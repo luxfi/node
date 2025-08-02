@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metervm
@@ -6,7 +6,7 @@ package metervm
 import (
 	"context"
 
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/quasar/engine/chain/block"
 )
 
 func (vm *blockVM) StateSyncEnabled(ctx context.Context) (bool, error) {

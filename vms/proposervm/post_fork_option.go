@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -9,7 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/choices"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
@@ -23,6 +24,11 @@ type postForkOption struct {
 	timestamp time.Time
 }
 
+// ID returns the block ID as string to satisfy choices.Decidable interface
+func (b *postForkOption) ID() string {
+	return b.Block.ID().String()
+}
+
 func (b *postForkOption) Timestamp() time.Time {
 	if b.Height() <= b.vm.lastAcceptedHeight {
 		return b.vm.lastAcceptedTime
@@ -30,10 +36,11 @@ func (b *postForkOption) Timestamp() time.Time {
 	return b.timestamp
 }
 
-func (b *postForkOption) Accept(ctx context.Context) error {
+func (b *postForkOption) Accept() error {
 	if err := b.acceptOuterBlk(); err != nil {
 		return err
 	}
+	ctx := context.Background()
 	return b.acceptInnerBlk(ctx)
 }
 
@@ -47,16 +54,27 @@ func (b *postForkOption) acceptInnerBlk(ctx context.Context) error {
 	return b.vm.Tree.Accept(ctx, b.innerBlk)
 }
 
-func (b *postForkOption) Reject(context.Context) error {
+func (b *postForkOption) Reject() error {
 	// we do not reject the inner block here because that block may be contained
 	// in the proposer block that causing this block to be rejected.
 
-	delete(b.vm.verifiedBlocks, b.ID())
+	blkID, _ := ids.FromString(b.ID())
+	delete(b.vm.verifiedBlocks, blkID)
 	return nil
 }
 
 func (b *postForkOption) Parent() ids.ID {
 	return b.ParentID()
+}
+
+// Status returns the status of this block
+func (b *postForkOption) Status() choices.Status {
+	return b.innerBlk.Status()
+}
+
+// Time returns the time as Unix timestamp to satisfy chain.Block interface
+func (b *postForkOption) Time() uint64 {
+	return uint64(b.Timestamp().Unix())
 }
 
 // If Verify returns nil, Accept or Reject is eventually called on [b] and
@@ -66,7 +84,15 @@ func (b *postForkOption) Verify(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	b.timestamp = parent.Timestamp()
+	// Get timestamp from parent block
+	if pfb, ok := parent.(*postForkBlock); ok {
+		b.timestamp = pfb.Timestamp()
+	} else if pfo, ok := parent.(*postForkOption); ok {
+		b.timestamp = pfo.Timestamp()
+	} else {
+		// This should not happen in post-fork context
+		return errUnexpectedBlockType
+	}
 	return parent.verifyPostForkOption(ctx, b)
 }
 
@@ -95,7 +121,8 @@ func (*postForkOption) verifyPostForkOption(context.Context, *postForkOption) er
 }
 
 func (b *postForkOption) buildChild(ctx context.Context) (Block, error) {
-	parentID := b.ID()
+	parentIDStr := b.ID()
+	parentID, _ := ids.FromString(parentIDStr)
 	parentPChainHeight, err := b.pChainHeight(ctx)
 	if err != nil {
 		b.vm.ctx.Log.Error("unexpected build block failure",

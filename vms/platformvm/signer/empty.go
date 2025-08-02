@@ -1,9 +1,9 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package signer
 
-import "github.com/luxfi/node/utils/crypto/bls"
+import "github.com/luxfi/crypto/bls"
 
 var _ Signer = (*Empty)(nil)
 

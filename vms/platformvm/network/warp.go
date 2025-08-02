@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -11,11 +11,11 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/network/p2p/acp118"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/node/proto/pb/platformvm"
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
@@ -45,7 +45,7 @@ const (
 	ErrWrongWeight
 )
 
-var _ acp118.Verifier = (*signatureRequestVerifier)(nil)
+var _ lp118.Verifier = (*signatureRequestVerifier)(nil)
 
 type signatureRequestVerifier struct {
 	stateLock sync.Locker

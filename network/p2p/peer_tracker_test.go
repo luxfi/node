@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -9,15 +9,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/ids"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
 
 func TestPeerTracker(t *testing.T) {
 	require := require.New(t)
 	p, err := NewPeerTracker(
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		"",
 		prometheus.NewRegistry(),
 		nil,

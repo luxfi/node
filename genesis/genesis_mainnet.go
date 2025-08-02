@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -8,6 +8,7 @@ import (
 
 	_ "embed"
 
+	"github.com/luxfi/node/quasar/sampling"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -18,8 +19,18 @@ var (
 	//go:embed genesis_mainnet.json
 	mainnetGenesisConfigJSON []byte
 
+	// MainnetConsensusParameters are the consensus parameters for mainnet (21 nodes)
+	MainnetConsensusParameters = sampling.Parameters{
+		K:               21, // Sample all 21 nodes
+		AlphaPreference: 13, // ~62% quorum - can tolerate up to 8 failures
+		AlphaConfidence: 18, // ~86% quorum - can tolerate up to 3 failures
+		Beta:            8,  // 8 rounds → 8×50ms + 100ms = 500ms finality
+		ConcurrentRepolls: 8, // Pipeline all 8 rounds for maximum throughput
+	}
+
 	// MainnetParams are the params used for mainnet
 	MainnetParams = Params{
+		ConsensusParameters: MainnetConsensusParameters,
 		TxFeeConfig: TxFeeConfig{
 			CreateAssetTxFee: 10 * units.MilliLux,
 			TxFee:            units.MilliLux,

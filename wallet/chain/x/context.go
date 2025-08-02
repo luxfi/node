@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
@@ -45,7 +45,7 @@ func NewContextFromClients(
 	return &builder.Context{
 		NetworkID:        networkID,
 		BlockchainID:     chainID,
-		LUXAssetID:      asset.AssetID,
+		LUXAssetID:       asset.AssetID,
 		BaseTxFee:        baseTxFee,
 		CreateAssetTxFee: createAssetTxFee,
 	}, nil

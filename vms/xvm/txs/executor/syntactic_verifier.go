@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -9,11 +9,12 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/xvm/txs"
 )
 
 const (
@@ -50,8 +51,20 @@ type SyntacticVerifier struct {
 	Tx *txs.Tx
 }
 
+// quasarContext returns a quasar.Context created from the quasar.Context
+func (v *SyntacticVerifier) quasarContext() *quasar.Context {
+	return &quasar.Context{
+		NetworkID:  v.Ctx.NetworkID,
+		ChainID:    v.Ctx.ChainID,
+		SubnetID:   v.Ctx.SubnetID,
+		NodeID:     v.Ctx.NodeID,
+		LUXAssetID: v.Ctx.LUXAssetID,
+		Log:        v.Ctx.Log,
+	}
+}
+
 func (v *SyntacticVerifier) BaseTx(tx *txs.BaseTx) error {
-	if err := tx.BaseTx.Verify(v.Ctx); err != nil {
+	if err := tx.BaseTx.Verify(v.quasarContext()); err != nil {
 		return err
 	}
 
@@ -114,7 +127,7 @@ func (v *SyntacticVerifier) CreateAssetTx(tx *txs.CreateAssetTx) error {
 		}
 	}
 
-	if err := tx.BaseTx.BaseTx.Verify(v.Ctx); err != nil {
+	if err := tx.BaseTx.BaseTx.Verify(v.quasarContext()); err != nil {
 		return err
 	}
 
@@ -162,7 +175,7 @@ func (v *SyntacticVerifier) OperationTx(tx *txs.OperationTx) error {
 		return errNoOperations
 	}
 
-	if err := tx.BaseTx.BaseTx.Verify(v.Ctx); err != nil {
+	if err := tx.BaseTx.BaseTx.Verify(v.quasarContext()); err != nil {
 		return err
 	}
 
@@ -222,7 +235,7 @@ func (v *SyntacticVerifier) ImportTx(tx *txs.ImportTx) error {
 		return errNoImportInputs
 	}
 
-	if err := tx.BaseTx.BaseTx.Verify(v.Ctx); err != nil {
+	if err := tx.BaseTx.BaseTx.Verify(v.quasarContext()); err != nil {
 		return err
 	}
 
@@ -264,7 +277,7 @@ func (v *SyntacticVerifier) ExportTx(tx *txs.ExportTx) error {
 		return errNoExportOutputs
 	}
 
-	if err := tx.BaseTx.BaseTx.Verify(v.Ctx); err != nil {
+	if err := tx.BaseTx.BaseTx.Verify(v.quasarContext()); err != nil {
 		return err
 	}
 
@@ -302,6 +315,7 @@ func (v *SyntacticVerifier) ExportTx(tx *txs.ExportTx) error {
 }
 
 func (v *SyntacticVerifier) BurnTx(tx *txs.BurnTx) error {
+<<<<<<< HEAD
 	if err := tx.SyntacticVerify(
 		v.Ctx,
 		v.Codec,
@@ -313,6 +327,54 @@ func (v *SyntacticVerifier) BurnTx(tx *txs.BurnTx) error {
 		return err
 	}
 
+=======
+	// Verify the base transaction
+	if err := tx.BaseTx.Verify(v.quasarContext()); err != nil {
+		return err
+	}
+
+	// Verify basic burn transaction constraints
+	switch {
+	case tx.AssetID == ids.Empty:
+		return fmt.Errorf("invalid asset ID")
+	case tx.Amount == 0:
+		return fmt.Errorf("invalid burn amount")
+	case tx.DestChain == ids.Empty:
+		return fmt.Errorf("invalid destination chain")
+	case len(tx.DestAddress) == 0:
+		return fmt.Errorf("invalid destination address")
+	case tx.DestChain == v.Ctx.ChainID:
+		return fmt.Errorf("cannot burn to same chain")
+	}
+
+	// Verify transaction fees and structure
+	err := lux.VerifyTx(
+		v.Config.TxFee,
+		v.FeeAssetID,
+		[][]*lux.TransferableInput{tx.Ins},
+		[][]*lux.TransferableOutput{tx.Outs},
+		v.Codec,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Ensure we're burning the correct amount
+	totalIn := uint64(0)
+	for _, in := range tx.Ins {
+		if in.AssetID() != tx.AssetID {
+			return fmt.Errorf("input asset mismatch")
+		}
+		totalIn += in.Input().Amount()
+	}
+
+	// Must burn exact amount (no change outputs for burn asset)
+	if totalIn != tx.Amount {
+		return fmt.Errorf("burn amount mismatch")
+	}
+
+	// Verify credentials
+>>>>>>> main
 	for _, cred := range v.Tx.Creds {
 		if err := cred.Verify(); err != nil {
 			return err
@@ -333,6 +395,7 @@ func (v *SyntacticVerifier) BurnTx(tx *txs.BurnTx) error {
 }
 
 func (v *SyntacticVerifier) MintTx(tx *txs.MintTx) error {
+<<<<<<< HEAD
 	if err := tx.SyntacticVerify(
 		v.Ctx,
 		v.Codec,
@@ -344,19 +407,83 @@ func (v *SyntacticVerifier) MintTx(tx *txs.MintTx) error {
 		return err
 	}
 
+=======
+	// Verify the base transaction
+	if err := tx.BaseTx.Verify(v.quasarContext()); err != nil {
+		return err
+	}
+
+	// Verify basic mint transaction constraints
+	switch {
+	case tx.AssetID == ids.Empty:
+		return fmt.Errorf("invalid asset ID")
+	case tx.Amount == 0:
+		return fmt.Errorf("invalid mint amount")
+	case tx.SourceChain == ids.Empty:
+		return fmt.Errorf("invalid source chain")
+	case len(tx.BurnProof) == 0:
+		return fmt.Errorf("invalid burn proof")
+	case tx.SourceChain == v.Ctx.ChainID:
+		return fmt.Errorf("cannot mint from same chain")
+	case len(tx.MPCSignatures) < 67: // Requires 67/100 threshold
+		return fmt.Errorf("insufficient MPC signatures")
+	}
+
+	// Verify transaction fees and structure
+	err := lux.VerifyTx(
+		v.Config.TxFee,
+		v.FeeAssetID,
+		[][]*lux.TransferableInput{tx.Ins},
+		[][]*lux.TransferableOutput{tx.Outs},
+		v.Codec,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Ensure outputs match the mint amount
+	totalOut := uint64(0)
+	for _, out := range tx.Outs {
+		if out.AssetID() == tx.AssetID {
+			totalOut += out.Output().Amount()
+		}
+	}
+
+	// Must mint exact amount
+	if totalOut != tx.Amount {
+		return fmt.Errorf("mint amount mismatch")
+	}
+
+	// Verify credentials
+>>>>>>> main
 	for _, cred := range v.Tx.Creds {
 		if err := cred.Verify(); err != nil {
 			return err
 		}
 	}
 
+<<<<<<< HEAD
 	// Mint transactions don't require credentials for inputs
 	// since they're authorized by MPC signatures
+=======
+	// Mint transactions may have fewer credentials than inputs
+	// since they're primarily authorized by MPC signatures
+	numCreds := len(v.Tx.Creds)
+	numInputs := len(tx.Ins)
+	if numCreds > numInputs {
+		return fmt.Errorf("%w: %d > %d",
+			errWrongNumberOfCredentials,
+			numCreds,
+			numInputs,
+		)
+	}
+>>>>>>> main
 
 	return nil
 }
 
 func (v *SyntacticVerifier) NFTTransferTx(tx *txs.NFTTransferTx) error {
+<<<<<<< HEAD
 	if err := tx.SyntacticVerify(
 		v.Ctx,
 		v.Codec,
@@ -368,13 +495,52 @@ func (v *SyntacticVerifier) NFTTransferTx(tx *txs.NFTTransferTx) error {
 		return err
 	}
 
+=======
+	// Verify the base transaction
+	if err := tx.BaseTx.Verify(v.quasarContext()); err != nil {
+		return err
+	}
+
+	// Verify basic NFT transfer transaction constraints
+	switch {
+	case tx.DestChain == ids.Empty:
+		return fmt.Errorf("invalid destination chain")
+	case len(tx.Recipient) == 0:
+		return fmt.Errorf("invalid recipient")
+	case tx.DestChain == v.Ctx.ChainID:
+		return fmt.Errorf("cannot transfer NFT to same chain")
+	}
+
+	// Verify transaction fees and structure
+	err := lux.VerifyTx(
+		v.Config.TxFee,
+		v.FeeAssetID,
+		[][]*lux.TransferableInput{tx.Ins},
+		[][]*lux.TransferableOutput{tx.Outs},
+		v.Codec,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Verify NFT transfer operation
+	if err := tx.NFTTransferOp.Verify(); err != nil {
+		return err
+	}
+
+	// Verify credentials
+>>>>>>> main
 	for _, cred := range v.Tx.Creds {
 		if err := cred.Verify(); err != nil {
 			return err
 		}
 	}
 
+<<<<<<< HEAD
 	// NFT transfers need credentials for the NFT inputs
+=======
+	// NFT transfers need credentials for all inputs including the NFT
+>>>>>>> main
 	numCreds := len(v.Tx.Creds)
 	numInputs := len(tx.Ins) + 1 // +1 for the NFT input
 	if numCreds != numInputs {

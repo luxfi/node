@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -65,6 +65,27 @@ func (m *txMetrics) ImportTx(*txs.ImportTx) error {
 func (m *txMetrics) ExportTx(*txs.ExportTx) error {
 	m.numTxs.With(prometheus.Labels{
 		txLabel: "export",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) BurnTx(*txs.BurnTx) error {
+	m.numTxs.With(prometheus.Labels{
+		txLabel: "burn",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) MintTx(*txs.MintTx) error {
+	m.numTxs.With(prometheus.Labels{
+		txLabel: "mint",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) NFTTransferTx(*txs.NFTTransferTx) error {
+	m.numTxs.With(prometheus.Labels{
+		txLabel: "nft_transfer",
 	}).Inc()
 	return nil
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -6,8 +6,8 @@ package txs
 import (
 	"errors"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -33,12 +33,18 @@ type TransferSubnetOwnershipTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [TransferSubnetOwnershipTx]. Also sets the [ctx] to the given [vm.ctx] so
 // that the addresses can be json marshalled into human readable format
-func (tx *TransferSubnetOwnershipTx) InitCtx(ctx *consensus.Context) {
+func (tx *TransferSubnetOwnershipTx) InitCtx(ctx *quasar.Context) {
 	tx.BaseTx.InitCtx(ctx)
-	tx.Owner.InitCtx(ctx)
+	tx.Owner.Initialize(ctx)
 }
 
-func (tx *TransferSubnetOwnershipTx) SyntacticVerify(ctx *consensus.Context) error {
+// Initialize implements quasar.ContextInitializable
+func (tx *TransferSubnetOwnershipTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
+}
+
+func (tx *TransferSubnetOwnershipTx) SyntacticVerify(ctx *quasar.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

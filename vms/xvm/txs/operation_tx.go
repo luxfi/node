@@ -1,11 +1,11 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -23,11 +23,17 @@ type OperationTx struct {
 	Ops []*Operation `serialize:"true" json:"operations"`
 }
 
-func (t *OperationTx) InitCtx(ctx *consensus.Context) {
+func (t *OperationTx) InitCtx(ctx *quasar.Context) {
 	for _, op := range t.Ops {
-		op.Op.InitCtx(ctx)
+		op.Op.Initialize(ctx)
 	}
 	t.BaseTx.InitCtx(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (t *OperationTx) Initialize(ctx *quasar.Context) error {
+	t.InitCtx(ctx)
+	return nil
 }
 
 // Operations track which ops this transaction is performing. The returned array

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package dynamicip
@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 var _ Resolver = (*mockResolver)(nil)
@@ -65,7 +65,7 @@ func TestNewUpdater(t *testing.T) {
 	require.Equal(updateFrequency, updater.updateFreq)
 
 	// Start updating the IP address
-	go updater.Dispatch(logging.NoLog{})
+	go updater.Dispatch(log.NewNoOpLogger())
 
 	// Assert that the IP is updated within 5s.
 	require.Eventually(

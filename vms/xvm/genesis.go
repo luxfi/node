@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -7,27 +7,27 @@ import (
 	"cmp"
 	"fmt"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/vms/xvm/txs"
 )
 
 var (
 	_ utils.Sortable[*GenesisAsset] = (*GenesisAsset)(nil)
 
 	_ lux.TransferableIn  = (*secp256k1fx.TransferInput)(nil)
-	_ verify.State         = (*secp256k1fx.MintOutput)(nil)
+	_ verify.State        = (*secp256k1fx.MintOutput)(nil)
 	_ lux.TransferableOut = (*secp256k1fx.TransferOutput)(nil)
-	_ fxs.FxOperation      = (*secp256k1fx.MintOperation)(nil)
-	_ verify.Verifiable    = (*secp256k1fx.Credential)(nil)
+	_ fxs.FxOperation     = (*secp256k1fx.MintOperation)(nil)
+	_ verify.Verifiable   = (*secp256k1fx.Credential)(nil)
 
 	_ verify.State      = (*nftfx.MintOutput)(nil)
 	_ verify.State      = (*nftfx.TransferOutput)(nil)

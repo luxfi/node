@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xsvm
@@ -6,16 +6,16 @@ package xsvm
 import (
 	"context"
 
-	"github.com/luxfi/node/network/p2p/acp118"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
-var _ acp118.Verifier = (*acp118Verifier)(nil)
+var _ lp118.Verifier = (*lp118Verifier)(nil)
 
-// acp118Verifier allows signing all warp messages
-type acp118Verifier struct{}
+// lp118Verifier allows signing all warp messages
+type lp118Verifier struct{}
 
-func (acp118Verifier) Verify(context.Context, *warp.UnsignedMessage, []byte) *core.AppError {
+func (lp118Verifier) Verify(context.Context, *warp.UnsignedMessage, []byte) *core.AppError {
 	return nil
 }

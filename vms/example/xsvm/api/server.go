@@ -1,14 +1,15 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package api
 
 import (
+	"errors"
 	"net/http"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/example/xsvm/block"
 	"github.com/luxfi/node/vms/example/xsvm/builder"
 	"github.com/luxfi/node/vms/example/xsvm/chain"
@@ -32,7 +33,7 @@ type Server interface {
 }
 
 func NewServer(
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	genesis *genesis.Genesis,
 	state database.KeyValueReader,
 	chain chain.Chain,
@@ -48,7 +49,7 @@ func NewServer(
 }
 
 type server struct {
-	ctx     *consensus.Context
+	ctx     *quasar.Context
 	genesis *genesis.Genesis
 	state   database.KeyValueReader
 	chain   chain.Chain
@@ -153,9 +154,9 @@ type LastAcceptedReply struct {
 }
 
 func (s *server) LastAccepted(_ *http.Request, _ *struct{}, reply *LastAcceptedReply) error {
-	s.ctx.Lock.RLock()
+	s.ctx.Lock.Lock()
 	reply.BlockID = s.chain.LastAccepted()
-	s.ctx.Lock.RUnlock()
+	s.ctx.Lock.Unlock()
 	blkBytes, err := state.GetBlock(s.state, reply.BlockID)
 	if err != nil {
 		return err
@@ -199,6 +200,11 @@ func (s *server) Message(_ *http.Request, args *MessageArgs, reply *MessageReply
 	}
 
 	reply.Message = message
-	reply.Signature, err = s.ctx.WarpSigner.Sign(message)
+	// Type assert WarpSigner to warp.Signer
+	signer, ok := s.ctx.WarpSigner.(warp.Signer)
+	if !ok {
+		return errors.New("WarpSigner does not implement warp.Signer interface")
+	}
+	reply.Signature, err = signer.Sign(message)
 	return err
 }

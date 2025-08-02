@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -6,7 +6,7 @@ package secp256k1fx
 import (
 	"errors"
 
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 )
 
 var ErrNoValueInput = errors.New("input has no value")
@@ -16,7 +16,7 @@ type TransferInput struct {
 	Input `serialize:"true"`
 }
 
-func (*TransferInput) InitCtx(*consensus.Context) {}
+func (*TransferInput) InitCtx(*quasar.Context) {}
 
 // Amount returns the quantity of the asset this input produces
 func (in *TransferInput) Amount() uint64 {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -8,10 +8,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/network/throttling/tracker"
+	"github.com/luxfi/node/quasar/validators"
+	log "github.com/luxfi/log"
 )
 
 var _ InboundMsgThrottler = (*inboundMsgThrottler)(nil)
@@ -52,7 +52,7 @@ type InboundMsgThrottlerConfig struct {
 
 // Returns a new, sybil-safe inbound message throttler.
 func NewInboundMsgThrottler(
-	log logging.Logger,
+	log log.Logger,
 	registerer prometheus.Registerer,
 	vdrs validators.Manager,
 	throttlerConfig InboundMsgThrottlerConfig,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -12,17 +12,17 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
-	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
+	"github.com/luxfi/node/quasar/engine/chain/block/blocktest"
+	"github.com/luxfi/node/quasar/chain/chaintest"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
@@ -43,7 +43,7 @@ var (
 	}
 
 	// last accepted blocks data before and after summary is accepted
-	preSummaryBlk = &lineartest.Block{
+	preSummaryBlk = &chaintest.Block{
 		Decidable: consensustest.Decidable{
 			IDV:    ids.ID{'f', 'i', 'r', 's', 't', 'B', 'l', 'K'},
 			Status: consensustest.Accepted,
@@ -52,7 +52,7 @@ var (
 		ParentV: ids.ID{'p', 'a', 'r', 'e', 'n', 't', 'B', 'l', 'k'},
 	}
 
-	summaryBlk = &lineartest.Block{
+	summaryBlk = &chaintest.Block{
 		Decidable: consensustest.Decidable{
 			IDV:    ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'B', 'l', 'K'},
 			Status: consensustest.Accepted,
@@ -266,10 +266,10 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 	process := helperProcess(testKey)
 
-	log := logging.NewLogger(
+	log := log.NewZapLogger(
 		testKey,
 		logging.NewWrappedCore(
-			logging.Info,
+			log.LevelInfo,
 			originalStderr,
 			logging.Colors.ConsoleEncoder(),
 		),
@@ -294,7 +294,7 @@ func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 	clientConn, err := grpcutils.Dial(status.Addr)
 	require.NoError(err)
 
-	return NewClient(clientConn, stopper, status.Pid, nil, metrics.NewPrefixGatherer(), &logging.NoLog{})
+	return NewClient(clientConn, stopper, status.Pid, nil, metrics.NewPrefixGatherer(), &log.NewNoOpLogger())
 }
 
 func TestStateSyncEnabled(t *testing.T) {
@@ -501,7 +501,7 @@ func TestLastAcceptedBlockPostStateSummaryAccept(t *testing.T) {
 	require.Equal(preSummaryBlk.Height(), lastBlk.Height())
 
 	// Setting state to bootstrapping duly update last accepted block
-	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), quasar.Bootstrapping))
 
 	blkID, err = vm.LastAccepted(context.Background())
 	require.NoError(err)

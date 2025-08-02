@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package e2e
@@ -14,8 +14,13 @@ import (
 	"time"
 
 	"github.com/luxfi/evm/ethclient"
+<<<<<<< HEAD
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum"
+=======
+	ethereum "github.com/luxfi/geth"
+	"github.com/luxfi/geth/core/types"
+>>>>>>> main
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
@@ -113,7 +118,7 @@ func GetWalletBalances(tc tests.TestContext, wallet *primary.Wallet) (uint64, ui
 	pBalances, err := pBuilder.GetBalance()
 	require.NoError(err, "failed to fetch P-chain balances")
 	var (
-		xContext    = xBuilder.Context()
+		xContext   = xBuilder.Context()
 		luxAssetID = xContext.LUXAssetID
 		xLUX       = xBalances[luxAssetID]
 		pLUX       = pBalances[luxAssetID]

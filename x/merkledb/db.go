@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package merkledb
@@ -15,8 +15,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/maybe"
@@ -861,14 +861,14 @@ func (db *merkleDB) Has(k []byte) (bool, error) {
 	return err == nil, err
 }
 
-func (db *merkleDB) HealthCheck(ctx context.Context) (interface{}, error) {
+func (db *merkleDB) HealthCheck() error {
 	db.lock.RLock()
 	defer db.lock.RUnlock()
 
 	if db.closed {
-		return nil, database.ErrClosed
+		return database.ErrClosed
 	}
-	return db.baseDB.HealthCheck(ctx)
+	return db.baseDB.HealthCheck()
 }
 
 func (db *merkleDB) NewBatch() database.Batch {

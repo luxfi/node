@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package listener
@@ -8,8 +8,13 @@ import (
 	"fmt"
 	"sync"
 
+<<<<<<< HEAD
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/luxfi/evm/interfaces"
+=======
+	interfaces "github.com/luxfi/evm/iface"
+	"github.com/luxfi/geth/core/types"
+>>>>>>> main
 )
 
 type NewHeadSubscriber interface {

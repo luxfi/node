@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package server
@@ -18,13 +18,13 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 const (
@@ -64,7 +64,7 @@ type Server interface {
 	// RegisterChain registers the API endpoints associated with this chain.
 	// That is, add <route, handler> pairs to server so that API calls can be
 	// made to the VM.
-	RegisterChain(chainName string, ctx *consensus.Context, vm core.VM)
+	RegisterChain(chainName string, ctx *quasar.Context, vm core.VM)
 	// Shutdown this server
 	Shutdown() error
 }
@@ -78,7 +78,7 @@ type HTTPConfig struct {
 
 type server struct {
 	// log this server writes to
-	log logging.Logger
+	log log.Logger
 
 	shutdownTimeout time.Duration
 
@@ -98,7 +98,7 @@ type server struct {
 
 // New returns an instance of a Server.
 func New(
-	log logging.Logger,
+	log log.Logger,
 	listener net.Listener,
 	allowedOrigins []string,
 	shutdownTimeout time.Duration,
@@ -149,7 +149,7 @@ func (s *server) Dispatch() error {
 	return s.srv.Serve(s.listener)
 }
 
-func (s *server) RegisterChain(chainName string, ctx *consensus.Context, vm core.VM) {
+func (s *server) RegisterChain(chainName string, ctx *quasar.Context, vm core.VM) {
 	ctx.Lock.Lock()
 	pathRouteHandlers, err := vm.CreateHandlers(context.TODO())
 	ctx.Lock.Unlock()
@@ -179,13 +179,24 @@ func (s *server) RegisterChain(chainName string, ctx *consensus.Context, vm core
 			)
 			continue
 		}
-		if err := s.addChainRoute(chainName, handler, ctx, defaultEndpoint, extension); err != nil {
+		httpHandler, ok := handler.(http.Handler)
+		if !ok {
+			s.log.Error("handler does not implement http.Handler",
+				zap.String("chainName", chainName),
+				zap.String("extension", extension),
+			)
+			continue
+		}
+		if err := s.addChainRoute(chainName, httpHandler, ctx, defaultEndpoint, extension); err != nil {
 			s.log.Error("error adding route",
 				zap.Error(err),
 			)
 		}
 	}
 
+	// TODO: NewHTTPHandler is not part of core.VM interface
+	// Need to check if the VM implements it via type assertion
+	/*
 	ctx.Lock.Lock()
 	headerRouteHandler, err := vm.NewHTTPHandler(context.TODO())
 	ctx.Lock.Unlock()
@@ -200,7 +211,7 @@ func (s *server) RegisterChain(chainName string, ctx *consensus.Context, vm core
 	if headerRouteHandler == nil {
 		return
 	}
-
+	
 	headerRouteHandler = s.wrapMiddleware(chainName, headerRouteHandler, ctx)
 	if !s.router.AddHeaderRoute(ctx.ChainID.String(), headerRouteHandler) {
 		s.log.Error(
@@ -208,9 +219,10 @@ func (s *server) RegisterChain(chainName string, ctx *consensus.Context, vm core
 			zap.String("chainName", chainName),
 		)
 	}
+	*/
 }
 
-func (s *server) addChainRoute(chainName string, handler http.Handler, ctx *consensus.Context, base, endpoint string) error {
+func (s *server) addChainRoute(chainName string, handler http.Handler, ctx *quasar.Context, base, endpoint string) error {
 	url := fmt.Sprintf("%s/%s", baseURL, base)
 	s.log.Info("adding route",
 		zap.String("url", url),
@@ -220,7 +232,7 @@ func (s *server) addChainRoute(chainName string, handler http.Handler, ctx *cons
 	return s.router.AddRouter(url, endpoint, handler)
 }
 
-func (s *server) wrapMiddleware(chainName string, handler http.Handler, ctx *consensus.Context) http.Handler {
+func (s *server) wrapMiddleware(chainName string, handler http.Handler, ctx *quasar.Context) http.Handler {
 	if s.tracingEnabled {
 		handler = api.TraceHandler(handler, chainName, s.tracer)
 	}
@@ -256,9 +268,9 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 
 // Reject middleware wraps a handler. If the chain that the context describes is
 // not done state-syncing/bootstrapping, writes back an error.
-func rejectMiddleware(handler http.Handler, ctx *consensus.Context) http.Handler {
+func rejectMiddleware(handler http.Handler, ctx *quasar.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { // If chain isn't done bootstrapping, ignore API calls
-		if ctx.State.Get().State != consensus.NormalOp {
+		if ctx.State != nil && ctx.State.Get().State != quasar.NormalOp {
 			http.Error(w, "API call rejected because chain is not done bootstrapping", http.StatusServiceUnavailable)
 		} else {
 			handler.ServeHTTP(w, r)

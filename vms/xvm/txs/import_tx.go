@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -24,6 +25,19 @@ type ImportTx struct {
 
 	// The inputs to this transaction
 	ImportedIns []*lux.TransferableInput `serialize:"true" json:"importedInputs"`
+}
+
+func (t *ImportTx) InitCtx(ctx *quasar.Context) {
+	for _, in := range t.ImportedIns {
+		in.InitCtx(ctx)
+	}
+	t.BaseTx.InitCtx(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (t *ImportTx) Initialize(ctx *quasar.Context) error {
+	t.InitCtx(ctx)
+	return nil
 }
 
 // InputUTXOs track which UTXOs this transaction is consuming.

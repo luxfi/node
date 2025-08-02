@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package health
@@ -11,8 +11,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/ids"
+	log "github.com/luxfi/log"
 )
 
 func TestServiceResponses(t *testing.T) {
@@ -22,11 +22,11 @@ func TestServiceResponses(t *testing.T) {
 		return "", nil
 	})
 
-	h, err := New(logging.NoLog{}, prometheus.NewRegistry())
+	h, err := New(log.NewNoOpLogger(), prometheus.NewRegistry())
 	require.NoError(err)
 
 	s := &Service{
-		log:    logging.NoLog{},
+		log:    log.NewNoOpLogger(),
 		health: h,
 	}
 
@@ -158,7 +158,7 @@ func TestServiceTagResponse(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			h, err := New(logging.NoLog{}, prometheus.NewRegistry())
+			h, err := New(log.NewNoOpLogger(), prometheus.NewRegistry())
 			require.NoError(err)
 			require.NoError(test.register(h, "check1", check))
 			require.NoError(test.register(h, "check2", check, subnetID1.String()))
@@ -166,7 +166,7 @@ func TestServiceTagResponse(t *testing.T) {
 			require.NoError(test.register(h, "check4", check, subnetID1.String(), subnetID2.String()))
 
 			s := &Service{
-				log:    logging.NoLog{},
+				log:    log.NewNoOpLogger(),
 				health: h,
 			}
 

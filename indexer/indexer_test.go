@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
@@ -12,17 +12,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-
+	
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/dag/vertex/vertexmock"
-	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/core/coremock"
+	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 var (
@@ -54,11 +54,11 @@ func TestNewIndexer(t *testing.T) {
 	config := Config{
 		IndexingEnabled:      true,
 		AllowIncompleteIndex: true,
-		Log:                  logging.NoLog{},
+		Log:                  log.NewNoOpLogger(),
 		DB:                   memdb.New(),
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:   quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:      quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup:  quasar.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -95,11 +95,11 @@ func TestMarkHasRunAndShutdown(t *testing.T) {
 	shutdown.Add(1)
 	config := Config{
 		IndexingEnabled:     true,
-		Log:                 logging.NoLog{},
+		Log:                 log.NewNoOpLogger(),
 		DB:                  db,
-		BlockAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:     consensus.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup: consensus.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:  quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:     quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup: quasar.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:           &apiServerMock{},
 		ShutdownF:           shutdown.Done,
 	}
@@ -134,11 +134,11 @@ func TestIndexer(t *testing.T) {
 	config := Config{
 		IndexingEnabled:      true,
 		AllowIncompleteIndex: false,
-		Log:                  logging.NoLog{},
+		Log:                  log.NewNoOpLogger(),
 		DB:                   db,
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:   quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:      quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup:  quasar.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:            server,
 		ShutdownF:            func() {},
 	}
@@ -152,8 +152,8 @@ func TestIndexer(t *testing.T) {
 	idxr.clock.Set(now)
 
 	// Assert state is right
-	snow1Ctx := consensustest.Context(t, consensustest.CChainID)
-	chain1Ctx := consensustest.ConsensusContext(snow1Ctx)
+	c1Ctx := consensustest.Context(t, consensustest.CChainID)
+	chain1Ctx := consensustest.ConsensusContext(c1Ctx)
 	isIncomplete, err := idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -162,7 +162,7 @@ func TestIndexer(t *testing.T) {
 	require.False(previouslyIndexed)
 
 	// Register this chain, creating a new index
-	chainVM := blockmock.NewChainVM(ctrl)
+	chainVM := blockmock.NewMockChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	isIncomplete, err = idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
@@ -257,15 +257,15 @@ func TestIndexer(t *testing.T) {
 	require.Contains(server.endpoints, "/block")
 
 	// Register a DAG chain
-	snow2Ctx := consensustest.Context(t, consensustest.XChainID)
-	chain2Ctx := consensustest.ConsensusContext(snow2Ctx)
+	c2Ctx := consensustest.Context(t, consensustest.XChainID)
+	chain2Ctx := consensustest.ConsensusContext(c2Ctx)
 	isIncomplete, err = idxr.isIncomplete(chain2Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
 	previouslyIndexed, err = idxr.previouslyIndexed(chain2Ctx.ChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
-	dagVM := vertexmock.NewLinearizableVM(ctrl)
+	dagVM := coremock.NewMockVM(ctrl)
 	idxr.RegisterChain("chain2", chain2Ctx, dagVM)
 	require.NoError(err)
 	require.Equal(4, server.timesCalled) // block index for chain, block index for dag, vtx index, tx index
@@ -402,11 +402,11 @@ func TestIncompleteIndex(t *testing.T) {
 	config := Config{
 		IndexingEnabled:      false,
 		AllowIncompleteIndex: false,
-		Log:                  logging.NoLog{},
+		Log:                  log.NewNoOpLogger(),
 		DB:                   versiondb.New(baseDB),
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:   quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:      quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup:  quasar.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -417,15 +417,15 @@ func TestIncompleteIndex(t *testing.T) {
 	require.False(idxr.indexingEnabled)
 
 	// Register a chain
-	snow1Ctx := consensustest.Context(t, consensustest.CChainID)
-	chain1Ctx := consensustest.ConsensusContext(snow1Ctx)
+	c1Ctx := consensustest.Context(t, consensustest.CChainID)
+	chain1Ctx := consensustest.ConsensusContext(c1Ctx)
 	isIncomplete, err := idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
 	previouslyIndexed, err := idxr.previouslyIndexed(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
-	chainVM := blockmock.NewChainVM(ctrl)
+	chainVM := blockmock.NewMockChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	isIncomplete, err = idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
@@ -484,11 +484,11 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	config := Config{
 		IndexingEnabled:      true,
 		AllowIncompleteIndex: false,
-		Log:                  logging.NoLog{},
+		Log:                  log.NewNoOpLogger(),
 		DB:                   db,
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(logging.NoLog{}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(logging.NoLog{}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(logging.NoLog{}),
+		BlockAcceptorGroup:   quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		TxAcceptorGroup:      quasar.NewAcceptorGroup(log.NewNoOpLogger()),
+		VertexAcceptorGroup:  quasar.NewAcceptorGroup(log.NewNoOpLogger()),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -500,13 +500,13 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	idxr := idxrIntf.(*indexer)
 
 	// Create chain1Ctx for a random subnet + chain.
-	chain1Ctx := consensustest.ConsensusContext(&consensus.Context{
+	chain1Ctx := consensustest.ConsensusContext(&quasar.Context{
 		ChainID:  ids.GenerateTestID(),
 		SubnetID: ids.GenerateTestID(),
 	})
 
 	// RegisterChain should return without adding an index for this chain
-	chainVM := blockmock.NewChainVM(ctrl)
+	chainVM := blockmock.NewMockChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	require.Empty(idxr.blockIndices)
 }

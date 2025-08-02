@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package resource
@@ -14,7 +14,7 @@ import (
 	"github.com/shirou/gopsutil/process"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/storage"
 )
 
@@ -67,7 +67,7 @@ type Manager interface {
 }
 
 type manager struct {
-	log            logging.Logger
+	log            log.Logger
 	processMetrics *metrics
 
 	processesLock sync.Mutex
@@ -87,7 +87,7 @@ type manager struct {
 }
 
 func NewManager(
-	log logging.Logger,
+	log log.Logger,
 	diskPath string,
 	frequency,
 	cpuHalflife,
@@ -234,7 +234,7 @@ func (m *manager) getActiveUsage(secondsSinceLastUpdate float64) (float64, float
 
 type proc struct {
 	p   *process.Process
-	log logging.Logger
+	log log.Logger
 
 	initialized bool
 

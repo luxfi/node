@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -10,7 +10,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 )
 
@@ -75,6 +75,9 @@ func connToIDAndCert(conn *tls.Conn, invalidCerts prometheus.Counter) (ids.NodeI
 		return ids.EmptyNodeID, nil, nil, err
 	}
 
-	nodeID := ids.NodeIDFromCert(peerCert)
+	nodeID := ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       peerCert.Raw,
+		PublicKey: peerCert.PublicKey,
+	})
 	return nodeID, conn, peerCert, nil
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -8,16 +8,16 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/wallet"
 )
 
@@ -375,7 +375,7 @@ func (b *builder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.addrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID     = b.context.LUXAssetID
+		luxAssetID      = b.context.LUXAssetID
 		txFee           = b.context.BaseTxFee
 
 		importedInputs  = make([]*lux.TransferableInput, 0, len(utxos))
@@ -424,8 +424,8 @@ func (b *builder) NewImportTx(
 	}
 
 	var (
-		inputs       []*lux.TransferableInput
-		outputs      = make([]*lux.TransferableOutput, 0, len(importedAmounts))
+		inputs      []*lux.TransferableInput
+		outputs     = make([]*lux.TransferableOutput, 0, len(importedAmounts))
 		importedLUX = importedAmounts[luxAssetID]
 	)
 	if importedLUX > txFee {
@@ -639,7 +639,7 @@ func (b *builder) spend(
 		}
 	}
 
-	utils.Sort(inputs)                                    // sort inputs
+	utils.Sort(inputs)                                   // sort inputs
 	lux.SortTransferableOutputs(outputs, Parser.Codec()) // sort the change outputs
 	return inputs, outputs, nil
 }
@@ -877,7 +877,7 @@ func (b *builder) burnProperty(
 }
 
 func (b *builder) initCtx(tx txs.UnsignedTx) error {
-	ctx, err := NewSnowContext(
+	ctx, err := NewLinearContext(
 		b.context.NetworkID,
 		b.context.BlockchainID,
 		b.context.LUXAssetID,
@@ -886,6 +886,5 @@ func (b *builder) initCtx(tx txs.UnsignedTx) error {
 		return err
 	}
 
-	tx.InitCtx(ctx)
-	return nil
+	return tx.Initialize(ctx)
 }

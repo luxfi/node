@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package health
@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -28,7 +28,7 @@ var (
 )
 
 type worker struct {
-	log           logging.Logger
+	log           log.Logger
 	name          string
 	failingChecks *prometheus.GaugeVec
 	checksLock    sync.RWMutex
@@ -52,7 +52,7 @@ type taggedChecker struct {
 }
 
 func newWorker(
-	log logging.Logger,
+	log log.Logger,
 	name string,
 	failingChecks *prometheus.GaugeVec,
 ) *worker {

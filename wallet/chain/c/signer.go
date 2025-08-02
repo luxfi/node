@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -9,10 +9,14 @@ import (
 	"fmt"
 
 	"github.com/luxfi/evm/plugin/evm/atomic"
+<<<<<<< HEAD
 	"github.com/ethereum/go-ethereum/common"
+=======
+	"github.com/luxfi/geth/common"
+>>>>>>> main
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
@@ -60,14 +64,14 @@ type SignerBackend interface {
 }
 
 type txSigner struct {
-	luxKC  keychain.Keychain
+	luxKC   keychain.Keychain
 	ethKC   EthKeychain
 	backend SignerBackend
 }
 
 func NewSigner(luxKC keychain.Keychain, ethKC EthKeychain, backend SignerBackend) Signer {
 	return &txSigner{
-		luxKC:  luxKC,
+		luxKC:   luxKC,
 		ethKC:   ethKC,
 		backend: backend,
 	}

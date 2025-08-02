@@ -1,9 +1,9 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chains
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 // TestManager implements Manager but does nothing. Always returns nil error.
 // To be used only in tests

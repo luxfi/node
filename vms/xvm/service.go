@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -12,16 +12,16 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/quasar/choices"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm/txs"
 
 	avajson "github.com/luxfi/node/utils/json"
 	safemath "github.com/luxfi/node/utils/math"
@@ -73,7 +73,7 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, reply *api.G
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		block.InitCtx(s.vm.ctx)
+		block.Initialize(s.vm.ctx)
 		for _, tx := range block.Txs() {
 			err := tx.Unsigned.Visit(&txInit{
 				tx:            tx,
@@ -128,7 +128,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		block.InitCtx(s.vm.ctx)
+		block.Initialize(s.vm.ctx)
 		for _, tx := range block.Txs() {
 			err := tx.Unsigned.Visit(&txInit{
 				tx:            tx,
@@ -180,12 +180,12 @@ func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *api.GetHeightRe
 	return nil
 }
 
-// IssueTx attempts to issue a transaction into consensus
+// IssueTx attempts to issue a transaction into quasar
 func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "issueTx"),
-		logging.UserString("tx", args.Tx),
+		log.UserString("tx", args.Tx),
 	)
 
 	txBytes, err := formatting.Decode(args.Encoding, args.Tx)
@@ -286,7 +286,7 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getUTXOs"),
-		logging.UserStrings("addresses", args.Addresses),
+		log.UserStrings("addresses", args.Addresses),
 	)
 
 	if len(args.Addresses) == 0 {
@@ -347,6 +347,9 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 			limit,
 		)
 	} else {
+		// TODO: Fix SharedMemory access
+		// SharedMemory is not available in quasar.Context
+		/*
 		utxos, endAddr, endUTXOID, err = lux.GetAtomicUTXOs(
 			s.vm.ctx.SharedMemory,
 			s.vm.parser.Codec(),
@@ -356,6 +359,12 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 			startUTXO,
 			limit,
 		)
+		*/
+		// For now, return empty results for cross-chain queries
+		utxos = nil
+		endAddr = ids.ShortEmpty
+		endUTXOID = ids.Empty
+		err = fmt.Errorf("cross-chain UTXOs not supported without SharedMemory")
 	}
 	if err != nil {
 		return fmt.Errorf("problem retrieving UTXOs: %w", err)
@@ -404,7 +413,7 @@ func (s *Service) GetAssetDescription(_ *http.Request, args *GetAssetDescription
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getAssetDescription"),
-		logging.UserString("assetID", args.AssetID),
+		log.UserString("assetID", args.AssetID),
 	)
 
 	assetID, err := s.vm.lookupAssetID(args.AssetID)
@@ -442,7 +451,7 @@ type GetBalanceArgs struct {
 // GetBalanceReply defines the GetBalance replies returned from the API
 type GetBalanceReply struct {
 	Balance avajson.Uint64 `json:"balance"`
-	UTXOIDs []lux.UTXOID  `json:"utxoIDs"`
+	UTXOIDs []lux.UTXOID   `json:"utxoIDs"`
 }
 
 // GetBalance returns the balance of an asset held by an address.
@@ -454,8 +463,8 @@ func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBa
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getBalance"),
-		logging.UserString("address", args.Address),
-		logging.UserString("assetID", args.AssetID),
+		log.UserString("address", args.Address),
+		log.UserString("assetID", args.AssetID),
 	)
 
 	addr, err := lux.ParseServiceAddress(s.vm, args.Address)
@@ -531,7 +540,7 @@ func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, repl
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getAllBalances"),
-		logging.UserString("address", args.Address),
+		log.UserString("address", args.Address),
 	)
 
 	address, err := lux.ParseServiceAddress(s.vm, args.Address)

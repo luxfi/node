@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -10,13 +10,13 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms/xvm/txs"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/node/vms/xvm/txs"
 )
 
 type WalletService struct {
@@ -92,12 +92,12 @@ func (w *WalletService) issue(tx *txs.Tx) (ids.ID, error) {
 	return txID, nil
 }
 
-// IssueTx attempts to issue a transaction into consensus
+// IssueTx attempts to issue a transaction into quasar
 func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
 	w.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "wallet"),
 		zap.String("method", "issueTx"),
-		logging.UserString("tx", args.Tx),
+		log.UserString("tx", args.Tx),
 	)
 
 	txBytes, err := formatting.Decode(args.Encoding, args.Tx)

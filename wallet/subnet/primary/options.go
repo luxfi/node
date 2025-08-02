@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -14,19 +14,19 @@ type IssuanceReceipt = wallet.IssuanceReceipt
 type ConfirmationReceipt = wallet.ConfirmationReceipt
 
 var (
-	NewOptions = wallet.NewOptions
-	UnionOptions = wallet.UnionOptions
-	WithContext = wallet.WithContext
-	WithCustomAddresses = wallet.WithCustomAddresses
-	WithCustomEthAddresses = wallet.WithCustomEthAddresses
-	WithBaseFee = wallet.WithBaseFee
-	WithMinIssuanceTime = wallet.WithMinIssuanceTime
-	WithStakeableLocked = wallet.WithStakeableLocked
-	WithChangeOwner = wallet.WithChangeOwner
-	WithMemo = wallet.WithMemo
-	WithAssumeDecided = wallet.WithAssumeDecided
-	WithPollFrequency = wallet.WithPollFrequency
-	WithIssuanceHandler = wallet.WithIssuanceHandler
+	NewOptions              = wallet.NewOptions
+	UnionOptions            = wallet.UnionOptions
+	WithContext             = wallet.WithContext
+	WithCustomAddresses     = wallet.WithCustomAddresses
+	WithCustomEthAddresses  = wallet.WithCustomEthAddresses
+	WithBaseFee             = wallet.WithBaseFee
+	WithMinIssuanceTime     = wallet.WithMinIssuanceTime
+	WithStakeableLocked     = wallet.WithStakeableLocked
+	WithChangeOwner         = wallet.WithChangeOwner
+	WithMemo                = wallet.WithMemo
+	WithAssumeDecided       = wallet.WithAssumeDecided
+	WithPollFrequency       = wallet.WithPollFrequency
+	WithIssuanceHandler     = wallet.WithIssuanceHandler
 	WithConfirmationHandler = wallet.WithConfirmationHandler
 )
 

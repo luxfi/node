@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -12,23 +12,23 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/uptime"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -88,7 +88,7 @@ type environment struct {
 	config         *config.Internal
 	clk            *mockable.Clock
 	baseDB         *versiondb.Database
-	ctx            *consensus.Context
+	ctx            *quasar.Context
 	fx             fx.Fx
 	state          state.State
 	mockedState    *state.MockState
@@ -302,7 +302,7 @@ func defaultClock() *mockable.Clock {
 type fxVMInt struct {
 	registry codec.Registry
 	clk      *mockable.Clock
-	log      logging.Logger
+	log      log.Logger
 }
 
 func (fvi *fxVMInt) CodecRegistry() codec.Registry {
@@ -313,11 +313,11 @@ func (fvi *fxVMInt) Clock() *mockable.Clock {
 	return fvi.clk
 }
 
-func (fvi *fxVMInt) Logger() logging.Logger {
+func (fvi *fxVMInt) Logger() log.Logger {
 	return fvi.log
 }
 
-func defaultFx(clk *mockable.Clock, log logging.Logger, isBootstrapped bool) fx.Fx {
+func defaultFx(clk *mockable.Clock, log log.Logger, isBootstrapped bool) fx.Fx {
 	fxVMInt := &fxVMInt{
 		registry: linearcodec.NewDefault(),
 		clk:      clk,

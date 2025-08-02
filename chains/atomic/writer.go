@@ -1,16 +1,16 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package atomic
 
-import "github.com/luxfi/node/database"
+import db "github.com/luxfi/database"
 
 // WriteAll writes all of the batches to the underlying database of baseBatch.
-// Assumes all batches have the same underlying database.
-func WriteAll(baseBatch database.Batch, batches ...database.Batch) error {
+// Assumes all batches have the same underlying db.
+func WriteAll(baseBatch db.Batch, batches ...db.Batch) error {
 	baseBatch = baseBatch.Inner()
 	// Replay the inner batches onto [baseBatch] so that it includes all DB
-	// operations as they would be applied to the base database.
+	// operations as they would be applied to the base db.
 	for _, batch := range batches {
 		batch = batch.Inner()
 		if err := batch.Replay(baseBatch); err != nil {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -7,9 +7,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	chaincon "github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/utils/wrappers"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
@@ -80,14 +80,14 @@ func (vm *VM) GetAncestors(
 	return res, nil
 }
 
-func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]linear.Block, error) {
+func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]block.Block, error) {
 	type partialData struct {
 		index int
 		block statelessblock.Block
 	}
 	var (
 		blocksIndex int
-		blocks      = make([]linear.Block, len(blks))
+		blocks      = make([]block.Block, len(blks))
 
 		innerBlocksIndex    int
 		statelessBlockDescs = make([]partialData, 0, len(blks))
@@ -118,37 +118,62 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]linear.Bl
 	innerBlockBytes = append(innerBlockBytes, blks[blocksIndex:]...)
 
 	// parse all inner blocks at once
-	innerBlks, err := block.BatchedParseBlock(ctx, vm.ChainVM, innerBlockBytes)
-	if err != nil {
-		return nil, err
+	var (
+		innerBlks []chaincon.Block
+		err       error
+	)
+	batchedVM, ok := vm.ChainVM.(block.BatchedChainVM)
+	if !ok {
+		// Fall back to parsing blocks one by one
+		for _, blockBytes := range innerBlockBytes {
+			var innerBlk chaincon.Block
+			innerBlk, err = vm.ChainVM.ParseBlock(ctx, blockBytes)
+			if err != nil {
+				return nil, err
+			}
+			innerBlks = append(innerBlks, innerBlk)
+		}
+	} else {
+		parsedBlks, err := batchedVM.BatchedParseBlock(ctx, innerBlockBytes)
+		if err != nil {
+			return nil, err
+		}
+		// Convert from block.Block to chaincon.Block
+		for _, blk := range parsedBlks {
+			if chainBlk, ok := blk.(chaincon.Block); ok {
+				innerBlks = append(innerBlks, chainBlk)
+			} else {
+				return nil, errUnexpectedBlockType
+			}
+		}
 	}
 	for ; innerBlocksIndex < len(statelessBlockDescs); innerBlocksIndex++ {
 		statelessBlockDesc := statelessBlockDescs[innerBlocksIndex]
 		statelessBlk := statelessBlockDesc.block
 
 		if statelessSignedBlock, ok := statelessBlk.(statelessblock.SignedBlock); ok {
-			blocks[statelessBlockDesc.index] = &postForkBlock{
+			blocks[statelessBlockDesc.index] = wrapBlock(&postForkBlock{
 				SignedBlock: statelessSignedBlock,
 				postForkCommonComponents: postForkCommonComponents{
 					vm:       vm,
 					innerBlk: innerBlks[innerBlocksIndex],
 				},
-			}
+			})
 		} else {
-			blocks[statelessBlockDesc.index] = &postForkOption{
+			blocks[statelessBlockDesc.index] = wrapBlock(&postForkOption{
 				Block: statelessBlk,
 				postForkCommonComponents: postForkCommonComponents{
 					vm:       vm,
 					innerBlk: innerBlks[innerBlocksIndex],
 				},
-			}
+			})
 		}
 	}
 	for ; blocksIndex < len(blocks); blocksIndex, innerBlocksIndex = blocksIndex+1, innerBlocksIndex+1 {
-		blocks[blocksIndex] = &preForkBlock{
+		blocks[blocksIndex] = wrapBlock(&preForkBlock{
 			Block: innerBlks[innerBlocksIndex],
 			vm:    vm,
-		}
+		})
 	}
 	return blocks, nil
 }

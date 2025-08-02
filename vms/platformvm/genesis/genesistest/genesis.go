@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesistest
@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/ids"
+	// "github.com/luxfi/quasar/consensustest" // TODO: Use when AssetID is available
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
@@ -34,7 +34,10 @@ const (
 )
 
 var (
-	LUXAsset = lux.Asset{ID: consensustest.LUXAssetID}
+	// TODO: Get AssetID from consensustest when available
+	// For now, using a placeholder ID
+	AssetID = ids.Empty
+	LUXAsset = lux.Asset{ID: AssetID}
 
 	DefaultValidatorStartTime     = upgrade.InitiallyActiveTime
 	DefaultValidatorStartTimeUnix = uint64(DefaultValidatorStartTime.Unix())
@@ -102,7 +105,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 	for i, key := range c.FundedKeys {
 		genesis.UTXOs[i] = &platformvmgenesis.UTXO{UTXO: lux.UTXO{
 			UTXOID: lux.UTXOID{
-				TxID:        consensustest.LUXAssetID,
+				TxID:        AssetID,
 				OutputIndex: uint32(i),
 			},
 			Asset: LUXAsset,
@@ -128,7 +131,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 		validator := &txs.AddValidatorTx{
 			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 				NetworkID:    c.NetworkID,
-				BlockchainID: constants.PlatformChainID,
+				BlockchainID: constants.PlatformChainID(),
 			}},
 			Validator: txs.Validator{
 				NodeID: nodeID,
@@ -157,7 +160,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 	chain := &txs.CreateChainTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    c.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: constants.PlatformChainID(),
 		}},
 		SubnetID:   constants.PrimaryNetworkID,
 		ChainName:  XChainName,

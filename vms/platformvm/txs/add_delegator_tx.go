@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
@@ -23,7 +23,7 @@ var (
 	_ ScheduledStaker = (*AddDelegatorTx)(nil)
 
 	errDelegatorWeightMismatch = errors.New("delegator weight is not equal to total stake weight")
-	errStakeMustBeLUX         = errors.New("stake must be LUX")
+	errStakeMustBeLUX          = errors.New("stake must be LUX")
 )
 
 // AddDelegatorTx is an unsigned addDelegatorTx
@@ -41,13 +41,19 @@ type AddDelegatorTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [UnsignedAddDelegatorTx]. Also sets the [ctx] to the given [vm.ctx] so that
 // the addresses can be json marshalled into human readable format
-func (tx *AddDelegatorTx) InitCtx(ctx *consensus.Context) {
+func (tx *AddDelegatorTx) InitCtx(ctx *quasar.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	for _, out := range tx.StakeOuts {
 		out.FxID = secp256k1fx.ID
 		out.InitCtx(ctx)
 	}
-	tx.DelegationRewardsOwner.InitCtx(ctx)
+	tx.DelegationRewardsOwner.Initialize(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (tx *AddDelegatorTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
 }
 
 func (*AddDelegatorTx) SubnetID() ids.ID {
@@ -79,7 +85,7 @@ func (tx *AddDelegatorTx) RewardsOwner() fx.Owner {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddDelegatorTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *AddDelegatorTx) SyntacticVerify(ctx *quasar.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

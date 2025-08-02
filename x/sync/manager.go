@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
@@ -19,9 +19,9 @@ import (
 	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/x/merkledb"
@@ -146,7 +146,7 @@ type ManagerConfig struct {
 	RangeProofClient      *p2p.Client
 	ChangeProofClient     *p2p.Client
 	SimultaneousWorkLimit int
-	Log                   logging.Logger
+	Log                   log.Logger
 	TargetRoot            ids.ID
 	BranchFactor          merkledb.BranchFactor
 	StateSyncNodes        []ids.NodeID

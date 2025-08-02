@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -10,16 +10,16 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/components/lux"
 )
 
 const (
@@ -88,7 +88,7 @@ type State interface {
 
 	// Returns a batch of unwritten changes that, when written, will commit all
 	// pending changes to the base database.
-	CommitBatch() (database.Batch, error)
+	CommitBatch() (db.Batch, error)
 
 	// Checksum returns the current state checksum.
 	Checksum() ids.ID
@@ -116,25 +116,25 @@ type state struct {
 	db     *versiondb.Database
 
 	modifiedUTXOs map[ids.ID]*lux.UTXO // map of modified UTXOID -> *UTXO if the UTXO is nil, it has been removed
-	utxoDB        database.Database
+	utxoDB        db.Database
 	utxoState     lux.UTXOState
 
 	addedTxs map[ids.ID]*txs.Tx            // map of txID -> *txs.Tx
 	txCache  cache.Cacher[ids.ID, *txs.Tx] // cache of txID -> *txs.Tx. If the entry is nil, it is not in the database
-	txDB     database.Database
+	txDB     db.Database
 
 	addedBlockIDs map[uint64]ids.ID            // map of height -> blockID
 	blockIDCache  cache.Cacher[uint64, ids.ID] // cache of height -> blockID. If the entry is ids.Empty, it is not in the database
-	blockIDDB     database.Database
+	blockIDDB     db.Database
 
 	addedBlocks map[ids.ID]block.Block            // map of blockID -> Block
 	blockCache  cache.Cacher[ids.ID, block.Block] // cache of blockID -> Block. If the entry is nil, it is not in the database
-	blockDB     database.Database
+	blockDB     db.Database
 
 	// [lastAccepted] is the most recently accepted block.
 	lastAccepted, persistedLastAccepted ids.ID
 	timestamp, persistedTimestamp       time.Time
-	singletonDB                         database.Database
+	singletonDB                         db.Database
 }
 
 func New(
@@ -208,7 +208,7 @@ func New(
 func (s *state) GetUTXO(utxoID ids.ID) (*lux.UTXO, error) {
 	if utxo, exists := s.modifiedUTXOs[utxoID]; exists {
 		if utxo == nil {
-			return nil, database.ErrNotFound
+			return nil, db.ErrNotFound
 		}
 		return utxo, nil
 	}
@@ -233,15 +233,15 @@ func (s *state) GetTx(txID ids.ID) (*txs.Tx, error) {
 	}
 	if tx, exists := s.txCache.Get(txID); exists {
 		if tx == nil {
-			return nil, database.ErrNotFound
+			return nil, db.ErrNotFound
 		}
 		return tx, nil
 	}
 
 	txBytes, err := s.txDB.Get(txID[:])
-	if err == database.ErrNotFound {
+	if err == db.ErrNotFound {
 		s.txCache.Put(txID, nil)
-		return nil, database.ErrNotFound
+		return nil, db.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -268,19 +268,23 @@ func (s *state) GetBlockIDAtHeight(height uint64) (ids.ID, error) {
 	}
 	if blkID, cached := s.blockIDCache.Get(height); cached {
 		if blkID == ids.Empty {
-			return ids.Empty, database.ErrNotFound
+			return ids.Empty, db.ErrNotFound
 		}
 
 		return blkID, nil
 	}
 
-	heightKey := database.PackUInt64(height)
+	heightKey := db.PackUInt64(height)
 
-	blkID, err := database.GetID(s.blockIDDB, heightKey)
-	if err == database.ErrNotFound {
+	blkIDBytes, err := s.blockIDDB.Get(heightKey)
+	if err == db.ErrNotFound {
 		s.blockIDCache.Put(height, ids.Empty)
-		return ids.Empty, database.ErrNotFound
+		return ids.Empty, db.ErrNotFound
 	}
+	if err != nil {
+		return ids.Empty, err
+	}
+	blkID, err := ids.ToID(blkIDBytes)
 	if err != nil {
 		return ids.Empty, err
 	}
@@ -295,16 +299,16 @@ func (s *state) GetBlock(blkID ids.ID) (block.Block, error) {
 	}
 	if blk, cached := s.blockCache.Get(blkID); cached {
 		if blk == nil {
-			return nil, database.ErrNotFound
+			return nil, db.ErrNotFound
 		}
 
 		return blk, nil
 	}
 
 	blkBytes, err := s.blockDB.Get(blkID[:])
-	if err == database.ErrNotFound {
+	if err == db.ErrNotFound {
 		s.blockCache.Put(blkID, nil)
-		return nil, database.ErrNotFound
+		return nil, db.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -326,16 +330,20 @@ func (s *state) AddBlock(block block.Block) {
 }
 
 func (s *state) InitializeChainState(stopVertexID ids.ID, genesisTimestamp time.Time) error {
-	lastAccepted, err := database.GetID(s.singletonDB, lastAcceptedKey)
-	if err == database.ErrNotFound {
+	lastAcceptedBytes, err := s.singletonDB.Get(lastAcceptedKey)
+	if err == db.ErrNotFound {
 		return s.initializeChainState(stopVertexID, genesisTimestamp)
 	} else if err != nil {
 		return fmt.Errorf("failed to get last accepted block: %w", err)
 	}
+	lastAccepted, err := ids.ToID(lastAcceptedBytes)
+	if err != nil {
+		return fmt.Errorf("failed to parse last accepted ID: %w", err)
+	}
 	s.lastAccepted = lastAccepted
 	s.persistedLastAccepted = lastAccepted
 
-	timestamp, err := database.GetTimestamp(s.singletonDB, timestampKey)
+	timestamp, err := db.GetTimestamp(s.singletonDB, timestampKey)
 	if err != nil {
 		return fmt.Errorf("failed to get last accepted timestamp: %w", err)
 	}
@@ -403,14 +411,21 @@ func (s *state) Commit() error {
 }
 
 func (s *state) Abort() {
-	s.db.Abort()
+	// versiondb doesn't have Abort method
+	// Clear the in-memory changes
+	s.modifiedUTXOs = make(map[ids.ID]*lux.UTXO)
+	s.addedTxs = make(map[ids.ID]*txs.Tx)
+	s.addedBlockIDs = make(map[uint64]ids.ID)
+	s.addedBlocks = make(map[ids.ID]block.Block)
 }
 
-func (s *state) CommitBatch() (database.Batch, error) {
+func (s *state) CommitBatch() (db.Batch, error) {
 	if err := s.write(); err != nil {
 		return nil, err
 	}
-	return s.db.CommitBatch()
+	// versiondb doesn't have CommitBatch method
+	// Create a new batch and return it
+	return s.db.NewBatch(), nil
 }
 
 func (s *state) Close() error {
@@ -466,11 +481,11 @@ func (s *state) writeTxs() error {
 
 func (s *state) writeBlockIDs() error {
 	for height, blkID := range s.addedBlockIDs {
-		heightKey := database.PackUInt64(height)
+		heightKey := db.PackUInt64(height)
 
 		delete(s.addedBlockIDs, height)
 		s.blockIDCache.Put(height, blkID)
-		if err := database.PutID(s.blockIDDB, heightKey, blkID); err != nil {
+		if err := s.blockIDDB.Put(heightKey, blkID[:]); err != nil {
 			return fmt.Errorf("failed to add blockID: %w", err)
 		}
 	}
@@ -492,13 +507,13 @@ func (s *state) writeBlocks() error {
 
 func (s *state) writeMetadata() error {
 	if !s.persistedTimestamp.Equal(s.timestamp) {
-		if err := database.PutTimestamp(s.singletonDB, timestampKey, s.timestamp); err != nil {
+		if err := db.PutTimestamp(s.singletonDB, timestampKey, s.timestamp); err != nil {
 			return fmt.Errorf("failed to write timestamp: %w", err)
 		}
 		s.persistedTimestamp = s.timestamp
 	}
 	if s.persistedLastAccepted != s.lastAccepted {
-		if err := database.PutID(s.singletonDB, lastAcceptedKey, s.lastAccepted); err != nil {
+		if err := s.singletonDB.Put(lastAcceptedKey, s.lastAccepted[:]); err != nil {
 			return fmt.Errorf("failed to write last accepted: %w", err)
 		}
 		s.persistedLastAccepted = s.lastAccepted

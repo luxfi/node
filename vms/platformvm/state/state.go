@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -17,29 +17,29 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/exp/maps"
 
+	"github.com/luxfi/crypto/bls"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/linkeddb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/linkeddb"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/quasar/uptime"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/iterator"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/utils/wrappers"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -219,23 +219,23 @@ type State interface {
 	// L1 conversion.
 	GetCurrentValidators(ctx context.Context, subnetID ids.ID) ([]*Staker, []L1Validator, uint64, error)
 
-	// Discard uncommitted changes to the database.
+	// Discard uncommitted changes to the db.
 	Abort()
 
 	// ReindexBlocks converts any block indices using the legacy storage format
 	// to the new format. If this database has already updated the indices,
 	// this function will return immediately, without iterating over the
-	// database.
+	// db.
 	//
 	// TODO: Remove after v1.14.x is activated
-	ReindexBlocks(lock sync.Locker, log logging.Logger) error
+	ReindexBlocks(lock sync.Locker, log log.Logger) error
 
-	// Commit changes to the base database.
+	// Commit changes to the base db.
 	Commit() error
 
 	// Returns a batch of unwritten changes that, when written, will commit all
-	// pending changes to the base database.
-	CommitBatch() (database.Batch, error)
+	// pending changes to the base db.
+	CommitBatch() (db.Batch, error)
 
 	Checksum() ids.ID
 
@@ -334,7 +334,7 @@ type state struct {
 	validatorState
 
 	validators validators.Manager
-	ctx        *consensus.Context
+	ctx        *quasar.Context
 	upgrades   upgrade.Config
 	metrics    metrics.Metrics
 	rewards    reward.Calculator
@@ -343,18 +343,18 @@ type state struct {
 
 	expiry     *btree.BTreeG[ExpiryEntry]
 	expiryDiff *expiryDiff
-	expiryDB   database.Database
+	expiryDB   db.Database
 
 	activeL1Validators  *activeL1Validators
 	l1ValidatorsDiff    *l1ValidatorsDiff
-	l1ValidatorsDB      database.Database
+	l1ValidatorsDB      db.Database
 	weightsCache        cache.Cacher[ids.ID, uint64] // subnetID -> total L1 validator weight
-	weightsDB           database.Database
+	weightsDB           db.Database
 	subnetIDNodeIDCache cache.Cacher[subnetIDNodeID, bool] // subnetID+nodeID -> is validator
-	subnetIDNodeIDDB    database.Database
-	activeDB            database.Database
+	subnetIDNodeIDDB    db.Database
+	activeDB            db.Database
 	inactiveCache       cache.Cacher[ids.ID, maybe.Maybe[L1Validator]] // validationID -> L1Validator
-	inactiveDB          database.Database
+	inactiveDB          db.Database
 
 	currentStakers *baseStakers
 	pendingStakers *baseStakers
@@ -363,72 +363,72 @@ type state struct {
 
 	addedBlockIDs map[uint64]ids.ID            // map of height -> blockID
 	blockIDCache  cache.Cacher[uint64, ids.ID] // cache of height -> blockID; if the entry is ids.Empty, it is not in the database
-	blockIDDB     database.Database
+	blockIDDB     db.Database
 
 	addedBlocks map[ids.ID]block.Block            // map of blockID -> Block
 	blockCache  cache.Cacher[ids.ID, block.Block] // cache of blockID -> Block; if the entry is nil, it is not in the database
-	blockDB     database.Database
+	blockDB     db.Database
 
-	validatorsDB                 database.Database
-	currentValidatorsDB          database.Database
-	currentValidatorBaseDB       database.Database
+	validatorsDB                 db.Database
+	currentValidatorsDB          db.Database
+	currentValidatorBaseDB       db.Database
 	currentValidatorList         linkeddb.LinkedDB
-	currentDelegatorBaseDB       database.Database
+	currentDelegatorBaseDB       db.Database
 	currentDelegatorList         linkeddb.LinkedDB
-	currentSubnetValidatorBaseDB database.Database
+	currentSubnetValidatorBaseDB db.Database
 	currentSubnetValidatorList   linkeddb.LinkedDB
-	currentSubnetDelegatorBaseDB database.Database
+	currentSubnetDelegatorBaseDB db.Database
 	currentSubnetDelegatorList   linkeddb.LinkedDB
-	pendingValidatorsDB          database.Database
-	pendingValidatorBaseDB       database.Database
+	pendingValidatorsDB          db.Database
+	pendingValidatorBaseDB       db.Database
 	pendingValidatorList         linkeddb.LinkedDB
-	pendingDelegatorBaseDB       database.Database
+	pendingDelegatorBaseDB       db.Database
 	pendingDelegatorList         linkeddb.LinkedDB
-	pendingSubnetValidatorBaseDB database.Database
+	pendingSubnetValidatorBaseDB db.Database
 	pendingSubnetValidatorList   linkeddb.LinkedDB
-	pendingSubnetDelegatorBaseDB database.Database
+	pendingSubnetDelegatorBaseDB db.Database
 	pendingSubnetDelegatorList   linkeddb.LinkedDB
 
-	validatorWeightDiffsDB    database.Database
-	validatorPublicKeyDiffsDB database.Database
+	validatorWeightDiffsDB    db.Database
+	validatorPublicKeyDiffsDB db.Database
 
 	addedTxs map[ids.ID]*txAndStatus            // map of txID -> {*txs.Tx, Status}
 	txCache  cache.Cacher[ids.ID, *txAndStatus] // txID -> {*txs.Tx, Status}; if the entry is nil, it is not in the database
-	txDB     database.Database
+	txDB     db.Database
 
 	addedRewardUTXOs map[ids.ID][]*lux.UTXO            // map of txID -> []*UTXO
 	rewardUTXOsCache cache.Cacher[ids.ID, []*lux.UTXO] // txID -> []*UTXO
-	rewardUTXODB     database.Database
+	rewardUTXODB     db.Database
 
 	modifiedUTXOs map[ids.ID]*lux.UTXO // map of modified UTXOID -> *UTXO; if the UTXO is nil, it has been removed
-	utxoDB        database.Database
+	utxoDB        db.Database
 	utxoState     lux.UTXOState
 
 	cachedSubnetIDs []ids.ID // nil if the subnets haven't been loaded
 	addedSubnetIDs  []ids.ID
-	subnetBaseDB    database.Database
+	subnetBaseDB    db.Database
 	subnetDB        linkeddb.LinkedDB
 
 	subnetOwners     map[ids.ID]fx.Owner                  // map of subnetID -> owner
 	subnetOwnerCache cache.Cacher[ids.ID, fxOwnerAndSize] // cache of subnetID -> owner; if the entry is nil, it is not in the database
-	subnetOwnerDB    database.Database
+	subnetOwnerDB    db.Database
 
 	subnetToL1Conversions     map[ids.ID]SubnetToL1Conversion            // map of subnetID -> conversion of the subnet
 	subnetToL1ConversionCache cache.Cacher[ids.ID, SubnetToL1Conversion] // cache of subnetID -> conversion
-	subnetToL1ConversionDB    database.Database
+	subnetToL1ConversionDB    db.Database
 
 	transformedSubnets     map[ids.ID]*txs.Tx            // map of subnetID -> transformSubnetTx
 	transformedSubnetCache cache.Cacher[ids.ID, *txs.Tx] // cache of subnetID -> transformSubnetTx; if the entry is nil, it is not in the database
-	transformedSubnetDB    database.Database
+	transformedSubnetDB    db.Database
 
 	modifiedSupplies map[ids.ID]uint64             // map of subnetID -> current supply
 	supplyCache      cache.Cacher[ids.ID, *uint64] // cache of subnetID -> current supply; if the entry is nil, it is not in the database
-	supplyDB         database.Database
+	supplyDB         db.Database
 
 	addedChains  map[ids.ID][]*txs.Tx                    // maps subnetID -> the newly added chains to the subnet
 	chainCache   cache.Cacher[ids.ID, []*txs.Tx]         // cache of subnetID -> the chains after all local modifications []*txs.Tx
 	chainDBCache cache.Cacher[ids.ID, linkeddb.LinkedDB] // cache of subnetID -> linkedDB
-	chainDB      database.Database
+	chainDB      db.Database
 
 	// The persisted fields represent the current database value
 	timestamp, persistedTimestamp                 time.Time
@@ -440,7 +440,7 @@ type state struct {
 	lastAccepted, persistedLastAccepted ids.ID
 	// TODO: Remove indexedHeights once v1.11.3 has been released.
 	indexedHeights *heightRange
-	singletonDB    database.Database
+	singletonDB    db.Database
 }
 
 // heightRange is used to track which heights are safe to use the native DB
@@ -525,13 +525,13 @@ func blockSize(_ ids.ID, blk block.Block) int {
 }
 
 func New(
-	db database.Database,
+	db db.Database,
 	genesisBytes []byte,
 	metricsReg prometheus.Registerer,
 	validators validators.Manager,
 	upgrades upgrade.Config,
 	execCfg *config.Config,
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	metrics metrics.Metrics,
 	rewards reward.Calculator,
 ) (State, error) {
@@ -890,7 +890,7 @@ func (s *state) WeightOfL1Validators(subnetID ids.ID) (uint64, error) {
 		return weight, nil
 	}
 
-	weight, err := database.WithDefault(database.GetUInt64, s.weightsDB, subnetID[:], 0)
+	weight, err := db.WithDefault(db.GetUInt64, s.weightsDB, subnetID[:], 0)
 	if err != nil {
 		return 0, err
 	}
@@ -903,7 +903,7 @@ func (s *state) WeightOfL1Validators(subnetID ids.ID) (uint64, error) {
 func (s *state) GetL1Validator(validationID ids.ID) (L1Validator, error) {
 	if l1Validator, modified := s.l1ValidatorsDiff.modified[validationID]; modified {
 		if l1Validator.isDeleted() {
-			return L1Validator{}, database.ErrNotFound
+			return L1Validator{}, db.ErrNotFound
 		}
 		return l1Validator, nil
 	}
@@ -1046,7 +1046,7 @@ func (s *state) GetSubnetOwner(subnetID ids.ID) (fx.Owner, error) {
 
 	if ownerAndSize, cached := s.subnetOwnerCache.Get(subnetID); cached {
 		if ownerAndSize.owner == nil {
-			return nil, database.ErrNotFound
+			return nil, db.ErrNotFound
 		}
 		return ownerAndSize.owner, nil
 	}
@@ -1063,13 +1063,13 @@ func (s *state) GetSubnetOwner(subnetID ids.ID) (fx.Owner, error) {
 		})
 		return owner, nil
 	}
-	if err != database.ErrNotFound {
+	if err != db.ErrNotFound {
 		return nil, err
 	}
 
 	subnetIntf, _, err := s.GetTx(subnetID)
 	if err != nil {
-		if err == database.ErrNotFound {
+		if errors.Is(err, db.ErrNotFound) {
 			s.subnetOwnerCache.Put(subnetID, fxOwnerAndSize{})
 		}
 		return nil, err
@@ -1122,15 +1122,15 @@ func (s *state) GetSubnetTransformation(subnetID ids.ID) (*txs.Tx, error) {
 
 	if tx, cached := s.transformedSubnetCache.Get(subnetID); cached {
 		if tx == nil {
-			return nil, database.ErrNotFound
+			return nil, db.ErrNotFound
 		}
 		return tx, nil
 	}
 
-	transformSubnetTxID, err := database.GetID(s.transformedSubnetDB, subnetID[:])
-	if err == database.ErrNotFound {
+	transformSubnetTxID, err := db.GetID(s.transformedSubnetDB, subnetID[:])
+	if errors.Is(err, db.ErrNotFound) {
 		s.transformedSubnetCache.Put(subnetID, nil)
-		return nil, database.ErrNotFound
+		return nil, db.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -1204,14 +1204,14 @@ func (s *state) GetTx(txID ids.ID) (*txs.Tx, status.Status, error) {
 	}
 	if tx, cached := s.txCache.Get(txID); cached {
 		if tx == nil {
-			return nil, status.Unknown, database.ErrNotFound
+			return nil, status.Unknown, db.ErrNotFound
 		}
 		return tx.tx, tx.status, nil
 	}
 	txBytes, err := s.txDB.Get(txID[:])
-	if err == database.ErrNotFound {
+	if errors.Is(err, db.ErrNotFound) {
 		s.txCache.Put(txID, nil)
-		return nil, status.Unknown, database.ErrNotFound
+		return nil, status.Unknown, db.ErrNotFound
 	} else if err != nil {
 		return nil, status.Unknown, err
 	}
@@ -1278,7 +1278,7 @@ func (s *state) AddRewardUTXO(txID ids.ID, utxo *lux.UTXO) {
 func (s *state) GetUTXO(utxoID ids.ID) (*lux.UTXO, error) {
 	if utxo, exists := s.modifiedUTXOs[utxoID]; exists {
 		if utxo == nil {
-			return nil, database.ErrNotFound
+			return nil, db.ErrNotFound
 		}
 		return utxo, nil
 	}
@@ -1295,6 +1295,42 @@ func (s *state) AddUTXO(utxo *lux.UTXO) {
 
 func (s *state) DeleteUTXO(utxoID ids.ID) {
 	s.modifiedUTXOs[utxoID] = nil
+}
+
+func (s *state) AddNode(nodeID ids.NodeID, startTime time.Time) error {
+	// No-op implementation for now
+	// TODO: Implement proper uptime tracking
+	return nil
+}
+
+func (s *state) RemoveNode(nodeID ids.NodeID) error {
+	// No-op implementation for now
+	// TODO: Implement proper uptime tracking
+	return nil
+}
+
+func (s *state) IsConnected(nodeID ids.NodeID) bool {
+	// No-op implementation for now
+	// TODO: Implement proper uptime tracking
+	return false
+}
+
+func (s *state) SetConnected(nodeID ids.NodeID, connected bool) error {
+	// No-op implementation for now
+	// TODO: Implement proper uptime tracking
+	return nil
+}
+
+func (s *state) GetUptime(nodeID ids.NodeID) (float64, error) {
+	// No-op implementation for now
+	// TODO: Implement proper uptime tracking
+	return 1.0, nil
+}
+
+func (s *state) GetUptimes() (map[ids.NodeID]float64, error) {
+	// No-op implementation for now
+	// TODO: Implement proper uptime tracking
+	return map[ids.NodeID]float64{}, nil
 }
 
 func (s *state) GetStartTime(nodeID ids.NodeID) (time.Time, error) {
@@ -1359,15 +1395,15 @@ func (s *state) GetCurrentSupply(subnetID ids.ID) (uint64, error) {
 	cachedSupply, ok := s.supplyCache.Get(subnetID)
 	if ok {
 		if cachedSupply == nil {
-			return 0, database.ErrNotFound
+			return 0, db.ErrNotFound
 		}
 		return *cachedSupply, nil
 	}
 
-	supply, err := database.GetUInt64(s.supplyDB, subnetID[:])
-	if err == database.ErrNotFound {
+	supply, err := db.GetUInt64(s.supplyDB, subnetID[:])
+	if errors.Is(err, db.ErrNotFound) {
 		s.supplyCache.Put(subnetID, nil)
-		return 0, database.ErrNotFound
+		return 0, db.ErrNotFound
 	}
 	if err != nil {
 		return 0, err
@@ -1516,7 +1552,7 @@ func (s *state) ApplyValidatorPublicKeyDiffs(
 			continue
 		}
 
-		vdr.PublicKey = bls.PublicKeyFromValidUncompressedBytes(pkBytes)
+		vdr.PublicKey = pkBytes
 	}
 
 	// Note: this does not fallback to the linkeddb index because the linkeddb
@@ -1618,42 +1654,52 @@ func (s *state) load() error {
 }
 
 func (s *state) loadMetadata() error {
-	timestamp, err := database.GetTimestamp(s.singletonDB, TimestampKey)
+	timestamp, err := db.GetTimestamp(s.singletonDB, TimestampKey)
 	if err != nil {
-		return err
+		if err != db.ErrNotFound {
+			return err
+		}
+		// If timestamp is not found, we're initializing from genesis
+		// The timestamp will be set during syncGenesis
+	} else {
+		s.persistedTimestamp = timestamp
+		s.SetTimestamp(timestamp)
 	}
-	s.persistedTimestamp = timestamp
-	s.SetTimestamp(timestamp)
 
 	feeState, err := getFeeState(s.singletonDB)
 	if err != nil {
-		return err
+		if err != db.ErrNotFound {
+			return err
+		}
+		// If fee state is not found, we're initializing from genesis
+		// The fee state will be set during initialization
+	} else {
+		s.persistedFeeState = feeState
+		s.SetFeeState(feeState)
 	}
-	s.persistedFeeState = feeState
-	s.SetFeeState(feeState)
 
-	l1ValidatorExcess, err := database.WithDefault(database.GetUInt64, s.singletonDB, L1ValidatorExcessKey, 0)
+	l1ValidatorExcess, err := db.WithDefault(db.GetUInt64, s.singletonDB, L1ValidatorExcessKey, 0)
 	if err != nil {
 		return err
 	}
 	s.persistedL1ValidatorExcess = gas.Gas(l1ValidatorExcess)
 	s.SetL1ValidatorExcess(gas.Gas(l1ValidatorExcess))
 
-	accruedFees, err := database.WithDefault(database.GetUInt64, s.singletonDB, AccruedFeesKey, 0)
+	accruedFees, err := db.WithDefault(db.GetUInt64, s.singletonDB, AccruedFeesKey, 0)
 	if err != nil {
 		return err
 	}
 	s.persistedAccruedFees = accruedFees
 	s.SetAccruedFees(accruedFees)
 
-	currentSupply, err := database.GetUInt64(s.singletonDB, CurrentSupplyKey)
+	currentSupply, err := db.GetUInt64(s.singletonDB, CurrentSupplyKey)
 	if err != nil {
 		return err
 	}
 	s.persistedCurrentSupply = currentSupply
 	s.SetCurrentSupply(constants.PrimaryNetworkID, currentSupply)
 
-	lastAccepted, err := database.GetID(s.singletonDB, LastAcceptedKey)
+	lastAccepted, err := db.GetID(s.singletonDB, LastAcceptedKey)
 	if err != nil {
 		return err
 	}
@@ -1663,7 +1709,7 @@ func (s *state) loadMetadata() error {
 	// Lookup the most recently indexed range on disk. If we haven't started
 	// indexing the weights, then we keep the indexed heights as nil.
 	indexedHeightsBytes, err := s.singletonDB.Get(HeightsIndexedKey)
-	if err == database.ErrNotFound {
+	if errors.Is(err, db.ErrNotFound) {
 		return nil
 	}
 	if err != nil {
@@ -1759,7 +1805,7 @@ func (s *state) loadCurrentValidators() error {
 		}
 		if scheduledStakerTx, ok := tx.Unsigned.(txs.ScheduledStaker); ok {
 			// Populate [StakerStartTime] using the tx as a default in the event
-			// it was added pre-durango and is not stored in the database.
+			// it was added pre-durango and is not stored in the db.
 			//
 			// Note: We do not populate [LastUpdated] since it is expected to
 			// always be present on disk.
@@ -1810,7 +1856,7 @@ func (s *state) loadCurrentValidators() error {
 		}
 		if scheduledStakerTx, ok := tx.Unsigned.(txs.ScheduledStaker); ok {
 			// Populate [StakerStartTime] and [LastUpdated] using the tx as a
-			// default in the event they are not stored in the database.
+			// default in the event they are not stored in the db.
 			startTime := uint64(scheduledStakerTx.StartTime().Unix())
 			metadata.StakerStartTime = startTime
 			metadata.LastUpdated = startTime
@@ -1842,7 +1888,7 @@ func (s *state) loadCurrentValidators() error {
 	subnetDelegatorIt := s.currentSubnetDelegatorList.NewIterator()
 	defer subnetDelegatorIt.Release()
 
-	for _, delegatorIt := range []database.Iterator{delegatorIt, subnetDelegatorIt} {
+	for _, delegatorIt := range []db.Iterator{delegatorIt, subnetDelegatorIt} {
 		for delegatorIt.Next() {
 			txIDBytes := delegatorIt.Key()
 			txID, err := ids.ToID(txIDBytes)
@@ -1866,7 +1912,7 @@ func (s *state) loadCurrentValidators() error {
 			if scheduledStakerTx, ok := tx.Unsigned.(txs.ScheduledStaker); ok {
 				// Populate [StakerStartTime] using the tx as a default in the
 				// event it was added pre-durango and is not stored in the
-				// database.
+				// db.
 				metadata.StakerStartTime = uint64(scheduledStakerTx.StartTime().Unix())
 			}
 			err = parseDelegatorMetadata(metadataBytes, metadata)
@@ -1911,7 +1957,7 @@ func (s *state) loadPendingValidators() error {
 	subnetValidatorIt := s.pendingSubnetValidatorList.NewIterator()
 	defer subnetValidatorIt.Release()
 
-	for _, validatorIt := range []database.Iterator{validatorIt, subnetValidatorIt} {
+	for _, validatorIt := range []db.Iterator{validatorIt, subnetValidatorIt} {
 		for validatorIt.Next() {
 			txIDBytes := validatorIt.Key()
 			txID, err := ids.ToID(txIDBytes)
@@ -1946,7 +1992,7 @@ func (s *state) loadPendingValidators() error {
 	subnetDelegatorIt := s.pendingSubnetDelegatorList.NewIterator()
 	defer subnetDelegatorIt.Release()
 
-	for _, delegatorIt := range []database.Iterator{delegatorIt, subnetDelegatorIt} {
+	for _, delegatorIt := range []db.Iterator{delegatorIt, subnetDelegatorIt} {
 		for delegatorIt.Next() {
 			txIDBytes := delegatorIt.Key()
 			txID, err := ids.ToID(txIDBytes)
@@ -1994,12 +2040,12 @@ func (s *state) initValidatorSets() error {
 		return errValidatorSetAlreadyPopulated
 	}
 
-	// Load active ACP-77 validators
+	// Load active LP-77 validators
 	if err := s.activeL1Validators.addStakersToValidatorManager(s.validators); err != nil {
 		return err
 	}
 
-	// Load inactive ACP-77 validator weights
+	// Load inactive LP-77 validator weights
 	//
 	// TODO: L1s with no active weight should not be held in memory.
 	it := s.weightsDB.NewIterator()
@@ -2011,7 +2057,7 @@ func (s *state) initValidatorSets() error {
 			return err
 		}
 
-		totalWeight, err := database.ParseUInt64(it.Value())
+		totalWeight, err := db.ParseUInt64(it.Value())
 		if err != nil {
 			return err
 		}
@@ -2038,7 +2084,7 @@ func (s *state) initValidatorSets() error {
 		}
 	}
 
-	// Load primary network and non-ACP77 validators
+	// Load primary network and non-LP77 validators
 	primaryNetworkValidators := s.currentStakers.validators[constants.PrimaryNetworkID]
 	for subnetID, subnetValidators := range s.currentStakers.validators {
 		for nodeID, subnetValidator := range subnetValidators {
@@ -2223,31 +2269,33 @@ func (s *state) Commit() error {
 }
 
 func (s *state) Abort() {
-	s.baseDB.Abort()
+	// versiondb commits immediately, no Abort method
+	// s.baseDB.Abort()
 }
 
 func (s *state) Checksum() ids.ID {
 	return s.utxoState.Checksum()
 }
 
-func (s *state) CommitBatch() (database.Batch, error) {
+func (s *state) CommitBatch() (db.Batch, error) {
 	// updateValidators is set to true here so that the validator manager is
 	// kept up to date with the last accepted state.
 	if err := s.write(true /*=updateValidators*/, s.currentHeight); err != nil {
 		return nil, err
 	}
-	return s.baseDB.CommitBatch()
+	// versiondb commits immediately, return a new batch
+	return s.baseDB.NewBatch(), nil
 }
 
 func (s *state) writeBlocks() error {
 	for blkID, blk := range s.addedBlocks {
 		blkBytes := blk.Bytes()
 		blkHeight := blk.Height()
-		heightKey := database.PackUInt64(blkHeight)
+		heightKey := db.PackUInt64(blkHeight)
 
 		delete(s.addedBlockIDs, blkHeight)
 		s.blockIDCache.Put(blkHeight, blkID)
-		if err := database.PutID(s.blockIDDB, heightKey, blkID); err != nil {
+		if err := db.PutID(s.blockIDDB, heightKey, blkID); err != nil {
 			return fmt.Errorf("failed to add blockID: %w", err)
 		}
 
@@ -2269,16 +2317,16 @@ func (s *state) GetStatelessBlock(blockID ids.ID) (block.Block, error) {
 	}
 	if blk, cached := s.blockCache.Get(blockID); cached {
 		if blk == nil {
-			return nil, database.ErrNotFound
+			return nil, db.ErrNotFound
 		}
 
 		return blk, nil
 	}
 
 	blkBytes, err := s.blockDB.Get(blockID[:])
-	if err == database.ErrNotFound {
+	if errors.Is(err, db.ErrNotFound) {
 		s.blockCache.Put(blockID, nil)
-		return nil, database.ErrNotFound
+		return nil, db.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -2299,18 +2347,18 @@ func (s *state) GetBlockIDAtHeight(height uint64) (ids.ID, error) {
 	}
 	if blkID, cached := s.blockIDCache.Get(height); cached {
 		if blkID == ids.Empty {
-			return ids.Empty, database.ErrNotFound
+			return ids.Empty, db.ErrNotFound
 		}
 
 		return blkID, nil
 	}
 
-	heightKey := database.PackUInt64(height)
+	heightKey := db.PackUInt64(height)
 
-	blkID, err := database.GetID(s.blockIDDB, heightKey)
-	if err == database.ErrNotFound {
+	blkID, err := db.GetID(s.blockIDDB, heightKey)
+	if errors.Is(err, db.ErrNotFound) {
 		s.blockIDCache.Put(height, ids.Empty)
-		return ids.Empty, database.ErrNotFound
+		return ids.Empty, db.ErrNotFound
 	}
 	if err != nil {
 		return ids.Empty, err
@@ -2425,7 +2473,7 @@ func (s *state) updateValidatorManager(updateValidators bool) error {
 		}
 
 		priorL1Validator, err := s.getPersistedL1Validator(validationID)
-		if err == database.ErrNotFound {
+		if errors.Is(err, db.ErrNotFound) {
 			// Deleting a non-existent validator is a noop. This can happen if
 			// the validator was added and then immediately removed.
 			continue
@@ -2466,7 +2514,7 @@ func (s *state) updateValidatorManager(updateValidators bool) error {
 					addL1ValidatorToValidatorManager(s.validators, l1Validator),
 				)
 			}
-		case database.ErrNotFound:
+		case db.ErrNotFound:
 			// Adding a new validator
 			err = addL1ValidatorToValidatorManager(s.validators, l1Validator)
 		}
@@ -2499,7 +2547,7 @@ type validatorDiff struct {
 func (s *state) calculateValidatorDiffs() (map[subnetIDNodeID]*validatorDiff, error) {
 	changes := make(map[subnetIDNodeID]*validatorDiff)
 
-	// Calculate the changes to the pre-ACP-77 validator set
+	// Calculate the changes to the pre-LP-77 validator set
 	for subnetID, subnetDiffs := range s.currentStakers.validatorDiffs {
 		for nodeID, diff := range subnetDiffs {
 			weightDiff, err := diff.WeightDiff()
@@ -2535,7 +2583,7 @@ func (s *state) calculateValidatorDiffs() (map[subnetIDNodeID]*validatorDiff, er
 		}
 	}
 
-	// Calculate the changes to the ACP-77 validator set
+	// Calculate the changes to the LP-77 validator set
 	for validationID, l1Validator := range s.l1ValidatorsDiff.modified {
 		priorL1Validator, err := s.getPersistedL1Validator(validationID)
 		if err == nil {
@@ -2550,7 +2598,7 @@ func (s *state) calculateValidatorDiffs() (map[subnetIDNodeID]*validatorDiff, er
 			}
 			diff.prevPublicKey = priorL1Validator.effectivePublicKeyBytes()
 		}
-		if err != database.ErrNotFound && err != nil {
+		if err != db.ErrNotFound && err != nil {
 			return nil, err
 		}
 
@@ -2782,7 +2830,7 @@ func (s *state) writeL1Validators() error {
 		if weight == 0 {
 			err = s.weightsDB.Delete(subnetID[:])
 		} else {
-			err = database.PutUInt64(s.weightsDB, subnetID[:], weight)
+			err = db.PutUInt64(s.weightsDB, subnetID[:], weight)
 		}
 		if err != nil {
 			return err
@@ -2983,7 +3031,7 @@ func (s *state) writeTransformedSubnets() error {
 		// referencing additional data (because of shared byte slices) that
 		// would not be properly accounted for in the cache sizing.
 		s.transformedSubnetCache.Evict(subnetID)
-		if err := database.PutID(s.transformedSubnetDB, subnetID[:], txID); err != nil {
+		if err := db.PutID(s.transformedSubnetDB, subnetID[:], txID); err != nil {
 			return fmt.Errorf("failed to write transformed subnet: %w", err)
 		}
 	}
@@ -2994,7 +3042,7 @@ func (s *state) writeSubnetSupplies() error {
 	for subnetID, supply := range s.modifiedSupplies {
 		delete(s.modifiedSupplies, subnetID)
 		s.supplyCache.Put(subnetID, &supply)
-		if err := database.PutUInt64(s.supplyDB, subnetID[:], supply); err != nil {
+		if err := db.PutUInt64(s.supplyDB, subnetID[:], supply); err != nil {
 			return fmt.Errorf("failed to write subnet supply: %w", err)
 		}
 	}
@@ -3018,7 +3066,7 @@ func (s *state) writeChains() error {
 
 func (s *state) writeMetadata() error {
 	if !s.persistedTimestamp.Equal(s.timestamp) {
-		if err := database.PutTimestamp(s.singletonDB, TimestampKey, s.timestamp); err != nil {
+		if err := db.PutTimestamp(s.singletonDB, TimestampKey, s.timestamp); err != nil {
 			return fmt.Errorf("failed to write timestamp: %w", err)
 		}
 		s.persistedTimestamp = s.timestamp
@@ -3030,25 +3078,25 @@ func (s *state) writeMetadata() error {
 		s.persistedFeeState = s.feeState
 	}
 	if s.l1ValidatorExcess != s.persistedL1ValidatorExcess {
-		if err := database.PutUInt64(s.singletonDB, L1ValidatorExcessKey, uint64(s.l1ValidatorExcess)); err != nil {
+		if err := db.PutUInt64(s.singletonDB, L1ValidatorExcessKey, uint64(s.l1ValidatorExcess)); err != nil {
 			return fmt.Errorf("failed to write l1Validator excess: %w", err)
 		}
 		s.persistedL1ValidatorExcess = s.l1ValidatorExcess
 	}
 	if s.accruedFees != s.persistedAccruedFees {
-		if err := database.PutUInt64(s.singletonDB, AccruedFeesKey, s.accruedFees); err != nil {
+		if err := db.PutUInt64(s.singletonDB, AccruedFeesKey, s.accruedFees); err != nil {
 			return fmt.Errorf("failed to write accrued fees: %w", err)
 		}
 		s.persistedAccruedFees = s.accruedFees
 	}
 	if s.persistedCurrentSupply != s.currentSupply {
-		if err := database.PutUInt64(s.singletonDB, CurrentSupplyKey, s.currentSupply); err != nil {
+		if err := db.PutUInt64(s.singletonDB, CurrentSupplyKey, s.currentSupply); err != nil {
 			return fmt.Errorf("failed to write current supply: %w", err)
 		}
 		s.persistedCurrentSupply = s.currentSupply
 	}
 	if s.persistedLastAccepted != s.lastAccepted {
-		if err := database.PutID(s.singletonDB, LastAcceptedKey, s.lastAccepted); err != nil {
+		if err := db.PutID(s.singletonDB, LastAcceptedKey, s.lastAccepted); err != nil {
 			return fmt.Errorf("failed to write last accepted: %w", err)
 		}
 		s.persistedLastAccepted = s.lastAccepted
@@ -3086,7 +3134,7 @@ func parseStoredBlock(blkBytes []byte) (block.Block, bool, error) {
 	return blk, true, err
 }
 
-func (s *state) ReindexBlocks(lock sync.Locker, log logging.Logger) error {
+func (s *state) ReindexBlocks(lock sync.Locker, log log.Logger) error {
 	has, err := s.singletonDB.Has(BlocksReindexedKey)
 	if err != nil {
 		return err
@@ -3221,7 +3269,7 @@ func (s *state) ReindexBlocks(lock sync.Locker, log logging.Logger) error {
 	return s.Commit()
 }
 
-func (s *state) GetUptime(vdrID ids.NodeID) (time.Duration, time.Time, error) {
+func (s *state) GetUptimeDuration(vdrID ids.NodeID) (time.Duration, time.Time, error) {
 	return s.validatorState.GetUptime(vdrID, constants.PrimaryNetworkID)
 }
 
@@ -3229,15 +3277,15 @@ func (s *state) SetUptime(vdrID ids.NodeID, upDuration time.Duration, lastUpdate
 	return s.validatorState.SetUptime(vdrID, constants.PrimaryNetworkID, upDuration, lastUpdated)
 }
 
-func markInitialized(db database.KeyValueWriter) error {
+func markInitialized(db db.KeyValueWriter) error {
 	return db.Put(InitializedKey, nil)
 }
 
-func isInitialized(db database.KeyValueReader) (bool, error) {
+func isInitialized(db db.KeyValueReader) (bool, error) {
 	return db.Has(InitializedKey)
 }
 
-func putFeeState(db database.KeyValueWriter, feeState gas.State) error {
+func putFeeState(db db.KeyValueWriter, feeState gas.State) error {
 	feeStateBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, feeState)
 	if err != nil {
 		return err
@@ -3245,9 +3293,9 @@ func putFeeState(db database.KeyValueWriter, feeState gas.State) error {
 	return db.Put(FeeStateKey, feeStateBytes)
 }
 
-func getFeeState(db database.KeyValueReader) (gas.State, error) {
-	feeStateBytes, err := db.Get(FeeStateKey)
-	if err == database.ErrNotFound {
+func getFeeState(reader db.KeyValueReader) (gas.State, error) {
+	feeStateBytes, err := reader.Get(FeeStateKey)
+	if errors.Is(err, db.ErrNotFound) {
 		return gas.State{}, nil
 	}
 	if err != nil {

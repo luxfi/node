@@ -1,14 +1,14 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
 
 import (
-	"github.com/luxfi/node/vms/xvm/block"
-	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm/block"
+	"github.com/luxfi/node/vms/xvm/fxs"
 )
 
 const (

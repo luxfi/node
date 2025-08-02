@@ -1,15 +1,15 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
 
 import (
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
 )
 
 const cacheSize = 8192 // max cache entries
@@ -48,22 +48,19 @@ type HeightIndex interface {
 }
 
 type heightIndex struct {
-	versiondb.Commitable
-
 	// Caches block height -> proposerVMBlockID.
 	heightsCache cache.Cacher[uint64, ids.ID]
 
-	heightDB   database.Database
-	metadataDB database.Database
+	heightDB   db.Database
+	metadataDB db.Database
 }
 
-func NewHeightIndex(db database.Database, commitable versiondb.Commitable) HeightIndex {
+func NewHeightIndex(database db.Database, _ *versiondb.Database) HeightIndex {
 	return &heightIndex{
-		Commitable: commitable,
 
 		heightsCache: lru.NewCache[uint64, ids.ID](cacheSize),
-		heightDB:     prefixdb.New(heightPrefix, db),
-		metadataDB:   prefixdb.New(metadataPrefix, db),
+		heightDB:     prefixdb.New(heightPrefix, database),
+		metadataDB:   prefixdb.New(metadataPrefix, database),
 	}
 }
 
@@ -72,10 +69,10 @@ func (hi *heightIndex) GetMinimumHeight() (uint64, error) {
 	defer it.Release()
 
 	if !it.Next() {
-		return 0, database.ErrNotFound
+		return 0, db.ErrNotFound
 	}
 
-	height, err := database.ParseUInt64(it.Key())
+	height, err := db.ParseUInt64(it.Key())
 	if err != nil {
 		return 0, err
 	}
@@ -87,8 +84,12 @@ func (hi *heightIndex) GetBlockIDAtHeight(height uint64) (ids.ID, error) {
 		return blkID, nil
 	}
 
-	key := database.PackUInt64(height)
-	blkID, err := database.GetID(hi.heightDB, key)
+	key := db.PackUInt64(height)
+	idBytes, err := hi.heightDB.Get(key)
+	if err != nil {
+		return ids.Empty, err
+	}
+	blkID, err := ids.ToID(idBytes)
 	if err != nil {
 		return ids.Empty, err
 	}
@@ -98,20 +99,20 @@ func (hi *heightIndex) GetBlockIDAtHeight(height uint64) (ids.ID, error) {
 
 func (hi *heightIndex) SetBlockIDAtHeight(height uint64, blkID ids.ID) error {
 	hi.heightsCache.Put(height, blkID)
-	key := database.PackUInt64(height)
-	return database.PutID(hi.heightDB, key, blkID)
+	key := db.PackUInt64(height)
+	return hi.heightDB.Put(key, blkID[:])
 }
 
 func (hi *heightIndex) DeleteBlockIDAtHeight(height uint64) error {
 	hi.heightsCache.Evict(height)
-	key := database.PackUInt64(height)
+	key := db.PackUInt64(height)
 	return hi.heightDB.Delete(key)
 }
 
 func (hi *heightIndex) GetForkHeight() (uint64, error) {
-	return database.GetUInt64(hi.metadataDB, forkKey)
+	return db.GetUInt64(hi.metadataDB, forkKey)
 }
 
 func (hi *heightIndex) SetForkHeight(height uint64) error {
-	return database.PutUInt64(hi.metadataDB, forkKey, height)
+	return db.PutUInt64(hi.metadataDB, forkKey, height)
 }

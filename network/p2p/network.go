@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -13,17 +13,30 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/core/appsender"
+	"github.com/luxfi/node/quasar/validators"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
 
+// EngineType represents the type of consensus engine
+type EngineType uint8
+
+const (
+	// EngineTypeUnknown is an unknown engine type
+	EngineTypeUnknown EngineType = iota
+	// EngineTypeLinear is a linear consensus engine
+	EngineTypeLinear
+	// EngineTypeDAG is a DAG consensus engine
+	EngineTypeDAG
+)
+
 var (
 	_ validators.Connector = (*Network)(nil)
-	_ core.AppHandler    = (*Network)(nil)
+	_ core.AppHandler      = (*Network)(nil)
 	_ NodeSampler          = (*PeerSampler)(nil)
 
 	opLabel      = "op"
@@ -57,8 +70,8 @@ type clientOptions struct {
 
 // NewNetwork returns an instance of Network
 func NewNetwork(
-	log logging.Logger,
-	sender core.AppSender,
+	log log.Logger,
+	sender appsender.AppSender,
 	registerer prometheus.Registerer,
 	namespace string,
 ) (*Network, error) {
@@ -102,8 +115,8 @@ func NewNetwork(
 type Network struct {
 	Peers *Peers
 
-	log    logging.Logger
-	sender core.AppSender
+	log    log.Logger
+	sender appsender.AppSender
 
 	router *router
 }

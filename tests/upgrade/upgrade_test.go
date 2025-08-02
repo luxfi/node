@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package upgrade
@@ -25,9 +25,9 @@ func TestUpgrade(t *testing.T) {
 var (
 	luxExecPath            string
 	luxExecPathToUpgradeTo string
-	collectorVars                  *flags.CollectorVars
-	checkMetricsCollected          bool
-	checkLogsCollected             bool
+	collectorVars          *flags.CollectorVars
+	checkMetricsCollected  bool
+	checkLogsCollected     bool
 )
 
 func init() {

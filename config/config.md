@@ -34,15 +34,15 @@ If set to `false`, this node will not expose the Metrics API. Defaults to
 
 ## Lux Community Proposals
 
-#### `--acp-support` (array of integers)
+#### `--lp-support` (array of integers)
 
-The `--acp-support` flag allows an Lux node to indicate support for a
-set of [Lux Community Proposals](https://github.com/lux-foundation/ACPs).
+The `--lp-support` flag allows an Lux node to indicate support for a
+set of [Lux Community Proposals](https://github.com/luxfi/LPs).
 
-#### `--acp-object` (array of integers)
+#### `--lp-object` (array of integers)
 
-The `--acp-object` flag allows an Lux node to indicate objection for a
-set of [Lux Community Proposals](https://github.com/lux-foundation/ACPs).
+The `--lp-object` flag allows an Lux node to indicate objection for a
+set of [Lux Community Proposals](https://github.com/luxfi/LPs).
 
 ## Bootstrapping
 
@@ -886,50 +886,50 @@ Fraction of time a validator must be online to receive rewards. Defaults to
 
 Frequency of renewing this node's average uptime metric. Defaults to `30s`.
 
-#### Snow Parameters
+#### Consensus Parameters
 
-##### `--snow-concurrent-repolls` (int)
+##### `--concurrent-repolls` (int)
 
-Snow consensus requires repolling transactions that are issued during low time
+Lux consensus requires repolling transactions that are issued during low time
 of network usage. This parameter lets one define how aggressive the client will
 be in finalizing these pending transactions. This should only be changed after
-careful consideration of the tradeoffs of Snow consensus. The value must be at
-least `1` and at most `--snow-commit-threshold`. Defaults to `4`.
+careful consideration of the tradeoffs of Lux consensus. The value must be at
+least `1` and at most `--commit-threshold`. Defaults to `4`.
 
-##### `--snow-sample-size` (int)
+##### `--sample-size` (int)
 
-Snow consensus defines `k` as the number of validators that are sampled during
+Lux consensus defines `k` as the number of validators that are sampled during
 each network poll. This parameter lets one define the `k` value used for
 consensus. This should only be changed after careful consideration of the
-tradeoffs of Snow consensus. The value must be at least `1`. Defaults to `20`.
+tradeoffs of Lux consensus. The value must be at least `1`. Defaults to `20`.
 
-##### `--snow-quorum-size` (int)
+##### `--quorum-size` (int)
 
-Snow consensus defines `alpha` as the number of validators that must prefer a
+Lux consensus defines `alpha` as the number of validators that must prefer a
 transaction during each network poll to increase the confidence in the
 transaction. This parameter lets us define the `alpha` value used for consensus.
-This should only be changed after careful consideration of the tradeoffs of Snow
+This should only be changed after careful consideration of the tradeoffs of Lux
 consensus. The value must be at greater than `k/2`. Defaults to `15`.
 
-##### `--snow-commit-threshold` (int)
+##### `--commit-threshold` (int)
 
-Snow consensus defines `beta` as the number of consecutive polls that a
+Lux consensus defines `beta` as the number of consecutive polls that a
 container must increase its confidence for it to be accepted. This
 parameter lets us define the `beta` value used for consensus. This should only
-be changed after careful consideration of the tradeoffs of Snow consensus. The
+be changed after careful consideration of the tradeoffs of Lux consensus. The
 value must be at least `1`. Defaults to `20`.
 
-##### `--snow-optimal-processing` (int)
+##### `--optimal-processing` (int)
 
 Optimal number of processing items in consensus. The value must be at least `1`. Defaults to `50`.
 
-##### `--snow-max-processing` (int)
+##### `--max-processing` (int)
 
 Maximum number of processing items to be considered healthy. Reports unhealthy
 if more than this number of items are outstanding. The value must be at least
 `1`. Defaults to `1024`.
 
-##### `--snow-max-time-processing` (duration)
+##### `--max-time-processing` (duration)
 
 Maximum amount of time an item should be processing and still be healthy.
 Reports unhealthy if there is an item processing for longer than this duration.

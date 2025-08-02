@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -6,13 +6,14 @@ package executor
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/uptime"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/uptime"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -34,7 +35,7 @@ var (
 // options supports build new option blocks
 type options struct {
 	// inputs populated before calling this struct's methods:
-	log                     logging.Logger
+	log                     log.Logger
 	primaryUptimePercentage float64
 	uptimes                 uptime.Calculator
 	state                   state.Chain
@@ -45,11 +46,11 @@ type options struct {
 }
 
 func (*options) BanffAbortBlock(*block.BanffAbortBlock) error {
-	return linear.ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (*options) BanffCommitBlock(*block.BanffCommitBlock) error {
-	return linear.ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
@@ -98,15 +99,15 @@ func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
 }
 
 func (*options) BanffStandardBlock(*block.BanffStandardBlock) error {
-	return linear.ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (*options) ApricotAbortBlock(*block.ApricotAbortBlock) error {
-	return linear.ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (*options) ApricotCommitBlock(*block.ApricotCommitBlock) error {
-	return linear.ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (o *options) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
@@ -133,11 +134,11 @@ func (o *options) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
 }
 
 func (*options) ApricotStandardBlock(*block.ApricotStandardBlock) error {
-	return linear.ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (*options) ApricotAtomicBlock(*block.ApricotAtomicBlock) error {
-	return linear.ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {
@@ -175,9 +176,10 @@ func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {
 		expectedUptimePercentage = float64(transformSubnet.UptimeRequirement) / reward.PercentDenominator
 	}
 
-	uptime, err := o.uptimes.CalculateUptimePercentFrom(
+	uptime, err := o.uptimes.CalculateUptimePercent(
 		nodeID,
 		primaryNetworkValidator.StartTime,
+		time.Now(),
 	)
 	if err != nil {
 		return false, fmt.Errorf("%w: %w", errFailedCalculatingUptime, err)

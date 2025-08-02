@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -12,10 +12,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/txs/mempool"
 
-	smblock "github.com/luxfi/node/consensus/engine/linear/block"
+	smblock "github.com/luxfi/node/quasar/engine/chain/block"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 )
@@ -56,13 +56,13 @@ type Builder interface {
 	mempool.Mempool[*txs.Tx]
 
 	// BuildBlock can be called to attempt to create a new block
-	BuildBlock(context.Context) (linear.Block, error)
+	BuildBlock(context.Context) (smblock.Block, error)
 
 	// PackAllBlockTxs returns an array of all txs that could be packed into a
 	// valid block of infinite size. The returned txs are all verified against
 	// the preferred state.
 	//
-	// Note: This function does not call the consensus core.
+	// Note: This function does not call the quasar core.
 	PackAllBlockTxs() ([]*txs.Tx, error)
 }
 
@@ -89,7 +89,7 @@ func New(
 func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
 	for {
 		if err := ctx.Err(); err != nil {
-			return 0, err
+			return core.Message{}, err
 		}
 
 		duration, err := b.durationToSleep()
@@ -97,12 +97,15 @@ func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
 			b.txExecutorBackend.Ctx.Log.Error("block builder failed to calculate next staker change time",
 				zap.Error(err),
 			)
-			return 0, err
+			return core.Message{}, err
 		}
 		if duration <= 0 {
 			b.txExecutorBackend.Ctx.Log.Debug("Skipping block build wait, next staker change is ready")
 			// The next staker change is ready to be performed.
-			return core.PendingTxs, nil
+			return core.Message{
+				Type: message.NotifyOp,
+				Body: &core.PendingTxs{},
+			}, nil
 		}
 
 		b.txExecutorBackend.Ctx.Log.Debug("Will wait until a transaction comes", zap.Duration("maxWait", duration))
@@ -115,14 +118,14 @@ func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
 
 		switch {
 		case err == nil:
-			b.txExecutorBackend.Ctx.Log.Debug("New transaction received", zap.Stringer("msg", msg))
+			b.txExecutorBackend.Ctx.Log.Debug("New transaction received", zap.Stringer("msgType", msg.Type))
 			return msg, nil
 		case errors.Is(err, context.DeadlineExceeded):
 			continue // Recheck the staker change time before returning
 		default:
 			// Error could have been due to the parent context being cancelled
 			// or another unexpected error.
-			return 0, err
+			return core.Message{}, err
 		}
 	}
 }
@@ -153,7 +156,7 @@ func (b *builder) durationToSleep() (time.Duration, error) {
 	return nextStakerChangeTime.Sub(now), nil
 }
 
-func (b *builder) BuildBlock(ctx context.Context) (linear.Block, error) {
+func (b *builder) BuildBlock(ctx context.Context) (smblock.Block, error) {
 	return b.BuildBlockWithContext(
 		ctx,
 		&smblock.Context{
@@ -165,7 +168,7 @@ func (b *builder) BuildBlock(ctx context.Context) (linear.Block, error) {
 func (b *builder) BuildBlockWithContext(
 	ctx context.Context,
 	blockContext *smblock.Context,
-) (linear.Block, error) {
+) (smblock.Block, error) {
 	b.txExecutorBackend.Ctx.Log.Debug("starting to attempt to build a block")
 
 	// Get the block to build on top of and retrieve the new block's context.
@@ -618,7 +621,7 @@ func getNextStakerToReward(
 	return ids.Empty, false, nil
 }
 
-func NewRewardValidatorTx(ctx *consensus.Context, txID ids.ID) (*txs.Tx, error) {
+func NewRewardValidatorTx(ctx *quasar.Context, txID ids.ID) (*txs.Tx, error) {
 	utx := &txs.RewardValidatorTx{TxID: txID}
 	tx, err := txs.NewSigned(utx, txs.Codec, nil)
 	if err != nil {

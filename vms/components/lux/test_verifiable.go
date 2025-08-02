@@ -1,10 +1,9 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
 
 import (
-	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -20,7 +19,11 @@ type TestState struct {
 	Err error
 }
 
-func (*TestState) InitCtx(*consensus.Context) {}
+func (*TestState) InitCtx(ctx interface{}) {}
+
+func (*TestState) Initialize(ctx interface{}) error {
+	return nil
+}
 
 func (v *TestState) Verify() error {
 	return v.Err
@@ -32,7 +35,11 @@ type TestTransferable struct {
 	Val uint64 `serialize:"true"`
 }
 
-func (*TestTransferable) InitCtx(*consensus.Context) {}
+func (*TestTransferable) InitCtx(ctx interface{}) {}
+
+func (*TestTransferable) Initialize(ctx interface{}) error {
+	return nil
+}
 
 func (t *TestTransferable) Amount() uint64 {
 	return t.Val

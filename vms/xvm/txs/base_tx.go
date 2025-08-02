@@ -1,11 +1,11 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -23,10 +23,16 @@ type BaseTx struct {
 	bytes []byte
 }
 
-func (t *BaseTx) InitCtx(ctx *consensus.Context) {
+func (t *BaseTx) InitCtx(ctx *quasar.Context) {
 	for _, out := range t.Outs {
 		out.InitCtx(ctx)
 	}
+}
+
+// Initialize implements quasar.ContextInitializable
+func (t *BaseTx) Initialize(ctx *quasar.Context) error {
+	t.InitCtx(ctx)
+	return nil
 }
 
 func (t *BaseTx) SetBytes(bytes []byte) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -14,24 +14,22 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/quasar/uptime"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/network/throttling/tracker"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/math/meter"
-	"github.com/luxfi/node/utils/resource"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 )
@@ -92,15 +90,7 @@ func NewTestNetworkConfig(
 	// TODO actually monitor usage
 	// TestNetwork doesn't use disk so we don't need to track it, but we should
 	// still have guardrails around cpu/memory usage.
-	resourceTracker, err := tracker.NewResourceTracker(
-		metrics,
-		resource.NoUsage,
-		&meter.ContinuousFactory{},
-		constants.DefaultHealthCheckAveragerHalflife,
-	)
-	if err != nil {
-		return nil, err
-	}
+	resourceTracker := tracker.NewResourceTracker()
 	return &Config{
 		HealthConfig: HealthConfig{
 			Enabled:                      true,
@@ -175,38 +165,20 @@ func NewTestNetworkConfig(
 		TrackedSubnets:               trackedSubnets,
 		Beacons:                      validators.NewManager(),
 		Validators:                   currentValidators,
-		UptimeCalculator:             uptime.NoOpCalculator,
+		UptimeCalculator:             uptime.NoOpCalculator{},
 		UptimeMetricFreq:             constants.DefaultUptimeMetricFreq,
 		RequireValidatorToConnect:    constants.DefaultNetworkRequireValidatorToConnect,
 		MaximumInboundMessageTimeout: constants.DefaultNetworkMaximumInboundTimeout,
 		PeerReadBufferSize:           constants.DefaultNetworkPeerReadBufferSize,
 		PeerWriteBufferSize:          constants.DefaultNetworkPeerWriteBufferSize,
-		ResourceTracker:              resourceTracker,
-		CPUTargeter: tracker.NewTargeter(
-			logging.NoLog{},
-			&tracker.TargeterConfig{
-				VdrAlloc:           float64(runtime.NumCPU()),
-				MaxNonVdrUsage:     .8 * float64(runtime.NumCPU()),
-				MaxNonVdrNodeUsage: float64(runtime.NumCPU()) / 8,
-			},
-			currentValidators,
-			resourceTracker.CPUTracker(),
-		),
-		DiskTargeter: tracker.NewTargeter(
-			logging.NoLog{},
-			&tracker.TargeterConfig{
-				VdrAlloc:           1000 * units.GiB,
-				MaxNonVdrUsage:     1000 * units.GiB,
-				MaxNonVdrNodeUsage: 1000 * units.GiB,
-			},
-			currentValidators,
-			resourceTracker.DiskTracker(),
-		),
+		ResourceTracker: resourceTracker,
+		CPUTargeter:     tracker.NewTargeter(uint64(float64(runtime.NumCPU()) * 0.8)),
+		DiskTargeter:    tracker.NewTargeter(1000 * units.GiB),
 	}, nil
 }
 
 func NewTestNetwork(
-	log logging.Logger,
+	log log.Logger,
 	metrics prometheus.Registerer,
 	cfg *Config,
 	router router.ExternalHandler,

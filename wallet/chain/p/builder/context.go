@@ -1,13 +1,13 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
 
 import (
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/gas"
 )
 
@@ -15,19 +15,19 @@ const Alias = "P"
 
 type Context struct {
 	NetworkID         uint32
-	LUXAssetID       ids.ID
+	LUXAssetID        ids.ID
 	ComplexityWeights gas.Dimensions
 	GasPrice          gas.Price
 }
 
-func NewSnowContext(networkID uint32, luxAssetID ids.ID) (*consensus.Context, error) {
+func NewLinearContext(networkID uint32, luxAssetID ids.ID) (*quasar.Context, error) {
 	lookup := ids.NewAliaser()
-	return &consensus.Context{
-		NetworkID:   networkID,
-		SubnetID:    constants.PrimaryNetworkID,
-		ChainID:     constants.PlatformChainID,
+	return &quasar.Context{
+		NetworkID:  networkID,
+		SubnetID:   constants.PrimaryNetworkID,
+		ChainID:    constants.PlatformChainID(),
 		LUXAssetID: luxAssetID,
-		Log:         logging.NoLog{},
-		BCLookup:    lookup,
-	}, lookup.Alias(constants.PlatformChainID, Alias)
+		Log:        log.NewNoOpLogger(),
+		BCLookup:   lookup,
+	}, lookup.Alias(constants.PlatformChainID(), Alias)
 }

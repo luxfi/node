@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -6,8 +6,8 @@ package txs
 import (
 	"time"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 )
@@ -35,7 +35,13 @@ func (tx *AdvanceTimeTx) Bytes() []byte {
 	return tx.unsignedBytes
 }
 
-func (*AdvanceTimeTx) InitCtx(*consensus.Context) {}
+func (*AdvanceTimeTx) InitCtx(*quasar.Context) {}
+
+// Initialize implements quasar.ContextInitializable
+func (tx *AdvanceTimeTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
+}
 
 // Timestamp returns the time this block is proposing the chain should be set to
 func (tx *AdvanceTimeTx) Timestamp() time.Time {
@@ -50,7 +56,7 @@ func (*AdvanceTimeTx) Outputs() []*lux.TransferableOutput {
 	return nil
 }
 
-func (*AdvanceTimeTx) SyntacticVerify(*consensus.Context) error {
+func (*AdvanceTimeTx) SyntacticVerify(*quasar.Context) error {
 	return nil
 }
 

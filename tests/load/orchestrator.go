@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package load
@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 var ErrFailedToReachTargetTPS = errors.New("failed to reach target TPS")
@@ -97,7 +97,7 @@ type Orchestrator[T TxID] struct {
 	agents  []Agent[T]
 	tracker *Tracker[T]
 
-	log logging.Logger
+	log log.Logger
 
 	maxObservedTPS atomic.Int64
 
@@ -110,7 +110,7 @@ type Orchestrator[T TxID] struct {
 func NewOrchestrator[T TxID](
 	agents []Agent[T],
 	tracker *Tracker[T],
-	log logging.Logger,
+	log log.Logger,
 	config OrchestratorConfig,
 ) *Orchestrator[T] {
 	return &Orchestrator[T]{

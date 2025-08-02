@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package load2
@@ -10,10 +10,17 @@ import (
 	"math/big"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/luxfi/evm/ethclient"
+=======
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/crypto"
+	"github.com/luxfi/geth/ethclient"
+>>>>>>> main
 )
 
 type Wallet struct {
@@ -21,7 +28,7 @@ type Wallet struct {
 	nonce   uint64
 	chainID *big.Int
 	signer  types.Signer
-	client  ethclient.Client
+	client  *ethclient.Client
 	metrics metrics
 }
 
@@ -29,7 +36,7 @@ func newWallet(
 	privKey *ecdsa.PrivateKey,
 	nonce uint64,
 	chainID *big.Int,
-	client ethclient.Client,
+	client *ethclient.Client,
 	metrics metrics,
 ) *Wallet {
 	return &Wallet{

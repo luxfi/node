@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
@@ -94,9 +94,9 @@ func TestRemoveSubnetValidatorTxSerialization(t *testing.T) {
 			SigIndices: []uint32{3},
 		},
 	}
-	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(&consensus.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(&quasar.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}))
 
@@ -262,9 +262,9 @@ func TestRemoveSubnetValidatorTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexRemoveValidatorTx.Outs, Codec)
 	utils.Sort(complexRemoveValidatorTx.Ins)
-	require.NoError(complexRemoveValidatorTx.SyntacticVerify(&consensus.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	require.NoError(complexRemoveValidatorTx.SyntacticVerify(&quasar.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}))
 
@@ -423,11 +423,11 @@ func TestRemoveSubnetValidatorTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexRemoveValidatorTx.InitCtx(&consensus.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	unsignedComplexRemoveValidatorTx.InitCtx(&quasar.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		BCLookup:    aliaser,
+		BCLookup:   aliaser,
 	})
 
 	unsignedComplexRemoveValidatorTxJSONBytes, err := json.MarshalIndent(unsignedComplexRemoveValidatorTx, "", "\t")
@@ -526,7 +526,7 @@ func TestRemoveSubnetValidatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &consensus.Context{
+	ctx := &quasar.Context{
 		ChainID:   chainID,
 		NetworkID: networkID,
 	}

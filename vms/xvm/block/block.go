@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -6,15 +6,15 @@ package block
 import (
 	"time"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
 
 // Block defines the common stateless interface for all blocks
 type Block interface {
-	consensus.ContextInitializable
+	quasar.ContextInitializable
 
 	ID() ids.ID
 	Parent() ids.ID

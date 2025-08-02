@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/set"
@@ -127,7 +127,7 @@ func (tx *Tx) InputIDs() set.Set[ids.ID] {
 	return tx.Unsigned.InputIDs()
 }
 
-func (tx *Tx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *Tx) SyntacticVerify(ctx *quasar.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilSignedTx

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package execute
@@ -7,10 +7,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/chain/block"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/example/xsvm/state"
@@ -34,7 +34,7 @@ var (
 
 type Tx struct {
 	Context      context.Context
-	ChainContext *consensus.Context
+	ChainContext *quasar.Context
 	Database     database.KeyValueReaderWriterDeleter
 
 	SkipVerify   bool

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package mempool
@@ -9,9 +9,10 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/lock"
 	"github.com/luxfi/node/utils/set"
@@ -233,8 +234,12 @@ func (m *mempool[_]) WaitForEvent(ctx context.Context) (core.Message, error) {
 
 	for m.unissuedTxs.Len() == 0 {
 		if err := m.cond.Wait(ctx); err != nil {
-			return 0, err
+			return core.Message{}, err
 		}
 	}
-	return core.PendingTxs, nil
+	// Return a message indicating pending transactions are available
+	return core.Message{
+		Type: message.AppGossipOp, // Use appropriate message type
+		Body: &core.PendingTxs{},
+	}, nil
 }

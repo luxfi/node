@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -12,21 +12,19 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/quasar/uptime"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/network/throttling/tracker"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/math/meter"
-	"github.com/luxfi/node/utils/resource"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -89,15 +87,7 @@ func StartTestPeer(
 		return nil, err
 	}
 
-	resourceTracker, err := tracker.NewResourceTracker(
-		prometheus.NewRegistry(),
-		resource.NoUsage,
-		meter.ContinuousFactory{},
-		10*time.Second,
-	)
-	if err != nil {
-		return nil, err
-	}
+	resourceTracker := tracker.NewResourceTracker()
 
 	tlsKey := tlsCert.PrivateKey.(crypto.Signer)
 	blsKey, err := localsigner.New()
@@ -109,7 +99,7 @@ func StartTestPeer(
 		&Config{
 			Metrics:              metrics,
 			MessageCreator:       mc,
-			Log:                  logging.NoLog{},
+			Log:                  log.NewNoOpLogger(),
 			InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
 			Network:              TestNetwork,
 			Router:               router,
@@ -122,7 +112,7 @@ func StartTestPeer(
 			PongTimeout:          constants.DefaultPingPongTimeout,
 			MaxClockDifference:   time.Minute,
 			ResourceTracker:      resourceTracker,
-			UptimeCalculator:     uptime.NoOpCalculator,
+			UptimeCalculator:     uptime.NoOpCalculator{},
 			IPSigner: NewIPSigner(
 				utils.NewAtomic(netip.AddrPortFrom(
 					netip.IPv6Loopback(),
@@ -137,7 +127,7 @@ func StartTestPeer(
 		peerID,
 		NewBlockingMessageQueue(
 			metrics,
-			logging.NoLog{},
+			log.NewNoOpLogger(),
 			maxMessageToSend,
 		),
 		false,

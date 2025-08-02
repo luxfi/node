@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tree
@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/chain/chaintest"
 )
 
 func TestAcceptSingleBlock(t *testing.T) {
@@ -18,7 +18,7 @@ func TestAcceptSingleBlock(t *testing.T) {
 
 	tr := New()
 
-	block := lineartest.BuildChild(lineartest.Genesis)
+	block := chaintest.BuildChild(chaintest.Genesis)
 	_, contains := tr.Get(block)
 	require.False(contains)
 
@@ -39,8 +39,8 @@ func TestAcceptBlockConflict(t *testing.T) {
 
 	tr := New()
 
-	blockToAccept := lineartest.BuildChild(lineartest.Genesis)
-	blockToReject := lineartest.BuildChild(lineartest.Genesis)
+	blockToAccept := chaintest.BuildChild(chaintest.Genesis)
+	blockToReject := chaintest.BuildChild(chaintest.Genesis)
 
 	// add conflicting blocks
 	tr.Add(blockToAccept)
@@ -69,9 +69,9 @@ func TestAcceptChainConflict(t *testing.T) {
 
 	tr := New()
 
-	blockToAccept := lineartest.BuildChild(lineartest.Genesis)
-	blockToReject := lineartest.BuildChild(lineartest.Genesis)
-	blockToRejectChild := lineartest.BuildChild(blockToReject)
+	blockToAccept := chaintest.BuildChild(chaintest.Genesis)
+	blockToReject := chaintest.BuildChild(chaintest.Genesis)
+	blockToRejectChild := chaintest.BuildChild(blockToReject)
 
 	// add conflicting blocks.
 	tr.Add(blockToAccept)

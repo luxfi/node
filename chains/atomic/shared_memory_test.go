@@ -1,24 +1,27 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package atomic_test
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic/atomictest"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
 
 	. "github.com/luxfi/node/chains/atomic"
 )
 
 func TestSharedMemory(t *testing.T) {
-	chainID0 := ids.GenerateTestID()
-	chainID1 := ids.GenerateTestID()
-
-	for _, test := range atomictest.SharedMemoryTests {
+	for i, test := range atomictest.SharedMemoryTests {
+		// Create fresh IDs for each test to avoid conflicts
+		chainID0 := ids.GenerateTestID()
+		chainID1 := ids.GenerateTestID()
+		
+		// Create fresh database instances for each test
 		baseDB := memdb.New()
 
 		memoryDB := prefixdb.New([]byte{0}, baseDB)
@@ -29,6 +32,10 @@ func TestSharedMemory(t *testing.T) {
 		sm0 := m.NewSharedMemory(chainID0)
 		sm1 := m.NewSharedMemory(chainID1)
 
-		test(t, chainID0, chainID1, sm0, sm1, testDB)
+		// Run test with a subtest name for better test output
+		testName := fmt.Sprintf("Test%d", i)
+		t.Run(testName, func(t *testing.T) {
+			test(t, chainID0, chainID1, sm0, sm1, testDB)
+		})
 	}
 }

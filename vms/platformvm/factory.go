@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
 
 import (
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/platformvm/config"
 )
@@ -17,6 +17,6 @@ type Factory struct {
 }
 
 // New returns a new instance of the Platform Chain
-func (f *Factory) New(logging.Logger) (interface{}, error) {
+func (f *Factory) New(log.Logger) (interface{}, error) {
 	return &VM{Internal: f.Internal}, nil
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package propertyfx
@@ -14,4 +14,12 @@ type OwnedOutput struct {
 	verify.IsState `json:"-"`
 
 	secp256k1fx.OutputOwners `serialize:"true"`
+}
+
+func (out *OwnedOutput) InitCtx(ctx interface{}) {
+	// No initialization needed
+}
+
+func (out *OwnedOutput) Initialize(ctx interface{}) error {
+	return nil
 }

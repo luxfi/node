@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -10,12 +10,12 @@ import (
 	"maps"
 	"time"
 
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/window"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -25,6 +25,12 @@ import (
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
+
+// GetValidatorOutput re-exports the type from quasar/validators
+type GetValidatorOutput = validators.GetValidatorOutput
+
+// GetCurrentValidatorOutput re-exports the type from quasar/validators
+type GetCurrentValidatorOutput = validators.GetCurrentValidatorOutput
 
 const (
 	// MaxRecentlyAcceptedWindowSize is the maximum number of blocks that the
@@ -100,6 +106,12 @@ type State interface {
 	) error
 
 	GetCurrentValidators(ctx context.Context, subnetID ids.ID) ([]*state.Staker, []state.L1Validator, uint64, error)
+
+	// GetSubnetID returns the subnet ID for a given chain ID
+	GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
+
+	// GetValidatorSet returns the validator set for a given height and subnet
+	GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error)
 }
 
 func NewManager(
@@ -294,11 +306,22 @@ func (m *manager) getCurrentValidatorSet(
 ) (map[ids.NodeID]*validators.GetValidatorOutput, uint64, error) {
 	subnetMap := m.cfg.Validators.GetMap(subnetID)
 	currentHeight, err := m.getCurrentHeight(ctx)
-	return subnetMap, currentHeight, err
+	
+	// Convert Validator to GetValidatorOutput
+	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(subnetMap))
+	for nodeID, validator := range subnetMap {
+		result[nodeID] = &validators.GetValidatorOutput{
+			NodeID:    validator.NodeID,
+			PublicKey: validator.PublicKey,
+			Weight:    validator.Weight,
+		}
+	}
+	
+	return result, currentHeight, err
 }
 
 func (m *manager) GetSubnetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
-	if chainID == constants.PlatformChainID {
+	if chainID == constants.PlatformChainID() {
 		return constants.PrimaryNetworkID, nil
 	}
 
@@ -354,4 +377,24 @@ func (m *manager) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (
 		}
 	}
 	return result, height, nil
+}
+
+func (m *manager) ApplyValidatorWeightDiffs(
+	ctx context.Context,
+	validators map[ids.NodeID]*validators.GetValidatorOutput,
+	startHeight uint64,
+	endHeight uint64,
+	subnetID ids.ID,
+) error {
+	return m.state.ApplyValidatorWeightDiffs(ctx, validators, startHeight, endHeight, subnetID)
+}
+
+func (m *manager) ApplyValidatorPublicKeyDiffs(
+	ctx context.Context,
+	validators map[ids.NodeID]*validators.GetValidatorOutput,
+	startHeight uint64,
+	endHeight uint64,
+	subnetID ids.ID,
+) error {
+	return m.state.ApplyValidatorPublicKeyDiffs(ctx, validators, startHeight, endHeight, subnetID)
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -8,12 +8,12 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	db "github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/node/quasar/choices"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/units"
@@ -40,7 +40,7 @@ type blockState struct {
 	// in storage.
 	blkCache cache.Cacher[ids.ID, *blockWrapper]
 
-	db database.Database
+	db db.Database
 }
 
 type blockWrapper struct {
@@ -57,14 +57,14 @@ func cachedBlockSize(_ ids.ID, bw *blockWrapper) int {
 	return ids.IDLen + len(bw.Block) + wrappers.IntLen + 2*constants.PointerOverhead
 }
 
-func NewBlockState(db database.Database) BlockState {
+func NewBlockState(db db.Database) BlockState {
 	return &blockState{
 		blkCache: lru.NewSizedCache(blockCacheSize, cachedBlockSize),
 		db:       db,
 	}
 }
 
-func NewMeteredBlockState(db database.Database, namespace string, metrics prometheus.Registerer) (BlockState, error) {
+func NewMeteredBlockState(db db.Database, namespace string, metrics prometheus.Registerer) (BlockState, error) {
 	blkCache, err := metercacher.New[ids.ID, *blockWrapper](
 		metric.AppendNamespace(namespace, "block_cache"),
 		metrics,
@@ -80,15 +80,15 @@ func NewMeteredBlockState(db database.Database, namespace string, metrics promet
 func (s *blockState) GetBlock(blkID ids.ID) (block.Block, error) {
 	if blk, found := s.blkCache.Get(blkID); found {
 		if blk == nil {
-			return nil, database.ErrNotFound
+			return nil, db.ErrNotFound
 		}
 		return blk.block, nil
 	}
 
 	blkWrapperBytes, err := s.db.Get(blkID[:])
-	if err == database.ErrNotFound {
+	if err == db.ErrNotFound {
 		s.blkCache.Put(blkID, nil)
-		return nil, database.ErrNotFound
+		return nil, db.ErrNotFound
 	}
 	if err != nil {
 		return nil, err

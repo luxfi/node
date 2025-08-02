@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -15,10 +15,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/core/appsender"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
+	"github.com/luxfi/node/version"
 )
 
 var (
@@ -58,8 +60,8 @@ func (m *metrics) observe(labels prometheus.Labels, start time.Time) error {
 // app handler. App messages must be made using the registered handler's
 // corresponding Client.
 type router struct {
-	log     logging.Logger
-	sender  core.AppSender
+	log     log.Logger
+	sender  appsender.AppSender
 	metrics metrics
 
 	lock               sync.RWMutex
@@ -70,8 +72,8 @@ type router struct {
 
 // newRouter returns a new instance of Router
 func newRouter(
-	log logging.Logger,
-	sender core.AppSender,
+	log log.Logger,
+	sender appsender.AppSender,
 	metrics metrics,
 ) *router {
 	return &router{
@@ -97,7 +99,7 @@ func (r *router) addHandler(handlerID uint64, handler Handler) error {
 		Handler:   handler,
 		handlerID: handlerID,
 		log:       r.log,
-		sender:    r.sender,
+		sender:    appsender.NewAdapter(r.sender),
 	}
 
 	return nil
@@ -123,7 +125,8 @@ func (r *router) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID ui
 		// Send an error back to the requesting peer. Invalid requests that we
 		// cannot parse a handler id for are handled the same way as requests
 		// for which we do not have a registered handler.
-		return r.sender.SendAppError(ctx, nodeID, requestID, ErrUnregisteredHandler.Code, ErrUnregisteredHandler.Message)
+		adapter := appsender.NewAdapter(r.sender)
+		return adapter.SendAppError(ctx, nodeID, requestID, ErrUnregisteredHandler.Code, ErrUnregisteredHandler.Message)
 	}
 
 	// call the corresponding handler and send back a response to nodeID
@@ -214,6 +217,18 @@ func (r *router) AppGossip(ctx context.Context, nodeID ids.NodeID, gossip []byte
 		},
 		start,
 	)
+}
+
+// Connected is called when a node connects
+func (r *router) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
+	// Router doesn't need to track connections, this is handled by the Network
+	return nil
+}
+
+// Disconnected is called when a node disconnects
+func (r *router) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	// Router doesn't need to track disconnections, this is handled by the Network
+	return nil
 }
 
 // Parse parses a gossip or request message and maps it to a corresponding

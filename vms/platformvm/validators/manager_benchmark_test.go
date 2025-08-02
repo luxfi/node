@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -9,15 +9,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database/leveldb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/database/leveldb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -28,6 +26,21 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state/statetest"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
+
+// testStateWrapper wraps state.State to implement State interface
+type testStateWrapper struct {
+	state.State
+}
+
+// GetSubnetID implements State
+func (s *testStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+// GetValidatorSet implements State
+func (s *testStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return make(map[ids.NodeID]*validators.GetValidatorOutput), nil
+}
 
 // BenchmarkGetValidatorSet generates 10k diffs and calculates the time to
 // generate the genesis validator set by applying them.
@@ -43,9 +56,9 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 
 	db, err := leveldb.New(
 		b.TempDir(),
-		nil,
-		logging.NoLog{},
-		prometheus.NewRegistry(),
+		0,  // blockCacheSize
+		0,  // writeCacheSize
+		0,  // handleCap
 	)
 	require.NoError(err)
 	defer func() {
@@ -62,7 +75,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 		config.Internal{
 			Validators: vdrs,
 		},
-		s,
+		&testStateWrapper{State: s},
 		metrics.Noop,
 		new(mockable.Clock),
 	)

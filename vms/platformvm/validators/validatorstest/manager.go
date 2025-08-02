@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validatorstest
@@ -6,9 +6,9 @@ package validatorstest
 import (
 	"context"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 
-	snowvalidators "github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/validators"
 	vmvalidators "github.com/luxfi/node/vms/platformvm/validators"
 )
 
@@ -28,12 +28,32 @@ func (manager) GetSubnetID(context.Context, ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
-func (manager) GetValidatorSet(context.Context, uint64, ids.ID) (map[ids.NodeID]*snowvalidators.GetValidatorOutput, error) {
+func (manager) GetValidatorSet(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return nil, nil
 }
 
 func (manager) OnAcceptedBlockID(ids.ID) {}
 
-func (manager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*snowvalidators.GetCurrentValidatorOutput, uint64, error) {
+func (manager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
 	return nil, 0, nil
+}
+
+func (manager) ApplyValidatorWeightDiffs(
+	ctx context.Context,
+	validators map[ids.NodeID]*validators.GetValidatorOutput,
+	startHeight uint64,
+	endHeight uint64,
+	subnetID ids.ID,
+) error {
+	return nil
+}
+
+func (manager) ApplyValidatorPublicKeyDiffs(
+	ctx context.Context,
+	validators map[ids.NodeID]*validators.GetValidatorOutput,
+	startHeight uint64,
+	endHeight uint64,
+	subnetID ids.ID,
+) error {
+	return nil
 }

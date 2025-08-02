@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package subnets
@@ -6,8 +6,8 @@ package subnets
 import (
 	"sync"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -30,6 +30,9 @@ type Subnet interface {
 	// Config returns config of this Subnet
 	Config() Config
 
+	// AllBootstrapped returns a channel that is closed when all chains are bootstrapped
+	AllBootstrapped() <-chan struct{}
+
 	Allower
 }
 
@@ -39,13 +42,14 @@ type subnet struct {
 	bootstrapped    set.Set[ids.ID]
 	config          Config
 	myNodeID        ids.NodeID
-	bootstrapSignal core.PreemptionSignal
+	bootstrapSignal *core.PreemptionSignal
 }
 
 func New(myNodeID ids.NodeID, config Config) Subnet {
 	return &subnet{
-		config:   config,
-		myNodeID: myNodeID,
+		config:          config,
+		myNodeID:        myNodeID,
+		bootstrapSignal: core.NewPreemptionSignal(),
 	}
 }
 
@@ -60,7 +64,21 @@ func (s *subnet) IsBootstrapped() bool {
 	return s.bootstrapping.Len() == 0
 }
 
-func (s *subnet) Bootstrapped(chainID ids.ID) {
+// Bootstrapped implements the BootstrapTracker interface
+func (s *subnet) Bootstrapped() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	// Mark all currently bootstrapping chains as bootstrapped
+	for chainID := range s.bootstrapping {
+		s.bootstrapped.Add(chainID)
+	}
+	s.bootstrapping.Clear()
+	s.bootstrapSignal.Preempt()
+}
+
+// BootstrappedChain marks a specific chain as bootstrapped
+func (s *subnet) BootstrappedChain(chainID ids.ID) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -87,6 +105,21 @@ func (s *subnet) AddChain(chainID ids.ID) bool {
 
 func (s *subnet) Config() Config {
 	return s.config
+}
+
+// OnValidatorAdded implements the BootstrapTracker interface
+func (s *subnet) OnValidatorAdded(nodeID ids.NodeID, weight uint64) {
+	// No-op for subnet level tracking
+}
+
+// OnValidatorRemoved implements the BootstrapTracker interface
+func (s *subnet) OnValidatorRemoved(nodeID ids.NodeID, weight uint64) {
+	// No-op for subnet level tracking
+}
+
+// OnValidatorWeightChanged implements the BootstrapTracker interface
+func (s *subnet) OnValidatorWeightChanged(nodeID ids.NodeID, oldWeight, newWeight uint64) {
+	// No-op for subnet level tracking
 }
 
 func (s *subnet) IsAllowed(nodeID ids.NodeID, isValidator bool) bool {

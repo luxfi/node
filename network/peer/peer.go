@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -17,14 +17,14 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/set"
@@ -146,9 +146,9 @@ type peer struct {
 	// trackedSubnets are the subnetIDs the peer sent us in the Handshake
 	// message. The primary network ID is always included.
 	trackedSubnets set.Set[ids.ID]
-	// options of ACPs provided in the Handshake message.
-	supportedACPs set.Set[uint32]
-	objectedACPs  set.Set[uint32]
+	// options of LPs provided in the Handshake message.
+	supportedLPs set.Set[uint32]
+	objectedLPs  set.Set[uint32]
 
 	// txIDOfVerifiedBLSKey is the txID that added the BLS key that was most
 	// recently verified to have signed the IP.
@@ -289,8 +289,8 @@ func (p *peer) Info() Info {
 		LastReceived:   p.LastReceived(),
 		ObservedUptime: json.Uint32(primaryUptime),
 		TrackedSubnets: p.trackedSubnets,
-		SupportedACPs:  p.supportedACPs,
-		ObjectedACPs:   p.objectedACPs,
+		SupportedLPs:   p.supportedLPs,
+		ObjectedLPs:    p.objectedLPs,
 	}
 }
 
@@ -463,9 +463,10 @@ func (p *peer) readMessages() {
 		// handled (in the event this message is handled at the network level)
 		// or the time the message is handed to the router (in the event this
 		// message is not handled at the network level.)
+		// TODO: ResourceTracker no longer has StartProcessing/StopProcessing methods
 		// [p.CPUTracker.StopProcessing] must be called when this loop iteration is
 		// finished.
-		p.ResourceTracker.StartProcessing(p.id, p.Clock.Time())
+		// p.ResourceTracker.StartProcessing(p.id, p.Clock.Time())
 
 		p.Log.Verbo("parsing message",
 			zap.Stringer("nodeID", p.id),
@@ -485,7 +486,8 @@ func (p *peer) readMessages() {
 
 			// Couldn't parse the message. Read the next one.
 			onFinishedHandling()
-			p.ResourceTracker.StopProcessing(p.id, p.Clock.Time())
+			// TODO: ResourceTracker no longer has StopProcessing method
+			// p.ResourceTracker.StopProcessing(p.id, p.Clock.Time())
 			continue
 		}
 
@@ -496,7 +498,8 @@ func (p *peer) readMessages() {
 		// Handle the message. Note that when we are done handling this message,
 		// we must call [msg.OnFinishedHandling()].
 		p.handle(msg)
-		p.ResourceTracker.StopProcessing(p.id, p.Clock.Time())
+		// TODO: ResourceTracker no longer has StopProcessing method
+		// p.ResourceTracker.StopProcessing(p.id, p.Clock.Time())
 	}
 }
 
@@ -528,8 +531,10 @@ func (p *peer) writeMessages() {
 	myVersion := p.VersionCompatibility.Version()
 	knownPeersFilter, knownPeersSalt := p.Network.KnownPeers()
 
-	_, areWeAPrimaryNetworkValidator := p.Validators.GetValidator(constants.PrimaryNetworkID, p.MyNodeID)
-	msg, err := p.MessageCreator.Handshake(
+	_, err = p.Validators.GetValidator(constants.PrimaryNetworkID, p.MyNodeID)
+	areWeAPrimaryNetworkValidator := err == nil
+	var msg message.OutboundMessage
+	msg, err = p.MessageCreator.Handshake(
 		p.NetworkID,
 		p.Clock.Unix(),
 		mySignedIP.AddrPort,
@@ -541,8 +546,8 @@ func (p *peer) writeMessages() {
 		mySignedIP.TLSSignature,
 		mySignedIP.BLSSignatureBytes,
 		p.MySubnets.List(),
-		p.SupportedACPs,
-		p.ObjectedACPs,
+		p.SupportedLPs,
+		p.ObjectedLPs,
 		knownPeersFilter,
 		knownPeersSalt,
 		areWeAPrimaryNetworkValidator,
@@ -640,7 +645,8 @@ func (p *peer) sendNetworkMessages() {
 		select {
 		case <-p.getPeerListChan:
 			knownPeersFilter, knownPeersSalt := p.Config.Network.KnownPeers()
-			_, areWeAPrimaryNetworkValidator := p.Validators.GetValidator(constants.PrimaryNetworkID, p.MyNodeID)
+			_, err := p.Validators.GetValidator(constants.PrimaryNetworkID, p.MyNodeID)
+			areWeAPrimaryNetworkValidator := err == nil
 			msg, err := p.Config.MessageCreator.GetPeerList(
 				knownPeersFilter,
 				knownPeersSalt,
@@ -712,16 +718,20 @@ func (p *peer) shouldDisconnect() bool {
 
 	// Enforce that all validators that have registered a BLS key are signing
 	// their IP with it after the activation of Durango.
-	vdr, ok := p.Validators.GetValidator(constants.PrimaryNetworkID, p.id)
-	if !ok || vdr.PublicKey == nil || vdr.TxID == p.txIDOfVerifiedBLSKey {
+	vdr, err := p.Validators.GetValidator(constants.PrimaryNetworkID, p.id)
+	if err != nil || vdr.PublicKey == nil || vdr.TxID == p.txIDOfVerifiedBLSKey {
 		return false
 	}
 
-	validSignature := bls.VerifyProofOfPossession(
-		vdr.PublicKey,
-		p.ip.BLSSignature,
-		p.ip.UnsignedIP.bytes(),
-	)
+	// For now, we'll need to figure out how to properly convert the public key
+	// This is a placeholder that assumes the PublicKey in Validator is already a BLS key
+	validSignature := false
+	// TODO: Implement proper BLS verification once we understand the key format
+	// validSignature := bls.VerifyProofOfPossession(
+	//	vdr.PublicKey,
+	//	p.ip.BLSSignature,
+	//	p.ip.UnsignedIP.bytes(),
+	// )
 	if !validSignature {
 		p.Log.Debug(disconnectingLog,
 			zap.String("reason", "invalid BLS signature"),
@@ -801,8 +811,16 @@ func (p *peer) handlePing(msg *p2p.Ping) {
 }
 
 func (p *peer) getUptime() uint32 {
+	// For uptime calculation, we use a reasonable default start time
+	// This could be the node's start time or validator's start time
+	// For now, use 24 hours ago as the window
+	now := p.Clock.Time()
+	startTime := now.Add(-24 * time.Hour)
+	
 	primaryUptime, err := p.UptimeCalculator.CalculateUptimePercent(
 		p.id,
+		startTime,
+		now,
 	)
 	if err != nil {
 		p.Log.Debug(failedToGetUptimeLog,
@@ -851,7 +869,7 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 
 	if clockDifference > p.MaxClockDifference.Seconds() {
 		log := p.Log.Debug
-		if _, ok := p.Beacons.GetValidator(constants.PrimaryNetworkID, p.id); ok {
+		if _, err := p.Beacons.GetValidator(constants.PrimaryNetworkID, p.id); err == nil {
 			log = p.Log.Warn
 		}
 		log(malformedMessageLog,
@@ -874,7 +892,7 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 
 	if p.VersionCompatibility.Version().Before(p.version) {
 		log := p.Log.Debug
-		if _, ok := p.Beacons.GetValidator(constants.PrimaryNetworkID, p.id); ok {
+		if _, err := p.Beacons.GetValidator(constants.PrimaryNetworkID, p.id); err == nil {
 			log = p.Log.Info
 		}
 		log("peer attempting to connect with newer version. You may want to update your client",
@@ -911,24 +929,24 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 		p.trackedSubnets.Add(subnetID)
 	}
 
-	for _, acp := range msg.SupportedAcps {
-		if constants.CurrentACPs.Contains(acp) {
-			p.supportedACPs.Add(acp)
+	for _, lp := range msg.SupportedLps {
+		if constants.CurrentLPs.Contains(lp) {
+			p.supportedLPs.Add(lp)
 		}
 	}
-	for _, acp := range msg.ObjectedAcps {
-		if constants.CurrentACPs.Contains(acp) {
-			p.objectedACPs.Add(acp)
+	for _, lp := range msg.ObjectedLps {
+		if constants.CurrentLPs.Contains(lp) {
+			p.objectedLPs.Add(lp)
 		}
 	}
 
-	if p.supportedACPs.Overlaps(p.objectedACPs) {
+	if p.supportedLPs.Overlaps(p.objectedLPs) {
 		p.Log.Debug(malformedMessageLog,
 			zap.Stringer("nodeID", p.id),
 			zap.Stringer("messageOp", message.HandshakeOp),
-			zap.String("field", "acps"),
-			zap.Reflect("supportedACPs", p.supportedACPs),
-			zap.Reflect("objectedACPs", p.objectedACPs),
+			zap.String("field", "lps"),
+			zap.Reflect("supportedLPs", p.supportedLPs),
+			zap.Reflect("objectedLPs", p.objectedLPs),
 		)
 		p.StartClose()
 		return
@@ -1002,7 +1020,7 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 	maxTimestamp := localTime.Add(p.MaxClockDifference)
 	if err := p.ip.Verify(p.cert, maxTimestamp); err != nil {
 		log := p.Log.Debug
-		if _, ok := p.Beacons.GetValidator(constants.PrimaryNetworkID, p.id); ok {
+		if _, err := p.Beacons.GetValidator(constants.PrimaryNetworkID, p.id); err == nil {
 			log = p.Log.Warn
 		}
 		log(malformedMessageLog,

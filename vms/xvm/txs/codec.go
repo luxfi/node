@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -7,7 +7,7 @@ import (
 	"reflect"
 
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -39,7 +39,7 @@ type fxVM struct {
 	typeToFxIndex map[reflect.Type]int
 
 	clock         *mockable.Clock
-	log           logging.Logger
+	log           log.Logger
 	codecRegistry codec.Registry
 }
 
@@ -51,6 +51,6 @@ func (vm *fxVM) CodecRegistry() codec.Registry {
 	return vm.codecRegistry
 }
 
-func (vm *fxVM) Logger() logging.Logger {
+func (vm *fxVM) Logger() log.Logger {
 	return vm.log
 }

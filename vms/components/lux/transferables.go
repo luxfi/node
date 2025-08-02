@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -8,9 +8,9 @@ import (
 	"errors"
 	"sort"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/vms/components/verify"
@@ -32,7 +32,6 @@ var (
 
 // Amounter is a data structure that has an amount of something associated with it
 type Amounter interface {
-	consensus.ContextInitializable
 	// Amount returns how much value this element represents of the asset in its
 	// transaction.
 	Amount() uint64
@@ -56,7 +55,6 @@ type TransferableIn interface {
 // TransferableOut is the interface a feature extension must provide to transfer
 // value between features extensions.
 type TransferableOut interface {
-	consensus.ContextInitializable
 	verify.State
 	Amounter
 }
@@ -68,8 +66,11 @@ type TransferableOutput struct {
 	Out  TransferableOut `serialize:"true"  json:"output"`
 }
 
-func (out *TransferableOutput) InitCtx(ctx *consensus.Context) {
-	out.Out.InitCtx(ctx)
+func (out *TransferableOutput) InitCtx(ctx *quasar.Context) {
+	// TransferableOut interface doesn't require InitCtx, so we check if it's available
+	if initializable, ok := out.Out.(interface{ InitCtx(*quasar.Context) }); ok {
+		initializable.InitCtx(ctx)
+	}
 }
 
 // Output returns the feature extension output that this Output is using.
@@ -143,6 +144,15 @@ type TransferableInput struct {
 	// FxID has serialize false because we don't want this to be encoded in bytes
 	FxID ids.ID         `serialize:"false" json:"fxID"`
 	In   TransferableIn `serialize:"true"  json:"input"`
+}
+
+// InitCtx allows addresses to be formatted into their human readable format
+// during json marshalling.
+func (in *TransferableInput) InitCtx(ctx *quasar.Context) {
+	// TransferableIn interface doesn't require InitCtx, so we check if it's available
+	if initializable, ok := in.In.(interface{ InitCtx(*quasar.Context) }); ok {
+		initializable.InitCtx(ctx)
+	}
 }
 
 // Input returns the feature extension input that this Input is using.

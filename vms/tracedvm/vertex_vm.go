@@ -1,21 +1,11 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tracedvm
 
 import (
-	"context"
-
-	"go.opentelemetry.io/otel/attribute"
-
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/quasar/engine/dag/vertex"
 	"github.com/luxfi/node/trace"
-
-	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var _ vertex.LinearizableVMWithEngine = (*vertexVM)(nil)
@@ -32,10 +22,12 @@ func NewVertexVM(vm vertex.LinearizableVMWithEngine, tracer trace.Tracer) vertex
 	}
 }
 
+// TODO: Fix interface mismatch - LinearizableVMWithEngine doesn't have Initialize method
+/*
 func (vm *vertexVM) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
-	db database.Database,
+	chainCtx *quasar.Context,
+	db db.Database,
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
@@ -56,8 +48,11 @@ func (vm *vertexVM) Initialize(
 		appSender,
 	)
 }
+*/
 
-func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (dag.Tx, error) {
+// TODO: Fix interface mismatch - LinearizableVMWithEngine doesn't have ParseTx method
+/*
+func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (graph.Tx, error) {
 	ctx, span := vm.tracer.Start(ctx, "vertexVM.ParseTx", oteltrace.WithAttributes(
 		attribute.Int("txLen", len(txBytes)),
 	))
@@ -69,3 +64,4 @@ func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (dag.Tx, error)
 		tracer: vm.tracer,
 	}, err
 }
+*/

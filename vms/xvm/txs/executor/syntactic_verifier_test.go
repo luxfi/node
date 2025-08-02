@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -10,17 +10,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/consensustest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/vms/xvm/config"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm/config"
+	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/vms/xvm/txs"
 
 	safemath "github.com/luxfi/node/utils/math"
 )

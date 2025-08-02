@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrapmonitor
@@ -14,7 +14,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 )
 
@@ -29,7 +29,7 @@ func NodeDataDir(path string) string {
 	return path + "/luxd"
 }
 
-func InitBootstrapTest(log logging.Logger, namespace string, podName string, nodeContainerName string, dataDir string) error {
+func InitBootstrapTest(log log.Logger, namespace string, podName string, nodeContainerName string, dataDir string) error {
 	clientset, err := getClientset(log)
 	if err != nil {
 		return fmt.Errorf("failed to get clientset: %w", err)

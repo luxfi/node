@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -17,25 +17,29 @@ import (
 	"google.golang.org/grpc/health"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	db "github.com/luxfi/database"
+	dbrpcdb "github.com/luxfi/database/rpcdb"
+	dbpb "github.com/luxfi/database/proto/pb/rpcdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/core/appsender"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/validators/gvalidators"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/rpcdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/ids/galiasreader"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/core/appsender"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	consensuschain "github.com/luxfi/node/quasar/chain"
+		"github.com/luxfi/node/quasar/validators/gvalidators"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/utils/galiasreader"
+	log "github.com/luxfi/log"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/chain"
+	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
@@ -45,7 +49,7 @@ import (
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"
@@ -72,7 +76,7 @@ var (
 	_ block.StateSyncableVM              = (*VMClient)(nil)
 	_ prometheus.Gatherer                = (*VMClient)(nil)
 
-	_ linear.Block            = (*blockClient)(nil)
+	_ block.Block            = (*blockClient)(nil)
 	_ block.WithVerifyContext = (*blockClient)(nil)
 
 	_ block.StateSummary = (*summaryClient)(nil)
@@ -81,7 +85,7 @@ var (
 // VMClient is an implementation of a VM that talks over RPC.
 type VMClient struct {
 	*chain.State
-	logger          logging.Logger
+	logger          log.Logger
 	client          vmpb.VMClient
 	runtime         runtime.Stopper
 	pid             int
@@ -90,8 +94,8 @@ type VMClient struct {
 
 	sharedMemory         *gsharedmemory.Server
 	bcLookup             *galiasreader.Server
-	appSender            *appsender.Server
-	validatorStateServer *gvalidators.Server
+	appSender            *appsender.GRPCServer
+	validatorStateServer *gvalidators.GRPCServer
 	warpSignerServer     *gwarp.Server
 
 	serverCloser grpcutils.ServerCloser
@@ -107,7 +111,7 @@ func NewClient(
 	pid int,
 	processTracker resource.ProcessTracker,
 	metricsGatherer metrics.MultiGatherer,
-	logger logging.Logger,
+	logger log.Logger,
 ) *VMClient {
 	return &VMClient{
 		client:          vmpb.NewVMClient(clientConn),
@@ -122,8 +126,8 @@ func NewClient(
 
 func (vm *VMClient) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
-	db database.Database,
+	chainCtx *quasar.Context,
+	db db.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
@@ -165,11 +169,13 @@ func (vm *VMClient) Initialize(
 		zap.String("address", dbServerAddr),
 	)
 
-	vm.sharedMemory = gsharedmemory.NewServer(chainCtx.SharedMemory, db)
+	vm.sharedMemory = gsharedmemory.NewServer(gsharedmemory.NewSharedMemoryWrapper(chainCtx.SharedMemory), db)
 	vm.bcLookup = galiasreader.NewServer(chainCtx.BCLookup)
-	vm.appSender = appsender.NewServer(appSender)
-	vm.validatorStateServer = gvalidators.NewServer(chainCtx.ValidatorState)
-	vm.warpSignerServer = gwarp.NewServer(chainCtx.WarpSigner)
+	vm.appSender = appsender.NewGRPCServer(appSender)
+	vm.validatorStateServer = gvalidators.NewGRPCServer(chainCtx.ValidatorState)
+	if warpSigner, ok := chainCtx.WarpSigner.(warp.Signer); ok {
+		vm.warpSignerServer = gwarp.NewServer(warpSigner)
+	}
 
 	serverListener, err := grpcutils.NewListener()
 	if err != nil {
@@ -182,23 +188,26 @@ func (vm *VMClient) Initialize(
 		zap.String("address", serverAddr),
 	)
 
-	networkUpgrades := &vmpb.NetworkUpgrades{
-		ApricotPhase_1Time:            grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.ApricotPhase1Time),
-		ApricotPhase_2Time:            grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.ApricotPhase2Time),
-		ApricotPhase_3Time:            grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.ApricotPhase3Time),
-		ApricotPhase_4Time:            grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.ApricotPhase4Time),
-		ApricotPhase_4MinPChainHeight: chainCtx.NetworkUpgrades.ApricotPhase4MinPChainHeight,
-		ApricotPhase_5Time:            grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.ApricotPhase5Time),
-		ApricotPhasePre_6Time:         grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.ApricotPhasePre6Time),
-		ApricotPhase_6Time:            grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.ApricotPhase6Time),
-		ApricotPhasePost_6Time:        grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.ApricotPhasePost6Time),
-		BanffTime:                     grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.BanffTime),
-		CortinaTime:                   grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.CortinaTime),
-		CortinaXChainStopVertexId:     chainCtx.NetworkUpgrades.CortinaXChainStopVertexID[:],
-		DurangoTime:                   grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.DurangoTime),
-		EtnaTime:                      grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.EtnaTime),
-		FortunaTime:                   grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.FortunaTime),
-		GraniteTime:                   grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.GraniteTime),
+	var networkUpgrades *vmpb.NetworkUpgrades
+	if upgrades, ok := chainCtx.NetworkUpgrades.(*upgrade.Config); ok {
+		networkUpgrades = &vmpb.NetworkUpgrades{
+			ApricotPhase_1Time:            grpcutils.TimestampFromTime(upgrades.ApricotPhase1Time),
+			ApricotPhase_2Time:            grpcutils.TimestampFromTime(upgrades.ApricotPhase2Time),
+			ApricotPhase_3Time:            grpcutils.TimestampFromTime(upgrades.ApricotPhase3Time),
+			ApricotPhase_4Time:            grpcutils.TimestampFromTime(upgrades.ApricotPhase4Time),
+			ApricotPhase_4MinPChainHeight: upgrades.ApricotPhase4MinPChainHeight,
+			ApricotPhase_5Time:            grpcutils.TimestampFromTime(upgrades.ApricotPhase5Time),
+			ApricotPhasePre_6Time:         grpcutils.TimestampFromTime(upgrades.ApricotPhasePre6Time),
+			ApricotPhase_6Time:            grpcutils.TimestampFromTime(upgrades.ApricotPhase6Time),
+			ApricotPhasePost_6Time:        grpcutils.TimestampFromTime(upgrades.ApricotPhasePost6Time),
+			BanffTime:                     grpcutils.TimestampFromTime(upgrades.BanffTime),
+			CortinaTime:                   grpcutils.TimestampFromTime(upgrades.CortinaTime),
+			CortinaXChainStopVertexId:     upgrades.CortinaXChainStopVertexID[:],
+			DurangoTime:                   grpcutils.TimestampFromTime(upgrades.DurangoTime),
+			EtnaTime:                      grpcutils.TimestampFromTime(upgrades.EtnaTime),
+			FortunaTime:                   grpcutils.TimestampFromTime(upgrades.FortunaTime),
+			GraniteTime:                   grpcutils.TimestampFromTime(upgrades.GraniteTime),
+		}
 	}
 
 	resp, err := vm.client.Initialize(ctx, &vmpb.InitializeRequest{
@@ -206,7 +215,7 @@ func (vm *VMClient) Initialize(
 		SubnetId:        chainCtx.SubnetID[:],
 		ChainId:         chainCtx.ChainID[:],
 		NodeId:          chainCtx.NodeID.Bytes(),
-		PublicKey:       bls.PublicKeyToCompressedBytes(chainCtx.PublicKey),
+		PublicKey:       chainCtx.PublicKey,
 		NetworkUpgrades: networkUpgrades,
 		XChainId:        chainCtx.XChainID[:],
 		CChainId:        chainCtx.CChainID[:],
@@ -222,8 +231,10 @@ func (vm *VMClient) Initialize(
 		return err
 	}
 
-	if err := chainCtx.Metrics.Register("", vm); err != nil {
-		return err
+	if metrics, ok := chainCtx.Metrics.(metrics.MultiGatherer); ok {
+		if err := metrics.Register("", vm); err != nil {
+			return err
+		}
 	}
 
 	id, err := ids.ToID(resp.LastAcceptedId)
@@ -259,17 +270,17 @@ func (vm *VMClient) Initialize(
 			UnverifiedCacheSize:   unverifiedCacheSize,
 			BytesToIDCacheSize:    bytesToIDCacheSize,
 			LastAcceptedBlock:     lastAcceptedBlk,
-			GetBlock:              vm.getBlock,
-			UnmarshalBlock:        vm.parseBlock,
-			BatchedUnmarshalBlock: vm.batchedParseBlock,
-			BuildBlock:            vm.buildBlock,
-			BuildBlockWithContext: vm.buildBlockWithContext,
+			GetBlock:              vm.getBlockWrapper,
+			UnmarshalBlock:        vm.parseBlockWrapper,
+			BatchedUnmarshalBlock: vm.batchedParseBlockWrapper,
+			BuildBlock:            vm.buildBlockWrapper,
+			BuildBlockWithContext: vm.buildBlockWithContextWrapper,
 		},
 	)
 	return err
 }
 
-func (vm *VMClient) newDBServer(db database.Database) *grpc.Server {
+func (vm *VMClient) newDBServer(db db.Database) *grpc.Server {
 	server := grpcutils.NewServer(
 		grpcutils.WithUnaryInterceptor(vm.grpcServerMetrics.UnaryServerInterceptor()),
 		grpcutils.WithStreamInterceptor(vm.grpcServerMetrics.StreamServerInterceptor()),
@@ -282,7 +293,7 @@ func (vm *VMClient) newDBServer(db database.Database) *grpc.Server {
 	vm.serverCloser.Add(server)
 
 	// Register services
-	rpcdbpb.RegisterDatabaseServer(server, rpcdb.NewServer(db))
+	dbpb.RegisterDatabaseServer(server, dbrpcdb.NewServer(db))
 	healthpb.RegisterHealthServer(server, grpcHealth)
 
 	// Ensure metric counters are zeroed on restart
@@ -317,7 +328,7 @@ func (vm *VMClient) newInitServer() *grpc.Server {
 	return server
 }
 
-func (vm *VMClient) SetState(ctx context.Context, state consensus.State) error {
+func (vm *VMClient) SetState(ctx context.Context, state quasar.State) error {
 	resp, err := vm.client.SetState(ctx, &vmpb.SetStateRequest{
 		State: vmpb.State(state),
 	})
@@ -410,9 +421,11 @@ func (vm *VMClient) WaitForEvent(ctx context.Context) (core.Message, error) {
 	resp, err := vm.client.WaitForEvent(ctx, &emptypb.Empty{})
 	if err != nil {
 		vm.logger.Debug("failed to subscribe to events", zap.Error(err))
-		return 0, err
+		return core.Message{}, err
 	}
-	return core.Message(resp.Message), nil
+	return core.Message{
+		Type: message.Op(resp.Message),
+	}, nil
 }
 
 func (vm *VMClient) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
@@ -435,7 +448,7 @@ func (vm *VMClient) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 
 // If the underlying VM doesn't actually implement this method, its [BuildBlock]
 // method will be called instead.
-func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.Context) (linear.Block, error) {
+func (vm *VMClient) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (block.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{
 		PChainHeight: &blockCtx.PChainHeight,
 	})
@@ -445,7 +458,7 @@ func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.C
 	return vm.newBlockFromBuildBlock(resp)
 }
 
-func (vm *VMClient) buildBlock(ctx context.Context) (linear.Block, error) {
+func (vm *VMClient) BuildBlock(ctx context.Context) (block.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{})
 	if err != nil {
 		return nil, err
@@ -453,7 +466,7 @@ func (vm *VMClient) buildBlock(ctx context.Context) (linear.Block, error) {
 	return vm.newBlockFromBuildBlock(resp)
 }
 
-func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (linear.Block, error) {
+func (vm *VMClient) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
 	resp, err := vm.client.ParseBlock(ctx, &vmpb.ParseBlockRequest{
 		Bytes: bytes,
 	})
@@ -486,7 +499,7 @@ func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (linear.Block,
 	}, nil
 }
 
-func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (linear.Block, error) {
+func (vm *VMClient) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
 	resp, err := vm.client.GetBlock(ctx, &vmpb.GetBlockRequest{
 		Id: blkID[:],
 	})
@@ -615,7 +628,7 @@ func (vm *VMClient) GetAncestors(
 	return resp.BlksBytes, nil
 }
 
-func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]linear.Block, error) {
+func (vm *VMClient) BatchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]block.Block, error) {
 	resp, err := vm.client.BatchedParseBlock(ctx, &vmpb.BatchedParseBlockRequest{
 		Request: blksBytes,
 	})
@@ -626,7 +639,7 @@ func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) (
 		return nil, errBatchedParseBlockWrongNumberOfBlocks
 	}
 
-	res := make([]linear.Block, 0, len(blksBytes))
+	res := make([]block.Block, 0, len(blksBytes))
 	for idx, blkResp := range resp.Response {
 		id, err := ids.ToID(blkResp.Id)
 		if err != nil {
@@ -765,6 +778,35 @@ func (vm *VMClient) GetStateSummary(ctx context.Context, summaryHeight uint64) (
 	}, err
 }
 
+// Wrapper functions to convert between block.Block and consensuschain.Block
+func (vm *VMClient) getBlockWrapper(ctx context.Context, blkID ids.ID) (consensuschain.Block, error) {
+	return vm.GetBlock(ctx, blkID)
+}
+
+func (vm *VMClient) parseBlockWrapper(ctx context.Context, bytes []byte) (consensuschain.Block, error) {
+	return vm.ParseBlock(ctx, bytes)
+}
+
+func (vm *VMClient) batchedParseBlockWrapper(ctx context.Context, blksBytes [][]byte) ([]consensuschain.Block, error) {
+	blocks, err := vm.BatchedParseBlock(ctx, blksBytes)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]consensuschain.Block, len(blocks))
+	for i, blk := range blocks {
+		result[i] = blk
+	}
+	return result, nil
+}
+
+func (vm *VMClient) buildBlockWrapper(ctx context.Context) (consensuschain.Block, error) {
+	return vm.BuildBlock(ctx)
+}
+
+func (vm *VMClient) buildBlockWithContextWrapper(ctx context.Context, blockCtx *block.Context) (consensuschain.Block, error) {
+	return vm.BuildBlockWithContext(ctx, blockCtx)
+}
+
 func (vm *VMClient) newBlockFromBuildBlock(resp *vmpb.BuildBlockResponse) (*blockClient, error) {
 	id, err := ids.ToID(resp.Id)
 	if err != nil {
@@ -799,19 +841,19 @@ type blockClient struct {
 	shouldVerifyWithCtx bool
 }
 
-func (b *blockClient) ID() ids.ID {
-	return b.id
+func (b *blockClient) ID() string {
+	return b.id.String()
 }
 
-func (b *blockClient) Accept(ctx context.Context) error {
-	_, err := b.vm.client.BlockAccept(ctx, &vmpb.BlockAcceptRequest{
+func (b *blockClient) Accept() error {
+	_, err := b.vm.client.BlockAccept(context.Background(), &vmpb.BlockAcceptRequest{
 		Id: b.id[:],
 	})
 	return err
 }
 
-func (b *blockClient) Reject(ctx context.Context) error {
-	_, err := b.vm.client.BlockReject(ctx, &vmpb.BlockRejectRequest{
+func (b *blockClient) Reject() error {
+	_, err := b.vm.client.BlockReject(context.Background(), &vmpb.BlockRejectRequest{
 		Id: b.id[:],
 	})
 	return err
@@ -843,6 +885,15 @@ func (b *blockClient) Height() uint64 {
 
 func (b *blockClient) Timestamp() time.Time {
 	return b.time
+}
+
+func (b *blockClient) Time() uint64 {
+	return uint64(b.time.Unix())
+}
+
+func (b *blockClient) Status() choices.Status {
+	// TODO: Implement proper status tracking
+	return choices.Processing
 }
 
 func (b *blockClient) ShouldVerifyWithContext(context.Context) (bool, error) {

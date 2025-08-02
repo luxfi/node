@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package atomic
@@ -7,9 +7,9 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
 )
 
@@ -28,13 +28,13 @@ type rcLock struct {
 type Memory struct {
 	lock  sync.Mutex
 	locks map[ids.ID]*rcLock
-	db    database.Database
+	db    db.Database
 }
 
-func NewMemory(db database.Database) *Memory {
+func NewMemory(database db.Database) *Memory {
 	return &Memory{
 		locks: make(map[ids.ID]*rcLock),
-		db:    db,
+		db:    database,
 	}
 }
 
@@ -50,10 +50,10 @@ func (m *Memory) NewSharedMemory(chainID ids.ID) SharedMemory {
 //
 // Invariant: ReleaseSharedDatabase must be called after to free the database
 // associated with [sharedID]
-func (m *Memory) GetSharedDatabase(db database.Database, sharedID ids.ID) database.Database {
+func (m *Memory) GetSharedDatabase(database db.Database, sharedID ids.ID) db.Database {
 	lock := m.makeLock(sharedID)
 	lock.Lock()
-	return prefixdb.NewNested(sharedID[:], db)
+	return prefixdb.NewNested(sharedID[:], database)
 }
 
 // ReleaseSharedDatabase unlocks the provided DB

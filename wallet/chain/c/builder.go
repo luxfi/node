@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/evm/plugin/evm/atomic"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"
@@ -18,7 +18,11 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	walletutil "github.com/luxfi/node/wallet"
 
+<<<<<<< HEAD
 	"github.com/luxfi/evm"
+=======
+	geth "github.com/luxfi/geth/common"
+>>>>>>> main
 )
 
 const luxConversionRateInt = 1_000_000_000
@@ -97,9 +101,9 @@ type BuilderBackend interface {
 
 type builder struct {
 	luxAddrs set.Set[ids.ShortID]
-	ethAddrs  set.Set[geth.Address]
-	context   *Context
-	backend   BuilderBackend
+	ethAddrs set.Set[geth.Address]
+	context  *Context
+	backend  BuilderBackend
 }
 
 // NewBuilder returns a new transaction builder.
@@ -118,9 +122,9 @@ func NewBuilder(
 ) Builder {
 	return &builder{
 		luxAddrs: luxAddrs,
-		ethAddrs:  ethAddrs,
-		context:   context,
-		backend:   backend,
+		ethAddrs: ethAddrs,
+		context:  context,
+		backend:  backend,
 	}
 }
 
@@ -161,7 +165,7 @@ func (b *builder) GetImportableBalance(
 	var (
 		addrs           = ops.Addresses(b.luxAddrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID     = b.context.LUXAssetID
+		luxAssetID      = b.context.LUXAssetID
 		balance         uint64
 	)
 	for _, utxo := range utxos {
@@ -195,7 +199,7 @@ func (b *builder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.luxAddrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID     = b.context.LUXAssetID
+		luxAssetID      = b.context.LUXAssetID
 
 		importedInputs = make([]*lux.TransferableInput, 0, len(utxos))
 		importedAmount uint64
@@ -269,7 +273,7 @@ func (b *builder) NewExportTx(
 	options ...walletutil.Option,
 ) (*atomic.UnsignedExportTx, error) {
 	var (
-		luxAssetID     = b.context.LUXAssetID
+		luxAssetID      = b.context.LUXAssetID
 		exportedOutputs = make([]*lux.TransferableOutput, len(outputs))
 		exportedAmount  uint64
 	)
@@ -387,12 +391,12 @@ func (b *builder) NewExportTx(
 	utils.Sort(inputs)
 	tx.Ins = inputs
 
-	snowCtx, err := newSnowContext(b.context)
+	linearCtx, err := newLinearContext(b.context)
 	if err != nil {
 		return nil, err
 	}
 	for _, out := range tx.ExportedOutputs {
-		out.InitCtx(snowCtx)
+		out.InitCtx(linearCtx)
 	}
 	return tx, nil
 }

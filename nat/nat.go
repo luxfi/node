@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package nat
@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 const (
@@ -46,14 +46,14 @@ func GetRouter() Router {
 
 // Mapper attempts to open a set of ports on a router
 type Mapper struct {
-	log    logging.Logger
+	log    log.Logger
 	r      Router
 	closer chan struct{}
 	wg     sync.WaitGroup
 }
 
 // NewPortMapper returns an initialized mapper
-func NewPortMapper(log logging.Logger, r Router) *Mapper {
+func NewPortMapper(log log.Logger, r Router) *Mapper {
 	return &Mapper{
 		log:    log,
 		r:      r,

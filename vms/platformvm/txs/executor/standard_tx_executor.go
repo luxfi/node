@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -12,14 +12,14 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -537,7 +537,7 @@ func (e *standardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error 
 		//            second entry.
 		map[ids.ID]uint64{
 			e.backend.Ctx.LUXAssetID: fee,
-			tx.AssetID:                totalRewardAmount,
+			tx.AssetID:               totalRewardAmount,
 		},
 	); err != nil {
 		return err

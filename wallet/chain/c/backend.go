@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -12,12 +12,16 @@ import (
 
 	"github.com/luxfi/evm/plugin/evm/atomic"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	walletutil "github.com/luxfi/node/wallet"
 
+<<<<<<< HEAD
 	"github.com/luxfi/evm"
+=======
+	geth "github.com/luxfi/geth/common"
+>>>>>>> main
 )
 
 var (

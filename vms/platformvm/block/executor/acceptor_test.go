@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -10,12 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/database/databasemock"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/atomicmock"
-	"github.com/luxfi/node/database/databasemock"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/quasar"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -52,8 +52,8 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 
 	acceptor := &acceptor{
 		backend: &backend{
-			ctx: &consensus.Context{
-				Log: logging.NoLog{},
+			ctx: &quasar.Context{
+				Log: log.NewNoOpLogger(),
 			},
 			blkIDToState: map[ids.ID]*blockState{
 				blkID: {},
@@ -90,8 +90,8 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &consensus.Context{
-				Log:          logging.NoLog{},
+			ctx: &quasar.Context{
+				Log:          log.NewNoOpLogger(),
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -168,8 +168,8 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &consensus.Context{
-				Log:          logging.NoLog{},
+			ctx: &quasar.Context{
+				Log:          log.NewNoOpLogger(),
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -255,8 +255,8 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &consensus.Context{
-				Log:          logging.NoLog{},
+			ctx: &quasar.Context{
+				Log:          log.NewNoOpLogger(),
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -364,8 +364,8 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &consensus.Context{
-				Log:          logging.NoLog{},
+			ctx: &quasar.Context{
+				Log:          log.NewNoOpLogger(),
 				SharedMemory: sharedMemory,
 			},
 		},

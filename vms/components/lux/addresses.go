@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/set"
@@ -38,10 +38,10 @@ type AddressManager interface {
 }
 
 type addressManager struct {
-	ctx *consensus.Context
+	ctx *quasar.Context
 }
 
-func NewAddressManager(ctx *consensus.Context) AddressManager {
+func NewAddressManager(ctx *quasar.Context) AddressManager {
 	return &addressManager{
 		ctx: ctx,
 	}

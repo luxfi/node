@@ -99,11 +99,11 @@ A temporary network can be managed by the `tmpnetctl` cli tool:
 # Start a new network. Possible to specify the number of nodes (> 1) with --node-count.
 $ ./bin/tmpnetctl start-network --luxd-path=/path/to/luxd
 ...
-Started network /home/me/.tmpnet/networks/20240306-152305.924531 (UUID: abaab590-b375-44f6-9ca5-f8a6dc061725)
+Started network /home/me/.tmpnet/networks/20250306-152305.924531 (UUID: abaab590-b375-44f6-9ca5-f8a6dc061725)
 
 Configure tmpnetctl to target this network by default with one of the following statements:
- - source /home/me/.tmpnet/networks/20240306-152305.924531/network.env
- - export TMPNET_NETWORK_DIR=/home/me/.tmpnet/networks/20240306-152305.924531
+ - source /home/me/.tmpnet/networks/20250306-152305.924531/network.env
+ - export TMPNET_NETWORK_DIR=/home/me/.tmpnet/networks/20250306-152305.924531
  - export TMPNET_NETWORK_DIR=/home/me/.tmpnet/networks/latest
 
 # Stop the network
@@ -212,7 +212,7 @@ HOME
     ├── promtail                                         // Working directory for a log-collecting promtail instance
     │   └── file_sd_configs                              // Directory containing file-based service discovery config for promtail
     └── networks                                         // Default parent directory for temporary networks
-        └── 20240306-152305.924531                       // The timestamp of creation is the name of a network's directory
+        └── 20250306-152305.924531                       // The timestamp of creation is the name of a network's directory
             ├── NodeID-37E8UK3x2YFsHE3RdALmfWcppcZ1eTuj9 // The ID of a node is the name of its data dir
             │   ├── chainData
             │   │   └── ...

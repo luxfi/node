@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
@@ -8,12 +8,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/consensustest"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
@@ -24,10 +24,10 @@ func TestIndex(t *testing.T) {
 	require := require.New(t)
 	baseDB := memdb.New()
 	db := versiondb.New(baseDB)
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
+	ctx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(ctx)
 
-	idx, err := newIndex(db, logging.NoLog{}, mockable.Clock{})
+	idx, err := newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
 	require.NoError(err)
 
 	// Populate "containers" with random IDs/bytes
@@ -79,7 +79,7 @@ func TestIndex(t *testing.T) {
 	require.NoError(db.Commit())
 	require.NoError(idx.Close())
 	db = versiondb.New(baseDB)
-	idx, err = newIndex(db, logging.NoLog{}, mockable.Clock{})
+	idx, err = newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
 	require.NoError(err)
 
 	// Get all of the containers
@@ -109,9 +109,9 @@ func TestIndexGetContainerByRangeMaxPageSize(t *testing.T) {
 	// Setup
 	require := require.New(t)
 	db := memdb.New()
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
-	idx, err := newIndex(db, logging.NoLog{}, mockable.Clock{})
+	ctx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(ctx)
+	idx, err := newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
 	require.NoError(err)
 
 	// Insert [MaxFetchedByRange] + 1 containers
@@ -147,9 +147,9 @@ func TestDontIndexSameContainerTwice(t *testing.T) {
 	// Setup
 	require := require.New(t)
 	db := memdb.New()
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(snowCtx)
-	idx, err := newIndex(db, logging.NoLog{}, mockable.Clock{})
+	ctx := consensustest.Context(t, consensustest.CChainID)
+	ctx := consensustest.ConsensusContext(ctx)
+	idx, err := newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
 	require.NoError(err)
 
 	// Accept the same container twice

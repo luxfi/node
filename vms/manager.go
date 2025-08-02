@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package vms
@@ -11,9 +11,9 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
+	log "github.com/luxfi/log"
 )
 
 var (
@@ -24,7 +24,7 @@ var (
 
 // A Factory creates new instances of a VM
 type Factory interface {
-	New(logging.Logger) (interface{}, error)
+	New(log.Logger) (interface{}, error)
 }
 
 // Manager tracks a collection of VM factories, their aliases, and their
@@ -62,7 +62,7 @@ type manager struct {
 	// alias of the VM. That is, [vmID].String() is an alias for [vmID].
 	ids.Aliaser
 
-	log logging.Logger
+	log log.Logger
 
 	lock sync.RWMutex
 
@@ -76,7 +76,7 @@ type manager struct {
 }
 
 // NewManager returns an instance of a VM manager
-func NewManager(log logging.Logger, aliaser ids.Aliaser) Manager {
+func NewManager(log log.Logger, aliaser ids.Aliaser) Manager {
 	return &manager{
 		Aliaser:   aliaser,
 		log:       log,

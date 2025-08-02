@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package admin
@@ -6,11 +6,12 @@ package admin
 import (
 	"context"
 
+	"github.com/luxfi/database/rpcdb"
+	dbpb "github.com/luxfi/database/proto/pb/rpcdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/database/rpcdb"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/rpc"
 )
 
@@ -80,18 +81,18 @@ func (c *Client) SetLoggerLevel(
 	options ...rpc.Option,
 ) (map[string]LogAndDisplayLevels, error) {
 	var (
-		logLevelArg     logging.Level
-		displayLevelArg logging.Level
+		logLevelArg     log.Level
+		displayLevelArg log.Level
 		err             error
 	)
 	if len(logLevel) > 0 {
-		logLevelArg, err = logging.ToLevel(logLevel)
+		logLevelArg, err = log.ToLevel(logLevel)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if len(displayLevel) > 0 {
-		displayLevelArg, err = logging.ToLevel(displayLevel)
+		displayLevelArg, err = log.ToLevel(displayLevel)
 		if err != nil {
 			return nil, err
 		}
@@ -137,7 +138,7 @@ func (c *Client) DBGet(ctx context.Context, key []byte, options ...rpc.Option) (
 		return nil, err
 	}
 
-	if err := rpcdb.ErrEnumToError[res.ErrorCode]; err != nil {
+	if err := rpcdb.ErrEnumToError[dbpb.Error(res.ErrorCode)]; err != nil {
 		return nil, err
 	}
 	return formatting.Decode(formatting.HexNC, res.Value)

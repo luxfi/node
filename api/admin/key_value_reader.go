@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package admin
@@ -6,7 +6,7 @@ package admin
 import (
 	"context"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 )
 
 var _ database.KeyValueReader = (*KeyValueReader)(nil)

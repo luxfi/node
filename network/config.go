@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -9,15 +9,15 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/uptime"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/network/throttling/tracker"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -122,8 +122,8 @@ type Config struct {
 	PingFrequency      time.Duration                 `json:"pingFrequency"`
 	AllowPrivateIPs    bool                          `json:"allowPrivateIPs"`
 
-	SupportedACPs set.Set[uint32] `json:"supportedACPs"`
-	ObjectedACPs  set.Set[uint32] `json:"objectedACPs"`
+	SupportedLPs set.Set[uint32] `json:"supportedLPs"`
+	ObjectedLPs  set.Set[uint32] `json:"objectedLPs"`
 
 	// The compression type to use when compressing outbound messages.
 	// Assumes all peers support this compression type.

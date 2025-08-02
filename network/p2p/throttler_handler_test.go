@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -10,9 +10,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
+	log "github.com/luxfi/log"
 )
 
 var _ Handler = (*TestHandler)(nil)
@@ -45,7 +45,7 @@ func TestThrottlerHandlerAppGossip(t *testing.T) {
 					},
 				},
 				tt.Throttler,
-				logging.NoLog{},
+				log.NewNoOpLogger(),
 			)
 
 			handler.AppGossip(context.Background(), ids.GenerateTestNodeID(), []byte("foobar"))
@@ -77,7 +77,7 @@ func TestThrottlerHandlerAppRequest(t *testing.T) {
 			handler := NewThrottlerHandler(
 				NoOpHandler{},
 				tt.Throttler,
-				logging.NoLog{},
+				log.NewNoOpLogger(),
 			)
 			_, err := handler.AppRequest(context.Background(), ids.GenerateTestNodeID(), time.Time{}, []byte("foobar"))
 			require.ErrorIs(err, tt.expectedErr)

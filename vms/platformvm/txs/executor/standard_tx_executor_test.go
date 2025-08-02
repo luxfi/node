@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -13,20 +13,20 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
@@ -1775,7 +1775,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &consensus.Context{},
+						Ctx:          &quasar.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1804,7 +1804,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &consensus.Context{},
+						Ctx:          &quasar.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1833,7 +1833,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &consensus.Context{},
+						Ctx:          &quasar.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1865,7 +1865,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &consensus.Context{},
+						Ctx:          &quasar.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1894,7 +1894,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &consensus.Context{},
+						Ctx:          &quasar.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1926,7 +1926,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &consensus.Context{},
+						Ctx:          &quasar.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1957,7 +1957,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &consensus.Context{},
+						Ctx:          &quasar.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -1991,7 +1991,7 @@ func TestStandardExecutorRemoveSubnetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &consensus.Context{},
+						Ctx:          &quasar.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2145,7 +2145,7 @@ func TestStandardExecutorTransformSubnetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &consensus.Context{},
+						Ctx:          &quasar.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2173,7 +2173,7 @@ func TestStandardExecutorTransformSubnetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &consensus.Context{},
+						Ctx:          &quasar.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2206,7 +2206,7 @@ func TestStandardExecutorTransformSubnetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &consensus.Context{},
+						Ctx:          &quasar.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2246,7 +2246,7 @@ func TestStandardExecutorTransformSubnetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &consensus.Context{},
+						Ctx:          &quasar.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2287,7 +2287,7 @@ func TestStandardExecutorTransformSubnetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &consensus.Context{},
+						Ctx:          &quasar.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2332,7 +2332,7 @@ func TestStandardExecutorTransformSubnetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &consensus.Context{},
+						Ctx:          &quasar.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2359,7 +2359,7 @@ func TestStandardExecutorConvertSubnetToL1Tx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: logging.NoLog{},
+			Log: log.NewNoOpLogger(),
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))
@@ -2677,7 +2677,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: logging.NoLog{},
+			Log: log.NewNoOpLogger(),
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))
@@ -3201,7 +3201,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: logging.NoLog{},
+			Log: log.NewNoOpLogger(),
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))
@@ -3700,7 +3700,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: logging.NoLog{},
+			Log: log.NewNoOpLogger(),
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))
@@ -3989,7 +3989,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
-			Log: logging.NoLog{},
+			Log: log.NewNoOpLogger(),
 		}
 	)
 	require.NoError(t, fx.InitializeVM(vm))

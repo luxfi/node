@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -8,32 +8,43 @@ import (
 	"fmt"
 
 	"github.com/luxfi/evm/ethclient"
+<<<<<<< HEAD
 	"github.com/luxfi/evm/plugin/evm/atomic"
+=======
+>>>>>>> main
 	"github.com/luxfi/evm/plugin/evm/client"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/rpc"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/wallet"
 	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
 
+	ethcommon "github.com/luxfi/geth/common"
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
+<<<<<<< HEAD
 	ethcommon "github.com/ethereum/go-ethereum/common"
+=======
+>>>>>>> main
 )
 
 const (
 	MainnetAPIURI = "https://api.lux.network"
+<<<<<<< HEAD
 	TestnetAPIURI    = "https://api.lux-test.network"
+=======
+	TestnetAPIURI = "https://api.lux-test.network"
+>>>>>>> main
 	LocalAPIURI   = "http://localhost:9650"
 
 	fetchLimit = 1024
@@ -77,7 +88,7 @@ func FetchState(
 	infoClient := info.NewClient(uri)
 	pClient := platformvm.NewClient(uri)
 	xClient := xvm.NewClient(uri, "X")
-	cClient := client.NewCChainClient(uri)
+	cClient := client.NewClient(uri, "C")
 
 	pCTX, err := p.NewContextFromClients(ctx, infoClient, pClient)
 	if err != nil {
@@ -96,6 +107,7 @@ func FetchState(
 
 	utxos := wallet.NewUTXOs()
 	addrList := addrs.List()
+	// Only P-chain and X-chain support atomic UTXOs
 	chains := []struct {
 		id     ids.ID
 		client UTXOClient
@@ -110,11 +122,6 @@ func FetchState(
 			id:     xCTX.BlockchainID,
 			client: xClient,
 			codec:  xbuilder.Parser.Codec(),
-		},
-		{
-			id:     cCTX.BlockchainID,
-			client: cClient,
-			codec:  atomic.Codec,
 		},
 	}
 	for _, destinationChain := range chains {

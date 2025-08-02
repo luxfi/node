@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -6,17 +6,17 @@ package node
 import (
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
 
 type insecureValidatorManager struct {
 	router.Router
-	log    logging.Logger
+	log    log.Logger
 	vdrs   validators.Manager
 	weight uint64
 }
@@ -38,7 +38,7 @@ func (i *insecureValidatorManager) Connected(vdrID ids.NodeID, nodeVersion *vers
 			)
 		}
 	}
-	i.Router.Connected(vdrID, nodeVersion, subnetID)
+	// TODO: Router no longer has Connected method
 }
 
 func (i *insecureValidatorManager) Disconnected(vdrID ids.NodeID) {
@@ -52,5 +52,5 @@ func (i *insecureValidatorManager) Disconnected(vdrID ids.NodeID) {
 			zap.Error(err),
 		)
 	}
-	i.Router.Disconnected(vdrID)
+	// TODO: Router no longer has Disconnected method
 }

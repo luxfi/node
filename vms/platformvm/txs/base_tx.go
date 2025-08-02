@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
@@ -58,7 +58,7 @@ func (tx *BaseTx) Outputs() []*lux.TransferableOutput {
 // InitCtx sets the FxID fields in the inputs and outputs of this [BaseTx]. Also
 // sets the [ctx] to the given [vm.ctx] so that the addresses can be json
 // marshalled into human readable format
-func (tx *BaseTx) InitCtx(ctx *consensus.Context) {
+func (tx *BaseTx) InitCtx(ctx *quasar.Context) {
 	for _, in := range tx.BaseTx.Ins {
 		in.FxID = secp256k1fx.ID
 	}
@@ -68,15 +68,23 @@ func (tx *BaseTx) InitCtx(ctx *consensus.Context) {
 	}
 }
 
+// Initialize implements quasar.ContextInitializable
+func (tx *BaseTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
+}
+
 // SyntacticVerify returns nil iff this tx is well formed
-func (tx *BaseTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *BaseTx) SyntacticVerify(ctx *quasar.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
 	case tx.SyntacticallyVerified: // already passed syntactic verification
 		return nil
 	}
-	if err := tx.BaseTx.Verify(ctx); err != nil {
+	// Convert quasar.Context to quasar.Context for lux.BaseTx verification
+	quasarCtx := adaptToQuasarContext(ctx)
+	if err := tx.BaseTx.Verify(quasarCtx); err != nil {
 		return fmt.Errorf("metadata failed verification: %w", err)
 	}
 	for _, out := range tx.Outs {

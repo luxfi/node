@@ -1,23 +1,22 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -28,18 +27,19 @@ var _ router.ExternalHandler = (*testExternalHandler)(nil)
 // is possible for multiple concurrent calls to happen with different NodeIDs.
 // However, a given NodeID will only be performing one call at a time.
 type testExternalHandler struct {
-	log logging.Logger
+	log log.Logger
 }
 
 // Note: HandleInbound will be called with raw P2P messages, the networking
 // implementation does not implicitly register timeouts, so this handler is only
 // called by messages explicitly sent by the peer. If timeouts are required,
 // that must be handled by the user of this utility.
-func (t *testExternalHandler) HandleInbound(_ context.Context, message message.InboundMessage) {
+func (t *testExternalHandler) HandleInbound(_ context.Context, message message.InboundMessage) error {
 	t.log.Info(
 		"receiving message",
 		zap.Stringer("op", message.Op()),
 	)
+	return nil
 }
 
 func (t *testExternalHandler) Connected(nodeID ids.NodeID, version *version.Application, subnetID ids.ID) {
@@ -62,19 +62,12 @@ type testAggressiveValidatorManager struct {
 	validators.Manager
 }
 
-func (*testAggressiveValidatorManager) Contains(ids.ID, ids.NodeID) bool {
+func (*testAggressiveValidatorManager) Contains(ids.ID) bool {
 	return true
 }
 
 func ExampleNewTestNetwork() {
-	log := logging.NewLogger(
-		"networking",
-		logging.NewWrappedCore(
-			logging.Info,
-			os.Stdout,
-			logging.Colors.ConsoleEncoder(),
-		),
-	)
+	log := log.NewNoOpLogger()
 
 	// Needs to be periodically updated by the caller to have the latest
 	// validator set

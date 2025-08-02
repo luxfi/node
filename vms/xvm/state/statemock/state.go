@@ -13,11 +13,11 @@ import (
 	reflect "reflect"
 	time "time"
 
-	database "github.com/luxfi/node/database"
-	ids "github.com/luxfi/node/ids"
+	database "github.com/luxfi/database"
+	ids "github.com/luxfi/ids"
+	lux "github.com/luxfi/node/vms/components/lux"
 	block "github.com/luxfi/node/vms/xvm/block"
 	txs "github.com/luxfi/node/vms/xvm/txs"
-	lux "github.com/luxfi/node/vms/components/lux"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -58,15 +58,15 @@ func (mr *StateMockRecorder) Abort() *gomock.Call {
 }
 
 // AddBlock mocks base method.
-func (m *State) AddBlock(block block.Block) {
+func (m *State) AddBlock(arg0 block.Block) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddBlock", block)
+	m.ctrl.Call(m, "AddBlock", arg0)
 }
 
 // AddBlock indicates an expected call of AddBlock.
-func (mr *StateMockRecorder) AddBlock(block any) *gomock.Call {
+func (mr *StateMockRecorder) AddBlock(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBlock", reflect.TypeOf((*State)(nil).AddBlock), block)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBlock", reflect.TypeOf((*State)(nil).AddBlock), arg0)
 }
 
 // AddTx mocks base method.

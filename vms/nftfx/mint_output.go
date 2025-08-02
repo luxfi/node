@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package nftfx
@@ -30,4 +30,16 @@ func (out *MintOutput) MarshalJSON() ([]byte, error) {
 
 	result["groupID"] = out.GroupID
 	return json.Marshal(result)
+}
+
+// InitCtx implements the verify.State interface
+func (out *MintOutput) InitCtx(ctx interface{}) {
+	// No initialization needed
+}
+
+// Initialize implements the verify.State interface
+func (out *MintOutput) Initialize(ctx interface{}) error {
+	// The MintOutput initialization is handled by the embedded OutputOwners
+	// and the GroupID field is set during unmarshaling
+	return nil
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -13,11 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/consensus/validators/validatorsmock"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core/appsender/appsendermock"
+	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/quasar/validators/validatorsmock"
+	log "github.com/luxfi/log"
 )
 
 func TestValidatorsSample(t *testing.T) {
@@ -170,7 +170,7 @@ func TestValidatorsSample(t *testing.T) {
 			require := require.New(t)
 			subnetID := ids.GenerateTestID()
 			ctrl := gomock.NewController(t)
-			mockValidators := validatorsmock.NewState(ctrl)
+			mockValidators := validatorsmock.NewMockState(ctrl)
 
 			calls := make([]any, 0)
 			for _, call := range tt.calls {
@@ -196,7 +196,10 @@ func TestValidatorsSample(t *testing.T) {
 			}
 			gomock.InOrder(calls...)
 
-			network, err := NewNetwork(logging.NoLog{}, &enginetest.SenderStub{}, prometheus.NewRegistry(), "")
+			ctrl2 := gomock.NewController(t)
+			defer ctrl2.Finish()
+			sender := appsendermock.NewMockAppSender(ctrl2)
+			network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()
@@ -336,12 +339,15 @@ func TestValidatorsTop(t *testing.T) {
 			}
 
 			subnetID := ids.GenerateTestID()
-			mockValidators := validatorsmock.NewState(ctrl)
+			mockValidators := validatorsmock.NewMockState(ctrl)
 
 			mockValidators.EXPECT().GetCurrentHeight(gomock.Any()).Return(uint64(1), nil)
 			mockValidators.EXPECT().GetValidatorSet(gomock.Any(), uint64(1), subnetID).Return(validatorSet, nil)
 
-			network, err := NewNetwork(logging.NoLog{}, &enginetest.SenderStub{}, prometheus.NewRegistry(), "")
+			ctrl2 := gomock.NewController(t)
+			defer ctrl2.Finish()
+			sender := appsendermock.NewMockAppSender(ctrl2)
+			network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -7,16 +7,16 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/txs/mempool"
 
 	blockexecutor "github.com/luxfi/node/vms/xvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/xvm/txs/executor"
@@ -36,7 +36,7 @@ type Builder interface {
 	// builder.
 	WaitForEvent(ctx context.Context) (core.Message, error)
 	// BuildBlock can be called to attempt to create a new block
-	BuildBlock(context.Context) (linear.Block, error)
+	BuildBlock(context.Context) (chain.Block, error)
 }
 
 // builder implements a simple builder to convert txs into valid blocks
@@ -67,8 +67,8 @@ func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
 	return b.mempool.WaitForEvent(ctx)
 }
 
-// BuildBlock builds a block to be added to consensus.
-func (b *builder) BuildBlock(context.Context) (linear.Block, error) {
+// BuildBlock builds a block to be added to quasar.
+func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
 	ctx := b.backend.Ctx
 	ctx.Log.Debug("starting to attempt to build a block")
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/xvm/fxs"
 )
@@ -43,7 +43,7 @@ func NewParser(fxs []fxs.Fx) (Parser, error) {
 	return NewCustomParser(
 		make(map[reflect.Type]int),
 		&mockable.Clock{},
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		fxs,
 	)
 }
@@ -51,7 +51,7 @@ func NewParser(fxs []fxs.Fx) (Parser, error) {
 func NewCustomParser(
 	typeToFxIndex map[reflect.Type]int,
 	clock *mockable.Clock,
-	log logging.Logger,
+	log log.Logger,
 	fxs []fxs.Fx,
 ) (Parser, error) {
 	gc := linearcodec.NewDefault()

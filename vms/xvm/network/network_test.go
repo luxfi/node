@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -13,19 +13,19 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/consensus/validators/validatorstest"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms/xvm/block/executor/executormock"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/core/coremock"
+	"github.com/luxfi/node/quasar/validators"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/node/vms/xvm/block/executor/executormock"
+	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/vms/xvm/txs"
 
 	xmempool "github.com/luxfi/node/vms/xvm/txs/mempool"
 )
@@ -190,8 +190,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return txVerifier
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := core.NewMockSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				appSender := coremock.NewMockAppSender(ctrl)
+				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
 			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
@@ -221,17 +221,17 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			}
 
 			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
-				return core.NewMockSender(ctrl)
+				return coremock.NewMockAppSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
 			}
 
 			n, err := New(
-				logging.NoLog{},
+				log.NewNoOpLogger(),
 				ids.EmptyNodeID,
 				ids.Empty,
-				&validatorstest.State{
+				&mockValidatorsState{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 0, nil
 					},
@@ -272,8 +272,8 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				return mempool
 			}(),
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := core.NewMockSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				appSender := coremock.NewMockAppSender(ctrl)
+				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
 			expectedErr: nil,
@@ -295,17 +295,17 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 			require.NoError(err)
 
 			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
-				return core.NewMockSender(ctrl)
+				return coremock.NewMockAppSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
 			}
 
 			n, err := New(
-				logging.NoLog{},
+				log.NewNoOpLogger(),
 				ids.EmptyNodeID,
 				ids.Empty,
-				&validatorstest.State{
+				&mockValidatorsState{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 0, nil
 					},

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -10,12 +10,12 @@ import (
 
 	"github.com/google/btree"
 
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/maybe"
@@ -75,7 +75,7 @@ type L1Validators interface {
 	PutL1Validator(l1Validator L1Validator) error
 }
 
-// L1Validator defines an ACP-77 validator. For a given ValidationID, it is
+// L1Validator defines an LP-77 validator. For a given ValidationID, it is
 // expected for SubnetID, NodeID, PublicKey, RemainingBalanceOwner,
 // DeactivationOwner, and StartTime to be constant.
 type L1Validator struct {

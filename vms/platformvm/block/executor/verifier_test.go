@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -12,27 +12,28 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/iterator"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -53,9 +54,9 @@ import (
 )
 
 type testVerifierConfig struct {
-	DB                 database.Database
+	DB                 db.Database
 	Upgrades           upgrade.Config
-	Context            *consensus.Context
+	Context            *quasar.Context
 	ValidatorFeeConfig validatorfee.Config
 }
 
@@ -89,7 +90,7 @@ func newTestVerifier(t testing.TB, c testVerifierConfig) *verifier {
 	)
 	require.NoError(fx.InitializeVM(&secp256k1fx.TestVM{
 		Clk: *clock,
-		Log: logging.NoLog{},
+		Log: log.NewNoOpLogger(),
 	}))
 
 	return &verifier{
@@ -475,8 +476,8 @@ func TestVerifierVisitCommitBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
-			Log: logging.NoLog{},
+		ctx: &quasar.Context{
+			Log: log.NewNoOpLogger(),
 		},
 	}
 	manager := &manager{
@@ -549,8 +550,8 @@ func TestVerifierVisitAbortBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
-			Log: logging.NoLog{},
+		ctx: &quasar.Context{
+			Log: log.NewNoOpLogger(),
 		},
 	}
 	manager := &manager{
@@ -611,8 +612,8 @@ func TestVerifyUnverifiedParent(t *testing.T) {
 		blkIDToState: map[ids.ID]*blockState{},
 		Mempool:      mempool,
 		state:        s,
-		ctx: &consensus.Context{
-			Log: logging.NoLog{},
+		ctx: &quasar.Context{
+			Log: log.NewNoOpLogger(),
 		},
 	}
 	verifier := &verifier{
@@ -684,8 +685,8 @@ func TestBanffAbortBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &consensus.Context{
-					Log: logging.NoLog{},
+				ctx: &quasar.Context{
+					Log: log.NewNoOpLogger(),
 				},
 			}
 			verifier := &verifier{
@@ -785,8 +786,8 @@ func TestBanffCommitBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &consensus.Context{
-					Log: logging.NoLog{},
+				ctx: &quasar.Context{
+					Log: log.NewNoOpLogger(),
 				},
 			}
 			verifier := &verifier{
@@ -863,8 +864,8 @@ func TestVerifierVisitApricotStandardBlockWithProposalBlockParent(t *testing.T) 
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
-			Log: logging.NoLog{},
+		ctx: &quasar.Context{
+			Log: log.NewNoOpLogger(),
 		},
 	}
 	verifier := &verifier{
@@ -921,8 +922,8 @@ func TestVerifierVisitBanffStandardBlockWithProposalBlockParent(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
-			Log: logging.NoLog{},
+		ctx: &quasar.Context{
+			Log: log.NewNoOpLogger(),
 		},
 	}
 	verifier := &verifier{
@@ -976,8 +977,8 @@ func TestVerifierVisitApricotCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensus.Context{
-				Log: logging.NoLog{},
+			ctx: &quasar.Context{
+				Log: log.NewNoOpLogger(),
 			},
 		},
 	}
@@ -1020,8 +1021,8 @@ func TestVerifierVisitBanffCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensus.Context{
-				Log: logging.NoLog{},
+			ctx: &quasar.Context{
+				Log: log.NewNoOpLogger(),
 			},
 		},
 	}
@@ -1063,8 +1064,8 @@ func TestVerifierVisitApricotAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensus.Context{
-				Log: logging.NoLog{},
+			ctx: &quasar.Context{
+				Log: log.NewNoOpLogger(),
 			},
 		},
 	}
@@ -1107,8 +1108,8 @@ func TestVerifierVisitBanffAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensus.Context{
-				Log: logging.NoLog{},
+			ctx: &quasar.Context{
+				Log: log.NewNoOpLogger(),
 			},
 		},
 	}

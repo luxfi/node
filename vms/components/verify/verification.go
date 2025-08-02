@@ -1,18 +1,24 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package verify
-
-import "github.com/luxfi/node/consensus"
 
 type Verifiable interface {
 	Verify() error
 }
 
+// ContextInitializable defines the interface for context initialization
+type ContextInitializable interface {
+	// Initialize initializes the state with the given context
+	Initialize(ctx interface{}) error
+}
+
 type State interface {
-	consensus.ContextInitializable
+	ContextInitializable
 	Verifiable
 	IsState
+	// InitCtx initializes the state with quasar context
+	InitCtx(ctx interface{})
 }
 
 type IsState interface {

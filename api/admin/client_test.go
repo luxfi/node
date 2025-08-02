@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package admin
@@ -10,9 +10,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
+	"github.com/luxfi/log/level"
 	"github.com/luxfi/node/utils/rpc"
 )
 
@@ -210,7 +211,7 @@ func TestSetLoggerLevel(t *testing.T) {
 			logLevel:     "INFO",
 			displayLevel: "INFO",
 			serviceResponse: map[string]LogAndDisplayLevels{
-				"Happy path": {LogLevel: logging.Info, DisplayLevel: logging.Info},
+				"Happy path": {LogLevel: level.Info, DisplayLevel: level.Info},
 			},
 			serviceErr: nil,
 			clientErr:  nil,
@@ -229,7 +230,7 @@ func TestSetLoggerLevel(t *testing.T) {
 			displayLevel:    "INFO",
 			serviceResponse: nil,
 			serviceErr:      nil,
-			clientErr:       logging.ErrUnknownLevel,
+			clientErr:       log.ErrUnknownLevel,
 		},
 		{
 			name:            "Invalid display level",
@@ -237,7 +238,7 @@ func TestSetLoggerLevel(t *testing.T) {
 			displayLevel:    "invalid",
 			serviceResponse: nil,
 			serviceErr:      nil,
-			clientErr:       logging.ErrUnknownLevel,
+			clientErr:       log.ErrUnknownLevel,
 		},
 	}
 	for _, tt := range tests {
@@ -280,7 +281,7 @@ func TestGetLoggerLevel(t *testing.T) {
 			name:       "Happy Path",
 			loggerName: "foo",
 			serviceResponse: map[string]LogAndDisplayLevels{
-				"foo": {LogLevel: logging.Info, DisplayLevel: logging.Info},
+				"foo": {LogLevel: level.Info, DisplayLevel: level.Info},
 			},
 			serviceErr: nil,
 			clientErr:  nil,

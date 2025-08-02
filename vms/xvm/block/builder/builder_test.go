@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -13,17 +13,19 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/codecmock"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/block/executor/executormock"
 	"github.com/luxfi/node/vms/xvm/fxs"
@@ -33,8 +35,6 @@ import (
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/txs/txsmock"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
 
 	blkexecutor "github.com/luxfi/node/vms/xvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/xvm/txs/executor"
@@ -69,8 +69,8 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+						Ctx: &quasar.Context{
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -100,8 +100,8 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+						Ctx: &quasar.Context{
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -141,8 +141,8 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+						Ctx: &quasar.Context{
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -183,8 +183,8 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+						Ctx: &quasar.Context{
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -226,8 +226,8 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+						Ctx: &quasar.Context{
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -315,8 +315,8 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+						Ctx: &quasar.Context{
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -385,8 +385,8 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+						Ctx: &quasar.Context{
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -457,8 +457,8 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &consensus.Context{
-							Log: logging.NoLog{},
+						Ctx: &quasar.Context{
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -505,8 +505,8 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	require.NoError(err)
 
 	backend := &txexecutor.Backend{
-		Ctx: &consensus.Context{
-			Log: logging.NoLog{},
+		Ctx: &quasar.Context{
+			Log: log.NewNoOpLogger(),
 		},
 		Codec: parser.Codec(),
 	}

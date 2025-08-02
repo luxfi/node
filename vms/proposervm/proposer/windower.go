@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposer
@@ -11,8 +11,8 @@ import (
 
 	"gonum.org/v1/gonum/mathext/prng"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/sampler"
@@ -238,7 +238,7 @@ func (w *windower) makeSampler(
 		return nil, nil, err
 	}
 
-	delete(validatorsMap, ids.EmptyNodeID) // Ignore inactive ACP-77 validators.
+	delete(validatorsMap, ids.EmptyNodeID) // Ignore inactive LP-77 validators.
 
 	validators := make([]validatorData, 0, len(validatorsMap))
 	for k, v := range validatorsMap {

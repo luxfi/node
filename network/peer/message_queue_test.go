@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 func TestMessageQueue(t *testing.T) {
@@ -21,7 +21,7 @@ func TestMessageQueue(t *testing.T) {
 		SendFailedFunc(func(message.OutboundMessage) {
 			require.True(expectFail)
 		}),
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		0,
 	)
 

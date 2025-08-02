@@ -1,13 +1,13 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
 
 import (
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 const Alias = "X"
@@ -15,24 +15,23 @@ const Alias = "X"
 type Context struct {
 	NetworkID        uint32
 	BlockchainID     ids.ID
-	LUXAssetID      ids.ID
+	LUXAssetID       ids.ID
 	BaseTxFee        uint64
 	CreateAssetTxFee uint64
 }
 
-func NewSnowContext(
+func NewLinearContext(
 	networkID uint32,
 	blockchainID ids.ID,
 	luxAssetID ids.ID,
-) (*consensus.Context, error) {
+) (*quasar.Context, error) {
 	lookup := ids.NewAliaser()
-	return &consensus.Context{
-		NetworkID:   networkID,
-		SubnetID:    constants.PrimaryNetworkID,
-		ChainID:     blockchainID,
-		XChainID:    blockchainID,
+	return &quasar.Context{
+		NetworkID:  networkID,
+		SubnetID:   constants.PrimaryNetworkID,
+		ChainID:    blockchainID,
 		LUXAssetID: luxAssetID,
-		Log:         logging.NoLog{},
-		BCLookup:    lookup,
+		Log:        log.NewNoOpLogger(),
+		BCLookup:   lookup,
 	}, lookup.Alias(blockchainID, Alias)
 }

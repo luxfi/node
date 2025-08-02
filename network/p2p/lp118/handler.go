@@ -1,0 +1,131 @@
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package lp118
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"google.golang.org/protobuf/proto"
+
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/proto/pb/sdk"
+	"github.com/luxfi/node/vms/platformvm/warp"
+)
+
+const HandlerID = p2p.SignatureRequestHandlerID
+
+var _ p2p.Handler = (*Handler)(nil)
+
+// Verifier verifies that a warp message should be signed
+type Verifier interface {
+	// Verify verifies that the provided message is valid for this node to sign
+	// based on the provided justification.
+	//
+	// Implementations of Verify are not expected to verify the NetworkID or
+	// SourceChainID fields of the message. Verification of these fields should
+	// be performed externally to Verify.
+	Verify(
+		ctx context.Context,
+		message *warp.UnsignedMessage,
+		justification []byte,
+	) *core.AppError
+}
+
+// NewHandler returns an instance of Handler
+func NewHandler(verifier Verifier, signer warp.Signer) *Handler {
+	return NewCachedHandler(
+		&cache.Empty[ids.ID, []byte]{},
+		verifier,
+		signer,
+	)
+}
+
+// NewCachedHandler returns an instance of Handler that caches successful
+// signatures.
+func NewCachedHandler(
+	cacher cache.Cacher[ids.ID, []byte],
+	verifier Verifier,
+	signer warp.Signer,
+) *Handler {
+	return &Handler{
+		signatureCache: cacher,
+		verifier:       verifier,
+		signer:         signer,
+	}
+}
+
+// Handler signs warp messages
+type Handler struct {
+	p2p.NoOpHandler
+
+	signatureCache cache.Cacher[ids.ID, []byte]
+	verifier       Verifier
+	signer         warp.Signer
+}
+
+func (h *Handler) AppRequest(
+	ctx context.Context,
+	_ ids.NodeID,
+	_ time.Time,
+	requestBytes []byte,
+) ([]byte, *core.AppError) {
+	request := &sdk.SignatureRequest{}
+	if err := proto.Unmarshal(requestBytes, request); err != nil {
+		return nil, &core.AppError{
+			Code:    p2p.ErrUnexpected.Code,
+			Message: fmt.Sprintf("failed to unmarshal request: %s", err),
+		}
+	}
+
+	msg, err := warp.ParseUnsignedMessage(request.Message)
+	if err != nil {
+		return nil, &core.AppError{
+			Code:    p2p.ErrUnexpected.Code,
+			Message: fmt.Sprintf("failed to parse warp unsigned message: %s", err),
+		}
+	}
+
+	msgID := msg.ID()
+	if signatureBytes, ok := h.signatureCache.Get(msgID); ok {
+		return signatureToResponse(signatureBytes)
+	}
+
+	// Verify that the payload is valid to sign.
+	if err := h.verifier.Verify(ctx, msg, request.Justification); err != nil {
+		return nil, err
+	}
+
+	// The signer internally verifies that the NetworkID and SourceChainID are
+	// populated with the expected values.
+	signature, err := h.signer.Sign(msg)
+	if err != nil {
+		return nil, &core.AppError{
+			Code:    p2p.ErrUnexpected.Code,
+			Message: fmt.Sprintf("failed to sign message: %s", err),
+		}
+	}
+
+	h.signatureCache.Put(msgID, signature)
+	return signatureToResponse(signature)
+}
+
+func signatureToResponse(signature []byte) ([]byte, *core.AppError) {
+	response := &sdk.SignatureResponse{
+		Signature: signature,
+	}
+
+	responseBytes, err := proto.Marshal(response)
+	if err != nil {
+		return nil, &core.AppError{
+			Code:    p2p.ErrUnexpected.Code,
+			Message: fmt.Sprintf("failed to marshal response: %s", err),
+		}
+	}
+	return responseBytes, nil
+}

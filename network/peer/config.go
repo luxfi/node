@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -7,14 +7,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/quasar/uptime"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/network/throttling/tracker"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
@@ -29,7 +29,7 @@ type Config struct {
 	Metrics         *Metrics
 	MessageCreator  message.Creator
 
-	Log                  logging.Logger
+	Log                  log.Logger
 	InboundMsgThrottler  throttling.InboundMsgThrottler
 	Network              Network
 	Router               router.InboundHandler
@@ -44,8 +44,8 @@ type Config struct {
 	PongTimeout        time.Duration
 	MaxClockDifference time.Duration
 
-	SupportedACPs []uint32
-	ObjectedACPs  []uint32
+	SupportedLPs []uint32
+	ObjectedLPs  []uint32
 
 	// Unix time of the last message sent and received respectively
 	// Must only be accessed atomically

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
@@ -10,12 +10,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/utils/logging"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -32,7 +32,7 @@ var (
 	errNumToFetchInvalid   = fmt.Errorf("numToFetch must be in [1,%d]", MaxFetchedByRange)
 	errNoContainerAtIndex  = errors.New("no container at index")
 
-	_ consensus.Acceptor = (*index)(nil)
+	_ quasar.Acceptor = (*index)(nil)
 )
 
 // index indexes containers in their order of acceptance
@@ -47,21 +47,21 @@ type index struct {
 	nextAcceptedIndex uint64
 	// When [baseDB] is committed, writes to [baseDB]
 	vDB    *versiondb.Database
-	baseDB database.Database
+	baseDB db.Database
 	// Both [indexToContainer] and [containerToIndex] have [vDB] underneath
 	// Index --> Container
-	indexToContainer database.Database
+	indexToContainer db.Database
 	// Container ID --> Index
-	containerToIndex database.Database
-	log              logging.Logger
+	containerToIndex db.Database
+	log              log.Logger
 }
 
 // Create a new thread-safe index.
 //
 // Invariant: Closes [baseDB] on close.
 func newIndex(
-	baseDB database.Database,
-	log logging.Logger,
+	baseDB db.Database,
+	log log.Logger,
 	clock mockable.Clock,
 ) (*index, error) {
 	vDB := versiondb.New(baseDB)
@@ -78,8 +78,8 @@ func newIndex(
 	}
 
 	// Get next accepted index from db
-	nextAcceptedIndex, err := database.WithDefault(
-		database.GetUInt64,
+	nextAcceptedIndex, err := db.WithDefault(
+		db.GetUInt64,
 		i.vDB,
 		nextAcceptedIndexKey,
 		0,
@@ -108,7 +108,7 @@ func (i *index) Close() error {
 // Index that the given transaction is accepted
 // Returned error should be treated as fatal; the VM should not commit [containerID]
 // or any new containers as accepted.
-func (i *index) Accept(ctx *consensus.Context, containerID ids.ID, containerBytes []byte) error {
+func (i *index) Accept(ctx *quasar.Context, containerID ids.ID, containerBytes []byte) error {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
@@ -123,7 +123,7 @@ func (i *index) Accept(ctx *consensus.Context, containerID ids.ID, containerByte
 		)
 		return nil
 	}
-	if err != database.ErrNotFound {
+	if err != db.ErrNotFound {
 		return fmt.Errorf("couldn't get whether %s is accepted: %w", containerID, err)
 	}
 
@@ -132,7 +132,7 @@ func (i *index) Accept(ctx *consensus.Context, containerID ids.ID, containerByte
 		zap.Stringer("containerID", containerID),
 	)
 	// Persist index --> Container
-	nextAcceptedIndexBytes := database.PackUInt64(i.nextAcceptedIndex)
+	nextAcceptedIndexBytes := db.PackUInt64(i.nextAcceptedIndex)
 	bytes, err := Codec.Marshal(CodecVersion, Container{
 		ID:        containerID,
 		Bytes:     containerBytes,
@@ -152,12 +152,13 @@ func (i *index) Accept(ctx *consensus.Context, containerID ids.ID, containerByte
 
 	// Persist next accepted index
 	i.nextAcceptedIndex++
-	if err := database.PutUInt64(i.vDB, nextAcceptedIndexKey, i.nextAcceptedIndex); err != nil {
+	if err := db.PutUInt64(i.vDB, nextAcceptedIndexKey, i.nextAcceptedIndex); err != nil {
 		return fmt.Errorf("couldn't put accepted container %s into index: %w", containerID, err)
 	}
 
-	// Atomically commit [i.vDB], [i.indexToContainer], [i.containerToIndex] to [i.baseDB]
-	return i.vDB.Commit()
+	// versiondb commits immediately, no need to call Commit
+	// return i.vDB.Commit()
+	return nil
 }
 
 // Returns the ID of the [index]th accepted container and the container itself.
@@ -177,7 +178,7 @@ func (i *index) getContainerByIndex(index uint64) (Container, error) {
 	if !ok || index > lastAcceptedIndex {
 		return Container{}, fmt.Errorf("%w %d", errNoContainerAtIndex, index)
 	}
-	indexBytes := database.PackUInt64(index)
+	indexBytes := db.PackUInt64(index)
 	return i.getContainerByIndexBytes(indexBytes)
 }
 
@@ -236,12 +237,12 @@ func (i *index) GetContainerRange(startIndex, numToFetch uint64) ([]Container, e
 	return containers, nil
 }
 
-// Returns database.ErrNotFound if the container is not indexed as accepted
+// Returns db.ErrNotFound if the container is not indexed as accepted
 func (i *index) GetIndex(id ids.ID) (uint64, error) {
 	i.lock.RLock()
 	defer i.lock.RUnlock()
 
-	return database.GetUInt64(i.containerToIndex, id[:])
+	return db.GetUInt64(i.containerToIndex, id[:])
 }
 
 func (i *index) GetContainerByID(id ids.ID) (Container, error) {

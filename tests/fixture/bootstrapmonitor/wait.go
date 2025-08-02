@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrapmonitor
@@ -18,7 +18,7 @@ import (
 
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -32,7 +32,7 @@ const (
 var nodeURL = fmt.Sprintf("http://localhost:%d", config.DefaultHTTPPort)
 
 func WaitForCompletion(
-	log logging.Logger,
+	log log.Logger,
 	namespace string,
 	podName string,
 	nodeContainerName string,
@@ -149,7 +149,7 @@ func WaitForCompletion(
 }
 
 // Determines the current disk usage for the specified directory
-func getDiskUsage(log logging.Logger, dir string) string {
+func getDiskUsage(log log.Logger, dir string) string {
 	cmd := exec.Command("du", "-sh", dir)
 
 	// Create a buffer to capture stderr in case an unexpected error occurs

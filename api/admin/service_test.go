@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package admin
@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/registry/registrymock"
 	"github.com/luxfi/node/vms/vmsmock"
 
@@ -34,7 +34,7 @@ func initLoadVMsTest(t *testing.T) *loadVMsTest {
 
 	return &loadVMsTest{
 		admin: &Admin{Config: Config{
-			Log:        logging.NoLog{},
+			Log:        log.NewNoOpLogger(),
 			VMRegistry: mockVMRegistry,
 			VMManager:  mockVMManager,
 		}},
@@ -115,7 +115,7 @@ func TestLoadVMsGetAliasesFails(t *testing.T) {
 
 func TestServiceDBGet(t *testing.T) {
 	a := &Admin{Config: Config{
-		Log: logging.NoLog{},
+		Log: log.NewNoOpLogger(),
 		DB:  memdb.New(),
 	}}
 

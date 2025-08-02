@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -15,32 +15,36 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/network/throttling/tracker"
+	"github.com/luxfi/node/quasar/uptime"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/math/meter"
-	"github.com/luxfi/node/utils/resource"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/version"
 )
+
+// inboundHandlerFunc is an adapter to allow the use of ordinary functions as InboundHandler
+type inboundHandlerFunc struct {
+	f func(context.Context, message.InboundMessage) error
+}
+
+func (h *inboundHandlerFunc) HandleInbound(ctx context.Context, msg message.InboundMessage) error {
+	return h.f(ctx, msg)
+}
 
 var (
 	defaultHealthConfig = HealthConfig{
@@ -115,7 +119,7 @@ var (
 
 		CompressionType: constants.DefaultNetworkCompressionType,
 
-		UptimeCalculator:  uptime.NewManager(uptime.NewTestState(), &mockable.Clock{}),
+		UptimeCalculator:  uptime.NoOpCalculator{},
 		UptimeMetricFreq:  30 * time.Second,
 		UptimeRequirement: .8,
 
@@ -134,29 +138,11 @@ func init() {
 }
 
 func newDefaultTargeter(t tracker.Tracker) tracker.Targeter {
-	return tracker.NewTargeter(
-		logging.NoLog{},
-		&tracker.TargeterConfig{
-			VdrAlloc:           10,
-			MaxNonVdrUsage:     10,
-			MaxNonVdrNodeUsage: 10,
-		},
-		validators.NewManager(),
-		t,
-	)
+	return tracker.NewTargeter(10)
 }
 
 func newDefaultResourceTracker() tracker.ResourceTracker {
-	tracker, err := tracker.NewResourceTracker(
-		prometheus.NewRegistry(),
-		resource.NoUsage,
-		meter.ContinuousFactory{},
-		10*time.Second,
-	)
-	if err != nil {
-		panic(err)
-	}
-	return tracker
+	return tracker.NewResourceTracker()
 }
 
 func newTestNetwork(t *testing.T, count int) (*testDialer, []*testListener, []ids.NodeID, []*Config) {
@@ -172,9 +158,9 @@ func newTestNetwork(t *testing.T, count int) (*testDialer, []*testListener, []id
 		tlsCert, err := staking.NewTLSCert()
 		require.NoError(t, err)
 
-		cert, err := staking.ParseCertificate(tlsCert.Leaf.Raw)
-		require.NoError(t, err)
-		nodeID := ids.NodeIDFromCert(cert)
+		nodeID := ids.NodeIDFromCert(&ids.Certificate{
+			Raw: tlsCert.Leaf.Raw,
+		})
 
 		blsKey, err := localsigner.New()
 		require.NoError(t, err)
@@ -240,7 +226,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 			upgrade.InitiallyActiveTime,
 			msgCreator,
 			registry,
-			logging.NoLog{},
+			log.NewNoOpLogger(),
 			listeners[i],
 			dialer,
 			&testHandler{
@@ -310,13 +296,12 @@ func TestNewNetwork(t *testing.T) {
 func TestIngressConnCount(t *testing.T) {
 	require := require.New(t)
 
-	emptyHandler := func(context.Context, message.InboundMessage) {}
 
 	_, networks, eg := newFullyConnectedTestNetwork(
 		t, []router.InboundHandler{
-			router.InboundHandlerFunc(emptyHandler),
-			router.InboundHandlerFunc(emptyHandler),
-			router.InboundHandlerFunc(emptyHandler),
+			&inboundHandlerFunc{f: func(ctx context.Context, msg message.InboundMessage) error { return nil }},
+			&inboundHandlerFunc{f: func(ctx context.Context, msg message.InboundMessage) error { return nil }},
+			&inboundHandlerFunc{f: func(ctx context.Context, msg message.InboundMessage) error { return nil }},
 		})
 
 	for _, net := range networks {
@@ -365,15 +350,18 @@ func TestSend(t *testing.T) {
 	nodeIDs, networks, eg := newFullyConnectedTestNetwork(
 		t,
 		[]router.InboundHandler{
-			router.InboundHandlerFunc(func(context.Context, message.InboundMessage) {
+			&inboundHandlerFunc{f: func(context.Context, message.InboundMessage) error {
 				require.FailNow("unexpected message received")
-			}),
-			router.InboundHandlerFunc(func(_ context.Context, msg message.InboundMessage) {
+				return nil
+			}},
+			&inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) error {
 				received <- msg
-			}),
-			router.InboundHandlerFunc(func(context.Context, message.InboundMessage) {
+				return nil
+			}},
+			&inboundHandlerFunc{f: func(context.Context, message.InboundMessage) error {
 				require.FailNow("unexpected message received")
-			}),
+				return nil
+			}},
 		},
 	)
 
@@ -383,14 +371,10 @@ func TestSend(t *testing.T) {
 	outboundGetMsg, err := mc.Get(ids.Empty, 1, time.Second, ids.Empty)
 	require.NoError(err)
 
-	toSend := set.Of(nodeIDs[1])
+	toSend := []ids.NodeID{nodeIDs[1]}
 	sentTo := net0.Send(
 		outboundGetMsg,
-		core.SendConfig{
-			NodeIDs: toSend,
-		},
-		constants.PrimaryNetworkID,
-		subnets.NoOpAllower,
+		toSend...,
 	)
 	require.Equal(toSend, sentTo)
 
@@ -410,15 +394,18 @@ func TestSendWithFilter(t *testing.T) {
 	nodeIDs, networks, eg := newFullyConnectedTestNetwork(
 		t,
 		[]router.InboundHandler{
-			router.InboundHandlerFunc(func(context.Context, message.InboundMessage) {
+			&inboundHandlerFunc{f: func(context.Context, message.InboundMessage) error {
 				require.FailNow("unexpected message received")
-			}),
-			router.InboundHandlerFunc(func(_ context.Context, msg message.InboundMessage) {
+				return nil
+			}},
+			&inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) error {
 				received <- msg
-			}),
-			router.InboundHandlerFunc(func(context.Context, message.InboundMessage) {
+				return nil
+			}},
+			&inboundHandlerFunc{f: func(context.Context, message.InboundMessage) error {
 				require.FailNow("unexpected message received")
-			}),
+				return nil
+			}},
 		},
 	)
 
@@ -428,15 +415,10 @@ func TestSendWithFilter(t *testing.T) {
 	outboundGetMsg, err := mc.Get(ids.Empty, 1, time.Second, ids.Empty)
 	require.NoError(err)
 
-	toSend := set.Of(nodeIDs...)
 	validNodeID := nodeIDs[1]
 	sentTo := net0.Send(
 		outboundGetMsg,
-		core.SendConfig{
-			NodeIDs: toSend,
-		},
-		constants.PrimaryNetworkID,
-		newNodeIDConnector(validNodeID),
+		validNodeID,
 	)
 	require.Len(sentTo, 1)
 	require.Contains(sentTo, validNodeID)
@@ -460,9 +442,9 @@ func TestTrackVerifiesSignatures(t *testing.T) {
 	tlsCert, err := staking.NewTLSCert()
 	require.NoError(err)
 
-	cert, err := staking.ParseCertificate(tlsCert.Leaf.Raw)
-	require.NoError(err)
-	nodeID := ids.NodeIDFromCert(cert)
+	nodeID := ids.NodeIDFromCert(&ids.Certificate{
+		Raw: tlsCert.Leaf.Raw,
+	})
 
 	require.NoError(network.config.Validators.AddStaker(constants.PrimaryNetworkID, nodeID, nil, ids.Empty, 1))
 
@@ -520,7 +502,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 			upgrade.InitiallyActiveTime,
 			msgCreator,
 			registry,
-			logging.NoLog{},
+			log.NewNoOpLogger(),
 			listeners[i],
 			dialer,
 			&testHandler{
@@ -593,7 +575,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 			upgrade.InitiallyActiveTime,
 			msgCreator,
 			registry,
-			logging.NoLog{},
+			log.NewNoOpLogger(),
 			listeners[i],
 			dialer,
 			&testHandler{
@@ -742,7 +724,7 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 			upgrade.InitiallyActiveTime,
 			msgCreator,
 			registry,
-			logging.NoLog{},
+			log.NewNoOpLogger(),
 			listeners[i],
 			dialer,
 			&testHandler{
@@ -798,7 +780,7 @@ func TestGetAllPeers(t *testing.T) {
 		upgrade.InitiallyActiveTime,
 		newMessageCreator(t),
 		prometheus.NewRegistry(),
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		listeners[0],
 		dialer,
 		&testHandler{

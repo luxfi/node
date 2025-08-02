@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/quasar/engine/chain/block"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"

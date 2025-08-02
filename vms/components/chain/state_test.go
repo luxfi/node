@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chain
@@ -12,11 +12,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/chain/chaintest"
 	"github.com/luxfi/node/utils/hashing"
 )
 
@@ -36,10 +36,10 @@ var (
 
 // NewTestBlock returns a new test block with height, bytes, and ID derived from [i]
 // and using [parentID] as the parent block ID
-func NewTestBlock(i uint64, parentID ids.ID) *lineartest.Block {
+func NewTestBlock(i uint64, parentID ids.ID) *chaintest.Block {
 	b := []byte{byte(i)}
 	id := hashing.ComputeHash256Array(b)
-	return &lineartest.Block{
+	return &chaintest.Block{
 		Decidable: consensustest.Decidable{
 			IDV:    id,
 			Status: Unknown,
@@ -51,8 +51,8 @@ func NewTestBlock(i uint64, parentID ids.ID) *lineartest.Block {
 }
 
 // NewTestBlocks generates [numBlocks] consecutive blocks
-func NewTestBlocks(numBlocks uint64) []*lineartest.Block {
-	blks := make([]*lineartest.Block, 0, numBlocks)
+func NewTestBlocks(numBlocks uint64) []*chaintest.Block {
+	blks := make([]*chaintest.Block, 0, numBlocks)
 	parentID := ids.Empty
 	for i := uint64(0); i < numBlocks; i++ {
 		blks = append(blks, NewTestBlock(i, parentID))
@@ -63,12 +63,12 @@ func NewTestBlocks(numBlocks uint64) []*lineartest.Block {
 	return blks
 }
 
-func createInternalBlockFuncs(blks []*lineartest.Block) (
+func createInternalBlockFuncs(blks []*chaintest.Block) (
 	func(ctx context.Context, blkID ids.ID) (linear.Block, error),
 	func(ctx context.Context, b []byte) (linear.Block, error),
 ) {
-	blkMap := make(map[ids.ID]*lineartest.Block)
-	blkBytesMap := make(map[string]*lineartest.Block)
+	blkMap := make(map[ids.ID]*chaintest.Block)
+	blkBytesMap := make(map[string]*chaintest.Block)
 	for _, blk := range blks {
 		blkMap[blk.ID()] = blk
 		blkBytes := blk.Bytes()
@@ -168,7 +168,7 @@ func TestState(t *testing.T) {
 	blk2 := testBlks[2]
 	// Need to create a block with a different bytes and hash here
 	// to generate a conflict with blk2
-	blk3 := lineartest.BuildChild(blk1)
+	blk3 := chaintest.BuildChild(blk1)
 	testBlks = append(testBlks, blk3)
 
 	getBlock, parseBlock := createInternalBlockFuncs(testBlks)
@@ -398,13 +398,13 @@ func TestGetBlockInternal(t *testing.T) {
 	})
 
 	genesisBlockInternal := chainState.LastAcceptedBlockInternal()
-	require.IsType(&lineartest.Block{}, genesisBlockInternal)
+	require.IsType(&chaintest.Block{}, genesisBlockInternal)
 	require.Equal(genesisBlock.ID(), genesisBlockInternal.ID())
 
 	blk, err := chainState.GetBlockInternal(context.Background(), genesisBlock.ID())
 	require.NoError(err)
 
-	require.IsType(&lineartest.Block{}, blk)
+	require.IsType(&chaintest.Block{}, blk)
 	require.Equal(genesisBlock.ID(), blk.ID())
 }
 
@@ -709,18 +709,18 @@ func TestIsProcessing(t *testing.T) {
 	parsedBlk1, err := chainState.ParseBlock(context.Background(), blk1.Bytes())
 	require.NoError(err)
 
-	// Check that it is not processing in consensus
+	// Check that it is not processing in quasar
 	require.False(chainState.IsProcessing(parsedBlk1.ID()))
 
 	// Verify blk1
 	require.NoError(parsedBlk1.Verify(context.Background()))
 
-	// Check that it is processing in consensus
+	// Check that it is processing in quasar
 	require.True(chainState.IsProcessing(parsedBlk1.ID()))
 
 	// Accept blk1
 	require.NoError(parsedBlk1.Accept(context.Background()))
 
-	// Check that it is no longer processing in consensus
+	// Check that it is no longer processing in quasar
 	require.False(chainState.IsProcessing(parsedBlk1.ID()))
 }

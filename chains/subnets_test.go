@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chains
@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
 )
@@ -164,6 +164,6 @@ func TestSubnetsBootstrapping(t *testing.T) {
 	require.Contains(bootstrapping, subnetID)
 
 	// Finish bootstrapping
-	subnet.Bootstrapped(chainID)
+	subnet.Bootstrapped()
 	require.Empty(subnets.Bootstrapping())
 }

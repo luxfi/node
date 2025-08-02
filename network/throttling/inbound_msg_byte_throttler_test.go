@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -11,10 +11,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 func TestInboundMsgByteThrottlerCancelContextDeadlock(t *testing.T) {
@@ -29,7 +29,7 @@ func TestInboundMsgByteThrottlerCancelContextDeadlock(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr, nil, ids.Empty, 1))
 
 	throttler, err := newInboundMsgByteThrottler(
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		vdrs,
 		config,
@@ -58,7 +58,7 @@ func TestInboundMsgByteThrottlerCancelContext(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 
 	throttler, err := newInboundMsgByteThrottler(
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		vdrs,
 		config,
@@ -115,7 +115,7 @@ func TestInboundMsgByteThrottler(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 
 	throttler, err := newInboundMsgByteThrottler(
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		vdrs,
 		config,
@@ -329,7 +329,7 @@ func TestSybilMsgThrottlerMaxNonVdr(t *testing.T) {
 	vdr1ID := ids.GenerateTestNodeID()
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttler, err := newInboundMsgByteThrottler(
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		vdrs,
 		config,
@@ -379,7 +379,7 @@ func TestMsgThrottlerNextMsg(t *testing.T) {
 	maxVdrBytes := config.VdrAllocSize + config.AtLargeAllocSize
 	maxBytes := maxVdrBytes
 	throttler, err := newInboundMsgByteThrottler(
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		vdrs,
 		config,

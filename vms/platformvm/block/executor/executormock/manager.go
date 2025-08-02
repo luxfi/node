@@ -12,8 +12,8 @@ package executormock
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/linear"
+	ids "github.com/luxfi/ids"
+	linear "github.com/luxfi/node/quasar/chain"
 	set "github.com/luxfi/node/utils/set"
 	block "github.com/luxfi/node/vms/platformvm/block"
 	state "github.com/luxfi/node/vms/platformvm/state"

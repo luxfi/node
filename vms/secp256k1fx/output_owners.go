@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
@@ -33,13 +33,19 @@ type OutputOwners struct {
 	// ctx is used in MarshalJSON to convert Addrs into human readable
 	// format with ChainID and NetworkID. Unexported because we don't use
 	// it outside this object.
-	ctx *consensus.Context
+	ctx *quasar.Context
 }
 
 // InitCtx allows addresses to be formatted into their human readable format
 // during json marshalling.
-func (out *OutputOwners) InitCtx(ctx *consensus.Context) {
+func (out *OutputOwners) InitCtx(ctx *quasar.Context) {
 	out.ctx = ctx
+}
+
+// Initialize implements quasar.ContextInitializable
+func (out *OutputOwners) Initialize(ctx *quasar.Context) error {
+	out.InitCtx(ctx)
+	return nil
 }
 
 // MarshalJSON marshals OutputOwners as JSON with human readable addresses.
@@ -132,7 +138,7 @@ func (out *OutputOwners) Sort() {
 // formatAddress formats a given [addr] into human readable format using
 // [ChainID] and [NetworkID] if a non-nil [ctx] is provided. If [ctx] is not
 // provided, the address will be returned in cb58 format.
-func formatAddress(ctx *consensus.Context, addr ids.ShortID) (string, error) {
+func formatAddress(ctx *quasar.Context, addr ids.ShortID) (string, error) {
 	if ctx == nil {
 		return addr.String(), nil
 	}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
@@ -64,9 +64,21 @@ func (b *ApricotStandardBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *ApricotStandardBlock) InitCtx(ctx *consensus.Context) {
+// Initialize implements quasar.ContextInitializable
+func (b *ApricotStandardBlock) Initialize(ctx *quasar.Context) error {
+	b.InitCtx(ctx)
+	return nil
+}
+
+// Initialize implements quasar.ContextInitializable
+func (b *BanffStandardBlock) Initialize(ctx *quasar.Context) error {
+	b.InitCtx(ctx)
+	return nil
+}
+
+func (b *ApricotStandardBlock) InitCtx(ctx *quasar.Context) {
 	for _, tx := range b.Transactions {
-		tx.Unsigned.InitCtx(ctx)
+		tx.Unsigned.Initialize(ctx)
 	}
 }
 

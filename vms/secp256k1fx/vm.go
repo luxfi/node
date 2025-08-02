@@ -1,11 +1,11 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
 
 import (
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -13,7 +13,7 @@ import (
 type VM interface {
 	CodecRegistry() codec.Registry
 	Clock() *mockable.Clock
-	Logger() logging.Logger
+	Logger() log.Logger
 }
 
 var _ VM = (*TestVM)(nil)
@@ -22,7 +22,7 @@ var _ VM = (*TestVM)(nil)
 type TestVM struct {
 	Clk   mockable.Clock
 	Codec codec.Registry
-	Log   logging.Logger
+	Log   log.Logger
 }
 
 func (vm *TestVM) Clock() *mockable.Clock {
@@ -33,6 +33,6 @@ func (vm *TestVM) CodecRegistry() codec.Registry {
 	return vm.Codec
 }
 
-func (vm *TestVM) Logger() logging.Logger {
+func (vm *TestVM) Logger() log.Logger {
 	return vm.Log
 }

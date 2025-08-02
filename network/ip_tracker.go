@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -11,13 +11,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/sampler"
 	"github.com/luxfi/node/utils/set"
 )
@@ -38,11 +37,12 @@ const (
 	newTimestamp       = 2
 )
 
-var _ validators.ManagerCallbackListener = (*ipTracker)(nil)
+// TODO: validators.ManagerCallbackListener has been removed
+// var _ validators.ManagerCallbackListener = (*ipTracker)(nil)
 
 func newIPTracker(
 	trackedSubnets set.Set[ids.ID],
-	log logging.Logger,
+	log log.Logger,
 	registerer prometheus.Registerer,
 ) (*ipTracker, error) {
 	bloomMetrics, err := bloom.NewMetrics("ip_bloom", registerer)
@@ -206,7 +206,7 @@ func (s *gossipableSubnet) canDelete() bool {
 type ipTracker struct {
 	// trackedSubnets does not include the primary network.
 	trackedSubnets    set.Set[ids.ID]
-	log               logging.Logger
+	log               log.Logger
 	numTrackedPeers   prometheus.Gauge
 	numGossipableIPs  prometheus.Gauge // IPs are not deduplicated across subnets
 	numTrackedSubnets prometheus.Gauge

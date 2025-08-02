@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -6,7 +6,7 @@ package message
 import (
 	"fmt"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // L1ValidatorRegistration reports if a validator is registered on the P-chain.

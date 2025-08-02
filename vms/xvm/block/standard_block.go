@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
@@ -41,10 +41,16 @@ func (b *StandardBlock) initialize(bytes []byte, cm codec.Manager) error {
 	return nil
 }
 
-func (b *StandardBlock) InitCtx(ctx *consensus.Context) {
+func (b *StandardBlock) InitCtx(ctx *quasar.Context) {
 	for _, tx := range b.Transactions {
-		tx.Unsigned.InitCtx(ctx)
+		tx.Unsigned.Initialize(ctx)
 	}
+}
+
+// Initialize implements quasar.ContextInitializable
+func (b *StandardBlock) Initialize(ctx *quasar.Context) error {
+	b.InitCtx(ctx)
+	return nil
 }
 
 func (b *StandardBlock) ID() ids.ID {

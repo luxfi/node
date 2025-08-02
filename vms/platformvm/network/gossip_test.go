@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -10,8 +10,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/ids"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
 
@@ -36,7 +36,7 @@ func TestGossipMempoolAddVerificationError(t *testing.T) {
 	gossipMempool, err := newGossipMempool(
 		mempool,
 		prometheus.NewRegistry(),
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
 		testConfig.ExpectedBloomFilterFalsePositiveProbability,
@@ -67,7 +67,7 @@ func TestMempoolDuplicate(t *testing.T) {
 	gossipMempool, err := newGossipMempool(
 		testMempool,
 		prometheus.NewRegistry(),
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
 		testConfig.ExpectedBloomFilterFalsePositiveProbability,
@@ -97,7 +97,7 @@ func TestGossipAddBloomFilter(t *testing.T) {
 	gossipMempool, err := newGossipMempool(
 		mempool,
 		prometheus.NewRegistry(),
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
 		testConfig.ExpectedBloomFilterFalsePositiveProbability,

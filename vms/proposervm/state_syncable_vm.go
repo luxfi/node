@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -9,8 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/database"
+	"github.com/luxfi/node/quasar/engine/chain/block"
 	"github.com/luxfi/node/vms/proposervm/summary"
 )
 

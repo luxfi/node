@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -6,6 +6,7 @@ package config
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -16,9 +17,8 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/subnets"
 )
 
@@ -408,7 +408,7 @@ func TestGetSubnetConfigsFromFile(t *testing.T) {
 			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
 				require.Nil(given)
 			},
-			expectedErr: sampling.ErrParametersInvalid,
+			expectedErr: errors.New("consensus alpha must be in (0, k]"),
 		},
 		"correct config": {
 			fileName:  "2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i.json",
@@ -501,7 +501,7 @@ func TestGetSubnetConfigsFromFlags(t *testing.T) {
 			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
 				require.Empty(given)
 			},
-			expectedErr: sampling.ErrParametersInvalid,
+			expectedErr: errors.New("consensus alpha must be in (0, k]"),
 		},
 		"correct config": {
 			givenJSON: `{

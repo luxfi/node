@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -16,18 +16,18 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/linearmock"
-	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/consensus/validators/validatorsmock"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/chain/chainmock"
+	"github.com/luxfi/node/quasar/chain/chaintest"
+	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/quasar/validators/validatorsmock"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/proposer/proposermock"
@@ -50,11 +50,11 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		blkID                  = ids.GenerateTestID()
 	)
 
-	innerBlk := linearmock.NewBlock(ctrl)
+	innerBlk := chainmock.NewBlock(ctrl)
 	innerBlk.EXPECT().ID().Return(blkID).AnyTimes()
 	innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
 
-	builtBlk := linearmock.NewBlock(ctrl)
+	builtBlk := chainmock.NewBlock(ctrl)
 	builtBlk.EXPECT().Bytes().Return([]byte{1, 2, 3}).AnyTimes()
 	builtBlk.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
@@ -82,10 +82,10 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		},
 		ChainVM:        innerVM,
 		blockBuilderVM: innerBlockBuilderVM,
-		ctx: &consensus.Context{
+		ctx: &quasar.Context{
 			NodeID:         nodeID,
 			ValidatorState: vdrState,
-			Log:            logging.NoLog{},
+			Log:            log.NewNoOpLogger(),
 		},
 		Windower: windower,
 	}
@@ -123,7 +123,7 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	parentTime := time.Now().Truncate(time.Second)
 	proVM.Set(parentTime)
 
-	coreParentBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreParentBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreParentBlk, nil
 	}
@@ -131,8 +131,8 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -141,8 +141,8 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -173,7 +173,7 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		}, nil
 	}
 
-	coreChildBlk := lineartest.BuildChild(coreParentBlk)
+	coreChildBlk := chaintest.BuildChild(coreParentBlk)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreChildBlk, nil
 	}
@@ -253,7 +253,7 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	parentTime := time.Now().Truncate(time.Second)
 	proVM.Set(parentTime)
 
-	coreParentBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreParentBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreParentBlk, nil
 	}
@@ -261,8 +261,8 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -271,8 +271,8 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -305,7 +305,7 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		}, nil
 	}
 
-	coreChildBlk := lineartest.BuildChild(coreParentBlk)
+	coreChildBlk := chaintest.BuildChild(coreParentBlk)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreChildBlk, nil
 	}
@@ -369,8 +369,8 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 		parentTimestamp          = time.Now().Truncate(time.Second)
 	)
 
-	innerParentBlock := lineartest.Genesis
-	innerChildBlock := lineartest.BuildChild(innerParentBlock)
+	innerParentBlock := chaintest.Genesis
+	innerChildBlock := chaintest.BuildChild(innerParentBlock)
 
 	innerBlockBuilderVM := blockmock.NewBuildBlockWithContextChainVM(ctrl)
 	// Expect the that context passed in has parent's P-Chain height
@@ -392,10 +392,10 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 			Registerer:        prometheus.NewRegistry(),
 		},
 		blockBuilderVM: innerBlockBuilderVM,
-		ctx: &consensus.Context{
+		ctx: &quasar.Context{
 			NodeID:         nodeID,
 			ValidatorState: vdrState,
-			Log:            logging.NoLog{},
+			Log:            log.NewNoOpLogger(),
 		},
 		Windower: windower,
 	}

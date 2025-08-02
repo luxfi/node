@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tests
@@ -11,18 +11,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 const failNowMessage = "SimpleTestContext.FailNow called"
 
 type SimpleTestContext struct {
-	log           logging.Logger
+	log           log.Logger
 	cleanupFuncs  []func()
 	cleanupCalled bool
 }
 
-func NewTestContext(log logging.Logger) *SimpleTestContext {
+func NewTestContext(log log.Logger) *SimpleTestContext {
 	return &SimpleTestContext{
 		log: log,
 	}
@@ -88,7 +88,7 @@ func (tc *SimpleTestContext) By(_ string, _ ...func()) {
 	tc.FailNow()
 }
 
-func (tc *SimpleTestContext) Log() logging.Logger {
+func (tc *SimpleTestContext) Log() log.Logger {
 	return tc.log
 }
 
@@ -101,7 +101,6 @@ func (tc *SimpleTestContext) ContextWithTimeout(duration time.Duration) context.
 func (tc *SimpleTestContext) DefaultContext() context.Context {
 	return DefaultContext(tc)
 }
-
 
 func (tc *SimpleTestContext) Eventually(condition func() bool, waitFor time.Duration, tick time.Duration, msg string) {
 	require.Eventually(tc, condition, waitFor, tick, msg)

@@ -1,9 +1,9 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package dynamicip
 
-import "github.com/luxfi/node/utils/logging"
+import log "github.com/luxfi/log"
 
 var _ Updater = noUpdater{}
 
@@ -13,6 +13,6 @@ func NewNoUpdater() Updater {
 
 type noUpdater struct{}
 
-func (noUpdater) Dispatch(logging.Logger) {}
+func (noUpdater) Dispatch(log.Logger) {}
 
 func (noUpdater) Stop() {}

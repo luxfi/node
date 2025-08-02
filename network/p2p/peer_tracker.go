@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -13,9 +13,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/heap"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 
@@ -60,7 +60,7 @@ type PeerTracker struct {
 
 	// The below fields are assumed to be constant and are not protected by the
 	// lock.
-	log          logging.Logger
+	log          log.Logger
 	ignoredNodes set.Set[ids.NodeID]
 	minVersion   *version.Application
 	metrics      peerTrackerMetrics
@@ -73,7 +73,7 @@ type peerTrackerMetrics struct {
 }
 
 func NewPeerTracker(
-	log logging.Logger,
+	log log.Logger,
 	metricsNamespace string,
 	registerer prometheus.Registerer,
 	ignoredNodes set.Set[ids.NodeID],

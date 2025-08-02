@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"
@@ -31,7 +31,11 @@ func main() {
 	}
 
 	validators := map[string]set.Set[ids.NodeID]{
+<<<<<<< HEAD
 		constants.TestnetName:    testnetValidators,
+=======
+		constants.TestnetName: testnetValidators,
+>>>>>>> main
 		constants.MainnetName: mainnetValidators,
 	}
 	validatorsJSON, err := json.MarshalIndent(validators, "", "\t")

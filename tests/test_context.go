@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tests
@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 type TestContext interface {
@@ -23,7 +23,7 @@ type TestContext interface {
 	DeferCleanup(cleanup func())
 
 	// Returns a logger that can be used to log test output
-	Log() logging.Logger
+	Log() log.Logger
 
 	// Context helpers requiring cleanup with DeferCleanup
 	ContextWithTimeout(duration time.Duration) context.Context

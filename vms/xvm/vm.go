@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -10,32 +10,32 @@ import (
 	"net/http"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/gorilla/rpc/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/engine/core"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/dag/vertex"
+	"github.com/luxfi/node/quasar/graph"
+	"github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/network"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/utxo"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/txs/mempool"
 
 	blockbuilder "github.com/luxfi/node/vms/xvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/xvm/block/executor"
@@ -53,6 +53,45 @@ var (
 	_ vertex.LinearizableVMWithEngine = (*VM)(nil)
 )
 
+// noOpAppHandler is a simple handler that does nothing
+type noOpAppHandler struct{}
+
+func (n *noOpAppHandler) CrossChainAppRequest(context.Context, ids.ID, time.Time, []byte) error {
+	return nil
+}
+
+func (n *noOpAppHandler) CrossChainAppRequestFailed(context.Context, ids.ID, *core.AppError) error {
+	return nil
+}
+
+func (n *noOpAppHandler) CrossChainAppResponse(context.Context, ids.ID, time.Time, []byte) error {
+	return nil
+}
+
+func (n *noOpAppHandler) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
+	return nil
+}
+
+func (n *noOpAppHandler) AppRequestFailed(context.Context, ids.NodeID, uint32, *core.AppError) error {
+	return nil
+}
+
+func (n *noOpAppHandler) AppResponse(context.Context, ids.NodeID, uint32, []byte) error {
+	return nil
+}
+
+func (n *noOpAppHandler) AppGossip(context.Context, ids.NodeID, []byte) error {
+	return nil
+}
+
+func (n *noOpAppHandler) Connected(context.Context, ids.NodeID, *version.Application) error {
+	return nil
+}
+
+func (n *noOpAppHandler) Disconnected(context.Context, ids.NodeID) error {
+	return nil
+}
+
 type VM struct {
 	network.Atomic
 
@@ -65,7 +104,7 @@ type VM struct {
 	utxo.Spender
 
 	// Contains information of where this VM is executing
-	ctx *consensus.Context
+	ctx *quasar.Context
 
 	// Used to check local time
 	clock mockable.Clock
@@ -84,7 +123,7 @@ type VM struct {
 	// asset id that will be used for fees
 	feeAssetID ids.ID
 
-	baseDB database.Database
+	baseDB db.Database
 	db     *versiondb.Database
 
 	typeToFxIndex map[reflect.Type]int
@@ -135,15 +174,16 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 
 func (vm *VM) Initialize(
 	_ context.Context,
-	ctx *consensus.Context,
-	db database.Database,
+	ctx *quasar.Context,
+	database db.Database,
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
 	fxs []*core.Fx,
 	appSender core.AppSender,
 ) error {
-	noopMessageHandler := core.NewNoOpAppHandler(ctx.Log)
+	// Create a no-op handler that doesn't log messages
+	noopMessageHandler := &noOpAppHandler{}
 	vm.Atomic = network.NewAtomic(noopMessageHandler)
 
 	xvmConfig, err := ParseConfig(configBytes)
@@ -154,10 +194,8 @@ func (vm *VM) Initialize(
 		zap.Reflect("config", xvmConfig),
 	)
 
-	vm.registerer, err = metrics.MakeAndRegister(ctx.Metrics, "")
-	if err != nil {
-		return err
-	}
+	// Create a metrics registry
+	vm.registerer = prometheus.NewRegistry()
 
 	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
 
@@ -167,13 +205,23 @@ func (vm *VM) Initialize(
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}
 
-	vm.AddressManager = lux.NewAddressManager(ctx)
+	// Create a minimal quasar.Context adapter
+	quasarCtx := &quasar.Context{
+		NetworkID:  ctx.NetworkID,
+		SubnetID:   ctx.SubnetID,
+		ChainID:    ctx.ChainID,
+		NodeID:     ctx.NodeID,
+		LUXAssetID: ctx.LUXAssetID,
+		Log:        ctx.Log,
+		BCLookup:   ctx.BCLookup,
+	}
+	vm.AddressManager = lux.NewAddressManager(quasarCtx)
 	vm.Aliaser = ids.NewAliaser()
 
 	vm.ctx = ctx
 	vm.appSender = appSender
-	vm.baseDB = db
-	vm.db = versiondb.New(db)
+	vm.baseDB = database
+	vm.db = versiondb.New(database)
 
 	typedFxs := make([]extensions.Fx, len(fxs))
 	vm.fxs = make([]*extensions.ParsedFx, len(fxs))
@@ -240,7 +288,7 @@ func (vm *VM) Initialize(
 	return vm.state.Commit()
 }
 
-// onBootstrapStarted is called by the consensus engine when it starts bootstrapping this chain
+// onBootstrapStarted is called by the quasar engine when it starts bootstrapping this chain
 func (vm *VM) onBootstrapStarted() error {
 	vm.txBackend.Bootstrapped = false
 	for _, fx := range vm.fxs {
@@ -261,14 +309,14 @@ func (vm *VM) onNormalOperationsStarted() error {
 	return nil
 }
 
-func (vm *VM) SetState(_ context.Context, state consensus.State) error {
+func (vm *VM) SetState(_ context.Context, state quasar.State) error {
 	switch state {
-	case consensus.Bootstrapping:
+	case quasar.Bootstrapping:
 		return vm.onBootstrapStarted()
-	case consensus.NormalOp:
+	case quasar.NormalOp:
 		return vm.onNormalOperationsStarted()
 	default:
-		return consensus.ErrUnknownState
+		return fmt.Errorf("unknown state: %s", state)
 	}
 }
 
@@ -327,11 +375,11 @@ func (*VM) NewHTTPHandler(context.Context) (http.Handler, error) {
  ******************************************************************************
  */
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (linear.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
 	return vm.chainManager.GetBlock(blkID)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (linear.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (chain.Block, error) {
 	blk, err := vm.parser.ParseBlock(blkBytes)
 	if err != nil {
 		return nil, err
@@ -357,6 +405,26 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
  *********************************** DAG VM ***********************************
  ******************************************************************************
  */
+
+// ParseVertex parses a vertex from bytes
+func (vm *VM) ParseVertex(ctx context.Context, vtxBytes []byte) (vertex.Vertex, error) {
+	// Since we're linearizing the DAG, we don't actually parse vertices
+	// Return an error indicating this operation is not supported
+	return nil, fmt.Errorf("vertex parsing not supported after linearization")
+}
+
+// BuildVertex builds a new vertex to be added to quasar
+func (vm *VM) BuildVertex(ctx context.Context) (vertex.Vertex, error) {
+	// Since we're linearizing the DAG, we don't actually build vertices
+	// Return nil to indicate no vertex is available
+	return nil, nil
+}
+
+// GetEngine returns the quasar engine
+func (vm *VM) GetEngine() interface{} {
+	// Return nil as we don't have a DAG engine
+	return nil
+}
 
 func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	time := vm.Config.Upgrades.CortinaTime
@@ -435,7 +503,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	return nil
 }
 
-func (vm *VM) ParseTx(_ context.Context, bytes []byte) (dag.Tx, error) {
+func (vm *VM) ParseTx(_ context.Context, bytes []byte) (graph.Tx, error) {
 	tx, err := vm.parser.ParseTx(bytes)
 	if err != nil {
 		return nil, err
@@ -461,7 +529,7 @@ func (vm *VM) ParseTx(_ context.Context, bytes []byte) (dag.Tx, error) {
  ******************************************************************************
  */
 
-// issueTxFromRPC attempts to send a transaction to consensus.
+// issueTxFromRPC attempts to send a transaction to quasar.
 //
 // Invariant: The context lock is not held
 // Invariant: This function is only called after Linearize has been called.

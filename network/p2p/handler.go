@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -9,17 +9,17 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 // Standardized identifiers for application protocol handlers
 const (
 	TxGossipHandlerID = iota
 	AtomicTxGossipHandlerID
-	// SignatureRequestHandlerID is specified in ACP-118: https://github.com/lux-foundation/ACPs/tree/main/ACPs/118-warp-signature-request
+	// SignatureRequestHandlerID is specified in LP-118: https://github.com/luxfi/LPs/tree/main/LPs/118-warp-signature-request
 	SignatureRequestHandlerID
 )
 
@@ -60,7 +60,7 @@ func (NoOpHandler) AppRequest(context.Context, ids.NodeID, time.Time, []byte) ([
 func NewValidatorHandler(
 	handler Handler,
 	validatorSet ValidatorSet,
-	log logging.Logger,
+	log log.Logger,
 ) *ValidatorHandler {
 	return &ValidatorHandler{
 		handler:      handler,
@@ -73,7 +73,7 @@ func NewValidatorHandler(
 type ValidatorHandler struct {
 	handler      Handler
 	validatorSet ValidatorSet
-	log          logging.Logger
+	log          log.Logger
 }
 
 func (v ValidatorHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
@@ -100,7 +100,7 @@ func (v ValidatorHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, dea
 type responder struct {
 	Handler
 	handlerID uint64
-	log       logging.Logger
+	log       log.Logger
 	sender    core.AppSender
 }
 

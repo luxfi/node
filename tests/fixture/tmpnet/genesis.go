@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -11,10 +11,16 @@ import (
 	"time"
 
 	"github.com/luxfi/evm/core"
+<<<<<<< HEAD
 	"github.com/luxfi/evm/params"
+=======
+	"github.com/luxfi/evm/core/types"
+	"github.com/luxfi/evm/params"
+	ethparams "github.com/luxfi/geth/params"
+>>>>>>> main
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
@@ -93,7 +99,7 @@ func NewTestGenesis(
 		Allocations: []genesis.UnparsedAllocation{
 			{
 				ETHAddr:       ethAddress,
-				LUXAddr:      stakeAddress,
+				LUXAddr:       stakeAddress,
 				InitialAmount: 0,
 				UnlockSchedule: []genesis.LockedAmount{ // Provides stake to validators
 					{
@@ -116,7 +122,7 @@ func NewTestGenesis(
 	cChainBalances := make(core.GenesisAlloc, len(keysToFund))
 	for _, key := range keysToFund {
 		xChainBalances[key.Address()] = defaultFundedKeyXChainAmount
-		cChainBalances[key.EthAddress()] = core.GenesisAccount{
+		cChainBalances[key.EthAddress()] = types.GenesisAccount{
 			Balance: defaultFundedKeyCChainAmount,
 		}
 	}
@@ -131,7 +137,7 @@ func NewTestGenesis(
 			config.Allocations,
 			genesis.UnparsedAllocation{
 				ETHAddr:       ethAddress,
-				LUXAddr:      luxAddr,
+				LUXAddr:       luxAddr,
 				InitialAmount: balance,
 				UnlockSchedule: []genesis.LockedAmount{
 					{
@@ -149,7 +155,11 @@ func NewTestGenesis(
 	chainID := big.NewInt(int64(networkID))
 	// Define C-Chain genesis
 	cChainGenesis := &core.Genesis{
-		Config:     &params.ChainConfig{ChainID: chainID},      // The rest of the config is set in geth on VM initialization
+		Config: &params.ChainConfig{
+			ChainConfig: &ethparams.ChainConfig{
+				ChainID: chainID,
+			},
+		}, // The rest of the config is set in geth on VM initialization
 		Difficulty: big.NewInt(0),                              // Difficulty is a mandatory field
 		Timestamp:  uint64(upgrade.InitiallyActiveTime.Unix()), // This time enables Lux upgrades by default
 		GasLimit:   defaultGasLimit,

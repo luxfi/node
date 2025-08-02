@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -10,12 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/message/messagemock"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 func TestSybilOutboundMsgThrottler(t *testing.T) {
@@ -32,7 +32,7 @@ func TestSybilOutboundMsgThrottler(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		vdrs,
 		config,
@@ -173,7 +173,7 @@ func TestSybilOutboundMsgThrottlerMaxNonVdr(t *testing.T) {
 	vdr1ID := ids.GenerateTestNodeID()
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		vdrs,
 		config,
@@ -219,7 +219,7 @@ func TestBypassThrottling(t *testing.T) {
 	vdr1ID := ids.GenerateTestNodeID()
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		vdrs,
 		config,

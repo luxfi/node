@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -7,9 +7,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/version"
 )
 
 var _ Atomic = (*atomic)(nil)
@@ -88,6 +89,23 @@ func (a *atomic) AppGossip(
 		nodeID,
 		msg,
 	)
+}
+
+func (a *atomic) Connected(
+	ctx context.Context,
+	nodeID ids.NodeID,
+	nodeVersion *version.Application,
+) error {
+	h := a.handler.Get()
+	return h.Connected(ctx, nodeID, nodeVersion)
+}
+
+func (a *atomic) Disconnected(
+	ctx context.Context,
+	nodeID ids.NodeID,
+) error {
+	h := a.handler.Get()
+	return h.Disconnected(ctx, nodeID)
 }
 
 func (a *atomic) Set(h core.AppHandler) {

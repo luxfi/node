@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -8,19 +8,19 @@ import (
 	"net/netip"
 	"time"
 
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/quasar/networking/benchlist"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/quasar/networking/tracker"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/consensus/networking/benchlist"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/trace"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer"
@@ -130,15 +130,18 @@ type Config struct {
 	StateSyncConfig     `json:"stateSyncConfig"`
 	BootstrapConfig     `json:"bootstrapConfig"`
 	DatabaseConfig      `json:"databaseConfig"`
-	
+
 	// DevMode enables single-node development mode with simplified routing
 	DevMode bool `json:"devMode"`
+
+	// ImportMode enables one-time blockchain data import with pruning disabled
+	ImportMode bool `json:"importMode"`
 
 	UpgradeConfig upgrade.Config `json:"upgradeConfig"`
 
 	// Genesis information
 	GenesisBytes []byte `json:"-"`
-	LuxAssetID  ids.ID `json:"luxAssetID"`
+	LuxAssetID   ids.ID `json:"luxAssetID"`
 
 	// ID of the network this node should connect to
 	NetworkID uint32 `json:"networkID"`
@@ -155,7 +158,7 @@ type Config struct {
 
 	ProfilerConfig profiler.Config `json:"profilerConfig"`
 
-	LoggingConfig logging.Config `json:"loggingConfig"`
+	LoggingConfig log.Config `json:"loggingConfig"`
 
 	PluginDir string `json:"pluginDir"`
 

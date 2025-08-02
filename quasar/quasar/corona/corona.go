@@ -1,0 +1,17 @@
+// Package corona provides placeholder implementations for the Corona cryptographic library
+package corona
+
+// Share represents a cryptographic share
+type Share []byte
+
+// Cert represents a certificate
+type Cert []byte
+
+// Aggregate combines shares into a certificate
+func Aggregate(shares []Share) (Cert, error) {
+	// Placeholder implementation
+	if len(shares) == 0 {
+		return nil, nil
+	}
+	return Cert(shares[0]), nil
+}

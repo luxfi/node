@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -6,8 +6,8 @@ package txs
 import (
 	"errors"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 )
 
 var (
@@ -25,7 +25,7 @@ type IncreaseL1ValidatorBalanceTx struct {
 	Balance uint64 `serialize:"true" json:"balance"`
 }
 
-func (tx *IncreaseL1ValidatorBalanceTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *IncreaseL1ValidatorBalanceTx) SyntacticVerify(ctx *quasar.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

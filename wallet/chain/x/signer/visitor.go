@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package signer
@@ -8,17 +8,17 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 )
 
@@ -88,6 +88,32 @@ func (s *visitor) ImportTx(tx *txs.ImportTx) error {
 }
 
 func (s *visitor) ExportTx(tx *txs.ExportTx) error {
+	txCreds, txSigners, err := s.getSigners(s.ctx, tx.BlockchainID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	return sign(s.tx, txCreds, txSigners)
+}
+
+func (s *visitor) BurnTx(tx *txs.BurnTx) error {
+	txCreds, txSigners, err := s.getSigners(s.ctx, tx.BlockchainID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	return sign(s.tx, txCreds, txSigners)
+}
+
+func (s *visitor) MintTx(tx *txs.MintTx) error {
+	// MintTx only requires inputs to be signed, no operations
+	txCreds, txSigners, err := s.getSigners(s.ctx, tx.BlockchainID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	return sign(s.tx, txCreds, txSigners)
+}
+
+func (s *visitor) NFTTransferTx(tx *txs.NFTTransferTx) error {
+	// NFTTransferTx only requires inputs to be signed, no operations
 	txCreds, txSigners, err := s.getSigners(s.ctx, tx.BlockchainID, tx.Ins)
 	if err != nil {
 		return err

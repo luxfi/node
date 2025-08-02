@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -12,6 +12,6 @@ type UTXOs = wallet.UTXOs
 type ChainUTXOs = wallet.ChainUTXOs
 
 var (
-	NewUTXOs = wallet.NewUTXOs
+	NewUTXOs      = wallet.NewUTXOs
 	NewChainUTXOs = wallet.NewChainUTXOs
 )
