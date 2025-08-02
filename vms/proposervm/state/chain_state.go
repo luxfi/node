@@ -1,11 +1,11 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
 
 import (
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/ids"
 )
 
 const (
@@ -26,10 +26,10 @@ type ChainState interface {
 
 type chainState struct {
 	lastAccepted ids.ID
-	db           database.Database
+	db           db.Database
 }
 
-func NewChainState(db database.Database) ChainState {
+func NewChainState(db db.Database) ChainState {
 	return &chainState{db: db}
 }
 

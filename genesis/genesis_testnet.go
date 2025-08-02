@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -8,6 +8,7 @@ import (
 
 	_ "embed"
 
+	"github.com/luxfi/node/quasar/sampling"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -18,8 +19,23 @@ var (
 	//go:embed genesis_testnet.json
 	testnetGenesisConfigJSON []byte
 
+<<<<<<< HEAD
 	// TestnetParams are the params used for the testnet testnet
 	TestnetParams = Params{
+=======
+	// TestnetConsensusParameters are the consensus parameters for testnet (11 nodes)
+	TestnetConsensusParameters = sampling.Parameters{
+		K:               11, // Sample all 11 nodes
+		AlphaPreference: 8,  // ~73% quorum - can tolerate up to 3 failures
+		AlphaConfidence: 9,  // ~82% quorum - can tolerate up to 2 failures
+		Beta:            10, // 10 rounds → 10×50ms + 100ms = 600ms finality
+		ConcurrentRepolls: 10, // Pipeline all 10 rounds for maximum throughput
+	}
+
+	// TestnetParams are the params used for the testnet testnet
+	TestnetParams = Params{
+		ConsensusParameters: TestnetConsensusParameters,
+>>>>>>> main
 		TxFeeConfig: TxFeeConfig{
 			CreateAssetTxFee: 10 * units.MilliLux,
 			TxFee:            units.MilliLux,

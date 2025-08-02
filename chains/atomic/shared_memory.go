@@ -1,12 +1,12 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package atomic
 
 import (
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 )
 
@@ -52,7 +52,7 @@ type SharedMemory interface {
 	//
 	// Invariant: The underlying database of [batches] must be the same as the
 	//            underlying database for SharedMemory.
-	Apply(requests map[ids.ID]*Requests, batches ...database.Batch) error
+	Apply(requests map[ids.ID]*Requests, batches ...db.Batch) error
 }
 
 // sharedMemory provides the API for a blockchain to interact with shared memory
@@ -112,7 +112,7 @@ func (sm *sharedMemory) Indexed(
 	return values, lastTrait, lastKey, nil
 }
 
-func (sm *sharedMemory) Apply(requests map[ids.ID]*Requests, batches ...database.Batch) error {
+func (sm *sharedMemory) Apply(requests map[ids.ID]*Requests, batches ...db.Batch) error {
 	// Sorting here introduces an ordering over the locks to prevent any
 	// deadlocks
 	sharedIDs := make([]ids.ID, 0, len(requests))
@@ -145,7 +145,7 @@ func (sm *sharedMemory) Apply(requests map[ids.ID]*Requests, batches ...database
 			}
 		}
 
-		// Add Put requests to the outbound database.
+		// Add Put requests to the outbound db.
 		s.valueDB, s.indexDB = outbound.getValueAndIndexDB(sm.thisChainID, req.peerChainID, db)
 		for _, putRequest := range req.PutRequests {
 			if err := s.SetValue(putRequest); err != nil {
@@ -156,10 +156,7 @@ func (sm *sharedMemory) Apply(requests map[ids.ID]*Requests, batches ...database
 
 	// Commit the operations on shared memory atomically with the contents of
 	// [batches].
-	batch, err := vdb.CommitBatch()
-	if err != nil {
-		return err
-	}
+	batch := vdb.NewBatch()
 
 	return WriteAll(batch, batches...)
 }

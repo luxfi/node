@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -8,7 +8,12 @@ import (
 	"fmt"
 	"strings"
 
+<<<<<<< HEAD
 	"github.com/luxfi/node/ids"
+=======
+	geth "github.com/luxfi/geth/common"
+	"github.com/luxfi/ids"
+>>>>>>> main
 	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
@@ -25,7 +30,7 @@ var (
 // Keychain is a collection of keys that can be used to spend outputs
 type Keychain struct {
 	luxAddrToKeyIndex map[ids.ShortID]int
-	ethAddrToKeyIndex  map[geth.Address]int
+	ethAddrToKeyIndex map[geth.Address]int
 
 	// These can be used to iterate over. However, they should not be modified
 	// externally.
@@ -38,7 +43,7 @@ type Keychain struct {
 func NewKeychain(keys ...*secp256k1.PrivateKey) *Keychain {
 	kc := &Keychain{
 		luxAddrToKeyIndex: make(map[ids.ShortID]int),
-		ethAddrToKeyIndex:  make(map[geth.Address]int),
+		ethAddrToKeyIndex: make(map[geth.Address]int),
 	}
 	for _, key := range keys {
 		kc.Add(key)

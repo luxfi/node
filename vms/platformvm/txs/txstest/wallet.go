@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txstest
@@ -10,9 +10,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -28,7 +29,7 @@ import (
 
 func NewWallet(
 	t testing.TB,
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	config *config.Internal,
 	state state.State,
 	kc *secp256k1fx.Keychain,
@@ -54,9 +55,13 @@ func NewWallet(
 		))
 	}
 
+	// Type assert SharedMemory to atomic.SharedMemory
+	sharedMem, ok := ctx.SharedMemory.(atomic.SharedMemory)
+	require.True(ok, "shared memory does not implement atomic.SharedMemory")
+	
 	for _, chainID := range chainIDs {
 		remoteChainUTXOs, _, _, err := lux.GetAtomicUTXOs(
-			ctx.SharedMemory,
+			sharedMem,
 			txs.Codec,
 			chainID,
 			addrs,

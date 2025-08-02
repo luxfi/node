@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package info
@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/ids"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/vmsmock"
 )
 
@@ -30,7 +30,7 @@ func initGetVMsTest(t *testing.T) *getVMsTest {
 			Parameters: Parameters{
 				VMManager: mockVMManager,
 			},
-			log: logging.NoLog{},
+			log: log.NewNoOpLogger(),
 		},
 		mockVMManager: mockVMManager,
 	}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -16,19 +16,20 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -131,7 +132,7 @@ type GetBalanceResponse struct {
 	Unlockeds           map[ids.ID]avajson.Uint64 `json:"unlockeds"`
 	LockedStakeables    map[ids.ID]avajson.Uint64 `json:"lockedStakeables"`
 	LockedNotStakeables map[ids.ID]avajson.Uint64 `json:"lockedNotStakeables"`
-	UTXOIDs             []*lux.UTXOID            `json:"utxoIDs"`
+	UTXOIDs             []*lux.UTXOID             `json:"utxoIDs"`
 }
 
 // GetBalance gets the balance of an address
@@ -139,7 +140,7 @@ func (s *Service) GetBalance(_ *http.Request, args *GetBalanceRequest, response 
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getBalance"),
-		logging.UserStrings("addresses", args.Addresses),
+		log.UserStrings("addresses", args.Addresses),
 	)
 
 	addrs, err := lux.ParseServiceAddresses(s.addrManager, args.Addresses)
@@ -327,8 +328,13 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *ap
 			limit,
 		)
 	} else {
+		// Type assert SharedMemory to atomic.SharedMemory
+		sharedMem, ok := s.vm.ctx.SharedMemory.(atomic.SharedMemory)
+		if !ok {
+			return fmt.Errorf("shared memory does not implement atomic.SharedMemory")
+		}
 		utxos, endAddr, endUTXOID, err = lux.GetAtomicUTXOs(
-			s.vm.ctx.SharedMemory,
+			sharedMem,
 			txs.Codec,
 			sourceChain,
 			addrSet,
@@ -1124,9 +1130,21 @@ func (s *Service) SampleValidators(_ *http.Request, args *SampleValidatorsArgs, 
 		zap.Uint16("size", uint16(args.Size)),
 	)
 
-	sample, err := s.vm.Validators.Sample(args.SubnetID, int(args.Size))
-	if err != nil {
-		return fmt.Errorf("sampling %s errored with %w", args.SubnetID, err)
+	// Get the validator set for the subnet
+	validatorSet, ok := s.vm.Validators.Get(args.SubnetID)
+	if !ok {
+		return fmt.Errorf("subnet %s not found", args.SubnetID)
+	}
+	
+	// Sample validators from the set
+	sample := make([]ids.NodeID, 0, args.Size)
+	seed := uint64(0) // TODO: Use a proper seed
+	for i := uint16(0); i < uint16(args.Size) && i < uint16(validatorSet.Len()); i++ {
+		nodeID, err := validatorSet.Sample(seed + uint64(i))
+		if err != nil {
+			return fmt.Errorf("sampling validator %d errored with %w", i, err)
+		}
+		sample = append(sample, nodeID)
 	}
 
 	if sample == nil {
@@ -1219,8 +1237,8 @@ func (s *Service) nodeValidates(blockchainID ids.ID) bool {
 		return false
 	}
 
-	_, isValidator := s.vm.Validators.GetValidator(chain.SubnetID, s.vm.ctx.NodeID)
-	return isValidator
+	_, err = s.vm.Validators.GetValidator(chain.SubnetID, s.vm.ctx.NodeID)
+	return err == nil
 }
 
 func (s *Service) chainExists(ctx context.Context, blockID ids.ID, chainID ids.ID) (bool, error) {
@@ -1446,7 +1464,7 @@ func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, response *api.GetT
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		tx.Unsigned.InitCtx(s.vm.ctx)
+		tx.Unsigned.Initialize(s.vm.ctx)
 		result = tx
 	} else {
 		result, err = formatting.Encode(args.Encoding, tx.Bytes())
@@ -1801,7 +1819,8 @@ func (v *GetValidatorsAtReply) MarshalJSON() ([]byte, error) {
 		}
 
 		if vdr.PublicKey != nil {
-			pk, err := formatting.Encode(formatting.HexNC, bls.PublicKeyToCompressedBytes(vdr.PublicKey))
+			// vdr.PublicKey is already []byte
+			pk, err := formatting.Encode(formatting.HexNC, vdr.PublicKey)
 			if err != nil {
 				return nil, err
 			}
@@ -1836,10 +1855,8 @@ func (v *GetValidatorsAtReply) UnmarshalJSON(b []byte) error {
 			if err != nil {
 				return err
 			}
-			vdr.PublicKey, err = bls.PublicKeyFromCompressedBytes(pkBytes)
-			if err != nil {
-				return err
-			}
+			// vdr.PublicKey expects []byte
+			vdr.PublicKey = pkBytes
 		}
 
 		v.Validators[nodeID] = vdr
@@ -1902,7 +1919,7 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *ap
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		block.InitCtx(s.vm.ctx)
+		block.Initialize(s.vm.ctx)
 		result = block
 	} else {
 		result, err = formatting.Encode(args.Encoding, block.Bytes())
@@ -1944,7 +1961,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		block.InitCtx(s.vm.ctx)
+		block.Initialize(s.vm.ctx)
 		result = block
 	} else {
 		result, err = formatting.Encode(args.Encoding, block.Bytes())

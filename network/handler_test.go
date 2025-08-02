@@ -1,11 +1,11 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
 
 import (
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/networking/router"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/networking/router"
 	"github.com/luxfi/node/version"
 )
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2ptest
@@ -12,11 +12,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/core/appsender"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -55,19 +55,23 @@ func NewClientWithPeers(
 ) *p2p.Client {
 	peers[clientNodeID] = clientHandler
 
-	peerSenders := make(map[ids.NodeID]*enginetest.Sender)
+	peerSenders := make(map[ids.NodeID]*Sender)
 	peerNetworks := make(map[ids.NodeID]*p2p.Network)
 	for nodeID := range peers {
-		peerSenders[nodeID] = &enginetest.Sender{}
-		peerNetwork, err := p2p.NewNetwork(logging.NoLog{}, peerSenders[nodeID], prometheus.NewRegistry(), "")
+		peerSenders[nodeID] = &Sender{}
+		peerNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), peerSenders[nodeID], prometheus.NewRegistry(), "")
 		require.NoError(t, err)
 		peerNetworks[nodeID] = peerNetwork
 	}
 
-	peerSenders[clientNodeID].SendAppGossipF = func(ctx context.Context, sendConfig core.SendConfig, gossipBytes []byte) error {
+	peerSenders[clientNodeID].SendAppGossipF = func(ctx context.Context, sendConfig appsender.SendConfig, gossipBytes []byte) error {
 		// Send the request asynchronously to avoid deadlock when the server
 		// sends the response back to the client
-		for nodeID := range sendConfig.NodeIDs {
+		allNodes := set.Of[ids.NodeID]()
+		allNodes.Union(sendConfig.Validators)
+		allNodes.Union(sendConfig.NonValidators)
+		for nodeID := range allNodes {
+			nodeID := nodeID // capture loop variable
 			go func() {
 				_ = peerNetworks[nodeID].AppGossip(ctx, nodeID, gossipBytes)
 			}()

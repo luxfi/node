@@ -12,7 +12,7 @@ package utxomock
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	lux "github.com/luxfi/node/vms/components/lux"
 	verify "github.com/luxfi/node/vms/components/verify"
 	txs "github.com/luxfi/node/vms/platformvm/txs"

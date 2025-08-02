@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ips
@@ -7,7 +7,7 @@ import (
 	"net"
 	"net/netip"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
@@ -50,7 +50,10 @@ func NewClaimedIPPort(
 		AddrPort:  ipPort,
 		Timestamp: timestamp,
 		Signature: signature,
-		NodeID:    ids.NodeIDFromCert(cert),
+		NodeID: ids.NodeIDFromCert(&ids.Certificate{
+			Raw:       cert.Raw,
+			PublicKey: cert.PublicKey,
+		}),
 	}
 
 	packer := wrappers.Packer{

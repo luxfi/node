@@ -1,11 +1,11 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 )
@@ -33,7 +33,13 @@ func (tx *RewardValidatorTx) SetBytes(unsignedBytes []byte) {
 	tx.unsignedBytes = unsignedBytes
 }
 
-func (*RewardValidatorTx) InitCtx(*consensus.Context) {}
+func (*RewardValidatorTx) InitCtx(*quasar.Context) {}
+
+// Initialize implements quasar.ContextInitializable
+func (tx *RewardValidatorTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
+}
 
 func (tx *RewardValidatorTx) Bytes() []byte {
 	return tx.unsignedBytes
@@ -47,7 +53,7 @@ func (*RewardValidatorTx) Outputs() []*lux.TransferableOutput {
 	return nil
 }
 
-func (*RewardValidatorTx) SyntacticVerify(*consensus.Context) error {
+func (*RewardValidatorTx) SyntacticVerify(*quasar.Context) error {
 	return nil
 }
 

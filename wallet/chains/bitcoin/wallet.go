@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Package bitcoin provides Bitcoin wallet functionality for the bridge chain
@@ -10,7 +10,7 @@ import (
 	"encoding/hex"
 	"math/big"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utxo"
 )
 
@@ -18,16 +18,16 @@ import (
 type Wallet interface {
 	// GetAddress returns the Bitcoin address for this wallet
 	GetAddress() string
-	
+
 	// GetBalance returns the balance for a specific asset (BTC)
 	GetBalance(ctx context.Context) (*big.Int, error)
-	
+
 	// CreateTransaction creates a new Bitcoin transaction
 	CreateTransaction(ctx context.Context, to string, amount *big.Int) (*Transaction, error)
-	
+
 	// SignTransaction signs a transaction
 	SignTransaction(ctx context.Context, tx *Transaction) (*SignedTransaction, error)
-	
+
 	// BroadcastTransaction broadcasts a signed transaction
 	BroadcastTransaction(ctx context.Context, tx *SignedTransaction) (ids.ID, error)
 }
@@ -80,7 +80,7 @@ func NewWallet(privateKey *ecdsa.PrivateKey, client Client) (Wallet, error) {
 	// TODO: Derive Bitcoin address from private key
 	// This requires implementing Bitcoin address generation
 	address := "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa" // placeholder
-	
+
 	return &wallet{
 		privateKey: privateKey,
 		address:    address,
@@ -104,7 +104,7 @@ func (w *wallet) CreateTransaction(ctx context.Context, to string, amount *big.I
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Create transaction inputs
 	inputs := make([]Input, len(selectedUTXOs))
 	for i, utxo := range selectedUTXOs {
@@ -114,7 +114,7 @@ func (w *wallet) CreateTransaction(ctx context.Context, to string, amount *big.I
 			Sequence:     0xffffffff,
 		}
 	}
-	
+
 	// Create outputs
 	outputs := []Output{
 		{
@@ -122,7 +122,7 @@ func (w *wallet) CreateTransaction(ctx context.Context, to string, amount *big.I
 			// TODO: Generate scriptPubKey for recipient
 		},
 	}
-	
+
 	// Add change output if necessary
 	change := new(big.Int).Sub(total, amount)
 	if change.Sign() > 0 {
@@ -131,7 +131,7 @@ func (w *wallet) CreateTransaction(ctx context.Context, to string, amount *big.I
 			// TODO: Generate scriptPubKey for change
 		})
 	}
-	
+
 	return &Transaction{
 		Version:  2,
 		Inputs:   inputs,
@@ -152,12 +152,12 @@ func (w *wallet) SignTransaction(ctx context.Context, tx *Transaction) (*SignedT
 func (w *wallet) BroadcastTransaction(ctx context.Context, tx *SignedTransaction) (ids.ID, error) {
 	// TODO: Serialize transaction to hex
 	txHex := hex.EncodeToString([]byte{}) // placeholder
-	
+
 	txID, err := w.client.BroadcastTransaction(ctx, txHex)
 	if err != nil {
 		return ids.Empty, err
 	}
-	
+
 	// Convert Bitcoin txID to ids.ID
 	return ids.FromString(txID)
 }

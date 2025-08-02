@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fee
@@ -13,6 +13,9 @@ import (
 )
 
 func TestDynamicCalculator(t *testing.T) {
+	// Initialize the test warp parser
+	InitializeTestWarpParser()
+	
 	calculator := NewDynamicCalculator(testDynamicWeights, testDynamicPrice)
 	for _, test := range txTests {
 		t.Run(test.name, func(t *testing.T) {

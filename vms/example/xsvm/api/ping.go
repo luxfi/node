@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package api
@@ -14,13 +14,13 @@ import (
 
 	"github.com/luxfi/node/connectproto/pb/xsvm"
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 var _ xsvmconnect.PingHandler = (*PingService)(nil)
 
 type PingService struct {
-	Log logging.Logger
+	Log log.Logger
 }
 
 func (p *PingService) Ping(_ context.Context, request *connect.Request[xsvm.PingRequest]) (*connect.Response[xsvm.PingReply], error) {

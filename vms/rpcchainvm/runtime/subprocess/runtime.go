@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package subprocess
@@ -15,7 +15,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/gruntime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
@@ -30,7 +30,7 @@ type Config struct {
 	Stdout io.Writer
 	// Duration engine server will wait for handshake success.
 	HandshakeTimeout time.Duration
-	Log              logging.Logger
+	Log              log.Logger
 }
 
 type Status struct {

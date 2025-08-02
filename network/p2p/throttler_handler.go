@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -9,14 +9,14 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
+	log "github.com/luxfi/log"
 )
 
 var _ Handler = (*ThrottlerHandler)(nil)
 
-func NewThrottlerHandler(handler Handler, throttler Throttler, log logging.Logger) *ThrottlerHandler {
+func NewThrottlerHandler(handler Handler, throttler Throttler, log log.Logger) *ThrottlerHandler {
 	return &ThrottlerHandler{
 		handler:   handler,
 		throttler: throttler,
@@ -27,7 +27,7 @@ func NewThrottlerHandler(handler Handler, throttler Throttler, log logging.Logge
 type ThrottlerHandler struct {
 	handler   Handler
 	throttler Throttler
-	log       logging.Logger
+	log       log.Logger
 }
 
 func (t ThrottlerHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {

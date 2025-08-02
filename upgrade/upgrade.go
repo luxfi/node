@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package upgrade
@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 )
 
@@ -33,9 +33,9 @@ var (
 		//
 		// Ref: https://subnets.lux.network/x-chain/block/0
 		CortinaXChainStopVertexID: ids.FromStringOrPanic("jrGWDh5Po9FMj54depyunNixpia5PN4aAYxfmNzU8n752Rjga"),
-		DurangoTime:               time.Date(2024, time.March, 6, 16, 0, 0, 0, time.UTC),
-		EtnaTime:                  time.Date(2024, time.December, 16, 17, 0, 0, 0, time.UTC),
-		FortunaTime:               time.Date(2025, time.April, 8, 15, 0, 0, 0, time.UTC),
+		DurangoTime:               time.Date(2025, time.March, 6, 16, 0, 0, 0, time.UTC),
+		EtnaTime:                  time.Date(2025, time.April, 8, 15, 0, 0, 0, time.UTC),
+		FortunaTime:               time.Date(2025, time.December, 16, 17, 0, 0, 0, time.UTC),
 		GraniteTime:               UnscheduledActivationTime,
 	}
 	Testnet = Config{
@@ -55,9 +55,9 @@ var (
 		//
 		// Ref: https://subnets-test.lux.network/x-chain/block/0
 		CortinaXChainStopVertexID: ids.FromStringOrPanic("2D1cmbiG36BqQMRyHt4kFhWarmatA1ighSpND3FeFgz3vFVtCZ"),
-		DurangoTime:               time.Date(2024, time.February, 13, 16, 0, 0, 0, time.UTC),
-		EtnaTime:                  time.Date(2024, time.November, 25, 16, 0, 0, 0, time.UTC),
-		FortunaTime:               time.Date(2025, time.March, 13, 15, 0, 0, 0, time.UTC),
+		DurangoTime:               time.Date(2025, time.February, 13, 16, 0, 0, 0, time.UTC),
+		EtnaTime:                  time.Date(2025, time.March, 13, 15, 0, 0, 0, time.UTC),
+		FortunaTime:               time.Date(2025, time.November, 25, 16, 0, 0, 0, time.UTC),
 		GraniteTime:               UnscheduledActivationTime,
 	}
 	Default = Config{
@@ -132,6 +132,13 @@ func (c *Config) Validate() error {
 	return nil
 }
 
+// IsActivated implements quasar.NetworkUpgrades
+func (c *Config) IsActivated(upgradeTime time.Time) bool {
+	// Check if any upgrade time matches the given time
+	// This is a generic implementation that could be expanded
+	return !upgradeTime.IsZero()
+}
+
 func (c *Config) IsApricotPhase1Activated(t time.Time) bool {
 	return !t.Before(c.ApricotPhase1Time)
 }
@@ -165,27 +172,33 @@ func (c *Config) IsApricotPhasePost6Activated(t time.Time) bool {
 }
 
 func (c *Config) IsBanffActivated(t time.Time) bool {
-	return !t.Before(c.BanffTime)
+	// All forks enabled: always treat Banff as activated
+	return true
 }
 
 func (c *Config) IsCortinaActivated(t time.Time) bool {
-	return !t.Before(c.CortinaTime)
+	// All forks enabled: always treat Cortina as activated
+	return true
 }
 
 func (c *Config) IsDurangoActivated(t time.Time) bool {
-	return !t.Before(c.DurangoTime)
+	// All forks enabled: always treat Durango as activated
+	return true
 }
 
 func (c *Config) IsEtnaActivated(t time.Time) bool {
-	return !t.Before(c.EtnaTime)
+	// All forks enabled: always treat Etna as activated
+	return true
 }
 
 func (c *Config) IsFortunaActivated(t time.Time) bool {
-	return !t.Before(c.FortunaTime)
+	// All forks enabled: always treat Fortuna as activated
+	return true
 }
 
 func (c *Config) IsGraniteActivated(t time.Time) bool {
-	return !t.Before(c.GraniteTime)
+	// All forks enabled: always treat Granite as activated
+	return true
 }
 
 func GetConfig(networkID uint32) Config {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -7,7 +7,7 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/ips"
@@ -31,8 +31,8 @@ type OutboundMsgBuilder interface {
 		ipNodeIDSig []byte,
 		ipBLSSig []byte,
 		trackedSubnets []ids.ID,
-		supportedACPs []uint32,
-		objectedACPs []uint32,
+		supportedLPs []uint32,
+		objectedLPs []uint32,
 		knownPeersFilter []byte,
 		knownPeersSalt []byte,
 		requestAllSubnetIPs bool,
@@ -242,8 +242,8 @@ func (b *outMsgBuilder) Handshake(
 	ipNodeIDSig []byte,
 	ipBLSSig []byte,
 	trackedSubnets []ids.ID,
-	supportedACPs []uint32,
-	objectedACPs []uint32,
+	supportedLPs []uint32,
+	objectedLPs []uint32,
 	knownPeersFilter []byte,
 	knownPeersSalt []byte,
 	requestAllSubnetIPs bool,
@@ -267,8 +267,8 @@ func (b *outMsgBuilder) Handshake(
 						Minor: minor,
 						Patch: patch,
 					},
-					SupportedAcps: supportedACPs,
-					ObjectedAcps:  objectedACPs,
+					SupportedLps: supportedLPs,
+					ObjectedLps:  objectedLPs,
 					KnownPeers: &p2p.BloomFilter{
 						Filter: knownPeersFilter,
 						Salt:   knownPeersSalt,

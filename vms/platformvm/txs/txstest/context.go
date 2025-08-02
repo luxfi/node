@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txstest
 
 import (
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -12,12 +12,12 @@ import (
 )
 
 func newContext(
-	ctx *consensus.Context,
+	ctx *quasar.Context,
 	config *config.Internal,
 	state state.State,
 ) *builder.Context {
 	builderContext := &builder.Context{
-		NetworkID:   ctx.NetworkID,
+		NetworkID:  ctx.NetworkID,
 		LUXAssetID: ctx.LUXAssetID,
 	}
 

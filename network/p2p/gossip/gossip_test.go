@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -14,21 +14,22 @@ import (
 	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core/appsender"
+	"github.com/luxfi/node/quasar/engine/core/appsender/appsendermock"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/consensus/validators/validatorstest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
+	"go.uber.org/mock/gomock"
 )
 
 func TestGossiperShutdown(*testing.T) {
 	gossiper := NewPullGossiper[*testTx](
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		nil,
 		nil,
 		nil,
@@ -41,7 +42,7 @@ func TestGossiperShutdown(*testing.T) {
 	wg.Add(1)
 
 	go func() {
-		Every(ctx, logging.NoLog{}, gossiper, time.Second)
+		Every(ctx, log.NewNoOpLogger(), gossiper, time.Second)
 		wg.Done()
 	}()
 
@@ -105,10 +106,18 @@ func TestGossiperGossip(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			responseSender := &enginetest.SenderStub{
-				SentAppResponse: make(chan []byte, 1),
-			}
-			responseNetwork, err := p2p.NewNetwork(logging.NoLog{}, responseSender, prometheus.NewRegistry(), "")
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			
+			responseSender := appsendermock.NewMockAppSender(ctrl)
+			sentAppResponse := make(chan []byte, 1)
+			
+			responseSender.EXPECT().SendAppResponse(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
+				sentAppResponse <- msg
+				return nil
+			}).AnyTimes()
+			
+			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, prometheus.NewRegistry(), "")
 			require.NoError(err)
 
 			responseBloom, err := NewBloomFilter(prometheus.NewRegistry(), "", 1000, 0.01, 0.05)
@@ -125,7 +134,7 @@ func TestGossiperGossip(t *testing.T) {
 			require.NoError(err)
 			marshaller := testMarshaller{}
 			handler := NewHandler[*testTx](
-				logging.NoLog{},
+				log.NewNoOpLogger(),
 				marshaller,
 				responseSet,
 				metrics,
@@ -134,11 +143,15 @@ func TestGossiperGossip(t *testing.T) {
 			require.NoError(err)
 			require.NoError(responseNetwork.AddHandler(0x0, handler))
 
-			requestSender := &enginetest.SenderStub{
-				SentAppRequest: make(chan []byte, 1),
-			}
+			requestSender := appsendermock.NewMockAppSender(ctrl)
+			sentAppRequest := make(chan []byte, 1)
+			
+			requestSender.EXPECT().SendAppRequest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, msg []byte) error {
+				sentAppRequest <- msg
+				return nil
+			}).AnyTimes()
 
-			requestNetwork, err := p2p.NewNetwork(logging.NoLog{}, requestSender, prometheus.NewRegistry(), "")
+			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(requestNetwork.Connected(context.Background(), ids.EmptyNodeID, nil))
 
@@ -156,7 +169,7 @@ func TestGossiperGossip(t *testing.T) {
 
 			require.NoError(err)
 			gossiper := NewPullGossiper[*testTx](
-				logging.NoLog{},
+				log.NewNoOpLogger(),
 				marshaller,
 				requestSet,
 				requestClient,
@@ -170,8 +183,8 @@ func TestGossiperGossip(t *testing.T) {
 			}
 
 			require.NoError(gossiper.Gossip(ctx))
-			require.NoError(responseNetwork.AppRequest(ctx, ids.EmptyNodeID, 1, time.Time{}, <-requestSender.SentAppRequest))
-			require.NoError(requestNetwork.AppResponse(ctx, ids.EmptyNodeID, 1, <-responseSender.SentAppResponse))
+			require.NoError(responseNetwork.AppRequest(ctx, ids.EmptyNodeID, 1, time.Time{}, <-sentAppRequest))
+			require.NoError(requestNetwork.AppResponse(ctx, ids.EmptyNodeID, 1, <-sentAppResponse))
 
 			require.Len(requestSet.txs, tt.expectedLen)
 			require.Subset(tt.expectedPossibleValues, maps.Values(requestSet.txs))
@@ -200,7 +213,7 @@ func TestEvery(*testing.T) {
 		},
 	}
 
-	go Every(ctx, logging.NoLog{}, gossiper, time.Millisecond)
+	go Every(ctx, log.NewNoOpLogger(), gossiper, time.Millisecond)
 	<-ctx.Done()
 }
 
@@ -510,11 +523,19 @@ func TestPushGossiper(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			sender := &enginetest.SenderStub{
-				SentAppGossip: make(chan []byte, 2),
-			}
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			
+			sender := appsendermock.NewMockAppSender(ctrl)
+			sentAppGossip := make(chan []byte, 2)
+			
+			sender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, config appsender.SendConfig, msg []byte) error {
+				sentAppGossip <- msg
+				return nil
+			}).AnyTimes()
+			
 			network, err := p2p.NewNetwork(
-				logging.NoLog{},
+				log.NewNoOpLogger(),
 				sender,
 				prometheus.NewRegistry(),
 				"",
@@ -523,9 +544,9 @@ func TestPushGossiper(t *testing.T) {
 			client := network.NewClient(0)
 			validators := p2p.NewValidators(
 				&p2p.Peers{},
-				logging.NoLog{},
+				log.NewNoOpLogger(),
 				constants.PrimaryNetworkID,
-				&validatorstest.State{
+				&mockValidatorsState{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 1, nil
 					},
@@ -580,14 +601,14 @@ func TestPushGossiper(t *testing.T) {
 
 					if len(want.Gossip) > 0 {
 						// remove the handler prefix
-						sentMsg := <-sender.SentAppGossip
+						sentMsg := <-sentAppGossip
 						got := &sdk.PushGossip{}
 						require.NoError(proto.Unmarshal(sentMsg[1:], got))
 
 						require.Equal(want.Gossip, got.Gossip)
 					} else {
 						select {
-						case <-sender.SentAppGossip:
+						case <-sentAppGossip:
 							require.FailNow("unexpectedly sent gossip message")
 						default:
 						}

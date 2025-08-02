@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Package utxo provides a generic UTXO (Unspent Transaction Output) management system
@@ -10,7 +10,7 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // ChainType represents different blockchain architectures
@@ -25,35 +25,35 @@ const (
 
 // UTXO represents a generic unspent transaction output
 type UTXO struct {
-	ID            ids.ID
-	TxID          ids.ID
-	OutputIndex   uint32
-	AssetID       ids.ID
-	Amount        *big.Int
-	Address       string // Can be different formats based on chain type
-	ScriptPubKey  []byte // For Bitcoin-style chains
-	Locktime      uint64
-	ChainType     ChainType
-	Extra         interface{} // Chain-specific data
+	ID           ids.ID
+	TxID         ids.ID
+	OutputIndex  uint32
+	AssetID      ids.ID
+	Amount       *big.Int
+	Address      string // Can be different formats based on chain type
+	ScriptPubKey []byte // For Bitcoin-style chains
+	Locktime     uint64
+	ChainType    ChainType
+	Extra        interface{} // Chain-specific data
 }
 
 // Manager provides chain-agnostic UTXO management
 type Manager interface {
 	// AddUTXO adds a new UTXO to the set
 	AddUTXO(ctx context.Context, utxo *UTXO) error
-	
+
 	// RemoveUTXO removes a UTXO from the set
 	RemoveUTXO(ctx context.Context, utxoID ids.ID) error
-	
+
 	// GetUTXO retrieves a specific UTXO
 	GetUTXO(ctx context.Context, utxoID ids.ID) (*UTXO, error)
-	
+
 	// GetUTXOs retrieves all UTXOs for a given address
 	GetUTXOs(ctx context.Context, address string) ([]*UTXO, error)
-	
+
 	// GetBalance calculates the total balance for an address
 	GetBalance(ctx context.Context, address string, assetID ids.ID) (*big.Int, error)
-	
+
 	// SelectUTXOs selects UTXOs to meet a target amount
 	SelectUTXOs(ctx context.Context, address string, assetID ids.ID, targetAmount *big.Int) ([]*UTXO, *big.Int, error)
 }
@@ -92,7 +92,7 @@ func (m *BaseManager) RemoveUTXO(_ context.Context, utxoID ids.ID) error {
 	}
 
 	delete(m.utxos, utxoID)
-	
+
 	// Remove from address index
 	addrUTXOs := m.byAddr[utxo.Address]
 	for i, id := range addrUTXOs {
@@ -101,7 +101,7 @@ func (m *BaseManager) RemoveUTXO(_ context.Context, utxoID ids.ID) error {
 			break
 		}
 	}
-	
+
 	return nil
 }
 
@@ -122,13 +122,13 @@ func (m *BaseManager) GetUTXOs(_ context.Context, address string) ([]*UTXO, erro
 
 	utxoIDs := m.byAddr[address]
 	result := make([]*UTXO, 0, len(utxoIDs))
-	
+
 	for _, id := range utxoIDs {
 		if utxo, exists := m.utxos[id]; exists {
 			result = append(result, utxo)
 		}
 	}
-	
+
 	return result, nil
 }
 
@@ -138,13 +138,13 @@ func (m *BaseManager) GetBalance(_ context.Context, address string, assetID ids.
 
 	balance := big.NewInt(0)
 	utxoIDs := m.byAddr[address]
-	
+
 	for _, id := range utxoIDs {
 		if utxo, exists := m.utxos[id]; exists && utxo.AssetID == assetID {
 			balance.Add(balance, utxo.Amount)
 		}
 	}
-	
+
 	return balance, nil
 }
 
@@ -154,18 +154,18 @@ func (m *BaseManager) SelectUTXOs(_ context.Context, address string, assetID ids
 
 	var selected []*UTXO
 	total := big.NewInt(0)
-	
+
 	// Simple greedy selection - can be improved with better algorithms
 	for _, id := range m.byAddr[address] {
 		if utxo, exists := m.utxos[id]; exists && utxo.AssetID == assetID {
 			selected = append(selected, utxo)
 			total.Add(total, utxo.Amount)
-			
+
 			if total.Cmp(targetAmount) >= 0 {
 				return selected, total, nil
 			}
 		}
 	}
-	
+
 	return nil, nil, ErrInsufficientFunds
 }

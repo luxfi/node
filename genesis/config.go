@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
@@ -37,7 +37,7 @@ type LockedAmount struct {
 
 type Allocation struct {
 	ETHAddr        ids.ShortID    `json:"ethAddr"`
-	LUXAddr       ids.ShortID    `json:"luxAddr"`
+	LUXAddr        ids.ShortID    `json:"luxAddr"`
 	InitialAmount  uint64         `json:"initialAmount"`
 	UnlockSchedule []LockedAmount `json:"unlockSchedule"`
 }
@@ -174,6 +174,14 @@ var (
 	// genesis.
 	LocalConfig Config
 
+	// LuxMainnetConfig is the config that should be used to generate the Lux
+	// mainnet genesis with network ID 96369.
+	LuxMainnetConfig Config
+
+	// LuxTestnetConfig is the config that should be used to generate the Lux
+	// testnet genesis with network ID 96368.
+	LuxTestnetConfig Config
+
 	// unmodifiedLocalConfig is the LocalConfig before advancing the StartTime
 	// to a recent value.
 	unmodifiedLocalConfig Config
@@ -217,6 +225,52 @@ func init() {
 
 	LocalConfig = unmodifiedLocalConfig
 	LocalConfig.StartTime = uint64(recentStartTime.Unix())
+
+	// Initialize Lux mainnet config based on local config but with proper network ID
+	// and chain ID. The actual genesis will be loaded from chain data.
+	LuxMainnetConfig = LocalConfig
+	LuxMainnetConfig.NetworkID = constants.LuxMainnetID
+
+	// Update C-Chain genesis to use chain ID 96369
+	if cChainGenesis, err := parseCChainGenesis([]byte(LocalConfig.CChainGenesis)); err == nil {
+		if config, ok := cChainGenesis["config"].(map[string]interface{}); ok {
+			config["chainId"] = float64(96369)
+		}
+		if cChainBytes, err := json.Marshal(cChainGenesis); err == nil {
+			LuxMainnetConfig.CChainGenesis = string(cChainBytes)
+		}
+	}
+
+	// Initialize Lux testnet config
+	LuxTestnetConfig = LocalConfig
+	LuxTestnetConfig.NetworkID = constants.LuxTestnetID
+
+	// Update C-Chain genesis to use chain ID 96368
+	if cChainGenesis, err := parseCChainGenesis([]byte(LocalConfig.CChainGenesis)); err == nil {
+		if config, ok := cChainGenesis["config"].(map[string]interface{}); ok {
+			config["chainId"] = float64(96368)
+		}
+		if cChainBytes, err := json.Marshal(cChainGenesis); err == nil {
+			LuxTestnetConfig.CChainGenesis = string(cChainBytes)
+		}
+	}
+}
+
+// parseCChainGenesis parses C-Chain genesis JSON string into a map
+func parseCChainGenesis(data []byte) (map[string]interface{}, error) {
+	var genesis map[string]interface{}
+	if err := json.Unmarshal(data, &genesis); err != nil {
+		return nil, err
+	}
+
+	// Parse the config section
+	if configData, ok := genesis["config"]; ok {
+		if configMap, ok := configData.(map[string]interface{}); ok {
+			genesis["config"] = configMap
+		}
+	}
+
+	return genesis, nil
 }
 
 func GetConfig(networkID uint32) *Config {
@@ -227,6 +281,10 @@ func GetConfig(networkID uint32) *Config {
 		return &TestnetConfig
 	case constants.LocalID:
 		return &LocalConfig
+	case constants.LuxMainnetID:
+		return &LuxMainnetConfig
+	case constants.LuxTestnetID:
+		return &LuxTestnetConfig
 	default:
 		tempConfig := LocalConfig
 		tempConfig.NetworkID = networkID

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package admin
@@ -12,17 +12,17 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"go.uber.org/zap"
 
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/rpcdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/rpcdb"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/vms"
@@ -44,11 +44,11 @@ var (
 )
 
 type Config struct {
-	Log          logging.Logger
+	Log          log.Logger
 	ProfileDir   string
-	LogFactory   logging.Factory
+	LogFactory   log.Factory
 	NodeConfig   interface{}
-	DB           database.Database
+	DB           db.Database
 	ChainManager chains.Manager
 	HTTPServer   server.PathAdderWithReadLock
 	VMRegistry   registry.VMRegistry
@@ -141,8 +141,8 @@ func (a *Admin) Alias(_ *http.Request, args *AliasArgs, _ *api.EmptyReply) error
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "alias"),
-		logging.UserString("endpoint", args.Endpoint),
-		logging.UserString("alias", args.Alias),
+		log.UserString("endpoint", args.Endpoint),
+		log.UserString("alias", args.Alias),
 	)
 
 	if len(args.Alias) > maxAliasLength {
@@ -163,8 +163,8 @@ func (a *Admin) AliasChain(_ *http.Request, args *AliasChainArgs, _ *api.EmptyRe
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "aliasChain"),
-		logging.UserString("chain", args.Chain),
-		logging.UserString("alias", args.Alias),
+		log.UserString("chain", args.Chain),
+		log.UserString("alias", args.Alias),
 	)
 
 	if len(args.Alias) > maxAliasLength {
@@ -202,7 +202,7 @@ func (a *Admin) GetChainAliases(_ *http.Request, args *GetChainAliasesArgs, repl
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "getChainAliases"),
-		logging.UserString("chain", args.Chain),
+		log.UserString("chain", args.Chain),
 	)
 
 	id, err := ids.FromString(args.Chain)
@@ -231,13 +231,13 @@ func (a *Admin) Stacktrace(_ *http.Request, _ *struct{}, _ *api.EmptyReply) erro
 
 type SetLoggerLevelArgs struct {
 	LoggerName   string         `json:"loggerName"`
-	LogLevel     *logging.Level `json:"logLevel"`
-	DisplayLevel *logging.Level `json:"displayLevel"`
+	LogLevel     *log.Level `json:"logLevel"`
+	DisplayLevel *log.Level `json:"displayLevel"`
 }
 
 type LogAndDisplayLevels struct {
-	LogLevel     logging.Level `json:"logLevel"`
-	DisplayLevel logging.Level `json:"displayLevel"`
+	LogLevel     log.Level `json:"logLevel"`
+	DisplayLevel log.Level `json:"displayLevel"`
 }
 
 type LoggerLevelReply struct {
@@ -257,7 +257,7 @@ func (a *Admin) SetLoggerLevel(_ *http.Request, args *SetLoggerLevelArgs, reply 
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "setLoggerLevel"),
-		logging.UserString("loggerName", args.LoggerName),
+		log.UserString("loggerName", args.LoggerName),
 		zap.Stringer("logLevel", args.LogLevel),
 		zap.Stringer("displayLevel", args.DisplayLevel),
 	)
@@ -297,7 +297,7 @@ func (a *Admin) GetLoggerLevel(_ *http.Request, args *GetLoggerLevelArgs, reply 
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "getLoggerLevel"),
-		logging.UserString("loggerName", args.LoggerName),
+		log.UserString("loggerName", args.LoggerName),
 	)
 
 	a.lock.RLock()
@@ -396,7 +396,7 @@ func (a *Admin) DbGet(_ *http.Request, args *DBGetArgs, reply *DBGetReply) error
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "dbGet"),
-		logging.UserString("key", args.Key),
+		log.UserString("key", args.Key),
 	)
 
 	key, err := formatting.Decode(formatting.HexNC, args.Key)
@@ -406,7 +406,7 @@ func (a *Admin) DbGet(_ *http.Request, args *DBGetArgs, reply *DBGetReply) error
 
 	value, err := a.DB.Get(key)
 	if err != nil {
-		reply.ErrorCode = rpcdb.ErrorToErrEnum[err]
+		reply.ErrorCode = rpcdbpb.Error(rpcdb.ErrorToErrEnum[err])
 		return rpcdb.ErrorToRPCError(err)
 	}
 

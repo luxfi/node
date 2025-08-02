@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
@@ -22,11 +22,17 @@ type CreateAssetTx struct {
 	States       []*InitialState `serialize:"true" json:"initialStates"`
 }
 
-func (t *CreateAssetTx) InitCtx(ctx *consensus.Context) {
+func (t *CreateAssetTx) InitCtx(ctx *quasar.Context) {
 	for _, state := range t.States {
 		state.InitCtx(ctx)
 	}
 	t.BaseTx.InitCtx(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (t *CreateAssetTx) Initialize(ctx *quasar.Context) error {
+	t.InitCtx(ctx)
+	return nil
 }
 
 // InitialStates track which virtual machines, and the initial state of these

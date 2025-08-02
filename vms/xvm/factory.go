@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xvm
 
 import (
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/xvm/config"
 )
@@ -15,6 +15,6 @@ type Factory struct {
 	config.Config
 }
 
-func (f *Factory) New(logging.Logger) (interface{}, error) {
+func (f *Factory) New(log.Logger) (interface{}, error) {
 	return &VM{Config: f.Config}, nil
 }

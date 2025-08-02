@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -11,18 +11,19 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/database"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/enginetest"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/chain/block/blocktest"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/chain/chaintest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/proposervm/summary"
 
@@ -44,20 +45,20 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	}
 
 	// load innerVM expectations
-	innerVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
+	innerVM.InitializeF = func(context.Context, *quasar.Context, db.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
-	innerVM.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
-		[]*lineartest.Block{lineartest.Genesis},
+	innerVM.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
+		[]*chaintest.Block{chaintest.Genesis},
 	)
 	innerVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
-		if blkID != lineartest.Genesis.ID() {
+		if blkID != chaintest.Genesis.ID() {
 			return nil, database.ErrNotFound
 		}
-		return lineartest.Genesis, nil
+		return chaintest.Genesis, nil
 	}
 
 	// create the VM
@@ -80,13 +81,13 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		context.Background(),
 		ctx,
 		prefixdb.New([]byte{}, memdb.New()),
-		lineartest.GenesisBytes,
+		chaintest.GenesisBytes,
 		nil,
 		nil,
 		nil,
 		nil,
 	))
-	require.NoError(vm.SetState(context.Background(), consensus.StateSyncing))
+	require.NoError(vm.SetState(context.Background(), quasar.StateSyncing))
 
 	return innerVM, vm
 }
@@ -165,7 +166,7 @@ func TestStateSyncGetOngoingSyncStateSummary(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &lineartest.Block{
+	innerBlk := &chaintest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
@@ -248,7 +249,7 @@ func TestStateSyncGetLastStateSummary(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &lineartest.Block{
+	innerBlk := &chaintest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
@@ -334,7 +335,7 @@ func TestStateSyncGetStateSummary(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &lineartest.Block{
+	innerBlk := &chaintest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
@@ -405,7 +406,7 @@ func TestParseStateSummary(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &lineartest.Block{
+	innerBlk := &chaintest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
@@ -462,7 +463,7 @@ func TestStateSummaryAccept(t *testing.T) {
 	require.NoError(vm.SetForkHeight(innerSummary.Height() - 1))
 
 	// store post fork block associated with summary
-	innerBlk := &lineartest.Block{
+	innerBlk := &chaintest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
@@ -533,7 +534,7 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	vm.lastAcceptedHeight = innerSummary.Height() + 1
 
 	// store post fork block associated with summary
-	innerBlk := &lineartest.Block{
+	innerBlk := &chaintest.Block{
 		BytesV:  []byte{1},
 		ParentV: ids.GenerateTestID(),
 		HeightV: innerSummary.Height(),
@@ -587,7 +588,7 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	require.Equal(block.StateSyncStatic, status)
 	require.True(calledInnerAccept)
 
-	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), quasar.Bootstrapping))
 	require.Equal(summary.Height(), vm.lastAcceptedHeight)
 	lastAcceptedID, err := vm.LastAccepted(context.Background())
 	require.NoError(err)
@@ -608,7 +609,7 @@ func TestStateSummaryAcceptOlderBlockSkipStateSync(t *testing.T) {
 	}()
 
 	// store post fork block associated with summary
-	innerBlk1 := &lineartest.Block{
+	innerBlk1 := &chaintest.Block{
 		Decidable: consensustest.Decidable{
 			IDV: ids.GenerateTestID(),
 		},
@@ -616,7 +617,7 @@ func TestStateSummaryAcceptOlderBlockSkipStateSync(t *testing.T) {
 		ParentV: ids.GenerateTestID(),
 		HeightV: 1969,
 	}
-	innerBlk2 := lineartest.BuildChild(innerBlk1)
+	innerBlk2 := chaintest.BuildChild(innerBlk1)
 
 	innerSummary1 := &blocktest.StateSummary{
 		IDV:     innerBlk1.ID(),
@@ -636,8 +637,8 @@ func TestStateSummaryAcceptOlderBlockSkipStateSync(t *testing.T) {
 
 	innerVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case innerBlk1.ID():
 			return innerBlk1, nil
 		case innerBlk2.ID():
@@ -714,12 +715,12 @@ func TestStateSummaryAcceptOlderBlockSkipStateSync(t *testing.T) {
 	// ProposerVM should ignore the rollback and accept the inner state summary to
 	// notify the innerVM.
 	// This can result in the ProposerVM and innerVM diverging their last accepted block.
-	// These are re-aligned in SetState before transitioning to consensus.
+	// These are re-aligned in SetState before transitioning to quasar.
 	status, err := summary.Accept(context.Background())
 	require.NoError(err)
 	require.Equal(block.StateSyncSkipped, status)
 	require.True(calledInnerAccept)
-	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), quasar.Bootstrapping))
 
 	require.Equal(innerBlk2.Height(), vm.lastAcceptedHeight)
 	lastAcceptedID, err := vm.LastAccepted(context.Background())

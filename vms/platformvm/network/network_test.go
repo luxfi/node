@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/core"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -222,12 +222,12 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			require := require.New(t)
 			ctrl := gomock.NewController(t)
 
-			snowCtx := consensustest.Context(t, ids.Empty)
+			ctx := consensustest.Context(t, ids.Empty)
 			n, err := New(
-				snowCtx.Log,
-				snowCtx.NodeID,
-				snowCtx.SubnetID,
-				snowCtx.ValidatorState,
+				ctx.Log,
+				ctx.NodeID,
+				ctx.SubnetID,
+				ctx.ValidatorState,
 				tt.txVerifier,
 				tt.mempool,
 				false,

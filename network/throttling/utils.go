@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -6,9 +6,9 @@ package throttling
 import (
 	"sync"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/validators"
+	log "github.com/luxfi/log"
 )
 
 // Used by the sybil-safe inbound and outbound message throttlers
@@ -20,7 +20,7 @@ type MsgByteThrottlerConfig struct {
 
 // Used by the sybil-safe inbound and outbound message throttlers
 type commonMsgThrottler struct {
-	log  logging.Logger
+	log  log.Logger
 	lock sync.Mutex
 	vdrs validators.Manager
 	// Max number of bytes that can be taken from the

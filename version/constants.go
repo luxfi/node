@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package version
@@ -21,9 +21,9 @@ const (
 // These are globals that describe network upgrades and node versions
 var (
 	Current = &Semantic{
-		Major: 1,
-		Minor: 13,
-		Patch: 3,
+		Major: 2,
+		Minor: 0,
+		Patch: 0,
 	}
 	CurrentApp = &Application{
 		Name:  Client,
@@ -33,15 +33,15 @@ var (
 	}
 	MinimumCompatibleVersion = &Application{
 		Name:  Client,
-		Major: 1,
-		Minor: 13,
+		Major: 2,
+		Minor: 0,
 		Patch: 0,
 	}
 	PrevMinimumCompatibleVersion = &Application{
 		Name:  Client,
 		Major: 1,
-		Minor: 12,
-		Patch: 0,
+		Minor: 13,
+		Patch: 3,
 	}
 
 	CurrentDatabase = DatabaseVersion1_4_5

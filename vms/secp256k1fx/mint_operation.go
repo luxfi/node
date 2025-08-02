@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -6,7 +6,7 @@ package secp256k1fx
 import (
 	"errors"
 
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -18,9 +18,15 @@ type MintOperation struct {
 	TransferOutput TransferOutput `serialize:"true" json:"transferOutput"`
 }
 
-func (op *MintOperation) InitCtx(ctx *consensus.Context) {
+func (op *MintOperation) InitCtx(ctx *quasar.Context) {
 	op.MintOutput.OutputOwners.InitCtx(ctx)
 	op.TransferOutput.OutputOwners.InitCtx(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (op *MintOperation) Initialize(ctx *quasar.Context) error {
+	op.InitCtx(ctx)
+	return nil
 }
 
 func (op *MintOperation) Cost() (uint64, error) {

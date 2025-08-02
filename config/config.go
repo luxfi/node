@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -18,28 +18,28 @@ import (
 
 	"github.com/spf13/viper"
 
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/config/node"
+	"github.com/luxfi/node/quasar/networking/benchlist"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/quasar/networking/tracker"
+	"github.com/luxfi/node/quasar/sampling"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/networking/benchlist"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/set"
@@ -63,8 +63,8 @@ var (
 	// TODO: deprecate "BootstrapIDsKey" and "BootstrapIPsKey"
 	deprecatedKeys = map[string]string{}
 
-	errConflictingACPOpinion                  = errors.New("supporting and objecting to the same ACP")
-	errConflictingImplicitACPOpinion          = errors.New("objecting to enabled ACP")
+	errConflictingLPOpinion                   = errors.New("supporting and objecting to the same LP")
+	errConflictingImplicitLPOpinion           = errors.New("objecting to enabled LP")
 	errSybilProtectionDisabledStakerWeights   = errors.New("sybil protection disabled weights must be positive")
 	errSybilProtectionDisabledOnPublicNetwork = errors.New("sybil protection disabled on public network")
 	errInvalidUptimeRequirement               = errors.New("uptime requirement must be in the range [0, 1]")
@@ -87,27 +87,27 @@ var (
 
 func getConsensusConfig(v *viper.Viper) sampling.Parameters {
 	p := sampling.Parameters{
-		K:                     v.GetInt(SnowSampleSizeKey),
-		AlphaPreference:       v.GetInt(SnowPreferenceQuorumSizeKey),
-		AlphaConfidence:       v.GetInt(SnowConfidenceQuorumSizeKey),
-		Beta:                  v.GetInt(SnowCommitThresholdKey),
-		ConcurrentRepolls:     v.GetInt(SnowConcurrentRepollsKey),
-		OptimalProcessing:     v.GetInt(SnowOptimalProcessingKey),
-		MaxOutstandingItems:   v.GetInt(SnowMaxProcessingKey),
-		MaxItemProcessingTime: v.GetDuration(SnowMaxTimeProcessingKey),
+		K:                     v.GetInt(SampleSizeKey),
+		AlphaPreference:       v.GetInt(PreferenceQuorumSizeKey),
+		AlphaConfidence:       v.GetInt(ConfidenceQuorumSizeKey),
+		Beta:                  v.GetInt(CommitThresholdKey),
+		ConcurrentRepolls:     v.GetInt(ConcurrentRepollsKey),
+		OptimalProcessing:     v.GetInt(OptimalProcessingKey),
+		MaxOutstandingItems:   v.GetInt(MaxProcessingKey),
+		MaxItemProcessingTime: v.GetDuration(MaxTimeProcessingKey),
 	}
-	if v.IsSet(SnowQuorumSizeKey) {
-		p.AlphaPreference = v.GetInt(SnowQuorumSizeKey)
+	if v.IsSet(QuorumSizeKey) {
+		p.AlphaPreference = v.GetInt(QuorumSizeKey)
 		p.AlphaConfidence = p.AlphaPreference
 	}
 	return p
 }
 
-func getLoggingConfig(v *viper.Viper) (logging.Config, error) {
-	loggingConfig := logging.Config{}
+func getLoggingConfig(v *viper.Viper) (log.Config, error) {
+	loggingConfig := log.Config{}
 	loggingConfig.Directory = getExpandedArg(v, LogsDirKey)
 	var err error
-	loggingConfig.LogLevel, err = logging.ToLevel(v.GetString(LogLevelKey))
+	loggingConfig.LogLevel, err = log.ToLevel(v.GetString(LogLevelKey))
 	if err != nil {
 		return loggingConfig, err
 	}
@@ -115,11 +115,11 @@ func getLoggingConfig(v *viper.Viper) (logging.Config, error) {
 	if v.IsSet(LogDisplayLevelKey) {
 		logDisplayLevel = v.GetString(LogDisplayLevelKey)
 	}
-	loggingConfig.DisplayLevel, err = logging.ToLevel(logDisplayLevel)
+	loggingConfig.DisplayLevel, err = log.ToLevel(logDisplayLevel)
 	if err != nil {
 		return loggingConfig, err
 	}
-	loggingConfig.LogFormat, err = logging.ToFormat(v.GetString(LogFormatKey), os.Stdout.Fd())
+	loggingConfig.LogFormat, err = log.ToFormat(v.GetString(LogFormatKey), os.Stdout.Fd())
 	loggingConfig.DisableWriterDisplaying = v.GetBool(LogDisableDisplayPluginLogsKey)
 	loggingConfig.MaxSize = int(v.GetUint(LogRotaterMaxSizeKey))
 	loggingConfig.MaxFiles = int(v.GetUint(LogRotaterMaxFilesKey))
@@ -260,36 +260,36 @@ func getNetworkConfig(
 		allowPrivateIPs = v.GetBool(NetworkAllowPrivateIPsKey)
 	}
 
-	var supportedACPs set.Set[uint32]
-	for _, acp := range v.GetIntSlice(ACPSupportKey) {
-		if acp < 0 || acp > math.MaxInt32 {
-			return network.Config{}, fmt.Errorf("invalid ACP: %d", acp)
+	var supportedLPs set.Set[uint32]
+	for _, lp := range v.GetIntSlice(LPSupportKey) {
+		if lp < 0 || lp > math.MaxInt32 {
+			return network.Config{}, fmt.Errorf("invalid LP: %d", lp)
 		}
-		supportedACPs.Add(uint32(acp))
+		supportedLPs.Add(uint32(lp))
 	}
 
-	var objectedACPs set.Set[uint32]
-	for _, acp := range v.GetIntSlice(ACPObjectKey) {
-		if acp < 0 || acp > math.MaxInt32 {
-			return network.Config{}, fmt.Errorf("invalid ACP: %d", acp)
+	var objectedLPs set.Set[uint32]
+	for _, lp := range v.GetIntSlice(LPObjectKey) {
+		if lp < 0 || lp > math.MaxInt32 {
+			return network.Config{}, fmt.Errorf("invalid LP: %d", lp)
 		}
-		objectedACPs.Add(uint32(acp))
+		objectedLPs.Add(uint32(lp))
 	}
-	if supportedACPs.Overlaps(objectedACPs) {
-		return network.Config{}, errConflictingACPOpinion
+	if supportedLPs.Overlaps(objectedLPs) {
+		return network.Config{}, errConflictingLPOpinion
 	}
-	if constants.ScheduledACPs.Overlaps(objectedACPs) {
-		return network.Config{}, errConflictingImplicitACPOpinion
+	if constants.ScheduledLPs.Overlaps(objectedLPs) {
+		return network.Config{}, errConflictingImplicitLPOpinion
 	}
 
-	// Because this node version has scheduled these ACPs, we should notify
+	// Because this node version has scheduled these LPs, we should notify
 	// peers that we support these upgrades.
-	supportedACPs.Union(constants.ScheduledACPs)
+	supportedLPs.Union(constants.ScheduledLPs)
 
 	// To decrease unnecessary network traffic, peers will not be notified of
-	// objection or support of activated ACPs.
-	supportedACPs.Difference(constants.ActivatedACPs)
-	objectedACPs.Difference(constants.ActivatedACPs)
+	// objection or support of activated LPs.
+	supportedLPs.Difference(constants.ActivatedLPs)
+	objectedLPs.Difference(constants.ActivatedLPs)
 
 	config := network.Config{
 		ThrottlerConfig: network.ThrottlerConfig{
@@ -369,8 +369,8 @@ func getNetworkConfig(
 		UptimeMetricFreq:             v.GetDuration(UptimeMetricFreqKey),
 		MaximumInboundMessageTimeout: v.GetDuration(NetworkMaximumInboundTimeoutKey),
 
-		SupportedACPs: supportedACPs,
-		ObjectedACPs:  objectedACPs,
+		SupportedLPs: supportedLPs,
+		ObjectedLPs:  objectedLPs,
 
 		RequireValidatorToConnect: v.GetBool(NetworkRequireValidatorToConnectKey),
 		PeerReadBufferSize:        int(v.GetUint(NetworkPeerReadBufferSizeKey)),
@@ -1156,7 +1156,7 @@ func getCPUTargeterConfig(v *viper.Viper) (tracker.TargeterConfig, error) {
 		return tracker.TargeterConfig{}, fmt.Errorf("%q (%f) < 0", CPUMaxNonVdrNodeUsageKey, maxNonVdrNodeUsage)
 	default:
 		return tracker.TargeterConfig{
-			VdrAlloc:           vdrAlloc,
+			VdrAlloc:           int64(vdrAlloc),
 			MaxNonVdrUsage:     maxNonVdrUsage,
 			MaxNonVdrNodeUsage: maxNonVdrNodeUsage,
 		}, nil
@@ -1187,7 +1187,7 @@ func getDiskTargeterConfig(v *viper.Viper) (tracker.TargeterConfig, error) {
 		return tracker.TargeterConfig{}, fmt.Errorf("%q (%f) < 0", DiskMaxNonVdrNodeUsageKey, maxNonVdrNodeUsage)
 	default:
 		return tracker.TargeterConfig{
-			VdrAlloc:           vdrAlloc,
+			VdrAlloc:           int64(vdrAlloc),
 			MaxNonVdrUsage:     maxNonVdrUsage,
 			MaxNonVdrNodeUsage: maxNonVdrNodeUsage,
 		}, nil
@@ -1271,9 +1271,12 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		nodeConfig node.Config
 		err        error
 	)
-	
+
 	// Set dev mode flag
 	nodeConfig.DevMode = v.GetBool(DevModeKey)
+
+	// Set import mode flag
+	nodeConfig.ImportMode = v.GetBool(ImportModeKey)
 
 	nodeConfig.PluginDir, err = getPluginDir(v)
 	if err != nil {

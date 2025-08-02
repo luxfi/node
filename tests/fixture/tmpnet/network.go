@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -23,13 +23,13 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm"
@@ -142,7 +142,7 @@ type Network struct {
 	// Subnets that have been enabled on the network
 	Subnets []*Subnet
 
-	log logging.Logger
+	log log.Logger
 }
 
 func NewDefaultNetwork(owner string) *Network {
@@ -166,7 +166,7 @@ func toCanonicalDir(dir string) (string, error) {
 
 func BootstrapNewNetwork(
 	ctx context.Context,
-	log logging.Logger,
+	log log.Logger,
 	network *Network,
 	rootNetworkDir string,
 ) error {
@@ -187,7 +187,7 @@ func BootstrapNewNetwork(
 }
 
 // Stops the nodes of the network configured in the provided directory.
-func StopNetwork(ctx context.Context, log logging.Logger, dir string) error {
+func StopNetwork(ctx context.Context, log log.Logger, dir string) error {
 	network, err := ReadNetwork(ctx, log, dir)
 	if err != nil {
 		return err
@@ -196,7 +196,7 @@ func StopNetwork(ctx context.Context, log logging.Logger, dir string) error {
 }
 
 // Restarts the nodes of the network configured in the provided directory.
-func RestartNetwork(ctx context.Context, log logging.Logger, dir string) error {
+func RestartNetwork(ctx context.Context, log log.Logger, dir string) error {
 	network, err := ReadNetwork(ctx, log, dir)
 	if err != nil {
 		return err
@@ -215,7 +215,7 @@ func restartNodes(ctx context.Context, nodes []*Node) error {
 }
 
 // Reads a network from the provided directory.
-func ReadNetwork(ctx context.Context, log logging.Logger, dir string) (*Network, error) {
+func ReadNetwork(ctx context.Context, log log.Logger, dir string) (*Network, error) {
 	canonicalDir, err := toCanonicalDir(dir)
 	if err != nil {
 		return nil, err
@@ -234,7 +234,7 @@ func ReadNetwork(ctx context.Context, log logging.Logger, dir string) (*Network,
 }
 
 // Initializes a new network with default configuration.
-func (n *Network) EnsureDefaultConfig(log logging.Logger) error {
+func (n *Network) EnsureDefaultConfig(log log.Logger) error {
 	log.Info("preparing configuration for new network",
 		zap.Any("runtimeConfig", n.DefaultRuntimeConfig),
 	)
@@ -353,7 +353,7 @@ func (n *Network) DefaultGenesis() (*genesis.UnparsedConfig, error) {
 }
 
 // Starts the specified nodes
-func (n *Network) StartNodes(ctx context.Context, log logging.Logger, nodesToStart ...*Node) error {
+func (n *Network) StartNodes(ctx context.Context, log log.Logger, nodesToStart ...*Node) error {
 	if len(nodesToStart) == 0 {
 		return errInsufficientNodes
 	}
@@ -408,7 +408,7 @@ func (n *Network) StartNodes(ctx context.Context, log logging.Logger, nodesToSta
 }
 
 // Start the network for the first time
-func (n *Network) Bootstrap(ctx context.Context, log logging.Logger) error {
+func (n *Network) Bootstrap(ctx context.Context, log log.Logger) error {
 	if len(n.Subnets) == 0 {
 		// Without the need to coordinate subnet configuration,
 		// starting all nodes at once is the simplest option.
@@ -549,7 +549,7 @@ func (n *Network) Restart(ctx context.Context) error {
 }
 
 // Waits for the provided nodes to become healthy.
-func WaitForHealthyNodes(ctx context.Context, log logging.Logger, nodes []*Node) error {
+func WaitForHealthyNodes(ctx context.Context, log log.Logger, nodes []*Node) error {
 	for _, node := range nodes {
 		log.Info("waiting for node to become healthy",
 			zap.Stringer("nodeID", node.NodeID),
@@ -606,7 +606,7 @@ func (n *Network) GetSubnet(name string) *Subnet {
 
 // Ensure that each subnet on the network is created. If restartRequired is false, node restart
 // to pick up configuration changes becomes the responsibility of the caller.
-func (n *Network) CreateSubnets(ctx context.Context, log logging.Logger, apiURI string, restartRequired bool) error {
+func (n *Network) CreateSubnets(ctx context.Context, log log.Logger, apiURI string, restartRequired bool) error {
 	createdSubnets := make([]*Subnet, 0, len(n.Subnets))
 	for _, subnet := range n.Subnets {
 		if len(subnet.ValidatorIDs) == 0 {
@@ -944,7 +944,7 @@ func GetGitHubLabels() map[string]string {
 }
 
 // Waits until the provided nodes are healthy.
-func waitForHealthy(ctx context.Context, log logging.Logger, nodes []*Node) error {
+func waitForHealthy(ctx context.Context, log log.Logger, nodes []*Node) error {
 	ticker := time.NewTicker(networkHealthCheckInterval)
 	defer ticker.Stop()
 
@@ -1010,7 +1010,7 @@ const invalidRPCVersion = 0
 
 // checkVMBinaries checks that VM binaries for the given subnets exist and optionally checks that VM
 // binaries have the same rpcchainvm version as the indicated luxd binary.
-func checkVMBinaries(log logging.Logger, subnets []*Subnet, config *ProcessRuntimeConfig) error {
+func checkVMBinaries(log log.Logger, subnets []*Subnet, config *ProcessRuntimeConfig) error {
 	if len(subnets) == 0 {
 		// Without subnets there are no VM binaries to check
 		return nil
@@ -1078,7 +1078,7 @@ type RPCChainVMVersion struct {
 
 // getRPCVersion attempts to invoke the given command with the specified version arguments and
 // retrieve an rpcchainvm version from its output.
-func getRPCVersion(log logging.Logger, command string, versionArgs ...string) (uint64, error) {
+func getRPCVersion(log log.Logger, command string, versionArgs ...string) (uint64, error) {
 	cmd := exec.Command(command, versionArgs...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {

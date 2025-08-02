@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fee
@@ -10,11 +10,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -25,6 +25,9 @@ import (
 )
 
 func TestTxComplexity_Individual(t *testing.T) {
+	// Initialize the test warp parser
+	InitializeTestWarpParser()
+	
 	for _, test := range txTests {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
@@ -54,6 +57,9 @@ func TestTxComplexity_Individual(t *testing.T) {
 }
 
 func TestTxComplexity_Batch(t *testing.T) {
+	// Initialize the test warp parser
+	InitializeTestWarpParser()
+	
 	require := require.New(t)
 
 	var (

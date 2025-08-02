@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package info
@@ -12,17 +12,17 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/quasar/networking/benchlist"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/peer"
-	"github.com/luxfi/node/consensus/networking/benchlist"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/version"
@@ -68,7 +68,7 @@ var (
 // Info is the API service for unprivileged info on a node
 type Info struct {
 	Parameters
-	log          logging.Logger
+	log          log.Logger
 	validators   validators.Manager
 	myIP         *utils.Atomic[netip.AddrPort]
 	networking   network.Network
@@ -91,7 +91,7 @@ type Parameters struct {
 
 func NewService(
 	parameters Parameters,
-	log logging.Logger,
+	log log.Logger,
 	validators validators.Manager,
 	chainManager chains.Manager,
 	vmManager vms.Manager,
@@ -303,7 +303,7 @@ func (i *Info) IsBootstrapped(_ *http.Request, args *IsBootstrappedArgs, reply *
 	i.log.Debug("API called",
 		zap.String("service", "info"),
 		zap.String("method", "isBootstrapped"),
-		logging.UserString("chain", args.Chain),
+		log.UserString("chain", args.Chain),
 	)
 
 	if args.Chain == "" {
@@ -360,7 +360,7 @@ func (i *Info) Uptime(_ *http.Request, _ *struct{}, reply *UptimeResponse) error
 	return nil
 }
 
-type ACP struct {
+type LP struct {
 	SupportWeight json.Uint64         `json:"supportWeight"`
 	Supporters    set.Set[ids.NodeID] `json:"supporters"`
 	ObjectWeight  json.Uint64         `json:"objectWeight"`
@@ -368,26 +368,26 @@ type ACP struct {
 	AbstainWeight json.Uint64         `json:"abstainWeight"`
 }
 
-type ACPsReply struct {
-	ACPs map[uint32]*ACP `json:"acps"`
+type LPsReply struct {
+	LPs map[uint32]*LP `json:"lps"`
 }
 
-func (a *ACPsReply) getACP(acpNum uint32) *ACP {
-	acp, ok := a.ACPs[acpNum]
+func (a *LPsReply) getLP(lpNum uint32) *LP {
+	lp, ok := a.LPs[lpNum]
 	if !ok {
-		acp = &ACP{}
-		a.ACPs[acpNum] = acp
+		lp = &LP{}
+		a.LPs[lpNum] = lp
 	}
-	return acp
+	return lp
 }
 
-func (i *Info) Acps(_ *http.Request, _ *struct{}, reply *ACPsReply) error {
+func (i *Info) LPs(_ *http.Request, _ *struct{}, reply *LPsReply) error {
 	i.log.Debug("API called",
 		zap.String("service", "info"),
-		zap.String("method", "acps"),
+		zap.String("method", "lps"),
 	)
 
-	reply.ACPs = make(map[uint32]*ACP, constants.CurrentACPs.Len())
+	reply.LPs = make(map[uint32]*LP, constants.CurrentLPs.Len())
 	peers := i.networking.PeerInfo(nil)
 	for _, peer := range peers {
 		weight := json.Uint64(i.validators.GetWeight(constants.PrimaryNetworkID, peer.ID))
@@ -395,15 +395,15 @@ func (i *Info) Acps(_ *http.Request, _ *struct{}, reply *ACPsReply) error {
 			continue
 		}
 
-		for acpNum := range peer.SupportedACPs {
-			acp := reply.getACP(acpNum)
-			acp.Supporters.Add(peer.ID)
-			acp.SupportWeight += weight
+		for lpNum := range peer.SupportedLPs {
+			lp := reply.getLP(lpNum)
+			lp.Supporters.Add(peer.ID)
+			lp.SupportWeight += weight
 		}
-		for acpNum := range peer.ObjectedACPs {
-			acp := reply.getACP(acpNum)
-			acp.Objectors.Add(peer.ID)
-			acp.ObjectWeight += weight
+		for lpNum := range peer.ObjectedLPs {
+			lp := reply.getLP(lpNum)
+			lp.Objectors.Add(peer.ID)
+			lp.ObjectWeight += weight
 		}
 	}
 
@@ -411,9 +411,9 @@ func (i *Info) Acps(_ *http.Request, _ *struct{}, reply *ACPsReply) error {
 	if err != nil {
 		return err
 	}
-	for acpNum := range constants.CurrentACPs {
-		acp := reply.getACP(acpNum)
-		acp.AbstainWeight = json.Uint64(totalWeight) - acp.SupportWeight - acp.ObjectWeight
+	for lpNum := range constants.CurrentLPs {
+		lp := reply.getLP(lpNum)
+		lp.AbstainWeight = json.Uint64(totalWeight) - lp.SupportWeight - lp.ObjectWeight
 	}
 	return nil
 }

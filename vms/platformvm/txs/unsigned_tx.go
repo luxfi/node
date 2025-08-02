@@ -1,11 +1,11 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -15,7 +15,7 @@ import (
 type UnsignedTx interface {
 	// TODO: Remove this initialization pattern from both the platformvm and the
 	// xvm.
-	consensus.ContextInitializable
+	quasar.ContextInitializable
 	secp256k1fx.UnsignedTx
 	SetBytes(unsignedBytes []byte)
 
@@ -25,7 +25,7 @@ type UnsignedTx interface {
 	Outputs() []*lux.TransferableOutput
 
 	// Attempts to verify this transaction without any provided state.
-	SyntacticVerify(ctx *consensus.Context) error
+	SyntacticVerify(ctx *quasar.Context) error
 
 	// Visit calls [visitor] with this transaction's concrete type
 	Visit(visitor Visitor) error

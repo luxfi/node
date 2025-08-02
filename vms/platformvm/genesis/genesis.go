@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/math"
@@ -38,7 +38,7 @@ var (
 // UTXO adds messages to UTXOs
 type UTXO struct {
 	lux.UTXO `serialize:"true"`
-	Message   []byte `serialize:"true" json:"message"`
+	Message  []byte `serialize:"true" json:"message"`
 }
 
 // Genesis represents a genesis state of the platform chain

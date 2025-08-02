@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package archivedb
@@ -8,8 +8,8 @@ import (
 	"errors"
 	"io"
 
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/database"
 )
 
 var (
@@ -21,7 +21,7 @@ var (
 	_ io.Closer          = (*Database)(nil)
 )
 
-// Database implements an ArchiveDB on top of a database.Database. An ArchiveDB
+// Database implements an ArchiveDB on top of a db.Database. An ArchiveDB
 // is an append only database which stores all state changes happening at every
 // height. Each record is stored in such way to perform both fast insertions and
 // lookups.
@@ -97,7 +97,13 @@ func (db *Database) Compact(start []byte, limit []byte) error {
 }
 
 func (db *Database) HealthCheck(ctx context.Context) (interface{}, error) {
-	return db.db.HealthCheck(ctx)
+	err := db.db.HealthCheck()
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"healthy": true,
+	}, nil
 }
 
 func (db *Database) Close() error {

@@ -663,8 +663,8 @@ type Handshake struct {
 	// Subnets the peer is tracking
 	TrackedSubnets [][]byte     `protobuf:"bytes,8,rep,name=tracked_subnets,json=trackedSubnets,proto3" json:"tracked_subnets,omitempty"`
 	Client         *Client      `protobuf:"bytes,9,opt,name=client,proto3" json:"client,omitempty"`
-	SupportedAcps  []uint32     `protobuf:"varint,10,rep,packed,name=supported_acps,json=supportedAcps,proto3" json:"supported_acps,omitempty"`
-	ObjectedAcps   []uint32     `protobuf:"varint,11,rep,packed,name=objected_acps,json=objectedAcps,proto3" json:"objected_acps,omitempty"`
+	SupportedLps   []uint32     `protobuf:"varint,10,rep,packed,name=supported_lps,json=supportedLps,proto3" json:"supported_lps,omitempty"`
+	ObjectedLps    []uint32     `protobuf:"varint,11,rep,packed,name=objected_lps,json=objectedLps,proto3" json:"objected_lps,omitempty"`
 	KnownPeers     *BloomFilter `protobuf:"bytes,12,opt,name=known_peers,json=knownPeers,proto3" json:"known_peers,omitempty"`
 	// Signature of the peer IP port pair at a provided timestamp with the BLS
 	// key.
@@ -762,16 +762,16 @@ func (x *Handshake) GetClient() *Client {
 	return nil
 }
 
-func (x *Handshake) GetSupportedAcps() []uint32 {
+func (x *Handshake) GetSupportedLps() []uint32 {
 	if x != nil {
-		return x.SupportedAcps
+		return x.SupportedLps
 	}
 	return nil
 }
 
-func (x *Handshake) GetObjectedAcps() []uint32 {
+func (x *Handshake) GetObjectedLps() []uint32 {
 	if x != nil {
-		return x.ObjectedAcps
+		return x.ObjectedLps
 	}
 	return nil
 }
@@ -3349,7 +3349,7 @@ const file_p2p_p2p_proto_rawDesc = "" +
 	"\amessageJ\x04\b\x01\x10\x02J\x04\b%\x10&\"$\n" +
 	"\x04Ping\x12\x16\n" +
 	"\x06uptime\x18\x01 \x01(\rR\x06uptimeJ\x04\b\x02\x10\x03\"\x12\n" +
-	"\x04PongJ\x04\b\x01\x10\x02J\x04\b\x02\x10\x03\"\xd4\x03\n" +
+	"\x04PongJ\x04\b\x01\x10\x02J\x04\b\x02\x10\x03\"\xd0\x03\n" +
 	"\tHandshake\x12\x1d\n" +
 	"\n" +
 	"network_id\x18\x01 \x01(\rR\tnetworkId\x12\x17\n" +
@@ -3359,10 +3359,10 @@ const file_p2p_p2p_proto_rawDesc = "" +
 	"\x0fip_signing_time\x18\x06 \x01(\x04R\ripSigningTime\x12#\n" +
 	"\x0eip_node_id_sig\x18\a \x01(\fR\vipNodeIdSig\x12'\n" +
 	"\x0ftracked_subnets\x18\b \x03(\fR\x0etrackedSubnets\x12#\n" +
-	"\x06client\x18\t \x01(\v2\v.p2p.ClientR\x06client\x12%\n" +
-	"\x0esupported_acps\x18\n" +
-	" \x03(\rR\rsupportedAcps\x12#\n" +
-	"\robjected_acps\x18\v \x03(\rR\fobjectedAcps\x121\n" +
+	"\x06client\x18\t \x01(\v2\v.p2p.ClientR\x06client\x12#\n" +
+	"\rsupported_lps\x18\n" +
+	" \x03(\rR\fsupportedLps\x12!\n" +
+	"\fobjected_lps\x18\v \x03(\rR\vobjectedLps\x121\n" +
 	"\vknown_peers\x18\f \x01(\v2\x10.p2p.BloomFilterR\n" +
 	"knownPeers\x12\x1c\n" +
 	"\n" +

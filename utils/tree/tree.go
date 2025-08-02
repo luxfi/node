@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tree
@@ -8,8 +8,8 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/ids"
+	chaincon "github.com/luxfi/node/quasar/chain"
 )
 
 // Tree handles the propagation of block acceptance and rejection to inner
@@ -31,57 +31,66 @@ import (
 // (it may be held by a different proposervm block).
 type Tree interface {
 	// Add places the block in the tree
-	Add(linear.Block)
+	Add(chaincon.Block)
 
 	// Get returns the block that was added to this tree whose parent and ID
 	// match the provided block. If non-exists, then false will be returned.
-	Get(linear.Block) (linear.Block, bool)
+	Get(chaincon.Block) (chaincon.Block, bool)
 
 	// Accept marks the provided block as accepted and rejects every conflicting
 	// block.
-	Accept(context.Context, linear.Block) error
+	Accept(context.Context, chaincon.Block) error
 }
 
 type tree struct {
 	// parentID -> childID -> childBlock
-	nodes map[ids.ID]map[ids.ID]linear.Block
+	nodes map[ids.ID]map[ids.ID]chaincon.Block
 }
 
 func New() Tree {
 	return &tree{
-		nodes: make(map[ids.ID]map[ids.ID]linear.Block),
+		nodes: make(map[ids.ID]map[ids.ID]chaincon.Block),
 	}
 }
 
-func (t *tree) Add(blk linear.Block) {
+func (t *tree) Add(blk chaincon.Block) {
 	parentID := blk.Parent()
 	children, exists := t.nodes[parentID]
 	if !exists {
-		children = make(map[ids.ID]linear.Block)
+		children = make(map[ids.ID]chaincon.Block)
 		t.nodes[parentID] = children
 	}
-	blkID := blk.ID()
+	blkIDStr := blk.ID()
+	// Convert string ID to ids.ID
+	var blkID ids.ID
+	copy(blkID[:], []byte(blkIDStr))
 	children[blkID] = blk
 }
 
-func (t *tree) Get(blk linear.Block) (linear.Block, bool) {
+func (t *tree) Get(blk chaincon.Block) (chaincon.Block, bool) {
 	parentID := blk.Parent()
 	children := t.nodes[parentID]
-	blkID := blk.ID()
+	blkIDStr := blk.ID()
+	// Convert string ID to ids.ID
+	var blkID ids.ID
+	copy(blkID[:], []byte(blkIDStr))
 	originalBlk, exists := children[blkID]
 	return originalBlk, exists
 }
 
-func (t *tree) Accept(ctx context.Context, blk linear.Block) error {
+func (t *tree) Accept(ctx context.Context, blk chaincon.Block) error {
 	// accept the provided block
-	if err := blk.Accept(ctx); err != nil {
+	if err := blk.Accept(); err != nil {
 		return err
 	}
 
 	// get the siblings of the block
 	parentID := blk.Parent()
 	children := t.nodes[parentID]
-	blkID := blk.ID()
+	blkIDStr := blk.ID()
+	// Convert string ID to ids.ID
+	var blkID ids.ID
+	copy(blkID[:], []byte(blkIDStr))
 	delete(children, blkID)
 	delete(t.nodes, parentID)
 
@@ -95,15 +104,18 @@ func (t *tree) Accept(ctx context.Context, blk linear.Block) error {
 		childrenToReject = childrenToReject[:i]
 
 		// reject the block
-		if err := child.Reject(ctx); err != nil {
+		if err := child.Reject(); err != nil {
 			return err
 		}
 
 		// mark the progeny of this block as being rejectable
-		blkID := child.ID()
-		children := t.nodes[blkID]
-		childrenToReject = append(childrenToReject, maps.Values(children)...)
-		delete(t.nodes, blkID)
+		childIDStr := child.ID()
+		// Convert string ID to ids.ID
+		var childID ids.ID
+		copy(childID[:], []byte(childIDStr))
+		childrenOfChild := t.nodes[childID]
+		childrenToReject = append(childrenToReject, maps.Values(childrenOfChild)...)
+		delete(t.nodes, childID)
 	}
 	return nil
 }

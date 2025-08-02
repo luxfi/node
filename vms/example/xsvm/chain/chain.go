@@ -1,12 +1,12 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chain
 
 import (
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
@@ -16,26 +16,26 @@ var _ Chain = (*chain)(nil)
 
 type Chain interface {
 	LastAccepted() ids.ID
-	SetChainState(state consensus.State)
+	SetChainState(state quasar.State)
 	GetBlock(blkID ids.ID) (Block, error)
 
 	// Creates a fully verifiable and executable block, which can be processed
-	// by the consensus engine, from a stateless block.
+	// by the quasar engine, from a stateless block.
 	NewBlock(blk *xsblock.Stateless) (Block, error)
 }
 
 type chain struct {
-	chainContext  *consensus.Context
-	acceptedState database.Database
+	chainContext  *quasar.Context
+	acceptedState db.Database
 
-	// chain state as driven by the consensus engine
-	chainState consensus.State
+	// chain state as driven by the quasar engine
+	chainState quasar.State
 
 	lastAcceptedID ids.ID
 	verifiedBlocks map[ids.ID]*block
 }
 
-func New(ctx *consensus.Context, db database.Database) (Chain, error) {
+func New(ctx *quasar.Context, db db.Database) (Chain, error) {
 	// Load the last accepted block data. For a newly created VM, this will be
 	// the genesis. It is assumed the genesis was processed and stored
 	// previously during VM initialization.
@@ -65,7 +65,7 @@ func (c *chain) LastAccepted() ids.ID {
 	return c.lastAcceptedID
 }
 
-func (c *chain) SetChainState(state consensus.State) {
+func (c *chain) SetChainState(state quasar.State) {
 	c.chainState = state
 }
 

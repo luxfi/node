@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -21,7 +21,7 @@ import (
 
 	_ "embed"
 
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -45,7 +45,7 @@ var tmpnetRBACManifest []byte
 // StartKindCluster starts a new kind cluster with integrated registry if one is not already running.
 func StartKindCluster(
 	ctx context.Context,
-	log logging.Logger,
+	log log.Logger,
 	configPath string,
 	startMetricsCollector bool,
 	startLogsCollector bool,
@@ -104,7 +104,7 @@ func StartKindCluster(
 }
 
 // isKindClusterRunning determines if a kind cluster is running
-func isKindClusterRunning(log logging.Logger, configPath string, configContext string) (bool, error) {
+func isKindClusterRunning(log log.Logger, configPath string, configContext string) (bool, error) {
 	_, err := os.Stat(configPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		log.Info("specified kubeconfig path does not exist",
@@ -147,7 +147,7 @@ func isKindClusterRunning(log logging.Logger, configPath string, configContext s
 }
 
 // ensureNamespace ensures that the specified namespace exists in cluster targeted by the clientset.
-func ensureNamespace(ctx context.Context, log logging.Logger, clientset *kubernetes.Clientset, namespace string) error {
+func ensureNamespace(ctx context.Context, log log.Logger, clientset *kubernetes.Clientset, namespace string) error {
 	_, err := clientset.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err == nil {
 		log.Info("namespace already exists",
@@ -180,7 +180,7 @@ func ensureNamespace(ctx context.Context, log logging.Logger, clientset *kuberne
 // deployRBAC deploys the RBAC resources for tmpnet to a Kubernetes cluster.
 func deployRBAC(
 	ctx context.Context,
-	log logging.Logger,
+	log log.Logger,
 	configPath string,
 	configContext string,
 	namespace string,
@@ -215,7 +215,7 @@ func deployRBAC(
 // This function is called from StartKindCluster after the kubeconfig and context have been verified.
 func createServiceAccountKubeconfig(
 	ctx context.Context,
-	log logging.Logger,
+	log log.Logger,
 	configPath string,
 	configContext string,
 	namespace string,

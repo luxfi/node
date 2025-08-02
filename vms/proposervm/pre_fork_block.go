@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -11,8 +11,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/linear"
+	"github.com/luxfi/ids"
+	chaincon "github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
@@ -23,14 +23,15 @@ var (
 )
 
 type preForkBlock struct {
-	linear.Block
+	chaincon.Block
 	vm *VM
 }
 
-func (b *preForkBlock) Accept(ctx context.Context) error {
+func (b *preForkBlock) Accept() error {
 	if err := b.acceptOuterBlk(); err != nil {
 		return err
 	}
+	ctx := context.Background()
 	return b.acceptInnerBlk(ctx)
 }
 
@@ -39,7 +40,7 @@ func (*preForkBlock) acceptOuterBlk() error {
 }
 
 func (b *preForkBlock) acceptInnerBlk(ctx context.Context) error {
-	return b.Block.Accept(ctx)
+	return b.Block.Accept()
 }
 
 func (b *preForkBlock) Verify(ctx context.Context) error {
@@ -50,18 +51,18 @@ func (b *preForkBlock) Verify(ctx context.Context) error {
 	return parent.verifyPreForkChild(ctx, b)
 }
 
-func (b *preForkBlock) Options(ctx context.Context) ([2]linear.Block, error) {
-	oracleBlk, ok := b.Block.(linear.OracleBlock)
+func (b *preForkBlock) Options(ctx context.Context) ([2]chaincon.Block, error) {
+	oracleBlk, ok := b.Block.(chaincon.OracleBlock)
 	if !ok {
-		return [2]linear.Block{}, linear.ErrNotOracle
+		return [2]chaincon.Block{}, chaincon.ErrNotOracle
 	}
 
 	options, err := oracleBlk.Options(ctx)
 	if err != nil {
-		return [2]linear.Block{}, err
+		return [2]chaincon.Block{}, err
 	}
 	// A pre-fork block's child options are always pre-fork blocks
-	return [2]linear.Block{
+	return [2]chaincon.Block{
 		&preForkBlock{
 			Block: options[0],
 			vm:    b.vm,
@@ -73,8 +74,12 @@ func (b *preForkBlock) Options(ctx context.Context) ([2]linear.Block, error) {
 	}, nil
 }
 
-func (b *preForkBlock) getInnerBlk() linear.Block {
+func (b *preForkBlock) getInnerBlk() chaincon.Block {
 	return b.Block
+}
+
+func (b *preForkBlock) Timestamp() time.Time {
+	return time.Unix(int64(b.Time()), 0)
 }
 
 func (b *preForkBlock) verifyPreForkChild(ctx context.Context, child *preForkBlock) error {
@@ -84,9 +89,10 @@ func (b *preForkBlock) verifyPreForkChild(ctx context.Context, child *preForkBlo
 			return err
 		}
 
+		blkID, _ := ids.FromString(b.ID())
 		b.vm.ctx.Log.Debug("allowing pre-fork block after the fork time",
 			zap.String("reason", "parent is an oracle block"),
-			zap.Stringer("blkID", b.ID()),
+			zap.Stringer("blkID", blkID),
 		)
 	}
 
@@ -103,9 +109,10 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 	childPChainHeight := child.PChainHeight()
 	currentPChainHeight, err := b.vm.ctx.ValidatorState.GetCurrentHeight(ctx)
 	if err != nil {
+		childIDConverted, _ := ids.FromString(childID)
 		b.vm.ctx.Log.Error("block verification failed",
 			zap.String("reason", "failed to get current P-Chain height"),
-			zap.Stringer("blkID", childID),
+			zap.Stringer("blkID", childIDConverted),
 			zap.Error(err),
 		)
 		return err
@@ -124,7 +131,8 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 	// Make sure [b] is the parent of [child]'s inner block
 	expectedInnerParentID := b.ID()
 	innerParentID := child.innerBlk.Parent()
-	if innerParentID != expectedInnerParentID {
+	expectedID, _ := ids.FromString(expectedInnerParentID)
+	if innerParentID != expectedID {
 		return errInnerParentMismatch
 	}
 
@@ -162,7 +170,7 @@ func (*preForkBlock) verifyPostForkOption(context.Context, *postForkOption) erro
 }
 
 func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
-	parentTimestamp := b.Timestamp()
+	parentTimestamp := time.Unix(int64(b.Time()), 0)
 	if !b.vm.Upgrades.IsApricotPhase4Activated(parentTimestamp) {
 		// The chain hasn't forked yet
 		innerBlock, err := b.vm.ChainVM.BuildBlock(ctx)
@@ -170,8 +178,9 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 			return nil, err
 		}
 
+		innerBlockID, _ := ids.FromString(innerBlock.ID())
 		b.vm.ctx.Log.Info("built block",
-			zap.Stringer("blkID", innerBlock.ID()),
+			zap.Stringer("blkID", innerBlockID),
 			zap.Uint64("height", innerBlock.Height()),
 			zap.Time("parentTimestamp", parentTimestamp),
 		)
@@ -184,7 +193,8 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 
 	// The chain is currently forking
 
-	parentID := b.ID()
+	parentIDStr := b.ID()
+	parentID, _ := ids.FromString(parentIDStr)
 	newTimestamp := b.vm.Time().Truncate(time.Second)
 	if newTimestamp.Before(parentTimestamp) {
 		newTimestamp = parentTimestamp
@@ -225,9 +235,11 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		},
 	}
 
+	blkID, _ := ids.FromString(blk.ID())
+	innerBlkID, _ := ids.FromString(innerBlock.ID())
 	b.vm.ctx.Log.Info("built block",
-		zap.Stringer("blkID", blk.ID()),
-		zap.Stringer("innerBlkID", innerBlock.ID()),
+		zap.Stringer("blkID", blkID),
+		zap.Stringer("innerBlkID", innerBlkID),
 		zap.Uint64("height", blk.Height()),
 		zap.Uint64("pChainHeight", pChainHeight),
 		zap.Time("parentTimestamp", parentTimestamp),

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -6,8 +6,8 @@ package block
 import (
 	"time"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
@@ -55,7 +55,19 @@ func (b *ApricotAbortBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (*ApricotAbortBlock) InitCtx(*consensus.Context) {}
+// Initialize implements quasar.ContextInitializable
+func (b *ApricotAbortBlock) Initialize(ctx *quasar.Context) error {
+	b.InitCtx(ctx)
+	return nil
+}
+
+// Initialize implements quasar.ContextInitializable
+func (b *BanffAbortBlock) Initialize(ctx *quasar.Context) error {
+	b.ApricotAbortBlock.Initialize(ctx)
+	return nil
+}
+
+func (*ApricotAbortBlock) InitCtx(*quasar.Context) {}
 
 func (*ApricotAbortBlock) Txs() []*txs.Tx {
 	return nil

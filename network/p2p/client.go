@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -10,9 +10,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core/appsender"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -35,7 +35,7 @@ type Client struct {
 	handlerIDStr  string
 	handlerPrefix []byte
 	router        *router
-	sender        core.AppSender
+	sender        appsender.AppSender
 	options       *clientOptions
 }
 
@@ -114,7 +114,7 @@ func (c *Client) AppRequest(
 // AppGossip sends a gossip message to a random set of peers.
 func (c *Client) AppGossip(
 	ctx context.Context,
-	config core.SendConfig,
+	config appsender.SendConfig,
 	appGossipBytes []byte,
 ) error {
 	// Cancellation is removed from this context to avoid erroring unexpectedly.

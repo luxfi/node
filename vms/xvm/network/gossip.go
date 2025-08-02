@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -11,13 +11,13 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms/xvm/txs"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/node/vms/xvm/txs"
 )
 
 var (
@@ -69,7 +69,7 @@ func (g *txParser) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
 func newGossipMempool(
 	mempool mempool.Mempool[*txs.Tx],
 	registerer prometheus.Registerer,
-	log logging.Logger,
+	log log.Logger,
 	txVerifier TxVerifier,
 	minTargetElements int,
 	targetFalsePositiveProbability,
@@ -86,7 +86,7 @@ func newGossipMempool(
 
 type gossipMempool struct {
 	mempool.Mempool[*txs.Tx]
-	log        logging.Logger
+	log        log.Logger
 	txVerifier TxVerifier
 
 	lock  sync.RWMutex

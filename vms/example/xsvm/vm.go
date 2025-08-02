@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xsvm
@@ -13,15 +13,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/network/p2p/acp118"
+	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/example/xsvm/api"
@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	smblock "github.com/luxfi/node/consensus/engine/linear/block"
+	smblock "github.com/luxfi/node/quasar/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
@@ -43,8 +43,8 @@ var (
 type VM struct {
 	*p2p.Network
 
-	chainContext *consensus.Context
-	db           database.Database
+	chainContext *quasar.Context
+	db           db.Database
 	genesis      *genesis.Genesis
 
 	chain   chain.Chain
@@ -53,8 +53,8 @@ type VM struct {
 
 func (vm *VM) Initialize(
 	_ context.Context,
-	chainContext *consensus.Context,
-	db database.Database,
+	chainContext *quasar.Context,
+	db db.Database,
 	genesisBytes []byte,
 	_ []byte,
 	_ []byte,
@@ -83,11 +83,11 @@ func (vm *VM) Initialize(
 
 	// Allow signing of all warp messages. This is not typically safe, but is
 	// allowed for this example.
-	acp118Handler := acp118.NewHandler(
-		acp118Verifier{},
+	lp118Handler := lp118.NewHandler(
+		lp118Verifier{},
 		chainContext.WarpSigner,
 	)
-	if err := vm.Network.AddHandler(p2p.SignatureRequestHandlerID, acp118Handler); err != nil {
+	if err := vm.Network.AddHandler(p2p.SignatureRequestHandlerID, lp118Handler); err != nil {
 		return err
 	}
 
@@ -121,7 +121,7 @@ func (vm *VM) Initialize(
 	return nil
 }
 
-func (vm *VM) SetState(_ context.Context, state consensus.State) error {
+func (vm *VM) SetState(_ context.Context, state quasar.State) error {
 	vm.chain.SetChainState(state)
 	return nil
 }

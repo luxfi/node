@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package quasar;
+
+option go_package = "github.com/luxfi/node/proto/pb/quasar";
+
+// QuasarFinalityCertificate represents the dual-signature finality certificate
+message QuasarFinalityCertificate {
+  bytes block_id = 1; // Unique identifier of the block (hash)
+  uint64 block_height = 2; // Height or sequence number of the block
+  uint32 epoch = 3; // Ringtail key epoch or version used for this cert
+  bytes bls_aggregate_sig = 4; // Aggregated BLS signature for the block
+  bytes ringtail_sig = 5; // Final Ringtail threshold signature for the block
+  repeated uint32 signer_ids = 6; // List of validator IDs who signed
+  uint64 timestamp = 7; // Timestamp when certificate was created
+}
+
+// QuasarPartialSig represents a validator's partial signature contribution
+message QuasarPartialSig {
+  bytes block_id = 1;
+  uint32 validator_id = 2;
+  bytes bls_sig_share = 3; // This validator's BLS signature on block
+  bytes ringtail_commitment = 4; // Round 1 data for Ringtail (if applicable)
+  bytes ringtail_sig_share = 5; // Round 2 data: the validator's Ringtail signature share
+  uint64 timestamp = 6;
+}
+
+// QuasarKeyRotation represents a key rotation announcement
+message QuasarKeyRotation {
+  uint32 validator_id = 1;
+  bytes new_bls_public_key = 2;
+  bytes new_ringtail_public_key = 3;
+  uint32 effective_epoch = 4;
+  bytes old_key_signature = 5; // Signed by old key to prove ownership
+}
+
+// QuasarMisbehaviorEvidence represents evidence of validator misbehavior
+message QuasarMisbehaviorEvidence {
+  bytes block_id = 1;
+  uint32 offender_id = 2;
+  bytes bls_signature = 3; // Offender's BLS signature on the block
+  bytes missing_ringtail_share = 4; // Empty if not provided
+  bytes invalid_ringtail_share = 5; // If provided but found invalid
+  repeated bytes witness_sigs = 6; // Signatures from witnesses
+}
+
+// QuasarDoubleSignEvidence represents evidence of double-signing
+message QuasarDoubleSignEvidence {
+  uint32 offender_id = 1;
+  bytes block_id_1 = 2;
+  bytes block_id_2 = 3;
+  bytes bls_sig_1 = 4;
+  bytes bls_sig_2 = 5;
+  bytes ringtail_sig_share_1 = 6;
+  bytes ringtail_sig_share_2 = 7;
+}
+
+// QuasarPrecompRequest represents a request for precomputation status
+message QuasarPrecompRequest {
+  uint32 validator_id = 1;
+}
+
+// QuasarPrecompResponse represents precomputation status
+message QuasarPrecompResponse {
+  uint32 validator_id = 1;
+  uint32 available_precomps = 2;
+  uint32 precomp_rate_per_sec = 3;
+  uint64 last_rotation_epoch = 4;
+  uint64 next_rotation_epoch = 5;
+}

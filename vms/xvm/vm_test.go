@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -10,22 +10,22 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/core"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm/txs"
 )
 
 func TestInvalidGenesis(t *testing.T) {
@@ -601,7 +601,7 @@ func TestIssueExportTx(t *testing.T) {
 	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
 
 	var (
-		luxID     = genesisTx.ID()
+		luxID      = genesisTx.ID()
 		key        = keys[0]
 		kc         = secp256k1fx.NewKeychain(key)
 		to         = key.PublicKey().Address()
@@ -661,7 +661,7 @@ func TestClearForceAcceptedExportTx(t *testing.T) {
 	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
 
 	var (
-		luxID     = genesisTx.ID()
+		luxID      = genesisTx.ID()
 		key        = keys[0]
 		kc         = secp256k1fx.NewKeychain(key)
 		to         = key.PublicKey().Address()

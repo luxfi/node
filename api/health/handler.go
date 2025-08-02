@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package health
@@ -9,14 +9,14 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 
 	avajson "github.com/luxfi/node/utils/json"
 )
 
 // NewGetAndPostHandler returns a health handler that supports GET and jsonrpc
 // POST requests.
-func NewGetAndPostHandler(log logging.Logger, reporter Reporter) (http.Handler, error) {
+func NewGetAndPostHandler(log log.Logger, reporter Reporter) (http.Handler, error) {
 	newServer := rpc.NewServer()
 	codec := avajson.NewCodec()
 	newServer.RegisterCodec(codec, "application/json")

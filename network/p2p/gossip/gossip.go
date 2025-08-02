@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -13,14 +13,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/quasar/engine/core/appsender"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/buffer"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -101,6 +101,7 @@ type Metrics struct {
 	tracking                *prometheus.GaugeVec
 	trackingLifetimeAverage prometheus.Gauge
 	topValidators           *prometheus.GaugeVec
+	bloomFilterHitRate      prometheus.Histogram
 }
 
 // NewMetrics returns a common set of metrics
@@ -146,6 +147,15 @@ func NewMetrics(
 			},
 			typeLabels,
 		),
+		bloomFilterHitRate: prometheus.NewHistogram(prometheus.HistogramOpts{
+			Namespace: namespace,
+			Name:      "bloomfilter_hit_rate",
+			Help:      "Hit rate (%) of the bloom filter sent by pull gossip",
+			// Buckets are (-∞, 0], (0, 25%], (25%, 50%], (50%, 75%], (75%, ∞).
+			// 0% is placed into its own bucket so that useless bloom filters
+			// can be easily identified.
+			Buckets: []float64{0, 25, 50, 75},
+		}),
 	}
 	err := errors.Join(
 		metrics.Register(m.count),
@@ -153,6 +163,7 @@ func NewMetrics(
 		metrics.Register(m.tracking),
 		metrics.Register(m.trackingLifetimeAverage),
 		metrics.Register(m.topValidators),
+		metrics.Register(m.bloomFilterHitRate),
 	)
 	return m, err
 }
@@ -182,7 +193,7 @@ func (v ValidatorGossiper) Gossip(ctx context.Context) error {
 }
 
 func NewPullGossiper[T Gossipable](
-	log logging.Logger,
+	log log.Logger,
 	marshaller Marshaller[T],
 	set Set[T],
 	client *p2p.Client,
@@ -200,7 +211,7 @@ func NewPullGossiper[T Gossipable](
 }
 
 type PullGossiper[T Gossipable] struct {
-	log        logging.Logger
+	log        log.Logger
 	marshaller Marshaller[T]
 	set        Set[T]
 	client     *p2p.Client
@@ -507,11 +518,9 @@ func (p *PushGossiper[T]) gossip(
 
 	return p.client.AppGossip(
 		ctx,
-		core.SendConfig{
-			NodeIDs:       set.Of(validatorsByStake...),
-			Validators:    gossipParams.Validators,
-			NonValidators: gossipParams.NonValidators,
-			Peers:         gossipParams.Peers,
+		appsender.SendConfig{
+			Validators:    set.Of(validatorsByStake...),
+			NonValidators: set.Set[ids.NodeID]{},
 		},
 		msgBytes,
 	)
@@ -570,7 +579,7 @@ func (p *PushGossiper[_]) updateMetrics(nowUnixNano float64) {
 }
 
 // Every calls [Gossip] every [frequency] amount of time.
-func Every(ctx context.Context, log logging.Logger, gossiper Gossiper, frequency time.Duration) {
+func Every(ctx context.Context, log log.Logger, gossiper Gossiper, frequency time.Duration) {
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
 

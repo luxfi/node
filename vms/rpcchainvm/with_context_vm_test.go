@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -11,20 +11,20 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/linearmock"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/chain/chainmock"
 )
 
 var (
 	_ block.ChainVM                      = ContextEnabledVMMock{}
 	_ block.BuildBlockWithContextChainVM = ContextEnabledVMMock{}
 
-	_ linear.Block           = ContextEnabledBlockMock{}
+	_ linear.Block            = ContextEnabledBlockMock{}
 	_ block.WithVerifyContext = ContextEnabledBlockMock{}
 
 	blockContext = &block.Context{
@@ -42,7 +42,7 @@ type ContextEnabledVMMock struct {
 }
 
 type ContextEnabledBlockMock struct {
-	*linearmock.Block
+	*chainmock.Block
 	*blockmock.WithVerifyContext
 }
 
@@ -58,7 +58,7 @@ func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM
 
 	if loadExpectations {
 		ctxBlock := ContextEnabledBlockMock{
-			Block:             linearmock.NewBlock(ctrl),
+			Block:             chainmock.NewBlock(ctrl),
 			WithVerifyContext: blockmock.NewWithVerifyContext(ctrl),
 		}
 		gomock.InOrder(

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package nftfx
@@ -6,7 +6,7 @@ package nftfx
 import (
 	"errors"
 
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
@@ -21,10 +21,16 @@ type MintOperation struct {
 	Outputs   []*secp256k1fx.OutputOwners `serialize:"true" json:"outputs"`
 }
 
-func (op *MintOperation) InitCtx(ctx *consensus.Context) {
+func (op *MintOperation) InitCtx(ctx *quasar.Context) {
 	for _, out := range op.Outputs {
 		out.InitCtx(ctx)
 	}
+}
+
+// Initialize implements quasar.ContextInitializable
+func (op *MintOperation) Initialize(ctx *quasar.Context) error {
+	op.InitCtx(ctx)
+	return nil
 }
 
 func (op *MintOperation) Cost() (uint64, error) {

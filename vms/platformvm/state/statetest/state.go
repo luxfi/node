@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package statetest
@@ -10,15 +10,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/validators"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
@@ -30,13 +30,13 @@ import (
 var DefaultNodeID = ids.GenerateTestNodeID()
 
 type Config struct {
-	DB         database.Database
+	DB         db.Database
 	Genesis    []byte
 	Registerer prometheus.Registerer
 	Validators validators.Manager
 	Upgrades   upgrade.Config
 	Config     config.Config
-	Context    *consensus.Context
+	Context    *quasar.Context
 	Metrics    metrics.Metrics
 	Rewards    reward.Calculator
 }
@@ -46,10 +46,10 @@ func New(t testing.TB, c Config) state.State {
 		c.DB = memdb.New()
 	}
 	if c.Context == nil {
-		c.Context = &consensus.Context{
+		c.Context = &quasar.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    DefaultNodeID,
-			Log:       logging.NoLog{},
+			Log:       log.NewNoOpLogger(),
 		}
 	}
 	if len(c.Genesis) == 0 {

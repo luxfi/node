@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build linux
@@ -16,7 +16,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 )
@@ -27,7 +27,7 @@ func NewCmd(path string, args ...string) *exec.Cmd {
 	return cmd
 }
 
-func stop(ctx context.Context, log logging.Logger, cmd *exec.Cmd) {
+func stop(ctx context.Context, log log.Logger, cmd *exec.Cmd) {
 	waitChan := make(chan error)
 	go func() {
 		// attempt graceful shutdown

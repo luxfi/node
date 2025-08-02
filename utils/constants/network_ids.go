@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package constants
@@ -9,12 +9,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 )
 
 // Const variables to be exported
 const (
+<<<<<<< HEAD
 	MainnetID uint32 = 1
 	CascadeID uint32 = 2
 	DenaliID  uint32 = 3
@@ -39,14 +40,49 @@ const (
 	UnitTestHRP = "testing"
 	LocalHRP    = "local"
 	FallbackHRP = "custom"
+=======
+	MainnetID  uint32 = 1
+	CascadeID  uint32 = 2
+	DenaliID   uint32 = 3
+	EverestID  uint32 = 4
+	TestnetID  uint32 = 5
+	UnitTestID uint32 = 10
+	LocalID    uint32 = 12345
+
+	// Lux Network IDs
+	LuxMainnetID uint32 = 96369
+	LuxTestnetID uint32 = 96368
+
+	MainnetName    = "mainnet"
+	CascadeName    = "cascade"
+	DenaliName     = "denali"
+	EverestName    = "everest"
+	TestnetName    = "testnet"
+	UnitTestName   = "testing"
+	LocalName      = "local"
+	LuxMainnetName = "lux-mainnet"
+	LuxTestnetName = "lux-testnet"
+
+	MainnetHRP    = "lux"
+	CascadeHRP    = "cascade"
+	DenaliHRP     = "denali"
+	EverestHRP    = "everest"
+	TestnetHRP    = "testnet"
+	UnitTestHRP   = "testing"
+	LocalHRP      = "local"
+	LuxMainnetHRP = "lux"
+	LuxTestnetHRP = "lux-test"
+	FallbackHRP   = "custom"
+>>>>>>> main
 )
 
 // Variables to be exported
 var (
 	PrimaryNetworkID = ids.Empty
-	PlatformChainID  = ids.Empty
+	QuantumChainID   = ids.Empty // Q-Chain is the quantum chain (formerly P-Chain/Platform Chain)
 
 	NetworkIDToNetworkName = map[uint32]string{
+<<<<<<< HEAD
 		MainnetID:  MainnetName,
 		CascadeID:  CascadeName,
 		DenaliID:   DenaliName,
@@ -73,13 +109,51 @@ var (
 		TestnetID:     TestnetHRP,
 		UnitTestID: UnitTestHRP,
 		LocalID:    LocalHRP,
+=======
+		MainnetID:    MainnetName,
+		CascadeID:    CascadeName,
+		DenaliID:     DenaliName,
+		EverestID:    EverestName,
+		TestnetID:    TestnetName,
+		UnitTestID:   UnitTestName,
+		LocalID:      LocalName,
+		LuxMainnetID: LuxMainnetName,
+		LuxTestnetID: LuxTestnetName,
+	}
+	NetworkNameToNetworkID = map[string]uint32{
+		MainnetName:    MainnetID,
+		CascadeName:    CascadeID,
+		DenaliName:     DenaliID,
+		EverestName:    EverestID,
+		TestnetName:    TestnetID,
+		UnitTestName:   UnitTestID,
+		LocalName:      LocalID,
+		LuxMainnetName: LuxMainnetID,
+		LuxTestnetName: LuxTestnetID,
+	}
+
+	NetworkIDToHRP = map[uint32]string{
+		MainnetID:    MainnetHRP,
+		CascadeID:    CascadeHRP,
+		DenaliID:     DenaliHRP,
+		EverestID:    EverestHRP,
+		TestnetID:    TestnetHRP,
+		UnitTestID:   UnitTestHRP,
+		LocalID:      LocalHRP,
+		LuxMainnetID: LuxMainnetHRP,
+		LuxTestnetID: LuxTestnetHRP,
+>>>>>>> main
 	}
 	NetworkHRPToNetworkID = map[string]uint32{
 		MainnetHRP:  MainnetID,
 		CascadeHRP:  CascadeID,
 		DenaliHRP:   DenaliID,
 		EverestHRP:  EverestID,
+<<<<<<< HEAD
 		TestnetHRP:     TestnetID,
+=======
+		TestnetHRP:  TestnetID,
+>>>>>>> main
 		UnitTestHRP: UnitTestID,
 		LocalHRP:    LocalID,
 	}
@@ -123,4 +197,10 @@ func NetworkID(networkName string) (uint32, error) {
 		return 0, fmt.Errorf("%w: %q", ErrParseNetworkName, networkName)
 	}
 	return uint32(id), nil
+}
+
+// PlatformChainID returns the QuantumChainID.
+// Deprecated: Use QuantumChainID directly. This function exists for backward compatibility.
+func PlatformChainID() ids.ID {
+	return QuantumChainID
 }

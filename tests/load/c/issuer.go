@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -12,11 +12,19 @@ import (
 	"math/rand/v2"
 
 	"github.com/luxfi/evm/accounts/abi/bind"
+<<<<<<< HEAD
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/luxfi/evm/ethclient"
 	"github.com/luxfi/evm/params"
+=======
+	"github.com/luxfi/evm/ethclient"
+	"github.com/luxfi/evm/params"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/crypto"
+>>>>>>> main
 
 	"github.com/luxfi/node/tests/load/c/contracts"
 )

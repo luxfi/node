@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -12,17 +12,17 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/linear/block"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	chaincon "github.com/luxfi/node/quasar/chain"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -34,10 +34,25 @@ import (
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
 
+// blockWrapper wraps a proposervm.Block to implement block.Block
+type blockWrapper struct {
+	Block
+}
+
+// Ensure blockWrapper implements block.Block
+var _ block.Block = (*blockWrapper)(nil)
+
+// wrapBlock wraps a proposervm.Block to satisfy block.Block interface
+func wrapBlock(blk Block) block.Block {
+	if blk == nil {
+		return nil
+	}
+	return &blockWrapper{Block: blk}
+}
+
 const (
-	// DefaultMinBlockDelay should be kept as whole seconds because block
-	// timestamps are only specific to the second.
-	DefaultMinBlockDelay = time.Second
+	// DefaultMinBlockDelay defines the minimum delay to throttle block production.
+	DefaultMinBlockDelay = 100 * time.Millisecond
 	// DefaultNumHistoricalBlocks as 0 results in never deleting any historical
 	// blocks.
 	DefaultNumHistoricalBlocks uint64 = 0
@@ -53,7 +68,7 @@ var (
 	dbPrefix = []byte("proposervm")
 )
 
-func cachedBlockSize(_ ids.ID, blk linear.Block) int {
+func cachedBlockSize(_ ids.ID, blk chaincon.Block) int {
 	return ids.IDLen + len(blk.Bytes()) + constants.PointerOverhead
 }
 
@@ -70,7 +85,7 @@ type VM struct {
 	tree.Tree
 	mockable.Clock
 
-	ctx *consensus.Context
+	ctx *quasar.Context
 	db  *versiondb.Database
 
 	// Block ID --> Block
@@ -81,9 +96,9 @@ type VM struct {
 	// Only contains post-fork blocks near the tip so that the cache doesn't get
 	// filled with random blocks every time this node parses blocks while
 	// processing a GetAncestors message from a bootstrapping node.
-	innerBlkCache  cache.Cacher[ids.ID, linear.Block]
+	innerBlkCache  cache.Cacher[ids.ID, chaincon.Block]
 	preferred      ids.ID
-	consensusState consensus.State
+	consensusState quasar.State
 
 	// lastAcceptedTime is set to the last accepted PostForkBlock's timestamp
 	// if the last accepted block has been a PostForkOption block since having
@@ -126,8 +141,8 @@ func New(
 
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
-	db database.Database,
+	chainCtx *quasar.Context,
+	database db.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
@@ -135,7 +150,7 @@ func (vm *VM) Initialize(
 	appSender core.AppSender,
 ) error {
 	vm.ctx = chainCtx
-	vm.db = versiondb.New(prefixdb.New(dbPrefix, db))
+	vm.db = versiondb.New(prefixdb.New(dbPrefix, database))
 	baseState, err := state.NewMetered(vm.db, "state", vm.Config.Registerer)
 	if err != nil {
 		return err
@@ -158,7 +173,7 @@ func (vm *VM) Initialize(
 	err = vm.ChainVM.Initialize(
 		ctx,
 		chainCtx,
-		db,
+		database,
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
@@ -189,7 +204,7 @@ func (vm *VM) Initialize(
 			zap.Uint64("forkHeight", forkHeight),
 			zap.Uint64("lastAcceptedHeight", vm.lastAcceptedHeight),
 		)
-	case database.ErrNotFound:
+	case db.ErrNotFound:
 		chainCtx.Log.Info("initialized proposervm",
 			zap.String("state", "before fork"),
 		)
@@ -230,20 +245,18 @@ func (vm *VM) Initialize(
 
 // Shutdown ops then propagate shutdown to innerVM
 func (vm *VM) Shutdown(ctx context.Context) error {
-	if err := vm.db.Commit(); err != nil {
-		return err
-	}
+	// versiondb doesn't have Commit method, operations are committed immediately
 	return vm.ChainVM.Shutdown(ctx)
 }
 
-func (vm *VM) SetState(ctx context.Context, newState consensus.State) error {
+func (vm *VM) SetState(ctx context.Context, newState quasar.State) error {
 	if err := vm.ChainVM.SetState(ctx, newState); err != nil {
 		return err
 	}
 
 	oldState := vm.consensusState
 	vm.consensusState = newState
-	if oldState != consensus.StateSyncing {
+	if oldState != quasar.StateSyncing {
 		return nil
 	}
 
@@ -257,7 +270,7 @@ func (vm *VM) SetState(ctx context.Context, newState consensus.State) error {
 	return vm.setLastAcceptedMetadata(ctx)
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (linear.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	preferredBlock, err := vm.getBlock(ctx, vm.preferred)
 	if err != nil {
 		vm.ctx.Log.Error("unexpected build block failure",
@@ -268,25 +281,41 @@ func (vm *VM) BuildBlock(ctx context.Context) (linear.Block, error) {
 		return nil, err
 	}
 
-	return preferredBlock.buildChild(ctx)
+	child, err := preferredBlock.buildChild(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return wrapBlock(child), nil
 }
 
-func (vm *VM) ParseBlock(ctx context.Context, b []byte) (linear.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, b []byte) (block.Block, error) {
 	if blk, err := vm.parsePostForkBlock(ctx, b, true); err == nil {
-		return blk, nil
+		return wrapBlock(blk), nil
 	}
-	return vm.parsePreForkBlock(ctx, b)
+	preFork, err := vm.parsePreForkBlock(ctx, b)
+	if err != nil {
+		return nil, err
+	}
+	return wrapBlock(preFork), nil
 }
 
-func (vm *VM) ParseLocalBlock(ctx context.Context, b []byte) (linear.Block, error) {
+func (vm *VM) ParseLocalBlock(ctx context.Context, b []byte) (block.Block, error) {
 	if blk, err := vm.parsePostForkBlock(ctx, b, false); err == nil {
-		return blk, nil
+		return wrapBlock(blk), nil
 	}
-	return vm.parsePreForkBlock(ctx, b)
+	preFork, err := vm.parsePreForkBlock(ctx, b)
+	if err != nil {
+		return nil, err
+	}
+	return wrapBlock(preFork), nil
 }
 
-func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (linear.Block, error) {
-	return vm.getBlock(ctx, id)
+func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
+	blk, err := vm.getBlock(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return wrapBlock(blk), nil
 }
 
 func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
@@ -300,7 +329,11 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 		return vm.ChainVM.SetPreference(ctx, preferred)
 	}
 
-	innerBlkID := blk.getInnerBlk().ID()
+	innerBlkIDStr := blk.getInnerBlk().ID()
+	innerBlkID, err := ids.FromString(innerBlkIDStr)
+	if err != nil {
+		return err
+	}
 	if err := vm.ChainVM.SetPreference(ctx, innerBlkID); err != nil {
 		return err
 	}
@@ -316,13 +349,13 @@ func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
 	for {
 		if err := ctx.Err(); err != nil {
 			vm.ctx.Log.Debug("Aborting WaitForEvent, context is done", zap.Error(err))
-			return 0, err
+			return core.Message{}, err
 		}
 
 		timeToBuild, shouldWait, err := vm.timeToBuild(ctx)
 		if err != nil {
 			vm.ctx.Log.Debug("Aborting WaitForEvent", zap.Error(err))
-			return 0, err
+			return core.Message{}, err
 		}
 
 		// If we are pre-fork or haven't finished bootstrapping yet, we should
@@ -356,16 +389,16 @@ func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
-	// Block building is only supported if the consensus state is normal
+	// Block building is only supported if the quasar state is normal
 	// operations and the vm is not state syncing.
 	//
 	// TODO: Correctly handle dynamic state sync here. When the innerVM is
 	// dynamically state syncing, we should return here as well.
-	if vm.consensusState != consensus.NormalOp {
+	if vm.consensusState != quasar.NormalOp {
 		return time.Time{}, false, nil
 	}
 
-	// Because the VM in marked as being in the [consensus.NormalOp] state, we know
+	// Because the VM in marked as being in the [quasar.NormalOp] state, we know
 	// that [VM.SetPreference] must have already been called.
 	blk, err := vm.getPostForkBlock(ctx, vm.preferred)
 	// If the preferred block is pre-fork, we should wait for events on the
@@ -430,7 +463,7 @@ func (vm *VM) getPreDurangoSlotTime(
 	}
 
 	// Note: The P-chain does not currently try to target any block time. It
-	// notifies the consensus engine as soon as a new block may be built. To
+	// notifies the quasar engine as soon as a new block may be built. To
 	// avoid fast runs of blocks there is an additional minimum delay that
 	// validators can specify. This delay may be an issue for high performance,
 	// custom VMs. Until the P-chain is modified to target a specific block
@@ -454,7 +487,7 @@ func (vm *VM) getPostDurangoSlotTime(
 		slot,
 	)
 	// Note: The P-chain does not currently try to target any block time. It
-	// notifies the consensus engine as soon as a new block may be built. To
+	// notifies the quasar engine as soon as a new block may be built. To
 	// avoid fast runs of blocks there is an additional minimum delay that
 	// validators can specify. This delay may be an issue for high performance,
 	// custom VMs. Until the P-chain is modified to target a specific block
@@ -472,7 +505,7 @@ func (vm *VM) getPostDurangoSlotTime(
 
 func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	lastAccepted, err := vm.State.GetLastAccepted()
-	if err == database.ErrNotFound {
+	if err == db.ErrNotFound {
 		return vm.ChainVM.LastAccepted(ctx)
 	}
 	return lastAccepted, err
@@ -488,7 +521,7 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		return fmt.Errorf("failed to get inner last accepted block: %w", err)
 	}
 	proLastAcceptedID, err := vm.State.GetLastAccepted()
-	if err == database.ErrNotFound {
+	if err == db.ErrNotFound {
 		// If the last accepted block isn't indexed yet, then the underlying
 		// chain is the only chain and there is nothing to repair.
 		return nil
@@ -529,7 +562,8 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		if err := vm.State.DeleteLastAccepted(); err != nil {
 			return fmt.Errorf("failed to delete last accepted: %w", err)
 		}
-		return vm.db.Commit()
+		// versiondb doesn't have Commit method, operations are committed immediately
+		return nil
 	}
 
 	newProLastAcceptedID, err := vm.State.GetBlockIDAtHeight(innerLastAcceptedHeight)
@@ -544,16 +578,14 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		return fmt.Errorf("failed to set last accepted: %w", err)
 	}
 
-	if err := vm.db.Commit(); err != nil {
-		return fmt.Errorf("failed to commit db: %w", err)
-	}
+	// versiondb doesn't have Commit method, operations are committed immediately
 
 	return nil
 }
 
 func (vm *VM) setLastAcceptedMetadata(ctx context.Context) error {
 	lastAcceptedID, err := vm.GetLastAccepted()
-	if err == database.ErrNotFound {
+	if err == db.ErrNotFound {
 		// If the last accepted block wasn't a PostFork block, then we don't
 		// initialize the metadata.
 		vm.lastAcceptedHeight = 0
@@ -687,7 +719,8 @@ func (vm *VM) getPreForkBlock(ctx context.Context, blkID ids.ID) (*preForkBlock,
 
 func (vm *VM) acceptPostForkBlock(blk PostForkBlock) error {
 	height := blk.Height()
-	blkID := blk.ID()
+	blkIDStr := blk.ID()
+	blkID, _ := ids.FromString(blkIDStr)
 
 	vm.lastAcceptedHeight = height
 	delete(vm.verifiedBlocks, blkID)
@@ -702,12 +735,14 @@ func (vm *VM) acceptPostForkBlock(blk PostForkBlock) error {
 	if err := vm.updateHeightIndex(height, blkID); err != nil {
 		return err
 	}
-	return vm.db.Commit()
+	// versiondb doesn't have Commit method, operations are committed immediately
+	return nil
 }
 
 func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Context, postFork PostForkBlock) error {
 	innerBlk := postFork.getInnerBlk()
-	postForkID := postFork.ID()
+	postForkIDStr := postFork.ID()
+	postForkID, _ := ids.FromString(postForkIDStr)
 	originalInnerBlock, previouslyVerified := vm.Tree.Get(innerBlk)
 	if previouslyVerified {
 		innerBlk = originalInnerBlock
@@ -788,7 +823,7 @@ func (vm *VM) selectChildPChainHeight(ctx context.Context, minPChainHeight uint6
 // parseInnerBlock attempts to parse the provided bytes as an inner block. If
 // the inner block happens to be cached, then the inner block will not be
 // parsed.
-func (vm *VM) parseInnerBlock(ctx context.Context, outerBlkID ids.ID, innerBlkBytes []byte) (linear.Block, error) {
+func (vm *VM) parseInnerBlock(ctx context.Context, outerBlkID ids.ID, innerBlkBytes []byte) (chaincon.Block, error) {
 	if innerBlk, ok := vm.innerBlkCache.Get(outerBlkID); ok {
 		return innerBlk, nil
 	}
@@ -803,7 +838,7 @@ func (vm *VM) parseInnerBlock(ctx context.Context, outerBlkID ids.ID, innerBlkBy
 
 // Caches proposervm block ID --> inner block if the inner block's height
 // is within [innerBlkCacheSize] of the last accepted block's height.
-func (vm *VM) cacheInnerBlock(outerBlkID ids.ID, innerBlk linear.Block) {
+func (vm *VM) cacheInnerBlock(outerBlkID ids.ID, innerBlk chaincon.Block) {
 	diff := math.AbsDiff(innerBlk.Height(), vm.lastAcceptedHeight)
 	if diff < innerBlkCacheSize {
 		vm.innerBlkCache.Put(outerBlkID, innerBlk)

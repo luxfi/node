@@ -18,8 +18,8 @@ message PushGossip {
 }
 
 // SignatureRequest is an AppRequest message type for requesting
-// a BLS signature over a Warp message, as defined in ACP-118:
-// https://github.com/lux-foundation/ACPs/tree/main/ACPs/118-warp-signature-request
+// a BLS signature over a Warp message, as defined in LP-118:
+// https://github.com/luxfi/LPs/tree/main/LPs/118-warp-signature-request
 message SignatureRequest {
   // Warp message to be signed
   bytes message = 1;
@@ -28,8 +28,8 @@ message SignatureRequest {
 }
 
 // SignatureResponse is an AppResponse message type for providing
-// a requested BLS signature over a Warp message, as defined in ACP-118:
-// https://github.com/lux-foundation/ACPs/tree/main/ACPs/118-warp-signature-request
+// a requested BLS signature over a Warp message, as defined in LP-118:
+// https://github.com/luxfi/LPs/tree/main/LPs/118-warp-signature-request
 message SignatureResponse {
   // BLS signature over the Warp message
   bytes signature = 1;

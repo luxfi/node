@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chain
@@ -8,15 +8,16 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
+	consensuschain "github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/choices"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 
-	smblock "github.com/luxfi/node/consensus/engine/linear/block"
+	smblock "github.com/luxfi/node/quasar/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
@@ -34,14 +35,14 @@ var (
 )
 
 type Block interface {
-	linear.Block
+	consensuschain.Block
 	smblock.WithVerifyContext
 
 	// State intends to return the new chain state following this block's
 	// acceptance. The new chain state is built (but not persisted) following a
 	// block's verification to allow block's descendants verification before
 	// being accepted.
-	State() (database.Database, error)
+	State() (db.Database, error)
 }
 
 type block struct {
@@ -56,12 +57,17 @@ type block struct {
 	verifiedChildrenIDs set.Set[ids.ID]
 }
 
-func (b *block) ID() ids.ID {
-	return b.id
-}
-
 func (b *block) Parent() ids.ID {
 	return b.ParentID
+}
+
+func (b *block) ID() string {
+	return b.id.String()
+}
+
+func (b *block) Status() choices.Status {
+	// TODO: Implement proper status tracking
+	return choices.Processing
 }
 
 func (b *block) Bytes() []byte {
@@ -73,17 +79,19 @@ func (b *block) Height() uint64 {
 }
 
 func (b *block) Timestamp() time.Time {
-	return b.Time()
+	return b.Stateless.Time()
+}
+
+func (b *block) Time() uint64 {
+	return uint64(b.Stateless.Time().Unix())
 }
 
 func (b *block) Verify(ctx context.Context) error {
 	return b.VerifyWithContext(ctx, nil)
 }
 
-func (b *block) Accept(context.Context) error {
-	if err := b.state.Commit(); err != nil {
-		return err
-	}
+func (b *block) Accept() error {
+	// versiondb commits immediately, no need to call Commit()
 
 	// Following this block's acceptance, make sure that it's direct children
 	// point to the base state, which now also contains this block's changes.
@@ -103,7 +111,7 @@ func (b *block) Accept(context.Context) error {
 	return nil
 }
 
-func (b *block) Reject(context.Context) error {
+func (b *block) Reject() error {
 	delete(b.chain.verifiedBlocks, b.id)
 	b.state = nil
 
@@ -116,7 +124,7 @@ func (b *block) ShouldVerifyWithContext(context.Context) (bool, error) {
 }
 
 func (b *block) VerifyWithContext(ctx context.Context, blockContext *smblock.Context) error {
-	timestamp := b.Time()
+	timestamp := b.Stateless.Time()
 	if time.Until(timestamp) > maxClockSkew {
 		return errFutureTimestamp
 	}
@@ -131,7 +139,7 @@ func (b *block) VerifyWithContext(ctx context.Context, blockContext *smblock.Con
 		return errWrongHeight
 	}
 
-	parentTimestamp := parent.Time()
+	parentTimestamp := parent.Stateless.Time()
 	if timestamp.Before(parentTimestamp) {
 		return errTimestampBeforeParent
 	}
@@ -148,7 +156,7 @@ func (b *block) VerifyWithContext(ctx context.Context, blockContext *smblock.Con
 		ctx,
 		b.chain.chainContext,
 		blkState,
-		b.chain.chainState == consensus.Bootstrapping,
+		b.chain.chainState == quasar.Bootstrapping,
 		blockContext,
 		b.Stateless,
 	)
@@ -166,7 +174,7 @@ func (b *block) VerifyWithContext(ctx context.Context, blockContext *smblock.Con
 	return nil
 }
 
-func (b *block) State() (database.Database, error) {
+func (b *block) State() (db.Database, error) {
 	if b.id == b.chain.lastAcceptedID {
 		return b.chain.acceptedState, nil
 	}

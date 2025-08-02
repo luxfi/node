@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -9,11 +9,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/utils/buffer"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 const initialQueueSize = 64
@@ -56,7 +56,7 @@ type throttledMessageQueue struct {
 	onFailed SendFailedCallback
 	// [id] of the peer we're sending messages to
 	id                   ids.NodeID
-	log                  logging.Logger
+	log                  log.Logger
 	outboundMsgThrottler throttling.OutboundMsgThrottler
 
 	// Signalled when a message is added to the queue and when Close() is
@@ -75,7 +75,7 @@ type throttledMessageQueue struct {
 func NewThrottledMessageQueue(
 	onFailed SendFailedCallback,
 	id ids.NodeID,
-	log logging.Logger,
+	log log.Logger,
 	outboundMsgThrottler throttling.OutboundMsgThrottler,
 ) MessageQueue {
 	return &throttledMessageQueue{
@@ -196,7 +196,7 @@ func (q *throttledMessageQueue) Close() {
 
 type blockingMessageQueue struct {
 	onFailed SendFailedCallback
-	log      logging.Logger
+	log      log.Logger
 
 	closeOnce   sync.Once
 	closingLock sync.RWMutex
@@ -208,7 +208,7 @@ type blockingMessageQueue struct {
 
 func NewBlockingMessageQueue(
 	onFailed SendFailedCallback,
-	log logging.Logger,
+	log log.Logger,
 	bufferSize int,
 ) MessageQueue {
 	return &blockingMessageQueue{

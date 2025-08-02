@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -11,13 +11,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/network/p2p/acp118"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/network/p2p/lp118"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -28,7 +28,7 @@ import (
 type Network struct {
 	*p2p.Network
 
-	log                       logging.Logger
+	log                       log.Logger
 	mempool                   *gossipMempool
 	partialSyncPrimaryNetwork bool
 
@@ -39,7 +39,7 @@ type Network struct {
 }
 
 func New(
-	log logging.Logger,
+	log log.Logger,
 	nodeID ids.NodeID,
 	subnetID ids.ID,
 	vdrs validators.State,
@@ -53,7 +53,7 @@ func New(
 	registerer prometheus.Registerer,
 	config config.Network,
 ) (*Network, error) {
-	p2pNetwork, err := p2p.NewNetwork(log, appSender, registerer, "p2p")
+	p2pNetwork, err := p2p.NewNetwork(log, newAppSenderWrapper(appSender), registerer, "p2p")
 	if err != nil {
 		return nil, err
 	}
@@ -164,9 +164,9 @@ func New(
 		stateLock: stateLock,
 		state:     state,
 	}
-	signatureRequestHandler := acp118.NewHandler(signatureRequestVerifier, signer)
+	signatureRequestHandler := lp118.NewHandler(signatureRequestVerifier, signer)
 
-	if err := p2pNetwork.AddHandler(acp118.HandlerID, signatureRequestHandler); err != nil {
+	if err := p2pNetwork.AddHandler(lp118.HandlerID, signatureRequestHandler); err != nil {
 		return nil, err
 	}
 

@@ -12,11 +12,11 @@ package txsmock
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	ids "github.com/luxfi/ids"
+	quasar "github.com/luxfi/node/quasar"
 	set "github.com/luxfi/node/utils/set"
-	txs "github.com/luxfi/node/vms/xvm/txs"
 	lux "github.com/luxfi/node/vms/components/lux"
+	txs "github.com/luxfi/node/vms/xvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -59,7 +59,7 @@ func (mr *UnsignedTxMockRecorder) Bytes() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *UnsignedTx) InitCtx(ctx *consensus.Context) {
+func (m *UnsignedTx) InitCtx(ctx *quasar.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", ctx)
 }

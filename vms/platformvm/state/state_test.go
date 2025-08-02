@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -17,25 +17,26 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/database"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/iterator"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
@@ -53,7 +54,7 @@ import (
 
 var defaultValidatorNodeID = ids.GenerateTestNodeID()
 
-func newTestState(t testing.TB, db database.Database) *state {
+func newTestState(t testing.TB, db db.Database) *state {
 	s, err := New(
 		db,
 		genesistest.NewBytes(t, genesistest.Config{
@@ -63,10 +64,10 @@ func newTestState(t testing.TB, db database.Database) *state {
 		validators.NewManager(),
 		upgradetest.GetConfig(upgradetest.Latest),
 		&config.Default,
-		&consensus.Context{
+		&quasar.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    ids.GenerateTestNodeID(),
-			Log:       logging.NoLog{},
+			Log:       log.NewNoOpLogger(),
 		},
 		metrics.Noop,
 		reward.NewCalculator(reward.Config{
@@ -1149,7 +1150,7 @@ func TestReindexBlocks(t *testing.T) {
 	}
 
 	// Convert the indices to the new format.
-	require.NoError(s.ReindexBlocks(&sync.Mutex{}, logging.NoLog{}))
+	require.NoError(s.ReindexBlocks(&sync.Mutex{}, log.NewNoOpLogger()))
 
 	// Verify that the blocks are stored in the new format.
 	for _, blk := range blks {

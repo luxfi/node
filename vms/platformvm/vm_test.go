@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -12,34 +12,33 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/core/tracker"
+	"github.com/luxfi/node/quasar/engine/enginetest"
+	"github.com/luxfi/node/quasar/engine/chain/bootstrap"
+	"github.com/luxfi/node/quasar/networking/benchlist"
+	"github.com/luxfi/node/quasar/networking/handler"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/quasar/networking/sender"
+	"github.com/luxfi/node/quasar/networking/sender/sendertest"
+	"github.com/luxfi/node/quasar/networking/timeout"
+	"github.com/luxfi/node/quasar/sampling"
+	"github.com/luxfi/node/quasar/uptime"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/factories"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/core/tracker"
-	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/linear/bootstrap"
-	"github.com/luxfi/node/consensus/networking/benchlist"
-	"github.com/luxfi/node/consensus/networking/handler"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/networking/sender"
-	"github.com/luxfi/node/consensus/networking/sender/sendertest"
-	"github.com/luxfi/node/consensus/networking/timeout"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
@@ -47,8 +46,8 @@ import (
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
@@ -63,12 +62,12 @@ import (
 	pwallet "github.com/luxfi/node/wallet"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
 
+	smeng "github.com/luxfi/node/quasar/engine/chain"
+	smblock "github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/chain/getter"
+	smcon "github.com/luxfi/node/quasar/chain"
+	timetracker "github.com/luxfi/node/quasar/networking/tracker"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	smcon "github.com/luxfi/node/consensus/linear"
-	smeng "github.com/luxfi/node/consensus/engine/linear"
-	smblock "github.com/luxfi/node/consensus/engine/linear/block"
-	snowgetter "github.com/luxfi/node/consensus/engine/linear/getter"
-	timetracker "github.com/luxfi/node/consensus/networking/tracker"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
@@ -125,7 +124,7 @@ type mutableSharedMemory struct {
 	atomic.SharedMemory
 }
 
-func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutableSharedMemory) {
+func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, db.Database, *mutableSharedMemory) {
 	require := require.New(t)
 
 	// always reset latestForkTime (a package level variable)
@@ -189,7 +188,7 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 		Capacity: defaultDynamicFeeConfig.MaxCapacity,
 	})
 
-	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(vm.SetState(context.Background(), quasar.NormalOp))
 
 	wallet := newWallet(t, vm, walletConfig{
 		keys: []*secp256k1.PrivateKey{genesistest.DefaultFundedKeys[0]},
@@ -1008,13 +1007,13 @@ func TestOptimisticAtomicImport(t *testing.T) {
 	err = blk.Verify(context.Background())
 	require.ErrorIs(err, database.ErrNotFound) // erred due to missing shared memory UTXOs
 
-	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), quasar.Bootstrapping))
 
 	require.NoError(blk.Verify(context.Background())) // skips shared memory UTXO verification during bootstrapping
 
 	require.NoError(blk.Accept(context.Background()))
 
-	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(vm.SetState(context.Background(), quasar.NormalOp))
 
 	_, txStatus, err := vm.state.GetTx(tx.ID())
 	require.NoError(err)
@@ -1226,7 +1225,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	externalSender := &sendertest.External{TB: t}
 	externalSender.Default(true)
 	subnet := subnets.New(ctx.NodeID, subnets.Config{})
-	// Passes messages from the consensus engine to the network
+	// Passes messages from the quasar engine to the network
 	sender, err := sender.New(
 		consensusCtx,
 		mc,
@@ -1259,8 +1258,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	startup := tracker.NewStartup(peers, 1)
 	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
-	// The engine handles consensus
-	snowGetHandler, err := snowgetter.New(
+	// The engine handles quasar
+	getHandler, err := getter.New(
 		vm,
 		sender,
 		ctx.Log,
@@ -1282,7 +1281,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	bootstrapConfig := bootstrap.Config{
 		Haltable:                       &core.Halter{},
 		NonVerifyingParse:              vm.ParseBlock,
-		AllGetsServer:                  snowGetHandler,
+		AllGetsServer:                  getHandler,
 		Ctx:                            consensusCtx,
 		Beacons:                        beacons,
 		SampleK:                        1,
@@ -1295,7 +1294,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		VM:                             vm,
 	}
 
-	// Asynchronously passes messages from the network to the consensus engine
+	// Asynchronously passes messages from the network to the quasar engine
 	cpuTracker, err := timetracker.NewResourceTracker(
 		prometheus.NewRegistry(),
 		resource.NoUsage,
@@ -1327,7 +1326,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	engineConfig := smeng.Config{
 		Ctx:                 bootstrapConfig.Ctx,
-		AllGetsServer:       snowGetHandler,
+		AllGetsServer:       getHandler,
 		VM:                  bootstrapConfig.VM,
 		Sender:              bootstrapConfig.Sender,
 		Validators:          beacons,
@@ -1342,7 +1341,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 			MaxOutstandingItems:   1,
 			MaxItemProcessingTime: 1,
 		},
-		Consensus: &smcon.Topological{Factory: factories.SnowflakeFactory},
+		Consensus: &smcon.Topological{Factory: sampling.Factory},
 	}
 	consensusEngine, err := smeng.New(engineConfig)
 	require.NoError(err)
@@ -1362,9 +1361,9 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		},
 	})
 
-	consensusCtx.State.Set(consensus.EngineState{
+	consensusCtx.State.Set(quasar.EngineState{
 		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-		State: consensus.Bootstrapping,
+		State: quasar.Bootstrapping,
 	})
 
 	// Allow incoming messages to be routed to the new chain
@@ -1488,7 +1487,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require.NoError(bootstrapper.Accepted(context.Background(), vdrID, reqID, frontier))
 
 	// Verify the locally preferred option on the validator removal aligns with
-	// our consensus preference.
+	// our quasar preference.
 	//
 	// We should prefer commit because our VM thinks we have been offline for
 	// the staking duration.
@@ -1691,8 +1690,8 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	firstVM.clock.Set(initialClkTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(firstVM.SetState(context.Background(), consensus.Bootstrapping))
-	require.NoError(firstVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(firstVM.SetState(context.Background(), quasar.Bootstrapping))
+	require.NoError(firstVM.SetState(context.Background(), quasar.NormalOp))
 
 	// Fast forward clock so that validators meet 20% uptime required for reward
 	durationForReward := genesistest.DefaultValidatorEndTime.Sub(genesistest.DefaultValidatorStartTime) * firstUptimePercentage / 100
@@ -1740,8 +1739,8 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	secondVM.clock.Set(vmStopTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(secondVM.SetState(context.Background(), consensus.Bootstrapping))
-	require.NoError(secondVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(secondVM.SetState(context.Background(), quasar.Bootstrapping))
+	require.NoError(secondVM.SetState(context.Background(), quasar.NormalOp))
 
 	// after restart and change of uptime required for reward, push validators to their end of life
 	secondVM.clock.Set(genesistest.DefaultValidatorEndTime)
@@ -1838,8 +1837,8 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	vm.clock.Set(initialClkTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
-	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(vm.SetState(context.Background(), quasar.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), quasar.NormalOp))
 
 	// Fast forward clock to time for genesis validators to leave
 	vm.clock.Set(genesistest.DefaultValidatorEndTime)

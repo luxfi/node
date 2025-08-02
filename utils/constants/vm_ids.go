@@ -1,12 +1,13 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package constants
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 const (
-	PlatformVMName = "platformvm"
+	QuantumVMName  = "quantumvm" // Q-Chain VM (formerly PlatformVM)
+	PlatformVMName = "quantumvm" // Deprecated: Use QuantumVMName
 	XVMName        = "xvm"
 	EVMName        = "evm"
 	SubnetEVMName  = "subnetevm"
@@ -14,7 +15,8 @@ const (
 )
 
 var (
-	PlatformVMID = ids.ID{'p', 'l', 'a', 't', 'f', 'o', 'r', 'm', 'v', 'm'}
+	QuantumVMID  = ids.ID{'q', 'u', 'a', 'n', 't', 'u', 'm', 'v', 'm'}      // Q-Chain VM
+	PlatformVMID = ids.ID{'q', 'u', 'a', 'n', 't', 'u', 'm', 'v', 'm'}      // Deprecated: Use QuantumVMID
 	XVMID        = ids.ID{'a', 'v', 'm'}
 	EVMID        = ids.ID{'e', 'v', 'm'}
 	SubnetEVMID  = ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'e', 'v', 'm'}
@@ -25,8 +27,8 @@ var (
 // name isn't known, then the formatted ID is returned.
 func VMName(vmID ids.ID) string {
 	switch vmID {
-	case PlatformVMID:
-		return PlatformVMName
+	case QuantumVMID:
+		return QuantumVMName
 	case XVMID:
 		return XVMName
 	case EVMID:

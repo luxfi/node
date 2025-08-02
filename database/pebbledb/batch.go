@@ -1,11 +1,9 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package pebbledb
 
 import (
-	"fmt"
-
 	"github.com/cockroachdb/pebble"
 
 	"github.com/luxfi/node/database"
@@ -13,92 +11,75 @@ import (
 
 var _ database.Batch = (*batch)(nil)
 
-// Not safe for concurrent use.
 type batch struct {
-	batch *pebble.Batch
-	db    *Database
-	size  int
-
-	// True iff [batch] has been written to the database
-	// since the last time [Reset] was called.
-	written bool
-}
-
-func (db *Database) NewBatch() database.Batch {
-	return &batch{
-		db:    db,
-		batch: db.pebbleDB.NewBatch(),
-	}
+	d *Database
+	*pebble.Batch
 }
 
 func (b *batch) Put(key, value []byte) error {
-	b.size += len(key) + len(value) + pebbleByteOverHead
-	return b.batch.Set(key, value, b.db.writeOptions)
+	return updateError(b.Set(key, value, b.d.writeOptions))
 }
 
 func (b *batch) Delete(key []byte) error {
-	b.size += len(key) + pebbleByteOverHead
-	return b.batch.Delete(key, b.db.writeOptions)
+	return updateError(b.Batch.Delete(key, b.d.writeOptions))
 }
 
 func (b *batch) Size() int {
-	return b.size
+	// TODO: Implement a more accurate size calculation, this only returns the
+	// number of operations not the size of the data. The Pebble batch doesn't
+	// expose the size of the data like the goleveldb batch does.
+	return int(b.Count())
 }
 
-// Assumes [b.db.lock] is not held.
 func (b *batch) Write() error {
-	b.db.lock.RLock()
-	defer b.db.lock.RUnlock()
+	b.d.lock.RLock()
+	defer b.d.lock.RUnlock()
 
-	// Committing to a closed database makes pebble panic
-	// so make sure [b.db] isn't closed.
-	if b.db.closed {
+	if b.d.closed {
 		return database.ErrClosed
 	}
 
-	if b.written {
-		// pebble doesn't support writing a batch twice so we have to clone the
-		// batch before writing it.
-		newBatch := b.db.pebbleDB.NewBatch()
-		if err := newBatch.Apply(b.batch, nil); err != nil {
-			return err
-		}
-		b.batch = newBatch
-	}
-
-	b.written = true
-	return updateError(b.batch.Commit(b.db.writeOptions))
+	return updateError(b.Commit(b.d.writeOptions))
 }
 
 func (b *batch) Reset() {
-	b.batch.Reset()
-	b.written = false
-	b.size = 0
+	b.Batch.Reset()
 }
 
 func (b *batch) Replay(w database.KeyValueWriterDeleter) error {
-	reader := b.batch.Reader()
+	reader := b.Reader()
 	for {
-		kind, k, v, ok, err := reader.Next()
+		kind, key, value, ok, err := reader.Next()
 		if err != nil {
 			return err
 		}
 		if !ok {
-			return nil
+			break
 		}
+
 		switch kind {
-		case pebble.InternalKeyKindSet:
-			if err := w.Put(k, v); err != nil {
+		case pebble.InternalKeyKindSet, pebble.InternalKeyKindSetWithDelete:
+			if err := w.Put(key, value); err != nil {
 				return err
 			}
 		case pebble.InternalKeyKindDelete:
-			if err := w.Delete(k); err != nil {
+			if err := w.Delete(key); err != nil {
 				return err
 			}
+		case pebble.InternalKeyKindSingleDelete:
+			if err := w.Delete(key); err != nil {
+				return err
+			}
+		case pebble.InternalKeyKindRangeDelete:
+			// RangeDelete is not supported in the replay
+			return errInvalidOperation
+		case pebble.InternalKeyKindLogData:
+			// LogData is ignored
 		default:
-			return fmt.Errorf("%w: %v", errInvalidOperation, kind)
+			return errInvalidOperation
 		}
 	}
+	return nil
 }
 
 func (b *batch) Inner() database.Batch {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package verify
@@ -8,8 +8,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
 )
 
 var (
@@ -20,17 +21,37 @@ var (
 // SameSubnet verifies that the provided [ctx] was provided to a chain in the
 // same subnet as [peerChainID], but not the same chain. If this verification
 // fails, a non-nil error will be returned.
-func SameSubnet(ctx context.Context, chainCtx *consensus.Context, peerChainID ids.ID) error {
-	if peerChainID == chainCtx.ChainID {
+func SameSubnet(ctx context.Context, chainCtx interface{}, peerChainID ids.ID) error {
+	// Handle both core.Context and quasar.Context
+	var chainID ids.ID
+	var subnetID ids.ID
+	var validatorState interface {
+		GetSubnetID(context.Context, ids.ID) (ids.ID, error)
+	}
+
+	switch c := chainCtx.(type) {
+	case *core.Context:
+		chainID = c.ChainID
+		subnetID = c.SubnetID
+		validatorState = c.ValidatorState
+	case *quasar.Context:
+		chainID = c.ChainID
+		subnetID = c.SubnetID
+		validatorState = c.ValidatorState
+	default:
+		return fmt.Errorf("unsupported context type: %T", chainCtx)
+	}
+
+	if peerChainID == chainID {
 		return ErrSameChainID
 	}
 
-	subnetID, err := chainCtx.ValidatorState.GetSubnetID(ctx, peerChainID)
+	peerSubnetID, err := validatorState.GetSubnetID(ctx, peerChainID)
 	if err != nil {
 		return fmt.Errorf("failed to get subnet of %q: %w", peerChainID, err)
 	}
-	if chainCtx.SubnetID != subnetID {
-		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedSubnetIDs, chainCtx.SubnetID, subnetID)
+	if subnetID != peerSubnetID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedSubnetIDs, subnetID, peerSubnetID)
 	}
 	return nil
 }

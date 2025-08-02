@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -19,21 +19,21 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/health"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/quasar/networking/sender"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/networking/sender"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
@@ -57,6 +57,19 @@ var (
 	errExpectedTCPProtocol    = errors.New("expected TCP protocol")
 	errTrackingPrimaryNetwork = errors.New("cannot track primary network")
 )
+
+// validatorManagerAdapter adapts validators.Manager to the validatorRetriever interface
+type validatorManagerAdapter struct {
+	manager validators.Manager
+}
+
+func (v *validatorManagerAdapter) GetValidator(subnetID ids.ID, nodeID ids.NodeID) (*validators.Validator, bool) {
+	validator, err := v.manager.GetValidator(subnetID, nodeID)
+	if err != nil {
+		return nil, false
+	}
+	return validator, true
+}
 
 // Network defines the functionality of the networking library.
 type Network interface {
@@ -178,7 +191,7 @@ func NewNetwork(
 	minCompatibleTime time.Time,
 	msgCreator message.Creator,
 	metricsRegisterer prometheus.Registerer,
-	log logging.Logger,
+	log log.Logger,
 	listener net.Listener,
 	dialer dialer.Dialer,
 	router router.ExternalHandler,
@@ -246,7 +259,8 @@ func NewNetwork(
 	if err != nil {
 		return nil, fmt.Errorf("initializing ip tracker failed with: %w", err)
 	}
-	config.Validators.RegisterCallbackListener(ipTracker)
+	// TODO: RegisterCallbackListener has been removed from validators.Manager
+	// config.Validators.RegisterCallbackListener(ipTracker)
 
 	// Track all default bootstrappers to ensure their current IPs are gossiped
 	// like validator IPs.
@@ -277,8 +291,8 @@ func NewNetwork(
 		PingFrequency:        config.PingFrequency,
 		PongTimeout:          config.PingPongTimeout,
 		MaxClockDifference:   config.MaxClockDifference,
-		SupportedACPs:        config.SupportedACPs.List(),
-		ObjectedACPs:         config.ObjectedACPs.List(),
+		SupportedLPs:         config.SupportedLPs.List(),
+		ObjectedLPs:          config.ObjectedLPs.List(),
 		ResourceTracker:      config.ResourceTracker,
 		UptimeCalculator:     config.UptimeCalculator,
 		IPSigner:             peer.NewIPSigner(config.MyIPPort, config.TLSKey, config.BLSKey),
@@ -317,43 +331,64 @@ func NewNetwork(
 	return n, nil
 }
 
-func (n *network) Send(
+// Send implements the ExternalSender interface
+// This adapts the variadic nodeIDs to the network's internal send method
+func (n *network) Send(msg message.OutboundMessage, nodeIDs ...ids.NodeID) []ids.NodeID {
+	// Convert variadic nodeIDs to a set
+	nodeIDSet := set.NewSet[ids.NodeID](len(nodeIDs))
+	for _, nodeID := range nodeIDs {
+		nodeIDSet.Add(nodeID)
+	}
+	
+	// Call the internal send method with the node ID set
+	// Using primary network ID and no subnet restrictions
+	sentTo := n.sendToNodeIDs(msg, nodeIDSet, constants.PrimaryNetworkID, subnets.NoOpAllower)
+	
+	// Convert the set back to a slice
+	result := make([]ids.NodeID, 0, sentTo.Len())
+	for nodeID := range sentTo {
+		result = append(result, nodeID)
+	}
+	
+	return result
+}
+
+// sendToNodeIDs sends a message to specific node IDs
+func (n *network) sendToNodeIDs(
 	msg message.OutboundMessage,
-	config core.SendConfig,
+	nodeIDs set.Set[ids.NodeID],
 	subnetID ids.ID,
 	allower subnets.Allower,
 ) set.Set[ids.NodeID] {
-	namedPeers := n.getPeers(config.NodeIDs, subnetID, allower)
+	namedPeers := n.getPeers(nodeIDs, subnetID, allower)
 	n.peerConfig.Metrics.MultipleSendsFailed(
 		msg.Op(),
-		config.NodeIDs.Len()-len(namedPeers),
+		nodeIDs.Len()-len(namedPeers),
 	)
 
 	var (
-		sampledPeers = n.samplePeers(config, subnetID, allower)
-		sentTo       = set.NewSet[ids.NodeID](len(namedPeers) + len(sampledPeers))
-		now          = n.peerConfig.Clock.Time()
+		// For this simple send, we don't sample additional peers
+		sentTo = set.NewSet[ids.NodeID](len(namedPeers))
+		now    = n.peerConfig.Clock.Time()
 	)
 
 	// send to peers and update metrics
-	//
-	// Note: It is guaranteed that namedPeers and sampledPeers are disjoint.
-	for _, peers := range [][]peer.Peer{namedPeers, sampledPeers} {
-		for _, peer := range peers {
-			if peer.Send(n.onCloseCtx, msg) {
-				sentTo.Add(peer.ID())
+	for _, peer := range namedPeers {
+		if peer.Send(n.onCloseCtx, msg) {
+			sentTo.Add(peer.ID())
 
-				// TODO: move send fail rate calculations into the peer metrics
-				// record metrics for success
-				n.sendFailRateCalculator.Observe(0, now)
-			} else {
-				// record metrics for failure
-				n.sendFailRateCalculator.Observe(1, now)
-			}
+			// TODO: move send fail rate calculations into the peer metrics
+			// record metrics for success
+			n.sendFailRateCalculator.Observe(0, now)
+		} else {
+			// record metrics for failure
+			n.sendFailRateCalculator.Observe(1, now)
 		}
 	}
 	return sentTo
 }
+
+
 
 // HealthCheck returns information about several network layer health checks.
 // 1) Information about health check results
@@ -407,7 +442,8 @@ func (n *network) HealthCheck(context.Context) (interface{}, error) {
 	reachablePrimaryNetworkValidator := true
 	// If we're a primary network validator, make sure we have ingress connections
 	if time.Since(n.startupTime) > n.config.NoIngressValidatorConnectionGracePeriod {
-		connectedPrimaryValidatorInfo, isConnectedPrimaryValidatorErr := checkNoIngressConnections(n.config.MyNodeID, n, n.config.Validators)
+		validatorAdapter := &validatorManagerAdapter{manager: n.config.Validators}
+		connectedPrimaryValidatorInfo, isConnectedPrimaryValidatorErr := checkNoIngressConnections(n.config.MyNodeID, n, validatorAdapter)
 		reachablePrimaryNetworkValidator = isConnectedPrimaryValidatorErr == nil
 		details[PrimaryNetworkValidatorHealthKey] = connectedPrimaryValidatorInfo
 	}
@@ -502,12 +538,14 @@ func (n *network) AllowConnection(nodeID ids.NodeID) bool {
 	if !n.config.RequireValidatorToConnect {
 		return true
 	}
-	_, areWeAPrimaryNetworkAValidator := n.config.Validators.GetValidator(constants.PrimaryNetworkID, n.config.MyNodeID)
+	_, err := n.config.Validators.GetValidator(constants.PrimaryNetworkID, n.config.MyNodeID)
+	areWeAPrimaryNetworkAValidator := err == nil
 	return areWeAPrimaryNetworkAValidator || n.ipTracker.WantsConnection(nodeID)
 }
 
 func (n *network) Track(claimedIPPorts []*ips.ClaimedIPPort) error {
-	_, areWeAPrimaryNetworkAValidator := n.config.Validators.GetValidator(constants.PrimaryNetworkID, n.config.MyNodeID)
+	_, err := n.config.Validators.GetValidator(constants.PrimaryNetworkID, n.config.MyNodeID)
+	areWeAPrimaryNetworkAValidator := err == nil
 	for _, ip := range claimedIPPorts {
 		if err := n.track(ip, areWeAPrimaryNetworkAValidator); err != nil {
 			return err
@@ -562,7 +600,8 @@ func (n *network) Peers(
 	knownPeers *bloom.ReadFilter,
 	salt []byte,
 ) []*ips.ClaimedIPPort {
-	_, areWeAPrimaryNetworkValidator := n.config.Validators.GetValidator(constants.PrimaryNetworkID, n.config.MyNodeID)
+	_, err := n.config.Validators.GetValidator(constants.PrimaryNetworkID, n.config.MyNodeID)
+	areWeAPrimaryNetworkValidator := err == nil
 
 	// Only return IPs for subnets that we are tracking.
 	var allowedSubnets func(ids.ID) bool
@@ -769,7 +808,8 @@ func (n *network) getPeers(
 			continue
 		}
 
-		_, areTheyAValidator := n.config.Validators.GetValidator(subnetID, nodeID)
+		_, err := n.config.Validators.GetValidator(subnetID, nodeID)
+		areTheyAValidator := err == nil
 		// check if the peer is allowed to connect to the subnet
 		if !allower.IsAllowed(nodeID, areTheyAValidator) {
 			continue
@@ -781,18 +821,36 @@ func (n *network) getPeers(
 	return peers
 }
 
+// networkSendConfig is used internally for sampling peers
+type networkSendConfig struct {
+	// Number of validators to sample
+	Validators int
+	// Number of non-validators to sample
+	NonValidators int
+	// Number of peers to sample
+	Peers int
+	// NodeIDs to exclude from sampling
+	NodeIDs set.Set[ids.NodeID]
+}
+
 // samplePeers samples connected peers attempting to align with the number of
 // requested validators, non-validators, and peers. This function will
 // explicitly ignore nodeIDs already included in the send config.
 func (n *network) samplePeers(
-	config core.SendConfig,
+	config networkSendConfig,
 	subnetID ids.ID,
 	allower subnets.Allower,
 ) []peer.Peer {
 	// As an optimization, if there are fewer validators than
 	// [numValidatorsToSample], only attempt to sample [numValidatorsToSample]
 	// validators to potentially avoid iterating over the entire peer set.
-	numValidatorsToSample := min(config.Validators, n.config.Validators.NumValidators(subnetID))
+	// Get the validator set for the subnet to count validators
+	validatorSet, ok := n.config.Validators.Get(subnetID)
+	numValidators := 0
+	if ok {
+		numValidators = validatorSet.Len()
+	}
+	numValidatorsToSample := min(config.Validators, numValidators)
 
 	n.peersLock.RLock()
 	defer n.peersLock.RUnlock()
@@ -812,7 +870,8 @@ func (n *network) samplePeers(
 				return false
 			}
 
-			_, areTheyAValidator := n.config.Validators.GetValidator(subnetID, peerID)
+			_, err := n.config.Validators.GetValidator(subnetID, peerID)
+			areTheyAValidator := err == nil
 			// check if the peer is allowed to connect to the subnet
 			if !allower.IsAllowed(peerID, areTheyAValidator) {
 				return false
@@ -1253,8 +1312,9 @@ func (n *network) runTimers() {
 // pullGossipPeerLists requests validators from peers in the network
 func (n *network) pullGossipPeerLists() {
 	peers := n.samplePeers(
-		core.SendConfig{
+		networkSendConfig{
 			Validators: 1,
+			NodeIDs:    set.NewSet[ids.NodeID](0),
 		},
 		constants.PrimaryNetworkID,
 		subnets.NoOpAllower,

@@ -30,3 +30,36 @@ Each allocation contains the following fields:
 Note: if an `luxAddr` from allocations is included in `initialStakers`, the genesis includes
 all the UTXOs specified in the `unlockSchedule` as part of the locked stake of the corresponding
 genesis validator. Otherwise, the locked UTXO is created directly on the P-Chain.
+
+## Subnet Consensus Overrides
+
+To bake custom DAG or Linear consensus defaults into your Primary Network genesis,
+provide a Subnet config file named `<subnetID>.json` under `configs/subnets/` alongside this genesis.
+When the node starts, it merges these overrides on top of its built-in defaults.
+
+Example `configs/subnets/<YourSubnetID>.json`:
+```json
+{
+  "validatorOnly": false,
+
+  // --- Consensus ---
+  "consensusParameters": {
+    "k": 12,              // sample 12 validators
+    "alpha": 8,           // need 8 matching votes
+    "beta": 10,           // commit threshold
+    "concurrentRepolls": 16,
+    "optimalProcessing": 2048,
+    "maxOutstandingItems": 4096,
+    "maxItemProcessingTime": "250ms",
+
+    // DAG-specific fast path
+    "betaVirtuous": 4,
+    "betaRogue": 12,
+    "batchSize": 40,
+    "parentSize": 2
+  },
+
+  // --- Block production cadence ---
+  "proposerMinBlockDelay": "200ms"   // see consensus docs
+}
+```

@@ -1,17 +1,13 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
 
 import (
 	"sync"
-	"sync/atomic"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/quasar/networking/router"
+	"github.com/luxfi/node/quasar/validators"
 )
 
 var _ router.Router = (*beaconManager)(nil)
@@ -25,21 +21,6 @@ type beaconManager struct {
 	onceOnSufficientlyConnected sync.Once
 }
 
-func (b *beaconManager) Connected(nodeID ids.NodeID, nodeVersion *version.Application, subnetID ids.ID) {
-	_, isBeacon := b.beacons.GetValidator(constants.PrimaryNetworkID, nodeID)
-	if isBeacon &&
-		constants.PrimaryNetworkID == subnetID &&
-		atomic.AddInt64(&b.numConns, 1) >= b.requiredConns {
-		b.onceOnSufficientlyConnected.Do(func() {
-			close(b.onSufficientlyConnected)
-		})
-	}
-	b.Router.Connected(nodeID, nodeVersion, subnetID)
-}
-
-func (b *beaconManager) Disconnected(nodeID ids.NodeID) {
-	if _, isBeacon := b.beacons.GetValidator(constants.PrimaryNetworkID, nodeID); isBeacon {
-		atomic.AddInt64(&b.numConns, -1)
-	}
-	b.Router.Disconnected(nodeID)
-}
+// TODO: The Router interface no longer has Connected/Disconnected methods.
+// This functionality needs to be implemented differently, possibly through
+// a peer tracker or network handler.

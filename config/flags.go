@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -13,16 +13,12 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/luxfi/node/database/leveldb"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/pebbledb"
+	"github.com/luxfi/node/quasar/sampling"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/dynamicip"
-	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/ulimit"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/gas"
@@ -33,7 +29,7 @@ const (
 	DefaultHTTPPort    = 9630
 	DefaultStakingPort = 9631
 
-	LuxDataDirVar    = "LUXD_DATA_DIR"
+	LuxDataDirVar            = "LUXD_DATA_DIR"
 	defaultUnexpandedDataDir = "$" + LuxDataDirVar
 
 	DefaultProcessContextFilename = "process.json"
@@ -82,6 +78,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint64(FdLimitKey, ulimit.DefaultFDLimit, "Attempts to raise the process file descriptor limit to at least this value and error if the value is above the system max")
 	// Dev Mode
 	fs.Bool(DevModeKey, false, "Enable development mode. Sets network-id=local, sybil-protection-enabled=false, and enables all APIs for local development")
+	// Import Mode
+	fs.Bool(ImportModeKey, false, "Enable import mode for one-time blockchain data import with pruning disabled")
 
 	// Plugin directory
 	fs.String(PluginDirKey, defaultPluginDir, "Path to the plugin directory")
@@ -104,9 +102,9 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// Network ID
 	fs.String(NetworkNameKey, constants.MainnetName, "Network ID this node will connect to")
 
-	// ACP flagging
-	fs.IntSlice(ACPSupportKey, nil, "ACPs to support adoption")
-	fs.IntSlice(ACPObjectKey, nil, "ACPs to object adoption")
+	// LP flagging
+	fs.IntSlice(LPSupportKey, nil, "LPs to support adoption")
+	fs.IntSlice(LPObjectKey, nil, "LPs to object adoption")
 
 	// LUX fees:
 	// Validator fees:
@@ -128,7 +126,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint64(TxFeeKey, genesis.LocalParams.TxFee, "Transaction fee, in nLUX")
 	fs.Uint64(CreateAssetTxFeeKey, genesis.LocalParams.CreateAssetTxFee, "Transaction fee, in nLUX, for transactions that create new assets")
 	// Database
-	fs.String(DBTypeKey, leveldb.Name, fmt.Sprintf("Database type to use. Must be one of {%s, %s, %s}", leveldb.Name, memdb.Name, pebbledb.Name))
+	fs.String(DBTypeKey, "badgerdb", fmt.Sprintf("Database type to use. Must be one of {%s, %s, %s, %s}", "badgerdb", "leveldb", "memdb", "pebbledb"))
 	fs.Bool(DBReadOnlyKey, false, "If true, database writes are to memory and never persisted. May still initialize database directory/files on disk if they don't exist")
 	fs.String(DBPathKey, defaultDBDir, "Path to database directory")
 	fs.String(DBConfigFileKey, "", fmt.Sprintf("Path to database config file. Ignored if %s is specified", DBConfigContentKey))
@@ -138,7 +136,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(LogsDirKey, defaultLogDir, "Logging directory for Lux")
 	fs.String(LogLevelKey, "info", "The log level. Should be one of {verbo, debug, trace, info, warn, error, fatal, off}")
 	fs.String(LogDisplayLevelKey, "", "The log display level. If left blank, will inherit the value of log-level. Otherwise, should be one of {verbo, debug, trace, info, warn, error, fatal, off}")
-	fs.String(LogFormatKey, logging.AutoString, logging.FormatDescription)
+	fs.String(LogFormatKey, "auto", "The structure of log format. Defaults to 'auto' which formats terminal-like logs, when the output is a terminal. Otherwise, should be one of {auto, plain, colors, json}")
 	fs.Uint(LogRotaterMaxSizeKey, 8, "The maximum file size in megabytes of the log file before it gets rotated.")
 	fs.Uint(LogRotaterMaxFilesKey, 7, "The maximum number of old log files to retain. 0 means retain all old log files.")
 	fs.Uint(LogRotaterMaxAgeKey, 0, "The maximum number of days to retain old log files based on the timestamp encoded in their filename. 0 means retain all old log files.")
@@ -304,17 +302,17 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint(BootstrapAncestorsMaxContainersReceivedKey, 2000, "This node reads at most this many containers from an incoming Ancestors message")
 
 	// Consensus
-	fs.Int(SnowSampleSizeKey, sampling.DefaultParameters.K, "Number of nodes to query for each network poll")
-	fs.Int(SnowQuorumSizeKey, sampling.DefaultParameters.AlphaConfidence, "Threshold of nodes required to update this node's preference and increase its confidence in a network poll")
-	fs.Int(SnowPreferenceQuorumSizeKey, sampling.DefaultParameters.AlphaPreference, fmt.Sprintf("Threshold of nodes required to update this node's preference in a network poll. Ignored if %s is provided", SnowQuorumSizeKey))
-	fs.Int(SnowConfidenceQuorumSizeKey, sampling.DefaultParameters.AlphaConfidence, fmt.Sprintf("Threshold of nodes required to increase this node's confidence in a network poll. Ignored if %s is provided", SnowQuorumSizeKey))
+	fs.Int(SampleSizeKey, sampling.DefaultParameters.K, "Number of nodes to query for each network poll")
+	fs.Int(QuorumSizeKey, sampling.DefaultParameters.AlphaConfidence, "Threshold of nodes required to update this node's preference and increase its confidence in a network poll")
+	fs.Int(PreferenceQuorumSizeKey, sampling.DefaultParameters.AlphaPreference, fmt.Sprintf("Threshold of nodes required to update this node's preference in a network poll. Ignored if %s is provided", QuorumSizeKey))
+	fs.Int(ConfidenceQuorumSizeKey, sampling.DefaultParameters.AlphaConfidence, fmt.Sprintf("Threshold of nodes required to increase this node's confidence in a network poll. Ignored if %s is provided", QuorumSizeKey))
 
-	fs.Int(SnowCommitThresholdKey, sampling.DefaultParameters.Beta, "Beta value to use for consensus")
+	fs.Int(CommitThresholdKey, sampling.DefaultParameters.Beta, "Beta value to use for consensus")
 
-	fs.Int(SnowConcurrentRepollsKey, sampling.DefaultParameters.ConcurrentRepolls, "Minimum number of concurrent polls for finalizing consensus")
-	fs.Int(SnowOptimalProcessingKey, sampling.DefaultParameters.OptimalProcessing, "Optimal number of processing containers in consensus")
-	fs.Int(SnowMaxProcessingKey, sampling.DefaultParameters.MaxOutstandingItems, "Maximum number of processing items to be considered healthy")
-	fs.Duration(SnowMaxTimeProcessingKey, sampling.DefaultParameters.MaxItemProcessingTime, "Maximum amount of time an item should be processing and still be healthy")
+	fs.Int(ConcurrentRepollsKey, sampling.DefaultParameters.ConcurrentRepolls, "Minimum number of concurrent polls for finalizing consensus")
+	fs.Int(OptimalProcessingKey, sampling.DefaultParameters.OptimalProcessing, "Optimal number of processing containers in consensus")
+	fs.Int(MaxProcessingKey, sampling.DefaultParameters.MaxOutstandingItems, "Maximum number of processing items to be considered healthy")
+	fs.Duration(MaxTimeProcessingKey, sampling.DefaultParameters.MaxItemProcessingTime, "Maximum amount of time an item should be processing and still be healthy")
 
 	// ProposerVM
 	fs.Bool(ProposerVMUseCurrentHeightKey, false, "Have the ProposerVM always report the last accepted P-chain block height")
@@ -372,7 +370,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Float64(DiskMaxNonVdrNodeUsageKey, 1000*units.GiB, "Maximum number of disk reads/writes per second that a non-validator can utilize. Must be >= 0")
 
 	// Opentelemetry tracing
-	fs.String(TracingExporterTypeKey, trace.Disabled.String(), fmt.Sprintf("Type of exporter to use for tracing. Options are [%s, %s, %s]", trace.Disabled, trace.GRPC, trace.HTTP))
+	fs.String(TracingExporterTypeKey, trace.Disabled, fmt.Sprintf("Type of exporter to use for tracing. Options are [%s, %s, %s]", trace.Disabled, trace.GRPC, trace.HTTP))
 	fs.String(TracingEndpointKey, "", "The endpoint to send trace data to. If unspecified, the default endpoint will be used; depending on the exporter type")
 	fs.Bool(TracingInsecureKey, true, "If true, don't use TLS when sending trace data")
 	fs.Float64(TracingSampleRateKey, 0.1, "The fraction of traces to sample. If >= 1, always sample. If <= 0, never sample")

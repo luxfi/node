@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -6,13 +6,13 @@ package executor
 import (
 	"fmt"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/components/lux"
 )
 
 var _ txs.Visitor = (*Executor)(nil)
@@ -143,5 +143,50 @@ func (e *Executor) ExportTx(tx *txs.ExportTx) error {
 			PutRequests: elems,
 		},
 	}
+	return nil
+}
+
+func (e *Executor) BurnTx(tx *txs.BurnTx) error {
+	// Process the base transaction (consume inputs, produce outputs)
+	if err := e.BaseTx(&tx.BaseTx); err != nil {
+		return err
+	}
+
+	// TODO: Store burn information for cross-chain verification
+	// This would typically involve:
+	// 1. Recording the burn in a special state for cross-chain proofs
+	// 2. Emitting events that can be picked up by validators
+	// 3. Creating cryptographic proofs of the burn
+
+	return nil
+}
+
+func (e *Executor) MintTx(tx *txs.MintTx) error {
+	// Process the base transaction
+	if err := e.BaseTx(&tx.BaseTx); err != nil {
+		return err
+	}
+
+	// TODO: Verify burn proof from source chain
+	// This would typically involve:
+	// 1. Verifying MPC signatures from validators
+	// 2. Checking burn proof validity
+	// 3. Ensuring the mint amount matches the burn amount
+
+	return nil
+}
+
+func (e *Executor) NFTTransferTx(tx *txs.NFTTransferTx) error {
+	// Process the base transaction
+	if err := e.BaseTx(&tx.BaseTx); err != nil {
+		return err
+	}
+
+	// TODO: Handle NFT transfer to destination chain
+	// This would typically involve:
+	// 1. Locking the NFT on X-Chain
+	// 2. Creating proof of ownership transfer
+	// 3. Preparing data for minting on destination chain
+
 	return nil
 }

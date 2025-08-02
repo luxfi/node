@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package registry
@@ -13,10 +13,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/filesystem/filesystemmock"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/vmsmock"
@@ -144,7 +144,7 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 	mockManager := vmsmock.NewManager(ctrl)
 	mockRegistry := prometheus.NewRegistry()
 	mockCPUTracker, err := resource.NewManager(
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		"",
 		time.Hour,
 		time.Hour,

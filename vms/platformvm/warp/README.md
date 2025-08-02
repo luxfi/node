@@ -93,7 +93,10 @@ Once the validator set of a blockchain is willing to sign an arbitrary message `
 
 ## Verifying / Receiving an Lux Interchain Message
 
-Lux Interchain Messages are verified within the context of a specific P-Chain height included in the [ProposerVM](../../proposervm/README.md)'s header. The P-Chain height is provided as context to the underlying VM when verifying the underlying VM's blocks (implemented by the optional interface [WithVerifyContext](../../../snow/engine/linear/block/block_context_vm.go)).
+Lux Interchain Messages are verified within the context of a specific P-Chain
+height included in the [ProposerVM](../../proposervm/README.md)'s header. The
+P-Chain height is provided as context to the underlying VM when verifying the
+underlying VM's blocks (implemented by the optional interface [WithVerifyContext](../../../consensus/engine/linear/block/block_context_vm.go)).
 
 To verify the message, the underlying VM utilizes this `warp` package to perform the following steps:
 

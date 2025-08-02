@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -6,7 +6,7 @@ package genesis
 import (
 	"path"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/platformvm/genesis"
@@ -16,31 +16,36 @@ import (
 )
 
 var (
-	PChainAliases = []string{"P", "platform"}
+	QChainAliases = []string{"Q", "quantum"}                 // Q-Chain aliases
+	PChainAliases = []string{"Q", "quantum", "P", "platform"} // Deprecated: Use QChainAliases. Includes legacy P aliases for compatibility
 	XChainAliases = []string{"X", "xvm"}
 	CChainAliases = []string{"C", "evm"}
 	VMAliases     = map[ids.ID][]string{
-		constants.PlatformVMID: {"platform"},
-		constants.XVMID:        {"xvm"},
-		constants.EVMID:        {"evm"},
-		secp256k1fx.ID:         {"secp256k1fx"},
-		nftfx.ID:               {"nftfx"},
-		propertyfx.ID:          {"propertyfx"},
+		constants.QuantumVMID: {"quantum", "platform"}, // Include platform for backward compatibility
+		constants.XVMID:       {"xvm"},
+		constants.EVMID:       {"evm"},
+		secp256k1fx.ID:        {"secp256k1fx"},
+		nftfx.ID:              {"nftfx"},
+		propertyfx.ID:         {"propertyfx"},
 	}
 )
 
 // Aliases returns the default aliases based on the network ID
 func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, error) {
 	apiAliases := map[string][]string{
-		path.Join(constants.ChainAliasPrefix, constants.PlatformChainID.String()): {
-			"P",
-			"platform",
-			path.Join(constants.ChainAliasPrefix, "P"),
-			path.Join(constants.ChainAliasPrefix, "platform"),
+		path.Join(constants.ChainAliasPrefix, constants.QuantumChainID.String()): {
+			"Q",
+			"quantum",
+			"P",                                             // Legacy alias for backward compatibility
+			"platform",                                      // Legacy alias for backward compatibility
+			path.Join(constants.ChainAliasPrefix, "Q"),
+			path.Join(constants.ChainAliasPrefix, "quantum"),
+			path.Join(constants.ChainAliasPrefix, "P"),        // Legacy
+			path.Join(constants.ChainAliasPrefix, "platform"), // Legacy
 		},
 	}
 	chainAliases := map[ids.ID][]string{
-		constants.PlatformChainID: PChainAliases,
+		constants.QuantumChainID: QChainAliases,
 	}
 
 	genesis, err := genesis.Parse(genesisBytes) // TODO let's not re-create genesis to do aliasing

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -9,25 +9,59 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/core/appsender"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms/xvm/txs"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/utils/set"
 )
 
 var (
-	_ core.AppHandler    = (*Network)(nil)
+	_ core.AppHandler      = (*Network)(nil)
 	_ validators.Connector = (*Network)(nil)
 )
+
+// appSenderAdapter adapts core.AppSender to appsender.AppSender
+type appSenderAdapter struct {
+	sender core.AppSender
+}
+
+func (a *appSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, message []byte) error {
+	return a.sender.SendAppRequest(ctx, nodeIDs.List(), requestID, message)
+}
+
+func (a *appSenderAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, message []byte) error {
+	return a.sender.SendAppResponse(ctx, nodeID, requestID, message)
+}
+
+func (a *appSenderAdapter) SendAppGossip(ctx context.Context, config appsender.SendConfig, message []byte) error {
+	// For now, just send to all nodes without filtering
+	return a.sender.SendAppGossip(ctx, message)
+}
+
+func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], message []byte) error {
+	// Not supported by core.AppSender, so just use SendAppGossip
+	return a.sender.SendAppGossip(ctx, message)
+}
+
+func (a *appSenderAdapter) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, message []byte) error {
+	return a.sender.SendCrossChainAppRequest(ctx, chainID, requestID, message)
+}
+
+func (a *appSenderAdapter) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, message []byte) error {
+	// Not supported by core.AppSender
+	return nil
+}
 
 type Network struct {
 	*p2p.Network
 
-	log     logging.Logger
+	log     log.Logger
 	mempool *gossipMempool
 
 	txPushGossiper        *gossip.PushGossiper[*txs.Tx]
@@ -37,7 +71,7 @@ type Network struct {
 }
 
 func New(
-	log logging.Logger,
+	log log.Logger,
 	nodeID ids.NodeID,
 	subnetID ids.ID,
 	vdrs validators.State,
@@ -48,7 +82,8 @@ func New(
 	registerer prometheus.Registerer,
 	config Config,
 ) (*Network, error) {
-	p2pNetwork, err := p2p.NewNetwork(log, appSender, registerer, "p2p")
+	adaptedSender := &appSenderAdapter{sender: appSender}
+	p2pNetwork, err := p2p.NewNetwork(log, adaptedSender, registerer, "p2p")
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
@@ -61,14 +61,20 @@ type AddPermissionlessValidatorTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [AddPermissionlessValidatorTx]. Also sets the [ctx] to the given [vm.ctx] so
 // that the addresses can be json marshalled into human readable format
-func (tx *AddPermissionlessValidatorTx) InitCtx(ctx *consensus.Context) {
+func (tx *AddPermissionlessValidatorTx) InitCtx(ctx *quasar.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	for _, out := range tx.StakeOuts {
 		out.FxID = secp256k1fx.ID
 		out.InitCtx(ctx)
 	}
-	tx.ValidatorRewardsOwner.InitCtx(ctx)
-	tx.DelegatorRewardsOwner.InitCtx(ctx)
+	tx.ValidatorRewardsOwner.Initialize(ctx)
+	tx.DelegatorRewardsOwner.Initialize(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (tx *AddPermissionlessValidatorTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
 }
 
 func (tx *AddPermissionlessValidatorTx) SubnetID() ids.ID {
@@ -118,7 +124,7 @@ func (tx *AddPermissionlessValidatorTx) Shares() uint32 {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddPermissionlessValidatorTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *AddPermissionlessValidatorTx) SyntacticVerify(ctx *quasar.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

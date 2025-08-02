@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -9,13 +9,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/ids"
+	log "github.com/luxfi/log"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/mempool"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var _ TxVerifier = (*testVerifier)(nil)
@@ -64,7 +64,7 @@ func TestGossipMempoolAdd(t *testing.T) {
 	mempool, err := newGossipMempool(
 		baseMempool,
 		metrics,
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		testVerifier{},
 		DefaultConfig.ExpectedBloomFilterElements,
 		DefaultConfig.ExpectedBloomFilterFalsePositiveProbability,
@@ -96,7 +96,7 @@ func TestGossipMempoolAddVerified(t *testing.T) {
 	mempool, err := newGossipMempool(
 		baseMempool,
 		metrics,
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 		testVerifier{
 			err: errTest, // We shouldn't be attempting to verify the tx in this flow
 		},

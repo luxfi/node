@@ -9,15 +9,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/formatting/address"
 )
 
 // Configuration for different networks
 var networks = map[string]uint32{
 	"mainnet": 1,     // MainnetID from constants
+<<<<<<< HEAD
 	"testnet": 5,     // TestnetID/TestnetID from constants
 	"testnet":    5,     // TestnetID from constants
+=======
+	"testnet": 5,     // TestnetID from constants
+>>>>>>> main
 	"local":   12345, // LocalID from constants
 }
 

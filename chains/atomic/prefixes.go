@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package atomic
@@ -6,9 +6,9 @@ package atomic
 import (
 	"bytes"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 )
 
 var (
@@ -45,21 +45,21 @@ type prefixes struct {
 	largerIndexPrefix  []byte
 }
 
-func (p *prefixes) getValueDB(myChainID, peerChainID ids.ID, db database.Database) database.Database {
+func (p *prefixes) getValueDB(myChainID, peerChainID ids.ID, database db.Database) db.Database {
 	if bytes.Compare(myChainID[:], peerChainID[:]) == -1 {
-		return prefixdb.New(p.smallerValuePrefix, db)
+		return prefixdb.New(p.smallerValuePrefix, database)
 	}
-	return prefixdb.New(p.largerValuePrefix, db)
+	return prefixdb.New(p.largerValuePrefix, database)
 }
 
-func (p *prefixes) getValueAndIndexDB(myChainID, peerChainID ids.ID, db database.Database) (database.Database, database.Database) {
-	var valueDB, indexDB database.Database
+func (p *prefixes) getValueAndIndexDB(myChainID, peerChainID ids.ID, database db.Database) (db.Database, db.Database) {
+	var valueDB, indexDB db.Database
 	if bytes.Compare(myChainID[:], peerChainID[:]) == -1 {
-		valueDB = prefixdb.New(p.smallerValuePrefix, db)
-		indexDB = prefixdb.New(p.smallerIndexPrefix, db)
+		valueDB = prefixdb.New(p.smallerValuePrefix, database)
+		indexDB = prefixdb.New(p.smallerIndexPrefix, database)
 	} else {
-		valueDB = prefixdb.New(p.largerValuePrefix, db)
-		indexDB = prefixdb.New(p.largerIndexPrefix, db)
+		valueDB = prefixdb.New(p.largerValuePrefix, database)
+		indexDB = prefixdb.New(p.largerIndexPrefix, database)
 	}
 	return valueDB, indexDB
 }

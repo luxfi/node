@@ -1,27 +1,23 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tracedvm
 
 import (
-	"context"
-
-	"go.opentelemetry.io/otel/attribute"
-
-	"github.com/luxfi/node/consensus/graph"
+	"github.com/luxfi/node/quasar/graph"
 	"github.com/luxfi/node/trace"
-
-	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-var _ dag.Tx = (*tracedTx)(nil)
+var _ graph.Tx = (*tracedTx)(nil)
 
 type tracedTx struct {
-	dag.Tx
+	graph.Tx
 
 	tracer trace.Tracer
 }
 
+// TODO: Fix interface mismatch - graph.Tx doesn't have Verify, Accept, Reject methods
+/*
 func (t *tracedTx) Verify(ctx context.Context) error {
 	ctx, span := t.tracer.Start(ctx, "tracedTx.Verify", oteltrace.WithAttributes(
 		attribute.Stringer("txID", t.ID()),
@@ -48,3 +44,4 @@ func (t *tracedTx) Reject(ctx context.Context) error {
 
 	return t.Tx.Reject(ctx)
 }
+*/

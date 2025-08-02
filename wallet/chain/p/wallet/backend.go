@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package wallet
@@ -7,8 +7,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
@@ -55,7 +55,7 @@ func (b *backend) AcceptTx(ctx context.Context, tx *txs.Tx) error {
 	}
 
 	producedUTXOSlice := tx.UTXOs()
-	return b.addUTXOs(ctx, constants.PlatformChainID, producedUTXOSlice)
+	return b.addUTXOs(ctx, constants.PlatformChainID(), producedUTXOSlice)
 }
 
 func (b *backend) addUTXOs(ctx context.Context, destinationChainID ids.ID, utxos []*lux.UTXO) error {

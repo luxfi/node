@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -22,12 +22,12 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
-	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
+	"github.com/luxfi/node/quasar/engine/enginetest"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
+	"github.com/luxfi/node/quasar/engine/chain/block/blocktest"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
@@ -138,9 +138,9 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 		{
 			name: "happy path",
 			config: &subprocess.Config{
-				Stderr:           logging.NoLog{},
-				Stdout:           logging.NoLog{},
-				Log:              logging.NoLog{},
+				Stderr:           log.NewNoOpLogger(),
+				Stdout:           log.NewNoOpLogger(),
+				Log:              log.NewNoOpLogger(),
 				HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 			},
 			assertErr: func(require *require.Assertions, err error) {
@@ -151,8 +151,8 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 		{
 			name: "invalid stderr",
 			config: &subprocess.Config{
-				Stdout:           logging.NoLog{},
-				Log:              logging.NoLog{},
+				Stdout:           log.NewNoOpLogger(),
+				Log:              log.NewNoOpLogger(),
 				HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 			},
 			assertErr: func(require *require.Assertions, err error) {
@@ -163,9 +163,9 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 		{
 			name: "handshake timeout",
 			config: &subprocess.Config{
-				Stderr:           logging.NoLog{},
-				Stdout:           logging.NoLog{},
-				Log:              logging.NoLog{},
+				Stderr:           log.NewNoOpLogger(),
+				Stdout:           log.NewNoOpLogger(),
+				Log:              log.NewNoOpLogger(),
 				HandshakeTimeout: time.Microsecond,
 			},
 			assertErr: func(require *require.Assertions, err error) {
@@ -247,7 +247,7 @@ func TestNewHTTPHandler(t *testing.T) {
 		123,
 		nil,
 		metrics.NewLabelGatherer(""),
-		logging.NoLog{},
+		log.NewNoOpLogger(),
 	)
 
 	handler, err := client.NewHTTPHandler(context.Background())

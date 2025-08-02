@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fee
@@ -46,7 +46,7 @@ func (s State) AdvanceTime(target gas.Gas, seconds uint64) State {
 // CostOf calculates how much to charge based on the dynamic fee mechanism for
 // seconds.
 //
-// This implements the ACP-77 cost over time formula:
+// This implements the LP-77 cost over time formula:
 func (s State) CostOf(c Config, seconds uint64) uint64 {
 	// If the current and target are the same, the price is constant.
 	if s.Current == c.Target {

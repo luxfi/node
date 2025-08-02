@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tests
@@ -6,11 +6,12 @@ package tests
 import (
 	"os"
 
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
+	"github.com/luxfi/log/level"
 )
 
-func NewDefaultLogger(prefix string) logging.Logger {
-	log, err := LoggerForFormat(prefix, logging.AutoString)
+func NewDefaultLogger(prefix string) log.Logger {
+	log, err := LoggerForFormat(prefix, "auto")
 	if err != nil {
 		// This should never happen since auto is a valid log format
 		panic(err)
@@ -19,11 +20,11 @@ func NewDefaultLogger(prefix string) logging.Logger {
 }
 
 // TODO(marun) Does/should the logging package have a function like this?
-func LoggerForFormat(prefix string, rawLogFormat string) (logging.Logger, error) {
+func LoggerForFormat(prefix string, rawLogFormat string) (log.Logger, error) {
 	writeCloser := os.Stdout
-	logFormat, err := logging.ToFormat(rawLogFormat, writeCloser.Fd())
+	logFormat, err := log.ToFormat(rawLogFormat, writeCloser.Fd())
 	if err != nil {
 		return nil, err
 	}
-	return logging.NewLogger(prefix, logging.NewWrappedCore(logging.Verbo, writeCloser, logFormat.ConsoleEncoder())), nil
+	return log.NewLogger(prefix, *log.NewWrappedCore(level.Info, writeCloser, logFormat.ConsoleEncoder())), nil
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -17,28 +17,29 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/linear"
-	"github.com/luxfi/node/consensus/linear/linearmock"
-	"github.com/luxfi/node/consensus/linear/lineartest"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/linear/block"
-	"github.com/luxfi/node/consensus/engine/linear/block/blockmock"
-	"github.com/luxfi/node/consensus/engine/linear/block/blocktest"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/consensus/validators/validatorstest"
+	"github.com/luxfi/database"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/consensustest"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/enginetest"
+	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
+	"github.com/luxfi/node/quasar/engine/chain/block/blocktest"
+	"github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/quasar/chain/chainmock"
+	"github.com/luxfi/node/quasar/chain/chaintest"
+	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/quasar/validators/validatorstest"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 
@@ -89,7 +90,7 @@ func initTestProposerVM(
 	*fullVM,
 	*validatorstest.State,
 	*VM,
-	database.Database,
+	db.Database,
 ) {
 	require := require.New(t)
 
@@ -105,27 +106,27 @@ func initTestProposerVM(
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *quasar.Context, db.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
-	coreVM.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
-		[]*lineartest.Block{lineartest.Genesis},
+	coreVM.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
+		[]*chaintest.Block{chaintest.Genesis},
 	)
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -151,7 +152,7 @@ func initTestProposerVM(
 		T: t,
 	}
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
-		return lineartest.GenesisHeight, nil
+		return chaintest.GenesisHeight, nil
 	}
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
@@ -203,10 +204,10 @@ func initTestProposerVM(
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
-	require.NoError(proVM.SetPreference(context.Background(), lineartest.GenesisID))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
+	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
-	proVM.Set(lineartest.GenesisTimestamp)
+	proVM.Set(chaintest.GenesisTimestamp)
 
 	return coreVM, valState, proVM, db
 }
@@ -256,7 +257,7 @@ func TestBuildBlockTimestampAreRoundedToSeconds(t *testing.T) {
 	skewedTimestamp := time.Now().Truncate(time.Second).Add(time.Millisecond)
 	proVM.Set(skewedTimestamp)
 
-	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk, nil
 	}
@@ -281,7 +282,7 @@ func TestBuildBlockIsIdempotent(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk, nil
 	}
@@ -311,18 +312,18 @@ func TestFirstProposerBlockIsBuiltOnTopOfGenesis(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk, nil
 	}
 
 	// test
-	snowBlock, err := proVM.BuildBlock(context.Background())
+	block, err := proVM.BuildBlock(context.Background())
 	require.NoError(err)
 
 	// checks
-	require.IsType(&postForkBlock{}, snowBlock)
-	proBlock := snowBlock.(*postForkBlock)
+	require.IsType(&postForkBlock{}, block)
+	proBlock := block.(*postForkBlock)
 
 	require.Equal(coreBlk, proBlock.innerBlk)
 }
@@ -341,14 +342,14 @@ func TestProposerBlocksAreBuiltOnPreferredProBlock(t *testing.T) {
 	}()
 
 	// add two proBlks...
-	coreBlk1 := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk1 := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk1, nil
 	}
 	proBlk1, err := proVM.BuildBlock(context.Background())
 	require.NoError(err)
 
-	coreBlk2 := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk2 := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk2, nil
 	}
@@ -358,7 +359,7 @@ func TestProposerBlocksAreBuiltOnPreferredProBlock(t *testing.T) {
 	require.NoError(proBlk2.Verify(context.Background()))
 
 	// ...and set one as preferred
-	var prefcoreBlk *lineartest.Block
+	var prefcoreBlk *chaintest.Block
 	coreVM.SetPreferenceF = func(_ context.Context, prefID ids.ID) error {
 		switch prefID {
 		case coreBlk1.ID():
@@ -387,7 +388,7 @@ func TestProposerBlocksAreBuiltOnPreferredProBlock(t *testing.T) {
 	require.NoError(proVM.SetPreference(context.Background(), proBlk2.ID()))
 
 	// build block...
-	coreBlk3 := lineartest.BuildChild(prefcoreBlk)
+	coreBlk3 := chaintest.BuildChild(prefcoreBlk)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk3, nil
 	}
@@ -412,14 +413,14 @@ func TestCoreBlocksMustBeBuiltOnPreferredCoreBlock(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreBlk1 := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk1 := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk1, nil
 	}
 	proBlk1, err := proVM.BuildBlock(context.Background())
 	require.NoError(err)
 
-	coreBlk2 := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk2 := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk2, nil
 	}
@@ -430,7 +431,7 @@ func TestCoreBlocksMustBeBuiltOnPreferredCoreBlock(t *testing.T) {
 	require.NoError(proBlk2.Verify(context.Background()))
 
 	// ...and set one as preferred
-	var wronglyPreferredcoreBlk *lineartest.Block
+	var wronglyPreferredcoreBlk *chaintest.Block
 	coreVM.SetPreferenceF = func(_ context.Context, prefID ids.ID) error {
 		switch prefID {
 		case coreBlk1.ID():
@@ -459,7 +460,7 @@ func TestCoreBlocksMustBeBuiltOnPreferredCoreBlock(t *testing.T) {
 	require.NoError(proVM.SetPreference(context.Background(), proBlk2.ID()))
 
 	// build block...
-	coreBlk3 := lineartest.BuildChild(wronglyPreferredcoreBlk)
+	coreBlk3 := chaintest.BuildChild(wronglyPreferredcoreBlk)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk3, nil
 	}
@@ -489,7 +490,7 @@ func TestCoreBlockFailureCauseProposerBlockParseFailure(t *testing.T) {
 		return nil, errMarshallingFailed
 	}
 
-	innerBlk := lineartest.BuildChild(lineartest.Genesis)
+	innerBlk := chaintest.BuildChild(chaintest.Genesis)
 	slb, err := statelessblock.Build(
 		proVM.preferred,
 		proVM.Time(),
@@ -526,7 +527,7 @@ func TestTwoProBlocksWrappingSameCoreBlockCanBeParsed(t *testing.T) {
 	}()
 
 	// create two Proposer blocks at the same height
-	innerBlk := lineartest.BuildChild(lineartest.Genesis)
+	innerBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		require.Equal(innerBlk.Bytes(), b)
 		return innerBlk, nil
@@ -596,7 +597,7 @@ func TestTwoProBlocksWithSameParentCanBothVerify(t *testing.T) {
 	}()
 
 	// one block is built from this proVM
-	localcoreBlk := lineartest.BuildChild(lineartest.Genesis)
+	localcoreBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return localcoreBlk, nil
 	}
@@ -606,11 +607,11 @@ func TestTwoProBlocksWithSameParentCanBothVerify(t *testing.T) {
 	require.NoError(builtBlk.Verify(context.Background()))
 
 	// another block with same parent comes from network and is parsed
-	netcoreBlk := lineartest.BuildChild(lineartest.Genesis)
+	netcoreBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, localcoreBlk.Bytes()):
 			return localcoreBlk, nil
 		case bytes.Equal(b, netcoreBlk.Bytes()):
@@ -664,7 +665,7 @@ func TestPreFork_Initialize(t *testing.T) {
 	require.NoError(err)
 
 	require.IsType(&preForkBlock{}, rtvdBlk)
-	require.Equal(lineartest.GenesisBytes, rtvdBlk.Bytes())
+	require.Equal(chaintest.GenesisBytes, rtvdBlk.Bytes())
 }
 
 func TestPreFork_BuildBlock(t *testing.T) {
@@ -679,7 +680,7 @@ func TestPreFork_BuildBlock(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk, nil
 	}
@@ -712,7 +713,7 @@ func TestPreFork_ParseBlock(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		require.Equal(coreBlk.Bytes(), b)
 		return coreBlk, nil
@@ -745,7 +746,7 @@ func TestPreFork_SetPreference(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreBlk0 := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk0 := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk0, nil
 	}
@@ -754,8 +755,8 @@ func TestPreFork_SetPreference(t *testing.T) {
 
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case coreBlk0.ID():
 			return coreBlk0, nil
 		default:
@@ -764,8 +765,8 @@ func TestPreFork_SetPreference(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, coreBlk0.Bytes()):
 			return coreBlk0, nil
 		default:
@@ -774,7 +775,7 @@ func TestPreFork_SetPreference(t *testing.T) {
 	}
 	require.NoError(proVM.SetPreference(context.Background(), builtBlk.ID()))
 
-	coreBlk1 := lineartest.BuildChild(coreBlk0)
+	coreBlk1 := chaintest.BuildChild(coreBlk0)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return coreBlk1, nil
 	}
@@ -789,21 +790,21 @@ func TestExpiredBuildBlock(t *testing.T) {
 	coreVM := &blocktest.VM{}
 	coreVM.T = t
 
-	coreVM.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
-		[]*lineartest.Block{lineartest.Genesis},
+	coreVM.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
+		[]*chaintest.Block{chaintest.Genesis},
 	)
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -835,7 +836,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 		T: t,
 	}
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
-		return lineartest.GenesisHeight, nil
+		return chaintest.GenesisHeight, nil
 	}
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
@@ -856,8 +857,8 @@ func TestExpiredBuildBlock(t *testing.T) {
 
 	coreVM.InitializeF = func(
 		_ context.Context,
-		_ *consensus.Context,
-		_ database.Database,
+		_ *quasar.Context,
+		_ db.Database,
 		_ []byte,
 		_ []byte,
 		_ []byte,
@@ -885,21 +886,21 @@ func TestExpiredBuildBlock(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
-	require.NoError(proVM.SetPreference(context.Background(), lineartest.GenesisID))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
+	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
 	// Notify the proposer VM of a new block on the inner block side
 	events <- core.PendingTxs
-	// The first notification will be read from the consensus engine
+	// The first notification will be read from the quasar engine
 	msg, err := proVM.WaitForEvent(context.Background())
 	require.NoError(err)
 	require.Equal(core.PendingTxs, msg)
 
 	// Before calling BuildBlock, verify a remote block and set it as the
 	// preferred block.
-	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk := chaintest.BuildChild(chaintest.Genesis)
 	statelessBlock, err := statelessblock.BuildUnsigned(
-		lineartest.GenesisID,
+		chaintest.GenesisID,
 		proVM.Time(),
 		0,
 		coreBlk.Bytes(),
@@ -908,8 +909,8 @@ func TestExpiredBuildBlock(t *testing.T) {
 
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		default:
@@ -918,8 +919,8 @@ func TestExpiredBuildBlock(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, coreBlk.Bytes()):
 			return coreBlk, nil
 		default:
@@ -978,7 +979,7 @@ func TestInnerBlockDeduplication(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk := chaintest.BuildChild(chaintest.Genesis)
 	coreBlk0 := &wrappedBlock{
 		Block: coreBlk,
 	}
@@ -986,14 +987,14 @@ func TestInnerBlockDeduplication(t *testing.T) {
 		Block: coreBlk,
 	}
 	statelessBlock0, err := statelessblock.BuildUnsigned(
-		lineartest.GenesisID,
+		chaintest.GenesisID,
 		coreBlk.Timestamp(),
 		0,
 		coreBlk.Bytes(),
 	)
 	require.NoError(err)
 	statelessBlock1, err := statelessblock.BuildUnsigned(
-		lineartest.GenesisID,
+		chaintest.GenesisID,
 		coreBlk.Timestamp(),
 		1,
 		coreBlk.Bytes(),
@@ -1002,8 +1003,8 @@ func TestInnerBlockDeduplication(t *testing.T) {
 
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case coreBlk0.ID():
 			return coreBlk0, nil
 		default:
@@ -1012,8 +1013,8 @@ func TestInnerBlockDeduplication(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, coreBlk0.Bytes()):
 			return coreBlk0, nil
 		default:
@@ -1030,8 +1031,8 @@ func TestInnerBlockDeduplication(t *testing.T) {
 
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case coreBlk1.ID():
 			return coreBlk1, nil
 		default:
@@ -1040,8 +1041,8 @@ func TestInnerBlockDeduplication(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, coreBlk1.Bytes()):
 			return coreBlk1, nil
 		default:
@@ -1083,8 +1084,8 @@ func TestInnerVMRollback(t *testing.T) {
 			T: t,
 			InitializeF: func(
 				context.Context,
-				*consensus.Context,
-				database.Database,
+				*quasar.Context,
+				db.Database,
 				[]byte,
 				[]byte,
 				[]byte,
@@ -1096,22 +1097,22 @@ func TestInnerVMRollback(t *testing.T) {
 		},
 		ParseBlockF: func(_ context.Context, b []byte) (linear.Block, error) {
 			switch {
-			case bytes.Equal(b, lineartest.GenesisBytes):
-				return lineartest.Genesis, nil
+			case bytes.Equal(b, chaintest.GenesisBytes):
+				return chaintest.Genesis, nil
 			default:
 				return nil, errUnknownBlock
 			}
 		},
 		GetBlockF: func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 			switch blkID {
-			case lineartest.GenesisID:
-				return lineartest.Genesis, nil
+			case chaintest.GenesisID:
+				return chaintest.Genesis, nil
 			default:
 				return nil, errUnknownBlock
 			}
 		},
-		LastAcceptedF: lineartest.MakeLastAcceptedBlockF(
-			[]*lineartest.Block{lineartest.Genesis},
+		LastAcceptedF: chaintest.MakeLastAcceptedBlockF(
+			[]*chaintest.Block{chaintest.Genesis},
 		),
 	}
 
@@ -1144,12 +1145,12 @@ func TestInnerVMRollback(t *testing.T) {
 		nil,
 	))
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
-	require.NoError(proVM.SetPreference(context.Background(), lineartest.GenesisID))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
+	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
-	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk := chaintest.BuildChild(chaintest.Genesis)
 	statelessBlock, err := statelessblock.BuildUnsigned(
-		lineartest.GenesisID,
+		chaintest.GenesisID,
 		coreBlk.Timestamp(),
 		0,
 		coreBlk.Bytes(),
@@ -1158,8 +1159,8 @@ func TestInnerVMRollback(t *testing.T) {
 
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		default:
@@ -1168,8 +1169,8 @@ func TestInnerVMRollback(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, coreBlk.Bytes()):
 			return coreBlk, nil
 		default:
@@ -1181,7 +1182,7 @@ func TestInnerVMRollback(t *testing.T) {
 
 	lastAcceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)
-	require.Equal(lineartest.GenesisID, lastAcceptedID)
+	require.Equal(chaintest.GenesisID, lastAcceptedID)
 
 	parsedBlock, err := proVM.ParseBlock(context.Background(), statelessBlock.Bytes())
 	require.NoError(err)
@@ -1226,7 +1227,7 @@ func TestInnerVMRollback(t *testing.T) {
 
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
-	require.Equal(lineartest.GenesisID, lastAcceptedID)
+	require.Equal(chaintest.GenesisID, lastAcceptedID)
 }
 
 func TestBuildBlockDuringWindow(t *testing.T) {
@@ -1250,10 +1251,10 @@ func TestBuildBlockDuringWindow(t *testing.T) {
 		}, nil
 	}
 
-	coreBlk0 := lineartest.BuildChild(lineartest.Genesis)
-	coreBlk1 := lineartest.BuildChild(coreBlk0)
+	coreBlk0 := chaintest.BuildChild(chaintest.Genesis)
+	coreBlk1 := chaintest.BuildChild(coreBlk0)
 	statelessBlock0, err := statelessblock.BuildUnsigned(
-		lineartest.GenesisID,
+		chaintest.GenesisID,
 		proVM.Time(),
 		0,
 		coreBlk0.Bytes(),
@@ -1262,8 +1263,8 @@ func TestBuildBlockDuringWindow(t *testing.T) {
 
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case coreBlk0.ID():
 			return coreBlk0, nil
 		case coreBlk1.ID():
@@ -1274,8 +1275,8 @@ func TestBuildBlockDuringWindow(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, coreBlk0.Bytes()):
 			return coreBlk0, nil
 		case bytes.Equal(b, coreBlk1.Bytes()):
@@ -1331,7 +1332,7 @@ func TestTwoForks_OneIsAccepted(t *testing.T) {
 	}()
 
 	// create pre-fork block X and post-fork block A
-	xBlock := lineartest.BuildChild(lineartest.Genesis)
+	xBlock := chaintest.BuildChild(chaintest.Genesis)
 
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return xBlock, nil
@@ -1342,10 +1343,10 @@ func TestTwoForks_OneIsAccepted(t *testing.T) {
 	require.NoError(aBlock.Verify(context.Background()))
 
 	// use a different way to construct pre-fork block Y and post-fork block B
-	yBlock := lineartest.BuildChild(lineartest.Genesis)
+	yBlock := chaintest.BuildChild(chaintest.Genesis)
 
 	ySlb, err := statelessblock.BuildUnsigned(
-		lineartest.GenesisID,
+		chaintest.GenesisID,
 		proVM.Time(),
 		defaultPChainHeight,
 		yBlock.Bytes(),
@@ -1363,7 +1364,7 @@ func TestTwoForks_OneIsAccepted(t *testing.T) {
 	require.NoError(bBlock.Verify(context.Background()))
 
 	// append Z/C to Y/B
-	zBlock := lineartest.BuildChild(yBlock)
+	zBlock := chaintest.BuildChild(yBlock)
 
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return zBlock, nil
@@ -1402,8 +1403,8 @@ func TestTooFarAdvanced(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	xBlock := lineartest.BuildChild(lineartest.Genesis)
-	yBlock := lineartest.BuildChild(xBlock)
+	xBlock := chaintest.BuildChild(chaintest.Genesis)
+	yBlock := chaintest.BuildChild(xBlock)
 
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return xBlock, nil
@@ -1475,12 +1476,12 @@ func TestTwoOptions_OneIsAccepted(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	xTestBlock := lineartest.BuildChild(lineartest.Genesis)
+	xTestBlock := chaintest.BuildChild(chaintest.Genesis)
 	xBlock := &TestOptionsBlock{
 		Block: *xTestBlock,
-		opts: [2]*lineartest.Block{
-			lineartest.BuildChild(xTestBlock),
-			lineartest.BuildChild(xTestBlock),
+		opts: [2]*chaintest.Block{
+			chaintest.BuildChild(xTestBlock),
+			chaintest.BuildChild(xTestBlock),
 		},
 	}
 
@@ -1523,7 +1524,7 @@ func TestLaggedPChainHeight(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	innerBlock := lineartest.BuildChild(lineartest.Genesis)
+	innerBlock := chaintest.BuildChild(chaintest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return innerBlock, nil
 	}
@@ -1534,7 +1535,7 @@ func TestLaggedPChainHeight(t *testing.T) {
 	block := blockIntf.(*postForkBlock)
 
 	pChainHeight := block.PChainHeight()
-	require.Equal(lineartest.GenesisHeight, pChainHeight)
+	require.Equal(chaintest.GenesisHeight, pChainHeight)
 }
 
 // Ensure that rejecting a block does not modify the accepted block ID for the
@@ -1542,7 +1543,7 @@ func TestLaggedPChainHeight(t *testing.T) {
 func TestRejectedHeightNotIndexed(t *testing.T) {
 	require := require.New(t)
 
-	coreHeights := []ids.ID{lineartest.GenesisID}
+	coreHeights := []ids.ID{chaintest.GenesisID}
 
 	initialState := []byte("genesis state")
 	coreVM := &blocktest.VM{
@@ -1557,27 +1558,27 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *quasar.Context, db.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
-	coreVM.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
-		[]*lineartest.Block{lineartest.Genesis},
+	coreVM.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
+		[]*chaintest.Block{chaintest.Genesis},
 	)
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -1599,7 +1600,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		T: t,
 	}
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
-		return lineartest.GenesisHeight, nil
+		return chaintest.GenesisHeight, nil
 	}
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
@@ -1652,12 +1653,12 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 
-	require.NoError(proVM.SetPreference(context.Background(), lineartest.GenesisID))
+	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
 	// create inner block X and outer block A
-	xBlock := lineartest.BuildChild(lineartest.Genesis)
+	xBlock := chaintest.BuildChild(chaintest.Genesis)
 
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 		return xBlock, nil
@@ -1669,11 +1670,11 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 	require.NoError(aBlock.Verify(context.Background()))
 
 	// use a different way to construct inner block Y and outer block B
-	yBlock := lineartest.BuildChild(lineartest.Genesis)
+	yBlock := chaintest.BuildChild(chaintest.Genesis)
 
 	ySlb, err := statelessblock.BuildUnsigned(
-		lineartest.GenesisID,
-		lineartest.GenesisTimestamp,
+		chaintest.GenesisID,
+		chaintest.GenesisTimestamp,
 		defaultPChainHeight,
 		yBlock.Bytes(),
 	)
@@ -1710,7 +1711,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 	require := require.New(t)
 
-	coreHeights := []ids.ID{lineartest.GenesisID}
+	coreHeights := []ids.ID{chaintest.GenesisID}
 
 	initialState := []byte("genesis state")
 	coreVM := &blocktest.VM{
@@ -1725,27 +1726,27 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, *quasar.Context, db.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
-	coreVM.LastAcceptedF = lineartest.MakeLastAcceptedBlockF(
-		[]*lineartest.Block{lineartest.Genesis},
+	coreVM.LastAcceptedF = chaintest.MakeLastAcceptedBlockF(
+		[]*chaintest.Block{chaintest.Genesis},
 	)
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -1767,7 +1768,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		T: t,
 	}
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
-		return lineartest.GenesisHeight, nil
+		return chaintest.GenesisHeight, nil
 	}
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
@@ -1820,16 +1821,16 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 
-	require.NoError(proVM.SetPreference(context.Background(), lineartest.GenesisID))
+	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
 
-	xTestBlock := lineartest.BuildChild(lineartest.Genesis)
+	xTestBlock := chaintest.BuildChild(chaintest.Genesis)
 	xBlock := &TestOptionsBlock{
 		Block: *xTestBlock,
-		opts: [2]*lineartest.Block{
-			lineartest.BuildChild(xTestBlock),
-			lineartest.BuildChild(xTestBlock),
+		opts: [2]*chaintest.Block{
+			chaintest.BuildChild(xTestBlock),
+			chaintest.BuildChild(xTestBlock),
 		},
 	}
 
@@ -1910,7 +1911,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 	innerVM.EXPECT().Shutdown(gomock.Any()).Return(nil)
 
 	{
-		innerBlk := linearmock.NewBlock(ctrl)
+		innerBlk := chainmock.NewBlock(ctrl)
 		innerBlkID := ids.GenerateTestID()
 		innerVM.EXPECT().LastAccepted(gomock.Any()).Return(innerBlkID, nil)
 		innerVM.EXPECT().GetBlock(gomock.Any(), innerBlkID).Return(innerBlk, nil)
@@ -1947,7 +1948,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 	require.NoError(err)
 
 	// We will ask the inner VM to parse.
-	mockInnerBlkNearTip := linearmock.NewBlock(ctrl)
+	mockInnerBlkNearTip := chainmock.NewBlock(ctrl)
 	mockInnerBlkNearTip.EXPECT().Height().Return(uint64(1)).Times(2)
 	mockInnerBlkNearTip.EXPECT().Bytes().Return(blkNearTipInnerBytes).Times(1)
 
@@ -1978,7 +1979,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 }
 
 type blockWithVerifyContext struct {
-	*linearmock.Block
+	*chainmock.Block
 	*blockmock.WithVerifyContext
 }
 
@@ -2021,18 +2022,18 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 	innerVM.EXPECT().Shutdown(gomock.Any()).Return(nil)
 
 	{
-		innerBlk := linearmock.NewBlock(ctrl)
+		innerBlk := chainmock.NewBlock(ctrl)
 		innerBlkID := ids.GenerateTestID()
 		innerVM.EXPECT().LastAccepted(gomock.Any()).Return(innerBlkID, nil)
 		innerVM.EXPECT().GetBlock(gomock.Any(), innerBlkID).Return(innerBlk, nil)
 	}
 
-	snowCtx := consensustest.Context(t, consensustest.CChainID)
-	snowCtx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx := consensustest.Context(t, consensustest.CChainID)
+	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
 
 	require.NoError(vm.Initialize(
 		context.Background(),
-		snowCtx,
+		ctx,
 		db,
 		nil,
 		nil,
@@ -2047,7 +2048,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 	{
 		pChainHeight := uint64(0)
 		innerBlk := blockWithVerifyContext{
-			Block:             linearmock.NewBlock(ctrl),
+			Block:             chainmock.NewBlock(ctrl),
 			WithVerifyContext: blockmock.NewWithVerifyContext(ctrl),
 		}
 		innerBlk.WithVerifyContext.EXPECT().ShouldVerifyWithContext(gomock.Any()).Return(true, nil).Times(2)
@@ -2095,7 +2096,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		// Ensure we call Verify on a block that returns
 		// false for ShouldVerifyWithContext
 		innerBlk := blockWithVerifyContext{
-			Block:             linearmock.NewBlock(ctrl),
+			Block:             chainmock.NewBlock(ctrl),
 			WithVerifyContext: blockmock.NewWithVerifyContext(ctrl),
 		}
 		innerBlk.WithVerifyContext.EXPECT().ShouldVerifyWithContext(gomock.Any()).Return(false, nil)
@@ -2118,7 +2119,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 	{
 		// Ensure we call Verify on a block that doesn't have a valid context
 		innerBlk := blockWithVerifyContext{
-			Block:             linearmock.NewBlock(ctrl),
+			Block:             chainmock.NewBlock(ctrl),
 			WithVerifyContext: blockmock.NewWithVerifyContext(ctrl),
 		}
 		innerBlk.Block.EXPECT().Verify(gomock.Any()).Return(nil)
@@ -2135,14 +2136,14 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 func TestHistoricalBlockDeletion(t *testing.T) {
 	require := require.New(t)
 
-	acceptedBlocks := []*lineartest.Block{lineartest.Genesis}
+	acceptedBlocks := []*chaintest.Block{chaintest.Genesis}
 	currentHeight := uint64(0)
 
 	initialState := []byte("genesis state")
 	coreVM := &blocktest.VM{
 		VM: enginetest.VM{
 			T: t,
-			InitializeF: func(context.Context, *consensus.Context, database.Database, []byte, []byte, []byte, []*core.Fx, core.AppSender) error {
+			InitializeF: func(context.Context, *quasar.Context, db.Database, []byte, []byte, []byte, []*core.Fx, core.AppSender) error {
 				return nil
 			},
 		},
@@ -2178,7 +2179,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	ctx.ValidatorState = &validatorstest.State{
 		T: t,
 		GetMinimumHeightF: func(context.Context) (uint64, error) {
-			return lineartest.GenesisHeight, nil
+			return chaintest.GenesisHeight, nil
 		},
 		GetCurrentHeightF: func(context.Context) (uint64, error) {
 			return defaultPChainHeight, nil
@@ -2217,12 +2218,12 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err := proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	issueBlock := func() {
 		lastAcceptedBlock := acceptedBlocks[currentHeight]
-		innerBlock := lineartest.BuildChild(lastAcceptedBlock)
+		innerBlock := chaintest.BuildChild(lastAcceptedBlock)
 
 		coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {
 			return innerBlock, nil
@@ -2306,7 +2307,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	// Verify that old blocks were pruned during startup
@@ -2351,7 +2352,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	lastAcceptedID, err = proVM.LastAccepted(context.Background())
 	require.NoError(err)
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), lastAcceptedID))
 
 	// The height index shouldn't be modified at this point
@@ -2386,9 +2387,9 @@ func TestGetPostDurangoSlotTimeWithNoValidators(t *testing.T) {
 		return map[ids.NodeID]*validators.GetValidatorOutput{}, nil
 	}
 
-	coreBlk := lineartest.BuildChild(lineartest.Genesis)
+	coreBlk := chaintest.BuildChild(chaintest.Genesis)
 	statelessBlock, err := statelessblock.BuildUnsigned(
-		lineartest.GenesisID,
+		chaintest.GenesisID,
 		proVM.Time(),
 		0,
 		coreBlk.Bytes(),
@@ -2397,8 +2398,8 @@ func TestGetPostDurangoSlotTimeWithNoValidators(t *testing.T) {
 
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (linear.Block, error) {
 		switch blkID {
-		case lineartest.GenesisID:
-			return lineartest.Genesis, nil
+		case chaintest.GenesisID:
+			return chaintest.Genesis, nil
 		case coreBlk.ID():
 			return coreBlk, nil
 		default:
@@ -2407,8 +2408,8 @@ func TestGetPostDurangoSlotTimeWithNoValidators(t *testing.T) {
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (linear.Block, error) {
 		switch {
-		case bytes.Equal(b, lineartest.GenesisBytes):
-			return lineartest.Genesis, nil
+		case bytes.Equal(b, chaintest.GenesisBytes):
+			return chaintest.Genesis, nil
 		case bytes.Equal(b, coreBlk.Bytes()):
 			return coreBlk, nil
 		default:
@@ -2437,7 +2438,7 @@ func TestGetPostDurangoSlotTimeWithNoValidators(t *testing.T) {
 func TestLocalParse(t *testing.T) {
 	innerVM := &blocktest.VM{
 		ParseBlockF: func(_ context.Context, rawBlock []byte) (linear.Block, error) {
-			return &lineartest.Block{BytesV: rawBlock}, nil
+			return &chaintest.Block{BytesV: rawBlock}, nil
 		},
 	}
 
@@ -2486,8 +2487,8 @@ func TestLocalParse(t *testing.T) {
 
 	db := prefixdb.New([]byte{}, memdb.New())
 
-	_ = vm.Initialize(context.Background(), &consensus.Context{
-		Log:     logging.NoLog{},
+	_ = vm.Initialize(context.Background(), &quasar.Context{
+		Log:     log.NewNoOpLogger(),
 		ChainID: chainID,
 	}, db, nil, nil, nil, nil, nil)
 
@@ -2534,7 +2535,7 @@ func TestTimestampMetrics(t *testing.T) {
 		require.NoError(t, proVM.Shutdown(ctx))
 	}()
 
-	innerBlock := lineartest.BuildChild(lineartest.Genesis)
+	innerBlock := chaintest.BuildChild(chaintest.Genesis)
 
 	outerTime := time.Unix(314159, 0)
 	innerTime := time.Unix(142857, 0)
@@ -2663,14 +2664,14 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 
 	// innerVMBlks is appended to throughout the test, which modifies the
 	// behavior of coreVM.
-	innerVMBlks := []*lineartest.Block{
-		lineartest.Genesis,
+	innerVMBlks := []*chaintest.Block{
+		chaintest.Genesis,
 	}
 
 	coreVM := &blocktest.VM{
 		VM: enginetest.VM{
 			T: t,
-			InitializeF: func(_ context.Context, _ *consensus.Context, _ database.Database, _ []byte, _ []byte, _ []byte, _ []*core.Fx, _ core.AppSender) error {
+			InitializeF: func(_ context.Context, _ *quasar.Context, _ db.Database, _ []byte, _ []byte, _ []byte, _ []*core.Fx, _ core.AppSender) error {
 				return nil
 			},
 		},
@@ -2709,9 +2710,9 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 		coreVM,
 		Config{
 			Upgrades: upgrade.Config{
-				ApricotPhase4Time:            lineartest.GenesisTimestamp,
+				ApricotPhase4Time:            chaintest.GenesisTimestamp,
 				ApricotPhase4MinPChainHeight: 0,
-				DurangoTime:                  lineartest.GenesisTimestamp,
+				DurangoTime:                  chaintest.GenesisTimestamp,
 			},
 			MinBlkDelay:         DefaultMinBlockDelay,
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
@@ -2720,7 +2721,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 			Registerer:          prometheus.NewRegistry(),
 		},
 	)
-	proVM.Set(lineartest.GenesisTimestamp)
+	proVM.Set(chaintest.GenesisTimestamp)
 
 	// We mark the P-chain as having synced to height=1.
 	const currentPChainHeight = 1
@@ -2765,15 +2766,15 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	require.NoError(proVM.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(proVM.SetState(context.Background(), quasar.Bootstrapping))
 
 	// During bootstrapping, the first post-fork block is verified against the
 	// P-chain height, so we provide a valid height.
-	innerBlock1 := lineartest.BuildChild(lineartest.Genesis)
+	innerBlock1 := chaintest.BuildChild(chaintest.Genesis)
 	innerVMBlks = append(innerVMBlks, innerBlock1)
 	statelessBlock1, err := statelessblock.BuildUnsigned(
-		lineartest.GenesisID,
-		lineartest.GenesisTimestamp,
+		chaintest.GenesisID,
+		chaintest.GenesisTimestamp,
 		currentPChainHeight,
 		innerBlock1.Bytes(),
 	)
@@ -2788,7 +2789,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 	// During bootstrapping, the additional post-fork blocks are not verified
 	// against the local P-chain height, so even if we provide a height higher
 	// than our P-chain height, verification will succeed.
-	innerBlock2 := lineartest.BuildChild(innerBlock1)
+	innerBlock2 := chaintest.BuildChild(innerBlock1)
 	innerVMBlks = append(innerVMBlks, innerBlock2)
 	statelessBlock2, err := statelessblock.Build(
 		statelessBlock1.ID(),
@@ -2811,17 +2812,17 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 
 	// At this point, the VM has a last accepted block with a P-chain height
 	// greater than our locally accepted P-chain.
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), quasar.NormalOp))
 
 	// If the inner VM requests building a block, the proposervm passes that
-	// message to the consensus core. This is really the source of the issue,
+	// message to the quasar core. This is really the source of the issue,
 	// as the proposervm is not currently in a state where it can correctly
 	// build any blocks.
 	msg, err := proVM.WaitForEvent(context.Background())
 	require.NoError(err)
 	require.Equal(core.PendingTxs, msg)
 
-	innerBlock3 := lineartest.BuildChild(innerBlock2)
+	innerBlock3 := chaintest.BuildChild(innerBlock2)
 	innerVMBlks = append(innerVMBlks, innerBlock3)
 
 	coreVM.BuildBlockF = func(context.Context) (linear.Block, error) {

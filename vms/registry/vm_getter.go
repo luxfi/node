@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package registry
@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"

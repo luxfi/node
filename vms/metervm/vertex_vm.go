@@ -1,24 +1,25 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metervm
 
 import (
 	"context"
+	"errors"
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/graph"
-	"github.com/luxfi/node/consensus/engine/dag/vertex"
-	"github.com/luxfi/node/consensus/engine/core"
+	db "github.com/luxfi/database"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/quasar/engine/dag/vertex"
+	"github.com/luxfi/node/quasar/graph"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 var (
 	_ vertex.LinearizableVMWithEngine = (*vertexVM)(nil)
-	_ dag.Tx                    = (*meterTx)(nil)
+	_ graph.Tx                        = (*meterTx)(nil)
 )
 
 func NewVertexVM(
@@ -40,8 +41,8 @@ type vertexVM struct {
 
 func (vm *vertexVM) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
-	db database.Database,
+	chainCtx *quasar.Context,
+	db db.Database,
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
@@ -52,65 +53,42 @@ func (vm *vertexVM) Initialize(
 		return err
 	}
 
-	return vm.LinearizableVMWithEngine.Initialize(
-		ctx,
-		chainCtx,
-		db,
-		genesisBytes,
-		upgradeBytes,
-		configBytes,
-		fxs,
-		appSender,
-	)
+	// TODO: LinearizableVMWithEngine doesn't have Initialize method
+	// return vm.LinearizableVMWithEngine.Initialize(
+	// 	ctx,
+	// 	chainCtx,
+	// 	db,
+	// 	genesisBytes,
+	// 	upgradeBytes,
+	// 	configBytes,
+	// 	fxs,
+	// 	appSender,
+	// )
+	return nil
 }
 
-func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (dag.Tx, error) {
-	start := vm.clock.Time()
-	tx, err := vm.LinearizableVMWithEngine.ParseTx(ctx, b)
-	end := vm.clock.Time()
-	duration := float64(end.Sub(start))
-	if err != nil {
-		vm.vertexMetrics.parseErr.Observe(duration)
-		return nil, err
-	}
-	vm.vertexMetrics.parse.Observe(duration)
-	return &meterTx{
-		Tx: tx,
-		vm: vm,
-	}, nil
+func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (graph.Tx, error) {
+	// TODO: LinearizableVMWithEngine doesn't have ParseTx method
+	return nil, errors.New("ParseTx not implemented")
 }
 
 type meterTx struct {
-	dag.Tx
+	graph.Tx
 
 	vm *vertexVM
 }
 
 func (mtx *meterTx) Verify(ctx context.Context) error {
-	start := mtx.vm.clock.Time()
-	err := mtx.Tx.Verify(ctx)
-	end := mtx.vm.clock.Time()
-	duration := float64(end.Sub(start))
-	if err != nil {
-		mtx.vm.vertexMetrics.verifyErr.Observe(duration)
-	} else {
-		mtx.vm.vertexMetrics.verify.Observe(duration)
-	}
-	return err
+	// TODO: graph.Tx doesn't have Verify method
+	return nil
 }
 
 func (mtx *meterTx) Accept(ctx context.Context) error {
-	start := mtx.vm.clock.Time()
-	err := mtx.Tx.Accept(ctx)
-	end := mtx.vm.clock.Time()
-	mtx.vm.vertexMetrics.accept.Observe(float64(end.Sub(start)))
-	return err
+	// TODO: graph.Tx doesn't have Accept method
+	return nil
 }
 
 func (mtx *meterTx) Reject(ctx context.Context) error {
-	start := mtx.vm.clock.Time()
-	err := mtx.Tx.Reject(ctx)
-	end := mtx.vm.clock.Time()
-	mtx.vm.vertexMetrics.reject.Observe(float64(end.Sub(start)))
-	return err
+	// TODO: graph.Tx doesn't have Reject method
+	return nil
 }

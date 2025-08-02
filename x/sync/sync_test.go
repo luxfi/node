@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
@@ -14,12 +14,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/p2ptest"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/x/merkledb"
 )
@@ -42,7 +42,7 @@ func Test_Creation(t *testing.T) {
 		RangeProofClient:      p2ptest.NewSelfClient(t, ctx, ids.EmptyNodeID, NewGetRangeProofHandler(db)),
 		ChangeProofClient:     p2ptest.NewSelfClient(t, ctx, ids.EmptyNodeID, NewGetChangeProofHandler(db)),
 		SimultaneousWorkLimit: 5,
-		Log:                   logging.NoLog{},
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	}, prometheus.NewRegistry())
 	require.NoError(err)
@@ -76,7 +76,7 @@ func Test_Completion(t *testing.T) {
 		ChangeProofClient:     p2ptest.NewSelfClient(t, ctx, ids.EmptyNodeID, NewGetChangeProofHandler(emptyDB)),
 		TargetRoot:            emptyRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   logging.NoLog{},
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	}, prometheus.NewRegistry())
 	require.NoError(err)
@@ -181,7 +181,7 @@ func Test_Sync_FindNextKey_InSync(t *testing.T) {
 		ChangeProofClient:     p2ptest.NewSelfClient(t, ctx, ids.EmptyNodeID, NewGetChangeProofHandler(dbToSync)),
 		TargetRoot:            syncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   logging.NoLog{},
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	}, prometheus.NewRegistry())
 	require.NoError(err)
@@ -257,7 +257,7 @@ func Test_Sync_FindNextKey_Deleted(t *testing.T) {
 		ChangeProofClient:     p2ptest.NewSelfClient(t, ctx, ids.EmptyNodeID, NewGetChangeProofHandler(db)),
 		TargetRoot:            syncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   logging.NoLog{},
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	}, prometheus.NewRegistry())
 	require.NoError(err)
@@ -307,7 +307,7 @@ func Test_Sync_FindNextKey_BranchInLocal(t *testing.T) {
 		ChangeProofClient:     p2ptest.NewSelfClient(t, ctx, ids.EmptyNodeID, NewGetChangeProofHandler(db)),
 		TargetRoot:            targetRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   logging.NoLog{},
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	}, prometheus.NewRegistry())
 	require.NoError(err)
@@ -344,7 +344,7 @@ func Test_Sync_FindNextKey_BranchInReceived(t *testing.T) {
 		ChangeProofClient:     p2ptest.NewSelfClient(t, ctx, ids.EmptyNodeID, NewGetChangeProofHandler(db)),
 		TargetRoot:            targetRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   logging.NoLog{},
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	}, prometheus.NewRegistry())
 	require.NoError(err)
@@ -380,7 +380,7 @@ func Test_Sync_FindNextKey_ExtraValues(t *testing.T) {
 		ChangeProofClient:     p2ptest.NewSelfClient(t, ctx, ids.EmptyNodeID, NewGetChangeProofHandler(dbToSync)),
 		TargetRoot:            syncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   logging.NoLog{},
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	}, prometheus.NewRegistry())
 	require.NoError(err)
@@ -442,7 +442,7 @@ func TestFindNextKeyEmptyEndProof(t *testing.T) {
 		ChangeProofClient:     p2ptest.NewSelfClient(t, ctx, ids.EmptyNodeID, NewGetChangeProofHandler(db)),
 		TargetRoot:            ids.Empty,
 		SimultaneousWorkLimit: 5,
-		Log:                   logging.NoLog{},
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	}, prometheus.NewRegistry())
 	require.NoError(err)
@@ -511,7 +511,7 @@ func Test_Sync_FindNextKey_DifferentChild(t *testing.T) {
 		ChangeProofClient:     p2ptest.NewSelfClient(t, ctx, ids.EmptyNodeID, NewGetChangeProofHandler(dbToSync)),
 		TargetRoot:            syncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   logging.NoLog{},
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	}, prometheus.NewRegistry())
 	require.NoError(err)
@@ -573,7 +573,7 @@ func TestFindNextKeyRandom(t *testing.T) {
 	)
 
 	// Put random keys into the databases
-	for _, db := range []database.Database{remoteDB, localDB} {
+	for _, db := range []db.Database{remoteDB, localDB} {
 		for i := 0; i < numKeyValues; i++ {
 			key := make([]byte, rand.Intn(maxKeyLen))
 			_, _ = rand.Read(key)
@@ -734,7 +734,7 @@ func TestFindNextKeyRandom(t *testing.T) {
 			ChangeProofClient:     p2ptest.NewSelfClient(t, ctx, ids.EmptyNodeID, NewGetChangeProofHandler(remoteDB)),
 			TargetRoot:            ids.GenerateTestID(),
 			SimultaneousWorkLimit: 5,
-			Log:                   logging.NoLog{},
+			Log:                   log.NewNoOpLogger(),
 			BranchFactor:          merkledb.BranchFactor16,
 		}, prometheus.NewRegistry())
 		require.NoError(err)
@@ -963,7 +963,7 @@ func Test_Sync_Result_Correct_Root(t *testing.T) {
 				ChangeProofClient:     changeProofClient,
 				TargetRoot:            syncRoot,
 				SimultaneousWorkLimit: 5,
-				Log:                   logging.NoLog{},
+				Log:                   log.NewNoOpLogger(),
 				BranchFactor:          merkledb.BranchFactor16,
 			}, prometheus.NewRegistry())
 
@@ -1035,7 +1035,7 @@ func Test_Sync_Result_Correct_Root_With_Sync_Restart(t *testing.T) {
 		ChangeProofClient:     p2ptest.NewSelfClient(t, ctx, ids.EmptyNodeID, NewGetChangeProofHandler(dbToSync)),
 		TargetRoot:            syncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   logging.NoLog{},
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	}, prometheus.NewRegistry())
 	require.NoError(err)
@@ -1062,7 +1062,7 @@ func Test_Sync_Result_Correct_Root_With_Sync_Restart(t *testing.T) {
 		ChangeProofClient:     p2ptest.NewSelfClient(t, ctx, ids.EmptyNodeID, NewGetChangeProofHandler(dbToSync)),
 		TargetRoot:            syncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   logging.NoLog{},
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	}, prometheus.NewRegistry())
 	require.NoError(err)
@@ -1146,7 +1146,7 @@ func Test_Sync_Result_Correct_Root_Update_Root_During(t *testing.T) {
 		ChangeProofClient:     changeProofClient,
 		TargetRoot:            firstSyncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   logging.NoLog{},
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	}, prometheus.NewRegistry())
 	require.NoError(err)
@@ -1193,7 +1193,7 @@ func Test_Sync_UpdateSyncTarget(t *testing.T) {
 		ChangeProofClient:     p2ptest.NewSelfClient(t, ctx, ids.EmptyNodeID, NewGetChangeProofHandler(db)),
 		TargetRoot:            ids.Empty,
 		SimultaneousWorkLimit: 5,
-		Log:                   logging.NoLog{},
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	}, prometheus.NewRegistry())
 	require.NoError(err)

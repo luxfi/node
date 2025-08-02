@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -11,8 +11,13 @@ import (
 	"sync"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/luxfi/evm/ethclient"
+=======
+	"github.com/luxfi/evm/ethclient"
+	"github.com/luxfi/geth/common"
+>>>>>>> main
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
@@ -23,7 +28,7 @@ import (
 	"github.com/luxfi/node/tests/load/c"
 	"github.com/luxfi/node/tests/load/c/listener"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 )
 
 const (
@@ -115,7 +120,7 @@ type workload struct {
 
 func (w *workload) run(
 	ctx context.Context,
-	log logging.Logger,
+	log log.Logger,
 	keys []*secp256k1.PrivateKey,
 	metrics *load.Metrics,
 ) error {

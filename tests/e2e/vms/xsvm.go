@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package vms
@@ -18,10 +18,10 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/connectclient"
 	"github.com/luxfi/node/connectproto/pb/xsvm"
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
-	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/subnet"
 	"github.com/luxfi/node/tests/fixture/tmpnet"

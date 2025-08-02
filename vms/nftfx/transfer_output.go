@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package nftfx
@@ -44,6 +44,14 @@ func (out *TransferOutput) MarshalJSON() ([]byte, error) {
 	result["groupID"] = out.GroupID
 	result["payload"] = out.Payload
 	return json.Marshal(result)
+}
+
+func (out *TransferOutput) InitCtx(ctx interface{}) {
+	// No initialization needed
+}
+
+func (out *TransferOutput) Initialize(ctx interface{}) error {
+	return nil
 }
 
 func (out *TransferOutput) Verify() error {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package stakeable
@@ -15,7 +15,7 @@ var (
 )
 
 type LockOut struct {
-	Locktime             uint64 `serialize:"true" json:"locktime"`
+	Locktime            uint64 `serialize:"true" json:"locktime"`
 	lux.TransferableOut `serialize:"true" json:"output"`
 }
 
@@ -37,7 +37,7 @@ func (s *LockOut) Verify() error {
 }
 
 type LockIn struct {
-	Locktime            uint64 `serialize:"true" json:"locktime"`
+	Locktime           uint64 `serialize:"true" json:"locktime"`
 	lux.TransferableIn `serialize:"true" json:"input"`
 }
 

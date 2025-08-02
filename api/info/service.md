@@ -12,15 +12,15 @@ This API uses the `json 2.0` RPC format. For more information on making JSON RPC
 
 ## Methods
 
-### `info.acps`
+### `info.lps`
 
-Returns peer preferences for Lux Community Proposals (ACPs)
+Returns peer preferences for Lux Community Proposals (LPs)
 
 **Signature**:
 
 ```
-info.acps() -> {
-  acps: map[uint32]{
+info.lps() -> {
+  lps: map[uint32]{
     supportWeight: uint64
     supporters:    set[string]
     objectWeight:  uint64
@@ -36,7 +36,7 @@ info.acps() -> {
 curl -sX POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
-    "method" :"info.acps",
+    "method" :"info.lps",
     "params" :{}
 }' -H 'content-type:application/json;' 127.0.0.1:9650/ext/info
 ```
@@ -47,7 +47,7 @@ curl -sX POST --data '{
 {
   "jsonrpc": "2.0",
   "result": {
-    "acps": {
+    "lps": {
       "23": {
         "supportWeight": "0",
         "supporters": [],
@@ -694,7 +694,7 @@ curl -X POST --data '{
     "cortinaTime": "2020-12-05T05:00:00Z",
     "cortinaXChainStopVertexID": "11111111111111111111111111111111LpoYY",
     "durangoTime": "2020-12-05T05:00:00Z",
-    "etnaTime": "2024-10-09T20:00:00Z",
+    "etnaTime": "2025-10-09T20:00:00Z",
     "fortunaTime": "9999-12-01T05:00:00Z",
     "graniteTime": "9999-12-01T05:00:00Z"
   },

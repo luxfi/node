@@ -6,6 +6,7 @@ package txs
 import (
 	"errors"
 
+<<<<<<< HEAD
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus"
@@ -19,6 +20,21 @@ var (
 	ErrInvalidNFTID        = errors.New("invalid NFT ID")
 	ErrInvalidRecipient    = errors.New("invalid recipient")
 	ErrUnsupportedChain    = errors.New("unsupported destination chain for NFT")
+=======
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/vms/nftfx"
+	"github.com/luxfi/node/vms/secp256k1fx"
+)
+
+var (
+	_ UnsignedTx             = (*NFTTransferTx)(nil)
+	_ secp256k1fx.UnsignedTx = (*NFTTransferTx)(nil)
+
+	ErrInvalidNFTID     = errors.New("invalid NFT ID")
+	ErrInvalidRecipient = errors.New("invalid recipient")
+	ErrUnsupportedChain = errors.New("unsupported destination chain for NFT")
+>>>>>>> main
 )
 
 // NFTTransferTx transfers NFTs from X-Chain to C-Chain or other subnets
@@ -40,6 +56,7 @@ type NFTTransferTx struct {
 	Metadata []byte `serialize:"true" json:"metadata"`
 }
 
+<<<<<<< HEAD
 func (t *NFTTransferTx) InitCtx(ctx *consensus.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
@@ -85,9 +102,22 @@ func (t *NFTTransferTx) SemanticVerify(vm VM, tx UnsignedTx, creds []verify.Veri
 	// TODO: Verify destination chain supports NFTs
 	// TODO: Check if recipient address is valid for destination chain
 
+=======
+func (t *NFTTransferTx) InitCtx(ctx *quasar.Context) {
+	t.BaseTx.InitCtx(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (t *NFTTransferTx) Initialize(ctx *quasar.Context) error {
+	t.InitCtx(ctx)
+>>>>>>> main
 	return nil
 }
 
 func (t *NFTTransferTx) Visit(v Visitor) error {
 	return v.NFTTransferTx(t)
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> main

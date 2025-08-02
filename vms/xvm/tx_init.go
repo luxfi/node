@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -6,7 +6,7 @@ package xvm
 import (
 	"reflect"
 
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
@@ -16,7 +16,7 @@ var _ txs.Visitor = (*txInit)(nil)
 // txInit initializes FxID where required
 type txInit struct {
 	tx            *txs.Tx
-	ctx           *consensus.Context
+	ctx           *quasar.Context
 	typeToFxIndex map[reflect.Type]int
 	fxs           []*fxs.ParsedFx
 }
@@ -41,7 +41,7 @@ func (t *txInit) getParsedFx(val interface{}) (*fxs.ParsedFx, error) {
 }
 
 func (t *txInit) init() error {
-	t.tx.Unsigned.InitCtx(t.ctx)
+	t.tx.Unsigned.Initialize(t.ctx)
 
 	for _, cred := range t.tx.Creds {
 		fx, err := t.getParsedFx(cred.Credential)
@@ -138,5 +138,28 @@ func (t *txInit) OperationTx(tx *txs.OperationTx) error {
 		}
 		op.FxID = fx.ID
 	}
+	return t.BaseTx(&tx.BaseTx)
+}
+
+func (t *txInit) BurnTx(tx *txs.BurnTx) error {
+	if err := t.init(); err != nil {
+		return err
+	}
+	return t.BaseTx(&tx.BaseTx)
+}
+
+func (t *txInit) MintTx(tx *txs.MintTx) error {
+	if err := t.init(); err != nil {
+		return err
+	}
+	return t.BaseTx(&tx.BaseTx)
+}
+
+func (t *txInit) NFTTransferTx(tx *txs.NFTTransferTx) error {
+	if err := t.init(); err != nil {
+		return err
+	}
+	// Initialize NFT operation's FxID if needed
+	// The NFT transfer operation might have its own FxID
 	return t.BaseTx(&tx.BaseTx)
 }

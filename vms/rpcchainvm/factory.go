@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
@@ -41,7 +41,7 @@ func NewFactory(
 	}
 }
 
-func (f *factory) New(log logging.Logger) (interface{}, error) {
+func (f *factory) New(log log.Logger) (interface{}, error) {
 	config := &subprocess.Config{
 		Stderr:           log,
 		Stdout:           log,

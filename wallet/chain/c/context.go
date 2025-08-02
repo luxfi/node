@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -6,11 +6,11 @@ package c
 import (
 	"context"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/vms/xvm"
 )
 
@@ -19,7 +19,7 @@ const Alias = "C"
 type Context struct {
 	NetworkID    uint32
 	BlockchainID ids.ID
-	LUXAssetID  ids.ID
+	LUXAssetID   ids.ID
 }
 
 func NewContextFromURI(ctx context.Context, uri string) (*Context, error) {
@@ -51,19 +51,19 @@ func NewContextFromClients(
 	return &Context{
 		NetworkID:    networkID,
 		BlockchainID: blockchainID,
-		LUXAssetID:  luxAsset.AssetID,
+		LUXAssetID:   luxAsset.AssetID,
 	}, nil
 }
 
-func newSnowContext(c *Context) (*consensus.Context, error) {
+func newLinearContext(c *Context) (*quasar.Context, error) {
 	lookup := ids.NewAliaser()
-	return &consensus.Context{
-		NetworkID:   c.NetworkID,
-		SubnetID:    constants.PrimaryNetworkID,
-		ChainID:     c.BlockchainID,
-		CChainID:    c.BlockchainID,
+	return &quasar.Context{
+		NetworkID:  c.NetworkID,
+		SubnetID:   constants.PrimaryNetworkID,
+		ChainID:    c.BlockchainID,
+		CChainID:   c.BlockchainID,
 		LUXAssetID: c.LUXAssetID,
-		Log:         logging.NoLog{},
-		BCLookup:    lookup,
+		Log:        log.NewNoOpLogger(),
+		BCLookup:   lookup,
 	}, lookup.Alias(c.BlockchainID, Alias)
 }

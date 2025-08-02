@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -13,12 +13,15 @@ import (
 	"testing"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/luxfi/evm/core"
+=======
+>>>>>>> main
 	"github.com/stretchr/testify/require"
 
 	_ "embed"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/hashing"
@@ -134,6 +137,11 @@ func TestValidateConfig(t *testing.T) {
 			networkID: 12345,
 			config: func() *Config {
 				thisConfig := LocalConfig
+				// LocalConfig has empty InitialStakedFunds, so create a test scenario
+				if len(thisConfig.InitialStakedFunds) == 0 {
+					// Use a dummy address
+					thisConfig.InitialStakedFunds = []ids.ShortID{{1, 2, 3}}
+				}
 				thisConfig.InitialStakedFunds = append(thisConfig.InitialStakedFunds, thisConfig.InitialStakedFunds[0])
 				return &thisConfig
 			}(),
@@ -143,7 +151,13 @@ func TestValidateConfig(t *testing.T) {
 			networkID: 5,
 			config: func() *Config {
 				thisConfig := TestnetConfig
+<<<<<<< HEAD
 				thisConfig.InitialStakedFunds = append(thisConfig.InitialStakedFunds, LocalConfig.InitialStakedFunds[0])
+=======
+				// Use a dummy address that's not in the allocations
+				dummyAddr := ids.ShortID{9, 8, 7, 6, 5}
+				thisConfig.InitialStakedFunds = append(thisConfig.InitialStakedFunds, dummyAddr)
+>>>>>>> main
 				return &thisConfig
 			}(),
 			expectedErr: errNoAllocationToStake,
@@ -521,7 +535,10 @@ func TestCChainGenesisTimestamp(t *testing.T) {
 			require := require.New(t)
 
 			config := GetConfig(test.networkID)
-			var cChainGenesis core.Genesis
+			// Use a minimal struct to avoid importing evm/core
+			var cChainGenesis struct {
+				Timestamp uint64 `json:"timestamp"`
+			}
 			require.NoError(json.Unmarshal([]byte(config.CChainGenesis), &cChainGenesis))
 			require.Equal(
 				test.expectedGenesisTime,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package pebbledb
@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 )
@@ -67,7 +67,7 @@ type Config struct {
 }
 
 // TODO: Add metrics
-func New(file string, configBytes []byte, log logging.Logger, _ prometheus.Registerer) (database.Database, error) {
+func New(file string, configBytes []byte, log log.Logger, _ prometheus.Registerer) (database.Database, error) {
 	cfg := DefaultConfig
 	if len(configBytes) > 0 {
 		if err := json.Unmarshal(configBytes, &cfg); err != nil {
@@ -100,203 +100,196 @@ func New(file string, configBytes []byte, log logging.Logger, _ prometheus.Regis
 	}, err
 }
 
-func (db *Database) Close() error {
-	db.lock.Lock()
-	defer db.lock.Unlock()
+func (d *Database) Close() error {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 
-	if db.closed {
+	if d.closed {
 		return database.ErrClosed
 	}
 
-	db.closed = true
+	d.closed = true
 
-	for iter := range db.openIterators {
+	for iter := range d.openIterators {
 		iter.lock.Lock()
 		iter.release()
 		iter.lock.Unlock()
 	}
-	db.openIterators.Clear()
+	clear(d.openIterators)
 
-	return updateError(db.pebbleDB.Close())
+	return updateError(d.pebbleDB.Close())
 }
 
-func (db *Database) HealthCheck(_ context.Context) (interface{}, error) {
-	db.lock.RLock()
-	defer db.lock.RUnlock()
+func (d *Database) HealthCheck(ctx context.Context) (interface{}, error) {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 
-	if db.closed {
+	if d.closed {
 		return nil, database.ErrClosed
 	}
-	return nil, nil
+
+	metrics := d.pebbleDB.Metrics()
+	return metrics, nil
 }
 
-func (db *Database) Has(key []byte) (bool, error) {
-	db.lock.RLock()
-	defer db.lock.RUnlock()
+func (d *Database) Has(key []byte) (bool, error) {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 
-	if db.closed {
+	if d.closed {
 		return false, database.ErrClosed
 	}
 
-	_, closer, err := db.pebbleDB.Get(key)
-	if err == pebble.ErrNotFound {
+	_, closer, err := d.pebbleDB.Get(key)
+	if closer != nil {
+		if closeErr := closer.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}
+	if errors.Is(err, pebble.ErrNotFound) {
 		return false, nil
 	}
-	if err != nil {
-		return false, updateError(err)
-	}
-	return true, closer.Close()
+	return err == nil, updateError(err)
 }
 
-func (db *Database) Get(key []byte) ([]byte, error) {
-	db.lock.RLock()
-	defer db.lock.RUnlock()
+func (d *Database) Get(key []byte) ([]byte, error) {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 
-	if db.closed {
+	if d.closed {
 		return nil, database.ErrClosed
 	}
 
-	data, closer, err := db.pebbleDB.Get(key)
+	data, closer, err := d.pebbleDB.Get(key)
+	if closer != nil {
+		defer closer.Close()
+	}
 	if err != nil {
 		return nil, updateError(err)
 	}
-	return slices.Clone(data), closer.Close()
+	return slices.Clone(data), nil
 }
 
-func (db *Database) Put(key []byte, value []byte) error {
-	db.lock.RLock()
-	defer db.lock.RUnlock()
+func (d *Database) Put(key []byte, value []byte) error {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 
-	if db.closed {
+	if d.closed {
 		return database.ErrClosed
 	}
 
-	return updateError(db.pebbleDB.Set(key, value, db.writeOptions))
+	return updateError(d.pebbleDB.Set(key, value, d.writeOptions))
 }
 
-func (db *Database) Delete(key []byte) error {
-	db.lock.RLock()
-	defer db.lock.RUnlock()
+func (d *Database) Delete(key []byte) error {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 
-	if db.closed {
+	if d.closed {
 		return database.ErrClosed
 	}
 
-	return updateError(db.pebbleDB.Delete(key, db.writeOptions))
+	return updateError(d.pebbleDB.Delete(key, d.writeOptions))
 }
 
-func (db *Database) Compact(start []byte, end []byte) error {
-	db.lock.RLock()
-	defer db.lock.RUnlock()
+func (d *Database) NewBatch() database.Batch {
+	return &batch{
+		d:     d,
+		Batch: d.pebbleDB.NewBatch(),
+	}
+}
 
-	if db.closed {
-		return database.ErrClosed
+func (d *Database) NewIterator() database.Iterator {
+	return d.NewIteratorWithStartAndPrefix(nil, nil)
+}
+
+func (d *Database) NewIteratorWithStart(start []byte) database.Iterator {
+	return d.NewIteratorWithStartAndPrefix(start, nil)
+}
+
+func (d *Database) NewIteratorWithPrefix(prefix []byte) database.Iterator {
+	return d.NewIteratorWithStartAndPrefix(nil, prefix)
+}
+
+func (d *Database) NewIteratorWithStartAndPrefix(start, prefix []byte) database.Iterator {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+
+	if d.closed {
+		return &database.IteratorError{Err: database.ErrClosed}
 	}
 
-	if end == nil {
-		// The database.Database spec treats a nil [limit] as a key after all
-		// keys but pebble treats a nil [limit] as a key before all keys in
-		// Compact. Use the greatest key in the database as the [limit] to get
-		// the desired behavior.
-		it, err := db.pebbleDB.NewIter(&pebble.IterOptions{})
-		if err != nil {
-			return updateError(err)
-		}
-
-		if !it.Last() {
-			// The database is empty.
-			return it.Close()
-		}
-
-		end = slices.Clone(it.Key())
-		if err := it.Close(); err != nil {
-			return err
-		}
+	opts := &pebble.IterOptions{
+		LowerBound: prefix,
+		UpperBound: prefixToUpperBound(prefix),
 	}
-
-	if pebble.DefaultComparer.Compare(start, end) >= 1 {
-		// pebble requires [start] < [end]
-		return nil
-	}
-
-	return updateError(db.pebbleDB.Compact(start, end, true /* parallelize */))
-}
-
-func (db *Database) NewIterator() database.Iterator {
-	return db.NewIteratorWithStartAndPrefix(nil, nil)
-}
-
-func (db *Database) NewIteratorWithStart(start []byte) database.Iterator {
-	return db.NewIteratorWithStartAndPrefix(start, nil)
-}
-
-func (db *Database) NewIteratorWithPrefix(prefix []byte) database.Iterator {
-	return db.NewIteratorWithStartAndPrefix(nil, prefix)
-}
-
-func (db *Database) NewIteratorWithStartAndPrefix(start, prefix []byte) database.Iterator {
-	db.lock.Lock()
-	defer db.lock.Unlock()
-
-	if db.closed {
-		return &iter{
-			db:     db,
-			closed: true,
-			err:    database.ErrClosed,
-		}
-	}
-
-	it, err := db.pebbleDB.NewIter(keyRange(start, prefix))
+	pebbleIter, err := d.pebbleDB.NewIter(opts)
 	if err != nil {
-		return &iter{
-			db:     db,
-			closed: true,
-			err:    updateError(err),
+		return &database.IteratorError{Err: updateError(err)}
+	}
+
+	it := &iter{
+		db:         d,
+		iter:       pebbleIter,
+		lowerBound: slices.Clone(opts.LowerBound),
+		upperBound: slices.Clone(opts.UpperBound),
+	}
+
+	it.release = func() {
+		defer d.openIterators.Remove(it)
+		if err := it.iter.Close(); err != nil {
+			it.err = err
 		}
 	}
 
-	iter := &iter{
-		db:   db,
-		iter: it,
+	d.openIterators.Add(it)
+
+	if start != nil {
+		it.iter.SeekGE(start)
+	} else {
+		it.iter.First()
 	}
-	db.openIterators.Add(iter)
-	return iter
+
+	return it
 }
 
-// Converts a pebble-specific error to its Lux equivalent, if applicable.
-func updateError(err error) error {
-	switch err {
-	case pebble.ErrClosed:
+func (d *Database) Compact(start []byte, limit []byte) error {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+
+	if d.closed {
 		return database.ErrClosed
-	case pebble.ErrNotFound:
+	}
+
+	return updateError(d.pebbleDB.Compact(start, limit, false))
+}
+
+func updateError(err error) error {
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, pebble.ErrNotFound):
 		return database.ErrNotFound
+	case errors.Is(err, pebble.ErrClosed):
+		return database.ErrClosed
 	default:
 		return err
 	}
 }
 
-func keyRange(start, prefix []byte) *pebble.IterOptions {
-	opt := &pebble.IterOptions{
-		LowerBound: prefix,
-		UpperBound: prefixToUpperBound(prefix),
-	}
-	if pebble.DefaultComparer.Compare(start, prefix) == 1 {
-		opt.LowerBound = start
-	}
-	return opt
-}
-
-// Returns an upper bound that stops after all keys with the given [prefix].
-// Assumes the Database uses bytes.Compare for key comparison and not a custom
-// comparer.
 func prefixToUpperBound(prefix []byte) []byte {
-	for i := len(prefix) - 1; i >= 0; i-- {
-		if prefix[i] != 0xFF {
-			upperBound := make([]byte, i+1)
-			copy(upperBound, prefix)
+	if len(prefix) == 0 {
+		return nil
+	}
+	upperBound := slices.Clone(prefix)
+	i := len(upperBound) - 1
+	for ; i >= 0; i-- {
+		if upperBound[i] < 0xff {
 			upperBound[i]++
-			return upperBound
+			break
+		} else if i == 0 {
+			return nil
 		}
 	}
-	return nil
+	return upperBound[:i+1]
 }

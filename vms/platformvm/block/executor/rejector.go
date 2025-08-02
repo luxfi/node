@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -6,7 +6,8 @@ package executor
 import (
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
@@ -89,7 +90,10 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 	}
 
 	select {
-	case r.toEngine <- core.PendingTxs:
+	case r.toEngine <- core.Message{
+		Type: message.NotifyOp,
+		Body: &core.PendingTxs{},
+	}:
 	default:
 	}
 

@@ -1,17 +1,17 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
 
 import (
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm/txs"
+	walletutil "github.com/luxfi/node/wallet"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
-	walletutil "github.com/luxfi/node/wallet"
 )
 
 var _ Wallet = (*walletWithOptions)(nil)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -12,10 +12,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/sampler"
 	"github.com/luxfi/node/utils/set"
 )
@@ -36,7 +36,7 @@ type ValidatorSubset interface {
 
 func NewValidators(
 	peers *Peers,
-	log logging.Logger,
+	log log.Logger,
 	subnetID ids.ID,
 	validators validators.State,
 	maxValidatorSetStaleness time.Duration,
@@ -53,7 +53,7 @@ func NewValidators(
 // Validators contains a set of nodes that are staking.
 type Validators struct {
 	peers                    *Peers
-	log                      logging.Logger
+	log                      log.Logger
 	subnetID                 ids.ID
 	validators               validators.State
 	maxValidatorSetStaleness time.Duration
@@ -98,7 +98,7 @@ func (v *Validators) refresh(ctx context.Context) {
 		return
 	}
 
-	delete(validatorSet, ids.EmptyNodeID) // Ignore inactive ACP-77 validators.
+	delete(validatorSet, ids.EmptyNodeID) // Ignore inactive LP-77 validators.
 
 	for nodeID, vdr := range validatorSet {
 		v.validatorList = append(v.validatorList, validator{

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
@@ -114,9 +114,9 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 			SigIndices: []uint32{3},
 		},
 	}
-	require.NoError(simpleTransformTx.SyntacticVerify(&consensus.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	require.NoError(simpleTransformTx.SyntacticVerify(&quasar.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}))
 
@@ -340,9 +340,9 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexTransformTx.Outs, Codec)
 	utils.Sort(complexTransformTx.Ins)
-	require.NoError(complexTransformTx.SyntacticVerify(&consensus.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	require.NoError(complexTransformTx.SyntacticVerify(&quasar.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 	}))
 
@@ -526,11 +526,11 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexTransformTx.InitCtx(&consensus.Context{
-		NetworkID:   1,
-		ChainID:     constants.PlatformChainID,
+	unsignedComplexTransformTx.InitCtx(&quasar.Context{
+		NetworkID:  1,
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		BCLookup:    aliaser,
+		BCLookup:   aliaser,
 	})
 
 	unsignedComplexTransformTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransformTx, "", "\t")
@@ -641,9 +641,9 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &consensus.Context{
-		ChainID:     chainID,
-		NetworkID:   networkID,
+	ctx := &quasar.Context{
+		ChainID:    chainID,
+		NetworkID:  networkID,
 		LUXAssetID: ids.GenerateTestID(),
 	}
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -9,24 +9,30 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/engine/chain/block"
 )
 
 const pruneCommitPeriod = 1024
 
 // vm.ctx.Lock should be held
 func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
+	heightIndexedVM, ok := vm.ChainVM.(block.HeightIndexedChainVM)
+	if !ok {
+		return ids.Empty, block.ErrRemoteVMNotImplemented
+	}
+
 	switch forkHeight, err := vm.State.GetForkHeight(); err {
 	case nil:
 		if height < forkHeight {
-			return vm.ChainVM.GetBlockIDAtHeight(ctx, height)
+			return heightIndexedVM.GetBlockIDAtHeight(ctx, height)
 		}
 		return vm.State.GetBlockIDAtHeight(height)
 
 	case database.ErrNotFound:
 		// fork not reached yet. Block must be pre-fork
-		return vm.ChainVM.GetBlockIDAtHeight(ctx, height)
+		return heightIndexedVM.GetBlockIDAtHeight(ctx, height)
 
 	default:
 		return ids.Empty, err
@@ -142,9 +148,8 @@ func (vm *VM) pruneOldBlocks() error {
 			continue
 		}
 
-		if err := vm.db.Commit(); err != nil {
-			return err
-		}
+		// versiondb doesn't have Commit method, operations are committed immediately
 	}
-	return vm.db.Commit()
+	// versiondb doesn't have Commit method, operations are committed immediately
+	return nil
 }

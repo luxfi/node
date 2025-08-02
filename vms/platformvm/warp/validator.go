@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package warp
@@ -11,10 +11,10 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar/validators"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"
 )
@@ -83,15 +83,21 @@ func FlattenValidatorSet(vdrSet map[ids.NodeID]*validators.GetValidatorOutput) (
 			return CanonicalValidatorSet{}, fmt.Errorf("%w: %w", ErrWeightOverflow, err)
 		}
 
-		if vdr.PublicKey == nil {
+		if vdr.PublicKey == nil || len(vdr.PublicKey) == 0 {
 			continue
 		}
 
-		pkBytes := bls.PublicKeyToUncompressedBytes(vdr.PublicKey)
+		// Convert []byte to *bls.PublicKey
+		pk := bls.PublicKeyFromValidUncompressedBytes(vdr.PublicKey)
+		if pk == nil {
+			continue
+		}
+
+		pkBytes := bls.PublicKeyToUncompressedBytes(pk)
 		uniqueVdr, ok := vdrs[string(pkBytes)]
 		if !ok {
 			uniqueVdr = &Validator{
-				PublicKey:      vdr.PublicKey,
+				PublicKey:      pk,
 				PublicKeyBytes: pkBytes,
 			}
 			vdrs[string(pkBytes)] = uniqueVdr

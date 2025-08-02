@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -10,24 +10,23 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/validators/validatorsmock"
+	"github.com/luxfi/node/quasar/consensustest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/logging"
+	log "github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/state/statemock"
 	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 func TestSemanticVerifierBaseTx(t *testing.T) {
@@ -38,7 +37,7 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		logging.NoWarn{},
+		log.NewNoOpLogger(),
 		[]fxs.Fx{
 			secpFx,
 		},
@@ -395,7 +394,7 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		logging.NoWarn{},
+		log.NewNoOpLogger(),
 		[]fxs.Fx{
 			secpFx,
 		},
@@ -754,16 +753,17 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 
 	ctx := consensustest.Context(t, consensustest.XChainID)
 
-	validatorState := validatorsmock.NewState(ctrl)
-	validatorState.EXPECT().GetSubnetID(gomock.Any(), ctx.CChainID).AnyTimes().Return(ids.GenerateTestID(), nil)
-	ctx.ValidatorState = validatorState
+	// Create a simple validator set for testing
+	ctx.ValidatorSet = NewMockValidatorSet(map[ids.NodeID]uint64{
+		ids.GenerateTestNodeID(): 1000,
+	})
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		logging.NoWarn{},
+		log.NewNoOpLogger(),
 		[]fxs.Fx{
 			secpFx,
 		},
@@ -872,14 +872,14 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 	ctx := consensustest.Context(t, consensustest.XChainID)
 
 	m := atomic.NewMemory(prefixdb.New([]byte{0}, memdb.New()))
-	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
+	ctx.SharedMemory = NewSharedMemoryAdapter(m.NewSharedMemory(ctx.ChainID))
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		logging.NoWarn{},
+		log.NewNoOpLogger(),
 		[]fxs.Fx{
 			fx,
 		},

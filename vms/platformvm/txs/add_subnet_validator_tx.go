@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -6,10 +6,10 @@ package txs
 import (
 	"errors"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/quasar"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -30,6 +30,19 @@ type AddSubnetValidatorTx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
+// InitCtx sets the FxID fields in the inputs and outputs of this
+// [AddSubnetValidatorTx]. Also sets the [ctx] to the given [vm.ctx] so that
+// the addresses can be json marshalled into human readable format
+func (tx *AddSubnetValidatorTx) InitCtx(ctx *quasar.Context) {
+	tx.BaseTx.InitCtx(ctx)
+}
+
+// Initialize implements quasar.ContextInitializable
+func (tx *AddSubnetValidatorTx) Initialize(ctx *quasar.Context) error {
+	tx.InitCtx(ctx)
+	return nil
+}
+
 func (tx *AddSubnetValidatorTx) NodeID() ids.NodeID {
 	return tx.SubnetValidator.NodeID
 }
@@ -47,7 +60,7 @@ func (*AddSubnetValidatorTx) CurrentPriority() Priority {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddSubnetValidatorTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *AddSubnetValidatorTx) SyntacticVerify(ctx *quasar.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

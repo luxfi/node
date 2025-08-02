@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package load
@@ -13,8 +13,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/ids"
+	log "github.com/luxfi/log"
 )
 
 var _ Issuer[ids.ID] = (*mockIssuer)(nil)
@@ -82,7 +82,7 @@ func TestOrchestratorTPS(t *testing.T) {
 			orchestrator := NewOrchestrator(
 				agents,
 				tracker,
-				logging.NoLog{},
+				log.NewNoOpLogger(),
 				tt.config,
 			)
 
@@ -153,7 +153,7 @@ func TestOrchestratorExecution(t *testing.T) {
 			orchestrator := NewOrchestrator(
 				tt.agents,
 				tracker,
-				logging.NoLog{},
+				log.NewNoOpLogger(),
 				NewOrchestratorConfig(),
 			)
 			r.NoError(err)

@@ -1,0 +1,119 @@
+// Copyright (C) 2025, Lux Partners Limited. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package quasar_test
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/quasar/engine/quasar"
+	"github.com/luxfi/node/quasar/engines/nova"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/crypto/ringtail"
+)
+
+// ExampleQuasarIntegration demonstrates how to integrate Quasar with Nova
+func ExampleQuasarIntegration() {
+	// Setup validator keys
+	validators := make(map[ids.NodeID]*quasar.ValidatorKeys)
+	
+	// Generate keys for 5 validators
+	for i := 0; i < 5; i++ {
+		nodeID := ids.GenerateTestNodeID()
+		
+		// BLS keys
+		blsSigner, _ := localsigner.New()
+		blsPK := blsSigner.PublicKey()
+		
+		// Ringtail keys
+		seed := make([]byte, 32)
+		_, rtPK, _ := ringtail.KeyGen(seed)
+		
+		validators[nodeID] = &quasar.ValidatorKeys{
+			NodeID:         nodeID,
+			BLSPublicKey:   blsPK,
+			RingtailPubKey: rtPK,
+			Epoch:          1,
+		}
+	}
+	
+	// Create Quasar configuration
+	nodeID := ids.GenerateTestNodeID()
+	blsSigner, _ := localsigner.New()
+	rtSK := make([]byte, 32)
+	
+	quasarConfig := quasar.Config{
+		NodeID:          nodeID,
+		Threshold:       3, // 3 of 5 validators
+		BLSSigner:       blsSigner,
+		RingtailSK:      rtSK,
+		Validators:      validators,
+		FinalityTimeout: 10 * time.Second,
+		PrecompPoolSize: 100,
+	}
+	
+	// Create Nova engine with Quasar
+	novaParams := nova.Parameters{
+		K:               21,
+		AlphaPreference: 13,
+		AlphaConfidence: 18,
+		Beta:            8,
+		MaxPollTime:     10 * time.Second,
+	}
+	
+	engine, err := nova.NewQuasarEngine(novaParams, quasarConfig)
+	if err != nil {
+		panic(err)
+	}
+	
+	// Initialize engine
+	ctx := context.Background()
+	if err := engine.Initialize(ctx); err != nil {
+		panic(err)
+	}
+	
+	// Set finality callback
+	engine.SetFinalityHook(func(ctx context.Context, blockID ids.ID, height uint64, blockHash []byte) error {
+		fmt.Printf("Nova decided block %s at height %d\n", blockID, height)
+		// Quasar will automatically start finality process
+		return nil
+	})
+	
+	// Simulate adding a vertex (block)
+	vertex := &nova.FlareVertex{
+		// Vertex data...
+	}
+	
+	if err := engine.Add(ctx, vertex); err != nil {
+		panic(err)
+	}
+	
+	// The engine will:
+	// 1. Process the vertex through Nova consensus
+	// 2. Once Nova decides, trigger Quasar finality
+	// 3. Collect BLS and Ringtail signatures in parallel
+	// 4. Create dual certificate when threshold reached
+	// 5. Emit finality event
+	
+	// Check if vertex is Quasar finalized
+	vertexID := vertex.ID()
+	if engine.IsQuasarFinalized(vertexID) {
+		cert, _ := engine.GetQuasarCertificate(vertexID)
+		fmt.Printf("Vertex %s achieved Quasar finality with %d validators\n",
+			vertexID, len(cert.SignerIDs))
+	}
+	
+	// Get metrics
+	metrics := engine.GetQuasarMetrics()
+	fmt.Printf("Blocks finalized: %d, Average latency: %v\n",
+		metrics.BlocksFinalized, metrics.FinalityLatency)
+		
+	// Output:
+	// Nova decided block {test-block-id} at height 100
+	// Vertex {test-vertex-id} achieved Quasar finality with 3 validators
+	// Blocks finalized: 1, Average latency: 450ms
+}

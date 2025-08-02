@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package utxotest
@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/wallet"
@@ -21,12 +21,12 @@ func NewDeterministicChainUTXOs(t *testing.T, utxoSets map[ids.ID][]*lux.UTXO) *
 	for subnetID, utxos := range utxoSets {
 		for _, utxo := range utxos {
 			require.NoError(
-				t, globalUTXOs.AddUTXO(context.Background(), subnetID, constants.PlatformChainID, utxo),
+				t, globalUTXOs.AddUTXO(context.Background(), subnetID, constants.PlatformChainID(), utxo),
 			)
 		}
 	}
 	return &DeterministicChainUTXOs{
-		ChainUTXOs: wallet.NewChainUTXOs(constants.PlatformChainID, globalUTXOs),
+		ChainUTXOs: wallet.NewChainUTXOs(constants.PlatformChainID(), globalUTXOs),
 	}
 }
 

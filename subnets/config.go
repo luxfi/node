@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package subnets
@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/node/ids"
-	binaryvote "github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/ids"
+	binaryvote "github.com/luxfi/node/quasar/sampling"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -23,7 +23,7 @@ type Config struct {
 	ValidatorOnly bool `json:"validatorOnly" yaml:"validatorOnly"`
 	// AllowedNodes is the set of node IDs that are explicitly allowed to connect to this Subnet when
 	// ValidatorOnly is enabled.
-	AllowedNodes        set.Set[ids.NodeID] `json:"allowedNodes"        yaml:"allowedNodes"`
+	AllowedNodes        set.Set[ids.NodeID]   `json:"allowedNodes"        yaml:"allowedNodes"`
 	ConsensusParameters binaryvote.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
 
 	// ProposerMinBlockDelay is the minimum delay this node will enforce when
@@ -52,7 +52,7 @@ type Config struct {
 }
 
 func (c *Config) Valid() error {
-	if err := c.ConsensusParameters.Verify(); err != nil {
+	if err := c.ConsensusParameters.Valid(); err != nil {
 		return fmt.Errorf("consensus %w", err)
 	}
 	if !c.ValidatorOnly && c.AllowedNodes.Len() > 0 {

@@ -13,10 +13,10 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	iterator "github.com/luxfi/node/utils/iterator"
-	lux "github.com/luxfi/node/vms/components/lux"
 	gas "github.com/luxfi/node/vms/components/gas"
+	lux "github.com/luxfi/node/vms/components/lux"
 	fx "github.com/luxfi/node/vms/platformvm/fx"
 	status "github.com/luxfi/node/vms/platformvm/status"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
@@ -96,15 +96,15 @@ func (mr *MockChainMockRecorder) AddSubnetTransformation(transformSubnetTx any) 
 }
 
 // AddTx mocks base method.
-func (m *MockChain) AddTx(tx *txs.Tx, status status.Status) {
+func (m *MockChain) AddTx(tx *txs.Tx, arg1 status.Status) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddTx", tx, status)
+	m.ctrl.Call(m, "AddTx", tx, arg1)
 }
 
 // AddTx indicates an expected call of AddTx.
-func (mr *MockChainMockRecorder) AddTx(tx, status any) *gomock.Call {
+func (mr *MockChainMockRecorder) AddTx(tx, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockChain)(nil).AddTx), tx, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockChain)(nil).AddTx), tx, arg1)
 }
 
 // AddUTXO mocks base method.
