@@ -219,3 +219,9 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
+// Temporary local development
+replace (
+	github.com/luxfi/evm/v2 => ../evm
+	github.com/luxfi/cli/v2 => ../cli
+)
+
