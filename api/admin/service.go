@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/registry"
 
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
 )
 
 const (
