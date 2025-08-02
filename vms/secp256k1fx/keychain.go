@@ -33,7 +33,7 @@ type Keychain struct {
 	// externally.
 	Addrs    set.Set[ids.ShortID]
 	EthAddrs set.Set[common.Address]
-	Keys     []*secp256k1.PrivateKey
+	Keys     []*secp256k1.LuxPrivateKey
 }
 
 // NewKeychain returns a new keychain containing [keys]
@@ -50,13 +50,14 @@ func NewKeychain(keys ...*secp256k1.PrivateKey) *Keychain {
 
 // Add a new key to the key chain
 func (kc *Keychain) Add(key *secp256k1.PrivateKey) {
-	pk := key.PublicKey()
+	luxKey := secp256k1.ToLuxPrivateKey(key)
+	pk := luxKey.PublicKey()
 	luxAddr := pk.Address()
 	if _, ok := kc.luxAddrToKeyIndex[luxAddr]; !ok {
 		kc.luxAddrToKeyIndex[luxAddr] = len(kc.Keys)
-		ethAddr := publicKeyToEthAddress(pk)
+		ethAddr := pk.EthAddress()
 		kc.ethAddrToKeyIndex[ethAddr] = len(kc.Keys)
-		kc.Keys = append(kc.Keys, key)
+		kc.Keys = append(kc.Keys, luxKey)
 		kc.Addrs.Add(luxAddr)
 		kc.EthAddrs.Add(ethAddr)
 	}
@@ -130,7 +131,7 @@ func (kc *Keychain) Match(owners *OutputOwners, time uint64) ([]uint32, []*secp2
 	for i := uint32(0); i < uint32(len(owners.Addrs)) && uint32(len(keys)) < owners.Threshold; i++ {
 		if key, exists := kc.get(owners.Addrs[i]); exists {
 			sigs = append(sigs, i)
-			keys = append(keys, key)
+			keys = append(keys, key.PrivateKey)
 		}
 	}
 	return sigs, keys, uint32(len(keys)) == owners.Threshold
@@ -162,13 +163,13 @@ func (kc *Keychain) String() string {
 }
 
 // to avoid internals type assertions
-func (kc Keychain) get(id ids.ShortID) (*secp256k1.PrivateKey, bool) {
+func (kc Keychain) get(id ids.ShortID) (*secp256k1.LuxPrivateKey, bool) {
 	if i, ok := kc.luxAddrToKeyIndex[id]; ok {
 		return kc.Keys[i], true
 	}
 	return nil, false
 }
 
-func publicKeyToEthAddress(pk *secp256k1.PublicKey) common.Address {
-	return secp256k1.PubkeyToAddress(*(pk.ToECDSA()))
+func publicKeyToEthAddress(pk *secp256k1.LuxPublicKey) common.Address {
+	return pk.EthAddress()
 }

@@ -44,38 +44,21 @@ func NewBadgerDatabase(luxDB database.Database, config BadgerDatabaseConfig) (et
 			"sharedAncient", config.SharedAncient,
 			"freezeThreshold", config.FreezeThreshold)
 		
-		// Use BadgerDB with integrated ancient store
-		db, err := badgerdb.NewBadgerDatabaseWithAncient(
+		// Use BadgerDB (ancient store support is handled by the wrapper)
+		db, err := badgerdb.New(
 			config.DataDir,
+			0, // cache
+			0, // handles
 			"", // namespace
-			config.ReadOnly,
-			config.SharedAncient,
-		)
+			config.ReadOnly)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open BadgerDB with ancient: %w", err)
 		}
 		
-		// If we have a freeze threshold, start auto-freezing
+		// Ancient store freezing is not yet supported in this BadgerDB implementation
+		// TODO: Implement freezer support when needed
 		if config.FreezeThreshold > 0 && !config.ReadOnly {
-			freezerConfig := badgerdb.FreezerConfig{
-				AncientPath:     filepath.Join(config.DataDir, "chaindata", "ancient"),
-				FreezeThreshold: config.FreezeThreshold,
-				BatchSize:       1000,
-			}
-			
-			freezer, err := badgerdb.NewFreezer(db, freezerConfig)
-			if err != nil {
-				log.Error("Failed to create freezer", "err", err)
-			} else {
-				// Start auto-freezing every 5 minutes
-				freezer.StartAutoFreeze(func() uint64 {
-					// This would get the current head from blockchain
-					// For now, return 0
-					return 0
-				}, 5*60) // 5 minutes
-				
-				log.Info("Auto-freezing enabled", "threshold", config.FreezeThreshold)
-			}
+			log.Warn("BadgerDB freezer not yet implemented, freezeThreshold ignored")
 		}
 		
 		return db, nil
@@ -83,7 +66,12 @@ func NewBadgerDatabase(luxDB database.Database, config BadgerDatabaseConfig) (et
 	
 	// Create regular BadgerDB without ancient store
 	badgerPath := filepath.Join(config.DataDir, "chaindata")
-	db, err := badgerdb.NewBadgerDatabase(badgerPath, config.ReadOnly, false)
+	db, err := badgerdb.New(
+		badgerPath,
+		0, // cache
+		0, // handles
+		"", // namespace
+		config.ReadOnly)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open BadgerDB: %w", err)
 	}
@@ -112,18 +100,8 @@ func SlurpIntoAncient(sourceDB ethdb.Database, targetPath string, startBlock, en
 	}
 	defer targetDB.Close()
 	
-	// Create a freezer to manage the import
-	freezerConfig := badgerdb.FreezerConfig{
-		AncientPath:     filepath.Join(targetPath, "chaindata", "ancient"),
-		FreezeThreshold: 0, // Freeze everything
-		BatchSize:       1000,
-	}
-	
-	freezer, err := badgerdb.NewFreezer(targetDB, freezerConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create freezer: %w", err)
-	}
-	defer freezer.Stop()
+	// Ancient store freezing is not yet supported in this BadgerDB implementation
+	// TODO: Implement freezer support when needed
 	
 	// Import blocks in batches
 	batchSize := uint64(1000)
