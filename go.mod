@@ -188,27 +188,3 @@ require (
 )
 
 replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
-
-replace github.com/tyler-smith/go-bip39 => github.com/luxfi/go-bip39 v1.1.0
-
-replace github.com/tyler-smith/go-bip32 => github.com/luxfi/go-bip32 v1.0.0
-
-replace github.com/luxfi/erc20-go => github.com/liyue201/erc20-go v0.0.0-20210521034206-b2824246def0
-
-replace github.com/luxfi/geth => ../geth
-
-replace github.com/luxfi/crypto => ../crypto
-
-replace github.com/luxfi/lpm => ../lpm
-
-replace github.com/luxfi/database => ../database
-
-replace github.com/luxfi/log => ../log
-
-replace github.com/luxfi/metrics => ../metrics
-
-replace github.com/luxfi/trace => ../trace
-
-replace github.com/luxfi/ids => ../ids
-
-replace github.com/luxfi/bft => ../bft
