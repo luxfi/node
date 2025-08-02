@@ -997,8 +997,7 @@ func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.
 		return err
 	}
 
-	luxSk := secp256k1.ToLuxPrivateKey(sk)
-	addr := luxSk.Address()
+	addr := sk.Address()
 	reply.Address, err = s.vm.FormatLocalAddress(addr)
 	return err
 }
@@ -1069,8 +1068,7 @@ func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSO
 		return errMissingPrivateKey
 	}
 
-	luxSk := secp256k1.ToLuxPrivateKey(args.PrivateKey)
-	addr := luxSk.Address()
+	addr := args.PrivateKey.Address()
 	var err error
 	reply.Address, err = s.vm.FormatLocalAddress(addr)
 	if err != nil {

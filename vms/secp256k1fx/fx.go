@@ -42,7 +42,7 @@ var (
 
 // Fx describes the secp256k1 feature extension
 type Fx struct {
-	*secp256k1.LuxRecoverCache
+	*secp256k1.RecoverCacheType
 
 	VM           VM
 	bootstrapped bool
@@ -56,7 +56,8 @@ func (fx *Fx) Initialize(vmIntf interface{}) error {
 	log := fx.VM.Logger()
 	log.Debug("initializing secp256k1 fx")
 
-	fx.LuxRecoverCache = secp256k1.NewLuxRecoverCache(defaultCacheSize)
+	cache := secp256k1.NewRecoverCache(defaultCacheSize)
+	fx.RecoverCacheType = &cache
 	c := fx.VM.CodecRegistry()
 	return errors.Join(
 		c.RegisterType(&TransferInput{}),

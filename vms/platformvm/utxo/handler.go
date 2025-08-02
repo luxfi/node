@@ -161,8 +161,7 @@ func (h *handler) Spend(
 ) {
 	addrs := set.NewSet[ids.ShortID](len(keys)) // The addresses controlled by [keys]
 	for _, key := range keys {
-		luxKey := secp256k1.ToLuxPrivateKey(key)
-		addrs.Add(luxKey.Address())
+		addrs.Add(key.Address())
 	}
 	utxos, err := lux.GetAllUTXOs(utxoReader, addrs) // The UTXOs controlled by [keys]
 	if err != nil {
