@@ -30,7 +30,7 @@ require (
 	github.com/luxfi/crypto v1.1.1
 	github.com/luxfi/database v1.1.4
 	github.com/luxfi/evm/v2 v2.0.0-alpha.1
-	github.com/luxfi/geth v1.16.6
+	github.com/luxfi/geth v1.16.1
 	github.com/luxfi/ids v0.1.1
 	github.com/luxfi/ledger-lux-go v0.0.2
 	github.com/luxfi/log v0.1.1
@@ -73,17 +73,6 @@ require (
 	k8s.io/apimachinery v0.29.0
 	k8s.io/client-go v0.29.0
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
-)
-
-replace (
-	github.com/luxfi/bft => ../bft
-	github.com/luxfi/crypto => ../crypto
-	github.com/luxfi/database => ../database
-	github.com/luxfi/ids => ../ids
-	github.com/luxfi/ledger-lux-go => ../ledger-lux-go
-	github.com/luxfi/log => ../log
-	github.com/luxfi/ringtail => ../ringtail
-	github.com/luxfi/trace => ../trace
 )
 
 require (
@@ -218,10 +207,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-// Temporary local development
-replace (
-	github.com/luxfi/evm/v2 => ../evm
-	github.com/luxfi/cli/v2 => ../cli
-)
-
