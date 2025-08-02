@@ -307,10 +307,10 @@ func (nc *NodeConfig) EnsureNodeID() error {
 	if err != nil {
 		return fmt.Errorf("failed to ensure node ID: failed to load tls cert: %w", err)
 	}
-	stakingCert := staking.CertificateFromX509(tlsCert.Leaf)
+	// Note: CertificateFromX509 was removed, using the leaf certificate directly
 	nc.NodeID = ids.NodeIDFromCert(&ids.Certificate{
-		Raw:       stakingCert.Raw,
-		PublicKey: stakingCert.PublicKey,
+		Raw:       tlsCert.Leaf.Raw,
+		PublicKey: tlsCert.Leaf.PublicKey,
 	})
 
 	return nil
