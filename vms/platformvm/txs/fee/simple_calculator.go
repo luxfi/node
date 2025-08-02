@@ -3,7 +3,7 @@
 
 package fee
 
-import "github.com/luxfi/node/vms/platformvm/txs"
+import "github.com/luxfi/node/v2/vms/platformvm/txs"
 
 var _ Calculator = (*SimpleCalculator)(nil)
 

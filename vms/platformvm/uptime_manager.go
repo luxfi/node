@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/platformvm/state"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
+	"github.com/luxfi/node/v2/vms/platformvm/state"
 )
 
 // uptimeManager implements a basic uptime manager with additional methods for compatibility

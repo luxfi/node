@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/rpc"
+	"github.com/luxfi/node/v2/api"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/formatting"
+	"github.com/luxfi/node/v2/utils/formatting/address"
+	"github.com/luxfi/node/v2/utils/json"
+	"github.com/luxfi/node/v2/utils/rpc"
 )
 
 var ErrRejected = errors.New("rejected")

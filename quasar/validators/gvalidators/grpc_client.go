@@ -9,8 +9,8 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/validators"
-	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
+	"github.com/luxfi/node/v2/quasar/validators"
+	validatorstatepb "github.com/luxfi/node/v2/proto/pb/validatorstate"
 )
 
 var _ validators.State = (*GRPCClient)(nil)

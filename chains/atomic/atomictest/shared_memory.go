@@ -11,8 +11,8 @@ import (
 
 	db "github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/v2/chains/atomic"
+	"github.com/luxfi/node/v2/utils/units"
 )
 
 // SharedMemoryTests is a list of all shared memory tests

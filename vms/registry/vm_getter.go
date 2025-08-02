@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/utils/filesystem"
-	"github.com/luxfi/node/utils/resource"
-	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/rpcchainvm"
-	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/v2/api/metrics"
+	"github.com/luxfi/node/v2/utils/filesystem"
+	"github.com/luxfi/node/v2/utils/resource"
+	"github.com/luxfi/node/v2/vms"
+	"github.com/luxfi/node/v2/vms/rpcchainvm"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/runtime"
 )
 
 var (

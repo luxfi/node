@@ -5,7 +5,7 @@ package math
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/heap"
+	"github.com/luxfi/node/v2/utils/heap"
 )
 
 var _ AveragerHeap = (*averagerHeap)(nil)

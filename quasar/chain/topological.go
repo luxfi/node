@@ -11,10 +11,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/quasar/params"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/quasar/params"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // Topological is the implementation of the Snowman/Chain consensus algorithm

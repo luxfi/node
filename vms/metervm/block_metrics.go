@@ -6,8 +6,8 @@ package metervm
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/utils/metric"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/v2/utils/metric"
+	"github.com/luxfi/node/v2/utils/wrappers"
 )
 
 type blockMetrics struct {

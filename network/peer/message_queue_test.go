@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/v2/message"
 	log "github.com/luxfi/log"
 )
 

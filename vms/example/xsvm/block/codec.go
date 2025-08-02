@@ -3,7 +3,7 @@
 
 package block
 
-import "github.com/luxfi/node/vms/example/xsvm/tx"
+import "github.com/luxfi/node/v2/vms/example/xsvm/tx"
 
 const CodecVersion = tx.CodecVersion
 

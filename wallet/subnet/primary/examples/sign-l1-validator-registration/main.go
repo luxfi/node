@@ -13,19 +13,19 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/quasar/networking/router"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/network/peer"
-	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/platformvm/warp"
-	"github.com/luxfi/node/vms/platformvm/warp/payload"
-	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/v2/api/info"
+	"github.com/luxfi/node/v2/quasar/networking/router"
+	"github.com/luxfi/node/v2/network/p2p"
+	"github.com/luxfi/node/v2/network/peer"
+	"github.com/luxfi/node/v2/proto/pb/sdk"
+	"github.com/luxfi/node/v2/utils/compression"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/vms/platformvm/warp"
+	"github.com/luxfi/node/v2/vms/platformvm/warp/payload"
+	"github.com/luxfi/node/v2/wallet/subnet/primary"
 
-	p2pmessage "github.com/luxfi/node/message"
-	warpmessage "github.com/luxfi/node/vms/platformvm/warp/message"
+	p2pmessage "github.com/luxfi/node/v2/message"
+	warpmessage "github.com/luxfi/node/v2/vms/platformvm/warp/message"
 )
 
 func main() {

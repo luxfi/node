@@ -10,13 +10,13 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/luxfi/evm/plugin/evm/atomic"
+	"github.com/luxfi/evm/v2/plugin/evm/atomic"
 	"github.com/luxfi/geth/common"
 
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/vms/components/lux"
-	walletutil "github.com/luxfi/node/wallet"
+	"github.com/luxfi/node/v2/utils/math"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	walletutil "github.com/luxfi/node/v2/wallet"
 )
 
 var (

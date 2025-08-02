@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils/json"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 type Info struct {

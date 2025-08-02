@@ -17,9 +17,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/grpcutils"
 
-	httppb "github.com/luxfi/node/proto/pb/http"
+	httppb "github.com/luxfi/node/v2/proto/pb/http"
 )
 
 var _ io.Reader = (*infiniteStream)(nil)

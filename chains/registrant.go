@@ -4,8 +4,8 @@
 package chains
 
 import (
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/quasar/engine/core"
 )
 
 // Registrant can register the existence of a chain

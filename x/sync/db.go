@@ -3,7 +3,7 @@
 
 package sync
 
-import "github.com/luxfi/node/x/merkledb"
+import "github.com/luxfi/node/v2/x/merkledb"
 
 type DB interface {
 	merkledb.Clearer

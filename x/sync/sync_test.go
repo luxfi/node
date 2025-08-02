@@ -17,11 +17,11 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/network/p2p/p2ptest"
+	"github.com/luxfi/node/v2/network/p2p"
+	"github.com/luxfi/node/v2/network/p2p/p2ptest"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/x/merkledb"
+	"github.com/luxfi/node/v2/utils/maybe"
+	"github.com/luxfi/node/v2/x/merkledb"
 )
 
 var _ p2p.Handler = (*waitingHandler)(nil)

@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/platformvm/block"
-	"github.com/luxfi/node/vms/platformvm/metrics"
-	"github.com/luxfi/node/vms/platformvm/state"
+	"github.com/luxfi/node/v2/chains/atomic"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/platformvm/block"
+	"github.com/luxfi/node/v2/vms/platformvm/metrics"
+	"github.com/luxfi/node/v2/vms/platformvm/state"
 )
 
 type proposalBlockState struct {

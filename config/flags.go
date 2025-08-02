@@ -13,16 +13,16 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/luxfi/node/quasar/sampling"
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/v2/quasar/sampling"
+	"github.com/luxfi/node/v2/genesis"
 	"github.com/luxfi/trace"
-	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/dynamicip"
-	"github.com/luxfi/node/utils/ulimit"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/proposervm"
+	"github.com/luxfi/node/v2/utils/compression"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/dynamicip"
+	"github.com/luxfi/node/v2/utils/ulimit"
+	"github.com/luxfi/node/v2/utils/units"
+	"github.com/luxfi/node/v2/vms/components/gas"
+	"github.com/luxfi/node/v2/vms/proposervm"
 )
 
 const (

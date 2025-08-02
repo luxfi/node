@@ -7,16 +7,16 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/quasar/uptime"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/validators/fee"
+	"github.com/luxfi/node/v2/chains"
+	"github.com/luxfi/node/v2/quasar/uptime"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/upgrade"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/components/gas"
+	"github.com/luxfi/node/v2/vms/platformvm/reward"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/platformvm/validators/fee"
 )
 
 // Internal contains all of the parameters for the PlatformVM that are

@@ -6,7 +6,7 @@ package lru
 import (
 	"sync"
 
-	"github.com/luxfi/node/utils/linked"
+	"github.com/luxfi/node/v2/utils/linked"
 )
 
 // Evictable allows the object to be notified when it is evicted

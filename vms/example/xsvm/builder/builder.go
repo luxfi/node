@@ -10,18 +10,18 @@ import (
 
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/quasar/engine/core"
-	consensuschain "github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/node/utils/lock"
-	"github.com/luxfi/node/vms/example/xsvm/chain"
-	"github.com/luxfi/node/vms/example/xsvm/execute"
-	"github.com/luxfi/node/vms/example/xsvm/tx"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	consensuschain "github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/utils/linked"
+	"github.com/luxfi/node/v2/utils/lock"
+	"github.com/luxfi/node/v2/vms/example/xsvm/chain"
+	"github.com/luxfi/node/v2/vms/example/xsvm/execute"
+	"github.com/luxfi/node/v2/vms/example/xsvm/tx"
 
-	smblock "github.com/luxfi/node/quasar/engine/chain/block"
-	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
+	smblock "github.com/luxfi/node/v2/quasar/engine/chain/block"
+	xsblock "github.com/luxfi/node/v2/vms/example/xsvm/block"
 )
 
 const MaxTxsPerBlock = 10

@@ -6,8 +6,8 @@ package proposervm
 import (
 	"context"
 
-	"github.com/luxfi/node/quasar/engine/chain/block"
-	"github.com/luxfi/node/vms/proposervm/summary"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/vms/proposervm/summary"
 )
 
 var _ block.StateSummary = (*stateSummary)(nil)

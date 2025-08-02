@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/v2/utils/units"
 )
 
 var Default = Config{

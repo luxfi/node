@@ -12,12 +12,12 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/vms/xvm/block"
-	"github.com/luxfi/node/vms/xvm/state"
-	"github.com/luxfi/node/vms/xvm/txs/executor"
+	"github.com/luxfi/node/v2/chains/atomic"
+	"github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/vms/xvm/block"
+	"github.com/luxfi/node/v2/vms/xvm/state"
+	"github.com/luxfi/node/v2/vms/xvm/txs/executor"
 )
 
 const SyncBound = 10 * time.Second

@@ -9,9 +9,9 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/luxfi/node/quasar/networking/router"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/v2/quasar/networking/router"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/utils/constants"
 )
 
 func ExampleStartTestPeer() {

@@ -13,18 +13,18 @@ import (
 	"go.uber.org/zap"
 
 	// ensure test packages are scanned by ginkgo
-	_ "github.com/luxfi/node/tests/e2e/banff"
-	_ "github.com/luxfi/node/tests/e2e/c"
-	_ "github.com/luxfi/node/tests/e2e/faultinjection"
-	_ "github.com/luxfi/node/tests/e2e/p"
-	_ "github.com/luxfi/node/tests/e2e/x"
-	_ "github.com/luxfi/node/tests/e2e/x/transfer"
+	_ "github.com/luxfi/node/v2/tests/e2e/banff"
+	_ "github.com/luxfi/node/v2/tests/e2e/c"
+	_ "github.com/luxfi/node/v2/tests/e2e/faultinjection"
+	_ "github.com/luxfi/node/v2/tests/e2e/p"
+	_ "github.com/luxfi/node/v2/tests/e2e/x"
+	_ "github.com/luxfi/node/v2/tests/e2e/x/transfer"
 
-	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/tests/e2e/vms"
-	"github.com/luxfi/node/tests/fixture/e2e"
-	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/upgrade"
+	"github.com/luxfi/node/v2/config"
+	"github.com/luxfi/node/v2/tests/e2e/vms"
+	"github.com/luxfi/node/v2/tests/fixture/e2e"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet"
+	"github.com/luxfi/node/v2/upgrade"
 )
 
 func TestE2E(t *testing.T) {

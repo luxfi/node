@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	"github.com/luxfi/node/utils/perms"
+	"github.com/luxfi/node/v2/utils/perms"
 )
 
 const (

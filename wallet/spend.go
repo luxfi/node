@@ -5,8 +5,8 @@ package wallet
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 )
 
 // MatchOwners attempts to match a list of addresses up to the provided

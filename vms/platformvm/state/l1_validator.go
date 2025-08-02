@@ -13,13 +13,13 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/iterator"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/node/v2/cache"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/iterator"
+	"github.com/luxfi/node/v2/utils/math"
+	"github.com/luxfi/node/v2/utils/maybe"
+	"github.com/luxfi/node/v2/vms/platformvm/block"
 )
 
 var (

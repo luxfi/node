@@ -8,8 +8,8 @@ import (
 	"sync"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/v2/subnets"
+	"github.com/luxfi/node/v2/utils/constants"
 )
 
 var ErrNoPrimaryNetworkConfig = errors.New("no subnet config for primary network found")

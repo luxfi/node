@@ -7,8 +7,8 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/core"
-	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	appsenderpb "github.com/luxfi/node/v2/proto/pb/appsender"
 )
 
 var _ core.AppSender = (*Client)(nil)

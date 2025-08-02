@@ -9,7 +9,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/ids"
-	chaincon "github.com/luxfi/node/quasar/chain"
+	chaincon "github.com/luxfi/node/v2/quasar/chain"
 )
 
 // Tree handles the propagation of block acceptance and rejection to inner

@@ -9,9 +9,9 @@ package node
 import (
 	"fmt"
 	
-	"github.com/luxfi/node/vms/registry"
+	"github.com/luxfi/node/v2/vms/registry"
 	// Remove this import:
-	// geth "github.com/luxfi/evm/plugin/evm"
+	// geth "github.com/luxfi/evm/v2/plugin/evm"
 )
 
 // Example of refactored code

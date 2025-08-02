@@ -15,15 +15,15 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/core/appsender"
-	"github.com/luxfi/node/quasar/engine/core/appsender/appsendermock"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/v2/quasar/engine/core/appsender"
+	"github.com/luxfi/node/v2/quasar/engine/core/appsender/appsendermock"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/network/p2p"
+	"github.com/luxfi/node/v2/proto/pb/sdk"
+	"github.com/luxfi/node/v2/utils/constants"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/utils/units"
 	"go.uber.org/mock/gomock"
 )
 

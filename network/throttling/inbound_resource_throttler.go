@@ -13,10 +13,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/throttling/tracker"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/v2/network/throttling/tracker"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
 
-	timerpkg "github.com/luxfi/node/utils/timer"
+	timerpkg "github.com/luxfi/node/v2/utils/timer"
 )
 
 const epsilon = time.Millisecond

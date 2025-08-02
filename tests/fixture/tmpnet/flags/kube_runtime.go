@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/luxfi/node/tests/fixture/tmpnet"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet"
 )
 
 const (

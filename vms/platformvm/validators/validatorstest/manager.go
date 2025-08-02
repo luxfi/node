@@ -8,8 +8,8 @@ import (
 
 	"github.com/luxfi/ids"
 
-	"github.com/luxfi/node/quasar/validators"
-	vmvalidators "github.com/luxfi/node/vms/platformvm/validators"
+	"github.com/luxfi/node/v2/quasar/validators"
+	vmvalidators "github.com/luxfi/node/v2/vms/platformvm/validators"
 )
 
 var Manager vmvalidators.Manager = manager{}

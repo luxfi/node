@@ -14,10 +14,10 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/consensustest"
-	"github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/quasar/chain/chaintest"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/v2/quasar/consensustest"
+	"github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/quasar/chain/chaintest"
+	"github.com/luxfi/node/v2/utils/hashing"
 )
 
 const (

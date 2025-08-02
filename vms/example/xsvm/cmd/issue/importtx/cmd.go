@@ -12,12 +12,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/example/xsvm/api"
-	"github.com/luxfi/node/vms/example/xsvm/cmd/issue/status"
-	"github.com/luxfi/node/vms/example/xsvm/tx"
-	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/v2/api/info"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/example/xsvm/api"
+	"github.com/luxfi/node/v2/vms/example/xsvm/cmd/issue/status"
+	"github.com/luxfi/node/v2/vms/example/xsvm/tx"
+	"github.com/luxfi/node/v2/vms/platformvm/warp"
 )
 
 func Command() *cobra.Command {

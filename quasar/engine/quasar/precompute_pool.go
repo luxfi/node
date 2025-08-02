@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/luxfi/node/quasar/crypto/corona"
+	"github.com/luxfi/node/v2/quasar/crypto/corona"
 )
 
 var (

@@ -7,11 +7,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/vms/platformvm/block"
 
-	smblock "github.com/luxfi/node/quasar/engine/chain/block"
+	smblock "github.com/luxfi/node/v2/quasar/engine/chain/block"
 )
 
 var (

@@ -5,7 +5,7 @@ package signer
 
 import (
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/v2/vms/components/verify"
 )
 
 type Signer interface {

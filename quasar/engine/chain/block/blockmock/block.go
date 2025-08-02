@@ -13,8 +13,8 @@ import (
 
 	gomock "go.uber.org/mock/gomock"
 	ids "github.com/luxfi/ids"
-	choices "github.com/luxfi/node/quasar/choices"
-	block "github.com/luxfi/node/quasar/engine/chain/block"
+	choices "github.com/luxfi/node/v2/quasar/choices"
+	block "github.com/luxfi/node/v2/quasar/engine/chain/block"
 )
 
 // MockBlock is a mock of Block interface.

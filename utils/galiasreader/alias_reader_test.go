@@ -10,9 +10,9 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/ids/idstest"
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/grpcutils"
 
-	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
+	aliasreaderpb "github.com/luxfi/node/v2/proto/pb/aliasreader"
 )
 
 func TestInterface(t *testing.T) {

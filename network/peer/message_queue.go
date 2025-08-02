@@ -10,9 +10,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/utils/buffer"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/network/throttling"
+	"github.com/luxfi/node/v2/utils/buffer"
 	log "github.com/luxfi/log"
 )
 

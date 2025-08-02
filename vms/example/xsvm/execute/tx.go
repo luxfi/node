@@ -9,13 +9,13 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/quasar/engine/chain/block"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/wrappers"
-	"github.com/luxfi/node/vms/example/xsvm/state"
-	"github.com/luxfi/node/vms/example/xsvm/tx"
-	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/utils/hashing"
+	"github.com/luxfi/node/v2/utils/wrappers"
+	"github.com/luxfi/node/v2/vms/example/xsvm/state"
+	"github.com/luxfi/node/v2/vms/example/xsvm/tx"
+	"github.com/luxfi/node/v2/vms/platformvm/warp"
 )
 
 const (

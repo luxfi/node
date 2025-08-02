@@ -13,7 +13,7 @@ import (
 	"slices"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/maybe"
+	"github.com/luxfi/node/v2/utils/maybe"
 )
 
 const (

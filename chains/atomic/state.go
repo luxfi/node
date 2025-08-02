@@ -13,8 +13,8 @@ import (
 	"github.com/luxfi/database/linkeddb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils/hashing"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 var (

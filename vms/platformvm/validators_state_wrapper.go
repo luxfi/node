@@ -7,12 +7,12 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/block"
-	"github.com/luxfi/node/vms/platformvm/status"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	pvalidators "github.com/luxfi/node/vms/platformvm/validators"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/vms/platformvm/state"
+	"github.com/luxfi/node/v2/vms/platformvm/block"
+	"github.com/luxfi/node/v2/vms/platformvm/status"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	pvalidators "github.com/luxfi/node/v2/vms/platformvm/validators"
 )
 
 // stateWrapper wraps state.State to implement validators.State

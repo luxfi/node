@@ -6,9 +6,9 @@ package xvm
 import (
 	"reflect"
 
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/vms/xvm/fxs"
+	"github.com/luxfi/node/v2/vms/xvm/txs"
 )
 
 var _ txs.Visitor = (*txInit)(nil)

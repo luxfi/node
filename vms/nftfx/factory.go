@@ -5,7 +5,7 @@ package nftfx
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/fx"
+	"github.com/luxfi/node/v2/vms/fx"
 )
 
 const Name = "nftfx"

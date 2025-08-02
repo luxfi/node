@@ -4,14 +4,14 @@
 package executor
 
 import (
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/quasar/uptime"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/platformvm/config"
-	"github.com/luxfi/node/vms/platformvm/fx"
-	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/utxo"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/quasar/uptime"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
+	"github.com/luxfi/node/v2/vms/platformvm/config"
+	"github.com/luxfi/node/v2/vms/platformvm/fx"
+	"github.com/luxfi/node/v2/vms/platformvm/reward"
+	"github.com/luxfi/node/v2/vms/platformvm/utxo"
 )
 
 type Backend struct {

@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/tests/fixture/e2e"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/platformvm"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/tests/fixture/e2e"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/vms/platformvm"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 )
 
 var _ = e2e.DescribePChain("[P-Chain Wallet]", func() {

@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/version"
 )
 
 //go:embed COMPATIBILITY.md

@@ -11,11 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/node/v2/utils/bloom"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/ips"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 func newTestIPTracker(t *testing.T) *ipTracker {

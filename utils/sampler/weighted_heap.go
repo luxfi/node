@@ -6,8 +6,8 @@ package sampler
 import (
 	"cmp"
 
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/math"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	xsvm "github.com/luxfi/node/connectproto/pb/xsvm"
+	xsvm "github.com/luxfi/node/v2/connectproto/pb/xsvm"
 	http "net/http"
 	strings "strings"
 )

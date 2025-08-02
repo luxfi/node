@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/maybe"
+	"github.com/luxfi/node/v2/utils/maybe"
 )
 
 func Test_History_Simple(t *testing.T) {

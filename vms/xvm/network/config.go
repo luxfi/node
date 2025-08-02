@@ -6,7 +6,7 @@ package network
 import (
 	"time"
 
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/v2/utils/units"
 )
 
 var DefaultConfig = Config{

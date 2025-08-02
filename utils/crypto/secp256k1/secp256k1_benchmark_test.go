@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/hashing"
 )
 
 func BenchmarkVerify(b *testing.B) {

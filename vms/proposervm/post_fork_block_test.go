@@ -14,13 +14,13 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/consensustest"
-	"github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/quasar/chain/chaintest"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/proposervm/block"
-	"github.com/luxfi/node/vms/proposervm/proposer"
+	"github.com/luxfi/node/v2/quasar/consensustest"
+	"github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/quasar/chain/chaintest"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
+	"github.com/luxfi/node/v2/vms/proposervm/block"
+	"github.com/luxfi/node/v2/vms/proposervm/proposer"
 )
 
 var (

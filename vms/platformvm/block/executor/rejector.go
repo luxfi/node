@@ -6,9 +6,9 @@ package executor
 import (
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/vms/platformvm/block"
 )
 
 var _ block.Visitor = (*rejector)(nil)

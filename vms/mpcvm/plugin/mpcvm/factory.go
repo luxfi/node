@@ -6,7 +6,7 @@ package mpcvm
 import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	vmtypes "github.com/luxfi/node/vms"
+	vmtypes "github.com/luxfi/node/v2/vms"
 )
 
 var (

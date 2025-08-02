@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // DynamicWaveThreshold implements decoupled alpha thresholding

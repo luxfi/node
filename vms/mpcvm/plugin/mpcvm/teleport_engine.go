@@ -14,8 +14,8 @@ import (
 	"github.com/luxfi/geth/log"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
-	// "github.com/luxfi/node/vms/components/warp" // TODO: fix import
+	"github.com/luxfi/node/v2/utils/constants"
+	// "github.com/luxfi/node/v2/vms/components/warp" // TODO: fix import
 )
 
 // TeleportEngine orchestrates cross-chain transfers via the Teleport Protocol

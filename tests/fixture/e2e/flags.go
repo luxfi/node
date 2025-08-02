@@ -12,8 +12,8 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/tests/fixture/tmpnet/flags"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet/flags"
 )
 
 type NetworkCmd int

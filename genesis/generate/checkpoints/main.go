@@ -10,10 +10,10 @@ import (
 	"log"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/indexer"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/indexer"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/perms"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 const (

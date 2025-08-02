@@ -14,15 +14,15 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 
-	"github.com/luxfi/node/quasar/engine/chain/block"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
-	"github.com/luxfi/node/vms/rpcchainvm/gruntime"
-	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/version"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/gruntime"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/runtime"
 
-	vmpb "github.com/luxfi/node/proto/pb/vm"
-	runtimepb "github.com/luxfi/node/proto/pb/vm/runtime"
+	vmpb "github.com/luxfi/node/v2/proto/pb/vm"
+	runtimepb "github.com/luxfi/node/v2/proto/pb/vm/runtime"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 

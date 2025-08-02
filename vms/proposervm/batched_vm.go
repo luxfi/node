@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/chain/block"
-	chaincon "github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
+	chaincon "github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/utils/wrappers"
 
-	statelessblock "github.com/luxfi/node/vms/proposervm/block"
+	statelessblock "github.com/luxfi/node/v2/vms/proposervm/block"
 )
 
 var _ block.BatchedChainVM = (*VM)(nil)

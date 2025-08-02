@@ -11,9 +11,9 @@ import (
 	"reflect"
 	"slices"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/utils/wrappers"
 )
 
 const (

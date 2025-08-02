@@ -3,7 +3,7 @@
 
 package genesis
 
-import "github.com/luxfi/node/vms/example/xsvm/block"
+import "github.com/luxfi/node/v2/vms/example/xsvm/block"
 
 const CodecVersion = block.CodecVersion
 

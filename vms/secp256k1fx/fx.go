@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/v2/utils/crypto/secp256k1"
+	"github.com/luxfi/node/v2/utils/hashing"
+	"github.com/luxfi/node/v2/vms/components/verify"
 )
 
 const defaultCacheSize = 256

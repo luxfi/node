@@ -6,9 +6,9 @@ package tmpnet
 import (
 	"time"
 
-	"github.com/luxfi/node/config"
+	"github.com/luxfi/node/v2/config"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/vms/platformvm/txs/executor"
+	"github.com/luxfi/node/v2/vms/platformvm/txs/executor"
 )
 
 const (

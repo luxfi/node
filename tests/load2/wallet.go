@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/crypto"
 	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/evm/ethclient"
+	"github.com/luxfi/evm/v2/ethclient"
 )
 
 type Wallet struct {

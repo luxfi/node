@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/quasar/consensus/beam/poll"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/quasar/consensus/beam/poll"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // FuzzBlockParsing tests block parsing with random inputs

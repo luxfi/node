@@ -7,12 +7,12 @@ import (
 	"errors"
 	"math"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/utils/wrappers"
-	"github.com/luxfi/node/vms/platformvm/signer"
-	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/codec/linearcodec"
+	"github.com/luxfi/node/v2/utils/wrappers"
+	"github.com/luxfi/node/v2/vms/platformvm/signer"
+	"github.com/luxfi/node/v2/vms/platformvm/stakeable"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 )
 
 const CodecVersion = 0

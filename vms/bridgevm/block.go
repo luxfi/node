@@ -12,9 +12,9 @@ import (
 	"github.com/luxfi/geth/core/types"
 	
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/utils/hashing"
 )
 
 var (

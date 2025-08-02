@@ -14,9 +14,9 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/trace"
-	"github.com/luxfi/node/utils/maybe"
+	"github.com/luxfi/node/v2/utils/maybe"
 
-	pb "github.com/luxfi/node/proto/pb/sync"
+	pb "github.com/luxfi/node/v2/proto/pb/sync"
 )
 
 const verificationCacheSize = math.MaxUint16

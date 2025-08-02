@@ -13,17 +13,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/evm/core"
+	"github.com/luxfi/evm/v2/core"
 	"github.com/stretchr/testify/require"
 
 	_ "embed"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/node/vms/platformvm/genesis"
+	"github.com/luxfi/node/v2/upgrade"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/hashing"
+	"github.com/luxfi/node/v2/utils/perms"
+	"github.com/luxfi/node/v2/vms/platformvm/genesis"
 )
 
 var (

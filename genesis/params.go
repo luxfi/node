@@ -6,11 +6,11 @@ package genesis
 import (
 	"time"
 
-	"github.com/luxfi/node/quasar/sampling"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/validators/fee"
+	"github.com/luxfi/node/v2/quasar/sampling"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/vms/components/gas"
+	"github.com/luxfi/node/v2/vms/platformvm/reward"
+	"github.com/luxfi/node/v2/vms/platformvm/validators/fee"
 )
 
 type StakingConfig struct {

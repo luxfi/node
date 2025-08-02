@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
 
-	timerpkg "github.com/luxfi/node/utils/timer"
+	timerpkg "github.com/luxfi/node/v2/utils/timer"
 )
 
 var (

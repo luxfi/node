@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/v2/staking"
+	"github.com/luxfi/node/v2/utils/hashing"
+	"github.com/luxfi/node/v2/utils/wrappers"
 )
 
 func BuildUnsigned(

@@ -11,18 +11,18 @@ import (
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/platformvm/config"
-	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
-	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/genesis"
+	"github.com/luxfi/node/v2/upgrade/upgradetest"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
+	"github.com/luxfi/node/v2/utils/units"
+	"github.com/luxfi/node/v2/vms/components/gas"
+	"github.com/luxfi/node/v2/vms/platformvm/config"
+	"github.com/luxfi/node/v2/vms/platformvm/genesis/genesistest"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
 
-	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"
-	validatorfee "github.com/luxfi/node/vms/platformvm/validators/fee"
+	txfee "github.com/luxfi/node/v2/vms/platformvm/txs/fee"
+	validatorfee "github.com/luxfi/node/v2/vms/platformvm/validators/fee"
 )
 
 func TestNextBlockTime(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/luxfi/node/utils/perms"
+	"github.com/luxfi/node/v2/utils/perms"
 )
 
 // Defines a mapping of flag keys to values intended to be supplied to

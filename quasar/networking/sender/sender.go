@@ -7,11 +7,11 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/network/p2p"
+	"github.com/luxfi/node/v2/subnets"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // Sender sends consensus messages

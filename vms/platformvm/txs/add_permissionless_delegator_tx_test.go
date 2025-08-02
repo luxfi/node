@@ -13,18 +13,18 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/lux/luxmock"
-	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
-	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/units"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/components/lux/luxmock"
+	"github.com/luxfi/node/v2/vms/platformvm/fx/fxmock"
+	"github.com/luxfi/node/v2/vms/platformvm/stakeable"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/vms/types"
 
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/node/v2/utils/math"
 )
 
 var errCustom = errors.New("custom error")

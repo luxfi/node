@@ -12,7 +12,7 @@ package luxmock
 import (
 	reflect "reflect"
 
-	quasar "github.com/luxfi/node/quasar"
+	quasar "github.com/luxfi/node/v2/quasar"
 	gomock "go.uber.org/mock/gomock"
 )
 

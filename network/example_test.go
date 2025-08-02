@@ -11,14 +11,14 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/networking/router"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/v2/quasar/networking/router"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/genesis"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/utils/constants"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/version"
 )
 
 var _ router.ExternalHandler = (*testExternalHandler)(nil)

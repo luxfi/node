@@ -13,14 +13,14 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/network/p2p/p2ptest"
-	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/v2/cache"
+	"github.com/luxfi/node/v2/cache/lru"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/network/p2p"
+	"github.com/luxfi/node/v2/network/p2p/p2ptest"
+	"github.com/luxfi/node/v2/proto/pb/sdk"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/platformvm/warp"
 )
 
 var _ Verifier = (*testVerifier)(nil)

@@ -10,8 +10,8 @@ import (
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/quasar/engine/chain/block"
-	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/quasar/engine/core"
 )
 
 // BlockChain manages the blockchain state

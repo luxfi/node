@@ -115,7 +115,7 @@ func TestNoCircularImports(t *testing.T) {
 			for _, imp := range node.Imports {
 				if imp.Path != nil {
 					impPath := strings.Trim(imp.Path.Value, "\"")
-					if strings.HasPrefix(impPath, "github.com/luxfi/node/node") {
+					if strings.HasPrefix(impPath, "github.com/luxfi/node/v2/node") {
 						imports[pkg] = append(imports[pkg], impPath)
 					}
 				}
@@ -222,9 +222,9 @@ func TestBuildFunctionConsistency(t *testing.T) {
 func TestImportAliasConsistency(t *testing.T) {
 	// Common aliases that should be consistent
 	expectedAliases := map[string]string{
-		"github.com/luxfi/node/quasar/consensustest": "",  // Should not have alias
-		"github.com/luxfi/node/quasar/linear/lineartest": "", // Should not have alias
-		"github.com/luxfi/node/quasar/linear/linearmock": "", // Should not have alias
+		"github.com/luxfi/node/v2/quasar/consensustest": "",  // Should not have alias
+		"github.com/luxfi/node/v2/quasar/linear/lineartest": "", // Should not have alias
+		"github.com/luxfi/node/v2/quasar/linear/linearmock": "", // Should not have alias
 	}
 
 	err := filepath.WalkDir("..", func(path string, d fs.DirEntry, err error) error {

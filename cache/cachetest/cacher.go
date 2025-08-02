@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/v2/cache"
 )
 
 const IntSize = ids.IDLen + 8

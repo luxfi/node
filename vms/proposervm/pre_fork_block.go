@@ -12,8 +12,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	chaincon "github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/vms/proposervm/block"
+	chaincon "github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/vms/proposervm/block"
 )
 
 var (

@@ -11,7 +11,7 @@ import (
 	"math/big"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/wallet"
+	"github.com/luxfi/node/v2/wallet"
 )
 
 // Wallet provides XRP Ledger wallet functionality

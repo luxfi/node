@@ -5,7 +5,7 @@ package txs
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/v2/utils/constants"
 )
 
 // SubnetValidator validates a subnet on the Lux network.

@@ -11,9 +11,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/luxfi/node/tests/fixture/bootstrapmonitor"
+	"github.com/luxfi/node/v2/tests/fixture/bootstrapmonitor"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/version"
 )
 
 const (

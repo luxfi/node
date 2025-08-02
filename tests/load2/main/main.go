@@ -8,14 +8,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/luxfi/evm/ethclient"
+	"github.com/luxfi/evm/v2/ethclient"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/tests"
-	"github.com/luxfi/node/tests/fixture/e2e"
-	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/tests/load2"
+	"github.com/luxfi/node/v2/tests"
+	"github.com/luxfi/node/v2/tests/fixture/e2e"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet"
+	"github.com/luxfi/node/v2/tests/load2"
 )
 
 const (

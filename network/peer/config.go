@@ -8,16 +8,16 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/networking/router"
-	"github.com/luxfi/node/quasar/uptime"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/network/throttling/tracker"
+	"github.com/luxfi/node/v2/quasar/networking/router"
+	"github.com/luxfi/node/v2/quasar/uptime"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/network/throttling"
+	"github.com/luxfi/node/v2/network/throttling/tracker"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
+	"github.com/luxfi/node/v2/version"
 )
 
 type Config struct {

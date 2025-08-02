@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/utils/timer"
-	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/utils/timer"
+	"github.com/luxfi/node/v2/network/p2p"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

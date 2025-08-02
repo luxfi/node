@@ -12,7 +12,7 @@ package codecmock
 import (
 	reflect "reflect"
 
-	codec "github.com/luxfi/node/codec"
+	codec "github.com/luxfi/node/v2/codec"
 	gomock "go.uber.org/mock/gomock"
 )
 

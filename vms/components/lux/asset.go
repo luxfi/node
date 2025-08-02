@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/v2/vms/components/verify"
 )
 
 var (

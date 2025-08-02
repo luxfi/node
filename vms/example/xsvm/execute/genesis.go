@@ -6,9 +6,9 @@ package execute
 import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/example/xsvm/block"
-	"github.com/luxfi/node/vms/example/xsvm/genesis"
-	"github.com/luxfi/node/vms/example/xsvm/state"
+	"github.com/luxfi/node/v2/vms/example/xsvm/block"
+	"github.com/luxfi/node/v2/vms/example/xsvm/genesis"
+	"github.com/luxfi/node/v2/vms/example/xsvm/state"
 )
 
 func Genesis(db database.KeyValueReaderWriterDeleter, chainID ids.ID, g *genesis.Genesis) error {

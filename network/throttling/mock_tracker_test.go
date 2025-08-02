@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/throttling/tracker"
+	"github.com/luxfi/node/v2/network/throttling/tracker"
 )
 
 // mockTracker is a test implementation of tracker.Tracker

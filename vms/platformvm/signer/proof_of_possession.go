@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/node/v2/utils/formatting"
 )
 
 var (

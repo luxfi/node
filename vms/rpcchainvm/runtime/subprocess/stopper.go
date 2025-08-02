@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/runtime"
 )
 
 func NewStopper(logger log.Logger, cmd *exec.Cmd) runtime.Stopper {

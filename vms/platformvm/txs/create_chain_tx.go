@@ -8,11 +8,11 @@ import (
 	"unicode"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/units"
+	"github.com/luxfi/node/v2/vms/components/verify"
 )
 
 const (

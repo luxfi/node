@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	binaryvote "github.com/luxfi/node/quasar/sampling"
-	"github.com/luxfi/node/utils/set"
+	binaryvote "github.com/luxfi/node/v2/quasar/sampling"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 var errAllowedNodesWhenNotValidatorOnly = errors.New("allowedNodes can only be set when ValidatorOnly is true")

@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/evm/rpc"
+	"github.com/luxfi/evm/v2/rpc"
 )
 
 type NewHeadSubscriber interface {

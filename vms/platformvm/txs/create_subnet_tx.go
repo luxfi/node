@@ -4,8 +4,8 @@
 package txs
 
 import (
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/vms/platformvm/fx"
 )
 
 var _ UnsignedTx = (*CreateSubnetTx)(nil)

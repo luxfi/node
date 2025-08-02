@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/utils/hashing"
 )
 
 // ConsensusBlock represents a network-wide consensus block containing operations from all chains

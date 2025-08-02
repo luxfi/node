@@ -5,7 +5,7 @@ package graph
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // Graph represents a directed graph

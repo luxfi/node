@@ -13,8 +13,8 @@ import (
 
 	_ "embed"
 
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/units"
 )
 
 const maxMessageSize = 2 * units.MiB // Max message size. Can't import due to cycle.

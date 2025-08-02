@@ -4,7 +4,7 @@ import (
     "sync/atomic"
     "time"
 
-    "github.com/luxfi/node/quasar/quasar"
+    "github.com/luxfi/node/v2/quasar/quasar"
 )
 
 // Engine interface for Quasar integration

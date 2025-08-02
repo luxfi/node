@@ -12,8 +12,8 @@ package fxmock
 import (
 	reflect "reflect"
 
-	"github.com/luxfi/node/quasar"
-	verify "github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/v2/quasar"
+	verify "github.com/luxfi/node/v2/vms/components/verify"
 	gomock "go.uber.org/mock/gomock"
 )
 

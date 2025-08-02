@@ -10,12 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/tests"
-	"github.com/luxfi/node/tests/fixture/e2e"
-	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/api/info"
+	"github.com/luxfi/node/v2/config"
+	"github.com/luxfi/node/v2/tests"
+	"github.com/luxfi/node/v2/tests/fixture/e2e"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 var _ = ginkgo.Describe("Duplicate node handling", func() {

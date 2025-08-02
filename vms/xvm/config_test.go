@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/vms/xvm/network"
+	"github.com/luxfi/node/v2/vms/xvm/network"
 )
 
 func TestParseConfig(t *testing.T) {

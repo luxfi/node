@@ -20,8 +20,8 @@ import (
 
 	_ "embed"
 
-	"github.com/luxfi/node/network/peer"
-	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/v2/network/peer"
+	"github.com/luxfi/node/v2/staking"
 )
 
 // 8192RSA_test.pem is used here because it's too expensive

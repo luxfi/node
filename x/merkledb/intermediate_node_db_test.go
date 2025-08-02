@@ -11,9 +11,9 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/maybe"
+	"github.com/luxfi/node/v2/utils/units"
 )
 
 // Tests:

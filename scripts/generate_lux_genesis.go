@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/node/v2/utils/formatting/address"
 )
 
 // Configuration for different networks

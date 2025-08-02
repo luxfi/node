@@ -9,8 +9,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/upgrade"
+	"github.com/luxfi/node/v2/staking"
+	"github.com/luxfi/node/v2/upgrade"
 )
 
 type Config struct {

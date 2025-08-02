@@ -13,9 +13,9 @@ import (
 	"github.com/spf13/cast"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/chains"
+	"github.com/luxfi/node/v2/config"
+	"github.com/luxfi/node/v2/version"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

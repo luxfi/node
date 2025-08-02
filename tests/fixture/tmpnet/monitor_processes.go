@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/perms"
+	"github.com/luxfi/node/v2/utils/perms"
 )
 
 const (

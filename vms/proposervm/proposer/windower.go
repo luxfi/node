@@ -12,11 +12,11 @@ import (
 	"gonum.org/v1/gonum/mathext/prng"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/utils/sampler"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/math"
+	"github.com/luxfi/node/v2/utils/sampler"
+	"github.com/luxfi/node/v2/utils/wrappers"
 )
 
 // Proposer list constants

@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/crypto/bls"
-	"github.com/luxfi/node/quasar/crypto/corona"
+	"github.com/luxfi/node/v2/quasar/crypto/bls"
+	"github.com/luxfi/node/v2/quasar/crypto/corona"
 )
 
 // TestQuantumFinalityEngine tests the full 8-chain quantum finality flow

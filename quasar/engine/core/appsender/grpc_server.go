@@ -7,10 +7,10 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/core"
+	"github.com/luxfi/node/v2/quasar/engine/core"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
+	appsenderpb "github.com/luxfi/node/v2/proto/pb/appsender"
 )
 
 // GRPCServer wraps a core.AppSender to implement the gRPC AppSenderServer interface

@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/lux/luxmock"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/components/lux/luxmock"
 )
 
 var errTest = errors.New("hi mom")

@@ -18,8 +18,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/v2/chains"
+	"github.com/luxfi/node/v2/subnets"
 )
 
 const chainConfigFilenameExtension = ".ex"

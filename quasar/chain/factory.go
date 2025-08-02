@@ -4,7 +4,7 @@
 package chain
 
 import (
-	"github.com/luxfi/node/quasar/params"
+	"github.com/luxfi/node/v2/quasar/params"
 )
 
 // Factory returns new instances of Consensus

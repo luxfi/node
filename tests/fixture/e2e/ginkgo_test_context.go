@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/luxfi/node/tests"
+	"github.com/luxfi/node/v2/tests"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/v2/wallet/subnet/primary"
 )
 
 type ginkgoWriteCloser struct{}

@@ -13,11 +13,11 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/utils"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/sampler"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils/sampler"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 var (

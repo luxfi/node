@@ -5,10 +5,16 @@ package bridgevm
 
 import (
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/vms"
 )
 
-var _ vms.Factory = (*Factory)(nil)
+var (
+	_ vms.Factory = (*Factory)(nil)
+
+	// ID is the VM ID for the Bridge VM
+	ID = constants.BridgeVMID
+)
 
 // Factory creates new instances of the Bridge VM
 type Factory struct{}

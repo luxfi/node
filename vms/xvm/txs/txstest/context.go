@@ -5,9 +5,9 @@ package txstest
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/vms/xvm/config"
-	"github.com/luxfi/node/wallet/chain/x/builder"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/vms/xvm/config"
+	"github.com/luxfi/node/v2/wallet/chain/x/builder"
 )
 
 func newContext(

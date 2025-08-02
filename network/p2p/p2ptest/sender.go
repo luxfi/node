@@ -7,8 +7,8 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/core/appsender"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/quasar/engine/core/appsender"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // Sender is a test implementation of appsender.AppSender

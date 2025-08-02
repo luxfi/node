@@ -12,8 +12,8 @@ import (
 
 	gomock "go.uber.org/mock/gomock"
 	ids "github.com/luxfi/ids"
-	choices "github.com/luxfi/node/quasar/choices"
-	chain "github.com/luxfi/node/quasar/chain"
+	choices "github.com/luxfi/node/v2/quasar/choices"
+	chain "github.com/luxfi/node/v2/quasar/chain"
 )
 
 // MockConsensus is a mock of Consensus interface.

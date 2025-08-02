@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/sampling"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/quasar/sampling"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 var validParameters = sampling.Parameters{

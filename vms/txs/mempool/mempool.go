@@ -10,14 +10,14 @@ import (
 	"sync"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/node/utils/lock"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/setmap"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/v2/cache/lru"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/utils/linked"
+	"github.com/luxfi/node/v2/utils/lock"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/utils/setmap"
+	"github.com/luxfi/node/v2/utils/units"
 )
 
 const (

@@ -13,11 +13,11 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/chains/atomic/atomictest"
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/v2/chains/atomic"
+	"github.com/luxfi/node/v2/chains/atomic/atomictest"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/grpcutils"
 
-	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
+	sharedmemorypb "github.com/luxfi/node/v2/proto/pb/sharedmemory"
 )
 
 func TestInterface(t *testing.T) {

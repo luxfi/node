@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ed25519"
 
-	"github.com/luxfi/node/network/peer"
-	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/v2/network/peer"
+	"github.com/luxfi/node/v2/staking"
 )
 
 func TestValidateCertificate(t *testing.T) {

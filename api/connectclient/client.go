@@ -8,7 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/v2/api/server"
 )
 
 var _ connect.Interceptor = (*SetRouteHeaderInterceptor)(nil)

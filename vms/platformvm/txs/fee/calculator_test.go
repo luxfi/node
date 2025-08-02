@@ -4,8 +4,8 @@
 package fee
 
 import (
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/v2/utils/units"
+	"github.com/luxfi/node/v2/vms/components/gas"
 )
 
 const testDynamicPrice = gas.Price(units.NanoLux)

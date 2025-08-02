@@ -8,12 +8,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/evm/iface"
-	"github.com/luxfi/evm/plugin/evm/message"
+	"github.com/luxfi/evm/v2/iface"
+	"github.com/luxfi/evm/v2/plugin/evm/message"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/log"
-	"github.com/luxfi/node/state_sync/handlers/stats"
-	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/v2/state_sync/handlers/stats"
+	"github.com/luxfi/node/v2/utils/units"
 )
 
 const (

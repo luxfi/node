@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/cache/cachetest"
+	"github.com/luxfi/node/v2/cache/cachetest"
 )
 
 func TestCache(t *testing.T) {

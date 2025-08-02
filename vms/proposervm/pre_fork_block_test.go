@@ -14,17 +14,17 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/quasar/consensustest"
-	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
-	"github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/quasar/chain/chainmock"
-	"github.com/luxfi/node/quasar/chain/chaintest"
-	"github.com/luxfi/node/quasar/validators/validatorsmock"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/quasar/consensustest"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block/blockmock"
+	"github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/quasar/chain/chainmock"
+	"github.com/luxfi/node/v2/quasar/chain/chaintest"
+	"github.com/luxfi/node/v2/quasar/validators/validatorsmock"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
 
-	statelessblock "github.com/luxfi/node/vms/proposervm/block"
+	statelessblock "github.com/luxfi/node/v2/vms/proposervm/block"
 )
 
 func TestOracle_PreForkBlkImplementsInterface(t *testing.T) {

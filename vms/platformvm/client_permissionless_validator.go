@@ -7,9 +7,9 @@ import (
 	"encoding/json"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/vms/platformvm/api"
-	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/v2/utils/formatting/address"
+	"github.com/luxfi/node/v2/vms/platformvm/api"
+	"github.com/luxfi/node/v2/vms/platformvm/signer"
 )
 
 // ClientStaker is the representation of a staker sent via client.

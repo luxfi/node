@@ -9,8 +9,8 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/chain/block"
-	chaincon "github.com/luxfi/node/quasar/chain"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
+	chaincon "github.com/luxfi/node/v2/quasar/chain"
 )
 
 var (

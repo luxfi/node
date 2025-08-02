@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/utils/hashing"
+	"github.com/luxfi/node/v2/vms/xvm/txs"
 )
 
 var _ Block = (*StandardBlock)(nil)

@@ -7,19 +7,19 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/keychain"
-	"github.com/luxfi/node/vms/platformvm"
-	"github.com/luxfi/node/wallet"
-	"github.com/luxfi/node/wallet/chain/c"
-	"github.com/luxfi/node/wallet/chain/p"
-	"github.com/luxfi/node/wallet/chain/x"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/crypto/keychain"
+	"github.com/luxfi/node/v2/vms/platformvm"
+	"github.com/luxfi/node/v2/wallet"
+	"github.com/luxfi/node/v2/wallet/chain/c"
+	"github.com/luxfi/node/v2/wallet/chain/p"
+	"github.com/luxfi/node/v2/wallet/chain/x"
 
-	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
-	psigner "github.com/luxfi/node/wallet/chain/p/signer"
-	pwallet "github.com/luxfi/node/wallet/chain/p/wallet"
-	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
-	xsigner "github.com/luxfi/node/wallet/chain/x/signer"
+	pbuilder "github.com/luxfi/node/v2/wallet/chain/p/builder"
+	psigner "github.com/luxfi/node/v2/wallet/chain/p/signer"
+	pwallet "github.com/luxfi/node/v2/wallet/chain/p/wallet"
+	xbuilder "github.com/luxfi/node/v2/wallet/chain/x/builder"
+	xsigner "github.com/luxfi/node/v2/wallet/chain/x/signer"
 )
 
 // Wallet provides chain wallets for the primary network.

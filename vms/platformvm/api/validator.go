@@ -5,9 +5,9 @@ package api
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/vms/platformvm/signer"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/node/v2/utils/json"
+	"github.com/luxfi/node/v2/vms/platformvm/signer"
+	"github.com/luxfi/node/v2/vms/types"
 )
 
 // Staker is the representation of a staker sent via APIs.

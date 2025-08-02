@@ -15,11 +15,11 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils/hashing"
+	"github.com/luxfi/node/v2/utils/maybe"
+	"github.com/luxfi/node/v2/utils/set"
 
-	pb "github.com/luxfi/node/proto/pb/sync"
+	pb "github.com/luxfi/node/v2/proto/pb/sync"
 )
 
 func Test_Proof_Empty(t *testing.T) {

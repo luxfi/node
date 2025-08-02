@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	utilswarp "github.com/luxfi/node/utils/warp"
+	utilswarp "github.com/luxfi/node/v2/utils/warp"
 )
 
 var (

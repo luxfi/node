@@ -8,9 +8,9 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/proto/pb/p2p"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
+	"github.com/luxfi/node/v2/version"
 )
 
 var (

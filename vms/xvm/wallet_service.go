@@ -11,12 +11,12 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/linked"
+	"github.com/luxfi/node/v2/api"
+	"github.com/luxfi/node/v2/utils/formatting"
+	"github.com/luxfi/node/v2/utils/linked"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/vms/txs/mempool"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/v2/vms/txs/mempool"
+	"github.com/luxfi/node/v2/vms/xvm/txs"
 )
 
 type WalletService struct {

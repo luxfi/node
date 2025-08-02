@@ -4,7 +4,7 @@
 package warp
 
 import (
-	"github.com/luxfi/node/vms/platformvm/txs/fee"
+	"github.com/luxfi/node/v2/vms/platformvm/txs/fee"
 )
 
 // messageAdapter adapts a warp.Message to implement fee.WarpMessage

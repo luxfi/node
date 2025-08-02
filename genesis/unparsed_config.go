@@ -8,8 +8,8 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/v2/utils/formatting/address"
+	"github.com/luxfi/node/v2/vms/platformvm/signer"
 )
 
 var errInvalidETHAddress = errors.New("invalid eth address")

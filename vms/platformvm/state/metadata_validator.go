@@ -8,10 +8,10 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/utils/wrappers"
 )
 
 // preDelegateeRewardSize is the size of codec marshalling

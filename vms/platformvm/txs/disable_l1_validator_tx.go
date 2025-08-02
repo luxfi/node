@@ -5,8 +5,8 @@ package txs
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/vms/components/verify"
 )
 
 var _ UnsignedTx = (*DisableL1ValidatorTx)(nil)

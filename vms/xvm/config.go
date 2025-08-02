@@ -6,7 +6,7 @@ package xvm
 import (
 	"encoding/json"
 
-	"github.com/luxfi/node/vms/xvm/network"
+	"github.com/luxfi/node/v2/vms/xvm/network"
 )
 
 var DefaultConfig = Config{

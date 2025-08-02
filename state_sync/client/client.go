@@ -10,12 +10,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/luxfi/evm/core/types"
-	"github.com/luxfi/evm/plugin/evm/message"
+	"github.com/luxfi/evm/v2/core/types"
+	"github.com/luxfi/evm/v2/plugin/evm/message"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/log"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/state_sync/client/stats"
+	"github.com/luxfi/node/v2/state_sync/client/stats"
 )
 
 const (

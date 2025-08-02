@@ -10,8 +10,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/vms/proposervm/block"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/vms/proposervm/block"
 )
 
 var _ PostForkBlock = (*postForkOption)(nil)

@@ -11,9 +11,9 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/v2/genesis"
 
-	xsgenesis "github.com/luxfi/node/vms/example/xsvm/genesis"
+	xsgenesis "github.com/luxfi/node/v2/vms/example/xsvm/genesis"
 )
 
 const (

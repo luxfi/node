@@ -6,8 +6,8 @@ package executor
 import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/v2/chains/atomic"
+	"github.com/luxfi/node/v2/quasar"
 )
 
 // sharedMemoryAdapter adapts atomic.SharedMemory to quasar.SharedMemory

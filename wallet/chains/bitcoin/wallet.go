@@ -11,7 +11,7 @@ import (
 	"math/big"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utxo"
+	"github.com/luxfi/node/v2/utxo"
 )
 
 // Wallet provides Bitcoin wallet functionality

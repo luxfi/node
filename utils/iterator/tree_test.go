@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/iterator"
-	"github.com/luxfi/node/vms/platformvm/state"
+	"github.com/luxfi/node/v2/utils/iterator"
+	"github.com/luxfi/node/v2/vms/platformvm/state"
 )
 
 var defaultTreeDegree = 2

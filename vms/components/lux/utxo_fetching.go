@@ -9,10 +9,10 @@ import (
 	"math"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/set"
 
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/node/v2/utils/math"
 )
 
 // GetBalance returns the current balance of [addrs]

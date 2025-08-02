@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/version"
 )
 
 var _ Atomic = (*atomic)(nil)

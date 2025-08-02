@@ -21,9 +21,9 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/staking"
-	platformvmsigner "github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/v2/config"
+	"github.com/luxfi/node/v2/staking"
+	platformvmsigner "github.com/luxfi/node/v2/vms/platformvm/signer"
 )
 
 // The Node type is defined in this file (node.go - orchestration) and

@@ -13,8 +13,8 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metrics"
 
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/quasar/validators"
 )
 
 var (

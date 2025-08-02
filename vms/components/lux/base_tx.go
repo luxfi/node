@@ -8,8 +8,8 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/vms/types"
 )
 
 // MaxMemoSize is the maximum number of bytes in the memo field

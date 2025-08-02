@@ -6,7 +6,7 @@ package upgradetest
 import (
 	"time"
 
-	"github.com/luxfi/node/upgrade"
+	"github.com/luxfi/node/v2/upgrade"
 )
 
 // GetConfig returns an upgrade config with the provided fork scheduled to have

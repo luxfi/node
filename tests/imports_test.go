@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/packages"
+	"github.com/luxfi/node/v2/utils/packages"
 )
 
 func TestMustNotImport(t *testing.T) {
@@ -19,12 +19,12 @@ func TestMustNotImport(t *testing.T) {
 		// Importing these packages configures geth globally. This must not be
 		// done to support both geth and subnet-evm.
 		"tests/...": {
-			"github.com/luxfi/evm/params",
-			"github.com/luxfi/evm/plugin/evm/customtypes",
+			"github.com/luxfi/evm/v2/params",
+			"github.com/luxfi/evm/v2/plugin/evm/customtypes",
 		},
 	}
 	for packageName, forbiddenImports := range mustNotImport {
-		packagePath := path.Join("github.com/luxfi/node/node", packageName)
+		packagePath := path.Join("github.com/luxfi/node/v2/node", packageName)
 		imports, err := packages.GetDependencies(packagePath)
 		require.NoError(err)
 

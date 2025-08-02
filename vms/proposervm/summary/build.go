@@ -6,7 +6,7 @@ package summary
 import (
 	"fmt"
 
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/v2/utils/hashing"
 )
 
 func Build(

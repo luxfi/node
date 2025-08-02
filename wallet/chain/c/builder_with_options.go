@@ -6,12 +6,12 @@ package c
 import (
 	"math/big"
 
-	"github.com/luxfi/evm/plugin/evm/atomic"
+	"github.com/luxfi/evm/v2/plugin/evm/atomic"
 	"github.com/luxfi/geth/common"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	walletutil "github.com/luxfi/node/wallet"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	walletutil "github.com/luxfi/node/v2/wallet"
 )
 
 var _ Builder = (*builderWithOptions)(nil)

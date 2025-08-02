@@ -10,12 +10,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/luxfi/node/vms/example/xsvm/cmd/account"
-	"github.com/luxfi/node/vms/example/xsvm/cmd/chain"
-	"github.com/luxfi/node/vms/example/xsvm/cmd/issue"
-	"github.com/luxfi/node/vms/example/xsvm/cmd/run"
-	"github.com/luxfi/node/vms/example/xsvm/cmd/version"
-	"github.com/luxfi/node/vms/example/xsvm/cmd/versionjson"
+	"github.com/luxfi/node/v2/vms/example/xsvm/cmd/account"
+	"github.com/luxfi/node/v2/vms/example/xsvm/cmd/chain"
+	"github.com/luxfi/node/v2/vms/example/xsvm/cmd/issue"
+	"github.com/luxfi/node/v2/vms/example/xsvm/cmd/run"
+	"github.com/luxfi/node/v2/vms/example/xsvm/cmd/version"
+	"github.com/luxfi/node/v2/vms/example/xsvm/cmd/versionjson"
 )
 
 func init() {

@@ -23,10 +23,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/config/node"
+	"github.com/luxfi/node/v2/config"
+	"github.com/luxfi/node/v2/config/node"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/perms"
+	"github.com/luxfi/node/v2/utils/perms"
 )
 
 const (

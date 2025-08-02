@@ -10,8 +10,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/quasar/engine/chain/block"
-	"github.com/luxfi/node/vms/proposervm/summary"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/vms/proposervm/summary"
 )
 
 func (vm *VM) StateSyncEnabled(ctx context.Context) (bool, error) {

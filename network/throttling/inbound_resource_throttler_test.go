@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/throttling/tracker"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/v2/network/throttling/tracker"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
 )
 
 func TestNewSystemThrottler(t *testing.T) {

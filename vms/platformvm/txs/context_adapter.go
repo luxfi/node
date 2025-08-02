@@ -4,7 +4,7 @@
 package txs
 
 import (
-	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/v2/quasar"
 )
 
 // adaptToQuasarContext converts a quasar.Context to a quasar.Context

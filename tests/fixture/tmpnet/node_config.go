@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luxfi/node/utils/perms"
+	"github.com/luxfi/node/v2/utils/perms"
 )
 
 // The Node type is defined in this file node_config.go

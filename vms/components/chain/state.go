@@ -12,12 +12,12 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/node/quasar/engine/chain/block"
-	chaincon "github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/v2/cache"
+	"github.com/luxfi/node/v2/cache/lru"
+	"github.com/luxfi/node/v2/cache/metercacher"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
+	chaincon "github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/utils/constants"
 )
 
 func cachedBlockSize(_ ids.ID, bw *BlockWrapper) int {

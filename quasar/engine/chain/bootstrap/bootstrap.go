@@ -10,8 +10,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/quasar/engine/chain/block"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // Config contains the configuration for bootstrapping

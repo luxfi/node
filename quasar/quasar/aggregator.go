@@ -5,7 +5,7 @@ import (
     "sync"
     "time"
 
-    rt "github.com/luxfi/node/quasar/quasar/corona"
+    rt "github.com/luxfi/node/v2/quasar/quasar/corona"
 )
 
 // Aggregator collects Corona shares → certificate once quorum reached.

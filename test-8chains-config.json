@@ -1,0 +1,24 @@
+{
+  "network-id": "local",
+  "staking-enabled": false,
+  "health-check-frequency": "5s",
+  "log-level": "info",
+  "log-display-level": "info",
+  "http-host": "127.0.0.1",
+  "http-port": 9650,
+  "chain-config-dir": "./chain-configs",
+  "chain-data-dir": "./test-data",
+  "db-dir": "./test-db",
+  "bootstrap-ips": "",
+  "bootstrap-ids": "",
+  "chain-aliases": {
+    "A": "aivm",
+    "B": "bridgevm", 
+    "C": "evm",
+    "M": "mpcvm",
+    "P": "platform",
+    "Q": "quantumvm",
+    "X": "avm",
+    "Z": "zkvm"
+  }
+}

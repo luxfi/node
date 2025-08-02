@@ -5,9 +5,9 @@ package peer
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils/bloom"
+	"github.com/luxfi/node/v2/utils/ips"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 var TestNetwork Network = testNetwork{}

@@ -9,19 +9,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/evm/core/state/snapshot"
-	"github.com/luxfi/evm/core/types"
-	"github.com/luxfi/evm/iface"
-	"github.com/luxfi/evm/plugin/evm/message"
-	"github.com/luxfi/evm/utils"
+	"github.com/luxfi/evm/v2/core/state/snapshot"
+	"github.com/luxfi/evm/v2/core/types"
+	"github.com/luxfi/evm/v2/iface"
+	"github.com/luxfi/evm/v2/plugin/evm/message"
+	"github.com/luxfi/evm/v2/utils"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/ethdb"
 	"github.com/luxfi/geth/ethdb/memorydb"
 	"github.com/luxfi/geth/log"
 	"github.com/luxfi/geth/trie"
 	"github.com/luxfi/geth/triedb"
-	"github.com/luxfi/node/state_sync/handlers/stats"
-	"github.com/luxfi/node/state_sync/syncutils"
+	"github.com/luxfi/node/v2/state_sync/handlers/stats"
+	"github.com/luxfi/node/v2/state_sync/syncutils"
 )
 
 const (

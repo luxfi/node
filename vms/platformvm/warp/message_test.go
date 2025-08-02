@@ -10,8 +10,8 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/utils/constants"
 )
 
 func TestMessage(t *testing.T) {

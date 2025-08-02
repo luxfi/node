@@ -14,20 +14,20 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/quasar/engine/core/coremock"
-	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/quasar/engine/core/coremock"
+	"github.com/luxfi/node/v2/quasar/validators"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/txs/mempool"
-	"github.com/luxfi/node/vms/xvm/block/executor/executormock"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/nftfx"
+	"github.com/luxfi/node/v2/vms/propertyfx"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/vms/txs/mempool"
+	"github.com/luxfi/node/v2/vms/xvm/block/executor/executormock"
+	"github.com/luxfi/node/v2/vms/xvm/fxs"
+	"github.com/luxfi/node/v2/vms/xvm/txs"
 
-	xmempool "github.com/luxfi/node/vms/xvm/txs/mempool"
+	xmempool "github.com/luxfi/node/v2/vms/xvm/txs/mempool"
 )
 
 var (

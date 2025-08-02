@@ -11,11 +11,11 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/luxfi/evm/core/types"
-	"github.com/luxfi/evm/plugin/evm/message"
+	"github.com/luxfi/evm/v2/core/types"
+	"github.com/luxfi/evm/v2/plugin/evm/message"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/rlp"
-	"github.com/luxfi/node/state_sync/handlers"
+	"github.com/luxfi/node/v2/state_sync/handlers"
 )
 
 var (

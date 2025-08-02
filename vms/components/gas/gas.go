@@ -8,7 +8,7 @@ import (
 
 	"github.com/holiman/uint256"
 
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/node/v2/utils/math"
 )
 
 var maxUint64 = new(uint256.Int).SetUint64(math.MaxUint64)

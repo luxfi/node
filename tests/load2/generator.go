@@ -9,11 +9,11 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/evm/ethclient"
+	"github.com/luxfi/evm/v2/ethclient"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxfi/node/tests"
+	"github.com/luxfi/node/v2/tests"
 	log "github.com/luxfi/log"
 )
 

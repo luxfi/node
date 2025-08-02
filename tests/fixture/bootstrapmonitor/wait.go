@@ -16,8 +16,8 @@ import (
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/tests/fixture/tmpnet"
+	"github.com/luxfi/node/v2/config"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet"
 	log "github.com/luxfi/log"
 
 	corev1 "k8s.io/api/core/v1"

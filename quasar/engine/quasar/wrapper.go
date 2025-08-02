@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/quasar/engine/dag"
-	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/quasar/engine/dag"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/version"
 	
 	// TODO: Import the real quantum-safe consensus implementation
 	// Will use local quantum_types.go until external module is available

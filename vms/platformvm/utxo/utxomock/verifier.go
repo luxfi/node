@@ -13,9 +13,9 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	lux "github.com/luxfi/node/vms/components/lux"
-	verify "github.com/luxfi/node/vms/components/verify"
-	txs "github.com/luxfi/node/vms/platformvm/txs"
+	lux "github.com/luxfi/node/v2/vms/components/lux"
+	verify "github.com/luxfi/node/v2/vms/components/verify"
+	txs "github.com/luxfi/node/v2/vms/platformvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
 

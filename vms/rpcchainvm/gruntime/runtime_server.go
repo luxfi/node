@@ -8,9 +8,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/runtime"
 
-	pb "github.com/luxfi/node/proto/pb/vm/runtime"
+	pb "github.com/luxfi/node/v2/proto/pb/vm/runtime"
 )
 
 var _ pb.RuntimeServer = (*Server)(nil)

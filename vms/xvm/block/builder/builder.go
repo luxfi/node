@@ -8,18 +8,18 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/txs/mempool"
-	"github.com/luxfi/node/vms/xvm/block"
-	"github.com/luxfi/node/vms/xvm/state"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
+	"github.com/luxfi/node/v2/utils/units"
+	"github.com/luxfi/node/v2/vms/txs/mempool"
+	"github.com/luxfi/node/v2/vms/xvm/block"
+	"github.com/luxfi/node/v2/vms/xvm/state"
+	"github.com/luxfi/node/v2/vms/xvm/txs"
 
-	blockexecutor "github.com/luxfi/node/vms/xvm/block/executor"
-	txexecutor "github.com/luxfi/node/vms/xvm/txs/executor"
+	blockexecutor "github.com/luxfi/node/v2/vms/xvm/block/executor"
+	txexecutor "github.com/luxfi/node/v2/vms/xvm/txs/executor"
 )
 
 // targetBlockSize is the max block size we aim to produce

@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/rpc"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/formatting"
+	"github.com/luxfi/node/v2/utils/json"
+	"github.com/luxfi/node/v2/utils/rpc"
 )
 
 type mockClient struct {

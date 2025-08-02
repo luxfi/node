@@ -10,11 +10,11 @@ import (
 	"unicode"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/xvm/txs"
 )
 
 const (

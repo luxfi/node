@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/v2/proto/pb/p2p"
 )
 
 var (

@@ -21,18 +21,18 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/quasar/engine/enginetest"
-	"github.com/luxfi/node/quasar/engine/chain/block"
-	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
-	"github.com/luxfi/node/quasar/engine/chain/block/blocktest"
-	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/v2/api/metrics"
+	"github.com/luxfi/node/v2/quasar/engine/enginetest"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block/blockmock"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block/blocktest"
+	"github.com/luxfi/node/v2/utils"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
-	"github.com/luxfi/node/vms/rpcchainvm/runtime"
-	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/runtime/subprocess"
 
-	vmpb "github.com/luxfi/node/proto/pb/vm"
+	vmpb "github.com/luxfi/node/v2/proto/pb/vm"
 )
 
 const (

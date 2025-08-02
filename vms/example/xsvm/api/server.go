@@ -9,14 +9,14 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/vms/example/xsvm/block"
-	"github.com/luxfi/node/vms/example/xsvm/builder"
-	"github.com/luxfi/node/vms/example/xsvm/chain"
-	"github.com/luxfi/node/vms/example/xsvm/genesis"
-	"github.com/luxfi/node/vms/example/xsvm/state"
-	"github.com/luxfi/node/vms/example/xsvm/tx"
-	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/vms/example/xsvm/block"
+	"github.com/luxfi/node/v2/vms/example/xsvm/builder"
+	"github.com/luxfi/node/v2/vms/example/xsvm/chain"
+	"github.com/luxfi/node/v2/vms/example/xsvm/genesis"
+	"github.com/luxfi/node/v2/vms/example/xsvm/state"
+	"github.com/luxfi/node/v2/vms/example/xsvm/tx"
+	"github.com/luxfi/node/v2/vms/platformvm/warp"
 )
 
 // Server defines the xsvm API server.
