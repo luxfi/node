@@ -85,9 +85,18 @@ require (
 )
 
 replace (
+	github.com/luxfi/bft => ../bft
+	github.com/luxfi/consensus => ../consensus
 	github.com/luxfi/crypto => ../crypto
+	github.com/luxfi/database => ../database
 	github.com/luxfi/evm => ../evm
 	github.com/luxfi/geth => ../geth
+	github.com/luxfi/ids => ../ids
+	github.com/luxfi/ledger-lux-go => ../ledger-lux-go
+	github.com/luxfi/log => ../log
+	github.com/luxfi/metrics => ../metrics
+	github.com/luxfi/ringtail => ../ringtail
+	github.com/luxfi/trace => ../trace
 )
 
 require (

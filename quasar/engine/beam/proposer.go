@@ -66,6 +66,12 @@ type Proposer struct {
 	engine  *Engine
 }
 
+// broadcastRTShare broadcasts a Ringtail share to the network
+func (p *Proposer) broadcastRTShare(height uint64, share []byte) {
+	// TODO: Implement actual network broadcast
+	// For now, this is a stub
+}
+
 // NewProposer creates a new proposer instance
 func NewProposer(cfg ProposerConfig, quasar *quasarState, engine *Engine) *Proposer {
 	return &Proposer{

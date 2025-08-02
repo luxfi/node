@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 // (c) 2019-2020, Lux Industries, Inc. All rights reserved.
-=======
-// (c) 2020-2020, Lux Industries, Inc. All rights reserved.
->>>>>>> main
 // See the file LICENSE for licensing terms.
 
 package registry
@@ -34,19 +30,11 @@ func New() *Registry {
 func (r *Registry) Register(name string, factory VMFactory) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-<<<<<<< HEAD
 	
 	if _, exists := r.factories[name]; exists {
 		return fmt.Errorf("VM %s already registered", name)
 	}
 	
-=======
-
-	if _, exists := r.factories[name]; exists {
-		return fmt.Errorf("VM %s already registered", name)
-	}
-
->>>>>>> main
 	r.factories[name] = factory
 	return nil
 }
@@ -55,20 +43,12 @@ func (r *Registry) Register(name string, factory VMFactory) error {
 func (r *Registry) Get(name string) (VMFactory, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-<<<<<<< HEAD
 	
-=======
-
->>>>>>> main
 	factory, ok := r.factories[name]
 	if !ok {
 		return nil, fmt.Errorf("VM %s not found", name)
 	}
-<<<<<<< HEAD
 	
-=======
-
->>>>>>> main
 	return factory, nil
 }
 
@@ -76,11 +56,7 @@ func (r *Registry) Get(name string) (VMFactory, error) {
 func (r *Registry) List() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-<<<<<<< HEAD
 	
-=======
-
->>>>>>> main
 	names := make([]string, 0, len(r.factories))
 	for name := range r.factories {
 		names = append(names, name)
@@ -104,8 +80,4 @@ func Get(name string) (VMFactory, error) {
 // List returns all registered VM names from the global registry
 func List() []string {
 	return globalRegistry.List()
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> main

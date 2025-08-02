@@ -11,13 +11,8 @@ import (
 	"sync"
 	"time"
 
-<<<<<<< HEAD
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/luxfi/evm/ethclient"
-=======
-	"github.com/luxfi/evm/ethclient"
 	"github.com/luxfi/geth/common"
->>>>>>> main
+	"github.com/luxfi/evm/ethclient"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 

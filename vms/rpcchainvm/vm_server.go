@@ -20,8 +20,8 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	db "github.com/luxfi/database"
-	dbrpcdb "github.com/luxfi/database/rpcdb"
 	dbpb "github.com/luxfi/database/proto/pb/rpcdb"
+	dbrpcdb "github.com/luxfi/database/rpcdb"
 	"github.com/luxfi/ids"
 	luxmetrics "github.com/luxfi/metrics"
 	"github.com/luxfi/node/api/metrics"
@@ -45,7 +45,6 @@ import (
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
-	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"

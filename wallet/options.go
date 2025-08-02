@@ -8,15 +8,10 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/luxfi/geth/common"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/secp256k1fx"
-
-<<<<<<< HEAD
-	"github.com/luxfi/evm"
-=======
-	"github.com/luxfi/geth/common"
->>>>>>> main
 )
 
 const defaultPollFrequency = 100 * time.Millisecond

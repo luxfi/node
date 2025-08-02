@@ -9,7 +9,7 @@ import (
 
 	"github.com/cockroachdb/pebble"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 )
 
 var _ database.Iterator = (*iter)(nil)

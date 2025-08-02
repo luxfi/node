@@ -11,19 +11,13 @@ import (
 	"math/big"
 	"strings"
 
-<<<<<<< HEAD
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
-=======
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/crypto"
->>>>>>> main
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/crypto/cb58"
+	"github.com/luxfi/node/utils/cb58"
 	"github.com/luxfi/node/utils/hashing"
 )
 

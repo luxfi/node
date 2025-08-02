@@ -5,16 +5,11 @@ package c
 
 import (
 	"github.com/luxfi/evm/plugin/evm/atomic"
+	"github.com/luxfi/geth/common"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	walletutil "github.com/luxfi/node/wallet"
-
-<<<<<<< HEAD
-	"github.com/luxfi/evm"
-=======
-	geth "github.com/luxfi/geth/common"
->>>>>>> main
 )
 
 var _ Wallet = (*walletWithOptions)(nil)
@@ -43,7 +38,7 @@ func (w *walletWithOptions) Builder() Builder {
 
 func (w *walletWithOptions) IssueImportTx(
 	chainID ids.ID,
-	to geth.Address,
+	to common.Address,
 	options ...walletutil.Option,
 ) (*atomic.Tx, error) {
 	return w.Wallet.IssueImportTx(

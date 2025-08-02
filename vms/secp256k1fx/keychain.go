@@ -8,12 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-<<<<<<< HEAD
-	"github.com/luxfi/node/ids"
-=======
 	geth "github.com/luxfi/geth/common"
 	"github.com/luxfi/ids"
->>>>>>> main
 	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"

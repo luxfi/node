@@ -7,16 +7,11 @@ import (
 	"math/big"
 
 	"github.com/luxfi/evm/plugin/evm/atomic"
+	"github.com/luxfi/geth/common"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	walletutil "github.com/luxfi/node/wallet"
-
-<<<<<<< HEAD
-	"github.com/luxfi/evm"
-=======
-	geth "github.com/luxfi/geth/common"
->>>>>>> main
 )
 
 var _ Builder = (*builderWithOptions)(nil)
@@ -60,7 +55,7 @@ func (b *builderWithOptions) GetImportableBalance(
 
 func (b *builderWithOptions) NewImportTx(
 	chainID ids.ID,
-	to geth.Address,
+	to common.Address,
 	baseFee *big.Int,
 	options ...walletutil.Option,
 ) (*atomic.UnsignedImportTx, error) {

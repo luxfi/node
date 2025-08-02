@@ -66,15 +66,9 @@ func main() {
 
 	checkpoints := map[string]map[ids.ID]set.Set[ids.ID]{
 		constants.TestnetName: {
-<<<<<<< HEAD
 			constants.PlatformChainID: testnetPChainCheckpoints,
 			testnetXChainID:              testnetXChainCheckpoints,
 			testnetCChainID:              testnetCChainCheckpoints,
-=======
-			constants.PlatformChainID(): testnetPChainCheckpoints,
-			testnetXChainID:             testnetXChainCheckpoints,
-			testnetCChainID:             testnetCChainCheckpoints,
->>>>>>> main
 		},
 		constants.MainnetName: {
 			constants.PlatformChainID(): mainnetPChainCheckpoints,
