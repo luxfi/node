@@ -19,6 +19,10 @@ type Ledger struct{}
 
 type Keychain struct{}
 
+func New() (keychain.Ledger, error) {
+	return nil, ErrLedgerDisabled
+}
+
 func NewKeychain() (*Keychain, error) {
 	return nil, ErrLedgerDisabled
 }
