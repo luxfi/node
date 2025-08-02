@@ -3,7 +3,7 @@
 
 package config
 
-import "github.com/luxfi/node/upgrade"
+import "github.com/luxfi/node/v2/upgrade"
 
 // Struct collecting all the foundational parameters of the XVM
 type Config struct {

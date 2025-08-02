@@ -6,7 +6,7 @@ package metervm
 import (
 	"context"
 
-	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
 )
 
 func (vm *blockVM) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (block.Block, error) {

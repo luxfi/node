@@ -15,11 +15,11 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/quasar/validators/validatorsmock"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/quasar/validators/validatorsmock"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 const pChainHeight uint64 = 1337

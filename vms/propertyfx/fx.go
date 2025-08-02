@@ -6,8 +6,8 @@ package propertyfx
 import (
 	"errors"
 
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/vms/components/verify"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 )
 
 var (

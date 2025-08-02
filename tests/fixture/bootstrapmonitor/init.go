@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/perms"
+	"github.com/luxfi/node/v2/utils/perms"
 )
 
 const (

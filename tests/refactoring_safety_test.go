@@ -1,9 +1,10 @@
-// Copyright (C) 2020-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tests
 
 import (
+	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -22,7 +23,7 @@ func TestMockPackageNamesMatchDirectories(t *testing.T) {
 		if err != nil {
 			return err
 		}
-
+		
 		// Skip vendor and .git directories
 		if d.IsDir() && (d.Name() == "vendor" || d.Name() == ".git") {
 			return filepath.SkipDir
@@ -52,9 +53,9 @@ func TestMockPackageNamesMatchDirectories(t *testing.T) {
 				// Check that package name matches directory name
 				expectedPkg := d.Name()
 				actualPkg := node.Name.Name
-
-				require.Equal(expectedPkg, actualPkg,
-					"Mock package name mismatch in %s: expected %s, got %s",
+				
+				require.Equal(expectedPkg, actualPkg, 
+					"Mock package name mismatch in %s: expected %s, got %s", 
 					file, expectedPkg, actualPkg)
 			}
 		}
@@ -80,9 +81,9 @@ func TestGenesisBlockConsistency(t *testing.T) {
 			}
 
 			// Look for Genesis ID definitions
-			if strings.Contains(string(content), "GenesisID") &&
-				strings.Contains(string(content), "ids.GenerateTestID()") &&
-				!strings.Contains(path, "tests/") {
+			if strings.Contains(string(content), "GenesisID") && 
+			   strings.Contains(string(content), "ids.GenerateTestID()") &&
+			   !strings.Contains(path, "tests/") {
 				t.Errorf("Found non-deterministic GenesisID in %s. Consider using ids.Empty for consistency", path)
 			}
 		}
@@ -114,7 +115,7 @@ func TestNoCircularImports(t *testing.T) {
 			for _, imp := range node.Imports {
 				if imp.Path != nil {
 					impPath := strings.Trim(imp.Path.Value, "\"")
-					if strings.HasPrefix(impPath, "github.com/luxfi/node") {
+					if strings.HasPrefix(impPath, "github.com/luxfi/node/v2/node") {
 						imports[pkg] = append(imports[pkg], impPath)
 					}
 				}
@@ -165,7 +166,7 @@ func TestMockGenerateCommands(t *testing.T) {
 							pkgPart := strings.Fields(parts[1])[0]
 							// Remove ${GOPACKAGE} prefix if present
 							pkgName := strings.TrimPrefix(pkgPart, "${GOPACKAGE}")
-
+							
 							// Check that it doesn't use old naming patterns
 							if strings.Contains(pkgName, "chainmock") {
 								t.Errorf("Found outdated chainmock reference in %s: %s", path, line)
@@ -195,18 +196,18 @@ func TestBuildFunctionConsistency(t *testing.T) {
 				return nil
 			}
 
-			// Check for old BuildChain usage with chaintest
-			if strings.Contains(string(content), "chaintest.BuildChain") {
-				t.Errorf("Found deprecated chaintest.BuildChain in %s. Use BuildLinear or BuildDescendants instead", path)
+			// Check for old BuildChain usage with lineartest
+			if strings.Contains(string(content), "lineartest.BuildChain") {
+				t.Errorf("Found deprecated lineartest.BuildChain in %s. Use BuildLinear or BuildDescendants instead", path)
 			}
 
 			// Check for correct usage of BuildDescendants
-			if strings.Contains(string(content), "BuildDescendants(chaintest.Genesis,") {
+			if strings.Contains(string(content), "BuildDescendants(lineartest.Genesis,") {
 				// Parse to check if it's being used correctly
 				lines := strings.Split(string(content), "\n")
 				for i, line := range lines {
-					if strings.Contains(line, "BuildDescendants(chaintest.Genesis,") &&
-						strings.Contains(line, "initializeVMWithBlockchain") {
+					if strings.Contains(line, "BuildDescendants(lineartest.Genesis,") && 
+					   strings.Contains(line, "initializeVMWithBlockchain") {
 						t.Logf("Warning: %s:%d might need BuildLinear instead of BuildDescendants when initializing VM", path, i+1)
 					}
 				}
@@ -221,9 +222,9 @@ func TestBuildFunctionConsistency(t *testing.T) {
 func TestImportAliasConsistency(t *testing.T) {
 	// Common aliases that should be consistent
 	expectedAliases := map[string]string{
-		"github.com/luxfi/node/quasar/consensustest":     "", // Should not have alias
-		"github.com/luxfi/node/quasar/chain/chaintest": "", // Should not have alias
-		"github.com/luxfi/node/quasar/chain/chainmock": "", // Should not have alias
+		"github.com/luxfi/node/v2/quasar/consensustest": "",  // Should not have alias
+		"github.com/luxfi/node/v2/quasar/linear/lineartest": "", // Should not have alias
+		"github.com/luxfi/node/v2/quasar/linear/linearmock": "", // Should not have alias
 	}
 
 	err := filepath.WalkDir("..", func(path string, d fs.DirEntry, err error) error {
@@ -247,7 +248,7 @@ func TestImportAliasConsistency(t *testing.T) {
 							actualAlias = imp.Name.Name
 						}
 						if actualAlias != expectedAlias && actualAlias != "_" {
-							t.Errorf("Import alias mismatch in %s: %s imported as %q, expected %q",
+							t.Errorf("Import alias mismatch in %s: %s imported as %q, expected %q", 
 								path, impPath, actualAlias, expectedAlias)
 						}
 					}

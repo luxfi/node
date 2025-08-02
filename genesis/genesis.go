@@ -9,19 +9,19 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/platformvm/genesis"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/xvm"
-	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/formatting/address"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/nftfx"
+	"github.com/luxfi/node/v2/vms/platformvm/genesis"
+	"github.com/luxfi/node/v2/vms/propertyfx"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/vms/xvm"
+	"github.com/luxfi/node/v2/vms/xvm/fxs"
 
-	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
-	xchaintxs "github.com/luxfi/node/vms/xvm/txs"
+	pchaintxs "github.com/luxfi/node/v2/vms/platformvm/txs"
+	xchaintxs "github.com/luxfi/node/v2/vms/xvm/txs"
 )
 
 const (

@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/v2/genesis"
+	"github.com/luxfi/node/v2/wallet/subnet/primary"
 )
 
 const (

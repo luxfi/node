@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/v2/utils/hashing"
 )
 
 func getNodeValue(t Trie, key string) ([]byte, error) {

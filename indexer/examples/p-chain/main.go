@@ -8,12 +8,12 @@ import (
 	"log"
 	"time"
 
-	"github.com/luxfi/node/indexer"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/v2/indexer"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/wallet/subnet/primary"
 
-	platformvmblock "github.com/luxfi/node/vms/platformvm/block"
-	proposervmblock "github.com/luxfi/node/vms/proposervm/block"
+	platformvmblock "github.com/luxfi/node/v2/vms/platformvm/block"
+	proposervmblock "github.com/luxfi/node/v2/vms/proposervm/block"
 )
 
 // This example program continuously polls for the next P-Chain block

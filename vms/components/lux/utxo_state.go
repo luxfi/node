@@ -10,10 +10,10 @@ import (
 	"github.com/luxfi/database/linkeddb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/v2/cache"
+	"github.com/luxfi/node/v2/cache/lru"
+	"github.com/luxfi/node/v2/cache/metercacher"
+	"github.com/luxfi/node/v2/codec"
 )
 
 const (

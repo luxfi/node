@@ -9,16 +9,16 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/platformvm/block"
-	"github.com/luxfi/node/vms/platformvm/metrics"
-	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/executor"
-	"github.com/luxfi/node/vms/platformvm/txs/fee"
-	"github.com/luxfi/node/vms/platformvm/validators"
-	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/platformvm/block"
+	"github.com/luxfi/node/v2/vms/platformvm/metrics"
+	"github.com/luxfi/node/v2/vms/platformvm/state"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/platformvm/txs/executor"
+	"github.com/luxfi/node/v2/vms/platformvm/txs/fee"
+	"github.com/luxfi/node/v2/vms/platformvm/validators"
+	"github.com/luxfi/node/v2/vms/txs/mempool"
 )
 
 var (

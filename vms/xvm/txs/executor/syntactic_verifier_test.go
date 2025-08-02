@@ -11,18 +11,18 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/consensustest"
-	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/xvm/config"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/v2/quasar/consensustest"
+	"github.com/luxfi/node/v2/upgrade/upgradetest"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/crypto/secp256k1"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/components/verify"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/vms/xvm/config"
+	"github.com/luxfi/node/v2/vms/xvm/fxs"
+	"github.com/luxfi/node/v2/vms/xvm/txs"
 
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/node/v2/utils/math"
 )
 
 var (

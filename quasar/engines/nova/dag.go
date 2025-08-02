@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/dag"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/quasar/engine/dag"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // DAG represents flare-based DAG consensus

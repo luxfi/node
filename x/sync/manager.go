@@ -20,13 +20,13 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/v2/network/p2p"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/x/merkledb"
+	"github.com/luxfi/node/v2/utils/maybe"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/x/merkledb"
 
-	pb "github.com/luxfi/node/proto/pb/sync"
+	pb "github.com/luxfi/node/v2/proto/pb/sync"
 )
 
 const (

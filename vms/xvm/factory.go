@@ -5,8 +5,8 @@ package xvm
 
 import (
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/xvm/config"
+	"github.com/luxfi/node/v2/vms"
+	"github.com/luxfi/node/v2/vms/xvm/config"
 )
 
 var _ vms.Factory = (*Factory)(nil)

@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/utils/set"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/quasar/networking/timeout"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/quasar/networking/timeout"
+	"github.com/luxfi/node/v2/network/p2p"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/version"
 )
 
 // Router routes consensus messages

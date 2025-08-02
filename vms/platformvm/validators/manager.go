@@ -12,18 +12,18 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/utils/window"
-	"github.com/luxfi/node/vms/platformvm/block"
-	"github.com/luxfi/node/vms/platformvm/config"
-	"github.com/luxfi/node/vms/platformvm/metrics"
-	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/status"
-	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/cache"
+	"github.com/luxfi/node/v2/cache/lru"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
+	"github.com/luxfi/node/v2/utils/window"
+	"github.com/luxfi/node/v2/vms/platformvm/block"
+	"github.com/luxfi/node/v2/vms/platformvm/config"
+	"github.com/luxfi/node/v2/vms/platformvm/metrics"
+	"github.com/luxfi/node/v2/vms/platformvm/state"
+	"github.com/luxfi/node/v2/vms/platformvm/status"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
 )
 
 // GetValidatorOutput re-exports the type from quasar/validators
@@ -321,7 +321,7 @@ func (m *manager) getCurrentValidatorSet(
 }
 
 func (m *manager) GetSubnetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
-	if chainID == constants.PlatformChainID() {
+	if chainID == constants.PlatformChainID {
 		return constants.PrimaryNetworkID, nil
 	}
 

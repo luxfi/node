@@ -7,13 +7,13 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/luxfi/node/proto/pb/io/reader"
-	"github.com/luxfi/node/vms/rpcchainvm/ghttp/greader"
-	"github.com/luxfi/node/vms/rpcchainvm/ghttp/gresponsewriter"
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/v2/proto/pb/io/reader"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/ghttp/greader"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/ghttp/gresponsewriter"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/grpcutils"
 
-	httppb "github.com/luxfi/node/proto/pb/http"
-	responsewriterpb "github.com/luxfi/node/proto/pb/http/responsewriter"
+	httppb "github.com/luxfi/node/v2/proto/pb/http"
+	responsewriterpb "github.com/luxfi/node/v2/proto/pb/http/responsewriter"
 )
 
 var _ http.Handler = (*Client)(nil)

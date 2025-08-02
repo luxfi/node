@@ -14,8 +14,8 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	appsender "github.com/luxfi/node/quasar/engine/core/appsender"
-	set "github.com/luxfi/node/utils/set"
+	appsender "github.com/luxfi/node/v2/quasar/engine/core/appsender"
+	set "github.com/luxfi/node/v2/utils/set"
 	gomock "go.uber.org/mock/gomock"
 )
 

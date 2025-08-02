@@ -13,16 +13,16 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/consensustest"
-	"github.com/luxfi/node/quasar/uptime/uptimemock"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/platformvm/block"
-	"github.com/luxfi/node/vms/platformvm/config"
-	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/status"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/executor"
+	"github.com/luxfi/node/v2/quasar/consensustest"
+	"github.com/luxfi/node/v2/quasar/uptime/uptimemock"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/vms/platformvm/block"
+	"github.com/luxfi/node/v2/vms/platformvm/config"
+	"github.com/luxfi/node/v2/vms/platformvm/reward"
+	"github.com/luxfi/node/v2/vms/platformvm/state"
+	"github.com/luxfi/node/v2/vms/platformvm/status"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/platformvm/txs/executor"
 )
 
 func TestBlockOptions(t *testing.T) {

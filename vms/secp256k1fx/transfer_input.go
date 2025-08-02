@@ -6,7 +6,7 @@ package secp256k1fx
 import (
 	"errors"
 
-	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/v2/quasar"
 )
 
 var ErrNoValueInput = errors.New("input has no value")

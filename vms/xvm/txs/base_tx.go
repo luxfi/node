@@ -5,10 +5,12 @@ package txs
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/components/verify"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 )
 
 var (
@@ -53,4 +55,34 @@ func (t *BaseTx) InputIDs() set.Set[ids.ID] {
 
 func (t *BaseTx) Visit(v Visitor) error {
 	return v.BaseTx(t)
+}
+
+// NumCredentials returns the number of expected credentials
+func (t *BaseTx) NumCredentials() int {
+	return t.BaseTx.NumCredentials()
+}
+
+// SyntacticVerify returns nil iff this tx is well formed
+func (t *BaseTx) SyntacticVerify(
+	ctx *quasar.Context,
+	c codec.Manager,
+	txFeeAssetID ids.ID,
+	txFee uint64,
+	createSubnetTxFee uint64,
+	numIns int,
+) error {
+	// Verify the embedded lux.BaseTx
+	if err := t.BaseTx.Verify(ctx); err != nil {
+		return err
+	}
+
+	// Additional verification can be added here
+	return nil
+}
+
+// SemanticVerify returns nil iff this tx is valid
+func (t *BaseTx) SemanticVerify(vm VM, tx UnsignedTx, creds []verify.Verifiable) error {
+	// Semantic verification logic would go here
+	// For now, just return nil
+	return nil
 }

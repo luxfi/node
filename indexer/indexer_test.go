@@ -16,12 +16,12 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/quasar/consensustest"
-	"github.com/luxfi/node/quasar/engine/core/coremock"
-	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
-	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/v2/api/server"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/quasar/consensustest"
+	"github.com/luxfi/node/v2/quasar/engine/core/coremock"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block/blockmock"
+	"github.com/luxfi/node/v2/utils"
 	log "github.com/luxfi/log"
 )
 

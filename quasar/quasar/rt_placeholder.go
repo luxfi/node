@@ -3,7 +3,7 @@
 
 package quasar
 
-import "github.com/luxfi/node/quasar/quasar/ringtail"
+import "github.com/luxfi/node/v2/quasar/quasar/ringtail"
 
 // Placeholder types for ringtail package until it's available
 

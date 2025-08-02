@@ -10,9 +10,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/v2/utils/wrappers"
 
-	codecpkg "github.com/luxfi/node/codec"
+	codecpkg "github.com/luxfi/node/v2/codec"
 )
 
 // A NamedTest couples a test in the suite with a human-readable name.

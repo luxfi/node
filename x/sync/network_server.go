@@ -13,15 +13,15 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/x/merkledb"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/network/p2p"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/hashing"
+	"github.com/luxfi/node/v2/utils/maybe"
+	"github.com/luxfi/node/v2/utils/units"
+	"github.com/luxfi/node/v2/x/merkledb"
 
-	pb "github.com/luxfi/node/proto/pb/sync"
+	pb "github.com/luxfi/node/v2/proto/pb/sync"
 )
 
 const (

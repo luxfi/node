@@ -6,8 +6,8 @@ package linearcodec
 import (
 	"testing"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/codectest"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/codec/codectest"
 )
 
 func TestVectors(t *testing.T) {

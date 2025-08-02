@@ -11,14 +11,14 @@ import (
 	db "github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	consensuschain "github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/example/xsvm/execute"
+	"github.com/luxfi/node/v2/quasar"
+	consensuschain "github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/example/xsvm/execute"
 
-	smblock "github.com/luxfi/node/quasar/engine/chain/block"
-	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
+	smblock "github.com/luxfi/node/v2/quasar/engine/chain/block"
+	xsblock "github.com/luxfi/node/v2/vms/example/xsvm/block"
 )
 
 const maxClockSkew = 10 * time.Second

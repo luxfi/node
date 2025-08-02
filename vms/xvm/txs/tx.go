@@ -7,17 +7,17 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/network/p2p/gossip"
+	"github.com/luxfi/node/v2/utils/crypto/secp256k1"
+	"github.com/luxfi/node/v2/utils/hashing"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/nftfx"
+	"github.com/luxfi/node/v2/vms/propertyfx"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/vms/xvm/fxs"
 )
 
 var _ gossip.Gossipable = (*Tx)(nil)

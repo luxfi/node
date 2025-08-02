@@ -4,8 +4,8 @@
 package txs
 
 import (
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 )
 
 var (

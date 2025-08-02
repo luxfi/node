@@ -11,12 +11,12 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/platformvm/warp"
-	"github.com/luxfi/node/vms/platformvm/warp/signertest"
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/vms/platformvm/warp"
+	"github.com/luxfi/node/v2/vms/platformvm/warp/signertest"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/grpcutils"
 
-	pb "github.com/luxfi/node/proto/pb/warp"
+	pb "github.com/luxfi/node/v2/proto/pb/warp"
 )
 
 type testSigner struct {

@@ -8,7 +8,7 @@ import (
 	"math"
 	"testing"
 
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/node/v2/utils/math"
 )
 
 func BenchmarkWeightedHeapSampling(b *testing.B) {

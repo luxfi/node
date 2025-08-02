@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/luxfi/geth/common"
-	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/crypto"
-	"github.com/luxfi/geth/ethclient"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/evm/v2/ethclient"
 )
 
 type Wallet struct {

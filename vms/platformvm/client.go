@@ -9,20 +9,20 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/rpc"
-	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/platformvm/fx"
-	"github.com/luxfi/node/vms/platformvm/status"
-	"github.com/luxfi/node/vms/platformvm/validators/fee"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/api"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/formatting"
+	"github.com/luxfi/node/v2/utils/formatting/address"
+	"github.com/luxfi/node/v2/utils/json"
+	"github.com/luxfi/node/v2/utils/rpc"
+	"github.com/luxfi/node/v2/vms/components/gas"
+	"github.com/luxfi/node/v2/vms/platformvm/fx"
+	"github.com/luxfi/node/v2/vms/platformvm/status"
+	"github.com/luxfi/node/v2/vms/platformvm/validators/fee"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 
-	platformapi "github.com/luxfi/node/vms/platformvm/api"
+	platformapi "github.com/luxfi/node/v2/vms/platformvm/api"
 )
 
 type Client struct {

@@ -7,9 +7,9 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/v2/vms/platformvm/warp"
 
-	pb "github.com/luxfi/node/proto/pb/warp"
+	pb "github.com/luxfi/node/v2/proto/pb/warp"
 )
 
 var _ pb.SignerServer = (*Server)(nil)

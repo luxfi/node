@@ -11,14 +11,14 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/uptime"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/network/dialer"
-	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/network/throttling/tracker"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/quasar/uptime"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/network/dialer"
+	"github.com/luxfi/node/v2/network/throttling"
+	"github.com/luxfi/node/v2/network/throttling/tracker"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/compression"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // HealthConfig describes parameters for network layer health checks.

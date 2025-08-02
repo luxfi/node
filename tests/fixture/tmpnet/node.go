@@ -18,11 +18,12 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/vms/platformvm/signer"
+	"github.com/luxfi/node/v2/config"
+	"github.com/luxfi/node/v2/staking"
+	platformvmsigner "github.com/luxfi/node/v2/vms/platformvm/signer"
 )
 
 // The Node type is defined in this file (node.go - orchestration) and
@@ -298,20 +299,33 @@ func (n *Node) EnsureStakingKeypair() error {
 
 // Derives the nodes proof-of-possession. Requires the node to have a
 // BLS signing key.
-func (n *Node) GetProofOfPossession() (*signer.ProofOfPossession, error) {
+func (n *Node) GetProofOfPossession() (*platformvmsigner.ProofOfPossession, error) {
 	signingKey := n.Flags[config.StakingSignerKeyContentKey]
 	signingKeyBytes, err := base64.StdEncoding.DecodeString(signingKey)
 	if err != nil {
 		return nil, err
 	}
-	secretKey, err := localsigner.FromBytes(signingKeyBytes)
+	signer, err := localsigner.FromBytes(signingKeyBytes)
 	if err != nil {
 		return nil, err
 	}
-	pop, err := signer.NewProofOfPossession(secretKey)
+	
+	// Get the public key
+	pk := signer.PublicKey()
+	pkBytes := bls.PublicKeyToCompressedBytes(pk)
+	
+	// Create proof of possession
+	sig, err := signer.SignProofOfPossession(pkBytes)
 	if err != nil {
 		return nil, err
 	}
+	
+	// Create ProofOfPossession struct
+	sigBytes := bls.SignatureToBytes(sig)
+	
+	pop := &platformvmsigner.ProofOfPossession{}
+	copy(pop.PublicKey[:], pkBytes)
+	copy(pop.ProofOfPossession[:], sigBytes)
 
 	return pop, nil
 }

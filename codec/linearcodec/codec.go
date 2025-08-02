@@ -8,10 +8,10 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/reflectcodec"
-	"github.com/luxfi/node/utils/bimap"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/codec/reflectcodec"
+	"github.com/luxfi/node/v2/utils/bimap"
+	"github.com/luxfi/node/v2/utils/wrappers"
 )
 
 var (

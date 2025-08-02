@@ -13,11 +13,11 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/node/v2/cache"
+	"github.com/luxfi/node/v2/cache/lru"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/maybe"
+	"github.com/luxfi/node/v2/vms/platformvm/block"
 )
 
 func TestL1Validator_Compare(t *testing.T) {

@@ -13,9 +13,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/grpcutils"
 
-	connpb "github.com/luxfi/node/proto/pb/net/conn"
+	connpb "github.com/luxfi/node/v2/proto/pb/net/conn"
 )
 
 var _ connpb.ConnServer = (*Server)(nil)

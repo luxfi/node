@@ -12,7 +12,7 @@ package messagemock
 import (
 	reflect "reflect"
 
-	message "github.com/luxfi/node/message"
+	message "github.com/luxfi/node/v2/message"
 	gomock "go.uber.org/mock/gomock"
 )
 

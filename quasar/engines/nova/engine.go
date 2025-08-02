@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/utils/set"
 
-	"github.com/luxfi/node/quasar/focus"
-	"github.com/luxfi/node/quasar/photon"
-	"github.com/luxfi/node/quasar/wave"
+	"github.com/luxfi/node/v2/quasar/focus"
+	"github.com/luxfi/node/v2/quasar/photon"
+	"github.com/luxfi/node/v2/quasar/wave"
 )
 
 // Engine implements the flare DAG consensus engine

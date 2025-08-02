@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
-	core "github.com/luxfi/node/quasar/engine/core"
+	core "github.com/luxfi/node/v2/quasar/engine/core"
 )
 
 // MockVM is a mock of VM interface.

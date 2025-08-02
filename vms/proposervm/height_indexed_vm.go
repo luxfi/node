@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
 )
 
 const pruneCommitPeriod = 1024

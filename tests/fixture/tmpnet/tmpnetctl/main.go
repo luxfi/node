@@ -14,11 +14,11 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/tests"
-	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/tests/fixture/tmpnet/flags"
+	"github.com/luxfi/node/v2/tests"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet/flags"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/version"
 )
 
 const cliVersion = "0.0.1"

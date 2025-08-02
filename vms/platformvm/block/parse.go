@@ -3,7 +3,7 @@
 
 package block
 
-import "github.com/luxfi/node/codec"
+import "github.com/luxfi/node/v2/codec"
 
 func Parse(c codec.Manager, b []byte) (Block, error) {
 	var blk Block

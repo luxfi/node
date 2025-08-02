@@ -9,14 +9,14 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/platformvm/fx"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	pwallet "github.com/luxfi/node/wallet"
-	"github.com/luxfi/node/wallet/chain/p/builder"
-	"github.com/luxfi/node/wallet/chain/p/signer"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/platformvm/fx"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	pwallet "github.com/luxfi/node/v2/wallet"
+	"github.com/luxfi/node/v2/wallet/chain/p/builder"
+	"github.com/luxfi/node/v2/wallet/chain/p/signer"
 )
 
 var _ Backend = (*backend)(nil)
@@ -55,7 +55,7 @@ func (b *backend) AcceptTx(ctx context.Context, tx *txs.Tx) error {
 	}
 
 	producedUTXOSlice := tx.UTXOs()
-	return b.addUTXOs(ctx, constants.PlatformChainID(), producedUTXOSlice)
+	return b.addUTXOs(ctx, constants.PlatformChainID, producedUTXOSlice)
 }
 
 func (b *backend) addUTXOs(ctx context.Context, destinationChainID ids.ID, utxos []*lux.UTXO) error {

@@ -12,15 +12,15 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/tests/fixture/e2e"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/platformvm"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/genesis"
+	"github.com/luxfi/node/v2/tests/fixture/e2e"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/vms/platformvm"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 
-	platformapi "github.com/luxfi/node/vms/platformvm/api"
+	platformapi "github.com/luxfi/node/v2/vms/platformvm/api"
 )
 
 var _ = e2e.DescribePChain("[Validator Sets]", func() {

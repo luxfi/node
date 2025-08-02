@@ -4,11 +4,11 @@
 package txstest
 
 import (
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/platformvm/config"
-	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/wallet/chain/p/builder"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/vms/components/gas"
+	"github.com/luxfi/node/v2/vms/platformvm/config"
+	"github.com/luxfi/node/v2/vms/platformvm/state"
+	"github.com/luxfi/node/v2/wallet/chain/p/builder"
 )
 
 func newContext(

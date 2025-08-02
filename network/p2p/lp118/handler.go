@@ -11,11 +11,11 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/v2/cache"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/network/p2p"
+	"github.com/luxfi/node/v2/proto/pb/sdk"
+	"github.com/luxfi/node/v2/vms/platformvm/warp"
 )
 
 const HandlerID = p2p.SignatureRequestHandlerID

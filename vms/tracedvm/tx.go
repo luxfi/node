@@ -4,8 +4,8 @@
 package tracedvm
 
 import (
-	"github.com/luxfi/node/quasar/graph"
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/node/v2/quasar/graph"
+	"github.com/luxfi/trace"
 )
 
 var _ graph.Tx = (*tracedTx)(nil)

@@ -3,7 +3,7 @@
 
 package secp256k1fx
 
-import "github.com/luxfi/node/vms/components/verify"
+import "github.com/luxfi/node/v2/vms/components/verify"
 
 var _ verify.State = (*MintOutput)(nil)
 

@@ -26,6 +26,38 @@ type (
 	Precomp []byte
 )
 
+// Signature represents a Ringtail signature
+type Signature struct {
+	bytes []byte
+}
+
+// Bytes returns the byte representation
+func (s *Signature) Bytes() []byte {
+	return s.bytes
+}
+
+// Witness represents a Ringtail witness for verification
+type Witness struct {
+	data []byte
+}
+
+// Verifier verifies Ringtail signatures
+type Verifier struct{}
+
+// NewVerifier creates a new Ringtail verifier
+func NewVerifier() *Verifier {
+	return &Verifier{}
+}
+
+// Verify verifies a Ringtail signature
+func (v *Verifier) Verify(msg []byte, sig *Signature) error {
+	// TODO: Implement actual Ringtail verification
+	if sig == nil {
+		return errors.New("nil signature")
+	}
+	return nil
+}
+
 // KeyGen generates a new key pair
 func KeyGen(seed []byte) (sk, pk []byte, err error) {
 	// TODO: Implement or import from ringtail package

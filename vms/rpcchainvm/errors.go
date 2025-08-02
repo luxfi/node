@@ -5,9 +5,9 @@ package rpcchainvm
 
 import (
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
 
-	vmpb "github.com/luxfi/node/proto/pb/vm"
+	vmpb "github.com/luxfi/node/v2/proto/pb/vm"
 )
 
 var (

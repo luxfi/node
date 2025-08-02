@@ -13,11 +13,11 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	linear "github.com/luxfi/node/quasar/chain"
-	set "github.com/luxfi/node/utils/set"
-	block "github.com/luxfi/node/vms/xvm/block"
-	state "github.com/luxfi/node/vms/xvm/state"
-	txs "github.com/luxfi/node/vms/xvm/txs"
+	linear "github.com/luxfi/node/v2/quasar/chain"
+	set "github.com/luxfi/node/v2/utils/set"
+	block "github.com/luxfi/node/v2/vms/xvm/block"
+	state "github.com/luxfi/node/v2/vms/xvm/state"
+	txs "github.com/luxfi/node/v2/vms/xvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
 

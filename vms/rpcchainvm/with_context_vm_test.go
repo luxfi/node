@@ -13,11 +13,11 @@ import (
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/consensustest"
-	"github.com/luxfi/node/quasar/engine/chain/block"
-	"github.com/luxfi/node/quasar/engine/chain/block/blockmock"
-	"github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/quasar/chain/chainmock"
+	"github.com/luxfi/node/v2/quasar/consensustest"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block/blockmock"
+	"github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/quasar/chain/chainmock"
 )
 
 var (

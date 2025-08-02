@@ -3,7 +3,7 @@
 
 package buffer
 
-import "github.com/luxfi/node/utils"
+import "github.com/luxfi/node/v2/utils"
 
 const defaultInitSize = 32
 

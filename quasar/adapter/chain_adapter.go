@@ -8,17 +8,15 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luxfi/consensus/config"
-	"github.com/luxfi/consensus/protocol/nova"
-	"github.com/luxfi/consensus/utils/bag"
+	qparams "github.com/luxfi/node/v2/quasar/params"
+	qtopological "github.com/luxfi/node/v2/quasar/chain"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/quasar/choices"
-	"github.com/luxfi/node/quasar/engine/chain"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/quasar/networking/sender"
-	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/v2/version"
+	"github.com/luxfi/node/v2/quasar/choices"
+	"github.com/luxfi/node/v2/quasar/engine/chain"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/quasar/networking/sender"
+	"github.com/luxfi/node/v2/quasar/validators"
 )
 
 var (
@@ -32,9 +30,10 @@ type ChainAdapter struct {
 	vm          chain.VM
 	sender      sender.Sender
 	validators  validators.State
-	params      config.Parameters
-	consensus   *nova.Topological
+	params      qparams.Parameters
+	consensus   *qtopological.Topological
 	blockMap    map[ids.ID]chain.Block
+	preferredID ids.ID
 	initialized bool
 }
 
@@ -56,14 +55,16 @@ func (ca *ChainAdapter) Initialize(ctx context.Context, params chain.Parameters)
 	
 	// Extract VM, sender, and validators from context
 	// This is a simplified initialization - in practice, these would come from the chain manager
-	ca.vm = params.ConsensusParams.(chain.VM)
+	ca.vm, _ = params.ConsensusParams.(chain.VM)
 	
 	// Convert chain parameters to consensus parameters
-	consensusParams := config.Parameters{
+	consensusParams := qparams.Parameters{
 		K:                     21, // Default for mainnet
 		AlphaPreference:       13,
 		AlphaConfidence:       18,
 		Beta:                  8,
+		ConcurrentRepolls:     4,
+		OptimalProcessing:     50,
 		MaxOutstandingItems:   256,
 		MaxItemProcessingTime: 10 * time.Second,
 	}
@@ -71,7 +72,7 @@ func (ca *ChainAdapter) Initialize(ctx context.Context, params chain.Parameters)
 	ca.params = consensusParams
 	
 	// Create nova consensus instance
-	ca.consensus = &nova.Topological{}
+	ca.consensus = &qtopological.Topological{}
 	
 	// Get last accepted block
 	lastAcceptedID, err := ca.vm.LastAccepted(ctx)
@@ -85,20 +86,26 @@ func (ca *ChainAdapter) Initialize(ctx context.Context, params chain.Parameters)
 	}
 	
 	// Initialize nova consensus
-	novaCtx := &nova.Context{
-		Log:        log.NewNoOpLogger(), // Use no-op logger for now
-		Registerer: &registererAdapter{ca.ctx.Registerer},
-		BlockAcceptor: &blockAcceptor{
-			ca: ca,
-		},
+	consensusCtx := context.WithValue(ctx, "consensus", ca.ctx)
+	
+	// Convert params.Parameters to chain.Parameters
+	chainParams := qtopological.Parameters{
+		K:                     consensusParams.K,
+		AlphaPreference:       consensusParams.AlphaPreference,
+		AlphaConfidence:       consensusParams.AlphaConfidence,
+		Beta:                  consensusParams.Beta,
+		ConcurrentRepolls:     consensusParams.ConcurrentRepolls,
+		OptimalProcessing:     consensusParams.OptimalProcessing,
+		MaxOutstandingItems:   consensusParams.MaxOutstandingItems,
+		MaxItemProcessingTime: int64(consensusParams.MaxItemProcessingTime),
 	}
 	
 	err = ca.consensus.Initialize(
-		novaCtx,
-		consensusParams,
-		lastAcceptedID,
+		consensusCtx,
+		chainParams,
+		lastAcceptedID.String(),
 		lastAcceptedBlk.Height(),
-		time.Unix(int64(lastAcceptedBlk.Time()), 0),
+		lastAcceptedBlk.Time(),
 	)
 	if err != nil {
 		return err
@@ -130,7 +137,9 @@ func (ca *ChainAdapter) GetAncestor(blkID ids.ID, height uint64) (ids.ID, error)
 
 // LastAccepted returns the ID of the last accepted block
 func (ca *ChainAdapter) LastAccepted() (ids.ID, uint64) {
-	return ca.consensus.LastAccepted()
+	// Return the preferredID and a placeholder height
+	// In a real implementation, we'd track the last accepted height
+	return ca.preferredID, 0
 }
 
 // VerifyHeightIndex returns whether height index is enabled
@@ -245,10 +254,7 @@ func (ca *ChainAdapter) QueryFailed(ctx context.Context, nodeID ids.NodeID, requ
 
 // recordPoll records a poll with the consensus engine
 func (ca *ChainAdapter) recordPoll(ctx context.Context, votes []ids.ID) error {
-	// Convert votes to bag for nova consensus
-	voteBag := bag.Of(votes...)
-	
-	return ca.consensus.RecordPrism(ctx, voteBag)
+	return ca.consensus.RecordPoll(ctx, votes)
 }
 
 // GetAcceptedFrontier returns the accepted frontier

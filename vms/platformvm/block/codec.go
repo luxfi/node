@@ -7,10 +7,10 @@ import (
 	"errors"
 	"math"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/utils/wrappers"
-	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/codec/linearcodec"
+	"github.com/luxfi/node/v2/utils/wrappers"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
 )
 
 const CodecVersion = txs.CodecVersion

@@ -14,12 +14,12 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/filesystem"
-	"github.com/luxfi/node/utils/filesystem/filesystemmock"
+	"github.com/luxfi/node/v2/utils/filesystem"
+	"github.com/luxfi/node/v2/utils/filesystem/filesystemmock"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/resource"
-	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/vmsmock"
+	"github.com/luxfi/node/v2/utils/resource"
+	"github.com/luxfi/node/v2/vms"
+	"github.com/luxfi/node/v2/vms/vmsmock"
 )
 
 var (

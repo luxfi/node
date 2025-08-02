@@ -5,10 +5,10 @@ package builder
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/utils/constants"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/v2/vms/components/gas"
 )
 
 const Alias = "P"
@@ -25,9 +25,9 @@ func NewLinearContext(networkID uint32, luxAssetID ids.ID) (*quasar.Context, err
 	return &quasar.Context{
 		NetworkID:  networkID,
 		SubnetID:   constants.PrimaryNetworkID,
-		ChainID:    constants.PlatformChainID(),
+		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
 		Log:        log.NewNoOpLogger(),
 		BCLookup:   lookup,
-	}, lookup.Alias(constants.PlatformChainID(), Alias)
+	}, lookup.Alias(constants.PlatformChainID, Alias)
 }

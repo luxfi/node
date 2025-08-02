@@ -10,14 +10,14 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/evm/plugin/evm/customrawdb"
-	"github.com/luxfi/evm/utils"
+	"github.com/luxfi/evm/v2/plugin/evm/customrawdb"
+	"github.com/luxfi/evm/v2/utils"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/ethdb"
 	"github.com/luxfi/geth/log"
 	"github.com/luxfi/geth/trie"
-	statesyncclient "github.com/luxfi/node/state_sync/client"
-	"github.com/luxfi/node/utils/wrappers"
+	statesyncclient "github.com/luxfi/node/v2/state_sync/client"
+	"github.com/luxfi/node/v2/utils/wrappers"
 )
 
 var (

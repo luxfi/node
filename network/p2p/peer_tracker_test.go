@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/ids"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/version"
 )
 
 func TestPeerTracker(t *testing.T) {

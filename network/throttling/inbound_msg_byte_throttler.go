@@ -11,12 +11,12 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/linked"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/linked"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/metric"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/v2/utils/metric"
+	"github.com/luxfi/node/v2/utils/wrappers"
 )
 
 // See inbound_msg_throttler.go

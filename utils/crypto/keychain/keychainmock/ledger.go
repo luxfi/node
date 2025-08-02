@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	version "github.com/luxfi/node/version"
+	version "github.com/luxfi/node/v2/version"
 	gomock "go.uber.org/mock/gomock"
 )
 

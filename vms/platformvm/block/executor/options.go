@@ -10,15 +10,15 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/quasar/uptime"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/quasar/uptime"
+	"github.com/luxfi/node/v2/utils/constants"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/vms/platformvm/block"
-	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/executor"
+	"github.com/luxfi/node/v2/vms/platformvm/block"
+	"github.com/luxfi/node/v2/vms/platformvm/reward"
+	"github.com/luxfi/node/v2/vms/platformvm/state"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/platformvm/txs/executor"
 )
 
 var (

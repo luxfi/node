@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/vms/platformvm/block"
 )
 
 func TestOptionsUnexpectedBlockType(t *testing.T) {

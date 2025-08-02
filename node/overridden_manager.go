@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/v2/quasar/validators"
 )
 
 var _ validators.Manager = (*overriddenManager)(nil)

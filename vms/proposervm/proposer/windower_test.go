@@ -13,10 +13,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/quasar/validators/validatorstest"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/quasar/validators/validatorstest"
 
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/node/v2/utils/math"
 )
 
 var (

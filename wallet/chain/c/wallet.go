@@ -8,16 +8,15 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/evm/ethclient"
-	"github.com/luxfi/evm/plugin/evm/atomic"
-	"github.com/luxfi/evm/plugin/evm/client"
+	"github.com/luxfi/evm/v2/ethclient"
+	"github.com/luxfi/evm/v2/plugin/evm/atomic"
+	"github.com/luxfi/evm/v2/plugin/evm/client"
+	"github.com/luxfi/geth/common"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/rpc"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	walletutil "github.com/luxfi/node/wallet"
-
-	geth "github.com/luxfi/geth/common"
+	"github.com/luxfi/node/v2/utils/rpc"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	walletutil "github.com/luxfi/node/v2/wallet"
 )
 
 var _ Wallet = (*wallet)(nil)
@@ -36,7 +35,7 @@ type Wallet interface {
 	// - [to] specifies where to send the imported funds to.
 	IssueImportTx(
 		chainID ids.ID,
-		to geth.Address,
+		to common.Address,
 		options ...walletutil.Option,
 	) (*atomic.Tx, error)
 
@@ -98,7 +97,7 @@ func (w *wallet) Signer() Signer {
 
 func (w *wallet) IssueImportTx(
 	chainID ids.ID,
-	to geth.Address,
+	to common.Address,
 	options ...walletutil.Option,
 ) (*atomic.Tx, error) {
 	baseFee, err := w.baseFee(options)

@@ -12,12 +12,12 @@ import (
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/node/v2/utils/formatting"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/vms/registry/registrymock"
-	"github.com/luxfi/node/vms/vmsmock"
+	"github.com/luxfi/node/v2/vms/registry/registrymock"
+	"github.com/luxfi/node/v2/vms/vmsmock"
 
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
 )
 
 type loadVMsTest struct {

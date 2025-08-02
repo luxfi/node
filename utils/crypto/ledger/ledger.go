@@ -7,9 +7,9 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/keychain"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/utils/crypto/keychain"
+	"github.com/luxfi/node/v2/utils/hashing"
+	"github.com/luxfi/node/v2/version"
 
 	ledger "github.com/luxfi/ledger-lux-go"
 )

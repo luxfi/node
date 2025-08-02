@@ -9,7 +9,7 @@ import (
 	"io"
 
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/api/health"
+	"github.com/luxfi/node/v2/api/health"
 )
 
 var (
@@ -97,11 +97,12 @@ func (db *Database) Compact(start []byte, limit []byte) error {
 }
 
 func (db *Database) HealthCheck(ctx context.Context) (interface{}, error) {
-	err := db.db.HealthCheck()
+	health, err := db.db.HealthCheck(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return map[string]interface{}{
+		"underlying": health,
 		"healthy": true,
 	}, nil
 }

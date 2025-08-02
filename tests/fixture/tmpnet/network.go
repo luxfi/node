@@ -24,15 +24,15 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/v2/chains"
+	"github.com/luxfi/node/v2/config"
+	"github.com/luxfi/node/v2/genesis"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/crypto/secp256k1"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/platformvm"
+	"github.com/luxfi/node/v2/utils/perms"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/platformvm"
 )
 
 // The Network type is defined in this file (orchestration) and

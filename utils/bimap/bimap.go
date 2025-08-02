@@ -10,7 +10,7 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/v2/utils"
 )
 
 var (

@@ -13,13 +13,13 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/network/p2p/lp118"
-	"github.com/luxfi/node/proto/pb/platformvm"
-	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/warp"
-	"github.com/luxfi/node/vms/platformvm/warp/message"
-	"github.com/luxfi/node/vms/platformvm/warp/payload"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/network/p2p/lp118"
+	"github.com/luxfi/node/v2/proto/pb/platformvm"
+	"github.com/luxfi/node/v2/vms/platformvm/state"
+	"github.com/luxfi/node/v2/vms/platformvm/warp"
+	"github.com/luxfi/node/v2/vms/platformvm/warp/message"
+	"github.com/luxfi/node/v2/vms/platformvm/warp/payload"
 )
 
 const (

@@ -8,17 +8,16 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/luxfi/evm/plugin/evm/atomic"
+	"github.com/luxfi/evm/v2/plugin/evm/atomic"
+	"github.com/luxfi/geth/common"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	walletutil "github.com/luxfi/node/wallet"
-
-	geth "github.com/luxfi/geth/common"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/math"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	walletutil "github.com/luxfi/node/v2/wallet"
 )
 
 const luxConversionRateInt = 1_000_000_000
@@ -68,7 +67,7 @@ type Builder interface {
 	// - [baseFee] specifies the fee price willing to be paid by this tx.
 	NewImportTx(
 		chainID ids.ID,
-		to geth.Address,
+		to common.Address,
 		baseFee *big.Int,
 		options ...walletutil.Option,
 	) (*atomic.UnsignedImportTx, error)
@@ -91,13 +90,13 @@ type Builder interface {
 // C-chain transactions.
 type BuilderBackend interface {
 	UTXOs(ctx context.Context, sourceChainID ids.ID) ([]*lux.UTXO, error)
-	Balance(ctx context.Context, addr geth.Address) (*big.Int, error)
-	Nonce(ctx context.Context, addr geth.Address) (uint64, error)
+	Balance(ctx context.Context, addr common.Address) (*big.Int, error)
+	Nonce(ctx context.Context, addr common.Address) (uint64, error)
 }
 
 type builder struct {
 	luxAddrs set.Set[ids.ShortID]
-	ethAddrs set.Set[geth.Address]
+	ethAddrs set.Set[common.Address]
 	context  *Context
 	backend  BuilderBackend
 }
@@ -112,7 +111,7 @@ type builder struct {
 //     to build out the transactions.
 func NewBuilder(
 	luxAddrs set.Set[ids.ShortID],
-	ethAddrs set.Set[geth.Address],
+	ethAddrs set.Set[common.Address],
 	context *Context,
 	backend BuilderBackend,
 ) Builder {
@@ -182,7 +181,7 @@ func (b *builder) GetImportableBalance(
 
 func (b *builder) NewImportTx(
 	chainID ids.ID,
-	to geth.Address,
+	to common.Address,
 	baseFee *big.Int,
 	options ...walletutil.Option,
 ) (*atomic.UnsignedImportTx, error) {

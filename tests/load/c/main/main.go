@@ -11,18 +11,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/evm/ethclient"
 	"github.com/luxfi/geth/common"
+	"github.com/luxfi/evm/v2/ethclient"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/tests"
-	"github.com/luxfi/node/tests/fixture/e2e"
-	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/tests/load"
-	"github.com/luxfi/node/tests/load/c"
-	"github.com/luxfi/node/tests/load/c/listener"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/v2/tests"
+	"github.com/luxfi/node/v2/tests/fixture/e2e"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet"
+	"github.com/luxfi/node/v2/tests/load"
+	"github.com/luxfi/node/v2/tests/load/c"
+	"github.com/luxfi/node/v2/tests/load/c/listener"
+	"github.com/luxfi/node/v2/utils/crypto/secp256k1"
 	log "github.com/luxfi/log"
 )
 

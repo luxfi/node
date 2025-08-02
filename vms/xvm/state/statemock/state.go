@@ -15,9 +15,9 @@ import (
 
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
-	lux "github.com/luxfi/node/vms/components/lux"
-	block "github.com/luxfi/node/vms/xvm/block"
-	txs "github.com/luxfi/node/vms/xvm/txs"
+	lux "github.com/luxfi/node/v2/vms/components/lux"
+	block "github.com/luxfi/node/v2/vms/xvm/block"
+	txs "github.com/luxfi/node/v2/vms/xvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
 

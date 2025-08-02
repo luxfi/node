@@ -9,7 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/node/v2/utils/metric"
 )
 
 const (

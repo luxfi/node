@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/node/utils/iterator"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/platformvm/config"
+	"github.com/luxfi/node/v2/utils/iterator"
+	"github.com/luxfi/node/v2/utils/math"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
+	"github.com/luxfi/node/v2/vms/components/gas"
+	"github.com/luxfi/node/v2/vms/platformvm/config"
 
-	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"
-	validatorfee "github.com/luxfi/node/vms/platformvm/validators/fee"
+	txfee "github.com/luxfi/node/v2/vms/platformvm/txs/fee"
+	validatorfee "github.com/luxfi/node/v2/vms/platformvm/validators/fee"
 )
 
 func NextBlockTime(

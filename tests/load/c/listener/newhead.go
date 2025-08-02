@@ -8,19 +8,19 @@ import (
 	"fmt"
 	"sync"
 
-	interfaces "github.com/luxfi/evm/iface"
 	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/evm/v2/rpc"
 )
 
 type NewHeadSubscriber interface {
-	SubscribeNewHead(ctx context.Context, ch chan<- *types.Header) (interfaces.Subscription, error)
+	SubscribeNewHead(ctx context.Context, ch chan<- *types.Header) (rpc.Subscription, error)
 }
 
 type headNotifier struct {
 	client       NewHeadSubscriber
 	listenStop   chan<- struct{}
 	listenDone   <-chan struct{}
-	subscription interfaces.Subscription
+	subscription rpc.Subscription
 
 	stopMutex sync.Mutex
 	stopped   bool

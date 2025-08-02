@@ -11,10 +11,10 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/networking/router/routermock"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/quasar/networking/router/routermock"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/version"
 )
 
 const numValidators = 5_000

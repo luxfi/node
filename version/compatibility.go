@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
 )
 
 var (

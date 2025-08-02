@@ -34,54 +34,60 @@ import (
 	"github.com/luxfi/database/pebbledb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api/admin"
-	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/config/node"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/quasar/networking/benchlist"
-	"github.com/luxfi/node/quasar/networking/router"
-	"github.com/luxfi/node/quasar/networking/timeout"
-	"github.com/luxfi/node/quasar/networking/tracker"
-	"github.com/luxfi/node/quasar/uptime"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/indexer"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/nat"
-	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/network/peer"
-	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/v2/api/admin"
+	"github.com/luxfi/node/v2/api/health"
+	"github.com/luxfi/node/v2/api/info"
+	"github.com/luxfi/node/v2/api/metrics"
+	"github.com/luxfi/node/v2/api/server"
+	"github.com/luxfi/node/v2/chains"
+	"github.com/luxfi/node/v2/chains/atomic"
+	"github.com/luxfi/node/v2/config/node"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/quasar/networking/benchlist"
+	"github.com/luxfi/node/v2/quasar/networking/router"
+	"github.com/luxfi/node/v2/quasar/networking/timeout"
+	"github.com/luxfi/node/v2/quasar/networking/tracker"
+	"github.com/luxfi/node/v2/quasar/uptime"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/genesis"
+	"github.com/luxfi/node/v2/indexer"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/nat"
+	"github.com/luxfi/node/v2/network"
+	"github.com/luxfi/node/v2/network/peer"
+	"github.com/luxfi/node/v2/network/throttling"
+	"github.com/luxfi/node/v2/staking"
 	"github.com/luxfi/log"
 	"github.com/luxfi/trace"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/dynamicip"
-	"github.com/luxfi/node/utils/filesystem"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/math/meter"
-	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/node/utils/profiler"
-	"github.com/luxfi/node/utils/resource"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/platformvm"
-	"github.com/luxfi/node/vms/platformvm/signer"
-	"github.com/luxfi/node/vms/registry"
-	"github.com/luxfi/node/vms/rpcchainvm/runtime"
-	xvm "github.com/luxfi/node/vms/xvm"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/dynamicip"
+	"github.com/luxfi/node/v2/utils/filesystem"
+	"github.com/luxfi/node/v2/utils/hashing"
+	"github.com/luxfi/node/v2/utils/ips"
+	"github.com/luxfi/node/v2/utils/math/meter"
+	"github.com/luxfi/node/v2/utils/perms"
+	"github.com/luxfi/node/v2/utils/profiler"
+	"github.com/luxfi/node/v2/utils/resource"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/version"
+	"github.com/luxfi/node/v2/vms"
+	"github.com/luxfi/node/v2/vms/platformvm"
+	"github.com/luxfi/node/v2/vms/platformvm/signer"
+	"github.com/luxfi/node/v2/vms/registry"
+	"github.com/luxfi/node/v2/vms/rpcchainvm/runtime"
+	xvm "github.com/luxfi/node/v2/vms/xvm"
+	aivm "github.com/luxfi/node/v2/vms/aivm"
+	bvm "github.com/luxfi/node/v2/vms/bridgevm"
+	mpcvm "github.com/luxfi/node/v2/vms/mpcvm/plugin/mpcvm"
+	quantumvm "github.com/luxfi/node/v2/vms/quantumvm"
+	zkvm "github.com/luxfi/node/v2/vms/zkvm"
 
 	databasefactory "github.com/luxfi/database/factory"
-	geth "github.com/luxfi/evm/plugin/evm"
-	platformconfig "github.com/luxfi/node/vms/platformvm/config"
-	xvmconfig "github.com/luxfi/node/vms/xvm/config"
+	geth "github.com/luxfi/evm/v2/plugin/evm"
+	platformconfig "github.com/luxfi/node/v2/vms/platformvm/config"
+	xvmconfig "github.com/luxfi/node/v2/vms/xvm/config"
 )
 
 const (
@@ -890,7 +896,7 @@ func (n *Node) initChains(genesisBytes []byte) error {
 	n.Log.Info("initializing chains")
 
 	platformChain := chains.ChainParameters{
-		ID:            constants.PlatformChainID(),
+		ID:            constants.PlatformChainID,
 		SubnetID:      constants.PrimaryNetworkID,
 		GenesisData:   genesisBytes, // Specifies other chains to create
 		VMID:          constants.PlatformVMID,
@@ -1051,7 +1057,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 
 	// If any of these chains die, the node shuts down
 	criticalChains := set.Of(
-		constants.PlatformChainID(),
+		constants.PlatformChainID,
 		xChainID,
 		cChainID,
 	)
@@ -1220,6 +1226,11 @@ func (n *Node) initVMs() error {
 			},
 		}),
 		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &geth.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.AIVMID, &aivm.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.BridgeVMID, &bvm.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.ZKVMID, &zkvm.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.MPCVMID, &mpcvm.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.QuantumVMID, &quantumvm.Factory{}),
 	)
 	if err != nil {
 		return err
@@ -1457,14 +1468,9 @@ func (n *Node) initHealthAPI() error {
 
 	// TODO: add database health to liveness check
 	// Create a wrapper to adapt database health check interface
-<<<<<<< HEAD
-	dbHealthChecker := health.CheckerFunc(func(context.Context) (interface{}, error) {
-		if _, err := n.DB.HealthCheck(context.Background()); err != nil {
-=======
 	dbHealthChecker := health.CheckerFunc(func(ctx context.Context) (interface{}, error) {
 		_, err := n.DB.HealthCheck(ctx)
 		if err != nil {
->>>>>>> a76b5b24a (Sync quasar)
 			return nil, err
 		}
 		return map[string]string{"status": "healthy"}, nil
@@ -1514,15 +1520,6 @@ func (n *Node) initHealthAPI() error {
 			return "validator doesn't have a BLS key", nil
 		}
 
-<<<<<<< HEAD
-		// Verify that the validator's compressed bytes are valid
-		_, err = bls.PublicKeyFromCompressedBytes(vdrPKBytes)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse validator BLS key: %w", err)
-		}
-
-=======
->>>>>>> a76b5b24a (Sync quasar)
 		nodePK := n.Config.StakingSigningKey.PublicKey()
 		nodePKBytes := bls.PublicKeyToCompressedBytes(nodePK)
 		if bytes.Equal(nodePKBytes, vdrPKBytes) {

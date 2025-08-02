@@ -10,11 +10,11 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/x/merkledb"
-	"github.com/luxfi/node/x/sync"
+	"github.com/luxfi/node/v2/utils/maybe"
+	"github.com/luxfi/node/v2/x/merkledb"
+	"github.com/luxfi/node/v2/x/sync"
 
-	pb "github.com/luxfi/node/proto/pb/sync"
+	pb "github.com/luxfi/node/v2/proto/pb/sync"
 )
 
 var _ pb.DBServer = (*DBServer)(nil)

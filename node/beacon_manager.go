@@ -6,8 +6,8 @@ package node
 import (
 	"sync"
 
-	"github.com/luxfi/node/quasar/networking/router"
-	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/v2/quasar/networking/router"
+	"github.com/luxfi/node/v2/quasar/validators"
 )
 
 var _ router.Router = (*beaconManager)(nil)

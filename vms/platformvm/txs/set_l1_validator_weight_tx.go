@@ -4,8 +4,8 @@
 package txs
 
 import (
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/vms/types"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/vms/types"
 )
 
 var _ UnsignedTx = (*SetL1ValidatorWeightTx)(nil)

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/choices"
+	"github.com/luxfi/node/v2/quasar/choices"
 	"github.com/stretchr/testify/require"
 )
 

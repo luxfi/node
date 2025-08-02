@@ -174,6 +174,8 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}
 
 **Note**: Single-node mode with sybil protection disabled should only be used for development. Never use this configuration on public networks (Mainnet or Testnet).
 
+## Bootstrapping
+
 A node needs to catch up to the latest network state before it can participate in consensus and serve API calls. This process (called bootstrapping) currently takes several days for a new node connected to Mainnet.
 
 A node will not [report healthy](https://docs.lux.network/docs/api-reference/health-api) until it is done bootstrapping.
@@ -184,7 +186,7 @@ The bottleneck during bootstrapping is typically database IO. Using a more power
 
 ## Generating Code
 
-Lux uses multiple tools to generate efficient and boilerplate code.
+Lux Node uses multiple tools to generate efficient and boilerplate code.
 
 ### Running protobuf codegen
 

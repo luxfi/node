@@ -11,14 +11,14 @@ import (
 	"math/big"
 	"math/rand/v2"
 
-	"github.com/luxfi/evm/accounts/abi/bind"
-	"github.com/luxfi/evm/ethclient"
-	"github.com/luxfi/evm/params"
+	"github.com/luxfi/evm/v2/accounts/abi/bind"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/crypto"
+	"github.com/luxfi/evm/v2/ethclient"
+	"github.com/luxfi/evm/v2/params"
 
-	"github.com/luxfi/node/tests/load/c/contracts"
+	"github.com/luxfi/node/v2/tests/load/c/contracts"
 )
 
 var (

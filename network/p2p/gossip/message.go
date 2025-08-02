@@ -7,8 +7,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/node/utils/bloom"
+	"github.com/luxfi/node/v2/proto/pb/sdk"
+	"github.com/luxfi/node/v2/utils/bloom"
 )
 
 func MarshalAppRequest(filter, salt []byte) ([]byte, error) {

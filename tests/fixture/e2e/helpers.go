@@ -13,20 +13,20 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luxfi/evm/ethclient"
-	ethereum "github.com/luxfi/geth"
+	"github.com/luxfi/evm/v2/ethclient"
 	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/tests"
-	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/vms/platformvm/txs/fee"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/chain/p/builder"
-	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/v2/config"
+	"github.com/luxfi/node/v2/tests"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet"
+	"github.com/luxfi/node/v2/utils/crypto/secp256k1"
+	"github.com/luxfi/node/v2/vms/platformvm/txs/fee"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/wallet/chain/p/builder"
+	"github.com/luxfi/node/v2/wallet/subnet/primary"
 )
 
 const (

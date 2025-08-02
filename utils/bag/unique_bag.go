@@ -9,8 +9,8 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/set"
 )
 
 // Maps a key to a bitset.

@@ -3,7 +3,7 @@
 
 package genesis
 
-import "github.com/luxfi/node/vms/platformvm/block"
+import "github.com/luxfi/node/v2/vms/platformvm/block"
 
 const CodecVersion = block.CodecVersion
 

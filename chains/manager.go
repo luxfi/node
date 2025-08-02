@@ -22,56 +22,56 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	luxmetrics "github.com/luxfi/metrics"
-	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/quasar"
-	"github.com/luxfi/node/quasar/engine/core"
-	"github.com/luxfi/node/quasar/engine/core/tracker"
-	"github.com/luxfi/node/quasar/engine/dag/vertex"
-	"github.com/luxfi/node/quasar/engine/chain"
-	"github.com/luxfi/node/quasar/engine/chain/block"
-	"github.com/luxfi/node/quasar/networking/handler"
-	"github.com/luxfi/node/quasar/networking/router"
-	"github.com/luxfi/node/quasar/networking/sender"
-	"github.com/luxfi/node/quasar/networking/timeout"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/node/trace"
-	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/buffer"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/v2/api/health"
+	"github.com/luxfi/node/v2/api/metrics"
+	"github.com/luxfi/node/v2/api/server"
+	"github.com/luxfi/node/v2/chains/atomic"
+	"github.com/luxfi/node/v2/quasar"
+	"github.com/luxfi/node/v2/quasar/engine/core"
+	"github.com/luxfi/node/v2/quasar/engine/core/tracker"
+	"github.com/luxfi/node/v2/quasar/engine/dag/vertex"
+	"github.com/luxfi/node/v2/quasar/engine/chain"
+	"github.com/luxfi/node/v2/quasar/engine/chain/block"
+	"github.com/luxfi/node/v2/quasar/networking/handler"
+	"github.com/luxfi/node/v2/quasar/networking/router"
+	"github.com/luxfi/node/v2/quasar/networking/sender"
+	"github.com/luxfi/node/v2/quasar/networking/timeout"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/network"
+	"github.com/luxfi/node/v2/network/p2p"
+	"github.com/luxfi/node/v2/staking"
+	"github.com/luxfi/node/v2/subnets"
+	"github.com/luxfi/trace"
+	"github.com/luxfi/node/v2/upgrade"
+	"github.com/luxfi/node/v2/utils/buffer"
+	"github.com/luxfi/node/v2/utils/constants"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/metric"
-	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/quasar/adapter"
-	"github.com/luxfi/node/vms/fx"
-	"github.com/luxfi/node/vms/metervm"
-	"github.com/luxfi/node/vms/nftfx"
-	// utilswarp "github.com/luxfi/node/utils/warp"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/proposervm"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/tracedvm"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/utils/metric"
+	"github.com/luxfi/node/v2/utils/perms"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms"
+	"github.com/luxfi/node/v2/quasar/adapter"
+	"github.com/luxfi/node/v2/vms/fx"
+	"github.com/luxfi/node/v2/vms/metervm"
+	"github.com/luxfi/node/v2/vms/nftfx"
+	// utilswarp "github.com/luxfi/node/v2/utils/warp"
+	"github.com/luxfi/node/v2/vms/propertyfx"
+	"github.com/luxfi/node/v2/vms/proposervm"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/vms/tracedvm"
+	"github.com/luxfi/node/v2/version"
 
-	luxeng "github.com/luxfi/node/quasar/engine/dag"
-	// luxbootstrap "github.com/luxfi/node/quasar/engine/dag/bootstrap"
-	luxgetter "github.com/luxfi/node/quasar/engine/dag/getter"
-	// smeng "github.com/luxfi/node/quasar/engine/chain"
-	// smbootstrap "github.com/luxfi/node/quasar/engine/chain/bootstrap"
-	lineargetter "github.com/luxfi/node/quasar/engine/chain/getter"
-	// factories "github.com/luxfi/node/quasar/factories"
-	smcon "github.com/luxfi/node/quasar/chain"
-	timetracker "github.com/luxfi/node/quasar/networking/tracker"
-	// p2ppb "github.com/luxfi/node/proto/pb/p2p"
+	luxeng "github.com/luxfi/node/v2/quasar/engine/dag"
+	// luxbootstrap "github.com/luxfi/node/v2/quasar/engine/dag/bootstrap"
+	luxgetter "github.com/luxfi/node/v2/quasar/engine/dag/getter"
+	// smeng "github.com/luxfi/node/v2/quasar/engine/chain"
+	// smbootstrap "github.com/luxfi/node/v2/quasar/engine/chain/bootstrap"
+	lineargetter "github.com/luxfi/node/v2/quasar/engine/chain/getter"
+	// factories "github.com/luxfi/node/v2/quasar/factories"
+	smcon "github.com/luxfi/node/v2/quasar/chain"
+	timetracker "github.com/luxfi/node/v2/quasar/networking/tracker"
+	// p2ppb "github.com/luxfi/node/v2/proto/pb/p2p"
 )
 
 const (
@@ -1052,7 +1052,6 @@ func (m *manager) createDAGBasedChain(
 	// Create a sender that wraps the network's ExternalSender interface
 	// TODO: Fix type mismatch - m.MsgCreator is OutboundMsgBuilder but needs Creator
 	// messageSender := sender.New(ctx, m.MsgCreator, m.Net, sb)
-	var messageSender sender.Sender // placeholder - will be nil
 
 	// create engine gear
 	luxEngine := adapter.NewDAGAdapter()
@@ -1092,51 +1091,9 @@ func (m *manager) createDAGBasedChain(
 	// 	Haltable:                       &halter,
 	// }
 	// if ctx.ChainID == m.XChainID {
-	// 	luxBootstrapperConfig.StopVertexID = m.Upgrades.CortinaXChainStopVertexID
+	// 		// 	luxBootstrapperConfig.StopVertexID = m.Upgrades.CortinaXChainStopVertexID
 	// }
-
-	// TODO: core.BootstrapableEngine doesn't exist
-	// var luxBootstrapper core.BootstrapableEngine
-	var _ interface{}
-	// luxBootstrapper, err = luxbootstrap.New(
-	// 	luxBootstrapperConfig,
-	// 	linearBootstrapper.Start,
-	// 	luxMetrics,
-	// )
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error initializing lux bootstrapper: %w", err)
-	// }
-
-	// if m.TracingEnabled {
-	// 	luxBootstrapper = core.TraceBootstrapableEngine(luxBootstrapper, m.Tracer)
-	// }
-
-	// TODO: h.SetEngineManager doesn't exist
-	// h.SetEngineManager(&handler.EngineManager{
-	// 	Dag: &handler.Engine{
-	// 		StateSyncer:  nil,
-	// 		Bootstrapper: luxBootstrapper,
-	// 		Consensus:    luxEngine,
-	// 	},
-	// 	Chain: &handler.Engine{
-	// 		StateSyncer:  nil,
-	// 		Bootstrapper: linearBootstrapper,
-	// 		Consensus:    linearEngine,
-	// 	},
-	// })
-
-	// Register health check for this chain
-	// TODO: handler.Handler doesn't implement health.Checker
-	// if err := m.Health.RegisterHealthCheck(primaryAlias, h, ctx.SubnetID.String()); err != nil {
-	// 	return nil, fmt.Errorf("couldn't add health check for chain %s: %w", primaryAlias, err)
-	// }
-
-	return &chainInfo{
-		Name:    primaryAlias,
-		Context: ctx,
-		VM:      nil, // TODO: dagVM doesn't implement core.VM
-		Handler: nil, // TODO: handler.Handler doesn't implement core.Handler
-	}, nil
+	return nil, nil
 }
 
 // Create a linear chain using the Linear consensus engine

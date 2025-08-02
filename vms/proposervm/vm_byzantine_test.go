@@ -14,10 +14,10 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/quasar/chain"
-	"github.com/luxfi/node/quasar/chain/chaintest"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/vms/proposervm/block"
+	"github.com/luxfi/node/v2/quasar/chain"
+	"github.com/luxfi/node/v2/quasar/chain/chaintest"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/vms/proposervm/block"
 )
 
 // Ensure that a byzantine node issuing an invalid PreForkBlock (Y) when the

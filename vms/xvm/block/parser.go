@@ -7,11 +7,11 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/v2/codec"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
+	"github.com/luxfi/node/v2/vms/xvm/fxs"
+	"github.com/luxfi/node/v2/vms/xvm/txs"
 )
 
 // CodecVersion is the current default codec version

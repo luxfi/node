@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/maybe"
+	"github.com/luxfi/node/v2/utils/maybe"
 )
 
 // Tests Insert and GetWork

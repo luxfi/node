@@ -10,7 +10,7 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/tests/fixture/tmpnet"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet"
 )
 
 // The ginkgo event handlers defined in this file will be automatically

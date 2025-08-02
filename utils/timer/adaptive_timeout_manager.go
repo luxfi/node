@@ -12,9 +12,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/heap"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/v2/utils/heap"
+	"github.com/luxfi/node/v2/utils/math"
+	"github.com/luxfi/node/v2/utils/timer/mockable"
 )
 
 var (

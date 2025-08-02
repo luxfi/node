@@ -10,9 +10,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms/example/xsvm"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/version"
+	"github.com/luxfi/node/v2/vms/example/xsvm"
 )
 
 type vmVersions struct {

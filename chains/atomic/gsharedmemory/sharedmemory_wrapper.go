@@ -5,8 +5,8 @@ package gsharedmemory
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/v2/chains/atomic"
+	"github.com/luxfi/node/v2/quasar"
 	db "github.com/luxfi/database"
 )
 

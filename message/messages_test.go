@@ -14,9 +14,9 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/utils/compression"
+	"github.com/luxfi/node/v2/proto/pb/p2p"
+	"github.com/luxfi/node/v2/staking"
+	"github.com/luxfi/node/v2/utils/compression"
 )
 
 func TestMessage(t *testing.T) {

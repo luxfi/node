@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxfi/node/utils/filesystem"
+	"github.com/luxfi/node/v2/utils/filesystem"
 )
 
 // Config that is used to describe the options of the continuous profiler.

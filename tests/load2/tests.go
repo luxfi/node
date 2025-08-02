@@ -12,16 +12,15 @@ import (
 	"math/rand"
 	"sync"
 
-	"github.com/luxfi/geth/accounts/abi/bind"
 	"github.com/luxfi/geth/common"
-	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/crypto"
-	"github.com/luxfi/geth/params"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/evm/v2/params"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/tests"
-	"github.com/luxfi/node/tests/load2/contracts"
-	"github.com/luxfi/node/utils/sampler"
+	"github.com/luxfi/node/v2/tests"
+	"github.com/luxfi/node/v2/tests/load2/contracts"
+	"github.com/luxfi/node/v2/utils/sampler"
 )
 
 var maxFeeCap = big.NewInt(300000000000)

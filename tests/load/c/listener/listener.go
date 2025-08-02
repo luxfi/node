@@ -9,10 +9,10 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/luxfi/evm/ethclient"
 	"github.com/luxfi/geth/common"
+	"github.com/luxfi/evm/v2/ethclient"
 
-	"github.com/luxfi/node/tests/load"
+	"github.com/luxfi/node/v2/tests/load"
 )
 
 // Listener listens for transaction confirmations from a node.

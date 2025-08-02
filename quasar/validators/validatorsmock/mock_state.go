@@ -15,8 +15,8 @@ import (
 
 	bls "github.com/luxfi/crypto/bls"
 	ids "github.com/luxfi/ids"
-	validators "github.com/luxfi/node/quasar/validators"
-	version "github.com/luxfi/node/version"
+	validators "github.com/luxfi/node/v2/quasar/validators"
+	version "github.com/luxfi/node/v2/version"
 	gomock "go.uber.org/mock/gomock"
 )
 

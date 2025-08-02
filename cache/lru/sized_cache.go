@@ -6,9 +6,9 @@ package lru
 import (
 	"sync"
 
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/linked"
+	"github.com/luxfi/node/v2/cache"
+	"github.com/luxfi/node/v2/utils"
+	"github.com/luxfi/node/v2/utils/linked"
 )
 
 var _ cache.Cacher[struct{}, any] = (*SizedCache[struct{}, any])(nil)

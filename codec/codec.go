@@ -6,7 +6,7 @@ package codec
 import (
 	"errors"
 
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/v2/utils/wrappers"
 )
 
 var (

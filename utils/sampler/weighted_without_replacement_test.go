@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/node/v2/utils/math"
 )
 
 func TestWeightedWithoutReplacementInitializeOverflow(t *testing.T) {

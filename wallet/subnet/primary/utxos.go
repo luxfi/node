@@ -4,7 +4,7 @@
 package primary
 
 import (
-	"github.com/luxfi/node/wallet"
+	"github.com/luxfi/node/v2/wallet"
 )
 
 // Re-export types and functions from the wallet package for backward compatibility

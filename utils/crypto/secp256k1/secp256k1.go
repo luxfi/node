@@ -15,10 +15,10 @@ import (
 	"github.com/luxfi/geth/crypto"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/crypto/cb58"
-	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/v2/cache"
+	"github.com/luxfi/node/v2/cache/lru"
+	"github.com/luxfi/node/v2/utils/cb58"
+	"github.com/luxfi/node/v2/utils/hashing"
 )
 
 const (

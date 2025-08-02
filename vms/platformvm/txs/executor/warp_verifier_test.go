@@ -12,13 +12,13 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/quasar/validators/validatorstest"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/quasar/validators/validatorstest"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/set"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/platformvm/warp"
 )
 
 func TestVerifyWarpMessages(t *testing.T) {

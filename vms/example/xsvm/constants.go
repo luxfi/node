@@ -3,7 +3,7 @@
 
 package xsvm
 
-import "github.com/luxfi/node/version"
+import "github.com/luxfi/node/v2/version"
 
 var Version = &version.Semantic{
 	Major: 1,

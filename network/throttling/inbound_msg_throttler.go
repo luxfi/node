@@ -9,8 +9,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/throttling/tracker"
-	"github.com/luxfi/node/quasar/validators"
+	"github.com/luxfi/node/v2/network/throttling/tracker"
+	"github.com/luxfi/node/v2/quasar/validators"
 	log "github.com/luxfi/log"
 )
 

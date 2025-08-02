@@ -13,9 +13,9 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/tests/fixture/e2e"
-	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/tests/fixture/tmpnet/flags"
+	"github.com/luxfi/node/v2/tests/fixture/e2e"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet/flags"
 )
 
 func TestUpgrade(t *testing.T) {

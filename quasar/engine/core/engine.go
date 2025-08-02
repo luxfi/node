@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/quasar/validators"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/message"
+	"github.com/luxfi/node/v2/quasar/validators"
+	"github.com/luxfi/node/v2/version"
 )
 
 // Engine describes the standard interface of a consensus engine.

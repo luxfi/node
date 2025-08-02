@@ -8,13 +8,13 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/warp"
-	"github.com/luxfi/node/vms/platformvm/warp/message"
-	"github.com/luxfi/node/vms/platformvm/warp/payload"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/platformvm/warp"
+	"github.com/luxfi/node/v2/vms/platformvm/warp/message"
+	"github.com/luxfi/node/v2/vms/platformvm/warp/payload"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 )
 
 var (
@@ -175,7 +175,7 @@ func (b *backendVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) erro
 func (b *backendVisitor) baseTx(tx *txs.BaseTx) error {
 	return b.b.removeUTXOs(
 		b.ctx,
-		constants.PlatformChainID(),
+		constants.PlatformChainID,
 		tx.InputIDs(),
 	)
 }

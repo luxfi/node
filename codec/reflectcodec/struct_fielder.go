@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/v2/codec"
 )
 
 // TagValue is the value the tag must have to be serialized.

@@ -10,17 +10,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	// "github.com/luxfi/quasar/consensustest" // TODO: Use when AssetID is available
-	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/secp256k1fx"
+	// "github.com/luxfi/node/v2/quasar/consensustest" // TODO: Use when AssetID is available
+	"github.com/luxfi/node/v2/upgrade"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/crypto/secp256k1"
+	"github.com/luxfi/node/v2/utils/units"
+	"github.com/luxfi/node/v2/vms/components/lux"
+	"github.com/luxfi/node/v2/vms/platformvm/reward"
+	"github.com/luxfi/node/v2/vms/platformvm/txs"
+	"github.com/luxfi/node/v2/vms/secp256k1fx"
 
-	platformvmgenesis "github.com/luxfi/node/vms/platformvm/genesis"
+	platformvmgenesis "github.com/luxfi/node/v2/vms/platformvm/genesis"
 )
 
 const (

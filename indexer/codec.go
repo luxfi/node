@@ -6,8 +6,8 @@ package indexer
 import (
 	"math"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/node/v2/codec"
+	"github.com/luxfi/node/v2/codec/linearcodec"
 )
 
 const CodecVersion = 0

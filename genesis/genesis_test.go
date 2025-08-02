@@ -13,16 +13,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/evm/v2/core"
 	"github.com/stretchr/testify/require"
 
 	_ "embed"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/node/vms/platformvm/genesis"
+	"github.com/luxfi/node/v2/upgrade"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/hashing"
+	"github.com/luxfi/node/v2/utils/perms"
+	"github.com/luxfi/node/v2/vms/platformvm/genesis"
 )
 
 var (
@@ -147,9 +148,7 @@ func TestValidateConfig(t *testing.T) {
 			networkID: 5,
 			config: func() *Config {
 				thisConfig := TestnetConfig
-				// Use a dummy address that's not in the allocations
-				dummyAddr := ids.ShortID{9, 8, 7, 6, 5}
-				thisConfig.InitialStakedFunds = append(thisConfig.InitialStakedFunds, dummyAddr)
+				thisConfig.InitialStakedFunds = append(thisConfig.InitialStakedFunds, LocalConfig.InitialStakedFunds[0])
 				return &thisConfig
 			}(),
 			expectedErr: errNoAllocationToStake,

@@ -18,10 +18,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/tests/fixture/tmpnet/flags"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet"
+	"github.com/luxfi/node/v2/tests/fixture/tmpnet/flags"
 	log "github.com/luxfi/log"
-	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/v2/version"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

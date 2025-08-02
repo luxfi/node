@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/luxfi/node/proto/pb/io/reader"
+	"github.com/luxfi/node/v2/proto/pb/io/reader"
 )
 
 // TestErrIOEOF tests that if an io.EOF is returned by an io.Reader, it

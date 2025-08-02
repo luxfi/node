@@ -13,16 +13,16 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/luxfi/node/quasar/sampling"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/trace"
-	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/dynamicip"
-	"github.com/luxfi/node/utils/ulimit"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/proposervm"
+	"github.com/luxfi/node/v2/quasar/sampling"
+	"github.com/luxfi/node/v2/genesis"
+	"github.com/luxfi/trace"
+	"github.com/luxfi/node/v2/utils/compression"
+	"github.com/luxfi/node/v2/utils/constants"
+	"github.com/luxfi/node/v2/utils/dynamicip"
+	"github.com/luxfi/node/v2/utils/ulimit"
+	"github.com/luxfi/node/v2/utils/units"
+	"github.com/luxfi/node/v2/vms/components/gas"
+	"github.com/luxfi/node/v2/vms/proposervm"
 )
 
 const (
@@ -370,7 +370,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Float64(DiskMaxNonVdrNodeUsageKey, 1000*units.GiB, "Maximum number of disk reads/writes per second that a non-validator can utilize. Must be >= 0")
 
 	// Opentelemetry tracing
-	fs.String(TracingExporterTypeKey, trace.Disabled, fmt.Sprintf("Type of exporter to use for tracing. Options are [%s, %s, %s]", trace.Disabled, trace.GRPC, trace.HTTP))
+	fs.String(TracingExporterTypeKey, string(trace.Disabled), fmt.Sprintf("Type of exporter to use for tracing. Options are [%s, %s, %s]", trace.Disabled, trace.GRPC, trace.HTTP))
 	fs.String(TracingEndpointKey, "", "The endpoint to send trace data to. If unspecified, the default endpoint will be used; depending on the exporter type")
 	fs.Bool(TracingInsecureKey, true, "If true, don't use TLS when sending trace data")
 	fs.Float64(TracingSampleRateKey, 0.1, "The fraction of traces to sample. If >= 1, always sample. If <= 0, never sample")

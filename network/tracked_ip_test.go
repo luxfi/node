@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/node/v2/staking"
+	"github.com/luxfi/node/v2/utils/ips"
 )
 
 var (
