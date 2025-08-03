@@ -304,7 +304,7 @@ func (vm *VM) Initialize(
 		)
 		
 		// If LUX_GENESIS=1 and we're at genesis, check for blocks to replay
-		if luxGenesis && currentBlock == nil || (currentBlock != nil && currentBlock.Number.Uint64() == 0) {
+		if luxGenesis && (currentBlock == nil || (currentBlock != nil && currentBlock.Number.Uint64() == 0)) {
 			vm.ctx.Log.Info("LUX_GENESIS=1 detected at genesis, checking for blocks to replay...")
 			
 			// Look for blockchain data in the C-Chain database directory
