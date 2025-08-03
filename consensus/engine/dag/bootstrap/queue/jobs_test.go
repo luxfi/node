@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/consensustest"
@@ -63,7 +62,7 @@ func TestNew(t *testing.T) {
 	parser := &TestParser{T: t}
 	db := memdb.New()
 
-	jobs, err := New(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err := New(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 	require.NoError(jobs.SetParser(parser))
 
@@ -80,7 +79,7 @@ func TestPushAndExecute(t *testing.T) {
 	parser := &TestParser{T: t}
 	db := memdb.New()
 
-	jobs, err := New(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err := New(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 	require.NoError(jobs.SetParser(parser))
 
@@ -100,7 +99,7 @@ func TestPushAndExecute(t *testing.T) {
 
 	require.NoError(jobs.Commit())
 
-	jobs, err = New(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err = New(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 	require.NoError(jobs.SetParser(parser))
 
@@ -143,7 +142,7 @@ func TestRemoveDependency(t *testing.T) {
 	parser := &TestParser{T: t}
 	db := memdb.New()
 
-	jobs, err := New(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err := New(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 	require.NoError(jobs.SetParser(parser))
 
@@ -206,7 +205,7 @@ func TestDuplicatedExecutablePush(t *testing.T) {
 
 	db := memdb.New()
 
-	jobs, err := New(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err := New(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 
 	jobID := ids.GenerateTestID()
@@ -222,7 +221,7 @@ func TestDuplicatedExecutablePush(t *testing.T) {
 
 	require.NoError(jobs.Commit())
 
-	jobs, err = New(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err = New(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 
 	pushed, err = jobs.Push(context.Background(), job)
@@ -236,7 +235,7 @@ func TestDuplicatedNotExecutablePush(t *testing.T) {
 
 	db := memdb.New()
 
-	jobs, err := New(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err := New(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 
 	job0ID, executed0 := ids.GenerateTestID(), false
@@ -253,7 +252,7 @@ func TestDuplicatedNotExecutablePush(t *testing.T) {
 
 	require.NoError(jobs.Commit())
 
-	jobs, err = New(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err = New(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 
 	pushed, err = jobs.Push(context.Background(), job1)
@@ -267,7 +266,7 @@ func TestMissingJobs(t *testing.T) {
 	parser := &TestParser{T: t}
 	db := memdb.New()
 
-	jobs, err := NewWithMissing(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err := NewWithMissing(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 	require.NoError(jobs.SetParser(context.Background(), parser))
 
@@ -294,7 +293,7 @@ func TestMissingJobs(t *testing.T) {
 
 	require.NoError(jobs.Commit())
 
-	jobs, err = NewWithMissing(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err = NewWithMissing(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 	require.NoError(jobs.SetParser(context.Background(), parser))
 
@@ -313,7 +312,7 @@ func TestHandleJobWithMissingDependencyOnRunnableStack(t *testing.T) {
 	parser := &TestParser{T: t}
 	db := memdb.New()
 
-	jobs, err := NewWithMissing(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err := NewWithMissing(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 	require.NoError(jobs.SetParser(context.Background(), parser))
 
@@ -374,7 +373,7 @@ func TestHandleJobWithMissingDependencyOnRunnableStack(t *testing.T) {
 
 	// Create jobs queue from the same database and ensure that the jobs queue
 	// recovers correctly.
-	jobs, err = NewWithMissing(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err = NewWithMissing(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 	require.NoError(jobs.SetParser(context.Background(), parser))
 
@@ -403,7 +402,7 @@ func TestInitializeNumJobs(t *testing.T) {
 	parser := &TestParser{T: t}
 	db := memdb.New()
 
-	jobs, err := NewWithMissing(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err := NewWithMissing(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 	require.NoError(jobs.SetParser(context.Background(), parser))
 
@@ -457,7 +456,7 @@ func TestInitializeNumJobs(t *testing.T) {
 	require.NoError(database.Clear(jobs.state.metadataDB, math.MaxInt))
 	require.NoError(jobs.Commit())
 
-	jobs, err = NewWithMissing(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err = NewWithMissing(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 	require.Equal(uint64(2), jobs.state.numJobs)
 }
@@ -468,7 +467,7 @@ func TestClearAll(t *testing.T) {
 	parser := &TestParser{T: t}
 	db := memdb.New()
 
-	jobs, err := NewWithMissing(db, "", metrics.NewNoOpMetrics("test").Registry())
+	jobs, err := NewWithMissing(db, "", prometheus.NewRegistry())
 	require.NoError(err)
 	require.NoError(jobs.SetParser(context.Background(), parser))
 	job0ID, executed0 := ids.GenerateTestID(), false

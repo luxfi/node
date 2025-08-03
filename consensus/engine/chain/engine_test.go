@@ -3038,7 +3038,7 @@ func TestGetProcessingAncestor(t *testing.T) {
 
 			require.NoError(consensus.Add(issuedBlock))
 
-			metrics, err := newMetrics(metrics.WrapPrometheusRegistry(metrics.NewNoOpMetrics("test").Registry()))
+			metrics, err := newMetrics(metrics.WrapPrometheusRegistry(prometheus.NewRegistry()))
 			require.NoError(err)
 
 			engine := &Engine{

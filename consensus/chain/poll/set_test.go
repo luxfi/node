@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -34,7 +33,7 @@ func TestNewSetErrorOnPollsMetrics(t *testing.T) {
 	alpha := 1
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
 	log := log.NewNoOpLogger()
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := prometheus.NewRegistry()
 
 	require.NoError(registerer.Register(prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "polls",
@@ -50,7 +49,7 @@ func TestNewSetErrorOnPollDurationMetrics(t *testing.T) {
 	alpha := 1
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
 	log := log.NewNoOpLogger()
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := prometheus.NewRegistry()
 
 	require.NoError(registerer.Register(prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "poll_duration_count",
@@ -68,7 +67,7 @@ func TestCreateAndFinishPollOutOfOrder_NewerFinishesFirst(t *testing.T) {
 
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
 	log := log.NewNoOpLogger()
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := prometheus.NewRegistry()
 	s, err := NewSet(factory, log, registerer)
 	require.NoError(err)
 
@@ -104,7 +103,7 @@ func TestCreateAndFinishPollOutOfOrder_OlderFinishesFirst(t *testing.T) {
 
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
 	log := log.NewNoOpLogger()
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := prometheus.NewRegistry()
 	s, err := NewSet(factory, log, registerer)
 	require.NoError(err)
 
@@ -140,7 +139,7 @@ func TestCreateAndFinishPollOutOfOrder_UnfinishedPollsGaps(t *testing.T) {
 
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
 	log := log.NewNoOpLogger()
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := prometheus.NewRegistry()
 	s, err := NewSet(factory, log, registerer)
 	require.NoError(err)
 
@@ -184,7 +183,7 @@ func TestCreateAndFinishSuccessfulPoll(t *testing.T) {
 
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
 	log := log.NewNoOpLogger()
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := prometheus.NewRegistry()
 	s, err := NewSet(factory, log, registerer)
 	require.NoError(err)
 
@@ -216,7 +215,7 @@ func TestCreateAndFinishFailedPoll(t *testing.T) {
 
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
 	log := log.NewNoOpLogger()
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := prometheus.NewRegistry()
 	s, err := NewSet(factory, log, registerer)
 	require.NoError(err)
 
@@ -245,7 +244,7 @@ func TestSetString(t *testing.T) {
 
 	factory := newEarlyTermNoTraversalTestFactory(require, alpha)
 	log := log.NewNoOpLogger()
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := prometheus.NewRegistry()
 	s, err := NewSet(factory, log, registerer)
 	require.NoError(err)
 
