@@ -31,7 +31,7 @@ require (
 	github.com/btcsuite/btcd/btcutil v1.1.3
 	github.com/cockroachdb/pebble v1.1.5
 	github.com/compose-spec/compose-go v1.20.2
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/google/btree v1.1.3
 	github.com/google/renameio/v2 v2.0.0
