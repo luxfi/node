@@ -39,7 +39,7 @@ func (ip *UnsignedIP) Sign(tlsSigner crypto.Signer, blsSigner *bls.SecretKey) (*
 		hashing.ComputeHash256(ipBytes),
 		crypto.SHA256,
 	)
-	blsSignature := bls.SignProofOfPossession(blsSigner, ipBytes)
+	blsSignature := blsSigner.SignProofOfPossession(ipBytes)
 	return &SignedIP{
 		UnsignedIP:        *ip,
 		TLSSignature:      tlsSignature,

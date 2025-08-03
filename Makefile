@@ -40,20 +40,20 @@ help:
 build:
 	@echo "🔨 Building $(BINARY_NAME) for current platform..."
 	@mkdir -p $(BUILD_DIR)
-	go build $(GO_BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./main
+	CGO_ENABLED=0 go build $(GO_BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./main
 
 # Build Linux binary
 build-linux:
 	@echo "🐧 Building $(BINARY_NAME) for Linux AMD64..."
 	@mkdir -p $(BUILD_DIR)
-	GOOS=linux GOARCH=amd64 go build $(GO_BUILD_FLAGS) $(LDFLAGS) -o $(LINUX_BINARY) ./main
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GO_BUILD_FLAGS) $(LDFLAGS) -o $(LINUX_BINARY) ./main
 	@echo "✅ Linux binary: $(LINUX_BINARY)"
 
 # Build macOS binary
 build-mac:
 	@echo "🍎 Building $(BINARY_NAME) for macOS ARM64..."
 	@mkdir -p $(BUILD_DIR)
-	GOOS=darwin GOARCH=arm64 go build $(GO_BUILD_FLAGS) $(LDFLAGS) -o $(MAC_BINARY) ./main
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build $(GO_BUILD_FLAGS) $(LDFLAGS) -o $(MAC_BINARY) ./main
 	@echo "✅ macOS binary: $(MAC_BINARY)"
 
 tidy:

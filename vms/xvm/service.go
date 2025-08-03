@@ -39,6 +39,13 @@ const (
 	maxPageSize uint64 = 1024
 )
 
+// publicKeyToAddress converts a secp256k1 public key to an ids.ShortID address
+func publicKeyToAddress(pk *secp256k1.PublicKey) (ids.ShortID, error) {
+	pkBytes := pk.Bytes()
+	addressBytes := secp256k1.PubkeyBytesToAddress(pkBytes)
+	return ids.ToShortID(addressBytes)
+}
+
 var (
 	errTxNotCreateAsset   = errors.New("transaction doesn't create an asset")
 	errNoMinters          = errors.New("no minters provided")
@@ -749,7 +756,11 @@ func (s *Service) buildCreateAssetTx(args *CreateAssetArgs) (*txs.Tx, ids.ShortI
 	if len(kc.Keys) == 0 {
 		return nil, ids.ShortEmpty, errNoKeys
 	}
-	changeAddr, err := s.vm.selectChangeAddr(kc.Keys[0].PublicKey().Address(), args.ChangeAddr)
+	defaultAddr, err := publicKeyToAddress(kc.Keys[0].PublicKey())
+	if err != nil {
+		return nil, ids.ShortEmpty, err
+	}
+	changeAddr, err := s.vm.selectChangeAddr(defaultAddr, args.ChangeAddr)
 	if err != nil {
 		return nil, ids.ShortEmpty, err
 	}
@@ -914,7 +925,11 @@ func (s *Service) buildCreateNFTAsset(args *CreateNFTAssetArgs) (*txs.Tx, ids.Sh
 	if len(kc.Keys) == 0 {
 		return nil, ids.ShortEmpty, errNoKeys
 	}
-	changeAddr, err := s.vm.selectChangeAddr(kc.Keys[0].PublicKey().Address(), args.ChangeAddr)
+	defaultAddr, err := publicKeyToAddress(kc.Keys[0].PublicKey())
+	if err != nil {
+		return nil, ids.ShortEmpty, err
+	}
+	changeAddr, err := s.vm.selectChangeAddr(defaultAddr, args.ChangeAddr)
 	if err != nil {
 		return nil, ids.ShortEmpty, err
 	}
@@ -997,7 +1012,10 @@ func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.
 		return err
 	}
 
-	addr := sk.Address()
+	addr, err := publicKeyToAddress(sk.PublicKey())
+	if err != nil {
+		return err
+	}
 	reply.Address, err = s.vm.FormatLocalAddress(addr)
 	return err
 }
@@ -1068,8 +1086,10 @@ func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSO
 		return errMissingPrivateKey
 	}
 
-	addr := args.PrivateKey.Address()
-	var err error
+	addr, err := publicKeyToAddress(args.PrivateKey.PublicKey())
+	if err != nil {
+		return err
+	}
 	reply.Address, err = s.vm.FormatLocalAddress(addr)
 	if err != nil {
 		return err
@@ -1175,7 +1195,11 @@ func (s *Service) buildSendMultiple(args *SendMultipleArgs) (*txs.Tx, ids.ShortI
 	if len(kc.Keys) == 0 {
 		return nil, ids.ShortEmpty, errNoKeys
 	}
-	changeAddr, err := s.vm.selectChangeAddr(kc.Keys[0].PublicKey().Address(), args.ChangeAddr)
+	defaultAddr, err := publicKeyToAddress(kc.Keys[0].PublicKey())
+	if err != nil {
+		return nil, ids.ShortEmpty, err
+	}
+	changeAddr, err := s.vm.selectChangeAddr(defaultAddr, args.ChangeAddr)
 	if err != nil {
 		return nil, ids.ShortEmpty, err
 	}
@@ -1349,7 +1373,11 @@ func (s *Service) buildMint(args *MintArgs) (*txs.Tx, ids.ShortID, error) {
 	if len(feeKc.Keys) == 0 {
 		return nil, ids.ShortEmpty, errNoKeys
 	}
-	changeAddr, err := s.vm.selectChangeAddr(feeKc.Keys[0].PublicKey().Address(), args.ChangeAddr)
+	defaultAddr, err := publicKeyToAddress(feeKc.Keys[0].PublicKey())
+	if err != nil {
+		return nil, ids.ShortEmpty, err
+	}
+	changeAddr, err := s.vm.selectChangeAddr(defaultAddr, args.ChangeAddr)
 	if err != nil {
 		return nil, ids.ShortEmpty, err
 	}
@@ -1474,7 +1502,11 @@ func (s *Service) buildSendNFT(args *SendNFTArgs) (*txs.Tx, ids.ShortID, error) 
 	if len(kc.Keys) == 0 {
 		return nil, ids.ShortEmpty, errNoKeys
 	}
-	changeAddr, err := s.vm.selectChangeAddr(kc.Keys[0].PublicKey().Address(), args.ChangeAddr)
+	defaultAddr, err := publicKeyToAddress(kc.Keys[0].PublicKey())
+	if err != nil {
+		return nil, ids.ShortEmpty, err
+	}
+	changeAddr, err := s.vm.selectChangeAddr(defaultAddr, args.ChangeAddr)
 	if err != nil {
 		return nil, ids.ShortEmpty, err
 	}
@@ -1600,7 +1632,11 @@ func (s *Service) buildMintNFT(args *MintNFTArgs) (*txs.Tx, ids.ShortID, error) 
 	if len(feeKc.Keys) == 0 {
 		return nil, ids.ShortEmpty, errNoKeys
 	}
-	changeAddr, err := s.vm.selectChangeAddr(feeKc.Keys[0].PublicKey().Address(), args.ChangeAddr)
+	defaultAddr, err := publicKeyToAddress(feeKc.Keys[0].PublicKey())
+	if err != nil {
+		return nil, ids.ShortEmpty, err
+	}
+	changeAddr, err := s.vm.selectChangeAddr(defaultAddr, args.ChangeAddr)
 	if err != nil {
 		return nil, ids.ShortEmpty, err
 	}
@@ -1884,7 +1920,11 @@ func (s *Service) buildExport(args *ExportArgs) (*txs.Tx, ids.ShortID, error) {
 	if len(kc.Keys) == 0 {
 		return nil, ids.ShortEmpty, errNoKeys
 	}
-	changeAddr, err := s.vm.selectChangeAddr(kc.Keys[0].PublicKey().Address(), args.ChangeAddr)
+	defaultAddr, err := publicKeyToAddress(kc.Keys[0].PublicKey())
+	if err != nil {
+		return nil, ids.ShortEmpty, err
+	}
+	changeAddr, err := s.vm.selectChangeAddr(defaultAddr, args.ChangeAddr)
 	if err != nil {
 		return nil, ids.ShortEmpty, err
 	}

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/engine/core"
@@ -19,7 +20,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -270,7 +270,7 @@ func TestExecute(t *testing.T) {
 			require.NoError(execute(
 				context.Background(),
 				test.haltable.Halted,
-				log.NoLog{}.Info,
+				func(msg string, fields ...zap.Field) {}, // no-op logger
 				db,
 				parser,
 				tree,

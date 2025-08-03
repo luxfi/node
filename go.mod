@@ -96,7 +96,7 @@ require (
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/log v0.1.1
 	github.com/luxfi/metrics v1.1.1
-	github.com/luxfi/trace v0.1.0
+	github.com/luxfi/trace v0.1.1
 	golang.org/x/mod v0.26.0
 )
 
