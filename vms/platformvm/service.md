@@ -66,7 +66,7 @@ curl -X POST --data '{
         "password": "myPassword",
         "address": "P-lux18jma8ppw3nhx5r4ap8clazz0dps7rv5ukulre5"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -125,7 +125,7 @@ curl -X POST --data '{
   "params" :{
       "addresses":["P-custom18jma8ppw3nhx5r4ap8clazz0dps7rv5u9xde7p"]
   }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -202,7 +202,7 @@ curl -X POST --data '{
         "encoding": "hex"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -231,7 +231,7 @@ curl -X POST --data '{
         "encoding": "json"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -335,7 +335,7 @@ curl -X POST --data '{
         "encoding": "hex"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -364,7 +364,7 @@ curl -X POST --data '{
         "encoding": "json"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -467,7 +467,7 @@ curl -X POST --data '{
     "method": "platform.getBlockchains",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -559,7 +559,7 @@ curl -X POST --data '{
         "blockchainID":"2NbS4dwGaf2p1MaXb65PrkZdXRwmSX4ZzGnUu7jm3aykgThuZE"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -599,7 +599,7 @@ curl -X POST --data '{
         "subnetID": "11111111111111111111111111111111LpoYY"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -726,7 +726,7 @@ curl -X POST --data '{
       "nodeIDs": ["NodeID-5mb46qkSBj81k9g9e4VFjGGSbaaSLFRzD"]
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -801,7 +801,7 @@ curl -X POST --data '{
     "method": "platform.getHeight",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -863,7 +863,7 @@ curl -X POST --data '{
         "endTime": 1644240634
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -905,7 +905,7 @@ curl -X POST --data '{
     "params": {
         "subnetID":"11111111111111111111111111111111LpoYY"
     },
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -989,7 +989,7 @@ curl -X POST --data '{
     "method": "platform.getPendingValidators",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -1063,7 +1063,7 @@ curl -X POST --data '{
         "txID": "2nmH8LithVbdjaXsxVQCQfXtzN9hBbmebrsaEYnLM9T32Uy2Y5"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -1128,7 +1128,7 @@ curl -X POST --data '{
     },
     "id": 1
 }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -1177,7 +1177,7 @@ curl -X POST --data '{
         "subnetID": "11111111111111111111111111111111LpoYY"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -1245,7 +1245,7 @@ curl -X POST --data '{
     "method": "platform.getSubnets",
     "params": {"ids":["hW8Ma7dLMA7o4xmJf3AXBbo17bXzE7xnThUd3ypM4VAWo1sNJ"]},
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -1288,7 +1288,7 @@ curl -X POST --data '{
     "params": {},
     "id": 1
 }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -1331,7 +1331,7 @@ curl -X POST --data '{
     },
     "id": 1
 }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -1360,7 +1360,7 @@ curl -X POST --data '{
     },
     "id": 1
 }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/P
 ```
 
 **Example Response:**
@@ -1405,7 +1405,7 @@ curl -X POST --data '{
         "encoding": "json"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -1517,7 +1517,7 @@ curl -X POST --data '{
         "txID":"TAG9Ns1sa723mZy1GSoGqWipK6Mvpaj7CAswVJGM6MkVJDF9Q"
    },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -1590,7 +1590,7 @@ curl -X POST --data '{
         "limit":5,
         "encoding": "hex"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 This gives response:
@@ -1634,7 +1634,7 @@ curl -X POST --data '{
         },
         "encoding": "hex"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 This gives response:
@@ -1677,7 +1677,7 @@ curl -X POST --data '{
         "sourceChain": "X",
         "encoding": "hex"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 This gives response:
@@ -1729,7 +1729,7 @@ curl -X POST --data '{
         "height":1
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -1779,7 +1779,7 @@ curl -X POST --data '{
         "encoding": "hex"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -1830,7 +1830,7 @@ curl -X POST --data '{
         "password":"myPassword"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -1877,7 +1877,7 @@ curl -X POST --data '{
     "params" :{
         "size":2
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -1922,7 +1922,7 @@ curl -X POST --data '{
         "blockchainID": "KDYHHKjM4yTJTT8H8qPs5KXzE6gQH5TZrmP1qVr1P6qECj3XN"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**
@@ -1964,7 +1964,7 @@ curl -X POST --data '{
         "subnetID":"2bRCr6B4MiEfSjidDwxDpdCyviwnfUVqB2HGwhm947w9YYqb7r"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
 ```
 
 **Example Response:**

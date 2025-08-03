@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"gonum.org/v1/gonum/mathext/prng"
 
@@ -498,7 +499,7 @@ func RecordPollSplitVoteNoChangeTest(t *testing.T, factory Factory) {
 
 	consensusCtx := consensustest.Context(t, consensustest.CChainID)
 	ctx := consensustest.ConsensusContext(consensusCtx)
-	registerer := prometheus.NewRegistry()
+	registerer := metrics.NewNoOpMetrics("test").Registry()
 	ctx.Registerer = registerer
 
 	params := sampling.Parameters{

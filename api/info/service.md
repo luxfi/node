@@ -48,7 +48,7 @@ curl -sX POST --data '{
     "id"     :1,
     "method" :"info.lps",
     "params" :{}
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/info
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/info
 ```
 
 **Example Response:**
@@ -135,7 +135,7 @@ curl -X POST --data '{
     "params": {
         "chain":"X"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/info
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/info
 ```
 
 **Example Response:**
@@ -170,7 +170,7 @@ curl -X POST --data '{
     "params": {
         "alias":"X"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/info
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/info
 ```
 
 **Example Response:**
@@ -202,7 +202,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
     "method" :"info.getNetworkID"
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/info
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/info
 ```
 
 **Example Response:**
@@ -237,7 +237,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
     "method" :"info.getNetworkName"
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/info
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/info
 ```
 
 **Example Response:**
@@ -286,7 +286,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
     "method" :"info.getNodeID"
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/info
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/info
 ```
 
 **Example Response:**
@@ -326,7 +326,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
     "method" :"info.getNodeIP"
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/info
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/info
 ```
 
 **Example Response:**
@@ -335,7 +335,7 @@ curl -X POST --data '{
 {
   "jsonrpc": "2.0",
   "result": {
-    "ip": "192.168.1.1:9651"
+    "ip": "192.168.1.1:9631"
   },
   "id": 1
 }
@@ -373,7 +373,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
     "method" :"info.getNodeVersion"
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/info
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/info
 ```
 
 **Example Response:**
@@ -436,7 +436,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
     "method" :"info.getTxFee"
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/info
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/info
 ```
 
 **Example Response:**
@@ -483,7 +483,7 @@ curl -X POST --data '{
     "id"     :1,
     "method" :"info.getVMs",
     "params" :{}
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/info
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/info
 ```
 
 **Example Response:**
@@ -554,7 +554,7 @@ curl -X POST --data '{
     "params": {
         "nodeIDs": []
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/info
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/info
 ```
 
 **Example Response:**
@@ -567,8 +567,8 @@ curl -X POST --data '{
     "numPeers": 3,
     "peers": [
       {
-        "ip": "206.189.137.87:9651",
-        "publicIP": "206.189.137.87:9651",
+        "ip": "206.189.137.87:9631",
+        "publicIP": "206.189.137.87:9631",
         "nodeID": "NodeID-8PYXX47kqLDe2wD4oPbvRRchcnSzMA4J4",
         "version": "lux/1.9.4",
         "lastSent": "2020-06-01T15:23:02Z",
@@ -580,8 +580,8 @@ curl -X POST --data '{
         "benched": []
       },
       {
-        "ip": "158.255.67.151:9651",
-        "publicIP": "158.255.67.151:9651",
+        "ip": "158.255.67.151:9631",
+        "publicIP": "158.255.67.151:9631",
         "nodeID": "NodeID-C14fr1n8EYNKyDfYixJ3rxSAVqTY3a8BP",
         "version": "lux/1.9.4",
         "lastSent": "2020-06-01T15:23:02Z",
@@ -597,8 +597,8 @@ curl -X POST --data '{
         "benched": []
       },
       {
-        "ip": "83.42.13.44:9651",
-        "publicIP": "83.42.13.44:9651",
+        "ip": "83.42.13.44:9631",
+        "publicIP": "83.42.13.44:9631",
         "nodeID": "NodeID-LPbcSMGJ4yocxYxvS2kBJ6umWeeFbctYZ",
         "version": "lux/1.9.3",
         "lastSent": "2020-06-01T15:23:02Z",
@@ -646,7 +646,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
     "method" :"info.uptime"
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/info
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/info
 ```
 
 **Example Response:**
@@ -672,7 +672,7 @@ curl -X POST --data '{
     "params" :{
         "subnetID":"29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/info
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/info
 ```
 
 #### **Example Subnet Response**

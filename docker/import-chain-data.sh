@@ -24,7 +24,7 @@ echo "   Database size: $SIZE"
 # Step 2: Check if network is healthy
 echo ""
 echo "Checking network health..."
-HEALTH_RESPONSE=$(curl -s http://localhost:9650/ext/health || echo "{}")
+HEALTH_RESPONSE=$(curl -s http://localhost:9630/ext/health || echo "{}")
 
 if ! echo "$HEALTH_RESPONSE" | grep -q "healthy"; then
     echo "❌ Network is not healthy yet. Please wait for network to start."
@@ -80,7 +80,7 @@ CMD_ARGS=(
     "--data-dir=/luxd"
     "--network-id=${NETWORK_ID:-96369}"
     "--http-host=0.0.0.0"
-    "--http-port=9650"
+    "--http-port=9630"
     "--chain-config-dir=/luxd/configs/chains"
     "--index-allow-incomplete"
     "--force-ignore-checksum"
@@ -118,7 +118,7 @@ check_import_complete() {
     fi
     
     # Also check if we can query the block height
-    RESPONSE=$(curl -s -X POST http://localhost:9650/ext/bc/C/rpc \
+    RESPONSE=$(curl -s -X POST http://localhost:9630/ext/bc/C/rpc \
         -H "Content-Type: application/json" \
         -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' 2>/dev/null || echo "{}")
     
@@ -138,7 +138,7 @@ while [ $ELAPSED -lt $TIMEOUT ]; do
         echo "✅ Import completed successfully!"
         
         # Check final block height
-        RESPONSE=$(curl -s -X POST http://localhost:9650/ext/bc/C/rpc \
+        RESPONSE=$(curl -s -X POST http://localhost:9630/ext/bc/C/rpc \
             -H "Content-Type: application/json" \
             -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}')
         
@@ -147,7 +147,7 @@ while [ $ELAPSED -lt $TIMEOUT ]; do
         echo "Current block height: $BLOCK_HEIGHT_DEC"
         
         # Check balance
-        BALANCE_RESPONSE=$(curl -s -X POST http://localhost:9650/ext/bc/C/rpc \
+        BALANCE_RESPONSE=$(curl -s -X POST http://localhost:9630/ext/bc/C/rpc \
             -H "Content-Type: application/json" \
             -d '{"jsonrpc":"2.0","method":"eth_getBalance","params":["0x9011E888251AB053B7bD1cdB598Db4f9DEd94714","latest"],"id":1}')
         

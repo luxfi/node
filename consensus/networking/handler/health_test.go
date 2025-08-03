@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus"
@@ -57,7 +58,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 			vdrs := validators.NewManager()
 
 			resourceTracker, err := tracker.NewResourceTracker(
-				prometheus.NewRegistry(),
+				metrics.NewNoOpMetrics("test").Registry(),
 				resource.NoUsage,
 				meter.ContinuousFactory{},
 				time.Second,
@@ -77,7 +78,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 			p2pTracker, err := p2p.NewPeerTracker(
 				log.NewNoOpLogger(),
 				"",
-				prometheus.NewRegistry(),
+				metrics.NewNoOpMetrics("test").Registry(),
 				nil,
 				version.CurrentApp,
 			)
@@ -96,7 +97,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 				sb,
 				peerTracker,
 				p2pTracker,
-				prometheus.NewRegistry(),
+				metrics.NewNoOpMetrics("test").Registry(),
 				func() {},
 			)
 			require.NoError(err)

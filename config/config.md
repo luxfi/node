@@ -462,7 +462,7 @@ domain names as parameter.
 
 Each node runs an HTTP server that provides the APIs for interacting with the
 node and the Lux network. This argument specifies the port that the HTTP
-server will listen on. The default value is `9650`.
+server will listen on. The default value is `9630`.
 
 #### `--http-tls-cert-file` (string, file path)
 
@@ -670,7 +670,7 @@ public IP. Only acceptable values are `ifconfigCo`, `opendns` or `ifconfigMe`.
 
 The port through which the network peers will connect to this node externally.
 Having this port accessible from the internet is required for correct node
-operation. Defaults to `9651`.
+operation. Defaults to `9631`.
 
 #### `--sybil-protection-enabled` (boolean)
 

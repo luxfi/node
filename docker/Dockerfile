@@ -29,7 +29,7 @@ USER luxnode
 WORKDIR /luxd
 
 # Expose ports
-EXPOSE 9650 9651 8546
+EXPOSE 9630 9631 8546
 
 # Set entrypoint
 ENTRYPOINT ["docker-entrypoint.sh"]

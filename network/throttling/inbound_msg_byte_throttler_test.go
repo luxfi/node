@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/validators"
@@ -30,7 +31,7 @@ func TestInboundMsgByteThrottlerCancelContextDeadlock(t *testing.T) {
 
 	throttler, err := newInboundMsgByteThrottler(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)
@@ -59,7 +60,7 @@ func TestInboundMsgByteThrottlerCancelContext(t *testing.T) {
 
 	throttler, err := newInboundMsgByteThrottler(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)
@@ -116,7 +117,7 @@ func TestInboundMsgByteThrottler(t *testing.T) {
 
 	throttler, err := newInboundMsgByteThrottler(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)
@@ -330,7 +331,7 @@ func TestSybilMsgThrottlerMaxNonVdr(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttler, err := newInboundMsgByteThrottler(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)
@@ -380,7 +381,7 @@ func TestMsgThrottlerNextMsg(t *testing.T) {
 	maxBytes := maxVdrBytes
 	throttler, err := newInboundMsgByteThrottler(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)

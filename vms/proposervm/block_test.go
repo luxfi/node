@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -78,7 +79,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 			DurangoTime:       time.Unix(0, 0),
 			StakingCertLeaf:   &staking.Certificate{},
 			StakingLeafSigner: pk,
-			Registerer:        prometheus.NewRegistry(),
+			Registerer:        metrics.NewNoOpMetrics("test").Registry(),
 		},
 		ChainVM:        innerVM,
 		blockBuilderVM: innerBlockBuilderVM,
@@ -391,7 +392,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 			DurangoTime:       time.Unix(0, 0),
 			StakingCertLeaf:   &staking.Certificate{},
 			StakingLeafSigner: pk,
-			Registerer:        prometheus.NewRegistry(),
+			Registerer:        metrics.NewNoOpMetrics("test").Registry(),
 		},
 		ChainVM: block.NewMockChainVM(ctrl),
 		ctx: &consensus.Context{

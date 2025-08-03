@@ -148,7 +148,7 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 		}
 
 		if i == 0 {
-			bootstrapIP = address + ":9651"
+			bootstrapIP = address + ":9631"
 			bootstrapIDs = node.NodeID.String()
 		} else {
 			env[config.BootstrapIPsKey] = bootstrapIP
@@ -174,7 +174,7 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 		}
 
 		// Collect URIs for the workload container
-		uris[i] = fmt.Sprintf("http://%s:9650", address)
+		uris[i] = fmt.Sprintf("http://%s:9630", address)
 	}
 
 	workloadEnv := types.Mapping{

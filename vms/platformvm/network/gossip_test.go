@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -40,7 +41,7 @@ func TestGossipMempoolAddVerificationError(t *testing.T) {
 
 	gossipMempool, err := newGossipMempool(
 		mempool,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		log.NewNoOpLogger(),
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
@@ -74,7 +75,7 @@ func TestGossipMempoolAddError(t *testing.T) {
 
 	gossipMempool, err := newGossipMempool(
 		mempool,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		log.NewNoOpLogger(),
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
@@ -105,7 +106,7 @@ func TestMempoolDuplicate(t *testing.T) {
 
 	gossipMempool, err := newGossipMempool(
 		testMempool,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		log.NewNoOpLogger(),
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
@@ -140,7 +141,7 @@ func TestGossipAddBloomFilter(t *testing.T) {
 
 	gossipMempool, err := newGossipMempool(
 		mempool,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		log.NewNoOpLogger(),
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,

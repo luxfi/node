@@ -79,7 +79,7 @@ USER luxnode
 WORKDIR /luxd
 
 # Expose ports
-EXPOSE 9650 9651 8546
+EXPOSE 9630 9631 8546
 
 # Set entrypoint
 ENTRYPOINT ["docker-entrypoint.sh"]
@@ -105,7 +105,7 @@ docker-compose -f compose.luxnet.yml up -d luxd
 # Wait for node to be healthy
 print_status "Waiting for node to be healthy..."
 for i in {1..30}; do
-    if docker exec luxnet-node curl -s http://localhost:9650/ext/health | jq -e '.healthy' > /dev/null 2>&1; then
+    if docker exec luxnet-node curl -s http://localhost:9630/ext/health | jq -e '.healthy' > /dev/null 2>&1; then
         print_status "Node is healthy!"
         break
     fi
@@ -114,18 +114,18 @@ for i in {1..30}; do
 done
 
 # Check final status
-if docker exec luxnet-node curl -s http://localhost:9650/ext/health | jq -e '.healthy' > /dev/null 2>&1; then
+if docker exec luxnet-node curl -s http://localhost:9630/ext/health | jq -e '.healthy' > /dev/null 2>&1; then
     print_status "Lux node is running successfully!"
     
     # Show some info
     echo -e "\n${GREEN}Node Information:${NC}"
-    echo "RPC Endpoint: http://localhost:9650/ext/bc/C/rpc"
+    echo "RPC Endpoint: http://localhost:9630/ext/bc/C/rpc"
     echo "WebSocket: ws://localhost:8546"
-    echo "Health Check: http://localhost:9650/ext/health"
+    echo "Health Check: http://localhost:9630/ext/health"
     
     # Test RPC
     echo -e "\n${GREEN}Testing RPC:${NC}"
-    curl -s -X POST http://localhost:9650/ext/bc/C/rpc \
+    curl -s -X POST http://localhost:9630/ext/bc/C/rpc \
         -H "Content-Type: application/json" \
         -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' | jq .
     

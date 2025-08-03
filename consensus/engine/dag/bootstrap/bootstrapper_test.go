@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus"
@@ -76,10 +77,10 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextes
 	peer := ids.GenerateTestNodeID()
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, peer, nil, ids.Empty, 1))
 
-	vtxBlocker, err := queue.NewWithMissing(prefixdb.New([]byte("vtx"), db), "vtx", prometheus.NewRegistry())
+	vtxBlocker, err := queue.NewWithMissing(prefixdb.New([]byte("vtx"), db), "vtx", metrics.NewNoOpMetrics("test").Registry())
 	require.NoError(err)
 
-	txBlocker, err := queue.New(prefixdb.New([]byte("tx"), db), "tx", prometheus.NewRegistry())
+	txBlocker, err := queue.New(prefixdb.New([]byte("tx"), db), "tx", metrics.NewNoOpMetrics("test").Registry())
 	require.NoError(err)
 
 	peerTracker := tracker.NewPeers()
@@ -88,13 +89,13 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextes
 	startupTracker := tracker.NewStartup(peerTracker, totalWeight/2+1)
 	vdrs.RegisterSetCallbackListener(constants.PrimaryNetworkID, startupTracker)
 
-	getHandler, err := getter.New(manager, sender, ctx.Log, time.Second, 2000, prometheus.NewRegistry())
+	getHandler, err := getter.New(manager, sender, ctx.Log, time.Second, 2000, metrics.NewNoOpMetrics("test").Registry())
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
 		log.NewNoOpLogger(),
 		"",
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -173,7 +174,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 			})
 			return nil
 		},
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(err)
 
@@ -280,7 +281,7 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 			})
 			return nil
 		},
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(err)
 
@@ -447,7 +448,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 			})
 			return nil
 		},
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(err)
 
@@ -571,7 +572,7 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 			})
 			return nil
 		},
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(err)
 

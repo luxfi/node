@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
@@ -778,7 +779,7 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 	newState, err := state.New(
 		vm.db,
 		nil,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		&vm.Config,
 		execCfg,
 		vm.ctx,
@@ -1087,7 +1088,7 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	newState, err := state.New(
 		vm.db,
 		nil,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		&vm.Config,
 		execCfg,
 		vm.ctx,

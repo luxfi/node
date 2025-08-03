@@ -28,7 +28,7 @@ import (
 
 const (
 	DefaultHTTPPort    = 9630
-	DefaultStakingPort = 9651
+	DefaultStakingPort = 9631
 
 	LuxNodeDataDirVar        = "LUXD_DATA_DIR"
 	defaultUnexpandedDataDir = "$" + LuxNodeDataDirVar

@@ -29,7 +29,7 @@ def update_bootstrappers(bootstrappers_path, staking_dir, reward_address='X-lux1
             staker_data = read_json(staker_json)
 
         node_id = staker_data['id']
-        node_ip = f'127.0.0.1:{9650+(i*2)}'
+        node_ip = f'127.0.0.1:{9630+(i*2)}'
 
         # Update the genesis data
         # This is an example update. Adjust the logic according to your needs.

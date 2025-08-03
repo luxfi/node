@@ -20,7 +20,7 @@ var (
 
 	defaultLoopbackAddrPort = netip.AddrPortFrom(
 		netip.AddrFrom4([4]byte{127, 0, 0, 1}),
-		9651,
+		9631,
 	)
 )
 

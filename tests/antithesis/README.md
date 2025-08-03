@@ -72,7 +72,7 @@ The workload of the 'node' test setup can be invoked against an
 arbitrary network:
 
 ```bash
-$ AVAWL_URIS="http://10.0.20.3:9650 http://10.0.20.4:9650" go run ./tests/antithesis/node
+$ AVAWL_URIS="http://10.0.20.3:9630 http://10.0.20.4:9630" go run ./tests/antithesis/node
 ```
 
 The workload of a subnet test setup like 'xsvm' additionally requires

@@ -10,6 +10,7 @@ package database
 import (
 	"io"
 
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/api/health"
 )
 
@@ -88,8 +89,8 @@ type Compacter interface {
 // key-value data stores backing the database.
 type Database interface {
 	KeyValueReaderWriterDeleter
-	Batcher
-	Iteratee
+	database.Batcher
+	database.Iteratee
 	Compacter
 	io.Closer
 	health.Checker

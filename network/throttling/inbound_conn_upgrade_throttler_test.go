@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	host1      = netip.AddrPortFrom(netip.AddrFrom4([4]byte{1, 2, 3, 4}), 9651)
+	host1      = netip.AddrPortFrom(netip.AddrFrom4([4]byte{1, 2, 3, 4}), 9631)
 	host2      = netip.AddrPortFrom(netip.AddrFrom4([4]byte{1, 2, 3, 5}), 9653)
 	host3      = netip.AddrPortFrom(netip.AddrFrom4([4]byte{1, 2, 3, 6}), 9655)
 	host4      = netip.AddrPortFrom(netip.AddrFrom4([4]byte{1, 2, 3, 7}), 9657)

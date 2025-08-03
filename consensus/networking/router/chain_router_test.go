@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -63,8 +64,8 @@ func TestShutdown(t *testing.T) {
 			TimeoutHalflife:    5 * time.Minute,
 		},
 		benchlist,
-		prometheus.NewRegistry(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(err)
 
@@ -82,13 +83,13 @@ func TestShutdown(t *testing.T) {
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	))
 
 	shutdownCalled := make(chan struct{}, 1)
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -98,7 +99,7 @@ func TestShutdown(t *testing.T) {
 	p2pTracker, err := p2p.NewPeerTracker(
 		log.NewNoOpLogger(),
 		"",
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -115,7 +116,7 @@ func TestShutdown(t *testing.T) {
 		subnets.New(chainCtx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		p2pTracker,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -218,8 +219,8 @@ func TestShutdownTimesOut(t *testing.T) {
 			TimeoutHalflife:    5 * time.Minute,
 		},
 		benchlist,
-		prometheus.NewRegistry(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(err)
 
@@ -238,11 +239,11 @@ func TestShutdownTimesOut(t *testing.T) {
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	))
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -252,7 +253,7 @@ func TestShutdownTimesOut(t *testing.T) {
 	p2pTracker, err := p2p.NewPeerTracker(
 		log.NewNoOpLogger(),
 		"",
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -269,7 +270,7 @@ func TestShutdownTimesOut(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		p2pTracker,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -368,8 +369,8 @@ func TestRouterTimeout(t *testing.T) {
 			TimeoutHalflife:    5 * time.Minute,
 		},
 		benchlist.NewNoBenchlist(),
-		prometheus.NewRegistry(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(err)
 
@@ -388,7 +389,7 @@ func TestRouterTimeout(t *testing.T) {
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	))
 	defer chainRouter.Shutdown(context.Background())
 
@@ -412,7 +413,7 @@ func TestRouterTimeout(t *testing.T) {
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -422,7 +423,7 @@ func TestRouterTimeout(t *testing.T) {
 	p2pTracker, err := p2p.NewPeerTracker(
 		log.NewNoOpLogger(),
 		"",
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -439,7 +440,7 @@ func TestRouterTimeout(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		p2pTracker,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -701,8 +702,8 @@ func TestRouterHonorsRequestedEngine(t *testing.T) {
 			TimeoutHalflife:    5 * time.Minute,
 		},
 		benchlist.NewNoBenchlist(),
-		prometheus.NewRegistry(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(err)
 
@@ -721,7 +722,7 @@ func TestRouterHonorsRequestedEngine(t *testing.T) {
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	))
 	defer chainRouter.Shutdown(context.Background())
 
@@ -910,8 +911,8 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 			TimeoutHalflife:    5 * time.Minute,
 		},
 		benchlist.NewNoBenchlist(),
-		prometheus.NewRegistry(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(err)
 
@@ -930,7 +931,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	))
 	defer chainRouter.Shutdown(context.Background())
 
@@ -945,7 +946,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	vID := ids.GenerateTestNodeID()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, vID, nil, ids.Empty, 1))
 	resourceTracker, err := tracker.NewResourceTracker(
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -955,7 +956,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	p2pTracker, err := p2p.NewPeerTracker(
 		log.NewNoOpLogger(),
 		"",
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -972,7 +973,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 		sb,
 		commontracker.NewPeers(),
 		p2pTracker,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -1073,8 +1074,8 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 			TimeoutHalflife:    5 * time.Minute,
 		},
 		benchlist.NewNoBenchlist(),
-		prometheus.NewRegistry(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(err)
 
@@ -1093,7 +1094,7 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	))
 	defer chainRouter.Shutdown(context.Background())
 
@@ -1112,7 +1113,7 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, vID, nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -1122,7 +1123,7 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 	p2pTracker, err := p2p.NewPeerTracker(
 		log.NewNoOpLogger(),
 		"",
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -1139,7 +1140,7 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 		sb,
 		commontracker.NewPeers(),
 		p2pTracker,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -1336,8 +1337,8 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 			TimeoutHalflife:    5 * time.Minute,
 		},
 		benchlist.NewNoBenchlist(),
-		prometheus.NewRegistry(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(t, err)
 
@@ -1355,7 +1356,7 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	))
 
 	// Create bootstrapper, engine and handler
@@ -1365,7 +1366,7 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 	require.NoError(t, vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -1375,7 +1376,7 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 	p2pTracker, err := p2p.NewPeerTracker(
 		log.NewNoOpLogger(),
 		"",
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -1392,7 +1393,7 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		p2pTracker,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		func() {},
 	)
 	require.NoError(t, err)
@@ -1460,7 +1461,7 @@ func TestHandleBFTMessage(t *testing.T) {
 			set.Set[ids.ID]{},
 			nil,
 			HealthConfig{},
-			prometheus.NewRegistry(),
+			metrics.NewNoOpMetrics("test").Registry(),
 		))
 	defer chainRouter.Shutdown(context.Background())
 

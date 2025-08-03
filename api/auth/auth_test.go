@@ -27,7 +27,7 @@ var (
 	hashedPassword            = password.Hash{}
 	unAuthorizedResponseRegex = `^{"jsonrpc":"2.0","error":{"code":-32600,"message":"(.*)"},"id":1}`
 	errTest                   = errors.New("non-nil error")
-	hostName                  = "http://127.0.0.1:9650"
+	hostName                  = "http://127.0.0.1:9630"
 )
 
 func init() {
@@ -228,7 +228,7 @@ func TestWrapHandlerNoAuthToken(t *testing.T) {
 	endpoints := []string{"/ext/info", "/ext/bc/X", "/ext/metrics"}
 	wrappedHandler := auth.WrapHandler(dummyHandler)
 	for _, endpoint := range endpoints {
-		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("http://127.0.0.1:9650%s", endpoint), strings.NewReader(""))
+		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("http://127.0.0.1:9630%s", endpoint), strings.NewReader(""))
 		rr := httptest.NewRecorder()
 		wrappedHandler.ServeHTTP(rr, req)
 		require.Equal(http.StatusUnauthorized, rr.Code)
@@ -272,7 +272,7 @@ func TestWrapHandlerAuthEndpoint(t *testing.T) {
 	require.NoError(err)
 
 	wrappedHandler := auth.WrapHandler(dummyHandler)
-	req := httptest.NewRequest(http.MethodPost, "http://127.0.0.1:9650/ext/auth", strings.NewReader(""))
+	req := httptest.NewRequest(http.MethodPost, "http://127.0.0.1:9630/ext/auth", strings.NewReader(""))
 	req.Header.Add("Authorization", headerValStart+tokenStr)
 	rr := httptest.NewRecorder()
 	wrappedHandler.ServeHTTP(rr, req)

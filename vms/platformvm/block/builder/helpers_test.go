@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/chains"
@@ -171,7 +172,7 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		Rewards:      rewardsCalc,
 	}
 
-	registerer := prometheus.NewRegistry()
+	registerer := metrics.NewNoOpMetrics("test").Registry()
 	res.sender = &core.SenderTest{
 		SendAppGossipF: func(context.Context, core.SendConfig, []byte) error {
 			return nil
@@ -289,7 +290,7 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		cfg,
 		execCfg,
 		ctx,

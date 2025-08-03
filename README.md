@@ -105,7 +105,7 @@ docker image ls
 The image should be tagged as `ghcr.io/luxfi/node:xxxxxxxx`, where `xxxxxxxx` is the shortened commit of the Lux source it was built from. To run the Lux node, run:
 
 ```sh
-docker run -ti -p 9630:9630 -p 9651:9651 ghcr.io/luxfi/node:xxxxxxxx /node/build/node
+docker run -ti -p 9630:9630 -p 9631:9631 ghcr.io/luxfi/node:xxxxxxxx /node/build/node
 ```
 
 ## Running Lux

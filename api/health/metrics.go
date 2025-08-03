@@ -5,13 +5,13 @@ package health
 
 import "github.com/prometheus/client_golang/prometheus"
 
-type metrics struct {
+type healthMetrics struct {
 	// failingChecks keeps track of the number of check failing
 	failingChecks *prometheus.GaugeVec
 }
 
-func newMetrics(namespace string, registerer prometheus.Registerer) (*metrics, error) {
-	metrics := &metrics{
+func newMetrics(namespace string, registerer prometheus.Registerer) (*healthMetrics, error) {
+	metrics := &healthMetrics{
 		failingChecks: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace: namespace,

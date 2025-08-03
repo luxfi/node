@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -22,7 +23,7 @@ func TestServiceResponses(t *testing.T) {
 		return "", nil
 	})
 
-	h, err := New(log.NewNoOpLogger(), prometheus.NewRegistry())
+	h, err := New(log.NewNoOpLogger(), metrics.NewNoOpMetrics("test").Registry())
 	require.NoError(err)
 
 	s := &Service{
@@ -158,7 +159,7 @@ func TestServiceTagResponse(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			h, err := New(log.NewNoOpLogger(), prometheus.NewRegistry())
+			h, err := New(log.NewNoOpLogger(), metrics.NewNoOpMetrics("test").Registry())
 			require.NoError(err)
 			require.NoError(test.register(h, "check1", check))
 			require.NoError(test.register(h, "check2", check, subnetID1.String()))
