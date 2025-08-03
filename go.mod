@@ -92,7 +92,7 @@ require (
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/crypto v1.2.0
 	github.com/luxfi/database v1.1.4
-	github.com/luxfi/geth v1.16.7
+	github.com/luxfi/geth v1.16.13
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/log v0.1.1
 	github.com/luxfi/metrics v1.1.1
