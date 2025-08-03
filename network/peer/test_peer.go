@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	
+	"github.com/luxfi/metrics"
 
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/tracker"
@@ -74,9 +76,15 @@ func StartTestPeer(
 		return nil, err
 	}
 
+	// Create a prometheus registry for metrics
+	promRegistry := prometheus.NewRegistry()
+	
+	// Create a no-op metrics instance for message creator
+	metricsInstance := metrics.NewNoOpMetrics("test")
+	
 	mc, err := message.NewCreator(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metricsInstance,
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -84,13 +92,13 @@ func StartTestPeer(
 		return nil, err
 	}
 
-	metrics, err := NewMetrics(prometheus.NewRegistry())
+	peerMetrics, err := NewMetrics(promRegistry)
 	if err != nil {
 		return nil, err
 	}
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		prometheus.NewRegistry(),
+		promRegistry,
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		10*time.Second,
@@ -107,7 +115,7 @@ func StartTestPeer(
 
 	peer := Start(
 		&Config{
-			Metrics:              metrics,
+			Metrics:              peerMetrics,
 			MessageCreator:       mc,
 			Log:                  log.NewNoOpLogger(),
 			InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
@@ -136,7 +144,7 @@ func StartTestPeer(
 		cert,
 		peerID,
 		NewBlockingMessageQueue(
-			metrics,
+			SendFailedFunc(func(message.OutboundMessage) {}), // No-op callback
 			log.NewNoOpLogger(),
 			maxMessageToSend,
 		),

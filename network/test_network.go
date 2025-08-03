@@ -13,6 +13,8 @@ import (
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
+	
+	lux_metrics "github.com/luxfi/metrics"
 
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/tracker"
@@ -79,10 +81,10 @@ func NewTestNetwork(
 	trackedSubnets set.Set[ids.ID],
 	router router.ExternalHandler,
 ) (Network, error) {
-	metrics := prometheus.NewRegistry()
+	m := lux_metrics.NewNoOpMetrics("test")
 	msgCreator, err := message.NewCreator(
 		log,
-		metrics,
+		m,
 		constants.DefaultNetworkCompressionType,
 		constants.DefaultNetworkMaximumInboundTimeout,
 	)
@@ -103,8 +105,9 @@ func NewTestNetwork(
 	// TODO actually monitor usage
 	// TestNetwork doesn't use disk so we don't need to track it, but we should
 	// still have guardrails around cpu/memory usage.
+	promRegistry := prometheus.NewRegistry()
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics,
+		promRegistry,
 		resource.NoUsage,
 		&meter.ContinuousFactory{},
 		constants.DefaultHealthCheckAveragerHalflife,
@@ -217,7 +220,7 @@ func NewTestNetwork(
 			),
 		},
 		msgCreator,
-		metrics,
+		promRegistry,
 		log,
 		newNoopListener(),
 		dialer.NewDialer(

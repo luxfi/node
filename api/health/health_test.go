@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/utils"
@@ -55,7 +54,7 @@ func TestDuplicatedRegistations(t *testing.T) {
 		return "", nil
 	})
 
-	h, err := New(log.NewNoOpLogger(), metrics.NewNoOpMetrics("test").Registry())
+	h, err := New(log.NewNoOpLogger(), prometheus.NewRegistry())
 	require.NoError(err)
 
 	require.NoError(h.RegisterReadinessCheck("check", check))
@@ -78,7 +77,7 @@ func TestDefaultFailing(t *testing.T) {
 		return "", nil
 	})
 
-	h, err := New(log.NewNoOpLogger(), metrics.NewNoOpMetrics("test").Registry())
+	h, err := New(log.NewNoOpLogger(), prometheus.NewRegistry())
 	require.NoError(err)
 
 	{
@@ -119,7 +118,7 @@ func TestPassingChecks(t *testing.T) {
 		return "", nil
 	})
 
-	h, err := New(log.NewNoOpLogger(), metrics.NewNoOpMetrics("test").Registry())
+	h, err := New(log.NewNoOpLogger(), prometheus.NewRegistry())
 	require.NoError(err)
 
 	require.NoError(h.RegisterReadinessCheck("check", check))
@@ -183,7 +182,7 @@ func TestPassingThenFailingChecks(t *testing.T) {
 		return "", nil
 	})
 
-	h, err := New(log.NewNoOpLogger(), metrics.NewNoOpMetrics("test").Registry())
+	h, err := New(log.NewNoOpLogger(), prometheus.NewRegistry())
 	require.NoError(err)
 
 	require.NoError(h.RegisterReadinessCheck("check", check))
@@ -230,7 +229,7 @@ func TestPassingThenFailingChecks(t *testing.T) {
 func TestDeadlockRegression(t *testing.T) {
 	require := require.New(t)
 
-	h, err := New(log.NewNoOpLogger(), metrics.NewNoOpMetrics("test").Registry())
+	h, err := New(log.NewNoOpLogger(), prometheus.NewRegistry())
 	require.NoError(err)
 
 	var lock sync.Mutex
@@ -260,7 +259,7 @@ func TestTags(t *testing.T) {
 		return "", nil
 	})
 
-	h, err := New(log.NewNoOpLogger(), metrics.NewNoOpMetrics("test").Registry())
+	h, err := New(log.NewNoOpLogger(), prometheus.NewRegistry())
 	require.NoError(err)
 	require.NoError(h.RegisterHealthCheck("check1", check))
 	require.NoError(h.RegisterHealthCheck("check2", check, "tag1"))
