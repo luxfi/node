@@ -44,6 +44,7 @@ import (
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/log"
+	"github.com/luxfi/log/level"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -271,7 +272,7 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 		},
 	}}
 
-	db := memdb.New()
+	db := memdb.NewDatabase()
 	chainDB := prefixdb.New([]byte{0}, db)
 	atomicDB := prefixdb.New([]byte{1}, db)
 
@@ -1198,7 +1199,7 @@ func TestOptimisticAtomicImport(t *testing.T) {
 // test restarting the node
 func TestRestartFullyAccepted(t *testing.T) {
 	require := require.New(t)
-	db := memdb.New()
+	db := memdb.NewDatabase()
 
 	firstDB := prefixdb.New([]byte{}, db)
 	firstVM := &VM{Config: config.Config{
@@ -1220,7 +1221,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 
 	_, genesisBytes := defaultGenesis(t, firstCtx.LUXAssetID)
 
-	baseDB := memdb.New()
+	baseDB := memdb.NewDatabase()
 	atomicDB := prefixdb.New([]byte{1}, baseDB)
 	m := atomic.NewMemory(atomicDB)
 	firstCtx.SharedMemory = m.NewSharedMemory(firstCtx.ChainID)
@@ -1334,7 +1335,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require := require.New(t)
 
-	baseDB := memdb.New()
+	baseDB := memdb.NewDatabase()
 	vmDB := prefixdb.New(chains.VMDBPrefix, baseDB)
 	bootstrappingDB := prefixdb.New(chains.ChainBootstrappingDBPrefix, baseDB)
 
@@ -1444,12 +1445,12 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	chainRouter := &router.ChainRouter{}
 
 	metrics := prometheus.NewRegistry()
-	mc, err := message.NewCreator(log.NoLog{}, metrics, constants.DefaultNetworkCompressionType, 10*time.Second)
+	mc, err := message.NewCreator(log.NewTestLogger(level.Error), metrics, constants.DefaultNetworkCompressionType, 10*time.Second)
 	require.NoError(err)
 
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		log.NoLog{},
+		log.NewTestLogger(level.Error),
 		timeoutManager,
 		time.Second,
 		set.Set[ids.ID]{},
@@ -1734,7 +1735,7 @@ func TestUnverifiedParent(t *testing.T) {
 	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
-		memdb.New(),
+		memdb.NewDatabase(),
 		genesisBytes,
 		nil,
 		nil,
@@ -1863,7 +1864,7 @@ func TestMaxStakeAmount(t *testing.T) {
 func TestUptimeDisallowedWithRestart(t *testing.T) {
 	require := require.New(t)
 	latestForkTime = defaultValidateStartTime.Add(defaultMinStakingDuration)
-	db := memdb.New()
+	db := memdb.NewDatabase()
 
 	firstDB := prefixdb.New([]byte{}, db)
 	const firstUptimePercentage = 20 // 20%
@@ -2014,7 +2015,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	require := require.New(t)
 	latestForkTime = defaultValidateStartTime.Add(defaultMinStakingDuration)
 
-	db := memdb.New()
+	db := memdb.NewDatabase()
 
 	vm := &VM{Config: config.Config{
 		Chains:                 chains.TestManager,
