@@ -47,7 +47,7 @@ func TestCommSendMessage(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	sender := sendermock.NewExternalSender(ctrl)
 	mc, err := message.NewCreator(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -78,7 +78,7 @@ func TestCommBroadcast(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	sender := sendermock.NewExternalSender(ctrl)
 	mc, err := message.NewCreator(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -114,7 +114,7 @@ func TestCommFailsWithoutCurrentNode(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mc, err := message.NewCreator(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,

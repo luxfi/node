@@ -58,7 +58,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -168,7 +168,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -277,7 +277,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -370,7 +370,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		"",
 		prometheus.NewRegistry(),
 		nil,
@@ -558,7 +558,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			require.NoError(err)
 
 			peerTracker, err := p2p.NewPeerTracker(
-				log.NoLog{},
+				log.NewNoOpLogger(),
 				"",
 				prometheus.NewRegistry(),
 				nil,
@@ -644,7 +644,7 @@ func TestHandlerStartError(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		"",
 		prometheus.NewRegistry(),
 		nil,

@@ -66,7 +66,7 @@ func (*testAggressiveValidatorManager) Contains(ids.ID, ids.NodeID) bool {
 }
 
 func ExampleNewTestNetwork() {
-	log := log.NoLog{}
+	log := log.NewNoOpLogger()
 
 	// Needs to be periodically updated by the caller to have the latest
 	// validator set

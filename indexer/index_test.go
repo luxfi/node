@@ -27,7 +27,7 @@ func TestIndex(t *testing.T) {
 	consensusCtx := consensustest.Context(t, consensustest.CChainID)
 	ctx := consensustest.ConsensusContext(consensusCtx)
 
-	idx, err := newIndex(db, log.NoLog{}, mockable.Clock{})
+	idx, err := newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
 	require.NoError(err)
 
 	// Populate "containers" with random IDs/bytes
@@ -79,7 +79,7 @@ func TestIndex(t *testing.T) {
 	require.NoError(db.Commit())
 	require.NoError(idx.Close())
 	db = versiondb.New(baseDB)
-	idx, err = newIndex(db, log.NoLog{}, mockable.Clock{})
+	idx, err = newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
 	require.NoError(err)
 
 	// Get all of the containers
@@ -111,7 +111,7 @@ func TestIndexGetContainerByRangeMaxPageSize(t *testing.T) {
 	db := memdb.New()
 	consensusCtx := consensustest.Context(t, consensustest.CChainID)
 	ctx := consensustest.ConsensusContext(consensusCtx)
-	idx, err := newIndex(db, log.NoLog{}, mockable.Clock{})
+	idx, err := newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
 	require.NoError(err)
 
 	// Insert [MaxFetchedByRange] + 1 containers
@@ -149,7 +149,7 @@ func TestDontIndexSameContainerTwice(t *testing.T) {
 	db := memdb.New()
 	consensusCtx := consensustest.Context(t, consensustest.CChainID)
 	ctx := consensustest.ConsensusContext(consensusCtx)
-	idx, err := newIndex(db, log.NoLog{}, mockable.Clock{})
+	idx, err := newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
 	require.NoError(err)
 
 	// Accept the same container twice

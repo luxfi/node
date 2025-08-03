@@ -132,7 +132,7 @@ func init() {
 
 func newDefaultTargeter(t tracker.Tracker) tracker.Targeter {
 	return tracker.NewTargeter(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		&tracker.TargeterConfig{
 			VdrAlloc:           10,
 			MaxNonVdrUsage:     10,
@@ -197,7 +197,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 	t.Helper()
 
 	mc, err := message.NewCreator(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -242,7 +242,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 			config,
 			msgCreator,
 			registry,
-			log.NoLog{},
+			log.NewNoOpLogger(),
 			listeners[i],
 			dialer,
 			&testHandler{
@@ -474,7 +474,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 			config,
 			msgCreator,
 			registry,
-			log.NoLog{},
+			log.NewNoOpLogger(),
 			listeners[i],
 			dialer,
 			&testHandler{
@@ -553,7 +553,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 			config,
 			msgCreator,
 			registry,
-			log.NoLog{},
+			log.NewNoOpLogger(),
 			listeners[i],
 			dialer,
 			&testHandler{
@@ -707,7 +707,7 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 			config,
 			msgCreator,
 			registry,
-			log.NoLog{},
+			log.NewNoOpLogger(),
 			listeners[i],
 			dialer,
 			&testHandler{

@@ -62,7 +62,7 @@ func BenchmarkMarshalHandshake(b *testing.B) {
 
 	useBuilder := os.Getenv("USE_BUILDER") != ""
 
-	codec, err := newMsgBuilder(log.NoLog{}, prometheus.NewRegistry(), 10*time.Second)
+	codec, err := newMsgBuilder(log.NewNoOpLogger(), prometheus.NewRegistry(), 10*time.Second)
 	require.NoError(err)
 
 	b.Logf("proto length %d-byte (use builder %v)", msgLen, useBuilder)
@@ -119,7 +119,7 @@ func BenchmarkUnmarshalHandshake(b *testing.B) {
 	require.NoError(err)
 
 	useBuilder := os.Getenv("USE_BUILDER") != ""
-	codec, err := newMsgBuilder(log.NoLog{}, prometheus.NewRegistry(), 10*time.Second)
+	codec, err := newMsgBuilder(log.NewNoOpLogger(), prometheus.NewRegistry(), 10*time.Second)
 	require.NoError(err)
 
 	b.StartTimer()

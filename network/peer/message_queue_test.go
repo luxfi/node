@@ -23,7 +23,7 @@ func TestMessageQueue(t *testing.T) {
 		SendFailedFunc(func(message.OutboundMessage) {
 			require.True(expectFail)
 		}),
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		0,
 	)
 

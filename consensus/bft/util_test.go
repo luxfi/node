@@ -105,7 +105,7 @@ func newNetworkConfigs(t *testing.T, numNodes uint64) []*Config {
 				ChainID:   chainID,
 				NetworkID: constants.UnitTestID,
 			},
-			Log:        log.NoLog{},
+			Log:        log.NewNoOpLogger(),
 			Validators: newTestValidatorInfo(testNodes),
 			SignBLS:    node.signFunc,
 		}

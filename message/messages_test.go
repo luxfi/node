@@ -24,7 +24,7 @@ func TestMessage(t *testing.T) {
 	t.Parallel()
 
 	mb, err := newMsgBuilder(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		5*time.Second,
 	)
@@ -666,7 +666,7 @@ func TestInboundMessageToString(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		5*time.Second,
 	)
@@ -696,7 +696,7 @@ func TestEmptyInboundMessage(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		5*time.Second,
 	)
@@ -716,7 +716,7 @@ func TestNilInboundMessage(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		prometheus.NewRegistry(),
 		5*time.Second,
 	)

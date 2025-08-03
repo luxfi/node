@@ -1043,7 +1043,7 @@ func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *ex
 		Bootstrapped: bootstrapped,
 		Ctx: &consensus.Context{
 			SharedMemory: sharedMemory,
-			Log:          log.NoLog{},
+			Log:          log.NewNoOpLogger(),
 		},
 		Config: &config.Config{
 			EtnaTime:         mockable.MaxTime,

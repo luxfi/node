@@ -1348,7 +1348,7 @@ func TestReindexBlocks(t *testing.T) {
 	}
 
 	// Convert the indices to the new format.
-	require.NoError(s.ReindexBlocks(&sync.Mutex{}, log.NoLog{}))
+	require.NoError(s.ReindexBlocks(&sync.Mutex{}, log.NewNoOpLogger()))
 
 	// Verify that the blocks are stored in the new format.
 	for _, blk := range blks {

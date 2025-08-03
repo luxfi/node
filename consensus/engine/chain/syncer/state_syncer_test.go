@@ -49,7 +49,7 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 	dummyGetter, err := getter.New(
 		nonStateSyncableVM,
 		sender,
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		time.Second,
 		2000,
 		prometheus.NewRegistry(),
@@ -78,7 +78,7 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 	dummyGetter, err = getter.New(
 		fullVM,
 		sender,
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		time.Second,
 		2000,
 		prometheus.NewRegistry())

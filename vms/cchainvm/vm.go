@@ -596,14 +596,24 @@ func (vm *VM) replayBlockchainData() error {
 	// Look for import path from environment variable
 	importPath := os.Getenv("LUX_GENESIS_IMPORT_PATH")
 	if importPath == "" {
-		// Use relative state repo path for original blockchain data
-		importPath = "../genesis/state/processed/lux-mainnet-96369/C/db"
-		if _, err := os.Stat(importPath); os.IsNotExist(err) {
-			// Try the symlinked path
-			importPath = "../state/chaindata/lux-mainnet-96369/db/pebbledb"
-			if _, err := os.Stat(importPath); os.IsNotExist(err) {
-				return fmt.Errorf("blockchain import path not found, set LUX_GENESIS_IMPORT_PATH")
+		// Try multiple paths for the blockchain data
+		// Use the original chaindata in SubnetEVM format
+		possiblePaths := []string{
+			"genesis/state/chaindata/lux-mainnet-96369/db/pebbledb",
+			"../genesis/state/chaindata/lux-mainnet-96369/db/pebbledb",
+			"state/chaindata/lux-mainnet-96369/db/pebbledb",
+			"../state/chaindata/lux-mainnet-96369/db/pebbledb",
+		}
+		
+		for _, path := range possiblePaths {
+			if _, err := os.Stat(path); err == nil {
+				importPath = path
+				break
 			}
+		}
+		
+		if importPath == "" {
+			return fmt.Errorf("blockchain import path not found, set LUX_GENESIS_IMPORT_PATH")
 		}
 	}
 
@@ -616,36 +626,58 @@ func (vm *VM) replayBlockchainData() error {
 	}
 	defer importDB.Close()
 
-	// Check for the highest block number in the import database
+	// Build number-to-hash mapping from hash-to-number mappings
+	vm.ctx.Log.Info("Building block number to hash mappings from SubnetEVM data...")
+	
+	numberToHash := make(map[uint64]common.Hash)
 	highestBlock := uint64(0)
-
-	// First, check for our custom Height key
-	if heightBytes, err := importDB.Get([]byte("Height")); err == nil && len(heightBytes) == 8 {
-		highestBlock = binary.BigEndian.Uint64(heightBytes)
-		vm.ctx.Log.Info("Found Height key", "height", highestBlock)
+	
+	// First check LastHeader/LastBlock for the tip
+	if lastHeaderBytes, err := importDB.Get([]byte("LastHeader")); err == nil && len(lastHeaderBytes) == 32 {
+		var lastHash common.Hash
+		copy(lastHash[:], lastHeaderBytes)
+		
+		// Get the block number for this hash
+		hashToNumKey := append([]byte{0x48}, lastHeaderBytes...) // 'H' + hash
+		if numBytes, err := importDB.Get(hashToNumKey); err == nil && len(numBytes) == 8 {
+			blockNum := binary.BigEndian.Uint64(numBytes)
+			highestBlock = blockNum
+			numberToHash[blockNum] = lastHash
+			vm.ctx.Log.Info("Found chain tip from LastHeader", "height", blockNum, "hash", lastHash.Hex())
+		}
 	}
-
-	if highestBlock == 0 {
-		// Scan for canonical blocks to find the highest
-		iter := importDB.NewIteratorWithStartAndPrefix([]byte("h"), nil)
-		defer iter.Release()
-
-		for iter.Next() {
-			key := iter.Key()
-			// Look for canonical block keys: h + num (8 bytes) + n
-			if len(key) == 10 && key[0] == 'h' && key[9] == 'n' {
-				blockNum := binary.BigEndian.Uint64(key[1:9])
-				if blockNum > highestBlock {
-					highestBlock = blockNum
-				}
+	
+	// Scan all hash-to-number mappings to build reverse mapping
+	iter := importDB.NewIteratorWithStartAndPrefix([]byte{0x48}, nil) // 'H' prefix
+	defer iter.Release()
+	
+	count := 0
+	for iter.Next() {
+		key := iter.Key()
+		val := iter.Value()
+		
+		// Hash-to-number mapping: H (1 byte) + hash (32 bytes) -> number (8 bytes)
+		if len(key) == 33 && key[0] == 0x48 && len(val) == 8 {
+			var hash common.Hash
+			copy(hash[:], key[1:])
+			blockNum := binary.BigEndian.Uint64(val)
+			
+			numberToHash[blockNum] = hash
+			if blockNum > highestBlock {
+				highestBlock = blockNum
+			}
+			count++
+			
+			if count % 10000 == 0 {
+				vm.ctx.Log.Info("Building mappings...", "processed", count, "highest", highestBlock)
 			}
 		}
-
-		if highestBlock == 0 {
-			return fmt.Errorf("no blocks found to replay")
-		}
-
-		vm.ctx.Log.Info("Found highest block by scanning", "height", highestBlock)
+	}
+	
+	vm.ctx.Log.Info("Built number-to-hash mappings", "total", count, "highest", highestBlock)
+	
+	if highestBlock == 0 {
+		return fmt.Errorf("no blocks found to replay")
 	}
 
 	// First, log consensus parameters being used
@@ -657,75 +689,6 @@ func (vm *VM) replayBlockchainData() error {
 	
 	// Note: The consensus parameters are set at the node level, not the VM level
 	// For single-node operation, they should be k=1, alpha=1, beta=1
-	
-	// First, let's debug what keys exist in the database
-	vm.ctx.Log.Info("Debugging import database keys...")
-	
-	// Iterate through all keys to see the format
-	debugIter := importDB.NewIterator()
-	defer debugIter.Release()
-	
-	keyTypes := make(map[string]int)
-	sampleKeys := []string{}
-	canonicalFound := 0
-	headerFound := 0
-	bodyFound := 0
-	count := 0
-	
-	for debugIter.Next() && count < 1000 {
-		key := debugIter.Key()
-		if len(key) > 0 {
-			// Count key types by first byte
-			if len(key) >= 1 {
-				firstByte := key[0]
-				keyTypes[fmt.Sprintf("%02x", firstByte)]++
-			}
-			
-			// Sample some keys for debugging
-			if count < 20 {
-				sampleKeys = append(sampleKeys, fmt.Sprintf("key[%d]: %x", len(key), key))
-			}
-			
-			// Look for canonical keys (h + 8 bytes + n)
-			if len(key) == 10 && key[0] == 0x68 && key[9] == 0x6e {
-				blockNum := binary.BigEndian.Uint64(key[1:9])
-				if canonicalFound < 5 {
-					vm.ctx.Log.Info("Found canonical key", "blockNum", blockNum, "key", fmt.Sprintf("%x", key))
-				}
-				canonicalFound++
-			}
-			
-			// Also look for block body keys to understand structure
-			if len(key) >= 41 && key[0] == 0x62 {
-				blockNum := binary.BigEndian.Uint64(key[1:9])
-				if blockNum <= 5 {
-					vm.ctx.Log.Info("Found body key", "blockNum", blockNum, "keyLen", len(key), "key", fmt.Sprintf("%x", key[:20]))
-				}
-			}
-			
-			// Look for header keys (H + 32 bytes)
-			if len(key) == 33 && key[0] == 0x48 {
-				headerFound++
-			}
-			
-			// Look for body keys (b + 32 bytes)
-			if len(key) == 33 && key[0] == 0x62 {
-				bodyFound++
-			}
-		}
-		count++
-		}
-	
-	vm.ctx.Log.Info("Database key analysis",
-		"totalScanned", count,
-		"keyTypes", keyTypes,
-		"canonicalKeys", canonicalFound,
-		"headerKeys", headerFound,
-		"bodyKeys", bodyFound,
-	)
-	for i, sample := range sampleKeys {
-		vm.ctx.Log.Info(fmt.Sprintf("Sample key %d", i), "data", sample)
-	}
 	
 	// Now replay blocks from 1 to highestBlock
 	vm.ctx.Log.Info("Replaying blocks", "from", 1, "to", highestBlock)
@@ -749,50 +712,31 @@ func (vm *VM) replayBlockchainData() error {
 
 		// Process blocks in batch
 		for blockNum := start; blockNum <= end; blockNum++ {
-			// Get canonical hash using the correct format
-			canonicalKey := canonicalKey(blockNum)
-			
-			// Debug first few keys
-			if blockNum <= 5 {
-				vm.ctx.Log.Info("Looking for canonical key", 
-					"blockNum", blockNum, 
-					"key", fmt.Sprintf("%x", canonicalKey))
-			}
-			
-			hashBytes, err := importDB.Get(canonicalKey)
-			if err != nil {
-				// For debugging, check if we have a body key instead
+			// Get block hash from our mapping
+			blockHash, ok := numberToHash[blockNum]
+			if !ok {
 				if blockNum <= 5 {
-					// Try to find any key for this block number
-					bodyPrefix := make([]byte, 9)
-					bodyPrefix[0] = 0x62 // 'b'
-					binary.BigEndian.PutUint64(bodyPrefix[1:], blockNum)
-					
-					// Create an iterator with this prefix
-					iter := importDB.NewIteratorWithStartAndPrefix(bodyPrefix, nil)
-					if iter.Next() {
-						vm.ctx.Log.Info("Found body key for block", 
-							"blockNum", blockNum,
-							"key", fmt.Sprintf("%x", iter.Key()))
-					}
-					iter.Release()
+					vm.ctx.Log.Warn("Block not found in mapping", "number", blockNum)
 				}
 				continue // Skip missing blocks
 			}
 
-			var blockHash common.Hash
-			copy(blockHash[:], hashBytes)
-
-			// Get block header
-			headerKey := append([]byte("H"), hashBytes...)
+			// Get block header - SubnetEVM format: 'h' (0x68) + number + hash
+			headerKey := make([]byte, 41)
+			headerKey[0] = 0x68 // 'h'
+			binary.BigEndian.PutUint64(headerKey[1:9], blockNum)
+			copy(headerKey[9:], blockHash[:])
 			headerData, err := importDB.Get(headerKey)
 			if err != nil {
-				vm.ctx.Log.Warn("Missing header", "number", blockNum)
+				vm.ctx.Log.Warn("Missing header", "number", blockNum, "hash", blockHash.Hex())
 				continue
 			}
 
-			// Get block body
-			bodyKey := append([]byte("b"), hashBytes...)
+			// Get block body - use 'b' prefix (0x62) + number + hash
+			bodyKey := make([]byte, 41)
+			bodyKey[0] = 0x62 // 'b'
+			binary.BigEndian.PutUint64(bodyKey[1:9], blockNum)
+			copy(bodyKey[9:], blockHash[:])
 			bodyData, err := importDB.Get(bodyKey)
 			if err != nil {
 				vm.ctx.Log.Warn("Missing body", "number", blockNum)
@@ -874,10 +818,7 @@ func (vm *VM) replayBlockchainData() error {
 	}
 
 	// Update to the final block
-	finalKey := canonicalKey(highestBlock)
-	if hashBytes, err := importDB.Get(finalKey); err == nil {
-		var finalHash common.Hash
-		copy(finalHash[:], hashBytes)
+	if finalHash, ok := numberToHash[highestBlock]; ok {
 		vm.lastAccepted = ids.ID(finalHash)
 
 		vm.ctx.Log.Info("Blockchain replay completed",

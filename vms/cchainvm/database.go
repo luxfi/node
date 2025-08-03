@@ -12,15 +12,17 @@ import (
 	"github.com/luxfi/database"
 )
 
-// canonicalKey returns the **new** 9-byte key used after migration:
-//   0x68 | uint64(blockNumber)
-// This exactly matches what `genesis migrate rebuild-canonical`
-// just wrote into Pebble.
+// canonicalKey returns the SubnetEVM canonical key format:
+//   "headerPrefix" + blockNumber (8 bytes) + "headerHashSuffix"
 func canonicalKey(number uint64) []byte {
-	key := make([]byte, 10)
-	key[0] = 0x68 // 'h'
-	binary.BigEndian.PutUint64(key[1:9], number)
-	key[9] = 0x6e // 'n'
+	prefix := []byte("headerPrefix")
+	suffix := []byte("headerHashSuffix")
+	
+	key := make([]byte, len(prefix)+8+len(suffix))
+	copy(key, prefix)
+	binary.BigEndian.PutUint64(key[len(prefix):len(prefix)+8], number)
+	copy(key[len(prefix)+8:], suffix)
+	
 	return key
 }
 

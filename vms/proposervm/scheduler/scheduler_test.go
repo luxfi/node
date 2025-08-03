@@ -17,7 +17,7 @@ func TestDelayFromNew(t *testing.T) {
 	toEngine := make(chan core.Message, 10)
 	startTime := time.Now().Add(50 * time.Millisecond)
 
-	s, fromVM := New(log.NoLog{}, toEngine)
+	s, fromVM := New(log.NewNoOpLogger(), toEngine)
 	defer s.Close()
 	go s.Dispatch(startTime)
 
@@ -32,7 +32,7 @@ func TestDelayFromSetTime(t *testing.T) {
 	now := time.Now()
 	startTime := now.Add(50 * time.Millisecond)
 
-	s, fromVM := New(log.NoLog{}, toEngine)
+	s, fromVM := New(log.NewNoOpLogger(), toEngine)
 	defer s.Close()
 	go s.Dispatch(now)
 
@@ -49,7 +49,7 @@ func TestReceipt(*testing.T) {
 	now := time.Now()
 	startTime := now.Add(50 * time.Millisecond)
 
-	s, fromVM := New(log.NoLog{}, toEngine)
+	s, fromVM := New(log.NewNoOpLogger(), toEngine)
 	defer s.Close()
 	go s.Dispatch(now)
 
