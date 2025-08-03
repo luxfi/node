@@ -20,23 +20,15 @@
       "baseFeeChangeDenominator": 36,
       "minBlockGasCost": 0,
       "maxBlockGasCost": 1000000,
-      "blockGasCostStep": 200000,
-      "elasticityMultiplier": 2
+      "blockGasCostStep": 200000
     },
     "warpConfig": {
-      "blockTimestamp": 0,
+      "blockTimestamp": 1750805381,
       "quorumNumerator": 67
-    },
-    "subnetEVMTimestamp": 0,
-    "durango": {
-      "blockTimestamp": 0
-    },
-    "etna": {
-      "blockTimestamp": 1800000000
     }
   },
   "nonce": "0x0",
-  "timestamp": "0x672485c2",
+  "timestamp": "0x685b2b85",
   "extraData": "0x",
   "gasLimit": "0xb71b00",
   "difficulty": "0x0",
