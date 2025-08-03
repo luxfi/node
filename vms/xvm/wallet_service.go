@@ -204,7 +204,11 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 	if len(kc.Keys) == 0 {
 		return errNoKeys
 	}
-	changeAddr, err := w.vm.selectChangeAddr(kc.Keys[0].PublicKey().Address(), args.ChangeAddr)
+	defaultAddr, err := publicKeyToAddress(kc.Keys[0].PublicKey())
+	if err != nil {
+		return err
+	}
+	changeAddr, err := w.vm.selectChangeAddr(defaultAddr, args.ChangeAddr)
 	if err != nil {
 		return err
 	}

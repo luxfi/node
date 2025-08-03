@@ -22,7 +22,29 @@ var (
 	errCantSpend = errors.New("unable to spend this UTXO")
 
 	_ keychain.Keychain = (*Keychain)(nil)
+	_ keychain.Signer   = (*luxSigner)(nil)
 )
+
+// luxSigner wraps a secp256k1.PrivateKey to implement keychain.Signer
+type luxSigner struct {
+	key *secp256k1.PrivateKey
+}
+
+func (s *luxSigner) SignHash(hash []byte) ([]byte, error) {
+	return s.key.SignHash(hash)
+}
+
+func (s *luxSigner) Sign(msg []byte) ([]byte, error) {
+	return s.key.Sign(msg)
+}
+
+func (s *luxSigner) Address() ids.ShortID {
+	pk := s.key.PublicKey()
+	pkBytes := pk.Bytes()
+	addressBytes := secp256k1.PubkeyBytesToAddress(pkBytes)
+	addr, _ := ids.ToShortID(addressBytes)
+	return addr
+}
 
 // Keychain is a collection of keys that can be used to spend outputs
 type Keychain struct {
@@ -51,7 +73,11 @@ func NewKeychain(keys ...*secp256k1.PrivateKey) *Keychain {
 // Add a new key to the key chain
 func (kc *Keychain) Add(key *secp256k1.PrivateKey) {
 	pk := key.PublicKey()
-	luxAddr := pk.Address()
+	// Convert public key to Lux address using hash160
+	pkBytes := pk.Bytes()
+	addressBytes := secp256k1.PubkeyBytesToAddress(pkBytes)
+	luxAddr, _ := ids.ToShortID(addressBytes)
+	
 	if _, ok := kc.luxAddrToKeyIndex[luxAddr]; !ok {
 		kc.luxAddrToKeyIndex[luxAddr] = len(kc.Keys)
 		ethAddr := publicKeyToEthAddress(pk)
@@ -64,13 +90,17 @@ func (kc *Keychain) Add(key *secp256k1.PrivateKey) {
 
 // Get a key from the keychain and return whether the key existed.
 func (kc Keychain) Get(id ids.ShortID) (keychain.Signer, bool) {
-	return kc.get(id)
+	signer, exists := kc.get(id)
+	if !exists {
+		return nil, false
+	}
+	return &luxSigner{key: signer}, true
 }
 
 // Get a key from the keychain and return whether the key existed.
 func (kc Keychain) GetEth(addr common.Address) (keychain.Signer, bool) {
 	if i, ok := kc.ethAddrToKeyIndex[addr]; ok {
-		return kc.Keys[i], true
+		return &luxSigner{key: kc.Keys[i]}, true
 	}
 	return nil, false
 }
@@ -170,7 +200,7 @@ func (kc Keychain) get(id ids.ShortID) (*secp256k1.PrivateKey, bool) {
 }
 
 func publicKeyToEthAddress(pk *secp256k1.PublicKey) common.Address {
-	// Convert to ECDSA public key and get Ethereum address
-	ecdsaPubKey := pk.ToECDSA()
-	return secp256k1.PubkeyToAddress(*ecdsaPubKey)
+	// Get address and convert to common.Address
+	addr := pk.Address()
+	return common.BytesToAddress(addr[:])
 }

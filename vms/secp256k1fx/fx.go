@@ -42,7 +42,7 @@ var (
 
 // Fx describes the secp256k1 feature extension
 type Fx struct {
-	*secp256k1.RecoverCacheType
+	RecoverCacheType *secp256k1.RecoverCacheType
 
 	VM           VM
 	bootstrapped bool
@@ -57,7 +57,7 @@ func (fx *Fx) Initialize(vmIntf interface{}) error {
 	log.Debug("initializing secp256k1 fx")
 
 	cache := secp256k1.NewRecoverCache(defaultCacheSize)
-	fx.RecoverCacheType = &cache
+	fx.RecoverCacheType = cache
 	c := fx.VM.CodecRegistry()
 	return errors.Join(
 		c.RegisterType(&TransferInput{}),
@@ -200,15 +200,23 @@ func (fx *Fx) VerifyCredentials(utx UnsignedTx, in *Input, cred *Credential, out
 		// Make sure each signature in the signature list is from an owner of
 		// the output being consumed
 		sig := cred.Sigs[i]
-		pk, err := fx.RecoverPublicKeyFromHash(txHash, sig[:])
+		pk, err := fx.RecoverCacheType.RecoverPublicKeyFromHash(txHash, sig[:])
 		if err != nil {
 			return err
 		}
-		if expectedAddress := out.Addrs[index]; expectedAddress != pk.Address() {
+		// Convert pk to Lux address using hash160
+		pkBytes := pk.Bytes()
+		addressBytes := secp256k1.PubkeyBytesToAddress(pkBytes)
+		pkAddr, err := ids.ToShortID(addressBytes)
+		if err != nil {
+			return err
+		}
+		
+		if expectedAddress := out.Addrs[index]; expectedAddress != pkAddr {
 			return fmt.Errorf("%w: expected signature from %s but got from %s",
 				ErrWrongSig,
 				expectedAddress,
-				pk.Address())
+				pkAddr)
 		}
 	}
 

@@ -161,7 +161,14 @@ func (h *handler) Spend(
 ) {
 	addrs := set.NewSet[ids.ShortID](len(keys)) // The addresses controlled by [keys]
 	for _, key := range keys {
-		addrs.Add(key.Address())
+		pk := key.PublicKey()
+		pkBytes := pk.Bytes()
+		addressBytes := secp256k1.PubkeyBytesToAddress(pkBytes)
+		addr, err := ids.ToShortID(addressBytes)
+		if err != nil {
+			return nil, nil, nil, nil, fmt.Errorf("couldn't convert key to address: %w", err)
+		}
+		addrs.Add(addr)
 	}
 	utxos, err := lux.GetAllUTXOs(utxoReader, addrs) // The UTXOs controlled by [keys]
 	if err != nil {

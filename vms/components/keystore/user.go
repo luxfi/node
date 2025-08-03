@@ -104,9 +104,16 @@ func (u *user) PutKeys(privKeys ...*secp256k1.PrivateKey) error {
 	}
 
 	for _, privKey := range toStore {
-		address := privKey.PublicKey().Address() // address the privKey controls
+		pk := privKey.PublicKey()
+		// Convert public key to Lux address using hash160
+		pkBytes := pk.Bytes()
+		addressBytes := secp256k1.PubkeyBytesToAddress(pkBytes)
+		address, err := ids.ToShortID(addressBytes)
+		if err != nil {
+			return err
+		}
 		// Address --> private key
-		if err := u.db.Put(address.Bytes(), privKey.Bytes()); err != nil {
+		if err := u.db.Put(address[:], privKey.Bytes()); err != nil {
 			return err
 		}
 		addresses = append(addresses, address)
