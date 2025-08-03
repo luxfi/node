@@ -54,11 +54,11 @@ func TestNewIndexer(t *testing.T) {
 	config := Config{
 		IndexingEnabled:      true,
 		AllowIncompleteIndex: true,
-		Log:                  log.NewNoOpLogger(),
+		Log:                  log.NoLog{},
 		DB:                   memdb.New(),
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NoLog{}),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NoLog{}),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -95,11 +95,11 @@ func TestMarkHasRunAndShutdown(t *testing.T) {
 	shutdown.Add(1)
 	config := Config{
 		IndexingEnabled:     true,
-		Log:                 log.NewNoOpLogger(),
+		Log:                 log.NoLog{},
 		DB:                  db,
-		BlockAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		TxAcceptorGroup:     consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		VertexAcceptorGroup: consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		BlockAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
+		TxAcceptorGroup:     consensus.NewAcceptorGroup(log.NoLog{}),
+		VertexAcceptorGroup: consensus.NewAcceptorGroup(log.NoLog{}),
 		APIServer:           &apiServerMock{},
 		ShutdownF:           shutdown.Done,
 	}
@@ -134,11 +134,11 @@ func TestIndexer(t *testing.T) {
 	config := Config{
 		IndexingEnabled:      true,
 		AllowIncompleteIndex: false,
-		Log:                  log.NewNoOpLogger(),
+		Log:                  log.NoLog{},
 		DB:                   db,
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NoLog{}),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NoLog{}),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
 		APIServer:            server,
 		ShutdownF:            func() {},
 	}
@@ -402,11 +402,11 @@ func TestIncompleteIndex(t *testing.T) {
 	config := Config{
 		IndexingEnabled:      false,
 		AllowIncompleteIndex: false,
-		Log:                  log.NewNoOpLogger(),
+		Log:                  log.NoLog{},
 		DB:                   versiondb.New(baseDB),
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NoLog{}),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NoLog{}),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -484,11 +484,11 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	config := Config{
 		IndexingEnabled:      true,
 		AllowIncompleteIndex: false,
-		Log:                  log.NewNoOpLogger(),
+		Log:                  log.NoLog{},
 		DB:                   db,
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NewNoOpLogger()),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NewNoOpLogger()),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NoLog{}),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NoLog{}),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}

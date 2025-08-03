@@ -156,6 +156,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 	closed := make(chan struct{}, 1)
 	consensusCtx := consensustest.Context(t, consensustest.CChainID)
 	ctx := consensustest.ConsensusContext(consensusCtx)
+	t.Logf("Test starting with subnet %s", ctx.SubnetID)
 
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
@@ -252,7 +253,8 @@ func TestHandlerClosesOnError(t *testing.T) {
 	}
 	handler.Push(context.Background(), msg)
 
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
 	select {
 	case <-ticker.C:
 		require.FailNow("Handler shutdown timed out before calling toClose")

@@ -169,7 +169,22 @@ func TestGetValidatorSet(t *testing.T) {
 
 	vdrs, err := state.client.GetValidatorSet(context.Background(), height, subnetID)
 	require.NoError(err)
-	require.Equal(expectedVdrs, vdrs)
+	require.Len(vdrs, len(expectedVdrs))
+	for nodeID, expectedVdr := range expectedVdrs {
+		vdr, ok := vdrs[nodeID]
+		require.True(ok)
+		require.Equal(expectedVdr.NodeID, vdr.NodeID)
+		require.Equal(expectedVdr.Weight, vdr.Weight)
+		if expectedVdr.PublicKey == nil {
+			require.Nil(vdr.PublicKey)
+		} else {
+			require.NotNil(vdr.PublicKey)
+			require.Equal(
+				bls.PublicKeyToUncompressedBytes(expectedVdr.PublicKey),
+				bls.PublicKeyToUncompressedBytes(vdr.PublicKey),
+			)
+		}
+	}
 
 	// Error path
 	state.server.EXPECT().GetValidatorSet(gomock.Any(), height, subnetID).Return(expectedVdrs, errCustom)
@@ -189,7 +204,10 @@ func TestPublicKeyDeserialize(t *testing.T) {
 	pkBytes := bls.PublicKeyToUncompressedBytes(pk)
 	pkDe := bls.PublicKeyFromValidUncompressedBytes(pkBytes)
 	require.NotNil(pkDe)
-	require.Equal(pk, pkDe)
+	require.Equal(
+		bls.PublicKeyToUncompressedBytes(pk),
+		bls.PublicKeyToUncompressedBytes(pkDe),
+	)
 }
 
 // BenchmarkGetValidatorSet measures the time it takes complete a gRPC client
