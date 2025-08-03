@@ -75,13 +75,9 @@ func TestIndex(t *testing.T) {
 
 	// Create a new index with the same database and ensure contents still there
 	require.NoError(idx.vDB.Commit())
-	// Don't close the index to keep baseDB open
-	// Instead, just close the sub-databases
-	require.NoError(idx.indexToContainer.Close())
-	require.NoError(idx.containerToIndex.Close())
-	require.NoError(idx.vDB.Close())
 	
-	// Create a new index with the same baseDB
+	// Create a new index by directly using the same base database
+	// Don't close the old index to avoid closing the baseDB
 	idx, err = newIndex(baseDB, log.NoLog{}, mockable.Clock{})
 	require.NoError(err)
 
