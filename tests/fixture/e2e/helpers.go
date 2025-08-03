@@ -145,7 +145,7 @@ func WaitForHealthy(node *tmpnet.Node) {
 
 // Sends an eth transaction, waits for the transaction receipt to be issued
 // and checks that the receipt indicates success.
-func SendEthTransaction(ethClient ethclient.Client, signedTx *types.Transaction) *types.Receipt {
+func SendEthTransaction(ethClient *ethclient.Client, signedTx *types.Transaction) *types.Receipt {
 	require := require.New(ginkgo.GinkgoT())
 
 	txID := signedTx.Hash()
