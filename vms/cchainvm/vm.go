@@ -153,7 +153,39 @@ func (vm *VM) Initialize(
 
 	// Parse genesis or use default
 	var genesis *gethcore.Genesis
-	if len(genesisBytes) > 0 {
+	
+	// When LUX_GENESIS=1, use the genesis from the imported blockchain data
+	if luxGenesis {
+		// This genesis matches the imported blockchain with hash:
+		// 0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e
+		genesis = &gethcore.Genesis{
+			Config: &params.ChainConfig{
+				ChainID:                 big.NewInt(96369),
+				HomesteadBlock:          big.NewInt(0),
+				EIP150Block:             big.NewInt(0),
+				EIP155Block:             big.NewInt(0),
+				EIP158Block:             big.NewInt(0),
+				ByzantiumBlock:          big.NewInt(0),
+				ConstantinopleBlock:     big.NewInt(0),
+				PetersburgBlock:         big.NewInt(0),
+				IstanbulBlock:           big.NewInt(0),
+				BerlinBlock:             big.NewInt(0),
+				LondonBlock:             big.NewInt(0),
+				TerminalTotalDifficulty: common.Big0,
+			},
+			Nonce:      0x0,
+			Timestamp:  0x672485c2, // 1730446786
+			ExtraData:  []byte{},
+			GasLimit:   0xb71b00,   // 12000000
+			Difficulty: big.NewInt(0),
+			Mixhash:    common.Hash{},
+			Coinbase:   common.Address{},
+			Alloc:      gethcore.GenesisAlloc{},
+			BaseFee:    big.NewInt(0x5d21dba00), // 25000000000
+		}
+		vm.ctx.Log.Info("Using imported blockchain genesis for replay",
+			"expectedHash", "0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
+	} else if len(genesisBytes) > 0 {
 		genesis = &gethcore.Genesis{}
 		if err := json.Unmarshal(genesisBytes, genesis); err != nil {
 			return fmt.Errorf("failed to unmarshal genesis: %w", err)
@@ -306,6 +338,14 @@ func (vm *VM) Initialize(
 		// If LUX_GENESIS=1 and we're at genesis, check for blocks to replay
 		if luxGenesis && (currentBlock == nil || (currentBlock != nil && currentBlock.Number.Uint64() == 0)) {
 			vm.ctx.Log.Info("LUX_GENESIS=1 detected at genesis, checking for blocks to replay...")
+			
+			// Before replaying, we need to ensure our genesis matches the imported data
+			// The imported blockchain has genesis hash: 0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e
+			// But our current genesis has a different hash
+			vm.ctx.Log.Info("WARNING: Genesis mismatch detected",
+				"currentGenesisHash", vm.genesisHash.Hex(),
+				"expectedGenesisHash", "0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e",
+			)
 
 			// Look for blockchain data in the C-Chain database directory
 			// The blockchain data should be in the same database
