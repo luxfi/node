@@ -632,6 +632,7 @@ func (vm *VM) replayBlockchainData() error {
 
 		for iter.Next() {
 			key := iter.Key()
+			// Look for canonical block keys: h + num (8 bytes) + n
 			if len(key) == 10 && key[0] == 'h' && key[9] == 'n' {
 				blockNum := binary.BigEndian.Uint64(key[1:9])
 				if blockNum > highestBlock {
