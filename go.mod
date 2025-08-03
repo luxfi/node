@@ -188,3 +188,17 @@ require (
 )
 
 replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
+
+replace github.com/luxfi/crypto => ../crypto
+
+replace github.com/luxfi/database => ../database
+
+replace github.com/luxfi/geth => ../geth
+
+replace github.com/luxfi/ids => ../ids
+
+replace github.com/luxfi/log => ../log
+
+replace github.com/luxfi/metrics => ../metrics
+
+replace github.com/luxfi/trace => ../trace
