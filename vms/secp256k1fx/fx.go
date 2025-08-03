@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/verify"
@@ -42,7 +41,7 @@ var (
 
 // Fx describes the secp256k1 feature extension
 type Fx struct {
-	RecoverCacheType *secp256k1.RecoverCacheType
+	RecoverCacheType *RecoverCacheType
 
 	VM           VM
 	bootstrapped bool
@@ -56,8 +55,8 @@ func (fx *Fx) Initialize(vmIntf interface{}) error {
 	log := fx.VM.Logger()
 	log.Debug("initializing secp256k1 fx")
 
-	cache := secp256k1.NewRecoverCache(defaultCacheSize)
-	fx.RecoverCacheType = &cache
+	cache := NewRecoverCache(defaultCacheSize)
+	fx.RecoverCacheType = cache
 	c := fx.VM.CodecRegistry()
 	return errors.Join(
 		c.RegisterType(&TransferInput{}),
@@ -206,7 +205,8 @@ func (fx *Fx) VerifyCredentials(utx UnsignedTx, in *Input, cred *Credential, out
 		}
 		// Convert pk to Lux address using hash160
 		pkBytes := pk.Bytes()
-		addressBytes := secp256k1.PubkeyBytesToAddress(pkBytes)
+		// Compute RIPEMD160(SHA256(publicKey))
+		addressBytes := hashing.ComputeHash160(hashing.ComputeHash256(pkBytes))
 		pkAddr, err := ids.ToShortID(addressBytes)
 		if err != nil {
 			return err
