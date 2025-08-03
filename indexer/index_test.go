@@ -10,7 +10,6 @@ import (
 
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/log"
@@ -23,11 +22,10 @@ func TestIndex(t *testing.T) {
 	pageSize := uint64(64)
 	require := require.New(t)
 	baseDB := memdb.New()
-	db := versiondb.New(baseDB)
 	consensusCtx := consensustest.Context(t, consensustest.CChainID)
 	ctx := consensustest.ConsensusContext(consensusCtx)
 
-	idx, err := newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
+	idx, err := newIndex(baseDB, log.NoLog{}, mockable.Clock{})
 	require.NoError(err)
 
 	// Populate "containers" with random IDs/bytes
@@ -76,10 +74,15 @@ func TestIndex(t *testing.T) {
 	}
 
 	// Create a new index with the same database and ensure contents still there
-	require.NoError(db.Commit())
-	require.NoError(idx.Close())
-	db = versiondb.New(baseDB)
-	idx, err = newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
+	require.NoError(idx.vDB.Commit())
+	// Don't close the index to keep baseDB open
+	// Instead, just close the sub-databases
+	require.NoError(idx.indexToContainer.Close())
+	require.NoError(idx.containerToIndex.Close())
+	require.NoError(idx.vDB.Close())
+	
+	// Create a new index with the same baseDB
+	idx, err = newIndex(baseDB, log.NoLog{}, mockable.Clock{})
 	require.NoError(err)
 
 	// Get all of the containers
@@ -111,7 +114,7 @@ func TestIndexGetContainerByRangeMaxPageSize(t *testing.T) {
 	db := memdb.New()
 	consensusCtx := consensustest.Context(t, consensustest.CChainID)
 	ctx := consensustest.ConsensusContext(consensusCtx)
-	idx, err := newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
+	idx, err := newIndex(db, log.NoLog{}, mockable.Clock{})
 	require.NoError(err)
 
 	// Insert [MaxFetchedByRange] + 1 containers
@@ -149,7 +152,7 @@ func TestDontIndexSameContainerTwice(t *testing.T) {
 	db := memdb.New()
 	consensusCtx := consensustest.Context(t, consensustest.CChainID)
 	ctx := consensustest.ConsensusContext(consensusCtx)
-	idx, err := newIndex(db, log.NewNoOpLogger(), mockable.Clock{})
+	idx, err := newIndex(db, log.NoLog{}, mockable.Clock{})
 	require.NoError(err)
 
 	// Accept the same container twice

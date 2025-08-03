@@ -1,0 +1,118 @@
+name: Comprehensive CI
+
+on:
+  push:
+    branches: [main, dev]
+    tags: ['v*']
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  test-and-build:
+    name: Test and Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, macos-14]
+        go-version: ['1.24.x']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+    
+    - name: Install dependencies
+      run: |
+        go mod download
+        go install -v golang.org/x/tools/cmd/goimports@latest
+    
+    - name: Run goimports
+      run: goimports -w .
+    
+    - name: Run go mod tidy
+      run: go mod tidy
+    
+    - name: Build
+      run: go build -v ./...
+    
+    - name: Test (excluding antithesis)
+      run: go test -tags '!antithesis' -short -timeout 10m -v ./...
+      
+    - name: Build luxd binary
+      run: |
+        ./scripts/build_luxd.sh
+        ./build/luxd --version
+
+  build-static-binaries:
+    name: Build Static Binaries
+    runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: 'go.mod'
+    
+    - name: Build Linux AMD64
+      run: |
+        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o luxd-linux-amd64 ./main
+        tar -czf luxd-linux-amd64.tar.gz luxd-linux-amd64
+    
+    - name: Build Linux ARM64
+      run: |
+        CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o luxd-linux-arm64 ./main
+        tar -czf luxd-linux-arm64.tar.gz luxd-linux-arm64
+    
+    - name: Build Darwin AMD64
+      run: |
+        CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o luxd-darwin-amd64 ./main
+        tar -czf luxd-darwin-amd64.tar.gz luxd-darwin-amd64
+    
+    - name: Build Darwin ARM64
+      run: |
+        CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o luxd-darwin-arm64 ./main
+        tar -czf luxd-darwin-arm64.tar.gz luxd-darwin-arm64
+    
+    - name: Build Windows AMD64
+      run: |
+        CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o luxd-windows-amd64.exe ./main
+        zip luxd-windows-amd64.zip luxd-windows-amd64.exe
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: binaries
+        path: |
+          luxd-*.tar.gz
+          luxd-*.zip
+
+  release:
+    name: Create Release
+    needs: [test-and-build, build-static-binaries]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: binaries
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          luxd-*.tar.gz
+          luxd-*.zip
+        draft: false
+        prerelease: false
+        generate_release_notes: true

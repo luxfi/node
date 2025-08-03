@@ -348,11 +348,11 @@ func TestGenesis(t *testing.T) {
 	}{
 		{
 			networkID:  constants.MainnetID,
-			expectedID: "7fEZ2qoiF38DHw8FRbDBJcsBYUF1cVQzQ8Mfu4u1BKkWJQHvj",
+			expectedID: "2EjBUk6BAkXmPeHfeYYEXZRDnR7xi9mhj8kmA9P2AskAh4BtbK",
 		},
 		{
 			networkID:  constants.TestnetID,
-			expectedID: "DtpihtA7yM642oqvm62iRwJubuMhkPbrDdrFRMvXwNb9hfgxx",
+			expectedID: "2vjcncTmJp58FEK5mWYjVRf6z8c8WeSBpVXhxMukUHYdGztnSn",
 		},
 		{
 			networkID:  constants.LocalID,
@@ -387,7 +387,7 @@ func TestVMGenesis(t *testing.T) {
 			vmTest: []vmTest{
 				{
 					vmID:       constants.XVMID,
-					expectedID: "EFEKtBuG5ExNULSx8sgpNRXPETAyKmP2UyHrQe6vRc3S9kXHH",
+					expectedID: "2sW1GVxCED7aPBRKHaNgLSD9SRjBaFx5qpmRUKPRzTYA9Tep42",
 				},
 				{
 					vmID:       constants.EVMID,
@@ -400,7 +400,7 @@ func TestVMGenesis(t *testing.T) {
 			vmTest: []vmTest{
 				{
 					vmID:       constants.XVMID,
-					expectedID: "2fW8dmC91Rq18Q5UehsY2D1raWahm8RPwdGhtiWnhFJ61WCXDS",
+					expectedID: "ovgzd2ZwmRy2HjJtdV2CV7HzG7UTzHPSiBMDw4Gvt8mWitvb4",
 				},
 				{
 					vmID:       constants.EVMID,
@@ -458,11 +458,11 @@ func TestLUXAssetID(t *testing.T) {
 	}{
 		{
 			networkID:  constants.MainnetID,
-			expectedID: "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
+			expectedID: "HnjjtRxPqMteF172uPCqw4eUqkgawzHavisARzaTPCdfbjukt",
 		},
 		{
 			networkID:  constants.TestnetID,
-			expectedID: "zXqutUMHtytaRgRf7e6uRMUb2wcr68Aod3iEyiJLYhQHoZjsv",
+			expectedID: "2FAQZiuoi7F2rfgfseLNy4P9oCkJeH6zfdNZRvXNh4msqFzv9o",
 		},
 		{
 			networkID:  constants.LocalID,
