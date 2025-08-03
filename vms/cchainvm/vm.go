@@ -589,8 +589,79 @@ func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, er
 	return ids.ID(block.Hash()), nil
 }
 
+// extractGenesisFromImport extracts the genesis block from imported data
+func (vm *VM) extractGenesisFromImport(importDB database.Database) (*types.Block, error) {
+	// Look for block 0
+	iter := importDB.NewIterator()
+	defer iter.Release()
+	
+	var block0Hash common.Hash
+	found := false
+	
+	for iter.Next() {
+		key := iter.Key()
+		val := iter.Value()
+		
+		if len(key) == 33 && key[0] == 0x48 && len(val) == 8 {
+			number := binary.BigEndian.Uint64(val)
+			if number == 0 {
+				copy(block0Hash[:], key[1:])
+				found = true
+				break
+			}
+		}
+	}
+	
+	if !found {
+		return nil, fmt.Errorf("genesis block (block 0) not found in import data")
+	}
+	
+	// Read genesis header
+	headerKey := make([]byte, 41)
+	headerKey[0] = 0x68
+	binary.BigEndian.PutUint64(headerKey[1:9], 0)
+	copy(headerKey[9:], block0Hash[:])
+	
+	headerData, err := importDB.Get(headerKey)
+	if err != nil {
+		return nil, fmt.Errorf("genesis header not found: %w", err)
+	}
+	
+	// Decode as SubnetEVM header
+	subnetHeader := new(SubnetEVMHeader)
+	if err := rlp.DecodeBytes(headerData, subnetHeader); err != nil {
+		return nil, fmt.Errorf("failed to decode genesis header: %w", err)
+	}
+	
+	// Convert to geth header
+	header := subnetHeader.ToGethHeader()
+	
+	// Read genesis body
+	bodyKey := make([]byte, 41)
+	bodyKey[0] = 0x62
+	binary.BigEndian.PutUint64(bodyKey[1:9], 0)
+	copy(bodyKey[9:], block0Hash[:])
+	
+	bodyData, err := importDB.Get(bodyKey)
+	if err != nil {
+		// Genesis might not have body
+		return types.NewBlockWithHeader(header), nil
+	}
+	
+	// Decode body
+	body := new(types.Body)
+	if err := rlp.DecodeBytes(bodyData, body); err != nil {
+		// If body decode fails, create without body
+		return types.NewBlockWithHeader(header), nil
+	}
+	
+	// Create genesis block
+	return types.NewBlockWithHeader(header).WithBody(*body), nil
+}
+
 // replayBlockchainData reads imported blockchain data and replays it into the C-Chain
 func (vm *VM) replayBlockchainData() error {
+	fmt.Println("=== STARTING BLOCKCHAIN REPLAY ===")
 	vm.ctx.Log.Info("Starting blockchain data replay...")
 
 	// Look for import path from environment variable
@@ -630,51 +701,39 @@ func (vm *VM) replayBlockchainData() error {
 	vm.ctx.Log.Info("Building block number to hash mappings from SubnetEVM data...")
 	
 	numberToHash := make(map[uint64]common.Hash)
+	hashToNumber := make(map[common.Hash]uint64)
 	highestBlock := uint64(0)
 	
-	// First check LastHeader/LastBlock for the tip
-	if lastHeaderBytes, err := importDB.Get([]byte("LastHeader")); err == nil && len(lastHeaderBytes) == 32 {
-		var lastHash common.Hash
-		copy(lastHash[:], lastHeaderBytes)
-		
-		// Get the block number for this hash
-		hashToNumKey := append([]byte{0x48}, lastHeaderBytes...) // 'H' + hash
-		if numBytes, err := importDB.Get(hashToNumKey); err == nil && len(numBytes) == 8 {
-			blockNum := binary.BigEndian.Uint64(numBytes)
-			highestBlock = blockNum
-			numberToHash[blockNum] = lastHash
-			vm.ctx.Log.Info("Found chain tip from LastHeader", "height", blockNum, "hash", lastHash.Hex())
-		}
-	}
-	
-	// Scan all hash-to-number mappings to build reverse mapping
-	iter := importDB.NewIteratorWithStartAndPrefix([]byte{0x48}, nil) // 'H' prefix
-	defer iter.Release()
-	
+	// First scan hash-to-number mappings (0x48 + hash -> number)
+	iter := importDB.NewIterator()
 	count := 0
 	for iter.Next() {
 		key := iter.Key()
 		val := iter.Value()
 		
-		// Hash-to-number mapping: H (1 byte) + hash (32 bytes) -> number (8 bytes)
+		// Format: 0x48 + hash (32 bytes) -> number (8 bytes)
 		if len(key) == 33 && key[0] == 0x48 && len(val) == 8 {
 			var hash common.Hash
 			copy(hash[:], key[1:])
-			blockNum := binary.BigEndian.Uint64(val)
+			number := binary.BigEndian.Uint64(val)
 			
-			numberToHash[blockNum] = hash
-			if blockNum > highestBlock {
-				highestBlock = blockNum
+			hashToNumber[hash] = number
+			numberToHash[number] = hash
+			
+			if number > highestBlock {
+				highestBlock = number
 			}
 			count++
 			
 			if count % 10000 == 0 {
-				vm.ctx.Log.Info("Building mappings...", "processed", count, "highest", highestBlock)
+				vm.ctx.Log.Info("Building hash mappings...", "processed", count, "highest", highestBlock)
 			}
 		}
 	}
+	iter.Release()
 	
 	vm.ctx.Log.Info("Built number-to-hash mappings", "total", count, "highest", highestBlock)
+	fmt.Printf("=== Found %d blocks to replay (highest: %d) ===\n", count, highestBlock)
 	
 	if highestBlock == 0 {
 		return fmt.Errorf("no blocks found to replay")
@@ -690,8 +749,9 @@ func (vm *VM) replayBlockchainData() error {
 	// Note: The consensus parameters are set at the node level, not the VM level
 	// For single-node operation, they should be k=1, alpha=1, beta=1
 	
-	// Now replay blocks from 1 to highestBlock
-	vm.ctx.Log.Info("Replaying blocks", "from", 1, "to", highestBlock)
+	// Now replay blocks from 0 to highestBlock (including genesis)
+	vm.ctx.Log.Info("Replaying blocks", "from", 0, "to", highestBlock)
+	fmt.Printf("=== Starting to replay blocks 0 to %d ===\n", highestBlock)
 
 	// Track progress
 	startTime := time.Now()
@@ -700,7 +760,7 @@ func (vm *VM) replayBlockchainData() error {
 	blocksInserted := uint64(0)
 
 	batchSize := uint64(1000)
-	for start := uint64(1); start <= highestBlock; start += batchSize {
+	for start := uint64(0); start <= highestBlock; start += batchSize {
 		end := start + batchSize - 1
 		if end > highestBlock {
 			end = highestBlock
@@ -728,11 +788,15 @@ func (vm *VM) replayBlockchainData() error {
 			copy(headerKey[9:], blockHash[:])
 			headerData, err := importDB.Get(headerKey)
 			if err != nil {
-				vm.ctx.Log.Warn("Missing header", "number", blockNum, "hash", blockHash.Hex())
+				// This database appears to have no headers (pruned mode)
+				// We can't replay without headers
+				if blockNum <= 5 {
+					vm.ctx.Log.Warn("Missing header - database appears to be pruned", "number", blockNum, "hash", blockHash.Hex())
+				}
 				continue
 			}
 
-			// Get block body - use 'b' prefix (0x62) + number + hash
+			// Get block body - SubnetEVM format: 'b' (0x62) + number + hash
 			bodyKey := make([]byte, 41)
 			bodyKey[0] = 0x62 // 'b'
 			binary.BigEndian.PutUint64(bodyKey[1:9], blockNum)
@@ -743,14 +807,17 @@ func (vm *VM) replayBlockchainData() error {
 				continue
 			}
 
-			// Decode header
-			header := new(types.Header)
-			if err := rlp.DecodeBytes(headerData, header); err != nil {
-				vm.ctx.Log.Error("Failed to decode header",
+			// Decode header as SubnetEVM format first
+			subnetHeader := new(SubnetEVMHeader)
+			if err := rlp.DecodeBytes(headerData, subnetHeader); err != nil {
+				vm.ctx.Log.Error("Failed to decode SubnetEVM header",
 					"number", blockNum,
 					"error", err)
 				continue
 			}
+			
+			// Convert to standard geth header
+			header := subnetHeader.ToGethHeader()
 
 			// Decode body
 			body := new(types.Body)
@@ -762,14 +829,19 @@ func (vm *VM) replayBlockchainData() error {
 			}
 
 			// Reconstruct block
-			block := types.NewBlock(header, body, nil, nil)
+			// For replay, we don't have receipts, so we'll create the block without them
+			block := types.NewBlockWithHeader(header).WithBody(*body)
 
 			// Insert block into blockchain
 			if _, err := vm.blockChain.InsertChain([]*types.Block{block}); err != nil {
-				vm.ctx.Log.Error("Failed to insert block",
-					"number", blockNum,
-					"hash", block.Hash().Hex(),
-					"error", err)
+				// For debugging, show first few errors
+				if blocksProcessed < 10 {
+					vm.ctx.Log.Error("Failed to insert block",
+						"number", blockNum,
+						"hash", block.Hash().Hex(),
+						"error", err)
+					fmt.Printf("ERROR inserting block %d: %v\n", blockNum, err)
+				}
 				continue
 			}
 
@@ -777,14 +849,24 @@ func (vm *VM) replayBlockchainData() error {
 			batchInserted++
 			blocksProcessed++
 			blocksInserted++
+			
+			// Debug: print first successful insertion
+			if blocksInserted == 1 {
+				fmt.Printf("✓ Successfully inserted first block: %d (hash: %s)\n", blockNum, block.Hash().Hex())
+			}
 
 			// Update lastAccepted periodically
 			if blockNum%1000 == 0 {
 				vm.lastAccepted = ids.ID(block.Hash())
 			}
 
-			// Log progress every 5 seconds
-			if time.Since(lastLogTime) > 5*time.Second {
+			// Log progress more frequently at the start, then every 5 seconds
+			logInterval := 5 * time.Second
+			if blocksProcessed < 100 {
+				logInterval = 1 * time.Second
+			}
+			
+			if time.Since(lastLogTime) > logInterval || blocksProcessed == 1 || blocksProcessed == 10 || blocksProcessed == 100 {
 				elapsed := time.Since(startTime)
 				blocksPerSec := float64(blocksProcessed) / elapsed.Seconds()
 				remaining := highestBlock - blockNum
@@ -802,6 +884,17 @@ func (vm *VM) replayBlockchainData() error {
 					"blocks/sec", fmt.Sprintf("%.0f", blocksPerSec),
 					"eta", eta.Round(time.Second).String(),
 				)
+				
+				// Also print to stdout for immediate visibility
+				if blocksProcessed == 1 || blocksProcessed == 10 || blocksProcessed == 100 || blocksProcessed%1000 == 0 {
+					fmt.Printf("Replay progress: %d/%d blocks (%.2f%%), %d inserted, %.0f blocks/sec, ETA: %s\n",
+						blockNum, highestBlock, 
+						float64(blockNum)*100/float64(highestBlock),
+						blocksInserted,
+						blocksPerSec,
+						eta.Round(time.Second).String())
+				}
+				
 				lastLogTime = time.Now()
 			}
 		}
