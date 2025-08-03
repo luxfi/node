@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -64,4 +64,22 @@ func (t *BaseTx) Verify(ctx *consensus.Context) error {
 	default:
 		return nil
 	}
+}
+
+func VerifyMemoFieldLength(memo types.JSONByteSlice, isDurangoActive bool) error {
+	if !isDurangoActive {
+		// SyntacticVerify validates this field pre-Durango
+		return nil
+	}
+
+	if len(memo) != 0 {
+		return fmt.Errorf(
+			"%w: %d > %d",
+			ErrMemoTooLarge,
+			len(memo),
+			0,
+		)
+	}
+
+	return nil
 }
