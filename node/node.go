@@ -214,9 +214,12 @@ func New(
 		return nil, err
 	}
 
+	// Create luxfi/metrics instance from prometheus registry
+	networkMetrics := luxmetrics.NewPrometheusMetrics(networkNamespace, networkRegisterer)
+
 	n.msgCreator, err = message.NewCreator(
 		n.Log,
-		networkRegisterer,
+		networkMetrics,
 		n.Config.NetworkConfig.CompressionType,
 		n.Config.NetworkConfig.MaximumInboundMessageTimeout,
 	)

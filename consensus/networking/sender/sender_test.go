@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -77,10 +76,10 @@ func TestTimeout(t *testing.T) {
 
 	chainRouter := router.ChainRouter{}
 
-	metrics := metrics.NewNoOpMetrics("test").Registry()
+	m := metrics.NewNoOpMetrics("test")
 	mc, err := message.NewCreator(
 		log.NewNoOpLogger(),
-		metrics,
+		m,
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -337,10 +336,10 @@ func TestReliableMessages(t *testing.T) {
 
 	chainRouter := router.ChainRouter{}
 
-	metrics := metrics.NewNoOpMetrics("test").Registry()
+	m := metrics.NewNoOpMetrics("test")
 	mc, err := message.NewCreator(
 		log.NewNoOpLogger(),
-		metrics,
+		m,
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)

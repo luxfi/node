@@ -51,7 +51,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 
 	mc, err := message.NewCreator(
 		log.NewNoOpLogger(),
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test"),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)

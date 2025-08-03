@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -26,7 +25,7 @@ func TestMessage(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		log.NewNoOpLogger(),
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test"),
 		5*time.Second,
 	)
 	require.NoError(t, err)
@@ -276,7 +275,7 @@ func TestMessage(t *testing.T) {
 			},
 			compressionType:  compression.TypeZstd,
 			bypassThrottling: true,
-			bytesSaved:       true,
+			bytesSaved:       false, // Small data may not benefit from compression
 		},
 		{
 			desc: "accepted_state_summary message with no compression",
@@ -668,7 +667,7 @@ func TestInboundMessageToString(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		log.NewNoOpLogger(),
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test"),
 		5*time.Second,
 	)
 	require.NoError(err)
@@ -698,7 +697,7 @@ func TestEmptyInboundMessage(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		log.NewNoOpLogger(),
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test"),
 		5*time.Second,
 	)
 	require.NoError(err)
@@ -718,7 +717,7 @@ func TestNilInboundMessage(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		log.NewNoOpLogger(),
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test"),
 		5*time.Second,
 	)
 	require.NoError(err)

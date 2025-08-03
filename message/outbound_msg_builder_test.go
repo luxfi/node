@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
@@ -21,7 +20,7 @@ func Test_newOutboundBuilder(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		log.NewNoOpLogger(),
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test"),
 		10*time.Second,
 	)
 	require.NoError(t, err)
