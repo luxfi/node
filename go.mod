@@ -92,7 +92,7 @@ require (
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/crypto v1.2.0
 	github.com/luxfi/database v1.1.4
-	github.com/luxfi/geth v1.16.13
+	github.com/luxfi/geth v1.16.16
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/log v0.1.1
 	github.com/luxfi/metrics v1.1.1
@@ -104,7 +104,7 @@ require (
 	github.com/DataDog/zstd v1.5.7 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bits-and-blooms/bitset v1.20.0 // indirect
+	github.com/bits-and-blooms/bitset v1.22.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
@@ -189,6 +189,3 @@ require (
 
 replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
 
-replace github.com/luxfi/crypto => ../crypto
-
-replace github.com/luxfi/geth => ../geth
