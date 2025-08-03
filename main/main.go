@@ -58,7 +58,7 @@ func main() {
 	}
 
 	if term.IsTerminal(int(os.Stdout.Fd())) {
-		fmt.Println(app.Header)
+		fmt.Print(app.Header)
 	}
 
 	nodeApp, err := app.New(nodeConfig)

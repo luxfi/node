@@ -15,7 +15,6 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/p2ptest"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/warp"
@@ -26,19 +25,19 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 	chainID := ids.GenerateTestID()
 
 	nodeID0 := ids.GenerateTestNodeID()
-	sk0, err := localsigner.New()
+	sk0, err := bls.NewSecretKey()
 	require.NoError(t, err)
 	pk0 := bls.PublicFromSecretKey(sk0)
 	signer0 := warp.NewSigner(sk0, networkID, chainID)
 
 	nodeID1 := ids.GenerateTestNodeID()
-	sk1, err := localsigner.New()
+	sk1, err := bls.NewSecretKey()
 	require.NoError(t, err)
 	pk1 := bls.PublicFromSecretKey(sk1)
 	signer1 := warp.NewSigner(sk1, networkID, chainID)
 
 	nodeID2 := ids.GenerateTestNodeID()
-	sk2, err := localsigner.New()
+	sk2, err := bls.NewSecretKey()
 	require.NoError(t, err)
 	pk2 := bls.PublicFromSecretKey(sk2)
 	signer2 := warp.NewSigner(sk2, networkID, chainID)

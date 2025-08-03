@@ -4,7 +4,6 @@
 package throttling
 
 import (
-	"github.com/luxfi/node/utils/metric"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
