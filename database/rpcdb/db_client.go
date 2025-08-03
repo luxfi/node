@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/set"
 
-	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 var (

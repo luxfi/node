@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
-	rpcdbpb "github.com/luxfi/database/proto/pb/rpcdb"
+	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 type testDatabase struct {

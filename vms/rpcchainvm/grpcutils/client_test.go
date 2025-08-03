@@ -16,10 +16,10 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/rpcdb"
+	"github.com/luxfi/node/database/rpcdb"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	pb "github.com/luxfi/database/proto/pb/rpcdb"
+	pb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 func TestDialOptsSmoke(t *testing.T) {
