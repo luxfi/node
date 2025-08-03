@@ -6,10 +6,9 @@ package message
 import (
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metrics"
 )
 
 var _ Creator = (*creator)(nil)
@@ -26,13 +25,13 @@ type creator struct {
 
 func NewCreator(
 	log log.Logger,
-	metrics prometheus.Registerer,
+	m metrics.Metrics,
 	compressionType compression.Type,
 	maxMessageTimeout time.Duration,
 ) (Creator, error) {
 	builder, err := newMsgBuilder(
 		log,
-		metrics,
+		m,
 		maxMessageTimeout,
 	)
 	if err != nil {

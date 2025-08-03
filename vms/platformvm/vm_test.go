@@ -1445,8 +1445,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	chainRouter := &router.ChainRouter{}
 
-	metrics := metrics.NewNoOpMetrics("test").Registry()
-	mc, err := message.NewCreator(log.NewTestLogger(level.Error), metrics, constants.DefaultNetworkCompressionType, 10*time.Second)
+	m := metrics.NewNoOpMetrics("test")
+	mc, err := message.NewCreator(log.NewTestLogger(level.Error), m, constants.DefaultNetworkCompressionType, 10*time.Second)
 	require.NoError(err)
 
 	require.NoError(chainRouter.Initialize(

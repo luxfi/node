@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
@@ -16,6 +15,7 @@ import (
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -140,15 +140,15 @@ type msgBuilder struct {
 	log log.Logger
 
 	zstdCompressor compression.Compressor
-	count          *prometheus.CounterVec // type + op + direction
-	duration       *prometheus.GaugeVec   // type + op + direction
+	count          metrics.CounterVec // type + op + direction
+	duration       metrics.GaugeVec   // type + op + direction
 
 	maxMessageTimeout time.Duration
 }
 
 func newMsgBuilder(
 	log log.Logger,
-	metrics prometheus.Registerer,
+	m metrics.Metrics,
 	maxMessageTimeout time.Duration,
 ) (*msgBuilder, error) {
 	zstdCompressor, err := compression.NewZstdCompressor(constants.DefaultMaxMessageSize)
@@ -160,27 +160,20 @@ func newMsgBuilder(
 		log: log,
 
 		zstdCompressor: zstdCompressor,
-		count: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "codec_compressed_count",
-				Help: "number of compressed messages",
-			},
+		count: m.NewCounterVec(
+			"codec_compressed_count",
+			"number of compressed messages",
 			metricLabels,
 		),
-		duration: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: "codec_compressed_duration",
-				Help: "time spent handling compressed messages",
-			},
+		duration: m.NewGaugeVec(
+			"codec_compressed_duration",
+			"time spent handling compressed messages",
 			metricLabels,
 		),
 
 		maxMessageTimeout: maxMessageTimeout,
 	}
-	return mb, errors.Join(
-		metrics.Register(mb.count),
-		metrics.Register(mb.duration),
-	)
+	return mb, nil
 }
 
 func (mb *msgBuilder) marshal(
@@ -230,7 +223,7 @@ func (mb *msgBuilder) marshal(
 	}
 	compressTook := time.Since(startTime)
 
-	labels := prometheus.Labels{
+	labels := metrics.Labels{
 		typeLabel:      compressionType.String(),
 		opLabel:        op.String(),
 		directionLabel: compressionLabel,
@@ -283,7 +276,7 @@ func (mb *msgBuilder) unmarshal(b []byte) (*p2p.Message, int, Op, error) {
 		return nil, 0, 0, err
 	}
 
-	labels := prometheus.Labels{
+	labels := metrics.Labels{
 		typeLabel:      compression.TypeZstd.String(),
 		opLabel:        op.String(),
 		directionLabel: decompressionLabel,

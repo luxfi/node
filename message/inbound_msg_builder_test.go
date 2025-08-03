@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
@@ -24,7 +23,7 @@ func Test_newMsgBuilder(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		log.NewNoOpLogger(),
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test"),
 		10*time.Second,
 	)
 	require.NoError(err)
@@ -393,7 +392,7 @@ func TestAppError(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		log.NewNoOpLogger(),
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test"),
 		time.Second,
 	)
 	require.NoError(err)
