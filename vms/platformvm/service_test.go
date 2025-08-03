@@ -96,7 +96,7 @@ func TestExportKey(t *testing.T) {
 	service, _, _ := defaultService(t)
 	service.vm.ctx.Lock.Lock()
 
-	ks := keystore.New(log.NoLog{}, memdb.New())
+	ks := keystore.New(log.NewNoOpLogger(), memdb.New())
 	require.NoError(ks.CreateUser(testUsername, testPassword))
 	service.vm.ctx.Keystore = ks.NewBlockchainKeyStore(service.vm.ctx.ChainID)
 
@@ -894,7 +894,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: log.NoLog{},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, nil
@@ -915,7 +915,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: log.NoLog{},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, nil
@@ -939,7 +939,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: log.NoLog{},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, block
@@ -967,7 +967,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: log.NoLog{},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected
@@ -995,7 +995,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: log.NoLog{},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected
@@ -1023,7 +1023,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: log.NoLog{},
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected

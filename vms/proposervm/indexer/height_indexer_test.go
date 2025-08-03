@@ -83,7 +83,7 @@ func TestHeightBlockIndexPostFork(t *testing.T) {
 	}
 
 	hIndex := newHeightIndexer(blkSrv,
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		storedState,
 	)
 	hIndex.commitFrequency = 0 // commit each block
@@ -163,7 +163,7 @@ func TestHeightBlockIndexAcrossFork(t *testing.T) {
 	}
 
 	hIndex := newHeightIndexer(blkSrv,
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		storedState,
 	)
 	hIndex.commitFrequency = 0 // commit each block
@@ -247,7 +247,7 @@ func TestHeightBlockIndexResumeFromCheckPoint(t *testing.T) {
 	}
 
 	hIndex := newHeightIndexer(blkSrv,
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		storedState,
 	)
 	hIndex.commitFrequency = 0 // commit each block

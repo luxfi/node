@@ -75,7 +75,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 			)
 
 			p2pTracker, err := p2p.NewPeerTracker(
-				log.NoLog{},
+				log.NewNoOpLogger(),
 				"",
 				prometheus.NewRegistry(),
 				nil,

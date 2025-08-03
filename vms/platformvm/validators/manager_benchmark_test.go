@@ -117,7 +117,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 		&consensus.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    ids.GenerateTestNodeID(),
-			Log:       log.NoLog{},
+			Log:       log.NewNoOpLogger(),
 		},
 		metrics,
 		reward.NewCalculator(reward.Config{
@@ -130,7 +130,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	require.NoError(err)
 
 	m := NewManager(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		config.Config{
 			Validators: vdrs,
 		},

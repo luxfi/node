@@ -26,9 +26,9 @@ func TestNew(t *testing.T) {
 	config := &ManagerConfig{
 		SkipBootstrap:    true,
 		EnableAutomining: true,
-		Log:              log.NoLog{},
+		Log:              log.NewNoOpLogger(),
 		Metrics:          metrics.NewMultiGatherer(),
-		VMManager:        vms.NewManager(log.NoLog{}, ids.NewAliaser()),
+		VMManager:        vms.NewManager(log.NewNoOpLogger(), ids.NewAliaser()),
 		ChainDataDir:     t.TempDir(),
 	}
 
@@ -74,9 +74,9 @@ func TestQueueChainCreation(t *testing.T) {
 	require.NoError(err)
 
 	config := &ManagerConfig{
-		Log:          log.NoLog{},
+		Log:          log.NewNoOpLogger(),
 		Metrics:      metrics.NewMultiGatherer(),
-		VMManager:    vms.NewManager(log.NoLog{}, ids.NewAliaser()),
+		VMManager:    vms.NewManager(log.NewNoOpLogger(), ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
 		Subnets:      subnets,
 	}
@@ -111,9 +111,9 @@ func TestLookup(t *testing.T) {
 	require := require.New(t)
 
 	config := &ManagerConfig{
-		Log:          log.NoLog{},
+		Log:          log.NewNoOpLogger(),
 		Metrics:      metrics.NewMultiGatherer(),
-		VMManager:    vms.NewManager(log.NoLog{}, ids.NewAliaser()),
+		VMManager:    vms.NewManager(log.NewNoOpLogger(), ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
 	}
 
@@ -147,9 +147,9 @@ func TestIsBootstrapped(t *testing.T) {
 	require := require.New(t)
 
 	config := &ManagerConfig{
-		Log:          log.NoLog{},
+		Log:          log.NewNoOpLogger(),
 		Metrics:      metrics.NewMultiGatherer(),
-		VMManager:    vms.NewManager(log.NoLog{}, ids.NewAliaser()),
+		VMManager:    vms.NewManager(log.NewNoOpLogger(), ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
 	}
 
@@ -168,7 +168,7 @@ func TestIsBootstrapped(t *testing.T) {
 		NetworkID: constants.MainnetID,
 		SubnetID:  constants.PrimaryNetworkID,
 		ChainID:   chainID,
-		Log:       log.NoLog{},
+		Log:       log.NewNoOpLogger(),
 	}
 	ctx.State.Set(consensus.EngineState{
 		State: consensus.Initializing,

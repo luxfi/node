@@ -47,7 +47,7 @@ func newTest(t *testing.T) (core.AllGetsServer, StateSyncEnabledMock, *enginetes
 	bs, err := New(
 		vm,
 		sender,
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		time.Second,
 		2000,
 		prometheus.NewRegistry(),

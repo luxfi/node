@@ -177,7 +177,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			}
 
 			n, err := New(
-				log.NoLog{},
+				log.NewNoOpLogger(),
 				ids.EmptyNodeID,
 				ids.Empty,
 				&validatorstest.State{
@@ -271,7 +271,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 			}
 
 			n, err := New(
-				log.NoLog{},
+				log.NewNoOpLogger(),
 				ids.EmptyNodeID,
 				ids.Empty,
 				&validatorstest.State{

@@ -69,7 +69,7 @@ func sendRangeProofRequest(
 		}
 
 		// Serves the range proof.
-		server = NewNetworkServer(sender, serverDB, log.NoLog{})
+		server = NewNetworkServer(sender, serverDB, log.NewNoOpLogger())
 
 		clientNodeID, serverNodeID = ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 
@@ -94,7 +94,7 @@ func sendRangeProofRequest(
 	client, err := NewClient(&ClientConfig{
 		NetworkClient: networkClient,
 		Metrics:       &mockMetrics{},
-		Log:           log.NoLog{},
+		Log:           log.NewNoOpLogger(),
 		BranchFactor:  merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -368,7 +368,7 @@ func sendChangeProofRequest(
 		}
 
 		// Serves the change proof.
-		server = NewNetworkServer(sender, serverDB, log.NoLog{})
+		server = NewNetworkServer(sender, serverDB, log.NewNoOpLogger())
 
 		clientNodeID, serverNodeID = ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 
@@ -391,7 +391,7 @@ func sendChangeProofRequest(
 	client, err := NewClient(&ClientConfig{
 		NetworkClient: networkClient,
 		Metrics:       &mockMetrics{},
-		Log:           log.NoLog{},
+		Log:           log.NewNoOpLogger(),
 		BranchFactor:  merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -753,7 +753,7 @@ func TestAppRequestSendFailed(t *testing.T) {
 	client, err := NewClient(
 		&ClientConfig{
 			NetworkClient: networkClient,
-			Log:           log.NoLog{},
+			Log:           log.NewNoOpLogger(),
 			Metrics:       &mockMetrics{},
 			BranchFactor:  merkledb.BranchFactor16,
 		},

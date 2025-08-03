@@ -30,7 +30,7 @@ func TestQueue(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 	mIntf, err := NewMessageQueue(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		constants.PrimaryNetworkID,
 		vdrs,
 		cpuTracker,

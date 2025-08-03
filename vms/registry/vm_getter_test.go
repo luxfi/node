@@ -142,7 +142,7 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 	mockManager := vms.NewMockManager(ctrl)
 	mockRegistry := prometheus.NewRegistry()
 	mockCPUTracker, err := resource.NewManager(
-		log.NoLog{},
+		log.NewNoOpLogger(),
 		"",
 		time.Hour,
 		time.Hour,
