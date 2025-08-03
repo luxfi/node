@@ -13,33 +13,35 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/luxfi/geth/common"
 	gethcore "github.com/luxfi/geth/core"
-	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/core/txpool"
+	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/eth/ethconfig"
 	"github.com/luxfi/geth/ethdb"
 	"github.com/luxfi/geth/params"
 	"github.com/luxfi/geth/rlp"
 	"github.com/luxfi/geth/rpc"
 
-	consensusNode "github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/database"
+	"github.com/luxfi/database/pebbledb"
 	"github.com/luxfi/ids"
+	consensusNode "github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/version"
 )
 
 var (
 	_ block.ChainVM = (*VM)(nil)
 
-	errNilBlock = errors.New("nil block")
+	errNilBlock     = errors.New("nil block")
 	errInvalidBlock = errors.New("invalid block")
 )
 
@@ -86,38 +88,38 @@ func (vm *VM) Initialize(
 	vm.genesisBytes = genesisBytes
 	vm.shutdownChan = make(chan struct{})
 	vm.builtBlocks = make(map[ids.ID]*Block)
-	
+
 	// MIGRATION DETECTION: Check if we have migrated data BEFORE any initialization
 	// We need to check at the C-Chain database level, not the wrapped level
 	hasMigratedData := false
 	migratedHeight := uint64(0)
 	migratedBlockHash := common.Hash{}
-	
+
 	// Create a database wrapper first
 	vm.ethDB = WrapDatabase(db)
-	
+
 	// Check for LUX_GENESIS flag to trigger automatic replay
 	luxGenesis := os.Getenv("LUX_GENESIS") == "1"
 	if luxGenesis {
 		fmt.Printf("LUX_GENESIS=1 detected, checking for blocks to replay...\n")
 		vm.ctx.Log.Info("LUX_GENESIS mode enabled for automatic block replay")
 	}
-	
+
 	// Check environment variables for imported blockchain data
 	if importedHeight := os.Getenv("LUX_IMPORTED_HEIGHT"); importedHeight != "" {
 		if height, err := strconv.ParseUint(importedHeight, 10, 64); err == nil && height > 0 {
 			hasMigratedData = true
 			migratedHeight = height
-			
+
 			// Get the block hash if provided
 			if importedBlockID := os.Getenv("LUX_IMPORTED_BLOCK_ID"); importedBlockID != "" {
 				if blockIDBytes, err := hex.DecodeString(importedBlockID); err == nil && len(blockIDBytes) == 32 {
 					copy(migratedBlockHash[:], blockIDBytes)
 				}
 			}
-			
+
 			fmt.Printf("DETECTED IMPORTED DATA AT HEIGHT %d, HASH %s\n", height, migratedBlockHash.Hex())
-			
+
 			// Log to Avalanche logger too
 			vm.ctx.Log.Info("Detected imported blockchain data from environment",
 				"height", height,
@@ -125,7 +127,7 @@ func (vm *VM) Initialize(
 			)
 		}
 	}
-	
+
 	// Fallback: Check for migrated blockchain data in database
 	if !hasMigratedData {
 		if heightBytes, err := vm.ethDB.Get([]byte("Height")); err == nil && len(heightBytes) == 8 {
@@ -134,7 +136,7 @@ func (vm *VM) Initialize(
 				hasMigratedData = true
 				migratedHeight = height
 				fmt.Printf("DETECTED MIGRATED DATA AT HEIGHT %d\n", height)
-				
+
 				// Log to Avalanche logger too
 				vm.ctx.Log.Info("Detected migrated blockchain data",
 					"height", height,
@@ -142,9 +144,9 @@ func (vm *VM) Initialize(
 			}
 		}
 	}
-	
+
 	// If we have migrated data, skip normal genesis initialization
-	
+
 	// DEBUG: Log database path and check contents
 	fmt.Printf("DEBUG: C-Chain VM Initialize called\n")
 	fmt.Printf("DEBUG: Database type: %T\n", db)
@@ -157,7 +159,7 @@ func (vm *VM) Initialize(
 		if err := json.Unmarshal(genesisBytes, genesis); err != nil {
 			return fmt.Errorf("failed to unmarshal genesis: %w", err)
 		}
-		
+
 		// Set terminal total difficulty for PoS transition
 		if genesis.Config != nil && genesis.Config.TerminalTotalDifficulty == nil {
 			genesis.Config.TerminalTotalDifficulty = common.Big0
@@ -176,14 +178,13 @@ func (vm *VM) Initialize(
 		}
 		genesis.Config.TerminalTotalDifficulty = common.Big0
 	}
-	
+
 	// Initialize chain config
 	vm.chainConfig = genesis.Config
 	if vm.chainConfig == nil {
 		vm.chainConfig = params.AllEthashProtocolChanges
 		genesis.Config = vm.chainConfig
 	}
-
 
 	// Initialize eth config
 	vm.ethConfig = ethconfig.Defaults
@@ -194,10 +195,10 @@ func (vm *VM) Initialize(
 	// CRITICAL: For migrated data, we must prevent normal genesis initialization
 	if hasMigratedData {
 		fmt.Printf("MIGRATION MODE: Skipping genesis, loading from height %d\n", migratedHeight)
-		
+
 		// Set a special genesis that won't overwrite our data
 		genesis.Alloc = nil // Clear allocations to prevent overwriting state
-		
+
 		// Mark database as already initialized to prevent SetupGenesisBlock
 		// Write a dummy genesis hash to satisfy the check
 		if err := vm.ethDB.Put([]byte("genesis"), []byte{1}); err == nil {
@@ -210,7 +211,7 @@ func (vm *VM) Initialize(
 	if hasMigratedData {
 		// CRITICAL: Skip all genesis processing for migrated data
 		fmt.Printf("MIGRATION MODE ACTIVE: Loading blockchain from height %d\n", migratedHeight)
-		
+
 		// Create a special backend that doesn't touch genesis
 		vm.backend, err = NewMigratedBackend(vm.ethDB, migratedHeight)
 		if err != nil {
@@ -242,12 +243,12 @@ func (vm *VM) Initialize(
 			"hash", migratedBlockHash.Hex(),
 			"lastAccepted", vm.lastAccepted.String(),
 		)
-		
+
 		// Log database status after migration detection
 		vm.logDatabaseStatus()
 		return nil
 	}
-	
+
 	// First check our custom consensus keys for migrated data
 	if heightBytes, err := vm.ethDB.Get([]byte("Height")); err == nil && len(heightBytes) == 8 {
 		height := binary.BigEndian.Uint64(heightBytes)
@@ -255,40 +256,40 @@ func (vm *VM) Initialize(
 			vm.ctx.Log.Info("Found Height consensus key",
 				"height", height,
 			)
-			
+
 			// Try to get the block hash at this height
 			blockNumBytes := make([]byte, 8)
 			binary.BigEndian.PutUint64(blockNumBytes, height)
-			
+
 			// Check canonical hash using 9-byte format
 			key := canonicalKey(height)
-			
+
 			if hashBytes, err := vm.ethDB.Get(key); err == nil && len(hashBytes) == 32 {
 				var hash common.Hash
 				copy(hash[:], hashBytes)
-				
+
 				// Force the blockchain to recognize this height
 				// Note: SetHead is not the right approach, we need to ensure the blockchain loads the data
-				
+
 				vm.lastAccepted = ids.ID(hash)
 				vm.ctx.Log.Info("Found migrated blockchain data",
 					"height", height,
 					"hash", hash.Hex(),
 					"lastAccepted", vm.lastAccepted.String(),
 				)
-				
+
 				// Log database status after migration detection
 				vm.logDatabaseStatus()
 				return nil
 			}
 		}
 	}
-	
+
 	currentBlock := vm.blockChain.CurrentBlock()
 	if currentBlock != nil && currentBlock.Number.Uint64() > 0 {
 		// We have migrated data, set last accepted to current block
 		vm.lastAccepted = ids.ID(currentBlock.Hash())
-		
+
 		vm.ctx.Log.Info("C-Chain VM found existing blockchain data",
 			"currentHash", currentBlock.Hash().Hex(),
 			"currentHeight", currentBlock.Number.Uint64(),
@@ -297,16 +298,16 @@ func (vm *VM) Initialize(
 	} else {
 		// Fresh start, use genesis
 		vm.lastAccepted = ids.ID(vm.genesisHash)
-		
+
 		vm.ctx.Log.Info("C-Chain VM starting from genesis",
 			"genesisHash", vm.genesisHash.Hex(),
 			"lastAccepted", vm.lastAccepted.String(),
 		)
-		
+
 		// If LUX_GENESIS=1 and we're at genesis, check for blocks to replay
 		if luxGenesis && (currentBlock == nil || (currentBlock != nil && currentBlock.Number.Uint64() == 0)) {
 			vm.ctx.Log.Info("LUX_GENESIS=1 detected at genesis, checking for blocks to replay...")
-			
+
 			// Look for blockchain data in the C-Chain database directory
 			// The blockchain data should be in the same database
 			if err := vm.replayBlockchainData(); err != nil {
@@ -326,7 +327,7 @@ func (vm *VM) Initialize(
 			}
 		}
 	}
-	
+
 	// Log database statistics
 	vm.logDatabaseStatus()
 
@@ -350,7 +351,7 @@ func (vm *VM) logDatabaseStatus() {
 			"timestamp", currentBlock.Time,
 		)
 	}
-	
+
 	// Get head block info
 	headBlock := vm.blockChain.CurrentHeader()
 	if headBlock != nil {
@@ -359,7 +360,7 @@ func (vm *VM) logDatabaseStatus() {
 			"hash", headBlock.Hash().Hex(),
 		)
 	}
-	
+
 	// Log database type
 	vm.ctx.Log.Info("Database info",
 		"type", fmt.Sprintf("%T", vm.ethDB),
@@ -387,12 +388,12 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 
 	// Create RPC server and register APIs
 	rpcServer := rpc.NewServer()
-	
+
 	// Manually register our minimal APIs to avoid any auto-start issues
 	ethAPI := NewEthAPI(vm.backend)
 	netAPI := &NetAPI{networkID: vm.ethConfig.NetworkId}
 	web3API := &Web3API{}
-	
+
 	// Register each API namespace
 	if err := rpcServer.RegisterName("eth", ethAPI); err != nil {
 		return nil, fmt.Errorf("failed to register eth API: %w", err)
@@ -403,7 +404,7 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 	if err := rpcServer.RegisterName("web3", web3API); err != nil {
 		return nil, fmt.Errorf("failed to register web3 API: %w", err)
 	}
-	
+
 	vm.ctx.Log.Info("Registered API namespaces")
 
 	// Create HTTP handler
@@ -487,16 +488,16 @@ func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 
 	// Create a new block header
 	header := &types.Header{
-		ParentHash:  parent.Hash(),
-		Number:      new(big.Int).Add(parent.Number, common.Big1),
-		GasLimit:    parent.GasLimit,
-		Time:        uint64(time.Now().Unix()),
-		Coinbase:    vm.ethConfig.Miner.Etherbase,
-		Difficulty:  big.NewInt(1), // PoS difficulty
-		MixDigest:   common.Hash{},
-		Nonce:       types.EncodeNonce(0),
-		Extra:       []byte{},
-		BaseFee:     parent.BaseFee,
+		ParentHash: parent.Hash(),
+		Number:     new(big.Int).Add(parent.Number, common.Big1),
+		GasLimit:   parent.GasLimit,
+		Time:       uint64(time.Now().Unix()),
+		Coinbase:   vm.ethConfig.Miner.Etherbase,
+		Difficulty: big.NewInt(1), // PoS difficulty
+		MixDigest:  common.Hash{},
+		Nonce:      types.EncodeNonce(0),
+		Extra:      []byte{},
+		BaseFee:    parent.BaseFee,
 	}
 
 	// Get pending transactions from the pool
@@ -592,21 +593,43 @@ func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, er
 // replayBlockchainData reads imported blockchain data and replays it into the C-Chain
 func (vm *VM) replayBlockchainData() error {
 	vm.ctx.Log.Info("Starting blockchain data replay...")
-	
-	// Check for the highest block number in the database
+
+	// Look for import path from environment variable
+	importPath := os.Getenv("LUX_GENESIS_IMPORT_PATH")
+	if importPath == "" {
+		// Try default locations
+		importPath = "state/genesisdb"
+		if _, err := os.Stat(importPath); os.IsNotExist(err) {
+			importPath = filepath.Join(os.Getenv("HOME"), ".luxd/genesisdb", "pebbledb")
+			if _, err := os.Stat(importPath); os.IsNotExist(err) {
+				return fmt.Errorf("no blockchain import path found, set LUX_GENESIS_IMPORT_PATH")
+			}
+		}
+	}
+
+	vm.ctx.Log.Info("Opening import database", "path", importPath)
+
+	// Open the import database using PebbleDB
+	importDB, err := pebbledb.New(importPath, 256, 256, "importDB", true)
+	if err != nil {
+		return fmt.Errorf("failed to open import database: %w", err)
+	}
+	defer importDB.Close()
+
+	// Check for the highest block number in the import database
 	highestBlock := uint64(0)
-	
+
 	// First, check for our custom Height key
-	if heightBytes, err := vm.ethDB.Get([]byte("Height")); err == nil && len(heightBytes) == 8 {
+	if heightBytes, err := importDB.Get([]byte("Height")); err == nil && len(heightBytes) == 8 {
 		highestBlock = binary.BigEndian.Uint64(heightBytes)
 		vm.ctx.Log.Info("Found Height key", "height", highestBlock)
 	}
-	
+
 	if highestBlock == 0 {
 		// Scan for canonical blocks to find the highest
-		iter := vm.ethDB.NewIterator([]byte("h"), []byte("i"))
+		iter := importDB.NewIterator([]byte("h"), []byte("i"))
 		defer iter.Release()
-		
+
 		for iter.Next() {
 			key := iter.Key()
 			if len(key) == 10 && key[0] == 'h' && key[9] == 'n' {
@@ -616,61 +639,61 @@ func (vm *VM) replayBlockchainData() error {
 				}
 			}
 		}
-		
+
 		if highestBlock == 0 {
 			return fmt.Errorf("no blocks found to replay")
 		}
-		
+
 		vm.ctx.Log.Info("Found highest block by scanning", "height", highestBlock)
 	}
-	
+
 	// Now replay blocks from 1 to highestBlock
 	vm.ctx.Log.Info("Replaying blocks", "from", 1, "to", highestBlock)
-	
+
 	batchSize := uint64(1000)
 	for start := uint64(1); start <= highestBlock; start += batchSize {
 		end := start + batchSize - 1
 		if end > highestBlock {
 			end = highestBlock
 		}
-		
+
 		// Process blocks in batch
 		for blockNum := start; blockNum <= end; blockNum++ {
 			// Get canonical hash
 			canonicalKey := canonicalKey(blockNum)
-			hashBytes, err := vm.ethDB.Get(canonicalKey)
+			hashBytes, err := importDB.Get(canonicalKey)
 			if err != nil {
 				continue // Skip missing blocks
 			}
-			
+
 			var blockHash common.Hash
 			copy(blockHash[:], hashBytes)
-			
+
 			// Get block header
 			headerKey := append([]byte("H"), hashBytes...)
-			headerData, err := vm.ethDB.Get(headerKey)
+			headerData, err := importDB.Get(headerKey)
 			if err != nil {
 				vm.ctx.Log.Warn("Missing header", "number", blockNum)
 				continue
 			}
-			
+
 			// Get block body
 			bodyKey := append([]byte("b"), hashBytes...)
-			bodyData, err := vm.ethDB.Get(bodyKey)
+			bodyData, err := importDB.Get(bodyKey)
 			if err != nil {
 				vm.ctx.Log.Warn("Missing body", "number", blockNum)
 				continue
 			}
-			
+
 			// Decode header
 			header := new(types.Header)
 			if err := rlp.DecodeBytes(headerData, header); err != nil {
-				vm.ctx.Log.Error("Failed to decode header", 
+				vm.ctx.Log.Error("Failed to decode header",
 					"number", blockNum,
 					"error", err)
 				continue
 			}
-			
+
 			// Decode body
 			body := new(types.Body)
 			if err := rlp.DecodeBytes(bodyData, body); err != nil {
@@ -679,10 +702,10 @@ func (vm *VM) replayBlockchainData() error {
 					"error", err)
 				continue
 			}
-			
+
 			// Reconstruct block
 			block := types.NewBlock(header, body, nil, nil)
-			
+
 			// Insert block into blockchain
 			if _, err := vm.blockChain.InsertChain([]*types.Block{block}); err != nil {
 				vm.ctx.Log.Error("Failed to insert block",
@@ -691,7 +714,7 @@ func (vm *VM) replayBlockchainData() error {
 					"error", err)
 				continue
 			}
-			
+
 			// Update lastAccepted periodically
 			if blockNum%10000 == 0 {
 				vm.lastAccepted = ids.ID(block.Hash())
@@ -702,19 +725,18 @@ func (vm *VM) replayBlockchainData() error {
 			}
 		}
 	}
-	
+
 	// Update to the final block
 	finalKey := canonicalKey(highestBlock)
-	if hashBytes, err := vm.ethDB.Get(finalKey); err == nil {
+	if hashBytes, err := importDB.Get(finalKey); err == nil {
 		var finalHash common.Hash
 		copy(finalHash[:], hashBytes)
 		vm.lastAccepted = ids.ID(finalHash)
-		
+
 		vm.ctx.Log.Info("Blockchain replay completed",
 			"finalHeight", highestBlock,
 			"finalHash", finalHash.Hex())
 	}
-	
+
 	return nil
 }
-
