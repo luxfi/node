@@ -90,7 +90,7 @@ require (
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
 	github.com/luxfi/bft v0.1.0
-	github.com/luxfi/crypto v1.1.1
+	github.com/luxfi/crypto v1.2.0
 	github.com/luxfi/database v1.1.4
 	github.com/luxfi/geth v1.16.7
 	github.com/luxfi/ids v1.0.2
@@ -190,3 +190,5 @@ require (
 replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
 
 replace github.com/luxfi/crypto => ../crypto
+
+replace github.com/luxfi/geth => ../geth
