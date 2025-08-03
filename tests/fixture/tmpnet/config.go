@@ -62,7 +62,7 @@ var (
 
 // getEthAddress converts a secp256k1 private key to an Ethereum address
 func getEthAddress(key *secp256k1.PrivateKey) common.Address {
-	return crypto.PubkeyToAddress(*(key.PublicKey().ToECDSA()))
+	return common.Address(crypto.PubkeyToAddress(*(key.PublicKey().ToECDSA())))
 }
 
 // GetEthAddress converts a secp256k1 private key to an Ethereum address (exported version)

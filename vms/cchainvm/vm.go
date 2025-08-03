@@ -627,7 +627,7 @@ func (vm *VM) replayBlockchainData() error {
 
 	if highestBlock == 0 {
 		// Scan for canonical blocks to find the highest
-		iter := importDB.NewIterator([]byte("h"), []byte("i"))
+		iter := importDB.NewIteratorWithStartAndPrefix([]byte("h"), nil)
 		defer iter.Release()
 
 		for iter.Next() {
