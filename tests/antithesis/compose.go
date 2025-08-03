@@ -1,6 +1,9 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build antithesis
+// +build antithesis
+
 package antithesis
 
 import (
@@ -13,10 +16,10 @@ import (
 	"github.com/compose-spec/compose-go/types"
 	"gopkg.in/yaml.v3"
 
+	"github.com/luxfi/log/level"
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 )
 
@@ -97,8 +100,8 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 
 		env := types.Mapping{
 			config.NetworkNameKey:             constants.LocalName,
-			config.LogLevelKey:                log.Debug.String(),
-			config.LogDisplayLevelKey:         logging.Trace.String(),
+			config.LogLevelKey:                level.Debug.String(),
+			config.LogDisplayLevelKey:         level.Trace.String(),
 			config.HTTPHostKey:                "0.0.0.0",
 			config.PublicIPKey:                address,
 			config.StakingTLSKeyContentKey:    tlsKey,
