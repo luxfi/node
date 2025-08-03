@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/quasar/validators"
 )
 
 // TestState is a test implementation of validators.State

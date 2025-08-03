@@ -6,7 +6,7 @@ package validatorsmock
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/quasar/validators"
 )
 
 // State is a mock implementation of validators.State
