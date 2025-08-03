@@ -17,9 +17,10 @@ import (
 // This exactly matches what `genesis migrate rebuild-canonical`
 // just wrote into Pebble.
 func canonicalKey(number uint64) []byte {
-	key := make([]byte, 9)
+	key := make([]byte, 10)
 	key[0] = 0x68 // 'h'
-	binary.BigEndian.PutUint64(key[1:], number)
+	binary.BigEndian.PutUint64(key[1:9], number)
+	key[9] = 0x6e // 'n'
 	return key
 }
 

@@ -13,7 +13,6 @@ import (
 	"math/big"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -597,12 +596,13 @@ func (vm *VM) replayBlockchainData() error {
 	// Look for import path from environment variable
 	importPath := os.Getenv("LUX_GENESIS_IMPORT_PATH")
 	if importPath == "" {
-		// Try default locations
-		importPath = "state/genesisdb"
+		// Use relative state repo path for original blockchain data
+		importPath = "../genesis/state/processed/lux-mainnet-96369/C/db"
 		if _, err := os.Stat(importPath); os.IsNotExist(err) {
-			importPath = filepath.Join(os.Getenv("HOME"), ".luxd/genesisdb", "pebbledb")
+			// Try the symlinked path
+			importPath = "../state/chaindata/lux-mainnet-96369/db/pebbledb"
 			if _, err := os.Stat(importPath); os.IsNotExist(err) {
-				return fmt.Errorf("no blockchain import path found, set LUX_GENESIS_IMPORT_PATH")
+				return fmt.Errorf("blockchain import path not found, set LUX_GENESIS_IMPORT_PATH")
 			}
 		}
 	}
@@ -648,8 +648,93 @@ func (vm *VM) replayBlockchainData() error {
 		vm.ctx.Log.Info("Found highest block by scanning", "height", highestBlock)
 	}
 
+	// First, log consensus parameters being used
+	vm.ctx.Log.Info("Consensus parameters for C-Chain",
+		"networkID", vm.ctx.NetworkID,
+		"subnetID", vm.ctx.SubnetID,
+		"chainID", vm.ctx.ChainID,
+	)
+	
+	// Note: The consensus parameters are set at the node level, not the VM level
+	// For single-node operation, they should be k=1, alpha=1, beta=1
+	
+	// First, let's debug what keys exist in the database
+	vm.ctx.Log.Info("Debugging import database keys...")
+	
+	// Iterate through all keys to see the format
+	debugIter := importDB.NewIterator()
+	defer debugIter.Release()
+	
+	keyTypes := make(map[string]int)
+	sampleKeys := []string{}
+	canonicalFound := 0
+	headerFound := 0
+	bodyFound := 0
+	count := 0
+	
+	for debugIter.Next() && count < 1000 {
+		key := debugIter.Key()
+		if len(key) > 0 {
+			// Count key types by first byte
+			if len(key) >= 1 {
+				firstByte := key[0]
+				keyTypes[fmt.Sprintf("%02x", firstByte)]++
+			}
+			
+			// Sample some keys for debugging
+			if count < 20 {
+				sampleKeys = append(sampleKeys, fmt.Sprintf("key[%d]: %x", len(key), key))
+			}
+			
+			// Look for canonical keys (h + 8 bytes + n)
+			if len(key) == 10 && key[0] == 0x68 && key[9] == 0x6e {
+				blockNum := binary.BigEndian.Uint64(key[1:9])
+				if canonicalFound < 5 {
+					vm.ctx.Log.Info("Found canonical key", "blockNum", blockNum, "key", fmt.Sprintf("%x", key))
+				}
+				canonicalFound++
+			}
+			
+			// Also look for block body keys to understand structure
+			if len(key) >= 41 && key[0] == 0x62 {
+				blockNum := binary.BigEndian.Uint64(key[1:9])
+				if blockNum <= 5 {
+					vm.ctx.Log.Info("Found body key", "blockNum", blockNum, "keyLen", len(key), "key", fmt.Sprintf("%x", key[:20]))
+				}
+			}
+			
+			// Look for header keys (H + 32 bytes)
+			if len(key) == 33 && key[0] == 0x48 {
+				headerFound++
+			}
+			
+			// Look for body keys (b + 32 bytes)
+			if len(key) == 33 && key[0] == 0x62 {
+				bodyFound++
+			}
+		}
+		count++
+		}
+	
+	vm.ctx.Log.Info("Database key analysis",
+		"totalScanned", count,
+		"keyTypes", keyTypes,
+		"canonicalKeys", canonicalFound,
+		"headerKeys", headerFound,
+		"bodyKeys", bodyFound,
+	)
+	for i, sample := range sampleKeys {
+		vm.ctx.Log.Info(fmt.Sprintf("Sample key %d", i), "data", sample)
+	}
+	
 	// Now replay blocks from 1 to highestBlock
 	vm.ctx.Log.Info("Replaying blocks", "from", 1, "to", highestBlock)
+
+	// Track progress
+	startTime := time.Now()
+	lastLogTime := startTime
+	blocksProcessed := uint64(0)
+	blocksInserted := uint64(0)
 
 	batchSize := uint64(1000)
 	for start := uint64(1); start <= highestBlock; start += batchSize {
@@ -658,12 +743,40 @@ func (vm *VM) replayBlockchainData() error {
 			end = highestBlock
 		}
 
+		batchStart := time.Now()
+		batchProcessed := 0
+		batchInserted := 0
+
 		// Process blocks in batch
 		for blockNum := start; blockNum <= end; blockNum++ {
-			// Get canonical hash
+			// Get canonical hash using the correct format
 			canonicalKey := canonicalKey(blockNum)
+			
+			// Debug first few keys
+			if blockNum <= 5 {
+				vm.ctx.Log.Info("Looking for canonical key", 
+					"blockNum", blockNum, 
+					"key", fmt.Sprintf("%x", canonicalKey))
+			}
+			
 			hashBytes, err := importDB.Get(canonicalKey)
 			if err != nil {
+				// For debugging, check if we have a body key instead
+				if blockNum <= 5 {
+					// Try to find any key for this block number
+					bodyPrefix := make([]byte, 9)
+					bodyPrefix[0] = 0x62 // 'b'
+					binary.BigEndian.PutUint64(bodyPrefix[1:], blockNum)
+					
+					// Create an iterator with this prefix
+					iter := importDB.NewIteratorWithStartAndPrefix(bodyPrefix, nil)
+					if iter.Next() {
+						vm.ctx.Log.Info("Found body key for block", 
+							"blockNum", blockNum,
+							"key", fmt.Sprintf("%x", iter.Key()))
+					}
+					iter.Release()
+				}
 				continue // Skip missing blocks
 			}
 
@@ -716,15 +829,48 @@ func (vm *VM) replayBlockchainData() error {
 				continue
 			}
 
+			batchProcessed++
+			batchInserted++
+			blocksProcessed++
+			blocksInserted++
+
 			// Update lastAccepted periodically
-			if blockNum%10000 == 0 {
+			if blockNum%1000 == 0 {
 				vm.lastAccepted = ids.ID(block.Hash())
-				vm.ctx.Log.Info("Replay progress",
-					"block", blockNum,
-					"total", highestBlock,
-					"percentage", fmt.Sprintf("%.1f%%", float64(blockNum)/float64(highestBlock)*100))
+			}
+
+			// Log progress every 5 seconds
+			if time.Since(lastLogTime) > 5*time.Second {
+				elapsed := time.Since(startTime)
+				blocksPerSec := float64(blocksProcessed) / elapsed.Seconds()
+				remaining := highestBlock - blockNum
+				eta := time.Duration(float64(remaining) / blocksPerSec * float64(time.Second))
+				
+				// Check current blockchain height
+				currentHeight := vm.blockChain.CurrentBlock().Number.Uint64()
+				
+				vm.ctx.Log.Info("Blockchain replay progress",
+					"processed", blockNum,
+					"inserted", blocksInserted,
+					"currentHeight", currentHeight,
+					"target", highestBlock,
+					"percent", fmt.Sprintf("%.2f%%", float64(blockNum)*100/float64(highestBlock)),
+					"blocks/sec", fmt.Sprintf("%.0f", blocksPerSec),
+					"eta", eta.Round(time.Second).String(),
+				)
+				lastLogTime = time.Now()
 			}
 		}
+
+		// Log batch completion
+		batchDuration := time.Since(batchStart)
+		vm.ctx.Log.Info("Batch completed",
+			"batch", fmt.Sprintf("%d-%d", start, end),
+			"processed", batchProcessed,
+			"inserted", batchInserted,
+			"duration", batchDuration.Round(time.Millisecond),
+			"rate", fmt.Sprintf("%.0f blocks/sec", float64(batchProcessed)/batchDuration.Seconds()),
+		)
 	}
 
 	// Update to the final block
