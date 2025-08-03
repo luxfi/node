@@ -218,7 +218,7 @@ func TestGet(t *testing.T) {
 	sk, err := localsigner.New()
 	require.NoError(err)
 
-	pk := bls.PublicFromSecretKey(sk)
+	pk := sk.PublicKey()
 	require.NoError(m.AddStaker(subnetID, nodeID, pk, ids.Empty, 1))
 
 	vdr0, ok := m.GetValidator(subnetID, nodeID)
@@ -308,7 +308,7 @@ func TestGetMap(t *testing.T) {
 	sk, err := localsigner.New()
 	require.NoError(err)
 
-	pk := bls.PublicFromSecretKey(sk)
+	pk := sk.PublicKey()
 	nodeID0 := ids.GenerateTestNodeID()
 	require.NoError(m.AddStaker(subnetID, nodeID0, pk, ids.Empty, 2))
 
@@ -409,7 +409,7 @@ func TestSample(t *testing.T) {
 	require.NoError(err)
 
 	nodeID0 := ids.GenerateTestNodeID()
-	pk := bls.PublicFromSecretKey(sk)
+	pk := sk.PublicKey()
 	require.NoError(m.AddStaker(subnetID, nodeID0, pk, ids.Empty, 1))
 
 	sampled, err = m.Sample(subnetID, 1)
@@ -470,7 +470,7 @@ func TestAddCallback(t *testing.T) {
 
 	var (
 		expectedNodeID           = ids.GenerateTestNodeID()
-		expectedPK               = bls.PublicFromSecretKey(expectedSK)
+		expectedPK               = expectedSK.PublicKey()
 		expectedTxID             = ids.GenerateTestID()
 		expectedWeight    uint64 = 1
 		expectedSubnetID0        = ids.GenerateTestID()
@@ -518,7 +518,7 @@ func TestAddWeightCallback(t *testing.T) {
 
 	var (
 		expectedNodeID             = ids.GenerateTestNodeID()
-		expectedPK                 = bls.PublicFromSecretKey(expectedSK)
+		expectedPK                 = expectedSK.PublicKey()
 		expectedTxID               = ids.GenerateTestID()
 		expectedOldWeight   uint64 = 1
 		expectedAddedWeight uint64 = 10
@@ -601,7 +601,7 @@ func TestRemoveWeightCallback(t *testing.T) {
 
 	var (
 		expectedNodeID               = ids.GenerateTestNodeID()
-		expectedPK                   = bls.PublicFromSecretKey(expectedSK)
+		expectedPK                   = expectedSK.PublicKey()
 		expectedTxID                 = ids.GenerateTestID()
 		expectedNewWeight     uint64 = 1
 		expectedRemovedWeight uint64 = 10
@@ -684,7 +684,7 @@ func TestRemoveCallback(t *testing.T) {
 
 	var (
 		expectedNodeID           = ids.GenerateTestNodeID()
-		expectedPK               = bls.PublicFromSecretKey(expectedSK)
+		expectedPK               = expectedSK.PublicKey()
 		expectedTxID             = ids.GenerateTestID()
 		expectedWeight    uint64 = 1
 		expectedSubnetID0        = ids.GenerateTestID()

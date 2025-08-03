@@ -125,10 +125,10 @@ func generateTestNodes(t *testing.T, num uint64) []*testNode {
 		nodes[i] = &testNode{
 			validator: validators.GetValidatorOutput{
 				NodeID:    nodeID,
-				PublicKey: bls.PublicFromSecretKey(ls),
+				PublicKey: ls.PublicKey(),
 			},
 			signFunc: func(msg []byte) (*bls.Signature, error) {
-				return bls.Sign(ls, msg), nil
+				return ls.Sign(msg)
 			},
 		}
 	}

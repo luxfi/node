@@ -14,6 +14,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
@@ -33,6 +35,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -3037,7 +3040,7 @@ func TestGetProcessingAncestor(t *testing.T) {
 
 			require.NoError(consensus.Add(issuedBlock))
 
-			metrics, err := newMetrics(prometheus.NewRegistry())
+			metrics, err := newMetrics(metrics.WrapPrometheusRegistry(prometheus.NewRegistry()))
 			require.NoError(err)
 
 			engine := &Engine{
@@ -3045,7 +3048,7 @@ func TestGetProcessingAncestor(t *testing.T) {
 					Ctx:       ctx,
 					Consensus: consensus,
 				},
-				metrics:                metrics,
+				chainMetrics:           metrics,
 				unverifiedIDToAncestor: test.nonVerifieds,
 				unverifiedBlockCache:   test.nonVerifiedCache,
 			}
@@ -3223,7 +3226,11 @@ func TestEngineAbortQueryWhenInPartition(t *testing.T) {
 
 	conf := DefaultConfig(t)
 	// Overwrite the log to record what it says
-	conf.Ctx.Log = logging.NewLogger("", logging.NewWrappedCore(log.Verbo, &buff, logging.Plain.ConsoleEncoder()))
+	conf.Ctx.Log = log.NewZapLogger(zap.New(zapcore.NewCore(
+		zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig()),
+		zapcore.AddSync(&buff),
+		zapcore.DebugLevel,
+	)))
 	conf.Params = sampling.DefaultParameters
 	conf.ConnectedValidators = &mockConnVDR{percent: 0.7, Peers: conf.ConnectedValidators}
 
