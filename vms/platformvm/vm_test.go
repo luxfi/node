@@ -272,7 +272,7 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 		},
 	}}
 
-	db := memdb.NewDatabase()
+	db := memdb.New()
 	chainDB := prefixdb.New([]byte{0}, db)
 	atomicDB := prefixdb.New([]byte{1}, db)
 
@@ -1199,7 +1199,7 @@ func TestOptimisticAtomicImport(t *testing.T) {
 // test restarting the node
 func TestRestartFullyAccepted(t *testing.T) {
 	require := require.New(t)
-	db := memdb.NewDatabase()
+	db := memdb.New()
 
 	firstDB := prefixdb.New([]byte{}, db)
 	firstVM := &VM{Config: config.Config{
@@ -1221,7 +1221,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 
 	_, genesisBytes := defaultGenesis(t, firstCtx.LUXAssetID)
 
-	baseDB := memdb.NewDatabase()
+	baseDB := memdb.New()
 	atomicDB := prefixdb.New([]byte{1}, baseDB)
 	m := atomic.NewMemory(atomicDB)
 	firstCtx.SharedMemory = m.NewSharedMemory(firstCtx.ChainID)
@@ -1335,7 +1335,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require := require.New(t)
 
-	baseDB := memdb.NewDatabase()
+	baseDB := memdb.New()
 	vmDB := prefixdb.New(chains.VMDBPrefix, baseDB)
 	bootstrappingDB := prefixdb.New(chains.ChainBootstrappingDBPrefix, baseDB)
 
@@ -1735,7 +1735,7 @@ func TestUnverifiedParent(t *testing.T) {
 	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
-		memdb.NewDatabase(),
+		memdb.New(),
 		genesisBytes,
 		nil,
 		nil,
@@ -1864,7 +1864,7 @@ func TestMaxStakeAmount(t *testing.T) {
 func TestUptimeDisallowedWithRestart(t *testing.T) {
 	require := require.New(t)
 	latestForkTime = defaultValidateStartTime.Add(defaultMinStakingDuration)
-	db := memdb.NewDatabase()
+	db := memdb.New()
 
 	firstDB := prefixdb.New([]byte{}, db)
 	const firstUptimePercentage = 20 // 20%
@@ -2015,7 +2015,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	require := require.New(t)
 	latestForkTime = defaultValidateStartTime.Add(defaultMinStakingDuration)
 
-	db := memdb.NewDatabase()
+	db := memdb.New()
 
 	vm := &VM{Config: config.Config{
 		Chains:                 chains.TestManager,

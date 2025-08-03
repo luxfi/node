@@ -4,7 +4,6 @@
 package throttling
 
 import (
-	"github.com/luxfi/node/utils/metric"
 	"net/netip"
 	"testing"
 	"time"

@@ -47,9 +47,9 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 
 	db, err := leveldb.New(
 		b.TempDir(),
-		nil,
-		log.NoLog{},
-		prometheus.NewRegistry(),
+		0,     // blockCacheSize - use default
+		0,     // writeCacheSize - use default  
+		1024,  // handleCap - reasonable default
 	)
 	require.NoError(err)
 	defer func() {

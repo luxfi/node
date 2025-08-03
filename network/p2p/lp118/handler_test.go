@@ -18,7 +18,6 @@ import (
 	"github.com/luxfi/node/network/p2p/p2ptest"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
@@ -73,7 +72,7 @@ func TestHandler(t *testing.T) {
 			require := require.New(t)
 
 			ctx := context.Background()
-			sk, err := localsigner.New()
+			sk, err := bls.NewSecretKey()
 			require.NoError(err)
 			pk := bls.PublicFromSecretKey(sk)
 			networkID := uint32(123)
