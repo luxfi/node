@@ -9,8 +9,8 @@ import (
 
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/quasar"
+	"github.com/luxfi/node/quasar/engine/common"
 )
 
 // Block is the block interface

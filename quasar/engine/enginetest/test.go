@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/quasar/engine/common"
 	"github.com/luxfi/node/version"
 )
 
