@@ -18,7 +18,7 @@ const (
 	// RPCChainVMProtocol should be bumped anytime changes are made which
 	// require the plugin vm to upgrade to latest node release to be
 	// compatible.
-	RPCChainVMProtocol uint = 35
+	RPCChainVMProtocol uint = 43
 )
 
 // These are globals that describe network upgrades and node versions
@@ -26,7 +26,7 @@ var (
 	Current = &Semantic{
 		Major: 1,
 		Minor: 13,
-		Patch: 2,
+		Patch: 4,
 	}
 	CurrentApp = &Application{
 		Name:  Client,
