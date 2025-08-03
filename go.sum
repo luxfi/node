@@ -61,8 +61,6 @@ github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
-github.com/bits-and-blooms/bitset v1.20.0 h1:2F+rfL86jE2d/bmw7OhqUg2Sj/1rURkBn3MdfoPyRVU=
-github.com/bits-and-blooms/bitset v1.20.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
 github.com/bits-and-blooms/bitset v1.22.0 h1:Tquv9S8+SGaS3EhyA+up3FXzmkhxPGjQQCkcs2uw7w4=
 github.com/bits-and-blooms/bitset v1.22.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
 github.com/bketelsen/crypt v0.0.4/go.mod h1:aI6NrJ0pMGgvZKL1iVgXLnfIFJtfV+bKCoqOes/6LfM=
@@ -376,8 +374,12 @@ github.com/leanovate/gopter v0.2.11 h1:vRjThO1EKPb/1NsDXuDrzldR28RLkBflWYcU9CvzW
 github.com/leanovate/gopter v0.2.11/go.mod h1:aK3tzZP/C+p1m3SPRE4SYZFGP7jjkuSI4f7Xvpt0S9c=
 github.com/luxfi/bft v0.1.0 h1:7PuGqoDSFTVwxT3MF0VU+c/QeC/HVerKJtpNL+4Bp0M=
 github.com/luxfi/bft v0.1.0/go.mod h1:IUT167Erk2h8z36197Yrmu/3CBIsZku5WlEG8O2NMp4=
+github.com/luxfi/crypto v1.2.0 h1:mvsD48VvEeFyUOMwlJlRXm48DqC3vQJjxuDek/8y42U=
+github.com/luxfi/crypto v1.2.0/go.mod h1:Wt4fomM14VWfQ/89PZh1dApz+0XteEG9x99Q9SHIRtY=
 github.com/luxfi/database v1.1.4 h1:C8yFA7ilwYnde/+tjSif9RgBlC9mN8Lj52jIIv/Vayk=
 github.com/luxfi/database v1.1.4/go.mod h1:/dUq+IYFvgFitQEXr4zj/9jJ0cjT/bf5558pB1rKpX8=
+github.com/luxfi/geth v1.16.23 h1:D5cCkHbLIkfIypirmHjVJs3UuF/n1BwKuCc1i94xrdA=
+github.com/luxfi/geth v1.16.23/go.mod h1:RSYtOoUalhirftZSNxPcUL5oxDu3VTZpvuNJueaJegY=
 github.com/luxfi/ids v1.0.2 h1:OnbCWBgdmuBPZat1r1vRikk1FFrdHMfSknpfKmX0KBg=
 github.com/luxfi/ids v1.0.2/go.mod h1:cMbto3Q8N3IaBxdz4Lzaq9wYl33coGXUdlr2+YwXeUw=
 github.com/luxfi/log v0.1.1 h1:KRTOIGqyPTrN3nWcBMVI50B6EXTayYex2+HyGjJ06Ew=
