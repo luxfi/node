@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -17,7 +18,7 @@ import (
 )
 
 func newMempool(toEngine chan<- core.Message) (Mempool, error) {
-	return New("mempool", prometheus.NewRegistry(), toEngine)
+	return New("mempool", metrics.NewNoOpMetrics("test").Registry(), toEngine)
 }
 
 func TestRequestBuildBlock(t *testing.T) {

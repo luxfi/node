@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
@@ -25,7 +26,7 @@ func TestMessage(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		5*time.Second,
 	)
 	require.NoError(t, err)
@@ -105,7 +106,7 @@ func TestMessage(t *testing.T) {
 						NetworkId:      uint32(1337),
 						MyTime:         uint64(nowUnix),
 						IpAddr:         []byte(net.IPv6zero),
-						IpPort:         9651,
+						IpPort:         9631,
 						IpSigningTime:  uint64(nowUnix),
 						IpNodeIdSig:    []byte{'y', 'e', 'e', 't'},
 						TrackedSubnets: [][]byte{testID[:]},
@@ -183,7 +184,7 @@ func TestMessage(t *testing.T) {
 							{
 								X509Certificate: testTLSCert.Certificate[0],
 								IpAddr:          []byte(net.IPv6zero),
-								IpPort:          9651,
+								IpPort:          9631,
 								Timestamp:       uint64(nowUnix),
 								Signature:       compressibleContainers[0],
 							},
@@ -667,7 +668,7 @@ func TestInboundMessageToString(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		5*time.Second,
 	)
 	require.NoError(err)
@@ -697,7 +698,7 @@ func TestEmptyInboundMessage(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		5*time.Second,
 	)
 	require.NoError(err)
@@ -717,7 +718,7 @@ func TestNilInboundMessage(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		5*time.Second,
 	)
 	require.NoError(err)

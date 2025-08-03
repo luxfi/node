@@ -37,7 +37,7 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		log.NoWarn{},
+		log.NewNoOpLogger(),
 		[]fxs.Fx{
 			secpFx,
 		},
@@ -394,7 +394,7 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		log.NoWarn{},
+		log.NewNoOpLogger(),
 		[]fxs.Fx{
 			secpFx,
 		},
@@ -762,7 +762,7 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		log.NoWarn{},
+		log.NewNoOpLogger(),
 		[]fxs.Fx{
 			secpFx,
 		},
@@ -878,7 +878,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		log.NoWarn{},
+		log.NewNoOpLogger(),
 		[]fxs.Fx{
 			fx,
 		},

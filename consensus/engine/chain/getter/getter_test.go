@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -50,7 +51,7 @@ func newTest(t *testing.T) (core.AllGetsServer, StateSyncEnabledMock, *enginetes
 		log.NewNoOpLogger(),
 		time.Second,
 		2000,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(t, err)
 

@@ -90,8 +90,8 @@ docker-run:
 	@docker run -d \
 		--name luxd-node \
 		--network lux-network \
-		-p 9650:9650 \
-		-p 9651:9651 \
+		-p 9630:9630 \
+		-p 9631:9631 \
 		-v ~/.luxd:/luxd \
 		$(DOCKER_IMAGE):latest
 

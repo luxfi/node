@@ -13,6 +13,7 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/database"
+	nodedatabase "github.com/luxfi/node/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/log"
@@ -146,7 +147,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
 	s.EXPECT().SetHeight(blk.Height()).Times(1)
 	s.EXPECT().AddStatelessBlock(blk).Times(1)
-	batch := database.NewMockBatch(ctrl)
+	batch := nodedatabase.NewMockBatch(ctrl)
 	s.EXPECT().CommitBatch().Return(batch, nil).Times(1)
 	s.EXPECT().Abort().Times(1)
 	onAcceptState.EXPECT().Apply(s).Times(1)
@@ -234,7 +235,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
 	s.EXPECT().SetHeight(blk.Height()).Times(1)
 	s.EXPECT().AddStatelessBlock(blk).Times(1)
-	batch := database.NewMockBatch(ctrl)
+	batch := nodedatabase.NewMockBatch(ctrl)
 	s.EXPECT().CommitBatch().Return(batch, nil).Times(1)
 	s.EXPECT().Abort().Times(1)
 	onAcceptState.EXPECT().Apply(s).Times(1)
@@ -329,7 +330,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 		atomicRequests: parentState.atomicRequests,
 	}
 
-	batch := database.NewMockBatch(ctrl)
+	batch := nodedatabase.NewMockBatch(ctrl)
 
 	// Set expected calls on dependencies.
 	// Make sure the parent is accepted first.
@@ -439,7 +440,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 		atomicRequests: parentState.atomicRequests,
 	}
 
-	batch := database.NewMockBatch(ctrl)
+	batch := nodedatabase.NewMockBatch(ctrl)
 
 	// Set expected calls on dependencies.
 	// Make sure the parent is accepted first.

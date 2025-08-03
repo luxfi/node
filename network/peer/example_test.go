@@ -21,7 +21,7 @@ func ExampleStartTestPeer() {
 
 	peerIP := netip.AddrPortFrom(
 		netip.IPv6Loopback(),
-		9651,
+		9631,
 	)
 	peer, err := StartTestPeer(
 		ctx,

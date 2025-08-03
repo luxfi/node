@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/consensustest"
@@ -52,7 +53,7 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 		log.NewNoOpLogger(),
 		time.Second,
 		2000,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(err)
 
@@ -81,7 +82,7 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 		log.NewNoOpLogger(),
 		time.Second,
 		2000,
-		prometheus.NewRegistry())
+		metrics.NewNoOpMetrics("test").Registry())
 	require.NoError(err)
 
 	cfg, err = NewConfig(dummyGetter, ctx, nil, sender, nil, 0, 0, nil, fullVM)

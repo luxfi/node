@@ -142,7 +142,7 @@ type Client interface {
 For example:
 
 ```bash
-curl --location --request POST 'http://34.235.54.228:9650/ext/bc/28iioW2fYMBnKv24VG5nw9ifY2PsFuwuhxhyzxZB5MmxDd3rnT' \
+curl --location --request POST 'http://34.235.54.228:9630/ext/bc/28iioW2fYMBnKv24VG5nw9ifY2PsFuwuhxhyzxZB5MmxDd3rnT' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "jsonrpc": "2.0",
@@ -351,7 +351,7 @@ xsvm issue import --source-chain-id <SubnetA.BlockchainID> --destination-chain-i
 ```
 
 > The <source_uris> can be found by running `lux network status`. The default URIs are
-"http://localhost:9650,http://localhost:9652,http://localhost:9654,http://localhost:9656,http://localhost:9658"
+"http://localhost:9630,http://localhost:9652,http://localhost:9654,http://localhost:9656,http://localhost:9658"
 
 **Account Values**
 To check proper execution, use the `xsvm account` command to check balances.

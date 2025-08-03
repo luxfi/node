@@ -168,7 +168,7 @@ curl -X POST --data '{
         },
         "encoding": "hex"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/vm/xvm
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/vm/xvm
 ```
 
 **Example Response:**
@@ -218,7 +218,7 @@ curl -X POST --data '{
         "password": "myPassword"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -315,7 +315,7 @@ curl -X POST --data '{
         "username":"myUsername",
         "password":"myPassword"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -403,7 +403,7 @@ curl -X POST --data '{
         "username":"myUsername",
         "password":"myPassword"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -504,7 +504,7 @@ curl -X POST --data '{
         "username":"myUsername",
         "password":"myPassword"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -581,7 +581,7 @@ curl -X POST --data '{
         "username":"myUsername",
         "password":"myPassword"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -641,7 +641,7 @@ curl -X POST --data '{
         "password":"myPassword",
         "address":"X-lux18jma8ppw3nhx5r4ap8clazz0dps7rv5ukulre5"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -712,7 +712,7 @@ curl -X POST --data '{
       "assetID":"LUX",
       "pageSize":20
   }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -759,7 +759,7 @@ curl -X POST --data '{
     "params" :{
         "address":"X-lux1c79e0dd0susp7dc8udq34jgk2yvve7hapvdyht"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -829,7 +829,7 @@ curl -X POST --data '{
     "params" :{
         "assetID" :"FvwEAhmxKfeiG8SnEvq42hc6whRyY3EFYAvebMqDNDGCgxN5Z"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -880,7 +880,7 @@ curl -X POST --data '{
       "address":"X-lux18jma8ppw3nhx5r4ap8clazz0dps7rv5ukulre5",
       "assetID": "2pYGetDWyKdHxpFxh2LHeoLNCH6H5vxxCxHQtFnnFaYxLsqtHC"
   }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -940,7 +940,7 @@ curl -X POST --data '{
         "encoding": "hex"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -995,7 +995,7 @@ curl -X POST --data '{
         "encoding": “hex”
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -1032,7 +1032,7 @@ curl -X POST --data '{
     "method": "xvm.getHeight",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -1075,7 +1075,7 @@ curl -X POST --data '{
         "txID":"2oJCbb8pfdxEHAf9A8CdN4Afj9VSR3xzyzNkf8tDv7aM1sfNFL",
         "encoding": "json"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -1208,7 +1208,7 @@ curl -X POST --data '{
     "params" :{
         "txID":"2QouvFWUbjuySRxeX5xMbNCuAaKWfbk5FeEa2JmoF85RKLk2dD"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -1279,7 +1279,7 @@ curl -X POST --data '{
         "limit":5,
         "encoding": "hex"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 This gives response:
@@ -1323,7 +1323,7 @@ curl -X POST --data '{
         },
         "encoding": "hex"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 This gives response:
@@ -1367,7 +1367,7 @@ curl -X POST --data '{
         "sourceChain": "P",
         "encoding": "hex"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 This gives response:
@@ -1435,7 +1435,7 @@ curl -X POST --data '{
         "username":"myUsername",
         "password":"myPassword"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -1493,7 +1493,7 @@ curl -X POST --data '{
         "password":"myPassword",
         "privateKey":"PrivateKey-2w4XiXxPfQK4TypYqnohRL8DRNTz9cGiGmwQ1zmgEqD9c9KWLq"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -1535,7 +1535,7 @@ curl -X POST --data '{
         "tx":"0x00000009de31b4d8b22991d51aa6aa1fc733f23a851a8c9400000000000186a0000000005f041280000000005f9ca900000030390000000000000001fceda8f90fcb5d30614b99d79fc4baa29307762668f16eb0259a57c2d3b78c875c86ec2045792d4df2d926c40f829196e0bb97ee697af71f5b0a966dabff749634c8b729855e937715b0e44303fd1014daedc752006011b730",
         "encoding": "hex"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -1584,7 +1584,7 @@ curl -X POST --data '{
         "password":"myPassword"
     },
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -1659,7 +1659,7 @@ curl -X POST --data '{
         "username":"myUsername",
         "password":"myPassword"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -1740,7 +1740,7 @@ curl -X POST --data '{
         "username":"myUsername",
         "password":"myPassword"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -1813,7 +1813,7 @@ curl -X POST --data '{
         "username"  : "userThatControlsAtLeast10000OfThisAsset",
         "password"  : "myPassword"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -1896,7 +1896,7 @@ curl -X POST --data '{
         "username"  : "username",
         "password"  : "myPassword"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -1966,7 +1966,7 @@ curl -X POST --data '{
         "username"  : "myUsername",
         "password"  : "myPassword"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
 ```
 
 **Example Response:**
@@ -2019,7 +2019,7 @@ curl -X POST --data '{
         "tx":"0x00000009de31b4d8b22991d51aa6aa1fc733f23a851a8c9400000000000186a0000000005f041280000000005f9ca900000030390000000000000001fceda8f90fcb5d30614b99d79fc4baa29307762668f16eb0259a57c2d3b78c875c86ec2045792d4df2d926c40f829196e0bb97ee697af71f5b0a966dabff749634c8b729855e937715b0e44303fd1014daedc752006011b730",
         "encoding": "hex"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X/wallet
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X/wallet
 ```
 
 **Example Response:**
@@ -2096,7 +2096,7 @@ curl -X POST --data '{
         "username"  : "userThatControlsAtLeast10000OfThisAsset",
         "password"  : "myPassword"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X/wallet
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X/wallet
 ```
 
 **Example Response:**
@@ -2183,7 +2183,7 @@ curl -X POST --data '{
         "username"  : "username",
         "password"  : "myPassword"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X/wallet
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X/wallet
 ```
 
 **Example Response:**
@@ -2238,7 +2238,7 @@ func main() {
     }
 
     httpHeader := http.Header{}
-    conn, _, err := dialer.Dial("ws://localhost:9650/ext/bc/X/events", httpHeader)
+    conn, _, err := dialer.Dial("ws://localhost:9630/ext/bc/X/events", httpHeader)
     if err != nil {
         panic(err)
     }

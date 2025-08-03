@@ -11,6 +11,7 @@ import (
 
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -191,7 +192,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		Rewards:      rewardsCalc,
 	}
 
-	registerer := prometheus.NewRegistry()
+	registerer := metrics.NewNoOpMetrics("test").Registry()
 	res.sender = &core.SenderTest{}
 
 	metrics := metrics.Noop
@@ -312,7 +313,7 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		cfg,
 		execCfg,
 		ctx,

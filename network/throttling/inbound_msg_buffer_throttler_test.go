@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -17,7 +18,7 @@ import (
 // Test inboundMsgBufferThrottler
 func TestMsgBufferThrottler(t *testing.T) {
 	require := require.New(t)
-	throttler, err := newInboundMsgBufferThrottler(prometheus.NewRegistry(), 3)
+	throttler, err := newInboundMsgBufferThrottler(metrics.NewNoOpMetrics("test").Registry(), 3)
 	require.NoError(err)
 
 	nodeID1, nodeID2 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
@@ -69,7 +70,7 @@ func TestMsgBufferThrottler(t *testing.T) {
 // Test inboundMsgBufferThrottler when an acquire is cancelled
 func TestMsgBufferThrottlerContextCancelled(t *testing.T) {
 	require := require.New(t)
-	throttler, err := newInboundMsgBufferThrottler(prometheus.NewRegistry(), 3)
+	throttler, err := newInboundMsgBufferThrottler(metrics.NewNoOpMetrics("test").Registry(), 3)
 	require.NoError(err)
 
 	vdr1Context, vdr1ContextCancelFunc := context.WithCancel(context.Background())

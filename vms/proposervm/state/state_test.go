@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database/memdb"
@@ -29,7 +30,7 @@ func TestMeteredState(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	s, err := NewMetered(vdb, "", prometheus.NewRegistry())
+	s, err := NewMetered(vdb, "", metrics.NewNoOpMetrics("test").Registry())
 	a.NoError(err)
 
 	testBlockState(a, s)

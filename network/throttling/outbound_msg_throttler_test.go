@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -32,7 +33,7 @@ func TestSybilOutboundMsgThrottler(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)
@@ -173,7 +174,7 @@ func TestSybilOutboundMsgThrottlerMaxNonVdr(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)
@@ -219,7 +220,7 @@ func TestBypassThrottling(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)

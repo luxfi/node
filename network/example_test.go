@@ -5,7 +5,6 @@ package network
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"go.uber.org/zap"

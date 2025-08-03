@@ -12,6 +12,7 @@ import (
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/core/coremock"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -192,7 +193,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				txVerifierFunc(ctrl),
 				mempoolFunc(ctrl),
 				appSenderFunc(ctrl),
-				prometheus.NewRegistry(),
+				metrics.NewNoOpMetrics("test").Registry(),
 				testConfig,
 			)
 			require.NoError(err)
@@ -286,7 +287,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				executor.NewMockManager(ctrl), // Should never verify a tx
 				mempoolFunc(ctrl),
 				appSenderFunc(ctrl),
-				prometheus.NewRegistry(),
+				metrics.NewNoOpMetrics("test").Registry(),
 				testConfig,
 			)
 			require.NoError(err)

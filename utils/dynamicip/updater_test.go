@@ -29,7 +29,7 @@ func TestNewUpdater(t *testing.T) {
 	require := require.New(t)
 
 	const (
-		port            = 9651
+		port            = 9631
 		updateFrequency = time.Millisecond
 		stopTimeout     = 5 * time.Second
 	)

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/networking/router"
@@ -50,7 +51,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 
 	mc, err := message.NewCreator(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -63,11 +64,11 @@ func newConfig(t *testing.T) Config {
 	t.Helper()
 	require := require.New(t)
 
-	metrics, err := NewMetrics(prometheus.NewRegistry())
+	metrics, err := NewMetrics(metrics.NewNoOpMetrics("test").Registry())
 	require.NoError(err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		10*time.Second,

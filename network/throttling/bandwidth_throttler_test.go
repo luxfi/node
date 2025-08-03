@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -22,7 +23,7 @@ func TestBandwidthThrottler(t *testing.T) {
 		RefillRate:   8,
 		MaxBurstSize: 10,
 	}
-	throttlerIntf, err := newBandwidthThrottler(log.NewNoOpLogger(), prometheus.NewRegistry(), config)
+	throttlerIntf, err := newBandwidthThrottler(log.NewNoOpLogger(), metrics.NewNoOpMetrics("test").Registry(), config)
 	require.NoError(err)
 	require.IsType(&bandwidthThrottlerImpl{}, throttlerIntf)
 	throttler := throttlerIntf.(*bandwidthThrottlerImpl)

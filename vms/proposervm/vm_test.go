@@ -14,6 +14,7 @@ import (
 
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -131,7 +132,7 @@ func initTestProposerVM(
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          prometheus.NewRegistry(),
+			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -813,7 +814,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          prometheus.NewRegistry(),
+			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -1117,7 +1118,7 @@ func TestInnerVMRollback(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          prometheus.NewRegistry(),
+			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -1192,7 +1193,7 @@ func TestInnerVMRollback(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          prometheus.NewRegistry(),
+			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -1588,7 +1589,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          prometheus.NewRegistry(),
+			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -1759,7 +1760,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          prometheus.NewRegistry(),
+			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -1896,7 +1897,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          prometheus.NewRegistry(),
+			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -2119,7 +2120,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          prometheus.NewRegistry(),
+			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -2323,7 +2324,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          prometheus.NewRegistry(),
+			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -2414,7 +2415,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 			NumHistoricalBlocks: numHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          prometheus.NewRegistry(),
+			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -2458,7 +2459,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 			NumHistoricalBlocks: newNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          prometheus.NewRegistry(),
+			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
 		},
 	)
 

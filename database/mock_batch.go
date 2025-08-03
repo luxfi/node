@@ -12,6 +12,7 @@ package database
 import (
 	reflect "reflect"
 
+	"github.com/luxfi/database"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -53,10 +54,10 @@ func (mr *MockBatchMockRecorder) Delete(arg0 any) *gomock.Call {
 }
 
 // Inner mocks base method.
-func (m *MockBatch) Inner() Batch {
+func (m *MockBatch) Inner() database.Batch {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Inner")
-	ret0, _ := ret[0].(Batch)
+	ret0, _ := ret[0].(database.Batch)
 	return ret0
 }
 

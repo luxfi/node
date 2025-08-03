@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/chains"
@@ -1434,8 +1435,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 			TimeoutCoefficient: 1.25,
 		},
 		benchlist,
-		prometheus.NewRegistry(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(err)
 
@@ -1444,7 +1445,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	chainRouter := &router.ChainRouter{}
 
-	metrics := prometheus.NewRegistry()
+	metrics := metrics.NewNoOpMetrics("test").Registry()
 	mc, err := message.NewCreator(log.NewTestLogger(level.Error), metrics, constants.DefaultNetworkCompressionType, 10*time.Second)
 	require.NoError(err)
 
@@ -1458,7 +1459,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	))
 
 	externalSender := &sendertest.External{TB: t}
@@ -1473,7 +1474,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		timeoutManager,
 		p2ppb.EngineType_ENGINE_TYPE_LINEAR,
 		subnets.New(consensusCtx.NodeID, subnets.Config{}),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(err)
 
@@ -1532,7 +1533,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// Asynchronously passes messages from the network to the consensus engine
 	cpuTracker, err := timetracker.NewResourceTracker(
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -1565,7 +1566,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		tracker.NewPeers(),
 		peerTracker,
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		func() {},
 	)
 	require.NoError(err)

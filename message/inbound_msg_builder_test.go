@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -23,7 +24,7 @@ func Test_newMsgBuilder(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		10*time.Second,
 	)
 	require.NoError(err)
@@ -392,7 +393,7 @@ func TestAppError(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		time.Second,
 	)
 	require.NoError(err)

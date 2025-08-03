@@ -10,6 +10,7 @@ import (
 
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus"
@@ -61,7 +62,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          prometheus.NewRegistry(),
+			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
 		},
 	)
 

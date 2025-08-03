@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -140,7 +141,7 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 
 	mockReader := filesystem.NewMockReader(ctrl)
 	mockManager := vms.NewMockManager(ctrl)
-	mockRegistry := prometheus.NewRegistry()
+	mockRegistry := metrics.NewNoOpMetrics("test").Registry()
 	mockCPUTracker, err := resource.NewManager(
 		log.NewNoOpLogger(),
 		"",

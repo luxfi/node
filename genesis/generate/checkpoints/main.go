@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	testnetURI    = "http://localhost:9650"
+	testnetURI    = "http://localhost:9630"
 	mainnetURI = "http://localhost:9660"
 
 	maxNumCheckpoints = 100

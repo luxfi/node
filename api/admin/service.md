@@ -56,7 +56,7 @@ curl -X POST --data '{
         "alias":"myAlias",
         "endpoint":"bc/X"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/admin
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/admin
 ```
 
 **Example Response:**
@@ -107,7 +107,7 @@ curl -X POST --data '{
         "chain":"sV6o671RtkGBcno1FiaDbVcFv2sG5aVXMZYzKdP4VQAWmJQnM",
         "alias":"myBlockchainAlias"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/admin
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/admin
 ```
 
 **Example Response:**
@@ -151,7 +151,7 @@ curl -X POST --data '{
     "params": {
         "chain":"sV6o671RtkGBcno1FiaDbVcFv2sG5aVXMZYzKdP4VQAWmJQnM"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/admin
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/admin
 ```
 
 **Example Response:**
@@ -204,7 +204,7 @@ curl -X POST --data '{
     "params": {
         "loggerName": "C"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/admin
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/admin
 ```
 
 **Example Response:**
@@ -249,7 +249,7 @@ curl -X POST --data '{
     "id"     :1,
     "method" :"admin.loadVMs",
     "params" :{}
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/admin
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/admin
 ```
 
 **Example Response:**
@@ -287,7 +287,7 @@ curl -X POST --data '{
     "id"     :1,
     "method" :"admin.lockProfile",
     "params" :{}
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/admin
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/admin
 ```
 
 **Example Response:**
@@ -318,7 +318,7 @@ curl -X POST --data '{
     "id"     :1,
     "method" :"admin.memoryProfile",
     "params" :{}
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/admin
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/admin
 ```
 
 **Example Response:**
@@ -366,7 +366,7 @@ curl -X POST --data '{
         "logLevel": "DEBUG",
         "displayLevel": "INFO"
     }
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/admin
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/admin
 ```
 
 **Example Response:**
@@ -398,7 +398,7 @@ curl -X POST --data '{
     "id"     :1,
     "method" :"admin.startCPUProfiler",
     "params" :{}
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/admin
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/admin
 ```
 
 **Example Response:**
@@ -428,7 +428,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "id"     :1,
     "method" :"admin.stopCPUProfiler"
-}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/admin
+}' -H 'content-type:application/json;' 127.0.0.1:9630/ext/admin
 ```
 
 **Example Response:**

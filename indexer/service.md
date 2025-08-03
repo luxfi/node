@@ -120,7 +120,7 @@ index.getContainerByID({
 **Example Call:**
 
 ```sh
-curl --location --request POST 'localhost:9650/ext/index/X/tx' \
+curl --location --request POST 'localhost:9630/ext/index/X/tx' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "jsonrpc": "2.0",
@@ -184,7 +184,7 @@ index.getContainerByIndex({
 **Example Call:**
 
 ```sh
-curl --location --request POST 'localhost:9650/ext/index/X/tx' \
+curl --location --request POST 'localhost:9630/ext/index/X/tx' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "jsonrpc": "2.0",
@@ -256,7 +256,7 @@ index.getContainerRange({
 **Example Call:**
 
 ```sh
-curl --location --request POST 'localhost:9650/ext/index/X/tx' \
+curl --location --request POST 'localhost:9630/ext/index/X/tx' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "jsonrpc": "2.0",
@@ -315,7 +315,7 @@ index.getIndex({
 **Example Call:**
 
 ```sh
-curl --location --request POST 'localhost:9650/ext/index/X/tx' \
+curl --location --request POST 'localhost:9630/ext/index/X/tx' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "jsonrpc": "2.0",
@@ -372,7 +372,7 @@ index.getLastAccepted({
 **Example Call:**
 
 ```sh
-curl --location --request POST 'localhost:9650/ext/index/X/tx' \
+curl --location --request POST 'localhost:9630/ext/index/X/tx' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "jsonrpc": "2.0",
@@ -427,7 +427,7 @@ index.isAccepted({
 **Example Call:**
 
 ```sh
-curl --location --request POST 'localhost:9650/ext/index/X/tx' \
+curl --location --request POST 'localhost:9630/ext/index/X/tx' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "jsonrpc": "2.0",

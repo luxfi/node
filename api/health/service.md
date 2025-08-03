@@ -46,7 +46,7 @@ For example, to filter health results by subnetID `29uVeLPJB1eQJkzRemU8g8wZDw5uJ
 use the following query:
 
 ```sh
-curl 'http://localhost:9650/ext/health?tag=29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL'
+curl 'http://localhost:9630/ext/health?tag=29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL'
 ```
 
 In this example returned results will contain global health checks and health checks that are
@@ -59,7 +59,7 @@ For example, to filter health results by subnetID `29uVeLPJB1eQJkzRemU8g8wZDw5uJ
 `28nrH5T2BMvNrWecFcV3mfccjs6axM1TVyqe79MCv2Mhs8kxiY` use the following query:
 
 ```sh
-curl 'http://localhost:9650/ext/health?tag=29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL&tag=28nrH5T2BMvNrWecFcV3mfccjs6axM1TVyqe79MCv2Mhs8kxiY'
+curl 'http://localhost:9630/ext/health?tag=29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL&tag=28nrH5T2BMvNrWecFcV3mfccjs6axM1TVyqe79MCv2Mhs8kxiY'
 ```
 
 The returned results will include health checks for both subnetIDs as well as global health checks.
@@ -103,7 +103,7 @@ curl  -H 'Content-Type: application/json' --data '{
     "params": {
         "tags": ["11111111111111111111111111111111LpoYY", "29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL"]
     }
-}' 'http://localhost:9650/ext/health'
+}' 'http://localhost:9630/ext/health'
 ```
 
 **Example Response:**
@@ -235,7 +235,7 @@ curl  -H 'Content-Type: application/json' --data '{
     "params": {
         "tags": ["11111111111111111111111111111111LpoYY", "29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL"]
     }
-}' 'http://localhost:9650/ext/health'
+}' 'http://localhost:9630/ext/health'
 ```
 
 **Example Response:**
@@ -281,7 +281,7 @@ curl  -H 'Content-Type: application/json' --data '{
     "jsonrpc":"2.0",
     "id"     :1,
     "method" :"health.liveness"
-}' 'http://localhost:9650/ext/health'
+}' 'http://localhost:9630/ext/health'
 ```
 
 **Example Response:**

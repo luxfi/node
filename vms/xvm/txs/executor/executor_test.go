@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"
@@ -44,7 +45,7 @@ func TestBaseTxExecutor(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	registerer := prometheus.NewRegistry()
+	registerer := metrics.NewNoOpMetrics("test").Registry()
 	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 
@@ -151,7 +152,7 @@ func TestCreateAssetTxExecutor(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	registerer := prometheus.NewRegistry()
+	registerer := metrics.NewNoOpMetrics("test").Registry()
 	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 
@@ -296,7 +297,7 @@ func TestOperationTxExecutor(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	registerer := prometheus.NewRegistry()
+	registerer := metrics.NewNoOpMetrics("test").Registry()
 	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 

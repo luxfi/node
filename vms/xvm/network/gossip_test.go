@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -57,7 +58,7 @@ func TestMarshaller(t *testing.T) {
 func TestGossipMempoolAdd(t *testing.T) {
 	require := require.New(t)
 
-	metrics := prometheus.NewRegistry()
+	metrics := metrics.NewNoOpMetrics("test").Registry()
 	toEngine := make(chan core.Message, 1)
 
 	baseMempool, err := mempool.New("", metrics, toEngine)
@@ -94,7 +95,7 @@ func TestGossipMempoolAdd(t *testing.T) {
 func TestGossipMempoolAddVerified(t *testing.T) {
 	require := require.New(t)
 
-	metrics := prometheus.NewRegistry()
+	metrics := metrics.NewNoOpMetrics("test").Registry()
 	toEngine := make(chan core.Message, 1)
 
 	baseMempool, err := mempool.New("", metrics, toEngine)

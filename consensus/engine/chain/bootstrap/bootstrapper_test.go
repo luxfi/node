@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus"
@@ -82,7 +83,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *blocktest
 	peerTracker, err := p2p.NewPeerTracker(
 		ctx.Log,
 		"",
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
 		nil,
 	)
@@ -136,7 +137,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	peerTracker, err := p2p.NewPeerTracker(
 		ctx.Log,
 		"",
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
 		nil,
 	)
@@ -676,7 +677,7 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 	peerTracker, err := p2p.NewPeerTracker(
 		ctx.Log,
 		"",
-		prometheus.NewRegistry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
 		nil,
 	)

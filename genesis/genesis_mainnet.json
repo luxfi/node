@@ -71293,19 +71293,19 @@
 			"initialAmount": 4995400000000,
 			"unlockSchedule": [
 				{
-					"amount": 11239650000000,
+					"amount": 11239630000000,
 					"locktime": 1607472000
 				},
 				{
-					"amount": 11239650000000,
+					"amount": 11239630000000,
 					"locktime": 1615248000
 				},
 				{
-					"amount": 11239650000000,
+					"amount": 11239630000000,
 					"locktime": 1623024000
 				},
 				{
-					"amount": 11239650000000,
+					"amount": 11239630000000,
 					"locktime": 1630800000
 				}
 			]
@@ -82301,19 +82301,19 @@
 			"initialAmount": 4995400000000,
 			"unlockSchedule": [
 				{
-					"amount": 11239650000000,
+					"amount": 11239630000000,
 					"locktime": 1607472000
 				},
 				{
-					"amount": 11239650000000,
+					"amount": 11239630000000,
 					"locktime": 1615248000
 				},
 				{
-					"amount": 11239650000000,
+					"amount": 11239630000000,
 					"locktime": 1623024000
 				},
 				{
-					"amount": 11239650000000,
+					"amount": 11239630000000,
 					"locktime": 1630800000
 				}
 			]
@@ -83059,7 +83059,7 @@
 		{
 			"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
 			"luxAddr": "X-lux1f2xnqam80lrqrukn2cze405gnfe4799atahky6",
-			"initialAmount": 96500000000,
+			"initialAmount": 96300000000,
 			"unlockSchedule": [
 				{
 					"amount": 144750000000,
@@ -138432,27 +138432,27 @@
 			"initialAmount": 3933100000000,
 			"unlockSchedule": [
 				{
-					"amount": 5899650000000,
+					"amount": 5899630000000,
 					"locktime": 1607472000
 				},
 				{
-					"amount": 5899650000000,
+					"amount": 5899630000000,
 					"locktime": 1615248000
 				},
 				{
-					"amount": 5899650000000,
+					"amount": 5899630000000,
 					"locktime": 1623024000
 				},
 				{
-					"amount": 5899650000000,
+					"amount": 5899630000000,
 					"locktime": 1630800000
 				},
 				{
-					"amount": 5899650000000,
+					"amount": 5899630000000,
 					"locktime": 1638576000
 				},
 				{
-					"amount": 5899650000000,
+					"amount": 5899630000000,
 					"locktime": 1646352000
 				}
 			]
@@ -145907,27 +145907,27 @@
 			"initialAmount": 73100000000,
 			"unlockSchedule": [
 				{
-					"amount": 109650000000,
+					"amount": 109630000000,
 					"locktime": 1607472000
 				},
 				{
-					"amount": 109650000000,
+					"amount": 109630000000,
 					"locktime": 1615248000
 				},
 				{
-					"amount": 109650000000,
+					"amount": 109630000000,
 					"locktime": 1623024000
 				},
 				{
-					"amount": 109650000000,
+					"amount": 109630000000,
 					"locktime": 1630800000
 				},
 				{
-					"amount": 109650000000,
+					"amount": 109630000000,
 					"locktime": 1638576000
 				},
 				{
-					"amount": 109650000000,
+					"amount": 109630000000,
 					"locktime": 1646352000
 				}
 			]
