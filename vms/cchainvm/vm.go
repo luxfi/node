@@ -34,7 +34,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/version"
-	"go.uber.org/zap"
 )
 
 var (
@@ -97,6 +96,13 @@ func (vm *VM) Initialize(
 	// Create a database wrapper first
 	vm.ethDB = WrapDatabase(db)
 	
+	// Check for LUX_GENESIS flag to trigger automatic replay
+	luxGenesis := os.Getenv("LUX_GENESIS") == "1"
+	if luxGenesis {
+		fmt.Printf("LUX_GENESIS=1 detected, checking for blocks to replay...\n")
+		vm.ctx.Log.Info("LUX_GENESIS mode enabled for automatic block replay")
+	}
+	
 	// Check environment variables for imported blockchain data
 	if importedHeight := os.Getenv("LUX_IMPORTED_HEIGHT"); importedHeight != "" {
 		if height, err := strconv.ParseUint(importedHeight, 10, 64); err == nil && height > 0 {
@@ -114,8 +120,8 @@ func (vm *VM) Initialize(
 			
 			// Log to Avalanche logger too
 			vm.ctx.Log.Info("Detected imported blockchain data from environment",
-				zap.Uint64("height", height),
-				zap.String("blockHash", migratedBlockHash.Hex()),
+				"height", height,
+				"blockHash", migratedBlockHash.Hex(),
 			)
 		}
 	}
@@ -131,7 +137,7 @@ func (vm *VM) Initialize(
 				
 				// Log to Avalanche logger too
 				vm.ctx.Log.Info("Detected migrated blockchain data",
-					zap.Uint64("height", height),
+					"height", height,
 				)
 			}
 		}
@@ -232,9 +238,9 @@ func (vm *VM) Initialize(
 	if hasMigratedData && migratedBlockHash != (common.Hash{}) {
 		vm.lastAccepted = ids.ID(migratedBlockHash)
 		vm.ctx.Log.Info("Using imported blockchain data from environment",
-			zap.Uint64("height", migratedHeight),
-			zap.String("hash", migratedBlockHash.Hex()),
-			zap.String("lastAccepted", vm.lastAccepted.String()),
+			"height", migratedHeight,
+			"hash", migratedBlockHash.Hex(),
+			"lastAccepted", vm.lastAccepted.String(),
 		)
 		
 		// Log database status after migration detection
@@ -247,7 +253,7 @@ func (vm *VM) Initialize(
 		height := binary.BigEndian.Uint64(heightBytes)
 		if height > 0 {
 			vm.ctx.Log.Info("Found Height consensus key",
-				zap.Uint64("height", height),
+				"height", height,
 			)
 			
 			// Try to get the block hash at this height
@@ -266,9 +272,9 @@ func (vm *VM) Initialize(
 				
 				vm.lastAccepted = ids.ID(hash)
 				vm.ctx.Log.Info("Found migrated blockchain data",
-					zap.Uint64("height", height),
-					zap.String("hash", hash.Hex()),
-					zap.String("lastAccepted", vm.lastAccepted.String()),
+					"height", height,
+					"hash", hash.Hex(),
+					"lastAccepted", vm.lastAccepted.String(),
 				)
 				
 				// Log database status after migration detection
@@ -284,18 +290,41 @@ func (vm *VM) Initialize(
 		vm.lastAccepted = ids.ID(currentBlock.Hash())
 		
 		vm.ctx.Log.Info("C-Chain VM found existing blockchain data",
-			zap.String("currentHash", currentBlock.Hash().Hex()),
-			zap.Uint64("currentHeight", currentBlock.Number.Uint64()),
-			zap.String("lastAccepted", vm.lastAccepted.String()),
+			"currentHash", currentBlock.Hash().Hex(),
+			"currentHeight", currentBlock.Number.Uint64(),
+			"lastAccepted", vm.lastAccepted.String(),
 		)
 	} else {
 		// Fresh start, use genesis
 		vm.lastAccepted = ids.ID(vm.genesisHash)
 		
 		vm.ctx.Log.Info("C-Chain VM starting from genesis",
-			zap.String("genesisHash", vm.genesisHash.Hex()),
-			zap.String("lastAccepted", vm.lastAccepted.String()),
+			"genesisHash", vm.genesisHash.Hex(),
+			"lastAccepted", vm.lastAccepted.String(),
 		)
+		
+		// If LUX_GENESIS=1 and we're at genesis, check for blocks to replay
+		if luxGenesis && currentBlock == nil || (currentBlock != nil && currentBlock.Number.Uint64() == 0) {
+			vm.ctx.Log.Info("LUX_GENESIS=1 detected at genesis, checking for blocks to replay...")
+			
+			// Look for blockchain data in the C-Chain database directory
+			// The blockchain data should be in the same database
+			if err := vm.replayBlockchainData(); err != nil {
+				vm.ctx.Log.Warn("Failed to replay blockchain data",
+					"error", err,
+				)
+			} else {
+				// Update current block after replay
+				currentBlock = vm.blockChain.CurrentBlock()
+				if currentBlock != nil && currentBlock.Number.Uint64() > 0 {
+					vm.lastAccepted = ids.ID(currentBlock.Hash())
+					vm.ctx.Log.Info("Successfully replayed blockchain data",
+						"currentHash", currentBlock.Hash().Hex(),
+						"currentHeight", currentBlock.Number.Uint64(),
+					)
+				}
+			}
+		}
 	}
 	
 	// Log database statistics
@@ -303,8 +332,8 @@ func (vm *VM) Initialize(
 
 	vm.ctx.Log.Info("C-Chain VM initialized")
 	vm.ctx.Log.Info("Chain configuration",
-		zap.String("chainID", vm.chainConfig.ChainID.String()),
-		zap.String("genesisHash", vm.genesisHash.Hex()),
+		"chainID", vm.chainConfig.ChainID.String(),
+		"genesisHash", vm.genesisHash.Hex(),
 	)
 
 	return nil
@@ -316,9 +345,9 @@ func (vm *VM) logDatabaseStatus() {
 	currentBlock := vm.blockChain.CurrentBlock()
 	if currentBlock != nil {
 		vm.ctx.Log.Info("Current blockchain state",
-			zap.Uint64("height", currentBlock.Number.Uint64()),
-			zap.String("hash", currentBlock.Hash().Hex()),
-			zap.Uint64("timestamp", currentBlock.Time),
+			"height", currentBlock.Number.Uint64(),
+			"hash", currentBlock.Hash().Hex(),
+			"timestamp", currentBlock.Time,
 		)
 	}
 	
@@ -326,14 +355,14 @@ func (vm *VM) logDatabaseStatus() {
 	headBlock := vm.blockChain.CurrentHeader()
 	if headBlock != nil {
 		vm.ctx.Log.Info("Head block state",
-			zap.Uint64("height", headBlock.Number.Uint64()),
-			zap.String("hash", headBlock.Hash().Hex()),
+			"height", headBlock.Number.Uint64(),
+			"hash", headBlock.Hash().Hex(),
 		)
 	}
 	
 	// Log database type
 	vm.ctx.Log.Info("Database info",
-		zap.String("type", fmt.Sprintf("%T", vm.ethDB)),
+		"type", fmt.Sprintf("%T", vm.ethDB),
 	)
 }
 
@@ -559,3 +588,133 @@ func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, er
 	}
 	return ids.ID(block.Hash()), nil
 }
+
+// replayBlockchainData reads imported blockchain data and replays it into the C-Chain
+func (vm *VM) replayBlockchainData() error {
+	vm.ctx.Log.Info("Starting blockchain data replay...")
+	
+	// Check for the highest block number in the database
+	highestBlock := uint64(0)
+	
+	// First, check for our custom Height key
+	if heightBytes, err := vm.ethDB.Get([]byte("Height")); err == nil && len(heightBytes) == 8 {
+		highestBlock = binary.BigEndian.Uint64(heightBytes)
+		vm.ctx.Log.Info("Found Height key", "height", highestBlock)
+	}
+	
+	if highestBlock == 0 {
+		// Scan for canonical blocks to find the highest
+		iter := vm.ethDB.NewIterator([]byte("h"), []byte("i"))
+		defer iter.Release()
+		
+		for iter.Next() {
+			key := iter.Key()
+			if len(key) == 10 && key[0] == 'h' && key[9] == 'n' {
+				blockNum := binary.BigEndian.Uint64(key[1:9])
+				if blockNum > highestBlock {
+					highestBlock = blockNum
+				}
+			}
+		}
+		
+		if highestBlock == 0 {
+			return fmt.Errorf("no blocks found to replay")
+		}
+		
+		vm.ctx.Log.Info("Found highest block by scanning", "height", highestBlock)
+	}
+	
+	// Now replay blocks from 1 to highestBlock
+	vm.ctx.Log.Info("Replaying blocks", "from", 1, "to", highestBlock)
+	
+	batchSize := uint64(1000)
+	for start := uint64(1); start <= highestBlock; start += batchSize {
+		end := start + batchSize - 1
+		if end > highestBlock {
+			end = highestBlock
+		}
+		
+		// Process blocks in batch
+		for blockNum := start; blockNum <= end; blockNum++ {
+			// Get canonical hash
+			canonicalKey := canonicalKey(blockNum)
+			hashBytes, err := vm.ethDB.Get(canonicalKey)
+			if err != nil {
+				continue // Skip missing blocks
+			}
+			
+			var blockHash common.Hash
+			copy(blockHash[:], hashBytes)
+			
+			// Get block header
+			headerKey := append([]byte("H"), hashBytes...)
+			headerData, err := vm.ethDB.Get(headerKey)
+			if err != nil {
+				vm.ctx.Log.Warn("Missing header", "number", blockNum)
+				continue
+			}
+			
+			// Get block body
+			bodyKey := append([]byte("b"), hashBytes...)
+			bodyData, err := vm.ethDB.Get(bodyKey)
+			if err != nil {
+				vm.ctx.Log.Warn("Missing body", "number", blockNum)
+				continue
+			}
+			
+			// Decode header
+			header := new(types.Header)
+			if err := rlp.DecodeBytes(headerData, header); err != nil {
+				vm.ctx.Log.Error("Failed to decode header", 
+					"number", blockNum,
+					"error", err)
+				continue
+			}
+			
+			// Decode body
+			body := new(types.Body)
+			if err := rlp.DecodeBytes(bodyData, body); err != nil {
+				vm.ctx.Log.Error("Failed to decode body",
+					"number", blockNum,
+					"error", err)
+				continue
+			}
+			
+			// Reconstruct block
+			block := types.NewBlock(header, body, nil, nil)
+			
+			// Insert block into blockchain
+			if _, err := vm.blockChain.InsertChain([]*types.Block{block}); err != nil {
+				vm.ctx.Log.Error("Failed to insert block",
+					"number", blockNum,
+					"hash", block.Hash().Hex(),
+					"error", err)
+				continue
+			}
+			
+			// Update lastAccepted periodically
+			if blockNum%10000 == 0 {
+				vm.lastAccepted = ids.ID(block.Hash())
+				vm.ctx.Log.Info("Replay progress",
+					"block", blockNum,
+					"total", highestBlock,
+					"percentage", fmt.Sprintf("%.1f%%", float64(blockNum)/float64(highestBlock)*100))
+			}
+		}
+	}
+	
+	// Update to the final block
+	finalKey := canonicalKey(highestBlock)
+	if hashBytes, err := vm.ethDB.Get(finalKey); err == nil {
+		var finalHash common.Hash
+		copy(finalHash[:], hashBytes)
+		vm.lastAccepted = ids.ID(finalHash)
+		
+		vm.ctx.Log.Info("Blockchain replay completed",
+			"finalHeight", highestBlock,
+			"finalHash", finalHash.Hex())
+	}
+	
+	return nil
+}
+
