@@ -156,33 +156,57 @@ func (vm *VM) Initialize(
 	
 	// When LUX_GENESIS=1, use the genesis from the imported blockchain data
 	if luxGenesis {
-		// This genesis matches the imported blockchain with hash:
-		// 0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e
-		genesis = &gethcore.Genesis{
-			Config: &params.ChainConfig{
-				ChainID:                 big.NewInt(96369),
-				HomesteadBlock:          big.NewInt(0),
-				EIP150Block:             big.NewInt(0),
-				EIP155Block:             big.NewInt(0),
-				EIP158Block:             big.NewInt(0),
-				ByzantiumBlock:          big.NewInt(0),
-				ConstantinopleBlock:     big.NewInt(0),
-				PetersburgBlock:         big.NewInt(0),
-				IstanbulBlock:           big.NewInt(0),
-				BerlinBlock:             big.NewInt(0),
-				LondonBlock:             big.NewInt(0),
-				TerminalTotalDifficulty: common.Big0,
-			},
-			Nonce:      0x0,
-			Timestamp:  0x672485c2, // 1730446786
-			ExtraData:  []byte{},
-			GasLimit:   0xb71b00,   // 12000000
-			Difficulty: big.NewInt(0),
-			Mixhash:    common.Hash{},
-			Coinbase:   common.Address{},
-			Alloc:      gethcore.GenesisAlloc{},
-			BaseFee:    big.NewInt(0x5d21dba00), // 25000000000
+		// Load the actual historic genesis from file
+		genesisFile := "/home/z/work/lux/node/genesis/genesis_mainnet.json"
+		genesisData, err := os.ReadFile(genesisFile)
+		if err != nil {
+			// Fallback to hardcoded genesis if file not found
+			vm.ctx.Log.Warn("Could not read genesis file, using hardcoded genesis", "error", err)
+			
+			// This genesis matches the imported blockchain with hash:
+			// 0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e
+			genesis = &gethcore.Genesis{
+				Config: &params.ChainConfig{
+					ChainID:                 big.NewInt(96369),
+					HomesteadBlock:          big.NewInt(0),
+					EIP150Block:             big.NewInt(0),
+					EIP155Block:             big.NewInt(0),
+					EIP158Block:             big.NewInt(0),
+					ByzantiumBlock:          big.NewInt(0),
+					ConstantinopleBlock:     big.NewInt(0),
+					PetersburgBlock:         big.NewInt(0),
+					IstanbulBlock:           big.NewInt(0),
+					BerlinBlock:             big.NewInt(0),
+					LondonBlock:             big.NewInt(0),
+					TerminalTotalDifficulty: common.Big0,
+				},
+				Nonce:      0x0,
+				Timestamp:  0x672485c2, // 1730446786 - from imported blockchain data
+				ExtraData:  []byte{},
+				GasLimit:   0xb71b00,   // 12000000
+				Difficulty: big.NewInt(0),
+				Mixhash:    common.Hash{},
+				Coinbase:   common.Address{},
+				Alloc: gethcore.GenesisAlloc{
+					// Single allocation from mainnet genesis
+					common.HexToAddress("0x9011E888251AB053B7bD1cdB598Db4f9DEd94714"): types.Account{
+						Balance: func() *big.Int {
+							b := new(big.Int)
+							b.SetString("193e5939a08ce9dbd480000000", 16) // hex value from genesis
+							return b
+						}(),
+					},
+				},
+			}
+		} else {
+			// Parse the genesis file
+			genesis = &gethcore.Genesis{}
+			if err := json.Unmarshal(genesisData, genesis); err != nil {
+				return fmt.Errorf("failed to unmarshal historic genesis: %w", err)
+			}
+			vm.ctx.Log.Info("Loaded historic genesis from file", "path", genesisFile)
 		}
+		
 		vm.ctx.Log.Info("Using imported blockchain genesis for replay",
 			"expectedHash", "0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
 	} else if len(genesisBytes) > 0 {
