@@ -157,7 +157,7 @@ func (vm *VM) Initialize(
 	// When LUX_GENESIS=1, use the genesis from the imported blockchain data
 	if luxGenesis {
 		// Load the actual historic genesis from file
-		genesisFile := "/home/z/work/lux/node/genesis/genesis_mainnet.json"
+		genesisFile := filepath.Join("/home/z/work/lux/node/genesis", "genesis_mainnet.json")
 		genesisData, err := os.ReadFile(genesisFile)
 		if err != nil {
 			// Fallback to hardcoded genesis if file not found
@@ -721,6 +721,110 @@ func (vm *VM) extractGenesisFromImport(importDB database.Database) (*types.Block
 	
 	// Create genesis block
 	return types.NewBlockWithHeader(header).WithBody(*body), nil
+}
+
+// extractGenesisFromDB attempts to extract genesis configuration from imported blockchain data
+func extractGenesisFromDB(db *pebble.DB, log logging.Logger) *gethcore.Genesis {
+	// Try to read genesis block (block 0)
+	iter := db.NewIter(nil)
+	defer iter.Close()
+	
+	var genesisHash common.Hash
+	var genesisFound bool
+	
+	// Find hash for block 0
+	for iter.First(); iter.Valid(); iter.Next() {
+		key := iter.Key()
+		val := iter.Value()
+		
+		// Look for hash-to-number mapping: 0x48 + hash -> number
+		if len(key) == 33 && key[0] == 0x48 && len(val) == 8 {
+			number := binary.BigEndian.Uint64(val)
+			if number == 0 {
+				copy(genesisHash[:], key[1:])
+				genesisFound = true
+				break
+			}
+		}
+	}
+	
+	if !genesisFound {
+		log.Warn("Genesis hash not found in imported data")
+		return nil
+	}
+	
+	log.Info("Found genesis hash in imported data", "hash", genesisHash.Hex())
+	
+	// Get the genesis header
+	headerKey := make([]byte, 41)
+	headerKey[0] = 0x68 // 'h'
+	binary.BigEndian.PutUint64(headerKey[1:9], 0)
+	copy(headerKey[9:], genesisHash[:])
+	
+	headerData, closer, err := db.Get(headerKey)
+	if err != nil {
+		log.Warn("Genesis header not found", "error", err)
+		return nil
+	}
+	defer closer.Close()
+	
+	// Try to decode as SubnetEVM header
+	var subnetHeader SubnetEVMHeader
+	if err := rlp.DecodeBytes(headerData, &subnetHeader); err != nil {
+		log.Warn("Failed to decode genesis header", "error", err)
+		return nil
+	}
+	
+	header := subnetHeader.ToGethHeader()
+	
+	// Create genesis from extracted data
+	genesis := &gethcore.Genesis{
+		Config: &params.ChainConfig{
+			ChainID:             big.NewInt(96369),
+			HomesteadBlock:      big.NewInt(0),
+			EIP150Block:         big.NewInt(0),
+			EIP155Block:         big.NewInt(0),
+			EIP158Block:         big.NewInt(0),
+			ByzantiumBlock:      big.NewInt(0),
+			ConstantinopleBlock: big.NewInt(0),
+			PetersburgBlock:     big.NewInt(0),
+			IstanbulBlock:       big.NewInt(0),
+			MuirGlacierBlock:    big.NewInt(0),
+			BerlinBlock:         big.NewInt(0),
+			LondonBlock:         big.NewInt(0),
+		},
+		Nonce:      uint64(header.Nonce),
+		Timestamp:  header.Time,
+		ExtraData:  header.Extra,
+		GasLimit:   header.GasLimit,
+		Difficulty: header.Difficulty,
+		Mixhash:    header.MixDigest,
+		Coinbase:   header.Coinbase,
+		BaseFee:    header.BaseFee,
+		Number:     0,
+		GasUsed:    0,
+		ParentHash: header.ParentHash,
+	}
+	
+	// Check for allocations in the genesis_mainnet.json file
+	genesisFile := filepath.Join("/home/z/work/lux/node/genesis", "genesis_mainnet.json")
+	if fileData, err := os.ReadFile(genesisFile); err == nil {
+		var fileGenesis gethcore.Genesis
+		if err := json.Unmarshal(fileData, &fileGenesis); err == nil {
+			genesis.Alloc = fileGenesis.Alloc
+			log.Info("Added allocations from genesis file", "accounts", len(genesis.Alloc))
+		}
+	} else {
+		genesis.Alloc = gethcore.GenesisAlloc{}
+	}
+	
+	log.Info("Successfully extracted genesis from imported data",
+		"timestamp", genesis.Timestamp,
+		"gasLimit", genesis.GasLimit,
+		"difficulty", genesis.Difficulty,
+		"stateRoot", header.Root.Hex())
+	
+	return genesis
 }
 
 // replayBlockchainData reads imported blockchain data and replays it into the C-Chain
