@@ -17,6 +17,8 @@ const (
 	VersionJSONKey                   = "version-json"
 	GenesisFileKey                   = "genesis-file"
 	GenesisFileContentKey            = "genesis-file-content"
+	GenesisDBKey                     = "genesis-db"
+	GenesisDBTypeKey                 = "genesis-db-type"
 	NetworkNameKey                   = "network-id"
 	LPSupportKey                    = "lp-support"
 	LPObjectKey                     = "lp-object"

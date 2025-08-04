@@ -9,7 +9,7 @@ DOCKER_IMAGE := ghcr.io/luxfi/node
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 
 # Go build flags
-GO_BUILD_FLAGS := -tags "pebbledb debug vmdebug"
+GO_BUILD_FLAGS := -tags "pebbledb badgerdb debug vmdebug"
 LDFLAGS := -ldflags "-X main.version=$(VERSION)"
 
 .PHONY: all build build-linux build-mac docker clean help tidy

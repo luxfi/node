@@ -55,6 +55,8 @@ LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Load the constants
 source "$LUX_PATH"/scripts/constants.sh
 
-build_args="$race"
-echo "Building luxd..."
+# Always build with pebbledb and badgerdb support by default
+build_tags="-tags \"pebbledb badgerdb\""
+build_args="$race $build_tags"
+echo "Building luxd with PebbleDB and BadgerDB support..."
 go build $build_args -ldflags "-X github.com/luxfi/node/version.GitCommit=$git_commit $static_ld_flags" -o "$node_path" "$LUX_PATH/main/"*.go
