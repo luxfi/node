@@ -47,6 +47,10 @@ const (
 	DBPathKey                        = "db-dir"
 	DBConfigFileKey                  = "db-config-file"
 	DBConfigContentKey               = "db-config-file-content"
+	// Per-chain database configuration
+	PChainDBTypeKey                  = "p-chain-db-type"
+	XChainDBTypeKey                  = "x-chain-db-type"
+	CChainDBTypeKey                  = "c-chain-db-type"
 	PublicIPKey                      = "public-ip"
 	PublicIPResolutionFreqKey        = "public-ip-resolution-frequency"
 	PublicIPResolutionServiceKey     = "public-ip-resolution-service"

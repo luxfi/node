@@ -783,61 +783,29 @@ func (n *Node) initDatabase() error {
 
 	// start the db
 	dbPath := filepath.Join(n.Config.DatabaseConfig.Path, version.CurrentDatabase.String())
-	if n.Config.DatabaseConfig.Name == pebbledb.Name {
+	
+	// Special path handling for specific database types
+	switch n.Config.DatabaseConfig.Name {
+	case "pebbledb":
 		dbPath = filepath.Join(n.Config.DatabaseConfig.Path, "pebble")
-	} else if n.Config.DatabaseConfig.Name == badgerdb.Name {
+	case "badgerdb":
 		dbPath = filepath.Join(n.Config.DatabaseConfig.Path, "badger")
 	}
 	
-	// TODO: Use database factory once it's properly integrated
-	// For now, use the direct constructors with default parameters
-	switch n.Config.DatabaseConfig.Name {
-	case leveldb.Name:
-		// Use default cache sizes for leveldb
-		n.DB, err = leveldb.New(dbPath, 512, 512, 1024)
-		if err != nil {
-			return fmt.Errorf("couldn't create %s at %s: %w", leveldb.Name, dbPath, err)
-		}
-	case memdb.Name:
-		n.DB = memdb.New()
-	case pebbledb.Name:
-		// Use default parameters for pebbledb
-		n.DB, err = pebbledb.New(dbPath, 512, 512, "default", false)
-		if err != nil {
-			return fmt.Errorf("couldn't create %s at %s: %w", pebbledb.Name, dbPath, err)
-		}
-	case badgerdb.Name:
-		// Use default parameters for badgerdb
-		n.DB, err = badgerdb.New(dbPath, nil, "default", nil)
-		if err != nil {
-			return fmt.Errorf("couldn't create %s at %s: %w", badgerdb.Name, dbPath, err)
-		}
-	default:
-		return fmt.Errorf(
-			"db-type was %q but should have been one of {%s, %s, %s, %s}",
-			n.Config.DatabaseConfig.Name,
-			leveldb.Name,
-			memdb.Name,
-			pebbledb.Name,
-			badgerdb.Name,
-		)
-	}
-
-	if n.Config.ReadOnly && n.Config.DatabaseConfig.Name != memdb.Name {
-		n.DB = versiondb.New(n.DB)
-	}
-
-	meterDBReg, err := metrics.MakeAndRegister(
+	// Use the database factory to create the database
+	// This abstracts away the specific database implementation
+	n.DB, err = factory.New(
+		n.Config.DatabaseConfig.Name,
+		dbPath,
+		n.Config.ReadOnly,
+		nil, // config bytes - use defaults
 		n.MeterDBMetricsGatherer,
+		n.Log,
+		"db",
 		"all",
 	)
 	if err != nil {
-		return err
-	}
-
-	n.DB, err = meterdb.New(meterDBReg, n.DB)
-	if err != nil {
-		return err
+		return fmt.Errorf("couldn't create database: %w", err)
 	}
 
 	rawExpectedGenesisHash := hashing.ComputeHash256(n.Config.GenesisBytes)
