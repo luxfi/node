@@ -4,6 +4,8 @@
 package genesis
 
 import (
+	"encoding/binary"
+	stdjson "encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -475,6 +477,11 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 }
 
 func splitAllocations(allocations []Allocation, numSplits int) [][]Allocation {
+	// Handle edge case where there are no splits
+	if numSplits == 0 {
+		return [][]Allocation{}
+	}
+	
 	totalAmount := uint64(0)
 	for _, allocation := range allocations {
 		for _, unlock := range allocation.UnlockSchedule {
@@ -577,4 +584,65 @@ func LUXAssetID(xvmGenesisBytes []byte) (ids.ID, error) {
 		return ids.Empty, err
 	}
 	return tx.ID(), nil
+}
+
+// encodeBlockNumber encodes a block number as big endian uint64
+func encodeBlockNumber(number uint64) []byte {
+	enc := make([]byte, 8)
+	binary.BigEndian.PutUint64(enc, number)
+	return enc
+}
+
+// FromDatabase returns the genesis data using an existing database for replay
+func FromDatabase(networkID uint32, dbPath string, dbType string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
+	fmt.Printf("Loading genesis for database replay from: %s (type: %s)\n", dbPath, dbType)
+	
+	// Use LocalID config as base to avoid BLS validation issues
+	config := LocalConfig
+	// Override network ID to match the requested one
+	config.NetworkID = networkID
+	
+	// Add C-chain genesis with database replay marker
+	cchainGenesis := map[string]interface{}{
+		"config": map[string]interface{}{
+			"chainId":             networkID,
+			"homesteadBlock":      0,
+			"eip150Block":         0,
+			"eip155Block":         0,
+			"eip158Block":         0,
+			"byzantiumBlock":      0,
+			"constantinopleBlock": 0,
+			"petersburgBlock":     0,
+			"istanbulBlock":       0,
+			"muirGlacierBlock":    0,
+			"berlinBlock":         0,
+			"londonBlock":         0,
+		},
+		"nonce":      "0x0",
+		"timestamp":  "0x0", 
+		"extraData":  "0x00",
+		"gasLimit":   "0x5f5e100",
+		"difficulty": "0x0",
+		"mixHash":    "0x0000000000000000000000000000000000000000000000000000000000000000",
+		"coinbase":   "0x0000000000000000000000000000000000000000",
+		"alloc": map[string]interface{}{
+			"0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC": map[string]interface{}{
+				"balance": "0x21e19e0c9bab2400000", // 10000 ETH
+			},
+		},
+		// Database replay markers
+		"dbPath": dbPath,
+		"dbType": dbType,
+		"replay": true,
+	}
+	
+	cchainGenesisBytes, err := stdjson.Marshal(cchainGenesis)
+	if err != nil {
+		return nil, ids.Empty, fmt.Errorf("failed to marshal C-chain genesis: %w", err)
+	}
+	
+	config.CChainGenesis = string(cchainGenesisBytes)
+	
+	// Build the genesis with LocalID configuration
+	return FromConfig(&config)
 }

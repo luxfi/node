@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/database/badgerdb"
 	"github.com/luxfi/database/leveldb"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/pebbledb"
@@ -93,6 +94,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(GenesisFileKey, "", fmt.Sprintf("Specifies a genesis config file path. Ignored when running standard networks or if %s is specified",
 		GenesisFileContentKey))
 	fs.String(GenesisFileContentKey, "", "Specifies base64 encoded genesis content")
+	fs.String(GenesisDBKey, "", "Path to existing genesis database for replay. Cannot be used with genesis-file or genesis-file-content")
+	fs.String(GenesisDBTypeKey, leveldb.Name, fmt.Sprintf("Database type to use for genesis database. Must be one of {%s, %s}", leveldb.Name, pebbledb.Name))
 
 	// Network ID
 	fs.String(NetworkNameKey, constants.MainnetName, "Network ID this node will connect to")
@@ -113,7 +116,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint64(AddSubnetDelegatorFeeKey, genesis.LocalParams.AddSubnetDelegatorFee, "Transaction fee, in nLUX, for transactions that add new subnet delegators")
 
 	// Database
-	fs.String(DBTypeKey, pebbledb.Name, fmt.Sprintf("Database type to use. Must be one of {%s, %s, %s}", leveldb.Name, memdb.Name, pebbledb.Name))
+	fs.String(DBTypeKey, badgerdb.Name, fmt.Sprintf("Database type to use. Must be one of {%s, %s, %s, %s}", leveldb.Name, memdb.Name, pebbledb.Name, badgerdb.Name))
 	fs.Bool(DBReadOnlyKey, false, "If true, database writes are to memory and never persisted. May still initialize database directory/files on disk if they don't exist")
 	fs.String(DBPathKey, defaultDBDir, "Path to database directory")
 	fs.String(DBConfigFileKey, "", fmt.Sprintf("Path to database config file. Ignored if %s is specified", DBConfigContentKey))

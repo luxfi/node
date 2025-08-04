@@ -789,6 +789,16 @@ func getTxFeeConfig(v *viper.Viper, networkID uint32) fee.StaticConfig {
 }
 
 func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.StakingConfig) ([]byte, ids.ID, error) {
+	// Check if genesis-db is specified for database replay
+	if v.IsSet(GenesisDBKey) {
+		if v.IsSet(GenesisFileKey) || v.IsSet(GenesisFileContentKey) {
+			return nil, ids.Empty, fmt.Errorf("cannot specify %s with %s or %s", GenesisDBKey, GenesisFileKey, GenesisFileContentKey)
+		}
+		genesisDBPath := GetExpandedArg(v, GenesisDBKey)
+		genesisDBType := v.GetString(GenesisDBTypeKey)
+		return genesis.FromDatabase(networkID, genesisDBPath, genesisDBType, stakingCfg)
+	}
+
 	// try first loading genesis content directly from flag/env-var
 	if v.IsSet(GenesisFileContentKey) {
 		genesisData := v.GetString(GenesisFileContentKey)

@@ -213,9 +213,59 @@ func (vm *VM) Initialize(
 		vm.ctx.Log.Info("Using imported blockchain genesis for replay",
 			"expectedHash", "0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
 	} else if len(genesisBytes) > 0 {
-		genesis = &gethcore.Genesis{}
-		if err := json.Unmarshal(genesisBytes, genesis); err != nil {
-			return fmt.Errorf("failed to unmarshal genesis: %w", err)
+		// First check if this is a database replay genesis
+		var genesisMap map[string]interface{}
+		if err := json.Unmarshal(genesisBytes, &genesisMap); err == nil {
+			if replay, ok := genesisMap["replay"].(bool); ok && replay {
+				// This is a database replay genesis
+				dbPath, _ := genesisMap["dbPath"].(string)
+				dbType, _ := genesisMap["dbType"].(string)
+				chainID, _ := genesisMap["chainId"].(float64)
+				
+				vm.ctx.Log.Info("Database replay genesis detected", 
+					"dbPath", dbPath, 
+					"dbType", dbType,
+					"chainId", chainID)
+				
+				// Mark as migrated data to skip genesis initialization
+				hasMigratedData = true
+				
+				// Extract the chain config
+				genesis = &gethcore.Genesis{
+					Config: &params.ChainConfig{
+						ChainID: big.NewInt(int64(chainID)),
+					},
+				}
+				
+				if configData, ok := genesisMap["config"].(map[string]interface{}); ok {
+					configBytes, _ := json.Marshal(configData)
+					if err := json.Unmarshal(configBytes, genesis.Config); err != nil {
+						return fmt.Errorf("failed to parse chain config: %w", err)
+					}
+				}
+				
+				// Try to read the latest block from the database
+				if dbPath != "" {
+					// The genesis-db flag already opened the database for us
+					// Just check for the latest height
+					if heightBytes, err := vm.ethDB.Get([]byte("LastBlock")); err == nil && len(heightBytes) == 8 {
+						migratedHeight = binary.BigEndian.Uint64(heightBytes)
+						vm.ctx.Log.Info("Found latest block height in database", "height", migratedHeight)
+					}
+				}
+			} else {
+				// Normal genesis parsing
+				genesis = &gethcore.Genesis{}
+				if err := json.Unmarshal(genesisBytes, genesis); err != nil {
+					return fmt.Errorf("failed to unmarshal genesis: %w", err)
+				}
+			}
+		} else {
+			// Normal genesis parsing
+			genesis = &gethcore.Genesis{}
+			if err := json.Unmarshal(genesisBytes, genesis); err != nil {
+				return fmt.Errorf("failed to unmarshal genesis: %w", err)
+			}
 		}
 
 		// Set terminal total difficulty for PoS transition

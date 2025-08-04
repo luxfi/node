@@ -41,6 +41,7 @@ import (
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/database"
+	"github.com/luxfi/database/badgerdb"
 	"github.com/luxfi/database/leveldb"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/meterdb"
@@ -789,6 +790,8 @@ func (n *Node) initDatabase() error {
 	dbPath := filepath.Join(n.Config.DatabaseConfig.Path, version.CurrentDatabase.String())
 	if n.Config.DatabaseConfig.Name == pebbledb.Name {
 		dbPath = filepath.Join(n.Config.DatabaseConfig.Path, "pebble")
+	} else if n.Config.DatabaseConfig.Name == badgerdb.Name {
+		dbPath = filepath.Join(n.Config.DatabaseConfig.Path, "badger")
 	}
 	
 	// TODO: Use database factory once it's properly integrated
@@ -808,13 +811,20 @@ func (n *Node) initDatabase() error {
 		if err != nil {
 			return fmt.Errorf("couldn't create %s at %s: %w", pebbledb.Name, dbPath, err)
 		}
+	case badgerdb.Name:
+		// Use default parameters for badgerdb
+		n.DB, err = badgerdb.New(dbPath, nil, "default", n.MetricsRegisterer)
+		if err != nil {
+			return fmt.Errorf("couldn't create %s at %s: %w", badgerdb.Name, dbPath, err)
+		}
 	default:
 		return fmt.Errorf(
-			"db-type was %q but should have been one of {%s, %s, %s}",
+			"db-type was %q but should have been one of {%s, %s, %s, %s}",
 			n.Config.DatabaseConfig.Name,
 			leveldb.Name,
 			memdb.Name,
 			pebbledb.Name,
+			badgerdb.Name,
 		)
 	}
 

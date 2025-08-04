@@ -373,10 +373,10 @@ github.com/leanovate/gopter v0.2.11 h1:vRjThO1EKPb/1NsDXuDrzldR28RLkBflWYcU9CvzW
 github.com/leanovate/gopter v0.2.11/go.mod h1:aK3tzZP/C+p1m3SPRE4SYZFGP7jjkuSI4f7Xvpt0S9c=
 github.com/luxfi/bft v0.1.0 h1:7PuGqoDSFTVwxT3MF0VU+c/QeC/HVerKJtpNL+4Bp0M=
 github.com/luxfi/bft v0.1.0/go.mod h1:IUT167Erk2h8z36197Yrmu/3CBIsZku5WlEG8O2NMp4=
-github.com/luxfi/crypto v1.2.1 h1:9QlSJFJcxz14b7sBLTaxKI6My0Rzy4DJT7JSS9WlZlU=
-github.com/luxfi/crypto v1.2.1/go.mod h1:qIfHGq5kzTUqzyTqj6II5/6aEp0OWntfeOdhYy/d7aQ=
-github.com/luxfi/database v1.1.7 h1:PV1x+if18v7xPASx+bGFp5cAH6GScfYxtb/GH8VFU2o=
-github.com/luxfi/database v1.1.7/go.mod h1:xRxzVwaT00jqeKAtVfvYzSdvEuT5Y+NIvD3HQQLaVmg=
+github.com/luxfi/crypto v1.2.2 h1:jkaLIUNML8f2I/SNEbZooJRRW43bOnU6E8yEG9x9D3w=
+github.com/luxfi/crypto v1.2.2/go.mod h1:qIfHGq5kzTUqzyTqj6II5/6aEp0OWntfeOdhYy/d7aQ=
+github.com/luxfi/database v1.1.7 h1:sskVC0lL5HMELmklQGHnGBlYYD6n+kWGls4XDxye/tg=
+github.com/luxfi/database v1.1.7/go.mod h1:0uBGc+U7415yAKBjImaz+OkGzeFaqxH3pcgB3pmofjM=
 github.com/luxfi/geth v1.16.25 h1:mvDM4GgJeD5Lhg+p8/PuJID/3qJXzy83JHT7GABdJ0I=
 github.com/luxfi/geth v1.16.25/go.mod h1:oW6L657BBT0okG+yQaBzuzg5XZ38RLdKupHyKf17LAc=
 github.com/luxfi/ids v1.0.2 h1:OnbCWBgdmuBPZat1r1vRikk1FFrdHMfSknpfKmX0KBg=
