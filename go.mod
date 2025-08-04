@@ -29,7 +29,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/antithesishq/antithesis-sdk-go v0.3.8
 	github.com/btcsuite/btcd/btcutil v1.1.3
-	github.com/cockroachdb/pebble v1.1.5 // indirect
+	github.com/cockroachdb/pebble v1.1.5
 	github.com/compose-spec/compose-go v1.20.2
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.1
@@ -92,7 +92,7 @@ require (
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/crypto v1.2.1
 	github.com/luxfi/database v1.1.7
-	github.com/luxfi/geth v1.16.23
+	github.com/luxfi/geth v1.16.24
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/log v0.1.1
 	github.com/luxfi/metrics v1.1.1
@@ -186,5 +186,3 @@ require (
 )
 
 replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
-
-replace github.com/luxfi/geth => ../geth
