@@ -14,10 +14,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/database/badgerdb"
-	"github.com/luxfi/database/leveldb"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/pebbledb"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils/compression"
@@ -95,7 +91,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 		GenesisFileContentKey))
 	fs.String(GenesisFileContentKey, "", "Specifies base64 encoded genesis content")
 	fs.String(GenesisDBKey, "", "Path to existing genesis database for replay. Cannot be used with genesis-file or genesis-file-content")
-	fs.String(GenesisDBTypeKey, leveldb.Name, fmt.Sprintf("Database type to use for genesis database. Must be one of {%s, %s}", leveldb.Name, pebbledb.Name))
+	fs.String(GenesisDBTypeKey, "leveldb", "Database type to use for genesis database. Must be one of {leveldb, pebbledb}")
 
 	// Network ID
 	fs.String(NetworkNameKey, constants.MainnetName, "Network ID this node will connect to")
@@ -116,11 +112,16 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint64(AddSubnetDelegatorFeeKey, genesis.LocalParams.AddSubnetDelegatorFee, "Transaction fee, in nLUX, for transactions that add new subnet delegators")
 
 	// Database
-	fs.String(DBTypeKey, badgerdb.Name, fmt.Sprintf("Database type to use. Must be one of {%s, %s, %s, %s}", leveldb.Name, memdb.Name, pebbledb.Name, badgerdb.Name))
+	fs.String(DBTypeKey, "pebbledb", "Default database type to use for all chains. Must be one of {leveldb, memdb, pebbledb, badgerdb}")
 	fs.Bool(DBReadOnlyKey, false, "If true, database writes are to memory and never persisted. May still initialize database directory/files on disk if they don't exist")
 	fs.String(DBPathKey, defaultDBDir, "Path to database directory")
 	fs.String(DBConfigFileKey, "", fmt.Sprintf("Path to database config file. Ignored if %s is specified", DBConfigContentKey))
 	fs.String(DBConfigContentKey, "", "Specifies base64 encoded database config content")
+	
+	// Per-chain database configuration
+	fs.String(PChainDBTypeKey, "", "Database type for P-Chain. If not specified, uses default db-type")
+	fs.String(XChainDBTypeKey, "", "Database type for X-Chain. If not specified, uses default db-type")
+	fs.String(CChainDBTypeKey, "", "Database type for C-Chain. If not specified, uses default db-type")
 
 	// Logging
 	fs.String(LogsDirKey, defaultLogDir, "Logging directory for Lux")

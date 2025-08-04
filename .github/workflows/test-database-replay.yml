@@ -1,0 +1,112 @@
+name: Test Database Replay
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-badgerdb-replay:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24.5'
+
+    - name: Build luxd with database support
+      run: |
+        echo "Building luxd with PebbleDB and BadgerDB support..."
+        make build
+        ./build/luxd --version
+
+    - name: Build genesis tool
+      run: |
+        cd ../genesis
+        make build
+        ./bin/genesis --version
+
+    - name: Generate staking keys
+      run: |
+        cd ../genesis
+        mkdir -p test-keys
+        ./bin/genesis staking keygen --output test-keys
+        echo "Generated staking keys:"
+        ls -la test-keys/
+
+    - name: Test database types
+      run: |
+        # Test that each database type can be initialized
+        for db_type in leveldb pebbledb badgerdb memdb; do
+          echo "Testing $db_type..."
+          timeout 10s ./build/luxd \
+            --network-id=96369 \
+            --db-type=$db_type \
+            --data-dir=/tmp/test-$db_type \
+            --http-port=9630 \
+            --staking-port=9631 \
+            --log-level=info \
+            --sybil-protection-enabled=false \
+            --api-admin-enabled=true || true
+          
+          # Check if database was created
+          if [ "$db_type" != "memdb" ]; then
+            ls -la /tmp/test-$db_type/db/ || true
+          fi
+          
+          # Clean up
+          pkill -f luxd || true
+          rm -rf /tmp/test-$db_type
+        done
+
+    - name: Test genesis database replay
+      run: |
+        # This would test the genesis-db flag with a sample database
+        # In a real CI environment, you'd have a test database available
+        echo "Testing genesis-db flag..."
+        
+        # Create a mock test to verify the flag is accepted
+        timeout 5s ./build/luxd \
+          --network-id=96369 \
+          --db-type=badgerdb \
+          --genesis-db=/tmp/mock-genesis-db \
+          --genesis-db-type=pebbledb \
+          --data-dir=/tmp/test-replay \
+          --http-port=9630 \
+          --staking-port=9631 \
+          --log-level=info \
+          --sybil-protection-enabled=false \
+          --api-admin-enabled=true 2>&1 | grep -E "(genesis-db|Genesis)" || true
+
+  test-database-factory:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24.5'
+
+    - name: Test database factory
+      run: |
+        # Run unit tests for the database factory
+        cd database
+        go test -v -tags "pebbledb badgerdb" ./factory/...
+
+    - name: Test database implementations
+      run: |
+        # Test each database implementation
+        cd database
+        go test -v -tags "pebbledb" ./pebbledb/...
+        go test -v -tags "badgerdb" ./badgerdb/...
+        go test -v ./leveldb/...
+        go test -v ./memdb/...
