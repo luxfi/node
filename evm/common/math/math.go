@@ -1,10 +1,10 @@
 package math
 
-// Re-export commonly used math functions from github.com/ethereum/go-ethereum/common/math
+// Re-export commonly used math functions from github.com/luxfi/geth/common/math
 import (
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/luxfi/geth/common/math"
 )
 
 var (

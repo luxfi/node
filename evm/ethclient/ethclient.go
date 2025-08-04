@@ -1,7 +1,7 @@
 package ethclient
 
-// Re-export ethclient from github.com/ethereum/go-ethereum/ethclient
-import "github.com/ethereum/go-ethereum/ethclient"
+// Re-export ethclient from github.com/luxfi/geth/ethclient
+import "github.com/luxfi/geth/ethclient"
 
 type Client = ethclient.Client
 

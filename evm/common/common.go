@@ -1,7 +1,7 @@
 package common
 
-// Re-export commonly used types from github.com/ethereum/go-ethereum/common
-import "github.com/ethereum/go-ethereum/common"
+// Re-export commonly used types from github.com/luxfi/geth/common
+import "github.com/luxfi/geth/common"
 
 type Address = common.Address
 type Hash = common.Hash
