@@ -13,6 +13,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -27,9 +28,11 @@ import (
 	"github.com/luxfi/geth/rlp"
 	"github.com/luxfi/geth/rpc"
 
+	"github.com/cockroachdb/pebble"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/pebbledb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	consensusNode "github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/engine/chain/block"
@@ -724,9 +727,13 @@ func (vm *VM) extractGenesisFromImport(importDB database.Database) (*types.Block
 }
 
 // extractGenesisFromDB attempts to extract genesis configuration from imported blockchain data
-func extractGenesisFromDB(db *pebble.DB, log logging.Logger) *gethcore.Genesis {
+func extractGenesisFromDB(db *pebble.DB, log log.Logger) *gethcore.Genesis {
 	// Try to read genesis block (block 0)
-	iter := db.NewIter(nil)
+	iter, err := db.NewIter(nil)
+	if err != nil {
+		log.Warn("Failed to create iterator for genesis extraction", "error", err)
+		return nil
+	}
 	defer iter.Close()
 	
 	var genesisHash common.Hash
@@ -793,7 +800,7 @@ func extractGenesisFromDB(db *pebble.DB, log logging.Logger) *gethcore.Genesis {
 			BerlinBlock:         big.NewInt(0),
 			LondonBlock:         big.NewInt(0),
 		},
-		Nonce:      uint64(header.Nonce),
+		Nonce:      header.Nonce.Uint64(),
 		Timestamp:  header.Time,
 		ExtraData:  header.Extra,
 		GasLimit:   header.GasLimit,
