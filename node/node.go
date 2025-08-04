@@ -41,13 +41,8 @@ import (
 	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/database"
-	"github.com/luxfi/database/badgerdb"
-	"github.com/luxfi/database/leveldb"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/meterdb"
-	"github.com/luxfi/database/pebbledb"
+	"github.com/luxfi/database/factory"
 	"github.com/luxfi/database/prefixdb"
-	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/indexer"
@@ -813,7 +808,7 @@ func (n *Node) initDatabase() error {
 		}
 	case badgerdb.Name:
 		// Use default parameters for badgerdb
-		n.DB, err = badgerdb.New(dbPath, nil, "default", n.MetricsRegisterer)
+		n.DB, err = badgerdb.New(dbPath, nil, "default", nil)
 		if err != nil {
 			return fmt.Errorf("couldn't create %s at %s: %w", badgerdb.Name, dbPath, err)
 		}
