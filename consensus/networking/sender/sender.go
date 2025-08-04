@@ -5,6 +5,7 @@ package sender
 
 import (
 	"context"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -1062,7 +1063,12 @@ func (s *sender) SendPullQuery(
 			requestedHeight,
 			s.ctx.NodeID,
 		)
-		s.router.HandleInternal(ctx, inMsg)
+		// Use goroutine with small delay for k=1 consensus to ensure poll registration
+		go func() {
+			// This delay ensures the poll is registered before we handle our own query
+			time.Sleep(10 * time.Millisecond)
+			s.router.HandleInternal(ctx, inMsg)
+		}()
 	}
 
 	// Some of the nodes in [nodeIDs] may be benched. That is, they've been
