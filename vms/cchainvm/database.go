@@ -12,17 +12,12 @@ import (
 	"github.com/luxfi/database"
 )
 
-// canonicalKey returns the SubnetEVM canonical key format:
-//   "headerPrefix" + blockNumber (8 bytes) + "headerHashSuffix"
+// canonicalKey returns the standard C-chain canonical key format:
+//   "H" + blockNumber (8 bytes)
 func canonicalKey(number uint64) []byte {
-	prefix := []byte("headerPrefix")
-	suffix := []byte("headerHashSuffix")
-	
-	key := make([]byte, len(prefix)+8+len(suffix))
-	copy(key, prefix)
-	binary.BigEndian.PutUint64(key[len(prefix):len(prefix)+8], number)
-	copy(key[len(prefix)+8:], suffix)
-	
+	key := make([]byte, 9)
+	key[0] = 'H'
+	binary.BigEndian.PutUint64(key[1:], number)
 	return key
 }
 
