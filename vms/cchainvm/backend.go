@@ -61,6 +61,7 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 	
 	// Read the head hash from migrated data using 9-byte format
 	key := canonicalKey(migratedHeight)
+	fmt.Printf("Looking for canonical hash at height %d with key: %x\n", migratedHeight, key)
 	
 	var headHash common.Hash
 	if val, err := db.Get(key); err == nil && len(val) == 32 {
@@ -76,6 +77,20 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 		// Also write the current block pointers
 		rawdb.WriteCanonicalHash(db, headHash, migratedHeight)
 	} else {
+		fmt.Printf("Failed to find canonical hash at height %d: err=%v, val_len=%d\n", migratedHeight, err, len(val))
+		// Try to list some keys to debug
+		fmt.Printf("Trying to read some keys from database...\n")
+		// Try different key patterns
+		testKeys := [][]byte{
+			[]byte("H\x00\x00\x00\x00\x00\x00\x00\x00"), // Standard canonical key for block 0
+			[]byte("genesis"), // Genesis marker
+			[]byte("LastBlock"), // Last block marker
+		}
+		for _, tk := range testKeys {
+			if val, err := db.Get(tk); err == nil {
+				fmt.Printf("Found key %x with value length %d\n", tk, len(val))
+			}
+		}
 		return nil, fmt.Errorf("could not find canonical hash at height %d", migratedHeight)
 	}
 	
