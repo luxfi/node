@@ -6,23 +6,20 @@ module github.com/luxfi/node
 // go.mod (here)
 go 1.24.5
 
-// Pin all OpenTelemetry modules (and metric sub-packages) to v1.37.0
-replace go.opentelemetry.io/otel => go.opentelemetry.io/otel v1.37.0
-
-replace go.opentelemetry.io/otel/metric => go.opentelemetry.io/otel/metric v1.37.0
-
-replace go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.37.0
-
-replace go.opentelemetry.io/otel/sdk/metric => go.opentelemetry.io/otel/sdk/metric v1.37.0
-
-replace go.opentelemetry.io/otel/sdk/metric/metricdata => go.opentelemetry.io/otel/sdk/metric v1.37.0
-
-replace go.opentelemetry.io/otel/sdk/metric/metricdatatest => go.opentelemetry.io/otel/sdk/metric v1.37.0
-
-// Fix genproto ambiguity
-exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
-
-exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
+require (
+	github.com/StephenButtolph/canoto v0.17.2
+	github.com/holiman/uint256 v1.3.2
+	github.com/klauspost/compress v1.18.0
+	github.com/luxfi/bft v0.1.0
+	github.com/luxfi/crypto v1.2.2
+	github.com/luxfi/database v1.1.9
+	github.com/luxfi/geth v1.16.25
+	github.com/luxfi/ids v1.0.2
+	github.com/luxfi/log v0.1.1
+	github.com/luxfi/metrics v1.1.1
+	github.com/luxfi/trace v0.1.1
+	golang.org/x/mod v0.26.0
+)
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
@@ -82,21 +79,6 @@ require (
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
-)
-
-require (
-	github.com/StephenButtolph/canoto v0.17.2
-	github.com/holiman/uint256 v1.3.2
-	github.com/klauspost/compress v1.18.0
-	github.com/luxfi/bft v0.1.0
-	github.com/luxfi/crypto v1.2.2
-	github.com/luxfi/database v1.1.9
-	github.com/luxfi/geth v1.16.25
-	github.com/luxfi/ids v1.0.2
-	github.com/luxfi/log v0.1.1
-	github.com/luxfi/metrics v1.1.1
-	github.com/luxfi/trace v0.1.1
-	golang.org/x/mod v0.26.0
 )
 
 require (
@@ -184,4 +166,23 @@ require (
 	gotest.tools/v3 v3.5.1 // indirect
 )
 
+// Go no longer supports bazaar repos
 replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
+
+// Pin all OpenTelemetry modules (and metric sub-packages) to v1.37.0
+replace go.opentelemetry.io/otel => go.opentelemetry.io/otel v1.37.0
+
+replace go.opentelemetry.io/otel/metric => go.opentelemetry.io/otel/metric v1.37.0
+
+replace go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.37.0
+
+replace go.opentelemetry.io/otel/sdk/metric => go.opentelemetry.io/otel/sdk/metric v1.37.0
+
+replace go.opentelemetry.io/otel/sdk/metric/metricdata => go.opentelemetry.io/otel/sdk/metric v1.37.0
+
+replace go.opentelemetry.io/otel/sdk/metric/metricdatatest => go.opentelemetry.io/otel/sdk/metric v1.37.0
+
+// Fix genproto ambiguity
+exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
+
+exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
