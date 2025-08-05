@@ -96,7 +96,7 @@ func (us UnparsedStaker) Parse() (Staker, error) {
 	_, _, luxAddrBytes, err := address.Parse(us.RewardAddress)
 	if err != nil {
 		// Fallback for legacy addresses with invalid checksums
-		if strings.Contains(us.RewardAddress, "-test1") || strings.Contains(us.RewardAddress, "-lux1") || strings.Contains(us.RewardAddress, "-local1") {
+		if strings.Contains(us.RewardAddress, "-test1") || strings.Contains(us.RewardAddress, "-lux1") || strings.Contains(us.RewardAddress, "-local1") || strings.Contains(us.RewardAddress, "-custom1") {
 			// Extract address bytes from the address string
 			parts := strings.Split(us.RewardAddress, "-")
 			if len(parts) >= 2 {
@@ -108,6 +108,8 @@ func (us UnparsedStaker) Parse() (Staker, error) {
 					addrPart = addrPart[4:]
 				} else if strings.HasPrefix(addrPart, "local1") {
 					addrPart = addrPart[6:]
+				} else if strings.HasPrefix(addrPart, "custom1") {
+					addrPart = addrPart[7:]
 				}
 				// Use a deterministic address based on the string
 				luxAddrBytes = make([]byte, 20)

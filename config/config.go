@@ -1381,6 +1381,25 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 
 	// Genesis Data
 	genesisStakingCfg := nodeConfig.StakingConfig.StakingConfig
+	
+	// Add BLS key information for genesis replay
+	if nodeConfig.StakingConfig.StakingSigningKey != nil {
+		// Get NodeID from the certificate
+		nodeID := ids.NodeIDFromCert(&ids.Certificate{
+			Raw:       nodeConfig.StakingConfig.StakingTLSCert.Leaf.Raw,
+			PublicKey: nodeConfig.StakingConfig.StakingTLSCert.Leaf.PublicKey,
+		})
+		genesisStakingCfg.NodeID = nodeID.String()
+		
+		// Get BLS public key and proof of possession
+		pk := nodeConfig.StakingConfig.StakingSigningKey.PublicKey()
+		genesisStakingCfg.BLSPublicKey = bls.PublicKeyToCompressedBytes(pk)
+		
+		// Generate proof of possession
+		sig := nodeConfig.StakingConfig.StakingSigningKey.SignProofOfPossession(genesisStakingCfg.BLSPublicKey)
+		genesisStakingCfg.BLSProofOfPossession = bls.SignatureToBytes(sig)
+	}
+	
 	nodeConfig.GenesisBytes, nodeConfig.LuxAssetID, err = getGenesisData(v, nodeConfig.NetworkID, &genesisStakingCfg)
 	if err != nil {
 		return node.Config{}, fmt.Errorf("unable to load genesis file: %w", err)
