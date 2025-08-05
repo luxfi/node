@@ -29,4 +29,4 @@ source "$LUX_PATH"/scripts/constants.sh
 
 build_args="$race"
 echo "Building Lux Node..."
-go build $build_args -ldflags "-X github.com/luxfi/node/version.GitCommit=$git_commit $static_ld_flags" -o "$node_path" "$LUX_PATH/main/"*.go
+go build $build_args -ldflags "-X github.com/luxfi/node/version.GitCommit=$git_commit $static_ld_flags" -o "$node_path" "$LUX_PATH/main"
