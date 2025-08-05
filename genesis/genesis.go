@@ -597,10 +597,10 @@ func encodeBlockNumber(number uint64) []byte {
 func FromDatabase(networkID uint32, dbPath string, dbType string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
 	fmt.Printf("Loading genesis for database replay from: %s (type: %s)\n", dbPath, dbType)
 	
-	// Use LocalID config as base to avoid BLS validation issues
+	// For database replay, just use the local config as a base
 	config := LocalConfig
-	// Override network ID to match the requested one
 	config.NetworkID = networkID
+	config.Message = "DATABASE_REPLAY_MODE" // Special marker for replay mode
 	
 	// Add C-chain genesis with database replay marker
 	cchainGenesis := map[string]interface{}{

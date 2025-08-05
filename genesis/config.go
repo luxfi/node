@@ -177,28 +177,30 @@ func init() {
 	unparsedTestnetConfig := UnparsedConfig{}
 	unparsedLocalConfig := UnparsedConfig{}
 
-	err := errors.Join(
-		json.Unmarshal(mainnetGenesisConfigJSON, &unparsedMainnetConfig),
-		json.Unmarshal(testnetGenesisConfigJSON, &unparsedTestnetConfig),
-		json.Unmarshal(localGenesisConfigJSON, &unparsedLocalConfig),
-	)
-	if err != nil {
-		panic(err)
+	if err := json.Unmarshal(mainnetGenesisConfigJSON, &unparsedMainnetConfig); err != nil {
+		panic(fmt.Errorf("failed to unmarshal mainnet genesis: %w", err))
+	}
+	if err := json.Unmarshal(testnetGenesisConfigJSON, &unparsedTestnetConfig); err != nil {
+		panic(fmt.Errorf("failed to unmarshal testnet genesis: %w", err))
+	}
+	if err := json.Unmarshal(localGenesisConfigJSON, &unparsedLocalConfig); err != nil {
+		panic(fmt.Errorf("failed to unmarshal local genesis: %w", err))
 	}
 
+	var err error
 	MainnetConfig, err = unparsedMainnetConfig.Parse()
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to parse mainnet config: %w", err))
 	}
 
 	TestnetConfig, err = unparsedTestnetConfig.Parse()
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to parse testnet config: %w", err))
 	}
 
 	LocalConfig, err = unparsedLocalConfig.Parse()
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to parse local config: %w", err))
 	}
 }
 
