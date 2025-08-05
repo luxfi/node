@@ -6,6 +6,8 @@ module github.com/luxfi/node
 // go.mod (here)
 go 1.24.5
 
+exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
+
 require (
 	github.com/StephenButtolph/canoto v0.17.2
 	github.com/holiman/uint256 v1.3.2
@@ -13,7 +15,7 @@ require (
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/crypto v1.2.2
 	github.com/luxfi/database v1.1.9
-	github.com/luxfi/geth v1.16.1
+	github.com/luxfi/geth v1.16.1-lux
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/log v0.1.1
 	github.com/luxfi/metrics v1.1.1
