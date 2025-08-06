@@ -106,14 +106,14 @@ func (c *client) SetLoggerLevel(
 		err             error
 	)
 	if len(logLevel) > 0 {
-		level := log.InfoLevel
+		level := log.Level(log.InfoLevel)
 		logLevelArg = &level // Default to info level
 		if err != nil {
 			return nil, err
 		}
 	}
 	if len(displayLevel) > 0 {
-		level := log.InfoLevel
+		level := log.Level(log.InfoLevel)
 		displayLevelArg = &level // Default to info level
 		if err != nil {
 			return nil, err

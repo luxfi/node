@@ -4,7 +4,6 @@
 package cchainvm
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"math/big"
@@ -51,6 +50,10 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 	// Enable subnet namespace handling in database wrapper
 	UseSubnetNamespace = true
 	
+	// For now, we'll use the wrapped database
+	// Later we can optimize to open raw database directly
+	rawDB := db
+	
 	// Create chain config for LUX mainnet
 	chainConfig := &params.ChainConfig{
 		ChainID:                 big.NewInt(96369),
@@ -70,46 +73,58 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 	// Create a dummy consensus engine
 	engine := &dummyEngine{}
 	
-	// Subnet-EVM namespace
-	namespace := []byte{
-		0x33, 0x7f, 0xb7, 0x3f, 0x9b, 0xcd, 0xac, 0x8c,
-		0x31, 0xa2, 0xd5, 0xf7, 0xb8, 0x77, 0xab, 0x1e,
-		0x8a, 0x2b, 0x7f, 0x2a, 0x1e, 0x9b, 0xf0, 0x2a,
-		0x0a, 0x0e, 0x6c, 0x6f, 0xd1, 0x64, 0xf1, 0xd1,
-	}
-	
 	fmt.Printf("Scanning subnet-EVM database for blocks...\n")
 	
 	// Build block index first
 	blocksByNumber := make(map[uint64]common.Hash)
 	headersByHash := make(map[common.Hash][]byte)
-	iter := db.NewIterator(nil, nil)
 	
-	for iter.Next() {
-		key := iter.Key()
-		value := iter.Value()
+	// We need to access the raw database, not the wrapped one
+	// The wrapped database won't see the namespace-prefixed keys
+	// So we'll scan for canonical mappings first
+	canonicalCount := 0
+	
+	// Look for 'H' canonical mappings (blockNum -> hash)
+	// When using wrapped database, keys are without namespace
+	for blockNum := uint64(0); blockNum <= 1082781; blockNum++ {
+		// Build the key: just 'H' + blockNum (namespace handled by wrapper)
+		key := make([]byte, 9)
+		key[0] = 'H'
+		binary.BigEndian.PutUint64(key[1:9], blockNum)
 		
-		// Check for namespace + 32-byte hash format
-		if len(key) == 64 && bytes.Equal(key[:32], namespace) {
-			hash := key[32:]
+		// Try to get the hash for this block number
+		if val, err := rawDB.Get(key); err == nil && len(val) == 32 {
+			var hash common.Hash
+			copy(hash[:], val)
+			blocksByNumber[blockNum] = hash
+			canonicalCount++
 			
-			// Check if value is RLP header
-			if len(value) > 100 && (value[0] == 0xf8 || value[0] == 0xf9) {
-				// Decode block number from first 3 bytes of hash
-				blockNum := uint64(hash[0])<<16 | uint64(hash[1])<<8 | uint64(hash[2])
-				
-				var h common.Hash
-				copy(h[:], hash)
-				blocksByNumber[blockNum] = h
-				headersByHash[h] = value
-				
-				if len(blocksByNumber) <= 10 || len(blocksByNumber)%100000 == 0 {
-					fmt.Printf("  Found block %d at hash %x\n", blockNum, hash[:8])
-				}
+			if canonicalCount <= 10 || canonicalCount%100000 == 0 {
+				fmt.Printf("  Found canonical block %d -> hash %x\n", blockNum, hash[:8])
+			}
+			
+			// Now get the header for this hash
+			// With wrapped database, just use the hash directly
+			headerKey := make([]byte, 32)
+			copy(headerKey, hash[:])
+			
+			if headerVal, err := rawDB.Get(headerKey); err == nil {
+				headersByHash[hash] = headerVal
 			}
 		}
+		
+		// Stop early if we haven't found blocks in a while
+		if blockNum > 100 && canonicalCount == 0 {
+			break
+		}
 	}
-	iter.Release()
+	
+	fmt.Printf("Found %d canonical blocks in subnet-EVM database\n", canonicalCount)
+	
+	// Close the raw database if we opened it
+	if rawDB != db {
+		rawDB.Close()
+	}
 	
 	fmt.Printf("Found %d blocks in subnet-EVM database\n", len(blocksByNumber))
 	

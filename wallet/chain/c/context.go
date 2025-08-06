@@ -6,11 +6,10 @@ package c
 import (
 	"context"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/xvm"
 )
 

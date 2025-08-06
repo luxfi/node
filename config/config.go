@@ -1474,7 +1474,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	
 	// Initialize logger if not already set
 	if nodeConfig.Log == nil {
-		nodeConfig.Log = log.NewLogger(log.DiscardHandler())
+		nodeConfig.Log = log.NewNoOpLogger()
 	}
 	
 	return nodeConfig, nil

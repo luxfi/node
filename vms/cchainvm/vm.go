@@ -312,6 +312,11 @@ func (vm *VM) Initialize(
 		if err := vm.ethDB.Put([]byte("genesis"), []byte{1}); err == nil {
 			fmt.Printf("Marked database as initialized\n")
 		}
+		
+		// Load all blocks from SubnetEVM database
+		if err := LoadSubnetEVMDatabase(vm.ethDB); err != nil {
+			fmt.Printf("Warning: Failed to load SubnetEVM database: %v\n", err)
+		}
 	}
 
 	// Create minimal Ethereum backend

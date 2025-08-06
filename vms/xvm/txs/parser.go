@@ -40,10 +40,12 @@ type parser struct {
 }
 
 func NewParser(fxs []fxs.Fx) (Parser, error) {
+	// Create a basic logger for parsing
+	logger := log.NewNoOpLogger()
 	return NewCustomParser(
 		make(map[reflect.Type]int),
 		&mockable.Clock{},
-		nil, // No logger needed
+		logger,
 		fxs,
 	)
 }
@@ -90,6 +92,7 @@ func NewCustomParser(
 			index:       i,
 			typeToIndex: vm.typeToFxIndex,
 		}
+		// Initialize with a proper VM that has a logger
 		if err := fx.Initialize(vm); err != nil {
 			return nil, err
 		}
