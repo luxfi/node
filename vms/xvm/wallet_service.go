@@ -15,7 +15,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
@@ -132,7 +131,7 @@ func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *a
 	w.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "wallet"),
 		zap.String("method", "issueTx"),
-		log.UserString("tx", args.Tx),
+		zap.String("tx", args.Tx),
 	)
 
 	txBytes, err := formatting.Decode(args.Encoding, args.Tx)
@@ -167,7 +166,7 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 	w.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "wallet"),
 		zap.String("method", "sendMultiple"),
-		log.UserString("username", args.Username),
+		"username", args.Username,
 	)
 
 	// Validate the memo field

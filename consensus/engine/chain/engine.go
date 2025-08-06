@@ -180,7 +180,7 @@ func (e *Engine) Gossip(ctx context.Context) error {
 		return nil
 	}
 
-	e.Ctx.Log.Verbo("sampling from validators",
+	e.Ctx.Log.Debug("sampling from validators",
 		zap.Stringer("validators", e.Validators),
 	)
 
@@ -220,7 +220,7 @@ func (e *Engine) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, b
 	blk, err := e.VM.ParseBlock(ctx, blkBytes)
 	if err != nil {
 		if e.Ctx.Log.Enabled(context.Background(), log.LevelDebug) {
-			e.Ctx.Log.Verbo("failed to parse block",
+			e.Ctx.Log.Debug("failed to parse block",
 				zap.Stringer("nodeID", nodeID),
 				zap.Uint32("requestID", requestID),
 				zap.Binary("block", blkBytes),
@@ -334,7 +334,7 @@ func (e *Engine) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uin
 	// If parsing fails, we just drop the request, as we didn't ask for it
 	if err != nil {
 		if e.Ctx.Log.Enabled(context.Background(), log.LevelDebug) {
-			e.Ctx.Log.Verbo("failed to parse block",
+			e.Ctx.Log.Debug("failed to parse block",
 				zap.Stringer("nodeID", nodeID),
 				zap.Uint32("requestID", requestID),
 				zap.Binary("block", blkBytes),
@@ -371,7 +371,7 @@ func (e *Engine) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uin
 func (e *Engine) Chits(ctx context.Context, nodeID ids.NodeID, requestID uint32, preferredID ids.ID, preferredIDAtHeight ids.ID, acceptedID ids.ID, acceptedHeight uint64) error {
 	e.acceptedFrontiers.SetLastAccepted(nodeID, acceptedID, acceptedHeight)
 
-	e.Ctx.Log.Verbo("called Chits for the block",
+	e.Ctx.Log.Debug("called Chits for the block",
 		zap.Stringer("nodeID", nodeID),
 		zap.Uint32("requestID", requestID),
 		zap.Stringer("preferredID", preferredID),
@@ -596,7 +596,7 @@ func (e *Engine) HealthCheck(ctx context.Context) (interface{}, error) {
 	e.Ctx.Lock.Lock()
 	defer e.Ctx.Lock.Unlock()
 
-	e.Ctx.Log.Verbo("running health check",
+	e.Ctx.Log.Debug("running health check",
 		zap.Uint32("requestID", e.requestID),
 		zap.Stringer("polls", e.polls),
 		zap.Reflect("outstandingBlockRequests", e.blkReqs),
@@ -748,7 +748,7 @@ func (e *Engine) buildBlocks(ctx context.Context) error {
 		// was rejected or was accepted along with one of its children. This
 		// should be cleaned up to never produce an invalid warning.
 		if e.canIssueChildOn(blk.ID()) {
-			e.Ctx.Log.Verbo("successfully issued new block from the VM")
+			e.Ctx.Log.Debug("successfully issued new block from the VM")
 		} else {
 			e.Ctx.Log.Warn("block that was just built is not extendable")
 		}
@@ -892,7 +892,7 @@ func (e *Engine) issue(
 	// either the last accepted block or is not decided.
 	var deps []ids.ID
 	if parentID := blk.Parent(); !e.canIssueChildOn(parentID) {
-		e.Ctx.Log.Verbo("block waiting for parent to be issued",
+		e.Ctx.Log.Debug("block waiting for parent to be issued",
 			zap.Stringer("blkID", blkID),
 			zap.Stringer("parentID", parentID),
 		)
@@ -922,7 +922,7 @@ func (e *Engine) sendRequest(
 	e.blkReqs.Put(req, blkID)
 	e.blkReqSourceMetric[req] = issuedMetric
 
-	e.Ctx.Log.Verbo("sending Get request",
+	e.Ctx.Log.Debug("sending Get request",
 		zap.Stringer("nodeID", nodeID),
 		zap.Uint32("requestID", e.requestID),
 		zap.Stringer("blkID", blkID),
@@ -943,7 +943,7 @@ func (e *Engine) sendQuery(
 		return
 	}
 
-	e.Ctx.Log.Verbo("sampling from validators",
+	e.Ctx.Log.Debug("sampling from validators",
 		zap.Stringer("validators", e.Validators),
 	)
 
@@ -1162,7 +1162,7 @@ func (e *Engine) addUnverifiedBlockToConsensus(
 	e.unverifiedIDToAncestor.Remove(blkID)
 	e.unverifiedBlockCache.Evict(blkID)
 	e.chainMetrics.issuerStake.Observe(float64(e.Validators.GetWeight(e.Ctx.SubnetID, nodeID)))
-	e.Ctx.Log.Verbo("adding block to consensus",
+	e.Ctx.Log.Debug("adding block to consensus",
 		zap.Stringer("nodeID", nodeID),
 		zap.Stringer("blkID", blkID),
 		zap.Uint64("height", blkHeight),
@@ -1185,7 +1185,7 @@ func (e *Engine) getProcessingAncestor(initialVote ids.ID) (ids.ID, bool) {
 	bubbledVote := e.unverifiedIDToAncestor.GetAncestor(initialVote)
 	for {
 		if e.Consensus.Processing(bubbledVote) {
-			e.Ctx.Log.Verbo("applying vote",
+			e.Ctx.Log.Debug("applying vote",
 				zap.Stringer("initialVoteID", initialVote),
 				zap.Stringer("bubbledVoteID", bubbledVote),
 			)

@@ -22,7 +22,7 @@ func Test_newMsgBuilder(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		log.NewNoOpLogger(),
+		nil,
 		metrics.NewNoOpMetrics("test"),
 		10*time.Second,
 	)
@@ -391,7 +391,7 @@ func TestAppError(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		log.NewNoOpLogger(),
+		nil,
 		metrics.NewNoOpMetrics("test"),
 		time.Second,
 	)

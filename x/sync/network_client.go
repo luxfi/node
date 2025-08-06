@@ -295,7 +295,7 @@ func (c *networkClient) sendRequestLocked(
 	ctxWithoutCancel := context.WithoutCancel(ctx)
 	if err := c.appSender.SendAppRequest(ctxWithoutCancel, nodeIDs, requestID, request); err != nil {
 		c.lock.Unlock()
-		c.log.Fatal("failed to send app request",
+		c.log.Error("failed to send app request",
 			zap.Stringer("nodeID", nodeID),
 			zap.Uint32("requestID", requestID),
 			zap.Int("requestLen", len(request)),

@@ -32,7 +32,7 @@ func NewConsensusContext(
 		ChainID:    blockchainID,
 		XChainID:   blockchainID,
 		LUXAssetID: luxAssetID,
-		Log:        log.NewNoOpLogger(),
+		Log:        nil,
 		BCLookup:   lookup,
 	}, lookup.Alias(blockchainID, Alias)
 }

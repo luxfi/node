@@ -130,7 +130,7 @@ func Test_Server_GetRangeProof(t *testing.T) {
 					return nil
 				},
 			).AnyTimes()
-			handler := NewNetworkServer(sender, smallTrieDB, log.NewNoOpLogger())
+			handler := NewNetworkServer(sender, smallTrieDB, nil)
 			err := handler.HandleRangeProofRequest(context.Background(), test.nodeID, 0, test.request)
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
@@ -327,7 +327,7 @@ func Test_Server_GetChangeProof(t *testing.T) {
 				},
 			).AnyTimes()
 
-			handler := NewNetworkServer(sender, trieDB, log.NewNoOpLogger())
+			handler := NewNetworkServer(sender, trieDB, nil)
 			err := handler.HandleChangeProofRequest(context.Background(), test.nodeID, 0, test.request)
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
@@ -412,7 +412,7 @@ func TestAppRequestErrAppSendFailed(t *testing.T) {
 					gomock.Any(),
 				).Return(&merkledb.ChangeProof{}, nil).Times(1)
 
-				return NewNetworkServer(sender, db, log.NewNoOpLogger())
+				return NewNetworkServer(sender, db, nil)
 			},
 			expectedErr: errAppSendFailed,
 		},
@@ -449,7 +449,7 @@ func TestAppRequestErrAppSendFailed(t *testing.T) {
 					gomock.Any(),
 				).Return(&merkledb.RangeProof{}, nil).Times(1)
 
-				return NewNetworkServer(sender, db, log.NewNoOpLogger())
+				return NewNetworkServer(sender, db, nil)
 			},
 			expectedErr: errAppSendFailed,
 		},

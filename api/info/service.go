@@ -276,7 +276,7 @@ func (i *Info) IsBootstrapped(_ *http.Request, args *IsBootstrappedArgs, reply *
 	i.log.Debug("API called",
 		zap.String("service", "info"),
 		zap.String("method", "isBootstrapped"),
-		log.UserString("chain", args.Chain),
+		zap.String("chain", args.Chain),
 	)
 
 	if args.Chain == "" {

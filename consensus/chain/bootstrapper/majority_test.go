@@ -19,7 +19,7 @@ import (
 
 func TestNewMajority(t *testing.T) {
 	majority := NewMajority(
-		log.NewNoOpLogger(), // log
+		nil, // log
 		map[ids.NodeID]uint64{
 			nodeID0: 1,
 			nodeID1: 1,
@@ -32,7 +32,7 @@ func TestNewMajority(t *testing.T) {
 			maxOutstanding: 2,
 			pendingSend:    set.Of(nodeID0, nodeID1),
 		},
-		log: log.NewNoOpLogger(),
+		log: nil,
 		nodeWeights: map[ids.NodeID]uint64{
 			nodeID0: 1,
 			nodeID1: 1,
@@ -57,7 +57,7 @@ func TestMajorityGetPeers(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -70,7 +70,7 @@ func TestMajorityGetPeers(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -86,7 +86,7 @@ func TestMajorityGetPeers(t *testing.T) {
 					maxOutstanding: 2,
 					pendingSend:    set.Of(nodeID0, nodeID1),
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -99,7 +99,7 @@ func TestMajorityGetPeers(t *testing.T) {
 					pendingSend:    set.Set[ids.NodeID]{},
 					outstanding:    set.Of(nodeID0, nodeID1),
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -115,7 +115,7 @@ func TestMajorityGetPeers(t *testing.T) {
 					maxOutstanding: 2,
 					pendingSend:    set.Of(nodeID0),
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 				},
@@ -127,7 +127,7 @@ func TestMajorityGetPeers(t *testing.T) {
 					pendingSend:    set.Set[ids.NodeID]{},
 					outstanding:    set.Of(nodeID0),
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 				},
@@ -164,7 +164,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -179,7 +179,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -196,7 +196,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 2,
 					nodeID1: 3,
@@ -211,7 +211,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Set[ids.NodeID]{},
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 2,
 					nodeID1: 3,
@@ -229,7 +229,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Of(nodeID1),
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: math.MaxUint64,
@@ -245,7 +245,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Set[ids.NodeID]{},
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: math.MaxUint64,
@@ -263,7 +263,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Of(nodeID1),
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: math.MaxUint64,
@@ -277,7 +277,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Set[ids.NodeID]{},
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: math.MaxUint64,
@@ -295,7 +295,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Of(nodeID2),
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -313,7 +313,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Set[ids.NodeID]{},
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -353,7 +353,7 @@ func TestMajorityResult(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Of(nodeID1),
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -370,7 +370,7 @@ func TestMajorityResult(t *testing.T) {
 				requests: requests{
 					maxOutstanding: 1,
 				},
-				log: log.NewNoOpLogger(),
+				log: nil,
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,

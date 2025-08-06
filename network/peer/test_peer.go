@@ -25,7 +25,6 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -83,7 +82,7 @@ func StartTestPeer(
 	metricsInstance := metrics.NewNoOpMetrics("test")
 	
 	mc, err := message.NewCreator(
-		log.NewNoOpLogger(),
+		nil,
 		metricsInstance,
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -117,7 +116,7 @@ func StartTestPeer(
 		&Config{
 			Metrics:              peerMetrics,
 			MessageCreator:       mc,
-			Log:                  log.NewNoOpLogger(),
+			Log:                  nil,
 			InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
 			Network:              TestNetwork,
 			Router:               router,
@@ -145,7 +144,7 @@ func StartTestPeer(
 		peerID,
 		NewBlockingMessageQueue(
 			SendFailedFunc(func(message.OutboundMessage) {}), // No-op callback
-			log.NewNoOpLogger(),
+			nil,
 			maxMessageToSend,
 		),
 	)

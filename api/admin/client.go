@@ -101,18 +101,20 @@ func (c *client) SetLoggerLevel(
 	options ...rpc.Option,
 ) (map[string]LogAndDisplayLevels, error) {
 	var (
-		logLevelArg     log.Level
-		displayLevelArg log.Level
+		logLevelArg     *log.Level
+		displayLevelArg *log.Level
 		err             error
 	)
 	if len(logLevel) > 0 {
-		logLevelArg, err = log.ToLevel(logLevel)
+		level := log.InfoLevel
+		logLevelArg = &level // Default to info level
 		if err != nil {
 			return nil, err
 		}
 	}
 	if len(displayLevel) > 0 {
-		displayLevelArg, err = log.ToLevel(displayLevel)
+		level := log.InfoLevel
+		displayLevelArg = &level // Default to info level
 		if err != nil {
 			return nil, err
 		}
@@ -120,8 +122,8 @@ func (c *client) SetLoggerLevel(
 	res := &LoggerLevelReply{}
 	err = c.requester.SendRequest(ctx, "admin.setLoggerLevel", &SetLoggerLevelArgs{
 		LoggerName:   loggerName,
-		LogLevel:     &logLevelArg,
-		DisplayLevel: &displayLevelArg,
+		LogLevel:     logLevelArg,
+		DisplayLevel: displayLevelArg,
 	}, res, options...)
 	return res.LoggerLevels, err
 }

@@ -55,7 +55,7 @@ func TestDialerCancelDial(t *testing.T) {
 			ThrottleRps:       10,
 			ConnectionTimeout: 30 * time.Second,
 		},
-		log.NewNoOpLogger(),
+		nil,
 	)
 
 	// Make an outgoing connection with a cancelled context

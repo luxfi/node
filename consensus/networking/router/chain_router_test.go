@@ -75,7 +75,7 @@ func TestShutdown(t *testing.T) {
 	chainRouter := ChainRouter{}
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		log.NewNoOpLogger(),
+		nil,
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
@@ -97,7 +97,7 @@ func TestShutdown(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
@@ -231,7 +231,7 @@ func TestShutdownTimesOut(t *testing.T) {
 
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		log.NewNoOpLogger(),
+		nil,
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
@@ -251,7 +251,7 @@ func TestShutdownTimesOut(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
@@ -381,7 +381,7 @@ func TestRouterTimeout(t *testing.T) {
 	chainRouter := ChainRouter{}
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		log.NewNoOpLogger(),
+		nil,
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
@@ -421,7 +421,7 @@ func TestRouterTimeout(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
@@ -714,7 +714,7 @@ func TestRouterHonorsRequestedEngine(t *testing.T) {
 	chainRouter := ChainRouter{}
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		log.NewNoOpLogger(),
+		nil,
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
@@ -923,7 +923,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	chainRouter := ChainRouter{}
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		log.NewNoOpLogger(),
+		nil,
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
@@ -954,7 +954,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
@@ -1086,7 +1086,7 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 	chainRouter := ChainRouter{}
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		log.NewNoOpLogger(),
+		nil,
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
@@ -1121,7 +1121,7 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
@@ -1348,7 +1348,7 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 	chainRouter := &ChainRouter{}
 	require.NoError(t, chainRouter.Initialize(
 		ids.EmptyNodeID,
-		log.NewNoOpLogger(),
+		nil,
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
@@ -1374,7 +1374,7 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 	require.NoError(t, err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
@@ -1449,7 +1449,7 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 // Tests that HandleInbound correctly handles BFT Messages
 func TestHandleBFTMessage(t *testing.T) {
 	chainRouter := ChainRouter{}
-	log := log.NewNoOpLogger()
+	log := nil
 	require.NoError(t,
 		chainRouter.Initialize(
 			ids.EmptyNodeID,

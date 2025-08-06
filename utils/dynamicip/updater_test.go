@@ -65,7 +65,7 @@ func TestNewUpdater(t *testing.T) {
 	require.Equal(updateFrequency, updater.updateFreq)
 
 	// Start updating the IP address
-	go updater.Dispatch(log.NewNoOpLogger())
+	go updater.Dispatch(nil)
 
 	// Assert that the IP is updated within 5s.
 	require.Eventually(

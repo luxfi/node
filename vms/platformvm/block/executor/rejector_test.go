@@ -128,7 +128,7 @@ func TestRejectBlock(t *testing.T) {
 			rejector := &rejector{
 				backend: &backend{
 					ctx: &consensus.Context{
-						Log: log.NewNoOpLogger(),
+						Log: nil,
 					},
 					blkIDToState: blkIDToState,
 					Mempool:      mempool,

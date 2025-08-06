@@ -110,7 +110,7 @@ func (i *indexer) Accept(txID ids.ID, inputUTXOs []*lux.UTXO, outputUTXOs []*lux
 	for _, utxo := range utxos {
 		out, ok := utxo.Out.(lux.Addressable)
 		if !ok {
-			i.log.Verbo("skipping UTXO for indexing",
+			i.log.Debug("skipping UTXO for indexing",
 				zap.Stringer("utxoID", utxo.InputID()),
 			)
 			continue
@@ -149,7 +149,7 @@ func (i *indexer) Accept(txID ids.ID, inputUTXOs []*lux.UTXO, outputUTXOs []*lux
 			}
 
 			// write the [txID] at the index
-			i.log.Verbo("writing indexed tx to DB",
+			i.log.Debug("writing indexed tx to DB",
 				zap.String("address", address),
 				zap.Stringer("assetID", assetID),
 				zap.Uint64("index", idx),

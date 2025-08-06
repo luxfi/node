@@ -93,7 +93,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextes
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,

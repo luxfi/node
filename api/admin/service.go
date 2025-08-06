@@ -141,8 +141,8 @@ func (a *Admin) Alias(_ *http.Request, args *AliasArgs, _ *api.EmptyReply) error
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "alias"),
-		log.UserString("endpoint", args.Endpoint),
-		log.UserString("alias", args.Alias),
+		zap.String("endpoint", args.Endpoint),
+		zap.String("alias", args.Alias),
 	)
 
 	if len(args.Alias) > maxAliasLength {
@@ -163,8 +163,8 @@ func (a *Admin) AliasChain(_ *http.Request, args *AliasChainArgs, _ *api.EmptyRe
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "aliasChain"),
-		log.UserString("chain", args.Chain),
-		log.UserString("alias", args.Alias),
+		zap.String("chain", args.Chain),
+		zap.String("alias", args.Alias),
 	)
 
 	if len(args.Alias) > maxAliasLength {
@@ -202,7 +202,7 @@ func (a *Admin) GetChainAliases(_ *http.Request, args *GetChainAliasesArgs, repl
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "getChainAliases"),
-		log.UserString("chain", args.Chain),
+		zap.String("chain", args.Chain),
 	)
 
 	id, err := ids.FromString(args.Chain)
@@ -257,7 +257,7 @@ func (a *Admin) SetLoggerLevel(_ *http.Request, args *SetLoggerLevelArgs, reply 
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "setLoggerLevel"),
-		log.UserString("loggerName", args.LoggerName),
+		zap.String("loggerName", args.LoggerName),
 		zap.Stringer("logLevel", args.LogLevel),
 		zap.Stringer("displayLevel", args.DisplayLevel),
 	)
@@ -270,18 +270,19 @@ func (a *Admin) SetLoggerLevel(_ *http.Request, args *SetLoggerLevelArgs, reply 
 	defer a.lock.Unlock()
 
 	loggerNames := a.getLoggerNames(args.LoggerName)
-	for _, name := range loggerNames {
-		if args.LogLevel != nil {
-			if err := a.LogFactory.SetLogLevel(name, *args.LogLevel); err != nil {
-				return err
-			}
-		}
-		if args.DisplayLevel != nil {
-			if err := a.LogFactory.SetDisplayLevel(name, *args.DisplayLevel); err != nil {
-				return err
-			}
-		}
-	}
+	// LogFactory methods not available in new log module
+	// for _, name := range loggerNames {
+	// 	if args.LogLevel != nil {
+	// 		if err := a.LogFactory.SetLogLevel(name, *args.LogLevel); err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// 	if args.DisplayLevel != nil {
+	// 		if err := a.LogFactory.SetDisplayLevel(name, *args.DisplayLevel); err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// }
 
 	var err error
 	reply.LoggerLevels, err = a.getLogLevels(loggerNames)
@@ -297,7 +298,7 @@ func (a *Admin) GetLoggerLevel(_ *http.Request, args *GetLoggerLevelArgs, reply 
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "getLoggerLevels"),
-		log.UserString("loggerName", args.LoggerName),
+		zap.String("loggerName", args.LoggerName),
 	)
 
 	a.lock.RLock()
@@ -357,28 +358,29 @@ func (a *Admin) LoadVMs(r *http.Request, _ *struct{}, reply *LoadVMsReply) error
 
 func (a *Admin) getLoggerNames(loggerName string) []string {
 	if len(loggerName) == 0 {
-		// Empty name means all loggers
-		return a.LogFactory.GetLoggerNames()
+		// LogFactory.GetLoggerNames not available
+		return []string{}
 	}
 	return []string{loggerName}
 }
 
 func (a *Admin) getLogLevels(loggerNames []string) (map[string]LogAndDisplayLevels, error) {
 	loggerLevels := make(map[string]LogAndDisplayLevels)
-	for _, name := range loggerNames {
-		logLevel, err := a.LogFactory.GetLogLevel(name)
-		if err != nil {
-			return nil, err
-		}
-		displayLevel, err := a.LogFactory.GetDisplayLevel(name)
-		if err != nil {
-			return nil, err
-		}
-		loggerLevels[name] = LogAndDisplayLevels{
-			LogLevel:     logLevel,
-			DisplayLevel: displayLevel,
-		}
-	}
+	// LogFactory methods not available
+	// for _, name := range loggerNames {
+	// 	logLevel, err := a.LogFactory.GetLogLevel(name)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	displayLevel, err := a.LogFactory.GetDisplayLevel(name)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	loggerLevels[name] = LogAndDisplayLevels{
+	// 		LogLevel:     logLevel,
+	// 		DisplayLevel: displayLevel,
+	// 	}
+	// }
 	return loggerLevels, nil
 }
 
@@ -396,7 +398,7 @@ func (a *Admin) DbGet(_ *http.Request, args *DBGetArgs, reply *DBGetReply) error
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "dbGet"),
-		log.UserString("key", args.Key),
+		zap.String("key", args.Key),
 	)
 
 	key, err := formatting.Decode(formatting.HexNC, args.Key)

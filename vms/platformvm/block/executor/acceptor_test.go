@@ -54,7 +54,7 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 	acceptor := &acceptor{
 		backend: &backend{
 			ctx: &consensus.Context{
-				Log: log.NewNoOpLogger(),
+				Log: nil,
 			},
 			blkIDToState: map[ids.ID]*blockState{
 				blkID: {},
@@ -92,7 +92,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
 			ctx: &consensus.Context{
-				Log:          log.NewNoOpLogger(),
+				Log:          nil,
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -172,7 +172,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
 			ctx: &consensus.Context{
-				Log:          log.NewNoOpLogger(),
+				Log:          nil,
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -261,7 +261,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
 			ctx: &consensus.Context{
-				Log:          log.NewNoOpLogger(),
+				Log:          nil,
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -371,7 +371,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
 			ctx: &consensus.Context{
-				Log:          log.NewNoOpLogger(),
+				Log:          nil,
 				SharedMemory: sharedMemory,
 			},
 		},

@@ -18,7 +18,7 @@ import (
 func TestPeerTracker(t *testing.T) {
 	require := require.New(t)
 	p, err := NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,

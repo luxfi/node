@@ -192,7 +192,7 @@ func (ss *stateSyncer) StateSummaryFrontier(ctx context.Context, nodeID ids.Node
 		}
 	} else {
 		if ss.Ctx.Log.Enabled(context.Background(), log.LevelDebug) {
-			ss.Ctx.Log.Verbo("failed to parse summary",
+			ss.Ctx.Log.Debug("failed to parse summary",
 				zap.Binary("summary", summaryBytes),
 				zap.Error(err),
 			)
@@ -319,7 +319,7 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 			newWeight = math.MaxUint64
 		}
 
-		ss.Ctx.Log.Verbo("updating summary weight",
+		ss.Ctx.Log.Debug("updating summary weight",
 			zap.Stringer("nodeID", nodeID),
 			zap.Stringer("summaryID", summaryID),
 			zap.Uint64("height", ws.summary.Height()),

@@ -107,7 +107,7 @@ func (vm *VM) Initialize(
 	_ []*core.Fx,
 	appSender core.AppSender,
 ) error {
-	chainCtx.Log.Verbo("initializing platform chain")
+	chainCtx.Log.Debug("initializing platform chain")
 
 	execConfig, err := config.GetExecutionConfig(configBytes)
 	if err != nil {

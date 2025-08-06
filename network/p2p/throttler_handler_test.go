@@ -45,7 +45,7 @@ func TestThrottlerHandlerAppGossip(t *testing.T) {
 					},
 				},
 				tt.Throttler,
-				log.NewNoOpLogger(),
+				nil,
 			)
 
 			handler.AppGossip(context.Background(), ids.GenerateTestNodeID(), []byte("foobar"))
@@ -77,7 +77,7 @@ func TestThrottlerHandlerAppRequest(t *testing.T) {
 			handler := NewThrottlerHandler(
 				NoOpHandler{},
 				tt.Throttler,
-				log.NewNoOpLogger(),
+				nil,
 			)
 			_, err := handler.AppRequest(context.Background(), ids.GenerateTestNodeID(), time.Time{}, []byte("foobar"))
 			require.ErrorIs(err, tt.expectedErr)

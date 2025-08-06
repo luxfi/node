@@ -179,7 +179,7 @@ func TestIndexingNewInitWithIndexingEnabled(t *testing.T) {
 	db := memdb.New()
 
 	// start with indexing enabled
-	_, err := index.NewIndexer(db, log.NewNoOpLogger(), "", metrics.NewNoOpMetrics("test").Registry(), true)
+	_, err := index.NewIndexer(db, nil, "", metrics.NewNoOpMetrics("test").Registry(), true)
 	require.NoError(err)
 
 	// now disable indexing with allow-incomplete set to false
@@ -201,11 +201,11 @@ func TestIndexingNewInitWithIndexingDisabled(t *testing.T) {
 	require.NoError(err)
 
 	// It's not OK to have an incomplete index when allowIncompleteIndices is false
-	_, err = index.NewIndexer(db, log.NewNoOpLogger(), "", metrics.NewNoOpMetrics("test").Registry(), false)
+	_, err = index.NewIndexer(db, nil, "", metrics.NewNoOpMetrics("test").Registry(), false)
 	require.ErrorIs(err, index.ErrIndexingRequiredFromGenesis)
 
 	// It's OK to have an incomplete index when allowIncompleteIndices is true
-	_, err = index.NewIndexer(db, log.NewNoOpLogger(), "", metrics.NewNoOpMetrics("test").Registry(), true)
+	_, err = index.NewIndexer(db, nil, "", metrics.NewNoOpMetrics("test").Registry(), true)
 	require.NoError(err)
 
 	// It's OK to have an incomplete index when indexing currently disabled
@@ -227,7 +227,7 @@ func TestIndexingAllowIncomplete(t *testing.T) {
 	require.NoError(err)
 
 	// we initialize with indexing enabled now and allow incomplete indexing as false
-	_, err = index.NewIndexer(db, log.NewNoOpLogger(), "", metrics.NewNoOpMetrics("test").Registry(), false)
+	_, err = index.NewIndexer(db, nil, "", metrics.NewNoOpMetrics("test").Registry(), false)
 	// we should get error because:
 	// - indexing was disabled previously
 	// - node now is asked to enable indexing with allow incomplete set to false

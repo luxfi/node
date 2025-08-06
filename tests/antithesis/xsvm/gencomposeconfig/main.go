@@ -20,22 +20,22 @@ const baseImageName = "antithesis-xsvm"
 func main() {
 	luxNodePath := os.Getenv("LUXD_PATH")
 	if len(luxNodePath) == 0 {
-		log.Fatal("LUXD_PATH environment variable not set")
+		log.Error("LUXD_PATH environment variable not set")
 	}
 
 	pluginDir := os.Getenv("LUXD_PLUGIN_DIR")
 	if len(pluginDir) == 0 {
-		log.Fatal("LUXD_PLUGIN_DIR environment variable not set")
+		log.Error("LUXD_PLUGIN_DIR environment variable not set")
 	}
 
 	targetPath := os.Getenv("TARGET_PATH")
 	if len(targetPath) == 0 {
-		log.Fatal("TARGET_PATH environment variable not set")
+		log.Error("TARGET_PATH environment variable not set")
 	}
 
 	imageTag := os.Getenv("IMAGE_TAG")
 	if len(imageTag) == 0 {
-		log.Fatal("IMAGE_TAG environment variable not set")
+		log.Error("IMAGE_TAG environment variable not set")
 	}
 
 	nodeImageName := fmt.Sprintf("%s-node:%s", baseImageName, imageTag)

@@ -19,7 +19,7 @@ func TestLog(t *testing.T) {
 	exitFunc := func() {
 		*recovered = true
 	}
-	log.RecoverAndExit(panicFunc, exitFunc)
+	log.Error(panicFunc, exitFunc)
 
 	require.True(t, *recovered)
 }

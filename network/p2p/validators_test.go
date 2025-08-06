@@ -197,7 +197,7 @@ func TestValidatorsSample(t *testing.T) {
 			}
 			gomock.InOrder(calls...)
 
-			network, err := NewNetwork(log.NewNoOpLogger(), &core.FakeSender{}, metrics.NewNoOpMetrics("test").Registry(), "")
+			network, err := NewNetwork(nil, &core.FakeSender{}, metrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()
@@ -317,7 +317,7 @@ func TestValidatorsTop(t *testing.T) {
 			mockValidators.EXPECT().GetCurrentHeight(gomock.Any()).Return(uint64(1), nil)
 			mockValidators.EXPECT().GetValidatorSet(gomock.Any(), uint64(1), subnetID).Return(validatorSet, nil)
 
-			network, err := NewNetwork(log.NewNoOpLogger(), &core.FakeSender{}, metrics.NewNoOpMetrics("test").Registry(), "")
+			network, err := NewNetwork(nil, &core.FakeSender{}, metrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()

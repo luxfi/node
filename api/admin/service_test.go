@@ -35,7 +35,7 @@ func initLoadVMsTest(t *testing.T) *loadVMsTest {
 
 	return &loadVMsTest{
 		admin: &Admin{Config: Config{
-			Log:        log.NewNoOpLogger(),
+			Log:        nil,
 			VMRegistry: mockVMRegistry,
 			VMManager:  mockVMManager,
 		}},
@@ -117,7 +117,7 @@ func TestLoadVMsGetAliasesFails(t *testing.T) {
 
 func TestServiceDBGet(t *testing.T) {
 	a := &Admin{Config: Config{
-		Log: log.NewNoOpLogger(),
+		Log: nil,
 		DB:  memdb.New(),
 	}}
 

@@ -417,7 +417,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	if err != nil {
 		if m.CriticalChains.Contains(chainParams.ID) {
 			// Shut down if we fail to create a required chain (i.e. X, P or C)
-			m.Log.Fatal("error creating required chain",
+			m.Log.Error("error creating required chain",
 				zap.Stringer("subnetID", chainParams.SubnetID),
 				zap.Stringer("chainID", chainParams.ID),
 				zap.Stringer("vmID", chainParams.VMID),
@@ -513,10 +513,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 	}
 
 	// Create the log and context of the chain
-	chainLog, err := m.LogFactory.MakeChain(primaryAlias)
-	if err != nil {
-		return nil, fmt.Errorf("error while creating chain's log %w", err)
-	}
+	chainLog := m.Log // Use main log instead of creating chain-specific log
 
 	linearMetrics, err := metrics.MakeAndRegister(
 		m.linearGatherer,

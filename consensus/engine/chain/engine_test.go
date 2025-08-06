@@ -3224,7 +3224,7 @@ func TestEngineAbortQueryWhenInPartition(t *testing.T) {
 	conf := DefaultConfig(t)
 	// For now, just use NoLog since the logging package needs fixing
 	// TODO: Fix log buffer integration
-	conf.Ctx.Log = log.NewNoOpLogger()
+	conf.Ctx.Log = nil
 	conf.Params = sampling.DefaultParameters
 	conf.ConnectedValidators = &mockConnVDR{percent: 0.7, Peers: conf.ConnectedValidators}
 

@@ -65,7 +65,7 @@ func (*testAggressiveValidatorManager) Contains(ids.ID, ids.NodeID) bool {
 }
 
 func ExampleNewTestNetwork() {
-	log := log.NewNoOpLogger()
+	log := nil
 
 	// Needs to be periodically updated by the caller to have the latest
 	// validator set
@@ -90,7 +90,7 @@ func ExampleNewTestNetwork() {
 		handler,
 	)
 	if err != nil {
-		log.Fatal(
+		log.Error(
 			"failed to create test network",
 			zap.Error(err),
 		)
@@ -106,7 +106,7 @@ func ExampleNewTestNetwork() {
 
 	// Typically network.StartClose() should be called based on receiving a
 	// SIGINT or SIGTERM. For the example, we close the network after 15s.
-	go log.RecoverAndPanic(func() {
+	go log.Error(func() {
 		time.Sleep(15 * time.Second)
 		network.StartClose()
 	})

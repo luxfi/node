@@ -112,31 +112,31 @@ func getConsensusConfig(v *viper.Viper) sampling.Parameters {
 	return p
 }
 
-func getLoggingConfig(v *viper.Viper) (log.Config, error) {
-	loggingConfig := log.Config{}
-	loggingConfig.Directory = GetExpandedArg(v, LogsDirKey)
-	var err error
-	loggingConfig.LogLevel, err = log.ToLevel(v.GetString(LogLevelKey))
-	if err != nil {
-		return loggingConfig, err
-	}
-	logDisplayLevel := v.GetString(LogLevelKey)
-	if v.IsSet(LogDisplayLevelKey) {
-		logDisplayLevel = v.GetString(LogDisplayLevelKey)
-	}
-	loggingConfig.DisplayLevel, err = log.ToLevel(logDisplayLevel)
-	if err != nil {
-		return loggingConfig, err
-	}
-	loggingConfig.LogFormat, err = log.ToFormat(v.GetString(LogFormatKey), os.Stdout.Fd())
-	loggingConfig.DisableWriterDisplaying = v.GetBool(LogDisableDisplayPluginLogsKey)
-	loggingConfig.MaxSize = int(v.GetUint(LogRotaterMaxSizeKey))
-	loggingConfig.MaxFiles = int(v.GetUint(LogRotaterMaxFilesKey))
-	loggingConfig.MaxAge = int(v.GetUint(LogRotaterMaxAgeKey))
-	loggingConfig.Compress = v.GetBool(LogRotaterCompressEnabledKey)
-
-	return loggingConfig, err
-}
+// func getLoggingConfig(v *viper.Viper) (log.Config, error) {
+// 	loggingConfig := log.Config{}
+// 	loggingConfig.Directory = GetExpandedArg(v, LogsDirKey)
+// 	var err error
+// 	loggingConfig.LogLevel, err = log.ToLevel(v.GetString(LogLevelKey))
+// 	if err != nil {
+// 		return loggingConfig, err
+// 	}
+// 	logDisplayLevel := v.GetString(LogLevelKey)
+// 	if v.IsSet(LogDisplayLevelKey) {
+// 		logDisplayLevel = v.GetString(LogDisplayLevelKey)
+// 	}
+// 	loggingConfig.DisplayLevel, err = log.ToLevel(logDisplayLevel)
+// 	if err != nil {
+// 		return loggingConfig, err
+// 	}
+// 	loggingConfig.LogFormat, err = log.ToFormat(v.GetString(LogFormatKey), os.Stdout.Fd())
+// 	loggingConfig.DisableWriterDisplaying = v.GetBool(LogDisableDisplayPluginLogsKey)
+// 	loggingConfig.MaxSize = int(v.GetUint(LogRotaterMaxSizeKey))
+// 	loggingConfig.MaxFiles = int(v.GetUint(LogRotaterMaxFilesKey))
+// 	loggingConfig.MaxAge = int(v.GetUint(LogRotaterMaxAgeKey))
+// 	loggingConfig.Compress = v.GetBool(LogRotaterCompressEnabledKey)
+// 
+// 	return loggingConfig, err
+// }
 
 func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 	var (
@@ -1275,11 +1275,11 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.UseCurrentHeight = v.GetBool(ProposerVMUseCurrentHeightKey)
 
 	// Logging
-	nodeConfig.LoggingConfig, err = getLoggingConfig(v)
-	if err != nil {
-		return node.Config{}, err
-	}
-
+// 	nodeConfig.LoggingConfig, err = getLoggingConfig(v)
+// 	if err != nil {
+// 		return node.Config{}, err
+// 	}
+// 
 	// Network ID
 	nodeConfig.NetworkID, err = constants.NetworkID(v.GetString(NetworkNameKey))
 	if err != nil {
@@ -1471,6 +1471,12 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.ProcessContextFilePath = GetExpandedArg(v, ProcessContextFileKey)
 
 	nodeConfig.ProvidedFlags = providedFlags(v)
+	
+	// Initialize logger if not already set
+	if nodeConfig.Log == nil {
+		nodeConfig.Log = log.NewLogger(log.DiscardHandler())
+	}
+	
 	return nodeConfig, nil
 }
 

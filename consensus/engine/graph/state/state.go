@@ -34,7 +34,7 @@ func (s *state) Vertex(id ids.ID) vertex.StatelessVertex {
 
 	bytes, err := s.db.Get(id[:])
 	if err != nil {
-		s.log.Verbo("failed to get vertex from database",
+		s.log.Debug("failed to get vertex from database",
 			zap.Binary("key", id[:]),
 			zap.Error(err),
 		)

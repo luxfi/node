@@ -165,9 +165,14 @@ func (vm *VM) Initialize(
 	vm.Scheduler = scheduler
 	vm.toScheduler = vmToEngine
 
-	go chainCtx.Log.RecoverAndPanic(func() {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				chainCtx.Log.Error("panic in scheduler dispatch", "panic", r)
+			}
+		}()
 		scheduler.Dispatch(time.Now())
-	})
+	}()
 
 	vm.verifiedBlocks = make(map[ids.ID]PostForkBlock)
 	detachedCtx := context.WithoutCancel(ctx)

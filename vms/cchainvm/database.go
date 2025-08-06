@@ -4,6 +4,7 @@
 package cchainvm
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -11,6 +12,17 @@ import (
 	"github.com/luxfi/geth/ethdb"
 	"github.com/luxfi/database"
 )
+
+// Subnet-EVM namespace for LUX mainnet
+var subnetNamespace = []byte{
+	0x33, 0x7f, 0xb7, 0x3f, 0x9b, 0xcd, 0xac, 0x8c,
+	0x31, 0xa2, 0xd5, 0xf7, 0xb8, 0x77, 0xab, 0x1e,
+	0x8a, 0x2b, 0x7f, 0x2a, 0x1e, 0x9b, 0xf0, 0x2a,
+	0x0a, 0x0e, 0x6c, 0x6f, 0xd1, 0x64, 0xf1, 0xd1,
+}
+
+// Flag to enable subnet namespace handling (set when using --genesis-db)
+var UseSubnetNamespace = true
 
 // canonicalKey returns the standard C-chain canonical key format:
 //   "H" + blockNumber (8 bytes)
@@ -38,11 +50,67 @@ func (d *DatabaseWrapper) Has(key []byte) (bool, error) {
 
 // Get retrieves the given key if it's present in the key-value data store
 func (d *DatabaseWrapper) Get(key []byte) ([]byte, error) {
-	// Debug specific keys (9-byte canonical format)
-	if len(key) > 0 && key[0] == 'h' && len(key) == 9 {
-		val, err := d.db.Get(key)
-		fmt.Printf("Debug: Reading canonical hash key: %x value: %x err: %v\n", key, val, err)
-		return val, err
+	// Handle subnet-EVM namespaced keys when flag is set
+	if UseSubnetNamespace {
+		// For canonical hash lookups (H prefix, 9 bytes)
+		if len(key) == 9 && key[0] == 'H' {
+			// First try standard format
+			val, err := d.db.Get(key)
+			if err == nil {
+				return val, nil
+			}
+			
+			// If not found, scan for block by number encoded in hash
+			blockNum := binary.BigEndian.Uint64(key[1:])
+			iter := d.db.NewIteratorWithPrefix(nil)
+			defer iter.Release()
+			
+			for iter.Next() {
+				k := iter.Key()
+				v := iter.Value()
+				
+				if len(k) == 64 && bytes.Equal(k[:32], subnetNamespace) {
+					hash := k[32:]
+					if len(v) > 100 && (v[0] == 0xf8 || v[0] == 0xf9) {
+						// Decode block number from first 3 bytes of hash
+						hashBlockNum := uint64(hash[0])<<16 | uint64(hash[1])<<8 | uint64(hash[2])
+						if hashBlockNum == blockNum {
+							// Return the hash for this block number
+							return hash, nil
+						}
+					}
+				}
+			}
+			return nil, database.ErrNotFound
+		}
+		
+		// For header/body lookups (h/b prefix + 32-byte hash)
+		if len(key) == 33 && (key[0] == 'h' || key[0] == 'b') {
+			// Try standard format first
+			val, err := d.db.Get(key)
+			if err == nil {
+				return val, nil
+			}
+			
+			// Try with namespace for header
+			if key[0] == 'h' {
+				nsKey := make([]byte, 64)
+				copy(nsKey[:32], subnetNamespace)
+				copy(nsKey[32:], key[1:])
+				val, err := d.db.Get(nsKey)
+				if err == nil {
+					return val, nil
+				}
+			}
+		}
+		
+		// For direct hash lookups (32 bytes)
+		if len(key) == 32 {
+			nsKey := make([]byte, 64)
+			copy(nsKey[:32], subnetNamespace)
+			copy(nsKey[32:], key)
+			return d.db.Get(nsKey)
+		}
 	}
 	return d.db.Get(key)
 }
@@ -53,16 +121,18 @@ func (d *DatabaseWrapper) Put(key []byte, value []byte) error {
 	if len(key) > 0 {
 		prefix := "unknown"
 		switch key[0] {
-		case 'h':
+		case 'H':
 			if len(key) == 9 {
 				prefix = "canonical-hash"
-			} else if len(key) == 41 {
+			} else {
+				prefix = "head-header"
+			}
+		case 'h':
+			if len(key) == 41 {
 				prefix = "header"
 			}
 		case 'b':
 			prefix = "body"
-		case 'H':
-			prefix = "head-header"
 		case 'B':
 			prefix = "head-block"
 		case 0x26:

@@ -19,7 +19,7 @@ func Test_newOutboundBuilder(t *testing.T) {
 	t.Parallel()
 
 	mb, err := newMsgBuilder(
-		log.NewNoOpLogger(),
+		nil,
 		metrics.NewNoOpMetrics("test"),
 		10*time.Second,
 	)

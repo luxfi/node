@@ -179,7 +179,7 @@ func (s *server) RegisterChain(chainName string, ctx *consensus.Context, vm core
 		return
 	}
 
-	s.log.Verbo("about to add API endpoints",
+	s.log.Debug("about to add API endpoints",
 		zap.Stringer("chainID", ctx.ChainID),
 	)
 	// all subroutes to a chain begin with "bc/<the chain's ID>"

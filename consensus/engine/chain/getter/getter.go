@@ -193,7 +193,7 @@ func (gh *getter) GetAncestors(ctx context.Context, nodeID ids.NodeID, requestID
 		gh.maxTimeGetAncestors,
 	)
 	if err != nil {
-		gh.log.Verbo("dropping GetAncestors message",
+		gh.log.Debug("dropping GetAncestors message",
 			zap.String("reason", "couldn't get ancestors"),
 			zap.Stringer("nodeID", nodeID),
 			zap.Uint32("requestID", requestID),

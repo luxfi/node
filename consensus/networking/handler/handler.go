@@ -278,19 +278,34 @@ func (h *handler) Start(ctx context.Context, recoverPanic bool) {
 		h.dispatchChans(detachedCtx)
 	}
 	if recoverPanic {
-		go h.ctx.Log.RecoverAndExit(dispatchSync, func() {
-			h.ctx.Log.Error("chain was shutdown due to a panic in the sync dispatcher")
-		})
-		go h.ctx.Log.RecoverAndExit(dispatchAsync, func() {
-			h.ctx.Log.Error("chain was shutdown due to a panic in the async dispatcher")
-		})
-		go h.ctx.Log.RecoverAndExit(dispatchChans, func() {
-			h.ctx.Log.Error("chain was shutdown due to a panic in the chan dispatcher")
-		})
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					h.ctx.Log.Error("chain was shutdown due to a panic in the sync dispatcher", "panic", r)
+				}
+			}()
+			dispatchSync()
+		}()
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					h.ctx.Log.Error("chain was shutdown due to a panic in the async dispatcher", "panic", r)
+				}
+			}()
+			dispatchAsync()
+		}()
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					h.ctx.Log.Error("chain was shutdown due to a panic in the chan dispatcher", "panic", r)
+				}
+			}()
+			dispatchChans()
+		}()
 	} else {
-		go h.ctx.Log.RecoverAndPanic(dispatchSync)
-		go h.ctx.Log.RecoverAndPanic(dispatchAsync)
-		go h.ctx.Log.RecoverAndPanic(dispatchChans)
+		go dispatchSync()
+		go dispatchAsync()
+		go dispatchChans()
 	}
 }
 
@@ -336,7 +351,7 @@ func (h *handler) Stop(_ context.Context) {
 }
 
 func (h *handler) StopWithError(ctx context.Context, err error) {
-	h.ctx.Log.Fatal("shutting down chain",
+	h.ctx.Log.Error("shutting down chain",
 		zap.String("reason", "received an unexpected error"),
 		zap.Error(err),
 	)
@@ -448,7 +463,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 		isNormalOp = h.ctx.State.Get().State == consensus.NormalOp
 	)
 	if h.ctx.Log.Enabled(context.Background(), log.LevelDebug) {
-		h.ctx.Log.Verbo("forwarding sync message to consensus",
+		h.ctx.Log.Debug("forwarding sync message to consensus",
 			zap.Stringer("nodeID", nodeID),
 			zap.String("messageOp", op),
 			zap.Stringer("message", body),
@@ -797,7 +812,7 @@ func (h *handler) executeAsyncMsg(ctx context.Context, msg Message) error {
 		startTime = h.clock.Time()
 	)
 	if h.ctx.Log.Enabled(context.Background(), log.LevelDebug) {
-		h.ctx.Log.Verbo("forwarding async message to consensus",
+		h.ctx.Log.Debug("forwarding async message to consensus",
 			zap.Stringer("nodeID", nodeID),
 			zap.String("messageOp", op),
 			zap.Stringer("message", body),
@@ -886,7 +901,7 @@ func (h *handler) handleChanMsg(msg message.InboundMessage) error {
 		isNormalOp = h.ctx.State.Get().State == consensus.NormalOp
 	)
 	if h.ctx.Log.Enabled(context.Background(), log.LevelDebug) {
-		h.ctx.Log.Verbo("forwarding chan message to consensus",
+		h.ctx.Log.Debug("forwarding chan message to consensus",
 			zap.String("messageOp", op),
 			zap.Stringer("message", body),
 		)

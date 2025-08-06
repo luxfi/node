@@ -25,7 +25,7 @@ var strongPassword = "N_+=_jJ;^(<;{4,:*m6CET}'&N;83FYK.wtNpwp-Jt" // #nosec G101
 func TestServiceListNoUsers(t *testing.T) {
 	require := require.New(t)
 
-	ks := New(log.NewNoOpLogger(), memdb.New())
+	ks := New(nil, memdb.New())
 	s := service{ks: ks.(*keystore)}
 
 	reply := ListUsersReply{}
@@ -36,7 +36,7 @@ func TestServiceListNoUsers(t *testing.T) {
 func TestServiceCreateUser(t *testing.T) {
 	require := require.New(t)
 
-	ks := New(log.NewNoOpLogger(), memdb.New())
+	ks := New(nil, memdb.New())
 	s := service{ks: ks.(*keystore)}
 
 	{
@@ -66,7 +66,7 @@ func genStr(n int) string {
 func TestServiceCreateUserArgsCheck(t *testing.T) {
 	require := require.New(t)
 
-	ks := New(log.NewNoOpLogger(), memdb.New())
+	ks := New(nil, memdb.New())
 	s := service{ks: ks.(*keystore)}
 
 	{
@@ -99,7 +99,7 @@ func TestServiceCreateUserArgsCheck(t *testing.T) {
 func TestServiceCreateUserWeakPassword(t *testing.T) {
 	require := require.New(t)
 
-	ks := New(log.NewNoOpLogger(), memdb.New())
+	ks := New(nil, memdb.New())
 	s := service{ks: ks.(*keystore)}
 
 	{
@@ -115,7 +115,7 @@ func TestServiceCreateUserWeakPassword(t *testing.T) {
 func TestServiceCreateDuplicate(t *testing.T) {
 	require := require.New(t)
 
-	ks := New(log.NewNoOpLogger(), memdb.New())
+	ks := New(nil, memdb.New())
 	s := service{ks: ks.(*keystore)}
 
 	{
@@ -137,7 +137,7 @@ func TestServiceCreateDuplicate(t *testing.T) {
 func TestServiceCreateUserNoName(t *testing.T) {
 	require := require.New(t)
 
-	ks := New(log.NewNoOpLogger(), memdb.New())
+	ks := New(nil, memdb.New())
 	s := service{ks: ks.(*keystore)}
 
 	reply := api.EmptyReply{}
@@ -150,7 +150,7 @@ func TestServiceCreateUserNoName(t *testing.T) {
 func TestServiceUseBlockchainDB(t *testing.T) {
 	require := require.New(t)
 
-	ks := New(log.NewNoOpLogger(), memdb.New())
+	ks := New(nil, memdb.New())
 	s := service{ks: ks.(*keystore)}
 
 	{
@@ -180,7 +180,7 @@ func TestServiceExportImport(t *testing.T) {
 
 	encodings := []formatting.Encoding{formatting.Hex}
 	for _, encoding := range encodings {
-		ks := New(log.NewNoOpLogger(), memdb.New())
+		ks := New(nil, memdb.New())
 		s := service{ks: ks.(*keystore)}
 
 		{
@@ -206,7 +206,7 @@ func TestServiceExportImport(t *testing.T) {
 		exportReply := ExportUserReply{}
 		require.NoError(s.ExportUser(nil, &exportArgs, &exportReply))
 
-		newKS := New(log.NewNoOpLogger(), memdb.New())
+		newKS := New(nil, memdb.New())
 		newS := service{ks: newKS.(*keystore)}
 
 		{
@@ -317,7 +317,7 @@ func TestServiceDeleteUser(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			require := require.New(t)
 
-			ksIntf := New(log.NewNoOpLogger(), memdb.New())
+			ksIntf := New(nil, memdb.New())
 			ks := ksIntf.(*keystore)
 			s := service{ks: ks}
 
