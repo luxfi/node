@@ -17,8 +17,14 @@ elif [ -n "$STAKING_KEY" ] && [ -n "$STAKING_CERT" ]; then
     chmod 600 /data/staking/*
 elif [ -d "/keys/staking" ]; then
     echo "🔑 Using mounted staking keys..."
-    cp -r /keys/staking /data/
-    chmod -R 600 /data/staking
+    mkdir -p /data/staking
+    cp /keys/staking/* /data/staking/ 2>/dev/null || true
+    if [ -f "/data/staking/staker.crt" ] && [ -f "/data/staking/staker.key" ]; then
+        chmod 600 /data/staking/*
+    elif [ -f "/data/staking/staker1.crt" ] && [ -f "/data/staking/staker1.key" ]; then
+        # Handle numbered staker files
+        chmod 600 /data/staking/*
+    fi
 else
     echo "⚠️  No staking keys provided - using ephemeral certificate"
     EXTRA_ARGS="--staking-ephemeral-cert-enabled"
