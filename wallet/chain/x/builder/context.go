@@ -4,10 +4,9 @@
 package builder
 
 import (
-	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
 )
 
 const Alias = "X"
