@@ -1,19 +1,4 @@
-# Build stage
-FROM golang:1.21.12-bookworm AS builder
-
-WORKDIR /build
-
-# Copy go mod files
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy source code
-COPY . .
-
-# Build luxd with the consensus modification
-RUN go build -o luxd ./luxd
-
-# Runtime stage
+# Runtime stage - using pre-built binary
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y \
@@ -25,16 +10,20 @@ RUN apt-get update && apt-get install -y \
 RUN useradd -m -u 1000 -s /bin/bash luxd
 
 # Create necessary directories
-RUN mkdir -p /app/plugins /data/db /app/configs && \
-    chown -R luxd:luxd /app /data
+RUN mkdir -p /app/plugins /data/db /app/configs /logs /keys/staking /blockchain-data && \
+    chown -R luxd:luxd /app /data /logs /keys /blockchain-data
 
 WORKDIR /app
 
-# Copy binary from builder
-COPY --from=builder /build/luxd /app/luxd
+# Copy the pre-built binary from the host
+COPY build/luxd /app/luxd
 
-# Copy plugins (geth) if available
-COPY --from=builder /build/plugins/* /app/plugins/ 2>/dev/null || true
+# Make sure the binary is executable
+RUN chmod +x /app/luxd
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
 # Switch to non-root user
 USER luxd
@@ -43,10 +32,15 @@ USER luxd
 EXPOSE 9630 9631
 
 # Environment variables for imported blockchain
-ENV LUX_IMPORTED_BLOCK_ID=""
-ENV LUX_IMPORTED_HEIGHT=""
-ENV LUX_IMPORTED_TIMESTAMP=""
+ENV NETWORK_ID=96369
+ENV HTTP_HOST=0.0.0.0
+ENV HTTP_PORT=9630
+ENV STAKING_PORT=9631
+ENV LOG_LEVEL=info
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:9630/ext/health || exit 1
 
 # Default command
-ENTRYPOINT ["/app/luxd"]
-CMD ["--http-host=0.0.0.0", "--http-port=9630"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

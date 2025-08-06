@@ -41,7 +41,7 @@ type parser struct {
 
 func NewParser(fxs []fxs.Fx) (Parser, error) {
 	// Create a basic logger for parsing
-	logger := log.NewNoOpLogger()
+	logger := log.New()
 	return NewCustomParser(
 		make(map[reflect.Type]int),
 		&mockable.Clock{},
