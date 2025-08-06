@@ -59,7 +59,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
@@ -170,7 +170,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
@@ -280,7 +280,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
@@ -373,7 +373,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
@@ -561,7 +561,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			require.NoError(err)
 
 			peerTracker, err := p2p.NewPeerTracker(
-				log.NewNoOpLogger(),
+				nil,
 				"",
 				metrics.NewNoOpMetrics("test").Registry(),
 				nil,
@@ -647,7 +647,7 @@ func TestHandlerStartError(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,

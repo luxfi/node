@@ -144,7 +144,7 @@ func (ts *Topological) NumProcessing() int {
 func (ts *Topological) Add(blk Block) error {
 	blkID := blk.ID()
 	height := blk.Height()
-	ts.ctx.Log.Verbo("adding block",
+	ts.ctx.Log.Debug("adding block",
 		zap.Stringer("blkID", blkID),
 		zap.Uint64("height", height),
 	)
@@ -177,7 +177,7 @@ func (ts *Topological) Add(blk Block) error {
 		ts.preferredHeights[height] = blkID
 	}
 
-	ts.ctx.Log.Verbo("added block",
+	ts.ctx.Log.Debug("added block",
 		zap.Stringer("blkID", blkID),
 		zap.Uint64("height", height),
 		zap.Stringer("parentID", parentID),
@@ -457,7 +457,7 @@ func (ts *Topological) vote(ctx context.Context, voteStack []votes) (ids.ID, err
 		lastAcceptedBlock.shouldFalter = true
 
 		if numProcessing := len(ts.blocks) - 1; numProcessing > 0 {
-			ts.ctx.Log.Verbo("no progress was made after processing pending blocks",
+			ts.ctx.Log.Debug("no progress was made after processing pending blocks",
 				zap.Int("numProcessing", numProcessing),
 			)
 			ts.metrics.FailedPoll()
@@ -491,7 +491,7 @@ func (ts *Topological) vote(ctx context.Context, voteStack []votes) (ids.ID, err
 		// if the block was previously marked as needing to falter, the block
 		// should falter before applying the vote
 		if shouldTransitivelyFalter {
-			ts.ctx.Log.Verbo("resetting confidence below parent",
+			ts.ctx.Log.Debug("resetting confidence below parent",
 				zap.Stringer("parentID", vote.parentID),
 			)
 
@@ -550,11 +550,11 @@ func (ts *Topological) vote(ctx context.Context, voteStack []votes) (ids.ID, err
 			// Therefore, we need to make sure the child is still in the tree.
 			childBlock, notRejected := ts.blocks[childID]
 			if notRejected {
-				ts.ctx.Log.Verbo("deferring confidence reset of child block",
+				ts.ctx.Log.Debug("deferring confidence reset of child block",
 					zap.Stringer("childID", childID),
 				)
 
-				ts.ctx.Log.Verbo("voting for next block",
+				ts.ctx.Log.Debug("voting for next block",
 					zap.Stringer("nextID", nextID),
 				)
 

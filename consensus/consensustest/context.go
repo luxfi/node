@@ -98,7 +98,7 @@ func Context(tb testing.TB, chainID ids.ID) *consensus.Context {
 		CChainID:   CChainID,
 		LUXAssetID: LUXAssetID,
 
-		Log:          log.NewNoOpLogger(),
+		Log:          nil,
 		SharedMemory: sharedMemory,
 		BCLookup:     aliaser,
 		Metrics:      metrics.NewPrefixGatherer(),

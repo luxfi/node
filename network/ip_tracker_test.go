@@ -18,7 +18,7 @@ import (
 )
 
 func newTestIPTracker(t *testing.T) *ipTracker {
-	tracker, err := newIPTracker(log.NewNoOpLogger(), metrics.NewNoOpMetrics("test").Registry())
+	tracker, err := newIPTracker(nil, metrics.NewNoOpMetrics("test").Registry())
 	require.NoError(t, err)
 	return tracker
 }

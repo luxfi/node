@@ -16,7 +16,7 @@ import (
 	"github.com/compose-spec/compose-go/types"
 	"gopkg.in/yaml.v3"
 
-	"github.com/luxfi/log/level"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
@@ -100,8 +100,8 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 
 		env := types.Mapping{
 			config.NetworkNameKey:             constants.LocalName,
-			config.LogLevelKey:                level.Debug.String(),
-			config.LogDisplayLevelKey:         level.Trace.String(),
+			config.LogLevelKey:                log.DebugLevel.String(),
+			config.LogDisplayLevelKey:         log.DebugLevel.String(),
 			config.HTTPHostKey:                "0.0.0.0",
 			config.PublicIPKey:                address,
 			config.StakingTLSKeyContentKey:    tlsKey,

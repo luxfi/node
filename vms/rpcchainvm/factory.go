@@ -41,8 +41,8 @@ func NewFactory(
 
 func (f *factory) New(log log.Logger) (interface{}, error) {
 	config := &subprocess.Config{
-		Stderr:           log,
-		Stdout:           log,
+		Stderr:           nil, // log doesn't implement io.Writer
+		Stdout:           nil, // log doesn't implement io.Writer
 		HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 		Log:              log,
 	}

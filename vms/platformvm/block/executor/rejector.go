@@ -59,7 +59,7 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 	blkID := b.ID()
 	defer r.free(blkID)
 
-	r.ctx.Log.Verbo(
+	r.ctx.Log.Debug(
 		"rejecting block",
 		zap.String("blockType", blockType),
 		zap.Stringer("blkID", blkID),

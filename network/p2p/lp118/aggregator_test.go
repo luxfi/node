@@ -623,7 +623,7 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 				p2p.NoOpHandler{},
 				tt.peers,
 			)
-			aggregator := NewSignatureAggregator(log.NewNoOpLogger(), client)
+			aggregator := NewSignatureAggregator(nil, client)
 
 			gotMsg, gotAggregatedStake, gotTotalStake, err := aggregator.AggregateSignatures(
 				tt.ctx,

@@ -78,7 +78,7 @@ func TestTimeout(t *testing.T) {
 
 	m := metrics.NewNoOpMetrics("test")
 	mc, err := message.NewCreator(
-		log.NewNoOpLogger(),
+		nil,
 		m,
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -87,7 +87,7 @@ func TestTimeout(t *testing.T) {
 
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		log.NewNoOpLogger(),
+		nil,
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
@@ -123,7 +123,7 @@ func TestTimeout(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
@@ -338,7 +338,7 @@ func TestReliableMessages(t *testing.T) {
 
 	m := metrics.NewNoOpMetrics("test")
 	mc, err := message.NewCreator(
-		log.NewNoOpLogger(),
+		nil,
 		m,
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -347,7 +347,7 @@ func TestReliableMessages(t *testing.T) {
 
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		log.NewNoOpLogger(),
+		nil,
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
@@ -383,7 +383,7 @@ func TestReliableMessages(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
@@ -498,7 +498,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 
 			metrics := metrics.NewNoOpMetrics("test").Registry()
 			mc, err := message.NewCreator(
-		log.NewNoOpLogger(),
+		nil,
 				metrics,
 				constants.DefaultNetworkCompressionType,
 				10*time.Second,
@@ -507,7 +507,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 
 			require.NoError(chainRouter.Initialize(
 				ids.EmptyNodeID,
-				log.NewNoOpLogger(),
+				nil,
 				tm,
 				time.Second,
 				set.Set[ids.ID]{},
@@ -546,7 +546,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 			require.NoError(err)
 
 			p2pTracker, err := p2p.NewPeerTracker(
-				log.NewNoOpLogger(),
+				nil,
 				"",
 				metrics.NewNoOpMetrics("test").Registry(),
 				nil,

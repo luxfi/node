@@ -25,7 +25,6 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	// "github.com/luxfi/node/vms/components/keystore" // Removed - keystore functionality deprecated
 	"github.com/luxfi/node/vms/components/lux"
@@ -114,7 +113,7 @@ func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportK
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "exportKey"),
-		log.UserString("username", args.Username),
+		"username", args.Username,
 	)
 
 	// Keystore functionality has been removed from consensus.Context
@@ -145,7 +144,7 @@ func (s *Service) GetBalance(_ *http.Request, args *GetBalanceRequest, response 
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getBalance"),
-		log.UserStrings("addresses", args.Addresses),
+		zap.Strings("addresses", args.Addresses),
 	)
 
 	addrs, err := lux.ParseServiceAddresses(s.addrManager, args.Addresses)
@@ -266,7 +265,7 @@ func (s *Service) ListAddresses(_ *http.Request, args *api.UserPass, response *a
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "listAddresses"),
-		log.UserString("username", args.Username),
+		"username", args.Username,
 	)
 
 	// Keystore functionality has been removed from consensus.Context

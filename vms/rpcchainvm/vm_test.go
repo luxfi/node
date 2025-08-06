@@ -128,9 +128,9 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 		{
 			name: "happy path",
 			config: &subprocess.Config{
-				Stderr:           log.NewNoOpLogger(),
-				Stdout:           log.NewNoOpLogger(),
-				Log:              log.NewNoOpLogger(),
+				Stderr:           nil,
+				Stdout:           nil,
+				Log:              nil,
 				HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 			},
 			assertErr: func(require *require.Assertions, err error) {
@@ -141,8 +141,8 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 		{
 			name: "invalid stderr",
 			config: &subprocess.Config{
-				Stdout:           log.NewNoOpLogger(),
-				Log:              log.NewNoOpLogger(),
+				Stdout:           nil,
+				Log:              nil,
 				HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 			},
 			assertErr: func(require *require.Assertions, err error) {
@@ -153,9 +153,9 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 		{
 			name: "handshake timeout",
 			config: &subprocess.Config{
-				Stderr:           log.NewNoOpLogger(),
-				Stdout:           log.NewNoOpLogger(),
-				Log:              log.NewNoOpLogger(),
+				Stderr:           nil,
+				Stdout:           nil,
+				Log:              nil,
 				HandshakeTimeout: time.Microsecond,
 			},
 			assertErr: func(require *require.Assertions, err error) {

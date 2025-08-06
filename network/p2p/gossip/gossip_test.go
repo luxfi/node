@@ -29,7 +29,7 @@ import (
 
 func TestGossiperShutdown(*testing.T) {
 	gossiper := NewPullGossiper[*testTx](
-		log.NewNoOpLogger(),
+		nil,
 		nil,
 		nil,
 		nil,
@@ -42,7 +42,7 @@ func TestGossiperShutdown(*testing.T) {
 	wg.Add(1)
 
 	go func() {
-		Every(ctx, log.NewNoOpLogger(), gossiper, time.Second)
+		Every(ctx, nil, gossiper, time.Second)
 		wg.Done()
 	}()
 
@@ -109,7 +109,7 @@ func TestGossiperGossip(t *testing.T) {
 			responseSender := &core.FakeSender{
 				SentAppResponse: make(chan []byte, 1),
 			}
-			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, metrics.NewNoOpMetrics("test").Registry(), "")
+			responseNetwork, err := p2p.NewNetwork(nil, responseSender, metrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 
 			responseBloom, err := NewBloomFilter(metrics.NewNoOpMetrics("test").Registry(), "", 1000, 0.01, 0.05)
@@ -126,7 +126,7 @@ func TestGossiperGossip(t *testing.T) {
 			require.NoError(err)
 			marshaller := testMarshaller{}
 			handler := NewHandler[*testTx](
-				log.NewNoOpLogger(),
+				nil,
 				marshaller,
 				responseSet,
 				metrics,
@@ -139,7 +139,7 @@ func TestGossiperGossip(t *testing.T) {
 				SentAppRequest: make(chan []byte, 1),
 			}
 
-			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, metrics.NewNoOpMetrics("test").Registry(), "")
+			requestNetwork, err := p2p.NewNetwork(nil, requestSender, metrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 			require.NoError(requestNetwork.Connected(context.Background(), ids.EmptyNodeID, nil))
 
@@ -157,7 +157,7 @@ func TestGossiperGossip(t *testing.T) {
 
 			require.NoError(err)
 			gossiper := NewPullGossiper[*testTx](
-				log.NewNoOpLogger(),
+				nil,
 				marshaller,
 				requestSet,
 				requestClient,
@@ -201,7 +201,7 @@ func TestEvery(*testing.T) {
 		},
 	}
 
-	go Every(ctx, log.NewNoOpLogger(), gossiper, time.Millisecond)
+	go Every(ctx, nil, gossiper, time.Millisecond)
 	<-ctx.Done()
 }
 
@@ -515,7 +515,7 @@ func TestPushGossiper(t *testing.T) {
 				SentAppGossip: make(chan []byte, 2),
 			}
 			network, err := p2p.NewNetwork(
-				log.NewNoOpLogger(),
+				nil,
 				sender,
 				metrics.NewNoOpMetrics("test").Registry(),
 				"",
@@ -524,7 +524,7 @@ func TestPushGossiper(t *testing.T) {
 			client := network.NewClient(0)
 			validators := p2p.NewValidators(
 				&p2p.Peers{},
-				log.NewNoOpLogger(),
+				nil,
 				constants.PrimaryNetworkID,
 				&validatorstest.State{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {

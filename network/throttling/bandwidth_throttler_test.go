@@ -23,7 +23,7 @@ func TestBandwidthThrottler(t *testing.T) {
 		RefillRate:   8,
 		MaxBurstSize: 10,
 	}
-	throttlerIntf, err := newBandwidthThrottler(log.NewNoOpLogger(), metrics.NewNoOpMetrics("test").Registry(), config)
+	throttlerIntf, err := newBandwidthThrottler(nil, metrics.NewNoOpMetrics("test").Registry(), config)
 	require.NoError(err)
 	require.IsType(&bandwidthThrottlerImpl{}, throttlerIntf)
 	throttler := throttlerIntf.(*bandwidthThrottlerImpl)

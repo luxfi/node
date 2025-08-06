@@ -63,7 +63,7 @@ func TestValidatorHandlerAppGossip(t *testing.T) {
 					},
 				},
 				tt.validatorSet,
-				log.NewNoOpLogger(),
+				nil,
 			)
 
 			handler.AppGossip(context.Background(), tt.nodeID, []byte("foobar"))
@@ -104,7 +104,7 @@ func TestValidatorHandlerAppRequest(t *testing.T) {
 			handler := NewValidatorHandler(
 				NoOpHandler{},
 				tt.validatorSet,
-				log.NewNoOpLogger(),
+				nil,
 			)
 
 			_, err := handler.AppRequest(context.Background(), tt.nodeID, time.Time{}, []byte("foobar"))

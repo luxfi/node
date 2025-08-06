@@ -148,10 +148,7 @@ func New(
 		zap.Reflect("config", n.Config),
 	)
 
-	n.VMFactoryLog, err = logFactory.Make("vm-factory")
-	if err != nil {
-		return nil, fmt.Errorf("problem creating vm logger: %w", err)
-	}
+	n.VMFactoryLog = n.Log // Use main log instead of vm-factory specific log
 
 	n.VMAliaser = ids.NewAliaser()
 	for vmID, aliases := range config.VMAliases {
@@ -685,7 +682,12 @@ func (n *Node) Dispatch() error {
 	}
 
 	// Start the HTTP API server
-	go n.Log.RecoverAndPanic(func() {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				n.Log.Error("panic in API server", "panic", r)
+			}
+		}()
 		n.Log.Info("API server listening",
 			zap.String("uri", n.apiURI),
 		)
@@ -694,14 +696,14 @@ func (n *Node) Dispatch() error {
 		// This causes [n.APIServer].Dispatch() to return an error.
 		// If that happened, don't log/return an error here.
 		if !n.shuttingDown.Get() {
-			n.Log.Fatal("API server dispatch failed",
+			n.Log.Error("API server dispatch failed",
 				zap.Error(err),
 			)
 		}
 		// If the API server isn't running, shut down the node.
 		// If node is already shutting down, this does nothing.
 		n.Shutdown(1)
-	})
+	}()
 
 	// Log a warning if we aren't able to connect to a sufficient portion of
 	// nodes.
@@ -960,7 +962,7 @@ func (n *Node) initAPIServer() error {
 	if !hostIsPublic {
 		ip, err := ips.Lookup(n.Config.HTTPHost)
 		if err != nil {
-			n.Log.Fatal("failed to lookup HTTP host",
+			n.Log.Error("failed to lookup HTTP host",
 				zap.String("host", n.Config.HTTPHost),
 				zap.Error(err),
 			)
@@ -1105,7 +1107,14 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 	if err != nil {
 		return err
 	}
-	go n.Log.RecoverAndPanic(n.timeoutManager.Dispatch)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				n.Log.Error("panic in timeout manager", "panic", r)
+			}
+		}()
+		n.timeoutManager.Dispatch()
+	}()
 
 	// Routes incoming messages from peers to the appropriate chain
 	err = n.chainRouter.Initialize(
@@ -1387,15 +1396,20 @@ func (n *Node) initProfiler() {
 		n.Config.ProfilerConfig.Freq,
 		n.Config.ProfilerConfig.MaxNumFiles,
 	)
-	go n.Log.RecoverAndPanic(func() {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				n.Log.Error("panic in profiler", "panic", r)
+			}
+		}()
 		err := n.profiler.Dispatch()
 		if err != nil {
-			n.Log.Fatal("continuous profiler failed",
+			n.Log.Error("continuous profiler failed",
 				zap.Error(err),
 			)
 		}
 		n.Shutdown(1)
-	})
+	}()
 }
 
 func (n *Node) initInfoAPI() error {
@@ -1487,7 +1501,7 @@ func (n *Node) initHealthAPI() error {
 
 		var err error
 		if availableDiskBytes < n.Config.RequiredAvailableDiskSpace {
-			n.Log.Fatal("low on disk space. Shutting down...",
+			n.Log.Error("low on disk space. Shutting down...",
 				zap.Uint64("remainingDiskBytes", availableDiskBytes),
 			)
 			go n.Shutdown(1)

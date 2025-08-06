@@ -35,7 +35,7 @@ func newTestSerializer(t *testing.T, parse func(context.Context, []byte) (dag.Tx
 			ChainID: ids.Empty,
 			VM:      &vm,
 			DB:      baseDB,
-			Log:     log.NewNoOpLogger(),
+			Log:     nil,
 		},
 	)
 

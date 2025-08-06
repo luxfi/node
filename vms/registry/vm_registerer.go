@@ -123,7 +123,7 @@ func (r *vmRegisterer) createStaticHandlers(
 func (r *vmRegisterer) createStaticEndpoints(pathAdder server.PathAdder, handlers map[string]http.Handler, defaultEndpoint string) error {
 	// register the static endpoints
 	for extension, service := range handlers {
-		r.config.Log.Verbo("adding static API endpoint",
+		r.config.Log.Debug("adding static API endpoint",
 			zap.String("endpoint", defaultEndpoint),
 			zap.String("extension", extension),
 		)

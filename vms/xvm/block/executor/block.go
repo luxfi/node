@@ -265,7 +265,7 @@ func (b *Block) Reject(context.Context) error {
 	blkID := b.ID()
 	defer b.manager.free(blkID)
 
-	b.manager.backend.Ctx.Log.Verbo(
+	b.manager.backend.Ctx.Log.Debug(
 		"rejecting block",
 		zap.Stringer("blkID", blkID),
 		zap.Uint64("height", b.Height()),

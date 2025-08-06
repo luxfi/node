@@ -102,7 +102,7 @@ func (s *Server) Publish(parser Filterer) {
 		}
 		conn := conns[i].(*connection)
 		if !conn.Send(msg) {
-			s.log.Verbo("dropping message to subscribed connection due to too many pending messages")
+			s.log.Debug("dropping message to subscribed connection due to too many pending messages")
 		}
 	}
 }

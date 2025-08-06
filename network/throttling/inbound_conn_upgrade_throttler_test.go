@@ -26,7 +26,7 @@ func TestNoInboundConnUpgradeThrottler(t *testing.T) {
 
 	{
 		throttler := NewInboundConnUpgradeThrottler(
-			log.NewNoOpLogger(),
+			nil,
 			InboundConnUpgradeThrottlerConfig{
 				UpgradeCooldown:        0,
 				MaxRecentConnsUpgraded: 5,
@@ -39,7 +39,7 @@ func TestNoInboundConnUpgradeThrottler(t *testing.T) {
 	}
 	{
 		throttler := NewInboundConnUpgradeThrottler(
-			log.NewNoOpLogger(),
+			nil,
 			InboundConnUpgradeThrottlerConfig{
 				UpgradeCooldown:        time.Second,
 				MaxRecentConnsUpgraded: 0,
@@ -57,7 +57,7 @@ func TestInboundConnUpgradeThrottler(t *testing.T) {
 
 	cooldown := 5 * time.Second
 	throttlerIntf := NewInboundConnUpgradeThrottler(
-		log.NewNoOpLogger(),
+		nil,
 		InboundConnUpgradeThrottlerConfig{
 			UpgradeCooldown:        cooldown,
 			MaxRecentConnsUpgraded: 3,

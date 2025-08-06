@@ -179,7 +179,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 
 	// TODO: Allow the logger to be configured by the client
 	// TODO: Properly configure logger
-	vm.log = log.NewNoOpLogger()
+	vm.log = nil // No logger needed
 
 	clientConn, err := grpcutils.Dial(
 		req.ServerAddr,

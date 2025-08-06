@@ -30,7 +30,7 @@ func TestNewTargeter(t *testing.T) {
 	tracker := trackermock.NewTracker(ctrl)
 
 	targeterIntf := NewTargeter(
-		log.NewNoOpLogger(),
+		nil,
 		config,
 		vdrs,
 		tracker,
@@ -62,7 +62,7 @@ func TestTarget(t *testing.T) {
 	}
 
 	targeter := NewTargeter(
-		log.NewNoOpLogger(),
+		nil,
 		config,
 		vdrs,
 		tracker,

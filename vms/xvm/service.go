@@ -19,7 +19,6 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
@@ -203,7 +202,7 @@ func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSO
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "issueTx"),
-		log.UserString("tx", args.Tx),
+		zap.String("tx", args.Tx),
 	)
 
 	txBytes, err := formatting.Decode(args.Encoding, args.Tx)
@@ -251,8 +250,8 @@ func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply 
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getAddressTxs"),
-		log.UserString("address", args.Address),
-		log.UserString("assetID", args.AssetID),
+		zap.String("address", args.Address),
+		zap.String("assetID", args.AssetID),
 		zap.Uint64("cursor", cursor),
 		zap.Uint64("pageSize", pageSize),
 	)
@@ -275,8 +274,8 @@ func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply 
 	}
 
 	s.vm.ctx.Log.Debug("fetching transactions",
-		log.UserString("address", args.Address),
-		log.UserString("assetID", args.AssetID),
+		zap.String("address", args.Address),
+		zap.String("assetID", args.AssetID),
 		zap.Uint64("cursor", cursor),
 		zap.Uint64("pageSize", pageSize),
 	)
@@ -290,8 +289,8 @@ func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply 
 		return err
 	}
 	s.vm.ctx.Log.Debug("fetched transactions",
-		log.UserString("address", args.Address),
-		log.UserString("assetID", args.AssetID),
+		zap.String("address", args.Address),
+		zap.String("assetID", args.AssetID),
 		zap.Int("numTxs", len(reply.TxIDs)),
 	)
 
@@ -378,7 +377,7 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getUTXOs"),
-		log.UserStrings("addresses", args.Addresses),
+		zap.Strings("addresses", args.Addresses),
 	)
 
 	if len(args.Addresses) == 0 {
@@ -496,7 +495,7 @@ func (s *Service) GetAssetDescription(_ *http.Request, args *GetAssetDescription
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getAssetDescription"),
-		log.UserString("assetID", args.AssetID),
+		zap.String("assetID", args.AssetID),
 	)
 
 	assetID, err := s.vm.lookupAssetID(args.AssetID)
@@ -546,8 +545,8 @@ func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBa
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getBalance"),
-		log.UserString("address", args.Address),
-		log.UserString("assetID", args.AssetID),
+		zap.String("address", args.Address),
+		zap.String("assetID", args.AssetID),
 	)
 
 	addr, err := lux.ParseServiceAddress(s.vm, args.Address)
@@ -623,7 +622,7 @@ func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, repl
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getAllBalances"),
-		log.UserString("address", args.Address),
+		zap.String("address", args.Address),
 	)
 
 	address, err := lux.ParseServiceAddress(s.vm, args.Address)
@@ -711,8 +710,8 @@ func (s *Service) CreateAsset(_ *http.Request, args *CreateAssetArgs, reply *Ass
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "createAsset"),
-		log.UserString("name", args.Name),
-		log.UserString("symbol", args.Symbol),
+		zap.String("name", args.Name),
+		zap.String("symbol", args.Symbol),
 		zap.Int("numInitialHolders", len(args.InitialHolders)),
 		zap.Int("numMinters", len(args.MinterSets)),
 	)
@@ -847,8 +846,8 @@ func (s *Service) CreateFixedCapAsset(r *http.Request, args *CreateAssetArgs, re
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "createFixedCapAsset"),
-		log.UserString("name", args.Name),
-		log.UserString("symbol", args.Symbol),
+		zap.String("name", args.Name),
+		zap.String("symbol", args.Symbol),
 		zap.Int("numInitialHolders", len(args.InitialHolders)),
 	)
 
@@ -860,8 +859,8 @@ func (s *Service) CreateVariableCapAsset(r *http.Request, args *CreateAssetArgs,
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "createVariableCapAsset"),
-		log.UserString("name", args.Name),
-		log.UserString("symbol", args.Symbol),
+		zap.String("name", args.Name),
+		zap.String("symbol", args.Symbol),
 		zap.Int("numMinters", len(args.MinterSets)),
 	)
 
@@ -881,8 +880,8 @@ func (s *Service) CreateNFTAsset(_ *http.Request, args *CreateNFTAssetArgs, repl
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "createNFTAsset"),
-		log.UserString("name", args.Name),
-		log.UserString("symbol", args.Symbol),
+		zap.String("name", args.Name),
+		zap.String("symbol", args.Symbol),
 		zap.Int("numMinters", len(args.MinterSets)),
 	)
 
@@ -1003,7 +1002,7 @@ func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "createAddress"),
-		log.UserString("username", args.Username),
+		"username", args.Username,
 	)
 
 	// TODO: Implement key management without consensus.Context keystore
@@ -1025,7 +1024,7 @@ func (s *Service) ListAddresses(_ *http.Request, args *api.UserPass, response *a
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "listAddresses"),
-		log.UserString("username", args.Username),
+		"username", args.Username,
 	)
 
 	// TODO: Implement address tracking without consensus.Context keystore
@@ -1050,7 +1049,7 @@ func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportK
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "exportKey"),
-		log.UserString("username", args.Username),
+		"username", args.Username,
 	)
 
 	_, err := lux.ParseServiceAddress(s.vm, args.Address)
@@ -1079,7 +1078,7 @@ func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSO
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "importKey"),
-		log.UserString("username", args.Username),
+		"username", args.Username,
 	)
 
 	if args.PrivateKey == nil {
@@ -1149,7 +1148,7 @@ func (s *Service) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *a
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "sendMultiple"),
-		log.UserString("username", args.Username),
+		"username", args.Username,
 	)
 
 	tx, changeAddr, err := s.buildSendMultiple(args)
@@ -1315,7 +1314,7 @@ func (s *Service) Mint(_ *http.Request, args *MintArgs, reply *api.JSONTxIDChang
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "mint"),
-		log.UserString("username", args.Username),
+		"username", args.Username,
 	)
 
 	tx, changeAddr, err := s.buildMint(args)
@@ -1337,7 +1336,7 @@ func (s *Service) buildMint(args *MintArgs) (*txs.Tx, ids.ShortID, error) {
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "mint"),
-		log.UserString("username", args.Username),
+		"username", args.Username,
 	)
 
 	if args.Amount == 0 {
@@ -1452,7 +1451,7 @@ func (s *Service) SendNFT(_ *http.Request, args *SendNFTArgs, reply *api.JSONTxI
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "sendNFT"),
-		log.UserString("username", args.Username),
+		"username", args.Username,
 	)
 
 	tx, changeAddr, err := s.buildSendNFT(args)
@@ -1579,7 +1578,7 @@ func (s *Service) MintNFT(_ *http.Request, args *MintNFTArgs, reply *api.JSONTxI
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "mintNFT"),
-		log.UserString("username", args.Username),
+		"username", args.Username,
 	)
 
 	tx, changeAddr, err := s.buildMintNFT(args)
@@ -1720,7 +1719,7 @@ func (s *Service) Import(_ *http.Request, args *ImportArgs, reply *api.JSONTxID)
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "import"),
-		log.UserString("username", args.Username),
+		"username", args.Username,
 	)
 
 	tx, err := s.buildImport(args)
@@ -1859,7 +1858,7 @@ func (s *Service) Export(_ *http.Request, args *ExportArgs, reply *api.JSONTxIDC
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "export"),
-		log.UserString("username", args.Username),
+		"username", args.Username,
 	)
 
 	tx, changeAddr, err := s.buildExport(args)

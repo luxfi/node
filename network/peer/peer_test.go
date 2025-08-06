@@ -50,7 +50,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 	t.Helper()
 
 	mc, err := message.NewCreator(
-		log.NewNoOpLogger(),
+		nil,
 		metrics.NewNoOpMetrics("test"),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -80,7 +80,7 @@ func newConfig(t *testing.T) Config {
 		WriteBufferSize:      constants.DefaultNetworkPeerWriteBufferSize,
 		Metrics:              metrics,
 		MessageCreator:       newMessageCreator(t),
-		Log:                  log.NewNoOpLogger(),
+		Log:                  nil,
 		InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
 		Network:              TestNetwork,
 		Router:               nil,
@@ -144,7 +144,7 @@ func startTestPeer(self *rawTestPeer, peer *rawTestPeer, conn net.Conn) *testPee
 			NewThrottledMessageQueue(
 				self.config.Metrics,
 				peer.nodeID,
-				log.NewNoOpLogger(),
+				nil,
 				throttling.NewNoOutboundThrottler(),
 			),
 		),
@@ -454,7 +454,7 @@ func TestShouldDisconnect(t *testing.T) {
 			name: "peer is reporting old version",
 			initialPeer: &peer{
 				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
+					Log:                  nil,
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 				},
 				version: &version.Application{
@@ -466,7 +466,7 @@ func TestShouldDisconnect(t *testing.T) {
 			},
 			expectedPeer: &peer{
 				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
+					Log:                  nil,
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 				},
 				version: &version.Application{
@@ -482,7 +482,7 @@ func TestShouldDisconnect(t *testing.T) {
 			name: "peer is not a validator",
 			initialPeer: &peer{
 				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
+					Log:                  nil,
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators:           validators.NewManager(),
 				},
@@ -490,7 +490,7 @@ func TestShouldDisconnect(t *testing.T) {
 			},
 			expectedPeer: &peer{
 				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
+					Log:                  nil,
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators:           validators.NewManager(),
 				},
@@ -502,7 +502,7 @@ func TestShouldDisconnect(t *testing.T) {
 			name: "peer is a validator without a BLS key",
 			initialPeer: &peer{
 				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
+					Log:                  nil,
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -521,7 +521,7 @@ func TestShouldDisconnect(t *testing.T) {
 			},
 			expectedPeer: &peer{
 				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
+					Log:                  nil,
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -544,7 +544,7 @@ func TestShouldDisconnect(t *testing.T) {
 			name: "already verified peer",
 			initialPeer: &peer{
 				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
+					Log:                  nil,
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -564,7 +564,7 @@ func TestShouldDisconnect(t *testing.T) {
 			},
 			expectedPeer: &peer{
 				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
+					Log:                  nil,
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -588,7 +588,7 @@ func TestShouldDisconnect(t *testing.T) {
 			name: "peer without signature",
 			initialPeer: &peer{
 				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
+					Log:                  nil,
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -608,7 +608,7 @@ func TestShouldDisconnect(t *testing.T) {
 			},
 			expectedPeer: &peer{
 				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
+					Log:                  nil,
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -632,7 +632,7 @@ func TestShouldDisconnect(t *testing.T) {
 			name: "peer with invalid signature",
 			initialPeer: &peer{
 				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
+					Log:                  nil,
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -654,7 +654,7 @@ func TestShouldDisconnect(t *testing.T) {
 			},
 			expectedPeer: &peer{
 				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
+					Log:                  nil,
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -680,7 +680,7 @@ func TestShouldDisconnect(t *testing.T) {
 			name: "peer with valid signature",
 			initialPeer: &peer{
 				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
+					Log:                  nil,
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
@@ -702,7 +702,7 @@ func TestShouldDisconnect(t *testing.T) {
 			},
 			expectedPeer: &peer{
 				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
+					Log:                  nil,
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()

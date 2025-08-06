@@ -47,38 +47,35 @@ func New(config node.Config) (App, error) {
 	if err := perms.ChmodR(config.DatabaseConfig.Path, true, perms.ReadWriteExecute); err != nil {
 		return nil, fmt.Errorf("failed to restrict the permissions of the database directory with: %w", err)
 	}
-	if err := perms.ChmodR(config.LoggingConfig.Directory, true, perms.ReadWriteExecute); err != nil {
-		return nil, fmt.Errorf("failed to restrict the permissions of the log directory with: %w", err)
-	}
+	// LoggingConfig removed from node.Config
+	// if err := perms.ChmodR(config.LoggingConfig.Directory, true, perms.ReadWriteExecute); err != nil {
+	// 	return nil, fmt.Errorf("failed to restrict the permissions of the log directory with: %w", err)
+	// }
 
-	logFactory := log.NewFactoryWithConfig(config.LoggingConfig)
-	logger, err := logFactory.Make("main")
-	if err != nil {
-		logFactory.Close()
-		return nil, fmt.Errorf("failed to initialize log: %w", err)
+	// Use the logger from config if available, otherwise create a new one
+	logger := config.Log
+	if logger == nil {
+		// Create a basic logger if one wasn't provided
+		logger = log.NewLogger(log.DiscardHandler())
 	}
 
 	// update fd limit
 	fdLimit := config.FdLimit
 	if err := ulimit.Set(fdLimit, logger); err != nil {
-		logger.Fatal("failed to set fd-limit",
+		logger.Error("failed to set fd-limit",
 			zap.Error(err),
 		)
-		logFactory.Close()
 		return nil, err
 	}
 
-	n, err := node.New(&config, logFactory, logger)
+	n, err := node.New(&config, nil, logger) // Factory is nil now
 	if err != nil {
-		logger.Stop()
-		logFactory.Close()
 		return nil, fmt.Errorf("failed to initialize node: %w", err)
 	}
 
 	return &app{
-		node:       n,
-		log:        logger,
-		logFactory: logFactory,
+		node: n,
+		log:  logger,
 	}, nil
 }
 
@@ -120,10 +117,9 @@ func Run(app App) int {
 
 // app is a wrapper around a node that runs in this process
 type app struct {
-	node       *node.Node
-	log        log.Logger
-	logFactory log.Factory
-	exitWG     sync.WaitGroup
+	node   *node.Node
+	log    log.Logger
+	exitWG sync.WaitGroup
 }
 
 // Start the business logic of the node (as opposed to config reading, etc).
@@ -137,15 +133,15 @@ func (a *app) Start() error {
 			if r := recover(); r != nil {
 				fmt.Println("caught panic", r)
 			}
-			a.log.Stop()
-			a.logFactory.Close()
+			// a.log.Stop() // Not available in new log module
+			// a.logFactory.Close() // Not available
 			a.exitWG.Done()
 		}()
 		defer func() {
 			// If [p.node.Dispatch()] panics, then we should log the panic and
 			// then re-raise the panic. This is why the above defer is broken
 			// into two parts.
-			a.log.StopOnPanic()
+			// a.log.StopOnPanic() // Not available
 		}()
 
 		err := a.node.Dispatch()

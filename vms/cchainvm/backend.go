@@ -4,6 +4,7 @@
 package cchainvm
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"math/big"
@@ -25,6 +26,13 @@ import (
 	"github.com/luxfi/geth/triedb"
 )
 
+// encodeBlockNumber encodes a block number as big endian uint64
+func encodeBlockNumber(number uint64) []byte {
+	enc := make([]byte, 8)
+	binary.BigEndian.PutUint64(enc, number)
+	return enc
+}
+
 // MinimalEthBackend provides a minimal Ethereum backend without p2p networking
 type MinimalEthBackend struct {
 	chainConfig *params.ChainConfig
@@ -38,9 +46,12 @@ type MinimalEthBackend struct {
 // NewMigratedBackend creates a special backend for fully migrated data
 // This completely bypasses genesis initialization
 func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBackend, error) {
-	fmt.Printf("Creating migrated backend for height %d\n", migratedHeight)
+	fmt.Printf("Creating migrated backend for subnet-EVM data at height %d\n", migratedHeight)
 	
-	// Create a minimal chain config
+	// Enable subnet namespace handling in database wrapper
+	UseSubnetNamespace = true
+	
+	// Create chain config for LUX mainnet
 	chainConfig := &params.ChainConfig{
 		ChainID:                 big.NewInt(96369),
 		HomesteadBlock:          big.NewInt(0),
@@ -59,40 +70,88 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 	// Create a dummy consensus engine
 	engine := &dummyEngine{}
 	
-	// Read the head hash from migrated data using 9-byte format
-	key := canonicalKey(migratedHeight)
-	fmt.Printf("Looking for canonical hash at height %d with key: %x\n", migratedHeight, key)
+	// Subnet-EVM namespace
+	namespace := []byte{
+		0x33, 0x7f, 0xb7, 0x3f, 0x9b, 0xcd, 0xac, 0x8c,
+		0x31, 0xa2, 0xd5, 0xf7, 0xb8, 0x77, 0xab, 0x1e,
+		0x8a, 0x2b, 0x7f, 0x2a, 0x1e, 0x9b, 0xf0, 0x2a,
+		0x0a, 0x0e, 0x6c, 0x6f, 0xd1, 0x64, 0xf1, 0xd1,
+	}
 	
-	var headHash common.Hash
-	if val, err := db.Get(key); err == nil && len(val) == 32 {
-		copy(headHash[:], val)
-		fmt.Printf("Found migrated head hash at height %d: %x\n", migratedHeight, headHash)
+	fmt.Printf("Scanning subnet-EVM database for blocks...\n")
+	
+	// Build block index first
+	blocksByNumber := make(map[uint64]common.Hash)
+	headersByHash := make(map[common.Hash][]byte)
+	iter := db.NewIterator(nil, nil)
+	
+	for iter.Next() {
+		key := iter.Key()
+		value := iter.Value()
 		
-		// Set all head pointers
-		rawdb.WriteHeadBlockHash(db, headHash)
-		rawdb.WriteHeadHeaderHash(db, headHash)
-		rawdb.WriteHeadFastBlockHash(db, headHash)
-		rawdb.WriteLastPivotNumber(db, migratedHeight)
-		
-		// Also write the current block pointers
-		rawdb.WriteCanonicalHash(db, headHash, migratedHeight)
-	} else {
-		fmt.Printf("Failed to find canonical hash at height %d: err=%v, val_len=%d\n", migratedHeight, err, len(val))
-		// Try to list some keys to debug
-		fmt.Printf("Trying to read some keys from database...\n")
-		// Try different key patterns
-		testKeys := [][]byte{
-			[]byte("H\x00\x00\x00\x00\x00\x00\x00\x00"), // Standard canonical key for block 0
-			[]byte("genesis"), // Genesis marker
-			[]byte("LastBlock"), // Last block marker
-		}
-		for _, tk := range testKeys {
-			if val, err := db.Get(tk); err == nil {
-				fmt.Printf("Found key %x with value length %d\n", tk, len(val))
+		// Check for namespace + 32-byte hash format
+		if len(key) == 64 && bytes.Equal(key[:32], namespace) {
+			hash := key[32:]
+			
+			// Check if value is RLP header
+			if len(value) > 100 && (value[0] == 0xf8 || value[0] == 0xf9) {
+				// Decode block number from first 3 bytes of hash
+				blockNum := uint64(hash[0])<<16 | uint64(hash[1])<<8 | uint64(hash[2])
+				
+				var h common.Hash
+				copy(h[:], hash)
+				blocksByNumber[blockNum] = h
+				headersByHash[h] = value
+				
+				if len(blocksByNumber) <= 10 || len(blocksByNumber)%100000 == 0 {
+					fmt.Printf("  Found block %d at hash %x\n", blockNum, hash[:8])
+				}
 			}
 		}
-		return nil, fmt.Errorf("could not find canonical hash at height %d", migratedHeight)
 	}
+	iter.Release()
+	
+	fmt.Printf("Found %d blocks in subnet-EVM database\n", len(blocksByNumber))
+	
+	// Find the requested block or highest available
+	var headHash common.Hash
+	var actualHeight uint64
+	
+	if hash, exists := blocksByNumber[migratedHeight]; exists {
+		headHash = hash
+		actualHeight = migratedHeight
+	} else {
+		// Find highest block
+		for num, hash := range blocksByNumber {
+			if num > actualHeight {
+				actualHeight = num
+				headHash = hash
+			}
+		}
+		fmt.Printf("Block %d not found, using highest block %d\n", migratedHeight, actualHeight)
+	}
+	
+	if headHash == (common.Hash{}) {
+		return nil, fmt.Errorf("no blocks found in subnet-EVM database")
+	}
+	
+	fmt.Printf("Setting head to block %d with hash: %x\n", actualHeight, headHash)
+	
+	// Write canonical mappings in standard format for all blocks
+	fmt.Printf("Writing canonical mappings for %d blocks...\n", len(blocksByNumber))
+	for blockNum, hash := range blocksByNumber {
+		rawdb.WriteCanonicalHash(db, hash, blockNum)
+		// Also write the header in standard format
+		if _, exists := headersByHash[hash]; exists {
+			rawdb.WriteHeader(db, &types.Header{Number: big.NewInt(int64(blockNum))})
+		}
+	}
+	
+	// Set head pointers
+	rawdb.WriteHeadBlockHash(db, headHash)
+	rawdb.WriteHeadHeaderHash(db, headHash)
+	rawdb.WriteHeadFastBlockHash(db, headHash)
+	rawdb.WriteLastPivotNumber(db, actualHeight)
 	
 	// Create blockchain options that skip validation
 	options := &gethcore.BlockChainConfig{

@@ -47,7 +47,7 @@ func (s *External) Send(
 	if s.CantSend {
 		if s.TB != nil {
 			s.TB.Helper()
-			s.TB.Fatal(errSend)
+			s.TB.Error(errSend)
 		}
 	}
 	return nil

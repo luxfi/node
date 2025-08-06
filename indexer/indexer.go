@@ -189,7 +189,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *consensus.Context, vm cor
 		if previouslyIndexed && !i.allowIncompleteIndex {
 			// We indexed this chain in a previous run but not in this run.
 			// This would create an incomplete index, which is not allowed, so exit.
-			i.log.Fatal("running would cause index to become incomplete but incomplete indices are disabled",
+			i.log.Error("running would cause index to become incomplete but incomplete indices are disabled",
 				zap.String("chainName", chainName),
 			)
 			if err := i.close(); err != nil {
@@ -205,7 +205,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *consensus.Context, vm cor
 		if err == nil {
 			return
 		}
-		i.log.Fatal("couldn't mark chain as incomplete",
+		i.log.Error("couldn't mark chain as incomplete",
 			zap.String("chainName", chainName),
 			zap.Error(err),
 		)
@@ -218,7 +218,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *consensus.Context, vm cor
 	}
 
 	if !i.allowIncompleteIndex && isIncomplete && (previouslyIndexed || i.hasRunBefore) {
-		i.log.Fatal("index is incomplete but incomplete indices are disabled. Shutting down",
+		i.log.Error("index is incomplete but incomplete indices are disabled. Shutting down",
 			zap.String("chainName", chainName),
 		)
 		if err := i.close(); err != nil {
@@ -245,7 +245,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *consensus.Context, vm cor
 
 	index, err := i.registerChainHelper(chainID, blockPrefix, chainName, "block", i.blockAcceptorGroup)
 	if err != nil {
-		i.log.Fatal("failed to create index",
+		i.log.Error("failed to create index",
 			zap.String("chainName", chainName),
 			zap.String("endpoint", "block"),
 			zap.Error(err),
@@ -263,7 +263,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *consensus.Context, vm cor
 	case vertex.GRAPHVM:
 		vtxIndex, err := i.registerChainHelper(chainID, vtxPrefix, chainName, "vtx", i.vertexAcceptorGroup)
 		if err != nil {
-			i.log.Fatal("couldn't create index",
+			i.log.Error("couldn't create index",
 				zap.String("chainName", chainName),
 				zap.String("endpoint", "vtx"),
 				zap.Error(err),
@@ -279,7 +279,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *consensus.Context, vm cor
 
 		txIndex, err := i.registerChainHelper(chainID, txPrefix, chainName, "tx", i.txAcceptorGroup)
 		if err != nil {
-			i.log.Fatal("couldn't create index",
+			i.log.Error("couldn't create index",
 				zap.String("chainName", chainName),
 				zap.String("endpoint", "tx"),
 				zap.Error(err),

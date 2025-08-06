@@ -45,7 +45,7 @@ func TestNotifier(t *testing.T) {
 	nf := NewNotificationForwarder(
 		Notifier(notifier),
 		subscriber,
-		&log.NewNoOpLogger())
+		&nil)
 
 	defer nf.Close()
 
@@ -71,7 +71,7 @@ func TestNotifierStopWhileSubscribing(_ *testing.T) {
 	nf := NewNotificationForwarder(
 		Notifier(notifier),
 		subscribe,
-		&log.NewNoOpLogger())
+		&nil)
 
 	subscribed.Wait()
 	nf.Close()
@@ -89,7 +89,7 @@ func TestNotifierWaitForPrefChangeAfterNotify(t *testing.T) {
 		return 0, nil
 	}
 
-	nf := NewNotificationForwarder(engine, subscribe, &log.NewNoOpLogger())
+	nf := NewNotificationForwarder(engine, subscribe, &nil)
 	defer nf.Close()
 
 	require.Eventually(t, func() bool {
@@ -145,7 +145,7 @@ func TestNotifierReSubscribeAtPrefChange(t *testing.T) {
 		}
 	}
 
-	nf := NewNotificationForwarder(engine, subscriber, &log.NewNoOpLogger())
+	nf := NewNotificationForwarder(engine, subscriber, &nil)
 	defer nf.Close()
 
 	select {

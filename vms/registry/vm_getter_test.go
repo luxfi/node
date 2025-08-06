@@ -143,7 +143,7 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 	mockManager := vms.NewMockManager(ctrl)
 	mockRegistry := metrics.NewNoOpMetrics("test").Registry()
 	mockCPUTracker, err := resource.NewManager(
-		log.NewNoOpLogger(),
+		nil,
 		"",
 		time.Hour,
 		time.Hour,

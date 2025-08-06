@@ -103,7 +103,7 @@ func (gh *getter) GetAccepted(_ context.Context, nodeID ids.NodeID, requestID ui
 
 func (gh *getter) GetAncestors(ctx context.Context, nodeID ids.NodeID, requestID uint32, vtxID ids.ID) error {
 	startTime := time.Now()
-	gh.log.Verbo("called GetAncestors",
+	gh.log.Debug("called GetAncestors",
 		zap.Stringer("nodeID", nodeID),
 		zap.Uint32("requestID", requestID),
 		zap.Stringer("vtxID", vtxID),
@@ -111,7 +111,7 @@ func (gh *getter) GetAncestors(ctx context.Context, nodeID ids.NodeID, requestID
 	vertex, err := gh.storage.GetVtx(ctx, vtxID)
 	if err != nil || vertex.Status() == choices.Unknown {
 		// Don't have the requested vertex. Drop message.
-		gh.log.Verbo("dropping getAncestors")
+		gh.log.Debug("dropping getAncestors")
 		return nil //nolint:nilerr
 	}
 

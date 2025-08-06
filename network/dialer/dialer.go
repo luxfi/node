@@ -66,7 +66,7 @@ func (d *dialer) Dial(ctx context.Context, ip netip.AddrPort) (net.Conn, error) 
 	if err := d.throttler.Acquire(ctx); err != nil {
 		return nil, err
 	}
-	d.log.Verbo("dialing",
+	d.log.Debug("dialing",
 		zap.Stringer("ip", ip),
 	)
 	conn, err := d.dialer.DialContext(ctx, d.network, ip.String())

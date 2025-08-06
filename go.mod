@@ -15,9 +15,9 @@ require (
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/crypto v1.2.2
 	github.com/luxfi/database v1.1.9
-	github.com/luxfi/geth v1.16.1-lux
+	github.com/luxfi/geth v1.16.24
 	github.com/luxfi/ids v1.0.2
-	github.com/luxfi/log v0.1.1
+	github.com/luxfi/log v1.0.1
 	github.com/luxfi/metrics v1.1.1
 	github.com/luxfi/trace v0.1.1
 	golang.org/x/mod v0.26.0
@@ -48,14 +48,14 @@ require (
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/pires/go-proxyproto v0.7.0
-	github.com/prometheus/client_golang v1.22.0
-	github.com/prometheus/client_model v0.6.1
-	github.com/prometheus/common v0.62.0
+	github.com/prometheus/client_golang v1.23.0
+	github.com/prometheus/client_model v0.6.2
+	github.com/prometheus/common v0.65.0
 	github.com/rs/cors v1.10.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/cast v1.9.2
 	github.com/spf13/cobra v1.9.1
-	github.com/spf13/pflag v1.0.6
+	github.com/spf13/pflag v1.0.7
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a // indirect
@@ -96,6 +96,7 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
+	github.com/consensys/bavard v0.1.27 // indirect
 	github.com/consensys/gnark-crypto v0.18.0 // indirect
 	github.com/crate-crypto/go-eth-kzg v1.3.0 // indirect
 	github.com/crate-crypto/go-ipa v0.0.0-20240724233137-53bbb0ceb27a // indirect
@@ -135,13 +136,14 @@ require (
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
+	github.com/mmcloughlin/addchain v0.4.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
@@ -166,6 +168,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250721164621-a45f3dfb1074 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
+	rsc.io/tmplfunc v0.0.3 // indirect
 )
 
 // Go no longer supports bazaar repos
@@ -184,7 +187,8 @@ replace go.opentelemetry.io/otel/sdk/metric/metricdata => go.opentelemetry.io/ot
 
 replace go.opentelemetry.io/otel/sdk/metric/metricdatatest => go.opentelemetry.io/otel/sdk/metric v1.37.0
 
-// Fix genproto ambiguity
-exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
-
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
+
+replace github.com/consensys/gnark-crypto => github.com/consensys/gnark-crypto v0.12.1
+
+replace github.com/luxfi/database => ./database-fix

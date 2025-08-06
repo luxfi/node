@@ -23,7 +23,7 @@ func TestSocketSendAndReceive(t *testing.T) {
 	)
 
 	// Create socket and client; wait for client to connect
-	socket := NewSocket(socketName, log.NewNoOpLogger())
+	socket := NewSocket(socketName, nil)
 	socket.accept, connCh = newTestAcceptFn(t)
 	require.NoError(socket.Listen())
 

@@ -95,7 +95,7 @@ func (s *set) Add(requestID uint32, vdrs bag.Bag[ids.NodeID]) bool {
 		return false
 	}
 
-	s.log.Verbo("creating poll",
+	s.log.Debug("creating poll",
 		zap.Uint32("requestID", requestID),
 		zap.Stringer("validators", &vdrs),
 	)
@@ -113,7 +113,7 @@ func (s *set) Add(requestID uint32, vdrs bag.Bag[ids.NodeID]) bool {
 func (s *set) Vote(requestID uint32, vdr ids.NodeID, vote ids.ID) []bag.Bag[ids.ID] {
 	holder, exists := s.polls.Get(requestID)
 	if !exists {
-		s.log.Verbo("dropping vote",
+		s.log.Debug("dropping vote",
 			zap.String("reason", "unknown poll"),
 			zap.Stringer("validator", vdr),
 			zap.Uint32("requestID", requestID),
@@ -123,7 +123,7 @@ func (s *set) Vote(requestID uint32, vdr ids.NodeID, vote ids.ID) []bag.Bag[ids.
 
 	p := holder.GetPoll()
 
-	s.log.Verbo("processing vote",
+	s.log.Debug("processing vote",
 		zap.Stringer("validator", vdr),
 		zap.Uint32("requestID", requestID),
 		zap.Stringer("vote", vote),
@@ -152,7 +152,7 @@ func (s *set) processFinishedPolls() []bag.Bag[ids.ID] {
 			break
 		}
 
-		s.log.Verbo("poll finished",
+		s.log.Debug("poll finished",
 			zap.Uint32("requestID", iter.Key()),
 			zap.Stringer("poll", holder.GetPoll()),
 		)
@@ -173,7 +173,7 @@ func (s *set) processFinishedPolls() []bag.Bag[ids.ID] {
 func (s *set) Drop(requestID uint32, vdr ids.NodeID) []bag.Bag[ids.ID] {
 	holder, exists := s.polls.Get(requestID)
 	if !exists {
-		s.log.Verbo("dropping vote",
+		s.log.Debug("dropping vote",
 			zap.String("reason", "unknown poll"),
 			zap.Stringer("validator", vdr),
 			zap.Uint32("requestID", requestID),
@@ -181,7 +181,7 @@ func (s *set) Drop(requestID uint32, vdr ids.NodeID) []bag.Bag[ids.ID] {
 		return nil
 	}
 
-	s.log.Verbo("processing dropped vote",
+	s.log.Debug("processing dropped vote",
 		zap.Stringer("validator", vdr),
 		zap.Uint32("requestID", requestID),
 	)
