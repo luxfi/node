@@ -137,6 +137,32 @@ func (vm *VM) Initialize(
 		}
 	}
 
+	// CRITICAL: Check for LUX_GENESIS=1 environment variable for automatic replay
+	if luxGenesis && vm.replayConfig == nil {
+		// Set up automatic replay configuration when LUX_GENESIS=1 is set
+		sourcePath := "/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb"
+		if _, err := os.Stat(sourcePath); err == nil {
+			fmt.Printf("LUX_GENESIS=1: Setting up automatic replay from %s\n", sourcePath)
+			vm.replayConfig = &DatabaseReplayConfig{
+				SourcePath: sourcePath,
+				TestLimit:  0, // Will be set from GENESIS_BLOCK_LIMIT if available
+			}
+			
+			// Check for block limit
+			if blockLimitStr := os.Getenv("GENESIS_BLOCK_LIMIT"); blockLimitStr != "" {
+				if blockLimit, err := strconv.ParseUint(blockLimitStr, 10, 64); err == nil && blockLimit > 0 {
+					vm.replayConfig.TestLimit = blockLimit
+					vm.ctx.Log.Info("LUX_GENESIS: Limiting replay to blocks", "limit", blockLimit)
+				}
+			}
+			
+			// Mark as having migrated data to use proper initialization path
+			hasMigratedData = true
+		} else {
+			vm.ctx.Log.Warn("LUX_GENESIS=1 set but source database not found", "path", sourcePath)
+		}
+	}
+
 	// Fallback: Check for migrated blockchain data in database
 	if !hasMigratedData {
 		if heightBytes, err := vm.ethDB.Get([]byte("Height")); err == nil && len(heightBytes) == 8 {
