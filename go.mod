@@ -15,7 +15,7 @@ require (
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/crypto v1.2.9
 	github.com/luxfi/database v1.1.10
-	github.com/luxfi/geth v1.16.24
+	github.com/luxfi/geth v1.16.2-lux.2
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/log v1.0.2
 	github.com/luxfi/metrics v1.1.1
@@ -185,5 +185,3 @@ replace go.opentelemetry.io/otel/sdk/metric/metricdata => go.opentelemetry.io/ot
 replace go.opentelemetry.io/otel/sdk/metric/metricdatatest => go.opentelemetry.io/otel/sdk/metric v1.37.0
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
-
-replace github.com/luxfi/geth v1.16.24 => ../geth
