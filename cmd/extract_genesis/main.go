@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/pebbledb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/pebbledb"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/prometheus/client_golang/prometheus"
