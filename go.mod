@@ -185,3 +185,5 @@ replace go.opentelemetry.io/otel/sdk/metric/metricdata => go.opentelemetry.io/ot
 replace go.opentelemetry.io/otel/sdk/metric/metricdatatest => go.opentelemetry.io/otel/sdk/metric v1.37.0
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
+
+replace github.com/luxfi/geth v1.16.24 => ../geth
