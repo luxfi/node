@@ -41,7 +41,7 @@ import (
 )
 
 const (
-	engineType         = p2ppb.EngineType_ENGINE_TYPE_LUX
+	engineType         = p2ppb.EngineType_ENGINE_TYPE_DAG
 	testThreadPoolSize = 2
 )
 
@@ -502,7 +502,7 @@ func TestRouterTimeout(t *testing.T) {
 		return nil
 	}
 	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		State: consensus.Bootstrapping, // assumed bootstrapping is ongoing
 	})
 
@@ -540,7 +540,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -558,7 +558,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -576,7 +576,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -594,7 +594,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -611,9 +611,9 @@ func TestRouterTimeout(t *testing.T) {
 				nodeID,
 				ctx.ChainID,
 				requestID,
-				p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -631,7 +631,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -649,7 +649,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -669,7 +669,7 @@ func TestRouterTimeout(t *testing.T) {
 				core.ErrTimeout.Code,
 				core.ErrTimeout.Message,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -993,7 +993,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 		return nil
 	}
 	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		State: consensus.Bootstrapping, // assumed bootstrapping is ongoing
 	})
 
@@ -1426,7 +1426,7 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 		},
 	})
 	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		State: consensus.NormalOp, // assumed bootstrapping is done
 	})
 

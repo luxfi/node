@@ -511,8 +511,8 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 	// We will attempt to pass the message to the requested type for the state
 	// we are currently in.
 	currentState := h.ctx.State.Get()
-	if msg.EngineType == p2ppb.EngineType_ENGINE_TYPE_LINEAR &&
-		currentState.Type == p2ppb.EngineType_ENGINE_TYPE_LUX {
+	if msg.EngineType == p2ppb.EngineType_ENGINE_TYPE_CHAIN &&
+		currentState.Type == p2ppb.EngineType_ENGINE_TYPE_DAG {
 		// The peer is requesting an engine type that hasn't been initialized
 		// yet. This means we know that this isn't a response, so we can safely
 		// drop the message.
@@ -527,7 +527,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 
 	var engineType p2ppb.EngineType
 	switch msg.EngineType {
-	case p2ppb.EngineType_ENGINE_TYPE_LUX, p2ppb.EngineType_ENGINE_TYPE_LINEAR:
+	case p2ppb.EngineType_ENGINE_TYPE_DAG, p2ppb.EngineType_ENGINE_TYPE_CHAIN:
 		// The peer is requesting an engine type that has been initialized, so
 		// we should attempt to honor the request.
 		engineType = msg.EngineType

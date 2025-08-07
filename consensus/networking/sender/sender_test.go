@@ -107,7 +107,7 @@ func TestTimeout(t *testing.T) {
 		externalSender,
 		&chainRouter,
 		tm,
-		p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		metrics.NewNoOpMetrics("test").Registry(),
 	)
@@ -173,7 +173,7 @@ func TestTimeout(t *testing.T) {
 		},
 	})
 	ctx2.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		State: consensus.Bootstrapping, // assumed bootstrap is ongoing
 	})
 
@@ -367,7 +367,7 @@ func TestReliableMessages(t *testing.T) {
 		externalSender,
 		&chainRouter,
 		tm,
-		p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		metrics.NewNoOpMetrics("test").Registry(),
 	)
@@ -443,7 +443,7 @@ func TestReliableMessages(t *testing.T) {
 		},
 	})
 	ctx2.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		State: consensus.Bootstrapping, // assumed bootstrap is ongoing
 	})
 
@@ -530,7 +530,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 				externalSender,
 				&chainRouter,
 				tm,
-				p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				subnet,
 				metrics.NewNoOpMetrics("test").Registry(),
 			)
@@ -605,7 +605,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 				},
 			})
 			ctx2.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: consensus.Bootstrapping, // assumed bootstrap is ongoing
 			})
 
@@ -846,7 +846,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				externalSender,
 				router,
 				timeoutManager,
-				p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				subnets.New(ctx.NodeID, subnets.Config{}),
 				metrics.NewNoOpMetrics("test").Registry(),
 			)
@@ -1053,7 +1053,7 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 				externalSender,
 				router,
 				timeoutManager,
-				p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				subnets.New(ctx.NodeID, subnets.Config{}),
 				metrics.NewNoOpMetrics("test").Registry(),
 			)
@@ -1092,7 +1092,7 @@ func TestSender_Single_Request(t *testing.T) {
 		deadline          = time.Second
 		requestID         = uint32(1337)
 		containerID       = ids.GenerateTestID()
-		engineType        = p2ppb.EngineType_ENGINE_TYPE_LINEAR
+		engineType        = p2ppb.EngineType_ENGINE_TYPE_CHAIN
 	)
 	consensusCtx := consensustest.Context(t, consensustest.PChainID)
 	ctx := consensustest.ConsensusContext(consensusCtx)

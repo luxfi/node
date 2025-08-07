@@ -26,7 +26,7 @@ import (
 var _ block.Parser = testParser(nil)
 
 func TestGetMissingBlockIDs(t *testing.T) {
-	blocks := chaintest.BuildLinear(7)
+	blocks := chaintest.BuildChain(7)
 	parser := makeParser(blocks)
 
 	tests := []struct {
@@ -104,7 +104,7 @@ func TestGetMissingBlockIDs(t *testing.T) {
 }
 
 func TestProcess(t *testing.T) {
-	blocks := chaintest.BuildLinear(7)
+	blocks := chaintest.BuildChain(7)
 
 	tests := []struct {
 		name                        string
@@ -260,7 +260,7 @@ func TestExecute(t *testing.T) {
 			tree, err := interval.NewTree(db)
 			require.NoError(err)
 
-			blocks := chaintest.BuildLinear(numBlocks)
+			blocks := chaintest.BuildChain(numBlocks)
 			parser := makeParser(blocks)
 			for _, blk := range blocks {
 				_, err := interval.Add(db, tree, 0, blk.Height(), blk.Bytes())
