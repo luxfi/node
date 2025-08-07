@@ -10,6 +10,9 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"runtime"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cockroachdb/pebble"
@@ -65,6 +68,9 @@ type UnifiedReplayConfig struct {
 	TestLimit    uint64       // Number of blocks to replay in test mode
 	CopyAllState bool         // If true, copy all state data (can be large)
 	MaxStateNodes uint64      // Maximum state nodes to copy (0 = unlimited)
+	ExtractGenesisFromSource bool // If true, extract genesis from block 0
+	ParallelWorkers int        // Number of parallel workers for processing (default: 8)
+	BatchSize    int           // Batch size for database writes (default: 100000)
 }
 
 // UnifiedReplayer handles replaying blocks from various database formats
@@ -90,11 +96,18 @@ func NewUnifiedReplayer(config *UnifiedReplayConfig, targetDB ethdb.Database, bl
 	if config.MaxStateNodes == 0 && !config.CopyAllState {
 		config.MaxStateNodes = 1000000 // Default to 1M nodes if not copying all
 	}
+	if config.ParallelWorkers == 0 {
+		config.ParallelWorkers = 8 // Default to 8 parallel workers
+	}
+	if config.BatchSize == 0 {
+		config.BatchSize = 100000 // Default to 100k batch size
+	}
 
 	sourceDB, err := pebble.Open(config.SourcePath, &pebble.Options{ReadOnly: true})
 	if err != nil {
-		return nil, fmt.Errorf("failed to open source database: %v", err)
+		return nil, fmt.Errorf("CRITICAL: Cannot open source database at %s: %v", config.SourcePath, err)
 	}
+	log.Printf("Successfully opened source database at %s", config.SourcePath)
 
 	replayer := &UnifiedReplayer{
 		config:     config,
@@ -168,6 +181,99 @@ func (r *UnifiedReplayer) detectDatabaseType() error {
 	}
 
 	return fmt.Errorf("unable to detect database type")
+}
+
+// ExtractGenesis extracts the genesis block from the source database
+func (r *UnifiedReplayer) ExtractGenesis() (*types.Block, error) {
+	if !r.isNamespaced {
+		return nil, fmt.Errorf("genesis extraction only supported for namespaced databases")
+	}
+	
+	// Get block 0 (genesis)
+	// Canonical hash key for block 0: namespace + 'h' + blocknum(8) + 'n'
+	canonicalKey := append([]byte(nil), r.namespace...)
+	canonicalKey = append(canonicalKey, 'h')
+	canonicalKey = append(canonicalKey, encodeBlockNumber(0)...)
+	canonicalKey = append(canonicalKey, 'n')
+	
+	hashData, closer, err := r.sourceDB.Get(canonicalKey)
+	if err != nil {
+		return nil, fmt.Errorf("genesis block hash not found: %v", err)
+	}
+	defer closer.Close()
+	
+	if len(hashData) != 32 {
+		return nil, fmt.Errorf("invalid genesis hash length: %d", len(hashData))
+	}
+	
+	genesisHash := common.BytesToHash(hashData)
+	log.Printf("Found genesis hash in source: %s", genesisHash.Hex())
+	
+	// Get the header: namespace + 'h' + blocknum(8) + hash(32)
+	headerKey := append([]byte(nil), r.namespace...)
+	headerKey = append(headerKey, 'h')
+	headerKey = append(headerKey, encodeBlockNumber(0)...)
+	headerKey = append(headerKey, genesisHash.Bytes()...)
+	
+	headerData, closer2, err := r.sourceDB.Get(headerKey)
+	if err != nil {
+		return nil, fmt.Errorf("genesis header not found: %v", err)
+	}
+	defer closer2.Close()
+	
+	// Try to decode header
+	var header types.Header
+	if err := rlp.DecodeBytes(headerData, &header); err != nil {
+		// Try SubnetEVM format
+		var subnetHeader SubnetEVMHeader
+		if err2 := rlp.DecodeBytes(headerData, &subnetHeader); err2 != nil {
+			return nil, fmt.Errorf("failed to decode genesis header: %v", err)
+		}
+		// Convert to standard header
+		header = types.Header{
+			ParentHash:  subnetHeader.ParentHash,
+			UncleHash:   subnetHeader.UncleHash,
+			Coinbase:    subnetHeader.Coinbase,
+			Root:        subnetHeader.Root,
+			TxHash:      subnetHeader.TxHash,
+			ReceiptHash: subnetHeader.ReceiptHash,
+			Bloom:       subnetHeader.Bloom,
+			Difficulty:  subnetHeader.Difficulty,
+			Number:      subnetHeader.Number,
+			GasLimit:    subnetHeader.GasLimit,
+			GasUsed:     subnetHeader.GasUsed,
+			Time:        subnetHeader.Time,
+			Extra:       subnetHeader.Extra,
+			MixDigest:   subnetHeader.MixDigest,
+			Nonce:       subnetHeader.Nonce,
+			BaseFee:     subnetHeader.BaseFee,
+		}
+	}
+	
+	// Get the body: namespace + 'b' + blocknum(8) + hash(32)
+	bodyKey := append([]byte(nil), r.namespace...)
+	bodyKey = append(bodyKey, 'b')
+	bodyKey = append(bodyKey, encodeBlockNumber(0)...)
+	bodyKey = append(bodyKey, genesisHash.Bytes()...)
+	
+	bodyData, closer3, err := r.sourceDB.Get(bodyKey)
+	if err != nil {
+		// Genesis might not have a body, that's ok
+		return types.NewBlockWithHeader(&header), nil
+	}
+	defer closer3.Close()
+	
+	var body types.Body
+	if err := rlp.DecodeBytes(bodyData, &body); err != nil {
+		// If body decode fails, just use empty body
+		return types.NewBlockWithHeader(&header), nil
+	}
+	
+	genesis := types.NewBlockWithHeader(&header).WithBody(body)
+	log.Printf("Extracted genesis block: number=%d, hash=%s, stateRoot=%s", 
+		genesis.NumberU64(), genesis.Hash().Hex(), genesis.Root().Hex())
+	
+	return genesis, nil
 }
 
 // Run executes the database replay
@@ -370,50 +476,89 @@ func (r *UnifiedReplayer) copyStateData(headers map[uint64]*types.Header) error 
 	
 	log.Printf("Found %d unique state roots to copy", len(stateRoots))
 	
-	// For test mode, copy ALL state nodes to ensure complete state access
-	if r.config.TestMode {
-		log.Printf("TEST MODE: Copying ALL state trie nodes from source database...")
-		copiedCount := 0
+	// Copy state nodes - optimized for parallel processing
+	log.Printf("Copying state trie nodes for %d blocks...", len(stateRoots))
+	copiedCount := 0
+	processedNodes := make(map[string]bool)
+	
+	// Create a batch for faster writes
+	batch := r.targetDB.NewBatch()
+	batchSize := 0
+	const maxBatchSize = 100000 // Increased batch size for better performance
 		
-		// Create a batch for faster writes
-		batch := r.targetDB.NewBatch()
-		batchSize := 0
-		const maxBatchSize = 10000 // Write in batches of 10k
-		
-		// Iterate through ALL entries with namespace prefix that are state nodes
-		stateIter, _ := r.sourceDB.NewIter(&pebble.IterOptions{
-			LowerBound: r.namespace,
-		})
-		defer stateIter.Close()
-		
-		for stateIter.First(); stateIter.Valid(); stateIter.Next() {
-			key := stateIter.Key()
-			val, _ := stateIter.ValueAndErr()
+		// Recursive function to copy a trie node and its children
+		var copyTrieNode func(hash []byte, depth int) error
+		copyTrieNode = func(hash []byte, depth int) error {
+			if len(hash) != 32 {
+				return nil
+			}
 			
-			// State trie nodes have exactly 64 bytes: namespace(32) + hash(32)
-			if len(key) == 64 && bytes.HasPrefix(key, r.namespace) {
-				// This is a state trie node
-				hash := key[32:] // The hash part after namespace
-				
-				// Add to batch (just the hash, no namespace)
-				if err := batch.Put(hash, val); err != nil {
-					log.Printf("Failed to batch state node %x: %v", hash, err)
-					continue
+			hashStr := hex.EncodeToString(hash)
+			if processedNodes[hashStr] {
+				return nil // Already processed
+			}
+			processedNodes[hashStr] = true
+			
+			// Build key: namespace + hash
+			nodeKey := append([]byte(nil), r.namespace...)
+			nodeKey = append(nodeKey, hash...)
+			
+			// Get node data from source
+			nodeData, closer, err := r.sourceDB.Get(nodeKey)
+			if err != nil {
+				// This is CRITICAL - if we can't find a node, the state will be incomplete
+				if depth == 0 {
+					// Root nodes MUST exist
+					return fmt.Errorf("CRITICAL: Root node %x not found in source database: %v", hash, err)
 				}
-				
-				copiedCount++
-				batchSize++
-				
-				// Write batch when it gets large enough
-				if batchSize >= maxBatchSize {
-					if err := batch.Write(); err != nil {
-						log.Printf("Failed to write batch: %v", err)
+				// For child nodes, log but continue (might be pruned)
+				log.Printf("WARNING: Child node %x at depth %d not found: %v", hash, depth, err)
+				return nil
+			}
+			defer closer.Close()
+			
+			// Add to batch (just the hash, no namespace)
+			if err := batch.Put(hash, nodeData); err != nil {
+				return fmt.Errorf("failed to batch node %x: %v", hash, err)
+			}
+			
+			copiedCount++
+			batchSize++
+			
+			// Write batch when it gets large enough
+			if batchSize >= maxBatchSize {
+				if err := batch.Write(); err != nil {
+					log.Printf("Failed to write batch: %v", err)
+				}
+				batch.Reset()
+				batchSize = 0
+				log.Printf("Copied %d state trie nodes...", copiedCount)
+			}
+			
+			// Parse node to find children and recurse
+			var nodeList []interface{}
+			if err := rlp.DecodeBytes(nodeData, &nodeList); err == nil {
+				// Process branch and extension nodes recursively
+				for _, item := range nodeList {
+					if child, ok := item.([]byte); ok && len(child) == 32 {
+						if err := copyTrieNode(child, depth+1); err != nil {
+							return err
+						}
 					}
-					batch.Reset()
-					batchSize = 0
-					log.Printf("Copied %d state trie nodes...", copiedCount)
 				}
 			}
+			
+			return nil
+		}
+		
+		// Copy state tries for each unique root
+		for root := range stateRoots {
+			log.Printf("Copying state trie from root %x", root)
+			if err := copyTrieNode(root.Bytes(), 0); err != nil {
+				// FAIL LOUDLY - we CANNOT continue with incomplete state
+				return fmt.Errorf("FAILED TO COPY STATE: Root %x copy failed: %v", root, err)
+			}
+			log.Printf("Successfully copied tree for root %x", root)
 		}
 		
 		// Write any remaining batch
@@ -423,78 +568,8 @@ func (r *UnifiedReplayer) copyStateData(headers map[uint64]*types.Header) error 
 			}
 		}
 		
-		log.Printf("Copied %d state trie nodes", copiedCount)
+		log.Printf("Copied %d state trie nodes for %d blocks", copiedCount, len(stateRoots))
 		return nil
-	}
-	
-	// For production, use selective recursive copy
-	processedNodes := make(map[string]bool)
-	copiedCount := 0
-	
-	var copyTrieNode func(hash []byte, depth int) error
-	copyTrieNode = func(hash []byte, depth int) error {
-		if len(hash) != 32 {
-			return nil
-		}
-		
-		hashStr := hex.EncodeToString(hash)
-		if processedNodes[hashStr] {
-			return nil
-		}
-		processedNodes[hashStr] = true
-		
-		// Build key: namespace + hash
-		nodeKey := append([]byte(nil), r.namespace...)
-		nodeKey = append(nodeKey, hash...)
-		
-		// Get node data
-		nodeData, closer, err := r.sourceDB.Get(nodeKey)
-		if err != nil {
-			return nil // Node doesn't exist
-		}
-		defer closer.Close()
-		
-		// Write to target database
-		if err := r.targetDB.Put(hash, nodeData); err != nil {
-			return fmt.Errorf("failed to write node %x: %v", hash, err)
-		}
-		
-		copiedCount++
-		if copiedCount % 10000 == 0 {
-			log.Printf("Copied %d state trie nodes...", copiedCount)
-		}
-		
-		// Check limit
-		if r.config.MaxStateNodes > 0 && uint64(copiedCount) >= r.config.MaxStateNodes {
-			log.Printf("Reached state node limit (%d nodes)", r.config.MaxStateNodes)
-			return nil
-		}
-		
-		// Parse node to find children
-		var nodeList []interface{}
-		if err := rlp.DecodeBytes(nodeData, &nodeList); err == nil {
-			// Process branch and extension nodes recursively
-			for _, item := range nodeList {
-				if child, ok := item.([]byte); ok && len(child) == 32 {
-					if err := copyTrieNode(child, depth+1); err != nil {
-						return err
-					}
-				}
-			}
-		}
-		
-		return nil
-	}
-	
-	// Copy state tries for each root
-	for root := range stateRoots {
-		if err := copyTrieNode(root.Bytes(), 0); err != nil {
-			log.Printf("Error copying state trie for root %x: %v", root, err)
-		}
-	}
-	
-	log.Printf("Copied %d state trie nodes", copiedCount)
-	return nil
 }
 
 // replayBlocks writes the blocks to the target database
@@ -561,6 +636,364 @@ func (r *UnifiedReplayer) Close() error {
 		return r.sourceDB.Close()
 	}
 	return nil
+}
+
+// ParallelReplay performs optimized parallel replay of the entire database
+func (r *UnifiedReplayer) ParallelReplay() error {
+	startTime := time.Now()
+	log.Printf("Starting OPTIMIZED parallel database replay with %d workers", r.config.ParallelWorkers)
+	
+	// Use all CPU cores if not in test mode
+	if !r.config.TestMode {
+		runtime.GOMAXPROCS(runtime.NumCPU())
+	}
+	
+	// First, get all canonical blocks in parallel
+	log.Printf("Phase 1: Discovering all canonical blocks...")
+	canonicalBlocks, maxHeight := r.discoverCanonicalBlocksParallel()
+	log.Printf("Found %d canonical blocks, max height: %d", len(canonicalBlocks), maxHeight)
+	
+	if r.config.TestMode && maxHeight > r.config.TestLimit {
+		maxHeight = r.config.TestLimit
+		log.Printf("TEST MODE: Limiting to %d blocks", maxHeight)
+	}
+	
+	// Phase 2: Fetch headers and bodies in parallel batches
+	log.Printf("Phase 2: Fetching headers and bodies in parallel...")
+	headers, bodies := r.fetchBlockDataParallel(canonicalBlocks, maxHeight)
+	
+	// Phase 3: Copy state data with parallel workers
+	log.Printf("Phase 3: Copying state data with parallel workers...")
+	if err := r.copyStateDataParallel(headers); err != nil {
+		return fmt.Errorf("state copy failed: %v", err)
+	}
+	
+	// Phase 4: Write blocks to database in large batches
+	log.Printf("Phase 4: Writing blocks in optimized batches...")
+	replayedCount, err := r.replayBlocksBatched(headers, bodies, maxHeight)
+	if err != nil {
+		return fmt.Errorf("block replay failed: %v", err)
+	}
+	
+	elapsed := time.Since(startTime)
+	rate := float64(replayedCount) / elapsed.Seconds()
+	log.Printf("✅ OPTIMIZED replay complete! Replayed %d blocks in %v (%.1f blocks/sec)", 
+		replayedCount, elapsed, rate)
+	
+	return nil
+}
+
+// discoverCanonicalBlocksParallel discovers all canonical blocks in parallel
+func (r *UnifiedReplayer) discoverCanonicalBlocksParallel() (map[uint64]common.Hash, uint64) {
+	canonicalBlocks := make(map[uint64]common.Hash)
+	var maxHeight uint64
+	var mu sync.Mutex
+	
+	// Create workers to scan ranges in parallel
+	numWorkers := r.config.ParallelWorkers
+	blockRangeSize := uint64(100000) // Each worker scans 100k blocks
+	
+	var wg sync.WaitGroup
+	for worker := 0; worker < numWorkers; worker++ {
+		wg.Add(1)
+		startBlock := uint64(worker) * blockRangeSize
+		endBlock := startBlock + blockRangeSize
+		
+		go func(start, end uint64) {
+			defer wg.Done()
+			
+			for blockNum := start; blockNum < end; blockNum++ {
+				// Build canonical key
+				canonicalKey := append([]byte(nil), r.namespace...)
+				canonicalKey = append(canonicalKey, 'h')
+				canonicalKey = append(canonicalKey, encodeBlockNumber(blockNum)...)
+				canonicalKey = append(canonicalKey, 'n')
+				
+				if hashData, closer, err := r.sourceDB.Get(canonicalKey); err == nil {
+					if len(hashData) == 32 {
+						hash := common.BytesToHash(hashData)
+						mu.Lock()
+						canonicalBlocks[blockNum] = hash
+						if blockNum > maxHeight {
+							maxHeight = blockNum
+						}
+						mu.Unlock()
+					}
+					closer.Close()
+				}
+			}
+		}(startBlock, endBlock)
+	}
+	
+	wg.Wait()
+	return canonicalBlocks, maxHeight
+}
+
+// fetchBlockDataParallel fetches headers and bodies in parallel
+func (r *UnifiedReplayer) fetchBlockDataParallel(canonicalBlocks map[uint64]common.Hash, maxHeight uint64) (map[uint64]*types.Header, map[common.Hash]*types.Body) {
+	headers := make(map[uint64]*types.Header)
+	bodies := make(map[common.Hash]*types.Body)
+	var headerMu, bodyMu sync.Mutex
+	
+	// Process blocks in chunks
+	chunkSize := uint64(10000)
+	numChunks := (maxHeight / chunkSize) + 1
+	
+	var wg sync.WaitGroup
+	processedBlocks := int32(0)
+	
+	for chunk := uint64(0); chunk < numChunks; chunk++ {
+		wg.Add(1)
+		startBlock := chunk * chunkSize
+		endBlock := startBlock + chunkSize
+		if endBlock > maxHeight {
+			endBlock = maxHeight + 1
+		}
+		
+		go func(start, end uint64) {
+			defer wg.Done()
+			
+			// Create local batch for this chunk
+			localHeaders := make(map[uint64]*types.Header)
+			localBodies := make(map[common.Hash]*types.Body)
+			
+			for blockNum := start; blockNum < end; blockNum++ {
+				hash, exists := canonicalBlocks[blockNum]
+				if !exists {
+					continue
+				}
+				
+				// Fetch header
+				headerKey := append([]byte(nil), r.namespace...)
+				headerKey = append(headerKey, 'h')
+				headerKey = append(headerKey, encodeBlockNumber(blockNum)...)
+				headerKey = append(headerKey, hash.Bytes()...)
+				
+				if headerData, closer, err := r.sourceDB.Get(headerKey); err == nil {
+					var header types.Header
+					if err := rlp.DecodeBytes(headerData, &header); err == nil {
+						localHeaders[blockNum] = &header
+						
+						// Fetch body
+						bodyKey := append([]byte(nil), r.namespace...)
+						bodyKey = append(bodyKey, 'b')
+						bodyKey = append(bodyKey, encodeBlockNumber(blockNum)...)
+						bodyKey = append(bodyKey, hash.Bytes()...)
+						
+						if bodyData, bodyCloser, err := r.sourceDB.Get(bodyKey); err == nil {
+							var body types.Body
+							if err := rlp.DecodeBytes(bodyData, &body); err == nil {
+								localBodies[hash] = &body
+							}
+							bodyCloser.Close()
+						}
+					}
+					closer.Close()
+				}
+				
+				// Update progress
+				processed := atomic.AddInt32(&processedBlocks, 1)
+				if processed%10000 == 0 {
+					log.Printf("Fetched %d blocks...", processed)
+				}
+			}
+			
+			// Merge local results
+			headerMu.Lock()
+			for k, v := range localHeaders {
+				headers[k] = v
+			}
+			headerMu.Unlock()
+			
+			bodyMu.Lock()
+			for k, v := range localBodies {
+				bodies[k] = v
+			}
+			bodyMu.Unlock()
+		}(startBlock, endBlock)
+	}
+	
+	wg.Wait()
+	log.Printf("Fetched %d headers and %d bodies", len(headers), len(bodies))
+	return headers, bodies
+}
+
+// copyStateDataParallel copies state data using parallel workers
+func (r *UnifiedReplayer) copyStateDataParallel(headers map[uint64]*types.Header) error {
+	// Collect unique state roots
+	stateRoots := make(map[common.Hash]bool)
+	for _, header := range headers {
+		if header != nil {
+			stateRoots[header.Root] = true
+		}
+	}
+	
+	log.Printf("Copying state for %d unique roots using %d workers", len(stateRoots), r.config.ParallelWorkers)
+	
+	// Create work queue
+	workQueue := make(chan common.Hash, len(stateRoots))
+	for root := range stateRoots {
+		workQueue <- root
+	}
+	close(workQueue)
+	
+	// Track progress
+	var copiedNodes int64
+	var errorCount int32
+	
+	// Create parallel workers
+	var wg sync.WaitGroup
+	for i := 0; i < r.config.ParallelWorkers; i++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+			
+			// Each worker gets its own batch
+			batch := r.targetDB.NewBatch()
+			batchSize := 0
+			processedNodes := make(map[string]bool)
+			
+			var copyNode func(hash []byte) error
+			copyNode = func(hash []byte) error {
+				if len(hash) != 32 {
+					return nil
+				}
+				
+				hashStr := hex.EncodeToString(hash)
+				if processedNodes[hashStr] {
+					return nil
+				}
+				processedNodes[hashStr] = true
+				
+				// Build key with namespace
+				nodeKey := append([]byte(nil), r.namespace...)
+				nodeKey = append(nodeKey, hash...)
+				
+				// Get node data
+				nodeData, closer, err := r.sourceDB.Get(nodeKey)
+				if err != nil {
+					return nil // Node might not exist
+				}
+				defer closer.Close()
+				
+				// Add to batch
+				batch.Put(hash, nodeData)
+				batchSize++
+				
+				// Write batch when full
+				if batchSize >= r.config.BatchSize {
+					if err := batch.Write(); err != nil {
+						atomic.AddInt32(&errorCount, 1)
+						return err
+					}
+					batch.Reset()
+					copied := atomic.AddInt64(&copiedNodes, int64(batchSize))
+					if copied%100000 == 0 {
+						log.Printf("Worker %d: Copied %d state nodes total", workerID, copied)
+					}
+					batchSize = 0
+				}
+				
+				// Parse for children
+				var nodeList []interface{}
+				if err := rlp.DecodeBytes(nodeData, &nodeList); err == nil {
+					for _, item := range nodeList {
+						if child, ok := item.([]byte); ok && len(child) == 32 {
+							if err := copyNode(child); err != nil {
+								return err
+							}
+						}
+					}
+				}
+				
+				return nil
+			}
+			
+			// Process work queue
+			for root := range workQueue {
+				if err := copyNode(root.Bytes()); err != nil {
+					log.Printf("Worker %d: Error copying root %x: %v", workerID, root, err)
+				}
+			}
+			
+			// Flush remaining batch
+			if batchSize > 0 {
+				batch.Write()
+				atomic.AddInt64(&copiedNodes, int64(batchSize))
+			}
+		}(i)
+	}
+	
+	wg.Wait()
+	
+	if errorCount > 0 {
+		return fmt.Errorf("encountered %d errors during state copy", errorCount)
+	}
+	
+	log.Printf("Successfully copied %d state nodes", copiedNodes)
+	return nil
+}
+
+// replayBlocksBatched writes blocks in large batches for maximum performance
+func (r *UnifiedReplayer) replayBlocksBatched(headers map[uint64]*types.Header, bodies map[common.Hash]*types.Body, maxHeight uint64) (int, error) {
+	log.Printf("Writing %d blocks to database in batches...", len(headers))
+	
+	batch := r.targetDB.NewBatch()
+	batchSize := 0
+	replayedCount := 0
+	
+	for blockNum := uint64(0); blockNum <= maxHeight; blockNum++ {
+		header, hasHeader := headers[blockNum]
+		if !hasHeader {
+			continue
+		}
+		
+		body, hasBody := bodies[header.Hash()]
+		if !hasBody {
+			body = &types.Body{}
+		}
+		
+		// Create block
+		block := types.NewBlockWithHeader(header).WithBody(*body)
+		
+		// Add all writes to batch
+		rawdb.WriteBlock(batch, block)
+		rawdb.WriteCanonicalHash(batch, block.Hash(), block.NumberU64())
+		rawdb.WriteHeader(batch, header)
+		rawdb.WriteBody(batch, block.Hash(), block.NumberU64(), body)
+		rawdb.WriteReceipts(batch, block.Hash(), block.NumberU64(), nil)
+		
+		batchSize++
+		replayedCount++
+		
+		// Write batch when full
+		if batchSize >= r.config.BatchSize {
+			if err := batch.Write(); err != nil {
+				return replayedCount, fmt.Errorf("batch write failed: %v", err)
+			}
+			batch.Reset()
+			log.Printf("Wrote batch of %d blocks (total: %d)", batchSize, replayedCount)
+			batchSize = 0
+		}
+	}
+	
+	// Write final batch
+	if batchSize > 0 {
+		if err := batch.Write(); err != nil {
+			return replayedCount, fmt.Errorf("final batch write failed: %v", err)
+		}
+	}
+	
+	// Set final head
+	if lastHeader, exists := headers[maxHeight]; exists {
+		rawdb.WriteHeadBlockHash(r.targetDB, lastHeader.Hash())
+		rawdb.WriteHeadHeaderHash(r.targetDB, lastHeader.Hash())
+		rawdb.WriteHeadFastBlockHash(r.targetDB, lastHeader.Hash())
+		rawdb.WriteLastPivotNumber(r.targetDB, maxHeight)
+		log.Printf("Set final head to block %d (hash: %s)", maxHeight, lastHeader.Hash().Hex())
+	}
+	
+	return replayedCount, nil
 }
 
 // encodeBlockNumber is defined in backend.go

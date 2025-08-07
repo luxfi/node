@@ -1,0 +1,24 @@
+{
+  "networkID": 96369,
+  "allocations": [
+    {
+      "ethAddr": "0x0100000000000000000000000000000000000000",
+      "luxAddr": "X-lux1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq97wwunp",
+      "initialAmount": 300000000000000000,
+      "unlockSchedule": []
+    }
+  ],
+  "startTime": 1730446786,
+  "initialStakeDuration": 31536000,
+  "initialStakeDurationOffset": 5400,
+  "initialStakedFunds": ["X-lux1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq97wwunp"],
+  "initialStakers": [
+    {
+      "nodeID": "NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg",
+      "rewardAddress": "X-lux1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq97wwunp",
+      "delegationFee": 20000
+    }
+  ],
+  "cChainGenesis": "{\"config\":{\"chainId\":96369,\"homesteadBlock\":0,\"eip150Block\":0,\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"berlinBlock\":0,\"londonBlock\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x672485c2\",\"extraData\":\"0x\",\"gasLimit\":\"0xb71b00\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0x9011E888251AB053B7bD1cdB598Db4f9DEd94714\":{\"balance\":\"0x193e5939a08ce9dbd480000000\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}",
+  "message": "Replay genesis for network 96369"
+}

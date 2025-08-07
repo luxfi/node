@@ -49,6 +49,7 @@ var (
 type DatabaseReplayConfig struct {
 	SourcePath string // Path to source database
 	TestLimit  uint64 // If > 0, limit replay to this many blocks
+	ExtractGenesisFromSource bool // If true, extract genesis from block 0 of source
 }
 
 // VM implements the C-Chain VM interface using geth
@@ -146,6 +147,7 @@ func (vm *VM) Initialize(
 			vm.replayConfig = &DatabaseReplayConfig{
 				SourcePath: sourcePath,
 				TestLimit:  0, // Will be set from GENESIS_BLOCK_LIMIT if available
+				ExtractGenesisFromSource: true, // Always extract genesis from source for consistency
 			}
 			
 			// Check for block limit
@@ -368,6 +370,65 @@ func (vm *VM) Initialize(
 		}
 	}
 
+	// CRITICAL: If we have a replay config with genesis extraction, do it FIRST
+	var extractedGenesis *types.Block
+	if vm.replayConfig != nil && vm.replayConfig.ExtractGenesisFromSource {
+		vm.ctx.Log.Info("Extracting genesis from source database BEFORE backend creation", 
+			"source", vm.replayConfig.SourcePath)
+		
+		// Create a temporary replayer just to extract genesis
+		config := &UnifiedReplayConfig{
+			SourcePath:   vm.replayConfig.SourcePath,
+			DatabaseType: AutoDetect,
+			ExtractGenesisFromSource: true,
+		}
+		
+		replayer, err := NewUnifiedReplayer(config, vm.ethDB, nil) // nil blockchain is OK for genesis extraction
+		if err != nil {
+			return fmt.Errorf("failed to create replayer for genesis extraction: %w", err)
+		}
+		
+		extractedGenesis, err = replayer.ExtractGenesis()
+		replayer.Close()
+		
+		if err != nil {
+			return fmt.Errorf("failed to extract genesis from source: %w", err)
+		}
+		
+		vm.ctx.Log.Info("Extracted genesis from source database", 
+			"hash", extractedGenesis.Hash().Hex(),
+			"number", extractedGenesis.NumberU64(),
+			"stateRoot", extractedGenesis.Root().Hex(),
+			"timestamp", extractedGenesis.Time())
+		
+		// Override the genesis to use the extracted one EXACTLY as it is
+		// We need to mark this database as already having the genesis
+		// by NOT passing a genesis object to the backend - it will use what's in the DB
+		hasMigratedData = true
+		migratedHeight = 0  // Starting from genesis
+		migratedBlockHash = extractedGenesis.Hash()
+		
+		// Store the extracted genesis hash for verification
+		vm.genesisHash = extractedGenesis.Hash()
+		
+		fmt.Printf("Using extracted genesis directly: hash=%s\n", extractedGenesis.Hash().Hex())
+		
+		// Write the extracted genesis to database BEFORE creating backend
+		rawdb.WriteBlock(vm.ethDB, extractedGenesis)
+		rawdb.WriteCanonicalHash(vm.ethDB, extractedGenesis.Hash(), 0)
+		rawdb.WriteHeader(vm.ethDB, extractedGenesis.Header())
+		rawdb.WriteBody(vm.ethDB, extractedGenesis.Hash(), 0, extractedGenesis.Body())
+		
+		// Mark that we have genesis so backend won't try to recreate it
+		rawdb.WriteHeadBlockHash(vm.ethDB, extractedGenesis.Hash())
+		rawdb.WriteHeadHeaderHash(vm.ethDB, extractedGenesis.Hash())
+		
+		vm.ctx.Log.Info("Pre-written extracted genesis to database")
+		
+		// CRITICAL: Clear the genesis variable so backend won't try to use it
+		genesis = nil
+	}
+
 	// Create minimal Ethereum backend
 	var err error
 	if hasMigratedData && vm.replayConfig == nil {
@@ -379,12 +440,26 @@ func (vm *VM) Initialize(
 		if err != nil {
 			return fmt.Errorf("failed to create migrated backend: %w", err)
 		}
+	} else if hasMigratedData && vm.replayConfig != nil {
+		// We have migrated data AND need to replay
+		// Use the normal backend but DON'T pass a genesis - let it use what's in the database
+		fmt.Printf("MIGRATION MODE WITH REPLAY: Using extracted genesis from database\n")
+		
+		// Pass nil genesis so the backend won't try to override what's already there
+		vm.backend, err = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, nil)
+		fmt.Printf("Backend creation result: err=%v, backend=%v\n", err, vm.backend != nil)
 	} else {
-		// Use normal backend (will do replay if configured)
+		// Use normal backend (no migration)
+		fmt.Printf("Creating normal backend with genesis hash: %s\n", genesis.ToBlock().Hash().Hex())
 		vm.backend, err = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, genesis)
+		fmt.Printf("Backend creation result: err=%v, backend=%v\n", err, vm.backend != nil)
 	}
 	if err != nil {
 		return fmt.Errorf("failed to create eth backend: %w", err)
+	}
+	
+	if vm.backend == nil {
+		return fmt.Errorf("backend is nil after creation")
 	}
 
 	vm.blockChain = vm.backend.BlockChain()
@@ -397,9 +472,21 @@ func (vm *VM) Initialize(
 	}
 	vm.genesisHash = genesisBlock.Hash()
 
+	// If we extracted genesis, verify it matches
+	if extractedGenesis != nil {
+		if vm.genesisHash != extractedGenesis.Hash() {
+			vm.ctx.Log.Warn("Genesis hash mismatch after backend creation",
+				"expected", extractedGenesis.Hash().Hex(),
+				"got", vm.genesisHash.Hex())
+			// Force the genesis hash to match
+			vm.genesisHash = extractedGenesis.Hash()
+		}
+	}
+
 	// Perform database replay if configured
 	if vm.replayConfig != nil {
-		vm.ctx.Log.Info("Performing database replay", "source", vm.replayConfig.SourcePath)
+		vm.ctx.Log.Info("STARTING DATABASE REPLAY", "source", vm.replayConfig.SourcePath)
+		fmt.Printf("STARTING DATABASE REPLAY from %s\n", vm.replayConfig.SourcePath)
 		
 		// Use unified replay system
 		config := &UnifiedReplayConfig{
@@ -408,6 +495,7 @@ func (vm *VM) Initialize(
 			TestMode:     false,       // Full replay by default
 			CopyAllState: false,       // Don't copy all state (too large)
 			MaxStateNodes: 1000000,    // Limit to 1M nodes for safety
+			ExtractGenesisFromSource: false, // Already extracted above
 		}
 		
 		// Check if test mode is requested
@@ -415,6 +503,7 @@ func (vm *VM) Initialize(
 			config.TestMode = true
 			config.TestLimit = vm.replayConfig.TestLimit
 			vm.ctx.Log.Info("TEST MODE: Limiting replay to blocks", "limit", config.TestLimit)
+			fmt.Printf("TEST MODE: Limiting replay to %d blocks\n", config.TestLimit)
 		}
 		
 		replayer, err := NewUnifiedReplayer(config, vm.ethDB, vm.blockChain)
