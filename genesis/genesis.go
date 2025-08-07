@@ -604,6 +604,10 @@ func FromDatabase(networkID uint32, dbPath string, dbType string, stakingCfg *St
 	
 	// Add C-chain genesis with database replay marker
 	cchainGenesis := map[string]interface{}{
+		"replay":  true,  // Marker for database replay mode
+		"dbPath":  dbPath,
+		"dbType":  dbType,
+		"chainId": float64(networkID),
 		"config": map[string]interface{}{
 			"chainId":             networkID,
 			"homesteadBlock":      0,
@@ -630,10 +634,6 @@ func FromDatabase(networkID uint32, dbPath string, dbType string, stakingCfg *St
 				"balance": "0x21e19e0c9bab2400000", // 10000 ETH
 			},
 		},
-		// Database replay markers
-		"dbPath": dbPath,
-		"dbType": dbType,
-		"replay": true,
 	}
 	
 	cchainGenesisBytes, err := stdjson.Marshal(cchainGenesis)

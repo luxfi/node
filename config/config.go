@@ -796,6 +796,12 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.Stakin
 		}
 		genesisDBPath := GetExpandedArg(v, GenesisDBKey)
 		genesisDBType := v.GetString(GenesisDBTypeKey)
+		
+		// Auto-detect database type based on path if not specified
+		if genesisDBType == "" {
+			genesisDBType = "pebbledb" // Default is always pebbledb
+		}
+		
 		return genesis.FromDatabase(networkID, genesisDBPath, genesisDBType, stakingCfg)
 	}
 

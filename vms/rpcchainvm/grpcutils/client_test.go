@@ -16,10 +16,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/node/database/rpcdb"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	pb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 func TestDialOptsSmoke(t *testing.T) {
@@ -48,7 +46,6 @@ func TestWaitForReady(t *testing.T) {
 
 	server := NewServer()
 	defer server.Stop()
-	pb.RegisterDatabaseServer(server, rpcdb.NewServer(memdb.New()))
 
 	go func() {
 		time.Sleep(100 * time.Millisecond)
@@ -59,7 +56,6 @@ func TestWaitForReady(t *testing.T) {
 	conn, err := Dial(listener.Addr().String())
 	require.NoError(err)
 
-	db := rpcdb.NewClient(pb.NewDatabaseClient(conn))
 	require.NoError(db.Put([]byte("foo"), []byte("bar")))
 
 	noWaitListener, err := NewListener()
@@ -76,7 +72,6 @@ func TestWaitForReady(t *testing.T) {
 	)
 	require.NoError(err)
 
-	db = rpcdb.NewClient(pb.NewDatabaseClient(noWaitConn))
 
 	err = db.Put([]byte("foo"), []byte("bar"))
 	status, ok := status.FromError(err)

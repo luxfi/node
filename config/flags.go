@@ -91,7 +91,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
 		GenesisFileContentKey))
 	fs.String(GenesisFileContentKey, "", "Specifies base64 encoded genesis content")
 	fs.String(GenesisDBKey, "", "Path to existing genesis database for replay. Cannot be used with genesis-file or genesis-file-content")
-	fs.String(GenesisDBTypeKey, "leveldb", "Database type to use for genesis database. Must be one of {leveldb, pebbledb}")
+	fs.String(GenesisDBTypeKey, "pebbledb", "Database type to use for genesis database. Must be one of {pebbledb, badgerdb}")
+	fs.Uint64(GenesisBlockLimitKey, 0, "Limit number of blocks to replay during genesis (0 = all blocks)")
 
 	// Network ID
 	fs.String(NetworkNameKey, constants.MainnetName, "Network ID this node will connect to")

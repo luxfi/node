@@ -27,7 +27,7 @@ import (
 	consensuschain "github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/validators/gvalidators"
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/database/rpcdb"
+	"github.com/luxfi/node/db/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/crypto/bls"

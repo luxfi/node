@@ -8,11 +8,9 @@ import (
 
 	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/database/rpcdb"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	keystorepb "github.com/luxfi/node/proto/pb/keystore"
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 var _ keystorepb.KeystoreServer = (*Server)(nil)
@@ -48,7 +46,6 @@ func (s *Server) GetDatabase(
 
 	server := grpcutils.NewServer()
 	closer.closer.Add(server)
-	rpcdbpb.RegisterDatabaseServer(server, rpcdb.NewServer(&closer))
 
 	// start the db server
 	go grpcutils.Serve(serverListener, server)

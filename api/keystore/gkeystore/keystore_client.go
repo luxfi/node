@@ -9,11 +9,9 @@ import (
 	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/database"
 		"github.com/luxfi/database/encdb"
-	"github.com/luxfi/node/database/rpcdb"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	keystorepb "github.com/luxfi/node/proto/pb/keystore"
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 var _ keystore.BlockchainKeystore = (*Client)(nil)
@@ -52,6 +50,5 @@ func (c *Client) GetRawDatabase(username, password string) (database.Database, e
 		return nil, err
 	}
 
-	dbClient := rpcdb.NewClient(rpcdbpb.NewDatabaseClient(clientConn))
 	return dbClient, err
 }
