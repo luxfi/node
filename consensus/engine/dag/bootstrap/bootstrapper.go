@@ -320,7 +320,7 @@ func (b *Bootstrapper) Start(ctx context.Context, startReqID uint32) error {
 	b.Ctx.Log.Info("starting bootstrap")
 
 	b.Ctx.State.Set(consensus.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_LUX,
+		Type:  p2p.EngineType_ENGINE_TYPE_DAG,
 		State: consensus.Bootstrapping,
 	})
 	if err := b.VM.SetState(ctx, consensus.Bootstrapping); err != nil {

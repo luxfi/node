@@ -8,14 +8,14 @@ package block
 import (
 	"context"
 
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/node/consensus/engine/core"
 )
 
-// ChainVM defines the required functionality of a Linear VM.
+// ChainVM defines the required functionality of a linear blockchain VM.
 //
-// A Linear VM is responsible for defining the representation of state,
+// The ChainVM is responsible for defining the representation of state,
 // the representation of operations on that state, the application of operations
 // on that state, and the creation of the operations. Consensus will decide on
 // if the operation is executed and the order operations are executed in.

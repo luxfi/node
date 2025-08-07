@@ -650,7 +650,7 @@ func (m *manager) createLuxChain(
 	defer ctx.Lock.Unlock()
 
 	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_LUX,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_DAG,
 		State: consensus.Initializing,
 	})
 
@@ -699,7 +699,7 @@ func (m *manager) createLuxChain(
 		m.Net,
 		m.ManagerConfig.Router,
 		m.TimeoutManager,
-		p2ppb.EngineType_ENGINE_TYPE_LUX,
+		p2ppb.EngineType_ENGINE_TYPE_DAG,
 		sb,
 		luxMetrics,
 	)
@@ -718,7 +718,7 @@ func (m *manager) createLuxChain(
 		m.Net,
 		m.ManagerConfig.Router,
 		m.TimeoutManager,
-		p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		sb,
 		ctx.Registerer,
 	)
@@ -1117,7 +1117,7 @@ func (m *manager) createLinearChain(
 	defer ctx.Lock.Unlock()
 
 	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		State: consensus.Initializing,
 	})
 
@@ -1146,7 +1146,7 @@ func (m *manager) createLinearChain(
 		m.Net,
 		m.ManagerConfig.Router,
 		m.TimeoutManager,
-		p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		sb,
 		ctx.Registerer,
 	)

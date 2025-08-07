@@ -1471,7 +1471,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		externalSender,
 		chainRouter,
 		timeoutManager,
-		p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		subnets.New(consensusCtx.NodeID, subnets.Config{}),
 		metrics.NewNoOpMetrics("test").Registry(),
 	)
@@ -1611,7 +1611,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	})
 
 	consensusCtx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		State: consensus.NormalOp,
 	})
 

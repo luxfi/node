@@ -113,7 +113,7 @@ func (ss *stateSyncer) Start(ctx context.Context, startReqID uint32) error {
 	ss.Ctx.Log.Info("starting state sync")
 
 	ss.Ctx.State.Set(consensus.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_LINEAR,
+		Type:  p2p.EngineType_ENGINE_TYPE_CHAIN,
 		State: consensus.StateSyncing,
 	})
 	if err := ss.VM.SetState(ctx, consensus.StateSyncing); err != nil {

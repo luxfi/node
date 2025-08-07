@@ -402,11 +402,8 @@ func (r *UnifiedReplayer) copyStateData(headers map[uint64]*types.Header) error 
 					log.Printf("Copied %d state trie nodes...", copiedCount)
 				}
 				
-				// Limit for test mode to avoid copying entire 7GB
-				if copiedCount >= 1000000 {
-					log.Printf("Reached 1M state nodes limit for test mode")
-					break
-				}
+				// No limit in test mode - we need ALL state
+				// Remove the 1M limit to ensure complete state
 			}
 		}
 		

@@ -217,8 +217,8 @@ message AcceptedStateSummary {
 enum EngineType {
   ENGINE_TYPE_UNSPECIFIED = 0;
   // Only the X-Chain uses lux consensus
-  ENGINE_TYPE_LUX = 1;
-  ENGINE_TYPE_LINEAR = 2;
+  ENGINE_TYPE_DAG = 1;
+  ENGINE_TYPE_CHAIN = 2;
 }
 
 // GetAcceptedFrontier requests the accepted frontier from a peer.

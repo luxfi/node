@@ -123,7 +123,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 			})
 
 			ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: consensus.NormalOp, // assumed bootstrap is done
 			})
 

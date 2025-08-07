@@ -23,7 +23,7 @@ var (
 	GenesisID        = ids.Empty
 	GenesisTimestamp = time.Unix(GenesisUnixTimestamp, 0)
 	GenesisBytes     = GenesisID[:]
-	Genesis          = BuildLinear(1)[0]
+	Genesis          = BuildChain(1)[0]
 )
 
 func BuildChild(parent *Block) *Block {
@@ -40,7 +40,7 @@ func BuildChild(parent *Block) *Block {
 	}
 }
 
-func BuildLinear(length int) []*Block {
+func BuildChain(length int) []*Block {
 	if length == 0 {
 		return nil
 	}

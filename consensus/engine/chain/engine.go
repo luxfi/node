@@ -582,7 +582,7 @@ func (e *Engine) Start(ctx context.Context, startReqID uint32) error {
 	e.chainMetrics.bootstrapFinished.Set(1)
 
 	e.Ctx.State.Set(consensus.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_LINEAR,
+		Type:  p2p.EngineType_ENGINE_TYPE_CHAIN,
 		State: consensus.NormalOp,
 	})
 	if err := e.VM.SetState(ctx, consensus.NormalOp); err != nil {

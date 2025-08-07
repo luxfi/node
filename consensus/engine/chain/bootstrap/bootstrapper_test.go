@@ -169,7 +169,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	// create bootstrapper
 	dummyCallback := func(context.Context, uint32) error {
 		cfg.Ctx.State.Set(consensus.EngineState{
-			Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+			Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			State: consensus.NormalOp,
 		})
 		return nil
@@ -219,14 +219,14 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 
 	config, _, _, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildLinear(1)
+	blks := chaintest.BuildChain(1)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: consensus.NormalOp,
 			})
 			return nil
@@ -248,14 +248,14 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildLinear(2)
+	blks := chaintest.BuildChain(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: consensus.NormalOp,
 			})
 			return nil
@@ -294,14 +294,14 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildLinear(4)
+	blks := chaintest.BuildChain(4)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: consensus.NormalOp,
 			})
 			return nil
@@ -345,14 +345,14 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildLinear(2)
+	blks := chaintest.BuildChain(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: consensus.NormalOp,
 			})
 			return nil
@@ -394,14 +394,14 @@ func TestBootstrapperAncestors(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildLinear(4)
+	blks := chaintest.BuildChain(4)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: consensus.NormalOp,
 			})
 			return nil
@@ -440,14 +440,14 @@ func TestBootstrapperFinalized(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildLinear(3)
+	blks := chaintest.BuildChain(3)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: consensus.NormalOp,
 			})
 			return nil
@@ -483,14 +483,14 @@ func TestRestartBootstrapping(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildLinear(5)
+	blks := chaintest.BuildChain(5)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: consensus.NormalOp,
 			})
 			return nil
@@ -545,7 +545,7 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildLinear(2)
+	blks := chaintest.BuildChain(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	blks[0].Status = consensustest.Undecided
@@ -555,7 +555,7 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: consensus.NormalOp,
 			})
 			return nil
@@ -589,14 +589,14 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 
 	config, _, _, vm, halt := newConfig(t)
 
-	blks := chaintest.BuildLinear(2)
+	blks := chaintest.BuildChain(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: consensus.NormalOp,
 			})
 			return nil
@@ -703,7 +703,7 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: consensus.NormalOp,
 			})
 			return nil
@@ -717,14 +717,14 @@ func TestBootstrapperReceiveStaleAncestorsMessage(t *testing.T) {
 
 	config, peerID, sender, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildLinear(3)
+	blks := chaintest.BuildChain(3)
 	initializeVMWithBlockchain(vm, blks)
 
 	bs, err := New(
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: consensus.NormalOp,
 			})
 			return nil
@@ -761,7 +761,7 @@ func TestBootstrapperRollbackOnSetState(t *testing.T) {
 
 	config, _, _, vm, _ := newConfig(t)
 
-	blks := chaintest.BuildLinear(2)
+	blks := chaintest.BuildChain(2)
 	initializeVMWithBlockchain(vm, blks)
 
 	blks[1].Status = consensustest.Accepted
@@ -770,7 +770,7 @@ func TestBootstrapperRollbackOnSetState(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_LINEAR,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: consensus.NormalOp,
 			})
 			return nil
