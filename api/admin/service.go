@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/database/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -28,7 +27,6 @@ import (
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/registry"
 
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 const (
@@ -390,7 +388,6 @@ type DBGetArgs struct {
 
 type DBGetReply struct {
 	Value     string        `json:"value"`
-	ErrorCode rpcdbpb.Error `json:"errorCode"`
 }
 
 //nolint:stylecheck // renaming this method to DBGet would change the API method from "dbGet" to "dBGet"
@@ -408,8 +405,7 @@ func (a *Admin) DbGet(_ *http.Request, args *DBGetArgs, reply *DBGetReply) error
 
 	value, err := a.DB.Get(key)
 	if err != nil {
-		reply.ErrorCode = rpcdb.ErrorToErrEnum[err]
-		return rpcdb.ErrorToRPCError(err)
+		return err
 	}
 
 	reply.Value, err = formatting.Encode(formatting.HexNC, value)

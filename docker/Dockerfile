@@ -17,11 +17,11 @@ RUN mkdir -p /luxd && \
     chown -R luxnode:luxnode /luxd
 
 # Copy pre-built binary
-COPY build/node /usr/local/bin/luxd
+COPY luxd /usr/local/bin/luxd
 RUN chmod +x /usr/local/bin/luxd
 
 # Copy startup script
-COPY docker/docker-entrypoint.sh /usr/local/bin/
+COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Switch to non-root user

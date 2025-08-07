@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/validators/gvalidators"
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/database/rpcdb"
+	"github.com/luxfi/node/db/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/node/utils"
@@ -174,8 +174,8 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 	vm.connCloser.Add(dbClientConn)
-	// TODO: Add corruptabledb wrapper once logger is available
 	vm.db = rpcdb.NewClient(rpcdbpb.NewDatabaseClient(dbClientConn))
+	// TODO: Add corruptabledb wrapper once logger is available
 
 	// TODO: Allow the logger to be configured by the client
 	// TODO: Properly configure logger

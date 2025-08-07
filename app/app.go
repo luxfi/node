@@ -56,7 +56,7 @@ func New(config node.Config) (App, error) {
 	logger := config.Log
 	if logger == nil {
 		// Create a basic logger if one wasn't provided
-		logger = log.NewLogger(log.DiscardHandler())
+		logger = log.NewNoOpLogger()
 	}
 
 	// update fd limit

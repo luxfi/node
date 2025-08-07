@@ -39,7 +39,7 @@ const (
 	CascadeHRP  = "cascade"
 	DenaliHRP   = "denali"
 	EverestHRP  = "everest"
-	TestnetHRP     = "testnet"
+	TestnetHRP     = "test"
 	UnitTestHRP = "testing"
 	LocalHRP    = "local"
 	LuxMainnetHRP = "lux"

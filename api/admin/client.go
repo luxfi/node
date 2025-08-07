@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/database/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/log"
@@ -157,10 +156,6 @@ func (c *client) DBGet(ctx context.Context, key []byte, options ...rpc.Option) (
 		Key: keyStr,
 	}, res, options...)
 	if err != nil {
-		return nil, err
-	}
-
-	if err := rpcdb.ErrEnumToError[res.ErrorCode]; err != nil {
 		return nil, err
 	}
 	return formatting.Decode(formatting.HexNC, res.Value)
