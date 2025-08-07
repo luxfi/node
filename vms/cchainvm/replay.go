@@ -375,6 +375,11 @@ func (r *UnifiedReplayer) copyStateData(headers map[uint64]*types.Header) error 
 		log.Printf("TEST MODE: Copying ALL state trie nodes from source database...")
 		copiedCount := 0
 		
+		// Create a batch for faster writes
+		batch := r.targetDB.NewBatch()
+		batchSize := 0
+		const maxBatchSize = 10000 // Write in batches of 10k
+		
 		// Iterate through ALL entries with namespace prefix that are state nodes
 		stateIter, _ := r.sourceDB.NewIter(&pebble.IterOptions{
 			LowerBound: r.namespace,
@@ -390,20 +395,31 @@ func (r *UnifiedReplayer) copyStateData(headers map[uint64]*types.Header) error 
 				// This is a state trie node
 				hash := key[32:] // The hash part after namespace
 				
-				// Write to target database (just the hash, no namespace)
-				if err := r.targetDB.Put(hash, val); err != nil {
-					log.Printf("Failed to write state node %x: %v", hash, err)
+				// Add to batch (just the hash, no namespace)
+				if err := batch.Put(hash, val); err != nil {
+					log.Printf("Failed to batch state node %x: %v", hash, err)
 					continue
 				}
 				
 				copiedCount++
+				batchSize++
 				
-				if copiedCount % 50000 == 0 {
+				// Write batch when it gets large enough
+				if batchSize >= maxBatchSize {
+					if err := batch.Write(); err != nil {
+						log.Printf("Failed to write batch: %v", err)
+					}
+					batch.Reset()
+					batchSize = 0
 					log.Printf("Copied %d state trie nodes...", copiedCount)
 				}
-				
-				// No limit in test mode - we need ALL state
-				// Remove the 1M limit to ensure complete state
+			}
+		}
+		
+		// Write any remaining batch
+		if batchSize > 0 {
+			if err := batch.Write(); err != nil {
+				log.Printf("Failed to write final batch: %v", err)
 			}
 		}
 		
@@ -547,4 +563,4 @@ func (r *UnifiedReplayer) Close() error {
 	return nil
 }
 
-// Use encodeBlockNumber from backend.go
+// encodeBlockNumber is defined in backend.go
