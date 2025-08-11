@@ -1659,29 +1659,9 @@ func (s *state) write(updateValidators bool, height uint64) error {
 }
 
 func (s *state) Close() error {
-	return errors.Join(
-		s.pendingSubnetValidatorBaseDB.Close(),
-		s.pendingSubnetDelegatorBaseDB.Close(),
-		s.pendingDelegatorBaseDB.Close(),
-		s.pendingValidatorBaseDB.Close(),
-		s.pendingValidatorsDB.Close(),
-		s.currentSubnetValidatorBaseDB.Close(),
-		s.currentSubnetDelegatorBaseDB.Close(),
-		s.currentDelegatorBaseDB.Close(),
-		s.currentValidatorBaseDB.Close(),
-		s.currentValidatorsDB.Close(),
-		s.validatorsDB.Close(),
-		s.txDB.Close(),
-		s.rewardUTXODB.Close(),
-		s.utxoDB.Close(),
-		s.subnetBaseDB.Close(),
-		s.transformedSubnetDB.Close(),
-		s.supplyDB.Close(),
-		s.chainDB.Close(),
-		s.singletonDB.Close(),
-		s.blockDB.Close(),
-		s.blockIDDB.Close(),
-	)
+	// All the prefix databases share the same underlying baseDB,
+	// so we only need to close the base database once.
+	return s.baseDB.Close()
 }
 
 func (s *state) sync(genesis []byte) error {

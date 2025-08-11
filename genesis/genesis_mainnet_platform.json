@@ -5,7 +5,12 @@
             "ethAddr": "0x9011E888251AB053B7bD1cdB598Db4f9DEd94714",
             "luxAddr": "X-lux1hfhf94tjcufccczxwfgp8kh9qnphxp5ycvzqzd",
             "initialAmount": 500000000000000000,
-            "unlockSchedule": []
+            "unlockSchedule": [
+                {
+                    "amount": 1000000000000000,
+                    "locktime": 0
+                }
+            ]
         }
     ],
     "startTime": 1754362800,
@@ -21,7 +26,7 @@
             "delegationFee": 20000
         }
     ],
-    "cChainGenesis": "",
+    "cChainGenesis": "{\"config\":{\"chainId\":43114}}",
     "xChainGenesis": "",
     "message": "mainnet"
 }

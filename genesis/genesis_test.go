@@ -112,6 +112,10 @@ func TestValidateConfig(t *testing.T) {
 			networkID: 12345,
 			config: func() *Config {
 				thisConfig := LocalConfig
+				// Add multiple stakers to trigger the offset validation
+				thisConfig.InitialStakers = append(thisConfig.InitialStakers, thisConfig.InitialStakers[0])
+				thisConfig.InitialStakers = append(thisConfig.InitialStakers, thisConfig.InitialStakers[0])
+				// With 3 stakers and huge offset, offsetTimeRequired will exceed duration
 				thisConfig.InitialStakeDurationOffset = 100000000
 				return &thisConfig
 			}(),

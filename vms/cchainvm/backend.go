@@ -75,35 +75,50 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 	blocksByNumber := make(map[uint64]common.Hash)
 	canonicalCount := 0
 	
-	// The migrated data uses lowercase 'h' prefix for canonical mappings
-	// Format: 'h' + blockNum(8 bytes) + 'n'
-	// Scan all blocks up to the migrated height
-	maxScan := migratedHeight + 10 // Scan a bit past the target
-	if maxScan > 1082790 {
-		maxScan = 1082790
-	}
+	// The migrated data uses lowercase 'h' prefix with hash embedded in key
+	// Format: 'h' + blockNum(8 bytes) + hash(32 bytes) = 41 bytes total
+	// We need to scan all keys with this prefix and extract the canonical mappings
 	
-	for blockNum := uint64(0); blockNum <= maxScan; blockNum++ {
-		// Build the key: 'h' + blockNum + 'n'
-		key := append([]byte("h"), encodeBlockNumber(blockNum)...)
-		key = append(key, 'n')
+	fmt.Printf("Scanning for blocks with 'h' prefix (migrated format)...\n")
+	
+	// Use iterator to scan all keys with 'h' prefix
+	it := rawDB.NewIterator([]byte("h"), nil)
+	defer it.Release()
+	
+	for it.Next() {
+		key := it.Key()
 		
-		// Try to get the hash for this block number
-		if val, err := rawDB.Get(key); err == nil && len(val) == 32 {
+		// Check if this is a block header key (41 bytes: 'h' + 8 bytes blockNum + 32 bytes hash)
+		if len(key) == 41 && key[0] == 'h' {
+			// Extract block number and hash from the key
+			blockNum := binary.BigEndian.Uint64(key[1:9])
+			
+			// Only process blocks up to our target height
+			if blockNum > migratedHeight {
+				continue
+			}
+			
+			// Extract hash from key (bytes 9-41)
 			var hash common.Hash
-			copy(hash[:], val)
+			copy(hash[:], key[9:41])
+			
+			// Store the canonical mapping
 			blocksByNumber[blockNum] = hash
 			canonicalCount++
 			
+			// Print progress
 			if canonicalCount <= 10 || canonicalCount%100000 == 0 || blockNum == migratedHeight {
-				fmt.Printf("  Found canonical block %d -> hash %x\n", blockNum, hash[:8])
+				fmt.Printf("  Found block %d -> hash %x\n", blockNum, hash[:8])
+			}
+			
+			if canonicalCount%10000 == 0 {
+				fmt.Printf("  Processed %d blocks...\n", canonicalCount)
 			}
 		}
-		
-		// Print progress every 10000 blocks
-		if blockNum > 0 && blockNum%10000 == 0 {
-			fmt.Printf("  Scanned up to block %d, found %d canonical blocks\n", blockNum, canonicalCount)
-		}
+	}
+	
+	if err := it.Error(); err != nil {
+		return nil, fmt.Errorf("error scanning database: %w", err)
 	}
 	
 	fmt.Printf("Found %d canonical blocks in migrated database\n", canonicalCount)
@@ -342,13 +357,31 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 		// Expected genesis hash from migrated data
 		expectedGenesisHash := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
 		
-		// Check using direct key access for migrated data
-		canonicalKey := append([]byte("h"), encodeBlockNumber(0)...)
-		canonicalKey = append(canonicalKey, 'n')
+		// Check using iterator to find block 0 with the 41-byte key format
+		// Format: 'h' + blockNum(8 bytes) + hash(32 bytes) = 41 bytes
 		
-		fmt.Printf("Checking for migrated data with key: %x\n", canonicalKey)
-		if hash, err := db.Get(canonicalKey); err == nil && len(hash) == 32 {
-			actualHash := common.BytesToHash(hash)
+		fmt.Printf("Checking for migrated data with 41-byte key format...\n")
+		
+		// Look for block 0 using iterator
+		it := db.NewIterator([]byte("h"), nil)
+		foundGenesis := false
+		var actualHash common.Hash
+		
+		for it.Next() {
+			key := it.Key()
+			if len(key) == 41 && key[0] == 'h' {
+				blockNum := binary.BigEndian.Uint64(key[1:9])
+				if blockNum == 0 {
+					// Found genesis block
+					copy(actualHash[:], key[9:41])
+					foundGenesis = true
+					break
+				}
+			}
+		}
+		it.Release()
+		
+		if foundGenesis {
 			fmt.Printf("Found genesis hash in database: %s (expected: %s)\n", actualHash.Hex(), expectedGenesisHash.Hex())
 			if actualHash == expectedGenesisHash {
 				fmt.Printf("✓ Found migrated blockchain with correct genesis: %s\n", expectedGenesisHash.Hex())
@@ -357,7 +390,7 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 				return NewMigratedBackend(db, 1082780)
 			}
 		} else {
-			fmt.Printf("No migrated data found (err: %v)\n", err)
+			fmt.Printf("No migrated data found in 41-byte key format\n")
 		}
 	}
 	
