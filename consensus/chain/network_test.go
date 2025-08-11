@@ -6,6 +6,7 @@ package chain
 import (
 	"context"
 	"testing"
+	
 
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/chain/chaintest"

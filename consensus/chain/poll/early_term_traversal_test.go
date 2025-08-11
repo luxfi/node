@@ -5,12 +5,11 @@ package poll
 
 import (
 	"testing"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stretchr/testify/require"
+		"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/bag"
+	"github.com/luxfi/node/utils/metrics"
 )
 
 type parentGetter func(id ids.ID) (ids.ID, bool)
@@ -20,7 +19,7 @@ func (p parentGetter) GetParent(id ids.ID) (ids.ID, bool) {
 }
 
 func newEarlyTermNoTraversalTestFactory(require *require.Assertions, alpha int) Factory {
-	factory, err := NewEarlyTermFactory(alpha, alpha, prometheus.NewRegistry(), parentGetter(returnEmpty))
+	factory, err := NewEarlyTermFactory(alpha, alpha, metrics.NewTestRegistry(), parentGetter(returnEmpty))
 	require.NoError(err)
 	return factory
 }
@@ -110,7 +109,7 @@ func TestEarlyTermNoTraversalTerminatesEarlyWithAlphaPreference(t *testing.T) {
 	alphaPreference := 3
 	alphaConfidence := 5
 
-	factory, err := NewEarlyTermFactory(alphaPreference, alphaConfidence, prometheus.NewRegistry(), parentGetter(returnEmpty))
+	factory, err := NewEarlyTermFactory(alphaPreference, alphaConfidence, metrics.NewTestRegistry(), parentGetter(returnEmpty))
 	require.NoError(err)
 	poll := factory.New(vdrs)
 
@@ -135,7 +134,7 @@ func TestEarlyTermNoTraversalTerminatesEarlyWithAlphaConfidence(t *testing.T) {
 	alphaPreference := 3
 	alphaConfidence := 3
 
-	factory, err := NewEarlyTermFactory(alphaPreference, alphaConfidence, prometheus.NewRegistry(), parentGetter(returnEmpty))
+	factory, err := NewEarlyTermFactory(alphaPreference, alphaConfidence, metrics.NewTestRegistry(), parentGetter(returnEmpty))
 	require.NoError(err)
 	poll := factory.New(vdrs)
 
@@ -166,7 +165,7 @@ func TestEarlyTermForSharedAncestor(t *testing.T) {
 		blkID4: blkID1,
 	}
 
-	factory, err := NewEarlyTermFactory(alpha, alpha, prometheus.NewRegistry(), g)
+	factory, err := NewEarlyTermFactory(alpha, alpha, metrics.NewTestRegistry(), g)
 	require.NoError(err)
 
 	poll := factory.New(vdrs)
@@ -274,7 +273,7 @@ func TestEarlyTermTraversalNotAllBlocksAreVotedOn(t *testing.T) {
 		blkID4: blkID3,
 		blkID5: blkID4,
 	}
-	factory, err := NewEarlyTermFactory(alphaPreference, alphaConfidence, prometheus.NewRegistry(), g)
+	factory, err := NewEarlyTermFactory(alphaPreference, alphaConfidence, metrics.NewTestRegistry(), g)
 	require.NoError(err)
 
 	poll := factory.New(vdrs)
@@ -322,7 +321,7 @@ func TestPollNoPrematureFinish(t *testing.T) {
 		blkID2: blkID1,
 	}
 
-	factory, err := NewEarlyTermFactory(alphaPreference, alphaConfidence, prometheus.NewRegistry(), g)
+	factory, err := NewEarlyTermFactory(alphaPreference, alphaConfidence, metrics.NewTestRegistry(), g)
 	require.NoError(err)
 	poll := factory.New(vdrs)
 
@@ -361,7 +360,7 @@ func TestEarlyTermTraversalForest(t *testing.T) {
 		blkID1: blkID0,
 	}
 
-	factory, err := NewEarlyTermFactory(alphaPreference, alphaConfidence, prometheus.NewRegistry(), g)
+	factory, err := NewEarlyTermFactory(alphaPreference, alphaConfidence, metrics.NewTestRegistry(), g)
 	require.NoError(err)
 	poll := factory.New(vdrs)
 
@@ -412,7 +411,7 @@ func TestEarlyTermTraversalTransitiveTree(t *testing.T) {
 		blkID2: blkID0,
 	}
 
-	factory, err := NewEarlyTermFactory(alphaPreference, alphaConfidence, prometheus.NewRegistry(), g)
+	factory, err := NewEarlyTermFactory(alphaPreference, alphaConfidence, metrics.NewTestRegistry(), g)
 	require.NoError(err)
 	poll := factory.New(vdrs)
 

@@ -5,6 +5,7 @@ package confidence
 
 import (
 	"testing"
+	
 
 	"github.com/stretchr/testify/require"
 )

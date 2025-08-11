@@ -7,13 +7,12 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stretchr/testify/require"
+		"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/networking/benchlist"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/timer"
+	"github.com/luxfi/node/utils/metrics"
 )
 
 func TestManagerFire(t *testing.T) {
@@ -27,8 +26,8 @@ func TestManagerFire(t *testing.T) {
 			TimeoutHalflife:    5 * time.Minute,
 		},
 		benchlist,
-		prometheus.NewRegistry(),
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
+		metrics.NewTestRegistry(),
 	)
 	require.NoError(t, err)
 	go manager.Dispatch()

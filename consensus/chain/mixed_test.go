@@ -6,6 +6,7 @@ package chain
 import (
 	"fmt"
 	"testing"
+	
 
 	"github.com/stretchr/testify/require"
 	"gonum.org/v1/gonum/mathext/prng"

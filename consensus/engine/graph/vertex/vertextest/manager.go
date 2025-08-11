@@ -5,6 +5,7 @@ package vertextest
 
 import (
 	"testing"
+	
 
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
 )

@@ -8,15 +8,14 @@ import (
 	"io/fs"
 	"testing"
 	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stretchr/testify/require"
+		"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/utils/metrics"
 )
 
 var (
@@ -145,7 +144,7 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 		time.Hour,
 		time.Hour,
 		time.Hour,
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
 	)
 	require.NoError(t, err)
 

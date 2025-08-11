@@ -7,8 +7,8 @@ import (
 	"context"
 	"net/http"
 	"testing"
-
-	"github.com/prometheus/client_golang/prometheus"
+	
+	
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"

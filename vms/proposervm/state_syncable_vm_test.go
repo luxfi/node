@@ -7,10 +7,9 @@ import (
 	"context"
 	"testing"
 	"time"
+	
 
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/node/consensus/engine/core"	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus"

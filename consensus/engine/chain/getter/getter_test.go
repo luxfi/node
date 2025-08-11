@@ -8,6 +8,7 @@ import (
 	"errors"
 	"testing"
 	"time"
+	
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -19,8 +20,7 @@ import (
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chaintest"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/node/utils/set"	"github.com/luxfi/node/utils/metrics"
 )
 
 var errUnknownBlock = errors.New("unknown block")
@@ -49,7 +49,7 @@ func newTest(t *testing.T) (core.AllGetsServer, StateSyncEnabledMock, *enginetes
 		nil,
 		time.Second,
 		2000,
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
 	)
 	require.NoError(t, err)
 

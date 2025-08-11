@@ -5,6 +5,7 @@ package indexer
 
 import (
 	"testing"
+	
 
 	"github.com/stretchr/testify/require"
 

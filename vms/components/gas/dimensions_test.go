@@ -6,6 +6,7 @@ package gas
 import (
 	"math"
 	"testing"
+	
 
 	"github.com/stretchr/testify/require"
 

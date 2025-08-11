@@ -9,8 +9,7 @@ import (
 	"errors"
 	"testing"
 	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
+	
 	luxmetrics "github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
@@ -50,6 +49,7 @@ import (
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/utils/metrics"
 )
 
 func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
@@ -779,7 +779,7 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 	newState, err := state.New(
 		vm.db,
 		nil,
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
 		&vm.Config,
 		execCfg,
 		vm.ctx,
@@ -1088,7 +1088,7 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	newState, err := state.New(
 		vm.db,
 		nil,
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
 		&vm.Config,
 		execCfg,
 		vm.ctx,
