@@ -9,8 +9,6 @@ import (
 	
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/luxfi/log"
 )
 
 func TestSocketSendAndReceive(t *testing.T) {

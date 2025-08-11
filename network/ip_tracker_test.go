@@ -18,8 +18,6 @@ import (
 	"github.com/luxfi/node/utils/bloom"
 
 	"github.com/luxfi/node/utils/ips"
-
-	"github.com/luxfi/log"
 )
 
 func newTestIPTracker(t *testing.T) *ipTracker {

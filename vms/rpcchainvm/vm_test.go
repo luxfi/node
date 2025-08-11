@@ -18,7 +18,6 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"

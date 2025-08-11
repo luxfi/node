@@ -13,7 +13,6 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/log"
 )
 
 func Test_newOutboundBuilder(t *testing.T) {

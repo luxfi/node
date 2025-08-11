@@ -27,8 +27,6 @@ import (
 
 	"github.com/luxfi/crypto/secp256k1"
 
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/node/vms/xvm/txs"
 
 	"github.com/luxfi/node/vms/components/index"

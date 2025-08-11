@@ -32,8 +32,6 @@ import (
 
 	"github.com/luxfi/node/utils/json"
 
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/node/utils/timer/mockable"
 
 	"github.com/luxfi/node/utils/units"
@@ -43,8 +41,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/block"
 
 	"github.com/luxfi/node/vms/platformvm/config"
-
-	"github.com/luxfi/node/vms/platformvm/metrics"
 
 	"github.com/luxfi/node/vms/platformvm/reward"
 

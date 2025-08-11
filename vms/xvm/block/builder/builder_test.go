@@ -45,8 +45,6 @@ import (
 
 	"github.com/luxfi/node/vms/xvm/fxs"
 
-	"github.com/luxfi/node/vms/xvm/metrics"
-
 	"github.com/luxfi/node/vms/xvm/state"
 
 	"github.com/luxfi/node/vms/xvm/txs"

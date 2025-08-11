@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/log"
 )
 
 func TestDelayFromNew(t *testing.T) {

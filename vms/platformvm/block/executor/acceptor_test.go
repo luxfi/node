@@ -13,7 +13,6 @@ import (
 
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/database"
 	"github.com/luxfi/database/databasemock"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"

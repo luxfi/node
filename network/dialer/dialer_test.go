@@ -12,8 +12,6 @@ import (
 	
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/luxfi/log"
 )
 
 // Test that canceling a context passed into Dial results
