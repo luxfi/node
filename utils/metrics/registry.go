@@ -5,6 +5,7 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	luxmetrics "github.com/luxfi/metrics"
 )
 
 // NewRegistry creates a new prometheus registry.
@@ -18,3 +19,17 @@ func NewRegistry() *prometheus.Registry {
 func NewTestRegistry() *prometheus.Registry {
 	return prometheus.NewRegistry()
 }
+
+// WrapPrometheusRegistry wraps a prometheus registry to implement luxfi/metrics.Registry.
+// This is used when a registry needs to be passed through multiple layers.
+func WrapPrometheusRegistry(registry *prometheus.Registry) luxmetrics.Registry {
+	return luxmetrics.WrapPrometheusRegistry(registry)
+}
+
+// NewNoOpMetrics creates a no-op metrics instance for testing.
+func NewNoOpMetrics(namespace string) luxmetrics.Metrics {
+	return luxmetrics.NewNoOpMetrics(namespace)
+}
+
+// Noop is a no-op metrics instance.
+var Noop = luxmetrics.Noop

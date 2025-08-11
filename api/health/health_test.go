@@ -11,12 +11,11 @@ import (
 	"testing"
 	"time"
 	
-	
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/node/utils/metrics"
 )
 
 const (

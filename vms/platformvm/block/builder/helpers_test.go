@@ -208,7 +208,7 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		Rewards:      rewardsCalc,
 	}
 
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := metrics.NewRegistry()
 	res.sender = &core.SenderTest{
 		SendAppGossipF: func(context.Context, core.SendConfig, []byte) error {
 			return nil
@@ -326,7 +326,7 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewRegistry(),
 		cfg,
 		execCfg,
 		ctx,

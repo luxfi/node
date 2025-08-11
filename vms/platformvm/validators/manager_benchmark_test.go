@@ -119,13 +119,13 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	execConfig, err := config.GetExecutionConfig(nil)
 	require.NoError(err)
 
-	metrics, err := metrics.New(metrics.NewNoOpMetrics("test").Registry())
+	metrics, err := metrics.New(metrics.NewRegistry())
 	require.NoError(err)
 
 	s, err := state.New(
 		db,
 		genesisBytes,
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewRegistry(),
 		&config.Config{
 			Validators: vdrs,
 		},
