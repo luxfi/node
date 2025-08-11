@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	//go:embed genesis_mainnet.json
+	//go:embed genesis_mainnet_platform.json
 	mainnetGenesisConfigJSON []byte
 
 	// MainnetParams are the params used for mainnet
