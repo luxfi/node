@@ -239,6 +239,13 @@ func (vm *VM) Initialize(
 	go vm.periodicallyPruneMempool(execConfig.MempoolPruneFrequency)
 
 	go func() {
+		// Check if shutdown has been called before starting the reindex
+		select {
+		case <-vm.onShutdownCtx.Done():
+			return
+		default:
+		}
+		
 		err := vm.state.ReindexBlocks(&vm.ctx.Lock, vm.ctx.Log)
 		if err != nil {
 			vm.ctx.Log.Warn("reindexing blocks failed",
@@ -580,8 +587,16 @@ func (vm *VM) Shutdown(context.Context) error {
 		return nil
 	}
 
-	vm.onShutdownCtxCancel()
-	vm.Builder.ShutdownBlockTimer()
+	// Check if already shutdown by seeing if cancel function exists
+	if vm.onShutdownCtxCancel != nil {
+		vm.onShutdownCtxCancel()
+		vm.onShutdownCtxCancel = nil // Prevent multiple calls
+	}
+	
+	// Builder might be nil if Initialize failed or wasn't fully completed
+	if vm.Builder != nil {
+		vm.Builder.ShutdownBlockTimer()
+	}
 
 	if vm.bootstrapped.Get() {
 		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
@@ -598,15 +613,22 @@ func (vm *VM) Shutdown(context.Context) error {
 			_ = vdrIDs // avoid unused variable
 		}
 
-		if err := vm.state.Commit(); err != nil {
-			return err
+		if vm.state != nil {
+			if err := vm.state.Commit(); err != nil {
+				return err
+			}
 		}
 	}
 
-	return errors.Join(
-		vm.state.Close(),
-		vm.db.Close(),
-	)
+	var errs []error
+	if vm.state != nil {
+		errs = append(errs, vm.state.Close())
+		vm.state = nil
+	}
+	// Don't close vm.db as it was provided externally and the caller
+	// is responsible for managing its lifecycle
+	vm.db = nil
+	return errors.Join(errs...)
 }
 
 func (vm *VM) ParseBlock(_ context.Context, b []byte) (chain.Block, error) {
