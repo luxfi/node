@@ -4,7 +4,7 @@
 package secp256k1fx
 
 import (
-	"github.com/luxfi/crypto"
+	"github.com/luxfi/crypto/secp256k1"
 )
 
 // RecoverCache provides a cache for public key recovery operations
@@ -20,14 +20,14 @@ func NewRecoverCache(size int) *RecoverCache {
 
 // RecoverPublicKeyFromHash recovers the public key from a hash and signature
 func (rc *RecoverCache) RecoverPublicKeyFromHash(hash, sig []byte) (*PublicKey, error) {
-	// Use the crypto package's Ecrecover function
-	pubkeyBytes, err := crypto.Ecrecover(hash, sig)
+	// Use secp256k1's recovery which returns compressed public key
+	pk, err := secp256k1.RecoverPublicKeyFromHash(hash, sig)
 	if err != nil {
 		return nil, err
 	}
 	
 	// Return a wrapper that provides the Bytes() method
-	return &PublicKey{bytes: pubkeyBytes}, nil
+	return &PublicKey{bytes: pk.Bytes()}, nil
 }
 
 // PublicKey wraps the recovered public key bytes

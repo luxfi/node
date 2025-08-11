@@ -207,7 +207,7 @@ func TestServiceExportImport(t *testing.T) {
 		exportReply := ExportUserReply{}
 		require.NoError(s.ExportUser(nil, &exportArgs, &exportReply))
 
-		newKS := New(nil, memdb.New())
+		newKS := New(log.NewNoOpLogger(), memdb.New())
 		newS := service{ks: newKS.(*keystore)}
 
 		{
@@ -318,7 +318,7 @@ func TestServiceDeleteUser(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			require := require.New(t)
 
-			ksIntf := New(nil, memdb.New())
+			ksIntf := New(log.NewNoOpLogger(), memdb.New())
 			ks := ksIntf.(*keystore)
 			s := service{ks: ks}
 
