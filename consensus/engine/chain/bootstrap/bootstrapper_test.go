@@ -9,7 +9,7 @@ import (
 	"errors"
 	"testing"
 	"time"
-	
+	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 
 	"github.com/stretchr/testify/require"
 
@@ -30,8 +30,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
-
-	p2ppb "github.com/luxfi/node/proto/pb/p2p"	"github.com/luxfi/node/utils/metrics"
+	utilmetrics "github.com/luxfi/node/utils/metrics"
 )
 
 var errUnknownBlock = errors.New("unknown block")
@@ -82,7 +81,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *blocktest
 	peerTracker, err := p2p.NewPeerTracker(
 		ctx.Log,
 		"",
-		metrics.NewTestRegistry(),
+		utilmetrics.NewTestRegistry(),
 		nil,
 		nil,
 	)
@@ -136,7 +135,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	peerTracker, err := p2p.NewPeerTracker(
 		ctx.Log,
 		"",
-		metrics.NewTestRegistry(),
+		utilmetrics.NewTestRegistry(),
 		nil,
 		nil,
 	)
@@ -676,7 +675,7 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 	peerTracker, err := p2p.NewPeerTracker(
 		ctx.Log,
 		"",
-		metrics.NewTestRegistry(),
+		utilmetrics.NewTestRegistry(),
 		nil,
 		nil,
 	)

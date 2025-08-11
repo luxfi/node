@@ -7,11 +7,12 @@ import (
 	"context"
 	"testing"
 	"time"
-	
+	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 
-	"github.com/luxfi/node/consensus/engine/core"	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/consensustest"
@@ -24,8 +25,6 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/summary"
-
-	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
 
 func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {

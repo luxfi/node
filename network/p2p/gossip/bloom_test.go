@@ -6,9 +6,13 @@ package gossip
 import (
 	"slices"
 	"testing"
-		"github.com/luxfi/metrics"
+	
+	"github.com/luxfi/metrics"
+
 	"github.com/prometheus/client_golang/prometheus/testutil"
+
 	"github.com/stretchr/testify/require"
+
 
 	"github.com/luxfi/ids"
 )

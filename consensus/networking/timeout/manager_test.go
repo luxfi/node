@@ -7,11 +7,16 @@ import (
 	"sync"
 	"testing"
 	"time"
-		"github.com/stretchr/testify/require"
+	
+	"github.com/stretchr/testify/require"
+
 
 	"github.com/luxfi/node/consensus/networking/benchlist"
+
 	"github.com/luxfi/ids"
+
 	"github.com/luxfi/node/utils/timer"
+
 	"github.com/luxfi/node/utils/metrics"
 )
 

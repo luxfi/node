@@ -8,27 +8,48 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-		"github.com/luxfi/metrics"
+	
+	"github.com/luxfi/metrics"
+
 	"github.com/stretchr/testify/require"
 
+
 	"github.com/luxfi/node/consensus"
+
 	"github.com/luxfi/node/consensus/validators"
+
 	"github.com/luxfi/database/leveldb"
+
 	"github.com/luxfi/ids"
+
 	"github.com/luxfi/node/utils/constants"
+
 	"github.com/luxfi/crypto/bls"
+
 	"github.com/luxfi/node/utils/formatting"
+
 	"github.com/luxfi/node/utils/formatting/address"
+
 	"github.com/luxfi/node/utils/json"
+
 	"github.com/luxfi/log"
+
 	"github.com/luxfi/node/utils/timer/mockable"
+
 	"github.com/luxfi/node/utils/units"
+
 	"github.com/luxfi/node/vms/platformvm/api"
+
 	"github.com/luxfi/node/vms/platformvm/block"
+
 	"github.com/luxfi/node/vms/platformvm/config"
+
 	"github.com/luxfi/node/vms/platformvm/metrics"
+
 	"github.com/luxfi/node/vms/platformvm/reward"
+
 	"github.com/luxfi/node/vms/platformvm/state"
+
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 

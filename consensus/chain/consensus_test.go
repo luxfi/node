@@ -21,8 +21,9 @@ import (
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/bag"
+	utilmetrics "github.com/luxfi/node/utils/metrics"
+	
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/luxfi/node/utils/metrics"
 )
 
 type testFunc func(*testing.T, Factory)
@@ -500,7 +501,7 @@ func RecordPollSplitVoteNoChangeTest(t *testing.T, factory Factory) {
 
 	consensusCtx := consensustest.Context(t, consensustest.CChainID)
 	ctx := consensustest.ConsensusContext(consensusCtx)
-	registerer := metrics.NewTestRegistry()
+	registerer := utilmetrics.NewTestRegistry()
 	ctx.Registerer = registerer
 
 	params := sampling.Parameters{

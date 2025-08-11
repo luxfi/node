@@ -8,15 +8,24 @@ import (
 	"errors"
 	"fmt"
 	"testing"
-		"github.com/stretchr/testify/require"
+	
+	"github.com/stretchr/testify/require"
+
 
 	"github.com/luxfi/node/consensus/choices"
+
 	"github.com/luxfi/node/consensus/consensustest"
+
 	"github.com/luxfi/node/consensus/chain"
+
 	"github.com/luxfi/node/consensus/chain/chaintest"
+
 	"github.com/luxfi/database"
+
 	"github.com/luxfi/ids"
+
 	"github.com/luxfi/node/utils/hashing"
+
 	"github.com/luxfi/node/utils/metrics"
 )
 

@@ -10,13 +10,14 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-	
-
-	"github.com/luxfi/node/consensus/engine/core"	"github.com/luxfi/metrics"
-	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/proto"
+	pb "github.com/luxfi/node/proto/pb/sync"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -24,8 +25,6 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/x/merkledb"
-
-	pb "github.com/luxfi/node/proto/pb/sync"
 )
 
 func newDefaultDBConfig() merkledb.Config {

@@ -10,32 +10,57 @@ import (
 	"sync"
 	"testing"
 	"time"
-		"github.com/luxfi/metrics"
+	
+	"github.com/luxfi/metrics"
+
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+
 	"github.com/luxfi/node/consensus"
+
 	"github.com/luxfi/node/consensus/choices"
+
 	"github.com/luxfi/node/consensus/validators"
+
 	"github.com/luxfi/database"
+
 	"github.com/luxfi/database/memdb"
+
 	"github.com/luxfi/ids"
+
 	"github.com/luxfi/node/utils/constants"
+
 	"github.com/luxfi/crypto/bls"
+
 	"github.com/luxfi/log"
+
 	"github.com/luxfi/node/utils/units"
+
 	"github.com/luxfi/node/utils/wrappers"
+
 	"github.com/luxfi/node/vms/components/lux"
+
 	"github.com/luxfi/node/vms/platformvm/block"
+
 	"github.com/luxfi/node/vms/platformvm/config"
+
 	"github.com/luxfi/node/vms/platformvm/fx"
+
 	"github.com/luxfi/node/vms/platformvm/genesis"
+
 	"github.com/luxfi/node/vms/platformvm/metrics"
+
 	"github.com/luxfi/node/vms/platformvm/reward"
+
 	"github.com/luxfi/node/vms/platformvm/signer"
+
 	"github.com/luxfi/node/vms/platformvm/status"
+
 	"github.com/luxfi/node/vms/platformvm/txs"
+
 	"github.com/luxfi/node/vms/secp256k1fx"
+
 	"github.com/luxfi/node/vms/types"
 
 	safemath "github.com/luxfi/node/utils/math"

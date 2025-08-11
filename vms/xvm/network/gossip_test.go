@@ -5,16 +5,26 @@ package network
 
 import (
 	"testing"
-		"github.com/luxfi/metrics"
+	
+	"github.com/luxfi/metrics"
+
 	"github.com/stretchr/testify/require"
 
+
 	"github.com/luxfi/ids"
+
 	"github.com/luxfi/node/consensus/engine/core"
+
 	"github.com/luxfi/log"
+
 	"github.com/luxfi/node/vms/xvm/fxs"
+
 	"github.com/luxfi/node/vms/xvm/txs"
+
 	"github.com/luxfi/node/vms/xvm/txs/mempool"
+
 	"github.com/luxfi/node/vms/components/lux"
+
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 

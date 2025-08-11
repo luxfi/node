@@ -357,9 +357,9 @@ func (vm *VM) Initialize(
 					TerminalTotalDifficulty: common.Big0,
 				},
 				Nonce:      0x0,
-				Timestamp:  0x0,
-				ExtraData:  []byte{0x00},
-				GasLimit:   0x7a1200, // 8000000
+				Timestamp:  0x672485c2, // 1730446786 - matches actual mainnet genesis
+				ExtraData:  []byte{},
+				GasLimit:   0xb71b00, // 12000000 - matches actual mainnet genesis
 				Difficulty: big.NewInt(0),
 				Mixhash:    common.Hash{},
 				Coinbase:   common.Address{},
