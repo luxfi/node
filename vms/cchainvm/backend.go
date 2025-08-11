@@ -357,6 +357,77 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 		StateScheme:    rawdb.HashScheme,
 	}
 
+	// For network 96369, check for migrated data first
+	if config != nil && config.NetworkId == 96369 {
+		// Expected genesis hash from migrated data
+		expectedGenesisHash := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
+		
+		// Check using direct key access for migrated data
+		canonicalKey := append([]byte("h"), encodeBlockNumber(0)...)
+		canonicalKey = append(canonicalKey, 'n')
+		
+		if hash, err := db.Get(canonicalKey); err == nil && len(hash) == 32 {
+			actualHash := common.BytesToHash(hash)
+			if actualHash == expectedGenesisHash {
+				fmt.Printf("Found migrated blockchain with correct genesis: %s\n", expectedGenesisHash.Hex())
+				
+				// Write the correct chain config
+				chainConfig := &params.ChainConfig{
+					ChainID:                 big.NewInt(96369),
+					HomesteadBlock:          big.NewInt(0),
+					EIP150Block:             big.NewInt(0),
+					EIP155Block:             big.NewInt(0),
+					EIP158Block:             big.NewInt(0),
+					ByzantiumBlock:          big.NewInt(0),
+					ConstantinopleBlock:     big.NewInt(0),
+					PetersburgBlock:         big.NewInt(0),
+					IstanbulBlock:           big.NewInt(0),
+					MuirGlacierBlock:        big.NewInt(0),
+					BerlinBlock:             big.NewInt(0),
+					LondonBlock:             big.NewInt(0),
+					ArrowGlacierBlock:       big.NewInt(0),
+					GrayGlacierBlock:        big.NewInt(0),
+					MergeNetsplitBlock:      big.NewInt(0),
+					TerminalTotalDifficulty: common.Big0,
+				}
+				
+				// Write chain config and use existing data
+				rawdb.WriteChainConfig(db, expectedGenesisHash, chainConfig)
+				rawdb.WriteCanonicalHash(db, expectedGenesisHash, 0)
+				
+				// Find the highest block
+				var highestBlock uint64 = 0
+				for i := uint64(1082780); i <= 1082790; i++ {
+					key := append([]byte("h"), encodeBlockNumber(i)...)
+					key = append(key, 'n')
+					if _, err := db.Get(key); err == nil {
+						highestBlock = i
+					} else {
+						break
+					}
+				}
+				
+				if highestBlock > 0 {
+					fmt.Printf("Migrated blockchain has blocks up to %d\n", highestBlock)
+					
+					// Get the hash at the highest block
+					key := append([]byte("h"), encodeBlockNumber(highestBlock)...)
+					key = append(key, 'n')
+					if hash, err := db.Get(key); err == nil && len(hash) == 32 {
+						headHash := common.BytesToHash(hash)
+						rawdb.WriteHeadBlockHash(db, headHash)
+						rawdb.WriteHeadHeaderHash(db, headHash)
+						fmt.Printf("Set head block to height %d, hash %s\n", highestBlock, headHash.Hex())
+					}
+				}
+				
+				// Skip genesis initialization
+				genesis = nil
+				fmt.Println("Using migrated blockchain data, skipping genesis initialization")
+			}
+		}
+	}
+	
 	// Log genesis info for debugging
 	if genesis != nil {
 		genesisBlock := genesis.ToBlock()

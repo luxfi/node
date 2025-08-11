@@ -203,10 +203,9 @@ func (fx *Fx) VerifyCredentials(utx UnsignedTx, in *Input, cred *Credential, out
 		if err != nil {
 			return err
 		}
-		// Convert pk to Lux address using hash160
+		// Convert pk to Lux address
 		pkBytes := pk.Bytes()
-		// Compute RIPEMD160(SHA256(publicKey))
-		addressBytes := hashing.ComputeHash160(hashing.ComputeHash256(pkBytes))
+		addressBytes := hashing.PubkeyBytesToAddress(pkBytes)
 		pkAddr, err := ids.ToShortID(addressBytes)
 		if err != nil {
 			return err
