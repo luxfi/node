@@ -8,10 +8,9 @@ import (
 	"errors"
 	"testing"
 	"time"
-	
+	"go.uber.org/mock/gomock"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/enginetest"
@@ -20,7 +19,8 @@ import (
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/consensus/chain/chaintest"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"	"github.com/luxfi/node/utils/metrics"
+	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/utils/metrics"
 )
 
 var errUnknownBlock = errors.New("unknown block")

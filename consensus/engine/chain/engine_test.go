@@ -11,27 +11,44 @@ import (
 	"slices"
 	"testing"
 	"time"
-		"github.com/stretchr/testify/require"
+	
+	"github.com/stretchr/testify/require"
+
 
 	"github.com/luxfi/node/cache"
+
 	"github.com/luxfi/node/cache/lru"
+
 	"github.com/luxfi/node/consensus"
+
 	"github.com/luxfi/node/consensus/consensustest"
+
 	"github.com/luxfi/node/consensus/engine/core"
+
 	"github.com/luxfi/node/consensus/engine/core/tracker"
+
 	"github.com/luxfi/node/consensus/engine/enginetest"
+
 	"github.com/luxfi/node/consensus/engine/chain/ancestor"
+
 	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
+
 	"github.com/luxfi/node/consensus/engine/chain/getter"
+
 	"github.com/luxfi/node/consensus/factories"
 	consensuschain "github.com/luxfi/node/consensus/chain"
+
 	"github.com/luxfi/node/consensus/chain/chaintest"
+
 	"github.com/luxfi/node/consensus/sampling"
+
 	"github.com/luxfi/node/consensus/validators"
+
 	"github.com/luxfi/database"
+
 	"github.com/luxfi/ids"
+
 	"github.com/luxfi/log"
-	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/utils/metrics"

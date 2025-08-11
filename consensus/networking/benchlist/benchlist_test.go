@@ -6,13 +6,13 @@ package benchlist
 import (
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/ids"	"github.com/luxfi/node/utils/metrics"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/metrics"
 )
 
 var minimumFailingDuration = 5 * time.Minute

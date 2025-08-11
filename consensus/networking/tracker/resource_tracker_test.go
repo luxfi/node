@@ -6,13 +6,19 @@ package tracker
 import (
 	"testing"
 	"time"
-		"github.com/stretchr/testify/require"
+	
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+
 	"github.com/luxfi/ids"
+
 	"github.com/luxfi/node/utils/math/meter"
+
 	"github.com/luxfi/node/utils/resource"
+
 	"github.com/luxfi/node/utils/resource/resourcemock"
+
 	"github.com/luxfi/node/utils/metrics"
 )
 

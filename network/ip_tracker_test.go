@@ -5,13 +5,20 @@ package network
 
 import (
 	"testing"
-		"github.com/luxfi/metrics"
+	
+	"github.com/luxfi/metrics"
+
 	"github.com/prometheus/client_golang/prometheus/testutil"
+
 	"github.com/stretchr/testify/require"
 
+
 	"github.com/luxfi/ids"
+
 	"github.com/luxfi/node/utils/bloom"
+
 	"github.com/luxfi/node/utils/ips"
+
 	"github.com/luxfi/log"
 )
 

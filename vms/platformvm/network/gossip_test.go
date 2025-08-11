@@ -6,13 +6,19 @@ package network
 import (
 	"errors"
 	"testing"
-		"github.com/luxfi/metrics"
+	
+	"github.com/luxfi/metrics"
+
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+
 	"github.com/luxfi/ids"
+
 	"github.com/luxfi/log"
+
 	"github.com/luxfi/node/vms/platformvm/txs"
+
 	"github.com/luxfi/node/vms/txs/mempool"
 
 	pmempool "github.com/luxfi/node/vms/platformvm/txs/mempool"

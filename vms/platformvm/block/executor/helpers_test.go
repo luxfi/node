@@ -8,12 +8,15 @@ import (
 	"fmt"
 	"testing"
 	"time"
-	
-
-	"github.com/luxfi/node/consensus/engine/core"	"github.com/luxfi/metrics"
-	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	pvalidators "github.com/luxfi/node/vms/platformvm/validators"
+	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
+	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
@@ -51,10 +54,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/upgrade"
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/node/vms/secp256k1fx"
-
-	pvalidators "github.com/luxfi/node/vms/platformvm/validators"
-	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
-	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 const (

@@ -9,29 +9,48 @@ import (
 	"errors"
 	"testing"
 	"time"
-		"github.com/stretchr/testify/require"
+	
+	"github.com/stretchr/testify/require"
+
 
 	"github.com/luxfi/node/consensus"
+
 	"github.com/luxfi/node/consensus/choices"
+
 	"github.com/luxfi/node/consensus/consensustest"
+
 	"github.com/luxfi/node/consensus/engine/core"
+
 	"github.com/luxfi/node/consensus/engine/core/tracker"
+
 	"github.com/luxfi/node/consensus/engine/graph/bootstrap/queue"
+
 	"github.com/luxfi/node/consensus/engine/graph/getter"
+
 	"github.com/luxfi/node/consensus/engine/graph/vertex/vertextest"
+
 	"github.com/luxfi/node/consensus/engine/enginetest"
 	dag "github.com/luxfi/node/consensus/graph"
+
 	"github.com/luxfi/node/consensus/validators"
+
 	"github.com/luxfi/database/memdb"
+
 	"github.com/luxfi/database/prefixdb"
+
 	"github.com/luxfi/ids"
+
 	"github.com/luxfi/node/network/p2p"
+
 	"github.com/luxfi/node/utils/constants"
+
 	"github.com/luxfi/node/utils/set"
+
 	"github.com/luxfi/node/version"
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/utils/metrics"
+
+	utilmetrics "github.com/luxfi/node/utils/metrics"
 )
 
 var (
@@ -74,10 +93,10 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextes
 	peer := ids.GenerateTestNodeID()
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, peer, nil, ids.Empty, 1))
 
-	vtxBlocker, err := queue.NewWithMissing(prefixdb.New([]byte("vtx"), db), "vtx", metrics.NewTestRegistry())
+	vtxBlocker, err := queue.NewWithMissing(prefixdb.New([]byte("vtx"), db), "vtx", utilmetrics.NewTestRegistry())
 	require.NoError(err)
 
-	txBlocker, err := queue.New(prefixdb.New([]byte("tx"), db), "tx", metrics.NewTestRegistry())
+	txBlocker, err := queue.New(prefixdb.New([]byte("tx"), db), "tx", utilmetrics.NewTestRegistry())
 	require.NoError(err)
 
 	peerTracker := tracker.NewPeers()
@@ -86,13 +105,13 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextes
 	startupTracker := tracker.NewStartup(peerTracker, totalWeight/2+1)
 	vdrs.RegisterSetCallbackListener(constants.PrimaryNetworkID, startupTracker)
 
-	getHandler, err := getter.New(manager, sender, ctx.Log, time.Second, 2000, metrics.NewTestRegistry())
+	getHandler, err := getter.New(manager, sender, ctx.Log, time.Second, 2000, utilmetrics.NewTestRegistry())
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
 		ctx.Log,
 		"",
-		metrics.NewTestRegistry(),
+		utilmetrics.NewTestRegistry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -171,7 +190,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 			})
 			return nil
 		},
-		metrics.NewTestRegistry(),
+		utilmetrics.NewTestRegistry(),
 	)
 	require.NoError(err)
 
@@ -278,7 +297,7 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 			})
 			return nil
 		},
-		metrics.NewTestRegistry(),
+		utilmetrics.NewTestRegistry(),
 	)
 	require.NoError(err)
 
@@ -445,7 +464,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 			})
 			return nil
 		},
-		metrics.NewTestRegistry(),
+		utilmetrics.NewTestRegistry(),
 	)
 	require.NoError(err)
 
@@ -569,7 +588,7 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 			})
 			return nil
 		},
-		metrics.NewTestRegistry(),
+		utilmetrics.NewTestRegistry(),
 	)
 	require.NoError(err)
 
