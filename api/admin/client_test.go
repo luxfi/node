@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
+	"github.com/luxfi/log/level"
 	"github.com/luxfi/node/utils/rpc"
 )
 
@@ -210,7 +210,7 @@ func TestSetLoggerLevel(t *testing.T) {
 			logLevel:     "INFO",
 			displayLevel: "INFO",
 			serviceResponse: map[string]LogAndDisplayLevels{
-				"Happy path": {LogLevel: log.InfoLevel, DisplayLevel: log.InfoLevel},
+				"Happy path": {LogLevel: level.Info, DisplayLevel: level.Info},
 			},
 			serviceErr: nil,
 			clientErr:  nil,
@@ -229,7 +229,7 @@ func TestSetLoggerLevel(t *testing.T) {
 			displayLevel:    "INFO",
 			serviceResponse: nil,
 			serviceErr:      nil,
-			clientErr:       log.ErrUnknownLevel,
+			clientErr:       level.ErrUnknownLevel,
 		},
 		{
 			name:            "Invalid display level",
@@ -237,7 +237,7 @@ func TestSetLoggerLevel(t *testing.T) {
 			displayLevel:    "invalid",
 			serviceResponse: nil,
 			serviceErr:      nil,
-			clientErr:       log.ErrUnknownLevel,
+			clientErr:       level.ErrUnknownLevel,
 		},
 	}
 	for _, tt := range tests {
@@ -280,7 +280,7 @@ func TestGetLoggerLevel(t *testing.T) {
 			name:       "Happy Path",
 			loggerName: "foo",
 			serviceResponse: map[string]LogAndDisplayLevels{
-				"foo": {LogLevel: log.InfoLevel, DisplayLevel: log.InfoLevel},
+				"foo": {LogLevel: level.Info, DisplayLevel: level.Info},
 			},
 			serviceErr: nil,
 			clientErr:  nil,

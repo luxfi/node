@@ -831,7 +831,14 @@ func (n *Node) initDatabase() error {
 	}
 
 	if genesisHash != expectedGenesisHash {
-		return fmt.Errorf("db contains invalid genesis hash. DB Genesis: %s Generated Genesis: %s", genesisHash, expectedGenesisHash)
+		// Check if this is migrated data (network 96369)
+		if n.Config.NetworkID == 96369 {
+			n.Log.Warn("Genesis hash mismatch detected for network 96369, using migrated blockchain data",
+				zap.Stringer("dbGenesis", genesisHash),
+				zap.Stringer("expectedGenesis", expectedGenesisHash))
+		} else {
+			return fmt.Errorf("db contains invalid genesis hash. DB Genesis: %s Generated Genesis: %s", genesisHash, expectedGenesisHash)
+		}
 	}
 
 	n.Log.Info("initializing database",

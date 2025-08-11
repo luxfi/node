@@ -33,7 +33,7 @@ func TestHandleTx(t *testing.T) {
 
 func TestNoopHandler(t *testing.T) {
 	handler := NoopHandler{
-		Log: nil,
+		Log: log.NewNoOpLogger(),
 	}
 
 	require.NoError(t, handler.HandleTx(ids.EmptyNodeID, 0, nil))

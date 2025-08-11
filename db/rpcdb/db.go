@@ -3,7 +3,6 @@ package rpcdb
 
 import (
 	"github.com/luxfi/node/proto/rpcdb"
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 // Type aliases for backwards compatibility

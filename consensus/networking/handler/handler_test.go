@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -49,7 +49,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, vdr0, nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -59,7 +59,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	peerTracker, err := p2p.NewPeerTracker(
 		nil,
 		"",
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -78,7 +78,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -160,7 +160,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -170,7 +170,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 	peerTracker, err := p2p.NewPeerTracker(
 		nil,
 		"",
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -192,7 +192,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -270,7 +270,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -280,7 +280,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	peerTracker, err := p2p.NewPeerTracker(
 		nil,
 		"",
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -299,7 +299,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -363,7 +363,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -373,7 +373,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	peerTracker, err := p2p.NewPeerTracker(
 		nil,
 		"",
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -393,7 +393,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -551,7 +551,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 			resourceTracker, err := tracker.NewResourceTracker(
-				metrics.NewNoOpMetrics("test").Registry(),
+				prometheus.NewRegistry(),
 				resource.NoUsage,
 				meter.ContinuousFactory{},
 				time.Second,
@@ -561,7 +561,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			peerTracker, err := p2p.NewPeerTracker(
 				nil,
 				"",
-				metrics.NewNoOpMetrics("test").Registry(),
+				prometheus.NewRegistry(),
 				nil,
 				version.CurrentApp,
 			)
@@ -580,7 +580,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 				subnets.New(ids.EmptyNodeID, subnets.Config{}),
 				commontracker.NewPeers(),
 				peerTracker,
-				metrics.NewNoOpMetrics("test").Registry(),
+				prometheus.NewRegistry(),
 				func() {},
 			)
 			require.NoError(err)
@@ -637,7 +637,7 @@ func TestHandlerStartError(t *testing.T) {
 	consensusCtx := consensustest.Context(t, consensustest.CChainID)
 	ctx := consensustest.ConsensusContext(consensusCtx)
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -647,7 +647,7 @@ func TestHandlerStartError(t *testing.T) {
 	peerTracker, err := p2p.NewPeerTracker(
 		nil,
 		"",
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -666,7 +666,7 @@ func TestHandlerStartError(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)

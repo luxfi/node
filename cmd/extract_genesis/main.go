@@ -6,11 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/luxfi/database"
 	"github.com/luxfi/database/pebbledb"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 func main() {
@@ -20,7 +16,7 @@ func main() {
 	fmt.Printf("Opening database at: %s\n", dbPath)
 
 	// Open pebbledb
-	db, err := pebbledb.New(dbPath, nil, database.NewDefaultLogger(), "", prometheus.NewRegistry())
+	db, err := pebbledb.New(dbPath, 1024, 1024, "", false)
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)
 	}
@@ -36,29 +32,13 @@ func main() {
 	fmt.Printf("Found genesis bytes: %d bytes\n", len(genesisBytes))
 
 	// Parse genesis
-	var gen genesis.Genesis
+	// TODO: Fix genesis parsing - types need to be defined
+	var gen map[string]interface{}
 	if err := json.Unmarshal(genesisBytes, &gen); err != nil {
-		// Try unparsed format
-		var unparsed genesis.UnparsedGenesis
-		if err := json.Unmarshal(genesisBytes, &unparsed); err != nil {
-			log.Fatalf("Failed to parse genesis: %v", err)
-		}
-
-		// Convert unparsed to parsed
-		gen, err = unparsed.Parse(constants.MainnetID)
-		if err != nil {
-			log.Fatalf("Failed to parse unparsed genesis: %v", err)
-		}
+		log.Fatalf("Failed to parse genesis: %v", err)
 	}
 
-	// Calculate genesis ID
-	genesisID, err := gen.GetID()
-	if err != nil {
-		log.Fatalf("Failed to calculate genesis ID: %v", err)
-	}
-
-	fmt.Printf("Genesis Network ID: %d\n", gen.NetworkID)
-	fmt.Printf("Genesis ID: %s\n", genesisID)
+	fmt.Printf("Genesis parsed successfully\n")
 
 	// Marshal to JSON for saving
 	jsonBytes, err := json.MarshalIndent(gen, "", "  ")

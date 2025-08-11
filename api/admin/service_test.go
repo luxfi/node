@@ -12,12 +12,10 @@ import (
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/registry"
-
-	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )
 
 type loadVMsTest struct {
@@ -35,7 +33,7 @@ func initLoadVMsTest(t *testing.T) *loadVMsTest {
 
 	return &loadVMsTest{
 		admin: &Admin{Config: Config{
-			Log:        nil,
+			Log:        log.NewNoOpLogger(),
 			VMRegistry: mockVMRegistry,
 			VMManager:  mockVMManager,
 		}},
@@ -117,7 +115,7 @@ func TestLoadVMsGetAliasesFails(t *testing.T) {
 
 func TestServiceDBGet(t *testing.T) {
 	a := &Admin{Config: Config{
-		Log: nil,
+		Log: log.NewNoOpLogger(),
 		DB:  memdb.New(),
 	}}
 
@@ -132,22 +130,22 @@ func TestServiceDBGet(t *testing.T) {
 	require.NoError(t, a.DB.Put(helloBytes, worldBytes))
 
 	tests := []struct {
-		name              string
-		key               string
-		expectedValue     string
-		expectedErrorCode rpcdbpb.Error
+		name          string
+		key           string
+		expectedValue string
+		expectedError bool
 	}{
 		{
-			name:              "key exists",
-			key:               helloHex,
-			expectedValue:     worldHex,
-			expectedErrorCode: rpcdbpb.Error_ERROR_UNSPECIFIED,
+			name:          "key exists",
+			key:           helloHex,
+			expectedValue: worldHex,
+			expectedError: false,
 		},
 		{
-			name:              "key doesn't exist",
-			key:               "",
-			expectedValue:     "",
-			expectedErrorCode: rpcdbpb.Error_ERROR_NOT_FOUND,
+			name:          "key doesn't exist",
+			key:           "",
+			expectedValue: "",
+			expectedError: true,
 		},
 	}
 	for _, test := range tests {
@@ -155,15 +153,19 @@ func TestServiceDBGet(t *testing.T) {
 			require := require.New(t)
 
 			reply := &DBGetReply{}
-			require.NoError(a.DbGet(
+			err := a.DbGet(
 				nil,
 				&DBGetArgs{
 					Key: test.key,
 				},
 				reply,
-			))
-			require.Equal(test.expectedValue, reply.Value)
-			require.Equal(test.expectedErrorCode, reply.ErrorCode)
+			)
+			if test.expectedError {
+				require.Error(err)
+			} else {
+				require.NoError(err)
+				require.Equal(test.expectedValue, reply.Value)
+			}
 		})
 	}
 }

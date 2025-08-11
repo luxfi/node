@@ -18,12 +18,12 @@ const baseImageName = "antithesis-node"
 func main() {
 	targetPath := os.Getenv("TARGET_PATH")
 	if len(targetPath) == 0 {
-		log.Error("TARGET_PATH environment variable not set")
+		log.Fatal("TARGET_PATH environment variable not set")
 	}
 
 	imageTag := os.Getenv("IMAGE_TAG")
 	if len(imageTag) == 0 {
-		log.Error("IMAGE_TAG environment variable not set")
+		log.Fatal("IMAGE_TAG environment variable not set")
 	}
 
 	nodeImageName := fmt.Sprintf("%s-node:%s", baseImageName, imageTag)

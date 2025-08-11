@@ -19,7 +19,7 @@ import (
 
 func TestNewMajority(t *testing.T) {
 	majority := NewMajority(
-		nil, // log
+		log.NewNoOpLogger(), // logger
 		map[ids.NodeID]uint64{
 			nodeID0: 1,
 			nodeID1: 1,
@@ -32,14 +32,18 @@ func TestNewMajority(t *testing.T) {
 			maxOutstanding: 2,
 			pendingSend:    set.Of(nodeID0, nodeID1),
 		},
-		log: nil,
+		log: log.NewNoOpLogger(),
 		nodeWeights: map[ids.NodeID]uint64{
 			nodeID0: 1,
 			nodeID1: 1,
 		},
 		received: make(map[ids.ID]uint64),
 	}
-	require.Equal(t, expectedMajority, majority)
+	// Compare only the relevant fields, not the logger
+	require.Equal(t, expectedMajority.requests, majority.requests)
+	require.Equal(t, expectedMajority.nodeWeights, majority.nodeWeights)
+	require.Equal(t, expectedMajority.received, majority.received)
+	require.NotNil(t, majority.log)
 }
 
 func TestMajorityGetPeers(t *testing.T) {
@@ -57,7 +61,7 @@ func TestMajorityGetPeers(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -70,7 +74,7 @@ func TestMajorityGetPeers(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -86,7 +90,7 @@ func TestMajorityGetPeers(t *testing.T) {
 					maxOutstanding: 2,
 					pendingSend:    set.Of(nodeID0, nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -99,7 +103,7 @@ func TestMajorityGetPeers(t *testing.T) {
 					pendingSend:    set.Set[ids.NodeID]{},
 					outstanding:    set.Of(nodeID0, nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -115,7 +119,7 @@ func TestMajorityGetPeers(t *testing.T) {
 					maxOutstanding: 2,
 					pendingSend:    set.Of(nodeID0),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 				},
@@ -127,7 +131,7 @@ func TestMajorityGetPeers(t *testing.T) {
 					pendingSend:    set.Set[ids.NodeID]{},
 					outstanding:    set.Of(nodeID0),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 				},
@@ -141,7 +145,13 @@ func TestMajorityGetPeers(t *testing.T) {
 			require := require.New(t)
 
 			peers := test.majority.GetPeers(context.Background())
-			require.Equal(test.expectedState, test.majority)
+			// Compare only the relevant fields, not the logger
+			actual := test.majority.(*Majority)
+			expected := test.expectedState.(*Majority)
+			require.Equal(expected.requests, actual.requests)
+			require.Equal(expected.nodeWeights, actual.nodeWeights)
+			require.Equal(expected.received, actual.received)
+			require.Equal(expected.accepted, actual.accepted)
 			require.Equal(test.expectedPeers, peers)
 		})
 	}
@@ -164,7 +174,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -179,7 +189,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -196,7 +206,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 2,
 					nodeID1: 3,
@@ -211,7 +221,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Set[ids.NodeID]{},
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 2,
 					nodeID1: 3,
@@ -229,7 +239,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Of(nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: math.MaxUint64,
@@ -245,7 +255,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Set[ids.NodeID]{},
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: math.MaxUint64,
@@ -263,7 +273,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Of(nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: math.MaxUint64,
@@ -277,7 +287,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Set[ids.NodeID]{},
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: math.MaxUint64,
@@ -295,7 +305,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Of(nodeID2),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -313,7 +323,7 @@ func TestMajorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Set[ids.NodeID]{},
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -333,7 +343,13 @@ func TestMajorityRecordOpinion(t *testing.T) {
 			require := require.New(t)
 
 			err := test.majority.RecordOpinion(context.Background(), test.nodeID, test.blkIDs)
-			require.Equal(test.expectedState, test.majority)
+			// Compare only the relevant fields, not the logger
+			actual := test.majority.(*Majority)
+			expected := test.expectedState.(*Majority)
+			require.Equal(expected.requests, actual.requests)
+			require.Equal(expected.nodeWeights, actual.nodeWeights)
+			require.Equal(expected.received, actual.received)
+			require.Equal(expected.accepted, actual.accepted)
 			require.ErrorIs(err, test.expectedErr)
 		})
 	}
@@ -353,7 +369,7 @@ func TestMajorityResult(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Of(nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,
@@ -370,7 +386,7 @@ func TestMajorityResult(t *testing.T) {
 				requests: requests{
 					maxOutstanding: 1,
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 				nodeWeights: map[ids.NodeID]uint64{
 					nodeID0: 1,
 					nodeID1: 1,

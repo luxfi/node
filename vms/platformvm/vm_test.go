@@ -1434,8 +1434,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 			TimeoutCoefficient: 1.25,
 		},
 		benchlist,
-		metrics.NewNoOpMetrics("test").Registry(),
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 
@@ -1445,12 +1445,12 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	chainRouter := &router.ChainRouter{}
 
 	m := metrics.NewNoOpMetrics("test")
-	mc, err := message.NewCreator(log.NewTestLogger(log.ErrorLevel), m, constants.DefaultNetworkCompressionType, 10*time.Second)
+	mc, err := message.NewCreator(log.NewNoOpLogger(), m, constants.DefaultNetworkCompressionType, 10*time.Second)
 	require.NoError(err)
 
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		log.NewTestLogger(log.ErrorLevel),
+		log.NewNoOpLogger(),
 		timeoutManager,
 		time.Second,
 		set.Set[ids.ID]{},
@@ -1458,7 +1458,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 	))
 
 	externalSender := &sendertest.External{TB: t}
@@ -1473,7 +1473,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		timeoutManager,
 		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		subnets.New(consensusCtx.NodeID, subnets.Config{}),
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 
@@ -1532,7 +1532,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// Asynchronously passes messages from the network to the consensus engine
 	cpuTracker, err := timetracker.NewResourceTracker(
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -1565,7 +1565,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		tracker.NewPeers(),
 		peerTracker,
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)

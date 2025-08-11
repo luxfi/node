@@ -212,6 +212,8 @@ func GetConfig(networkID uint32) *Config {
 		return &TestnetConfig
 	case constants.LocalID:
 		return &LocalConfig
+	case constants.LuxMainnetID: // 96369
+		return &LuxMainnetConfig
 	default:
 		tempConfig := LocalConfig
 		tempConfig.NetworkID = networkID

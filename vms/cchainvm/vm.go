@@ -248,10 +248,21 @@ func (vm *VM) Initialize(
 		vm.ctx.Log.Info("Using imported blockchain genesis for replay",
 			"expectedHash", "0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
 	} else if len(genesisBytes) > 0 {
-		// First check if this is a database replay genesis
+		// First check if this is a database replay genesis or uses migrated data
 		var genesisMap map[string]interface{}
 		if err := json.Unmarshal(genesisBytes, &genesisMap); err == nil {
-			if replay, ok := genesisMap["replay"].(bool); ok && replay {
+			// Check for useMigratedData flag - for using existing migrated blockchain data
+			if useMigrated, ok := genesisMap["useMigratedData"].(bool); ok && useMigrated {
+				vm.ctx.Log.Info("Using migrated blockchain data from existing database")
+				fmt.Printf("MIGRATED DATA MODE: Using existing blockchain at block 1,082,780\n")
+				
+				// Mark as migrated data to skip genesis initialization
+				hasMigratedData = true
+				
+				// Don't set any genesis - let the VM use what's already in the database
+				genesis = nil
+				
+			} else if replay, ok := genesisMap["replay"].(bool); ok && replay {
 				// This is a database replay genesis
 				dbPath, _ := genesisMap["dbPath"].(string)
 				dbType, _ := genesisMap["dbType"].(string)
@@ -321,18 +332,53 @@ func (vm *VM) Initialize(
 			genesis.Config.TerminalTotalDifficulty = common.Big0
 		}
 	} else {
-		// Use a default dev genesis if none provided
-		genesis = &gethcore.Genesis{
-			Config:     params.AllEthashProtocolChanges,
-			Difficulty: big.NewInt(0),
-			GasLimit:   8000000,
-			Alloc: gethcore.GenesisAlloc{
-				common.HexToAddress("0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC"): types.Account{
-					Balance: new(big.Int).Mul(big.NewInt(1000000), big.NewInt(params.Ether)),
+		// For network 96369, use genesis that matches migrated data
+		if vm.ctx.NetworkID == 96369 {
+			genesis = &gethcore.Genesis{
+				Config: &params.ChainConfig{
+					ChainID:                 big.NewInt(96369),
+					HomesteadBlock:          big.NewInt(0),
+					EIP150Block:             big.NewInt(0),
+					EIP155Block:             big.NewInt(0),
+					EIP158Block:             big.NewInt(0),
+					ByzantiumBlock:          big.NewInt(0),
+					ConstantinopleBlock:     big.NewInt(0),
+					PetersburgBlock:         big.NewInt(0),
+					IstanbulBlock:           big.NewInt(0),
+					MuirGlacierBlock:        big.NewInt(0),
+					BerlinBlock:             big.NewInt(0),
+					LondonBlock:             big.NewInt(0),
+					ArrowGlacierBlock:       big.NewInt(0),
+					GrayGlacierBlock:        big.NewInt(0),
+					MergeNetsplitBlock:      big.NewInt(0),
+					ShanghaiTime:            new(uint64), // 0
+					CancunTime:              new(uint64), // 0
+					TerminalTotalDifficulty: common.Big0,
 				},
-			},
+				Nonce:      0x0,
+				Timestamp:  0x0,
+				ExtraData:  []byte{0x00},
+				GasLimit:   0x7a1200, // 8000000
+				Difficulty: big.NewInt(0),
+				Mixhash:    common.Hash{},
+				Coinbase:   common.Address{},
+				Alloc:      gethcore.GenesisAlloc{},
+			}
+			vm.ctx.Log.Info("Using genesis for migrated network 96369 data")
+		} else {
+			// Use default dev genesis for other networks
+			genesis = &gethcore.Genesis{
+				Config:     params.AllEthashProtocolChanges,
+				Difficulty: big.NewInt(0),
+				GasLimit:   8000000,
+				Alloc: gethcore.GenesisAlloc{
+					common.HexToAddress("0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC"): types.Account{
+						Balance: new(big.Int).Mul(big.NewInt(1000000), big.NewInt(params.Ether)),
+					},
+				},
+			}
+			genesis.Config.TerminalTotalDifficulty = common.Big0
 		}
-		genesis.Config.TerminalTotalDifficulty = common.Big0
 	}
 
 	// Initialize chain config

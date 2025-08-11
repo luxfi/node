@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/consensustest"
@@ -23,9 +22,9 @@ import (
 	"github.com/luxfi/node/consensus/engine/chain/getter"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (

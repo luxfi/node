@@ -34,7 +34,7 @@ type loggerAdapter struct {
 var _ bft.Logger = (*loggerAdapter)(nil)
 
 func (l *loggerAdapter) Fatal(msg string, fields ...zap.Field) {
-	l.wrapped.Error(msg, fields...)
+	l.wrapped.Error(msg, fieldsToInterface(fields)...)
 }
 
 func (l *loggerAdapter) Error(msg string, fields ...zap.Field) {
@@ -58,7 +58,7 @@ func (l *loggerAdapter) Debug(msg string, fields ...zap.Field) {
 }
 
 func (l *loggerAdapter) Verbo(msg string, fields ...zap.Field) {
-	l.wrapped.Debug(msg, fields...)
+	l.wrapped.Debug(msg, fieldsToInterface(fields)...)
 }
 
 // fieldsToInterface converts zap.Field slice to interface{} slice

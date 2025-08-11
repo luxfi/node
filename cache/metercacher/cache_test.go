@@ -8,7 +8,6 @@ package metercacher
 import (
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
@@ -40,7 +39,7 @@ func TestInterface(t *testing.T) {
 	for _, scenario := range scenarios {
 		for _, test := range cache.CacherTests {
 			baseCache := scenario.setup(test.Size)
-			c, err := New("", metrics.NewNoOpMetrics("test").Registry(), baseCache)
+			c, err := New("", metrics.NewNoOpMetrics("test").PrometheusRegistry(), baseCache)
 			require.NoError(t, err)
 			test.Func(t, c)
 		}

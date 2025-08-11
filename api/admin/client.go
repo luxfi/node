@@ -105,18 +105,18 @@ func (c *client) SetLoggerLevel(
 		err             error
 	)
 	if len(logLevel) > 0 {
-		level := log.Level(log.InfoLevel)
-		logLevelArg = &level // Default to info level
+		level, err := log.ToLevel(logLevel)
 		if err != nil {
 			return nil, err
 		}
+		logLevelArg = &level
 	}
 	if len(displayLevel) > 0 {
-		level := log.Level(log.InfoLevel)
-		displayLevelArg = &level // Default to info level
+		level, err := log.ToLevel(displayLevel)
 		if err != nil {
 			return nil, err
 		}
+		displayLevelArg = &level
 	}
 	res := &LoggerLevelReply{}
 	err = c.requester.SendRequest(ctx, "admin.setLoggerLevel", &SetLoggerLevelArgs{

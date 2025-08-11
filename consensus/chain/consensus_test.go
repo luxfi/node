@@ -12,7 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"gonum.org/v1/gonum/mathext/prng"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/bag"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type testFunc func(*testing.T, Factory)

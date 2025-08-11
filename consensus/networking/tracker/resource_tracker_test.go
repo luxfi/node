@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -21,11 +20,11 @@ import (
 func TestNewCPUTracker(t *testing.T) {
 	require := require.New(t)
 
-	reg := metrics.NewNoOpMetrics("test").Registry()
+	promReg := prometheus.NewRegistry()
 	halflife := 5 * time.Second
 	factory := &meter.ContinuousFactory{}
 
-	trackerIntf, err := NewResourceTracker(reg, resource.NoUsage, factory, halflife)
+	trackerIntf, err := NewResourceTracker(promReg, resource.NoUsage, factory, halflife)
 	require.NoError(err)
 	require.IsType(&resourceTracker{}, trackerIntf)
 	tracker := trackerIntf.(*resourceTracker)
@@ -45,7 +44,7 @@ func TestCPUTracker(t *testing.T) {
 	mockUser := resourcemock.NewUser(ctrl)
 	mockUser.EXPECT().CPUUsage().Return(1.0).Times(3)
 
-	tracker, err := NewResourceTracker(metrics.NewNoOpMetrics("test").Registry(), mockUser, meter.ContinuousFactory{}, time.Second)
+	tracker, err := NewResourceTracker(prometheus.NewRegistry(), mockUser, meter.ContinuousFactory{}, time.Second)
 	require.NoError(err)
 
 	node1 := ids.BuildTestNodeID([]byte{1})
@@ -98,7 +97,7 @@ func TestCPUTrackerTimeUntilCPUUtilization(t *testing.T) {
 	require := require.New(t)
 
 	halflife := 5 * time.Second
-	tracker, err := NewResourceTracker(metrics.NewNoOpMetrics("test").Registry(), resource.NoUsage, meter.ContinuousFactory{}, halflife)
+	tracker, err := NewResourceTracker(prometheus.NewRegistry(), resource.NoUsage, meter.ContinuousFactory{}, halflife)
 	require.NoError(err)
 	now := time.Now()
 	nodeID := ids.GenerateTestNodeID()

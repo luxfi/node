@@ -6,7 +6,7 @@ package metrics
 import (
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
@@ -95,7 +95,7 @@ func TestLabelGatherer_Gather(t *testing.T) {
 			gatherer := NewLabelGatherer(labelName)
 			require.NotNil(gatherer)
 
-			registerA := prometheus.NewRegistry()
+			registerA := metrics.NewRegistry()
 			require.NoError(gatherer.Register(labelValueA, registerA))
 			{
 				counterA := prometheus.NewCounterVec(
@@ -106,7 +106,7 @@ func TestLabelGatherer_Gather(t *testing.T) {
 				require.NoError(registerA.Register(counterA))
 			}
 
-			registerB := prometheus.NewRegistry()
+			registerB := metrics.NewRegistry()
 			require.NoError(gatherer.Register(labelValueB, registerB))
 			{
 				counterB := prometheus.NewCounterVec(

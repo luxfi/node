@@ -10,13 +10,11 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/filesystem"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"
 )
@@ -141,14 +139,13 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 
 	mockReader := filesystem.NewMockReader(ctrl)
 	mockManager := vms.NewMockManager(ctrl)
-	mockRegistry := metrics.NewNoOpMetrics("test").Registry()
 	mockCPUTracker, err := resource.NewManager(
 		nil,
 		"",
 		time.Hour,
 		time.Hour,
 		time.Hour,
-		mockRegistry,
+		prometheus.NewRegistry(),
 	)
 	require.NoError(t, err)
 
