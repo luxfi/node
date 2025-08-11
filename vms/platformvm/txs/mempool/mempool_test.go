@@ -33,7 +33,7 @@ var preFundedKeys = secp256k1.TestKeys()
 func TestBlockBuilderMaxMempoolSizeHandling(t *testing.T) {
 	require := require.New(t)
 
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := metrics.NewRegistry()
 	mpool, err := New("mempool", registerer, nil)
 	require.NoError(err)
 
@@ -57,7 +57,7 @@ func TestBlockBuilderMaxMempoolSizeHandling(t *testing.T) {
 func TestDecisionTxsInMempool(t *testing.T) {
 	require := require.New(t)
 
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := metrics.NewRegistry()
 	mpool, err := New("mempool", registerer, nil)
 	require.NoError(err)
 
@@ -110,7 +110,7 @@ func TestDecisionTxsInMempool(t *testing.T) {
 func TestProposalTxsInMempool(t *testing.T) {
 	require := require.New(t)
 
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := metrics.NewRegistry()
 	mpool, err := New("mempool", registerer, nil)
 	require.NoError(err)
 
@@ -244,7 +244,7 @@ func generateAddValidatorTx(startTime uint64, endTime uint64) (*txs.Tx, error) {
 func TestDropExpiredStakerTxs(t *testing.T) {
 	require := require.New(t)
 
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := metrics.NewRegistry()
 	mempool, err := New("mempool", registerer, nil)
 	require.NoError(err)
 

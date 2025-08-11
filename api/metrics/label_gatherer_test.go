@@ -6,12 +6,12 @@ package metrics
 import (
 	"testing"
 	
-
-	"github.com/luxfi/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
 	dto "github.com/prometheus/client_model/go"
+	"github.com/luxfi/node/utils/metrics"
 )
 
 func TestLabelGatherer_Gather(t *testing.T) {

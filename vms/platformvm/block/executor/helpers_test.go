@@ -189,7 +189,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		Rewards:      rewardsCalc,
 	}
 
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := metrics.NewRegistry()
 	res.sender = &core.SenderTest{}
 
 	metrics := metrics.Noop
@@ -310,7 +310,7 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewRegistry(),
 		cfg,
 		execCfg,
 		ctx,

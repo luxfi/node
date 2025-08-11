@@ -43,7 +43,7 @@ func TestGossipMempoolAddVerificationError(t *testing.T) {
 
 	gossipMempool, err := newGossipMempool(
 		mempool,
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewRegistry(),
 		nil,
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
@@ -77,7 +77,7 @@ func TestGossipMempoolAddError(t *testing.T) {
 
 	gossipMempool, err := newGossipMempool(
 		mempool,
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewRegistry(),
 		nil,
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
@@ -108,7 +108,7 @@ func TestMempoolDuplicate(t *testing.T) {
 
 	gossipMempool, err := newGossipMempool(
 		testMempool,
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewRegistry(),
 		nil,
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
@@ -143,7 +143,7 @@ func TestGossipAddBloomFilter(t *testing.T) {
 
 	gossipMempool, err := newGossipMempool(
 		mempool,
-		metrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewRegistry(),
 		nil,
 		txVerifier,
 		testConfig.ExpectedBloomFilterElements,
