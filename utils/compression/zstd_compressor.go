@@ -27,7 +27,9 @@ func NewZstdCompressor(maxSize int64) (Compressor, error) {
 	if err != nil {
 		return nil, err
 	}
-	decoder, err := zstd.NewReader(nil)
+	// Configure decoder with memory limit to prevent zip bomb attacks
+	// Use maxSize as the memory limit to prevent excessive allocation
+	decoder, err := zstd.NewReader(nil, zstd.WithDecoderMaxMemory(uint64(maxSize)))
 	if err != nil {
 		encoder.Close()
 		return nil, err
@@ -56,6 +58,10 @@ func (z *zstdCompressor) Compress(msg []byte) ([]byte, error) {
 func (z *zstdCompressor) Decompress(msg []byte) ([]byte, error) {
 	decompressed, err := z.decoder.DecodeAll(msg, nil)
 	if err != nil {
+		// If the decoder returns an error about size limit, wrap it with our error
+		if err.Error() == "decompressed size exceeds configured limit" {
+			return nil, fmt.Errorf("%w: decompression stopped due to size limit", ErrDecompressedMsgTooLarge)
+		}
 		return nil, err
 	}
 	if int64(len(decompressed)) > z.maxSize {

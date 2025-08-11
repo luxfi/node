@@ -13,6 +13,7 @@ import (
 
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/p2ptest"
 	"github.com/luxfi/crypto/bls"
@@ -623,7 +624,7 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 				p2p.NoOpHandler{},
 				tt.peers,
 			)
-			aggregator := NewSignatureAggregator(nil, client)
+			aggregator := NewSignatureAggregator(log.NewNoOpLogger(), client)
 
 			gotMsg, gotAggregatedStake, gotTotalStake, err := aggregator.AggregateSignatures(
 				tt.ctx,

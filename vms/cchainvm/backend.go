@@ -47,11 +47,7 @@ type MinimalEthBackend struct {
 func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBackend, error) {
 	fmt.Printf("Creating migrated backend for subnet-EVM data at height %d\n", migratedHeight)
 	
-	// Enable subnet namespace handling in database wrapper
-	UseSubnetNamespace = true
-	
-	// For now, we'll use the wrapped database
-	// Later we can optimize to open raw database directly
+	// Use the database as-is (already wrapped)
 	rawDB := db
 	
 	// Create chain config for LUX mainnet
@@ -73,24 +69,24 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 	// Create a dummy consensus engine
 	engine := &dummyEngine{}
 	
-	fmt.Printf("Scanning subnet-EVM database for blocks...\n")
+	fmt.Printf("Scanning migrated database for blocks...\n")
 	
 	// Build block index first
 	blocksByNumber := make(map[uint64]common.Hash)
-	headersByHash := make(map[common.Hash][]byte)
-	
-	// We need to access the raw database, not the wrapped one
-	// The wrapped database won't see the namespace-prefixed keys
-	// So we'll scan for canonical mappings first
 	canonicalCount := 0
 	
-	// Look for 'H' canonical mappings (blockNum -> hash)
-	// When using wrapped database, keys are without namespace
-	for blockNum := uint64(0); blockNum <= 1082781; blockNum++ {
-		// Build the key: just 'H' + blockNum (namespace handled by wrapper)
-		key := make([]byte, 9)
-		key[0] = 'H'
-		binary.BigEndian.PutUint64(key[1:9], blockNum)
+	// The migrated data uses lowercase 'h' prefix for canonical mappings
+	// Format: 'h' + blockNum(8 bytes) + 'n'
+	// Scan all blocks up to the migrated height
+	maxScan := migratedHeight + 10 // Scan a bit past the target
+	if maxScan > 1082790 {
+		maxScan = 1082790
+	}
+	
+	for blockNum := uint64(0); blockNum <= maxScan; blockNum++ {
+		// Build the key: 'h' + blockNum + 'n'
+		key := append([]byte("h"), encodeBlockNumber(blockNum)...)
+		key = append(key, 'n')
 		
 		// Try to get the hash for this block number
 		if val, err := rawDB.Get(key); err == nil && len(val) == 32 {
@@ -99,34 +95,22 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 			blocksByNumber[blockNum] = hash
 			canonicalCount++
 			
-			if canonicalCount <= 10 || canonicalCount%100000 == 0 {
+			if canonicalCount <= 10 || canonicalCount%100000 == 0 || blockNum == migratedHeight {
 				fmt.Printf("  Found canonical block %d -> hash %x\n", blockNum, hash[:8])
-			}
-			
-			// Now get the header for this hash
-			// With wrapped database, just use the hash directly
-			headerKey := make([]byte, 32)
-			copy(headerKey, hash[:])
-			
-			if headerVal, err := rawDB.Get(headerKey); err == nil {
-				headersByHash[hash] = headerVal
 			}
 		}
 		
-		// Stop early if we haven't found blocks in a while
-		if blockNum > 100 && canonicalCount == 0 {
-			break
+		// Print progress every 10000 blocks
+		if blockNum > 0 && blockNum%10000 == 0 {
+			fmt.Printf("  Scanned up to block %d, found %d canonical blocks\n", blockNum, canonicalCount)
 		}
 	}
 	
-	fmt.Printf("Found %d canonical blocks in subnet-EVM database\n", canonicalCount)
+	fmt.Printf("Found %d canonical blocks in migrated database\n", canonicalCount)
 	
-	// Close the raw database if we opened it
-	if rawDB != db {
-		rawDB.Close()
+	if canonicalCount == 0 {
+		return nil, fmt.Errorf("no blocks found in migrated database")
 	}
-	
-	fmt.Printf("Found %d blocks in subnet-EVM database\n", len(blocksByNumber))
 	
 	// Find the requested block or highest available
 	var headHash common.Hash
@@ -147,19 +131,15 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 	}
 	
 	if headHash == (common.Hash{}) {
-		return nil, fmt.Errorf("no blocks found in subnet-EVM database")
+		return nil, fmt.Errorf("no head block found in migrated database")
 	}
 	
 	fmt.Printf("Setting head to block %d with hash: %x\n", actualHeight, headHash)
 	
-	// Write canonical mappings in standard format for all blocks
+	// Write canonical mappings in standard geth format
 	fmt.Printf("Writing canonical mappings for %d blocks...\n", len(blocksByNumber))
 	for blockNum, hash := range blocksByNumber {
 		rawdb.WriteCanonicalHash(db, hash, blockNum)
-		// Also write the header in standard format
-		if _, exists := headersByHash[hash]; exists {
-			rawdb.WriteHeader(db, &types.Header{Number: big.NewInt(int64(blockNum))})
-		}
 	}
 	
 	// Set head pointers
@@ -366,65 +346,18 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 		canonicalKey := append([]byte("h"), encodeBlockNumber(0)...)
 		canonicalKey = append(canonicalKey, 'n')
 		
+		fmt.Printf("Checking for migrated data with key: %x\n", canonicalKey)
 		if hash, err := db.Get(canonicalKey); err == nil && len(hash) == 32 {
 			actualHash := common.BytesToHash(hash)
+			fmt.Printf("Found genesis hash in database: %s (expected: %s)\n", actualHash.Hex(), expectedGenesisHash.Hex())
 			if actualHash == expectedGenesisHash {
-				fmt.Printf("Found migrated blockchain with correct genesis: %s\n", expectedGenesisHash.Hex())
+				fmt.Printf("✓ Found migrated blockchain with correct genesis: %s\n", expectedGenesisHash.Hex())
 				
-				// Write the correct chain config
-				chainConfig := &params.ChainConfig{
-					ChainID:                 big.NewInt(96369),
-					HomesteadBlock:          big.NewInt(0),
-					EIP150Block:             big.NewInt(0),
-					EIP155Block:             big.NewInt(0),
-					EIP158Block:             big.NewInt(0),
-					ByzantiumBlock:          big.NewInt(0),
-					ConstantinopleBlock:     big.NewInt(0),
-					PetersburgBlock:         big.NewInt(0),
-					IstanbulBlock:           big.NewInt(0),
-					MuirGlacierBlock:        big.NewInt(0),
-					BerlinBlock:             big.NewInt(0),
-					LondonBlock:             big.NewInt(0),
-					ArrowGlacierBlock:       big.NewInt(0),
-					GrayGlacierBlock:        big.NewInt(0),
-					MergeNetsplitBlock:      big.NewInt(0),
-					TerminalTotalDifficulty: common.Big0,
-				}
-				
-				// Write chain config and use existing data
-				rawdb.WriteChainConfig(db, expectedGenesisHash, chainConfig)
-				rawdb.WriteCanonicalHash(db, expectedGenesisHash, 0)
-				
-				// Find the highest block
-				var highestBlock uint64 = 0
-				for i := uint64(1082780); i <= 1082790; i++ {
-					key := append([]byte("h"), encodeBlockNumber(i)...)
-					key = append(key, 'n')
-					if _, err := db.Get(key); err == nil {
-						highestBlock = i
-					} else {
-						break
-					}
-				}
-				
-				if highestBlock > 0 {
-					fmt.Printf("Migrated blockchain has blocks up to %d\n", highestBlock)
-					
-					// Get the hash at the highest block
-					key := append([]byte("h"), encodeBlockNumber(highestBlock)...)
-					key = append(key, 'n')
-					if hash, err := db.Get(key); err == nil && len(hash) == 32 {
-						headHash := common.BytesToHash(hash)
-						rawdb.WriteHeadBlockHash(db, headHash)
-						rawdb.WriteHeadHeaderHash(db, headHash)
-						fmt.Printf("Set head block to height %d, hash %s\n", highestBlock, headHash.Hex())
-					}
-				}
-				
-				// Skip genesis initialization
-				genesis = nil
-				fmt.Println("Using migrated blockchain data, skipping genesis initialization")
+				// Use the migrated backend directly
+				return NewMigratedBackend(db, 1082780)
 			}
+		} else {
+			fmt.Printf("No migrated data found (err: %v)\n", err)
 		}
 	}
 	
