@@ -6,6 +6,7 @@ package peer
 import (
 	"net/netip"
 	"time"
+	
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/json"

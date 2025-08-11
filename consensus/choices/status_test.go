@@ -6,6 +6,7 @@ package choices
 import (
 	"math"
 	"testing"
+	
 
 	"github.com/stretchr/testify/require"
 )

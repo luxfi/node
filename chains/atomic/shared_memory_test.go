@@ -7,6 +7,7 @@ package atomic
 
 import (
 	"testing"
+	
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"

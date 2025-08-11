@@ -8,6 +8,7 @@ package atomic
 import (
 	"math/rand"
 	"testing"
+	
 
 	"github.com/stretchr/testify/require"
 

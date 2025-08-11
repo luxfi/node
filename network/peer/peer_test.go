@@ -10,9 +10,7 @@ import (
 	"net/netip"
 	"testing"
 	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/luxfi/metrics"
+		"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/networking/router"

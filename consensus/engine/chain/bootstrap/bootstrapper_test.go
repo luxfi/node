@@ -9,6 +9,7 @@ import (
 	"errors"
 	"testing"
 	"time"
+	
 
 	"github.com/stretchr/testify/require"
 
@@ -30,8 +31,7 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 
-	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	"github.com/prometheus/client_golang/prometheus"
+	p2ppb "github.com/luxfi/node/proto/pb/p2p"	"github.com/luxfi/node/utils/metrics"
 )
 
 var errUnknownBlock = errors.New("unknown block")
@@ -82,7 +82,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *blocktest
 	peerTracker, err := p2p.NewPeerTracker(
 		ctx.Log,
 		"",
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
 		nil,
 		nil,
 	)
@@ -136,7 +136,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	peerTracker, err := p2p.NewPeerTracker(
 		ctx.Log,
 		"",
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
 		nil,
 		nil,
 	)
@@ -676,7 +676,7 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 	peerTracker, err := p2p.NewPeerTracker(
 		ctx.Log,
 		"",
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
 		nil,
 		nil,
 	)

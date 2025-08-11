@@ -11,6 +11,7 @@ import (
 	"sort"
 	"testing"
 	"time"
+	
 
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"

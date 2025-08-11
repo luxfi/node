@@ -5,9 +5,7 @@ package network
 
 import (
 	"testing"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/luxfi/metrics"
+		"github.com/luxfi/metrics"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 

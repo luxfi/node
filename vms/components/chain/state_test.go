@@ -8,9 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stretchr/testify/require"
+		"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/consensustest"
@@ -19,6 +17,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/utils/metrics"
 )
 
 var (
@@ -564,7 +563,7 @@ func TestBuildBlockError(t *testing.T) {
 func TestMeteredCache(t *testing.T) {
 	require := require.New(t)
 
-	registry := prometheus.NewRegistry()
+	registry := metrics.NewTestRegistry()
 
 	testBlks := NewTestBlocks(1)
 	genesisBlock := testBlks[0]

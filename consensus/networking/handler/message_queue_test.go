@@ -7,9 +7,7 @@ import (
 	"context"
 	"testing"
 	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stretchr/testify/require"
+		"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/consensus/networking/tracker/trackermock"
@@ -18,6 +16,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/metrics"
 )
 
 func TestQueue(t *testing.T) {
@@ -34,7 +33,7 @@ func TestQueue(t *testing.T) {
 		vdrs,
 		cpuTracker,
 		"",
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
 	)
 	require.NoError(err)
 	u := mIntf.(*messageQueue)

@@ -5,6 +5,7 @@ package genesis
 
 import (
 	"time"
+	
 
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/reward"

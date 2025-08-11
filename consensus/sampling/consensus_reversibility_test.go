@@ -5,6 +5,7 @@ package sampling
 
 import (
 	"testing"
+	
 
 	"github.com/stretchr/testify/require"
 	"gonum.org/v1/gonum/mathext/prng"

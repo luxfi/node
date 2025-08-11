@@ -6,6 +6,7 @@ package subnet
 import (
 	"math"
 	"time"
+	
 
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"

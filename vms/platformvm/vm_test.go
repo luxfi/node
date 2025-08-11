@@ -8,9 +8,7 @@ import (
 	"context"
 	"testing"
 	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/luxfi/metrics"
+		"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/chains"
@@ -76,6 +74,7 @@ import (
 	walletbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/utils/metrics"
 )
 
 const (
@@ -1434,8 +1433,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 			TimeoutCoefficient: 1.25,
 		},
 		benchlist,
-		prometheus.NewRegistry(),
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
+		metrics.NewTestRegistry(),
 	)
 	require.NoError(err)
 
@@ -1458,7 +1457,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
 	))
 
 	externalSender := &sendertest.External{TB: t}
@@ -1473,7 +1472,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		timeoutManager,
 		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		subnets.New(consensusCtx.NodeID, subnets.Config{}),
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
 	)
 	require.NoError(err)
 
@@ -1532,7 +1531,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// Asynchronously passes messages from the network to the consensus engine
 	cpuTracker, err := timetracker.NewResourceTracker(
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -1565,7 +1564,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		tracker.NewPeers(),
 		peerTracker,
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
 		func() {},
 	)
 	require.NoError(err)

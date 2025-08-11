@@ -5,6 +5,7 @@ package consistent
 
 import (
 	"testing"
+	
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"

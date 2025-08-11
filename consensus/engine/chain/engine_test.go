@@ -11,9 +11,7 @@ import (
 	"slices"
 	"testing"
 	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stretchr/testify/require"
+		"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
@@ -36,6 +34,7 @@ import (
 	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/utils/metrics"
 )
 
 var (
@@ -3038,7 +3037,7 @@ func TestGetProcessingAncestor(t *testing.T) {
 
 			require.NoError(consensus.Add(issuedBlock))
 
-			metrics, err := newMetrics(metrics.WrapPrometheusRegistry(prometheus.NewRegistry()))
+			metrics, err := newMetrics(metrics.WrapPrometheusRegistry(metrics.NewTestRegistry()))
 			require.NoError(err)
 
 			engine := &Engine{

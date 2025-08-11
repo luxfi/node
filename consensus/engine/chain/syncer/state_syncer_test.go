@@ -10,6 +10,7 @@ import (
 	"math"
 	"testing"
 	"time"
+	
 
 	"github.com/stretchr/testify/require"
 
@@ -23,8 +24,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/version"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/node/version"	"github.com/luxfi/node/utils/metrics"
 )
 
 var (
@@ -51,7 +51,7 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 		nil,
 		time.Second,
 		2000,
-		prometheus.NewRegistry(),
+		metrics.NewTestRegistry(),
 	)
 	require.NoError(err)
 
@@ -80,7 +80,7 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 		nil,
 		time.Second,
 		2000,
-		prometheus.NewRegistry())
+		metrics.NewTestRegistry())
 	require.NoError(err)
 
 	cfg, err = NewConfig(dummyGetter, ctx, nil, sender, nil, 0, 0, nil, fullVM)
