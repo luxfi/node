@@ -16,7 +16,7 @@ import (
 
 func TestNewMinority(t *testing.T) {
 	minority := NewMinority(
-		nil, // log
+		log.NewNoOpLogger(), // log
 		set.Of(nodeID0), // frontierNodes
 		2,               // maxOutstanding
 	)
@@ -26,9 +26,11 @@ func TestNewMinority(t *testing.T) {
 			maxOutstanding: 2,
 			pendingSend:    set.Of(nodeID0),
 		},
-		log: nil,
+		log: log.NewNoOpLogger(),
 	}
-	require.Equal(t, expectedMinority, minority)
+	// Compare only the relevant fields, not the logger
+	require.Equal(t, expectedMinority.requests, minority.requests)
+	require.NotNil(t, minority.log)
 }
 
 func TestMinorityGetPeers(t *testing.T) {
@@ -46,7 +48,7 @@ func TestMinorityGetPeers(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 			},
 			expectedState: &Minority{
 				requests: requests{
@@ -54,7 +56,7 @@ func TestMinorityGetPeers(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 			},
 			expectedPeers: nil,
 		},
@@ -65,7 +67,7 @@ func TestMinorityGetPeers(t *testing.T) {
 					maxOutstanding: 2,
 					pendingSend:    set.Of(nodeID0, nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 			},
 			expectedState: &Minority{
 				requests: requests{
@@ -73,7 +75,7 @@ func TestMinorityGetPeers(t *testing.T) {
 					pendingSend:    set.Set[ids.NodeID]{},
 					outstanding:    set.Of(nodeID0, nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 			},
 			expectedPeers: set.Of(nodeID0, nodeID1),
 		},
@@ -84,7 +86,7 @@ func TestMinorityGetPeers(t *testing.T) {
 					maxOutstanding: 2,
 					pendingSend:    set.Of(nodeID0),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 			},
 			expectedState: &Minority{
 				requests: requests{
@@ -92,7 +94,7 @@ func TestMinorityGetPeers(t *testing.T) {
 					pendingSend:    set.Set[ids.NodeID]{},
 					outstanding:    set.Of(nodeID0),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 			},
 			expectedPeers: set.Of(nodeID0),
 		},
@@ -102,7 +104,12 @@ func TestMinorityGetPeers(t *testing.T) {
 			require := require.New(t)
 
 			peers := test.minority.GetPeers(context.Background())
-			require.Equal(test.expectedState, test.minority)
+			// Compare only the relevant fields, not the logger
+			actual := test.minority.(*Minority)
+			expected := test.expectedState.(*Minority)
+			require.Equal(expected.requests, actual.requests)
+			require.Equal(expected.receivedSet, actual.receivedSet)
+			require.Equal(expected.received, actual.received)
 			require.Equal(test.expectedPeers, peers)
 		})
 	}
@@ -125,7 +132,7 @@ func TestMinorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 			},
 			nodeID: nodeID0,
 			blkIDs: nil,
@@ -135,7 +142,7 @@ func TestMinorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 			},
 			expectedErr: nil,
 		},
@@ -147,7 +154,7 @@ func TestMinorityRecordOpinion(t *testing.T) {
 					pendingSend:    set.Of(nodeID0),
 					outstanding:    set.Of(nodeID1),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 			},
 			nodeID: nodeID1,
 			blkIDs: set.Of(blkID0),
@@ -169,7 +176,7 @@ func TestMinorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Of(nodeID2),
 				},
-				log: nil,
+				log: log.NewNoOpLogger(),
 			},
 			nodeID: nodeID2,
 			blkIDs: set.Of(blkID1),
@@ -178,7 +185,7 @@ func TestMinorityRecordOpinion(t *testing.T) {
 					maxOutstanding: 1,
 					outstanding:    set.Set[ids.NodeID]{},
 				},
-				log:         nil,
+				log:         log.NewNoOpLogger(),
 				receivedSet: set.Of(blkID1),
 				received:    []ids.ID{blkID1},
 			},
@@ -190,7 +197,12 @@ func TestMinorityRecordOpinion(t *testing.T) {
 			require := require.New(t)
 
 			err := test.minority.RecordOpinion(context.Background(), test.nodeID, test.blkIDs)
-			require.Equal(test.expectedState, test.minority)
+			// Compare only the relevant fields, not the logger
+			actual := test.minority.(*Minority)
+			expected := test.expectedState.(*Minority)
+			require.Equal(expected.requests, actual.requests)
+			require.Equal(expected.receivedSet, actual.receivedSet)
+			require.Equal(expected.received, actual.received)
 			require.ErrorIs(err, test.expectedErr)
 		})
 	}

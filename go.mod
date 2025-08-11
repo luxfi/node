@@ -17,7 +17,7 @@ require (
 	github.com/luxfi/database v1.1.10
 	github.com/luxfi/geth v1.16.27
 	github.com/luxfi/ids v1.0.2
-	github.com/luxfi/log v1.0.2
+	github.com/luxfi/log v1.0.6
 	github.com/luxfi/metrics v1.1.1
 	github.com/luxfi/trace v0.1.1
 	golang.org/x/mod v0.26.0

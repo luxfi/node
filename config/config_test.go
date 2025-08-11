@@ -562,7 +562,7 @@ func setupViperFlags() *viper.Viper {
 	fs := BuildFlagSet()
 	pflag.Parse()
 	if err := v.BindPFlags(fs); err != nil {
-		log.Error(err)
+		log.Fatal(err)
 	}
 	return v
 }
@@ -571,7 +571,7 @@ func setupViper(configFilePath string) *viper.Viper {
 	v := setupViperFlags()
 	v.SetConfigFile(configFilePath)
 	if err := v.ReadInConfig(); err != nil {
-		log.Error(err)
+		log.Fatal(err)
 	}
 	return v
 }

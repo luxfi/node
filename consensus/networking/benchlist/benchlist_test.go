@@ -7,13 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/ids"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var minimumFailingDuration = 5 * time.Minute
@@ -51,7 +50,7 @@ func TestBenchlistAdd(t *testing.T) {
 		minimumFailingDuration,
 		duration,
 		maxPortion,
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 	b := benchIntf.(*benchlist)
@@ -176,7 +175,7 @@ func TestBenchlistMaxStake(t *testing.T) {
 		minimumFailingDuration,
 		duration,
 		maxPortion,
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 	b := benchIntf.(*benchlist)
@@ -299,7 +298,7 @@ func TestBenchlistRemove(t *testing.T) {
 		minimumFailingDuration,
 		duration,
 		maxPortion,
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 	b := benchIntf.(*benchlist)

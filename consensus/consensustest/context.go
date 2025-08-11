@@ -48,6 +48,10 @@ func ConsensusContext(ctx *consensus.Context) *consensus.Context {
 	ctx.BlockAcceptor = noOpAcceptor{}
 	ctx.TxAcceptor = noOpAcceptor{}
 	ctx.VertexAcceptor = noOpAcceptor{}
+	// Ensure Log is set if not already
+	if ctx.Log == nil {
+		ctx.Log = log.NewNoOpLogger()
+	}
 	return ctx
 }
 
@@ -98,7 +102,7 @@ func Context(tb testing.TB, chainID ids.ID) *consensus.Context {
 		CChainID:   CChainID,
 		LUXAssetID: LUXAssetID,
 
-		Log:          nil,
+		Log:          log.NewNoOpLogger(),
 		SharedMemory: sharedMemory,
 		BCLookup:     aliaser,
 		Metrics:      metrics.NewPrefixGatherer(),

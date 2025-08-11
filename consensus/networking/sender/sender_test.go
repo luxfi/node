@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -31,12 +31,13 @@ import (
 	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/message/messagemock"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -68,8 +69,8 @@ func TestTimeout(t *testing.T) {
 			TimeoutCoefficient: 1.25,
 		},
 		benchlist,
-		metrics.NewNoOpMetrics("test").Registry(),
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 	go tm.Dispatch()
@@ -87,7 +88,7 @@ func TestTimeout(t *testing.T) {
 
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		nil,
+		log.NewNoOpLogger(),
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
@@ -95,7 +96,7 @@ func TestTimeout(t *testing.T) {
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 	))
 
 	externalSender := &sendertest.External{TB: t}
@@ -109,13 +110,13 @@ func TestTimeout(t *testing.T) {
 		tm,
 		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		subnets.New(ctx.NodeID, subnets.Config{}),
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 
 	ctx2 := consensustest.ConsensusContext(consensusCtx)
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -123,9 +124,9 @@ func TestTimeout(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		nil,
+		log.NewNoOpLogger(),
 		"",
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -142,7 +143,7 @@ func TestTimeout(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		p2pTracker,
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -327,8 +328,8 @@ func TestReliableMessages(t *testing.T) {
 			TimeoutCoefficient: 1.25,
 		},
 		benchlist,
-		metrics.NewNoOpMetrics("test").Registry(),
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 
@@ -347,7 +348,7 @@ func TestReliableMessages(t *testing.T) {
 
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		nil,
+		log.NewNoOpLogger(),
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
@@ -355,7 +356,7 @@ func TestReliableMessages(t *testing.T) {
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 	))
 
 	externalSender := &sendertest.External{TB: t}
@@ -369,13 +370,13 @@ func TestReliableMessages(t *testing.T) {
 		tm,
 		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		subnets.New(ctx.NodeID, subnets.Config{}),
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 
 	ctx2 := consensustest.ConsensusContext(consensusCtx)
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -383,9 +384,9 @@ func TestReliableMessages(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		nil,
+		log.NewNoOpLogger(),
 		"",
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -402,7 +403,7 @@ func TestReliableMessages(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		p2pTracker,
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -487,8 +488,8 @@ func TestReliableMessagesToMyself(t *testing.T) {
 					TimeoutCoefficient: 1.25,
 				},
 				benchlist,
-				metrics.NewNoOpMetrics("test").Registry(),
-				metrics.NewNoOpMetrics("test").Registry(),
+				prometheus.NewRegistry(),
+				prometheus.NewRegistry(),
 			)
 			require.NoError(err)
 
@@ -496,10 +497,10 @@ func TestReliableMessagesToMyself(t *testing.T) {
 
 			chainRouter := router.ChainRouter{}
 
-			metrics := metrics.NewNoOpMetrics("test").Registry()
+			m := metrics.NewNoOpMetrics("test")
 			mc, err := message.NewCreator(
 		nil,
-				metrics,
+				m,
 				constants.DefaultNetworkCompressionType,
 				10*time.Second,
 			)
@@ -507,7 +508,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 
 			require.NoError(chainRouter.Initialize(
 				ids.EmptyNodeID,
-				nil,
+				log.NewNoOpLogger(),
 				tm,
 				time.Second,
 				set.Set[ids.ID]{},
@@ -515,7 +516,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 				set.Set[ids.ID]{},
 				nil,
 				router.HealthConfig{},
-				metrics.NewNoOpMetrics("test").Registry(),
+				prometheus.NewRegistry(),
 			))
 
 			externalSender := &sendertest.External{TB: t}
@@ -532,13 +533,13 @@ func TestReliableMessagesToMyself(t *testing.T) {
 				tm,
 				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				subnet,
-				metrics.NewNoOpMetrics("test").Registry(),
+				prometheus.NewRegistry(),
 			)
 			require.NoError(err)
 
 			ctx2 := consensustest.ConsensusContext(consensusCtx)
 			resourceTracker, err := tracker.NewResourceTracker(
-				metrics.NewNoOpMetrics("test").Registry(),
+				prometheus.NewRegistry(),
 				resource.NoUsage,
 				meter.ContinuousFactory{},
 				time.Second,
@@ -546,9 +547,9 @@ func TestReliableMessagesToMyself(t *testing.T) {
 			require.NoError(err)
 
 			p2pTracker, err := p2p.NewPeerTracker(
-				nil,
+				log.NewNoOpLogger(),
 				"",
-				metrics.NewNoOpMetrics("test").Registry(),
+				prometheus.NewRegistry(),
 				nil,
 				version.CurrentApp,
 			)
@@ -565,7 +566,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 				subnet,
 				commontracker.NewPeers(),
 				p2pTracker,
-				metrics.NewNoOpMetrics("test").Registry(),
+				prometheus.NewRegistry(),
 				func() {},
 			)
 			require.NoError(err)
@@ -838,7 +839,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 
 			// Instantiate new registerers to avoid duplicate metrics
 			// registration
-			ctx.Registerer = metrics.NewNoOpMetrics("test").Registry()
+			ctx.Registerer = prometheus.NewRegistry()
 
 			sender, err := New(
 				ctx,
@@ -848,7 +849,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				timeoutManager,
 				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				subnets.New(ctx.NodeID, subnets.Config{}),
-				metrics.NewNoOpMetrics("test").Registry(),
+				prometheus.NewRegistry(),
 			)
 			require.NoError(err)
 
@@ -1055,7 +1056,7 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 				timeoutManager,
 				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				subnets.New(ctx.NodeID, subnets.Config{}),
-				metrics.NewNoOpMetrics("test").Registry(),
+				prometheus.NewRegistry(),
 			)
 			require.NoError(err)
 
@@ -1208,7 +1209,7 @@ func TestSender_Single_Request(t *testing.T) {
 
 			// Instantiate new registerers to avoid duplicate metrics
 			// registration
-			ctx.Registerer = metrics.NewNoOpMetrics("test").Registry()
+			ctx.Registerer = prometheus.NewRegistry()
 
 			sender, err := New(
 				ctx,
@@ -1218,7 +1219,7 @@ func TestSender_Single_Request(t *testing.T) {
 				timeoutManager,
 				engineType,
 				subnets.New(ctx.NodeID, subnets.Config{}),
-				metrics.NewNoOpMetrics("test").Registry(),
+				prometheus.NewRegistry(),
 			)
 			require.NoError(err)
 

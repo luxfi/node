@@ -6,7 +6,7 @@ package metrics
 import (
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
@@ -19,14 +19,14 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 	gatherer := NewPrefixGatherer()
 	require.NotNil(gatherer)
 
-	registerA := prometheus.NewRegistry()
+	registerA := metrics.NewRegistry()
 	require.NoError(gatherer.Register("a", registerA))
 	{
 		counterA := prometheus.NewCounter(counterOpts)
 		require.NoError(registerA.Register(counterA))
 	}
 
-	registerB := prometheus.NewRegistry()
+	registerB := metrics.NewRegistry()
 	require.NoError(gatherer.Register("b", registerB))
 	{
 		counterB := prometheus.NewCounter(counterOpts)

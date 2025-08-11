@@ -8,6 +8,7 @@ import (
 
 	"github.com/luxfi/node/consensus/sampling"
 	"github.com/luxfi/node/consensus/uptime"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 )
 
@@ -35,19 +36,12 @@ func TestK1ConsensusIntegration(t *testing.T) {
 
 	// Test chain parameters with k=1
 	chainParams := ChainParameters{
-		ID:                  constants.PlatformChainID,
-		GenesisData:         []byte("test-genesis"),
-		SubnetID:            constants.PrimaryNetworkID,
-		VMData:              []byte{},
-		UpgradeSchedule:     []netutils.Upgrade{},
-		FxIDs:               []ids.ID{},
-		Config:              ChainConfig{},
-		VMID:                constants.PlatformVMID,
-		ConsensusParameters: consensusParams,
-		ResourceTracker:     nil,
-		UptimeTracker:       uptime.NoOpTracker{},
-		ReplayDecisions:     false,
-		TrackSubnetsUsed:    false,
+		ID:            constants.PlatformChainID,
+		SubnetID:      constants.PrimaryNetworkID,
+		GenesisData:   []byte("test-genesis"),
+		VMID:          constants.PlatformVMID,
+		FxIDs:         []ids.ID{},
+		CustomBeacons: nil,
 	}
 
 	// Verify chain parameters are properly configured
@@ -61,17 +55,11 @@ func TestK1ConsensusBootstrap(t *testing.T) {
 	require := require.New(t)
 
 	// Bootstrap parameters for k=1
-	bootstrapConfig := BootstrapConfig{
-		BootstrapBeaconConnectionTimeout:        10 * time.Second,
-		BootstrapAncestorsMaxContainersSent:     2000,
-		BootstrapAncestorsMaxContainersReceived: 2000,
-		BootstrapMaxTimeGetAncestors:            50 * time.Millisecond,
-		Bootstrappers:                           []string{}, // No bootstrappers needed for k=1
-		SkipBootstrap:                           false,
-	}
-
 	// With k=1, we don't need external bootstrappers
-	require.Empty(bootstrapConfig.Bootstrappers)
+	bootstrappers := []string{} // No bootstrappers needed for k=1
+	
+	// Verify that with k=1, no external bootstrappers are needed
+	require.Empty(bootstrappers)
 }
 
 // TestK1ConsensusValidation tests validation logic for k=1

@@ -68,7 +68,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: &consensus.Context{
-							Log: nil,
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -99,7 +99,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: &consensus.Context{
-							Log: nil,
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -143,7 +143,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: &consensus.Context{
-							Log: nil,
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -188,7 +188,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: &consensus.Context{
-							Log: nil,
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -234,7 +234,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Ctx: &consensus.Context{
-							Log: nil,
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -327,7 +327,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 					&txexecutor.Backend{
 						Codec: codec,
 						Ctx: &consensus.Context{
-							Log: nil,
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -399,7 +399,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 					&txexecutor.Backend{
 						Codec: codec,
 						Ctx: &consensus.Context{
-							Log: nil,
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -473,7 +473,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 					&txexecutor.Backend{
 						Codec: codec,
 						Ctx: &consensus.Context{
-							Log: nil,
+							Log: log.NewNoOpLogger(),
 						},
 					},
 					manager,
@@ -522,7 +522,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 
 	backend := &txexecutor.Backend{
 		Ctx: &consensus.Context{
-			Log: nil,
+			Log: log.NewNoOpLogger(),
 		},
 		Codec: parser.Codec(),
 	}

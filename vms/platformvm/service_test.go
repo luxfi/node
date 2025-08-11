@@ -894,7 +894,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: nil,
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, nil
@@ -915,7 +915,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: nil,
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, nil
@@ -939,7 +939,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: nil,
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, block
@@ -967,7 +967,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: nil,
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected
@@ -995,7 +995,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: nil,
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected
@@ -1023,7 +1023,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 						state:   state,
 						manager: manager,
 						ctx: &consensus.Context{
-							Log: nil,
+							Log: log.NewNoOpLogger(),
 						},
 					},
 				}, expected

@@ -18,7 +18,6 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/log"
 )
 
 var errUnknownTx = errors.New("unknown tx")
