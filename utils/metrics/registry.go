@@ -32,4 +32,4 @@ func NewNoOpMetrics(namespace string) luxmetrics.Metrics {
 }
 
 // Noop is a no-op metrics instance.
-var Noop = luxmetrics.Noop
+var Noop = luxmetrics.NewNoOpMetrics("")

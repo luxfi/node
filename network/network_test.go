@@ -10,7 +10,9 @@ import (
 	"sync"
 	"testing"
 	"time"
-		"github.com/luxfi/metrics"
+	
+	"github.com/prometheus/client_golang/prometheus"
+	utilmetrics "github.com/luxfi/node/utils/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/networking/router"
@@ -143,7 +145,7 @@ func newDefaultTargeter(t tracker.Tracker) tracker.Targeter {
 
 func newDefaultResourceTracker() tracker.ResourceTracker {
 	tracker, err := tracker.NewResourceTracker(
-		metrics.NewNoOpMetrics("test").Registry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		10*time.Second,
@@ -196,7 +198,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 
 	mc, err := message.NewCreator(
 		nil,
-		metrics.NewNoOpMetrics("test"),
+		utilmetrics.NewNoOpMetrics("test"),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -220,7 +222,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 	)
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := metrics.NewNoOpMetrics("test").Registry()
+		registry := prometheus.NewRegistry()
 
 		beacons := validators.NewManager()
 		require.NoError(beacons.AddStaker(constants.PrimaryNetworkID, nodeIDs[0], nil, ids.GenerateTestID(), 1))
@@ -452,7 +454,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := metrics.NewNoOpMetrics("test").Registry()
+		registry := prometheus.NewRegistry()
 
 		beacons := validators.NewManager()
 		require.NoError(beacons.AddStaker(constants.PrimaryNetworkID, nodeIDs[0], nil, ids.GenerateTestID(), 1))
@@ -536,7 +538,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := metrics.NewNoOpMetrics("test").Registry()
+		registry := prometheus.NewRegistry()
 
 		beacons := validators.NewManager()
 		require.NoError(beacons.AddStaker(constants.PrimaryNetworkID, nodeIDs[0], nil, ids.GenerateTestID(), 1))
@@ -687,7 +689,7 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := metrics.NewNoOpMetrics("test").Registry()
+		registry := prometheus.NewRegistry()
 
 		beacons := validators.NewManager()
 		require.NoError(beacons.AddStaker(constants.PrimaryNetworkID, nodeIDs[0], nil, ids.GenerateTestID(), 1))

@@ -6,8 +6,7 @@ package network
 import (
 	"testing"
 	
-	"github.com/luxfi/metrics"
-
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 
 	"github.com/stretchr/testify/require"
@@ -21,7 +20,7 @@ import (
 )
 
 func newTestIPTracker(t *testing.T) *ipTracker {
-	tracker, err := newIPTracker(nil, metrics.NewNoOpMetrics("test").Registry())
+	tracker, err := newIPTracker(nil, prometheus.NewRegistry())
 	require.NoError(t, err)
 	return tracker
 }
