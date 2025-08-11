@@ -18,7 +18,6 @@ import (
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/log"
 )
 
 func TestMessage(t *testing.T) {

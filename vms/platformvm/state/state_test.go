@@ -33,8 +33,6 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/node/utils/units"
 
 	"github.com/luxfi/node/utils/wrappers"
@@ -48,8 +46,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/fx"
 
 	"github.com/luxfi/node/vms/platformvm/genesis"
-
-	"github.com/luxfi/node/vms/platformvm/metrics"
 
 	"github.com/luxfi/node/vms/platformvm/reward"
 

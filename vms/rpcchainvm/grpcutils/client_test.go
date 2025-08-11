@@ -16,8 +16,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
-	"github.com/luxfi/database/memdb"
-
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 )
 

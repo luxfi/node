@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/sampling"
-	"github.com/luxfi/node/consensus/uptime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 )

@@ -15,8 +15,6 @@ import (
 
 	"github.com/luxfi/node/consensus/engine/core"
 
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/node/vms/xvm/fxs"
 
 	"github.com/luxfi/node/vms/xvm/txs"

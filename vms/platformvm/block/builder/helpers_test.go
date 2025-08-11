@@ -65,8 +65,6 @@ import (
 
 	"github.com/luxfi/node/vms/platformvm/fx"
 
-	"github.com/luxfi/node/vms/platformvm/metrics"
-
 	"github.com/luxfi/node/vms/platformvm/network"
 
 	"github.com/luxfi/node/vms/platformvm/reward"

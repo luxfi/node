@@ -74,6 +74,8 @@ import (
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
 	"github.com/luxfi/node/utils/metrics"
+	
+	luxmetrics "github.com/luxfi/metrics"
 )
 
 const (
@@ -1442,8 +1444,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	chainRouter := &router.ChainRouter{}
 
-	m := metrics.NewNoOpMetrics("test")
-	mc, err := message.NewCreator(log.NewNoOpLogger(), m, constants.DefaultNetworkCompressionType, 10*time.Second)
+	metricsInstance := luxmetrics.NewNoOpMetrics("test")
+	mc, err := message.NewCreator(log.NewNoOpLogger(), metricsInstance, constants.DefaultNetworkCompressionType, 10*time.Second)
 	require.NoError(err)
 
 	require.NoError(chainRouter.Initialize(

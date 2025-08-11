@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 )
 
