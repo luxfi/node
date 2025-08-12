@@ -45,10 +45,30 @@ type MinimalEthBackend struct {
 // NewMigratedBackend creates a special backend for fully migrated data
 // This completely bypasses genesis initialization
 func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBackend, error) {
-	fmt.Printf("Creating migrated backend for subnet-EVM data at height %d\n", migratedHeight)
+	fmt.Printf("Creating migrated backend for Coreth data at height %d\n", migratedHeight)
+	fmt.Printf("Database type: %T\n", db)
 	
-	// Use the database as-is (already wrapped)
+	// The migrated data is already in proper geth format in the ethdb
+	// We can use it directly
 	rawDB := db
+	
+	// Test if we can read a key directly
+	testKey := []byte("LastBlock")
+	if val, err := rawDB.Get(testKey); err == nil {
+		fmt.Printf("Successfully read LastBlock: %x (len=%d)\n", val, len(val))
+	} else {
+		fmt.Printf("Failed to read LastBlock: %v\n", err)
+	}
+	
+	// Also try a canonical hash key
+	testKey2 := make([]byte, 9)
+	testKey2[0] = 'H'
+	binary.BigEndian.PutUint64(testKey2[1:], 0)
+	if val, err := rawDB.Get(testKey2); err == nil {
+		fmt.Printf("Successfully read block 0 canonical: %x (len=%d)\n", val, len(val))
+	} else {
+		fmt.Printf("Failed to read block 0 canonical with key %x: %v\n", testKey2, err)
+	}
 	
 	// Create chain config for LUX mainnet with all forks enabled
 	chainConfig := &params.ChainConfig{
@@ -84,99 +104,113 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 	// Create a dummy consensus engine
 	engine := &dummyEngine{}
 	
-	fmt.Printf("Scanning migrated database for blocks...\n")
+	fmt.Printf("Reading migrated database for blocks...\n")
 	
-	// Build block index first
-	blocksByNumber := make(map[uint64]common.Hash)
-	canonicalCount := 0
+	// The database is already migrated with proper Coreth format
+	// We just need to verify it has the expected blocks
 	
-	// The migrated data uses lowercase 'h' prefix with hash embedded in key
-	// Format: 'h' + blockNum(8 bytes) + hash(32 bytes) = 41 bytes total
-	// We need to scan all keys with this prefix and extract the canonical mappings
-	
-	fmt.Printf("Scanning for blocks with 'h' prefix (migrated format)...\n")
-	
-	// Use iterator to scan all keys with 'h' prefix
-	it := rawDB.NewIterator([]byte("h"), nil)
-	defer it.Release()
-	
-	for it.Next() {
-		key := it.Key()
+	// Check for LastBlock key
+	lastBlockBytes, err := rawDB.Get([]byte("LastBlock"))
+	if err == nil && len(lastBlockBytes) == 32 {
+		var lastBlockHash common.Hash
+		copy(lastBlockHash[:], lastBlockBytes)
+		fmt.Printf("Found LastBlock in database: %x\n", lastBlockHash)
 		
-		// Check if this is a block header key (41 bytes: 'h' + 8 bytes blockNum + 32 bytes hash)
-		if len(key) == 41 && key[0] == 'h' {
-			// Extract block number and hash from the key
-			blockNum := binary.BigEndian.Uint64(key[1:9])
-			
-			// Only process blocks up to our target height
-			if blockNum > migratedHeight {
-				continue
-			}
-			
-			// Extract hash from key (bytes 9-41)
+		// Set this as the head
+		rawdb.WriteHeadBlockHash(rawDB, lastBlockHash)
+		rawdb.WriteHeadHeaderHash(rawDB, lastBlockHash)
+		rawdb.WriteHeadFastBlockHash(rawDB, lastBlockHash)
+	}
+	
+	// Count available blocks by checking canonical hashes
+	// Use direct key access since ReadCanonicalHash might not work with BadgerDB wrapper
+	blockCount := 0
+	for i := uint64(0); i <= 10; i++ {
+		// Build the canonical hash key: 'H' + block number
+		key := make([]byte, 9)
+		key[0] = 'H'
+		binary.BigEndian.PutUint64(key[1:], i)
+		
+		// Try to read the hash value
+		hashBytes, err := rawDB.Get(key)
+		if err == nil && len(hashBytes) == 32 {
 			var hash common.Hash
-			copy(hash[:], key[9:41])
-			
-			// Store the canonical mapping
-			blocksByNumber[blockNum] = hash
-			canonicalCount++
-			
-			// Print progress
-			if canonicalCount <= 10 || canonicalCount%100000 == 0 || blockNum == migratedHeight {
-				fmt.Printf("  Found block %d -> hash %x\n", blockNum, hash[:8])
-			}
-			
-			if canonicalCount%10000 == 0 {
-				fmt.Printf("  Processed %d blocks...\n", canonicalCount)
+			copy(hash[:], hashBytes)
+			blockCount++
+			fmt.Printf("  Found block %d: %x\n", i, hash[:8])
+		} else if err != nil {
+			// Debug: show the error
+			if i == 0 {
+				fmt.Printf("  Failed to read block %d with key %x: %v\n", i, key, err)
 			}
 		}
 	}
 	
-	if err := it.Error(); err != nil {
-		return nil, fmt.Errorf("error scanning database: %w", err)
+	// Also check the target height
+	if migratedHeight > 10 {
+		key := make([]byte, 9)
+		key[0] = 'H'
+		binary.BigEndian.PutUint64(key[1:], migratedHeight)
+		
+		hashBytes, err := rawDB.Get(key)
+		if err == nil && len(hashBytes) == 32 {
+			var hash common.Hash
+			copy(hash[:], hashBytes)
+			blockCount++
+			fmt.Printf("  Found block %d: %x\n", migratedHeight, hash[:8])
+		}
 	}
 	
-	fmt.Printf("Found %d canonical blocks in migrated database\n", canonicalCount)
+	fmt.Printf("Found %d canonical blocks in migrated database\n", blockCount)
 	
-	if canonicalCount == 0 {
-		return nil, fmt.Errorf("no blocks found in migrated database")
+	if blockCount == 0 {
+		// The database might use different key format, try direct iteration
+		// but limit it to avoid crashes
+		fmt.Printf("No canonical blocks found, database may need re-migration\n")
+		return nil, fmt.Errorf("no canonical blocks found in migrated database")
 	}
 	
-	// Find the requested block or highest available
+	// Use the migrated height as the target
+	actualHeight := migratedHeight
+	
+	// Get the hash at the migrated height using direct key access
 	var headHash common.Hash
-	var actualHeight uint64
+	key := make([]byte, 9)
+	key[0] = 'H'
+	binary.BigEndian.PutUint64(key[1:], migratedHeight)
 	
-	if hash, exists := blocksByNumber[migratedHeight]; exists {
-		headHash = hash
-		actualHeight = migratedHeight
+	hashBytes, err := rawDB.Get(key)
+	if err == nil && len(hashBytes) == 32 {
+		copy(headHash[:], hashBytes)
 	} else {
-		// Find highest block
-		for num, hash := range blocksByNumber {
-			if num > actualHeight {
-				actualHeight = num
-				headHash = hash
+		// Try to find the highest available block
+		for i := migratedHeight; i > 0 && i > migratedHeight-1000; i-- {
+			key := make([]byte, 9)
+			key[0] = 'H'
+			binary.BigEndian.PutUint64(key[1:], i)
+			
+			hashBytes, err := rawDB.Get(key)
+			if err == nil && len(hashBytes) == 32 {
+				copy(headHash[:], hashBytes)
+				actualHeight = i
+				fmt.Printf("Block %d not found, using block %d instead\n", migratedHeight, i)
+				break
 			}
 		}
-		fmt.Printf("Block %d not found, using highest block %d\n", migratedHeight, actualHeight)
 	}
 	
 	if headHash == (common.Hash{}) {
-		return nil, fmt.Errorf("no head block found in migrated database")
+		return nil, fmt.Errorf("no head block found in migrated database at height %d", migratedHeight)
 	}
 	
 	fmt.Printf("Setting head to block %d with hash: %x\n", actualHeight, headHash)
 	
-	// Write canonical mappings in standard geth format
-	fmt.Printf("Writing canonical mappings for %d blocks...\n", len(blocksByNumber))
-	for blockNum, hash := range blocksByNumber {
-		rawdb.WriteCanonicalHash(db, hash, blockNum)
-	}
-	
-	// Set head pointers
-	rawdb.WriteHeadBlockHash(db, headHash)
-	rawdb.WriteHeadHeaderHash(db, headHash)
-	rawdb.WriteHeadFastBlockHash(db, headHash)
-	rawdb.WriteLastPivotNumber(db, actualHeight)
+	// The canonical mappings should already be in the database from migration
+	// Just ensure the head pointers are set correctly
+	rawdb.WriteHeadBlockHash(rawDB, headHash)
+	rawdb.WriteHeadHeaderHash(rawDB, headHash)
+	rawdb.WriteHeadFastBlockHash(rawDB, headHash)
+	rawdb.WriteLastPivotNumber(rawDB, actualHeight)
 	
 	// Create blockchain options that skip validation
 	options := &gethcore.BlockChainConfig{

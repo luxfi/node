@@ -65,7 +65,18 @@ func NewBadgerDatabase(luxDB database.Database, config BadgerDatabaseConfig) (et
 	}
 	
 	// Create regular BadgerDB without ancient store
-	badgerPath := filepath.Join(config.DataDir, "chaindata")
+	// For migrated data, use the directory directly (no chaindata subdir)
+	badgerPath := config.DataDir
+	
+	// Check if this looks like migrated data (has .sst files directly in the directory)
+	if files, err := filepath.Glob(filepath.Join(config.DataDir, "*.sst")); err == nil && len(files) > 0 {
+		// Migrated data - use directory as-is
+		log.Info("Detected migrated BadgerDB data", "path", badgerPath)
+	} else {
+		// Standard format - add chaindata subdirectory
+		badgerPath = filepath.Join(config.DataDir, "chaindata")
+	}
+	
 	db, err := badgerdb.New(
 		badgerPath,
 		0, // cache
