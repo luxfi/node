@@ -15,7 +15,7 @@ require (
 	github.com/klauspost/compress v1.18.0
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/crypto v1.2.9
-	github.com/luxfi/database v1.1.1
+	github.com/luxfi/database v1.1.11
 	github.com/luxfi/geth v1.16.2-lux.4
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/log v1.0.7
@@ -132,6 +132,7 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
+	github.com/luxfi/metrics v1.1.1 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
