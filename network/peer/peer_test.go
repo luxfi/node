@@ -10,7 +10,7 @@ import (
 	"net/netip"
 	"testing"
 	"time"
-		"github.com/luxfi/metrics"
+		luxmetrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/consensus/networking/router"
@@ -49,7 +49,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 
 	mc, err := message.NewCreator(
 		nil,
-		metrics.NewNoOpMetrics("test"),
+		luxmetrics.NewNoOpMetrics("test"),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -62,11 +62,11 @@ func newConfig(t *testing.T) Config {
 	t.Helper()
 	require := require.New(t)
 
-	metrics, err := NewMetrics(metrics.NewNoOpMetrics("test").Registry())
+	metrics, err := NewMetrics(luxmetrics.NewNoOpMetrics("test").Registry())
 	require.NoError(err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics.NewNoOpMetrics("test").Registry(),
+		luxmetrics.NewNoOpMetrics("test").Registry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		10*time.Second,

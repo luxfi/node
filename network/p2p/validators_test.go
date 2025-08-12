@@ -8,7 +8,7 @@ import (
 	"errors"
 	"testing"
 	"time"
-		"github.com/luxfi/metrics"
+		luxmetrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/consensus/validators/validatorsmock"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 )
 
 func TestValidatorsSample(t *testing.T) {
@@ -195,7 +194,7 @@ func TestValidatorsSample(t *testing.T) {
 			}
 			gomock.InOrder(calls...)
 
-			network, err := NewNetwork(nil, &core.FakeSender{}, metrics.NewNoOpMetrics("test").Registry(), "")
+			network, err := NewNetwork(nil, &core.FakeSender{}, luxmetrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()
@@ -315,7 +314,7 @@ func TestValidatorsTop(t *testing.T) {
 			mockValidators.EXPECT().GetCurrentHeight(gomock.Any()).Return(uint64(1), nil)
 			mockValidators.EXPECT().GetValidatorSet(gomock.Any(), uint64(1), subnetID).Return(validatorSet, nil)
 
-			network, err := NewNetwork(nil, &core.FakeSender{}, metrics.NewNoOpMetrics("test").Registry(), "")
+			network, err := NewNetwork(nil, &core.FakeSender{}, luxmetrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()

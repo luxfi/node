@@ -15,7 +15,7 @@ import (
 	dag "github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"

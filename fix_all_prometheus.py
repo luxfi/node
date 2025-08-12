@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Complete migration from prometheus to luxfi/metrics
+Complete migration from prometheus to luxfi/metric
 """
 
 import os
@@ -40,9 +40,9 @@ def fix_imports(content):
             new_lines.append(line)
             continue
         elif in_imports and line.strip() == ')':
-            # Add luxfi/metrics if needed and not already added
+            # Add luxfi/metric if needed and not already added
             if not import_added and 'metrics.' in content:
-                new_lines.append('\t"github.com/luxfi/metrics"')
+                new_lines.append('\t"github.com/luxfi/metric"')
                 import_added = True
             in_imports = False
             new_lines.append(line)

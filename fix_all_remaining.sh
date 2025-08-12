@@ -14,7 +14,7 @@ package getter
 import (
 	"time"
 
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -99,7 +99,7 @@ package metrics
 import (
 	"fmt"
 
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/xvm/block"
@@ -188,7 +188,7 @@ cat > vms/xvm/metrics/tx_metrics.go << 'EOF'
 package metrics
 
 import (
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
 
@@ -253,7 +253,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
@@ -388,7 +388,7 @@ cat > vms/platformvm/metrics/block_metrics.go << 'EOF'
 package metrics
 
 import (
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
@@ -489,7 +489,7 @@ cat > vms/platformvm/metrics/tx_metrics.go << 'EOF'
 package metrics
 
 import (
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
@@ -626,7 +626,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/cache/metercacher"
@@ -699,7 +699,7 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/set"
 )

@@ -22,7 +22,7 @@ import (
 	"sync"
 
 	"github.com/cockroachdb/pebble"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/database"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"

@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 	
-	"github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
 
@@ -25,7 +25,7 @@ func TestBandwidthThrottler(t *testing.T) {
 		RefillRate:   8,
 		MaxBurstSize: 10,
 	}
-	throttlerIntf, err := newBandwidthThrottler(nil, metrics.NewNoOpMetrics("test").Registry(), config)
+	throttlerIntf, err := newBandwidthThrottler(nil, luxmetrics.NewNoOpMetrics("test").Registry(), config)
 	require.NoError(err)
 	require.IsType(&bandwidthThrottlerImpl{}, throttlerIntf)
 	throttler := throttlerIntf.(*bandwidthThrottlerImpl)

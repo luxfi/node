@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"testing"
 	"time"
-		"github.com/luxfi/metrics"
+		"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"

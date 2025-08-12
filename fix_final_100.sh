@@ -20,7 +20,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/engine/graph/vertex"
@@ -125,7 +125,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/utils/set"
@@ -249,7 +249,7 @@ import (
 	
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/network/p2p"
 )
@@ -315,7 +315,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/consensus/engine/dag/bootstrap"

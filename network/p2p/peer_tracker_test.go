@@ -5,11 +5,10 @@ package p2p
 
 import (
 	"testing"
-		"github.com/luxfi/metrics"
+		luxmetrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
 
@@ -18,7 +17,7 @@ func TestPeerTracker(t *testing.T) {
 	p, err := NewPeerTracker(
 		nil,
 		"",
-		metrics.NewNoOpMetrics("test").Registry(),
+		luxmetrics.NewNoOpMetrics("test").Registry(),
 		nil,
 		nil,
 	)

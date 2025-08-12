@@ -4,7 +4,7 @@
 package handler
 
 import (
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 )
 
 const opLabel = "op"
@@ -38,6 +38,6 @@ func (m *messageQueueMetrics) initialize(
 		"times a message has been deferred due to excessive CPU usage",
 	)
 
-	// Metrics are auto-registered with luxfi/metrics
+	// Metrics are auto-registered with luxfi/metric
 	return nil
 }

@@ -4,14 +4,14 @@ set -e
 
 echo "=== Complete Migration to 100% Test Pass Rate ==="
 echo "This will:"
-echo "1. Rewrite luxfi/metrics with full prometheus compatibility"
+echo "1. Rewrite luxfi/metric with full prometheus compatibility"
 echo "2. Update all external luxfi dependencies"
 echo "3. Rewrite all test mocks and helpers"
 echo "4. Fix all vector metric usages"
 echo "5. Resolve package structure issues"
 
-# Step 1: Complete rewrite of luxfi/metrics with prometheus compatibility
-echo "=== Step 1: Rewriting luxfi/metrics ==="
+# Step 1: Complete rewrite of luxfi/metric with prometheus compatibility
+echo "=== Step 1: Rewriting luxfi/metric ==="
 
 cd ../metrics
 
@@ -395,12 +395,12 @@ go 1.24.5
 require (
 	github.com/cockroachdb/pebble v1.1.5
 	github.com/dgraph-io/badger/v4 v4.8.0
-	github.com/luxfi/metrics v1.1.1
+	github.com/luxfi/metric v1.1.1
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a
 	go.uber.org/mock v0.5.2
 )
 
-replace github.com/luxfi/metrics => ../../metrics
+replace github.com/luxfi/metric => ../../metrics
 EOF
 
 # Create main database interface

@@ -5,7 +5,7 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	luxmetrics "github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 )
 
 // NewRegistry creates a new prometheus registry.

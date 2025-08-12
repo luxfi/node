@@ -10,7 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/consensus/networking/tracker"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/ids"
@@ -202,7 +202,7 @@ func (m *messageQueue) Shutdown() {
 	m.nodeToUnprocessedMsgs = nil
 
 	// Update metrics
-	// TODO: luxfi/metrics GaugeVec doesn't have Reset method
+	// TODO: luxfi/metric GaugeVec doesn't have Reset method
 	// m.metrics.count.Reset()
 	m.metrics.nodesWithMessages.Set(0)
 

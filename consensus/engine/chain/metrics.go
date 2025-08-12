@@ -4,7 +4,7 @@
 package chain
 
 import (
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -127,6 +127,6 @@ func newMetrics(reg metrics.Registry) (*chainMetrics, error) {
 	m.issued.WithLabelValues(builtSource)
 	m.issued.WithLabelValues(unknownSource)
 
-	// No need to manually register with luxfi/metrics - they're auto-registered
+	// No need to manually register with luxfi/metric - they're auto-registered
 	return m, errs.Err
 }

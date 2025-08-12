@@ -14,7 +14,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	
-	lux_metrics "github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/consensus/networking/tracker"
@@ -81,7 +81,7 @@ func NewTestNetwork(
 	trackedSubnets set.Set[ids.ID],
 	router router.ExternalHandler,
 ) (Network, error) {
-	m := lux_metrics.NewNoOpMetrics("test")
+	m := luxmetrics.NewNoOpMetrics("test")
 	msgCreator, err := message.NewCreator(
 		log,
 		m,
