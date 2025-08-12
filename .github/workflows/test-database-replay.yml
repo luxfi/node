@@ -29,13 +29,13 @@ jobs:
 
     - name: Build genesis tool
       run: |
-        cd ../genesis
+        cd genesis
         make build
         ./bin/genesis --version
 
     - name: Generate staking keys
       run: |
-        cd ../genesis
+        cd genesis
         mkdir -p test-keys
         ./bin/genesis staking keygen --output test-keys
         echo "Generated staking keys:"
@@ -99,14 +99,9 @@ jobs:
     - name: Test database factory
       run: |
         # Run unit tests for the database factory
-        cd database
-        go test -v -tags "pebbledb badgerdb" ./factory/...
+        go test -v -tags "pebbledb badgerdb" ./db/...
 
     - name: Test database implementations
       run: |
         # Test each database implementation
-        cd database
-        go test -v -tags "pebbledb" ./pebbledb/...
-        go test -v -tags "badgerdb" ./badgerdb/...
-        go test -v ./leveldb/...
-        go test -v ./memdb/...
+        go test -v -tags "pebbledb badgerdb" ./db/...
