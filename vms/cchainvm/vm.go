@@ -13,6 +13,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -110,7 +111,7 @@ func (vm *VM) Initialize(
 	migratedHeight := uint64(0)
 	migratedBlockHash := common.Hash{}
 
-	// Create a database wrapper first
+	// Create a database wrapper first (will be replaced if we have migrated data)
 	vm.ethDB = WrapDatabase(db)
 
 	// Check for LUX_GENESIS flag to trigger automatic replay
@@ -140,6 +141,24 @@ func (vm *VM) Initialize(
 				"height", height,
 				"blockHash", migratedBlockHash.Hex(),
 			)
+			
+			// Open the ethdb subdirectory directly for migrated data
+			ethdbPath := filepath.Join(chainCtx.ChainDataDir, "ethdb")
+			if _, err := os.Stat(ethdbPath); err == nil {
+				fmt.Printf("Opening migrated ethdb at: %s\n", ethdbPath)
+				badgerConfig := BadgerDatabaseConfig{
+					DataDir:       ethdbPath,
+					EnableAncient: false,
+					ReadOnly:      false,
+				}
+				ethDB, err := NewBadgerDatabase(nil, badgerConfig)
+				if err == nil {
+					vm.ethDB = ethDB
+					fmt.Printf("Successfully opened migrated ethdb\n")
+				} else {
+					fmt.Printf("Failed to open migrated ethdb: %v\n", err)
+				}
+			}
 		}
 	}
 
@@ -324,6 +343,12 @@ func (vm *VM) Initialize(
 					hasMigratedData = true
 					vm.replayConfig = replayConfig
 				}
+			} else if hasMigratedData {
+				// PATCH: When we have migrated data from environment variables,
+				// don't parse the genesis JSON - it will conflict with our migrated data
+				vm.ctx.Log.Info("Skipping genesis parsing due to migrated data from environment")
+				fmt.Printf("MIGRATION PATCH: Skipping genesis due to imported data at height %d\n", migratedHeight)
+				genesis = nil
 			} else {
 				// Normal genesis parsing
 				genesis = &gethcore.Genesis{}
@@ -340,7 +365,7 @@ func (vm *VM) Initialize(
 		}
 
 		// Set terminal total difficulty for PoS transition
-		if genesis.Config != nil && genesis.Config.TerminalTotalDifficulty == nil {
+		if genesis != nil && genesis.Config != nil && genesis.Config.TerminalTotalDifficulty == nil {
 			genesis.Config.TerminalTotalDifficulty = common.Big0
 		}
 	} else {
@@ -405,10 +430,38 @@ func (vm *VM) Initialize(
 	}
 
 	// Initialize chain config
-	vm.chainConfig = genesis.Config
+	if genesis != nil {
+		vm.chainConfig = genesis.Config
+	}
 	if vm.chainConfig == nil {
-		vm.chainConfig = params.AllEthashProtocolChanges
-		genesis.Config = vm.chainConfig
+		// Use network 96369 config for migrated data
+		if hasMigratedData {
+			vm.chainConfig = &params.ChainConfig{
+				ChainID:                 big.NewInt(96369),
+				HomesteadBlock:          big.NewInt(0),
+				EIP150Block:             big.NewInt(0),
+				EIP155Block:             big.NewInt(0),
+				EIP158Block:             big.NewInt(0),
+				ByzantiumBlock:          big.NewInt(0),
+				ConstantinopleBlock:     big.NewInt(0),
+				PetersburgBlock:         big.NewInt(0),
+				IstanbulBlock:           big.NewInt(0),
+				MuirGlacierBlock:        big.NewInt(0),
+				BerlinBlock:             big.NewInt(0),
+				LondonBlock:             big.NewInt(0),
+				ArrowGlacierBlock:       big.NewInt(0),
+				GrayGlacierBlock:        big.NewInt(0),
+				MergeNetsplitBlock:      big.NewInt(0),
+				ShanghaiTime:            newUint64(0),
+				CancunTime:              newUint64(0),
+				TerminalTotalDifficulty: common.Big0,
+			}
+		} else {
+			vm.chainConfig = params.AllEthashProtocolChanges
+		}
+		if genesis != nil {
+			genesis.Config = vm.chainConfig
+		}
 	}
 
 	// Initialize eth config
@@ -421,8 +474,8 @@ func (vm *VM) Initialize(
 	if hasMigratedData {
 		fmt.Printf("MIGRATION MODE: Skipping genesis, loading from height %d\n", migratedHeight)
 
-		// Set a special genesis that won't overwrite our data
-		genesis.Alloc = nil // Clear allocations to prevent overwriting state
+		// When we have migrated data, genesis is already nil, 
+		// so we don't need to modify it
 
 		// Mark database as already initialized to prevent SetupGenesisBlock
 		// Write a dummy genesis hash to satisfy the check
@@ -504,8 +557,24 @@ func (vm *VM) Initialize(
 		// CRITICAL: Skip all genesis processing for migrated data (old method)
 		fmt.Printf("MIGRATION MODE ACTIVE: Loading blockchain from height %d\n", migratedHeight)
 
+		// If we opened the ethdb directly, use that instead of the wrapped DB
+		dbToUse := vm.ethDB
+		ethdbPath := filepath.Join(chainCtx.ChainDataDir, "ethdb")
+		if _, err := os.Stat(ethdbPath); err == nil {
+			// Re-open the ethdb with proper config for the backend
+			badgerConfig := BadgerDatabaseConfig{
+				DataDir:       ethdbPath,
+				EnableAncient: false,
+				ReadOnly:      false,
+			}
+			if directDB, err := NewBadgerDatabase(nil, badgerConfig); err == nil {
+				dbToUse = directDB
+				fmt.Printf("Using direct ethdb for migrated backend\n")
+			}
+		}
+
 		// Create a special backend that doesn't touch genesis
-		vm.backend, err = NewMigratedBackend(vm.ethDB, migratedHeight)
+		vm.backend, err = NewMigratedBackend(dbToUse, migratedHeight)
 		if err != nil {
 			return fmt.Errorf("failed to create migrated backend: %w", err)
 		}
