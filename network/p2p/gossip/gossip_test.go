@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 	"time"
-		"github.com/luxfi/metrics"
+		luxmetrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/proto"
@@ -106,10 +106,10 @@ func TestGossiperGossip(t *testing.T) {
 			responseSender := &core.FakeSender{
 				SentAppResponse: make(chan []byte, 1),
 			}
-			responseNetwork, err := p2p.NewNetwork(nil, responseSender, metrics.NewNoOpMetrics("test").Registry(), "")
+			responseNetwork, err := p2p.NewNetwork(nil, responseSender, luxmetrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 
-			responseBloom, err := NewBloomFilter(metrics.NewNoOpMetrics("test").Registry(), "", 1000, 0.01, 0.05)
+			responseBloom, err := NewBloomFilter(luxmetrics.NewNoOpMetrics("test").Registry(), "", 1000, 0.01, 0.05)
 			require.NoError(err)
 			responseSet := &testSet{
 				txs:   make(map[ids.ID]*testTx),
@@ -119,7 +119,7 @@ func TestGossiperGossip(t *testing.T) {
 				require.NoError(responseSet.Add(item))
 			}
 
-			metrics, err := NewMetrics(metrics.NewNoOpMetrics("test").Registry(), "")
+			metrics, err := NewMetrics(luxmetrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 			marshaller := testMarshaller{}
 			handler := NewHandler[*testTx](
@@ -136,11 +136,11 @@ func TestGossiperGossip(t *testing.T) {
 				SentAppRequest: make(chan []byte, 1),
 			}
 
-			requestNetwork, err := p2p.NewNetwork(nil, requestSender, metrics.NewNoOpMetrics("test").Registry(), "")
+			requestNetwork, err := p2p.NewNetwork(nil, requestSender, luxmetrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 			require.NoError(requestNetwork.Connected(context.Background(), ids.EmptyNodeID, nil))
 
-			bloom, err := NewBloomFilter(metrics.NewNoOpMetrics("test").Registry(), "", 1000, 0.01, 0.05)
+			bloom, err := NewBloomFilter(luxmetrics.NewNoOpMetrics("test").Registry(), "", 1000, 0.01, 0.05)
 			require.NoError(err)
 			requestSet := &testSet{
 				txs:   make(map[ids.ID]*testTx),
@@ -514,7 +514,7 @@ func TestPushGossiper(t *testing.T) {
 			network, err := p2p.NewNetwork(
 				nil,
 				sender,
-				metrics.NewNoOpMetrics("test").Registry(),
+				luxmetrics.NewNoOpMetrics("test").Registry(),
 				"",
 			)
 			require.NoError(err)
@@ -533,7 +533,7 @@ func TestPushGossiper(t *testing.T) {
 				},
 				time.Hour,
 			)
-			metrics, err := NewMetrics(metrics.NewNoOpMetrics("test").Registry(), "")
+			metrics, err := NewMetrics(luxmetrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 			marshaller := testMarshaller{}
 

@@ -6,7 +6,7 @@ package chain
 import (
 	"context"
 
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/consensus/engine/chain/job"
 	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/ids"

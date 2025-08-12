@@ -103,11 +103,11 @@ FAIL	github.com/luxfi/node/consensus/networking/tracker [build failed]
 network/p2p/gossip/gossip_test.go:139:70: metrics.NewNoOpMetrics undefined (type Metrics has no field or method NewNoOpMetrics)
 network/p2p/gossip/gossip_test.go:143:41: metrics.NewNoOpMetrics undefined (type Metrics has no field or method NewNoOpMetrics)
 # github.com/luxfi/node/network/p2p [github.com/luxfi/node/network/p2p.test]
-network/p2p/router.go:48:6: metrics already declared through import of package metrics ("github.com/luxfi/metrics")
+network/p2p/router.go:48:6: metrics already declared through import of package metrics ("github.com/luxfi/metric")
 	network/p2p/network_test.go:11:2: other declaration of metrics
-network/p2p/router.go:48:6: metrics already declared through import of package metrics ("github.com/luxfi/metrics")
+network/p2p/router.go:48:6: metrics already declared through import of package metrics ("github.com/luxfi/metric")
 	network/p2p/peer_tracker_test.go:8:3: other declaration of metrics
-network/p2p/router.go:48:6: metrics already declared through import of package metrics ("github.com/luxfi/metrics")
+network/p2p/router.go:48:6: metrics already declared through import of package metrics ("github.com/luxfi/metric")
 	network/p2p/validators_test.go:11:3: other declaration of metrics
 network/p2p/handler_test.go:16:2: "github.com/luxfi/log" imported and not used
 network/p2p/network_test.go:24:2: "github.com/luxfi/log" imported and not used
@@ -443,7 +443,7 @@ FAIL	github.com/luxfi/node/vms/platformvm [build failed]
 ok  	github.com/luxfi/node/vms/platformvm/api	0.011s
 # github.com/luxfi/node/vms/xvm/block/builder [github.com/luxfi/node/vms/xvm/block/builder.test]
 vms/xvm/block/builder/builder_test.go:565:18: assignment mismatch: 2 variables but metrics.New returns 1 value
-vms/xvm/block/builder/builder_test.go:565:30: cannot use registerer (variable of pointer type "github.com/luxfi/metrics".Registry) as string value in argument to metrics.New
+vms/xvm/block/builder/builder_test.go:565:30: cannot use registerer (variable of pointer type "github.com/luxfi/metric".Registry) as string value in argument to metrics.New
 --- FAIL: TestBanffProposalBlockJSON (0.00s)
     serialization_test.go:190: 
         	Error Trace:	/home/z/work/lux/node/vms/platformvm/block/serialization_test.go:190

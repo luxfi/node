@@ -42,11 +42,11 @@ def fix_file(filepath):
             in_imports = False
         elif in_imports:
             # Track imports
-            if '"github.com/luxfi/metrics"' in line:
+            if '"github.com/luxfi/metric"' in line:
                 if 'metrics' not in import_seen:
                     import_seen['metrics'] = True
                     if '"github.com/luxfi/node/api/metrics"' in import_seen:
-                        line = '\tluxmetrics "github.com/luxfi/metrics"'
+                        line = '\tluxmetrics "github.com/luxfi/metric"'
                 else:
                     continue  # Skip duplicate
             elif '"github.com/luxfi/node/api/metrics"' in line:

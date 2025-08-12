@@ -4,7 +4,7 @@
 package getter
 
 import (
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 )
 
 // Averager tracks average values using count and sum

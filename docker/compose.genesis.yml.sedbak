@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  luxd:
+    image: ghcr.io/luxfi/node:latest
+    container_name: luxd-cchain
+    restart: unless-stopped
+    ports:
+      - "9630:9630"  # HTTP API
+      - "9631:9631"  # Staking
+    volumes:
+      # Historic C-chain data (1,082,781 blocks)
+      - /home/z/work/lux/state/cchain:/blockchain-data:ro
+      # Persistent data
+      - luxd-data:/data
+      # Logs
+      - ./logs:/logs
+      # Staking keys (optional - for validators)
+      # - ./staking:/keys/staking:ro
+    environment:
+      - NETWORK_ID=96369
+      - LOG_LEVEL=info
+      - HTTP_HOST=0.0.0.0
+      - HTTP_PORT=9630
+      - STAKING_PORT=9631
+      # Disable staking for local testing
+      - STAKING_ENABLED=false
+      - SYBIL_PROTECTION_ENABLED=false
+      # POA mode for single node
+      - SNOW_SAMPLE_SIZE=1
+      - SNOW_QUORUM_SIZE=1
+    networks:
+      - lux-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9630/ext/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  luxd-data:
+    driver: local
+
+networks:
+  lux-network:
+    driver: bridge

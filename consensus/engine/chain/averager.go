@@ -4,7 +4,7 @@
 package chain
 
 import (
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
 

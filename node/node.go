@@ -63,7 +63,7 @@ import (
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
-	luxmetrics "github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/resource"
@@ -207,7 +207,7 @@ func New(
 		return nil, err
 	}
 
-	// Create luxfi/metrics instance from prometheus registry
+	// Create luxfi/metric instance from prometheus registry
 	networkMetrics := luxmetrics.NewPrometheusMetrics(networkNamespace, networkRegisterer)
 
 	n.msgCreator, err = message.NewCreator(

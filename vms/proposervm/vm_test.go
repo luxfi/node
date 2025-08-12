@@ -15,7 +15,7 @@ import (
 
 	"github.com/luxfi/node/consensus/engine/core"
 
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 

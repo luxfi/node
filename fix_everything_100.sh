@@ -3,12 +3,12 @@
 set -e
 
 echo "=== Comprehensive Fix for 100% Test Pass Rate ==="
-echo "1. Adding vector/histogram support to luxfi/metrics"
+echo "1. Adding vector/histogram support to luxfi/metric"
 echo "2. Fixing external luxfi/database dependency"
 echo "3. Fixing all mocks and test infrastructure"
 
-# First, let's add vector/histogram support to luxfi/metrics
-echo "=== Step 1: Enhancing luxfi/metrics with vector/histogram support ==="
+# First, let's add vector/histogram support to luxfi/metric
+echo "=== Step 1: Enhancing luxfi/metric with vector/histogram support ==="
 
 cd ../metrics
 
@@ -253,7 +253,7 @@ require (
 	github.com/luxfi/geth v1.16.24
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/log v0.1.1
-	github.com/luxfi/metrics v1.1.1
+	github.com/luxfi/metric v1.1.1
 	github.com/luxfi/node v1.13.4
 	github.com/stretchr/testify v1.10.0
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a
@@ -264,7 +264,7 @@ require (
 	golang.org/x/sync v0.16.0
 )
 
-replace github.com/luxfi/metrics => ../../metrics
+replace github.com/luxfi/metric => ../../metrics
 EOF
 
 # Create database.go
@@ -592,7 +592,7 @@ package meterdb
 import (
 	"context"
 	"github.com/luxfi/database"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 )
 
 type Database struct {

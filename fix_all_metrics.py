@@ -82,11 +82,11 @@ def fix_duplicate_imports(content):
         elif in_imports and line.strip() == ')':
             in_imports = False
         elif in_imports:
-            if '"github.com/luxfi/metrics"' in line:
+            if '"github.com/luxfi/metric"' in line:
                 if not seen_metrics:
                     if api_metrics_seen:
                         # Need to alias it
-                        line = '\tluxmetrics "github.com/luxfi/metrics"'
+                        line = '\tluxmetrics "github.com/luxfi/metric"'
                     seen_metrics = True
                 else:
                     continue  # Skip duplicate

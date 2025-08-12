@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 )
 
 var _ Creator = (*creator)(nil)

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 	
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"

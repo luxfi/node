@@ -75,7 +75,7 @@ import (
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
 	"github.com/luxfi/node/utils/metrics"
 	
-	luxmetrics "github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 )
 
 const (

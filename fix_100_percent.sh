@@ -27,7 +27,7 @@ cat > vms/components/index/metrics.go << 'EOF'
 package index
 
 import (
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 )
 
 type metrics struct {
