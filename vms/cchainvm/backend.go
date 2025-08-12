@@ -50,7 +50,7 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 	// Use the database as-is (already wrapped)
 	rawDB := db
 	
-	// Create chain config for LUX mainnet
+	// Create chain config for LUX mainnet with all forks enabled
 	chainConfig := &params.ChainConfig{
 		ChainID:                 big.NewInt(96369),
 		HomesteadBlock:          big.NewInt(0),
@@ -61,9 +61,24 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 		ConstantinopleBlock:     big.NewInt(0),
 		PetersburgBlock:         big.NewInt(0),
 		IstanbulBlock:           big.NewInt(0),
+		MuirGlacierBlock:        big.NewInt(0),
 		BerlinBlock:             big.NewInt(0),
 		LondonBlock:             big.NewInt(0),
+		ArrowGlacierBlock:       big.NewInt(0),
+		GrayGlacierBlock:        big.NewInt(0),
+		MergeNetsplitBlock:      big.NewInt(0),
+		ShanghaiTime:            newUint64(0),
+		CancunTime:              newUint64(0),
+		PragueTime:              nil,
+		VerkleTime:              nil,
 		TerminalTotalDifficulty: common.Big0,
+		BlobScheduleConfig: &params.BlobScheduleConfig{
+			Cancun: &params.BlobConfig{
+				Target:         3,
+				Max:            6,
+				UpdateFraction: 3338477,
+			},
+		},
 	}
 	
 	// Create a dummy consensus engine
@@ -206,10 +221,35 @@ func NewMinimalEthBackendForMigration(db ethdb.Database, config *ethconfig.Confi
 	if genesis != nil && genesis.Config != nil {
 		chainConfig = genesis.Config
 	} else {
-		// Use a default config for migrated data
+		// Use a default config for migrated data with all forks enabled
 		chainConfig = &params.ChainConfig{
-			ChainID: big.NewInt(96369),
+			ChainID:                 big.NewInt(96369),
+			HomesteadBlock:          big.NewInt(0),
+			EIP150Block:             big.NewInt(0),
+			EIP155Block:             big.NewInt(0),
+			EIP158Block:             big.NewInt(0),
+			ByzantiumBlock:          big.NewInt(0),
+			ConstantinopleBlock:     big.NewInt(0),
+			PetersburgBlock:         big.NewInt(0),
+			IstanbulBlock:           big.NewInt(0),
+			MuirGlacierBlock:        big.NewInt(0),
+			BerlinBlock:             big.NewInt(0),
+			LondonBlock:             big.NewInt(0),
+			ArrowGlacierBlock:       big.NewInt(0),
+			GrayGlacierBlock:        big.NewInt(0),
+			MergeNetsplitBlock:      big.NewInt(0),
+			ShanghaiTime:            newUint64(0),
+			CancunTime:              newUint64(0),
+			PragueTime:              nil,
+			VerkleTime:              nil,
 			TerminalTotalDifficulty: common.Big0,
+			BlobScheduleConfig: &params.BlobScheduleConfig{
+				Cancun: &params.BlobConfig{
+					Target:         3,
+					Max:            6,
+					UpdateFraction: 3338477,
+				},
+			},
 		}
 	}
 
@@ -319,7 +359,7 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 		chainConfig = genesis.Config
 	}
 	if chainConfig == nil {
-		// Use default mainnet config for replay scenarios
+		// Use default mainnet config for replay scenarios with all forks enabled
 		chainConfig = &params.ChainConfig{
 			ChainID:                 big.NewInt(96369),
 			HomesteadBlock:          big.NewInt(0),
@@ -330,9 +370,24 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 			ConstantinopleBlock:     big.NewInt(0),
 			PetersburgBlock:         big.NewInt(0),
 			IstanbulBlock:           big.NewInt(0),
+			MuirGlacierBlock:        big.NewInt(0),
 			BerlinBlock:             big.NewInt(0),
 			LondonBlock:             big.NewInt(0),
+			ArrowGlacierBlock:       big.NewInt(0),
+			GrayGlacierBlock:        big.NewInt(0),
+			MergeNetsplitBlock:      big.NewInt(0),
+			ShanghaiTime:            newUint64(0),
+			CancunTime:              newUint64(0),
+			PragueTime:              nil,
+			VerkleTime:              nil,
 			TerminalTotalDifficulty: common.Big0,
+			BlobScheduleConfig: &params.BlobScheduleConfig{
+				Cancun: &params.BlobConfig{
+					Target:         3,
+					Max:            6,
+					UpdateFraction: 3338477,
+				},
+			},
 		}
 	}
 
@@ -353,45 +408,12 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 	}
 
 	// For network 96369, check for migrated data first
-	if config != nil && config.NetworkId == 96369 {
-		// Expected genesis hash from migrated data
-		expectedGenesisHash := common.HexToHash("0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
-		
-		// Check using iterator to find block 0 with the 41-byte key format
-		// Format: 'h' + blockNum(8 bytes) + hash(32 bytes) = 41 bytes
-		
+	// DISABLED: The migrated data has issues with the treasury account missing
+	// We need to use regular genesis for now
+	if false && config != nil && config.NetworkId == 96369 {
 		fmt.Printf("Checking for migrated data with 41-byte key format...\n")
-		
-		// Look for block 0 using iterator
-		it := db.NewIterator([]byte("h"), nil)
-		foundGenesis := false
-		var actualHash common.Hash
-		
-		for it.Next() {
-			key := it.Key()
-			if len(key) == 41 && key[0] == 'h' {
-				blockNum := binary.BigEndian.Uint64(key[1:9])
-				if blockNum == 0 {
-					// Found genesis block
-					copy(actualHash[:], key[9:41])
-					foundGenesis = true
-					break
-				}
-			}
-		}
-		it.Release()
-		
-		if foundGenesis {
-			fmt.Printf("Found genesis hash in database: %s (expected: %s)\n", actualHash.Hex(), expectedGenesisHash.Hex())
-			if actualHash == expectedGenesisHash {
-				fmt.Printf("✓ Found migrated blockchain with correct genesis: %s\n", expectedGenesisHash.Hex())
-				
-				// Use the migrated backend directly
-				return NewMigratedBackend(db, 1082780)
-			}
-		} else {
-			fmt.Printf("No migrated data found in 41-byte key format\n")
-		}
+		// Migration check disabled due to iterator issues
+		fmt.Printf("Migration check skipped - using regular genesis\n")
 	}
 	
 	// Log genesis info for debugging
