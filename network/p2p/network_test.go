@@ -388,7 +388,7 @@ func TestAppGossipMessageForUnregisteredHandler(t *testing.T) {
 					require.Fail("should not be called")
 				},
 			}
-			network, err := NewNetwork(nil, nil, luxmetrics.NewNoOpMetrics("test").Registry(), "")
+			network, err := NewNetwork(log.NewNoOpLogger(), nil, luxmetrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 			require.NoError(network.AddHandler(handlerID, handler))
 			require.NoError(network.AppGossip(ctx, ids.EmptyNodeID, tt.msg))
@@ -528,7 +528,7 @@ func TestResponseForUnrequestedRequest(t *testing.T) {
 					return nil, nil
 				},
 			}
-			network, err := NewNetwork(nil, nil, luxmetrics.NewNoOpMetrics("test").Registry(), "")
+			network, err := NewNetwork(log.NewNoOpLogger(), nil, luxmetrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 			require.NoError(network.AddHandler(handlerID, handler))
 
