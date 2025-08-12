@@ -463,7 +463,7 @@ func TestLUXAssetID(t *testing.T) {
 	}{
 		{
 			networkID:  constants.MainnetID,
-			expectedID: "2qLJ1jAP1cyn8QLzKzJbT6qUeR5YAGrACn8jZVEhZXqPVZNbtP",
+			expectedID: "2HkbAcvpo7htbWv4iffXpzbcLLzjDZPBJ32fKRGXYFfBsxoe9F",
 		},
 		{
 			networkID:  constants.TestnetID,
@@ -471,7 +471,7 @@ func TestLUXAssetID(t *testing.T) {
 		},
 		{
 			networkID:  constants.LocalID,
-			expectedID: "2FGnCoZfucowttBTae1yEViEo9aXVEzD1jToLhnwRNRopasJbu",
+			expectedID: "2QLSdF6mNa6tbRLodYBqQcZY3evjw3etbBswv3ciTbxiebXa7q",
 		},
 	}
 
