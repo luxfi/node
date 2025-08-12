@@ -87,7 +87,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		ctx: &consensus.Context{
 			NodeID:         nodeID,
 			ValidatorState: vdrState,
-			Log:            nil,
+			Log: log.NewNoOpLogger(),
 		},
 		Windower: windower,
 	}
@@ -399,7 +399,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 		ctx: &consensus.Context{
 			NodeID:         thisNodeID,
 			ValidatorState: vdrState,
-			Log:            nil,
+			Log: log.NewNoOpLogger(),
 		},
 		Windower:               windower,
 		Scheduler:              scheduler,

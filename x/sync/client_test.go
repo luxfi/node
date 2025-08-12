@@ -93,7 +93,7 @@ func sendRangeProofRequest(
 	client, err := NewClient(&ClientConfig{
 		NetworkClient: networkClient,
 		Metrics:       &mockMetrics{},
-		Log:           nil,
+		Log: log.NewNoOpLogger(),
 		BranchFactor:  merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -390,7 +390,7 @@ func sendChangeProofRequest(
 	client, err := NewClient(&ClientConfig{
 		NetworkClient: networkClient,
 		Metrics:       &mockMetrics{},
-		Log:           nil,
+		Log: log.NewNoOpLogger(),
 		BranchFactor:  merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -752,7 +752,7 @@ func TestAppRequestSendFailed(t *testing.T) {
 	client, err := NewClient(
 		&ClientConfig{
 			NetworkClient: networkClient,
-			Log:           nil,
+			Log: log.NewNoOpLogger(),
 			Metrics:       &mockMetrics{},
 			BranchFactor:  merkledb.BranchFactor16,
 		},
