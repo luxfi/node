@@ -7,11 +7,11 @@ import (
 	"context"
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/utils/set"
 )
@@ -63,7 +63,7 @@ func TestValidatorHandlerAppGossip(t *testing.T) {
 					},
 				},
 				tt.validatorSet,
-				nil,
+				log.NewNoOpLogger(),
 			)
 
 			handler.AppGossip(context.Background(), tt.nodeID, []byte("foobar"))
@@ -104,7 +104,7 @@ func TestValidatorHandlerAppRequest(t *testing.T) {
 			handler := NewValidatorHandler(
 				NoOpHandler{},
 				tt.validatorSet,
-				nil,
+				log.NewNoOpLogger(),
 			)
 
 			_, err := handler.AppRequest(context.Background(), tt.nodeID, time.Time{}, []byte("foobar"))
