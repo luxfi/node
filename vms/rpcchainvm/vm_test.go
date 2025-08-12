@@ -4,6 +4,7 @@
 package rpcchainvm
 
 import (
+	"github.com/luxfi/log"
 	"context"
 	"fmt"
 	"os"
@@ -130,7 +131,7 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 			config: &subprocess.Config{
 				Stderr:           nil,
 				Stdout:           nil,
-				Log:              nil,
+				Log: log.NewNoOpLogger(),
 				HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 			},
 			assertErr: func(require *require.Assertions, err error) {
@@ -142,7 +143,7 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 			name: "invalid stderr",
 			config: &subprocess.Config{
 				Stdout:           nil,
-				Log:              nil,
+				Log: log.NewNoOpLogger(),
 				HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 			},
 			assertErr: func(require *require.Assertions, err error) {
@@ -155,7 +156,7 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 			config: &subprocess.Config{
 				Stderr:           nil,
 				Stdout:           nil,
-				Log:              nil,
+				Log: log.NewNoOpLogger(),
 				HandshakeTimeout: time.Microsecond,
 			},
 			assertErr: func(require *require.Assertions, err error) {

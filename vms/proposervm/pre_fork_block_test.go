@@ -658,7 +658,7 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 		ChainVM: innerVM,
 		ctx: &consensus.Context{
 			ValidatorState: vdrState,
-			Log:            nil,
+			Log: log.NewNoOpLogger(),
 		},
 	}
 

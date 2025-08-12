@@ -21,6 +21,7 @@ import (
 	"github.com/luxfi/database/leveldb"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/utils/constants"
 
@@ -133,7 +134,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 		&consensus.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    ids.GenerateTestNodeID(),
-			Log:       nil,
+			Log: log.NewNoOpLogger(),
 		},
 		metrics,
 		reward.NewCalculator(reward.Config{

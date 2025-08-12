@@ -18,6 +18,7 @@ import (
 	dag "github.com/luxfi/node/consensus/graph"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/hashing"
 )
 
@@ -35,7 +36,7 @@ func newTestSerializer(t *testing.T, parse func(context.Context, []byte) (dag.Tx
 			ChainID: ids.Empty,
 			VM:      &vm,
 			DB:      baseDB,
-			Log:     nil,
+			Log: log.NewNoOpLogger(),
 		},
 	)
 

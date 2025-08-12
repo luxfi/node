@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/node/consensus/choices"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -1043,7 +1044,7 @@ func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *ex
 		Bootstrapped: bootstrapped,
 		Ctx: &consensus.Context{
 			SharedMemory: sharedMemory,
-			Log:          nil,
+			Log: log.NewNoOpLogger(),
 		},
 		Config: &config.Config{
 			EtnaTime:         mockable.MaxTime,
