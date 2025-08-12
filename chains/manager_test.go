@@ -74,7 +74,7 @@ func TestQueueChainCreation(t *testing.T) {
 	require.NoError(err)
 
 	config := &ManagerConfig{
-		Log:          nil,
+		Log: log.NewNoOpLogger(),
 		Metrics:      metrics.NewMultiGatherer(),
 		VMManager:    vms.NewManager(nil, ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
@@ -111,7 +111,7 @@ func TestLookup(t *testing.T) {
 	require := require.New(t)
 
 	config := &ManagerConfig{
-		Log:          nil,
+		Log: log.NewNoOpLogger(),
 		Metrics:      metrics.NewMultiGatherer(),
 		VMManager:    vms.NewManager(nil, ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
@@ -147,7 +147,7 @@ func TestIsBootstrapped(t *testing.T) {
 	require := require.New(t)
 
 	config := &ManagerConfig{
-		Log:          nil,
+		Log: log.NewNoOpLogger(),
 		Metrics:      metrics.NewMultiGatherer(),
 		VMManager:    vms.NewManager(nil, ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
@@ -168,7 +168,7 @@ func TestIsBootstrapped(t *testing.T) {
 		NetworkID: constants.MainnetID,
 		SubnetID:  constants.PrimaryNetworkID,
 		ChainID:   chainID,
-		Log:       nil,
+		Log: log.NewNoOpLogger(),
 	}
 	ctx.State.Set(consensus.EngineState{
 		State: consensus.Initializing,
