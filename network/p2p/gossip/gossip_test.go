@@ -8,15 +8,17 @@ import (
 	"sync"
 	"testing"
 	"time"
-		luxmetrics "github.com/luxfi/metric"
+
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	luxmetrics "github.com/luxfi/metric"
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/consensus/validators/validatorstest"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/utils/constants"
@@ -39,7 +41,7 @@ func TestGossiperShutdown(*testing.T) {
 	wg.Add(1)
 
 	go func() {
-		Every(ctx, nil, gossiper, time.Second)
+		Every(ctx, log.NewNoOpLogger(), gossiper, time.Second)
 		wg.Done()
 	}()
 
