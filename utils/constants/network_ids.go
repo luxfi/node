@@ -16,9 +16,13 @@ import (
 // Const variables to be exported
 const (
 	LocalID    uint32 = 31337
-	MainnetID  uint32 = 96369
-	TestnetID  uint32 = 96368
+	MainnetID  uint32 = 1      // Use 1 for Avalanche compatibility
+	TestnetID  uint32 = 5      // Use 5 for Avalanche compatibility
 	UnitTestID uint32 = 369
+	
+	// Lux-specific network IDs
+	LuxMainnetID uint32 = 96369
+	LuxTestnetID uint32 = 96368
 
 	LocalName    = "local"
 	MainnetName  = "mainnet"
@@ -38,10 +42,12 @@ var (
 	PlatformChainID  = ids.Empty
 
 	NetworkIDToNetworkName = map[uint32]string{
-		LocalID:    LocalName,
-		MainnetID:  MainnetName,
-		TestnetID:  TestnetName,
-		UnitTestID: UnitTestName,
+		LocalID:      LocalName,
+		MainnetID:    MainnetName,
+		TestnetID:    TestnetName,
+		UnitTestID:   UnitTestName,
+		LuxMainnetID: MainnetName, // Also map Lux IDs to the same names
+		LuxTestnetID: TestnetName,
 	}
 	NetworkNameToNetworkID = map[string]uint32{
 		LocalName:    LocalID,
@@ -51,10 +57,12 @@ var (
 	}
 
 	NetworkIDToHRP = map[uint32]string{
-		LocalID:    LocalHRP,
-		MainnetID:  MainnetHRP,
-		TestnetID:  TestnetHRP,
-		UnitTestID: UnitTestHRP,
+		LocalID:      LocalHRP,
+		MainnetID:    MainnetHRP,
+		TestnetID:    TestnetHRP,
+		UnitTestID:   UnitTestHRP,
+		LuxMainnetID: MainnetHRP,  // Lux uses same HRP
+		LuxTestnetID: TestnetHRP,
 	}
 	NetworkHRPToNetworkID = map[string]uint32{
 		LocalHRP:    LocalID,
