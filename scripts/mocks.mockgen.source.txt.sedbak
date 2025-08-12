@@ -1,9 +1,0 @@
-consensus/engine/core/sender.go=StateSummarySender,AcceptedStateSummarySender,FrontierSender,AcceptedSender,FetchSender,AppSender,QuerySender,CrossChainAppSender,NetworkAppSender,Gossiper=consensus/engine/core/mock_sender.go
-consensus/networking/router/router.go=InternalHandler=consensus/networking/router/mock_router.go
-consensus/networking/sender/external_sender.go==consensus/networking/sender/mock_external_sender.go
-vms/xvm/block/executor/manager.go==vms/xvm/block/executor/mock_manager.go
-vms/xvm/txs/tx.go==vms/xvm/txs/mock_unsigned_tx.go
-vms/platformvm/block/executor/manager.go==vms/platformvm/block/executor/mock_manager.go
-vms/platformvm/txs/staker_tx.go=ValidatorTx,DelegatorTx,StakerTx,PermissionlessStaker=vms/platformvm/txs/mock_staker_tx.go
-vms/platformvm/txs/unsigned_tx.go==vms/platformvm/txs/mock_unsigned_tx.go
-x/merkledb/db.go=ChangeProofer,RangeProofer,Clearer,Prefetcher=x/merkledb/mock_db.go
