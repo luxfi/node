@@ -15,35 +15,21 @@ import (
 
 // Const variables to be exported
 const (
-	MainnetID uint32 = 1
-	CascadeID uint32 = 2
-	DenaliID  uint32 = 3
-	EverestID uint32 = 4
-	TestnetID uint32 = 5
+	LocalID    uint32 = 31337
+	MainnetID  uint32 = 96369
+	TestnetID  uint32 = 96368
+	UnitTestID uint32 = 369
 
-	UnitTestID uint32 = 10
-	LocalID    uint32 = 12345
-	
-	LuxMainnetID uint32 = 96369
-
+	LocalName    = "local"
 	MainnetName  = "mainnet"
-	CascadeName  = "cascade"
-	DenaliName   = "denali"
-	EverestName  = "everest"
 	TestnetName  = "testnet"
 	UnitTestName = "testing"
-	LocalName    = "local"
-	LuxMainnetName = "lux-mainnet"
 
-	MainnetHRP  = "lux"
-	CascadeHRP  = "cascade"
-	DenaliHRP   = "denali"
-	EverestHRP  = "everest"
-	TestnetHRP     = "test"
-	UnitTestHRP = "testing"
-	LocalHRP    = "local"
-	LuxMainnetHRP = "lux"
 	FallbackHRP = "custom"
+	LocalHRP    = "local"
+	MainnetHRP  = "lux"
+	TestnetHRP  = "test"
+	UnitTestHRP = "testing"
 )
 
 // Variables to be exported
@@ -52,44 +38,29 @@ var (
 	PlatformChainID  = ids.Empty
 
 	NetworkIDToNetworkName = map[uint32]string{
-		MainnetID:  MainnetName,
-		CascadeID:  CascadeName,
-		DenaliID:   DenaliName,
-		EverestID:  EverestName,
-		TestnetID:     TestnetName,
-		UnitTestID: UnitTestName,
 		LocalID:    LocalName,
-		LuxMainnetID: LuxMainnetName,
+		MainnetID:  MainnetName,
+		TestnetID:  TestnetName,
+		UnitTestID: UnitTestName,
 	}
 	NetworkNameToNetworkID = map[string]uint32{
+		LocalName:    LocalID,
 		MainnetName:  MainnetID,
-		CascadeName:  CascadeID,
-		DenaliName:   DenaliID,
-		EverestName:  EverestID,
 		TestnetName:  TestnetID,
 		UnitTestName: UnitTestID,
-		LocalName:    LocalID,
-		LuxMainnetName: LuxMainnetID,
 	}
 
 	NetworkIDToHRP = map[uint32]string{
-		MainnetID:  MainnetHRP,
-		CascadeID:  CascadeHRP,
-		DenaliID:   DenaliHRP,
-		EverestID:  EverestHRP,
-		TestnetID:     TestnetHRP,
-		UnitTestID: UnitTestHRP,
 		LocalID:    LocalHRP,
-		LuxMainnetID: LuxMainnetHRP,
+		MainnetID:  MainnetHRP,
+		TestnetID:  TestnetHRP,
+		UnitTestID: UnitTestHRP,
 	}
 	NetworkHRPToNetworkID = map[string]uint32{
-		MainnetHRP:  MainnetID,
-		CascadeHRP:  CascadeID,
-		DenaliHRP:   DenaliID,
-		EverestHRP:  EverestID,
-		TestnetHRP:     TestnetID,
-		UnitTestHRP: UnitTestID,
 		LocalHRP:    LocalID,
+		MainnetHRP:  MainnetID,
+		TestnetHRP:  TestnetID,
+		UnitTestHRP: UnitTestID,
 	}
 	ProductionNetworkIDs = set.Of(MainnetID, TestnetID)
 

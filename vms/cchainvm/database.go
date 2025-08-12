@@ -22,7 +22,7 @@ var subnetNamespace = []byte{
 }
 
 // Flag to enable subnet namespace handling (set when using --genesis-db)
-var UseSubnetNamespace = true
+var UseSubnetNamespace = false
 
 // canonicalKey returns the standard C-chain canonical key format:
 //   "H" + blockNumber (8 bytes)

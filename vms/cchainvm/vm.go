@@ -13,7 +13,6 @@ import (
 	"math/big"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -38,6 +37,11 @@ import (
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/node/version"
 )
+
+// newUint64 is a helper function to create a pointer to uint64
+func newUint64(n uint64) *uint64 {
+	return &n
+}
 
 var (
 	_ block.ChainVM = (*VM)(nil)
@@ -189,64 +193,71 @@ func (vm *VM) Initialize(
 	fmt.Printf("DEBUG: C-Chain VM Initialize called\n")
 	fmt.Printf("DEBUG: Database type: %T\n", db)
 	fmt.Printf("DEBUG: Genesis bytes length: %d\n", len(genesisBytes))
+	fmt.Printf("DEBUG: Genesis bytes: %s\n", string(genesisBytes))
 
 	// Parse genesis or use default
 	var genesis *gethcore.Genesis
 	
 	// When LUX_GENESIS=1, use the genesis from the imported blockchain data
 	if luxGenesis {
-		// Load the actual historic genesis from file
-		genesisFile := filepath.Join("/home/z/work/lux/node/genesis", "genesis_mainnet.json")
-		genesisData, err := os.ReadFile(genesisFile)
-		if err != nil {
-			// Fallback to hardcoded genesis if file not found
-			vm.ctx.Log.Warn("Could not read genesis file, using hardcoded genesis", "error", err)
-			
-			// This genesis matches the imported blockchain with hash:
-			// 0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e
-			genesis = &gethcore.Genesis{
-				Config: &params.ChainConfig{
-					ChainID:                 big.NewInt(96369),
-					HomesteadBlock:          big.NewInt(0),
-					EIP150Block:             big.NewInt(0),
-					EIP155Block:             big.NewInt(0),
-					EIP158Block:             big.NewInt(0),
-					ByzantiumBlock:          big.NewInt(0),
-					ConstantinopleBlock:     big.NewInt(0),
-					PetersburgBlock:         big.NewInt(0),
-					IstanbulBlock:           big.NewInt(0),
-					BerlinBlock:             big.NewInt(0),
-					LondonBlock:             big.NewInt(0),
-					TerminalTotalDifficulty: common.Big0,
-				},
-				Nonce:      0x0,
-				Timestamp:  0x672485c2, // 1730446786 - from imported blockchain data
-				ExtraData:  []byte{},
-				GasLimit:   0xb71b00,   // 12000000
-				Difficulty: big.NewInt(0),
-				Mixhash:    common.Hash{},
-				Coinbase:   common.Address{},
-				Alloc: gethcore.GenesisAlloc{
-					// Single allocation from mainnet genesis
-					common.HexToAddress("0x9011E888251AB053B7bD1cdB598Db4f9DEd94714"): types.Account{
-						Balance: func() *big.Int {
-							b := new(big.Int)
-							b.SetString("193e5939a08ce9dbd480000000", 16) // hex value from genesis
-							return b
-						}(),
+		// Use the properly extracted genesis configuration from genesis package
+		// This genesis matches the imported blockchain with hash:
+		// 0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e
+		genesis = &gethcore.Genesis{
+			Config: &params.ChainConfig{
+				ChainID:                 big.NewInt(96369),
+				HomesteadBlock:          big.NewInt(0),
+				EIP150Block:             big.NewInt(0),
+				EIP155Block:             big.NewInt(0),
+				EIP158Block:             big.NewInt(0),
+				ByzantiumBlock:          big.NewInt(0),
+				ConstantinopleBlock:     big.NewInt(0),
+				PetersburgBlock:         big.NewInt(0),
+				IstanbulBlock:           big.NewInt(0),
+				MuirGlacierBlock:        big.NewInt(0),
+				BerlinBlock:             big.NewInt(0),
+				LondonBlock:             big.NewInt(0),
+				ArrowGlacierBlock:       big.NewInt(0),
+				GrayGlacierBlock:        big.NewInt(0),
+				MergeNetsplitBlock:      big.NewInt(0),
+				// Use actual timestamps from extracted database config
+				ShanghaiTime:            newUint64(1607144400), // From extracted config
+				CancunTime:              newUint64(253399622400), // Far future from extracted config
+				PragueTime:              nil, // Not yet defined
+				VerkleTime:              nil, // Not yet defined
+				TerminalTotalDifficulty: common.Big0,
+				// BlobScheduleConfig for Cancun
+				BlobScheduleConfig: &params.BlobScheduleConfig{
+					Cancun: &params.BlobConfig{
+						Target:         3,
+						Max:            6,
+						UpdateFraction: 3338477,
 					},
 				},
-			}
-		} else {
-			// Parse the genesis file
-			genesis = &gethcore.Genesis{}
-			if err := json.Unmarshal(genesisData, genesis); err != nil {
-				return fmt.Errorf("failed to unmarshal historic genesis: %w", err)
-			}
-			vm.ctx.Log.Info("Loaded historic genesis from file", "path", genesisFile)
+			},
+			Nonce:      0x0,
+			Timestamp:  0x672485c2, // 1730446786 - from imported blockchain data
+			ExtraData:  []byte{},
+			GasLimit:   0xb71b00,   // 12000000
+			Difficulty: big.NewInt(0),
+			Mixhash:    common.Hash{},
+			Coinbase:   common.Address{},
+			Alloc: gethcore.GenesisAlloc{
+				// Single allocation from mainnet genesis
+				common.HexToAddress("0x9011E888251AB053B7bD1cdB598Db4f9DEd94714"): types.Account{
+					Balance: func() *big.Int {
+						b := new(big.Int)
+						b.SetString("193e5939a08ce9dbd480000000", 16) // hex value from genesis
+						return b
+					}(),
+				},
+			},
 		}
 		
 		vm.ctx.Log.Info("Using imported blockchain genesis for replay",
+			"chainId", 96369,
+			"shanghaiTime", 1607144400,
+			"cancunTime", 253399622400,
 			"expectedHash", "0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e")
 	} else if len(genesisBytes) > 0 {
 		// First check if this is a database replay genesis or uses migrated data
@@ -352,9 +363,20 @@ func (vm *VM) Initialize(
 					ArrowGlacierBlock:       big.NewInt(0),
 					GrayGlacierBlock:        big.NewInt(0),
 					MergeNetsplitBlock:      big.NewInt(0),
-					ShanghaiTime:            new(uint64), // 0
-					CancunTime:              new(uint64), // 0
+					// Activate time-based forks at genesis timestamp + 1 second
+					// This ensures they're active but don't interfere with genesis validation
+					ShanghaiTime:            newUint64(1730446787), // genesis timestamp + 1
+					CancunTime:              newUint64(1730446787), // genesis timestamp + 1
+					PragueTime:              nil, // Not yet defined
+					VerkleTime:              nil, // Not yet defined
 					TerminalTotalDifficulty: common.Big0,
+					BlobScheduleConfig: &params.BlobScheduleConfig{
+						Cancun: &params.BlobConfig{
+							Target:         3,
+							Max:            6,
+							UpdateFraction: 3338477,
+						},
+					},
 				},
 				Nonce:      0x0,
 				Timestamp:  0x672485c2, // 1730446786 - matches actual mainnet genesis

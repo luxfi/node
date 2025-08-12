@@ -14,10 +14,10 @@ import (
 )
 
 var (
-	//go:embed genesis_mainnet_platform.json
+	//go:embed genesis_mainnet.json
 	mainnetGenesisConfigJSON []byte
 
-	// MainnetParams are the params used for mainnet
+	// MainnetParams are the params used for mainnet (network ID 96369)
 	MainnetParams = Params{
 		StaticConfig: fee.StaticConfig{
 			TxFee:                         units.MilliLux,
