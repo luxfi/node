@@ -10,6 +10,7 @@ exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 
 require (
 	github.com/StephenButtolph/canoto v0.17.2
+	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
 	github.com/luxfi/bft v0.1.0
@@ -17,8 +18,8 @@ require (
 	github.com/luxfi/database v1.1.10
 	github.com/luxfi/geth v1.16.27
 	github.com/luxfi/ids v1.0.2
-	github.com/luxfi/log v1.0.6
-	github.com/luxfi/metrics v1.1.1
+	github.com/luxfi/log v1.0.7
+	github.com/luxfi/metrics v1.1.9
 	github.com/luxfi/trace v0.1.1
 	golang.org/x/mod v0.26.0
 )
@@ -101,7 +102,6 @@ require (
 	github.com/crate-crypto/go-ipa v0.0.0-20240724233137-53bbb0ceb27a // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
-	github.com/dgraph-io/badger/v4 v4.8.0 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.2.0 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect

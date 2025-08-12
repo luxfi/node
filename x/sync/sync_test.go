@@ -10,7 +10,9 @@ import (
 	"slices"
 	"testing"
 	"time"
-		"github.com/luxfi/metrics"
+
+	"github.com/luxfi/log"
+	luxmetrics "github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -31,7 +33,7 @@ func newDefaultDBConfig() merkledb.Config {
 		ValueNodeCacheSize:          defaultRequestKeyLimit,
 		IntermediateWriteBufferSize: defaultRequestKeyLimit,
 		IntermediateNodeCacheSize:   defaultRequestKeyLimit,
-		Reg:                         metrics.NewNoOpMetrics("test").Registry(),
+		Reg:                         luxmetrics.NewNoOpMetrics("test").Registry(),
 		Tracer:                      trace.Noop,
 		BranchFactor:                merkledb.BranchFactor16,
 	}
@@ -95,7 +97,7 @@ func Test_Creation(t *testing.T) {
 		Client:                NewMockClient(ctrl),
 		TargetRoot:            ids.Empty,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -129,7 +131,7 @@ func Test_Completion(t *testing.T) {
 		Client:                newCallthroughSyncClient(ctrl, emptyDB),
 		TargetRoot:            emptyRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -234,7 +236,7 @@ func Test_Sync_FindNextKey_InSync(t *testing.T) {
 		Client:                newCallthroughSyncClient(ctrl, dbToSync),
 		TargetRoot:            syncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -310,7 +312,7 @@ func Test_Sync_FindNextKey_Deleted(t *testing.T) {
 		Client:                NewMockClient(ctrl),
 		TargetRoot:            syncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -359,7 +361,7 @@ func Test_Sync_FindNextKey_BranchInLocal(t *testing.T) {
 		Client:                NewMockClient(ctrl),
 		TargetRoot:            targetRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -395,7 +397,7 @@ func Test_Sync_FindNextKey_BranchInReceived(t *testing.T) {
 		Client:                NewMockClient(ctrl),
 		TargetRoot:            targetRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -430,7 +432,7 @@ func Test_Sync_FindNextKey_ExtraValues(t *testing.T) {
 		Client:                newCallthroughSyncClient(ctrl, dbToSync),
 		TargetRoot:            syncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -492,7 +494,7 @@ func TestFindNextKeyEmptyEndProof(t *testing.T) {
 		Client:                NewMockClient(ctrl),
 		TargetRoot:            ids.Empty,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -560,7 +562,7 @@ func Test_Sync_FindNextKey_DifferentChild(t *testing.T) {
 		Client:                newCallthroughSyncClient(ctrl, dbToSync),
 		TargetRoot:            syncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -783,7 +785,7 @@ func TestFindNextKeyRandom(t *testing.T) {
 			Client:                NewMockClient(ctrl),
 			TargetRoot:            ids.GenerateTestID(),
 			SimultaneousWorkLimit: 5,
-			Log:                   nil,
+			Log:                   log.NewNoOpLogger(),
 			BranchFactor:          merkledb.BranchFactor16,
 		})
 		require.NoError(err)
@@ -830,7 +832,7 @@ func Test_Sync_Result_Correct_Root(t *testing.T) {
 		Client:                newCallthroughSyncClient(ctrl, dbToSync),
 		TargetRoot:            syncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -889,7 +891,7 @@ func Test_Sync_Result_Correct_Root_With_Sync_Restart(t *testing.T) {
 		Client:                newCallthroughSyncClient(ctrl, dbToSync),
 		TargetRoot:            syncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -915,7 +917,7 @@ func Test_Sync_Result_Correct_Root_With_Sync_Restart(t *testing.T) {
 		Client:                newCallthroughSyncClient(ctrl, dbToSync),
 		TargetRoot:            syncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -980,7 +982,7 @@ func Test_Sync_Error_During_Sync(t *testing.T) {
 		Client:                client,
 		TargetRoot:            syncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -1078,7 +1080,7 @@ func Test_Sync_Result_Correct_Root_Update_Root_During(t *testing.T) {
 		Client:                client,
 		TargetRoot:            firstSyncRoot,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -1118,7 +1120,7 @@ func Test_Sync_UpdateSyncTarget(t *testing.T) {
 		Client:                NewMockClient(ctrl),            // Not used
 		TargetRoot:            ids.Empty,
 		SimultaneousWorkLimit: 5,
-		Log:                   nil,
+		Log:                   log.NewNoOpLogger(),
 		BranchFactor:          merkledb.BranchFactor16,
 	})
 	require.NoError(err)

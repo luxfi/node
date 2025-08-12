@@ -20,10 +20,11 @@ func NewTestRegistry() *prometheus.Registry {
 	return prometheus.NewRegistry()
 }
 
-// WrapPrometheusRegistry wraps a prometheus registry to implement luxfi/metrics.Registry.
-// This is used when a registry needs to be passed through multiple layers.
+// WrapPrometheusRegistry is deprecated - just use the registry directly
+// since luxmetrics.Registry is now an alias for *prometheus.Registry
 func WrapPrometheusRegistry(registry *prometheus.Registry) luxmetrics.Registry {
-	return luxmetrics.WrapPrometheusRegistry(registry)
+	// Since Registry is now an alias, we can return it directly
+	return registry
 }
 
 // NewNoOpMetrics creates a no-op metrics instance for testing.
