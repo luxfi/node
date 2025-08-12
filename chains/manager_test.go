@@ -5,15 +5,15 @@ package chains
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/consensus/engine/core/tracker"
 	"github.com/luxfi/node/consensus/networking/handler"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms"
@@ -26,7 +26,7 @@ func TestNew(t *testing.T) {
 	config := &ManagerConfig{
 		SkipBootstrap:    true,
 		EnableAutomining: true,
-		Log:              nil,
+		Log:              log.NewNoOpLogger(),
 		Metrics:          metrics.NewMultiGatherer(),
 		VMManager:        vms.NewManager(nil, ids.NewAliaser()),
 		ChainDataDir:     t.TempDir(),
