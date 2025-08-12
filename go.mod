@@ -19,7 +19,7 @@ require (
 	github.com/luxfi/geth v1.16.2-lux.4
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/log v1.0.7
-	github.com/luxfi/metric v1.2.2
+	github.com/luxfi/metric v1.3.0
 	github.com/luxfi/trace v0.1.1
 	golang.org/x/mod v0.26.0
 )
