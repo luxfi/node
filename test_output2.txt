@@ -1,0 +1,955 @@
+# github.com/luxfi/node
+found packages main (convert_db_format.go) and node (tools.go) in /home/z/work/lux/node
+FAIL	github.com/luxfi/node [setup failed]
+# github.com/luxfi/node/tests/e2e
+package github.com/luxfi/node/tests/e2e_test
+	imports github.com/luxfi/node/tests/e2e/banff: build constraints exclude all Go files in /home/z/work/lux/node/tests/e2e/banff
+FAIL	github.com/luxfi/node/tests/e2e [setup failed]
+# github.com/luxfi/node/utils/metrics
+utils/metrics/registry.go:26:20: undefined: luxmetrics.WrapPrometheusRegistry
+?   	github.com/luxfi/node/api	[no test files]
+# github.com/luxfi/node/consensus/engine/chain
+consensus/engine/chain/engine.go:141:29: undefined: metrics.WrapPrometheusRegistry
+# github.com/luxfi/node/consensus/networking/handler
+consensus/networking/handler/message_queue.go:102:29: undefined: metrics.WrapPrometheusRegistry
+FAIL	github.com/luxfi/node/api/admin [build failed]
+ok  	github.com/luxfi/node/api/auth	1.399s
+FAIL	github.com/luxfi/node/api/health [build failed]
+FAIL	github.com/luxfi/node/api/info [build failed]
+FAIL	github.com/luxfi/node/api/ipcs [build failed]
+ok  	github.com/luxfi/node/api/keystore	1.141s
+?   	github.com/luxfi/node/api/keystore/gkeystore	[no test files]
+FAIL	github.com/luxfi/node/api/metrics [build failed]
+ok  	github.com/luxfi/node/api/server	0.019s
+FAIL	github.com/luxfi/node/app [build failed]
+ok  	github.com/luxfi/node/cache	0.005s
+?   	github.com/luxfi/node/cache/cachetest	[no test files]
+ok  	github.com/luxfi/node/cache/lru	0.008s
+?   	github.com/luxfi/node/cache/metercacher	[no test files]
+FAIL	github.com/luxfi/node/chains [build failed]
+ok  	github.com/luxfi/node/chains/atomic	0.008s
+?   	github.com/luxfi/node/chains/atomic/gsharedmemory	[no test files]
+?   	github.com/luxfi/node/cmd/check_vmid	[no test files]
+?   	github.com/luxfi/node/cmd/extract_genesis	[no test files]
+?   	github.com/luxfi/node/cmd/quick_check	[no test files]
+?   	github.com/luxfi/node/codec	[no test files]
+?   	github.com/luxfi/node/codec/hierarchycodec	[no test files]
+?   	github.com/luxfi/node/codec/linearcodec	[no test files]
+ok  	github.com/luxfi/node/codec/reflectcodec	0.007s
+FAIL	github.com/luxfi/node/config [build failed]
+?   	github.com/luxfi/node/config/node	[no test files]
+?   	github.com/luxfi/node/consensus	[no test files]
+FAIL	github.com/luxfi/node/consensus/bft [build failed]
+FAIL	github.com/luxfi/node/consensus/chain [build failed]
+ok  	github.com/luxfi/node/consensus/chain/bootstrapper	0.008s
+?   	github.com/luxfi/node/consensus/chain/chainmock	[no test files]
+?   	github.com/luxfi/node/consensus/chain/chaintest	[no test files]
+FAIL	github.com/luxfi/node/consensus/chain/poll [build failed]
+ok  	github.com/luxfi/node/consensus/choices	0.008s
+ok  	github.com/luxfi/node/consensus/confidence	0.008s
+?   	github.com/luxfi/node/consensus/consensustest	[no test files]
+FAIL	github.com/luxfi/node/consensus/engine/chain [build failed]
+ok  	github.com/luxfi/node/consensus/engine/chain/ancestor	0.007s
+ok  	github.com/luxfi/node/consensus/engine/chain/block	0.015s
+?   	github.com/luxfi/node/consensus/engine/chain/block/blockmock	[no test files]
+?   	github.com/luxfi/node/consensus/engine/chain/block/blocktest	[no test files]
+FAIL	github.com/luxfi/node/consensus/engine/chain/bootstrap [build failed]
+ok  	github.com/luxfi/node/consensus/engine/chain/bootstrap/interval	0.012s
+FAIL	github.com/luxfi/node/consensus/engine/chain/getter [build failed]
+ok  	github.com/luxfi/node/consensus/engine/chain/job	0.009s
+FAIL	github.com/luxfi/node/consensus/engine/chain/syncer [build failed]
+ok  	github.com/luxfi/node/consensus/engine/core	0.238s
+?   	github.com/luxfi/node/consensus/engine/core/appsender	[no test files]
+?   	github.com/luxfi/node/consensus/engine/core/coremock	[no test files]
+ok  	github.com/luxfi/node/consensus/engine/core/tracker	0.014s
+?   	github.com/luxfi/node/consensus/engine/dag	[no test files]
+FAIL	github.com/luxfi/node/consensus/engine/dag/bootstrap [build failed]
+FAIL	github.com/luxfi/node/consensus/engine/dag/bootstrap/queue [build failed]
+?   	github.com/luxfi/node/consensus/engine/dag/getter	[no test files]
+ok  	github.com/luxfi/node/consensus/engine/dag/state	0.012s
+ok  	github.com/luxfi/node/consensus/engine/dag/vertex	0.009s
+ok  	github.com/luxfi/node/consensus/engine/dag/vertex/vertex_impl	0.010s
+?   	github.com/luxfi/node/consensus/engine/dag/vertex/vertex_impl/vertexmock	[no test files]
+?   	github.com/luxfi/node/consensus/engine/dag/vertex/vertex_impl/vertextest	[no test files]
+?   	github.com/luxfi/node/consensus/engine/dag/vertex/vertexmock	[no test files]
+?   	github.com/luxfi/node/consensus/engine/dag/vertex/vertextest	[no test files]
+?   	github.com/luxfi/node/consensus/engine/enginetest	[no test files]
+?   	github.com/luxfi/node/consensus/engine/graph	[no test files]
+FAIL	github.com/luxfi/node/consensus/engine/graph/bootstrap [build failed]
+FAIL	github.com/luxfi/node/consensus/engine/graph/bootstrap/queue [build failed]
+?   	github.com/luxfi/node/consensus/engine/graph/getter	[no test files]
+ok  	github.com/luxfi/node/consensus/engine/graph/state	0.015s
+ok  	github.com/luxfi/node/consensus/engine/graph/vertex	0.009s
+ok  	github.com/luxfi/node/consensus/engine/graph/vertex/vertex_impl	0.010s
+?   	github.com/luxfi/node/consensus/engine/graph/vertex/vertex_impl/vertexmock	[no test files]
+?   	github.com/luxfi/node/consensus/engine/graph/vertex/vertex_impl/vertextest	[no test files]
+?   	github.com/luxfi/node/consensus/engine/graph/vertex/vertexmock	[no test files]
+?   	github.com/luxfi/node/consensus/engine/graph/vertex/vertextest	[no test files]
+?   	github.com/luxfi/node/consensus/factories	[no test files]
+?   	github.com/luxfi/node/consensus/graph	[no test files]
+FAIL	github.com/luxfi/node/consensus/networking/benchlist [build failed]
+FAIL	github.com/luxfi/node/consensus/networking/handler [build failed]
+FAIL	github.com/luxfi/node/consensus/networking/handler/handlermock [build failed]
+FAIL	github.com/luxfi/node/consensus/networking/router [build failed]
+FAIL	github.com/luxfi/node/consensus/networking/router/routermock [build failed]
+FAIL	github.com/luxfi/node/consensus/networking/sender [build failed]
+?   	github.com/luxfi/node/consensus/networking/sender/sendermock	[no test files]
+FAIL	github.com/luxfi/node/consensus/networking/sender/sendertest [build failed]
+FAIL	github.com/luxfi/node/consensus/networking/timeout [build failed]
+?   	github.com/luxfi/node/consensus/networking/timeout/timeoutmock	[no test files]
+FAIL	github.com/luxfi/node/consensus/networking/tracker [build failed]
+?   	github.com/luxfi/node/consensus/networking/tracker/trackermock	[no test files]
+# github.com/luxfi/node/network/p2p/gossip [github.com/luxfi/node/network/p2p/gossip.test]
+network/p2p/gossip/gossip_test.go:139:70: metrics.NewNoOpMetrics undefined (type Metrics has no field or method NewNoOpMetrics)
+network/p2p/gossip/gossip_test.go:143:41: metrics.NewNoOpMetrics undefined (type Metrics has no field or method NewNoOpMetrics)
+# github.com/luxfi/node/network/p2p [github.com/luxfi/node/network/p2p.test]
+network/p2p/router.go:48:6: metrics already declared through import of package metrics ("github.com/luxfi/metrics")
+	network/p2p/network_test.go:11:2: other declaration of metrics
+network/p2p/router.go:48:6: metrics already declared through import of package metrics ("github.com/luxfi/metrics")
+	network/p2p/peer_tracker_test.go:8:3: other declaration of metrics
+network/p2p/router.go:48:6: metrics already declared through import of package metrics ("github.com/luxfi/metrics")
+	network/p2p/validators_test.go:11:3: other declaration of metrics
+network/p2p/handler_test.go:16:2: "github.com/luxfi/log" imported and not used
+network/p2p/network_test.go:24:2: "github.com/luxfi/log" imported and not used
+network/p2p/peer_tracker_test.go:12:2: "github.com/luxfi/log" imported and not used
+network/p2p/throttler_handler_test.go:16:2: "github.com/luxfi/log" imported and not used
+network/p2p/validators_test.go:19:2: "github.com/luxfi/log" imported and not used
+# github.com/luxfi/node/network/throttling [github.com/luxfi/node/network/throttling.test]
+network/throttling/bandwidth_throttler_test.go:18:2: "github.com/luxfi/log" imported and not used
+network/throttling/inbound_conn_upgrade_throttler_test.go:14:2: "github.com/luxfi/log" imported and not used
+network/throttling/inbound_msg_byte_throttler_test.go:16:2: "github.com/luxfi/log" imported and not used
+network/throttling/outbound_msg_throttler_test.go:16:2: "github.com/luxfi/log" imported and not used
+ok  	github.com/luxfi/node/consensus/sampling	0.654s
+ok  	github.com/luxfi/node/consensus/threshold	0.007s
+ok  	github.com/luxfi/node/consensus/uptime	0.006s
+?   	github.com/luxfi/node/consensus/uptime/uptimemock	[no test files]
+ok  	github.com/luxfi/node/consensus/validators	0.020s
+ok  	github.com/luxfi/node/consensus/validators/gvalidators	0.029s
+?   	github.com/luxfi/node/consensus/validators/validatorsmock	[no test files]
+?   	github.com/luxfi/node/consensus/validators/validatorstest	[no test files]
+?   	github.com/luxfi/node/db/rpcdb	[no test files]
+?   	github.com/luxfi/node/evm/common	[no test files]
+?   	github.com/luxfi/node/evm/common/math	[no test files]
+?   	github.com/luxfi/node/evm/core	[no test files]
+?   	github.com/luxfi/node/evm/ethclient	[no test files]
+ok  	github.com/luxfi/node/gas	0.006s
+--- FAIL: TestValidateConfig (0.00s)
+    --- FAIL: TestValidateConfig/mainnet (0.00s)
+        genesis_test.go:174: 
+            	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:174
+            	Error:      	Target error should be in err chain:
+            	            	expected: ""
+            	            	in chain: "conflicting networkIDs: expected 1 but config contains 96369"
+            	            		"conflicting networkIDs"
+            	Test:       	TestValidateConfig/mainnet
+--- FAIL: TestGenesis (0.02s)
+    --- FAIL: TestGenesis/mainnet (0.00s)
+        genesis_test.go:376: 
+            	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:376
+            	Error:      	Not equal: 
+            	            	expected: "2MQUiaRTcXD7T6swZRL1xcNKZm4zsEGBGZBfA2rJBXDLCNu4wb"
+            	            	actual  : "2RubAfTujLNUutcbtqsjpvfcHnvCbDrcH9ido9EbdJkYeYnWgE"
+            	            	
+            	            	Diff:
+            	            	--- Expected
+            	            	+++ Actual
+            	            	@@ -1 +1 @@
+            	            	-2MQUiaRTcXD7T6swZRL1xcNKZm4zsEGBGZBfA2rJBXDLCNu4wb
+            	            	+2RubAfTujLNUutcbtqsjpvfcHnvCbDrcH9ido9EbdJkYeYnWgE
+            	Test:       	TestGenesis/mainnet
+    --- FAIL: TestGenesis/local (0.00s)
+        genesis_test.go:376: 
+            	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:376
+            	Error:      	Not equal: 
+            	            	expected: "enryPVr4JS8GEgi76sMNW9zTx6V6RUFn8YJLhK2ErN4wVEsTB"
+            	            	actual  : "2ASgccyNavJxfhGkfb5d3Xt6QyKJmU6YabQnK1dd4Noei1XqBH"
+            	            	
+            	            	Diff:
+            	            	--- Expected
+            	            	+++ Actual
+            	            	@@ -1 +1 @@
+            	            	-enryPVr4JS8GEgi76sMNW9zTx6V6RUFn8YJLhK2ErN4wVEsTB
+            	            	+2ASgccyNavJxfhGkfb5d3Xt6QyKJmU6YabQnK1dd4Noei1XqBH
+            	Test:       	TestGenesis/local
+--- FAIL: TestVMGenesis (0.05s)
+    --- FAIL: TestVMGenesis/mainnet-jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq (0.00s)
+        genesis_test.go:447: 
+            	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:447
+            	Error:      	Not equal: 
+            	            	expected: "2CK9qd4C2xWQR8pPQddDDCPEh4pufyjbddTftMRkuxGs4MYxNA"
+            	            	actual  : "oBNAjGCioVdXmQqUqXtgaRNJgz8ZDp1qejpY6gwN6Ddct1xgx"
+            	            	
+            	            	Diff:
+            	            	--- Expected
+            	            	+++ Actual
+            	            	@@ -1 +1 @@
+            	            	-2CK9qd4C2xWQR8pPQddDDCPEh4pufyjbddTftMRkuxGs4MYxNA
+            	            	+oBNAjGCioVdXmQqUqXtgaRNJgz8ZDp1qejpY6gwN6Ddct1xgx
+            	Test:       	TestVMGenesis/mainnet-jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
+            	Messages:   	jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq genesisID with networkID 96369 mismatch
+    --- FAIL: TestVMGenesis/mainnet-mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6 (0.00s)
+        genesis_test.go:447: 
+            	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:447
+            	Error:      	Not equal: 
+            	            	expected: "nXTRvuviB33V53LQLyPdiZerLb4ApBD9xZ9pAqs5abMW8WTSr"
+            	            	actual  : "EWi9aPkGe6EfJ3SobCAmSUXRPLa4brF3cThwPwmHTrD1y13jy"
+            	            	
+            	            	Diff:
+            	            	--- Expected
+            	            	+++ Actual
+            	            	@@ -1 +1 @@
+            	            	-nXTRvuviB33V53LQLyPdiZerLb4ApBD9xZ9pAqs5abMW8WTSr
+            	            	+EWi9aPkGe6EfJ3SobCAmSUXRPLa4brF3cThwPwmHTrD1y13jy
+            	Test:       	TestVMGenesis/mainnet-mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+            	Messages:   	mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6 genesisID with networkID 96369 mismatch
+    --- FAIL: TestVMGenesis/local-jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq (0.00s)
+        genesis_test.go:447: 
+            	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:447
+            	Error:      	Not equal: 
+            	            	expected: "2kFhXmifGiEf54PKdsnr1EauaN2tgJWNB6x1XT1kWWm8Wwp6LG"
+            	            	actual  : "dnETgw1RTLQwSLbuhQEnjisfsvEz84CLgwGTYByyvAjjgLY4B"
+            	            	
+            	            	Diff:
+            	            	--- Expected
+            	            	+++ Actual
+            	            	@@ -1 +1 @@
+            	            	-2kFhXmifGiEf54PKdsnr1EauaN2tgJWNB6x1XT1kWWm8Wwp6LG
+            	            	+dnETgw1RTLQwSLbuhQEnjisfsvEz84CLgwGTYByyvAjjgLY4B
+            	Test:       	TestVMGenesis/local-jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
+            	Messages:   	jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq genesisID with networkID 31337 mismatch
+    --- FAIL: TestVMGenesis/local-mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6 (0.00s)
+        genesis_test.go:447: 
+            	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:447
+            	Error:      	Not equal: 
+            	            	expected: "2f9gWKiw8VTE29NbiA6kUmETi6Rz8ikk8tUbaHEdhft7X8BvQo"
+            	            	actual  : "2WokyoVujr7NqByCPvaaSNRqqnKSJM7jahC58RhRyaktPjNPqz"
+            	            	
+            	            	Diff:
+            	            	--- Expected
+            	            	+++ Actual
+            	            	@@ -1 +1 @@
+            	            	-2f9gWKiw8VTE29NbiA6kUmETi6Rz8ikk8tUbaHEdhft7X8BvQo
+            	            	+2WokyoVujr7NqByCPvaaSNRqqnKSJM7jahC58RhRyaktPjNPqz
+            	Test:       	TestVMGenesis/local-mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+            	Messages:   	mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6 genesisID with networkID 31337 mismatch
+--- FAIL: TestLUXAssetID (0.01s)
+    --- FAIL: TestLUXAssetID/mainnet (0.00s)
+        genesis_test.go:486: 
+            	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:486
+            	Error:      	Not equal: 
+            	            	expected: "2qLJ1jAP1cyn8QLzKzJbT6qUeR5YAGrACn8jZVEhZXqPVZNbtP"
+            	            	actual  : "2HkbAcvpo7htbWv4iffXpzbcLLzjDZPBJ32fKRGXYFfBsxoe9F"
+            	            	
+            	            	Diff:
+            	            	--- Expected
+            	            	+++ Actual
+            	            	@@ -1 +1 @@
+            	            	-2qLJ1jAP1cyn8QLzKzJbT6qUeR5YAGrACn8jZVEhZXqPVZNbtP
+            	            	+2HkbAcvpo7htbWv4iffXpzbcLLzjDZPBJ32fKRGXYFfBsxoe9F
+            	Test:       	TestLUXAssetID/mainnet
+            	Messages:   	LUX assetID with networkID 96369 mismatch
+    --- FAIL: TestLUXAssetID/local (0.00s)
+        genesis_test.go:486: 
+            	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:486
+            	Error:      	Not equal: 
+            	            	expected: "2FGnCoZfucowttBTae1yEViEo9aXVEzD1jToLhnwRNRopasJbu"
+            	            	actual  : "2QLSdF6mNa6tbRLodYBqQcZY3evjw3etbBswv3ciTbxiebXa7q"
+            	            	
+            	            	Diff:
+            	            	--- Expected
+            	            	+++ Actual
+            	            	@@ -1 +1 @@
+            	            	-2FGnCoZfucowttBTae1yEViEo9aXVEzD1jToLhnwRNRopasJbu
+            	            	+2QLSdF6mNa6tbRLodYBqQcZY3evjw3etbBswv3ciTbxiebXa7q
+            	Test:       	TestLUXAssetID/local
+            	Messages:   	LUX assetID with networkID 31337 mismatch
+FAIL
+FAIL	github.com/luxfi/node/genesis	1.162s
+FAIL	github.com/luxfi/node/genesis/generate/checkpoints [build failed]
+FAIL	github.com/luxfi/node/genesis/generate/validators [build failed]
+ok  	github.com/luxfi/node/ids/galiasreader	0.021s
+FAIL	github.com/luxfi/node/indexer [build failed]
+FAIL	github.com/luxfi/node/indexer/examples/p-chain [build failed]
+FAIL	github.com/luxfi/node/indexer/examples/x-chain-blocks [build failed]
+?   	github.com/luxfi/node/ipcs	[no test files]
+ok  	github.com/luxfi/node/ipcs/socket	0.011s
+# github.com/luxfi/node/consensus/engine/chain [github.com/luxfi/node/main]
+consensus/engine/chain/engine.go:141:29: undefined: metrics.WrapPrometheusRegistry
+# github.com/luxfi/node/consensus/networking/handler [github.com/luxfi/node/main]
+consensus/networking/handler/message_queue.go:102:29: undefined: metrics.WrapPrometheusRegistry
+FAIL	github.com/luxfi/node/main [build failed]
+# github.com/luxfi/node/utils/logging [github.com/luxfi/node/utils/logging.test]
+utils/logging/log_test.go:23:12: cannot use panicFunc (variable of type func()) as string value in argument to log.Error
+utils/logging/log_test.go:23:23: cannot use exitFunc (variable of type func()) as zap.Field value in argument to log.Error
+ok  	github.com/luxfi/node/message	0.165s
+?   	github.com/luxfi/node/message/messagemock	[no test files]
+?   	github.com/luxfi/node/nat	[no test files]
+FAIL	github.com/luxfi/node/network [build failed]
+ok  	github.com/luxfi/node/network/dialer	0.023s
+FAIL	github.com/luxfi/node/network/p2p [build failed]
+?   	github.com/luxfi/node/network/p2p/acp118	[no test files]
+FAIL	github.com/luxfi/node/network/p2p/gossip [build failed]
+ok  	github.com/luxfi/node/network/p2p/lp118	0.385s
+?   	github.com/luxfi/node/network/p2p/mocks	[no test files]
+ok  	github.com/luxfi/node/network/p2p/p2ptest	0.022s
+FAIL	github.com/luxfi/node/network/peer [build failed]
+FAIL	github.com/luxfi/node/network/throttling [build failed]
+FAIL	github.com/luxfi/node/node [build failed]
+?   	github.com/luxfi/node/proto/p2p	[no test files]
+?   	github.com/luxfi/node/proto/pb/aliasreader	[no test files]
+?   	github.com/luxfi/node/proto/pb/appsender	[no test files]
+?   	github.com/luxfi/node/proto/pb/http	[no test files]
+?   	github.com/luxfi/node/proto/pb/http/responsewriter	[no test files]
+?   	github.com/luxfi/node/proto/pb/io/reader	[no test files]
+?   	github.com/luxfi/node/proto/pb/io/writer	[no test files]
+?   	github.com/luxfi/node/proto/pb/keystore	[no test files]
+?   	github.com/luxfi/node/proto/pb/message	[no test files]
+?   	github.com/luxfi/node/proto/pb/messenger	[no test files]
+?   	github.com/luxfi/node/proto/pb/net/conn	[no test files]
+?   	github.com/luxfi/node/proto/pb/p2p	[no test files]
+?   	github.com/luxfi/node/proto/pb/platformvm	[no test files]
+?   	github.com/luxfi/node/proto/pb/rpcdb	[no test files]
+?   	github.com/luxfi/node/proto/pb/sdk	[no test files]
+?   	github.com/luxfi/node/proto/pb/sharedmemory	[no test files]
+?   	github.com/luxfi/node/proto/pb/sync	[no test files]
+?   	github.com/luxfi/node/proto/pb/validatorstate	[no test files]
+?   	github.com/luxfi/node/proto/pb/vm	[no test files]
+?   	github.com/luxfi/node/proto/pb/vm/runtime	[no test files]
+?   	github.com/luxfi/node/proto/pb/warp	[no test files]
+?   	github.com/luxfi/node/proto/rpcdb	[no test files]
+ok  	github.com/luxfi/node/pubsub	0.023s
+ok  	github.com/luxfi/node/pubsub/bloom	0.020s
+ok  	github.com/luxfi/node/staking	0.012s
+ok  	github.com/luxfi/node/subnets	0.019s
+?   	github.com/luxfi/node/tests	[no test files]
+FAIL	github.com/luxfi/node/tests/antithesis [build failed]
+FAIL	github.com/luxfi/node/tests/antithesis/luxd/gencomposeconfig [build failed]
+FAIL	github.com/luxfi/node/tests/antithesis/xsvm/gencomposeconfig [build failed]
+?   	github.com/luxfi/node/tests/e2e/c	[no test files]
+ok  	github.com/luxfi/node/tests/fixture	0.021s
+FAIL	github.com/luxfi/node/tests/fixture/e2e [build failed]
+FAIL	github.com/luxfi/node/tests/fixture/subnet [build failed]
+FAIL	github.com/luxfi/node/tests/fixture/tmpnet [build failed]
+FAIL	github.com/luxfi/node/tests/fixture/tmpnet/cmd [build failed]
+FAIL	github.com/luxfi/node/tests/fixture/tmpnet/local [build failed]
+FAIL	github.com/luxfi/node/tests/poa [build failed]
+?   	github.com/luxfi/node/upgrade	[no test files]
+?   	github.com/luxfi/node/upgrade/upgradetest	[no test files]
+ok  	github.com/luxfi/node/utils	0.017s
+ok  	github.com/luxfi/node/utils/bag	0.005s
+ok  	github.com/luxfi/node/utils/beacon	0.006s
+ok  	github.com/luxfi/node/utils/bimap	0.006s
+# github.com/luxfi/node/vms/platformvm/txs/mempool [github.com/luxfi/node/vms/platformvm/txs/mempool.test]
+vms/platformvm/txs/mempool/mempool_test.go:36:24: undefined: metrics.NewRegistry
+vms/platformvm/txs/mempool/mempool_test.go:60:24: undefined: metrics.NewRegistry
+vms/platformvm/txs/mempool/mempool_test.go:113:24: undefined: metrics.NewRegistry
+vms/platformvm/txs/mempool/mempool_test.go:247:24: undefined: metrics.NewRegistry
+# github.com/luxfi/node/vms/platformvm/network [github.com/luxfi/node/vms/platformvm/network.test]
+vms/platformvm/network/gossip_test.go:46:11: undefined: metrics.NewRegistry
+vms/platformvm/network/gossip_test.go:80:11: undefined: metrics.NewRegistry
+vms/platformvm/network/gossip_test.go:111:11: undefined: metrics.NewRegistry
+vms/platformvm/network/gossip_test.go:146:11: undefined: metrics.NewRegistry
+vms/platformvm/network/network_test.go:176:13: undefined: metrics.NewRegistry
+ok  	github.com/luxfi/node/utils/bloom	0.500s
+ok  	github.com/luxfi/node/utils/buffer	0.008s
+ok  	github.com/luxfi/node/utils/cb58	0.006s
+ok  	github.com/luxfi/node/utils/compression	0.241s
+ok  	github.com/luxfi/node/utils/constants	0.007s
+ok  	github.com/luxfi/node/utils/crypto/keychain	0.009s
+?   	github.com/luxfi/node/utils/crypto/ledger	[no test files]
+ok  	github.com/luxfi/node/utils/dynamicip	0.008s
+ok  	github.com/luxfi/node/utils/filesystem	0.007s
+ok  	github.com/luxfi/node/utils/formatting	0.007s
+?   	github.com/luxfi/node/utils/formatting/address	[no test files]
+?   	github.com/luxfi/node/utils/hashing	[no test files]
+ok  	github.com/luxfi/node/utils/hashing/consistent	0.009s
+ok  	github.com/luxfi/node/utils/heap	0.007s
+ok  	github.com/luxfi/node/utils/ips	0.008s
+ok  	github.com/luxfi/node/utils/json	0.007s
+ok  	github.com/luxfi/node/utils/linked	0.007s
+ok  	github.com/luxfi/node/utils/linkedhashmap	0.008s
+?   	github.com/luxfi/node/utils/lock	[no test files]
+FAIL	github.com/luxfi/node/utils/logging [build failed]
+ok  	github.com/luxfi/node/utils/math	0.007s
+ok  	github.com/luxfi/node/utils/math/meter	0.008s
+ok  	github.com/luxfi/node/utils/maybe	0.007s
+ok  	github.com/luxfi/node/utils/metric	0.009s
+FAIL	github.com/luxfi/node/utils/metrics [build failed]
+ok  	github.com/luxfi/node/utils/password	0.402s
+?   	github.com/luxfi/node/utils/perms	[no test files]
+ok  	github.com/luxfi/node/utils/profiler	0.215s
+ok  	github.com/luxfi/node/utils/resource	0.010s
+?   	github.com/luxfi/node/utils/resource/resourcemock	[no test files]
+?   	github.com/luxfi/node/utils/rpc	[no test files]
+ok  	github.com/luxfi/node/utils/sampler	0.012s
+ok  	github.com/luxfi/node/utils/set	0.009s
+ok  	github.com/luxfi/node/utils/setmap	0.009s
+?   	github.com/luxfi/node/utils/storage	[no test files]
+ok  	github.com/luxfi/node/utils/timer	0.015s
+ok  	github.com/luxfi/node/utils/timer/mockable	0.005s
+ok  	github.com/luxfi/node/utils/tree	0.010s
+?   	github.com/luxfi/node/utils/ulimit	[no test files]
+?   	github.com/luxfi/node/utils/units	[no test files]
+ok  	github.com/luxfi/node/utils/window	0.006s
+ok  	github.com/luxfi/node/utils/wrappers	0.006s
+ok  	github.com/luxfi/node/version	0.006s
+?   	github.com/luxfi/node/vms	[no test files]
+?   	github.com/luxfi/node/vms/cchainvm	[no test files]
+FAIL	github.com/luxfi/node/vms/components/chain [build failed]
+ok  	github.com/luxfi/node/vms/components/gas	0.006s
+?   	github.com/luxfi/node/vms/components/index	[no test files]
+# github.com/luxfi/node/vms/proposervm [github.com/luxfi/node/vms/proposervm.test]
+vms/proposervm/block_test.go:31:2: "github.com/luxfi/log" imported and not used
+vms/proposervm/pre_fork_block_test.go:26:2: "github.com/luxfi/log" imported and not used
+ok  	github.com/luxfi/node/vms/components/keystore	0.082s
+# github.com/luxfi/node/vms/rpcchainvm/grpcutils [github.com/luxfi/node/vms/rpcchainvm/grpcutils.test]
+vms/rpcchainvm/grpcutils/client_test.go:55:2: declared and not used: conn
+vms/rpcchainvm/grpcutils/client_test.go:58:18: undefined: db
+vms/rpcchainvm/grpcutils/client_test.go:68:2: declared and not used: noWaitConn
+vms/rpcchainvm/grpcutils/client_test.go:75:8: undefined: db
+vms/rpcchainvm/grpcutils/client_test.go:91:8: undefined: pb
+vms/rpcchainvm/grpcutils/client_test.go:92:41: undefined: pb
+ok  	github.com/luxfi/node/vms/components/lux	0.093s
+ok  	github.com/luxfi/node/vms/components/message	0.010s
+ok  	github.com/luxfi/node/vms/components/verify	0.014s
+?   	github.com/luxfi/node/vms/example/xsvm	[no test files]
+?   	github.com/luxfi/node/vms/example/xsvm/api	[no test files]
+?   	github.com/luxfi/node/vms/example/xsvm/block	[no test files]
+?   	github.com/luxfi/node/vms/example/xsvm/builder	[no test files]
+?   	github.com/luxfi/node/vms/example/xsvm/chain	[no test files]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/account [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/chain [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/chain/create [build failed]
+?   	github.com/luxfi/node/vms/example/xsvm/cmd/chain/genesis	[no test files]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue/export [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue/importtx [build failed]
+?   	github.com/luxfi/node/vms/example/xsvm/cmd/issue/status	[no test files]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue/transfer [build failed]
+?   	github.com/luxfi/node/vms/example/xsvm/cmd/run	[no test files]
+?   	github.com/luxfi/node/vms/example/xsvm/cmd/version	[no test files]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/xsvm [build failed]
+?   	github.com/luxfi/node/vms/example/xsvm/execute	[no test files]
+ok  	github.com/luxfi/node/vms/example/xsvm/genesis	0.010s
+?   	github.com/luxfi/node/vms/example/xsvm/state	[no test files]
+?   	github.com/luxfi/node/vms/example/xsvm/tx	[no test files]
+?   	github.com/luxfi/node/vms/fx	[no test files]
+?   	github.com/luxfi/node/vms/metervm	[no test files]
+# github.com/luxfi/node/vms/rpcchainvm [github.com/luxfi/node/vms/rpcchainvm.test]
+vms/rpcchainvm/state_syncable_vm_test.go:273:4: cannot use log.Info (value of type func(msg string, ctx ...interface{})) as logging.Level value in argument to logging.NewWrappedCore
+vms/rpcchainvm/state_syncable_vm_test.go:289:22: cannot use log (variable of interface type logging.Logger) as "github.com/luxfi/log".Logger value in struct literal: logging.Logger does not implement "github.com/luxfi/log".Logger (missing method Crit)
+ok  	github.com/luxfi/node/vms/nftfx	0.010s
+FAIL	github.com/luxfi/node/vms/platformvm [build failed]
+ok  	github.com/luxfi/node/vms/platformvm/api	0.011s
+# github.com/luxfi/node/vms/xvm/block/builder [github.com/luxfi/node/vms/xvm/block/builder.test]
+vms/xvm/block/builder/builder_test.go:565:18: assignment mismatch: 2 variables but metrics.New returns 1 value
+vms/xvm/block/builder/builder_test.go:565:30: cannot use registerer (variable of pointer type "github.com/luxfi/metrics".Registry) as string value in argument to metrics.New
+--- FAIL: TestBanffProposalBlockJSON (0.00s)
+    serialization_test.go:190: 
+        	Error Trace:	/home/z/work/lux/node/vms/platformvm/block/serialization_test.go:190
+        	Error:      	Not equal: 
+        	            	expected: "{\n\t\"time\": 123456,\n\t\"txs\": [\n\t\t{\n\t\t\t\"unsignedTx\": {\n\t\t\t\t\"networkID\": 1,\n\t\t\t\t\"blockchainID\": \"11111111111111111111111111111111LpoYY\",\n\t\t\t\t\"outputs\": [],\n\t\t\t\t\"inputs\": [],\n\t\t\t\t\"memo\": \"0x4b696c726f7957617348657265\"\n\t\t\t},\n\t\t\t\"credentials\": null,\n\t\t\t\"id\": \"11111111111111111111111111111111LpoYY\"\n\t\t},\n\t\t{\n\t\t\t\"unsignedTx\": {\n\t\t\t\t\"networkID\": 1,\n\t\t\t\t\"blockchainID\": \"11111111111111111111111111111111LpoYY\",\n\t\t\t\t\"outputs\": [],\n\t\t\t\t\"inputs\": [],\n\t\t\t\t\"memo\": \"0x4b696c726f795761734865726532\"\n\t\t\t},\n\t\t\t\"credentials\": null,\n\t\t\t\"id\": \"11111111111111111111111111111111LpoYY\"\n\t\t}\n\t],\n\t\"parentID\": \"rVcYrvnGXdoJBeYQRm5ZNaCGHeVyqcHHJu8Yd89kJcef6V5Eg\",\n\t\"height\": 1337,\n\t\"id\": \"kM6h4d2UKYEDzQXm7KNqyeBJLjhb42J24m4L4WACB5didf3pk\",\n\t\"tx\": {\n\t\t\"unsignedTx\": {\n\t\t\t\"time\": 123457\n\t\t},\n\t\t\"credentials\": null,\n\t\t\"id\": \"11111111111111111111111111111111LpoYY\"\n\t}\n}"
+        	            	actual  : "{\n\t\"time\": 123456,\n\t\"txs\": [\n\t\t{\n\t\t\t\"unsignedTx\": {\n\t\t\t\t\"networkID\": 96369,\n\t\t\t\t\"blockchainID\": \"11111111111111111111111111111111LpoYY\",\n\t\t\t\t\"outputs\": [],\n\t\t\t\t\"inputs\": [],\n\t\t\t\t\"memo\": \"0x4b696c726f7957617348657265\"\n\t\t\t},\n\t\t\t\"credentials\": null,\n\t\t\t\"id\": \"11111111111111111111111111111111LpoYY\"\n\t\t},\n\t\t{\n\t\t\t\"unsignedTx\": {\n\t\t\t\t\"networkID\": 96369,\n\t\t\t\t\"blockchainID\": \"11111111111111111111111111111111LpoYY\",\n\t\t\t\t\"outputs\": [],\n\t\t\t\t\"inputs\": [],\n\t\t\t\t\"memo\": \"0x4b696c726f795761734865726532\"\n\t\t\t},\n\t\t\t\"credentials\": null,\n\t\t\t\"id\": \"11111111111111111111111111111111LpoYY\"\n\t\t}\n\t],\n\t\"parentID\": \"rVcYrvnGXdoJBeYQRm5ZNaCGHeVyqcHHJu8Yd89kJcef6V5Eg\",\n\t\"height\": 1337,\n\t\"id\": \"kM6h4d2UKYEDzQXm7KNqyeBJLjhb42J24m4L4WACB5didf3pk\",\n\t\"tx\": {\n\t\t\"unsignedTx\": {\n\t\t\t\"time\": 123457\n\t\t},\n\t\t\"credentials\": null,\n\t\t\"id\": \"11111111111111111111111111111111LpoYY\"\n\t}\n}"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -5,3 +5,3 @@
+        	            	 			"unsignedTx": {
+        	            	-				"networkID": 1,
+        	            	+				"networkID": 96369,
+        	            	 				"blockchainID": "11111111111111111111111111111111LpoYY",
+        	            	@@ -16,3 +16,3 @@
+        	            	 			"unsignedTx": {
+        	            	-				"networkID": 1,
+        	            	+				"networkID": 96369,
+        	            	 				"blockchainID": "11111111111111111111111111111111LpoYY",
+        	Test:       	TestBanffProposalBlockJSON
+FAIL
+FAIL	github.com/luxfi/node/vms/platformvm/block	0.020s
+FAIL	github.com/luxfi/node/vms/platformvm/block/builder [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/block/executor [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/config [build failed]
+?   	github.com/luxfi/node/vms/platformvm/fx	[no test files]
+?   	github.com/luxfi/node/vms/platformvm/genesis	[no test files]
+?   	github.com/luxfi/node/vms/platformvm/metrics	[no test files]
+FAIL	github.com/luxfi/node/vms/platformvm/network [build failed]
+ok  	github.com/luxfi/node/vms/platformvm/reward	0.010s
+--- FAIL: TestInvalidProofOfPossession (0.03s)
+    --- FAIL: TestInvalidProofOfPossession/corrupted_public_key (0.00s)
+        bls_k1_test.go:131: 
+            	Error Trace:	/home/z/work/lux/node/vms/platformvm/signer/bls_k1_test.go:131
+            	Error:      	Target error should be in err chain:
+            	            	expected: "invalid proof of possession"
+            	            	in chain: "couldn't decompress public key"
+            	Test:       	TestInvalidProofOfPossession/corrupted_public_key
+--- FAIL: TestProofOfPossession (0.02s)
+    proof_of_possession_test.go:27: 
+        	Error Trace:	/home/z/work/lux/node/vms/platformvm/signer/proof_of_possession_test.go:27
+        	Error:      	Target error should be in err chain:
+        	            	expected: "couldn't decompress signature"
+        	            	in chain: "invalid signature"
+        	Test:       	TestProofOfPossession
+FAIL
+FAIL	github.com/luxfi/node/vms/platformvm/signer	0.112s
+ok  	github.com/luxfi/node/vms/platformvm/stakeable	0.014s
+FAIL	github.com/luxfi/node/vms/platformvm/state [build failed]
+ok  	github.com/luxfi/node/vms/platformvm/status	0.013s
+--- FAIL: TestAddPermissionlessPrimaryDelegatorSerialization (0.00s)
+    add_permissionless_delegator_tx_test.go:124: 
+        	Error Trace:	/home/z/work/lux/node/vms/platformvm/txs/add_permissionless_delegator_tx_test.go:124
+        	Error:      	Received unexpected error:
+        	            	failed to verify BaseTx: metadata failed verification: tx has wrong network ID
+        	Test:       	TestAddPermissionlessPrimaryDelegatorSerialization
+--- FAIL: TestAddPermissionlessSubnetDelegatorSerialization (0.00s)
+    add_permissionless_delegator_tx_test.go:859: 
+        	Error Trace:	/home/z/work/lux/node/vms/platformvm/txs/add_permissionless_delegator_tx_test.go:859
+        	Error:      	Received unexpected error:
+        	            	failed to verify BaseTx: metadata failed verification: tx has wrong network ID
+        	Test:       	TestAddPermissionlessSubnetDelegatorSerialization
+--- FAIL: TestAddPermissionlessPrimaryValidator (0.00s)
+    add_permissionless_validator_tx_test.go:139: 
+        	Error Trace:	/home/z/work/lux/node/vms/platformvm/txs/add_permissionless_validator_tx_test.go:139
+        	Error:      	Received unexpected error:
+        	            	failed to verify BaseTx: metadata failed verification: tx has wrong network ID
+        	Test:       	TestAddPermissionlessPrimaryValidator
+--- FAIL: TestAddPermissionlessSubnetValidator (0.00s)
+    add_permissionless_validator_tx_test.go:825: 
+        	Error Trace:	/home/z/work/lux/node/vms/platformvm/txs/add_permissionless_validator_tx_test.go:825
+        	Error:      	Received unexpected error:
+        	            	failed to verify BaseTx: metadata failed verification: tx has wrong network ID
+        	Test:       	TestAddPermissionlessSubnetValidator
+--- FAIL: TestBaseTxSerialization (0.00s)
+    base_tx_test.go:75: 
+        	Error Trace:	/home/z/work/lux/node/vms/platformvm/txs/base_tx_test.go:75
+        	Error:      	Received unexpected error:
+        	            	metadata failed verification: tx has wrong network ID
+        	Test:       	TestBaseTxSerialization
+--- FAIL: TestRemoveSubnetValidatorTxSerialization (0.00s)
+    remove_subnet_validator_tx_test.go:98: 
+        	Error Trace:	/home/z/work/lux/node/vms/platformvm/txs/remove_subnet_validator_tx_test.go:98
+        	Error:      	Received unexpected error:
+        	            	metadata failed verification: tx has wrong network ID
+        	Test:       	TestRemoveSubnetValidatorTxSerialization
+--- FAIL: TestTransferSubnetOwnershipTxSerialization (0.00s)
+    transfer_subnet_ownership_tx_test.go:97: 
+        	Error Trace:	/home/z/work/lux/node/vms/platformvm/txs/transfer_subnet_ownership_tx_test.go:97
+        	Error:      	Received unexpected error:
+        	            	metadata failed verification: tx has wrong network ID
+        	Test:       	TestTransferSubnetOwnershipTxSerialization
+--- FAIL: TestTransformSubnetTxSerialization (0.00s)
+    transform_subnet_tx_test.go:118: 
+        	Error Trace:	/home/z/work/lux/node/vms/platformvm/txs/transform_subnet_tx_test.go:118
+        	Error:      	Received unexpected error:
+        	            	metadata failed verification: tx has wrong network ID
+        	Test:       	TestTransformSubnetTxSerialization
+FAIL
+FAIL	github.com/luxfi/node/vms/platformvm/txs	0.051s
+FAIL	github.com/luxfi/node/vms/platformvm/txs/builder [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/txs/executor [build failed]
+ok  	github.com/luxfi/node/vms/platformvm/txs/fee	0.011s
+FAIL	github.com/luxfi/node/vms/platformvm/txs/mempool [build failed]
+ok  	github.com/luxfi/node/vms/platformvm/txs/txheap	0.011s
+FAIL	github.com/luxfi/node/vms/platformvm/txs/txstest [build failed]
+?   	github.com/luxfi/node/vms/platformvm/upgrade	[no test files]
+FAIL	github.com/luxfi/node/vms/platformvm/utxo [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/validators [build failed]
+ok  	github.com/luxfi/node/vms/platformvm/warp	0.199s
+?   	github.com/luxfi/node/vms/platformvm/warp/gwarp	[no test files]
+ok  	github.com/luxfi/node/vms/platformvm/warp/payload	0.006s
+ok  	github.com/luxfi/node/vms/propertyfx	0.009s
+FAIL	github.com/luxfi/node/vms/proposervm [build failed]
+ok  	github.com/luxfi/node/vms/proposervm/block	0.009s
+--- FAIL: TestHeightBlockIndexPostFork (0.00s)
+panic: runtime error: invalid memory address or nil pointer dereference [recovered]
+	panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x20 pc=0xa08f6e]
+
+goroutine 9 [running]:
+testing.tRunner.func1.2({0xb14220, 0x120f880})
+	/usr/local/go/src/testing/testing.go:1734 +0x21c
+testing.tRunner.func1()
+	/usr/local/go/src/testing/testing.go:1737 +0x35e
+panic({0xb14220?, 0x120f880?})
+	/usr/local/go/src/runtime/panic.go:792 +0x132
+github.com/luxfi/node/vms/proposervm/indexer.(*heightIndexer).doRepair(0xc000119800, {0xd06918, 0x1252960}, {0x8d, 0xfa, 0x21, 0x16, 0x44, 0xe9, 0x57, ...}, ...)
+	/home/z/work/lux/node/vms/proposervm/indexer/height_indexer.go:169 +0x30e
+github.com/luxfi/node/vms/proposervm/indexer.(*heightIndexer).RepairHeightIndex(0xc000119800, {0xd06918, 0x1252960})
+	/home/z/work/lux/node/vms/proposervm/indexer/height_indexer.go:105 +0x12c
+github.com/luxfi/node/vms/proposervm/indexer.TestHeightBlockIndexPostFork(0xc00013afc0?)
+	/home/z/work/lux/node/vms/proposervm/indexer/height_indexer_test.go:93 +0x5a7
+testing.tRunner(0xc00013afc0, 0xc3edd0)
+	/usr/local/go/src/testing/testing.go:1792 +0xf4
+created by testing.(*T).Run in goroutine 1
+	/usr/local/go/src/testing/testing.go:1851 +0x413
+FAIL	github.com/luxfi/node/vms/proposervm/indexer	0.014s
+ok  	github.com/luxfi/node/vms/proposervm/proposer	0.182s
+ok  	github.com/luxfi/node/vms/proposervm/scheduler	0.161s
+ok  	github.com/luxfi/node/vms/proposervm/state	0.009s
+ok  	github.com/luxfi/node/vms/proposervm/summary	0.005s
+ok  	github.com/luxfi/node/vms/proposervm/tree	0.012s
+FAIL	github.com/luxfi/node/vms/registry [build failed]
+FAIL	github.com/luxfi/node/vms/rpcchainvm [build failed]
+ok  	github.com/luxfi/node/vms/rpcchainvm/ghttp	0.008s
+?   	github.com/luxfi/node/vms/rpcchainvm/ghttp/gconn	[no test files]
+?   	github.com/luxfi/node/vms/rpcchainvm/ghttp/greader	[no test files]
+?   	github.com/luxfi/node/vms/rpcchainvm/ghttp/gresponsewriter	[no test files]
+?   	github.com/luxfi/node/vms/rpcchainvm/ghttp/gwriter	[no test files]
+FAIL	github.com/luxfi/node/vms/rpcchainvm/grpcutils [build failed]
+?   	github.com/luxfi/node/vms/rpcchainvm/gruntime	[no test files]
+?   	github.com/luxfi/node/vms/rpcchainvm/messenger	[no test files]
+?   	github.com/luxfi/node/vms/rpcchainvm/runtime	[no test files]
+?   	github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess	[no test files]
+--- FAIL: TestFxVerifyTransferInvalidSignature (0.00s)
+    fx_test.go:493: 
+        	Error Trace:	/home/z/work/lux/node/vms/secp256k1fx/fx_test.go:493
+        	Error:      	Target error should be in err chain:
+        	            	expected: "invalid signature"
+        	            	in chain: "recovery failed"
+        	Test:       	TestFxVerifyTransferInvalidSignature
+--- FAIL: TestKeychainAdd (0.00s)
+    keychain_test.go:57: 
+        	Error Trace:	/home/z/work/lux/node/vms/secp256k1fx/keychain_test.go:57
+        	Error:      	Object expected to be of type *secp256k1.PrivateKey, but was *secp256k1fx.luxSigner
+        	Test:       	TestKeychainAdd
+FAIL
+FAIL	github.com/luxfi/node/vms/secp256k1fx	0.015s
+?   	github.com/luxfi/node/vms/tracedvm	[no test files]
+ok  	github.com/luxfi/node/vms/txs/mempool	0.015s
+?   	github.com/luxfi/node/vms/types	[no test files]
+--- FAIL: TestIndexTransaction_Ordered (0.01s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestIndexTransaction_Ordered
+--- FAIL: TestIndexTransaction_MultipleTransactions (0.01s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestIndexTransaction_MultipleTransactions
+--- FAIL: TestIndexTransaction_MultipleAddresses (0.01s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestIndexTransaction_MultipleAddresses
+--- FAIL: TestIndexer_Read (0.00s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestIndexer_Read
+--- FAIL: TestSetsAndGets (0.00s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestSetsAndGets
+--- FAIL: TestFundingNoAddresses (0.00s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestFundingNoAddresses
+--- FAIL: TestFundingAddresses (0.00s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestFundingAddresses
+--- FAIL: TestVerifyFxUsage (0.00s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestVerifyFxUsage
+--- FAIL: TestIssueTx (0.00s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestIssueTx
+--- FAIL: TestIssueNFT (0.01s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestIssueNFT
+--- FAIL: TestIssueProperty (0.00s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestIssueProperty
+--- FAIL: TestIssueTxWithFeeAsset (0.00s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestIssueTxWithFeeAsset
+--- FAIL: TestIssueTxWithAnotherAsset (0.00s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestIssueTxWithAnotherAsset
+--- FAIL: TestVMFormat (0.00s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestVMFormat
+--- FAIL: TestIssueImportTx (0.00s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestIssueImportTx
+--- FAIL: TestIssueExportTx (0.00s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestIssueExportTx
+--- FAIL: TestClearForceAcceptedExportTx (0.00s)
+    environment_test.go:204: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/environment_test.go:204
+        	            				/usr/local/go/src/testing/testing.go:1211
+        	            				/usr/local/go/src/testing/testing.go:1445
+        	            				/usr/local/go/src/testing/testing.go:1786
+        	Error:      	Received unexpected error:
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	            	closed
+        	Test:       	TestClearForceAcceptedExportTx
+FAIL
+FAIL	github.com/luxfi/node/vms/xvm	0.101s
+ok  	github.com/luxfi/node/vms/xvm/block	0.014s
+FAIL	github.com/luxfi/node/vms/xvm/block/builder [build failed]
+--- FAIL: TestBlockAccept (0.00s)
+    --- FAIL: TestBlockAccept/no_error (0.00s)
+panic: runtime error: invalid memory address or nil pointer dereference [recovered]
+	panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x98 pc=0xa3a69f]
+
+goroutine 56 [running]:
+testing.tRunner.func1.2({0xb72dc0, 0x1357300})
+	/usr/local/go/src/testing/testing.go:1734 +0x21c
+testing.tRunner.func1()
+	/usr/local/go/src/testing/testing.go:1737 +0x35e
+panic({0xb72dc0?, 0x1357300?})
+	/usr/local/go/src/runtime/panic.go:792 +0x132
+github.com/luxfi/node/vms/xvm/block/executor.(*Block).Accept(0xc00037b020, {0xc00046e000?, 0x0?})
+	/home/z/work/lux/node/vms/xvm/block/executor/block.go:253 +0xb1f
+github.com/luxfi/node/vms/xvm/block/executor.TestBlockAccept.func6(0xc00046e000?)
+	/home/z/work/lux/node/vms/xvm/block/executor/block_test.go:783 +0x71
+testing.tRunner(0xc00046e000, 0xc00046a5a0)
+	/usr/local/go/src/testing/testing.go:1792 +0xf4
+created by testing.(*T).Run in goroutine 51
+	/usr/local/go/src/testing/testing.go:1851 +0x413
+FAIL	github.com/luxfi/node/vms/xvm/block/executor	0.019s
+?   	github.com/luxfi/node/vms/xvm/config	[no test files]
+?   	github.com/luxfi/node/vms/xvm/fxs	[no test files]
+?   	github.com/luxfi/node/vms/xvm/metrics	[no test files]
+ok  	github.com/luxfi/node/vms/xvm/network	0.014s
+ok  	github.com/luxfi/node/vms/xvm/state	0.016s
+--- FAIL: TestBaseTxSerialization (0.00s)
+    base_tx_test.go:137: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/txs/base_tx_test.go:137
+        	Error:      	Not equal: 
+        	            	expected: "zeqT8FTnRAxes7QQQYkaWhNkHavd9d6aCdH8TQu2Mx5KEydEz"
+        	            	actual  : "28f9BswnotzWBpsXKeubSZW8xz32snhyyQ6ac89oz7seExtAs5"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-zeqT8FTnRAxes7QQQYkaWhNkHavd9d6aCdH8TQu2Mx5KEydEz
+        	            	+28f9BswnotzWBpsXKeubSZW8xz32snhyyQ6ac89oz7seExtAs5
+        	Test:       	TestBaseTxSerialization
+--- FAIL: TestCreateAssetTxSerializationAgain (0.00s)
+    create_asset_tx_test.go:377: 
+        	Error Trace:	/home/z/work/lux/node/vms/xvm/txs/create_asset_tx_test.go:377
+        	Error:      	Not equal: 
+        	            	expected: []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0xa, 0x5, 0x4, 0x3, 0x2, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3, 0x1, 0x2, 0x3, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0x0, 0x0, 0x12, 0x30, 0x9c, 0xe5, 0x40, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x1, 0xfc, 0xed, 0xa8, 0xf9, 0xf, 0xcb, 0x5d, 0x30, 0x61, 0x4b, 0x99, 0xd7, 0x9f, 0xc4, 0xba, 0xa2, 0x93, 0x7, 0x76, 0x26, 0x1, 0x2, 0x3, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0x0, 0x0, 0x12, 0x30, 0x9c, 0xe5, 0x40, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x1, 0x6e, 0xad, 0x69, 0x3c, 0x17, 0xab, 0xb1, 0xbe, 0x42, 0x2b, 0xb5, 0xb, 0x30, 0xb9, 0x71, 0x1f, 0xf9, 0x8d, 0x66, 0x7e, 0x1, 0x2, 0x3, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0x0, 0x0, 0x12, 0x30, 0x9c, 0xe5, 0x40, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x1, 0xf2, 0x42, 0x8, 0x46, 0x87, 0x6e, 0x69, 0xf4, 0x73, 0xdd, 0xa2, 0x56, 0x17, 0x29, 0x67, 0xe9, 0x92, 0xf0, 0xee, 0x31, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4, 0x0, 0x1, 0x2, 0x3, 0x0, 0x4, 0x6e, 0x61, 0x6d, 0x65, 0x0, 0x4, 0x73, 0x79, 0x6d, 0x62, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x6, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x1, 0xfc, 0xed, 0xa8, 0xf9, 0xf, 0xcb, 0x5d, 0x30, 0x61, 0x4b, 0x99, 0xd7, 0x9f, 0xc4, 0xba, 0xa2, 0x93, 0x7, 0x76, 0x26, 0x0, 0x0, 0x0, 0x0}
+        	            	actual  : []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x1, 0x71, 0x5, 0x4, 0x3, 0x2, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3, 0x1, 0x2, 0x3, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0x0, 0x0, 0x12, 0x30, 0x9c, 0xe5, 0x40, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x1, 0xfc, 0xed, 0xa8, 0xf9, 0xf, 0xcb, 0x5d, 0x30, 0x61, 0x4b, 0x99, 0xd7, 0x9f, 0xc4, 0xba, 0xa2, 0x93, 0x7, 0x76, 0x26, 0x1, 0x2, 0x3, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0x0, 0x0, 0x12, 0x30, 0x9c, 0xe5, 0x40, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x1, 0x6e, 0xad, 0x69, 0x3c, 0x17, 0xab, 0xb1, 0xbe, 0x42, 0x2b, 0xb5, 0xb, 0x30, 0xb9, 0x71, 0x1f, 0xf9, 0x8d, 0x66, 0x7e, 0x1, 0x2, 0x3, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0x0, 0x0, 0x12, 0x30, 0x9c, 0xe5, 0x40, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x1, 0xf2, 0x42, 0x8, 0x46, 0x87, 0x6e, 0x69, 0xf4, 0x73, 0xdd, 0xa2, 0x56, 0x17, 0x29, 0x67, 0xe9, 0x92, 0xf0, 0xee, 0x31, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4, 0x0, 0x1, 0x2, 0x3, 0x0, 0x4, 0x6e, 0x61, 0x6d, 0x65, 0x0, 0x4, 0x73, 0x79, 0x6d, 0x62, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x6, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x1, 0xfc, 0xed, 0xa8, 0xf9, 0xf, 0xcb, 0x5d, 0x30, 0x61, 0x4b, 0x99, 0xd7, 0x9f, 0xc4, 0xba, 0xa2, 0x93, 0x7, 0x76, 0x26, 0x0, 0x0, 0x0, 0x0}
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1,3 +1,3 @@
+        	            	 ([]uint8) (len=367) {
+        	            	- 00000000  00 00 00 00 00 01 00 00  00 0a 05 04 03 02 01 00  |................|
+        	            	+ 00000000  00 00 00 00 00 01 00 00  01 71 05 04 03 02 01 00  |.........q......|
+        	            	  00000010  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+        	Test:       	TestCreateAssetTxSerializationAgain
+FAIL
+FAIL	github.com/luxfi/node/vms/xvm/txs	0.014s
+--- FAIL: TestSemanticVerifierBaseTx (0.00s)
+panic: runtime error: invalid memory address or nil pointer dereference [recovered]
+	panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x20 pc=0xa0b63f]
+
+goroutine 19 [running]:
+testing.tRunner.func1.2({0xbc2280, 0x1406370})
+	/usr/local/go/src/testing/testing.go:1734 +0x21c
+testing.tRunner.func1()
+	/usr/local/go/src/testing/testing.go:1737 +0x35e
+panic({0xbc2280?, 0x1406370?})
+	/usr/local/go/src/runtime/panic.go:792 +0x132
+github.com/luxfi/node/vms/secp256k1fx.(*Fx).Initialize(0xc00048a200, {0xbe9880?, 0xc000364690?})
+	/home/z/work/lux/node/vms/secp256k1fx/fx.go:56 +0x9f
+github.com/luxfi/node/vms/xvm/txs.NewCustomParser(0xc000364480, 0xc00048a220, {0x0, 0x0}, {0xc000179ee0, 0x1, 0x0?})
+	/home/z/work/lux/node/vms/xvm/txs/parser.go:96 +0xe29
+github.com/luxfi/node/vms/xvm/txs/executor.TestSemanticVerifierBaseTx(0xc0004f5880)
+	/home/z/work/lux/node/vms/xvm/txs/executor/semantic_verifier_test.go:37 +0xdd
+testing.tRunner(0xc0004f5880, 0xd0b3b8)
+	/usr/local/go/src/testing/testing.go:1792 +0xf4
+created by testing.(*T).Run in goroutine 1
+	/usr/local/go/src/testing/testing.go:1851 +0x413
+FAIL	github.com/luxfi/node/vms/xvm/txs/executor	0.020s
+ok  	github.com/luxfi/node/vms/xvm/txs/mempool	0.012s
+?   	github.com/luxfi/node/vms/xvm/txs/txstest	[no test files]
+?   	github.com/luxfi/node/vms/xvm/utxo	[no test files]
+?   	github.com/luxfi/node/wallet	[no test files]
+FAIL	github.com/luxfi/node/wallet/chain/c [build failed]
+FAIL	github.com/luxfi/node/wallet/chain/p [build failed]
+FAIL	github.com/luxfi/node/wallet/chain/p/builder [build failed]
+?   	github.com/luxfi/node/wallet/chain/p/signer	[no test files]
+FAIL	github.com/luxfi/node/wallet/chain/x [build failed]
+?   	github.com/luxfi/node/wallet/chain/x/builder	[no test files]
+?   	github.com/luxfi/node/wallet/chain/x/signer	[no test files]
+FAIL	github.com/luxfi/node/wallet/subnet/primary [build failed]
+?   	github.com/luxfi/node/wallet/subnet/primary/common	[no test files]
+FAIL	github.com/luxfi/node/wallet/subnet/primary/examples/add-permissioned-subnet-validator [build failed]
+FAIL	github.com/luxfi/node/wallet/subnet/primary/examples/add-primary-validator [build failed]
+FAIL	github.com/luxfi/node/wallet/subnet/primary/examples/c-chain-export [build failed]
+FAIL	github.com/luxfi/node/wallet/subnet/primary/examples/c-chain-import [build failed]
+FAIL	github.com/luxfi/node/wallet/subnet/primary/examples/create-asset [build failed]
+FAIL	github.com/luxfi/node/wallet/subnet/primary/examples/create-chain [build failed]
+FAIL	github.com/luxfi/node/wallet/subnet/primary/examples/create-locked-stakeable [build failed]
+FAIL	github.com/luxfi/node/wallet/subnet/primary/examples/create-subnet [build failed]
+FAIL	github.com/luxfi/node/wallet/subnet/primary/examples/get-p-chain-balance [build failed]
+FAIL	github.com/luxfi/node/wallet/subnet/primary/examples/get-x-chain-balance [build failed]
+FAIL	github.com/luxfi/node/wallet/subnet/primary/examples/remove-subnet-validator [build failed]
+ok  	github.com/luxfi/node/x/archivedb	0.091s
+ok  	github.com/luxfi/node/x/merkledb	0.023s
+ok  	github.com/luxfi/node/x/sync	2.129s
+?   	github.com/luxfi/node/x/sync/g_db	[no test files]
+FAIL

@@ -94,12 +94,13 @@ func NewMessageQueue(
 		msgAndCtxs:            buffer.NewUnboundedDeque[*msgAndContext](1 /*=initSize*/),
 	}
 	// Convert prometheus.Registerer to metrics.Registry
-	promReg, ok := reg.(*prometheus.Registry)
+	// Since metrics.Registry is now an alias for *prometheus.Registry,
+	// we can use reg directly if it's already the right type
+	metricsRegistry, ok := reg.(metrics.Registry)
 	if !ok {
-		// If it's not a *prometheus.Registry, we need to create a new one
-		promReg = prometheus.NewRegistry()
+		// If it's not a metrics.Registry, create a new one
+		metricsRegistry = prometheus.NewRegistry()
 	}
-	metricsRegistry := metrics.WrapPrometheusRegistry(promReg)
 	
 	return m, m.metrics.initialize(metricsNamespace, metricsRegistry)
 }
