@@ -28,7 +28,7 @@ import (
 
 func TestGossiperShutdown(*testing.T) {
 	gossiper := NewPullGossiper[*testTx](
-		nil,
+		log.NewNoOpLogger(),
 		nil,
 		nil,
 		nil,
@@ -108,7 +108,7 @@ func TestGossiperGossip(t *testing.T) {
 			responseSender := &core.FakeSender{
 				SentAppResponse: make(chan []byte, 1),
 			}
-			responseNetwork, err := p2p.NewNetwork(nil, responseSender, luxmetrics.NewNoOpMetrics("test").Registry(), "")
+			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, luxmetrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 
 			responseBloom, err := NewBloomFilter(luxmetrics.NewNoOpMetrics("test").Registry(), "", 1000, 0.01, 0.05)
@@ -138,7 +138,7 @@ func TestGossiperGossip(t *testing.T) {
 				SentAppRequest: make(chan []byte, 1),
 			}
 
-			requestNetwork, err := p2p.NewNetwork(nil, requestSender, luxmetrics.NewNoOpMetrics("test").Registry(), "")
+			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, luxmetrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 			require.NoError(requestNetwork.Connected(context.Background(), ids.EmptyNodeID, nil))
 
@@ -200,7 +200,7 @@ func TestEvery(*testing.T) {
 		},
 	}
 
-	go Every(ctx, nil, gossiper, time.Millisecond)
+	go Every(ctx, log.NewNoOpLogger(), gossiper, time.Millisecond)
 	<-ctx.Done()
 }
 
