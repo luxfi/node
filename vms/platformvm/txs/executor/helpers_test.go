@@ -11,6 +11,7 @@ import (
 	"time"
 	
 	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/stretchr/testify/require"
 
@@ -288,11 +289,11 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		metrics.NewRegistry(),
+		prometheus.NewRegistry(),
 		cfg,
 		execCfg,
 		ctx,
-		metrics.Noop,
+		prometheus.NewRegistry(),
 		rewards,
 	)
 	if err != nil {

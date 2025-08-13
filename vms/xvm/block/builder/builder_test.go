@@ -10,6 +10,7 @@ import (
 	"time"
 	
 	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -562,7 +563,8 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	state.AddBlock(parentBlk)
 	state.SetLastAccepted(parentBlk.ID())
 
-	metrics, err := metrics.New(registerer)
+	metrics := prometheus.NewRegistry()
+	_ = registerer // registerer variable
 	require.NoError(err)
 
 	manager := blkexecutor.NewManager(mempool, metrics, state, backend, clk, onAccept)

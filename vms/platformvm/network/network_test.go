@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 		"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -173,7 +174,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				tt.mempoolFunc(ctrl),
 				tt.partialSyncPrimaryNetwork,
 				tt.appSenderFunc(ctrl),
-				metrics.NewRegistry(),
+				prometheus.NewRegistry(),
 				testConfig,
 			)
 			require.NoError(err)
