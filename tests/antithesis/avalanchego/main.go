@@ -84,7 +84,7 @@ func main() {
 		genesisXWallet  = wallet.X()
 		genesisXBuilder = genesisXWallet.Builder()
 		genesisXContext = genesisXBuilder.Context()
-		avaxAssetID     = genesisXContext.AVAXAssetID
+		avaxAssetID     = genesisXContext.LUXAssetID
 	)
 	for i := 1; i < NumKeys; i++ {
 		key, err := secp256k1.NewPrivateKey()
@@ -99,7 +99,7 @@ func main() {
 				ID: avaxAssetID,
 			},
 			Out: &secp256k1fx.TransferOutput{
-				Amt: 100 * units.KiloAvax,
+				Amt: 100 * units.KiloLux,
 				OutputOwners: secp256k1fx.OutputOwners{
 					Threshold: 1,
 					Addrs: []ids.ShortID{
@@ -173,11 +173,11 @@ func (w *workload) run(ctx context.Context) {
 	defer tc.RecoverAndRethrow()
 	require := require.New(tc)
 
-	xAVAX, pAVAX := e2e.GetWalletBalances(tc, w.wallet)
+	xLUX, pLUX := e2e.GetWalletBalances(tc, w.wallet)
 	assert.Reachable("wallet starting", map[string]any{
 		"worker":   w.id,
-		"xBalance": xAVAX,
-		"pBalance": pAVAX,
+		"xBalance": xLUX,
+		"pBalance": pLUX,
 	})
 
 	for {
@@ -256,7 +256,7 @@ func (w *workload) issueXChainBaseTx(ctx context.Context) {
 
 	var (
 		xContext      = xBuilder.Context()
-		avaxAssetID   = xContext.AVAXAssetID
+		avaxAssetID   = xContext.LUXAssetID
 		avaxBalance   = balances[avaxAssetID]
 		baseTxFee     = xContext.BaseTxFee
 		neededBalance = baseTxFee + units.Schmeckle
@@ -328,7 +328,7 @@ func (w *workload) issueXChainCreateAssetTx(ctx context.Context) {
 
 	var (
 		xContext      = xBuilder.Context()
-		avaxAssetID   = xContext.AVAXAssetID
+		avaxAssetID   = xContext.LUXAssetID
 		avaxBalance   = balances[avaxAssetID]
 		neededBalance = xContext.CreateAssetTxFee
 	)
@@ -399,7 +399,7 @@ func (w *workload) issueXChainOperationTx(ctx context.Context) {
 
 	var (
 		xContext         = xBuilder.Context()
-		avaxAssetID      = xContext.AVAXAssetID
+		avaxAssetID      = xContext.LUXAssetID
 		avaxBalance      = balances[avaxAssetID]
 		createAssetTxFee = xContext.CreateAssetTxFee
 		baseTxFee        = xContext.BaseTxFee
@@ -499,10 +499,10 @@ func (w *workload) issueXToPTransfer(ctx context.Context) {
 
 	var (
 		xContext      = xBuilder.Context()
-		avaxAssetID   = xContext.AVAXAssetID
+		avaxAssetID   = xContext.LUXAssetID
 		avaxBalance   = balances[avaxAssetID]
 		xBaseTxFee    = xContext.BaseTxFee
-		neededBalance = xBaseTxFee + units.Avax
+		neededBalance = xBaseTxFee + units.Lux
 	)
 	if avaxBalance < neededBalance {
 		w.log.Info("skipping X-chain tx issuance due to insufficient balance",
@@ -523,7 +523,7 @@ func (w *workload) issueXToPTransfer(ctx context.Context) {
 				ID: avaxAssetID,
 			},
 			Out: &secp256k1fx.TransferOutput{
-				Amt: units.Avax,
+				Amt: units.Lux,
 			},
 		}},
 	)
@@ -602,7 +602,7 @@ func (w *workload) issuePToXTransfer(ctx context.Context) {
 	var (
 		xContext      = xBuilder.Context()
 		pContext      = pBuilder.Context()
-		avaxAssetID   = pContext.AVAXAssetID
+		avaxAssetID   = pContext.LUXAssetID
 		avaxBalance   = balances[avaxAssetID]
 		txFees        = xContext.BaseTxFee
 		neededBalance = txFees + units.Schmeckle

@@ -61,7 +61,7 @@ type BaseL1Validator struct {
 	RemainingBalanceOwner *Owner               `json:"remainingBalanceOwner,omitempty"`
 	DeactivationOwner     *Owner               `json:"deactivationOwner,omitempty"`
 	MinNonce              *json.Uint64         `json:"minNonce,omitempty"`
-	// Balance is the remaining amount of AVAX this L1 validator has for paying
+	// Balance is the remaining amount of LUX this L1 validator has for paying
 	// the continuous fee, according to the last accepted state. If the
 	// validator is inactive, the balance will be 0.
 	Balance *json.Uint64 `json:"balance,omitempty"`

@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/node/snow/networking/router"
+	"github.com/luxfi/node/consensus/networking/router"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
@@ -42,7 +42,7 @@ import (
 	p2psdk "github.com/luxfi/node/network/p2p"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	platformvmpb "github.com/luxfi/node/proto/pb/platformvm"
-	snowvalidators "github.com/luxfi/node/snow/validators"
+	snowvalidators "github.com/luxfi/node/consensus/validators"
 	platformapi "github.com/luxfi/node/vms/platformvm/api"
 	platformvmvalidators "github.com/luxfi/node/vms/platformvm/validators"
 	warpmessage "github.com/luxfi/node/vms/platformvm/warp/message"
@@ -50,7 +50,7 @@ import (
 
 const (
 	genesisWeight   = units.Schmeckle
-	genesisBalance  = units.Avax
+	genesisBalance  = units.Lux
 	registerWeight  = genesisWeight / 10
 	updatedWeight   = 2 * registerWeight
 	registerBalance = 0
@@ -661,7 +661,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		tc.By("issuing an IncreaseL1ValidatorBalanceTx", func() {
 			_, err := pWallet.IssueIncreaseL1ValidatorBalanceTx(
 				registerValidationID,
-				units.Avax,
+				units.Lux,
 			)
 			require.NoError(err)
 		})

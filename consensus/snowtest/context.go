@@ -16,8 +16,8 @@ import (
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/validators"
-	"github.com/luxfi/node/snow/validators/validatorstest"
+	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/node/consensus/validators/validatorstest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
@@ -29,7 +29,7 @@ var (
 	PChainID    = constants.PlatformChainID
 	XChainID    = ids.GenerateTestID()
 	CChainID    = ids.GenerateTestID()
-	AVAXAssetID = ids.GenerateTestID()
+	LUXAssetID = ids.GenerateTestID()
 
 	errMissing = errors.New("missing")
 
@@ -98,7 +98,7 @@ func Context(tb testing.TB, chainID ids.ID) *snow.Context {
 
 		XChainID:    XChainID,
 		CChainID:    CChainID,
-		AVAXAssetID: AVAXAssetID,
+		LUXAssetID: LUXAssetID,
 
 		Log:          logging.NoLog{},
 		SharedMemory: sharedMemory,

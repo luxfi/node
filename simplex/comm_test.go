@@ -7,15 +7,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ava-labs/simplex"
+	"github.com/luxfi/simplex"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/networking/sender/sendermock"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/networking/sender/sendermock"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/set"
 )

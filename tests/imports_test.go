@@ -19,8 +19,8 @@ func TestMustNotImport(t *testing.T) {
 		// Importing these packages configures libevm globally. This must not be
 		// done to support both coreth and subnet-evm.
 		"tests/...": {
-			"github.com/ava-labs/coreth/params",
-			"github.com/ava-labs/coreth/plugin/evm/customtypes",
+			"github.com/luxfi/coreth/params",
+			"github.com/luxfi/coreth/plugin/evm/customtypes",
 		},
 	}
 	for packageName, forbiddenImports := range mustNotImport {

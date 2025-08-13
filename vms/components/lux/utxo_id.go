@@ -1,7 +1,7 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package lux
+package avax
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/luxfi/ids"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/vms/components/verify"
 )
@@ -84,12 +84,11 @@ func UTXOIDFromString(s string) (*UTXOID, error) {
 }
 
 func (utxo *UTXOID) Verify() error {
-	switch {
-	case utxo == nil:
+	if utxo == nil {
 		return errNilUTXOID
-	default:
-		return nil
 	}
+
+	return nil
 }
 
 func (utxo *UTXOID) Compare(other *UTXOID) int {

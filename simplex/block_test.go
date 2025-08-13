@@ -10,15 +10,15 @@ import (
 	"testing"
 
 	"github.com/StephenButtolph/canoto"
-	"github.com/ava-labs/simplex"
+	"github.com/luxfi/simplex"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
-	"github.com/luxfi/node/snow/engine/enginetest"
-	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
-	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/node/consensus/protocols/snowman"
+	"github.com/luxfi/node/consensus/protocols/snowman/snowmantest"
+	"github.com/luxfi/node/consensus/engine/enginetest"
+	"github.com/luxfi/node/consensus/engine/snowman/block/blocktest"
+	"github.com/luxfi/node/consensus/snowtest"
 )
 
 func TestBlockSerialization(t *testing.T) {

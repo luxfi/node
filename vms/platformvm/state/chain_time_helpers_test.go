@@ -89,7 +89,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 	config := validatorfee.Config{
 		Capacity:                 genesis.LocalParams.ValidatorFeeConfig.Capacity,
 		Target:                   genesis.LocalParams.ValidatorFeeConfig.Target,
-		MinPrice:                 gas.Price(2 * units.NanoAvax), // Increase minimum price to test fractional seconds
+		MinPrice:                 gas.Price(2 * units.NanoLux), // Increase minimum price to test fractional seconds
 		ExcessConversionConstant: genesis.LocalParams.ValidatorFeeConfig.ExcessConversionConstant,
 	}
 
@@ -173,7 +173,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 					SubnetID:          ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					Weight:            1,
-					EndAccumulatedFee: units.Avax, // This validator won't be evicted soon.
+					EndAccumulatedFee: units.Lux, // This validator won't be evicted soon.
 				},
 			},
 			maxTime:  mockable.MaxTime,

@@ -15,20 +15,20 @@ require (
 	github.com/klauspost/compress v1.18.0
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/crypto v1.2.9
-	github.com/luxfi/database v1.1.9
-	github.com/luxfi/geth v1.16.2-lux.4
+	github.com/luxfi/database v1.1.10
+	github.com/luxfi/geth v1.16.24
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/log v1.0.7
 	github.com/luxfi/metric v1.3.0
 	github.com/luxfi/trace v0.1.1
-	golang.org/x/mod v0.26.0
+	golang.org/x/mod v0.27.0
 )
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/antithesishq/antithesis-sdk-go v0.3.8
-	github.com/btcsuite/btcd/btcutil v1.1.1
+	github.com/btcsuite/btcd/btcutil v1.1.3
 	github.com/cockroachdb/pebble v1.1.5
 	github.com/compose-spec/compose-go v1.20.2
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
@@ -38,7 +38,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/rpc v1.2.1
-	github.com/gorilla/websocket v1.5.1
+	github.com/gorilla/websocket v1.5.3
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.0.6
@@ -71,8 +71,8 @@ require (
 	go.uber.org/mock v0.5.2
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.41.0
-	golang.org/x/exp v0.0.0-20250718183923-645b1fa84792
-	golang.org/x/net v0.42.0
+	golang.org/x/exp v0.0.0-20250811191247-51f88131bc50
+	golang.org/x/net v0.43.0
 	golang.org/x/sync v0.16.0
 	golang.org/x/term v0.34.0
 	golang.org/x/time v0.12.0
@@ -113,7 +113,9 @@ require (
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/ferranbt/fastssz v0.1.4 // indirect
+	github.com/fjl/gencodec v0.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
+	github.com/garslo/gogen v0.0.0-20170306192744-1d203ffc1f61 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -133,6 +135,7 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
+	github.com/luxfi/evm v0.7.8-lux.9 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
@@ -163,26 +166,14 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
-	golang.org/x/tools v0.35.0 // indirect
+	golang.org/x/tools v0.36.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250721164621-a45f3dfb1074 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 )
 
 // Go no longer supports bazaar repos
-replace launchpad.net/gocheck => gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
 
 // Pin all OpenTelemetry modules (and metric sub-packages) to v1.37.0
-replace go.opentelemetry.io/otel => go.opentelemetry.io/otel v1.37.0
-
-replace go.opentelemetry.io/otel/metric => go.opentelemetry.io/otel/metric v1.37.0
-
-replace go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.37.0
-
-replace go.opentelemetry.io/otel/sdk/metric => go.opentelemetry.io/otel/sdk/metric v1.37.0
-
-replace go.opentelemetry.io/otel/sdk/metric/metricdata => go.opentelemetry.io/otel/sdk/metric v1.37.0
-
-replace go.opentelemetry.io/otel/sdk/metric/metricdatatest => go.opentelemetry.io/otel/sdk/metric v1.37.0
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd

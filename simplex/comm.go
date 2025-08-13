@@ -7,14 +7,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ava-labs/simplex"
+	"github.com/luxfi/simplex"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/networking/sender"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/networking/sender"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/set"
 )

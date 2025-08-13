@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ava-labs/coreth/plugin/factory"
+	"github.com/luxfi/coreth/plugin/factory"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -29,9 +29,9 @@ import (
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/engine/enginetest"
-	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/validators/validatorstest"
+	"github.com/luxfi/node/consensus/engine/enginetest"
+	"github.com/luxfi/node/consensus/engine/snowman/block"
+	"github.com/luxfi/node/consensus/validators/validatorstest"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/upgrade"
@@ -46,7 +46,7 @@ import (
 var (
 	mainnetXChainID    = ids.FromStringOrPanic("2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM")
 	mainnetCChainID    = ids.FromStringOrPanic("2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5")
-	mainnetAvaxAssetID = ids.FromStringOrPanic("FvwEAhmxKfeiG8SnEvq42hc6whRyY3EFYAvebMqDNDGCgxN5Z")
+	mainnetLuxAssetID = ids.FromStringOrPanic("FvwEAhmxKfeiG8SnEvq42hc6whRyY3EFYAvebMqDNDGCgxN5Z")
 )
 
 var (
@@ -228,7 +228,7 @@ func newMainnetCChainVM(
 
 			XChainID:    mainnetXChainID,
 			CChainID:    mainnetCChainID,
-			AVAXAssetID: mainnetAvaxAssetID,
+			LUXAssetID: mainnetLuxAssetID,
 
 			Log:          tests.NewDefaultLogger("mainnet-vm-reexecution"),
 			SharedMemory: atomicMemory.NewSharedMemory(mainnetCChainID),

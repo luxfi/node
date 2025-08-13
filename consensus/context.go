@@ -1,7 +1,7 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package consensus
+package snow
 
 import (
 	"sync"
@@ -10,12 +10,12 @@ import (
 
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
@@ -38,11 +38,11 @@ type Context struct {
 	PublicKey       *bls.PublicKey
 	NetworkUpgrades upgrade.Config
 
-	XChainID   ids.ID
-	CChainID   ids.ID
+	XChainID    ids.ID
+	CChainID    ids.ID
 	LUXAssetID ids.ID
 
-	Log log.Logger
+	Log logging.Logger
 	// Deprecated: This lock should not be used unless absolutely necessary.
 	// This lock will be removed in a future release once it is replaced with
 	// more granular locks.
@@ -55,10 +55,20 @@ type Context struct {
 
 	WarpSigner warp.Signer
 
-	// chain++ attributes
+	// snowman++ attributes
 	ValidatorState validators.State // interface for P-Chain validators
 	// Chain-specific directory where arbitrary data can be written
 	ChainDataDir string
+}
+
+// Expose gatherer interface for unit testing.
+type Registerer interface {
+	prometheus.Registerer
+	prometheus.Gatherer
+}
+
+type ConsensusContext struct {
+	*Context
 
 	// PrimaryAlias is the primary alias of the chain this context exists
 	// within.
@@ -87,10 +97,4 @@ type Context struct {
 
 	// True iff this chain is currently state-syncing
 	StateSyncing utils.Atomic[bool]
-}
-
-// Expose gatherer interface for unit testing.
-type Registerer interface {
-	prometheus.Registerer
-	prometheus.Gatherer
 }

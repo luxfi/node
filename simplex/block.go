@@ -11,10 +11,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ava-labs/simplex"
+	"github.com/luxfi/simplex"
 
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/consensus/protocols/snowman"
+	"github.com/luxfi/node/consensus/engine/snowman/block"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/tree"
 )

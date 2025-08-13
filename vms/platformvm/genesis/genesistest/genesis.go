@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/node/consensus/snowtest"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
@@ -25,16 +25,16 @@ import (
 
 const (
 	DefaultValidatorDuration = 28 * 24 * time.Hour
-	DefaultValidatorWeight   = 5 * units.MilliAvax
-	DefaultInitialBalance    = 1 * units.Avax
+	DefaultValidatorWeight   = 5 * units.MilliLux
+	DefaultInitialBalance    = 1 * units.Lux
 
 	ValidatorDelegationShares = reward.PercentDenominator
 	XChainName                = "x"
-	InitialSupply             = 360 * units.MegaAvax
+	InitialSupply             = 360 * units.MegaLux
 )
 
 var (
-	AVAXAsset = avax.Asset{ID: snowtest.AVAXAssetID}
+	LUXAsset = avax.Asset{ID: snowtest.LUXAssetID}
 
 	DefaultValidatorStartTime     = upgrade.InitiallyActiveTime
 	DefaultValidatorStartTimeUnix = uint64(DefaultValidatorStartTime.Unix())
@@ -102,10 +102,10 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 	for i, key := range c.FundedKeys {
 		genesis.UTXOs[i] = &platformvmgenesis.UTXO{UTXO: avax.UTXO{
 			UTXOID: avax.UTXOID{
-				TxID:        snowtest.AVAXAssetID,
+				TxID:        snowtest.LUXAssetID,
 				OutputIndex: uint32(i),
 			},
-			Asset: AVAXAsset,
+			Asset: LUXAsset,
 			Out: &secp256k1fx.TransferOutput{
 				Amt: c.InitialBalance,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -138,7 +138,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 			},
 			StakeOuts: []*avax.TransferableOutput{
 				{
-					Asset: AVAXAsset,
+					Asset: LUXAsset,
 					Out: &secp256k1fx.TransferOutput{
 						Amt:          c.ValidatorWeight,
 						OutputOwners: owner,

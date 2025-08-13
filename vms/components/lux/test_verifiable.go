@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package lux
+package avax
 
 import (
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -20,7 +20,7 @@ type TestState struct {
 	Err error
 }
 
-func (*TestState) InitCtx(*consensus.Context) {}
+func (*TestState) InitCtx(*snow.Context) {}
 
 func (v *TestState) Verify() error {
 	return v.Err
@@ -32,7 +32,7 @@ type TestTransferable struct {
 	Val uint64 `serialize:"true"`
 }
 
-func (*TestTransferable) InitCtx(*consensus.Context) {}
+func (*TestTransferable) InitCtx(*snow.Context) {}
 
 func (t *TestTransferable) Amount() uint64 {
 	return t.Val

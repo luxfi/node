@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package handler
@@ -10,7 +10,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/attribute"
@@ -19,21 +18,21 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/consensus"
-	enginepkg "github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/ids"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/snowman/block"
+	"github.com/luxfi/node/consensus/networking/tracker"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 
-	commontracker "github.com/luxfi/node/consensus/engine/core/tracker"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
+	commontracker "github.com/luxfi/node/consensus/engine/common/tracker"
 )
 
 const (
@@ -54,7 +53,7 @@ var (
 type Handler interface {
 	health.Checker
 
-	Context() *consensus.Context
+	Context() *snow.ConsensusContext
 	// ShouldHandle returns true if the node with the given ID is allowed to send
 	// messages to this chain. If the node is not allowed to send messages to
 	// this chain, the message should be dropped.
@@ -81,21 +80,21 @@ type Handler interface {
 type handler struct {
 	haltBootstrapping func()
 
-	metrics *handlerMetrics
+	metrics *metrics
 
-	nf           *enginepkg.NotificationForwarder
-	subscription enginepkg.Subscription
+	nf           *common.NotificationForwarder
+	subscription common.Subscription
 	cn           *block.ChangeNotifier
 
 	// Useful for faking time in tests
 	clock mockable.Clock
 
-	ctx *consensus.Context
+	ctx *snow.ConsensusContext
 	// TODO: consider using peerTracker instead of validators
 	// since peerTracker is already tracking validators
 	validators validators.Manager
 	// Receives messages from the VM
-	msgFromVMChan   chan enginepkg.Message
+	msgFromVMChan   chan common.Message
 	gossipFrequency time.Duration
 
 	engineManager *EngineManager
@@ -134,9 +133,9 @@ type handler struct {
 // Initialize this consensus handler
 // [engine] must be initialized before initializing this handler
 func New(
-	ctx *consensus.Context,
+	ctx *snow.ConsensusContext,
 	cn *block.ChangeNotifier,
-	subscription enginepkg.Subscription,
+	subscription common.Subscription,
 	validators validators.Manager,
 	gossipFrequency time.Duration,
 	threadPoolSize int,
@@ -150,7 +149,7 @@ func New(
 	h := &handler{
 		subscription:      subscription,
 		cn:                cn,
-		msgFromVMChan:     make(chan enginepkg.Message),
+		msgFromVMChan:     make(chan common.Message),
 		haltBootstrapping: haltBootstrapping,
 		ctx:               ctx,
 		validators:        validators,
@@ -196,7 +195,7 @@ func New(
 	return h, nil
 }
 
-func (h *handler) Context() *consensus.Context {
+func (h *handler) Context() *snow.ConsensusContext {
 	return h.ctx
 }
 
@@ -217,7 +216,7 @@ func (h *handler) SetOnStopped(onStopped func()) {
 	h.onStopped = onStopped
 }
 
-func (h *handler) selectStartingGear(ctx context.Context) (enginepkg.Engine, error) {
+func (h *handler) selectStartingGear(ctx context.Context) (common.Engine, error) {
 	state := h.ctx.State.Get()
 	engines := h.engineManager.Get(state.Type)
 	if engines == nil {
@@ -250,12 +249,8 @@ func (h *handler) Start(ctx context.Context, recoverPanic bool) {
 		return
 	}
 
-	if h.subscription != nil {
-		h.nf = enginepkg.NewNotificationForwarder(h, h.subscription, h.ctx.Log)
-		if h.cn != nil {
-			h.cn.OnChange = h.nf.CheckForEvent
-		}
-	}
+	h.nf = common.NewNotificationForwarder(h, h.subscription, h.ctx.Log)
+	h.cn.OnChange = h.nf.CheckForEvent
 
 	h.ctx.Lock.Lock()
 	err = gear.Start(ctx, 0)
@@ -279,38 +274,23 @@ func (h *handler) Start(ctx context.Context, recoverPanic bool) {
 		h.dispatchChans(detachedCtx)
 	}
 	if recoverPanic {
-		go func() {
-			defer func() {
-				if r := recover(); r != nil {
-					h.ctx.Log.Error("chain was shutdown due to a panic in the sync dispatcher", "panic", r)
-				}
-			}()
-			dispatchSync()
-		}()
-		go func() {
-			defer func() {
-				if r := recover(); r != nil {
-					h.ctx.Log.Error("chain was shutdown due to a panic in the async dispatcher", "panic", r)
-				}
-			}()
-			dispatchAsync()
-		}()
-		go func() {
-			defer func() {
-				if r := recover(); r != nil {
-					h.ctx.Log.Error("chain was shutdown due to a panic in the chan dispatcher", "panic", r)
-				}
-			}()
-			dispatchChans()
-		}()
+		go h.ctx.Log.RecoverAndExit(dispatchSync, func() {
+			h.ctx.Log.Error("chain was shutdown due to a panic in the sync dispatcher")
+		})
+		go h.ctx.Log.RecoverAndExit(dispatchAsync, func() {
+			h.ctx.Log.Error("chain was shutdown due to a panic in the async dispatcher")
+		})
+		go h.ctx.Log.RecoverAndExit(dispatchChans, func() {
+			h.ctx.Log.Error("chain was shutdown due to a panic in the chan dispatcher")
+		})
 	} else {
-		go dispatchSync()
-		go dispatchAsync()
-		go dispatchChans()
+		go h.ctx.Log.RecoverAndPanic(dispatchSync)
+		go h.ctx.Log.RecoverAndPanic(dispatchAsync)
+		go h.ctx.Log.RecoverAndPanic(dispatchChans)
 	}
 }
 
-func (h *handler) Notify(ctx context.Context, msg enginepkg.Message) error {
+func (h *handler) Notify(ctx context.Context, msg common.Message) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -352,7 +332,7 @@ func (h *handler) Stop(_ context.Context) {
 }
 
 func (h *handler) StopWithError(ctx context.Context, err error) {
-	h.ctx.Log.Error("shutting down chain",
+	h.ctx.Log.Fatal("shutting down chain",
 		zap.String("reason", "received an unexpected error"),
 		zap.Error(err),
 	)
@@ -461,10 +441,10 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 		startTime = h.clock.Time()
 		// Check if the chain is in normal operation at the start of message
 		// execution (may change during execution)
-		isNormalOp = h.ctx.State.Get().State == consensus.NormalOp
+		isNormalOp = h.ctx.State.Get().State == snow.NormalOp
 	)
-	if h.ctx.Log.Enabled(context.Background(), log.LevelDebug) {
-		h.ctx.Log.Debug("forwarding sync message to consensus",
+	if h.ctx.Log.Enabled(logging.Verbo) {
+		h.ctx.Log.Verbo("forwarding sync message to consensus",
 			zap.Stringer("nodeID", nodeID),
 			zap.String("messageOp", op),
 			zap.Stringer("message", body),
@@ -512,8 +492,8 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 	// We will attempt to pass the message to the requested type for the state
 	// we are currently in.
 	currentState := h.ctx.State.Get()
-	if msg.EngineType == p2ppb.EngineType_ENGINE_TYPE_CHAIN &&
-		currentState.Type == p2ppb.EngineType_ENGINE_TYPE_DAG {
+	if msg.EngineType == p2ppb.EngineType_ENGINE_TYPE_SNOWMAN &&
+		currentState.Type == p2ppb.EngineType_ENGINE_TYPE_AVALANCHE {
 		// The peer is requesting an engine type that hasn't been initialized
 		// yet. This means we know that this isn't a response, so we can safely
 		// drop the message.
@@ -528,13 +508,13 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 
 	var engineType p2ppb.EngineType
 	switch msg.EngineType {
-	case p2ppb.EngineType_ENGINE_TYPE_DAG, p2ppb.EngineType_ENGINE_TYPE_CHAIN:
+	case p2ppb.EngineType_ENGINE_TYPE_AVALANCHE, p2ppb.EngineType_ENGINE_TYPE_SNOWMAN:
 		// The peer is requesting an engine type that has been initialized, so
 		// we should attempt to honor the request.
 		engineType = msg.EngineType
 	default:
 		// Note: [msg.EngineType] may have been provided by the peer as an
-		// invalid option. I.E. not one of LINEAR, GRAPH, or UNSPECIFIED.
+		// invalid option. I.E. not one of AVALANCHE, SNOWMAN, or UNSPECIFIED.
 		// In this case, we treat the value the same way as UNSPECIFIED.
 		//
 		// If the peer didn't request a specific engine type, we default to the
@@ -545,8 +525,8 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 	engine, ok := h.engineManager.Get(engineType).Get(currentState.State)
 	if !ok {
 		// This should only happen if the peer is not following the protocol.
-		// This can happen if the chain only has a Linear engine and the peer
-		// requested an Lux engine handle the message.
+		// This can happen if the chain only has a Snowman engine and the peer
+		// requested an Avalanche engine handle the message.
 		h.ctx.Log.Debug("dropping sync message",
 			zap.String("reason", "uninitialized engine state"),
 			zap.String("messageOp", op),
@@ -562,7 +542,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 	//            should be invoked with a failure message if parsing of the
 	//            response fails.
 	switch msg := body.(type) {
-	// State messages should always be sent to the linear engine
+	// State messages should always be sent to the snowman engine
 	case *p2ppb.GetStateSummaryFrontier:
 		return engine.GetStateSummaryFrontier(ctx, nodeID, msg.RequestId)
 
@@ -598,7 +578,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 	case *message.GetAcceptedStateSummaryFailed:
 		return engine.GetAcceptedStateSummaryFailed(ctx, nodeID, msg.RequestID)
 
-	// Bootstrapping messages may be forwarded to either lux or linear
+	// Bootstrapping messages may be forwarded to either avalanche or snowman
 	// engines, depending on the EngineType field
 	case *p2ppb.GetAcceptedFrontier:
 		return engine.GetAcceptedFrontier(ctx, nodeID, msg.RequestId)
@@ -751,20 +731,18 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 			return engine.QueryFailed(ctx, nodeID, msg.RequestId)
 		}
 
-		// TODO: AcceptedHeight should be passed but is not available in the message
-		return engine.Chits(ctx, nodeID, msg.RequestId, preferredID, preferredIDAtHeight, acceptedID, 0)
+		return engine.Chits(ctx, nodeID, msg.RequestId, preferredID, preferredIDAtHeight, acceptedID, msg.AcceptedHeight)
 
 	case *message.QueryFailed:
 		return engine.QueryFailed(ctx, nodeID, msg.RequestID)
 
-	// TODO: BFT message type is not defined in p2ppb
-	// case *p2ppb.BFT:
-	//	h.ctx.Log.Debug("received bft message",
-	//		zap.Stringer("nodeID", nodeID),
-	//		zap.String("messageOp", op),
-	//		zap.Stringer("message", body),
-	//	)
-	//	return nil
+	case *p2ppb.Simplex:
+		h.ctx.Log.Debug("received simplex message",
+			zap.Stringer("nodeID", nodeID),
+			zap.String("messageOp", op),
+			zap.Stringer("message", body),
+		)
+		return nil
 	// Connection messages can be sent to the currently executing engine
 	case *message.Connected:
 		err := h.peerTracker.Connected(ctx, nodeID, msg.NodeVersion)
@@ -812,8 +790,8 @@ func (h *handler) executeAsyncMsg(ctx context.Context, msg Message) error {
 		body      = msg.Message()
 		startTime = h.clock.Time()
 	)
-	if h.ctx.Log.Enabled(context.Background(), log.LevelDebug) {
-		h.ctx.Log.Debug("forwarding async message to consensus",
+	if h.ctx.Log.Enabled(logging.Verbo) {
+		h.ctx.Log.Verbo("forwarding async message to consensus",
 			zap.Stringer("nodeID", nodeID),
 			zap.String("messageOp", op),
 			zap.Stringer("message", body),
@@ -868,7 +846,7 @@ func (h *handler) executeAsyncMsg(ctx context.Context, msg Message) error {
 		return engine.AppResponse(ctx, nodeID, m.RequestId, m.AppBytes)
 
 	case *p2ppb.AppError:
-		err := &enginepkg.AppError{
+		err := &common.AppError{
 			Code:    m.ErrorCode,
 			Message: m.ErrorMessage,
 		}
@@ -899,10 +877,10 @@ func (h *handler) handleChanMsg(msg message.InboundMessage) error {
 		startTime = h.clock.Time()
 		// Check if the chain is in normal operation at the start of message
 		// execution (may change during execution)
-		isNormalOp = h.ctx.State.Get().State == consensus.NormalOp
+		isNormalOp = h.ctx.State.Get().State == snow.NormalOp
 	)
-	if h.ctx.Log.Enabled(context.Background(), log.LevelDebug) {
-		h.ctx.Log.Debug("forwarding chan message to consensus",
+	if h.ctx.Log.Enabled(logging.Verbo) {
+		h.ctx.Log.Verbo("forwarding chan message to consensus",
 			zap.String("messageOp", op),
 			zap.Stringer("message", body),
 		)
@@ -955,7 +933,7 @@ func (h *handler) handleChanMsg(msg message.InboundMessage) error {
 
 	switch msg := body.(type) {
 	case *message.VMMessage:
-		return engine.Notify(context.TODO(), enginepkg.Message(msg.Notification))
+		return engine.Notify(context.TODO(), common.Message(msg.Notification))
 
 	case *message.GossipRequest:
 		return engine.Gossip(context.TODO())

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sender_test
@@ -10,71 +10,43 @@ import (
 	"sync"
 	"testing"
 	"time"
-	
+
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-
-	"github.com/luxfi/node/consensus"
-
-	"github.com/luxfi/node/consensus/consensustest"
-
-	"github.com/luxfi/node/consensus/engine/core"
-
-	"github.com/luxfi/node/consensus/engine/enginetest"
-
-	"github.com/luxfi/node/consensus/engine/chain/block"
-
-	"github.com/luxfi/node/consensus/networking/benchlist"
-
-	"github.com/luxfi/node/consensus/networking/handler"
-
-	"github.com/luxfi/node/consensus/networking/router"
-
-	"github.com/luxfi/node/consensus/networking/router/routermock"
-
-	"github.com/luxfi/node/consensus/networking/sender/sendermock"
-
-	"github.com/luxfi/node/consensus/networking/sender/sendertest"
-
-	"github.com/luxfi/node/consensus/networking/timeout"
-
-	"github.com/luxfi/node/consensus/networking/timeout/timeoutmock"
-
-	"github.com/luxfi/node/consensus/networking/tracker"
-
-	"github.com/luxfi/node/consensus/validators"
-
-	"github.com/luxfi/ids"
-
-	"github.com/luxfi/log"
-
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
-
 	"github.com/luxfi/node/message/messagemock"
-
 	"github.com/luxfi/node/network/p2p"
-
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/enginetest"
+	"github.com/luxfi/node/consensus/engine/snowman/block"
+	"github.com/luxfi/node/consensus/networking/benchlist"
+	"github.com/luxfi/node/consensus/networking/handler"
+	"github.com/luxfi/node/consensus/networking/router"
+	"github.com/luxfi/node/consensus/networking/router/routermock"
+	"github.com/luxfi/node/consensus/networking/sender/sendermock"
+	"github.com/luxfi/node/consensus/networking/sender/sendertest"
+	"github.com/luxfi/node/consensus/networking/timeout"
+	"github.com/luxfi/node/consensus/networking/timeout/timeoutmock"
+	"github.com/luxfi/node/consensus/networking/tracker"
+	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/subnets"
-
 	"github.com/luxfi/node/utils/constants"
-
+	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/math/meter"
-
 	"github.com/luxfi/node/utils/resource"
-
 	"github.com/luxfi/node/utils/set"
-
 	"github.com/luxfi/node/utils/timer"
-
 	"github.com/luxfi/node/version"
 
-	commontracker "github.com/luxfi/node/consensus/engine/core/tracker"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
+	commontracker "github.com/luxfi/node/consensus/engine/common/tracker"
 
 	. "github.com/luxfi/node/consensus/networking/sender"
-
-	utilmetrics "github.com/luxfi/node/utils/metrics"
 )
 
 const testThreadPoolSize = 2
@@ -82,8 +54,8 @@ const testThreadPoolSize = 2
 func TestTimeout(t *testing.T) {
 	require := require.New(t)
 
-	consensusCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(consensusCtx)
+	snowCtx := snowtest.Context(t, snowtest.CChainID)
+	ctx := snowtest.ConsensusContext(snowCtx)
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 	benchlist := benchlist.NewNoBenchlist()
@@ -96,18 +68,17 @@ func TestTimeout(t *testing.T) {
 			TimeoutCoefficient: 1.25,
 		},
 		benchlist,
-		utilmetrics.NewTestRegistry(),
-		utilmetrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 	go tm.Dispatch()
 
 	chainRouter := router.ChainRouter{}
 
-	m := utilmetrics.NewNoOpMetrics("test")
+	metrics := prometheus.NewRegistry()
 	mc, err := message.NewCreator(
-		nil,
-		m,
+		metrics,
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -115,7 +86,7 @@ func TestTimeout(t *testing.T) {
 
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		log.NewNoOpLogger(),
+		logging.NoLog{},
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
@@ -123,7 +94,7 @@ func TestTimeout(t *testing.T) {
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
-		utilmetrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 	))
 
 	externalSender := &sendertest.External{TB: t}
@@ -135,15 +106,15 @@ func TestTimeout(t *testing.T) {
 		externalSender,
 		&chainRouter,
 		tm,
-		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
 		subnets.New(ctx.NodeID, subnets.Config{}),
-		utilmetrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 
-	ctx2 := consensustest.ConsensusContext(consensusCtx)
+	ctx2 := snowtest.ConsensusContext(snowCtx)
 	resourceTracker, err := tracker.NewResourceTracker(
-		utilmetrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -151,9 +122,9 @@ func TestTimeout(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		logging.NoLog{},
 		"",
-		utilmetrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -170,7 +141,7 @@ func TestTimeout(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		p2pTracker,
-		utilmetrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -182,27 +153,27 @@ func TestTimeout(t *testing.T) {
 	}
 	bootstrapper.Default(true)
 	bootstrapper.CantGossip = false
-	bootstrapper.ContextF = func() *consensus.Context {
+	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
 		return nil
 	}
 	h.SetEngineManager(&handler.EngineManager{
-		Dag: &handler.Engine{
+		Avalanche: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
 		},
-		Chain: &handler.Engine{
+		Snowman: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
 		},
 	})
-	ctx2.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-		State: consensus.Bootstrapping, // assumed bootstrap is ongoing
+	ctx2.State.Set(snow.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		State: snow.Bootstrapping, // assumed bootstrap is ongoing
 	})
 
 	chainRouter.AddChain(context.Background(), h)
@@ -243,7 +214,7 @@ func TestTimeout(t *testing.T) {
 	bootstrapper.GetAncestorsFailedF = failed
 	bootstrapper.GetFailedF = failed
 	bootstrapper.QueryFailedF = failed
-	bootstrapper.AppRequestFailedF = func(ctx context.Context, nodeID ids.NodeID, _ uint32, _ *core.AppError) error {
+	bootstrapper.AppRequestFailedF = func(ctx context.Context, nodeID ids.NodeID, _ uint32, _ *common.AppError) error {
 		require.NoError(ctx.Err())
 
 		failedLock.Lock()
@@ -321,13 +292,13 @@ func TestTimeout(t *testing.T) {
 	}
 
 	// Send messages to disconnected peers
-	externalSender.SendF = func(message.OutboundMessage, core.SendConfig, ids.ID, subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(message.OutboundMessage, common.SendConfig, ids.ID, subnets.Allower) set.Set[ids.NodeID] {
 		return nil
 	}
 	sendAll()
 
 	// Send messages to connected peers
-	externalSender.SendF = func(_ message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	externalSender.SendF = func(_ message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		return config.NodeIDs
 	}
 	sendAll()
@@ -341,8 +312,8 @@ func TestTimeout(t *testing.T) {
 func TestReliableMessages(t *testing.T) {
 	require := require.New(t)
 
-	consensusCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(consensusCtx)
+	snowCtx := snowtest.Context(t, snowtest.CChainID)
+	ctx := snowtest.ConsensusContext(snowCtx)
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.BuildTestNodeID([]byte{1}), nil, ids.Empty, 1))
 	benchlist := benchlist.NewNoBenchlist()
@@ -355,8 +326,8 @@ func TestReliableMessages(t *testing.T) {
 			TimeoutCoefficient: 1.25,
 		},
 		benchlist,
-		utilmetrics.NewTestRegistry(),
-		utilmetrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 
@@ -364,10 +335,9 @@ func TestReliableMessages(t *testing.T) {
 
 	chainRouter := router.ChainRouter{}
 
-	m := utilmetrics.NewNoOpMetrics("test")
+	metrics := prometheus.NewRegistry()
 	mc, err := message.NewCreator(
-		nil,
-		m,
+		metrics,
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -375,7 +345,7 @@ func TestReliableMessages(t *testing.T) {
 
 	require.NoError(chainRouter.Initialize(
 		ids.EmptyNodeID,
-		log.NewNoOpLogger(),
+		logging.NoLog{},
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
@@ -383,7 +353,7 @@ func TestReliableMessages(t *testing.T) {
 		set.Set[ids.ID]{},
 		nil,
 		router.HealthConfig{},
-		utilmetrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 	))
 
 	externalSender := &sendertest.External{TB: t}
@@ -395,15 +365,15 @@ func TestReliableMessages(t *testing.T) {
 		externalSender,
 		&chainRouter,
 		tm,
-		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
 		subnets.New(ctx.NodeID, subnets.Config{}),
-		utilmetrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 
-	ctx2 := consensustest.ConsensusContext(consensusCtx)
+	ctx2 := snowtest.ConsensusContext(snowCtx)
 	resourceTracker, err := tracker.NewResourceTracker(
-		utilmetrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -411,9 +381,9 @@ func TestReliableMessages(t *testing.T) {
 	require.NoError(err)
 
 	p2pTracker, err := p2p.NewPeerTracker(
-		log.NewNoOpLogger(),
+		logging.NoLog{},
 		"",
-		utilmetrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -430,7 +400,7 @@ func TestReliableMessages(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		p2pTracker,
-		utilmetrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -442,7 +412,7 @@ func TestReliableMessages(t *testing.T) {
 	}
 	bootstrapper.Default(true)
 	bootstrapper.CantGossip = false
-	bootstrapper.ContextF = func() *consensus.Context {
+	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx2
 	}
 	bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
@@ -459,20 +429,20 @@ func TestReliableMessages(t *testing.T) {
 	}
 	bootstrapper.CantGossip = false
 	h.SetEngineManager(&handler.EngineManager{
-		Dag: &handler.Engine{
+		Avalanche: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
 		},
-		Chain: &handler.Engine{
+		Snowman: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
 		},
 	})
-	ctx2.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-		State: consensus.Bootstrapping, // assumed bootstrap is ongoing
+	ctx2.State.Set(snow.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		State: snow.Bootstrapping, // assumed bootstrap is ongoing
 	})
 
 	chainRouter.AddChain(context.Background(), h)
@@ -502,8 +472,8 @@ func TestReliableMessagesToMyself(t *testing.T) {
 			require := require.New(t)
 
 			benchlist := benchlist.NewNoBenchlist()
-			consensusCtx := consensustest.Context(t, consensustest.CChainID)
-			ctx := consensustest.ConsensusContext(consensusCtx)
+			snowCtx := snowtest.Context(t, snowtest.CChainID)
+			ctx := snowtest.ConsensusContext(snowCtx)
 			vdrs := validators.NewManager()
 			require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 			tm, err := timeout.NewManager(
@@ -515,8 +485,8 @@ func TestReliableMessagesToMyself(t *testing.T) {
 					TimeoutCoefficient: 1.25,
 				},
 				benchlist,
-				utilmetrics.NewTestRegistry(),
-				utilmetrics.NewTestRegistry(),
+				prometheus.NewRegistry(),
+				prometheus.NewRegistry(),
 			)
 			require.NoError(err)
 
@@ -524,10 +494,9 @@ func TestReliableMessagesToMyself(t *testing.T) {
 
 			chainRouter := router.ChainRouter{}
 
-			m := utilmetrics.NewNoOpMetrics("test")
+			metrics := prometheus.NewRegistry()
 			mc, err := message.NewCreator(
-		nil,
-				m,
+				metrics,
 				constants.DefaultNetworkCompressionType,
 				10*time.Second,
 			)
@@ -535,7 +504,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 
 			require.NoError(chainRouter.Initialize(
 				ids.EmptyNodeID,
-				log.NewNoOpLogger(),
+				logging.NoLog{},
 				tm,
 				time.Second,
 				set.Set[ids.ID]{},
@@ -543,7 +512,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 				set.Set[ids.ID]{},
 				nil,
 				router.HealthConfig{},
-				utilmetrics.NewTestRegistry(),
+				prometheus.NewRegistry(),
 			))
 
 			externalSender := &sendertest.External{TB: t}
@@ -558,15 +527,15 @@ func TestReliableMessagesToMyself(t *testing.T) {
 				externalSender,
 				&chainRouter,
 				tm,
-				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+				p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
 				subnet,
-				utilmetrics.NewTestRegistry(),
+				prometheus.NewRegistry(),
 			)
 			require.NoError(err)
 
-			ctx2 := consensustest.ConsensusContext(consensusCtx)
+			ctx2 := snowtest.ConsensusContext(snowCtx)
 			resourceTracker, err := tracker.NewResourceTracker(
-				utilmetrics.NewTestRegistry(),
+				prometheus.NewRegistry(),
 				resource.NoUsage,
 				meter.ContinuousFactory{},
 				time.Second,
@@ -574,9 +543,9 @@ func TestReliableMessagesToMyself(t *testing.T) {
 			require.NoError(err)
 
 			p2pTracker, err := p2p.NewPeerTracker(
-				log.NewNoOpLogger(),
+				logging.NoLog{},
 				"",
-				utilmetrics.NewTestRegistry(),
+				prometheus.NewRegistry(),
 				nil,
 				version.CurrentApp,
 			)
@@ -593,7 +562,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 				subnet,
 				commontracker.NewPeers(),
 				p2pTracker,
-				utilmetrics.NewTestRegistry(),
+				prometheus.NewRegistry(),
 				func() {},
 			)
 			require.NoError(err)
@@ -605,7 +574,7 @@ func TestReliableMessagesToMyself(t *testing.T) {
 			}
 			bootstrapper.Default(true)
 			bootstrapper.CantGossip = false
-			bootstrapper.ContextF = func() *consensus.Context {
+			bootstrapper.ContextF = func() *snow.ConsensusContext {
 				return ctx2
 			}
 			bootstrapper.ConnectedF = func(context.Context, ids.NodeID, *version.Application) error {
@@ -621,20 +590,20 @@ func TestReliableMessagesToMyself(t *testing.T) {
 				return nil
 			}
 			h.SetEngineManager(&handler.EngineManager{
-				Dag: &handler.Engine{
+				Avalanche: &handler.Engine{
 					StateSyncer:  nil,
 					Bootstrapper: bootstrapper,
 					Consensus:    nil,
 				},
-				Chain: &handler.Engine{
+				Snowman: &handler.Engine{
 					StateSyncer:  nil,
 					Bootstrapper: bootstrapper,
 					Consensus:    nil,
 				},
 			})
-			ctx2.State.Set(consensus.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-				State: consensus.Bootstrapping, // assumed bootstrap is ongoing
+			ctx2.State.Set(snow.EngineState{
+				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				State: snow.Bootstrapping, // assumed bootstrap is ongoing
 			})
 
 			chainRouter.AddChain(context.Background(), h)
@@ -670,8 +639,8 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 		heights       = []uint64{1, 2, 3}
 		containerIDs  = []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 	)
-	consensusCtx := consensustest.Context(t, consensustest.PChainID)
-	ctx := consensustest.ConsensusContext(consensusCtx)
+	snowCtx := snowtest.Context(t, snowtest.PChainID)
+	ctx := snowtest.ConsensusContext(snowCtx)
 
 	type test struct {
 		name                    string
@@ -680,7 +649,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 		expectedResponseOp      message.Op
 		setMsgCreatorExpect     func(msgCreator *messagemock.OutboundMsgBuilder)
 		setExternalSenderExpect func(externalSender *sendermock.ExternalSender)
-		sendF                   func(require *require.Assertions, sender core.Sender, nodeIDs set.Set[ids.NodeID])
+		sendF                   func(require *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID])
 	}
 
 	tests := []test{
@@ -711,7 +680,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					core.SendConfig{
+					common.SendConfig{
 						// Note [myNodeID] is not in this set
 						NodeIDs: set.Of(successNodeID, failedNodeID),
 					},
@@ -719,7 +688,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					gomock.Any(),
 				).Return(set.Of(successNodeID))
 			},
-			sendF: func(_ *require.Assertions, sender core.Sender, nodeIDs set.Set[ids.NodeID]) {
+			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
 				sender.SendGetStateSummaryFrontier(
 					context.Background(),
 					nodeIDs,
@@ -756,7 +725,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					core.SendConfig{
+					common.SendConfig{
 						// Note [myNodeID] is not in this set
 						NodeIDs: set.Of(successNodeID, failedNodeID),
 					},
@@ -764,7 +733,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					gomock.Any(),
 				).Return(set.Of(successNodeID))
 			},
-			sendF: func(_ *require.Assertions, sender core.Sender, nodeIDs set.Set[ids.NodeID]) {
+			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
 				sender.SendGetAcceptedStateSummary(context.Background(), nodeIDs, requestID, heights)
 			},
 		},
@@ -795,7 +764,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					core.SendConfig{
+					common.SendConfig{
 						// Note [myNodeID] is not in this set
 						NodeIDs: set.Of(successNodeID, failedNodeID),
 					},
@@ -803,7 +772,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					gomock.Any(),
 				).Return(set.Of(successNodeID))
 			},
-			sendF: func(_ *require.Assertions, sender core.Sender, nodeIDs set.Set[ids.NodeID]) {
+			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
 				sender.SendGetAcceptedFrontier(context.Background(), nodeIDs, requestID)
 			},
 		},
@@ -835,7 +804,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					core.SendConfig{
+					common.SendConfig{
 						// Note [myNodeID] is not in this set
 						NodeIDs: set.Of(successNodeID, failedNodeID),
 					},
@@ -843,7 +812,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 					gomock.Any(),
 				).Return(set.Of(successNodeID))
 			},
-			sendF: func(_ *require.Assertions, sender core.Sender, nodeIDs set.Set[ids.NodeID]) {
+			sendF: func(_ *require.Assertions, sender common.Sender, nodeIDs set.Set[ids.NodeID]) {
 				sender.SendGetAccepted(context.Background(), nodeIDs, requestID, containerIDs)
 			},
 		},
@@ -866,7 +835,7 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 
 			// Instantiate new registerers to avoid duplicate metrics
 			// registration
-			ctx.Registerer = utilmetrics.NewTestRegistry()
+			ctx.Registerer = prometheus.NewRegistry()
 
 			sender, err := New(
 				ctx,
@@ -874,9 +843,9 @@ func TestSender_Bootstrap_Requests(t *testing.T) {
 				externalSender,
 				router,
 				timeoutManager,
-				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+				p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
 				subnets.New(ctx.NodeID, subnets.Config{}),
-				utilmetrics.NewTestRegistry(),
+				prometheus.NewRegistry(),
 			)
 			require.NoError(err)
 
@@ -925,15 +894,15 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 		summaryIDs        = []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
 		summary           = []byte{1, 2, 3}
 	)
-	consensusCtx := consensustest.Context(t, consensustest.PChainID)
-	ctx := consensustest.ConsensusContext(consensusCtx)
+	snowCtx := snowtest.Context(t, snowtest.PChainID)
+	ctx := snowtest.ConsensusContext(snowCtx)
 
 	type test struct {
 		name                    string
 		assertMsgToMyself       func(require *require.Assertions, msg message.InboundMessage)
 		setMsgCreatorExpect     func(msgCreator *messagemock.OutboundMsgBuilder)
 		setExternalSenderExpect func(externalSender *sendermock.ExternalSender)
-		sendF                   func(require *require.Assertions, sender core.Sender, nodeID ids.NodeID)
+		sendF                   func(require *require.Assertions, sender common.Sender, nodeID ids.NodeID)
 	}
 
 	tests := []test{
@@ -956,14 +925,14 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					core.SendConfig{
+					common.SendConfig{
 						NodeIDs: set.Of(destinationNodeID),
 					},
 					ctx.SubnetID, // Subnet ID
 					gomock.Any(),
 				).Return(nil)
 			},
-			sendF: func(_ *require.Assertions, sender core.Sender, nodeID ids.NodeID) {
+			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
 				sender.SendStateSummaryFrontier(context.Background(), nodeID, requestID, summary)
 			},
 		},
@@ -988,14 +957,14 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					core.SendConfig{
+					common.SendConfig{
 						NodeIDs: set.Of(destinationNodeID),
 					},
 					ctx.SubnetID, // Subnet ID
 					gomock.Any(),
 				).Return(nil)
 			},
-			sendF: func(_ *require.Assertions, sender core.Sender, nodeID ids.NodeID) {
+			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
 				sender.SendAcceptedStateSummary(context.Background(), nodeID, requestID, summaryIDs)
 			},
 		},
@@ -1018,14 +987,14 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					core.SendConfig{
+					common.SendConfig{
 						NodeIDs: set.Of(destinationNodeID),
 					},
 					ctx.SubnetID, // Subnet ID
 					gomock.Any(),
 				).Return(nil)
 			},
-			sendF: func(_ *require.Assertions, sender core.Sender, nodeID ids.NodeID) {
+			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
 				sender.SendAcceptedFrontier(context.Background(), nodeID, requestID, summaryIDs[0])
 			},
 		},
@@ -1050,14 +1019,14 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					core.SendConfig{
+					common.SendConfig{
 						NodeIDs: set.Of(destinationNodeID),
 					},
 					ctx.SubnetID, // Subnet ID
 					gomock.Any(),
 				).Return(nil)
 			},
-			sendF: func(_ *require.Assertions, sender core.Sender, nodeID ids.NodeID) {
+			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
 				sender.SendAccepted(context.Background(), nodeID, requestID, summaryIDs)
 			},
 		},
@@ -1081,9 +1050,9 @@ func TestSender_Bootstrap_Responses(t *testing.T) {
 				externalSender,
 				router,
 				timeoutManager,
-				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+				p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
 				subnets.New(ctx.NodeID, subnets.Config{}),
-				utilmetrics.NewTestRegistry(),
+				prometheus.NewRegistry(),
 			)
 			require.NoError(err)
 
@@ -1120,10 +1089,10 @@ func TestSender_Single_Request(t *testing.T) {
 		deadline          = time.Second
 		requestID         = uint32(1337)
 		containerID       = ids.GenerateTestID()
-		engineType        = p2ppb.EngineType_ENGINE_TYPE_CHAIN
+		engineType        = p2ppb.EngineType_ENGINE_TYPE_SNOWMAN
 	)
-	consensusCtx := consensustest.Context(t, consensustest.PChainID)
-	ctx := consensustest.ConsensusContext(consensusCtx)
+	snowCtx := snowtest.Context(t, snowtest.PChainID)
+	ctx := snowtest.ConsensusContext(snowCtx)
 
 	type test struct {
 		name                    string
@@ -1133,7 +1102,7 @@ func TestSender_Single_Request(t *testing.T) {
 		expectedResponseOp      message.Op
 		setMsgCreatorExpect     func(msgCreator *messagemock.OutboundMsgBuilder)
 		setExternalSenderExpect func(externalSender *sendermock.ExternalSender, sentTo set.Set[ids.NodeID])
-		sendF                   func(require *require.Assertions, sender core.Sender, nodeID ids.NodeID)
+		sendF                   func(require *require.Assertions, sender common.Sender, nodeID ids.NodeID)
 		expectedEngineType      p2ppb.EngineType
 	}
 
@@ -1169,14 +1138,14 @@ func TestSender_Single_Request(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender, sentTo set.Set[ids.NodeID]) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					core.SendConfig{
+					common.SendConfig{
 						NodeIDs: set.Of(destinationNodeID),
 					},
 					ctx.SubnetID,
 					gomock.Any(),
 				).Return(sentTo)
 			},
-			sendF: func(_ *require.Assertions, sender core.Sender, nodeID ids.NodeID) {
+			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
 				sender.SendGetAncestors(context.Background(), nodeID, requestID, containerID)
 			},
 			expectedEngineType: engineType,
@@ -1209,14 +1178,14 @@ func TestSender_Single_Request(t *testing.T) {
 			setExternalSenderExpect: func(externalSender *sendermock.ExternalSender, sentTo set.Set[ids.NodeID]) {
 				externalSender.EXPECT().Send(
 					gomock.Any(), // Outbound message
-					core.SendConfig{
+					common.SendConfig{
 						NodeIDs: set.Of(destinationNodeID),
 					},
 					ctx.SubnetID,
 					gomock.Any(),
 				).Return(sentTo)
 			},
-			sendF: func(_ *require.Assertions, sender core.Sender, nodeID ids.NodeID) {
+			sendF: func(_ *require.Assertions, sender common.Sender, nodeID ids.NodeID) {
 				sender.SendGet(context.Background(), nodeID, requestID, containerID)
 			},
 		},
@@ -1236,7 +1205,7 @@ func TestSender_Single_Request(t *testing.T) {
 
 			// Instantiate new registerers to avoid duplicate metrics
 			// registration
-			ctx.Registerer = utilmetrics.NewTestRegistry()
+			ctx.Registerer = prometheus.NewRegistry()
 
 			sender, err := New(
 				ctx,
@@ -1246,7 +1215,7 @@ func TestSender_Single_Request(t *testing.T) {
 				timeoutManager,
 				engineType,
 				subnets.New(ctx.NodeID, subnets.Config{}),
-				utilmetrics.NewTestRegistry(),
+				prometheus.NewRegistry(),
 			)
 			require.NoError(err)
 
@@ -1344,7 +1313,7 @@ func TestSender_Single_Request(t *testing.T) {
 	}
 }
 
-func noopSubscription(ctx context.Context) (core.Message, error) {
+func noopSubscription(ctx context.Context) (common.Message, error) {
 	<-ctx.Done()
-	return core.Message(0), ctx.Err()
+	return common.Message(0), ctx.Err()
 }

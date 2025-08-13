@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package handler
@@ -9,15 +9,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type handlerMetrics struct {
+type metrics struct {
 	expired             *prometheus.CounterVec // op
 	messages            *prometheus.CounterVec // op
 	lockingTime         prometheus.Gauge
 	messageHandlingTime *prometheus.GaugeVec // op
 }
 
-func newMetrics(reg prometheus.Registerer) (*handlerMetrics, error) {
-	m := &handlerMetrics{
+func newMetrics(reg prometheus.Registerer) (*metrics, error) {
+	m := &metrics{
 		expired: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "expired",

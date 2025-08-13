@@ -10,10 +10,10 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ava-labs/libevm/common"
-	"github.com/ava-labs/libevm/core/types"
-	"github.com/ava-labs/libevm/crypto"
-	"github.com/ava-labs/libevm/ethclient"
+	"github.com/luxfi/libevm/common"
+	"github.com/luxfi/libevm/core/types"
+	"github.com/luxfi/libevm/crypto"
+	"github.com/luxfi/libevm/ethclient"
 )
 
 type Wallet struct {

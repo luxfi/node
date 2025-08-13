@@ -132,7 +132,7 @@ func main() {
 
 	registerL1ValidatorStartTime := time.Now()
 	registerL1ValidatorTx, err := wallet.IssueRegisterL1ValidatorTx(
-		units.Avax,
+		units.Lux,
 		nodePoP.ProofOfPossession,
 		warp.Bytes(),
 	)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -6,7 +6,7 @@ package validators
 import (
 	"context"
 
-	"github.com/luxfi/ids"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/version"
 )
 
