@@ -16,7 +16,7 @@ require (
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/crypto v1.2.9
 	github.com/luxfi/database v1.1.9
-	github.com/luxfi/geth v1.16.24
+	github.com/luxfi/geth v1.16.2-lux.4
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/log v1.0.7
 	github.com/luxfi/metric v1.3.0
@@ -89,6 +89,7 @@ require (
 	github.com/VictoriaMetrics/fastcache v1.12.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.24.0 // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
