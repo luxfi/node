@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package router
@@ -6,18 +6,17 @@ package router
 import (
 	"context"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/node/api/health"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/consensus/networking/benchlist"
 	"github.com/luxfi/node/consensus/networking/handler"
 	"github.com/luxfi/node/consensus/networking/timeout"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -29,7 +28,7 @@ type Router interface {
 
 	Initialize(
 		nodeID ids.NodeID,
-		log log.Logger,
+		log logging.Logger,
 		timeouts timeout.Manager,
 		shutdownTimeout time.Duration,
 		criticalChains set.Set[ids.ID],

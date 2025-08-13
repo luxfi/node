@@ -73,7 +73,7 @@ The `load` package provides a comprehensive suite of test types designed to stre
 
 | Test Type         | Description                                                     |
 | ----------------- | --------------------------------------------------------------- |
-| Transfer          | Performs self-transfer of 0 AVAX                                |
+| Transfer          | Performs self-transfer of 0 LUX                                |
 | Read              | Performs multiple storage reads from contract state             |
 | Write             | Executes equential storage writes to new contract storage slots |
 | StateModification | Updates existing storage values or creates new ones             |

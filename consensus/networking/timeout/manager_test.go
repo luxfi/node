@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package timeout
@@ -7,17 +7,13 @@ import (
 	"sync"
 	"testing"
 	"time"
-	
+
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/consensus/networking/benchlist"
-
-	"github.com/luxfi/ids"
-
 	"github.com/luxfi/node/utils/timer"
-
-	"github.com/luxfi/node/utils/metrics"
 )
 
 func TestManagerFire(t *testing.T) {
@@ -31,8 +27,8 @@ func TestManagerFire(t *testing.T) {
 			TimeoutHalflife:    5 * time.Minute,
 		},
 		benchlist,
-		metrics.NewTestRegistry(),
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(t, err)
 	go manager.Dispatch()

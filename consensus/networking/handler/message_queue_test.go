@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package handler
@@ -7,16 +7,18 @@ import (
 	"context"
 	"testing"
 	"time"
-		"github.com/stretchr/testify/require"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/consensus/networking/tracker/trackermock"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/ids"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/consensus/networking/tracker/trackermock"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/metrics"
+	"github.com/luxfi/node/utils/logging"
 )
 
 func TestQueue(t *testing.T) {
@@ -28,12 +30,12 @@ func TestQueue(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 	mIntf, err := NewMessageQueue(
-		nil,
+		logging.NoLog{},
 		constants.PrimaryNetworkID,
 		vdrs,
 		cpuTracker,
 		"",
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 	u := mIntf.(*messageQueue)

@@ -6,7 +6,7 @@ package snowmantest
 import (
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/node/consensus/snowtest"
 )
 
 func RequireStatusIs(require *require.Assertions, status snowtest.Status, blks ...*Block) {

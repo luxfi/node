@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package timeout
@@ -7,13 +7,12 @@ import (
 	"errors"
 	"sync"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/ids"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/snow"
 )
 
 const (
@@ -55,7 +54,7 @@ func newTimeoutMetrics(reg prometheus.Registerer) (*timeoutMetrics, error) {
 	)
 }
 
-func (m *timeoutMetrics) RegisterChain(ctx *consensus.Context) error {
+func (m *timeoutMetrics) RegisterChain(ctx *snow.ConsensusContext) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 

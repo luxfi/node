@@ -6,8 +6,8 @@ package simplex
 import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/snow/networking/sender"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/networking/sender"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/utils/logging"
 )
 

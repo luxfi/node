@@ -10,6 +10,6 @@ source "$AVALANCHE_PATH"/scripts/git_commit.sh
 
 echo "Building bootstrap-monitor..."
 go build -ldflags\
-   "-X github.com/ava-labs/avalanchego/version.GitCommit=$git_commit $static_ld_flags"\
+   "-X github.com/luxfi/avalanchego/version.GitCommit=$git_commit $static_ld_flags"\
    -o "$AVALANCHE_PATH/build/bootstrap-monitor"\
    "$AVALANCHE_PATH/tests/fixture/bootstrapmonitor/cmd/"*.go

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package handler
@@ -8,43 +8,29 @@ import (
 	"errors"
 	"testing"
 	"time"
-	
+
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-
-	"github.com/luxfi/ids"
-
-	"github.com/luxfi/node/consensus"
-
-	"github.com/luxfi/node/consensus/consensustest"
-
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	enginepkg "github.com/luxfi/node/consensus/engine/core"
-
-	"github.com/luxfi/node/consensus/engine/enginetest"
-
-	"github.com/luxfi/node/consensus/networking/tracker"
-
-	"github.com/luxfi/node/consensus/validators"
-
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
-
 	"github.com/luxfi/node/network/p2p"
-
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/node/consensus/engine/enginetest"
+	"github.com/luxfi/node/consensus/engine/snowman/block"
+	"github.com/luxfi/node/consensus/networking/tracker"
+	"github.com/luxfi/node/consensus/snowtest"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/subnets"
-
+	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/math/meter"
-
 	"github.com/luxfi/node/utils/resource"
-
 	"github.com/luxfi/node/utils/set"
-
 	"github.com/luxfi/node/version"
 
-	commontracker "github.com/luxfi/node/consensus/engine/core/tracker"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-
-	"github.com/luxfi/node/utils/metrics"
+	commontracker "github.com/luxfi/node/consensus/engine/common/tracker"
 )
 
 const testThreadPoolSize = 2
@@ -56,15 +42,15 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 
 	called := make(chan struct{})
 
-	consensusCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(consensusCtx)
+	snowCtx := snowtest.Context(t, snowtest.CChainID)
+	ctx := snowtest.ConsensusContext(snowCtx)
 
 	vdrs := validators.NewManager()
 	vdr0 := ids.GenerateTestNodeID()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, vdr0, nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -72,9 +58,9 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		nil,
+		logging.NoLog{},
 		"",
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -93,7 +79,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -105,7 +91,7 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 		},
 	}
 	bootstrapper.Default(false)
-	bootstrapper.ContextF = func() *consensus.Context {
+	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
 	bootstrapper.GetAcceptedFrontierF = func(context.Context, ids.NodeID, uint32) error {
@@ -117,13 +103,13 @@ func TestHandlerDropsTimedOutMessages(t *testing.T) {
 		return nil
 	}
 	handler.SetEngineManager(&EngineManager{
-		Chain: &Engine{
+		Snowman: &Engine{
 			Bootstrapper: bootstrapper,
 		},
 	})
-	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-		State: consensus.Bootstrapping, // assumed bootstrap is ongoing
+	ctx.State.Set(snow.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		State: snow.Bootstrapping, // assumed bootstrap is ongoing
 	})
 
 	pastTime := time.Now()
@@ -167,15 +153,14 @@ func TestHandlerClosesOnError(t *testing.T) {
 	require := require.New(t)
 
 	closed := make(chan struct{}, 1)
-	consensusCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(consensusCtx)
-	t.Logf("Test starting with subnet %s", ctx.SubnetID)
+	snowCtx := snowtest.Context(t, snowtest.CChainID)
+	ctx := snowtest.ConsensusContext(snowCtx)
 
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -183,17 +168,17 @@ func TestHandlerClosesOnError(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		nil,
+		logging.NoLog{},
 		"",
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		nil,
 		version.CurrentApp,
 	)
 	require.NoError(err)
 
 	var cn block.ChangeNotifier
-	subscription := func(context.Context) (enginepkg.Message, error) {
-		return enginepkg.PendingTxs, nil
+	subscription := func(context.Context) (common.Message, error) {
+		return common.PendingTxs, nil
 	}
 
 	handlerIntf, err := New(
@@ -207,7 +192,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -224,7 +209,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 		},
 	}
 	bootstrapper.Default(false)
-	bootstrapper.ContextF = func() *consensus.Context {
+	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
 	bootstrapper.GetAcceptedFrontierF = func(context.Context, ids.NodeID, uint32) error {
@@ -233,12 +218,12 @@ func TestHandlerClosesOnError(t *testing.T) {
 
 	engine := &enginetest.Engine{T: t}
 	engine.Default(false)
-	engine.ContextF = func() *consensus.Context {
+	engine.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
 
 	handler.SetEngineManager(&EngineManager{
-		Chain: &Engine{
+		Snowman: &Engine{
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
 		},
@@ -246,9 +231,9 @@ func TestHandlerClosesOnError(t *testing.T) {
 
 	// assume bootstrapping is ongoing so that InboundGetAcceptedFrontier
 	// should normally be handled
-	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-		State: consensus.Bootstrapping,
+	ctx.State.Set(snow.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		State: snow.Bootstrapping,
 	})
 
 	bootstrapper.StartF = func(context.Context, uint32) error {
@@ -266,8 +251,7 @@ func TestHandlerClosesOnError(t *testing.T) {
 	}
 	handler.Push(context.Background(), msg)
 
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
+	ticker := time.NewTicker(time.Second)
 	select {
 	case <-ticker.C:
 		require.FailNow("Handler shutdown timed out before calling toClose")
@@ -279,13 +263,13 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	require := require.New(t)
 
 	closed := make(chan struct{}, 1)
-	consensusCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(consensusCtx)
+	snowCtx := snowtest.Context(t, snowtest.CChainID)
+	ctx := snowtest.ConsensusContext(snowCtx)
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -293,9 +277,9 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		nil,
+		logging.NoLog{},
 		"",
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -314,7 +298,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -328,7 +312,7 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 		},
 	}
 	bootstrapper.Default(false)
-	bootstrapper.ContextF = func() *consensus.Context {
+	bootstrapper.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
 	bootstrapper.GetFailedF = func(context.Context, ids.NodeID, uint32) error {
@@ -336,13 +320,13 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 		return nil
 	}
 	handler.SetEngineManager(&EngineManager{
-		Chain: &Engine{
+		Snowman: &Engine{
 			Bootstrapper: bootstrapper,
 		},
 	})
-	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-		State: consensus.Bootstrapping, // assumed bootstrap is ongoing
+	ctx.State.Set(snow.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		State: snow.Bootstrapping, // assumed bootstrap is ongoing
 	})
 
 	bootstrapper.StartF = func(context.Context, uint32) error {
@@ -372,13 +356,13 @@ func TestHandlerDropsGossipDuringBootstrapping(t *testing.T) {
 func TestHandlerDispatchInternal(t *testing.T) {
 	require := require.New(t)
 
-	consensusCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(consensusCtx)
+	snowCtx := snowtest.Context(t, snowtest.CChainID)
+	ctx := snowtest.ConsensusContext(snowCtx)
 	vdrs := validators.NewManager()
 	require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -386,16 +370,16 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		nil,
+		logging.NoLog{},
 		"",
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		nil,
 		version.CurrentApp,
 	)
 	require.NoError(err)
 
 	subscription, messages := createSubscriber()
-	notified := make(chan enginepkg.Message)
+	notified := make(chan common.Message)
 
 	handler, err := New(
 		ctx,
@@ -408,7 +392,7 @@ func TestHandlerDispatchInternal(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -422,11 +406,11 @@ func TestHandlerDispatchInternal(t *testing.T) {
 
 	engine := &enginetest.Engine{T: t}
 	engine.Default(false)
-	engine.ContextF = func() *consensus.Context {
+	engine.ContextF = func() *snow.ConsensusContext {
 		return ctx
 	}
 
-	engine.NotifyF = func(ctx context.Context, msg enginepkg.Message) error {
+	engine.NotifyF = func(ctx context.Context, msg common.Message) error {
 		select {
 		case notified <- msg:
 			notified <- msg
@@ -437,15 +421,15 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	}
 
 	handler.SetEngineManager(&EngineManager{
-		Chain: &Engine{
+		Snowman: &Engine{
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
 		},
 	})
 
-	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-		State: consensus.NormalOp, // assumed bootstrap is done
+	ctx.State.Set(snow.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		State: snow.NormalOp, // assumed bootstrap is done
 	})
 
 	bootstrapper.StartF = func(context.Context, uint32) error {
@@ -453,10 +437,10 @@ func TestHandlerDispatchInternal(t *testing.T) {
 	}
 
 	handler.Start(context.Background(), false)
-	messages <- enginepkg.PendingTxs
+	messages <- common.PendingTxs
 	select {
 	case msg := <-notified:
-		require.Equal(enginepkg.PendingTxs, msg)
+		require.Equal(common.PendingTxs, msg)
 	case <-time.After(time.Minute):
 		require.FailNow("Handler did not dispatch expected message")
 	}
@@ -470,48 +454,48 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 		requestedEngineType p2ppb.EngineType
 		setup               func(
 			h Handler,
-			b enginepkg.BootstrapableEngine,
-			e enginepkg.Engine,
+			b common.BootstrapableEngine,
+			e common.Engine,
 		)
 	}{
 		{
-			name:                "current - lux, requested - unspecified",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_DAG,
+			name:                "current - avalanche, requested - unspecified",
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_UNSPECIFIED,
-			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
+			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
-					Dag: &Engine{
+					Avalanche: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: b,
 						Consensus:    e,
 					},
-					Chain: nil,
+					Snowman: nil,
 				})
 			},
 		},
 		{
-			name:                "current - lux, requested - lux",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_DAG,
-			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_DAG,
-			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
+			name:                "current - avalanche, requested - avalanche",
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
+			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
+			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
-					Dag: &Engine{
+					Avalanche: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: b,
 						Consensus:    e,
 					},
-					Chain: nil,
+					Snowman: nil,
 				})
 			},
 		},
 		{
-			name:                "current - chain, requested - unspecified",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+			name:                "current - snowman, requested - unspecified",
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
 			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_UNSPECIFIED,
-			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
+			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
-					Dag: nil,
-					Chain: &Engine{
+					Avalanche: nil,
+					Snowman: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: b,
 						Consensus:    e,
@@ -520,17 +504,17 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			},
 		},
 		{
-			name:                "current - chain, requested - dag",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_DAG,
-			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
+			name:                "current - snowman, requested - avalanche",
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
+			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
-					Dag: &Engine{
+					Avalanche: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: nil,
 						Consensus:    e,
 					},
-					Chain: &Engine{
+					Snowman: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: b,
 						Consensus:    nil,
@@ -539,13 +523,13 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			},
 		},
 		{
-			name:                "current - chain, requested - chain",
-			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-			setup: func(h Handler, b enginepkg.BootstrapableEngine, e enginepkg.Engine) {
+			name:                "current - snowman, requested - snowman",
+			currentEngineType:   p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			requestedEngineType: p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			setup: func(h Handler, b common.BootstrapableEngine, e common.Engine) {
 				h.SetEngineManager(&EngineManager{
-					Dag: nil,
-					Chain: &Engine{
+					Avalanche: nil,
+					Snowman: &Engine{
 						StateSyncer:  nil,
 						Bootstrapper: b,
 						Consensus:    e,
@@ -560,13 +544,13 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			require := require.New(t)
 
 			messageReceived := make(chan struct{})
-			consensusCtx := consensustest.Context(t, consensustest.CChainID)
-			ctx := consensustest.ConsensusContext(consensusCtx)
+			snowCtx := snowtest.Context(t, snowtest.CChainID)
+			ctx := snowtest.ConsensusContext(snowCtx)
 			vdrs := validators.NewManager()
 			require.NoError(vdrs.AddStaker(ctx.SubnetID, ids.GenerateTestNodeID(), nil, ids.Empty, 1))
 
 			resourceTracker, err := tracker.NewResourceTracker(
-				metrics.NewTestRegistry(),
+				prometheus.NewRegistry(),
 				resource.NoUsage,
 				meter.ContinuousFactory{},
 				time.Second,
@@ -574,9 +558,9 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 			require.NoError(err)
 
 			peerTracker, err := p2p.NewPeerTracker(
-				nil,
+				logging.NoLog{},
 				"",
-				metrics.NewTestRegistry(),
+				prometheus.NewRegistry(),
 				nil,
 				version.CurrentApp,
 			)
@@ -595,7 +579,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 				subnets.New(ids.EmptyNodeID, subnets.Config{}),
 				commontracker.NewPeers(),
 				peerTracker,
-				metrics.NewTestRegistry(),
+				prometheus.NewRegistry(),
 				func() {},
 			)
 			require.NoError(err)
@@ -609,7 +593,7 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 
 			engine := &enginetest.Engine{T: t}
 			engine.Default(false)
-			engine.ContextF = func() *consensus.Context {
+			engine.ContextF = func() *snow.ConsensusContext {
 				return ctx
 			}
 			engine.ChitsF = func(context.Context, ids.NodeID, uint32, ids.ID, ids.ID, ids.ID, uint64) error {
@@ -619,9 +603,9 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 
 			test.setup(handler, bootstrapper, engine)
 
-			ctx.State.Set(consensus.EngineState{
+			ctx.State.Set(snow.EngineState{
 				Type:  test.currentEngineType,
-				State: consensus.NormalOp, // assumed bootstrap is done
+				State: snow.NormalOp, // assumed bootstrap is done
 			})
 
 			bootstrapper.StartF = func(context.Context, uint32) error {
@@ -649,10 +633,10 @@ func TestDynamicEngineTypeDispatch(t *testing.T) {
 func TestHandlerStartError(t *testing.T) {
 	require := require.New(t)
 
-	consensusCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(consensusCtx)
+	snowCtx := snowtest.Context(t, snowtest.CChainID)
+	ctx := snowtest.ConsensusContext(snowCtx)
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -660,9 +644,9 @@ func TestHandlerStartError(t *testing.T) {
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
-		nil,
+		logging.NoLog{},
 		"",
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		nil,
 		version.CurrentApp,
 	)
@@ -681,7 +665,7 @@ func TestHandlerStartError(t *testing.T) {
 		subnets.New(ctx.NodeID, subnets.Config{}),
 		commontracker.NewPeers(),
 		peerTracker,
-		metrics.NewTestRegistry(),
+		prometheus.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)
@@ -689,9 +673,9 @@ func TestHandlerStartError(t *testing.T) {
 	// Starting a handler with an unprovided engine should immediately cause the
 	// handler to shutdown.
 	handler.SetEngineManager(&EngineManager{})
-	ctx.State.Set(consensus.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-		State: consensus.Initializing,
+	ctx.State.Set(snow.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		State: snow.Initializing,
 	})
 	handler.Start(context.Background(), false)
 
@@ -699,15 +683,15 @@ func TestHandlerStartError(t *testing.T) {
 	require.NoError(err)
 }
 
-func createSubscriber() (enginepkg.Subscription, chan<- enginepkg.Message) {
-	messages := make(chan enginepkg.Message, 1)
+func createSubscriber() (common.Subscription, chan<- common.Message) {
+	messages := make(chan common.Message, 1)
 
-	subscription := func(ctx context.Context) (enginepkg.Message, error) {
+	subscription := func(ctx context.Context) (common.Message, error) {
 		select {
 		case msg := <-messages:
 			return msg, nil
 		case <-ctx.Done():
-			return enginepkg.Message(0), ctx.Err()
+			return common.Message(0), ctx.Err()
 		}
 	}
 

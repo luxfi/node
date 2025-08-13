@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -11,8 +11,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/sampler"
@@ -97,7 +97,7 @@ func (s *vdrSet) addWeight(nodeID ids.NodeID, weight uint64) error {
 	}
 
 	oldWeight := vdr.Weight
-	newWeight, err := math.Add64(oldWeight, weight)
+	newWeight, err := math.Add(oldWeight, weight)
 	if err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func (s *vdrSet) subsetWeight(subset set.Set[ids.NodeID]) (uint64, error) {
 		err         error
 	)
 	for nodeID := range subset {
-		totalWeight, err = math.Add64(totalWeight, s.getWeight(nodeID))
+		totalWeight, err = math.Add(totalWeight, s.getWeight(nodeID))
 		if err != nil {
 			return 0, err
 		}

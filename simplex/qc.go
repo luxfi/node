@@ -10,7 +10,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ava-labs/simplex"
+	"github.com/luxfi/simplex"
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/crypto/bls"

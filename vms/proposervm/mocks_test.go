@@ -29,7 +29,7 @@ import (
 	block "github.com/luxfi/node/vms/proposervm/block"
 =======
 	ids "github.com/luxfi/node/ids"
-	snowman "github.com/luxfi/node/snow/consensus/snowman"
+	snowman "github.com/luxfi/node/consensus/protocols/snowman"
 	block "github.com/luxfi/node/vms/proposervm/block"
 >>>>>>> upstream/master:vms/proposervm/mocks_test.go
 	gomock "go.uber.org/mock/gomock"

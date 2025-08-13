@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/ava-labs/libevm/ethclient"
+	"github.com/luxfi/libevm/ethclient"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 

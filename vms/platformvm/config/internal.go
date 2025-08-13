@@ -8,8 +8,8 @@ import (
 
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/uptime"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/uptime"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/set"
@@ -57,7 +57,7 @@ type Internal struct {
 	// The maximum amount of tokens that can be bonded on a validator
 	MaxValidatorStake uint64
 
-	// Minimum stake, in nAVAX, that can be delegated on the primary network
+	// Minimum stake, in nLUX, that can be delegated on the primary network
 	MinDelegatorStake uint64
 
 	// Minimum fee that can be charged for delegation

@@ -1,15 +1,15 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
 
 import (
-	"github.com/luxfi/ids"
-	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/crypto/bls"
 )
 
 // Validator is a struct that contains the base values representing a validator
-// of the Lux Network.
+// of the Avalanche Network.
 type Validator struct {
 	NodeID    ids.NodeID
 	PublicKey *bls.PublicKey
@@ -23,7 +23,7 @@ type Validator struct {
 }
 
 // GetValidatorOutput is a struct that contains the publicly relevant values of
-// a validator of the Lux Network for the output of GetValidator.
+// a validator of the Avalanche Network for the output of GetValidator.
 type GetValidatorOutput struct {
 	NodeID    ids.NodeID
 	PublicKey *bls.PublicKey

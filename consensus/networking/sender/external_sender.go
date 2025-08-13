@@ -1,12 +1,12 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sender
 
 import (
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/ids"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/set"
 )
@@ -16,7 +16,7 @@ import (
 type ExternalSender interface {
 	Send(
 		msg message.OutboundMessage,
-		config core.SendConfig,
+		config common.SendConfig,
 		subnetID ids.ID,
 		allower subnets.Allower,
 	) set.Set[ids.NodeID]
