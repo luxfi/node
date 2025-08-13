@@ -12,6 +12,7 @@ import (
 	"time"
 	
 	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -801,13 +802,13 @@ func newStateFromDB(require *require.Assertions, db database.Database) *state {
 	execCfg, _ := config.GetExecutionConfig(nil)
 	state, err := newState(
 		db,
-		metrics.Noop,
+		prometheus.NewRegistry(),
 		&config.Config{
 			Validators: validators.NewManager(),
 		},
 		execCfg,
 		&consensus.Context{},
-		metrics.NewRegistry(),
+		prometheus.NewRegistry(),
 		reward.NewCalculator(reward.Config{
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .1 * reward.PercentDenominator,

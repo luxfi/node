@@ -10,6 +10,7 @@ import (
 	"time"
 	
 	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/stretchr/testify/require"
 
@@ -120,13 +121,13 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	execConfig, err := config.GetExecutionConfig(nil)
 	require.NoError(err)
 
-	metrics, err := metrics.New(metrics.NewRegistry())
+	metrics, err := metrics.New(prometheus.NewRegistry())
 	require.NoError(err)
 
 	s, err := state.New(
 		db,
 		genesisBytes,
-		metrics.NewRegistry(),
+		prometheus.NewRegistry(),
 		&config.Config{
 			Validators: vdrs,
 		},

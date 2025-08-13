@@ -270,7 +270,7 @@ func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 	log := logging.NewLogger(
 		testKey,
 		logging.NewWrappedCore(
-			log.Info,
+			logging.Info,
 			originalStderr,
 			logging.Colors.ConsoleEncoder(),
 		),
@@ -284,9 +284,9 @@ func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 		listener,
 		process,
 		&subprocess.Config{
-			Stderr:           log,
+			Stderr:           originalStderr,
 			Stdout:           io.Discard,
-			Log:              log,
+			Log:              logging.NoLog{},
 			HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 		},
 	)

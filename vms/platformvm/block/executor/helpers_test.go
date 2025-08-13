@@ -14,6 +14,7 @@ import (
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
 
 	"github.com/stretchr/testify/require"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/node/consensus/engine/core"
 	"github.com/luxfi/metric"
@@ -189,10 +190,10 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		Rewards:      rewardsCalc,
 	}
 
-	registerer := metrics.NewRegistry()
+	registerer := prometheus.NewRegistry()
 	res.sender = &core.SenderTest{}
 
-	metrics := metrics.Noop
+	metrics := prometheus.NewRegistry()
 
 	var err error
 	res.mempool, err = mempool.New("mempool", registerer, nil)
@@ -310,11 +311,11 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		metrics.NewRegistry(),
+		prometheus.NewRegistry(),
 		cfg,
 		execCfg,
 		ctx,
-		metrics.Noop,
+		prometheus.NewRegistry(),
 		rewards,
 	)
 	if err != nil {
