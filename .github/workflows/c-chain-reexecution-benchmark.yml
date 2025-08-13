@@ -44,7 +44,7 @@ jobs:
               echo "SOURCE_BLOCK_DIR=${{ github.event.inputs.source-block-dir || 's3://luxd-bootstrap-testing/cchain-mainnet-blocks-1m-ldb.zip' }}"
               echo "CURRENT_STATE_DIR=${{ github.event.inputs.current-state-dir || 's3://luxd-bootstrap-testing/cchain-current-state-hashdb-full-100.zip' }}"
             } >> "$GITHUB_ENV"
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v5
         - uses: ./.github/actions/setup-go-for-project
         - name: Run C-Chain Re-Execution
           uses: ./.github/actions/run-monitored-tmpnet-cmd
