@@ -31,6 +31,7 @@ import (
 const (
 	baseURL              = "/ext"
 	maxConcurrentStreams = 64
+	HTTPHeaderRoute      = "X-Lux-Route"
 )
 
 var (

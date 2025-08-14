@@ -4,6 +4,7 @@
 package ipcs
 
 import (
+	"context"
 	"errors"
 	"os"
 	"syscall"
@@ -61,7 +62,7 @@ func newEventSockets(
 }
 
 // Accept delivers a message to the underlying eventSockets
-func (ipcs *EventSockets) Accept(ctx *consensus.Context, containerID ids.ID, container []byte) error {
+func (ipcs *EventSockets) Accept(ctx context.Context, containerID ids.ID, container []byte) error {
 	if ipcs.consensusSocket != nil {
 		if err := ipcs.consensusSocket.Accept(ctx, containerID, container); err != nil {
 			return err
@@ -166,7 +167,7 @@ func newEventIPCSocket(
 }
 
 // Accept delivers a message to the eventSocket
-func (eis *eventSocket) Accept(_ *consensus.Context, _ ids.ID, container []byte) error {
+func (eis *eventSocket) Accept(_ context.Context, _ ids.ID, container []byte) error {
 	eis.socket.Send(container)
 	return nil
 }

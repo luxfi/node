@@ -7,12 +7,8 @@ import (
 	"math/rand"
 	"testing"
 	
-
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/database"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -181,7 +177,6 @@ func TestSharedMemoryLargeIndexed(t *testing.T, chainID0, chainID1 ids.ID, sm0, 
 		})
 	}
 
-	require.NoError(sm0.Apply(map[ids.ID]*Requests{chainID1: {PutRequests: elems}}))
 	require.NoError(sm0.Apply(map[ids.ID]*atomic.Requests{chainID1: {PutRequests: elems}}))
 
 	values, _, _, err := sm1.Indexed(chainID0, allTraits, nil, nil, len(elems)+1)
@@ -268,7 +263,6 @@ func TestSharedMemoryCommitOnRemove(t *testing.T, _, chainID1 ids.ID, sm0, _ ato
 	require.NoError(batch.Delete([]byte{1}))
 
 	require.NoError(sm0.Apply(
-		map[ids.ID]*Requests{chainID1: {RemoveRequests: [][]byte{{0}}}},
 		map[ids.ID]*atomic.Requests{chainID1: {RemoveRequests: [][]byte{{0}}}},
 		batch,
 	))
@@ -344,7 +338,6 @@ func TestSharedMemoryLargeBatchSize(t *testing.T, _, chainID1 ids.ID, sm0, _ ato
 	require.NoError(batch.Delete([]byte{1}))
 
 	require.NoError(sm0.Apply(
-		map[ids.ID]*Requests{chainID1: {RemoveRequests: [][]byte{{0}}}},
 		map[ids.ID]*atomic.Requests{chainID1: {RemoveRequests: [][]byte{{0}}}},
 		batch,
 	))
@@ -368,7 +361,6 @@ func TestSharedMemoryLargeBatchSize(t *testing.T, _, chainID1 ids.ID, sm0, _ ato
 	}
 
 	require.NoError(sm0.Apply(
-		map[ids.ID]*Requests{chainID1: {RemoveRequests: [][]byte{{1}}}},
 		map[ids.ID]*atomic.Requests{chainID1: {RemoveRequests: [][]byte{{1}}}},
 		batch,
 	))

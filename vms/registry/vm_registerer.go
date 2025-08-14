@@ -112,7 +112,7 @@ func (r *vmRegisterer) createStaticHandlers(
 			zap.Error(err),
 		)
 
-		if err := commonVM.Shutdown(ctx); err != nil {
+		if err := commonVM.Shutdown(); err != nil {
 			return nil, fmt.Errorf("shutting down VM errored with: %w", err)
 		}
 		return nil, err
