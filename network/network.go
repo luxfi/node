@@ -239,7 +239,7 @@ func NewNetwork(
 	if err != nil {
 		return nil, fmt.Errorf("initializing ip tracker failed with: %w", err)
 	}
-	config.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, ipTracker)
+	config.Validators.RegisterSetCallbackListener(ipTracker)
 
 	// Track all default bootstrappers to ensure their current IPs are gossiped
 	// like validator IPs.
@@ -315,10 +315,23 @@ func (n *network) Send(
 	subnetID ids.ID,
 	allower subnets.Allower,
 ) set.Set[ids.NodeID] {
-	namedPeers := n.getPeers(config.NodeIDs, subnetID, allower)
+	// Convert NodeIDs to set if needed
+	var nodeIDSet set.Set[ids.NodeID]
+	if config.NodeIDs != nil {
+		if s, ok := config.NodeIDs.(set.Set[ids.NodeID]); ok {
+			nodeIDSet = s
+		} else if slice, ok := config.NodeIDs.([]ids.NodeID); ok {
+			nodeIDSet = set.Of(slice...)
+		}
+	}
+	if nodeIDSet == nil {
+		nodeIDSet = set.NewSet[ids.NodeID](0)
+	}
+	
+	namedPeers := n.getPeers(nodeIDSet, subnetID, allower)
 	n.peerConfig.Metrics.MultipleSendsFailed(
 		msg.Op(),
-		config.NodeIDs.Len()-len(namedPeers),
+		nodeIDSet.Len()-len(namedPeers),
 	)
 
 	var (
@@ -725,7 +738,7 @@ func (n *network) samplePeers(
 	// As an optimization, if there are fewer validators than
 	// [numValidatorsToSample], only attempt to sample [numValidatorsToSample]
 	// validators to potentially avoid iterating over the entire peer set.
-	numValidatorsToSample := min(config.Validators, n.config.Validators.NumValidators(subnetID))
+	numValidatorsToSample := min(len(config.Validators), n.config.Validators.NumValidators(subnetID))
 
 	n.peersLock.RLock()
 	defer n.peersLock.RUnlock()
@@ -741,7 +754,7 @@ func (n *network) samplePeers(
 			peerID := p.ID()
 			// if the peer was already explicitly included, don't include in the
 			// sample
-			if config.NodeIDs.Contains(peerID) {
+			if nodeIDSet, ok := config.NodeIDs.(set.Set[ids.NodeID]); ok && nodeIDSet.Contains(peerID) {
 				return false
 			}
 
@@ -1104,7 +1117,7 @@ func (n *network) NodeUptime(subnetID ids.ID) (UptimeResult, error) {
 		return UptimeResult{}, errNotTracked
 	}
 
-	myStake := n.config.Validators.GetWeight(subnetID, n.config.MyNodeID)
+	myStake, _ := n.config.Validators.GetWeight(subnetID, n.config.MyNodeID)
 	if myStake == 0 {
 		return UptimeResult{}, errNotValidator
 	}
@@ -1127,7 +1140,7 @@ func (n *network) NodeUptime(subnetID ids.ID) (UptimeResult, error) {
 		peer, _ := n.connectedPeers.GetByIndex(i)
 
 		nodeID := peer.ID()
-		weight := n.config.Validators.GetWeight(subnetID, nodeID)
+		weight, _ := n.config.Validators.GetWeight(subnetID, nodeID)
 		if weight == 0 {
 			// this is not a validator skip it.
 			continue
@@ -1207,7 +1220,7 @@ func (n *network) runTimers() {
 func (n *network) pullGossipPeerLists() {
 	peers := n.samplePeers(
 		core.SendConfig{
-			Validators: 1,
+			NonValidators: 1,
 		},
 		constants.PrimaryNetworkID,
 		subnets.NoOpAllower,

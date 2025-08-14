@@ -4,6 +4,7 @@
 package txs
 
 import (
+	"context"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
@@ -61,4 +62,10 @@ func (t *OperationTx) NumCredentials() int {
 
 func (t *OperationTx) Visit(v Visitor) error {
 	return v.OperationTx(t)
+}
+
+// InitializeWithContext initializes the transaction with consensus context
+func (tx *OperationTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
 }

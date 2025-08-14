@@ -4,6 +4,7 @@
 package txs
 
 import (
+	"context"
 	"errors"
 	"unicode"
 
@@ -87,4 +88,10 @@ func (tx *CreateChainTx) SyntacticVerify(ctx *consensus.Context) error {
 
 func (tx *CreateChainTx) Visit(visitor Visitor) error {
 	return visitor.CreateChainTx(tx)
+}
+
+// InitializeWithContext initializes the transaction with consensus context
+func (tx *CreateChainTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
 }

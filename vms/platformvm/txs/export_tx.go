@@ -4,6 +4,7 @@
 package txs
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -76,4 +77,10 @@ func (tx *ExportTx) SyntacticVerify(ctx *consensus.Context) error {
 
 func (tx *ExportTx) Visit(visitor Visitor) error {
 	return visitor.ExportTx(tx)
+}
+
+// InitializeWithContext initializes the transaction with consensus context
+func (tx *ExportTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
 }

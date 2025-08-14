@@ -4,6 +4,7 @@
 package txs
 
 import (
+	"context"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/platformvm/fx"
 )
@@ -48,4 +49,10 @@ func (tx *CreateSubnetTx) SyntacticVerify(ctx *consensus.Context) error {
 
 func (tx *CreateSubnetTx) Visit(visitor Visitor) error {
 	return visitor.CreateSubnetTx(tx)
+}
+
+// InitializeWithContext initializes the transaction with consensus context
+func (tx *CreateSubnetTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
 }

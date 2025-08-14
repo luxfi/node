@@ -3,6 +3,8 @@
 
 package block
 
+import "context"
+
 import (
 	"fmt"
 	"time"
@@ -101,4 +103,10 @@ func NewStandardBlock(
 	blk.BlockID = hashing.ComputeHash256Array(bytes)
 	blk.bytes = bytes
 	return blk, nil
+}
+
+// InitializeWithContext initializes the block with consensus context
+func (b *StandardBlock) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
 }

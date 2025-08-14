@@ -96,6 +96,8 @@ const (
 
 var (
 	_ txs.Visitor = (*complexityVisitor)(nil)
+	
+	ErrUnsupportedTx = errors.New("unsupported transaction type")
 
 	IntrinsicAddSubnetValidatorTxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
@@ -285,11 +287,11 @@ func outputComplexity(out *lux.TransferableOutput) (gas.Dimensions, error) {
 	}
 
 	numAddresses := uint64(len(secp256k1Out.Addrs))
-	addressBandwidth, err := math.Mul(numAddresses, ids.ShortIDLen)
+	addressBandwidth, err := math.Mul64(numAddresses, ids.ShortIDLen)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
-	complexity[gas.Bandwidth], err = math.Add(complexity[gas.Bandwidth], addressBandwidth)
+	complexity[gas.Bandwidth], err = math.Add64(complexity[gas.Bandwidth], addressBandwidth)
 	return complexity, err
 }
 
@@ -331,17 +333,17 @@ func inputComplexity(in *lux.TransferableInput) (gas.Dimensions, error) {
 
 	numSignatures := uint64(len(secp256k1In.SigIndices))
 	// Add signature bandwidth
-	signatureBandwidth, err := math.Mul(numSignatures, intrinsicSECP256k1FxSignatureBandwidth)
+	signatureBandwidth, err := math.Mul64(numSignatures, intrinsicSECP256k1FxSignatureBandwidth)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
-	complexity[gas.Bandwidth], err = math.Add(complexity[gas.Bandwidth], signatureBandwidth)
+	complexity[gas.Bandwidth], err = math.Add64(complexity[gas.Bandwidth], signatureBandwidth)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
 
 	// Add signature compute
-	complexity[gas.Compute], err = math.Mul(numSignatures, intrinsicSECP256k1FxSignatureCompute)
+	complexity[gas.Compute], err = math.Mul64(numSignatures, intrinsicSECP256k1FxSignatureCompute)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
@@ -350,6 +352,8 @@ func inputComplexity(in *lux.TransferableInput) (gas.Dimensions, error) {
 
 // ConvertSubnetToL1ValidatorComplexity returns the complexity the validators
 // add to a transaction.
+// ConvertSubnetToL1Validator is not yet implemented
+/*
 func ConvertSubnetToL1ValidatorComplexity(l1Validators ...*txs.ConvertSubnetToL1Validator) (gas.Dimensions, error) {
 	var complexity gas.Dimensions
 	for _, l1Validator := range l1Validators {
@@ -378,7 +382,7 @@ func convertSubnetToL1ValidatorComplexity(l1Validator *txs.ConvertSubnetToL1Vali
 	}
 
 	numAddresses := uint64(len(l1Validator.RemainingBalanceOwner.Addresses) + len(l1Validator.DeactivationOwner.Addresses))
-	addressBandwidth, err := math.Mul(numAddresses, ids.ShortIDLen)
+	addressBandwidth, err := math.Mul64(numAddresses, ids.ShortIDLen)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
@@ -392,6 +396,7 @@ func convertSubnetToL1ValidatorComplexity(l1Validator *txs.ConvertSubnetToL1Vali
 		},
 	)
 }
+*/
 
 // OwnerComplexity returns the complexity an owner adds to a transaction.
 // It does not include the typeID of the owner.
@@ -402,12 +407,12 @@ func OwnerComplexity(ownerIntf fx.Owner) (gas.Dimensions, error) {
 	}
 
 	numAddresses := uint64(len(owner.Addrs))
-	addressBandwidth, err := math.Mul(numAddresses, ids.ShortIDLen)
+	addressBandwidth, err := math.Mul64(numAddresses, ids.ShortIDLen)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
 
-	bandwidth, err := math.Add(addressBandwidth, intrinsicSECP256k1FxOutputOwnersBandwidth)
+	bandwidth, err := math.Add64(addressBandwidth, intrinsicSECP256k1FxOutputOwnersBandwidth)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
@@ -428,17 +433,17 @@ func AuthComplexity(authIntf verify.Verifiable) (gas.Dimensions, error) {
 	}
 
 	numSignatures := uint64(len(auth.SigIndices))
-	signatureBandwidth, err := math.Mul(numSignatures, intrinsicSECP256k1FxSignatureBandwidth)
+	signatureBandwidth, err := math.Mul64(numSignatures, intrinsicSECP256k1FxSignatureBandwidth)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
 
-	bandwidth, err := math.Add(signatureBandwidth, intrinsicSECP256k1FxInputBandwidth)
+	bandwidth, err := math.Add64(signatureBandwidth, intrinsicSECP256k1FxInputBandwidth)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
 
-	signatureCompute, err := math.Mul(numSignatures, intrinsicSECP256k1FxSignatureCompute)
+	signatureCompute, err := math.Mul64(numSignatures, intrinsicSECP256k1FxSignatureCompute)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
@@ -476,12 +481,12 @@ func WarpComplexity(message []byte) (gas.Dimensions, error) {
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
-	aggregationCompute, err := math.Mul(uint64(numSigners), intrinsicBLSAggregateCompute)
+	aggregationCompute, err := math.Mul64(uint64(numSigners), intrinsicBLSAggregateCompute)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
 
-	compute, err := math.Add(aggregationCompute, intrinsicBLSVerifyCompute)
+	compute, err := math.Add64(aggregationCompute, intrinsicBLSVerifyCompute)
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
@@ -534,15 +539,15 @@ func (c *complexityVisitor) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) e
 }
 
 func (c *complexityVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
-	bandwidth, err := math.Mul(uint64(len(tx.FxIDs)), ids.IDLen)
+	bandwidth, err := math.Mul64(uint64(len(tx.FxIDs)), ids.IDLen)
 	if err != nil {
 		return err
 	}
-	bandwidth, err = math.Add(bandwidth, uint64(len(tx.ChainName)))
+	bandwidth, err = math.Add64(bandwidth, uint64(len(tx.ChainName)))
 	if err != nil {
 		return err
 	}
-	bandwidth, err = math.Add(bandwidth, uint64(len(tx.GenesisData)))
+	bandwidth, err = math.Add64(bandwidth, uint64(len(tx.GenesisData)))
 	if err != nil {
 		return err
 	}
@@ -712,6 +717,8 @@ func (c *complexityVisitor) BaseTx(tx *txs.BaseTx) error {
 	return err
 }
 
+// ConvertSubnetToL1Tx is not yet implemented
+/*
 func (c *complexityVisitor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 	if err != nil {
@@ -735,6 +742,7 @@ func (c *complexityVisitor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) err
 	)
 	return err
 }
+*/
 
 func (c *complexityVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
@@ -808,7 +816,7 @@ func baseTxComplexity(tx *txs.BaseTx) (gas.Dimensions, error) {
 	if err != nil {
 		return gas.Dimensions{}, err
 	}
-	complexity[gas.Bandwidth], err = math.Add(
+	complexity[gas.Bandwidth], err = math.Add64(
 		complexity[gas.Bandwidth],
 		uint64(len(tx.Memo)),
 	)

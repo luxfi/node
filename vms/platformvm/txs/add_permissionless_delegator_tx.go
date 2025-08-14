@@ -4,6 +4,7 @@
 package txs
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/luxfi/consensus"
@@ -140,4 +141,10 @@ func (tx *AddPermissionlessDelegatorTx) SyntacticVerify(ctx *consensus.Context) 
 
 func (tx *AddPermissionlessDelegatorTx) Visit(visitor Visitor) error {
 	return visitor.AddPermissionlessDelegatorTx(tx)
+}
+
+// InitializeWithContext initializes the transaction with consensus context
+func (tx *AddPermissionlessDelegatorTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
 }

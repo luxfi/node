@@ -43,7 +43,7 @@ func (*preForkBlock) acceptOuterBlk() error {
 }
 
 func (b *preForkBlock) acceptInnerBlk(ctx context.Context) error {
-	return b.Block.Accept(ctx)
+	return b.Block.Accept()
 }
 
 func (b *preForkBlock) Status() choices.Status {
@@ -118,7 +118,7 @@ func (b *preForkBlock) verifyPreForkChild(ctx context.Context, child *preForkBlo
 		)
 	}
 
-	return child.Block.Verify(ctx)
+	return child.Block.Verify()
 }
 
 // This method only returns nil once (during the transition)
@@ -129,7 +129,7 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 
 	childID := child.ID()
 	childPChainHeight := child.PChainHeight()
-	currentPChainHeight, err := b.vm.ctx.ValidatorState.GetCurrentHeight(ctx)
+	currentPChainHeight, err := b.vm.ctx.ValidatorState.GetCurrentHeight()
 	if err != nil {
 		b.vm.ctx.Log.Error("block verification failed",
 			zap.String("reason", "failed to get current P-Chain height"),

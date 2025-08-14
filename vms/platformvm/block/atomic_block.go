@@ -3,6 +3,8 @@
 
 package block
 
+import "context"
+
 import (
 	"fmt"
 
@@ -53,4 +55,10 @@ func NewApricotAtomicBlock(
 		Tx: tx,
 	}
 	return blk, initialize(blk, &blk.CommonBlock)
+}
+
+// InitializeWithContext initializes the block with consensus context
+func (b *ApricotAtomicBlock) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
 }

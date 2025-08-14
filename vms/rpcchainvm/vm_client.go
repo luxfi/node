@@ -23,11 +23,11 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/core/appsender"
 	"github.com/luxfi/consensus/engine/chain/block"
 	consensuschain "github.com/luxfi/consensus/chain"
-	"github.com/luxfi/consensus/validators/gvalidators"
+	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/database"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/db/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/ids/galiasreader"
@@ -38,6 +38,8 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
+	"github.com/luxfi/node/vms/rpcchainvm/appsender"
+	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/messenger"
@@ -75,7 +77,7 @@ var (
 	_ block.StateSyncableVM              = (*VMClient)(nil)
 	_ prometheus.Gatherer                = (*VMClient)(nil)
 
-	_ consensuschain.Block    = (*blockClient)(nil)
+	_ block.Block             = (*blockClient)(nil)
 	_ block.WithVerifyContext = (*blockClient)(nil)
 
 	_ block.StateSummary = (*summaryClient)(nil)
@@ -124,22 +126,26 @@ func NewClient(
 
 func (vm *VMClient) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
-	db database.Database,
+	chainCtx *block.ChainContext,
+	dbManager block.DBManager,
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	fxs []*core.Fx,
-	appSender core.AppSender,
+	toEngine chan<- block.Message,
+	fxs []*block.Fx,
+	appSender block.AppSender,
 ) error {
+	// Convert back to consensus.Context for internal use
+	consensusCtx := (*consensus.Context)(chainCtx)
+	db := dbManager.Current()
 	if len(fxs) != 0 {
 		return errUnsupportedFXs
 	}
 
-	primaryAlias, err := chainCtx.BCLookup.PrimaryAlias(chainCtx.ChainID)
+	primaryAlias, err := consensusCtx.BCLookup.PrimaryAlias(consensusCtx.ChainID)
 	if err != nil {
 		// If fetching the alias fails, we default to the chain's ID
-		primaryAlias = chainCtx.ChainID.String()
+		primaryAlias = consensusCtx.ChainID.String()
 	}
 
 	// Register metrics
@@ -155,7 +161,7 @@ func (vm *VMClient) Initialize(
 		return err
 	}
 
-	if err := chainCtx.Metrics.Register("", vm); err != nil {
+	if err := consensusCtx.Metrics.Register("", vm); err != nil {
 		return err
 	}
 
@@ -167,19 +173,32 @@ func (vm *VMClient) Initialize(
 	dbServerAddr := dbServerListener.Addr().String()
 
 	go grpcutils.Serve(dbServerListener, vm.newDBServer(db))
-	chainCtx.Log.Info("grpc: serving database",
+	consensusCtx.Log.Info("grpc: serving database",
 		zap.String("address", dbServerAddr),
 	)
 
 	// Create a channel for message passing
-	toEngine := make(chan core.Message, 1)
-	vm.messenger = messenger.NewServer(toEngine)
+	msgChannel := make(chan core.Message, 1) 
+	vm.messenger = messenger.NewServer(msgChannel)
 	// vm.keystore = gkeystore.NewServer(chainCtx.Keystore) // Keystore removed from consensus.Context
-	vm.sharedMemory = gsharedmemory.NewServer(chainCtx.SharedMemory, db)
-	vm.bcLookup = galiasreader.NewServer(chainCtx.BCLookup)
-	vm.appSender = appsender.NewServer(appSender)
-	vm.validatorStateServer = gvalidators.NewServer(chainCtx.ValidatorState)
-	vm.warpSignerServer = gwarp.NewServer(chainCtx.WarpSigner)
+	
+	// Create SharedMemory wrapper
+	sharedMemoryWrapper := &sharedMemoryWrapper{sm: consensusCtx.SharedMemory}
+	vm.sharedMemory = gsharedmemory.NewServer(sharedMemoryWrapper, db)
+	
+	// Create BCLookup wrapper
+	bcLookupWrapper := &bcLookupWrapper{bc: consensusCtx.BCLookup}
+	vm.bcLookup = galiasreader.NewServer(bcLookupWrapper)
+	
+	// Convert appSender
+	coreAppSender := &appSenderWrapper{appSender: appSender}
+	vm.appSender = appsender.NewServer(coreAppSender)
+	
+	// Create ValidatorState wrapper
+	validatorStateWrapper := &validatorStateWrapper{vs: consensusCtx.ValidatorState}
+	vm.validatorStateServer = gvalidators.NewServer(validatorStateWrapper)
+	// WarpSigner doesn't exist in consensus.Context - skip it
+	// vm.warpSignerServer = gwarp.NewServer(chainCtx.WarpSigner)
 
 	serverListener, err := grpcutils.NewListener()
 	if err != nil {
@@ -188,20 +207,20 @@ func (vm *VMClient) Initialize(
 	serverAddr := serverListener.Addr().String()
 
 	go grpcutils.Serve(serverListener, vm.newInitServer())
-	chainCtx.Log.Info("grpc: serving vm services",
+	consensusCtx.Log.Info("grpc: serving vm services",
 		zap.String("address", serverAddr),
 	)
 
 	resp, err := vm.client.Initialize(ctx, &vmpb.InitializeRequest{
-		NetworkId:    chainCtx.NetworkID,
-		SubnetId:     chainCtx.SubnetID[:],
-		ChainId:      chainCtx.ChainID[:],
-		NodeId:       chainCtx.NodeID.Bytes(),
-		PublicKey:    bls.PublicKeyToCompressedBytes(chainCtx.PublicKey),
-		XChainId:     chainCtx.XChainID[:],
-		CChainId:     chainCtx.CChainID[:],
-		LuxAssetId:   chainCtx.LUXAssetID[:],
-		ChainDataDir: chainCtx.ChainDataDir,
+		NetworkId:    consensusCtx.NetworkID,
+		SubnetId:     consensusCtx.SubnetID[:],
+		ChainId:      consensusCtx.ChainID[:],
+		NodeId:       consensusCtx.NodeID.Bytes(),
+		PublicKey:    bls.PublicKeyToCompressedBytes(consensusCtx.PublicKey),
+		XChainId:     ids.Empty[:], // XChainID doesn't exist in consensus.Context
+		CChainId:     consensusCtx.CChainID[:],
+		LuxAssetId:   consensusCtx.LUXAssetID[:],
+		ChainDataDir: consensusCtx.ChainDataDir,
 		GenesisBytes: genesisBytes,
 		UpgradeBytes: upgradeBytes,
 		ConfigBytes:  configBytes,
@@ -238,6 +257,55 @@ func (vm *VMClient) Initialize(
 		time:     time,
 	}
 
+	// Create wrapper functions that convert between chain.Block types
+	getBlockWrapper := func(ctx context.Context, blkID ids.ID) (consensuschain.Block, error) {
+		blk, err := vm.getBlock(ctx, blkID)
+		if err != nil {
+			return nil, err
+		}
+		// blockClient already implements consensuschain.Block
+		return blk.(consensuschain.Block), nil
+	}
+	
+	parseBlockWrapper := func(ctx context.Context, bytes []byte) (consensuschain.Block, error) {
+		blk, err := vm.parseBlock(ctx, bytes)
+		if err != nil {
+			return nil, err
+		}
+		// blockClient already implements consensuschain.Block
+		return blk.(consensuschain.Block), nil
+	}
+	
+	batchedParseBlockWrapper := func(ctx context.Context, blksBytes [][]byte) ([]consensuschain.Block, error) {
+		blks, err := vm.batchedParseBlock(ctx, blksBytes)
+		if err != nil {
+			return nil, err
+		}
+		result := make([]consensuschain.Block, len(blks))
+		for i, blk := range blks {
+			result[i] = blk.(consensuschain.Block)
+		}
+		return result, nil
+	}
+	
+	buildBlockWrapper := func(ctx context.Context) (consensuschain.Block, error) {
+		blk, err := vm.buildBlock(ctx)
+		if err != nil {
+			return nil, err
+		}
+		// blockClient already implements consensuschain.Block
+		return blk.(consensuschain.Block), nil
+	}
+	
+	buildBlockWithContextWrapper := func(ctx context.Context, blockCtx *block.Context) (consensuschain.Block, error) {
+		blk, err := vm.buildBlockWithContext(ctx, blockCtx)
+		if err != nil {
+			return nil, err
+		}
+		// blockClient already implements consensuschain.Block
+		return blk.(consensuschain.Block), nil
+	}
+
 	vm.State, err = chain.NewMeteredState(
 		serverReg,
 		&chain.Config{
@@ -246,11 +314,11 @@ func (vm *VMClient) Initialize(
 			UnverifiedCacheSize:   unverifiedCacheSize,
 			BytesToIDCacheSize:    bytesToIDCacheSize,
 			LastAcceptedBlock:     lastAcceptedBlk,
-			GetBlock:              vm.getBlock,
-			UnmarshalBlock:        vm.parseBlock,
-			BatchedUnmarshalBlock: vm.batchedParseBlock,
-			BuildBlock:            vm.buildBlock,
-			BuildBlockWithContext: vm.buildBlockWithContext,
+			GetBlock:              getBlockWrapper,
+			UnmarshalBlock:        parseBlockWrapper,
+			BatchedUnmarshalBlock: batchedParseBlockWrapper,
+			BuildBlock:            buildBlockWrapper,
+			BuildBlockWithContext: buildBlockWithContextWrapper,
 		},
 	)
 	return err
@@ -397,7 +465,7 @@ func (vm *VMClient) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 
 // If the underlying VM doesn't actually implement this method, its [BuildBlock]
 // method will be called instead.
-func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.Context) (consensuschain.Block, error) {
+func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.Context) (chain.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{
 		PChainHeight: &blockCtx.PChainHeight,
 	})
@@ -407,7 +475,7 @@ func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.C
 	return vm.newBlockFromBuildBlock(resp)
 }
 
-func (vm *VMClient) buildBlock(ctx context.Context) (consensuschain.Block, error) {
+func (vm *VMClient) buildBlock(ctx context.Context) (chain.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{})
 	if err != nil {
 		return nil, err
@@ -415,7 +483,7 @@ func (vm *VMClient) buildBlock(ctx context.Context) (consensuschain.Block, error
 	return vm.newBlockFromBuildBlock(resp)
 }
 
-func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (consensuschain.Block, error) {
+func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (chain.Block, error) {
 	resp, err := vm.client.ParseBlock(ctx, &vmpb.ParseBlockRequest{
 		Bytes: bytes,
 	})
@@ -454,7 +522,7 @@ func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (consensuschai
 	}, nil
 }
 
-func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (consensuschain.Block, error) {
+func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 	resp, err := vm.client.GetBlock(ctx, &vmpb.GetBlockRequest{
 		Id: blkID[:],
 	})
@@ -626,7 +694,7 @@ func (vm *VMClient) GetAncestors(
 	return resp.BlksBytes, nil
 }
 
-func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]consensuschain.Block, error) {
+func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]chain.Block, error) {
 	resp, err := vm.client.BatchedParseBlock(ctx, &vmpb.BatchedParseBlockRequest{
 		Request: blksBytes,
 	})
@@ -637,7 +705,7 @@ func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) (
 		return nil, errBatchedParseBlockWrongNumberOfBlocks
 	}
 
-	res := make([]consensuschain.Block, 0, len(blksBytes))
+	res := make([]chain.Block, 0, len(blksBytes))
 	for idx, blkResp := range resp.Response {
 		id, err := ids.ToID(blkResp.Id)
 		if err != nil {
@@ -822,7 +890,8 @@ func (b *blockClient) ID() ids.ID {
 	return b.id
 }
 
-func (b *blockClient) Accept(ctx context.Context) error {
+func (b *blockClient) Accept() error {
+	ctx := context.Background()
 	b.status = choices.Accepted
 	_, err := b.vm.client.BlockAccept(ctx, &vmpb.BlockAcceptRequest{
 		Id: b.id[:],
@@ -830,7 +899,8 @@ func (b *blockClient) Accept(ctx context.Context) error {
 	return err
 }
 
-func (b *blockClient) Reject(ctx context.Context) error {
+func (b *blockClient) Reject() error {
+	ctx := context.Background()
 	b.status = choices.Rejected
 	_, err := b.vm.client.BlockReject(ctx, &vmpb.BlockRejectRequest{
 		Id: b.id[:],
@@ -846,7 +916,8 @@ func (b *blockClient) Parent() ids.ID {
 	return b.parentID
 }
 
-func (b *blockClient) Verify(ctx context.Context) error {
+func (b *blockClient) Verify() error {
+	ctx := context.Background()
 	resp, err := b.vm.client.BlockVerify(ctx, &vmpb.BlockVerifyRequest{
 		Bytes: b.bytes,
 	})
@@ -885,6 +956,11 @@ func (b *blockClient) VerifyWithContext(ctx context.Context, blockCtx *block.Con
 
 	b.time, err = grpcutils.TimestampAsTime(resp.Timestamp)
 	return err
+}
+
+// SetStatus sets the status of the block
+func (b *blockClient) SetStatus(status choices.Status) {
+	b.status = status
 }
 
 type summaryClient struct {
@@ -932,4 +1008,190 @@ func (vm *VMClient) WaitForEvent(ctx context.Context) (core.Message, error) {
 func (vm *VMClient) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 	// RPC VM uses CreateHandlers instead of a single handler
 	return nil, nil
+}
+
+// BuildBlock implements the block.ChainVM interface
+func (vm *VMClient) BuildBlock(ctx context.Context) (block.Block, error) {
+	innerBlk, err := vm.buildBlock(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// Convert chain.Block to block.Block through wrapper
+	return &chainBlockWrapper{innerBlk}, nil
+}
+
+// BuildBlockWithContext implements the block.BuildBlockWithContextChainVM interface
+func (vm *VMClient) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (block.Block, error) {
+	innerBlk, err := vm.buildBlockWithContext(ctx, blockCtx)
+	if err != nil {
+		return nil, err
+	}
+	// Convert chain.Block to block.Block through wrapper
+	return &chainBlockWrapper{innerBlk}, nil
+}
+
+// ParseBlock implements the block.ChainVM interface
+func (vm *VMClient) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
+	innerBlk, err := vm.parseBlock(ctx, bytes)
+	if err != nil {
+		return nil, err
+	}
+	// Convert chain.Block to block.Block through wrapper
+	return &chainBlockWrapper{innerBlk}, nil
+}
+
+// GetBlock implements the block.ChainVM interface
+func (vm *VMClient) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
+	innerBlk, err := vm.getBlock(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	// Convert chain.Block to block.Block through wrapper
+	return &chainBlockWrapper{innerBlk}, nil
+}
+
+// LastAccepted implements the block.ChainVM interface
+func (vm *VMClient) LastAccepted(ctx context.Context) (ids.ID, error) {
+	lastAcceptedBlk := vm.State.LastAcceptedBlock()
+	return lastAcceptedBlk.ID(), nil
+}
+
+// BatchedParseBlock implements the block.BatchedChainVM interface
+func (vm *VMClient) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]block.Block, error) {
+	innerBlks, err := vm.batchedParseBlock(ctx, blks)
+	if err != nil {
+		return nil, err
+	}
+	// Convert []chain.Block to []block.Block
+	result := make([]block.Block, len(innerBlks))
+	for i, blk := range innerBlks {
+		result[i] = &chainBlockWrapper{blk}
+	}
+	return result, nil
+}
+
+// chainBlockWrapper wraps a chain.Block to implement block.Block
+type chainBlockWrapper struct {
+	chain.Block
+}
+
+// Accept implements block.Block
+func (b *chainBlockWrapper) Accept() error {
+	// Chain.Block already has Accept() with no context
+	return b.Block.Accept()
+}
+
+// Reject implements block.Block
+func (b *chainBlockWrapper) Reject() error {
+	// Chain.Block already has Reject() with no context
+	return b.Block.Reject()
+}
+
+// Verify implements block.Block
+func (b *chainBlockWrapper) Verify() error {
+	// Chain.Block already has Verify() with no context
+	return b.Block.Verify()
+}
+
+// sharedMemoryWrapper wraps interfaces.SharedMemory to match atomic.SharedMemory
+type sharedMemoryWrapper struct {
+	sm interfaces.SharedMemory
+}
+
+func (s *sharedMemoryWrapper) Apply(requests map[ids.ID]*atomic.Requests, batches ...database.Batch) error {
+	// Convert *atomic.Requests to interface{}
+	reqMap := make(map[ids.ID]interface{}, len(requests))
+	for k, v := range requests {
+		reqMap[k] = v
+	}
+	// Convert batches to interface{} slice
+	batchesInterface := make([]interface{}, len(batches))
+	for i, batch := range batches {
+		batchesInterface[i] = batch
+	}
+	return s.sm.Apply(reqMap, batchesInterface...)
+}
+
+func (s *sharedMemoryWrapper) Get(peerChainID ids.ID, keys [][]byte) ([][]byte, error) {
+	// SharedMemory.Get is not available in interfaces.SharedMemory
+	// Return empty values
+	result := make([][]byte, len(keys))
+	return result, nil
+}
+
+func (s *sharedMemoryWrapper) Indexed(peerChainID ids.ID, traits [][]byte, startTrait []byte, startKey []byte, limit int) ([][]byte, []byte, []byte, error) {
+	// SharedMemory.Indexed is not available in interfaces.SharedMemory
+	// Return empty values
+	return nil, nil, nil, nil
+}
+
+// bcLookupWrapper wraps interfaces.BCLookup to match ids.AliaserReader
+type bcLookupWrapper struct {
+	bc interfaces.BCLookup
+}
+
+func (b *bcLookupWrapper) Lookup(alias string) (ids.ID, error) {
+	return b.bc.Lookup(alias)
+}
+
+func (b *bcLookupWrapper) PrimaryAlias(id ids.ID) (string, error) {
+	return b.bc.PrimaryAlias(id)
+}
+
+func (b *bcLookupWrapper) Aliases(id ids.ID) ([]string, error) {
+	// BCLookup doesn't have Aliases method, return just the primary alias
+	primary, err := b.bc.PrimaryAlias(id)
+	if err != nil {
+		return nil, err
+	}
+	return []string{primary}, nil
+}
+
+// validatorStateWrapper wraps interfaces.ValidatorState to match validators.State
+type validatorStateWrapper struct {
+	vs interfaces.ValidatorState
+}
+
+func (v *validatorStateWrapper) GetCurrentHeight() (uint64, error) {
+	return v.vs.GetCurrentHeight()
+}
+
+func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return v.vs.GetSubnetID(ctx, chainID)
+}
+
+func (v *validatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+	return v.vs.GetValidatorSet(height, subnetID)
+}
+
+// appSenderWrapper wraps block.AppSender to match core.AppSender
+type appSenderWrapper struct {
+	appSender block.AppSender
+}
+
+func (a *appSenderWrapper) SendAppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, request []byte) error {
+	return a.appSender.SendAppRequest(ctx, nodeID, requestID, request)
+}
+
+func (a *appSenderWrapper) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+	return a.appSender.SendAppResponse(ctx, nodeID, requestID, response)
+}
+
+func (a *appSenderWrapper) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	// AppSender in block package doesn't have SendAppError, just return nil
+	return nil
+}
+
+func (a *appSenderWrapper) SendAppGossip(ctx context.Context, appGossipBytes []byte) error {
+	return a.appSender.SendAppGossip(ctx, appGossipBytes)
+}
+
+func (a *appSenderWrapper) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error {
+	// Not implemented - return nil
+	return nil
+}
+
+func (a *appSenderWrapper) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, appResponseBytes []byte) error {
+	// Not implemented - return nil
+	return nil
 }

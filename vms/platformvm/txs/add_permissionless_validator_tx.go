@@ -4,6 +4,7 @@
 package txs
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -186,4 +187,10 @@ func (tx *AddPermissionlessValidatorTx) SyntacticVerify(ctx *consensus.Context) 
 
 func (tx *AddPermissionlessValidatorTx) Visit(visitor Visitor) error {
 	return visitor.AddPermissionlessValidatorTx(tx)
+}
+
+// InitializeWithContext initializes the transaction with consensus context
+func (tx *AddPermissionlessValidatorTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
 }

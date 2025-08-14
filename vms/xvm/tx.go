@@ -4,14 +4,13 @@
 package xvm
 
 import (
-	"context"
 	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/graph"
+	"github.com/luxfi/consensus/engine/graph"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
@@ -35,7 +34,7 @@ func (tx *Tx) ID() ids.ID {
 	return tx.tx.ID()
 }
 
-func (tx *Tx) Accept(context.Context) error {
+func (tx *Tx) Accept() error {
 	if s := tx.Status(); s != choices.Processing {
 		return fmt.Errorf("%w: %s", errTxNotProcessing, s)
 	}
@@ -63,8 +62,13 @@ func (tx *Tx) Accept(context.Context) error {
 	}
 
 	defer tx.vm.state.Abort()
+	// Convert the atomicRequests to interface{} type for SharedMemory
+	requests := make(map[ids.ID]interface{}, len(executor.AtomicRequests))
+	for chainID, reqs := range executor.AtomicRequests {
+		requests[chainID] = reqs
+	}
 	err = tx.vm.ctx.SharedMemory.Apply(
-		executor.AtomicRequests,
+		requests,
 		commitBatch,
 	)
 	if err != nil {
@@ -75,7 +79,7 @@ func (tx *Tx) Accept(context.Context) error {
 	return tx.vm.metrics.MarkTxAccepted(tx.tx)
 }
 
-func (*Tx) Reject(context.Context) error {
+func (*Tx) Reject() error {
 	return errUnexpectedReject
 }
 
@@ -121,7 +125,7 @@ func (tx *Tx) Bytes() []byte {
 	return tx.tx.Bytes()
 }
 
-func (tx *Tx) Verify(context.Context) error {
+func (tx *Tx) Verify() error {
 	if s := tx.Status(); s != choices.Processing {
 		return fmt.Errorf("%w: %s", errTxNotProcessing, s)
 	}

@@ -14,7 +14,6 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/bloom"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/sampler"
@@ -255,7 +254,7 @@ func (i *ipTracker) Disconnected(nodeID ids.NodeID) {
 	i.removeGossipableIP(nodeID)
 }
 
-func (i *ipTracker) OnValidatorAdded(nodeID ids.NodeID, _ *bls.PublicKey, _ ids.ID, _ uint64) {
+func (i *ipTracker) OnValidatorAdded(nodeID ids.NodeID, _ uint64) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 

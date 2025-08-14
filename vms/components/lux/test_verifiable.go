@@ -7,7 +7,6 @@ import (
 	"context"
 	
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -23,7 +22,7 @@ type TestState struct {
 	Err error
 }
 
-func (*TestState) InitCtx(*snow.Context) {}
+func (*TestState) InitCtx(*consensus.Context) {}
 
 func (*TestState) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
 	return nil
@@ -39,7 +38,7 @@ type TestTransferable struct {
 	Val uint64 `serialize:"true"`
 }
 
-func (*TestTransferable) InitCtx(*snow.Context) {}
+func (*TestTransferable) InitCtx(*consensus.Context) {}
 
 func (*TestTransferable) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
 	return nil

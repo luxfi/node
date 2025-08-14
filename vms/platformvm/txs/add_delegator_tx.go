@@ -4,6 +4,7 @@
 package txs
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -129,4 +130,10 @@ func (tx *AddDelegatorTx) SyntacticVerify(ctx *consensus.Context) error {
 
 func (tx *AddDelegatorTx) Visit(visitor Visitor) error {
 	return visitor.AddDelegatorTx(tx)
+}
+
+// InitializeWithContext initializes the transaction with consensus context
+func (tx *AddDelegatorTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
 }

@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	_ Calculator = (*dynamicCalculator)(nil)
+	// _ Calculator = (*dynamicCalculator)(nil)
 
 	ErrCalculatingComplexity = errors.New("error calculating complexity")
 	ErrCalculatingGas        = errors.New("error calculating gas")
@@ -22,7 +22,7 @@ var (
 func NewDynamicCalculator(
 	weights gas.Dimensions,
 	price gas.Price,
-) Calculator {
+) *dynamicCalculator {
 	return &dynamicCalculator{
 		weights: weights,
 		price:   price,

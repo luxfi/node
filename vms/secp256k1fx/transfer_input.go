@@ -4,6 +4,7 @@
 package secp256k1fx
 
 import (
+	"context"
 	"errors"
 
 	"github.com/luxfi/consensus"
@@ -17,6 +18,11 @@ type TransferInput struct {
 }
 
 func (*TransferInput) InitCtx(*consensus.Context) {}
+
+// InitializeWithContext initializes the input with consensus context
+func (*TransferInput) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+	return nil
+}
 
 // Amount returns the quantity of the asset this input produces
 func (in *TransferInput) Amount() uint64 {

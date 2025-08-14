@@ -4,7 +4,6 @@
 package executor
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -42,7 +41,7 @@ type Block struct {
 	rejected bool
 }
 
-func (b *Block) Verify(context.Context) error {
+func (b *Block) Verify() error {
 	blkID := b.ID()
 	if _, ok := b.manager.blkIDToState[blkID]; ok {
 		// This block has already been verified.
@@ -204,7 +203,7 @@ func (b *Block) Verify(context.Context) error {
 	return nil
 }
 
-func (b *Block) Accept(context.Context) error {
+func (b *Block) Accept() error {
 	blkID := b.ID()
 	defer b.manager.free(blkID)
 
@@ -241,7 +240,14 @@ func (b *Block) Accept(context.Context) error {
 	}
 
 	// Note that this method writes [batch] to the database.
-	if err := b.manager.backend.Ctx.SharedMemory.Apply(blkState.atomicRequests, batch); err != nil {
+	// Convert the atomicRequests to interface{} type for SharedMemory
+	requests := make(map[ids.ID]interface{}, len(blkState.atomicRequests))
+	for chainID, reqs := range blkState.atomicRequests {
+		requests[chainID] = reqs
+	}
+	
+	// Note that this method writes [batch] to the database.
+	if err := b.manager.backend.Ctx.SharedMemory.Apply(requests, batch); err != nil {
 		return fmt.Errorf("failed to apply state diff to shared memory: %w", err)
 	}
 
@@ -261,7 +267,7 @@ func (b *Block) Accept(context.Context) error {
 	return nil
 }
 
-func (b *Block) Reject(context.Context) error {
+func (b *Block) Reject() error {
 	blkID := b.ID()
 	defer b.manager.free(blkID)
 

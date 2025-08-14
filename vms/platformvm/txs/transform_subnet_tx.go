@@ -4,6 +4,7 @@
 package txs
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -167,4 +168,10 @@ func (tx *TransformSubnetTx) SyntacticVerify(ctx *consensus.Context) error {
 
 func (tx *TransformSubnetTx) Visit(visitor Visitor) error {
 	return visitor.TransformSubnetTx(tx)
+}
+
+// InitializeWithContext initializes the transaction with consensus context
+func (tx *TransformSubnetTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
 }

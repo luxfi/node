@@ -4,6 +4,7 @@
 package txs
 
 import (
+	"context"
 	"errors"
 
 	"github.com/luxfi/consensus"
@@ -71,4 +72,10 @@ func (tx *AddSubnetValidatorTx) SyntacticVerify(ctx *consensus.Context) error {
 
 func (tx *AddSubnetValidatorTx) Visit(visitor Visitor) error {
 	return visitor.AddSubnetValidatorTx(tx)
+}
+
+// InitializeWithContext initializes the transaction with consensus context
+func (tx *AddSubnetValidatorTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
 }
