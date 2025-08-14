@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/luxfi/metric"
+	"github.com/luxfi/node/vms/evm/metrics"
 )
 
 var metricsLock sync.Mutex

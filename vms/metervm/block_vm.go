@@ -8,12 +8,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/chain"
-	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -53,13 +49,14 @@ func NewBlockVM(
 
 func (vm *blockVM) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
-	db database.Database,
+	chainCtx *block.ChainContext,
+	dbManager block.DBManager,
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
-	fxs []*core.Fx,
-	appSender core.AppSender,
+	toEngine chan<- block.Message,
+	fxs []*block.Fx,
+	appSender block.AppSender,
 ) error {
 	err := vm.blockMetrics.Initialize(
 		vm.buildBlockVM != nil,
@@ -71,7 +68,7 @@ func (vm *blockVM) Initialize(
 		return err
 	}
 
-	return vm.ChainVM.Initialize(ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, fxs, appSender)
+	return vm.ChainVM.Initialize(ctx, chainCtx, dbManager, genesisBytes, upgradeBytes, configBytes, toEngine, fxs, appSender)
 }
 
 func (vm *blockVM) BuildBlock(ctx context.Context) (block.Block, error) {

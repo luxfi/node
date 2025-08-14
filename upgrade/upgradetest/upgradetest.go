@@ -17,11 +17,11 @@ func TestConfig() map[string]time.Time {
 	}
 }
 
-// Latest represents the latest upgrade configuration for testing
-const Latest = "latest"
+// LatestVersion represents the latest upgrade configuration for testing
+const LatestVersion = "latest"
 
-// GetConfig returns an upgrade configuration for testing
-func GetConfig(version string) upgrade.Config {
+// GetConfigForVersion returns an upgrade configuration for testing
+func GetConfigForVersion(version string) upgrade.Config {
 	return upgrade.Config{
 		ActivationTime: time.Now().Add(time.Hour),
 	}

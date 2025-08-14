@@ -523,6 +523,19 @@ func (c *genericCodec) Unmarshal(bytes []byte, dest interface{}) error {
 	return nil
 }
 
+// UnmarshalFrom unpacks data from the Packer into dest
+func (c *genericCodec) UnmarshalFrom(p *wrappers.Packer, dest interface{}) error {
+	if dest == nil {
+		return codec.ErrUnmarshalNil
+	}
+	
+	destPtr := reflect.ValueOf(dest)
+	if destPtr.Kind() != reflect.Ptr {
+		return errNeedPointer
+	}
+	return c.unmarshal(p, destPtr.Elem(), nil /*=typeStack*/)
+}
+
 // Unmarshal from p.Bytes into [value]. [value] must be addressable.
 //
 // c.lock should be held for the duration of this function

@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/luxfi/metric"
+	"github.com/luxfi/node/vms/evm/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 
 	dto "github.com/prometheus/client_model/go"
