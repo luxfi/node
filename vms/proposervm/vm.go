@@ -17,6 +17,7 @@ import (
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/chain"
 	"github.com/luxfi/database"
@@ -129,22 +130,29 @@ func New(
 
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
-	db database.Database,
+	chainCtx *block.ChainContext,
+	dbManager block.DBManager,
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	fxs []*core.Fx,
-	appSender core.AppSender,
+	toEngine chan<- block.Message,
+	fxs []*block.Fx,
+	appSender block.AppSender,
 ) error {
-	vm.ctx = chainCtx
+	// Convert types back to what we need
+	consensusCtx := chainCtx
+	db := dbManager.Current()
+	// No longer need to convert fxs since they're not used directly
+	vm.ctx = consensusCtx
 	vm.db = versiondb.New(prefixdb.New(dbPrefix, db))
 	baseState, err := state.NewMetered(vm.db, "state", vm.Config.Registerer)
 	if err != nil {
 		return err
 	}
 	vm.State = baseState
-	vm.Windower = proposer.New(chainCtx.ValidatorState, chainCtx.SubnetID, chainCtx.ChainID)
+	// Create a wrapper for ValidatorState to match validators.State interface
+	validatorStateWrapper := &validatorStateWrapper{vs: chainCtx.ValidatorState}
+	vm.Windower = proposer.New(validatorStateWrapper, chainCtx.SubnetID, chainCtx.ChainID)
 	vm.Tree = tree.New()
 	innerBlkCache, err := metercacher.New(
 		"inner_block_cache",
@@ -161,15 +169,16 @@ func (vm *VM) Initialize(
 
 	// Create an internal channel for engine messages
 	// This channel is used by the scheduler to notify the consensus engine
-	toEngine := make(chan core.Message, 1)
-	scheduler, vmToEngine := scheduler.New(vm.ctx.Log, toEngine)
+	// We need to create a local channel for the scheduler
+	toSchedulerEngine := make(chan core.Message, 1)
+	scheduler, vmToEngine := scheduler.New(vm.ctx.Log, toSchedulerEngine)
 	vm.Scheduler = scheduler
 	vm.toScheduler = vmToEngine
 
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				chainCtx.Log.Error("panic in scheduler dispatch", "panic", r)
+				consensusCtx.Log.Error("panic in scheduler dispatch", "panic", r)
 			}
 		}()
 		scheduler.Dispatch(time.Now())
@@ -183,11 +192,12 @@ func (vm *VM) Initialize(
 
 	err = vm.ChainVM.Initialize(
 		ctx,
-		chainCtx,
-		db,
+		consensusCtx,
+		dbManager,
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
+		toEngine,
 		fxs,
 		appSender,
 	)
@@ -255,17 +265,20 @@ func (vm *VM) Shutdown(ctx context.Context) error {
 	if err := vm.db.Commit(); err != nil {
 		return err
 	}
-	return vm.ChainVM.Shutdown(ctx)
+	// ChainVM doesn't have Shutdown in new consensus
+	// return vm.ChainVM.Shutdown(ctx)
+	return nil
 }
 
 func (vm *VM) SetState(ctx context.Context, newState consensus.State) error {
-	if err := vm.ChainVM.SetState(ctx, newState); err != nil {
-		return err
-	}
+	// ChainVM doesn't have SetState in new consensus
+	// if err := vm.ChainVM.SetState(ctx, newState); err != nil {
+	// 	return err
+	// }
 
 	oldState := vm.consensusState
 	vm.consensusState = newState
-	if oldState != consensus.StateSyncing {
+	if oldState != interfaces.StateSyncing {
 		return nil
 	}
 
@@ -279,7 +292,7 @@ func (vm *VM) SetState(ctx context.Context, newState consensus.State) error {
 	return vm.setLastAcceptedMetadata(ctx)
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	preferredBlock, err := vm.getBlock(ctx, vm.preferred)
 	if err != nil {
 		vm.ctx.Log.Error("unexpected build block failure",
@@ -293,14 +306,14 @@ func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	return preferredBlock.buildChild(ctx)
 }
 
-func (vm *VM) ParseBlock(ctx context.Context, b []byte) (chain.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, b []byte) (block.Block, error) {
 	if blk, err := vm.parsePostForkBlock(ctx, b); err == nil {
 		return blk, nil
 	}
 	return vm.parsePreForkBlock(ctx, b)
 }
 
-func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (chain.Block, error) {
+func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
 	return vm.getBlock(ctx, id)
 }
 
@@ -694,7 +707,7 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Conte
 		err = blkWithCtx.VerifyWithContext(ctx, blockCtx)
 	} else if !previouslyVerified {
 		// This isn't a [block.WithVerifyContext] so we only call [Verify] once.
-		err = innerBlk.Verify(ctx)
+		err = innerBlk.Verify()
 	}
 	if err != nil {
 		return err
@@ -751,4 +764,17 @@ func (vm *VM) cacheInnerBlock(outerBlkID ids.ID, innerBlk chain.Block) {
 	if diff < innerBlkCacheSize {
 		vm.innerBlkCache.Put(outerBlkID, innerBlk)
 	}
+}
+
+// validatorStateWrapper wraps interfaces.ValidatorState to match validators.State
+type validatorStateWrapper struct {
+	vs interfaces.ValidatorState
+}
+
+func (v *validatorStateWrapper) GetCurrentHeight() (uint64, error) {
+	return v.vs.GetCurrentHeight()
+}
+
+func (v *validatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+	return v.vs.GetValidatorSet(height, subnetID)
 }

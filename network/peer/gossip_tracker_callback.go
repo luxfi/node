@@ -8,7 +8,6 @@ import (
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/log"
 )
 
@@ -25,18 +24,17 @@ type GossipTrackerCallback struct {
 // gossiped about
 func (g *GossipTrackerCallback) OnValidatorAdded(
 	nodeID ids.NodeID,
-	_ *bls.PublicKey,
-	txID ids.ID,
-	_ uint64,
+	weight uint64,
 ) {
+	// For compatibility, use empty ID for TxID when not available
 	vdr := ValidatorID{
 		NodeID: nodeID,
-		TxID:   txID,
+		TxID:   ids.Empty,
 	}
 	if !g.GossipTracker.AddValidator(vdr) {
 		g.Log.Error("failed to add a validator",
 			zap.Stringer("nodeID", nodeID),
-			zap.Stringer("txID", txID),
+			zap.Uint64("weight", weight),
 		)
 	}
 }

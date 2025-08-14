@@ -138,3 +138,32 @@ func (m *txMetrics) BaseTx(*txs.BaseTx) error {
 	}).Inc()
 	return nil
 }
+
+// L1 Validator transaction methods
+func (m *txMetrics) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
+	m.numTxs.With(prometheus.Labels{
+		txLabel: "disable_l1_validator",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) IncreaseL1ValidatorBalanceTx(*txs.IncreaseL1ValidatorBalanceTx) error {
+	m.numTxs.With(prometheus.Labels{
+		txLabel: "increase_l1_validator_balance",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
+	m.numTxs.With(prometheus.Labels{
+		txLabel: "register_l1_validator",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error {
+	m.numTxs.With(prometheus.Labels{
+		txLabel: "set_l1_validator_weight",
+	}).Inc()
+	return nil
+}

@@ -10,6 +10,7 @@
 package txs
 
 import (
+	"context"
 	reflect "reflect"
 
 	consensus "github.com/luxfi/consensus"
@@ -134,4 +135,10 @@ func (m *MockUnsignedTx) Visit(visitor Visitor) error {
 func (mr *MockUnsignedTxMockRecorder) Visit(visitor any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Visit", reflect.TypeOf((*MockUnsignedTx)(nil).Visit), visitor)
+}
+
+// InitializeWithContext initializes the transaction with consensus context
+func (tx *MockUnsignedTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
 }

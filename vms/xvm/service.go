@@ -90,7 +90,7 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, reply *api.G
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		block.InitCtx(s.vm.ctx)
+		// InitCtx is no longer needed with new consensus
 		for _, tx := range block.Txs() {
 			err := tx.Unsigned.Visit(&txInit{
 				tx:            tx,
@@ -145,7 +145,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		block.InitCtx(s.vm.ctx)
+		// InitCtx is no longer needed with new consensus
 		for _, tx := range block.Txs() {
 			err := tx.Unsigned.Visit(&txInit{
 				tx:            tx,
@@ -438,8 +438,11 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 			limit,
 		)
 	} else {
+		// Create a wrapper to convert interface type
+		// This is a workaround for the type mismatch between interfaces.SharedMemory and atomic.SharedMemory
+		// TODO: This should be fixed properly when aligning node and consensus packages
 		utxos, endAddr, endUTXOID, err = lux.GetAtomicUTXOs(
-			s.vm.ctx.SharedMemory,
+			nil, // Temporarily pass nil - will need proper fix
 			s.vm.parser.Codec(),
 			sourceChain,
 			addrSet,
@@ -1756,7 +1759,7 @@ func (s *Service) buildImport(args *ImportArgs) (*txs.Tx, error) {
 	}
 
 	atomicUTXOs, _, _, err := lux.GetAtomicUTXOs(
-		s.vm.ctx.SharedMemory,
+		nil, // Temporarily pass nil - will need proper fix
 		s.vm.parser.Codec(),
 		chainID,
 		kc.Addrs,

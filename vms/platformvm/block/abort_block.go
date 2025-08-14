@@ -3,6 +3,8 @@
 
 package block
 
+import "context"
+
 import (
 	"time"
 	
@@ -80,4 +82,16 @@ func NewApricotAbortBlock(
 		},
 	}
 	return blk, initialize(blk, &blk.CommonBlock)
+}
+
+// InitializeWithContext initializes the block with consensus context
+func (b *BanffAbortBlock) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
+}
+
+// InitializeWithContext initializes the block with consensus context
+func (b *ApricotAbortBlock) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
 }

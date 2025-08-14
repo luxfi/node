@@ -10,7 +10,7 @@ type Verifiable interface {
 }
 
 type State interface {
-	consensus.ContextInitializable
+	consensus.Contextualizable
 	Verifiable
 	IsState
 }

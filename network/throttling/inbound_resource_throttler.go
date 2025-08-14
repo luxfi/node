@@ -140,12 +140,12 @@ func (t *systemThrottler) Acquire(ctx context.Context, nodeID ids.NodeID) {
 		target := t.targeter.TargetUsage()
 		// Get actual usage for this node.
 		usage := t.tracker.Usage(nodeID, now)
-		if usage <= target {
+		if usage <= float64(target) {
 			return
 		}
 		// See how long it will take for actual usage to drop to the target,
 		// assuming this node uses no more resources.
-		waitDuration := t.tracker.TimeUntilUsage(nodeID, now, target)
+		waitDuration := t.tracker.TimeUntilUsage(nodeID, now, float64(target))
 		if waitDuration < epsilon {
 			// If the amount of time until we reach the target is very small,
 			// just return to avoid a situation where we excessively re-check.

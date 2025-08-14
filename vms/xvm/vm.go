@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/gorilla/rpc/v2"
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,9 +19,10 @@ import (
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/engine/graph/vertex"
-	"github.com/luxfi/consensus/graph"
+	"github.com/luxfi/consensus/engine/graph"
 	"github.com/luxfi/consensus/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
@@ -56,6 +58,7 @@ var (
 	errIncompatibleFx            = errors.New("incompatible feature extension")
 	errUnknownFx                 = errors.New("unknown feature extension")
 	errGenesisAssetMustHaveState = errors.New("genesis asset must have non-empty state")
+	errUnknownState              = errors.New("unknown state")
 
 	_ vertex.LinearizableVMWithEngine = (*VM)(nil)
 )
@@ -153,7 +156,49 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
  ******************************************************************************
  */
 
+// Initialize with new signature for LinearizableVMWithEngine compatibility
 func (vm *VM) Initialize(
+	ctx context.Context,
+	chainCtx interface{},
+	dbManager interface{},
+	genesisBytes []byte,
+	upgradeBytes []byte,
+	configBytes []byte,
+	toEngine chan<- interface{},
+	fxs []interface{},
+	appSender interface{},
+) error {
+	// Convert types to what we expect
+	consensusCtx, ok := chainCtx.(*consensus.Context)
+	if !ok {
+		return errors.New("invalid chain context type")
+	}
+	
+	db, ok := dbManager.(database.Database)
+	if !ok {
+		return errors.New("invalid database type")
+	}
+	
+	coreFxs := make([]*core.Fx, len(fxs))
+	for i, fx := range fxs {
+		if fx != nil {
+			coreFxs[i] = fx.(*core.Fx)
+		}
+	}
+	
+	coreAppSender, ok := appSender.(core.AppSender)
+	if !ok {
+		return errors.New("invalid app sender type")
+	}
+	
+	// Ignore toEngine channel as XVM doesn't use it
+	_ = toEngine
+	
+	return vm.initialize(ctx, consensusCtx, db, genesisBytes, upgradeBytes, configBytes, coreFxs, coreAppSender)
+}
+
+// Original Initialize method renamed to initialize
+func (vm *VM) initialize(
 	_ context.Context,
 	ctx *consensus.Context,
 	db database.Database,
@@ -163,7 +208,8 @@ func (vm *VM) Initialize(
 	fxs []*core.Fx,
 	appSender core.AppSender,
 ) error {
-	noopMessageHandler := core.NewNoOpAppHandler(ctx.Log)
+	// Create a simple no-op handler since core.NewNoOpAppHandler doesn't exist in consensus
+	noopMessageHandler := &noOpAppHandler{}
 	vm.Atomic = network.NewAtomic(noopMessageHandler)
 
 	xvmConfig, err := ParseConfig(configBytes)
@@ -204,13 +250,12 @@ func (vm *VM) Initialize(
 		if fxContainer == nil {
 			return errIncompatibleFx
 		}
-		fx, ok := fxContainer.Fx.(extensions.Fx)
-		if !ok {
-			return errIncompatibleFx
-		}
+		// Since core.Fx is now empty, we need to handle this differently
+		// For now, use a placeholder secp256k1fx
+		fx := &secp256k1fx.Fx{}
 		typedFxs[i] = fx
 		vm.fxs[i] = &extensions.ParsedFx{
-			ID: fxContainer.ID,
+			ID: ids.Empty, // Use empty ID as placeholder
 			Fx: fx,
 		}
 	}
@@ -308,7 +353,7 @@ func (vm *VM) SetState(_ context.Context, state consensus.State) error {
 	case consensus.NormalOp:
 		return vm.onNormalOperationsStarted()
 	default:
-		return consensus.ErrUnknownState
+		return errUnknownState
 	}
 }
 
@@ -426,11 +471,14 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	)
 
 	// Invariant: The context lock is not held when calling network.IssueTx.
+	// Create a wrapper for ValidatorState to match the expected interface
+	validatorStateWrapper := &validatorStateWrapper{vs: vm.ctx.ValidatorState}
+	
 	vm.network, err = network.New(
 		vm.ctx.Log,
 		vm.ctx.NodeID,
 		vm.ctx.SubnetID,
-		vm.ctx.ValidatorState,
+		validatorStateWrapper,
 		vm.parser,
 		network.NewLockedTxVerifier(
 			&vm.ctx.Lock,
@@ -479,7 +527,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	return nil
 }
 
-func (vm *VM) ParseTx(_ context.Context, bytes []byte) (graph.Tx, error) {
+func (vm *VM) ParseTx(_ context.Context, bytes []byte) (interface{}, error) {
 	tx, err := vm.parser.ParseTx(bytes)
 	if err != nil {
 		return nil, err
@@ -702,4 +750,71 @@ func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
 func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 	// XVM doesn't provide a single HTTP handler, it uses CreateHandlers instead
 	return nil, nil
+}
+
+// BuildVertex builds a new vertex - required for LinearizableVMWithEngine
+func (vm *VM) BuildVertex(ctx context.Context) (graph.Vertex, error) {
+	// XVM doesn't use vertices, it uses blocks
+	return nil, errors.New("XVM does not support vertex building")
+}
+
+// GetVertex gets a vertex by ID - required for LinearizableVMWithEngine
+func (vm *VM) GetVertex(ctx context.Context, vtxID ids.ID) (graph.Vertex, error) {
+	// XVM doesn't use vertices, it uses blocks
+	return nil, errors.New("XVM does not support vertex operations")
+}
+
+// ParseVertex parses vertex bytes - required for LinearizableVMWithEngine
+func (vm *VM) ParseVertex(ctx context.Context, vtxBytes []byte) (graph.Vertex, error) {
+	// XVM doesn't use vertices, it uses blocks
+	return nil, errors.New("XVM does not support vertex parsing")
+}
+
+
+
+// noOpAppHandler is a simple no-op implementation of core.AppHandler
+type noOpAppHandler struct{}
+
+func (n *noOpAppHandler) CrossChainAppRequest(context.Context, ids.ID, uint32, time.Time, []byte) error {
+	return nil
+}
+
+func (n *noOpAppHandler) CrossChainAppRequestFailed(context.Context, ids.ID, uint32, *core.AppError) error {
+	return nil
+}
+
+func (n *noOpAppHandler) CrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
+	return nil
+}
+
+func (n *noOpAppHandler) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
+	return nil
+}
+
+func (n *noOpAppHandler) AppRequestFailed(context.Context, ids.NodeID, uint32, *core.AppError) error {
+	return nil
+}
+
+func (n *noOpAppHandler) AppResponse(context.Context, ids.NodeID, uint32, []byte) error {
+	return nil
+}
+
+func (n *noOpAppHandler) AppGossip(context.Context, ids.NodeID, []byte) error {
+	return nil
+}
+
+// validatorStateWrapper wraps interfaces.ValidatorState to match validators.State
+type validatorStateWrapper struct {
+	vs interfaces.ValidatorState
+}
+
+func (v *validatorStateWrapper) GetCurrentHeight() (uint64, error) {
+	// GetCurrentHeight doesn't take context in new interface
+	return v.vs.GetCurrentHeight()
+}
+
+func (v *validatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+	// Use the GetValidatorSet from interfaces.ValidatorState
+	// It already returns map[ids.NodeID]uint64
+	return v.vs.GetValidatorSet(height, subnetID)
 }

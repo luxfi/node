@@ -715,8 +715,17 @@ func (p *peer) shouldDisconnect() bool {
 		return false
 	}
 
+	blsKey, ok := vdr.PublicKey.(*bls.PublicKey)
+	if !ok {
+		p.Log.Debug(disconnectingLog,
+			zap.Stringer("nodeID", vdr.NodeID),
+			zap.String("reason", "validator public key is not a BLS key"),
+		)
+		return false
+	}
+	
 	validSignature := bls.VerifyProofOfPossession(
-		vdr.PublicKey,
+		blsKey,
 		p.ip.BLSSignature,
 		p.ip.UnsignedIP.bytes(),
 	)

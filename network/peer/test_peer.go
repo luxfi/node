@@ -26,8 +26,6 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/math/meter"
-	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -97,15 +95,8 @@ func StartTestPeer(
 		return nil, err
 	}
 
-	resourceTracker, err := tracker.NewResourceTracker(
-		promRegistry,
-		resource.NoUsage,
-		meter.ContinuousFactory{},
-		10*time.Second,
-	)
-	if err != nil {
-		return nil, err
-	}
+	// Create a basic resource tracker for testing
+	resourceTracker := &testResourceTracker{}
 
 	tlsKey := tlsCert.PrivateKey.(crypto.Signer)
 	blsKey, err := bls.NewSecretKey()
@@ -123,8 +114,8 @@ func StartTestPeer(
 			Router:               router,
 			VersionCompatibility: version.GetCompatibility(networkID),
 			MySubnets:            set.Set[ids.ID]{},
-			Beacons:              validators.NewManager(),
-			Validators:           validators.NewManager(),
+			Beacons:              &testValidatorManager{},
+			Validators:           &testValidatorManager{},
 			NetworkID:            networkID,
 			PingFrequency:        constants.DefaultPingFrequency,
 			PongTimeout:          constants.DefaultPingPongTimeout,
@@ -150,4 +141,59 @@ func StartTestPeer(
 		),
 	)
 	return peer, peer.AwaitReady(ctx)
+}
+
+// testResourceTracker is a minimal implementation for testing
+type testResourceTracker struct{}
+
+func (t *testResourceTracker) CPUTracker() tracker.Tracker {
+	return &testTracker{}
+}
+
+func (t *testResourceTracker) DiskTracker() tracker.DiskTracker {
+	return &testDiskTracker{}
+}
+
+func (t *testResourceTracker) StartProcessing(ids.NodeID, time.Time) {}
+func (t *testResourceTracker) StopProcessing(ids.NodeID, time.Time) {}
+
+// testTracker is a minimal tracker implementation
+type testTracker struct{}
+
+func (t *testTracker) UtilizationTarget() float64 { return 0.8 }
+func (t *testTracker) CurrentUsage() uint64 { return 0 }
+func (t *testTracker) TotalUsage() float64 { return 0 }
+func (t *testTracker) Usage(ids.NodeID, time.Time) float64 { return 0 }
+func (t *testTracker) TimeUntilUsage(ids.NodeID, time.Time, float64) time.Duration { return 0 }
+
+// testDiskTracker is a minimal disk tracker implementation
+type testDiskTracker struct{ testTracker }
+
+func (t *testDiskTracker) AvailableDiskBytes() uint64 { return 1 << 30 } // 1GB
+
+// testValidatorManager is a minimal validator manager implementation for testing
+type testValidatorManager struct{}
+
+func (m *testValidatorManager) GetValidators(subnetID ids.ID) ([]ids.NodeID, error) {
+	return nil, nil
+}
+
+func (m *testValidatorManager) GetValidator(subnetID ids.ID, nodeID ids.NodeID) (*validators.Validator, bool) {
+	return nil, false
+}
+
+func (m *testValidatorManager) GetWeight(subnetID ids.ID, nodeID ids.NodeID) (uint64, error) {
+	return 0, nil
+}
+
+func (m *testValidatorManager) TotalWeight(subnetID ids.ID) (uint64, error) {
+	return 0, nil
+}
+
+func (m *testValidatorManager) NumValidators(subnetID ids.ID) int {
+	return 0
+}
+
+func (m *testValidatorManager) RegisterSetCallbackListener(listener validators.SetCallbackListener) {
+	// No-op for test
 }

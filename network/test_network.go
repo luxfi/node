@@ -106,10 +106,11 @@ func NewTestNetwork(
 	// TestNetwork doesn't use disk so we don't need to track it, but we should
 	// still have guardrails around cpu/memory usage.
 	promRegistry := prometheus.NewRegistry()
+	
 	resourceTracker, err := tracker.NewResourceTracker(
 		promRegistry,
-		resource.NoUsage,
-		&meter.ContinuousFactory{},
+		&noOpResourceManager{},
+		&noOpMetricsFactory{},
 		constants.DefaultHealthCheckAveragerHalflife,
 	)
 	if err != nil {
@@ -245,4 +246,17 @@ func newNodeIDConnector(nodeID ids.NodeID) *nodeIDConnector {
 
 func (f *nodeIDConnector) IsAllowed(nodeID ids.NodeID, _ bool) bool {
 	return nodeID == f.nodeID
+}
+
+// noOpResourceManager is a no-op resource manager for testing
+type noOpResourceManager struct{}
+
+func (n *noOpResourceManager) Usage() resource.Usage { return resource.NoUsage.Usage() }
+func (n *noOpResourceManager) Shutdown() {}
+
+// noOpMetricsFactory is a no-op metrics factory for testing
+type noOpMetricsFactory struct{}
+
+func (n *noOpMetricsFactory) New(string) luxmetrics.Metrics {
+	return luxmetrics.NewNoOpMetrics("test")
 }

@@ -20,10 +20,8 @@ import (
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/core/appsender"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/chain"
-	"github.com/luxfi/consensus/validators/gvalidators"
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/db/rpcdb"
 	"github.com/luxfi/ids"
@@ -357,7 +355,14 @@ func (vm *VMServer) Connected(ctx context.Context, req *vmpb.ConnectedRequest) (
 		Minor: int(req.Minor),
 		Patch: int(req.Patch),
 	}
-	return &emptypb.Empty{}, vm.vm.Connected(ctx, nodeID, peerVersion)
+	// Check if VM implements network.Handler interface
+	type connectedHandler interface {
+		Connected(context.Context, ids.NodeID, *version.Application) error
+	}
+	if handler, ok := vm.vm.(connectedHandler); ok {
+		return &emptypb.Empty{}, handler.Connected(ctx, nodeID, peerVersion)
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func (vm *VMServer) Disconnected(ctx context.Context, req *vmpb.DisconnectedRequest) (*emptypb.Empty, error) {
@@ -365,7 +370,14 @@ func (vm *VMServer) Disconnected(ctx context.Context, req *vmpb.DisconnectedRequ
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, vm.vm.Disconnected(ctx, nodeID)
+	// Check if VM implements network.Handler interface
+	type disconnectedHandler interface {
+		Disconnected(context.Context, ids.NodeID) error
+	}
+	if handler, ok := vm.vm.(disconnectedHandler); ok {
+		return &emptypb.Empty{}, handler.Disconnected(ctx, nodeID)
+	}
+	return &emptypb.Empty{}, nil
 }
 
 // If the underlying VM doesn't actually implement this method, its [BuildBlock]
@@ -550,7 +562,14 @@ func (vm *VMServer) AppRequest(ctx context.Context, req *vmpb.AppRequestMsg) (*e
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, vm.vm.AppRequest(ctx, nodeID, req.RequestId, deadline, req.Request)
+	// Check if VM implements AppHandler interface
+	type appHandler interface {
+		AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error
+	}
+	if handler, ok := vm.vm.(appHandler); ok {
+		return &emptypb.Empty{}, handler.AppRequest(ctx, nodeID, req.RequestId, deadline, req.Request)
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func (vm *VMServer) AppRequestFailed(ctx context.Context, req *vmpb.AppRequestFailedMsg) (*emptypb.Empty, error) {
@@ -563,7 +582,14 @@ func (vm *VMServer) AppRequestFailed(ctx context.Context, req *vmpb.AppRequestFa
 		Code:    req.ErrorCode,
 		Message: req.ErrorMessage,
 	}
-	return &emptypb.Empty{}, vm.vm.AppRequestFailed(ctx, nodeID, req.RequestId, appErr)
+	// Check if VM implements AppHandler interface
+	type appFailHandler interface {
+		AppRequestFailed(context.Context, ids.NodeID, uint32, *core.AppError) error
+	}
+	if handler, ok := vm.vm.(appFailHandler); ok {
+		return &emptypb.Empty{}, handler.AppRequestFailed(ctx, nodeID, req.RequestId, appErr)
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func (vm *VMServer) AppResponse(ctx context.Context, req *vmpb.AppResponseMsg) (*emptypb.Empty, error) {
@@ -571,7 +597,14 @@ func (vm *VMServer) AppResponse(ctx context.Context, req *vmpb.AppResponseMsg) (
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, vm.vm.AppResponse(ctx, nodeID, req.RequestId, req.Response)
+	// Check if VM implements AppHandler interface
+	type appRespHandler interface {
+		AppResponse(context.Context, ids.NodeID, uint32, []byte) error
+	}
+	if handler, ok := vm.vm.(appRespHandler); ok {
+		return &emptypb.Empty{}, handler.AppResponse(ctx, nodeID, req.RequestId, req.Response)
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func (vm *VMServer) AppGossip(ctx context.Context, req *vmpb.AppGossipMsg) (*emptypb.Empty, error) {
@@ -579,7 +612,14 @@ func (vm *VMServer) AppGossip(ctx context.Context, req *vmpb.AppGossipMsg) (*emp
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, vm.vm.AppGossip(ctx, nodeID, req.Msg)
+	// Check if VM implements AppHandler interface
+	type appGossipHandler interface {
+		AppGossip(context.Context, ids.NodeID, []byte) error
+	}
+	if handler, ok := vm.vm.(appGossipHandler); ok {
+		return &emptypb.Empty{}, handler.AppGossip(ctx, nodeID, req.Msg)
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func (vm *VMServer) Gather(context.Context, *emptypb.Empty) (*vmpb.GatherResponse, error) {
@@ -769,7 +809,7 @@ func (vm *VMServer) BlockVerify(ctx context.Context, req *vmpb.BlockVerifyReques
 	}
 
 	if req.PChainHeight == nil {
-		err = blk.Verify(ctx)
+		err = blk.Verify()
 	} else {
 		blkWithCtx, ok := blk.(block.WithVerifyContext)
 		if !ok {
@@ -798,7 +838,7 @@ func (vm *VMServer) BlockAccept(ctx context.Context, req *vmpb.BlockAcceptReques
 	if err != nil {
 		return nil, err
 	}
-	if err := blk.Accept(ctx); err != nil {
+	if err := blk.Accept(); err != nil {
 		return nil, err
 	}
 	return &emptypb.Empty{}, nil
@@ -813,7 +853,7 @@ func (vm *VMServer) BlockReject(ctx context.Context, req *vmpb.BlockRejectReques
 	if err != nil {
 		return nil, err
 	}
-	if err := blk.Reject(ctx); err != nil {
+	if err := blk.Reject(); err != nil {
 		return nil, err
 	}
 	return &emptypb.Empty{}, nil

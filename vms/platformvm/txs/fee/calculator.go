@@ -14,20 +14,20 @@ import (
 
 var _ txs.Visitor = (*calculator)(nil)
 
-func NewStaticCalculator(config StaticConfig, upgradeTimes upgrade.Config) *Calculator {
-	return &Calculator{
+func NewStaticCalculator(config StaticConfig, upgradeTimes upgrade.Config) *StaticCalculator {
+	return &StaticCalculator{
 		config:       config,
 		upgradeTimes: upgradeTimes,
 	}
 }
 
-type Calculator struct {
+type StaticCalculator struct {
 	config       StaticConfig
 	upgradeTimes upgrade.Config
 }
 
 // [CalculateFee] returns the minimal fee needed to accept [tx], at chain time [time]
-func (c *Calculator) CalculateFee(tx txs.UnsignedTx, time time.Time) uint64 {
+func (c *StaticCalculator) CalculateFee(tx txs.UnsignedTx, time time.Time) uint64 {
 	tmp := &calculator{
 		upgrades:  c.upgradeTimes,
 		staticCfg: c.config,
@@ -138,6 +138,26 @@ func (c *calculator) ImportTx(*txs.ImportTx) error {
 }
 
 func (c *calculator) ExportTx(*txs.ExportTx) error {
+	c.fee = c.staticCfg.TxFee
+	return nil
+}
+
+func (c *calculator) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
+	c.fee = c.staticCfg.TxFee
+	return nil
+}
+
+func (c *calculator) IncreaseL1ValidatorBalanceTx(*txs.IncreaseL1ValidatorBalanceTx) error {
+	c.fee = c.staticCfg.TxFee
+	return nil
+}
+
+func (c *calculator) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
+	c.fee = c.staticCfg.TxFee
+	return nil
+}
+
+func (c *calculator) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error {
 	c.fee = c.staticCfg.TxFee
 	return nil
 }

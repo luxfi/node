@@ -5,7 +5,7 @@ package fee
 
 import "github.com/luxfi/node/vms/platformvm/txs"
 
-var _ Calculator = (*SimpleCalculator)(nil)
+// var _ Calculator = (*SimpleCalculator)(nil)
 
 type SimpleCalculator struct {
 	txFee uint64

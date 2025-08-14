@@ -126,7 +126,7 @@ func (p *postForkCommonComponents) Verify(
 	// If the node is currently syncing - we don't assume that the P-chain has
 	// been synced up to this point yet.
 	if p.vm.consensusState == consensus.NormalOp {
-		currentPChainHeight, err := p.vm.ctx.ValidatorState.GetCurrentHeight(ctx)
+		currentPChainHeight, err := p.vm.ctx.ValidatorState.GetCurrentHeight()
 		if err != nil {
 			p.vm.ctx.Log.Error("block verification failed",
 				zap.String("reason", "failed to get current P-Chain height"),

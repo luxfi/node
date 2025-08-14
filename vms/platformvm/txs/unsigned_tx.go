@@ -16,6 +16,7 @@ type UnsignedTx interface {
 	// TODO: Remove this initialization pattern from both the platformvm and the
 	// xvm.
 	consensus.ContextInitializable
+	consensus.Contextualizable
 	secp256k1fx.UnsignedTx
 	SetBytes(unsignedBytes []byte)
 

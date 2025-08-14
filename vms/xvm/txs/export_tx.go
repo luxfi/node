@@ -4,6 +4,7 @@
 package txs
 
 import (
+	"context"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
@@ -35,4 +36,10 @@ func (t *ExportTx) InitCtx(ctx *consensus.Context) {
 
 func (t *ExportTx) Visit(v Visitor) error {
 	return v.ExportTx(t)
+}
+
+// InitializeWithContext initializes the transaction with consensus context
+func (tx *ExportTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+    // Initialize any context-dependent fields here
+    return nil
 }
