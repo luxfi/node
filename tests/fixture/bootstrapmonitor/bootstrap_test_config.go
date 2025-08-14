@@ -36,7 +36,7 @@ const (
 	CChainStateSync    SyncMode = "c-chain-state-sync"     // aka state sync
 	OnlyPChainFullSync SyncMode = "p-chain-full-sync-only" // aka partial sync
 
-	VersionsAnnotationKey = "avalanche.lux.network/luxd-versions"
+	VersionsAnnotationKey = "lux.lux.network/luxd-versions"
 )
 
 var (

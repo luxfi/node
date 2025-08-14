@@ -14,7 +14,7 @@ on:
 
 env:
   REGISTRY: us-central1-docker.pkg.dev
-  REPOSITORY: molten-verve-216720/avalanche-repository
+  REPOSITORY: molten-verve-216720/lux-repository
 
 jobs:
   antithesis:
@@ -31,8 +31,8 @@ jobs:
         username: _json_key
         password: ${{ secrets.ANTITHESIS_GAR_JSON_KEY }}
 
-    - name: Build and push images for avalanchego test setup
-      run: ./scripts/run_task.sh build-antithesis-images-avalanchego
+    - name: Build and push images for luxd test setup
+      run: ./scripts/run_task.sh build-antithesis-images-luxd
       env:
         IMAGE_PREFIX: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
         IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}

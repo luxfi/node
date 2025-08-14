@@ -1,24 +1,24 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package lp118
+package acp118
 
 import (
 	"context"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/p2ptest"
 	"github.com/luxfi/node/proto/pb/sdk"
+	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
@@ -36,12 +36,12 @@ func TestHandler(t *testing.T) {
 			name:   "signature fails verification",
 			cacher: &cache.Empty[ids.ID, []byte]{},
 			verifier: &testVerifier{
-				Errs: []*core.AppError{
+				Errs: []*common.AppError{
 					{Code: 123},
 				},
 			},
 			expectedErrs: []error{
-				&core.AppError{Code: 123},
+				&common.AppError{Code: 123},
 			},
 		},
 		{
@@ -56,7 +56,7 @@ func TestHandler(t *testing.T) {
 			name:   "signature is cached",
 			cacher: lru.NewCache[ids.ID, []byte](1),
 			verifier: &testVerifier{
-				Errs: []*core.AppError{
+				Errs: []*common.AppError{
 					nil,
 					{Code: 123}, // The valid response should be cached
 				},
@@ -73,9 +73,9 @@ func TestHandler(t *testing.T) {
 			require := require.New(t)
 
 			ctx := context.Background()
-			sk, err := bls.NewSecretKey()
+			sk, err := localsigner.New()
 			require.NoError(err)
-			pk := bls.PublicFromSecretKey(sk)
+			pk := sk.PublicKey()
 			networkID := uint32(123)
 			chainID := ids.GenerateTestID()
 			signer := warp.NewSigner(sk, networkID, chainID)
@@ -145,14 +145,14 @@ func TestHandler(t *testing.T) {
 
 // The zero value of testVerifier allows signing
 type testVerifier struct {
-	Errs []*core.AppError
+	Errs []*common.AppError
 }
 
 func (t *testVerifier) Verify(
 	context.Context,
 	*warp.UnsignedMessage,
 	[]byte,
-) *core.AppError {
+) *common.AppError {
 	if len(t.Errs) == 0 {
 		return nil
 	}

@@ -136,7 +136,7 @@ func (vm *VM) Initialize(
 
 			fmt.Printf("DETECTED IMPORTED DATA AT HEIGHT %d, HASH %s\n", height, migratedBlockHash.Hex())
 
-			// Log to Avalanche logger too
+			// Log to Lux logger too
 			vm.ctx.Log.Info("Detected imported blockchain data from environment",
 				"height", height,
 				"blockHash", migratedBlockHash.Hex(),
@@ -198,7 +198,7 @@ func (vm *VM) Initialize(
 				migratedHeight = height
 				fmt.Printf("DETECTED MIGRATED DATA AT HEIGHT %d\n", height)
 
-				// Log to Avalanche logger too
+				// Log to Lux logger too
 				vm.ctx.Log.Info("Detected migrated blockchain data",
 					"height", height,
 				)

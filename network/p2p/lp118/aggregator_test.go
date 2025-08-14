@@ -1,22 +1,22 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package lp118
+package acp118
 
 import (
 	"context"
 	"math/big"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/p2ptest"
+	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
@@ -26,21 +26,21 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 	chainID := ids.GenerateTestID()
 
 	nodeID0 := ids.GenerateTestNodeID()
-	sk0, err := bls.NewSecretKey()
+	sk0, err := localsigner.New()
 	require.NoError(t, err)
-	pk0 := bls.PublicFromSecretKey(sk0)
+	pk0 := sk0.PublicKey()
 	signer0 := warp.NewSigner(sk0, networkID, chainID)
 
 	nodeID1 := ids.GenerateTestNodeID()
-	sk1, err := bls.NewSecretKey()
+	sk1, err := localsigner.New()
 	require.NoError(t, err)
-	pk1 := bls.PublicFromSecretKey(sk1)
+	pk1 := sk1.PublicKey()
 	signer1 := warp.NewSigner(sk1, networkID, chainID)
 
 	nodeID2 := ids.GenerateTestNodeID()
-	sk2, err := bls.NewSecretKey()
+	sk2, err := localsigner.New()
 	require.NoError(t, err)
-	pk2 := bls.PublicFromSecretKey(sk2)
+	pk2 := sk2.PublicKey()
 	signer2 := warp.NewSigner(sk2, networkID, chainID)
 
 	tests := []struct {
@@ -59,7 +59,7 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 		{
 			name: "single validator - less than threshold",
 			peers: map[ids.NodeID]p2p.Handler{
-				nodeID0: NewHandler(&testVerifier{Errs: []*core.AppError{core.ErrUndefined}}, signer0),
+				nodeID0: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer0),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -152,8 +152,8 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 			name: "multiple validators - less than threshold - equal weights",
 			peers: map[ids.NodeID]p2p.Handler{
 				nodeID0: NewHandler(&testVerifier{}, signer0),
-				nodeID1: NewHandler(&testVerifier{Errs: []*core.AppError{core.ErrUndefined}}, signer1),
-				nodeID2: NewHandler(&testVerifier{Errs: []*core.AppError{core.ErrUndefined}}, signer2),
+				nodeID1: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer1),
+				nodeID2: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -196,7 +196,7 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 			peers: map[ids.NodeID]p2p.Handler{
 				nodeID0: NewHandler(&testVerifier{}, signer0),
 				nodeID1: NewHandler(&testVerifier{}, signer1),
-				nodeID2: NewHandler(&testVerifier{Errs: []*core.AppError{core.ErrUndefined}}, signer2),
+				nodeID2: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -281,8 +281,8 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 			name: "multiple validators - less than threshold - different weights",
 			peers: map[ids.NodeID]p2p.Handler{
 				nodeID0: NewHandler(&testVerifier{}, signer0),
-				nodeID1: NewHandler(&testVerifier{Errs: []*core.AppError{core.ErrUndefined}}, signer1),
-				nodeID2: NewHandler(&testVerifier{Errs: []*core.AppError{core.ErrUndefined}}, signer2),
+				nodeID1: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer1),
+				nodeID2: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -325,7 +325,7 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 			peers: map[ids.NodeID]p2p.Handler{
 				nodeID0: NewHandler(&testVerifier{}, signer0),
 				nodeID1: NewHandler(&testVerifier{}, signer1),
-				nodeID2: NewHandler(&testVerifier{Errs: []*core.AppError{core.ErrUndefined}}, signer2),
+				nodeID2: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -368,7 +368,7 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 			peers: map[ids.NodeID]p2p.Handler{
 				nodeID0: NewHandler(&testVerifier{}, signer0),
 				nodeID1: NewHandler(&testVerifier{}, signer1),
-				nodeID2: NewHandler(&testVerifier{Errs: []*core.AppError{core.ErrUndefined}}, signer2),
+				nodeID2: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -624,7 +624,7 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 				p2p.NoOpHandler{},
 				tt.peers,
 			)
-			aggregator := NewSignatureAggregator(log.NewNoOpLogger(), client)
+			aggregator := NewSignatureAggregator(logging.NoLog{}, client)
 
 			gotMsg, gotAggregatedStake, gotTotalStake, err := aggregator.AggregateSignatures(
 				tt.ctx,
@@ -646,33 +646,21 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 
 			pks := make([]*bls.PublicKey, 0)
 			wantAggregatedStake := uint64(0)
-			signerIndices := make([]int, 0)
 			for i := 0; i < bitSet.BitLen(); i++ {
 				if !bitSet.Contains(i) {
 					continue
 				}
 
 				pks = append(pks, tt.validators[i].PublicKey)
-				signerIndices = append(signerIndices, i)
 				wantAggregatedStake += tt.validators[i].Weight
 			}
 
 			if tt.wantSigners > 0 {
-				// Skip multi-signature verification tests due to broken AggregatePublicKeys in luxfi/crypto v0.1.3
-				// The library just returns the first public key instead of properly aggregating them
-				if len(pks) > 1 {
-					t.Skip("Skipping multi-signature verification test - luxfi/crypto v0.1.3 has broken public key aggregation")
-				}
-				
 				aggPk, err := bls.AggregatePublicKeys(pks)
 				require.NoError(err)
 				blsSig, err := bls.SignatureFromBytes(gotSignature.Signature[:])
 				require.NoError(err)
-				
-				// Only verify for single signer case
-				msgBytes := tt.msg.UnsignedMessage.Bytes()
-				isValid := bls.Verify(aggPk, blsSig, msgBytes)
-				require.True(isValid, "BLS signature verification failed")
+				require.True(bls.Verify(aggPk, blsSig, tt.msg.UnsignedMessage.Bytes()))
 			}
 
 			require.Equal(new(big.Int).SetUint64(wantAggregatedStake), gotAggregatedStake)

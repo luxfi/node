@@ -16,8 +16,8 @@ import (
 // Const variables to be exported
 const (
 	LocalID    uint32 = 31337
-	MainnetID  uint32 = 1      // Use 1 for Avalanche compatibility
-	TestnetID  uint32 = 5      // Use 5 for Avalanche compatibility
+	MainnetID  uint32 = 1      // Use 1 for Lux compatibility
+	TestnetID  uint32 = 5      // Use 5 for Lux compatibility
 	UnitTestID uint32 = 369
 	
 	// Lux-specific network IDs

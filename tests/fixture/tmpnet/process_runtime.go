@@ -43,7 +43,7 @@ var (
 )
 
 type ProcessRuntimeConfig struct {
-	LuxdPath   string `json:"avalancheGoPath,omitempty"`
+	LuxdPath   string `json:"luxGoPath,omitempty"`
 	PluginDir         string `json:"pluginDir,omitempty"`
 	ReuseDynamicPorts bool   `json:"reuseDynamicPorts,omitempty"`
 }

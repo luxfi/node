@@ -4,7 +4,7 @@
 
 ### Private Testing Phase (January 2021)
 - Initial private alpha testing and benchmarking
-- Based on early Avalanche node implementation
+- Based on early Lux node implementation
 - Used for internal evaluation and performance testing
 - Testing consensus mechanisms and network topology
 

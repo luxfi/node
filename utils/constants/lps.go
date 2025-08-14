@@ -14,7 +14,7 @@ var (
 		23, // https://github.com/luxfi/LPs/blob/main/LPs/23-p-chain-native-transfers/README.md
 		24, // https://github.com/luxfi/LPs/blob/main/LPs/24-shanghai-eips/README.md
 		25, // https://github.com/luxfi/LPs/blob/main/LPs/25-vm-application-errors/README.md
-		30, // https://github.com/luxfi/LPs/blob/main/LPs/30-avalanche-warp-x-evm/README.md
+		30, // https://github.com/luxfi/LPs/blob/main/LPs/30-lux-warp-x-evm/README.md
 		31, // https://github.com/luxfi/LPs/blob/main/LPs/31-enable-subnet-ownership-transfer/README.md
 		41, // https://github.com/luxfi/LPs/blob/main/LPs/41-remove-pending-stakers/README.md
 		62, // https://github.com/luxfi/LPs/blob/main/LPs/62-disable-addvalidatortx-and-adddelegatortx/README.md
