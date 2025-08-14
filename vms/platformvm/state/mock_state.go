@@ -15,7 +15,7 @@ import (
 	sync "sync"
 	time "time"
 
-	validators "github.com/luxfi/node/consensus/validators"
+	validators "github.com/luxfi/consensus/validators"
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
 	logging "github.com/luxfi/log"

@@ -14,21 +14,21 @@ import (
 	"github.com/stretchr/testify/require"
 
 
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/consensus"
 
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/consensus/consensustest"
 
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/chain/block"
 
-	"github.com/luxfi/node/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 
-	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/consensus/chain"
 
-	"github.com/luxfi/node/consensus/chain/chaintest"
+	"github.com/luxfi/consensus/chain/chaintest"
 
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/consensus/validators"
 
-	"github.com/luxfi/node/consensus/validators/validatorstest"
+	"github.com/luxfi/consensus/validators/validatorstest"
 
 	"github.com/luxfi/database"
 
@@ -38,7 +38,7 @@ import (
 
 	"github.com/luxfi/ids"
 
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/core"
 
 	"github.com/luxfi/node/utils/timer/mockable"
 )

@@ -8,8 +8,8 @@ import (
 	"time"
 	
 
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/chain"
 	"github.com/luxfi/ids"
 )
 

@@ -4,7 +4,7 @@
 package e2e
 
 import (
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/wallet/subnet/primary"
 )

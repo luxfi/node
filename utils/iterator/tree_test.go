@@ -18,7 +18,7 @@ import (
 <<<<<<< HEAD:vms/platformvm/state/tree_iterator_test.go
 	"github.com/luxfi/ids"
 =======
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/vms/platformvm/state"
 >>>>>>> upstream/master:utils/iterator/tree_test.go

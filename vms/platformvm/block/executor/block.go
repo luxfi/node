@@ -9,8 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/consensus/choices"
-	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/vms/platformvm/block"
 )

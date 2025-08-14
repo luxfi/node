@@ -13,8 +13,8 @@ import (
 	http "net/http"
 	reflect "reflect"
 
-	consensus "github.com/luxfi/node/consensus"
-	core "github.com/luxfi/node/consensus/engine/core"
+	consensus "github.com/luxfi/consensus"
+	core "github.com/luxfi/consensus/engine/core"
 	gomock "go.uber.org/mock/gomock"
 )
 

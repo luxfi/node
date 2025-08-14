@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms"

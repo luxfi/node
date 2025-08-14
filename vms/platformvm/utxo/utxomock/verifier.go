@@ -12,8 +12,8 @@ package utxomock
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
-	avax "github.com/luxfi/node/vms/components/avax"
+	ids "github.com/luxfi/ids"
+	avax "github.com/luxfi/node/vms/components/lux"
 	verify "github.com/luxfi/node/vms/components/verify"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
 	gomock "go.uber.org/mock/gomock"

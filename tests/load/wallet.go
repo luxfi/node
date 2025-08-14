@@ -10,10 +10,10 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/libevm/common"
-	"github.com/luxfi/libevm/core/types"
-	"github.com/luxfi/libevm/crypto"
-	"github.com/luxfi/libevm/ethclient"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/crypto"
+	"github.com/luxfi/geth/ethclient"
 )
 
 type Wallet struct {

@@ -6,7 +6,7 @@ package message
 import (
 	"fmt"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // L1ValidatorRegistration reports if a validator is registered on the P-chain.

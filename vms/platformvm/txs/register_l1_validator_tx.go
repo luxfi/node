@@ -5,7 +5,7 @@ package txs
 
 import (
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/vms/types"
 )
 

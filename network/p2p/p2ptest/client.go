@@ -16,8 +16,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/enginetest"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/enginetest"
 	"github.com/luxfi/node/utils/set"
 )
 

@@ -11,7 +11,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	dto "github.com/prometheus/client_model/go"
-	"github.com/luxfi/node/utils/metrics"
+	"github.com/luxfi/metric"
 )
 
 func TestPrefixGatherer_Gather(t *testing.T) {

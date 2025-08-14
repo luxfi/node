@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luxfi/libevm/common"
-	"github.com/luxfi/libevm/crypto"
+	"github.com/luxfi/geth/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/cb58"
 	"github.com/luxfi/node/utils/hashing"
 

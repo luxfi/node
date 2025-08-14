@@ -12,8 +12,8 @@ package executormock
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
-	snowman "github.com/luxfi/node/consensus/protocols/snowman"
+	ids "github.com/luxfi/ids"
+	snowman "github.com/luxfi/consensus/protocols/snowman"
 	set "github.com/luxfi/node/utils/set"
 	block "github.com/luxfi/node/vms/platformvm/block"
 	state "github.com/luxfi/node/vms/platformvm/state"

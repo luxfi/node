@@ -9,11 +9,10 @@ import (
 	
 
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/platformvm/network"
 )
 
 var DefaultExecutionConfig = ExecutionConfig{
-	Network:                      network.DefaultConfig,
+	Network:                      DefaultNetworkConfig,
 	BlockCacheSize:               64 * units.MiB,
 	TxCacheSize:                  128 * units.MiB,
 	TransformedSubnetTxCacheSize: 4 * units.MiB,
@@ -28,7 +27,7 @@ var DefaultExecutionConfig = ExecutionConfig{
 
 // ExecutionConfig provides execution parameters of PlatformVM
 type ExecutionConfig struct {
-	Network                      network.Config `json:"network"`
+	Network                      NetworkConfig `json:"network"`
 	BlockCacheSize               int            `json:"block-cache-size"`
 	TxCacheSize                  int            `json:"tx-cache-size"`
 	TransformedSubnetTxCacheSize int            `json:"transformed-subnet-tx-cache-size"`

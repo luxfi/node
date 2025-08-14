@@ -10,7 +10,7 @@ import (
 	"time"
 	
 
-	"github.com/luxfi/node/consensus/networking/router"
+	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
 )

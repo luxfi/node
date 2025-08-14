@@ -13,8 +13,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/consensus/networking/benchlist"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/consensus/networking/benchlist"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/peer"

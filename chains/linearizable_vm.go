@@ -6,10 +6,10 @@ package chains
 import (
 	"context"
 
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/engine/core"
-	"github.com/luxfi/node/consensus/engine/graph/vertex"
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/graph/vertex"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 )

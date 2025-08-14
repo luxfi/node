@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/consensus/sampling"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils/compression"

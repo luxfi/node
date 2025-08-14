@@ -12,7 +12,7 @@ package txs
 import (
 	reflect "reflect"
 
-	consensus "github.com/luxfi/node/consensus"
+	consensus "github.com/luxfi/consensus"
 	ids "github.com/luxfi/ids"
 	set "github.com/luxfi/node/utils/set"
 	lux "github.com/luxfi/node/vms/components/lux"

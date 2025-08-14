@@ -12,11 +12,11 @@ import (
 	"math/rand"
 	"sync"
 
-	"github.com/luxfi/libevm/accounts/abi/bind"
-	"github.com/luxfi/libevm/common"
-	"github.com/luxfi/libevm/core/types"
-	"github.com/luxfi/libevm/crypto"
-	"github.com/luxfi/libevm/params"
+	"github.com/luxfi/geth/accounts/abi/bind"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/crypto"
+	"github.com/luxfi/geth/params"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/tests"

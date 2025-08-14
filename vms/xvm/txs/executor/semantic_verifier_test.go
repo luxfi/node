@@ -12,8 +12,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/validators/validatorsmock"
+	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus/validators/validatorsmock"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
