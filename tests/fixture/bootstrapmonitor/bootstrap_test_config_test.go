@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrapmonitor
@@ -21,7 +21,7 @@ func TestBootstrapTestConfigForPod(t *testing.T) {
 	networkName := "network"
 	nodeContainerName := "avago"
 	imageName := "image"
-	validVersionsString := `{"application": "avalanchego/1.11.11", "database": "v1.4.5", "rpcchainvm": 37, "commit": "5bcfb0fb30cc311adb22173daabb56eae736fac3","go": "1.21.12" }`
+	validVersionsString := `{"application": "luxd/1.11.11", "database": "v1.4.5", "rpcchainvm": 37, "commit": "5bcfb0fb30cc311adb22173daabb56eae736fac3","go": "1.21.12" }`
 	invalidVersionsString := "invalid"
 
 	tests := []struct {
@@ -102,7 +102,7 @@ func TestBootstrapTestConfigForPod(t *testing.T) {
 				SyncMode: CChainStateSync,
 				Image:    imageName,
 				Versions: &version.Versions{
-					Application: "avalanchego/1.11.11",
+					Application: "luxd/1.11.11",
 					Database:    "v1.4.5",
 					RPCChainVM:  37,
 					Commit:      "5bcfb0fb30cc311adb22173daabb56eae736fac3",

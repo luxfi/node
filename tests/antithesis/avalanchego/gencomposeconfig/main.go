@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 )
 
-const baseImageName = "antithesis-avalanchego"
+const baseImageName = "antithesis-luxd"
 
 // Creates docker-compose.yml and its associated volumes in the target path.
 func main() {

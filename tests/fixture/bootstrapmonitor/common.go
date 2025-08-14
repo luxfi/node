@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrapmonitor
@@ -127,7 +127,7 @@ type ImageDetails struct {
 	Versions *version.Versions
 }
 
-// GetLatestImageDetails retrieves the image details for the avalanchego image with tag `latest`.
+// GetLatestImageDetails retrieves the image details for the luxd image with tag `latest`.
 func getLatestImageDetails(
 	ctx context.Context,
 	log logging.Logger,
@@ -141,16 +141,16 @@ func getLatestImageDetails(
 		return nil, err
 	}
 
-	// Start a new pod with the `latest`-tagged avalanchego image to discover its image ID
+	// Start a new pod with the `latest`-tagged luxd image to discover its image ID
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "avalanchego-version-check-",
+			GenerateName: "luxd-version-check-",
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
 					Name:    containerName,
-					Command: []string{"./avalanchego"},
+					Command: []string{"./luxd"},
 					Args:    []string{"--version-json"},
 					Image:   baseImageName + ":latest",
 				},
@@ -176,7 +176,7 @@ func getLatestImageDetails(
 		return nil, fmt.Errorf("failed to retrieve terminated pod %s: %w", qualifiedPodName, err)
 	}
 
-	// Get the image id for the avalanchego image
+	// Get the image id for the luxd image
 	imageID := ""
 	for _, status := range terminatedPod.Status.ContainerStatuses {
 		if status.Name == containerName {

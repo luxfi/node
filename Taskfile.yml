@@ -8,13 +8,13 @@ tasks:
   default: ./scripts/run_task.sh --list
 
   build:
-    desc: Builds avalanchego
+    desc: Builds luxd
     cmd: ./scripts/build.sh
 
-  build-antithesis-images-avalanchego:
-    desc: Builds docker images for antithesis for the avalanchego test setup
+  build-antithesis-images-luxd:
+    desc: Builds docker images for antithesis for the luxd test setup
     env:
-      TEST_SETUP: avalanchego
+      TEST_SETUP: luxd
     cmd: bash -x ./scripts/build_antithesis_images.sh
 
   build-antithesis-images-xsvm:
@@ -32,11 +32,11 @@ tasks:
     cmd: ./scripts/build_bootstrap_monitor_image.sh
 
   build-image:
-    desc: Builds docker image for avalanchego
+    desc: Builds docker image for luxd
     cmd: ./scripts/build_image.sh
 
   build-race:
-    desc: Builds avalanchego with race detection enabled
+    desc: Builds luxd with race detection enabled
     cmd: ./scripts/build.sh -r
 
   build-tmpnetctl:
@@ -93,7 +93,7 @@ tasks:
       START_BLOCK: '{{.START_BLOCK}}'
       END_BLOCK: '{{.END_BLOCK}}'
     cmds:
-      - cmd: go test -timeout=0 -run=TestExportBlockRange github.com/luxfi/avalanchego/tests/reexecute/c --source-block-dir={{.SOURCE_BLOCK_DIR}} --target-block-dir={{.TARGET_BLOCK_DIR}} --start-block={{.START_BLOCK}} --end-block={{.END_BLOCK}}
+      - cmd: go test -timeout=0 -run=TestExportBlockRange github.com/luxfi/luxd/tests/reexecute/c --source-block-dir={{.SOURCE_BLOCK_DIR}} --target-block-dir={{.TARGET_BLOCK_DIR}} --start-block={{.START_BLOCK}} --end-block={{.END_BLOCK}}
 
   export-dir-to-s3:
     desc: Copies a directory to s3
@@ -131,8 +131,8 @@ tasks:
     desc: Imports the C-Chain block and state data to re-execute. Defaults to import the first 200 and the current state created with the default config of the C-Chain (hashdb).
     vars:
       EXECUTION_DATA_DIR: '{{.EXECUTION_DATA_DIR}}'
-      SOURCE_BLOCK_DIR: '{{.SOURCE_BLOCK_DIR | default "s3://avalanchego-bootstrap-testing/cchain-mainnet-blocks-200.zip"}}'
-      CURRENT_STATE_DIR: '{{.CURRENT_STATE_DIR | default "s3://avalanchego-bootstrap-testing/cchain-current-state-hashdb-full-100.zip"}}'
+      SOURCE_BLOCK_DIR: '{{.SOURCE_BLOCK_DIR | default "s3://luxd-bootstrap-testing/cchain-mainnet-blocks-200.zip"}}'
+      CURRENT_STATE_DIR: '{{.CURRENT_STATE_DIR | default "s3://luxd-bootstrap-testing/cchain-current-state-hashdb-full-100.zip"}}'
     cmds:
       - task: import-s3-to-dir
         vars:
@@ -203,8 +203,8 @@ tasks:
     desc: Combines import-cchain-reexecute-range and reexecute-cchain-range
     vars:
       EXECUTION_DATA_DIR: '{{.EXECUTION_DATA_DIR}}'
-      SOURCE_BLOCK_DIR: '{{.SOURCE_BLOCK_DIR | default "s3://avalanchego-bootstrap-testing/cchain-mainnet-blocks-1m-ldb.zip"}}'
-      CURRENT_STATE_DIR: '{{.CURRENT_STATE_DIR | default "s3://avalanchego-bootstrap-testing/cchain-current-state-hashdb-full-100.zip"}}'
+      SOURCE_BLOCK_DIR: '{{.SOURCE_BLOCK_DIR | default "s3://luxd-bootstrap-testing/cchain-mainnet-blocks-1m-ldb.zip"}}'
+      CURRENT_STATE_DIR: '{{.CURRENT_STATE_DIR | default "s3://luxd-bootstrap-testing/cchain-current-state-hashdb-full-100.zip"}}'
       START_BLOCK: '{{.START_BLOCK | default "101"}}'
       END_BLOCK: '{{.END_BLOCK | default "250000"}}'
       LABELS: '{{.LABELS | default ""}}'
@@ -228,13 +228,13 @@ tasks:
     desc: Runs bootstrap monitor e2e tests
     cmd: bash -x ./scripts/tests.e2e.bootstrap_monitor.sh
 
-  test-build-antithesis-images-avalanchego:
-    desc: Tests the build of antithesis images for the avalanchego test setup
+  test-build-antithesis-images-luxd:
+    desc: Tests the build of antithesis images for the luxd test setup
     env:
-      TEST_SETUP: avalanchego
+      TEST_SETUP: luxd
     cmds:
       - task: build-race
-      - cmd: go run ./tests/antithesis/avalanchego --avalanchego-path=./build/avalanchego --duration=120s
+      - cmd: go run ./tests/antithesis/luxd --luxd-path=./build/luxd --duration=120s
       - cmd: bash -x ./scripts/tests.build_antithesis_images.sh
 
   test-build-antithesis-images-xsvm:
@@ -244,7 +244,7 @@ tasks:
     cmds:
       - task: build-race
       - task: build-xsvm
-      - cmd: go run ./tests/antithesis/xsvm --avalanchego-path=./build/avalanchego --duration=120s
+      - cmd: go run ./tests/antithesis/xsvm --luxd-path=./build/luxd --duration=120s
       - cmd: bash -x ./scripts/tests.build_antithesis_images.sh
 
   test-build-image:
@@ -317,7 +317,7 @@ tasks:
     cmds:
       - task: generate-load-contract-bindings
       - task: build
-      - cmd: go run ./tests/load/main --avalanchego-path=./build/avalanchego {{.CLI_ARGS}}
+      - cmd: go run ./tests/load/main --luxd-path=./build/luxd {{.CLI_ARGS}}
 
   test-load-exclusive:
     desc: Runs load tests against kube with exclusive scheduling

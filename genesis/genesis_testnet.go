@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -21,8 +21,8 @@ var (
 	// FujiParams are the params used for the testnet testnet
 	FujiParams = Params{
 		TxFeeConfig: TxFeeConfig{
-			CreateAssetTxFee: 10 * units.MilliAvax,
-			TxFee:            units.MilliAvax,
+			CreateAssetTxFee: 10 * units.MilliLux,
+			TxFee:            units.MilliLux,
 			DynamicFeeConfig: gas.Config{
 				Weights: gas.Dimensions{
 					gas.Bandwidth: 1,     // Max block size ~1MB
@@ -43,7 +43,7 @@ var (
 			ValidatorFeeConfig: fee.Config{
 				Capacity: 20_000,
 				Target:   10_000,
-				MinPrice: gas.Price(512 * units.NanoAvax),
+				MinPrice: gas.Price(512 * units.NanoLux),
 				// ExcessConversionConstant = (Capacity - Target) * NumberOfSecondsPerDoubling / ln(2)
 				//
 				// ln(2) is a float and the result is consensus critical, so we
@@ -53,9 +53,9 @@ var (
 		},
 		StakingConfig: StakingConfig{
 			UptimeRequirement: .8, // 80%
-			MinValidatorStake: 1 * units.Avax,
-			MaxValidatorStake: 3 * units.MegaAvax,
-			MinDelegatorStake: 1 * units.Avax,
+			MinValidatorStake: 1 * units.Lux,
+			MaxValidatorStake: 3 * units.MegaLux,
+			MinDelegatorStake: 1 * units.Lux,
 			MinDelegationFee:  20000, // 2%
 			MinStakeDuration:  24 * time.Hour,
 			MaxStakeDuration:  365 * 24 * time.Hour,
@@ -63,7 +63,7 @@ var (
 				MaxConsumptionRate: .12 * reward.PercentDenominator,
 				MinConsumptionRate: .10 * reward.PercentDenominator,
 				MintingPeriod:      365 * 24 * time.Hour,
-				SupplyCap:          720 * units.MegaAvax,
+				SupplyCap:          720 * units.MegaLux,
 			},
 		},
 	}

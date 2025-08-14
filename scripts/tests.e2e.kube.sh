@@ -15,12 +15,12 @@ fi
 ./scripts/start_kind_cluster.sh "$@"
 
 # Use an image that will be pushed to the local registry that the kind cluster is configured to use.
-AVALANCHEGO_IMAGE="localhost:5001/avalanchego"
-XSVM_IMAGE="${AVALANCHEGO_IMAGE}-xsvm"
+LUXD_IMAGE="localhost:5001/luxd"
+XSVM_IMAGE="${LUXD_IMAGE}-xsvm"
 if [[ -n "${SKIP_BUILD_IMAGE:-}" ]]; then
   echo "Skipping build of xsvm image due to SKIP_BUILD_IMAGE=${SKIP_BUILD_IMAGE}"
 else
-  XSVM_IMAGE="${XSVM_IMAGE}" AVALANCHEGO_IMAGE="${AVALANCHEGO_IMAGE}" bash -x ./scripts/build_xsvm_image.sh
+  XSVM_IMAGE="${XSVM_IMAGE}" LUXD_IMAGE="${LUXD_IMAGE}" bash -x ./scripts/build_xsvm_image.sh
 fi
 
 # Determine kubeconfig context to use

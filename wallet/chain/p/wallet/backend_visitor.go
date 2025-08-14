@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package wallet
@@ -79,12 +79,12 @@ func (b *backendVisitor) ExportTx(tx *txs.ExportTx) error {
 		err := b.b.AddUTXO(
 			b.ctx,
 			tx.DestinationChain,
-			&avax.UTXO{
-				UTXOID: avax.UTXOID{
+			&lux.UTXO{
+				UTXOID: lux.UTXOID{
 					TxID:        b.txID,
 					OutputIndex: uint32(len(tx.Outs) + i),
 				},
-				Asset: avax.Asset{ID: out.AssetID()},
+				Asset: lux.Asset{ID: out.AssetID()},
 				Out:   out.Out,
 			},
 		)

@@ -1,13 +1,13 @@
 # bootstrap-monitor
 
 Code rooted at this package implements a `bootstrap-monitor` binary
-intended to enable continuous bootstrap testing for avalanchego
+intended to enable continuous bootstrap testing for luxd
 networks.
 
 ## Bootstrap testing
 
-Bootstrapping an avalanchego node on a persistent network like
-`mainnet` or `fuji` requires that the version of avalanchego that the
+Bootstrapping an luxd node on a persistent network like
+`mainnet` or `fuji` requires that the version of luxd that the
 node is running be compatible with the historical data of that
 network. Bootstrapping regularly is a good way of insuring against
 regressions in compatibility.
@@ -41,38 +41,38 @@ processed. This is configured by including
 
 The intention of `bootstrap-monitor` is to enable a Kubernetes
 [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)
-to perform continuous bootstrap testing for a given avalanchego
+to perform continuous bootstrap testing for a given luxd
 configuration. It ensures that a testing pod either starts or resumes
 a test, and upon completion of a test, polls for a new image to test
 and initiates a new test when one is found.
 
  - Both the `init` and `wait-for-completion` commands of the
    `bootstrap-monitor` binary are intended to run as containers of a
-   pod alongside an avalanchego container. The pod is expected to be
+   pod alongside an luxd container. The pod is expected to be
    managed by a `StatefulSet` to ensure the pod is restarted on
    failure and that only a single pod runs at a time to avoid
    contention for the backing data volume. Both commands derive the
    configuration of a bootstrap test from the pod:
    - The network targeted by the test is determined by the value of
-     the `AVAGO_NETWORK_NAME` env var set for the avalanchego
+     the `AVAGO_NETWORK_NAME` env var set for the luxd
      container.
    - By default, the sync mode will be `c-chain-state-sync`. The other sync
      modes require providing additional configuration:
      - The `only-p-chain-full-sync` mode is enabled by setting the
        `AVAGO_PARTIAL_SYNC_PRIMARY_NETWORK` env var to `"true"` for
-       the avalanchego container. If this mode is enabled, the state
+       the luxd container. If this mode is enabled, the state
        sync configuration for the C-Chain will be ignored.
      - The `full-sync` mode is enabled by including
        `state-sync-enabled:false` in the
-       `AVAGO_CHAIN_CONFIG_CONTENT` env var set for the avalanchego
+       `AVAGO_CHAIN_CONFIG_CONTENT` env var set for the luxd
        container and either not including a value for
        `AVAGO_PARTIAL_SYNC_PRIMARY_NETWORK` or setting it to
        `"false"`.
    - The image used by the test is determined by the image configured
-     for the avalanchego container.
-   - The versions of the avalanchego image used by the test is
+     for the luxd container.
+   - The versions of the luxd image used by the test is
      determined by the pod annotation with key
-     `avalanche.avax.network/avalanchego-versions`.
+     `avalanche.lux.network/luxd-versions`.
  - When a bootstrap testing pod is inevitably rescheduled or
    restarted, the contents of the `PersistentVolumeClaim` configured
    by the managing `StatefulSet` will persist across pod restarts to
@@ -80,39 +80,39 @@ and initiates a new test when one is found.
  - Both the `init` and `wait-for-completion` commands of the
    `bootstrap-monitor` attempt to read serialized test details (namely
    the image used for the test and the start time of the test) from
-   the same data volume used by the avalanchego node. These details
+   the same data volume used by the luxd node. These details
    are written by the `init` command when it determines that a new test
    is starting.
  - The `bootstrap-monitor init` command is intended to run as an
    [init
    container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/)
-   of an avalanchego node and ensure that the ID of the image and its
+   of an luxd node and ensure that the ID of the image and its
    associated versions are recorded for the test and that the contents
    of the pod's data volume is either cleared for a new test or
    retained to enable resuming a previously started test. It
    accomplishes this by:
-   - Mounting the same data volume as the avalanchego node
+   - Mounting the same data volume as the luxd node
    - Reading bootstrap test configuration as described previously
    - Determining the image ID and versions for an image if the
-     avalanchego image for the pod uses the `latest` tag. This will
+     luxd image for the pod uses the `latest` tag. This will
      only need to be performed the first pod that a bootstrap testing
      `StatefulSet` runs. Subsequent pods from the same `StatefulSet`
      should have an image qualified with its SHA and version details
      set by the previous test run's `wait-for-completion` pod.
      - A new pod will be started with the `latest` image to execute
-     `avalanchego --versions-json` to determine the image ID (which
-     includes a sha256 hash) of the image and its avalanchego
+     `luxd --versions-json` to determine the image ID (which
+     includes a sha256 hash) of the image and its luxd
      versions. Those values will then be applied to the `StatefulSet`
      managing the pod which will prompt pod deletion and recreation
      with the updated values. This ensures that a test result can be
-     associated with both a specific image SHA and the avalanchego
+     associated with both a specific image SHA and the luxd
      versions (including commit hash) of the binary that the image
      provides.
      - A separate pod is used because the image ID of a non-init
-       avalanchego container using a `latest`-tagged image is only
+       luxd container using a `latest`-tagged image is only
        available when that container runs rather than when an init container runs.
      - While it would be possible to add an init container running the
-       same avalanchego image as the primary avalanchego container,
+       same luxd image as the primary luxd container,
        have it run the version command, and then have a subsequent
        `bootstrap-monitor init` container read those results, the use
        of a separate pod for SHA and versions discovery would still be
@@ -131,7 +131,7 @@ and initiates a new test when one is found.
      - If the images are the same, the data volume is used as-is to
        enable resuming an in-progress test.
  - `bootstrap-monitor wait-for-completion` is intended to run as a
-   sidecar of the avalanchego container. It polls the health of the
+   sidecar of the luxd container. It polls the health of the
    node container to detect when a bootstrap test has completed
    successfully and then polls for a new image to test. When a new
    image is found, the managing `StatefulSet` is updated with the
@@ -174,9 +174,9 @@ due to the 5-day maximum duration for a job running on a self-hosted
 runner. State sync bootstrap usually completes within 5 days, but full
 sync bootstrap usually takes much longer.
 
-### Adding a 'bootstrap mode' to avalanchego
+### Adding a 'bootstrap mode' to luxd
 
-If avalanchego supported a `--bootstrap-mode` flag that exited on
+If luxd supported a `--bootstrap-mode` flag that exited on
 successful bootstrap, and a pod configured with this flag used an
 image with a `latest` tag, the pod would continuously bootstrap, exit,
 and restart with the current latest image. While appealingly simple,

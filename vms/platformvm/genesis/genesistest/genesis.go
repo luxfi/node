@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesistest
@@ -34,7 +34,7 @@ const (
 )
 
 var (
-	LUXAsset = avax.Asset{ID: snowtest.LUXAssetID}
+	LUXAsset = lux.Asset{ID: snowtest.LUXAssetID}
 
 	DefaultValidatorStartTime     = upgrade.InitiallyActiveTime
 	DefaultValidatorStartTimeUnix = uint64(DefaultValidatorStartTime.Unix())
@@ -100,8 +100,8 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 		InitialSupply: InitialSupply,
 	}
 	for i, key := range c.FundedKeys {
-		genesis.UTXOs[i] = &platformvmgenesis.UTXO{UTXO: avax.UTXO{
-			UTXOID: avax.UTXOID{
+		genesis.UTXOs[i] = &platformvmgenesis.UTXO{UTXO: lux.UTXO{
+			UTXOID: lux.UTXOID{
 				TxID:        snowtest.LUXAssetID,
 				OutputIndex: uint32(i),
 			},
@@ -126,7 +126,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 			},
 		}
 		validator := &txs.AddValidatorTx{
-			BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 				NetworkID:    c.NetworkID,
 				BlockchainID: constants.PlatformChainID,
 			}},
@@ -136,7 +136,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 				End:    uint64(c.ValidatorEndTime.Unix()),
 				Wght:   c.ValidatorWeight,
 			},
-			StakeOuts: []*avax.TransferableOutput{
+			StakeOuts: []*lux.TransferableOutput{
 				{
 					Asset: LUXAsset,
 					Out: &secp256k1fx.TransferOutput{
@@ -155,7 +155,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 	}
 
 	chain := &txs.CreateChainTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    c.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 		}},

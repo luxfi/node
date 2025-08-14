@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package e2e
@@ -13,7 +13,7 @@ import (
 type APITestFunction func(tc tests.TestContext, wallet primary.Wallet, ownerAddress ids.ShortID)
 
 // ExecuteAPITest executes a test whose primary dependency is being
-// able to access the API of one or more avalanchego nodes.
+// able to access the API of one or more luxd nodes.
 func ExecuteAPITest(apiTest APITestFunction) {
 	tc := NewTestContext()
 	env := GetEnv(tc)

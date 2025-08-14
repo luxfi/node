@@ -1,7 +1,7 @@
 <<<<<<< HEAD:wallet/chain/p/wallet.go
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 =======
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 >>>>>>> upstream/master:wallet/chain/p/wallet/wallet.go
 // See the file LICENSE for licensing terms.
 

@@ -2,13 +2,13 @@
 
 The C-Chain benchmarks support re-executing a range of mainnet C-Chain blocks against a provided snapshot of the current state as of some initial state.
 
-AvalancheGo provides a [Taskfile](https://taskfile.dev/) with commands to manage the import/export of data required for re-execution (block range and current state) and triggering a benchmark run.
+Luxd provides a [Taskfile](https://taskfile.dev/) with commands to manage the import/export of data required for re-execution (block range and current state) and triggering a benchmark run.
 
 ## Metrics
 
-The C-Chain benchmarks export VM metrics to the same Grafana instance as AvalancheGo CI: https://grafana-poc.avax-dev.network/.
+The C-Chain benchmarks export VM metrics to the same Grafana instance as Luxd CI: https://grafana-poc.lux-dev.network/.
 
-You can view granular C-Chain processing metrics with the label attached to this job (job="c-chain-reexecution") [here](https://grafana-poc.avax-dev.network/d/Gl1I20mnk/c-chain?orgId=1&from=now-5m&to=now&timezone=browser&var-datasource=P1809F7CD0C75ACF3&var-filter=job%7C%3D%7Cc-chain-reexecution&var-chain=C&refresh=10s).
+You can view granular C-Chain processing metrics with the label attached to this job (job="c-chain-reexecution") [here](https://grafana-poc.lux-dev.network/d/Gl1I20mnk/c-chain?orgId=1&from=now-5m&to=now&timezone=browser&var-datasource=P1809F7CD0C75ACF3&var-filter=job%7C%3D%7Cc-chain-reexecution&var-chain=C&refresh=10s).
 
 Note: to ensure Prometheus gets a final scrape at the end of a run, the test will sleep for 2s greater than the 10s Prometheus scrape interval, which will cause short-running tests to appear to take much longer than expected. Additionally, the linked dashboard displays most metrics using a 1min rate, which means that very short running tests will not produce a very useful visualization.
 
@@ -22,16 +22,16 @@ To set up your dev environment to run C-Chain benchmarks, run:
 nix develop
 ```
 
-If using AWS to push/pull S3 buckets, configure your AWS profile with the required access. The instructions here utilize the S3 bucket `s3://avalanchego-bootstrap-testing` in `us-east-2` under the Ava Labs Experimental AWS account.
+If using AWS to push/pull S3 buckets, configure your AWS profile with the required access. The instructions here utilize the S3 bucket `s3://luxd-bootstrap-testing` in `us-east-2` under the Lux Industries Experimental AWS account.
 
 To authenticate metrics collection (enabled by default), provide the Prometheus credentials referenced in the e2e [README](../../e2e/README.md#monitoring).
 
 ## Import Blocks
 
-To import the first 200 blocks for re-execution, you can fetch the following ZIP from S3: `s3://avalanchego-bootstrap-testing/cchain-mainnet-blocks-10k-ldb.zip`:
+To import the first 200 blocks for re-execution, you can fetch the following ZIP from S3: `s3://luxd-bootstrap-testing/cchain-mainnet-blocks-10k-ldb.zip`:
 
 ```bash
-task import-s3-to-dir SRC=s3://avalanchego-bootstrap-testing/cchain-mainnet-blocks-10k-ldb.zip DST=$HOME/exec-data/blocks
+task import-s3-to-dir SRC=s3://luxd-bootstrap-testing/cchain-mainnet-blocks-10k-ldb.zip DST=$HOME/exec-data/blocks
 ```
 
 ## Create C-Chain State Snapshot
@@ -77,7 +77,7 @@ After generating the `$HOME/exec-data/current-state` directory from executing th
 Run the export task:
 
 ```bash
-task export-dir-to-s3 LOCAL_SRC=$HOME/exec-data/current-state/ S3_DST=s3://avalanchego-bootstrap-testing/cchain-current-state-test/
+task export-dir-to-s3 LOCAL_SRC=$HOME/exec-data/current-state/ S3_DST=s3://luxd-bootstrap-testing/cchain-current-state-test/
 ```
 
 ## Run C-Chain Benchmark
@@ -95,7 +95,7 @@ Note: if you attempt to re-execute a second time on the same data set, it will f
 Provide the parameters explicitly that we have just used locally:
 
 ```bash
-task reexecute-cchain-range-with-copied-data EXECUTION_DATA_DIR=$HOME/reexec-data-params SOURCE_BLOCK_DIR=s3://avalanchego-bootstrap-testing/cchain-mainnet-blocks-10k-ldb.zip CURRENT_STATE_DIR=s3://avalanchego-bootstrap-testing/cchain-current-state-test/** START_BLOCK=101 END_BLOCK=10000
+task reexecute-cchain-range-with-copied-data EXECUTION_DATA_DIR=$HOME/reexec-data-params SOURCE_BLOCK_DIR=s3://luxd-bootstrap-testing/cchain-mainnet-blocks-10k-ldb.zip CURRENT_STATE_DIR=s3://luxd-bootstrap-testing/cchain-current-state-test/** START_BLOCK=101 END_BLOCK=10000
 ```
 
 ## Run Default C-Chain Benchmark

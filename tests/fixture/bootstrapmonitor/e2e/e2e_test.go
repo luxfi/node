@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package e2e
@@ -45,8 +45,8 @@ const (
 	// of this file.
 	repoRelativePath = "tests/fixture/bootstrapmonitor/e2e"
 
-	avalanchegoImage       = "localhost:5001/avalanchego"
-	latestLuxdImage = avalanchegoImage + ":latest"
+	luxdImage       = "localhost:5001/luxd"
+	latestLuxdImage = luxdImage + ":latest"
 	monitorImage           = "localhost:5001/bootstrap-monitor"
 	latestMonitorImage     = monitorImage + ":latest"
 
@@ -72,9 +72,9 @@ func init() {
 	kubeconfigVars = flags.NewKubeconfigFlagVars()
 	flag.BoolVar(
 		&skipLuxdImageBuild,
-		"skip-avalanchego-image-build",
+		"skip-luxd-image-build",
 		false,
-		"whether to skip building the avalanchego image",
+		"whether to skip building the luxd image",
 	)
 	flag.BoolVar(
 		&skipMonitorImageBuild,
@@ -92,10 +92,10 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 		require := require.New(tc)
 
 		if skipLuxdImageBuild {
-			tc.Log().Warn("skipping build of avalanchego image")
+			tc.Log().Warn("skipping build of luxd image")
 		} else {
-			ginkgo.By("Building the avalanchego image")
-			buildLuxdImage(tc, avalanchegoImage, false /* forceNewHash */)
+			ginkgo.By("Building the luxd image")
+			buildLuxdImage(tc, luxdImage, false /* forceNewHash */)
 		}
 
 		if skipMonitorImageBuild {
@@ -122,7 +122,7 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 		ginkgo.By(fmt.Sprintf("Created namespace %q", namespace))
 
 		ginkgo.By("Creating a node to bootstrap from")
-		nodeStatefulSet := newNodeStatefulSet("avalanchego-node", defaultPodFlags())
+		nodeStatefulSet := newNodeStatefulSet("luxd-node", defaultPodFlags())
 		createdNodeStatefulSet, err := clientset.AppsV1().StatefulSets(namespace).Create(tc.DefaultContext(), nodeStatefulSet, metav1.CreateOptions{})
 		require.NoError(err)
 		nodePodName := createdNodeStatefulSet.Name + "-0"
@@ -197,8 +197,8 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 		bootstrapResumingMessage := bootstrapMessageForImage(bootstrapmonitor.BootstrapResumingMessage, containerImage)
 		waitForLogOutput(tc, clientset, namespace, bootstrapPodName, initContainerName, bootstrapResumingMessage)
 
-		ginkgo.By("Building and pushing a new avalanchego image to prompt the start of a new bootstrap test")
-		buildLuxdImage(tc, avalanchegoImage, true /* forceNewHash */)
+		ginkgo.By("Building and pushing a new luxd image to prompt the start of a new bootstrap test")
+		buildLuxdImage(tc, luxdImage, true /* forceNewHash */)
 
 		ginkgo.By("Waiting for the pod image to change")
 		require.Eventually(func() bool {

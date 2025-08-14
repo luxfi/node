@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrapmonitor
@@ -165,7 +165,7 @@ func getDiskUsage(log logging.Logger, dir string) string {
 		}
 		switch exitError.ExitCode() {
 		case 1:
-			// Exit code 1 usually indicates that files cannot be accessed. Since avalanchego will
+			// Exit code 1 usually indicates that files cannot be accessed. Since luxd will
 			// regularly delete files in the db dir, this can be safely ignored and the regular disk
 			// usage message can be printed.
 		case 2:
