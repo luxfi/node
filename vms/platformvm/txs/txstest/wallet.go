@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txstest
@@ -42,7 +42,7 @@ func NewWallet(
 		utxos   = common.NewUTXOs()
 	)
 
-	pChainUTXOs, err := avax.GetAllUTXOs(state, addrs)
+	pChainUTXOs, err := lux.GetAllUTXOs(state, addrs)
 	require.NoError(err)
 
 	for _, utxo := range pChainUTXOs {
@@ -55,7 +55,7 @@ func NewWallet(
 	}
 
 	for _, chainID := range chainIDs {
-		remoteChainUTXOs, _, _, err := avax.GetAtomicUTXOs(
+		remoteChainUTXOs, _, _, err := lux.GetAtomicUTXOs(
 			ctx.SharedMemory,
 			txs.Codec,
 			chainID,

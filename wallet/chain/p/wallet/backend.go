@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package wallet
@@ -58,7 +58,7 @@ func (b *backend) AcceptTx(ctx context.Context, tx *txs.Tx) error {
 	return b.addUTXOs(ctx, constants.PlatformChainID, producedUTXOSlice)
 }
 
-func (b *backend) addUTXOs(ctx context.Context, destinationChainID ids.ID, utxos []*avax.UTXO) error {
+func (b *backend) addUTXOs(ctx context.Context, destinationChainID ids.ID, utxos []*lux.UTXO) error {
 	for _, utxo := range utxos {
 		if err := b.AddUTXO(ctx, destinationChainID, utxo); err != nil {
 			return err

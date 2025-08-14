@@ -17,7 +17,7 @@ import (
 	block "github.com/luxfi/node/vms/avm/block"
 	state "github.com/luxfi/node/vms/avm/state"
 	txs "github.com/luxfi/node/vms/avm/txs"
-	avax "github.com/luxfi/node/vms/components/lux"
+	lux "github.com/luxfi/node/vms/components/lux"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -70,7 +70,7 @@ func (mr *DiffMockRecorder) AddTx(tx any) *gomock.Call {
 }
 
 // AddUTXO mocks base method.
-func (m *Diff) AddUTXO(utxo *avax.UTXO) {
+func (m *Diff) AddUTXO(utxo *lux.UTXO) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "AddUTXO", utxo)
 }
@@ -179,10 +179,10 @@ func (mr *DiffMockRecorder) GetTx(txID any) *gomock.Call {
 }
 
 // GetUTXO mocks base method.
-func (m *Diff) GetUTXO(utxoID ids.ID) (*avax.UTXO, error) {
+func (m *Diff) GetUTXO(utxoID ids.ID) (*lux.UTXO, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUTXO", utxoID)
-	ret0, _ := ret[0].(*avax.UTXO)
+	ret0, _ := ret[0].(*lux.UTXO)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

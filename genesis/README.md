@@ -23,10 +23,10 @@ The genesis JSON file contains the following properties:
 Each allocation contains the following fields:
 
 - `ethAddr`: Annotation of corresponding Ethereum address holding an ERC-20 token
-- `avaxAddr`: X/P Chain address to receive the allocation
-- `initialAmount`: Initial unlocked amount minted to the `avaxAddr` on the X-Chain
-- `unlockSchedule`: List of locked, stakeable UTXOs minted to `avaxAddr` on the P-Chain
+- `luxAddr`: X/P Chain address to receive the allocation
+- `initialAmount`: Initial unlocked amount minted to the `luxAddr` on the X-Chain
+- `unlockSchedule`: List of locked, stakeable UTXOs minted to `luxAddr` on the P-Chain
 
-Note: if an `avaxAddr` from allocations is included in `initialStakers`, the genesis includes
+Note: if an `luxAddr` from allocations is included in `initialStakers`, the genesis includes
 all the UTXOs specified in the `unlockSchedule` as part of the locked stake of the corresponding
 genesis validator. Otherwise, the locked UTXO is created directly on the P-Chain.

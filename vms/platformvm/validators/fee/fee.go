@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fee
@@ -7,7 +7,6 @@ import (
 	"math"
 
 	"github.com/luxfi/node/vms/components/gas"
-
 	safemath "github.com/luxfi/node/utils/math"
 )
 
@@ -51,7 +50,7 @@ func (s State) CostOf(c Config, seconds uint64) uint64 {
 	// If the current and target are the same, the price is constant.
 	if s.Current == c.Target {
 		price := gas.CalculatePrice(c.MinPrice, s.Excess, c.ExcessConversionConstant)
-		cost, err := safemath.Mul(seconds, uint64(price))
+		cost, err := safemath.Mul64(seconds, uint64(price))
 		if err != nil {
 			return math.MaxUint64
 		}
@@ -71,12 +70,12 @@ func (s State) CostOf(c Config, seconds uint64) uint64 {
 		// to always remain 0.
 		if s.Excess == 0 {
 			secondsWithZeroExcess := seconds - i
-			zeroExcessCost, err := safemath.Mul(uint64(c.MinPrice), secondsWithZeroExcess)
+			zeroExcessCost, err := safemath.Mul64(uint64(c.MinPrice), secondsWithZeroExcess)
 			if err != nil {
 				return math.MaxUint64
 			}
 
-			cost, err = safemath.Add(cost, zeroExcessCost)
+			cost, err = safemath.Add64(cost, zeroExcessCost)
 			if err != nil {
 				return math.MaxUint64
 			}
@@ -84,7 +83,7 @@ func (s State) CostOf(c Config, seconds uint64) uint64 {
 		}
 
 		price := gas.CalculatePrice(c.MinPrice, s.Excess, c.ExcessConversionConstant)
-		cost, err = safemath.Add(cost, uint64(price))
+		cost, err = safemath.Add64(cost, uint64(price))
 		if err != nil {
 			return math.MaxUint64
 		}
@@ -118,7 +117,7 @@ func (s State) SecondsRemaining(c Config, maxSeconds uint64, fundsRemaining uint
 		// to always remain 0.
 		if s.Excess == 0 {
 			secondsWithZeroExcess := fundsRemaining / uint64(c.MinPrice)
-			totalSeconds, err := safemath.Add(seconds, secondsWithZeroExcess)
+			totalSeconds, err := safemath.Add64(seconds, secondsWithZeroExcess)
 			if err != nil {
 				// This is technically unreachable, but makes the code more
 				// clearly correct.

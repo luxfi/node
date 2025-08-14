@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -49,7 +49,7 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 			0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
 			0x44, 0x55, 0x66, 0x77,
 		}
-		avaxAssetID = ids.ID{
+		luxAssetID = ids.ID{
 			0x21, 0xe6, 0x73, 0x17, 0xcb, 0xc4, 0xbe, 0x2a,
 			0xeb, 0x00, 0x67, 0x7a, 0xd6, 0x46, 0x27, 0x78,
 			0xa8, 0xf5, 0x22, 0x74, 0xb9, 0xd6, 0x05, 0xdf,
@@ -101,18 +101,18 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 			name: "simple",
 			tx: &ConvertSubnetToL1Tx{
 				BaseTx: BaseTx{
-					BaseTx: avax.BaseTx{
+					BaseTx: lux.BaseTx{
 						NetworkID:    constants.UnitTestID,
 						BlockchainID: constants.PlatformChainID,
-						Outs:         []*avax.TransferableOutput{},
-						Ins: []*avax.TransferableInput{
+						Outs:         []*lux.TransferableOutput{},
+						Ins: []*lux.TransferableInput{
 							{
-								UTXOID: avax.UTXOID{
+								UTXOID: lux.UTXOID{
 									TxID:        txID,
 									OutputIndex: 1,
 								},
-								Asset: avax.Asset{
-									ID: avaxAssetID,
+								Asset: lux.Asset{
+									ID: luxAssetID,
 								},
 								In: &secp256k1fx.TransferInput{
 									Amt: units.MilliLux,
@@ -203,13 +203,13 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 			name: "complex",
 			tx: &ConvertSubnetToL1Tx{
 				BaseTx: BaseTx{
-					BaseTx: avax.BaseTx{
+					BaseTx: lux.BaseTx{
 						NetworkID:    constants.UnitTestID,
 						BlockchainID: constants.PlatformChainID,
-						Outs: []*avax.TransferableOutput{
+						Outs: []*lux.TransferableOutput{
 							{
-								Asset: avax.Asset{
-									ID: avaxAssetID,
+								Asset: lux.Asset{
+									ID: luxAssetID,
 								},
 								Out: &stakeable.LockOut{
 									Locktime: 87654321,
@@ -224,7 +224,7 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 								},
 							},
 							{
-								Asset: avax.Asset{
+								Asset: lux.Asset{
 									ID: customAssetID,
 								},
 								Out: &stakeable.LockOut{
@@ -242,14 +242,14 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 								},
 							},
 						},
-						Ins: []*avax.TransferableInput{
+						Ins: []*lux.TransferableInput{
 							{
-								UTXOID: avax.UTXOID{
+								UTXOID: lux.UTXOID{
 									TxID:        txID,
 									OutputIndex: 1,
 								},
-								Asset: avax.Asset{
-									ID: avaxAssetID,
+								Asset: lux.Asset{
+									ID: luxAssetID,
 								},
 								In: &secp256k1fx.TransferInput{
 									Amt: units.Lux,
@@ -259,11 +259,11 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 								},
 							},
 							{
-								UTXOID: avax.UTXOID{
+								UTXOID: lux.UTXOID{
 									TxID:        txID,
 									OutputIndex: 2,
 								},
-								Asset: avax.Asset{
+								Asset: lux.Asset{
 									ID: customAssetID,
 								},
 								In: &stakeable.LockIn{
@@ -277,11 +277,11 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 								},
 							},
 							{
-								UTXOID: avax.UTXOID{
+								UTXOID: lux.UTXOID{
 									TxID:        txID,
 									OutputIndex: 3,
 								},
-								Asset: avax.Asset{
+								Asset: lux.Asset{
 									ID: customAssetID,
 								},
 								In: &secp256k1fx.TransferInput{
@@ -556,7 +556,7 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 	var (
 		ctx         = snowtest.Context(t, ids.GenerateTestID())
 		validBaseTx = BaseTx{
-			BaseTx: avax.BaseTx{
+			BaseTx: lux.BaseTx{
 				NetworkID:    ctx.NetworkID,
 				BlockchainID: ctx.ChainID,
 			},
@@ -780,7 +780,7 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 				Validators: validValidators,
 				SubnetAuth: validSubnetAuth,
 			},
-			expectedErr: avax.ErrWrongNetworkID,
+			expectedErr: lux.ErrWrongNetworkID,
 		},
 		{
 			name: "invalid subnetAuth",

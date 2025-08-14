@@ -36,20 +36,20 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ] && [ "$BUILDPLATFORM" != "linux/arm
     echo "export CC=gcc" > ./build_env.sh \
     ; fi
 
-# Build avalanchego. The build environment is configured with build_env.sh from the step
+# Build luxd. The build environment is configured with build_env.sh from the step
 # enabling cross-compilation.
 ARG RACE_FLAG=""
 ARG BUILD_SCRIPT=build.sh
-ARG AVALANCHEGO_COMMIT=""
+ARG LUXD_COMMIT=""
 RUN . ./build_env.sh && \
     echo "{CC=$CC, TARGETPLATFORM=$TARGETPLATFORM, BUILDPLATFORM=$BUILDPLATFORM}" && \
     export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
-    export AVALANCHEGO_COMMIT="${AVALANCHEGO_COMMIT}" && \
+    export LUXD_COMMIT="${LUXD_COMMIT}" && \
     ./scripts/${BUILD_SCRIPT} ${RACE_FLAG}
 
 # Create this directory in the builder to avoid requiring anything to be executed in the
 # potentially emulated execution container.
-RUN mkdir -p /avalanchego/build
+RUN mkdir -p /luxd/build
 
 # ============= Cleanup Stage ================
 # Commands executed in this stage may be emulated (i.e. very slow) if TARGETPLATFORM and
@@ -57,10 +57,10 @@ RUN mkdir -p /avalanchego/build
 FROM debian:12-slim AS execution
 
 # Maintain compatibility with previous images
-COPY --from=builder /avalanchego/build /avalanchego/build
-WORKDIR /avalanchego/build
+COPY --from=builder /luxd/build /luxd/build
+WORKDIR /luxd/build
 
 # Copy the executables into the container
 COPY --from=builder /build/build/ .
 
-CMD [ "./avalanchego" ]
+CMD [ "./luxd" ]

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fee
@@ -129,13 +129,13 @@ func BenchmarkTxComplexity_Batch(b *testing.B) {
 func TestOutputComplexity(t *testing.T) {
 	tests := []struct {
 		name        string
-		out         *avax.TransferableOutput
+		out         *lux.TransferableOutput
 		expected    gas.Dimensions
 		expectedErr error
 	}{
 		{
 			name: "any can spend",
-			out: &avax.TransferableOutput{
+			out: &lux.TransferableOutput{
 				Out: &secp256k1fx.TransferOutput{
 					OutputOwners: secp256k1fx.OutputOwners{
 						Addrs: make([]ids.ShortID, 0),
@@ -150,7 +150,7 @@ func TestOutputComplexity(t *testing.T) {
 		},
 		{
 			name: "one owner",
-			out: &avax.TransferableOutput{
+			out: &lux.TransferableOutput{
 				Out: &secp256k1fx.TransferOutput{
 					OutputOwners: secp256k1fx.OutputOwners{
 						Addrs: make([]ids.ShortID, 1),
@@ -165,7 +165,7 @@ func TestOutputComplexity(t *testing.T) {
 		},
 		{
 			name: "three owners",
-			out: &avax.TransferableOutput{
+			out: &lux.TransferableOutput{
 				Out: &secp256k1fx.TransferOutput{
 					OutputOwners: secp256k1fx.OutputOwners{
 						Addrs: make([]ids.ShortID, 3),
@@ -180,7 +180,7 @@ func TestOutputComplexity(t *testing.T) {
 		},
 		{
 			name: "locked stakeable",
-			out: &avax.TransferableOutput{
+			out: &lux.TransferableOutput{
 				Out: &stakeable.LockOut{
 					TransferableOut: &secp256k1fx.TransferOutput{
 						OutputOwners: secp256k1fx.OutputOwners{
@@ -197,7 +197,7 @@ func TestOutputComplexity(t *testing.T) {
 		},
 		{
 			name: "invalid output type",
-			out: &avax.TransferableOutput{
+			out: &lux.TransferableOutput{
 				Out: nil,
 			},
 			expected:    gas.Dimensions{},
@@ -228,14 +228,14 @@ func TestOutputComplexity(t *testing.T) {
 func TestInputComplexity(t *testing.T) {
 	tests := []struct {
 		name        string
-		in          *avax.TransferableInput
+		in          *lux.TransferableInput
 		cred        verify.Verifiable
 		expected    gas.Dimensions
 		expectedErr error
 	}{
 		{
 			name: "any can spend",
-			in: &avax.TransferableInput{
+			in: &lux.TransferableInput{
 				In: &secp256k1fx.TransferInput{
 					Input: secp256k1fx.Input{
 						SigIndices: make([]uint32, 0),
@@ -254,7 +254,7 @@ func TestInputComplexity(t *testing.T) {
 		},
 		{
 			name: "one owner",
-			in: &avax.TransferableInput{
+			in: &lux.TransferableInput{
 				In: &secp256k1fx.TransferInput{
 					Input: secp256k1fx.Input{
 						SigIndices: make([]uint32, 1),
@@ -274,7 +274,7 @@ func TestInputComplexity(t *testing.T) {
 		},
 		{
 			name: "three owners",
-			in: &avax.TransferableInput{
+			in: &lux.TransferableInput{
 				In: &secp256k1fx.TransferInput{
 					Input: secp256k1fx.Input{
 						SigIndices: make([]uint32, 3),
@@ -294,7 +294,7 @@ func TestInputComplexity(t *testing.T) {
 		},
 		{
 			name: "locked stakeable",
-			in: &avax.TransferableInput{
+			in: &lux.TransferableInput{
 				In: &stakeable.LockIn{
 					TransferableIn: &secp256k1fx.TransferInput{
 						Input: secp256k1fx.Input{
@@ -316,7 +316,7 @@ func TestInputComplexity(t *testing.T) {
 		},
 		{
 			name: "invalid input type",
-			in: &avax.TransferableInput{
+			in: &lux.TransferableInput{
 				In: nil,
 			},
 			cred:        nil,

@@ -12,7 +12,7 @@ the `main` [README.md](./main/README.md).
 ## Prerequisites
 
 Using the `load` package has so far been coupled with `tmpnet`, a framework that
-enables orchestration of temporary AvalancheGo networks. For more details as to
+enables orchestration of temporary Luxd networks. For more details as to
 its capabilities and configuration, refer to the `tmpnet` [README.md](../fixture/tmpnet/README.md).
 
 ## Components

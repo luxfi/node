@@ -10,16 +10,16 @@
 
 ### Mainnet Beta Launch (January 1, 2022)
 - Lux mainnet beta launched with network ID 96369
-- Based on avalanchego v1.7.x series
+- Based on luxd v1.7.x series
 - Initial production deployment with 21 validators
 - Established primary network infrastructure
 
 ### First Public Network - Chain ID 7777 (December 2023)
 - **Version**: v1.10.20
 - First public deployment with Chain ID 7777
-- Based on avalanchego v1.10.20 compatibility
+- Based on luxd v1.10.20 compatibility
 - Beginning of public testing phase
-- Network upgrade to avalanchego v1.9.x/v1.10.x compatibility
+- Network upgrade to luxd v1.9.x/v1.10.x compatibility
 - Enhanced stability and performance improvements
 - Added support for dynamic fees
 - Improved subnet management capabilities
@@ -27,7 +27,7 @@
 ### Public Mainnet - Chain ID 96369 (November 2024)
 - **Version**: v1.11.13
 - Official mainnet launch with Chain ID 96369
-- Upgraded to avalanchego v1.11.x compatibility
+- Upgraded to luxd v1.11.x compatibility
 - Public mainnet launch with original genesis
 - Enhanced Warp messaging support
 - Improved cross-chain communication
@@ -35,7 +35,7 @@
 
 ### Current Sync (July 26, 2025)
 - Full synchronization with latest upstream versions
-- Now at parity with avalanchego v1.13.3
+- Now at parity with luxd v1.13.3
 - All tests passing with upstream compatibility
 - Final compatibility build for Lux network
 
@@ -57,7 +57,7 @@
 
 **Current Development Version**
 
-This version represents the current state of development, fully synchronized with upstream avalanchego.
+This version represents the current state of development, fully synchronized with upstream luxd.
 
 ## [v1.11.13](https://github.com/luxfi/node/releases/tag/v1.11.13)
 

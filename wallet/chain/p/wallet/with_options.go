@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package wallet
@@ -47,7 +47,7 @@ func (w *withOptions) Signer() walletsigner.Signer {
 }
 
 func (w *withOptions) IssueBaseTx(
-	outputs []*avax.TransferableOutput,
+	outputs []*lux.TransferableOutput,
 	options ...common.Option,
 ) (*txs.Tx, error) {
 	return w.wallet.IssueBaseTx(
@@ -220,7 +220,7 @@ func (w *withOptions) IssueImportTx(
 
 func (w *withOptions) IssueExportTx(
 	chainID ids.ID,
-	outputs []*avax.TransferableOutput,
+	outputs []*lux.TransferableOutput,
 	options ...common.Option,
 ) (*txs.Tx, error) {
 	return w.wallet.IssueExportTx(

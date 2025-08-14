@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -194,14 +194,14 @@ func TestGenesis(t *testing.T) {
 	require := require.New(t)
 	genesis := createTestGenesis(t)
 
-	avaxAssetID := ids.ID{'d', 'u', 'm', 'm', 'y', ' ', 'I', 'D'}
+	luxAssetID := ids.ID{'d', 'u', 'm', 'm', 'y', ' ', 'I', 'D'}
 	nodeID := ids.BuildTestNodeID([]byte{1})
 	require.Equal("Test Genesis", genesis.Message)
 
 	// Validate allocations
 	require.Len(genesis.UTXOs, 1)
 	utxo := genesis.UTXOs[0]
-	require.Equal(avaxAssetID, utxo.Asset.ID)
+	require.Equal(luxAssetID, utxo.Asset.ID)
 	output, ok := utxo.Out.(*secp256k1fx.TransferOutput)
 	require.True(ok)
 	require.Equal(uint64(123456789), output.Amt)
@@ -285,9 +285,9 @@ func TestNewReturnsSortedValidators(t *testing.T) {
 		}},
 	}
 
-	avaxAssetID := ids.ID{'d', 'u', 'm', 'm', 'y', ' ', 'I', 'D'}
+	luxAssetID := ids.ID{'d', 'u', 'm', 'm', 'y', ' ', 'I', 'D'}
 	genesis, err := New(
-		avaxAssetID,
+		luxAssetID,
 		constants.UnitTestID,
 		[]Allocation{allocation},
 		[]PermissionlessValidator{
@@ -312,9 +312,9 @@ func TestAllocationCompare(t *testing.T) {
 		smallerAddr = ids.ShortID{}
 		largerAddr  = ids.ShortID{1}
 	)
-	smallerAddrStr, err := address.FormatBech32("avax", smallerAddr[:])
+	smallerAddrStr, err := address.FormatBech32("lux", smallerAddr[:])
 	require.NoError(t, err)
-	largerAddrStr, err := address.FormatBech32("avax", largerAddr[:])
+	largerAddrStr, err := address.FormatBech32("lux", largerAddr[:])
 	require.NoError(t, err)
 
 	type test struct {

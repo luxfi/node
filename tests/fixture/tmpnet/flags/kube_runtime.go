@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package flags
@@ -55,7 +55,7 @@ func (v *kubeRuntimeVars) register(stringVar varFunc[string], uintVar varFunc[ui
 	stringVar(
 		&v.image,
 		"kube-image",
-		"avaplatform/avalanchego:latest",
+		"avaplatform/luxd:latest",
 		kubeDocPrefix+"The name of the docker image to use for creating nodes",
 	)
 	uintVar(
@@ -71,7 +71,7 @@ func (v *kubeRuntimeVars) register(stringVar varFunc[string], uintVar varFunc[ui
 		&v.useExclusiveScheduling,
 		"kube-use-exclusive-scheduling",
 		false,
-		kubeDocPrefix+"Whether to schedule each AvalancheGo node to a dedicated Kubernetes node",
+		kubeDocPrefix+"Whether to schedule each Luxd node to a dedicated Kubernetes node",
 	)
 	stringVar(
 		&v.schedulingLabelKey,

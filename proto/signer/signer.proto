@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package signer;
 
-option go_package = "github.com/luxfi/avalanchego/proto/pb/signer";
+option go_package = "github.com/luxfi/luxd/proto/pb/signer";
 
 service Signer {
   rpc PublicKey(PublicKeyRequest) returns (PublicKeyResponse) {}

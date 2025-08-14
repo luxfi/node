@@ -4,7 +4,7 @@ set -euo pipefail
 
 # e.g.,
 # ./scripts/build_image.sh                                                   # Build local single-arch image
-# AVALANCHEGO_IMAGE=localhost:5001/avalanchego ./scripts/build_xsvm_image.sh # Build and push image to private registry
+# LUXD_IMAGE=localhost:5001/luxd ./scripts/build_xsvm_image.sh # Build and push image to private registry
 
 if ! [[ "$0" =~ scripts/build_xsvm_image.sh ]]; then
   echo "must be run from repository root"
@@ -13,11 +13,11 @@ fi
 
 source ./scripts/image_tag.sh
 
-AVALANCHEGO_IMAGE="${AVALANCHEGO_IMAGE:-avalanchego}"
-XSVM_IMAGE="${XSVM_IMAGE:-avalanchego-xsvm}"
+LUXD_IMAGE="${LUXD_IMAGE:-luxd}"
+XSVM_IMAGE="${XSVM_IMAGE:-luxd-xsvm}"
 
-# Build the avalanchego base image
-SKIP_BUILD_RACE=1 DOCKER_IMAGE="${AVALANCHEGO_IMAGE}" bash -x ./scripts/build_image.sh
+# Build the luxd base image
+SKIP_BUILD_RACE=1 DOCKER_IMAGE="${LUXD_IMAGE}" bash -x ./scripts/build_image.sh
 
 DOCKER_CMD=("docker" "buildx" "build")
 if [[ "${XSVM_IMAGE}" == *"/"* ]]; then
@@ -31,5 +31,5 @@ fi
 
 GO_VERSION="$(go list -m -f '{{.GoVersion}}')"
 
-"${DOCKER_CMD[@]}" --build-arg GO_VERSION="${GO_VERSION}" --build-arg AVALANCHEGO_NODE_IMAGE="${AVALANCHEGO_IMAGE}:${image_tag}" \
+"${DOCKER_CMD[@]}" --build-arg GO_VERSION="${GO_VERSION}" --build-arg LUXD_IMAGE="${LUXD_IMAGE}:${image_tag}" \
   -t "${XSVM_IMAGE}" -f ./vms/example/xsvm/Dockerfile .

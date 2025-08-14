@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -58,7 +58,7 @@ func (w *withOptions) GetImportableBalance(
 }
 
 func (w *withOptions) NewBaseTx(
-	outputs []*avax.TransferableOutput,
+	outputs []*lux.TransferableOutput,
 	options ...common.Option,
 ) (*txs.BaseTx, error) {
 	return w.builder.NewBaseTx(
@@ -231,7 +231,7 @@ func (w *withOptions) NewImportTx(
 
 func (w *withOptions) NewExportTx(
 	chainID ids.ID,
-	outputs []*avax.TransferableOutput,
+	outputs []*lux.TransferableOutput,
 	options ...common.Option,
 ) (*txs.ExportTx, error) {
 	return w.builder.NewExportTx(

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package flags
@@ -18,10 +18,10 @@ const (
 	processRuntime   = "process"
 	processDocPrefix = "[process runtime] "
 
-	avalanchegoPathFlag = "avalanchego-path"
+	luxdPathFlag = "luxd-path"
 )
 
-var errAvalancheGoRequired = fmt.Errorf("--%s or %s are required", avalanchegoPathFlag, tmpnet.AvalancheGoPathEnvName)
+var errLuxdRequired = fmt.Errorf("--%s or %s are required", luxdPathFlag, tmpnet.LuxdPathEnvName)
 
 type processRuntimeVars struct {
 	config tmpnet.ProcessRuntimeConfig
@@ -37,21 +37,21 @@ func (v *processRuntimeVars) registerWithFlagSet(flagSet *pflag.FlagSet) {
 
 func (v *processRuntimeVars) register(stringVar varFunc[string], boolVar varFunc[bool]) {
 	stringVar(
-		&v.config.AvalancheGoPath,
-		avalanchegoPathFlag,
-		os.Getenv(tmpnet.AvalancheGoPathEnvName),
+		&v.config.LuxdPath,
+		luxdPathFlag,
+		os.Getenv(tmpnet.LuxdPathEnvName),
 		processDocPrefix+fmt.Sprintf(
-			"The avalanchego executable path. Also possible to configure via the %s env variable.",
-			tmpnet.AvalancheGoPathEnvName,
+			"The luxd executable path. Also possible to configure via the %s env variable.",
+			tmpnet.LuxdPathEnvName,
 		),
 	)
 	stringVar(
 		&v.config.PluginDir,
 		"plugin-dir",
-		tmpnet.GetEnvWithDefault(tmpnet.AvalancheGoPluginDirEnvName, os.ExpandEnv("$HOME/.avalanchego/plugins")),
+		tmpnet.GetEnvWithDefault(tmpnet.LuxdPluginDirEnvName, os.ExpandEnv("$HOME/.luxd/plugins")),
 		processDocPrefix+fmt.Sprintf(
 			"The dir containing VM plugins. Also possible to configure via the %s env variable.",
-			tmpnet.AvalancheGoPluginDirEnvName,
+			tmpnet.LuxdPluginDirEnvName,
 		),
 	)
 	boolVar(
@@ -70,15 +70,15 @@ func (v *processRuntimeVars) getProcessRuntimeConfig() (*tmpnet.ProcessRuntimeCo
 }
 
 func (v *processRuntimeVars) validate() error {
-	path := v.config.AvalancheGoPath
+	path := v.config.LuxdPath
 
 	if len(path) == 0 {
-		return errAvalancheGoRequired
+		return errLuxdRequired
 	}
 
 	if filepath.IsAbs(path) {
 		if _, err := os.Stat(path); err != nil {
-			return fmt.Errorf("--%s (%s) not found: %w", avalanchegoPathFlag, path, err)
+			return fmt.Errorf("--%s (%s) not found: %w", luxdPathFlag, path, err)
 		}
 		return nil
 	}
@@ -88,7 +88,7 @@ func (v *processRuntimeVars) validate() error {
 	if err != nil {
 		return fmt.Errorf(
 			"--%s (%s) is a relative path but its absolute path cannot be determined: %w",
-			avalanchegoPathFlag,
+			luxdPathFlag,
 			path,
 			err,
 		)
@@ -98,7 +98,7 @@ func (v *processRuntimeVars) validate() error {
 	if _, err := os.Stat(absPath); err != nil {
 		return fmt.Errorf(
 			"--%s (%s) is a relative path but its absolute path (%s) is not found: %w",
-			avalanchegoPathFlag,
+			luxdPathFlag,
 			path,
 			absPath,
 			err,

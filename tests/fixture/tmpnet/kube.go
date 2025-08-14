@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -42,7 +42,7 @@ import (
 	restclient "k8s.io/client-go/rest"
 )
 
-// DefaultPodFlags defines common flags for avalanchego nodes running in a pod.
+// DefaultPodFlags defines common flags for luxd nodes running in a pod.
 func DefaultPodFlags(networkName string, dataDir string) map[string]string {
 	return map[string]string{
 		config.DataDirKey:                dataDir,
@@ -55,7 +55,7 @@ func DefaultPodFlags(networkName string, dataDir string) map[string]string {
 	}
 }
 
-// NewNodeStatefulSet returns a statefulset for an avalanchego node.
+// NewNodeStatefulSet returns a statefulset for an luxd node.
 func NewNodeStatefulSet(
 	name string,
 	generateName bool,

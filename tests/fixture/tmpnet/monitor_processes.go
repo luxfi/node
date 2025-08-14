@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -32,14 +32,14 @@ const (
 
 	// Prometheus configuration
 	prometheusCmd            = "prometheus"
-	defaultPrometheusURL     = "https://prometheus-poc.avax-dev.network"
+	defaultPrometheusURL     = "https://prometheus-poc.lux-dev.network"
 	prometheusScrapeInterval = 10 * time.Second
 	prometheusListenAddress  = "127.0.0.1:9090"
 	prometheusReadinessURL   = "http://" + prometheusListenAddress + "/-/ready"
 
 	// Promtail configuration
 	promtailCmd          = "promtail"
-	defaultLokiURL       = "https://loki-poc.avax-dev.network"
+	defaultLokiURL       = "https://loki-poc.lux-dev.network"
 	promtailHTTPPort     = "3101"
 	promtailReadinessURL = "http://127.0.0.1:" + promtailHTTPPort + "/ready"
 
@@ -188,7 +188,7 @@ global:
   scrape_timeout: 5s       # The default is every 10s
 
 scrape_configs:
-  - job_name: "avalanchego"
+  - job_name: "luxd"
     metrics_path: "/ext/metrics"
     file_sd_configs:
       - files:
@@ -243,7 +243,7 @@ client:
     password: "%s"
 
 scrape_configs:
-  - job_name: "avalanchego"
+  - job_name: "luxd"
     file_sd_configs:
       - files:
           - '%s/*.json'

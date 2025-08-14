@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -76,7 +76,7 @@ type KubeRuntimeConfig struct {
 	Image string `json:"image,omitempty"`
 	// Size in gigabytes of the PersistentVolumeClaim  to allocate for the node
 	VolumeSizeGB uint `json:"volumeSizeGB,omitempty"`
-	// Whether to schedule each AvalancheGo node to a dedicated Kubernetes node
+	// Whether to schedule each Luxd node to a dedicated Kubernetes node
 	UseExclusiveScheduling bool `json:"useExclusiveScheduling,omitempty"`
 	// Label key to use for exclusive scheduling for node selection and toleration
 	SchedulingLabelKey string `json:"schedulingLabelKey,omitempty"`
@@ -893,7 +893,7 @@ func (p *KubeRuntime) setNotRunning() {
 	p.node.StakingAddress = netip.AddrPort{}
 }
 
-// getFlags determines the set of avalanchego flags to configure the node with.
+// getFlags determines the set of luxd flags to configure the node with.
 func (p *KubeRuntime) getFlags() (FlagsMap, error) {
 	flags, err := p.node.composeFlags()
 	if err != nil {
@@ -912,7 +912,7 @@ func (p *KubeRuntime) getFlags() (FlagsMap, error) {
 
 // configureExclusiveScheduling ensures that the provided template schedules only to nodes with the provided
 // labeling, tolerates a taint that matches the labeling, and uses anti-affinity to ensure only a single
-// avalanchego pod is scheduled to a given target node.
+// luxd pod is scheduled to a given target node.
 func configureExclusiveScheduling(template *corev1.PodTemplateSpec, labelKey string, labelValue string) {
 	podSpec := &template.Spec
 
