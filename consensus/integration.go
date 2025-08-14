@@ -1,5 +1,5 @@
-// Package engine provides VM consensus integration
-package engine
+// Package consensus provides consensus integration for VMs
+package consensus
 
 import (
 	"context"
@@ -13,40 +13,37 @@ import (
 	"github.com/luxfi/ids"
 )
 
-// VerkleVMIntegration bridges VMs with Verkle+FPC consensus
-type VerkleVMIntegration struct {
-	engine *WaveFPCEngine
+// VerkleIntegration bridges VMs with Verkle+FPC consensus
+type VerkleIntegration struct {
+	engine *FPCEngine
 	db     database.NodeDatabase
 	cache  *utils.PointCache
 }
 
-// NewVerkleVMIntegration creates VM-consensus bridge
-func NewVerkleVMIntegration(engine *WaveFPCEngine, db database.NodeDatabase) *VerkleVMIntegration {
-	return &VerkleVMIntegration{
+// NewVerkleIntegration creates VM-consensus bridge
+func NewVerkleIntegration(engine *FPCEngine, db database.NodeDatabase) *VerkleIntegration {
+	return &VerkleIntegration{
 		engine: engine,
 		db:     db,
 		cache:  utils.NewPointCache(10000),
 	}
 }
 
-// ProcessBlock processes a block through consensus with Verkle validation
-func (v *VerkleVMIntegration) ProcessBlock(ctx context.Context, blkID ids.ID, txs []Transaction) error {
-	
+// ProcessTransactions processes transactions through consensus
+func (v *VerkleIntegration) ProcessTransactions(ctx context.Context, txs []Transaction) error {
 	// Process each transaction through consensus
 	for _, tx := range txs {
 		txID := ids.ID(tx.Hash())
 		
 		// Propose to consensus
-		if err := v.engine.Propose(ctx, txID); err != nil {
+		if err := v.engine.Propose(txID); err != nil {
 			return err
 		}
 		
 		// Validate Verkle witness if present
 		if witness := tx.Witness(); witness != nil {
-			valid, size, root := v.engine.ValidateWitness(
-				mockHeader{id: blockIDFromHash(tx.Hash())},
-				witness,
-			)
+			header := mockHeader{id: blockIDFromHash(tx.Hash())}
+			valid, size, root := v.engine.ValidateWitness(header, witness)
 			if !valid {
 				return errors.New("invalid Verkle witness")
 			}
@@ -60,7 +57,7 @@ func (v *VerkleVMIntegration) ProcessBlock(ctx context.Context, blkID ids.ID, tx
 	// Wait for consensus on all transactions
 	for _, tx := range txs {
 		txID := ids.ID(tx.Hash())
-		accepted, err := v.engine.Query(ctx, txID)
+		accepted, err := v.engine.Query(txID)
 		if err != nil {
 			return err
 		}
@@ -73,11 +70,11 @@ func (v *VerkleVMIntegration) ProcessBlock(ctx context.Context, blkID ids.ID, tx
 }
 
 // GetVerkleTrie returns a Verkle trie for state access
-func (v *VerkleVMIntegration) GetVerkleTrie(root common.Hash) (*trie.VerkleTrie, error) {
+func (v *VerkleIntegration) GetVerkleTrie(root common.Hash) (*trie.VerkleTrie, error) {
 	return trie.NewVerkleTrie(root, v.db, v.cache)
 }
 
-// Transaction represents a VM transaction with optional witness
+// Transaction represents a transaction with optional witness
 type Transaction interface {
 	Hash() common.Hash
 	Witness() []byte
