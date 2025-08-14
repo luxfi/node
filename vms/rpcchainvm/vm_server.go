@@ -32,6 +32,8 @@ import (
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
+	"github.com/luxfi/node/vms/rpcchainvm/appsender"
+	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/messenger"

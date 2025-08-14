@@ -31,7 +31,6 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
@@ -251,12 +250,25 @@ func (f *nodeIDConnector) IsAllowed(nodeID ids.NodeID, _ bool) bool {
 // noOpResourceManager is a no-op resource manager for testing
 type noOpResourceManager struct{}
 
-func (n *noOpResourceManager) Usage() resource.Usage { return resource.NoUsage.Usage() }
+func (n *noOpResourceManager) Usage() resource.Usage { 
+	return resource.Usage{
+		CPU:         0,
+		MEM:         0,
+		Disk:        0,
+		DiskReads:   0,
+		DiskWrites:  0,
+	}
+}
 func (n *noOpResourceManager) Shutdown() {}
+func (n *noOpResourceManager) AvailableDiskBytes() uint64 { return 1 << 30 } // 1GB
 
 // noOpMetricsFactory is a no-op metrics factory for testing
 type noOpMetricsFactory struct{}
 
 func (n *noOpMetricsFactory) New(string) luxmetrics.Metrics {
 	return luxmetrics.NewNoOpMetrics("test")
+}
+
+func (n *noOpMetricsFactory) NewWithRegistry(string, prometheus.Registerer) (luxmetrics.Metrics, error) {
+	return luxmetrics.NewNoOpMetrics("test"), nil
 }
