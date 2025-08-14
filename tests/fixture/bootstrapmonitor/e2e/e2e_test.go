@@ -19,7 +19,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/bootstrapmonitor"
 	"github.com/luxfi/node/tests/fixture/e2e"
@@ -46,7 +46,7 @@ const (
 	repoRelativePath = "tests/fixture/bootstrapmonitor/e2e"
 
 	avalanchegoImage       = "localhost:5001/avalanchego"
-	latestAvalanchegoImage = avalanchegoImage + ":latest"
+	latestLuxdImage = avalanchegoImage + ":latest"
 	monitorImage           = "localhost:5001/bootstrap-monitor"
 	latestMonitorImage     = monitorImage + ":latest"
 
@@ -62,7 +62,7 @@ const (
 
 var (
 	kubeconfigVars            *flags.KubeconfigVars
-	skipAvalanchegoImageBuild bool
+	skipLuxdImageBuild bool
 	skipMonitorImageBuild     bool
 
 	nodeDataDir = bootstrapmonitor.NodeDataDir(dataDir) // Use a subdirectory of the data path so that os.RemoveAll can be used when starting a new test
@@ -71,7 +71,7 @@ var (
 func init() {
 	kubeconfigVars = flags.NewKubeconfigFlagVars()
 	flag.BoolVar(
-		&skipAvalanchegoImageBuild,
+		&skipLuxdImageBuild,
 		"skip-avalanchego-image-build",
 		false,
 		"whether to skip building the avalanchego image",
@@ -91,11 +91,11 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 		tc := e2e.NewTestContext()
 		require := require.New(tc)
 
-		if skipAvalanchegoImageBuild {
+		if skipLuxdImageBuild {
 			tc.Log().Warn("skipping build of avalanchego image")
 		} else {
 			ginkgo.By("Building the avalanchego image")
-			buildAvalanchegoImage(tc, avalanchegoImage, false /* forceNewHash */)
+			buildLuxdImage(tc, avalanchegoImage, false /* forceNewHash */)
 		}
 
 		if skipMonitorImageBuild {
@@ -198,7 +198,7 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 		waitForLogOutput(tc, clientset, namespace, bootstrapPodName, initContainerName, bootstrapResumingMessage)
 
 		ginkgo.By("Building and pushing a new avalanchego image to prompt the start of a new bootstrap test")
-		buildAvalanchegoImage(tc, avalanchegoImage, true /* forceNewHash */)
+		buildLuxdImage(tc, avalanchegoImage, true /* forceNewHash */)
 
 		ginkgo.By("Waiting for the pod image to change")
 		require.Eventually(func() bool {
@@ -230,7 +230,7 @@ func bootstrapMessageForImage(message, image string) string {
 	return message + fmt.Sprintf(`{"image": "%s"}`, image)
 }
 
-func buildAvalanchegoImage(tc tests.TestContext, imageName string, forceNewHash bool) {
+func buildLuxdImage(tc tests.TestContext, imageName string, forceNewHash bool) {
 	buildImage(tc, imageName, forceNewHash, "build_image.sh")
 }
 
@@ -267,7 +267,7 @@ func newNodeStatefulSet(name string, flags tmpnet.FlagsMap) *appsv1.StatefulSet 
 	statefulSet := tmpnet.NewNodeStatefulSet(
 		name,
 		true, // generateName
-		latestAvalanchegoImage,
+		latestLuxdImage,
 		nodeContainerName,
 		volumeName,
 		volumeSize,

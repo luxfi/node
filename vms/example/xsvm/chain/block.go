@@ -9,9 +9,9 @@ import (
 	"time"
 	
 
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/choices"
-	consensuschain "github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/choices"
+	consensuschain "github.com/luxfi/consensus/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	smblock "github.com/luxfi/node/consensus/engine/chain/block"
+	smblock "github.com/luxfi/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 

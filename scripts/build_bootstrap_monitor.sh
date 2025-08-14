@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# Avalanchego root folder
+# Luxd root folder
 AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Load the constants
 source "$AVALANCHE_PATH"/scripts/constants.sh

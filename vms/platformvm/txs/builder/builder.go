@@ -9,7 +9,7 @@ import (
 	"time"
 	
 
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/crypto/secp256k1"

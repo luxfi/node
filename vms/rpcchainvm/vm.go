@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 
-	"github.com/luxfi/node/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"

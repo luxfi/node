@@ -11,11 +11,11 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p/acp118"
 	"github.com/luxfi/node/proto/pb/platformvm"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/message"

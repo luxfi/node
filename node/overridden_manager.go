@@ -6,7 +6,7 @@ package node
 import (
 	"fmt"
 
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/set"

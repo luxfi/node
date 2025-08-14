@@ -6,7 +6,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/block"

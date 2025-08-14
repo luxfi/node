@@ -21,15 +21,15 @@ import (
 
 	"github.com/luxfi/node/codec/linearcodec"
 
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/consensus"
 
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/consensus/consensustest"
 
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/core"
 
-	"github.com/luxfi/node/consensus/uptime"
+	"github.com/luxfi/consensus/uptime"
 
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/consensus/validators"
 
 	"github.com/luxfi/database"
 

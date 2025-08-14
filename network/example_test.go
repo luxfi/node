@@ -9,8 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/consensus/networking/router"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"

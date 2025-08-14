@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -9,32 +9,53 @@ import (
 	_ "embed"
 
 	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/txs/fee"
+	"github.com/luxfi/node/vms/platformvm/validators/fee"
 )
 
 var (
 	//go:embed genesis_testnet.json
 	testnetGenesisConfigJSON []byte
 
-	// TestnetParams are the params used for the testnet testnet
-	TestnetParams = Params{
-		StaticConfig: fee.StaticConfig{
-			TxFee:                         units.MilliLux,
-			CreateAssetTxFee:              10 * units.MilliLux,
-			CreateSubnetTxFee:             100 * units.MilliLux,
-			TransformSubnetTxFee:          1 * units.Lux,
-			CreateBlockchainTxFee:         100 * units.MilliLux,
-			AddPrimaryNetworkValidatorFee: 0,
-			AddPrimaryNetworkDelegatorFee: 0,
-			AddSubnetValidatorFee:         units.MilliLux,
-			AddSubnetDelegatorFee:         units.MilliLux,
+	// FujiParams are the params used for the testnet testnet
+	FujiParams = Params{
+		TxFeeConfig: TxFeeConfig{
+			CreateAssetTxFee: 10 * units.MilliAvax,
+			TxFee:            units.MilliAvax,
+			DynamicFeeConfig: gas.Config{
+				Weights: gas.Dimensions{
+					gas.Bandwidth: 1,     // Max block size ~1MB
+					gas.DBRead:    1_000, // Max reads per block 1,000
+					gas.DBWrite:   1_000, // Max writes per block 1,000
+					gas.Compute:   4,     // Max compute time per block ~250ms
+				},
+				MaxCapacity:     1_000_000,
+				MaxPerSecond:    100_000, // Refill time 10s
+				TargetPerSecond: 50_000,  // Target is half of max
+				MinPrice:        1,
+				// ExcessConversionConstant = (MaxPerSecond - TargetPerSecond) * NumberOfSecondsPerDoubling / ln(2)
+				//
+				// ln(2) is a float and the result is consensus critical, so we
+				// hardcode the result.
+				ExcessConversionConstant: 2_164_043, // Double every 30s
+			},
+			ValidatorFeeConfig: fee.Config{
+				Capacity: 20_000,
+				Target:   10_000,
+				MinPrice: gas.Price(512 * units.NanoAvax),
+				// ExcessConversionConstant = (Capacity - Target) * NumberOfSecondsPerDoubling / ln(2)
+				//
+				// ln(2) is a float and the result is consensus critical, so we
+				// hardcode the result.
+				ExcessConversionConstant: 51_937_021, // Double every hour
+			},
 		},
 		StakingConfig: StakingConfig{
 			UptimeRequirement: .8, // 80%
-			MinValidatorStake: 1 * units.Lux,
-			MaxValidatorStake: 3 * units.MegaLux,
-			MinDelegatorStake: 1 * units.Lux,
+			MinValidatorStake: 1 * units.Avax,
+			MaxValidatorStake: 3 * units.MegaAvax,
+			MinDelegatorStake: 1 * units.Avax,
 			MinDelegationFee:  20000, // 2%
 			MinStakeDuration:  24 * time.Hour,
 			MaxStakeDuration:  365 * 24 * time.Hour,
@@ -42,7 +63,7 @@ var (
 				MaxConsumptionRate: .12 * reward.PercentDenominator,
 				MinConsumptionRate: .10 * reward.PercentDenominator,
 				MintingPeriod:      365 * 24 * time.Hour,
-				SupplyCap:          720 * units.MegaLux,
+				SupplyCap:          720 * units.MegaAvax,
 			},
 		},
 	}

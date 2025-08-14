@@ -7,7 +7,7 @@ import (
 	stdcontext "context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/keychain"
+	"github.com/luxfi/crypto/keychain"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )

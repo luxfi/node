@@ -6,9 +6,9 @@ package builder
 import (
 	"time"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"

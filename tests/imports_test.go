@@ -16,7 +16,7 @@ func TestMustNotImport(t *testing.T) {
 	require := require.New(t)
 
 	mustNotImport := map[string][]string{
-		// Importing these packages configures libevm globally. This must not be
+		// Importing these packages configures geth globally. This must not be
 		// done to support both coreth and subnet-evm.
 		"tests/...": {
 			"github.com/luxfi/coreth/params",

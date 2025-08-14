@@ -11,7 +11,7 @@ import (
 	
 
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/secp256k1"

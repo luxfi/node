@@ -12,7 +12,7 @@ package fx
 import (
 	reflect "reflect"
 
-	consensus "github.com/luxfi/node/consensus"
+	consensus "github.com/luxfi/consensus"
 	verify "github.com/luxfi/node/vms/components/verify"
 	gomock "go.uber.org/mock/gomock"
 )

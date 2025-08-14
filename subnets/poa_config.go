@@ -7,7 +7,7 @@ import (
 	"time"
 	
 
-	"github.com/luxfi/node/consensus/sampling"
+	"github.com/luxfi/consensus/sampling"
 )
 
 // POAConfig provides Proof of Authority configuration for subnets

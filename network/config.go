@@ -10,9 +10,9 @@ import (
 	"time"
 	
 
-	"github.com/luxfi/node/consensus/networking/tracker"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/consensus/networking/tracker"
+	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"

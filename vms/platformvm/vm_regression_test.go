@@ -14,10 +14,10 @@ import (
 
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/chain"
-	"github.com/luxfi/node/consensus/uptime"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
@@ -47,7 +47,7 @@ import (
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
-	utilmetrics "github.com/luxfi/node/utils/metrics"
+	utilmetrics "github.com/luxfi/metric"
 )
 
 func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {

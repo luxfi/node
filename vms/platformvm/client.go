@@ -9,7 +9,7 @@ import (
 	
 
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/secp256k1"

@@ -6,7 +6,7 @@ package txs
 import (
 	"fmt"
 
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/bls"

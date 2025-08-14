@@ -6,8 +6,8 @@ package metervm
 import (
 	"context"
 
-	"github.com/luxfi/node/consensus/engine/chain/block"
-	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/chain"
 )
 
 func (vm *blockVM) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (chain.Block, error) {

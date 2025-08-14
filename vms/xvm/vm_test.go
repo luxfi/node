@@ -9,12 +9,12 @@ import (
 	"testing"
 	
 
-	"github.com/luxfi/node/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/core"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"

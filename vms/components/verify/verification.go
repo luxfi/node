@@ -3,7 +3,7 @@
 
 package verify
 
-import "github.com/luxfi/node/consensus"
+import "github.com/luxfi/consensus"
 
 type Verifiable interface {
 	Verify() error

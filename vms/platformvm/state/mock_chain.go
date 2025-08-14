@@ -13,9 +13,9 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	iterator "github.com/luxfi/node/utils/iterator"
-	avax "github.com/luxfi/node/vms/components/avax"
+	avax "github.com/luxfi/node/vms/components/lux"
 	gas "github.com/luxfi/node/vms/components/gas"
 	fx "github.com/luxfi/node/vms/platformvm/fx"
 	status "github.com/luxfi/node/vms/platformvm/status"

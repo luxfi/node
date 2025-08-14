@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 
-	"github.com/luxfi/node/consensus/choices"
+	"github.com/luxfi/consensus/choices"
 
 	"github.com/luxfi/database"
 

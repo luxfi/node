@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 )
 
