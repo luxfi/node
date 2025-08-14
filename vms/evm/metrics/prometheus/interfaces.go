@@ -3,12 +3,6 @@
 
 package prometheus
 
-import "github.com/luxfi/node/vms/evm/metrics"
-
-var _ Registry = (*metricsRegistry)(nil)
-
-type metricsRegistry struct{}
-
 type Registry interface {
 	// Call the given function for each registered metric.
 	Each(func(name string, metric any))

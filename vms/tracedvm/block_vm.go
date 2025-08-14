@@ -8,12 +8,8 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/chain"
-	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/trace"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
@@ -96,13 +92,14 @@ func NewBlockVM(vm block.ChainVM, name string, tracer trace.Tracer) block.ChainV
 
 func (vm *blockVM) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
-	db database.Database,
+	chainCtx *block.ChainContext,
+	dbManager block.DBManager,
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
-	fxs []*core.Fx,
-	appSender core.AppSender,
+	toEngine chan<- block.Message,
+	fxs []*block.Fx,
+	appSender block.AppSender,
 ) error {
 	ctx, span := vm.tracer.Start(ctx, vm.initializeTag)
 	defer span.End()
@@ -110,10 +107,11 @@ func (vm *blockVM) Initialize(
 	return vm.ChainVM.Initialize(
 		ctx,
 		chainCtx,
-		db,
+		dbManager,
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
+		toEngine,
 		fxs,
 		appSender,
 	)

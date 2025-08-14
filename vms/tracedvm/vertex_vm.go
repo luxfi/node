@@ -8,11 +8,8 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/graph/vertex"
 	"github.com/luxfi/consensus/graph"
-	"github.com/luxfi/database"
-	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/trace"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
@@ -34,13 +31,14 @@ func NewVertexVM(vm vertex.LinearizableVMWithEngine, tracer trace.Tracer) vertex
 
 func (vm *vertexVM) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
-	db database.Database,
+	chainCtx interface{},
+	db interface{},
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
-	fxs []*core.Fx,
-	appSender core.AppSender,
+	toEngine chan<- interface{},
+	fxs []interface{},
+	appSender interface{},
 ) error {
 	ctx, span := vm.tracer.Start(ctx, "vertexVM.Initialize")
 	defer span.End()
@@ -52,20 +50,31 @@ func (vm *vertexVM) Initialize(
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
+		toEngine,
 		fxs,
 		appSender,
 	)
 }
 
-func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (graph.Tx, error) {
+func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (interface{}, error) {
 	ctx, span := vm.tracer.Start(ctx, "vertexVM.ParseTx", oteltrace.WithAttributes(
 		attribute.Int("txLen", len(txBytes)),
 	))
 	defer span.End()
 
 	tx, err := vm.LinearizableVMWithEngine.ParseTx(ctx, txBytes)
-	return &tracedTx{
-		Tx:     tx,
-		tracer: vm.tracer,
-	}, err
+	if err != nil {
+		return nil, err
+	}
+	
+	// If the tx implements graph.Tx, wrap it with tracedTx
+	if graphTx, ok := tx.(graph.Tx); ok {
+		return &tracedTx{
+			Tx:     graphTx,
+			tracer: vm.tracer,
+		}, nil
+	}
+	
+	// Otherwise return as-is
+	return tx, nil
 }

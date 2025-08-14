@@ -122,6 +122,9 @@ type (
 		UpdateSince(int64)
 		Values() []int64
 		Snapshot() ResettingTimer
+		Percentiles([]float64) []float64
+		Count() int64
+		Mean() float64
 	}
 
 	// EWMA is an exponentially weighted moving average
@@ -255,6 +258,9 @@ func (NilResettingTimer) Update(int64)            {}
 func (NilResettingTimer) UpdateSince(int64)       {}
 func (NilResettingTimer) Values() []int64         { return nil }
 func (n NilResettingTimer) Snapshot() ResettingTimer { return n }
+func (NilResettingTimer) Percentiles([]float64) []float64 { return nil }
+func (NilResettingTimer) Count() int64            { return 0 }
+func (NilResettingTimer) Mean() float64           { return 0 }
 
 // NilEWMA implementation
 func (NilEWMA) Rate() float64     { return 0 }

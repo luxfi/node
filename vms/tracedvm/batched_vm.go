@@ -10,7 +10,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/chain"
 	"github.com/luxfi/ids"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
@@ -44,7 +43,7 @@ func (vm *blockVM) GetAncestors(
 	)
 }
 
-func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chain.Block, error) {
+func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]block.Block, error) {
 	if vm.batchedVM == nil {
 		return nil, block.ErrRemoteVMNotImplemented
 	}
@@ -59,10 +58,10 @@ func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chai
 		return nil, err
 	}
 
-	wrappedBlocks := make([]chain.Block, len(blocks))
-	for i, block := range blocks {
+	wrappedBlocks := make([]block.Block, len(blocks))
+	for i, blk := range blocks {
 		wrappedBlocks[i] = &tracedBlock{
-			Block: block,
+			Block: blk,
 			vm:    vm,
 		}
 	}
