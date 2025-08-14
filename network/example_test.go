@@ -9,6 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/genesis"
@@ -33,11 +34,13 @@ type testExternalHandler struct {
 // implementation does not implicitly register timeouts, so this handler is only
 // called by messages explicitly sent by the peer. If timeouts are required,
 // that must be handled by the user of this utility.
-func (t *testExternalHandler) HandleInbound(_ context.Context, message message.InboundMessage) {
-	t.log.Info(
-		"receiving message",
-		zap.Stringer("op", message.Op()),
-	)
+func (t *testExternalHandler) HandleInbound(_ context.Context, msg interface{}) {
+	if message, ok := msg.(message.InboundMessage); ok {
+		t.log.Info(
+			"receiving message",
+			zap.Stringer("op", message.Op()),
+		)
+	}
 }
 
 func (t *testExternalHandler) Connected(nodeID ids.NodeID, version *version.Application, subnetID ids.ID) {
@@ -54,6 +57,26 @@ func (t *testExternalHandler) Disconnected(nodeID ids.NodeID) {
 		"disconnected",
 		zap.Stringer("nodeID", nodeID),
 	)
+}
+
+func (t *testExternalHandler) AppRequest(_ context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, appRequestBytes []byte) error {
+	t.log.Info("AppRequest", zap.Stringer("nodeID", nodeID), zap.Uint32("requestID", requestID))
+	return nil
+}
+
+func (t *testExternalHandler) AppRequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
+	t.log.Info("AppRequestFailed", zap.Stringer("nodeID", nodeID), zap.Uint32("requestID", requestID))
+	return nil
+}
+
+func (t *testExternalHandler) AppResponse(_ context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
+	t.log.Info("AppResponse", zap.Stringer("nodeID", nodeID), zap.Uint32("requestID", requestID))
+	return nil
+}
+
+func (t *testExternalHandler) AppGossip(_ context.Context, nodeID ids.NodeID, appGossipBytes []byte) error {
+	t.log.Info("AppGossip", zap.Stringer("nodeID", nodeID))
+	return nil
 }
 
 type testAggressiveValidatorManager struct {
