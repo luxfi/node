@@ -4,7 +4,7 @@
 package txs
 
 import (
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/chain"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 

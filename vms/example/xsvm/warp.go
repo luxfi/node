@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/node/network/p2p/acp118"
-	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/node/chain/engine/common"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 

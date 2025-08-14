@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/chain/chaintest"
-	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/node/chain/chain/chaintest"
+	"github.com/luxfi/node/chain/consensustest"
 )
 
 func TestAcceptSingleBlock(t *testing.T) {

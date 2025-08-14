@@ -9,7 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"

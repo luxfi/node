@@ -15,10 +15,10 @@ import (
 	
 	luxmetrics "github.com/luxfi/metric"
 
-	"github.com/luxfi/consensus/networking/router"
-	"github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/chain/networking/router"
+	"github.com/luxfi/node/chain/networking/tracker"
+	"github.com/luxfi/node/chain/uptime"
+	"github.com/luxfi/node/chain/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"

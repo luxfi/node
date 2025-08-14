@@ -32,10 +32,10 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	consensusNode "github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/chain"
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/core"
+	consensusNode "github.com/luxfi/node/chain"
+	"github.com/luxfi/node/chain/chain"
+	"github.com/luxfi/node/chain/engine/chain/block"
+	"github.com/luxfi/node/chain/engine/core"
 	"github.com/luxfi/node/version"
 )
 

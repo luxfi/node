@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/node/chain/choices"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"

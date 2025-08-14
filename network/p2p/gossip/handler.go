@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/node/chain/engine/core"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/log"
 )

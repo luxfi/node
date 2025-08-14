@@ -9,16 +9,16 @@ import (
 	"time"
 	
 
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/chain"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/node/chain/engine/core"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/vms/example/xsvm/chain"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
 
-	smblock "github.com/luxfi/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/chain/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 

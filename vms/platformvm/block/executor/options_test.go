@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/node/chain/chain"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 

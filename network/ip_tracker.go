@@ -11,7 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/chain/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/crypto/bls"

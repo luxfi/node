@@ -22,8 +22,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/node/chain"
+	"github.com/luxfi/node/chain/engine/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/trace"
 )

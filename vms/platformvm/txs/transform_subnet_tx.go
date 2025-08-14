@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/verify"

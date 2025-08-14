@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/chain/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/set"
 )

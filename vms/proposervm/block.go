@@ -11,14 +11,14 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/node/chain"
+	"github.com/luxfi/node/chain/choices"
+	"github.com/luxfi/node/chain/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 
-	smblock "github.com/luxfi/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/chain/engine/chain/block"
 )
 
 const (

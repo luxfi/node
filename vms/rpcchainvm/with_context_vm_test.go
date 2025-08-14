@@ -12,11 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/consensus/chain"
-	"github.com/luxfi/consensus/chain/chainmock"
+	"github.com/luxfi/node/chain/consensustest"
+	"github.com/luxfi/node/chain/engine/chain/block"
+	"github.com/luxfi/node/chain/engine/chain/block/blockmock"
+	"github.com/luxfi/node/chain/chain"
+	"github.com/luxfi/node/chain/chain/chainmock"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 )

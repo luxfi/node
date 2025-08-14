@@ -4,7 +4,7 @@
 package utxo
 
 import (
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/chain"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/platformvm/fx"
 )

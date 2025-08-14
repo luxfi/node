@@ -6,7 +6,7 @@ package validators
 import (
 	"context"
 
-	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/chain/validators"
 	"github.com/luxfi/ids"
 )
 

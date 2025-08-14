@@ -11,10 +11,10 @@ package proposervm
 //
 // 	"github.com/stretchr/testify/require"
 //
-// 	"github.com/luxfi/consensus"
-// 	"github.com/luxfi/consensus/consensustest"
-// 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
-// 	"github.com/luxfi/consensus/engine/core"
+// 	"github.com/luxfi/node/chain"
+// 	"github.com/luxfi/node/chain/consensustest"
+// 	"github.com/luxfi/node/chain/engine/chain/block/blocktest"
+// 	"github.com/luxfi/node/chain/engine/core"
 // 	"github.com/luxfi/database"
 // 	"github.com/luxfi/database/memdb"
 // 	"github.com/luxfi/database/prefixdb"

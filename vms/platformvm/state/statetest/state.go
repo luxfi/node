@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow"
-	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/chain/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"

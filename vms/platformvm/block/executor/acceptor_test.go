@@ -12,7 +12,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/chain"
 	"github.com/luxfi/database/databasemock"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"

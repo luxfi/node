@@ -24,13 +24,13 @@ import (
 
 	"github.com/luxfi/node/codec/linearcodec"
 
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/chain"
 
-	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/node/chain/consensustest"
 
-	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/node/chain/uptime"
 
-	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/chain/validators"
 
 	"github.com/luxfi/database"
 

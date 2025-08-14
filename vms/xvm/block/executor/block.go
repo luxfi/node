@@ -12,8 +12,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/node/chain/choices"
+	"github.com/luxfi/node/chain/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/xvm/block"

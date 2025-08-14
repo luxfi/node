@@ -8,12 +8,12 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/node/chain"
+	"github.com/luxfi/node/chain/engine/chain/block"
+	"github.com/luxfi/node/chain/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/node/chain/engine/core"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 

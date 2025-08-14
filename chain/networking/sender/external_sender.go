@@ -1,0 +1,23 @@
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package sender
+
+import (
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/chain/engine/common"
+	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/utils/set"
+)
+
+// ExternalSender sends consensus messages to other validators
+// Right now this is implemented in the networking package
+type ExternalSender interface {
+	Send(
+		msg message.OutboundMessage,
+		config core.SendConfig,
+		subnetID ids.ID,
+		allower subnets.Allower,
+	) set.Set[ids.NodeID]
+}

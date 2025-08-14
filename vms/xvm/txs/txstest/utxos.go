@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"

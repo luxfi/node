@@ -10,8 +10,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/graph"
+	"github.com/luxfi/node/chain/choices"
+	"github.com/luxfi/node/chain/graph"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"

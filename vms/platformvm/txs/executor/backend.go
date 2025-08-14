@@ -4,8 +4,8 @@
 package executor
 
 import (
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/node/chain"
+	"github.com/luxfi/node/chain/uptime"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/platformvm/config"

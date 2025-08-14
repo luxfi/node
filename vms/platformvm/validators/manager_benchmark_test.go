@@ -15,9 +15,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/chain"
 
-	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/chain/validators"
 
 	"github.com/luxfi/database/leveldb"
 

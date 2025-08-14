@@ -11,12 +11,12 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/consensus"
-	consensuschain "github.com/luxfi/consensus/chain"
+	"github.com/luxfi/node/chain"
+	consensuschain "github.com/luxfi/node/chain/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/node/chain/engine/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	smblock "github.com/luxfi/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/chain/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 

@@ -11,9 +11,9 @@ import (
 
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/consensus/networking/benchlist"
-	"github.com/luxfi/consensus/networking/router"
-	"github.com/luxfi/consensus/networking/tracker"
+	"github.com/luxfi/node/chain/networking/benchlist"
+	"github.com/luxfi/node/chain/networking/router"
+	"github.com/luxfi/node/chain/networking/tracker"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"

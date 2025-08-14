@@ -8,7 +8,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/ipcs/socket"
 	"github.com/luxfi/node/utils"

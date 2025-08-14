@@ -6,7 +6,7 @@ package xvm
 import (
 	"reflect"
 
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/chain"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 )

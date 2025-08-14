@@ -7,7 +7,7 @@ import (
 	"reflect"
 
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/fxs"

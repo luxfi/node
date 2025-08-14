@@ -8,8 +8,8 @@ import (
 
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/chain/uptime"
+	"github.com/luxfi/node/chain/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/set"

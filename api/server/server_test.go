@@ -11,8 +11,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/node/chain"
+	"github.com/luxfi/node/chain/consensustest"
 )
 
 func TestRejectMiddleware(t *testing.T) {

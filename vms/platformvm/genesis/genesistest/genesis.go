@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/snowtest"
+	"github.com/luxfi/node/chain/snowtest"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/secp256k1"

@@ -12,10 +12,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/chain"
-	"github.com/luxfi/consensus/chain/chaintest"
+	"github.com/luxfi/node/chain/choices"
+	"github.com/luxfi/node/chain/consensustest"
+	"github.com/luxfi/node/chain/chain"
+	"github.com/luxfi/node/chain/chain/chaintest"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"

@@ -6,7 +6,7 @@ package proposervm
 import (
 	"context"
 
-	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/node/chain/engine/chain/block"
 	"github.com/luxfi/node/vms/proposervm/summary"
 )
 

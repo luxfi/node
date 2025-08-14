@@ -12,7 +12,7 @@ import (
 	_ "embed"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/snowtest"
+	"github.com/luxfi/node/chain/snowtest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"

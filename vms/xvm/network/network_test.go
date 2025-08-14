@@ -12,11 +12,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/core/coremock"
+	"github.com/luxfi/node/chain/engine/core"
+	"github.com/luxfi/node/chain/engine/core/coremock"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorstest"
+	"github.com/luxfi/node/chain/validators"
+	"github.com/luxfi/node/chain/validators/validatorstest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/xvm/block/executor"
 	"github.com/luxfi/node/vms/xvm/fxs"

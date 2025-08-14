@@ -12,7 +12,7 @@ package executor
 import (
 	reflect "reflect"
 
-	chain "github.com/luxfi/consensus/chain"
+	chain "github.com/luxfi/node/chain/chain"
 	ids "github.com/luxfi/ids"
 	set "github.com/luxfi/node/utils/set"
 	block "github.com/luxfi/node/vms/xvm/block"

@@ -14,8 +14,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/node/chain"
+	"github.com/luxfi/node/chain/choices"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"

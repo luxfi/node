@@ -8,11 +8,11 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/engine/graph/vertex"
-	"github.com/luxfi/consensus/graph"
+	"github.com/luxfi/node/chain"
+	"github.com/luxfi/node/chain/engine/graph/vertex"
+	"github.com/luxfi/node/chain/graph"
 	"github.com/luxfi/database"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/node/chain/engine/core"
 	"github.com/luxfi/trace"
 
 	oteltrace "go.opentelemetry.io/otel/trace"

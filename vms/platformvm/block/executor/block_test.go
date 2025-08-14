@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/uptime/uptimemock"
+	"github.com/luxfi/node/chain/choices"
+	"github.com/luxfi/node/chain/consensustest"
+	"github.com/luxfi/node/chain/uptime/uptimemock"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"

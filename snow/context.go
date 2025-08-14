@@ -2,7 +2,7 @@ package snow
 
 import (
     "github.com/luxfi/ids"
-    "github.com/luxfi/consensus"
+    "github.com/luxfi/node/chain"
 )
 
 // Context provides snow protocol context

@@ -14,9 +14,9 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorstest"
+	"github.com/luxfi/node/chain/engine/core"
+	"github.com/luxfi/node/chain/validators"
+	"github.com/luxfi/node/chain/validators/validatorstest"
 	"github.com/luxfi/node/utils/set"
 
 	"github.com/luxfi/node/version"

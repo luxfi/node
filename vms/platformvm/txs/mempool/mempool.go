@@ -10,7 +10,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	common "github.com/luxfi/consensus/engine/core"
+	common "github.com/luxfi/node/chain/engine/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
 

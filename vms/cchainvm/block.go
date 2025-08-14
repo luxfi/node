@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/rlp"
 
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/node/chain/choices"
+	"github.com/luxfi/node/chain/chain"
 	"github.com/luxfi/ids"
 )
 

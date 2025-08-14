@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/core/coremock"
+	"github.com/luxfi/node/chain/consensustest"
+	"github.com/luxfi/node/chain/engine/core"
+	"github.com/luxfi/node/chain/engine/core/coremock"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"

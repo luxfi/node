@@ -8,8 +8,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/node/chain/engine/chain/block"
+	"github.com/luxfi/node/chain/chain"
 )
 
 var (

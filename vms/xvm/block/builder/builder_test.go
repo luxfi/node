@@ -18,11 +18,11 @@ import (
 
 	"github.com/luxfi/node/codec"
 
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/chain"
 
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/node/chain/engine/core"
 
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/node/chain/chain"
 
 	"github.com/luxfi/database/memdb"
 

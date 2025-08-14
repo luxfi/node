@@ -8,7 +8,7 @@ import (
 	"testing"
 	
 
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/node/chain/engine/core"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"

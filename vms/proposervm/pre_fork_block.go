@@ -12,8 +12,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/node/chain/choices"
+	"github.com/luxfi/node/chain/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"

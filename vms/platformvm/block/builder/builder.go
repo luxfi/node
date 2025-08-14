@@ -12,8 +12,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/node/chain"
+	"github.com/luxfi/node/chain/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"

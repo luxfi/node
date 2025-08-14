@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/p2ptest"
 	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/node/chain/engine/common"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/set"

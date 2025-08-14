@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorsmock"
-	"github.com/luxfi/consensus/validators/validatorstest"
+	"github.com/luxfi/node/chain/validators"
+	"github.com/luxfi/node/chain/validators/validatorsmock"
+	"github.com/luxfi/node/chain/validators/validatorstest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/set"

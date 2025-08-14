@@ -7,11 +7,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	smblock "github.com/luxfi/consensus/engine/chain/block"
+	smblock "github.com/luxfi/node/chain/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
