@@ -10,11 +10,11 @@ import (
 
 // PrometheusRegistryAdapter wraps a luxfi/metric Registry to implement prometheus.Registerer
 type PrometheusRegistryAdapter struct {
-	registry metrics.Registry
+	registry metric.Registry
 }
 
 // NewPrometheusRegistryAdapter creates a new adapter
-func NewPrometheusRegistryAdapter(registry metrics.Registry) prometheus.Registerer {
+func NewPrometheusRegistryAdapter(registry metric.Registry) prometheus.Registerer {
 	return &PrometheusRegistryAdapter{
 		registry: registry,
 	}

@@ -69,7 +69,8 @@ type TransferableOutput struct {
 }
 
 func (out *TransferableOutput) InitCtx(ctx *consensus.Context) {
-	out.Out.InitCtx(ctx)
+	// TransferableOut implements consensus.ContextInitializable which has InitializeWithContext
+	// So we don't need to do anything here as initialization happens during unmarshalling
 }
 
 // Output returns the feature extension output that this Output is using.

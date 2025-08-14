@@ -74,7 +74,7 @@ func (vm *blockVM) Initialize(
 	return vm.ChainVM.Initialize(ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, fxs, appSender)
 }
 
-func (vm *blockVM) BuildBlock(ctx context.Context) (chain.Block, error) {
+func (vm *blockVM) BuildBlock(ctx context.Context) (block.Block, error) {
 	start := vm.clock.Time()
 	blk, err := vm.ChainVM.BuildBlock(ctx)
 	end := vm.clock.Time()
@@ -90,7 +90,7 @@ func (vm *blockVM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	}, nil
 }
 
-func (vm *blockVM) ParseBlock(ctx context.Context, b []byte) (chain.Block, error) {
+func (vm *blockVM) ParseBlock(ctx context.Context, b []byte) (block.Block, error) {
 	start := vm.clock.Time()
 	blk, err := vm.ChainVM.ParseBlock(ctx, b)
 	end := vm.clock.Time()
@@ -106,7 +106,7 @@ func (vm *blockVM) ParseBlock(ctx context.Context, b []byte) (chain.Block, error
 	}, nil
 }
 
-func (vm *blockVM) GetBlock(ctx context.Context, id ids.ID) (chain.Block, error) {
+func (vm *blockVM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
 	start := vm.clock.Time()
 	blk, err := vm.ChainVM.GetBlock(ctx, id)
 	end := vm.clock.Time()

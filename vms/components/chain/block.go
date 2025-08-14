@@ -6,7 +6,6 @@ package chain
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/chain"

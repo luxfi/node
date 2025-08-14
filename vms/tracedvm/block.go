@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	_ chain.Block            = (*tracedBlock)(nil)
+	_ block.Block            = (*tracedBlock)(nil)
 	_ chain.OracleBlock      = (*tracedBlock)(nil)
 	_ block.WithVerifyContext = (*tracedBlock)(nil)
 
@@ -25,39 +25,42 @@ var (
 )
 
 type tracedBlock struct {
-	chain.Block
+	block.Block
 
 	vm *blockVM
 }
 
-func (b *tracedBlock) Verify(ctx context.Context) error {
+func (b *tracedBlock) Verify() error {
+	ctx := context.Background()
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.verifyTag, oteltrace.WithAttributes(
 		attribute.Stringer("blkID", b.ID()),
 		attribute.Int64("height", int64(b.Height())),
 	))
 	defer span.End()
 
-	return b.Block.Verify(ctx)
+	return b.Block.Verify()
 }
 
-func (b *tracedBlock) Accept(ctx context.Context) error {
+func (b *tracedBlock) Accept() error {
+	ctx := context.Background()
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.acceptTag, oteltrace.WithAttributes(
 		attribute.Stringer("blkID", b.ID()),
 		attribute.Int64("height", int64(b.Height())),
 	))
 	defer span.End()
 
-	return b.Block.Accept(ctx)
+	return b.Block.Accept()
 }
 
-func (b *tracedBlock) Reject(ctx context.Context) error {
+func (b *tracedBlock) Reject() error {
+	ctx := context.Background()
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.rejectTag, oteltrace.WithAttributes(
 		attribute.Stringer("blkID", b.ID()),
 		attribute.Int64("height", int64(b.Height())),
 	))
 	defer span.End()
 
-	return b.Block.Reject(ctx)
+	return b.Block.Reject()
 }
 
 func (b *tracedBlock) Options(ctx context.Context) ([2]chain.Block, error) {

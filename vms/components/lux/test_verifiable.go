@@ -4,6 +4,9 @@
 package lux
 
 import (
+	"context"
+	
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/components/verify"
 )
@@ -22,6 +25,10 @@ type TestState struct {
 
 func (*TestState) InitCtx(*snow.Context) {}
 
+func (*TestState) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+	return nil
+}
+
 func (v *TestState) Verify() error {
 	return v.Err
 }
@@ -33,6 +40,10 @@ type TestTransferable struct {
 }
 
 func (*TestTransferable) InitCtx(*snow.Context) {}
+
+func (*TestTransferable) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+	return nil
+}
 
 func (t *TestTransferable) Amount() uint64 {
 	return t.Val
