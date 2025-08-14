@@ -1,7 +1,7 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package lp118
+package acp118
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
@@ -36,7 +36,7 @@ type result struct {
 }
 
 // NewSignatureAggregator returns an instance of SignatureAggregator
-func NewSignatureAggregator(log log.Logger, client *p2p.Client) *SignatureAggregator {
+func NewSignatureAggregator(log logging.Logger, client *p2p.Client) *SignatureAggregator {
 	return &SignatureAggregator{
 		log:    log,
 		client: client,
@@ -45,7 +45,7 @@ func NewSignatureAggregator(log log.Logger, client *p2p.Client) *SignatureAggreg
 
 // SignatureAggregator aggregates validator signatures for warp messages
 type SignatureAggregator struct {
-	log    log.Logger
+	log    logging.Logger
 	client *p2p.Client
 }
 

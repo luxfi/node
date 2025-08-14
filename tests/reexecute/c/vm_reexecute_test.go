@@ -113,12 +113,12 @@ func benchmarkReexecuteRange(b *testing.B, sourceBlockDir string, targetDir stri
 	prefixGatherer := metrics.NewPrefixGatherer()
 
 	vmMultiGatherer := metrics.NewPrefixGatherer()
-	r.NoError(prefixGatherer.Register("avalanche_evm", vmMultiGatherer))
+	r.NoError(prefixGatherer.Register("lux_evm", vmMultiGatherer))
 
-	// consensusRegistry includes the chain="C" label and the prefix "avalanche_snowman".
+	// consensusRegistry includes the chain="C" label and the prefix "lux_snowman".
 	// The consensus registry is passed to the executor to mimic a subset of consensus metrics.
 	consensusRegistry := prometheus.NewRegistry()
-	r.NoError(prefixGatherer.Register("avalanche_snowman", consensusRegistry))
+	r.NoError(prefixGatherer.Register("lux_snowman", consensusRegistry))
 
 	if metricsEnabled {
 		collectRegistry(b, "c-chain-reexecution", time.Minute, prefixGatherer, labels)
@@ -471,7 +471,7 @@ type consensusMetrics struct {
 // [engine](../../snow/engine/snowman/metrics.go).
 //
 // The registry passed in is expected to be registered with the prefix
-// "avalanche_snowman" and the chain label (ex. chain="C") that would be handled
+// "lux_snowman" and the chain label (ex. chain="C") that would be handled
 // by the[chain manager](../../../chains/manager.go).
 func newConsensusMetrics(registry prometheus.Registerer) (*consensusMetrics, error) {
 	m := &consensusMetrics{
@@ -541,7 +541,7 @@ func parseLabels(labelsStr string) (map[string]string, error) {
 func getTopLevelMetrics(b *testing.B, registry prometheus.Gatherer, elapsed time.Duration) {
 	r := require.New(b)
 
-	gasUsed, err := getCounterMetricValue(registry, "avalanche_evm_eth_chain_block_gas_used_processed")
+	gasUsed, err := getCounterMetricValue(registry, "lux_evm_eth_chain_block_gas_used_processed")
 	r.NoError(err)
 	mgasPerSecond := gasUsed / 1_000_000 / elapsed.Seconds()
 	b.ReportMetric(mgasPerSecond, "mgas/s")

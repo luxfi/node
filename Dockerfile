@@ -8,7 +8,7 @@ FROM --platform=$BUILDPLATFORM golang:$GO_VERSION-bookworm AS builder
 
 WORKDIR /build
 
-# Copy and download avalanche dependencies using go mod
+# Copy and download lux dependencies using go mod
 COPY go.mod .
 COPY go.sum .
 RUN go mod download

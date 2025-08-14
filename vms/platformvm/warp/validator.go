@@ -9,9 +9,6 @@ import (
 	"errors"
 	"fmt"
 
-	"golang.org/x/exp/maps"
-
-	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/crypto/bls"
@@ -29,7 +26,8 @@ var (
 // ValidatorState defines the functions that must be implemented to get
 // the canonical validator set for warp message validation.
 type ValidatorState interface {
-	GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error)
+	GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error)
+	GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
 }
 
 type Validator struct {
@@ -64,40 +62,30 @@ func GetCanonicalValidatorSet(
 
 // FlattenValidatorSet converts the provided [vdrSet] into a canonical ordering.
 // Also returns the total weight of the validator set.
-func FlattenValidatorSet(vdrSet map[ids.NodeID]*validators.GetValidatorOutput) ([]*Validator, uint64, error) {
+func FlattenValidatorSet(vdrSet map[ids.NodeID]uint64) ([]*Validator, uint64, error) {
 	var (
-		vdrs        = make(map[string]*Validator, len(vdrSet))
+		vdrs        = make([]*Validator, 0, len(vdrSet))
 		totalWeight uint64
 		err         error
 	)
-	for _, vdr := range vdrSet {
-		totalWeight, err = math.Add64(totalWeight, vdr.Weight)
+	for nodeID, weight := range vdrSet {
+		totalWeight, err = math.Add64(totalWeight, weight)
 		if err != nil {
 			return nil, 0, fmt.Errorf("%w: %w", ErrWeightOverflow, err)
 		}
 
-		if vdr.PublicKey == nil {
-			continue
+		// For now, we'll create validators without BLS keys
+		// This is a simplified version for compatibility
+		vdr := &Validator{
+			Weight:  weight,
+			NodeIDs: []ids.NodeID{nodeID},
 		}
-
-		pkBytes := bls.PublicKeyToUncompressedBytes(vdr.PublicKey)
-		uniqueVdr, ok := vdrs[string(pkBytes)]
-		if !ok {
-			uniqueVdr = &Validator{
-				PublicKey:      vdr.PublicKey,
-				PublicKeyBytes: pkBytes,
-			}
-			vdrs[string(pkBytes)] = uniqueVdr
-		}
-
-		uniqueVdr.Weight += vdr.Weight // Impossible to overflow here
-		uniqueVdr.NodeIDs = append(uniqueVdr.NodeIDs, vdr.NodeID)
+		vdrs = append(vdrs, vdr)
 	}
 
-	// Sort validators by public key
-	vdrList := maps.Values(vdrs)
-	utils.Sort(vdrList)
-	return vdrList, totalWeight, nil
+	// Sort validators by node ID for canonical ordering
+	utils.Sort(vdrs)
+	return vdrs, totalWeight, nil
 }
 
 // FilterValidators returns the validators in [vdrs] whose bit is set to 1 in

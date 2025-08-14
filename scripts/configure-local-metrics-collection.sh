@@ -52,7 +52,7 @@ echo "Wrote promtail configuration to ${PROMTAIL_CONFIG_FILE}"
 echo "Metrics collection by prometheus can be started with ./scripts/run_prometheus.sh"
 echo "Log collection by promtail can be started with ./scripts/run_promtail.sh"
 
-GRAFANA_LINK="https://grafana-poc.lux-dev.network/d/kBQpRdWnk/avalanche-main-dashboard?var-filter=network_uuid%7C%3D%7C${METRICS_UUID}"
+GRAFANA_LINK="https://grafana-poc.lux-dev.network/d/kBQpRdWnk/lux-main-dashboard?var-filter=network_uuid%7C%3D%7C${METRICS_UUID}"
 METRICS_PATH="${HOME}/.luxd/metrics.txt"
 echo "${GRAFANA_LINK}" > "${METRICS_PATH}"
 echo "Metrics and logs can be viewed at: ${GRAFANA_LINK}"

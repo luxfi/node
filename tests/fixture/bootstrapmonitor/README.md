@@ -72,7 +72,7 @@ and initiates a new test when one is found.
      for the luxd container.
    - The versions of the luxd image used by the test is
      determined by the pod annotation with key
-     `avalanche.lux.network/luxd-versions`.
+     `lux.lux.network/luxd-versions`.
  - When a bootstrap testing pod is inevitably rescheduled or
    restarted, the contents of the `PersistentVolumeClaim` configured
    by the managing `StatefulSet` will persist across pod restarts to
