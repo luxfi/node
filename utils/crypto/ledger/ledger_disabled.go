@@ -10,7 +10,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/crypto/keychain"
+	"github.com/luxfi/node/utils/crypto/keychain"
 )
 
 var ErrLedgerDisabled = errors.New("ledger support is disabled")

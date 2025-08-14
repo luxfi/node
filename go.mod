@@ -6,7 +6,24 @@ module github.com/luxfi/node
 // go.mod (here)
 go 1.24.5
 
+// Temporarily use local modules during development
+replace (
+	github.com/luxfi/consensus => ../consensus
+	github.com/luxfi/coreth => ../coreth
+	github.com/luxfi/crypto => ../crypto
+	github.com/luxfi/database => ../database
+	github.com/luxfi/geth => ../geth
+	github.com/luxfi/ids => ../ids
+	github.com/luxfi/log => ../log
+	github.com/luxfi/metric => ../metric
+	github.com/luxfi/metrics => ../metrics
+	github.com/luxfi/trace => ../trace
+)
+
 exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
+
+// Do not use go-ethereum directly
+exclude github.com/ethereum/go-ethereum v1.16.2
 
 require (
 	connectrpc.com/connect v1.18.1
@@ -14,10 +31,10 @@ require (
 	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
-	github.com/luxfi/consensus v0.1.0
+	github.com/luxfi/consensus v1.1.0
 	github.com/luxfi/crypto v1.2.9
 	github.com/luxfi/database v1.1.11
-	github.com/luxfi/geth v1.16.24
+	github.com/luxfi/geth v1.16.32
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/log v1.1.1
 	github.com/luxfi/metric v1.3.0
@@ -99,6 +116,7 @@ require (
 	github.com/VictoriaMetrics/fastcache v1.12.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.24.0 // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.3.4 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
@@ -136,6 +154,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gofrs/flock v0.12.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
@@ -151,6 +170,7 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
+	github.com/luxfi/ledger-lux-go v0.0.3 // indirect
 	github.com/luxfi/metrics v1.1.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
@@ -164,6 +184,11 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
+	github.com/pion/dtls/v2 v2.2.7 // indirect
+	github.com/pion/logging v0.2.2 // indirect
+	github.com/pion/stun/v2 v2.0.0 // indirect
+	github.com/pion/transport/v2 v2.2.1 // indirect
+	github.com/pion/transport/v3 v3.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
@@ -179,6 +204,8 @@ require (
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
+	github.com/zondax/hid v0.9.2 // indirect
+	github.com/zondax/ledger-go v1.0.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel/metric v1.37.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.37.0 // indirect
@@ -207,5 +234,4 @@ require (
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
 
-// Use local consensus module
-replace github.com/luxfi/consensus => ../consensus
+replace github.com/luxfi/consensus/protocol/snowman => ../consensus/protocol/snowman
