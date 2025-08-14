@@ -31,10 +31,11 @@ func (b *postForkOption) Timestamp() time.Time {
 	return b.timestamp
 }
 
-func (b *postForkOption) Accept(ctx context.Context) error {
+func (b *postForkOption) Accept() error {
 	if err := b.acceptOuterBlk(); err != nil {
 		return err
 	}
+	ctx := context.Background()
 	return b.acceptInnerBlk(ctx)
 }
 
@@ -51,7 +52,7 @@ func (b *postForkOption) acceptInnerBlk(ctx context.Context) error {
 	return b.vm.Tree.Accept(ctx, b.innerBlk)
 }
 
-func (b *postForkOption) Reject(context.Context) error {
+func (b *postForkOption) Reject() error {
 	// we do not reject the inner block here because that block may be contained
 	// in the proposer block that causing this block to be rejected.
 

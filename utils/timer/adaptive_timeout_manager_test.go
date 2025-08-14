@@ -85,7 +85,7 @@ func TestAdaptiveTimeoutManagerInit(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		_, err := NewAdaptiveTimeoutManager(&test.config, metrics.NewNoOpMetrics("test").Registry())
+		_, err := NewAdaptiveTimeoutManager(&test.config, metric.NewNoOpMetrics("test").Registry())
 		require.ErrorIs(t, err, test.expectedErr)
 	}
 }
@@ -99,7 +99,7 @@ func TestAdaptiveTimeoutManager(t *testing.T) {
 			TimeoutHalflife:    5 * time.Minute,
 			TimeoutCoefficient: 1.25,
 		},
-		metrics.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(t, err)
 	go tm.Dispatch()

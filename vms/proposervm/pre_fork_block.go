@@ -30,10 +30,11 @@ type preForkBlock struct {
 	vm *VM
 }
 
-func (b *preForkBlock) Accept(ctx context.Context) error {
+func (b *preForkBlock) Accept() error {
 	if err := b.acceptOuterBlk(); err != nil {
 		return err
 	}
+	ctx := context.Background()
 	return b.acceptInnerBlk(ctx)
 }
 
