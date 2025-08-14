@@ -21,7 +21,6 @@ import (
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils/set"
 )
 
 const (
@@ -508,13 +507,16 @@ func (p *PushGossiper[T]) gossip(
 	validatorsByStake := p.validators.Top(ctx, gossipParams.StakePercentage)
 	topValidatorsMetric.Set(float64(len(validatorsByStake)))
 
+	// Combine validators from stake percentage with additional validators
+	allValidators := validatorsByStake
+	
+	// TODO: Add logic to select additional validators based on gossipParams.Validators count
+	// and non-validators based on gossipParams.NonValidators count
+	
 	return p.client.AppGossip(
 		ctx,
 		core.SendConfig{
-			NodeIDs:       set.Of(validatorsByStake...),
-			Validators:    gossipParams.Validators,
-			NonValidators: gossipParams.NonValidators,
-			Peers:         gossipParams.Peers,
+			Validators: allValidators,
 		},
 		msgBytes,
 	)

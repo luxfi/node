@@ -74,7 +74,7 @@ func (t *tree) Get(blk chain.Block) (chain.Block, bool) {
 
 func (t *tree) Accept(ctx context.Context, blk chain.Block) error {
 	// accept the provided block
-	if err := blk.Accept(ctx); err != nil {
+	if err := blk.Accept(); err != nil {
 		return err
 	}
 
@@ -95,7 +95,7 @@ func (t *tree) Accept(ctx context.Context, blk chain.Block) error {
 		childrenToReject = childrenToReject[:i]
 
 		// reject the block
-		if err := child.Reject(ctx); err != nil {
+		if err := child.Reject(); err != nil {
 			return err
 		}
 

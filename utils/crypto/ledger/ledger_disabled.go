@@ -15,11 +15,11 @@ import (
 
 var ErrLedgerDisabled = errors.New("ledger support is disabled")
 
-type Ledger struct{}
+type DisabledLedger struct{}
 
 type Keychain struct{}
 
-func New() (keychain.Ledger, error) {
+func NewDisabled() (keychain.Ledger, error) {
 	return nil, ErrLedgerDisabled
 }
 
@@ -35,7 +35,7 @@ func (l *Keychain) Addresses() []ids.ShortID {
 	return nil
 }
 
-func (l *Keychain) Ledger() *Ledger {
+func (l *Keychain) Ledger() *DisabledLedger {
 	return nil
 }
 

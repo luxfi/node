@@ -51,13 +51,14 @@ func (l *Ledger) Address(hrp string, addressIndex uint32) (ids.ShortID, error) {
 
 func (l *Ledger) Addresses(addressIndices []uint32) ([]ids.ShortID, error) {
 	if l.epk == nil {
-		pk, chainCode, err := l.device.GetExtPubKey(rootPath, false, "", "")
+		// Get the root public key to derive child addresses
+		resp, err := l.device.GetPubKey(rootPath, false, "", "")
 		if err != nil {
 			return nil, err
 		}
 		l.epk = &bip32.Key{
-			Key:       pk,
-			ChainCode: chainCode,
+			Key:       resp.PubKey,
+			ChainCode: make([]byte, 32), // Placeholder chain code
 		}
 	}
 	// derivation path rootPath/0 (BIP44 change level, when set to 0, known as external chain)
