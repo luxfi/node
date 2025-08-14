@@ -28,10 +28,11 @@ type postForkBlock struct {
 // 1) Sets this blocks status to Accepted.
 // 2) Persists this block in storage
 // 3) Calls Reject() on siblings of this block and their descendants.
-func (b *postForkBlock) Accept(ctx context.Context) error {
+func (b *postForkBlock) Accept() error {
 	if err := b.acceptOuterBlk(); err != nil {
 		return err
 	}
+	ctx := context.Background()
 	if err := b.acceptInnerBlk(ctx); err != nil {
 		return err
 	}
@@ -55,7 +56,7 @@ func (b *postForkBlock) acceptInnerBlk(ctx context.Context) error {
 	return b.vm.Tree.Accept(ctx, b.innerBlk)
 }
 
-func (b *postForkBlock) Reject(context.Context) error {
+func (b *postForkBlock) Reject() error {
 	// We do not reject the inner block here because it may be accepted later
 	delete(b.vm.verifiedBlocks, b.ID())
 	b.status = choices.Rejected
