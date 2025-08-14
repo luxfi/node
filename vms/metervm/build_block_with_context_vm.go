@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/chain"
 )
 
 func (vm *blockVM) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (block.Block, error) {
