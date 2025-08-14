@@ -99,7 +99,7 @@ func (c *Client) AppRequest(
 
 		if err := c.sender.SendAppRequest(
 			ctxWithoutCancel,
-			set.Of(nodeID),
+			nodeID,
 			requestID,
 			appRequestBytes,
 		); err != nil {
@@ -135,7 +135,6 @@ func (c *Client) AppGossip(
 
 	return c.sender.SendAppGossip(
 		ctxWithoutCancel,
-		config,
 		PrefixMessage(c.handlerPrefix, appGossipBytes),
 	)
 }

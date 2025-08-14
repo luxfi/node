@@ -4,9 +4,11 @@
 package secp256k1fx
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -22,6 +24,11 @@ type TransferOutput struct {
 	Amt uint64 `serialize:"true" json:"amount"`
 
 	OutputOwners `serialize:"true"`
+}
+
+// InitializeWithContext implements consensus.ContextInitializable
+func (out *TransferOutput) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+	return nil
 }
 
 // MarshalJSON marshals Amt and the embedded OutputOwners struct

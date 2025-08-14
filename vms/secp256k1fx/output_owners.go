@@ -4,6 +4,7 @@
 package secp256k1fx
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 
@@ -34,6 +35,12 @@ type OutputOwners struct {
 	// format with ChainID and NetworkID. Unexported because we don't use
 	// it outside this object.
 	ctx *consensus.Context
+}
+
+// InitializeWithContext implements consensus.ContextInitializable
+func (out *OutputOwners) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+	out.ctx = chainCtx
+	return nil
 }
 
 // InitCtx allows addresses to be formatted into their human readable format

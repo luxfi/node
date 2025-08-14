@@ -3,7 +3,11 @@
 
 package secp256k1fx
 
-import "github.com/luxfi/node/vms/components/verify"
+import (
+	"context"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/node/vms/components/verify"
+)
 
 var _ verify.State = (*MintOutput)(nil)
 
@@ -11,6 +15,11 @@ type MintOutput struct {
 	verify.IsState `json:"-"`
 
 	OutputOwners `serialize:"true"`
+}
+
+// InitializeWithContext implements consensus.ContextInitializable
+func (out *MintOutput) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+	return nil
 }
 
 func (out *MintOutput) Verify() error {

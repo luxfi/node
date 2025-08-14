@@ -19,7 +19,6 @@ import (
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/version"
 )
 
 var (
@@ -137,7 +136,7 @@ func (n *Network) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID
 	return n.router.CrossChainAppRequestFailed(ctx, chainID, requestID, appErr)
 }
 
-func (n *Network) Connected(_ context.Context, nodeID ids.NodeID, _ *version.Application) error {
+func (n *Network) Connected(_ context.Context, nodeID ids.NodeID, version interface{}) error {
 	n.Peers.add(nodeID)
 	return nil
 }

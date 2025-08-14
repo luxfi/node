@@ -1,34 +1,10 @@
+// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
 package lux
 
-import "github.com/luxfi/ids"
-
-// UTXO represents an unspent transaction output
-type UTXO struct {
-    UTXOID
-    Asset
-    Out interface{}
-}
-
-// UTXOID uniquely identifies a UTXO
-type UTXOID struct {
-    TxID        ids.ID
-    OutputIndex uint32
-}
-
-// Asset represents an asset
-type Asset struct {
-    ID ids.ID
-}
-
-// TransferableInput represents a transferable input
-type TransferableInput struct {
-    UTXOID
-    Asset
-    In interface{}
-}
-
-// TransferableOutput represents a transferable output
-type TransferableOutput struct {
-    Asset
-    Out interface{}
-}
+// This file is kept minimal as types are defined in their respective files:
+// - UTXO is defined in utxo.go
+// - UTXOID is defined in utxo_id.go
+// - Asset is defined in asset.go
+// - TransferableInput and TransferableOutput are defined in transferables.go
