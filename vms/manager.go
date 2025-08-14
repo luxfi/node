@@ -118,15 +118,9 @@ func (m *manager) RegisterFactory(ctx context.Context, vmID ids.ID, factory Fact
 		return nil
 	}
 
-	version, err := commonVM.Version(ctx)
-	if err != nil {
-		// Drop the shutdown error to surface the original error
-		_ = commonVM.Shutdown(ctx)
-		return err
-	}
-
-	m.versions[vmID] = version
-	return commonVM.Shutdown(ctx)
+	// Version is not available in core.VM interface
+	// Just shutdown the VM
+	return commonVM.Shutdown()
 }
 
 func (m *manager) ListFactories() ([]ids.ID, error) {

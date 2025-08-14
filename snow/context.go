@@ -1,7 +1,6 @@
 package snow
 
 import (
-    "github.com/luxfi/ids"
     "github.com/luxfi/consensus"
 )
 

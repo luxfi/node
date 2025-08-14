@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/luxfi/geth/common"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/luxfi/crypto"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
 
 	"github.com/luxfi/node/cache"

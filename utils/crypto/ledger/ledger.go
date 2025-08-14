@@ -7,11 +7,11 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/crypto/keychain"
+	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/version"
 
-	ledger "github.com/luxfi/ledger-lux/go"
+	ledger "github.com/luxfi/ledger-lux-go"
 	bip32 "github.com/tyler-smith/go-bip32"
 )
 
