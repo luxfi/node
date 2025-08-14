@@ -69,7 +69,8 @@ func (b *preForkBlock) Status() choices.Status {
 	return choices.Processing
 }
 
-func (b *preForkBlock) Verify(ctx context.Context) error {
+func (b *preForkBlock) Verify() error {
+	ctx := context.Background()
 	parent, err := b.vm.getPreForkBlock(ctx, b.Block.Parent())
 	if err != nil {
 		return err

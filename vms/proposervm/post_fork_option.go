@@ -74,7 +74,8 @@ func (b *postForkOption) Parent() ids.ID {
 
 // If Verify returns nil, Accept or Reject is eventually called on [b] and
 // [b.innerBlk].
-func (b *postForkOption) Verify(ctx context.Context) error {
+func (b *postForkOption) Verify() error {
+	ctx := context.Background()
 	parent, err := b.vm.getBlock(ctx, b.ParentID())
 	if err != nil {
 		return err
