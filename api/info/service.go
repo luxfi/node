@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/consensus/networking/benchlist"
+	// "github.com/luxfi/consensus/networking/benchlist" // benchlist package doesn't exist
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
@@ -42,7 +42,7 @@ type Info struct {
 	networking   network.Network
 	chainManager chains.Manager
 	vmManager    vms.Manager
-	benchlist    benchlist.Manager
+	// benchlist    benchlist.Manager // benchlist package doesn't exist
 }
 
 type Parameters struct {
@@ -70,7 +70,7 @@ func NewService(
 	vmManager vms.Manager,
 	myIP *utils.Atomic[netip.AddrPort],
 	network network.Network,
-	benchlist benchlist.Manager,
+	// benchlist benchlist.Manager, // benchlist package doesn't exist
 ) (http.Handler, error) {
 	server := rpc.NewServer()
 	codec := json.NewCodec()
@@ -85,7 +85,7 @@ func NewService(
 			vmManager:    vmManager,
 			myIP:         myIP,
 			networking:   network,
-			benchlist:    benchlist,
+			// benchlist:    benchlist, // benchlist removed
 		},
 		"info",
 	)
@@ -237,15 +237,16 @@ func (i *Info) Peers(_ *http.Request, args *PeersArgs, reply *PeersReply) error 
 	peers := i.networking.PeerInfo(args.NodeIDs)
 	peerInfo := make([]Peer, len(peers))
 	for index, peer := range peers {
-		benchedIDs := i.benchlist.GetBenched(peer.ID)
-		benchedAliases := make([]string, len(benchedIDs))
-		for idx, id := range benchedIDs {
-			alias, err := i.chainManager.PrimaryAlias(id)
-			if err != nil {
-				return fmt.Errorf("failed to get primary alias for chain ID %s: %w", id, err)
-			}
-			benchedAliases[idx] = alias
-		}
+		// benchlist removed
+		// benchedIDs := i.benchlist.GetBenched(peer.ID)
+		benchedAliases := make([]string, 0) // Empty list since benchlist is removed
+		// for idx, id := range benchedIDs {
+		// 	alias, err := i.chainManager.PrimaryAlias(id)
+		// 	if err != nil {
+		// 		return fmt.Errorf("failed to get primary alias for chain ID %s: %w", id, err)
+		// 	}
+		// 	benchedAliases[idx] = alias
+		// }
 		peerInfo[index] = Peer{
 			Info:    peer,
 			Benched: benchedAliases,
@@ -357,7 +358,8 @@ func (i *Info) Lps(_ *http.Request, _ *struct{}, reply *LPsReply) error {
 	reply.LPs = make(map[uint32]*LP, constants.CurrentLPs.Len())
 	peers := i.networking.PeerInfo(nil)
 	for _, peer := range peers {
-		weight := json.Uint64(i.validators.GetWeight(constants.PrimaryNetworkID, peer.ID))
+		w, _ := i.validators.GetWeight(constants.PrimaryNetworkID, peer.ID)
+		weight := json.Uint64(w)
 		if weight == 0 {
 			continue
 		}

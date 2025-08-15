@@ -260,7 +260,7 @@ func (i *indexer) RegisterChain(chainName string, ctx *consensus.Context, vm cor
 	i.blockIndices[chainID] = index
 
 	switch vm.(type) {
-	case vertex.GRAPHVM:
+	case vertex.LinearizableVMWithEngine:
 		vtxIndex, err := i.registerChainHelper(chainID, vtxPrefix, chainName, "vtx", i.vertexAcceptorGroup)
 		if err != nil {
 			i.log.Error("couldn't create index",
