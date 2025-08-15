@@ -26,7 +26,7 @@ type TransferOutput struct {
 }
 
 // InitializeWithContext implements context.ContextInitializable
-func (out *TransferOutput) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
+func (out *TransferOutput) InitializeWithContext(ctx context.Context) error {
 	return nil
 }
 

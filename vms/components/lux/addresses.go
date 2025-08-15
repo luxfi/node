@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
@@ -40,7 +41,7 @@ type AddressManager interface {
 
 type addressManager struct {
 	ctx      context.Context
-	bcLookup consensus.AliasLookup
+	bcLookup interfaces.BCLookup
 }
 
 func NewAddressManager(ctx context.Context) AddressManager {

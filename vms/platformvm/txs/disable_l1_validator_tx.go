@@ -4,7 +4,8 @@
 package txs
 
 import (
-	"github.com/luxfi/consensus"
+	"context"
+	
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
 )

@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"context"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core/interfaces"
 )
 
@@ -20,7 +19,7 @@ func TestRejectMiddleware(t *testing.T) {
 	type test struct {
 		name               string
 		handlerFunc        func(*require.Assertions) http.Handler
-		state              consensus.State
+		state              interfaces.State
 		expectedStatusCode int
 	}
 
@@ -32,7 +31,7 @@ func TestRejectMiddleware(t *testing.T) {
 					require.Fail("shouldn't have called handler")
 				})
 			},
-			state:              consensus.StateSyncing,
+			state:              interfaces.StateSyncing,
 			expectedStatusCode: http.StatusServiceUnavailable,
 		},
 		{
@@ -42,7 +41,7 @@ func TestRejectMiddleware(t *testing.T) {
 					require.Fail("shouldn't have called handler")
 				})
 			},
-			state:              consensus.Bootstrapping,
+			state:              interfaces.Bootstrapping,
 			expectedStatusCode: http.StatusServiceUnavailable,
 		},
 		{
@@ -52,7 +51,7 @@ func TestRejectMiddleware(t *testing.T) {
 					w.WriteHeader(http.StatusTeapot)
 				})
 			},
-			state:              consensus.NormalOp,
+			state:              interfaces.NormalOp,
 			expectedStatusCode: http.StatusTeapot,
 		},
 	}
@@ -61,13 +60,10 @@ func TestRejectMiddleware(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			// Create a test chain context
-			cc := &consensus.ChainContext{
-				Context: context.Background(),
-				State: &interfaces.StateHolder{},
-			}
-			cc.State.Set(interfaces.State(tt.state))
-			ctx := consensus.WithChainContext(context.Background(), cc)
+			// Create a test context
+			stateHolder := &interfaces.StateHolder{}
+			stateHolder.Set(tt.state)
+			ctx := context.Background()
 
 			middleware := rejectMiddleware(tt.handlerFunc(require), ctx)
 			w := httptest.NewRecorder()

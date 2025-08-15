@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/set"
@@ -92,7 +91,7 @@ func (tx *ImportTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *ImportTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
+func (tx *ImportTx) InitializeWithContext(ctx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

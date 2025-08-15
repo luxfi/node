@@ -63,8 +63,7 @@ func New(
 func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
 	defer b.mempool.RequestBuildBlock()
 
-	ctx := b.backend.Ctx
-	ctx.Log.Debug("starting to attempt to build a block")
+	b.backend.Log.Debug("starting to attempt to build a block")
 
 	// Get the block to build on top of and retrieve the new block's context.
 	preferredID := b.manager.Preferred()

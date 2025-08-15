@@ -3,15 +3,12 @@
 
 package block
 
-import "context"
-
 import (
+	"context"
 	"fmt"
 	"time"
-	
 
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/xvm/txs"
@@ -106,7 +103,7 @@ func NewStandardBlock(
 }
 
 // InitializeWithContext initializes the block with consensus context
-func (b *StandardBlock) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
+func (b *StandardBlock) InitializeWithContext(ctx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

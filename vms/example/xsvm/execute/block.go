@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 

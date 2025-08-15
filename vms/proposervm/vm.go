@@ -151,9 +151,6 @@ func (vm *VM) Initialize(
 		ChainID:      chainCtx.ChainID,
 		NodeID:       chainCtx.NodeID,
 		PublicKey:    chainCtx.PublicKey,
-		CChainID:     chainCtx.CChainID,
-		LUXAssetID:   chainCtx.LUXAssetID,
-		ChainDataDir: chainCtx.ChainDataDir,
 	})
 	
 	// Create an adapter for ValidatorState
@@ -739,7 +736,7 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Conte
 		err = blkWithCtx.VerifyWithContext(ctx, blockCtx)
 	} else if !previouslyVerified {
 		// This isn't a [block.WithVerifyContext] so we only call [Verify] once.
-		err = innerBlk.Verify()
+		err = innerBlk.Verify(ctx)
 	}
 	if err != nil {
 		return err
@@ -809,20 +806,12 @@ type validatorStateWrapper struct {
 }
 
 func (v *validatorStateWrapper) GetCurrentHeight() (uint64, error) {
-	return v.vs.GetCurrentHeight(v.ctx)
+	return v.vs.GetCurrentHeight()
 }
 
 func (v *validatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	validatorSet, err := v.vs.GetValidatorSet(v.ctx, height, subnetID)
-	if err != nil {
-		return nil, err
-	}
-	// Convert from GetValidatorOutput map to weight map
-	result := make(map[ids.NodeID]uint64, len(validatorSet))
-	for nodeID, output := range validatorSet {
-		result[nodeID] = output.Weight
-	}
-	return result, nil
+	// The consensus.ValidatorState already returns map[ids.NodeID]uint64
+	return v.vs.GetValidatorSet(height, subnetID)
 }
 
 // interfacesToConsensusValidatorStateAdapter adapts interfaces.ValidatorState to consensus.ValidatorState
@@ -835,29 +824,21 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetMinimumHeight(ctx contex
 	return a.vs.GetMinimumHeight(ctx)
 }
 
-func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentHeight(ctx context.Context) (uint64, error) {
+func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentHeight() (uint64, error) {
 	return a.vs.GetCurrentHeight()
 }
 
-func (a *interfacesToConsensusValidatorStateAdapter) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return a.vs.GetSubnetID(ctx, chainID)
+func (a *interfacesToConsensusValidatorStateAdapter) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	return a.vs.GetSubnetID(context.Background(), chainID)
 }
 
-func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*consensus.GetValidatorOutput, error) {
+func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
 	// Get the validator set from the interfaces version
 	valSet, err := a.vs.GetValidatorSet(height, subnetID)
 	if err != nil {
 		return nil, err
 	}
 	
-	// Convert to consensus.GetValidatorOutput format
-	result := make(map[ids.NodeID]*consensus.GetValidatorOutput, len(valSet))
-	for nodeID, weight := range valSet {
-		result[nodeID] = &consensus.GetValidatorOutput{
-			NodeID: nodeID,
-			Weight: weight,
-			// PublicKey would need to be obtained from somewhere else
-		}
-	}
-	return result, nil
+	// Already in the right format - map[ids.NodeID]uint64
+	return valSet, nil
 }

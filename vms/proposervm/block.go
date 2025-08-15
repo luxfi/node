@@ -131,7 +131,7 @@ func (p *postForkCommonComponents) Verify(
 		if vs == nil {
 			return fmt.Errorf("no validator state found")
 		}
-		currentPChainHeight, err := vs.GetCurrentHeight(ctx)
+		currentPChainHeight, err := vs.GetCurrentHeight()
 		if err != nil {
 			p.vm.log.Error("block verification failed",
 				zap.String("reason", "failed to get current P-Chain height"),

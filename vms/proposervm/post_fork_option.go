@@ -24,6 +24,24 @@ type postForkOption struct {
 	timestamp time.Time
 }
 
+// EpochBit returns the epoch bit for FPC
+func (b *postForkOption) EpochBit() bool {
+	// Forward to inner block if it supports it
+	if innerBlk, ok := b.innerBlk.(interface{ EpochBit() bool }); ok {
+		return innerBlk.EpochBit()
+	}
+	return false
+}
+
+// FPCVotes returns embedded fast-path vote references
+func (b *postForkOption) FPCVotes() [][]byte {
+	// Forward to inner block if it supports it
+	if innerBlk, ok := b.innerBlk.(interface{ FPCVotes() [][]byte }); ok {
+		return innerBlk.FPCVotes()
+	}
+	return nil
+}
+
 func (b *postForkOption) Timestamp() time.Time {
 	if b.Status() == choices.Accepted {
 		return b.vm.lastAcceptedTime
@@ -31,11 +49,10 @@ func (b *postForkOption) Timestamp() time.Time {
 	return b.timestamp
 }
 
-func (b *postForkOption) Accept() error {
+func (b *postForkOption) Accept(ctx context.Context) error {
 	if err := b.acceptOuterBlk(); err != nil {
 		return err
 	}
-	ctx := context.Background()
 	return b.acceptInnerBlk(ctx)
 }
 
@@ -52,7 +69,7 @@ func (b *postForkOption) acceptInnerBlk(ctx context.Context) error {
 	return b.vm.Tree.Accept(ctx, b.innerBlk)
 }
 
-func (b *postForkOption) Reject() error {
+func (b *postForkOption) Reject(ctx context.Context) error {
 	// we do not reject the inner block here because that block may be contained
 	// in the proposer block that causing this block to be rejected.
 
@@ -74,8 +91,7 @@ func (b *postForkOption) Parent() ids.ID {
 
 // If Verify returns nil, Accept or Reject is eventually called on [b] and
 // [b.innerBlk].
-func (b *postForkOption) Verify() error {
-	ctx := context.Background()
+func (b *postForkOption) Verify(ctx context.Context) error {
 	parent, err := b.vm.getBlock(ctx, b.ParentID())
 	if err != nil {
 		return err

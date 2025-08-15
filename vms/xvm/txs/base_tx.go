@@ -5,7 +5,6 @@ package txs
 
 import (
 	"context"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
@@ -46,12 +45,26 @@ func (t *BaseTx) InputIDs() set.Set[ids.ID] {
 	return inputIDs
 }
 
+// InputUTXOs returns the UTXOIDs this transaction is consuming
+func (t *BaseTx) InputUTXOs() []*lux.UTXOID {
+	utxos := make([]*lux.UTXOID, len(t.Ins))
+	for i, in := range t.Ins {
+		utxos[i] = &in.UTXOID
+	}
+	return utxos
+}
+
 func (t *BaseTx) Visit(v Visitor) error {
 	return v.BaseTx(t)
 }
 
+// NumCredentials returns the number of expected credentials
+func (t *BaseTx) NumCredentials() int {
+	return len(t.Ins)
+}
+
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *BaseTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
+func (tx *BaseTx) InitializeWithContext(ctx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

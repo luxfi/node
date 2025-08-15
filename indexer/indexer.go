@@ -4,6 +4,7 @@
 package indexer
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"sync"
@@ -128,10 +129,13 @@ type indexer struct {
 	vertexAcceptorGroup consensus.AcceptorGroup
 }
 
-// Assumes [ctx.Lock] is not held
+// RegisterChain registers a chain for indexing
 func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm core.VM) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
+
+	// Extract IDs from context
+	ids := consensus.MustIDs(ctx)
 
 	if i.closed {
 		i.log.Debug("not registering chain to indexer",
@@ -139,7 +143,7 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm core.V
 			zap.String("chainName", chainName),
 		)
 		return
-	} else if ctx.SubnetID != constants.PrimaryNetworkID {
+	} else if ids.SubnetID != constants.PrimaryNetworkID {
 		i.log.Debug("not registering chain to indexer",
 			zap.String("reason", "not in the primary network"),
 			zap.String("chainName", chainName),
@@ -147,7 +151,7 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm core.V
 		return
 	}
 
-	chainID := ctx.ChainID
+	chainID := ids.ChainID
 	if i.blockIndices[chainID] != nil || i.txIndices[chainID] != nil || i.vtxIndices[chainID] != nil {
 		i.log.Warn("chain is already being indexed",
 			zap.Stringer("chainID", chainID),

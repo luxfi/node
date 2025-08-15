@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/api"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -69,15 +70,15 @@ type Service struct{ vm *VM }
 
 // GetBlock returns the requested block.
 func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, reply *api.GetBlockResponse) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getBlock"),
 		zap.Stringer("blkID", args.BlockID),
 		zap.Stringer("encoding", args.Encoding),
 	)
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	if s.vm.chainManager == nil {
 		return errNotLinearized
@@ -116,14 +117,14 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, reply *api.G
 
 // GetBlockByHeight returns the block at the given height.
 func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightArgs, reply *api.GetBlockResponse) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getBlockByHeight"),
 		zap.Uint64("height", uint64(args.Height)),
 	)
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	if s.vm.chainManager == nil {
 		return errNotLinearized
@@ -136,7 +137,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 	}
 	block, err := s.vm.chainManager.GetStatelessBlock(blockID)
 	if err != nil {
-		s.vm.ctx.Log.Error("couldn't get accepted block",
+		s.vm.log.Error("couldn't get accepted block",
 			zap.Stringer("blkID", blockID),
 			zap.Error(err),
 		)
@@ -171,13 +172,13 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 
 // GetHeight returns the height of the last accepted block.
 func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *api.GetHeightResponse) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getHeight"),
 	)
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	if s.vm.chainManager == nil {
 		return errNotLinearized
@@ -186,7 +187,7 @@ func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *api.GetHeightRe
 	blockID := s.vm.state.GetLastAccepted()
 	block, err := s.vm.chainManager.GetStatelessBlock(blockID)
 	if err != nil {
-		s.vm.ctx.Log.Error("couldn't get last accepted block",
+		s.vm.log.Error("couldn't get last accepted block",
 			zap.Stringer("blkID", blockID),
 			zap.Error(err),
 		)
@@ -199,7 +200,7 @@ func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *api.GetHeightRe
 
 // IssueTx attempts to issue a transaction into consensus
 func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "issueTx"),
 		zap.String("tx", args.Tx),
@@ -212,7 +213,7 @@ func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSO
 
 	tx, err := s.vm.parser.ParseTx(txBytes)
 	if err != nil {
-		s.vm.ctx.Log.Debug("failed to parse tx",
+		s.vm.log.Debug("failed to parse tx",
 			zap.Error(err),
 		)
 		return err
@@ -247,7 +248,7 @@ type GetAddressTxsReply struct {
 func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply *GetAddressTxsReply) error {
 	cursor := uint64(args.Cursor)
 	pageSize := uint64(args.PageSize)
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getAddressTxs"),
 		zap.String("address", args.Address),
@@ -273,22 +274,22 @@ func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply 
 		return fmt.Errorf("specified `assetID` is invalid: %w", err)
 	}
 
-	s.vm.ctx.Log.Debug("fetching transactions",
+	s.vm.log.Debug("fetching transactions",
 		zap.String("address", args.Address),
 		zap.String("assetID", args.AssetID),
 		zap.Uint64("cursor", cursor),
 		zap.Uint64("pageSize", pageSize),
 	)
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	// Read transactions from the indexer
 	reply.TxIDs, err = s.vm.addressTxsIndexer.Read(address[:], assetID, cursor, pageSize)
 	if err != nil {
 		return err
 	}
-	s.vm.ctx.Log.Debug("fetched transactions",
+	s.vm.log.Debug("fetched transactions",
 		zap.String("address", args.Address),
 		zap.String("assetID", args.AssetID),
 		zap.Int("numTxs", len(reply.TxIDs)),
@@ -306,7 +307,7 @@ func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply 
 // Deprecated: GetTxStatus only returns Accepted or Unknown, GetTx should be
 // used instead to determine if the tx was accepted.
 func (s *Service) GetTxStatus(_ *http.Request, args *api.JSONTxID, reply *GetTxStatusReply) error {
-	s.vm.ctx.Log.Debug("deprecated API called",
+	s.vm.log.Debug("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getTxStatus"),
 		zap.Stringer("txID", args.TxID),
@@ -316,8 +317,8 @@ func (s *Service) GetTxStatus(_ *http.Request, args *api.JSONTxID, reply *GetTxS
 		return errNilTxID
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	_, err := s.vm.state.GetTx(args.TxID)
 	switch err {
@@ -333,7 +334,7 @@ func (s *Service) GetTxStatus(_ *http.Request, args *api.JSONTxID, reply *GetTxS
 
 // GetTx returns the specified transaction
 func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxReply) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getTx"),
 		zap.Stringer("txID", args.TxID),
@@ -343,8 +344,8 @@ func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxRe
 		return errNilTxID
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	tx, err := s.vm.state.GetTx(args.TxID)
 	if err != nil {
@@ -374,7 +375,7 @@ func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxRe
 
 // GetUTXOs gets all utxos for passed in addresses
 func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.GetUTXOsReply) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getUTXOs"),
 		zap.Strings("addresses", args.Addresses),
@@ -389,9 +390,9 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 
 	var sourceChain ids.ID
 	if args.SourceChain == "" {
-		sourceChain = s.vm.ctx.ChainID
+		sourceChain = consensus.GetChainID(s.vm.ctx)
 	} else {
-		chainID, err := s.vm.ctx.BCLookup.Lookup(args.SourceChain)
+		chainID, err := s.vm.bcLookup.Lookup(args.SourceChain)
 		if err != nil {
 			return fmt.Errorf("problem parsing source chainID %q: %w", args.SourceChain, err)
 		}
@@ -426,10 +427,10 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 		limit = int(maxPageSize)
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
-	if sourceChain == s.vm.ctx.ChainID {
+	if sourceChain == consensus.GetChainID(s.vm.ctx) {
 		utxos, endAddr, endUTXOID, err = lux.GetPaginatedUTXOs(
 			s.vm.state,
 			addrSet,
@@ -495,7 +496,7 @@ type GetAssetDescriptionReply struct {
 
 // GetAssetDescription creates an empty account with the name passed in
 func (s *Service) GetAssetDescription(_ *http.Request, args *GetAssetDescriptionArgs, reply *GetAssetDescriptionReply) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getAssetDescription"),
 		zap.String("assetID", args.AssetID),
@@ -506,8 +507,8 @@ func (s *Service) GetAssetDescription(_ *http.Request, args *GetAssetDescription
 		return err
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	tx, err := s.vm.state.GetTx(assetID)
 	if err != nil {
@@ -545,7 +546,7 @@ type GetBalanceReply struct {
 // Otherwise, returned balance includes assets held only partially by the
 // address, and includes balances with locktime in the future.
 func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBalanceReply) error {
-	s.vm.ctx.Log.Debug("deprecated API called",
+	s.vm.log.Debug("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getBalance"),
 		zap.String("address", args.Address),
@@ -564,8 +565,8 @@ func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBa
 
 	addrSet := set.Of(addr)
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	utxos, err := lux.GetAllUTXOs(s.vm.state, addrSet)
 	if err != nil {
@@ -622,7 +623,7 @@ type GetAllBalancesReply struct {
 // Otherwise, returned balance/UTXOs includes assets held only partially by the
 // address, and includes balances with locktime in the future.
 func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, reply *GetAllBalancesReply) error {
-	s.vm.ctx.Log.Debug("deprecated API called",
+	s.vm.log.Debug("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "getAllBalances"),
 		zap.String("address", args.Address),
@@ -634,8 +635,8 @@ func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, repl
 	}
 	addrSet := set.Of(address)
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	utxos, err := lux.GetAllUTXOs(s.vm.state, addrSet)
 	if err != nil {
@@ -710,7 +711,7 @@ type AssetIDChangeAddr struct {
 
 // CreateAsset returns ID of the newly created asset
 func (s *Service) CreateAsset(_ *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "createAsset"),
 		zap.String("name", args.Name),
@@ -745,8 +746,8 @@ func (s *Service) buildCreateAssetTx(args *CreateAssetArgs) (*txs.Tx, ids.ShortI
 		return nil, ids.ShortEmpty, err
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	// Get the UTXOs/keys for the from addresses
 	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, fromAddrs)
@@ -831,8 +832,8 @@ func (s *Service) buildCreateAssetTx(args *CreateAssetArgs) (*txs.Tx, ids.ShortI
 
 	tx := &txs.Tx{Unsigned: &txs.CreateAssetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    s.vm.ctx.NetworkID,
-			BlockchainID: s.vm.ctx.ChainID,
+			NetworkID:    consensus.GetNetworkID(s.vm.ctx),
+			BlockchainID: consensus.GetChainID(s.vm.ctx),
 			Outs:         outs,
 			Ins:          ins,
 		}},
@@ -846,7 +847,7 @@ func (s *Service) buildCreateAssetTx(args *CreateAssetArgs) (*txs.Tx, ids.ShortI
 
 // CreateFixedCapAsset returns ID of the newly created asset
 func (s *Service) CreateFixedCapAsset(r *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "createFixedCapAsset"),
 		zap.String("name", args.Name),
@@ -859,7 +860,7 @@ func (s *Service) CreateFixedCapAsset(r *http.Request, args *CreateAssetArgs, re
 
 // CreateVariableCapAsset returns ID of the newly created asset
 func (s *Service) CreateVariableCapAsset(r *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "createVariableCapAsset"),
 		zap.String("name", args.Name),
@@ -880,7 +881,7 @@ type CreateNFTAssetArgs struct {
 
 // CreateNFTAsset returns ID of the newly created asset
 func (s *Service) CreateNFTAsset(_ *http.Request, args *CreateNFTAssetArgs, reply *AssetIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "createNFTAsset"),
 		zap.String("name", args.Name),
@@ -914,8 +915,8 @@ func (s *Service) buildCreateNFTAsset(args *CreateNFTAssetArgs) (*txs.Tx, ids.Sh
 		return nil, ids.ShortEmpty, err
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	// Get the UTXOs/keys for the from addresses
 	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, fromAddrs)
@@ -987,8 +988,8 @@ func (s *Service) buildCreateNFTAsset(args *CreateNFTAssetArgs) (*txs.Tx, ids.Sh
 
 	tx := &txs.Tx{Unsigned: &txs.CreateAssetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    s.vm.ctx.NetworkID,
-			BlockchainID: s.vm.ctx.ChainID,
+			NetworkID:    consensus.GetNetworkID(s.vm.ctx),
+			BlockchainID: consensus.GetChainID(s.vm.ctx),
 			Outs:         outs,
 			Ins:          ins,
 		}},
@@ -1002,7 +1003,7 @@ func (s *Service) buildCreateNFTAsset(args *CreateNFTAssetArgs) (*txs.Tx, ids.Sh
 
 // CreateAddress creates an address for the user [args.Username]
 func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.JSONAddress) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "createAddress"),
 		"username", args.Username,
@@ -1024,7 +1025,7 @@ func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.
 
 // ListAddresses returns all of the addresses controlled by user [args.Username]
 func (s *Service) ListAddresses(_ *http.Request, args *api.UserPass, response *api.JSONAddresses) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "listAddresses"),
 		"username", args.Username,
@@ -1049,7 +1050,7 @@ type ExportKeyReply struct {
 
 // ExportKey returns a private key from the provided user
 func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportKeyReply) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "exportKey"),
 		"username", args.Username,
@@ -1078,7 +1079,7 @@ type ImportKeyReply struct {
 
 // ImportKey adds a private key to the provided user
 func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSONAddress) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "importKey"),
 		"username", args.Username,
@@ -1148,7 +1149,7 @@ func (s *Service) Send(r *http.Request, args *SendArgs, reply *api.JSONTxIDChang
 
 // SendMultiple sends a transaction with multiple outputs.
 func (s *Service) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "sendMultiple"),
 		"username", args.Username,
@@ -1184,8 +1185,8 @@ func (s *Service) buildSendMultiple(args *SendMultipleArgs) (*txs.Tx, ids.ShortI
 		return nil, ids.ShortEmpty, err
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	// Load user's UTXOs/keys
 	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, fromAddrs)
@@ -1295,8 +1296,8 @@ func (s *Service) buildSendMultiple(args *SendMultipleArgs) (*txs.Tx, ids.ShortI
 	lux.SortTransferableOutputs(outs, codec)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
-		NetworkID:    s.vm.ctx.NetworkID,
-		BlockchainID: s.vm.ctx.ChainID,
+		NetworkID:    consensus.GetNetworkID(s.vm.ctx),
+		BlockchainID: consensus.GetChainID(s.vm.ctx),
 		Outs:         outs,
 		Ins:          ins,
 		Memo:         memoBytes,
@@ -1314,7 +1315,7 @@ type MintArgs struct {
 
 // Mint issues a transaction that mints more of the asset
 func (s *Service) Mint(_ *http.Request, args *MintArgs, reply *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "mint"),
 		"username", args.Username,
@@ -1336,7 +1337,7 @@ func (s *Service) Mint(_ *http.Request, args *MintArgs, reply *api.JSONTxIDChang
 }
 
 func (s *Service) buildMint(args *MintArgs) (*txs.Tx, ids.ShortID, error) {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "mint"),
 		"username", args.Username,
@@ -1362,8 +1363,8 @@ func (s *Service) buildMint(args *MintArgs) (*txs.Tx, ids.ShortID, error) {
 		return nil, ids.ShortEmpty, err
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	// Get the UTXOs/keys for the from addresses
 	feeUTXOs, feeKc, err := s.vm.LoadUser(args.Username, args.Password, fromAddrs)
@@ -1431,8 +1432,8 @@ func (s *Service) buildMint(args *MintArgs) (*txs.Tx, ids.ShortID, error) {
 
 	tx := &txs.Tx{Unsigned: &txs.OperationTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    s.vm.ctx.NetworkID,
-			BlockchainID: s.vm.ctx.ChainID,
+			NetworkID:    consensus.GetNetworkID(s.vm.ctx),
+			BlockchainID: consensus.GetChainID(s.vm.ctx),
 			Outs:         outs,
 			Ins:          ins,
 		}},
@@ -1451,7 +1452,7 @@ type SendNFTArgs struct {
 
 // SendNFT sends an NFT
 func (s *Service) SendNFT(_ *http.Request, args *SendNFTArgs, reply *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "sendNFT"),
 		"username", args.Username,
@@ -1491,8 +1492,8 @@ func (s *Service) buildSendNFT(args *SendNFTArgs) (*txs.Tx, ids.ShortID, error) 
 		return nil, ids.ShortEmpty, err
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	// Get the UTXOs/keys for the from addresses
 	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, fromAddrs)
@@ -1552,8 +1553,8 @@ func (s *Service) buildSendNFT(args *SendNFTArgs) (*txs.Tx, ids.ShortID, error) 
 
 	tx := &txs.Tx{Unsigned: &txs.OperationTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    s.vm.ctx.NetworkID,
-			BlockchainID: s.vm.ctx.ChainID,
+			NetworkID:    consensus.GetNetworkID(s.vm.ctx),
+			BlockchainID: consensus.GetChainID(s.vm.ctx),
 			Outs:         outs,
 			Ins:          ins,
 		}},
@@ -1578,7 +1579,7 @@ type MintNFTArgs struct {
 
 // MintNFT issues a MintNFT transaction and returns the ID of the newly created transaction
 func (s *Service) MintNFT(_ *http.Request, args *MintNFTArgs, reply *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "mintNFT"),
 		"username", args.Username,
@@ -1621,8 +1622,8 @@ func (s *Service) buildMintNFT(args *MintNFTArgs) (*txs.Tx, ids.ShortID, error) 
 		return nil, ids.ShortEmpty, err
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	// Get the UTXOs/keys for the from addresses
 	feeUTXOs, feeKc, err := s.vm.LoadUser(args.Username, args.Password, fromAddrs)
@@ -1688,8 +1689,8 @@ func (s *Service) buildMintNFT(args *MintNFTArgs) (*txs.Tx, ids.ShortID, error) 
 
 	tx := &txs.Tx{Unsigned: &txs.OperationTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    s.vm.ctx.NetworkID,
-			BlockchainID: s.vm.ctx.ChainID,
+			NetworkID:    consensus.GetNetworkID(s.vm.ctx),
+			BlockchainID: consensus.GetChainID(s.vm.ctx),
 			Outs:         outs,
 			Ins:          ins,
 		}},
@@ -1719,7 +1720,7 @@ type ImportArgs struct {
 // The LUX must have already been exported from the P/C-Chain.
 // Returns the ID of the newly created atomic transaction
 func (s *Service) Import(_ *http.Request, args *ImportArgs, reply *api.JSONTxID) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "import"),
 		"username", args.Username,
@@ -1740,7 +1741,7 @@ func (s *Service) Import(_ *http.Request, args *ImportArgs, reply *api.JSONTxID)
 }
 
 func (s *Service) buildImport(args *ImportArgs) (*txs.Tx, error) {
-	chainID, err := s.vm.ctx.BCLookup.Lookup(args.SourceChain)
+	chainID, err := s.vm.bcLookup.Lookup(args.SourceChain)
 	if err != nil {
 		return nil, fmt.Errorf("problem parsing chainID %q: %w", args.SourceChain, err)
 	}
@@ -1750,8 +1751,8 @@ func (s *Service) buildImport(args *ImportArgs) (*txs.Tx, error) {
 		return nil, fmt.Errorf("problem parsing to address %q: %w", args.To, err)
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, set.Set[ids.ShortID]{})
 	if err != nil {
@@ -1826,8 +1827,8 @@ func (s *Service) buildImport(args *ImportArgs) (*txs.Tx, error) {
 
 	tx := &txs.Tx{Unsigned: &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    s.vm.ctx.NetworkID,
-			BlockchainID: s.vm.ctx.ChainID,
+			NetworkID:    consensus.GetNetworkID(s.vm.ctx),
+			BlockchainID: consensus.GetChainID(s.vm.ctx),
 			Outs:         outs,
 			Ins:          ins,
 		}},
@@ -1858,7 +1859,7 @@ type ExportArgs struct {
 // After this tx is accepted, the LUX must be imported to the P/C-chain with an importTx.
 // Returns the ID of the newly created atomic transaction
 func (s *Service) Export(_ *http.Request, args *ExportArgs, reply *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Log.Warn("deprecated API called",
+	s.vm.log.Warn("deprecated API called",
 		zap.String("service", "xvm"),
 		zap.String("method", "export"),
 		"username", args.Username,
@@ -1889,7 +1890,7 @@ func (s *Service) buildExport(args *ExportArgs) (*txs.Tx, ids.ShortID, error) {
 	// Get the chainID and parse the to address
 	chainID, to, err := s.vm.ParseAddress(args.To)
 	if err != nil {
-		chainID, err = s.vm.ctx.BCLookup.Lookup(args.TargetChain)
+		chainID, err = s.vm.bcLookup.Lookup(args.TargetChain)
 		if err != nil {
 			return nil, ids.ShortEmpty, err
 		}
@@ -1909,8 +1910,8 @@ func (s *Service) buildExport(args *ExportArgs) (*txs.Tx, ids.ShortID, error) {
 		return nil, ids.ShortEmpty, err
 	}
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	// Get the UTXOs/keys for the from addresses
 	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, fromAddrs)
@@ -1983,8 +1984,8 @@ func (s *Service) buildExport(args *ExportArgs) (*txs.Tx, ids.ShortID, error) {
 
 	tx := &txs.Tx{Unsigned: &txs.ExportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    s.vm.ctx.NetworkID,
-			BlockchainID: s.vm.ctx.ChainID,
+			NetworkID:    consensus.GetNetworkID(s.vm.ctx),
+			BlockchainID: consensus.GetChainID(s.vm.ctx),
 			Outs:         outs,
 			Ins:          ins,
 		}},

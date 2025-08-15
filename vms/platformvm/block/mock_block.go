@@ -10,9 +10,9 @@
 package block
 
 import (
+	context "context"
 	reflect "reflect"
 
-	consensus "github.com/luxfi/consensus"
 	ids "github.com/luxfi/ids"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
 	gomock "go.uber.org/mock/gomock"
@@ -149,4 +149,18 @@ func (m *MockBlock) initialize(arg0 []byte) error {
 func (mr *MockBlockMockRecorder) initialize(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "initialize", reflect.TypeOf((*MockBlock)(nil).initialize), arg0)
+}
+
+// InitializeWithContext mocks base method.
+func (m *MockBlock) InitializeWithContext(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InitializeWithContext", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InitializeWithContext indicates an expected call of InitializeWithContext.
+func (mr *MockBlockMockRecorder) InitializeWithContext(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeWithContext", reflect.TypeOf((*MockBlock)(nil).InitializeWithContext), arg0)
 }

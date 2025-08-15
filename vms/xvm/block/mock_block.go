@@ -10,11 +10,11 @@
 package block
 
 import (
+	context "context"
 	reflect "reflect"
 	time "time"
 
 	codec "github.com/luxfi/node/codec"
-	consensus "github.com/luxfi/consensus"
 	ids "github.com/luxfi/ids"
 	txs "github.com/luxfi/node/vms/xvm/txs"
 	gomock "go.uber.org/mock/gomock"

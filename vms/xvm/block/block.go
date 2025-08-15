@@ -5,7 +5,6 @@ package block
 
 import (
 	"time"
-	
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/consensus"
@@ -15,7 +14,7 @@ import (
 
 // Block defines the common stateless interface for all blocks
 type Block interface {
-	context.ContextInitializable
+	consensus.ContextInitializable
 
 	ID() ids.ID
 	Parent() ids.ID

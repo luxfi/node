@@ -68,7 +68,7 @@ func (tx *Tx) Accept(ctx context.Context) error {
 	for chainID, reqs := range executor.AtomicRequests {
 		requests[chainID] = reqs
 	}
-	err = tx.vm.ctx.SharedMemory.Apply(
+	err = tx.vm.sharedMemory.Apply(
 		requests,
 		commitBatch,
 	)
@@ -93,7 +93,7 @@ func (tx *Tx) Status() choices.Status {
 	case database.ErrNotFound:
 		return choices.Processing
 	default:
-		tx.vm.ctx.Log.Error("failed looking up tx status",
+		tx.vm.log.Error("failed looking up tx status",
 			zap.Stringer("txID", txID),
 			zap.Error(err),
 		)

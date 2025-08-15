@@ -197,7 +197,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/yusufpapurcu/wmi v1.2.3 // indirect
+	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	github.com/zondax/hid v0.9.2 // indirect
 	github.com/zondax/ledger-go v1.0.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
@@ -227,5 +227,3 @@ require (
 // Pin all OpenTelemetry modules (and metric sub-packages) to v1.37.0
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
-
-replace github.com/luxfi/consensus/protocol/snowman => ../consensus/protocol/snowman

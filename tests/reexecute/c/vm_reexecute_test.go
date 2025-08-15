@@ -30,7 +30,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/enginetest"
-	"github.com/luxfi/consensus/engine/snowman/block"
+	"github.com/luxfi/consensus/chain"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
@@ -189,13 +189,13 @@ func newMainnetCChainVM(
 	chainDataDir string,
 	configBytes []byte,
 	metricsGatherer metrics.MultiGatherer,
-) (block.ChainVM, error) {
+) (chain.VM, error) {
 	factory := factory.Factory{}
 	vmIntf, err := factory.New(logging.NoLog{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VM from factory: %w", err)
 	}
-	vm := vmIntf.(block.ChainVM)
+	vm := vmIntf.(chain.VM)
 
 	blsKey, err := localsigner.New()
 	if err != nil {
@@ -283,11 +283,11 @@ type vmExecutorConfig struct {
 
 type vmExecutor struct {
 	config  vmExecutorConfig
-	vm      block.ChainVM
+	vm      chain.VM
 	metrics *consensusMetrics
 }
 
-func newVMExecutor(vm block.ChainVM, config vmExecutorConfig) (*vmExecutor, error) {
+func newVMExecutor(vm chain.VM, config vmExecutorConfig) (*vmExecutor, error) {
 	metrics, err := newConsensusMetrics(config.Registry)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create consensus metrics: %w", err)

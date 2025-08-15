@@ -241,9 +241,6 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		ChainID:      chainID,
 		NodeID:       nodeID,
 		PublicKey:    publicKey,
-		CChainID:     cChainID,
-		LUXAssetID:   luxAssetID,
-		ChainDataDir: req.ChainDataDir,
 	})
 	
 	// The VM already has a log field
@@ -887,7 +884,7 @@ func (vm *VMServer) BlockVerify(ctx context.Context, req *vmpb.BlockVerifyReques
 	}
 
 	if req.PChainHeight == nil {
-		err = blk.Verify()
+		err = blk.Verify(ctx)
 	} else {
 		blkWithCtx, ok := blk.(block.WithVerifyContext)
 		if !ok {
@@ -916,7 +913,7 @@ func (vm *VMServer) BlockAccept(ctx context.Context, req *vmpb.BlockAcceptReques
 	if err != nil {
 		return nil, err
 	}
-	if err := blk.Accept(); err != nil {
+	if err := blk.Accept(ctx); err != nil {
 		return nil, err
 	}
 	return &emptypb.Empty{}, nil
@@ -931,7 +928,7 @@ func (vm *VMServer) BlockReject(ctx context.Context, req *vmpb.BlockRejectReques
 	if err != nil {
 		return nil, err
 	}
-	if err := blk.Reject(); err != nil {
+	if err := blk.Reject(ctx); err != nil {
 		return nil, err
 	}
 	return &emptypb.Empty{}, nil

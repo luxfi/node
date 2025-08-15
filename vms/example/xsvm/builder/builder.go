@@ -7,9 +7,7 @@ import (
 	"context"
 	"sync"
 	"time"
-	
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/engine/core"

@@ -24,7 +24,6 @@ import (
 
 	"github.com/luxfi/node/codec/linearcodec"
 
-	"github.com/luxfi/consensus"
 
 	"github.com/luxfi/consensus/consensustest"
 

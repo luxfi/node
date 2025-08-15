@@ -31,11 +31,28 @@ type preForkBlock struct {
 	vm *VM
 }
 
-func (b *preForkBlock) Accept() error {
+// EpochBit returns the epoch bit for FPC
+func (b *preForkBlock) EpochBit() bool {
+	// Forward to inner block if it supports it
+	if innerBlk, ok := b.Block.(interface{ EpochBit() bool }); ok {
+		return innerBlk.EpochBit()
+	}
+	return false
+}
+
+// FPCVotes returns embedded fast-path vote references
+func (b *preForkBlock) FPCVotes() [][]byte {
+	// Forward to inner block if it supports it
+	if innerBlk, ok := b.Block.(interface{ FPCVotes() [][]byte }); ok {
+		return innerBlk.FPCVotes()
+	}
+	return nil
+}
+
+func (b *preForkBlock) Accept(ctx context.Context) error {
 	if err := b.acceptOuterBlk(); err != nil {
 		return err
 	}
-	ctx := context.Background()
 	return b.acceptInnerBlk(ctx)
 }
 
@@ -44,7 +61,7 @@ func (*preForkBlock) acceptOuterBlk() error {
 }
 
 func (b *preForkBlock) acceptInnerBlk(ctx context.Context) error {
-	return b.Block.Accept()
+	return b.Block.Accept(ctx)
 }
 
 func (b *preForkBlock) Status() choices.Status {
@@ -70,8 +87,7 @@ func (b *preForkBlock) Status() choices.Status {
 	return choices.Processing
 }
 
-func (b *preForkBlock) Verify() error {
-	ctx := context.Background()
+func (b *preForkBlock) Verify(ctx context.Context) error {
 	parent, err := b.vm.getPreForkBlock(ctx, b.Block.Parent())
 	if err != nil {
 		return err
@@ -119,7 +135,7 @@ func (b *preForkBlock) verifyPreForkChild(ctx context.Context, child *preForkBlo
 		)
 	}
 
-	return child.Block.Verify()
+	return child.Block.Verify(ctx)
 }
 
 // This method only returns nil once (during the transition)
@@ -134,7 +150,7 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 	if vs == nil {
 		return fmt.Errorf("validator state not available")
 	}
-	currentPChainHeight, err := vs.GetCurrentHeight(b.vm.ctx)
+	currentPChainHeight, err := vs.GetCurrentHeight()
 	if err != nil {
 		b.vm.log.Error("block verification failed",
 			zap.String("reason", "failed to get current P-Chain height"),

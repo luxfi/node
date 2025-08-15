@@ -28,11 +28,10 @@ type postForkBlock struct {
 // 1) Sets this blocks status to Accepted.
 // 2) Persists this block in storage
 // 3) Calls Reject() on siblings of this block and their descendants.
-func (b *postForkBlock) Accept() error {
+func (b *postForkBlock) Accept(ctx context.Context) error {
 	if err := b.acceptOuterBlk(); err != nil {
 		return err
 	}
-	ctx := context.Background()
 	if err := b.acceptInnerBlk(ctx); err != nil {
 		return err
 	}
@@ -56,7 +55,7 @@ func (b *postForkBlock) acceptInnerBlk(ctx context.Context) error {
 	return b.vm.Tree.Accept(ctx, b.innerBlk)
 }
 
-func (b *postForkBlock) Reject() error {
+func (b *postForkBlock) Reject(ctx context.Context) error {
 	// We do not reject the inner block here because it may be accepted later
 	delete(b.vm.verifiedBlocks, b.ID())
 	b.status = choices.Rejected
@@ -76,10 +75,27 @@ func (b *postForkBlock) Parent() ids.ID {
 	return b.ParentID()
 }
 
+// EpochBit returns the epoch bit for FPC
+func (b *postForkBlock) EpochBit() bool {
+	// Forward to inner block if it supports it
+	if innerBlk, ok := b.innerBlk.(interface{ EpochBit() bool }); ok {
+		return innerBlk.EpochBit()
+	}
+	return false
+}
+
+// FPCVotes returns embedded fast-path vote references
+func (b *postForkBlock) FPCVotes() [][]byte {
+	// Forward to inner block if it supports it
+	if innerBlk, ok := b.innerBlk.(interface{ FPCVotes() [][]byte }); ok {
+		return innerBlk.FPCVotes()
+	}
+	return nil
+}
+
 // If Verify() returns nil, Accept() or Reject() will eventually be called on
 // [b] and [b.innerBlk]
-func (b *postForkBlock) Verify() error {
-	ctx := context.Background()
+func (b *postForkBlock) Verify(ctx context.Context) error {
 	parent, err := b.vm.getBlock(ctx, b.ParentID())
 	if err != nil {
 		return err

@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/crypto"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/geth/ethclient"
 )
 
@@ -94,7 +94,8 @@ func (w Wallet) awaitTx(
 	errs <-chan error,
 	txHash common.Hash,
 ) error {
-	account := crypto.PubkeyToAddress(w.privKey.PublicKey)
+	cryptoAddr := secp256k1.PubkeyToAddress(w.privKey.PublicKey)
+	account := common.BytesToAddress(cryptoAddr[:])
 	for {
 		select {
 		case <-ctx.Done():

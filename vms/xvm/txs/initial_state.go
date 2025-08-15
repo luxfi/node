@@ -6,11 +6,11 @@ package txs
 import (
 	"bytes"
 	"cmp"
+	"context"
 	"errors"
 	"sort"
 
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/vms/components/verify"
@@ -32,9 +32,8 @@ type InitialState struct {
 }
 
 func (is *InitialState) InitCtx(ctx context.Context) {
-	for _, out := range is.Outs {
-		out.InitCtx(ctx)
-	}
+	// verify.State doesn't have InitCtx method
+	// The InitCtx is handled at a higher level
 }
 
 func (is *InitialState) Verify(c codec.Manager, numFxs int) error {

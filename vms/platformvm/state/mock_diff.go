@@ -20,6 +20,7 @@ import (
 	fx "github.com/luxfi/node/vms/platformvm/fx"
 	status "github.com/luxfi/node/vms/platformvm/status"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/warp/message"
 	gomock "go.uber.org/mock/gomock"
 )
 

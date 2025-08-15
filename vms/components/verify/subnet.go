@@ -33,7 +33,7 @@ func SameSubnet(ctx context.Context, chainCtx context.Context, peerChainID ids.I
 	if vs == nil {
 		return fmt.Errorf("no validator state found in context")
 	}
-	subnetID, err := vs.GetSubnetID(ctx, peerChainID)
+	subnetID, err := vs.GetSubnetID(peerChainID)
 	if err != nil {
 		return fmt.Errorf("failed to get subnet of %q: %w", peerChainID, err)
 	}

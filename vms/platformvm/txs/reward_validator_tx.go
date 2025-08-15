@@ -5,7 +5,6 @@ package txs
 
 import (
 	"context"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
@@ -57,7 +56,7 @@ func (tx *RewardValidatorTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *RewardValidatorTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
+func (tx *RewardValidatorTx) InitializeWithContext(ctx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

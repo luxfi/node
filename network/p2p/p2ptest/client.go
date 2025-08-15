@@ -18,7 +18,6 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/engine/enginetest"
-	"github.com/luxfi/node/utils/set"
 )
 
 func NewSelfClient(t *testing.T, ctx context.Context, nodeID ids.NodeID, handler p2p.Handler) *p2p.Client {

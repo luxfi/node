@@ -6,6 +6,7 @@ package execute
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/chain/block"
@@ -164,13 +165,46 @@ func (t *Tx) Import(i *tx.Import) error {
 		return errs.Err
 	}
 
+	// Create adapter for ValidatorState
+	vs := consensus.GetValidatorState(t.ChainContext)
+	if vs == nil {
+		return fmt.Errorf("validator state not available")
+	}
+	vsAdapter := &warpValidatorStateAdapter{
+		ctx: t.ChainContext,
+		vs:  vs,
+	}
+	
 	return message.Signature.Verify(
 		t.Context,
 		&message.UnsignedMessage,
 		consensus.GetNetworkID(t.ChainContext),
-		consensus.GetValidatorState(t.ChainContext),
+		vsAdapter,
 		t.BlockContext.PChainHeight,
 		QuorumNumerator,
 		QuorumDenominator,
 	)
+}
+
+// warpValidatorStateAdapter adapts consensus.ValidatorState to warp.ValidatorState
+type warpValidatorStateAdapter struct {
+	ctx context.Context
+	vs  consensus.ValidatorState
+}
+
+func (w *warpValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+	validatorSet, err := w.vs.GetValidatorSet(ctx, height, subnetID)
+	if err != nil {
+		return nil, err
+	}
+	// Convert from GetValidatorOutput map to weight map
+	result := make(map[ids.NodeID]uint64, len(validatorSet))
+	for nodeID, output := range validatorSet {
+		result[nodeID] = output.Weight
+	}
+	return result, nil
+}
+
+func (w *warpValidatorStateAdapter) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return w.vs.GetSubnetID(ctx, chainID)
 }

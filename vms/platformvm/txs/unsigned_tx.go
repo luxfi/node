@@ -4,6 +4,8 @@
 package txs
 
 import (
+	"context"
+	
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
@@ -15,8 +17,8 @@ import (
 type UnsignedTx interface {
 	// TODO: Remove this initialization pattern from both the platformvm and the
 	// xvm.
-	context.ContextInitializable
-	context.Contextualizable
+	consensus.ContextInitializable
+	consensus.Contextualizable
 	secp256k1fx.UnsignedTx
 	SetBytes(unsignedBytes []byte)
 

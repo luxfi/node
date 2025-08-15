@@ -4,7 +4,8 @@
 package chains
 
 import (
-	"github.com/luxfi/consensus"
+	"context"
+	
 	"github.com/luxfi/consensus/engine/core"
 )
 

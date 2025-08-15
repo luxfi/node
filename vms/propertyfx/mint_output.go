@@ -18,6 +18,6 @@ type MintOutput struct {
 }
 
 // InitializeWithContext implements context.ContextInitializable
-func (out *MintOutput) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
-	return out.OutputOwners.InitializeWithContext(ctx, chainCtx)
+func (out *MintOutput) InitializeWithContext(ctx context.Context) error {
+	return out.OutputOwners.InitializeWithContext(ctx)
 }

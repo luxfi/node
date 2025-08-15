@@ -4,6 +4,7 @@
 package txs
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"math"
@@ -14,6 +15,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -28,6 +30,15 @@ import (
 )
 
 var errCustom = errors.New("custom error")
+
+// testContext creates a test context with the given parameters
+func testContext(networkID uint32, chainID, luxAssetID ids.ID) context.Context {
+	ctx := context.Background()
+	return consensus.WithIDs(ctx, consensus.IDs{
+		NetworkID: networkID,
+		ChainID:   chainID,
+	})
+}
 
 func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	require := require.New(t)
