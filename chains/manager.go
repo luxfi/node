@@ -1000,7 +1000,7 @@ func (m *manager) createLuxChain(
 
 	// Asynchronously passes messages from the network to the consensus engine
 	h, err := handler.New(
-		ctx,
+		interfacesCtx,
 		nil, // cn *block.ChangeNotifier - not used for DAG chains
 		nil, // subscription core.Subscription - not used for DAG chains
 		vdrs,
@@ -1011,7 +1011,6 @@ func (m *manager) createLuxChain(
 		connectedValidators,
 		peerTracker,
 		handlerReg,
-		func() {}, // haltBootstrapping
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing network handler: %w", err)
@@ -1024,9 +1023,10 @@ func (m *manager) createLuxChain(
 		startupTracker = tracker.NewStartup(connectedBeacons, 0)
 		ctx.Log.Info("bootstrapping disabled - starting processing immediately")
 	} else {
-		startupTracker = tracker.NewStartup(connectedBeacons, (3*bootstrapWeight+3)/4)
+		startupTracker = tracker.NewStartup(connectedBeacons, float64(3*bootstrapWeight+3)/4.0)
 	}
-	vdrs.RegisterSetCallbackListener(ctx.SubnetID, startupTracker)
+	// startupTracker doesn't implement SetCallbackListener, skip registration
+	// vdrs.RegisterSetCallbackListener(startupTracker)
 
 	consensusGetHandler, err := consensusgetter.New(
 		vmWrappingProposerVM,
