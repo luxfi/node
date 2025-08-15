@@ -151,7 +151,7 @@ func (m *MockOwner) EXPECT() *MockOwnerMockRecorder {
 }
 
 // InitCtx mocks base method.
-func (m *MockOwner) InitCtx(arg0 *consensus.Context) {
+func (m *MockOwner) InitCtx(arg0 context.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", arg0)
 }

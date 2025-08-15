@@ -46,7 +46,7 @@ func (t *BaseTx) NumCredentials() int {
 }
 
 // Verify ensures that transaction metadata is valid
-func (t *BaseTx) Verify(ctx *consensus.Context) error {
+func (t *BaseTx) Verify(ctx context.Context) error {
 	switch {
 	case t == nil:
 		return ErrNilTx

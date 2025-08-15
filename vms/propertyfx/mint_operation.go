@@ -19,7 +19,7 @@ type MintOperation struct {
 	OwnedOutput OwnedOutput       `serialize:"true" json:"ownedOutput"`
 }
 
-func (op *MintOperation) InitCtx(ctx *consensus.Context) {
+func (op *MintOperation) InitCtx(ctx context.Context) {
 	op.MintOutput.OutputOwners.InitCtx(ctx)
 	op.OwnedOutput.OutputOwners.InitCtx(ctx)
 }

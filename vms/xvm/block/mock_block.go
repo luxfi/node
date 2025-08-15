@@ -86,7 +86,7 @@ func (mr *MockBlockMockRecorder) ID() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *MockBlock) InitCtx(arg0 *consensus.Context) {
+func (m *MockBlock) InitCtx(arg0 context.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", arg0)
 }

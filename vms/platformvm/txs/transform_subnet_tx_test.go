@@ -115,7 +115,7 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 			SigIndices: []uint32{3},
 		},
 	}
-	require.NoError(simpleTransformTx.SyntacticVerify(&consensus.Context{
+	require.NoError(simpleTransformTx.SyntacticVerify(&context.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -341,7 +341,7 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexTransformTx.Outs, Codec)
 	utils.Sort(complexTransformTx.Ins)
-	require.NoError(complexTransformTx.SyntacticVerify(&consensus.Context{
+	require.NoError(complexTransformTx.SyntacticVerify(&context.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -527,7 +527,7 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexTransformTx.InitCtx(&consensus.Context{
+	unsignedComplexTransformTx.InitCtx(&context.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -642,7 +642,7 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &consensus.Context{
+	ctx := &context.Context{
 		ChainID:    chainID,
 		NetworkID:  networkID,
 		LUXAssetID: ids.GenerateTestID(),

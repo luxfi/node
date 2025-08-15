@@ -75,7 +75,7 @@ type VM struct {
 	scheduler.Scheduler
 	mockable.Clock
 
-	ctx         *consensus.Context
+	ctx         context.Context
 	db          *versiondb.Database
 	toScheduler chan<- core.Message
 

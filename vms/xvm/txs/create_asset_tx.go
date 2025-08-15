@@ -23,7 +23,7 @@ type CreateAssetTx struct {
 	States       []*InitialState `serialize:"true" json:"initialStates"`
 }
 
-func (t *CreateAssetTx) InitCtx(ctx *consensus.Context) {
+func (t *CreateAssetTx) InitCtx(ctx context.Context) {
 	for _, state := range t.States {
 		state.InitCtx(ctx)
 	}
@@ -41,7 +41,7 @@ func (t *CreateAssetTx) Visit(v Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *CreateAssetTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *CreateAssetTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

@@ -163,7 +163,7 @@ func TestIsBootstrapped(t *testing.T) {
 	require.False(m.IsBootstrapped(chainID))
 
 	// Create a mock handler with context
-	ctx := &consensus.Context{
+	ctx := &context.Context{
 		NodeID:    ids.EmptyNodeID,
 		NetworkID: constants.MainnetID,
 		SubnetID:  constants.PrimaryNetworkID,
@@ -193,9 +193,9 @@ func TestIsBootstrapped(t *testing.T) {
 // mockHandler is a minimal handler implementation for testing
 type mockHandler struct {
 	handler.Handler
-	ctx *consensus.Context
+	ctx context.Context
 }
 
-func (h *mockHandler) Context() *consensus.Context {
+func (h *mockHandler) Context() context.Context {
 	return h.ctx
 }

@@ -132,7 +132,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 			Validators: vdrs,
 		},
 		execConfig,
-		&consensus.Context{
+		&context.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    ids.GenerateTestNodeID(),
 			Log: log.NewNoOpLogger(),

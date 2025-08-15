@@ -13,7 +13,7 @@ type BurnOperation struct {
 	secp256k1fx.Input `serialize:"true"`
 }
 
-func (*BurnOperation) InitCtx(*consensus.Context) {}
+func (*BurnOperation) InitCtx(context.Context) {}
 
 func (*BurnOperation) Outs() []verify.State {
 	return nil

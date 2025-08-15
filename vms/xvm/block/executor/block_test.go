@@ -1042,7 +1042,7 @@ func TestBlockStatus(t *testing.T) {
 func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *executor.Backend {
 	return &executor.Backend{
 		Bootstrapped: bootstrapped,
-		Ctx: &consensus.Context{
+		Ctx: &context.Context{
 			SharedMemory: sharedMemory,
 			Log: log.NewNoOpLogger(),
 		},

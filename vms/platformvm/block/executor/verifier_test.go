@@ -53,7 +53,7 @@ func TestVerifierVisitProposalBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
+		ctx: &context.Context{
 			Log: log.NewNoOpLogger(),
 		},
 	}
@@ -139,7 +139,7 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
+		ctx: &context.Context{
 			Log: log.NewNoOpLogger(),
 		},
 	}
@@ -228,7 +228,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
+		ctx: &context.Context{
 			Log: log.NewNoOpLogger(),
 		},
 	}
@@ -335,7 +335,7 @@ func TestVerifierVisitCommitBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
+		ctx: &context.Context{
 			Log: log.NewNoOpLogger(),
 		},
 	}
@@ -408,7 +408,7 @@ func TestVerifierVisitAbortBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
+		ctx: &context.Context{
 			Log: log.NewNoOpLogger(),
 		},
 	}
@@ -469,7 +469,7 @@ func TestVerifyUnverifiedParent(t *testing.T) {
 		blkIDToState: map[ids.ID]*blockState{},
 		Mempool:      mempool,
 		state:        s,
-		ctx: &consensus.Context{
+		ctx: &context.Context{
 			Log: log.NewNoOpLogger(),
 		},
 	}
@@ -543,7 +543,7 @@ func TestBanffAbortBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &consensus.Context{
+				ctx: &context.Context{
 					Log: log.NewNoOpLogger(),
 				},
 			}
@@ -641,7 +641,7 @@ func TestBanffCommitBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &consensus.Context{
+				ctx: &context.Context{
 					Log: log.NewNoOpLogger(),
 				},
 			}
@@ -722,7 +722,7 @@ func TestVerifierVisitStandardBlockWithDuplicateInputs(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
+		ctx: &context.Context{
 			Log: log.NewNoOpLogger(),
 		},
 	}
@@ -813,7 +813,7 @@ func TestVerifierVisitApricotStandardBlockWithProposalBlockParent(t *testing.T) 
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
+		ctx: &context.Context{
 			Log: log.NewNoOpLogger(),
 		},
 	}
@@ -872,7 +872,7 @@ func TestVerifierVisitBanffStandardBlockWithProposalBlockParent(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &consensus.Context{
+		ctx: &context.Context{
 			Log: log.NewNoOpLogger(),
 		},
 	}
@@ -931,7 +931,7 @@ func TestVerifierVisitApricotCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensus.Context{
+			ctx: &context.Context{
 				Log: log.NewNoOpLogger(),
 			},
 		},
@@ -977,7 +977,7 @@ func TestVerifierVisitBanffCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensus.Context{
+			ctx: &context.Context{
 				Log: log.NewNoOpLogger(),
 			},
 		},
@@ -1022,7 +1022,7 @@ func TestVerifierVisitApricotAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensus.Context{
+			ctx: &context.Context{
 				Log: log.NewNoOpLogger(),
 			},
 		},
@@ -1068,7 +1068,7 @@ func TestVerifierVisitBanffAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &consensus.Context{
+			ctx: &context.Context{
 				Log: log.NewNoOpLogger(),
 			},
 		},

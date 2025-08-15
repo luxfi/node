@@ -34,18 +34,18 @@ type OutputOwners struct {
 	// ctx is used in MarshalJSON to convert Addrs into human readable
 	// format with ChainID and NetworkID. Unexported because we don't use
 	// it outside this object.
-	ctx *consensus.Context
+	ctx context.Context
 }
 
-// InitializeWithContext implements consensus.ContextInitializable
-func (out *OutputOwners) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+// InitializeWithContext implements context.ContextInitializable
+func (out *OutputOwners) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
 	out.ctx = chainCtx
 	return nil
 }
 
 // InitCtx allows addresses to be formatted into their human readable format
 // during json marshalling.
-func (out *OutputOwners) InitCtx(ctx *consensus.Context) {
+func (out *OutputOwners) InitCtx(ctx context.Context) {
 	out.ctx = ctx
 }
 
@@ -139,7 +139,7 @@ func (out *OutputOwners) Sort() {
 // formatAddress formats a given [addr] into human readable format using
 // [ChainID] and [NetworkID] if a non-nil [ctx] is provided. If [ctx] is not
 // provided, the address will be returned in cb58 format.
-func formatAddress(ctx *consensus.Context, addr ids.ShortID) (string, error) {
+func formatAddress(ctx context.Context, addr ids.ShortID) (string, error) {
 	if ctx == nil {
 		return addr.String(), nil
 	}

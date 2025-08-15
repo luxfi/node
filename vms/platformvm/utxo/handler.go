@@ -129,7 +129,7 @@ type Handler interface {
 }
 
 func NewHandler(
-	ctx *consensus.Context,
+	ctx context.Context,
 	clk *mockable.Clock,
 	fx fx.Fx,
 ) Handler {
@@ -141,7 +141,7 @@ func NewHandler(
 }
 
 type handler struct {
-	ctx *consensus.Context
+	ctx context.Context
 	clk *mockable.Clock
 	fx  fx.Fx
 }

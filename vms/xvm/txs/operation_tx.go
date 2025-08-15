@@ -24,7 +24,7 @@ type OperationTx struct {
 	Ops []*Operation `serialize:"true" json:"operations"`
 }
 
-func (t *OperationTx) InitCtx(ctx *consensus.Context) {
+func (t *OperationTx) InitCtx(ctx context.Context) {
 	for _, op := range t.Ops {
 		op.Op.InitCtx(ctx)
 	}
@@ -65,7 +65,7 @@ func (t *OperationTx) Visit(v Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *OperationTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *OperationTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

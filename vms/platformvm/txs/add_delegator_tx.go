@@ -42,7 +42,7 @@ type AddDelegatorTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [UnsignedAddDelegatorTx]. Also sets the [ctx] to the given [vm.ctx] so that
 // the addresses can be json marshalled into human readable format
-func (tx *AddDelegatorTx) InitCtx(ctx *consensus.Context) {
+func (tx *AddDelegatorTx) InitCtx(ctx context.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	for _, out := range tx.StakeOuts {
 		out.FxID = secp256k1fx.ID
@@ -80,7 +80,7 @@ func (tx *AddDelegatorTx) RewardsOwner() fx.Owner {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddDelegatorTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *AddDelegatorTx) SyntacticVerify(ctx context.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -133,7 +133,7 @@ func (tx *AddDelegatorTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *AddDelegatorTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *AddDelegatorTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

@@ -44,7 +44,7 @@ func (b *StandardBlock) initialize(bytes []byte, cm codec.Manager) error {
 	return nil
 }
 
-func (b *StandardBlock) InitCtx(ctx *consensus.Context) {
+func (b *StandardBlock) InitCtx(ctx context.Context) {
 	for _, tx := range b.Transactions {
 		tx.Unsigned.InitCtx(ctx)
 	}
@@ -106,7 +106,7 @@ func NewStandardBlock(
 }
 
 // InitializeWithContext initializes the block with consensus context
-func (b *StandardBlock) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (b *StandardBlock) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

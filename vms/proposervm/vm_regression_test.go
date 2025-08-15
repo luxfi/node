@@ -33,7 +33,7 @@ package proposervm
 // 		},
 // 	}
 
-// 	innerVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
+// 	innerVM.InitializeF = func(context.Context, context.Context, database.Database,
 // 		[]byte, []byte, []byte,
 // 		[]*core.Fx, core.AppSender,
 // 	) error {

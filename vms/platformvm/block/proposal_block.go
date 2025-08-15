@@ -38,7 +38,7 @@ func (b *BanffProposalBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *BanffProposalBlock) InitCtx(ctx *consensus.Context) {
+func (b *BanffProposalBlock) InitCtx(ctx context.Context) {
 	for _, tx := range b.Transactions {
 		tx.Unsigned.InitCtx(ctx)
 	}
@@ -95,7 +95,7 @@ func (b *ApricotProposalBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *ApricotProposalBlock) InitCtx(ctx *consensus.Context) {
+func (b *ApricotProposalBlock) InitCtx(ctx context.Context) {
 	b.Tx.Unsigned.InitCtx(ctx)
 }
 
@@ -126,13 +126,13 @@ func NewApricotProposalBlock(
 }
 
 // InitializeWithContext initializes the block with consensus context
-func (b *BanffProposalBlock) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (b *BanffProposalBlock) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }
 
 // InitializeWithContext initializes the block with consensus context
-func (b *ApricotProposalBlock) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (b *ApricotProposalBlock) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

@@ -51,7 +51,7 @@ type CreateChainTx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
-func (tx *CreateChainTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *CreateChainTx) SyntacticVerify(ctx context.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -91,7 +91,7 @@ func (tx *CreateChainTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *CreateChainTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *CreateChainTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

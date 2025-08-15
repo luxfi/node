@@ -48,7 +48,7 @@ func (*AddSubnetValidatorTx) CurrentPriority() Priority {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddSubnetValidatorTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *AddSubnetValidatorTx) SyntacticVerify(ctx context.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -75,7 +75,7 @@ func (tx *AddSubnetValidatorTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *AddSubnetValidatorTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *AddSubnetValidatorTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

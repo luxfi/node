@@ -22,13 +22,13 @@ type CreateSubnetTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [CreateSubnetTx]. Also sets the [ctx] to the given [vm.ctx] so that
 // the addresses can be json marshalled into human readable format
-func (tx *CreateSubnetTx) InitCtx(ctx *consensus.Context) {
+func (tx *CreateSubnetTx) InitCtx(ctx context.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	tx.Owner.InitCtx(ctx)
 }
 
 // SyntacticVerify verifies that this transaction is well-formed
-func (tx *CreateSubnetTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *CreateSubnetTx) SyntacticVerify(ctx context.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -52,7 +52,7 @@ func (tx *CreateSubnetTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *CreateSubnetTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *CreateSubnetTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

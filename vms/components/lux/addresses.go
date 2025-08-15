@@ -38,10 +38,10 @@ type AddressManager interface {
 }
 
 type addressManager struct {
-	ctx *consensus.Context
+	ctx context.Context
 }
 
-func NewAddressManager(ctx *consensus.Context) AddressManager {
+func NewAddressManager(ctx context.Context) AddressManager {
 	return &addressManager{
 		ctx: ctx,
 	}

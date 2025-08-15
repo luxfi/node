@@ -59,7 +59,7 @@ func (tx *BaseTx) Outputs() []*lux.TransferableOutput {
 // InitCtx sets the FxID fields in the inputs and outputs of this [BaseTx]. Also
 // sets the [ctx] to the given [vm.ctx] so that the addresses can be json
 // marshalled into human readable format
-func (tx *BaseTx) InitCtx(ctx *consensus.Context) {
+func (tx *BaseTx) InitCtx(ctx context.Context) {
 	for _, in := range tx.BaseTx.Ins {
 		in.FxID = secp256k1fx.ID
 	}
@@ -70,7 +70,7 @@ func (tx *BaseTx) InitCtx(ctx *consensus.Context) {
 }
 
 // SyntacticVerify returns nil iff this tx is well formed
-func (tx *BaseTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *BaseTx) SyntacticVerify(ctx context.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -105,7 +105,7 @@ func (tx *BaseTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *BaseTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *BaseTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

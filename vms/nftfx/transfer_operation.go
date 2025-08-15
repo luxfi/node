@@ -18,7 +18,7 @@ type TransferOperation struct {
 	Output TransferOutput    `serialize:"true" json:"output"`
 }
 
-func (op *TransferOperation) InitCtx(ctx *consensus.Context) {
+func (op *TransferOperation) InitCtx(ctx context.Context) {
 	op.Output.OutputOwners.InitCtx(ctx)
 }
 

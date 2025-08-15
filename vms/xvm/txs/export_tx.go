@@ -27,7 +27,7 @@ type ExportTx struct {
 	ExportedOuts []*lux.TransferableOutput `serialize:"true" json:"exportedOutputs"`
 }
 
-func (t *ExportTx) InitCtx(ctx *consensus.Context) {
+func (t *ExportTx) InitCtx(ctx context.Context) {
 	for _, out := range t.ExportedOuts {
 		out.InitCtx(ctx)
 	}
@@ -39,7 +39,7 @@ func (t *ExportTx) Visit(v Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *ExportTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *ExportTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

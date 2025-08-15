@@ -22,9 +22,9 @@ type TestState struct {
 	Err error
 }
 
-func (*TestState) InitCtx(*consensus.Context) {}
+func (*TestState) InitCtx(context.Context) {}
 
-func (*TestState) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (*TestState) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
 	return nil
 }
 
@@ -38,9 +38,9 @@ type TestTransferable struct {
 	Val uint64 `serialize:"true"`
 }
 
-func (*TestTransferable) InitCtx(*consensus.Context) {}
+func (*TestTransferable) InitCtx(context.Context) {}
 
-func (*TestTransferable) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (*TestTransferable) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
 	return nil
 }
 

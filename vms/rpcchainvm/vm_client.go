@@ -135,8 +135,8 @@ func (vm *VMClient) Initialize(
 	fxs []*block.Fx,
 	appSender block.AppSender,
 ) error {
-	// Convert back to consensus.Context for internal use
-	consensusCtx := (*consensus.Context)(chainCtx)
+	// Convert back to context.Context for internal use
+	consensusCtx := (context.Context)(chainCtx)
 	db := dbManager.Current()
 	if len(fxs) != 0 {
 		return errUnsupportedFXs
@@ -180,7 +180,7 @@ func (vm *VMClient) Initialize(
 	// Create a channel for message passing
 	msgChannel := make(chan core.Message, 1) 
 	vm.messenger = messenger.NewServer(msgChannel)
-	// vm.keystore = gkeystore.NewServer(chainCtx.Keystore) // Keystore removed from consensus.Context
+	// vm.keystore = gkeystore.NewServer(chainCtx.Keystore) // Keystore removed from context.Context
 	
 	// Create SharedMemory wrapper
 	sharedMemoryWrapper := &sharedMemoryWrapper{sm: consensusCtx.SharedMemory}
@@ -197,7 +197,7 @@ func (vm *VMClient) Initialize(
 	// Create ValidatorState wrapper
 	validatorStateWrapper := &validatorStateWrapper{vs: consensusCtx.ValidatorState}
 	vm.validatorStateServer = gvalidators.NewServer(validatorStateWrapper)
-	// WarpSigner doesn't exist in consensus.Context - skip it
+	// WarpSigner doesn't exist in context.Context - skip it
 	// vm.warpSignerServer = gwarp.NewServer(chainCtx.WarpSigner)
 
 	serverListener, err := grpcutils.NewListener()
@@ -217,7 +217,7 @@ func (vm *VMClient) Initialize(
 		ChainId:      consensusCtx.ChainID[:],
 		NodeId:       consensusCtx.NodeID.Bytes(),
 		PublicKey:    bls.PublicKeyToCompressedBytes(consensusCtx.PublicKey),
-		XChainId:     ids.Empty[:], // XChainID doesn't exist in consensus.Context
+		XChainId:     ids.Empty[:], // XChainID doesn't exist in context.Context
 		CChainId:     consensusCtx.CChainID[:],
 		LuxAssetId:   consensusCtx.LUXAssetID[:],
 		ChainDataDir: consensusCtx.ChainDataDir,

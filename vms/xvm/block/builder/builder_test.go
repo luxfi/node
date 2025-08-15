@@ -85,7 +85,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
+						Ctx: &context.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -116,7 +116,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
+						Ctx: &context.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -160,7 +160,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
+						Ctx: &context.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -205,7 +205,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
+						Ctx: &context.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -251,7 +251,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 
 				return New(
 					&txexecutor.Backend{
-						Ctx: &consensus.Context{
+						Ctx: &context.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -344,7 +344,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &consensus.Context{
+						Ctx: &context.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -416,7 +416,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &consensus.Context{
+						Ctx: &context.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -490,7 +490,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &consensus.Context{
+						Ctx: &context.Context{
 							Log: log.NewNoOpLogger(),
 						},
 					},
@@ -539,7 +539,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	require.NoError(err)
 
 	backend := &txexecutor.Backend{
-		Ctx: &consensus.Context{
+		Ctx: &context.Context{
 			Log: log.NewNoOpLogger(),
 		},
 		Codec: parser.Codec(),

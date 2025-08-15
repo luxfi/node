@@ -122,7 +122,7 @@ func (mr *MockServerMockRecorder) Dispatch() *gomock.Call {
 }
 
 // RegisterChain mocks base method.
-func (m *MockServer) RegisterChain(arg0 string, arg1 *consensus.Context, arg2 core.VM) {
+func (m *MockServer) RegisterChain(arg0 string, arg1 context.Context, arg2 core.VM) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RegisterChain", arg0, arg1, arg2)
 }

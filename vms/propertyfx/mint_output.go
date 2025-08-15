@@ -18,7 +18,7 @@ type MintOutput struct {
 	secp256k1fx.OutputOwners `serialize:"true"`
 }
 
-// InitializeWithContext implements consensus.ContextInitializable
-func (out *MintOutput) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+// InitializeWithContext implements context.ContextInitializable
+func (out *MintOutput) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
 	return out.OutputOwners.InitializeWithContext(ctx, chainCtx)
 }

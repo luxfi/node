@@ -72,7 +72,7 @@ func TestBaseTxSerialization(t *testing.T) {
 			Memo: types.JSONByteSlice{},
 		},
 	}
-	require.NoError(simpleBaseTx.SyntacticVerify(&consensus.Context{
+	require.NoError(simpleBaseTx.SyntacticVerify(&context.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -218,7 +218,7 @@ func TestBaseTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexBaseTx.Outs, Codec)
 	utils.Sort(complexBaseTx.Ins)
-	require.NoError(complexBaseTx.SyntacticVerify(&consensus.Context{
+	require.NoError(complexBaseTx.SyntacticVerify(&context.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -366,7 +366,7 @@ func TestBaseTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexBaseTx.InitCtx(&consensus.Context{
+	unsignedComplexBaseTx.InitCtx(&context.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,

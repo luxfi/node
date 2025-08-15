@@ -14,7 +14,7 @@ import (
 )
 
 func NewWalletFactory(
-	ctx *consensus.Context,
+	ctx context.Context,
 	cfg *config.Config,
 	state state.State,
 ) *WalletFactory {
@@ -26,7 +26,7 @@ func NewWalletFactory(
 }
 
 type WalletFactory struct {
-	ctx   *consensus.Context
+	ctx   context.Context
 	cfg   *config.Config
 	state state.State
 }

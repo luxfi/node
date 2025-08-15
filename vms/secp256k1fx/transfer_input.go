@@ -17,10 +17,10 @@ type TransferInput struct {
 	Input `serialize:"true"`
 }
 
-func (*TransferInput) InitCtx(*consensus.Context) {}
+func (*TransferInput) InitCtx(context.Context) {}
 
 // InitializeWithContext initializes the input with consensus context
-func (*TransferInput) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (*TransferInput) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
 	return nil
 }
 

@@ -11,13 +11,13 @@ import (
 
 // UTXOVerifier verifies that UTXOs are valid
 type UTXOVerifier struct {
-	ctx *consensus.Context
+	ctx context.Context
 	clk *mockable.Clock
 	fx  fx.Fx
 }
 
 // NewVerifier creates a new UTXO verifier
-func NewVerifier(ctx *consensus.Context, clk *mockable.Clock, fx fx.Fx) *UTXOVerifier {
+func NewVerifier(ctx context.Context, clk *mockable.Clock, fx fx.Fx) *UTXOVerifier {
 	return &UTXOVerifier{
 		ctx: ctx,
 		clk: clk,

@@ -97,7 +97,7 @@ func initTestProposerVM(
 		StateSyncableVM: &blocktest.StateSyncableVM{},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, context.Context, database.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
@@ -847,7 +847,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 
 	coreVM.InitializeF = func(
 		_ context.Context,
-		_ *consensus.Context,
+		_ context.Context,
 		_ database.Database,
 		_ []byte,
 		_ []byte,
@@ -1096,7 +1096,7 @@ func TestInnerVMRollback(t *testing.T) {
 
 	coreVM.InitializeF = func(
 		context.Context,
-		*consensus.Context,
+		context.Context,
 		database.Database,
 		[]byte,
 		[]byte,
@@ -1554,7 +1554,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, context.Context, database.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
@@ -1725,7 +1725,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		},
 	}
 
-	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
+	coreVM.InitializeF = func(context.Context, context.Context, database.Database,
 		[]byte, []byte, []byte,
 		[]*core.Fx, core.AppSender,
 	) error {
@@ -2263,7 +2263,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	initialState := []byte("genesis state")
 	coreVM := &blocktest.VM{
 		VM: enginetest.VM{
-			InitializeF: func(context.Context, *consensus.Context, database.Database, []byte, []byte, []byte, []*core.Fx, core.AppSender) error {
+			InitializeF: func(context.Context, context.Context, database.Database, []byte, []byte, []byte, []*core.Fx, core.AppSender) error {
 				return nil
 			},
 		},

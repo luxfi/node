@@ -150,7 +150,7 @@ type environment struct {
 	config         *config.Config
 	clk            *mockable.Clock
 	baseDB         *versiondb.Database
-	ctx            *consensus.Context
+	ctx            context.Context
 	msm            *mutableSharedMemory
 	fx             fx.Fx
 	state          state.State
@@ -315,7 +315,7 @@ func addSubnet(t *testing.T, env *environment) {
 func defaultState(
 	t *testing.T,
 	cfg *config.Config,
-	ctx *consensus.Context,
+	ctx context.Context,
 	db database.Database,
 	rewards reward.Calculator,
 ) state.State {
@@ -438,7 +438,7 @@ func defaultFx(t *testing.T, clk *mockable.Clock, log log.Logger, isBootstrapped
 	return res
 }
 
-func buildGenesisTest(t *testing.T, ctx *consensus.Context) []byte {
+func buildGenesisTest(t *testing.T, ctx context.Context) []byte {
 	require := require.New(t)
 
 	genesisUTXOs := make([]api.UTXO, len(preFundedKeys))

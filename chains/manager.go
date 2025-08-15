@@ -170,7 +170,7 @@ type ChainParameters struct {
 
 type chainInfo struct {
 	Name    string
-	Context *consensus.Context
+	Context context.Context
 	VM      core.VM
 	Handler handler.Handler
 	Engine  Engine // Added to handle Start/Stop operations
@@ -180,7 +180,7 @@ type chainInfo struct {
 type Engine interface {
 	Start(context.Context, bool) error
 	StopWithError(context.Context, error) error
-	Context() *consensus.Context
+	Context() context.Context
 }
 
 // senderToAppSenderAdapter adapts sender.Sender to block.AppSender
@@ -640,7 +640,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 	// Create the log and context of the chain
 	chainLog := m.Log // Use main log instead of creating chain-specific log
 
-	// linearMetrics was here but not used in consensus.Context
+	// linearMetrics was here but not used in context.Context
 	// linearMetrics, err := luxmetric.MakeAndRegister(
 	// 	m.linearGatherer,
 	// 	primaryAlias,
@@ -664,7 +664,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		state: m.validatorState,
 	}
 
-	ctx := &consensus.Context{
+	ctx := &context.Context{
 		NetworkID:    m.NetworkID,
 		SubnetID:     chainParams.SubnetID,
 		ChainID:      chainParams.ID,
@@ -762,7 +762,7 @@ func (m *manager) AddRegistrant(r Registrant) {
 
 // Create a Graph-based blockchain that uses Lux
 func (m *manager) createLuxChain(
-	ctx *consensus.Context,
+	ctx context.Context,
 	genesisData []byte,
 	vdrs validators.Manager,
 	vm vertex.LinearizableVMWithEngine,
@@ -819,7 +819,7 @@ func (m *manager) createLuxChain(
 	}
 
 	// Passes messages from the lux engines to the network
-	// Convert consensus.Context to interfaces.Context for sender
+	// Convert context.Context to interfaces.Context for sender
 	interfacesCtx := &interfaces.Context{
 		NetworkID:      ctx.NetworkID,
 		SubnetID:       ctx.SubnetID,
@@ -1094,7 +1094,7 @@ func (m *manager) createLuxChain(
 		ctx.Log,
 		m.BootstrapMaxTimeGetAncestors,
 		m.BootstrapAncestorsMaxContainersSent,
-		// ctx.Registerer doesn't exist in consensus.Context
+		// ctx.Registerer doesn't exist in context.Context
 	)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize consensus base message handler: %w", err)
@@ -1215,7 +1215,7 @@ func (m *manager) createLuxChain(
 		func(ctx context.Context, lastReqID uint32) error {
 			return linearBootstrapper.Start(ctx)
 		},
-		// ctx.Registerer doesn't exist in consensus.Context
+		// ctx.Registerer doesn't exist in context.Context
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing lux bootstrapper: %w", err)
@@ -1260,7 +1260,7 @@ func (m *manager) createLuxChain(
 
 // Create a linear chain using the Linear consensus engine
 func (m *manager) createLinearChain(
-	ctx *consensus.Context,
+	ctx context.Context,
 	genesisData []byte,
 	vdrs validators.Manager,
 	beacons validators.Manager,
@@ -1301,7 +1301,7 @@ func (m *manager) createLinearChain(
 		m.Net,           // Passing network as interface{}
 		m.ManagerConfig.Router, // Passing router as interface{}
 		sb,
-		// ctx.Registerer doesn't exist in consensus.Context
+		// ctx.Registerer doesn't exist in context.Context
 	)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize sender: %w", err)
@@ -1433,7 +1433,7 @@ func (m *manager) createLinearChain(
 	// VM uses this channel to notify engine that a block is ready to be made
 	msgChan := make(chan core.Message, defaultChannelSize)
 
-	// Create ChainContext from consensus.Context
+	// Create ChainContext from context.Context
 	chainCtx := &block.ChainContext{
 		NetworkID:    ctx.NetworkID,
 		SubnetID:     ctx.SubnetID,
@@ -1569,7 +1569,7 @@ func (m *manager) createLinearChain(
 		ctx.Log,
 		m.BootstrapMaxTimeGetAncestors,
 		m.BootstrapAncestorsMaxContainersSent,
-		// ctx.Registerer doesn't exist in consensus.Context
+		// ctx.Registerer doesn't exist in context.Context
 	)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize consensus base message handler: %w", err)
@@ -1804,7 +1804,7 @@ func (m *manager) LookupVM(alias string) (ids.ID, error) {
 
 // Notify registrants [those who want to know about the creation of chains]
 // that the specified chain has been created
-func (m *manager) notifyRegistrants(name string, ctx *consensus.Context, vm core.VM) {
+func (m *manager) notifyRegistrants(name string, ctx context.Context, vm core.VM) {
 	for _, registrant := range m.registrants {
 		registrant.RegisterChain(name, ctx, vm)
 	}

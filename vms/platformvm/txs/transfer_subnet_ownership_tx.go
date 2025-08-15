@@ -34,12 +34,12 @@ type TransferSubnetOwnershipTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [TransferSubnetOwnershipTx]. Also sets the [ctx] to the given [vm.ctx] so
 // that the addresses can be json marshalled into human readable format
-func (tx *TransferSubnetOwnershipTx) InitCtx(ctx *consensus.Context) {
+func (tx *TransferSubnetOwnershipTx) InitCtx(ctx context.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	tx.Owner.InitCtx(ctx)
 }
 
-func (tx *TransferSubnetOwnershipTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *TransferSubnetOwnershipTx) SyntacticVerify(ctx context.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -66,7 +66,7 @@ func (tx *TransferSubnetOwnershipTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *TransferSubnetOwnershipTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *TransferSubnetOwnershipTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }
