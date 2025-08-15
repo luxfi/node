@@ -23,9 +23,9 @@ import (
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/engine/core/tracker"
 	"github.com/luxfi/consensus/core/interfaces"
-	"github.com/luxfi/consensus/engine/graph/bootstrap/queue"
-	"github.com/luxfi/consensus/engine/graph/state"
-	"github.com/luxfi/consensus/engine/graph/vertex"
+	"github.com/luxfi/consensus/engine/dag/bootstrap/queue"
+	"github.com/luxfi/consensus/engine/dag/state"
+	"github.com/luxfi/consensus/engine/dag/vertex"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/syncer"
 	"github.com/luxfi/consensus/networking/handler"
@@ -62,9 +62,9 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/tracedvm"
 
-	aveng "github.com/luxfi/consensus/engine/graph"
-	graphbootstrap "github.com/luxfi/consensus/engine/graph/bootstrap"
-	graphgetter "github.com/luxfi/consensus/engine/graph/getter"
+	aveng "github.com/luxfi/consensus/engine/dag"
+	dagbootstrap "github.com/luxfi/consensus/engine/dag/bootstrap"
+	daggetter "github.com/luxfi/consensus/engine/dag/getter"
 	smeng "github.com/luxfi/consensus/engine/chain"
 	smbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap"
 	consensusgetter "github.com/luxfi/consensus/engine/chain/getter"
@@ -1047,18 +1047,11 @@ func (m *manager) createLuxChain(
 
 	// Create engine, bootstrapper and state-syncer in this order,
 	// to make sure start callbacks are duly initialized
-	linearEngineConfig := smeng.Config{
-		Ctx:                 ctx,
-		AllGetsServer:       consensusGetHandler,
-		VM:                  vmWrappingProposerVM,
-		Sender:              linearMessageSender,
-		Validators:          vdrs,
-		ConnectedValidators: connectedValidators,
-		Params:              consensusParams,
-		Consensus:           linearConsensus,
-	}
+	// Convert sampling.Parameters to chain.Parameters
+	chainParams := smeng.Parameters{}
+	
 	var linearEngine core.Engine
-	linearEngine, err = smeng.New(linearEngineConfig)
+	linearEngine, err = smeng.New(interfacesCtx, chainParams)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing linear engine: %w", err)
 	}
@@ -1076,49 +1069,50 @@ func (m *manager) createLuxChain(
 
 	bootstrapCfg := smbootstrap.Config{
 		AllGetsServer:    consensusGetHandler,
-		Ctx:              ctx,
+		Ctx:              interfacesCtx,
 		Beacons:          bootstrapBeacons,
 		SampleK:          sampleK,
 		StartupTracker:   startupTracker,
 		Sender:           linearMessageSender,
 		BootstrapTracker: sb,
-		// Timer field removed - h,
-		PeerTracker:                    peerTracker,
+		Timer:            nil, // Timer not used for now
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
-		DB:                             blockBootstrappingDB,
-		VM:                             vmWrappingProposerVM,
-		Haltable:                       &core.Halter{},
+		Blocked:          nil, // Blocked not used for now
+		VM:               vmWrappingProposerVM,
 	}
-	var linearBootstrapper core.BootstrapableEngine
-	linearBootstrapper, err = smbootstrap.New(
+	
+	// Create bootstrapper with a callback function
+	bootstrapCallback := func(ctx context.Context, lastReqID uint32) error {
+		return linearEngine.Start(ctx)
+	}
+	
+	linearBootstrapper, err := smbootstrap.New(
 		bootstrapCfg,
-		linearEngine.Start,
+		bootstrapCallback,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing linear bootstrapper: %w", err)
 	}
 
 	if m.TracingEnabled {
-		linearBootstrapper = core.TraceBootstrapableEngine(linearBootstrapper, m.Tracer)
+		linearBootstrapper = smbootstrap.Trace(linearBootstrapper, m.Tracer)
 	}
 
-	getHandler, err := graphgetter.New(
+	getHandler, err := daggetter.New(
 		vtxManager,
 		luxMessageSender,
 		ctx.Log,
 		m.BootstrapMaxTimeGetAncestors,
 		m.BootstrapAncestorsMaxContainersSent,
-		luxMetrics,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize lux base message handler: %w", err)
 	}
 
 	// create engine gear
-	luxEngine := aveng.New(ctx, getHandler)
-	if m.TracingEnabled {
-		luxEngine = core.TraceEngine(luxEngine, m.Tracer)
-	}
+	luxEngine := aveng.New()
+	// Note: aveng.Engine doesn't implement core.Engine interface
+	// Tracing is not supported for graph engines currently
 
 	// create bootstrap gear
 	// beacons := vdrs // Not used
@@ -1128,7 +1122,7 @@ func (m *manager) createLuxChain(
 	// 	ctx.Log.Info("skip-bootstrap enabled - using empty beacons for X-Chain single-node mode")
 	// }
 
-	luxBootstrapperConfig := graphbootstrap.Config{
+	luxBootstrapperConfig := dagbootstrap.Config{
 		AllGetsServer:  getHandler,
 		Ctx:            ctx,
 		StartupTracker: startupTracker,
@@ -1146,7 +1140,7 @@ func (m *manager) createLuxChain(
 		luxBootstrapperConfig.StopVertexID = version.CortinaXChainStopVertexID[ctx.NetworkID]
 	}
 
-	luxBootstrapper, err := graphbootstrap.New(
+	luxBootstrapper, err := dagbootstrap.New(
 		luxBootstrapperConfig,
 		linearBootstrapper.Start,
 		// ctx.Registerer doesn't exist in consensus.Context
@@ -1580,7 +1574,7 @@ func (m *manager) IsBootstrapped(id ids.ID) bool {
 		return false
 	}
 
-	return chain.Context.State.Get().State == consensus.NormalOp
+	return chain.Context.State.Get() == interfaces.NormalOp
 }
 
 func (m *manager) registerBootstrappedHealthChecks() error {

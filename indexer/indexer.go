@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/engine/graph/vertex"
+	"github.com/luxfi/consensus/engine/dag/vertex"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"

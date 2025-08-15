@@ -21,8 +21,8 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/graph/vertex"
-	"github.com/luxfi/consensus/engine/graph"
+	"github.com/luxfi/consensus/engine/dag/vertex"
+	"github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/consensus/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
@@ -357,7 +357,7 @@ func (vm *VM) SetState(_ context.Context, state consensus.State) error {
 	}
 }
 
-func (vm *VM) Shutdown(context.Context) error {
+func (vm *VM) Shutdown() error {
 	if vm.state == nil {
 		return nil
 	}
@@ -527,7 +527,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	return nil
 }
 
-func (vm *VM) ParseTx(_ context.Context, bytes []byte) (interface{}, error) {
+func (vm *VM) ParseTx(_ context.Context, bytes []byte) (dag.Tx, error) {
 	tx, err := vm.parser.ParseTx(bytes)
 	if err != nil {
 		return nil, err
@@ -753,21 +753,32 @@ func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 }
 
 // BuildVertex builds a new vertex - required for LinearizableVMWithEngine
-func (vm *VM) BuildVertex(ctx context.Context) (graph.Vertex, error) {
+func (vm *VM) BuildVertex(ctx context.Context) (dag.Vertex, error) {
 	// XVM doesn't use vertices, it uses blocks
 	return nil, errors.New("XVM does not support vertex building")
 }
 
 // GetVertex gets a vertex by ID - required for LinearizableVMWithEngine
-func (vm *VM) GetVertex(ctx context.Context, vtxID ids.ID) (graph.Vertex, error) {
+func (vm *VM) GetVertex(ctx context.Context, vtxID ids.ID) (dag.Vertex, error) {
 	// XVM doesn't use vertices, it uses blocks
 	return nil, errors.New("XVM does not support vertex operations")
 }
 
 // ParseVertex parses vertex bytes - required for LinearizableVMWithEngine
-func (vm *VM) ParseVertex(ctx context.Context, vtxBytes []byte) (graph.Vertex, error) {
+func (vm *VM) ParseVertex(ctx context.Context, vtxBytes []byte) (dag.Vertex, error) {
 	// XVM doesn't use vertices, it uses blocks
 	return nil, errors.New("XVM does not support vertex parsing")
+}
+
+// GetEngine returns the consensus engine - required for LinearizableVMWithEngine
+func (vm *VM) GetEngine() interface{} {
+	// XVM doesn't have a separate engine
+	return nil
+}
+
+// SetEngine sets the consensus engine - required for LinearizableVMWithEngine
+func (vm *VM) SetEngine(engine interface{}) {
+	// XVM doesn't use a separate engine
 }
 
 

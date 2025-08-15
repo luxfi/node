@@ -8,14 +8,14 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/consensus/engine/graph/vertex"
-	"github.com/luxfi/consensus/graph"
+	"github.com/luxfi/consensus/engine/dag"
+	"github.com/luxfi/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 var (
 	_ vertex.LinearizableVMWithEngine = (*vertexVM)(nil)
-	_ graph.Tx                        = (*meterTx)(nil)
+	_ dag.Tx                          = (*meterTx)(nil)
 )
 
 func NewVertexVM(
@@ -63,7 +63,7 @@ func (vm *vertexVM) Initialize(
 	)
 }
 
-func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (interface{}, error) {
+func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (dag.Tx, error) {
 	start := vm.clock.Time()
 	tx, err := vm.LinearizableVMWithEngine.ParseTx(ctx, b)
 	end := vm.clock.Time()
@@ -74,20 +74,15 @@ func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (interface{}, error) 
 	}
 	vm.vertexMetrics.parse.Observe(duration)
 	
-	// If the tx implements graph.Tx, wrap it with meterTx
-	if graphTx, ok := tx.(graph.Tx); ok {
-		return &meterTx{
-			Tx: graphTx,
-			vm: vm,
-		}, nil
-	}
-	
-	// Otherwise return as-is
-	return tx, nil
+	// Wrap it with meterTx
+	return &meterTx{
+		Tx: tx,
+		vm: vm,
+	}, nil
 }
 
 type meterTx struct {
-	graph.Tx
+	dag.Tx
 
 	vm *vertexVM
 }
