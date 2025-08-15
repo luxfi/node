@@ -6,6 +6,7 @@ package validators
 import (
 	"context"
 
+	"github.com/luxfi/consensus/validator"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 )
@@ -18,7 +19,7 @@ func (testManager) GetMinimumHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
-func (testManager) GetCurrentHeight(context.Context) (uint64, error) {
+func (testManager) GetCurrentHeight() (uint64, error) {
 	return 0, nil
 }
 
@@ -32,6 +33,6 @@ func (testManager) GetValidatorSet(context.Context, uint64, ids.ID) (map[ids.Nod
 
 func (testManager) OnAcceptedBlockID(ids.ID) {}
 
-func (testManager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+func (testManager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validator.GetCurrentValidatorOutput, uint64, error) {
 	return nil, 0, nil
 }
