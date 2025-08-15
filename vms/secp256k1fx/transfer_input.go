@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/consensus"
 )
 
 var ErrNoValueInput = errors.New("input has no value")

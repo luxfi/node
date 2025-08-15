@@ -144,11 +144,16 @@ func formatAddress(ctx context.Context, addr ids.ShortID) (string, error) {
 		return addr.String(), nil
 	}
 
-	chainIDAlias, err := ctx.BCLookup.PrimaryAlias(ctx.ChainID)
+	c := consensus.GetChainContext(ctx)
+	if c == nil {
+		return addr.String(), nil
+	}
+
+	chainIDAlias, err := c.BCLookup.PrimaryAlias(c.ChainID)
 	if err != nil {
 		return "", err
 	}
 
-	hrp := constants.GetHRP(ctx.NetworkID)
+	hrp := constants.GetHRP(c.NetworkID)
 	return address.Format(chainIDAlias, hrp, addr.Bytes())
 }

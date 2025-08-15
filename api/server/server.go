@@ -171,11 +171,15 @@ func (s *server) Dispatch() error {
 
 func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM) {
 	// Get chain context from context value
-	cc := consensus.GetChainContext(ctx)
-	if cc != nil {
-		cc.Lock.Lock()
-		defer cc.Lock.Unlock()
+	c := consensus.GetChainContext(ctx)
+	if c == nil {
+		s.log.Error("no chain context found")
+		return
 	}
+	
+	c.Lock.Lock()
+	defer c.Lock.Unlock()
+	
 	handlers, err := vm.CreateHandlers(context.TODO())
 	if err != nil {
 		s.log.Error("failed to create handlers",
@@ -184,17 +188,11 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 		)
 		return
 	}
-
-	cc := consensus.GetChainContext(ctx)
-	if cc == nil {
-		s.log.Error("no chain context found")
-		return
-	}
 	s.log.Debug("about to add API endpoints",
-		zap.Stringer("chainID", cc.ChainID),
+		zap.Stringer("chainID", c.ChainID),
 	)
 	// all subroutes to a chain begin with "bc/<the chain's ID>"
-	defaultEndpoint := path.Join(constants.ChainAliasPrefix, cc.ChainID.String())
+	defaultEndpoint := path.Join(constants.ChainAliasPrefix, c.ChainID.String())
 
 	// Register each endpoint
 	for extension, handler := range handlers {
@@ -260,8 +258,8 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 // not done state-syncing/bootstrapping, writes back an error.
 func rejectMiddleware(handler http.Handler, ctx context.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { // If chain isn't done bootstrapping, ignore API calls
-		cc := consensus.GetChainContext(ctx)
-		if cc != nil && cc.State != nil && cc.State.Get() != consensus.NormalOp {
+		c := consensus.GetChainContext(ctx)
+		if c != nil && c.State != nil && c.State.Get() != consensus.NormalOp {
 			http.Error(w, "API call rejected because chain is not done bootstrapping", http.StatusServiceUnavailable)
 		} else {
 			handler.ServeHTTP(w, r)

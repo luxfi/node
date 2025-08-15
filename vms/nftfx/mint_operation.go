@@ -6,7 +6,6 @@ package nftfx
 import (
 	"errors"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
