@@ -11,6 +11,7 @@ import (
 	
 
 	"github.com/luxfi/node/cache"
+	"github.com/luxfi/consensus/validator"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
@@ -415,7 +416,7 @@ func (m *manager) OnAcceptedBlockID(blkID ids.ID) {
 func (m *manager) GetCurrentValidatorSet(
 	ctx context.Context,
 	subnetID ids.ID,
-) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+) (map[ids.ID]*validator.GetCurrentValidatorOutput, uint64, error) {
 	// For now, return an empty map with current height
 	// This is a stub implementation that needs to be properly implemented
 	currentHeight, err := m.getCurrentHeight(ctx)
@@ -424,6 +425,6 @@ func (m *manager) GetCurrentValidatorSet(
 	}
 	
 	// TODO: Implement proper conversion from GetValidatorOutput to GetCurrentValidatorOutput
-	result := make(map[ids.ID]*validators.GetCurrentValidatorOutput)
+	result := make(map[ids.ID]*validator.GetCurrentValidatorOutput)
 	return result, currentHeight, nil
 }
