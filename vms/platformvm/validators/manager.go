@@ -316,7 +316,9 @@ func (m *manager) makePrimaryNetworkValidatorSet(
 func (m *manager) getCurrentPrimaryValidatorSet(
 	ctx context.Context,
 ) (map[ids.NodeID]*validators.GetValidatorOutput, uint64, error) {
-	primaryMap := m.cfg.Validators.GetMap(constants.PrimaryNetworkID)
+	// TODO: Implement GetMap or equivalent functionality
+	// primaryMap := m.cfg.Validators.GetMap(constants.PrimaryNetworkID)
+	primaryMap := make(map[ids.NodeID]*validators.GetValidatorOutput)
 	currentHeight, err := m.getCurrentHeight(ctx)
 	return primaryMap, currentHeight, err
 }
@@ -383,8 +385,11 @@ func (m *manager) getCurrentValidatorSets(
 	ctx context.Context,
 	subnetID ids.ID,
 ) (map[ids.NodeID]*validators.GetValidatorOutput, map[ids.NodeID]*validators.GetValidatorOutput, uint64, error) {
-	subnetMap := m.cfg.Validators.GetMap(subnetID)
-	primaryMap := m.cfg.Validators.GetMap(constants.PrimaryNetworkID)
+	// TODO: Implement GetMap or equivalent functionality
+	// subnetMap := m.cfg.Validators.GetMap(subnetID)
+	// primaryMap := m.cfg.Validators.GetMap(constants.PrimaryNetworkID)
+	subnetMap := make(map[ids.NodeID]*validators.GetValidatorOutput)
+	primaryMap := make(map[ids.NodeID]*validators.GetValidatorOutput)
 	currentHeight, err := m.getCurrentHeight(ctx)
 	return subnetMap, primaryMap, currentHeight, err
 }
