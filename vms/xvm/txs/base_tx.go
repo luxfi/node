@@ -24,7 +24,7 @@ type BaseTx struct {
 	bytes []byte
 }
 
-func (t *BaseTx) InitCtx(ctx *consensus.Context) {
+func (t *BaseTx) InitCtx(ctx context.Context) {
 	for _, out := range t.Outs {
 		out.InitCtx(ctx)
 	}
@@ -51,7 +51,7 @@ func (t *BaseTx) Visit(v Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *BaseTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *BaseTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

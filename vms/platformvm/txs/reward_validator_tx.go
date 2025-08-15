@@ -34,7 +34,7 @@ func (tx *RewardValidatorTx) SetBytes(unsignedBytes []byte) {
 	tx.unsignedBytes = unsignedBytes
 }
 
-func (*RewardValidatorTx) InitCtx(*consensus.Context) {}
+func (*RewardValidatorTx) InitCtx(context.Context) {}
 
 func (tx *RewardValidatorTx) Bytes() []byte {
 	return tx.unsignedBytes
@@ -48,7 +48,7 @@ func (*RewardValidatorTx) Outputs() []*lux.TransferableOutput {
 	return nil
 }
 
-func (*RewardValidatorTx) SyntacticVerify(*consensus.Context) error {
+func (*RewardValidatorTx) SyntacticVerify(context.Context) error {
 	return nil
 }
 
@@ -57,7 +57,7 @@ func (tx *RewardValidatorTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *RewardValidatorTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *RewardValidatorTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

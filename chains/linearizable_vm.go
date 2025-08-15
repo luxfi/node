@@ -30,7 +30,7 @@ type initializeOnLinearizeVM struct {
 	vmToInitialize core.VM
 	vmToLinearize  *linearizeOnInitializeVM
 
-	ctx          *consensus.Context
+	ctx          context.Context
 	db           database.Database
 	genesisBytes []byte
 	upgradeBytes []byte
@@ -149,7 +149,7 @@ type linearizeOnInitializeVM struct {
 	stopVertexID ids.ID
 	
 	// Stored from Initialize for later use
-	chainCtx     *consensus.Context
+	chainCtx     context.Context
 	db           database.Database
 	genesisBytes []byte
 	upgradeBytes []byte
@@ -223,7 +223,7 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	appSender block.AppSender,
 ) error {
 	// Convert block types to consensus types for the underlying VM
-	consensusCtx := &consensus.Context{
+	consensusCtx := &context.Context{
 		NetworkID:    chainCtx.NetworkID,
 		SubnetID:     chainCtx.SubnetID,
 		ChainID:      chainCtx.ChainID,

@@ -20,7 +20,7 @@ var (
 // SameSubnet verifies that the provided [ctx] was provided to a chain in the
 // same subnet as [peerChainID], but not the same chain. If this verification
 // fails, a non-nil error will be returned.
-func SameSubnet(ctx context.Context, chainCtx *consensus.Context, peerChainID ids.ID) error {
+func SameSubnet(ctx context.Context, chainCtx context.Context, peerChainID ids.ID) error {
 	if peerChainID == chainCtx.ChainID {
 		return ErrSameChainID
 	}

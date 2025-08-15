@@ -36,7 +36,7 @@ type ImportTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [ImportTx]. Also sets the [ctx] to the given [vm.ctx] so that
 // the addresses can be json marshalled into human readable format
-func (tx *ImportTx) InitCtx(ctx *consensus.Context) {
+func (tx *ImportTx) InitCtx(ctx context.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	for _, in := range tx.ImportedInputs {
 		in.FxID = secp256k1fx.ID
@@ -60,7 +60,7 @@ func (tx *ImportTx) InputIDs() set.Set[ids.ID] {
 }
 
 // SyntacticVerify this transaction is well-formed
-func (tx *ImportTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *ImportTx) SyntacticVerify(ctx context.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -92,7 +92,7 @@ func (tx *ImportTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *ImportTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *ImportTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

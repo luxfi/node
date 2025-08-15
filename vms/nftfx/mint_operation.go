@@ -21,7 +21,7 @@ type MintOperation struct {
 	Outputs   []*secp256k1fx.OutputOwners `serialize:"true" json:"outputs"`
 }
 
-func (op *MintOperation) InitCtx(ctx *consensus.Context) {
+func (op *MintOperation) InitCtx(ctx context.Context) {
 	for _, out := range op.Outputs {
 		out.InitCtx(ctx)
 	}

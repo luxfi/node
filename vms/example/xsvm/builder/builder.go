@@ -34,7 +34,7 @@ type Builder interface {
 }
 
 type builder struct {
-	chainContext *consensus.Context
+	chainContext context.Context
 	chain        chain.Chain
 
 	preference ids.ID
@@ -43,7 +43,7 @@ type builder struct {
 	pendingTxs     *linked.Hashmap[ids.ID, *tx.Tx]
 }
 
-func New(chainContext *consensus.Context, chain chain.Chain) Builder {
+func New(chainContext context.Context, chain chain.Chain) Builder {
 	return &builder{
 		chainContext:   chainContext,
 		chain:          chain,

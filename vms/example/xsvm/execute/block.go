@@ -19,7 +19,7 @@ var errNoTxs = errors.New("no transactions")
 
 func Block(
 	ctx context.Context,
-	chainContext *consensus.Context,
+	chainContext context.Context,
 	db database.KeyValueReaderWriterDeleter,
 	skipVerify bool,
 	blockContext *smblock.Context,

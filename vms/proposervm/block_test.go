@@ -84,7 +84,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		},
 		ChainVM:        innerVM,
 		blockBuilderVM: innerBlockBuilderVM,
-		ctx: &consensus.Context{
+		ctx: &context.Context{
 			NodeID:         nodeID,
 			ValidatorState: vdrState,
 			Log: log.NewNoOpLogger(),
@@ -396,7 +396,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 			Registerer:        metrics.NewNoOpMetrics("test").Registry(),
 		},
 		ChainVM: block.NewMockChainVM(ctrl),
-		ctx: &consensus.Context{
+		ctx: &context.Context{
 			NodeID:         thisNodeID,
 			ValidatorState: vdrState,
 			Log: log.NewNoOpLogger(),

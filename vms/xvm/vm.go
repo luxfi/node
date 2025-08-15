@@ -75,7 +75,7 @@ type VM struct {
 	utxo.Spender
 
 	// Contains information of where this VM is executing
-	ctx *consensus.Context
+	ctx context.Context
 
 	// Used to check local time
 	clock mockable.Clock
@@ -169,7 +169,7 @@ func (vm *VM) Initialize(
 	appSender interface{},
 ) error {
 	// Convert types to what we expect
-	consensusCtx, ok := chainCtx.(*consensus.Context)
+	consensusCtx, ok := chainCtx.(context.Context)
 	if !ok {
 		return errors.New("invalid chain context type")
 	}
@@ -200,7 +200,7 @@ func (vm *VM) Initialize(
 // Original Initialize method renamed to initialize
 func (vm *VM) initialize(
 	_ context.Context,
-	ctx *consensus.Context,
+	ctx context.Context,
 	db database.Database,
 	genesisBytes []byte,
 	_ []byte,
@@ -639,7 +639,7 @@ func (vm *VM) initState(tx *txs.Tx) {
 }
 
 // LoadUser retrieves user keys from external storage
-// TODO: Implement proper key management without consensus.Context keystore
+// TODO: Implement proper key management without context.Context keystore
 func (vm *VM) LoadUser(
 	username string,
 	password string,

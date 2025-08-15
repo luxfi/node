@@ -36,7 +36,7 @@ type ExportTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [UnsignedExportTx]. Also sets the [ctx] to the given [vm.ctx] so that
 // the addresses can be json marshalled into human readable format
-func (tx *ExportTx) InitCtx(ctx *consensus.Context) {
+func (tx *ExportTx) InitCtx(ctx context.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	for _, out := range tx.ExportedOutputs {
 		out.FxID = secp256k1fx.ID
@@ -45,7 +45,7 @@ func (tx *ExportTx) InitCtx(ctx *consensus.Context) {
 }
 
 // SyntacticVerify this transaction is well-formed
-func (tx *ExportTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *ExportTx) SyntacticVerify(ctx context.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -80,7 +80,7 @@ func (tx *ExportTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *ExportTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *ExportTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

@@ -194,7 +194,7 @@ type ProposalTxBuilder interface {
 }
 
 func New(
-	ctx *consensus.Context,
+	ctx context.Context,
 	cfg *config.Config,
 	clk *mockable.Clock,
 	fx fx.Fx,
@@ -219,7 +219,7 @@ type builder struct {
 	state state.State
 
 	cfg *config.Config
-	ctx *consensus.Context
+	ctx context.Context
 	clk *mockable.Clock
 	fx  fx.Fx
 }

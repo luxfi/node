@@ -58,7 +58,7 @@ func (mr *MockUnsignedTxMockRecorder) Bytes() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *MockUnsignedTx) InitCtx(ctx *consensus.Context) {
+func (m *MockUnsignedTx) InitCtx(ctx context.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", ctx)
 }
@@ -138,7 +138,7 @@ func (mr *MockUnsignedTxMockRecorder) Visit(visitor any) *gomock.Call {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *MockUnsignedTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *MockUnsignedTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

@@ -32,7 +32,7 @@ type Server interface {
 }
 
 func NewServer(
-	ctx *consensus.Context,
+	ctx context.Context,
 	genesis *genesis.Genesis,
 	state database.KeyValueReader,
 	chain chain.Chain,
@@ -48,7 +48,7 @@ func NewServer(
 }
 
 type server struct {
-	ctx     *consensus.Context
+	ctx     context.Context
 	genesis *genesis.Genesis
 	state   database.KeyValueReader
 	chain   chain.Chain

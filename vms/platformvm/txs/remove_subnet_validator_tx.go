@@ -30,7 +30,7 @@ type RemoveSubnetValidatorTx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
-func (tx *RemoveSubnetValidatorTx) SyntacticVerify(ctx *consensus.Context) error {
+func (tx *RemoveSubnetValidatorTx) SyntacticVerify(ctx context.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -57,7 +57,7 @@ func (tx *RemoveSubnetValidatorTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *RemoveSubnetValidatorTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *RemoveSubnetValidatorTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

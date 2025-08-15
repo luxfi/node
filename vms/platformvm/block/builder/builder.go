@@ -428,7 +428,7 @@ func getNextStakerToReward(
 	return ids.Empty, false, nil
 }
 
-func NewRewardValidatorTx(ctx *consensus.Context, txID ids.ID) (*txs.Tx, error) {
+func NewRewardValidatorTx(ctx context.Context, txID ids.ID) (*txs.Tx, error) {
 	utx := &txs.RewardValidatorTx{TxID: txID}
 	tx, err := txs.NewSigned(utx, txs.Codec, nil)
 	if err != nil {

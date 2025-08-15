@@ -116,7 +116,7 @@ func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportK
 		"username", args.Username,
 	)
 
-	// Keystore functionality has been removed from consensus.Context
+	// Keystore functionality has been removed from context.Context
 	return fmt.Errorf("keystore functionality has been removed")
 }
 
@@ -268,7 +268,7 @@ func (s *Service) ListAddresses(_ *http.Request, args *api.UserPass, response *a
 		"username", args.Username,
 	)
 
-	// Keystore functionality has been removed from consensus.Context
+	// Keystore functionality has been removed from context.Context
 	return fmt.Errorf("keystore functionality has been removed")
 }
 

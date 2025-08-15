@@ -37,7 +37,7 @@ func (tx *AdvanceTimeTx) Bytes() []byte {
 	return tx.unsignedBytes
 }
 
-func (*AdvanceTimeTx) InitCtx(*consensus.Context) {}
+func (*AdvanceTimeTx) InitCtx(context.Context) {}
 
 // Timestamp returns the time this block is proposing the chain should be set to
 func (tx *AdvanceTimeTx) Timestamp() time.Time {
@@ -52,7 +52,7 @@ func (*AdvanceTimeTx) Outputs() []*lux.TransferableOutput {
 	return nil
 }
 
-func (*AdvanceTimeTx) SyntacticVerify(*consensus.Context) error {
+func (*AdvanceTimeTx) SyntacticVerify(context.Context) error {
 	return nil
 }
 
@@ -61,7 +61,7 @@ func (tx *AdvanceTimeTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *AdvanceTimeTx) InitializeWithContext(ctx context.Context, chainCtx *consensus.Context) error {
+func (tx *AdvanceTimeTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

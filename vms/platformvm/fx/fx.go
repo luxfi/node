@@ -47,7 +47,7 @@ type Owner interface {
 	verify.IsNotState
 
 	verify.Verifiable
-	consensus.Contextualizable
+	context.Contextualizable
 }
 
 type Owned interface {

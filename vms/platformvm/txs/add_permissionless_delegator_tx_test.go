@@ -121,7 +121,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
-	require.NoError(simpleAddPrimaryTx.SyntacticVerify(&consensus.Context{
+	require.NoError(simpleAddPrimaryTx.SyntacticVerify(&context.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -375,7 +375,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			Addrs:     []ids.ShortID{},
 		},
 	}
-	require.NoError(complexAddPrimaryTx.SyntacticVerify(&consensus.Context{
+	require.NoError(complexAddPrimaryTx.SyntacticVerify(&context.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -606,7 +606,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexAddPrimaryTx.InitCtx(&consensus.Context{
+	unsignedComplexAddPrimaryTx.InitCtx(&context.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -856,7 +856,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddSubnetTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddSubnetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddSubnetTx.Ins)
-	require.NoError(simpleAddSubnetTx.SyntacticVerify(&consensus.Context{
+	require.NoError(simpleAddSubnetTx.SyntacticVerify(&context.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -1131,7 +1131,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 			Addrs:     []ids.ShortID{},
 		},
 	}
-	require.NoError(complexAddSubnetTx.SyntacticVerify(&consensus.Context{
+	require.NoError(complexAddSubnetTx.SyntacticVerify(&context.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -1362,7 +1362,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexAddSubnetTx.InitCtx(&consensus.Context{
+	unsignedComplexAddSubnetTx.InitCtx(&context.Context{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
@@ -1511,7 +1511,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &consensus.Context{
+	ctx := &context.Context{
 		ChainID:   chainID,
 		NetworkID: networkID,
 	}

@@ -54,9 +54,9 @@ func NewContextFromClients(
 	}, nil
 }
 
-func newConsensusContext(c *Context) (*consensus.Context, error) {
+func newConsensusContext(c *Context) (context.Context, error) {
 	lookup := ids.NewAliaser()
-	return &consensus.Context{
+	return &context.Context{
 		NetworkID:  c.NetworkID,
 		SubnetID:   constants.PrimaryNetworkID,
 		ChainID:    c.BlockchainID,

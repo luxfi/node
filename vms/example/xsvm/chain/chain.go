@@ -26,7 +26,7 @@ type Chain interface {
 }
 
 type chain struct {
-	chainContext  *consensus.Context
+	chainContext  context.Context
 	acceptedState database.Database
 
 	// chain state as driven by the consensus engine
@@ -36,7 +36,7 @@ type chain struct {
 	verifiedBlocks map[ids.ID]*block
 }
 
-func New(ctx *consensus.Context, db database.Database) (Chain, error) {
+func New(ctx context.Context, db database.Database) (Chain, error) {
 	// Load the last accepted block data. For a newly created VM, this will be
 	// the genesis. It is assumed the genesis was processed and stored
 	// previously during VM initialization.

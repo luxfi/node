@@ -39,7 +39,7 @@ var (
 type VM struct {
 	core.AppHandler
 
-	chainContext *consensus.Context
+	chainContext context.Context
 	db           database.Database
 	genesis      *genesis.Genesis
 
@@ -49,7 +49,7 @@ type VM struct {
 
 func (vm *VM) Initialize(
 	_ context.Context,
-	chainContext *consensus.Context,
+	chainContext context.Context,
 	db database.Database,
 	genesisBytes []byte,
 	_ []byte,

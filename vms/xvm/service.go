@@ -1008,7 +1008,7 @@ func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.
 		"username", args.Username,
 	)
 
-	// TODO: Implement key management without consensus.Context keystore
+	// TODO: Implement key management without context.Context keystore
 	sk, err := secp256k1.NewPrivateKey()
 	if err != nil {
 		return err
@@ -1030,7 +1030,7 @@ func (s *Service) ListAddresses(_ *http.Request, args *api.UserPass, response *a
 		"username", args.Username,
 	)
 
-	// TODO: Implement address tracking without consensus.Context keystore
+	// TODO: Implement address tracking without context.Context keystore
 	response.Addresses = []string{}
 	return nil
 }
@@ -1060,7 +1060,7 @@ func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportK
 		return fmt.Errorf("problem parsing address %q: %w", args.Address, err)
 	}
 
-	// TODO: Implement key retrieval without consensus.Context keystore
+	// TODO: Implement key retrieval without context.Context keystore
 	return fmt.Errorf("key export not available without keystore")
 }
 
@@ -1097,7 +1097,7 @@ func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSO
 		return err
 	}
 
-	// TODO: Store imported key without consensus.Context keystore
+	// TODO: Store imported key without context.Context keystore
 	return nil
 }
 

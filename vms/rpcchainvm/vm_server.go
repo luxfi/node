@@ -80,7 +80,7 @@ type VMServer struct {
 	serverCloser grpcutils.ServerCloser
 	connCloser   wrappers.Closer
 
-	ctx    *consensus.Context
+	ctx    context.Context
 	closed chan struct{}
 }
 
@@ -113,7 +113,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	if err != nil {
 		return nil, err
 	}
-	_, err = ids.ToID(req.XChainId) // xChainID not used in consensus.Context
+	_, err = ids.ToID(req.XChainId) // xChainID not used in context.Context
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	// Create wrapper for ValidatorState
 	vsWrapper := &serverValidatorStateWrapper{client: validatorStateClient}
 
-	vm.ctx = &consensus.Context{
+	vm.ctx = &context.Context{
 		NetworkID:    req.NetworkId,
 		SubnetID:     subnetID,
 		ChainID:      chainID,
@@ -254,7 +254,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	// Create a simple DBManager implementation
 	dbMgr := &dbManagerImpl{db: vm.db}
 	
-	// Initialize the VM - use vm.ctx which is already consensus.Context (aka ChainContext)
+	// Initialize the VM - use vm.ctx which is already context.Context (aka ChainContext)
 	if err := vm.vm.Initialize(ctx, vm.ctx, dbMgr, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, toEngine, nil, appSenderClient); err != nil {
 		// Ignore errors closing resources to return the original error
 		_ = vm.connCloser.Close()

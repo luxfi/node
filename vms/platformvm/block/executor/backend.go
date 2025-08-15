@@ -34,7 +34,7 @@ type backend struct {
 	blkIDToState map[ids.ID]*blockState
 	state        state.State
 
-	ctx *consensus.Context
+	ctx context.Context
 }
 
 func (b *backend) GetState(blkID ids.ID) (state.Chain, bool) {

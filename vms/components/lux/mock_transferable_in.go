@@ -69,7 +69,7 @@ func (mr *MockTransferableInMockRecorder) Cost() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *MockTransferableIn) InitCtx(arg0 *consensus.Context) {
+func (m *MockTransferableIn) InitCtx(arg0 context.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", arg0)
 }

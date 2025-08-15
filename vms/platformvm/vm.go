@@ -77,7 +77,7 @@ type VM struct {
 	uptimeManager uptime.Manager
 
 	// The context of this vm
-	ctx *consensus.Context
+	ctx context.Context
 	db  database.Database
 
 	state state.State
@@ -100,7 +100,7 @@ type VM struct {
 // [vm.ChainManager] and [vm.vdrMgr] must be set before this function is called.
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *consensus.Context,
+	chainCtx context.Context,
 	db database.Database,
 	genesisBytes []byte,
 	_ []byte,

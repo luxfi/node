@@ -15,7 +15,7 @@ import (
 
 // Block defines the common stateless interface for all blocks
 type Block interface {
-	consensus.ContextInitializable
+	context.ContextInitializable
 	ID() ids.ID
 	Parent() ids.ID
 	Bytes() []byte

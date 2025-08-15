@@ -551,7 +551,7 @@ func TestOptionTimestampValidity(t *testing.T) {
 
 	coreVM.InitializeF = func(
 		context.Context,
-		*consensus.Context,
+		context.Context,
 		database.Database,
 		[]byte,
 		[]byte,

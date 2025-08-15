@@ -807,7 +807,7 @@ func newStateFromDB(require *require.Assertions, db database.Database) *state {
 			Validators: validators.NewManager(),
 		},
 		execCfg,
-		&consensus.Context{},
+		&context.Context{},
 		prometheus.NewRegistry(),
 		reward.NewCalculator(reward.Config{
 			MaxConsumptionRate: .12 * reward.PercentDenominator,

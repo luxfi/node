@@ -15,7 +15,7 @@ import (
 )
 
 func newContext(
-	ctx *consensus.Context,
+	ctx context.Context,
 	cfg *config.Config,
 	timestamp time.Time,
 ) *builder.Context {

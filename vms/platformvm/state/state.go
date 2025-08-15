@@ -275,7 +275,7 @@ type state struct {
 	validatorState
 
 	validators validators.Manager
-	ctx        *consensus.Context
+	ctx        context.Context
 	cfg        *config.Config
 	metrics    metrics.Metrics
 	rewards    reward.Calculator
@@ -435,7 +435,7 @@ func New(
 	metricsReg prometheus.Registerer,
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
-	ctx *consensus.Context,
+	ctx context.Context,
 	metrics metrics.Metrics,
 	rewards reward.Calculator,
 ) (State, error) {
@@ -467,7 +467,7 @@ func newState(
 	metrics metrics.Metrics,
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
-	ctx *consensus.Context,
+	ctx context.Context,
 	metricsReg prometheus.Registerer,
 	rewards reward.Calculator,
 ) (*state, error) {
