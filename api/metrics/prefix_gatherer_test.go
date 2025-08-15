@@ -20,14 +20,14 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 	gatherer := NewPrefixGatherer()
 	require.NotNil(gatherer)
 
-	registerA := metric.NewPrometheusRegistry()
+	registerA := metric.NewNoOpRegistry()
 	require.NoError(gatherer.Register("a", registerA))
 	{
 		counterA := prometheus.NewCounter(counterOpts)
 		require.NoError(registerA.Register(counterA))
 	}
 
-	registerB := metric.NewPrometheusRegistry()
+	registerB := metric.NewNoOpRegistry()
 	require.NoError(gatherer.Register("b", registerB))
 	{
 		counterB := prometheus.NewCounter(counterOpts)

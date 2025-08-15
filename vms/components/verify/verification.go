@@ -3,14 +3,13 @@
 
 package verify
 
-import "github.com/luxfi/consensus"
+import "context"
 
 type Verifiable interface {
 	Verify() error
 }
 
 type State interface {
-	context.Contextualizable
 	Verifiable
 	IsState
 }

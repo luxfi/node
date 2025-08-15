@@ -96,7 +96,7 @@ func TestLabelGatherer_Gather(t *testing.T) {
 			gatherer := NewLabelGatherer(labelName)
 			require.NotNil(gatherer)
 
-			registerA := metric.NewPrometheusRegistry()
+			registerA := metric.NewNoOpRegistry()
 			require.NoError(gatherer.Register(labelValueA, registerA))
 			{
 				counterA := prometheus.NewCounterVec(
@@ -107,7 +107,7 @@ func TestLabelGatherer_Gather(t *testing.T) {
 				require.NoError(registerA.Register(counterA))
 			}
 
-			registerB := metric.NewPrometheusRegistry()
+			registerB := metric.NewNoOpRegistry()
 			require.NoError(gatherer.Register(labelValueB, registerB))
 			{
 				counterB := prometheus.NewCounterVec(
