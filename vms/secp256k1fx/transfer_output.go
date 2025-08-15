@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 )
 

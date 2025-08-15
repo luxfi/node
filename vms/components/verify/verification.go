@@ -3,8 +3,6 @@
 
 package verify
 
-import "context"
-
 type Verifiable interface {
 	Verify() error
 }

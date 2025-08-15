@@ -11,8 +11,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"context"
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus/core/interfaces"
 )
 
 func TestRejectMiddleware(t *testing.T) {
@@ -60,11 +61,13 @@ func TestRejectMiddleware(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			consensusCtx := consensustest.Context(t, consensustest.CChainID)
-			ctx := consensustest.ConsensusContext(consensusCtx)
-			ctx.State.Set(consensus.EngineState{
-				State: tt.state,
-			})
+			// Create a test chain context
+			cc := &consensus.ChainContext{
+				Context: context.Background(),
+				State: &interfaces.StateHolder{},
+			}
+			cc.State.Set(interfaces.State(tt.state))
+			ctx := consensus.WithChainContext(context.Background(), cc)
 
 			middleware := rejectMiddleware(tt.handlerFunc(require), ctx)
 			w := httptest.NewRecorder()

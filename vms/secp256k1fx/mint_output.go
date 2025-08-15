@@ -5,7 +5,6 @@ package secp256k1fx
 
 import (
 	"context"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
