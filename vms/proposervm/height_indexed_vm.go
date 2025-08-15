@@ -54,7 +54,7 @@ func (vm *VM) updateHeightIndex(height uint64, blkID ids.ID) error {
 		return err
 	}
 
-	vm.ctx.Log.Debug("indexed block",
+	vm.log.Debug("indexed block",
 		zap.Stringer("blkID", blkID),
 		zap.Uint64("height", height),
 	)
@@ -94,7 +94,7 @@ func (vm *VM) updateHeightIndex(height uint64, blkID ids.ID) error {
 		return err
 	}
 
-	vm.ctx.Log.Debug("deleted block",
+	vm.log.Debug("deleted block",
 		zap.Stringer("blkID", blockToDelete),
 		zap.Uint64("height", heightToDelete),
 	)
@@ -130,7 +130,7 @@ func (vm *VM) pruneOldBlocks() error {
 			return err
 		}
 
-		vm.ctx.Log.Debug("deleted block",
+		vm.log.Debug("deleted block",
 			zap.Stringer("blkID", blockToDelete),
 			zap.Uint64("height", height),
 		)

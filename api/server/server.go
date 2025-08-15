@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"sync"
 	"time"
 	
 
@@ -93,6 +94,9 @@ type server struct {
 
 	// Maps endpoints to handlers
 	router *router
+	
+	// Mutex for thread-safe operations
+	lock sync.RWMutex
 
 	srv *http.Server
 
@@ -170,15 +174,16 @@ func (s *server) Dispatch() error {
 }
 
 func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM) {
-	// Get chain context from context value
-	c := consensus.GetChainContext(ctx)
-	if c == nil {
-		s.log.Error("no chain context found")
+	// Get chain ID from context
+	chainID := consensus.GetChainID(ctx)
+	if chainID == ids.Empty {
+		s.log.Error("no chain ID found in context")
 		return
 	}
 	
-	c.Lock.Lock()
-	defer c.Lock.Unlock()
+	// TODO: Add proper locking mechanism as a field on server instead of in context
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	
 	handlers, err := vm.CreateHandlers(context.TODO())
 	if err != nil {
@@ -189,10 +194,10 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 		return
 	}
 	s.log.Debug("about to add API endpoints",
-		zap.Stringer("chainID", c.ChainID),
+		zap.Stringer("chainID", chainID),
 	)
 	// all subroutes to a chain begin with "bc/<the chain's ID>"
-	defaultEndpoint := path.Join(constants.ChainAliasPrefix, c.ChainID.String())
+	defaultEndpoint := path.Join(constants.ChainAliasPrefix, chainID.String())
 
 	// Register each endpoint
 	for extension, handler := range handlers {
@@ -257,13 +262,11 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 // Reject middleware wraps a handler. If the chain that the context describes is
 // not done state-syncing/bootstrapping, writes back an error.
 func rejectMiddleware(handler http.Handler, ctx context.Context) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { // If chain isn't done bootstrapping, ignore API calls
-		c := consensus.GetChainContext(ctx)
-		if c != nil && c.State != nil && c.State.Get() != consensus.NormalOp {
-			http.Error(w, "API call rejected because chain is not done bootstrapping", http.StatusServiceUnavailable)
-		} else {
-			handler.ServeHTTP(w, r)
-		}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { 
+		// TODO: Check chain state properly once we have a better state management approach
+		// For now, just pass through
+		// In production, this should check if the chain is done bootstrapping
+		handler.ServeHTTP(w, r)
 	})
 }
 

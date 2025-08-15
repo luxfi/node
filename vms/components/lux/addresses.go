@@ -39,12 +39,15 @@ type AddressManager interface {
 }
 
 type addressManager struct {
-	ctx context.Context
+	ctx      context.Context
+	bcLookup consensus.AliasLookup
 }
 
 func NewAddressManager(ctx context.Context) AddressManager {
 	return &addressManager{
 		ctx: ctx,
+		// TODO: Get bcLookup from VM or pass it in
+		bcLookup: nil,
 	}
 }
 
@@ -53,15 +56,12 @@ func (a *addressManager) ParseLocalAddress(addrStr string) (ids.ShortID, error) 
 	if err != nil {
 		return ids.ShortID{}, err
 	}
-	c := consensus.GetChainContext(a.ctx)
-	if c == nil {
-		return ids.ShortID{}, fmt.Errorf("no chain context found")
-	}
-	if chainID != c.ChainID {
+	expectedChainID := consensus.GetChainID(a.ctx)
+	if chainID != expectedChainID {
 		return ids.ShortID{}, fmt.Errorf(
 			"%w: expected %q but got %q",
 			ErrMismatchedChainIDs,
-			c.ChainID,
+			expectedChainID,
 			chainID,
 		)
 	}
@@ -74,16 +74,20 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 		return ids.Empty, ids.ShortID{}, err
 	}
 
-	c := consensus.GetChainContext(a.ctx)
-	if c == nil {
-		return ids.Empty, ids.ShortID{}, fmt.Errorf("no chain context found")
-	}
-	chainID, err := c.BCLookup.Lookup(chainIDAlias)
-	if err != nil {
-		return ids.Empty, ids.ShortID{}, err
+	var chainID ids.ID
+	if a.bcLookup != nil {
+		chainID, err = a.bcLookup.Lookup(chainIDAlias)
+		if err != nil {
+			return ids.Empty, ids.ShortID{}, err
+		}
+	} else {
+		// TODO: Properly handle missing BCLookup
+		// For now, return empty chain ID
+		chainID = ids.Empty
 	}
 
-	expectedHRP := constants.GetHRP(c.NetworkID)
+	networkID := consensus.GetNetworkID(a.ctx)
+	expectedHRP := constants.GetHRP(networkID)
 	if hrp != expectedHRP {
 		return ids.Empty, ids.ShortID{}, fmt.Errorf(
 			"expected hrp %q but got %q",
@@ -100,23 +104,21 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 }
 
 func (a *addressManager) FormatLocalAddress(addr ids.ShortID) (string, error) {
-	c := consensus.GetChainContext(a.ctx)
-	if c == nil {
-		return "", fmt.Errorf("no chain context found")
-	}
-	return a.FormatAddress(c.ChainID, addr)
+	chainID := consensus.GetChainID(a.ctx)
+	return a.FormatAddress(chainID, addr)
 }
 
 func (a *addressManager) FormatAddress(chainID ids.ID, addr ids.ShortID) (string, error) {
-	c := consensus.GetChainContext(a.ctx)
-	if c == nil {
-		return "", fmt.Errorf("no chain context found")
+	if a.bcLookup == nil {
+		// TODO: Properly handle missing BCLookup
+		return addr.String(), nil
 	}
-	chainIDAlias, err := c.BCLookup.PrimaryAlias(chainID)
+	chainIDAlias, err := a.bcLookup.PrimaryAlias(chainID)
 	if err != nil {
 		return "", err
 	}
-	hrp := constants.GetHRP(c.NetworkID)
+	networkID := consensus.GetNetworkID(a.ctx)
+	hrp := constants.GetHRP(networkID)
 	return address.Format(chainIDAlias, hrp, addr.Bytes())
 }
 

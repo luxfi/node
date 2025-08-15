@@ -51,7 +51,7 @@ func (t *Tx) Transfer(tf *tx.Transfer) error {
 	if tf.MaxFee < t.TransferFee {
 		return errFeeTooHigh
 	}
-	if tf.ChainID != t.ChainContext.ChainID {
+	if tf.ChainID != consensus.GetChainID(t.ChainContext) {
 		return errWrongChainID
 	}
 
@@ -67,7 +67,7 @@ func (t *Tx) Export(e *tx.Export) error {
 	if e.MaxFee < t.ExportFee {
 		return errFeeTooHigh
 	}
-	if e.ChainID != t.ChainContext.ChainID {
+	if e.ChainID != consensus.GetChainID(t.ChainContext) {
 		return errWrongChainID
 	}
 
@@ -83,7 +83,7 @@ func (t *Tx) Export(e *tx.Export) error {
 	}
 
 	message, err := warp.NewUnsignedMessage(
-		t.ChainContext.NetworkID,
+		consensus.GetNetworkID(t.ChainContext),
 		e.ChainID,
 		payload.Bytes(),
 	)
@@ -130,7 +130,7 @@ func (t *Tx) Import(i *tx.Import) error {
 	var errs wrappers.Errs
 	errs.Add(
 		state.IncrementNonce(t.Database, t.Sender, i.Nonce),
-		state.DecreaseBalance(t.Database, t.Sender, t.ChainContext.ChainID, t.ImportFee),
+		state.DecreaseBalance(t.Database, t.Sender, consensus.GetChainID(t.ChainContext), t.ImportFee),
 	)
 
 	payload, err := tx.ParsePayload(message.Payload)
@@ -140,7 +140,7 @@ func (t *Tx) Import(i *tx.Import) error {
 
 	if payload.IsReturn {
 		errs.Add(
-			state.IncreaseBalance(t.Database, payload.To, t.ChainContext.ChainID, payload.Amount),
+			state.IncreaseBalance(t.Database, payload.To, consensus.GetChainID(t.ChainContext), payload.Amount),
 			state.DecreaseLoan(t.Database, message.SourceChainID, payload.Amount),
 		)
 	} else {
@@ -167,8 +167,8 @@ func (t *Tx) Import(i *tx.Import) error {
 	return message.Signature.Verify(
 		t.Context,
 		&message.UnsignedMessage,
-		t.ChainContext.NetworkID,
-		t.ChainContext.ValidatorState,
+		consensus.GetNetworkID(t.ChainContext),
+		consensus.GetValidatorState(t.ChainContext),
 		t.BlockContext.PChainHeight,
 		QuorumNumerator,
 		QuorumDenominator,

@@ -13,7 +13,6 @@ import (
 	"context"
 	reflect "reflect"
 
-	consensus "github.com/luxfi/consensus"
 	gomock "go.uber.org/mock/gomock"
 )
 

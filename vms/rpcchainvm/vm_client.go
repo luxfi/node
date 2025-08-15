@@ -135,17 +135,26 @@ func (vm *VMClient) Initialize(
 	fxs []*block.Fx,
 	appSender block.AppSender,
 ) error {
-	// Convert back to context.Context for internal use
-	consensusCtx := (context.Context)(chainCtx)
+	// Set IDs in context
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
+		NetworkID:    chainCtx.NetworkID,
+		SubnetID:     chainCtx.SubnetID,
+		ChainID:      chainCtx.ChainID,
+		NodeID:       chainCtx.NodeID,
+		PublicKey:    chainCtx.PublicKey,
+		CChainID:     chainCtx.CChainID,
+		LUXAssetID:   chainCtx.LUXAssetID,
+		ChainDataDir: chainCtx.ChainDataDir,
+	})
+	
 	db := dbManager.Current()
 	if len(fxs) != 0 {
 		return errUnsupportedFXs
 	}
-
-	primaryAlias, err := consensusCtx.BCLookup.PrimaryAlias(consensusCtx.ChainID)
+	primaryAlias, err := chainCtx.BCLookup.PrimaryAlias(chainCtx.ChainID)
 	if err != nil {
 		// If fetching the alias fails, we default to the chain's ID
-		primaryAlias = consensusCtx.ChainID.String()
+		primaryAlias = chainCtx.ChainID.String()
 	}
 
 	// Register metrics
@@ -161,7 +170,7 @@ func (vm *VMClient) Initialize(
 		return err
 	}
 
-	if err := consensusCtx.Metrics.Register("", vm); err != nil {
+	if err := chainCtx.Metrics.Register("", vm); err != nil {
 		return err
 	}
 
@@ -173,7 +182,7 @@ func (vm *VMClient) Initialize(
 	dbServerAddr := dbServerListener.Addr().String()
 
 	go grpcutils.Serve(dbServerListener, vm.newDBServer(db))
-	consensusCtx.Log.Info("grpc: serving database",
+	chainCtx.Log.Info("grpc: serving database",
 		zap.String("address", dbServerAddr),
 	)
 
@@ -183,11 +192,11 @@ func (vm *VMClient) Initialize(
 	// vm.keystore = gkeystore.NewServer(chainCtx.Keystore) // Keystore removed from context.Context
 	
 	// Create SharedMemory wrapper
-	sharedMemoryWrapper := &sharedMemoryWrapper{sm: consensusCtx.SharedMemory}
+	sharedMemoryWrapper := &sharedMemoryWrapper{sm: chainCtx.SharedMemory}
 	vm.sharedMemory = gsharedmemory.NewServer(sharedMemoryWrapper, db)
 	
 	// Create BCLookup wrapper
-	bcLookupWrapper := &bcLookupWrapper{bc: consensusCtx.BCLookup}
+	bcLookupWrapper := &bcLookupWrapper{bc: chainCtx.BCLookup}
 	vm.bcLookup = galiasreader.NewServer(bcLookupWrapper)
 	
 	// Convert appSender
@@ -195,7 +204,7 @@ func (vm *VMClient) Initialize(
 	vm.appSender = appsender.NewServer(coreAppSender)
 	
 	// Create ValidatorState wrapper
-	validatorStateWrapper := &validatorStateWrapper{vs: consensusCtx.ValidatorState}
+	validatorStateWrapper := &validatorStateWrapper{vs: chainCtx.ValidatorState}
 	vm.validatorStateServer = gvalidators.NewServer(validatorStateWrapper)
 	// WarpSigner doesn't exist in context.Context - skip it
 	// vm.warpSignerServer = gwarp.NewServer(chainCtx.WarpSigner)
@@ -207,20 +216,20 @@ func (vm *VMClient) Initialize(
 	serverAddr := serverListener.Addr().String()
 
 	go grpcutils.Serve(serverListener, vm.newInitServer())
-	consensusCtx.Log.Info("grpc: serving vm services",
+	chainCtx.Log.Info("grpc: serving vm services",
 		zap.String("address", serverAddr),
 	)
 
 	resp, err := vm.client.Initialize(ctx, &vmpb.InitializeRequest{
-		NetworkId:    consensusCtx.NetworkID,
-		SubnetId:     consensusCtx.SubnetID[:],
-		ChainId:      consensusCtx.ChainID[:],
-		NodeId:       consensusCtx.NodeID.Bytes(),
-		PublicKey:    bls.PublicKeyToCompressedBytes(consensusCtx.PublicKey),
+		NetworkId:    chainCtx.NetworkID,
+		SubnetId:     chainCtx.SubnetID[:],
+		ChainId:      chainCtx.ChainID[:],
+		NodeId:       chainCtx.NodeID.Bytes(),
+		PublicKey:    bls.PublicKeyToCompressedBytes(chainCtx.PublicKey),
 		XChainId:     ids.Empty[:], // XChainID doesn't exist in context.Context
-		CChainId:     consensusCtx.CChainID[:],
-		LuxAssetId:   consensusCtx.LUXAssetID[:],
-		ChainDataDir: consensusCtx.ChainDataDir,
+		CChainId:     chainCtx.CChainID[:],
+		LuxAssetId:   chainCtx.LUXAssetID[:],
+		ChainDataDir: chainCtx.ChainDataDir,
 		GenesisBytes: genesisBytes,
 		UpgradeBytes: upgradeBytes,
 		ConfigBytes:  configBytes,

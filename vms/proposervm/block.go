@@ -14,6 +14,7 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
@@ -125,10 +126,14 @@ func (p *postForkCommonComponents) Verify(
 
 	// If the node is currently syncing - we don't assume that the P-chain has
 	// been synced up to this point yet.
-	if p.vm.consensusState == consensus.NormalOp {
-		currentPChainHeight, err := p.vm.ctx.ValidatorState.GetCurrentHeight()
+	if p.vm.consensusState == interfaces.NormalOp {
+		vs := consensus.GetValidatorState(p.vm.ctx)
+		if vs == nil {
+			return fmt.Errorf("no validator state found")
+		}
+		currentPChainHeight, err := vs.GetCurrentHeight(ctx)
 		if err != nil {
-			p.vm.ctx.Log.Error("block verification failed",
+			p.vm.log.Error("block verification failed",
 				zap.String("reason", "failed to get current P-Chain height"),
 				zap.Stringer("blkID", child.ID()),
 				zap.Error(err),
@@ -158,7 +163,7 @@ func (p *postForkCommonComponents) Verify(
 			return fmt.Errorf("%w: shouldHaveProposer (%v) != hasProposer (%v)", errProposerMismatch, shouldHaveProposer, hasProposer)
 		}
 
-		p.vm.ctx.Log.Debug("verified post-fork block",
+		p.vm.log.Debug("verified post-fork block",
 			zap.Stringer("blkID", child.ID()),
 			zap.Time("parentTimestamp", parentTimestamp),
 			zap.Time("blockTimestamp", childTimestamp),
@@ -191,7 +196,7 @@ func (p *postForkCommonComponents) buildChild(
 	// is at least the parent's P-Chain height
 	pChainHeight, err := p.vm.optimalPChainHeight(ctx, parentPChainHeight)
 	if err != nil {
-		p.vm.ctx.Log.Error("unexpected build block failure",
+		p.vm.log.Error("unexpected build block failure",
 			zap.String("reason", "failed to calculate optimal P-chain height"),
 			zap.Stringer("parentID", parentID),
 			zap.Error(err),
@@ -242,7 +247,7 @@ func (p *postForkCommonComponents) buildChild(
 			pChainHeight,
 			p.vm.StakingCertLeaf,
 			innerBlock.Bytes(),
-			p.vm.ctx.ChainID,
+			consensus.GetChainID(p.vm.ctx),
 			p.vm.StakingLeafSigner,
 		)
 	} else {
@@ -254,7 +259,7 @@ func (p *postForkCommonComponents) buildChild(
 		)
 	}
 	if err != nil {
-		p.vm.ctx.Log.Error("unexpected build block failure",
+		p.vm.log.Error("unexpected build block failure",
 			zap.String("reason", "failed to generate proposervm block header"),
 			zap.Stringer("parentID", parentID),
 			zap.Stringer("blkID", innerBlock.ID()),
@@ -272,7 +277,7 @@ func (p *postForkCommonComponents) buildChild(
 		},
 	}
 
-	p.vm.ctx.Log.Info("built block",
+	p.vm.log.Info("built block",
 		zap.Stringer("blkID", child.ID()),
 		zap.Stringer("innerBlkID", innerBlock.ID()),
 		zap.Uint64("height", child.Height()),
@@ -341,7 +346,7 @@ func (p *postForkCommonComponents) verifyPreDurangoBlockDelay(
 		proposer.MaxVerifyWindows,
 	)
 	if err != nil {
-		p.vm.ctx.Log.Error("unexpected block verification failure",
+		p.vm.log.Error("unexpected block verification failure",
 			zap.String("reason", "failed to calculate required timestamp delay"),
 			zap.Stringer("blkID", blk.ID()),
 			zap.Error(err),
@@ -383,7 +388,7 @@ func (p *postForkCommonComponents) verifyPostDurangoBlockDelay(
 	case errors.Is(err, proposer.ErrAnyoneCanPropose):
 		return false, nil // block should be unsigned
 	case err != nil:
-		p.vm.ctx.Log.Error("unexpected block verification failure",
+		p.vm.log.Error("unexpected block verification failure",
 			zap.String("reason", "failed to calculate expected proposer"),
 			zap.Stringer("blkID", blk.ID()),
 			zap.Error(err),
@@ -415,20 +420,20 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPostDurango(
 	case errors.Is(err, proposer.ErrAnyoneCanPropose):
 		return false, nil // build an unsigned block
 	case err != nil:
-		p.vm.ctx.Log.Error("unexpected build block failure",
+		p.vm.log.Error("unexpected build block failure",
 			zap.String("reason", "failed to calculate expected proposer"),
 			zap.Stringer("parentID", parentID),
 			zap.Error(err),
 		)
 		return false, err
-	case expectedProposerID == p.vm.ctx.NodeID:
+	case expectedProposerID == consensus.GetNodeID(p.vm.ctx):
 		return true, nil // build a signed block
 	}
 
 	// It's not our turn to propose a block yet. This is likely caused by having
 	// previously notified the consensus engine to attempt to build a block on
 	// top of a block that is no longer the preferred block.
-	p.vm.ctx.Log.Debug("build block dropped",
+	p.vm.log.Debug("build block dropped",
 		zap.Time("parentTimestamp", parentTimestamp),
 		zap.Time("blockTimestamp", newTimestamp),
 		zap.Uint64("slot", currentSlot),
@@ -448,7 +453,7 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPostDurango(
 		parentTimestamp,
 	)
 	if err != nil {
-		p.vm.ctx.Log.Error("failed to reset block builder scheduler",
+		p.vm.log.Error("failed to reset block builder scheduler",
 			zap.String("reason", "failed to calculate expected proposer"),
 			zap.Stringer("parentID", parentID),
 			zap.Error(err),
@@ -481,10 +486,10 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPreDurango(
 	}
 
 	parentHeight := p.innerBlk.Height()
-	proposerID := p.vm.ctx.NodeID
+	proposerID := consensus.GetNodeID(p.vm.ctx)
 	minDelay, err := p.vm.Windower.Delay(ctx, parentHeight+1, parentPChainHeight, proposerID, proposer.MaxBuildWindows)
 	if err != nil {
-		p.vm.ctx.Log.Error("unexpected build block failure",
+		p.vm.log.Error("unexpected build block failure",
 			zap.String("reason", "failed to calculate required timestamp delay"),
 			zap.Stringer("parentID", parentID),
 			zap.Error(err),
@@ -501,7 +506,7 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPreDurango(
 	// It's not our turn to propose a block yet. This is likely caused by having
 	// previously notified the consensus engine to attempt to build a block on
 	// top of a block that is no longer the preferred block.
-	p.vm.ctx.Log.Debug("build block dropped",
+	p.vm.log.Debug("build block dropped",
 		zap.Time("parentTimestamp", parentTimestamp),
 		zap.Duration("minDelay", minDelay),
 		zap.Time("blockTimestamp", newTimestamp),

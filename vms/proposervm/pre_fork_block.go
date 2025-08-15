@@ -12,6 +12,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/chain"
 	"github.com/luxfi/database"
@@ -55,7 +56,7 @@ func (b *preForkBlock) Status() choices.Status {
 	if err != nil {
 		// TODO: Once `Status()` can return an error, we should return the error
 		// here.
-		b.vm.ctx.Log.Error("unexpected error looking up fork height",
+		b.vm.log.Error("unexpected error looking up fork height",
 			zap.Error(err),
 		)
 		return choices.Processing
@@ -112,7 +113,7 @@ func (b *preForkBlock) verifyPreForkChild(ctx context.Context, child *preForkBlo
 			return err
 		}
 
-		b.vm.ctx.Log.Debug("allowing pre-fork block after the fork time",
+		b.vm.log.Debug("allowing pre-fork block after the fork time",
 			zap.String("reason", "parent is an oracle block"),
 			zap.Stringer("blkID", b.ID()),
 		)
@@ -129,9 +130,13 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 
 	childID := child.ID()
 	childPChainHeight := child.PChainHeight()
-	currentPChainHeight, err := b.vm.ctx.ValidatorState.GetCurrentHeight()
+	vs := consensus.GetValidatorState(b.vm.ctx)
+	if vs == nil {
+		return fmt.Errorf("validator state not available")
+	}
+	currentPChainHeight, err := vs.GetCurrentHeight(b.vm.ctx)
 	if err != nil {
-		b.vm.ctx.Log.Error("block verification failed",
+		b.vm.log.Error("block verification failed",
 			zap.String("reason", "failed to get current P-Chain height"),
 			zap.Stringer("blkID", childID),
 			zap.Error(err),
@@ -202,7 +207,7 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 			return nil, err
 		}
 
-		b.vm.ctx.Log.Info("built block",
+		b.vm.log.Info("built block",
 			zap.Stringer("blkID", innerBlock.ID()),
 			zap.Uint64("height", innerBlock.Height()),
 			zap.Time("parentTimestamp", parentTimestamp),
@@ -226,7 +231,7 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	// is at least the minimum height
 	pChainHeight, err := b.vm.optimalPChainHeight(ctx, b.vm.MinimumPChainHeight)
 	if err != nil {
-		b.vm.ctx.Log.Error("unexpected build block failure",
+		b.vm.log.Error("unexpected build block failure",
 			zap.String("reason", "failed to calculate optimal P-chain height"),
 			zap.Stringer("parentID", parentID),
 			zap.Error(err),
@@ -258,7 +263,7 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		},
 	}
 
-	b.vm.ctx.Log.Info("built block",
+	b.vm.log.Info("built block",
 		zap.Stringer("blkID", blk.ID()),
 		zap.Stringer("innerBlkID", innerBlock.ID()),
 		zap.Uint64("height", blk.Height()),

@@ -103,7 +103,7 @@ func (vm *VM) buildStateSummary(ctx context.Context, innerSummary block.StateSum
 	case database.ErrNotFound:
 		// fork has not been reached since there is not fork height
 		// just return innerSummary
-		vm.ctx.Log.Debug("built pre-fork summary",
+		vm.log.Debug("built pre-fork summary",
 			zap.Stringer("summaryID", innerSummary.ID()),
 			zap.Uint64("summaryHeight", innerSummary.Height()),
 		)
@@ -115,7 +115,7 @@ func (vm *VM) buildStateSummary(ctx context.Context, innerSummary block.StateSum
 	height := innerSummary.Height()
 	blkID, err := vm.GetBlockIDAtHeight(ctx, height)
 	if err != nil {
-		vm.ctx.Log.Debug("failed to fetch proposervm block ID",
+		vm.log.Debug("failed to fetch proposervm block ID",
 			zap.Uint64("height", height),
 			zap.Error(err),
 		)
@@ -123,7 +123,7 @@ func (vm *VM) buildStateSummary(ctx context.Context, innerSummary block.StateSum
 	}
 	block, err := vm.getPostForkBlock(ctx, blkID)
 	if err != nil {
-		vm.ctx.Log.Warn("failed to fetch proposervm block",
+		vm.log.Warn("failed to fetch proposervm block",
 			zap.Stringer("blkID", blkID),
 			zap.Uint64("height", height),
 			zap.Error(err),
@@ -136,7 +136,7 @@ func (vm *VM) buildStateSummary(ctx context.Context, innerSummary block.StateSum
 		return nil, err
 	}
 
-	vm.ctx.Log.Debug("built post-fork summary",
+	vm.log.Debug("built post-fork summary",
 		zap.Stringer("summaryID", statelessSummary.ID()),
 		zap.Uint64("summaryHeight", forkHeight),
 	)
