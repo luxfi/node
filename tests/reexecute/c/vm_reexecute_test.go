@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/coreth/plugin/factory"
+	// "github.com/luxfi/coreth/plugin/factory" // coreth not available
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
