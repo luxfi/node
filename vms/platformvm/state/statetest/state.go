@@ -37,7 +37,7 @@ type Config struct {
 	Validators validators.Manager
 	Upgrades   upgrade.Config
 	Config     config.Config
-	Context    *consensus.Context
+	Context    context.Context
 	Metrics    metrics.Metrics
 	Rewards    reward.Calculator
 }

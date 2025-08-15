@@ -20,17 +20,21 @@ var (
 // SameSubnet verifies that the provided [ctx] was provided to a chain in the
 // same subnet as [peerChainID], but not the same chain. If this verification
 // fails, a non-nil error will be returned.
-func SameSubnet(ctx context.Context, chainCtx *consensus.Context, peerChainID ids.ID) error {
-	if peerChainID == chainCtx.ChainID {
+func SameSubnet(ctx context.Context, chainCtx context.Context, peerChainID ids.ID) error {
+	cc := consensus.GetChainContext(chainCtx)
+	if cc == nil {
+		return fmt.Errorf("no chain context found")
+	}
+	if peerChainID == cc.ChainID {
 		return ErrSameChainID
 	}
 
-	subnetID, err := chainCtx.ValidatorState.GetSubnetID(ctx, peerChainID)
+	subnetID, err := cc.ValidatorState.GetSubnetID(ctx, peerChainID)
 	if err != nil {
 		return fmt.Errorf("failed to get subnet of %q: %w", peerChainID, err)
 	}
-	if chainCtx.SubnetID != subnetID {
-		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedSubnetIDs, chainCtx.SubnetID, subnetID)
+	if cc.SubnetID != subnetID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedSubnetIDs, cc.SubnetID, subnetID)
 	}
 	return nil
 }
