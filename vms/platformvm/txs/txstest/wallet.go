@@ -28,7 +28,7 @@ import (
 
 func NewWallet(
 	t testing.TB,
-	ctx *consensus.Context,
+	ctx context.Context,
 	config *config.Internal,
 	state state.State,
 	kc *secp256k1fx.Keychain,

@@ -66,7 +66,7 @@ type Server interface {
 	// RegisterChain registers the API endpoints associated with this chain.
 	// That is, add <route, handler> pairs to server so that API calls can be
 	// made to the VM.
-	RegisterChain(chainName string, ctx *consensus.Context, vm core.VM)
+	RegisterChain(chainName string, ctx context.Context, vm core.VM)
 	// Shutdown this server
 	Shutdown() error
 }
@@ -169,10 +169,14 @@ func (s *server) Dispatch() error {
 	return s.srv.Serve(s.listener)
 }
 
-func (s *server) RegisterChain(chainName string, ctx *consensus.Context, vm core.VM) {
-	ctx.Lock.Lock()
+func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM) {
+	// Get chain context from context value
+	cc := consensus.GetChainContext(ctx)
+	if cc != nil {
+		cc.Lock.Lock()
+		defer cc.Lock.Unlock()
+	}
 	handlers, err := vm.CreateHandlers(context.TODO())
-	ctx.Lock.Unlock()
 	if err != nil {
 		s.log.Error("failed to create handlers",
 			zap.String("chainName", chainName),
@@ -181,11 +185,16 @@ func (s *server) RegisterChain(chainName string, ctx *consensus.Context, vm core
 		return
 	}
 
+	cc := consensus.GetChainContext(ctx)
+	if cc == nil {
+		s.log.Error("no chain context found")
+		return
+	}
 	s.log.Debug("about to add API endpoints",
-		zap.Stringer("chainID", ctx.ChainID),
+		zap.Stringer("chainID", cc.ChainID),
 	)
 	// all subroutes to a chain begin with "bc/<the chain's ID>"
-	defaultEndpoint := path.Join(constants.ChainAliasPrefix, ctx.ChainID.String())
+	defaultEndpoint := path.Join(constants.ChainAliasPrefix, cc.ChainID.String())
 
 	// Register each endpoint
 	for extension, handler := range handlers {
@@ -251,7 +260,8 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 // not done state-syncing/bootstrapping, writes back an error.
 func rejectMiddleware(handler http.Handler, ctx context.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { // If chain isn't done bootstrapping, ignore API calls
-		if ctx.State.Get() != consensus.NormalOp {
+		cc := consensus.GetChainContext(ctx)
+		if cc != nil && cc.State != nil && cc.State.Get() != consensus.NormalOp {
 			http.Error(w, "API call rejected because chain is not done bootstrapping", http.StatusServiceUnavailable)
 		} else {
 			handler.ServeHTTP(w, r)
