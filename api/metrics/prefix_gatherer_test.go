@@ -11,7 +11,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	dto "github.com/prometheus/client_model/go"
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 func TestPrefixGatherer_Gather(t *testing.T) {
@@ -20,14 +20,14 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 	gatherer := NewPrefixGatherer()
 	require.NotNil(gatherer)
 
-	registerA := metrics.NewRegistry()
+	registerA := metric.NewPrometheusRegistry()
 	require.NoError(gatherer.Register("a", registerA))
 	{
 		counterA := prometheus.NewCounter(counterOpts)
 		require.NoError(registerA.Register(counterA))
 	}
 
-	registerB := metrics.NewRegistry()
+	registerB := metric.NewPrometheusRegistry()
 	require.NoError(gatherer.Register("b", registerB))
 	{
 		counterB := prometheus.NewCounter(counterOpts)

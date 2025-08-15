@@ -172,7 +172,13 @@ func (m *manager) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	return blk.Height() - 1, nil
 }
 
-func (m *manager) GetCurrentHeight(ctx context.Context) (uint64, error) {
+// GetCurrentHeight without context to implement validators.State
+func (m *manager) GetCurrentHeight() (uint64, error) {
+	return m.getCurrentHeight(context.Background())
+}
+
+// GetCurrentHeightWithContext with context for internal use
+func (m *manager) GetCurrentHeightWithContext(ctx context.Context) (uint64, error) {
 	return m.getCurrentHeight(ctx)
 }
 

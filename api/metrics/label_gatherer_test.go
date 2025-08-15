@@ -11,7 +11,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	dto "github.com/prometheus/client_model/go"
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 func TestLabelGatherer_Gather(t *testing.T) {
@@ -96,7 +96,7 @@ func TestLabelGatherer_Gather(t *testing.T) {
 			gatherer := NewLabelGatherer(labelName)
 			require.NotNil(gatherer)
 
-			registerA := metrics.NewRegistry()
+			registerA := metric.NewPrometheusRegistry()
 			require.NoError(gatherer.Register(labelValueA, registerA))
 			{
 				counterA := prometheus.NewCounterVec(
@@ -107,7 +107,7 @@ func TestLabelGatherer_Gather(t *testing.T) {
 				require.NoError(registerA.Register(counterA))
 			}
 
-			registerB := metrics.NewRegistry()
+			registerB := metric.NewPrometheusRegistry()
 			require.NoError(gatherer.Register(labelValueB, registerB))
 			{
 				counterB := prometheus.NewCounterVec(
