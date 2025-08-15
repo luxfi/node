@@ -60,7 +60,7 @@ type DatabaseReplayConfig struct {
 
 // VM implements the C-Chain VM interface using geth
 type VM struct {
-	ctx          *consensusNode.Context
+	ctx          consensusNode.Context
 	db           database.Database
 	genesisBytes []byte
 	lastAccepted ids.ID
@@ -91,7 +91,7 @@ type VM struct {
 // Initialize implements the block.ChainVM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *consensusNode.Context,
+	chainCtx consensusNode.Context,
 	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,

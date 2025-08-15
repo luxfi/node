@@ -10,7 +10,7 @@ import (
 )
 
 func NewDefaultLogger(prefix string) logging.Logger {
-	log, err := LoggerForFormat(prefix, logging.AutoString)
+	log, err := LoggerForFormat(prefix, "AUTO")
 	if err != nil {
 		// This should never happen since auto is a valid log format
 		panic(err)

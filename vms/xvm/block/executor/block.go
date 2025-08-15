@@ -4,6 +4,7 @@
 package executor
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -41,7 +42,17 @@ type Block struct {
 	rejected bool
 }
 
-func (b *Block) Verify() error {
+// EpochBit returns the epoch bit for FPC
+func (b *Block) EpochBit() bool {
+	return false // XVM blocks don't support epoch bits yet
+}
+
+// FPCVotes returns embedded fast-path vote references
+func (b *Block) FPCVotes() [][]byte {
+	return nil // XVM blocks don't support FPC votes yet
+}
+
+func (b *Block) Verify(ctx context.Context) error {
 	blkID := b.ID()
 	if _, ok := b.manager.blkIDToState[blkID]; ok {
 		// This block has already been verified.
@@ -203,7 +214,7 @@ func (b *Block) Verify() error {
 	return nil
 }
 
-func (b *Block) Accept() error {
+func (b *Block) Accept(ctx context.Context) error {
 	blkID := b.ID()
 	defer b.manager.free(blkID)
 
@@ -247,7 +258,7 @@ func (b *Block) Accept() error {
 	}
 	
 	// Note that this method writes [batch] to the database.
-	if err := b.manager.backend.Ctx.SharedMemory.Apply(requests, batch); err != nil {
+	if err := b.manager.backend.SharedMemory.Apply(requests, batch); err != nil {
 		return fmt.Errorf("failed to apply state diff to shared memory: %w", err)
 	}
 
@@ -256,7 +267,7 @@ func (b *Block) Accept() error {
 	}
 
 	txChecksum, utxoChecksum := b.manager.state.Checksums()
-	b.manager.backend.Ctx.Log.Trace(
+	b.manager.backend.Log.Trace(
 		"accepted block",
 		zap.Stringer("blkID", blkID),
 		zap.Uint64("height", b.Height()),
@@ -267,11 +278,11 @@ func (b *Block) Accept() error {
 	return nil
 }
 
-func (b *Block) Reject() error {
+func (b *Block) Reject(ctx context.Context) error {
 	blkID := b.ID()
 	defer b.manager.free(blkID)
 
-	b.manager.backend.Ctx.Log.Debug(
+	b.manager.backend.Log.Debug(
 		"rejecting block",
 		zap.Stringer("blkID", blkID),
 		zap.Uint64("height", b.Height()),
@@ -280,7 +291,7 @@ func (b *Block) Reject() error {
 
 	for _, tx := range b.Txs() {
 		if err := b.manager.VerifyTx(tx); err != nil {
-			b.manager.backend.Ctx.Log.Debug("dropping invalidated tx",
+			b.manager.backend.Log.Debug("dropping invalidated tx",
 				zap.Stringer("txID", tx.ID()),
 				zap.Stringer("blkID", blkID),
 				zap.Error(err),
@@ -288,7 +299,7 @@ func (b *Block) Reject() error {
 			continue
 		}
 		if err := b.manager.mempool.Add(tx); err != nil {
-			b.manager.backend.Ctx.Log.Debug("dropping valid tx",
+			b.manager.backend.Log.Debug("dropping valid tx",
 				zap.Stringer("txID", tx.ID()),
 				zap.Stringer("blkID", blkID),
 				zap.Error(err),
@@ -340,7 +351,7 @@ func (b *Block) Status() choices.Status {
 
 	default:
 		// TODO: correctly report this error to the consensus engine.
-		b.manager.backend.Ctx.Log.Error(
+		b.manager.backend.Log.Error(
 			"dropping unhandled database error",
 			zap.Error(err),
 		)

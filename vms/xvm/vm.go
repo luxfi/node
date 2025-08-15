@@ -16,7 +16,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core/interfaces"
@@ -27,6 +26,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/pubsub"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/linked"
@@ -76,6 +76,18 @@ type VM struct {
 
 	// Contains information of where this VM is executing
 	ctx context.Context
+	
+	// Logger for this VM
+	log log.Logger
+	
+	// Lock for thread safety
+	lock sync.RWMutex
+	
+	// BCLookup provides blockchain alias lookup
+	bcLookup interfaces.BCLookup
+	
+	// SharedMemory for cross-chain operations
+	sharedMemory interfaces.SharedMemory
 
 	// Used to check local time
 	clock mockable.Clock
@@ -216,14 +228,12 @@ func (vm *VM) initialize(
 	if err != nil {
 		return err
 	}
-	ctx.Log.Info("VM config initialized",
+	vm.log.Info("VM config initialized",
 		zap.Reflect("config", xvmConfig),
 	)
 
-	vm.registerer, err = metrics.MakeAndRegister(ctx.Metrics, "")
-	if err != nil {
-		return err
-	}
+	// Get metrics from a global registry or create new one
+	vm.registerer = prometheus.NewRegistry()
 
 	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
 
@@ -242,7 +252,7 @@ func (vm *VM) initialize(
 	vm.db = versiondb.New(db)
 	vm.assetToFxCache = &cache.LRU[ids.ID, set.Bits64]{Size: assetToFxCacheSize}
 
-	vm.pubsub = pubsub.New(ctx.Log)
+	vm.pubsub = pubsub.New(vm.log)
 
 	typedFxs := make([]extensions.Fx, len(fxs))
 	vm.fxs = make([]*extensions.ParsedFx, len(fxs))
@@ -264,7 +274,7 @@ func (vm *VM) initialize(
 	vm.parser, err = block.NewCustomParser(
 		vm.typeToFxIndex,
 		&vm.clock,
-		ctx.Log,
+		vm.log,
 		typedFxs,
 	)
 	if err != nil {
@@ -295,13 +305,13 @@ func (vm *VM) initialize(
 
 	// use no op impl when disabled in config
 	if xvmConfig.IndexTransactions {
-		vm.ctx.Log.Warn("deprecated address transaction indexing is enabled")
-		vm.addressTxsIndexer, err = index.NewIndexer(vm.db, vm.ctx.Log, "", vm.registerer, xvmConfig.IndexAllowIncomplete)
+		vm.log.Warn("deprecated address transaction indexing is enabled")
+		vm.addressTxsIndexer, err = index.NewIndexer(vm.db, vm.log, "", vm.registerer, xvmConfig.IndexAllowIncomplete)
 		if err != nil {
 			return fmt.Errorf("failed to initialize address transaction indexer: %w", err)
 		}
 	} else {
-		vm.ctx.Log.Info("address transaction indexing is disabled")
+		vm.log.Info("address transaction indexing is disabled")
 		vm.addressTxsIndexer, err = index.NewNoIndexer(vm.db, xvmConfig.IndexAllowIncomplete)
 		if err != nil {
 			return fmt.Errorf("failed to initialize disabled indexer: %w", err)
@@ -441,7 +451,7 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
  */
 
 func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
-	time := version.GetCortinaTime(vm.ctx.NetworkID)
+	time := version.GetCortinaTime(consensus.GetNetworkID(vm.ctx))
 	err := vm.state.InitializeChainState(stopVertexID, time)
 	if err != nil {
 		return err
@@ -472,16 +482,17 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 
 	// Invariant: The context lock is not held when calling network.IssueTx.
 	// Create a wrapper for ValidatorState to match the expected interface
-	validatorStateWrapper := &validatorStateWrapper{vs: vm.ctx.ValidatorState}
+	// For now, use a nil validator state as we don't have it in context
+	validatorStateWrapper := &validatorStateWrapper{vs: nil}
 	
 	vm.network, err = network.New(
-		vm.ctx.Log,
-		vm.ctx.NodeID,
-		vm.ctx.SubnetID,
+		vm.log,
+		consensus.GetNodeID(vm.ctx),
+		consensus.GetSubnetID(vm.ctx),
 		validatorStateWrapper,
 		vm.parser,
 		network.NewLockedTxVerifier(
-			&vm.ctx.Lock,
+			&vm.lock,
 			vm.chainManager,
 		),
 		mempool,
@@ -561,7 +572,7 @@ func (vm *VM) issueTxFromRPC(tx *txs.Tx) (ids.ID, error) {
 	txID := tx.ID()
 	err := vm.network.IssueTxFromRPC(tx)
 	if err != nil && !errors.Is(err, mempool.ErrDuplicateTx) {
-		vm.ctx.Log.Debug("failed to add tx to mempool",
+		vm.log.Debug("failed to add tx to mempool",
 			zap.Stringer("txID", txID),
 			zap.Error(err),
 		)
@@ -589,7 +600,7 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 	}
 
 	// secure this by defaulting to luxAsset
-	vm.feeAssetID = vm.ctx.LUXAssetID
+	vm.feeAssetID = consensus.LuxAssetID(vm.ctx)
 
 	for index, genesisTx := range genesis.Txs {
 		if len(genesisTx.Outs) != 0 {
@@ -612,7 +623,7 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 			vm.initState(tx)
 		}
 		if index == 0 {
-			vm.ctx.Log.Info("fee asset is established",
+			vm.log.Info("fee asset is established",
 				zap.String("alias", genesisTx.Alias),
 				zap.Stringer("assetID", txID),
 			)
@@ -629,7 +640,7 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 
 func (vm *VM) initState(tx *txs.Tx) {
 	txID := tx.ID()
-	vm.ctx.Log.Info("initializing genesis asset",
+	vm.log.Info("initializing genesis asset",
 		zap.Stringer("txID", txID),
 	)
 	vm.state.AddTx(tx)
@@ -704,7 +715,7 @@ func (vm *VM) onAccept(tx *txs.Tx) error {
 
 		utxo, err := vm.state.GetUTXO(utxoID.InputID())
 		if err == database.ErrNotFound {
-			vm.ctx.Log.Debug("dropping utxo from index",
+			vm.log.Debug("dropping utxo from index",
 				zap.Stringer("txID", txID),
 				zap.Stringer("utxoTxID", utxoID.TxID),
 				zap.Uint32("utxoOutputIndex", utxoID.OutputIndex),

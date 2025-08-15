@@ -17,7 +17,7 @@ type MintOutput struct {
 }
 
 // InitializeWithContext implements context.ContextInitializable
-func (out *MintOutput) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
+func (out *MintOutput) InitializeWithContext(ctx context.Context) error {
 	return nil
 }
 

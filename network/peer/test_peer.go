@@ -195,5 +195,17 @@ func (m *testValidatorManager) NumValidators(subnetID ids.ID) int {
 }
 
 func (m *testValidatorManager) RegisterSetCallbackListener(listener validators.SetCallbackListener) {
-	// No-op for test
+	// No-op
+}
+
+func (m *testValidatorManager) AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk interface{}, validationID ids.ID, weight uint64) error {
+	return nil
+}
+
+func (m *testValidatorManager) AddWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
+	return nil
+}
+
+func (m *testValidatorManager) RemoveWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
+	return nil
 }

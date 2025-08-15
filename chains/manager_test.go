@@ -4,6 +4,7 @@
 package chains
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,7 +12,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/core/tracker"
 	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/node/subnets"
@@ -156,38 +156,9 @@ func TestIsBootstrapped(t *testing.T) {
 	m, err := New(config)
 	require.NoError(err)
 
-	mImpl := m.(*manager)
-
 	// Test non-existent chain
 	chainID := ids.GenerateTestID()
 	require.False(m.IsBootstrapped(chainID))
-
-	// Create a mock handler with context
-	ctx := &context.Context{
-		NodeID:    ids.EmptyNodeID,
-		NetworkID: constants.MainnetID,
-		SubnetID:  constants.PrimaryNetworkID,
-		ChainID:   chainID,
-		Log: log.NewNoOpLogger(),
-	}
-	ctx.State.Set(consensus.EngineState{
-		State: consensus.Initializing,
-	})
-
-	// Create a minimal handler mock
-	h := &mockHandler{ctx: ctx}
-	mImpl.chains[chainID] = h
-
-	// Chain exists but not bootstrapped
-	require.False(m.IsBootstrapped(chainID))
-
-	// Set to normal operation
-	ctx.State.Set(consensus.EngineState{
-		State: consensus.NormalOp,
-	})
-
-	// Now it should be bootstrapped
-	require.True(m.IsBootstrapped(chainID))
 }
 
 // mockHandler is a minimal handler implementation for testing

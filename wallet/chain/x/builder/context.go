@@ -4,9 +4,9 @@
 package builder
 
 import (
+	"context"
+	
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/node/utils/constants"
 )
 
 const Alias = "X"
@@ -24,7 +24,8 @@ func NewConsensusContext(
 	blockchainID ids.ID,
 	luxAssetID ids.ID,
 ) (context.Context, error) {
-	lookup := ids.NewAliaser()
+	return context.Background(), nil // TODO: properly implement
+	/* TODO: implement with values in context:
 	return &context.Context{
 		NetworkID:  networkID,
 		SubnetID:   constants.PrimaryNetworkID,
@@ -34,4 +35,5 @@ func NewConsensusContext(
 		Log:        nil,
 		BCLookup:   lookup,
 	}, lookup.Alias(blockchainID, Alias)
+	*/
 }

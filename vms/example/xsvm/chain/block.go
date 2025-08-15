@@ -88,11 +88,11 @@ func (b *block) Timestamp() time.Time {
 	return b.Time()
 }
 
-func (b *block) Verify(ctx context.Context) error {
-	return b.VerifyWithContext(ctx, nil)
+func (b *block) Verify() error {
+	return b.VerifyWithContext(context.Background(), nil)
 }
 
-func (b *block) Accept(context.Context) error {
+func (b *block) Accept() error {
 	if err := b.state.Commit(); err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func (b *block) Accept(context.Context) error {
 	return nil
 }
 
-func (b *block) Reject(context.Context) error {
+func (b *block) Reject() error {
 	b.status = choices.Rejected
 	delete(b.chain.verifiedBlocks, b.id)
 

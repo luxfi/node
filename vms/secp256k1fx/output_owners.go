@@ -35,8 +35,8 @@ type OutputOwners struct {
 }
 
 // InitializeWithContext implements context.ContextInitializable
-func (out *OutputOwners) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
-	out.ctx = chainCtx
+func (out *OutputOwners) InitializeWithContext(ctx context.Context) error {
+	out.ctx = ctx
 	return nil
 }
 

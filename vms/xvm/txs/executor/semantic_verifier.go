@@ -99,7 +99,7 @@ func (v *SemanticVerifier) ImportTx(tx *txs.ImportTx) error {
 		utxoIDs[i] = inputID[:]
 	}
 
-	allUTXOBytes, err := v.Ctx.SharedMemory.Get(tx.SourceChain, utxoIDs)
+	allUTXOBytes, err := v.SharedMemory.Get(tx.SourceChain, utxoIDs)
 	if err != nil {
 		return err
 	}

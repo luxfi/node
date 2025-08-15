@@ -116,6 +116,12 @@ type Chain interface {
 
 	GetTx(txID ids.ID) (*txs.Tx, status.Status, error)
 	AddTx(tx *txs.Tx, status status.Status)
+
+	// L1 Validator support
+	GetL1Validator(validationID ids.ID) (L1Validator, error)
+	HasL1Validator(subnetID ids.ID, nodeID ids.NodeID) (bool, error)
+	WeightOfL1Validators(subnetID ids.ID) (uint64, error)
+	PutL1Validator(validator L1Validator) error
 }
 
 type State interface {
@@ -2434,4 +2440,28 @@ func (s *state) ReindexBlocks(lock sync.Locker, log log.Logger) error {
 	)
 
 	return s.Commit()
+}
+
+// GetL1Validator returns an L1 validator by its validation ID
+func (s *state) GetL1Validator(validationID ids.ID) (L1Validator, error) {
+	// TODO: Implement L1 validator storage
+	return L1Validator{}, database.ErrNotFound
+}
+
+// HasL1Validator checks if an L1 validator exists for the given subnet and node
+func (s *state) HasL1Validator(subnetID ids.ID, nodeID ids.NodeID) (bool, error) {
+	// TODO: Implement L1 validator existence check
+	return false, nil
+}
+
+// WeightOfL1Validators returns the total weight of L1 validators for a subnet
+func (s *state) WeightOfL1Validators(subnetID ids.ID) (uint64, error) {
+	// TODO: Implement L1 validator weight calculation
+	return 0, nil
+}
+
+// PutL1Validator stores an L1 validator
+func (s *state) PutL1Validator(validator L1Validator) error {
+	// TODO: Implement L1 validator storage
+	return nil
 }

@@ -123,7 +123,7 @@ func (tx *TransformSubnetTx) SyntacticVerify(ctx context.Context) error {
 		return errCantTransformPrimaryNetwork
 	case tx.AssetID == ids.Empty:
 		return errEmptyAssetID
-	case tx.AssetID == ctx.LUXAssetID:
+	case tx.AssetID == consensus.LuxAssetID(ctx):
 		return errAssetIDCantBeLUX
 	case tx.InitialSupply == 0:
 		return errInitialSupplyZero
@@ -171,7 +171,7 @@ func (tx *TransformSubnetTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *TransformSubnetTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
+func (tx *TransformSubnetTx) InitializeWithContext(ctx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

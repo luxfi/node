@@ -14,7 +14,8 @@ import (
 
 // FPCEngine provides fast-path consensus for the Lux node
 type FPCEngine struct {
-	flare  flare.Flare[ids.ID]
+	// TODO: Update when flare API is stable
+	// flare  flare.Flare[ids.ID]
 	dag    *dag.DAG
 	cache  *witness.Cache
 	log    log.Logger
@@ -22,8 +23,8 @@ type FPCEngine struct {
 
 // NewFPCEngine creates a new FPC consensus engine
 func NewFPCEngine(f int) *FPCEngine {
-	// Create Flare fast path
-	fl := flare.New[ids.ID](f)
+	// TODO: Update when flare API is stable
+	// fl := flare.New[ids.ID](f)
 	
 	// Create DAG for transaction ordering
 	d := dag.New()
@@ -36,7 +37,8 @@ func NewFPCEngine(f int) *FPCEngine {
 	wCache := witness.NewCache(policy, 100000, 1<<30)
 	
 	return &FPCEngine{
-		flare: fl,
+		// TODO: Update when flare API is stable
+		// flare: fl,
 		dag:   d,
 		cache: wCache,
 		log:   log.NewLogger("fpc"),
@@ -57,17 +59,19 @@ func (e *FPCEngine) Stop() error {
 
 // Propose adds a transaction to consensus
 func (e *FPCEngine) Propose(txID ids.ID) error {
-	ref := e.flare.Propose(txID)
-	e.log.Debug("Proposed transaction", "txID", txID, "ref", ref)
+	// TODO: Update when flare API is stable
+	// ref := e.flare.Propose(txID)
+	// e.log.Debug("Proposed transaction", "txID", txID, "ref", ref)
 	return nil
 }
 
 // Query checks if a transaction is finalized
 func (e *FPCEngine) Query(txID ids.ID) (bool, error) {
-	status := e.flare.Status(txID)
-	if status == flare.StatusFinal || status == flare.StatusExecutable {
-		return true, nil
-	}
+	// TODO: Update when flare API is stable
+	// status := e.flare.Status(txID)
+	// if status == flare.StatusFinal || status == flare.StatusExecutable {
+	// 	return true, nil
+	// }
 	return false, fmt.Errorf("not finalized: %s", txID)
 }
 
@@ -78,5 +82,7 @@ func (e *FPCEngine) ValidateWitness(header witness.Header, payload []byte) (bool
 
 // Executable returns transactions ready for execution
 func (e *FPCEngine) Executable() []ids.ID {
-	return e.flare.Executable()
+	// TODO: Update when flare API is stable
+	// return e.flare.Executable()
+	return nil
 }

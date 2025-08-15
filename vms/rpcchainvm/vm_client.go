@@ -142,9 +142,6 @@ func (vm *VMClient) Initialize(
 		ChainID:      chainCtx.ChainID,
 		NodeID:       chainCtx.NodeID,
 		PublicKey:    chainCtx.PublicKey,
-		CChainID:     chainCtx.CChainID,
-		LUXAssetID:   chainCtx.LUXAssetID,
-		ChainDataDir: chainCtx.ChainDataDir,
 	})
 	
 	db := dbManager.Current()
@@ -899,8 +896,19 @@ func (b *blockClient) ID() ids.ID {
 	return b.id
 }
 
-func (b *blockClient) Accept() error {
-	ctx := context.Background()
+// EpochBit returns the epoch bit for FPC
+func (b *blockClient) EpochBit() bool {
+	// RPC blocks don't support epoch bits yet
+	return false
+}
+
+// FPCVotes returns embedded fast-path vote references
+func (b *blockClient) FPCVotes() [][]byte {
+	// RPC blocks don't support FPC votes yet
+	return nil
+}
+
+func (b *blockClient) Accept(ctx context.Context) error {
 	b.status = choices.Accepted
 	_, err := b.vm.client.BlockAccept(ctx, &vmpb.BlockAcceptRequest{
 		Id: b.id[:],
@@ -908,8 +916,7 @@ func (b *blockClient) Accept() error {
 	return err
 }
 
-func (b *blockClient) Reject() error {
-	ctx := context.Background()
+func (b *blockClient) Reject(ctx context.Context) error {
 	b.status = choices.Rejected
 	_, err := b.vm.client.BlockReject(ctx, &vmpb.BlockRejectRequest{
 		Id: b.id[:],
@@ -925,8 +932,7 @@ func (b *blockClient) Parent() ids.ID {
 	return b.parentID
 }
 
-func (b *blockClient) Verify() error {
-	ctx := context.Background()
+func (b *blockClient) Verify(ctx context.Context) error {
 	resp, err := b.vm.client.BlockVerify(ctx, &vmpb.BlockVerifyRequest{
 		Bytes: b.bytes,
 	})
@@ -1085,21 +1091,21 @@ type chainBlockWrapper struct {
 }
 
 // Accept implements block.Block
-func (b *chainBlockWrapper) Accept() error {
-	// Chain.Block already has Accept() with no context
-	return b.Block.Accept()
+func (b *chainBlockWrapper) Accept(ctx context.Context) error {
+	// Forward to embedded chain.Block
+	return b.Block.Accept(ctx)
 }
 
 // Reject implements block.Block
-func (b *chainBlockWrapper) Reject() error {
-	// Chain.Block already has Reject() with no context
-	return b.Block.Reject()
+func (b *chainBlockWrapper) Reject(ctx context.Context) error {
+	// Forward to embedded chain.Block
+	return b.Block.Reject(ctx)
 }
 
 // Verify implements block.Block
-func (b *chainBlockWrapper) Verify() error {
-	// Chain.Block already has Verify() with no context
-	return b.Block.Verify()
+func (b *chainBlockWrapper) Verify(ctx context.Context) error {
+	// Forward to embedded chain.Block
+	return b.Block.Verify(ctx)
 }
 
 // sharedMemoryWrapper wraps interfaces.SharedMemory to match atomic.SharedMemory

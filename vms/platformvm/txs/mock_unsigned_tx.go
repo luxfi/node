@@ -13,7 +13,6 @@ import (
 	"context"
 	reflect "reflect"
 
-	consensus "github.com/luxfi/consensus"
 	ids "github.com/luxfi/ids"
 	set "github.com/luxfi/node/utils/set"
 	lux "github.com/luxfi/node/vms/components/lux"
@@ -138,7 +137,7 @@ func (mr *MockUnsignedTxMockRecorder) Visit(visitor any) *gomock.Call {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *MockUnsignedTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
+func (tx *MockUnsignedTx) InitializeWithContext(ctx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

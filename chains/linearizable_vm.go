@@ -27,7 +27,7 @@ var (
 // linearizeOnInitializeVM.
 type initializeOnLinearizeVM struct {
 	vertex.LinearizableVMWithEngine
-	vmToInitialize core.VM
+	vmToInitialize block.ChainVM  // Changed from core.VM to block.ChainVM
 	vmToLinearize  *linearizeOnInitializeVM
 
 	ctx          context.Context
@@ -42,18 +42,17 @@ type initializeOnLinearizeVM struct {
 func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	vm.vmToLinearize.stopVertexID = stopVertexID
 	
-	// Check if vmToInitialize is a ChainVM
-	if chainVM, ok := vm.vmToInitialize.(block.ChainVM); ok {
-		// Convert consensus types to block types
-		chainCtx := &block.ChainContext{
-			NetworkID:    vm.ctx.NetworkID,
-			SubnetID:     vm.ctx.SubnetID,
-			ChainID:      vm.ctx.ChainID,
-			NodeID:       vm.ctx.NodeID,
-			PublicKey:    vm.ctx.PublicKey,
-			LUXAssetID:   vm.ctx.LUXAssetID,
-			CChainID:     vm.ctx.CChainID,
-			ChainDataDir: vm.ctx.ChainDataDir,
+	// Initialize the ChainVM
+	// Convert consensus types to block types
+	chainCtx := &block.ChainContext{
+			NetworkID:    consensus.GetNetworkID(vm.ctx),
+			SubnetID:     consensus.GetSubnetID(vm.ctx),
+			ChainID:      consensus.GetChainID(vm.ctx),
+			NodeID:       consensus.GetNodeID(vm.ctx),
+			PublicKey:    consensus.PK(vm.ctx),
+			LUXAssetID:   consensus.LuxAssetID(vm.ctx),
+			CChainID:     ids.Empty, // TODO: Get from config
+			ChainDataDir: "", // TODO: Get from config
 		}
 		
 		// Create DBManager wrapper
@@ -72,7 +71,7 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 		// Create message channel
 		toEngine := make(chan block.Message, 1)
 		
-		return chainVM.Initialize(
+		return vm.vmToInitialize.Initialize(
 			ctx,
 			chainCtx,
 			dbManager,
@@ -82,16 +81,7 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 			toEngine,
 			blockFxs,
 			blockAppSender,
-		)
-	}
-	
-	// Fallback to core.VM Initialize (if it exists)
-	if coreVM, ok := vm.vmToInitialize.(core.VM); ok {
-		// core.VM's Initialize takes no parameters, so we just call it
-		return coreVM.Initialize()
-	}
-	
-	return errors.New("vmToInitialize does not implement ChainVM or core.VM")
+	)
 }
 
 // dbManagerWrapper wraps a database.Database to implement block.DBManager
@@ -223,16 +213,14 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	appSender block.AppSender,
 ) error {
 	// Convert block types to consensus types for the underlying VM
-	consensusCtx := &context.Context{
+	consensusCtx := context.Background()
+	consensusCtx = consensus.WithIDs(consensusCtx, consensus.IDs{
 		NetworkID:    chainCtx.NetworkID,
 		SubnetID:     chainCtx.SubnetID,
 		ChainID:      chainCtx.ChainID,
 		NodeID:       chainCtx.NodeID,
 		PublicKey:    chainCtx.PublicKey,
-		LUXAssetID:   chainCtx.LUXAssetID,
-		CChainID:     chainCtx.CChainID,
-		ChainDataDir: chainCtx.ChainDataDir,
-	}
+	})
 	
 	// Get current database from DBManager
 	var db database.Database

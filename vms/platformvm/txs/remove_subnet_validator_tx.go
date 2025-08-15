@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/verify"
@@ -57,7 +56,7 @@ func (tx *RemoveSubnetValidatorTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *RemoveSubnetValidatorTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
+func (tx *RemoveSubnetValidatorTx) InitializeWithContext(ctx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

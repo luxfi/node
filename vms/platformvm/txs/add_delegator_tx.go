@@ -107,7 +107,7 @@ func (tx *AddDelegatorTx) SyntacticVerify(ctx context.Context) error {
 		totalStakeWeight = newWeight
 
 		assetID := out.AssetID()
-		if assetID != ctx.LUXAssetID {
+		if assetID != consensus.LuxAssetID(ctx) {
 			return fmt.Errorf("%w but is %q", errStakeMustBeLUX, assetID)
 		}
 	}
@@ -133,7 +133,7 @@ func (tx *AddDelegatorTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *AddDelegatorTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
+func (tx *AddDelegatorTx) InitializeWithContext(ctx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

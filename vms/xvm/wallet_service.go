@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/exp/maps"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/formatting"
@@ -34,7 +35,7 @@ func (w *WalletService) decided(txID ids.ID) {
 		return
 	}
 
-	w.vm.ctx.Log.Info("tx decided over wallet API",
+	w.vm.log.Info("tx decided over wallet API",
 		zap.Stringer("txID", txID),
 	)
 	for {
@@ -45,7 +46,7 @@ func (w *WalletService) decided(txID ids.ID) {
 
 		err := w.vm.network.IssueTxFromRPCWithoutVerification(tx)
 		if err == nil {
-			w.vm.ctx.Log.Info("issued tx to mempool over wallet API",
+			w.vm.log.Info("issued tx to mempool over wallet API",
 				zap.Stringer("txID", txID),
 			)
 			return
@@ -55,7 +56,7 @@ func (w *WalletService) decided(txID ids.ID) {
 		}
 
 		w.pendingTxs.Delete(txID)
-		w.vm.ctx.Log.Warn("dropping tx issued over wallet API",
+		w.vm.log.Warn("dropping tx issued over wallet API",
 			zap.Stringer("txID", txID),
 			zap.Error(err),
 		)
@@ -64,12 +65,12 @@ func (w *WalletService) decided(txID ids.ID) {
 
 func (w *WalletService) issue(tx *txs.Tx) (ids.ID, error) {
 	txID := tx.ID()
-	w.vm.ctx.Log.Info("issuing tx over wallet API",
+	w.vm.log.Info("issuing tx over wallet API",
 		zap.Stringer("txID", txID),
 	)
 
 	if _, ok := w.pendingTxs.Get(txID); ok {
-		w.vm.ctx.Log.Warn("issuing duplicate tx over wallet API",
+		w.vm.log.Warn("issuing duplicate tx over wallet API",
 			zap.Stringer("txID", txID),
 		)
 		return txID, nil
@@ -77,18 +78,18 @@ func (w *WalletService) issue(tx *txs.Tx) (ids.ID, error) {
 
 	if w.pendingTxs.Len() == 0 {
 		if err := w.vm.network.IssueTxFromRPCWithoutVerification(tx); err == nil {
-			w.vm.ctx.Log.Info("issued tx to mempool over wallet API",
+			w.vm.log.Info("issued tx to mempool over wallet API",
 				zap.Stringer("txID", txID),
 			)
 		} else if !errors.Is(err, mempool.ErrDuplicateTx) {
-			w.vm.ctx.Log.Warn("failed to issue tx over wallet API",
+			w.vm.log.Warn("failed to issue tx over wallet API",
 				zap.Stringer("txID", txID),
 				zap.Error(err),
 			)
 			return ids.Empty, err
 		}
 	} else {
-		w.vm.ctx.Log.Info("enqueueing tx over wallet API",
+		w.vm.log.Info("enqueueing tx over wallet API",
 			zap.Stringer("txID", txID),
 		)
 	}
@@ -128,7 +129,7 @@ func (w *WalletService) update(utxos []*lux.UTXO) ([]*lux.UTXO, error) {
 
 // IssueTx attempts to issue a transaction into consensus
 func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
-	w.vm.ctx.Log.Warn("deprecated API called",
+	w.vm.log.Warn("deprecated API called",
 		zap.String("service", "wallet"),
 		zap.String("method", "issueTx"),
 		zap.String("tx", args.Tx),
@@ -144,8 +145,8 @@ func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *a
 		return err
 	}
 
-	w.vm.ctx.Lock.Lock()
-	defer w.vm.ctx.Lock.Unlock()
+	w.vm.lock.Lock()
+	defer w.vm.lock.Unlock()
 
 	txID, err := w.issue(tx)
 	reply.TxID = txID
@@ -163,7 +164,7 @@ func (w *WalletService) Send(r *http.Request, args *SendArgs, reply *api.JSONTxI
 
 // SendMultiple sends a transaction with multiple outputs.
 func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *api.JSONTxIDChangeAddr) error {
-	w.vm.ctx.Log.Warn("deprecated API called",
+	w.vm.log.Warn("deprecated API called",
 		zap.String("service", "wallet"),
 		zap.String("method", "sendMultiple"),
 		"username", args.Username,
@@ -185,8 +186,8 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 		return fmt.Errorf("couldn't parse 'From' addresses: %w", err)
 	}
 
-	w.vm.ctx.Lock.Lock()
-	defer w.vm.ctx.Lock.Unlock()
+	w.vm.lock.Lock()
+	defer w.vm.lock.Unlock()
 
 	// Load user's UTXOs/keys
 	utxos, kc, err := w.vm.LoadUser(args.Username, args.Password, fromAddrs)
@@ -298,8 +299,8 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 	lux.SortTransferableOutputs(outs, codec)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
-		NetworkID:    w.vm.ctx.NetworkID,
-		BlockchainID: w.vm.ctx.ChainID,
+		NetworkID:    consensus.GetNetworkID(w.vm.ctx),
+		BlockchainID: consensus.GetChainID(w.vm.ctx),
 		Outs:         outs,
 		Ins:          ins,
 		Memo:         memoBytes,

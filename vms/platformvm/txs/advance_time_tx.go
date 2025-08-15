@@ -8,7 +8,6 @@ import (
 	"time"
 	
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
@@ -61,7 +60,7 @@ func (tx *AdvanceTimeTx) Visit(visitor Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *AdvanceTimeTx) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
+func (tx *AdvanceTimeTx) InitializeWithContext(ctx context.Context) error {
     // Initialize any context-dependent fields here
     return nil
 }

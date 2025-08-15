@@ -4,7 +4,6 @@
 package executor
 
 import (
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/timer/mockable"

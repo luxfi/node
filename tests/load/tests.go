@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/geth/accounts/abi/bind"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/crypto"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/geth/params"
 	"github.com/stretchr/testify/require"
 
@@ -239,9 +239,10 @@ func (t TransferTest) Run(tc tests.TestContext, wallet *Wallet) {
 	gasFeeCap := new(big.Int).Mul(bigGwei, maxFeeCap)
 
 	// Generate non-existent account address
-	pk, err := crypto.GenerateKey()
+	pk, err := secp256k1.NewPrivateKey()
 	require.NoError(err)
-	recipient := crypto.PubkeyToAddress(pk.PublicKey)
+	cryptoAddr := secp256k1.PubkeyToAddress(*pk.PublicKey().ToECDSA())
+	recipient := common.BytesToAddress(cryptoAddr[:])
 
 	tx, err := types.SignNewTx(wallet.privKey, wallet.signer, &types.DynamicFeeTx{
 		ChainID:   wallet.chainID,

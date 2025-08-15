@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/snowtest"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/secp256k1"
@@ -34,7 +34,7 @@ const (
 )
 
 var (
-	LUXAsset = lux.Asset{ID: snowtest.LUXAssetID}
+	LUXAsset = lux.Asset{ID: consensustest.LUXAssetID}
 
 	DefaultValidatorStartTime     = upgrade.InitiallyActiveTime
 	DefaultValidatorStartTimeUnix = uint64(DefaultValidatorStartTime.Unix())
@@ -102,7 +102,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 	for i, key := range c.FundedKeys {
 		genesis.UTXOs[i] = &platformvmgenesis.UTXO{UTXO: lux.UTXO{
 			UTXOID: lux.UTXOID{
-				TxID:        snowtest.LUXAssetID,
+				TxID:        consensustest.LUXAssetID,
 				OutputIndex: uint32(i),
 			},
 			Asset: LUXAsset,
@@ -161,7 +161,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 		}},
 		SubnetID:   constants.PrimaryNetworkID,
 		ChainName:  XChainName,
-		VMID:       constants.AVMID,
+		VMID:       constants.XVMID,
 		SubnetAuth: &secp256k1fx.Input{},
 	}
 	chainTx := &txs.Tx{Unsigned: chain}

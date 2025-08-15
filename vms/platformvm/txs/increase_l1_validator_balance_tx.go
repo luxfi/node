@@ -4,10 +4,10 @@
 package txs
 
 import (
+	"context"
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
 )
 
 var (

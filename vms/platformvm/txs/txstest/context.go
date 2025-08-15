@@ -7,7 +7,6 @@ import (
 	"time"
 	
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"

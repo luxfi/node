@@ -30,37 +30,34 @@ type tracedBlock struct {
 	vm *blockVM
 }
 
-func (b *tracedBlock) Verify() error {
-	ctx := context.Background()
+func (b *tracedBlock) Verify(ctx context.Context) error {
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.verifyTag, oteltrace.WithAttributes(
 		attribute.Stringer("blkID", b.ID()),
 		attribute.Int64("height", int64(b.Height())),
 	))
 	defer span.End()
 
-	return b.Block.Verify()
+	return b.Block.Verify(ctx)
 }
 
-func (b *tracedBlock) Accept() error {
-	ctx := context.Background()
+func (b *tracedBlock) Accept(ctx context.Context) error {
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.acceptTag, oteltrace.WithAttributes(
 		attribute.Stringer("blkID", b.ID()),
 		attribute.Int64("height", int64(b.Height())),
 	))
 	defer span.End()
 
-	return b.Block.Accept()
+	return b.Block.Accept(ctx)
 }
 
-func (b *tracedBlock) Reject() error {
-	ctx := context.Background()
+func (b *tracedBlock) Reject(ctx context.Context) error {
 	ctx, span := b.vm.tracer.Start(ctx, b.vm.rejectTag, oteltrace.WithAttributes(
 		attribute.Stringer("blkID", b.ID()),
 		attribute.Int64("height", int64(b.Height())),
 	))
 	defer span.End()
 
-	return b.Block.Reject()
+	return b.Block.Reject(ctx)
 }
 
 func (b *tracedBlock) Options(ctx context.Context) ([2]chain.Block, error) {

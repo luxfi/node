@@ -108,7 +108,6 @@ func NewTestNetwork(
 	resourceTracker, err := tracker.NewResourceTracker(
 		promRegistry,
 		&noOpResourceManager{},
-		&noOpMetricsFactory{},
 		constants.DefaultHealthCheckAveragerHalflife,
 	)
 	if err != nil {

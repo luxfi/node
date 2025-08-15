@@ -27,9 +27,9 @@ type meterBlock struct {
 	vm *blockVM
 }
 
-func (mb *meterBlock) Verify() error {
+func (mb *meterBlock) Verify(ctx context.Context) error {
 	start := mb.vm.clock.Time()
-	err := mb.Block.Verify()
+	err := mb.Block.Verify(ctx)
 	end := mb.vm.clock.Time()
 	duration := float64(end.Sub(start))
 	if err != nil {
@@ -40,18 +40,18 @@ func (mb *meterBlock) Verify() error {
 	return err
 }
 
-func (mb *meterBlock) Accept() error {
+func (mb *meterBlock) Accept(ctx context.Context) error {
 	start := mb.vm.clock.Time()
-	err := mb.Block.Accept()
+	err := mb.Block.Accept(ctx)
 	end := mb.vm.clock.Time()
 	duration := float64(end.Sub(start))
 	mb.vm.blockMetrics.accept.Observe(duration)
 	return err
 }
 
-func (mb *meterBlock) Reject() error {
+func (mb *meterBlock) Reject(ctx context.Context) error {
 	start := mb.vm.clock.Time()
-	err := mb.Block.Reject()
+	err := mb.Block.Reject(ctx)
 	end := mb.vm.clock.Time()
 	duration := float64(end.Sub(start))
 	mb.vm.blockMetrics.reject.Observe(duration)

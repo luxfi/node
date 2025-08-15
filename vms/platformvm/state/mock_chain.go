@@ -20,8 +20,12 @@ import (
 	fx "github.com/luxfi/node/vms/platformvm/fx"
 	status "github.com/luxfi/node/vms/platformvm/status"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/warp/message"
 	gomock "go.uber.org/mock/gomock"
 )
+
+// Type alias for clarity
+type SubnetToL1Conversion = message.SubnetToL1Conversion
 
 // MockChain is a mock of Chain interface.
 type MockChain struct {

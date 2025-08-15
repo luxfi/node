@@ -19,7 +19,7 @@ type TransferInput struct {
 func (*TransferInput) InitCtx(context.Context) {}
 
 // InitializeWithContext initializes the input with consensus context
-func (*TransferInput) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
+func (*TransferInput) InitializeWithContext(ctx context.Context) error {
 	return nil
 }
 
