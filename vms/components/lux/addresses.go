@@ -53,11 +53,15 @@ func (a *addressManager) ParseLocalAddress(addrStr string) (ids.ShortID, error) 
 	if err != nil {
 		return ids.ShortID{}, err
 	}
-	if chainID != a.ctx.ChainID {
+	c := consensus.GetChainContext(a.ctx)
+	if c == nil {
+		return ids.ShortID{}, fmt.Errorf("no chain context found")
+	}
+	if chainID != c.ChainID {
 		return ids.ShortID{}, fmt.Errorf(
 			"%w: expected %q but got %q",
 			ErrMismatchedChainIDs,
-			a.ctx.ChainID,
+			c.ChainID,
 			chainID,
 		)
 	}
@@ -70,12 +74,16 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 		return ids.Empty, ids.ShortID{}, err
 	}
 
-	chainID, err := a.ctx.BCLookup.Lookup(chainIDAlias)
+	c := consensus.GetChainContext(a.ctx)
+	if c == nil {
+		return ids.Empty, ids.ShortID{}, fmt.Errorf("no chain context found")
+	}
+	chainID, err := c.BCLookup.Lookup(chainIDAlias)
 	if err != nil {
 		return ids.Empty, ids.ShortID{}, err
 	}
 
-	expectedHRP := constants.GetHRP(a.ctx.NetworkID)
+	expectedHRP := constants.GetHRP(c.NetworkID)
 	if hrp != expectedHRP {
 		return ids.Empty, ids.ShortID{}, fmt.Errorf(
 			"expected hrp %q but got %q",
@@ -92,15 +100,23 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 }
 
 func (a *addressManager) FormatLocalAddress(addr ids.ShortID) (string, error) {
-	return a.FormatAddress(a.ctx.ChainID, addr)
+	c := consensus.GetChainContext(a.ctx)
+	if c == nil {
+		return "", fmt.Errorf("no chain context found")
+	}
+	return a.FormatAddress(c.ChainID, addr)
 }
 
 func (a *addressManager) FormatAddress(chainID ids.ID, addr ids.ShortID) (string, error) {
-	chainIDAlias, err := a.ctx.BCLookup.PrimaryAlias(chainID)
+	c := consensus.GetChainContext(a.ctx)
+	if c == nil {
+		return "", fmt.Errorf("no chain context found")
+	}
+	chainIDAlias, err := c.BCLookup.PrimaryAlias(chainID)
 	if err != nil {
 		return "", err
 	}
-	hrp := constants.GetHRP(a.ctx.NetworkID)
+	hrp := constants.GetHRP(c.NetworkID)
 	return address.Format(chainIDAlias, hrp, addr.Bytes())
 }
 
