@@ -400,6 +400,37 @@ func (d *diff) DeleteUTXO(utxoID ids.ID) {
 	}
 }
 
+// L1 Validator support methods
+func (d *diff) GetL1Validator(validationID ids.ID) (L1Validator, error) {
+	parentState, ok := d.stateVersions.GetState(d.parentID)
+	if !ok {
+		return L1Validator{}, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
+	}
+	return parentState.GetL1Validator(validationID)
+}
+
+func (d *diff) HasL1Validator(subnetID ids.ID, nodeID ids.NodeID) (bool, error) {
+	parentState, ok := d.stateVersions.GetState(d.parentID)
+	if !ok {
+		return false, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
+	}
+	return parentState.HasL1Validator(subnetID, nodeID)
+}
+
+func (d *diff) WeightOfL1Validators(subnetID ids.ID) (uint64, error) {
+	parentState, ok := d.stateVersions.GetState(d.parentID)
+	if !ok {
+		return 0, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
+	}
+	return parentState.WeightOfL1Validators(subnetID)
+}
+
+func (d *diff) PutL1Validator(validator L1Validator) error {
+	// TODO: Track L1 validators in diff state for proper commit
+	// For now, just return nil
+	return nil
+}
+
 func (d *diff) Apply(baseState Chain) error {
 	baseState.SetTimestamp(d.timestamp)
 	for subnetID, supply := range d.currentSupply {

@@ -4,7 +4,9 @@
 package utxo
 
 import (
-	"github.com/luxfi/consensus"
+	"context"
+	
+	// "github.com/luxfi/consensus" // Not used
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/platformvm/fx"
 )

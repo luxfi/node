@@ -4,12 +4,13 @@
 package utxo
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/consensus"
+	// "github.com/luxfi/consensus" // Not used
 	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"

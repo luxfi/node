@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	
-	"github.com/luxfi/consensus/flare"
+	// "github.com/luxfi/consensus/flare" // TODO: Uncomment when flare API is stable
 	"github.com/luxfi/consensus/dag"
 	"github.com/luxfi/consensus/dag/witness"
 	"github.com/luxfi/ids"
@@ -84,5 +84,5 @@ func (e *FPCEngine) ValidateWitness(header witness.Header, payload []byte) (bool
 func (e *FPCEngine) Executable() []ids.ID {
 	// TODO: Update when flare API is stable
 	// return e.flare.Executable()
-	return nil
+	return []ids.ID{} // Return empty slice instead of nil
 }
