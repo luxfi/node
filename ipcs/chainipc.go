@@ -26,7 +26,7 @@ const (
 	ipcDecisionsIdentifier = "decisions"
 )
 
-type context struct {
+type ipcContext struct {
 	log       log.Logger
 	networkID uint32
 	path      string
@@ -34,7 +34,7 @@ type context struct {
 
 // ChainIPCs maintains IPCs for a set of chains
 type ChainIPCs struct {
-	context
+	ipcContext
 	chains              map[ids.ID]*EventSockets
 	blockAcceptorGroup  consensus.AcceptorGroup
 	txAcceptorGroup     consensus.AcceptorGroup
@@ -53,7 +53,7 @@ func NewChainIPCs(
 	defaultChainIDs []ids.ID,
 ) (*ChainIPCs, error) {
 	cipcs := &ChainIPCs{
-		context: context{
+		ipcContext: ipcContext{
 			log:       log,
 			networkID: networkID,
 			path:      path,
@@ -81,7 +81,7 @@ func (cipcs *ChainIPCs) Publish(chainID ids.ID) (*EventSockets, error) {
 	}
 
 	es, err := newEventSockets(
-		cipcs.context,
+		cipcs.ipcContext,
 		chainID,
 		cipcs.blockAcceptorGroup,
 		cipcs.txAcceptorGroup,
@@ -129,6 +129,6 @@ func (cipcs *ChainIPCs) Shutdown() error {
 	return errs.Err
 }
 
-func ipcURL(ctx context, chainID ids.ID, eventType string) string {
+func ipcURL(ctx ipcContext, chainID ids.ID, eventType string) string {
 	return filepath.Join(ctx.path, fmt.Sprintf("%d-%s-%s", ctx.networkID, chainID.String(), eventType))
 }

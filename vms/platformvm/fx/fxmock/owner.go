@@ -12,7 +12,7 @@ package fxmock
 import (
 	reflect "reflect"
 
-	snow "github.com/luxfi/node/snow"
+	consensus "github.com/luxfi/consensus"
 	verify "github.com/luxfi/node/vms/components/verify"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -43,7 +43,7 @@ func (m *Owner) EXPECT() *OwnerMockRecorder {
 }
 
 // InitCtx mocks base method.
-func (m *Owner) InitCtx(arg0 *snow.Context) {
+func (m *Owner) InitCtx(arg0 *consensus.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", arg0)
 }

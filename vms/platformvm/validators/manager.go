@@ -192,7 +192,26 @@ func (m *manager) getCurrentHeight(context.Context) (uint64, error) {
 	return lastAccepted.Height(), nil
 }
 
+// GetValidatorSet without context to implement validators.State
 func (m *manager) GetValidatorSet(
+	targetHeight uint64,
+	subnetID ids.ID,
+) (map[ids.NodeID]uint64, error) {
+	valSet, err := m.GetValidatorSetWithContext(context.Background(), targetHeight, subnetID)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Convert to simple weight map
+	result := make(map[ids.NodeID]uint64, len(valSet))
+	for nodeID, val := range valSet {
+		result[nodeID] = val.Weight
+	}
+	return result, nil
+}
+
+// GetValidatorSetWithContext returns detailed validator information
+func (m *manager) GetValidatorSetWithContext(
 	ctx context.Context,
 	targetHeight uint64,
 	subnetID ids.ID,

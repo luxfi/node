@@ -120,7 +120,7 @@ func (i *index) Accept(ctx context.Context, containerID ids.ID, containerBytes [
 	// Make sure we don't index the same container twice in that event.
 	_, err := i.containerToIndex.Get(containerID[:])
 	if err == nil {
-		ctx.Log.Debug("not indexing already accepted container",
+		i.log.Debug("not indexing already accepted container",
 			zap.Stringer("containerID", containerID),
 		)
 		return nil
@@ -129,7 +129,7 @@ func (i *index) Accept(ctx context.Context, containerID ids.ID, containerBytes [
 		return fmt.Errorf("couldn't get whether %s is accepted: %w", containerID, err)
 	}
 
-	ctx.Log.Debug("indexing container",
+	i.log.Debug("indexing container",
 		zap.Uint64("nextAcceptedIndex", i.nextAcceptedIndex),
 		zap.Stringer("containerID", containerID),
 	)

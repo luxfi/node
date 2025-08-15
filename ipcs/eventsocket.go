@@ -27,7 +27,7 @@ type EventSockets struct {
 
 // newEventSockets creates a *ChainIPCs with both consensus and decisions IPCs
 func newEventSockets(
-	ctx context,
+	ctx ipcContext,
 	chainID ids.ID,
 	blockAcceptorGroup consensus.AcceptorGroup,
 	txAcceptorGroup consensus.AcceptorGroup,
@@ -114,7 +114,7 @@ type eventSocket struct {
 // newEventIPCSocket creates a *eventSocket for the given chain and
 // EventDispatcher that writes to a local IPC socket
 func newEventIPCSocket(
-	ctx context,
+	ctx ipcContext,
 	chainID ids.ID,
 	name string,
 	linearAcceptorGroup consensus.AcceptorGroup,
