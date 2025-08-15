@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 	
 
@@ -24,6 +25,7 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/math"
@@ -76,6 +78,8 @@ type VM struct {
 	mockable.Clock
 
 	ctx         context.Context
+	log         log.Logger
+	lock        sync.RWMutex
 	db          *versiondb.Database
 	toScheduler chan<- core.Message
 
@@ -89,7 +93,7 @@ type VM struct {
 	// processing a GetAncestors message from a bootstrapping node.
 	innerBlkCache  cache.Cacher[ids.ID, chain.Block]
 	preferred      ids.ID
-	consensusState consensus.State
+	consensusState interfaces.State
 	context        context.Context
 	onShutdown     func()
 
@@ -109,6 +113,7 @@ type VM struct {
 	// proposed in.
 	acceptedBlocksSlotHistogram prometheus.Histogram
 }
+
 
 // New performs best when [minBlkDelay] is whole seconds. This is because block
 // timestamps are only specific to the second.
@@ -139,11 +144,30 @@ func (vm *VM) Initialize(
 	fxs []*block.Fx,
 	appSender block.AppSender,
 ) error {
-	// Convert types back to what we need
-	consensusCtx := chainCtx
+	// Set IDs once at initialization
+	vm.ctx = consensus.WithIDs(ctx, consensus.IDs{
+		NetworkID:    chainCtx.NetworkID,
+		SubnetID:     chainCtx.SubnetID,
+		ChainID:      chainCtx.ChainID,
+		NodeID:       chainCtx.NodeID,
+		PublicKey:    chainCtx.PublicKey,
+		CChainID:     chainCtx.CChainID,
+		LUXAssetID:   chainCtx.LUXAssetID,
+		ChainDataDir: chainCtx.ChainDataDir,
+	})
+	
+	// Create an adapter for ValidatorState
+	// chainCtx.ValidatorState is interfaces.ValidatorState but we need consensus.ValidatorState
+	vsAdapter := &interfacesToConsensusValidatorStateAdapter{
+		ctx: vm.ctx,
+		vs:  chainCtx.ValidatorState,
+	}
+	vm.ctx = consensus.WithValidatorState(vm.ctx, vsAdapter)
+	
+	// Store log directly on VM
+	vm.log = chainCtx.Log
+	
 	db := dbManager.Current()
-	// No longer need to convert fxs since they're not used directly
-	vm.ctx = consensusCtx
 	vm.db = versiondb.New(prefixdb.New(dbPrefix, db))
 	baseState, err := state.NewMetered(vm.db, "state", vm.Config.Registerer)
 	if err != nil {
@@ -151,8 +175,16 @@ func (vm *VM) Initialize(
 	}
 	vm.State = baseState
 	// Create a wrapper for ValidatorState to match validators.State interface
-	validatorStateWrapper := &validatorStateWrapper{vs: chainCtx.ValidatorState}
-	vm.Windower = proposer.New(validatorStateWrapper, chainCtx.SubnetID, chainCtx.ChainID)
+	// chainCtx.ValidatorState is interfaces.ValidatorState, need to convert to consensus.ValidatorState
+	// For now, use the ValidatorState from context
+	vs := consensus.GetValidatorState(vm.ctx)
+	if vs != nil {
+		validatorStateWrapper := &validatorStateWrapper{ctx: vm.ctx, vs: vs}
+		vm.Windower = proposer.New(validatorStateWrapper, chainCtx.SubnetID, chainCtx.ChainID)
+	} else {
+		// Create a minimal implementation for now
+		vm.log.Warn("ValidatorState not found in context, Windower may not work correctly")
+	}
 	vm.Tree = tree.New()
 	innerBlkCache, err := metercacher.New(
 		"inner_block_cache",
@@ -171,14 +203,14 @@ func (vm *VM) Initialize(
 	// This channel is used by the scheduler to notify the consensus engine
 	// We need to create a local channel for the scheduler
 	toSchedulerEngine := make(chan core.Message, 1)
-	scheduler, vmToEngine := scheduler.New(vm.ctx.Log, toSchedulerEngine)
+	scheduler, vmToEngine := scheduler.New(vm.log, toSchedulerEngine)
 	vm.Scheduler = scheduler
 	vm.toScheduler = vmToEngine
 
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				consensusCtx.Log.Error("panic in scheduler dispatch", "panic", r)
+				vm.log.Error("panic in scheduler dispatch", "panic", r)
 			}
 		}()
 		scheduler.Dispatch(time.Now())
@@ -192,7 +224,7 @@ func (vm *VM) Initialize(
 
 	err = vm.ChainVM.Initialize(
 		ctx,
-		consensusCtx,
+		chainCtx,
 		dbManager,
 		genesisBytes,
 		upgradeBytes,
@@ -270,7 +302,7 @@ func (vm *VM) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (vm *VM) SetState(ctx context.Context, newState consensus.State) error {
+func (vm *VM) SetState(ctx context.Context, newState interfaces.State) error {
 	// ChainVM doesn't have SetState in new consensus
 	// if err := vm.ChainVM.SetState(ctx, newState); err != nil {
 	// 	return err
@@ -295,7 +327,7 @@ func (vm *VM) SetState(ctx context.Context, newState consensus.State) error {
 func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	preferredBlock, err := vm.getBlock(ctx, vm.preferred)
 	if err != nil {
-		vm.ctx.Log.Error("unexpected build block failure",
+		vm.log.Error("unexpected build block failure",
 			zap.String("reason", "failed to fetch preferred block"),
 			zap.Stringer("parentID", vm.preferred),
 			zap.Error(err),
@@ -362,7 +394,7 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 		)
 	}
 	if err != nil {
-		vm.ctx.Log.Debug("failed to fetch the expected delay",
+		vm.log.Debug("failed to fetch the expected delay",
 			zap.Error(err),
 		)
 
@@ -374,7 +406,7 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 	}
 	vm.Scheduler.SetBuildBlockTime(nextStartTime)
 
-	vm.ctx.Log.Debug("set preference",
+	vm.log.Debug("set preference",
 		zap.Stringer("blkID", blk.ID()),
 		zap.Time("blockTimestamp", parentTimestamp),
 		zap.Time("nextStartTime", nextStartTime),
@@ -388,7 +420,7 @@ func (vm *VM) getPreDurangoSlotTime(
 	pChainHeight uint64,
 	parentTimestamp time.Time,
 ) (time.Time, error) {
-	delay, err := vm.Windower.Delay(ctx, blkHeight, pChainHeight, vm.ctx.NodeID, proposer.MaxBuildWindows)
+	delay, err := vm.Windower.Delay(ctx, blkHeight, pChainHeight, consensus.GetNodeID(vm.ctx), proposer.MaxBuildWindows)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -414,7 +446,7 @@ func (vm *VM) getPostDurangoSlotTime(
 		ctx,
 		blkHeight,
 		pChainHeight,
-		vm.ctx.NodeID,
+		consensus.GetNodeID(vm.ctx),
 		slot,
 	)
 	// Note: The P-chain does not currently try to target any block time. It
@@ -475,7 +507,7 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		return nil
 	}
 
-	vm.ctx.Log.Info("repairing accepted chain by height",
+	vm.log.Info("repairing accepted chain by height",
 		zap.Uint64("outerHeight", proLastAcceptedHeight),
 		zap.Uint64("innerHeight", innerLastAcceptedHeight),
 	)
@@ -511,7 +543,7 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 }
 
 func (vm *VM) setLastAcceptedMetadata(ctx context.Context) error {
-	lastAcceptedID, err := vm.GetLastAccepted()
+	lastAcceptedID, err := vm.LastAccepted(ctx)
 	if err == database.ErrNotFound {
 		// If the last accepted block wasn't a PostFork block, then we don't
 		// initialize the metadata.
@@ -546,7 +578,7 @@ func (vm *VM) setLastAcceptedMetadata(ctx context.Context) error {
 }
 
 func (vm *VM) parsePostForkBlock(ctx context.Context, b []byte) (PostForkBlock, error) {
-	statelessBlock, err := statelessblock.Parse(b, vm.ctx.ChainID)
+	statelessBlock, err := statelessblock.Parse(b, consensus.GetChainID(vm.ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -728,12 +760,16 @@ func (vm *VM) notifyInnerBlockReady() {
 	select {
 	case vm.toScheduler <- core.PendingTxs:
 	default:
-		vm.ctx.Log.Debug("dropping message to consensus engine")
+		vm.log.Debug("dropping message to consensus engine")
 	}
 }
 
 func (vm *VM) optimalPChainHeight(ctx context.Context, minPChainHeight uint64) (uint64, error) {
-	minimumHeight, err := vm.ctx.ValidatorState.GetMinimumHeight(ctx)
+	vs := consensus.GetValidatorState(vm.ctx)
+	if vs == nil {
+		return 0, fmt.Errorf("no validator state found")
+	}
+	minimumHeight, err := vs.GetMinimumHeight(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -766,15 +802,62 @@ func (vm *VM) cacheInnerBlock(outerBlkID ids.ID, innerBlk chain.Block) {
 	}
 }
 
-// validatorStateWrapper wraps interfaces.ValidatorState to match validators.State
+// validatorStateWrapper wraps consensus.ValidatorState to match validators.State
 type validatorStateWrapper struct {
-	vs interfaces.ValidatorState
+	ctx context.Context
+	vs  consensus.ValidatorState
 }
 
 func (v *validatorStateWrapper) GetCurrentHeight() (uint64, error) {
-	return v.vs.GetCurrentHeight()
+	return v.vs.GetCurrentHeight(v.ctx)
 }
 
 func (v *validatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	return v.vs.GetValidatorSet(height, subnetID)
+	validatorSet, err := v.vs.GetValidatorSet(v.ctx, height, subnetID)
+	if err != nil {
+		return nil, err
+	}
+	// Convert from GetValidatorOutput map to weight map
+	result := make(map[ids.NodeID]uint64, len(validatorSet))
+	for nodeID, output := range validatorSet {
+		result[nodeID] = output.Weight
+	}
+	return result, nil
+}
+
+// interfacesToConsensusValidatorStateAdapter adapts interfaces.ValidatorState to consensus.ValidatorState
+type interfacesToConsensusValidatorStateAdapter struct {
+	ctx context.Context
+	vs  interfaces.ValidatorState
+}
+
+func (a *interfacesToConsensusValidatorStateAdapter) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	return a.vs.GetMinimumHeight(ctx)
+}
+
+func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return a.vs.GetCurrentHeight()
+}
+
+func (a *interfacesToConsensusValidatorStateAdapter) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return a.vs.GetSubnetID(ctx, chainID)
+}
+
+func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*consensus.GetValidatorOutput, error) {
+	// Get the validator set from the interfaces version
+	valSet, err := a.vs.GetValidatorSet(height, subnetID)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Convert to consensus.GetValidatorOutput format
+	result := make(map[ids.NodeID]*consensus.GetValidatorOutput, len(valSet))
+	for nodeID, weight := range valSet {
+		result[nodeID] = &consensus.GetValidatorOutput{
+			NodeID: nodeID,
+			Weight: weight,
+			// PublicKey would need to be obtained from somewhere else
+		}
+	}
+	return result, nil
 }

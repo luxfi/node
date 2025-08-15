@@ -70,7 +70,7 @@ const expectedMetrics = `
 func TestGatherer_Gather(t *testing.T) {
 	metricstest.WithMetrics(t)
 
-	registry := metrics.NewRegistry()
+	registry := metric.NewRegistry()
 	register := func(t *testing.T, name string, collector any) {
 		t.Helper()
 		err := registry.Register(name, collector)
@@ -94,7 +94,7 @@ func TestGatherer_Gather(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test gathering with unsupported metric type
-	register(t, "unsupported", metrics.NewHealthcheck(nil))
+	register(t, "unsupported", metric.NewHealthcheck(nil))
 	metrics, err := gatherer.Gather()
 	require.ErrorIs(t, err, errMetricTypeNotSupported)
 	require.Equal(t, wantMetrics, metrics)

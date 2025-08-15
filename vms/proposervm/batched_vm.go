@@ -8,6 +8,7 @@ import (
 	"time"
 	
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
@@ -101,7 +102,7 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]block.Blo
 	)
 	for ; blocksIndex < len(blks); blocksIndex++ {
 		blkBytes := blks[blocksIndex]
-		statelessBlock, err := statelessblock.Parse(blkBytes, vm.ctx.ChainID)
+		statelessBlock, err := statelessblock.Parse(blkBytes, consensus.GetChainID(vm.ctx))
 		if err != nil {
 			break
 		}

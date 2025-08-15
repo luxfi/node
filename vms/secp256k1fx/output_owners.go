@@ -8,11 +8,8 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/verify"
 )
@@ -144,16 +141,7 @@ func formatAddress(ctx context.Context, addr ids.ShortID) (string, error) {
 		return addr.String(), nil
 	}
 
-	c := consensus.GetChainContext(ctx)
-	if c == nil {
-		return addr.String(), nil
-	}
-
-	chainIDAlias, err := c.BCLookup.PrimaryAlias(c.ChainID)
-	if err != nil {
-		return "", err
-	}
-
-	hrp := constants.GetHRP(c.NetworkID)
-	return address.Format(chainIDAlias, hrp, addr.Bytes())
+	// Without BCLookup in context, just return the address string
+	// TODO: Get BCLookup from VM struct if formatting is needed
+	return addr.String(), nil
 }

@@ -286,7 +286,6 @@ func (c *networkClient) sendRequestLocked(
 	c.peers.RegisterRequest(nodeID)
 
 	// Send an app request to the peer.
-	nodeIDs := set.Of(nodeID)
 	// Cancellation is removed from this context to avoid erroring unexpectedly.
 	// SendAppRequest should be non-blocking and any error other than context
 	// cancellation is unexpected.
@@ -294,7 +293,7 @@ func (c *networkClient) sendRequestLocked(
 	// This guarantees that the network should never receive an unexpected
 	// AppResponse.
 	ctxWithoutCancel := context.WithoutCancel(ctx)
-	if err := c.appSender.SendAppRequest(ctxWithoutCancel, nodeIDs, requestID, request); err != nil {
+	if err := c.appSender.SendAppRequest(ctxWithoutCancel, nodeID, requestID, request); err != nil {
 		c.lock.Unlock()
 		c.log.Error("failed to send app request",
 			zap.Stringer("nodeID", nodeID),

@@ -6,7 +6,6 @@ package lux
 import (
 	"context"
 	
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -24,7 +23,7 @@ type TestState struct {
 
 func (*TestState) InitCtx(context.Context) {}
 
-func (*TestState) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
+func (*TestState) InitializeWithContext(ctx context.Context) error {
 	return nil
 }
 
@@ -40,7 +39,7 @@ type TestTransferable struct {
 
 func (*TestTransferable) InitCtx(context.Context) {}
 
-func (*TestTransferable) InitializeWithContext(ctx context.Context, chainCtx context.Context) error {
+func (*TestTransferable) InitializeWithContext(ctx context.Context) error {
 	return nil
 }
 

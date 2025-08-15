@@ -16,15 +16,15 @@ var _ indexer.BlockServer = (*VM)(nil)
 // Note: this is a contention heavy call that should be avoided
 // for frequent/repeated indexer ops
 func (vm *VM) GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	return vm.getPostForkBlock(ctx, blkID)
 }
 
 func (vm *VM) Commit() error {
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	return vm.db.Commit()
 }

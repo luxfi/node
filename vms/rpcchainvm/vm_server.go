@@ -234,7 +234,8 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	// Create wrapper for ValidatorState
 	vsWrapper := &serverValidatorStateWrapper{client: validatorStateClient}
 
-	vm.ctx = &context.Context{
+	// Set IDs in context
+	vm.ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:    req.NetworkId,
 		SubnetID:     subnetID,
 		ChainID:      chainID,
@@ -243,19 +244,31 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		CChainID:     cChainID,
 		LUXAssetID:   luxAssetID,
 		ChainDataDir: req.ChainDataDir,
-		
+	})
+	
+	// The VM already has a log field
+	vm.metrics = vmMetrics
+
+	// Create a simple DBManager implementation
+	dbMgr := &dbManagerImpl{db: vm.db}
+	
+	// Initialize the VM - convert back to block.ChainContext for the interface
+	blockChainCtx := &block.ChainContext{
+		NetworkID:      req.NetworkId,
+		SubnetID:       subnetID,
+		ChainID:        chainID,
+		NodeID:         nodeID,
+		PublicKey:      publicKey,
+		CChainID:       cChainID,
+		LUXAssetID:     luxAssetID,
+		ChainDataDir:   req.ChainDataDir,
 		Log:            vm.log,
 		Metrics:        vmMetrics,
 		SharedMemory:   smWrapper,
 		BCLookup:       bcWrapper,
 		ValidatorState: vsWrapper,
 	}
-
-	// Create a simple DBManager implementation
-	dbMgr := &dbManagerImpl{db: vm.db}
-	
-	// Initialize the VM - use vm.ctx which is already context.Context (aka ChainContext)
-	if err := vm.vm.Initialize(ctx, vm.ctx, dbMgr, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, toEngine, nil, appSenderClient); err != nil {
+	if err := vm.vm.Initialize(ctx, blockChainCtx, dbMgr, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, toEngine, nil, appSenderClient); err != nil {
 		// Ignore errors closing resources to return the original error
 		_ = vm.connCloser.Close()
 		close(vm.closed)

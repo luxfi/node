@@ -25,7 +25,7 @@ func TestMessage(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		nil,
-		metrics.NewNoOpMetrics("test"),
+		metric.NewNoOpMetrics("test"),
 		5*time.Second,
 	)
 	require.NoError(t, err)
@@ -667,7 +667,7 @@ func TestInboundMessageToString(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		nil,
-		metrics.NewNoOpMetrics("test"),
+		metric.NewNoOpMetrics("test"),
 		5*time.Second,
 	)
 	require.NoError(err)
@@ -697,7 +697,7 @@ func TestEmptyInboundMessage(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		nil,
-		metrics.NewNoOpMetrics("test"),
+		metric.NewNoOpMetrics("test"),
 		5*time.Second,
 	)
 	require.NoError(err)
@@ -717,7 +717,7 @@ func TestNilInboundMessage(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		nil,
-		metrics.NewNoOpMetrics("test"),
+		metric.NewNoOpMetrics("test"),
 		5*time.Second,
 	)
 	require.NoError(err)

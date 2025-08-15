@@ -48,16 +48,17 @@ func (t *BaseTx) NumCredentials() int {
 
 // Verify ensures that transaction metadata is valid
 func (t *BaseTx) Verify(ctx context.Context) error {
-	c := consensus.GetChainContext(ctx)
-	if c == nil {
-		return fmt.Errorf("no chain context found")
+	networkID := consensus.GetNetworkID(ctx)
+	chainID := consensus.GetChainID(ctx)
+	if chainID == ids.Empty {
+		return fmt.Errorf("no chain ID found in context")
 	}
 	switch {
 	case t == nil:
 		return ErrNilTx
-	case t.NetworkID != c.NetworkID:
+	case t.NetworkID != networkID:
 		return ErrWrongNetworkID
-	case t.BlockchainID != c.ChainID:
+	case t.BlockchainID != chainID:
 		return ErrWrongChainID
 	case len(t.Memo) > MaxMemoSize:
 		return fmt.Errorf(

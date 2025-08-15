@@ -10,9 +10,9 @@
 package luxmock
 
 import (
+	"context"
 	reflect "reflect"
 
-	"github.com/luxfi/consensus"
 	gomock "go.uber.org/mock/gomock"
 )
 

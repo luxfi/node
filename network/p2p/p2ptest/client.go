@@ -68,28 +68,27 @@ func NewClientWithPeers(
 	peerSenders[clientNodeID].SendAppGossipF = func(ctx context.Context, sendConfig core.SendConfig, gossipBytes []byte) error {
 		// Send the request asynchronously to avoid deadlock when the server
 		// sends the response back to the client
-		for nodeID := range sendConfig.NodeIDs {
-			go func() {
+		nodeIDs := sendConfig.GetNodeIDsAsSlice()
+		for _, nodeID := range nodeIDs {
+			go func(nodeID ids.NodeID) {
 				_ = peerNetworks[nodeID].AppGossip(ctx, nodeID, gossipBytes)
-			}()
+			}(nodeID)
 		}
 
 		return nil
 	}
 
-	peerSenders[clientNodeID].SendAppRequestF = func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, requestBytes []byte) error {
-		for nodeID := range nodeIDs {
-			network, ok := peerNetworks[nodeID]
-			if !ok {
-				return fmt.Errorf("%s is not connected", nodeID)
-			}
-
-			// Send the request asynchronously to avoid deadlock when the server
-			// sends the response back to the client
-			go func() {
-				_ = network.AppRequest(ctx, clientNodeID, requestID, time.Time{}, requestBytes)
-			}()
+	peerSenders[clientNodeID].SendAppRequestF = func(ctx context.Context, nodeID ids.NodeID, requestID uint32, requestBytes []byte) error {
+		network, ok := peerNetworks[nodeID]
+		if !ok {
+			return fmt.Errorf("%s is not connected", nodeID)
 		}
+
+		// Send the request asynchronously to avoid deadlock when the server
+		// sends the response back to the client
+		go func() {
+			_ = network.AppRequest(ctx, clientNodeID, requestID, time.Time{}, requestBytes)
+		}()
 
 		return nil
 	}

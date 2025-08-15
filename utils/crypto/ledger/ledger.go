@@ -57,7 +57,7 @@ func (l *Ledger) Addresses(addressIndices []uint32) ([]ids.ShortID, error) {
 			return nil, err
 		}
 		l.epk = &bip32.Key{
-			Key:       resp.PubKey,
+			Key:       resp.PublicKey,
 			ChainCode: make([]byte, 32), // Placeholder chain code
 		}
 	}
