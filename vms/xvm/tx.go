@@ -4,13 +4,14 @@
 package xvm
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/engine/graph"
+	"github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
@@ -19,7 +20,7 @@ import (
 )
 
 var (
-	_ graph.Tx = (*Tx)(nil)
+	_ dag.Tx = (*Tx)(nil)
 
 	errTxNotProcessing  = errors.New("transaction is not processing")
 	errUnexpectedReject = errors.New("attempting to reject transaction")
@@ -34,7 +35,7 @@ func (tx *Tx) ID() ids.ID {
 	return tx.tx.ID()
 }
 
-func (tx *Tx) Accept() error {
+func (tx *Tx) Accept(ctx context.Context) error {
 	if s := tx.Status(); s != choices.Processing {
 		return fmt.Errorf("%w: %s", errTxNotProcessing, s)
 	}
@@ -79,7 +80,7 @@ func (tx *Tx) Accept() error {
 	return tx.vm.metrics.MarkTxAccepted(tx.tx)
 }
 
-func (*Tx) Reject() error {
+func (*Tx) Reject(ctx context.Context) error {
 	return errUnexpectedReject
 }
 
@@ -125,7 +126,7 @@ func (tx *Tx) Bytes() []byte {
 	return tx.tx.Bytes()
 }
 
-func (tx *Tx) Verify() error {
+func (tx *Tx) Verify(ctx context.Context) error {
 	if s := tx.Status(); s != choices.Processing {
 		return fmt.Errorf("%w: %s", errTxNotProcessing, s)
 	}

@@ -8,16 +8,16 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/luxfi/consensus/graph"
+	"github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/trace"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-var _ graph.Tx = (*tracedTx)(nil)
+var _ dag.Tx = (*tracedTx)(nil)
 
 type tracedTx struct {
-	graph.Tx
+	dag.Tx
 
 	tracer trace.Tracer
 }
