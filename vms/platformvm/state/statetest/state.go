@@ -13,7 +13,8 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow"
+	// "github.com/luxfi/node/snow" // snow package removed
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -36,7 +37,7 @@ type Config struct {
 	Validators validators.Manager
 	Upgrades   upgrade.Config
 	Config     config.Config
-	Context    *snow.Context
+	Context    *consensus.Context
 	Metrics    metrics.Metrics
 	Rewards    reward.Calculator
 }
@@ -46,7 +47,7 @@ func New(t testing.TB, c Config) state.State {
 		c.DB = memdb.New()
 	}
 	if c.Context == nil {
-		c.Context = &snow.Context{
+		c.Context = &consensus.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    DefaultNodeID,
 			Log:       logging.NoLog{},

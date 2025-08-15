@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/enginetest"
 	"github.com/luxfi/consensus/engine/snowman/block"
 	"github.com/luxfi/consensus/validators/validatorstest"
@@ -218,7 +218,7 @@ func newMainnetCChainVM(
 
 	if err := vm.Initialize(
 		ctx,
-		&snow.Context{
+		&consensus.Context{
 			NetworkID:       constants.MainnetID,
 			SubnetID:        constants.PrimaryNetworkID,
 			ChainID:         mainnetCChainID,
