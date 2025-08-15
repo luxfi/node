@@ -1098,7 +1098,7 @@ func (s *state) ApplyValidatorWeightDiffs(
 		}
 
 		if parsedHeight > prevHeight {
-			s.ctx.Log.Error("unexpected parsed height",
+			log.Error("unexpected parsed height",
 				zap.Stringer("subnetID", subnetID),
 				zap.Uint64("parsedHeight", parsedHeight),
 				zap.Stringer("nodeID", nodeID),
@@ -1276,7 +1276,8 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 
 		// Ensure all chains that the genesis bytes say to create have the right
 		// network ID
-		if unsignedChain.NetworkID != s.ctx.NetworkID {
+		networkID := consensus.GetNetworkID(s.ctx)
+		if unsignedChain.NetworkID != networkID {
 			return lux.ErrWrongNetworkID
 		}
 
@@ -1609,7 +1610,9 @@ func (s *state) loadPendingValidators() error {
 // been called.
 func (s *state) initValidatorSets() error {
 	for subnetID, validators := range s.currentStakers.validators {
-		if len(s.validators.GetValidatorIDs(subnetID)) != 0 {
+		// Check if there are any validators in the subnet
+		// Use NumValidators instead of GetValidatorSet
+		if s.validators.NumValidators(subnetID) != 0 {
 			// Enforce the invariant that the validator set is empty here.
 			return fmt.Errorf("%w: %s", errValidatorSetAlreadyPopulated, subnetID)
 		}
@@ -1632,7 +1635,9 @@ func (s *state) initValidatorSets() error {
 		}
 	}
 
-	s.metrics.SetLocalStake(s.validators.GetWeight(constants.PrimaryNetworkID, s.ctx.NodeID))
+	nodeID := consensus.GetNodeID(s.ctx)
+	weight, _ := s.validators.GetWeight(constants.PrimaryNetworkID, nodeID)
+	s.metrics.SetLocalStake(weight)
 	totalWeight, err := s.validators.TotalWeight(constants.PrimaryNetworkID)
 	if err != nil {
 		return fmt.Errorf("failed to get total weight of primary network validators: %w", err)
@@ -2010,7 +2015,9 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64, codecV
 		return fmt.Errorf("failed to get total weight of primary network: %w", err)
 	}
 
-	s.metrics.SetLocalStake(s.validators.GetWeight(constants.PrimaryNetworkID, s.ctx.NodeID))
+	nodeID := consensus.GetNodeID(s.ctx)
+	weight, _ := s.validators.GetWeight(constants.PrimaryNetworkID, nodeID)
+	s.metrics.SetLocalStake(weight)
 	s.metrics.SetTotalStake(totalWeight)
 	return nil
 }
