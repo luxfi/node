@@ -4,6 +4,7 @@
 package nftfx
 
 import (
+	"context"
 	"errors"
 
 	"github.com/luxfi/node/vms/components/verify"
