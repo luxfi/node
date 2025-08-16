@@ -7,8 +7,10 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 const (
@@ -46,10 +48,6 @@ var (
 	ErrInvalidFalconPublicKey         = errors.New("invalid FALCON public key")
 )
 
-// VM defines the interface for FALCON fx VM
-type VM interface {
-	verify.VM
-}
 
 // FalconFx describes the FALCON-512 post-quantum signature feature extension
 // This provides quantum-resistant signatures for X-Chain UTXOs

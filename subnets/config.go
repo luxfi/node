@@ -58,7 +58,7 @@ type Config struct {
 }
 
 func (c *Config) Valid() error {
-	if err := c.ConsensusParameters.Verify(); err != nil {
+	if err := c.ConsensusParameters.Validate(); err != nil {
 		return fmt.Errorf("consensus %w", err)
 	}
 	if !c.ValidatorOnly && c.AllowedNodes.Len() > 0 {
@@ -74,7 +74,7 @@ func GetPOAConsensusParameters() config.Parameters {
 		AlphaPreference:       1, // Change preference with 1 vote
 		AlphaConfidence:       1, // Increase confidence with 1 vote
 		Beta:                  1, // Only need 1 successful query for finalization
-		ConcurrentRepolls:     1, // Only 1 concurrent repoll needed
+		ConcurrentPolls:       1, // Only 1 concurrent poll needed
 		OptimalProcessing:     1, // Single-node POA mode: only 1 block in processing
 		MaxOutstandingItems:   256,
 		MaxItemProcessingTime: 30 * time.Second,

@@ -7,8 +7,10 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 const (
@@ -46,7 +48,9 @@ var (
 
 // VM defines the interface for Dilithium fx VM
 type VM interface {
-	verify.VM
+	CodecRegistry() codec.Registry
+	Clock() *mockable.Clock
+	Logger() log.Logger
 }
 
 // DilithiumFx describes the Dilithium post-quantum signature feature extension

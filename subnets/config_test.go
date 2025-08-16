@@ -39,7 +39,7 @@ func TestValid(t *testing.T) {
 					AlphaPreference: 1,
 				},
 			},
-			expectedErr: sampling.ErrParametersInvalid,
+			expectedErr: config.ErrParametersInvalid,
 		},
 		{
 			name: "invalid allowed node IDs",
