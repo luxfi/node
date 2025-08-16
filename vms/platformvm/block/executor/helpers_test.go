@@ -127,7 +127,7 @@ type environment struct {
 	ctx            context.Context
 	fx             fx.Fx
 	state          state.State
-	mockedState    *state.MockState
+	mockedState    *state.MockChain
 	uptimes        uptime.Manager
 	utxosVerifier  utxo.Verifier
 	factory        *txstest.WalletFactory
@@ -165,7 +165,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		)
 	} else {
 		genesisBlkID = ids.GenerateTestID()
-		res.mockedState = state.NewMockState(ctrl)
+		res.mockedState = state.NewMockChain(ctrl)
 		res.uptimes = uptime.NewManager(res.mockedState, res.clk)
 		res.utxosVerifier = utxo.NewHandler(res.ctx, res.clk, res.fx)
 		res.factory = txstest.NewWalletFactory(

@@ -15,7 +15,7 @@ import (
 func (vm *VM) HealthCheck(context.Context) (interface{}, error) {
 	localPrimaryValidator, err := vm.state.GetCurrentValidator(
 		constants.PrimaryNetworkID,
-		vm.ctx.NodeID,
+		vm.nodeID,
 	)
 	switch err {
 	case nil:
@@ -29,7 +29,7 @@ func (vm *VM) HealthCheck(context.Context) (interface{}, error) {
 	for subnetID := range vm.TrackedSubnets {
 		localSubnetValidator, err := vm.state.GetCurrentValidator(
 			subnetID,
-			vm.ctx.NodeID,
+			vm.nodeID,
 		)
 		switch err {
 		case nil:

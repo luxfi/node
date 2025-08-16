@@ -10,7 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	dto "github.com/prometheus/client_model/go"
-	"github.com/luxfi/metric"
+	"github.com/luxfi/node/api/metrics"
 )
 
 // "metric name" -> "metric value"
@@ -21,7 +21,7 @@ type NodesMetrics map[string]NodeMetrics
 
 // GetNodeMetrics retrieves the specified metrics the provided node URI.
 func GetNodeMetrics(ctx context.Context, nodeURI string) (NodeMetrics, error) {
-	client := metric.NewClient(nodeURI)
+	client := metrics.NewClient(nodeURI)
 	return client.GetMetrics(ctx)
 }
 

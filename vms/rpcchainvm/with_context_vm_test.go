@@ -21,11 +21,11 @@ import (
 )
 
 var (
-	_ block.ChainVM                      = ContextEnabledVMMock{}
-	_ block.BuildBlockWithContextChainVM = ContextEnabledVMMock{}
+	_ block.ChainVM                      = &ContextEnabledVMMock{}
+	_ block.BuildBlockWithContextChainVM = &ContextEnabledVMMock{}
 
-	_ chain.Block             = ContextEnabledBlockMock{}
-	_ block.WithVerifyContext = ContextEnabledBlockMock{}
+	_ chain.Block             = &ContextEnabledBlockMock{}
+	_ block.WithVerifyContext = &ContextEnabledBlockMock{}
 
 	blockContext = &block.Context{
 		PChainHeight: 1,
@@ -37,8 +37,8 @@ var (
 )
 
 type ContextEnabledVMMock struct {
-	*blockmock.ChainVM
-	*blockmock.BuildBlockWithContextChainVM
+	blockmock.ChainVM
+	blockmock.BuildBlockWithContextChainVM
 }
 
 type ContextEnabledBlockMock struct {

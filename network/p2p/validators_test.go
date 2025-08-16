@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorsmock"
 	"github.com/luxfi/ids"
+	luxmetric "github.com/luxfi/metric"
 )
 
 func TestValidatorsSample(t *testing.T) {
@@ -167,16 +167,27 @@ func TestValidatorsSample(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 			subnetID := ids.GenerateTestID()
-			ctrl := gomock.NewController(t)
-			mockValidators := validatorsmock.NewState(ctrl)
+			mockValidators := validatorsmock.NewState(t)
 
-			calls := make([]any, 0)
-			for _, call := range tt.calls {
-				calls = append(calls, mockValidators.EXPECT().
-					GetCurrentHeight(gomock.Any()).Return(call.height, call.getCurrentHeightErr))
+			// Set up mock behavior
+			callIndex := 0
+			mockValidators.GetCurrentHeightF = func(context.Context) (uint64, error) {
+				if callIndex >= len(tt.calls) {
+					return 0, errors.New("unexpected call")
+				}
+				call := tt.calls[callIndex]
+				return call.height, call.getCurrentHeightErr
+			}
 
+			mockValidators.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+				if callIndex >= len(tt.calls) {
+					return nil, errors.New("unexpected call")
+				}
+				call := tt.calls[callIndex]
+				callIndex++
+				
 				if call.getCurrentHeightErr != nil {
-					continue
+					return nil, call.getCurrentHeightErr
 				}
 
 				validatorSet := make(map[ids.NodeID]*validators.GetValidatorOutput, 0)
@@ -186,13 +197,8 @@ func TestValidatorsSample(t *testing.T) {
 						Weight: 1,
 					}
 				}
-
-				calls = append(calls,
-					mockValidators.EXPECT().
-						GetValidatorSet(gomock.Any(), gomock.Any(), subnetID).
-						Return(validatorSet, call.getValidatorSetErr))
+				return validatorSet, call.getValidatorSetErr
 			}
-			gomock.InOrder(calls...)
 
 			network, err := NewNetwork(nil, &core.FakeSender{}, luxmetric.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
@@ -298,7 +304,6 @@ func TestValidatorsTop(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
-			ctrl := gomock.NewController(t)
 
 			validatorSet := make(map[ids.NodeID]*validators.GetValidatorOutput, 0)
 			for _, validator := range test.validators {
@@ -309,10 +314,14 @@ func TestValidatorsTop(t *testing.T) {
 			}
 
 			subnetID := ids.GenerateTestID()
-			mockValidators := validatorsmock.NewState(ctrl)
+			mockValidators := validatorsmock.NewState(t)
 
-			mockValidators.EXPECT().GetCurrentHeight(gomock.Any()).Return(uint64(1), nil)
-			mockValidators.EXPECT().GetValidatorSet(gomock.Any(), uint64(1), subnetID).Return(validatorSet, nil)
+			mockValidators.GetCurrentHeightF = func(context.Context) (uint64, error) {
+				return uint64(1), nil
+			}
+			mockValidators.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+				return validatorSet, nil
+			}
 
 			network, err := NewNetwork(nil, &core.FakeSender{}, luxmetric.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
