@@ -15,6 +15,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/utxo"
+	"github.com/luxfi/node/utils/logging"
 )
 
 type Backend struct {
@@ -30,6 +31,7 @@ type Backend struct {
 	Uptimes      uptime.Calculator
 	Rewards      reward.Calculator
 	Bootstrapped *utils.Atomic[bool]
+	Log          logging.Logger
 }
 
 // SharedMemory provides cross-chain atomic operations
