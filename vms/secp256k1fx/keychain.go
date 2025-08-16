@@ -109,6 +109,15 @@ func (kc Keychain) Addresses() set.Set[ids.ShortID] {
 	return kc.Addrs
 }
 
+// List returns all addresses in the keychain (implements keychain.Keychain)
+func (kc Keychain) List() []ids.ShortID {
+	addrs := make([]ids.ShortID, 0, kc.Addrs.Len())
+	for addr := range kc.Addrs {
+		addrs = append(addrs, addr)
+	}
+	return addrs
+}
+
 // EthAddresses returns a list of addresses this keychain manages
 func (kc Keychain) EthAddresses() set.Set[common.Address] {
 	return kc.EthAddrs
