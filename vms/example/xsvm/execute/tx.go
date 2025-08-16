@@ -193,18 +193,18 @@ type warpValidatorStateAdapter struct {
 }
 
 func (w *warpValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	validatorSet, err := w.vs.GetValidatorSet(ctx, height, subnetID)
+	validatorSet, err := w.vs.GetValidatorSet(height, subnetID)
 	if err != nil {
 		return nil, err
 	}
 	// Convert from GetValidatorOutput map to weight map
 	result := make(map[ids.NodeID]uint64, len(validatorSet))
 	for nodeID, output := range validatorSet {
-		result[nodeID] = output.Weight
+		result[nodeID] = output
 	}
 	return result, nil
 }
 
 func (w *warpValidatorStateAdapter) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return w.vs.GetSubnetID(ctx, chainID)
+	return w.vs.GetSubnetID(chainID)
 }
