@@ -1635,7 +1635,7 @@ func (s *state) initValidatorSets() error {
 	}
 
 	nodeID := consensus.GetNodeID(s.ctx)
-	weight, _ := s.validators.GetWeight(constants.PrimaryNetworkID, nodeID)
+	weight := s.validators.GetWeight(constants.PrimaryNetworkID, nodeID)
 	s.metrics.SetLocalStake(weight)
 	totalWeight, err := s.validators.TotalWeight(constants.PrimaryNetworkID)
 	if err != nil {
@@ -2015,7 +2015,7 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64, codecV
 	}
 
 	nodeID := consensus.GetNodeID(s.ctx)
-	weight, _ := s.validators.GetWeight(constants.PrimaryNetworkID, nodeID)
+	weight := s.validators.GetWeight(constants.PrimaryNetworkID, nodeID)
 	s.metrics.SetLocalStake(weight)
 	s.metrics.SetTotalStake(totalWeight)
 	return nil

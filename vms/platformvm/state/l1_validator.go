@@ -424,10 +424,7 @@ func (a *activeL1Validators) addStakersToValidatorManager(vdrs validators.Manage
 
 func addL1ValidatorToValidatorManager(vdrs validators.Manager, l1Validator L1Validator) error {
 	nodeID := l1Validator.effectiveNodeID()
-	weight, err := vdrs.GetWeight(l1Validator.SubnetID, nodeID)
-	if err != nil {
-		return err
-	}
+	weight := vdrs.GetWeight(l1Validator.SubnetID, nodeID)
 	if weight != 0 {
 		return vdrs.AddWeight(l1Validator.SubnetID, nodeID, l1Validator.Weight)
 	}

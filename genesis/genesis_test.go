@@ -43,14 +43,14 @@ func TestValidateConfig(t *testing.T) {
 		expectedErr error
 	}{
 		"mainnet": {
-			networkID:   1,
+			networkID:   constants.LuxMainnetID, // 96369
 			config:      &MainnetConfig,
-			expectedErr: nil,
+			expectedErr: errNoStakers, // Lux mainnet has no initial stakers
 		},
 		"testnet": {
-			networkID:   5,
+			networkID:   constants.LuxTestnetID, // 96368
 			config:      &TestnetConfig,
-			expectedErr: nil,
+			expectedErr: errNoStakers, // Lux testnet has no initial stakers
 		},
 		"local": {
 			networkID:   12345,
@@ -139,10 +139,12 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: errDuplicateInitiallyStakedAddress,
 		},
 		"initial staked funds not in allocations": {
-			networkID: 5,
+			networkID: 12345,
 			config: func() *Config {
-				thisConfig := TestnetConfig
-				thisConfig.InitialStakedFunds = append(thisConfig.InitialStakedFunds, LocalConfig.InitialStakedFunds[0])
+				thisConfig := LocalConfig
+				// Add a staked fund that's not in allocations
+				nonExistentAddr := ids.ShortID{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
+				thisConfig.InitialStakedFunds = append(thisConfig.InitialStakedFunds, nonExistentAddr)
 				return &thisConfig
 			}(),
 			expectedErr: errNoAllocationToStake,
@@ -352,15 +354,15 @@ func TestGenesis(t *testing.T) {
 	}{
 		{
 			networkID:  constants.MainnetID,
-			expectedID: "2MQUiaRTcXD7T6swZRL1xcNKZm4zsEGBGZBfA2rJBXDLCNu4wb",
+			expectedID: "2RubAfTujLNUutcbtqsjpvfcHnvCbDrcH9ido9EbdJkYeYnWgE",
 		},
 		{
 			networkID:  constants.TestnetID,
-			expectedID: "2vjcncTmJp58FEK5mWYjVRf6z8c8WeSBpVXhxMukUHYdGztnSn",
+			expectedID: "ZJhaJoFxhB94e8McJENhDH7JW2cPUWndTGcKehtEWy2fSfYLq",
 		},
 		{
 			networkID:  constants.LocalID,
-			expectedID: "enryPVr4JS8GEgi76sMNW9zTx6V6RUFn8YJLhK2ErN4wVEsTB",
+			expectedID: "2ASgccyNavJxfhGkfb5d3Xt6QyKJmU6YabQnK1dd4Noei1XqBH",
 		},
 	}
 	for _, test := range tests {
@@ -391,11 +393,11 @@ func TestVMGenesis(t *testing.T) {
 			vmTest: []vmTest{
 				{
 					vmID:       constants.XVMID,
-					expectedID: "2CK9qd4C2xWQR8pPQddDDCPEh4pufyjbddTftMRkuxGs4MYxNA",
+					expectedID: "oBNAjGCioVdXmQqUqXtgaRNJgz8ZDp1qejpY6gwN6Ddct1xgx",
 				},
 				{
 					vmID:       constants.EVMID,
-					expectedID: "nXTRvuviB33V53LQLyPdiZerLb4ApBD9xZ9pAqs5abMW8WTSr",
+					expectedID: "EWi9aPkGe6EfJ3SobCAmSUXRPLa4brF3cThwPwmHTrD1y13jy",
 				},
 			},
 		},
@@ -404,11 +406,11 @@ func TestVMGenesis(t *testing.T) {
 			vmTest: []vmTest{
 				{
 					vmID:       constants.XVMID,
-					expectedID: "ovgzd2ZwmRy2HjJtdV2CV7HzG7UTzHPSiBMDw4Gvt8mWitvb4",
+					expectedID: "247iq1TNcSm82HvqLgEWwJrNfHTYeKUcEa8A1kYU6mow4QMaTf",
 				},
 				{
 					vmID:       constants.EVMID,
-					expectedID: "2M295X6biTyb6QExqBUXDjxFDez5ERsX93Zw226HLEANrpLkuL",
+					expectedID: "2JC1RVBy3tGYZ27ZsZfT5y6JXPkKpW1aCepgHN7WwmiwBhCnn5",
 				},
 			},
 		},
@@ -417,11 +419,11 @@ func TestVMGenesis(t *testing.T) {
 			vmTest: []vmTest{
 				{
 					vmID:       constants.XVMID,
-					expectedID: "2kFhXmifGiEf54PKdsnr1EauaN2tgJWNB6x1XT1kWWm8Wwp6LG",
+					expectedID: "dnETgw1RTLQwSLbuhQEnjisfsvEz84CLgwGTYByyvAjjgLY4B",
 				},
 				{
 					vmID:       constants.EVMID,
-					expectedID: "2f9gWKiw8VTE29NbiA6kUmETi6Rz8ikk8tUbaHEdhft7X8BvQo",
+					expectedID: "2WokyoVujr7NqByCPvaaSNRqqnKSJM7jahC58RhRyaktPjNPqz",
 				},
 			},
 		},

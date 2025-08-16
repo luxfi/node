@@ -172,8 +172,8 @@ func (m *manager) GetMinimumHeight(ctx context.Context) (uint64, error) {
 }
 
 // GetCurrentHeight without context to implement validators.State
-func (m *manager) GetCurrentHeight() (uint64, error) {
-	return m.getCurrentHeight(context.Background())
+func (m *manager) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return m.getCurrentHeight(ctx)
 }
 
 // GetCurrentHeightWithContext with context for internal use
@@ -191,22 +191,13 @@ func (m *manager) getCurrentHeight(context.Context) (uint64, error) {
 	return lastAccepted.Height(), nil
 }
 
-// GetValidatorSet without context to implement validators.State
+// GetValidatorSet implements validators.State
 func (m *manager) GetValidatorSet(
+	ctx context.Context,
 	targetHeight uint64,
 	subnetID ids.ID,
-) (map[ids.NodeID]uint64, error) {
-	valSet, err := m.GetValidatorSetWithContext(context.Background(), targetHeight, subnetID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert to simple weight map
-	result := make(map[ids.NodeID]uint64, len(valSet))
-	for nodeID, val := range valSet {
-		result[nodeID] = val.Weight
-	}
-	return result, nil
+) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return m.GetValidatorSetWithContext(ctx, targetHeight, subnetID)
 }
 
 // GetValidatorSetWithContext returns detailed validator information
@@ -419,7 +410,7 @@ func (m *manager) OnAcceptedBlockID(blkID ids.ID) {
 func (m *manager) GetCurrentValidatorSet(
 	ctx context.Context,
 	subnetID ids.ID,
-) (map[ids.NodeID]*validators.GetCurrentValidatorOutput, uint64, error) {
+) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
 	// For now, return an empty map with current height
 	// This is a stub implementation that needs to be properly implemented
 	currentHeight, err := m.getCurrentHeight(ctx)
@@ -428,6 +419,6 @@ func (m *manager) GetCurrentValidatorSet(
 	}
 
 	// TODO: Implement proper conversion from GetValidatorOutput to GetCurrentValidatorOutput
-	result := make(map[ids.NodeID]*validators.GetCurrentValidatorOutput)
+	result := make(map[ids.ID]*validators.GetCurrentValidatorOutput)
 	return result, currentHeight, nil
 }
