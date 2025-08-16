@@ -209,3 +209,8 @@ func (m *testValidatorManager) AddWeight(subnetID ids.ID, nodeID ids.NodeID, wei
 func (m *testValidatorManager) RemoveWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
 	return nil
 }
+
+func (m *testValidatorManager) GetMap(subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	// Return empty map for testing
+	return make(map[ids.NodeID]*validators.GetValidatorOutput), nil
+}

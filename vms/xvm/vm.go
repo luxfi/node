@@ -482,8 +482,12 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 
 	// Invariant: The context lock is not held when calling network.IssueTx.
 	// Create a wrapper for ValidatorState to match the expected interface
-	// For now, use a nil validator state as we don't have it in context
-	validatorStateWrapper := &validatorStateWrapper{vs: nil}
+	// Get ValidatorState from context
+	vs := consensus.GetValidatorState(vm.ctx)
+	if vs == nil {
+		return fmt.Errorf("validator state not available in context")
+	}
+	validatorStateWrapper := &validatorStateWrapper{vs: vs}
 	
 	vm.network, err = network.New(
 		vm.log,
@@ -600,7 +604,7 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 	}
 
 	// secure this by defaulting to luxAsset
-	vm.feeAssetID = consensus.LuxAssetID(vm.ctx)
+	vm.feeAssetID = consensus.GetXAssetID(vm.ctx)
 
 	for index, genesisTx := range genesis.Txs {
 		if len(genesisTx.Outs) != 0 {
@@ -825,18 +829,18 @@ func (n *noOpAppHandler) AppGossip(context.Context, ids.NodeID, []byte) error {
 	return nil
 }
 
-// validatorStateWrapper wraps interfaces.ValidatorState to match validators.State
+// validatorStateWrapper wraps consensus.ValidatorState to match network.ValidatorState
 type validatorStateWrapper struct {
-	vs interfaces.ValidatorState
+	vs consensus.ValidatorState
 }
 
 func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
-	// GetCurrentHeight now takes context
-	return v.vs.GetCurrentHeight(ctx)
+	// GetCurrentHeight doesn't take context in consensus.ValidatorState
+	return v.vs.GetCurrentHeight()
 }
 
 func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	// Use the GetValidatorSet from interfaces.ValidatorState
+	// Use the GetValidatorSet from consensus.ValidatorState
 	// It already returns map[ids.NodeID]uint64
-	return v.vs.GetValidatorSet(ctx, height, subnetID)
+	return v.vs.GetValidatorSet(height, subnetID)
 }
