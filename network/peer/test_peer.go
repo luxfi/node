@@ -17,6 +17,7 @@ import (
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
+	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
@@ -222,7 +223,7 @@ func (m *testValidatorManager) GetMap(subnetID ids.ID) map[ids.NodeID]*validator
 	return make(map[ids.NodeID]*validators.GetValidatorOutput)
 }
 
-func (m *testValidatorManager) SubsetWeight(subnetID ids.ID, validatorIDs set.Set[ids.NodeID]) (uint64, error) {
+func (m *testValidatorManager) SubsetWeight(subnetID ids.ID, validatorIDs consensusset.Set[ids.NodeID]) (uint64, error) {
 	return 0, nil
 }
 

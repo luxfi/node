@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/consensus/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/node/utils/timer/mockable"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"

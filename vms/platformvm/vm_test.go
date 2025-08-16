@@ -37,7 +37,7 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/snow/engine/enginetest"
+	"github.com/luxfi/consensus/engine/enginetest"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"

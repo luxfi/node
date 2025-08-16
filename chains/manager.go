@@ -301,8 +301,8 @@ func (v *consensusValidatorStateWrapper) GetValidatorSet(ctx context.Context, he
 	return v.state.GetValidatorSet(ctx, height, subnetID)
 }
 
-func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
-	return v.state.GetCurrentHeight(ctx)
+func (v *validatorStateWrapper) GetCurrentHeight() (uint64, error) {
+	return v.state.GetCurrentHeight(context.Background())
 }
 
 func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
@@ -1055,7 +1055,7 @@ func (m *manager) createLuxChain(
 	if err != nil {
 		return nil, fmt.Errorf("error creating peer tracker: %w", err)
 	}
-	vdrs.RegisterSetCallbackListener(connectedValidators)
+	vdrs.RegisterSetCallbackListener(chainParams.SubnetID, connectedValidators)
 
 	p2pReg, err := luxmetric.MakeAndRegister(
 		m.p2pGatherer,
@@ -1142,9 +1142,10 @@ func (m *manager) createLuxChain(
 		return nil, fmt.Errorf("error initializing linear engine: %w", err)
 	}
 
-	if m.TracingEnabled {
-		linearEngine = core.TraceEngine(linearEngine, m.Tracer)
-	}
+	// Tracing for linearEngine can be added here if needed
+	// if m.TracingEnabled {
+	// 	linearEngine = core.TraceEngine(linearEngine, m.Tracer)
+	// }
 
 	// create bootstrap gear
 	bootstrapBeacons := vdrs
@@ -1169,7 +1170,7 @@ func (m *manager) createLuxChain(
 
 	// Create bootstrapper with a callback function
 	bootstrapCallback := func(ctx context.Context, lastReqID uint32) error {
-		return linearEngine.Start(ctx)
+		return linearEngine.Start(ctx, lastReqID)
 	}
 
 	linearBootstrapper, err := smbootstrap.New(
@@ -1569,7 +1570,7 @@ func (m *manager) createLinearChain(
 	if err != nil {
 		return nil, fmt.Errorf("error creating peer tracker: %w", err)
 	}
-	vdrs.RegisterSetCallbackListener(connectedValidators)
+	vdrs.RegisterSetCallbackListener(chainParams.SubnetID, connectedValidators)
 
 	p2pReg, err := luxmetric.MakeAndRegister(
 		m.p2pGatherer,
