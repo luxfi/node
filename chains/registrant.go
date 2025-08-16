@@ -5,14 +5,12 @@ package chains
 
 import (
 	"context"
-
-	"github.com/luxfi/consensus/core"
 )
 
 // Registrant can register the existence of a chain
 type Registrant interface {
 	// Called when a chain is created
 	// This function is called before the chain starts processing messages
-	// [vm] should be a vertex.GRAPHVM or block.ChainVM
-	RegisterChain(chainName string, ctx context.Context, vm core.VM)
+	// [vm] should be a vertex.LinearizableVMWithEngine or block.ChainVM
+	RegisterChain(chainName string, ctx context.Context, vm interface{})
 }

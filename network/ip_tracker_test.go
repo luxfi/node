@@ -13,13 +13,13 @@ import (
 
 	"github.com/luxfi/ids"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/bloom"
-
 	"github.com/luxfi/node/utils/ips"
 )
 
 func newTestIPTracker(t *testing.T) *ipTracker {
-	tracker, err := newIPTracker(nil, prometheus.NewRegistry())
+	tracker, err := newIPTracker(log.NoLog{}, prometheus.NewRegistry())
 	require.NoError(t, err)
 	return tracker
 }
