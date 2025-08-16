@@ -15,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
@@ -136,7 +137,7 @@ func (n *Network) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID
 	return n.router.CrossChainAppRequestFailed(ctx, chainID, requestID, appErr)
 }
 
-func (n *Network) Connected(_ context.Context, nodeID ids.NodeID, version interface{}) error {
+func (n *Network) Connected(_ context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
 	n.Peers.add(nodeID)
 	return nil
 }

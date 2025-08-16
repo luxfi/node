@@ -233,7 +233,7 @@ func (w *windower) makeSampler(
 ) (sampler.WeightedWithoutReplacement, []validatorData, error) {
 	// Get the canonical representation of the validator set at the provided
 	// p-chain height.
-	validatorsMap, err := w.state.GetValidatorSet(pChainHeight, w.subnetID)
+	validatorsMap, err := w.state.GetValidatorSet(context.Background(), pChainHeight, w.subnetID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -242,7 +242,7 @@ func (w *windower) makeSampler(
 	for k, v := range validatorsMap {
 		validators = append(validators, validatorData{
 			id:     k,
-			weight: v,
+			weight: v.Weight,
 		})
 	}
 

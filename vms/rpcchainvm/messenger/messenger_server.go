@@ -20,16 +20,16 @@ var (
 // Server is a messenger that is managed over RPC.
 type Server struct {
 	messengerpb.UnsafeMessengerServer
-	messenger chan<- core.Message
+	messenger chan<- core.MessageType
 }
 
 // NewServer returns a messenger connected to a remote channel
-func NewServer(messenger chan<- core.Message) *Server {
+func NewServer(messenger chan<- core.MessageType) *Server {
 	return &Server{messenger: messenger}
 }
 
 func (s *Server) Notify(_ context.Context, req *messengerpb.NotifyRequest) (*messengerpb.NotifyResponse, error) {
-	msg := core.Message(req.Message)
+	msg := core.MessageType(req.Message)
 	select {
 	case s.messenger <- msg:
 		return &messengerpb.NotifyResponse{}, nil

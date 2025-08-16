@@ -8,6 +8,7 @@ go 1.24.5
 
 // Temporarily use local modules during development
 replace (
+	github.com/luxfi/consensus => ../consensus
 	github.com/luxfi/coreth => ../coreth
 	github.com/luxfi/crypto => ../crypto
 	github.com/luxfi/database => ../database
@@ -15,6 +16,7 @@ replace (
 	github.com/luxfi/ids => ../ids
 	github.com/luxfi/log => ../log
 	github.com/luxfi/metric => ../metric
+	github.com/luxfi/metrics => ../metrics
 	github.com/luxfi/trace => ../trace
 )
 
@@ -228,3 +230,4 @@ require (
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
 
 replace github.com/luxfi/consensus => ../consensus
+replace github.com/luxfi/crypto => ../crypto

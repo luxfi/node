@@ -45,7 +45,7 @@ type Mempool interface {
 type mempool struct {
 	txmempool.Mempool[*txs.Tx]
 
-	toEngine chan<- common.Message
+	toEngine chan<- common.MessageType
 	bytesAvailable int  // Exposed for tests
 	
 	// Keep track of tx sizes for removal
@@ -55,7 +55,7 @@ type mempool struct {
 func New(
 	namespace string,
 	registerer prometheus.Registerer,
-	toEngine chan<- common.Message,
+	toEngine chan<- common.MessageType,
 ) (Mempool, error) {
 	metrics, err := txmempool.NewMetrics(namespace, registerer)
 	if err != nil {

@@ -1165,16 +1165,16 @@ type validatorStateWrapper struct {
 	vs interfaces.ValidatorState
 }
 
-func (v *validatorStateWrapper) GetCurrentHeight() (uint64, error) {
-	return v.vs.GetCurrentHeight()
+func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return v.vs.GetCurrentHeight(ctx)
 }
 
 func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	return v.vs.GetSubnetID(ctx, chainID)
 }
 
-func (v *validatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	return v.vs.GetValidatorSet(height, subnetID)
+func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+	return v.vs.GetValidatorSet(ctx, height, subnetID)
 }
 
 // appSenderWrapper wraps block.AppSender to match core.AppSender

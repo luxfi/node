@@ -25,6 +25,7 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/trace"
 )
@@ -262,10 +263,15 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 // Reject middleware wraps a handler. If the chain that the context describes is
 // not done state-syncing/bootstrapping, writes back an error.
 func rejectMiddleware(handler http.Handler, ctx context.Context) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { 
-		// TODO: Check chain state properly once we have a better state management approach
-		// For now, just pass through
-		// In production, this should check if the chain is done bootstrapping
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check if chain state is available in context
+		if stateHolder, ok := ctx.Value("stateHolder").(*interfaces.StateHolder); ok {
+			state := stateHolder.Get()
+			if state == interfaces.StateSyncing || state == interfaces.Bootstrapping {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				return
+			}
+		}
 		handler.ServeHTTP(w, r)
 	})
 }

@@ -6,8 +6,8 @@ package proposervm
 import (
 	"context"
 
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/proposervm/indexer"
 )
 

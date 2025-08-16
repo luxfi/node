@@ -14,7 +14,7 @@ import (
 
 var (
 	_ chain.Block            = (*meterBlock)(nil)
-	_ chain.OracleBlock      = (*meterBlock)(nil)
+	// _ chain.OracleBlock      = (*meterBlock)(nil) // TODO: OracleBlock not in consensus
 	_ block.WithVerifyContext = (*meterBlock)(nil)
 	_ block.Block            = (*meterBlock)(nil)
 
@@ -58,27 +58,28 @@ func (mb *meterBlock) Reject(ctx context.Context) error {
 	return err
 }
 
-func (mb *meterBlock) Options(ctx context.Context) ([2]chain.Block, error) {
-	oracleBlock, ok := mb.Block.(chain.OracleBlock)
-	if !ok {
-		return [2]chain.Block{}, chain.ErrNotOracle
-	}
+// TODO: OracleBlock not in consensus - commenting out Options method
+// func (mb *meterBlock) Options(ctx context.Context) ([2]chain.Block, error) {
+// 	oracleBlock, ok := mb.Block.(chain.OracleBlock)
+// 	if !ok {
+// 		return [2]chain.Block{}, chain.ErrNotOracle
+// 	}
 
-	blks, err := oracleBlock.Options(ctx)
-	if err != nil {
-		return [2]chain.Block{}, err
-	}
-	return [2]chain.Block{
-		&meterBlock{
-			Block: blks[0],
-			vm:    mb.vm,
-		},
-		&meterBlock{
-			Block: blks[1],
-			vm:    mb.vm,
-		},
-	}, nil
-}
+// 	blks, err := oracleBlock.Options(ctx)
+// 	if err != nil {
+// 		return [2]chain.Block{}, err
+// 	}
+// 	return [2]chain.Block{
+// 		&meterBlock{
+// 			Block: blks[0],
+// 			vm:    mb.vm,
+// 		},
+// 		&meterBlock{
+// 			Block: blks[1],
+// 			vm:    mb.vm,
+// 		},
+// 	}, nil
+// }
 
 func (mb *meterBlock) ShouldVerifyWithContext(ctx context.Context) (bool, error) {
 	blkWithCtx, ok := mb.Block.(block.WithVerifyContext)

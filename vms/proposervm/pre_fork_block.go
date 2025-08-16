@@ -14,6 +14,7 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
@@ -149,7 +150,7 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 	if vs == nil {
 		return fmt.Errorf("validator state not available")
 	}
-	currentPChainHeight, err := vs.GetCurrentHeight()
+	currentPChainHeight, err := vs.GetCurrentHeight(ctx)
 	if err != nil {
 		b.vm.log.Error("block verification failed",
 			zap.String("reason", "failed to get current P-Chain height"),

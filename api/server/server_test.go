@@ -63,7 +63,7 @@ func TestRejectMiddleware(t *testing.T) {
 			// Create a test context
 			stateHolder := &interfaces.StateHolder{}
 			stateHolder.Set(tt.state)
-			ctx := context.Background()
+			ctx := context.WithValue(context.Background(), "stateHolder", stateHolder)
 
 			middleware := rejectMiddleware(tt.handlerFunc(require), ctx)
 			w := httptest.NewRecorder()

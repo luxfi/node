@@ -281,13 +281,13 @@ type consensusValidatorStateWrapper struct {
 	state validators.State
 }
 
-func (v *consensusValidatorStateWrapper) GetCurrentHeight() (uint64, error) {
-	return v.state.GetCurrentHeight()
+func (v *consensusValidatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return v.state.GetCurrentHeight(ctx)
 }
 
 func (v *consensusValidatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	// validators.State doesn't have GetMinimumHeight, return current height
-	return v.state.GetCurrentHeight()
+	return v.state.GetCurrentHeight(ctx)
 }
 
 func (v *consensusValidatorStateWrapper) GetSubnetID(chainID ids.ID) (ids.ID, error) {
@@ -295,17 +295,17 @@ func (v *consensusValidatorStateWrapper) GetSubnetID(chainID ids.ID) (ids.ID, er
 	return ids.Empty, nil
 }
 
-func (v *consensusValidatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	return v.state.GetValidatorSet(height, subnetID)
+func (v *consensusValidatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+	return v.state.GetValidatorSet(ctx, height, subnetID)
 }
 
-func (v *validatorStateWrapper) GetCurrentHeight() (uint64, error) {
-	return v.state.GetCurrentHeight()
+func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return v.state.GetCurrentHeight(ctx)
 }
 
 func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	// validators.State doesn't have GetMinimumHeight, return current height
-	return v.state.GetCurrentHeight()
+	return v.state.GetCurrentHeight(ctx)
 }
 
 func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
@@ -313,8 +313,8 @@ func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID)
 	return ids.Empty, nil
 }
 
-func (v *validatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	return v.state.GetValidatorSet(height, subnetID)
+func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+	return v.state.GetValidatorSet(ctx, height, subnetID)
 }
 
 // ChainConfig is configuration settings for the current execution.

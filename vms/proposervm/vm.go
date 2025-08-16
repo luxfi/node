@@ -80,7 +80,7 @@ type VM struct {
 	log         log.Logger
 	lock        sync.RWMutex
 	db          *versiondb.Database
-	toScheduler chan<- core.Message
+	toScheduler chan<- core.MessageType
 
 	// Block ID --> Block
 	// Each element is a block that passed verification but
@@ -197,7 +197,7 @@ func (vm *VM) Initialize(
 	// Create an internal channel for engine messages
 	// This channel is used by the scheduler to notify the consensus engine
 	// We need to create a local channel for the scheduler
-	toSchedulerEngine := make(chan core.Message, 1)
+	toSchedulerEngine := make(chan core.MessageType, 1)
 	scheduler, vmToEngine := scheduler.New(vm.log, toSchedulerEngine)
 	vm.Scheduler = scheduler
 	vm.toScheduler = vmToEngine
@@ -803,13 +803,13 @@ type validatorStateWrapper struct {
 	vs  consensus.ValidatorState
 }
 
-func (v *validatorStateWrapper) GetCurrentHeight() (uint64, error) {
-	return v.vs.GetCurrentHeight()
+func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return v.vs.GetCurrentHeight(ctx)
 }
 
-func (v *validatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
 	// The consensus.ValidatorState already returns map[ids.NodeID]uint64
-	return v.vs.GetValidatorSet(height, subnetID)
+	return v.vs.GetValidatorSet(ctx, height, subnetID)
 }
 
 // interfacesToConsensusValidatorStateAdapter adapts interfaces.ValidatorState to consensus.ValidatorState
@@ -822,17 +822,17 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetMinimumHeight(ctx contex
 	return a.vs.GetMinimumHeight(ctx)
 }
 
-func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentHeight() (uint64, error) {
-	return a.vs.GetCurrentHeight()
+func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return a.vs.GetCurrentHeight(ctx)
 }
 
 func (a *interfacesToConsensusValidatorStateAdapter) GetSubnetID(chainID ids.ID) (ids.ID, error) {
 	return a.vs.GetSubnetID(context.Background(), chainID)
 }
 
-func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
 	// Get the validator set from the interfaces version
-	valSet, err := a.vs.GetValidatorSet(height, subnetID)
+	valSet, err := a.vs.GetValidatorSet(ctx, height, subnetID)
 	if err != nil {
 		return nil, err
 	}
