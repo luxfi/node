@@ -14,8 +14,8 @@ replace (
 	github.com/luxfi/database => ../database
 	github.com/luxfi/geth => ../geth
 	github.com/luxfi/ids => ../ids
+	github.com/luxfi/log => ../log
 	github.com/luxfi/metric => ../metric
-	github.com/luxfi/metrics => ../metrics
 	github.com/luxfi/trace => ../trace
 )
 
@@ -33,7 +33,7 @@ require (
 	github.com/luxfi/consensus v1.1.0
 	github.com/luxfi/crypto v1.2.9
 	github.com/luxfi/database v1.1.11
-	github.com/luxfi/geth v1.16.32
+	github.com/luxfi/geth v1.16.34
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/ledger-lux-go v0.0.3
 	github.com/luxfi/log v1.1.1
@@ -138,6 +138,7 @@ require (
 	github.com/emicklei/dot v1.6.2 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.1 // indirect
+	github.com/ethereum/go-ethereum v1.16.1 // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/ferranbt/fastssz v0.1.4 // indirect
@@ -166,7 +167,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
+	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
@@ -226,5 +227,3 @@ require (
 // Pin all OpenTelemetry modules (and metric sub-packages) to v1.37.0
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
-
-replace github.com/luxfi/log => ../log
