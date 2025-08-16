@@ -26,7 +26,7 @@ import (
 
 	"github.com/luxfi/node/utils/hashing"
 
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 )
 
 var (

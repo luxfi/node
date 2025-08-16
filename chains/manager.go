@@ -48,7 +48,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/log"
-	luxmetric "github.com/luxfi/metrics"
+	luxmetric "github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"

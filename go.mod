@@ -18,13 +18,13 @@ require (
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
 	github.com/luxfi/consensus v1.1.2
-	github.com/luxfi/crypto v1.2.10
+	github.com/luxfi/crypto v1.2.9
 	github.com/luxfi/database v1.1.11
 	github.com/luxfi/geth v1.16.34
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/ledger-lux-go v0.0.3
 	github.com/luxfi/log v1.1.1
-	github.com/luxfi/metrics v1.3.0
+	github.com/luxfi/metric v1.3.0
 	github.com/luxfi/trace v0.1.1
 	github.com/supranational/blst v0.3.15
 	github.com/tyler-smith/go-bip32 v1.0.0
@@ -222,5 +222,5 @@ replace (
 	github.com/luxfi/geth => ../geth
 	github.com/luxfi/ids => ../ids
 	github.com/luxfi/log => ../log
-	github.com/luxfi/metrics => ../metrics
+	github.com/luxfi/metric => ../metric
 )

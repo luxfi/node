@@ -6,7 +6,7 @@ package executor
 import (
 	"testing"
 	
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
 

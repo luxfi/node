@@ -7,7 +7,7 @@ import (
 	"errors"
 	"testing"
 	
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/stretchr/testify/require"

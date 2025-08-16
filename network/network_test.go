@@ -12,7 +12,7 @@ import (
 	"time"
 	
 	"github.com/prometheus/client_golang/prometheus"
-	luxmetrics "github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/networking/router"
