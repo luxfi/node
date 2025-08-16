@@ -51,10 +51,11 @@ func TestKeychainAdd(t *testing.T) {
 	kc.Add(sk)
 
 	addr, _ := ids.ShortFromString(addrs[0])
-	rsk, exists := kc.Get(addr)
+	signer, exists := kc.Get(addr)
 	require.True(exists)
-	// The Get method now returns a luxSigner which wraps the private key
-	require.NotNil(rsk)
+	require.NotNil(signer)
+	// Verify the signer has the correct address
+	require.Equal(addr, signer.Address())
 
 	addrs := kc.Addresses()
 	require.Equal(1, addrs.Len())

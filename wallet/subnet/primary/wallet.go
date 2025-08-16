@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/keychain"
+	"github.com/luxfi/ledger-lux-go/keychain"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/c"

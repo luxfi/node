@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/keychain"
+	"github.com/luxfi/ledger-lux-go/keychain"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"

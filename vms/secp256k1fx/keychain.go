@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/keychain"
+	"github.com/luxfi/ledger-lux-go/keychain"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/verify"
@@ -21,8 +21,7 @@ import (
 var (
 	errCantSpend = errors.New("unable to spend this UTXO")
 
-	_ keychain.Keychain = (*Keychain)(nil)
-	_ keychain.Signer   = (*luxSigner)(nil)
+	_ keychain.Signer = (*luxSigner)(nil)
 )
 
 // luxSigner wraps a secp256k1.PrivateKey to implement keychain.Signer

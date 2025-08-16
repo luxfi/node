@@ -140,15 +140,15 @@ type msgBuilder struct {
 	log log.Logger
 
 	zstdCompressor compression.Compressor
-	count          metric.CounterVec // type + op + direction
-	duration       metric.GaugeVec   // type + op + direction
+	count          metrics.CounterVec // type + op + direction
+	duration       metrics.GaugeVec   // type + op + direction
 
 	maxMessageTimeout time.Duration
 }
 
 func newMsgBuilder(
 	log log.Logger,
-	m metric.Metrics,
+	m metrics.Metrics,
 	maxMessageTimeout time.Duration,
 ) (*msgBuilder, error) {
 	zstdCompressor, err := compression.NewZstdCompressor(constants.DefaultMaxMessageSize)
@@ -223,7 +223,7 @@ func (mb *msgBuilder) marshal(
 	}
 	compressTook := time.Since(startTime)
 
-	labels := metric.Labels{
+	labels := metrics.Labels{
 		typeLabel:      compressionType.String(),
 		opLabel:        op.String(),
 		directionLabel: compressionLabel,
@@ -276,7 +276,7 @@ func (mb *msgBuilder) unmarshal(b []byte) (*p2p.Message, int, Op, error) {
 		return nil, 0, 0, err
 	}
 
-	labels := metric.Labels{
+	labels := metrics.Labels{
 		typeLabel:      compression.TypeZstd.String(),
 		opLabel:        op.String(),
 		directionLabel: decompressionLabel,

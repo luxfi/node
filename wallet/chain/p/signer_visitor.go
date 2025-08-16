@@ -13,7 +13,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"

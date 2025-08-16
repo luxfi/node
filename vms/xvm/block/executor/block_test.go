@@ -130,7 +130,7 @@ func TestBlockVerify(t *testing.T) {
 					manager: &manager{
 						backend:      defaultTestBackend(false, nil),
 						mempool:      mempool,
-						metrics:      metric.NewMockMetrics(ctrl),
+						metrics:      metrics.NewMockMetrics(ctrl),
 						blkIDToState: map[ids.ID]*blockState{},
 						clk:          &mockable.Clock{},
 					},
@@ -600,7 +600,7 @@ func TestBlockAccept(t *testing.T) {
 					Block: mockBlock,
 					manager: &manager{
 						mempool:      mempool,
-						metrics:      metric.NewMockMetrics(ctrl),
+						metrics:      metrics.NewMockMetrics(ctrl),
 						backend:      defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{},
 					},
@@ -853,7 +853,7 @@ func TestBlockReject(t *testing.T) {
 					manager: &manager{
 						lastAccepted: lastAcceptedID,
 						mempool:      mempool,
-						metrics:      metric.NewMockMetrics(ctrl),
+						metrics:      metrics.NewMockMetrics(ctrl),
 						backend:      defaultTestBackend(true, nil),
 						state:        mockState,
 						blkIDToState: map[ids.ID]*blockState{
@@ -906,7 +906,7 @@ func TestBlockReject(t *testing.T) {
 					manager: &manager{
 						lastAccepted: lastAcceptedID,
 						mempool:      mempool,
-						metrics:      metric.NewMockMetrics(ctrl),
+						metrics:      metrics.NewMockMetrics(ctrl),
 						backend:      defaultTestBackend(true, nil),
 						state:        mockState,
 						blkIDToState: map[ids.ID]*blockState{
