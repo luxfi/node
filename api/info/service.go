@@ -358,7 +358,7 @@ func (i *Info) Lps(_ *http.Request, _ *struct{}, reply *LPsReply) error {
 	reply.LPs = make(map[uint32]*LP, constants.CurrentLPs.Len())
 	peers := i.networking.PeerInfo(nil)
 	for _, peer := range peers {
-		w, _ := i.validators.GetWeight(constants.PrimaryNetworkID, peer.ID)
+		w := i.validators.GetWeight(constants.PrimaryNetworkID, peer.ID)
 		weight := json.Uint64(w)
 		if weight == 0 {
 			continue

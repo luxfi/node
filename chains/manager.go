@@ -72,7 +72,7 @@ import (
 	dagbootstrap "github.com/luxfi/consensus/engine/dag/bootstrap"
 	daggetter "github.com/luxfi/consensus/engine/dag/getter"
 	timetracker "github.com/luxfi/consensus/networking/tracker"
-	smcon "github.com/luxfi/consensus/protocol/chain"
+	// smcon "github.com/luxfi/consensus/protocol/chain" // currently unused
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 )
 
@@ -1071,7 +1071,7 @@ func (m *manager) createLuxChain(
 	if err != nil {
 		return nil, fmt.Errorf("error creating peer tracker: %w", err)
 	}
-	vdrs.RegisterSetCallbackListener(chainParams.SubnetID, connectedValidators)
+	vdrs.RegisterSetCallbackListener(subnetID, connectedValidators)
 
 	p2pReg, err := luxmetric.MakeAndRegister(
 		m.p2pGatherer,
@@ -1142,21 +1142,21 @@ func (m *manager) createLuxChain(
 		return nil, fmt.Errorf("couldn't initialize consensus base message handler: %w", err)
 	}
 
-	var linearConsensus smcon.Consensus = &smcon.Topological{}
-	if m.TracingEnabled {
-		linearConsensus = smcon.Trace(linearConsensus, m.Tracer)
-	}
+	// TODO: Initialize consensus properly
+	// var linearConsensus smcon.Consensus
 
 	// Create engine, bootstrapper and state-syncer in this order,
 	// to make sure start callbacks are duly initialized
 	// Convert sampling.Parameters to chain.Parameters
 	chainParams := smeng.Parameters{}
 
-	var linearEngine core.Engine
-	linearEngine, err = smeng.New(runtime, chainParams)
+	// TODO: Fix engine initialization - smeng.Engine doesn't implement core.Engine
+	// var linearEngine core.Engine
+	linearEngine, err := smeng.New(runtime, chainParams)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing linear engine: %w", err)
 	}
+	_ = linearEngine // temporarily unused
 
 	// Tracing for linearEngine can be added here if needed
 	// if m.TracingEnabled {
@@ -1186,7 +1186,8 @@ func (m *manager) createLuxChain(
 
 	// Create bootstrapper with a callback function
 	bootstrapCallback := func(ctx context.Context, lastReqID uint32) error {
-		return linearEngine.Start(ctx, lastReqID)
+		_ = lastReqID // TODO: handle lastReqID if needed
+		return linearEngine.Start(ctx)
 	}
 
 	linearBootstrapper, err := smbootstrap.New(
@@ -1586,7 +1587,7 @@ func (m *manager) createLinearChain(
 	if err != nil {
 		return nil, fmt.Errorf("error creating peer tracker: %w", err)
 	}
-	vdrs.RegisterSetCallbackListener(chainParams.SubnetID, connectedValidators)
+	vdrs.RegisterSetCallbackListener(subnetID, connectedValidators)
 
 	p2pReg, err := luxmetric.MakeAndRegister(
 		m.p2pGatherer,
@@ -1623,7 +1624,7 @@ func (m *manager) createLinearChain(
 		case msg := <-msgChan:
 			return msg, nil
 		case <-ctx.Done():
-			return core.Message(0), ctx.Err()
+			return core.Message{}, ctx.Err()
 		}
 	}
 
@@ -1664,10 +1665,8 @@ func (m *manager) createLinearChain(
 		return nil, fmt.Errorf("couldn't initialize consensus base message handler: %w", err)
 	}
 
-	var consensus smcon.Consensus = &smcon.Topological{}
-	if m.TracingEnabled {
-		consensus = smcon.Trace(consensus, m.Tracer)
-	}
+	// TODO: Initialize consensus properly
+	// var consensus smcon.Consensus
 
 	// Create engine, bootstrapper and state-syncer in this order,
 	// to make sure start callbacks are duly initialized
@@ -1686,15 +1685,17 @@ func (m *manager) createLinearChain(
 	// 	Consensus:           consensus,
 	// 	// PartialSync field removed - doesn't exist
 	// }
-	var engine core.Engine
-	engine, err = smeng.New(runtime, chainParams)
+	// TODO: Fix engine initialization - smeng.Engine doesn't implement core.Engine
+	// var engine core.Engine
+	engine, err := smeng.New(runtime, chainParams)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing linear engine: %w", err)
 	}
+	_ = engine // temporarily unused
 
-	if m.TracingEnabled {
-		engine = core.TraceEngine(engine, m.Tracer)
-	}
+	// if m.TracingEnabled {
+	// 	engine = core.TraceEngine(engine, m.Tracer)
+	// }
 
 	// create bootstrap gear
 	bootstrapCfg := smbootstrap.Config{

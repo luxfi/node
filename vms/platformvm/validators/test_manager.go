@@ -6,7 +6,7 @@ package validators
 import (
 	"context"
 
-	// "github.com/luxfi/consensus/validators" // Not used
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 )
 
@@ -18,7 +18,7 @@ func (testManager) GetMinimumHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
-func (testManager) GetCurrentHeight() (uint64, error) {
+func (testManager) GetCurrentHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
@@ -26,12 +26,12 @@ func (testManager) GetSubnetID(context.Context, ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
-func (testManager) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+func (testManager) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return nil, nil
 }
 
 func (testManager) OnAcceptedBlockID(ids.ID) {}
 
-func (testManager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validator.GetCurrentValidatorOutput, uint64, error) {
+func (testManager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
 	return nil, 0, nil
 }

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"go.uber.org/zap"
+	// "go.uber.org/zap"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
@@ -342,12 +342,13 @@ func (e *StandardTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	lux.Produce(e.State, txID, tx.Outs)
 
 	if e.Config.PartialSyncPrimaryNetwork && tx.Validator.NodeID == e.NodeID {
-		e.Log.Warn("verified transaction that would cause this node to become unhealthy",
-			zap.String("reason", "primary network is not being fully synced"),
-			zap.Stringer("txID", txID),
-			zap.String("txType", "addValidator"),
-			zap.Stringer("nodeID", tx.Validator.NodeID),
-		)
+		// TODO: Add logging support
+		// e.Log.Warn("verified transaction that would cause this node to become unhealthy",
+		// 	zap.String("reason", "primary network is not being fully synced"),
+		// 	zap.Stringer("txID", txID),
+		// 	zap.String("txType", "addValidator"),
+		// 	zap.Stringer("nodeID", tx.Validator.NodeID),
+		// )
 	}
 	return nil
 }
@@ -502,12 +503,13 @@ func (e *StandardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionl
 	if e.Config.PartialSyncPrimaryNetwork &&
 		tx.Subnet == constants.PrimaryNetworkID &&
 		tx.Validator.NodeID == e.NodeID {
-		e.Log.Warn("verified transaction that would cause this node to become unhealthy",
-			zap.String("reason", "primary network is not being fully synced"),
-			zap.Stringer("txID", txID),
-			zap.String("txType", "addPermissionlessValidator"),
-			zap.Stringer("nodeID", tx.Validator.NodeID),
-		)
+		// TODO: Add logging support
+		// e.Log.Warn("verified transaction that would cause this node to become unhealthy",
+		// 	zap.String("reason", "primary network is not being fully synced"),
+		// 	zap.Stringer("txID", txID),
+		// 	zap.String("txType", "addPermissionlessValidator"),
+		// 	zap.Stringer("nodeID", tx.Validator.NodeID),
+		// )
 	}
 
 	return nil

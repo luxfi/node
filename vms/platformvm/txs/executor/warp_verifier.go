@@ -25,7 +25,17 @@ type validatorStateWrapper struct {
 }
 
 func (w *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	return w.state.GetValidatorSet(height, subnetID)
+	valSet, err := w.state.GetValidatorSet(ctx, height, subnetID)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Convert to simple weight map
+	result := make(map[ids.NodeID]uint64, len(valSet))
+	for nodeID, val := range valSet {
+		result[nodeID] = val.Weight
+	}
+	return result, nil
 }
 
 func (w *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
