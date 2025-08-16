@@ -40,6 +40,9 @@ type Block interface {
 	consensuschain.Block
 	smblock.WithVerifyContext
 
+	// Timestamp returns the block's timestamp
+	Timestamp() time.Time
+	
 	// State intends to return the new chain state following this block's
 	// acceptance. The new chain state is built (but not persisted) following a
 	// block's verification to allow block's descendants verification before

@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/vms/evm/metrics/metricstest"
 )
 
