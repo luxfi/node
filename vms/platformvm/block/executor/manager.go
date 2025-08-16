@@ -8,6 +8,7 @@ import (
 
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/metrics"
@@ -81,6 +82,7 @@ func NewManager(
 		},
 		preferred:         lastAccepted,
 		txExecutorBackend: txExecutorBackend,
+		Log:               log.NoLog{},
 	}
 }
 
@@ -92,6 +94,7 @@ type manager struct {
 
 	preferred         ids.ID
 	txExecutorBackend *executor.Backend
+	Log               log.Logger
 }
 
 func (m *manager) GetBlock(blkID ids.ID) (chain.Block, error) {

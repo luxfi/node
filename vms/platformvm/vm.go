@@ -12,9 +12,11 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/gorilla/rpc/v2"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus"
@@ -29,9 +31,12 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
+	consensusutils "github.com/luxfi/consensus/utils"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
+	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
+	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/lux"
@@ -62,6 +67,31 @@ var (
 	// _ validators.SubnetConnector = (*VM)(nil) // Type no longer exists
 )
 
+// appSenderAdapter adapts linearblock.AppSender to core.AppSender
+type appSenderAdapter struct {
+	linearblock.AppSender
+}
+
+func (a *appSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	// Not implemented in linearblock.AppSender, return nil
+	return nil
+}
+
+func (a *appSenderAdapter) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error {
+	// Not implemented in linearblock.AppSender, return nil
+	return nil
+}
+
+func (a *appSenderAdapter) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, appResponseBytes []byte) error {
+	// Not implemented in linearblock.AppSender, return nil
+	return nil
+}
+
+func (a *appSenderAdapter) SendCrossChainAppError(ctx context.Context, chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) error {
+	// Not implemented in linearblock.AppSender, return nil
+	return nil
+}
+
 type VM struct {
 	config.Config
 	blockbuilder.Builder
@@ -71,13 +101,24 @@ type VM struct {
 	metrics platformvmmetrics.Metrics
 
 	// Used to get time. Useful for faking time during tests.
-	clock mockable.Clock
+	consensusClock consensusclock.Clock
+	nodeClock      mockable.Clock
 
 	uptimeManager uptime.Manager
 
 	// The context of this vm
 	ctx context.Context
 	db  database.Database
+	
+	// Additional fields needed for platformvm
+	log          log.Logger
+	nodeID       ids.NodeID
+	lock         sync.RWMutex
+	luxAssetID   ids.ID
+	chainID      ids.ID
+	bcLookup     consensus.AliasLookup
+	sharedMemory consensus.SharedMemory
+	chainDataDir string
 
 	state state.State
 
@@ -85,7 +126,8 @@ type VM struct {
 	codecRegistry codec.Registry
 
 	// Bootstrapped remembers if this chain has finished bootstrapping or not
-	bootstrapped utils.Atomic[bool]
+	bootstrappedConsensus consensusutils.Atomic[bool]
+	bootstrapped          utils.Atomic[bool]
 
 	manager blockexecutor.Manager
 
@@ -99,35 +141,45 @@ type VM struct {
 // [vm.ChainManager] and [vm.vdrMgr] must be set before this function is called.
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx context.Context,
-	db database.Database,
+	chainCtx *linearblock.ChainContext,
+	dbManager linearblock.DBManager,
 	genesisBytes []byte,
-	_ []byte,
+	upgradeBytes []byte,
 	configBytes []byte,
-	_ []*core.Fx,
-	appSender core.AppSender,
+	toEngine chan<- linearblock.Message,
+	fxs []*linearblock.Fx,
+	appSender linearblock.AppSender,
 ) error {
-	chainCtx.Log.Debug("initializing platform chain")
+	// Initialize logger
+	vm.log = log.NoLog{}
+	vm.log.Debug("initializing platform chain")
 
 	execConfig, err := config.GetExecutionConfig(configBytes)
 	if err != nil {
 		return err
 	}
-	chainCtx.Log.Info("using VM execution config", zap.Reflect("config", execConfig))
+	vm.log.Info("using VM execution config", zap.Reflect("config", execConfig))
 
-	registerer, err := metric.MakeAndRegister(chainCtx.Metrics, "")
+	// Use a prometheus registry for metrics
+	registerer := prometheus.NewRegistry()
 	if err != nil {
 		return err
 	}
 
 	// Initialize metrics as soon as possible
-	vm.metrics, err = platformvmmetric.New(registerer)
+	vm.metrics, err = platformvmmetrics.New(registerer)
 	if err != nil {
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}
 
-	vm.ctx = chainCtx
-	vm.db = db
+	// ChainContext is compatible with context.Context
+	if chainCtx != nil {
+		vm.ctx = context.Background() // Use the runtime context
+	}
+	// Get the current database from the DBManager
+	if dbManager != nil {
+		vm.db = dbManager.Current()
+	}
 
 	// Note: this codec is never used to serialize anything
 	vm.codecRegistry = linearcodec.NewDefault()
@@ -152,16 +204,16 @@ func (vm *VM) Initialize(
 		return err
 	}
 
-	validatorManager := pvalidators.NewManager(chainCtx.Log, vm.Config, vm.state, vm.metrics, &vm.clock)
+	validatorManager := pvalidators.NewManager(vm.log, vm.Config, vm.state, vm.metrics, &vm.nodeClock)
 	vm.State = validatorManager
-	utxoHandler := utxo.NewHandler(vm.ctx, &vm.clock, vm.fx)
-	vm.uptimeManager = uptime.NewManager(vm.state, &vm.clock)
-	vm.UptimeLockedCalculator.SetCalculator(&vm.bootstrapped, &chainCtx.Lock, vm.uptimeManager)
+	utxoHandler := utxo.NewHandler(vm.ctx, &vm.nodeClock, vm.fx)
+	vm.uptimeManager = uptime.NewManager(vm.state, &vm.consensusClock)
+	vm.UptimeLockedCalculator.SetCalculator(&vm.bootstrappedConsensus, &vm.lock, vm.uptimeManager)
 
 	txExecutorBackend := &txexecutor.Backend{
 		Config:       &vm.Config,
 		Ctx:          vm.ctx,
-		Clk:          &vm.clock,
+		Clk:          &vm.nodeClock,
 		Fx:           vm.fx,
 		FlowChecker:  utxoHandler,
 		Uptimes:      vm.uptimeManager,
@@ -170,8 +222,9 @@ func (vm *VM) Initialize(
 	}
 
 	// Create a channel for mempool to engine communication
-	toEngine := make(chan core.Message, 1)
-	mempool, err := pmempool.New("mempool", registerer, toEngine)
+	// Convert the linearblock.Message channel to core.MessageType channel
+	mempoolToEngine := make(chan core.MessageType, 1)
+	mempool, err := pmempool.New("mempool", registerer, mempoolToEngine)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
 	}
@@ -184,21 +237,25 @@ func (vm *VM) Initialize(
 		validatorManager,
 	)
 
-	txVerifier := network.NewLockedTxVerifier(&txExecutorBackend.Ctx.Lock, vm.manager)
+	txVerifier := network.NewLockedTxVerifier(&vm.lock, vm.manager)
+	// Create wrapper for AppSender to adapt linearblock.AppSender to core.AppSender
+	appSenderWrapper := &appSenderAdapter{appSender}
+	// Create network config with default values
+	networkConfig := network.DefaultConfig()
 	vm.Network, err = network.New(
-		chainCtx.Log,
-		chainCtx.NodeID,
-		chainCtx.SubnetID,
+		vm.log,
+		vm.nodeID,
+		constants.PrimaryNetworkID,
 		validators.NewLockedState(
-			&chainCtx.Lock,
+			&vm.lock,
 			validatorManager,
 		),
 		txVerifier,
 		mempool,
 		txExecutorBackend.Config.PartialSyncPrimaryNetwork,
-		appSender,
+		appSenderWrapper,
 		registerer,
-		execConfig.Network,
+		networkConfig,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to initialize network: %w", err)
@@ -217,7 +274,7 @@ func (vm *VM) Initialize(
 	)
 
 	// Create all of the chains that the database says exist
-	chainCtx.Log.Info("about to call initBlockchains")
+	vm.log.Info("about to call initBlockchains")
 	if err := vm.initBlockchains(); err != nil {
 		return fmt.Errorf(
 			"failed to initialize blockchains: %w",
@@ -226,7 +283,7 @@ func (vm *VM) Initialize(
 	}
 
 	lastAcceptedID := vm.state.GetLastAccepted()
-	chainCtx.Log.Info("initializing last accepted",
+	vm.log.Info("initializing last accepted",
 		zap.Stringer("blkID", lastAcceptedID),
 	)
 	if err := vm.SetPreference(ctx, lastAcceptedID); err != nil {
@@ -245,9 +302,9 @@ func (vm *VM) Initialize(
 		default:
 		}
 
-		err := vm.state.ReindexBlocks(&vm.ctx.Lock, vm.ctx.Log)
+		err := vm.state.ReindexBlocks(&vm.lock, vm.log)
 		if err != nil {
-			vm.ctx.Log.Warn("reindexing blocks failed",
+			vm.log.Warn("reindexing blocks failed",
 				zap.Error(err),
 			)
 		}
@@ -266,7 +323,7 @@ func (vm *VM) periodicallyPruneMempool(frequency time.Duration) {
 			return
 		case <-ticker.C:
 			if err := vm.pruneMempool(); err != nil {
-				vm.ctx.Log.Debug("pruning mempool failed",
+				vm.log.Debug("pruning mempool failed",
 					zap.Error(err),
 				)
 			}
@@ -275,8 +332,8 @@ func (vm *VM) periodicallyPruneMempool(frequency time.Duration) {
 }
 
 func (vm *VM) pruneMempool() error {
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	// Packing all of the transactions in order performs additional checks that
 	// the MempoolTxVerifier doesn't include. So, evicting transactions from
@@ -288,7 +345,7 @@ func (vm *VM) pruneMempool() error {
 
 	for _, tx := range blockTxs {
 		if err := vm.Builder.Add(tx); err != nil {
-			vm.ctx.Log.Debug(
+			vm.log.Debug(
 				"failed to reissue tx",
 				zap.Stringer("txID", tx.ID()),
 				zap.Error(err),
@@ -303,21 +360,21 @@ func (vm *VM) pruneMempool() error {
 func (vm *VM) checkExistingChains() error {
 	// Scan chainData directory for existing chains
 	// We need the parent chainData directory, not the P-Chain specific one
-	chainDataDir := filepath.Dir(vm.ctx.ChainDataDir)
-	vm.ctx.Log.Info("checking for existing chains in chainData directory",
+	chainDataDir := filepath.Dir(vm.chainDataDir)
+	vm.log.Info("checking for existing chains in chainData directory",
 		zap.String("chainDataDir", chainDataDir),
 	)
 
 	entries, err := os.ReadDir(chainDataDir)
 	if err != nil {
-		vm.ctx.Log.Info("chainData directory read error",
+		vm.log.Info("chainData directory read error",
 			zap.Error(err),
 		)
 		// Directory might not exist yet, that's ok
 		return nil
 	}
 
-	vm.ctx.Log.Info("found chainData entries",
+	vm.log.Info("found chainData entries",
 		zap.Int("count", len(entries)),
 	)
 
@@ -326,14 +383,14 @@ func (vm *VM) checkExistingChains() error {
 			continue
 		}
 
-		vm.ctx.Log.Info("checking chainData entry",
+		vm.log.Info("checking chainData entry",
 			zap.String("name", entry.Name()),
 		)
 
 		// Try to parse as chain ID
 		chainID, err := ids.FromString(entry.Name())
 		if err != nil {
-			vm.ctx.Log.Debug("failed to parse chain ID",
+			vm.log.Debug("failed to parse chain ID",
 				zap.String("name", entry.Name()),
 				zap.Error(err),
 			)
@@ -354,13 +411,13 @@ func (vm *VM) checkExistingChains() error {
 		// Check for EVM chain (C-Chain)
 		if bytes.Contains(configData, []byte("chain-id")) || bytes.Contains(configData, []byte("chainId")) {
 			vmID = constants.EVMID
-			vm.ctx.Log.Info("detected EVM chain from config",
+			vm.log.Info("detected EVM chain from config",
 				zap.String("chainID", chainID.String()),
 			)
 		} else {
 			// Check for other VM types by looking at other files
 			// For now, we'll skip non-EVM chains
-			vm.ctx.Log.Debug("skipping non-EVM chain",
+			vm.log.Debug("skipping non-EVM chain",
 				zap.String("chainID", chainID.String()),
 			)
 			continue
@@ -372,7 +429,7 @@ func (vm *VM) checkExistingChains() error {
 		// Check if this chain is already known
 		chains, err := vm.state.GetChains(subnetID)
 		if err != nil {
-			vm.ctx.Log.Warn("failed to get chains for subnet",
+			vm.log.Warn("failed to get chains for subnet",
 				zap.String("subnetID", subnetID.String()),
 				zap.Error(err),
 			)
@@ -389,7 +446,7 @@ func (vm *VM) checkExistingChains() error {
 
 		if !chainExists {
 			// This is an orphaned chain, queue it for creation
-			vm.ctx.Log.Info("found orphaned chain, queuing for creation",
+			vm.log.Info("found orphaned chain, queuing for creation",
 				zap.String("chainID", chainID.String()),
 				zap.String("vmID", vmID.String()),
 				zap.String("subnetID", subnetID.String()),
@@ -435,7 +492,7 @@ func (vm *VM) checkExistingChains() error {
 
 			vm.Config.QueueExistingChainWithGenesis(chainID, subnetID, vmID, []byte(minimalGenesis))
 		} else {
-			vm.ctx.Log.Debug("chain already registered",
+			vm.log.Debug("chain already registered",
 				zap.String("chainID", chainID.String()),
 			)
 		}
@@ -445,15 +502,15 @@ func (vm *VM) checkExistingChains() error {
 
 // Create all chains that exist that this node validates.
 func (vm *VM) initBlockchains() error {
-	vm.ctx.Log.Info("initBlockchains called")
+	vm.log.Info("initBlockchains called")
 
 	// Check for existing chains in chainData directory
 	if err := vm.checkExistingChains(); err != nil {
-		vm.ctx.Log.Warn("failed to check existing chains", zap.Error(err))
+		vm.log.Warn("failed to check existing chains", zap.Error(err))
 	}
 
 	if vm.Config.PartialSyncPrimaryNetwork {
-		vm.ctx.Log.Info("skipping primary network chain creation")
+		vm.log.Info("skipping primary network chain creation")
 	} else if err := vm.createSubnet(constants.PrimaryNetworkID); err != nil {
 		return err
 	}
@@ -494,7 +551,7 @@ func (vm *VM) createSubnet(subnetID ids.ID) error {
 
 		// Check for chain ID mapping override
 		// Support mapping for C-Chain to use existing blockchain ID
-		vm.ctx.Log.Info("Checking chain ID mapping",
+		vm.log.Info("Checking chain ID mapping",
 			zap.String("vmID", tx.VMID.String()),
 			zap.String("EVMID", constants.EVMID.String()),
 			zap.String("originalChainID", chainID.String()),
@@ -505,13 +562,13 @@ func (vm *VM) createSubnet(subnetID ids.ID) error {
 			mappedID := os.Getenv("LUX_CHAIN_ID_MAPPING_C")
 			parsedID, err := ids.FromString(mappedID)
 			if err == nil {
-				vm.ctx.Log.Info("Using mapped blockchain ID for C-Chain",
+				vm.log.Info("Using mapped blockchain ID for C-Chain",
 					zap.String("original", chainID.String()),
 					zap.String("mapped", parsedID.String()),
 				)
 				chainID = parsedID
 			} else {
-				vm.ctx.Log.Warn("Invalid chain ID mapping",
+				vm.log.Warn("Invalid chain ID mapping",
 					zap.String("mapping", mappedID),
 					zap.Error(err),
 				)
@@ -526,6 +583,7 @@ func (vm *VM) createSubnet(subnetID ids.ID) error {
 // onBootstrapStarted marks this VM as bootstrapping
 func (vm *VM) onBootstrapStarted() error {
 	vm.bootstrapped.Set(false)
+	vm.bootstrappedConsensus.Set(false)
 	return vm.fx.Bootstrapping()
 }
 
@@ -535,6 +593,7 @@ func (vm *VM) onNormalOperationsStarted() error {
 		return nil
 	}
 	vm.bootstrapped.Set(true)
+	vm.bootstrappedConsensus.Set(true)
 
 	if err := vm.fx.Bootstrapped(); err != nil {
 		return err
@@ -545,7 +604,7 @@ func (vm *VM) onNormalOperationsStarted() error {
 		return err
 	}
 
-	vl := validators.NewLogger(vm.ctx.Log, constants.PrimaryNetworkID, vm.ctx.NodeID)
+	vl := validators.NewLogger(vm.log, constants.PrimaryNetworkID, vm.nodeID)
 	vm.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, vl)
 
 	for subnetID := range vm.TrackedSubnets {
@@ -556,7 +615,7 @@ func (vm *VM) onNormalOperationsStarted() error {
 		// }
 		_ = vdrIDs // avoid unused variable
 
-		vl := validators.NewLogger(vm.ctx.Log, subnetID, vm.ctx.NodeID)
+		vl := validators.NewLogger(vm.log, subnetID, vm.nodeID)
 		vm.Validators.RegisterSetCallbackListener(subnetID, vl)
 	}
 
@@ -576,7 +635,7 @@ func (vm *VM) SetState(_ context.Context, state consensus.State) error {
 	case consensus.NormalOp:
 		return vm.onNormalOperationsStarted()
 	default:
-		return consensus.ErrUnknownState
+		return fmt.Errorf("unknown state: %v", state)
 	}
 }
 
@@ -630,7 +689,18 @@ func (vm *VM) Shutdown(context.Context) error {
 	return errors.Join(errs...)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, b []byte) (chain.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (linearblock.Block, error) {
+	// Use the embedded Builder to build a block
+	blk, err := vm.Builder.BuildBlock(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// The Builder returns chain.Block which is compatible with linearblock.Block
+	// since linearblock.Block extends chain.Block
+	return blk, nil
+}
+
+func (vm *VM) ParseBlock(_ context.Context, b []byte) (linearblock.Block, error) {
 	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
 	// rather than blocks.GenesisCodec
 	statelessBlk, err := block.Parse(block.Codec, b)
@@ -640,7 +710,7 @@ func (vm *VM) ParseBlock(_ context.Context, b []byte) (chain.Block, error) {
 	return vm.manager.NewBlock(statelessBlk), nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (linearblock.Block, error) {
 	return vm.manager.GetBlock(blkID)
 }
 
@@ -683,11 +753,18 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	}, err
 }
 
-func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
 	if err := vm.uptimeManager.Connect(nodeID); err != nil {
 		return err
 	}
-	return vm.Network.Connected(ctx, nodeID, version)
+	// Convert node version to consensus version
+	consensusVer := &consensusversion.Application{
+		Name:  nodeVersion.Name,
+		Major: nodeVersion.Major,
+		Minor: nodeVersion.Minor,
+		Patch: nodeVersion.Patch,
+	}
+	return vm.Network.Connected(ctx, nodeID, consensusVer)
 }
 
 func (vm *VM) ConnectedSubnet(_ context.Context, nodeID ids.NodeID, subnetID ids.ID) error {
@@ -713,11 +790,11 @@ func (vm *VM) CodecRegistry() codec.Registry {
 }
 
 func (vm *VM) Clock() *mockable.Clock {
-	return &vm.clock
+	return &vm.nodeClock
 }
 
 func (vm *VM) Logger() log.Logger {
-	return vm.ctx.Log
+	return vm.log
 }
 
 func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, error) {
@@ -727,7 +804,7 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
 func (vm *VM) issueTxFromRPC(tx *txs.Tx) error {
 	err := vm.Network.IssueTxFromRPC(tx)
 	if err != nil && !errors.Is(err, mempool.ErrDuplicateTx) {
-		vm.ctx.Log.Debug("failed to add tx to mempool",
+		vm.log.Debug("failed to add tx to mempool",
 			zap.Stringer("txID", tx.ID()),
 			zap.Error(err),
 		)
@@ -745,8 +822,8 @@ func (vm *VM) NewHTTPHandler(context.Context) (http.Handler, error) {
 
 // WaitForEvent blocks until either the given context is cancelled, or a message is returned
 // This is required by the linearblock.ChainVM interface
-func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
+func (vm *VM) WaitForEvent(ctx context.Context) (core.MessageType, error) {
 	// For now, just block until context is cancelled
 	<-ctx.Done()
-	return core.Message(0), ctx.Err()
+	return core.MessageType(0), ctx.Err()
 }

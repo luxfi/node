@@ -14,8 +14,9 @@ import (
 )
 
 var (
-	_ chain.Block       = (*Block)(nil)
-	_ chain.OracleBlock = (*Block)(nil)
+	_ chain.Block = (*Block)(nil)
+	// OracleBlock is not available in consensus package
+	// _ chain.OracleBlock = (*Block)(nil)
 )
 
 // Exported for testing in platformvm package.

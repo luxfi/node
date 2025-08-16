@@ -35,7 +35,7 @@ import (
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/version"
 	
-	luxmetric "github.com/luxfi/node/utils/metric"
+	luxmetrics "github.com/luxfi/metric"
 )
 
 // inboundHandlerFunc is a simple wrapper to make a function implement InboundHandler
@@ -221,7 +221,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 
 	mc, err := message.NewCreator(
 		nil,
-		luxmetric.NewOptionalGatherer(),
+		luxmetrics.NewNoOpMetrics("test"),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)

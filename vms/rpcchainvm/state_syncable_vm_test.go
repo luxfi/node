@@ -29,8 +29,8 @@ import (
 )
 
 var (
-	_ block.ChainVM         = StateSyncEnabledMock{}
-	_ block.StateSyncableVM = StateSyncEnabledMock{}
+	_ block.ChainVM         = &StateSyncEnabledMock{}
+	_ block.StateSyncableVM = &StateSyncEnabledMock{}
 
 	preSummaryHeight = uint64(1789)
 	SummaryHeight    = uint64(2022)
@@ -75,20 +75,25 @@ func stateSyncEnabledTestPlugin(t *testing.T, loadExpectations bool) block.Chain
 	// test key is "stateSyncEnabledTestKey"
 
 	// create mock
-	// ctrl := gomock.NewController(t)
-	ssVM := StateSyncEnabledMock{
-		// ChainVM:         blockmock.NewChainVM(ctrl),
-		// StateSyncableVM: blockmock.NewStateSyncableVM(ctrl),
-	}
+	ssVM := &StateSyncEnabledMock{}
 
-	// if loadExpectations {
-	// 	gomock.InOrder(
-	// 		ssVM.StateSyncableVM.EXPECT().StateSyncEnabled(gomock.Any()).Return(false, block.ErrStateSyncableVMNotImplemented).Times(1),
-	// 		ssVM.StateSyncableVM.EXPECT().StateSyncEnabled(gomock.Any()).Return(false, nil).Times(1),
-	// 		ssVM.StateSyncableVM.EXPECT().StateSyncEnabled(gomock.Any()).Return(true, nil).Times(1),
-	// 		ssVM.StateSyncableVM.EXPECT().StateSyncEnabled(gomock.Any()).Return(false, errBrokenConnectionOrSomething).Times(1),
-	// 	)
-	// }
+	if loadExpectations {
+		callCount := 0
+		ssVM.StateSyncEnabledF = func(context.Context) (bool, error) {
+			callCount++
+			switch callCount {
+			case 1:
+				return false, block.ErrStateSyncableVMNotImplemented
+			case 2:
+				return false, nil
+			case 3:
+				return true, nil
+			case 4:
+				return false, errBrokenConnectionOrSomething
+			}
+			return false, nil
+		}
+	}
 
 	return ssVM
 }
@@ -97,18 +102,22 @@ func getOngoingSyncStateSummaryTestPlugin(t *testing.T, loadExpectations bool) b
 	// test key is "getOngoingSyncStateSummaryTestKey"
 
 	// create mock
-	// ctrl := gomock.NewController(t)
-	ssVM := StateSyncEnabledMock{
-		// ChainVM:         blockmock.NewChainVM(ctrl),
-		// StateSyncableVM: blockmock.NewStateSyncableVM(ctrl),
-	}
+	ssVM := &StateSyncEnabledMock{}
 
 	if loadExpectations {
-		gomock.InOrder(
-			ssVM.StateSyncableVM.EXPECT().GetOngoingSyncStateSummary(gomock.Any()).Return(nil, block.ErrStateSyncableVMNotImplemented).Times(1),
-			ssVM.StateSyncableVM.EXPECT().GetOngoingSyncStateSummary(gomock.Any()).Return(mockedSummary, nil).Times(1),
-			ssVM.StateSyncableVM.EXPECT().GetOngoingSyncStateSummary(gomock.Any()).Return(nil, errBrokenConnectionOrSomething).Times(1),
-		)
+		callCount := 0
+		ssVM.StateSyncGetOngoingSyncStateSummaryF = func(context.Context) (block.StateSummary, error) {
+			callCount++
+			switch callCount {
+			case 1:
+				return nil, block.ErrStateSyncableVMNotImplemented
+			case 2:
+				return mockedSummary, nil
+			case 3:
+				return nil, errBrokenConnectionOrSomething
+			}
+			return nil, nil
+		}
 	}
 
 	return ssVM
@@ -118,18 +127,22 @@ func getLastStateSummaryTestPlugin(t *testing.T, loadExpectations bool) block.Ch
 	// test key is "getLastStateSummaryTestKey"
 
 	// create mock
-	// ctrl := gomock.NewController(t)
-	ssVM := StateSyncEnabledMock{
-		// ChainVM:         blockmock.NewChainVM(ctrl),
-		// StateSyncableVM: blockmock.NewStateSyncableVM(ctrl),
-	}
+	ssVM := &StateSyncEnabledMock{}
 
 	if loadExpectations {
-		gomock.InOrder(
-			ssVM.StateSyncableVM.EXPECT().GetLastStateSummary(gomock.Any()).Return(nil, block.ErrStateSyncableVMNotImplemented).Times(1),
-			ssVM.StateSyncableVM.EXPECT().GetLastStateSummary(gomock.Any()).Return(mockedSummary, nil).Times(1),
-			ssVM.StateSyncableVM.EXPECT().GetLastStateSummary(gomock.Any()).Return(nil, errBrokenConnectionOrSomething).Times(1),
-		)
+		callCount := 0
+		ssVM.GetLastStateSummaryF = func(context.Context) (block.StateSummary, error) {
+			callCount++
+			switch callCount {
+			case 1:
+				return nil, block.ErrStateSyncableVMNotImplemented
+			case 2:
+				return mockedSummary, nil
+			case 3:
+				return nil, errBrokenConnectionOrSomething
+			}
+			return nil, nil
+		}
 	}
 
 	return ssVM
@@ -139,19 +152,24 @@ func parseStateSummaryTestPlugin(t *testing.T, loadExpectations bool) block.Chai
 	// test key is "parseStateSummaryTestKey"
 
 	// create mock
-	// ctrl := gomock.NewController(t)
-	ssVM := StateSyncEnabledMock{
-		// ChainVM:         blockmock.NewChainVM(ctrl),
-		// StateSyncableVM: blockmock.NewStateSyncableVM(ctrl),
-	}
+	ssVM := &StateSyncEnabledMock{}
 
 	if loadExpectations {
-		gomock.InOrder(
-			ssVM.StateSyncableVM.EXPECT().ParseStateSummary(gomock.Any(), gomock.Any()).Return(nil, block.ErrStateSyncableVMNotImplemented).Times(1),
-			ssVM.StateSyncableVM.EXPECT().ParseStateSummary(gomock.Any(), gomock.Any()).Return(mockedSummary, nil).Times(1),
-			ssVM.StateSyncableVM.EXPECT().ParseStateSummary(gomock.Any(), gomock.Any()).Return(nil, errNothingToParse).Times(1),
-			ssVM.StateSyncableVM.EXPECT().ParseStateSummary(gomock.Any(), gomock.Any()).Return(nil, errBrokenConnectionOrSomething).Times(1),
-		)
+		callCount := 0
+		ssVM.ParseStateSummaryF = func(context.Context, []byte) (block.StateSummary, error) {
+			callCount++
+			switch callCount {
+			case 1:
+				return nil, block.ErrStateSyncableVMNotImplemented
+			case 2:
+				return mockedSummary, nil
+			case 3:
+				return nil, errNothingToParse
+			case 4:
+				return nil, errBrokenConnectionOrSomething
+			}
+			return nil, nil
+		}
 	}
 
 	return ssVM
@@ -161,18 +179,22 @@ func getStateSummaryTestPlugin(t *testing.T, loadExpectations bool) block.ChainV
 	// test key is "getStateSummaryTestKey"
 
 	// create mock
-	// ctrl := gomock.NewController(t)
-	ssVM := StateSyncEnabledMock{
-		// ChainVM:         blockmock.NewChainVM(ctrl),
-		// StateSyncableVM: blockmock.NewStateSyncableVM(ctrl),
-	}
+	ssVM := &StateSyncEnabledMock{}
 
 	if loadExpectations {
-		gomock.InOrder(
-			ssVM.StateSyncableVM.EXPECT().GetStateSummary(gomock.Any(), gomock.Any()).Return(nil, block.ErrStateSyncableVMNotImplemented).Times(1),
-			ssVM.StateSyncableVM.EXPECT().GetStateSummary(gomock.Any(), gomock.Any()).Return(mockedSummary, nil).Times(1),
-			ssVM.StateSyncableVM.EXPECT().GetStateSummary(gomock.Any(), gomock.Any()).Return(nil, errBrokenConnectionOrSomething).Times(1),
-		)
+		callCount := 0
+		ssVM.GetStateSummaryF = func(context.Context, uint64) (block.StateSummary, error) {
+			callCount++
+			switch callCount {
+			case 1:
+				return nil, block.ErrStateSyncableVMNotImplemented
+			case 2:
+				return mockedSummary, nil
+			case 3:
+				return nil, errBrokenConnectionOrSomething
+			}
+			return nil, nil
+		}
 	}
 
 	return ssVM
@@ -182,43 +204,38 @@ func acceptStateSummaryTestPlugin(t *testing.T, loadExpectations bool) block.Cha
 	// test key is "acceptStateSummaryTestKey"
 
 	// create mock
-	// ctrl := gomock.NewController(t)
-	ssVM := StateSyncEnabledMock{
-		// ChainVM:         blockmock.NewChainVM(ctrl),
-		// StateSyncableVM: blockmock.NewStateSyncableVM(ctrl),
-	}
+	ssVM := &StateSyncEnabledMock{}
 
 	if loadExpectations {
-		gomock.InOrder(
-			ssVM.StateSyncableVM.EXPECT().GetStateSummary(gomock.Any(), gomock.Any()).Return(mockedSummary, nil).Times(1),
-			ssVM.StateSyncableVM.EXPECT().ParseStateSummary(gomock.Any(), gomock.Any()).DoAndReturn(
-				func(context.Context, []byte) (block.StateSummary, error) {
-					// setup summary to be accepted before returning it
-					mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
-						return block.StateSyncStatic, nil
-					}
-					return mockedSummary, nil
-				},
-			).Times(1),
-			ssVM.StateSyncableVM.EXPECT().ParseStateSummary(gomock.Any(), gomock.Any()).DoAndReturn(
-				func(context.Context, []byte) (block.StateSummary, error) {
-					// setup summary to be skipped before returning it
-					mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
-						return block.StateSyncSkipped, nil
-					}
-					return mockedSummary, nil
-				},
-			).Times(1),
-			ssVM.StateSyncableVM.EXPECT().ParseStateSummary(gomock.Any(), gomock.Any()).DoAndReturn(
-				func(context.Context, []byte) (block.StateSummary, error) {
-					// setup summary to fail accept
-					mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
-						return block.StateSyncSkipped, errBrokenConnectionOrSomething
-					}
-					return mockedSummary, nil
-				},
-			).Times(1),
-		)
+		ssVM.GetStateSummaryF = func(context.Context, uint64) (block.StateSummary, error) {
+			return mockedSummary, nil
+		}
+		
+		parseCallCount := 0
+		ssVM.ParseStateSummaryF = func(context.Context, []byte) (block.StateSummary, error) {
+			parseCallCount++
+			switch parseCallCount {
+			case 1:
+				// setup summary to be accepted before returning it
+				mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+					return block.StateSyncStatic, nil
+				}
+				return mockedSummary, nil
+			case 2:
+				// setup summary to be skipped before returning it
+				mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+					return block.StateSyncSkipped, nil
+				}
+				return mockedSummary, nil
+			case 3:
+				// setup summary to fail accept
+				mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+					return block.StateSyncSkipped, errBrokenConnectionOrSomething
+				}
+				return mockedSummary, nil
+			}
+			return nil, nil
+		}
 	}
 
 	return ssVM
@@ -228,35 +245,43 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 	// test key is "lastAcceptedBlockPostStateSummaryAcceptTestKey"
 
 	// create mock
-	// ctrl := gomock.NewController(t)
-	ssVM := StateSyncEnabledMock{
-		// ChainVM:         blockmock.NewChainVM(ctrl),
-		// StateSyncableVM: blockmock.NewStateSyncableVM(ctrl),
-	}
+	ssVM := &StateSyncEnabledMock{}
 
 	if loadExpectations {
-		gomock.InOrder(
-			ssVM.ChainVM.EXPECT().Initialize(
-				gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-				gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-			).Return(nil).Times(1),
-			ssVM.ChainVM.EXPECT().LastAccepted(gomock.Any()).Return(preSummaryBlk.ID(), nil).Times(1),
-			ssVM.ChainVM.EXPECT().GetBlock(gomock.Any(), gomock.Any()).Return(preSummaryBlk, nil).Times(1),
-
-			ssVM.StateSyncableVM.EXPECT().ParseStateSummary(gomock.Any(), gomock.Any()).DoAndReturn(
-				func(context.Context, []byte) (block.StateSummary, error) {
-					// setup summary to be accepted before returning it
-					mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
-						return block.StateSyncStatic, nil
-					}
-					return mockedSummary, nil
-				},
-			).Times(2),
-
-			ssVM.ChainVM.EXPECT().SetState(gomock.Any(), gomock.Any()).Return(nil).Times(1),
-			ssVM.ChainVM.EXPECT().LastAccepted(gomock.Any()).Return(summaryBlk.ID(), nil).Times(1),
-			ssVM.ChainVM.EXPECT().GetBlock(gomock.Any(), gomock.Any()).Return(summaryBlk, nil).Times(1),
-		)
+		ssVM.InitializeF = func(
+			context.Context, interface{}, interface{}, interface{},
+			interface{}, interface{}, interface{}, interface{},
+		) error {
+			return nil
+		}
+		
+		lastAcceptedCallCount := 0
+		ssVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
+			lastAcceptedCallCount++
+			if lastAcceptedCallCount <= 1 {
+				return preSummaryBlk.ID(), nil
+			}
+			return summaryBlk.ID(), nil
+		}
+		
+		ssVM.GetBlockF = func(context.Context, ids.ID) (block.Block, error) {
+			if lastAcceptedCallCount <= 1 {
+				return preSummaryBlk, nil
+			}
+			return summaryBlk, nil
+		}
+		
+		ssVM.ParseStateSummaryF = func(context.Context, []byte) (block.StateSummary, error) {
+			// setup summary to be accepted before returning it
+			mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
+				return block.StateSyncStatic, nil
+			}
+			return mockedSummary, nil
+		}
+		
+		ssVM.SetStateF = func(context.Context, uint8) error {
+			return nil
+		}
 	}
 
 	return ssVM

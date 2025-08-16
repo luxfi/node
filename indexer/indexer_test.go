@@ -165,10 +165,10 @@ func TestIndexer(t *testing.T) {
 	// Register this chain, creating a new index
 	chainVM := blockmock.NewChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
-	isIncomplete, err = idxr.isIncomplete(chain1Ctx.ChainID)
+	isIncomplete, err = idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
-	previouslyIndexed, err = idxr.previouslyIndexed(chain1Ctx.ChainID)
+	previouslyIndexed, err = idxr.previouslyIndexed(testChainID)
 	require.NoError(err)
 	require.True(previouslyIndexed)
 	require.Equal(1, server.timesCalled)
@@ -188,7 +188,7 @@ func TestIndexer(t *testing.T) {
 
 	require.NoError(config.BlockAcceptorGroup.Accept(chain1Ctx, blkID, blkBytes))
 
-	blkIdx := idxr.blockIndices[chain1Ctx.ChainID]
+	blkIdx := idxr.blockIndices[testChainID]
 	require.NotNil(blkIdx)
 
 	// Verify GetLastAccepted is right
@@ -242,19 +242,19 @@ func TestIndexer(t *testing.T) {
 	require.Empty(idxr.txIndices)
 	require.Empty(idxr.vtxIndices)
 	require.True(idxr.hasRunBefore)
-	previouslyIndexed, err = idxr.previouslyIndexed(chain1Ctx.ChainID)
+	previouslyIndexed, err = idxr.previouslyIndexed(testChainID)
 	require.NoError(err)
 	require.True(previouslyIndexed)
 	hasRun, err := idxr.hasRun()
 	require.NoError(err)
 	require.True(hasRun)
-	isIncomplete, err = idxr.isIncomplete(chain1Ctx.ChainID)
+	isIncomplete, err = idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
 
 	// Register the same chain as before
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
-	blkIdx = idxr.blockIndices[chain1Ctx.ChainID]
+	blkIdx = idxr.blockIndices[testChainID]
 	require.NotNil(blkIdx)
 	container, err = blkIdx.GetLastAccepted()
 	require.NoError(err)
@@ -271,8 +271,9 @@ func TestIndexer(t *testing.T) {
 	// previouslyIndexed, err = idxr.previouslyIndexed(chain2ChainID)
 	// require.NoError(err)
 	// require.False(previouslyIndexed)
-	// graphVM := vertexmock.NewLinearizableVM(ctrl)
-	// idxr.RegisterChain("chain2", chain2Ctx, graphVM)
+	// For now, use another ChainVM mock for the vertex chain
+	graphVM := blockmock.NewChainVM(ctrl)
+	idxr.RegisterChain("chain2", chain2Ctx, graphVM)
 	// require.NoError(err)
 	// require.Equal(4, server.timesCalled) // block index for chain, block index for dag, vtx index, tx index
 	// require.Contains(server.bases, "index/chain2")
@@ -403,7 +404,7 @@ func TestIndexer(t *testing.T) {
 	lastAcceptedVtx, err = idxr.vtxIndices[chain2ChainID].GetLastAccepted()
 	require.NoError(err)
 	require.Equal(vtxID, lastAcceptedVtx.ID)
-	lastAcceptedBlk, err = idxr.blockIndices[chain1Ctx.ChainID].GetLastAccepted()
+	lastAcceptedBlk, err = idxr.blockIndices[testChainID].GetLastAccepted()
 	require.NoError(err)
 	require.Equal(blkID, lastAcceptedBlk.ID)
 }
@@ -435,7 +436,7 @@ func TestIncompleteIndex(t *testing.T) {
 	// Register a chain
 	consensus1Ctx := consensustest.Context(t, consensustest.CChainID)
 	chain1Ctx := consensustest.ConsensusContext(consensus1Ctx)
-	isIncomplete, err := idxr.isIncomplete(chain1Ctx.ChainID)
+	isIncomplete, err := idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
 	previouslyIndexed, err := idxr.previouslyIndexed(testChainID)
@@ -443,7 +444,7 @@ func TestIncompleteIndex(t *testing.T) {
 	require.False(previouslyIndexed)
 	chainVM := blockmock.NewChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
-	isIncomplete, err = idxr.isIncomplete(chain1Ctx.ChainID)
+	isIncomplete, err = idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.True(isIncomplete)
 	require.Empty(idxr.blockIndices)

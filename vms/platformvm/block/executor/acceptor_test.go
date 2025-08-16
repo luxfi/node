@@ -19,6 +19,7 @@ import (
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators"
@@ -46,20 +47,18 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 
 	blkID := blk.ID()
 
-	s := state.NewMockState(ctrl)
+	s := state.NewMockChain(ctrl)
 	s.EXPECT().Checksum().Return(ids.Empty).Times(1)
 
 	acceptor := &acceptor{
 		backend: &backend{
-			ctx: &context.Context{
-				Log: log.NewNoOpLogger(),
-			},
+			ctx: context.Background(),
 			blkIDToState: map[ids.ID]*blockState{
 				blkID: {},
 			},
 			state: s,
 		},
-		metrics:    metric.Noop,
+		metrics:    metrics.Noop,
 		validators: validators.TestManager,
 	}
 
@@ -80,7 +79,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	s := state.NewMockState(ctrl)
+	s := state.NewMockChain(ctrl)
 	sharedMemory := atomic.NewMockSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
@@ -89,12 +88,10 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &context.Context{
-				Log:          log.NewNoOpLogger(),
-				SharedMemory: sharedMemory,
-			},
+			ctx:          context.Background(),
+			SharedMemory: sharedMemory,
 		},
-		metrics:    metric.Noop,
+		metrics:    metrics.Noop,
 		validators: validators.TestManager,
 	}
 
@@ -159,7 +156,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	s := state.NewMockState(ctrl)
+	s := state.NewMockChain(ctrl)
 	sharedMemory := atomic.NewMockSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
@@ -169,12 +166,10 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &context.Context{
-				Log:          log.NewNoOpLogger(),
-				SharedMemory: sharedMemory,
-			},
+			ctx:          context.Background(),
+			SharedMemory: sharedMemory,
 		},
-		metrics:    metric.Noop,
+		metrics:    metrics.Noop,
 		validators: validators.TestManager,
 	}
 
@@ -249,7 +244,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	s := state.NewMockState(ctrl)
+	s := state.NewMockChain(ctrl)
 	sharedMemory := atomic.NewMockSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
@@ -258,12 +253,10 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &context.Context{
-				Log:          log.NewNoOpLogger(),
-				SharedMemory: sharedMemory,
-			},
+			ctx:          context.Background(),
+			SharedMemory: sharedMemory,
 		},
-		metrics:      metric.Noop,
+		metrics:      metrics.Noop,
 		validators:   validators.TestManager,
 		bootstrapped: &utils.Atomic[bool]{},
 	}
@@ -359,7 +352,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	s := state.NewMockState(ctrl)
+	s := state.NewMockChain(ctrl)
 	sharedMemory := atomic.NewMockSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
@@ -368,12 +361,10 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &context.Context{
-				Log:          log.NewNoOpLogger(),
-				SharedMemory: sharedMemory,
-			},
+			ctx:          context.Background(),
+			SharedMemory: sharedMemory,
 		},
-		metrics:      metric.Noop,
+		metrics:      metrics.Noop,
 		validators:   validators.TestManager,
 		bootstrapped: &utils.Atomic[bool]{},
 	}

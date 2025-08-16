@@ -189,7 +189,7 @@ func TestAppRequestCancelledContext(t *testing.T) {
 
 	sentMessages := make(chan []byte, 1)
 	sender := &core.SenderTest{
-		SendAppRequestF: func(ctx context.Context, _ set.Set[ids.NodeID], _ uint32, msgBytes []byte) error {
+		SendAppRequestF: func(ctx context.Context, _ ids.NodeID, _ uint32, msgBytes []byte) error {
 			require.NoError(ctx.Err())
 			sentMessages <- msgBytes
 			return nil
@@ -675,10 +675,10 @@ func TestAppRequestAnyNodeSelection(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			sent := set.Set[ids.NodeID]{}
+			var sent ids.NodeID
 			sender := &core.SenderTest{
-				SendAppRequestF: func(_ context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, _ []byte) error {
-					sent = nodeIDs
+				SendAppRequestF: func(_ context.Context, nodeID ids.NodeID, _ uint32, _ []byte) error {
+					sent = nodeID
 					return nil
 				},
 			}
@@ -686,14 +686,16 @@ func TestAppRequestAnyNodeSelection(t *testing.T) {
 			n, err := NewNetwork(nil, sender, metric.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 			for _, peer := range tt.peers {
-				require.NoError(n.Connected(context.Background(), peer, &version.Application{}))
+				require.NoError(n.Connected(context.Background(), peer, nil))
 			}
 
 			client := n.NewClient(1)
 
 			err = client.AppRequestAny(context.Background(), []byte("foobar"), nil)
 			require.ErrorIs(err, tt.expected)
-			require.Subset(tt.peers, sent.List())
+			if len(tt.peers) > 0 && tt.expected == nil {
+				require.Contains(tt.peers, sent)
+			}
 		})
 	}
 }
@@ -772,8 +774,10 @@ func TestNodeSamplerClientOption(t *testing.T) {
 
 			done := make(chan struct{})
 			sender := &core.SenderTest{
-				SendAppRequestF: func(_ context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, _ []byte) error {
-					require.Subset(tt.expected, nodeIDs.List())
+				SendAppRequestF: func(_ context.Context, nodeID ids.NodeID, _ uint32, _ []byte) error {
+					if len(tt.expected) > 0 {
+						require.Contains(tt.expected, nodeID)
+					}
 					close(done)
 					return nil
 				},

@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/node/snow/engine/snowman/block/blockmock"
+	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/chain"

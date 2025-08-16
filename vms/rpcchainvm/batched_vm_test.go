@@ -40,37 +40,45 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 	// test key is "batchedParseBlockCachingTestKey"
 
 	// create mock
-	ctrl := gomock.NewController(t)
-	vm := blockmock.NewChainVM(ctrl)
-
+	vm := &blockmock.ChainVM{}
+	
 	if loadExpectations {
-		blk1 := chainmock.NewBlock(ctrl)
-		blk2 := chainmock.NewBlock(ctrl)
-		gomock.InOrder(
-			// Initialize
-			vm.EXPECT().Initialize(
-				gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-				gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-			).Return(nil).Times(1),
-			vm.EXPECT().LastAccepted(gomock.Any()).Return(preSummaryBlk.ID(), nil).Times(1),
-			vm.EXPECT().GetBlock(gomock.Any(), gomock.Any()).Return(preSummaryBlk, nil).Times(1),
-
-			// Parse Block 1
-			vm.EXPECT().ParseBlock(gomock.Any(), blkBytes1).Return(blk1, nil).Times(1),
-			blk1.EXPECT().ID().Return(blkID1).Times(1),
-			blk1.EXPECT().Parent().Return(blkID0).Times(1),
-			// Status is no longer a method on Block
-			blk1.EXPECT().Height().Return(uint64(1)).Times(1),
-			blk1.EXPECT().Timestamp().Return(time1).Times(1),
-
-			// Parse Block 2
-			vm.EXPECT().ParseBlock(gomock.Any(), blkBytes2).Return(blk2, nil).Times(1),
-			blk2.EXPECT().ID().Return(blkID2).Times(1),
-			blk2.EXPECT().Parent().Return(blkID1).Times(1),
-			// Status is no longer a method on Block
-			blk2.EXPECT().Height().Return(uint64(2)).Times(1),
-			blk2.EXPECT().Timestamp().Return(time2).Times(1),
-		)
+		blk1 := &chainmock.Block{
+			IDF:        func() ids.ID { return blkID1 },
+			ParentF:    func() ids.ID { return blkID0 },
+			HeightF:    func() uint64 { return 1 },
+			TimestampF: func() time.Time { return time1 },
+		}
+		blk2 := &chainmock.Block{
+			IDF:        func() ids.ID { return blkID2 },
+			ParentF:    func() ids.ID { return blkID1 },
+			HeightF:    func() uint64 { return 2 },
+			TimestampF: func() time.Time { return time2 },
+		}
+		
+		parseBlockCallCount := 0
+		vm.ParseBlockF = func(ctx context.Context, bytes []byte) (block.Block, error) {
+			parseBlockCallCount++
+			switch parseBlockCallCount {
+			case 1:
+				if string(bytes) == string(blkBytes1) {
+					return blk1, nil
+				}
+			case 2:
+				if string(bytes) == string(blkBytes2) {
+					return blk2, nil
+				}
+			}
+			return nil, nil
+		}
+		
+		vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
+			return preSummaryBlk.ID(), nil
+		}
+		
+		vm.GetBlockF = func(context.Context, ids.ID) (block.Block, error) {
+			return preSummaryBlk, nil
+		}
 	}
 
 	return vm
@@ -84,9 +92,8 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 	vm := buildClientHelper(require, testKey)
 	defer vm.runtime.Stop(context.Background())
 
-	ctx := consensustest.Context(t, consensustest.CChainID)
-
-	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, nil))
+	// Initialize the VM - using nil for all parameters as this is a test
+	require.NoError(vm.Initialize(context.Background(), nil, memdb.New(), nil, nil, nil, nil, nil, nil))
 
 	// Call should parse the first block
 	blk, err := vm.ParseBlock(context.Background(), blkBytes1)

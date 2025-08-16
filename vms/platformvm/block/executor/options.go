@@ -9,7 +9,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/constants"
@@ -23,6 +22,7 @@ import (
 var (
 	_ block.Visitor = (*options)(nil)
 
+	ErrNotOracle                          = errors.New("block doesn't have options")
 	errUnexpectedProposalTxType           = errors.New("unexpected proposal transaction type")
 	errFailedFetchingStakerTx             = errors.New("failed fetching staker transaction")
 	errUnexpectedStakerTxType             = errors.New("unexpected staker transaction type")
@@ -45,11 +45,11 @@ type options struct {
 }
 
 func (*options) BanffAbortBlock(*block.BanffAbortBlock) error {
-	return chain.ErrNotOracle
+	return ErrNotOracle
 }
 
 func (*options) BanffCommitBlock(*block.BanffCommitBlock) error {
-	return chain.ErrNotOracle
+	return ErrNotOracle
 }
 
 func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
@@ -98,15 +98,15 @@ func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
 }
 
 func (*options) BanffStandardBlock(*block.BanffStandardBlock) error {
-	return chain.ErrNotOracle
+	return ErrNotOracle
 }
 
 func (*options) ApricotAbortBlock(*block.ApricotAbortBlock) error {
-	return chain.ErrNotOracle
+	return ErrNotOracle
 }
 
 func (*options) ApricotCommitBlock(*block.ApricotCommitBlock) error {
-	return chain.ErrNotOracle
+	return ErrNotOracle
 }
 
 func (o *options) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
@@ -133,11 +133,11 @@ func (o *options) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
 }
 
 func (*options) ApricotStandardBlock(*block.ApricotStandardBlock) error {
-	return chain.ErrNotOracle
+	return ErrNotOracle
 }
 
 func (*options) ApricotAtomicBlock(*block.ApricotAtomicBlock) error {
-	return chain.ErrNotOracle
+	return ErrNotOracle
 }
 
 func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {

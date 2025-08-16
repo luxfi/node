@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	metric "github.com/luxfi/metric"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/utils/constants"

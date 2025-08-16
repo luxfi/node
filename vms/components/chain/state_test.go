@@ -9,16 +9,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/choices"
-
 	"github.com/luxfi/consensus/consensustest"
-
+	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/protocol/chain"
-
-	"github.com/luxfi/consensus/engine/chain/blocktest"
-
 	"github.com/luxfi/database"
 
 	"github.com/luxfi/ids"
@@ -34,7 +31,7 @@ var (
 	errUnexpectedBlockBytes = errors.New("unexpected block bytes")
 )
 
-// testBlockAdapter wraps a blocktest.Block to implement the chain.Block interface
+// testBlockAdapter wraps a blocktest.Block to implement the Block interface
 type testBlockAdapter struct {
 	*blocktest.Block
 	choicesStatus choices.Status
@@ -45,11 +42,11 @@ func (b *testBlockAdapter) SetStatus(status choices.Status) {
 	// Map choices.Status to consensustest.Status
 	switch status {
 	case choices.Accepted:
-		b.Block.Status = consensustest.Accepted
+		b.Block.StatusV = consensustest.Accepted
 	case choices.Rejected:
-		b.Block.Status = consensustest.Rejected
+		b.Block.StatusV = consensustest.Rejected
 	default:
-		b.Block.Status = consensustest.Undecided
+		b.Block.StatusV = choices.Processing
 	}
 }
 
@@ -69,8 +66,8 @@ func NewTestBlock(i uint64, parentID ids.ID) *blocktest.Block {
 	id := hashing.ComputeHash256Array(b)
 	return &blocktest.Block{
 		Decidable: consensustest.Decidable{
-			IDV:    id,
-			Status: consensustest.Undecided,
+			IDV:     id,
+			StatusV: choices.Processing,
 		},
 		HeightV: i,
 		ParentV: parentID,
@@ -123,7 +120,7 @@ func createInternalBlockFuncs(blks []*blocktest.Block) (
 			return nil, database.ErrNotFound
 		}
 		// Return blocks that are either decided (accepted/rejected) or have been parsed
-		if blk.Status == consensustest.Undecided && !parsedBlocks[id] {
+		if blk.StatusV == choices.Processing && !parsedBlocks[id] {
 			return nil, database.ErrNotFound
 		}
 
@@ -147,7 +144,7 @@ func createInternalBlockFuncs(blks []*blocktest.Block) (
 				continue
 			}
 
-			if blk.Status == consensustest.Accepted {
+			if blk.StatusV == consensustest.Accepted {
 				return blk.ID(), nil
 			}
 		}
@@ -223,12 +220,12 @@ func TestState(t *testing.T) {
 
 	testBlks := NewTestBlocks(3)
 	genesisBlock := testBlks[0]
-	genesisBlock.Status = consensustest.Accepted
+	genesisBlock.StatusV = consensustest.Accepted
 	blk1 := testBlks[1]
 	blk2 := testBlks[2]
 	// Need to create a block with a different bytes and hash here
 	// to generate a conflict with blk2
-	blk3 := blocktest.BuildChild(blk1)
+	blk3 := NewTestBlock(3, blk1.ID())
 	testBlks = append(testBlks, blk3)
 
 	getBlock, parseBlock, getCanonicalBlockID, adapterMap := createInternalBlockFuncs(testBlks)
@@ -307,14 +304,14 @@ func TestBuildBlock(t *testing.T) {
 
 	testBlks := NewTestBlocks(2)
 	genesisBlock := testBlks[0]
-	genesisBlock.Status = consensustest.Accepted
+	genesisBlock.StatusV = consensustest.Accepted
 	blk1 := testBlks[1]
 
 	getBlock, parseBlock, getCanonicalBlockID, adapterMap := createInternalBlockFuncs(testBlks)
 
 	buildBlock := func(context.Context) (chain.Block, error) {
 		// Once the block is built, mark it as processing
-		blk1.Status = consensustest.Accepted
+		blk1.StatusV = consensustest.Accepted
 		return adapterMap[blk1.ID()], nil
 	}
 
@@ -349,7 +346,7 @@ func TestStateDecideBlock(t *testing.T) {
 
 	testBlks := NewTestBlocks(4)
 	genesisBlock := testBlks[0]
-	genesisBlock.Status = consensustest.Accepted
+	genesisBlock.StatusV = consensustest.Accepted
 	badAcceptBlk := testBlks[1]
 	badAcceptBlk.AcceptV = errAccept
 	badVerifyBlk := testBlks[2]
@@ -405,7 +402,7 @@ func TestStateParent(t *testing.T) {
 
 	testBlks := NewTestBlocks(3)
 	genesisBlock := testBlks[0]
-	genesisBlock.Status = consensustest.Accepted
+	genesisBlock.StatusV = consensustest.Accepted
 	blk1 := testBlks[1]
 	blk2 := testBlks[2]
 
@@ -448,7 +445,7 @@ func TestGetBlockInternal(t *testing.T) {
 	require := require.New(t)
 	testBlks := NewTestBlocks(1)
 	genesisBlock := testBlks[0]
-	genesisBlock.Status = consensustest.Accepted
+	genesisBlock.StatusV = consensustest.Accepted
 
 	getBlock, parseBlock, getCanonicalBlockID, adapterMap := createInternalBlockFuncs(testBlks)
 	chainState := NewState(&Config{
@@ -487,7 +484,7 @@ func TestGetBlockError(t *testing.T) {
 
 	testBlks := NewTestBlocks(2)
 	genesisBlock := testBlks[0]
-	genesisBlock.Status = consensustest.Accepted
+	genesisBlock.StatusV = consensustest.Accepted
 	blk1 := testBlks[1]
 
 	getBlock, parseBlock, getCanonicalBlockID, adapterMap := createInternalBlockFuncs(testBlks)
@@ -515,7 +512,7 @@ func TestGetBlockError(t *testing.T) {
 
 	// Update the status to Processing, so that it will be returned by the internal get block
 	// function.
-	blk1.Status = consensustest.Accepted
+	blk1.StatusV = consensustest.Accepted
 	blk, err := chainState.GetBlock(context.Background(), blk1.ID())
 	require.NoError(err)
 	require.Equal(blk1.ID(), blk.ID())
@@ -525,7 +522,7 @@ func TestGetBlockError(t *testing.T) {
 func TestParseBlockError(t *testing.T) {
 	testBlks := NewTestBlocks(1)
 	genesisBlock := testBlks[0]
-	genesisBlock.Status = consensustest.Accepted
+	genesisBlock.StatusV = consensustest.Accepted
 
 	getBlock, parseBlock, getCanonicalBlockID, adapterMap := createInternalBlockFuncs(testBlks)
 	chainState := NewState(&Config{
@@ -547,7 +544,7 @@ func TestParseBlockError(t *testing.T) {
 func TestBuildBlockError(t *testing.T) {
 	testBlks := NewTestBlocks(1)
 	genesisBlock := testBlks[0]
-	genesisBlock.Status = consensustest.Accepted
+	genesisBlock.StatusV = consensustest.Accepted
 
 	getBlock, parseBlock, getCanonicalBlockID, adapterMap := createInternalBlockFuncs(testBlks)
 	chainState := NewState(&Config{
@@ -569,11 +566,11 @@ func TestBuildBlockError(t *testing.T) {
 func TestMeteredCache(t *testing.T) {
 	require := require.New(t)
 
-	registry := metric.NewTestRegistry()
+	registry := prometheus.NewRegistry()
 
 	testBlks := NewTestBlocks(1)
 	genesisBlock := testBlks[0]
-	genesisBlock.Status = consensustest.Accepted
+	genesisBlock.StatusV = consensustest.Accepted
 
 	getBlock, parseBlock, getCanonicalBlockID, adapterMap := createInternalBlockFuncs(testBlks)
 	config := &Config{
@@ -599,7 +596,7 @@ func TestStateBytesToIDCache(t *testing.T) {
 
 	testBlks := NewTestBlocks(3)
 	genesisBlock := testBlks[0]
-	genesisBlock.Status = consensustest.Accepted
+	genesisBlock.StatusV = consensustest.Accepted
 	blk1 := testBlks[1]
 	blk2 := testBlks[2]
 
@@ -653,7 +650,7 @@ func TestSetLastAcceptedBlock(t *testing.T) {
 
 	testBlks := NewTestBlocks(1)
 	genesisBlock := testBlks[0]
-	genesisBlock.Status = consensustest.Accepted
+	genesisBlock.StatusV = consensustest.Accepted
 
 	postSetBlk1ParentID := hashing.ComputeHash256Array([]byte{byte(199)})
 	postSetBlk1 := NewTestBlock(200, postSetBlk1ParentID)
@@ -701,14 +698,14 @@ func TestSetLastAcceptedBlockWithProcessingBlocksErrors(t *testing.T) {
 
 	testBlks := NewTestBlocks(5)
 	genesisBlock := testBlks[0]
-	genesisBlock.Status = consensustest.Accepted
+	genesisBlock.StatusV = consensustest.Accepted
 	blk1 := testBlks[1]
 	resetBlk := testBlks[4]
 
 	getBlock, parseBlock, getCanonicalBlockID, adapterMap := createInternalBlockFuncs(testBlks)
 	buildBlock := func(context.Context) (chain.Block, error) {
 		// Once the block is built, mark it as processing
-		blk1.Status = consensustest.Accepted
+		blk1.StatusV = consensustest.Accepted
 		return adapterMap[blk1.ID()], nil
 	}
 
@@ -742,10 +739,10 @@ func TestStateParseTransitivelyAcceptedBlock(t *testing.T) {
 
 	testBlks := NewTestBlocks(3)
 	genesisBlock := testBlks[0]
-	genesisBlock.Status = consensustest.Accepted
+	genesisBlock.StatusV = consensustest.Accepted
 	blk1 := testBlks[1]
 	blk2 := testBlks[2]
-	blk2.Status = consensustest.Accepted
+	blk2.StatusV = consensustest.Accepted
 
 	getBlock, parseBlock, getCanonicalBlockID, adapterMap := createInternalBlockFuncs(testBlks)
 	chainState := NewState(&Config{
@@ -770,7 +767,7 @@ func TestIsProcessing(t *testing.T) {
 
 	testBlks := NewTestBlocks(2)
 	genesisBlock := testBlks[0]
-	genesisBlock.Status = consensustest.Accepted
+	genesisBlock.StatusV = consensustest.Accepted
 	blk1 := testBlks[1]
 
 	getBlock, parseBlock, getCanonicalBlockID, adapterMap := createInternalBlockFuncs(testBlks)

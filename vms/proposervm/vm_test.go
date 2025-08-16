@@ -12,9 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/metric"
-
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -24,6 +21,7 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/consensus/engine/chain/chainmock"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
@@ -31,8 +29,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow/engine/enginetest"
-	"github.com/luxfi/node/snow/engine/snowman/block/blockmock"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/chain"
@@ -2260,16 +2257,14 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	currentHeight := uint64(0)
 
 	initialState := []byte("genesis state")
-	coreVM := &blocktest.VM{
-		VM: enginetest.VM{
-			InitializeF: func(context.Context, context.Context, database.Database, []byte, []byte, []byte, []*core.Fx, core.AppSender) error {
-				return nil
-			},
+	coreVM := &blockmock.ChainVM{
+		InitializeF: func(context.Context, interface{}, interface{}, []byte, []byte, []byte, chan<- block.Message, []*block.Fx, block.AppSender) error {
+			return nil
 		},
 		LastAcceptedF: func(context.Context) (ids.ID, error) {
 			return acceptedBlocks[currentHeight].ID(), nil
 		},
-		GetBlockF: func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+		GetBlockF: func(_ context.Context, blkID ids.ID) (block.Block, error) {
 			for _, blk := range acceptedBlocks {
 				if blkID == blk.ID() {
 					return blk, nil

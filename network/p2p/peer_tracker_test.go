@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
+	luxmetric "github.com/luxfi/metric"
 	"github.com/luxfi/node/version"
 )
 
