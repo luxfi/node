@@ -13,7 +13,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	
-	luxmetrics "github.com/luxfi/metric"
+	luxmetrics "github.com/luxfi/metrics"
 
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/tracker"
@@ -176,6 +176,10 @@ type testValidatorManager struct{}
 
 func (m *testValidatorManager) GetValidators(subnetID ids.ID) ([]ids.NodeID, error) {
 	return nil, nil
+}
+
+func (m *testValidatorManager) GetValidatorIDs(subnetID ids.ID) []ids.NodeID {
+	return nil
 }
 
 func (m *testValidatorManager) GetValidator(subnetID ids.ID, nodeID ids.NodeID) (*validators.Validator, bool) {

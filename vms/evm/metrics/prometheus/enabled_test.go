@@ -6,7 +6,7 @@ package prometheus_test
 import (
 	"testing"
 
-	"github.com/luxfi/metric"
+	"github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,6 +16,6 @@ import (
 // here or in the implementation do actually do so then this test may have false
 // negatives.
 func TestMetricsEnabledByDefault(t *testing.T) {
-	require.True(t, metric.Enabled, "metric.Enabled")
-	require.IsType(t, (*metric.StandardCounter)(nil), metric.NewCounter(), "metric.NewCounter() returned wrong type")
+	require.True(t, metrics.Enabled, "metrics.Enabled")
+	require.IsType(t, (*metrics.StandardCounter)(nil), metrics.NewCounter(), "metrics.NewCounter() returned wrong type")
 }

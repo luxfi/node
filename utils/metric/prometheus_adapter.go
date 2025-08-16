@@ -5,16 +5,16 @@ package metric
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/luxfi/metric"
+	"github.com/luxfi/metrics"
 )
 
 // PrometheusRegistryAdapter wraps a luxfi/metric Registry to implement prometheus.Registerer
 type PrometheusRegistryAdapter struct {
-	registry metric.Registry
+	registry metrics.Registry
 }
 
 // NewPrometheusRegistryAdapter creates a new adapter
-func NewPrometheusRegistryAdapter(registry metric.Registry) prometheus.Registerer {
+func NewPrometheusRegistryAdapter(registry metrics.Registry) prometheus.Registerer {
 	return &PrometheusRegistryAdapter{
 		registry: registry,
 	}

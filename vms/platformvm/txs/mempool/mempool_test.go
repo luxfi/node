@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 	
-	"github.com/luxfi/metric"
+	"github.com/luxfi/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 
 

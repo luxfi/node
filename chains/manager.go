@@ -48,7 +48,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/log"
-	luxmetric "github.com/luxfi/metric"
+	luxmetric "github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"
@@ -1905,7 +1905,7 @@ func (m *manager) getOrMakeVMRegisterer(vmID ids.ID, chainAlias string) (luxmetr
 	vmGatherer, ok := m.vmGatherer[vmID]
 	if !ok {
 		vmName := constants.VMName(vmID)
-		vmNamespace := metric.AppendNamespace(constants.PlatformName, vmName)
+		vmNamespace := metrics.AppendNamespace(constants.PlatformName, vmName)
 		vmGatherer = luxmetric.NewLabelGatherer(ChainLabel)
 		err := m.Metrics.Register(
 			vmNamespace,

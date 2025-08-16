@@ -17,7 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/metric"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"

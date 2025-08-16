@@ -18,7 +18,7 @@ import (
 var _ Metrics = (*metrics)(nil)
 
 type Metrics interface {
-	metric.APIInterceptor
+	metrics.APIInterceptor
 
 	// Mark that the given block was accepted.
 	MarkAccepted(block.Block) error
@@ -84,7 +84,7 @@ func New(registerer prometheus.Registerer) (Metrics, error) {
 	}
 
 	errs := wrappers.Errs{Err: err}
-	apiRequestMetrics, err := metric.NewAPIInterceptor(registerer)
+	apiRequestMetrics, err := metrics.NewAPIInterceptor(registerer)
 	errs.Add(err)
 	m.APIInterceptor = apiRequestMetrics
 	errs.Add(
@@ -103,7 +103,7 @@ func New(registerer prometheus.Registerer) (Metrics, error) {
 }
 
 type metrics struct {
-	metric.APIInterceptor
+	metrics.APIInterceptor
 
 	blockMetrics *blockMetrics
 

@@ -299,7 +299,7 @@ func (t *inboundMsgByteThrottler) release(metadata *msgMetadata, nodeID ids.Node
 }
 
 type inboundMsgByteThrottlerMetrics struct {
-	acquireLatency        metric.Averager
+	acquireLatency        metrics.Averager
 	remainingAtLargeBytes prometheus.Gauge
 	remainingVdrBytes     prometheus.Gauge
 	awaitingAcquire       prometheus.Gauge
@@ -308,7 +308,7 @@ type inboundMsgByteThrottlerMetrics struct {
 
 func (m *inboundMsgByteThrottlerMetrics) initialize(reg prometheus.Registerer) error {
 	errs := wrappers.Errs{}
-	m.acquireLatency = metric.NewAveragerWithErrs(
+	m.acquireLatency = metrics.NewAveragerWithErrs(
 		"byte_throttler_inbound_acquire_latency",
 		"average time (in ns) to get space on the inbound message byte buffer",
 		reg,

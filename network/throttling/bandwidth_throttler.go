@@ -68,7 +68,7 @@ func newBandwidthThrottler(
 		log:                      log,
 		limiters:                 make(map[ids.NodeID]*rate.Limiter),
 		metrics: bandwidthThrottlerMetrics{
-			acquireLatency: metric.NewAveragerWithErrs(
+			acquireLatency: metrics.NewAveragerWithErrs(
 				"bandwidth_throttler_inbound_acquire_latency",
 				"average time (in ns) to acquire bytes from the inbound bandwidth throttler",
 				registerer,
@@ -85,7 +85,7 @@ func newBandwidthThrottler(
 }
 
 type bandwidthThrottlerMetrics struct {
-	acquireLatency  metric.Averager
+	acquireLatency  metrics.Averager
 	awaitingAcquire prometheus.Gauge
 }
 
