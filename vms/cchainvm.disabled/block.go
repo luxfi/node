@@ -126,3 +126,17 @@ func (b *Block) Height() uint64 {
 func (b *Block) Timestamp() time.Time {
 	return time.Unix(int64(b.ethBlock.Time()), 0)
 }
+
+// FPCVotes implements the chain.Block interface
+// Returns embedded fast-path consensus vote references
+func (b *Block) FPCVotes() [][]byte {
+	// TODO: Extract FPC votes from block extra data if available
+	return nil
+}
+
+// EpochBit implements the chain.Block interface  
+// Returns the epoch fence bit for FPC
+func (b *Block) EpochBit() bool {
+	// TODO: Extract epoch bit from block extra data if available
+	return false
+}
