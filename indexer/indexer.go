@@ -13,7 +13,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/dag/vertex"
 	"github.com/luxfi/database"
@@ -130,7 +129,7 @@ type indexer struct {
 }
 
 // RegisterChain registers a chain for indexing
-func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm core.VM) {
+func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interface{}) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 

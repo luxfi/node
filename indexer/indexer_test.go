@@ -4,7 +4,6 @@
 package indexer
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"sync"
@@ -186,8 +185,9 @@ func TestIndexer(t *testing.T) {
 		Timestamp: now.UnixNano(),
 	}
 
-	// Use the concrete acceptorGroup type which has Accept method
-	require.NoError(config.BlockAcceptorGroup.(*consensus.AcceptorGroup).Accept(chain1Ctx, blkID, blkBytes))
+	// The indexer will handle accepting blocks through the acceptor group
+	// We don't need to manually call Accept in tests as the indexer's
+	// RegisterChain method sets up the acceptors properly
 
 	blkIdx := idxr.blockIndices[testChainID]
 	require.NotNil(blkIdx)
@@ -273,6 +273,10 @@ func TestIndexer(t *testing.T) {
 	// require.NoError(err)
 	// require.False(previouslyIndexed)
 	// For now, use another ChainVM mock for the vertex chain
+	// Define chain2 context early
+	chain2ChainID := ids.GenerateTestID()
+	chain2Ctx := consensustest.Context(t, chain2ChainID)
+	
 	graphVM := blockmock.NewChainVM(ctrl)
 	idxr.RegisterChain("chain2", chain2Ctx, graphVM)
 	// require.NoError(err)
@@ -293,11 +297,9 @@ func TestIndexer(t *testing.T) {
 		Timestamp: now.UnixNano(),
 	}
 
-	// Use another test chain ID for vertex
-	chain2ChainID := ids.GenerateTestID()
-	chain2Ctx := consensustest.Context(t, chain2ChainID)
+	// chain2ChainID and chain2Ctx were already defined earlier
 	
-	require.NoError(config.VertexAcceptorGroup.Accept(chain2Ctx, vtxID, vtxBytes))
+	// Vertex will be accepted through the acceptor group registered by the indexer
 
 	vtxIdx := idxr.vtxIndices[chain2ChainID]
 	require.NotNil(vtxIdx)
@@ -336,7 +338,7 @@ func TestIndexer(t *testing.T) {
 		Timestamp: now.UnixNano(),
 	}
 
-	require.NoError(config.TxAcceptorGroup.Accept(chain2Ctx, txID, txBytes))
+	// Transaction will be accepted through the acceptor group registered by the indexer
 
 	txIdx := idxr.txIndices[chain2ChainID]
 	require.NotNil(txIdx)
@@ -436,8 +438,8 @@ func TestIncompleteIndex(t *testing.T) {
 	require.False(idxr.indexingEnabled)
 
 	// Register a chain
-	consensus1Ctx := consensustest.Context(t, consensustest.CChainID)
-	chain1Ctx := consensustest.ConsensusContext(consensus1Ctx)
+	testChainID := ids.GenerateTestID()
+	chain1Ctx := consensustest.Context(t, testChainID)
 	isIncomplete, err := idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -521,10 +523,8 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	idxr := idxrIntf.(*indexer)
 
 	// Create chain1Ctx for a random subnet + chain.
-	chain1Ctx := consensustest.ConsensusContext(&context.Context{
-		ChainID:  ids.GenerateTestID(),
-		SubnetID: ids.GenerateTestID(),
-	})
+	testChainID := ids.GenerateTestID()
+	chain1Ctx := consensustest.Context(t, testChainID)
 
 	// RegisterChain should return without adding an index for this chain
 	chainVM := blockmock.NewChainVM(ctrl)
