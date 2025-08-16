@@ -830,13 +830,13 @@ type validatorStateWrapper struct {
 	vs interfaces.ValidatorState
 }
 
-func (v *validatorStateWrapper) GetCurrentHeight() (uint64, error) {
-	// GetCurrentHeight doesn't take context in new interface
-	return v.vs.GetCurrentHeight()
+func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	// GetCurrentHeight now takes context
+	return v.vs.GetCurrentHeight(ctx)
 }
 
-func (v *validatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
 	// Use the GetValidatorSet from interfaces.ValidatorState
 	// It already returns map[ids.NodeID]uint64
-	return v.vs.GetValidatorSet(height, subnetID)
+	return v.vs.GetValidatorSet(ctx, height, subnetID)
 }

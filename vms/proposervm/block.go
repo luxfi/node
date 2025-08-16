@@ -14,6 +14,7 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/core/interfaces"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
@@ -130,7 +131,7 @@ func (p *postForkCommonComponents) Verify(
 		if vs == nil {
 			return fmt.Errorf("no validator state found")
 		}
-		currentPChainHeight, err := vs.GetCurrentHeight()
+		currentPChainHeight, err := vs.GetCurrentHeight(ctx)
 		if err != nil {
 			p.vm.log.Error("block verification failed",
 				zap.String("reason", "failed to get current P-Chain height"),

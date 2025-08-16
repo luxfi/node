@@ -18,7 +18,7 @@ import (
 
 	"github.com/luxfi/consensus/protocol/chain"
 
-	"github.com/luxfi/consensus/engine/chain/chaintest"
+	"github.com/luxfi/consensus/engine/chain/blocktest"
 
 	"github.com/luxfi/database"
 
@@ -37,9 +37,9 @@ var (
 	errUnexpectedBlockBytes = errors.New("unexpected block bytes")
 )
 
-// testBlockAdapter wraps a chaintest.Block to implement the chain.Block interface
+// testBlockAdapter wraps a blocktest.Block to implement the chain.Block interface
 type testBlockAdapter struct {
-	*chaintest.Block
+	*blocktest.Block
 	choicesStatus choices.Status
 }
 
@@ -67,10 +67,10 @@ func (b *testBlockAdapter) Verify(ctx context.Context) error {
 
 // NewTestBlock returns a new test block with height, bytes, and ID derived from [i]
 // and using [parentID] as the parent block ID
-func NewTestBlock(i uint64, parentID ids.ID) *chaintest.Block {
+func NewTestBlock(i uint64, parentID ids.ID) *blocktest.Block {
 	b := []byte{byte(i)}
 	id := hashing.ComputeHash256Array(b)
-	return &chaintest.Block{
+	return &blocktest.Block{
 		Decidable: consensustest.Decidable{
 			IDV:    id,
 			Status: consensustest.Undecided,
@@ -82,8 +82,8 @@ func NewTestBlock(i uint64, parentID ids.ID) *chaintest.Block {
 }
 
 // NewTestBlocks generates [numBlocks] consecutive blocks
-func NewTestBlocks(numBlocks uint64) []*chaintest.Block {
-	blks := make([]*chaintest.Block, 0, numBlocks)
+func NewTestBlocks(numBlocks uint64) []*blocktest.Block {
+	blks := make([]*blocktest.Block, 0, numBlocks)
 	parentID := ids.Empty
 	for i := uint64(0); i < numBlocks; i++ {
 		blks = append(blks, NewTestBlock(i, parentID))
@@ -95,18 +95,18 @@ func NewTestBlocks(numBlocks uint64) []*chaintest.Block {
 }
 
 // getOrCreateAdapter creates an adapter for a block
-func getOrCreateAdapter(blk *chaintest.Block) *testBlockAdapter {
+func getOrCreateAdapter(blk *blocktest.Block) *testBlockAdapter {
 	return &testBlockAdapter{Block: blk}
 }
 
-func createInternalBlockFuncs(blks []*chaintest.Block) (
+func createInternalBlockFuncs(blks []*blocktest.Block) (
 	func(ctx context.Context, blkID ids.ID) (chain.Block, error),
 	func(ctx context.Context, b []byte) (chain.Block, error),
 	func(ctx context.Context, height uint64) (ids.ID, error),
 	map[ids.ID]*testBlockAdapter,
 ) {
-	blkMap := make(map[ids.ID]*chaintest.Block)
-	blkBytesMap := make(map[string]*chaintest.Block)
+	blkMap := make(map[ids.ID]*blocktest.Block)
+	blkBytesMap := make(map[string]*blocktest.Block)
 	adapterMap := make(map[ids.ID]*testBlockAdapter)
 	
 	// Create adapters for all blocks upfront
@@ -231,7 +231,7 @@ func TestState(t *testing.T) {
 	blk2 := testBlks[2]
 	// Need to create a block with a different bytes and hash here
 	// to generate a conflict with blk2
-	blk3 := chaintest.BuildChild(blk1)
+	blk3 := blocktest.BuildChild(blk1)
 	testBlks = append(testBlks, blk3)
 
 	getBlock, parseBlock, getCanonicalBlockID, adapterMap := createInternalBlockFuncs(testBlks)
@@ -471,7 +471,7 @@ func TestGetBlockInternal(t *testing.T) {
 	if adapter, ok := genesisBlockInternal.(*testBlockAdapter); ok {
 		genesisBlockInternal = adapter.Block
 	}
-	require.IsType(&chaintest.Block{}, genesisBlockInternal)
+	require.IsType(&blocktest.Block{}, genesisBlockInternal)
 	require.Equal(genesisBlock.ID(), genesisBlockInternal.ID())
 
 	blk, err := chainState.GetBlockInternal(context.Background(), genesisBlock.ID())
@@ -481,7 +481,7 @@ func TestGetBlockInternal(t *testing.T) {
 	if adapter, ok := blk.(*testBlockAdapter); ok {
 		blk = adapter.Block
 	}
-	require.IsType(&chaintest.Block{}, blk)
+	require.IsType(&blocktest.Block{}, blk)
 	require.Equal(genesisBlock.ID(), blk.ID())
 }
 

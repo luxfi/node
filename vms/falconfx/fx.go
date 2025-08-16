@@ -6,11 +6,8 @@ package falconfx
 import (
 	"errors"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/log"
 )
 
 const (
@@ -22,10 +19,6 @@ const (
 	Falcon512SaltLen   = 40
 	Falcon512PublicLen = 897
 	Falcon512SigMaxLen = 690
-)
-
-var (
-	_ ids.ID // explicitly use ids to avoid unused import warning
 )
 
 var (
@@ -48,6 +41,12 @@ var (
 	ErrInvalidFalconPublicKey         = errors.New("invalid FALCON public key")
 )
 
+
+// Add FalconInput type alias
+type FalconInput = FalconTransferInput
+
+// codecVersion is the current codec version
+const codecVersion = 0
 
 // FalconFx describes the FALCON-512 post-quantum signature feature extension
 // This provides quantum-resistant signatures for X-Chain UTXOs
@@ -75,20 +74,25 @@ func (fx *FalconFx) Initialize(vmIntf interface{}) error {
 		return err
 	}
 
-	log := fx.VM.Logger()
 	log.Debug("initializing FALCON fx")
 
 	cache := NewVerifyCache(defaultCacheSize)
 	fx.VerifyCache = cache
 	
 	c := fx.VM.CodecRegistry()
-	return errors.Join(
+	err := errors.Join(
 		c.RegisterType(&FalconTransferInput{}),
 		c.RegisterType(&FalconMintOutput{}),
 		c.RegisterType(&FalconTransferOutput{}),
 		c.RegisterType(&FalconMintOperation{}),
 		c.RegisterType(&FalconCredential{}),
 	)
+	if err != nil {
+		return err
+	}
+	
+	log.Info("FALCON fx initialized")
+	return nil
 }
 
 func (fx *FalconFx) InitializeVM(vmIntf interface{}) error {
@@ -140,10 +144,7 @@ func (fx *FalconFx) VerifyPermission(txIntf, inIntf, credIntf, ownerIntf interfa
 
 func (fx *FalconFx) verifyFalconSignature(tx UnsignedTx, in *FalconInput, cred *FalconCredential, owner *FalconOutputOwners) error {
 	// Get the message to be signed (transaction hash)
-	txBytes, err := fx.VM.CodecRegistry().Marshal(codecVersion, &tx)
-	if err != nil {
-		return err
-	}
+	txBytes := tx.Bytes()
 	txHash := hashing.ComputeHash256(txBytes)
 
 	// Check cache first
@@ -156,7 +157,7 @@ func (fx *FalconFx) verifyFalconSignature(tx UnsignedTx, in *FalconInput, cred *
 	}
 
 	// Verify FALCON signature
-	valid := verifyFalcon512(txHash, cred.Salt, cred.Sig, owner.FalconPublicKey)
+	valid := verifyFalcon512(txHash, cred.Salt[:], cred.Sig, owner.FalconPublicKey)
 	
 	// Cache result
 	fx.VerifyCache.cache[cacheKey] = valid
@@ -175,10 +176,7 @@ func (fx *FalconFx) verifyMultisigFalcon(tx UnsignedTx, owner *FalconOutputOwner
 	}
 	
 	// Verify each signature
-	txBytes, err := fx.VM.CodecRegistry().Marshal(codecVersion, &tx)
-	if err != nil {
-		return err
-	}
+	txBytes := tx.Bytes()
 	txHash := hashing.ComputeHash256(txBytes)
 	
 	validSigs := 0
@@ -187,7 +185,7 @@ func (fx *FalconFx) verifyMultisigFalcon(tx UnsignedTx, owner *FalconOutputOwner
 			break
 		}
 		
-		if verifyFalcon512(txHash, sig.Salt, sig.Sig, owner.FalconPublicKeys[i]) {
+		if verifyFalcon512(txHash, sig.Salt[:], sig.Sig, owner.FalconPublicKeys[i]) {
 			validSigs++
 			if validSigs >= int(owner.Threshold) {
 				return nil

@@ -715,11 +715,11 @@ func (p *peer) shouldDisconnect() bool {
 		return false
 	}
 
-	blsKey, ok := vdr.PublicKey.(*bls.PublicKey)
-	if !ok {
+	blsKey := vdr.PublicKey
+	if blsKey == nil {
 		p.Log.Debug(disconnectingLog,
 			zap.Stringer("nodeID", vdr.NodeID),
-			zap.String("reason", "validator public key is not a BLS key"),
+			zap.String("reason", "validator public key is nil"),
 		)
 		return false
 	}

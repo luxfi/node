@@ -11,14 +11,14 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/protocol/chain"
+	// "github.com/luxfi/consensus/protocol/chain" // TODO: OracleBlock not in consensus
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var (
 	_ block.Block            = (*tracedBlock)(nil)
-	_ chain.OracleBlock      = (*tracedBlock)(nil)
+	// _ chain.OracleBlock      = (*tracedBlock)(nil) // TODO: OracleBlock not in consensus
 	_ block.WithVerifyContext = (*tracedBlock)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
@@ -60,33 +60,34 @@ func (b *tracedBlock) Reject(ctx context.Context) error {
 	return b.Block.Reject(ctx)
 }
 
-func (b *tracedBlock) Options(ctx context.Context) ([2]chain.Block, error) {
-	oracleBlock, ok := b.Block.(chain.OracleBlock)
-	if !ok {
-		return [2]chain.Block{}, chain.ErrNotOracle
-	}
+// TODO: OracleBlock not in consensus - commenting out Options method
+// func (b *tracedBlock) Options(ctx context.Context) ([2]chain.Block, error) {
+// 	oracleBlock, ok := b.Block.(chain.OracleBlock)
+// 	if !ok {
+// 		return [2]chain.Block{}, chain.ErrNotOracle
+// 	}
 
-	ctx, span := b.vm.tracer.Start(ctx, b.vm.optionsTag, oteltrace.WithAttributes(
-		attribute.Stringer("blkID", b.ID()),
-		attribute.Int64("height", int64(b.Height())),
-	))
-	defer span.End()
+// 	ctx, span := b.vm.tracer.Start(ctx, b.vm.optionsTag, oteltrace.WithAttributes(
+// 		attribute.Stringer("blkID", b.ID()),
+// 		attribute.Int64("height", int64(b.Height())),
+// 	))
+// 	defer span.End()
 
-	blks, err := oracleBlock.Options(ctx)
-	if err != nil {
-		return [2]chain.Block{}, err
-	}
-	return [2]chain.Block{
-		&tracedBlock{
-			Block: blks[0],
-			vm:    b.vm,
-		},
-		&tracedBlock{
-			Block: blks[1],
-			vm:    b.vm,
-		},
-	}, nil
-}
+// 	blks, err := oracleBlock.Options(ctx)
+// 	if err != nil {
+// 		return [2]chain.Block{}, err
+// 	}
+// 	return [2]chain.Block{
+// 		&tracedBlock{
+// 			Block: blks[0],
+// 			vm:    b.vm,
+// 		},
+// 		&tracedBlock{
+// 			Block: blks[1],
+// 			vm:    b.vm,
+// 		},
+// 	}, nil
+// }
 
 func (b *tracedBlock) ShouldVerifyWithContext(ctx context.Context) (bool, error) {
 	blkWithCtx, ok := b.Block.(block.WithVerifyContext)

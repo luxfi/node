@@ -39,8 +39,8 @@ type autominingCommand struct {
 }
 
 // NewAutomining creates a new scheduler with automining capabilities
-func NewAutomining(log log.Logger, toEngine chan<- core.Message) (AutominingScheduler, chan<- core.Message) {
-	vmToEngine := make(chan core.Message, cap(toEngine))
+func NewAutomining(log log.Logger, toEngine chan<- core.MessageType) (AutominingScheduler, chan<- core.MessageType) {
+	vmToEngine := make(chan core.MessageType, cap(toEngine))
 	baseScheduler := &scheduler{
 		log:               log,
 		fromVM:            vmToEngine,
@@ -129,7 +129,7 @@ func (s *autominingScheduler) Dispatch(buildBlockTime time.Time) {
 				// If the channel to the engine is full, drop the message
 				s.log.Debug("dropping message from VM",
 					zap.String("reason", "channel to engine is full"),
-					zap.Stringer("messageString", msg),
+					zap.Any("message", msg),
 				)
 			}
 		}

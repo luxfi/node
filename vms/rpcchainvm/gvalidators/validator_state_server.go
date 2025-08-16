@@ -31,7 +31,7 @@ func (s *Server) GetMinimumHeight(ctx context.Context, _ *emptypb.Empty) (*pb.Ge
 }
 
 func (s *Server) GetCurrentHeight(ctx context.Context, _ *emptypb.Empty) (*pb.GetCurrentHeightResponse, error) {
-	height, err := s.state.GetCurrentHeight()
+	height, err := s.state.GetCurrentHeight(ctx)
 	return &pb.GetCurrentHeightResponse{Height: height}, err
 }
 
@@ -48,20 +48,20 @@ func (s *Server) GetValidatorSet(ctx context.Context, req *pb.GetValidatorSetReq
 		return nil, err
 	}
 
-	// GetValidatorSet returns map[ids.NodeID]uint64 (weights only)
-	weights, err := s.state.GetValidatorSet(req.Height, subnetID)
+	// GetValidatorSet returns map[ids.NodeID]*GetValidatorOutput
+	validators, err := s.state.GetValidatorSet(ctx, req.Height, subnetID)
 	if err != nil {
 		return nil, err
 	}
 
 	resp := &pb.GetValidatorSetResponse{
-		Validators: make([]*pb.Validator, 0, len(weights)),
+		Validators: make([]*pb.Validator, 0, len(validators)),
 	}
 
-	for nodeID, weight := range weights {
+	for nodeID, validator := range validators {
 		vdrPB := &pb.Validator{
 			NodeId: nodeID.Bytes(),
-			Weight: weight,
+			Weight: validator.Weight,
 		}
 		resp.Validators = append(resp.Validators, vdrPB)
 	}
@@ -75,25 +75,25 @@ func (s *Server) GetCurrentValidatorSet(ctx context.Context, req *pb.GetCurrentV
 	}
 
 	// validators.State doesn't have GetCurrentValidatorSet, use GetValidatorSet with height 0
-	currentHeight, err := s.state.GetCurrentHeight()
+	currentHeight, err := s.state.GetCurrentHeight(ctx)
 	if err != nil {
 		return nil, err
 	}
 	
-	weights, err := s.state.GetValidatorSet(currentHeight, subnetID)
+	validators, err := s.state.GetValidatorSet(ctx, currentHeight, subnetID)
 	if err != nil {
 		return nil, err
 	}
 
 	resp := &pb.GetCurrentValidatorSetResponse{
-		Validators:    make([]*pb.Validator, 0, len(weights)),
+		Validators:    make([]*pb.Validator, 0, len(validators)),
 		CurrentHeight: currentHeight,
 	}
 
-	for nodeID, weight := range weights {
+	for nodeID, validator := range validators {
 		vdrPB := &pb.Validator{
 			NodeId: nodeID.Bytes(),
-			Weight: weight,
+			Weight: validator.Weight,
 			// All other fields like StartTime, IsActive, etc. are not available
 		}
 		resp.Validators = append(resp.Validators, vdrPB)

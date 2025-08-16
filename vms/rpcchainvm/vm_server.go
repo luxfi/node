@@ -1000,8 +1000,8 @@ type serverValidatorStateWrapper struct {
 	client validators.State
 }
 
-func (v *serverValidatorStateWrapper) GetCurrentHeight() (uint64, error) {
-	return v.client.GetCurrentHeight()
+func (v *serverValidatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return v.client.GetCurrentHeight(ctx)
 }
 
 func (v *serverValidatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
@@ -1014,8 +1014,8 @@ func (v *serverValidatorStateWrapper) GetSubnetID(ctx context.Context, chainID i
 	return ids.Empty, nil
 }
 
-func (v *serverValidatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	return v.client.GetValidatorSet(height, subnetID)
+func (v *serverValidatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+	return v.client.GetValidatorSet(ctx, height, subnetID)
 }
 
 // dbManagerImpl is a simple DBManager implementation

@@ -20,7 +20,7 @@ func NewClient(client messengerpb.MessengerClient) *Client {
 	return &Client{client: client}
 }
 
-func (c *Client) Notify(msg core.Message) error {
+func (c *Client) Notify(msg core.MessageType) error {
 	_, err := c.client.Notify(context.Background(), &messengerpb.NotifyRequest{
 		Message: messengerpb.Message(msg),
 	})

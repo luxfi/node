@@ -29,18 +29,18 @@ type scheduler struct {
 	log log.Logger
 	// The VM sends a message on this channel when it wants to tell the engine
 	// that the engine should call the VM's BuildBlock method
-	fromVM <-chan core.Message
+	fromVM <-chan core.MessageType
 	// The scheduler sends a message on this channel to notify the engine that
 	// it should call its VM's BuildBlock method
-	toEngine chan<- core.Message
+	toEngine chan<- core.MessageType
 	// When we receive a message on this channel, it means that we must refrain
 	// from telling the engine to call its VM's BuildBlock method until the
 	// given time
 	newBuildBlockTime chan time.Time
 }
 
-func New(log log.Logger, toEngine chan<- core.Message) (Scheduler, chan<- core.Message) {
-	vmToEngine := make(chan core.Message, cap(toEngine))
+func New(log log.Logger, toEngine chan<- core.MessageType) (Scheduler, chan<- core.MessageType) {
+	vmToEngine := make(chan core.MessageType, cap(toEngine))
 	return &scheduler{
 		log:               log,
 		fromVM:            vmToEngine,
@@ -84,7 +84,7 @@ waitloop:
 					// from the VM to avoid deadlock
 					s.log.Debug("dropping message from VM",
 						zap.String("reason", "channel to engine is full"),
-						zap.Stringer("messageString", msg),
+						zap.Stringer("message", msg),
 					)
 				}
 			case buildBlockTime, ok := <-s.newBuildBlockTime:

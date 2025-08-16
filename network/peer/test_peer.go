@@ -198,7 +198,7 @@ func (m *testValidatorManager) RegisterSetCallbackListener(listener validators.S
 	// No-op
 }
 
-func (m *testValidatorManager) AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk interface{}, validationID ids.ID, weight uint64) error {
+func (m *testValidatorManager) AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, validationID ids.ID, weight uint64) error {
 	return nil
 }
 

@@ -87,24 +87,24 @@ func (v *Validators) refresh(ctx context.Context) {
 	v.validatorSet.Clear()
 	v.totalWeight = 0
 
-	height, err := v.validators.GetCurrentHeight()
+	height, err := v.validators.GetCurrentHeight(ctx)
 	if err != nil {
 		v.log.Warn("failed to get current height", zap.Error(err))
 		return
 	}
-	validatorSet, err := v.validators.GetValidatorSet(height, v.subnetID)
+	validatorSet, err := v.validators.GetValidatorSet(ctx, height, v.subnetID)
 	if err != nil {
 		v.log.Warn("failed to get validator set", zap.Error(err))
 		return
 	}
 
-	for nodeID, weight := range validatorSet {
+	for nodeID, validatorOutput := range validatorSet {
 		v.validatorList = append(v.validatorList, validator{
 			nodeID: nodeID,
-			weight: weight,
+			weight: validatorOutput.Weight,
 		})
 		v.validatorSet.Add(nodeID)
-		v.totalWeight += weight
+		v.totalWeight += validatorOutput.Weight
 	}
 	utils.Sort(v.validatorList)
 
