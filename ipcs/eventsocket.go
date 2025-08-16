@@ -11,9 +11,9 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/ipcs/socket"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 )
 

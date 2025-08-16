@@ -7,11 +7,8 @@ import (
 	"context"
 	"testing"
 	"time"
-	
-	"github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
-
 
 	"github.com/luxfi/node/chains"
 
@@ -20,7 +17,6 @@ import (
 	"github.com/luxfi/node/codec"
 
 	"github.com/luxfi/node/codec/linearcodec"
-
 
 	"github.com/luxfi/consensus/consensustest"
 

@@ -9,9 +9,9 @@ import (
 	"math"
 	"reflect"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/xvm/fxs"
 )

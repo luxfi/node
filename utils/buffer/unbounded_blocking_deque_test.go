@@ -6,7 +6,6 @@ package buffer
 import (
 	"sync"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 )

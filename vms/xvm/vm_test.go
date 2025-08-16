@@ -7,19 +7,18 @@ import (
 	"context"
 	"math"
 	"testing"
-	
 
 	"github.com/luxfi/consensus/core"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
@@ -68,7 +67,7 @@ func TestInvalidFx(t *testing.T) {
 		genesisBytes, // genesisState
 		nil,          // upgradeBytes
 		nil,          // configBytes
-		[]*core.Fx{   // fxs
+		[]*core.Fx{ // fxs
 			nil,
 		},
 		nil, // AppSender
@@ -95,7 +94,7 @@ func TestFxInitializationFailure(t *testing.T) {
 		genesisBytes, // genesisState
 		nil,          // upgradeBytes
 		nil,          // configBytes
-		[]*core.Fx{{  // fxs
+		[]*core.Fx{{ // fxs
 			ID: ids.Empty,
 			Fx: &FxTest{
 				InitializeF: func(interface{}) error {

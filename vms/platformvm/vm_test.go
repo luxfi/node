@@ -8,40 +8,41 @@ import (
 	"context"
 	"testing"
 	"time"
+
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/consensus"
+	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/tracker"
-	"github.com/luxfi/consensus/engine/chain/bootstrap"
 	engineblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain/bootstrap"
 	"github.com/luxfi/consensus/networking/benchlist"
 	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/sender"
 	"github.com/luxfi/consensus/networking/sender/sendertest"
 	"github.com/luxfi/consensus/networking/timeout"
-	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/snow/engine/enginetest"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
@@ -64,8 +65,8 @@ import (
 
 	smeng "github.com/luxfi/consensus/engine/chain"
 	consensusgetter "github.com/luxfi/consensus/engine/chain/getter"
-	smcon "github.com/luxfi/consensus/protocol/chain"
 	timetracker "github.com/luxfi/consensus/networking/tracker"
+	smcon "github.com/luxfi/consensus/protocol/chain"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
@@ -73,9 +74,6 @@ import (
 	walletbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
-	"github.com/luxfi/metric"
-	
-	luxmetrics "github.com/luxfi/metric"
 )
 
 const (
@@ -1187,7 +1185,7 @@ func TestOptimisticAtomicImport(t *testing.T) {
 	// Stop tracking before transitioning back to NormalOp to avoid "already started tracking" error
 	validatorIDs := vm.Config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 	require.NoError(vm.uptimeManager.StopTracking(validatorIDs))
-	
+
 	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
 
 	_, txStatus, err := vm.state.GetTx(tx.ID())
@@ -1543,7 +1541,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	changeNotifier := &engineblock.ChangeNotifier{
 		ChainVM: vm,
 	}
-	
+
 	// Create a subscription that returns from msgChan
 	subscription := func(ctx context.Context) (core.Message, error) {
 		select {
@@ -1553,7 +1551,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 			return 0, ctx.Err()
 		}
 	}
-	
+
 	h, err := handler.New(
 		bootstrapConfig.Ctx,
 		changeNotifier,
@@ -1581,7 +1579,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 			AlphaPreference:       1,
 			AlphaConfidence:       1,
 			Beta:                  20,
-			ConcurrentPolls:     1,
+			ConcurrentPolls:       1,
 			OptimalProcessing:     1,
 			MaxOutstandingItems:   1,
 			MaxItemProcessingTime: 1,

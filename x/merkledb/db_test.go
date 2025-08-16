@@ -9,23 +9,25 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+
 	// "fmt"
 	"math/rand"
 	"slices"
 	"strconv"
 	"testing"
 	"time"
-		"github.com/luxfi/metric"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/trace"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/trace"
 )
 
 const defaultHistoryLength = 300

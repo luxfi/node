@@ -8,8 +8,8 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/ids"
 )
 
 // Tree handles the propagation of block acceptance and rejection to inner

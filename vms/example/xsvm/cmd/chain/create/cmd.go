@@ -6,7 +6,6 @@ package create
 import (
 	"log"
 	"time"
-	
 
 	"github.com/spf13/cobra"
 

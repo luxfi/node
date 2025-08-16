@@ -7,8 +7,8 @@ import (
 	"context"
 	"errors"
 
-	messengerpb "github.com/luxfi/node/proto/pb/messenger"
 	"github.com/luxfi/consensus/core"
+	messengerpb "github.com/luxfi/node/proto/pb/messenger"
 )
 
 var (

@@ -10,12 +10,12 @@ import (
 
 	"github.com/google/btree"
 
-	"github.com/luxfi/node/cache"
+	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/maybe"
@@ -424,7 +424,7 @@ func (a *activeL1Validators) addStakersToValidatorManager(vdrs validators.Manage
 
 func addL1ValidatorToValidatorManager(vdrs validators.Manager, l1Validator L1Validator) error {
 	nodeID := l1Validator.effectiveNodeID()
-	weight, err := vdrs.GetWeight(l1Validator.SubnetID, nodeID) 
+	weight, err := vdrs.GetWeight(l1Validator.SubnetID, nodeID)
 	if err != nil {
 		return err
 	}

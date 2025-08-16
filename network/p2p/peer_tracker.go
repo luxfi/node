@@ -9,14 +9,13 @@ import (
 	"math/rand"
 	"sync"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/heap"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils/heap"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 
@@ -115,9 +114,9 @@ func NewPeerTracker(
 	}
 
 	err := errors.Join(
-		registerer.Register(t.metric.numTrackedPeers),
-		registerer.Register(t.metric.numResponsivePeers),
-		registerer.Register(t.metric.averageBandwidth),
+		registerer.Register(t.metrics.numTrackedPeers),
+		registerer.Register(t.metrics.numResponsivePeers),
+		registerer.Register(t.metrics.averageBandwidth),
 	)
 	return t, err
 }
@@ -222,7 +221,7 @@ func (p *PeerTracker) RegisterRequest(nodeID ids.NodeID) {
 	p.trackedPeers.Add(nodeID)
 	p.bandwidthHeap.Remove(nodeID)
 
-	p.metric.numTrackedPeers.Set(float64(p.trackedPeers.Len()))
+	p.metrics.numTrackedPeers.Set(float64(p.trackedPeers.Len()))
 }
 
 // Record that we observed that [nodeID]'s bandwidth is [bandwidth].
@@ -268,8 +267,8 @@ func (p *PeerTracker) updateBandwidth(nodeID ids.NodeID, bandwidth float64, resp
 		p.responsivePeers.Remove(nodeID)
 	}
 
-	p.metric.numResponsivePeers.Set(float64(p.responsivePeers.Len()))
-	p.metric.averageBandwidth.Set(p.averageBandwidth.Read())
+	p.metrics.numResponsivePeers.Set(float64(p.responsivePeers.Len()))
+	p.metrics.averageBandwidth.Set(p.averageBandwidth.Read())
 }
 
 // Connected should be called when [nodeID] connects to this node.
@@ -305,8 +304,8 @@ func (p *PeerTracker) Disconnected(nodeID ids.NodeID) {
 	delete(p.peerBandwidth, nodeID)
 	p.bandwidthHeap.Remove(nodeID)
 
-	p.metric.numTrackedPeers.Set(float64(p.trackedPeers.Len()))
-	p.metric.numResponsivePeers.Set(float64(p.responsivePeers.Len()))
+	p.metrics.numTrackedPeers.Set(float64(p.trackedPeers.Len()))
+	p.metrics.numResponsivePeers.Set(float64(p.responsivePeers.Len()))
 }
 
 // Returns the number of peers the node is connected to.

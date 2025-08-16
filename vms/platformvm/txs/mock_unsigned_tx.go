@@ -138,6 +138,6 @@ func (mr *MockUnsignedTxMockRecorder) Visit(visitor any) *gomock.Call {
 
 // InitializeWithContext initializes the transaction with consensus context
 func (tx *MockUnsignedTx) InitializeWithContext(ctx context.Context) error {
-    // Initialize any context-dependent fields here
-    return nil
+	// Initialize any context-dependent fields here
+	return nil
 }

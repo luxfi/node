@@ -11,8 +11,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
@@ -463,7 +463,7 @@ func (e *StandardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error 
 		//            second entry.
 		map[ids.ID]uint64{
 			e.LUXAssetID: fee,
-			tx.AssetID:       totalRewardAmount,
+			tx.AssetID:   totalRewardAmount,
 		},
 	); err != nil {
 		return err

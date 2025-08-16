@@ -367,7 +367,7 @@ func deployIngressController(ctx context.Context, log logging.Logger, configPath
 		"--set", "controller.config.proxy-send-timeout=600",
 		"--set", "controller.config.proxy-body-size=0",
 		"--set", "controller.config.proxy-http-version=1.1",
-		"--set", "controller.metric.enabled=true",
+		"--set", "controller.metrics.enabled=true",
 	}
 
 	if err := runHelmCommand(ctx, args...); err != nil {

@@ -6,7 +6,6 @@ package cache
 import (
 	"crypto/rand"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 

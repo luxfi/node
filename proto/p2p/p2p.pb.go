@@ -7,10 +7,11 @@
 package p2p
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -26,7 +27,7 @@ type EngineType int32
 const (
 	EngineType_ENGINE_TYPE_UNSPECIFIED EngineType = 0
 	// Only the X-Chain uses lux consensus
-	EngineType_ENGINE_TYPE_DAG    EngineType = 1
+	EngineType_ENGINE_TYPE_DAG   EngineType = 1
 	EngineType_ENGINE_TYPE_CHAIN EngineType = 2
 )
 
@@ -40,7 +41,7 @@ var (
 	EngineType_value = map[string]int32{
 		"ENGINE_TYPE_UNSPECIFIED": 0,
 		"ENGINE_TYPE_DAG":         1,
-		"ENGINE_TYPE_CHAIN":      2,
+		"ENGINE_TYPE_CHAIN":       2,
 	}
 )
 

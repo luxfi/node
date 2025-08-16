@@ -6,7 +6,6 @@ package txs
 import (
 	"errors"
 	"time"
-	
 
 	"github.com/luxfi/ids"
 )

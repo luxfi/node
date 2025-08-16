@@ -11,8 +11,8 @@ import (
 	// "github.com/luxfi/evm"
 	"github.com/luxfi/geth/common"
 
-	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"

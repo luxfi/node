@@ -6,12 +6,11 @@ package xvm
 import (
 	"context"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/api"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/rpc"
 )

@@ -13,14 +13,16 @@ import (
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
-	
+
 	luxmetrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
@@ -29,8 +31,6 @@ import (
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 )
@@ -104,7 +104,7 @@ func NewTestNetwork(
 	// TestNetwork doesn't use disk so we don't need to track it, but we should
 	// still have guardrails around cpu/memory usage.
 	promRegistry := prometheus.NewRegistry()
-	
+
 	resourceTracker, err := tracker.NewResourceTracker(
 		promRegistry,
 		&noOpResourceManager{},
@@ -248,20 +248,20 @@ func (f *nodeIDConnector) IsAllowed(nodeID ids.NodeID, _ bool) bool {
 // noOpResourceManager is a no-op resource manager for testing
 type noOpResourceManager struct{}
 
-func (n *noOpResourceManager) CPUUsage() float64 { return 0 }
+func (n *noOpResourceManager) CPUUsage() float64             { return 0 }
 func (n *noOpResourceManager) DiskUsage() (float64, float64) { return 0, 0 }
-func (n *noOpResourceManager) Shutdown() {}
-func (n *noOpResourceManager) AvailableDiskBytes() uint64 { return 1 << 30 } // 1GB
-func (n *noOpResourceManager) TrackProcess(pid int) { /* no-op */ }
-func (n *noOpResourceManager) UntrackProcess(pid int) { /* no-op */ }
+func (n *noOpResourceManager) Shutdown()                     {}
+func (n *noOpResourceManager) AvailableDiskBytes() uint64    { return 1 << 30 } // 1GB
+func (n *noOpResourceManager) TrackProcess(pid int)          { /* no-op */ }
+func (n *noOpResourceManager) UntrackProcess(pid int)        { /* no-op */ }
 
 // noOpMetricsFactory is a no-op metrics factory for testing
 type noOpMetricsFactory struct{}
 
-func (n *noOpMetricsFactory) New(string) luxmetric.Metrics {
-	return luxmetric.NewNoOpMetrics("test")
+func (n *noOpMetricsFactory) New(string) luxmetrics.Metrics {
+	return luxmetrics.NewNoOpMetrics("test")
 }
 
-func (n *noOpMetricsFactory) NewWithRegistry(string, luxmetric.Registry) luxmetric.Metrics {
-	return luxmetric.NewNoOpMetrics("test")
+func (n *noOpMetricsFactory) NewWithRegistry(string, luxmetrics.Registry) luxmetrics.Metrics {
+	return luxmetrics.NewNoOpMetrics("test")
 }

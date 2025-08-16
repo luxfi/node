@@ -6,7 +6,6 @@ package tmpnet
 import (
 	"bytes"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 )

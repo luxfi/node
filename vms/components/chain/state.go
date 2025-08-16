@@ -10,13 +10,13 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/utils/constants"
 )
 

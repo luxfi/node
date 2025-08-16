@@ -18,10 +18,10 @@ var metricsLock sync.Mutex
 // [metric.Enabled] is restored to its original value during testing cleanup.
 func WithMetrics(t testing.TB) {
 	metricsLock.Lock()
-	initialValue := metric.Enabled
-	metric.Enabled = true
+	initialValue := metrics.Enabled
+	metrics.Enabled = true
 	t.Cleanup(func() {
-		metric.Enabled = initialValue
+		metrics.Enabled = initialValue
 		metricsLock.Unlock()
 	})
 }

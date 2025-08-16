@@ -8,13 +8,12 @@ import (
 	"net/netip"
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/crypto/bls"
 )
 
 func TestIPSigner(t *testing.T) {

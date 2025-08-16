@@ -81,7 +81,7 @@ func NewIndexer(
 		return nil, err
 	}
 	// initialize the metrics
-	if err := i.metric.initialize(metricsNamespace, metricsRegisterer); err != nil {
+	if err := i.metrics.initialize(metricsNamespace, metricsRegisterer); err != nil {
 		return nil, err
 	}
 	return i, nil
@@ -168,7 +168,7 @@ func (i *indexer) Accept(txID ids.ID, inputUTXOs []*lux.UTXO, outputUTXOs []*lux
 			}
 		}
 	}
-	i.metric.numTxsIndexed.Inc()
+	i.metrics.numTxsIndexed.Inc()
 	return nil
 }
 

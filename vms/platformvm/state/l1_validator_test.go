@@ -9,13 +9,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/lru"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/vms/platformvm/block"
 )

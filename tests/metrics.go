@@ -9,9 +9,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/api/metrics"
-
 	dto "github.com/prometheus/client_model/go"
+	"github.com/luxfi/metric"
 )
 
 // "metric name" -> "metric value"

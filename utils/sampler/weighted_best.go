@@ -7,7 +7,6 @@ import (
 	"errors"
 	"math"
 	"time"
-	
 
 	"github.com/luxfi/node/utils/timer/mockable"
 

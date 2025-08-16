@@ -5,7 +5,7 @@ package router
 type Router interface {
 	// Route sends a message to the appropriate handler
 	Route(msg Message) error
-	
+
 	// RegisterHandler registers a message handler
 	RegisterHandler(msgType string, handler Handler) error
 }

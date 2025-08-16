@@ -8,14 +8,14 @@ package fee
 import (
 	"errors"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/wrappers"
-	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -96,7 +96,7 @@ const (
 
 var (
 	_ txs.Visitor = (*complexityVisitor)(nil)
-	
+
 	ErrUnsupportedTx = errors.New("unsupported transaction type")
 
 	IntrinsicAddSubnetValidatorTxComplexities = gas.Dimensions{

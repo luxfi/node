@@ -6,7 +6,6 @@ package p2p
 import (
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 

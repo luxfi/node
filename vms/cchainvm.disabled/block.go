@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"time"
-	
 
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/rlp"
@@ -134,7 +133,7 @@ func (b *Block) FPCVotes() [][]byte {
 	return nil
 }
 
-// EpochBit implements the chain.Block interface  
+// EpochBit implements the chain.Block interface
 // Returns the epoch fence bit for FPC
 func (b *Block) EpochBit() bool {
 	// TODO: Extract epoch bit from block extra data if available

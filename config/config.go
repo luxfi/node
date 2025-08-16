@@ -15,30 +15,29 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	
 
 	"github.com/spf13/viper"
 
-	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/chains"
+	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/consensus/networking/benchlist"
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/tracker"
-	consensusconfig "github.com/luxfi/consensus/config"
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/chains"
+	"github.com/luxfi/consensus/prism"
+	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/node"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/set"
@@ -48,6 +47,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/proposervm"
+	"github.com/luxfi/trace"
 )
 
 const (
@@ -65,8 +65,8 @@ var (
 		KeystoreAPIEnabledKey: keystoreDeprecationMsg,
 	}
 
-	errConflictingLPOpinion                  = errors.New("supporting and objecting to the same LP")
-	errConflictingImplicitLPOpinion          = errors.New("objecting to enabled LP")
+	errConflictingLPOpinion                   = errors.New("supporting and objecting to the same LP")
+	errConflictingImplicitLPOpinion           = errors.New("objecting to enabled LP")
 	errSybilProtectionDisabledStakerWeights   = errors.New("sybil protection disabled weights must be positive")
 	errSybilProtectionDisabledOnPublicNetwork = errors.New("sybil protection disabled on public network")
 	errInvalidUptimeRequirement               = errors.New("uptime requirement must be in the range [0, 1]")
@@ -135,7 +135,7 @@ func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
 // 	loggingConfig.MaxFiles = int(v.GetUint(LogRotaterMaxFilesKey))
 // 	loggingConfig.MaxAge = int(v.GetUint(LogRotaterMaxAgeKey))
 // 	loggingConfig.Compress = v.GetBool(LogRotaterCompressEnabledKey)
-// 
+//
 // 	return loggingConfig, err
 // }
 
@@ -426,7 +426,7 @@ func getNetworkConfig(
 	return config, nil
 }
 
-func getBenchlistConfig(v *viper.Viper, consensusParameters sampling.Parameters) (benchlist.Config, error) {
+func getBenchlistConfig(v *viper.Viper, consensusParameters prism.Parameters) (benchlist.Config, error) {
 	// AlphaConfidence is used here to ensure that benching can't cause a
 	// liveness failure. If AlphaPreference were used, the benchlist may grow to
 	// a point that committing would be extremely unlikely to happen.
@@ -797,12 +797,12 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.Stakin
 		}
 		genesisDBPath := GetExpandedArg(v, GenesisDBKey)
 		genesisDBType := v.GetString(GenesisDBTypeKey)
-		
+
 		// Auto-detect database type based on path if not specified
 		if genesisDBType == "" {
 			genesisDBType = "pebbledb" // Default is always pebbledb
 		}
-		
+
 		return genesis.FromDatabase(networkID, genesisDBPath, genesisDBType, stakingCfg)
 	}
 
@@ -1282,11 +1282,11 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.UseCurrentHeight = v.GetBool(ProposerVMUseCurrentHeightKey)
 
 	// Logging
-// 	nodeConfig.LoggingConfig, err = getLoggingConfig(v)
-// 	if err != nil {
-// 		return node.Config{}, err
-// 	}
-// 
+	// 	nodeConfig.LoggingConfig, err = getLoggingConfig(v)
+	// 	if err != nil {
+	// 		return node.Config{}, err
+	// 	}
+	//
 	// Network ID
 	nodeConfig.NetworkID, err = constants.NetworkID(v.GetString(NetworkNameKey))
 	if err != nil {
@@ -1388,7 +1388,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 
 	// Genesis Data
 	genesisStakingCfg := nodeConfig.StakingConfig.StakingConfig
-	
+
 	// Add BLS key information for genesis replay
 	if nodeConfig.StakingConfig.StakingSigningKey != nil {
 		// Get NodeID from the certificate
@@ -1397,16 +1397,16 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 			PublicKey: nodeConfig.StakingConfig.StakingTLSCert.Leaf.PublicKey,
 		})
 		genesisStakingCfg.NodeID = nodeID.String()
-		
+
 		// Get BLS public key and proof of possession
 		pk := nodeConfig.StakingConfig.StakingSigningKey.PublicKey()
 		genesisStakingCfg.BLSPublicKey = bls.PublicKeyToCompressedBytes(pk)
-		
+
 		// Generate proof of possession
 		sig := nodeConfig.StakingConfig.StakingSigningKey.SignProofOfPossession(genesisStakingCfg.BLSPublicKey)
 		genesisStakingCfg.BLSProofOfPossession = bls.SignatureToBytes(sig)
 	}
-	
+
 	nodeConfig.GenesisBytes, nodeConfig.LuxAssetID, err = getGenesisData(v, nodeConfig.NetworkID, &genesisStakingCfg)
 	if err != nil {
 		return node.Config{}, fmt.Errorf("unable to load genesis file: %w", err)
@@ -1478,12 +1478,12 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.ProcessContextFilePath = GetExpandedArg(v, ProcessContextFileKey)
 
 	nodeConfig.ProvidedFlags = providedFlags(v)
-	
+
 	// Initialize logger if not already set
 	if nodeConfig.Log == nil {
 		nodeConfig.Log = log.New()
 	}
-	
+
 	return nodeConfig, nil
 }
 

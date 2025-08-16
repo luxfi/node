@@ -7,7 +7,6 @@ import (
 	"context"
 	"sync"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -80,7 +79,7 @@ func newBandwidthThrottler(
 			}),
 		},
 	}
-	errs.Add(registerer.Register(t.metric.awaitingAcquire))
+	errs.Add(registerer.Register(t.metrics.awaitingAcquire))
 	return t, errs.Err
 }
 
@@ -106,10 +105,10 @@ func (t *bandwidthThrottlerImpl) Acquire(
 	nodeID ids.NodeID,
 ) {
 	startTime := time.Now()
-	t.metric.awaitingAcquire.Inc()
+	t.metrics.awaitingAcquire.Inc()
 	defer func() {
-		t.metric.acquireLatency.Observe(float64(time.Since(startTime)))
-		t.metric.awaitingAcquire.Dec()
+		t.metrics.acquireLatency.Observe(float64(time.Since(startTime)))
+		t.metrics.awaitingAcquire.Dec()
 	}()
 
 	t.lock.RLock()

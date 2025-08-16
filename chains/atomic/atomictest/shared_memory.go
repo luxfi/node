@@ -6,12 +6,12 @@ package atomictest
 import (
 	"math/rand"
 	"testing"
-	
+
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/units"
 )
 

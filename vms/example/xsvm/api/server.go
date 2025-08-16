@@ -56,7 +56,7 @@ type server struct {
 	state   database.KeyValueReader
 	chain   chain.Chain
 	builder builder.Builder
-	lock    sync.RWMutex  // For thread safety
+	lock    sync.RWMutex // For thread safety
 }
 
 type NetworkReply struct {
@@ -202,7 +202,7 @@ func (s *server) Message(_ *http.Request, args *MessageArgs, reply *MessageReply
 	}
 
 	reply.Message = message
-	
+
 	// Get WarpSigner from context
 	if warpSignerIface := consensus.GetWarpSigner(s.ctx); warpSignerIface != nil {
 		if warpSigner, ok := warpSignerIface.(consensus.WarpSigner); ok {

@@ -5,6 +5,7 @@ package txs
 
 import (
 	"context"
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
@@ -56,6 +57,6 @@ func (t *ImportTx) Visit(v Visitor) error {
 
 // InitializeWithContext initializes the transaction with consensus context
 func (tx *ImportTx) InitializeWithContext(ctx context.Context) error {
-    // Initialize any context-dependent fields here
-    return nil
+	// Initialize any context-dependent fields here
+	return nil
 }

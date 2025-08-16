@@ -6,8 +6,8 @@ package ipcs
 import (
 	"context"
 
-	"github.com/luxfi/node/api"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/rpc"
 )
 

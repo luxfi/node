@@ -6,18 +6,18 @@ package txs
 import (
 	"fmt"
 
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm/fxs"
 )
 
 var _ gossip.Gossipable = (*Tx)(nil)

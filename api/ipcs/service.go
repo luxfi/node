@@ -11,12 +11,12 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/ipcs"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/log"
 )
 
 type Service struct {

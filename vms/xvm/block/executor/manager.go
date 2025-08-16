@@ -6,9 +6,9 @@ package executor
 import (
 	"errors"
 
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/xvm/block"
@@ -50,7 +50,7 @@ type Manager interface {
 
 func NewManager(
 	mempool mempool.Mempool,
-	metrics metric.Metrics,
+	metrics metrics.Metrics,
 	state state.State,
 	backend *executor.Backend,
 	clk *mockable.Clock,
@@ -73,7 +73,7 @@ func NewManager(
 type manager struct {
 	backend *executor.Backend
 	state   state.State
-	metrics metric.Metrics
+	metrics metrics.Metrics
 	mempool mempool.Mempool
 	clk     *mockable.Clock
 	// Invariant: onAccept is called when [tx] is being marked as accepted, but

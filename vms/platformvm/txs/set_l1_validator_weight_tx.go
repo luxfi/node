@@ -5,7 +5,7 @@ package txs
 
 import (
 	"context"
-	
+
 	"github.com/luxfi/node/vms/types"
 )
 

@@ -6,7 +6,6 @@ package mempool
 import (
 	"errors"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -34,7 +33,7 @@ type Mempool interface {
 	// a notification will only be sent if there is at least one transaction in
 	// the mempool.
 	RequestBuildBlock(emptyBlockPermitted bool)
-	
+
 	// Additional methods for compatibility
 	HasTxs() bool
 	Has(txID ids.ID) bool
@@ -45,9 +44,9 @@ type Mempool interface {
 type mempool struct {
 	txmempool.Mempool[*txs.Tx]
 
-	toEngine chan<- common.MessageType
-	bytesAvailable int  // Exposed for tests
-	
+	toEngine       chan<- common.MessageType
+	bytesAvailable int // Exposed for tests
+
 	// Keep track of tx sizes for removal
 	txSizes map[ids.ID]int
 }
@@ -65,10 +64,10 @@ func New(
 		metrics,
 	)
 	return &mempool{
-		Mempool:  pool,
-		toEngine: toEngine,
+		Mempool:        pool,
+		toEngine:       toEngine,
 		bytesAvailable: 64 * 1024 * 1024, // 64 MiB default
-		txSizes: make(map[ids.ID]int),
+		txSizes:        make(map[ids.ID]int),
 	}, nil
 }
 
@@ -132,7 +131,7 @@ func (m *mempool) PeekTxs(n int) []*txs.Tx {
 func (m *mempool) DropExpiredStakerTxs(minStartTime time.Time) []ids.ID {
 	var droppedTxIDs []ids.ID
 	var txsToRemove []*txs.Tx
-	
+
 	m.Iterate(func(tx *txs.Tx) bool {
 		// Check if this is a staker transaction
 		switch stakerTx := tx.Unsigned.(type) {
@@ -159,11 +158,11 @@ func (m *mempool) DropExpiredStakerTxs(minStartTime time.Time) []ids.ID {
 		}
 		return true
 	})
-	
+
 	if len(txsToRemove) > 0 {
 		m.Remove(txsToRemove...)
 	}
-	
+
 	return droppedTxIDs
 }
 

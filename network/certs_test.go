@@ -7,7 +7,6 @@ import (
 	"crypto/tls"
 	"sync"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 

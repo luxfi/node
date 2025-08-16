@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	_ block.Block            = (*tracedBlock)(nil)
+	_ block.Block = (*tracedBlock)(nil)
 	// _ chain.OracleBlock      = (*tracedBlock)(nil) // TODO: OracleBlock not in consensus
 	_ block.WithVerifyContext = (*tracedBlock)(nil)
 

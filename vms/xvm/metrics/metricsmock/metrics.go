@@ -13,9 +13,9 @@ import (
 	http "net/http"
 	reflect "reflect"
 
+	rpc "github.com/gorilla/rpc/v2"
 	block "github.com/luxfi/node/vms/xvm/block"
 	txs "github.com/luxfi/node/vms/xvm/txs"
-	rpc "github.com/gorilla/rpc/v2"
 	gomock "go.uber.org/mock/gomock"
 )
 

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math"
 	"time"
-	
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -30,6 +31,8 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/snow/engine/enginetest"
+	"github.com/luxfi/node/snow/engine/snowman/block/blockmock"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/chain"

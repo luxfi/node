@@ -3,6 +3,7 @@ package cchainvm
 
 import (
 	"encoding/binary"
+
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/ethdb"
 )
@@ -10,17 +11,17 @@ import (
 // Database key prefixes
 var (
 	// SubnetEVM format prefixes
-	subnetHeaderPrefix = []byte{0x68} // 'h' - header data
-	subnetBodyPrefix   = []byte{0x62} // 'b' - block body
+	subnetHeaderPrefix    = []byte{0x68} // 'h' - header data
+	subnetBodyPrefix      = []byte{0x62} // 'b' - block body
 	subnetHashToNumPrefix = []byte{0x48} // 'H' - hash to number
-	
+
 	// Standard geth format prefixes
 	gethHeaderPrefix       = []byte{0x30} // headerPrefix + num + hash -> header
 	gethBodyPrefix         = []byte{0x31} // blockBodyPrefix + num + hash -> body
 	gethHeaderHashSuffix   = []byte{0x32} // headerHashSuffix + num -> hash
 	gethHeaderNumberPrefix = []byte{0x33} // headerNumberPrefix + hash -> num
 	gethReceiptsPrefix     = []byte{0x34} // receiptsPrefix + num + hash -> receipts
-	gethTDSuffix          = []byte{0x35} // headerTDSuffix + num + hash -> TD
+	gethTDSuffix           = []byte{0x35} // headerTDSuffix + num + hash -> TD
 )
 
 // DatabaseFormat represents the database format type
@@ -87,19 +88,19 @@ func detectDatabaseFormat(db ethdb.Database) DatabaseFormat {
 	iter := db.NewIterator([]byte{0x48}, nil)
 	hasSubnetFormat := iter.Next()
 	iter.Release()
-	
+
 	if hasSubnetFormat {
 		return SubnetEVMFormat
 	}
-	
+
 	// Check for geth format (canonical hash mapping)
 	iter = db.NewIterator(gethHeaderHashSuffix, nil)
 	hasGethFormat := iter.Next()
 	iter.Release()
-	
+
 	if hasGethFormat {
 		return GethFormat
 	}
-	
+
 	return UnknownFormat
 }

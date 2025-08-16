@@ -5,7 +5,6 @@ package message
 
 import (
 	"time"
-	
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/p2p"

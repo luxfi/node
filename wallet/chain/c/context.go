@@ -59,13 +59,13 @@ func newConsensusContext(c *Context) (context.Context, error) {
 	if err := lookup.Alias(c.BlockchainID, Alias); err != nil {
 		return nil, err
 	}
-	
+
 	ctx := context.Background()
 	ctx = consensus.WithNetworkID(ctx, c.NetworkID)
 	ctx = consensus.WithSubnetID(ctx, constants.PrimaryNetworkID)
 	ctx = consensus.WithChainID(ctx, c.BlockchainID)
 	ctx = consensus.WithBCLookup(ctx, lookup)
-	
+
 	// Create IDs struct with C-chain info
 	ids := consensus.IDs{
 		NetworkID:  c.NetworkID,
@@ -74,6 +74,6 @@ func newConsensusContext(c *Context) (context.Context, error) {
 		LUXAssetID: c.LUXAssetID,
 	}
 	ctx = consensus.WithIDs(ctx, ids)
-	
+
 	return ctx, nil
 }

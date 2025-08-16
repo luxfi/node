@@ -6,7 +6,6 @@ package fee
 import (
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
@@ -32,7 +31,7 @@ func TestTxFees(t *testing.T) {
 
 	latestForkTime := time.Unix(1713945427, 0)
 	upgrades := upgrade.Config{
-		EtnaTime:      latestForkTime,
+		EtnaTime:          latestForkTime,
 		DurangoTime:       latestForkTime.Add(-1 * time.Hour),
 		CortinaTime:       latestForkTime.Add(-2 * time.Hour),
 		BanffTime:         latestForkTime.Add(-3 * time.Hour),

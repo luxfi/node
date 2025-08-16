@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	
 
 	"github.com/spf13/cobra"
 
@@ -22,8 +21,8 @@ import (
 const cliVersion = "0.0.1"
 
 var (
-	errLuxNodeRequired = fmt.Errorf("--node-path or %s are required", tmpnet.LuxNodePathEnvName)
-	errNetworkDirRequired  = fmt.Errorf("--network-dir or %s are required", tmpnet.NetworkDirEnvName)
+	errLuxNodeRequired    = fmt.Errorf("--node-path or %s are required", tmpnet.LuxNodePathEnvName)
+	errNetworkDirRequired = fmt.Errorf("--network-dir or %s are required", tmpnet.NetworkDirEnvName)
 )
 
 func main() {
@@ -49,11 +48,11 @@ func main() {
 	rootCmd.AddCommand(versionCmd)
 
 	var (
-		rootDir         string
-		networkOwner    string
-		luxNodePath string
-		pluginDir       string
-		nodeCount       uint8
+		rootDir      string
+		networkOwner string
+		luxNodePath  string
+		pluginDir    string
+		nodeCount    uint8
 	)
 	startNetworkCmd := &cobra.Command{
 		Use:   "start-network",

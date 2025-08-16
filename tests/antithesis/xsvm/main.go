@@ -12,15 +12,14 @@ import (
 	"math/big"
 	"os"
 	"time"
-	
 
 	"github.com/antithesishq/antithesis-sdk-go/assert"
 	"github.com/antithesishq/antithesis-sdk-go/lifecycle"
 
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/tests/antithesis"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/tests/antithesis"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/example/xsvm/api"

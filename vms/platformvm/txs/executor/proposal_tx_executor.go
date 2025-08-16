@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"

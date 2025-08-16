@@ -9,11 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/consensus/core/tracker"
 	"github.com/luxfi/consensus/networking/handler"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms"
@@ -51,13 +51,13 @@ func TestSkipBootstrapTracker(t *testing.T) {
 	// Test with skip bootstrap enabled
 	connectedBeacons := tracker.NewPeers()
 	skipTracker := tracker.NewStartup(connectedBeacons, 0)
-	
+
 	// The skip bootstrap tracker should start with 0 weight requirement
 	require.True(skipTracker.ShouldStart())
 
 	// Test with regular bootstrap
 	regularTracker := tracker.NewStartup(connectedBeacons, 100)
-	
+
 	// Regular tracker should not start with no validators connected
 	require.False(regularTracker.ShouldStart())
 }
@@ -74,7 +74,7 @@ func TestQueueChainCreation(t *testing.T) {
 	require.NoError(err)
 
 	config := &ManagerConfig{
-		Log: log.NewNoOpLogger(),
+		Log:          log.NewNoOpLogger(),
 		Metrics:      metric.NewMultiGatherer(),
 		VMManager:    vms.NewManager(nil, ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
@@ -111,7 +111,7 @@ func TestLookup(t *testing.T) {
 	require := require.New(t)
 
 	config := &ManagerConfig{
-		Log: log.NewNoOpLogger(),
+		Log:          log.NewNoOpLogger(),
 		Metrics:      metric.NewMultiGatherer(),
 		VMManager:    vms.NewManager(nil, ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
@@ -147,7 +147,7 @@ func TestIsBootstrapped(t *testing.T) {
 	require := require.New(t)
 
 	config := &ManagerConfig{
-		Log: log.NewNoOpLogger(),
+		Log:          log.NewNoOpLogger(),
 		Metrics:      metric.NewMultiGatherer(),
 		VMManager:    vms.NewManager(nil, ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),

@@ -174,7 +174,7 @@ func (t *Tx) Import(i *tx.Import) error {
 		ctx: t.ChainContext,
 		vs:  vs,
 	}
-	
+
 	return message.Signature.Verify(
 		t.Context,
 		&message.UnsignedMessage,

@@ -6,9 +6,9 @@ package lux
 import (
 	"fmt"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 )
 

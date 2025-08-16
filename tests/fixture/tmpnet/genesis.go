@@ -9,15 +9,14 @@ import (
 	"fmt"
 	"math/big"
 	"time"
-	
 
 	"github.com/luxfi/geth/core"
 	"github.com/luxfi/geth/params"
 
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -144,7 +143,7 @@ func NewTestGenesisWithFunds(
 	// Define C-Chain genesis
 	cChainGenesis := &core.Genesis{
 		Config:     params.AllEthashProtocolChanges, // LuxLocalChainConfig was removed, using AllEthashProtocolChanges
-		Difficulty: big.NewInt(0), // Difficulty is a mandatory field
+		Difficulty: big.NewInt(0),                   // Difficulty is a mandatory field
 		GasLimit:   defaultGasLimit,
 		Alloc:      cChainBalances,
 	}

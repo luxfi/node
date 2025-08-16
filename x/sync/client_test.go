@@ -10,21 +10,22 @@ import (
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/luxfi/metric"
+	pb "github.com/luxfi/node/proto/pb/sync"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/proto"
-	pb "github.com/luxfi/node/proto/pb/sync"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/trace"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/x/merkledb"
+	"github.com/luxfi/trace"
 )
 
 func newDefaultDBConfig() merkledb.Config {
@@ -93,7 +94,7 @@ func sendRangeProofRequest(
 	client, err := NewClient(&ClientConfig{
 		NetworkClient: networkClient,
 		Metrics:       &mockMetrics{},
-		Log: log.NewNoOpLogger(),
+		Log:           log.NewNoOpLogger(),
 		BranchFactor:  merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -390,7 +391,7 @@ func sendChangeProofRequest(
 	client, err := NewClient(&ClientConfig{
 		NetworkClient: networkClient,
 		Metrics:       &mockMetrics{},
-		Log: log.NewNoOpLogger(),
+		Log:           log.NewNoOpLogger(),
 		BranchFactor:  merkledb.BranchFactor16,
 	})
 	require.NoError(err)
@@ -752,7 +753,7 @@ func TestAppRequestSendFailed(t *testing.T) {
 	client, err := NewClient(
 		&ClientConfig{
 			NetworkClient: networkClient,
-			Log: log.NewNoOpLogger(),
+			Log:           log.NewNoOpLogger(),
 			Metrics:       &mockMetrics{},
 			BranchFactor:  merkledb.BranchFactor16,
 		},

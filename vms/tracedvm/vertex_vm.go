@@ -66,7 +66,7 @@ func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (dag.Tx, error)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Wrap it with tracedTx
 	return &tracedTx{
 		Tx:     tx,

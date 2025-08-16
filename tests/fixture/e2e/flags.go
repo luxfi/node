@@ -8,13 +8,12 @@ import (
 	"fmt"
 	"os"
 	"time"
-	
 
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 )
 
 type FlagVars struct {
-	luxNodeExecPath  string
+	luxNodeExecPath      string
 	pluginDir            string
 	networkDir           string
 	reuseNetwork         bool

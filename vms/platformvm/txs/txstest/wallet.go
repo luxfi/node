@@ -100,7 +100,7 @@ func NewWallet(
 		common.NewChainUTXOs(constants.PlatformChainID, utxos),
 		owners,
 	)
-	// Use constants for networkID and LUXAssetID  
+	// Use constants for networkID and LUXAssetID
 	builderContext := newContext(constants.TestnetID, ids.Empty, config, state.GetTimestamp())
 	return wallet.New(
 		&client{

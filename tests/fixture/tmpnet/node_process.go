@@ -18,7 +18,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-	
 
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/config"

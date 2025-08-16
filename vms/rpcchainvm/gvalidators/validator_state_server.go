@@ -8,8 +8,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/ids"
 
 	pb "github.com/luxfi/node/proto/pb/validatorstate"
 )
@@ -79,7 +79,7 @@ func (s *Server) GetCurrentValidatorSet(ctx context.Context, req *pb.GetCurrentV
 	if err != nil {
 		return nil, err
 	}
-	
+
 	validators, err := s.state.GetValidatorSet(ctx, currentHeight, subnetID)
 	if err != nil {
 		return nil, err

@@ -7,7 +7,6 @@ package cache
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 

@@ -17,7 +17,7 @@ func (j *L1ValidatorRegistrationJustification) ProtoMessage() {}
 // Reset stub for proto.Message interface
 func (j *L1ValidatorRegistrationJustification) Reset() {}
 
-// String stub for proto.Message interface  
+// String stub for proto.Message interface
 func (j *L1ValidatorRegistrationJustification) String() string { return "" }
 
 // Justification type wrappers

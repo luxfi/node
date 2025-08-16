@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/luxfi/node/api/keystore"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/encdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )

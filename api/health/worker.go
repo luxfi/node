@@ -11,13 +11,12 @@ import (
 	"slices"
 	"sync"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/set"
 )
 

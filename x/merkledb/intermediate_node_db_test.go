@@ -6,7 +6,6 @@ package merkledb
 import (
 	"fmt"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 

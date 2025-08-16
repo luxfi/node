@@ -11,15 +11,14 @@ import (
 	"strconv"
 	"sync"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/message"
 )
 
 var (
@@ -148,7 +147,7 @@ func (r *router) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID ui
 		return err
 	}
 
-	return r.metric.observe(
+	return r.metrics.observe(
 		prometheus.Labels{
 			opLabel:      message.AppRequestOp.String(),
 			handlerLabel: handlerID,
@@ -172,7 +171,7 @@ func (r *router) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, reques
 
 	pending.callback(ctx, nodeID, nil, appErr)
 
-	return r.metric.observe(
+	return r.metrics.observe(
 		prometheus.Labels{
 			opLabel:      message.AppErrorOp.String(),
 			handlerLabel: pending.handlerID,
@@ -196,7 +195,7 @@ func (r *router) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID u
 
 	pending.callback(ctx, nodeID, response, nil)
 
-	return r.metric.observe(
+	return r.metrics.observe(
 		prometheus.Labels{
 			opLabel:      message.AppResponseOp.String(),
 			handlerLabel: pending.handlerID,
@@ -224,7 +223,7 @@ func (r *router) AppGossip(ctx context.Context, nodeID ids.NodeID, gossip []byte
 
 	handler.AppGossip(ctx, nodeID, parsedMsg)
 
-	return r.metric.observe(
+	return r.metrics.observe(
 		prometheus.Labels{
 			opLabel:      message.AppGossipOp.String(),
 			handlerLabel: handlerID,
@@ -263,7 +262,7 @@ func (r *router) CrossChainAppRequest(
 		return err
 	}
 
-	return r.metric.observe(
+	return r.metrics.observe(
 		prometheus.Labels{
 			opLabel:      message.CrossChainAppRequestOp.String(),
 			handlerLabel: handlerID,
@@ -287,7 +286,7 @@ func (r *router) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID,
 
 	pending.callback(ctx, chainID, nil, appErr)
 
-	return r.metric.observe(
+	return r.metrics.observe(
 		prometheus.Labels{
 			opLabel:      message.CrossChainAppErrorOp.String(),
 			handlerLabel: pending.handlerID,
@@ -311,7 +310,7 @@ func (r *router) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requ
 
 	pending.callback(ctx, chainID, response, nil)
 
-	return r.metric.observe(
+	return r.metrics.observe(
 		prometheus.Labels{
 			opLabel:      message.CrossChainAppResponseOp.String(),
 			handlerLabel: pending.handlerID,

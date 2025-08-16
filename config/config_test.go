@@ -11,15 +11,14 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/chains"
 	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/subnets"
 )
 

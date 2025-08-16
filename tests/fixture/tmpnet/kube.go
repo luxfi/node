@@ -31,9 +31,9 @@ import (
 	"k8s.io/client-go/transport/spdy"
 	"k8s.io/utils/ptr"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/logging"
 
 	appsv1 "k8s.io/api/apps/v1"

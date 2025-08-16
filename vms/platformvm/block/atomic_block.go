@@ -57,6 +57,6 @@ func NewApricotAtomicBlock(
 
 // InitializeWithContext initializes the block with consensus context
 func (b *ApricotAtomicBlock) InitializeWithContext(ctx context.Context) error {
-    // Initialize any context-dependent fields here
-    return nil
+	// Initialize any context-dependent fields here
+	return nil
 }

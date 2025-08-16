@@ -5,7 +5,6 @@ package genesis
 
 import (
 	"time"
-	
 
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -33,7 +32,7 @@ type StakingConfig struct {
 	MaxStakeDuration time.Duration `json:"maxStakeDuration"`
 	// RewardConfig is the config for the reward function.
 	RewardConfig reward.Config `json:"rewardConfig"`
-	
+
 	// BLS key information for genesis replay
 	NodeID               string `json:"nodeID"`
 	BLSPublicKey         []byte `json:"blsPublicKey"`

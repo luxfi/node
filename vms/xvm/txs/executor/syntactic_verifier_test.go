@@ -7,21 +7,20 @@ import (
 	"math"
 	"strings"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/xvm/config"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm/config"
+	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/vms/xvm/txs"
 
 	safemath "github.com/luxfi/node/utils/math"
 )
@@ -31,7 +30,7 @@ var (
 	feeConfig = config.Config{
 		TxFee:            2,
 		CreateAssetTxFee: 3,
-		EtnaTime:     mockable.MaxTime,
+		EtnaTime:         mockable.MaxTime,
 	}
 )
 

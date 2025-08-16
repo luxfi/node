@@ -8,10 +8,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"

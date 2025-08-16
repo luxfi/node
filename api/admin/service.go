@@ -12,21 +12,20 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/database"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/registry"
-
 )
 
 const (
@@ -228,7 +227,7 @@ func (a *Admin) Stacktrace(_ *http.Request, _ *struct{}, _ *api.EmptyReply) erro
 }
 
 type SetLoggerLevelArgs struct {
-	LoggerName   string         `json:"loggerName"`
+	LoggerName   string     `json:"loggerName"`
 	LogLevel     *log.Level `json:"logLevel"`
 	DisplayLevel *log.Level `json:"displayLevel"`
 }
@@ -387,7 +386,7 @@ type DBGetArgs struct {
 }
 
 type DBGetReply struct {
-	Value     string        `json:"value"`
+	Value string `json:"value"`
 }
 
 //nolint:stylecheck // renaming this method to DBGet would change the API method from "dbGet" to "dBGet"

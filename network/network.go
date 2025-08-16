@@ -14,27 +14,26 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	
 
 	"github.com/pires/go-proxyproto"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/api/health"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/sender"
-	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/node/api/health"
+	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
@@ -270,8 +269,8 @@ func NewNetwork(
 		PingFrequency:        config.PingFrequency,
 		PongTimeout:          config.PingPongTimeout,
 		MaxClockDifference:   config.MaxClockDifference,
-		SupportedLPs:        config.SupportedLPs.List(),
-		ObjectedLPs:         config.ObjectedLPs.List(),
+		SupportedLPs:         config.SupportedLPs.List(),
+		ObjectedLPs:          config.ObjectedLPs.List(),
 		ResourceTracker:      config.ResourceTracker,
 		UptimeCalculator:     config.UptimeCalculator,
 		IPSigner:             peer.NewIPSigner(config.MyIPPort, config.TLSKey, config.BLSKey),
@@ -327,7 +326,7 @@ func (n *network) Send(
 	if nodeIDSet == nil {
 		nodeIDSet = set.NewSet[ids.NodeID](0)
 	}
-	
+
 	namedPeers := n.getPeers(nodeIDSet, subnetID, allower)
 	n.peerConfig.Metrics.MultipleSendsFailed(
 		msg.Op(),
@@ -387,7 +386,7 @@ func (n *network) HealthCheck(context.Context) (interface{}, error) {
 		timeSinceLastMsgReceived = now.Sub(lastMsgReceivedAt)
 		wasMsgReceivedRecently = timeSinceLastMsgReceived <= n.config.HealthConfig.MaxTimeSinceMsgReceived
 		details[TimeSinceLastMsgReceivedKey] = timeSinceLastMsgReceived.String()
-		n.metric.timeSinceLastMsgReceived.Set(float64(timeSinceLastMsgReceived))
+		n.metrics.timeSinceLastMsgReceived.Set(float64(timeSinceLastMsgReceived))
 	}
 	healthy = healthy && wasMsgReceivedRecently
 
@@ -399,7 +398,7 @@ func (n *network) HealthCheck(context.Context) (interface{}, error) {
 		timeSinceLastMsgSent = now.Sub(lastMsgSentAt)
 		wasMsgSentRecently = timeSinceLastMsgSent <= n.config.HealthConfig.MaxTimeSinceMsgSent
 		details[TimeSinceLastMsgSentKey] = timeSinceLastMsgSent.String()
-		n.metric.timeSinceLastMsgSent.Set(float64(timeSinceLastMsgSent))
+		n.metrics.timeSinceLastMsgSent.Set(float64(timeSinceLastMsgSent))
 	}
 	healthy = healthy && wasMsgSentRecently
 
@@ -407,10 +406,10 @@ func (n *network) HealthCheck(context.Context) (interface{}, error) {
 	isMsgFailRate := sendFailRate <= n.config.HealthConfig.MaxSendFailRate
 	healthy = healthy && isMsgFailRate
 	details[SendFailRateKey] = sendFailRate
-	n.metric.sendFailRate.Set(sendFailRate)
+	n.metrics.sendFailRate.Set(sendFailRate)
 
 	// emit metrics about the lifetime of peer connections
-	n.metric.updatePeerConnectionLifetimeMetrics()
+	n.metrics.updatePeerConnectionLifetimeMetrics()
 
 	// Network layer is healthy
 	if healthy || !n.config.HealthConfig.Enabled {
@@ -469,7 +468,7 @@ func (n *network) Connected(nodeID ids.NodeID) {
 	)
 	n.ipTracker.Connected(newIP)
 
-	n.metric.markConnected(peer)
+	n.metrics.markConnected(peer)
 
 	peerVersion := peer.Version()
 	n.router.Connected(nodeID, peerVersion, constants.PrimaryNetworkID)
@@ -551,7 +550,7 @@ func (n *network) Dispatch() error {
 			// Sleep for a small amount of time to try to wait for the
 			// error to go away.
 			time.Sleep(time.Millisecond)
-			n.metric.acceptFailed.Inc()
+			n.metrics.acceptFailed.Inc()
 			continue
 		}
 
@@ -578,11 +577,11 @@ func (n *network) Dispatch() error {
 					zap.String("reason", "rate-limiting"),
 					zap.Stringer("peerIP", ip),
 				)
-				n.metric.inboundConnRateLimited.Inc()
+				n.metrics.inboundConnRateLimited.Inc()
 				_ = conn.Close()
 				return
 			}
-			n.metric.inboundConnAllowed.Inc()
+			n.metrics.inboundConnAllowed.Inc()
 
 			n.peerConfig.Log.Debug("starting to upgrade connection",
 				zap.String("direction", "inbound"),
@@ -644,7 +643,7 @@ func (n *network) track(ip *ips.ClaimedIPPort) error {
 	// Note: Avoiding signature verification when the IP isn't needed is a
 	// **significant** performance optimization.
 	if !n.ipTracker.ShouldVerifyIP(ip) {
-		n.metric.numUselessPeerListBytes.Add(float64(ip.Size()))
+		n.metrics.numUselessPeerListBytes.Add(float64(ip.Size()))
 		return nil
 	}
 
@@ -799,7 +798,7 @@ func (n *network) disconnectedFromConnecting(nodeID ids.NodeID) {
 		}
 	}
 
-	n.metric.disconnected.Inc()
+	n.metrics.disconnected.Inc()
 }
 
 func (n *network) disconnectedFromConnected(peer peer.Peer, nodeID ids.NodeID) {
@@ -818,7 +817,7 @@ func (n *network) disconnectedFromConnected(peer peer.Peer, nodeID ids.NodeID) {
 		n.dial(nodeID, tracked)
 	}
 
-	n.metric.markDisconnected(peer)
+	n.metrics.markDisconnected(peer)
 }
 
 // dial will spin up a new goroutine and attempt to establish a connection with
@@ -846,8 +845,8 @@ func (n *network) dial(nodeID ids.NodeID, ip *trackedIP) {
 		zap.Stringer("ip", ip.ip),
 	)
 	go func() {
-		n.metric.numTracked.Inc()
-		defer n.metric.numTracked.Dec()
+		n.metrics.numTracked.Inc()
+		defer n.metrics.numTracked.Dec()
 
 		for {
 			timer := time.NewTimer(ip.getDelay())
@@ -1197,8 +1196,8 @@ func (n *network) runTimers() {
 					zap.Error(err),
 				)
 			}
-			n.metric.nodeUptimeWeightedAverage.Set(primaryUptime.WeightedAveragePercentage)
-			n.metric.nodeUptimeRewardingStake.Set(primaryUptime.RewardingStakePercentage)
+			n.metrics.nodeUptimeWeightedAverage.Set(primaryUptime.WeightedAveragePercentage)
+			n.metrics.nodeUptimeRewardingStake.Set(primaryUptime.RewardingStakePercentage)
 
 			for subnetID := range n.config.TrackedSubnets {
 				result, err := n.NodeUptime(subnetID)
@@ -1209,8 +1208,8 @@ func (n *network) runTimers() {
 					)
 				}
 				subnetIDStr := subnetID.String()
-				n.metric.nodeSubnetUptimeWeightedAverage.WithLabelValues(subnetIDStr).Set(result.WeightedAveragePercentage)
-				n.metric.nodeSubnetUptimeRewardingStake.WithLabelValues(subnetIDStr).Set(result.RewardingStakePercentage)
+				n.metrics.nodeSubnetUptimeWeightedAverage.WithLabelValues(subnetIDStr).Set(result.WeightedAveragePercentage)
+				n.metrics.nodeSubnetUptimeRewardingStake.WithLabelValues(subnetIDStr).Set(result.RewardingStakePercentage)
 			}
 		}
 	}

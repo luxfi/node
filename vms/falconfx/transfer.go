@@ -19,7 +19,7 @@ var (
 type FalconTransferInput struct {
 	// Amt is the amount of asset this input consumes
 	Amt uint64 `serialize:"true" json:"amount"`
-	
+
 	// Input specifies which UTXOs to consume
 	Input `serialize:"true"`
 }
@@ -41,7 +41,7 @@ func (i *FalconTransferInput) Verify() error {
 type FalconTransferOutput struct {
 	// Amt is the amount of asset stored in this output
 	Amt uint64 `serialize:"true" json:"amount"`
-	
+
 	// OutputOwners specifies who can spend this output
 	FalconOutputOwners `serialize:"true"`
 }
@@ -74,10 +74,10 @@ func (o *FalconMintOutput) Verify() error {
 type FalconMintOperation struct {
 	// MintInput specifies the mint output to consume
 	MintInput `serialize:"true"`
-	
+
 	// MintOutput specifies the new mint output to create
 	MintOutput FalconMintOutput `serialize:"true" json:"mintOutput"`
-	
+
 	// TransferOutput specifies the newly minted assets
 	TransferOutput FalconTransferOutput `serialize:"true" json:"transferOutput"`
 }
@@ -104,7 +104,7 @@ func (i *Input) Verify() error {
 	if len(i.SigIndices) == 0 {
 		return errors.New("input must have at least one signature index")
 	}
-	
+
 	// Check for duplicates
 	seen := make(map[uint32]bool)
 	for _, idx := range i.SigIndices {
@@ -113,7 +113,7 @@ func (i *Input) Verify() error {
 		}
 		seen[idx] = true
 	}
-	
+
 	return nil
 }
 
@@ -128,7 +128,7 @@ func (i *MintInput) Verify() error {
 	if len(i.SigIndices) == 0 {
 		return errors.New("mint input must have at least one signature index")
 	}
-	
+
 	// Check for duplicates
 	seen := make(map[uint32]bool)
 	for _, idx := range i.SigIndices {
@@ -137,7 +137,7 @@ func (i *MintInput) Verify() error {
 		}
 		seen[idx] = true
 	}
-	
+
 	return nil
 }
 

@@ -5,7 +5,7 @@ package txs
 
 import (
 	"context"
-	
+
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"

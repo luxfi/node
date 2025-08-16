@@ -5,7 +5,6 @@ package fee
 
 import (
 	"time"
-	
 
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/txs"

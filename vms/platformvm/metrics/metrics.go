@@ -5,7 +5,6 @@ package metrics
 
 import (
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 

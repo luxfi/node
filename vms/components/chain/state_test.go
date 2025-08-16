@@ -8,9 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"testing"
-	
-	"github.com/stretchr/testify/require"
 
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/choices"
 
@@ -25,8 +24,6 @@ import (
 	"github.com/luxfi/ids"
 
 	"github.com/luxfi/node/utils/hashing"
-
-	"github.com/luxfi/metric"
 )
 
 var (
@@ -108,7 +105,7 @@ func createInternalBlockFuncs(blks []*blocktest.Block) (
 	blkMap := make(map[ids.ID]*blocktest.Block)
 	blkBytesMap := make(map[string]*blocktest.Block)
 	adapterMap := make(map[ids.ID]*testBlockAdapter)
-	
+
 	// Create adapters for all blocks upfront
 	for _, blk := range blks {
 		blkMap[blk.ID()] = blk
@@ -119,7 +116,7 @@ func createInternalBlockFuncs(blks []*blocktest.Block) (
 
 	// Keep track of which blocks have been parsed
 	parsedBlocks := make(map[ids.ID]bool)
-	
+
 	getBlock := func(_ context.Context, id ids.ID) (chain.Block, error) {
 		blk, ok := blkMap[id]
 		if !ok {
@@ -314,7 +311,7 @@ func TestBuildBlock(t *testing.T) {
 	blk1 := testBlks[1]
 
 	getBlock, parseBlock, getCanonicalBlockID, adapterMap := createInternalBlockFuncs(testBlks)
-	
+
 	buildBlock := func(context.Context) (chain.Block, error) {
 		// Once the block is built, mark it as processing
 		blk1.Status = consensustest.Accepted

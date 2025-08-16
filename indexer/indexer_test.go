@@ -4,26 +4,27 @@
 package indexer
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"sync"
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/engine/chain/chainmock"
+	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/snow/engine/snowman/block/blockmock"
+
 	// "github.com/luxfi/consensus/engine/dag/vertex/vertexmock"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils"
 )
 
 var (
@@ -219,11 +220,11 @@ func TestIndexer(t *testing.T) {
 
 	// Commit the database before closing the indexer
 	require.NoError(db.Commit())
-	
+
 	// Don't actually close the indexer to avoid closing the database
 	// Just check that it would close properly
 	require.False(idxr.closed)
-	
+
 	server.timesCalled = 0
 
 	// Create a new indexer using the same baseDB to simulate restart
@@ -478,7 +479,7 @@ func TestIncompleteIndex(t *testing.T) {
 	// Don't close the indexer to avoid closing the database
 	// Instead, just mark it as closed for testing purposes
 	idxr.closed = true
-	
+
 	config.AllowIncompleteIndex = false
 	config.IndexingEnabled = false
 	// Re-use the same baseDB

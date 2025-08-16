@@ -7,7 +7,6 @@ import (
 	"net/netip"
 	"sync"
 	"time"
-	
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"

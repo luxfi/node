@@ -2,9 +2,9 @@ package appsender
 
 import (
 	"context"
-	
-	"github.com/luxfi/ids"
+
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/ids"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 )
 

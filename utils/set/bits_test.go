@@ -5,7 +5,6 @@ package set
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 )

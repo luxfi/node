@@ -7,7 +7,6 @@ package lp118
 import (
 	"context"
 	"time"
-	
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
@@ -33,7 +32,7 @@ func (NoOpHandler) AppRequest(context.Context, ids.NodeID, time.Time, []byte) ([
 
 // CachedHandler implements a cached handler for LP-118
 type CachedHandler struct {
-	cache  cache.Cacher[ids.ID, []byte]
+	cache   cache.Cacher[ids.ID, []byte]
 	backend interface{}
 	signer  warp.Signer
 }

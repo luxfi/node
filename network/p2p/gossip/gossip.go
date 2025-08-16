@@ -9,18 +9,17 @@ import (
 	"fmt"
 	"sync"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/buffer"
-	"github.com/luxfi/log"
 )
 
 const (
@@ -150,11 +149,11 @@ func NewMetrics(
 		),
 	}
 	err := errors.Join(
-		metric.Register(m.count),
-		metric.Register(m.bytes),
-		metric.Register(m.tracking),
-		metric.Register(m.trackingLifetimeAverage),
-		metric.Register(m.topValidators),
+		metrics.Register(m.count),
+		metrics.Register(m.bytes),
+		metrics.Register(m.tracking),
+		metrics.Register(m.trackingLifetimeAverage),
+		metrics.Register(m.topValidators),
 	)
 	return m, err
 }
@@ -278,7 +277,7 @@ func (p *PullGossiper[_]) handleResponse(
 		}
 	}
 
-	if err := p.metric.observeMessage(receivedPullLabels, len(gossip), receivedBytes); err != nil {
+	if err := p.metrics.observeMessage(receivedPullLabels, len(gossip), receivedBytes); err != nil {
 		p.log.Error("failed to update metrics",
 			zap.Error(err),
 		)
@@ -495,11 +494,11 @@ func (p *PushGossiper[T]) gossip(
 		return err
 	}
 
-	if err := p.metric.observeMessage(sentPushLabels, len(gossip), sentBytes); err != nil {
+	if err := p.metrics.observeMessage(sentPushLabels, len(gossip), sentBytes); err != nil {
 		return err
 	}
 
-	topValidatorsMetric, err := p.metric.topValidators.GetMetricWith(metricsLabels)
+	topValidatorsMetric, err := p.metrics.topValidators.GetMetricWith(metricsLabels)
 	if err != nil {
 		return fmt.Errorf("failed to get top validators metric: %w", err)
 	}
@@ -509,10 +508,10 @@ func (p *PushGossiper[T]) gossip(
 
 	// Combine validators from stake percentage with additional validators
 	allValidators := validatorsByStake
-	
+
 	// TODO: Add logic to select additional validators based on gossipParams.Validators count
 	// and non-validators based on gossipParams.NonValidators count
-	
+
 	return p.client.AppGossip(
 		ctx,
 		core.SendConfig{
@@ -569,9 +568,9 @@ func (p *PushGossiper[_]) updateMetrics(nowUnixNano float64) {
 		averageLifetime = nowUnixNano - p.addedTimeSum/numTracking
 	}
 
-	p.metric.tracking.With(unsentLabels).Set(numUnsent)
-	p.metric.tracking.With(sentLabels).Set(numSent)
-	p.metric.trackingLifetimeAverage.Set(averageLifetime)
+	p.metrics.tracking.With(unsentLabels).Set(numUnsent)
+	p.metrics.tracking.With(sentLabels).Set(numSent)
+	p.metrics.trackingLifetimeAverage.Set(averageLifetime)
 }
 
 // Every calls [Gossip] every [frequency] amount of time.

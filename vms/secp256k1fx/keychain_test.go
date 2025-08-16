@@ -5,12 +5,11 @@ package secp256k1fx
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/formatting"
 )
 

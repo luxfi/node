@@ -5,6 +5,7 @@ package propertyfx
 
 import (
 	"context"
+
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )

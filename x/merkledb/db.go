@@ -18,11 +18,11 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/trace"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
@@ -1256,7 +1256,7 @@ func (db *merkleDB) initializeRoot() error {
 	}
 
 	db.rootID = db.hasher.HashNode(root)
-	db.metric.HashCalculated()
+	db.metrics.HashCalculated()
 
 	db.root = maybe.Some(root)
 	return nil

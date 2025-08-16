@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	_ chain.Block            = (*BlockWrapper)(nil)
+	_ chain.Block             = (*BlockWrapper)(nil)
 	_ block.WithVerifyContext = (*BlockWrapper)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")

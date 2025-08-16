@@ -6,7 +6,6 @@ package health
 import (
 	"context"
 	"time"
-	
 
 	"github.com/luxfi/node/utils/rpc"
 )

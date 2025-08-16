@@ -6,16 +6,15 @@ package throttling
 import (
 	"context"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -42,7 +41,7 @@ func newInboundMsgByteThrottler(
 		waitingToAcquire:   linked.NewHashmap[uint64, *msgMetadata](),
 		nodeToWaitingMsgID: make(map[ids.NodeID]uint64),
 	}
-	return t, t.metric.initialize(registerer)
+	return t, t.metrics.initialize(registerer)
 }
 
 // Information about a message waiting to be read.
@@ -84,8 +83,8 @@ type inboundMsgByteThrottler struct {
 func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, nodeID ids.NodeID) ReleaseFunc {
 	startTime := time.Now()
 	defer func() {
-		t.metric.awaitingRelease.Inc()
-		t.metric.acquireLatency.Observe(float64(time.Since(startTime)))
+		t.metrics.awaitingRelease.Inc()
+		t.metrics.acquireLatency.Observe(float64(time.Since(startTime)))
 	}()
 	metadata := &msgMetadata{
 		bytesNeeded: msgSize,
@@ -102,7 +101,7 @@ func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, n
 			zap.Uint64("messageID", existingID),
 		)
 		t.lock.Unlock()
-		return t.metric.awaitingRelease.Dec
+		return t.metrics.awaitingRelease.Dec
 	}
 
 	// Take as many bytes as we can from the at-large allocation.
@@ -116,7 +115,7 @@ func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, n
 	)
 	if atLargeBytesUsed > 0 {
 		t.remainingAtLargeBytes -= atLargeBytesUsed
-		t.metric.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
+		t.metrics.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
 		metadata.bytesNeeded -= atLargeBytesUsed
 		t.nodeToAtLargeBytesUsed[nodeID] += atLargeBytesUsed
 		if metadata.bytesNeeded == 0 { // If we acquired enough bytes, return
@@ -156,7 +155,7 @@ func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, n
 		// Mark that [nodeID] used [vdrBytesUsed] from its validator allocation
 		t.nodeToVdrBytesUsed[nodeID] += vdrBytesUsed
 		t.remainingVdrBytes -= vdrBytesUsed
-		t.metric.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
+		t.metrics.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
 		metadata.bytesNeeded -= vdrBytesUsed
 		if metadata.bytesNeeded == 0 { // If we acquired enough bytes, return
 			t.lock.Unlock()
@@ -182,8 +181,8 @@ func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, n
 	t.nodeToWaitingMsgID[nodeID] = msgID
 	t.lock.Unlock()
 
-	t.metric.awaitingAcquire.Inc()
-	defer t.metric.awaitingAcquire.Dec()
+	t.metrics.awaitingAcquire.Inc()
+	defer t.metrics.awaitingAcquire.Dec()
 
 	select {
 	case <-metadata.closeOnAcquireChan:
@@ -203,9 +202,9 @@ func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, n
 func (t *inboundMsgByteThrottler) release(metadata *msgMetadata, nodeID ids.NodeID) {
 	t.lock.Lock()
 	defer func() {
-		t.metric.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
-		t.metric.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
-		t.metric.awaitingRelease.Dec()
+		t.metrics.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
+		t.metrics.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
+		t.metrics.awaitingRelease.Dec()
 		t.lock.Unlock()
 	}()
 

@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/set"

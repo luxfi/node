@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 )

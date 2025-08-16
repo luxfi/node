@@ -4,21 +4,21 @@
 package network
 
 import (
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 )
 
 // validatorsWrapper wraps validators.Manager to match the expected interface
 type validatorsWrapper struct {
-	manager validators.Manager
+	manager   validators.Manager
 	callbacks []validators.SetCallbackListener
 }
 
 // NewValidatorsWrapper creates a new validators wrapper
 func NewValidatorsWrapper(manager validators.Manager) *validatorsWrapper {
 	return &validatorsWrapper{
-		manager: manager,
+		manager:   manager,
 		callbacks: make([]validators.SetCallbackListener, 0),
 	}
 }

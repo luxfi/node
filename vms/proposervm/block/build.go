@@ -7,7 +7,6 @@ import (
 	"crypto"
 	"crypto/rand"
 	"time"
-	
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
@@ -59,7 +58,7 @@ func Build(
 		},
 		timestamp: timestamp,
 		cert:      cert,
-		proposer:  ids.NodeIDFromCert(&ids.Certificate{
+		proposer: ids.NodeIDFromCert(&ids.Certificate{
 			Raw:       cert.Raw,
 			PublicKey: cert.PublicKey,
 		}),

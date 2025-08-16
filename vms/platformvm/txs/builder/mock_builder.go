@@ -11,8 +11,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/luxfi/ids"
 	secp256k1 "github.com/luxfi/crypto/secp256k1"
+	ids "github.com/luxfi/ids"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
 	secp256k1fx "github.com/luxfi/node/vms/secp256k1fx"
 	gomock "go.uber.org/mock/gomock"

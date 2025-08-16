@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/consensustest"
 

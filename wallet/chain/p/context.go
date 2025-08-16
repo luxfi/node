@@ -6,8 +6,8 @@ package p
 import (
 	stdcontext "context"
 
-	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/vms/xvm"
 )
 

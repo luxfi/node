@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 )

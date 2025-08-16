@@ -30,6 +30,7 @@ import (
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
+
 	// Using consensus protocol/chain for Block interface
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/node/vms/proposervm/proposer"
@@ -815,7 +816,7 @@ func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Convert map[ids.NodeID]uint64 to map[ids.NodeID]*validators.GetValidatorOutput
 	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(valSet))
 	for nodeID, weight := range valSet {

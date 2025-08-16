@@ -7,7 +7,6 @@ package hierarchycodec
 
 import (
 	"testing"
-	
 
 	"github.com/luxfi/node/codec"
 )

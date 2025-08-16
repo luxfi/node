@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"strconv"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 	"github.com/thepudds/fzgen/fuzzer"

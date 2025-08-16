@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/db/rpcdb"
@@ -214,9 +214,9 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 				if !ok {
 					return
 				}
-				// Convert block.Message to core.Message
-				if coreMsg, ok := msg.(core.Message); ok {
-					_ = msgClient.Notify(coreMsg)
+				// Convert block.Message to core.MessageType
+				if msgType, ok := msg.(core.MessageType); ok {
+					_ = msgClient.Notify(msgType)
 				}
 			case <-vm.closed:
 				return
@@ -688,7 +688,7 @@ func (vm *VMServer) AppGossip(ctx context.Context, req *vmpb.AppGossipMsg) (*emp
 }
 
 func (vm *VMServer) Gather(context.Context, *emptypb.Empty) (*vmpb.GatherResponse, error) {
-	metrics, err := vm.metric.Gather()
+	metrics, err := vm.metrics.Gather()
 	return &vmpb.GatherResponse{MetricFamilies: metrics}, err
 }
 
@@ -1000,22 +1000,31 @@ type serverValidatorStateWrapper struct {
 	client validators.State
 }
 
-func (v *serverValidatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
-	return v.client.GetCurrentHeight(ctx)
+func (v *serverValidatorStateWrapper) GetCurrentHeight() (uint64, error) {
+	return v.client.GetCurrentHeight(context.Background())
 }
 
 func (v *serverValidatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
-	// Minimum height not available, return 0
-	return 0, nil
+	return v.client.GetMinimumHeight(ctx)
 }
 
 func (v *serverValidatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	// Not available, return empty ID
-	return ids.Empty, nil
+	return v.client.GetSubnetID(ctx, chainID)
 }
 
-func (v *serverValidatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	return v.client.GetValidatorSet(ctx, height, subnetID)
+func (v *serverValidatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+	// Get the validator set from the client with context
+	valSet, err := v.client.GetValidatorSet(context.Background(), height, subnetID)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Convert map[ids.NodeID]*validators.GetValidatorOutput to map[ids.NodeID]uint64
+	result := make(map[ids.NodeID]uint64, len(valSet))
+	for nodeID, validator := range valSet {
+		result[nodeID] = validator.Weight
+	}
+	return result, nil
 }
 
 // dbManagerImpl is a simple DBManager implementation

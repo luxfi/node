@@ -5,7 +5,6 @@ package signer
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 )

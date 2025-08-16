@@ -21,7 +21,7 @@ func newMetrics(namespace string, registerer prometheus.Registerer) (*healthMetr
 			[]string{"tag"},
 		),
 	}
-	metric.failingChecks.WithLabelValues(AllTag).Set(0)
-	metric.failingChecks.WithLabelValues(ApplicationTag).Set(0)
-	return metrics, registerer.Register(metric.failingChecks)
+	metrics.failingChecks.WithLabelValues(AllTag).Set(0)
+	metrics.failingChecks.WithLabelValues(ApplicationTag).Set(0)
+	return metrics, registerer.Register(metrics.failingChecks)
 }

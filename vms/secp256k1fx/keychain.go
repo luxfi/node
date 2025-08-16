@@ -10,9 +10,9 @@ import (
 
 	"github.com/luxfi/geth/common"
 
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/verify"
@@ -77,7 +77,7 @@ func (kc *Keychain) Add(key *secp256k1.PrivateKey) {
 	pkBytes := pk.Bytes()
 	addressBytes := secp256k1.PubkeyBytesToAddress(pkBytes)
 	luxAddr, _ := ids.ToShortID(addressBytes)
-	
+
 	if _, ok := kc.luxAddrToKeyIndex[luxAddr]; !ok {
 		kc.luxAddrToKeyIndex[luxAddr] = len(kc.Keys)
 		ethAddr := publicKeyToEthAddress(pk)

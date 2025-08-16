@@ -7,19 +7,18 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/metercacher"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/components/lux"
 )
 
 const (

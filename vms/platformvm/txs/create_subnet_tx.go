@@ -5,6 +5,7 @@ package txs
 
 import (
 	"context"
+
 	"github.com/luxfi/node/vms/platformvm/fx"
 )
 
@@ -52,6 +53,6 @@ func (tx *CreateSubnetTx) Visit(visitor Visitor) error {
 
 // InitializeWithContext initializes the transaction with consensus context
 func (tx *CreateSubnetTx) InitializeWithContext(ctx context.Context) error {
-    // Initialize any context-dependent fields here
-    return nil
+	// Initialize any context-dependent fields here
+	return nil
 }

@@ -9,23 +9,22 @@ import (
 	"net"
 	"net/netip"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
-	
+
 	luxmetrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -76,10 +75,10 @@ func StartTestPeer(
 
 	// Create a prometheus registry for metrics
 	promRegistry := prometheus.NewRegistry()
-	
+
 	// Create a no-op metrics instance for message creator
-	metricsInstance := luxmetric.NewNoOpMetrics("test")
-	
+	metricsInstance := luxmetrics.NewNoOpMetrics("test")
+
 	mc, err := message.NewCreator(
 		nil,
 		metricsInstance,
@@ -155,15 +154,15 @@ func (t *testResourceTracker) DiskTracker() tracker.DiskTracker {
 }
 
 func (t *testResourceTracker) StartProcessing(ids.NodeID, time.Time) {}
-func (t *testResourceTracker) StopProcessing(ids.NodeID, time.Time) {}
+func (t *testResourceTracker) StopProcessing(ids.NodeID, time.Time)  {}
 
 // testTracker is a minimal tracker implementation
 type testTracker struct{}
 
-func (t *testTracker) UtilizationTarget() float64 { return 0.8 }
-func (t *testTracker) CurrentUsage() uint64 { return 0 }
-func (t *testTracker) TotalUsage() float64 { return 0 }
-func (t *testTracker) Usage(ids.NodeID, time.Time) float64 { return 0 }
+func (t *testTracker) UtilizationTarget() float64                                  { return 0.8 }
+func (t *testTracker) CurrentUsage() uint64                                        { return 0 }
+func (t *testTracker) TotalUsage() float64                                         { return 0 }
+func (t *testTracker) Usage(ids.NodeID, time.Time) float64                         { return 0 }
 func (t *testTracker) TimeUntilUsage(ids.NodeID, time.Time, float64) time.Duration { return 0 }
 
 // testDiskTracker is a minimal disk tracker implementation
@@ -186,8 +185,8 @@ func (m *testValidatorManager) GetValidator(subnetID ids.ID, nodeID ids.NodeID) 
 	return nil, false
 }
 
-func (m *testValidatorManager) GetWeight(subnetID ids.ID, nodeID ids.NodeID) (uint64, error) {
-	return 0, nil
+func (m *testValidatorManager) GetWeight(subnetID ids.ID, nodeID ids.NodeID) uint64 {
+	return 0
 }
 
 func (m *testValidatorManager) TotalWeight(subnetID ids.ID) (uint64, error) {
@@ -198,8 +197,12 @@ func (m *testValidatorManager) NumValidators(subnetID ids.ID) int {
 	return 0
 }
 
-func (m *testValidatorManager) RegisterSetCallbackListener(listener validators.SetCallbackListener) {
+func (m *testValidatorManager) RegisterSetCallbackListener(subnetID ids.ID, listener validators.SetCallbackListener) {
 	// No-op
+}
+
+func (m *testValidatorManager) RegisterCallbackListener(listener validators.ManagerCallbackListener) {
+	// No-op for testing
 }
 
 func (m *testValidatorManager) AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, validationID ids.ID, weight uint64) error {
@@ -217,6 +220,19 @@ func (m *testValidatorManager) RemoveWeight(subnetID ids.ID, nodeID ids.NodeID, 
 func (m *testValidatorManager) GetMap(subnetID ids.ID) map[ids.NodeID]*validators.GetValidatorOutput {
 	// Return empty map for testing
 	return make(map[ids.NodeID]*validators.GetValidatorOutput)
+}
+
+func (m *testValidatorManager) SubsetWeight(subnetID ids.ID, validatorIDs set.Set[ids.NodeID]) (uint64, error) {
+	return 0, nil
+}
+
+func (m *testValidatorManager) Sample(subnetID ids.ID, n int) ([]ids.NodeID, error) {
+	// Return empty sample for testing
+	return nil, nil
+}
+
+func (m *testValidatorManager) NumSubnets() int {
+	return 0
 }
 
 func (m *testValidatorManager) String() string {

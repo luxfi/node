@@ -13,10 +13,10 @@ import (
 )
 
 var (
-	_ chain.Block            = (*meterBlock)(nil)
+	_ chain.Block = (*meterBlock)(nil)
 	// _ chain.OracleBlock      = (*meterBlock)(nil) // TODO: OracleBlock not in consensus
 	_ block.WithVerifyContext = (*meterBlock)(nil)
-	_ block.Block            = (*meterBlock)(nil)
+	_ block.Block             = (*meterBlock)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )

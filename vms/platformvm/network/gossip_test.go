@@ -6,13 +6,11 @@ package network
 import (
 	"errors"
 	"testing"
-	
-	"github.com/luxfi/metric"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-
 
 	"github.com/luxfi/ids"
 

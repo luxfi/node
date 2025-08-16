@@ -19,21 +19,12 @@ import (
 	"strconv"
 	"sync"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/api/admin"
-	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/api/keystore"
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/networking/benchlist"
 	"github.com/luxfi/consensus/networking/router"
@@ -44,8 +35,17 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/factory"
 	"github.com/luxfi/database/prefixdb"
-	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/node/api/admin"
+	"github.com/luxfi/node/api/health"
+	"github.com/luxfi/node/api/info"
+	"github.com/luxfi/node/api/keystore"
+	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/indexer"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/nat"
@@ -54,32 +54,30 @@ import (
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/dynamicip"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
-	luxmetrics "github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/upgrade"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+	"github.com/luxfi/node/vms/xvm"
+	"github.com/luxfi/trace"
 
 	// "github.com/luxfi/node/vms/cchainvm" // Temporarily disabled
-	xvmconfig "github.com/luxfi/node/vms/xvm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
+	xvmconfig "github.com/luxfi/node/vms/xvm/config"
 )
 
 const (
@@ -130,11 +128,11 @@ func New(
 		LogFactory:       logFactory,
 		StakingTLSSigner: config.StakingTLSCert.PrivateKey.(crypto.Signer),
 		StakingTLSCert:   stakingCert,
-		ID:               ids.NodeIDFromCert(&ids.Certificate{
+		ID: ids.NodeIDFromCert(&ids.Certificate{
 			Raw:       stakingCert.Raw,
 			PublicKey: stakingCert.PublicKey,
 		}),
-		Config:           config,
+		Config: config,
 	}
 
 	n.DoneShuttingDown.Add(1)
@@ -208,7 +206,7 @@ func New(
 	}
 
 	// Create luxfi/metric instance from prometheus registry
-	networkMetrics := luxmetric.NewPrometheusMetrics(networkNamespace, networkRegisterer)
+	networkMetrics := luxmetrics.NewPrometheusMetrics(networkNamespace, networkRegisterer)
 
 	n.msgCreator, err = message.NewCreator(
 		n.Log,
@@ -375,8 +373,8 @@ type Node struct {
 	DoneShuttingDown sync.WaitGroup
 
 	// Metrics Registerer
-	MetricsGatherer        luxmetric.MultiGatherer
-	MeterDBMetricsGatherer luxmetric.MultiGatherer
+	MetricsGatherer        luxmetrics.MultiGatherer
+	MeterDBMetricsGatherer luxmetrics.MultiGatherer
 
 	VMAliaser ids.Aliaser
 	VMManager vms.Manager
@@ -786,7 +784,7 @@ func (n *Node) initDatabase() error {
 
 	// start the db
 	dbPath := filepath.Join(n.Config.DatabaseConfig.Path, version.CurrentDatabase.String())
-	
+
 	// Special path handling for specific database types
 	switch n.Config.DatabaseConfig.Name {
 	case "pebbledb":
@@ -794,7 +792,7 @@ func (n *Node) initDatabase() error {
 	case "badgerdb":
 		dbPath = filepath.Join(n.Config.DatabaseConfig.Path, "badger")
 	}
-	
+
 	// Use the database factory to create the database
 	// This abstracts away the specific database implementation
 	n.DB, err = factory.New(
@@ -935,8 +933,8 @@ func (n *Node) initChains(genesisBytes []byte) error {
 }
 
 func (n *Node) initMetrics() error {
-	n.MetricsGatherer = luxmetric.NewPrefixGatherer()
-	n.MeterDBMetricsGatherer = luxmetric.NewLabelGatherer(chains.ChainLabel)
+	n.MetricsGatherer = luxmetrics.NewPrefixGatherer()
+	n.MeterDBMetricsGatherer = luxmetrics.NewLabelGatherer(chains.ChainLabel)
 	return n.MetricsGatherer.Register(
 		meterDBNamespace,
 		n.MeterDBMetricsGatherer,
@@ -1267,7 +1265,7 @@ func (n *Node) initVMs() error {
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()
 
-	rpcchainvmMetricsGatherer := luxmetric.NewLabelGatherer(chains.ChainLabel)
+	rpcchainvmMetricsGatherer := luxmetrics.NewLabelGatherer(chains.ChainLabel)
 	if err := n.MetricsGatherer.Register(rpcchainvmNamespace, rpcchainvmMetricsGatherer); err != nil {
 		return err
 	}

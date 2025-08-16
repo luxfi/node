@@ -8,17 +8,16 @@ import (
 	"net/http"
 	"path"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms"
 )
 

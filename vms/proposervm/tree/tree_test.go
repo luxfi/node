@@ -6,12 +6,11 @@ package tree
 import (
 	"context"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/engine/chain/chaintest"
 	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus/engine/chain/chaintest"
 )
 
 func TestAcceptSingleBlock(t *testing.T) {

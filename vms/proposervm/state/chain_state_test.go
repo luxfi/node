@@ -5,7 +5,6 @@ package state
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 

@@ -5,12 +5,13 @@ package trackermock
 
 import (
 	"testing"
+
 	"github.com/luxfi/ids"
 )
 
 // Targeter is a mock targeter for testing
 type Targeter struct {
-	T *testing.T
+	T            *testing.T
 	TargetUsageF func(ids.NodeID) float64
 }
 

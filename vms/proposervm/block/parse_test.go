@@ -8,12 +8,11 @@ import (
 	"encoding/hex"
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/staking"
 )
 

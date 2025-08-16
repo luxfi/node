@@ -7,7 +7,6 @@ import (
 	"context"
 	"log"
 	"time"
-	
 
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"

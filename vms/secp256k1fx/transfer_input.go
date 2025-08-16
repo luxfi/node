@@ -6,7 +6,6 @@ package secp256k1fx
 import (
 	"context"
 	"errors"
-
 )
 
 var ErrNoValueInput = errors.New("input has no value")

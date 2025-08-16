@@ -5,7 +5,6 @@ package subnets
 
 import (
 	"time"
-	
 
 	"github.com/luxfi/consensus/config"
 )

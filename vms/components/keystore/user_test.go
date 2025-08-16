@@ -5,15 +5,14 @@ package keystore
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/encdb"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/crypto/secp256k1"
 )
 
 // Test user password, must meet minimum complexity/length requirements

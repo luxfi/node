@@ -11,11 +11,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs/executor"
@@ -256,13 +256,13 @@ func (b *Block) Accept(ctx context.Context) error {
 	for chainID, reqs := range blkState.atomicRequests {
 		requests[chainID] = reqs
 	}
-	
+
 	// Note that this method writes [batch] to the database.
 	if err := b.manager.backend.SharedMemory.Apply(requests, batch); err != nil {
 		return fmt.Errorf("failed to apply state diff to shared memory: %w", err)
 	}
 
-	if err := b.manager.metric.MarkBlockAccepted(b); err != nil {
+	if err := b.manager.metrics.MarkBlockAccepted(b); err != nil {
 		return err
 	}
 

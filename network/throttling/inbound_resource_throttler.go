@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"sync"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -125,12 +124,12 @@ func (t *systemThrottler) Acquire(ctx context.Context, nodeID ids.NodeID) {
 	var timer *time.Timer
 	defer func() {
 		if timer != nil { // We waited at least once for usage to fall.
-			t.metric.totalWaits.Inc()
-			// Note that [t.metric.awaitingAcquire.Inc()] was called once if
+			t.metrics.totalWaits.Inc()
+			// Note that [t.metrics.awaitingAcquire.Inc()] was called once if
 			// and only if [waited] is true.
-			t.metric.awaitingAcquire.Dec()
+			t.metrics.awaitingAcquire.Dec()
 		} else {
-			t.metric.totalNoWaits.Inc()
+			t.metrics.totalNoWaits.Inc()
 		}
 	}()
 
@@ -168,7 +167,7 @@ func (t *systemThrottler) Acquire(ctx context.Context, nodeID ids.NodeID) {
 		// Reset [timer].
 		if timer == nil {
 			// Note this is called at most once.
-			t.metric.awaitingAcquire.Inc()
+			t.metrics.awaitingAcquire.Inc()
 
 			timer = t.timerPool.Get().(*time.Timer)
 			defer func() {

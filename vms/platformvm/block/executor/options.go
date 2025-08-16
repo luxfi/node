@@ -11,8 +11,8 @@ import (
 
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/state"

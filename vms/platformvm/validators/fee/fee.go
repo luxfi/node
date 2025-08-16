@@ -6,8 +6,8 @@ package fee
 import (
 	"math"
 
-	"github.com/luxfi/node/vms/components/gas"
 	safemath "github.com/luxfi/node/utils/math"
+	"github.com/luxfi/node/vms/components/gas"
 )
 
 // Config contains all the static parameters of the dynamic fee mechanism.

@@ -8,8 +8,8 @@ import (
 
 	_ "embed"
 
-	"github.com/luxfi/node/utils/cb58"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/utils/cb58"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -22,7 +22,7 @@ import (
 
 const (
 	PrivateKeyPrefix = "PrivateKey-"
-	
+
 	VMRQKeyStr          = "vmRQiZeXEXYMyJhEiqdC2z5JhuDbxL8ix9UVvjgMu2Er1NepE"
 	VMRQKeyFormattedStr = PrivateKeyPrefix + VMRQKeyStr
 

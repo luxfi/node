@@ -4,22 +4,21 @@
 package executor
 
 import (
+	"context"
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/database/databasemock"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
-	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators"
@@ -91,7 +90,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
 			ctx: &context.Context{
-				Log: log.NewNoOpLogger(),
+				Log:          log.NewNoOpLogger(),
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -171,7 +170,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
 			ctx: &context.Context{
-				Log: log.NewNoOpLogger(),
+				Log:          log.NewNoOpLogger(),
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -260,7 +259,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
 			ctx: &context.Context{
-				Log: log.NewNoOpLogger(),
+				Log:          log.NewNoOpLogger(),
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -370,7 +369,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
 			ctx: &context.Context{
-				Log: log.NewNoOpLogger(),
+				Log:          log.NewNoOpLogger(),
 				SharedMemory: sharedMemory,
 			},
 		},

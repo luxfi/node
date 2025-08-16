@@ -8,23 +8,24 @@ import (
 	"errors"
 	"testing"
 	"time"
+
 	"go.uber.org/mock/gomock"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/coremock"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/xvm/block/executor"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/node/vms/xvm/block/executor"
+	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/vms/xvm/txs"
 	xmempool "github.com/luxfi/node/vms/xvm/txs/mempool"
 )
 

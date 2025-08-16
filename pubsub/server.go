@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"sync"
 	"time"
-	
 
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"

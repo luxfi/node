@@ -2,7 +2,6 @@ package signer
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 
@@ -28,7 +27,7 @@ func TestBLSSingleNodeProofOfPossession(t *testing.T) {
 	// Get public key
 	pk := pop.Key()
 	require.NotNil(pk)
-	
+
 	// Verify it's the same as original
 	originalPk := sk.PublicKey()
 	require.Equal(bls.PublicKeyToCompressedBytes(originalPk), pop.PublicKey[:])
@@ -105,14 +104,14 @@ func TestInvalidProofOfPossession(t *testing.T) {
 			setupPoP: func() *ProofOfPossession {
 				sk1, _ := bls.NewSecretKey()
 				sk2, _ := bls.NewSecretKey()
-				
+
 				// Use pk from sk1 but signature from sk2
 				pop := NewProofOfPossession(sk1)
 				pk2 := sk2.PublicKey()
 				pk2Bytes := bls.PublicKeyToCompressedBytes(pk2)
 				sig2 := sk2.SignProofOfPossession(pk2Bytes)
 				copy(pop.ProofOfPossession[:], bls.SignatureToBytes(sig2))
-				
+
 				return pop
 			},
 			expectErr: true,
@@ -122,10 +121,10 @@ func TestInvalidProofOfPossession(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
-			
+
 			pop := tt.setupPoP()
 			err := pop.Verify()
-			
+
 			if tt.expectErr {
 				require.Error(err, "Invalid PoP must fail verification")
 				require.ErrorIs(err, errInvalidProofOfPossession)

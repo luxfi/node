@@ -12,22 +12,21 @@ import (
 	"os"
 	"strings"
 	"time"
-	
 
 	"github.com/spf13/cast"
 
+	"github.com/luxfi/crypto"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core"
-	"github.com/luxfi/crypto"
 	"github.com/luxfi/geth/params"
 
-	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/config"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/units"

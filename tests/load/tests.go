@@ -12,10 +12,10 @@ import (
 	"math/rand"
 	"sync"
 
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/geth/accounts/abi/bind"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/geth/params"
 	"github.com/stretchr/testify/require"
 

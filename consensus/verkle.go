@@ -3,7 +3,7 @@ package consensus
 
 import (
 	"context"
-	
+
 	"github.com/luxfi/geth/trie/utils"
 	"github.com/luxfi/geth/triedb/database"
 	"github.com/luxfi/ids"
@@ -30,18 +30,18 @@ func (v *VerkleIntegration) ProcessTransactions(ctx context.Context, txs []Trans
 	// Process each transaction through consensus
 	for _, tx := range txs {
 		txID := ids.ID(tx.Hash())
-		
+
 		// Propose to consensus
 		if err := v.engine.Propose(txID); err != nil {
 			return err
 		}
-		
+
 		// TODO: Validate Verkle witness when witness package is ready
 		// if witness := tx.Witness(); witness != nil {
 		//     // Validate witness
 		// }
 	}
-	
+
 	return nil
 }
 

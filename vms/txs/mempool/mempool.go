@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/node/cache"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/setmap"
@@ -93,7 +93,7 @@ func New[T Tx](
 }
 
 func (m *mempool[T]) updateMetrics() {
-	m.metric.Update(m.unissuedTxs.Len(), m.bytesAvailable)
+	m.metrics.Update(m.unissuedTxs.Len(), m.bytesAvailable)
 }
 
 func (m *mempool[T]) Add(tx T) error {

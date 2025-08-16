@@ -15,17 +15,18 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/cache"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/database"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/api"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/set"
+
 	// "github.com/luxfi/node/vms/components/keystore" // Removed - keystore functionality deprecated
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
