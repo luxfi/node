@@ -96,7 +96,13 @@ func (b *postForkOption) Verify(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	b.timestamp = parent.Timestamp()
+	// Cast parent to PostForkBlock to get Timestamp
+	if postForkParent, ok := parent.(PostForkBlock); ok {
+		b.timestamp = postForkParent.Timestamp()
+	} else {
+		// For pre-fork blocks, use current time as fallback
+		b.timestamp = b.vm.Time()
+	}
 	return parent.verifyPostForkOption(ctx, b)
 }
 

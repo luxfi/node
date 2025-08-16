@@ -59,7 +59,7 @@ type Config struct {
 
 func (c *Config) Valid() error {
 	if err := c.ConsensusParameters.Validate(); err != nil {
-		return fmt.Errorf("consensus %w", err)
+		return fmt.Errorf("%w: %w", config.ErrParametersInvalid, err)
 	}
 	if !c.ValidatorOnly && c.AllowedNodes.Len() > 0 {
 		return errAllowedNodesWhenNotValidatorOnly

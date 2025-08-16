@@ -49,6 +49,16 @@ func (b *preForkBlock) FPCVotes() [][]byte {
 	return nil
 }
 
+// Timestamp returns the timestamp of the inner block
+func (b *preForkBlock) Timestamp() time.Time {
+	// Forward to inner block if it supports it
+	if innerBlk, ok := b.Block.(interface{ Timestamp() time.Time }); ok {
+		return innerBlk.Timestamp()
+	}
+	// Fallback to current time
+	return b.vm.Time()
+}
+
 func (b *preForkBlock) Accept(ctx context.Context) error {
 	if err := b.acceptOuterBlk(); err != nil {
 		return err
@@ -96,26 +106,8 @@ func (b *preForkBlock) Verify(ctx context.Context) error {
 }
 
 func (b *preForkBlock) Options(ctx context.Context) ([2]chain.Block, error) {
-	oracleBlk, ok := b.Block.(chain.OracleBlock)
-	if !ok {
-		return [2]chain.Block{}, chain.ErrNotOracle
-	}
-
-	options, err := oracleBlk.Options(ctx)
-	if err != nil {
-		return [2]chain.Block{}, err
-	}
-	// A pre-fork block's child options are always pre-fork blocks
-	return [2]chain.Block{
-		&preForkBlock{
-			Block: options[0],
-			vm:    b.vm,
-		},
-		&preForkBlock{
-			Block: options[1],
-			vm:    b.vm,
-		},
-	}, nil
+	// Oracle blocks are not supported in the new consensus
+	return [2]chain.Block{}, nil
 }
 
 func (b *preForkBlock) getInnerBlk() chain.Block {
@@ -150,7 +142,7 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 	if vs == nil {
 		return fmt.Errorf("validator state not available")
 	}
-	currentPChainHeight, err := vs.GetCurrentHeight(ctx)
+	currentPChainHeight, err := vs.GetCurrentHeight()
 	if err != nil {
 		b.vm.log.Error("block verification failed",
 			zap.String("reason", "failed to get current P-Chain height"),
@@ -208,6 +200,11 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 
 func (*preForkBlock) verifyPostForkOption(context.Context, *postForkOption) error {
 	return errUnexpectedBlockType
+}
+
+// Timestamp returns the block's timestamp
+func (b *preForkBlock) Timestamp() time.Time {
+	return b.Block.Timestamp()
 }
 
 func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
