@@ -43,6 +43,17 @@ func NewBackend(utxos common.ChainUTXOs, owners map[ids.ID]fx.Owner) Backend {
 	}
 }
 
+func (b *backend) GetSubnetOwner(_ context.Context, subnetID ids.ID) (fx.Owner, error) {
+	b.ownersLock.RLock()
+	defer b.ownersLock.RUnlock()
+
+	owner, exists := b.owners[subnetID]
+	if !exists {
+		return nil, database.ErrNotFound
+	}
+	return owner, nil
+}
+
 func (b *backend) AcceptTx(ctx context.Context, tx *txs.Tx) error {
 	txID := tx.ID()
 	err := tx.Unsigned.Visit(&backendVisitor{

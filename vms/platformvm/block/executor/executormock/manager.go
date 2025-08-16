@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	chain "github.com/luxfi/consensus/chain"
+	chain "github.com/luxfi/consensus/protocol/chain"
 	set "github.com/luxfi/node/utils/set"
 	block "github.com/luxfi/node/vms/platformvm/block"
 	state "github.com/luxfi/node/vms/platformvm/state"

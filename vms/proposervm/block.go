@@ -13,7 +13,6 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/chain"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"

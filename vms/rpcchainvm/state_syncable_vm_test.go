@@ -8,22 +8,18 @@ import (
 	"errors"
 	"io"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
-	"github.com/luxfi/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/consensus/chain/chaintest"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
+	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
@@ -45,7 +41,7 @@ var (
 	}
 
 	// last accepted blocks data before and after summary is accepted
-	preSummaryBlk = &chaintest.Block{
+	preSummaryBlk = &blocktest.Block{
 		Decidable: consensustest.Decidable{
 			IDV:    ids.ID{'f', 'i', 'r', 's', 't', 'B', 'l', 'K'},
 			Status: consensustest.Accepted,
@@ -54,7 +50,7 @@ var (
 		ParentV: ids.ID{'p', 'a', 'r', 'e', 'n', 't', 'B', 'l', 'k'},
 	}
 
-	summaryBlk = &chaintest.Block{
+	summaryBlk = &blocktest.Block{
 		Decidable: consensustest.Decidable{
 			IDV:    ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'B', 'l', 'K'},
 			Status: consensustest.Accepted,

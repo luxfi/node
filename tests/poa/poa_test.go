@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/consensus/sampling"
+	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/node/subnets"
 )
 
@@ -25,8 +25,8 @@ func TestPOAConsensusParameters(t *testing.T) {
 	require.Equal(1, params.K, "POA mode should have K=1")
 	require.Equal(1, params.AlphaPreference, "POA mode should have AlphaPreference=1")
 	require.Equal(1, params.AlphaConfidence, "POA mode should have AlphaConfidence=1")
-	require.Equal(1, params.Beta, "POA mode should have Beta=1")
-	require.Equal(1, params.ConcurrentRepolls, "POA mode should have ConcurrentRepolls=1")
+	require.Equal(uint32(1), params.Beta, "POA mode should have Beta=1")
+	require.Equal(1, params.ConcurrentPolls, "POA mode should have ConcurrentPolls=1")
 }
 
 func TestPOASubnetConfig(t *testing.T) {
@@ -37,12 +37,12 @@ func TestPOASubnetConfig(t *testing.T) {
 		POAEnabled:        true,
 		POASingleNodeMode: true,
 		POAMinBlockTime:   1 * time.Second,
-		ConsensusParameters: sampling.Parameters{
+		ConsensusParameters: consensusconfig.Parameters{
 			K:                     5,
 			AlphaPreference:       3,
 			AlphaConfidence:       3,
-			Beta:                  20,
-			ConcurrentRepolls:     4,
+			Beta:                  uint32(20),
+			ConcurrentPolls:     4,
 			OptimalProcessing:     10,
 			MaxOutstandingItems:   256,
 			MaxItemProcessingTime: 30 * time.Second,

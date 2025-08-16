@@ -249,3 +249,65 @@ func (b *builderWithOptions) NewAddPermissionlessDelegatorTx(
 		common.UnionOptions(b.options, options)...,
 	)
 }
+
+func (b *builderWithOptions) NewConvertSubnetToL1Tx(
+	subnetID ids.ID,
+	chainID ids.ID,
+	address []byte,
+	validators []*txs.ConvertSubnetToL1Validator,
+	options ...common.Option,
+) (*txs.ConvertSubnetToL1Tx, error) {
+	return b.builder.NewConvertSubnetToL1Tx(
+		subnetID,
+		chainID,
+		address,
+		validators,
+		common.UnionOptions(b.options, options)...,
+	)
+}
+
+func (b *builderWithOptions) NewRegisterL1ValidatorTx(
+	balance uint64,
+	proofOfPossession [96]byte,
+	message []byte,
+	options ...common.Option,
+) (*txs.RegisterL1ValidatorTx, error) {
+	return b.builder.NewRegisterL1ValidatorTx(
+		balance,
+		proofOfPossession,
+		message,
+		common.UnionOptions(b.options, options)...,
+	)
+}
+
+func (b *builderWithOptions) NewSetL1ValidatorWeightTx(
+	message []byte,
+	options ...common.Option,
+) (*txs.SetL1ValidatorWeightTx, error) {
+	return b.builder.NewSetL1ValidatorWeightTx(
+		message,
+		common.UnionOptions(b.options, options)...,
+	)
+}
+
+func (b *builderWithOptions) NewIncreaseL1ValidatorBalanceTx(
+	validationID ids.ID,
+	balance uint64,
+	options ...common.Option,
+) (*txs.IncreaseL1ValidatorBalanceTx, error) {
+	return b.builder.NewIncreaseL1ValidatorBalanceTx(
+		validationID,
+		balance,
+		common.UnionOptions(b.options, options)...,
+	)
+}
+
+func (b *builderWithOptions) NewDisableL1ValidatorTx(
+	validationID ids.ID,
+	options ...common.Option,
+) (*txs.DisableL1ValidatorTx, error) {
+	return b.builder.NewDisableL1ValidatorTx(
+		validationID,
+		common.UnionOptions(b.options, options)...,
+	)
+}

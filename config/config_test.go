@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/consensus/sampling"
+	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/subnets"
 )

@@ -12,11 +12,10 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus"
-	consensuschain "github.com/luxfi/consensus/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
@@ -37,8 +36,6 @@ var (
 )
 
 type VM struct {
-	core.AppHandler
-
 	chainContext context.Context
 	db           database.Database
 	genesis      *genesis.Genesis
@@ -57,9 +54,9 @@ func (vm *VM) Initialize(
 	_ []*core.Fx,
 	_ core.AppSender,
 ) error {
-	vm.AppHandler = core.NewNoOpAppHandler(chainContext.Log)
+	logger := consensus.GetLogger(chainContext)
 
-	chainContext.Log.Info("initializing xsvm",
+	logger.Info("initializing xsvm",
 		zap.Stringer("version", Version),
 	)
 
@@ -71,7 +68,8 @@ func (vm *VM) Initialize(
 	}
 
 	vdb := versiondb.New(vm.db)
-	if err := execute.Genesis(vdb, chainContext.ChainID, g); err != nil {
+	chainID := consensus.GetChainID(chainContext)
+	if err := execute.Genesis(vdb, chainID, g); err != nil {
 		return fmt.Errorf("failed to initialize genesis state: %w", err)
 	}
 	if err := vdb.Commit(); err != nil {
@@ -87,7 +85,7 @@ func (vm *VM) Initialize(
 
 	vm.builder = builder.New(chainContext, vm.chain)
 
-	chainContext.Log.Info("initialized xsvm",
+	logger.Info("initialized xsvm",
 		zap.Stringer("lastAcceptedID", vm.chain.LastAccepted()),
 	)
 	return nil
@@ -137,11 +135,11 @@ func (*VM) Disconnected(context.Context, ids.NodeID) error {
 	return nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (consensuschain.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (smblock.Block, error) {
 	return vm.chain.GetBlock(blkID)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (consensuschain.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (smblock.Block, error) {
 	blk, err := xsblock.Parse(blkBytes)
 	if err != nil {
 		return nil, err
@@ -149,7 +147,7 @@ func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (consensuschain.Blo
 	return vm.chain.NewBlock(blk)
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (consensuschain.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (smblock.Block, error) {
 	return vm.builder.BuildBlock(ctx, nil)
 }
 
@@ -162,7 +160,7 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 	return vm.chain.LastAccepted(), nil
 }
 
-func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (consensuschain.Block, error) {
+func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (smblock.Block, error) {
 	return vm.builder.BuildBlock(ctx, blockContext)
 }
 

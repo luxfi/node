@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/consensus/engine/core/tracker"
+	"github.com/luxfi/consensus/core/tracker"
 	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"

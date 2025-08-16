@@ -9,17 +9,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/sampling"
+	"github.com/luxfi/consensus/config"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 )
 
-var validParameters = sampling.Parameters{
+var validParameters = config.Parameters{
 	K:                     1,
 	AlphaPreference:       1,
 	AlphaConfidence:       1,
 	Beta:                  1,
-	ConcurrentRepolls:     1,
+	ConcurrentPolls:       1,
 	OptimalProcessing:     1,
 	MaxOutstandingItems:   1,
 	MaxItemProcessingTime: 1,
@@ -34,7 +34,7 @@ func TestValid(t *testing.T) {
 		{
 			name: "invalid consensus parameters",
 			s: Config{
-				ConsensusParameters: sampling.Parameters{
+				ConsensusParameters: config.Parameters{
 					K:               2,
 					AlphaPreference: 1,
 				},

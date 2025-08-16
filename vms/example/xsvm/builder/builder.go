@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/vms/example/xsvm/chain"
 	"github.com/luxfi/node/vms/example/xsvm/execute"

@@ -8,10 +8,10 @@ import (
 	"errors"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/dag/vertex"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 )

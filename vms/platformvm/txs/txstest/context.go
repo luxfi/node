@@ -5,8 +5,8 @@ package txstest
 
 import (
 	"time"
-	
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
@@ -14,7 +14,8 @@ import (
 )
 
 func newContext(
-	ctx context.Context,
+	networkID uint32,
+	luxAssetID ids.ID,
 	cfg *config.Config,
 	timestamp time.Time,
 ) *builder.Context {
@@ -25,8 +26,8 @@ func newContext(
 	)
 
 	return &builder.Context{
-		NetworkID:                     ctx.NetworkID,
-		LUXAssetID:                    ctx.LUXAssetID,
+		NetworkID:                     networkID,
+		LUXAssetID:                    luxAssetID,
 		BaseTxFee:                     cfg.StaticFeeConfig.TxFee,
 		CreateSubnetTxFee:             createSubnetFee,
 		TransformSubnetTxFee:          cfg.StaticFeeConfig.TransformSubnetTxFee,

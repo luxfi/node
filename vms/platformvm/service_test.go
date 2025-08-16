@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"

@@ -14,7 +14,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"

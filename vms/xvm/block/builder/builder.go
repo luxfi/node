@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"

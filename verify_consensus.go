@@ -3,7 +3,6 @@ package main
 import (
     "fmt"
     "github.com/luxfi/consensus/config"
-    "github.com/luxfi/consensus/sampling"
 )
 
 func main() {
@@ -34,9 +33,9 @@ func main() {
         local.MaxItemProcessingTime, local.MaxItemProcessingTime.Seconds())
     fmt.Println()
     
-    // Check sampling.DefaultParameters (backward compatibility)
-    defaults := sampling.DefaultParameters
-    fmt.Printf("Sampling DefaultParameters (backward compatibility):\n")
+    // Check DefaultParameters (backward compatibility)
+    defaults := config.DefaultParameters
+    fmt.Printf("DefaultParameters (backward compatibility):\n")
     fmt.Printf("  K: %d\n", defaults.K)
     fmt.Printf("  MaxItemProcessingTime: %v (%.3f seconds)\n",
         defaults.MaxItemProcessingTime, defaults.MaxItemProcessingTime.Seconds())

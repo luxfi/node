@@ -4,6 +4,7 @@
 package txstest
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/luxfi/node/chains/atomic"
@@ -26,13 +27,15 @@ var (
 )
 
 func newUTXOs(
-	ctx *consensus.Context,
+	ctx context.Context,
 	state state.State,
-	sharedMemory interface{},
+	sharedMemory atomic.SharedMemory,
 	codec codec.Manager,
 ) *utxos {
+	// Extract chain ID from context - this should be X-chain ID
+	chainID := consensus.GetChainID(ctx)
 	return &utxos{
-		xchainID:     ctx.XChainID,
+		xchainID:     chainID,
 		state:        state,
 		sharedMemory: sharedMemory,
 		codec:        codec,
@@ -42,7 +45,7 @@ func newUTXOs(
 type utxos struct {
 	xchainID     ids.ID
 	state        state.State
-	sharedMemory interface{}
+	sharedMemory atomic.SharedMemory
 	codec        codec.Manager
 }
 

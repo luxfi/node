@@ -14,18 +14,18 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/core/tracker"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/tracker"
 	"github.com/luxfi/consensus/engine/chain/bootstrap"
 	engineblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/enginetest"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/networking/benchlist"
 	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/sender"
 	"github.com/luxfi/consensus/networking/sender/sendertest"
 	"github.com/luxfi/consensus/networking/timeout"
-	"github.com/luxfi/consensus/sampling"
+	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
@@ -64,7 +64,7 @@ import (
 
 	smeng "github.com/luxfi/consensus/engine/chain"
 	consensusgetter "github.com/luxfi/consensus/engine/chain/getter"
-	smcon "github.com/luxfi/consensus/chain"
+	smcon "github.com/luxfi/consensus/protocol/chain"
 	timetracker "github.com/luxfi/consensus/networking/tracker"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
@@ -1576,12 +1576,12 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		VM:            bootstrapConfig.VM,
 		Sender:        bootstrapConfig.Sender,
 		Validators:    beacons,
-		Params: sampling.Parameters{
+		Params: consensusconfig.Parameters{
 			K:                     1,
 			AlphaPreference:       1,
 			AlphaConfidence:       1,
 			Beta:                  20,
-			ConcurrentRepolls:     1,
+			ConcurrentPolls:     1,
 			OptimalProcessing:     1,
 			MaxOutstandingItems:   1,
 			MaxItemProcessingTime: 1,

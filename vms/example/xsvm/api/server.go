@@ -5,7 +5,9 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/database"
@@ -54,6 +56,7 @@ type server struct {
 	state   database.KeyValueReader
 	chain   chain.Chain
 	builder builder.Builder
+	lock    sync.RWMutex  // For thread safety
 }
 
 type NetworkReply struct {
@@ -135,10 +138,9 @@ func (s *server) IssueTx(r *http.Request, args *IssueTxArgs, reply *IssueTxReply
 		return err
 	}
 
-	ctx := r.Context()
-	s.ctx.Lock.Lock()
-	err = s.builder.AddTx(ctx, newTx)
-	s.ctx.Lock.Unlock()
+	s.lock.Lock()
+	err = s.builder.AddTx(r.Context(), newTx)
+	s.lock.Unlock()
 	if err != nil {
 		return err
 	}
@@ -154,9 +156,9 @@ type LastAcceptedReply struct {
 }
 
 func (s *server) LastAccepted(_ *http.Request, _ *struct{}, reply *LastAcceptedReply) error {
-	s.ctx.Lock.RLock()
+	s.lock.RLock()
 	reply.BlockID = s.chain.LastAccepted()
-	s.ctx.Lock.RUnlock()
+	s.lock.RUnlock()
 	blkBytes, err := state.GetBlock(s.state, reply.BlockID)
 	if err != nil {
 		return err
@@ -200,6 +202,14 @@ func (s *server) Message(_ *http.Request, args *MessageArgs, reply *MessageReply
 	}
 
 	reply.Message = message
-	reply.Signature, err = s.ctx.WarpSigner.Sign(message)
-	return err
+	
+	// Get WarpSigner from context
+	if warpSignerIface := consensus.GetWarpSigner(s.ctx); warpSignerIface != nil {
+		if warpSigner, ok := warpSignerIface.(consensus.WarpSigner); ok {
+			reply.Signature, err = warpSigner.Sign(message)
+			return err
+		}
+	}
+	// Return an error if no warp signer is available
+	return fmt.Errorf("warp signer not available")
 }

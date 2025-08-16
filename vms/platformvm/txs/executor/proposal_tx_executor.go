@@ -609,3 +609,23 @@ func (e *ProposalTxExecutor) rewardDelegatorTx(uDelegatorTx txs.DelegatorTx, del
 	}
 	return nil
 }
+
+// DisableL1ValidatorTx handles L1 validator disabling
+func (e *ProposalTxExecutor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
+	return ErrWrongTxType
+}
+
+// IncreaseL1ValidatorBalanceTx handles L1 validator balance increase
+func (e *ProposalTxExecutor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
+	return ErrWrongTxType
+}
+
+// RegisterL1ValidatorTx handles L1 validator registration
+func (e *ProposalTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
+	return ErrWrongTxType
+}
+
+// SetL1ValidatorWeightTx handles L1 validator weight setting
+func (e *ProposalTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
+	return ErrWrongTxType
+}

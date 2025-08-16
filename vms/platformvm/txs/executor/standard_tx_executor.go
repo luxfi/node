@@ -79,7 +79,7 @@ func (e *StandardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			e.Ctx.LUXAssetID: fee,
+			e.LUXAssetID: fee,
 		},
 	); err != nil {
 		return err
@@ -127,7 +127,7 @@ func (e *StandardTxExecutor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 		tx.Outs,
 		e.Tx.Creds,
 		map[ids.ID]uint64{
-			e.Ctx.LUXAssetID: fee,
+			e.LUXAssetID: fee,
 		},
 	); err != nil {
 		return err
@@ -174,7 +174,7 @@ func (e *StandardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 			return err
 		}
 
-		allUTXOBytes, err := e.Ctx.SharedMemory.Get(tx.SourceChain, utxoIDs)
+		allUTXOBytes, err := e.SharedMemory.Get(tx.SourceChain, utxoIDs)
 		if err != nil {
 			return fmt.Errorf("failed to get shared memory: %w", err)
 		}
@@ -210,7 +210,7 @@ func (e *StandardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 			tx.Outs,
 			e.Tx.Creds,
 			map[ids.ID]uint64{
-				e.Ctx.LUXAssetID: fee,
+				e.LUXAssetID: fee,
 			},
 		); err != nil {
 			return err
@@ -269,7 +269,7 @@ func (e *StandardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 		outs,
 		e.Tx.Creds,
 		map[ids.ID]uint64{
-			e.Ctx.LUXAssetID: fee,
+			e.LUXAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("failed verifySpend: %w", err)
@@ -341,8 +341,8 @@ func (e *StandardTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	lux.Consume(e.State, tx.Ins)
 	lux.Produce(e.State, txID, tx.Outs)
 
-	if e.Config.PartialSyncPrimaryNetwork && tx.Validator.NodeID == e.Ctx.NodeID {
-		e.Ctx.Log.Warn("verified transaction that would cause this node to become unhealthy",
+	if e.Config.PartialSyncPrimaryNetwork && tx.Validator.NodeID == e.NodeID {
+		e.Log.Warn("verified transaction that would cause this node to become unhealthy",
 			zap.String("reason", "primary network is not being fully synced"),
 			zap.Stringer("txID", txID),
 			zap.String("txType", "addValidator"),
@@ -458,11 +458,11 @@ func (e *StandardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error 
 		tx.Ins,
 		tx.Outs,
 		baseTxCreds,
-		// Invariant: [tx.AssetID != e.Ctx.LUXAssetID]. This prevents the first
+		// Invariant: [tx.AssetID != e.LUXAssetID]. This prevents the first
 		//            entry in this map literal from being overwritten by the
 		//            second entry.
 		map[ids.ID]uint64{
-			e.Ctx.LUXAssetID: fee,
+			e.LUXAssetID: fee,
 			tx.AssetID:       totalRewardAmount,
 		},
 	); err != nil {
@@ -501,8 +501,8 @@ func (e *StandardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionl
 
 	if e.Config.PartialSyncPrimaryNetwork &&
 		tx.Subnet == constants.PrimaryNetworkID &&
-		tx.Validator.NodeID == e.Ctx.NodeID {
-		e.Ctx.Log.Warn("verified transaction that would cause this node to become unhealthy",
+		tx.Validator.NodeID == e.NodeID {
+		e.Log.Warn("verified transaction that would cause this node to become unhealthy",
 			zap.String("reason", "primary network is not being fully synced"),
 			zap.Stringer("txID", txID),
 			zap.String("txType", "addPermissionlessValidator"),
@@ -582,7 +582,7 @@ func (e *StandardTxExecutor) BaseTx(tx *txs.BaseTx) error {
 		tx.Outs,
 		e.Tx.Creds,
 		map[ids.ID]uint64{
-			e.Ctx.LUXAssetID: fee,
+			e.LUXAssetID: fee,
 		},
 	); err != nil {
 		return err
@@ -661,5 +661,29 @@ func (e *StandardTxExecutor) putStaker(stakerTx txs.Staker) error {
 	default:
 		return fmt.Errorf("staker %s, unexpected priority %d", staker.TxID, priority)
 	}
+	return nil
+}
+
+// DisableL1ValidatorTx handles L1 validator disabling
+func (e *StandardTxExecutor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
+	// TODO: Implement L1 validator disabling logic
+	return nil
+}
+
+// IncreaseL1ValidatorBalanceTx handles L1 validator balance increase
+func (e *StandardTxExecutor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
+	// TODO: Implement L1 validator balance increase logic
+	return nil
+}
+
+// RegisterL1ValidatorTx handles L1 validator registration
+func (e *StandardTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
+	// TODO: Implement L1 validator registration logic
+	return nil
+}
+
+// SetL1ValidatorWeightTx handles L1 validator weight setting
+func (e *StandardTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
+	// TODO: Implement L1 validator weight setting logic
 	return nil
 }

@@ -9,28 +9,27 @@ import (
 	"fmt"
 	"sync"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/scheduler"
 	"github.com/luxfi/node/vms/proposervm/state"
@@ -114,7 +113,6 @@ type VM struct {
 	acceptedBlocksSlotHistogram prometheus.Histogram
 }
 
-
 // New performs best when [minBlkDelay] is whole seconds. This is because block
 // timestamps are only specific to the second.
 func New(
@@ -146,13 +144,13 @@ func (vm *VM) Initialize(
 ) error {
 	// Set IDs once at initialization
 	vm.ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:    chainCtx.NetworkID,
-		SubnetID:     chainCtx.SubnetID,
-		ChainID:      chainCtx.ChainID,
-		NodeID:       chainCtx.NodeID,
-		PublicKey:    chainCtx.PublicKey,
+		NetworkID: chainCtx.NetworkID,
+		SubnetID:  chainCtx.SubnetID,
+		ChainID:   chainCtx.ChainID,
+		NodeID:    chainCtx.NodeID,
+		PublicKey: chainCtx.PublicKey,
 	})
-	
+
 	// Create an adapter for ValidatorState
 	// chainCtx.ValidatorState is interfaces.ValidatorState but we need consensus.ValidatorState
 	vsAdapter := &interfacesToConsensusValidatorStateAdapter{
@@ -160,10 +158,10 @@ func (vm *VM) Initialize(
 		vs:  chainCtx.ValidatorState,
 	}
 	vm.ctx = consensus.WithValidatorState(vm.ctx, vsAdapter)
-	
+
 	// Store log directly on VM
 	vm.log = chainCtx.Log
-	
+
 	db := dbManager.Current()
 	vm.db = versiondb.New(prefixdb.New(dbPrefix, db))
 	baseState, err := state.NewMetered(vm.db, "state", vm.Config.Registerer)
@@ -838,7 +836,7 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(height uint
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Already in the right format - map[ids.NodeID]uint64
 	return valSet, nil
 }

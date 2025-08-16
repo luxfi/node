@@ -6,7 +6,7 @@ package indexer
 import (
 	"context"
 
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 )

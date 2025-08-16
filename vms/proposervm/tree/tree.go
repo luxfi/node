@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
 )
 

@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/chain/chaintest"
+	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/consensustest"
 )
 

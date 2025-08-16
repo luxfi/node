@@ -20,9 +20,9 @@ import (
 
 	"github.com/luxfi/consensus"
 
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/core"
 
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 
 	"github.com/luxfi/database/memdb"
 

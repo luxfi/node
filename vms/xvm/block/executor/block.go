@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/xvm/block"

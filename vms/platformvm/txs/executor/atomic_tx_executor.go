@@ -108,3 +108,23 @@ func (e *AtomicTxExecutor) atomicTx(tx txs.UnsignedTx) error {
 	e.AtomicRequests = executor.AtomicRequests
 	return err
 }
+
+// DisableL1ValidatorTx handles L1 validator disabling
+func (e *AtomicTxExecutor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
+	return ErrWrongTxType
+}
+
+// IncreaseL1ValidatorBalanceTx handles L1 validator balance increase
+func (e *AtomicTxExecutor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
+	return ErrWrongTxType
+}
+
+// RegisterL1ValidatorTx handles L1 validator registration
+func (e *AtomicTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
+	return ErrWrongTxType
+}
+
+// SetL1ValidatorWeightTx handles L1 validator weight setting
+func (e *AtomicTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
+	return ErrWrongTxType
+}

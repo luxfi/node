@@ -12,8 +12,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/core/coremock"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/coremock"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"

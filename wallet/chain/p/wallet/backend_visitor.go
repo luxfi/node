@@ -124,15 +124,8 @@ func (b *backendVisitor) BaseTx(tx *txs.BaseTx) error {
 }
 
 func (b *backendVisitor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
-	for i, vdr := range tx.Validators {
-		b.b.setOwner(
-			tx.Subnet.Append(uint32(i)),
-			&secp256k1fx.OutputOwners{
-				Threshold: vdr.DeactivationOwner.Threshold,
-				Addrs:     vdr.DeactivationOwner.Addresses,
-			},
-		)
-	}
+	// L1 validators no longer have DeactivationOwner, so we don't need to set owners
+	// for each validator anymore
 	return b.baseTx(&tx.BaseTx)
 }
 

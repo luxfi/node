@@ -33,9 +33,8 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	consensusNode "github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/chain"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/version"
 )
 
@@ -60,7 +59,7 @@ type DatabaseReplayConfig struct {
 
 // VM implements the C-Chain VM interface using geth
 type VM struct {
-	ctx          consensusNode.Context
+	ctx          context.Context
 	db           database.Database
 	genesisBytes []byte
 	lastAccepted ids.ID
@@ -91,7 +90,7 @@ type VM struct {
 // Initialize implements the block.ChainVM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx consensusNode.Context,
+	chainCtx context.Context,
 	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -118,7 +117,8 @@ func (vm *VM) Initialize(
 	luxGenesis := os.Getenv("LUX_GENESIS") == "1"
 	if luxGenesis {
 		fmt.Printf("LUX_GENESIS=1 detected, checking for blocks to replay...\n")
-		vm.ctx.Log.Info("LUX_GENESIS mode enabled for automatic block replay")
+		logger := consensusNode.GetLogger(chainCtx)
+		logger.Info("LUX_GENESIS mode enabled for automatic block replay")
 	}
 
 	// Check environment variables for imported blockchain data
@@ -137,13 +137,15 @@ func (vm *VM) Initialize(
 			fmt.Printf("DETECTED IMPORTED DATA AT HEIGHT %d, HASH %s\n", height, migratedBlockHash.Hex())
 
 			// Log to Lux logger too
-			vm.ctx.Log.Info("Detected imported blockchain data from environment",
+			logger := consensusNode.GetLogger(chainCtx)
+			logger.Info("Detected imported blockchain data from environment",
 				"height", height,
 				"blockHash", migratedBlockHash.Hex(),
 			)
 			
 			// Open the ethdb subdirectory directly for migrated data
-			ethdbPath := filepath.Join(chainCtx.ChainDataDir, "ethdb")
+			chainDataDir := consensusNode.GetChainDataDir(chainCtx)
+			ethdbPath := filepath.Join(chainDataDir, "ethdb")
 			if _, err := os.Stat(ethdbPath); err == nil {
 				fmt.Printf("Opening migrated ethdb at: %s\n", ethdbPath)
 				badgerConfig := BadgerDatabaseConfig{
@@ -911,7 +913,7 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 }
 
 // GetBlock implements the block.ChainVM interface
-func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
+func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 
@@ -931,7 +933,7 @@ func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 }
 
 // ParseBlock implements the block.ChainVM interface
-func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (block.Block, error) {
 	ethBlock := new(types.Block)
 	if err := rlp.DecodeBytes(blockBytes, ethBlock); err != nil {
 		return nil, fmt.Errorf("failed to decode block: %w", err)

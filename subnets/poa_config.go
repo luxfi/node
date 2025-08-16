@@ -7,7 +7,7 @@ import (
 	"time"
 	
 
-	"github.com/luxfi/consensus/sampling"
+	"github.com/luxfi/consensus/config"
 )
 
 // POAConfig provides Proof of Authority configuration for subnets
@@ -26,13 +26,13 @@ type POAConfig struct {
 }
 
 // DefaultPOAParameters returns sampling parameters optimized for POA mode
-func DefaultPOAParameters() sampling.Parameters {
-	return sampling.Parameters{
+func DefaultPOAParameters() config.Parameters {
+	return config.Parameters{
 		K:                     1, // Only query 1 node (ourselves)
 		AlphaPreference:       1, // Change preference with 1 vote
 		AlphaConfidence:       1, // Increase confidence with 1 vote
 		Beta:                  1, // Only need 1 successful query for finalization
-		ConcurrentRepolls:     1, // Only 1 concurrent repoll needed
+		ConcurrentPolls:       1, // Only 1 concurrent poll needed
 		OptimalProcessing:     1, // Only 1 block in processing at a time for single-node mode
 		MaxOutstandingItems:   256,
 		MaxItemProcessingTime: 30 * time.Second,

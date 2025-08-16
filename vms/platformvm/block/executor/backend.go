@@ -4,11 +4,12 @@
 package executor
 
 import (
+	"context"
 	"errors"
 	"time"
-	
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -33,7 +34,14 @@ type backend struct {
 	blkIDToState map[ids.ID]*blockState
 	state        state.State
 
-	ctx context.Context
+	ctx          context.Context
+	SharedMemory SharedMemory
+}
+
+// SharedMemory provides cross-chain atomic operations
+type SharedMemory interface {
+	Get(peerChainID ids.ID, keys [][]byte) ([][]byte, error)
+	Apply(requests map[ids.ID]interface{}, batch ...interface{}) error
 }
 
 func (b *backend) GetState(blkID ids.ID) (state.Chain, bool) {
