@@ -9,6 +9,7 @@ import (
 	"github.com/luxfi/ids"
 
 	snowvalidators "github.com/luxfi/consensus/validators"
+	"github.com/luxfi/consensus/validator"
 	vmvalidators "github.com/luxfi/node/vms/platformvm/validators"
 )
 
@@ -20,7 +21,7 @@ func (manager) GetMinimumHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
-func (manager) GetCurrentHeight(context.Context) (uint64, error) {
+func (manager) GetCurrentHeight() (uint64, error) {
 	return 0, nil
 }
 
@@ -28,12 +29,12 @@ func (manager) GetSubnetID(context.Context, ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
-func (manager) GetValidatorSet(context.Context, uint64, ids.ID) (map[ids.NodeID]*snowvalidators.GetValidatorOutput, error) {
+func (manager) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
 	return nil, nil
 }
 
 func (manager) OnAcceptedBlockID(ids.ID) {}
 
-func (manager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*snowvalidators.GetCurrentValidatorOutput, uint64, error) {
+func (manager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validator.GetCurrentValidatorOutput, uint64, error) {
 	return nil, 0, nil
 }

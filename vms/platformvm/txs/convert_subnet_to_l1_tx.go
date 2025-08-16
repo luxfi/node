@@ -6,6 +6,7 @@ package txs
 import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/components/verify"
 )
 
 // ConvertSubnetToL1Validator represents a validator for subnet-to-L1 conversion
@@ -31,4 +32,20 @@ type ConvertSubnetToL1Validator struct {
 	
 	// Percentage of delegation rewards given to delegators (out of 1,000,000)
 	DelegationShares uint32 `serialize:"true" json:"delegationShares"`
+}
+
+// ConvertSubnetToL1Tx converts a subnet to an L1
+type ConvertSubnetToL1Tx struct {
+	// Metadata, inputs and outputs
+	BaseTx `serialize:"true"`
+	// ID of the subnet to convert
+	SubnetID ids.ID `serialize:"true" json:"subnetID"`
+	// Chain being created
+	ChainID ids.ID `serialize:"true" json:"chainID"`
+	// Address to receive fees
+	Address ids.ShortID `serialize:"true" json:"address"`
+	// Initial validators
+	Validators []*ConvertSubnetToL1Validator `serialize:"true" json:"validators"`
+	// Subnet authorization
+	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuth"`
 }
