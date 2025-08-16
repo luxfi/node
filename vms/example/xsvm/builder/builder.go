@@ -78,13 +78,13 @@ func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
 	for b.pendingTxs.Len() == 0 {
 		select {
 		case <-ctx.Done():
-			return 0, ctx.Err()
+			return core.Message{}, ctx.Err()
 		default:
 			b.pendingTxsCond.Wait()
 		}
 	}
 
-	return core.PendingTxs, nil
+	return core.Message{Op: core.Op(core.PendingTxs)}, nil
 }
 
 func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context) (chain.Block, error) {

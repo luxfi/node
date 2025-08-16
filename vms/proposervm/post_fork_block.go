@@ -5,8 +5,10 @@ package proposervm
 
 import (
 	"context"
+	"time"
 
 	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
@@ -92,6 +94,11 @@ func (b *postForkBlock) FPCVotes() [][]byte {
 	return nil
 }
 
+// Timestamp returns the block's timestamp from the SignedBlock
+func (b *postForkBlock) Timestamp() time.Time {
+	return b.SignedBlock.Timestamp()
+}
+
 // If Verify() returns nil, Accept() or Reject() will eventually be called on
 // [b] and [b.innerBlk]
 func (b *postForkBlock) Verify(ctx context.Context) error {
@@ -104,40 +111,9 @@ func (b *postForkBlock) Verify(ctx context.Context) error {
 
 // Return the two options for the block that follows [b]
 func (b *postForkBlock) Options(ctx context.Context) ([2]chain.Block, error) {
-	innerOracleBlk, ok := b.innerBlk.(chain.OracleBlock)
-	if !ok {
-		// [b]'s innerBlk isn't an oracle block
-		return [2]chain.Block{}, chain.ErrNotOracle
-	}
-
-	// The inner block's child options
-	innerOptions, err := innerOracleBlk.Options(ctx)
-	if err != nil {
-		return [2]chain.Block{}, err
-	}
-
-	parentID := b.ID()
-	outerOptions := [2]chain.Block{}
-	for i, innerOption := range innerOptions {
-		// Wrap the inner block's child option
-		statelessOuterOption, err := block.BuildOption(
-			parentID,
-			innerOption.Bytes(),
-		)
-		if err != nil {
-			return [2]chain.Block{}, err
-		}
-
-		outerOptions[i] = &postForkOption{
-			Block: statelessOuterOption,
-			postForkCommonComponents: postForkCommonComponents{
-				vm:       b.vm,
-				innerBlk: innerOption,
-				status:   choices.Processing,
-			},
-		}
-	}
-	return outerOptions, nil
+	// OracleBlock not supported in new consensus - return empty
+	// Oracle blocks are not used in the current implementation
+	return [2]chain.Block{}, nil
 }
 
 // A post-fork block can never have a pre-fork child

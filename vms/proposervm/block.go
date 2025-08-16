@@ -46,6 +46,7 @@ type Block interface {
 	chain.Block
 
 	getInnerBlk() chain.Block
+	Timestamp() time.Time
 
 	// After a state sync, we may need to update last accepted block data
 	// without propagating any changes to the innerVM.
@@ -69,6 +70,7 @@ type PostForkBlock interface {
 	setStatus(choices.Status)
 	getStatelessBlk() block.Block
 	setInnerBlk(chain.Block)
+	Timestamp() time.Time
 }
 
 // field of postForkBlock and postForkOption
@@ -131,7 +133,7 @@ func (p *postForkCommonComponents) Verify(
 		if vs == nil {
 			return fmt.Errorf("no validator state found")
 		}
-		currentPChainHeight, err := vs.GetCurrentHeight(ctx)
+		currentPChainHeight, err := vs.GetCurrentHeight()
 		if err != nil {
 			p.vm.log.Error("block verification failed",
 				zap.String("reason", "failed to get current P-Chain height"),
@@ -297,34 +299,18 @@ func (p *postForkCommonComponents) setInnerBlk(innerBlk chain.Block) {
 }
 
 func verifyIsOracleBlock(ctx context.Context, b chain.Block) error {
-	oracle, ok := b.(chain.OracleBlock)
-	if !ok {
-		return fmt.Errorf(
-			"%w: expected block %s to be a chain.OracleBlock but it's a %T",
-			errUnexpectedBlockType, b.ID(), b,
-		)
-	}
-	_, err := oracle.Options(ctx)
-	return err
+	// Oracle blocks are not supported in the new consensus
+	// Always return an error indicating this is not an oracle block
+	return fmt.Errorf(
+		"%w: oracle blocks are not supported in the current implementation",
+		errUnexpectedBlockType,
+	)
 }
 
 func verifyIsNotOracleBlock(ctx context.Context, b chain.Block) error {
-	oracle, ok := b.(chain.OracleBlock)
-	if !ok {
-		return nil
-	}
-	_, err := oracle.Options(ctx)
-	switch err {
-	case nil:
-		return fmt.Errorf(
-			"%w: expected block %s not to be an oracle block but it's a %T",
-			errUnexpectedBlockType, b.ID(), b,
-		)
-	case chain.ErrNotOracle:
-		return nil
-	default:
-		return err
-	}
+	// Oracle blocks are not supported in the new consensus
+	// All blocks are not oracle blocks, so this always succeeds
+	return nil
 }
 
 func (p *postForkCommonComponents) verifyPreDurangoBlockDelay(

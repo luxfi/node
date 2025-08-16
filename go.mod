@@ -6,19 +6,6 @@ module github.com/luxfi/node
 // go.mod (here)
 go 1.24.5
 
-// Temporarily use local modules during development
-replace (
-	github.com/luxfi/consensus => ../consensus
-	github.com/luxfi/coreth => ../coreth
-	github.com/luxfi/crypto => ../crypto
-	github.com/luxfi/database => ../database
-	github.com/luxfi/geth => ../geth
-	github.com/luxfi/ids => ../ids
-	github.com/luxfi/log => ../log
-	github.com/luxfi/metric => ../metric
-	github.com/luxfi/metrics => ../metrics
-	github.com/luxfi/trace => ../trace
-)
 
 exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 
@@ -31,8 +18,8 @@ require (
 	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
-	github.com/luxfi/consensus v1.1.1-0.20250816042749-e64270d6bd1e
-	github.com/luxfi/crypto v1.2.9
+	github.com/luxfi/consensus v1.1.2
+	github.com/luxfi/crypto v1.2.10
 	github.com/luxfi/database v1.1.11
 	github.com/luxfi/geth v1.16.34
 	github.com/luxfi/ids v1.0.2
@@ -139,7 +126,6 @@ require (
 	github.com/emicklei/dot v1.6.2 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.1 // indirect
-	github.com/ethereum/go-ethereum v1.16.1 // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/ferranbt/fastssz v0.1.4 // indirect
@@ -229,5 +215,3 @@ require (
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
 
-replace github.com/luxfi/consensus => ../consensus
-replace github.com/luxfi/crypto => ../crypto
