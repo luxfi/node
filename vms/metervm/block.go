@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 )
 
 var (

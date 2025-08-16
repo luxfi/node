@@ -6,9 +6,9 @@ package c
 import (
 	"context"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/xvm"
 )
@@ -56,13 +56,24 @@ func NewContextFromClients(
 
 func newConsensusContext(c *Context) (context.Context, error) {
 	lookup := ids.NewAliaser()
-	return &context.Context{
+	if err := lookup.Alias(c.BlockchainID, Alias); err != nil {
+		return nil, err
+	}
+	
+	ctx := context.Background()
+	ctx = consensus.WithNetworkID(ctx, c.NetworkID)
+	ctx = consensus.WithSubnetID(ctx, constants.PrimaryNetworkID)
+	ctx = consensus.WithChainID(ctx, c.BlockchainID)
+	ctx = consensus.WithBCLookup(ctx, lookup)
+	
+	// Create IDs struct with C-chain info
+	ids := consensus.IDs{
 		NetworkID:  c.NetworkID,
-		SubnetID:   constants.PrimaryNetworkID,
 		ChainID:    c.BlockchainID,
-		CChainID:   c.BlockchainID,
+		SubnetID:   constants.PrimaryNetworkID,
 		LUXAssetID: c.LUXAssetID,
-		Log:        nil,
-		BCLookup:   lookup,
-	}, lookup.Alias(c.BlockchainID, Alias)
+	}
+	ctx = consensus.WithIDs(ctx, ids)
+	
+	return ctx, nil
 }

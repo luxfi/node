@@ -6,7 +6,6 @@ package proposervm
 import (
 	"crypto"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 

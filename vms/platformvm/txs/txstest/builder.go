@@ -4,7 +4,13 @@
 package txstest
 
 import (
+	"context"
+	
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -14,28 +20,34 @@ import (
 
 func NewWalletFactory(
 	ctx context.Context,
+	sharedMemory atomic.SharedMemory,
 	cfg *config.Config,
 	state state.State,
 ) *WalletFactory {
 	return &WalletFactory{
-		ctx:   ctx,
-		cfg:   cfg,
-		state: state,
+		ctx:          ctx,
+		sharedMemory: sharedMemory,
+		cfg:          cfg,
+		state:        state,
 	}
 }
 
 type WalletFactory struct {
-	ctx   context.Context
-	cfg   *config.Config
-	state state.State
+	ctx          context.Context
+	sharedMemory atomic.SharedMemory
+	cfg          *config.Config
+	state        state.State
 }
 
 func (w *WalletFactory) NewWallet(keys ...*secp256k1.PrivateKey) (builder.Builder, signer.Signer) {
 	var (
 		kc      = secp256k1fx.NewKeychain(keys...)
 		addrs   = kc.Addresses()
-		backend = newBackend(addrs, w.state, w.ctx.SharedMemory)
-		context = newContext(w.ctx, w.cfg, w.state.GetTimestamp())
+		backend = newBackend(addrs, w.state, w.sharedMemory)
+		// Extract networkID and LUXAssetID from context
+		networkID  = consensus.GetNetworkID(w.ctx)
+		luxAssetID = consensus.GetLUXAssetID(w.ctx)
+		context = newContext(networkID, luxAssetID, w.cfg, w.state.GetTimestamp())
 	)
 
 	return builder.New(addrs, context, backend), signer.New(kc, backend)

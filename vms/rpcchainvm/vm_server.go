@@ -11,34 +11,33 @@ import (
 	"net/http"
 	"os"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/chain"
-	"github.com/luxfi/database"
 	"github.com/luxfi/node/db/rpcdb"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
 	"github.com/luxfi/node/vms/rpcchainvm/appsender"
-	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 	"github.com/luxfi/node/vms/rpcchainvm/messenger"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -227,28 +226,28 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 
 	// Create wrappers for SharedMemory to match interfaces.SharedMemory
 	smWrapper := &serverSharedMemoryWrapper{sm: sharedMemoryClient}
-	
+
 	// Create wrapper for BCLookup
 	bcWrapper := &serverBCLookupWrapper{client: bcLookupClient}
-	
+
 	// Create wrapper for ValidatorState
 	vsWrapper := &serverValidatorStateWrapper{client: validatorStateClient}
 
 	// Set IDs in context
 	vm.ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:    req.NetworkId,
-		SubnetID:     subnetID,
-		ChainID:      chainID,
-		NodeID:       nodeID,
-		PublicKey:    publicKey,
+		NetworkID: req.NetworkId,
+		SubnetID:  subnetID,
+		ChainID:   chainID,
+		NodeID:    nodeID,
+		PublicKey: publicKey,
 	})
-	
+
 	// The VM already has a log field
 	vm.metrics = vmMetrics
 
 	// Create a simple DBManager implementation
 	dbMgr := &dbManagerImpl{db: vm.db}
-	
+
 	// Initialize the VM - convert back to block.ChainContext for the interface
 	blockChainCtx := &block.ChainContext{
 		NetworkID:      req.NetworkId,
@@ -306,7 +305,7 @@ func (vm *VMServer) SetState(ctx context.Context, stateReq *vmpb.SetStateRequest
 	type stateSetter interface {
 		SetState(context.Context, consensus.State) error
 	}
-	
+
 	if ss, ok := vm.vm.(stateSetter); ok {
 		err := ss.SetState(ctx, consensus.State(stateReq.State))
 		if err != nil {
@@ -353,7 +352,7 @@ func (vm *VMServer) CreateHandlers(ctx context.Context, _ *emptypb.Empty) (*vmpb
 	type handlerCreator interface {
 		CreateHandlers(context.Context) (map[string]http.Handler, error)
 	}
-	
+
 	var handlers map[string]http.Handler
 	if hc, ok := vm.vm.(handlerCreator); ok {
 		var err error
@@ -482,8 +481,8 @@ func (vm *VMServer) ParseBlock(ctx context.Context, req *vmpb.ParseBlockRequest)
 		parentID = blk.Parent()
 	)
 	return &vmpb.ParseBlockResponse{
-		Id:                blkID[:],
-		ParentId:          parentID[:],
+		Id:       blkID[:],
+		ParentId: parentID[:],
 		// Status:            vmpb.Status(blk.Status()), // Status method no longer exists on chain.Block
 		Height:            blk.Height(),
 		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
@@ -513,8 +512,8 @@ func (vm *VMServer) GetBlock(ctx context.Context, req *vmpb.GetBlockRequest) (*v
 
 	parentID := blk.Parent()
 	return &vmpb.GetBlockResponse{
-		ParentId:          parentID[:],
-		Bytes:             blk.Bytes(),
+		ParentId: parentID[:],
+		Bytes:    blk.Bytes(),
 		// Status:            vmpb.Status(blk.Status()), // Status method no longer exists on chain.Block
 		Height:            blk.Height(),
 		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
@@ -535,7 +534,7 @@ func (vm *VMServer) Health(ctx context.Context, _ *emptypb.Empty) (*vmpb.HealthR
 	type healthChecker interface {
 		HealthCheck(context.Context) (interface{}, error)
 	}
-	
+
 	var vmHealth interface{}
 	if hc, ok := vm.vm.(healthChecker); ok {
 		var err error
@@ -566,7 +565,7 @@ func (vm *VMServer) Version(ctx context.Context, _ *emptypb.Empty) (*vmpb.Versio
 	type versionGetter interface {
 		Version(context.Context) (string, error)
 	}
-	
+
 	var version string
 	var err error
 	if vg, ok := vm.vm.(versionGetter); ok {
@@ -574,7 +573,7 @@ func (vm *VMServer) Version(ctx context.Context, _ *emptypb.Empty) (*vmpb.Versio
 	} else {
 		version = "1.0.0" // Default version
 	}
-	
+
 	return &vmpb.VersionResponse{
 		Version: version,
 	}, err

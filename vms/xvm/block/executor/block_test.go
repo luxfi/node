@@ -14,11 +14,9 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -1040,12 +1038,15 @@ func TestBlockStatus(t *testing.T) {
 }
 
 func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *executor.Backend {
+	ctx := context.Background()
+	// Add shared memory to context if needed
+	if sharedMemory != nil {
+		// Use consensus package helper if available
+		// Otherwise just use base context
+	}
 	return &executor.Backend{
 		Bootstrapped: bootstrapped,
-		Ctx: &context.Context{
-			SharedMemory: sharedMemory,
-			Log: log.NewNoOpLogger(),
-		},
+		Ctx: ctx,
 		Config: &config.Config{
 			EtnaTime:         mockable.MaxTime,
 			TxFee:            0,

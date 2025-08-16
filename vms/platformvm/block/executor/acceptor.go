@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"go.uber.org/zap"
-
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/metrics"
@@ -95,7 +95,12 @@ func (a *acceptor) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
 	}
 
 	// Note that this method writes [batch] to the database.
-	if err := a.ctx.SharedMemory.Apply(blkState.atomicRequests, batch); err != nil {
+	// Convert atomicRequests to map[ids.ID]interface{}
+	requests := make(map[ids.ID]interface{})
+	for chainID, req := range blkState.atomicRequests {
+		requests[chainID] = req
+	}
+	if err := a.SharedMemory.Apply(requests, batch); err != nil {
 		return fmt.Errorf(
 			"failed to atomically accept tx %s in block %s: %w",
 			b.Tx.ID(),
@@ -104,13 +109,13 @@ func (a *acceptor) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
 		)
 	}
 
-	a.ctx.Log.Trace(
+	log.Trace(
 		"accepted block",
-		zap.String("blockType", "apricot atomic"),
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-		zap.Stringer("utxoChecksum", a.state.Checksum()),
+		"blockType", "apricot atomic",
+		"blkID", blkID,
+		"height", b.Height(),
+		"parentID", b.Parent(),
+		"utxoChecksum", a.state.Checksum(),
 	)
 
 	return nil
@@ -165,7 +170,12 @@ func (a *acceptor) optionBlock(b block.Block, blockType string) error {
 	}
 
 	// Note that this method writes [batch] to the database.
-	if err := a.ctx.SharedMemory.Apply(parentState.atomicRequests, batch); err != nil {
+	// Convert atomicRequests to map[ids.ID]interface{}
+	requests := make(map[ids.ID]interface{})
+	for chainID, req := range parentState.atomicRequests {
+		requests[chainID] = req
+	}
+	if err := a.SharedMemory.Apply(requests, batch); err != nil {
 		return fmt.Errorf("failed to apply vm's state to shared memory: %w", err)
 	}
 
@@ -173,13 +183,13 @@ func (a *acceptor) optionBlock(b block.Block, blockType string) error {
 		onAcceptFunc()
 	}
 
-	a.ctx.Log.Trace(
+	log.Trace(
 		"accepted block",
-		zap.String("blockType", blockType),
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", parentID),
-		zap.Stringer("utxoChecksum", a.state.Checksum()),
+		"blockType", blockType,
+		"blkID", blkID,
+		"height", b.Height(),
+		"parentID", parentID,
+		"utxoChecksum", a.state.Checksum(),
 	)
 
 	return nil
@@ -205,13 +215,13 @@ func (a *acceptor) proposalBlock(b block.Block, blockType string) {
 	blkID := b.ID()
 	a.backend.lastAccepted = blkID
 
-	a.ctx.Log.Trace(
+	log.Trace(
 		"accepted block",
-		zap.String("blockType", blockType),
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-		zap.Stringer("utxoChecksum", a.state.Checksum()),
+		"blockType", blockType,
+		"blkID", blkID,
+		"height", b.Height(),
+		"parentID", b.Parent(),
+		"utxoChecksum", a.state.Checksum(),
 	)
 }
 
@@ -244,7 +254,12 @@ func (a *acceptor) standardBlock(b block.Block, blockType string) error {
 	}
 
 	// Note that this method writes [batch] to the database.
-	if err := a.ctx.SharedMemory.Apply(blkState.atomicRequests, batch); err != nil {
+	// Convert atomicRequests to map[ids.ID]interface{}
+	requests := make(map[ids.ID]interface{})
+	for chainID, req := range blkState.atomicRequests {
+		requests[chainID] = req
+	}
+	if err := a.SharedMemory.Apply(requests, batch); err != nil {
 		return fmt.Errorf("failed to apply vm's state to shared memory: %w", err)
 	}
 
@@ -252,13 +267,13 @@ func (a *acceptor) standardBlock(b block.Block, blockType string) error {
 		onAcceptFunc()
 	}
 
-	a.ctx.Log.Trace(
+	log.Trace(
 		"accepted block",
-		zap.String("blockType", blockType),
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-		zap.Stringer("utxoChecksum", a.state.Checksum()),
+		"blockType", blockType,
+		"blkID", blkID,
+		"height", b.Height(),
+		"parentID", b.Parent(),
+		"utxoChecksum", a.state.Checksum(),
 	)
 
 	return nil

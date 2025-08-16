@@ -8,7 +8,6 @@ go 1.24.5
 
 // Temporarily use local modules during development
 replace (
-	github.com/luxfi/consensus => ../consensus
 	github.com/luxfi/coreth => ../coreth
 	github.com/luxfi/crypto => ../crypto
 	github.com/luxfi/database => ../database
@@ -30,7 +29,7 @@ require (
 	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
-	github.com/luxfi/consensus v1.1.0
+	github.com/luxfi/consensus v1.1.1-0.20250816042749-e64270d6bd1e
 	github.com/luxfi/crypto v1.2.9
 	github.com/luxfi/database v1.1.11
 	github.com/luxfi/geth v1.16.34
@@ -227,3 +226,5 @@ require (
 // Pin all OpenTelemetry modules (and metric sub-packages) to v1.37.0
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
+
+replace github.com/luxfi/consensus => ../consensus

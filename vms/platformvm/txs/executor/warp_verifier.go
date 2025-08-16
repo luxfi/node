@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
@@ -17,6 +18,21 @@ const (
 )
 
 var _ txs.Visitor = (*warpVerifier)(nil)
+
+// validatorStateWrapper wraps validators.State to implement warp.ValidatorState
+type validatorStateWrapper struct {
+	state validators.State
+}
+
+func (w *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+	return w.state.GetValidatorSet(height, subnetID)
+}
+
+func (w *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	// TODO: This needs to be implemented based on the chain registry
+	// For now, return an error
+	return ids.Empty, nil
+}
 
 // VerifyWarpMessages verifies all warp messages in the tx. If any of the warp
 // messages are invalid, an error is returned.
@@ -30,7 +46,7 @@ func VerifyWarpMessages(
 	return tx.Visit(&warpVerifier{
 		context:        ctx,
 		networkID:      networkID,
-		validatorState: validatorState,
+		validatorState: &validatorStateWrapper{state: validatorState},
 		pChainHeight:   pChainHeight,
 	})
 }
@@ -38,7 +54,7 @@ func VerifyWarpMessages(
 type warpVerifier struct {
 	context        context.Context
 	networkID      uint32
-	validatorState validators.State
+	validatorState warp.ValidatorState
 	pChainHeight   uint64
 }
 
@@ -128,20 +144,13 @@ func (w *warpVerifier) verify(message []byte) error {
 		return err
 	}
 
-	validators, err := warp.GetCanonicalValidatorSetFromChainID(
-		w.context,
-		w.validatorState,
-		w.pChainHeight,
-		msg.SourceChainID,
-	)
-	if err != nil {
-		return err
-	}
-
+	// The signature verification now handles getting validators internally
 	return msg.Signature.Verify(
+		w.context,
 		&msg.UnsignedMessage,
 		w.networkID,
-		validators,
+		w.validatorState,
+		w.pChainHeight,
 		WarpQuorumNumerator,
 		WarpQuorumDenominator,
 	)

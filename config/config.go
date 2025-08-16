@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/consensus/networking/benchlist"
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/consensus/sampling"
+	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
@@ -88,7 +88,7 @@ var (
 	errFileDoesNotExist                       = errors.New("file does not exist")
 )
 
-func getConsensusConfig(v *viper.Viper) sampling.Parameters {
+func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
 	// Check if dev mode is enabled
 	if v.GetBool(DevModeKey) {
 		// Return dev mode optimized parameters
@@ -96,12 +96,12 @@ func getConsensusConfig(v *viper.Viper) sampling.Parameters {
 	}
 
 	// Standard consensus parameters
-	p := sampling.Parameters{
+	p := consensusconfig.Parameters{
 		K:                     v.GetInt(ConsensusSampleSizeKey),
 		AlphaPreference:       v.GetInt(ConsensusPreferenceQuorumSizeKey),
 		AlphaConfidence:       v.GetInt(ConsensusConfidenceQuorumSizeKey),
-		Beta:                  v.GetInt(ConsensusCommitThresholdKey),
-		ConcurrentRepolls:     v.GetInt(ConsensusConcurrentRepollsKey),
+		Beta:                  uint32(v.GetInt(ConsensusCommitThresholdKey)),
+		ConcurrentPolls:       v.GetInt(ConsensusConcurrentRepollsKey),
 		OptimalProcessing:     v.GetInt(ConsensusOptimalProcessingKey),
 		MaxOutstandingItems:   v.GetInt(ConsensusMaxProcessingKey),
 		MaxItemProcessingTime: v.GetDuration(ConsensusMaxTimeProcessingKey),

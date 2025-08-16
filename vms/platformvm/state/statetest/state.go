@@ -4,6 +4,7 @@
 package statetest
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
@@ -47,15 +47,15 @@ func New(t testing.TB, c Config) state.State {
 		c.DB = memdb.New()
 	}
 	if c.Context == nil {
-		c.Context = &consensus.Context{
-			NetworkID: constants.UnitTestID,
-			NodeID:    DefaultNodeID,
-			Log:       logging.NoLog{},
-		}
+		ctx := context.Background()
+		ctx = consensus.WithNetworkID(ctx, constants.UnitTestID)
+		ctx = consensus.WithNodeID(ctx, DefaultNodeID)
+		ctx = consensus.WithLogger(ctx, consensus.NoOpLogger{})
+		c.Context = ctx
 	}
 	if len(c.Genesis) == 0 {
 		c.Genesis = genesistest.NewBytes(t, genesistest.Config{
-			NetworkID: c.Context.NetworkID,
+			NetworkID: consensus.GetNetworkID(c.Context),
 		})
 	}
 	if c.Registerer == nil {
@@ -67,8 +67,10 @@ func New(t testing.TB, c Config) state.State {
 	if c.Upgrades == (upgrade.Config{}) {
 		c.Upgrades = upgradetest.GetConfig(upgradetest.Latest)
 	}
-	if c.Config == (config.Config{}) {
-		c.Config = config.Default
+	// Initialize fee configuration if not set
+	if c.Config.StaticFeeConfig.CreateSubnetTxFee == 0 {
+		c.Config.StaticFeeConfig.CreateSubnetTxFee = 1 * units.MilliLux
+		c.Config.StaticFeeConfig.CreateBlockchainTxFee = 1 * units.MilliLux
 	}
 	if c.Metrics == nil {
 		c.Metrics = metrics.Noop
@@ -82,13 +84,23 @@ func New(t testing.TB, c Config) state.State {
 		})
 	}
 
+	execCfg := &config.ExecutionConfig{
+		BlockCacheSize:               64,
+		TxCacheSize:                  128,
+		TransformedSubnetTxCacheSize: 64,
+		RewardUTXOsCacheSize:         2048,
+		ChainCacheSize:               2048,
+		ChainDBCacheSize:             2048,
+		BlockIDCacheSize:             8192,
+		FxOwnerCacheSize:             4 * 1024 * 1024,
+	}
+	
 	s, err := state.New(
 		c.DB,
 		c.Genesis,
 		c.Registerer,
-		c.Validators,
-		c.Upgrades,
 		&c.Config,
+		execCfg,
 		c.Context,
 		c.Metrics,
 		c.Rewards,

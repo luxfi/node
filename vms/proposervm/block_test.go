@@ -11,25 +11,21 @@ import (
 	"crypto/rand"
 	"testing"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/consensus/chain"
-	"github.com/luxfi/consensus/chain/chainmock"
-	"github.com/luxfi/consensus/chain/chaintest"
+	"github.com/luxfi/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/consensus/engine/chain/chainmock"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorsmock"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/staking"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/scheduler"
 )
@@ -87,7 +83,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		ctx: &context.Context{
 			NodeID:         nodeID,
 			ValidatorState: vdrState,
-			Log: log.NewNoOpLogger(),
+			Log:            log.NewNoOpLogger(),
 		},
 		Windower: windower,
 	}
@@ -125,7 +121,7 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	parentTime := time.Now().Truncate(time.Second)
 	proVM.Set(parentTime)
 
-	coreParentBlk := chaintest.BuildChild(chaintest.Genesis)
+	coreParentBlk := blocktest.BuildChild(blocktest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreParentBlk, nil
 	}
@@ -133,8 +129,8 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case blocktest.GenesisID:
+			return blocktest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -143,8 +139,8 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
-		case bytes.Equal(b, chaintest.GenesisBytes):
-			return chaintest.Genesis, nil
+		case bytes.Equal(b, blocktest.GenesisBytes):
+			return blocktest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -175,7 +171,7 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		}, nil
 	}
 
-	coreChildBlk := chaintest.BuildChild(coreParentBlk)
+	coreChildBlk := blocktest.BuildChild(coreParentBlk)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreChildBlk, nil
 	}
@@ -255,7 +251,7 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	parentTime := time.Now().Truncate(time.Second)
 	proVM.Set(parentTime)
 
-	coreParentBlk := chaintest.BuildChild(chaintest.Genesis)
+	coreParentBlk := blocktest.BuildChild(blocktest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreParentBlk, nil
 	}
@@ -263,8 +259,8 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case blocktest.GenesisID:
+			return blocktest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -273,8 +269,8 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
-		case bytes.Equal(b, chaintest.GenesisBytes):
-			return chaintest.Genesis, nil
+		case bytes.Equal(b, blocktest.GenesisBytes):
+			return blocktest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -307,7 +303,7 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 		}, nil
 	}
 
-	coreChildBlk := chaintest.BuildChild(coreParentBlk)
+	coreChildBlk := blocktest.BuildChild(coreParentBlk)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreChildBlk, nil
 	}
@@ -399,7 +395,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 		ctx: &context.Context{
 			NodeID:         thisNodeID,
 			ValidatorState: vdrState,
-			Log: log.NewNoOpLogger(),
+			Log:            log.NewNoOpLogger(),
 		},
 		Windower:               windower,
 		Scheduler:              scheduler,

@@ -6,7 +6,6 @@ package falconfx
 import (
 	"errors"
 
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/components/verify"
 )
 

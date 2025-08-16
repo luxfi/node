@@ -16,9 +16,9 @@ import (
 
 	"github.com/luxfi/consensus/consensustest"
 
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 
-	"github.com/luxfi/consensus/chain/chaintest"
+	"github.com/luxfi/consensus/engine/chain/chaintest"
 
 	"github.com/luxfi/database"
 

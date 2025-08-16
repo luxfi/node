@@ -4,6 +4,8 @@
 package txstest
 
 import (
+	"context"
+	
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/xvm/config"
@@ -11,13 +13,17 @@ import (
 )
 
 func newContext(
-	ctx *consensus.Context,
+	ctx context.Context,
 	cfg *config.Config,
 	feeAssetID ids.ID,
 ) *builder.Context {
+	// Extract IDs from context
+	networkID := consensus.GetNetworkID(ctx)
+	chainID := consensus.GetChainID(ctx)
+	
 	return &builder.Context{
-		NetworkID:        ctx.NetworkID,
-		BlockchainID:     ctx.XChainID,
+		NetworkID:        networkID,
+		BlockchainID:     chainID,
 		LUXAssetID:       feeAssetID,
 		BaseTxFee:        cfg.TxFee,
 		CreateAssetTxFee: cfg.CreateAssetTxFee,

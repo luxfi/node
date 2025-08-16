@@ -17,7 +17,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/platformvm"
-	"github.com/luxfi/consensus/engine/common"
+	"github.com/luxfi/consensus/core/common"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/bls"

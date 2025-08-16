@@ -15,8 +15,8 @@ import (
 	time "time"
 
 	choices "github.com/luxfi/consensus/choices"
-	chain "github.com/luxfi/consensus/chain"
 	ids "github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/components/chain"
 	block "github.com/luxfi/node/vms/proposervm/block"
 	gomock "go.uber.org/mock/gomock"
 )

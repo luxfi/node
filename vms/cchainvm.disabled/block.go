@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/geth/rlp"
 
 	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
 )
 

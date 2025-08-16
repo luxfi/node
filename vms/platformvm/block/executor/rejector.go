@@ -4,8 +4,7 @@
 package executor
 
 import (
-	"go.uber.org/zap"
-
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
@@ -59,12 +58,12 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 	blkID := b.ID()
 	defer r.free(blkID)
 
-	r.ctx.Log.Debug(
+	log.Debug(
 		"rejecting block",
-		zap.String("blockType", blockType),
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
+		"blockType", blockType,
+		"blkID", blkID,
+		"height", b.Height(),
+		"parentID", b.Parent(),
 	)
 
 	if !r.addTxsToMempool {
@@ -73,11 +72,11 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 
 	for _, tx := range b.Txs() {
 		if err := r.Mempool.Add(tx); err != nil {
-			r.ctx.Log.Debug(
+			log.Debug(
 				"failed to reissue tx",
-				zap.Stringer("txID", tx.ID()),
-				zap.Stringer("blkID", blkID),
-				zap.Error(err),
+				"txID", tx.ID(),
+				"blkID", blkID,
+				"error", err,
 			)
 		}
 	}

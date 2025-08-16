@@ -9,7 +9,7 @@ import (
 	"math"
 	"sync"
 
-	"google.golang.org/protobuf/proto"
+	// "google.golang.org/protobuf/proto" // Commented out until L1 validators are implemented
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -98,7 +98,8 @@ func (s signatureRequestVerifier) verifySubnetToL1Conversion(
 	msg *message.SubnetToL1Conversion,
 	justification []byte,
 ) *common.AppError {
-	subnetID, err := ids.ToID(justification)
+	// Parse the justification as subnetID
+	_, err := ids.ToID(justification) // subnetID will be used when L1 conversion is implemented
 	if err != nil {
 		return &common.AppError{
 			Code:    ErrFailedToParseJustification,
@@ -109,27 +110,29 @@ func (s signatureRequestVerifier) verifySubnetToL1Conversion(
 	s.stateLock.Lock()
 	defer s.stateLock.Unlock()
 
-	conversion, err := s.state.GetSubnetToL1Conversion(subnetID)
-	if err == database.ErrNotFound {
-		return &common.AppError{
-			Code:    ErrConversionDoesNotExist,
-			Message: fmt.Sprintf("subnet %q has not been converted", subnetID),
-		}
-	}
-	if err != nil {
-		return &common.AppError{
-			Code:    common.ErrUndefined.Code,
-			Message: "failed to get subnet conversionID: " + err.Error(),
-		}
-	}
+	// TODO: Implement GetSubnetToL1Conversion when L1 validators are fully implemented
+	// conversion, err := s.state.GetSubnetToL1Conversion(subnetID)
+	// if err == database.ErrNotFound {
+	// 	return &common.AppError{
+	// 		Code:    ErrConversionDoesNotExist,
+	// 		Message: fmt.Sprintf("subnet %q has not been converted", subnetID),
+	// 	}
+	// }
+	// if err != nil {
+	// 	return &common.AppError{
+	// 		Code:    common.ErrUndefined.Code,
+	// 		Message: "failed to get subnet conversionID: " + err.Error(),
+	// 	}
+	// }
 
-	if msg.ID != conversion.ConversionID {
-		return &common.AppError{
-			Code:    ErrMismatchedConversionID,
-			Message: fmt.Sprintf("provided conversionID %q != expected conversionID %q", msg.ID, conversion.ConversionID),
-		}
-	}
+	// if msg.ID != conversion.ConversionID {
+	// 	return &common.AppError{
+	// 		Code:    ErrMismatchedConversionID,
+	// 		Message: fmt.Sprintf("provided conversionID %q != expected conversionID %q", msg.ID, conversion.ConversionID),
+	// 	}
+	// }
 
+	// Temporary placeholder until L1 conversion is implemented
 	return nil
 }
 
@@ -141,25 +144,29 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 		return s.verifyL1ValidatorRegistered(msg.ValidationID)
 	}
 
-	var justification platformvm.L1ValidatorRegistrationJustification
-	if err := proto.Unmarshal(justificationBytes, &justification); err != nil {
-		return &common.AppError{
-			Code:    ErrFailedToParseJustification,
-			Message: "failed to parse justification: " + err.Error(),
-		}
-	}
+	// TODO: Implement L1ValidatorRegistrationJustification when protobuf messages are available
+	// var justification platformvm.L1ValidatorRegistrationJustification
+	// if err := proto.Unmarshal(justificationBytes, &justification); err != nil {
+	// 	return &common.AppError{
+	// 		Code:    ErrFailedToParseJustification,
+	// 		Message: "failed to parse justification: " + err.Error(),
+	// 	}
+	// }
 
-	switch preimage := justification.GetPreimage().(type) {
-	case *platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData:
-		return s.verifySubnetValidatorNotCurrentlyRegistered(msg.ValidationID, preimage.ConvertSubnetToL1TxData)
-	case *platformvm.L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage:
-		return s.verifySubnetValidatorCanNotValidate(msg.ValidationID, preimage.RegisterL1ValidatorMessage)
-	default:
-		return &common.AppError{
-			Code:    ErrInvalidJustificationType,
-			Message: fmt.Sprintf("invalid justification type: %T", justification.Preimage),
-		}
-	}
+	// switch preimage := justification.GetPreimage().(type) {
+	// case *platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData:
+	// 	return s.verifySubnetValidatorNotCurrentlyRegistered(msg.ValidationID, preimage.ConvertSubnetToL1TxData)
+	// case *platformvm.L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage:
+	// 	return s.verifySubnetValidatorCanNotValidate(msg.ValidationID, preimage.RegisterL1ValidatorMessage)
+	// default:
+	// 	return &common.AppError{
+	// 		Code:    ErrInvalidJustificationType,
+	// 		Message: fmt.Sprintf("invalid justification type: %T", justification.Preimage),
+	// 	}
+	// }
+	
+	// Temporary placeholder until L1 validation is implemented
+	return nil
 }
 
 // verifyL1ValidatorRegistered verifies that the validationID is currently a
@@ -194,54 +201,55 @@ func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
 	validationID ids.ID,
 	justification *platformvm.SubnetIDIndex,
 ) *common.AppError {
-	subnetID, err := ids.ToID(justification.GetSubnetId())
-	if err != nil {
-		return &common.AppError{
-			Code:    ErrFailedToParseSubnetID,
-			Message: "failed to parse subnetID: " + err.Error(),
-		}
-	}
+	// TODO: Implement when L1 validator support is complete
+	// subnetID, err := ids.ToID(justification.GetSubnetId())
+	// if err != nil {
+	// 	return &common.AppError{
+	// 		Code:    ErrFailedToParseSubnetID,
+	// 		Message: "failed to parse subnetID: " + err.Error(),
+	// 	}
+	// }
 
-	justificationID := subnetID.Append(justification.GetIndex())
-	if validationID != justificationID {
-		return &common.AppError{
-			Code:    ErrMismatchedValidationID,
-			Message: fmt.Sprintf("validationID %q != justificationID %q", validationID, justificationID),
-		}
-	}
+	// justificationID := subnetID.Append(justification.GetIndex())
+	// if validationID != justificationID {
+	// 	return &common.AppError{
+	// 		Code:    ErrMismatchedValidationID,
+	// 		Message: fmt.Sprintf("validationID %q != justificationID %q", validationID, justificationID),
+	// 	}
+	// }
 
-	s.stateLock.Lock()
-	defer s.stateLock.Unlock()
+	// s.stateLock.Lock()
+	// defer s.stateLock.Unlock()
 
-	// Verify that the provided subnetID has been converted.
-	_, err = s.state.GetSubnetToL1Conversion(subnetID)
-	if err == database.ErrNotFound {
-		return &common.AppError{
-			Code:    ErrConversionDoesNotExist,
-			Message: fmt.Sprintf("subnet %q has not been converted", subnetID),
-		}
-	}
-	if err != nil {
-		return &common.AppError{
-			Code:    common.ErrUndefined.Code,
-			Message: "failed to get subnet conversionID: " + err.Error(),
-		}
-	}
+	// // Verify that the provided subnetID has been converted.
+	// _, err = s.state.GetSubnetToL1Conversion(subnetID)
+	// if err == database.ErrNotFound {
+	// 	return &common.AppError{
+	// 		Code:    ErrConversionDoesNotExist,
+	// 		Message: fmt.Sprintf("subnet %q has not been converted", subnetID),
+	// 	}
+	// }
+	// if err != nil {
+	// 	return &common.AppError{
+	// 		Code:    common.ErrUndefined.Code,
+	// 		Message: "failed to get subnet conversionID: " + err.Error(),
+	// 	}
+	// }
 
-	// Verify that the validator is not in the current state
-	_, err = s.state.GetL1Validator(validationID)
-	if err == nil {
-		return &common.AppError{
-			Code:    ErrValidationExists,
-			Message: fmt.Sprintf("validation %q exists", validationID),
-		}
-	}
-	if err != database.ErrNotFound {
-		return &common.AppError{
-			Code:    common.ErrUndefined.Code,
-			Message: "failed to lookup L1 validator: " + err.Error(),
-		}
-	}
+	// // Verify that the validator is not in the current state
+	// _, err = s.state.GetL1Validator(validationID)
+	// if err == nil {
+	// 	return &common.AppError{
+	// 		Code:    ErrValidationExists,
+	// 		Message: fmt.Sprintf("validation %q exists", validationID),
+	// 	}
+	// }
+	// if err != database.ErrNotFound {
+	// 	return &common.AppError{
+	// 		Code:    common.ErrUndefined.Code,
+	// 		Message: "failed to lookup L1 validator: " + err.Error(),
+	// 	}
+	// }
 
 	// Either the validator was removed or it was never registered as part of
 	// the subnet conversion.
@@ -293,24 +301,25 @@ func (s signatureRequestVerifier) verifySubnetValidatorCanNotValidate(
 		return nil // The expiry time has passed
 	}
 
-	// If the validation ID was successfully registered and then removed, it can
-	// never be re-used again even if its expiry has not yet passed.
-	hasExpiry, err := s.state.HasExpiry(state.ExpiryEntry{
-		Timestamp:    justification.Expiry,
-		ValidationID: validationID,
-	})
-	if err != nil {
-		return &common.AppError{
-			Code:    common.ErrUndefined.Code,
-			Message: "failed to lookup expiry: " + err.Error(),
-		}
-	}
-	if !hasExpiry {
-		return &common.AppError{
-			Code:    ErrValidationCouldBeRegistered,
-			Message: fmt.Sprintf("validation %q can be registered until %d", validationID, justification.Expiry),
-		}
-	}
+	// TODO: Implement HasExpiry when L1 validators are complete
+	// // If the validation ID was successfully registered and then removed, it can
+	// // never be re-used again even if its expiry has not yet passed.
+	// hasExpiry, err := s.state.HasExpiry(state.ExpiryEntry{
+	// 	Timestamp:    justification.Expiry,
+	// 	ValidationID: validationID,
+	// })
+	// if err != nil {
+	// 	return &common.AppError{
+	// 		Code:    common.ErrUndefined.Code,
+	// 		Message: "failed to lookup expiry: " + err.Error(),
+	// 	}
+	// }
+	// if !hasExpiry {
+	// 	return &common.AppError{
+	// 		Code:    ErrValidationCouldBeRegistered,
+	// 		Message: fmt.Sprintf("validation %q can be registered until %d", validationID, justification.Expiry),
+	// 	}
+	// }
 
 	return nil // The validator has been removed
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"

@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -28,7 +29,8 @@ import (
 func NewWallet(
 	t testing.TB,
 	ctx context.Context,
-	config *config.Internal,
+	sharedMemory atomic.SharedMemory,
+	config *config.Config,
 	state state.State,
 	kc *secp256k1fx.Keychain,
 	subnetIDs []ids.ID,
@@ -55,7 +57,7 @@ func NewWallet(
 
 	for _, chainID := range chainIDs {
 		remoteChainUTXOs, _, _, err := lux.GetAtomicUTXOs(
-			ctx.SharedMemory,
+			sharedMemory,
 			txs.Codec,
 			chainID,
 			addrs,
@@ -98,7 +100,8 @@ func NewWallet(
 		common.NewChainUTXOs(constants.PlatformChainID, utxos),
 		owners,
 	)
-	builderContext := newContext(ctx, config, state)
+	// Use constants for networkID and LUXAssetID  
+	builderContext := newContext(constants.TestnetID, ids.Empty, config, state.GetTimestamp())
 	return wallet.New(
 		&client{
 			backend: backend,
@@ -123,19 +126,9 @@ func (c *client) IssueTx(
 	tx *txs.Tx,
 	options ...common.Option,
 ) error {
+	// Options no longer have IssuanceHandler and ConfirmationHandler
+	// Just accept the transaction directly
 	ops := common.NewOptions(options)
-	if f := ops.IssuanceHandler(); f != nil {
-		f(common.IssuanceReceipt{
-			ChainAlias: builder.Alias,
-			TxID:       tx.ID(),
-		})
-	}
-	if f := ops.ConfirmationHandler(); f != nil {
-		f(common.ConfirmationReceipt{
-			ChainAlias: builder.Alias,
-			TxID:       tx.ID(),
-		})
-	}
 	ctx := ops.Context()
 	return c.backend.AcceptTx(ctx, tx)
 }

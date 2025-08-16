@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"

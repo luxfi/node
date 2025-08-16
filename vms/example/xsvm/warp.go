@@ -6,8 +6,8 @@ package xsvm
 import (
 	"context"
 
+	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/node/network/p2p/lp118"
-	"github.com/luxfi/consensus/engine/common"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 

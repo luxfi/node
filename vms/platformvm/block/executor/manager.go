@@ -6,7 +6,7 @@ package executor
 import (
 	"errors"
 
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -60,6 +60,7 @@ func NewManager(
 		state:        s,
 		ctx:          txExecutorBackend.Ctx,
 		blkIDToState: map[ids.ID]*blockState{},
+		SharedMemory: txExecutorBackend.SharedMemory,
 	}
 
 	return &manager{

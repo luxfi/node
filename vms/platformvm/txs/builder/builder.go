@@ -4,10 +4,10 @@
 package builder
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
-	
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
@@ -217,10 +217,13 @@ type builder struct {
 	utxo.Spender
 	state state.State
 
-	cfg *config.Config
-	ctx context.Context
-	clk *mockable.Clock
-	fx  fx.Fx
+	cfg        *config.Config
+	ctx        context.Context
+	NetworkID  uint32
+	ChainID    ids.ID
+	LUXAssetID ids.ID
+	clk        *mockable.Clock
+	fx         fx.Fx
 }
 
 func (b *builder) NewImportTx(
@@ -268,7 +271,7 @@ func (b *builder) NewImportTx(
 		return nil, ErrNoFunds // No imported UTXOs were spendable
 	}
 
-	importedLUX := importedAmounts[b.ctx.LUXAssetID]
+	importedLUX := importedAmounts[b.LUXAssetID]
 
 	ins := []*lux.TransferableInput{}
 	outs := []*lux.TransferableOutput{}
@@ -280,11 +283,11 @@ func (b *builder) NewImportTx(
 			return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 		}
 		signers = append(baseSigners, signers...)
-		delete(importedAmounts, b.ctx.LUXAssetID)
+		delete(importedAmounts, b.LUXAssetID)
 	case importedLUX == b.cfg.TxFee:
-		delete(importedAmounts, b.ctx.LUXAssetID)
+		delete(importedAmounts, b.LUXAssetID)
 	default:
-		importedAmounts[b.ctx.LUXAssetID] -= b.cfg.TxFee
+		importedAmounts[b.LUXAssetID] -= b.cfg.TxFee
 	}
 
 	for assetID, amount := range importedAmounts {
@@ -306,8 +309,8 @@ func (b *builder) NewImportTx(
 	// Create the transaction
 	utx := &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.ctx.NetworkID,
-			BlockchainID: b.ctx.ChainID,
+			NetworkID:    b.NetworkID,
+			BlockchainID: b.ChainID,
 			Outs:         outs,
 			Ins:          ins,
 		}},
@@ -341,14 +344,14 @@ func (b *builder) NewExportTx(
 	// Create the transaction
 	utx := &txs.ExportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.ctx.NetworkID,
-			BlockchainID: b.ctx.ChainID,
+			NetworkID:    b.NetworkID,
+			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs, // Non-exported outputs
 		}},
 		DestinationChain: chainID,
 		ExportedOutputs: []*lux.TransferableOutput{{ // Exported to X-Chain
-			Asset: lux.Asset{ID: b.ctx.LUXAssetID},
+			Asset: lux.Asset{ID: b.LUXAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: amount,
 				OutputOwners: secp256k1fx.OutputOwners{
@@ -394,8 +397,8 @@ func (b *builder) NewCreateChainTx(
 	// Create the tx
 	utx := &txs.CreateChainTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.ctx.NetworkID,
-			BlockchainID: b.ctx.ChainID,
+			NetworkID:    b.NetworkID,
+			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
 		}},
@@ -432,8 +435,8 @@ func (b *builder) NewCreateSubnetTx(
 	// Create the tx
 	utx := &txs.CreateSubnetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.ctx.NetworkID,
-			BlockchainID: b.ctx.ChainID,
+			NetworkID:    b.NetworkID,
+			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
 		}},
@@ -466,8 +469,8 @@ func (b *builder) NewAddValidatorTx(
 	// Create the tx
 	utx := &txs.AddValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.ctx.NetworkID,
-			BlockchainID: b.ctx.ChainID,
+			NetworkID:    b.NetworkID,
+			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         unstakedOuts,
 		}},
@@ -508,8 +511,8 @@ func (b *builder) NewAddDelegatorTx(
 	// Create the tx
 	utx := &txs.AddDelegatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.ctx.NetworkID,
-			BlockchainID: b.ctx.ChainID,
+			NetworkID:    b.NetworkID,
+			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         unlockedOuts,
 		}},
@@ -556,8 +559,8 @@ func (b *builder) NewAddSubnetValidatorTx(
 	// Create the tx
 	utx := &txs.AddSubnetValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.ctx.NetworkID,
-			BlockchainID: b.ctx.ChainID,
+			NetworkID:    b.NetworkID,
+			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
 		}},
@@ -599,8 +602,8 @@ func (b *builder) NewRemoveSubnetValidatorTx(
 	// Create the tx
 	utx := &txs.RemoveSubnetValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.ctx.NetworkID,
-			BlockchainID: b.ctx.ChainID,
+			NetworkID:    b.NetworkID,
+			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
 		}},
@@ -654,8 +657,8 @@ func (b *builder) NewTransferSubnetOwnershipTx(
 
 	utx := &txs.TransferSubnetOwnershipTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.ctx.NetworkID,
-			BlockchainID: b.ctx.ChainID,
+			NetworkID:    b.NetworkID,
+			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
 		}},
@@ -689,7 +692,7 @@ func (b *builder) NewBaseTx(
 	}
 
 	outs = append(outs, &lux.TransferableOutput{
-		Asset: lux.Asset{ID: b.ctx.LUXAssetID},
+		Asset: lux.Asset{ID: b.LUXAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt:          amount,
 			OutputOwners: owner,
@@ -700,8 +703,8 @@ func (b *builder) NewBaseTx(
 
 	utx := &txs.BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:    b.ctx.NetworkID,
-			BlockchainID: b.ctx.ChainID,
+			NetworkID:    b.NetworkID,
+			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
 		},

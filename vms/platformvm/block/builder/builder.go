@@ -12,8 +12,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
@@ -119,7 +120,7 @@ func (b *builder) StartBlockTimer() {
 			for {
 				duration, err := b.durationToSleep()
 				if err != nil {
-					b.txExecutorBackend.Ctx.Log.Error("block builder encountered a fatal error",
+					log.Error("block builder encountered a fatal error",
 						zap.Error(err),
 					)
 					return
@@ -151,8 +152,8 @@ func (b *builder) StartBlockTimer() {
 func (b *builder) durationToSleep() (time.Duration, error) {
 	// Grabbing the lock here enforces that this function is not called mid-way
 	// through modifying of the state.
-	b.txExecutorBackend.Ctx.Lock.Lock()
-	defer b.txExecutorBackend.Ctx.Lock.Unlock()
+	b.txExecutorBackend.Lock.Lock()
+	defer b.txExecutorBackend.Lock.Unlock()
 
 	// If [ShutdownBlockTimer] was called, we want to exit the block timer
 	// goroutine. We check this with the context lock held because
@@ -201,7 +202,7 @@ func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
 	// re-trigger block building.
 	defer b.Mempool.RequestBuildBlock(false /*=emptyBlockPermitted*/)
 
-	b.txExecutorBackend.Ctx.Log.Debug("starting to attempt to build a block")
+	log.Debug("starting to attempt to build a block")
 
 	// Get the block to build on top of and retrieve the new block's context.
 	preferredID := b.blkManager.Preferred()
@@ -299,7 +300,7 @@ func buildBlock(
 
 	// If there is no reason to build a block, don't.
 	if len(blockTxs) == 0 && !forceAdvanceTime {
-		builder.txExecutorBackend.Ctx.Log.Debug("no pending txs to issue into a block")
+		log.Debug("no pending txs to issue into a block")
 		return nil, ErrNoPendingBlocks
 	}
 

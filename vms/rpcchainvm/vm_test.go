@@ -4,7 +4,6 @@
 package rpcchainvm
 
 import (
-	"github.com/luxfi/log"
 	"context"
 	"fmt"
 	"os"
@@ -13,7 +12,8 @@ import (
 	"slices"
 	"testing"
 	"time"
-	
+
+	"github.com/luxfi/log"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -131,7 +131,7 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 			config: &subprocess.Config{
 				Stderr:           nil,
 				Stdout:           nil,
-				Log: log.NewNoOpLogger(),
+				Log:              log.NewNoOpLogger(),
 				HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 			},
 			assertErr: func(require *require.Assertions, err error) {
@@ -143,7 +143,7 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 			name: "invalid stderr",
 			config: &subprocess.Config{
 				Stdout:           nil,
-				Log: log.NewNoOpLogger(),
+				Log:              log.NewNoOpLogger(),
 				HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 			},
 			assertErr: func(require *require.Assertions, err error) {
@@ -156,7 +156,7 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 			config: &subprocess.Config{
 				Stderr:           nil,
 				Stdout:           nil,
-				Log: log.NewNoOpLogger(),
+				Log:              log.NewNoOpLogger(),
 				HandshakeTimeout: time.Microsecond,
 			},
 			assertErr: func(require *require.Assertions, err error) {

@@ -8,11 +8,8 @@ import (
 	"context"
 	"testing"
 	"time"
-	
-	"github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
-
 
 	"github.com/luxfi/consensus"
 
@@ -22,9 +19,7 @@ import (
 
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 
-	"github.com/luxfi/consensus/chain"
-
-	"github.com/luxfi/consensus/chain/chaintest"
+	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 
 	"github.com/luxfi/consensus/validators"
 
@@ -38,9 +33,10 @@ import (
 
 	"github.com/luxfi/ids"
 
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/core"
 
 	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/vms/components/chain"
 )
 
 func TestCoreVMNotRemote(t *testing.T) {
@@ -85,7 +81,7 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 	}()
 
 	// Build some prefork blocks....
-	coreBlk1 := chaintest.BuildChild(chaintest.Genesis)
+	coreBlk1 := blocktest.BuildChild(blocktest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk1, nil
 	}
@@ -103,7 +99,7 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 		}
 	}
 
-	coreBlk2 := chaintest.BuildChild(coreBlk1)
+	coreBlk2 := blocktest.BuildChild(coreBlk1)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk2, nil
 	}
@@ -121,7 +117,7 @@ func TestGetAncestorsPreForkOnly(t *testing.T) {
 		}
 	}
 
-	coreBlk3 := chaintest.BuildChild(coreBlk2)
+	coreBlk3 := blocktest.BuildChild(coreBlk2)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk3, nil
 	}
@@ -208,7 +204,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	}()
 
 	// Build some post-Fork blocks....
-	coreBlk1 := chaintest.BuildChild(chaintest.Genesis)
+	coreBlk1 := blocktest.BuildChild(blocktest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk1, nil
 	}
@@ -220,7 +216,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
 	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk1, 0))
 
-	coreBlk2 := chaintest.BuildChild(coreBlk1)
+	coreBlk2 := blocktest.BuildChild(coreBlk1)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk2, nil
 	}
@@ -232,7 +228,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
 	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk2, 0))
 
-	coreBlk3 := chaintest.BuildChild(coreBlk2)
+	coreBlk3 := blocktest.BuildChild(coreBlk2)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk3, nil
 	}
@@ -267,8 +263,8 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		switch {
-		case bytes.Equal(b, chaintest.GenesisBytes):
-			return chaintest.Genesis, nil
+		case bytes.Equal(b, blocktest.GenesisBytes):
+			return blocktest.Genesis, nil
 		case bytes.Equal(b, coreBlk1.Bytes()):
 			return coreBlk1, nil
 		case bytes.Equal(b, coreBlk2.Bytes()):
@@ -345,7 +341,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 
 	// Build some prefork blocks....
 	proRemoteVM.Set(preForkTime)
-	coreBlk1 := chaintest.BuildChild(chaintest.Genesis)
+	coreBlk1 := blocktest.BuildChild(blocktest.Genesis)
 	coreBlk1.TimestampV = preForkTime
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk1, nil
@@ -365,7 +361,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 		}
 	}
 
-	coreBlk2 := chaintest.BuildChild(coreBlk1)
+	coreBlk2 := blocktest.BuildChild(coreBlk1)
 	coreBlk2.TimestampV = postForkTime
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk2, nil
@@ -387,7 +383,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 
 	// .. and some post-fork
 	proRemoteVM.Set(postForkTime)
-	coreBlk3 := chaintest.BuildChild(coreBlk2)
+	coreBlk3 := blocktest.BuildChild(coreBlk2)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk3, nil
 	}
@@ -400,7 +396,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk3.ID()))
 	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk3, builtBlk3.(*postForkBlock).PChainHeight()))
 
-	coreBlk4 := chaintest.BuildChild(coreBlk3)
+	coreBlk4 := blocktest.BuildChild(coreBlk3)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk4, nil
 	}
@@ -514,7 +510,7 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 	}()
 
 	// Build some prefork blocks....
-	coreBlk1 := chaintest.BuildChild(chaintest.Genesis)
+	coreBlk1 := blocktest.BuildChild(blocktest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk1, nil
 	}
@@ -532,7 +528,7 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 		}
 	}
 
-	coreBlk2 := chaintest.BuildChild(coreBlk1)
+	coreBlk2 := blocktest.BuildChild(coreBlk1)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk2, nil
 	}
@@ -550,7 +546,7 @@ func TestBatchedParseBlockPreForkOnly(t *testing.T) {
 		}
 	}
 
-	coreBlk3 := chaintest.BuildChild(coreBlk2)
+	coreBlk3 := blocktest.BuildChild(coreBlk2)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk3, nil
 	}
@@ -612,7 +608,7 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	}()
 
 	// Build some post-Fork blocks....
-	coreBlk1 := chaintest.BuildChild(chaintest.Genesis)
+	coreBlk1 := blocktest.BuildChild(blocktest.Genesis)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk1, nil
 	}
@@ -624,7 +620,7 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
 	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk1, 0))
 
-	coreBlk2 := chaintest.BuildChild(coreBlk1)
+	coreBlk2 := blocktest.BuildChild(coreBlk1)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk2, nil
 	}
@@ -636,7 +632,7 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
 	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk2, builtBlk2.(*postForkBlock).PChainHeight()))
 
-	coreBlk3 := chaintest.BuildChild(coreBlk2)
+	coreBlk3 := blocktest.BuildChild(coreBlk2)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk3, nil
 	}
@@ -706,7 +702,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 
 	// Build some prefork blocks....
 	proRemoteVM.Set(preForkTime)
-	coreBlk1 := chaintest.BuildChild(chaintest.Genesis)
+	coreBlk1 := blocktest.BuildChild(blocktest.Genesis)
 	coreBlk1.TimestampV = preForkTime
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk1, nil
@@ -726,7 +722,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 		}
 	}
 
-	coreBlk2 := chaintest.BuildChild(coreBlk1)
+	coreBlk2 := blocktest.BuildChild(coreBlk1)
 	coreBlk2.TimestampV = postForkTime
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk2, nil
@@ -748,7 +744,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 
 	// .. and some post-fork
 	proRemoteVM.Set(postForkTime)
-	coreBlk3 := chaintest.BuildChild(coreBlk2)
+	coreBlk3 := blocktest.BuildChild(coreBlk2)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk3, nil
 	}
@@ -761,7 +757,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk3.ID()))
 	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk3, builtBlk3.(*postForkBlock).PChainHeight()))
 
-	coreBlk4 := chaintest.BuildChild(coreBlk3)
+	coreBlk4 := blocktest.BuildChild(coreBlk3)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
 		return coreBlk4, nil
 	}
@@ -856,20 +852,20 @@ func initTestRemoteProposerVM(
 		return nil
 	}
 	coreVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		return chaintest.GenesisID, nil
+		return blocktest.GenesisID, nil
 	}
 	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
 		switch blkID {
-		case chaintest.GenesisID:
-			return chaintest.Genesis, nil
+		case blocktest.GenesisID:
+			return blocktest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
 	}
 	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
 		switch {
-		case bytes.Equal(b, chaintest.GenesisBytes):
-			return chaintest.Genesis, nil
+		case bytes.Equal(b, blocktest.GenesisBytes):
+			return blocktest.Genesis, nil
 		default:
 			return nil, errUnknownBlock
 		}
@@ -893,7 +889,7 @@ func initTestRemoteProposerVM(
 		T: t,
 	}
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
-		return chaintest.GenesisHeight, nil
+		return blocktest.GenesisHeight, nil
 	}
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
@@ -947,6 +943,6 @@ func initTestRemoteProposerVM(
 	coreVM.InitializeF = nil
 
 	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
-	require.NoError(proVM.SetPreference(context.Background(), chaintest.GenesisID))
+	require.NoError(proVM.SetPreference(context.Background(), blocktest.GenesisID))
 	return coreVM, proVM
 }

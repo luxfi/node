@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -18,20 +17,19 @@ import (
 	"google.golang.org/grpc/health"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/chain/block"
-	consensuschain "github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
-	"github.com/luxfi/database"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/db/rpcdb"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/ids/galiasreader"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/chains/atomic/gsharedmemory"
+	"github.com/luxfi/node/db/rpcdb"
+	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
@@ -39,9 +37,9 @@ import (
 	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
 	"github.com/luxfi/node/vms/rpcchainvm/appsender"
-	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 	"github.com/luxfi/node/vms/rpcchainvm/messenger"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
@@ -92,7 +90,7 @@ type VMClient struct {
 	processTracker  resource.ProcessTracker
 	metricsGatherer metrics.MultiGatherer
 
-	messenger            *messenger.Server
+	messenger *messenger.Server
 	// keystore             *gkeystore.Server // Keystore removed
 	sharedMemory         *gsharedmemory.Server
 	bcLookup             *galiasreader.Server
@@ -137,13 +135,13 @@ func (vm *VMClient) Initialize(
 ) error {
 	// Set IDs in context
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:    chainCtx.NetworkID,
-		SubnetID:     chainCtx.SubnetID,
-		ChainID:      chainCtx.ChainID,
-		NodeID:       chainCtx.NodeID,
-		PublicKey:    chainCtx.PublicKey,
+		NetworkID: chainCtx.NetworkID,
+		SubnetID:  chainCtx.SubnetID,
+		ChainID:   chainCtx.ChainID,
+		NodeID:    chainCtx.NodeID,
+		PublicKey: chainCtx.PublicKey,
 	})
-	
+
 	db := dbManager.Current()
 	if len(fxs) != 0 {
 		return errUnsupportedFXs
@@ -184,22 +182,22 @@ func (vm *VMClient) Initialize(
 	)
 
 	// Create a channel for message passing
-	msgChannel := make(chan core.Message, 1) 
+	msgChannel := make(chan core.Message, 1)
 	vm.messenger = messenger.NewServer(msgChannel)
 	// vm.keystore = gkeystore.NewServer(chainCtx.Keystore) // Keystore removed from context.Context
-	
+
 	// Create SharedMemory wrapper
 	sharedMemoryWrapper := &sharedMemoryWrapper{sm: chainCtx.SharedMemory}
 	vm.sharedMemory = gsharedmemory.NewServer(sharedMemoryWrapper, db)
-	
+
 	// Create BCLookup wrapper
 	bcLookupWrapper := &bcLookupWrapper{bc: chainCtx.BCLookup}
 	vm.bcLookup = galiasreader.NewServer(bcLookupWrapper)
-	
+
 	// Convert appSender
 	coreAppSender := &appSenderWrapper{appSender: appSender}
 	vm.appSender = appsender.NewServer(coreAppSender)
-	
+
 	// Create ValidatorState wrapper
 	validatorStateWrapper := &validatorStateWrapper{vs: chainCtx.ValidatorState}
 	vm.validatorStateServer = gvalidators.NewServer(validatorStateWrapper)
@@ -272,7 +270,7 @@ func (vm *VMClient) Initialize(
 		// blockClient already implements consensuschain.Block
 		return blk.(consensuschain.Block), nil
 	}
-	
+
 	parseBlockWrapper := func(ctx context.Context, bytes []byte) (consensuschain.Block, error) {
 		blk, err := vm.parseBlock(ctx, bytes)
 		if err != nil {
@@ -281,7 +279,7 @@ func (vm *VMClient) Initialize(
 		// blockClient already implements consensuschain.Block
 		return blk.(consensuschain.Block), nil
 	}
-	
+
 	batchedParseBlockWrapper := func(ctx context.Context, blksBytes [][]byte) ([]consensuschain.Block, error) {
 		blks, err := vm.batchedParseBlock(ctx, blksBytes)
 		if err != nil {
@@ -293,7 +291,7 @@ func (vm *VMClient) Initialize(
 		}
 		return result, nil
 	}
-	
+
 	buildBlockWrapper := func(ctx context.Context) (consensuschain.Block, error) {
 		blk, err := vm.buildBlock(ctx)
 		if err != nil {
@@ -302,7 +300,7 @@ func (vm *VMClient) Initialize(
 		// blockClient already implements consensuschain.Block
 		return blk.(consensuschain.Block), nil
 	}
-	
+
 	buildBlockWithContextWrapper := func(ctx context.Context, blockCtx *block.Context) (consensuschain.Block, error) {
 		blk, err := vm.buildBlockWithContext(ctx, blockCtx)
 		if err != nil {
@@ -1013,7 +1011,7 @@ func (s *summaryClient) Accept(ctx context.Context) (block.StateSyncMode, error)
 
 // WaitForEvent implements the core.VM interface
 func (vm *VMClient) WaitForEvent(ctx context.Context) (core.Message, error) {
-	// The RPC VM client doesn't directly handle events, 
+	// The RPC VM client doesn't directly handle events,
 	// it relies on the server-side VM for event handling
 	<-ctx.Done()
 	return core.PendingTxs, ctx.Err()

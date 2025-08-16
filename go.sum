@@ -422,6 +422,8 @@ github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/leanovate/gopter v0.2.11 h1:vRjThO1EKPb/1NsDXuDrzldR28RLkBflWYcU9CvzWu4=
 github.com/leanovate/gopter v0.2.11/go.mod h1:aK3tzZP/C+p1m3SPRE4SYZFGP7jjkuSI4f7Xvpt0S9c=
+github.com/luxfi/consensus v1.1.1-0.20250816042749-e64270d6bd1e h1:Ju+6XcTqFDR0cSgM26DugClTcvm5Jh2scQYr0yhp8Lg=
+github.com/luxfi/consensus v1.1.1-0.20250816042749-e64270d6bd1e/go.mod h1:IuFEy6+79LIsiWnrLekKz6D2uIEAoNfk4LwXEl+DLoQ=
 github.com/luxfi/ledger-lux-go v0.0.3 h1:HDJvwQpPZgbB0AsSiasQUWD8O7/oQ5+9sPzje4pBoGw=
 github.com/luxfi/ledger-lux-go v0.0.3/go.mod h1:BbL5bOv9OgEtzE+dQ180SmNRRc5APi/YksT20qt5TsQ=
 github.com/magiconair/properties v1.8.5/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=

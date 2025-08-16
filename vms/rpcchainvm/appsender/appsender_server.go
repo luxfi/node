@@ -9,7 +9,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/core"
 
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 )

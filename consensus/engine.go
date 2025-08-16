@@ -5,43 +5,19 @@ import (
 	"context"
 	"fmt"
 	
-	// "github.com/luxfi/consensus/flare" // TODO: Uncomment when flare API is stable
-	"github.com/luxfi/consensus/dag"
-	"github.com/luxfi/consensus/dag/witness"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 )
 
 // FPCEngine provides fast-path consensus for the Lux node
 type FPCEngine struct {
-	// TODO: Update when flare API is stable
-	// flare  flare.Flare[ids.ID]
-	dag    *dag.DAG
-	cache  *witness.Cache
-	log    log.Logger
+	log log.Logger
 }
 
 // NewFPCEngine creates a new FPC consensus engine
 func NewFPCEngine(f int) *FPCEngine {
-	// TODO: Update when flare API is stable
-	// fl := flare.New[ids.ID](f)
-	
-	// Create DAG for transaction ordering
-	d := dag.New()
-	
-	// Create witness cache for Verkle validation
-	policy := witness.Policy{
-		Mode:     witness.Soft,
-		MaxBytes: 100 * 1024 * 1024, // 100MB
-	}
-	wCache := witness.NewCache(policy, 100000, 1<<30)
-	
 	return &FPCEngine{
-		// TODO: Update when flare API is stable
-		// flare: fl,
-		dag:   d,
-		cache: wCache,
-		log:   log.NewLogger("fpc"),
+		log: log.NewLogger("fpc"),
 	}
 }
 
@@ -59,30 +35,19 @@ func (e *FPCEngine) Stop() error {
 
 // Propose adds a transaction to consensus
 func (e *FPCEngine) Propose(txID ids.ID) error {
-	// TODO: Update when flare API is stable
-	// ref := e.flare.Propose(txID)
-	// e.log.Debug("Proposed transaction", "txID", txID, "ref", ref)
+	// TODO: Implement when consensus protocols are ready
+	e.log.Debug("Proposed transaction", "txID", txID)
 	return nil
 }
 
 // Query checks if a transaction is finalized
 func (e *FPCEngine) Query(txID ids.ID) (bool, error) {
-	// TODO: Update when flare API is stable
-	// status := e.flare.Status(txID)
-	// if status == flare.StatusFinal || status == flare.StatusExecutable {
-	// 	return true, nil
-	// }
+	// TODO: Implement when consensus protocols are ready
 	return false, fmt.Errorf("not finalized: %s", txID)
-}
-
-// ValidateWitness validates a Verkle witness
-func (e *FPCEngine) ValidateWitness(header witness.Header, payload []byte) (bool, int, [32]byte) {
-	return e.cache.Validate(header, payload)
 }
 
 // Executable returns transactions ready for execution
 func (e *FPCEngine) Executable() []ids.ID {
-	// TODO: Update when flare API is stable
-	// return e.flare.Executable()
+	// TODO: Implement when consensus protocols are ready
 	return []ids.ID{} // Return empty slice instead of nil
 }

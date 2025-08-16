@@ -9,7 +9,7 @@ import (
 	"testing"
 	
 
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/core"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/chains/atomic"

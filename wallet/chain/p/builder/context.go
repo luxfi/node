@@ -8,7 +8,6 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/xvm"
 )
 

@@ -24,7 +24,7 @@ import (
 
 	"github.com/luxfi/consensus/consensustest"
 
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/core"
 
 	"github.com/luxfi/consensus/uptime"
 

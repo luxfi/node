@@ -7,10 +7,8 @@ import (
 	"context"
 	"time"
 
-	"go.uber.org/zap"
-
 	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
@@ -69,9 +67,9 @@ func (b *Block) Status() choices.Status {
 
 	default:
 		// TODO: correctly report this error to the consensus engine.
-		b.manager.ctx.Log.Error(
+		b.manager.Log.Error(
 			"dropping unhandled database error",
-			zap.Error(err),
+			"error", err,
 		)
 		return choices.Processing
 	}
@@ -83,7 +81,7 @@ func (b *Block) Timestamp() time.Time {
 
 func (b *Block) Options(context.Context) ([2]chain.Block, error) {
 	options := options{
-		log:                     b.manager.ctx.Log,
+		log:                     b.manager.Log,
 		primaryUptimePercentage: b.manager.txExecutorBackend.Config.UptimePercentage,
 		uptimes:                 b.manager.txExecutorBackend.Uptimes,
 		state:                   b.manager.backend.state,
@@ -96,4 +94,18 @@ func (b *Block) Options(context.Context) ([2]chain.Block, error) {
 		b.manager.NewBlock(options.preferredBlock),
 		b.manager.NewBlock(options.alternateBlock),
 	}, nil
+}
+
+// FPCVotes implements the chain.Block interface
+// Returns embedded fast-path consensus vote references
+func (b *Block) FPCVotes() [][]byte {
+	// TODO: Extract FPC votes from block if available
+	return nil
+}
+
+// EpochBit implements the chain.Block interface
+// Returns the epoch fence bit for FPC
+func (b *Block) EpochBit() bool {
+	// TODO: Extract epoch bit from block if available
+	return false
 }

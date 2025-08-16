@@ -9,7 +9,7 @@ import (
 	"time"
 	
 
-	"github.com/luxfi/consensus/sampling"
+	"github.com/luxfi/consensus/config"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 )
@@ -25,7 +25,7 @@ type Config struct {
 	// AllowedNodes is the set of node IDs that are explicitly allowed to connect to this Subnet when
 	// ValidatorOnly is enabled.
 	AllowedNodes        set.Set[ids.NodeID] `json:"allowedNodes"        yaml:"allowedNodes"`
-	ConsensusParameters sampling.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
+	ConsensusParameters config.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
 
 	// ProposerMinBlockDelay is the minimum delay this node will enforce when
 	// building a linear++ block.
@@ -68,8 +68,8 @@ func (c *Config) Valid() error {
 }
 
 // GetPOAConsensusParameters returns sampling parameters optimized for POA mode
-func GetPOAConsensusParameters() sampling.Parameters {
-	return sampling.Parameters{
+func GetPOAConsensusParameters() config.Parameters {
+	return config.Parameters{
 		K:                     1, // Only query 1 node (ourselves)
 		AlphaPreference:       1, // Change preference with 1 vote
 		AlphaConfidence:       1, // Increase confidence with 1 vote

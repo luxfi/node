@@ -6,7 +6,6 @@ package proposervm
 import (
 	"context"
 	"time"
-	
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"

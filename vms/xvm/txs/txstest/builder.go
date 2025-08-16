@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/state"
@@ -28,12 +28,13 @@ type Builder struct {
 
 func New(
 	codec codec.Manager,
-	ctx *consensus.Context,
+	ctx context.Context,
 	cfg *config.Config,
 	feeAssetID ids.ID,
 	state state.State,
+	sharedMemory atomic.SharedMemory,
 ) *Builder {
-	utxos := newUTXOs(ctx, state, ctx.SharedMemory, codec)
+	utxos := newUTXOs(ctx, state, sharedMemory, codec)
 	return &Builder{
 		utxos: utxos,
 		ctx:   newContext(ctx, cfg, feeAssetID),

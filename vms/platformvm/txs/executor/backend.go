@@ -4,7 +4,12 @@
 package executor
 
 import (
+	"context"
+	"sync"
+
 	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -16,10 +21,20 @@ import (
 type Backend struct {
 	Config       *config.Config
 	Ctx          context.Context
+	LUXAssetID   ids.ID
+	NodeID       ids.NodeID
+	SharedMemory SharedMemory
+	Lock         sync.Locker
 	Clk          *mockable.Clock
 	Fx           fx.Fx
 	FlowChecker  utxo.Verifier
 	Uptimes      uptime.Calculator
 	Rewards      reward.Calculator
 	Bootstrapped *utils.Atomic[bool]
+}
+
+// SharedMemory provides cross-chain atomic operations
+type SharedMemory interface {
+	Get(peerChainID ids.ID, keys [][]byte) ([][]byte, error)
+	Apply(requests map[ids.ID]interface{}, batch ...interface{}) error
 }
