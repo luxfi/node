@@ -405,7 +405,7 @@ func TestGetSubnetConfigsFromFile(t *testing.T) {
 			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
 				require.Nil(given)
 			},
-			expectedErr: sampling.ErrParametersInvalid,
+			expectedErr: consensusconfig.ErrParametersInvalid,
 		},
 		"correct config": {
 			fileName:  "2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i.json",
@@ -494,7 +494,7 @@ func TestGetSubnetConfigsFromFlags(t *testing.T) {
 			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
 				require.Empty(given)
 			},
-			expectedErr: sampling.ErrParametersInvalid,
+			expectedErr: consensusconfig.ErrParametersInvalid,
 		},
 		"correct config": {
 			givenJSON: `{
