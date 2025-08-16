@@ -28,7 +28,7 @@ type Builder struct {
 
 func New(
 	codec codec.Manager,
-	ctx context.Context,
+	ctx *consensus.Context,
 	cfg *config.Config,
 	feeAssetID ids.ID,
 	state state.State,
