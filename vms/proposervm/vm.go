@@ -30,7 +30,8 @@ import (
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/chain"
+	// Using consensus protocol/chain for Block interface
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/scheduler"
 	"github.com/luxfi/node/vms/proposervm/state"
@@ -836,7 +837,7 @@ func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID)
 
 func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
 	// For now, return empty set with current height - need proper implementation
-	height, err := v.vs.GetCurrentHeight(ctx)
+	height, err := v.vs.GetCurrentHeight()
 	if err != nil {
 		return nil, 0, err
 	}
@@ -854,7 +855,8 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetMinimumHeight(ctx contex
 }
 
 func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentHeight() (uint64, error) {
-	return a.vs.GetCurrentHeight(a.ctx)
+	// interfaces.ValidatorState.GetCurrentHeight doesn't take context
+	return a.vs.GetCurrentHeight()
 }
 
 func (a *interfacesToConsensusValidatorStateAdapter) GetSubnetID(chainID ids.ID) (ids.ID, error) {
@@ -862,8 +864,8 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetSubnetID(chainID ids.ID)
 }
 
 func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	// Get the validator set from the interfaces version
-	valSet, err := a.vs.GetValidatorSet(a.ctx, height, subnetID)
+	// Get the validator set from the interfaces version which takes context
+	valSet, err := a.vs.GetValidatorSet(height, subnetID)
 	if err != nil {
 		return nil, err
 	}

@@ -11,7 +11,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	dto "github.com/prometheus/client_model/go"
-	"github.com/luxfi/metric"
+	"github.com/luxfi/metrics"
 )
 
 func TestLabelGatherer_Gather(t *testing.T) {

@@ -24,7 +24,7 @@ require (
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/ledger-lux-go v0.0.3
 	github.com/luxfi/log v1.1.1
-	github.com/luxfi/metric v1.3.0
+	github.com/luxfi/metrics v1.3.0
 	github.com/luxfi/trace v0.1.1
 	github.com/supranational/blst v0.3.15
 	github.com/tyler-smith/go-bip32 v1.0.0
@@ -157,6 +157,7 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
+	github.com/luxfi/metric v1.3.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
