@@ -5,7 +5,7 @@ package p2p
 
 import (
 	"testing"
-		luxmetrics "github.com/luxfi/metrics"
+		luxmetrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"

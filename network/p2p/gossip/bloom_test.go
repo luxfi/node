@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 	
-	luxmetrics "github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
 

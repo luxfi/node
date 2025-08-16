@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 )
 
 func TestServiceResponses(t *testing.T) {

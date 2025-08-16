@@ -73,9 +73,9 @@ import (
 	walletbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	
-	luxmetrics "github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 )
 
 const (

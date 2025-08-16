@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 	"time"
-		luxmetrics "github.com/luxfi/metrics"
+		luxmetrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 

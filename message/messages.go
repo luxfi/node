@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
@@ -140,15 +140,15 @@ type msgBuilder struct {
 	log log.Logger
 
 	zstdCompressor compression.Compressor
-	count          metrics.CounterVec // type + op + direction
-	duration       metrics.GaugeVec   // type + op + direction
+	count          metric.CounterVec // type + op + direction
+	duration       metric.GaugeVec   // type + op + direction
 
 	maxMessageTimeout time.Duration
 }
 
 func newMsgBuilder(
 	log log.Logger,
-	m metrics.Metrics,
+	m metric.Metrics,
 	maxMessageTimeout time.Duration,
 ) (*msgBuilder, error) {
 	zstdCompressor, err := compression.NewZstdCompressor(constants.DefaultMaxMessageSize)
@@ -223,7 +223,7 @@ func (mb *msgBuilder) marshal(
 	}
 	compressTook := time.Since(startTime)
 
-	labels := metrics.Labels{
+	labels := metric.Labels{
 		typeLabel:      compressionType.String(),
 		opLabel:        op.String(),
 		directionLabel: compressionLabel,
@@ -276,7 +276,7 @@ func (mb *msgBuilder) unmarshal(b []byte) (*p2p.Message, int, Op, error) {
 		return nil, 0, 0, err
 	}
 
-	labels := metrics.Labels{
+	labels := metric.Labels{
 		typeLabel:      compression.TypeZstd.String(),
 		opLabel:        op.String(),
 		directionLabel: decompressionLabel,

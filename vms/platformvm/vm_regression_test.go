@@ -47,7 +47,7 @@ import (
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
-	utilmetrics "github.com/luxfi/metrics"
+	utilmetrics "github.com/luxfi/metric"
 )
 
 func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {

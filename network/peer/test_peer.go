@@ -13,7 +13,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	
-	luxmetrics "github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/tracker"
