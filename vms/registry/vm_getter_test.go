@@ -21,7 +21,7 @@ import (
 
 	"github.com/luxfi/node/vms"
 
-	"github.com/luxfi/metric"
+	"github.com/luxfi/metrics"
 )
 
 var (

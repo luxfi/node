@@ -13,7 +13,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	
-	luxmetrics "github.com/luxfi/metric"
+	luxmetrics "github.com/luxfi/metrics"
 
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/tracker"
@@ -210,7 +210,11 @@ func (m *testValidatorManager) RemoveWeight(subnetID ids.ID, nodeID ids.NodeID, 
 	return nil
 }
 
-func (m *testValidatorManager) GetMap(subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+func (m *testValidatorManager) GetMap(subnetID ids.ID) map[ids.NodeID]*validators.GetValidatorOutput {
 	// Return empty map for testing
-	return make(map[ids.NodeID]*validators.GetValidatorOutput), nil
+	return make(map[ids.NodeID]*validators.GetValidatorOutput)
+}
+
+func (m *testValidatorManager) String() string {
+	return "testValidatorManager"
 }

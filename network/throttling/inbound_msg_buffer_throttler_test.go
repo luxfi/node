@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 	"time"
-		luxmetrics "github.com/luxfi/metric"
+		luxmetrics "github.com/luxfi/metrics"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
