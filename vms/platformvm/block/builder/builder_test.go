@@ -8,15 +8,14 @@ import (
 	"errors"
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/block"

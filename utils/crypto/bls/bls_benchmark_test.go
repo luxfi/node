@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/crypto/bls/blstest"
+	"github.com/luxfi/node/utils"
 )
 
 func BenchmarkVerify(b *testing.B) {

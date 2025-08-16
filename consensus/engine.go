@@ -4,7 +4,7 @@ package consensus
 import (
 	"context"
 	"fmt"
-	
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 )

@@ -5,7 +5,6 @@ package peer
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 

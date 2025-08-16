@@ -80,7 +80,7 @@ func (db *DatabaseServer) Delete(ctx context.Context, req *rpcdbpb.DeleteRequest
 
 func (db *DatabaseServer) WriteBatch(ctx context.Context, req *rpcdbpb.WriteBatchRequest) (*rpcdbpb.WriteBatchResponse, error) {
 	batch := db.db.NewBatch()
-	
+
 	for _, put := range req.Puts {
 		if err := batch.Put(put.Key, put.Value); err != nil {
 			return &rpcdbpb.WriteBatchResponse{
@@ -88,7 +88,7 @@ func (db *DatabaseServer) WriteBatch(ctx context.Context, req *rpcdbpb.WriteBatc
 			}, nil
 		}
 	}
-	
+
 	for _, del := range req.Deletes {
 		if err := batch.Delete(del.Key); err != nil {
 			return &rpcdbpb.WriteBatchResponse{
@@ -96,7 +96,7 @@ func (db *DatabaseServer) WriteBatch(ctx context.Context, req *rpcdbpb.WriteBatc
 			}, nil
 		}
 	}
-	
+
 	err := batch.Write()
 	return &rpcdbpb.WriteBatchResponse{
 		Err: errorToRPCError(err),
@@ -124,7 +124,7 @@ func (db *DatabaseServer) HealthCheck(ctx context.Context, req *emptypb.Empty) (
 			Details: []byte(err.Error()),
 		}, nil
 	}
-	
+
 	// Convert health data to bytes
 	healthBytes := []byte("healthy")
 	if health != nil {
@@ -132,7 +132,7 @@ func (db *DatabaseServer) HealthCheck(ctx context.Context, req *emptypb.Empty) (
 			healthBytes = []byte(str)
 		}
 	}
-	
+
 	return &rpcdbpb.HealthCheckResponse{
 		Details: healthBytes,
 	}, nil
@@ -140,13 +140,13 @@ func (db *DatabaseServer) HealthCheck(ctx context.Context, req *emptypb.Empty) (
 
 func (db *DatabaseServer) NewIteratorWithStartAndPrefix(ctx context.Context, req *rpcdbpb.NewIteratorWithStartAndPrefixRequest) (*rpcdbpb.NewIteratorWithStartAndPrefixResponse, error) {
 	it := db.db.NewIteratorWithStartAndPrefix(req.Start, req.Prefix)
-	
+
 	db.iteratorLock.Lock()
 	id := db.nextIteratorID
 	db.nextIteratorID++
 	db.iterators[id] = it
 	db.iteratorLock.Unlock()
-	
+
 	return &rpcdbpb.NewIteratorWithStartAndPrefixResponse{
 		Id: id,
 	}, nil
@@ -156,24 +156,24 @@ func (db *DatabaseServer) IteratorNext(ctx context.Context, req *rpcdbpb.Iterato
 	db.iteratorLock.RLock()
 	it, ok := db.iterators[req.Id]
 	db.iteratorLock.RUnlock()
-	
+
 	if !ok {
 		return &rpcdbpb.IteratorNextResponse{
 			Data: nil,
 		}, nil
 	}
-	
+
 	// Collect data until we have a reasonable batch or iterator is exhausted
 	var data []*rpcdbpb.PutRequest
 	const maxBatchSize = 100
-	
+
 	for i := 0; i < maxBatchSize && it.Next(); i++ {
 		data = append(data, &rpcdbpb.PutRequest{
 			Key:   it.Key(),
 			Value: it.Value(),
 		})
 	}
-	
+
 	return &rpcdbpb.IteratorNextResponse{
 		Data: data,
 	}, nil
@@ -183,13 +183,13 @@ func (db *DatabaseServer) IteratorError(ctx context.Context, req *rpcdbpb.Iterat
 	db.iteratorLock.RLock()
 	it, ok := db.iterators[req.Id]
 	db.iteratorLock.RUnlock()
-	
+
 	if !ok {
 		return &rpcdbpb.IteratorErrorResponse{
 			Err: rpcdbpb.Error_ERROR_NOT_FOUND,
 		}, nil
 	}
-	
+
 	err := it.Error()
 	return &rpcdbpb.IteratorErrorResponse{
 		Err: errorToRPCError(err),
@@ -204,14 +204,14 @@ func (db *DatabaseServer) IteratorRelease(ctx context.Context, req *rpcdbpb.Iter
 		delete(db.iterators, req.Id)
 	}
 	db.iteratorLock.Unlock()
-	
+
 	var err rpcdbpb.Error
 	if !ok {
 		err = rpcdbpb.Error_ERROR_NOT_FOUND
 	} else {
 		err = rpcdbpb.Error_ERROR_UNSPECIFIED
 	}
-	
+
 	return &rpcdbpb.IteratorReleaseResponse{
 		Err: err,
 	}, nil
@@ -431,13 +431,13 @@ func (it *iterator) Next() bool {
 	if it.err != nil || it.closed {
 		return false
 	}
-	
+
 	// If we have data left from previous fetch, use it
 	if it.dataIndex < len(it.data)-1 {
 		it.dataIndex++
 		return true
 	}
-	
+
 	// Fetch next batch
 	resp, err := it.db.client.IteratorNext(context.Background(), &rpcdbpb.IteratorNextRequest{
 		Id: it.id,
@@ -446,11 +446,11 @@ func (it *iterator) Next() bool {
 		it.err = err
 		return false
 	}
-	
+
 	if len(resp.Data) == 0 {
 		return false
 	}
-	
+
 	it.data = resp.Data
 	it.dataIndex = 0
 	return true
@@ -460,7 +460,7 @@ func (it *iterator) Error() error {
 	if it.err != nil {
 		return it.err
 	}
-	
+
 	resp, err := it.db.client.IteratorError(context.Background(), &rpcdbpb.IteratorErrorRequest{
 		Id: it.id,
 	})

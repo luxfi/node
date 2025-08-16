@@ -22,10 +22,11 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/db/rpcdb"
@@ -42,6 +43,8 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 	"github.com/luxfi/node/vms/rpcchainvm/messenger"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
+
+	consensuschain "github.com/luxfi/consensus/protocol/chain"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
@@ -182,7 +185,7 @@ func (vm *VMClient) Initialize(
 	)
 
 	// Create a channel for message passing
-	msgChannel := make(chan core.Message, 1)
+	msgChannel := make(chan core.MessageType, 1)
 	vm.messenger = messenger.NewServer(msgChannel)
 	// vm.keystore = gkeystore.NewServer(chainCtx.Keystore) // Keystore removed from context.Context
 
@@ -1010,7 +1013,7 @@ func (s *summaryClient) Accept(ctx context.Context) (block.StateSyncMode, error)
 }
 
 // WaitForEvent implements the core.VM interface
-func (vm *VMClient) WaitForEvent(ctx context.Context) (core.Message, error) {
+func (vm *VMClient) WaitForEvent(ctx context.Context) (core.MessageType, error) {
 	// The RPC VM client doesn't directly handle events,
 	// it relies on the server-side VM for event handling
 	<-ctx.Done()
@@ -1166,7 +1169,7 @@ type validatorStateWrapper struct {
 }
 
 func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
-	return v.vs.GetCurrentHeight(ctx)
+	return v.vs.GetCurrentHeight()
 }
 
 func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
@@ -1174,7 +1177,39 @@ func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID)
 }
 
 func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	return v.vs.GetValidatorSet(ctx, height, subnetID)
+	return v.vs.GetValidatorSet(height, subnetID)
+}
+
+func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+	// Get current height first
+	height, err := v.vs.GetCurrentHeight()
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	// Get validators at current height
+	valSet, err := v.vs.GetValidatorSet(height, subnetID)
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	// Convert to GetCurrentValidatorOutput format
+	result := make(map[ids.ID]*validators.GetCurrentValidatorOutput, len(valSet))
+	for nodeID, weight := range valSet {
+		// Convert NodeID to ID by copying the bytes
+		var id ids.ID
+		copy(id[:], nodeID[:])
+		result[id] = &validators.GetCurrentValidatorOutput{
+			NodeID: nodeID,
+			Weight: weight,
+		}
+	}
+	
+	return result, height, nil
+}
+
+func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	return v.vs.GetMinimumHeight(ctx)
 }
 
 // appSenderWrapper wraps block.AppSender to match core.AppSender

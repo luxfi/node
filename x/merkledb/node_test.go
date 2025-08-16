@@ -8,7 +8,6 @@ package merkledb
 import (
 	"io"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 

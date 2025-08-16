@@ -6,7 +6,6 @@ package peer
 import (
 	"net/netip"
 	"time"
-	
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/json"
@@ -23,6 +22,6 @@ type Info struct {
 	ObservedUptime        json.Uint32            `json:"observedUptime"`
 	ObservedSubnetUptimes map[ids.ID]json.Uint32 `json:"observedSubnetUptimes"`
 	TrackedSubnets        set.Set[ids.ID]        `json:"trackedSubnets"`
-	SupportedLPs         set.Set[uint32]        `json:"supportedLPs"`
-	ObjectedLPs          set.Set[uint32]        `json:"objectedLPs"`
+	SupportedLPs          set.Set[uint32]        `json:"supportedLPs"`
+	ObjectedLPs           set.Set[uint32]        `json:"objectedLPs"`
 }

@@ -8,18 +8,17 @@ package p
 import (
 	"fmt"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"

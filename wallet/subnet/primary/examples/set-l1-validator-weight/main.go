@@ -10,10 +10,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/message"

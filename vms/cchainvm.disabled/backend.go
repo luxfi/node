@@ -47,11 +47,11 @@ type MinimalEthBackend struct {
 func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBackend, error) {
 	fmt.Printf("Creating migrated backend for Coreth data at height %d\n", migratedHeight)
 	fmt.Printf("Database type: %T\n", db)
-	
+
 	// The migrated data is already in proper geth format in the ethdb
 	// We can use it directly
 	rawDB := db
-	
+
 	// Test if we can read a key directly
 	testKey := []byte("LastBlock")
 	if val, err := rawDB.Get(testKey); err == nil {
@@ -59,7 +59,7 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 	} else {
 		fmt.Printf("Failed to read LastBlock: %v\n", err)
 	}
-	
+
 	// Also try a canonical hash key
 	testKey2 := make([]byte, 9)
 	testKey2[0] = 'H'
@@ -69,7 +69,7 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 	} else {
 		fmt.Printf("Failed to read block 0 canonical with key %x: %v\n", testKey2, err)
 	}
-	
+
 	// Create chain config for LUX mainnet with all forks enabled
 	chainConfig := &params.ChainConfig{
 		ChainID:                 big.NewInt(96369),
@@ -100,28 +100,28 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 			},
 		},
 	}
-	
+
 	// Create a dummy consensus engine
 	engine := &dummyEngine{}
-	
+
 	fmt.Printf("Reading migrated database for blocks...\n")
-	
+
 	// The database is already migrated with proper Coreth format
 	// We just need to verify it has the expected blocks
-	
+
 	// Check for LastBlock key
 	lastBlockBytes, err := rawDB.Get([]byte("LastBlock"))
 	if err == nil && len(lastBlockBytes) == 32 {
 		var lastBlockHash common.Hash
 		copy(lastBlockHash[:], lastBlockBytes)
 		fmt.Printf("Found LastBlock in database: %x\n", lastBlockHash)
-		
+
 		// Set this as the head
 		rawdb.WriteHeadBlockHash(rawDB, lastBlockHash)
 		rawdb.WriteHeadHeaderHash(rawDB, lastBlockHash)
 		rawdb.WriteHeadFastBlockHash(rawDB, lastBlockHash)
 	}
-	
+
 	// Count available blocks by checking canonical hashes
 	// Use direct key access since ReadCanonicalHash might not work with BadgerDB wrapper
 	blockCount := 0
@@ -130,7 +130,7 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 		key := make([]byte, 9)
 		key[0] = 'H'
 		binary.BigEndian.PutUint64(key[1:], i)
-		
+
 		// Try to read the hash value
 		hashBytes, err := rawDB.Get(key)
 		if err == nil && len(hashBytes) == 32 {
@@ -145,13 +145,13 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 			}
 		}
 	}
-	
+
 	// Also check the target height
 	if migratedHeight > 10 {
 		key := make([]byte, 9)
 		key[0] = 'H'
 		binary.BigEndian.PutUint64(key[1:], migratedHeight)
-		
+
 		hashBytes, err := rawDB.Get(key)
 		if err == nil && len(hashBytes) == 32 {
 			var hash common.Hash
@@ -160,25 +160,25 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 			fmt.Printf("  Found block %d: %x\n", migratedHeight, hash[:8])
 		}
 	}
-	
+
 	fmt.Printf("Found %d canonical blocks in migrated database\n", blockCount)
-	
+
 	if blockCount == 0 {
 		// The database might use different key format, try direct iteration
 		// but limit it to avoid crashes
 		fmt.Printf("No canonical blocks found, database may need re-migration\n")
 		return nil, fmt.Errorf("no canonical blocks found in migrated database")
 	}
-	
+
 	// Use the migrated height as the target
 	actualHeight := migratedHeight
-	
+
 	// Get the hash at the migrated height using direct key access
 	var headHash common.Hash
 	key := make([]byte, 9)
 	key[0] = 'H'
 	binary.BigEndian.PutUint64(key[1:], migratedHeight)
-	
+
 	hashBytes, err := rawDB.Get(key)
 	if err == nil && len(hashBytes) == 32 {
 		copy(headHash[:], hashBytes)
@@ -188,7 +188,7 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 			key := make([]byte, 9)
 			key[0] = 'H'
 			binary.BigEndian.PutUint64(key[1:], i)
-			
+
 			hashBytes, err := rawDB.Get(key)
 			if err == nil && len(hashBytes) == 32 {
 				copy(headHash[:], hashBytes)
@@ -198,27 +198,27 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 			}
 		}
 	}
-	
+
 	if headHash == (common.Hash{}) {
 		return nil, fmt.Errorf("no head block found in migrated database at height %d", migratedHeight)
 	}
-	
+
 	fmt.Printf("Setting head to block %d with hash: %x\n", actualHeight, headHash)
-	
+
 	// The canonical mappings should already be in the database from migration
 	// Just ensure the head pointers are set correctly
 	rawdb.WriteHeadBlockHash(rawDB, headHash)
 	rawdb.WriteHeadHeaderHash(rawDB, headHash)
 	rawdb.WriteHeadFastBlockHash(rawDB, headHash)
 	rawdb.WriteLastPivotNumber(rawDB, actualHeight)
-	
+
 	// Create blockchain options that skip validation
 	options := &gethcore.BlockChainConfig{
 		TrieCleanLimit: 256,
 		NoPrefetch:     false,
 		StateScheme:    rawdb.HashScheme,
 	}
-	
+
 	// CRITICAL: Create blockchain WITHOUT genesis
 	// This prevents any genesis initialization
 	fmt.Printf("Creating blockchain without genesis...\n")
@@ -227,18 +227,18 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 		fmt.Printf("Failed to create blockchain: %v\n", err)
 		return nil, fmt.Errorf("failed to create blockchain from migrated data: %w", err)
 	}
-	
+
 	// Verify the blockchain loaded at the right height
 	currentBlock := blockchain.CurrentBlock()
 	fmt.Printf("Blockchain initialized at height: %d\n", currentBlock.Number.Uint64())
-	
+
 	// Create transaction pool
 	legacyPool := legacypool.New(ethconfig.Defaults.TxPool, blockchain)
 	txPool, err := txpool.New(ethconfig.Defaults.TxPool.PriceLimit, blockchain, []txpool.SubPool{legacyPool})
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &MinimalEthBackend{
 		chainConfig: chainConfig,
 		blockchain:  blockchain,
@@ -298,15 +298,15 @@ func NewMinimalEthBackendForMigration(db ethdb.Database, config *ethconfig.Confi
 
 	// Set the head pointers to the migrated height
 	fmt.Printf("Setting blockchain to migrated height %d\n", migratedHeight)
-	
+
 	// Get the hash at the migrated height using 9-byte format
 	key := canonicalKey(migratedHeight)
-	
+
 	var headHash common.Hash
 	if val, err := db.Get(key); err == nil && len(val) == 32 {
 		copy(headHash[:], val)
 		fmt.Printf("Found head hash at height %d: %x\n", migratedHeight, headHash)
-		
+
 		// Write head pointers
 		rawdb.WriteHeadBlockHash(db, headHash)
 		rawdb.WriteHeadHeaderHash(db, headHash)
@@ -328,20 +328,20 @@ func NewMinimalEthBackendForMigration(db ethdb.Database, config *ethconfig.Confi
 		// If it fails, it might be because it expects genesis
 		// Try creating a minimal genesis that won't overwrite data
 		fmt.Printf("First attempt failed: %v, trying with minimal genesis\n", err)
-		
+
 		minimalGenesis := &gethcore.Genesis{
 			Config:     chainConfig,
 			Difficulty: big.NewInt(0),
 			GasLimit:   8000000,
 			Alloc:      nil, // No allocations to prevent state overwrite
 		}
-		
+
 		blockchain, err = gethcore.NewBlockChain(db, minimalGenesis, engine, options)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create blockchain from migrated data: %w", err)
 		}
 	}
-	
+
 	fmt.Printf("Blockchain created, current height: %d\n", blockchain.CurrentBlock().Number.Uint64())
 
 	// Create transaction pool
@@ -365,7 +365,7 @@ func NewMinimalEthBackendForMigration(db ethdb.Database, config *ethconfig.Confi
 func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *gethcore.Genesis) (*MinimalEthBackend, error) {
 	// Special marker for "use existing genesis in database"
 	_ = false // useExistingGenesis - may use later
-	
+
 	// If no genesis is provided, check if we should use existing or create default
 	if genesis == nil {
 		// Check if database already has a genesis
@@ -375,9 +375,9 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 		} else {
 			// No existing genesis, create default
 			genesis = &gethcore.Genesis{
-				Config: params.AllEthashProtocolChanges,
+				Config:     params.AllEthashProtocolChanges,
 				Difficulty: big.NewInt(1),
-				GasLimit: 8000000,
+				GasLimit:   8000000,
 				Alloc: gethcore.GenesisAlloc{
 					// Default test account with some balance
 					common.HexToAddress("0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC"): types.Account{
@@ -387,7 +387,7 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 			}
 		}
 	}
-	
+
 	var chainConfig *params.ChainConfig
 	if genesis != nil {
 		chainConfig = genesis.Config
@@ -449,7 +449,7 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 		// Migration check disabled due to iterator issues
 		fmt.Printf("Migration check skipped - using regular genesis\n")
 	}
-	
+
 	// Log genesis info for debugging
 	if genesis != nil {
 		genesisBlock := genesis.ToBlock()
@@ -459,9 +459,9 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 
 	// Check if we need to initialize genesis first
 	stored := rawdb.ReadCanonicalHash(db, 0)
-	fmt.Printf("Debug: Reading canonical hash key: %x value: %x err: %v\n", 
+	fmt.Printf("Debug: Reading canonical hash key: %x value: %x err: %v\n",
 		canonicalKey(0), stored, nil)
-	
+
 	if stored == (common.Hash{}) {
 		// Double check with direct key access for migrated data
 		// Use 9-byte canonical key format (no suffix)
@@ -470,10 +470,10 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 			copy(stored[:], val)
 			fmt.Printf("Found canonical hash with direct key access: %x\n", stored)
 		}
-		
+
 		if stored == (common.Hash{}) {
 			fmt.Printf("No genesis found in database, will initialize\n")
-			
+
 			// SPECIAL CASE: Check if we're replaying from an existing genesis
 			// In this case, the genesis is already written but SetupGenesisBlockWithOverride
 			// will fail because it sees a different genesis
@@ -485,17 +485,17 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 			} else {
 				// Create trie database for genesis initialization
 				tdb := triedb.NewDatabase(db, triedb.HashDefaults)
-				
+
 				// Initialize genesis block normally
 				_, genesisHash, _, err := gethcore.SetupGenesisBlockWithOverride(db, tdb, genesis, nil)
 				if err != nil {
 					return nil, fmt.Errorf("failed to setup genesis: %w", err)
 				}
-				
+
 				if genesisHash != (common.Hash{}) {
 					fmt.Printf("Genesis initialized with hash: %s\n", genesisHash.Hex())
 				}
-				
+
 				// Check again
 				stored = rawdb.ReadCanonicalHash(db, 0)
 				fmt.Printf("After setup, canonical hash at 0: %s\n", stored.Hex())
@@ -512,14 +512,14 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 		if val, err := db.Get([]byte("LastBlock")); err == nil && len(val) == 32 {
 			copy(currentHash[:], val)
 			fmt.Printf("Found head block from LastBlock key: %x\n", currentHash)
-			
+
 			// Write it to the standard location
 			rawdb.WriteHeadBlockHash(db, currentHash)
 			rawdb.WriteHeadHeaderHash(db, currentHash)
 			rawdb.WriteHeadFastBlockHash(db, currentHash)
 		}
 	}
-	
+
 	if currentHash != (common.Hash{}) {
 		if header := rawdb.ReadHeader(db, currentHash, 0); header != nil {
 			fmt.Printf("Found header at hash %x with number %d\n", currentHash, header.Number.Uint64())
@@ -539,17 +539,17 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 	// However, NewBlockChain calls SetupGenesisBlockWithOverride which causes issues
 	// when we have a custom genesis already in the database
 	// So we need to create the blockchain manually when we have existing genesis
-	
+
 	var blockchain *gethcore.BlockChain
 	var err error
-	
+
 	// Check if we already have a genesis in the database
 	existingGenesisHash := rawdb.ReadCanonicalHash(db, 0)
 	if existingGenesisHash != (common.Hash{}) && genesis == nil {
 		// We have genesis in database and no new genesis provided
 		// Create blockchain without calling SetupGenesisBlockWithOverride
 		fmt.Printf("Creating blockchain with existing genesis: %s\n", existingGenesisHash.Hex())
-		
+
 		// Read the chain config from database
 		storedConfig := rawdb.ReadChainConfig(db, existingGenesisHash)
 		if storedConfig == nil {
@@ -558,7 +558,7 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 			// Write it to database
 			rawdb.WriteChainConfig(db, existingGenesisHash, storedConfig)
 		}
-		
+
 		// Create the blockchain directly without genesis setup
 		blockchain, err = createBlockchainWithoutGenesis(db, storedConfig, engine, options)
 		if err != nil {
@@ -632,25 +632,25 @@ func createBlockchainWithoutGenesis(db ethdb.Database, chainConfig *params.Chain
 	// The key insight is that NewBlockChain with nil genesis will use what's in the database
 	// But it compares against the default mainnet genesis (d4e56740...)
 	// We need to make it think our genesis IS the mainnet genesis
-	
+
 	// Get the genesis hash from database
 	genesisHash := rawdb.ReadCanonicalHash(db, 0)
 	if genesisHash == (common.Hash{}) {
 		return nil, fmt.Errorf("no genesis found in database")
 	}
-	
+
 	fmt.Printf("Attempting to create blockchain with genesis hash: %s\n", genesisHash.Hex())
-	
+
 	// The issue is that when genesis is nil, NewBlockChain defaults to mainnet genesis
 	// and compares it with what's in the database
 	// We need to pass nil and hope it accepts what's in the database
-	
+
 	// First ensure the chain config is written
 	if rawdb.ReadChainConfig(db, genesisHash) == nil {
 		fmt.Printf("Writing chain config for genesis %s\n", genesisHash.Hex())
 		rawdb.WriteChainConfig(db, genesisHash, chainConfig)
 	}
-	
+
 	// Try to create blockchain with nil genesis
 	// This should use what's in the database
 	blockchain, err := gethcore.NewBlockChain(db, nil, engine, options)
@@ -660,7 +660,7 @@ func createBlockchainWithoutGenesis(db ethdb.Database, chainConfig *params.Chain
 		// or to use the exact genesis that matches our extracted one
 		return nil, fmt.Errorf("failed to create blockchain: %w", err)
 	}
-	
+
 	return blockchain, nil
 }
 
@@ -699,7 +699,7 @@ func (d *dummyEngine) Finalize(chain consensus.ChainHeaderReader, header *types.
 func (d *dummyEngine) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB, body *types.Body, receipts []*types.Receipt) (*types.Block, error) {
 	// Finalize the state
 	d.Finalize(chain, header, state, body)
-	
+
 	// Assemble and return the block
 	return types.NewBlock(header, body, receipts, nil), nil
 }

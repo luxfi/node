@@ -6,16 +6,15 @@ package network
 import (
 	"context"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/mempool"
 )
@@ -23,7 +22,7 @@ import (
 const txGossipHandlerID = 0
 
 var (
-	_ core.AppHandler    = (*Network)(nil)
+	_ core.AppHandler      = (*Network)(nil)
 	_ validators.Connector = (*Network)(nil)
 )
 

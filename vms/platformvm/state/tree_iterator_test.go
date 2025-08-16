@@ -6,7 +6,6 @@ package state
 import (
 	"testing"
 	"time"
-	
 
 	"github.com/google/btree"
 	"github.com/stretchr/testify/require"

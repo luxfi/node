@@ -4,17 +4,12 @@
 package grpcutils
 
 import (
-	"context"
-	"fmt"
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/status"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 )
@@ -82,7 +77,7 @@ func TestWaitForReady(t *testing.T) {
 func TestWaitForReadyCallOption(t *testing.T) {
 	// TODO: Fix test - pb package not available
 	t.Skip("Test needs pb package to be fixed")
-	
+
 	// require := require.New(t)
 
 	// listener, err := NewListener()

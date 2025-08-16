@@ -7,21 +7,20 @@ package p
 
 import (
 	"time"
-	
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/admin"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/reward"

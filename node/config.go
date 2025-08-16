@@ -7,24 +7,23 @@ import (
 	"crypto/tls"
 	"net/netip"
 	"time"
-	
 
-	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/chains"
 	"github.com/luxfi/consensus/networking/benchlist"
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/trace"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
+	"github.com/luxfi/trace"
 )
 
 type APIIndexerConfig struct {

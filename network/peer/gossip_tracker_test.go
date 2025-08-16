@@ -5,12 +5,8 @@ package peer
 
 import (
 	"testing"
-	
-	luxmetrics "github.com/luxfi/metric"
-
 
 	"github.com/stretchr/testify/require"
-
 
 	"github.com/luxfi/ids"
 )

@@ -7,13 +7,14 @@ import (
 	"context"
 	"testing"
 	"time"
-		luxmetrics "github.com/luxfi/metric"
+
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/networking/tracker/trackermock"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -22,7 +23,7 @@ import (
 func TestNewSystemThrottler(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	require := require.New(t)
-	reg := luxmetric.NewNoOpMetrics("test").Registry()
+	reg := metric.NewNoOpMetrics("test").Registry()
 	clock := mockable.Clock{}
 	clock.Set(time.Now())
 	resourceTracker, err := tracker.NewResourceTracker(reg, resource.NoUsage, meter.ContinuousFactory{}, time.Second)
@@ -56,7 +57,7 @@ func TestSystemThrottler(t *testing.T) {
 	}
 	vdrID, nonVdrID := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 	targeter := trackermock.NewTargeter(ctrl)
-	throttler, err := NewSystemThrottler("", luxmetric.NewNoOpMetrics("test").Registry(), config, mockTracker, targeter)
+	throttler, err := NewSystemThrottler("", metric.NewNoOpMetrics("test").Registry(), config, mockTracker, targeter)
 	require.NoError(err)
 
 	// Case: Actual usage <= target usage; should return immediately
@@ -138,7 +139,7 @@ func TestSystemThrottlerContextCancel(t *testing.T) {
 	}
 	vdrID := ids.GenerateTestNodeID()
 	targeter := trackermock.NewTargeter(ctrl)
-	throttler, err := NewSystemThrottler("", luxmetric.NewNoOpMetrics("test").Registry(), config, mockTracker, targeter)
+	throttler, err := NewSystemThrottler("", metric.NewNoOpMetrics("test").Registry(), config, mockTracker, targeter)
 	require.NoError(err)
 
 	// Case: Actual usage > target usage; we should wait.

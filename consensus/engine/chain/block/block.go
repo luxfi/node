@@ -5,13 +5,13 @@ package block
 type Block interface {
 	// ID returns the block's unique identifier
 	ID() string
-	
+
 	// Height returns the block's height
 	Height() uint64
-	
+
 	// Parent returns the parent block's ID
 	Parent() string
-	
+
 	// Timestamp returns the block's timestamp
 	Timestamp() int64
 }

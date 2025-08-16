@@ -5,12 +5,10 @@ package txstest
 
 import (
 	"context"
-	
+
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -47,7 +45,7 @@ func (w *WalletFactory) NewWallet(keys ...*secp256k1.PrivateKey) (builder.Builde
 		// Extract networkID and LUXAssetID from context
 		networkID  = consensus.GetNetworkID(w.ctx)
 		luxAssetID = consensus.GetLUXAssetID(w.ctx)
-		context = newContext(networkID, luxAssetID, w.cfg, w.state.GetTimestamp())
+		context    = newContext(networkID, luxAssetID, w.cfg, w.state.GetTimestamp())
 	)
 
 	return builder.New(addrs, context, backend), signer.New(kc, backend)

@@ -6,7 +6,6 @@ package block
 import (
 	"context"
 	"time"
-	
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -81,12 +80,12 @@ func NewApricotCommitBlock(
 
 // InitializeWithContext initializes the block with consensus context
 func (b *BanffCommitBlock) InitializeWithContext(ctx context.Context) error {
-    // Initialize any context-dependent fields here
-    return nil
+	// Initialize any context-dependent fields here
+	return nil
 }
 
 // InitializeWithContext initializes the block with consensus context
 func (b *ApricotCommitBlock) InitializeWithContext(ctx context.Context) error {
-    // Initialize any context-dependent fields here
-    return nil
+	// Initialize any context-dependent fields here
+	return nil
 }

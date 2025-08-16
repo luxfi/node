@@ -9,16 +9,15 @@ import (
 	"fmt"
 	"sync"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )

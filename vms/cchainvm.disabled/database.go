@@ -9,8 +9,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/geth/ethdb"
 	"github.com/luxfi/database"
+	"github.com/luxfi/geth/ethdb"
 )
 
 // Subnet-EVM namespace for LUX mainnet
@@ -25,7 +25,8 @@ var subnetNamespace = []byte{
 var UseSubnetNamespace = false
 
 // canonicalKey returns the standard C-chain canonical key format:
-//   "H" + blockNumber (8 bytes)
+//
+//	"H" + blockNumber (8 bytes)
 func canonicalKey(number uint64) []byte {
 	key := make([]byte, 9)
 	key[0] = 'H'
@@ -59,16 +60,16 @@ func (d *DatabaseWrapper) Get(key []byte) ([]byte, error) {
 			if err == nil {
 				return val, nil
 			}
-			
+
 			// If not found, scan for block by number encoded in hash
 			blockNum := binary.BigEndian.Uint64(key[1:])
 			iter := d.db.NewIteratorWithPrefix(nil)
 			defer iter.Release()
-			
+
 			for iter.Next() {
 				k := iter.Key()
 				v := iter.Value()
-				
+
 				if len(k) == 64 && bytes.Equal(k[:32], subnetNamespace) {
 					hash := k[32:]
 					if len(v) > 100 && (v[0] == 0xf8 || v[0] == 0xf9) {
@@ -83,7 +84,7 @@ func (d *DatabaseWrapper) Get(key []byte) ([]byte, error) {
 			}
 			return nil, database.ErrNotFound
 		}
-		
+
 		// For header/body lookups (h/b prefix + 32-byte hash)
 		if len(key) == 33 && (key[0] == 'h' || key[0] == 'b') {
 			// Try standard format first
@@ -91,7 +92,7 @@ func (d *DatabaseWrapper) Get(key []byte) ([]byte, error) {
 			if err == nil {
 				return val, nil
 			}
-			
+
 			// Try with namespace for header
 			if key[0] == 'h' {
 				nsKey := make([]byte, 64)
@@ -103,7 +104,7 @@ func (d *DatabaseWrapper) Get(key []byte) ([]byte, error) {
 				}
 			}
 		}
-		
+
 		// For direct hash lookups (32 bytes)
 		if len(key) == 32 {
 			nsKey := make([]byte, 64)
@@ -181,7 +182,6 @@ func (d *DatabaseWrapper) Compact(start []byte, limit []byte) error {
 	// Not implemented in Lux database
 	return nil
 }
-
 
 // Close closes the database
 func (d *DatabaseWrapper) Close() error {

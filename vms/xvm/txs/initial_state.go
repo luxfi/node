@@ -10,8 +10,8 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/vms/components/verify"
 )

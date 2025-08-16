@@ -6,12 +6,11 @@ package poa
 import (
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/config"
 	consensusconfig "github.com/luxfi/consensus/config"
+	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/subnets"
 )
 
@@ -42,7 +41,7 @@ func TestPOASubnetConfig(t *testing.T) {
 			AlphaPreference:       3,
 			AlphaConfidence:       3,
 			Beta:                  uint32(20),
-			ConcurrentPolls:     4,
+			ConcurrentPolls:       4,
 			OptimalProcessing:     10,
 			MaxOutstandingItems:   256,
 			MaxItemProcessingTime: 30 * time.Second,

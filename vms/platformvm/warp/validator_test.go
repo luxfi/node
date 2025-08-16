@@ -8,7 +8,6 @@ import (
 	"math"
 	"strconv"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -16,8 +15,8 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorsmock"
 	"github.com/luxfi/consensus/validators/validatorstest"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 )
 

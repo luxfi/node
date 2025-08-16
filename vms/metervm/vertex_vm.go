@@ -73,7 +73,7 @@ func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (dag.Tx, error) {
 		return nil, err
 	}
 	vm.vertexMetrics.parse.Observe(duration)
-	
+
 	// Wrap it with meterTx
 	return &meterTx{
 		Tx: tx,

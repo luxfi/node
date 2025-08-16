@@ -8,16 +8,13 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-	
-	"github.com/luxfi/metric"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/stretchr/testify/require"
 
-
-	"github.com/luxfi/consensus"
-
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/database/leveldb"
 
@@ -65,9 +62,9 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 
 	db, err := leveldb.New(
 		b.TempDir(),
-		0,     // blockCacheSize - use default
-		0,     // writeCacheSize - use default  
-		1024,  // handleCap - reasonable default
+		0,    // blockCacheSize - use default
+		0,    // writeCacheSize - use default
+		1024, // handleCap - reasonable default
 	)
 	require.NoError(err)
 	defer func() {
@@ -135,7 +132,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 		&context.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    ids.GenerateTestNodeID(),
-			Log: log.NewNoOpLogger(),
+			Log:       log.NewNoOpLogger(),
 		},
 		metrics,
 		reward.NewCalculator(reward.Config{

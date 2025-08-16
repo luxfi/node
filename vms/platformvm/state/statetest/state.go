@@ -14,6 +14,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+
 	// "github.com/luxfi/node/snow" // snow package removed
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/validators"
@@ -38,7 +39,7 @@ type Config struct {
 	Upgrades   upgrade.Config
 	Config     config.Config
 	Context    context.Context
-	Metrics    metric.Metrics
+	Metrics    metrics.Metrics
 	Rewards    reward.Calculator
 }
 
@@ -94,7 +95,7 @@ func New(t testing.TB, c Config) state.State {
 		BlockIDCacheSize:             8192,
 		FxOwnerCacheSize:             4 * 1024 * 1024,
 	}
-	
+
 	s, err := state.New(
 		c.DB,
 		c.Genesis,

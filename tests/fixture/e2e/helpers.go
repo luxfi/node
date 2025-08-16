@@ -15,6 +15,7 @@ import (
 	"time"
 
 	// "github.com/luxfi/coreth"
+	"github.com/ethereum/go-ethereum"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/ethclient"
 	"github.com/stretchr/testify/require"

@@ -9,8 +9,8 @@ import (
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/version"
 )
 

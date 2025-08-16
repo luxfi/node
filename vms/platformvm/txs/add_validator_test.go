@@ -6,13 +6,12 @@ package txs
 import (
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/reward"

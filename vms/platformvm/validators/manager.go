@@ -8,14 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	
 
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/window"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -94,7 +92,7 @@ func NewManager(
 	log log.Logger,
 	cfg config.Config,
 	state State,
-	metrics metric.Metrics,
+	metrics metrics.Metrics,
 	clk *mockable.Clock,
 ) Manager {
 	return &manager{
@@ -121,7 +119,7 @@ type manager struct {
 	log     log.Logger
 	cfg     config.Config
 	state   State
-	metrics metric.Metrics
+	metrics metrics.Metrics
 	clk     *mockable.Clock
 
 	// Maps caches for each subnet that is currently tracked.
@@ -202,7 +200,7 @@ func (m *manager) GetValidatorSet(
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Convert to simple weight map
 	result := make(map[ids.NodeID]uint64, len(valSet))
 	for nodeID, val := range valSet {
@@ -220,7 +218,7 @@ func (m *manager) GetValidatorSetWithContext(
 	validatorSetsCache := m.getValidatorSetCache(subnetID)
 
 	if validatorSet, ok := validatorSetsCache.Get(targetHeight); ok {
-		m.metric.IncValidatorSetsCached()
+		m.metrics.IncValidatorSetsCached()
 		return validatorSet, nil
 	}
 
@@ -245,9 +243,9 @@ func (m *manager) GetValidatorSetWithContext(
 	validatorSetsCache.Put(targetHeight, validatorSet)
 
 	duration := m.clk.Time().Sub(startTime)
-	m.metric.IncValidatorSetsCreated()
-	m.metric.AddValidatorSetsDuration(duration)
-	m.metric.AddValidatorSetsHeightDiff(currentHeight - targetHeight)
+	m.metrics.IncValidatorSetsCreated()
+	m.metrics.AddValidatorSetsDuration(duration)
+	m.metrics.AddValidatorSetsHeightDiff(currentHeight - targetHeight)
 	return validatorSet, nil
 }
 
@@ -421,15 +419,15 @@ func (m *manager) OnAcceptedBlockID(blkID ids.ID) {
 func (m *manager) GetCurrentValidatorSet(
 	ctx context.Context,
 	subnetID ids.ID,
-) (map[ids.ID]*validator.GetCurrentValidatorOutput, uint64, error) {
+) (map[ids.NodeID]*validators.GetCurrentValidatorOutput, uint64, error) {
 	// For now, return an empty map with current height
 	// This is a stub implementation that needs to be properly implemented
 	currentHeight, err := m.getCurrentHeight(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
-	
+
 	// TODO: Implement proper conversion from GetValidatorOutput to GetCurrentValidatorOutput
-	result := make(map[ids.ID]*validator.GetCurrentValidatorOutput)
+	result := make(map[ids.NodeID]*validators.GetCurrentValidatorOutput)
 	return result, currentHeight, nil
 }

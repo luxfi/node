@@ -6,12 +6,11 @@ package state
 import (
 	"bytes"
 	"time"
-	
 
 	"github.com/google/btree"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 

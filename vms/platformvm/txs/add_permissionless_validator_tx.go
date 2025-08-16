@@ -8,9 +8,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
@@ -190,6 +190,6 @@ func (tx *AddPermissionlessValidatorTx) Visit(visitor Visitor) error {
 
 // InitializeWithContext initializes the transaction with consensus context
 func (tx *AddPermissionlessValidatorTx) InitializeWithContext(ctx context.Context) error {
-    // Initialize any context-dependent fields here
-    return nil
+	// Initialize any context-dependent fields here
+	return nil
 }

@@ -12,7 +12,6 @@ import (
 	"path"
 	"sync"
 	"time"
-	
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/prometheus/client_golang/prometheus"
@@ -20,12 +19,12 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	"github.com/luxfi/node/api"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/trace"
 )
@@ -95,7 +94,7 @@ type server struct {
 
 	// Maps endpoints to handlers
 	router *router
-	
+
 	// Mutex for thread-safe operations
 	lock sync.RWMutex
 
@@ -181,11 +180,11 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 		s.log.Error("no chain ID found in context")
 		return
 	}
-	
+
 	// TODO: Add proper locking mechanism as a field on server instead of in context
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	
+
 	handlers, err := vm.CreateHandlers(context.TODO())
 	if err != nil {
 		s.log.Error("failed to create handlers",
@@ -231,7 +230,7 @@ func (s *server) addChainRoute(chainName string, handler http.Handler, ctx conte
 	}
 	// Apply middleware to reject calls to the handler before the chain finishes bootstrapping
 	handler = rejectMiddleware(handler, ctx)
-	handler = s.metric.wrapHandler(chainName, handler)
+	handler = s.metrics.wrapHandler(chainName, handler)
 	return s.router.AddRouter(url, endpoint, handler)
 }
 
@@ -256,7 +255,7 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 		handler = api.TraceHandler(handler, url, s.tracer)
 	}
 
-	handler = s.metric.wrapHandler(base, handler)
+	handler = s.metrics.wrapHandler(base, handler)
 	return s.router.AddRouter(url, endpoint, handler)
 }
 

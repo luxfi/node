@@ -6,7 +6,6 @@ package ips
 import (
 	"net/netip"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 )

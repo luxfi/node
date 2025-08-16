@@ -8,17 +8,16 @@ import (
 	"crypto/tls"
 	"net/netip"
 	"time"
-	
 
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/set"
 )
 

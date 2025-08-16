@@ -8,14 +8,13 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/engine/chain/chaintest"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"

@@ -9,19 +9,18 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/sampler"

@@ -7,7 +7,6 @@ import (
 	"context"
 	"sync"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -27,7 +26,7 @@ func newInboundMsgBufferThrottler(
 		awaitingAcquire:          make(map[ids.NodeID]chan struct{}),
 		nodeToNumProcessingMsgs:  make(map[ids.NodeID]uint64),
 	}
-	return t, t.metric.initialize(registerer)
+	return t, t.metrics.initialize(registerer)
 }
 
 // Rate-limits inbound messages based on the number of
@@ -63,7 +62,7 @@ type inboundMsgBufferThrottler struct {
 func (t *inboundMsgBufferThrottler) Acquire(ctx context.Context, nodeID ids.NodeID) ReleaseFunc {
 	startTime := time.Now()
 	defer func() {
-		t.metric.acquireLatency.Observe(float64(time.Since(startTime)))
+		t.metrics.acquireLatency.Observe(float64(time.Since(startTime)))
 	}()
 
 	t.lock.Lock()
@@ -84,8 +83,8 @@ func (t *inboundMsgBufferThrottler) Acquire(ctx context.Context, nodeID ids.Node
 	closeOnAcquireChan := make(chan struct{})
 	t.awaitingAcquire[nodeID] = closeOnAcquireChan
 	t.lock.Unlock()
-	t.metric.awaitingAcquire.Inc()
-	defer t.metric.awaitingAcquire.Dec()
+	t.metrics.awaitingAcquire.Inc()
+	defer t.metrics.awaitingAcquire.Dec()
 
 	var releaseFunc ReleaseFunc
 	select {

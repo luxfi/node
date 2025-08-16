@@ -7,7 +7,6 @@ import (
 	"errors"
 	"sync"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 

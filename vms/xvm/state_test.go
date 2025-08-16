@@ -6,14 +6,13 @@ package xvm
 import (
 	"math"
 	"testing"
-	
 
 	"github.com/luxfi/consensus/core"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"

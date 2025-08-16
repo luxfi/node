@@ -8,7 +8,6 @@ import (
 	"math"
 	"runtime"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 

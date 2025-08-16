@@ -6,7 +6,6 @@ package ghttp
 import (
 	"net/http/httptest"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 

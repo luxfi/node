@@ -7,19 +7,19 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxfi/geth/ethclient"
 	gethcommon "github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/ethclient"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/rpc"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/x"
 
@@ -31,7 +31,7 @@ import (
 
 const (
 	MainnetAPIURI = "https://api.lux.network"
-	TestnetAPIURI    = "https://api.lux-test.network"
+	TestnetAPIURI = "https://api.lux-test.network"
 	LocalAPIURI   = "http://localhost:9630"
 
 	fetchLimit = 1024
@@ -63,7 +63,7 @@ type LUXState struct {
 	XCTX    *xbuilder.Context
 	// CClient evm.Client // TODO: Implement C-Chain client
 	// CCTX    *c.Context
-	UTXOs   walletcommon.UTXOs
+	UTXOs walletcommon.UTXOs
 }
 
 func FetchState(
@@ -140,7 +140,7 @@ func FetchState(
 		XCTX:    xCTX,
 		// CClient: cClient,
 		// CCTX:    cCTX,
-		UTXOs:   utxos,
+		UTXOs: utxos,
 	}, nil
 }
 

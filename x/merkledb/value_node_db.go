@@ -6,8 +6,8 @@ package merkledb
 import (
 	"errors"
 
-	"github.com/luxfi/node/cache"
 	"github.com/luxfi/database"
+	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/utils"
 )
 
@@ -51,7 +51,7 @@ func newValueNodeDB(
 }
 
 func (db *valueNodeDB) Write(batch database.KeyValueWriterDeleter, key Key, n *node) error {
-	db.metric.DatabaseNodeWrite()
+	db.metrics.DatabaseNodeWrite()
 	db.nodeCache.Put(key, n)
 	prefixedKey := addPrefixToKey(db.bufferPool, valueNodePrefix, key.Bytes())
 	defer db.bufferPool.Put(prefixedKey)
@@ -81,18 +81,18 @@ func (db *valueNodeDB) Close() {
 
 func (db *valueNodeDB) Get(key Key) (*node, error) {
 	if cachedValue, isCached := db.nodeCache.Get(key); isCached {
-		db.metric.ValueNodeCacheHit()
+		db.metrics.ValueNodeCacheHit()
 		if cachedValue == nil {
 			return nil, database.ErrNotFound
 		}
 		return cachedValue, nil
 	}
-	db.metric.ValueNodeCacheMiss()
+	db.metrics.ValueNodeCacheMiss()
 
 	prefixedKey := addPrefixToKey(db.bufferPool, valueNodePrefix, key.Bytes())
 	defer db.bufferPool.Put(prefixedKey)
 
-	db.metric.DatabaseNodeRead()
+	db.metrics.DatabaseNodeRead()
 	nodeBytes, err := db.baseDB.Get(*prefixedKey)
 	if err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (i *iterator) Next() bool {
 		return false
 	}
 
-	i.db.metric.DatabaseNodeRead()
+	i.db.metrics.DatabaseNodeRead()
 
 	r := codecReader{
 		b: i.nodeIter.Value(),

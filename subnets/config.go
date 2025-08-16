@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	
 
 	"github.com/luxfi/consensus/config"
 	"github.com/luxfi/ids"
@@ -25,7 +24,7 @@ type Config struct {
 	// AllowedNodes is the set of node IDs that are explicitly allowed to connect to this Subnet when
 	// ValidatorOnly is enabled.
 	AllowedNodes        set.Set[ids.NodeID] `json:"allowedNodes"        yaml:"allowedNodes"`
-	ConsensusParameters config.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
+	ConsensusParameters config.Parameters   `json:"consensusParameters" yaml:"consensusParameters"`
 
 	// ProposerMinBlockDelay is the minimum delay this node will enforce when
 	// building a linear++ block.

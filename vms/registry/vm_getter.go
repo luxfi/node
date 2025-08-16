@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"

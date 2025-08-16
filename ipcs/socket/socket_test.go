@@ -6,7 +6,6 @@ package socket
 import (
 	"net"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 )

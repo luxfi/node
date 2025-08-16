@@ -6,7 +6,6 @@ package cb58
 import (
 	"bytes"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 )

@@ -7,17 +7,16 @@ package p
 
 import (
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/api/info"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm"

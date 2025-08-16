@@ -9,13 +9,11 @@ import (
 	"errors"
 	"math"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"

@@ -5,7 +5,6 @@ package bloom
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 )
@@ -16,7 +15,7 @@ func TestNew(t *testing.T) {
 		count   = 10000
 		p       = 0.1
 	)
-	
+
 	numHashes, numEntries := OptimalParameters(count, p)
 	f, err := New(numHashes, numEntries)
 	require.NoError(err)

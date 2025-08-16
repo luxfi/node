@@ -7,11 +7,8 @@ import (
 	"net/netip"
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/luxfi/log"
 )
 
 var (

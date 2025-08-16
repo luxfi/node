@@ -6,7 +6,6 @@ package maybe
 import (
 	"slices"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 )

@@ -11,8 +11,8 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 )
 

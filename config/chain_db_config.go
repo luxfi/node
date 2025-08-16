@@ -9,12 +9,12 @@ import (
 type ChainDatabaseConfig struct {
 	// Default database type for all chains
 	DefaultType string
-	
+
 	// Per-chain overrides
 	PChainDBType string
 	XChainDBType string
 	CChainDBType string
-	
+
 	// Additional subnet configurations can be added here
 	// SubnetDBTypes map[ids.ID]string
 }
@@ -47,12 +47,12 @@ func (c *ChainDatabaseConfig) Validate() error {
 		"badgerdb": true,
 		"memdb":    true,
 	}
-	
+
 	// Check default type
 	if !validTypes[c.DefaultType] {
 		return fmt.Errorf("invalid default database type: %s", c.DefaultType)
 	}
-	
+
 	// Check chain-specific types
 	for chain, dbType := range map[string]string{
 		"P-Chain": c.PChainDBType,
@@ -63,6 +63,6 @@ func (c *ChainDatabaseConfig) Validate() error {
 			return fmt.Errorf("invalid database type for %s: %s", chain, dbType)
 		}
 	}
-	
+
 	return nil
 }

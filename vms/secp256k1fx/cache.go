@@ -25,7 +25,7 @@ func (rc *RecoverCache) RecoverPublicKeyFromHash(hash, sig []byte) (*PublicKey, 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Return a wrapper that provides the Bytes() method
 	return &PublicKey{bytes: pk.Bytes()}, nil
 }

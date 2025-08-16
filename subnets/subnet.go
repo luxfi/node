@@ -6,8 +6,8 @@ package subnets
 import (
 	"sync"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 )
 

@@ -6,7 +6,6 @@ package reflectcodec
 import (
 	"reflect"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 )
@@ -20,13 +19,13 @@ func TestSizeWithNil(t *testing.T) {
 	// It will return error for nil pointers
 	_, _, err := c.size(reflect.ValueOf(x), nil)
 	require.Error(err)
-	
+
 	// For non-nil values
 	x = &y
 	len, _, err := c.size(reflect.ValueOf(y), nil)
 	require.NoError(err)
 	require.Equal(4, len) // int32 is 4 bytes
-	
+
 	len, _, err = c.size(reflect.ValueOf(x), nil)
 	require.NoError(err)
 	require.Equal(4, len) // pointer to int32 is also 4 bytes when dereferenced

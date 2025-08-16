@@ -6,7 +6,6 @@ package config
 import (
 	"encoding/json"
 	"time"
-	
 
 	"github.com/luxfi/node/utils/units"
 )
@@ -28,16 +27,16 @@ var DefaultExecutionConfig = ExecutionConfig{
 // ExecutionConfig provides execution parameters of PlatformVM
 type ExecutionConfig struct {
 	Network                      NetworkConfig `json:"network"`
-	BlockCacheSize               int            `json:"block-cache-size"`
-	TxCacheSize                  int            `json:"tx-cache-size"`
-	TransformedSubnetTxCacheSize int            `json:"transformed-subnet-tx-cache-size"`
-	RewardUTXOsCacheSize         int            `json:"reward-utxos-cache-size"`
-	ChainCacheSize               int            `json:"chain-cache-size"`
-	ChainDBCacheSize             int            `json:"chain-db-cache-size"`
-	BlockIDCacheSize             int            `json:"block-id-cache-size"`
-	FxOwnerCacheSize             int            `json:"fx-owner-cache-size"`
-	ChecksumsEnabled             bool           `json:"checksums-enabled"`
-	MempoolPruneFrequency        time.Duration  `json:"mempool-prune-frequency"`
+	BlockCacheSize               int           `json:"block-cache-size"`
+	TxCacheSize                  int           `json:"tx-cache-size"`
+	TransformedSubnetTxCacheSize int           `json:"transformed-subnet-tx-cache-size"`
+	RewardUTXOsCacheSize         int           `json:"reward-utxos-cache-size"`
+	ChainCacheSize               int           `json:"chain-cache-size"`
+	ChainDBCacheSize             int           `json:"chain-db-cache-size"`
+	BlockIDCacheSize             int           `json:"block-id-cache-size"`
+	FxOwnerCacheSize             int           `json:"fx-owner-cache-size"`
+	ChecksumsEnabled             bool          `json:"checksums-enabled"`
+	MempoolPruneFrequency        time.Duration `json:"mempool-prune-frequency"`
 }
 
 // GetExecutionConfig returns an ExecutionConfig

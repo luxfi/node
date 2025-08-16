@@ -5,15 +5,14 @@ package indexer
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
@@ -76,7 +75,7 @@ func TestIndex(t *testing.T) {
 
 	// Create a new index with the same database and ensure contents still there
 	require.NoError(idx.vDB.Commit())
-	
+
 	// Create a new index by directly using the same base database
 	// Don't close the old index to avoid closing the baseDB
 	idx, err = newIndex(baseDB, log.NoLog{}, mockable.Clock{})

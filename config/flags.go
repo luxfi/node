@@ -9,19 +9,18 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
-	
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	consensusconfig "github.com/luxfi/consensus/config"
+	"github.com/luxfi/consensus/config"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/dynamicip"
 	"github.com/luxfi/node/utils/ulimit"
 	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/trace"
 )
 
 const (
@@ -119,7 +118,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(DBPathKey, defaultDBDir, "Path to database directory")
 	fs.String(DBConfigFileKey, "", fmt.Sprintf("Path to database config file. Ignored if %s is specified", DBConfigContentKey))
 	fs.String(DBConfigContentKey, "", "Specifies base64 encoded database config content")
-	
+
 	// Per-chain database configuration
 	fs.String(PChainDBTypeKey, "", "Database type for P-Chain. If not specified, uses default db-type")
 	fs.String(XChainDBTypeKey, "", "Database type for X-Chain. If not specified, uses default db-type")

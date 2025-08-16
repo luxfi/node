@@ -5,13 +5,11 @@ package mempool
 
 import (
 	"testing"
-	
-	"github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
 
-
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/core"
 

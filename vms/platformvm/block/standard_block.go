@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"time"
-	
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -99,12 +98,12 @@ func NewApricotStandardBlock(
 
 // InitializeWithContext initializes the block with consensus context
 func (b *BanffStandardBlock) InitializeWithContext(ctx context.Context) error {
-    // Initialize any context-dependent fields here
-    return nil
+	// Initialize any context-dependent fields here
+	return nil
 }
 
 // InitializeWithContext initializes the block with consensus context
 func (b *ApricotStandardBlock) InitializeWithContext(ctx context.Context) error {
-    // Initialize any context-dependent fields here
-    return nil
+	// Initialize any context-dependent fields here
+	return nil
 }

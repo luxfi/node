@@ -6,7 +6,6 @@ package version
 import (
 	"strconv"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 )

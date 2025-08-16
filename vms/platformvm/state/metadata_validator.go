@@ -5,11 +5,10 @@ package state
 
 import (
 	"time"
-	
 
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/wrappers"

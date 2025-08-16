@@ -10,16 +10,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
-	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/state/statetest"
 

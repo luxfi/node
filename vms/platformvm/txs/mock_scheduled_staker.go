@@ -13,8 +13,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/luxfi/ids"
 	bls "github.com/luxfi/crypto/bls"
+	ids "github.com/luxfi/ids"
 	gomock "go.uber.org/mock/gomock"
 )
 

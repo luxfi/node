@@ -9,11 +9,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/node/utils/bloom"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/utils/bloom"
 )
 
 var _ p2p.Handler = (*Handler[*testTx])(nil)
@@ -77,7 +77,7 @@ func (h Handler[T]) AppRequest(_ context.Context, _ ids.NodeID, _ time.Time, req
 		return nil, p2p.ErrUnexpected
 	}
 
-	if err := h.metric.observeMessage(sentPullLabels, len(gossipBytes), responseSize); err != nil {
+	if err := h.metrics.observeMessage(sentPullLabels, len(gossipBytes), responseSize); err != nil {
 		return nil, p2p.ErrUnexpected
 	}
 
@@ -118,7 +118,7 @@ func (h Handler[_]) AppGossip(_ context.Context, nodeID ids.NodeID, gossipBytes 
 		}
 	}
 
-	if err := h.metric.observeMessage(receivedPushLabels, len(gossip), receivedBytes); err != nil {
+	if err := h.metrics.observeMessage(receivedPushLabels, len(gossip), receivedBytes); err != nil {
 		h.log.Error("failed to update metrics",
 			zap.Error(err),
 		)

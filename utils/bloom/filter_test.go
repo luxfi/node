@@ -6,7 +6,6 @@ package bloom
 import (
 	"math/rand"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 

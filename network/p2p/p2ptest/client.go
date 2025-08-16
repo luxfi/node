@@ -8,15 +8,14 @@ import (
 	"fmt"
 	"testing"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/consensus/core"
 )
 
 func NewSelfClient(t *testing.T, ctx context.Context, nodeID ids.NodeID, handler p2p.Handler) *p2p.Client {

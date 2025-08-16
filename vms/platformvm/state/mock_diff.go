@@ -15,11 +15,12 @@ import (
 
 	ids "github.com/luxfi/ids"
 	iterator "github.com/luxfi/node/utils/iterator"
-	lux "github.com/luxfi/node/vms/components/lux"
 	gas "github.com/luxfi/node/vms/components/gas"
+	lux "github.com/luxfi/node/vms/components/lux"
 	fx "github.com/luxfi/node/vms/platformvm/fx"
 	status "github.com/luxfi/node/vms/platformvm/status"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
+
 	// "github.com/luxfi/node/vms/platformvm/warp/message" // Commented out - not used
 	gomock "go.uber.org/mock/gomock"
 )

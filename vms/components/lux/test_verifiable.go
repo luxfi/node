@@ -5,7 +5,7 @@ package lux
 
 import (
 	"context"
-	
+
 	"github.com/luxfi/node/vms/components/verify"
 )
 

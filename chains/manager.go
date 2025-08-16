@@ -16,39 +16,39 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/interfaces"
+	"github.com/luxfi/consensus/core/tracker"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/dag/bootstrap/queue"
+	"github.com/luxfi/consensus/engine/dag/state"
+	"github.com/luxfi/consensus/engine/dag/vertex"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/core/tracker"
-	"github.com/luxfi/consensus/core/interfaces"
-	"github.com/luxfi/consensus/engine/dag/bootstrap/queue"
-	"github.com/luxfi/consensus/engine/dag/state"
-	"github.com/luxfi/consensus/engine/dag/vertex"
-	"github.com/luxfi/consensus/engine/chain/block"
+
 	// "github.com/luxfi/consensus/engine/chain/syncer" // Not used
 	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/sender"
 	"github.com/luxfi/consensus/networking/timeout"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/meterdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	luxmetric "github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/trace"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/log"
-	luxmetric "github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"
@@ -57,20 +57,22 @@ import (
 	"github.com/luxfi/node/vms/fx"
 	"github.com/luxfi/node/vms/metervm"
 	"github.com/luxfi/node/vms/nftfx"
+	"github.com/luxfi/trace"
+
 	// "github.com/luxfi/node/vms/platformvm/warp" // Not used
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/proposervm"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/tracedvm"
 
-	aveng "github.com/luxfi/consensus/engine/dag"
-	dagbootstrap "github.com/luxfi/consensus/engine/dag/bootstrap"
-	daggetter "github.com/luxfi/consensus/engine/dag/getter"
 	smeng "github.com/luxfi/consensus/engine/chain"
 	smbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap"
 	consensusgetter "github.com/luxfi/consensus/engine/chain/getter"
-	smcon "github.com/luxfi/consensus/protocol/chain"
+	aveng "github.com/luxfi/consensus/engine/dag"
+	dagbootstrap "github.com/luxfi/consensus/engine/dag/bootstrap"
+	daggetter "github.com/luxfi/consensus/engine/dag/getter"
 	timetracker "github.com/luxfi/consensus/networking/tracker"
+	smcon "github.com/luxfi/consensus/protocol/chain"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 )
 
@@ -260,14 +262,14 @@ func (s *sharedMemoryWrapper) Apply(requests map[ids.ID]interface{}, batch ...in
 			atomicRequests[chainID] = atomicReq
 		}
 	}
-	
+
 	// Convert batch to database.Batch if provided
 	if len(batch) > 0 {
 		if dbBatch, ok := batch[0].(database.Batch); ok {
 			return s.atomicMemory.Apply(atomicRequests, dbBatch)
 		}
 	}
-	
+
 	return s.atomicMemory.Apply(atomicRequests)
 }
 
@@ -776,24 +778,24 @@ func (m *manager) createLuxChain(
 
 	chainID := consensus.CID(ctx)
 	primaryAlias := m.PrimaryAliasOrDefault(chainID)
-	
+
 	// Create this chain's data directory
 	chainDataDir := filepath.Join(m.ChainDataDir, chainID.String())
 	if err := os.MkdirAll(chainDataDir, perms.ReadWriteExecute); err != nil {
 		return nil, fmt.Errorf("error while creating chain data directory %w", err)
 	}
-	
+
 	// Get VM metrics
 	vmMetrics, err := m.getOrMakeVMRegisterer(chainID, primaryAlias)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Create SharedMemory wrapper for consensus package
 	sharedMem := &sharedMemoryWrapper{
 		atomicMemory: m.AtomicMemory.NewSharedMemory(chainID),
 	}
-	
+
 	// Create ValidatorState wrapper
 	valStateWrapper := &validatorStateWrapper{
 		state: m.validatorState,
@@ -827,7 +829,7 @@ func (m *manager) createLuxChain(
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Convert Registry to Metrics for queue functions
 	luxMetrics := luxmetric.NewWithRegistry(primaryAlias, luxMetricsReg)
 
@@ -844,21 +846,21 @@ func (m *manager) createLuxChain(
 	// Create Runtime for sender
 	ids := consensus.MustIDs(ctx)
 	runtime := &interfaces.Runtime{
-		NetworkID:    ids.NetworkID,
-		SubnetID:     ids.SubnetID,
-		ChainID:      ids.ChainID,
-		NodeID:       ids.NodeID,
-		PublicKey:    ids.PublicKey,
-		LUXAssetID:   m.LUXAssetID,
-		CChainID:     m.CChainID,
-		ChainDataDir: chainDataDir,
-		Log:          m.Log,
-		Metrics:      vmMetrics,
+		NetworkID:      ids.NetworkID,
+		SubnetID:       ids.SubnetID,
+		ChainID:        ids.ChainID,
+		NodeID:         ids.NodeID,
+		PublicKey:      ids.PublicKey,
+		LUXAssetID:     m.LUXAssetID,
+		CChainID:       m.CChainID,
+		ChainDataDir:   chainDataDir,
+		Log:            m.Log,
+		Metrics:        vmMetrics,
 		ValidatorState: valStateWrapper,
-		BCLookup:     m,
-		SharedMemory: sharedMem,
+		BCLookup:       m,
+		SharedMemory:   sharedMem,
 	}
-	
+
 	luxMessageSender, err := sender.New(
 		runtime,
 		m.MsgCreator,
@@ -928,22 +930,22 @@ func (m *manager) createLuxChain(
 	// linearMessageSender here.
 	// Create a message channel for engine communication
 	toEngine := make(chan interface{}, 1)
-	
+
 	// Convert fxs to []interface{}
 	var fxInterfaces []interface{}
 	for _, fx := range fxs {
 		fxInterfaces = append(fxInterfaces, fx)
 	}
-	
+
 	err = graphVM.Initialize(
 		context.TODO(),
-		ctx,           // chainCtx interface{}
-		vmDB,          // dbManager interface{}
-		genesisData,   // genesisBytes []byte
+		ctx,                 // chainCtx interface{}
+		vmDB,                // dbManager interface{}
+		genesisData,         // genesisBytes []byte
 		chainConfig.Upgrade, // upgradeBytes []byte
 		chainConfig.Config,  // configBytes []byte
-		toEngine,      // toEngine chan<- interface{}
-		fxInterfaces,  // fxs []interface{}
+		toEngine,            // toEngine chan<- interface{}
+		fxInterfaces,        // fxs []interface{}
 		linearMessageSender, // appSender interface{}
 	)
 	if err != nil {
@@ -1133,7 +1135,7 @@ func (m *manager) createLuxChain(
 	// to make sure start callbacks are duly initialized
 	// Convert sampling.Parameters to chain.Parameters
 	chainParams := smeng.Parameters{}
-	
+
 	var linearEngine core.Engine
 	linearEngine, err = smeng.New(runtime, chainParams)
 	if err != nil {
@@ -1152,24 +1154,24 @@ func (m *manager) createLuxChain(
 	}
 
 	bootstrapCfg := smbootstrap.Config{
-		AllGetsServer:    consensusGetHandler,
-		Ctx:              runtime,
-		Beacons:          bootstrapBeacons,
-		SampleK:          sampleK,
-		StartupTracker:   startupTracker,
-		Sender:           linearMessageSender,
-		BootstrapTracker: sb,
-		Timer:            nil, // Timer not used for now
+		AllGetsServer:                  consensusGetHandler,
+		Ctx:                            runtime,
+		Beacons:                        bootstrapBeacons,
+		SampleK:                        sampleK,
+		StartupTracker:                 startupTracker,
+		Sender:                         linearMessageSender,
+		BootstrapTracker:               sb,
+		Timer:                          nil, // Timer not used for now
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
-		Blocked:          nil, // Blocked not used for now
-		VM:               vmWrappingProposerVM,
+		Blocked:                        nil, // Blocked not used for now
+		VM:                             vmWrappingProposerVM,
 	}
-	
+
 	// Create bootstrapper with a callback function
 	bootstrapCallback := func(ctx context.Context, lastReqID uint32) error {
 		return linearEngine.Start(ctx)
 	}
-	
+
 	linearBootstrapper, err := smbootstrap.New(
 		bootstrapCfg,
 		bootstrapCallback,
@@ -1198,10 +1200,10 @@ func (m *manager) createLuxChain(
 
 	// create engine gear
 	dagParams := aveng.Parameters{
-		K:               20,  // Sample size
-		AlphaPreference: 14,  // Preference threshold
-		AlphaConfidence: 14,  // Confidence threshold
-		Beta:            20,  // Finalization threshold
+		K:               20, // Sample size
+		AlphaPreference: 14, // Preference threshold
+		AlphaConfidence: 14, // Confidence threshold
+		Beta:            20, // Finalization threshold
 	}
 	_, err = aveng.New(runtime, dagParams) // luxEngine not used currently
 	if err != nil {
@@ -1276,7 +1278,7 @@ func (m *manager) createLuxChain(
 
 	// Create a wrapper to adapt LinearizableVMWithEngine to core.VM
 	vmWrapper := &linearizableVMWrapper{vm: graphVM}
-	
+
 	return &chainInfo{
 		Name:    primaryAlias,
 		Context: ctx,
@@ -1300,7 +1302,7 @@ func (m *manager) createLinearChain(
 
 	chainID := consensus.CID(ctx)
 	primaryAlias := m.PrimaryAliasOrDefault(chainID)
-	
+
 	// Create this chain's data directory
 	chainDataDir := filepath.Join(m.ChainDataDir, chainID.String())
 	if err := os.MkdirAll(chainDataDir, perms.ReadWriteExecute); err != nil {
@@ -1330,12 +1332,12 @@ func (m *manager) createLinearChain(
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Create SharedMemory wrapper for consensus package
 	sharedMem := &sharedMemoryWrapper{
 		atomicMemory: m.AtomicMemory.NewSharedMemory(chainID),
 	}
-	
+
 	// Create ValidatorState wrapper
 	valStateWrapper := &validatorStateWrapper{
 		state: m.validatorState,
@@ -1344,26 +1346,26 @@ func (m *manager) createLinearChain(
 	// Create Runtime for consensus components
 	ids := consensus.MustIDs(ctx)
 	runtime := &interfaces.Runtime{
-		NetworkID:    ids.NetworkID,
-		SubnetID:     ids.SubnetID,
-		ChainID:      ids.ChainID,
-		NodeID:       ids.NodeID,
-		PublicKey:    ids.PublicKey,
-		LUXAssetID:   m.LUXAssetID,
-		CChainID:     m.CChainID,
-		ChainDataDir: chainDataDir,
-		Log:          m.Log,
-		Metrics:      vmMetrics,
+		NetworkID:      ids.NetworkID,
+		SubnetID:       ids.SubnetID,
+		ChainID:        ids.ChainID,
+		NodeID:         ids.NodeID,
+		PublicKey:      ids.PublicKey,
+		LUXAssetID:     m.LUXAssetID,
+		CChainID:       m.CChainID,
+		ChainDataDir:   chainDataDir,
+		Log:            m.Log,
+		Metrics:        vmMetrics,
 		ValidatorState: valStateWrapper,
-		BCLookup:     m,
-		SharedMemory: sharedMem,
+		BCLookup:       m,
+		SharedMemory:   sharedMem,
 	}
 
 	// Passes messages from the consensus engine to the network
 	messageSender, err := sender.New(
 		runtime,
 		m.MsgCreator,
-		m.Net,           // Passing network as interface{}
+		m.Net,                  // Passing network as interface{}
 		m.ManagerConfig.Router, // Passing router as interface{}
 		sb,
 		// ctx.Registerer doesn't exist in context.Context
@@ -1513,22 +1515,22 @@ func (m *manager) createLinearChain(
 		CChainID:     m.CChainID,
 		ChainDataDir: chainDataDir,
 	}
-	
+
 	// Create DBManager wrapper
 	dbManager := &dbManagerWrapper{db: vmDB}
-	
+
 	// Create channel for messages
 	toEngine := make(chan block.Message, defaultChannelSize)
-	
+
 	// Convert core.Fx to block.Fx
 	blockFxs := make([]*block.Fx, len(fxs))
 	for i := range fxs {
 		blockFxs[i] = &block.Fx{}
 	}
-	
+
 	// Create AppSender wrapper - adapter from sender.Sender to block.AppSender
 	appSender := &senderToAppSenderAdapter{sender: messageSender}
-	
+
 	if err := vm.Initialize(
 		context.TODO(),
 		chainCtx,
@@ -1611,7 +1613,7 @@ func (m *manager) createLinearChain(
 	// Asynchronously passes messages from the network to the consensus engine
 	h, err := handler.New(
 		runtime,
-		nil, // cn was block.ChangeNotifier which doesn't exist
+		nil,          // cn was block.ChangeNotifier which doesn't exist
 		subscription, // Pass as interface{}
 		vdrs,
 		m.FrontierPollFrequency,
@@ -1654,7 +1656,7 @@ func (m *manager) createLinearChain(
 	// to make sure start callbacks are duly initialized
 	// chain.Parameters is an empty struct
 	chainParams := smeng.Parameters{}
-	
+
 	// engineConfig not used - using New directly
 	// engineConfig := smeng.Config{
 	// 	Ctx:                 ctx,
@@ -1690,7 +1692,7 @@ func (m *manager) createLinearChain(
 		// PeerTracker field removed - doesn't exist
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
 		// DB field removed - doesn't exist
-		VM:                             vm,
+		VM: vm,
 		// Bootstrapped field removed - doesn't exist
 		// NonVerifyingParse field removed - doesn't exist
 		// Haltable field removed - doesn't exist

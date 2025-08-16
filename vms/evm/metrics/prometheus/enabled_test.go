@@ -6,7 +6,6 @@ package prometheus_test
 import (
 	"testing"
 
-	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 )
 

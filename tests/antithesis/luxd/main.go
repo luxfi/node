@@ -13,30 +13,29 @@ import (
 	"math/big"
 	"os"
 	"time"
-	
 
 	"github.com/antithesishq/antithesis-sdk-go/assert"
 	"github.com/antithesishq/antithesis-sdk-go/lifecycle"
 
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/tests/antithesis"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/wallet/subnet/primary"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 
-	xtxs "github.com/luxfi/node/vms/xvm/txs"
 	ptxs "github.com/luxfi/node/vms/platformvm/txs"
+	xtxs "github.com/luxfi/node/vms/xvm/txs"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 )
 

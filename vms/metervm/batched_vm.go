@@ -6,7 +6,6 @@ package metervm
 import (
 	"context"
 	"time"
-	
 
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"

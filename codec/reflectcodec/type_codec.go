@@ -528,7 +528,7 @@ func (c *genericCodec) UnmarshalFrom(p *wrappers.Packer, dest interface{}) error
 	if dest == nil {
 		return codec.ErrUnmarshalNil
 	}
-	
+
 	destPtr := reflect.ValueOf(dest)
 	if destPtr.Kind() != reflect.Ptr {
 		return errNeedPointer

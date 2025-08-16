@@ -8,7 +8,6 @@ package merkledb
 import (
 	"context"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 
@@ -29,28 +28,28 @@ func Test_Metrics_Basic_Usage(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	db.metric.(*mockMetrics).nodeReadCount = 0
-	db.metric.(*mockMetrics).nodeWriteCount = 0
-	db.metric.(*mockMetrics).hashCount = 0
+	db.metrics.(*mockMetrics).nodeReadCount = 0
+	db.metrics.(*mockMetrics).nodeWriteCount = 0
+	db.metrics.(*mockMetrics).hashCount = 0
 
 	require.NoError(t, db.Put([]byte("key"), []byte("value")))
 
-	require.Equal(t, int64(1), db.metric.(*mockMetrics).nodeReadCount)
-	require.Equal(t, int64(1), db.metric.(*mockMetrics).nodeWriteCount)
-	require.Equal(t, int64(1), db.metric.(*mockMetrics).hashCount)
+	require.Equal(t, int64(1), db.metrics.(*mockMetrics).nodeReadCount)
+	require.Equal(t, int64(1), db.metrics.(*mockMetrics).nodeWriteCount)
+	require.Equal(t, int64(1), db.metrics.(*mockMetrics).hashCount)
 
 	require.NoError(t, db.Delete([]byte("key")))
 
-	require.Equal(t, int64(1), db.metric.(*mockMetrics).nodeReadCount)
-	require.Equal(t, int64(2), db.metric.(*mockMetrics).nodeWriteCount)
-	require.Equal(t, int64(1), db.metric.(*mockMetrics).hashCount)
+	require.Equal(t, int64(1), db.metrics.(*mockMetrics).nodeReadCount)
+	require.Equal(t, int64(2), db.metrics.(*mockMetrics).nodeWriteCount)
+	require.Equal(t, int64(1), db.metrics.(*mockMetrics).hashCount)
 
 	_, err = db.Get([]byte("key2"))
 	require.ErrorIs(t, err, database.ErrNotFound)
 
-	require.Equal(t, int64(2), db.metric.(*mockMetrics).nodeReadCount)
-	require.Equal(t, int64(2), db.metric.(*mockMetrics).nodeWriteCount)
-	require.Equal(t, int64(1), db.metric.(*mockMetrics).hashCount)
+	require.Equal(t, int64(2), db.metrics.(*mockMetrics).nodeReadCount)
+	require.Equal(t, int64(2), db.metrics.(*mockMetrics).nodeWriteCount)
+	require.Equal(t, int64(1), db.metrics.(*mockMetrics).hashCount)
 }
 
 func Test_Metrics_Initialize(t *testing.T) {

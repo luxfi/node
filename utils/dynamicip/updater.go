@@ -10,8 +10,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils"
 )
 
 const ipResolutionTimeout = 10 * time.Second

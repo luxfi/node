@@ -6,7 +6,6 @@ package executor
 import (
 	"fmt"
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 

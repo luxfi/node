@@ -4,8 +4,8 @@
 package merkledb
 
 import (
-	"github.com/luxfi/node/cache"
 	"github.com/luxfi/database"
+	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/utils"
 )
 
@@ -101,7 +101,7 @@ func (db *intermediateNodeDB) addToBatch(b database.KeyValueWriterDeleter, key K
 	dbKey := db.constructDBKey(key)
 	defer db.bufferPool.Put(dbKey)
 
-	db.metric.DatabaseNodeWrite()
+	db.metrics.DatabaseNodeWrite()
 	if n == nil {
 		return b.Delete(*dbKey)
 	}
@@ -110,25 +110,25 @@ func (db *intermediateNodeDB) addToBatch(b database.KeyValueWriterDeleter, key K
 
 func (db *intermediateNodeDB) Get(key Key) (*node, error) {
 	if cachedValue, isCached := db.nodeCache.Get(key); isCached {
-		db.metric.IntermediateNodeCacheHit()
+		db.metrics.IntermediateNodeCacheHit()
 		if cachedValue == nil {
 			return nil, database.ErrNotFound
 		}
 		return cachedValue, nil
 	}
 	if cachedValue, isCached := db.writeBuffer.Get(key); isCached {
-		db.metric.IntermediateNodeCacheHit()
+		db.metrics.IntermediateNodeCacheHit()
 		if cachedValue == nil {
 			return nil, database.ErrNotFound
 		}
 		return cachedValue, nil
 	}
-	db.metric.IntermediateNodeCacheMiss()
+	db.metrics.IntermediateNodeCacheMiss()
 
 	dbKey := db.constructDBKey(key)
 	defer db.bufferPool.Put(dbKey)
 
-	db.metric.DatabaseNodeRead()
+	db.metrics.DatabaseNodeRead()
 	nodeBytes, err := db.baseDB.Get(*dbKey)
 	if err != nil {
 		return nil, err

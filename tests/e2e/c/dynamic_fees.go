@@ -15,10 +15,10 @@ import (
 	"github.com/luxfi/geth/params"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/crypto/secp256k1"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 )

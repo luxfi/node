@@ -6,8 +6,8 @@ package xvm
 import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/pubsub"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/xvm/txs"
 )
 
 var _ pubsub.Filterer = (*connector)(nil)

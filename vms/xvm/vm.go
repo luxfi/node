@@ -16,17 +16,19 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/cache"
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/dag/vertex"
+	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/dag"
+	"github.com/luxfi/consensus/engine/dag/vertex"
 	"github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/consensus/validators"
+	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/pubsub"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/linked"
@@ -68,7 +70,7 @@ type VM struct {
 
 	config.Config
 
-	metrics xvmmetric.Metrics
+	metrics xvmmetrics.Metrics
 
 	lux.AddressManager
 	ids.Aliaser
@@ -76,16 +78,16 @@ type VM struct {
 
 	// Contains information of where this VM is executing
 	ctx context.Context
-	
+
 	// Logger for this VM
 	log log.Logger
-	
+
 	// Lock for thread safety
 	lock sync.RWMutex
-	
+
 	// BCLookup provides blockchain alias lookup
 	bcLookup interfaces.BCLookup
-	
+
 	// SharedMemory for cross-chain operations
 	sharedMemory interfaces.SharedMemory
 
@@ -137,9 +139,9 @@ type VM struct {
 	blockbuilder.Builder
 	chainManager blockexecutor.Manager
 	network      *network.Network
-	
+
 	// Channel for receiving messages from mempool
-	toEngine chan core.Message
+	toEngine chan core.MessageType
 }
 
 func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
@@ -149,7 +151,14 @@ func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version
 		vm.connectedPeers[nodeID] = version
 		return nil
 	}
-	return vm.network.Connected(ctx, nodeID, version)
+	// Convert to consensus version type
+	consensusVer := &consensusversion.Application{
+		Name:  version.Name,
+		Major: version.Major,
+		Minor: version.Minor,
+		Patch: version.Patch,
+	}
+	return vm.network.Connected(ctx, nodeID, consensusVer)
 }
 
 func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
@@ -185,27 +194,27 @@ func (vm *VM) Initialize(
 	if !ok {
 		return errors.New("invalid chain context type")
 	}
-	
+
 	db, ok := dbManager.(database.Database)
 	if !ok {
 		return errors.New("invalid database type")
 	}
-	
+
 	coreFxs := make([]*core.Fx, len(fxs))
 	for i, fx := range fxs {
 		if fx != nil {
 			coreFxs[i] = fx.(*core.Fx)
 		}
 	}
-	
+
 	coreAppSender, ok := appSender.(core.AppSender)
 	if !ok {
 		return errors.New("invalid app sender type")
 	}
-	
+
 	// Ignore toEngine channel as XVM doesn't use it
 	_ = toEngine
-	
+
 	return vm.initialize(ctx, consensusCtx, db, genesisBytes, upgradeBytes, configBytes, coreFxs, coreAppSender)
 }
 
@@ -238,7 +247,7 @@ func (vm *VM) initialize(
 	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
 
 	// Initialize metrics as soon as possible
-	vm.metrics, err = xvmmetric.New(vm.registerer)
+	vm.metrics, err = xvmmetrics.New(vm.registerer)
 	if err != nil {
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}
@@ -458,7 +467,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	}
 
 	// Create a channel for mempool to engine communication
-	vm.toEngine = make(chan core.Message, 1)
+	vm.toEngine = make(chan core.MessageType, 1)
 	mempool, err := xmempool.New("mempool", vm.registerer, vm.toEngine)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
@@ -488,7 +497,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 		return fmt.Errorf("validator state not available in context")
 	}
 	validatorStateWrapper := &validatorStateWrapper{vs: vs}
-	
+
 	vm.network, err = network.New(
 		vm.log,
 		consensus.GetNodeID(vm.ctx),
@@ -510,7 +519,14 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 
 	// Notify the network of our current peers
 	for nodeID, version := range vm.connectedPeers {
-		if err := vm.network.Connected(ctx, nodeID, version); err != nil {
+		// Convert to consensus version type
+		consensusVer := &consensusversion.Application{
+			Name:  version.Name,
+			Major: version.Major,
+			Minor: version.Minor,
+			Patch: version.Patch,
+		}
+		if err := vm.network.Connected(ctx, nodeID, consensusVer); err != nil {
 			return err
 		}
 	}
@@ -664,7 +680,7 @@ func (vm *VM) LoadUser(
 	// This needs to be properly implemented with external key management
 	kc := secp256k1fx.NewKeychain()
 	utxos := []*lux.UTXO{}
-	
+
 	// If addresses provided, get their UTXOs
 	if addresses.Len() > 0 {
 		allUTXOs, err := lux.GetAllUTXOs(vm.state, addresses)
@@ -673,7 +689,7 @@ func (vm *VM) LoadUser(
 		}
 		utxos = allUTXOs
 	}
-	
+
 	return utxos, kc, nil
 }
 
@@ -746,16 +762,16 @@ func (vm *VM) onAccept(tx *txs.Tx) error {
 }
 
 // WaitForEvent implements the core.VM interface
-func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
+func (vm *VM) WaitForEvent(ctx context.Context) (core.MessageType, error) {
 	if vm.toEngine == nil {
 		// Before linearization, no events to wait for
 		<-ctx.Done()
 		return core.PendingTxs, ctx.Err()
 	}
-	
+
 	select {
-	case msg := <-vm.toEngine:
-		return msg, nil
+	case msgType := <-vm.toEngine:
+		return msgType, nil
 	case <-ctx.Done():
 		return core.PendingTxs, ctx.Err()
 	}
@@ -795,8 +811,6 @@ func (vm *VM) GetEngine() interface{} {
 func (vm *VM) SetEngine(engine interface{}) {
 	// XVM doesn't use a separate engine
 }
-
-
 
 // noOpAppHandler is a simple no-op implementation of core.AppHandler
 type noOpAppHandler struct{}
@@ -839,8 +853,56 @@ func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, e
 	return v.vs.GetCurrentHeight()
 }
 
-func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	// Use the GetValidatorSet from consensus.ValidatorState
-	// It already returns map[ids.NodeID]uint64
-	return v.vs.GetValidatorSet(height, subnetID)
+func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	// Get the validator set from consensus.ValidatorState
+	valSet, err := v.vs.GetValidatorSet(height, subnetID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert map[ids.NodeID]uint64 to map[ids.NodeID]*validators.GetValidatorOutput
+	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(valSet))
+	for nodeID, weight := range valSet {
+		result[nodeID] = &validators.GetValidatorOutput{
+			NodeID: nodeID,
+			Weight: weight,
+		}
+	}
+	return result, nil
+}
+
+func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+	// Get current height
+	height, err := v.vs.GetCurrentHeight()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Get validators at current height
+	valSet, err := v.vs.GetValidatorSet(height, subnetID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Convert to GetCurrentValidatorOutput format
+	result := make(map[ids.ID]*validators.GetCurrentValidatorOutput, len(valSet))
+	for nodeID, weight := range valSet {
+		// Convert NodeID to ID by copying the bytes
+		var id ids.ID
+		copy(id[:], nodeID[:])
+		result[id] = &validators.GetCurrentValidatorOutput{
+			NodeID: nodeID,
+			Weight: weight,
+		}
+	}
+
+	return result, height, nil
+}
+
+func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	return v.vs.GetMinimumHeight(ctx)
+}
+
+func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return v.vs.GetSubnetID(chainID)
 }

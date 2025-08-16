@@ -5,7 +5,6 @@ package heap
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 )

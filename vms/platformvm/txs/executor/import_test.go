@@ -8,14 +8,13 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"

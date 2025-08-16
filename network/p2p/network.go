@@ -10,21 +10,20 @@ import (
 	"strconv"
 	"sync"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 )
 
 var (
 	_ validators.Connector = (*Network)(nil)
-	_ core.AppHandler    = (*Network)(nil)
+	_ core.AppHandler      = (*Network)(nil)
 	_ NodeSampler          = (*peerSampler)(nil)
 
 	opLabel      = "op"
@@ -83,8 +82,8 @@ func NewNetwork(
 	}
 
 	err := errors.Join(
-		registerer.Register(metric.msgTime),
-		registerer.Register(metric.msgCount),
+		registerer.Register(metrics.msgTime),
+		registerer.Register(metrics.msgCount),
 	)
 	if err != nil {
 		return nil, err

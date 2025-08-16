@@ -5,7 +5,6 @@ package metrics
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"

@@ -10,27 +10,26 @@ import (
 	"math"
 	"sync"
 	"time"
-	
 
 	"github.com/google/btree"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/linkeddb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/metercacher"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/components/lux"
@@ -283,7 +282,7 @@ type state struct {
 	validators validators.Manager
 	ctx        context.Context
 	cfg        *config.Config
-	metrics    metric.Metrics
+	metrics    metrics.Metrics
 	rewards    reward.Calculator
 
 	baseDB *versiondb.Database
@@ -442,7 +441,7 @@ func New(
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
 	ctx context.Context,
-	metrics metric.Metrics,
+	metrics metrics.Metrics,
 	rewards reward.Calculator,
 ) (State, error) {
 	s, err := newState(
@@ -470,7 +469,7 @@ func New(
 
 func newState(
 	db database.Database,
-	metrics metric.Metrics,
+	metrics metrics.Metrics,
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
 	ctx context.Context,
@@ -1637,12 +1636,12 @@ func (s *state) initValidatorSets() error {
 
 	nodeID := consensus.GetNodeID(s.ctx)
 	weight, _ := s.validators.GetWeight(constants.PrimaryNetworkID, nodeID)
-	s.metric.SetLocalStake(weight)
+	s.metrics.SetLocalStake(weight)
 	totalWeight, err := s.validators.TotalWeight(constants.PrimaryNetworkID)
 	if err != nil {
 		return fmt.Errorf("failed to get total weight of primary network validators: %w", err)
 	}
-	s.metric.SetTotalStake(totalWeight)
+	s.metrics.SetTotalStake(totalWeight)
 	return nil
 }
 
@@ -2017,8 +2016,8 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64, codecV
 
 	nodeID := consensus.GetNodeID(s.ctx)
 	weight, _ := s.validators.GetWeight(constants.PrimaryNetworkID, nodeID)
-	s.metric.SetLocalStake(weight)
-	s.metric.SetTotalStake(totalWeight)
+	s.metrics.SetLocalStake(weight)
+	s.metrics.SetTotalStake(totalWeight)
 	return nil
 }
 

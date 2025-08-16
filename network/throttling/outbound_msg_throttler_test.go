@@ -5,15 +5,15 @@ package throttling
 
 import (
 	"testing"
-		luxmetrics "github.com/luxfi/metric"
+
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
 )
 
 func TestSybilOutboundMsgThrottler(t *testing.T) {
@@ -31,7 +31,7 @@ func TestSybilOutboundMsgThrottler(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		nil,
-		luxmetric.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)
@@ -172,7 +172,7 @@ func TestSybilOutboundMsgThrottlerMaxNonVdr(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		nil,
-		luxmetric.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)
@@ -218,7 +218,7 @@ func TestBypassThrottling(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		nil,
-		luxmetric.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)

@@ -738,8 +738,8 @@ func (b *outMsgBuilder) BFTMessage(msg *p2p.BFT) (OutboundMessage, error) {
 		return nil, err
 	}
 	return &outboundMessage{
-		op:    BFTOp,
-		bytes: msgBytes,
+		op:               BFTOp,
+		bytes:            msgBytes,
 		bypassThrottling: true,
 	}, nil
 }

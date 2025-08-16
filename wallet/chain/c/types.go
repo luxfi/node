@@ -6,23 +6,23 @@ package c
 import (
 	"math/big"
 
+	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/geth/common"
 )
 
 // Tx represents a transaction on the C-Chain
 // TODO: Implement proper C-chain transaction types
 type Tx struct {
-	ID ids.ID
+	ID               ids.ID
 	UnsignedAtomicTx UnsignedAtomicTx
-	Creds []verify.Verifiable
-	signedBytes []byte
+	Creds            []verify.Verifiable
+	signedBytes      []byte
 }
 
 // SignedBytes returns the signed bytes of the transaction
@@ -34,9 +34,9 @@ func (tx *Tx) SignedBytes() []byte {
 // TODO: Implement proper import transaction
 type UnsignedImportTx struct {
 	BaseTx
-	SourceChain ids.ID
+	SourceChain    ids.ID
 	ImportedInputs []*lux.TransferableInput
-	Outs []*EVMOutput
+	Outs           []*EVMOutput
 }
 
 // InputUTXOs implements UnsignedAtomicTx
@@ -60,7 +60,7 @@ type EVMOutput struct {
 	Amount  uint64
 }
 
-// EVMInput represents an input on the C-chain  
+// EVMInput represents an input on the C-chain
 type EVMInput struct {
 	Address common.Address
 	Amount  uint64
@@ -74,24 +74,24 @@ func (e *EVMInput) Compare(other *EVMInput) int {
 	if addrCmp != 0 {
 		return addrCmp
 	}
-	
+
 	if e.Amount < other.Amount {
 		return -1
 	}
 	if e.Amount > other.Amount {
 		return 1
 	}
-	
+
 	return e.AssetID.Compare(other.AssetID)
 }
 
-// UnsignedExportTx is an unsigned export transaction  
+// UnsignedExportTx is an unsigned export transaction
 // TODO: Implement proper export transaction
 type UnsignedExportTx struct {
 	BaseTx
 	DestinationChain ids.ID
-	ExportedOutputs []*lux.TransferableOutput
-	Ins []*EVMInput
+	ExportedOutputs  []*lux.TransferableOutput
+	Ins              []*EVMInput
 }
 
 // ID returns the transaction ID
@@ -141,8 +141,8 @@ type Status string
 const (
 	codecVersion = 0
 	EVMOutputGas = 100 // TODO: Set proper gas value
-	EVMInputGas = 100  // TODO: Set proper gas value
-	
+	EVMInputGas  = 100 // TODO: Set proper gas value
+
 	// Transaction status
 	Accepted = "Accepted"
 )

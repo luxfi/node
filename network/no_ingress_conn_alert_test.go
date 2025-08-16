@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/ids"
 )
 
 type fakeValidatorRetriever struct {

@@ -7,10 +7,9 @@ import (
 	"context"
 	"log"
 	"time"
-	
 
-	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"

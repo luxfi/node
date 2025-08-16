@@ -8,10 +8,9 @@ import (
 	"io/fs"
 	"testing"
 	"time"
-	
+
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-
 
 	"github.com/luxfi/ids"
 
@@ -20,8 +19,6 @@ import (
 	"github.com/luxfi/node/utils/resource"
 
 	"github.com/luxfi/node/vms"
-
-	"github.com/luxfi/metric"
 )
 
 var (

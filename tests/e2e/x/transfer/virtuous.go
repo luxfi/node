@@ -10,19 +10,18 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
-	
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/chains"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/wallet/subnet/primary"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 

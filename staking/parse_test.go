@@ -5,7 +5,6 @@ package staking
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 

@@ -7,9 +7,9 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/fxs"
 )
@@ -24,10 +24,10 @@ type Backend struct {
 	// running in a subnet.
 	FeeAssetID   ids.ID
 	Bootstrapped bool
-	
+
 	// Logger for this backend
 	Log log.Logger
-	
+
 	// SharedMemory provides cross-chain atomic operations
 	SharedMemory SharedMemory
 }

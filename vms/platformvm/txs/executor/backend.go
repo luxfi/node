@@ -9,7 +9,6 @@ import (
 
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/platformvm/config"

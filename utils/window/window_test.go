@@ -6,7 +6,6 @@ package window
 import (
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 

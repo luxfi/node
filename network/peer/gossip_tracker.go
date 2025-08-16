@@ -142,7 +142,7 @@ func (g *gossipTracker) StartTrackingPeer(peerID ids.NodeID) bool {
 	g.trackedPeers[peerID] = set.NewBits()
 
 	// emit metrics
-	g.metric.trackedPeersSize.Set(float64(len(g.trackedPeers)))
+	g.metrics.trackedPeersSize.Set(float64(len(g.trackedPeers)))
 
 	return true
 }
@@ -158,7 +158,7 @@ func (g *gossipTracker) StopTrackingPeer(peerID ids.NodeID) bool {
 
 	// stop tracking the peer by removing them
 	delete(g.trackedPeers, peerID)
-	g.metric.trackedPeersSize.Set(float64(len(g.trackedPeers)))
+	g.metrics.trackedPeersSize.Set(float64(len(g.trackedPeers)))
 
 	return true
 }
@@ -182,7 +182,7 @@ func (g *gossipTracker) AddValidator(validator ValidatorID) bool {
 	g.validatorIDs = append(g.validatorIDs, validator)
 
 	// emit metrics
-	g.metric.validatorsSize.Set(float64(len(g.validatorIDs)))
+	g.metrics.validatorsSize.Set(float64(len(g.validatorIDs)))
 
 	return true
 }
@@ -237,7 +237,7 @@ func (g *gossipTracker) RemoveValidator(validatorID ids.NodeID) bool {
 	}
 
 	// emit metrics
-	g.metric.validatorsSize.Set(float64(len(g.validatorIDs)))
+	g.metrics.validatorsSize.Set(float64(len(g.validatorIDs)))
 
 	return true
 }

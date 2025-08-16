@@ -17,14 +17,14 @@ var (
 	//go:embed genesis_testnet.json
 	testnetGenesisConfigJSON []byte
 
-	// TestnetParams are the params used for the testnet  
+	// TestnetParams are the params used for the testnet
 	TestnetParams = Params{
 		StaticConfig: fee.StaticConfig{
-			TxFee:                          units.MilliLux,
-			CreateAssetTxFee:               10 * units.MilliLux,
-			CreateSubnetTxFee:              100 * units.MilliLux,
-			TransformSubnetTxFee:           1000 * units.MilliLux,
-			CreateBlockchainTxFee:          100 * units.MilliLux,
+			TxFee:                         units.MilliLux,
+			CreateAssetTxFee:              10 * units.MilliLux,
+			CreateSubnetTxFee:             100 * units.MilliLux,
+			TransformSubnetTxFee:          1000 * units.MilliLux,
+			CreateBlockchainTxFee:         100 * units.MilliLux,
 			AddPrimaryNetworkValidatorFee: 0,
 			AddPrimaryNetworkDelegatorFee: 0,
 			AddSubnetValidatorFee:         units.MilliLux,

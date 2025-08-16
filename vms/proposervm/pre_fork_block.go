@@ -202,7 +202,6 @@ func (*preForkBlock) verifyPostForkOption(context.Context, *postForkOption) erro
 	return errUnexpectedBlockType
 }
 
-
 func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	parentTimestamp := b.Timestamp()
 

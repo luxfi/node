@@ -3,7 +3,6 @@ package chains
 import (
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
@@ -59,7 +58,7 @@ func TestK1ConsensusBootstrap(t *testing.T) {
 	// Bootstrap parameters for k=1
 	// With k=1, we don't need external bootstrappers
 	bootstrappers := []string{} // No bootstrappers needed for k=1
-	
+
 	// Verify that with k=1, no external bootstrappers are needed
 	require.Empty(bootstrappers)
 }

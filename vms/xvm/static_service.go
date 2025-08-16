@@ -13,13 +13,13 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/vms/xvm/txs"
 
 	avajson "github.com/luxfi/node/utils/json"
 )

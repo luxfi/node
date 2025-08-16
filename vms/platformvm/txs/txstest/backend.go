@@ -7,8 +7,8 @@ import (
 	"context"
 	"math"
 
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"

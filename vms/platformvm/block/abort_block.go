@@ -83,12 +83,12 @@ func NewApricotAbortBlock(
 
 // InitializeWithContext initializes the block with consensus context
 func (b *BanffAbortBlock) InitializeWithContext(ctx context.Context) error {
-    // Initialize any context-dependent fields here
-    return nil
+	// Initialize any context-dependent fields here
+	return nil
 }
 
 // InitializeWithContext initializes the block with consensus context
 func (b *ApricotAbortBlock) InitializeWithContext(ctx context.Context) error {
-    // Initialize any context-dependent fields here
-    return nil
+	// Initialize any context-dependent fields here
+	return nil
 }

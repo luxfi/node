@@ -6,7 +6,6 @@ package p2p
 import (
 	"sync"
 	"time"
-	
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/timer/mockable"

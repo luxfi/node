@@ -7,13 +7,13 @@ import (
 	"context"
 	"testing"
 	"time"
-		luxmetrics "github.com/luxfi/metric"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
 )
 
 func TestInboundMsgByteThrottlerCancelContextDeadlock(t *testing.T) {
@@ -29,7 +29,7 @@ func TestInboundMsgByteThrottlerCancelContextDeadlock(t *testing.T) {
 
 	throttler, err := newInboundMsgByteThrottler(
 		nil,
-		luxmetric.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)
@@ -58,7 +58,7 @@ func TestInboundMsgByteThrottlerCancelContext(t *testing.T) {
 
 	throttler, err := newInboundMsgByteThrottler(
 		nil,
-		luxmetric.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)
@@ -115,7 +115,7 @@ func TestInboundMsgByteThrottler(t *testing.T) {
 
 	throttler, err := newInboundMsgByteThrottler(
 		nil,
-		luxmetric.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)
@@ -329,7 +329,7 @@ func TestSybilMsgThrottlerMaxNonVdr(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttler, err := newInboundMsgByteThrottler(
 		nil,
-		luxmetric.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)
@@ -379,7 +379,7 @@ func TestMsgThrottlerNextMsg(t *testing.T) {
 	maxBytes := maxVdrBytes
 	throttler, err := newInboundMsgByteThrottler(
 		nil,
-		luxmetric.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
 	)

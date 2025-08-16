@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"

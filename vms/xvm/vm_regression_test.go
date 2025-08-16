@@ -5,7 +5,6 @@ package xvm
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 

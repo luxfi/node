@@ -17,6 +17,8 @@ import (
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/node/consensus/chain"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 

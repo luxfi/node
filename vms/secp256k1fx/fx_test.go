@@ -6,15 +6,14 @@ package secp256k1fx
 import (
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/cb58"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/node/utils/cb58"
 )
 
 var (
@@ -55,7 +54,7 @@ func init() {
 func TestFxInitialize(t *testing.T) {
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	fx := Fx{}
 	require.NoError(t, fx.Initialize(&vm))
@@ -71,7 +70,7 @@ func TestFxVerifyTransfer(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -109,7 +108,7 @@ func TestFxVerifyTransferNilTx(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -145,7 +144,7 @@ func TestFxVerifyTransferNilOutput(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -172,7 +171,7 @@ func TestFxVerifyTransferNilInput(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -203,7 +202,7 @@ func TestFxVerifyTransferNilCredential(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -235,7 +234,7 @@ func TestFxVerifyTransferInvalidOutput(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -272,7 +271,7 @@ func TestFxVerifyTransferWrongAmounts(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -309,7 +308,7 @@ func TestFxVerifyTransferTimelocked(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -346,7 +345,7 @@ func TestFxVerifyTransferTooManySigners(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -384,7 +383,7 @@ func TestFxVerifyTransferTooFewSigners(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -419,7 +418,7 @@ func TestFxVerifyTransferMismatchedSigners(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -457,7 +456,7 @@ func TestFxVerifyTransferInvalidSignature(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -497,7 +496,7 @@ func TestFxVerifyTransferWrongSigner(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -537,7 +536,7 @@ func TestFxVerifyTransferSigIndexOOB(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -577,7 +576,7 @@ func TestFxVerifyOperation(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -629,7 +628,7 @@ func TestFxVerifyOperationUnknownTx(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -681,7 +680,7 @@ func TestFxVerifyOperationUnknownOperation(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -711,7 +710,7 @@ func TestFxVerifyOperationUnknownCredential(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -759,7 +758,7 @@ func TestFxVerifyOperationWrongNumberOfUTXOs(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -812,7 +811,7 @@ func TestFxVerifyOperationUnknownUTXOType(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -857,7 +856,7 @@ func TestFxVerifyOperationInvalidOperationVerify(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -907,7 +906,7 @@ func TestFxVerifyOperationMismatchedMintOutputs(t *testing.T) {
 	require := require.New(t)
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	date := time.Date(2019, time.January, 19, 16, 25, 17, 3, time.UTC)
 	vm.Clk.Set(date)
@@ -954,7 +953,7 @@ func TestFxVerifyOperationMismatchedMintOutputs(t *testing.T) {
 func TestVerifyPermission(t *testing.T) {
 	vm := TestVM{
 		Codec: linearcodec.NewDefault(),
-		Log: log.NewNoOpLogger(),
+		Log:   log.NewNoOpLogger(),
 	}
 	fx := Fx{}
 	require.NoError(t, fx.Initialize(&vm))

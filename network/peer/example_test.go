@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/netip"
 	"time"
-	
 
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/node/message"

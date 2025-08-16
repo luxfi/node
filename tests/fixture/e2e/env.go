@@ -11,16 +11,15 @@ import (
 	"math/rand"
 	"os"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
 	ginkgo "github.com/onsi/ginkgo/v2"

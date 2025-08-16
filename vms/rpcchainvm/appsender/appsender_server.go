@@ -8,8 +8,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/ids"
 
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 )
@@ -32,12 +32,12 @@ func (s *Server) SendAppRequest(ctx context.Context, req *appsenderpb.SendAppReq
 	if len(req.NodeIds) == 0 {
 		return &emptypb.Empty{}, nil
 	}
-	
+
 	nodeID, err := ids.ToNodeID(req.NodeIds[0])
 	if err != nil {
 		return nil, err
 	}
-	
+
 	err = s.appSender.SendAppRequest(ctx, nodeID, req.RequestId, req.Request)
 	return &emptypb.Empty{}, err
 }

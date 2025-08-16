@@ -9,9 +9,9 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/dag/vertex"
-	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/dag/vertex"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 )
@@ -27,7 +27,7 @@ var (
 // linearizeOnInitializeVM.
 type initializeOnLinearizeVM struct {
 	vertex.LinearizableVMWithEngine
-	vmToInitialize block.ChainVM  // Changed from core.VM to block.ChainVM
+	vmToInitialize block.ChainVM // Changed from core.VM to block.ChainVM
 	vmToLinearize  *linearizeOnInitializeVM
 
 	ctx          context.Context
@@ -41,46 +41,46 @@ type initializeOnLinearizeVM struct {
 
 func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	vm.vmToLinearize.stopVertexID = stopVertexID
-	
+
 	// Initialize the ChainVM
 	// Convert consensus types to block types
 	chainCtx := &block.ChainContext{
-			NetworkID:    consensus.GetNetworkID(vm.ctx),
-			SubnetID:     consensus.GetSubnetID(vm.ctx),
-			ChainID:      consensus.GetChainID(vm.ctx),
-			NodeID:       consensus.GetNodeID(vm.ctx),
-			PublicKey:    consensus.PK(vm.ctx),
-			LUXAssetID:   consensus.LuxAssetID(vm.ctx),
-			CChainID:     ids.Empty, // TODO: Get from config
-			ChainDataDir: "", // TODO: Get from config
-		}
-		
-		// Create DBManager wrapper
-		dbManager := &dbManagerWrapper{db: vm.db}
-		
-		// Convert fxs - since core.Fx has no ID, we need to handle this differently
-		var blockFxs []*block.Fx
-		// For now, just create empty Fx entries
-		for range vm.fxs {
-			blockFxs = append(blockFxs, &block.Fx{})
-		}
-		
-		// Create block AppSender wrapper
-		blockAppSender := &blockAppSenderWrapper{appSender: vm.appSender}
-		
-		// Create message channel
-		toEngine := make(chan block.Message, 1)
-		
-		return vm.vmToInitialize.Initialize(
-			ctx,
-			chainCtx,
-			dbManager,
-			vm.genesisBytes,
-			vm.upgradeBytes,
-			vm.configBytes,
-			toEngine,
-			blockFxs,
-			blockAppSender,
+		NetworkID:    consensus.GetNetworkID(vm.ctx),
+		SubnetID:     consensus.GetSubnetID(vm.ctx),
+		ChainID:      consensus.GetChainID(vm.ctx),
+		NodeID:       consensus.GetNodeID(vm.ctx),
+		PublicKey:    consensus.PK(vm.ctx),
+		LUXAssetID:   consensus.LuxAssetID(vm.ctx),
+		CChainID:     ids.Empty, // TODO: Get from config
+		ChainDataDir: "",        // TODO: Get from config
+	}
+
+	// Create DBManager wrapper
+	dbManager := &dbManagerWrapper{db: vm.db}
+
+	// Convert fxs - since core.Fx has no ID, we need to handle this differently
+	var blockFxs []*block.Fx
+	// For now, just create empty Fx entries
+	for range vm.fxs {
+		blockFxs = append(blockFxs, &block.Fx{})
+	}
+
+	// Create block AppSender wrapper
+	blockAppSender := &blockAppSenderWrapper{appSender: vm.appSender}
+
+	// Create message channel
+	toEngine := make(chan block.Message, 1)
+
+	return vm.vmToInitialize.Initialize(
+		ctx,
+		chainCtx,
+		dbManager,
+		vm.genesisBytes,
+		vm.upgradeBytes,
+		vm.configBytes,
+		toEngine,
+		blockFxs,
+		blockAppSender,
 	)
 }
 
@@ -137,7 +137,7 @@ func (b *blockAppSenderWrapper) SendAppGossip(ctx context.Context, appGossipByte
 type linearizeOnInitializeVM struct {
 	vertex.LinearizableVMWithEngine
 	stopVertexID ids.ID
-	
+
 	// Stored from Initialize for later use
 	chainCtx     context.Context
 	db           database.Database
@@ -215,29 +215,29 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	// Convert block types to consensus types for the underlying VM
 	consensusCtx := context.Background()
 	consensusCtx = consensus.WithIDs(consensusCtx, consensus.IDs{
-		NetworkID:    chainCtx.NetworkID,
-		SubnetID:     chainCtx.SubnetID,
-		ChainID:      chainCtx.ChainID,
-		NodeID:       chainCtx.NodeID,
-		PublicKey:    chainCtx.PublicKey,
+		NetworkID: chainCtx.NetworkID,
+		SubnetID:  chainCtx.SubnetID,
+		ChainID:   chainCtx.ChainID,
+		NodeID:    chainCtx.NodeID,
+		PublicKey: chainCtx.PublicKey,
 	})
-	
+
 	// Get current database from DBManager
 	var db database.Database
 	if dbManager != nil {
 		db = dbManager.Current()
 	}
-	
-	// Convert fxs 
+
+	// Convert fxs
 	var coreFxs []*core.Fx
 	for range fxs {
 		// core.Fx is an empty struct, so just create them
 		coreFxs = append(coreFxs, &core.Fx{})
 	}
-	
+
 	// Create core AppSender adapter
 	coreAppSender := &appSenderAdapter{appSender: appSender}
-	
+
 	// Store for later use
 	vm.chainCtx = consensusCtx
 	vm.db = db
@@ -247,7 +247,7 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	vm.fxs = coreFxs
 	vm.appSender = coreAppSender
 	vm.toEngine = toEngine
-	
+
 	// Now linearize
 	return vm.Linearize(ctx, vm.stopVertexID)
 }

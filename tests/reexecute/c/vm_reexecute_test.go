@@ -21,22 +21,22 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/consensus/validators/validatorstest"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/leveldb"
 	"github.com/luxfi/database/prefixdb"
-	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/protocol/chain"
-	"github.com/luxfi/consensus/validators/validatorstest"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/snow/engine/enginetest"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/utils/units"
@@ -44,8 +44,8 @@ import (
 )
 
 var (
-	mainnetXChainID    = ids.FromStringOrPanic("2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM")
-	mainnetCChainID    = ids.FromStringOrPanic("2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5")
+	mainnetXChainID   = ids.FromStringOrPanic("2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM")
+	mainnetCChainID   = ids.FromStringOrPanic("2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5")
 	mainnetLuxAssetID = ids.FromStringOrPanic("FvwEAhmxKfeiG8SnEvq42hc6whRyY3EFYAvebMqDNDGCgxN5Z")
 )
 
@@ -226,8 +226,8 @@ func newMainnetCChainVM(
 			PublicKey:       blsPublicKey,
 			NetworkUpgrades: upgrade.Mainnet,
 
-			XChainID:    mainnetXChainID,
-			CChainID:    mainnetCChainID,
+			XChainID:   mainnetXChainID,
+			CChainID:   mainnetCChainID,
 			LUXAssetID: mainnetLuxAssetID,
 
 			Log:          tests.NewDefaultLogger("mainnet-vm-reexecution"),
@@ -312,7 +312,7 @@ func (e *vmExecutor) execute(ctx context.Context, blockBytes []byte) error {
 	if err := blk.Accept(ctx); err != nil {
 		return fmt.Errorf("failed to accept block %s at height %d: %w", blk.ID(), blk.Height(), err)
 	}
-	e.metric.lastAcceptedHeight.Set(float64(blk.Height()))
+	e.metrics.lastAcceptedHeight.Set(float64(blk.Height()))
 
 	return nil
 }

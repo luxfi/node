@@ -13,26 +13,25 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	
 
 	"github.com/gorilla/rpc/v2"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/lux"
@@ -69,7 +68,7 @@ type VM struct {
 	*network.Network
 	validators.State
 
-	metrics platformvmmetric.Metrics
+	metrics platformvmmetrics.Metrics
 
 	// Used to get time. Useful for faking time during tests.
 	clock mockable.Clock
@@ -245,7 +244,7 @@ func (vm *VM) Initialize(
 			return
 		default:
 		}
-		
+
 		err := vm.state.ReindexBlocks(&vm.ctx.Lock, vm.ctx.Log)
 		if err != nil {
 			vm.ctx.Log.Warn("reindexing blocks failed",
@@ -592,7 +591,7 @@ func (vm *VM) Shutdown(context.Context) error {
 		vm.onShutdownCtxCancel()
 		vm.onShutdownCtxCancel = nil // Prevent multiple calls
 	}
-	
+
 	// Builder might be nil if Initialize failed or wasn't fully completed
 	if vm.Builder != nil {
 		vm.Builder.ShutdownBlockTimer()
@@ -669,8 +668,8 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	server := rpc.NewServer()
 	server.RegisterCodec(json.NewCodec(), "application/json")
 	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
-	server.RegisterInterceptFunc(vm.metric.InterceptRequest)
-	server.RegisterAfterFunc(vm.metric.AfterRequest)
+	server.RegisterInterceptFunc(vm.metrics.InterceptRequest)
+	server.RegisterAfterFunc(vm.metrics.AfterRequest)
 	service := &Service{
 		vm:          vm,
 		addrManager: lux.NewAddressManager(vm.ctx),

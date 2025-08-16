@@ -5,13 +5,12 @@ package secp256k1fx
 
 import (
 	"testing"
-	
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/vms/components/verify"
 )
 

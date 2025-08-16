@@ -5,6 +5,7 @@ import (
 )
 
 // Embed the C-chain genesis configuration for network 96369
+//
 //go:embed cchain_genesis_mainnet.json
 var CChainGenesisMainnet []byte
 

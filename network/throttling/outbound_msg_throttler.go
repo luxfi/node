@@ -11,9 +11,9 @@ import (
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
 )
 
 var (
@@ -59,7 +59,7 @@ func NewSybilOutboundMsgThrottler(
 			nodeToAtLargeBytesUsed: make(map[ids.NodeID]uint64),
 		},
 	}
-	return t, t.metric.initialize(registerer)
+	return t, t.metrics.initialize(registerer)
 }
 
 func (t *outboundMsgThrottler) Acquire(msg message.OutboundMessage, nodeID ids.NodeID) bool {
@@ -111,7 +111,7 @@ func (t *outboundMsgThrottler) Acquire(msg message.OutboundMessage, nodeID ids.N
 	bytesNeeded -= vdrBytesUsed
 	if bytesNeeded != 0 {
 		// Can't acquire enough bytes to queue this message to be sent
-		t.metric.acquireFailures.Inc()
+		t.metrics.acquireFailures.Inc()
 		return false
 	}
 	// Can acquire enough bytes to queue this message to be sent.
@@ -119,16 +119,16 @@ func (t *outboundMsgThrottler) Acquire(msg message.OutboundMessage, nodeID ids.N
 	if atLargeBytesUsed > 0 {
 		t.remainingAtLargeBytes -= atLargeBytesUsed
 		t.nodeToAtLargeBytesUsed[nodeID] += atLargeBytesUsed
-		t.metric.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
+		t.metrics.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
 	}
 	if vdrBytesUsed > 0 {
 		// Mark that [nodeID] used [vdrBytesUsed] from its validator allocation
 		t.remainingVdrBytes -= vdrBytesUsed
 		t.nodeToVdrBytesUsed[nodeID] += vdrBytesUsed
-		t.metric.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
+		t.metrics.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
 	}
-	t.metric.acquireSuccesses.Inc()
-	t.metric.awaitingRelease.Inc()
+	t.metrics.acquireSuccesses.Inc()
+	t.metrics.awaitingRelease.Inc()
 	return true
 }
 
@@ -140,9 +140,9 @@ func (t *outboundMsgThrottler) Release(msg message.OutboundMessage, nodeID ids.N
 
 	t.lock.Lock()
 	defer func() {
-		t.metric.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
-		t.metric.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
-		t.metric.awaitingRelease.Dec()
+		t.metrics.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
+		t.metrics.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
+		t.metrics.awaitingRelease.Dec()
 		t.lock.Unlock()
 	}()
 

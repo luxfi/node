@@ -6,7 +6,6 @@ package metrics
 import (
 	"net/http"
 	"time"
-	
 
 	"github.com/gorilla/rpc/v2"
 

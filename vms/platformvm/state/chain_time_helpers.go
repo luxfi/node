@@ -6,7 +6,6 @@ package state
 import (
 	"fmt"
 	"time"
-	
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils/timer/mockable"

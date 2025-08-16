@@ -6,13 +6,13 @@ package falconfx
 import (
 	"errors"
 
-	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils/hashing"
 )
 
 const (
 	defaultCacheSize = 256
-	
+
 	// FALCON-512 parameters
 	Falcon512Degree    = 512
 	Falcon512Modulus   = 12289
@@ -41,7 +41,6 @@ var (
 	ErrInvalidFalconPublicKey         = errors.New("invalid FALCON public key")
 )
 
-
 // Add FalconInput type alias
 type FalconInput = FalconTransferInput
 
@@ -51,8 +50,8 @@ const codecVersion = 0
 // FalconFx describes the FALCON-512 post-quantum signature feature extension
 // This provides quantum-resistant signatures for X-Chain UTXOs
 type FalconFx struct {
-	VerifyCache *VerifyCache
-	VM          VM
+	VerifyCache  *VerifyCache
+	VM           VM
 	bootstrapped bool
 }
 
@@ -78,7 +77,7 @@ func (fx *FalconFx) Initialize(vmIntf interface{}) error {
 
 	cache := NewVerifyCache(defaultCacheSize)
 	fx.VerifyCache = cache
-	
+
 	c := fx.VM.CodecRegistry()
 	err := errors.Join(
 		c.RegisterType(&FalconTransferInput{}),
@@ -90,7 +89,7 @@ func (fx *FalconFx) Initialize(vmIntf interface{}) error {
 	if err != nil {
 		return err
 	}
-	
+
 	log.Info("FALCON fx initialized")
 	return nil
 }
@@ -119,17 +118,17 @@ func (fx *FalconFx) VerifyPermission(txIntf, inIntf, credIntf, ownerIntf interfa
 	if !ok {
 		return ErrWrongTxType
 	}
-	
+
 	in, ok := inIntf.(*FalconInput)
 	if !ok {
 		return ErrWrongInputType
 	}
-	
+
 	cred, ok := credIntf.(*FalconCredential)
 	if !ok {
 		return ErrWrongCredentialType
 	}
-	
+
 	owner, ok := ownerIntf.(*FalconOutputOwners)
 	if !ok {
 		return ErrWrongOwnerType
@@ -158,14 +157,14 @@ func (fx *FalconFx) verifyFalconSignature(tx UnsignedTx, in *FalconInput, cred *
 
 	// Verify FALCON signature
 	valid := verifyFalcon512(txHash, cred.Salt[:], cred.Sig, owner.FalconPublicKey)
-	
+
 	// Cache result
 	fx.VerifyCache.cache[cacheKey] = valid
-	
+
 	if !valid {
 		return ErrInvalidFalconSignature
 	}
-	
+
 	return nil
 }
 
@@ -174,17 +173,17 @@ func (fx *FalconFx) verifyMultisigFalcon(tx UnsignedTx, owner *FalconOutputOwner
 	if len(cred.Sigs) < int(owner.Threshold) {
 		return ErrTooFewSigners
 	}
-	
+
 	// Verify each signature
 	txBytes := tx.Bytes()
 	txHash := hashing.ComputeHash256(txBytes)
-	
+
 	validSigs := 0
 	for i, sig := range cred.Sigs {
 		if i >= len(owner.FalconPublicKeys) {
 			break
 		}
-		
+
 		if verifyFalcon512(txHash, sig.Salt[:], sig.Sig, owner.FalconPublicKeys[i]) {
 			validSigs++
 			if validSigs >= int(owner.Threshold) {
@@ -192,11 +191,11 @@ func (fx *FalconFx) verifyMultisigFalcon(tx UnsignedTx, owner *FalconOutputOwner
 			}
 		}
 	}
-	
+
 	if validSigs < int(owner.Threshold) {
 		return ErrTooFewSigners
 	}
-	
+
 	return nil
 }
 

@@ -8,17 +8,18 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luxfi/geth/common"
-	"github.com/luxfi/crypto"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
+	"github.com/luxfi/crypto"
+	"github.com/luxfi/geth/common"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/cb58"
 	"github.com/luxfi/node/utils/hashing"
 
 	stdecdsa "crypto/ecdsa"
+
 	secp256k1 "github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 

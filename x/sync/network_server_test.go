@@ -10,7 +10,6 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-	
 
 	"github.com/luxfi/consensus/core"
 	"github.com/stretchr/testify/require"
@@ -19,7 +18,6 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/x/merkledb"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
@@ -109,8 +107,8 @@ func Test_Server_GetRangeProof(t *testing.T) {
 			require := require.New(t)
 			ctrl := gomock.NewController(t)
 			sender := &core.FakeSender{
-		SentAppResponse: make(chan []byte, 1),
-	}
+				SentAppResponse: make(chan []byte, 1),
+			}
 			var proof *merkledb.RangeProof
 			sender.EXPECT().SendAppResponse(
 				gomock.Any(), // ctx
@@ -305,8 +303,8 @@ func Test_Server_GetChangeProof(t *testing.T) {
 			var proofResult *pb.SyncGetChangeProofResponse
 			var proofBytes []byte
 			sender := &core.FakeSender{
-		SentAppResponse: make(chan []byte, 1),
-	}
+				SentAppResponse: make(chan []byte, 1),
+			}
 			sender.EXPECT().SendAppResponse(
 				gomock.Any(), // ctx
 				gomock.Any(), // nodeID
@@ -394,8 +392,8 @@ func TestAppRequestErrAppSendFailed(t *testing.T) {
 			},
 			handlerFunc: func(ctrl *gomock.Controller) *NetworkServer {
 				sender := &core.FakeSender{
-		SentAppResponse: make(chan []byte, 1),
-	}
+					SentAppResponse: make(chan []byte, 1),
+				}
 				sender.EXPECT().SendAppResponse(
 					gomock.Any(),
 					gomock.Any(),
@@ -432,8 +430,8 @@ func TestAppRequestErrAppSendFailed(t *testing.T) {
 			},
 			handlerFunc: func(ctrl *gomock.Controller) *NetworkServer {
 				sender := &core.FakeSender{
-		SentAppResponse: make(chan []byte, 1),
-	}
+					SentAppResponse: make(chan []byte, 1),
+				}
 				sender.EXPECT().SendAppResponse(
 					gomock.Any(),
 					gomock.Any(),

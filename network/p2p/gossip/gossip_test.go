@@ -13,12 +13,11 @@ import (
 	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	luxmetrics "github.com/luxfi/metric"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/utils/constants"
@@ -108,10 +107,10 @@ func TestGossiperGossip(t *testing.T) {
 			responseSender := &core.FakeSender{
 				SentAppResponse: make(chan []byte, 1),
 			}
-			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, luxmetric.NewNoOpMetrics("test").Registry(), "")
+			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, metric.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 
-			responseBloom, err := NewBloomFilter(luxmetric.NewNoOpMetrics("test").Registry(), "", 1000, 0.01, 0.05)
+			responseBloom, err := NewBloomFilter(metric.NewNoOpMetrics("test").Registry(), "", 1000, 0.01, 0.05)
 			require.NoError(err)
 			responseSet := &testSet{
 				txs:   make(map[ids.ID]*testTx),
@@ -121,7 +120,7 @@ func TestGossiperGossip(t *testing.T) {
 				require.NoError(responseSet.Add(item))
 			}
 
-			metrics, err := NewMetrics(luxmetric.NewNoOpMetrics("test").Registry(), "")
+			metrics, err := NewMetrics(metric.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 			marshaller := testMarshaller{}
 			handler := NewHandler[*testTx](
@@ -138,11 +137,11 @@ func TestGossiperGossip(t *testing.T) {
 				SentAppRequest: make(chan []byte, 1),
 			}
 
-			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, luxmetric.NewNoOpMetrics("test").Registry(), "")
+			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, metric.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 			require.NoError(requestNetwork.Connected(context.Background(), ids.EmptyNodeID, nil))
 
-			bloom, err := NewBloomFilter(luxmetric.NewNoOpMetrics("test").Registry(), "", 1000, 0.01, 0.05)
+			bloom, err := NewBloomFilter(metric.NewNoOpMetrics("test").Registry(), "", 1000, 0.01, 0.05)
 			require.NoError(err)
 			requestSet := &testSet{
 				txs:   make(map[ids.ID]*testTx),
@@ -516,7 +515,7 @@ func TestPushGossiper(t *testing.T) {
 			network, err := p2p.NewNetwork(
 				nil,
 				sender,
-				luxmetric.NewNoOpMetrics("test").Registry(),
+				metric.NewNoOpMetrics("test").Registry(),
 				"",
 			)
 			require.NoError(err)
@@ -535,7 +534,7 @@ func TestPushGossiper(t *testing.T) {
 				},
 				time.Hour,
 			)
-			metrics, err := NewMetrics(luxmetric.NewNoOpMetrics("test").Registry(), "")
+			metrics, err := NewMetrics(metric.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 			marshaller := testMarshaller{}
 

@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
@@ -18,16 +17,16 @@ import (
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/xvm"
-	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/platformvm/api"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/xvm"
+	"github.com/luxfi/node/vms/xvm/fxs"
 
-	xchaintxs "github.com/luxfi/node/vms/xvm/txs"
 	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
+	xchaintxs "github.com/luxfi/node/vms/xvm/txs"
 )
 
 const (
@@ -482,7 +481,7 @@ func splitAllocations(allocations []Allocation, numSplits int) [][]Allocation {
 	if numSplits == 0 {
 		return [][]Allocation{}
 	}
-	
+
 	totalAmount := uint64(0)
 	for _, allocation := range allocations {
 		for _, unlock := range allocation.UnlockSchedule {
@@ -597,15 +596,15 @@ func encodeBlockNumber(number uint64) []byte {
 // FromDatabase returns the genesis data using an existing database for replay
 func FromDatabase(networkID uint32, dbPath string, dbType string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
 	fmt.Printf("Loading genesis for database replay from: %s (type: %s)\n", dbPath, dbType)
-	
+
 	// For database replay, just use the local config as a base
 	config := LocalConfig
 	config.NetworkID = networkID
 	config.Message = "DATABASE_REPLAY_MODE" // Special marker for replay mode
-	
+
 	// Add C-chain genesis with database replay marker
 	cchainGenesis := map[string]interface{}{
-		"replay":  true,  // Marker for database replay mode
+		"replay":  true, // Marker for database replay mode
 		"dbPath":  dbPath,
 		"dbType":  dbType,
 		"chainId": float64(networkID),
@@ -624,7 +623,7 @@ func FromDatabase(networkID uint32, dbPath string, dbType string, stakingCfg *St
 			"londonBlock":         0,
 		},
 		"nonce":      "0x0",
-		"timestamp":  "0x0", 
+		"timestamp":  "0x0",
 		"extraData":  "0x00",
 		"gasLimit":   "0x5f5e100",
 		"difficulty": "0x0",
@@ -636,14 +635,14 @@ func FromDatabase(networkID uint32, dbPath string, dbType string, stakingCfg *St
 			},
 		},
 	}
-	
+
 	cchainGenesisBytes, err := stdjson.Marshal(cchainGenesis)
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("failed to marshal C-chain genesis: %w", err)
 	}
-	
+
 	config.CChainGenesis = string(cchainGenesisBytes)
-	
+
 	// Build the genesis with LocalID configuration
 	return FromConfig(&config)
 }

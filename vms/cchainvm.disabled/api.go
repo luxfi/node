@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/luxfi/crypto"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/common/hexutil"
 	"github.com/luxfi/geth/core/rawdb"
 	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/crypto"
 	"github.com/luxfi/geth/rpc"
 )
 
@@ -159,12 +159,12 @@ func (api *EthAPI) GetTransactionReceipt(ctx context.Context, hash common.Hash) 
 	if block == nil {
 		return nil, nil
 	}
-	
+
 	receipts := rawdb.ReadReceipts(api.backend.chainDb, blockHash, blockNumber, block.Time(), api.backend.chainConfig)
 	if len(receipts) <= int(index) {
 		return nil, nil
 	}
-	
+
 	receipt := receipts[index]
 
 	// Get sender
@@ -247,14 +247,14 @@ func (api *EthAPI) rpcMarshalBlock(block *types.Block, inclTx bool, fullTx bool)
 
 // TransactionArgs represents the arguments for a transaction
 type TransactionArgs struct {
-	From     *common.Address  `json:"from"`
-	To       *common.Address  `json:"to"`
-	Gas      *hexutil.Uint64  `json:"gas"`
-	GasPrice *hexutil.Big     `json:"gasPrice"`
-	Value    *hexutil.Big     `json:"value"`
-	Nonce    *hexutil.Uint64  `json:"nonce"`
-	Data     *hexutil.Bytes   `json:"data"`
-	Input    *hexutil.Bytes   `json:"input"`
+	From     *common.Address `json:"from"`
+	To       *common.Address `json:"to"`
+	Gas      *hexutil.Uint64 `json:"gas"`
+	GasPrice *hexutil.Big    `json:"gasPrice"`
+	Value    *hexutil.Big    `json:"value"`
+	Nonce    *hexutil.Uint64 `json:"nonce"`
+	Data     *hexutil.Bytes  `json:"data"`
+	Input    *hexutil.Bytes  `json:"input"`
 }
 
 // RPCTransaction represents a transaction for RPC

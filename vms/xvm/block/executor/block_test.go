@@ -8,21 +8,19 @@ import (
 	"errors"
 	"testing"
 	"time"
-	
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/config"
-	"github.com/luxfi/node/vms/xvm/metrics"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/executor"
@@ -1046,7 +1044,7 @@ func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *ex
 	}
 	return &executor.Backend{
 		Bootstrapped: bootstrapped,
-		Ctx: ctx,
+		Ctx:          ctx,
 		Config: &config.Config{
 			EtnaTime:         mockable.MaxTime,
 			TxFee:            0,

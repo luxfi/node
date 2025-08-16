@@ -5,13 +5,13 @@ package metrics
 
 import (
 	"testing"
-	
+
+	"github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
 	dto "github.com/prometheus/client_model/go"
-	"github.com/luxfi/metric"
 )
 
 func TestPrefixGatherer_Gather(t *testing.T) {
@@ -37,7 +37,7 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 
 	metrics, err := gatherer.Gather()
 	require.NoError(err)
-	
+
 	// Strip timestamps from metrics to avoid comparison issues
 	for _, mf := range metrics {
 		for _, m := range mf.Metric {
@@ -46,7 +46,7 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 			}
 		}
 	}
-	
+
 	require.Equal(
 		[]*dto.MetricFamily{
 			{

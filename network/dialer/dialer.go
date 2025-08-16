@@ -12,8 +12,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/network/throttling"
 )
 
 var _ Dialer = (*dialer)(nil)

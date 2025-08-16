@@ -210,7 +210,7 @@ func (fx *Fx) VerifyCredentials(utx UnsignedTx, in *Input, cred *Credential, out
 		if err != nil {
 			return err
 		}
-		
+
 		if expectedAddress := out.Addrs[index]; expectedAddress != pkAddr {
 			return fmt.Errorf("%w: expected signature from %s but got from %s",
 				ErrWrongSig,

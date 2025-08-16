@@ -31,7 +31,7 @@ func main() {
 	}
 
 	validators := map[string]set.Set[ids.NodeID]{
-		constants.TestnetName:    testnetValidators,
+		constants.TestnetName: testnetValidators,
 		constants.MainnetName: mainnetValidators,
 	}
 	validatorsJSON, err := json.MarshalIndent(validators, "", "\t")
