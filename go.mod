@@ -17,7 +17,7 @@ require (
 	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
-	github.com/luxfi/consensus v1.1.2
+	github.com/luxfi/consensus v1.1.3
 	github.com/luxfi/crypto v1.3.2
 	github.com/luxfi/database v1.1.11
 	github.com/luxfi/geth v1.16.34
