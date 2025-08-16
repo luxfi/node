@@ -92,7 +92,7 @@ func (b *block) Verify() error {
 	return b.VerifyWithContext(context.Background(), nil)
 }
 
-func (b *block) Accept() error {
+func (b *block) Accept(context.Context) error {
 	if err := b.state.Commit(); err != nil {
 		return err
 	}
