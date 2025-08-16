@@ -34,6 +34,8 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/version"
+	
+	luxmetric "github.com/luxfi/node/utils/metric"
 )
 
 // inboundHandlerFunc is a simple wrapper to make a function implement InboundHandler
@@ -169,7 +171,6 @@ func newDefaultResourceTracker() tracker.ResourceTracker {
 	tracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),
 		&noOpResourceManager{},
-		&noOpMetricsFactory{},
 		10*time.Second,
 	)
 	if err != nil {
@@ -220,7 +221,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 
 	mc, err := message.NewCreator(
 		nil,
-		luxmetric.NewNoOpMetrics("test"),
+		luxmetric.NewOptionalGatherer(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
