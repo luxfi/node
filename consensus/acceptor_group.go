@@ -26,7 +26,7 @@ type acceptorGroup struct {
 }
 
 // NewAcceptorGroup creates a new AcceptorGroup
-func NewAcceptorGroup(log log.Logger) consensus.AcceptorGroup {
+func NewAcceptorGroup(log log.Logger) *acceptorGroup {
 	return &acceptorGroup{
 		log:       log,
 		acceptors: make(map[ids.ID]map[string]acceptorWrapper),

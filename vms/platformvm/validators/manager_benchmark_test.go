@@ -14,12 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/metric"
-
 	"github.com/luxfi/database/leveldb"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/utils/constants"
 
@@ -43,6 +40,7 @@ import (
 
 	"github.com/luxfi/node/vms/platformvm/reward"
 
+	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/state"
 
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -118,8 +116,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	execConfig, err := config.GetExecutionConfig(nil)
 	require.NoError(err)
 
-	metrics, err := metric.New(prometheus.NewRegistry())
-	require.NoError(err)
+	metrics := metrics.Noop
 
 	s, err := state.New(
 		db,
@@ -129,11 +126,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 			Validators: vdrs,
 		},
 		execConfig,
-		&context.Context{
-			NetworkID: constants.UnitTestID,
-			NodeID:    ids.GenerateTestNodeID(),
-			Log:       log.NewNoOpLogger(),
-		},
+		context.Background(),
 		metrics,
 		reward.NewCalculator(reward.Config{
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
