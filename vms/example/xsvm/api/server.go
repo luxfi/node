@@ -7,6 +7,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/block"
@@ -62,9 +63,9 @@ type NetworkReply struct {
 }
 
 func (s *server) Network(_ *http.Request, _ *struct{}, reply *NetworkReply) error {
-	reply.NetworkID = s.ctx.NetworkID
-	reply.SubnetID = s.ctx.SubnetID
-	reply.ChainID = s.ctx.ChainID
+	reply.NetworkID = consensus.GetNetworkID(s.ctx)
+	reply.SubnetID = consensus.GetSubnetID(s.ctx)
+	reply.ChainID = consensus.GetChainID(s.ctx)
 	return nil
 }
 
