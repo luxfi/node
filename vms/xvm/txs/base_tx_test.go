@@ -32,7 +32,7 @@ func TestBaseTxSerialization(t *testing.T) {
 		// txID:
 		0x00, 0x00, 0x00, 0x00,
 		// networkID:
-		0x00, 0x00, 0x00, 0x0a,
+		0x00, 0x00, 0x01, 0x71, // 369 = UnitTestID
 		// blockchainID:
 		0x05, 0x04, 0x03, 0x02, 0x01, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -133,7 +133,7 @@ func TestBaseTxSerialization(t *testing.T) {
 	require.NoError(err)
 
 	require.NoError(tx.Initialize(parser.Codec()))
-	require.Equal("zeqT8FTnRAxes7QQQYkaWhNkHavd9d6aCdH8TQu2Mx5KEydEz", tx.ID().String())
+	require.Equal("28f9BswnotzWBpsXKeubSZW8xz32snhyyQ6ac89oz7seExtAs5", tx.ID().String())
 
 	result := tx.Bytes()
 	require.Equal(expected, result)
@@ -195,7 +195,7 @@ func TestBaseTxSerialization(t *testing.T) {
 			{keys[0], keys[0]},
 		},
 	))
-	require.Equal("QnTUuie2qe6BKyYrC2jqd73bJ828QNhYnZbdA2HWsnVRPjBfV", tx.ID().String())
+	require.Equal("EHZZ7zs4t5T6wV7V19PH9VyBmarHVJYdQNMvCqh23Q4NBESgj", tx.ID().String())
 
 	// there are two credentials
 	expected[len(expected)-1] = 0x02

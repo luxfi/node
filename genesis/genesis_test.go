@@ -466,7 +466,7 @@ func TestLUXAssetID(t *testing.T) {
 		},
 		{
 			networkID:  constants.TestnetID,
-			expectedID: "2FAQZiuoi7F2rfgfseLNy4P9oCkJeH6zfdNZRvXNh4msqFzv9o",
+			expectedID: "2we4SyEFuAC5Ch7hgPBjVfz6eut4TyzFd954ZLWCa5mAiAer5Z",
 		},
 		{
 			networkID:  constants.LocalID,

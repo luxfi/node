@@ -489,7 +489,7 @@ func TestFxVerifyTransferInvalidSignature(t *testing.T) {
 	require.NoError(fx.VerifyTransfer(tx, in, cred, out))
 	require.NoError(fx.Bootstrapped())
 	err := fx.VerifyTransfer(tx, in, cred, out)
-	require.ErrorIs(err, secp256k1.ErrInvalidSig)
+	require.ErrorIs(err, secp256k1.ErrRecoverFailed)
 }
 
 func TestFxVerifyTransferWrongSigner(t *testing.T) {

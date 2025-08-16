@@ -283,8 +283,8 @@ type consensusValidatorStateWrapper struct {
 	state validators.State
 }
 
-func (v *consensusValidatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
-	return v.state.GetCurrentHeight(ctx)
+func (v *consensusValidatorStateWrapper) GetCurrentHeight() (uint64, error) {
+	return v.state.GetCurrentHeight(context.Background())
 }
 
 func (v *consensusValidatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
@@ -297,8 +297,16 @@ func (v *consensusValidatorStateWrapper) GetSubnetID(chainID ids.ID) (ids.ID, er
 	return ids.Empty, nil
 }
 
-func (v *consensusValidatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	return v.state.GetValidatorSet(ctx, height, subnetID)
+func (v *consensusValidatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+	valSet, err := v.state.GetValidatorSet(context.Background(), height, subnetID)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[ids.NodeID]uint64, len(valSet))
+	for nodeID, val := range valSet {
+		result[nodeID] = val.Weight
+	}
+	return result, nil
 }
 
 func (v *validatorStateWrapper) GetCurrentHeight() (uint64, error) {
@@ -315,8 +323,16 @@ func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID)
 	return ids.Empty, nil
 }
 
-func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	return v.state.GetValidatorSet(ctx, height, subnetID)
+func (v *validatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+	valSet, err := v.state.GetValidatorSet(context.Background(), height, subnetID)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[ids.NodeID]uint64, len(valSet))
+	for nodeID, val := range valSet {
+		result[nodeID] = val.Weight
+	}
+	return result, nil
 }
 
 // ChainConfig is configuration settings for the current execution.
