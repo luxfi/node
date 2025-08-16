@@ -3,7 +3,6 @@ package validatorstest
 
 import (
 	"testing"
-	"github.com/luxfi/node/consensus/validators"
 )
 
 // TestValidator is a test validator implementation

@@ -6,7 +6,6 @@ module github.com/luxfi/node
 // go.mod (here)
 go 1.24.5
 
-
 exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 
 // Do not use go-ethereum directly
@@ -215,3 +214,12 @@ require (
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
 
+replace (
+	github.com/luxfi/consensus => ../consensus
+	github.com/luxfi/crypto => ../crypto
+	github.com/luxfi/database => ../database
+	github.com/luxfi/geth => ../geth
+	github.com/luxfi/ids => ../ids
+	github.com/luxfi/log => ../log
+	github.com/luxfi/metrics => ../metrics
+)
