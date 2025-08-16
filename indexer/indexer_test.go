@@ -186,7 +186,8 @@ func TestIndexer(t *testing.T) {
 		Timestamp: now.UnixNano(),
 	}
 
-	require.NoError(config.BlockAcceptorGroup.Accept(chain1Ctx, blkID, blkBytes))
+	// Use the concrete acceptorGroup type which has Accept method
+	require.NoError(config.BlockAcceptorGroup.(*consensus.AcceptorGroup).Accept(chain1Ctx, blkID, blkBytes))
 
 	blkIdx := idxr.blockIndices[testChainID]
 	require.NotNil(blkIdx)
@@ -395,6 +396,7 @@ func TestIndexer(t *testing.T) {
 	require.IsType(&indexer{}, idxrIntf)
 	idxr = idxrIntf.(*indexer)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
+	// chain2Ctx was defined earlier when creating vertex test data
 	idxr.RegisterChain("chain2", chain2Ctx, graphVM)
 
 	// Verify state
