@@ -74,7 +74,7 @@ func New(t testing.TB, c Config) state.State {
 		c.Config.StaticFeeConfig.CreateBlockchainTxFee = 1 * units.MilliLux
 	}
 	if c.Metrics == nil {
-		c.Metrics = metric.Noop
+		c.Metrics = metrics.Noop
 	}
 	if c.Rewards == nil {
 		c.Rewards = reward.NewCalculator(reward.Config{

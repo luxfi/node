@@ -152,12 +152,13 @@ func TestIndexer(t *testing.T) {
 	idxr.clock.Set(now)
 
 	// Assert state is right
-	consensus1Ctx := consensustest.Context(t, consensustest.CChainID)
-	chain1Ctx := consensustest.ConsensusContext(consensus1Ctx)
-	isIncomplete, err := idxr.isIncomplete(chain1Ctx.ChainID)
+	// Use a test chain ID
+	testChainID := ids.GenerateTestID()
+	chain1Ctx := consensustest.Context(t, testChainID)
+	isIncomplete, err := idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
-	previouslyIndexed, err := idxr.previouslyIndexed(chain1Ctx.ChainID)
+	previouslyIndexed, err := idxr.previouslyIndexed(testChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
 
@@ -264,10 +265,10 @@ func TestIndexer(t *testing.T) {
 	// Register a DAG chain - commented out as vertexmock is not available
 	// consensus2Ctx := consensustest.Context(t, consensustest.XChainID)
 	// chain2Ctx := consensustest.ConsensusContext(consensus2Ctx)
-	// isIncomplete, err = idxr.isIncomplete(chain2Ctx.ChainID)
+	// isIncomplete, err = idxr.isIncomplete(chain2ChainID)
 	// require.NoError(err)
 	// require.False(isIncomplete)
-	// previouslyIndexed, err = idxr.previouslyIndexed(chain2Ctx.ChainID)
+	// previouslyIndexed, err = idxr.previouslyIndexed(chain2ChainID)
 	// require.NoError(err)
 	// require.False(previouslyIndexed)
 	// graphVM := vertexmock.NewLinearizableVM(ctrl)
@@ -282,18 +283,22 @@ func TestIndexer(t *testing.T) {
 	// require.Len(idxr.txIndices, 1)
 	// require.Len(idxr.vtxIndices, 1)
 
-	// Accept a vertex - commented out as vertexmock is not available
-	// vtxID, vtxBytes := ids.GenerateTestID(), utils.RandomBytes(32)
-	// expectedVtx := Container{
-	// 	ID:        vtxID,
-	// 	Bytes:     vtxBytes,
-	// 	Timestamp: now.UnixNano(),
-	// }
+	// Accept a vertex
+	vtxID, vtxBytes := ids.GenerateTestID(), utils.RandomBytes(32)
+	expectedVtx := Container{
+		ID:        vtxID,
+		Bytes:     vtxBytes,
+		Timestamp: now.UnixNano(),
+	}
 
-	// require.NoError(config.VertexAcceptorGroup.Accept(chain2Ctx, vtxID, vtxBytes))
+	// Use another test chain ID for vertex
+	chain2ChainID := ids.GenerateTestID()
+	chain2Ctx := consensustest.Context(t, chain2ChainID)
+	
+	require.NoError(config.VertexAcceptorGroup.Accept(chain2Ctx, vtxID, vtxBytes))
 
-	// vtxIdx := idxr.vtxIndices[chain2Ctx.ChainID]
-	// require.NotNil(vtxIdx)
+	vtxIdx := idxr.vtxIndices[chain2ChainID]
+	require.NotNil(vtxIdx)
 
 	// Verify GetLastAccepted is right
 	gotLastAccepted, err = vtxIdx.GetLastAccepted()
@@ -331,7 +336,7 @@ func TestIndexer(t *testing.T) {
 
 	require.NoError(config.TxAcceptorGroup.Accept(chain2Ctx, txID, txBytes))
 
-	txIdx := idxr.txIndices[chain2Ctx.ChainID]
+	txIdx := idxr.txIndices[chain2ChainID]
 	require.NotNil(txIdx)
 
 	// Verify GetLastAccepted is right
@@ -392,10 +397,10 @@ func TestIndexer(t *testing.T) {
 	idxr.RegisterChain("chain2", chain2Ctx, graphVM)
 
 	// Verify state
-	lastAcceptedTx, err = idxr.txIndices[chain2Ctx.ChainID].GetLastAccepted()
+	lastAcceptedTx, err = idxr.txIndices[chain2ChainID].GetLastAccepted()
 	require.NoError(err)
 	require.Equal(txID, lastAcceptedTx.ID)
-	lastAcceptedVtx, err = idxr.vtxIndices[chain2Ctx.ChainID].GetLastAccepted()
+	lastAcceptedVtx, err = idxr.vtxIndices[chain2ChainID].GetLastAccepted()
 	require.NoError(err)
 	require.Equal(vtxID, lastAcceptedVtx.ID)
 	lastAcceptedBlk, err = idxr.blockIndices[chain1Ctx.ChainID].GetLastAccepted()
@@ -433,7 +438,7 @@ func TestIncompleteIndex(t *testing.T) {
 	isIncomplete, err := idxr.isIncomplete(chain1Ctx.ChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
-	previouslyIndexed, err := idxr.previouslyIndexed(chain1Ctx.ChainID)
+	previouslyIndexed, err := idxr.previouslyIndexed(testChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
 	chainVM := blockmock.NewChainVM(ctrl)
