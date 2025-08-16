@@ -22,8 +22,9 @@ func TestIndex(t *testing.T) {
 	pageSize := uint64(64)
 	require := require.New(t)
 	baseDB := memdb.New()
-	consensusCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(consensusCtx)
+	// Use a test chain ID
+	testChainID := ids.GenerateTestID()
+	ctx := consensustest.Context(t, testChainID)
 
 	idx, err := newIndex(baseDB, log.NoLog{}, mockable.Clock{})
 	require.NoError(err)
@@ -108,8 +109,9 @@ func TestIndexGetContainerByRangeMaxPageSize(t *testing.T) {
 	// Setup
 	require := require.New(t)
 	db := memdb.New()
-	consensusCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(consensusCtx)
+	// Use a test chain ID
+	testChainID := ids.GenerateTestID()
+	ctx := consensustest.Context(t, testChainID)
 	idx, err := newIndex(db, log.NoLog{}, mockable.Clock{})
 	require.NoError(err)
 
@@ -146,8 +148,9 @@ func TestDontIndexSameContainerTwice(t *testing.T) {
 	// Setup
 	require := require.New(t)
 	db := memdb.New()
-	consensusCtx := consensustest.Context(t, consensustest.CChainID)
-	ctx := consensustest.ConsensusContext(consensusCtx)
+	// Use a test chain ID
+	testChainID := ids.GenerateTestID()
+	ctx := consensustest.Context(t, testChainID)
 	idx, err := newIndex(db, log.NoLog{}, mockable.Clock{})
 	require.NoError(err)
 

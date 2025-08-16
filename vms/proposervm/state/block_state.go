@@ -43,10 +43,11 @@ type blockState struct {
 }
 
 type blockWrapper struct {
-	Block  []byte         `serialize:"true"`
-	Status choices.Status `serialize:"true"`
+	Block      []byte `serialize:"true"`
+	StatusInt  uint32 `serialize:"true"` // Store status as uint32 for serialization
 
-	block block.Block
+	block  block.Block
+	status choices.Status // Keep the actual status here
 }
 
 func cachedBlockSize(_ ids.ID, bw *blockWrapper) int {
@@ -87,7 +88,7 @@ func (s *blockState) GetBlock(blkID ids.ID) (block.Block, choices.Status, error)
 		if blk == nil {
 			return nil, choices.Unknown, database.ErrNotFound
 		}
-		return blk.block, blk.Status, nil
+		return blk.block, blk.status, nil
 	}
 
 	blkWrapperBytes, err := s.db.Get(blkID[:])
@@ -114,16 +115,18 @@ func (s *blockState) GetBlock(blkID ids.ID) (block.Block, choices.Status, error)
 		return nil, choices.Unknown, err
 	}
 	blkWrapper.block = blk
+	blkWrapper.status = choices.Status(blkWrapper.StatusInt) // Convert back from uint32
 
 	s.blkCache.Put(blkID, &blkWrapper)
-	return blk, blkWrapper.Status, nil
+	return blk, blkWrapper.status, nil
 }
 
 func (s *blockState) PutBlock(blk block.Block, status choices.Status) error {
 	blkWrapper := blockWrapper{
-		Block:  blk.Bytes(),
-		Status: status,
-		block:  blk,
+		Block:     blk.Bytes(),
+		StatusInt: uint32(status),
+		block:     blk,
+		status:    status,
 	}
 
 	bytes, err := Codec.Marshal(CodecVersion, &blkWrapper)
