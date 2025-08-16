@@ -1176,8 +1176,22 @@ func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID)
 	return v.vs.GetSubnetID(ctx, chainID)
 }
 
-func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	return v.vs.GetValidatorSet(height, subnetID)
+func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	// Get the raw validator set
+	valSet, err := v.vs.GetValidatorSet(height, subnetID)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Convert map[ids.NodeID]uint64 to map[ids.NodeID]*validators.GetValidatorOutput
+	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(valSet))
+	for nodeID, weight := range valSet {
+		result[nodeID] = &validators.GetValidatorOutput{
+			NodeID: nodeID,
+			Weight: weight,
+		}
+	}
+	return result, nil
 }
 
 func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {

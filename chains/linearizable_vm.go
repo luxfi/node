@@ -19,6 +19,10 @@ import (
 var (
 	_ vertex.LinearizableVM = (*initializeOnLinearizeVM)(nil)
 	_ block.ChainVM         = (*linearizeOnInitializeVM)(nil)
+
+	// ErrSkipped is returned when a linearizable VM is asked to perform
+	// chain VM operations
+	ErrSkipped = errors.New("skipped")
 )
 
 // initializeOnLinearizeVM transforms the consensus engine's call to Linearize
@@ -255,35 +259,35 @@ func (vm *linearizeOnInitializeVM) Initialize(
 // BuildBlock implements block.ChainVM interface
 func (vm *linearizeOnInitializeVM) BuildBlock(ctx context.Context) (block.Block, error) {
 	// This is a linearizable VM, not a chain VM, so we return an error
-	return nil, chain.ErrSkipped
+	return nil, ErrSkipped
 }
 
 // ParseBlock implements block.ChainVM interface
 func (vm *linearizeOnInitializeVM) ParseBlock(ctx context.Context, b []byte) (block.Block, error) {
 	// This is a linearizable VM, not a chain VM, so we return an error
-	return nil, chain.ErrSkipped
+	return nil, ErrSkipped
 }
 
 // GetBlock implements block.ChainVM interface
 func (vm *linearizeOnInitializeVM) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
 	// This is a linearizable VM, not a chain VM, so we return an error
-	return nil, chain.ErrSkipped
+	return nil, ErrSkipped
 }
 
 // SetPreference implements block.ChainVM interface
 func (vm *linearizeOnInitializeVM) SetPreference(ctx context.Context, blkID ids.ID) error {
 	// This is a linearizable VM, not a chain VM, so we return an error
-	return chain.ErrSkipped
+	return ErrSkipped
 }
 
 // LastAccepted implements block.ChainVM interface
 func (vm *linearizeOnInitializeVM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	// This is a linearizable VM, not a chain VM, so we return an error
-	return ids.Empty, chain.ErrSkipped
+	return ids.Empty, ErrSkipped
 }
 
 // GetBlockIDAtHeight implements block.ChainVM interface
 func (vm *linearizeOnInitializeVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
 	// This is a linearizable VM, not a chain VM, so we return an error
-	return ids.Empty, chain.ErrSkipped
+	return ids.Empty, ErrSkipped
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
@@ -32,7 +33,6 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
 	"github.com/luxfi/node/vms/rpcchainvm/appsender"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
@@ -291,12 +291,19 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 	parentID := blk.Parent()
+	
+	// Try to get timestamp if block supports it
+	var timestamp *timestamppb.Timestamp
+	if timestampable, ok := blk.(interface{ Timestamp() time.Time }); ok {
+		timestamp = grpcutils.TimestampFromTime(timestampable.Timestamp())
+	}
+	
 	return &vmpb.InitializeResponse{
 		LastAcceptedId:       lastAccepted[:],
 		LastAcceptedParentId: parentID[:],
 		Height:               blk.Height(),
 		Bytes:                blk.Bytes(),
-		Timestamp:            grpcutils.TimestampFromTime(blk.Timestamp()),
+		Timestamp:            timestamp,
 	}, nil
 }
 
@@ -324,12 +331,18 @@ func (vm *VMServer) SetState(ctx context.Context, stateReq *vmpb.SetStateRequest
 	}
 
 	parentID := blk.Parent()
+	// Try to get timestamp if block supports it
+	var timestamp *timestamppb.Timestamp
+	if timestampable, ok := blk.(interface{ Timestamp() time.Time }); ok {
+		timestamp = grpcutils.TimestampFromTime(timestampable.Timestamp())
+	}
+	
 	return &vmpb.SetStateResponse{
 		LastAcceptedId:       lastAccepted[:],
 		LastAcceptedParentId: parentID[:],
 		Height:               blk.Height(),
 		Bytes:                blk.Bytes(),
-		Timestamp:            grpcutils.TimestampFromTime(blk.Timestamp()),
+		Timestamp:            timestamp,
 	}, nil
 }
 
@@ -426,7 +439,7 @@ func (vm *VMServer) Disconnected(ctx context.Context, req *vmpb.DisconnectedRequ
 // method will be called instead.
 func (vm *VMServer) BuildBlock(ctx context.Context, req *vmpb.BuildBlockRequest) (*vmpb.BuildBlockResponse, error) {
 	var (
-		blk chain.Block
+		blk block.Block
 		err error
 	)
 	if vm.bVM == nil || req.PChainHeight == nil {
@@ -452,12 +465,19 @@ func (vm *VMServer) BuildBlock(ctx context.Context, req *vmpb.BuildBlockRequest)
 		blkID    = blk.ID()
 		parentID = blk.Parent()
 	)
+	
+	// Try to get timestamp if block supports it
+	var timestamp *timestamppb.Timestamp
+	if timestampable, ok := blk.(interface{ Timestamp() time.Time }); ok {
+		timestamp = grpcutils.TimestampFromTime(timestampable.Timestamp())
+	}
+	
 	return &vmpb.BuildBlockResponse{
 		Id:                blkID[:],
 		ParentId:          parentID[:],
 		Bytes:             blk.Bytes(),
 		Height:            blk.Height(),
-		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
+		Timestamp:         timestamp,
 		VerifyWithContext: verifyWithCtx,
 	}, nil
 }
@@ -480,12 +500,19 @@ func (vm *VMServer) ParseBlock(ctx context.Context, req *vmpb.ParseBlockRequest)
 		blkID    = blk.ID()
 		parentID = blk.Parent()
 	)
+	
+	// Try to get timestamp if block supports it
+	var timestamp *timestamppb.Timestamp
+	if timestampable, ok := blk.(interface{ Timestamp() time.Time }); ok {
+		timestamp = grpcutils.TimestampFromTime(timestampable.Timestamp())
+	}
+	
 	return &vmpb.ParseBlockResponse{
 		Id:       blkID[:],
 		ParentId: parentID[:],
 		// Status:            vmpb.Status(blk.Status()), // Status method no longer exists on chain.Block
 		Height:            blk.Height(),
-		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
+		Timestamp:         timestamp,
 		VerifyWithContext: verifyWithCtx,
 	}, nil
 }
@@ -511,12 +538,19 @@ func (vm *VMServer) GetBlock(ctx context.Context, req *vmpb.GetBlockRequest) (*v
 	}
 
 	parentID := blk.Parent()
+	
+	// Try to get timestamp if block supports it
+	var timestamp *timestamppb.Timestamp
+	if timestampable, ok := blk.(interface{ Timestamp() time.Time }); ok {
+		timestamp = grpcutils.TimestampFromTime(timestampable.Timestamp())
+	}
+	
 	return &vmpb.GetBlockResponse{
 		ParentId: parentID[:],
 		Bytes:    blk.Bytes(),
 		// Status:            vmpb.Status(blk.Status()), // Status method no longer exists on chain.Block
 		Height:            blk.Height(),
-		Timestamp:         grpcutils.TimestampFromTime(blk.Timestamp()),
+		Timestamp:         timestamp,
 		VerifyWithContext: verifyWithCtx,
 	}, nil
 }
@@ -898,8 +932,14 @@ func (vm *VMServer) BlockVerify(ctx context.Context, req *vmpb.BlockVerifyReques
 		return nil, err
 	}
 
+	// Try to get timestamp if block supports it
+	var timestamp *timestamppb.Timestamp
+	if timestampable, ok := blk.(interface{ Timestamp() time.Time }); ok {
+		timestamp = grpcutils.TimestampFromTime(timestampable.Timestamp())
+	}
+	
 	return &vmpb.BlockVerifyResponse{
-		Timestamp: grpcutils.TimestampFromTime(blk.Timestamp()),
+		Timestamp: timestamp,
 	}, nil
 }
 

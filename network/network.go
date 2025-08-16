@@ -238,7 +238,7 @@ func NewNetwork(
 	if err != nil {
 		return nil, fmt.Errorf("initializing ip tracker failed with: %w", err)
 	}
-	config.Validators.RegisterSetCallbackListener(ipTracker)
+	config.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, ipTracker)
 
 	// Track all default bootstrappers to ensure their current IPs are gossiped
 	// like validator IPs.
@@ -286,8 +286,8 @@ func NewNetwork(
 		inboundConnUpgradeThrottler: throttling.NewInboundConnUpgradeThrottler(log, config.ThrottlerConfig.InboundConnUpgradeThrottlerConfig),
 		listener:                    listener,
 		dialer:                      dialer,
-		serverUpgrader:              peer.NewTLSServerUpgrader(config.TLSConfig, metric.tlsConnRejected),
-		clientUpgrader:              peer.NewTLSClientUpgrader(config.TLSConfig, metric.tlsConnRejected),
+		serverUpgrader:              peer.NewTLSServerUpgrader(config.TLSConfig, metrics.tlsConnRejected),
+		clientUpgrader:              peer.NewTLSClientUpgrader(config.TLSConfig, metrics.tlsConnRejected),
 
 		onCloseCtx:       onCloseCtx,
 		onCloseCtxCancel: cancel,
@@ -1116,7 +1116,7 @@ func (n *network) NodeUptime(subnetID ids.ID) (UptimeResult, error) {
 		return UptimeResult{}, errNotTracked
 	}
 
-	myStake, _ := n.config.Validators.GetWeight(subnetID, n.config.MyNodeID)
+	myStake := n.config.Validators.GetWeight(subnetID, n.config.MyNodeID)
 	if myStake == 0 {
 		return UptimeResult{}, errNotValidator
 	}
@@ -1139,7 +1139,7 @@ func (n *network) NodeUptime(subnetID ids.ID) (UptimeResult, error) {
 		peer, _ := n.connectedPeers.GetByIndex(i)
 
 		nodeID := peer.ID()
-		weight, _ := n.config.Validators.GetWeight(subnetID, nodeID)
+		weight := n.config.Validators.GetWeight(subnetID, nodeID)
 		if weight == 0 {
 			// this is not a validator skip it.
 			continue

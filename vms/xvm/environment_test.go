@@ -124,15 +124,17 @@ func setup(tb testing.TB, c *envConfig) *environment {
 
 	genesisBytes := buildGenesisTestWithArgs(tb, genesisArgs)
 
-	ctx := consensustest.Context(tb, consensustest.XChainID)
+	xChainID := ids.GenerateTestID()
+	consensusCtx := consensustest.NewContext(tb)
+	consensusCtx.ChainID = xChainID
 
 	baseDB := memdb.New()
 	m := atomic.NewMemory(prefixdb.New([]byte{0}, baseDB))
-	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
+	consensusCtx.SharedMemory = m.NewSharedMemory(consensusCtx.ChainID)
 
 	// NB: this lock is intentionally left locked when this function returns.
 	// The caller of this function is responsible for unlocking.
-	ctx.Lock.Lock()
+	consensusCtx.Lock.Lock()
 
 	vmStaticConfig := staticConfig(tb, c.fork)
 	if c.vmStaticConfig != nil {
@@ -153,7 +155,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 
 	require.NoError(vm.Initialize(
 		context.Background(),
-		ctx,
+		consensusCtx,
 		prefixdb.New([]byte{1}, baseDB),
 		genesisBytes,
 		nil,
@@ -181,7 +183,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		genesisTx:    getCreateTxFromGenesisTest(tb, genesisBytes, assetName),
 		sharedMemory: m,
 		vm:           vm,
-		txBuilder:    txstest.New(vm.parser.Codec(), vm.ctx, &vm.Config, vm.feeAssetID, vm.state),
+		txBuilder:    txstest.New(vm.parser.Codec(), vm.ctx, &vm.Config, vm.feeAssetID, vm.state, m),
 	}
 
 	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))

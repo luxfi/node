@@ -79,7 +79,7 @@ func NewTestNetwork(
 	trackedSubnets set.Set[ids.ID],
 	router router.ExternalHandler,
 ) (Network, error) {
-	m := luxmetric.NewNoOpMetrics("test")
+	m := luxmetrics.NewNoOpMetrics("test")
 	msgCreator, err := message.NewCreator(
 		log,
 		m,
