@@ -239,3 +239,15 @@ func (m *testValidatorManager) NumSubnets() int {
 func (m *testValidatorManager) String() string {
 	return "testValidatorManager"
 }
+
+func (m *testValidatorManager) NumSubnets() int {
+	return 0
+}
+
+func (m *testValidatorManager) Sample(subnetID ids.ID, size int) ([]ids.NodeID, error) {
+	return nil, nil
+}
+
+func (m *testValidatorManager) SubsetWeight(subnetID ids.ID, nodeIDs consensusset.Set[ids.NodeID]) (uint64, error) {
+	return 0, nil
+}

@@ -22,14 +22,14 @@ type factory struct {
 	path            string
 	processTracker  resource.ProcessTracker
 	runtimeTracker  runtime.Tracker
-	metricsGatherer metric.MultiGatherer
+	metricsGatherer metrics.MultiGatherer
 }
 
 func NewFactory(
 	path string,
 	processTracker resource.ProcessTracker,
 	runtimeTracker runtime.Tracker,
-	metricsGatherer metric.MultiGatherer,
+	metricsGatherer metrics.MultiGatherer,
 ) vms.Factory {
 	return &factory{
 		path:            path,

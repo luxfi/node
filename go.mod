@@ -22,7 +22,7 @@ require (
 	github.com/luxfi/database v1.1.11
 	github.com/luxfi/geth v1.16.34
 	github.com/luxfi/ids v1.0.2
-	github.com/luxfi/ledger-lux-go v0.0.3
+	github.com/luxfi/ledger-lux-go v0.0.0
 	github.com/luxfi/log v1.1.1
 	github.com/luxfi/metric v1.3.0
 	github.com/luxfi/trace v0.1.1
@@ -223,3 +223,5 @@ replace (
 	github.com/luxfi/log => ../log
 	github.com/luxfi/metric => ../metric
 )
+
+replace github.com/luxfi/ledger-lux-go => ../ledger-lux-go

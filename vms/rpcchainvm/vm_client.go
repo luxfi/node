@@ -23,6 +23,7 @@ import (
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/validators"
+	consensuschain "github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -43,8 +44,6 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 	"github.com/luxfi/node/vms/rpcchainvm/messenger"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
-
-	consensuschain "github.com/luxfi/consensus/protocol/chain"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
@@ -91,7 +90,7 @@ type VMClient struct {
 	runtime         runtime.Stopper
 	pid             int
 	processTracker  resource.ProcessTracker
-	metricsGatherer metric.MultiGatherer
+	metricsGatherer metrics.MultiGatherer
 
 	messenger *messenger.Server
 	// keystore             *gkeystore.Server // Keystore removed
@@ -113,7 +112,7 @@ func NewClient(
 	runtime runtime.Stopper,
 	pid int,
 	processTracker resource.ProcessTracker,
-	metricsGatherer metric.MultiGatherer,
+	metricsGatherer metrics.MultiGatherer,
 ) *VMClient {
 	return &VMClient{
 		client:          vmpb.NewVMClient(clientConn),
@@ -156,7 +155,7 @@ func (vm *VMClient) Initialize(
 	}
 
 	// Register metrics
-	serverReg, err := metric.MakeAndRegister(
+	serverReg, err := metrics.MakeAndRegister(
 		vm.metricsGatherer,
 		primaryAlias,
 	)
@@ -185,7 +184,11 @@ func (vm *VMClient) Initialize(
 	)
 
 	// Create a channel for message passing
+<<<<<<< HEAD
 	msgChannel := make(chan core.MessageType, 1)
+=======
+	msgChannel := make(chan<- core.MessageType, 1)
+>>>>>>> fa3d92b4a (Consolidate crypto to independent package)
 	vm.messenger = messenger.NewServer(msgChannel)
 	// vm.keystore = gkeystore.NewServer(chainCtx.Keystore) // Keystore removed from context.Context
 
@@ -1170,6 +1173,14 @@ type validatorStateWrapper struct {
 
 func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
 	return v.vs.GetCurrentHeight()
+<<<<<<< HEAD
+=======
+}
+
+func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	// Return a default minimum height since this is not available in the interface
+	return 0, nil
+>>>>>>> fa3d92b4a (Consolidate crypto to independent package)
 }
 
 func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
@@ -1177,20 +1188,34 @@ func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID)
 }
 
 func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+<<<<<<< HEAD
 	// Get the raw validator set
 	valSet, err := v.vs.GetValidatorSet(height, subnetID)
+=======
+	weights, err := v.vs.GetValidatorSet(height, subnetID)
+>>>>>>> fa3d92b4a (Consolidate crypto to independent package)
 	if err != nil {
 		return nil, err
 	}
 	
+<<<<<<< HEAD
 	// Convert map[ids.NodeID]uint64 to map[ids.NodeID]*validators.GetValidatorOutput
 	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(valSet))
 	for nodeID, weight := range valSet {
+=======
+	// Convert to expected format
+	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(weights))
+	for nodeID, weight := range weights {
+>>>>>>> fa3d92b4a (Consolidate crypto to independent package)
 		result[nodeID] = &validators.GetValidatorOutput{
 			NodeID: nodeID,
 			Weight: weight,
 		}
 	}
+<<<<<<< HEAD
+=======
+	
+>>>>>>> fa3d92b4a (Consolidate crypto to independent package)
 	return result, nil
 }
 
@@ -1201,12 +1226,18 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, subn
 		return nil, 0, err
 	}
 	
+<<<<<<< HEAD
 	// Get validators at current height
 	valSet, err := v.vs.GetValidatorSet(height, subnetID)
+=======
+	// Get validator set at current height
+	validatorWeights, err := v.vs.GetValidatorSet(height, subnetID)
+>>>>>>> fa3d92b4a (Consolidate crypto to independent package)
 	if err != nil {
 		return nil, 0, err
 	}
 	
+<<<<<<< HEAD
 	// Convert to GetCurrentValidatorOutput format
 	result := make(map[ids.ID]*validators.GetCurrentValidatorOutput, len(valSet))
 	for nodeID, weight := range valSet {
@@ -1214,16 +1245,27 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, subn
 		var id ids.ID
 		copy(id[:], nodeID[:])
 		result[id] = &validators.GetCurrentValidatorOutput{
+=======
+	// Convert to expected format
+	result := make(map[ids.ID]*validators.GetCurrentValidatorOutput, len(validatorWeights))
+	for nodeID, weight := range validatorWeights {
+		// Convert NodeID to ID format expected by GetCurrentValidatorOutput
+		validatorID := ids.ID(nodeID[:])
+		result[validatorID] = &validators.GetCurrentValidatorOutput{
+>>>>>>> fa3d92b4a (Consolidate crypto to independent package)
 			NodeID: nodeID,
 			Weight: weight,
 		}
 	}
 	
 	return result, height, nil
+<<<<<<< HEAD
 }
 
 func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	return v.vs.GetMinimumHeight(ctx)
+=======
+>>>>>>> fa3d92b4a (Consolidate crypto to independent package)
 }
 
 // appSenderWrapper wraps block.AppSender to match core.AppSender
