@@ -21,13 +21,11 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
@@ -241,7 +239,7 @@ func (vm *VM) Initialize(
 	// Create wrapper for AppSender to adapt linearblock.AppSender to core.AppSender
 	appSenderWrapper := &appSenderAdapter{appSender}
 	// Create network config with default values
-	networkConfig := network.DefaultConfig()
+	networkConfig := network.DefaultConfig
 	vm.Network, err = network.New(
 		vm.log,
 		vm.nodeID,

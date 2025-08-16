@@ -341,12 +341,7 @@ func (e *StandardTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 
 	if e.Config.PartialSyncPrimaryNetwork && tx.Validator.NodeID == e.NodeID {
 		if e.Log != nil {
-			e.Log.Warn("verified transaction that would cause this node to become unhealthy",
-				"reason", "primary network is not being fully synced",
-				"txID", txID,
-				"txType", "addValidator",
-				"nodeID", tx.Validator.NodeID,
-			)
+			e.Log.Warn("verified transaction that would cause this node to become unhealthy")
 		}
 	}
 	return nil
@@ -503,12 +498,7 @@ func (e *StandardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionl
 		tx.Subnet == constants.PrimaryNetworkID &&
 		tx.Validator.NodeID == e.NodeID {
 		if e.Log != nil {
-			e.Log.Warn("verified transaction that would cause this node to become unhealthy",
-				zap.String("reason", "primary network is not being fully synced"),
-				zap.Stringer("txID", txID),
-				zap.String("txType", "addPermissionlessValidator"),
-				zap.Stringer("nodeID", tx.Validator.NodeID),
-			)
+			e.Log.Warn("verified transaction that would cause this node to become unhealthy")
 		}
 	}
 
