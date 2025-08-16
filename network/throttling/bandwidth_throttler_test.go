@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 	
-	luxmetrics "github.com/luxfi/metric"
+	luxmetrics "github.com/luxfi/metrics"
 
 	"github.com/stretchr/testify/require"
 

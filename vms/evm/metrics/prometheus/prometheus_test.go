@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
+	"github.com/luxfi/metrics"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 
@@ -70,7 +70,7 @@ const expectedMetrics = `
 func TestGatherer_Gather(t *testing.T) {
 	metricstest.WithMetrics(t)
 
-	registry := metric.NewRegistry()
+	registry := metrics.NewRegistry()
 	register := func(t *testing.T, name string, collector any) {
 		t.Helper()
 		err := registry.Register(name, collector)
@@ -94,7 +94,7 @@ func TestGatherer_Gather(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test gathering with unsupported metric type
-	register(t, "unsupported", metric.NewHealthcheck(nil))
+	register(t, "unsupported", metrics.NewHealthcheck(nil))
 	metrics, err := gatherer.Gather()
 	require.ErrorIs(t, err, errMetricTypeNotSupported)
 	require.Equal(t, wantMetrics, metrics)

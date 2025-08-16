@@ -78,7 +78,7 @@ func (g *prefixedGatherer) Gather() ([]*dto.MetricFamily, error) {
 	// is expected to still return the metrics in the case an error is returned.
 	metricFamilies, err := g.gatherer.Gather()
 	for _, metricFamily := range metricFamilies {
-		metricFamily.Name = proto.String(metric.AppendNamespace(
+		metricFamily.Name = proto.String(metrics.AppendNamespace(
 			g.prefix,
 			metricFamily.GetName(),
 		))
@@ -99,5 +99,5 @@ func eitherIsPrefix(a, b string) bool {
 	return a == b[:len(a)] && // a is a prefix of b
 		(len(a) == 0 || // a is empty
 			len(a) == len(b) || // a is equal to b
-			b[len(a)] == metric.NamespaceSeparatorByte) // a ends at a namespace boundary of b
+			b[len(a)] == metrics.NamespaceSeparatorByte) // a ends at a namespace boundary of b
 }

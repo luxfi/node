@@ -15,7 +15,7 @@ import (
 var _ Metrics = (*metrics)(nil)
 
 type Metrics interface {
-	metric.APIInterceptor
+	metrics.APIInterceptor
 
 	IncTxRefreshes()
 	IncTxRefreshHits()
@@ -38,7 +38,7 @@ type metrics struct {
 
 	numTxRefreshes, numTxRefreshHits, numTxRefreshMisses prometheus.Counter
 
-	metric.APIInterceptor
+	metrics.APIInterceptor
 }
 
 func (m *metrics) IncTxRefreshes() {
@@ -85,7 +85,7 @@ func New(registerer prometheus.Registerer) (Metrics, error) {
 		Help: "Number of times unique txs have not been unique and weren't cached",
 	})
 
-	apiRequestMetric, err := metric.NewAPIInterceptor(registerer)
+	apiRequestMetric, err := metrics.NewAPIInterceptor(registerer)
 	m.APIInterceptor = apiRequestMetric
 	errs.Add(
 		err,

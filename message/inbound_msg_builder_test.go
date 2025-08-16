@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
+	"github.com/luxfi/metrics"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -23,7 +23,7 @@ func Test_newMsgBuilder(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		nil,
-		metric.NewNoOpMetrics("test"),
+		metrics.NewNoOpMetrics("test"),
 		10*time.Second,
 	)
 	require.NoError(err)
@@ -392,7 +392,7 @@ func TestAppError(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		nil,
-		metric.NewNoOpMetrics("test"),
+		metrics.NewNoOpMetrics("test"),
 		time.Second,
 	)
 	require.NoError(err)

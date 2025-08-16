@@ -42,7 +42,7 @@ type blockMetrics struct {
 	parseStateSummary,
 	parseStateSummaryErr,
 	getStateSummary,
-	getStateSummaryErr metric.Averager
+	getStateSummaryErr metrics.Averager
 }
 
 func (m *blockMetrics) Initialize(

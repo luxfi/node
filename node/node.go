@@ -63,7 +63,7 @@ import (
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
-	luxmetrics "github.com/luxfi/metric"
+	luxmetrics "github.com/luxfi/metrics"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/resource"

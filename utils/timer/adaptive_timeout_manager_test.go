@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 	
-	"github.com/luxfi/metric"
+	"github.com/luxfi/metrics"
 
 	"github.com/stretchr/testify/require"
 
@@ -85,7 +85,7 @@ func TestAdaptiveTimeoutManagerInit(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		_, err := NewAdaptiveTimeoutManager(&test.config, metric.NewNoOpMetrics("test").Registry())
+		_, err := NewAdaptiveTimeoutManager(&test.config, metrics.NewNoOpMetrics("test").Registry())
 		require.ErrorIs(t, err, test.expectedErr)
 	}
 }
@@ -99,7 +99,7 @@ func TestAdaptiveTimeoutManager(t *testing.T) {
 			TimeoutHalflife:    5 * time.Minute,
 			TimeoutCoefficient: 1.25,
 		},
-		metric.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 	)
 	require.NoError(t, err)
 	go tm.Dispatch()
