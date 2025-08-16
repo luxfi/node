@@ -21,7 +21,7 @@ import (
 
 	"github.com/luxfi/node/vms"
 
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 )
 
 var (
@@ -150,7 +150,7 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 		time.Hour,
 		time.Hour,
 		time.Hour,
-		metrics.NewTestRegistry(),
+		metric.NewTestRegistry(),
 	)
 	require.NoError(t, err)
 

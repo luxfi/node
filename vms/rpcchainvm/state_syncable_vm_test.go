@@ -291,7 +291,7 @@ func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 	clientConn, err := grpcutils.Dial(status.Addr)
 	require.NoError(err)
 
-	return NewClient(clientConn, stopper, status.Pid, nil, metrics.NewPrefixGatherer())
+	return NewClient(clientConn, stopper, status.Pid, nil, metric.NewPrefixGatherer())
 }
 
 func TestStateSyncEnabled(t *testing.T) {

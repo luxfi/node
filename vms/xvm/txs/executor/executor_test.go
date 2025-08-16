@@ -6,7 +6,7 @@ package executor
 import (
 	"testing"
 	
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
 
@@ -59,7 +59,7 @@ func TestBaseTxExecutor(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := metric.NewNoOpMetrics("test").Registry()
 	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 
@@ -166,7 +166,7 @@ func TestCreateAssetTxExecutor(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := metric.NewNoOpMetrics("test").Registry()
 	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 
@@ -311,7 +311,7 @@ func TestOperationTxExecutor(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	registerer := metrics.NewNoOpMetrics("test").Registry()
+	registerer := metric.NewNoOpMetrics("test").Registry()
 	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 

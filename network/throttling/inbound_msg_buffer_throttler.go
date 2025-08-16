@@ -27,7 +27,7 @@ func newInboundMsgBufferThrottler(
 		awaitingAcquire:          make(map[ids.NodeID]chan struct{}),
 		nodeToNumProcessingMsgs:  make(map[ids.NodeID]uint64),
 	}
-	return t, t.metrics.initialize(registerer)
+	return t, t.metric.initialize(registerer)
 }
 
 // Rate-limits inbound messages based on the number of
@@ -63,7 +63,7 @@ type inboundMsgBufferThrottler struct {
 func (t *inboundMsgBufferThrottler) Acquire(ctx context.Context, nodeID ids.NodeID) ReleaseFunc {
 	startTime := time.Now()
 	defer func() {
-		t.metrics.acquireLatency.Observe(float64(time.Since(startTime)))
+		t.metric.acquireLatency.Observe(float64(time.Since(startTime)))
 	}()
 
 	t.lock.Lock()
@@ -84,8 +84,8 @@ func (t *inboundMsgBufferThrottler) Acquire(ctx context.Context, nodeID ids.Node
 	closeOnAcquireChan := make(chan struct{})
 	t.awaitingAcquire[nodeID] = closeOnAcquireChan
 	t.lock.Unlock()
-	t.metrics.awaitingAcquire.Inc()
-	defer t.metrics.awaitingAcquire.Dec()
+	t.metric.awaitingAcquire.Inc()
+	defer t.metric.awaitingAcquire.Dec()
 
 	var releaseFunc ReleaseFunc
 	select {
@@ -126,13 +126,13 @@ func (t *inboundMsgBufferThrottler) release(nodeID ids.NodeID) {
 }
 
 type inboundMsgBufferThrottlerMetrics struct {
-	acquireLatency  metrics.Averager
+	acquireLatency  metric.Averager
 	awaitingAcquire prometheus.Gauge
 }
 
 func (m *inboundMsgBufferThrottlerMetrics) initialize(reg prometheus.Registerer) error {
 	errs := wrappers.Errs{}
-	m.acquireLatency = metrics.NewAveragerWithErrs(
+	m.acquireLatency = metric.NewAveragerWithErrs(
 		"buffer_throttler_inbound_acquire_latency",
 		"average time (in ns) to get space on the inbound message buffer",
 		reg,

@@ -6,7 +6,7 @@ package mempool
 import (
 	"testing"
 	
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
 
@@ -23,7 +23,7 @@ import (
 )
 
 func newMempool(toEngine chan<- core.Message) (Mempool, error) {
-	return New("mempool", metrics.NewNoOpMetrics("test").Registry(), toEngine)
+	return New("mempool", metric.NewNoOpMetrics("test").Registry(), toEngine)
 }
 
 func TestRequestBuildBlock(t *testing.T) {

@@ -102,7 +102,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 			Validators: vdrs,
 		},
 		s,
-		metrics.Noop,
+		metric.Noop,
 		new(mockable.Clock),
 	)
 

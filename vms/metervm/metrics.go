@@ -10,8 +10,8 @@ import (
 	"github.com/luxfi/node/utils/wrappers"
 )
 
-func newAverager(name string, reg prometheus.Registerer, errs *wrappers.Errs) metrics.Averager {
-	return metrics.NewAveragerWithErrs(
+func newAverager(name string, reg prometheus.Registerer, errs *wrappers.Errs) metric.Averager {
+	return metric.NewAveragerWithErrs(
 		name,
 		"time (in ns) of a "+name,
 		reg,

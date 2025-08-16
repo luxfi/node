@@ -26,7 +26,7 @@ import (
 
 	"github.com/luxfi/node/utils/hashing"
 
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 )
 
 var (
@@ -572,7 +572,7 @@ func TestBuildBlockError(t *testing.T) {
 func TestMeteredCache(t *testing.T) {
 	require := require.New(t)
 
-	registry := metrics.NewTestRegistry()
+	registry := metric.NewTestRegistry()
 
 	testBlks := NewTestBlocks(1)
 	genesisBlock := testBlks[0]

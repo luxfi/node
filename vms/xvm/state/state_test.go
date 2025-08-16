@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 	
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
 
@@ -113,7 +113,7 @@ func TestState(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	s, err := New(vdb, parser, metrics.NewNoOpMetrics("test").Registry(), trackChecksums)
+	s, err := New(vdb, parser, metric.NewNoOpMetrics("test").Registry(), trackChecksums)
 	require.NoError(err)
 
 	s.AddUTXO(populatedUTXO)
@@ -121,7 +121,7 @@ func TestState(t *testing.T) {
 	s.AddBlock(populatedBlk)
 	require.NoError(s.Commit())
 
-	s, err = New(vdb, parser, metrics.NewNoOpMetrics("test").Registry(), trackChecksums)
+	s, err = New(vdb, parser, metric.NewNoOpMetrics("test").Registry(), trackChecksums)
 	require.NoError(err)
 
 	ChainUTXOTest(t, s)
@@ -134,7 +134,7 @@ func TestDiff(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	s, err := New(vdb, parser, metrics.NewNoOpMetrics("test").Registry(), trackChecksums)
+	s, err := New(vdb, parser, metric.NewNoOpMetrics("test").Registry(), trackChecksums)
 	require.NoError(err)
 
 	s.AddUTXO(populatedUTXO)
@@ -294,7 +294,7 @@ func TestInitializeChainState(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	s, err := New(vdb, parser, metrics.NewNoOpMetrics("test").Registry(), trackChecksums)
+	s, err := New(vdb, parser, metric.NewNoOpMetrics("test").Registry(), trackChecksums)
 	require.NoError(err)
 
 	stopVertexID := ids.GenerateTestID()

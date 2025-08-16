@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"testing"
 	"time"
-		"github.com/luxfi/metrics"
+		"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"
@@ -49,7 +49,7 @@ func newDefaultConfig() Config {
 		IntermediateNodeCacheSize:   units.MiB,
 		IntermediateWriteBufferSize: units.KiB,
 		IntermediateWriteBatchSize:  256 * units.KiB,
-		Reg:                         metrics.NewNoOpMetrics("test").Registry(),
+		Reg:                         metric.NewNoOpMetrics("test").Registry(),
 		TraceLevel:                  InfoTrace,
 		Tracer:                      trace.Noop,
 	}

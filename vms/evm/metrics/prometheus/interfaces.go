@@ -4,7 +4,7 @@
 package prometheus
 
 type Registry interface {
-	// Call the given function for each registered metrics.
+	// Call the given function for each registered metric.
 	Each(func(name string, metric any))
 	// Get the metric by the given name or nil if none is registered.
 	Get(name string) any

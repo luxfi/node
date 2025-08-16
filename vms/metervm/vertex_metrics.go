@@ -16,7 +16,7 @@ type vertexMetrics struct {
 	verify,
 	verifyErr,
 	accept,
-	reject metrics.Averager
+	reject metric.Averager
 }
 
 func (m *vertexMetrics) Initialize(reg prometheus.Registerer) error {

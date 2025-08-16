@@ -56,7 +56,7 @@ type PeerTracker struct {
 	// Max heap that contains the average bandwidth of peers that do not have an
 	// outstanding request.
 	bandwidthHeap heap.Map[ids.NodeID, safemath.Averager]
-	// Average bandwidth is only used for metrics.
+	// Average bandwidth is only used for metric.
 	averageBandwidth safemath.Averager
 
 	// The below fields are assumed to be constant and are not protected by the
@@ -115,9 +115,9 @@ func NewPeerTracker(
 	}
 
 	err := errors.Join(
-		registerer.Register(t.metrics.numTrackedPeers),
-		registerer.Register(t.metrics.numResponsivePeers),
-		registerer.Register(t.metrics.averageBandwidth),
+		registerer.Register(t.metric.numTrackedPeers),
+		registerer.Register(t.metric.numResponsivePeers),
+		registerer.Register(t.metric.averageBandwidth),
 	)
 	return t, err
 }
@@ -222,7 +222,7 @@ func (p *PeerTracker) RegisterRequest(nodeID ids.NodeID) {
 	p.trackedPeers.Add(nodeID)
 	p.bandwidthHeap.Remove(nodeID)
 
-	p.metrics.numTrackedPeers.Set(float64(p.trackedPeers.Len()))
+	p.metric.numTrackedPeers.Set(float64(p.trackedPeers.Len()))
 }
 
 // Record that we observed that [nodeID]'s bandwidth is [bandwidth].
@@ -268,8 +268,8 @@ func (p *PeerTracker) updateBandwidth(nodeID ids.NodeID, bandwidth float64, resp
 		p.responsivePeers.Remove(nodeID)
 	}
 
-	p.metrics.numResponsivePeers.Set(float64(p.responsivePeers.Len()))
-	p.metrics.averageBandwidth.Set(p.averageBandwidth.Read())
+	p.metric.numResponsivePeers.Set(float64(p.responsivePeers.Len()))
+	p.metric.averageBandwidth.Set(p.averageBandwidth.Read())
 }
 
 // Connected should be called when [nodeID] connects to this node.
@@ -305,8 +305,8 @@ func (p *PeerTracker) Disconnected(nodeID ids.NodeID) {
 	delete(p.peerBandwidth, nodeID)
 	p.bandwidthHeap.Remove(nodeID)
 
-	p.metrics.numTrackedPeers.Set(float64(p.trackedPeers.Len()))
-	p.metrics.numResponsivePeers.Set(float64(p.responsivePeers.Len()))
+	p.metric.numTrackedPeers.Set(float64(p.trackedPeers.Len()))
+	p.metric.numResponsivePeers.Set(float64(p.responsivePeers.Len()))
 }
 
 // Returns the number of peers the node is connected to.

@@ -283,7 +283,7 @@ type state struct {
 	validators validators.Manager
 	ctx        context.Context
 	cfg        *config.Config
-	metrics    metrics.Metrics
+	metrics    metric.Metrics
 	rewards    reward.Calculator
 
 	baseDB *versiondb.Database
@@ -442,7 +442,7 @@ func New(
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
 	ctx context.Context,
-	metrics metrics.Metrics,
+	metrics metric.Metrics,
 	rewards reward.Calculator,
 ) (State, error) {
 	s, err := newState(
@@ -470,7 +470,7 @@ func New(
 
 func newState(
 	db database.Database,
-	metrics metrics.Metrics,
+	metrics metric.Metrics,
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
 	ctx context.Context,
@@ -1637,12 +1637,12 @@ func (s *state) initValidatorSets() error {
 
 	nodeID := consensus.GetNodeID(s.ctx)
 	weight, _ := s.validators.GetWeight(constants.PrimaryNetworkID, nodeID)
-	s.metrics.SetLocalStake(weight)
+	s.metric.SetLocalStake(weight)
 	totalWeight, err := s.validators.TotalWeight(constants.PrimaryNetworkID)
 	if err != nil {
 		return fmt.Errorf("failed to get total weight of primary network validators: %w", err)
 	}
-	s.metrics.SetTotalStake(totalWeight)
+	s.metric.SetTotalStake(totalWeight)
 	return nil
 }
 
@@ -2017,8 +2017,8 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64, codecV
 
 	nodeID := consensus.GetNodeID(s.ctx)
 	weight, _ := s.validators.GetWeight(constants.PrimaryNetworkID, nodeID)
-	s.metrics.SetLocalStake(weight)
-	s.metrics.SetTotalStake(totalWeight)
+	s.metric.SetLocalStake(weight)
+	s.metric.SetTotalStake(totalWeight)
 	return nil
 }
 

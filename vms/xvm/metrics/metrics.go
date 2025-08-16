@@ -15,7 +15,7 @@ import (
 var _ Metrics = (*metrics)(nil)
 
 type Metrics interface {
-	metrics.APIInterceptor
+	metric.APIInterceptor
 
 	IncTxRefreshes()
 	IncTxRefreshHits()
@@ -29,7 +29,7 @@ type Metrics interface {
 	//
 	// Note: This is not intended to be called during the acceptance of a block,
 	// as MarkBlockAccepted already handles updating transaction related
-	// metrics.
+	// metric.
 	MarkTxAccepted(tx *txs.Tx) error
 }
 
@@ -38,7 +38,7 @@ type metrics struct {
 
 	numTxRefreshes, numTxRefreshHits, numTxRefreshMisses prometheus.Counter
 
-	metrics.APIInterceptor
+	metric.APIInterceptor
 }
 
 func (m *metrics) IncTxRefreshes() {
@@ -85,7 +85,7 @@ func New(registerer prometheus.Registerer) (Metrics, error) {
 		Help: "Number of times unique txs have not been unique and weren't cached",
 	})
 
-	apiRequestMetric, err := metrics.NewAPIInterceptor(registerer)
+	apiRequestMetric, err := metric.NewAPIInterceptor(registerer)
 	m.APIInterceptor = apiRequestMetric
 	errs.Add(
 		err,

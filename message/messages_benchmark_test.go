@@ -10,7 +10,7 @@ import (
 	"time"
 	
 
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
@@ -62,7 +62,7 @@ func BenchmarkMarshalHandshake(b *testing.B) {
 
 	useBuilder := os.Getenv("USE_BUILDER") != ""
 
-	codec, err := newMsgBuilder(nil, metrics.NewNoOpMetrics("test"), 10*time.Second)
+	codec, err := newMsgBuilder(nil, metric.NewNoOpMetrics("test"), 10*time.Second)
 	require.NoError(err)
 
 	b.Logf("proto length %d-byte (use builder %v)", msgLen, useBuilder)
@@ -119,7 +119,7 @@ func BenchmarkUnmarshalHandshake(b *testing.B) {
 	require.NoError(err)
 
 	useBuilder := os.Getenv("USE_BUILDER") != ""
-	codec, err := newMsgBuilder(nil, metrics.NewNoOpMetrics("test"), 10*time.Second)
+	codec, err := newMsgBuilder(nil, metric.NewNoOpMetrics("test"), 10*time.Second)
 	require.NoError(err)
 
 	b.StartTimer()

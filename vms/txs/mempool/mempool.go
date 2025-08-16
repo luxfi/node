@@ -93,7 +93,7 @@ func New[T Tx](
 }
 
 func (m *mempool[T]) updateMetrics() {
-	m.metrics.Update(m.unissuedTxs.Len(), m.bytesAvailable)
+	m.metric.Update(m.unissuedTxs.Len(), m.bytesAvailable)
 }
 
 func (m *mempool[T]) Add(tx T) error {

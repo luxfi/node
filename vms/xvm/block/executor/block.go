@@ -262,7 +262,7 @@ func (b *Block) Accept(ctx context.Context) error {
 		return fmt.Errorf("failed to apply state diff to shared memory: %w", err)
 	}
 
-	if err := b.manager.metrics.MarkBlockAccepted(b); err != nil {
+	if err := b.manager.metric.MarkBlockAccepted(b); err != nil {
 		return err
 	}
 

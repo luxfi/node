@@ -5,7 +5,7 @@ package state
 
 import (
 	"testing"
-		"github.com/luxfi/metrics"
+		"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database/memdb"
@@ -28,7 +28,7 @@ func TestMeteredState(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	s, err := NewMetered(vdb, "", metrics.NewNoOpMetrics("test").Registry())
+	s, err := NewMetered(vdb, "", metric.NewNoOpMetrics("test").Registry())
 	a.NoError(err)
 
 	testBlockState(a, s)

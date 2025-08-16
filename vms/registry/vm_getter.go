@@ -41,7 +41,7 @@ type VMGetterConfig struct {
 	PluginDirectory string
 	CPUTracker      resource.ProcessTracker
 	RuntimeTracker  runtime.Tracker
-	MetricsGatherer metrics.MultiGatherer
+	MetricsGatherer metric.MultiGatherer
 }
 
 type vmGetter struct {

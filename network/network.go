@@ -287,8 +287,8 @@ func NewNetwork(
 		inboundConnUpgradeThrottler: throttling.NewInboundConnUpgradeThrottler(log, config.ThrottlerConfig.InboundConnUpgradeThrottlerConfig),
 		listener:                    listener,
 		dialer:                      dialer,
-		serverUpgrader:              peer.NewTLSServerUpgrader(config.TLSConfig, metrics.tlsConnRejected),
-		clientUpgrader:              peer.NewTLSClientUpgrader(config.TLSConfig, metrics.tlsConnRejected),
+		serverUpgrader:              peer.NewTLSServerUpgrader(config.TLSConfig, metric.tlsConnRejected),
+		clientUpgrader:              peer.NewTLSClientUpgrader(config.TLSConfig, metric.tlsConnRejected),
 
 		onCloseCtx:       onCloseCtx,
 		onCloseCtxCancel: cancel,
@@ -387,7 +387,7 @@ func (n *network) HealthCheck(context.Context) (interface{}, error) {
 		timeSinceLastMsgReceived = now.Sub(lastMsgReceivedAt)
 		wasMsgReceivedRecently = timeSinceLastMsgReceived <= n.config.HealthConfig.MaxTimeSinceMsgReceived
 		details[TimeSinceLastMsgReceivedKey] = timeSinceLastMsgReceived.String()
-		n.metrics.timeSinceLastMsgReceived.Set(float64(timeSinceLastMsgReceived))
+		n.metric.timeSinceLastMsgReceived.Set(float64(timeSinceLastMsgReceived))
 	}
 	healthy = healthy && wasMsgReceivedRecently
 
@@ -399,7 +399,7 @@ func (n *network) HealthCheck(context.Context) (interface{}, error) {
 		timeSinceLastMsgSent = now.Sub(lastMsgSentAt)
 		wasMsgSentRecently = timeSinceLastMsgSent <= n.config.HealthConfig.MaxTimeSinceMsgSent
 		details[TimeSinceLastMsgSentKey] = timeSinceLastMsgSent.String()
-		n.metrics.timeSinceLastMsgSent.Set(float64(timeSinceLastMsgSent))
+		n.metric.timeSinceLastMsgSent.Set(float64(timeSinceLastMsgSent))
 	}
 	healthy = healthy && wasMsgSentRecently
 
@@ -407,10 +407,10 @@ func (n *network) HealthCheck(context.Context) (interface{}, error) {
 	isMsgFailRate := sendFailRate <= n.config.HealthConfig.MaxSendFailRate
 	healthy = healthy && isMsgFailRate
 	details[SendFailRateKey] = sendFailRate
-	n.metrics.sendFailRate.Set(sendFailRate)
+	n.metric.sendFailRate.Set(sendFailRate)
 
 	// emit metrics about the lifetime of peer connections
-	n.metrics.updatePeerConnectionLifetimeMetrics()
+	n.metric.updatePeerConnectionLifetimeMetrics()
 
 	// Network layer is healthy
 	if healthy || !n.config.HealthConfig.Enabled {
@@ -469,7 +469,7 @@ func (n *network) Connected(nodeID ids.NodeID) {
 	)
 	n.ipTracker.Connected(newIP)
 
-	n.metrics.markConnected(peer)
+	n.metric.markConnected(peer)
 
 	peerVersion := peer.Version()
 	n.router.Connected(nodeID, peerVersion, constants.PrimaryNetworkID)
@@ -551,7 +551,7 @@ func (n *network) Dispatch() error {
 			// Sleep for a small amount of time to try to wait for the
 			// error to go away.
 			time.Sleep(time.Millisecond)
-			n.metrics.acceptFailed.Inc()
+			n.metric.acceptFailed.Inc()
 			continue
 		}
 
@@ -578,11 +578,11 @@ func (n *network) Dispatch() error {
 					zap.String("reason", "rate-limiting"),
 					zap.Stringer("peerIP", ip),
 				)
-				n.metrics.inboundConnRateLimited.Inc()
+				n.metric.inboundConnRateLimited.Inc()
 				_ = conn.Close()
 				return
 			}
-			n.metrics.inboundConnAllowed.Inc()
+			n.metric.inboundConnAllowed.Inc()
 
 			n.peerConfig.Log.Debug("starting to upgrade connection",
 				zap.String("direction", "inbound"),
@@ -644,7 +644,7 @@ func (n *network) track(ip *ips.ClaimedIPPort) error {
 	// Note: Avoiding signature verification when the IP isn't needed is a
 	// **significant** performance optimization.
 	if !n.ipTracker.ShouldVerifyIP(ip) {
-		n.metrics.numUselessPeerListBytes.Add(float64(ip.Size()))
+		n.metric.numUselessPeerListBytes.Add(float64(ip.Size()))
 		return nil
 	}
 
@@ -799,7 +799,7 @@ func (n *network) disconnectedFromConnecting(nodeID ids.NodeID) {
 		}
 	}
 
-	n.metrics.disconnected.Inc()
+	n.metric.disconnected.Inc()
 }
 
 func (n *network) disconnectedFromConnected(peer peer.Peer, nodeID ids.NodeID) {
@@ -818,7 +818,7 @@ func (n *network) disconnectedFromConnected(peer peer.Peer, nodeID ids.NodeID) {
 		n.dial(nodeID, tracked)
 	}
 
-	n.metrics.markDisconnected(peer)
+	n.metric.markDisconnected(peer)
 }
 
 // dial will spin up a new goroutine and attempt to establish a connection with
@@ -846,8 +846,8 @@ func (n *network) dial(nodeID ids.NodeID, ip *trackedIP) {
 		zap.Stringer("ip", ip.ip),
 	)
 	go func() {
-		n.metrics.numTracked.Inc()
-		defer n.metrics.numTracked.Dec()
+		n.metric.numTracked.Inc()
+		defer n.metric.numTracked.Dec()
 
 		for {
 			timer := time.NewTimer(ip.getDelay())
@@ -1197,8 +1197,8 @@ func (n *network) runTimers() {
 					zap.Error(err),
 				)
 			}
-			n.metrics.nodeUptimeWeightedAverage.Set(primaryUptime.WeightedAveragePercentage)
-			n.metrics.nodeUptimeRewardingStake.Set(primaryUptime.RewardingStakePercentage)
+			n.metric.nodeUptimeWeightedAverage.Set(primaryUptime.WeightedAveragePercentage)
+			n.metric.nodeUptimeRewardingStake.Set(primaryUptime.RewardingStakePercentage)
 
 			for subnetID := range n.config.TrackedSubnets {
 				result, err := n.NodeUptime(subnetID)
@@ -1209,8 +1209,8 @@ func (n *network) runTimers() {
 					)
 				}
 				subnetIDStr := subnetID.String()
-				n.metrics.nodeSubnetUptimeWeightedAverage.WithLabelValues(subnetIDStr).Set(result.WeightedAveragePercentage)
-				n.metrics.nodeSubnetUptimeRewardingStake.WithLabelValues(subnetIDStr).Set(result.RewardingStakePercentage)
+				n.metric.nodeSubnetUptimeWeightedAverage.WithLabelValues(subnetIDStr).Set(result.WeightedAveragePercentage)
+				n.metric.nodeSubnetUptimeRewardingStake.WithLabelValues(subnetIDStr).Set(result.RewardingStakePercentage)
 			}
 		}
 	}

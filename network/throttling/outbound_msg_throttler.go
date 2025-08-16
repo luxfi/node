@@ -59,7 +59,7 @@ func NewSybilOutboundMsgThrottler(
 			nodeToAtLargeBytesUsed: make(map[ids.NodeID]uint64),
 		},
 	}
-	return t, t.metrics.initialize(registerer)
+	return t, t.metric.initialize(registerer)
 }
 
 func (t *outboundMsgThrottler) Acquire(msg message.OutboundMessage, nodeID ids.NodeID) bool {
@@ -111,7 +111,7 @@ func (t *outboundMsgThrottler) Acquire(msg message.OutboundMessage, nodeID ids.N
 	bytesNeeded -= vdrBytesUsed
 	if bytesNeeded != 0 {
 		// Can't acquire enough bytes to queue this message to be sent
-		t.metrics.acquireFailures.Inc()
+		t.metric.acquireFailures.Inc()
 		return false
 	}
 	// Can acquire enough bytes to queue this message to be sent.
@@ -119,16 +119,16 @@ func (t *outboundMsgThrottler) Acquire(msg message.OutboundMessage, nodeID ids.N
 	if atLargeBytesUsed > 0 {
 		t.remainingAtLargeBytes -= atLargeBytesUsed
 		t.nodeToAtLargeBytesUsed[nodeID] += atLargeBytesUsed
-		t.metrics.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
+		t.metric.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
 	}
 	if vdrBytesUsed > 0 {
 		// Mark that [nodeID] used [vdrBytesUsed] from its validator allocation
 		t.remainingVdrBytes -= vdrBytesUsed
 		t.nodeToVdrBytesUsed[nodeID] += vdrBytesUsed
-		t.metrics.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
+		t.metric.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
 	}
-	t.metrics.acquireSuccesses.Inc()
-	t.metrics.awaitingRelease.Inc()
+	t.metric.acquireSuccesses.Inc()
+	t.metric.awaitingRelease.Inc()
 	return true
 }
 
@@ -140,9 +140,9 @@ func (t *outboundMsgThrottler) Release(msg message.OutboundMessage, nodeID ids.N
 
 	t.lock.Lock()
 	defer func() {
-		t.metrics.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
-		t.metrics.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
-		t.metrics.awaitingRelease.Dec()
+		t.metric.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
+		t.metric.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
+		t.metric.awaitingRelease.Dec()
 		t.lock.Unlock()
 	}()
 

@@ -28,8 +28,10 @@ func ExampleStartTestPeer() {
 		ctx,
 		peerIP,
 		constants.LocalID,
-		router.InboundHandlerFunc(func(_ context.Context, msg message.InboundMessage) {
-			fmt.Printf("handling %s\n", msg.Op())
+		router.InboundHandlerFunc(func(_ context.Context, msgIntf interface{}) {
+			if msg, ok := msgIntf.(message.InboundMessage); ok {
+				fmt.Printf("handling %s\n", msg.Op())
+			}
 		}),
 	)
 	if err != nil {

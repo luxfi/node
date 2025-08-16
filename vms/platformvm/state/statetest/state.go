@@ -38,7 +38,7 @@ type Config struct {
 	Upgrades   upgrade.Config
 	Config     config.Config
 	Context    context.Context
-	Metrics    metrics.Metrics
+	Metrics    metric.Metrics
 	Rewards    reward.Calculator
 }
 
@@ -73,7 +73,7 @@ func New(t testing.TB, c Config) state.State {
 		c.Config.StaticFeeConfig.CreateBlockchainTxFee = 1 * units.MilliLux
 	}
 	if c.Metrics == nil {
-		c.Metrics = metrics.Noop
+		c.Metrics = metric.Noop
 	}
 	if c.Rewards == nil {
 		c.Rewards = reward.NewCalculator(reward.Config{

@@ -881,7 +881,7 @@ func initTestRemoteProposerVM(
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOpMetrics("test").Registry(),
 		},
 	)
 

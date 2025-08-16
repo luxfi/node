@@ -68,7 +68,7 @@ func NewBlockState(db database.Database) BlockState {
 
 func NewMeteredBlockState(db database.Database, namespace string, metrics prometheus.Registerer) (BlockState, error) {
 	blkCache, err := metercacher.New[ids.ID, *blockWrapper](
-		metrics.AppendNamespace(namespace, "block_cache"),
+		metric.AppendNamespace(namespace, "block_cache"),
 		metrics,
 		cache.NewSizedLRU[ids.ID, *blockWrapper](
 			blockCacheSize,

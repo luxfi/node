@@ -83,8 +83,8 @@ func NewNetwork(
 	}
 
 	err := errors.Join(
-		registerer.Register(metrics.msgTime),
-		registerer.Register(metrics.msgCount),
+		registerer.Register(metric.msgTime),
+		registerer.Register(metric.msgCount),
 	)
 	if err != nil {
 		return nil, err

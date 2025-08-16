@@ -14,7 +14,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	
-	luxmetrics "github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/tracker"
@@ -79,7 +79,7 @@ func NewTestNetwork(
 	trackedSubnets set.Set[ids.ID],
 	router router.ExternalHandler,
 ) (Network, error) {
-	m := luxmetrics.NewNoOpMetrics("test")
+	m := luxmetric.NewNoOpMetrics("test")
 	msgCreator, err := message.NewCreator(
 		log,
 		m,
@@ -258,10 +258,10 @@ func (n *noOpResourceManager) UntrackProcess(pid int) { /* no-op */ }
 // noOpMetricsFactory is a no-op metrics factory for testing
 type noOpMetricsFactory struct{}
 
-func (n *noOpMetricsFactory) New(string) luxmetrics.Metrics {
-	return luxmetrics.NewNoOpMetrics("test")
+func (n *noOpMetricsFactory) New(string) luxmetric.Metrics {
+	return luxmetric.NewNoOpMetrics("test")
 }
 
-func (n *noOpMetricsFactory) NewWithRegistry(string, luxmetrics.Registry) luxmetrics.Metrics {
-	return luxmetrics.NewNoOpMetrics("test")
+func (n *noOpMetricsFactory) NewWithRegistry(string, luxmetric.Registry) luxmetric.Metrics {
+	return luxmetric.NewNoOpMetrics("test")
 }

@@ -15,7 +15,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	luxmetrics "github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
@@ -50,7 +50,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 
 	mc, err := message.NewCreator(
 		nil,
-		luxmetrics.NewNoOpMetrics("test"),
+		luxmetric.NewNoOpMetrics("test"),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -63,11 +63,11 @@ func newConfig(t *testing.T) Config {
 	t.Helper()
 	require := require.New(t)
 
-	metrics, err := NewMetrics(luxmetrics.NewNoOpMetrics("test").Registry())
+	metrics, err := NewMetrics(luxmetric.NewNoOpMetrics("test").Registry())
 	require.NoError(err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
-		luxmetrics.NewNoOpMetrics("test").Registry(),
+		luxmetric.NewNoOpMetrics("test").Registry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		10*time.Second,

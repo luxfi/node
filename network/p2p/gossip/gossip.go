@@ -150,11 +150,11 @@ func NewMetrics(
 		),
 	}
 	err := errors.Join(
-		metrics.Register(m.count),
-		metrics.Register(m.bytes),
-		metrics.Register(m.tracking),
-		metrics.Register(m.trackingLifetimeAverage),
-		metrics.Register(m.topValidators),
+		metric.Register(m.count),
+		metric.Register(m.bytes),
+		metric.Register(m.tracking),
+		metric.Register(m.trackingLifetimeAverage),
+		metric.Register(m.topValidators),
 	)
 	return m, err
 }
@@ -278,7 +278,7 @@ func (p *PullGossiper[_]) handleResponse(
 		}
 	}
 
-	if err := p.metrics.observeMessage(receivedPullLabels, len(gossip), receivedBytes); err != nil {
+	if err := p.metric.observeMessage(receivedPullLabels, len(gossip), receivedBytes); err != nil {
 		p.log.Error("failed to update metrics",
 			zap.Error(err),
 		)
@@ -495,11 +495,11 @@ func (p *PushGossiper[T]) gossip(
 		return err
 	}
 
-	if err := p.metrics.observeMessage(sentPushLabels, len(gossip), sentBytes); err != nil {
+	if err := p.metric.observeMessage(sentPushLabels, len(gossip), sentBytes); err != nil {
 		return err
 	}
 
-	topValidatorsMetric, err := p.metrics.topValidators.GetMetricWith(metricsLabels)
+	topValidatorsMetric, err := p.metric.topValidators.GetMetricWith(metricsLabels)
 	if err != nil {
 		return fmt.Errorf("failed to get top validators metric: %w", err)
 	}
@@ -569,9 +569,9 @@ func (p *PushGossiper[_]) updateMetrics(nowUnixNano float64) {
 		averageLifetime = nowUnixNano - p.addedTimeSum/numTracking
 	}
 
-	p.metrics.tracking.With(unsentLabels).Set(numUnsent)
-	p.metrics.tracking.With(sentLabels).Set(numSent)
-	p.metrics.trackingLifetimeAverage.Set(averageLifetime)
+	p.metric.tracking.With(unsentLabels).Set(numUnsent)
+	p.metric.tracking.With(sentLabels).Set(numSent)
+	p.metric.trackingLifetimeAverage.Set(averageLifetime)
 }
 
 // Every calls [Gossip] every [frequency] amount of time.

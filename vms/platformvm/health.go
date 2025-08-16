@@ -20,9 +20,9 @@ func (vm *VM) HealthCheck(context.Context) (interface{}, error) {
 	)
 	switch err {
 	case nil:
-		vm.metrics.SetTimeUntilUnstake(time.Until(localPrimaryValidator.EndTime))
+		vm.metric.SetTimeUntilUnstake(time.Until(localPrimaryValidator.EndTime))
 	case database.ErrNotFound:
-		vm.metrics.SetTimeUntilUnstake(0)
+		vm.metric.SetTimeUntilUnstake(0)
 	default:
 		return nil, fmt.Errorf("couldn't get current local validator: %w", err)
 	}
@@ -34,9 +34,9 @@ func (vm *VM) HealthCheck(context.Context) (interface{}, error) {
 		)
 		switch err {
 		case nil:
-			vm.metrics.SetTimeUntilSubnetUnstake(subnetID, time.Until(localSubnetValidator.EndTime))
+			vm.metric.SetTimeUntilSubnetUnstake(subnetID, time.Until(localSubnetValidator.EndTime))
 		case database.ErrNotFound:
-			vm.metrics.SetTimeUntilSubnetUnstake(subnetID, 0)
+			vm.metric.SetTimeUntilSubnetUnstake(subnetID, 0)
 		default:
 			return nil, fmt.Errorf("couldn't get current subnet validator of %q: %w", subnetID, err)
 		}

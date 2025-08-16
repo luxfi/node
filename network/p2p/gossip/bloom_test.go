@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 	
-	luxmetrics "github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
 
@@ -81,7 +81,7 @@ func TestBloomFilterRefresh(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
-			bloom, err := NewBloomFilter(luxmetrics.NewNoOpMetrics("test").Registry(), "", tt.minTargetElements, tt.targetFalsePositiveProbability, tt.resetFalsePositiveProbability)
+			bloom, err := NewBloomFilter(luxmetric.NewNoOpMetrics("test").Registry(), "", tt.minTargetElements, tt.targetFalsePositiveProbability, tt.resetFalsePositiveProbability)
 			require.NoError(err)
 
 			var resetCount uint64
@@ -102,7 +102,7 @@ func TestBloomFilterRefresh(t *testing.T) {
 			}
 
 			require.Equal(tt.resetCount, resetCount)
-			require.Equal(float64(tt.resetCount+1), testutil.ToFloat64(bloom.metrics.ResetCount))
+			require.Equal(float64(tt.resetCount+1), testutil.ToFloat64(bloom.metric.ResetCount))
 			for _, expected := range tt.expected {
 				require.True(bloom.Has(expected))
 			}

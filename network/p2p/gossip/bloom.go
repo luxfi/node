@@ -63,7 +63,7 @@ type BloomFilter struct {
 func (b *BloomFilter) Add(gossipable Gossipable) {
 	h := gossipable.GossipID()
 	bloom.Add(b.bloom, h[:], b.salt[:])
-	b.metrics.Count.Inc()
+	b.metric.Count.Inc()
 }
 
 func (b *BloomFilter) Has(gossipable Gossipable) bool {
@@ -126,6 +126,6 @@ func resetBloomFilter(
 	bloomFilter.bloom = newBloom
 	bloomFilter.salt = newSalt
 
-	bloomFilter.metrics.Reset(newBloom, bloomFilter.maxCount)
+	bloomFilter.metric.Reset(newBloom, bloomFilter.maxCount)
 	return nil
 }

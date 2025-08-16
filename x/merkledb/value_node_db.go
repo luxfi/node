@@ -51,7 +51,7 @@ func newValueNodeDB(
 }
 
 func (db *valueNodeDB) Write(batch database.KeyValueWriterDeleter, key Key, n *node) error {
-	db.metrics.DatabaseNodeWrite()
+	db.metric.DatabaseNodeWrite()
 	db.nodeCache.Put(key, n)
 	prefixedKey := addPrefixToKey(db.bufferPool, valueNodePrefix, key.Bytes())
 	defer db.bufferPool.Put(prefixedKey)
@@ -81,18 +81,18 @@ func (db *valueNodeDB) Close() {
 
 func (db *valueNodeDB) Get(key Key) (*node, error) {
 	if cachedValue, isCached := db.nodeCache.Get(key); isCached {
-		db.metrics.ValueNodeCacheHit()
+		db.metric.ValueNodeCacheHit()
 		if cachedValue == nil {
 			return nil, database.ErrNotFound
 		}
 		return cachedValue, nil
 	}
-	db.metrics.ValueNodeCacheMiss()
+	db.metric.ValueNodeCacheMiss()
 
 	prefixedKey := addPrefixToKey(db.bufferPool, valueNodePrefix, key.Bytes())
 	defer db.bufferPool.Put(prefixedKey)
 
-	db.metrics.DatabaseNodeRead()
+	db.metric.DatabaseNodeRead()
 	nodeBytes, err := db.baseDB.Get(*prefixedKey)
 	if err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (i *iterator) Next() bool {
 		return false
 	}
 
-	i.db.metrics.DatabaseNodeRead()
+	i.db.metric.DatabaseNodeRead()
 
 	r := codecReader{
 		b: i.nodeIter.Value(),

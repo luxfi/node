@@ -50,7 +50,7 @@ type Manager interface {
 
 func NewManager(
 	mempool mempool.Mempool,
-	metrics metrics.Metrics,
+	metrics metric.Metrics,
 	state state.State,
 	backend *executor.Backend,
 	clk *mockable.Clock,
@@ -73,7 +73,7 @@ func NewManager(
 type manager struct {
 	backend *executor.Backend
 	state   state.State
-	metrics metrics.Metrics
+	metrics metric.Metrics
 	mempool mempool.Mempool
 	clk     *mockable.Clock
 	// Invariant: onAccept is called when [tx] is being marked as accepted, but

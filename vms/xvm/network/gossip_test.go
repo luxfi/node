@@ -6,7 +6,7 @@ package network
 import (
 	"testing"
 	
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
 
@@ -64,7 +64,7 @@ func TestMarshaller(t *testing.T) {
 func TestGossipMempoolAdd(t *testing.T) {
 	require := require.New(t)
 
-	metrics := metrics.NewNoOpMetrics("test").Registry()
+	metrics := metric.NewNoOpMetrics("test").Registry()
 	toEngine := make(chan core.Message, 1)
 
 	baseMempool, err := mempool.New("", metrics, toEngine)
@@ -101,7 +101,7 @@ func TestGossipMempoolAdd(t *testing.T) {
 func TestGossipMempoolAddVerified(t *testing.T) {
 	require := require.New(t)
 
-	metrics := metrics.NewNoOpMetrics("test").Registry()
+	metrics := metric.NewNoOpMetrics("test").Registry()
 	toEngine := make(chan core.Message, 1)
 
 	baseMempool, err := mempool.New("", metrics, toEngine)

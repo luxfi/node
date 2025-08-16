@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/coremock"
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
@@ -190,7 +190,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				txVerifierFunc(ctrl),
 				mempoolFunc(ctrl),
 				appSenderFunc(ctrl),
-				metrics.NewNoOpMetrics("test").Registry(),
+				metric.NewNoOpMetrics("test").Registry(),
 				testConfig,
 			)
 			require.NoError(err)
@@ -284,7 +284,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				executor.NewMockManager(ctrl), // Should never verify a tx
 				mempoolFunc(ctrl),
 				appSenderFunc(ctrl),
-				metrics.NewNoOpMetrics("test").Registry(),
+				metric.NewNoOpMetrics("test").Registry(),
 				testConfig,
 			)
 			require.NoError(err)
