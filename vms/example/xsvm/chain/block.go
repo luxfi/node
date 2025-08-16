@@ -88,8 +88,8 @@ func (b *block) Timestamp() time.Time {
 	return b.Time()
 }
 
-func (b *block) Verify() error {
-	return b.VerifyWithContext(context.Background(), nil)
+func (b *block) Verify(ctx context.Context) error {
+	return b.VerifyWithContext(ctx, nil)
 }
 
 func (b *block) Accept(context.Context) error {

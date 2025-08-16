@@ -941,7 +941,7 @@ func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, e
 }
 
 // BuildBlock implements the block.ChainVM interface
-func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
 
