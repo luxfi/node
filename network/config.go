@@ -141,7 +141,7 @@ type Config struct {
 	UptimeCalculator uptime.Calculator `json:"-"`
 
 	// UptimeMetricFreq marks how frequently this node will recalculate the
-	// observed average uptime metrics.
+	// observed average uptime metric.
 	UptimeMetricFreq time.Duration `json:"uptimeMetricFreq"`
 
 	// UptimeRequirement is the fraction of time a validator must be online and

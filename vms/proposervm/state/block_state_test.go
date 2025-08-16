@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 	
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
 
@@ -83,7 +83,7 @@ func TestMeteredBlockState(t *testing.T) {
 	a := require.New(t)
 
 	db := memdb.New()
-	bs, err := NewMeteredBlockState(db, "", metrics.NewNoOpMetrics("test").Registry())
+	bs, err := NewMeteredBlockState(db, "", metric.NewNoOpMetrics("test").Registry())
 	a.NoError(err)
 
 	testBlockState(a, bs)

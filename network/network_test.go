@@ -12,7 +12,7 @@ import (
 	"time"
 	
 	"github.com/prometheus/client_golang/prometheus"
-	luxmetrics "github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/networking/router"
@@ -221,7 +221,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 
 	mc, err := message.NewCreator(
 		nil,
-		luxmetrics.NewNoOpMetrics("test"),
+		luxmetric.NewNoOpMetrics("test"),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)

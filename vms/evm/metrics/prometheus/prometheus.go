@@ -69,13 +69,13 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 	metric := registry.Get(name)
 	name = strings.ReplaceAll(name, "/", "_")
 
-	switch m := metrics.(type) {
-	case metrics.NilCounter, metrics.NilCounterFloat64, metrics.NilEWMA,
-		metrics.NilGauge, metrics.NilGaugeFloat64, metrics.NilGaugeInfo,
-		metrics.NilHealthcheck, metrics.NilHistogram, metrics.NilMeter,
-		metrics.NilResettingTimer, metrics.NilSample, metrics.NilTimer:
+	switch m := metric.(type) {
+	case metric.NilCounter, metric.NilCounterFloat64, metric.NilEWMA,
+		metric.NilGauge, metric.NilGaugeFloat64, metric.NilGaugeInfo,
+		metric.NilHealthcheck, metric.NilHistogram, metric.NilMeter,
+		metric.NilResettingTimer, metric.NilSample, metric.NilTimer:
 		return nil, fmt.Errorf("%w: %q metric is nil", errMetricSkip, name)
-	case metrics.Counter:
+	case metric.Counter:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -86,7 +86,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metrics.CounterFloat64:
+	case metric.CounterFloat64:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -97,7 +97,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metrics.Gauge:
+	case metric.Gauge:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -108,7 +108,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metrics.GaugeFloat64:
+	case metric.GaugeFloat64:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -119,9 +119,9 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metrics.GaugeInfo:
+	case metric.GaugeInfo:
 		return nil, fmt.Errorf("%w: %q is a %T", errMetricSkip, name, m)
-	case metrics.Histogram:
+	case metric.Histogram:
 		snapshot := m.Snapshot()
 		thresholds := snapshot.Percentiles(quantiles)
 		dtoQuantiles := make([]*dto.Quantile, len(quantiles))
@@ -143,7 +143,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metrics.Meter:
+	case metric.Meter:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -154,7 +154,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metrics.Timer:
+	case metric.Timer:
 		snapshot := m.Snapshot()
 		thresholds := snapshot.Percentiles(quantiles)
 		dtoQuantiles := make([]*dto.Quantile, len(quantiles))
@@ -176,7 +176,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metrics.ResettingTimer:
+	case metric.ResettingTimer:
 		snapshot := m.Snapshot()
 		thresholds := snapshot.Percentiles(pvShortPercent)
 		dtoQuantiles := make([]*dto.Quantile, len(pvShortPercent))

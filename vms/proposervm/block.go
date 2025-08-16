@@ -447,7 +447,7 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPostDurango(
 		return false, err
 	}
 
-	// report the build slot to the metrics.
+	// report the build slot to the metric.
 	p.vm.proposerBuildSlotGauge.Set(float64(proposer.TimeToSlot(parentTimestamp, nextStartTime)))
 
 	// set the scheduler to let us know when the next block need to be built.

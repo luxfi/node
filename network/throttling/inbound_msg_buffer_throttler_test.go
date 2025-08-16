@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 	"time"
-		luxmetrics "github.com/luxfi/metrics"
+		luxmetrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -16,7 +16,7 @@ import (
 // Test inboundMsgBufferThrottler
 func TestMsgBufferThrottler(t *testing.T) {
 	require := require.New(t)
-	throttler, err := newInboundMsgBufferThrottler(luxmetrics.NewNoOpMetrics("test").Registry(), 3)
+	throttler, err := newInboundMsgBufferThrottler(luxmetric.NewNoOpMetrics("test").Registry(), 3)
 	require.NoError(err)
 
 	nodeID1, nodeID2 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
@@ -68,7 +68,7 @@ func TestMsgBufferThrottler(t *testing.T) {
 // Test inboundMsgBufferThrottler when an acquire is cancelled
 func TestMsgBufferThrottlerContextCancelled(t *testing.T) {
 	require := require.New(t)
-	throttler, err := newInboundMsgBufferThrottler(luxmetrics.NewNoOpMetrics("test").Registry(), 3)
+	throttler, err := newInboundMsgBufferThrottler(luxmetric.NewNoOpMetrics("test").Registry(), 3)
 	require.NoError(err)
 
 	vdr1Context, vdr1ContextCancelFunc := context.WithCancel(context.Background())

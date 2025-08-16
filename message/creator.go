@@ -26,7 +26,7 @@ type creator struct {
 
 func NewCreator(
 	log log.Logger,
-	m metrics.Metrics,
+	m metric.Metrics,
 	compressionType compression.Type,
 	maxMessageTimeout time.Duration,
 ) (Creator, error) {

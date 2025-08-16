@@ -129,7 +129,7 @@ func initTestProposerVM(
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -811,7 +811,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -1115,7 +1115,7 @@ func TestInnerVMRollback(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -1190,7 +1190,7 @@ func TestInnerVMRollback(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -1586,7 +1586,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -1757,7 +1757,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -1894,7 +1894,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -2117,7 +2117,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -2321,7 +2321,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -2412,7 +2412,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 			NumHistoricalBlocks: numHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOpMetrics("test").Registry(),
 		},
 	)
 
@@ -2456,7 +2456,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 			NumHistoricalBlocks: newNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOpMetrics("test").Registry(),
 		},
 	)
 

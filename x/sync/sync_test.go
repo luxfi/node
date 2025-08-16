@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	luxmetrics "github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -33,7 +33,7 @@ func newDefaultDBConfig() merkledb.Config {
 		ValueNodeCacheSize:          defaultRequestKeyLimit,
 		IntermediateWriteBufferSize: defaultRequestKeyLimit,
 		IntermediateNodeCacheSize:   defaultRequestKeyLimit,
-		Reg:                         luxmetrics.NewNoOpMetrics("test").Registry(),
+		Reg:                         luxmetric.NewNoOpMetrics("test").Registry(),
 		Tracer:                      trace.Noop,
 		BranchFactor:                merkledb.BranchFactor16,
 	}

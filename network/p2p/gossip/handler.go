@@ -77,7 +77,7 @@ func (h Handler[T]) AppRequest(_ context.Context, _ ids.NodeID, _ time.Time, req
 		return nil, p2p.ErrUnexpected
 	}
 
-	if err := h.metrics.observeMessage(sentPullLabels, len(gossipBytes), responseSize); err != nil {
+	if err := h.metric.observeMessage(sentPullLabels, len(gossipBytes), responseSize); err != nil {
 		return nil, p2p.ErrUnexpected
 	}
 
@@ -118,7 +118,7 @@ func (h Handler[_]) AppGossip(_ context.Context, nodeID ids.NodeID, gossipBytes 
 		}
 	}
 
-	if err := h.metrics.observeMessage(receivedPushLabels, len(gossip), receivedBytes); err != nil {
+	if err := h.metric.observeMessage(receivedPushLabels, len(gossip), receivedBytes); err != nil {
 		h.log.Error("failed to update metrics",
 			zap.Error(err),
 		)

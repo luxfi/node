@@ -482,7 +482,7 @@ func (n *Network) StartNode(ctx context.Context, w io.Writer, node *Node) error 
 // Restart a single node.
 func (n *Network) RestartNode(ctx context.Context, w io.Writer, node *Node) error {
 	// Ensure the node reuses the same API port across restarts to ensure
-	// consistent labeling of metrics. Otherwise prometheus's automatic
+	// consistent labeling of metric. Otherwise prometheus's automatic
 	// addition of the `instance` label (host:port) results in
 	// segmentation of results for a given node every time the port
 	// changes on restart. This segmentation causes graphs on the grafana

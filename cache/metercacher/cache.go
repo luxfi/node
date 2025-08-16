@@ -37,10 +37,10 @@ func (c *Cache[K, V]) Put(key K, value V) {
 	c.Cacher.Put(key, value)
 	putDuration := time.Since(start)
 
-	c.metrics.putCount.Inc()
-	c.metrics.putTime.Add(float64(putDuration))
-	c.metrics.len.Set(float64(c.Cacher.Len()))
-	c.metrics.portionFilled.Set(c.Cacher.PortionFilled())
+	c.metric.putCount.Inc()
+	c.metric.putTime.Add(float64(putDuration))
+	c.metric.len.Set(float64(c.Cacher.Len()))
+	c.metric.portionFilled.Set(c.Cacher.PortionFilled())
 }
 
 func (c *Cache[K, V]) Get(key K) (V, bool) {
@@ -49,11 +49,11 @@ func (c *Cache[K, V]) Get(key K) (V, bool) {
 	getDuration := time.Since(start)
 
 	if has {
-		c.metrics.getCount.With(hitLabels).Inc()
-		c.metrics.getTime.With(hitLabels).Add(float64(getDuration))
+		c.metric.getCount.With(hitLabels).Inc()
+		c.metric.getTime.With(hitLabels).Add(float64(getDuration))
 	} else {
-		c.metrics.getCount.With(missLabels).Inc()
-		c.metrics.getTime.With(missLabels).Add(float64(getDuration))
+		c.metric.getCount.With(missLabels).Inc()
+		c.metric.getTime.With(missLabels).Add(float64(getDuration))
 	}
 
 	return value, has
@@ -62,13 +62,13 @@ func (c *Cache[K, V]) Get(key K) (V, bool) {
 func (c *Cache[K, _]) Evict(key K) {
 	c.Cacher.Evict(key)
 
-	c.metrics.len.Set(float64(c.Cacher.Len()))
-	c.metrics.portionFilled.Set(c.Cacher.PortionFilled())
+	c.metric.len.Set(float64(c.Cacher.Len()))
+	c.metric.portionFilled.Set(c.Cacher.PortionFilled())
 }
 
 func (c *Cache[_, _]) Flush() {
 	c.Cacher.Flush()
 
-	c.metrics.len.Set(float64(c.Cacher.Len()))
-	c.metrics.portionFilled.Set(c.Cacher.PortionFilled())
+	c.metric.len.Set(float64(c.Cacher.Len()))
+	c.metric.portionFilled.Set(c.Cacher.PortionFilled())
 }

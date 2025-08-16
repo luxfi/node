@@ -619,7 +619,7 @@ func Test_Trie_HashCountOnBranch(t *testing.T) {
 	// [12]  [1F]
 
 	// clear the hash count to ignore setup
-	dbTrie.metrics.(*mockMetrics).hashCount = 0
+	dbTrie.metric.(*mockMetrics).hashCount = 0
 
 	// calculate the root
 	_, err = view2.GetMerkleRoot(context.Background())
@@ -634,7 +634,7 @@ func Test_Trie_HashCountOnBranch(t *testing.T) {
 	require.Len(root.children, 2)
 
 	// Had to hash each of the new nodes ("12" and "1F") and the new root
-	require.Equal(int64(3), dbTrie.metrics.(*mockMetrics).hashCount)
+	require.Equal(int64(3), dbTrie.metric.(*mockMetrics).hashCount)
 }
 
 func Test_Trie_HashCountOnDelete(t *testing.T) {
@@ -659,7 +659,7 @@ func Test_Trie_HashCountOnDelete(t *testing.T) {
 	require.NotNil(trie)
 
 	require.NoError(trie.CommitToDB(context.Background()))
-	oldCount := dbTrie.metrics.(*mockMetrics).hashCount
+	oldCount := dbTrie.metric.(*mockMetrics).hashCount
 
 	// delete the middle values
 	view, err := trie.NewView(
@@ -685,7 +685,7 @@ func Test_Trie_HashCountOnDelete(t *testing.T) {
 	require.Len(root.children, 2)
 
 	// Had to hash the new root but not [key1] or [key2] nodes
-	require.Equal(oldCount+1, dbTrie.metrics.(*mockMetrics).hashCount)
+	require.Equal(oldCount+1, dbTrie.metric.(*mockMetrics).hashCount)
 }
 
 func Test_Trie_NoExistingResidual(t *testing.T) {

@@ -83,7 +83,7 @@ func TestMain(m *testing.M) {
 	flag.DurationVar(&executionTimeout, "execution-timeout", 0, "Benchmark execution timeout. After this timeout has elapsed, terminate the benchmark without error. If 0, no timeout is applied.")
 
 	flag.BoolVar(&metricsEnabledArg, "metrics-enabled", true, "Enable metrics collection.")
-	flag.StringVar(&labelsArg, "labels", "", "Comma separated KV list of metric labels to attach to all exported metrics. Ex. \"owner=tim,runner=snoopy\"")
+	flag.StringVar(&labelsArg, "labels", "", "Comma separated KV list of metric labels to attach to all exported metric. Ex. \"owner=tim,runner=snoopy\"")
 
 	flag.Parse()
 
@@ -110,13 +110,13 @@ func benchmarkReexecuteRange(b *testing.B, sourceBlockDir string, targetDir stri
 
 	// Create the prefix gatherer passed to the VM and register it with the top-level,
 	// labeled gatherer.
-	prefixGatherer := metrics.NewPrefixGatherer()
+	prefixGatherer := metric.NewPrefixGatherer()
 
-	vmMultiGatherer := metrics.NewPrefixGatherer()
+	vmMultiGatherer := metric.NewPrefixGatherer()
 	r.NoError(prefixGatherer.Register("lux_evm", vmMultiGatherer))
 
 	// consensusRegistry includes the chain="C" label and the prefix "lux_snowman".
-	// The consensus registry is passed to the executor to mimic a subset of consensus metrics.
+	// The consensus registry is passed to the executor to mimic a subset of consensus metric.
 	consensusRegistry := prometheus.NewRegistry()
 	r.NoError(prefixGatherer.Register("lux_snowman", consensusRegistry))
 
@@ -188,7 +188,7 @@ func newMainnetCChainVM(
 	vmAndSharedMemoryDB database.Database,
 	chainDataDir string,
 	configBytes []byte,
-	metricsGatherer metrics.MultiGatherer,
+	metricsGatherer metric.MultiGatherer,
 ) (chain.VM, error) {
 	factory := factory.Factory{}
 	vmIntf, err := factory.New(logging.NoLog{})
@@ -312,7 +312,7 @@ func (e *vmExecutor) execute(ctx context.Context, blockBytes []byte) error {
 	if err := blk.Accept(ctx); err != nil {
 		return fmt.Errorf("failed to accept block %s at height %d: %w", blk.ID(), blk.Height(), err)
 	}
-	e.metrics.lastAcceptedHeight.Set(float64(blk.Height()))
+	e.metric.lastAcceptedHeight.Set(float64(blk.Height()))
 
 	return nil
 }
@@ -468,7 +468,7 @@ type consensusMetrics struct {
 }
 
 // newConsensusMetrics creates a subset of the metrics from snowman consensus
-// [engine](../../snow/engine/snowman/metrics.go).
+// [engine](../../snow/engine/snowman/metric.go).
 //
 // The registry passed in is expected to be registered with the prefix
 // "lux_snowman" and the chain label (ex. chain="C") that would be handled
@@ -487,7 +487,7 @@ func newConsensusMetrics(registry prometheus.Registerer) (*consensusMetrics, err
 }
 
 // collectRegistry starts prometheus and collects metrics from the provided gatherer.
-// Attaches the provided labels + GitHub labels if available to the collected metrics.
+// Attaches the provided labels + GitHub labels if available to the collected metric.
 func collectRegistry(tb testing.TB, name string, timeout time.Duration, gatherer prometheus.Gatherer, labels map[string]string) {
 	r := require.New(tb)
 

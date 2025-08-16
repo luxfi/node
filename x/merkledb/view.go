@@ -285,7 +285,7 @@ func (v *view) hashChangedNodes(ctx context.Context) {
 	root := v.root.Value()
 	if len(root.children) == 0 {
 		v.changes.rootID = v.db.hasher.HashNode(root)
-		v.db.metrics.HashCalculated()
+		v.db.metric.HashCalculated()
 		return
 	}
 
@@ -372,7 +372,7 @@ func (v *view) hashChangedNode(n *node, keyBuffer []byte) (ids.ID, []byte) {
 		// the buffer for the child keys.
 		if len(childNode.children) == 0 {
 			childEntry.id = v.db.hasher.HashNode(childNode)
-			v.db.metrics.HashCalculated()
+			v.db.metric.HashCalculated()
 			continue
 		}
 
@@ -399,7 +399,7 @@ func (v *view) hashChangedNode(n *node, keyBuffer []byte) (ids.ID, []byte) {
 	wg.Wait()
 
 	// The IDs [n]'s descendants are up to date so we can calculate [n]'s ID.
-	v.db.metrics.HashCalculated()
+	v.db.metric.HashCalculated()
 	return v.db.hasher.HashNode(n), keyBuffer
 }
 
@@ -592,13 +592,13 @@ func (v *view) getValue(key Key) ([]byte, error) {
 	}
 
 	if change, ok := v.changes.values[key]; ok {
-		v.db.metrics.ViewChangesValueHit()
+		v.db.metric.ViewChangesValueHit()
 		if change.after.IsNothing() {
 			return nil, database.ErrNotFound
 		}
 		return change.after.Value(), nil
 	}
-	v.db.metrics.ViewChangesValueMiss()
+	v.db.metric.ViewChangesValueMiss()
 
 	// if we don't have local copy of the value, then grab a copy from the parent trie
 	value, err := v.getParentTrie().getValue(key)
@@ -784,7 +784,7 @@ func (v *view) insert(
 			newRoot            = newNode(commonPrefix)
 			oldRootID          = v.db.hasher.HashNode(oldRoot)
 		)
-		v.db.metrics.HashCalculated()
+		v.db.metric.HashCalculated()
 
 		// Call addChildWithID instead of addChild so the old root is added
 		// to the new root with the correct ID.
@@ -974,13 +974,13 @@ func (v *view) recordValueChange(key Key, value maybe.Maybe[[]byte]) error {
 func (v *view) getNode(key Key, hasValue bool) (*node, error) {
 	// check for the key within the changed nodes
 	if nodeChange, isChanged := v.changes.nodes[key]; isChanged {
-		v.db.metrics.ViewChangesNodeHit()
+		v.db.metric.ViewChangesNodeHit()
 		if nodeChange.after == nil {
 			return nil, database.ErrNotFound
 		}
 		return nodeChange.after, nil
 	}
-	v.db.metrics.ViewChangesNodeMiss()
+	v.db.metric.ViewChangesNodeMiss()
 
 	// get the node from the parent trie and store a local copy
 	return v.getParentTrie().getEditableNode(key, hasValue)

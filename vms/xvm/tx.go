@@ -77,7 +77,7 @@ func (tx *Tx) Accept(ctx context.Context) error {
 		return fmt.Errorf("error committing accepted state changes while processing tx %s: %w", txID, err)
 	}
 
-	return tx.vm.metrics.MarkTxAccepted(tx.tx)
+	return tx.vm.metric.MarkTxAccepted(tx.tx)
 }
 
 func (*Tx) Reject(ctx context.Context) error {

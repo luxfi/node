@@ -6,7 +6,7 @@ package peer
 import (
 	"testing"
 	
-	luxmetrics "github.com/luxfi/metrics"
+	luxmetrics "github.com/luxfi/metric"
 
 
 	"github.com/stretchr/testify/require"
@@ -67,7 +67,7 @@ func TestGossipTracker_Contains(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			g, err := NewGossipTracker(luxmetrics.NewNoOpMetrics("test").Registry(), "foobar")
+			g, err := NewGossipTracker(luxmetric.NewNoOpMetrics("test").Registry(), "foobar")
 			require.NoError(err)
 
 			for _, add := range test.track {
@@ -103,7 +103,7 @@ func TestGossipTracker_StartTrackingPeer(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			g, err := NewGossipTracker(luxmetrics.NewNoOpMetrics("test").Registry(), "foobar")
+			g, err := NewGossipTracker(luxmetric.NewNoOpMetrics("test").Registry(), "foobar")
 			require.NoError(err)
 
 			for i, p := range test.toStartTracking {
@@ -150,7 +150,7 @@ func TestGossipTracker_StopTrackingPeer(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			g, err := NewGossipTracker(luxmetrics.NewNoOpMetrics("test").Registry(), "foobar")
+			g, err := NewGossipTracker(luxmetric.NewNoOpMetrics("test").Registry(), "foobar")
 			require.NoError(err)
 
 			for _, add := range test.toStartTracking {
@@ -212,7 +212,7 @@ func TestGossipTracker_AddValidator(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			g, err := NewGossipTracker(luxmetrics.NewNoOpMetrics("test").Registry(), "foobar")
+			g, err := NewGossipTracker(luxmetric.NewNoOpMetrics("test").Registry(), "foobar")
 			require.NoError(err)
 
 			for _, v := range test.validators {
@@ -253,7 +253,7 @@ func TestGossipTracker_RemoveValidator(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			g, err := NewGossipTracker(luxmetrics.NewNoOpMetrics("test").Registry(), "foobar")
+			g, err := NewGossipTracker(luxmetric.NewNoOpMetrics("test").Registry(), "foobar")
 			require.NoError(err)
 
 			for _, v := range test.validators {
@@ -294,7 +294,7 @@ func TestGossipTracker_ResetValidator(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			g, err := NewGossipTracker(luxmetrics.NewNoOpMetrics("test").Registry(), "foobar")
+			g, err := NewGossipTracker(luxmetric.NewNoOpMetrics("test").Registry(), "foobar")
 			require.NoError(err)
 
 			require.True(g.StartTrackingPeer(p1))
@@ -384,7 +384,7 @@ func TestGossipTracker_AddKnown(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			g, err := NewGossipTracker(luxmetrics.NewNoOpMetrics("test").Registry(), "foobar")
+			g, err := NewGossipTracker(luxmetric.NewNoOpMetrics("test").Registry(), "foobar")
 			require.NoError(err)
 
 			for _, p := range test.trackedPeers {
@@ -458,7 +458,7 @@ func TestGossipTracker_GetUnknown(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			g, err := NewGossipTracker(luxmetrics.NewNoOpMetrics("test").Registry(), "foobar")
+			g, err := NewGossipTracker(luxmetric.NewNoOpMetrics("test").Registry(), "foobar")
 			require.NoError(err)
 
 			// add our validators
@@ -486,7 +486,7 @@ func TestGossipTracker_GetUnknown(t *testing.T) {
 func TestGossipTracker_E2E(t *testing.T) {
 	require := require.New(t)
 
-	g, err := NewGossipTracker(luxmetrics.NewNoOpMetrics("test").Registry(), "foobar")
+	g, err := NewGossipTracker(luxmetric.NewNoOpMetrics("test").Registry(), "foobar")
 	require.NoError(err)
 
 	// [v1, v2, v3] are validators
@@ -607,7 +607,7 @@ func TestGossipTracker_E2E(t *testing.T) {
 func TestGossipTracker_Regression_IncorrectTxIDDeletion(t *testing.T) {
 	require := require.New(t)
 
-	g, err := NewGossipTracker(luxmetrics.NewNoOpMetrics("test").Registry(), "foobar")
+	g, err := NewGossipTracker(luxmetric.NewNoOpMetrics("test").Registry(), "foobar")
 	require.NoError(err)
 
 	require.True(g.AddValidator(v1))

@@ -66,7 +66,7 @@ func (g *labeledGatherer) Gather() ([]*dto.MetricFamily, error) {
 	metricFamilies, err := g.gatherer.Gather()
 	for _, metricFamily := range metricFamilies {
 		for _, metric := range metricFamily.Metric {
-			metrics.Label = append(metrics.Label, &dto.LabelPair{
+			metric.Label = append(metric.Label, &dto.LabelPair{
 				Name:  &g.labelName,
 				Value: &g.labelValue,
 			})

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 	
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
 
@@ -207,14 +207,14 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		Rewards:      rewardsCalc,
 	}
 
-	registerer := metrics.NewRegistry()
+	registerer := metric.NewRegistry()
 	res.sender = &core.SenderTest{
 		SendAppGossipF: func(context.Context, core.SendConfig, []byte) error {
 			return nil
 		},
 	}
 
-	metrics, err := metrics.New(registerer)
+	metrics, err := metric.New(registerer)
 	require.NoError(err)
 
 	res.mempool, err = mempool.New("mempool", registerer, nil)
@@ -325,11 +325,11 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		metrics.NewRegistry(),
+		metric.NewRegistry(),
 		cfg,
 		execCfg,
 		ctx,
-		metrics.Noop,
+		metric.Noop,
 		rewards,
 	)
 	require.NoError(err)

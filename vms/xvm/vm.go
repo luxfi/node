@@ -68,7 +68,7 @@ type VM struct {
 
 	config.Config
 
-	metrics xvmmetrics.Metrics
+	metrics xvmmetric.Metrics
 
 	lux.AddressManager
 	ids.Aliaser
@@ -238,7 +238,7 @@ func (vm *VM) initialize(
 	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
 
 	// Initialize metrics as soon as possible
-	vm.metrics, err = xvmmetrics.New(vm.registerer)
+	vm.metrics, err = xvmmetric.New(vm.registerer)
 	if err != nil {
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}

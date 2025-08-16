@@ -125,10 +125,10 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 
-	pluginMetrics := metrics.NewPrefixGatherer()
+	pluginMetrics := metric.NewPrefixGatherer()
 	vm.metrics = pluginMetrics
 
-	processMetrics, err := metrics.MakeAndRegister(
+	processMetrics, err := metric.MakeAndRegister(
 		pluginMetrics,
 		"process",
 	)
@@ -148,7 +148,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 
-	grpcMetrics, err := metrics.MakeAndRegister(
+	grpcMetrics, err := metric.MakeAndRegister(
 		pluginMetrics,
 		"grpc",
 	)
@@ -162,7 +162,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 
-	vmMetrics := metrics.NewPrefixGatherer()
+	vmMetrics := metric.NewPrefixGatherer()
 	if err := pluginMetrics.Register("vm", vmMetrics); err != nil {
 		return nil, err
 	}
@@ -688,7 +688,7 @@ func (vm *VMServer) AppGossip(ctx context.Context, req *vmpb.AppGossipMsg) (*emp
 }
 
 func (vm *VMServer) Gather(context.Context, *emptypb.Empty) (*vmpb.GatherResponse, error) {
-	metrics, err := vm.metrics.Gather()
+	metrics, err := vm.metric.Gather()
 	return &vmpb.GatherResponse{MetricFamilies: metrics}, err
 }
 

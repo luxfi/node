@@ -47,7 +47,7 @@ import (
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
-	utilmetrics "github.com/luxfi/metrics"
+	utilmetrics "github.com/luxfi/metric"
 )
 
 func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
@@ -777,11 +777,11 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 	newState, err := state.New(
 		vm.db,
 		nil,
-		utilmetrics.NewTestRegistry(),
+		utilmetric.NewTestRegistry(),
 		&vm.Config,
 		execCfg,
 		vm.ctx,
-		metrics.Noop,
+		metric.Noop,
 		reward.NewCalculator(vm.Config.RewardConfig),
 	)
 	require.NoError(err)
@@ -1086,11 +1086,11 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	newState, err := state.New(
 		vm.db,
 		nil,
-		utilmetrics.NewTestRegistry(),
+		utilmetric.NewTestRegistry(),
 		&vm.Config,
 		execCfg,
 		vm.ctx,
-		metrics.Noop,
+		metric.Noop,
 		reward.NewCalculator(vm.Config.RewardConfig),
 	)
 	require.NoError(err)

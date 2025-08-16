@@ -18,7 +18,7 @@ type MultiGatherer interface {
 	prometheus.Gatherer
 
 	// Register adds the outputs of [gatherer] to the results of future calls to
-	// Gather with the provided [name] added to the metrics.
+	// Gather with the provided [name] added to the metric.
 	Register(name string, gatherer prometheus.Gatherer) error
 
 	// Deregister removes the outputs of a gatherer with [name] from the results

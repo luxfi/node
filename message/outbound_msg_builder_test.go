@@ -8,7 +8,7 @@ import (
 	"time"
 	
 
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -20,7 +20,7 @@ func Test_newOutboundBuilder(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		nil,
-		metrics.NewNoOpMetrics("test"),
+		metric.NewNoOpMetrics("test"),
 		10*time.Second,
 	)
 	require.NoError(t, err)

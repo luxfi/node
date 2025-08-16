@@ -69,7 +69,7 @@ type VM struct {
 	*network.Network
 	validators.State
 
-	metrics platformvmmetrics.Metrics
+	metrics platformvmmetric.Metrics
 
 	// Used to get time. Useful for faking time during tests.
 	clock mockable.Clock
@@ -116,13 +116,13 @@ func (vm *VM) Initialize(
 	}
 	chainCtx.Log.Info("using VM execution config", zap.Reflect("config", execConfig))
 
-	registerer, err := metrics.MakeAndRegister(chainCtx.Metrics, "")
+	registerer, err := metric.MakeAndRegister(chainCtx.Metrics, "")
 	if err != nil {
 		return err
 	}
 
 	// Initialize metrics as soon as possible
-	vm.metrics, err = platformvmmetrics.New(registerer)
+	vm.metrics, err = platformvmmetric.New(registerer)
 	if err != nil {
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}
@@ -669,8 +669,8 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	server := rpc.NewServer()
 	server.RegisterCodec(json.NewCodec(), "application/json")
 	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
-	server.RegisterInterceptFunc(vm.metrics.InterceptRequest)
-	server.RegisterAfterFunc(vm.metrics.AfterRequest)
+	server.RegisterInterceptFunc(vm.metric.InterceptRequest)
+	server.RegisterAfterFunc(vm.metric.AfterRequest)
 	service := &Service{
 		vm:          vm,
 		addrManager: lux.NewAddressManager(vm.ctx),

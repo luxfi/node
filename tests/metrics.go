@@ -22,7 +22,7 @@ type NodesMetrics map[string]NodeMetrics
 
 // GetNodeMetrics retrieves the specified metrics the provided node URI.
 func GetNodeMetrics(ctx context.Context, nodeURI string) (NodeMetrics, error) {
-	client := metrics.NewClient(nodeURI)
+	client := metric.NewClient(nodeURI)
 	return client.GetMetrics(ctx)
 }
 
@@ -58,10 +58,10 @@ func GetMetricValue(metrics NodeMetrics, name string, labels prometheus.Labels) 
 		}
 
 		switch {
-		case metrics.Gauge != nil:
-			return metrics.Gauge.GetValue(), true
-		case metrics.Counter != nil:
-			return metrics.Counter.GetValue(), true
+		case metric.Gauge != nil:
+			return metric.Gauge.GetValue(), true
+		case metric.Counter != nil:
+			return metric.Counter.GetValue(), true
 		}
 	}
 	return 0, false
@@ -69,7 +69,7 @@ func GetMetricValue(metrics NodeMetrics, name string, labels prometheus.Labels) 
 
 func labelsMatch(metric *dto.Metric, labels prometheus.Labels) bool {
 	var found int
-	for _, label := range metrics.Label {
+	for _, label := range metric.Label {
 		expectedValue, ok := labels[label.GetName()]
 		if !ok {
 			continue

@@ -27,7 +27,7 @@ var (
 // being shutdown.
 type acceptor struct {
 	*backend
-	metrics      metrics.Metrics
+	metrics      metric.Metrics
 	validators   validators.Manager
 	bootstrapped *utils.Atomic[bool]
 }
@@ -282,7 +282,7 @@ func (a *acceptor) standardBlock(b block.Block, blockType string) error {
 func (a *acceptor) commonAccept(b block.Block) error {
 	blkID := b.ID()
 
-	if err := a.metrics.MarkAccepted(b); err != nil {
+	if err := a.metric.MarkAccepted(b); err != nil {
 		return fmt.Errorf("failed to accept block %s: %w", blkID, err)
 	}
 

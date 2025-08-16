@@ -94,7 +94,7 @@ func NewManager(
 	log log.Logger,
 	cfg config.Config,
 	state State,
-	metrics metrics.Metrics,
+	metrics metric.Metrics,
 	clk *mockable.Clock,
 ) Manager {
 	return &manager{
@@ -121,7 +121,7 @@ type manager struct {
 	log     log.Logger
 	cfg     config.Config
 	state   State
-	metrics metrics.Metrics
+	metrics metric.Metrics
 	clk     *mockable.Clock
 
 	// Maps caches for each subnet that is currently tracked.
@@ -220,7 +220,7 @@ func (m *manager) GetValidatorSetWithContext(
 	validatorSetsCache := m.getValidatorSetCache(subnetID)
 
 	if validatorSet, ok := validatorSetsCache.Get(targetHeight); ok {
-		m.metrics.IncValidatorSetsCached()
+		m.metric.IncValidatorSetsCached()
 		return validatorSet, nil
 	}
 
@@ -245,9 +245,9 @@ func (m *manager) GetValidatorSetWithContext(
 	validatorSetsCache.Put(targetHeight, validatorSet)
 
 	duration := m.clk.Time().Sub(startTime)
-	m.metrics.IncValidatorSetsCreated()
-	m.metrics.AddValidatorSetsDuration(duration)
-	m.metrics.AddValidatorSetsHeightDiff(currentHeight - targetHeight)
+	m.metric.IncValidatorSetsCreated()
+	m.metric.AddValidatorSetsDuration(duration)
+	m.metric.AddValidatorSetsHeightDiff(currentHeight - targetHeight)
 	return validatorSet, nil
 }
 

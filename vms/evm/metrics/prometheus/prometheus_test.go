@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metrics"
+	"github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 
@@ -70,7 +70,7 @@ const expectedMetrics = `
 func TestGatherer_Gather(t *testing.T) {
 	metricstest.WithMetrics(t)
 
-	registry := metrics.NewRegistry()
+	registry := metric.NewRegistry()
 	register := func(t *testing.T, name string, collector any) {
 		t.Helper()
 		err := registry.Register(name, collector)
@@ -94,43 +94,43 @@ func TestGatherer_Gather(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test gathering with unsupported metric type
-	register(t, "unsupported", metrics.NewHealthcheck(nil))
+	register(t, "unsupported", metric.NewHealthcheck(nil))
 	metrics, err := gatherer.Gather()
 	require.ErrorIs(t, err, errMetricTypeNotSupported)
 	require.Equal(t, wantMetrics, metrics)
 }
 
 func registerRealMetrics(t *testing.T, register func(t *testing.T, name string, collector any)) {
-	counter := metrics.NewCounter()
+	counter := metric.NewCounter()
 	counter.Inc(12345)
 	register(t, "test/counter", counter)
 
-	counterFloat64 := metrics.NewCounterFloat64()
+	counterFloat64 := metric.NewCounterFloat64()
 	counterFloat64.Inc(1.1)
 	register(t, "test/counter_float64", counterFloat64)
 
-	gauge := metrics.NewGauge()
+	gauge := metric.NewGauge()
 	gauge.Update(23456)
 	register(t, "test/gauge", gauge)
 
-	gaugeFloat64 := metrics.NewGaugeFloat64()
+	gaugeFloat64 := metric.NewGaugeFloat64()
 	gaugeFloat64.Update(34567.89)
 	register(t, "test/gauge_float64", gaugeFloat64)
 
-	gaugeInfo := metrics.NewGaugeInfo()
-	gaugeInfo.Update(metrics.GaugeInfoValue{"key": "value"})
+	gaugeInfo := metric.NewGaugeInfo()
+	gaugeInfo.Update(metric.GaugeInfoValue{"key": "value"})
 	register(t, "test/gauge_info", gaugeInfo) // skipped
 
-	sample := metrics.NewUniformSample(1028)
-	histogram := metrics.NewHistogram(sample)
+	sample := metric.NewUniformSample(1028)
+	histogram := metric.NewHistogram(sample)
 	register(t, "test/histogram", histogram)
 
-	meter := metrics.NewMeter()
+	meter := metric.NewMeter()
 	t.Cleanup(meter.Stop)
 	meter.Mark(9999999)
 	register(t, "test/meter", meter)
 
-	timer := metrics.NewTimer()
+	timer := metric.NewTimer()
 	t.Cleanup(timer.Stop)
 	timer.Update(20 * time.Millisecond)
 	timer.Update(21 * time.Millisecond)
@@ -140,11 +140,11 @@ func registerRealMetrics(t *testing.T, register func(t *testing.T, name string, 
 	timer.Update(24 * time.Millisecond)
 	register(t, "test/timer", timer)
 
-	resettingTimer := metrics.NewResettingTimer()
+	resettingTimer := metric.NewResettingTimer()
 	register(t, "test/resetting_timer", resettingTimer)
 	resettingTimer.Update(time.Second) // must be after register call
 
-	emptyResettingTimer := metrics.NewResettingTimer()
+	emptyResettingTimer := metric.NewResettingTimer()
 	register(t, "test/empty_resetting_timer", emptyResettingTimer)
 
 	emptyResettingTimer.Update(time.Second) // no effect because of snapshot below
@@ -154,19 +154,19 @@ func registerRealMetrics(t *testing.T, register func(t *testing.T, name string, 
 func registerNilMetrics(t *testing.T, register func(t *testing.T, name string, collector any)) {
 	// The NewXXX metrics functions return nil metrics types when the metrics
 	// are disabled.
-	metrics.Enabled = false
-	defer func() { metrics.Enabled = true }()
+	metric.Enabled = false
+	defer func() { metric.Enabled = true }()
 
-	register(t, "nil/counter", metrics.NewCounter())
-	register(t, "nil/counter_float64", metrics.NewCounterFloat64())
-	register(t, "nil/ewma", &metrics.NilEWMA{})
-	register(t, "nil/gauge", metrics.NewGauge())
-	register(t, "nil/gauge_float64", metrics.NewGaugeFloat64())
-	register(t, "nil/gauge_info", metrics.NewGaugeInfo())
-	register(t, "nil/healthcheck", metrics.NewHealthcheck(nil))
-	register(t, "nil/histogram", metrics.NewHistogram(nil))
-	register(t, "nil/meter", metrics.NewMeter())
-	register(t, "nil/resetting_timer", metrics.NewResettingTimer())
-	register(t, "nil/sample", metrics.NewUniformSample(1028))
-	register(t, "nil/timer", metrics.NewTimer())
+	register(t, "nil/counter", metric.NewCounter())
+	register(t, "nil/counter_float64", metric.NewCounterFloat64())
+	register(t, "nil/ewma", &metric.NilEWMA{})
+	register(t, "nil/gauge", metric.NewGauge())
+	register(t, "nil/gauge_float64", metric.NewGaugeFloat64())
+	register(t, "nil/gauge_info", metric.NewGaugeInfo())
+	register(t, "nil/healthcheck", metric.NewHealthcheck(nil))
+	register(t, "nil/histogram", metric.NewHistogram(nil))
+	register(t, "nil/meter", metric.NewMeter())
+	register(t, "nil/resetting_timer", metric.NewResettingTimer())
+	register(t, "nil/sample", metric.NewUniformSample(1028))
+	register(t, "nil/timer", metric.NewTimer())
 }

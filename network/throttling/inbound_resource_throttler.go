@@ -125,12 +125,12 @@ func (t *systemThrottler) Acquire(ctx context.Context, nodeID ids.NodeID) {
 	var timer *time.Timer
 	defer func() {
 		if timer != nil { // We waited at least once for usage to fall.
-			t.metrics.totalWaits.Inc()
-			// Note that [t.metrics.awaitingAcquire.Inc()] was called once if
+			t.metric.totalWaits.Inc()
+			// Note that [t.metric.awaitingAcquire.Inc()] was called once if
 			// and only if [waited] is true.
-			t.metrics.awaitingAcquire.Dec()
+			t.metric.awaitingAcquire.Dec()
 		} else {
-			t.metrics.totalNoWaits.Inc()
+			t.metric.totalNoWaits.Inc()
 		}
 	}()
 
@@ -168,7 +168,7 @@ func (t *systemThrottler) Acquire(ctx context.Context, nodeID ids.NodeID) {
 		// Reset [timer].
 		if timer == nil {
 			// Note this is called at most once.
-			t.metrics.awaitingAcquire.Inc()
+			t.metric.awaitingAcquire.Inc()
 
 			timer = t.timerPool.Get().(*time.Timer)
 			defer func() {
