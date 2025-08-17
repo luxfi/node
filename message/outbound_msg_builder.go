@@ -251,7 +251,6 @@ func (b *outMsgBuilder) Handshake(
 ) (OutboundMessage, error) {
 	subnetIDBytes := make([][]byte, len(trackedSubnets))
 	encodeIDs(trackedSubnets, subnetIDBytes)
-	// TODO: Use .AsSlice() after v1.12.x activates.
 	addr := ip.Addr().As16()
 	return b.builder.createOutbound(
 		&p2p.Message{
@@ -308,7 +307,6 @@ func (b *outMsgBuilder) GetPeerList(
 func (b *outMsgBuilder) PeerList(peers []*ips.ClaimedIPPort, bypassThrottling bool) (OutboundMessage, error) {
 	claimIPPorts := make([]*p2p.ClaimedIpPort, len(peers))
 	for i, p := range peers {
-		// TODO: Use .AsSlice() after v1.12.x activates.
 		ip := p.AddrPort.Addr().As16()
 		claimIPPorts[i] = &p2p.ClaimedIpPort{
 			X509Certificate: p.Cert.Raw,

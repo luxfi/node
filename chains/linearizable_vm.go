@@ -55,8 +55,8 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 		NodeID:       consensus.GetNodeID(vm.ctx),
 		PublicKey:    consensus.PK(vm.ctx),
 		LUXAssetID:   consensus.LuxAssetID(vm.ctx),
-		CChainID:     ids.Empty, // TODO: Get from config
-		ChainDataDir: "",        // TODO: Get from config
+		CChainID:     ids.Empty, // Implementation note
+		ChainDataDir: "",        // Implementation note
 	}
 
 	// Create DBManager wrapper

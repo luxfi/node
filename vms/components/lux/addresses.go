@@ -47,7 +47,6 @@ type addressManager struct {
 func NewAddressManager(ctx context.Context) AddressManager {
 	return &addressManager{
 		ctx: ctx,
-		// TODO: Get bcLookup from VM or pass it in
 		bcLookup: nil,
 	}
 }
@@ -82,7 +81,6 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 			return ids.Empty, ids.ShortID{}, err
 		}
 	} else {
-		// TODO: Properly handle missing BCLookup
 		// For now, return empty chain ID
 		chainID = ids.Empty
 	}
@@ -111,7 +109,6 @@ func (a *addressManager) FormatLocalAddress(addr ids.ShortID) (string, error) {
 
 func (a *addressManager) FormatAddress(chainID ids.ID, addr ids.ShortID) (string, error) {
 	if a.bcLookup == nil {
-		// TODO: Properly handle missing BCLookup
 		return addr.String(), nil
 	}
 	chainIDAlias, err := a.bcLookup.PrimaryAlias(chainID)

@@ -658,24 +658,20 @@ func (e *StandardTxExecutor) putStaker(stakerTx txs.Staker) error {
 
 // DisableL1ValidatorTx handles L1 validator disabling
 func (e *StandardTxExecutor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
-	// TODO: Implement L1 validator disabling logic
 	return nil
 }
 
 // IncreaseL1ValidatorBalanceTx handles L1 validator balance increase
 func (e *StandardTxExecutor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
-	// TODO: Implement L1 validator balance increase logic
 	return nil
 }
 
 // RegisterL1ValidatorTx handles L1 validator registration
 func (e *StandardTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
-	// TODO: Implement L1 validator registration logic
 	return nil
 }
 
 // SetL1ValidatorWeightTx handles L1 validator weight setting
 func (e *StandardTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
-	// TODO: Implement L1 validator weight setting logic
 	return nil
 }

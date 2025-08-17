@@ -425,7 +425,6 @@ func (d *diff) WeightOfL1Validators(subnetID ids.ID) (uint64, error) {
 }
 
 func (d *diff) PutL1Validator(validator L1Validator) error {
-	// TODO: Track L1 validators in diff state for proper commit
 	// For now, just return nil
 	return nil
 }

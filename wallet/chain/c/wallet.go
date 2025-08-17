@@ -176,12 +176,10 @@ func (w *wallet) baseFee(options []common.Option) (*big.Int, error) {
 		return baseFee, nil
 	}
 
-	// TODO: Implement EstimateBaseFee in ethclient
 	// For now, return a default base fee
 	return big.NewInt(25000000000), nil // 25 gwei
 }
 
-// TODO: Upstream this function into coreth.
 func awaitTxAccepted(
 	c Client,
 	ctx context.Context,

@@ -2086,7 +2086,6 @@ func TestVMInnerBlkMarkedAcceptedRegression(t *testing.T) {
 
 	wrappedInnerBlock, err := proVM.GetBlock(context.Background(), innerBlock.ID())
 	require.NoError(err)
-	// TODO: Fix this - Status() method not available on chain.Block
 	// require.Equal(choices.Rejected, wrappedInnerBlock.Status())
 	_ = wrappedInnerBlock
 }
@@ -2096,7 +2095,6 @@ type blockWithVerifyContext struct {
 	*blockmock.WithVerifyContext
 }
 
-// TODO: Fix this test - many undefined types and methods
 // Ensures that we call [VerifyWithContext] rather than [Verify] on blocks that
 // implement [block.WithVerifyContext] and that returns true for
 // [ShouldVerifyWithContext].
@@ -2160,7 +2158,6 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		require.NoError(vm.Shutdown(context.Background()))
 	}()
 
-	// TODO: Fix this test - many undefined types and methods
 	// {
 	// 	pChainHeight := uint64(0)
 	// 	innerBlk := blockWithVerifyContext{

@@ -102,7 +102,6 @@ func (g *gossipMempool) Add(tx *txs.Tx) error {
 	if reason := g.Mempool.GetDropReason(txID); reason != nil {
 		// If the tx is being dropped - just ignore it
 		//
-		// TODO: Should we allow re-verification of the transaction even if it
 		// failed previously?
 		return reason
 	}

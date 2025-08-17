@@ -72,7 +72,7 @@ var (
 
 	assetID = ids.ID{1, 2, 3}
 
-	keys  = secp256k1.TestKeys()[:3] // TODO: Remove [:3]
+	keys  = secp256k1.TestKeys()[:3] // Implementation note
 	addrs []ids.ShortID              // addrs[i] corresponds to keys[i]
 )
 

@@ -33,7 +33,6 @@ func TestWrongChainID(t *testing.T, s warp.Signer, _ bls.Signer, _ uint32, _ ids
 	require.NoError(err)
 
 	_, err = s.Sign(msg)
-	// TODO: require error to be ErrWrongSourceChainID
 	require.Error(err) //nolint:forbidigo // currently returns grpc errors too
 }
 
@@ -49,7 +48,6 @@ func TestWrongNetworkID(t *testing.T, s warp.Signer, _ bls.Signer, networkID uin
 	require.NoError(err)
 
 	_, err = s.Sign(msg)
-	// TODO: require error to be ErrWrongNetworkID
 	require.Error(err) //nolint:forbidigo // currently returns grpc errors too
 }
 

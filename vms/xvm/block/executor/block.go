@@ -350,7 +350,6 @@ func (b *Block) Status() choices.Status {
 		return choices.Processing
 
 	default:
-		// TODO: correctly report this error to the consensus engine.
 		b.manager.backend.Log.Error(
 			"dropping unhandled database error",
 			zap.Error(err),

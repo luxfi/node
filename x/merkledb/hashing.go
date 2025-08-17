@@ -11,7 +11,6 @@ import (
 	"github.com/luxfi/ids"
 )
 
-// TODO: Support configurable hash lengths
 const HashLength = 32
 
 var (

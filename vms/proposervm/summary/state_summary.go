@@ -17,7 +17,6 @@ type StateSummary interface {
 
 type stateSummary struct {
 	Height uint64 `serialize:"true"`
-	// TODO: Rather than storing the full block here - we should only store
 	//       proposervm information. We would then modify the StateSummary
 	//       interface to expose the required information to generate the full
 	//       block.

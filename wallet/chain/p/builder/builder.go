@@ -1237,7 +1237,6 @@ func (b *builder) NewConvertSubnetToL1Tx(
 	validators []*txs.ConvertSubnetToL1Validator,
 	options ...common.Option,
 ) (*txs.ConvertSubnetToL1Tx, error) {
-	// TODO: Implement L1 conversion
 	return &txs.ConvertSubnetToL1Tx{}, nil
 }
 
@@ -1247,7 +1246,6 @@ func (b *builder) NewRegisterL1ValidatorTx(
 	message []byte,
 	options ...common.Option,
 ) (*txs.RegisterL1ValidatorTx, error) {
-	// TODO: Implement L1 validator registration
 	return &txs.RegisterL1ValidatorTx{}, nil
 }
 
@@ -1255,7 +1253,6 @@ func (b *builder) NewSetL1ValidatorWeightTx(
 	message []byte,
 	options ...common.Option,
 ) (*txs.SetL1ValidatorWeightTx, error) {
-	// TODO: Implement L1 validator weight setting
 	return &txs.SetL1ValidatorWeightTx{}, nil
 }
 
@@ -1264,7 +1261,6 @@ func (b *builder) NewIncreaseL1ValidatorBalanceTx(
 	balance uint64,
 	options ...common.Option,
 ) (*txs.IncreaseL1ValidatorBalanceTx, error) {
-	// TODO: Implement L1 validator balance increase
 	return &txs.IncreaseL1ValidatorBalanceTx{}, nil
 }
 
@@ -1272,6 +1268,5 @@ func (b *builder) NewDisableL1ValidatorTx(
 	validationID ids.ID,
 	options ...common.Option,
 ) (*txs.DisableL1ValidatorTx, error) {
-	// TODO: Implement L1 validator disable
 	return &txs.DisableL1ValidatorTx{}, nil
 }

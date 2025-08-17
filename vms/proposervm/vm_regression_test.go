@@ -20,7 +20,6 @@ package proposervm
 // 	"github.com/luxfi/database/prefixdb"
 // )
 
-// TODO: This test is temporarily disabled as VerifyHeightIndexF no longer exists in blocktest.VM
 // func TestProposerVMInitializeShouldFailIfInnerVMCantVerifyItsHeightIndex(t *testing.T) {
 // 	require := require.New(t)
 

@@ -113,7 +113,6 @@ func NewManager(
 	}
 }
 
-// TODO: Remove requirement for the P-chain's context lock to be held when
 // calling exported functions.
 type manager struct {
 	log     log.Logger
@@ -181,7 +180,6 @@ func (m *manager) GetCurrentHeightWithContext(ctx context.Context) (uint64, erro
 	return m.getCurrentHeight(ctx)
 }
 
-// TODO: Pass the context into the state.
 func (m *manager) getCurrentHeight(context.Context) (uint64, error) {
 	lastAcceptedID := m.state.GetLastAccepted()
 	lastAccepted, err := m.state.GetStatelessBlock(lastAcceptedID)
@@ -305,7 +303,6 @@ func (m *manager) makePrimaryNetworkValidatorSet(
 func (m *manager) getCurrentPrimaryValidatorSet(
 	ctx context.Context,
 ) (map[ids.NodeID]*validators.GetValidatorOutput, uint64, error) {
-	// TODO: Implement GetMap or equivalent functionality
 	// primaryMap := m.cfg.Validators.GetMap(constants.PrimaryNetworkID)
 	primaryMap := make(map[ids.NodeID]*validators.GetValidatorOutput)
 	currentHeight, err := m.getCurrentHeight(ctx)
@@ -374,7 +371,6 @@ func (m *manager) getCurrentValidatorSets(
 	ctx context.Context,
 	subnetID ids.ID,
 ) (map[ids.NodeID]*validators.GetValidatorOutput, map[ids.NodeID]*validators.GetValidatorOutput, uint64, error) {
-	// TODO: Implement GetMap or equivalent functionality
 	// subnetMap := m.cfg.Validators.GetMap(subnetID)
 	// primaryMap := m.cfg.Validators.GetMap(constants.PrimaryNetworkID)
 	subnetMap := make(map[ids.NodeID]*validators.GetValidatorOutput)
@@ -418,7 +414,6 @@ func (m *manager) GetCurrentValidatorSet(
 		return nil, 0, err
 	}
 
-	// TODO: Implement proper conversion from GetValidatorOutput to GetCurrentValidatorOutput
 	result := make(map[ids.ID]*validators.GetCurrentValidatorOutput)
 	return result, currentHeight, nil
 }

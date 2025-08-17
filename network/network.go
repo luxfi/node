@@ -347,7 +347,6 @@ func (n *network) Send(
 			if peer.Send(n.onCloseCtx, msg) {
 				sentTo.Add(peer.ID())
 
-				// TODO: move send fail rate calculations into the peer metrics
 				// record metrics for success
 				n.sendFailRateCalculator.Observe(0, now)
 			} else {
@@ -1154,7 +1153,6 @@ func (n *network) NodeUptime(subnetID ids.ID) (UptimeResult, error) {
 		totalWeightedPercent += percent * weightFloat
 
 		// if this peer thinks we're above requirement add the weight
-		// TODO: use subnet-specific uptime requirements
 		if percent/100 >= n.config.UptimeRequirement {
 			rewardingStake += weightFloat
 		}

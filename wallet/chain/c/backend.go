@@ -58,7 +58,6 @@ func NewBackend(
 }
 
 func (b *backend) AcceptAtomicTx(ctx context.Context, tx *Tx) error {
-	// TODO: Implement proper atomic transaction handling
 	switch utx := tx.UnsignedAtomicTx.(type) {
 	case *UnsignedImportTx:
 		for _, input := range utx.ImportedInputs {

@@ -46,7 +46,6 @@ type Status struct {
 // The subprocess is expected to be stopped by the caller if a non-nil error is
 // returned. If piping the IO fails then the subprocess will be stopped.
 //
-// TODO: create the listener inside this method once we refactor the tests
 func Bootstrap(
 	ctx context.Context,
 	listener net.Listener,

@@ -260,7 +260,6 @@ func (vm *VM) Initialize(
 	}
 
 	vm.onShutdownCtx, vm.onShutdownCtxCancel = context.WithCancel(context.Background())
-	// TODO: Wait for this goroutine to exit during Shutdown once the platformvm
 	// has better control of the context lock.
 	go vm.Network.PushGossip(vm.onShutdownCtx)
 	go vm.Network.PullGossip(vm.onShutdownCtx)
@@ -607,7 +606,6 @@ func (vm *VM) onNormalOperationsStarted() error {
 
 	for subnetID := range vm.TrackedSubnets {
 		vdrIDs := vm.Validators.GetValidatorIDs(subnetID)
-		// TODO: handle subnet uptime tracking
 		// if err := vm.uptimeManager.StartTracking(vdrIDs); err != nil {
 		//	return err
 		// }
@@ -662,7 +660,6 @@ func (vm *VM) Shutdown(context.Context) error {
 
 		for subnetID := range vm.TrackedSubnets {
 			vdrIDs := vm.Validators.GetValidatorIDs(subnetID)
-			// TODO: handle subnet uptime tracking
 			// if err := vm.uptimeManager.StopTracking(vdrIDs); err != nil {
 			// 	return err
 			// }

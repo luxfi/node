@@ -347,7 +347,6 @@ func TestStateSyncEnabled(t *testing.T) {
 	require.True(enabled)
 
 	// test a non-special error.
-	// TODO: retrieve exact error
 	_, err = vm.StateSyncEnabled(context.Background())
 	require.Error(err) //nolint:forbidigo // currently returns grpc errors
 }
@@ -372,7 +371,6 @@ func TestGetOngoingSyncStateSummary(t *testing.T) {
 	require.Equal(mockedSummary.Bytes(), summary.Bytes())
 
 	// test a non-special error.
-	// TODO: retrieve exact error
 	_, err = vm.GetOngoingSyncStateSummary(context.Background())
 	require.Error(err) //nolint:forbidigo // currently returns grpc errors
 }
@@ -397,7 +395,6 @@ func TestGetLastStateSummary(t *testing.T) {
 	require.Equal(mockedSummary.Bytes(), summary.Bytes())
 
 	// test a non-special error.
-	// TODO: retrieve exact error
 	_, err = vm.GetLastStateSummary(context.Background())
 	require.Error(err) //nolint:forbidigo // currently returns grpc errors
 }
@@ -426,7 +423,6 @@ func TestParseStateSummary(t *testing.T) {
 	require.Error(err) //nolint:forbidigo // currently returns grpc errors
 
 	// test a non-special error.
-	// TODO: retrieve exact error
 	_, err = vm.ParseStateSummary(context.Background(), mockedSummary.Bytes())
 	require.Error(err) //nolint:forbidigo // currently returns grpc errors
 }
@@ -451,7 +447,6 @@ func TestGetStateSummary(t *testing.T) {
 	require.Equal(mockedSummary.Bytes(), summary.Bytes())
 
 	// test a non-special error.
-	// TODO: retrieve exact error
 	_, err = vm.GetStateSummary(context.Background(), mockedSummary.Height())
 	require.Error(err) //nolint:forbidigo // currently returns grpc errors
 }
@@ -479,7 +474,6 @@ func TestAcceptStateSummary(t *testing.T) {
 	require.Equal(block.StateSyncSkipped, status)
 
 	// test a non-special error.
-	// TODO: retrieve exact error
 	_, err = summary.Accept(context.Background())
 	require.Error(err) //nolint:forbidigo // currently returns grpc errors
 }

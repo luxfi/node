@@ -188,7 +188,6 @@ type State interface {
 	// this function will return immediately, without iterating over the
 	// database.
 	//
-	// TODO: Remove after v1.12.x is activated
 	ReindexBlocks(lock sync.Locker, log log.Logger) error
 
 	// Commit changes to the base database.
@@ -207,7 +206,6 @@ type State interface {
 // stored as a map from blkID to stateBlk. Nodes synced prior to this PR may
 // still have blocks partially stored using this legacy format.
 //
-// TODO: Remove after v1.12.x is activated
 type stateBlk struct {
 	Bytes  []byte `serialize:"true"`
 	Status uint32 `serialize:"true"`
@@ -364,7 +362,6 @@ type state struct {
 	currentSupply, persistedCurrentSupply uint64
 	// [lastAccepted] is the most recently accepted block.
 	lastAccepted, persistedLastAccepted ids.ID
-	// TODO: Remove indexedHeights once v1.11.3 has been released.
 	indexedHeights *heightRange
 	singletonDB    database.Database
 }
@@ -372,7 +369,6 @@ type state struct {
 // heightRange is used to track which heights are safe to use the native DB
 // iterator for querying validator diffs.
 //
-// TODO: Remove once we are guaranteed nodes can not rollback to not support the
 // new indexing mechanism.
 type heightRange struct {
 	LowerBound uint64 `serialize:"true"`
@@ -1235,7 +1231,6 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 		// We expect genesis validator txs to be either AddValidatorTx or
 		// AddPermissionlessValidatorTx.
 		//
-		// TODO: Enforce stricter type check
 		validatorTx, ok := vdrTx.Unsigned.(txs.ScheduledStaker)
 		if !ok {
 			return fmt.Errorf("expected a scheduled staker but got %T", vdrTx.Unsigned)
@@ -1979,7 +1974,6 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64, codecV
 				return err
 			}
 
-			// TODO: Move the validator set management out of the state package
 			if !updateValidators {
 				continue
 			}
@@ -2006,7 +2000,6 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64, codecV
 		}
 	}
 
-	// TODO: Move validator set management out of the state package
 	//
 	// Attempt to update the stake metrics
 	if !updateValidators {
@@ -2299,7 +2292,6 @@ func (s *state) writeMetadata() error {
 // Returns the block and whether it is a [stateBlk].
 // Invariant: blkBytes is safe to parse with blocks.GenesisCodec
 //
-// TODO: Remove after v1.12.x is activated
 func parseStoredBlock(blkBytes []byte) (block.Block, bool, error) {
 	// Attempt to parse as blocks.Block
 	blk, err := block.Parse(block.GenesisCodec, blkBytes)
@@ -2458,7 +2450,6 @@ func (s *state) GetL1Validator(validationID ids.ID) (L1Validator, error) {
 	if validator, ok := s.l1Validators[validationID]; ok {
 		return validator, nil
 	}
-	// TODO: Check persistent storage when implemented
 	return L1Validator{}, database.ErrNotFound
 }
 
@@ -2470,7 +2461,6 @@ func (s *state) HasL1Validator(subnetID ids.ID, nodeID ids.NodeID) (bool, error)
 			return true, nil
 		}
 	}
-	// TODO: Check persistent storage when implemented
 	return false, nil
 }
 
@@ -2482,7 +2472,6 @@ func (s *state) WeightOfL1Validators(subnetID ids.ID) (uint64, error) {
 			totalWeight += validator.Weight
 		}
 	}
-	// TODO: Check persistent storage when implemented
 	return totalWeight, nil
 }
 
@@ -2490,6 +2479,5 @@ func (s *state) WeightOfL1Validators(subnetID ids.ID) (uint64, error) {
 func (s *state) PutL1Validator(validator L1Validator) error {
 	// Store in memory
 	s.l1Validators[validator.ValidationID] = validator
-	// TODO: Store persistently when implemented
 	return nil
 }

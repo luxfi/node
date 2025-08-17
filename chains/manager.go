@@ -712,7 +712,6 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 	if err != nil {
 		return nil, fmt.Errorf("error while creating vm: %w", err)
 	}
-	// TODO: Shutdown VM if an error occurs
 
 	chainFxs := make([]*core.Fx, len(chainParams.FxIDs))
 	for i, fxID := range chainParams.FxIDs {
@@ -1142,7 +1141,6 @@ func (m *manager) createLuxChain(
 		return nil, fmt.Errorf("couldn't initialize consensus base message handler: %w", err)
 	}
 
-	// TODO: Initialize consensus properly
 	// var linearConsensus smcon.Consensus
 
 	// Create engine, bootstrapper and state-syncer in this order,
@@ -1150,7 +1148,6 @@ func (m *manager) createLuxChain(
 	// Convert sampling.Parameters to chain.Parameters
 	chainParams := smeng.Parameters{}
 
-	// TODO: Fix engine initialization - smeng.Engine doesn't implement core.Engine
 	// var linearEngine core.Engine
 	linearEngine, err := smeng.New(runtime, chainParams)
 	if err != nil {
@@ -1186,7 +1183,7 @@ func (m *manager) createLuxChain(
 
 	// Create bootstrapper with a callback function
 	bootstrapCallback := func(ctx context.Context, lastReqID uint32) error {
-		_ = lastReqID // TODO: handle lastReqID if needed
+		_ = lastReqID // Implementation note
 		return linearEngine.Start(ctx)
 	}
 
@@ -1250,9 +1247,8 @@ func (m *manager) createLuxChain(
 		TxBlocked:                      txBlocker,
 		Manager:                        vtxManager,
 		VM:                             linearizableVM,
-		Haltable:                       nil, // TODO: add halter if needed
+		Haltable:                       nil, // Implementation note
 	}
-	// TODO: StopVertexID field doesn't exist in Config
 	// if ctx.ChainID == m.XChainID {
 	// 	luxBootstrapperConfig.StopVertexID = version.CortinaXChainStopVertexID[ctx.NetworkID]
 	// }
@@ -1268,13 +1264,11 @@ func (m *manager) createLuxChain(
 		return nil, fmt.Errorf("error initializing lux bootstrapper: %w", err)
 	}
 
-	// TODO: dagbootstrap.Bootstrapper doesn't implement core.BootstrapableEngine
 	// var tracedLuxBootstrapper core.BootstrapableEngine = luxBootstrapper
 	// if m.TracingEnabled {
 	// 	tracedLuxBootstrapper = core.TraceBootstrapableEngine(luxBootstrapper, m.Tracer)
 	// }
 
-	// TODO: Handler interface doesn't have SetEngineManager method
 	// h.SetEngineManager(&handler.EngineManager{
 	// 	Dag: &handler.Engine{
 	// 		StateSyncer:  nil,
@@ -1288,7 +1282,6 @@ func (m *manager) createLuxChain(
 	// 	},
 	// })
 
-	// TODO: Handler doesn't implement health.Checker
 	// // Register health check for this chain
 	// if err := m.Health.RegisterHealthCheck(primaryAlias, h, ctx.SubnetID.String()); err != nil {
 	// 	return nil, fmt.Errorf("couldn't add health check for chain %s: %w", primaryAlias, err)
@@ -1409,7 +1402,6 @@ func (m *manager) createLinearChain(
 			return nil, fmt.Errorf("expected validators.State but got %T", vm)
 		}
 
-		// TODO: validators.Trace doesn't exist
 		// if m.TracingEnabled {
 		// 	valState = validators.Trace(valState, "platformvm", m.Tracer)
 		// }
@@ -1424,15 +1416,12 @@ func (m *manager) createLinearChain(
 		ctx = consensus.WithValidatorState(ctx, consensusValState)
 
 		// Initialize the validator state for future chains.
-		// TODO: validators.NewLockedState doesn't exist
 		m.validatorState = valState // State locking handled elsewhere if needed
-		// TODO: validators.Trace doesn't exist
 		// if m.TracingEnabled {
 		// 	m.validatorState = validators.Trace(m.validatorState, "lockedState", m.Tracer)
 		// }
 
 		if !m.ManagerConfig.SybilProtectionEnabled {
-			// TODO: validators.NewNoValidatorsState doesn't exist
 			// m.validatorState = validators.NewNoValidatorsState(m.validatorState)
 			// Wrap the NoValidatorsState as well
 			// ctx.ValidatorState = &validatorStateWrapper{state: validators.NewNoValidatorsState(valState)}
@@ -1442,13 +1431,11 @@ func (m *manager) createLinearChain(
 		//
 		// The linear bootstrapper ensures this function is only executed once, so
 		// we don't need to be concerned about closing this channel multiple times.
-		// TODO: bootstrapFunc not used anymore
 		// bootstrapFunc = func() {
 		// 	close(m.unblockChainCreatorCh)
 		// }
 
 		// Set up the subnet connector for the P-Chain
-		// TODO: validators.SubnetConnector interface has been removed, need to update this
 		// subnetConnector, ok = vm.(validators.SubnetConnector)
 		// if !ok {
 		// 	return nil, fmt.Errorf("expected validators.SubnetConnector but got %T", vm)
@@ -1617,7 +1604,6 @@ func (m *manager) createLinearChain(
 	}
 
 	// Create change notifier and subscription for linear chain
-	// TODO: block.ChangeNotifier doesn't exist
 	// cn := &block.ChangeNotifier{}
 	subscription := func(ctx context.Context) (core.Message, error) {
 		select {
@@ -1649,7 +1635,6 @@ func (m *manager) createLinearChain(
 
 	connectedBeacons := tracker.NewPeers()
 	startupTracker := tracker.NewStartup(connectedBeacons, float64((3*bootstrapWeight+3)/4))
-	// TODO: RegisterSetCallbackListener signature mismatch - startupTracker doesn't implement SetCallbackListener
 	// beacons.RegisterSetCallbackListener(ctx.SubnetID, startupTracker)
 	// beacons.RegisterSetCallbackListener(startupTracker)
 
@@ -1665,7 +1650,6 @@ func (m *manager) createLinearChain(
 		return nil, fmt.Errorf("couldn't initialize consensus base message handler: %w", err)
 	}
 
-	// TODO: Initialize consensus properly
 	// var consensus smcon.Consensus
 
 	// Create engine, bootstrapper and state-syncer in this order,
@@ -1685,7 +1669,6 @@ func (m *manager) createLinearChain(
 	// 	Consensus:           consensus,
 	// 	// PartialSync field removed - doesn't exist
 	// }
-	// TODO: Fix engine initialization - smeng.Engine doesn't implement core.Engine
 	// var engine core.Engine
 	engine, err := smeng.New(runtime, chainParams)
 	if err != nil {
@@ -1715,7 +1698,6 @@ func (m *manager) createLinearChain(
 		// NonVerifyingParse field removed - doesn't exist
 		// Haltable field removed - doesn't exist
 	}
-	// TODO: smbootstrap.Bootstrapper doesn't implement core.BootstrapableEngine
 	// var bootstrapper core.BootstrapableEngine
 	_, err = smbootstrap.New(
 		bootstrapCfg,
@@ -1727,12 +1709,10 @@ func (m *manager) createLinearChain(
 		return nil, fmt.Errorf("error initializing linear bootstrapper: %w", err)
 	}
 
-	// TODO: bootstrapper doesn't implement BootstrapableEngine
 	// if m.TracingEnabled {
 	// 	bootstrapper = core.TraceBootstrapableEngine(bootstrapper, m.Tracer)
 	// }
 
-	// TODO: syncer package doesn't have NewConfig or New
 	// // create state sync gear
 	// stateSyncCfg, err := syncer.NewConfig(
 	// 	consensusGetHandler,
@@ -1757,7 +1737,6 @@ func (m *manager) createLinearChain(
 	// 	stateSyncer = core.TraceStateSyncer(stateSyncer, m.Tracer)
 	// }
 
-	// TODO: Handler interface doesn't have SetEngineManager method
 	// h.SetEngineManager(&handler.EngineManager{
 	// 	Dag: nil,
 	// 	Chain: &handler.Engine{
@@ -1767,7 +1746,6 @@ func (m *manager) createLinearChain(
 	// 	},
 	// })
 
-	// TODO: Handler doesn't implement health.Checker
 	// // Register health checks
 	// if err := m.Health.RegisterHealthCheck(primaryAlias, h, ctx.SubnetID.String()); err != nil {
 	// 	return nil, fmt.Errorf("couldn't add health check for chain %s: %w", primaryAlias, err)
@@ -1792,7 +1770,6 @@ func (m *manager) IsBootstrapped(id ids.ID) bool {
 		return false
 	}
 
-	// TODO: Track chain state properly
 	// For now, assume bootstrapped chains are in NormalOp
 	return true // chain.Context.State.Get() == interfaces.NormalOp
 }

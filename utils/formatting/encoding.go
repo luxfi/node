@@ -130,7 +130,6 @@ func Decode(encoding Encoding, str string) ([]byte, error) {
 	switch {
 	case !encoding.valid():
 		return nil, errInvalidEncoding
-		// TODO: remove the empty string check and enforce the correct format.
 	case len(str) == 0:
 		return nil, nil
 	}

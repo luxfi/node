@@ -16,7 +16,6 @@ type manager struct {
 
 // NewManager returns manager of VM runtimes.
 //
-// TODO: If a runtime exits before the call to `manager.Stop`, it would be nice
 // to remove it from the current set.
 func NewManager() Manager {
 	return &manager{}

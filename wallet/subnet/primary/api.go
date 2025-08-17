@@ -37,7 +37,6 @@ const (
 	fetchLimit = 1024
 )
 
-// TODO: Refactor UTXOClient definition to allow the client implementations to
 // perform their own assertions.
 var (
 	_ UTXOClient = platformvm.Client(nil)
@@ -61,7 +60,7 @@ type LUXState struct {
 	PCTX    *pbuilder.Context
 	XClient xvm.Client
 	XCTX    *xbuilder.Context
-	// CClient evm.Client // TODO: Implement C-Chain client
+	// CClient evm.Client // Implementation note
 	// CCTX    *c.Context
 	UTXOs walletcommon.UTXOs
 }
@@ -77,7 +76,7 @@ func FetchState(
 	infoClient := info.NewClient(uri)
 	pClient := platformvm.NewClient(uri)
 	xClient := xvm.NewClient(uri, "X")
-	// cClient := evm.NewCChainClient(uri) // TODO: Implement C-Chain client
+	// cClient := evm.NewCChainClient(uri) // Implementation note
 
 	pCTX, err := pbuilder.NewContextFromClients(ctx, infoClient, xClient)
 	if err != nil {

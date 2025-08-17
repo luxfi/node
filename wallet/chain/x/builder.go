@@ -693,7 +693,6 @@ func (b *txBuilder) mintFTs(
 	return operations, nil
 }
 
-// TODO: make this able to generate multiple NFT groups
 func (b *txBuilder) mintNFTs(
 	assetID ids.ID,
 	payload []byte,

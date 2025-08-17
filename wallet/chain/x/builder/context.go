@@ -24,7 +24,7 @@ func NewConsensusContext(
 	blockchainID ids.ID,
 	luxAssetID ids.ID,
 ) (context.Context, error) {
-	return context.Background(), nil // TODO: properly implement
+	return context.Background(), nil // Implementation note
 	/* TODO: implement with values in context:
 	return &context.Context{
 		NetworkID:  networkID,

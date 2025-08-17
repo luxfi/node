@@ -261,7 +261,6 @@ func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndSubne
 
 func addSubnetValidator(vm *VM, data *validatorInputData, subnetID ids.ID) (*state.Staker, error) {
 	// Create a nil shared memory for testing
-	// TODO: Fix this to use proper shared memory adapter
 	factory := txstest.NewWalletFactory(vm.ctx, nil, &vm.Config, vm.state)
 	builder, signer := factory.NewWallet(keys[0], keys[1])
 	utx, err := builder.NewAddSubnetValidatorTx(
@@ -298,7 +297,6 @@ func addPrimaryValidatorWithBLSKey(vm *VM, data *validatorInputData) (*state.Sta
 	}
 
 	// Create a nil shared memory for testing
-	// TODO: Fix this to use proper shared memory adapter
 	factory := txstest.NewWalletFactory(vm.ctx, nil, &vm.Config, vm.state)
 	builder, txSigner := factory.NewWallet(keys[0], keys[1])
 	utx, err := builder.NewAddPermissionlessValidatorTx(
@@ -399,7 +397,6 @@ func terminatePrimaryValidator(vm *VM, validator *state.Staker) error {
 		return fmt.Errorf("failed verifying block: %w", err)
 	}
 
-	// TODO: Fix OracleBlock - type doesn't exist
 	// For now, skip oracle block processing
 	options := []chain.Block{}
 	if len(options) == 0 {
@@ -686,7 +683,6 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 
 	_ = consensustest.Context(t, consensustest.PChainID) // ctx
 
-	// TODO: Fix test context setup - ctx is context.Context not test context
 	// m := atomic.NewMemory(atomicDB)
 	// ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
 	
@@ -736,7 +732,6 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	// Note: following Banff activation, block acceptance will move
 	// chain time ahead
 	// Create a nil shared memory for testing
-	// TODO: Fix this to use proper shared memory adapter
 	factory := txstest.NewWalletFactory(vm.ctx, nil, &vm.Config, vm.state)
 	builder, signer := factory.NewWallet(keys[len(keys)-1])
 	utx, err := builder.NewCreateSubnetTx(

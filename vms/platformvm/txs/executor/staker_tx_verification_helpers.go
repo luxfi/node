@@ -149,7 +149,6 @@ func GetMaxWeight(
 		return 0, err
 	}
 
-	// TODO: We can optimize this by moving the current total weight to be
 	//       stored in the validator state.
 	//
 	// Calculate the current total weight on this validator, including the

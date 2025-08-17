@@ -142,6 +142,5 @@ func formatAddress(ctx context.Context, addr ids.ShortID) (string, error) {
 	}
 
 	// Without BCLookup in context, just return the address string
-	// TODO: Get BCLookup from VM struct if formatting is needed
 	return addr.String(), nil
 }

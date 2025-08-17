@@ -704,7 +704,6 @@ func (b *builder) mintFTs(
 	return operations, nil
 }
 
-// TODO: make this able to generate multiple NFT groups
 func (b *builder) mintNFTs(
 	assetID ids.ID,
 	payload []byte,

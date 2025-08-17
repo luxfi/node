@@ -22,7 +22,6 @@ func TestFPCEngine(t *testing.T) {
 	err = engine.Propose(txID)
 	require.NoError(t, err)
 
-	// TODO: Enable when flare API is stable
 	// Simulate votes for fast path (need 2f+1 = 7 votes)
 	// for i := 0; i < 7; i++ {
 	// 	engine.flare.Propose(txID)
@@ -47,7 +46,6 @@ func TestVerkleIntegration(t *testing.T) {
 	engine := NewFPCEngine(3)
 	require.NotNil(t, engine)
 
-	// TODO: Re-enable when Verkle witness validation is implemented
 	// Test witness validation
 	// payload := make([]byte, 1000)
 	// payload[0] = 0x01 // varint length indicator
@@ -73,7 +71,6 @@ func BenchmarkFPCEngine(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		txID := ids.ID([32]byte{byte(i), byte(i >> 8)})
 
-		// TODO: Enable when flare API is stable
 		// Fast path proposal
 		// for j := 0; j < 7; j++ {
 		// 	engine.flare.Propose(txID)

@@ -84,7 +84,6 @@ func TestGatherer_Gather(t *testing.T) {
 
 	// Test successful gathering.
 	//
-	// TODO: This results in resetting the timer, is this expected behavior?
 	require.NoError(t, testutil.GatherAndCompare(
 		gatherer,
 		strings.NewReader(expectedMetrics),

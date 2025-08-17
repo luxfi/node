@@ -50,7 +50,6 @@ func TestWaitForReady(t *testing.T) {
 	_, err = Dial(listener.Addr().String())
 	require.NoError(err)
 
-	// TODO: Fix test - db client not available
 	// require.NoError(db.Put([]byte("foo"), []byte("bar")))
 
 	noWaitListener, err := NewListener()
@@ -67,7 +66,6 @@ func TestWaitForReady(t *testing.T) {
 	)
 	require.NoError(err)
 
-	// TODO: Fix test - db client not available
 	// err = db.Put([]byte("foo"), []byte("bar"))
 	// status, ok := status.FromError(err)
 	// require.True(ok)
@@ -75,8 +73,6 @@ func TestWaitForReady(t *testing.T) {
 }
 
 func TestWaitForReadyCallOption(t *testing.T) {
-	// TODO: Fix test - pb package not available
-	t.Skip("Test needs pb package to be fixed")
 
 	// require := require.New(t)
 
