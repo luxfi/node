@@ -47,7 +47,7 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 
 	blkID := blk.ID()
 
-	s := state.NewMockChain(ctrl)
+	s := state.NewMockState(ctrl)
 	s.EXPECT().Checksum().Return(ids.Empty).Times(1)
 
 	acceptor := &acceptor{
@@ -75,12 +75,37 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 	require.True(exists)
 }
 
+// sharedMemoryAdapter wraps atomic.MockSharedMemory to implement SharedMemory interface
+type sharedMemoryAdapter struct {
+	*atomic.MockSharedMemory
+}
+
+func (s *sharedMemoryAdapter) Apply(requests map[ids.ID]interface{}, batch ...interface{}) error {
+	// Convert interface{} to the expected types
+	atomicRequests := make(map[ids.ID]*atomic.Requests)
+	for id, req := range requests {
+		if atomicReq, ok := req.(*atomic.Requests); ok {
+			atomicRequests[id] = atomicReq
+		}
+	}
+	
+	var dbBatches []database.Batch
+	for _, b := range batch {
+		if dbBatch, ok := b.(database.Batch); ok {
+			dbBatches = append(dbBatches, dbBatch)
+		}
+	}
+	
+	return s.MockSharedMemory.Apply(atomicRequests, dbBatches...)
+}
+
 func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	s := state.NewMockChain(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	s := state.NewMockState(ctrl)
+	mockSharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := &sharedMemoryAdapter{MockSharedMemory: mockSharedMemory}
 
 	parentID := ids.GenerateTestID()
 	acceptor := &acceptor{
@@ -156,7 +181,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	s := state.NewMockChain(ctrl)
+	s := state.NewMockState(ctrl)
 	sharedMemory := atomic.NewMockSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
@@ -244,7 +269,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	s := state.NewMockChain(ctrl)
+	s := state.NewMockState(ctrl)
 	sharedMemory := atomic.NewMockSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
@@ -352,7 +377,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	s := state.NewMockChain(ctrl)
+	s := state.NewMockState(ctrl)
 	sharedMemory := atomic.NewMockSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()

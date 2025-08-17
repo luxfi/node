@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"sync"
+	"time"
 
 	// "google.golang.org/protobuf/proto" // Commented out until L1 validators are implemented
 
@@ -16,7 +17,6 @@ import (
 	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/node/proto/pb/platformvm"
-	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
@@ -45,11 +45,26 @@ const (
 	ErrWrongWeight
 )
 
+// L1ValidatorInfo contains the minimal fields needed from state.L1Validator
+type L1ValidatorInfo interface {
+	GetMinNonce() uint64
+	GetWeight() uint64
+}
+
+// StateReader defines the minimal interface needed from state.Chain
+// to avoid import cycles
+type StateReader interface {
+	GetL1Validator(validationID ids.ID) (L1ValidatorInfo, error)
+	GetTimestamp() time.Time
+	// GetSubnetToL1Conversion(subnetID ids.ID) (interface{}, error) // Uncommented when needed
+	// HasExpiry(entry interface{}) (bool, error) // Uncommented when needed
+}
+
 var _ lp118.Verifier = (*signatureRequestVerifier)(nil)
 
 type signatureRequestVerifier struct {
 	stateLock sync.Locker
-	state     state.Chain
+	state     StateReader
 }
 
 func (s signatureRequestVerifier) Verify(
@@ -352,15 +367,15 @@ func (s signatureRequestVerifier) verifyL1ValidatorWeight(
 			Code:    common.ErrUndefined.Code,
 			Message: "failed to get L1 validator: " + err.Error(),
 		}
-	case msg.Nonce+1 != l1Validator.MinNonce:
+	case msg.Nonce+1 != l1Validator.GetMinNonce():
 		return &common.AppError{
 			Code:    ErrWrongNonce,
-			Message: fmt.Sprintf("provided nonce %d != expected nonce (%d - 1)", msg.Nonce, l1Validator.MinNonce),
+			Message: fmt.Sprintf("provided nonce %d != expected nonce (%d - 1)", msg.Nonce, l1Validator.GetMinNonce()),
 		}
-	case msg.Weight != l1Validator.Weight:
+	case msg.Weight != l1Validator.GetWeight():
 		return &common.AppError{
 			Code:    ErrWrongWeight,
-			Message: fmt.Sprintf("provided weight %d != expected weight %d", msg.Weight, l1Validator.Weight),
+			Message: fmt.Sprintf("provided weight %d != expected weight %d", msg.Weight, l1Validator.GetWeight()),
 		}
 	default:
 		return nil // The nonce and weight are correct

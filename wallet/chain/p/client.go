@@ -42,7 +42,7 @@ func (c *Client) IssueTx(
 		return err
 	}
 
-	_ = time.Since(startTime) // issuanceDuration could be tracked if needed
+	issuanceDuration := time.Since(startTime)
 	if f := ops.PostIssuanceFunc(); f != nil {
 		f(txID)
 	}
@@ -62,6 +62,7 @@ func (c *Client) IssueTx(
 		f(common.ConfirmationReceipt{
 			ChainAlias:           builder.Alias,
 			TxID:                 txID,
+			IssuanceDuration:     issuanceDuration,
 			TotalDuration:        totalDuration,
 			ConfirmationDuration: confirmationDuration,
 		})

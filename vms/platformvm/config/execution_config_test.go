@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/luxfi/node/vms/platformvm/network"
 )
 
 // Requires all values in a struct to be initialized
@@ -62,24 +60,10 @@ func TestExecutionConfigUnmarshal(t *testing.T) {
 		require := require.New(t)
 
 		expected := &ExecutionConfig{
-			Network: network.Config{
-				MaxValidatorSetStaleness:                    1,
-				TargetGossipSize:                            2,
-				PushGossipPercentStake:                      .3,
-				PushGossipNumValidators:                     4,
-				PushGossipNumPeers:                          5,
-				PushRegossipNumValidators:                   6,
-				PushRegossipNumPeers:                        7,
-				PushGossipDiscardedCacheSize:                8,
-				PushGossipMaxRegossipFrequency:              9,
-				PushGossipFrequency:                         10,
-				PullGossipPollSize:                          11,
-				PullGossipFrequency:                         12,
-				PullGossipThrottlingPeriod:                  13,
-				PullGossipThrottlingLimit:                   14,
-				ExpectedBloomFilterElements:                 15,
-				ExpectedBloomFilterFalsePositiveProbability: 16,
-				MaxBloomFilterFalsePositiveProbability:      17,
+			Network: NetworkConfig{
+				MaxGossipSize:          15,
+				GossipAcceptedFrontier: 5 * time.Second,
+				GossipAccepted:         3 * time.Second,
 			},
 			BlockCacheSize:               1,
 			TxCacheSize:                  2,

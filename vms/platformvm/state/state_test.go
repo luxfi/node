@@ -44,6 +44,8 @@ import (
 
 	"github.com/luxfi/node/vms/platformvm/genesis"
 
+	"github.com/luxfi/node/vms/platformvm/metrics"
+
 	"github.com/luxfi/node/vms/platformvm/reward"
 
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -798,12 +800,12 @@ func newStateFromDB(require *require.Assertions, db database.Database) *state {
 	execCfg, _ := config.GetExecutionConfig(nil)
 	state, err := newState(
 		db,
-		prometheus.NewRegistry(),
+		metrics.Noop,
 		&config.Config{
 			Validators: validators.NewManager(),
 		},
 		execCfg,
-		&context.Context{},
+		context.Background(),
 		prometheus.NewRegistry(),
 		reward.NewCalculator(reward.Config{
 			MaxConsumptionRate: .12 * reward.PercentDenominator,

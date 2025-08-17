@@ -67,15 +67,15 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 	}
 	addSubnetValidatorTx = &AddSubnetValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    ctx.NetworkID,
-			BlockchainID: ctx.ChainID,
+			NetworkID:    consensustest.TestNetworkID,
+			BlockchainID: consensustest.PChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}},
 		SubnetValidator: SubnetValidator{
 			Validator: Validator{
-				NodeID: ctx.NodeID,
+				NodeID: consensustest.TestNodeID,
 				Start:  uint64(clk.Time().Unix()),
 				End:    uint64(clk.Time().Add(time.Hour).Unix()),
 				Wght:   validatorWeight,
@@ -178,15 +178,15 @@ func TestAddSubnetValidatorMarshal(t *testing.T) {
 	}
 	addSubnetValidatorTx = &AddSubnetValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    ctx.NetworkID,
-			BlockchainID: ctx.ChainID,
+			NetworkID:    consensustest.TestNetworkID,
+			BlockchainID: consensustest.PChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}},
 		SubnetValidator: SubnetValidator{
 			Validator: Validator{
-				NodeID: ctx.NodeID,
+				NodeID: consensustest.TestNodeID,
 				Start:  uint64(clk.Time().Unix()),
 				End:    uint64(clk.Time().Add(time.Hour).Unix()),
 				Wght:   validatorWeight,

@@ -124,6 +124,16 @@ type L1Validator struct {
 	EndAccumulatedFee uint64 `serialize:"true"`
 }
 
+// GetMinNonce returns the MinNonce of the validator
+func (v L1Validator) GetMinNonce() uint64 {
+	return v.MinNonce
+}
+
+// GetWeight returns the Weight of the validator
+func (v L1Validator) GetWeight() uint64 {
+	return v.Weight
+}
+
 func (v L1Validator) Less(o L1Validator) bool {
 	return v.Compare(o) == -1
 }

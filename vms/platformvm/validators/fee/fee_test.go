@@ -533,18 +533,16 @@ func FuzzStateSecondsRemaining(f *testing.F) {
 // unoptimizedCostOf is a naive implementation of CostOf that is used for
 // differential fuzzing.
 func (s State) unoptimizedCostOf(c Config, seconds uint64) uint64 {
-	var (
-		cost uint64
-		err  error
-	)
+	var cost uint64
 	for i := uint64(0); i < seconds; i++ {
 		s = s.AdvanceTime(c.Target, 1)
 
 		price := gas.CalculatePrice(c.MinPrice, s.Excess, c.ExcessConversionConstant)
-		cost, err = safemath.Add(cost, uint64(price))
-		if err != nil {
+		priceUint := uint64(price)
+		if cost > math.MaxUint64-priceUint {
 			return math.MaxUint64
 		}
+		cost += priceUint
 	}
 	return cost
 }

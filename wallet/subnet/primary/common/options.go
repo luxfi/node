@@ -21,6 +21,18 @@ const defaultPollFrequency = 100 * time.Millisecond
 // has been issued with the ID of the issued transaction.
 type PostIssuanceFunc func(ids.ID)
 
+// ConfirmationReceipt contains information about a confirmed transaction
+type ConfirmationReceipt struct {
+	ChainAlias           string
+	TxID                 ids.ID
+	IssuanceDuration     time.Duration
+	ConfirmationDuration time.Duration
+	TotalDuration        time.Duration
+}
+
+// ConfirmationHandler is called when a transaction is confirmed
+type ConfirmationHandler func(ConfirmationReceipt)
+
 type Option func(*Options)
 
 type Options struct {
@@ -49,6 +61,7 @@ type Options struct {
 	pollFrequency    time.Duration
 
 	postIssuanceFunc PostIssuanceFunc
+	confirmationHandler ConfirmationHandler
 }
 
 func NewOptions(ops []Option) *Options {
@@ -136,6 +149,10 @@ func (o *Options) PostIssuanceFunc() PostIssuanceFunc {
 	return o.postIssuanceFunc
 }
 
+func (o *Options) ConfirmationHandler() ConfirmationHandler {
+	return o.confirmationHandler
+}
+
 func WithContext(ctx context.Context) Option {
 	return func(o *Options) {
 		o.ctx = ctx
@@ -203,5 +220,11 @@ func WithPollFrequency(pollFrequency time.Duration) Option {
 func WithPostIssuanceFunc(f PostIssuanceFunc) Option {
 	return func(o *Options) {
 		o.postIssuanceFunc = f
+	}
+}
+
+func WithConfirmationHandler(f ConfirmationHandler) Option {
+	return func(o *Options) {
+		o.confirmationHandler = f
 	}
 }

@@ -170,3 +170,59 @@ func TestUnwrapOutput(t *testing.T) {
 		})
 	}
 }
+
+// Helper types and functions for tests
+
+type utxosByLocktime struct {
+	unlocked []*lux.UTXO
+	locked   []*lux.UTXO
+}
+
+func splitByLocktime(utxos []*lux.UTXO, unlockedTime uint64) utxosByLocktime {
+	result := utxosByLocktime{}
+	for _, utxo := range utxos {
+		if out, ok := utxo.Out.(*secp256k1fx.TransferOutput); ok {
+			if out.Locktime < unlockedTime {
+				result.unlocked = append(result.unlocked, utxo)
+			} else {
+				result.locked = append(result.locked, utxo)
+			}
+		} else if stakeableOut, ok := utxo.Out.(*stakeable.LockOut); ok {
+			if innerOut, ok := stakeableOut.TransferableOut.(*secp256k1fx.TransferOutput); ok {
+				if innerOut.Locktime < unlockedTime || stakeableOut.Locktime < unlockedTime {
+					result.unlocked = append(result.unlocked, utxo)
+				} else {
+					result.locked = append(result.locked, utxo)
+				}
+			}
+		}
+	}
+	return result
+}
+
+type utxosByAssetID struct {
+	requested []*lux.UTXO
+	other     []*lux.UTXO
+}
+
+func splitByAssetID(utxos []*lux.UTXO, assetID ids.ID) utxosByAssetID {
+	result := utxosByAssetID{}
+	for _, utxo := range utxos {
+		if utxo.AssetID() == assetID {
+			result.requested = append(result.requested, utxo)
+		} else {
+			result.other = append(result.other, utxo)
+		}
+	}
+	return result
+}
+
+func unwrapOutput(output lux.TransferableOut) (lux.TransferableOut, uint64, error) {
+	if stakeableOut, ok := output.(*stakeable.LockOut); ok {
+		return stakeableOut.TransferableOut, stakeableOut.Locktime, nil
+	}
+	if transferOut, ok := output.(*secp256k1fx.TransferOutput); ok {
+		return transferOut, transferOut.Locktime, nil
+	}
+	return output, 0, nil
+}
