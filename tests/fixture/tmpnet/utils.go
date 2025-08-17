@@ -26,8 +26,17 @@ var (
 
 // MetricsLinkForNetwork returns a metrics link for the given network UUID and time range
 func MetricsLinkForNetwork(networkUUID, startTime, endTime string) string {
-	// TODO: Implement actual metrics link generation
-	return fmt.Sprintf("http://metrics.example.com/?network=%s&start=%s&end=%s", networkUUID, startTime, endTime)
+	// Generate Prometheus metrics dashboard link for the specified network and time range
+	prometheusURL := GetEnvWithDefault("PROMETHEUS_URL", "https://prometheus-poc.lux-dev.network")
+	// Use Grafana explore URL format if Grafana is configured
+	grafanaURL := GetEnvWithDefault("GRAFANA_URL", "")
+	if grafanaURL != "" {
+		return fmt.Sprintf("%s/explore?orgId=1&left=[\"now-%s\",\"now-%s\",\"Prometheus\",{\"expr\":\"up{network_uuid=\\\"%s\\\"}\"}]", 
+			grafanaURL, startTime, endTime, networkUUID)
+	}
+	// Fall back to Prometheus graph URL
+	return fmt.Sprintf("%s/graph?g0.expr=up%%7Bnetwork_uuid%%3D%%22%s%%22%%7D&g0.tab=0&g0.range_input=%s", 
+		prometheusURL, networkUUID, startTime)
 }
 
 // WaitForHealthy blocks until Node.IsHealthy returns true or an error (including context timeout) is observed.
