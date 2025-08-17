@@ -380,7 +380,7 @@ func defaultClock(f fork) *consensusmockable.Clock {
 
 type fxVMInt struct {
 	registry codec.Registry
-	clk      *consensusmockable.Clock
+	clk      *mockable.Clock
 	log      log.Logger
 }
 
@@ -388,7 +388,7 @@ func (fvi *fxVMInt) CodecRegistry() codec.Registry {
 	return fvi.registry
 }
 
-func (fvi *fxVMInt) Clock() *consensusmockable.Clock {
+func (fvi *fxVMInt) Clock() *mockable.Clock {
 	return fvi.clk
 }
 
@@ -397,9 +397,13 @@ func (fvi *fxVMInt) Logger() log.Logger {
 }
 
 func defaultFx(clk *consensusmockable.Clock, log log.Logger, isBootstrapped bool) fx.Fx {
+	// Convert consensus clock to utils clock
+	utilsClock := &mockable.Clock{}
+	utilsClock.Set(clk.Time())
+	
 	fxVMInt := &fxVMInt{
 		registry: linearcodec.NewDefault(),
-		clk:      clk,
+		clk:      utilsClock,
 		log:      log,
 	}
 	res := &secp256k1fx.Fx{}
