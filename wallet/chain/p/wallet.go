@@ -260,7 +260,7 @@ func NewWallet(
 	client platformvm.Client,
 	backend Backend,
 ) Wallet {
-	return &wallet{
+	return &walletImpl{
 		Backend: backend,
 		builder: builder,
 		signer:  signer,
@@ -268,22 +268,22 @@ func NewWallet(
 	}
 }
 
-type wallet struct {
+type walletImpl struct {
 	Backend
 	builder builder.Builder
 	signer  walletsigner.Signer
 	client  platformvm.Client
 }
 
-func (w *wallet) Builder() builder.Builder {
+func (w *walletImpl) Builder() builder.Builder {
 	return w.builder
 }
 
-func (w *wallet) Signer() walletsigner.Signer {
+func (w *walletImpl) Signer() walletsigner.Signer {
 	return w.signer
 }
 
-func (w *wallet) IssueBaseTx(
+func (w *walletImpl) IssueBaseTx(
 	outputs []*lux.TransferableOutput,
 	options ...common.Option,
 ) (*txs.Tx, error) {
@@ -294,7 +294,7 @@ func (w *wallet) IssueBaseTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueAddValidatorTx(
+func (w *walletImpl) IssueAddValidatorTx(
 	vdr *txs.Validator,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	shares uint32,
@@ -307,7 +307,7 @@ func (w *wallet) IssueAddValidatorTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueAddSubnetValidatorTx(
+func (w *walletImpl) IssueAddSubnetValidatorTx(
 	vdr *txs.SubnetValidator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
@@ -318,7 +318,7 @@ func (w *wallet) IssueAddSubnetValidatorTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueRemoveSubnetValidatorTx(
+func (w *walletImpl) IssueRemoveSubnetValidatorTx(
 	nodeID ids.NodeID,
 	subnetID ids.ID,
 	options ...common.Option,
@@ -330,7 +330,7 @@ func (w *wallet) IssueRemoveSubnetValidatorTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueAddDelegatorTx(
+func (w *walletImpl) IssueAddDelegatorTx(
 	vdr *txs.Validator,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,
@@ -342,7 +342,7 @@ func (w *wallet) IssueAddDelegatorTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueCreateChainTx(
+func (w *walletImpl) IssueCreateChainTx(
 	subnetID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
@@ -357,7 +357,7 @@ func (w *wallet) IssueCreateChainTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueCreateSubnetTx(
+func (w *walletImpl) IssueCreateSubnetTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.Tx, error) {
@@ -368,7 +368,7 @@ func (w *wallet) IssueCreateSubnetTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueTransferSubnetOwnershipTx(
+func (w *walletImpl) IssueTransferSubnetOwnershipTx(
 	subnetID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
@@ -380,7 +380,7 @@ func (w *wallet) IssueTransferSubnetOwnershipTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueImportTx(
+func (w *walletImpl) IssueImportTx(
 	sourceChainID ids.ID,
 	to *secp256k1fx.OutputOwners,
 	options ...common.Option,
@@ -392,7 +392,7 @@ func (w *wallet) IssueImportTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueExportTx(
+func (w *walletImpl) IssueExportTx(
 	chainID ids.ID,
 	outputs []*lux.TransferableOutput,
 	options ...common.Option,
@@ -404,7 +404,7 @@ func (w *wallet) IssueExportTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueTransformSubnetTx(
+func (w *walletImpl) IssueTransformSubnetTx(
 	subnetID ids.ID,
 	assetID ids.ID,
 	initialSupply uint64,
@@ -444,7 +444,7 @@ func (w *wallet) IssueTransformSubnetTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueAddPermissionlessValidatorTx(
+func (w *walletImpl) IssueAddPermissionlessValidatorTx(
 	vdr *txs.SubnetValidator,
 	signer vmsigner.Signer,
 	assetID ids.ID,
@@ -468,7 +468,7 @@ func (w *wallet) IssueAddPermissionlessValidatorTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueAddPermissionlessDelegatorTx(
+func (w *walletImpl) IssueAddPermissionlessDelegatorTx(
 	vdr *txs.SubnetValidator,
 	assetID ids.ID,
 	rewardsOwner *secp256k1fx.OutputOwners,
@@ -486,7 +486,7 @@ func (w *wallet) IssueAddPermissionlessDelegatorTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueUnsignedTx(
+func (w *walletImpl) IssueUnsignedTx(
 	utx txs.UnsignedTx,
 	options ...common.Option,
 ) (*txs.Tx, error) {
@@ -500,7 +500,7 @@ func (w *wallet) IssueUnsignedTx(
 	return tx, w.IssueTx(tx, options...)
 }
 
-func (w *wallet) IssueTx(
+func (w *walletImpl) IssueTx(
 	tx *txs.Tx,
 	options ...common.Option,
 ) error {

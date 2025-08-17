@@ -4,7 +4,7 @@
 package metric
 
 import (
-	"github.com/luxfi/metric"
+	metric "github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

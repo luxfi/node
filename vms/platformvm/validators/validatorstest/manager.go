@@ -20,7 +20,7 @@ func (manager) GetMinimumHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
-func (manager) GetCurrentHeight() (uint64, error) {
+func (manager) GetCurrentHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
