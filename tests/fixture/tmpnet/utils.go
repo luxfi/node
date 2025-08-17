@@ -20,9 +20,6 @@ const (
 var (
 	ErrNotRunning = errors.New("not running")
 	
-	// NetworkShutdownDelay is the delay before shutting down a network
-	NetworkShutdownDelay = 2 * time.Second
-	
 	// MetricsAvailableMessage is the message logged when metrics are available
 	MetricsAvailableMessage = "Metrics available"
 )
