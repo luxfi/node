@@ -4,8 +4,21 @@
 
 ---
 
+[![Build Status](https://github.com/luxfi/node/actions/workflows/ci.yml/badge.svg)](https://github.com/luxfi/node/actions)
+[![Go Version](https://img.shields.io/badge/go-1.21.12-blue.svg)](https://golang.org/)
+[![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
+
 Node implementation for the [Lux](https://lux.network) network -
 a blockchains platform with high throughput, and blazing fast transactions.
+
+## Features
+
+- **High Performance**: Optimized for throughput with sub-second finality
+- **Multiple Consensus**: Support for Snowball/Avalanche consensus
+- **EVM Compatible**: Full Ethereum Virtual Machine support on C-Chain  
+- **Multi-Chain Architecture**: Platform (P), Exchange (X), and Contract (C) chains
+- **Custom Subnets**: Create custom blockchain networks with configurable VMs
+- **Cross-Chain Transfers**: Native cross-chain asset transfers between chains
 
 ## Installation
 
