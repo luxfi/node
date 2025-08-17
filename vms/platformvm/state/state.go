@@ -610,6 +610,8 @@ func newState(
 
 		currentStakers: newBaseStakers(),
 		pendingStakers: newBaseStakers(),
+		
+		l1Validators: make(map[ids.ID]L1Validator),
 
 		validatorsDB:                 validatorsDB,
 		currentValidatorsDB:          currentValidatorsDB,
@@ -2452,24 +2454,42 @@ func (s *state) ReindexBlocks(lock sync.Locker, log log.Logger) error {
 
 // GetL1Validator returns an L1 validator by its validation ID
 func (s *state) GetL1Validator(validationID ids.ID) (L1Validator, error) {
-	// TODO: Implement L1 validator storage
+	// Check in-memory storage
+	if validator, ok := s.l1Validators[validationID]; ok {
+		return validator, nil
+	}
+	// TODO: Check persistent storage when implemented
 	return L1Validator{}, database.ErrNotFound
 }
 
 // HasL1Validator checks if an L1 validator exists for the given subnet and node
 func (s *state) HasL1Validator(subnetID ids.ID, nodeID ids.NodeID) (bool, error) {
-	// TODO: Implement L1 validator existence check
+	// Check all L1 validators for matching subnet and node
+	for _, validator := range s.l1Validators {
+		if validator.SubnetID == subnetID && validator.NodeID == nodeID {
+			return true, nil
+		}
+	}
+	// TODO: Check persistent storage when implemented
 	return false, nil
 }
 
 // WeightOfL1Validators returns the total weight of L1 validators for a subnet
 func (s *state) WeightOfL1Validators(subnetID ids.ID) (uint64, error) {
-	// TODO: Implement L1 validator weight calculation
-	return 0, nil
+	var totalWeight uint64
+	for _, validator := range s.l1Validators {
+		if validator.SubnetID == subnetID {
+			totalWeight += validator.Weight
+		}
+	}
+	// TODO: Check persistent storage when implemented
+	return totalWeight, nil
 }
 
 // PutL1Validator stores an L1 validator
 func (s *state) PutL1Validator(validator L1Validator) error {
-	// TODO: Implement L1 validator storage
+	// Store in memory
+	s.l1Validators[validator.ValidationID] = validator
+	// TODO: Store persistently when implemented
 	return nil
 }
