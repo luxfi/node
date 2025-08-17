@@ -4,6 +4,10 @@
 package e2e
 
 import (
+	"context"
+
+	"github.com/stretchr/testify/require"
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
@@ -24,12 +28,15 @@ func GetEnv(tc tests.TestContext) *TestEnvironment {
 
 // NewWallet creates a new wallet for testing
 func NewWallet(tc tests.TestContext, keychain *secp256k1fx.Keychain, uri tmpnet.NodeURI) *primary.Wallet {
-	wallet, err := primary.MakeWallet(tc.GetDefaultContextForTest(), &primary.WalletConfig{
-		URI:         string(uri),
+	ctx := context.Background()
+	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
+		URI:         uri.URI,
 		LUXKeychain: keychain,
 		EthKeychain: keychain,
 	})
-	tc.NoError(err, "Failed to create wallet")
+	if err != nil {
+		tc.Log().Fatal("Failed to create wallet", err)
+	}
 	return &wallet
 }
 
