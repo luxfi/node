@@ -126,3 +126,19 @@ func (b *backendVisitor) baseTx(tx *txs.BaseTx) error {
 		tx.InputIDs(),
 	)
 }
+
+func (b *backendVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
+
+func (b *backendVisitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
+
+func (b *backendVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
+
+func (b *backendVisitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
+	return b.baseTx(&tx.BaseTx)
+}

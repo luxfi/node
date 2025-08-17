@@ -16,7 +16,7 @@ import (
 var _ wallet.Client = (*Client)(nil)
 
 func NewClient(
-	c *platformvm.Client,
+	c platformvm.Client,
 	b wallet.Backend,
 ) *Client {
 	return &Client{
@@ -26,7 +26,7 @@ func NewClient(
 }
 
 type Client struct {
-	client  *platformvm.Client
+	client  platformvm.Client
 	backend wallet.Backend
 }
 
@@ -42,13 +42,9 @@ func (c *Client) IssueTx(
 		return err
 	}
 
-	issuanceDuration := time.Since(startTime)
-	if f := ops.IssuanceHandler(); f != nil {
-		f(common.IssuanceReceipt{
-			ChainAlias: builder.Alias,
-			TxID:       txID,
-			Duration:   issuanceDuration,
-		})
+	_ = time.Since(startTime) // issuanceDuration could be tracked if needed
+	if f := ops.PostIssuanceFunc(); f != nil {
+		f(txID)
 	}
 
 	if ops.AssumeDecided() {

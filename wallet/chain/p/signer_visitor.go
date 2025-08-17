@@ -12,6 +12,7 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/ledger-lux-go/keychain"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/lux"
@@ -350,4 +351,40 @@ func sign(tx *txs.Tx, signHash bool, txSigners [][]keychain.Signer) error {
 	}
 	tx.SetBytes(unsignedBytes, signedBytes)
 	return nil
+}
+
+// DisableL1ValidatorTx signs a DisableL1ValidatorTx
+func (s *signerVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
+	txSigners, err := s.getSigners(constants.PrimaryNetworkID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	return sign(s.tx, false, txSigners)
+}
+
+// IncreaseL1ValidatorBalanceTx signs an IncreaseL1ValidatorBalanceTx
+func (s *signerVisitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
+	txSigners, err := s.getSigners(constants.PrimaryNetworkID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	return sign(s.tx, false, txSigners)
+}
+
+// RegisterL1ValidatorTx signs a RegisterL1ValidatorTx
+func (s *signerVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
+	txSigners, err := s.getSigners(constants.PrimaryNetworkID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	return sign(s.tx, false, txSigners)
+}
+
+// SetL1ValidatorWeightTx signs a SetL1ValidatorWeightTx
+func (s *signerVisitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
+	txSigners, err := s.getSigners(constants.PrimaryNetworkID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	return sign(s.tx, false, txSigners)
 }

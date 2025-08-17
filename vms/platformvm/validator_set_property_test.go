@@ -20,10 +20,12 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/core"
+	linearblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
@@ -400,9 +402,9 @@ func terminatePrimaryValidator(vm *VM, validator *state.Staker) error {
 	// TODO: Fix OracleBlock - type doesn't exist
 	// For now, skip oracle block processing
 	options := []chain.Block{}
-	err := error(nil)
-	if err != nil {
-		return fmt.Errorf("failed retrieving options: %w", err)
+	if len(options) == 0 {
+		// No oracle options to process
+		_ = options // Mark as intentionally unused
 	}
 
 	commit := options[0].(*blockexecutor.Block)
@@ -680,7 +682,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 
 	baseDB := memdb.New()
 	chainDB := prefixdb.New([]byte{0}, baseDB)
-	atomicDB := prefixdb.New([]byte{1}, baseDB)
+	// atomicDB := prefixdb.New([]byte{1}, baseDB) // Currently unused due to context issues
 
 	ctx := consensustest.Context(t, consensustest.PChainID)
 
@@ -691,25 +693,35 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	// ctx.Lock.Lock()
 	// defer ctx.Lock.Unlock()
 	appSender := &core.SenderTest{
-		SendAppGossipF: func(context.Context, core.SendConfig, []byte) error {
+		SendAppGossipF: func(context.Context, []byte) error {
 			return nil
 		},
 	}
 
-	genesisBytes, err := buildCustomGenesis(ctx.LUXAssetID)
+	// Use a fixed asset ID for testing since ctx doesn't have LUXAssetID
+	luxAssetID := ids.GenerateTestID()
+	genesisBytes, err := buildCustomGenesis(luxAssetID)
 	if err != nil {
 		return nil, ids.Empty, err
 	}
 
+	// Create a mock DBManager
+	dbManager := &mockDBManager{db: chainDB}
+	// Create a message channel
+	toEngine := make(chan linearblock.Message, 1)
+	// Create AppSender adapter
+	appSenderAdapter := &appSenderAdapter{linearblock.AppSender(nil)}
+	
 	err = vm.Initialize(
 		context.Background(),
-		ctx,
-		chainDB,
+		nil, // ChainContext
+		dbManager,
 		genesisBytes,
-		nil,
-		nil,
-		nil,
-		appSender,
+		nil, // upgradeBytes
+		nil, // configBytes
+		toEngine,
+		nil, // fxs
+		appSenderAdapter,
 	)
 	if err != nil {
 		return nil, ids.Empty, err
@@ -834,4 +846,21 @@ func buildCustomGenesis(luxAssetID ids.ID) ([]byte, error) {
 	}
 
 	return genesisBytes, nil
+}
+
+// mockDBManager implements linearblock.DBManager
+type mockDBManager struct {
+	db database.Database
+}
+
+func (m *mockDBManager) Current() database.Database {
+	return m.db
+}
+
+func (m *mockDBManager) Get(version uint64) (database.Database, error) {
+	return m.db, nil
+}
+
+func (m *mockDBManager) Close() error {
+	return nil
 }

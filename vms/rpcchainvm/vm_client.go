@@ -90,7 +90,7 @@ type VMClient struct {
 	runtime         runtime.Stopper
 	pid             int
 	processTracker  resource.ProcessTracker
-	metricsGatherer metrics.MultiGatherer
+	metricsGatherer metric.MultiGatherer
 
 	messenger *messenger.Server
 	// keystore             *gkeystore.Server // Keystore removed
@@ -112,7 +112,7 @@ func NewClient(
 	runtime runtime.Stopper,
 	pid int,
 	processTracker resource.ProcessTracker,
-	metricsGatherer metrics.MultiGatherer,
+	metricsGatherer metric.MultiGatherer,
 ) *VMClient {
 	return &VMClient{
 		client:          vmpb.NewVMClient(clientConn),
@@ -155,7 +155,7 @@ func (vm *VMClient) Initialize(
 	}
 
 	// Register metrics
-	serverReg, err := metrics.MakeAndRegister(
+	serverReg, err := metric.MakeAndRegister(
 		vm.metricsGatherer,
 		primaryAlias,
 	)

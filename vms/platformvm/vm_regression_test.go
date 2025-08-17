@@ -52,10 +52,10 @@ import (
 func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	require := require.New(t)
 	vm, factory, _, _ := defaultVM(t, cortina)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
-	validatorStartTime := vm.clock.Time().Add(executor.SyncBound).Add(1 * time.Second)
+	validatorStartTime := vm.nodeClock.Time().Add(executor.SyncBound).Add(1 * time.Second)
 	validatorEndTime := validatorStartTime.Add(360 * 24 * time.Hour)
 
 	nodeID := ids.GenerateTestNodeID()
@@ -85,9 +85,9 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	require.NoError(err)
 
 	// trigger block creation
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addValidatorTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 
 	addValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
 	require.NoError(err)
@@ -129,9 +129,9 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	require.NoError(err)
 
 	// trigger block creation
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addFirstDelegatorTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 
 	addFirstDelegatorBlock, err := vm.Builder.BuildBlock(context.Background())
 	require.NoError(err)
@@ -175,9 +175,9 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	require.NoError(err)
 
 	// trigger block creation
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addSecondDelegatorTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 
 	addSecondDelegatorBlock, err := vm.Builder.BuildBlock(context.Background())
 	require.NoError(err)
@@ -211,10 +211,10 @@ func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	require.NoError(err)
 
 	// trigger block creation
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	err = vm.issueTxFromRPC(addThirdDelegatorTx)
 	require.ErrorIs(err, executor.ErrOverDelegated)
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 }
 
 func TestAddDelegatorTxHeapCorruption(t *testing.T) {
@@ -259,8 +259,8 @@ func TestAddDelegatorTxHeapCorruption(t *testing.T) {
 			vm, factory, _, _ := defaultVM(t, apricotPhase3)
 			vm.UpgradeConfig.ApricotPhase3Time = test.ap3Time
 
-			vm.ctx.Lock.Lock()
-			defer vm.ctx.Lock.Unlock()
+			vm.lock.Lock()
+			defer vm.lock.Unlock()
 
 			key, err := secp256k1.NewPrivateKey()
 			require.NoError(err)
@@ -293,9 +293,9 @@ func TestAddDelegatorTxHeapCorruption(t *testing.T) {
 			require.NoError(err)
 
 			// issue the add validator tx
-			vm.ctx.Lock.Unlock()
+			vm.lock.Unlock()
 			require.NoError(vm.issueTxFromRPC(addValidatorTx))
-			vm.ctx.Lock.Lock()
+			vm.lock.Lock()
 
 			// trigger block creation for the validator tx
 			addValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -326,9 +326,9 @@ func TestAddDelegatorTxHeapCorruption(t *testing.T) {
 			require.NoError(err)
 
 			// issue the first add delegator tx
-			vm.ctx.Lock.Unlock()
+			vm.lock.Unlock()
 			require.NoError(vm.issueTxFromRPC(addFirstDelegatorTx))
-			vm.ctx.Lock.Lock()
+			vm.lock.Lock()
 
 			// trigger block creation for the first add delegator tx
 			addFirstDelegatorBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -359,9 +359,9 @@ func TestAddDelegatorTxHeapCorruption(t *testing.T) {
 			require.NoError(err)
 
 			// issue the second add delegator tx
-			vm.ctx.Lock.Unlock()
+			vm.lock.Unlock()
 			require.NoError(vm.issueTxFromRPC(addSecondDelegatorTx))
-			vm.ctx.Lock.Lock()
+			vm.lock.Lock()
 
 			// trigger block creation for the second add delegator tx
 			addSecondDelegatorBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -392,9 +392,9 @@ func TestAddDelegatorTxHeapCorruption(t *testing.T) {
 			require.NoError(err)
 
 			// issue the third add delegator tx
-			vm.ctx.Lock.Unlock()
+			vm.lock.Unlock()
 			require.NoError(vm.issueTxFromRPC(addThirdDelegatorTx))
-			vm.ctx.Lock.Lock()
+			vm.lock.Lock()
 
 			// trigger block creation for the third add delegator tx
 			addThirdDelegatorBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -425,9 +425,9 @@ func TestAddDelegatorTxHeapCorruption(t *testing.T) {
 			require.NoError(err)
 
 			// issue the fourth add delegator tx
-			vm.ctx.Lock.Unlock()
+			vm.lock.Unlock()
 			require.NoError(vm.issueTxFromRPC(addFourthDelegatorTx))
-			vm.ctx.Lock.Lock()
+			vm.lock.Lock()
 
 			// trigger block creation for the fourth add delegator tx
 			addFourthDelegatorBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -597,8 +597,8 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 	require := require.New(t)
 
 	vm, factory, baseDB, mutableSharedMemory := defaultVM(t, cortina)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	nodeID := ids.GenerateTestNodeID()
 	newValidatorStartTime := vm.clock.Time().Add(executor.SyncBound).Add(1 * time.Second)
@@ -802,8 +802,8 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	require := require.New(t)
 
 	vm, factory, baseDB, mutableSharedMemory := defaultVM(t, cortina)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	vm.state.SetCurrentSupply(constants.PrimaryNetworkID, defaultRewardConfig.SupplyCap/2)
 
@@ -1120,8 +1120,8 @@ func TestValidatorSetAtCacheOverwriteRegression(t *testing.T) {
 	require := require.New(t)
 
 	vm, factory, _, _ := defaultVM(t, cortina)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	currentHeight, err := vm.GetCurrentHeight(context.Background())
 	require.NoError(err)
@@ -1262,8 +1262,8 @@ func TestAddDelegatorTxAddBeforeRemove(t *testing.T) {
 	delegator2Stake := defaultMaxValidatorStake - validatorStake
 
 	vm, factory, _, _ := defaultVM(t, cortina)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	key, err := secp256k1.NewPrivateKey()
 	require.NoError(err)
@@ -1296,9 +1296,9 @@ func TestAddDelegatorTxAddBeforeRemove(t *testing.T) {
 	require.NoError(err)
 
 	// issue the add validator tx
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addValidatorTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 
 	// trigger block creation for the validator tx
 	addValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -1329,9 +1329,9 @@ func TestAddDelegatorTxAddBeforeRemove(t *testing.T) {
 	require.NoError(err)
 
 	// issue the first add delegator tx
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addFirstDelegatorTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 
 	// trigger block creation for the first add delegator tx
 	addFirstDelegatorBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -1363,10 +1363,10 @@ func TestAddDelegatorTxAddBeforeRemove(t *testing.T) {
 
 	// attempting to issue the second add delegator tx should fail because the
 	// total stake weight would go over the limit.
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	err = vm.issueTxFromRPC(addSecondDelegatorTx)
 	require.ErrorIs(err, executor.ErrOverDelegated)
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 }
 
 func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionNotTracked(t *testing.T) {
@@ -1376,8 +1376,8 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionNotTracked(t
 	validatorEndTime := validatorStartTime.Add(360 * 24 * time.Hour)
 
 	vm, factory, _, _ := defaultVM(t, cortina)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	key, err := secp256k1.NewPrivateKey()
 	require.NoError(err)
@@ -1408,9 +1408,9 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionNotTracked(t
 	addValidatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addValidatorTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 
 	// trigger block creation for the validator tx
 	addValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -1433,9 +1433,9 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionNotTracked(t
 	createSubnetTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uSubnetTx)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(createSubnetTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 
 	// trigger block creation for the subnet tx
 	createSubnetBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -1463,9 +1463,9 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionNotTracked(t
 	addSubnetValidatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uSubnetValTx)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addSubnetValidatorTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 
 	// trigger block creation for the validator tx
 	addSubnetValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -1498,9 +1498,9 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionNotTracked(t
 	// validator set into the current validator set.
 	vm.clock.Set(validatorStartTime)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(removeSubnetValidatorTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 
 	// trigger block creation for the validator tx
 	removeSubnetValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -1525,8 +1525,8 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionTracked(t *t
 	validatorEndTime := validatorStartTime.Add(360 * 24 * time.Hour)
 
 	vm, factory, _, _ := defaultVM(t, cortina)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	key, err := secp256k1.NewPrivateKey()
 	require.NoError(err)
@@ -1557,9 +1557,9 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionTracked(t *t
 	addValidatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addValidatorTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 
 	// trigger block creation for the validator tx
 	addValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -1582,9 +1582,9 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionTracked(t *t
 	createSubnetTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uCreateSubnetTx)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(createSubnetTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 
 	// trigger block creation for the subnet tx
 	createSubnetBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -1612,9 +1612,9 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionTracked(t *t
 	addSubnetValidatorTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uAddSubnetValTx)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(addSubnetValidatorTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 
 	// trigger block creation for the validator tx
 	addSubnetValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -1639,9 +1639,9 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionTracked(t *t
 	// validator set into the current validator set.
 	vm.clock.Set(validatorStartTime)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(removeSubnetValidatorTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 
 	// trigger block creation for the validator tx
 	removeSubnetValidatorBlock, err := vm.Builder.BuildBlock(context.Background())
@@ -1657,8 +1657,8 @@ func TestSubnetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 	// setup
 	require := require.New(t)
 	vm, factory, _, _ := defaultVM(t, cortina)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	subnetID := testSubnet1.TxID
 
@@ -1717,9 +1717,9 @@ func TestSubnetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 	primaryTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uPrimaryTx)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(primaryTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting primary validator to current
@@ -1755,9 +1755,9 @@ func TestSubnetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 	subnetTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uAddSubnetValTx)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(subnetTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting the subnet validator to current
@@ -1847,9 +1847,9 @@ func TestSubnetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 	primaryRestartTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uPrimaryRestartTx)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(primaryRestartTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting restarted primary validator to current
@@ -1922,8 +1922,8 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	// setup
 	require := require.New(t)
 	vm, factory, _, _ := defaultVM(t, cortina)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	// setup time
 	currentTime := defaultGenesisTime
@@ -1964,9 +1964,9 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	primaryTx1, err := walletsigner.SignUnsigned(context.Background(), txSigner, uAddValTx1)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(primaryTx1))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting primary validator to current
@@ -2043,9 +2043,9 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	primaryRestartTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uPrimaryRestartTx)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(primaryRestartTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting restarted primary validator to current
@@ -2078,8 +2078,8 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	// setup
 	require := require.New(t)
 	vm, factory, _, _ := defaultVM(t, cortina)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	subnetID := testSubnet1.TxID
 
@@ -2124,9 +2124,9 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	primaryTx1, err := walletsigner.SignUnsigned(context.Background(), txSigner, uPrimaryTx1)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(primaryTx1))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting primary validator to current
@@ -2162,9 +2162,9 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	subnetTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uAddSubnetValTx)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(subnetTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting the subnet validator to current
@@ -2253,9 +2253,9 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	primaryRestartTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uPrimaryRestartTx)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(primaryRestartTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting restarted primary validator to current
@@ -2297,8 +2297,8 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 	// setup
 	require := require.New(t)
 	vm, factory, _, _ := defaultVM(t, cortina)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	subnetID := testSubnet1.TxID
 
@@ -2341,9 +2341,9 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 	primaryTx1, err := walletsigner.SignUnsigned(context.Background(), txSigner, uPrimaryTx1)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(primaryTx1))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting primary validator to current
@@ -2376,9 +2376,9 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 	subnetTx, err := walletsigner.SignUnsigned(context.Background(), txSigner, uAddSubnetValTx)
 	require.NoError(err)
 
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	require.NoError(vm.issueTxFromRPC(subnetTx))
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 	require.NoError(buildAndAcceptStandardBlock(vm))
 
 	// move time ahead, promoting the subnet validator to current
@@ -2435,8 +2435,8 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 func TestValidatorSetRaceCondition(t *testing.T) {
 	require := require.New(t)
 	vm, _, _, _ := defaultVM(t, cortina)
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
 
 	nodeID := ids.GenerateTestNodeID()
 	require.NoError(vm.Connected(context.Background(), nodeID, version.CurrentApp))
@@ -2492,10 +2492,10 @@ func TestValidatorSetRaceCondition(t *testing.T) {
 
 	// If the validator set lock is grabbed, we need to make sure to release the
 	// lock to avoid a deadlock.
-	vm.ctx.Lock.Unlock()
+	vm.lock.Unlock()
 	cancel() // stop and wait for workers
 	require.NoError(eg.Wait())
-	vm.ctx.Lock.Lock()
+	vm.lock.Lock()
 }
 
 func buildAndAcceptStandardBlock(vm *VM) error {

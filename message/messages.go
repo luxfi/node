@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
+	metric "github.com/luxfi/metric"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
