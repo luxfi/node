@@ -24,10 +24,14 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/vms/platformvm/testcontext"
 )
 
 func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
-	ctx := consensustest.Context(t, consensustest.PChainID)
+	baseCtx := consensustest.Context(t, consensustest.PChainID)
+	ctx := testcontext.New(baseCtx)
+	ctx.NetworkID = constants.UnitTestID
+	ctx.ChainID = consensustest.PChainID
 
 	type test struct {
 		name        string
@@ -546,9 +550,7 @@ func TestGetValidatorRules(t *testing.T) {
 			subnetID: constants.PrimaryNetworkID,
 			backend: &Backend{
 				Config: config,
-				Ctx: &context.Context{
-					LUXAssetID: luxAssetID,
-				},
+				Ctx: context.Background(),
 			},
 			chainStateF: func(*gomock.Controller) state.Chain {
 				return nil
@@ -663,9 +665,7 @@ func TestGetDelegatorRules(t *testing.T) {
 			subnetID: constants.PrimaryNetworkID,
 			backend: &Backend{
 				Config: config,
-				Ctx: &context.Context{
-					LUXAssetID: luxAssetID,
-				},
+				Ctx: context.Background(),
 			},
 			chainStateF: func(*gomock.Controller) state.Chain {
 				return nil

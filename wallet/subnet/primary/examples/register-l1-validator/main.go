@@ -54,14 +54,16 @@ func main() {
 	}
 	log.Printf("fetched node ID %s in %s\n", nodeID, time.Since(nodeInfoStartTime))
 
-	// MakePWallet fetches the available UTXOs owned by [kc] on the P-chain that
+	// MakeWallet fetches the available UTXOs owned by [kc] on the P-chain that
 	// [uri] is hosting.
 	walletSyncStartTime := time.Now()
-	wallet, err := primary.MakePWallet(
+	wallet, err := primary.MakeWallet(
 		ctx,
-		uri,
-		kc,
-		primary.WalletConfig{},
+		&primary.WalletConfig{
+			URI:         uri,
+			LUXKeychain: kc,
+			EthKeychain: secp256k1fx.NewKeychain(), // Empty ETH keychain
+		},
 	)
 	if err != nil {
 		log.Fatalf("failed to initialize wallet: %s\n", err)
@@ -131,7 +133,7 @@ func main() {
 	}
 
 	registerL1ValidatorStartTime := time.Now()
-	registerL1ValidatorTx, err := wallet.IssueRegisterL1ValidatorTx(
+	registerL1ValidatorTx, err := wallet.P().IssueRegisterL1ValidatorTx(
 		units.Lux,
 		nodePoP.ProofOfPossession,
 		warp.Bytes(),

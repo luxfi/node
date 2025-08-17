@@ -63,6 +63,12 @@ var (
 	errMissingIngressHost      = errors.New("IngressHost is a required value. Ensure the " + defaultsConfigMapName + " ConfigMap contains an entry for " + ingressHostKey)
 )
 
+var DefaultKubeRuntimeConfig = &KubeRuntimeConfig{
+	Namespace:    "default",
+	VolumeSizeGB: 10,
+	Image:        "luxfi/luxd:latest",
+}
+
 type KubeRuntimeConfig struct {
 	// Path to the kubeconfig file identifying the target cluster
 	ConfigPath string `json:"configPath,omitempty"`
@@ -167,7 +173,7 @@ type KubeRuntime struct {
 // readState reads the URI and staking address for the node if the node is running.
 func (p *KubeRuntime) readState(ctx context.Context) error {
 	var (
-		log             = p.node.network.log
+		log             = logging.NewLogger("")
 		nodeID          = p.node.NodeID.String()
 		runtimeConfig   = p.runtimeConfig()
 		namespace       = runtimeConfig.Namespace
@@ -241,7 +247,7 @@ func (p *KubeRuntime) GetAccessibleURI() string {
 	var (
 		protocol      = "http"
 		nodeID        = p.node.NodeID.String()
-		networkUUID   = p.node.network.UUID
+		networkUUID   = p.node.NetworkUUID
 		runtimeConfig = p.runtimeConfig()
 	)
 	// Assume tls is configured for an ingress secret
@@ -255,7 +261,7 @@ func (p *KubeRuntime) GetAccessibleURI() string {
 // GetAccessibleStakingAddress retrieves a StakingAddress for the node intended to be
 // accessible from this process until the provided cancel function is called.
 func (p *KubeRuntime) GetAccessibleStakingAddress(ctx context.Context) (netip.AddrPort, func(), error) {
-	if p.node.StakingAddress == (netip.AddrPort{}) {
+	if p.node.StakingAddress == "" {
 		// Assume that an empty staking address indicates a need to retrieve pod state
 		if err := p.readState(ctx); err != nil {
 			return netip.AddrPort{}, func() {}, fmt.Errorf("failed to read Pod state: %w", err)
@@ -264,7 +270,11 @@ func (p *KubeRuntime) GetAccessibleStakingAddress(ctx context.Context) (netip.Ad
 
 	// Use direct pod staking address if running inside the cluster
 	if IsRunningInCluster() {
-		return p.node.StakingAddress, func() {}, nil
+		addr, err := netip.ParseAddrPort(p.node.StakingAddress)
+		if err != nil {
+			return netip.AddrPort{}, func() {}, fmt.Errorf("failed to parse staking address: %w", err)
+		}
+		return addr, func() {}, nil
 	}
 
 	port, stopChan, err := p.forwardPort(ctx, config.DefaultStakingPort)
@@ -280,7 +290,7 @@ func (p *KubeRuntime) GetAccessibleStakingAddress(ctx context.Context) (netip.Ad
 // Start the node as a Kubernetes StatefulSet.
 func (p *KubeRuntime) Start(ctx context.Context) error {
 	var (
-		log             = p.node.network.log
+		log             = logging.NewLogger("")
 		nodeID          = p.node.NodeID.String()
 		runtimeConfig   = p.runtimeConfig()
 		namespace       = runtimeConfig.Namespace
@@ -374,7 +384,10 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 		fmt.Sprintf("%dGi", runtimeConfig.VolumeSizeGB),
 		volumeMountPath,
 		flags,
-		p.node.getMonitoringLabels(),
+		map[string]string{
+			"network_uuid": p.node.NetworkUUID,
+			"node_id": p.node.NodeID.String(),
+		},
 	)
 
 	if runtimeConfig.UseExclusiveScheduling {
@@ -430,7 +443,7 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 // Stop the Pod by setting the replicas to zero on the StatefulSet.
 func (p *KubeRuntime) InitiateStop(ctx context.Context) error {
 	var (
-		log             = p.node.network.log
+		log             = logging.NewLogger("")
 		nodeID          = p.node.NodeID.String()
 		runtimeConfig   = p.runtimeConfig()
 		namespace       = runtimeConfig.Namespace
@@ -493,7 +506,7 @@ func (p *KubeRuntime) InitiateStop(ctx context.Context) error {
 // TODO(marun) Consider using a watch instead
 func (p *KubeRuntime) WaitForStopped(ctx context.Context) error {
 	var (
-		log             = p.node.network.log
+		log             = logging.NewLogger("")
 		nodeID          = p.node.NodeID.String()
 		runtimeConfig   = p.runtimeConfig()
 		namespace       = runtimeConfig.Namespace
@@ -557,7 +570,7 @@ func (p *KubeRuntime) WaitForStopped(ctx context.Context) error {
 // Restarts the node. Does not wait for readiness or health.
 func (p *KubeRuntime) Restart(ctx context.Context) error {
 	var (
-		log             = p.node.network.log
+		log             = logging.NewLogger("")
 		nodeID          = p.node.NodeID.String()
 		runtimeConfig   = p.runtimeConfig()
 		namespace       = runtimeConfig.Namespace
@@ -690,33 +703,34 @@ func (p *KubeRuntime) IsHealthy(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	if len(p.node.URI) == 0 {
-		return false, errNotRunning
+		return false, ErrNotRunning
 	}
 
-	healthReply, err := CheckNodeHealth(ctx, p.GetAccessibleURI())
-	if errors.Is(err, ErrUnrecoverableNodeHealthCheck) {
+	healthy, err := checkNodeHealth(ctx, p.GetAccessibleURI())
+	if err != nil && strings.Contains(err.Error(), "connection refused") {
 		return false, err
 	} else if err != nil {
-		p.node.network.log.Verbo("failed to check node health",
+		logging.NewLogger("").Verbo("failed to check node health",
 			zap.String("nodeID", p.node.NodeID.String()),
 			zap.Error(err),
 		)
 		return false, nil
 	}
-	return healthReply.Healthy, nil
+	return healthy, nil
 }
 
 // ensureBootstrapIP waits for this pod to be ready if there are no other pods already
 // running to ensure the availability of a bootstrap node.
 func (p *KubeRuntime) ensureBootstrapIP(ctx context.Context) error {
 	var (
-		log             = p.node.network.log
+		log             = logging.NewLogger("")
 		nodeID          = p.node.NodeID.String()
 		runtimeConfig   = p.runtimeConfig()
 		namespace       = runtimeConfig.Namespace
 		statefulSetName = p.getStatefulSetName()
 	)
-	bootstrapIPs, _ := p.node.network.GetBootstrapIPsAndIDs(p.node)
+	// TODO: Get bootstrap IPs from network configuration
+	bootstrapIPs := []string{}
 	if len(bootstrapIPs) > 0 {
 		log.Debug("bootstrap IPs are already available so no need to wait for StatefulSet Pod to become ready",
 			zap.String("nodeID", nodeID),
@@ -738,7 +752,7 @@ func (p *KubeRuntime) ensureBootstrapIP(ctx context.Context) error {
 // staking endpoints are capable of serving traffic.
 func (p *KubeRuntime) waitForPodReadiness(ctx context.Context) error {
 	var (
-		log           = p.node.network.log
+		log           = logging.NewLogger("")
 		nodeID        = p.node.NodeID.String()
 		runtimeConfig = p.runtimeConfig()
 		namespace     = runtimeConfig.Namespace
@@ -785,12 +799,12 @@ func (p *KubeRuntime) waitForPodReadiness(ctx context.Context) error {
 		uri            = fmt.Sprintf("http://%s:%d", pod.Status.PodIP, config.DefaultHTTPPort)
 		stakingAddress = netip.AddrPortFrom(addr, config.DefaultStakingPort)
 	)
-	if uri == p.node.URI && stakingAddress == p.node.StakingAddress {
+	if uri == p.node.URI && stakingAddress.String() == p.node.StakingAddress {
 		readyMsg = "node was already ready"
 	} else {
 		readyMsg = "node is ready"
 		p.node.URI = uri
-		p.node.StakingAddress = stakingAddress
+		p.node.StakingAddress = stakingAddress.String()
 	}
 	log.Debug(readyMsg,
 		zap.String("nodeID", nodeID),
@@ -808,7 +822,7 @@ func (p *KubeRuntime) getStatefulSetName() string {
 	nodeIDString := p.node.NodeID.String()
 	startIndex := len(ids.NodeIDPrefix)
 	endIndex := startIndex + 8
-	return p.node.network.UUID + "-" + strings.ToLower(nodeIDString[startIndex:endIndex])
+	return p.node.NetworkUUID + "-" + strings.ToLower(nodeIDString[startIndex:endIndex])
 }
 
 // The Pod name is the StatefulSet name with a suffix of "-0" to indicate the first Pod in the StatefulSet
@@ -817,7 +831,8 @@ func (p *KubeRuntime) getPodName() string {
 }
 
 func (p *KubeRuntime) runtimeConfig() *KubeRuntimeConfig {
-	return p.node.getRuntimeConfig().Kube
+	// TODO: Get runtime config from node - for now use defaults
+	return DefaultKubeRuntimeConfig
 }
 
 // getKubeconfig retrieves the kubeconfig for the target cluster. It
@@ -827,7 +842,7 @@ func (p *KubeRuntime) getKubeconfig() (*restclient.Config, error) {
 	if p.kubeConfig == nil {
 		runtimeConfig := p.runtimeConfig()
 		config, err := GetClientConfig(
-			p.node.network.log,
+			logging.NewLogger(""),
 			runtimeConfig.ConfigPath,
 			runtimeConfig.ConfigContext,
 		)
@@ -886,18 +901,19 @@ func (p *KubeRuntime) forwardPort(ctx context.Context, port int) (uint16, chan s
 }
 
 func (p *KubeRuntime) setNotRunning() {
-	p.node.network.log.Debug("node is not running",
+	logging.NewLogger("").Debug("node is not running",
 		zap.Stringer("nodeID", p.node.NodeID),
 	)
 	p.node.URI = ""
-	p.node.StakingAddress = netip.AddrPort{}
+	p.node.StakingAddress = ""
 }
 
 // getFlags determines the set of luxd flags to configure the node with.
 func (p *KubeRuntime) getFlags() (FlagsMap, error) {
-	flags, err := p.node.composeFlags()
-	if err != nil {
-		return nil, err
+	// TODO: Get flags from node configuration
+	flags := p.node.Flags
+	if flags == nil {
+		flags = FlagsMap{}
 	}
 	// The data dir path is fixed for the Pod
 	flags[config.DataDirKey] = volumeMountPath
@@ -958,7 +974,7 @@ func configureExclusiveScheduling(template *corev1.PodTemplateSpec, labelKey str
 // createNodeService creates a Kubernetes Service for the node to enable ingress routing
 func (p *KubeRuntime) createNodeService(ctx context.Context, serviceName string) error {
 	var (
-		log           = p.node.network.log
+		log           = logging.NewLogger("")
 		nodeID        = p.node.NodeID.String()
 		runtimeConfig = p.runtimeConfig()
 		namespace     = runtimeConfig.Namespace
@@ -981,13 +997,13 @@ func (p *KubeRuntime) createNodeService(ctx context.Context, serviceName string)
 			Namespace: namespace,
 			Labels: map[string]string{
 				"app":          serviceName,
-				"network-uuid": p.node.network.UUID,
+				"network-uuid": p.node.NetworkUUID,
 				"node-id":      nodeID,
 			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
-				"network_uuid": p.node.network.UUID,
+				"network_uuid": p.node.NetworkUUID,
 				"node_id":      nodeID,
 			},
 			Ports: []corev1.ServicePort{
@@ -1019,11 +1035,11 @@ func (p *KubeRuntime) createNodeService(ctx context.Context, serviceName string)
 // createNodeIngress creates a Kubernetes Ingress for the node to enable external access
 func (p *KubeRuntime) createNodeIngress(ctx context.Context, serviceName string) error {
 	var (
-		log           = p.node.network.log
+		log           = logging.NewLogger("")
 		nodeID        = p.node.NodeID.String()
 		runtimeConfig = p.runtimeConfig()
 		namespace     = runtimeConfig.Namespace
-		networkUUID   = p.node.network.UUID
+		networkUUID   = p.node.NetworkUUID
 	)
 
 	log.Debug("creating Ingress for node",
@@ -1126,7 +1142,7 @@ func (p *KubeRuntime) createNodeIngress(ctx context.Context, serviceName string)
 // This prevents 503 errors when health checks are performed immediately after node start
 func (p *KubeRuntime) waitForIngressReadiness(ctx context.Context, serviceName string) error {
 	var (
-		log           = p.node.network.log
+		log           = logging.NewLogger("")
 		nodeID        = p.node.NodeID.String()
 		runtimeConfig = p.runtimeConfig()
 		namespace     = runtimeConfig.Namespace

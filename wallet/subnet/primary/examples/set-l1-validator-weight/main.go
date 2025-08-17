@@ -43,15 +43,17 @@ func main() {
 		log.Fatalf("failed to parse secret key: %s\n", err)
 	}
 
-	// MakePWallet fetches the available UTXOs owned by [kc] on the P-chain that
+	// MakeWallet fetches the available UTXOs owned by [kc] on the P-chain that
 	// [uri] is hosting.
 	walletSyncStartTime := time.Now()
 	ctx := context.Background()
-	wallet, err := primary.MakePWallet(
+	wallet, err := primary.MakeWallet(
 		ctx,
-		uri,
-		kc,
-		primary.WalletConfig{},
+		&primary.WalletConfig{
+			URI:         uri,
+			LUXKeychain: kc,
+			EthKeychain: secp256k1fx.NewKeychain(), // Empty ETH keychain
+		},
 	)
 	if err != nil {
 		log.Fatalf("failed to initialize wallet: %s\n", err)
@@ -110,7 +112,7 @@ func main() {
 	}
 
 	setWeightStartTime := time.Now()
-	setWeightTx, err := wallet.IssueSetL1ValidatorWeightTx(
+	setWeightTx, err := wallet.P().IssueSetL1ValidatorWeightTx(
 		warp.Bytes(),
 	)
 	if err != nil {

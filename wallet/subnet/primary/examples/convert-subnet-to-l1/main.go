@@ -12,6 +12,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
@@ -60,15 +61,16 @@ func main() {
 		log.Fatalf("failed to calculate conversionID: %s\n", err)
 	}
 
-	// MakePWallet fetches the available UTXOs owned by [kc] on the P-chain that
+	// MakeWallet fetches the available UTXOs owned by [kc] on the P-chain that
 	// [uri] is hosting and registers [subnetID].
 	walletSyncStartTime := time.Now()
-	wallet, err := primary.MakePWallet(
+	wallet, err := primary.MakeWallet(
 		ctx,
-		uri,
-		kc,
-		primary.WalletConfig{
-			SubnetIDs: []ids.ID{subnetID},
+		&primary.WalletConfig{
+			URI:         uri,
+			LUXKeychain: kc,
+			EthKeychain: secp256k1fx.NewKeychain(), // Empty ETH keychain
+			PChainTxsToFetch: set.Of(subnetID),
 		},
 	)
 	if err != nil {
@@ -77,13 +79,13 @@ func main() {
 	log.Printf("synced wallet in %s\n", time.Since(walletSyncStartTime))
 
 	convertSubnetToL1StartTime := time.Now()
-	convertSubnetToL1Tx, err := wallet.IssueConvertSubnetToL1Tx(
+	convertSubnetToL1Tx, err := wallet.P().IssueConvertSubnetToL1Tx(
 		subnetID,
 		chainID,
 		address,
 		[]*txs.ConvertSubnetToL1Validator{
 			{
-				NodeID:                nodeID.Bytes(),
+				NodeID:                nodeID,
 				Weight:                weight,
 				Balance:               units.Lux,
 				Signer:                *nodePoP,

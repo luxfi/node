@@ -24,7 +24,8 @@ import (
 
 	"github.com/luxfi/consensus/consensustest"
 
-	"github.com/luxfi/consensus/uptime"
+	consensusuptime "github.com/luxfi/consensus/uptime"
+	consensusmockable "github.com/luxfi/consensus/utils/timer/mockable"
 
 	"github.com/luxfi/consensus/validators"
 
@@ -63,6 +64,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 
 	"github.com/luxfi/node/vms/platformvm/state"
+	"github.com/luxfi/node/vms/platformvm/metrics"
 
 	"github.com/luxfi/node/vms/platformvm/status"
 
@@ -73,6 +75,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 
 	"github.com/luxfi/node/vms/platformvm/upgrade"
+	"github.com/luxfi/node/vms/platformvm/testcontext"
 
 	"github.com/luxfi/node/vms/platformvm/utxo"
 
@@ -130,14 +133,14 @@ type mutableSharedMemory struct {
 type environment struct {
 	isBootstrapped *utils.Atomic[bool]
 	config         *config.Config
-	clk            *mockable.Clock
+	clk            *consensusmockable.Clock
 	baseDB         *versiondb.Database
-	ctx            context.Context
+	ctx            *testcontext.Context
 	msm            *mutableSharedMemory
 	fx             fx.Fx
 	state          state.State
 	states         map[ids.ID]state.Chain
-	uptimes        uptime.Manager
+	uptimes        consensusuptime.Manager
 	utxosHandler   utxo.Verifier
 	factory        *txstest.WalletFactory
 	backend        Backend
@@ -163,7 +166,10 @@ func newEnvironment(t *testing.T, f fork) *environment {
 	clk := defaultClock(f)
 
 	baseDB := versiondb.New(memdb.New())
-	ctx := consensustest.Context(t, consensustest.PChainID)
+	baseCtx := consensustest.Context(t, consensustest.PChainID)
+	ctx := testcontext.New(baseCtx)
+	ctx.ChainID = consensustest.PChainID
+	ctx.LUXAssetID = consensustest.LUXAssetID
 	m := atomic.NewMemory(baseDB)
 	msm := &mutableSharedMemory{
 		SharedMemory: m.NewSharedMemory(ctx.ChainID),
@@ -175,15 +181,15 @@ func newEnvironment(t *testing.T, f fork) *environment {
 	rewards := reward.NewCalculator(config.RewardConfig)
 	baseState := defaultState(config, ctx, baseDB, rewards)
 
-	uptimes := uptime.NewManager(baseState, clk)
-	utxosHandler := utxo.NewHandler(ctx, clk, fx)
+	uptimes := consensusuptime.NewManager(baseState, clk)
+	utxosHandler := utxo.NewHandler(ctx.Context, &mockable.Clock{}, fx)
 
-	factory := txstest.NewWalletFactory(ctx, config, baseState)
+	factory := txstest.NewWalletFactory(ctx.Context, ctx.SharedMemory, config, baseState)
 
 	backend := Backend{
 		Config:       config,
 		Ctx:          ctx,
-		Clk:          clk,
+		Clk:          &mockable.Clock{},
 		Bootstrapped: &isBootstrapped,
 		Fx:           fx,
 		FlowChecker:  utxosHandler,
@@ -276,7 +282,7 @@ func addSubnet(t *testing.T, env *environment) {
 
 func defaultState(
 	cfg *config.Config,
-	ctx context.Context,
+	ctx *testcontext.Context,
 	db database.Database,
 	rewards reward.Calculator,
 ) state.State {
@@ -288,8 +294,8 @@ func defaultState(
 		prometheus.NewRegistry(),
 		cfg,
 		execCfg,
-		ctx,
-		prometheus.NewRegistry(),
+		ctx.Context,
+		metrics.Noop,
 		rewards,
 	)
 	if err != nil {
@@ -308,7 +314,7 @@ func defaultState(
 func defaultConfig(t *testing.T, f fork) *config.Config {
 	c := &config.Config{
 		Chains:                 chains.TestManager,
-		UptimeLockedCalculator: uptime.NewLockedCalculator(),
+		UptimeLockedCalculator: consensusuptime.NewLockedCalculator(),
 		Validators:             validators.NewManager(),
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                 defaultTxFee,
@@ -361,20 +367,20 @@ func defaultConfig(t *testing.T, f fork) *config.Config {
 	return c
 }
 
-func defaultClock(f fork) *mockable.Clock {
+func defaultClock(f fork) *consensusmockable.Clock {
 	now := defaultGenesisTime
 	if f >= banff {
 		// 1 second after active fork
 		now = defaultValidateEndTime.Add(-2 * time.Second)
 	}
-	clk := &mockable.Clock{}
+	clk := &consensusmockable.Clock{}
 	clk.Set(now)
 	return clk
 }
 
 type fxVMInt struct {
 	registry codec.Registry
-	clk      *mockable.Clock
+	clk      *consensusmockable.Clock
 	log      log.Logger
 }
 
@@ -382,7 +388,7 @@ func (fvi *fxVMInt) CodecRegistry() codec.Registry {
 	return fvi.registry
 }
 
-func (fvi *fxVMInt) Clock() *mockable.Clock {
+func (fvi *fxVMInt) Clock() *consensusmockable.Clock {
 	return fvi.clk
 }
 
@@ -390,7 +396,7 @@ func (fvi *fxVMInt) Logger() log.Logger {
 	return fvi.log
 }
 
-func defaultFx(clk *mockable.Clock, log log.Logger, isBootstrapped bool) fx.Fx {
+func defaultFx(clk *consensusmockable.Clock, log log.Logger, isBootstrapped bool) fx.Fx {
 	fxVMInt := &fxVMInt{
 		registry: linearcodec.NewDefault(),
 		clk:      clk,
@@ -408,7 +414,7 @@ func defaultFx(clk *mockable.Clock, log log.Logger, isBootstrapped bool) fx.Fx {
 	return res
 }
 
-func buildGenesisTest(ctx context.Context) []byte {
+func buildGenesisTest(ctx *testcontext.Context) []byte {
 	genesisUTXOs := make([]api.UTXO, len(preFundedKeys))
 	for i, key := range preFundedKeys {
 		id := key.PublicKey().Address()

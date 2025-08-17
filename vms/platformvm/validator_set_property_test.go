@@ -684,7 +684,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	chainDB := prefixdb.New([]byte{0}, baseDB)
 	// atomicDB := prefixdb.New([]byte{1}, baseDB) // Currently unused due to context issues
 
-	ctx := consensustest.Context(t, consensustest.PChainID)
+	_ = consensustest.Context(t, consensustest.PChainID) // ctx
 
 	// TODO: Fix test context setup - ctx is context.Context not test context
 	// m := atomic.NewMemory(atomicDB)
@@ -692,7 +692,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	
 	// ctx.Lock.Lock()
 	// defer ctx.Lock.Unlock()
-	appSender := &core.SenderTest{
+	_ = &core.SenderTest{ // appSender 
 		SendAppGossipF: func(context.Context, []byte) error {
 			return nil
 		},

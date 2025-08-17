@@ -10,6 +10,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary"
 )
@@ -22,15 +23,16 @@ func main() {
 
 	ctx := context.Background()
 
-	// MakePWallet fetches the available UTXOs owned by [kc] on the P-chain that
+	// MakeWallet fetches the available UTXOs owned by [kc] on the P-chain that
 	// [uri] is hosting and registers [validationID].
 	walletSyncStartTime := time.Now()
-	wallet, err := primary.MakePWallet(
+	wallet, err := primary.MakeWallet(
 		ctx,
-		uri,
-		kc,
-		primary.WalletConfig{
-			ValidationIDs: []ids.ID{validationID},
+		&primary.WalletConfig{
+			URI:         uri,
+			LUXKeychain: kc,
+			EthKeychain: secp256k1fx.NewKeychain(), // Empty ETH keychain
+			PChainTxsToFetch: set.Of(validationID),
 		},
 	)
 	if err != nil {
@@ -39,7 +41,7 @@ func main() {
 	log.Printf("synced wallet in %s\n", time.Since(walletSyncStartTime))
 
 	disableL1ValidatorStartTime := time.Now()
-	disableL1ValidatorTx, err := wallet.IssueDisableL1ValidatorTx(
+	disableL1ValidatorTx, err := wallet.P().IssueDisableL1ValidatorTx(
 		validationID,
 	)
 	if err != nil {

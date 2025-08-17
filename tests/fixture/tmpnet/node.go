@@ -48,9 +48,16 @@ type NodeRuntime interface {
 	IsHealthy(ctx context.Context) (bool, error)
 }
 
+// ProcessRuntimeConfig contains configuration for running a node as a process
+type ProcessRuntimeConfig struct {
+	LuxNodePath string `json:"luxNodePath,omitempty"`
+}
+
 // Configuration required to configure a node runtime.
 type NodeRuntimeConfig struct {
 	LuxNodePath string
+	Process     *ProcessRuntimeConfig `json:"process,omitempty"`
+	Kube        *KubeRuntimeConfig    `json:"kube,omitempty"`
 }
 
 // Node supports configuring and running a node participating in a temporary network.
