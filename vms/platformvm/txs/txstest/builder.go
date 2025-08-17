@@ -45,7 +45,7 @@ func (w *WalletFactory) NewWallet(keys ...*secp256k1.PrivateKey) (builder.Builde
 		// Extract networkID and LUXAssetID from context
 		networkID  = consensus.GetNetworkID(w.ctx)
 		luxAssetID = consensus.GetLUXAssetID(w.ctx)
-		context    = newContext(networkID, luxAssetID, w.cfg, w.state.GetTimestamp())
+		context    = newContext(w.ctx, networkID, luxAssetID, w.cfg, w.state.GetTimestamp())
 	)
 
 	return builder.New(addrSet, context, backend), signer.New(kc, backend)

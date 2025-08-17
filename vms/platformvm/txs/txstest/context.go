@@ -4,8 +4,10 @@
 package txstest
 
 import (
+	"context"
 	"time"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -14,6 +16,7 @@ import (
 )
 
 func newContext(
+	ctx context.Context,
 	networkID uint32,
 	luxAssetID ids.ID,
 	cfg *config.Config,
@@ -25,8 +28,16 @@ func newContext(
 		createChainFee  = feeCalc.CalculateFee(&txs.CreateChainTx{}, timestamp)
 	)
 
+	// Get chain ID from context
+	chainID := ids.Empty
+	if ctx != nil {
+		// Try to get chain ID from consensus context
+		chainID = consensus.GetChainID(ctx)
+	}
+
 	return &builder.Context{
 		NetworkID:                     networkID,
+		BlockchainID:                  chainID,
 		LUXAssetID:                    luxAssetID,
 		BaseTxFee:                     cfg.StaticFeeConfig.TxFee,
 		CreateSubnetTxFee:             createSubnetFee,

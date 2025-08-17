@@ -15,6 +15,7 @@ const Alias = "P"
 
 type Context struct {
 	NetworkID                     uint32
+	BlockchainID                  ids.ID // Added for test compatibility
 	LUXAssetID                    ids.ID
 	BaseTxFee                     uint64
 	CreateSubnetTxFee             uint64
@@ -54,6 +55,7 @@ func NewContextFromClients(
 
 	return &Context{
 		NetworkID:                     networkID,
+		BlockchainID:                  ids.Empty, // Default to PlatformChainID (constants.PlatformChainID)
 		LUXAssetID:                    asset.AssetID,
 		BaseTxFee:                     uint64(txFees.TxFee),
 		CreateSubnetTxFee:             uint64(txFees.CreateSubnetTxFee),

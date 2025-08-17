@@ -101,7 +101,7 @@ func NewWallet(
 		owners,
 	)
 	// Use constants for networkID and LUXAssetID
-	builderContext := newContext(constants.TestnetID, ids.Empty, config, state.GetTimestamp())
+	builderContext := newContext(context.Background(), constants.TestnetID, ids.Empty, config, state.GetTimestamp())
 	return wallet.New(
 		&client{
 			backend: backend,

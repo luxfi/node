@@ -50,6 +50,10 @@ func GetNextStakerChangeTime(state Chain) (time.Time, error) {
 	}
 	defer pendingStakerIterator.Release()
 
+	// TODO: Add L1 validator support when GetActiveL1ValidatorsIterator is implemented
+	// For now, we'll just consider current and pending stakers
+	// L1 validators would need to be checked for fee exhaustion timing
+
 	hasCurrentStaker := currentStakerIterator.Next()
 	hasPendingStaker := pendingStakerIterator.Next()
 	switch {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/status"
@@ -429,6 +430,7 @@ func (d *diff) PutL1Validator(validator L1Validator) error {
 	return nil
 }
 
+
 func (d *diff) Apply(baseState Chain) error {
 	baseState.SetTimestamp(d.timestamp)
 	for subnetID, supply := range d.currentSupply {
@@ -511,4 +513,21 @@ func (d *diff) Apply(baseState Chain) error {
 		baseState.SetSubnetOwner(subnetID, owner)
 	}
 	return nil
+}
+// GetActiveL1ValidatorsIterator implements L1Validators interface
+func (d *diff) GetActiveL1ValidatorsIterator() (iterator.Iterator[L1Validator], error) {
+	parentState, ok := d.stateVersions.GetState(d.parentID)
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
+	}
+	return parentState.GetActiveL1ValidatorsIterator()
+}
+
+// NumActiveL1Validators implements L1Validators interface
+func (d *diff) NumActiveL1Validators() int {
+	parentState, ok := d.stateVersions.GetState(d.parentID)
+	if !ok {
+		return 0
+	}
+	return parentState.NumActiveL1Validators()
 }

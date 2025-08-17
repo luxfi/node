@@ -320,6 +320,15 @@ func New(
 	}
 }
 
+// getBlockchainID returns the blockchain ID to use for transactions
+// It uses the BlockchainID from context if set, otherwise defaults to PlatformChainID
+func (b *builder) getBlockchainID() ids.ID {
+	if b.context.BlockchainID != ids.Empty {
+		return b.context.BlockchainID
+	}
+	return constants.PlatformChainID
+}
+
 func (b *builder) Context() *Context {
 	return b.context
 }
@@ -366,7 +375,7 @@ func (b *builder) NewBaseTx(
 
 	tx := &txs.BaseTx{BaseTx: lux.BaseTx{
 		NetworkID:    b.context.NetworkID,
-		BlockchainID: constants.PlatformChainID,
+		BlockchainID: b.getBlockchainID(),
 		Ins:          inputs,
 		Outs:         outputs,
 		Memo:         ops.Memo(),
@@ -394,10 +403,16 @@ func (b *builder) NewAddValidatorTx(
 	}
 
 	utils.Sort(rewardsOwner.Addrs)
+	// Use BlockchainID from context if set, otherwise use default PlatformChainID
+	blockchainID := b.context.BlockchainID
+	if blockchainID == ids.Empty {
+		blockchainID = constants.PlatformChainID
+	}
+	
 	tx := &txs.AddValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: blockchainID,
 			Ins:          inputs,
 			Outs:         baseOutputs,
 			Memo:         ops.Memo(),
@@ -432,7 +447,7 @@ func (b *builder) NewAddSubnetValidatorTx(
 	tx := &txs.AddSubnetValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
@@ -466,7 +481,7 @@ func (b *builder) NewRemoveSubnetValidatorTx(
 	tx := &txs.RemoveSubnetValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
@@ -500,7 +515,7 @@ func (b *builder) NewAddDelegatorTx(
 	tx := &txs.AddDelegatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         baseOutputs,
 			Memo:         ops.Memo(),
@@ -539,7 +554,7 @@ func (b *builder) NewCreateChainTx(
 	tx := &txs.CreateChainTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
@@ -572,7 +587,7 @@ func (b *builder) NewCreateSubnetTx(
 	tx := &txs.CreateSubnetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
@@ -606,7 +621,7 @@ func (b *builder) NewTransferSubnetOwnershipTx(
 	tx := &txs.TransferSubnetOwnershipTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
@@ -714,7 +729,7 @@ func (b *builder) NewImportTx(
 	tx := &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
@@ -753,7 +768,7 @@ func (b *builder) NewExportTx(
 	tx := &txs.ExportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         changeOutputs,
 			Memo:         ops.Memo(),
@@ -800,7 +815,7 @@ func (b *builder) NewTransformSubnetTx(
 	tx := &txs.TransformSubnetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
@@ -854,7 +869,7 @@ func (b *builder) NewAddPermissionlessValidatorTx(
 	tx := &txs.AddPermissionlessValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         baseOutputs,
 			Memo:         ops.Memo(),
@@ -896,7 +911,7 @@ func (b *builder) NewAddPermissionlessDelegatorTx(
 	tx := &txs.AddPermissionlessDelegatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
-			BlockchainID: constants.PlatformChainID,
+			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         baseOutputs,
 			Memo:         ops.Memo(),
