@@ -15,6 +15,7 @@ require (
 	connectrpc.com/connect v1.18.1
 	github.com/StephenButtolph/canoto v0.17.2
 	github.com/dgraph-io/badger/v4 v4.8.0
+	github.com/ethereum/go-ethereum v1.16.1
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
 	github.com/luxfi/consensus v1.1.3
@@ -26,8 +27,6 @@ require (
 	github.com/luxfi/log v1.1.1
 	github.com/luxfi/metric v1.3.0
 	github.com/luxfi/trace v0.1.1
-	github.com/supranational/blst v0.3.15
-	github.com/tyler-smith/go-bip32 v1.0.0
 	golang.org/x/mod v0.27.0
 	golang.org/x/tools v0.36.0
 	k8s.io/api v0.33.4
@@ -40,10 +39,10 @@ require (
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/antithesishq/antithesis-sdk-go v0.3.8
-	github.com/btcsuite/btcd/btcutil v1.1.3
-	github.com/cockroachdb/pebble v1.1.5
+	github.com/btcsuite/btcd/btcutil v1.1.6
+	github.com/cockroachdb/pebble v1.1.5 // indirect
 	github.com/compose-spec/compose-go v1.20.2
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/google/btree v1.1.3
 	github.com/google/renameio/v2 v2.0.0
@@ -89,7 +88,7 @@ require (
 	golang.org/x/term v0.34.0
 	golang.org/x/time v0.12.0
 	gonum.org/v1/gonum v0.14.0
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250728155136-f173205681a0
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250811230008-5f3141c8851a
 	google.golang.org/grpc v1.74.2
 	google.golang.org/protobuf v1.36.7
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -98,12 +97,10 @@ require (
 
 require (
 	github.com/DataDog/zstd v1.5.7 // indirect
-	github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e // indirect
-	github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.24.0 // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.3.4 // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.3.5 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
@@ -148,7 +145,6 @@ require (
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1 // indirect
-	github.com/holiman/billy v0.0.0-20250707135307-f2f9b9aae7db // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -180,6 +176,7 @@ require (
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.14.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/supranational/blst v0.3.15 // indirect
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
