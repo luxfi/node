@@ -19,8 +19,10 @@ import (
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
+	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/state/statetest"
+	"github.com/luxfi/log"
 
 	. "github.com/luxfi/node/vms/platformvm/validators"
 )
@@ -75,8 +77,8 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 		s.AddStatelessBlock(blk)
 		s.SetLastAccepted(blk.ID())
 
-		require.NoError(s.PutCurrentValidator(primaryStaker))
-		require.NoError(s.PutCurrentValidator(subnetStaker))
+		s.PutCurrentValidator(primaryStaker)
+		s.PutCurrentValidator(subnetStaker)
 
 		require.NoError(s.Commit())
 	}
@@ -97,11 +99,12 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 	}
 
 	m := NewManager(
-		config.Internal{
+		log.NoLog{},
+		config.Config{
 			Validators: vdrs,
 		},
 		s,
-		metric.Noop,
+		metrics.Noop,
 		new(mockable.Clock),
 	)
 
