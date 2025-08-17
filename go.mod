@@ -18,7 +18,10 @@ require (
 	github.com/ethereum/go-ethereum v1.16.1
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
+	github.com/luxfi/consensus v1.1.3
 	github.com/luxfi/crypto v1.3.2
+	github.com/luxfi/database v1.1.11
+	github.com/luxfi/geth v1.16.34
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/ledger-lux-go v0.1.0
 	github.com/luxfi/log v1.1.1
@@ -94,7 +97,7 @@ require (
 
 require (
 	github.com/DataDog/zstd v1.5.7 // indirect
-	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
+	github.com/VictoriaMetrics/fastcache v1.12.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.24.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.5 // indirect
@@ -150,9 +153,6 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/luxfi/consensus v1.1.3 // indirect
-	github.com/luxfi/database v1.1.11 // indirect
-	github.com/luxfi/geth v1.16.34 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
@@ -210,3 +210,15 @@ require (
 // Pin all OpenTelemetry modules (and metric sub-packages) to v1.37.0
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
+
+replace (
+	github.com/luxfi/consensus => ../consensus
+	github.com/luxfi/crypto => ../crypto
+	github.com/luxfi/database => ../database
+	github.com/luxfi/geth => ../geth
+	github.com/luxfi/ids => ../ids
+	github.com/luxfi/ledger-lux-go => ../ledger-lux-go
+	github.com/luxfi/log => ../log
+	github.com/luxfi/metric => ../metric
+	github.com/luxfi/trace => ../trace
+)

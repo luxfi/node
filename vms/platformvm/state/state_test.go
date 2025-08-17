@@ -19,16 +19,18 @@ import (
 	"github.com/luxfi/consensus/choices"
 
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls"
 
 	"github.com/luxfi/database"
 
 	"github.com/luxfi/database/memdb"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/node/utils/constants"
-
-	"github.com/luxfi/crypto/bls"
 
 	"github.com/luxfi/node/utils/units"
 
@@ -201,7 +203,7 @@ func TestPersistStakers(t *testing.T) {
 				blsDiffBytes, err := s.validatorPublicKeyDiffsDB.Get(marshalDiffKey(staker.SubnetID, height, staker.NodeID))
 				if staker.SubnetID == constants.PrimaryNetworkID {
 					r.NoError(err)
-					r.Nil(blsDiffBytes)
+					r.Empty(blsDiffBytes)
 				} else {
 					r.ErrorIs(err, database.ErrNotFound)
 				}
@@ -1284,6 +1286,11 @@ func copyValidatorSet(
 	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(input))
 	for nodeID, vdr := range input {
 		vdrCopy := *vdr
+		// Deep copy the public key if it exists
+		if vdr.PublicKey != nil {
+			pkBytes := bls.PublicKeyToUncompressedBytes(vdr.PublicKey)
+			vdrCopy.PublicKey = bls.PublicKeyFromValidUncompressedBytes(pkBytes)
+		}
 		result[nodeID] = &vdrCopy
 	}
 	return result
@@ -1315,7 +1322,17 @@ func requireEqualPublicKeysValidatorSet(
 
 		actualVdr := actual[nodeID]
 		require.Equal(expectedVdr.NodeID, actualVdr.NodeID)
-		require.Equal(expectedVdr.PublicKey, actualVdr.PublicKey)
+		
+		// Compare public key values, not pointers
+		if expectedVdr.PublicKey == nil {
+			require.Nil(actualVdr.PublicKey)
+		} else if actualVdr.PublicKey == nil {
+			require.Fail("expected public key but got nil")
+		} else {
+			expectedBytes := bls.PublicKeyToUncompressedBytes(expectedVdr.PublicKey)
+			actualBytes := bls.PublicKeyToUncompressedBytes(actualVdr.PublicKey)
+			require.Equal(expectedBytes, actualBytes)
+		}
 	}
 }
 
@@ -1353,21 +1370,37 @@ func TestReindexBlocks(t *testing.T) {
 		blks    = makeBlocks(require)
 	)
 
+	// Create a test codec that includes stateBlk type
+	testCodec := codec.NewManager(math.MaxInt32)
+	c := linearcodec.NewDefault()
+	require.NoError(RegisterStateBlockType(c))
+	require.NoError(block.RegisterApricotBlockTypes(c))
+	require.NoError(block.RegisterBanffBlockTypes(c))
+	require.NoError(txs.RegisterUnsignedTxsTypes(c))
+	require.NoError(txs.RegisterDUnsignedTxsTypes(c))
+	require.NoError(testCodec.RegisterCodec(block.CodecVersion, c))
+
 	// Populate the blocks using the legacy format.
 	for _, blk := range blks {
 		stBlk := stateBlk{
 			Bytes:  blk.Bytes(),
 			Status: uint32(choices.Accepted),
 		}
-		stBlkBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, &stBlk)
+		stBlkBytes, err := testCodec.Marshal(block.CodecVersion, &stBlk)
 		require.NoError(err)
+		
+		// Debug: Check what we marshaled
+		t.Logf("Marshaled stateBlk with version %d, got %d bytes", block.CodecVersion, len(stBlkBytes))
+		if len(stBlkBytes) > 10 {
+			t.Logf("First 10 bytes: %x", stBlkBytes[:10])
+		}
 
 		blkID := blk.ID()
 		require.NoError(s.blockDB.Put(blkID[:], stBlkBytes))
 	}
 
 	// Convert the indices to the new format.
-	require.NoError(s.ReindexBlocks(&sync.Mutex{}, nil))
+	require.NoError(s.ReindexBlocks(&sync.Mutex{}, log.NoLog{}))
 
 	// Verify that the blocks are stored in the new format.
 	for _, blk := range blks {
