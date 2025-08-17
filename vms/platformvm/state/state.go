@@ -291,6 +291,9 @@ type state struct {
 
 	currentHeight uint64
 
+	// L1 validators storage (temporary in-memory implementation)
+	l1Validators map[ids.ID]L1Validator
+
 	addedBlockIDs map[uint64]ids.ID            // map of height -> blockID
 	blockIDCache  cache.Cacher[uint64, ids.ID] // cache of height -> blockID; if the entry is ids.Empty, it is not in the database
 	blockIDDB     database.Database

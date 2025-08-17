@@ -21,6 +21,7 @@ import (
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/wallet/subnet/primary"
@@ -148,6 +149,11 @@ func main() {
 		log.Fatalf("failed to create justification: %s\n", err)
 	}
 
+	// Create inbound handler for messages
+	inboundHandler := func(_ context.Context, msg p2pmessage.InboundMessage) {
+		log.Printf("received %s: %s", msg.Op(), msg.Message())
+	}
+	
 	p, err := peer.StartTestPeer(
 		context.Background(),
 		netip.AddrPortFrom(
@@ -155,15 +161,14 @@ func main() {
 			9651,
 		),
 		networkID,
-		router.InboundHandlerFunc(func(_ context.Context, msg p2pmessage.InboundMessage) {
-			log.Printf("received %s: %s", msg.Op(), msg.Message())
-		}),
+		inboundHandler,
 	)
 	if err != nil {
 		log.Fatalf("failed to start peer: %s\n", err)
 	}
 
-	mesageBuilder, err := p2pmessage.NewCreator(
+	messageBuilder, err := p2pmessage.NewCreator(
+		logging.NoOpLogger{}, // Add logger
 		prometheus.NewRegistry(),
 		compression.TypeZstd,
 		time.Hour,
@@ -180,7 +185,7 @@ func main() {
 		log.Fatalf("failed to marshal SignatureRequest: %s\n", err)
 	}
 
-	appRequest, err := mesageBuilder.AppRequest(
+	appRequest, err := messageBuilder.AppRequest(
 		constants.PlatformChainID,
 		0,
 		time.Hour,
