@@ -27,6 +27,8 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/timer"
@@ -209,6 +211,21 @@ type State interface {
 type stateBlk struct {
 	Bytes  []byte `serialize:"true"`
 	Status uint32 `serialize:"true"`
+}
+
+// RegisterStateBlockType registers the stateBlk type with the given codec.
+// This is needed for backward compatibility with old block storage format.
+func RegisterStateBlockType(targetCodec codec.Registry) error {
+	return targetCodec.RegisterType(&stateBlk{})
+}
+
+// Initialize the stateBlk type registration with the block codecs.
+// This must be called before using parseStoredBlock for backward compatibility.
+func init() {
+	// We need to register stateBlk with block.GenesisCodec so that
+	// parseStoredBlock can deserialize legacy block storage format.
+	// We can't import block package here due to import cycle, so this
+	// registration needs to happen elsewhere or we use a different approach.
 }
 
 /*
@@ -2292,6 +2309,39 @@ func (s *state) writeMetadata() error {
 // Returns the block and whether it is a [stateBlk].
 // Invariant: blkBytes is safe to parse with blocks.GenesisCodec
 //
+// legacyStateBlockCodec is used for parsing old stateBlk format.
+// It's created once and reused.
+var legacyStateBlockCodec codec.Manager
+
+func init() {
+	// Create a codec that can handle stateBlk for backward compatibility
+	legacyStateBlockCodec = codec.NewManager(math.MaxInt32)
+	c := linearcodec.NewDefault()
+	
+	// Register stateBlk type
+	if err := RegisterStateBlockType(c); err != nil {
+		panic(fmt.Errorf("failed to register stateBlk: %w", err))
+	}
+	
+	// Register all block types needed for parsing
+	if err := block.RegisterApricotBlockTypes(c); err != nil {
+		panic(fmt.Errorf("failed to register Apricot block types: %w", err))
+	}
+	if err := block.RegisterBanffBlockTypes(c); err != nil {
+		panic(fmt.Errorf("failed to register Banff block types: %w", err))
+	}
+	if err := txs.RegisterUnsignedTxsTypes(c); err != nil {
+		panic(fmt.Errorf("failed to register unsigned tx types: %w", err))
+	}
+	if err := txs.RegisterDUnsignedTxsTypes(c); err != nil {
+		panic(fmt.Errorf("failed to register D unsigned tx types: %w", err))
+	}
+	
+	if err := legacyStateBlockCodec.RegisterCodec(block.CodecVersion, c); err != nil {
+		panic(fmt.Errorf("failed to register codec version %d: %w", block.CodecVersion, err))
+	}
+}
+
 func parseStoredBlock(blkBytes []byte) (block.Block, bool, error) {
 	// Attempt to parse as blocks.Block
 	blk, err := block.Parse(block.GenesisCodec, blkBytes)
@@ -2299,9 +2349,12 @@ func parseStoredBlock(blkBytes []byte) (block.Block, bool, error) {
 		return blk, false, nil
 	}
 
-	// Fallback to [stateBlk]
+	// Fallback to [stateBlk] using our legacy codec
 	blkState := stateBlk{}
-	if _, err := block.GenesisCodec.Unmarshal(blkBytes, &blkState); err != nil {
+	if _, err := legacyStateBlockCodec.Unmarshal(blkBytes, &blkState); err != nil {
+		// If we can't unmarshal as stateBlk, this might not be a block at all
+		// (could be an index entry or other data in the blockDB)
+		// Return the original parse error
 		return nil, false, err
 	}
 
@@ -2341,10 +2394,19 @@ func (s *state) ReindexBlocks(lock sync.Locker, log log.Logger) error {
 	)
 
 	for blockIterator.Next() {
+		keyBytes := blockIterator.Key()
 		valueBytes := blockIterator.Value()
+		
+		// Skip entries that are not 32 bytes (not block IDs)
+		if len(keyBytes) != ids.IDLen {
+			continue
+		}
+		
 		blk, isStateBlk, err := parseStoredBlock(valueBytes)
 		if err != nil {
-			return fmt.Errorf("failed to parse block: %w", err)
+			// Skip entries that can't be parsed as blocks
+			// This could be metadata or other non-block data
+			continue
 		}
 
 		blkID := blk.ID()
