@@ -73,6 +73,10 @@ func New(t testing.TB, c Config) state.State {
 		c.Config.StaticFeeConfig.CreateSubnetTxFee = 1 * units.MilliLux
 		c.Config.StaticFeeConfig.CreateBlockchainTxFee = 1 * units.MilliLux
 	}
+	// Set validators manager in config if not set
+	if c.Config.Validators == nil {
+		c.Config.Validators = c.Validators
+	}
 	if c.Metrics == nil {
 		c.Metrics = metrics.Noop
 	}
