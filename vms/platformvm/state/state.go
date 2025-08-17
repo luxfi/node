@@ -16,7 +16,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -210,8 +209,8 @@ type State interface {
 //
 // TODO: Remove after v1.12.x is activated
 type stateBlk struct {
-	Bytes  []byte         `serialize:"true"`
-	Status choices.Status `serialize:"true"`
+	Bytes  []byte `serialize:"true"`
+	Status uint32 `serialize:"true"`
 }
 
 /*

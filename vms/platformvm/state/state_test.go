@@ -1328,7 +1328,7 @@ func TestParsedStateBlock(t *testing.T) {
 	for _, blk := range blks {
 		stBlk := stateBlk{
 			Bytes:  blk.Bytes(),
-			Status: choices.Accepted,
+			Status: uint32(choices.Accepted),
 		}
 
 		stBlkBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, &stBlk)
@@ -1357,7 +1357,7 @@ func TestReindexBlocks(t *testing.T) {
 	for _, blk := range blks {
 		stBlk := stateBlk{
 			Bytes:  blk.Bytes(),
-			Status: choices.Accepted,
+			Status: uint32(choices.Accepted),
 		}
 		stBlkBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, &stBlk)
 		require.NoError(err)
