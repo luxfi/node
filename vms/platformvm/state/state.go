@@ -19,6 +19,7 @@ import (
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/linkeddb"
 	"github.com/luxfi/database/prefixdb"
@@ -92,6 +93,7 @@ var (
 // execution.
 type Chain interface {
 	Stakers
+	L1Validators
 	lux.UTXOAdder
 	lux.UTXOGetter
 	lux.UTXODeleter
@@ -2542,4 +2544,28 @@ func (s *state) PutL1Validator(validator L1Validator) error {
 	// Store in memory
 	s.l1Validators[validator.ValidationID] = validator
 	return nil
+}
+
+// GetActiveL1ValidatorsIterator returns an iterator of all active L1 validators
+func (s *state) GetActiveL1ValidatorsIterator() (iterator.Iterator[L1Validator], error) {
+	// Create a slice of active L1 validators
+	var activeValidators []L1Validator
+	for _, validator := range s.l1Validators {
+		// Check if validator is active (simplified check)
+		if validator.Weight > 0 {
+			activeValidators = append(activeValidators, validator)
+		}
+	}
+	return iterator.FromSlice(activeValidators...), nil
+}
+
+// NumActiveL1Validators returns the number of currently active L1 validators
+func (s *state) NumActiveL1Validators() int {
+	count := 0
+	for _, validator := range s.l1Validators {
+		if validator.Weight > 0 {
+			count++
+		}
+	}
+	return count
 }
