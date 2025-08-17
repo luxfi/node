@@ -39,7 +39,7 @@ var ginkgoEncoderConfig = zapcore.EncoderConfig{
 	CallerKey:      "",
 	MessageKey:     "msg",
 	StacktraceKey:  "stacktrace",
-	EncodeLevel:    logging.ConsoleColorLevelEncoder,
+	EncodeLevel:    zapcore.CapitalColorLevelEncoder,
 	EncodeDuration: zapcore.StringDurationEncoder,
 }
 
@@ -64,7 +64,7 @@ type GinkgoTestContext struct {
 // handler e.g. SynchronizedBeforeSuite.
 func NewEventHandlerTestContext() *GinkgoTestContext {
 	return &GinkgoTestContext{
-		logger: newGinkgoLogger(logging.Auto.ConsoleEncoder()),
+		logger: newGinkgoLogger(zapcore.NewConsoleEncoder(ginkgoEncoderConfig)),
 	}
 }
 
