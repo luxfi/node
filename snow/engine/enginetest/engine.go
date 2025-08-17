@@ -4,7 +4,6 @@
 package enginetest
 
 import (
-	"context"
 	"testing"
 
 	"github.com/luxfi/node/snow/engine/common"

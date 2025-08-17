@@ -4,6 +4,7 @@
 package c
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/luxfi/crypto/secp256k1"
@@ -14,14 +15,15 @@ import (
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 // Tx represents a transaction on the C-Chain
-// TODO: Implement proper C-chain transaction types
 type Tx struct {
 	ID               ids.ID
 	UnsignedAtomicTx UnsignedAtomicTx
 	Creds            []verify.Verifiable
+	unsignedBytes    []byte
 	signedBytes      []byte
 }
 
@@ -161,28 +163,79 @@ func init() {
 	Codec.RegisterCodec(codecVersion, lcodec)
 }
 
-// CalculateDynamicFee calculates the dynamic fee
-// TODO: Implement proper fee calculation
+// CalculateDynamicFee calculates the dynamic fee based on EIP-1559
+// Fee = gasUsed * (baseFee + priorityFee)
 func CalculateDynamicFee(gasUsed uint64, baseFee *big.Int) (uint64, error) {
-	fee := new(big.Int).Mul(baseFee, new(big.Int).SetUint64(gasUsed))
-	if !fee.IsUint64() {
+	// Calculate base fee component
+	baseFeeComponent := new(big.Int).Mul(baseFee, new(big.Int).SetUint64(gasUsed))
+	
+	// Add priority fee (tip) - using a minimum priority fee of 1 Gwei
+	priorityFeePerGas := new(big.Int).SetUint64(1_000_000_000) // 1 Gwei in Wei
+	priorityFeeComponent := new(big.Int).Mul(priorityFeePerGas, new(big.Int).SetUint64(gasUsed))
+	
+	// Total fee = base fee + priority fee
+	totalFee := new(big.Int).Add(baseFeeComponent, priorityFeeComponent)
+	
+	// Check if fee fits in uint64
+	if !totalFee.IsUint64() {
 		return 0, errInsufficientFunds
 	}
-	return fee.Uint64(), nil
+	return totalFee.Uint64(), nil
 }
 
-// Sign signs the transaction
-// TODO: Implement proper signing
+// Sign signs the transaction with the provided private keys
 func (tx *Tx) Sign(codec codec.Manager, signers [][]*secp256k1.PrivateKey) error {
+	// Serialize the unsigned transaction
+	unsignedBytes, err := codec.Marshal(codecVersion, &tx.UnsignedAtomicTx)
+	if err != nil {
+		return fmt.Errorf("failed to marshal unsigned tx: %w", err)
+	}
+	
+	// Create signature placeholder for each input
+	tx.Creds = make([]verify.Verifiable, len(signers))
+	
+	// Sign each input with the corresponding signers
+	for i, inputSigners := range signers {
+		cred := &secp256k1fx.Credential{
+			Sigs: make([][secp256k1.SignatureLen]byte, len(inputSigners)),
+		}
+		
+		// Generate signature for each signer
+		for j, signer := range inputSigners {
+			sig, err := signer.SignHash(hashing.ComputeHash256(unsignedBytes))
+			if err != nil {
+				return fmt.Errorf("failed to sign tx at input %d, signer %d: %w", i, j, err)
+			}
+			copy(cred.Sigs[j][:], sig)
+		}
+		
+		tx.Creds[i] = cred
+	}
+	
+	// Serialize the signed transaction
+	signedBytes, err := codec.Marshal(codecVersion, tx)
+	if err != nil {
+		return fmt.Errorf("failed to marshal signed tx: %w", err)
+	}
+	
+	// Initialize the transaction with the serialized bytes
+	tx.Initialize(unsignedBytes, signedBytes)
 	return nil
 }
 
-// Initialize initializes the transaction
-// TODO: Implement proper initialization
+// Initialize initializes the transaction with computed ID and caches bytes
 func (tx *Tx) Initialize(unsignedBytes, signedBytes []byte) {
-	// Calculate transaction ID from signed bytes using hash
-	tx.ID = ids.ID(hashing.ComputeHash256(signedBytes))
+	// Calculate transaction ID from unsigned bytes (standard for atomic txs)
+	tx.ID = ids.ID(hashing.ComputeHash256(unsignedBytes))
+	
+	// Cache the unsigned and signed bytes for future use
+	tx.unsignedBytes = unsignedBytes
 	tx.signedBytes = signedBytes
+	
+	// Also initialize the underlying unsigned transaction if it has an Initialize method
+	if initializable, ok := tx.UnsignedAtomicTx.(interface{ Initialize([]byte) }); ok {
+		initializable.Initialize(unsignedBytes)
+	}
 }
 
 // UnsignedAtomicTx field for Tx
