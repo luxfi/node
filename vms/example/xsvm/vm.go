@@ -13,6 +13,7 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
@@ -31,29 +32,33 @@ import (
 )
 
 var (
-	_ smblock.ChainVM                      = (*VM)(nil)
-	_ smblock.BuildBlockWithContextChainVM = (*VM)(nil)
+	_ block.ChainVM                      = (*VM)(nil)
+	_ block.BuildBlockWithContextChainVM = (*VM)(nil)
 )
 
 type VM struct {
 	chainContext context.Context
 	db           database.Database
 	genesis      *genesis.Genesis
+	toEngine     chan<- block.Message
 
 	chain   chain.Chain
 	builder builder.Builder
 }
 
 func (vm *VM) Initialize(
-	_ context.Context,
-	chainContext context.Context,
-	db database.Database,
+	ctx context.Context,
+	chainCtx *block.ChainContext,
+	dbManager block.DBManager,
 	genesisBytes []byte,
-	_ []byte,
-	_ []byte,
-	_ []*core.Fx,
-	_ core.AppSender,
+	upgradeBytes []byte,
+	configBytes []byte,
+	toEngine chan<- block.Message,
+	fxs []*block.Fx,
+	appSender block.AppSender,
 ) error {
+	// Convert ChainContext to context.Context for compatibility
+	chainContext := context.WithValue(ctx, "chainContext", chainCtx)
 	logger := consensus.GetLogger(chainContext)
 
 	logger.Info("initializing xsvm",
@@ -61,7 +66,8 @@ func (vm *VM) Initialize(
 	)
 
 	vm.chainContext = chainContext
-	vm.db = db
+	vm.db = dbManager.Current()
+	vm.toEngine = toEngine
 	g, err := genesis.Parse(genesisBytes)
 	if err != nil {
 		return fmt.Errorf("failed to parse genesis bytes: %w", err)
@@ -135,11 +141,11 @@ func (*VM) Disconnected(context.Context, ids.NodeID) error {
 	return nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (smblock.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (block.Block, error) {
 	return vm.chain.GetBlock(blkID)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (smblock.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (block.Block, error) {
 	blk, err := xsblock.Parse(blkBytes)
 	if err != nil {
 		return nil, err
@@ -147,7 +153,7 @@ func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (smblock.Block, err
 	return vm.chain.NewBlock(blk)
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (smblock.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	return vm.builder.BuildBlock(ctx, nil)
 }
 
@@ -160,8 +166,12 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 	return vm.chain.LastAccepted(), nil
 }
 
-func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *smblock.Context) (smblock.Block, error) {
-	return vm.builder.BuildBlock(ctx, blockContext)
+func (vm *VM) BuildBlockWithContext(ctx context.Context, blockContext *block.Context) (block.Block, error) {
+	// Convert to smblock.Context for compatibility with builder
+	smContext := &smblock.Context{
+		PChainHeight: blockContext.PChainHeight,
+	}
+	return vm.builder.BuildBlock(ctx, smContext)
 }
 
 func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, error) {

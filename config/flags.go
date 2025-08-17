@@ -302,7 +302,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Int(ConsensusPreferenceQuorumSizeKey, config.MainnetParameters.AlphaPreference, fmt.Sprintf("Threshold of nodes required to update this node's preference in a network poll. Ignored if %s is provided", ConsensusQuorumSizeKey))
 	fs.Int(ConsensusConfidenceQuorumSizeKey, config.MainnetParameters.AlphaConfidence, fmt.Sprintf("Threshold of nodes required to increase this node's confidence in a network poll. Ignored if %s is provided", ConsensusQuorumSizeKey))
 
-	fs.Int(ConsensusCommitThresholdKey, config.MainnetParameters.Beta, "Beta value to use for consensus")
+	fs.Int(ConsensusCommitThresholdKey, int(config.MainnetParameters.Beta), "Beta value to use for consensus")
 
 	fs.Int(ConsensusConcurrentRepollsKey, config.MainnetParameters.ConcurrentPolls, "Minimum number of concurrent polls for finalizing consensus")
 	fs.Int(ConsensusOptimalProcessingKey, config.MainnetParameters.OptimalProcessing, "Optimal number of processing containers in consensus")

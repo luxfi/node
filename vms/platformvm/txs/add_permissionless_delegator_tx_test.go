@@ -40,6 +40,8 @@ func testContext(networkID uint32, chainID, luxAssetID ids.ID) context.Context {
 
 func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	require := require.New(t)
+	
+	var ctx context.Context
 
 	addr := ids.ShortID{
 		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
@@ -130,11 +132,13 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
-	require.NoError(simpleAddPrimaryTx.SyntacticVerify(&context.Context{
+	ctx = context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-	}))
+	})
+	require.NoError(simpleAddPrimaryTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleAddPrimaryTxBytes := []byte{
 		// Codec version
@@ -384,11 +388,13 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			Addrs:     []ids.ShortID{},
 		},
 	}
-	require.NoError(complexAddPrimaryTx.SyntacticVerify(&context.Context{
+	ctx = context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-	}))
+	})
+	require.NoError(complexAddPrimaryTx.SyntacticVerify(ctx))
 
 	expectedUnsignedComplexAddPrimaryTxBytes := []byte{
 		// Codec version
@@ -615,12 +621,14 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexAddPrimaryTx.InitCtx(&context.Context{
+	ctx2 := context.Background()
+	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		BCLookup:   aliaser,
 	})
+	ctx2 = consensus.WithBCLookup(ctx2, aliaser)
+	unsignedComplexAddPrimaryTx.InitCtx(ctx2)
 
 	unsignedComplexAddPrimaryTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddPrimaryTx, "", "\t")
 	require.NoError(err)
@@ -865,11 +873,13 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddSubnetTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddSubnetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddSubnetTx.Ins)
-	require.NoError(simpleAddSubnetTx.SyntacticVerify(&context.Context{
+	ctx = context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-	}))
+	})
+	require.NoError(simpleAddSubnetTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleAddSubnetTxBytes := []byte{
 		// Codec version
@@ -1140,11 +1150,13 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 			Addrs:     []ids.ShortID{},
 		},
 	}
-	require.NoError(complexAddSubnetTx.SyntacticVerify(&context.Context{
+	ctx = context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-	}))
+	})
+	require.NoError(complexAddSubnetTx.SyntacticVerify(ctx))
 
 	expectedUnsignedComplexAddSubnetTxBytes := []byte{
 		// Codec version
@@ -1371,12 +1383,14 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexAddSubnetTx.InitCtx(&context.Context{
+	ctx2 := context.Background()
+	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		BCLookup:   aliaser,
 	})
+	ctx2 = consensus.WithBCLookup(ctx2, aliaser)
+	unsignedComplexAddSubnetTx.InitCtx(ctx2)
 
 	unsignedComplexAddSubnetTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddSubnetTx, "", "\t")
 	require.NoError(err)
@@ -1520,10 +1534,11 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &context.Context{
-		ChainID:   chainID,
+	ctx = context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: networkID,
-	}
+		ChainID:   chainID,
+	})
 
 	// A BaseTx that already passed syntactic verification.
 	verifiedBaseTx := BaseTx{

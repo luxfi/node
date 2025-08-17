@@ -92,7 +92,7 @@ type WalletConfig struct {
 //
 // The wallet manages all state locally, and performs all tx signing locally.
 func MakeWallet(ctx context.Context, config *WalletConfig) (Wallet, error) {
-	luxAddrs := config.LUXKeychain.Addresses()
+	luxAddrs := set.Of(config.LUXKeychain.List()...)
 	luxState, err := FetchState(ctx, config.URI, luxAddrs)
 	if err != nil {
 		return nil, err

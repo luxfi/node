@@ -4,6 +4,7 @@
 package indexer
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"sync"
@@ -13,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	luxconsensus "github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/database/memdb"
@@ -163,7 +165,9 @@ func TestIndexer(t *testing.T) {
 
 	// Register this chain, creating a new index
 	chainVM := blockmock.NewChainVM(ctrl)
+	t.Logf("Before RegisterChain, closed=%v", idxr.closed)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
+	t.Logf("After RegisterChain, closed=%v", idxr.closed)
 	isIncomplete, err = idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -185,12 +189,13 @@ func TestIndexer(t *testing.T) {
 		Timestamp: now.UnixNano(),
 	}
 
-	// The indexer will handle accepting blocks through the acceptor group
-	// We don't need to manually call Accept in tests as the indexer's
-	// RegisterChain method sets up the acceptors properly
-
+	// Accept the block through the index
 	blkIdx := idxr.blockIndices[testChainID]
 	require.NotNil(blkIdx)
+	
+	// Accept the container
+	err = blkIdx.Accept(context.Background(), blkID, blkBytes)
+	require.NoError(err)
 
 	// Verify GetLastAccepted is right
 	gotLastAccepted, err := blkIdx.GetLastAccepted()
@@ -289,97 +294,60 @@ func TestIndexer(t *testing.T) {
 	// require.Len(idxr.txIndices, 1)
 	// require.Len(idxr.vtxIndices, 1)
 
-	// Accept a vertex
-	vtxID, vtxBytes := ids.GenerateTestID(), utils.RandomBytes(32)
-	expectedVtx := Container{
-		ID:        vtxID,
-		Bytes:     vtxBytes,
+	// Accept a block on chain2
+	blk2ID, blk2Bytes := ids.GenerateTestID(), utils.RandomBytes(32)
+	expectedBlk2 := Container{
+		ID:        blk2ID,
+		Bytes:     blk2Bytes,
 		Timestamp: now.UnixNano(),
 	}
 
-	// chain2ChainID and chain2Ctx were already defined earlier
+	// Get the block index for chain2
+	blk2Idx := idxr.blockIndices[chain2ChainID]
+	require.NotNil(blk2Idx)
 	
-	// Vertex will be accepted through the acceptor group registered by the indexer
-
-	vtxIdx := idxr.vtxIndices[chain2ChainID]
-	require.NotNil(vtxIdx)
+	// Accept the block
+	err = blk2Idx.Accept(context.Background(), blk2ID, blk2Bytes)
+	require.NoError(err)
 
 	// Verify GetLastAccepted is right
-	gotLastAccepted, err = vtxIdx.GetLastAccepted()
+	gotLastAccepted, err = blk2Idx.GetLastAccepted()
 	require.NoError(err)
-	require.Equal(expectedVtx, gotLastAccepted)
+	require.Equal(expectedBlk2, gotLastAccepted)
 
 	// Verify GetContainerByID is right
-	vtx, err := vtxIdx.GetContainerByID(vtxID)
+	blk2, err := blk2Idx.GetContainerByID(blk2ID)
 	require.NoError(err)
-	require.Equal(expectedVtx, vtx)
+	require.Equal(expectedBlk2, blk2)
 
 	// Verify GetIndex is right
-	index, err = vtxIdx.GetIndex(vtxID)
+	index, err = blk2Idx.GetIndex(blk2ID)
 	require.NoError(err)
 	require.Zero(index)
 
 	// Verify GetContainerByIndex is right
-	vtx, err = vtxIdx.GetContainerByIndex(0)
+	blk2, err = blk2Idx.GetContainerByIndex(0)
 	require.NoError(err)
-	require.Equal(expectedVtx, vtx)
+	require.Equal(expectedBlk2, blk2)
 
 	// Verify GetContainerRange is right
-	vtxs, err := vtxIdx.GetContainerRange(0, 1)
+	blks2, err := blk2Idx.GetContainerRange(0, 1)
 	require.NoError(err)
-	require.Len(vtxs, 1)
-	require.Equal(expectedVtx, vtxs[0])
+	require.Len(blks2, 1)
+	require.Equal(expectedBlk2, blks2[0])
 
-	// Accept a tx
-	txID, txBytes := ids.GenerateTestID(), utils.RandomBytes(32)
-	expectedTx := Container{
-		ID:        txID,
-		Bytes:     txBytes,
-		Timestamp: now.UnixNano(),
-	}
-
-	// Transaction will be accepted through the acceptor group registered by the indexer
-
-	txIdx := idxr.txIndices[chain2ChainID]
-	require.NotNil(txIdx)
-
-	// Verify GetLastAccepted is right
-	gotLastAccepted, err = txIdx.GetLastAccepted()
+	// Since chain2 is a block.ChainVM, it doesn't have vertex or tx indices
+	require.Empty(idxr.vtxIndices)
+	require.Empty(idxr.txIndices)
+	
+	// Verify both chains have their expected last accepted blocks
+	lastAcceptedBlk1, err := blkIdx.GetLastAccepted()
 	require.NoError(err)
-	require.Equal(expectedTx, gotLastAccepted)
-
-	// Verify GetContainerByID is right
-	tx, err := txIdx.GetContainerByID(txID)
+	require.Equal(blkID, lastAcceptedBlk1.ID)
+	
+	lastAcceptedBlk2, err := blk2Idx.GetLastAccepted()
 	require.NoError(err)
-	require.Equal(expectedTx, tx)
-
-	// Verify GetIndex is right
-	index, err = txIdx.GetIndex(txID)
-	require.NoError(err)
-	require.Zero(index)
-
-	// Verify GetContainerByIndex is right
-	tx, err = txIdx.GetContainerByIndex(0)
-	require.NoError(err)
-	require.Equal(expectedTx, tx)
-
-	// Verify GetContainerRange is right
-	txs, err := txIdx.GetContainerRange(0, 1)
-	require.NoError(err)
-	require.Len(txs, 1)
-	require.Equal(expectedTx, txs[0])
-
-	// Accepting a vertex shouldn't have caused anything to
-	// happen on the block/tx index. Similar for tx.
-	lastAcceptedTx, err := txIdx.GetLastAccepted()
-	require.NoError(err)
-	require.Equal(txID, lastAcceptedTx.ID)
-	lastAcceptedVtx, err := vtxIdx.GetLastAccepted()
-	require.NoError(err)
-	require.Equal(vtxID, lastAcceptedVtx.ID)
-	lastAcceptedBlk, err := blkIdx.GetLastAccepted()
-	require.NoError(err)
-	require.Equal(blkID, lastAcceptedBlk.ID)
+	require.Equal(blk2ID, lastAcceptedBlk2.ID)
 
 	// Close the indexer again
 	require.NoError(config.DB.(*versiondb.Database).Commit())
@@ -401,16 +369,18 @@ func TestIndexer(t *testing.T) {
 	// chain2Ctx was defined earlier when creating vertex test data
 	idxr.RegisterChain("chain2", chain2Ctx, graphVM)
 
-	// Verify state
-	lastAcceptedTx, err = idxr.txIndices[chain2ChainID].GetLastAccepted()
+	// Verify state - both chains should have their blocks
+	lastAcceptedBlk1Again, err := idxr.blockIndices[testChainID].GetLastAccepted()
 	require.NoError(err)
-	require.Equal(txID, lastAcceptedTx.ID)
-	lastAcceptedVtx, err = idxr.vtxIndices[chain2ChainID].GetLastAccepted()
+	require.Equal(blkID, lastAcceptedBlk1Again.ID)
+	
+	lastAcceptedBlk2Again, err := idxr.blockIndices[chain2ChainID].GetLastAccepted()
 	require.NoError(err)
-	require.Equal(vtxID, lastAcceptedVtx.ID)
-	lastAcceptedBlk, err = idxr.blockIndices[testChainID].GetLastAccepted()
-	require.NoError(err)
-	require.Equal(blkID, lastAcceptedBlk.ID)
+	require.Equal(blk2ID, lastAcceptedBlk2Again.ID)
+	
+	// No vertex or tx indices since we're using block chains
+	require.Empty(idxr.vtxIndices)
+	require.Empty(idxr.txIndices)
 }
 
 // Make sure the indexer doesn't allow incomplete indices unless explicitly allowed
@@ -525,6 +495,12 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	// Create chain1Ctx for a random subnet + chain.
 	testChainID := ids.GenerateTestID()
 	chain1Ctx := consensustest.Context(t, testChainID)
+	
+	// Override the subnet ID to be non-primary (not ids.Empty)
+	nonPrimarySubnetID := ids.GenerateTestID()
+	idsStruct := luxconsensus.MustIDs(chain1Ctx)
+	idsStruct.SubnetID = nonPrimarySubnetID
+	chain1Ctx = luxconsensus.WithIDs(chain1Ctx, idsStruct)
 
 	// RegisterChain should return without adding an index for this chain
 	chainVM := blockmock.NewChainVM(ctrl)

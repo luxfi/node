@@ -60,7 +60,6 @@ import (
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/resource"
@@ -206,7 +205,7 @@ func New(
 	}
 
 	// Create luxfi/metric instance from prometheus registry
-	networkMetrics := luxmetrics.NewPrometheusMetrics(networkNamespace, networkRegisterer)
+	networkMetrics := metric.NewPrometheusMetrics(networkNamespace, networkRegisterer)
 
 	n.msgCreator, err = message.NewCreator(
 		n.Log,
@@ -373,8 +372,8 @@ type Node struct {
 	DoneShuttingDown sync.WaitGroup
 
 	// Metrics Registerer
-	MetricsGatherer        luxmetrics.MultiGatherer
-	MeterDBMetricsGatherer luxmetrics.MultiGatherer
+	MetricsGatherer        metric.MultiGatherer
+	MeterDBMetricsGatherer metric.MultiGatherer
 
 	VMAliaser ids.Aliaser
 	VMManager vms.Manager
@@ -550,17 +549,20 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 	// Create chain router
 	n.chainRouter = &router.ChainRouter{}
 	if n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled {
-		n.chainRouter = router.Trace(n.chainRouter, n.tracer)
+		if traced, ok := router.Trace(n.chainRouter, n.tracer).(router.Router); ok {
+			n.chainRouter = traced
+		}
 	}
 
 	// Configure benchlist
 	n.Config.BenchlistConfig.Validators = n.vdrs
 	n.Config.BenchlistConfig.Benchable = n.chainRouter
-	n.Config.BenchlistConfig.BenchlistRegisterer = metric.NewLabelGatherer(chains.ChainLabel)
+	benchlistGatherer := metric.NewLabelGatherer(chains.ChainLabel)
+	n.Config.BenchlistConfig.BenchlistRegisterer = benchlistGatherer
 
 	err = n.MetricsGatherer.Register(
 		benchlistNamespace,
-		n.Config.BenchlistConfig.BenchlistRegisterer,
+		benchlistGatherer,
 	)
 	if err != nil {
 		return err
@@ -933,8 +935,8 @@ func (n *Node) initChains(genesisBytes []byte) error {
 }
 
 func (n *Node) initMetrics() error {
-	n.MetricsGatherer = luxmetrics.NewPrefixGatherer()
-	n.MeterDBMetricsGatherer = luxmetrics.NewLabelGatherer(chains.ChainLabel)
+	n.MetricsGatherer = metric.NewPrefixGatherer()
+	n.MeterDBMetricsGatherer = metric.NewLabelGatherer(chains.ChainLabel)
 	return n.MetricsGatherer.Register(
 		meterDBNamespace,
 		n.MeterDBMetricsGatherer,
@@ -1201,7 +1203,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 	}
 
 	// Notify the API server when new chains are created
-	n.chainManager.AddRegistrant(n.APIServer)
+	n.chainManager.AddRegistrant(chains.NewRegistrantAdapter(n.APIServer))
 	return nil
 }
 
@@ -1265,7 +1267,7 @@ func (n *Node) initVMs() error {
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()
 
-	rpcchainvmMetricsGatherer := luxmetrics.NewLabelGatherer(chains.ChainLabel)
+	rpcchainvmMetricsGatherer := metric.NewLabelGatherer(chains.ChainLabel)
 	if err := n.MetricsGatherer.Register(rpcchainvmNamespace, rpcchainvmMetricsGatherer); err != nil {
 		return err
 	}
@@ -1449,7 +1451,6 @@ func (n *Node) initInfoAPI() error {
 		n.VMManager,
 		n.Config.NetworkConfig.MyIPPort,
 		n.Net,
-		n.benchlistManager,
 	)
 	if err != nil {
 		return err
@@ -1641,7 +1642,6 @@ func (n *Node) initResourceManager() error {
 	n.resourceTracker, err = tracker.NewResourceTracker(
 		resourceTrackerRegisterer,
 		n.resourceManager,
-		&meter.ContinuousFactory{},
 		n.Config.SystemTrackerProcessingHalflife,
 	)
 	return err

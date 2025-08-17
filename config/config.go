@@ -1037,12 +1037,14 @@ func getSubnetConfigsFromFlags(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]s
 	res := make(map[ids.ID]subnets.Config)
 	for _, subnetID := range subnetIDs {
 		if rawSubnetConfigBytes, ok := subnetConfigs[subnetID]; ok {
+			// Start with defaults, then unmarshal on top
 			config := getDefaultSubnetConfig(v)
 			if err := json.Unmarshal(rawSubnetConfigBytes, &config); err != nil {
 				return nil, err
 			}
 
-			if config.ConsensusParameters.Alpha != nil {
+			// Only override if Alpha is explicitly set (not zero)
+			if config.ConsensusParameters.Alpha != nil && *config.ConsensusParameters.Alpha > 0 {
 				config.ConsensusParameters.AlphaPreference = *config.ConsensusParameters.Alpha
 				config.ConsensusParameters.AlphaConfidence = config.ConsensusParameters.AlphaPreference
 			}
@@ -1090,12 +1092,14 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 			return nil, err
 		}
 
+		// Start with defaults, then unmarshal on top
 		config := getDefaultSubnetConfig(v)
 		if err := json.Unmarshal(file, &config); err != nil {
 			return nil, fmt.Errorf("%w: %w", errUnmarshalling, err)
 		}
 
-		if config.ConsensusParameters.Alpha != nil {
+		// Only override if Alpha is explicitly set (not zero)
+		if config.ConsensusParameters.Alpha != nil && *config.ConsensusParameters.Alpha > 0 {
 			config.ConsensusParameters.AlphaPreference = *config.ConsensusParameters.Alpha
 			config.ConsensusParameters.AlphaConfidence = config.ConsensusParameters.AlphaPreference
 		}
@@ -1375,7 +1379,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.SubnetConfigs = subnetConfigs
 
 	// Benchlist
-	nodeConfig.BenchlistConfig, err = getBenchlistConfig(v, primaryNetworkConfig.ConsensusParameters)
+	nodeConfig.BenchlistConfig, err = getBenchlistConfig(v, primaryNetworkConfig.ConsensusParameters.ToPrismParameters())
 	if err != nil {
 		return node.Config{}, err
 	}

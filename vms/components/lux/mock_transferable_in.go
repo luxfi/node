@@ -93,3 +93,17 @@ func (mr *MockTransferableInMockRecorder) Verify() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Verify", reflect.TypeOf((*MockTransferableIn)(nil).Verify))
 }
+
+// InitializeWithContext mocks base method.
+func (m *MockTransferableIn) InitializeWithContext(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InitializeWithContext", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InitializeWithContext indicates an expected call of InitializeWithContext.
+func (mr *MockTransferableInMockRecorder) InitializeWithContext(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeWithContext", reflect.TypeOf((*MockTransferableIn)(nil).InitializeWithContext), ctx)
+}

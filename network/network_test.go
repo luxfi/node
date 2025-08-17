@@ -22,6 +22,7 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
@@ -262,7 +263,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 			config,
 			msgCreator,
 			registry,
-			nil,
+			log.NewNoOpLogger(),
 			listeners[i],
 			dialer,
 			&testHandler{
@@ -504,7 +505,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 			config,
 			msgCreator,
 			registry,
-			nil,
+			log.NewNoOpLogger(),
 			listeners[i],
 			dialer,
 			&testHandler{
@@ -585,7 +586,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 			config,
 			msgCreator,
 			registry,
-			nil,
+			log.NewNoOpLogger(),
 			listeners[i],
 			dialer,
 			&testHandler{
@@ -742,7 +743,7 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 			config,
 			msgCreator,
 			registry,
-			nil,
+			log.NewNoOpLogger(),
 			listeners[i],
 			dialer,
 			&testHandler{

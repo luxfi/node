@@ -13,10 +13,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/coremock"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
 
@@ -151,8 +154,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return mempool
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := coremock.NewSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				appSender := coremock.NewMockAppSender(ctrl)
+				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
 			expectedErr: nil,
@@ -165,11 +168,18 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
 			consensusCtx := consensustest.Context(t, ids.Empty)
+			// Extract values from context
+			nodeID := consensus.GetNodeID(consensusCtx)
+			subnetID := consensus.GetSubnetID(consensusCtx)
+			// Use a simple test logger for now
+			logger := log.NoLog{}
+			// validatorState would need proper mock but skip for now
+			var validatorState validators.State = nil
 			n, err := New(
-				consensusCtx.Log,
-				consensusCtx.NodeID,
-				consensusCtx.SubnetID,
-				consensusCtx.ValidatorState,
+				logger,
+				nodeID,
+				subnetID,
+				validatorState,
 				tt.txVerifier,
 				tt.mempoolFunc(ctrl),
 				tt.partialSyncPrimaryNetwork,

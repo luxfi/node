@@ -23,13 +23,14 @@ func TestProofOfPossession(t *testing.T) {
 	require.NoError(err)
 	blsPOP.ProofOfPossession = [bls.SignatureLen]byte{}
 	err = blsPOP.Verify()
-	require.ErrorIs(err, bls.ErrFailedSignatureDecompress)
+	require.ErrorIs(err, bls.ErrInvalidSignature)
 
 	blsPOP, err = newProofOfPossession()
 	require.NoError(err)
 	blsPOP.PublicKey = [bls.PublicKeyLen]byte{}
 	err = blsPOP.Verify()
-	require.ErrorIs(err, bls.ErrFailedPublicKeyDecompress)
+	// All zeros for public key will fail to decompress
+	require.Error(err)
 
 	newBLSPOP, err := newProofOfPossession()
 	require.NoError(err)

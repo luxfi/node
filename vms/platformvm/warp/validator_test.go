@@ -10,20 +10,64 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorsmock"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/set"
 )
+
+var (
+	subnetID = ids.GenerateTestID()
+	testVdrs []*testValidator
+)
+
+type testValidator struct {
+	nodeID ids.NodeID
+	sk     *bls.SecretKey
+	vdr    *Validator
+}
+
+func (v *testValidator) Compare(o *testValidator) int {
+	return v.vdr.Compare(o.vdr)
+}
+
+func newTestValidator() *testValidator {
+	sk, err := bls.NewSecretKey()
+	if err != nil {
+		panic(err)
+	}
+
+	nodeID := ids.GenerateTestNodeID()
+	pk := bls.PublicFromSecretKey(sk)
+	return &testValidator{
+		nodeID: nodeID,
+		sk:     sk,
+		vdr: &Validator{
+			PublicKey:      pk,
+			PublicKeyBytes: bls.PublicKeyToUncompressedBytes(pk),
+			Weight:         3,
+			NodeIDs:        []ids.NodeID{nodeID},
+		},
+	}
+}
+
+func init() {
+	testVdrs = []*testValidator{
+		newTestValidator(),
+		newTestValidator(),
+		newTestValidator(),
+	}
+	utils.Sort(testVdrs)
+}
 
 func TestGetCanonicalValidatorSet(t *testing.T) {
 	type test struct {
 		name           string
-		stateF         func(*gomock.Controller) validators.State
+		stateF         func() ValidatorState
 		expectedVdrs   []*Validator
 		expectedWeight uint64
 		expectedErr    error
@@ -32,33 +76,44 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 	tests := []test{
 		{
 			name: "can't get validator set",
-			stateF: func(ctrl *gomock.Controller) validators.State {
-				state := validatorsmock.NewState(ctrl)
-				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, errTest)
-				return state
+			stateF: func() ValidatorState {
+				return &validatorStateAdapter{
+					state: &validatorsmock.State{
+					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+						if height == pChainHeight && sID == subnetID {
+							return nil, errTest
+						}
+						return nil, nil
+					},
+				},
+				}
 			},
 			expectedErr: errTest,
 		},
 		{
 			name: "all validators have public keys; no duplicate pub keys",
-			stateF: func(ctrl *gomock.Controller) validators.State {
-				state := validatorsmock.NewState(ctrl)
-				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(
-					map[ids.NodeID]*validators.GetValidatorOutput{
-						testVdrs[0].nodeID: {
-							NodeID:    testVdrs[0].nodeID,
-							PublicKey: testVdrs[0].vdr.PublicKey,
-							Weight:    testVdrs[0].vdr.Weight,
-						},
-						testVdrs[1].nodeID: {
-							NodeID:    testVdrs[1].nodeID,
-							PublicKey: testVdrs[1].vdr.PublicKey,
-							Weight:    testVdrs[1].vdr.Weight,
-						},
+			stateF: func() ValidatorState {
+				return &validatorStateAdapter{
+					state: &validatorsmock.State{
+					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+						if height == pChainHeight && sID == subnetID {
+							return map[ids.NodeID]*validators.GetValidatorOutput{
+								testVdrs[0].nodeID: {
+									NodeID:    testVdrs[0].nodeID,
+									PublicKey: testVdrs[0].vdr.PublicKey,
+									Weight:    testVdrs[0].vdr.Weight,
+								},
+								testVdrs[1].nodeID: {
+									NodeID:    testVdrs[1].nodeID,
+									PublicKey: testVdrs[1].vdr.PublicKey,
+									Weight:    testVdrs[1].vdr.Weight,
+								},
+							}, nil
+						}
+						return nil, nil
 					},
-					nil,
-				)
-				return state
+				},
+				}
 			},
 			expectedVdrs:   []*Validator{testVdrs[0].vdr, testVdrs[1].vdr},
 			expectedWeight: 6,
@@ -66,10 +121,12 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 		},
 		{
 			name: "all validators have public keys; duplicate pub keys",
-			stateF: func(ctrl *gomock.Controller) validators.State {
-				state := validatorsmock.NewState(ctrl)
-				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(
-					map[ids.NodeID]*validators.GetValidatorOutput{
+			stateF: func() ValidatorState {
+				return &validatorStateAdapter{
+					state: &validatorsmock.State{
+					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+						if height == pChainHeight && sID == subnetID {
+							return map[ids.NodeID]*validators.GetValidatorOutput{
 						testVdrs[0].nodeID: {
 							NodeID:    testVdrs[0].nodeID,
 							PublicKey: testVdrs[0].vdr.PublicKey,
@@ -85,10 +142,12 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 							PublicKey: testVdrs[0].vdr.PublicKey,
 							Weight:    testVdrs[0].vdr.Weight,
 						},
+							}, nil
+						}
+						return nil, nil
 					},
-					nil,
-				)
-				return state
+				},
+				}
 			},
 			expectedVdrs: []*Validator{
 				{
@@ -107,10 +166,12 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 		},
 		{
 			name: "validator without public key; no duplicate pub keys",
-			stateF: func(ctrl *gomock.Controller) validators.State {
-				state := validatorsmock.NewState(ctrl)
-				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(
-					map[ids.NodeID]*validators.GetValidatorOutput{
+			stateF: func() ValidatorState {
+				return &validatorStateAdapter{
+					state: &validatorsmock.State{
+					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+						if height == pChainHeight && sID == subnetID {
+							return map[ids.NodeID]*validators.GetValidatorOutput{
 						testVdrs[0].nodeID: {
 							NodeID:    testVdrs[0].nodeID,
 							PublicKey: nil,
@@ -121,10 +182,12 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 							PublicKey: testVdrs[1].vdr.PublicKey,
 							Weight:    testVdrs[1].vdr.Weight,
 						},
+							}, nil
+						}
+						return nil, nil
 					},
-					nil,
-				)
-				return state
+				},
+				}
 			},
 			expectedVdrs:   []*Validator{testVdrs[1].vdr},
 			expectedWeight: 6,
@@ -135,9 +198,8 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
-			ctrl := gomock.NewController(t)
 
-			state := tt.stateF(ctrl)
+			state := tt.stateF()
 
 			vdrs, weight, err := GetCanonicalValidatorSet(context.Background(), state, pChainHeight, subnetID)
 			require.ErrorIs(err, tt.expectedErr)
@@ -331,9 +393,11 @@ func BenchmarkGetCanonicalValidatorSet(b *testing.B) {
 			validator := getValidatorOutputs[i]
 			getValidatorsOutput[validator.NodeID] = validator
 		}
-		validatorState := &validatorstest.State{
-			GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-				return getValidatorsOutput, nil
+		validatorState := &validatorStateAdapter{
+			state: &validatorstest.State{
+				GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+					return getValidatorsOutput, nil
+				},
 			},
 		}
 

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
@@ -30,6 +31,8 @@ import (
 
 func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	require := require.New(t)
+	
+	var ctx context.Context
 
 	addr := ids.ShortID{
 		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
@@ -135,11 +138,13 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
-	require.NoError(simpleAddPrimaryTx.SyntacticVerify(&context.Context{
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-	}))
+	})
+	require.NoError(simpleAddPrimaryTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleAddPrimaryTxBytes := []byte{
 		// Codec version
@@ -434,11 +439,13 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	require.NoError(complexAddPrimaryTx.SyntacticVerify(&context.Context{
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-	}))
+	})
+	require.NoError(complexAddPrimaryTx.SyntacticVerify(ctx))
 
 	expectedUnsignedComplexAddPrimaryTxBytes := []byte{
 		// Codec version
@@ -701,6 +708,8 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 
 func TestAddPermissionlessSubnetValidator(t *testing.T) {
 	require := require.New(t)
+	
+	var ctx context.Context
 
 	addr := ids.ShortID{
 		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
@@ -821,11 +830,13 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddSubnetTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddSubnetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddSubnetTx.Ins)
-	require.NoError(simpleAddSubnetTx.SyntacticVerify(&context.Context{
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-	}))
+	})
+	require.NoError(simpleAddSubnetTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleAddSubnetTxBytes := []byte{
 		// Codec version
@@ -1121,11 +1132,13 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	require.NoError(complexAddSubnetTx.SyntacticVerify(&context.Context{
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-	}))
+	})
+	require.NoError(complexAddSubnetTx.SyntacticVerify(ctx))
 
 	expectedUnsignedComplexAddSubnetTxBytes := []byte{
 		// Codec version
@@ -1378,10 +1391,11 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &context.Context{
-		ChainID:   chainID,
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: networkID,
-	}
+		ChainID:   chainID,
+	})
 
 	// A BaseTx that already passed syntactic verification.
 	verifiedBaseTx := BaseTx{

@@ -224,7 +224,7 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 		i.log.Error("index is incomplete but incomplete indices are disabled. Shutting down",
 			zap.String("chainName", chainName),
 		)
-		if err := i.close(); err != nil {
+		if err := i.close(); err != nil{
 			i.log.Error("failed to close indexer",
 				zap.Error(err),
 			)
@@ -252,6 +252,7 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 			zap.String("chainName", chainName),
 			zap.String("endpoint", "block"),
 			zap.Error(err),
+			zap.String("debug", "closing indexer due to block index creation failure"),
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
@@ -262,6 +263,10 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 	}
 	i.blockIndices[chainID] = index
 
+	vmType := fmt.Sprintf("%T", vm)
+	i.log.Debug("RegisterChain VM type check",
+		zap.String("vmType", vmType),
+	)
 	switch vm.(type) {
 	case vertex.LinearizableVMWithEngine:
 		vtxIndex, err := i.registerChainHelper(chainID, vtxPrefix, chainName, "vtx", i.vertexAcceptorGroup)
@@ -296,6 +301,7 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 		}
 		i.txIndices[chainID] = txIndex
 	case block.ChainVM:
+		i.log.Debug("Matched block.ChainVM type, no additional indices needed")
 	default:
 		vmType := fmt.Sprintf("%T", vm)
 		i.log.Error("got unexpected vm type",
@@ -321,7 +327,8 @@ func (i *indexer) registerChainHelper(
 	indexDB := prefixdb.New(prefix, i.db)
 	index, err := newIndex(indexDB, i.log, i.clock)
 	if err != nil {
-		_ = indexDB.Close()
+		// Don't close indexDB as it would close the underlying database
+		// The prefixdb doesn't hold resources that need explicit cleanup
 		return nil, err
 	}
 

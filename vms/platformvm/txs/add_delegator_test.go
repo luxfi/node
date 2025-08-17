@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
@@ -46,14 +47,14 @@ func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: lux.Asset{ID: ctx.LUXAssetID},
+		Asset: lux.Asset{ID: consensus.LuxAssetID(ctx)},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
 	outputs := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: ctx.LUXAssetID},
+		Asset: lux.Asset{ID: consensus.LuxAssetID(ctx)},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -63,7 +64,7 @@ func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 		},
 	}}
 	stakes := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: ctx.LUXAssetID},
+		Asset: lux.Asset{ID: consensus.LuxAssetID(ctx)},
 		Out: &stakeable.LockOut{
 			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
 			TransferableOut: &secp256k1fx.TransferOutput{
@@ -77,14 +78,14 @@ func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 	}}
 	addDelegatorTx = &AddDelegatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    ctx.NetworkID,
-			BlockchainID: ctx.ChainID,
+			NetworkID:    consensus.GetNetworkID(ctx),
+			BlockchainID: consensus.GetChainID(ctx),
 			Outs:         outputs,
 			Ins:          inputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}},
 		Validator: Validator{
-			NodeID: ctx.NodeID,
+			NodeID: consensus.GetNodeID(ctx),
 			Start:  uint64(clk.Time().Unix()),
 			End:    uint64(clk.Time().Add(time.Hour).Unix()),
 			Wght:   validatorWeight,
@@ -176,14 +177,14 @@ func TestAddDelegatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	}}
 	addDelegatorTx = &AddDelegatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    ctx.NetworkID,
-			BlockchainID: ctx.ChainID,
+			NetworkID:    consensus.GetNetworkID(ctx),
+			BlockchainID: consensus.GetChainID(ctx),
 			Outs:         outputs,
 			Ins:          inputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}},
 		Validator: Validator{
-			NodeID: ctx.NodeID,
+			NodeID: consensus.GetNodeID(ctx),
 			Start:  uint64(clk.Time().Unix()),
 			End:    uint64(clk.Time().Add(time.Hour).Unix()),
 			Wght:   validatorWeight,
