@@ -13,7 +13,6 @@ import (
 	"math"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -262,8 +261,8 @@ func getSelectors(networkUUID string) (string, error) {
 
 	// Fall back to using Github labels as selectors
 	selectors := []string{}
-	for _, label := range githubLabels {
-		value := os.Getenv(strings.ToUpper(label))
+	githubLabels := GetGitHubLabels()
+	for label, value := range githubLabels {
 		if len(value) > 0 {
 			selectors = append(selectors, fmt.Sprintf(`%s="%s"`, label, value))
 		}

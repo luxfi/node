@@ -12,6 +12,7 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 )
 
 func TestBandwidthThrottler(t *testing.T) {
@@ -21,7 +22,8 @@ func TestBandwidthThrottler(t *testing.T) {
 		RefillRate:   8,
 		MaxBurstSize: 10,
 	}
-	throttlerIntf, err := newBandwidthThrottler(nil, metric.NewNoOpMetrics("test").Registry(), config)
+	logger := log.NewNoOpLogger()
+	throttlerIntf, err := newBandwidthThrottler(logger, metric.NewNoOpMetrics("test").Registry(), config)
 	require.NoError(err)
 	require.IsType(&bandwidthThrottlerImpl{}, throttlerIntf)
 	throttler := throttlerIntf.(*bandwidthThrottlerImpl)

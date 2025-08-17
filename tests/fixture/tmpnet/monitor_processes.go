@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -316,6 +317,26 @@ func WritePrometheusSDConfig(name string, sdConfig SDConfig, withGitHubLabels bo
 	return configPath, nil
 }
 
+func GetGitHubLabels() map[string]string {
+	labels := make(map[string]string)
+	githubEnvVars := []string{
+		"GH_JOB_ID",
+		"GH_REPO",
+		"GH_WORKFLOW",
+		"GH_RUN_ID",
+		"GH_RUN_NUMBER",
+		"GH_RUN_ATTEMPT",
+	}
+	for _, envVar := range githubEnvVars {
+		if value := os.Getenv(envVar); value != "" {
+			// Convert GH_WORKFLOW to gh_workflow format
+			key := strings.ToLower(strings.Replace(envVar, "_", "_", -1))
+			labels[key] = value
+		}
+	}
+	return labels
+}
+
 func applyGitHubLabels(sdConfig SDConfig) SDConfig {
 	maps.Copy(sdConfig.Labels, GetGitHubLabels())
 	return sdConfig
@@ -606,4 +627,17 @@ func waitForReadiness(ctx context.Context, log logging.Logger, cmdName string, r
 
 func pollUntilContextCancel(ctx context.Context, condition wait.ConditionWithContextFunc) error {
 	return wait.PollUntilContextCancel(ctx, collectorTickerInterval, true /* immediate */, condition)
+}
+
+// getProcess returns an os.Process for the given PID
+func getProcess(pid int) (*os.Process, error) {
+	return os.FindProcess(pid)
+}
+
+// GetEnvWithDefault gets an environment variable with a default value
+func GetEnvWithDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }

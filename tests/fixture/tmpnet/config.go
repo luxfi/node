@@ -44,6 +44,9 @@ const (
 
 	// A short min stake duration enables testing of staking logic.
 	DefaultMinStakeDuration = time.Second
+
+	// RootNetworkDirEnvName is the environment variable for the root network directory
+	RootNetworkDirEnvName = "TMPNET_ROOT_DIR"
 )
 
 var (

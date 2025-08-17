@@ -21,6 +21,13 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
+func must[T any](t require.TestingT) func(T, error) T {
+	return func(val T, err error) T {
+		require.NoError(t, err)
+		return val
+	}
+}
+
 func TestVerifyWarpMessages(t *testing.T) {
 	var (
 		subnetID     = ids.GenerateTestID()

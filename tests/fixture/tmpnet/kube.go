@@ -7,7 +7,6 @@ import (
 	"cmp"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -169,9 +168,11 @@ func flagsToEnvVarSlice(flags FlagsMap) []corev1.EnvVar {
 	envVars := make([]corev1.EnvVar, len(flags))
 	var i int
 	for k, v := range flags {
+		// Convert flag key to environment variable name with LUXD_ prefix
+		envName := strings.ToUpper(strings.ReplaceAll(config.EnvPrefix+"_"+k, "-", "_"))
 		envVars[i] = corev1.EnvVar{
-			Name:  config.EnvVarName(config.EnvPrefix, k),
-			Value: v,
+			Name:  envName,
+			Value: fmt.Sprintf("%v", v), // Convert interface{} to string
 		}
 		i++
 	}
@@ -229,8 +230,8 @@ func WaitForNodeHealthy(
 		return ids.NodeID{}, fmt.Errorf("failed to retrieve node bootstrap ID: %w", err)
 	}
 	if err := wait.PollImmediateInfinite(healthCheckInterval, func() (bool, error) {
-		healthReply, err := CheckNodeHealth(ctx, localNodeURI)
-		if errors.Is(err, ErrUnrecoverableNodeHealthCheck) {
+		healthy, err := checkNodeHealth(ctx, localNodeURI)
+		if err != nil && strings.Contains(err.Error(), "connection refused") {
 			return false, err
 		} else if err != nil {
 			// Error is potentially recoverable - log and continue
@@ -239,7 +240,7 @@ func WaitForNodeHealthy(
 			)
 			return false, nil
 		}
-		return healthReply.Healthy, nil
+		return healthy, nil
 	}); err != nil {
 		return ids.NodeID{}, fmt.Errorf("failed to wait for node to report healthy: %w", err)
 	}

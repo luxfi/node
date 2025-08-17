@@ -66,7 +66,7 @@ func TestCreateSubnetTxAP3FeeChange(t *testing.T) {
 
 			cfg := *env.config
 			cfg.StaticFeeConfig.CreateSubnetTxFee = test.fee
-			factory := txstest.NewWalletFactory(env.ctx, &cfg, env.state)
+			factory := txstest.NewWalletFactory(env.ctx.Context, env.ctx.SharedMemory, &cfg, env.state)
 			builder, signer := factory.NewWallet(preFundedKeys...)
 			utx, err := builder.NewCreateSubnetTx(
 				&secp256k1fx.OutputOwners{},

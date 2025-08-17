@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/database"
 	"github.com/luxfi/database/databasemock"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -171,7 +172,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	s.EXPECT().CommitBatch().Return(batch, nil).Times(1)
 	s.EXPECT().Abort().Times(1)
 	onAcceptState.EXPECT().Apply(s).Times(1)
-	sharedMemory.EXPECT().Apply(atomicRequests, batch).Return(nil).Times(1)
+	mockSharedMemory.EXPECT().Apply(atomicRequests, batch).Return(nil).Times(1)
 	s.EXPECT().Checksum().Return(ids.Empty).Times(1)
 
 	require.NoError(acceptor.ApricotAtomicBlock(blk))
@@ -182,7 +183,8 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	mockSharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := &sharedMemoryAdapter{MockSharedMemory: mockSharedMemory}
 
 	parentID := ids.GenerateTestID()
 	clk := &mockable.Clock{}
@@ -257,7 +259,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	s.EXPECT().CommitBatch().Return(batch, nil).Times(1)
 	s.EXPECT().Abort().Times(1)
 	onAcceptState.EXPECT().Apply(s).Times(1)
-	sharedMemory.EXPECT().Apply(atomicRequests, batch).Return(nil).Times(1)
+	mockSharedMemory.EXPECT().Apply(atomicRequests, batch).Return(nil).Times(1)
 	s.EXPECT().Checksum().Return(ids.Empty).Times(1)
 
 	require.NoError(acceptor.BanffStandardBlock(blk))
@@ -270,7 +272,8 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	mockSharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := &sharedMemoryAdapter{MockSharedMemory: mockSharedMemory}
 
 	parentID := ids.GenerateTestID()
 	acceptor := &acceptor{
@@ -363,7 +366,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 
 		parentOnCommitState.EXPECT().Apply(s).Times(1),
 		s.EXPECT().CommitBatch().Return(batch, nil).Times(1),
-		sharedMemory.EXPECT().Apply(atomicRequests, batch).Return(nil).Times(1),
+		mockSharedMemory.EXPECT().Apply(atomicRequests, batch).Return(nil).Times(1),
 		s.EXPECT().Checksum().Return(ids.Empty).Times(1),
 		s.EXPECT().Abort().Times(1),
 	)
@@ -378,7 +381,8 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	mockSharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := &sharedMemoryAdapter{MockSharedMemory: mockSharedMemory}
 
 	parentID := ids.GenerateTestID()
 	acceptor := &acceptor{
@@ -471,7 +475,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 
 		parentOnAbortState.EXPECT().Apply(s).Times(1),
 		s.EXPECT().CommitBatch().Return(batch, nil).Times(1),
-		sharedMemory.EXPECT().Apply(atomicRequests, batch).Return(nil).Times(1),
+		mockSharedMemory.EXPECT().Apply(atomicRequests, batch).Return(nil).Times(1),
 		s.EXPECT().Checksum().Return(ids.Empty).Times(1),
 		s.EXPECT().Abort().Times(1),
 	)
