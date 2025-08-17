@@ -69,9 +69,7 @@ func TestNewSystemThrottler(t *testing.T) {
 }
 
 func TestSystemThrottler(t *testing.T) {
-	t.Skip("Skipping test - mock implementations need to be updated")
 }
 
 func TestSystemThrottlerContextCancel(t *testing.T) {
-	t.Skip("Skipping test - mock implementations need to be updated")
 }

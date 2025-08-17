@@ -28,7 +28,6 @@ import (
 )
 
 const (
-	// TODO: name better
 	rebuildViewSizeFractionOfCacheSize   = 50
 	minRebuildViewSizePerCommit          = 1000
 	clearBatchSize                       = units.MiB
@@ -341,7 +340,6 @@ func newDatabase(
 }
 
 // Deletes every intermediate node and rebuilds them by re-adding every key/value.
-// TODO: make this more efficient by only clearing out the stale portions of the trie.
 func (db *merkleDB) rebuild(ctx context.Context, cacheSize int) error {
 	db.root = maybe.Nothing[*node]()
 	db.rootID = ids.Empty

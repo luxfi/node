@@ -531,7 +531,6 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 	invalidBlk, err := proVM.ParseBlock(context.Background(), invalidBlkBytes)
 	if err != nil {
 		// Not being able to parse an invalid block is fine.
-		t.Skip(err)
 	}
 
 	err = invalidBlk.Verify(context.Background())
@@ -548,7 +547,6 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 	proVM.innerBlkCache.Flush() // So we don't get from the cache
 	fetchedBlk, err := proVM.GetBlock(context.Background(), blkID)
 	if err != nil {
-		t.Skip(err)
 	}
 
 	// GetBlock returned, so it must have somehow gotten a valid representation

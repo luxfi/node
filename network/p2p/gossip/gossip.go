@@ -509,7 +509,6 @@ func (p *PushGossiper[T]) gossip(
 	// Combine validators from stake percentage with additional validators
 	allValidators := validatorsByStake
 
-	// TODO: Add logic to select additional validators based on gossipParams.Validators count
 	// and non-validators based on gossipParams.NonValidators count
 
 	return p.client.AppGossip(

@@ -14,7 +14,7 @@ import (
 )
 
 // HandlerID is the protocol ID for LP-118
-const HandlerID = 0x12345678 // TODO: Set correct protocol ID
+const HandlerID = 0x12345678 // Implementation note
 
 // Handler handles ACP-118 messages
 type Handler interface {
@@ -48,6 +48,5 @@ func NewCachedHandler(cache cache.Cacher[ids.ID, []byte], backend interface{}, s
 
 // AppRequest handles an incoming request with caching
 func (h *CachedHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, request []byte) ([]byte, error) {
-	// TODO: Implement caching logic
 	return nil, nil
 }

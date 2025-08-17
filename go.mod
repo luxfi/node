@@ -210,3 +210,15 @@ require (
 // Pin all OpenTelemetry modules (and metric sub-packages) to v1.37.0
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
+
+replace (
+	github.com/luxfi/consensus => ../consensus
+	github.com/luxfi/crypto => ../crypto
+	github.com/luxfi/database => ../database
+	github.com/luxfi/geth => ../geth
+	github.com/luxfi/ids => ../ids
+	github.com/luxfi/ledger-lux-go => ../ledger-lux-go
+	github.com/luxfi/log => ../log
+	github.com/luxfi/metric => ../metric
+	github.com/luxfi/trace => ../trace
+)

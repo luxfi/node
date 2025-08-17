@@ -59,7 +59,6 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
-// TODO: Enable these to be configured by the user
 const (
 	decidedCacheSize    = 64 * units.MiB
 	missingCacheSize    = 2048

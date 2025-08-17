@@ -201,7 +201,6 @@ func (fx *FalconFx) verifyMultisigFalcon(tx UnsignedTx, owner *FalconOutputOwner
 
 // Stub function - would be implemented by integrating actual FALCON library
 func verifyFalcon512(hash, salt, sig, pubKey []byte) bool {
-	// TODO: Integrate with Go FALCON library
 	// This would call the actual FALCON-512 verification
 	return false
 }

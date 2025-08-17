@@ -349,7 +349,6 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *ap
 			limit,
 		)
 	} else {
-		// TODO: Fix shared memory interface mismatch
 		// For now, return empty results when shared memory is used
 		utxos = []*lux.UTXO{}
 		endAddr = ids.ShortEmpty
@@ -730,7 +729,6 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 		if err != nil {
 			return err
 		}
-		// TODO: avoid iterating over delegators here.
 		for currentStakerIterator.Next() {
 			staker := currentStakerIterator.Value()
 			if args.SubnetID != staker.SubnetID {
@@ -752,7 +750,6 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			}
 			targetStakers = append(targetStakers, staker)
 
-			// TODO: avoid iterating over delegators when numNodeIDs > 1.
 			delegatorsIt, err := s.vm.state.GetCurrentDelegatorIterator(args.SubnetID, nodeID)
 			if err != nil {
 				return err
@@ -799,7 +796,6 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 				return err
 			}
 
-			// TODO: handle subnet uptime
 			connected := false
 			if args.SubnetID == constants.PrimaryNetworkID {
 				connected = s.vm.uptimeManager.IsConnected(nodeID)
@@ -867,7 +863,6 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			if err != nil {
 				return err
 			}
-			// TODO: handle subnet uptime
 			connected := false
 			if args.SubnetID == constants.PrimaryNetworkID {
 				connected = s.vm.uptimeManager.IsConnected(nodeID)
@@ -1401,7 +1396,6 @@ type GetStakeReply struct {
 // This method assumes that each stake output has only owner
 // This method assumes only LUX can be staked
 // This method only concerns itself with the Primary Network, not subnets
-// TODO: Improve the performance of this method by maintaining this data
 // in a data structure rather than re-calculating it by iterating over stakers
 func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetStakeReply) error {
 	s.vm.log.Debug("deprecated API called",
@@ -1744,7 +1738,6 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *ap
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		// TODO: Fix InitCtx - method doesn't exist on block
 		// block.InitCtx(s.vm.ctx)
 		result = block
 	} else {
@@ -1787,7 +1780,6 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 
 	var result any
 	if args.Encoding == formatting.JSON {
-		// TODO: Fix InitCtx - method doesn't exist on block
 		// block.InitCtx(s.vm.ctx)
 		result = block
 	} else {
@@ -1807,7 +1799,6 @@ func (s *Service) getAPIUptime(staker *state.Staker) (*avajson.Float32, error) {
 		return nil, nil
 	}
 
-	// TODO: handle subnet uptime
 	rawUptime := float64(0)
 	var err error
 	if staker.SubnetID == constants.PrimaryNetworkID {

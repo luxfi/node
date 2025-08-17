@@ -56,7 +56,6 @@ func (b *builder) SetPreference(preferred ids.ID) {
 }
 
 func (b *builder) AddTx(_ context.Context, newTx *tx.Tx) error {
-	// TODO: verify [tx] against the currently preferred state
 	txID, err := newTx.ID()
 	if err != nil {
 		return err
@@ -139,7 +138,6 @@ func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context)
 			BlockContext: blockContext,
 			TxID:         txID,
 			Sender:       sender,
-			// TODO: populate fees
 		}
 		if err := currentTx.Unsigned.Visit(&txExecutor); err != nil {
 			// This tx was invalid, drop it and continue block building

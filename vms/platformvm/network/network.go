@@ -173,7 +173,6 @@ func New(
 }
 
 func (n *Network) PushGossip(ctx context.Context) {
-	// TODO: Even though the node is running partial sync, we should support
 	// issuing transactions from the RPC.
 	if n.partialSyncPrimaryNetwork {
 		return
@@ -207,7 +206,6 @@ func (n *Network) IssueTxFromRPC(tx *txs.Tx) error {
 	// If we are partially syncing the Primary Network, we should not be
 	// maintaining the transaction mempool locally.
 	//
-	// TODO: We should still push the transaction to some peers when partial
 	// syncing.
 	if n.partialSyncPrimaryNetwork {
 		return errMempoolDisabledWithPartialSync

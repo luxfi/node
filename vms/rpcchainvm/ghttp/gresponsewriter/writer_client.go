@@ -75,12 +75,10 @@ func (c *Client) WriteHeader(statusCode int) {
 			Values: values,
 		})
 	}
-	// TODO: Is there a way to handle the error here?
 	_, _ = c.client.WriteHeader(context.Background(), req)
 }
 
 func (c *Client) Flush() {
-	// TODO: is there a way to handle the error here?
 	_, _ = c.client.Flush(context.Background(), &emptypb.Empty{})
 }
 

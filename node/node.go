@@ -774,7 +774,6 @@ func (n *Node) Dispatch() error {
  */
 
 func (n *Node) initDatabase() error {
-	// TODO: Re-enable metrics when using database factory
 	// dbRegisterer, err := metric.MakeAndRegister(
 	// 	n.MetricsGatherer,
 	// 	dbNamespace,
@@ -1494,7 +1493,6 @@ func (n *Node) initHealthAPI() error {
 		return fmt.Errorf("couldn't register router health check: %w", err)
 	}
 
-	// TODO: add database health to liveness check
 	err = n.health.RegisterHealthCheck("database", n.DB, health.ApplicationTag)
 	if err != nil {
 		return fmt.Errorf("couldn't register database health check: %w", err)

@@ -309,7 +309,6 @@ func (s *visitor) getSubnetSigners(subnetID ids.ID, subnetAuth verify.Verifiable
 	return authSigners, nil
 }
 
-// TODO: remove [signHash] after the ledger supports signing all transactions.
 func sign(tx *txs.Tx, signHash bool, txSigners [][]keychain.Signer) error {
 	unsignedBytes, err := txs.Codec.Marshal(txs.CodecVersion, &tx.Unsigned)
 	if err != nil {

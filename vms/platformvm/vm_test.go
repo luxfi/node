@@ -132,7 +132,6 @@ var (
 
 func init() {
 	for _, key := range keys {
-		// TODO: use ids.GenerateTestNodeID() instead of ids.BuildTestNodeID
 		// Can be done when TestGetState is refactored
 		nodeBytes := key.PublicKey().Address()
 		nodeID := ids.BuildTestNodeID(nodeBytes[:])

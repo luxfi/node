@@ -32,7 +32,6 @@ func main() {
 	fmt.Printf("Found genesis bytes: %d bytes\n", len(genesisBytes))
 
 	// Parse genesis
-	// TODO: Fix genesis parsing - types need to be defined
 	var gen map[string]interface{}
 	if err := json.Unmarshal(genesisBytes, &gen); err != nil {
 		log.Fatalf("Failed to parse genesis: %v", err)

@@ -32,7 +32,6 @@ func writeDelegatorMetadata(db database.KeyValueWriter, metadata *delegatorMetad
 	// [validatorMetadata] codec version is the same as the [delegatorMetadata]
 	// codec version.
 	//
-	// TODO: Cleanup post-Durango activation.
 	if codecVersion == 0 {
 		return database.PutUInt64(db, metadata.txID[:], metadata.PotentialReward)
 	}

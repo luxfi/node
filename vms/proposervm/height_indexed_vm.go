@@ -101,7 +101,6 @@ func (vm *VM) updateHeightIndex(height uint64, blkID ids.ID) error {
 	return nil
 }
 
-// TODO: Support async deletion of old blocks.
 func (vm *VM) pruneOldBlocks() error {
 	if vm.NumHistoricalBlocks == 0 {
 		return nil
@@ -113,7 +112,6 @@ func (vm *VM) pruneOldBlocks() error {
 		return nil
 	}
 
-	// TODO: Refactor to use DB iterators.
 	//
 	// Note: vm.lastAcceptedHeight is guaranteed to be >= height, so the
 	// subtraction can never underflow.

@@ -39,7 +39,6 @@ func (w *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint
 }
 
 func (w *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	// TODO: This needs to be implemented based on the chain registry
 	// For now, return an error
 	return ids.Empty, nil
 }

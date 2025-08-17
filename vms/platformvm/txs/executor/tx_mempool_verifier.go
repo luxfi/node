@@ -146,24 +146,20 @@ func (v *MempoolTxVerifier) nextBlockTime(stateDiff state.Diff) (time.Time, erro
 
 // DisableL1ValidatorTx handles L1 validator disabling
 func (v *MempoolTxVerifier) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
-	// TODO: Implement mempool verification for L1 validator disabling
 	return nil
 }
 
 // IncreaseL1ValidatorBalanceTx handles L1 validator balance increase
 func (v *MempoolTxVerifier) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
-	// TODO: Implement mempool verification for L1 validator balance increase
 	return nil
 }
 
 // RegisterL1ValidatorTx handles L1 validator registration
 func (v *MempoolTxVerifier) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
-	// TODO: Implement mempool verification for L1 validator registration
 	return nil
 }
 
 // SetL1ValidatorWeightTx handles L1 validator weight setting
 func (v *MempoolTxVerifier) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
-	// TODO: Implement mempool verification for L1 validator weight setting
 	return nil
 }

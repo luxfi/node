@@ -18,7 +18,6 @@ var (
 	_ verify.Verifiable = (*Metadata)(nil)
 )
 
-// TODO: Delete this once the downstream dependencies have been updated.
 type Metadata struct {
 	id            ids.ID // The ID of this data
 	unsignedBytes []byte // Unsigned byte representation of this data

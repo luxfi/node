@@ -41,7 +41,6 @@ type inboundMsgBufferThrottler struct {
 	// In this case, a message is "processing" if the corresponding
 	// call to Acquire() has returned or is about to return,
 	// but the corresponding call to Release() has not happened.
-	// TODO: Different values for validators / non-validators?
 	maxProcessingMsgsPerNode uint64
 	// Node ID --> Number of messages from this node we're currently processing.
 	// Must only be accessed when [lock] is held.

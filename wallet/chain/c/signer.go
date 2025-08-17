@@ -156,7 +156,6 @@ func SignUnsignedAtomic(ctx context.Context, signer Signer, utx UnsignedAtomicTx
 	return tx, signer.SignAtomic(ctx, tx)
 }
 
-// TODO: remove [signHash] after the ledger supports signing all transactions.
 func sign(tx *Tx, signHash bool, txSigners [][]keychain.Signer) error {
 	unsignedBytes, err := Codec.Marshal(version, &tx.UnsignedAtomicTx)
 	if err != nil {

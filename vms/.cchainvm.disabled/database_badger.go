@@ -56,7 +56,6 @@ func NewBadgerDatabase(luxDB database.Database, config BadgerDatabaseConfig) (et
 		}
 
 		// Ancient store freezing is not yet supported in this BadgerDB implementation
-		// TODO: Implement freezer support when needed
 		if config.FreezeThreshold > 0 && !config.ReadOnly {
 			log.Warn("BadgerDB freezer not yet implemented, freezeThreshold ignored")
 		}
@@ -112,7 +111,6 @@ func SlurpIntoAncient(sourceDB ethdb.Database, targetPath string, startBlock, en
 	defer targetDB.Close()
 
 	// Ancient store freezing is not yet supported in this BadgerDB implementation
-	// TODO: Implement freezer support when needed
 
 	// Import blocks in batches
 	batchSize := uint64(1000)

@@ -110,7 +110,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 		}
 		if len(assetDefinition.InitialState) > 0 {
 			initialState := &txs.InitialState{
-				FxIndex: 0, // TODO: Should lookup secp256k1fx FxID
+				FxIndex: 0, // Implementation note
 			}
 			for assetType, initialStates := range assetDefinition.InitialState {
 				switch assetType {

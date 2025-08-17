@@ -39,11 +39,11 @@ func NewWallet(
 ) wallet.Wallet {
 	var (
 		require = require.New(t)
-		addrs   = kc.Addresses()
+		addrSet = kc.AddressSet()
 		utxos   = common.NewUTXOs()
 	)
 
-	pChainUTXOs, err := lux.GetAllUTXOs(state, addrs)
+	pChainUTXOs, err := lux.GetAllUTXOs(state, addrSet)
 	require.NoError(err)
 
 	for _, utxo := range pChainUTXOs {
@@ -60,7 +60,7 @@ func NewWallet(
 			sharedMemory,
 			txs.Codec,
 			chainID,
-			addrs,
+			addrSet,
 			ids.ShortEmpty,
 			ids.Empty,
 			math.MaxInt,
@@ -107,7 +107,7 @@ func NewWallet(
 			backend: backend,
 		},
 		builder.New(
-			addrs,
+			addrSet,
 			builderContext,
 			backend,
 		),

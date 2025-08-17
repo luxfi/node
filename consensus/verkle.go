@@ -36,7 +36,6 @@ func (v *VerkleIntegration) ProcessTransactions(ctx context.Context, txs []Trans
 			return err
 		}
 
-		// TODO: Validate Verkle witness when witness package is ready
 		// if witness := tx.Witness(); witness != nil {
 		//     // Validate witness
 		// }

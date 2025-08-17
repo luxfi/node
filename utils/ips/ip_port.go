@@ -81,7 +81,6 @@ func ToIPPort(str string) (IPPort, error) {
 	}
 	port, err := strconv.ParseUint(portStr, 10 /*=base*/, 16 /*=size*/)
 	if err != nil {
-		// TODO: Should this return a locally defined error? (e.g. errBadPort)
 		return IPPort{}, err
 	}
 	ip := net.ParseIP(host)

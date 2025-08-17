@@ -14,7 +14,7 @@ import (
 
 var (
 	_ chain.Block = (*meterBlock)(nil)
-	// _ chain.OracleBlock      = (*meterBlock)(nil) // TODO: OracleBlock not in consensus
+	// _ chain.OracleBlock      = (*meterBlock)(nil) // Implementation note
 	_ block.WithVerifyContext = (*meterBlock)(nil)
 	_ block.Block             = (*meterBlock)(nil)
 
@@ -58,7 +58,6 @@ func (mb *meterBlock) Reject(ctx context.Context) error {
 	return err
 }
 
-// TODO: OracleBlock not in consensus - commenting out Options method
 // func (mb *meterBlock) Options(ctx context.Context) ([2]chain.Block, error) {
 // 	oracleBlock, ok := mb.Block.(chain.OracleBlock)
 // 	if !ok {

@@ -135,7 +135,6 @@ func (m *outboundMessage) BytesSavedCompression() int {
 	return m.bytesSavedCompression
 }
 
-// TODO: add other compression algorithms with extended interface
 type msgBuilder struct {
 	log log.Logger
 

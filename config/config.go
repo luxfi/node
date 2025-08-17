@@ -60,7 +60,6 @@ const (
 
 var (
 	// Deprecated key --> deprecation message (i.e. which key replaces it)
-	// TODO: deprecate "BootstrapIDsKey" and "BootstrapIPsKey"
 	deprecatedKeys = map[string]string{
 		KeystoreAPIEnabledKey: keystoreDeprecationMsg,
 	}
@@ -495,7 +494,6 @@ func getBootstrapConfig(v *viper.Viper, networkID uint32) (node.BootstrapConfig,
 		EnableAutomining:                        v.GetBool(EnableAutominingKey),
 	}
 
-	// TODO: Add a "BootstrappersKey" flag to more clearly enforce ID and IP
 	// length equality.
 	ipsSet := v.IsSet(BootstrapIPsKey)
 	idsSet := v.IsSet(BootstrapIDsKey)

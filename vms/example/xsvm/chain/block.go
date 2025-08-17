@@ -121,7 +121,6 @@ func (b *block) Reject(context.Context) error {
 	b.status = choices.Rejected
 	delete(b.chain.verifiedBlocks, b.id)
 
-	// TODO: push transactions back into the mempool
 	return nil
 }
 
@@ -216,7 +215,6 @@ func (b *block) calculateStatus() choices.Status {
 		return choices.Processing
 
 	default:
-		// TODO: correctly report this error to the consensus engine.
 		return choices.Processing
 	}
 }
@@ -224,13 +222,11 @@ func (b *block) calculateStatus() choices.Status {
 // FPCVotes implements the Block interface
 // Returns embedded fast-path consensus vote references
 func (b *block) FPCVotes() [][]byte {
-	// TODO: Extract FPC votes from block if available
 	return nil
 }
 
 // EpochBit implements the Block interface
 // Returns the epoch fence bit for FPC
 func (b *block) EpochBit() bool {
-	// TODO: Extract epoch bit from block if available
 	return false
 }

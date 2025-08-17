@@ -37,7 +37,6 @@ func BenchmarkMessageCompression(b *testing.B) {
 	b.Run("Zstd", func(b *testing.B) {
 		compressor, err := compression.NewZstdCompressor(10 * 1024 * 1024) // 10MB max
 		if err != nil {
-			b.Skip("Zstd not available")
 		}
 		b.ResetTimer()
 		b.ReportAllocs()

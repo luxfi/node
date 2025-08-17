@@ -178,10 +178,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	}
 	vm.connCloser.Add(dbClientConn)
 	vm.db = rpcdb.NewClient(rpcdbpb.NewDatabaseClient(dbClientConn))
-	// TODO: Add corruptabledb wrapper once logger is available
 
-	// TODO: Allow the logger to be configured by the client
-	// TODO: Properly configure logger
 	vm.log = nil // No logger needed
 
 	clientConn, err := grpcutils.Dial(

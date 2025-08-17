@@ -29,7 +29,6 @@ type Config struct {
 	// ProposerMinBlockDelay is the minimum delay this node will enforce when
 	// building a linear++ block.
 	//
-	// TODO: Remove this flag once all VMs throttle their own block production.
 	ProposerMinBlockDelay time.Duration `json:"proposerMinBlockDelay" yaml:"proposerMinBlockDelay"`
 	// ProposerNumHistoricalBlocks is the number of historical linear++ blocks
 	// this node will index per chain. If set to 0, the node will index all
@@ -46,7 +45,6 @@ type Config struct {
 	// the innerVM is not persisting its last accepted block quickly enough, the
 	// database can become corrupted.
 	//
-	// TODO: Move this flag once the proposervm is configurable on a per-chain
 	// basis.
 	ProposerNumHistoricalBlocks uint64 `json:"proposerNumHistoricalBlocks" yaml:"proposerNumHistoricalBlocks"`
 

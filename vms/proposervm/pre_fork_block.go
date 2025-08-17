@@ -81,7 +81,6 @@ func (b *preForkBlock) Status() choices.Status {
 		return choices.Processing
 	}
 	if err != nil {
-		// TODO: Once `Status()` can return an error, we should return the error
 		// here.
 		b.vm.log.Error("unexpected error looking up fork height",
 			zap.Error(err),

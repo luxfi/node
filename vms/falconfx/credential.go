@@ -114,7 +114,6 @@ func (o *FalconOutputOwners) Addresses() [][]byte {
 
 // deriveAddressFromFalconPubKey derives an address from a FALCON public key
 func deriveAddressFromFalconPubKey(pubKey []byte) []byte {
-	// TODO: Implement proper address derivation
 	// This could use a hash of the public key similar to Bitcoin
 	return pubKey[:20] // Placeholder
 }

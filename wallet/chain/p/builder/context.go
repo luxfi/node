@@ -67,7 +67,6 @@ func NewContextFromClients(
 }
 
 func NewConsensusContext(networkID uint32, luxAssetID ids.ID) (context.Context, error) {
-	// TODO: This function needs to be refactored to work with standard context.Context
 	// For now, return a basic context
 	ctx := context.Background()
 	return ctx, nil

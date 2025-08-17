@@ -45,7 +45,6 @@ func Block(
 			BlockContext: blockContext,
 			TxID:         txID,
 			Sender:       sender,
-			// TODO: populate fees
 		}
 		if err := currentTx.Unsigned.Visit(&txExecutor); err != nil {
 			return err

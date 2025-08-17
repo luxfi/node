@@ -788,7 +788,6 @@ func (v *view) insert(
 
 		// Call addChildWithID instead of addChild so the old root is added
 		// to the new root with the correct ID.
-		// TODO:
 		// [oldRootID] shouldn't need to be calculated here.
 		// Either oldRootID should already be calculated or will be calculated at the end with the other nodes
 		// Initialize the v.changes.rootID during newView and then use that here instead of oldRootID

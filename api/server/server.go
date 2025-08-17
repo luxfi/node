@@ -181,7 +181,6 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 		return
 	}
 
-	// TODO: Add proper locking mechanism as a field on server instead of in context
 	s.lock.Lock()
 	defer s.lock.Unlock()
 

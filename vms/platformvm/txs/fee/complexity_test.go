@@ -36,7 +36,6 @@ var txTests = []struct {
 }
 
 func TestTxComplexity_Individual(t *testing.T) {
-	t.Skip("Skipping until txTests data is populated")
 	for _, test := range txTests {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
@@ -66,7 +65,6 @@ func TestTxComplexity_Individual(t *testing.T) {
 }
 
 func TestTxComplexity_Batch(t *testing.T) {
-	t.Skip("Skipping until txTests data is populated")
 	require := require.New(t)
 
 	var (
@@ -97,7 +95,6 @@ func TestTxComplexity_Batch(t *testing.T) {
 }
 
 func BenchmarkTxComplexity_Individual(b *testing.B) {
-	b.Skip("Skipping until txTests data is populated")
 	for _, test := range txTests {
 		b.Run(test.name, func(b *testing.B) {
 			require := require.New(b)
@@ -117,7 +114,6 @@ func BenchmarkTxComplexity_Individual(b *testing.B) {
 }
 
 func BenchmarkTxComplexity_Batch(b *testing.B) {
-	b.Skip("Skipping until txTests data is populated")
 	require := require.New(b)
 
 	unsignedTxs := make([]txs.UnsignedTx, 0, len(txTests))
@@ -365,7 +361,6 @@ func TestInputComplexity(t *testing.T) {
 }
 
 func TestConvertSubnetToL1ValidatorComplexity(t *testing.T) {
-	t.Skip("ConvertSubnetToL1Validator not yet registered in codec")
 	tests := []struct {
 		name     string
 		vdr      txs.ConvertSubnetToL1Validator

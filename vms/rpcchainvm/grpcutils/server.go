@@ -94,7 +94,6 @@ func NewListener() (net.Listener, error) {
 
 // Serve will start a gRPC server and block until it errors or is shutdown.
 func Serve(listener net.Listener, grpcServer *grpc.Server) {
-	// TODO: While errors will be reported later, it could be useful to somehow
 	//       log this if it is the primary error.
 	//
 	// There is nothing to with the error returned by serve here. Later requests

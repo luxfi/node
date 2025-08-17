@@ -729,7 +729,6 @@ func (p *KubeRuntime) ensureBootstrapIP(ctx context.Context) error {
 		namespace       = runtimeConfig.Namespace
 		statefulSetName = p.getStatefulSetName()
 	)
-	// TODO: Get bootstrap IPs from network configuration
 	bootstrapIPs := []string{}
 	if len(bootstrapIPs) > 0 {
 		log.Debug("bootstrap IPs are already available so no need to wait for StatefulSet Pod to become ready",
@@ -831,7 +830,6 @@ func (p *KubeRuntime) getPodName() string {
 }
 
 func (p *KubeRuntime) runtimeConfig() *KubeRuntimeConfig {
-	// TODO: Get runtime config from node - for now use defaults
 	return DefaultKubeRuntimeConfig
 }
 
@@ -910,7 +908,6 @@ func (p *KubeRuntime) setNotRunning() {
 
 // getFlags determines the set of luxd flags to configure the node with.
 func (p *KubeRuntime) getFlags() (FlagsMap, error) {
-	// TODO: Get flags from node configuration
 	flags := p.node.Flags
 	if flags == nil {
 		flags = FlagsMap{}

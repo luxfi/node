@@ -108,7 +108,6 @@ func TestWalletCreation(t *testing.T) {
 
 // TestCrossChainTransfer tests cross-chain transfer operations (P->X->C)
 func TestCrossChainTransfer(t *testing.T) {
-	t.Skip("Skipping cross-chain transfer test - requires funded wallet")
 	
 	require := require.New(t)
 	

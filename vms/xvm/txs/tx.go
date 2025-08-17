@@ -32,7 +32,6 @@ type UnsignedTx interface {
 	InputIDs() set.Set[ids.ID]
 
 	NumCredentials() int
-	// TODO: deprecate after x-chain linearization
 	InputUTXOs() []*lux.UTXOID
 
 	// Visit calls [visitor] with this transaction's concrete type

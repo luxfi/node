@@ -45,6 +45,13 @@ func (s *luxSigner) Address() ids.ShortID {
 	return addr
 }
 
+// AddressBytes returns the address as bytes (for keychain.Signer interface)
+func (s *luxSigner) AddressBytes() []byte {
+	pk := s.key.PublicKey()
+	pkBytes := pk.Bytes()
+	return secp256k1.PubkeyBytesToAddress(pkBytes)
+}
+
 // Keychain is a collection of keys that can be used to spend outputs
 type Keychain struct {
 	luxAddrToKeyIndex map[ids.ShortID]int
@@ -104,9 +111,14 @@ func (kc Keychain) GetEth(addr common.Address) (keychain.Signer, bool) {
 	return nil, false
 }
 
-// Addresses returns a list of addresses this keychain manages
-func (kc Keychain) Addresses() set.Set[ids.ShortID] {
+// AddressSet returns a set of addresses this keychain manages
+func (kc Keychain) AddressSet() set.Set[ids.ShortID] {
 	return kc.Addrs
+}
+
+// Addresses returns a list of addresses this keychain manages (implements keychain.Keychain)
+func (kc Keychain) Addresses() []ids.ShortID {
+	return kc.List()
 }
 
 // List returns all addresses in the keychain (implements keychain.Keychain)

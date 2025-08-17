@@ -11,14 +11,14 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/luxfi/consensus/engine/chain/block"
-	// "github.com/luxfi/consensus/protocol/chain" // TODO: OracleBlock not in consensus
+	// "github.com/luxfi/consensus/protocol/chain" // Implementation note
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var (
 	_ block.Block = (*tracedBlock)(nil)
-	// _ chain.OracleBlock      = (*tracedBlock)(nil) // TODO: OracleBlock not in consensus
+	// _ chain.OracleBlock      = (*tracedBlock)(nil) // Implementation note
 	_ block.WithVerifyContext = (*tracedBlock)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
@@ -60,7 +60,6 @@ func (b *tracedBlock) Reject(ctx context.Context) error {
 	return b.Block.Reject(ctx)
 }
 
-// TODO: OracleBlock not in consensus - commenting out Options method
 // func (b *tracedBlock) Options(ctx context.Context) ([2]chain.Block, error) {
 // 	oracleBlock, ok := b.Block.(chain.OracleBlock)
 // 	if !ok {

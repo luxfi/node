@@ -69,7 +69,6 @@ func NewRandomTest(
 		// during random test execution. Currently all tests use the same weight,
 		// making them equally likely to be chosen.
 		//
-		// TODO: fine-tune individual test weights so that load is
 		// representative of C-Chain usage patterns.
 		weight = uint64(100)
 		// count specifies how many times to repeat an operation (e.g. reads,

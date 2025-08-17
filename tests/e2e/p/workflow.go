@@ -94,7 +94,7 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 				Threshold: 1,
 				Addrs:     []ids.ShortID{pShortAddr},
 			}
-			shares := uint32(20000) // TODO: retrieve programmatically
+			shares := uint32(20000) // Implementation note
 
 			sk, err := bls.NewSecretKey()
 			require.NoError(err)

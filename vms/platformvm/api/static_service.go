@@ -72,7 +72,6 @@ func (utxo UTXO) Compare(other UTXO) int {
 	return utxoAddr.Compare(otherAddr)
 }
 
-// TODO: Refactor APIStaker, APIValidators and merge them together for
 //       PermissionedValidators + PermissionlessValidators.
 
 // APIStaker is the representation of a staker sent via APIs.
@@ -90,7 +89,6 @@ type Staker struct {
 	NodeID    ids.NodeID  `json:"nodeID"`
 
 	// Deprecated: Use Weight instead
-	// TODO: remove [StakeAmount] after enough time for dependencies to update
 	StakeAmount *json.Uint64 `json:"stakeAmount,omitempty"`
 }
 

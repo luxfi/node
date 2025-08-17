@@ -25,7 +25,6 @@ var (
 )
 
 func TestDynamicCalculator(t *testing.T) {
-	t.Skip("Skipping until txTests data is populated")
 	calculator := NewDynamicCalculator(testDynamicWeights, testDynamicPrice)
 	for _, test := range txTests {
 		t.Run(test.name, func(t *testing.T) {

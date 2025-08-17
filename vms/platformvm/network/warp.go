@@ -125,7 +125,6 @@ func (s signatureRequestVerifier) verifySubnetToL1Conversion(
 	s.stateLock.Lock()
 	defer s.stateLock.Unlock()
 
-	// TODO: Implement GetSubnetToL1Conversion when L1 validators are fully implemented
 	// conversion, err := s.state.GetSubnetToL1Conversion(subnetID)
 	// if err == database.ErrNotFound {
 	// 	return &common.AppError{
@@ -159,7 +158,6 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 		return s.verifyL1ValidatorRegistered(msg.ValidationID)
 	}
 
-	// TODO: Implement L1ValidatorRegistrationJustification when protobuf messages are available
 	// var justification platformvm.L1ValidatorRegistrationJustification
 	// if err := proto.Unmarshal(justificationBytes, &justification); err != nil {
 	// 	return &common.AppError{
@@ -216,7 +214,6 @@ func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
 	validationID ids.ID,
 	justification *platformvm.SubnetIDIndex,
 ) *common.AppError {
-	// TODO: Implement when L1 validator support is complete
 	// subnetID, err := ids.ToID(justification.GetSubnetId())
 	// if err != nil {
 	// 	return &common.AppError{
@@ -316,7 +313,6 @@ func (s signatureRequestVerifier) verifySubnetValidatorCanNotValidate(
 		return nil // The expiry time has passed
 	}
 
-	// TODO: Implement HasExpiry when L1 validators are complete
 	// // If the validation ID was successfully registered and then removed, it can
 	// // never be re-used again even if its expiry has not yet passed.
 	// hasExpiry, err := s.state.HasExpiry(state.ExpiryEntry{

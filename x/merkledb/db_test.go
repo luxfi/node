@@ -101,7 +101,6 @@ func Test_MerkleDB_GetValues_Safety(t *testing.T) {
 	require.Equal(value, gotValues[0])
 }
 
-// TODO: Fix database.Tests import issue
 // func Test_MerkleDB_DB_Interface(t *testing.T) {
 // 	for _, bf := range validBranchFactors {
 // 		for name, test := range database.Tests {
@@ -114,7 +113,6 @@ func Test_MerkleDB_GetValues_Safety(t *testing.T) {
 // 	}
 // }
 
-// TODO: Fix database benchmark imports
 // func Benchmark_MerkleDB_DBInterface(b *testing.B) {
 // 	for _, size := range database.BenchmarkSizes {
 // 		keys, values := database.SetupBenchmark(b, size[0], size[1], size[2])
