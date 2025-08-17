@@ -10,8 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/vms/components/gas"
-
-	safemath "github.com/luxfi/node/utils/math"
 )
 
 const (

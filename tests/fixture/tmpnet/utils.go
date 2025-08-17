@@ -17,7 +17,21 @@ const (
 	DefaultNodeTickerInterval = 50 * time.Millisecond
 )
 
-var ErrNotRunning = errors.New("not running")
+var (
+	ErrNotRunning = errors.New("not running")
+	
+	// NetworkShutdownDelay is the delay before shutting down a network
+	NetworkShutdownDelay = 2 * time.Second
+	
+	// MetricsAvailableMessage is the message logged when metrics are available
+	MetricsAvailableMessage = "Metrics available"
+)
+
+// MetricsLinkForNetwork returns a metrics link for the given network UUID and time range
+func MetricsLinkForNetwork(networkUUID, startTime, endTime string) string {
+	// TODO: Implement actual metrics link generation
+	return fmt.Sprintf("http://metrics.example.com/?network=%s&start=%s&end=%s", networkUUID, startTime, endTime)
+}
 
 // WaitForHealthy blocks until Node.IsHealthy returns true or an error (including context timeout) is observed.
 func WaitForHealthy(ctx context.Context, node *Node) error {
