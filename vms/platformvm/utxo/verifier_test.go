@@ -329,7 +329,7 @@ func TestVerifySpendUTXOs(t *testing.T) {
 			producedAmounts: map[ids.ID]uint64{
 				luxAssetID: 1,
 			},
-			expectedErr: secp256k1.ErrInvalidSig,
+			expectedErr: secp256k1.ErrRecoverFailed,
 		},
 		{
 			description: "one input, no outputs, positive fee",
