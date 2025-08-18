@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/consensus/utils/set"
 )
 
 var (
@@ -97,9 +97,11 @@ func (c *Client) AppRequest(
 			)
 		}
 
+		nodeIDs := set.NewSet[ids.NodeID](1)
+		nodeIDs.Add(nodeID)
 		if err := c.sender.SendAppRequest(
 			ctxWithoutCancel,
-			nodeID,
+			nodeIDs,
 			requestID,
 			appRequestBytes,
 		); err != nil {
@@ -133,8 +135,27 @@ func (c *Client) AppGossip(
 	// cancellation is unexpected.
 	ctxWithoutCancel := context.WithoutCancel(ctx)
 
+	// Extract nodeIDs from config
+	var nodeIDs set.Set[ids.NodeID]
+	if config.NodeIDs != nil {
+		switch v := config.NodeIDs.(type) {
+		case set.Set[ids.NodeID]:
+			nodeIDs = v
+		case []ids.NodeID:
+			nodeIDs = set.NewSet[ids.NodeID](len(v))
+			for _, id := range v {
+				nodeIDs.Add(id)
+			}
+		default:
+			nodeIDs = set.NewSet[ids.NodeID](0)
+		}
+	} else {
+		nodeIDs = set.NewSet[ids.NodeID](0)
+	}
+	
 	return c.sender.SendAppGossip(
 		ctxWithoutCancel,
+		nodeIDs,
 		PrefixMessage(c.handlerPrefix, appGossipBytes),
 	)
 }
@@ -167,12 +188,11 @@ func (c *Client) CrossChainAppRequest(
 		)
 	}
 
-	if err := c.sender.SendCrossChainAppRequest(
-		ctxWithoutCancel,
-		chainID,
-		requestID,
-		PrefixMessage(c.handlerPrefix, appRequestBytes),
-	); err != nil {
+	// CrossChain methods not supported in new core.AppSender interface
+	// TODO: Implement cross-chain support
+	_ = ctxWithoutCancel // Mark as used to avoid compiler error
+	err := fmt.Errorf("cross-chain app requests not supported in current AppSender interface")
+	if err != nil {
 		c.router.log.Error("unexpected error when sending message",
 			zap.Stringer("op", message.CrossChainAppRequestOp),
 			zap.Stringer("chainID", chainID),

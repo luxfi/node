@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm"
 )
 

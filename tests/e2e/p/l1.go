@@ -29,7 +29,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/platformvm"

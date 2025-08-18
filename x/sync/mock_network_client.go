@@ -15,7 +15,7 @@ import (
 
 	ids "github.com/luxfi/ids"
 	version "github.com/luxfi/node/version"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockNetworkClient is a mock of NetworkClient interface.

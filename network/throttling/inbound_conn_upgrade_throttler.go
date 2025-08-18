@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 

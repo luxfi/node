@@ -12,7 +12,7 @@ package state
 import (
 	reflect "reflect"
 
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockStakerIterator is a mock of StakerIterator interface.

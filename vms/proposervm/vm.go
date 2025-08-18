@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 

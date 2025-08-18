@@ -10,7 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 // GossipTracker tracks the validators that we're currently aware of, as well as

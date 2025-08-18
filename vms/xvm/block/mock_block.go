@@ -17,7 +17,7 @@ import (
 	ids "github.com/luxfi/ids"
 	codec "github.com/luxfi/node/codec"
 	txs "github.com/luxfi/node/vms/xvm/txs"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockBlock is a mock of Block interface.

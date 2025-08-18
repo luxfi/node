@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
@@ -27,18 +28,17 @@ func NewServer(appSender core.AppSender) *Server {
 }
 
 func (s *Server) SendAppRequest(ctx context.Context, req *appsenderpb.SendAppRequestMsg) (*emptypb.Empty, error) {
-	// core.AppSender expects a single NodeID, not a set
-	// Take the first node if multiple are provided
-	if len(req.NodeIds) == 0 {
-		return &emptypb.Empty{}, nil
+	// Convert byte slices to NodeID set
+	nodeIDs := set.NewSet[ids.NodeID](len(req.NodeIds))
+	for _, nodeIDBytes := range req.NodeIds {
+		nodeID, err := ids.ToNodeID(nodeIDBytes)
+		if err != nil {
+			return nil, err
+		}
+		nodeIDs.Add(nodeID)
 	}
 
-	nodeID, err := ids.ToNodeID(req.NodeIds[0])
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.appSender.SendAppRequest(ctx, nodeID, req.RequestId, req.Request)
+	err := s.appSender.SendAppRequest(ctx, nodeIDs, req.RequestId, req.Request)
 	return &emptypb.Empty{}, err
 }
 
@@ -62,25 +62,26 @@ func (s *Server) SendAppError(ctx context.Context, req *appsenderpb.SendAppError
 }
 
 func (s *Server) SendAppGossip(ctx context.Context, req *appsenderpb.SendAppGossipMsg) (*emptypb.Empty, error) {
-	// core.AppSender.SendAppGossip just takes bytes
-	err := s.appSender.SendAppGossip(ctx, req.Msg)
+	// For RPC gossip, we don't have specific nodes, so use an empty set
+	nodeIDs := set.NewSet[ids.NodeID](0)
+	err := s.appSender.SendAppGossip(ctx, nodeIDs, req.Msg)
 	return &emptypb.Empty{}, err
 }
 
 // SendCrossChainAppRequest implements AppSenderServer
 func (s *Server) SendCrossChainAppRequest(ctx context.Context, req *appsenderpb.SendCrossChainAppRequestMsg) (*emptypb.Empty, error) {
-	// Not implemented - return empty response
+	// Not implemented in core.AppSender
 	return &emptypb.Empty{}, nil
 }
 
 // SendCrossChainAppResponse implements AppSenderServer
 func (s *Server) SendCrossChainAppResponse(ctx context.Context, req *appsenderpb.SendCrossChainAppResponseMsg) (*emptypb.Empty, error) {
-	// Not implemented - return empty response
+	// Not implemented in core.AppSender
 	return &emptypb.Empty{}, nil
 }
 
 // SendCrossChainAppError implements AppSenderServer
 func (s *Server) SendCrossChainAppError(ctx context.Context, req *appsenderpb.SendCrossChainAppErrorMsg) (*emptypb.Empty, error) {
-	// Not implemented - return empty response
+	// Not implemented in core.AppSender
 	return &emptypb.Empty{}, nil
 }

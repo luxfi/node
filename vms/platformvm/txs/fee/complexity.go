@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/lux"

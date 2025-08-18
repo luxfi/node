@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 )

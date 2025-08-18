@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	verify "github.com/luxfi/node/vms/components/verify"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // Owner is a mock of Owner interface.

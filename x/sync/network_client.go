@@ -19,6 +19,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/set"
+	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/node/version"
 )
 
@@ -292,7 +293,8 @@ func (c *networkClient) sendRequestLocked(
 	// This guarantees that the network should never receive an unexpected
 	// AppResponse.
 	ctxWithoutCancel := context.WithoutCancel(ctx)
-	if err := c.appSender.SendAppRequest(ctxWithoutCancel, nodeID, requestID, request); err != nil {
+	nodeIDs := consensusset.Of(nodeID)
+	if err := c.appSender.SendAppRequest(ctxWithoutCancel, nodeIDs, requestID, request); err != nil {
 		c.lock.Unlock()
 		c.log.Error("failed to send app request",
 			zap.Stringer("nodeID", nodeID),

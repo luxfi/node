@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/subnet/primary"

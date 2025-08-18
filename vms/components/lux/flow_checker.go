@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils/wrappers"
 )
 

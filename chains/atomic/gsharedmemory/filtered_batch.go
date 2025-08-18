@@ -4,7 +4,7 @@
 package gsharedmemory
 
 import (
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 )

@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"

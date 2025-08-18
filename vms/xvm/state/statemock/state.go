@@ -18,7 +18,7 @@ import (
 	lux "github.com/luxfi/node/vms/components/lux"
 	block "github.com/luxfi/node/vms/xvm/block"
 	txs "github.com/luxfi/node/vms/xvm/txs"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // State is a mock of State interface.

@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/platformvm/api"
 	"github.com/luxfi/node/vms/platformvm/genesis"

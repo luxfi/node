@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/ledger-lux-go/keychain"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/verify"
 )
 

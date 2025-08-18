@@ -14,7 +14,7 @@ import (
 
 	ids "github.com/luxfi/ids"
 	txs "github.com/luxfi/node/vms/xvm/txs"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockMempool is a mock of Mempool interface.

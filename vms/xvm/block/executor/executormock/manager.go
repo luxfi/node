@@ -14,11 +14,11 @@ import (
 
 	chain "github.com/luxfi/consensus/protocol/chain"
 	ids "github.com/luxfi/ids"
-	set "github.com/luxfi/node/utils/set"
+	set "github.com/luxfi/math/set"
 	block "github.com/luxfi/node/vms/xvm/block"
 	state "github.com/luxfi/node/vms/xvm/state"
 	txs "github.com/luxfi/node/vms/xvm/txs"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // Manager is a mock of Manager interface.

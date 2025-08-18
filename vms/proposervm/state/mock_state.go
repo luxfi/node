@@ -15,7 +15,7 @@ import (
 	choices "github.com/luxfi/consensus/choices"
 	ids "github.com/luxfi/ids"
 	block "github.com/luxfi/node/vms/proposervm/block"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockState is a mock of State interface.

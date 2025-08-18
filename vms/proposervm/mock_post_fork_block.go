@@ -18,7 +18,7 @@ import (
 	ids "github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/chain"
 	block "github.com/luxfi/node/vms/proposervm/block"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockPostForkBlock is a mock of PostForkBlock interface.

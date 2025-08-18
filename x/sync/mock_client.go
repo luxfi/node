@@ -15,7 +15,7 @@ import (
 
 	sync "github.com/luxfi/node/proto/pb/sync"
 	merkledb "github.com/luxfi/node/x/merkledb"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockClient is a mock of Client interface.

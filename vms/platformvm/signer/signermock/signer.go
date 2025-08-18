@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	bls "github.com/luxfi/crypto/bls"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // Signer is a mock of Signer interface.

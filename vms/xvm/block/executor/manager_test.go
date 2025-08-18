@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
+	"github.com/luxfi/mock/gomock"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
