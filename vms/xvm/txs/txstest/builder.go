@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/vms/components/lux"
@@ -18,6 +19,7 @@ import (
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
+	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
@@ -220,13 +222,15 @@ func (b *Builder) ExportTx(
 
 func (b *Builder) builders(kc *secp256k1fx.Keychain) (builder.Builder, signer.Signer) {
 	var (
-		addrs = kc.Addresses()
-		wa    = &walletUTXOsAdapter{
+		addrsSlice = kc.Addresses()
+		addrs      = set.Of(addrsSlice...)
+		wa         = &walletUTXOsAdapter{
 			utxos: b.utxos,
 			addrs: addrs,
 		}
 		builder = builder.New(addrs, b.ctx, wa)
-		signer  = signer.New(kc, wa)
+		kcAdapter = keychain.NewSecp256k1fxKeychain(kc)
+		signer  = signer.New(kcAdapter, wa)
 	)
 	return builder, signer
 }

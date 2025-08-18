@@ -23,6 +23,7 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
+	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
@@ -112,7 +113,7 @@ func NewWallet(
 			backend,
 		),
 		signer.New(
-			kc,
+			keychain.NewSecp256k1fxKeychain(kc),
 			backend,
 		),
 	)

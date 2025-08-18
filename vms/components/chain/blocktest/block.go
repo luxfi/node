@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/components/state"
@@ -82,6 +83,20 @@ func (b *Block) Status() chain.Status {
 
 func (b *Block) State() state.ReadOnlyChain {
 	return b.state
+}
+
+func (b *Block) SetStatus(status choices.Status) {
+	// Convert choices.Status to chain.Status
+	switch status {
+	case choices.Unknown:
+		b.StatusV = chain.Unknown
+	case choices.Processing:
+		b.StatusV = chain.Processing
+	case choices.Rejected:
+		b.StatusV = chain.Rejected
+	case choices.Accepted:
+		b.StatusV = chain.Accepted
+	}
 }
 
 // BuildChild creates a child block of the given parent

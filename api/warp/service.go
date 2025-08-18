@@ -23,10 +23,10 @@ type Service struct {
 	log          log.Logger
 	chainManager chains.Manager
 	lock         sync.RWMutex
-	ipcs         *ipcs.ChainIPCs
+	ipcs         *warp.ChainIPCs
 }
 
-func NewService(log log.Logger, chainManager chains.Manager, ipcs *ipcs.ChainIPCs) (http.Handler, error) {
+func NewService(log log.Logger, chainManager chains.Manager, ipcs *warp.ChainIPCs) (http.Handler, error) {
 	server := rpc.NewServer()
 	codec := json.NewCodec()
 	server.RegisterCodec(codec, "application/json")
