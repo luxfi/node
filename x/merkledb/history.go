@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 var (

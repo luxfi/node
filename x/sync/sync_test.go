@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/log"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
+	"github.com/luxfi/mock/gomock"
 
 	luxmetric "github.com/luxfi/metric"
 	"github.com/luxfi/database"

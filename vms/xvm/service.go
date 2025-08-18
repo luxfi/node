@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/vms/xvm/txs"
 
 	avajson "github.com/luxfi/node/utils/json"
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/math/math"
 )
 
 const (

@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	verify "github.com/luxfi/node/vms/components/verify"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockFx is a mock of Fx interface.

@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 var (

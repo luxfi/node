@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/vms/platformvm/signer"
 )
 

@@ -63,7 +63,7 @@ import (
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/resource"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/platformvm"

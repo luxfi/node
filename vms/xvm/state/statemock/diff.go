@@ -18,7 +18,7 @@ import (
 	block "github.com/luxfi/node/vms/xvm/block"
 	state "github.com/luxfi/node/vms/xvm/state"
 	txs "github.com/luxfi/node/vms/xvm/txs"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // Diff is a mock of Diff interface.

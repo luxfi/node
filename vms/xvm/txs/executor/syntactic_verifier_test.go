@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/math/math"
 )
 
 var (

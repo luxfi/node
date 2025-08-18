@@ -21,6 +21,7 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -261,7 +262,9 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		BCLookup:       bcWrapper,
 		ValidatorState: vsWrapper,
 	}
-	if err := vm.vm.Initialize(ctx, blockChainCtx, dbMgr, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, toEngine, nil, appSenderClient); err != nil {
+	// Wrap core.AppSender to block.AppSender
+	blockAppSender := &blockAppSenderWrapper{appSender: appSenderClient}
+	if err := vm.vm.Initialize(ctx, blockChainCtx, dbMgr, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, toEngine, nil, blockAppSender); err != nil {
 		// Ignore errors closing resources to return the original error
 		_ = vm.connCloser.Close()
 		close(vm.closed)
@@ -1079,4 +1082,26 @@ func (d *dbManagerImpl) Get(version uint64) (database.Database, error) {
 
 func (d *dbManagerImpl) Close() error {
 	return nil
+}
+
+// blockAppSenderWrapper wraps a core.AppSender to implement block.AppSender
+type blockAppSenderWrapper struct {
+	appSender core.AppSender
+}
+
+func (b *blockAppSenderWrapper) SendAppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, appRequestBytes []byte) error {
+	// Convert single nodeID to set for core.AppSender
+	nodeIDs := set.NewSet[ids.NodeID](1)
+	nodeIDs.Add(nodeID)
+	return b.appSender.SendAppRequest(ctx, nodeIDs, requestID, appRequestBytes)
+}
+
+func (b *blockAppSenderWrapper) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
+	return b.appSender.SendAppResponse(ctx, nodeID, requestID, appResponseBytes)
+}
+
+func (b *blockAppSenderWrapper) SendAppGossip(ctx context.Context, appGossipBytes []byte) error {
+	// core.AppSender requires nodeIDs, use empty set for broadcast
+	nodeIDs := set.NewSet[ids.NodeID](0)
+	return b.appSender.SendAppGossip(ctx, nodeIDs, appGossipBytes)
 }

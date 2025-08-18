@@ -90,11 +90,22 @@ func BuildChild(parent chain.Block) *Block {
 	blockID := ids.ID{}
 	copy(blockID[:], fmt.Sprintf("block_%d", nextID))
 	
+	// Get parent timestamp if available
+	var timestamp time.Time
+	if testParent, ok := parent.(*chain.TestBlock); ok {
+		timestamp = testParent.Timestamp().Add(time.Second)
+	} else if blockParent, ok := parent.(*Block); ok {
+		timestamp = blockParent.Timestamp().Add(time.Second)
+	} else {
+		// Default to current time if parent doesn't have timestamp
+		timestamp = time.Now()
+	}
+	
 	return &Block{
 		TestBlock: chain.TestBlock{
 			IDV:        blockID,
 			HeightV:    parent.Height() + 1,
-			TimestampV: parent.Timestamp().Add(time.Second),
+			TimestampV: timestamp,
 			ParentV:    parent.ID(),
 			BytesV:     []byte(fmt.Sprintf("block_%d", nextID)),
 			StatusV:    chain.Processing,

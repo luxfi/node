@@ -23,6 +23,7 @@ import (
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/consensus/utils/set"
 	consensuschain "github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
@@ -1229,8 +1230,12 @@ type appSenderWrapper struct {
 	appSender block.AppSender
 }
 
-func (a *appSenderWrapper) SendAppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, request []byte) error {
-	return a.appSender.SendAppRequest(ctx, nodeID, requestID, request)
+func (a *appSenderWrapper) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
+	// block.AppSender expects a single nodeID, so we take the first one
+	for nodeID := range nodeIDs {
+		return a.appSender.SendAppRequest(ctx, nodeID, requestID, request)
+	}
+	return nil
 }
 
 func (a *appSenderWrapper) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
@@ -1242,7 +1247,13 @@ func (a *appSenderWrapper) SendAppError(ctx context.Context, nodeID ids.NodeID, 
 	return nil
 }
 
-func (a *appSenderWrapper) SendAppGossip(ctx context.Context, appGossipBytes []byte) error {
+func (a *appSenderWrapper) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
+	// block.AppSender doesn't use nodeIDs for gossip
+	return a.appSender.SendAppGossip(ctx, appGossipBytes)
+}
+
+func (a *appSenderWrapper) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
+	// Same as SendAppGossip for this wrapper
 	return a.appSender.SendAppGossip(ctx, appGossipBytes)
 }
 

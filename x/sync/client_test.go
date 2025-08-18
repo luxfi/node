@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/metric"
 	pb "github.com/luxfi/node/proto/pb/sync"
-	"go.uber.org/mock/gomock"
+	"github.com/luxfi/mock/gomock"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/stretchr/testify/require"

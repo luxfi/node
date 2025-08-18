@@ -15,7 +15,7 @@ import (
 
 	ids "github.com/luxfi/ids"
 	vms "github.com/luxfi/node/vms"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // Manager is a mock of Manager interface.

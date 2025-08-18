@@ -16,7 +16,7 @@ import (
 	lux "github.com/luxfi/node/vms/components/lux"
 	verify "github.com/luxfi/node/vms/components/verify"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // Verifier is a mock of Verifier interface.

@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 // HealthConfig describes parameters for network layer health checks.

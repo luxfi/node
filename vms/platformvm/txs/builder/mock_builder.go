@@ -15,7 +15,7 @@ import (
 	ids "github.com/luxfi/ids"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
 	secp256k1fx "github.com/luxfi/node/vms/secp256k1fx"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockBuilder is a mock of Builder interface.
