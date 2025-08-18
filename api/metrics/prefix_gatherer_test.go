@@ -6,7 +6,7 @@ package metrics
 import (
 	"testing"
 
-	"github.com/luxfi/metric"
+	metric "github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"

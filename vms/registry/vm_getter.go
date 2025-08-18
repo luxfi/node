@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
+	metric "github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"

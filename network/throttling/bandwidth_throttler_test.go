@@ -9,10 +9,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/luxfi/metric"
-
+	
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	metric "github.com/luxfi/metric"
 )
 
 func TestBandwidthThrottler(t *testing.T) {
@@ -22,8 +22,7 @@ func TestBandwidthThrottler(t *testing.T) {
 		RefillRate:   8,
 		MaxBurstSize: 10,
 	}
-	logger := log.NewNoOpLogger()
-	throttlerIntf, err := newBandwidthThrottler(logger, metric.NewNoOpMetrics("test").Registry(), config)
+	throttlerIntf, err := newBandwidthThrottler(log.NoLog{}, metric.NewNoOpMetrics("test").Registry(), config)
 	require.NoError(err)
 	require.IsType(&bandwidthThrottlerImpl{}, throttlerIntf)
 	throttler := throttlerIntf.(*bandwidthThrottlerImpl)

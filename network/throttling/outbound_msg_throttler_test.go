@@ -11,7 +11,8 @@ import (
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
+	"github.com/luxfi/log"
+	metric "github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
 )
@@ -30,7 +31,7 @@ func TestSybilOutboundMsgThrottler(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
-		nil,
+		log.NoLog{},
 		metric.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
@@ -171,7 +172,7 @@ func TestSybilOutboundMsgThrottlerMaxNonVdr(t *testing.T) {
 	vdr1ID := ids.GenerateTestNodeID()
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
-		nil,
+		log.NoLog{},
 		metric.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,
@@ -217,7 +218,7 @@ func TestBypassThrottling(t *testing.T) {
 	vdr1ID := ids.GenerateTestNodeID()
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
-		nil,
+		log.NoLog{},
 		metric.NewNoOpMetrics("test").Registry(),
 		vdrs,
 		config,

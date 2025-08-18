@@ -21,6 +21,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/subnet/primary"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
@@ -79,7 +80,9 @@ type Subnet struct {
 
 // Retrieves a wallet configured for use with the subnet
 func (s *Subnet) GetWallet(ctx context.Context, uri string) (primary.Wallet, error) {
-	keychain := secp256k1fx.NewKeychain(s.OwningKey)
+	secp256Keychain := secp256k1fx.NewKeychain(s.OwningKey)
+	// Use the wallet keychain adapter
+	walletKeychain := keychain.NewWalletKeychain(secp256Keychain)
 
 	// Only fetch the subnet transaction if a subnet ID is present. This won't be true when
 	// the wallet is first used to create the subnet.
@@ -90,8 +93,8 @@ func (s *Subnet) GetWallet(ctx context.Context, uri string) (primary.Wallet, err
 
 	return primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:              uri,
-		LUXKeychain:      keychain,
-		EthKeychain:      keychain,
+		LUXKeychain:      walletKeychain,
+		EthKeychain:      walletKeychain,
 		PChainTxsToFetch: txIDs,
 	})
 }

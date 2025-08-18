@@ -58,15 +58,15 @@ func TestKeychainAdd(t *testing.T) {
 	require.Equal(addr, signer.Address())
 
 	addrs := kc.Addresses()
-	require.Equal(1, addrs.Len())
-	require.True(addrs.Contains(addr))
+	require.Equal(1, len(addrs))
+	require.Contains(addrs, addr)
 }
 
 func TestKeychainNew(t *testing.T) {
 	require := require.New(t)
 	kc := NewKeychain()
 
-	require.Zero(kc.Addresses().Len())
+	require.Zero(len(kc.Addresses()))
 
 	sk, err := kc.New()
 	require.NoError(err)
@@ -74,8 +74,8 @@ func TestKeychainNew(t *testing.T) {
 	addr := sk.PublicKey().Address()
 
 	addrs := kc.Addresses()
-	require.Equal(1, addrs.Len())
-	require.True(addrs.Contains(addr))
+	require.Equal(1, len(addrs))
+	require.Contains(addrs, addr)
 }
 
 func TestKeychainMatch(t *testing.T) {

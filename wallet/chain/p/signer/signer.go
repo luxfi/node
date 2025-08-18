@@ -4,13 +4,13 @@
 package signer
 
 import (
+	stdcontext "context"
+
 	"github.com/luxfi/ids"
-	"github.com/luxfi/ledger-lux-go/keychain"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/txs"
-
-	stdcontext "context"
+	"github.com/luxfi/node/wallet/keychain"
 )
 
 var _ Signer = (*txSigner)(nil)

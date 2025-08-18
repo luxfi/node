@@ -260,6 +260,7 @@ func getSelectors(networkUUID string) (string, error) {
 	}
 
 	// Fall back to using Github labels as selectors
+	githubLabels := []string{"gh_repo", "gh_sha", "gh_workflow", "gh_run_id", "gh_run_attempt"}
 	selectors := []string{}
 	githubLabels := GetGitHubLabels()
 	for label, value := range githubLabels {

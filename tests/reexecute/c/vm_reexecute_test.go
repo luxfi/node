@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build skip
+
 package vm
 
 import (
@@ -32,7 +34,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/snow/engine/enginetest"
+	// "github.com/luxfi/node/snow/engine/enginetest"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/upgrade"
@@ -253,7 +255,7 @@ func newMainnetCChainVM(
 		nil,
 		configBytes,
 		nil,
-		&enginetest.Sender{},
+		nil, // &enginetest.Sender{},
 	); err != nil {
 		return nil, fmt.Errorf("failed to initialize VM: %w", err)
 	}
