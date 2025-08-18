@@ -18,13 +18,13 @@ require (
 	github.com/ethereum/go-ethereum v1.16.1
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
-	github.com/luxfi/consensus v1.1.3
+	github.com/luxfi/consensus v1.1.4
 	github.com/luxfi/crypto v1.3.2
 	github.com/luxfi/database v1.1.13
 	github.com/luxfi/geth v1.16.34
 	github.com/luxfi/ids v1.0.2
 	github.com/luxfi/ledger-lux-go v0.1.0
-	github.com/luxfi/log v1.1.1
+	github.com/luxfi/log v1.1.22
 	github.com/luxfi/metric v1.3.0
 	github.com/luxfi/trace v0.1.1
 	golang.org/x/mod v0.27.0
@@ -210,4 +210,3 @@ require (
 // Pin all OpenTelemetry modules (and metric sub-packages) to v1.37.0
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
-
