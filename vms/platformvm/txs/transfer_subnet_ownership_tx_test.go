@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -18,6 +19,7 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
@@ -93,11 +95,13 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(simpleTransferSubnetOwnershipTx.SyntacticVerify(&context.Context{
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-	}))
+	})
+	require.NoError(simpleTransferSubnetOwnershipTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleTransferSubnetOwnershipTxBytes := []byte{
 		// Codec version
@@ -275,11 +279,13 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexTransferSubnetOwnershipTx.Outs, Codec)
 	utils.Sort(complexTransferSubnetOwnershipTx.Ins)
-	require.NoError(complexTransferSubnetOwnershipTx.SyntacticVerify(&context.Context{
+	ctx2 := context.Background()
+	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-	}))
+	})
+	require.NoError(complexTransferSubnetOwnershipTx.SyntacticVerify(ctx2))
 
 	expectedUnsignedComplexTransferSubnetOwnershipTxBytes := []byte{
 		// Codec version
@@ -444,12 +450,15 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexTransferSubnetOwnershipTx.InitCtx(&context.Context{
+	ctx3 := context.Background()
+	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		BCLookup:   aliaser,
 	})
+	testCtx := testcontext.New(ctx3)
+	testCtx.BCLookup = aliaser
+	unsignedComplexTransferSubnetOwnershipTx.InitCtx(testCtx)
 
 	unsignedComplexTransferSubnetOwnershipTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransferSubnetOwnershipTx, "", "\t")
 	require.NoError(err)
@@ -553,10 +562,11 @@ func TestTransferSubnetOwnershipTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &context.Context{
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		ChainID:   chainID,
 		NetworkID: networkID,
-	}
+	})
 
 	// A BaseTx that already passed syntactic verification.
 	verifiedBaseTx := BaseTx{

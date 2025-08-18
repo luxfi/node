@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -19,6 +20,7 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
 )
@@ -94,11 +96,13 @@ func TestRemoveSubnetValidatorTxSerialization(t *testing.T) {
 			SigIndices: []uint32{3},
 		},
 	}
-	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(&context.Context{
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-	}))
+	})
+	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleRemoveValidatorTxBytes := []byte{
 		// Codec version
@@ -262,11 +266,13 @@ func TestRemoveSubnetValidatorTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexRemoveValidatorTx.Outs, Codec)
 	utils.Sort(complexRemoveValidatorTx.Ins)
-	require.NoError(complexRemoveValidatorTx.SyntacticVerify(&context.Context{
+	ctx2 := context.Background()
+	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-	}))
+	})
+	require.NoError(complexRemoveValidatorTx.SyntacticVerify(ctx2))
 
 	expectedUnsignedComplexRemoveValidatorTxBytes := []byte{
 		// Codec version
@@ -423,12 +429,15 @@ func TestRemoveSubnetValidatorTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexRemoveValidatorTx.InitCtx(&context.Context{
+	ctx3 := context.Background()
+	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		BCLookup:   aliaser,
 	})
+	testCtx := testcontext.New(ctx3)
+	testCtx.BCLookup = aliaser
+	unsignedComplexRemoveValidatorTx.InitCtx(testCtx)
 
 	unsignedComplexRemoveValidatorTxJSONBytes, err := json.MarshalIndent(unsignedComplexRemoveValidatorTx, "", "\t")
 	require.NoError(err)
@@ -526,10 +535,11 @@ func TestRemoveSubnetValidatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx := &context.Context{
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		ChainID:   chainID,
 		NetworkID: networkID,
-	}
+	})
 
 	// A BaseTx that already passed syntactic verification.
 	verifiedBaseTx := BaseTx{

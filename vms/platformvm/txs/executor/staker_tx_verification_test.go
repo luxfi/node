@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
@@ -28,10 +28,14 @@ import (
 )
 
 func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
-	baseCtx := consensustest.Context(t, consensustest.PChainID)
+	baseCtx := context.Background()
+	baseCtx = consensus.WithIDs(baseCtx, consensus.IDs{
+		NetworkID: constants.UnitTestID,
+		ChainID:   constants.PlatformChainID,
+	})
 	ctx := testcontext.New(baseCtx)
 	ctx.NetworkID = constants.UnitTestID
-	ctx.ChainID = consensustest.PChainID
+	ctx.ChainID = constants.PlatformChainID
 
 	type test struct {
 		name        string

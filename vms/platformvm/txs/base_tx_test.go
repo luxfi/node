@@ -10,12 +10,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
 )
@@ -71,11 +73,13 @@ func TestBaseTxSerialization(t *testing.T) {
 			Memo: types.JSONByteSlice{},
 		},
 	}
-	require.NoError(simpleBaseTx.SyntacticVerify(&context.Context{
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-	}))
+	})
+	require.NoError(simpleBaseTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleBaseTxBytes := []byte{
 		// Codec version
@@ -217,11 +221,13 @@ func TestBaseTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexBaseTx.Outs, Codec)
 	utils.Sort(complexBaseTx.Ins)
-	require.NoError(complexBaseTx.SyntacticVerify(&context.Context{
+	ctx2 := context.Background()
+	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-	}))
+	})
+	require.NoError(complexBaseTx.SyntacticVerify(ctx2))
 
 	expectedUnsignedComplexBaseTxBytes := []byte{
 		// Codec version
@@ -365,12 +371,15 @@ func TestBaseTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexBaseTx.InitCtx(&context.Context{
+	ctx3 := context.Background()
+	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
 		LUXAssetID: luxAssetID,
-		BCLookup:   aliaser,
 	})
+	testCtx := testcontext.New(ctx3)
+	testCtx.BCLookup = aliaser
+	unsignedComplexBaseTx.InitCtx(testCtx)
 
 	unsignedComplexBaseTxJSONBytes, err := json.MarshalIndent(unsignedComplexBaseTx, "", "\t")
 	require.NoError(err)

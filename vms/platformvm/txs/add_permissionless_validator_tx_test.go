@@ -31,8 +31,6 @@ import (
 
 func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	require := require.New(t)
-	
-	var ctx context.Context
 
 	addr := ids.ShortID{
 		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
@@ -439,7 +437,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	ctx := context.Background()
+	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
@@ -830,7 +828,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddSubnetTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddSubnetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddSubnetTx.Ins)
-	ctx := context.Background()
+	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
@@ -1132,7 +1130,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	ctx := context.Background()
+	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,

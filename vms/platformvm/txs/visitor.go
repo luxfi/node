@@ -20,6 +20,7 @@ type Visitor interface {
 	AddPermissionlessDelegatorTx(*AddPermissionlessDelegatorTx) error
 	TransferSubnetOwnershipTx(*TransferSubnetOwnershipTx) error
 	BaseTx(*BaseTx) error
+	ConvertSubnetToL1Tx(*ConvertSubnetToL1Tx) error
 	DisableL1ValidatorTx(*DisableL1ValidatorTx) error
 	IncreaseL1ValidatorBalanceTx(*IncreaseL1ValidatorBalanceTx) error
 	RegisterL1ValidatorTx(*RegisterL1ValidatorTx) error

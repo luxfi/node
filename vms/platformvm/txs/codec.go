@@ -110,5 +110,10 @@ func RegisterDUnsignedTxsTypes(targetCodec linearcodec.Codec) error {
 	return errors.Join(
 		targetCodec.RegisterType(&TransferSubnetOwnershipTx{}),
 		targetCodec.RegisterType(&BaseTx{}),
+		targetCodec.RegisterType(&ConvertSubnetToL1Tx{}),
+		targetCodec.RegisterType(&RegisterL1ValidatorTx{}),
+		targetCodec.RegisterType(&SetL1ValidatorWeightTx{}),
+		targetCodec.RegisterType(&IncreaseL1ValidatorBalanceTx{}),
+		targetCodec.RegisterType(&DisableL1ValidatorTx{}),
 	)
 }

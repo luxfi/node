@@ -160,3 +160,8 @@ func (c *calculator) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error {
 	c.fee = c.staticCfg.TxFee
 	return nil
 }
+
+func (c *calculator) ConvertSubnetToL1Tx(*txs.ConvertSubnetToL1Tx) error {
+	c.fee = c.staticCfg.TxFee
+	return nil
+}

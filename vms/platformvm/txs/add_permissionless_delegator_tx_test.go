@@ -873,7 +873,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddSubnetTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddSubnetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddSubnetTx.Ins)
-	ctx = context.Background()
+	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
@@ -1534,7 +1534,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx = context.Background()
+	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: networkID,
 		ChainID:   chainID,
@@ -1875,7 +1875,12 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
 			tx := tt.txFunc(ctrl)
-			err := tx.SyntacticVerify(ctx)
+			testCtx := context.Background()
+			testCtx = consensus.WithIDs(testCtx, consensus.IDs{
+				NetworkID: networkID,
+				ChainID:   chainID,
+			})
+			err := tx.SyntacticVerify(testCtx)
 			require.ErrorIs(t, err, tt.err)
 		})
 	}

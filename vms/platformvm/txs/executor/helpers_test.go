@@ -22,7 +22,7 @@ import (
 
 	"github.com/luxfi/node/codec/linearcodec"
 
-	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus"
 
 	consensusuptime "github.com/luxfi/consensus/uptime"
 	consensusmockable "github.com/luxfi/consensus/utils/timer/mockable"
@@ -166,10 +166,16 @@ func newEnvironment(t *testing.T, f fork) *environment {
 	clk := defaultClock(f)
 
 	baseDB := versiondb.New(memdb.New())
-	baseCtx := consensustest.Context(t, consensustest.PChainID)
+	baseCtx := context.Background()
+	luxAssetID := ids.GenerateTestID()
+	baseCtx = consensus.WithIDs(baseCtx, consensus.IDs{
+		NetworkID:  constants.UnitTestID,
+		ChainID:    constants.PlatformChainID,
+		LUXAssetID: luxAssetID,
+	})
 	ctx := testcontext.New(baseCtx)
-	ctx.ChainID = consensustest.PChainID
-	ctx.LUXAssetID = consensustest.LUXAssetID
+	ctx.ChainID = constants.PlatformChainID
+	ctx.LUXAssetID = luxAssetID
 	m := atomic.NewMemory(baseDB)
 	msm := &mutableSharedMemory{
 		SharedMemory: m.NewSharedMemory(ctx.ChainID),

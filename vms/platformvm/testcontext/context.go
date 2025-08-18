@@ -28,6 +28,7 @@ type Context struct {
 	Log          log.Logger
 	Lock         *sync.RWMutex
 	SharedMemory atomic.SharedMemory
+	BCLookup     ids.AliaserReader
 }
 
 // New creates a new test context
