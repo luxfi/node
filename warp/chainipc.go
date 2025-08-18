@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2023, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package ipcs
+package warp
 
 import (
 	"fmt"
