@@ -217,6 +217,19 @@ func (s *visitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
 	return sign(s.tx, true, txSigners)
 }
 
+func (s *visitor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	subnetAuthSigners, err := s.getSubnetSigners(tx.Subnet, tx.SubnetAuth)
+	if err != nil {
+		return err
+	}
+	txSigners = append(txSigners, subnetAuthSigners)
+	return sign(s.tx, true, txSigners)
+}
+
 func (s *visitor) getSigners(sourceChainID ids.ID, ins []*lux.TransferableInput) ([][]keychain.Signer, error) {
 	txSigners := make([][]keychain.Signer, len(ins))
 	for credIndex, transferInput := range ins {

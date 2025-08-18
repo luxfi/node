@@ -30,6 +30,7 @@ import (
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
 	consensusutils "github.com/luxfi/consensus/utils"
+	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
@@ -70,6 +71,23 @@ type appSenderAdapter struct {
 	linearblock.AppSender
 }
 
+func (a *appSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
+	// Send to the first node in the set for compatibility
+	for nodeID := range nodeIDs {
+		return a.AppSender.SendAppRequest(ctx, nodeID, requestID, appRequestBytes)
+	}
+	return nil
+}
+
+func (a *appSenderAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
+	return a.AppSender.SendAppResponse(ctx, nodeID, requestID, appResponseBytes)
+}
+
+func (a *appSenderAdapter) SendAppGossip(ctx context.Context, _ consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
+	// Ignore the nodeIDs set and broadcast to all
+	return a.AppSender.SendAppGossip(ctx, appGossipBytes)
+}
+
 func (a *appSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 	// Not implemented in linearblock.AppSender, return nil
 	return nil
@@ -87,6 +105,14 @@ func (a *appSenderAdapter) SendCrossChainAppResponse(ctx context.Context, chainI
 
 func (a *appSenderAdapter) SendCrossChainAppError(ctx context.Context, chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) error {
 	// Not implemented in linearblock.AppSender, return nil
+	return nil
+}
+
+func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
+	// Send to first node as a workaround
+	for nodeID := range nodeIDs {
+		return a.AppSender.SendAppRequest(ctx, nodeID, 0, appGossipBytes)
+	}
 	return nil
 }
 
