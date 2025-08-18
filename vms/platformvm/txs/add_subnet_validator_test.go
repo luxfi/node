@@ -4,12 +4,13 @@
 package txs
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
@@ -22,7 +23,13 @@ import (
 func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
-	ctx := consensustest.Context(t, consensustest.PChainID)
+	nodeID := ids.GenerateTestNodeID()
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
+		NetworkID: constants.UnitTestID,
+		ChainID:   constants.PlatformChainID,
+		NodeID:    nodeID,
+	})
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -67,15 +74,15 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 	}
 	addSubnetValidatorTx = &AddSubnetValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    consensustest.TestNetworkID,
-			BlockchainID: consensustest.PChainID,
+			NetworkID:    consensus.GetNetworkID(ctx),
+			BlockchainID: consensus.GetChainID(ctx),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}},
 		SubnetValidator: SubnetValidator{
 			Validator: Validator{
-				NodeID: consensustest.TestNodeID,
+				NodeID: nodeID,
 				Start:  uint64(clk.Time().Unix()),
 				End:    uint64(clk.Time().Add(time.Hour).Unix()),
 				Wght:   validatorWeight,
@@ -140,7 +147,13 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 func TestAddSubnetValidatorMarshal(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
-	ctx := consensustest.Context(t, consensustest.PChainID)
+	nodeID := ids.GenerateTestNodeID()
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
+		NetworkID: constants.UnitTestID,
+		ChainID:   constants.PlatformChainID,
+		NodeID:    nodeID,
+	})
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -178,15 +191,15 @@ func TestAddSubnetValidatorMarshal(t *testing.T) {
 	}
 	addSubnetValidatorTx = &AddSubnetValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    consensustest.TestNetworkID,
-			BlockchainID: consensustest.PChainID,
+			NetworkID:    consensus.GetNetworkID(ctx),
+			BlockchainID: consensus.GetChainID(ctx),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}},
 		SubnetValidator: SubnetValidator{
 			Validator: Validator{
-				NodeID: consensustest.TestNodeID,
+				NodeID: nodeID,
 				Start:  uint64(clk.Time().Unix()),
 				End:    uint64(clk.Time().Add(time.Hour).Unix()),
 				Wght:   validatorWeight,

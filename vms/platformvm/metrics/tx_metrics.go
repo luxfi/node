@@ -167,3 +167,10 @@ func (m *txMetrics) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error {
 	}).Inc()
 	return nil
 }
+
+func (m *txMetrics) ConvertSubnetToL1Tx(*txs.ConvertSubnetToL1Tx) error {
+	m.numTxs.With(prometheus.Labels{
+		txLabel: "convert_subnet_to_l1",
+	}).Inc()
+	return nil
+}

@@ -4,14 +4,16 @@
 package txs
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -22,7 +24,15 @@ import (
 func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
-	ctx := consensustest.Context(t, consensustest.PChainID)
+	luxAssetID := ids.GenerateTestID()
+	nodeID := ids.GenerateTestNodeID()
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
+		NetworkID:  constants.UnitTestID,
+		ChainID:    constants.PlatformChainID,
+		LUXAssetID: luxAssetID,
+		NodeID:     nodeID,
+	})
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -46,14 +56,14 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: lux.Asset{ID: ctx.LUXAssetID},
+		Asset: lux.Asset{ID: luxAssetID},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
 	outputs := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: ctx.LUXAssetID},
+		Asset: lux.Asset{ID: luxAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -63,7 +73,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 		},
 	}}
 	stakes := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: ctx.LUXAssetID},
+		Asset: lux.Asset{ID: luxAssetID},
 		Out: &stakeable.LockOut{
 			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
 			TransferableOut: &secp256k1fx.TransferOutput{
@@ -77,13 +87,13 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	}}
 	addValidatorTx = &AddValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    ctx.NetworkID,
-			BlockchainID: ctx.ChainID,
+			NetworkID:    consensus.GetNetworkID(ctx),
+			BlockchainID: consensus.GetChainID(ctx),
 			Ins:          inputs,
 			Outs:         outputs,
 		}},
 		Validator: Validator{
-			NodeID: ctx.NodeID,
+			NodeID: consensus.GetNodeID(ctx),
 			Start:  uint64(clk.Time().Unix()),
 			End:    uint64(clk.Time().Add(time.Hour).Unix()),
 			Wght:   validatorWeight,
@@ -145,7 +155,15 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
-	ctx := consensustest.Context(t, consensustest.PChainID)
+	luxAssetID := ids.GenerateTestID()
+	nodeID := ids.GenerateTestNodeID()
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
+		NetworkID:  constants.UnitTestID,
+		ChainID:    constants.PlatformChainID,
+		LUXAssetID: luxAssetID,
+		NodeID:     nodeID,
+	})
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -193,13 +211,13 @@ func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	}}
 	addValidatorTx = &AddValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    ctx.NetworkID,
-			BlockchainID: ctx.ChainID,
+			NetworkID:    consensus.GetNetworkID(ctx),
+			BlockchainID: consensus.GetChainID(ctx),
 			Ins:          inputs,
 			Outs:         outputs,
 		}},
 		Validator: Validator{
-			NodeID: ctx.NodeID,
+			NodeID: consensus.GetNodeID(ctx),
 			Start:  uint64(clk.Time().Unix()),
 			End:    uint64(clk.Time().Add(time.Hour).Unix()),
 			Wght:   validatorWeight,

@@ -802,6 +802,23 @@ func (c *complexityVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) e
 	return err
 }
 
+func (c *complexityVisitor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
+	if err != nil {
+		return err
+	}
+	authComplexity, err := AuthComplexity(tx.SubnetAuth)
+	if err != nil {
+		return err
+	}
+	// TODO: Add complexity for validators
+	c.output, err = IntrinsicRemoveSubnetValidatorTxComplexities.Add(
+		&baseTxComplexity,
+		&authComplexity,
+	)
+	return err
+}
+
 func baseTxComplexity(tx *txs.BaseTx) (gas.Dimensions, error) {
 	outputsComplexity, err := OutputComplexity(tx.Outs...)
 	if err != nil {

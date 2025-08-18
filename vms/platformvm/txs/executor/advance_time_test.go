@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -31,7 +31,12 @@ func newAdvanceTimeTx(t testing.TB, timestamp time.Time) (*txs.Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	return tx, tx.SyntacticVerify(consensustest.Context(t, consensustest.PChainID))
+	ctx := context.Background()
+	ctx = consensus.WithIDs(ctx, consensus.IDs{
+		NetworkID: constants.UnitTestID,
+		ChainID:   constants.PlatformChainID,
+	})
+	return tx, tx.SyntacticVerify(ctx)
 }
 
 // Ensure semantic verification updates the current and pending staker set
