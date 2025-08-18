@@ -156,7 +156,7 @@ func TestGossiperGossip(t *testing.T) {
 
 			require.NoError(err)
 			gossiper := NewPullGossiper[*testTx](
-				nil,
+				log.NoLog{},
 				marshaller,
 				requestSet,
 				requestClient,

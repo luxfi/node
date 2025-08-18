@@ -92,6 +92,29 @@ func StopLogsCollector(ctx context.Context, log logging.Logger) error {
 	return stopCollector(ctx, log, promtailCmd)
 }
 
+// getProcess gets a process by PID, returns nil if process doesn't exist
+func getProcess(pid int) (*os.Process, error) {
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		return nil, err
+	}
+	// Check if process is still running
+	err = proc.Signal(syscall.Signal(0))
+	if err != nil {
+		// Process doesn't exist
+		return nil, nil
+	}
+	return proc, nil
+}
+
+// GetEnvWithDefault gets an environment variable with a default value
+func GetEnvWithDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
 // stopCollector stops the collector process if it is running.
 func stopCollector(ctx context.Context, log logging.Logger, cmdName string) error {
 	if _, ok := ctx.Deadline(); !ok {
@@ -340,6 +363,18 @@ func GetGitHubLabels() map[string]string {
 func applyGitHubLabels(sdConfig SDConfig) SDConfig {
 	maps.Copy(sdConfig.Labels, GetGitHubLabels())
 	return sdConfig
+}
+
+// GetGitHubLabels returns labels from GitHub environment variables
+func GetGitHubLabels() map[string]string {
+	labels := make(map[string]string)
+	githubEnvs := []string{"GH_REPO", "GH_SHA", "GH_WORKFLOW", "GH_RUN_ID", "GH_RUN_ATTEMPT"}
+	for _, env := range githubEnvs {
+		if value := os.Getenv(env); value != "" {
+			labels[strings.ToLower(env)] = value
+		}
+	}
+	return labels
 }
 
 func getLogFilename(cmdName string) string {

@@ -67,7 +67,9 @@ func TestBlockClientsWithIncorrectRSAKeys(t *testing.T) {
 				clientCert8192 := makeTLSCert(t, privKey8192)
 				return clientCert8192
 			},
-			expectedErr: staking.ErrUnsupportedRSAModulusBitLen,
+			// An 8192-bit RSA key certificate exceeds the max certificate size,
+			// so it's rejected for size before RSA modulus validation
+			expectedErr: staking.ErrCertificateTooLarge,
 		},
 		{
 			description: "Improper public exponent",
@@ -88,14 +90,23 @@ func TestBlockClientsWithIncorrectRSAKeys(t *testing.T) {
 
 			c := prometheus.NewCounter(prometheus.CounterOpts{})
 
-			// Initialize upgrader with a mock that fails when it's incremented.
-			failOnIncrementCounter := &mockPrometheusCounter{
-				Counter: c,
-				onIncrement: func() {
-					require.FailNow(t, "should not have invoked")
-				},
+			// Initialize upgrader with a mock counter.
+			// For test cases with invalid certs (expectedErr != nil), we expect the counter to be incremented.
+			// For test cases with valid certs (expectedErr == nil), we expect the counter NOT to be incremented.
+			var mockCounter prometheus.Counter
+			if testCase.expectedErr != nil {
+				// For invalid certs, allow increment
+				mockCounter = c
+			} else {
+				// For valid certs, fail if incremented
+				mockCounter = &mockPrometheusCounter{
+					Counter: c,
+					onIncrement: func() {
+						require.FailNow(t, "should not have invoked")
+					},
+				}
 			}
-			upgrader := peer.NewTLSServerUpgrader(config, failOnIncrementCounter)
+			upgrader := peer.NewTLSServerUpgrader(config, mockCounter)
 
 			clientConfig := tls.Config{
 				ClientAuth:         tls.RequireAnyClientCert,

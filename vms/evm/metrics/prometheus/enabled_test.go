@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/metric"
+	metric "github.com/luxfi/metric"
 )
 
 // This test assumes that there are no imported packages that might change the

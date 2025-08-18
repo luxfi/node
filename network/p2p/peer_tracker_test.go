@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	luxmetric "github.com/luxfi/metric"
 	"github.com/luxfi/node/version"
 )
@@ -16,7 +17,7 @@ import (
 func TestPeerTracker(t *testing.T) {
 	require := require.New(t)
 	p, err := NewPeerTracker(
-		nil,
+		log.NoLog{},
 		"",
 		luxmetric.NewNoOpMetrics("test").Registry(),
 		nil,

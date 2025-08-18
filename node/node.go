@@ -37,7 +37,7 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
+	metric "github.com/luxfi/metric"
 	"github.com/luxfi/node/api/admin"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/info"

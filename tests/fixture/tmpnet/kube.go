@@ -163,6 +163,11 @@ func NewNodeStatefulSet(
 	}
 }
 
+// EnvVarName returns the environment variable name for a given prefix and key
+func EnvVarName(prefix, key string) string {
+	return fmt.Sprintf("%s_%s", prefix, strings.ToUpper(strings.ReplaceAll(key, "-", "_")))
+}
+
 // stringMapToEnvVarSlice converts a string map to a kube EnvVar slice.
 func flagsToEnvVarSlice(flags FlagsMap) []corev1.EnvVar {
 	envVars := make([]corev1.EnvVar, len(flags))

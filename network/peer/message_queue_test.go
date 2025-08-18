@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
 )
@@ -22,7 +23,7 @@ func TestMessageQueue(t *testing.T) {
 		SendFailedFunc(func(message.OutboundMessage) {
 			require.True(expectFail)
 		}),
-		nil,
+		log.NoLog{},
 		0,
 	)
 

@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2023, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package ipcs
+package warp
 
 import (
 	"net/http"
@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/ipcs"
+	"github.com/luxfi/node/warp"
 	"github.com/luxfi/node/utils/json"
 )
 

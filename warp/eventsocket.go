@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2023, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package ipcs
+package warp
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/ipcs/socket"
+	"github.com/luxfi/node/warp/socket"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/wrappers"
 )

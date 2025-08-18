@@ -20,14 +20,13 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	luxmetric "github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/math/meter"
-	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
@@ -44,11 +43,21 @@ type rawTestPeer struct {
 	inboundMsgChan <-chan message.InboundMessage
 }
 
+// noOpResourceManager implements resource.Manager for testing
+type noOpResourceManager struct{}
+
+func (n *noOpResourceManager) CPUUsage() float64                    { return 0 }
+func (n *noOpResourceManager) DiskUsage() (float64, float64)        { return 0, 0 }
+func (n *noOpResourceManager) AvailableDiskBytes() uint64           { return 1 << 62 }
+func (n *noOpResourceManager) TrackProcess(pid int)                 {}
+func (n *noOpResourceManager) UntrackProcess(pid int)               {}
+func (n *noOpResourceManager) Shutdown()                            {}
+
 func newMessageCreator(t *testing.T) message.Creator {
 	t.Helper()
 
 	mc, err := message.NewCreator(
-		nil,
+		log.NoLog{},
 		luxmetric.NewNoOpMetrics("test"),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -65,10 +74,11 @@ func newConfig(t *testing.T) Config {
 	metrics, err := NewMetrics(luxmetric.NewNoOpMetrics("test").Registry())
 	require.NoError(err)
 
+	// Create a no-op resource manager for testing
+	noOpManager := &noOpResourceManager{}
 	resourceTracker, err := tracker.NewResourceTracker(
 		luxmetric.NewNoOpMetrics("test").Registry(),
-		resource.NoUsage,
-		meter.ContinuousFactory{},
+		noOpManager,
 		10*time.Second,
 	)
 	require.NoError(err)
@@ -120,8 +130,10 @@ func newRawTestPeer(t *testing.T, config Config) *rawTestPeer {
 	config.IPSigner = NewIPSigner(ip, tls, bls)
 
 	inboundMsgChan := make(chan message.InboundMessage)
-	config.Router = router.InboundHandlerFunc(func(_ context.Context, msg message.InboundMessage) {
-		inboundMsgChan <- msg
+	config.Router = router.InboundHandlerFunc(func(_ context.Context, msg interface{}) {
+		if inboundMsg, ok := msg.(message.InboundMessage); ok {
+			inboundMsgChan <- inboundMsg
+		}
 	})
 
 	return &rawTestPeer{
@@ -442,6 +454,18 @@ func TestShouldDisconnect(t *testing.T) {
 	blsKey, err := bls.NewSecretKey()
 	require.NoError(t, err)
 
+	// Create shared config and version for old version test
+	oldVersionConfig := &Config{
+		Log:                  log.NewNoOpLogger(),
+		VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
+	}
+	oldVersion := &version.Application{
+		Name:  version.Client,
+		Major: 0,
+		Minor: 0,
+		Patch: 0,
+	}
+	
 	tests := []struct {
 		name                     string
 		initialPeer              *peer
@@ -451,28 +475,12 @@ func TestShouldDisconnect(t *testing.T) {
 		{
 			name: "peer is reporting old version",
 			initialPeer: &peer{
-				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
-					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
-				},
-				version: &version.Application{
-					Name:  version.Client,
-					Major: 0,
-					Minor: 0,
-					Patch: 0,
-				},
+				Config:  oldVersionConfig,
+				version: oldVersion,
 			},
 			expectedPeer: &peer{
-				Config: &Config{
-					Log:                  log.NewNoOpLogger(),
-					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
-				},
-				version: &version.Application{
-					Name:  version.Client,
-					Major: 0,
-					Minor: 0,
-					Patch: 0,
-				},
+				Config:  oldVersionConfig,
+				version: oldVersion,
 			},
 			expectedShouldDisconnect: true,
 		},
