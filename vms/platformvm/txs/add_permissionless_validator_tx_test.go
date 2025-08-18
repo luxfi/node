@@ -138,7 +138,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddPrimaryTx.StakeOuts, Codec)
 	utils.Sort(simpleAddPrimaryTx.Ins)
-	ctx := context.Background()
+	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
@@ -439,7 +439,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	ctx := context.Background()
+	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
@@ -830,7 +830,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddSubnetTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddSubnetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddSubnetTx.Ins)
-	ctx := context.Background()
+	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
@@ -1132,7 +1132,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	ctx := context.Background()
+	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,

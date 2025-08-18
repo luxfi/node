@@ -19,6 +19,7 @@ import (
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
 	log "github.com/luxfi/log"
+	iterator "github.com/luxfi/node/utils/iterator"
 	lux "github.com/luxfi/node/vms/components/lux"
 	block "github.com/luxfi/node/vms/platformvm/block"
 	fx "github.com/luxfi/node/vms/platformvm/fx"
@@ -290,6 +291,21 @@ func (m *MockState) DeleteUTXO(utxoID ids.ID) {
 func (mr *MockStateMockRecorder) DeleteUTXO(utxoID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUTXO", reflect.TypeOf((*MockState)(nil).DeleteUTXO), utxoID)
+}
+
+// GetActiveL1ValidatorsIterator mocks base method.
+func (m *MockState) GetActiveL1ValidatorsIterator() (iterator.Iterator[L1Validator], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetActiveL1ValidatorsIterator")
+	ret0, _ := ret[0].(iterator.Iterator[L1Validator])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetActiveL1ValidatorsIterator indicates an expected call of GetActiveL1ValidatorsIterator.
+func (mr *MockStateMockRecorder) GetActiveL1ValidatorsIterator() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveL1ValidatorsIterator", reflect.TypeOf((*MockState)(nil).GetActiveL1ValidatorsIterator))
 }
 
 // GetBlockIDAtHeight mocks base method.
@@ -635,6 +651,20 @@ func (m *MockState) HasL1Validator(subnetID ids.ID, nodeID ids.NodeID) (bool, er
 func (mr *MockStateMockRecorder) HasL1Validator(subnetID, nodeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasL1Validator", reflect.TypeOf((*MockState)(nil).HasL1Validator), subnetID, nodeID)
+}
+
+// NumActiveL1Validators mocks base method.
+func (m *MockState) NumActiveL1Validators() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NumActiveL1Validators")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// NumActiveL1Validators indicates an expected call of NumActiveL1Validators.
+func (mr *MockStateMockRecorder) NumActiveL1Validators() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NumActiveL1Validators", reflect.TypeOf((*MockState)(nil).NumActiveL1Validators))
 }
 
 // PutCurrentDelegator mocks base method.

@@ -12,7 +12,8 @@ import (
 	_ "embed"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/snowtest"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
@@ -303,7 +304,7 @@ func TestIncreaseL1ValidatorBalanceTxSerialization(t *testing.T) {
 	}
 	require.Equal(expectedBytes, txBytes)
 
-	ctx := snowtest.Context(t, constants.PlatformChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	unsignedTx.InitCtx(ctx)
 
 	txJSON, err := json.MarshalIndent(unsignedTx, "", "\t")
@@ -313,11 +314,11 @@ func TestIncreaseL1ValidatorBalanceTxSerialization(t *testing.T) {
 
 func TestIncreaseL1ValidatorBalanceTxSyntacticVerify(t *testing.T) {
 	var (
-		ctx         = snowtest.Context(t, ids.GenerateTestID())
+		ctx         = consensustest.Context(t, consensustest.PChainID)
 		validBaseTx = BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    ctx.NetworkID,
-				BlockchainID: ctx.ChainID,
+				NetworkID:    consensus.GetNetworkID(ctx),
+				BlockchainID: consensus.GetChainID(ctx),
 			},
 		}
 	)

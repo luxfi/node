@@ -641,7 +641,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 			"output": {
 				"addresses": [
-					"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+					"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 				],
 				"amount": 1,
 				"locktime": 0,
@@ -668,7 +668,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 				"locktime": 876543210,
 				"output": {
 					"addresses": [
-						"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+						"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 					],
 					"amount": 18446744073709551615,
 					"locktime": 0,
@@ -731,7 +731,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 			"output": {
 				"addresses": [
-					"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+					"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 				],
 				"amount": 2000000000000,
 				"locktime": 0,
@@ -873,7 +873,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	lux.SortTransferableOutputs(simpleAddSubnetTx.Outs, Codec)
 	lux.SortTransferableOutputs(simpleAddSubnetTx.StakeOuts, Codec)
 	utils.Sort(simpleAddSubnetTx.Ins)
-	ctx = context.Background()
+	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    constants.PlatformChainID,
@@ -1403,7 +1403,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 			"output": {
 				"addresses": [
-					"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+					"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 				],
 				"amount": 1,
 				"locktime": 0,
@@ -1430,7 +1430,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 				"locktime": 876543210,
 				"output": {
 					"addresses": [
-						"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+						"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 					],
 					"amount": 18446744073709551600,
 					"locktime": 0,
@@ -1493,7 +1493,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 			"output": {
 				"addresses": [
-					"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+					"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 				],
 				"amount": 2,
 				"locktime": 0,
@@ -1534,7 +1534,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		chainID   = ids.GenerateTestID()
 	)
 
-	ctx = context.Background()
+	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: networkID,
 		ChainID:   chainID,

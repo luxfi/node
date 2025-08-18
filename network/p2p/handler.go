@@ -5,6 +5,7 @@ package p2p
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"go.uber.org/zap"
@@ -148,7 +149,15 @@ func (r *responder) CrossChainAppRequest(ctx context.Context, chainID ids.ID, re
 		return nil
 	}
 
-	return r.sender.SendCrossChainAppResponse(ctx, chainID, requestID, appResponse)
+	// TODO: Cross-chain app responses are not yet implemented in core.AppSender
+	// For now, return an error
+	_ = ctx
+	_ = chainID
+	_ = requestID
+	_ = appResponse
+	return errors.New("cross-chain app responses not yet implemented")
+	// Original code:
+	// return r.sender.SendCrossChainAppResponse(ctx, chainID, requestID, appResponse)
 }
 
 type TestHandler struct {

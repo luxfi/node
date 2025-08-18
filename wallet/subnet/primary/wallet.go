@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/ledger-lux-go/keychain"
+	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/c"
@@ -92,7 +92,7 @@ type WalletConfig struct {
 //
 // The wallet manages all state locally, and performs all tx signing locally.
 func MakeWallet(ctx context.Context, config *WalletConfig) (Wallet, error) {
-	luxAddrs := set.Of(config.LUXKeychain.List()...)
+	luxAddrs := set.Of(config.LUXKeychain.Addresses()...)
 	luxState, err := FetchState(ctx, config.URI, luxAddrs)
 	if err != nil {
 		return nil, err

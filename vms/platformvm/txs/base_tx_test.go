@@ -4,12 +4,13 @@
 package txs
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -22,6 +23,7 @@ import (
 
 func TestBaseTxSerialization(t *testing.T) {
 	require := require.New(t)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	addr := ids.ShortID{
 		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
@@ -48,8 +50,8 @@ func TestBaseTxSerialization(t *testing.T) {
 
 	simpleBaseTx := &BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:    constants.MainnetID,
-			BlockchainID: constants.PlatformChainID,
+			NetworkID:    consensus.GetNetworkID(ctx),
+			BlockchainID: consensus.GetChainID(ctx),
 			Outs:         []*lux.TransferableOutput{},
 			Ins: []*lux.TransferableInput{
 				{
@@ -71,19 +73,15 @@ func TestBaseTxSerialization(t *testing.T) {
 			Memo: types.JSONByteSlice{},
 		},
 	}
-	require.NoError(simpleBaseTx.SyntacticVerify(&context.Context{
-		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
-	}))
+	require.NoError(simpleBaseTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleBaseTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
 		// BaseTx Type ID
 		0x00, 0x00, 0x00, 0x22,
-		// Mainnet network ID
-		0x00, 0x00, 0x00, 0x01,
+		// Test network ID (10001)
+		0x00, 0x00, 0x27, 0x11,
 		// P-chain blockchain ID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -124,8 +122,8 @@ func TestBaseTxSerialization(t *testing.T) {
 
 	complexBaseTx := &BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:    constants.MainnetID,
-			BlockchainID: constants.PlatformChainID,
+			NetworkID:    consensus.GetNetworkID(ctx),
+			BlockchainID: consensus.GetChainID(ctx),
 			Outs: []*lux.TransferableOutput{
 				{
 					Asset: lux.Asset{
@@ -217,19 +215,16 @@ func TestBaseTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexBaseTx.Outs, Codec)
 	utils.Sort(complexBaseTx.Ins)
-	require.NoError(complexBaseTx.SyntacticVerify(&context.Context{
-		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
-	}))
+	ctx2 := consensustest.Context(t, consensustest.PChainID)
+	require.NoError(complexBaseTx.SyntacticVerify(ctx2))
 
 	expectedUnsignedComplexBaseTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
 		// BaseTx Type ID
 		0x00, 0x00, 0x00, 0x22,
-		// Mainnet network ID
-		0x00, 0x00, 0x00, 0x01,
+		// Test network ID (10001)
+		0x00, 0x00, 0x27, 0x11,
 		// P-chain blockchain ID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -365,17 +360,14 @@ func TestBaseTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexBaseTx.InitCtx(&context.Context{
-		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
-		BCLookup:   aliaser,
-	})
+	ctx3 := consensustest.Context(t, consensustest.PChainID)
+	// Note: BCLookup not supported in consensustest.Context, using default context
+	unsignedComplexBaseTx.InitCtx(ctx3)
 
 	unsignedComplexBaseTxJSONBytes, err := json.MarshalIndent(unsignedComplexBaseTx, "", "\t")
 	require.NoError(err)
 	require.Equal(`{
-	"networkID": 1,
+	"networkID": 10001,
 	"blockchainID": "11111111111111111111111111111111LpoYY",
 	"outputs": [
 		{
@@ -398,7 +390,7 @@ func TestBaseTxSerialization(t *testing.T) {
 				"locktime": 876543210,
 				"output": {
 					"addresses": [
-						"P-lux1g32kvaugnx4tk3z4vemc3xd2hdz92enhl8j54s"
+						"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
 					],
 					"amount": 18446744073709551615,
 					"locktime": 0,

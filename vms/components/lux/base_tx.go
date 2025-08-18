@@ -50,9 +50,7 @@ func (t *BaseTx) NumCredentials() int {
 func (t *BaseTx) Verify(ctx context.Context) error {
 	networkID := consensus.GetNetworkID(ctx)
 	chainID := consensus.GetChainID(ctx)
-	if chainID == ids.Empty {
-		return fmt.Errorf("no chain ID found in context")
-	}
+	// Note: chainID can be empty (all zeros) for the P-chain
 	switch {
 	case t == nil:
 		return ErrNilTx

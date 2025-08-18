@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
@@ -73,7 +74,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			chainName:   "yeet",
 			keys:        []*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 			setup: func(tx *CreateChainTx) *CreateChainTx {
-				tx.SubnetID = ctx.ChainID
+				tx.SubnetID = consensus.GetChainID(ctx)
 				return tx
 			},
 			expectedErr: ErrCantValidatePrimaryNetwork,
@@ -153,8 +154,8 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 
 			createChainTx := &CreateChainTx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:    ctx.NetworkID,
-					BlockchainID: ctx.ChainID,
+					NetworkID:    consensus.GetNetworkID(ctx),
+					BlockchainID: consensus.GetChainID(ctx),
 					Ins:          inputs,
 					Outs:         outputs,
 				}},

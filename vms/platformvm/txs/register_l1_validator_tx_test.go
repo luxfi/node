@@ -12,9 +12,10 @@ import (
 
 	_ "embed"
 
-	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/snowtest"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
@@ -34,10 +35,9 @@ func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 
 	skBytes, err := hex.DecodeString("6668fecd4595b81e4d568398c820bbf3f073cb222902279fa55ebb84764ed2e3")
 	require.NoError(err)
-	sk, err := localsigner.FromBytes(skBytes)
+	sk, err := bls.SecretKeyFromBytes(skBytes)
 	require.NoError(err)
-	pop, err := signer.NewProofOfPossession(sk)
-	require.NoError(err)
+	pop := signer.NewProofOfPossession(sk)
 
 	var (
 		message = []byte("message")
@@ -322,7 +322,7 @@ func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 	}
 	require.Equal(expectedBytes, txBytes)
 
-	ctx := snowtest.Context(t, constants.PlatformChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	unsignedTx.InitCtx(ctx)
 
 	txJSON, err := json.MarshalIndent(unsignedTx, "", "\t")
@@ -331,7 +331,7 @@ func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 }
 
 func TestRegisterL1ValidatorTxSyntacticVerify(t *testing.T) {
-	ctx := snowtest.Context(t, ids.GenerateTestID())
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	tests := []struct {
 		name        string
 		tx          *RegisterL1ValidatorTx
@@ -365,8 +365,8 @@ func TestRegisterL1ValidatorTxSyntacticVerify(t *testing.T) {
 			tx: &RegisterL1ValidatorTx{
 				BaseTx: BaseTx{
 					BaseTx: lux.BaseTx{
-						NetworkID:    ctx.NetworkID,
-						BlockchainID: ctx.ChainID,
+						NetworkID:    consensus.GetNetworkID(ctx),
+						BlockchainID: consensus.GetChainID(ctx),
 					},
 				},
 			},

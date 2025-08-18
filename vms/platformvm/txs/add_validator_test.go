@@ -23,6 +23,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
 	ctx := consensustest.Context(t, consensustest.PChainID)
+	luxAssetID := consensustest.LUXAssetID
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
@@ -46,14 +47,14 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 			TxID:        ids.ID{'t', 'x', 'I', 'D'},
 			OutputIndex: 2,
 		},
-		Asset: lux.Asset{ID: ctx.LUXAssetID},
+		Asset: lux.Asset{ID: luxAssetID},
 		In: &secp256k1fx.TransferInput{
 			Amt:   uint64(5678),
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
 	outputs := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: ctx.LUXAssetID},
+		Asset: lux.Asset{ID: luxAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(1234),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -63,7 +64,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 		},
 	}}
 	stakes := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: ctx.LUXAssetID},
+		Asset: lux.Asset{ID: luxAssetID},
 		Out: &stakeable.LockOut{
 			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
 			TransferableOut: &secp256k1fx.TransferOutput{
@@ -77,13 +78,13 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	}}
 	addValidatorTx = &AddValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    ctx.NetworkID,
-			BlockchainID: ctx.ChainID,
+			NetworkID:    10001,
+			BlockchainID: consensustest.PChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 		}},
 		Validator: Validator{
-			NodeID: ctx.NodeID,
+			NodeID: ids.GenerateTestNodeID(),
 			Start:  uint64(clk.Time().Unix()),
 			End:    uint64(clk.Time().Add(time.Hour).Unix()),
 			Wght:   validatorWeight,
@@ -193,13 +194,13 @@ func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	}}
 	addValidatorTx = &AddValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    ctx.NetworkID,
-			BlockchainID: ctx.ChainID,
+			NetworkID:    10001,
+			BlockchainID: consensustest.PChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 		}},
 		Validator: Validator{
-			NodeID: ctx.NodeID,
+			NodeID: ids.GenerateTestNodeID(),
 			Start:  uint64(clk.Time().Unix()),
 			End:    uint64(clk.Time().Add(time.Hour).Unix()),
 			Wght:   validatorWeight,

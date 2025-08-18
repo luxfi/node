@@ -97,9 +97,10 @@ func (c *Client) AppRequest(
 			)
 		}
 
+		nodeIDs := set.Of(nodeID)
 		if err := c.sender.SendAppRequest(
 			ctxWithoutCancel,
-			nodeID,
+			nodeIDs,
 			requestID,
 			appRequestBytes,
 		); err != nil {
@@ -133,8 +134,24 @@ func (c *Client) AppGossip(
 	// cancellation is unexpected.
 	ctxWithoutCancel := context.WithoutCancel(ctx)
 
+	// Extract node IDs from config
+	var nodeIDs set.Set[ids.NodeID]
+	if config.NodeIDs != nil {
+		switch v := config.NodeIDs.(type) {
+		case set.Set[ids.NodeID]:
+			nodeIDs = v
+		case []ids.NodeID:
+			nodeIDs = set.Of(v...)
+		}
+	} else if len(config.Validators) > 0 {
+		nodeIDs = set.Of(config.Validators...)
+	} else {
+		nodeIDs = set.Set[ids.NodeID]{}
+	}
+	
 	return c.sender.SendAppGossip(
 		ctxWithoutCancel,
+		nodeIDs,
 		PrefixMessage(c.handlerPrefix, appGossipBytes),
 	)
 }
@@ -167,28 +184,38 @@ func (c *Client) CrossChainAppRequest(
 		)
 	}
 
-	if err := c.sender.SendCrossChainAppRequest(
-		ctxWithoutCancel,
-		chainID,
-		requestID,
-		PrefixMessage(c.handlerPrefix, appRequestBytes),
-	); err != nil {
-		c.router.log.Error("unexpected error when sending message",
-			zap.Stringer("op", message.CrossChainAppRequestOp),
-			zap.Stringer("chainID", chainID),
-			zap.Uint32("requestID", requestID),
-			zap.Error(err),
-		)
-		return err
-	}
-
-	c.router.pendingCrossChainAppRequests[requestID] = pendingCrossChainAppRequest{
-		handlerID: c.handlerIDStr,
-		callback:  onResponse,
-	}
-	c.router.requestID += 2
-
-	return nil
+	// TODO: Cross-chain app requests are not yet implemented in core.AppSender
+	// For now, return an error
+	_ = ctxWithoutCancel
+	_ = chainID
+	_ = requestID
+	_ = appRequestBytes
+	_ = onResponse
+	return errors.New("cross-chain app requests not yet implemented")
+	
+	// Original code commented out until cross-chain support is added:
+	// if err := c.sender.SendCrossChainAppRequest(
+	//	ctxWithoutCancel,
+	//	chainID,
+	//	requestID,
+	//	PrefixMessage(c.handlerPrefix, appRequestBytes),
+	// ); err != nil {
+	//	c.router.log.Error("unexpected error when sending message",
+	//		zap.Stringer("op", message.CrossChainAppRequestOp),
+	//		zap.Stringer("chainID", chainID),
+	//		zap.Uint32("requestID", requestID),
+	//		zap.Error(err),
+	//	)
+	//	return err
+	// }
+	//
+	// c.router.pendingCrossChainAppRequests[requestID] = pendingCrossChainAppRequest{
+	//	handlerID: c.handlerIDStr,
+	//	callback:  onResponse,
+	// }
+	// c.router.requestID += 2
+	//
+	// return nil
 }
 
 // PrefixMessage prefixes the original message with the protocol identifier.

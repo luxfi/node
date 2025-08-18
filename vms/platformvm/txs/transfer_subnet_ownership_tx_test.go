@@ -4,13 +4,14 @@
 package txs
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -93,11 +94,8 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(simpleTransferSubnetOwnershipTx.SyntacticVerify(&context.Context{
-		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
-	}))
+	ctx := consensustest.Context(t, consensustest.PChainID)
+	require.NoError(simpleTransferSubnetOwnershipTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleTransferSubnetOwnershipTxBytes := []byte{
 		// Codec version
@@ -275,11 +273,8 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexTransferSubnetOwnershipTx.Outs, Codec)
 	utils.Sort(complexTransferSubnetOwnershipTx.Ins)
-	require.NoError(complexTransferSubnetOwnershipTx.SyntacticVerify(&context.Context{
-		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
-	}))
+	ctx2 := consensustest.Context(t, consensustest.PChainID)
+	require.NoError(complexTransferSubnetOwnershipTx.SyntacticVerify(ctx2))
 
 	expectedUnsignedComplexTransferSubnetOwnershipTxBytes := []byte{
 		// Codec version
@@ -444,12 +439,9 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexTransferSubnetOwnershipTx.InitCtx(&context.Context{
-		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
-		BCLookup:   aliaser,
-	})
+	ctx3 := consensustest.Context(t, consensustest.PChainID)
+	// Note: BCLookup not supported in consensustest.Context
+	unsignedComplexTransferSubnetOwnershipTx.InitCtx(ctx3)
 
 	unsignedComplexTransferSubnetOwnershipTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransferSubnetOwnershipTx, "", "\t")
 	require.NoError(err)
@@ -548,15 +540,7 @@ func TestTransferSubnetOwnershipTxSyntacticVerify(t *testing.T) {
 		expectedErr error
 	}
 
-	var (
-		networkID = uint32(1337)
-		chainID   = ids.GenerateTestID()
-	)
-
-	ctx := &context.Context{
-		ChainID:   chainID,
-		NetworkID: networkID,
-	}
+	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	// A BaseTx that already passed syntactic verification.
 	verifiedBaseTx := BaseTx{
@@ -568,8 +552,8 @@ func TestTransferSubnetOwnershipTxSyntacticVerify(t *testing.T) {
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:    networkID,
-			BlockchainID: chainID,
+			NetworkID:    consensus.GetNetworkID(ctx),
+			BlockchainID: consensus.GetChainID(ctx),
 		},
 	}
 	// Sanity check.

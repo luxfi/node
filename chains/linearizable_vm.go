@@ -14,6 +14,7 @@ import (
 	"github.com/luxfi/consensus/engine/dag/vertex"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/set"
 )
 
 var (
@@ -118,7 +119,8 @@ func (b *blockAppSenderWrapper) SendAppRequest(ctx context.Context, nodeID ids.N
 	if b.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	return b.appSender.SendAppRequest(ctx, nodeID, requestID, appRequestBytes)
+	nodeIDs := set.Of(nodeID)
+	return b.appSender.SendAppRequest(ctx, nodeIDs, requestID, appRequestBytes)
 }
 
 func (b *blockAppSenderWrapper) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
@@ -132,7 +134,9 @@ func (b *blockAppSenderWrapper) SendAppGossip(ctx context.Context, appGossipByte
 	if b.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	return b.appSender.SendAppGossip(ctx, appGossipBytes)
+	// For gossip, use empty set to broadcast to all nodes
+	nodeIDs := set.Set[ids.NodeID]{}
+	return b.appSender.SendAppGossip(ctx, nodeIDs, appGossipBytes)
 }
 
 // linearizeOnInitializeVM transforms the proposervm's call to Initialize into a

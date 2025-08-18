@@ -4,13 +4,14 @@
 package txs
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -114,11 +115,8 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 			SigIndices: []uint32{3},
 		},
 	}
-	require.NoError(simpleTransformTx.SyntacticVerify(&context.Context{
-		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
-	}))
+	ctx := consensustest.Context(t, consensustest.PChainID)
+	require.NoError(simpleTransformTx.SyntacticVerify(ctx))
 
 	expectedUnsignedSimpleTransformTxBytes := []byte{
 		// Codec version
@@ -340,11 +338,8 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 	}
 	lux.SortTransferableOutputs(complexTransformTx.Outs, Codec)
 	utils.Sort(complexTransformTx.Ins)
-	require.NoError(complexTransformTx.SyntacticVerify(&context.Context{
-		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
-	}))
+	ctx2 := consensustest.Context(t, consensustest.PChainID)
+	require.NoError(complexTransformTx.SyntacticVerify(ctx2))
 
 	expectedUnsignedComplexTransformTxBytes := []byte{
 		// Codec version
@@ -526,12 +521,9 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
 
-	unsignedComplexTransformTx.InitCtx(&context.Context{
-		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
-		BCLookup:   aliaser,
-	})
+	ctx3 := consensustest.Context(t, consensustest.PChainID)
+	// Note: BCLookup not supported in consensustest.Context
+	unsignedComplexTransformTx.InitCtx(ctx3)
 
 	unsignedComplexTransformTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransformTx, "", "\t")
 	require.NoError(err)
@@ -636,16 +628,7 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 		err    error
 	}
 
-	var (
-		networkID = uint32(1337)
-		chainID   = ids.GenerateTestID()
-	)
-
-	ctx := &context.Context{
-		ChainID:    chainID,
-		NetworkID:  networkID,
-		LUXAssetID: ids.GenerateTestID(),
-	}
+	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	// A BaseTx that already passed syntactic verification.
 	verifiedBaseTx := BaseTx{
@@ -655,8 +638,8 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:    networkID,
-			BlockchainID: chainID,
+			NetworkID:    consensus.GetNetworkID(ctx),
+			BlockchainID: consensus.GetChainID(ctx),
 		},
 	}
 
@@ -707,7 +690,7 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 				return &TransformSubnetTx{
 					BaseTx:  validBaseTx,
 					Subnet:  ids.GenerateTestID(),
-					AssetID: ctx.LUXAssetID,
+					AssetID: consensustest.LUXAssetID,
 				}
 			},
 			err: errAssetIDCantBeLUX,

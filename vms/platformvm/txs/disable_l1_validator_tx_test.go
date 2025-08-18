@@ -12,7 +12,8 @@ import (
 	_ "embed"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/snowtest"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
@@ -309,7 +310,7 @@ func TestDisableL1ValidatorTxSerialization(t *testing.T) {
 	}
 	require.Equal(expectedBytes, txBytes)
 
-	ctx := snowtest.Context(t, constants.PlatformChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	unsignedTx.InitCtx(ctx)
 
 	txJSON, err := json.MarshalIndent(unsignedTx, "", "\t")
@@ -318,12 +319,12 @@ func TestDisableL1ValidatorTxSerialization(t *testing.T) {
 }
 
 func TestDisableL1ValidatorTxSyntacticVerify(t *testing.T) {
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	var (
-		ctx         = snowtest.Context(t, ids.GenerateTestID())
 		validBaseTx = BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    ctx.NetworkID,
-				BlockchainID: ctx.ChainID,
+				NetworkID:    consensus.GetNetworkID(ctx),
+				BlockchainID: consensus.GetChainID(ctx),
 			},
 		}
 		validDisableAuth verify.Verifiable = &secp256k1fx.Input{}

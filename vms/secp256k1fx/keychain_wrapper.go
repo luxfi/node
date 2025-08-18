@@ -5,23 +5,25 @@ package secp256k1fx
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/ledger-lux-go/keychain"
+	ledgerkeychain "github.com/luxfi/ledger-lux-go/keychain"
+	nodekeychain "github.com/luxfi/node/utils/crypto/keychain"
+	"github.com/luxfi/node/utils/set"
 )
 
-// Ensure Keychain implements keychain.Keychain interface
-var _ keychain.Keychain = (*keychainWrapper)(nil)
+// Ensure Keychain implements ledgerkeychain.Keychain interface
+var _ ledgerkeychain.Keychain = (*keychainWrapper)(nil)
 
 // keychainWrapper wraps a Keychain to implement the ledger keychain interface
 type keychainWrapper struct {
 	*Keychain
 }
 
-// Get implements keychain.Keychain
-func (kw *keychainWrapper) Get(addr ids.ShortID) (keychain.Signer, bool) {
+// Get implements ledgerkeychain.Keychain
+func (kw *keychainWrapper) Get(addr ids.ShortID) (ledgerkeychain.Signer, bool) {
 	return kw.Keychain.Get(addr)
 }
 
-// Addresses implements keychain.Keychain
+// Addresses implements ledgerkeychain.Keychain
 func (kw *keychainWrapper) Addresses() []ids.ShortID {
 	addrs := make([]ids.ShortID, 0, kw.Keychain.Addrs.Len())
 	for addr := range kw.Keychain.Addrs {
@@ -31,6 +33,26 @@ func (kw *keychainWrapper) Addresses() []ids.ShortID {
 }
 
 // WrapKeychain wraps a Keychain to implement the ledger keychain interface
-func WrapKeychain(kc *Keychain) keychain.Keychain {
+func WrapKeychain(kc *Keychain) ledgerkeychain.Keychain {
 	return &keychainWrapper{Keychain: kc}
+}
+
+// nodeKeychainWrapper wraps a Keychain to implement the node's keychain interface
+type nodeKeychainWrapper struct {
+	*Keychain
+}
+
+// Get implements node's keychain.Keychain
+func (nkw *nodeKeychainWrapper) Get(addr ids.ShortID) (nodekeychain.Signer, bool) {
+	return nkw.Keychain.Get(addr)
+}
+
+// Addresses implements node's keychain.Keychain, returning a set
+func (nkw *nodeKeychainWrapper) Addresses() set.Set[ids.ShortID] {
+	return nkw.Keychain.Addrs
+}
+
+// WrapKeychainForNode wraps a Keychain to implement the node's keychain interface
+func WrapKeychainForNode(kc *Keychain) nodekeychain.Keychain {
+	return &nodeKeychainWrapper{Keychain: kc}
 }

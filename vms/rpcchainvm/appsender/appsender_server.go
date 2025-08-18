@@ -10,6 +10,7 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/set"
 
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 )
@@ -27,18 +28,17 @@ func NewServer(appSender core.AppSender) *Server {
 }
 
 func (s *Server) SendAppRequest(ctx context.Context, req *appsenderpb.SendAppRequestMsg) (*emptypb.Empty, error) {
-	// core.AppSender expects a single NodeID, not a set
-	// Take the first node if multiple are provided
-	if len(req.NodeIds) == 0 {
-		return &emptypb.Empty{}, nil
+	// Convert node IDs to a set
+	nodeIDs := set.NewSet[ids.NodeID](len(req.NodeIds))
+	for _, nodeIDBytes := range req.NodeIds {
+		nodeID, err := ids.ToNodeID(nodeIDBytes)
+		if err != nil {
+			return nil, err
+		}
+		nodeIDs.Add(nodeID)
 	}
 
-	nodeID, err := ids.ToNodeID(req.NodeIds[0])
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.appSender.SendAppRequest(ctx, nodeID, req.RequestId, req.Request)
+	err := s.appSender.SendAppRequest(ctx, nodeIDs, req.RequestId, req.Request)
 	return &emptypb.Empty{}, err
 }
 
@@ -62,8 +62,10 @@ func (s *Server) SendAppError(ctx context.Context, req *appsenderpb.SendAppError
 }
 
 func (s *Server) SendAppGossip(ctx context.Context, req *appsenderpb.SendAppGossipMsg) (*emptypb.Empty, error) {
-	// core.AppSender.SendAppGossip just takes bytes
-	err := s.appSender.SendAppGossip(ctx, req.Msg)
+	// core.AppSender.SendAppGossip needs a set of node IDs
+	// For gossip, we broadcast to all nodes so use an empty set
+	nodeIDs := set.Set[ids.NodeID]{}
+	err := s.appSender.SendAppGossip(ctx, nodeIDs, req.Msg)
 	return &emptypb.Empty{}, err
 }
 
