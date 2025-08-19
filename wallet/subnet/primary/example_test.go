@@ -18,19 +18,23 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet/keychain"
 )
 
 func ExampleWallet() {
 	ctx := context.Background()
 	kc := secp256k1fx.NewKeychain(genesis.EWOQKey)
 
+	// Create adapter for the keychain
+	adapter := keychain.NewLedgerAdapter(kc)
+
 	// MakeWallet fetches the available UTXOs owned by [kc] on the network that
 	// [LocalAPIURI] is hosting.
 	walletSyncStartTime := time.Now()
 	wallet, err := MakeWallet(ctx, &WalletConfig{
 		URI:         LocalAPIURI,
-		LUXKeychain: kc,
-		EthKeychain: kc,
+		LUXKeychain: adapter,
+		EthKeychain: adapter,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize wallet with: %s\n", err)

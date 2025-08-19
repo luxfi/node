@@ -10,16 +10,14 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/node/codec"
 
-	"github.com/luxfi/consensus/core"
-
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/node/vms/xvm/txs/mempool/mempooltypes"
 
 	"github.com/luxfi/database/memdb"
 
@@ -50,6 +48,7 @@ import (
 	"github.com/luxfi/node/vms/xvm/txs/mempool"
 
 	blkexecutor "github.com/luxfi/node/vms/xvm/block/executor"
+	xvmmetrics "github.com/luxfi/node/vms/xvm/metrics"
 	txexecutor "github.com/luxfi/node/vms/xvm/txs/executor"
 )
 
@@ -80,11 +79,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				mempool := mempool.NewMockMempool(ctrl)
 				mempool.EXPECT().RequestBuildBlock()
 
+				ctx := context.Background()
+				ctx = consensus.WithLogger(ctx, log.NewNoOpLogger())
 				return New(
 					&txexecutor.Backend{
-						Ctx: &context.Context{
-							Log: log.NewNoOpLogger(),
-						},
+						Ctx: ctx,
 					},
 					manager,
 					&mockable.Clock{},
@@ -111,11 +110,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				mempool := mempool.NewMockMempool(ctrl)
 				mempool.EXPECT().RequestBuildBlock()
 
+				ctx := context.Background()
+				ctx = consensus.WithLogger(ctx, log.NewNoOpLogger())
 				return New(
 					&txexecutor.Backend{
-						Ctx: &context.Context{
-							Log: log.NewNoOpLogger(),
-						},
+						Ctx: ctx,
 					},
 					manager,
 					&mockable.Clock{},
@@ -155,11 +154,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				mempool.EXPECT().Peek().Return(nil, false)
 				mempool.EXPECT().RequestBuildBlock()
 
+				ctx := context.Background()
+				ctx = consensus.WithLogger(ctx, log.NewNoOpLogger())
 				return New(
 					&txexecutor.Backend{
-						Ctx: &context.Context{
-							Log: log.NewNoOpLogger(),
-						},
+						Ctx: ctx,
 					},
 					manager,
 					&mockable.Clock{},
@@ -200,11 +199,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				mempool.EXPECT().Peek().Return(nil, false)
 				mempool.EXPECT().RequestBuildBlock()
 
+				ctx := context.Background()
+				ctx = consensus.WithLogger(ctx, log.NewNoOpLogger())
 				return New(
 					&txexecutor.Backend{
-						Ctx: &context.Context{
-							Log: log.NewNoOpLogger(),
-						},
+						Ctx: ctx,
 					},
 					manager,
 					&mockable.Clock{},
@@ -246,11 +245,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				mempool.EXPECT().Peek().Return(nil, false)
 				mempool.EXPECT().RequestBuildBlock()
 
+				ctx := context.Background()
+				ctx = consensus.WithLogger(ctx, log.NewNoOpLogger())
 				return New(
 					&txexecutor.Backend{
-						Ctx: &context.Context{
-							Log: log.NewNoOpLogger(),
-						},
+						Ctx: ctx,
 					},
 					manager,
 					&mockable.Clock{},
@@ -341,9 +340,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &context.Context{
-							Log: log.NewNoOpLogger(),
-						},
+						Ctx: consensus.WithLogger(context.Background(), log.NewNoOpLogger()),
 					},
 					manager,
 					&mockable.Clock{},
@@ -413,9 +410,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &context.Context{
-							Log: log.NewNoOpLogger(),
-						},
+						Ctx: consensus.WithLogger(context.Background(), log.NewNoOpLogger()),
 					},
 					manager,
 					clock,
@@ -487,9 +482,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: &context.Context{
-							Log: log.NewNoOpLogger(),
-						},
+						Ctx: consensus.WithLogger(context.Background(), log.NewNoOpLogger()),
 					},
 					manager,
 					clock,
@@ -516,8 +509,8 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 
 	require := require.New(t)
 
-	registerer := metric.NewNoOpMetrics("test").Registry()
-	toEngine := make(chan core.Message, 100)
+	registerer := prometheus.NewRegistry()
+	toEngine := make(chan mempooltypes.MessageType, 100)
 	mempool, err := mempool.New("mempool", registerer, toEngine)
 	require.NoError(err)
 	// add a tx to the mempool
@@ -536,9 +529,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	require.NoError(err)
 
 	backend := &txexecutor.Backend{
-		Ctx: &context.Context{
-			Log: log.NewNoOpLogger(),
-		},
+		Ctx:   consensus.WithLogger(context.Background(), log.NewNoOpLogger()),
 		Codec: parser.Codec(),
 	}
 
@@ -560,11 +551,10 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	state.AddBlock(parentBlk)
 	state.SetLastAccepted(parentBlk.ID())
 
-	metrics := prometheus.NewRegistry()
-	_ = registerer // registerer variable
+	xvmMetrics, err := xvmmetrics.New("test", registerer)
 	require.NoError(err)
 
-	manager := blkexecutor.NewManager(mempool, metrics, state, backend, clk, onAccept)
+	manager := blkexecutor.NewManager(mempool, xvmMetrics, state, backend, clk, onAccept)
 
 	manager.SetPreference(parentBlk.ID())
 

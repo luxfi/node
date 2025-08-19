@@ -18,8 +18,8 @@ require (
 	github.com/ethereum/go-ethereum v1.16.1
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
-	github.com/luxfi/consensus v1.2.10
-	github.com/luxfi/crypto v1.3.2
+	github.com/luxfi/consensus v1.13.4-lux.24
+	github.com/luxfi/crypto v1.3.4
 	github.com/luxfi/database v1.1.13
 	github.com/luxfi/geth v1.16.34
 	github.com/luxfi/ids v1.0.2
@@ -210,13 +210,19 @@ require (
 	k8s.io/kube-openapi v0.0.0-20250814151709-d7b6acb124c3 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.7.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
 // Go no longer supports bazaar repos
 
+// Fix structured-merge-diff version conflict
+replace sigs.k8s.io/structured-merge-diff/v4 => sigs.k8s.io/structured-merge-diff/v4 v4.4.1
+
 // Pin all OpenTelemetry modules (and metric sub-packages) to v1.37.0
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
+
+// Use lux-branded geth
+replace github.com/luxfi/geth => github.com/luxfi/geth v1.16.34-lux.3

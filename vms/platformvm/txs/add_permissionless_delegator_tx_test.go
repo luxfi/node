@@ -21,6 +21,7 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
 
@@ -42,6 +43,8 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	require := require.New(t)
 	
 	var ctx context.Context
+	// Use empty chain ID for serialization test to match expected bytes
+	testChainID := ids.Empty
 
 	addr := ids.ShortID{
 		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
@@ -75,7 +78,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
 				NetworkID:    constants.MainnetID,
-				BlockchainID: constants.PlatformChainID,
+				BlockchainID: testChainID,
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
 					{
@@ -135,7 +138,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
+		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
 	require.NoError(simpleAddPrimaryTx.SyntacticVerify(ctx))
@@ -391,7 +394,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
+		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
 	require.NoError(complexAddPrimaryTx.SyntacticVerify(ctx))
@@ -624,11 +627,12 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	ctx2 := context.Background()
 	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
 		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
+		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
-	ctx2 = consensus.WithBCLookup(ctx2, aliaser)
-	unsignedComplexAddPrimaryTx.InitCtx(ctx2)
+	testCtx := testcontext.New(ctx2)
+	testCtx.BCLookup = aliaser
+	unsignedComplexAddPrimaryTx.InitCtx(testCtx)
 
 	unsignedComplexAddPrimaryTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddPrimaryTx, "", "\t")
 	require.NoError(err)
@@ -762,6 +766,8 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 
 func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	require := require.New(t)
+	// Use empty chain ID for serialization test to match expected bytes
+	testChainID := ids.Empty
 
 	addr := ids.ShortID{
 		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
@@ -876,7 +882,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
+		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
 	require.NoError(simpleAddSubnetTx.SyntacticVerify(ctx))
@@ -1153,7 +1159,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
+		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
 	require.NoError(complexAddSubnetTx.SyntacticVerify(ctx))
@@ -1386,11 +1392,12 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	ctx2 := context.Background()
 	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
 		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
+		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
-	ctx2 = consensus.WithBCLookup(ctx2, aliaser)
-	unsignedComplexAddSubnetTx.InitCtx(ctx2)
+	testCtx := testcontext.New(ctx2)
+	testCtx.BCLookup = aliaser
+	unsignedComplexAddSubnetTx.InitCtx(testCtx)
 
 	unsignedComplexAddSubnetTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddSubnetTx, "", "\t")
 	require.NoError(err)

@@ -387,3 +387,17 @@ func (s *signerVisitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) e
 	}
 	return sign(s.tx, false, txSigners)
 }
+
+// ConvertSubnetToL1Tx signs a ConvertSubnetToL1Tx
+func (s *signerVisitor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+	txSigners, err := s.getSigners(constants.PrimaryNetworkID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	subnetAuthSigners, err := s.getSubnetSigners(tx.Subnet, tx.SubnetAuth)
+	if err != nil {
+		return err
+	}
+	txSigners = append(txSigners, subnetAuthSigners)
+	return sign(s.tx, false, txSigners)
+}

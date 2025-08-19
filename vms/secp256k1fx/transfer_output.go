@@ -30,6 +30,11 @@ func (out *TransferOutput) InitializeWithContext(ctx context.Context) error {
 	return nil
 }
 
+// InitCtx sets the context for address formatting
+func (out *TransferOutput) InitCtx(ctx context.Context) {
+	out.OutputOwners.InitCtx(ctx)
+}
+
 // MarshalJSON marshals Amt and the embedded OutputOwners struct
 // into a JSON readable format
 // If OutputOwners cannot be serialized then this will return error

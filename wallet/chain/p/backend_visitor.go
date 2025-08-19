@@ -142,3 +142,7 @@ func (b *backendVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) er
 func (b *backendVisitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
+
+func (b *backendVisitor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+	return b.baseTx(&tx.BaseTx)
+}

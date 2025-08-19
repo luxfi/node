@@ -628,3 +628,8 @@ func (e *ProposalTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx
 func (e *ProposalTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
 	return ErrWrongTxType
 }
+
+// ConvertSubnetToL1Tx handles subnet to L1 conversion
+func (e *ProposalTxExecutor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+	return ErrWrongTxType
+}

@@ -61,7 +61,7 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
 				NetworkID:    constants.MainnetID,
-				BlockchainID: constants.PlatformChainID,
+				BlockchainID: ids.Empty, // Use empty for serialization test
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
 					{
@@ -116,10 +116,11 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 			SigIndices: []uint32{3},
 		},
 	}
+	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
+		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
 	require.NoError(simpleTransformTx.SyntacticVerify(ctx))
@@ -234,7 +235,7 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
 				NetworkID:    constants.MainnetID,
-				BlockchainID: constants.PlatformChainID,
+				BlockchainID: ids.Empty, // Use empty for serialization test
 				Outs: []*lux.TransferableOutput{
 					{
 						Asset: lux.Asset{
@@ -347,7 +348,7 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 	ctx2 := context.Background()
 	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
 		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
+		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
 	require.NoError(complexTransformTx.SyntacticVerify(ctx2))
@@ -535,7 +536,7 @@ func TestTransformSubnetTxSerialization(t *testing.T) {
 	ctx3 := context.Background()
 	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
 		NetworkID:  1,
-		ChainID:    constants.PlatformChainID,
+		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
 	testCtx := testcontext.New(ctx3)

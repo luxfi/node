@@ -24,10 +24,11 @@ func TestAddSubnetValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
 	nodeID := ids.GenerateTestNodeID()
+	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: constants.UnitTestID,
-		ChainID:   constants.PlatformChainID,
+		ChainID:    testChainID,
 		NodeID:    nodeID,
 	})
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
@@ -148,10 +149,11 @@ func TestAddSubnetValidatorMarshal(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
 	nodeID := ids.GenerateTestNodeID()
+	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: constants.UnitTestID,
-		ChainID:   constants.PlatformChainID,
+		ChainID:    testChainID,
 		NodeID:    nodeID,
 	})
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}

@@ -22,10 +22,10 @@ func (kw *keychainWrapper) Get(addr ids.ShortID) (keychain.Signer, bool) {
 }
 
 // Addresses implements keychain.Keychain
-func (kw *keychainWrapper) Addresses() []ids.ShortID {
-	addrs := make([]ids.ShortID, 0, kw.Keychain.Addrs.Len())
+func (kw *keychainWrapper) Addresses() keychain.Set[ids.ShortID] {
+	addrs := make(keychain.Set[ids.ShortID], kw.Keychain.Addrs.Len())
 	for addr := range kw.Keychain.Addrs {
-		addrs = append(addrs, addr)
+		addrs[addr] = struct{}{}
 	}
 	return addrs
 }

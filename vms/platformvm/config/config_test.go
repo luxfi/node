@@ -16,26 +16,26 @@ func TestConfigUnmarshal(t *testing.T) {
 	// Testing empty json defaults
 	t.Run("default values from empty json", func(t *testing.T) {
 		require := require.New(t)
-		c := Default
+		c := DefaultExecutionConfig
 		require.NotNil(c)
 	})
 
 	t.Run("default values from empty bytes", func(t *testing.T) {
 		require := require.New(t)
-		c := Default
+		c := DefaultExecutionConfig
 		require.NotNil(c)
 	})
 
 	t.Run("mix default and extracted values from json", func(t *testing.T) {
 		require := require.New(t)
-		c := Default
+		c := DefaultExecutionConfig
 		c.BlockCacheSize = 1
 		require.Equal(1, c.BlockCacheSize)
 	})
 
 	t.Run("all values extracted from json", func(t *testing.T) {
 		require := require.New(t)
-		c := Default
+		c := DefaultExecutionConfig
 		require.NotNil(c)
 	})
 }

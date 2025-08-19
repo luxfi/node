@@ -830,11 +830,11 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 	newState, err := state.New(
 		vm.db,
 		nil,
-		utilmetric.NewTestRegistry(),
+		nil, // metrics registry
 		&vm.Config,
 		execCfg,
 		vm.ctx,
-		metric.Noop,
+		nil, // validators
 		reward.NewCalculator(vm.Config.RewardConfig),
 	)
 	require.NoError(err)
@@ -1142,11 +1142,11 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	newState, err := state.New(
 		vm.db,
 		nil,
-		utilmetric.NewTestRegistry(),
+		nil, // metrics registry
 		&vm.Config,
 		execCfg,
 		vm.ctx,
-		metric.Noop,
+		nil, // validators
 		reward.NewCalculator(vm.Config.RewardConfig),
 	)
 	require.NoError(err)
@@ -1262,7 +1262,7 @@ func TestValidatorSetAtCacheOverwriteRegression(t *testing.T) {
 	// Create the standard block that moves the first new validator from the
 	// pending validator set into the current validator set.
 	preferredID = vm.manager.Preferred()
-	preferred, err = vm.manager.GetBlock(preferredID)
+	preferred, err := vm.manager.GetBlock(preferredID)
 	require.NoError(err)
 	preferredID = preferred.ID()
 	preferredHeight = preferred.Height()
@@ -1853,7 +1853,11 @@ func TestSubnetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 	require.NoError(err)
 	require.NoError(blk.Verify(context.Background()))
 
-	proposalBlk := blk.(chain.OracleBlock)
+	// Check if this block has options (proposal block)
+	proposalBlk, ok := blk.(interface {
+		Options(context.Context) ([]block.Block, error)
+	})
+	require.True(ok, "expected block to be a proposal block")
 	options, err := proposalBlk.Options(context.Background())
 	require.NoError(err)
 
@@ -2050,7 +2054,11 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(err)
 	require.NoError(blk.Verify(context.Background()))
 
-	proposalBlk := blk.(chain.OracleBlock)
+	// Check if this block has options (proposal block)
+	proposalBlk, ok := blk.(interface {
+		Options(context.Context) ([]block.Block, error)
+	})
+	require.True(ok, "expected block to be a proposal block")
 	options, err := proposalBlk.Options(context.Background())
 	require.NoError(err)
 
@@ -2260,7 +2268,11 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(err)
 	require.NoError(blk.Verify(context.Background()))
 
-	proposalBlk := blk.(chain.OracleBlock)
+	// Check if this block has options (proposal block)
+	proposalBlk, ok := blk.(interface {
+		Options(context.Context) ([]block.Block, error)
+	})
+	require.True(ok, "expected block to be a proposal block")
 	options, err := proposalBlk.Options(context.Background())
 	require.NoError(err)
 
@@ -2471,7 +2483,11 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 	require.NoError(err)
 	require.NoError(blk.Verify(context.Background()))
 
-	proposalBlk := blk.(chain.OracleBlock)
+	// Check if this block has options (proposal block)
+	proposalBlk, ok := blk.(interface {
+		Options(context.Context) ([]block.Block, error)
+	})
+	require.True(ok, "expected block to be a proposal block")
 	options, err := proposalBlk.Options(context.Background())
 	require.NoError(err)
 

@@ -20,6 +20,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
@@ -369,12 +370,12 @@ func TestConvertSubnetToL1ValidatorComplexity(t *testing.T) {
 		{
 			name: "any can spend",
 			vdr: txs.ConvertSubnetToL1Validator{
-				NodeID:                  ids.GenerateTestNodeID(),
-				Weight:                  1000,
-				Balance:                 1000000,
-				RewardAddress:           ids.ShortEmpty,
-				DelegationRewardAddress: ids.ShortEmpty,
-				DelegationShares:        10000,
+				NodeID:                ids.GenerateTestNodeID().Bytes(),
+				Weight:                1000,
+				Balance:               1000000,
+				Signer:                signer.ProofOfPossession{},
+				RemainingBalanceOwner: message.PChainOwner{},
+				DeactivationOwner:     message.PChainOwner{},
 			},
 			expected: gas.Dimensions{
 				gas.Bandwidth: 200,
@@ -385,12 +386,12 @@ func TestConvertSubnetToL1ValidatorComplexity(t *testing.T) {
 		{
 			name: "single remaining balance owner",
 			vdr: txs.ConvertSubnetToL1Validator{
-				NodeID:                  ids.GenerateTestNodeID(),
-				Weight:                  1000,
-				Balance:                 1000000,
-				RewardAddress:           ids.GenerateTestShortID(),
-				DelegationRewardAddress: ids.ShortEmpty,
-				DelegationShares:        10000,
+				NodeID:                ids.GenerateTestNodeID().Bytes(),
+				Weight:                1000,
+				Balance:               1000000,
+				Signer:                signer.ProofOfPossession{},
+				RemainingBalanceOwner: message.PChainOwner{Threshold: 1, Addresses: []ids.ShortID{ids.GenerateTestShortID()}},
+				DeactivationOwner:     message.PChainOwner{},
 			},
 			expected: gas.Dimensions{
 				gas.Bandwidth: 220,
@@ -401,12 +402,12 @@ func TestConvertSubnetToL1ValidatorComplexity(t *testing.T) {
 		{
 			name: "single deactivation owner",
 			vdr: txs.ConvertSubnetToL1Validator{
-				NodeID:                  ids.GenerateTestNodeID(),
-				Weight:                  1000,
-				Balance:                 1000000,
-				RewardAddress:           ids.ShortEmpty,
-				DelegationRewardAddress: ids.GenerateTestShortID(),
-				DelegationShares:        10000,
+				NodeID:                ids.GenerateTestNodeID().Bytes(),
+				Weight:                1000,
+				Balance:               1000000,
+				Signer:                signer.ProofOfPossession{},
+				RemainingBalanceOwner: message.PChainOwner{},
+				DeactivationOwner:     message.PChainOwner{Threshold: 1, Addresses: []ids.ShortID{ids.GenerateTestShortID()}},
 			},
 			expected: gas.Dimensions{
 				gas.Bandwidth: 220,

@@ -4,6 +4,7 @@
 package stakeable
 
 import (
+	"context"
 	"errors"
 
 	"github.com/luxfi/node/vms/components/lux"
@@ -17,6 +18,13 @@ var (
 type LockOut struct {
 	Locktime            uint64 `serialize:"true" json:"locktime"`
 	lux.TransferableOut `serialize:"true" json:"output"`
+}
+
+func (s *LockOut) InitCtx(ctx context.Context) {
+	// Initialize the context for the underlying output if it supports it
+	if contextOutput, ok := s.TransferableOut.(interface{ InitCtx(context.Context) }); ok {
+		contextOutput.InitCtx(ctx)
+	}
 }
 
 func (s *LockOut) Addresses() [][]byte {

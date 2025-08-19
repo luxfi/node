@@ -11,6 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/subnet/primary"
 )
 
@@ -18,6 +19,9 @@ func main() {
 	key := genesis.EWOQKey
 	uri := primary.LocalAPIURI
 	kc := secp256k1fx.NewKeychain(key)
+
+	// Create adapter for the keychain
+	adapter := keychain.NewLedgerAdapter(kc)
 	validationID := ids.FromStringOrPanic("9FAftNgNBrzHUMMApsSyV6RcFiL9UmCbvsCu28xdLV2mQ7CMo")
 	balance := uint64(2)
 
@@ -30,8 +34,8 @@ func main() {
 		ctx,
 		&primary.WalletConfig{
 			URI:         uri,
-			LUXKeychain: kc,
-			EthKeychain: secp256k1fx.NewKeychain(), // Empty ETH keychain
+			LUXKeychain: adapter,
+			EthKeychain: keychain.NewLedgerAdapter(secp256k1fx.NewKeychain()), // Empty ETH keychain
 		},
 	)
 	if err != nil {

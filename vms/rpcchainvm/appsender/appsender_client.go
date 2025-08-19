@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 )
@@ -18,9 +19,13 @@ type Client struct {
 	client appsenderpb.AppSenderClient
 }
 
-func (c *Client) SendAppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, request []byte) error {
+func (c *Client) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
+	nodeIDBytes := make([][]byte, 0, nodeIDs.Len())
+	for nodeID := range nodeIDs {
+		nodeIDBytes = append(nodeIDBytes, nodeID[:])
+	}
 	_, err := c.client.SendAppRequest(ctx, &appsenderpb.SendAppRequestMsg{
-		NodeIds:   [][]byte{nodeID[:]},
+		NodeIds:   nodeIDBytes,
 		RequestId: requestID,
 		Request:   request,
 	})
@@ -36,9 +41,14 @@ func (c *Client) SendAppResponse(ctx context.Context, nodeID ids.NodeID, request
 	return err
 }
 
-func (c *Client) SendAppGossip(ctx context.Context, appGossipBytes []byte) error {
+func (c *Client) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
+	nodeIDBytes := make([][]byte, 0, nodeIDs.Len())
+	for nodeID := range nodeIDs {
+		nodeIDBytes = append(nodeIDBytes, nodeID[:])
+	}
 	_, err := c.client.SendAppGossip(ctx, &appsenderpb.SendAppGossipMsg{
-		Msg: appGossipBytes,
+		NodeIds: nodeIDBytes,
+		Msg:     appGossipBytes,
 	})
 	return err
 }
@@ -46,6 +56,11 @@ func (c *Client) SendAppGossip(ctx context.Context, appGossipBytes []byte) error
 func (c *Client) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 	// AppSender doesn't have SendAppError method, ignore
 	return nil
+}
+
+func (c *Client) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
+	// SendAppGossipSpecific is the same as SendAppGossip for this implementation
+	return c.SendAppGossip(ctx, nodeIDs, appGossipBytes)
 }
 
 func (c *Client) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error {
@@ -64,4 +79,9 @@ func (c *Client) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, 
 		Response:  appResponseBytes,
 	})
 	return err
+}
+
+func (c *Client) SendCrossChainAppError(ctx context.Context, chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) error {
+	// Not implemented for now
+	return nil
 }
