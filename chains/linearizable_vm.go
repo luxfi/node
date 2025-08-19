@@ -12,6 +12,7 @@ import (
 	// "github.com/luxfi/consensus/engine/chain" // currently unused
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/dag/vertex"
+	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 )
@@ -118,7 +119,10 @@ func (b *blockAppSenderWrapper) SendAppRequest(ctx context.Context, nodeID ids.N
 	if b.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	return b.appSender.SendAppRequest(ctx, nodeID, requestID, appRequestBytes)
+	// Convert single nodeID to a set
+	nodeIDs := set.NewSet[ids.NodeID](1)
+	nodeIDs.Add(nodeID)
+	return b.appSender.SendAppRequest(ctx, nodeIDs, requestID, appRequestBytes)
 }
 
 func (b *blockAppSenderWrapper) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
@@ -132,7 +136,9 @@ func (b *blockAppSenderWrapper) SendAppGossip(ctx context.Context, appGossipByte
 	if b.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	return b.appSender.SendAppGossip(ctx, appGossipBytes)
+	// SendAppGossip now requires a set of node IDs, use empty set for broadcast
+	nodeIDs := set.NewSet[ids.NodeID](0)
+	return b.appSender.SendAppGossip(ctx, nodeIDs, appGossipBytes)
 }
 
 // linearizeOnInitializeVM transforms the proposervm's call to Initialize into a
@@ -158,11 +164,16 @@ type appSenderAdapter struct {
 	appSender block.AppSender
 }
 
-func (a *appSenderAdapter) SendAppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, appRequestBytes []byte) error {
+func (a *appSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
 	if a.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	return a.appSender.SendAppRequest(ctx, nodeID, requestID, appRequestBytes)
+	// block.AppSender expects a single nodeID, so we take the first one
+	// This is appropriate for single-node subnets
+	for nodeID := range nodeIDs {
+		return a.appSender.SendAppRequest(ctx, nodeID, requestID, appRequestBytes)
+	}
+	return nil
 }
 
 func (a *appSenderAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
@@ -172,10 +183,11 @@ func (a *appSenderAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeI
 	return a.appSender.SendAppResponse(ctx, nodeID, requestID, appResponseBytes)
 }
 
-func (a *appSenderAdapter) SendAppGossip(ctx context.Context, appGossipBytes []byte) error {
+func (a *appSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
 	if a.appSender == nil {
 		return errors.New("app sender is nil")
 	}
+	// block.AppSender doesn't use nodeIDs for gossip
 	return a.appSender.SendAppGossip(ctx, appGossipBytes)
 }
 
@@ -192,6 +204,11 @@ func (a *appSenderAdapter) SendCrossChainAppRequest(ctx context.Context, chainID
 func (a *appSenderAdapter) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, appResponseBytes []byte) error {
 	// Not implemented for now - cross chain responses not supported
 	return nil
+}
+
+func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
+	// SendAppGossipSpecific is the same as SendAppGossip for this implementation
+	return a.SendAppGossip(ctx, nodeIDs, appGossipBytes)
 }
 
 func (a *appSenderAdapter) SendCrossChainAppError(ctx context.Context, chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) error {

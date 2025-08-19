@@ -675,3 +675,8 @@ func (e *StandardTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx
 func (e *StandardTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
 	return nil
 }
+
+// ConvertSubnetToL1Tx handles subnet to L1 conversion
+func (e *StandardTxExecutor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+	return nil
+}

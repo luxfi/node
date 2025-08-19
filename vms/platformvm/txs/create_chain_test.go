@@ -18,10 +18,11 @@ import (
 )
 
 func TestUnsignedCreateChainTxVerify(t *testing.T) {
+	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: constants.UnitTestID,
-		ChainID:   constants.PlatformChainID,
+		ChainID:    testChainID,
 	})
 	testSubnet1ID := ids.GenerateTestID()
 	testSubnet1ControlKeys := []*secp256k1.PrivateKey{
@@ -70,7 +71,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			expectedErr: errInvalidVMID,
 		},
 		{
-			description: "subnet ID is platform chain's ID",
+			description: "subnet ID is primary network ID",
 			subnetID:    testSubnet1ID,
 			genesisData: nil,
 			vmID:        constants.XVMID,
@@ -78,7 +79,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			chainName:   "yeet",
 			keys:        []*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 			setup: func(tx *CreateChainTx) *CreateChainTx {
-				tx.SubnetID = consensus.GetChainID(ctx)
+				tx.SubnetID = constants.PrimaryNetworkID
 				return tx
 			},
 			expectedErr: ErrCantValidatePrimaryNetwork,

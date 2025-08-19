@@ -135,6 +135,13 @@ func (tx *ConvertSubnetToL1Tx) SyntacticVerify(ctx context.Context) error {
 	return nil
 }
 
+// InitCtx sets the FxID fields in the inputs and outputs of this tx.
+// Also sets the context for json marshalling.
+func (tx *ConvertSubnetToL1Tx) InitCtx(ctx context.Context) {
+	tx.BaseTx.InitCtx(ctx)
+	// The SubnetAuth doesn't have FxID since it's just a Verifiable
+}
+
 // Visit calls visitor.ConvertSubnetToL1Tx
 func (tx *ConvertSubnetToL1Tx) Visit(visitor Visitor) error {
 	return visitor.ConvertSubnetToL1Tx(tx)

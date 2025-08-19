@@ -24,7 +24,7 @@ var (
 	_ keychain.Signer = (*luxSigner)(nil)
 )
 
-// luxSigner wraps a secp256k1.PrivateKey to implement keychain.Signer
+// luxSigner wraps a secp256k1.PrivateKey to implement ledger-lux-go/keychain.Signer
 type luxSigner struct {
 	key *secp256k1.PrivateKey
 }
@@ -103,7 +103,7 @@ func (kc Keychain) Get(id ids.ShortID) (keychain.Signer, bool) {
 	return &luxSigner{key: signer}, true
 }
 
-// Get a key from the keychain and return whether the key existed.
+// GetEth gets a key from the keychain by Ethereum address
 func (kc Keychain) GetEth(addr common.Address) (keychain.Signer, bool) {
 	if i, ok := kc.ethAddrToKeyIndex[addr]; ok {
 		return &luxSigner{key: kc.Keys[i]}, true

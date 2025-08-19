@@ -14,6 +14,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/secp256k1fx"
+	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/subnet/primary"
 
 	xsgenesis "github.com/luxfi/node/vms/example/xsvm/genesis"
@@ -23,6 +24,9 @@ func main() {
 	key := genesis.EWOQKey
 	uri := primary.LocalAPIURI
 	kc := secp256k1fx.NewKeychain(key)
+
+	// Create adapter for the keychain
+	adapter := keychain.NewLedgerAdapter(kc)
 	subnetIDStr := "29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL"
 	genesis := &xsgenesis.Genesis{
 		Timestamp: time.Now().Unix(),
@@ -53,8 +57,8 @@ func main() {
 	walletSyncStartTime := time.Now()
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:              uri,
-		LUXKeychain:      kc,
-		EthKeychain:      kc,
+		LUXKeychain: adapter,
+		EthKeychain: adapter,
 		PChainTxsToFetch: set.Of(subnetID),
 	})
 	if err != nil {

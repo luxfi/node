@@ -20,6 +20,7 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
@@ -201,6 +202,9 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	appSenderClient := appsender.NewClient(appsenderpb.NewAppSenderClient(clientConn))
 	validatorStateClient := gvalidators.NewClient(validatorstatepb.NewValidatorStateClient(clientConn))
 	_ = gwarp.NewClient(warppb.NewSignerClient(clientConn)) // warpSignerClient not used
+	
+	// Wrap core.AppSender to block.AppSender
+	blockAppSender := &coreToBlockAppSender{appSender: appSenderClient}
 
 	toEngine := make(chan block.Message, 1)
 	vm.closed = make(chan struct{})
@@ -261,7 +265,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		BCLookup:       bcWrapper,
 		ValidatorState: vsWrapper,
 	}
-	if err := vm.vm.Initialize(ctx, blockChainCtx, dbMgr, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, toEngine, nil, appSenderClient); err != nil {
+	if err := vm.vm.Initialize(ctx, blockChainCtx, dbMgr, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, toEngine, nil, blockAppSender); err != nil {
 		// Ignore errors closing resources to return the original error
 		_ = vm.connCloser.Close()
 		close(vm.closed)
@@ -1079,4 +1083,26 @@ func (d *dbManagerImpl) Get(version uint64) (database.Database, error) {
 
 func (d *dbManagerImpl) Close() error {
 	return nil
+}
+
+// coreToBlockAppSender wraps core.AppSender to implement block.AppSender
+type coreToBlockAppSender struct {
+	appSender core.AppSender
+}
+
+func (c *coreToBlockAppSender) SendAppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, request []byte) error {
+	// Convert single nodeID to set for core.AppSender
+	nodeIDs := set.NewSet[ids.NodeID](1)
+	nodeIDs.Add(nodeID)
+	return c.appSender.SendAppRequest(ctx, nodeIDs, requestID, request)
+}
+
+func (c *coreToBlockAppSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+	return c.appSender.SendAppResponse(ctx, nodeID, requestID, response)
+}
+
+func (c *coreToBlockAppSender) SendAppGossip(ctx context.Context, appGossipBytes []byte) error {
+	// block.AppSender doesn't specify nodes, send to all
+	nodeIDs := set.NewSet[ids.NodeID](0)
+	return c.appSender.SendAppGossip(ctx, nodeIDs, appGossipBytes)
 }

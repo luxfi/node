@@ -9,9 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
-
-	"github.com/luxfi/consensus/core"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/node/utils"
 
@@ -20,14 +18,14 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 )
 
-func newMempool(toEngine chan<- core.Message) (Mempool, error) {
-	return New("mempool", metric.NewNoOpMetrics("test").Registry(), toEngine)
+func newMempool(toEngine chan<- MessageType) (Mempool, error) {
+	return New("mempool", prometheus.NewRegistry(), toEngine)
 }
 
 func TestRequestBuildBlock(t *testing.T) {
 	require := require.New(t)
 
-	toEngine := make(chan core.Message, 1)
+	toEngine := make(chan MessageType, 1)
 	mempool, err := newMempool(toEngine)
 	require.NoError(err)
 

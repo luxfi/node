@@ -22,6 +22,7 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -68,6 +69,30 @@ var (
 // appSenderAdapter adapts linearblock.AppSender to core.AppSender
 type appSenderAdapter struct {
 	linearblock.AppSender
+}
+
+func (a *appSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
+	// linearblock.AppSender.SendAppGossip doesn't take nodeIDs, just broadcast to all
+	return a.AppSender.SendAppGossip(ctx, appGossipBytes)
+}
+
+func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
+	// linearblock.AppSender doesn't support specific gossip, fall back to general gossip
+	return a.AppSender.SendAppGossip(ctx, appGossipBytes)
+}
+
+func (a *appSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
+	// Send to each node in the set
+	for nodeID := range nodeIDs {
+		if err := a.AppSender.SendAppRequest(ctx, nodeID, requestID, appRequestBytes); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (a *appSenderAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
+	return a.AppSender.SendAppResponse(ctx, nodeID, requestID, appResponseBytes)
 }
 
 func (a *appSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {

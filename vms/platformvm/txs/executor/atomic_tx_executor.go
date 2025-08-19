@@ -128,3 +128,8 @@ func (e *AtomicTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) 
 func (e *AtomicTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
 	return ErrWrongTxType
 }
+
+// ConvertSubnetToL1Tx handles subnet to L1 conversion
+func (e *AtomicTxExecutor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+	return ErrWrongTxType
+}

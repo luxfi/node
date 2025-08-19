@@ -102,6 +102,10 @@ func NewWallet(
 	)
 	// Use constants for networkID and LUXAssetID
 	builderContext := newContext(context.Background(), constants.TestnetID, ids.Empty, config, state.GetTimestamp())
+	
+	// Create keychain adapter for wallet signer
+	kcAdapter := &keychainAdapter{kc: kc}
+	
 	return wallet.New(
 		&client{
 			backend: backend,
@@ -112,7 +116,7 @@ func NewWallet(
 			backend,
 		),
 		signer.New(
-			kc,
+			kcAdapter,
 			backend,
 		),
 	)

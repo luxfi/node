@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus/core"
+	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/set"
@@ -99,7 +100,7 @@ func (c *Client) AppRequest(
 
 		if err := c.sender.SendAppRequest(
 			ctxWithoutCancel,
-			nodeID,
+			consensusset.Of(nodeID),
 			requestID,
 			appRequestBytes,
 		); err != nil {
@@ -133,8 +134,31 @@ func (c *Client) AppGossip(
 	// cancellation is unexpected.
 	ctxWithoutCancel := context.WithoutCancel(ctx)
 
+	// For gossip, we extract node IDs from config
+	nodeIDs := consensusset.Set[ids.NodeID]{}
+	if config.NodeIDs != nil {
+		switch v := config.NodeIDs.(type) {
+		case []ids.NodeID:
+			for _, id := range v {
+				nodeIDs.Add(id)
+			}
+		case set.Set[ids.NodeID]:
+			// Convert from node set to consensus set
+			for id := range v {
+				nodeIDs.Add(id)
+			}
+		case consensusset.Set[ids.NodeID]:
+			nodeIDs = v
+		}
+	}
+	// If no specific nodes, add validators
+	for _, id := range config.Validators {
+		nodeIDs.Add(id)
+	}
+	
 	return c.sender.SendAppGossip(
 		ctxWithoutCancel,
+		nodeIDs,
 		PrefixMessage(c.handlerPrefix, appGossipBytes),
 	)
 }

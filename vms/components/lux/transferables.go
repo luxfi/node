@@ -70,8 +70,10 @@ type TransferableOutput struct {
 }
 
 func (out *TransferableOutput) InitCtx(ctx context.Context) {
-	// TransferableOut implements context.ContextInitializable which has InitializeWithContext
-	// So we don't need to do anything here as initialization happens during unmarshalling
+	// Initialize the context for the underlying output if it supports it
+	if contextOutput, ok := out.Out.(interface{ InitCtx(context.Context) }); ok {
+		contextOutput.InitCtx(ctx)
+	}
 }
 
 // Output returns the feature extension output that this Output is using.
