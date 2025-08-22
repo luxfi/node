@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
+	"github.com/luxfi/mock/gomock"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/database"

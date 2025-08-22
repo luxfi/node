@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	codec "github.com/luxfi/node/codec"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // Manager is a mock of Manager interface.

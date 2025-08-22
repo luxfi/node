@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils/sampler"
 	"github.com/luxfi/node/utils/wrappers"
 )

@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/password"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 

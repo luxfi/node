@@ -10,7 +10,7 @@ package logging
 import (
 	reflect "reflect"
 
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 	zapcore "go.uber.org/zap/zapcore"
 )
 

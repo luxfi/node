@@ -14,9 +14,9 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	set "github.com/luxfi/node/utils/set"
+	set "github.com/luxfi/math/set"
 	lux "github.com/luxfi/node/vms/components/lux"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockUnsignedTx is a mock of UnsignedTx interface.

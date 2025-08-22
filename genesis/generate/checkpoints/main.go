@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/indexer"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 const (

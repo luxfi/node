@@ -3,7 +3,7 @@
 
 package constants
 
-import "github.com/luxfi/node/utils/set"
+import "github.com/luxfi/math/set"
 
 var (
 	// ActivatedLPs is the set of LPs that are activated.

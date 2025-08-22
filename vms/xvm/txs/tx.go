@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"

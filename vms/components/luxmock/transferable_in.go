@@ -13,7 +13,7 @@ import (
 	"context"
 	reflect "reflect"
 
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // TransferableIn is a mock of TransferableIn interface.

@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -629,7 +629,7 @@ func (e *ProposalTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeight
 	return ErrWrongTxType
 }
 
-// ConvertSubnetToL1Tx handles subnet to L1 conversion
+// ConvertSubnetToL1Tx handles converting a subnet to L1
 func (e *ProposalTxExecutor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
 	return ErrWrongTxType
 }

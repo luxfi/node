@@ -12,7 +12,7 @@ package message
 import (
 	reflect "reflect"
 
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockOutboundMessage is a mock of OutboundMessage interface.

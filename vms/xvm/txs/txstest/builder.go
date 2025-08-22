@@ -8,9 +8,9 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -26,46 +26,6 @@ import (
 type Builder struct {
 	utxos *utxos
 	ctx   *builder.Context
-}
-
-// keychainAdapter adapts secp256k1fx.Keychain to wallet/keychain.Keychain
-type keychainAdapter struct {
-	kc *secp256k1fx.Keychain
-}
-
-func (k *keychainAdapter) Addresses() []ids.ShortID {
-	return k.kc.Addresses()
-}
-
-func (k *keychainAdapter) Get(addr ids.ShortID) (keychain.Signer, bool) {
-	// Get the key from the underlying keychain
-	ledgerSigner, exists := k.kc.Get(addr)
-	if !exists {
-		return nil, false
-	}
-	// Wrap it in our adapter that implements wallet/keychain.Signer
-	return &signerAdapter{signer: ledgerSigner}, true
-}
-
-// signerAdapter adapts ledger-lux-go/keychain.Signer to wallet/keychain.Signer
-type signerAdapter struct {
-	signer interface {
-		SignHash([]byte) ([]byte, error)
-		Sign([]byte) ([]byte, error)
-		Address() ids.ShortID
-	}
-}
-
-func (s *signerAdapter) SignHash(hash []byte) ([]byte, error) {
-	return s.signer.SignHash(hash)
-}
-
-func (s *signerAdapter) Sign(msg []byte) ([]byte, error) {
-	return s.signer.Sign(msg)
-}
-
-func (s *signerAdapter) Address() ids.ShortID {
-	return s.signer.Address()
 }
 
 func New(
@@ -261,22 +221,16 @@ func (b *Builder) ExportTx(
 }
 
 func (b *Builder) builders(kc *secp256k1fx.Keychain) (builder.Builder, signer.Signer) {
-	addrs := kc.Addresses()
-	// Convert slice to set
-	addrSet := set.NewSet[ids.ShortID](len(addrs))
-	for _, addr := range addrs {
-		addrSet.Add(addr)
-	}
-	
-	wa := &walletUTXOsAdapter{
-		utxos: b.utxos,
-		addrs: addrSet,
-	}
-	
-	// Create keychain adapter for wallet
-	kcAdapter := &keychainAdapter{kc: kc}
-	
-	xBuilder := builder.New(addrSet, b.ctx, wa)
-	xSigner := signer.New(kcAdapter, wa)
-	return xBuilder, xSigner
+	var (
+		addrsSlice = kc.Addresses()
+		addrs      = set.Of(addrsSlice...)
+		wa         = &walletUTXOsAdapter{
+			utxos: b.utxos,
+			addrs: addrs,
+		}
+		builder = builder.New(addrs, b.ctx, wa)
+		kcAdapter = keychain.NewSecp256k1fxKeychain(kc)
+		signer  = signer.New(kcAdapter, wa)
+	)
+	return builder, signer
 }

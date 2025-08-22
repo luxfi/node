@@ -18,7 +18,7 @@ import (
 	message "github.com/luxfi/node/message"
 	p2p "github.com/luxfi/node/proto/pb/p2p"
 	ips "github.com/luxfi/node/utils/ips"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // OutboundMsgBuilder is a mock of OutboundMsgBuilder interface.

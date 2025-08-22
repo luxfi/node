@@ -119,9 +119,7 @@ func (b *blockAppSenderWrapper) SendAppRequest(ctx context.Context, nodeID ids.N
 	if b.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	// Convert single nodeID to a set
-	nodeIDs := set.NewSet[ids.NodeID](1)
-	nodeIDs.Add(nodeID)
+	nodeIDs := set.Of(nodeID)
 	return b.appSender.SendAppRequest(ctx, nodeIDs, requestID, appRequestBytes)
 }
 
@@ -136,7 +134,7 @@ func (b *blockAppSenderWrapper) SendAppGossip(ctx context.Context, appGossipByte
 	if b.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	// SendAppGossip now requires a set of node IDs, use empty set for broadcast
+	// For gossip, we send to an empty set which means broadcast
 	nodeIDs := set.NewSet[ids.NodeID](0)
 	return b.appSender.SendAppGossip(ctx, nodeIDs, appGossipBytes)
 }
@@ -168,8 +166,7 @@ func (a *appSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs set.Set[i
 	if a.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	// block.AppSender expects a single nodeID, so we take the first one
-	// This is appropriate for single-node subnets
+	// Send to the first node in the set
 	for nodeID := range nodeIDs {
 		return a.appSender.SendAppRequest(ctx, nodeID, requestID, appRequestBytes)
 	}
@@ -187,13 +184,18 @@ func (a *appSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs set.Set[id
 	if a.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	// block.AppSender doesn't use nodeIDs for gossip
+	// block.AppSender.SendAppGossip doesn't take nodeIDs, so we ignore them
 	return a.appSender.SendAppGossip(ctx, appGossipBytes)
 }
 
 func (a *appSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 	// block.AppSender doesn't have SendAppError, so we just log and return nil
 	return nil
+}
+
+func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
+	// Just use regular gossip
+	return a.SendAppGossip(ctx, nodeIDs, appGossipBytes)
 }
 
 func (a *appSenderAdapter) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error {
@@ -204,11 +206,6 @@ func (a *appSenderAdapter) SendCrossChainAppRequest(ctx context.Context, chainID
 func (a *appSenderAdapter) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, appResponseBytes []byte) error {
 	// Not implemented for now - cross chain responses not supported
 	return nil
-}
-
-func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	// SendAppGossipSpecific is the same as SendAppGossip for this implementation
-	return a.SendAppGossip(ctx, nodeIDs, appGossipBytes)
 }
 
 func (a *appSenderAdapter) SendCrossChainAppError(ctx context.Context, chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) error {

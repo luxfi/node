@@ -15,7 +15,7 @@ import (
 	reflect "reflect"
 
 	core "github.com/luxfi/consensus/core"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockServer is a mock of Server interface.
