@@ -5,6 +5,7 @@ package p2p
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -136,6 +137,7 @@ func (r *responder) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID
 // to chainID
 func (r *responder) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
 	appResponse, err := r.Handler.CrossChainAppRequest(ctx, chainID, deadline, request)
+	_ = appResponse // Mark as used to avoid compiler error
 	if err != nil {
 		r.log.Debug("failed to handle message",
 			zap.Stringer("messageOp", message.CrossChainAppRequestOp),
@@ -148,7 +150,10 @@ func (r *responder) CrossChainAppRequest(ctx context.Context, chainID ids.ID, re
 		return nil
 	}
 
-	return r.sender.SendCrossChainAppResponse(ctx, chainID, requestID, appResponse)
+	// CrossChain methods not supported in new core.AppSender interface
+	// TODO: Implement cross-chain support
+	// return r.sender.SendCrossChainAppResponse(ctx, chainID, requestID, appResponse)
+	return fmt.Errorf("cross-chain app responses not supported in current AppSender interface")
 }
 
 type TestHandler struct {

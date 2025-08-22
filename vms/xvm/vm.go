@@ -32,7 +32,7 @@ import (
 	"github.com/luxfi/node/pubsub"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/index"

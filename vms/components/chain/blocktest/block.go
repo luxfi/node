@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/components/state"
@@ -84,17 +85,42 @@ func (b *Block) State() state.ReadOnlyChain {
 	return b.state
 }
 
+func (b *Block) SetStatus(status choices.Status) {
+	// Convert choices.Status to chain.Status
+	switch status {
+	case choices.Unknown:
+		b.StatusV = chain.Unknown
+	case choices.Processing:
+		b.StatusV = chain.Processing
+	case choices.Rejected:
+		b.StatusV = chain.Rejected
+	case choices.Accepted:
+		b.StatusV = chain.Accepted
+	}
+}
+
 // BuildChild creates a child block of the given parent
 func BuildChild(parent chain.Block) *Block {
 	nextID++
 	blockID := ids.ID{}
 	copy(blockID[:], fmt.Sprintf("block_%d", nextID))
 	
+	// Get parent timestamp if available
+	var timestamp time.Time
+	if testParent, ok := parent.(*chain.TestBlock); ok {
+		timestamp = testParent.Timestamp().Add(time.Second)
+	} else if blockParent, ok := parent.(*Block); ok {
+		timestamp = blockParent.Timestamp().Add(time.Second)
+	} else {
+		// Default to current time if parent doesn't have timestamp
+		timestamp = time.Now()
+	}
+	
 	return &Block{
 		TestBlock: chain.TestBlock{
 			IDV:        blockID,
 			HeightV:    parent.Height() + 1,
-			TimestampV: parent.Timestamp().Add(time.Second),
+			TimestampV: timestamp,
 			ParentV:    parent.ID(),
 			BytesV:     []byte(fmt.Sprintf("block_%d", nextID)),
 			StatusV:    chain.Processing,

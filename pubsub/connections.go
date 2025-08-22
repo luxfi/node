@@ -6,7 +6,7 @@ package pubsub
 import (
 	"sync"
 
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 type connections struct {

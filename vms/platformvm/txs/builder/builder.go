@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/math"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -235,13 +235,8 @@ func (b *builder) NewImportTx(
 ) (*txs.Tx, error) {
 	kc := secp256k1fx.NewKeychain(keys...)
 
-	// Convert addresses slice to set
-	addresses := set.NewSet[ids.ShortID](len(keys))
-	for _, addr := range kc.Addresses() {
-		addresses.Add(addr)
-	}
-
-	atomicUTXOs, _, _, err := b.GetAtomicUTXOs(from, addresses, ids.ShortEmpty, ids.Empty, MaxPageSize)
+	addrs := set.Of(kc.Addresses()...)
+	atomicUTXOs, _, _, err := b.GetAtomicUTXOs(from, addrs, ids.ShortEmpty, ids.Empty, MaxPageSize)
 	if err != nil {
 		return nil, fmt.Errorf("problem retrieving atomic UTXOs: %w", err)
 	}

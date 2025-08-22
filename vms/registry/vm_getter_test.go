@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
+	"github.com/luxfi/mock/gomock"
 
 	"github.com/luxfi/ids"
 

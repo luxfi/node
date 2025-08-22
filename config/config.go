@@ -40,7 +40,7 @@ import (
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/storage"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"

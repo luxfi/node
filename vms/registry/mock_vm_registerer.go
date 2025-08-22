@@ -13,7 +13,7 @@ import (
 
 	ids "github.com/luxfi/ids"
 	vms "github.com/luxfi/node/vms"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockVMRegisterer is a mock of VMRegisterer interface.

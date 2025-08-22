@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/math/math"
 )
 
 const (

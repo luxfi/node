@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -676,7 +676,7 @@ func (e *StandardTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeight
 	return nil
 }
 
-// ConvertSubnetToL1Tx handles subnet to L1 conversion
+// ConvertSubnetToL1Tx handles converting a subnet to L1
 func (e *StandardTxExecutor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
 	return nil
 }

@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/profiler"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/trace"

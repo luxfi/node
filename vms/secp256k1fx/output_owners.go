@@ -7,14 +7,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"reflect"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -145,35 +141,6 @@ func formatAddress(ctx context.Context, addr ids.ShortID) (string, error) {
 		return addr.String(), nil
 	}
 
-	// Use reflection to check if context has BCLookup field
-	// This handles testcontext.Context and similar types
-	var bcLookup ids.AliaserReader
-	ctxValue := reflect.ValueOf(ctx)
-	if ctxValue.Kind() == reflect.Ptr {
-		ctxValue = ctxValue.Elem()
-	}
-	if ctxValue.Kind() == reflect.Struct {
-		bcLookupField := ctxValue.FieldByName("BCLookup")
-		if bcLookupField.IsValid() && !bcLookupField.IsNil() {
-			if lookup, ok := bcLookupField.Interface().(ids.AliaserReader); ok {
-				bcLookup = lookup
-			}
-		}
-	}
-	
-	if bcLookup != nil {
-		chainAlias, err := bcLookup.PrimaryAlias(consensus.GetChainID(ctx))
-		if err == nil && chainAlias != "" {
-			// Get HRP based on network ID
-			networkID := consensus.GetNetworkID(ctx)
-			hrp := constants.GetHRP(networkID)
-			addrStr, err := address.Format(chainAlias, hrp, addr.Bytes())
-			if err == nil {
-				return addrStr, nil
-			}
-		}
-	}
-
-	// Fallback to simple string representation
+	// Without BCLookup in context, just return the address string
 	return addr.String(), nil
 }

@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 
 	// "github.com/luxfi/node/vms/components/keystore" // Removed - keystore functionality deprecated
 	"github.com/luxfi/node/vms/components/lux"
@@ -39,7 +39,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 
 	avajson "github.com/luxfi/node/utils/json"
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/math/math"
 	platformapi "github.com/luxfi/node/vms/platformvm/api"
 )
 

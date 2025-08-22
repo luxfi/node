@@ -164,7 +164,7 @@ func (v *MempoolTxVerifier) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightT
 	return nil
 }
 
-// ConvertSubnetToL1Tx handles subnet to L1 conversion
+// ConvertSubnetToL1Tx handles converting a subnet to L1
 func (v *MempoolTxVerifier) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
 	return nil
 }

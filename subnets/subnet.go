@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 var _ Subnet = (*subnet)(nil)

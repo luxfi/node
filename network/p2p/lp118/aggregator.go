@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
+	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
@@ -128,7 +129,7 @@ func (s *SignatureAggregator) AggregateSignatures(
 		results:             results,
 	}
 
-	if err := s.client.AppRequest(ctx, set.Of(nonSigners...), requestBytes, handler.HandleResponse); err != nil {
+	if err := s.client.AppRequest(ctx, consensusset.Of(nonSigners...), requestBytes, handler.HandleResponse); err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to send aggregation request: %w", err)
 	}
 

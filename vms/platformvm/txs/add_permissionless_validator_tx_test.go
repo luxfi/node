@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
+	"github.com/luxfi/mock/gomock"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/crypto/bls"
@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
 
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/math/math"
 )
 
 func TestAddPermissionlessPrimaryValidator(t *testing.T) {

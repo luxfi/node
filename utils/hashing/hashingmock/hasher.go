@@ -12,7 +12,7 @@ package hashingmock
 import (
 	reflect "reflect"
 
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // Hasher is a mock of Hasher interface.

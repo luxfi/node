@@ -6,7 +6,7 @@ package fee
 import (
 	"math"
 
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/math/math"
 	"github.com/luxfi/node/vms/components/gas"
 )
 

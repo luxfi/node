@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	logging "github.com/luxfi/node/utils/logging"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // Factory is a mock of Factory interface.

@@ -15,7 +15,7 @@ import (
 
 	ids "github.com/luxfi/ids"
 	logging "github.com/luxfi/log"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockFactory is a mock of Factory interface.

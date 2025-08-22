@@ -23,6 +23,7 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
+	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
@@ -102,10 +103,6 @@ func NewWallet(
 	)
 	// Use constants for networkID and LUXAssetID
 	builderContext := newContext(context.Background(), constants.TestnetID, ids.Empty, config, state.GetTimestamp())
-	
-	// Create keychain adapter for wallet signer
-	kcAdapter := &keychainAdapter{kc: kc}
-	
 	return wallet.New(
 		&client{
 			backend: backend,
@@ -116,7 +113,7 @@ func NewWallet(
 			backend,
 		),
 		signer.New(
-			kcAdapter,
+			keychain.NewSecp256k1fxKeychain(kc),
 			backend,
 		),
 	)

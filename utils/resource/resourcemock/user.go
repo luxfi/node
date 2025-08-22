@@ -12,7 +12,7 @@ package resourcemock
 import (
 	reflect "reflect"
 
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // User is a mock of User interface.

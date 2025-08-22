@@ -6,7 +6,7 @@ package executor
 import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
@@ -129,7 +129,7 @@ func (e *AtomicTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx
 	return ErrWrongTxType
 }
 
-// ConvertSubnetToL1Tx handles subnet to L1 conversion
+// ConvertSubnetToL1Tx handles converting a subnet to L1
 func (e *AtomicTxExecutor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
 	return ErrWrongTxType
 }

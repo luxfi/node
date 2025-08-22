@@ -14,7 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
+	"github.com/luxfi/mock/gomock"
 
 	"github.com/luxfi/consensus/choices"
 
@@ -60,7 +60,7 @@ import (
 
 	"github.com/luxfi/node/vms/types"
 
-	safemath "github.com/luxfi/node/utils/math"
+	safemath "github.com/luxfi/math/math"
 )
 
 var (

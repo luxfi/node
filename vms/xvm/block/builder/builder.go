@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/xvm/block"

@@ -15,11 +15,11 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/luxfi/consensus/core"
-	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/set"
+	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/node/version"
 )
 
@@ -293,9 +293,7 @@ func (c *networkClient) sendRequestLocked(
 	// This guarantees that the network should never receive an unexpected
 	// AppResponse.
 	ctxWithoutCancel := context.WithoutCancel(ctx)
-	// Create a set with just this nodeID using consensus set
-	nodeIDs := consensusset.NewSet[ids.NodeID](1)
-	nodeIDs.Add(nodeID)
+	nodeIDs := consensusset.Of(nodeID)
 	if err := c.appSender.SendAppRequest(ctxWithoutCancel, nodeIDs, requestID, request); err != nil {
 		c.lock.Unlock()
 		c.log.Error("failed to send app request",

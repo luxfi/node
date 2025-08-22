@@ -13,7 +13,7 @@ import (
 
 	bls "github.com/luxfi/crypto/bls"
 	ids "github.com/luxfi/ids"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockStaker is a mock of Staker interface.

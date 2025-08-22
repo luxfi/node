@@ -5,7 +5,7 @@ package setmap
 
 import (
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 type Entry[K any, V comparable] struct {
