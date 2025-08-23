@@ -17,7 +17,7 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/protocol/chain"
-	"github.com/luxfi/node/vms/xvm/txs/mempool/mempooltypes"
+	"github.com/luxfi/node/vms/xvm/txs/mempool"
 
 	"github.com/luxfi/database/memdb"
 
@@ -510,7 +510,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	require := require.New(t)
 
 	registerer := prometheus.NewRegistry()
-	toEngine := make(chan mempooltypes.MessageType, 100)
+	toEngine := make(chan chain.MessageType, 100)
 	mempool, err := mempool.New("mempool", registerer, toEngine)
 	require.NoError(err)
 	// add a tx to the mempool

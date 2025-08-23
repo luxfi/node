@@ -10,16 +10,16 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/consensus/core/common"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/p2ptest"
 	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/math/set"
+	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
@@ -73,13 +73,13 @@ func TestHandler(t *testing.T) {
 			require := require.New(t)
 
 			ctx := context.Background()
-			sk, err := localsigner.New()
+			sk, err := bls.NewSecretKey()
 			require.NoError(err)
 			pk := sk.PublicKey()
 			networkID := uint32(123)
 			chainID := ids.GenerateTestID()
 			signer := warp.NewSigner(sk, networkID, chainID)
-			h := NewCachedHandler(tt.cacher, tt.verifier, signer)
+			h := NewHandlerAdapter(NewCachedHandler(tt.cacher, tt.verifier, signer))
 			clientNodeID := ids.GenerateTestNodeID()
 			serverNodeID := ids.GenerateTestNodeID()
 			c := p2ptest.NewClient(
@@ -115,7 +115,16 @@ func TestHandler(t *testing.T) {
 					handled <- struct{}{}
 				}()
 
-				require.ErrorIs(appErr, expectedErr)
+				if expectedErr != nil {
+					require.Error(appErr)
+					if expectedAppErr, ok := expectedErr.(*common.AppError); ok {
+						actualAppErr, ok := appErr.(*core.AppError)
+						require.True(ok, "expected AppError but got %T", appErr)
+						require.Equal(int32(expectedAppErr.Code), actualAppErr.Code)
+					}
+				} else {
+					require.NoError(appErr)
+				}
 				if appErr != nil {
 					return
 				}

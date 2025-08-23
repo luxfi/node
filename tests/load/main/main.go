@@ -34,9 +34,7 @@ var (
 )
 
 func init() {
-	flagVars = e2e.RegisterFlags(
-		e2e.WithDefaultNodeCount(defaultNodeCount),
-	)
+	flagVars = e2e.RegisterFlags()
 
 	flag.DurationVar(
 		&loadTimeout,
@@ -55,8 +53,7 @@ func main() {
 
 	require := require.New(tc)
 
-	numNodes, err := flagVars.NodeCount()
-	require.NoError(err, "failed to get node count")
+	numNodes := flagVars.NodeCount()
 
 	nodes := tmpnet.NewNodesOrPanic(numNodes)
 

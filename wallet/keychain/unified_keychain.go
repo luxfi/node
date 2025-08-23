@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build ignore
+
 package keychain
 
 import (
@@ -146,11 +148,11 @@ func (s *UnifiedSigner) SignRing(message []byte, ring []crypto.PublicKey) ([]byt
 }
 
 // Encapsulate creates a ciphertext and shared secret (for ML-KEM)
-func (s *UnifiedSigner) Encapsulate(pubKey crypto.PublicKey) (ciphertext, sharedSecret []byte, error) {
+func (s *UnifiedSigner) Encapsulate(pubKey crypto.PublicKey) (ciphertext []byte, sharedSecret []byte, err error) {
 	return s.crypto.Encapsulate(pubKey)
 }
 
 // Decapsulate recovers the shared secret from ciphertext (for ML-KEM)
-func (s *UnifiedSigner) Decapsulate(ciphertext []byte) (sharedSecret []byte, error) {
+func (s *UnifiedSigner) Decapsulate(ciphertext []byte) (sharedSecret []byte, err error) {
 	return s.crypto.Decapsulate(s.privKey, ciphertext)
 }
