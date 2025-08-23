@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/luxfi/mock/gomock"
+	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/utils/hashing"
 )

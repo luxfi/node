@@ -19,6 +19,8 @@ a blockchains platform with high throughput, and blazing fast transactions.
 - **Multi-Chain Architecture**: Platform (P), Exchange (X), and Contract (C) chains
 - **Custom Subnets**: Create custom blockchain networks with configurable VMs
 - **Cross-Chain Transfers**: Native cross-chain asset transfers between chains
+- **L1 Validators**: Support for L1 (Layer 1) validator operations with BLS signatures
+- **LP-118 Protocol**: Implementation of LP-118 for warp message handling and aggregation
 
 ## Installation
 

@@ -10,9 +10,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/core/common"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/p2ptest"
@@ -26,19 +26,19 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 	chainID := ids.GenerateTestID()
 
 	nodeID0 := ids.GenerateTestNodeID()
-	sk0, err := localsigner.New()
+	sk0, err := bls.NewSecretKey()
 	require.NoError(t, err)
 	pk0 := sk0.PublicKey()
 	signer0 := warp.NewSigner(sk0, networkID, chainID)
 
 	nodeID1 := ids.GenerateTestNodeID()
-	sk1, err := localsigner.New()
+	sk1, err := bls.NewSecretKey()
 	require.NoError(t, err)
 	pk1 := sk1.PublicKey()
 	signer1 := warp.NewSigner(sk1, networkID, chainID)
 
 	nodeID2 := ids.GenerateTestNodeID()
-	sk2, err := localsigner.New()
+	sk2, err := bls.NewSecretKey()
 	require.NoError(t, err)
 	pk2 := sk2.PublicKey()
 	signer2 := warp.NewSigner(sk2, networkID, chainID)
@@ -59,7 +59,7 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 		{
 			name: "single validator - less than threshold",
 			peers: map[ids.NodeID]p2p.Handler{
-				nodeID0: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer0),
+				nodeID0: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer0)),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -89,7 +89,7 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 		{
 			name: "single validator - equal to threshold",
 			peers: map[ids.NodeID]p2p.Handler{
-				nodeID0: NewHandler(&testVerifier{}, signer0),
+				nodeID0: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer0)),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -120,7 +120,7 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 		{
 			name: "single validator - greater than threshold",
 			peers: map[ids.NodeID]p2p.Handler{
-				nodeID0: NewHandler(&testVerifier{}, signer0),
+				nodeID0: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer0)),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -151,9 +151,9 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 		{
 			name: "multiple validators - less than threshold - equal weights",
 			peers: map[ids.NodeID]p2p.Handler{
-				nodeID0: NewHandler(&testVerifier{}, signer0),
-				nodeID1: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer1),
-				nodeID2: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2),
+				nodeID0: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer0)),
+				nodeID1: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer1)),
+				nodeID2: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2)),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -194,9 +194,9 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 		{
 			name: "multiple validators - equal to threshold - equal weights",
 			peers: map[ids.NodeID]p2p.Handler{
-				nodeID0: NewHandler(&testVerifier{}, signer0),
-				nodeID1: NewHandler(&testVerifier{}, signer1),
-				nodeID2: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2),
+				nodeID0: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer0)),
+				nodeID1: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer1)),
+				nodeID2: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2)),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -237,9 +237,9 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 		{
 			name: "multiple validators - greater than threshold - equal weights",
 			peers: map[ids.NodeID]p2p.Handler{
-				nodeID0: NewHandler(&testVerifier{}, signer0),
-				nodeID1: NewHandler(&testVerifier{}, signer1),
-				nodeID2: NewHandler(&testVerifier{}, signer2),
+				nodeID0: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer0)),
+				nodeID1: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer1)),
+				nodeID2: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer2)),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -280,9 +280,9 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 		{
 			name: "multiple validators - less than threshold - different weights",
 			peers: map[ids.NodeID]p2p.Handler{
-				nodeID0: NewHandler(&testVerifier{}, signer0),
-				nodeID1: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer1),
-				nodeID2: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2),
+				nodeID0: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer0)),
+				nodeID1: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer1)),
+				nodeID2: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2)),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -323,9 +323,9 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 		{
 			name: "multiple validators - equal to threshold - different weights",
 			peers: map[ids.NodeID]p2p.Handler{
-				nodeID0: NewHandler(&testVerifier{}, signer0),
-				nodeID1: NewHandler(&testVerifier{}, signer1),
-				nodeID2: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2),
+				nodeID0: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer0)),
+				nodeID1: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer1)),
+				nodeID2: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2)),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -366,9 +366,9 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 		{
 			name: "multiple validators - greater than threshold - different weights",
 			peers: map[ids.NodeID]p2p.Handler{
-				nodeID0: NewHandler(&testVerifier{}, signer0),
-				nodeID1: NewHandler(&testVerifier{}, signer1),
-				nodeID2: NewHandler(&testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2),
+				nodeID0: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer0)),
+				nodeID1: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer1)),
+				nodeID2: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{Errs: []*common.AppError{common.ErrUndefined}}, signer2)),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -409,9 +409,9 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 		{
 			name: "multiple validators - shared public keys",
 			peers: map[ids.NodeID]p2p.Handler{
-				nodeID0: NewHandler(&testVerifier{}, signer1),
-				nodeID1: NewHandler(&testVerifier{}, signer1),
-				nodeID2: NewHandler(&testVerifier{}, signer1),
+				nodeID0: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer1)),
+				nodeID1: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer1)),
+				nodeID2: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer1)),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -442,9 +442,9 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 		{
 			name: "multiple validators - unique and shared public keys",
 			peers: map[ids.NodeID]p2p.Handler{
-				nodeID0: NewHandler(&testVerifier{}, signer0),
-				nodeID1: NewHandler(&testVerifier{}, signer1),
-				nodeID2: NewHandler(&testVerifier{}, signer1),
+				nodeID0: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer0)),
+				nodeID1: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer1)),
+				nodeID2: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer1)),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {
@@ -562,9 +562,9 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 		{
 			name: "multiple validators - resume aggregation on signature",
 			peers: map[ids.NodeID]p2p.Handler{
-				nodeID0: NewHandler(&testVerifier{}, signer0),
-				nodeID1: NewHandler(&testVerifier{}, signer1),
-				nodeID2: NewHandler(&testVerifier{}, signer2),
+				nodeID0: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer0)),
+				nodeID1: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer1)),
+				nodeID2: NewHandlerAdapter(NewCachedHandler(&cache.Empty[ids.ID, []byte]{}, &testVerifier{}, signer2)),
 			},
 			ctx: context.Background(),
 			msg: func() *warp.Message {

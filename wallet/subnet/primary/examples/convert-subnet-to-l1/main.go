@@ -89,7 +89,7 @@ func main() {
 		address,
 		[]*txs.ConvertSubnetToL1Validator{
 			{
-				NodeID:                nodeID,
+				NodeID:                nodeID[:],
 				Weight:                weight,
 				Balance:               units.Lux,
 				Signer:                *nodePoP,

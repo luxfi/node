@@ -241,6 +241,63 @@ type Wallet interface {
 		options ...common.Option,
 	) (*txs.Tx, error)
 
+	// IssueConvertSubnetToL1Tx creates, signs, and issues a transaction that
+	// converts a permissioned subnet to an L1.
+	//
+	// - [subnetID] is the subnet to convert to an L1
+	// - [chainID] is the chain ID to use for the L1
+	// - [address] is the initial validator manager address
+	// - [validators] are the initial validators for the L1
+	IssueConvertSubnetToL1Tx(
+		subnetID ids.ID,
+		chainID ids.ID,
+		address []byte,
+		validators []*txs.ConvertSubnetToL1Validator,
+		options ...common.Option,
+	) (*txs.Tx, error)
+
+	// IssueRegisterL1ValidatorTx creates, signs, and issues a transaction that
+	// registers a new L1 validator.
+	//
+	// - [balance] is the amount to stake
+	// - [proofOfPossession] is the BLS proof of possession
+	// - [message] is the signed message
+	IssueRegisterL1ValidatorTx(
+		balance uint64,
+		proofOfPossession [96]byte,
+		message []byte,
+		options ...common.Option,
+	) (*txs.Tx, error)
+
+	// IssueSetL1ValidatorWeightTx creates, signs, and issues a transaction that
+	// sets the weight of an L1 validator.
+	//
+	// - [message] is the signed weight update message
+	IssueSetL1ValidatorWeightTx(
+		message []byte,
+		options ...common.Option,
+	) (*txs.Tx, error)
+
+	// IssueIncreaseL1ValidatorBalanceTx creates, signs, and issues a transaction that
+	// increases the balance of an L1 validator.
+	//
+	// - [validationID] is the ID of the validation period
+	// - [balance] is the amount to add to the validator's stake
+	IssueIncreaseL1ValidatorBalanceTx(
+		validationID ids.ID,
+		balance uint64,
+		options ...common.Option,
+	) (*txs.Tx, error)
+
+	// IssueDisableL1ValidatorTx creates, signs, and issues a transaction that
+	// disables an L1 validator.
+	//
+	// - [validationID] is the ID of the validation period to disable
+	IssueDisableL1ValidatorTx(
+		validationID ids.ID,
+		options ...common.Option,
+	) (*txs.Tx, error)
+
 	// IssueUnsignedTx signs and issues the unsigned tx.
 	IssueUnsignedTx(
 		utx txs.UnsignedTx,
@@ -480,6 +537,67 @@ func (w *walletImpl) IssueAddPermissionlessDelegatorTx(
 		rewardsOwner,
 		options...,
 	)
+	if err != nil {
+		return nil, err
+	}
+	return w.IssueUnsignedTx(utx, options...)
+}
+
+func (w *walletImpl) IssueConvertSubnetToL1Tx(
+	subnetID ids.ID,
+	chainID ids.ID,
+	address []byte,
+	validators []*txs.ConvertSubnetToL1Validator,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	utx, err := w.builder.NewConvertSubnetToL1Tx(subnetID, chainID, address, validators, options...)
+	if err != nil {
+		return nil, err
+	}
+	return w.IssueUnsignedTx(utx, options...)
+}
+
+func (w *walletImpl) IssueRegisterL1ValidatorTx(
+	balance uint64,
+	proofOfPossession [96]byte,
+	message []byte,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	utx, err := w.builder.NewRegisterL1ValidatorTx(balance, proofOfPossession, message, options...)
+	if err != nil {
+		return nil, err
+	}
+	return w.IssueUnsignedTx(utx, options...)
+}
+
+func (w *walletImpl) IssueSetL1ValidatorWeightTx(
+	message []byte,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	utx, err := w.builder.NewSetL1ValidatorWeightTx(message, options...)
+	if err != nil {
+		return nil, err
+	}
+	return w.IssueUnsignedTx(utx, options...)
+}
+
+func (w *walletImpl) IssueIncreaseL1ValidatorBalanceTx(
+	validationID ids.ID,
+	balance uint64,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	utx, err := w.builder.NewIncreaseL1ValidatorBalanceTx(validationID, balance, options...)
+	if err != nil {
+		return nil, err
+	}
+	return w.IssueUnsignedTx(utx, options...)
+}
+
+func (w *walletImpl) IssueDisableL1ValidatorTx(
+	validationID ids.ID,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	utx, err := w.builder.NewDisableL1ValidatorTx(validationID, options...)
 	if err != nil {
 		return nil, err
 	}

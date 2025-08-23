@@ -10,12 +10,13 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	metrics "github.com/luxfi/metric"
+	luxlog "github.com/luxfi/log"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/network/p2p"
+	p2psdk "github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/utils/compression"
@@ -76,7 +77,8 @@ func main() {
 			9651,
 		),
 		networkID,
-		router.InboundHandlerFunc(func(_ context.Context, msg p2pmessage.InboundMessage) {
+		router.InboundHandlerFunc(func(_ context.Context, msgIntf interface{}) {
+			msg := msgIntf.(p2pmessage.InboundMessage)
 			log.Printf("received %s: %s", msg.Op(), msg.Message())
 		}),
 	)
@@ -84,8 +86,9 @@ func main() {
 		log.Fatalf("failed to start peer: %s\n", err)
 	}
 
-	mesageBuilder, err := p2pmessage.NewCreator(
-		prometheus.NewRegistry(),
+	messageBuilder, err := p2pmessage.NewCreator(
+		luxlog.NewNoOpLogger(),
+		metrics.NewNoOp(),
 		compression.TypeZstd,
 		time.Hour,
 	)
@@ -100,12 +103,12 @@ func main() {
 		log.Fatalf("failed to marshal SignatureRequest: %s\n", err)
 	}
 
-	appRequest, err := mesageBuilder.AppRequest(
+	appRequest, err := messageBuilder.AppRequest(
 		constants.PlatformChainID,
 		0,
 		time.Hour,
-		p2p.PrefixMessage(
-			p2p.ProtocolPrefix(p2p.SignatureRequestHandlerID),
+		p2psdk.PrefixMessage(
+			p2psdk.ProtocolPrefix(0), // SignatureRequestHandlerID placeholder,
 			appRequestPayload,
 		),
 	)

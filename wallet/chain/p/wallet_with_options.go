@@ -237,6 +237,68 @@ func (w *walletWithOptions) IssueAddPermissionlessDelegatorTx(
 	)
 }
 
+func (w *walletWithOptions) IssueConvertSubnetToL1Tx(
+	subnetID ids.ID,
+	chainID ids.ID,
+	address []byte,
+	validators []*txs.ConvertSubnetToL1Validator,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueConvertSubnetToL1Tx(
+		subnetID,
+		chainID,
+		address,
+		validators,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *walletWithOptions) IssueRegisterL1ValidatorTx(
+	balance uint64,
+	proofOfPossession [96]byte,
+	message []byte,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueRegisterL1ValidatorTx(
+		balance,
+		proofOfPossession,
+		message,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *walletWithOptions) IssueSetL1ValidatorWeightTx(
+	message []byte,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueSetL1ValidatorWeightTx(
+		message,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *walletWithOptions) IssueIncreaseL1ValidatorBalanceTx(
+	validationID ids.ID,
+	balance uint64,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueIncreaseL1ValidatorBalanceTx(
+		validationID,
+		balance,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
+func (w *walletWithOptions) IssueDisableL1ValidatorTx(
+	validationID ids.ID,
+	options ...common.Option,
+) (*txs.Tx, error) {
+	return w.wallet.IssueDisableL1ValidatorTx(
+		validationID,
+		common.UnionOptions(w.options, options)...,
+	)
+}
+
 func (w *walletWithOptions) IssueUnsignedTx(
 	utx txs.UnsignedTx,
 	options ...common.Option,

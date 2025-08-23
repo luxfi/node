@@ -8,8 +8,11 @@ import (
 	"context"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
@@ -48,5 +51,42 @@ func NewCachedHandler(cache cache.Cacher[ids.ID, []byte], backend interface{}, s
 
 // AppRequest handles an incoming request with caching
 func (h *CachedHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, request []byte) ([]byte, error) {
-	return nil, nil
+	req := &sdk.SignatureRequest{}
+	if err := proto.Unmarshal(request, req); err != nil {
+		return nil, err
+	}
+
+	unsignedMessage, err := warp.ParseUnsignedMessage(req.Message)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check cache
+	messageID := unsignedMessage.ID()
+	if signatureBytes, ok := h.cache.Get(messageID); ok {
+		resp := &sdk.SignatureResponse{
+			Signature: signatureBytes,
+		}
+		return proto.Marshal(resp)
+	}
+
+	// Verify if backend is a Verifier
+	if verifier, ok := h.backend.(Verifier); ok {
+		if appErr := verifier.Verify(ctx, unsignedMessage, req.Justification); appErr != nil {
+			return nil, appErr
+		}
+	}
+
+	// Sign the message
+	signatureBytes, err := h.signer.Sign(unsignedMessage)
+	if err != nil {
+		return nil, err
+	}
+
+	h.cache.Put(messageID, signatureBytes)
+
+	resp := &sdk.SignatureResponse{
+		Signature: signatureBytes,
+	}
+	return proto.Marshal(resp)
 }

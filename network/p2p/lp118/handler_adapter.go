@@ -9,6 +9,7 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/node/network/p2p"
 )
 
@@ -31,6 +32,13 @@ func (h *HandlerAdapter) AppGossip(ctx context.Context, nodeID ids.NodeID, gossi
 func (h *HandlerAdapter) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *core.AppError) {
 	resp, err := h.handler.AppRequest(ctx, nodeID, deadline, requestBytes)
 	if err != nil {
+		// Check if error is already an AppError from our own package
+		if appErr, ok := err.(*common.AppError); ok {
+			return nil, &core.AppError{
+				Code:    int32(appErr.Code),
+				Message: appErr.Message,
+			}
+		}
 		return nil, &core.AppError{
 			Code:    -1,
 			Message: err.Error(),

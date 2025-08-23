@@ -75,7 +75,7 @@ func main() {
 	log.Printf("synced wallet in %s\n", time.Since(walletSyncStartTime))
 
 	// Get the chain context
-	context := wallet.Builder().Context()
+	context := wallet.P().Builder().Context()
 
 	expiry := uint64(time.Now().Add(5 * time.Minute).Unix()) // This message will expire in 5 minutes
 	addressedCallPayload, err := message.NewRegisterL1Validator(
