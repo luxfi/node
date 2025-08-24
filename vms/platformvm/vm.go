@@ -66,7 +66,7 @@ var (
 	// _ validators.SubnetConnector = (*VM)(nil) // Type no longer exists
 )
 
-// appSenderAdapter adapts linearblock.AppSender to core.AppSender
+// appSenderAdapter adapts linearblock.AppSender to appsender.AppSender (for network.New)
 type appSenderAdapter struct {
 	linearblock.AppSender
 }
@@ -83,8 +83,8 @@ func (a *appSenderAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeI
 	return a.AppSender.SendAppResponse(ctx, nodeID, requestID, appResponseBytes)
 }
 
-func (a *appSenderAdapter) SendAppGossip(ctx context.Context, _ consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
-	// Ignore the nodeIDs set and broadcast to all
+func (a *appSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
+	// Ignore nodeIDs and broadcast to all
 	return a.AppSender.SendAppGossip(ctx, appGossipBytes)
 }
 
@@ -93,28 +93,11 @@ func (a *appSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, 
 	return nil
 }
 
-func (a *appSenderAdapter) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error {
-	// Not implemented in linearblock.AppSender, return nil
-	return nil
-}
-
-func (a *appSenderAdapter) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, appResponseBytes []byte) error {
-	// Not implemented in linearblock.AppSender, return nil
-	return nil
-}
-
-func (a *appSenderAdapter) SendCrossChainAppError(ctx context.Context, chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) error {
-	// Not implemented in linearblock.AppSender, return nil
-	return nil
-}
-
 func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
-	// Send to first node as a workaround
-	for nodeID := range nodeIDs {
-		return a.AppSender.SendAppRequest(ctx, nodeID, 0, appGossipBytes)
-	}
-	return nil
+	// Ignore nodeIDs and broadcast to all
+	return a.AppSender.SendAppGossip(ctx, appGossipBytes)
 }
+
 
 type VM struct {
 	config.Config
