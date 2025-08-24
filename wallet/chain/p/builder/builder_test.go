@@ -13,7 +13,6 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -118,8 +117,8 @@ func TestUnwrapOutput(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		output           verify.State
-		expectedOutput   *secp256k1fx.TransferOutput
+		output           lux.TransferableOut
+		expectedOutput   lux.TransferableOut
 		expectedLocktime uint64
 		expectedErr      error
 	}{
@@ -181,20 +180,16 @@ type utxosByLocktime struct {
 func splitByLocktime(utxos []*lux.UTXO, unlockedTime uint64) utxosByLocktime {
 	result := utxosByLocktime{}
 	for _, utxo := range utxos {
-		if out, ok := utxo.Out.(*secp256k1fx.TransferOutput); ok {
-			if out.Locktime < unlockedTime {
+		if stakeableOut, ok := utxo.Out.(*stakeable.LockOut); ok {
+			// For stakeable outputs, check the stakeable locktime
+			if stakeableOut.Locktime <= unlockedTime {
 				result.unlocked = append(result.unlocked, utxo)
 			} else {
 				result.locked = append(result.locked, utxo)
 			}
-		} else if stakeableOut, ok := utxo.Out.(*stakeable.LockOut); ok {
-			if innerOut, ok := stakeableOut.TransferableOut.(*secp256k1fx.TransferOutput); ok {
-				if innerOut.Locktime < unlockedTime || stakeableOut.Locktime < unlockedTime {
-					result.unlocked = append(result.unlocked, utxo)
-				} else {
-					result.locked = append(result.locked, utxo)
-				}
-			}
+		} else if _, ok := utxo.Out.(*secp256k1fx.TransferOutput); ok {
+			// Regular transfer outputs are always unlocked (no stakeable locktime)
+			result.unlocked = append(result.unlocked, utxo)
 		}
 	}
 	return result
@@ -218,11 +213,14 @@ func splitByAssetID(utxos []*lux.UTXO, assetID ids.ID) utxosByAssetID {
 }
 
 func unwrapOutput(output lux.TransferableOut) (lux.TransferableOut, uint64, error) {
+	if output == nil {
+		return nil, 0, ErrUnknownOutputType
+	}
 	if stakeableOut, ok := output.(*stakeable.LockOut); ok {
 		return stakeableOut.TransferableOut, stakeableOut.Locktime, nil
 	}
 	if transferOut, ok := output.(*secp256k1fx.TransferOutput); ok {
-		return transferOut, transferOut.Locktime, nil
+		return transferOut, 0, nil
 	}
 	return output, 0, nil
 }

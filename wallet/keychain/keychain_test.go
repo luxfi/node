@@ -4,7 +4,6 @@
 package keychain
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,7 +14,7 @@ func TestCryptoKeychain_Secp256k1(t *testing.T) {
 	require := require.New(t)
 	
 	// Create keychain with secp256k1 as default
-	kc := NewKeychain(AlgoSecp256k1)
+	kc := NewPQKeychain(KeyTypeSecp256k1)
 	
 	// Generate a key
 	addr, err := kc.GenerateKey()
@@ -34,8 +33,8 @@ func TestCryptoKeychain_Secp256k1(t *testing.T) {
 	require.NotEmpty(sig)
 	
 	// Check algorithm
-	keySigner := signer.(*KeySigner)
-	require.Equal(AlgoSecp256k1, keySigner.Algorithm())
+	keySigner := signer.(*PQSigner)
+	require.Equal(KeyTypeSecp256k1, keySigner.keyType)
 }
 
 func TestCryptoKeychain_MLDSA(t *testing.T) {
@@ -43,16 +42,16 @@ func TestCryptoKeychain_MLDSA(t *testing.T) {
 	
 	testCases := []struct {
 		name string
-		algo Algorithm
+		algo KeyType
 	}{
-		{"ML-DSA-44", AlgoMLDSA44},
-		{"ML-DSA-65", AlgoMLDSA65},
-		{"ML-DSA-87", AlgoMLDSA87},
+		{"ML-DSA-44", KeyTypeMLDSA44},
+		{"ML-DSA-65", KeyTypeMLDSA65},
+		{"ML-DSA-87", KeyTypeMLDSA87},
 	}
 	
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			kc := NewKeychain(tc.algo)
+			kc := NewPQKeychain(tc.algo)
 			
 			addr, err := kc.GenerateKey()
 			require.NoError(err)
@@ -66,8 +65,8 @@ func TestCryptoKeychain_MLDSA(t *testing.T) {
 			require.NoError(err)
 			require.NotEmpty(sig)
 			
-			keySigner := signer.(*KeySigner)
-			require.Equal(tc.algo, keySigner.Algorithm())
+			keySigner := signer.(*PQSigner)
+			require.Equal(tc.algo, keySigner.keyType)
 		})
 	}
 }
@@ -77,16 +76,16 @@ func TestCryptoKeychain_SLHDSA(t *testing.T) {
 	
 	testCases := []struct {
 		name string
-		algo Algorithm
+		algo KeyType
 	}{
-		{"SLH-DSA-128s", AlgoSLHDSA128s},
-		{"SLH-DSA-192s", AlgoSLHDSA192s},
-		{"SLH-DSA-256s", AlgoSLHDSA256s},
+		{"SLH-DSA-128", KeyTypeSLHDSA128},
+		{"SLH-DSA-192", KeyTypeSLHDSA192},
+		{"SLH-DSA-256", KeyTypeSLHDSA256},
 	}
 	
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			kc := NewKeychain(tc.algo)
+			kc := NewPQKeychain(tc.algo)
 			
 			addr, err := kc.GenerateKey()
 			require.NoError(err)
@@ -100,66 +99,29 @@ func TestCryptoKeychain_SLHDSA(t *testing.T) {
 			require.NoError(err)
 			require.NotEmpty(sig)
 			
-			keySigner := signer.(*KeySigner)
-			require.Equal(tc.algo, keySigner.Algorithm())
+			keySigner := signer.(*PQSigner)
+			require.Equal(tc.algo, keySigner.keyType)
 		})
 	}
 }
 
-func TestCryptoKeychain_MLKEM(t *testing.T) {
-	require := require.New(t)
-	
-	testCases := []struct {
-		name string
-		algo Algorithm
-	}{
-		{"ML-KEM-512", AlgoMLKEM512},
-		{"ML-KEM-768", AlgoMLKEM768},
-		{"ML-KEM-1024", AlgoMLKEM1024},
-	}
-	
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			kc := NewKeychain(tc.algo)
-			
-			addr, err := kc.GenerateKey()
-			require.NoError(err)
-			require.NotEqual(ids.ShortEmpty, addr)
-			
-			signer, exists := kc.Get(addr)
-			require.True(exists)
-			
-			// ML-KEM is for key encapsulation, not signing
-			keySigner := signer.(*KeySigner)
-			require.Equal(tc.algo, keySigner.Algorithm())
-			
-			// Test encapsulation
-			ct, ss, err := keySigner.Encapsulate()
-			require.NoError(err)
-			require.NotEmpty(ct)
-			require.NotEmpty(ss)
-			
-			// Test decapsulation
-			ss2, err := keySigner.Decapsulate(ct)
-			require.NoError(err)
-			require.True(bytes.Equal(ss, ss2))
-		})
-	}
-}
+// ML-KEM tests are removed as ML-KEM is for key encapsulation, not signing
+// and PQKeychain doesn't support generating ML-KEM keys
 
 func TestCryptoKeychain_MultipleAlgorithms(t *testing.T) {
 	require := require.New(t)
 	
-	kc := NewKeychain(AlgoSecp256k1)
-	
-	// Generate multiple keys with different algorithms
-	addr1, err := kc.GenerateKeyWithAlgo(AlgoSecp256k1)
+	// Test different keychains with different default algorithms
+	kc1 := NewPQKeychain(KeyTypeSecp256k1)
+	addr1, err := kc1.GenerateKey()
 	require.NoError(err)
 	
-	addr2, err := kc.GenerateKeyWithAlgo(AlgoMLDSA44)
+	kc2 := NewPQKeychain(KeyTypeMLDSA44)
+	addr2, err := kc2.GenerateKey()
 	require.NoError(err)
 	
-	addr3, err := kc.GenerateKeyWithAlgo(AlgoSLHDSA128s)
+	kc3 := NewPQKeychain(KeyTypeSLHDSA128)
+	addr3, err := kc3.GenerateKey()
 	require.NoError(err)
 	
 	// All addresses should be different
@@ -167,32 +129,30 @@ func TestCryptoKeychain_MultipleAlgorithms(t *testing.T) {
 	require.NotEqual(addr2, addr3)
 	require.NotEqual(addr1, addr3)
 	
-	// All signers should exist
-	signer1, exists := kc.Get(addr1)
+	// Check that each keychain has the right type
+	signer1, exists := kc1.Get(addr1)
 	require.True(exists)
-	require.Equal(AlgoSecp256k1, signer1.(*KeySigner).Algorithm())
+	require.Equal(KeyTypeSecp256k1, signer1.(*PQSigner).keyType)
 	
-	signer2, exists := kc.Get(addr2)
+	signer2, exists := kc2.Get(addr2)
 	require.True(exists)
-	require.Equal(AlgoMLDSA44, signer2.(*KeySigner).Algorithm())
+	require.Equal(KeyTypeMLDSA44, signer2.(*PQSigner).keyType)
 	
-	signer3, exists := kc.Get(addr3)
+	signer3, exists := kc3.Get(addr3)
 	require.True(exists)
-	require.Equal(AlgoSLHDSA128s, signer3.(*KeySigner).Algorithm())
+	require.Equal(KeyTypeSLHDSA128, signer3.(*PQSigner).keyType)
 	
-	// Check addresses set
-	addrs := kc.Addresses()
-	require.Equal(3, addrs.Len())
-	require.True(addrs.Contains(addr1))
-	require.True(addrs.Contains(addr2))
-	require.True(addrs.Contains(addr3))
+	// Check Addresses method
+	addrs1 := kc1.Addresses()
+	require.Equal(1, len(addrs1))
+	require.Equal(addr1, addrs1[0])
 }
 
 func TestCryptoKeychain_Compatibility(t *testing.T) {
 	require := require.New(t)
 	
-	// Test that New() creates a secp256k1 keychain for backward compatibility
-	kc := New()
+	// Test that NewPQKeychain with secp256k1 provides backward compatibility
+	kc := NewPQKeychain(KeyTypeSecp256k1)
 	
 	addr, err := kc.GenerateKey()
 	require.NoError(err)
@@ -200,8 +160,8 @@ func TestCryptoKeychain_Compatibility(t *testing.T) {
 	signer, exists := kc.Get(addr)
 	require.True(exists)
 	
-	keySigner := signer.(*KeySigner)
-	require.Equal(AlgoSecp256k1, keySigner.Algorithm())
+	keySigner := signer.(*PQSigner)
+	require.Equal(KeyTypeSecp256k1, keySigner.keyType)
 	
 	// Test SignHash for secp256k1
 	hash := make([]byte, 32)
