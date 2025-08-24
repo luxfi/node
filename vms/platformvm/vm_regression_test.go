@@ -72,7 +72,7 @@ func (s *simpleDBManager) Close() error {
 
 func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
 	require := require.New(t)
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, factory, _, _, _ := defaultVM(t, cortina)
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
@@ -277,7 +277,7 @@ func TestAddDelegatorTxHeapCorruption(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			vm, factory, _, _ := defaultVM(t, apricotPhase3)
+			vm, factory, _, _, _ := defaultVM(t, apricotPhase3)
 			vm.UpgradeConfig.ApricotPhase3Time = test.ap3Time
 
 			vm.lock.Lock()
@@ -742,7 +742,7 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 
 	// Create the standard block that will fail verification, and then be
 	// re-verified.
-	preferredChainTime = addValidatorStandardBlk.Timestamp()
+	preferredChainTime = statelessBlk.Timestamp()
 	preferredID = addValidatorStandardBlk.ID()
 	preferredHeight = addValidatorStandardBlk.Height()
 
@@ -988,7 +988,7 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 
 	// Create the standard block that will fail verification, and then be
 	// re-verified.
-	preferredChainTime = advanceTimeStandardBlk0.Timestamp()
+	preferredChainTime = statelessAdvanceTimeStandardBlk0.Timestamp()
 	preferredID = advanceTimeStandardBlk0.ID()
 	preferredHeight = advanceTimeStandardBlk0.Height()
 
@@ -1062,7 +1062,7 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	require.NoError(err)
 
 	// Create the standard block to add the second new validator
-	preferredChainTime = importBlk.Timestamp()
+	preferredChainTime = statelessImportBlk.Timestamp()
 	preferredID = importBlk.ID()
 	preferredHeight = importBlk.Height()
 
@@ -1176,7 +1176,7 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 func TestValidatorSetAtCacheOverwriteRegression(t *testing.T) {
 	require := require.New(t)
 
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, factory, _, _, _ := defaultVM(t, cortina)
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
@@ -1321,7 +1321,7 @@ func TestAddDelegatorTxAddBeforeRemove(t *testing.T) {
 	delegator2EndTime := delegator2StartTime.Add(3 * defaultMinStakingDuration)
 	delegator2Stake := defaultMaxValidatorStake - validatorStake
 
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, factory, _, _, _ := defaultVM(t, cortina)
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
@@ -1435,7 +1435,7 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionNotTracked(t
 	validatorStartTime := latestForkTime.Add(executor.SyncBound).Add(1 * time.Second)
 	validatorEndTime := validatorStartTime.Add(360 * 24 * time.Hour)
 
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, factory, _, _, _ := defaultVM(t, cortina)
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
@@ -1584,7 +1584,7 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionTracked(t *t
 	validatorStartTime := latestForkTime.Add(executor.SyncBound).Add(1 * time.Second)
 	validatorEndTime := validatorStartTime.Add(360 * 24 * time.Hour)
 
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, factory, _, _, _ := defaultVM(t, cortina)
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
@@ -1716,7 +1716,7 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionTracked(t *t
 func TestSubnetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 	// setup
 	require := require.New(t)
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, factory, _, _, _ := defaultVM(t, cortina)
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
@@ -1985,7 +1985,7 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 
 	// setup
 	require := require.New(t)
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, factory, _, _, _ := defaultVM(t, cortina)
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
@@ -2145,7 +2145,7 @@ func TestSubnetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 
 	// setup
 	require := require.New(t)
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, factory, _, _, _ := defaultVM(t, cortina)
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
@@ -2368,7 +2368,7 @@ func TestSubnetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 
 	// setup
 	require := require.New(t)
-	vm, factory, _, _ := defaultVM(t, cortina)
+	vm, factory, _, _, _ := defaultVM(t, cortina)
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 

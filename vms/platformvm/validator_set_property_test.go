@@ -705,8 +705,8 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	dbManager := &mockDBManager{db: chainDB}
 	// Create a message channel
 	toEngine := make(chan linearblock.Message, 1)
-	// Create AppSender adapter
-	appSenderAdapter := &appSenderAdapter{linearblock.AppSender(nil)}
+	// Create a mock AppSender
+	appSender := &core.SenderTest{}
 	
 	err = vm.Initialize(
 		context.Background(),
@@ -717,7 +717,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		nil, // configBytes
 		toEngine,
 		nil, // fxs
-		appSenderAdapter,
+		appSender,
 	)
 	if err != nil {
 		return nil, ids.Empty, err
