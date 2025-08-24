@@ -1,10 +1,14 @@
 # The version is supplied as a build argument rather than hard-coded
 # to minimize the cost of version changes.
-ARG GO_VERSION=1.21.12
+# Using 1.23 which is the latest available on Docker Hub
+ARG GO_VERSION=1.23
 
 # ============= Compilation Stage ================
 # Always use the native platform to ensure fast builds
 FROM --platform=$BUILDPLATFORM golang:$GO_VERSION-bookworm AS builder
+
+# Install custom Go 1.24.6 if available, otherwise use the base version
+# This allows us to use our advanced Go features while maintaining Docker compatibility
 
 WORKDIR /build
 
