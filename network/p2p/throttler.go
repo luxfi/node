@@ -82,6 +82,8 @@ func (s *SlidingWindowThrottler) Handle(nodeID ids.NodeID) bool {
 
 	currentHits := s.windows[s.current].hits
 	current := currentHits[nodeID]
+	currentHits[nodeID]++
+
 	previousFraction := float64(s.period-sinceUpdate) / float64(s.period)
 	previous := s.windows[1-s.current].hits[nodeID]
 	estimatedHits := current + previousFraction*previous
@@ -89,8 +91,6 @@ func (s *SlidingWindowThrottler) Handle(nodeID ids.NodeID) bool {
 		// The peer has sent too many requests, drop this request.
 		return false
 	}
-
-	currentHits[nodeID]++
 	return true
 }
 
