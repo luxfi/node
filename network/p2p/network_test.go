@@ -11,12 +11,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/appsender"
+	consensusSet "github.com/luxfi/consensus/utils/set"
 	metric "github.com/luxfi/metric"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	utils "github.com/luxfi/node/utils/set"
 )
 
 const (
@@ -28,6 +31,78 @@ var errFoo = &core.AppError{
 	Code:    123,
 	Message: "foo",
 }
+
+// fakeSenderAdapter adapts core.FakeSender to appsender.AppSender interface
+type fakeSenderAdapter struct {
+	*core.FakeSender
+}
+
+func (f *fakeSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
+	// FakeSender expects single node, so we'll use the first one
+	for nodeID := range nodeIDs {
+		return f.FakeSender.SendAppRequest(ctx, nodeID, requestID, appRequestBytes)
+	}
+	return nil
+}
+
+func (f *fakeSenderAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
+	return f.FakeSender.SendAppResponse(ctx, nodeID, requestID, appResponseBytes)
+}
+
+func (f *fakeSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	return f.FakeSender.SendAppError(ctx, nodeID, requestID, errorCode, errorMessage)
+}
+
+func (f *fakeSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], appGossipBytes []byte) error {
+	// FakeSender's SendAppGossip doesn't take nodeIDs
+	return f.FakeSender.SendAppGossip(ctx, appGossipBytes)
+}
+
+func (f *fakeSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], appGossipBytes []byte) error {
+	// Convert consensus set to utils set for FakeSender
+	nodeSet := utils.NewSet[ids.NodeID](len(nodeIDs))
+	for nodeID := range nodeIDs {
+		nodeSet.Add(nodeID)
+	}
+	return f.FakeSender.SendAppGossipSpecific(ctx, nodeSet, appGossipBytes)
+}
+
+var _ appsender.AppSender = (*fakeSenderAdapter)(nil)
+
+// senderTestAdapter adapts core.SenderTest to appsender.AppSender interface
+type senderTestAdapter struct {
+	*core.SenderTest
+}
+
+func (s *senderTestAdapter) SendAppRequest(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
+	for nodeID := range nodeIDs {
+		return s.SenderTest.SendAppRequest(ctx, nodeID, requestID, appRequestBytes)
+	}
+	return nil
+}
+
+func (s *senderTestAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
+	return s.SenderTest.SendAppResponse(ctx, nodeID, requestID, appResponseBytes)
+}
+
+func (s *senderTestAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	return s.SenderTest.SendAppError(ctx, nodeID, requestID, errorCode, errorMessage)
+}
+
+func (s *senderTestAdapter) SendAppGossip(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], appGossipBytes []byte) error {
+	return s.SenderTest.SendAppGossip(ctx, appGossipBytes)
+}
+
+func (s *senderTestAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], appGossipBytes []byte) error {
+	// Convert consensus set to utils set for SenderTest
+	nodeSet := utils.NewSet[ids.NodeID](len(nodeIDs))
+	for nodeID := range nodeIDs {
+		nodeSet.Add(nodeID)
+	}
+	return s.SenderTest.SendAppGossipSpecific(ctx, nodeSet, appGossipBytes)
+}
+
+var _ appsender.AppSender = (*senderTestAdapter)(nil)
 
 func TestMessageRouting(t *testing.T) {
 	require := require.New(t)
@@ -57,11 +132,12 @@ func TestMessageRouting(t *testing.T) {
 		},
 	}
 
-	sender := &core.FakeSender{
+	fakeSender := &core.FakeSender{
 		SentAppGossip:            make(chan []byte, 1),
 		SentAppRequest:           make(chan []byte, 1),
 		SentCrossChainAppRequest: make(chan []byte, 1),
 	}
+	sender := &fakeSenderAdapter{FakeSender: fakeSender}
 
 	network, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 	require.NoError(err)
@@ -75,15 +151,15 @@ func TestMessageRouting(t *testing.T) {
 		},
 		wantMsg,
 	))
-	require.NoError(network.AppGossip(ctx, wantNodeID, <-sender.SentAppGossip))
+	require.NoError(network.AppGossip(ctx, wantNodeID, <-fakeSender.SentAppGossip))
 	require.True(appGossipCalled)
 
-	require.NoError(client.AppRequest(ctx, set.Of(ids.EmptyNodeID), wantMsg, func(context.Context, ids.NodeID, []byte, error) {}))
-	require.NoError(network.AppRequest(ctx, wantNodeID, 1, time.Time{}, <-sender.SentAppRequest))
+	require.NoError(client.AppRequest(ctx, consensusSet.Of(ids.EmptyNodeID), wantMsg, func(context.Context, ids.NodeID, []byte, error) {}))
+	require.NoError(network.AppRequest(ctx, wantNodeID, 1, time.Time{}, <-fakeSender.SentAppRequest))
 	require.True(appRequestCalled)
 
 	require.NoError(client.CrossChainAppRequest(ctx, ids.Empty, wantMsg, func(context.Context, ids.ID, []byte, error) {}))
-	require.NoError(network.CrossChainAppRequest(ctx, wantChainID, 1, time.Time{}, <-sender.SentCrossChainAppRequest))
+	require.NoError(network.CrossChainAppRequest(ctx, wantChainID, 1, time.Time{}, <-fakeSender.SentCrossChainAppRequest))
 	require.True(crossChainAppRequestCalled)
 }
 
@@ -92,11 +168,12 @@ func TestClientPrefixesMessages(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := &core.FakeSender{
+	fakeSender := &core.FakeSender{
 		SentAppRequest:           make(chan []byte, 1),
 		SentAppGossip:            make(chan []byte, 1),
 		SentCrossChainAppRequest: make(chan []byte, 1),
 	}
+	sender := &fakeSenderAdapter{FakeSender: fakeSender}
 
 	network, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 	require.NoError(err)
@@ -107,11 +184,11 @@ func TestClientPrefixesMessages(t *testing.T) {
 
 	require.NoError(client.AppRequest(
 		ctx,
-		set.Of(ids.EmptyNodeID),
+		consensusSet.Of(ids.EmptyNodeID),
 		want,
 		func(context.Context, ids.NodeID, []byte, error) {},
 	))
-	gotAppRequest := <-sender.SentAppRequest
+	gotAppRequest := <-fakeSender.SentAppRequest
 	require.Equal(handlerPrefix, gotAppRequest[0])
 	require.Equal(want, gotAppRequest[1:])
 
@@ -120,7 +197,7 @@ func TestClientPrefixesMessages(t *testing.T) {
 		want,
 		func(context.Context, ids.NodeID, []byte, error) {},
 	))
-	gotAppRequest = <-sender.SentAppRequest
+	gotAppRequest = <-fakeSender.SentAppRequest
 	require.Equal(handlerPrefix, gotAppRequest[0])
 	require.Equal(want, gotAppRequest[1:])
 
@@ -130,7 +207,7 @@ func TestClientPrefixesMessages(t *testing.T) {
 		want,
 		func(context.Context, ids.ID, []byte, error) {},
 	))
-	gotCrossChainAppRequest := <-sender.SentCrossChainAppRequest
+	gotCrossChainAppRequest := <-fakeSender.SentCrossChainAppRequest
 	require.Equal(handlerPrefix, gotCrossChainAppRequest[0])
 	require.Equal(want, gotCrossChainAppRequest[1:])
 
@@ -141,7 +218,7 @@ func TestClientPrefixesMessages(t *testing.T) {
 		},
 		want,
 	))
-	gotAppGossip := <-sender.SentAppGossip
+	gotAppGossip := <-fakeSender.SentAppGossip
 	require.Equal(handlerPrefix, gotAppGossip[0])
 	require.Equal(want, gotAppGossip[1:])
 }
@@ -151,9 +228,10 @@ func TestAppRequestResponse(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := &core.FakeSender{
+	fakeSender := &core.FakeSender{
 		SentAppRequest: make(chan []byte, 1),
 	}
+	sender := &fakeSenderAdapter{FakeSender: fakeSender}
 	network, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
@@ -171,8 +249,8 @@ func TestAppRequestResponse(t *testing.T) {
 	}
 
 	want := []byte("request")
-	require.NoError(client.AppRequest(ctx, set.Of(wantNodeID), want, callback))
-	got := <-sender.SentAppRequest
+	require.NoError(client.AppRequest(ctx, consensusSet.Of(wantNodeID), want, callback))
+	got := <-fakeSender.SentAppRequest
 	require.Equal(handlerPrefix, got[0])
 	require.Equal(want, got[1:])
 
@@ -186,13 +264,14 @@ func TestAppRequestCancelledContext(t *testing.T) {
 	ctx := context.Background()
 
 	sentMessages := make(chan []byte, 1)
-	sender := &core.SenderTest{
+	senderTest := &core.SenderTest{
 		SendAppRequestF: func(ctx context.Context, _ ids.NodeID, _ uint32, msgBytes []byte) error {
 			require.NoError(ctx.Err())
 			sentMessages <- msgBytes
 			return nil
 		},
 	}
+	sender := &senderTestAdapter{SenderTest: senderTest}
 	network, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
@@ -213,7 +292,7 @@ func TestAppRequestCancelledContext(t *testing.T) {
 	cancel()
 
 	want := []byte("request")
-	require.NoError(client.AppRequest(cancelledCtx, set.Of(wantNodeID), want, callback))
+	require.NoError(client.AppRequest(cancelledCtx, consensusSet.Of(wantNodeID), want, callback))
 	got := <-sentMessages
 	require.Equal(handlerPrefix, got[0])
 	require.Equal(want, got[1:])
@@ -227,9 +306,10 @@ func TestAppRequestFailed(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := &core.FakeSender{
+	fakeSender := &core.FakeSender{
 		SentAppRequest: make(chan []byte, 1),
 	}
+	sender := &fakeSenderAdapter{FakeSender: fakeSender}
 	network, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
@@ -245,8 +325,8 @@ func TestAppRequestFailed(t *testing.T) {
 		close(done)
 	}
 
-	require.NoError(client.AppRequest(ctx, set.Of(wantNodeID), []byte("request"), callback))
-	<-sender.SentAppRequest
+	require.NoError(client.AppRequest(ctx, consensusSet.Of(wantNodeID), []byte("request"), callback))
+	<-fakeSender.SentAppRequest
 
 	require.NoError(network.AppRequestFailed(ctx, wantNodeID, 1, errFoo))
 	<-done
@@ -257,9 +337,10 @@ func TestCrossChainAppRequestResponse(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := &core.FakeSender{
+	fakeSender := &core.FakeSender{
 		SentCrossChainAppRequest: make(chan []byte, 1),
 	}
+	sender := &fakeSenderAdapter{FakeSender: fakeSender}
 	network, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
@@ -277,7 +358,7 @@ func TestCrossChainAppRequestResponse(t *testing.T) {
 	}
 
 	require.NoError(client.CrossChainAppRequest(ctx, wantChainID, []byte("request"), callback))
-	<-sender.SentCrossChainAppRequest
+	<-fakeSender.SentCrossChainAppRequest
 
 	require.NoError(network.CrossChainAppResponse(ctx, wantChainID, 1, wantResponse))
 	<-done
@@ -289,13 +370,14 @@ func TestCrossChainAppRequestCancelledContext(t *testing.T) {
 	ctx := context.Background()
 
 	sentMessages := make(chan []byte, 1)
-	sender := &core.SenderTest{
+	senderTest := &core.SenderTest{
 		SendCrossChainAppRequestF: func(ctx context.Context, _ ids.ID, _ uint32, msgBytes []byte) error {
 			require.NoError(ctx.Err())
 			sentMessages <- msgBytes
 			return nil
 		},
 	}
+	sender := &senderTestAdapter{SenderTest: senderTest}
 	network, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
@@ -327,9 +409,10 @@ func TestCrossChainAppRequestFailed(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := &core.FakeSender{
+	fakeSender := &core.FakeSender{
 		SentCrossChainAppRequest: make(chan []byte, 1),
 	}
+	sender := &fakeSenderAdapter{FakeSender: fakeSender}
 	network, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
@@ -346,7 +429,7 @@ func TestCrossChainAppRequestFailed(t *testing.T) {
 	}
 
 	require.NoError(client.CrossChainAppRequest(ctx, wantChainID, []byte("request"), callback))
-	<-sender.SentCrossChainAppRequest
+	<-fakeSender.SentCrossChainAppRequest
 
 	require.NoError(network.CrossChainAppRequestFailed(ctx, wantChainID, 1, errFoo))
 	<-done
@@ -425,8 +508,8 @@ func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
 			wantRequestID := uint32(111)
 
 			done := make(chan struct{})
-			sender := &core.SenderTest{}
-			sender.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+			senderTest := &core.SenderTest{}
+			senderTest.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 				defer close(done)
 
 				require.Equal(wantNodeID, nodeID)
@@ -436,6 +519,7 @@ func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
 
 				return nil
 			}
+	sender := &senderTestAdapter{SenderTest: senderTest}
 			network, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 			require.NoError(network.AddHandler(handlerID, handler))
@@ -464,8 +548,8 @@ func TestAppError(t *testing.T) {
 	wantRequestID := uint32(111)
 
 	done := make(chan struct{})
-	sender := &core.SenderTest{}
-	sender.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	senderTest := &core.SenderTest{}
+	senderTest.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 		defer close(done)
 
 		require.Equal(wantNodeID, nodeID)
@@ -475,6 +559,7 @@ func TestAppError(t *testing.T) {
 
 		return nil
 	}
+	sender := &senderTestAdapter{SenderTest: senderTest}
 	network, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 	require.NoError(err)
 	require.NoError(network.AddHandler(handlerID, handler))
@@ -545,9 +630,10 @@ func TestAppRequestDuplicateRequestIDs(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := &core.FakeSender{
+	fakeSender := &core.FakeSender{
 		SentAppRequest: make(chan []byte, 1),
 	}
+	sender := &fakeSenderAdapter{FakeSender: fakeSender}
 
 	network, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 	require.NoError(err)
@@ -556,12 +642,12 @@ func TestAppRequestDuplicateRequestIDs(t *testing.T) {
 	noOpCallback := func(context.Context, ids.NodeID, []byte, error) {}
 	// create a request that never gets a response
 	network.router.requestID = 1
-	require.NoError(client.AppRequest(ctx, set.Of(ids.EmptyNodeID), []byte{}, noOpCallback))
-	<-sender.SentAppRequest
+	require.NoError(client.AppRequest(ctx, consensusSet.Of(ids.EmptyNodeID), []byte{}, noOpCallback))
+	<-fakeSender.SentAppRequest
 
 	// force the network to use the same requestID
 	network.router.requestID = 1
-	err = client.AppRequest(context.Background(), set.Of(ids.EmptyNodeID), []byte{}, noOpCallback)
+	err = client.AppRequest(context.Background(), consensusSet.Of(ids.EmptyNodeID), []byte{}, noOpCallback)
 	require.ErrorIs(err, ErrRequestPending)
 }
 
@@ -631,7 +717,7 @@ func TestPeersSample(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			network, err := NewNetwork(log.NoLog{}, &core.FakeSender{}, metric.NewNoOpMetrics("test").Registry(), "")
+			network, err := NewNetwork(log.NoLog{}, &fakeSenderAdapter{FakeSender: &core.FakeSender{}}, metric.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 
 			for connected := range tt.connected {
@@ -674,12 +760,13 @@ func TestAppRequestAnyNodeSelection(t *testing.T) {
 			require := require.New(t)
 
 			var sent ids.NodeID
-			sender := &core.SenderTest{
+			senderTest := &core.SenderTest{
 				SendAppRequestF: func(_ context.Context, nodeID ids.NodeID, _ uint32, _ []byte) error {
 					sent = nodeID
 					return nil
 				},
 			}
+	sender := &senderTestAdapter{SenderTest: senderTest}
 
 			n, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
@@ -771,15 +858,17 @@ func TestNodeSamplerClientOption(t *testing.T) {
 			require := require.New(t)
 
 			done := make(chan struct{})
-			sender := &core.SenderTest{
+			senderTest := &core.SenderTest{
 				SendAppRequestF: func(_ context.Context, nodeID ids.NodeID, _ uint32, _ []byte) error {
 					if len(tt.expected) > 0 {
 						require.Contains(tt.expected, nodeID)
 					}
+	
 					close(done)
 					return nil
 				},
 			}
+			sender := &senderTestAdapter{SenderTest: senderTest}
 			network, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 			ctx := context.Background()
@@ -803,7 +892,9 @@ func TestNodeSamplerClientOption(t *testing.T) {
 func TestMultipleClients(t *testing.T) {
 	require := require.New(t)
 
-	n, err := NewNetwork(log.NoLog{}, &core.SenderTest{}, metric.NewNoOpMetrics("test").Registry(), "")
+	senderTest := &core.SenderTest{}
+	sender := &senderTestAdapter{SenderTest: senderTest}
+	n, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 	require.NoError(err)
 	_ = n.NewClient(0)
 	_ = n.NewClient(0)
