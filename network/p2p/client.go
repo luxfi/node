@@ -188,10 +188,15 @@ func (c *Client) CrossChainAppRequest(
 		)
 	}
 
-	// CrossChain methods not supported in new core.AppSender interface
-	// TODO: Implement cross-chain support
-	_ = ctxWithoutCancel // Mark as used to avoid compiler error
-	err := fmt.Errorf("cross-chain app requests not supported in current AppSender interface")
+	// Check if sender supports cross-chain operations
+	var err error
+	if extSender, ok := c.router.sender.(ExtendedAppSender); ok {
+		err = extSender.SendCrossChainAppRequest(ctxWithoutCancel, chainID, requestID, appRequestBytes)
+	} else {
+		// Fallback: sender doesn't support cross-chain
+		err = fmt.Errorf("cross-chain app requests not supported by sender")
+	}
+	
 	if err != nil {
 		c.router.log.Error("unexpected error when sending message",
 			zap.Stringer("op", message.CrossChainAppRequestOp),
