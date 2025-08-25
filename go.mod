@@ -226,3 +226,5 @@ require (
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
 
 replace k8s.io/apimachinery => k8s.io/apimachinery v0.31.4
+
+replace github.com/luxfi/node => ../node
