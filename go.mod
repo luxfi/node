@@ -4,7 +4,7 @@ module github.com/luxfi/node
 // CONTRIBUTING.md
 // README.md
 // go.mod (here)
-go 1.24.5
+go 1.24.6
 
 exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 
@@ -19,7 +19,7 @@ require (
 	github.com/golang/mock v1.5.0
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
-	github.com/luxfi/consensus v1.3.2-0.20250825015806-c5226e4df296
+	github.com/luxfi/consensus v1.3.2-0.20250825020531-39f182226540
 	github.com/luxfi/crypto v1.16.16
 	github.com/luxfi/database v1.1.13
 	github.com/luxfi/geth v1.16.34

@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/luxfi/consensus/engine/dag"
-	"github.com/luxfi/consensus/engine/dag/vertex"
+	"github.com/luxfi/consensus/engine/vertex"
 	"github.com/luxfi/trace"
 
 	oteltrace "go.opentelemetry.io/otel/trace"

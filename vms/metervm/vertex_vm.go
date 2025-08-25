@@ -9,7 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/consensus/engine/dag"
-	"github.com/luxfi/consensus/engine/dag/vertex"
+	"github.com/luxfi/consensus/engine/vertex"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
