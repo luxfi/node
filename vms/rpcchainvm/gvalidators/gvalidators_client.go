@@ -60,13 +60,19 @@ func (c *Client) GetValidatorSet(ctx context.Context, height uint64, subnetID id
 		}
 		validatorSet[nodeID] = &validators.GetValidatorOutput{
 			NodeID: nodeID,
-			Weight: v.Weight,
+			Light:  v.Weight,
+			Weight: v.Weight, // Both fields for compatibility
 		}
 	}
 	return validatorSet, nil
 }
 
-func (c *Client) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+func (c *Client) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	// Call GetValidatorSet with the same parameters
+	return c.GetValidatorSet(ctx, height, netID)
+}
+
+func (c *Client) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*validators.GetValidatorOutput, uint64, error) {
 	// For now, just return empty map and current height since we don't have full support for this
 	height, err := c.GetCurrentHeight(ctx)
 	if err != nil {

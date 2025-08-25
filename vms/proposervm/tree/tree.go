@@ -54,7 +54,7 @@ func New() Tree {
 }
 
 func (t *tree) Add(blk chain.Block) {
-	parentID := blk.Parent()
+	parentID := blk.ParentID()
 	children, exists := t.nodes[parentID]
 	if !exists {
 		children = make(map[ids.ID]chain.Block)
@@ -65,7 +65,7 @@ func (t *tree) Add(blk chain.Block) {
 }
 
 func (t *tree) Get(blk chain.Block) (chain.Block, bool) {
-	parentID := blk.Parent()
+	parentID := blk.ParentID()
 	children := t.nodes[parentID]
 	blkID := blk.ID()
 	originalBlk, exists := children[blkID]
@@ -79,7 +79,7 @@ func (t *tree) Accept(ctx context.Context, blk chain.Block) error {
 	}
 
 	// get the siblings of the block
-	parentID := blk.Parent()
+	parentID := blk.ParentID()
 	children := t.nodes[parentID]
 	blkID := blk.ID()
 	delete(children, blkID)

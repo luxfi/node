@@ -82,7 +82,7 @@ func (vm *blockVM) BuildBlock(ctx context.Context) (block.Block, error) {
 	}
 	vm.blockMetrics.buildBlock.Observe(duration)
 	return &meterBlock{
-		Block: blk,
+		innerBlock: blk,
 		vm:    vm,
 	}, nil
 }
@@ -98,7 +98,7 @@ func (vm *blockVM) ParseBlock(ctx context.Context, b []byte) (block.Block, error
 	}
 	vm.blockMetrics.parseBlock.Observe(duration)
 	return &meterBlock{
-		Block: blk,
+		innerBlock: blk,
 		vm:    vm,
 	}, nil
 }
@@ -114,7 +114,7 @@ func (vm *blockVM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error)
 	}
 	vm.blockMetrics.getBlock.Observe(duration)
 	return &meterBlock{
-		Block: blk,
+		innerBlock: blk,
 		vm:    vm,
 	}, nil
 }

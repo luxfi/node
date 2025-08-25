@@ -7,29 +7,61 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/ids"
 )
 
 var (
-	_ chain.Block = (*meterBlock)(nil)
-	// _ chain.OracleBlock      = (*meterBlock)(nil) // Implementation note
-	_ block.WithVerifyContext = (*meterBlock)(nil)
 	_ block.Block             = (*meterBlock)(nil)
+	_ block.WithVerifyContext = (*meterBlock)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )
 
+// meterBlock wraps a chain.Block to satisfy the block.Block interface
+// while adding metrics
 type meterBlock struct {
-	chain.Block
+	innerBlock chain.Block
+	vm         *blockVM
+}
 
-	vm *blockVM
+// ID returns the block's ID
+func (mb *meterBlock) ID() ids.ID {
+	return mb.innerBlock.ID()
+}
+
+// ParentID returns the parent block's ID (block.Block expects ParentID)
+func (mb *meterBlock) ParentID() ids.ID {
+	return mb.innerBlock.Parent()
+}
+
+// Height returns the block's height
+func (mb *meterBlock) Height() uint64 {
+	return mb.innerBlock.Height()
+}
+
+// Timestamp returns the block's timestamp as time.Time
+// This satisfies the block.Block interface
+func (mb *meterBlock) Timestamp() time.Time {
+	return time.Unix(mb.innerBlock.Timestamp(), 0)
+}
+
+// Status returns the block's status as uint8
+func (mb *meterBlock) Status() uint8 {
+	return uint8(mb.innerBlock.Status())
+}
+
+// Bytes returns the serialized block
+func (mb *meterBlock) Bytes() []byte {
+	return mb.innerBlock.Bytes()
 }
 
 func (mb *meterBlock) Verify(ctx context.Context) error {
 	start := mb.vm.clock.Time()
-	err := mb.Block.Verify(ctx)
+	err := mb.innerBlock.Verify(ctx)
 	end := mb.vm.clock.Time()
 	duration := float64(end.Sub(start))
 	if err != nil {
@@ -42,7 +74,7 @@ func (mb *meterBlock) Verify(ctx context.Context) error {
 
 func (mb *meterBlock) Accept(ctx context.Context) error {
 	start := mb.vm.clock.Time()
-	err := mb.Block.Accept(ctx)
+	err := mb.innerBlock.Accept(ctx)
 	end := mb.vm.clock.Time()
 	duration := float64(end.Sub(start))
 	mb.vm.blockMetrics.accept.Observe(duration)
@@ -51,7 +83,7 @@ func (mb *meterBlock) Accept(ctx context.Context) error {
 
 func (mb *meterBlock) Reject(ctx context.Context) error {
 	start := mb.vm.clock.Time()
-	err := mb.Block.Reject(ctx)
+	err := mb.innerBlock.Reject(ctx)
 	end := mb.vm.clock.Time()
 	duration := float64(end.Sub(start))
 	mb.vm.blockMetrics.reject.Observe(duration)
@@ -81,7 +113,7 @@ func (mb *meterBlock) Reject(ctx context.Context) error {
 // }
 
 func (mb *meterBlock) ShouldVerifyWithContext(ctx context.Context) (bool, error) {
-	blkWithCtx, ok := mb.Block.(block.WithVerifyContext)
+	blkWithCtx, ok := mb.innerBlock.(block.WithVerifyContext)
 	if !ok {
 		return false, nil
 	}
@@ -95,9 +127,9 @@ func (mb *meterBlock) ShouldVerifyWithContext(ctx context.Context) (bool, error)
 }
 
 func (mb *meterBlock) VerifyWithContext(ctx context.Context, blockCtx *block.Context) error {
-	blkWithCtx, ok := mb.Block.(block.WithVerifyContext)
+	blkWithCtx, ok := mb.innerBlock.(block.WithVerifyContext)
 	if !ok {
-		return fmt.Errorf("%w but got %T", errExpectedBlockWithVerifyContext, mb.Block)
+		return fmt.Errorf("%w but got %T", errExpectedBlockWithVerifyContext, mb.innerBlock)
 	}
 
 	start := mb.vm.clock.Time()

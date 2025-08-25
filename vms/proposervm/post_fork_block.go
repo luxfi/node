@@ -63,11 +63,11 @@ func (b *postForkBlock) Reject(ctx context.Context) error {
 	return nil
 }
 
-func (b *postForkBlock) Status() choices.Status {
+func (b *postForkBlock) Status() uint8 {
 	if b.status == choices.Accepted && b.Height() > b.vm.lastAcceptedHeight {
-		return choices.Processing
+		return uint8(choices.Processing)
 	}
-	return b.status
+	return uint8(b.status)
 }
 
 // Return this block's parent, or a *missing.Block if

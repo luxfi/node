@@ -242,7 +242,7 @@ func (w *windower) makeSampler(
 	for k, v := range validatorsMap {
 		validators = append(validators, validatorData{
 			id:     k,
-			weight: v.Weight,
+			weight: v.Light,
 		})
 	}
 

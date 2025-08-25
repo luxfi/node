@@ -715,11 +715,21 @@ func (p *peer) shouldDisconnect() bool {
 		return false
 	}
 
-	blsKey := vdr.PublicKey
-	if blsKey == nil {
+	blsKeyBytes := vdr.PublicKey
+	if blsKeyBytes == nil {
 		p.Log.Debug(disconnectingLog,
 			zap.Stringer("nodeID", vdr.NodeID),
 			zap.String("reason", "validator public key is nil"),
+		)
+		return false
+	}
+
+	blsKey, err := bls.PublicKeyFromBytes(blsKeyBytes)
+	if err != nil {
+		p.Log.Debug(disconnectingLog,
+			zap.Stringer("nodeID", vdr.NodeID),
+			zap.String("reason", "invalid BLS public key"),
+			zap.Error(err),
 		)
 		return false
 	}
@@ -777,7 +787,14 @@ func (p *peer) handle(msg message.InboundMessage) {
 	}
 
 	// Consensus and app-level messages
-	p.Router.HandleInbound(context.Background(), msg)
+	// Convert message.InboundMessage to router.Message
+	routerMsg := router.Message{
+		NodeID:     p.id,
+		Op:         router.Op(msg.Op()),
+		Message:    msg.Bytes(),
+		Expiration: p.Clock.Time().Add(time.Minute), // Default expiration
+	}
+	p.Router.HandleInbound(context.Background(), routerMsg)
 }
 
 func (p *peer) handlePing(msg *p2p.Ping) {
@@ -846,7 +863,7 @@ func (p *peer) handlePing(msg *p2p.Ping) {
 }
 
 func (p *peer) getUptimes() (uint32, []*p2p.SubnetUptime) {
-	primaryUptime, err := p.UptimeCalculator.CalculateUptimePercent(p.id)
+	primaryUptime, err := p.UptimeCalculator.CalculateUptimePercent(p.id, constants.PrimaryNetworkID)
 	if err != nil {
 		p.Log.Debug(failedToGetUptimeLog,
 			zap.Stringer("nodeID", p.id),
@@ -862,7 +879,7 @@ func (p *peer) getUptimes() (uint32, []*p2p.SubnetUptime) {
 			continue
 		}
 
-		subnetUptime, err := p.UptimeCalculator.CalculateUptimePercent(p.id)
+		subnetUptime, err := p.UptimeCalculator.CalculateUptimePercent(p.id, subnetID)
 		if err != nil {
 			p.Log.Debug(failedToGetUptimeLog,
 				zap.Stringer("nodeID", p.id),
