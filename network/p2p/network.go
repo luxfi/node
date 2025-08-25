@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	_ validators.Connector = (*networkConnectorAdapter)(nil)
+	_ validators.Connector = (*Network)(nil)
 	_ core.AppHandler      = (*networkAppHandlerAdapter)(nil)
 	_ NodeSampler          = (*peerSampler)(nil)
 
@@ -32,21 +32,6 @@ var (
 	labelNames   = []string{opLabel, handlerLabel}
 )
 
-// networkConnectorAdapter adapts Network to validators.Connector
-type networkConnectorAdapter struct {
-	*Network
-}
-
-// Connected implements validators.Connector
-func (n *networkConnectorAdapter) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
-	// Convert consensus version to node version
-	nodeVersion := &nodeVersion.Application{
-		Major: version.Major,
-		Minor: version.Minor,
-		Patch: version.Patch,
-	}
-	return n.Network.Connected(ctx, nodeID, nodeVersion)
-}
 
 // networkAppHandlerAdapter adapts Network to core.AppHandler
 type networkAppHandlerAdapter struct {
