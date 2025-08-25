@@ -25,8 +25,37 @@ var (
 	ErrExistingAppProtocol = errors.New("existing app protocol")
 	ErrUnrequestedResponse = errors.New("unrequested response")
 
-	_ core.AppHandler = (*router)(nil)
+	_ core.AppHandler = (*routerAppHandlerAdapter)(nil)
 )
+
+// routerAppHandlerAdapter adapts router to core.AppHandler
+type routerAppHandlerAdapter struct {
+	*router
+}
+
+// AppRequest implements core.AppHandler
+func (r *routerAppHandlerAdapter) AppRequest(ctx context.Context, nodeID interface{}, requestID uint32, deadline time.Time, msg []byte) error {
+	if id, ok := nodeID.(ids.NodeID); ok {
+		return r.router.AppRequest(ctx, id, requestID, deadline, msg)
+	}
+	return errors.New("invalid nodeID type")
+}
+
+// AppResponse implements core.AppHandler
+func (r *routerAppHandlerAdapter) AppResponse(ctx context.Context, nodeID interface{}, requestID uint32, msg []byte) error {
+	if id, ok := nodeID.(ids.NodeID); ok {
+		return r.router.AppResponse(ctx, id, requestID, msg)
+	}
+	return errors.New("invalid nodeID type")
+}
+
+// AppGossip implements core.AppHandler
+func (r *routerAppHandlerAdapter) AppGossip(ctx context.Context, nodeID interface{}, msg []byte) error {
+	if id, ok := nodeID.(ids.NodeID); ok {
+		return r.router.AppGossip(ctx, id, msg)
+	}
+	return errors.New("invalid nodeID type")
+}
 
 type pendingAppRequest struct {
 	handlerID string
