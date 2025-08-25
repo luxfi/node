@@ -29,6 +29,7 @@ require (
 	github.com/luxfi/math v0.1.0
 	github.com/luxfi/metric v1.3.0
 	github.com/luxfi/mock v0.1.0
+	github.com/luxfi/qzmq v0.1.1
 	github.com/luxfi/trace v0.1.2
 	golang.org/x/mod v0.27.0
 	golang.org/x/tools v0.36.0
@@ -159,6 +160,8 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
+	github.com/luxfi/czmq/v4 v4.2.0 // indirect
+	github.com/luxfi/zmq/v4 v4.2.0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
