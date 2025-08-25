@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/core/appsender"
 	consensusSet "github.com/luxfi/consensus/utils/set"
 	metric "github.com/luxfi/metric"
 	"github.com/luxfi/consensus/validators"
@@ -67,7 +66,19 @@ func (f *fakeSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs c
 	return f.FakeSender.SendAppGossipSpecific(ctx, nodeSet, appGossipBytes)
 }
 
-var _ appsender.AppSender = (*fakeSenderAdapter)(nil)
+func (f *fakeSenderAdapter) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error {
+	return f.FakeSender.SendCrossChainAppRequest(ctx, chainID, requestID, appRequestBytes)
+}
+
+func (f *fakeSenderAdapter) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, appResponseBytes []byte) error {
+	return f.FakeSender.SendCrossChainAppResponse(ctx, chainID, requestID, appResponseBytes)
+}
+
+func (f *fakeSenderAdapter) SendCrossChainAppError(ctx context.Context, chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) error {
+	return f.FakeSender.SendCrossChainAppError(ctx, chainID, requestID, errorCode, errorMessage)
+}
+
+var _ ExtendedAppSender = (*fakeSenderAdapter)(nil)
 
 // senderTestAdapter adapts core.SenderTest to appsender.AppSender interface
 type senderTestAdapter struct {
@@ -102,7 +113,19 @@ func (s *senderTestAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs c
 	return s.SenderTest.SendAppGossipSpecific(ctx, nodeSet, appGossipBytes)
 }
 
-var _ appsender.AppSender = (*senderTestAdapter)(nil)
+func (s *senderTestAdapter) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error {
+	return s.SenderTest.SendCrossChainAppRequest(ctx, chainID, requestID, appRequestBytes)
+}
+
+func (s *senderTestAdapter) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, appResponseBytes []byte) error {
+	return s.SenderTest.SendCrossChainAppResponse(ctx, chainID, requestID, appResponseBytes)
+}
+
+func (s *senderTestAdapter) SendCrossChainAppError(ctx context.Context, chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) error {
+	return s.SenderTest.SendCrossChainAppError(ctx, chainID, requestID, errorCode, errorMessage)
+}
+
+var _ ExtendedAppSender = (*senderTestAdapter)(nil)
 
 func TestMessageRouting(t *testing.T) {
 	require := require.New(t)
