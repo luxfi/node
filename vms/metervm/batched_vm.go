@@ -48,8 +48,8 @@ func (vm *blockVM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]bloc
 	wrappedBlocks := make([]block.Block, len(blocks))
 	for i, blk := range blocks {
 		wrappedBlocks[i] = &meterBlock{
-			Block: blk,
-			vm:    vm,
+			innerBlock: blk,
+			vm:         vm,
 		}
 	}
 	return wrappedBlocks, err

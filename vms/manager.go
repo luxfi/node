@@ -120,7 +120,7 @@ func (m *manager) RegisterFactory(ctx context.Context, vmID ids.ID, factory Fact
 
 	// Version is not available in core.VM interface
 	// Just shutdown the VM
-	return commonVM.Shutdown()
+	return commonVM.Shutdown(context.Background())
 }
 
 func (m *manager) ListFactories() ([]ids.ID, error) {

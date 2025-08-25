@@ -78,11 +78,11 @@ func (b *postForkOption) Reject(ctx context.Context) error {
 	return nil
 }
 
-func (b *postForkOption) Status() choices.Status {
+func (b *postForkOption) Status() uint8 {
 	if b.status == choices.Accepted && b.Height() > b.vm.lastAcceptedHeight {
-		return choices.Processing
+		return uint8(choices.Processing)
 	}
-	return b.status
+	return uint8(b.status)
 }
 
 func (b *postForkOption) Parent() ids.ID {

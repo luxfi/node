@@ -8,8 +8,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 )

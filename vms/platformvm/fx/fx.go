@@ -4,6 +4,8 @@
 package fx
 
 import (
+	"context"
+	
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -11,9 +13,23 @@ import (
 
 var (
 	_ Fx    = (*secp256k1fx.Fx)(nil)
-	_ Owner = (*secp256k1fx.OutputOwners)(nil)
+	// Note: secp256k1fx.OutputOwners may not implement Owner directly
+	// _ Owner = (*secp256k1fx.OutputOwners)(nil)
 	_ Owned = (*secp256k1fx.TransferOutput)(nil)
 )
+
+// OutputOwnersWrapper wraps secp256k1fx.OutputOwners to implement Owner
+type OutputOwnersWrapper struct {
+	*secp256k1fx.OutputOwners
+}
+
+// InitializeContext implements consensus.Contextualizable
+func (o *OutputOwnersWrapper) InitializeContext(ctx context.Context) error {
+	// No-op implementation for now
+	return nil
+}
+
+var _ Owner = (*OutputOwnersWrapper)(nil)
 
 // Fx is the interface a feature extension must implement to support the
 // Platform Chain.

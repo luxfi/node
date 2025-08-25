@@ -24,7 +24,7 @@ func (vm *blockVM) BuildBlockWithContext(ctx context.Context, blockCtx *block.Co
 	}
 	vm.blockMetrics.buildBlockWithContext.Observe(duration)
 	return &meterBlock{
-		Block: blk,
+		innerBlock: blk,
 		vm:    vm,
 	}, nil
 }

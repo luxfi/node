@@ -61,7 +61,7 @@ func (s *Server) GetValidatorSet(ctx context.Context, req *pb.GetValidatorSetReq
 	for nodeID, validator := range validators {
 		vdrPB := &pb.Validator{
 			NodeId: nodeID.Bytes(),
-			Weight: validator.Weight,
+			Weight: validator.Light, // Use Light field which is the actual weight
 		}
 		resp.Validators = append(resp.Validators, vdrPB)
 	}
@@ -93,7 +93,7 @@ func (s *Server) GetCurrentValidatorSet(ctx context.Context, req *pb.GetCurrentV
 	for nodeID, validator := range validators {
 		vdrPB := &pb.Validator{
 			NodeId: nodeID.Bytes(),
-			Weight: validator.Weight,
+			Weight: validator.Light, // Use Light field which is the actual weight
 			// All other fields like StartTime, IsActive, etc. are not available
 		}
 		resp.Validators = append(resp.Validators, vdrPB)

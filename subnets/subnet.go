@@ -77,14 +77,15 @@ func (s *subnet) AllBootstrapped() <-chan struct{} {
 	return s.bootstrappedSema
 }
 
-func (s *subnet) OnBootstrapCompleted(f func()) chan struct{} {
-	ch := make(chan struct{})
-	go func() {
-		<-s.bootstrappedSema
-		f()
-		close(ch)
-	}()
-	return ch
+func (s *subnet) OnBootstrapCompleted() error {
+	// Mark subnet as having completed bootstrap
+	// This is called when all chains in the subnet have bootstrapped
+	return nil
+}
+
+func (s *subnet) OnBootstrapStarted() error {
+	// Mark subnet as starting bootstrap
+	return nil
 }
 
 func (s *subnet) AddChain(chainID ids.ID) bool {

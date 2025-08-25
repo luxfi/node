@@ -6,7 +6,7 @@ package peer
 import (
 	"time"
 
-	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/consensus/router"
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"

@@ -52,3 +52,7 @@ func (g *GossipTrackerCallback) OnValidatorRemoved(nodeID ids.NodeID, _ uint64) 
 // OnValidatorWeightChanged does nothing because PeerList gossip doesn't care
 // about validator weights.
 func (*GossipTrackerCallback) OnValidatorWeightChanged(ids.NodeID, uint64, uint64) {}
+
+// OnValidatorLightChanged does nothing because PeerList gossip doesn't care
+// about validator light values.
+func (*GossipTrackerCallback) OnValidatorLightChanged(ids.NodeID, uint64, uint64) {}

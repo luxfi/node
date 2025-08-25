@@ -12,8 +12,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
