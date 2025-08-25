@@ -425,6 +425,8 @@ github.com/luxfi/consensus v1.3.2-0.20250825015806-c5226e4df296 h1:ujnNdJ0Z9rPcG
 github.com/luxfi/consensus v1.3.2-0.20250825015806-c5226e4df296/go.mod h1:QM14S9j78a3iWMtYnwhSnZnkmv9ktcNUT6iqL1pIq9o=
 github.com/luxfi/consensus v1.3.2-0.20250825020531-39f182226540 h1:IGSqA1QEtJcle3AN9RcUvygVkJb8I3afdth9b/Dd/KA=
 github.com/luxfi/consensus v1.3.2-0.20250825020531-39f182226540/go.mod h1:QM14S9j78a3iWMtYnwhSnZnkmv9ktcNUT6iqL1pIq9o=
+github.com/luxfi/consensus v1.3.2-0.20250825042107-28302afbcfd5 h1:crODp0z7BjQQdaX34T730xIUcWRDhxUBknmdjOz2fUo=
+github.com/luxfi/consensus v1.3.2-0.20250825042107-28302afbcfd5/go.mod h1:QM14S9j78a3iWMtYnwhSnZnkmv9ktcNUT6iqL1pIq9o=
 github.com/luxfi/crypto v1.16.16 h1:hRHP4++vXNf4zjody/zNGU5AzPmV+tPldRorhlnVoBU=
 github.com/luxfi/crypto v1.16.16/go.mod h1:dhshhrUIuwlrfgYBgYQS6h55EFD3yZex6vlPT1sXKZ4=
 github.com/luxfi/database v1.1.13 h1:J0iNaejPDFfvevvX/TDr61pcfEciPRSKK1czoDbg+n0=

@@ -19,17 +19,63 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	nodeVersion "github.com/luxfi/node/version"
 )
 
 var (
-	_ validators.Connector = (*Network)(nil)
-	_ core.AppHandler      = (*Network)(nil)
+	_ validators.Connector = (*networkConnectorAdapter)(nil)
+	_ core.AppHandler      = (*networkAppHandlerAdapter)(nil)
 	_ NodeSampler          = (*peerSampler)(nil)
 
 	opLabel      = "op"
 	handlerLabel = "handlerID"
 	labelNames   = []string{opLabel, handlerLabel}
 )
+
+// networkConnectorAdapter adapts Network to validators.Connector
+type networkConnectorAdapter struct {
+	*Network
+}
+
+// Connected implements validators.Connector
+func (n *networkConnectorAdapter) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
+	// Convert consensus version to node version
+	nodeVersion := &nodeVersion.Application{
+		Major: version.Major,
+		Minor: version.Minor,
+		Patch: version.Patch,
+	}
+	return n.Network.Connected(ctx, nodeID, nodeVersion)
+}
+
+// networkAppHandlerAdapter adapts Network to core.AppHandler
+type networkAppHandlerAdapter struct {
+	*Network
+}
+
+// AppRequest implements core.AppHandler
+func (n *networkAppHandlerAdapter) AppRequest(ctx context.Context, nodeID interface{}, requestID uint32, deadline time.Time, msg []byte) error {
+	if id, ok := nodeID.(ids.NodeID); ok {
+		return n.Network.AppRequest(ctx, id, requestID, deadline, msg)
+	}
+	return errors.New("invalid nodeID type")
+}
+
+// AppResponse implements core.AppHandler
+func (n *networkAppHandlerAdapter) AppResponse(ctx context.Context, nodeID interface{}, requestID uint32, msg []byte) error {
+	if id, ok := nodeID.(ids.NodeID); ok {
+		return n.Network.AppResponse(ctx, id, requestID, msg)
+	}
+	return errors.New("invalid nodeID type")
+}
+
+// AppGossip implements core.AppHandler
+func (n *networkAppHandlerAdapter) AppGossip(ctx context.Context, nodeID interface{}, msg []byte) error {
+	if id, ok := nodeID.(ids.NodeID); ok {
+		return n.Network.AppGossip(ctx, id, msg)
+	}
+	return errors.New("invalid nodeID type")
+}
 
 // ClientOption configures Client
 type ClientOption interface {
