@@ -86,7 +86,7 @@ require (
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.41.0
-	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6
+	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b
 	golang.org/x/net v0.43.0
 	golang.org/x/sync v0.16.0
 	golang.org/x/term v0.34.0
@@ -94,7 +94,7 @@ require (
 	gonum.org/v1/gonum v0.16.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c
 	google.golang.org/grpc v1.74.2
-	google.golang.org/protobuf v1.36.7
+	google.golang.org/protobuf v1.36.8
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -231,3 +231,7 @@ exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
 replace k8s.io/apimachinery => k8s.io/apimachinery v0.31.4
 
 replace github.com/luxfi/node => ../node
+
+replace github.com/luxfi/qzmq => ../qzmq
+
+replace github.com/luxfi/geth => ../geth

@@ -514,7 +514,7 @@ func (p *PushGossiper[T]) gossip(
 	return p.client.AppGossip(
 		ctx,
 		core.SendConfig{
-			Validators: allValidators,
+			Validators: len(allValidators),
 		},
 		msgBytes,
 	)

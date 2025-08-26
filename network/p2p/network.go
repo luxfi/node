@@ -15,11 +15,10 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	nodeVersion "github.com/luxfi/node/version"
+	"github.com/luxfi/node/version"
 )
 
 var (
