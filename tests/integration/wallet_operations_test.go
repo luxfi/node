@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/wallet/net/primary"
 )
 
 // TestWalletCreation tests wallet creation and basic operations
@@ -126,7 +126,7 @@ func TestCrossChainTransfer(t *testing.T) {
 	_ = require
 }
 
-// TestSubnetCreation tests subnet creation workflow
+// TestSubnetCreation tests net creation workflow
 func TestSubnetCreation(t *testing.T) {
 	require := require.New(t)
 	
@@ -146,7 +146,7 @@ func TestSubnetCreation(t *testing.T) {
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	
-	t.Log("Starting node for subnet test...")
+	t.Log("Starting node for net test...")
 	err := node.Start(ctxWithTimeout)
 	require.NoError(err, "Failed to start node")
 	
@@ -160,7 +160,7 @@ func TestSubnetCreation(t *testing.T) {
 	err = tmpnet.WaitForHealthy(ctxWithTimeout, node)
 	require.NoError(err, "Node failed to become healthy")
 	
-	// Create wallet for subnet operations
+	// Create wallet for net operations
 	keychain := secp256k1fx.NewKeychain()
 	key, err := keychain.NewKey()
 	require.NoError(err, "Failed to create key")
@@ -174,35 +174,35 @@ func TestSubnetCreation(t *testing.T) {
 	wallet, err := primary.MakeWallet(ctx, walletConfig)
 	require.NoError(err, "Failed to create wallet")
 	
-	// Get subnet owner addresses
+	// Get net owner addresses
 	addresses := keychain.List()
 	require.NotEmpty(addresses, "No addresses in keychain")
 	
-	// Test subnet ID generation
-	subnetID := ids.GenerateTestID()
-	require.NotEqual(ids.Empty, subnetID, "Subnet ID should not be empty")
+	// Test net ID generation
+	netID := ids.GenerateTestID()
+	require.NotEqual(ids.Empty, netID, "Net ID should not be empty")
 	
-	t.Logf("Generated test subnet ID: %s", subnetID)
+	t.Logf("Generated test net ID: %s", netID)
 	
 	// In a real test with funded wallet, we would:
-	// 1. Create subnet transaction
+	// 1. Create net transaction
 	// 2. Add validator to subnet
 	// 3. Create blockchain on subnet
-	// 4. Verify subnet is operational
+	// 4. Verify net is operational
 	
-	// For now, we just verify the wallet can access P-chain for subnet operations
+	// For now, we just verify the wallet can access P-chain for net operations
 	pWallet := wallet.P()
-	require.NotNil(pWallet, "P-chain wallet required for subnet operations")
+	require.NotNil(pWallet, "P-chain wallet required for net operations")
 	
-	// Verify we can get the base fee for subnet creation
+	// Verify we can get the base fee for net creation
 	baseFee, err := pWallet.Builder().GetBaseFee()
 	require.NoError(err, "Failed to get base fee")
 	
-	// Subnet creation fee is typically 1 LUX
+	// Net creation fee is typically 1 LUX
 	expectedSubnetCreationFee := 1 * units.Lux
-	t.Logf("Base fee: %d, Expected subnet creation fee: %d", baseFee, expectedSubnetCreationFee)
+	t.Logf("Base fee: %d, Expected net creation fee: %d", baseFee, expectedSubnetCreationFee)
 	
-	t.Log("Subnet creation test completed successfully")
+	t.Log("Net creation test completed successfully")
 }
 
 // TestValidatorOperations tests validator-related operations

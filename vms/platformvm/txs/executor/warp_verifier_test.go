@@ -30,7 +30,7 @@ func must[T any](t require.TestingT) func(T, error) T {
 
 func TestVerifyWarpMessages(t *testing.T) {
 	var (
-		subnetID     = ids.GenerateTestID()
+		netID     = ids.GenerateTestID()
 		chainID      = ids.GenerateTestID()
 		newValidator = func() (bls.Signer, *validators.GetValidatorOutput) {
 			sk, err := localsigner.New()
@@ -50,8 +50,8 @@ func TestVerifyWarpMessages(t *testing.T) {
 		}
 		state = &validatorstest.State{
 			T: t,
-			GetSubnetIDF: func(context.Context, ids.ID) (ids.ID, error) {
-				return subnetID, nil
+			GetNetIDF: func(context.Context, ids.ID) (ids.ID, error) {
+				return netID, nil
 			},
 			GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 				return vdrs, nil
@@ -104,8 +104,8 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.AddValidatorTx{},
 		},
 		{
-			name: "AddSubnetValidatorTx",
-			tx:   &txs.AddSubnetValidatorTx{},
+			name: "AddNetValidatorTx",
+			tx:   &txs.AddNetValidatorTx{},
 		},
 		{
 			name: "AddDelegatorTx",
@@ -116,8 +116,8 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.CreateChainTx{},
 		},
 		{
-			name: "CreateSubnetTx",
-			tx:   &txs.CreateSubnetTx{},
+			name: "CreateNetTx",
+			tx:   &txs.CreateNetTx{},
 		},
 		{
 			name: "ImportTx",
@@ -136,12 +136,12 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.RewardValidatorTx{},
 		},
 		{
-			name: "RemoveSubnetValidatorTx",
-			tx:   &txs.RemoveSubnetValidatorTx{},
+			name: "RemoveNetValidatorTx",
+			tx:   &txs.RemoveNetValidatorTx{},
 		},
 		{
-			name: "TransformSubnetTx",
-			tx:   &txs.TransformSubnetTx{},
+			name: "TransformNetTx",
+			tx:   &txs.TransformNetTx{},
 		},
 		{
 			name: "AddPermissionlessValidatorTx",
@@ -152,16 +152,16 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.AddPermissionlessDelegatorTx{},
 		},
 		{
-			name: "TransferSubnetOwnershipTx",
-			tx:   &txs.TransferSubnetOwnershipTx{},
+			name: "TransferNetOwnershipTx",
+			tx:   &txs.TransferNetOwnershipTx{},
 		},
 		{
 			name: "BaseTx",
 			tx:   &txs.BaseTx{},
 		},
 		{
-			name: "ConvertSubnetToL1Tx",
-			tx:   &txs.ConvertSubnetToL1Tx{},
+			name: "ConvertNetToL1Tx",
+			tx:   &txs.ConvertNetToL1Tx{},
 		},
 		{
 			name:        "RegisterL1ValidatorTx with unparsable message",

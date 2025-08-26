@@ -98,21 +98,21 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		})
 		require.NoError(err)
 
-		var subnetID ids.ID
-		tc.By("issuing a CreateSubnetTx", func() {
-			subnetTx, err := pWallet.IssueCreateSubnetTx(
+		var netID ids.ID
+		tc.By("issuing a CreateNetTx", func() {
+			subnetTx, err := pWallet.IssueCreateNetTx(
 				owner,
 				tc.WithDefaultContext(),
 			)
 			require.NoError(err)
 
-			subnetID = subnetTx.ID()
+			netID = subnetTx.ID()
 		})
 
-		tc.By("verifying a Permissioned Subnet was successfully created", func() {
-			require.NotEqual(constants.PrimaryNetworkID, subnetID)
+		tc.By("verifying a Permissioned Net was successfully created", func() {
+			require.NotEqual(constants.PrimaryNetworkID, netID)
 
-			subnet, err := pClient.GetSubnet(tc.DefaultContext(), subnetID)
+			subnet, err := pClient.GetSubnet(tc.DefaultContext(), netID)
 			require.NoError(err)
 			require.Equal(
 				platformvm.GetSubnetClientResponse{
@@ -129,7 +129,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		var chainID ids.ID
 		tc.By("issuing a CreateChainTx", func() {
 			chainTx, err := pWallet.IssueCreateChainTx(
-				subnetID,
+				netID,
 				genesisBytes,
 				constants.XSVMID,
 				nil,
@@ -145,13 +145,13 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			height, err := pClient.GetHeight(tc.DefaultContext())
 			require.NoError(err)
 
-			subnetValidators, err := pClient.GetValidatorsAt(tc.DefaultContext(), subnetID, platformapi.Height(height))
+			subnetValidators, err := pClient.GetValidatorsAt(tc.DefaultContext(), netID, platformapi.Height(height))
 			require.NoError(err)
 			require.Equal(expectedValidators, subnetValidators)
 		}
-		tc.By("verifying the Permissioned Subnet is configured as expected", func() {
-			tc.By("verifying the subnet reports as permissioned", func() {
-				subnet, err := pClient.GetSubnet(tc.DefaultContext(), subnetID)
+		tc.By("verifying the Permissioned Net is configured as expected", func() {
+			tc.By("verifying the net reports as permissioned", func() {
+				subnet, err := pClient.GetSubnet(tc.DefaultContext(), netID)
 				require.NoError(err)
 				require.Equal(
 					platformvm.GetSubnetClientResponse{
@@ -172,7 +172,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 
 		tc.By("creating the genesis validator")
 		subnetGenesisNode := e2e.AddEphemeralNode(tc, env.GetNetwork(), tmpnet.NewEphemeralNode(tmpnet.FlagsMap{
-			config.TrackSubnetsKey: subnetID.String(),
+			config.TrackSubnetsKey: netID.String(),
 		}))
 
 		genesisNodePoP, err := subnetGenesisNode.GetProofOfPossession()
@@ -207,12 +207,12 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		subnetGenesisNodeURI := subnetGenesisNode.GetAccessibleURI()
 
 		address := []byte{}
-		tc.By("issuing a ConvertSubnetToL1Tx", func() {
-			tx, err := pWallet.IssueConvertSubnetToL1Tx(
-				subnetID,
+		tc.By("issuing a ConvertNetToL1Tx", func() {
+			tx, err := pWallet.IssueConvertNetToL1Tx(
+				netID,
 				chainID,
 				address,
-				[]*txs.ConvertSubnetToL1Validator{
+				[]*txs.ConvertNetToL1Validator{
 					{
 						NodeID:  subnetGenesisNode.NodeID.Bytes(),
 						Weight:  genesisWeight,
@@ -240,11 +240,11 @@ var _ = e2e.DescribePChain("[L1]", func() {
 				)
 			})
 		})
-		genesisValidationID := subnetID.Append(0)
+		genesisValidationID := netID.Append(0)
 
-		tc.By("verifying the Permissioned Subnet was converted to an L1", func() {
+		tc.By("verifying the Permissioned Net was converted to an L1", func() {
 			expectedConversionID, err := warpmessage.SubnetToL1ConversionID(warpmessage.SubnetToL1ConversionData{
-				SubnetID:       subnetID,
+				NetID:       netID,
 				ManagerChainID: chainID,
 				ManagerAddress: address,
 				Validators: []warpmessage.SubnetToL1ConversionValidatorData{
@@ -257,8 +257,8 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			})
 			require.NoError(err)
 
-			tc.By("verifying the subnet reports as being converted", func() {
-				subnet, err := pClient.GetSubnet(tc.DefaultContext(), subnetID)
+			tc.By("verifying the net reports as being converted", func() {
+				subnet, err := pClient.GetSubnet(tc.DefaultContext(), netID)
 				require.NoError(err)
 				require.Equal(
 					platformvm.GetSubnetClientResponse{
@@ -294,7 +294,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 				l1Validator.Balance = 0
 				require.Equal(
 					platformvm.L1Validator{
-						SubnetID:  subnetID,
+						NetID:  netID,
 						NodeID:    subnetGenesisNode.NodeID,
 						PublicKey: genesisNodePK,
 						RemainingBalanceOwner: &secp256k1fx.OutputOwners{
@@ -310,7 +310,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 				)
 			})
 
-			tc.By("fetching the subnet conversion attestation", func() {
+			tc.By("fetching the net conversion attestation", func() {
 				unsignedSubnetToL1Conversion := must[*warp.UnsignedMessage](tc)(warp.NewUnsignedMessage(
 					networkID,
 					constants.PlatformChainID,
@@ -325,7 +325,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 				tc.By("sending the request to sign the warp message", func() {
 					registerL1ValidatorRequest, err := wrapWarpSignatureRequest(
 						unsignedSubnetToL1Conversion,
-						subnetID[:],
+						netID[:],
 					)
 					require.NoError(err)
 
@@ -350,7 +350,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 
 		tc.By("creating the validator to register")
 		subnetRegisterNode := e2e.AddEphemeralNode(tc, env.GetNetwork(), tmpnet.NewEphemeralNode(tmpnet.FlagsMap{
-			config.TrackSubnetsKey: subnetID.String(),
+			config.TrackSubnetsKey: netID.String(),
 		}))
 
 		registerNodePoP, err := subnetRegisterNode.GetProofOfPossession()
@@ -359,7 +359,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		registerNodePK, err := bls.PublicKeyFromCompressedBytes(registerNodePoP.PublicKey[:])
 		require.NoError(err)
 
-		tc.By("ensuring the subnet nodes are healthy", func() {
+		tc.By("ensuring the net nodes are healthy", func() {
 			e2e.WaitForHealthy(tc, subnetGenesisNode)
 			e2e.WaitForHealthy(tc, subnetRegisterNode)
 		})
@@ -367,7 +367,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		tc.By("creating the RegisterL1ValidatorMessage")
 		expiry := uint64(time.Now().Add(expiryDelay).Unix()) // This message will expire in 5 minutes
 		registerL1ValidatorMessage, err := warpmessage.NewRegisterL1Validator(
-			subnetID,
+			netID,
 			subnetRegisterNode.NodeID,
 			registerNodePoP.PublicKey,
 			expiry,
@@ -464,7 +464,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 				l1Validator.StartTime = 0
 				require.Equal(
 					platformvm.L1Validator{
-						SubnetID:  subnetID,
+						NetID:  netID,
 						NodeID:    subnetRegisterNode.NodeID,
 						PublicKey: registerNodePK,
 						RemainingBalanceOwner: &secp256k1fx.OutputOwners{
@@ -608,7 +608,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 				l1Validator.StartTime = 0
 				require.Equal(
 					platformvm.L1Validator{
-						SubnetID:  subnetID,
+						NetID:  netID,
 						NodeID:    subnetRegisterNode.NodeID,
 						PublicKey: registerNodePK,
 						RemainingBalanceOwner: &secp256k1fx.OutputOwners{

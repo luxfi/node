@@ -46,7 +46,7 @@ import (
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/metric"
@@ -158,8 +158,8 @@ type Manager interface {
 type ChainParameters struct {
 	// The ID of the chain being created.
 	ID ids.ID
-	// ID of the subnet that validates this chain.
-	SubnetID ids.ID
+	// ID of the net that validates this chain.
+	NetID ids.ID
 	// The genesis data of this chain's ledger.
 	GenesisData []byte
 	// The ID of the vm this chain is running.
@@ -292,13 +292,13 @@ func (v *consensusValidatorStateWrapper) GetMinimumHeight(ctx context.Context) (
 	return v.state.GetCurrentHeight(ctx)
 }
 
-func (v *consensusValidatorStateWrapper) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	// validators.State doesn't have GetSubnetID, return empty ID for now
+func (v *consensusValidatorStateWrapper) GetNetID(chainID ids.ID) (ids.ID, error) {
+	// validators.State doesn't have GetNetID, return empty ID for now
 	return ids.Empty, nil
 }
 
-func (v *consensusValidatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	valSet, err := v.state.GetValidatorSet(context.Background(), height, subnetID)
+func (v *consensusValidatorStateWrapper) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	valSet, err := v.state.GetValidatorSet(context.Background(), height, netID)
 	if err != nil {
 		return nil, err
 	}
@@ -318,13 +318,13 @@ func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, e
 	return v.state.GetCurrentHeight(ctx)
 }
 
-func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	// validators.State doesn't have GetSubnetID, return empty ID for now
+func (v *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	// validators.State doesn't have GetNetID, return empty ID for now
 	return ids.Empty, nil
 }
 
-func (v *validatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	valSet, err := v.state.GetValidatorSet(context.Background(), height, subnetID)
+func (v *validatorStateWrapper) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	valSet, err := v.state.GetValidatorSet(context.Background(), height, netID)
 	if err != nil {
 		return nil, err
 	}
@@ -510,7 +510,7 @@ func New(config *ManagerConfig) (Manager, error) {
 }
 
 // QueueChainCreation queues a chain creation request
-// Invariant: Tracked Subnet must be checked before calling this function
+// Invariant: Tracked Net must be checked before calling this function
 func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 	// Check for chain ID mapping override for C-Chain
 	m.Log.Info("QueueChainCreation called",
@@ -537,10 +537,10 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 		}
 	}
 
-	if sb, _ := m.Subnets.GetOrCreate(chainParams.SubnetID); !sb.AddChain(chainParams.ID) {
+	if sb, _ := m.Subnets.GetOrCreate(chainParams.NetID); !sb.AddChain(chainParams.ID) {
 		m.Log.Debug("skipping chain creation",
 			zap.String("reason", "chain already staged"),
-			zap.Stringer("subnetID", chainParams.SubnetID),
+			zap.Stringer("netID", chainParams.NetID),
 			zap.Stringer("chainID", chainParams.ID),
 			zap.Stringer("vmID", chainParams.VMID),
 		)
@@ -550,7 +550,7 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 	if ok := m.chainsQueue.PushRight(chainParams); !ok {
 		m.Log.Warn("skipping chain creation",
 			zap.String("reason", "couldn't enqueue chain"),
-			zap.Stringer("subnetID", chainParams.SubnetID),
+			zap.Stringer("netID", chainParams.NetID),
 			zap.Stringer("chainID", chainParams.ID),
 			zap.Stringer("vmID", chainParams.VMID),
 		)
@@ -559,16 +559,16 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 
 // createChain creates and starts the chain
 //
-// Note: it is expected for the subnet to already have the chain registered as
+// Note: it is expected for the net to already have the chain registered as
 // bootstrapping before this function is called
 func (m *manager) createChain(chainParams ChainParameters) {
 	m.Log.Info("creating chain",
-		zap.Stringer("subnetID", chainParams.SubnetID),
+		zap.Stringer("netID", chainParams.NetID),
 		zap.Stringer("chainID", chainParams.ID),
 		zap.Stringer("vmID", chainParams.VMID),
 	)
 
-	sb, _ := m.Subnets.GetOrCreate(chainParams.SubnetID)
+	sb, _ := m.Subnets.GetOrCreate(chainParams.NetID)
 
 	// Note: buildChain builds all chain's relevant objects (notably engine and handler)
 	// but does not start their operations. Starting of the handler (which could potentially
@@ -580,7 +580,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		if m.CriticalChains.Contains(chainParams.ID) {
 			// Shut down if we fail to create a required chain (i.e. X, P or C)
 			m.Log.Error("error creating required chain",
-				zap.Stringer("subnetID", chainParams.SubnetID),
+				zap.Stringer("netID", chainParams.NetID),
 				zap.Stringer("chainID", chainParams.ID),
 				zap.Stringer("vmID", chainParams.VMID),
 				zap.Error(err),
@@ -591,7 +591,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 
 		chainAlias := m.PrimaryAliasOrDefault(chainParams.ID)
 		m.Log.Error("error creating chain",
-			zap.Stringer("subnetID", chainParams.SubnetID),
+			zap.Stringer("netID", chainParams.NetID),
 			zap.Stringer("chainID", chainParams.ID),
 			zap.String("chainAlias", chainAlias),
 			zap.Stringer("vmID", chainParams.VMID),
@@ -600,19 +600,19 @@ func (m *manager) createChain(chainParams ChainParameters) {
 
 		// Register the health check for this chain regardless of if it was
 		// created or not. This attempts to notify the node operator that their
-		// node may not be properly validating the subnet they expect to be
+		// node may not be properly validating the net they expect to be
 		// validating.
-		healthCheckErr := fmt.Errorf("failed to create chain on subnet %s: %w", chainParams.SubnetID, err)
+		healthCheckErr := fmt.Errorf("failed to create chain on net %s: %w", chainParams.NetID, err)
 		err := m.Health.RegisterHealthCheck(
 			chainAlias,
 			health.CheckerFunc(func(context.Context) (interface{}, error) {
 				return nil, healthCheckErr
 			}),
-			chainParams.SubnetID.String(),
+			chainParams.NetID.String(),
 		)
 		if err != nil {
 			m.Log.Error("failed to register failing health check",
-				zap.Stringer("subnetID", chainParams.SubnetID),
+				zap.Stringer("netID", chainParams.NetID),
 				zap.Stringer("chainID", chainParams.ID),
 				zap.String("chainAlias", chainAlias),
 				zap.Stringer("vmID", chainParams.VMID),
@@ -629,7 +629,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// Associate the newly created chain with its default alias
 	if err := m.Alias(chainParams.ID, chainParams.ID.String()); err != nil {
 		m.Log.Error("failed to alias the new chain with itself",
-			zap.Stringer("subnetID", chainParams.SubnetID),
+			zap.Stringer("netID", chainParams.NetID),
 			zap.Stringer("chainID", chainParams.ID),
 			zap.Stringer("vmID", chainParams.VMID),
 			zap.Error(err),
@@ -695,7 +695,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: m.NetworkID,
-		SubnetID:  chainParams.SubnetID,
+		NetID:  chainParams.NetID,
 		ChainID:   chainParams.ID,
 		NodeID:    m.NodeID,
 		PublicKey: m.StakingBLSKey.PublicKey(),
@@ -862,7 +862,7 @@ func (m *manager) createLuxChain(
 	ids := consensus.MustIDs(ctx)
 	runtime := &interfaces.Runtime{
 		NetworkID:      ids.NetworkID,
-		SubnetID:       ids.SubnetID,
+		NetID:       ids.NetID,
 		ChainID:        ids.ChainID,
 		NodeID:         ids.NodeID,
 		PublicKey:      ids.PublicKey,
@@ -972,8 +972,8 @@ func (m *manager) createLuxChain(
 		minBlockDelay       = proposervm.DefaultMinBlockDelay
 		numHistoricalBlocks = proposervm.DefaultNumHistoricalBlocks
 	)
-	subnetID := consensus.SID(ctx)
-	if subnetCfg, ok := m.SubnetConfigs[subnetID]; ok {
+	netID := consensus.SID(ctx)
+	if subnetCfg, ok := m.SubnetConfigs[netID]; ok {
 		minBlockDelay = subnetCfg.ProposerMinBlockDelay
 		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
 	}
@@ -1047,9 +1047,9 @@ func (m *manager) createLuxChain(
 		appSender:    nil, // Will be set to proper AppSender type later
 	}
 
-	bootstrapWeight, err := vdrs.TotalWeight(subnetID)
+	bootstrapWeight, err := vdrs.TotalWeight(netID)
 	if err != nil {
-		return nil, fmt.Errorf("error while fetching weight for subnet %s: %w", subnetID, err)
+		return nil, fmt.Errorf("error while fetching weight for net %s: %w", netID, err)
 	}
 
 	consensusParams := sb.Config().ConsensusParameters
@@ -1070,7 +1070,7 @@ func (m *manager) createLuxChain(
 	if err != nil {
 		return nil, fmt.Errorf("error creating peer tracker: %w", err)
 	}
-	vdrs.RegisterSetCallbackListener(subnetID, connectedValidators)
+	vdrs.RegisterSetCallbackListener(netID, connectedValidators)
 
 	p2pReg, err := luxmetric.MakeAndRegister(
 		m.p2pGatherer,
@@ -1283,7 +1283,7 @@ func (m *manager) createLuxChain(
 	// })
 
 	// // Register health check for this chain
-	// if err := m.Health.RegisterHealthCheck(primaryAlias, h, ctx.SubnetID.String()); err != nil {
+	// if err := m.Health.RegisterHealthCheck(primaryAlias, h, ctx.NetID.String()); err != nil {
 	// 	return nil, fmt.Errorf("couldn't add health check for chain %s: %w", primaryAlias, err)
 	// }
 
@@ -1358,7 +1358,7 @@ func (m *manager) createLinearChain(
 	ids := consensus.MustIDs(ctx)
 	runtime := &interfaces.Runtime{
 		NetworkID:      ids.NetworkID,
-		SubnetID:       ids.SubnetID,
+		NetID:       ids.NetID,
 		ChainID:        ids.ChainID,
 		NodeID:         ids.NodeID,
 		PublicKey:      ids.PublicKey,
@@ -1435,7 +1435,7 @@ func (m *manager) createLinearChain(
 		// 	close(m.unblockChainCreatorCh)
 		// }
 
-		// Set up the subnet connector for the P-Chain
+		// Set up the net connector for the P-Chain
 		// subnetConnector, ok = vm.(validators.SubnetConnector)
 		// if !ok {
 		// 	return nil, fmt.Errorf("expected validators.SubnetConnector but got %T", vm)
@@ -1452,8 +1452,8 @@ func (m *manager) createLinearChain(
 		minBlockDelay       = proposervm.DefaultMinBlockDelay
 		numHistoricalBlocks = proposervm.DefaultNumHistoricalBlocks
 	)
-	subnetID := consensus.SID(ctx)
-	if subnetCfg, ok := m.SubnetConfigs[subnetID]; ok {
+	netID := consensus.SID(ctx)
+	if subnetCfg, ok := m.SubnetConfigs[netID]; ok {
 		minBlockDelay = subnetCfg.ProposerMinBlockDelay
 		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
 	}
@@ -1512,7 +1512,7 @@ func (m *manager) createLinearChain(
 	// Create ChainContext from context.Context (reuse ids from above)
 	chainCtx := &block.ChainContext{
 		NetworkID:    ids.NetworkID,
-		SubnetID:     ids.SubnetID,
+		NetID:     ids.NetID,
 		ChainID:      ids.ChainID,
 		NodeID:       ids.NodeID,
 		PublicKey:    ids.PublicKey,
@@ -1550,10 +1550,10 @@ func (m *manager) createLinearChain(
 		return nil, err
 	}
 
-	// subnetID already defined above
-	bootstrapWeight, err := beacons.TotalWeight(subnetID)
+	// netID already defined above
+	bootstrapWeight, err := beacons.TotalWeight(netID)
 	if err != nil {
-		return nil, fmt.Errorf("error while fetching weight for subnet %s: %w", subnetID, err)
+		return nil, fmt.Errorf("error while fetching weight for net %s: %w", netID, err)
 	}
 
 	consensusParams := sb.Config().ConsensusParameters
@@ -1574,7 +1574,7 @@ func (m *manager) createLinearChain(
 	if err != nil {
 		return nil, fmt.Errorf("error creating peer tracker: %w", err)
 	}
-	vdrs.RegisterSetCallbackListener(subnetID, connectedValidators)
+	vdrs.RegisterSetCallbackListener(netID, connectedValidators)
 
 	p2pReg, err := luxmetric.MakeAndRegister(
 		m.p2pGatherer,
@@ -1635,7 +1635,7 @@ func (m *manager) createLinearChain(
 
 	connectedBeacons := tracker.NewPeers()
 	startupTracker := tracker.NewStartup(connectedBeacons, float64((3*bootstrapWeight+3)/4))
-	// beacons.RegisterSetCallbackListener(ctx.SubnetID, startupTracker)
+	// beacons.RegisterSetCallbackListener(ctx.NetID, startupTracker)
 	// beacons.RegisterSetCallbackListener(startupTracker)
 
 	consensusGetHandler, err := consensusgetter.New(
@@ -1747,7 +1747,7 @@ func (m *manager) createLinearChain(
 	// })
 
 	// // Register health checks
-	// if err := m.Health.RegisterHealthCheck(primaryAlias, h, ctx.SubnetID.String()); err != nil {
+	// if err := m.Health.RegisterHealthCheck(primaryAlias, h, ctx.NetID.String()); err != nil {
 	// 	return nil, fmt.Errorf("couldn't add health check for chain %s: %w", primaryAlias, err)
 	// }
 
@@ -1776,8 +1776,8 @@ func (m *manager) IsBootstrapped(id ids.ID) bool {
 
 func (m *manager) registerBootstrappedHealthChecks() error {
 	bootstrappedCheck := health.CheckerFunc(func(context.Context) (interface{}, error) {
-		if subnetIDs := m.Subnets.Bootstrapping(); len(subnetIDs) != 0 {
-			return subnetIDs, errNotBootstrapped
+		if netIDs := m.Subnets.Bootstrapping(); len(netIDs) != 0 {
+			return netIDs, errNotBootstrapped
 		}
 		return []ids.ID{}, nil
 	})

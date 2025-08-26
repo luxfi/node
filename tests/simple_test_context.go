@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 var _ TestContext = (*SimpleTestContext)(nil)

@@ -79,12 +79,12 @@ func (s *BitSetSignature) Verify(
 		return ErrWrongNetworkID
 	}
 
-	subnetID, err := pChainState.GetSubnetID(ctx, msg.SourceChainID)
+	netID, err := pChainState.GetNetID(ctx, msg.SourceChainID)
 	if err != nil {
 		return err
 	}
 
-	vdrs, totalWeight, err := GetCanonicalValidatorSet(ctx, pChainState, pChainHeight, subnetID)
+	vdrs, totalWeight, err := GetCanonicalValidatorSet(ctx, pChainState, pChainHeight, netID)
 	if err != nil {
 		return err
 	}

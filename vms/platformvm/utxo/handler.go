@@ -69,11 +69,11 @@ type Spender interface {
 		error,
 	)
 
-	// Authorize an operation on behalf of the named subnet with the provided
+	// Authorize an operation on behalf of the named net with the provided
 	// keys.
 	Authorize(
 		state state.Chain,
-		subnetID ids.ID,
+		netID ids.ID,
 		keys []*secp256k1.PrivateKey,
 	) (
 		verify.Verifiable, // Input that names owners
@@ -400,23 +400,23 @@ func (h *handler) Spend(
 
 func (h *handler) Authorize(
 	state state.Chain,
-	subnetID ids.ID,
+	netID ids.ID,
 	keys []*secp256k1.PrivateKey,
 ) (
 	verify.Verifiable, // Input that names owners
 	[]*secp256k1.PrivateKey, // Keys that prove ownership
 	error,
 ) {
-	subnetOwner, err := state.GetSubnetOwner(subnetID)
+	subnetOwner, err := state.GetSubnetOwner(netID)
 	if err != nil {
 		return nil, nil, fmt.Errorf(
-			"failed to fetch subnet owner for %s: %w",
-			subnetID,
+			"failed to fetch net owner for %s: %w",
+			netID,
 			err,
 		)
 	}
 
-	// Make sure the owners of the subnet match the provided keys
+	// Make sure the owners of the net match the provided keys
 	owner, ok := subnetOwner.(*secp256k1fx.OutputOwners)
 	if !ok {
 		return nil, nil, fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", subnetOwner)

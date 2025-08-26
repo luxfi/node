@@ -51,7 +51,7 @@ func (tx *AddDelegatorTx) InitCtx(ctx context.Context) {
 	tx.DelegationRewardsOwner.InitCtx(ctx)
 }
 
-func (*AddDelegatorTx) SubnetID() ids.ID {
+func (*AddDelegatorTx) NetID() ids.ID {
 	return constants.PrimaryNetworkID
 }
 

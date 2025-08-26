@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	_ UnsignedTx = (*TransformSubnetTx)(nil)
+	_ UnsignedTx = (*TransformNetTx)(nil)
 
 	errCantTransformPrimaryNetwork       = errors.New("cannot transform primary network")
 	errEmptyAssetID                      = errors.New("empty asset ID is not valid")
@@ -37,14 +37,14 @@ var (
 	errUptimeRequirementTooLarge         = fmt.Errorf("uptime requirement must be less than or equal to %d", reward.PercentDenominator)
 )
 
-// TransformSubnetTx is an unsigned transformSubnetTx
-type TransformSubnetTx struct {
+// TransformNetTx is an unsigned transformSubnetTx
+type TransformNetTx struct {
 	// Metadata, inputs and outputs
 	BaseTx `serialize:"true"`
-	// ID of the Subnet to transform
+	// ID of the Net to transform
 	// Restrictions:
 	// - Must not be the Primary Network ID
-	Subnet ids.ID `serialize:"true" json:"subnetID"`
+	Net ids.ID `serialize:"true" json:"netID"`
 	// Asset to use when staking on the Subnet
 	// Restrictions:
 	// - Must not be the Empty ID
@@ -113,13 +113,13 @@ type TransformSubnetTx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
-func (tx *TransformSubnetTx) SyntacticVerify(ctx context.Context) error {
+func (tx *TransformNetTx) SyntacticVerify(ctx context.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
 	case tx.SyntacticallyVerified: // already passed syntactic verification
 		return nil
-	case tx.Subnet == constants.PrimaryNetworkID:
+	case tx.Net == constants.PrimaryNetworkID:
 		return errCantTransformPrimaryNetwork
 	case tx.AssetID == ids.Empty:
 		return errEmptyAssetID
@@ -166,12 +166,12 @@ func (tx *TransformSubnetTx) SyntacticVerify(ctx context.Context) error {
 	return nil
 }
 
-func (tx *TransformSubnetTx) Visit(visitor Visitor) error {
-	return visitor.TransformSubnetTx(tx)
+func (tx *TransformNetTx) Visit(visitor Visitor) error {
+	return visitor.TransformNetTx(tx)
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *TransformSubnetTx) InitializeWithContext(ctx context.Context) error {
+func (tx *TransformNetTx) InitializeWithContext(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

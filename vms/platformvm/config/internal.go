@@ -25,7 +25,7 @@ type Internal struct {
 	// The node's chain manager
 	Chains chains.Manager
 
-	// Node's validator set maps subnetID -> validators of the subnet
+	// Node's validator set maps netID -> validators of the subnet
 	//
 	// Invariant: The primary network's validator set should have been added to
 	//            the manager before calling VM.Initialize.
@@ -89,17 +89,17 @@ type Internal struct {
 }
 
 // Create the blockchain described in [tx], but only if this node is a member of
-// the subnet that validates the chain
+// the net that validates the chain
 func (c *Internal) CreateChain(chainID ids.ID, tx *txs.CreateChainTx) {
 	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all chains
-		constants.PrimaryNetworkID != tx.SubnetID && // All nodes must validate the primary network
-		!c.TrackedSubnets.Contains(tx.SubnetID) { // This node doesn't validate this blockchain
+		constants.PrimaryNetworkID != tx.NetID && // All nodes must validate the primary network
+		!c.TrackedSubnets.Contains(tx.NetID) { // This node doesn't validate this blockchain
 		return
 	}
 
 	chainParams := chains.ChainParameters{
 		ID:          chainID,
-		SubnetID:    tx.SubnetID,
+		NetID:    tx.NetID,
 		GenesisData: tx.GenesisData,
 		VMID:        tx.VMID,
 		FxIDs:       tx.FxIDs,

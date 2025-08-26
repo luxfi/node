@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/builder"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 var (
@@ -39,13 +39,13 @@ var (
 		NetworkID:                     constants.UnitTestID,
 		LUXAssetID:                    luxAssetID,
 		BaseTxFee:                     units.MicroLux,
-		CreateSubnetTxFee:             19 * units.MicroLux,
-		TransformSubnetTxFee:          789 * units.MicroLux,
+		CreateNetTxFee:             19 * units.MicroLux,
+		TransformNetTxFee:          789 * units.MicroLux,
 		CreateBlockchainTxFee:         1234 * units.MicroLux,
 		AddPrimaryNetworkValidatorFee: 19 * units.MilliLux,
 		AddPrimaryNetworkDelegatorFee: 765 * units.MilliLux,
-		AddSubnetValidatorFee:         1010 * units.MilliLux,
-		AddSubnetDelegatorFee:         9 * units.Lux,
+		AddNetValidatorFee:         1010 * units.MilliLux,
+		AddNetDelegatorFee:         9 * units.Lux,
 	}
 )
 
@@ -96,7 +96,7 @@ func TestBaseTx(t *testing.T) {
 	require.Equal(outputsToMove[0], outs[1])
 }
 
-func TestAddSubnetValidatorTx(t *testing.T) {
+func TestAddNetValidatorTx(t *testing.T) {
 	var (
 		require = require.New(t)
 
@@ -107,7 +107,7 @@ func TestAddSubnetValidatorTx(t *testing.T) {
 			constants.PlatformChainID: utxos,
 		})
 
-		subnetID       = ids.GenerateTestID()
+		netID       = ids.GenerateTestID()
 		subnetAuthKey  = testKeys[0]
 		subnetAuthAddr = subnetAuthKey.Address()
 		subnetOwner    = &secp256k1fx.OutputOwners{
@@ -115,8 +115,8 @@ func TestAddSubnetValidatorTx(t *testing.T) {
 			Addrs:     []ids.ShortID{subnetAuthAddr},
 		}
 		subnets = map[ids.ID]*txs.Tx{
-			subnetID: {
-				Unsigned: &txs.CreateSubnetTx{
+			netID: {
+				Unsigned: &txs.CreateNetTx{
 					Owner: subnetOwner,
 				},
 			},
@@ -129,17 +129,17 @@ func TestAddSubnetValidatorTx(t *testing.T) {
 		builder  = builder.New(set.Of(utxoAddr, subnetAuthAddr), testContext, backend)
 
 		// data to build the transaction
-		subnetValidator = &txs.SubnetValidator{
+		subnetValidator = &txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 				End:    uint64(time.Now().Add(time.Hour).Unix()),
 			},
-			Subnet: subnetID,
+			Subnet: netID,
 		}
 	)
 
 	// build the transaction
-	utx, err := builder.NewAddSubnetValidatorTx(subnetValidator)
+	utx, err := builder.NewAddNetValidatorTx(subnetValidator)
 	require.NoError(err)
 
 	// check UTXOs selection and fee financing
@@ -148,12 +148,12 @@ func TestAddSubnetValidatorTx(t *testing.T) {
 	require.Len(ins, 2)
 	require.Len(outs, 1)
 
-	expectedConsumed := testContext.AddSubnetValidatorFee
+	expectedConsumed := testContext.AddNetValidatorFee
 	consumed := ins[0].In.Amount() + ins[1].In.Amount() - outs[0].Out.Amount()
 	require.Equal(expectedConsumed, consumed)
 }
 
-func TestRemoveSubnetValidatorTx(t *testing.T) {
+func TestRemoveNetValidatorTx(t *testing.T) {
 	var (
 		require = require.New(t)
 
@@ -164,7 +164,7 @@ func TestRemoveSubnetValidatorTx(t *testing.T) {
 			constants.PlatformChainID: utxos,
 		})
 
-		subnetID       = ids.GenerateTestID()
+		netID       = ids.GenerateTestID()
 		subnetAuthKey  = testKeys[0]
 		subnetAuthAddr = subnetAuthKey.Address()
 		subnetOwner    = &secp256k1fx.OutputOwners{
@@ -172,8 +172,8 @@ func TestRemoveSubnetValidatorTx(t *testing.T) {
 			Addrs:     []ids.ShortID{subnetAuthAddr},
 		}
 		subnets = map[ids.ID]*txs.Tx{
-			subnetID: {
-				Unsigned: &txs.CreateSubnetTx{
+			netID: {
+				Unsigned: &txs.CreateNetTx{
 					Owner: subnetOwner,
 				},
 			},
@@ -187,9 +187,9 @@ func TestRemoveSubnetValidatorTx(t *testing.T) {
 	)
 
 	// build the transaction
-	utx, err := builder.NewRemoveSubnetValidatorTx(
+	utx, err := builder.NewRemoveNetValidatorTx(
 		ids.GenerateTestNodeID(),
-		subnetID,
+		netID,
 	)
 	require.NoError(err)
 
@@ -215,7 +215,7 @@ func TestCreateChainTx(t *testing.T) {
 			constants.PlatformChainID: utxos,
 		})
 
-		subnetID       = ids.GenerateTestID()
+		netID       = ids.GenerateTestID()
 		subnetAuthKey  = testKeys[0]
 		subnetAuthAddr = subnetAuthKey.Address()
 		subnetOwner    = &secp256k1fx.OutputOwners{
@@ -223,8 +223,8 @@ func TestCreateChainTx(t *testing.T) {
 			Addrs:     []ids.ShortID{subnetAuthAddr},
 		}
 		subnets = map[ids.ID]*txs.Tx{
-			subnetID: {
-				Unsigned: &txs.CreateSubnetTx{
+			netID: {
+				Unsigned: &txs.CreateNetTx{
 					Owner: subnetOwner,
 				},
 			},
@@ -244,7 +244,7 @@ func TestCreateChainTx(t *testing.T) {
 
 	// build the transaction
 	utx, err := builder.NewCreateChainTx(
-		subnetID,
+		netID,
 		genesisBytes,
 		vmID,
 		fxIDs,
@@ -263,7 +263,7 @@ func TestCreateChainTx(t *testing.T) {
 	require.Equal(expectedConsumed, consumed)
 }
 
-func TestCreateSubnetTx(t *testing.T) {
+func TestCreateNetTx(t *testing.T) {
 	var (
 		require = require.New(t)
 
@@ -274,7 +274,7 @@ func TestCreateSubnetTx(t *testing.T) {
 			constants.PlatformChainID: utxos,
 		})
 
-		subnetID       = ids.GenerateTestID()
+		netID       = ids.GenerateTestID()
 		subnetAuthKey  = testKeys[0]
 		subnetAuthAddr = subnetAuthKey.Address()
 		subnetOwner    = &secp256k1fx.OutputOwners{
@@ -282,8 +282,8 @@ func TestCreateSubnetTx(t *testing.T) {
 			Addrs:     []ids.ShortID{subnetAuthAddr},
 		}
 		subnets = map[ids.ID]*txs.Tx{
-			subnetID: {
-				Unsigned: &txs.CreateSubnetTx{
+			netID: {
+				Unsigned: &txs.CreateNetTx{
 					Owner: subnetOwner,
 				},
 			},
@@ -297,7 +297,7 @@ func TestCreateSubnetTx(t *testing.T) {
 	)
 
 	// build the transaction
-	utx, err := builder.NewCreateSubnetTx(subnetOwner)
+	utx, err := builder.NewCreateNetTx(subnetOwner)
 	require.NoError(err)
 
 	// check UTXOs selection and fee financing
@@ -306,12 +306,12 @@ func TestCreateSubnetTx(t *testing.T) {
 	require.Len(ins, 1)
 	require.Len(outs, 1)
 
-	expectedConsumed := testContext.CreateSubnetTxFee
+	expectedConsumed := testContext.CreateNetTxFee
 	consumed := ins[0].In.Amount() - outs[0].Out.Amount()
 	require.Equal(expectedConsumed, consumed)
 }
 
-func TestTransferSubnetOwnershipTx(t *testing.T) {
+func TestTransferNetOwnershipTx(t *testing.T) {
 	var (
 		require = require.New(t)
 
@@ -322,7 +322,7 @@ func TestTransferSubnetOwnershipTx(t *testing.T) {
 			constants.PlatformChainID: utxos,
 		})
 
-		subnetID       = ids.GenerateTestID()
+		netID       = ids.GenerateTestID()
 		subnetAuthKey  = testKeys[0]
 		subnetAuthAddr = subnetAuthKey.Address()
 		subnetOwner    = &secp256k1fx.OutputOwners{
@@ -330,8 +330,8 @@ func TestTransferSubnetOwnershipTx(t *testing.T) {
 			Addrs:     []ids.ShortID{subnetAuthAddr},
 		}
 		subnets = map[ids.ID]*txs.Tx{
-			subnetID: {
-				Unsigned: &txs.CreateSubnetTx{
+			netID: {
+				Unsigned: &txs.CreateNetTx{
 					Owner: subnetOwner,
 				},
 			},
@@ -345,8 +345,8 @@ func TestTransferSubnetOwnershipTx(t *testing.T) {
 	)
 
 	// build the transaction
-	utx, err := builder.NewTransferSubnetOwnershipTx(
-		subnetID,
+	utx, err := builder.NewTransferNetOwnershipTx(
+		netID,
 		subnetOwner,
 	)
 	require.NoError(err)
@@ -429,7 +429,7 @@ func TestExportTx(t *testing.T) {
 		builder  = builder.New(set.Of(utxoAddr), testContext, backend)
 
 		// data to build the transaction
-		subnetID        = ids.GenerateTestID()
+		netID        = ids.GenerateTestID()
 		exportedOutputs = []*lux.TransferableOutput{{
 			Asset: lux.Asset{ID: luxAssetID},
 			Out: &secp256k1fx.TransferOutput{
@@ -444,7 +444,7 @@ func TestExportTx(t *testing.T) {
 
 	// build the transaction
 	utx, err := builder.NewExportTx(
-		subnetID,
+		netID,
 		exportedOutputs,
 	)
 	require.NoError(err)
@@ -461,7 +461,7 @@ func TestExportTx(t *testing.T) {
 	require.Equal(utx.ExportedOutputs, exportedOutputs)
 }
 
-func TestTransformSubnetTx(t *testing.T) {
+func TestTransformNetTx(t *testing.T) {
 	var (
 		require = require.New(t)
 
@@ -472,7 +472,7 @@ func TestTransformSubnetTx(t *testing.T) {
 			constants.PlatformChainID: utxos,
 		})
 
-		subnetID       = ids.GenerateTestID()
+		netID       = ids.GenerateTestID()
 		subnetAuthKey  = testKeys[0]
 		subnetAuthAddr = subnetAuthKey.Address()
 		subnetOwner    = &secp256k1fx.OutputOwners{
@@ -480,8 +480,8 @@ func TestTransformSubnetTx(t *testing.T) {
 			Addrs:     []ids.ShortID{subnetAuthAddr},
 		}
 		subnets = map[ids.ID]*txs.Tx{
-			subnetID: {
-				Unsigned: &txs.CreateSubnetTx{
+			netID: {
+				Unsigned: &txs.CreateNetTx{
 					Owner: subnetOwner,
 				},
 			},
@@ -499,8 +499,8 @@ func TestTransformSubnetTx(t *testing.T) {
 	)
 
 	// build the transaction
-	utx, err := builder.NewTransformSubnetTx(
-		subnetID,
+	utx, err := builder.NewTransformNetTx(
+		netID,
 		subnetAssetID,
 		initialSupply,                 // initial supply
 		maxSupply,                     // max supply
@@ -526,7 +526,7 @@ func TestTransformSubnetTx(t *testing.T) {
 	expectedConsumedSubnetAsset := maxSupply - initialSupply
 	consumedSubnetAsset := ins[0].In.Amount() - outs[1].Out.Amount()
 	require.Equal(expectedConsumedSubnetAsset, consumedSubnetAsset)
-	expectedConsumed := testContext.TransformSubnetTxFee
+	expectedConsumed := testContext.TransformNetTxFee
 	consumed := ins[1].In.Amount() - outs[0].Out.Amount()
 	require.Equal(expectedConsumed, consumed)
 }
@@ -569,7 +569,7 @@ func TestAddPermissionlessValidatorTx(t *testing.T) {
 
 	// build the transaction
 	utx, err := builder.NewAddPermissionlessValidatorTx(
-		&txs.SubnetValidator{
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 				End:    uint64(time.Now().Add(time.Hour).Unix()),
@@ -630,7 +630,7 @@ func TestAddPermissionlessDelegatorTx(t *testing.T) {
 
 	// build the transaction
 	utx, err := builder.NewAddPermissionlessDelegatorTx(
-		&txs.SubnetValidator{
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 				End:    uint64(time.Now().Add(time.Hour).Unix()),

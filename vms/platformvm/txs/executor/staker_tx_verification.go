@@ -32,7 +32,7 @@ var (
 	ErrStakeOverflow                   = errors.New("validator stake exceeds limit")
 	ErrPeriodMismatch                  = errors.New("proposed staking period is not inside dependant staking period")
 	ErrOverDelegated                   = errors.New("validator would be over delegated")
-	ErrIsNotTransformSubnetTx          = errors.New("is not a transform subnet tx")
+	ErrIsNotTransformNetTx          = errors.New("is not a transform net tx")
 	ErrTimestampNotBeforeStartTime     = errors.New("chain timestamp not before start time")
 	ErrAlreadyValidator                = errors.New("already a validator")
 	ErrDuplicateValidator              = errors.New("duplicate validator")
@@ -43,10 +43,10 @@ var (
 	ErrAddDelegatorTxPostDurango       = errors.New("AddDelegatorTx is not permitted post-Durango")
 )
 
-// verifySubnetValidatorPrimaryNetworkRequirements verifies the primary
+// verifyNetValidatorPrimaryNetworkRequirements verifies the primary
 // network requirements for [subnetValidator]. An error is returned if they
 // are not fulfilled.
-func verifySubnetValidatorPrimaryNetworkRequirements(
+func verifyNetValidatorPrimaryNetworkRequirements(
 	isDurangoActive bool,
 	chainState state.Chain,
 	subnetValidator txs.Validator,
@@ -183,13 +183,13 @@ func verifyAddValidatorTx(
 	return outs, nil
 }
 
-// verifyAddSubnetValidatorTx carries out the validation for an
-// AddSubnetValidatorTx.
-func verifyAddSubnetValidatorTx(
+// verifyAddNetValidatorTx carries out the validation for an
+// AddNetValidatorTx.
+func verifyAddNetValidatorTx(
 	backend *Backend,
 	chainState state.Chain,
 	sTx *txs.Tx,
-	tx *txs.AddSubnetValidatorTx,
+	tx *txs.AddNetValidatorTx,
 ) error {
 	// Verify the tx is well-formed
 	if err := sTx.SyntacticVerify(backend.Ctx); err != nil {
@@ -228,28 +228,28 @@ func verifyAddSubnetValidatorTx(
 		return err
 	}
 
-	_, err := GetValidator(chainState, tx.SubnetValidator.Subnet, tx.Validator.NodeID)
+	_, err := GetValidator(chainState, tx.NetValidator.Subnet, tx.Validator.NodeID)
 	if err == nil {
 		return fmt.Errorf(
-			"attempted to issue %w for %s on subnet %s",
+			"attempted to issue %w for %s on net %s",
 			ErrDuplicateValidator,
 			tx.Validator.NodeID,
-			tx.SubnetValidator.Subnet,
+			tx.NetValidator.Subnet,
 		)
 	}
 	if err != database.ErrNotFound {
 		return fmt.Errorf(
-			"failed to find whether %s is a subnet validator: %w",
+			"failed to find whether %s is a net validator: %w",
 			tx.Validator.NodeID,
 			err,
 		)
 	}
 
-	if err := verifySubnetValidatorPrimaryNetworkRequirements(isDurangoActive, chainState, tx.Validator); err != nil {
+	if err := verifyNetValidatorPrimaryNetworkRequirements(isDurangoActive, chainState, tx.Validator); err != nil {
 		return err
 	}
 
-	baseTxCreds, err := verifyPoASubnetAuthorization(backend, chainState, sTx, tx.SubnetValidator.Subnet, tx.SubnetAuth)
+	baseTxCreds, err := verifyPoASubnetAuthorization(backend, chainState, sTx, tx.NetValidator.Subnet, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
@@ -282,11 +282,11 @@ func verifyAddSubnetValidatorTx(
 // * [sTx]'s creds authorize it to spend the stated inputs.
 // * [sTx]'s creds authorize it to remove a validator from [tx.Subnet].
 // * The flow checker passes.
-func verifyRemoveSubnetValidatorTx(
+func verifyRemoveNetValidatorTx(
 	backend *Backend,
 	chainState state.Chain,
 	sTx *txs.Tx,
-	tx *txs.RemoveSubnetValidatorTx,
+	tx *txs.RemoveNetValidatorTx,
 ) (*state.Staker, bool, error) {
 	// Verify the tx is well-formed
 	if err := sTx.SyntacticVerify(backend.Ctx); err != nil {
@@ -560,8 +560,8 @@ func verifyAddPermissionlessValidatorTx(
 		)
 	}
 
-	if tx.Subnet != constants.PrimaryNetworkID {
-		if err := verifySubnetValidatorPrimaryNetworkRequirements(isDurangoActive, chainState, tx.Validator); err != nil {
+	if tx.Net != constants.PrimaryNetworkID {
+		if err := verifyNetValidatorPrimaryNetworkRequirements(isDurangoActive, chainState, tx.Validator); err != nil {
 			return err
 		}
 	}
@@ -703,11 +703,11 @@ func verifyAddPermissionlessDelegatorTx(
 	copy(outs, tx.Outs)
 	copy(outs[len(tx.Outs):], tx.StakeOuts)
 
-	if tx.Subnet != constants.PrimaryNetworkID {
+	if tx.Net != constants.PrimaryNetworkID {
 		// Invariant: Delegators must only be able to reference validator
 		//            transactions that implement [txs.ValidatorTx]. All
 		//            validator transactions implement this interface except the
-		//            AddSubnetValidatorTx. AddSubnetValidatorTx is the only
+		//            AddNetValidatorTx. AddNetValidatorTx is the only
 		//            permissioned validator, so we verify this delegator is
 		//            pointing to a permissionless validator.
 		if validator.Priority.IsPermissionedValidator() {
@@ -740,11 +740,11 @@ func verifyAddPermissionlessDelegatorTx(
 // * [sTx]'s creds authorize it to spend the stated inputs.
 // * [sTx]'s creds authorize it to transfer ownership of [tx.Subnet].
 // * The flow checker passes.
-func verifyTransferSubnetOwnershipTx(
+func verifyTransferNetOwnershipTx(
 	backend *Backend,
 	chainState state.Chain,
 	sTx *txs.Tx,
-	tx *txs.TransferSubnetOwnershipTx,
+	tx *txs.TransferNetOwnershipTx,
 ) error {
 	if !backend.Config.UpgradeConfig.IsDurangoActivated(chainState.GetTimestamp()) {
 		return ErrDurangoUpgradeNotActive

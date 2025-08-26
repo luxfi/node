@@ -13,30 +13,30 @@ import (
 )
 
 var (
-	_ UnsignedTx = (*RemoveSubnetValidatorTx)(nil)
+	_ UnsignedTx = (*RemoveNetValidatorTx)(nil)
 
-	ErrRemovePrimaryNetworkValidator = errors.New("can't remove primary network validator with RemoveSubnetValidatorTx")
+	ErrRemovePrimaryNetworkValidator = errors.New("can't remove primary network validator with RemoveNetValidatorTx")
 )
 
 // Removes a validator from a subnet.
-type RemoveSubnetValidatorTx struct {
+type RemoveNetValidatorTx struct {
 	BaseTx `serialize:"true"`
 	// The node to remove from the subnet.
 	NodeID ids.NodeID `serialize:"true" json:"nodeID"`
-	// The subnet to remove the node from.
-	Subnet ids.ID `serialize:"true" json:"subnetID"`
+	// The net to remove the node from.
+	Net ids.ID `serialize:"true" json:"netID"`
 	// Proves that the issuer has the right to remove the node from the subnet.
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
-func (tx *RemoveSubnetValidatorTx) SyntacticVerify(ctx context.Context) error {
+func (tx *RemoveNetValidatorTx) SyntacticVerify(ctx context.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
 	case tx.SyntacticallyVerified:
 		// already passed syntactic verification
 		return nil
-	case tx.Subnet == constants.PrimaryNetworkID:
+	case tx.Net == constants.PrimaryNetworkID:
 		return ErrRemovePrimaryNetworkValidator
 	}
 
@@ -51,12 +51,12 @@ func (tx *RemoveSubnetValidatorTx) SyntacticVerify(ctx context.Context) error {
 	return nil
 }
 
-func (tx *RemoveSubnetValidatorTx) Visit(visitor Visitor) error {
-	return visitor.RemoveSubnetValidatorTx(tx)
+func (tx *RemoveNetValidatorTx) Visit(visitor Visitor) error {
+	return visitor.RemoveNetValidatorTx(tx)
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *RemoveSubnetValidatorTx) InitializeWithContext(ctx context.Context) error {
+func (tx *RemoveNetValidatorTx) InitializeWithContext(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

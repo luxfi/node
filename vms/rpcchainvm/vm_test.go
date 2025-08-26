@@ -51,7 +51,7 @@ var TestServerPluginMap = map[string]func(*testing.T, bool) block.ChainVM{
 	batchedParseBlockCachingTestKey:                batchedParseBlockCachingTestPlugin,
 }
 
-// helperProcess helps with creating the subnet binary for testing.
+// helperProcess helps with creating the net binary for testing.
 func helperProcess(s ...string) *exec.Cmd {
 	cs := []string{"-test.run=TestHelperProcess", "--"}
 	cs = append(cs, s...)

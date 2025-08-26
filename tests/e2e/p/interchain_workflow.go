@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 )
@@ -113,7 +113,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 			)
 
 			_, err = pWallet.IssueAddPermissionlessValidatorTx(
-				&txs.SubnetValidator{
+				&txs.NetValidator{
 					Validator: txs.Validator{
 						NodeID: nodeID,
 						End:    uint64(endTime.Unix()),
@@ -143,7 +143,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 			require.NoError(err)
 
 			_, err = pWallet.IssueAddPermissionlessDelegatorTx(
-				&txs.SubnetValidator{
+				&txs.NetValidator{
 					Validator: txs.Validator{
 						NodeID: nodeID,
 						End:    uint64(endTime.Unix()),

@@ -24,7 +24,7 @@ func newContext(
 ) *builder.Context {
 	var (
 		feeCalc         = fee.NewStaticCalculator(cfg.StaticFeeConfig, cfg.UpgradeConfig)
-		createSubnetFee = feeCalc.CalculateFee(&txs.CreateSubnetTx{}, timestamp)
+		createSubnetFee = feeCalc.CalculateFee(&txs.CreateNetTx{}, timestamp)
 		createChainFee  = feeCalc.CalculateFee(&txs.CreateChainTx{}, timestamp)
 	)
 
@@ -40,12 +40,12 @@ func newContext(
 		BlockchainID:                  chainID,
 		LUXAssetID:                    luxAssetID,
 		BaseTxFee:                     cfg.StaticFeeConfig.TxFee,
-		CreateSubnetTxFee:             createSubnetFee,
-		TransformSubnetTxFee:          cfg.StaticFeeConfig.TransformSubnetTxFee,
+		CreateNetTxFee:             createSubnetFee,
+		TransformNetTxFee:          cfg.StaticFeeConfig.TransformNetTxFee,
 		CreateBlockchainTxFee:         createChainFee,
 		AddPrimaryNetworkValidatorFee: cfg.StaticFeeConfig.AddPrimaryNetworkValidatorFee,
 		AddPrimaryNetworkDelegatorFee: cfg.StaticFeeConfig.AddPrimaryNetworkDelegatorFee,
-		AddSubnetValidatorFee:         cfg.StaticFeeConfig.AddSubnetValidatorFee,
-		AddSubnetDelegatorFee:         cfg.StaticFeeConfig.AddSubnetDelegatorFee,
+		AddNetValidatorFee:         cfg.StaticFeeConfig.AddNetValidatorFee,
+		AddNetDelegatorFee:         cfg.StaticFeeConfig.AddNetDelegatorFee,
 	}
 }

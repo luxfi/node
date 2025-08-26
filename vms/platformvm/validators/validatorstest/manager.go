@@ -24,11 +24,11 @@ func (manager) GetCurrentHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
-func (manager) GetSubnetID(context.Context, ids.ID) (ids.ID, error) {
+func (manager) GetNetID(context.Context, ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
-func (manager) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+func (manager) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return nil, nil
 }
 

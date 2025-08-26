@@ -62,7 +62,7 @@ func newMetrics(
 				Name: "peers_subnet",
 				Help: "Number of peers that are validating a particular subnet",
 			},
-			[]string{"subnetID"},
+			[]string{"netID"},
 		),
 		timeSinceLastMsgReceived: prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "time_since_last_msg_received",
@@ -115,16 +115,16 @@ func newMetrics(
 		nodeSubnetUptimeWeightedAverage: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "node_subnet_uptime_weighted_average",
-				Help: "This node's subnet uptime averages weighted by observing subnet peer stakes",
+				Help: "This node's net uptime averages weighted by observing net peer stakes",
 			},
-			[]string{"subnetID"},
+			[]string{"netID"},
 		),
 		nodeSubnetUptimeRewardingStake: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "node_subnet_uptime_rewarding_stake",
 				Help: "The percentage of subnet's total stake which thinks this node is eligible for subnet's rewards",
 			},
-			[]string{"subnetID"},
+			[]string{"netID"},
 		),
 		peerConnectedLifetimeAverage: prometheus.NewGauge(
 			prometheus.GaugeOpts{
@@ -156,13 +156,13 @@ func newMetrics(
 		registerer.Register(m.peerConnectedLifetimeAverage),
 	)
 
-	// init subnet tracker metrics with tracked subnets
-	for subnetID := range trackedSubnets {
+	// init net tracker metrics with tracked subnets
+	for netID := range trackedSubnets {
 		// initialize to 0
-		subnetIDStr := subnetID.String()
-		m.numSubnetPeers.WithLabelValues(subnetIDStr).Set(0)
-		m.nodeSubnetUptimeWeightedAverage.WithLabelValues(subnetIDStr).Set(0)
-		m.nodeSubnetUptimeRewardingStake.WithLabelValues(subnetIDStr).Set(0)
+		netIDStr := netID.String()
+		m.numSubnetPeers.WithLabelValues(netIDStr).Set(0)
+		m.nodeSubnetUptimeWeightedAverage.WithLabelValues(netIDStr).Set(0)
+		m.nodeSubnetUptimeRewardingStake.WithLabelValues(netIDStr).Set(0)
 	}
 
 	return m, err
@@ -173,9 +173,9 @@ func (m *metrics) markConnected(peer peer.Peer) {
 	m.connected.Inc()
 
 	trackedSubnets := peer.TrackedSubnets()
-	for subnetID := range m.trackedSubnets {
-		if trackedSubnets.Contains(subnetID) {
-			m.numSubnetPeers.WithLabelValues(subnetID.String()).Inc()
+	for netID := range m.trackedSubnets {
+		if trackedSubnets.Contains(netID) {
+			m.numSubnetPeers.WithLabelValues(netID.String()).Inc()
 		}
 	}
 
@@ -192,9 +192,9 @@ func (m *metrics) markDisconnected(peer peer.Peer) {
 	m.disconnected.Inc()
 
 	trackedSubnets := peer.TrackedSubnets()
-	for subnetID := range m.trackedSubnets {
-		if trackedSubnets.Contains(subnetID) {
-			m.numSubnetPeers.WithLabelValues(subnetID.String()).Dec()
+	for netID := range m.trackedSubnets {
+		if trackedSubnets.Contains(netID) {
+			m.numSubnetPeers.WithLabelValues(netID.String()).Dec()
 		}
 	}
 

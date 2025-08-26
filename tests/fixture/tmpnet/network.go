@@ -336,7 +336,7 @@ func (n *Network) StartNodes(ctx context.Context, w io.Writer, nodesToStart ...*
 		nodesToWaitFor = n.Nodes
 	} else {
 		// Simplify output by only logging network start when starting all nodes or when starting
-		// the first node by itself to bootstrap subnet creation.
+		// the first node by itself to bootstrap net creation.
 		if _, err := fmt.Fprintf(w, "Starting network %s (UUID: %s)\n", n.Dir, n.UUID); err != nil {
 			return err
 		}
@@ -372,7 +372,7 @@ func (n *Network) StartNodes(ctx context.Context, w io.Writer, nodesToStart ...*
 // Start the network for the first time
 func (n *Network) Bootstrap(ctx context.Context, w io.Writer) error {
 	if len(n.Subnets) == 0 {
-		// Without the need to coordinate subnet configuration,
+		// Without the need to coordinate net configuration,
 		// starting all nodes at once is the simplest option.
 		return n.StartNodes(ctx, w, n.Nodes...)
 	}
@@ -380,16 +380,16 @@ func (n *Network) Bootstrap(ctx context.Context, w io.Writer) error {
 	// The node that will be used to create subnets and bootstrap the network
 	bootstrapNode := n.Nodes[0]
 
-	// Whether sybil protection will need to be re-enabled after subnet creation
+	// Whether sybil protection will need to be re-enabled after net creation
 	reEnableSybilProtection := false
 
 	if len(n.Nodes) > 1 {
-		// Reduce the cost of subnet creation for a network of multiple nodes by
+		// Reduce the cost of net creation for a network of multiple nodes by
 		// creating subnets with a single node with sybil protection
-		// disabled. This allows the creation of initial subnet state without
+		// disabled. This allows the creation of initial net state without
 		// requiring coordination between multiple nodes.
 
-		if _, err := fmt.Fprintln(w, "Starting a single-node network with sybil protection disabled for quicker subnet creation"); err != nil {
+		if _, err := fmt.Fprintln(w, "Starting a single-node network with sybil protection disabled for quicker net creation"); err != nil {
 			return err
 		}
 
@@ -412,8 +412,8 @@ func (n *Network) Bootstrap(ctx context.Context, w io.Writer) error {
 		return err
 	}
 
-	// Don't restart the node during subnet creation since it will always be restarted afterwards.
-	if err := n.CreateSubnets(ctx, w, bootstrapNode.URI, false /* restartRequired */); err != nil {
+	// Don't restart the node during net creation since it will always be restarted afterwards.
+	if err := n.CreateNets(ctx, w, bootstrapNode.URI, false /* restartRequired */); err != nil {
 		return err
 	}
 
@@ -429,13 +429,13 @@ func (n *Network) Bootstrap(ctx context.Context, w io.Writer) error {
 	}
 
 	if len(n.Nodes) == 1 {
-		// Ensure the node is restarted to pick up subnet and chain configuration
+		// Ensure the node is restarted to pick up net and chain configuration
 		return n.RestartNode(ctx, w, bootstrapNode)
 	}
 
 	// TODO(marun) This last restart of the bootstrap node might be unnecessary if:
 	// - sybil protection didn't change
-	// - the node is not a subnet validator
+	// - the node is not a net validator
 
 	// Ensure the bootstrap node is restarted to pick up configuration changes. Avoid using
 	// RestartNode since the node won't be able to report healthy until other nodes are started.
@@ -591,7 +591,7 @@ func (n *Network) EnsureNodeConfig(node *Node) error {
 			defaultFlags[config.GenesisFileKey] = n.getGenesisPath()
 		}
 
-		// Only set the subnet dir if it exists or the node won't start.
+		// Only set the net dir if it exists or the node won't start.
 		subnetDir := n.getSubnetDir()
 		if _, err := os.Stat(subnetDir); err == nil {
 			defaultFlags[config.SubnetConfigDirKey] = subnetDir
@@ -620,27 +620,27 @@ func (n *Network) EnsureNodeConfig(node *Node) error {
 	return nil
 }
 
-// TrackedSubnetsForNode returns the subnet IDs for the given node
+// TrackedSubnetsForNode returns the net IDs for the given node
 func (n *Network) TrackedSubnetsForNode(nodeID ids.NodeID) string {
-	subnetIDs := make([]string, 0, len(n.Subnets))
-	for _, subnet := range n.Subnets {
-		if subnet.SubnetID == ids.Empty {
-			// Subnet has not yet been created
+	netIDs := make([]string, 0, len(n.Subnets))
+	for _, net := range n.Subnets {
+		if subnet.NetID == ids.Empty {
+			// Net has not yet been created
 			continue
 		}
 		// Only track subnets that this node validates
 		for _, validatorID := range subnet.ValidatorIDs {
 			if validatorID == nodeID {
-				subnetIDs = append(subnetIDs, subnet.SubnetID.String())
+				netIDs = append(netIDs, subnet.NetID.String())
 				break
 			}
 		}
 	}
-	return strings.Join(subnetIDs, ",")
+	return strings.Join(netIDs, ",")
 }
 
-func (n *Network) GetSubnet(name string) *Subnet {
-	for _, subnet := range n.Subnets {
+func (n *Network) GetSubnet(name string) *Net {
+	for _, net := range n.Subnets {
 		if subnet.Name == name {
 			return subnet
 		}
@@ -648,20 +648,20 @@ func (n *Network) GetSubnet(name string) *Subnet {
 	return nil
 }
 
-// Ensure that each subnet on the network is created. If restartRequired is false, node restart
+// Ensure that each net on the network is created. If restartRequired is false, node restart
 // to pick up configuration changes becomes the responsibility of the caller.
-func (n *Network) CreateSubnets(ctx context.Context, w io.Writer, apiURI string, restartRequired bool) error {
+func (n *Network) CreateNets(ctx context.Context, w io.Writer, apiURI string, restartRequired bool) error {
 	createdSubnets := make([]*Subnet, 0, len(n.Subnets))
-	for _, subnet := range n.Subnets {
+	for _, net := range n.Subnets {
 		if len(subnet.ValidatorIDs) == 0 {
-			return fmt.Errorf("subnet %s needs at least one validator", subnet.SubnetID)
+			return fmt.Errorf("subnet %s needs at least one validator", subnet.NetID)
 		}
-		if subnet.SubnetID != ids.Empty {
-			// The subnet already exists
+		if subnet.NetID != ids.Empty {
+			// The net already exists
 			continue
 		}
 
-		if _, err := fmt.Fprintf(w, "Creating subnet %q\n", subnet.Name); err != nil {
+		if _, err := fmt.Fprintf(w, "Creating net %q\n", subnet.Name); err != nil {
 			return err
 		}
 
@@ -669,27 +669,27 @@ func (n *Network) CreateSubnets(ctx context.Context, w io.Writer, apiURI string,
 			// Allocate a pre-funded key and remove it from the network so it won't be used for
 			// other purposes
 			if len(n.PreFundedKeys) == 0 {
-				return fmt.Errorf("no pre-funded keys available to create subnet %q", subnet.Name)
+				return fmt.Errorf("no pre-funded keys available to create net %q", subnet.Name)
 			}
 			subnet.OwningKey = n.PreFundedKeys[len(n.PreFundedKeys)-1]
 			n.PreFundedKeys = n.PreFundedKeys[:len(n.PreFundedKeys)-1]
 		}
 
-		// Create the subnet on the network
+		// Create the net on the network
 		if err := subnet.Create(ctx, n.Nodes[0].URI); err != nil {
 			return err
 		}
 
-		if _, err := fmt.Fprintf(w, " created subnet %q as %q\n", subnet.Name, subnet.SubnetID); err != nil {
+		if _, err := fmt.Fprintf(w, " created net %q as %q\n", subnet.Name, subnet.NetID); err != nil {
 			return err
 		}
 
-		// Persist the subnet configuration
+		// Persist the net configuration
 		if err := subnet.Write(n.getSubnetDir(), n.getChainConfigDir()); err != nil {
 			return err
 		}
 
-		if _, err := fmt.Fprintf(w, " wrote configuration for subnet %q\n", subnet.Name); err != nil {
+		if _, err := fmt.Fprintf(w, " wrote configuration for net %q\n", subnet.Name); err != nil {
 			return err
 		}
 
@@ -736,8 +736,8 @@ func (n *Network) CreateSubnets(ctx context.Context, w io.Writer, apiURI string,
 	}
 
 	// Add validators for the subnet
-	for _, subnet := range createdSubnets {
-		if _, err := fmt.Fprintf(w, "Adding validators for subnet %q\n", subnet.Name); err != nil {
+	for _, net := range createdSubnets {
+		if _, err := fmt.Fprintf(w, "Adding validators for net %q\n", subnet.Name); err != nil {
 			return err
 		}
 
@@ -757,10 +757,10 @@ func (n *Network) CreateSubnets(ctx context.Context, w io.Writer, apiURI string,
 		}
 	}
 
-	// Wait for nodes to become subnet validators
+	// Wait for nodes to become net validators
 	pChainClient := platformvm.NewClient(n.Nodes[0].URI)
 	validatorsToRestart := set.Set[ids.NodeID]{}
-	for _, subnet := range createdSubnets {
+	for _, net := range createdSubnets {
 		if err := waitForActiveValidators(ctx, w, pChainClient, subnet); err != nil {
 			return err
 		}
@@ -774,7 +774,7 @@ func (n *Network) CreateSubnets(ctx context.Context, w io.Writer, apiURI string,
 		if err := subnet.Write(n.getSubnetDir(), n.getChainConfigDir()); err != nil {
 			return err
 		}
-		if _, err := fmt.Fprintf(w, " wrote chain configuration for subnet %q\n", subnet.Name); err != nil {
+		if _, err := fmt.Fprintf(w, " wrote chain configuration for net %q\n", subnet.Name); err != nil {
 			return err
 		}
 

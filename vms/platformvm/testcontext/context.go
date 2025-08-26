@@ -19,7 +19,7 @@ import (
 type Context struct {
 	context.Context
 	NetworkID    uint32
-	SubnetID     ids.ID
+	NetID     ids.ID
 	ChainID      ids.ID
 	NodeID       ids.NodeID
 	XChainID     ids.ID
@@ -44,7 +44,7 @@ func New(ctx context.Context) *Context {
 func (c *Context) WithIDs(ids consensus.IDs) *Context {
 	c.NetworkID = ids.NetworkID
 	c.ChainID = ids.ChainID
-	c.SubnetID = ids.SubnetID
+	c.NetID = ids.NetID
 	c.NodeID = ids.NodeID
 	c.LUXAssetID = ids.LUXAssetID
 	return c

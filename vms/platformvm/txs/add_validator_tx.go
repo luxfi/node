@@ -54,7 +54,7 @@ func (tx *AddValidatorTx) InitCtx(ctx context.Context) {
 	tx.RewardsOwner.InitCtx(ctx)
 }
 
-func (*AddValidatorTx) SubnetID() ids.ID {
+func (*AddValidatorTx) NetID() ids.ID {
 	return constants.PrimaryNetworkID
 }
 

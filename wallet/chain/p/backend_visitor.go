@@ -38,7 +38,7 @@ func (b *backendVisitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) error {
+func (b *backendVisitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
@@ -50,7 +50,7 @@ func (b *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
+func (b *backendVisitor) CreateNetTx(tx *txs.CreateNetTx) error {
 	b.b.setSubnetOwner(
 		b.txID,
 		tx.Owner,
@@ -58,11 +58,11 @@ func (b *backendVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx) error {
+func (b *backendVisitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
+func (b *backendVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
 	b.b.setSubnetOwner(
 		tx.Subnet,
 		tx.Owner,
@@ -107,7 +107,7 @@ func (b *backendVisitor) ExportTx(tx *txs.ExportTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) TransformSubnetTx(tx *txs.TransformSubnetTx) error {
+func (b *backendVisitor) TransformNetTx(tx *txs.TransformNetTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
@@ -143,6 +143,6 @@ func (b *backendVisitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) 
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+func (b *backendVisitor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 	return b.baseTx(&tx.BaseTx)
 }

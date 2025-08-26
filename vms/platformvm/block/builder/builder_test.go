@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
@@ -113,7 +113,7 @@ func TestBuildBlockShouldReward(t *testing.T) {
 	// Create a valid [AddPermissionlessValidatorTx]
 	builder, txSigner := env.factory.NewWallet(preFundedKeys[0])
 	utx, err := builder.NewAddPermissionlessValidatorTx(
-		&txs.SubnetValidator{
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  uint64(validatorStartTime.Unix()),
@@ -322,7 +322,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 
 	builder1, signer1 := env.factory.NewWallet(preFundedKeys[0])
 	utx1, err := builder1.NewAddPermissionlessValidatorTx(
-		&txs.SubnetValidator{
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 				Start:  uint64(now.Unix()),
@@ -363,7 +363,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 
 	builder2, signer2 := env.factory.NewWallet(preFundedKeys[2])
 	utx2, err := builder2.NewAddPermissionlessValidatorTx(
-		&txs.SubnetValidator{
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 				Start:  uint64(now.Unix()),
@@ -513,7 +513,7 @@ func TestGetNextStakerToReward(t *testing.T) {
 			},
 		},
 		{
-			name:      "expired subnet validator/delegator",
+			name:      "expired net validator/delegator",
 			timestamp: now,
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				currentStakerIter := state.NewMockStakerIterator(ctrl)
@@ -540,7 +540,7 @@ func TestGetNextStakerToReward(t *testing.T) {
 			expectedShouldReward: true,
 		},
 		{
-			name:      "expired primary network validator after subnet expired subnet validator",
+			name:      "expired primary network validator after net expired net validator",
 			timestamp: now,
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				currentStakerIter := state.NewMockStakerIterator(ctrl)
@@ -567,7 +567,7 @@ func TestGetNextStakerToReward(t *testing.T) {
 			expectedShouldReward: true,
 		},
 		{
-			name:      "expired primary network delegator after subnet expired subnet validator",
+			name:      "expired primary network delegator after net expired net validator",
 			timestamp: now,
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				currentStakerIter := state.NewMockStakerIterator(ctrl)

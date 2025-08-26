@@ -37,14 +37,14 @@ type ValidatorSubset interface {
 func NewValidators(
 	peers *Peers,
 	log log.Logger,
-	subnetID ids.ID,
+	netID ids.ID,
 	validators validators.State,
 	maxValidatorSetStaleness time.Duration,
 ) *Validators {
 	return &Validators{
 		peers:                    peers,
 		log:                      log,
-		subnetID:                 subnetID,
+		netID:                 netID,
 		validators:               validators,
 		maxValidatorSetStaleness: maxValidatorSetStaleness,
 	}
@@ -54,7 +54,7 @@ func NewValidators(
 type Validators struct {
 	peers                    *Peers
 	log                      log.Logger
-	subnetID                 ids.ID
+	netID                 ids.ID
 	validators               validators.State
 	maxValidatorSetStaleness time.Duration
 
@@ -92,7 +92,7 @@ func (v *Validators) refresh(ctx context.Context) {
 		v.log.Warn("failed to get current height", zap.Error(err))
 		return
 	}
-	validatorSet, err := v.validators.GetValidatorSet(ctx, height, v.subnetID)
+	validatorSet, err := v.validators.GetValidatorSet(ctx, height, v.netID)
 	if err != nil {
 		v.log.Warn("failed to get validator set", zap.Error(err))
 		return

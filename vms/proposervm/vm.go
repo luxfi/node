@@ -148,7 +148,7 @@ func (vm *VM) Initialize(
 	// Set IDs once at initialization
 	vm.ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: chainCtx.NetworkID,
-		SubnetID:  chainCtx.SubnetID,
+		NetID:  chainCtx.NetID,
 		ChainID:   chainCtx.ChainID,
 		NodeID:    chainCtx.NodeID,
 		PublicKey: chainCtx.PublicKey,
@@ -178,7 +178,7 @@ func (vm *VM) Initialize(
 	vs := consensus.GetValidatorState(vm.ctx)
 	if vs != nil {
 		validatorStateWrapper := &validatorStateWrapper{ctx: vm.ctx, vs: vs}
-		vm.Windower = proposer.New(validatorStateWrapper, chainCtx.SubnetID, chainCtx.ChainID)
+		vm.Windower = proposer.New(validatorStateWrapper, chainCtx.NetID, chainCtx.ChainID)
 	} else {
 		// Create a minimal implementation for now
 		vm.log.Warn("ValidatorState not found in context, Windower may not work correctly")
@@ -428,7 +428,7 @@ func (vm *VM) getPreDurangoSlotTime(
 	// avoid fast runs of blocks there is an additional minimum delay that
 	// validators can specify. This delay may be an issue for high performance,
 	// custom VMs. Until the P-chain is modified to target a specific block
-	// time, ProposerMinBlockDelay can be configured in the subnet config.
+	// time, ProposerMinBlockDelay can be configured in the net config.
 	delay = max(delay, vm.MinBlkDelay)
 	return parentTimestamp.Add(delay), nil
 }
@@ -452,7 +452,7 @@ func (vm *VM) getPostDurangoSlotTime(
 	// avoid fast runs of blocks there is an additional minimum delay that
 	// validators can specify. This delay may be an issue for high performance,
 	// custom VMs. Until the P-chain is modified to target a specific block
-	// time, ProposerMinBlockDelay can be configured in the subnet config.
+	// time, ProposerMinBlockDelay can be configured in the net config.
 	switch {
 	case err == nil:
 		delay = max(delay, vm.MinBlkDelay)
@@ -810,9 +810,9 @@ func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, e
 	return v.vs.GetCurrentHeight()
 }
 
-func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	// Get the validator set from the consensus version which returns map[ids.NodeID]uint64
-	valSet, err := v.vs.GetValidatorSet(height, subnetID)
+	valSet, err := v.vs.GetValidatorSet(height, netID)
 	if err != nil {
 		return nil, err
 	}
@@ -832,11 +832,11 @@ func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, e
 	return v.vs.GetMinimumHeight(ctx)
 }
 
-func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return v.vs.GetSubnetID(chainID)
+func (v *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return v.vs.GetNetID(chainID)
 }
 
-func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
 	// For now, return empty set with current height - need proper implementation
 	height, err := v.vs.GetCurrentHeight()
 	if err != nil {
@@ -860,13 +860,13 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentHeight() (uint64,
 	return a.vs.GetCurrentHeight()
 }
 
-func (a *interfacesToConsensusValidatorStateAdapter) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	return a.vs.GetSubnetID(a.ctx, chainID)
+func (a *interfacesToConsensusValidatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
+	return a.vs.GetNetID(a.ctx, chainID)
 }
 
-func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
 	// Get the validator set from the interfaces version which takes context
-	valSet, err := a.vs.GetValidatorSet(height, subnetID)
+	valSet, err := a.vs.GetValidatorSet(height, netID)
 	if err != nil {
 		return nil, err
 	}

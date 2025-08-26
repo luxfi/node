@@ -10,11 +10,11 @@ type StaticConfig struct {
 	// Fee that must be burned by every state creating transaction before AP3
 	CreateAssetTxFee uint64 `json:"createAssetTxFee"`
 
-	// Fee that must be burned by every subnet creating transaction after AP3
-	CreateSubnetTxFee uint64 `json:"createSubnetTxFee"`
+	// Fee that must be burned by every net creating transaction after AP3
+	CreateNetTxFee uint64 `json:"createSubnetTxFee"`
 
-	// Fee that must be burned by every transform subnet transaction
-	TransformSubnetTxFee uint64 `json:"transformSubnetTxFee"`
+	// Fee that must be burned by every transform net transaction
+	TransformNetTxFee uint64 `json:"transformSubnetTxFee"`
 
 	// Fee that must be burned by every blockchain creating transaction after AP3
 	CreateBlockchainTxFee uint64 `json:"createBlockchainTxFee"`
@@ -25,9 +25,9 @@ type StaticConfig struct {
 	// Transaction fee for adding a primary network delegator
 	AddPrimaryNetworkDelegatorFee uint64 `json:"addPrimaryNetworkDelegatorFee"`
 
-	// Transaction fee for adding a subnet validator
-	AddSubnetValidatorFee uint64 `json:"addSubnetValidatorFee"`
+	// Transaction fee for adding a net validator
+	AddNetValidatorFee uint64 `json:"addNetValidatorFee"`
 
-	// Transaction fee for adding a subnet delegator
-	AddSubnetDelegatorFee uint64 `json:"addSubnetDelegatorFee"`
+	// Transaction fee for adding a net delegator
+	AddNetDelegatorFee uint64 `json:"addSubnetDelegatorFee"`
 }

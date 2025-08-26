@@ -412,7 +412,7 @@ func (vm *VM) checkExistingChains() error {
 
 		// Determine VM type based on directory contents
 		var vmID ids.ID
-		var subnetID ids.ID = constants.PrimaryNetworkID // Default to primary network
+		var netID ids.ID = constants.PrimaryNetworkID // Default to primary network
 
 		// Check for EVM chain (C-Chain)
 		if bytes.Contains(configData, []byte("chain-id")) || bytes.Contains(configData, []byte("chainId")) {
@@ -429,14 +429,14 @@ func (vm *VM) checkExistingChains() error {
 			continue
 		}
 
-		// Check if we need to determine subnet ID from somewhere
+		// Check if we need to determine net ID from somewhere
 		// For now, assume primary network for orphaned chains
 
 		// Check if this chain is already known
-		chains, err := vm.state.GetChains(subnetID)
+		chains, err := vm.state.GetChains(netID)
 		if err != nil {
 			vm.log.Warn("failed to get chains for subnet",
-				zap.String("subnetID", subnetID.String()),
+				zap.String("netID", netID.String()),
 				zap.Error(err),
 			)
 			continue
@@ -455,7 +455,7 @@ func (vm *VM) checkExistingChains() error {
 			vm.log.Info("found orphaned chain, queuing for creation",
 				zap.String("chainID", chainID.String()),
 				zap.String("vmID", vmID.String()),
-				zap.String("subnetID", subnetID.String()),
+				zap.String("netID", netID.String()),
 				zap.String("path", filepath.Join(chainDataDir, entry.Name())),
 			)
 
@@ -496,7 +496,7 @@ func (vm *VM) checkExistingChains() error {
 				"alloc": {}
 			}`, chainIDNum)
 
-			vm.Config.QueueExistingChainWithGenesis(chainID, subnetID, vmID, []byte(minimalGenesis))
+			vm.Config.QueueExistingChainWithGenesis(chainID, netID, vmID, []byte(minimalGenesis))
 		} else {
 			vm.log.Debug("chain already registered",
 				zap.String("chainID", chainID.String()),
@@ -522,18 +522,18 @@ func (vm *VM) initBlockchains() error {
 	}
 
 	if vm.SybilProtectionEnabled {
-		for subnetID := range vm.TrackedSubnets {
-			if err := vm.createSubnet(subnetID); err != nil {
+		for netID := range vm.TrackedSubnets {
+			if err := vm.createSubnet(netID); err != nil {
 				return err
 			}
 		}
 	} else {
-		subnetIDs, err := vm.state.GetSubnetIDs()
+		netIDs, err := vm.state.GetNetIDs()
 		if err != nil {
 			return err
 		}
-		for _, subnetID := range subnetIDs {
-			if err := vm.createSubnet(subnetID); err != nil {
+		for _, netID := range netIDs {
+			if err := vm.createSubnet(netID); err != nil {
 				return err
 			}
 		}
@@ -541,9 +541,9 @@ func (vm *VM) initBlockchains() error {
 	return nil
 }
 
-// Create the subnet with ID [subnetID]
-func (vm *VM) createSubnet(subnetID ids.ID) error {
-	chains, err := vm.state.GetChains(subnetID)
+// Create the net with ID [netID]
+func (vm *VM) createSubnet(netID ids.ID) error {
+	chains, err := vm.state.GetChains(netID)
 	if err != nil {
 		return err
 	}
@@ -613,15 +613,15 @@ func (vm *VM) onNormalOperationsStarted() error {
 	vl := validators.NewLogger(vm.log, constants.PrimaryNetworkID, vm.nodeID)
 	vm.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, vl)
 
-	for subnetID := range vm.TrackedSubnets {
-		vdrIDs := vm.Validators.GetValidatorIDs(subnetID)
+	for netID := range vm.TrackedSubnets {
+		vdrIDs := vm.Validators.GetValidatorIDs(netID)
 		// if err := vm.uptimeManager.StartTracking(vdrIDs); err != nil {
 		//	return err
 		// }
 		_ = vdrIDs // avoid unused variable
 
-		vl := validators.NewLogger(vm.log, subnetID, vm.nodeID)
-		vm.Validators.RegisterSetCallbackListener(subnetID, vl)
+		vl := validators.NewLogger(vm.log, netID, vm.nodeID)
+		vm.Validators.RegisterSetCallbackListener(netID, vl)
 	}
 
 	if err := vm.state.Commit(); err != nil {
@@ -667,8 +667,8 @@ func (vm *VM) Shutdown(context.Context) error {
 			return err
 		}
 
-		for subnetID := range vm.TrackedSubnets {
-			vdrIDs := vm.Validators.GetValidatorIDs(subnetID)
+		for netID := range vm.TrackedSubnets {
+			vdrIDs := vm.Validators.GetValidatorIDs(netID)
 			// if err := vm.uptimeManager.StopTracking(vdrIDs); err != nil {
 			// 	return err
 			// }
@@ -771,9 +771,9 @@ func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *ver
 	return vm.Network.Connected(ctx, nodeID, consensusVer)
 }
 
-func (vm *VM) ConnectedSubnet(_ context.Context, nodeID ids.NodeID, subnetID ids.ID) error {
+func (vm *VM) ConnectedSubnet(_ context.Context, nodeID ids.NodeID, netID ids.ID) error {
 	// For uptime tracking, only track primary network connections
-	if subnetID == constants.PrimaryNetworkID {
+	if netID == constants.PrimaryNetworkID {
 		return vm.uptimeManager.Connect(nodeID)
 	}
 	return nil

@@ -33,7 +33,7 @@ var (
 	convertSubnetToL1TxComplexJSON []byte
 )
 
-func TestConvertSubnetToL1TxSerialization(t *testing.T) {
+func TestConvertNetToL1TxSerialization(t *testing.T) {
 	skBytes, err := hex.DecodeString("6668fecd4595b81e4d568398c820bbf3f073cb222902279fa55ebb84764ed2e3")
 	require.NoError(t, err)
 	sk, err := bls.SecretKeyFromBytes(skBytes)
@@ -66,7 +66,7 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 			0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
 			0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
 		}
-		subnetID = ids.ID{
+		netID = ids.ID{
 			0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 			0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 			0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
@@ -92,13 +92,13 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		tx            *ConvertSubnetToL1Tx
+		tx            *ConvertNetToL1Tx
 		expectedBytes []byte
 		expectedJSON  []byte
 	}{
 		{
 			name: "simple",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
 					NetworkID:    10, // Match expected JSON
 					BlockchainID: testPlatformChainID,
@@ -119,10 +119,10 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 						},
 					},
 				}},
-				Subnet:     subnetID,
+				Subnet:     netID,
 				ChainID:    managerChainID,
 				Address:    managerAddress,
-				Validators: []*ConvertSubnetToL1Validator{}, // Empty array to match expected JSON
+				Validators: []*ConvertNetToL1Validator{}, // Empty array to match expected JSON
 				SubnetAuth: &secp256k1fx.Input{
 					SigIndices: []uint32{3},
 				},
@@ -132,7 +132,7 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 		},
 		{
 			name: "complex",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
 					NetworkID:    10, // Match expected JSON
 					BlockchainID: testPlatformChainID,
@@ -216,10 +216,10 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 					},
 					Memo: types.JSONByteSlice("😅\nwell that's\x01\x23\x45!"),
 				}},
-				Subnet:  subnetID,
+				Subnet:  netID,
 				ChainID: managerChainID,
 				Address: managerAddress,
-				Validators: []*ConvertSubnetToL1Validator{
+				Validators: []*ConvertNetToL1Validator{
 					{
 						NodeID:  nodeID[:],
 						Weight:  72623859790382856, // Match expected JSON
@@ -273,7 +273,7 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 			require.NoError(err)
 
 			// Deserialize from bytes
-			parsedTx := &ConvertSubnetToL1Tx{}
+			parsedTx := &ConvertNetToL1Tx{}
 			_, err = Codec.Unmarshal(txBytes, parsedTx)
 			require.NoError(err)
 			// Don't compare SyntacticallyVerified flag as it's expected to be false after unmarshal
@@ -308,7 +308,7 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 	}
 }
 
-func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
+func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 	// Use a test chain ID instead of ids.Empty
 	testChainID := ids.GenerateTestID()
 	ctx := context.Background()
@@ -320,7 +320,7 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		tx          *ConvertSubnetToL1Tx
+		tx          *ConvertNetToL1Tx
 		expectedErr error
 	}{
 		{
@@ -330,7 +330,7 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "primary network",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
 					NetworkID:    1,
 					BlockchainID: testChainID,
@@ -341,7 +341,7 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "address too long",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
 					NetworkID:    1,
 					BlockchainID: testChainID,
@@ -353,27 +353,27 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "no validators",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
 					NetworkID:    1,
 					BlockchainID: testChainID,
 				}},
 				Subnet:     ids.GenerateTestID(),
 				Address:    []byte{1, 2, 3},
-				Validators: []*ConvertSubnetToL1Validator{},
+				Validators: []*ConvertNetToL1Validator{},
 			},
 			expectedErr: ErrConvertMustIncludeValidators,
 		},
 		{
 			name: "validators not sorted",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
 					NetworkID:    1,
 					BlockchainID: testChainID,
 				}},
 				Subnet:  ids.GenerateTestID(),
 				Address: []byte{1, 2, 3},
-				Validators: []*ConvertSubnetToL1Validator{
+				Validators: []*ConvertNetToL1Validator{
 					{
 						NodeID: []byte{2},
 						Weight: 1,

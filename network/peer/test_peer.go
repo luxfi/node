@@ -174,31 +174,31 @@ func (t *testDiskTracker) AvailableDiskBytes() uint64 { return 1 << 30 } // 1GB
 // testValidatorManager is a minimal validator manager implementation for testing
 type testValidatorManager struct{}
 
-func (m *testValidatorManager) GetValidators(subnetID ids.ID) ([]ids.NodeID, error) {
+func (m *testValidatorManager) GetValidators(netID ids.ID) ([]ids.NodeID, error) {
 	return nil, nil
 }
 
-func (m *testValidatorManager) GetValidatorIDs(subnetID ids.ID) []ids.NodeID {
+func (m *testValidatorManager) GetValidatorIDs(netID ids.ID) []ids.NodeID {
 	return nil
 }
 
-func (m *testValidatorManager) GetValidator(subnetID ids.ID, nodeID ids.NodeID) (*validators.Validator, bool) {
+func (m *testValidatorManager) GetValidator(netID ids.ID, nodeID ids.NodeID) (*validators.Validator, bool) {
 	return nil, false
 }
 
-func (m *testValidatorManager) GetWeight(subnetID ids.ID, nodeID ids.NodeID) uint64 {
+func (m *testValidatorManager) GetWeight(netID ids.ID, nodeID ids.NodeID) uint64 {
 	return 0
 }
 
-func (m *testValidatorManager) TotalWeight(subnetID ids.ID) (uint64, error) {
+func (m *testValidatorManager) TotalWeight(netID ids.ID) (uint64, error) {
 	return 0, nil
 }
 
-func (m *testValidatorManager) NumValidators(subnetID ids.ID) int {
+func (m *testValidatorManager) NumValidators(netID ids.ID) int {
 	return 0
 }
 
-func (m *testValidatorManager) RegisterSetCallbackListener(subnetID ids.ID, listener validators.SetCallbackListener) {
+func (m *testValidatorManager) RegisterSetCallbackListener(netID ids.ID, listener validators.SetCallbackListener) {
 	// No-op
 }
 
@@ -206,28 +206,28 @@ func (m *testValidatorManager) RegisterCallbackListener(listener validators.Mana
 	// No-op for testing
 }
 
-func (m *testValidatorManager) AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, validationID ids.ID, weight uint64) error {
+func (m *testValidatorManager) AddStaker(netID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, validationID ids.ID, weight uint64) error {
 	return nil
 }
 
-func (m *testValidatorManager) AddWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
+func (m *testValidatorManager) AddWeight(netID ids.ID, nodeID ids.NodeID, weight uint64) error {
 	return nil
 }
 
-func (m *testValidatorManager) RemoveWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
+func (m *testValidatorManager) RemoveWeight(netID ids.ID, nodeID ids.NodeID, weight uint64) error {
 	return nil
 }
 
-func (m *testValidatorManager) GetMap(subnetID ids.ID) map[ids.NodeID]*validators.GetValidatorOutput {
+func (m *testValidatorManager) GetMap(netID ids.ID) map[ids.NodeID]*validators.GetValidatorOutput {
 	// Return empty map for testing
 	return make(map[ids.NodeID]*validators.GetValidatorOutput)
 }
 
-func (m *testValidatorManager) SubsetWeight(subnetID ids.ID, validatorIDs consensusset.Set[ids.NodeID]) (uint64, error) {
+func (m *testValidatorManager) SubsetWeight(netID ids.ID, validatorIDs consensusset.Set[ids.NodeID]) (uint64, error) {
 	return 0, nil
 }
 
-func (m *testValidatorManager) Sample(subnetID ids.ID, n int) ([]ids.NodeID, error) {
+func (m *testValidatorManager) Sample(netID ids.ID, n int) ([]ids.NodeID, error) {
 	// Return empty sample for testing
 	return nil, nil
 }

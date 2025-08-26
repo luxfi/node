@@ -110,8 +110,8 @@ func TestServiceTagResponse(t *testing.T) {
 		return "", nil
 	})
 
-	subnetID1 := ids.GenerateTestID()
-	subnetID2 := ids.GenerateTestID()
+	netID1 := ids.GenerateTestID()
+	netID2 := ids.GenerateTestID()
 
 	// test cases
 	type testMethods struct {
@@ -161,9 +161,9 @@ func TestServiceTagResponse(t *testing.T) {
 			h, err := New(log.NewNoOpLogger(), metric.NewNoOpRegistry())
 			require.NoError(err)
 			require.NoError(test.register(h, "check1", check))
-			require.NoError(test.register(h, "check2", check, subnetID1.String()))
-			require.NoError(test.register(h, "check3", check, subnetID2.String()))
-			require.NoError(test.register(h, "check4", check, subnetID1.String(), subnetID2.String()))
+			require.NoError(test.register(h, "check2", check, netID1.String()))
+			require.NoError(test.register(h, "check3", check, netID2.String()))
+			require.NoError(test.register(h, "check4", check, netID1.String(), netID2.String()))
 
 			s := &Service{
 				log:    log.NewNoOpLogger(),
@@ -182,7 +182,7 @@ func TestServiceTagResponse(t *testing.T) {
 				require.Equal(notYetRunResult, reply.Checks["check1"])
 				require.False(reply.Healthy)
 
-				require.NoError(test.check(s, nil, &APIArgs{Tags: []string{subnetID1.String()}}, &reply))
+				require.NoError(test.check(s, nil, &APIArgs{Tags: []string{netID1.String()}}, &reply))
 				require.Len(reply.Checks, 2)
 				require.Contains(reply.Checks, "check2")
 				require.Contains(reply.Checks, "check4")
@@ -196,7 +196,7 @@ func TestServiceTagResponse(t *testing.T) {
 
 			{
 				reply := APIReply{}
-				require.NoError(test.check(s, nil, &APIArgs{Tags: []string{subnetID1.String()}}, &reply))
+				require.NoError(test.check(s, nil, &APIArgs{Tags: []string{netID1.String()}}, &reply))
 				require.Len(reply.Checks, 2)
 				require.Contains(reply.Checks, "check2")
 				require.Contains(reply.Checks, "check4")
@@ -208,10 +208,10 @@ func TestServiceTagResponse(t *testing.T) {
 
 			{
 				// now we'll add a new check which is unhealthy by default (notYetRunResult)
-				require.NoError(test.register(h, "check5", check, subnetID1.String()))
+				require.NoError(test.register(h, "check5", check, netID1.String()))
 
 				reply := APIReply{}
-				require.NoError(test.check(s, nil, &APIArgs{Tags: []string{subnetID1.String()}}, &reply))
+				require.NoError(test.check(s, nil, &APIArgs{Tags: []string{netID1.String()}}, &reply))
 				require.Len(reply.Checks, 3)
 				require.Contains(reply.Checks, "check2")
 				require.Contains(reply.Checks, "check4")

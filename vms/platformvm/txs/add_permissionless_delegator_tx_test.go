@@ -192,7 +192,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x01, 0x07, 0xdc, 0x39,
 		// Stake weight
 		0x00, 0x00, 0x01, 0xd1, 0xa9, 0x4a, 0x20, 0x00,
-		// Primary network subnetID
+		// Primary network netID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -562,7 +562,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x01, 0x07, 0xdc, 0x39,
 		// Stake weight
 		0x00, 0x00, 0x04, 0x8c, 0x27, 0x39, 0x50, 0x00,
-		// Primary Network subnet ID
+		// Primary Network net ID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -728,7 +728,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 		"end": 17292345,
 		"weight": 5000000000000
 	},
-	"subnetID": "11111111111111111111111111111111LpoYY",
+	"netID": "11111111111111111111111111111111LpoYY",
 	"stake": [
 		{
 			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
@@ -796,14 +796,14 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 		0x11, 0x22, 0x33, 0x44,
 	})
-	subnetID := ids.ID{
+	netID := ids.ID{
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
 		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
 	}
 
-	simpleAddSubnetTx := &AddPermissionlessDelegatorTx{
+	simpleAddNetTx := &AddPermissionlessDelegatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
 				NetworkID:    constants.MainnetID,
@@ -850,7 +850,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 			End:    12346,
 			Wght:   1,
 		},
-		Subnet: subnetID,
+		Subnet: netID,
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
@@ -876,18 +876,18 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 			},
 		},
 	}
-	lux.SortTransferableOutputs(simpleAddSubnetTx.Outs, Codec)
-	lux.SortTransferableOutputs(simpleAddSubnetTx.StakeOuts, Codec)
-	utils.Sort(simpleAddSubnetTx.Ins)
+	lux.SortTransferableOutputs(simpleAddNetTx.Outs, Codec)
+	lux.SortTransferableOutputs(simpleAddNetTx.StakeOuts, Codec)
+	utils.Sort(simpleAddNetTx.Ins)
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
-	require.NoError(simpleAddSubnetTx.SyntacticVerify(ctx))
+	require.NoError(simpleAddNetTx.SyntacticVerify(ctx))
 
-	expectedUnsignedSimpleAddSubnetTxBytes := []byte{
+	expectedUnsignedSimpleAddNetTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
 		// AddPermissionlessDelegationTx type ID
@@ -957,7 +957,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x3a,
 		// Stake weight
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-		// SubnetID
+		// NetID
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
@@ -996,12 +996,12 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
 		0x44, 0x55, 0x66, 0x77,
 	}
-	var unsignedSimpleAddSubnetTx UnsignedTx = simpleAddSubnetTx
-	unsignedSimpleAddSubnetTxBytes, err := Codec.Marshal(CodecVersion, &unsignedSimpleAddSubnetTx)
+	var unsignedSimpleAddNetTx UnsignedTx = simpleAddNetTx
+	unsignedSimpleAddNetTxBytes, err := Codec.Marshal(CodecVersion, &unsignedSimpleAddNetTx)
 	require.NoError(err)
-	require.Equal(expectedUnsignedSimpleAddSubnetTxBytes, unsignedSimpleAddSubnetTxBytes)
+	require.Equal(expectedUnsignedSimpleAddNetTxBytes, unsignedSimpleAddNetTxBytes)
 
-	complexAddSubnetTx := &AddPermissionlessDelegatorTx{
+	complexAddNetTx := &AddPermissionlessDelegatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
 				NetworkID:    constants.MainnetID,
@@ -1116,7 +1116,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 			End:    12345 + 1,
 			Wght:   9,
 		},
-		Subnet: subnetID,
+		Subnet: netID,
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
@@ -1162,9 +1162,9 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
-	require.NoError(complexAddSubnetTx.SyntacticVerify(ctx))
+	require.NoError(complexAddNetTx.SyntacticVerify(ctx))
 
-	expectedUnsignedComplexAddSubnetTxBytes := []byte{
+	expectedUnsignedComplexAddNetTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
 		// AddPermissionlessDelegatorTx type ID
@@ -1327,7 +1327,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x3a,
 		// Stake weight
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09,
-		// subnetID
+		// netID
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
@@ -1381,10 +1381,10 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 		// number of addresses
 		0x00, 0x00, 0x00, 0x00,
 	}
-	var unsignedComplexAddSubnetTx UnsignedTx = complexAddSubnetTx
-	unsignedComplexAddSubnetTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexAddSubnetTx)
+	var unsignedComplexAddNetTx UnsignedTx = complexAddNetTx
+	unsignedComplexAddNetTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexAddNetTx)
 	require.NoError(err)
-	require.Equal(expectedUnsignedComplexAddSubnetTxBytes, unsignedComplexAddSubnetTxBytes)
+	require.Equal(expectedUnsignedComplexAddNetTxBytes, unsignedComplexAddNetTxBytes)
 
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
@@ -1397,9 +1397,9 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	})
 	testCtx := testcontext.New(ctx2)
 	testCtx.BCLookup = aliaser
-	unsignedComplexAddSubnetTx.InitCtx(testCtx)
+	unsignedComplexAddNetTx.InitCtx(testCtx)
 
-	unsignedComplexAddSubnetTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddSubnetTx, "", "\t")
+	unsignedComplexAddNetTxJSONBytes, err := json.MarshalIndent(unsignedComplexAddNetTx, "", "\t")
 	require.NoError(err)
 	require.Equal(`{
 	"networkID": 1,
@@ -1493,7 +1493,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 		"end": 12346,
 		"weight": 9
 	},
-	"subnetID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
+	"netID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
 	"stake": [
 		{
 			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
@@ -1526,7 +1526,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 		"locktime": 0,
 		"threshold": 0
 	}
-}`, string(unsignedComplexAddSubnetTxJSONBytes))
+}`, string(unsignedComplexAddNetTxJSONBytes))
 }
 
 func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
@@ -1806,7 +1806,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 			err: errDelegatorWeightMismatch,
 		},
 		{
-			name: "valid subnet validator",
+			name: "valid net validator",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
 				rewardsOwner := fx.NewMockOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()

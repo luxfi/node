@@ -20,13 +20,13 @@ func TestTxFees(t *testing.T) {
 	feeTestsDefaultCfg := StaticConfig{
 		TxFee:                         1 * units.Lux,
 		CreateAssetTxFee:              2 * units.Lux,
-		CreateSubnetTxFee:             3 * units.Lux,
-		TransformSubnetTxFee:          4 * units.Lux,
+		CreateNetTxFee:             3 * units.Lux,
+		TransformNetTxFee:          4 * units.Lux,
 		CreateBlockchainTxFee:         5 * units.Lux,
 		AddPrimaryNetworkValidatorFee: 6 * units.Lux,
 		AddPrimaryNetworkDelegatorFee: 7 * units.Lux,
-		AddSubnetValidatorFee:         8 * units.Lux,
-		AddSubnetDelegatorFee:         9 * units.Lux,
+		AddNetValidatorFee:         8 * units.Lux,
+		AddNetDelegatorFee:         9 * units.Lux,
 	}
 
 	latestForkTime := time.Unix(1713945427, 0)
@@ -56,10 +56,10 @@ func TestTxFees(t *testing.T) {
 			expected:   feeTestsDefaultCfg.AddPrimaryNetworkValidatorFee,
 		},
 		{
-			name:       "AddSubnetValidatorTx pre EUpgrade",
+			name:       "AddNetValidatorTx pre EUpgrade",
 			chainTime:  preEtnaTime,
-			unsignedTx: addSubnetValidatorTx,
-			expected:   feeTestsDefaultCfg.AddSubnetValidatorFee,
+			unsignedTx: addNetValidatorTx,
+			expected:   feeTestsDefaultCfg.AddNetValidatorFee,
 		},
 		{
 			name:       "AddDelegatorTx pre EUpgrade",
@@ -80,31 +80,31 @@ func TestTxFees(t *testing.T) {
 			expected:   feeTestsDefaultCfg.CreateBlockchainTxFee,
 		},
 		{
-			name:       "CreateSubnetTx pre ApricotPhase3",
+			name:       "CreateNetTx pre ApricotPhase3",
 			chainTime:  preApricotPhase3Time,
 			unsignedTx: createSubnetTx,
 			expected:   feeTestsDefaultCfg.CreateAssetTxFee,
 		},
 		{
-			name:       "CreateSubnetTx pre EUpgrade",
+			name:       "CreateNetTx pre EUpgrade",
 			chainTime:  preEtnaTime,
 			unsignedTx: createSubnetTx,
-			expected:   feeTestsDefaultCfg.CreateSubnetTxFee,
+			expected:   feeTestsDefaultCfg.CreateNetTxFee,
 		},
 		{
-			name:       "RemoveSubnetValidatorTx pre EUpgrade",
+			name:       "RemoveNetValidatorTx pre EUpgrade",
 			chainTime:  preEtnaTime,
-			unsignedTx: removeSubnetValidatorTx,
+			unsignedTx: removeNetValidatorTx,
 			expected:   feeTestsDefaultCfg.TxFee,
 		},
 		{
-			name:       "TransformSubnetTx pre EUpgrade",
+			name:       "TransformNetTx pre EUpgrade",
 			chainTime:  preEtnaTime,
 			unsignedTx: transformSubnetTx,
-			expected:   feeTestsDefaultCfg.TransformSubnetTxFee,
+			expected:   feeTestsDefaultCfg.TransformNetTxFee,
 		},
 		{
-			name:       "TransferSubnetOwnershipTx pre EUpgrade",
+			name:       "TransferNetOwnershipTx pre EUpgrade",
 			chainTime:  preEtnaTime,
 			unsignedTx: transferSubnetOwnershipTx,
 			expected:   feeTestsDefaultCfg.TxFee,
@@ -118,14 +118,14 @@ func TestTxFees(t *testing.T) {
 			expected: feeTestsDefaultCfg.AddPrimaryNetworkValidatorFee,
 		},
 		{
-			name:      "AddPermissionlessValidatorTx Subnet pre EUpgrade",
+			name:      "AddPermissionlessValidatorTx Net pre EUpgrade",
 			chainTime: upgrades.EtnaTime.Add(-1 * time.Second),
 			unsignedTx: func() txs.UnsignedTx {
-				subnetID := ids.GenerateTestID()
-				require.NotEqual(t, constants.PrimaryNetworkID, subnetID)
-				return addPermissionlessValidatorTx(subnetID)
+				netID := ids.GenerateTestID()
+				require.NotEqual(t, constants.PrimaryNetworkID, netID)
+				return addPermissionlessValidatorTx(netID)
 			},
-			expected: feeTestsDefaultCfg.AddSubnetValidatorFee,
+			expected: feeTestsDefaultCfg.AddNetValidatorFee,
 		},
 		{
 			name:      "AddPermissionlessDelegatorTx Primary Network pre EUpgrade",
@@ -139,11 +139,11 @@ func TestTxFees(t *testing.T) {
 			name:      "AddPermissionlessDelegatorTx pre EUpgrade",
 			chainTime: upgrades.EtnaTime.Add(-1 * time.Second),
 			unsignedTx: func() txs.UnsignedTx {
-				subnetID := ids.GenerateTestID()
-				require.NotEqual(t, constants.PrimaryNetworkID, subnetID)
-				return addPermissionlessDelegatorTx(subnetID)
+				netID := ids.GenerateTestID()
+				require.NotEqual(t, constants.PrimaryNetworkID, netID)
+				return addPermissionlessDelegatorTx(netID)
 			},
-			expected: feeTestsDefaultCfg.AddSubnetDelegatorFee,
+			expected: feeTestsDefaultCfg.AddNetDelegatorFee,
 		},
 		{
 			name:       "BaseTx pre EUpgrade",
@@ -198,8 +198,8 @@ func addValidatorTx() txs.UnsignedTx {
 	return &txs.AddValidatorTx{}
 }
 
-func addSubnetValidatorTx() txs.UnsignedTx {
-	return &txs.AddSubnetValidatorTx{}
+func addNetValidatorTx() txs.UnsignedTx {
+	return &txs.AddNetValidatorTx{}
 }
 
 func addDelegatorTx() txs.UnsignedTx {
@@ -211,30 +211,30 @@ func createChainTx() txs.UnsignedTx {
 }
 
 func createSubnetTx() txs.UnsignedTx {
-	return &txs.CreateSubnetTx{}
+	return &txs.CreateNetTx{}
 }
 
-func removeSubnetValidatorTx() txs.UnsignedTx {
-	return &txs.RemoveSubnetValidatorTx{}
+func removeNetValidatorTx() txs.UnsignedTx {
+	return &txs.RemoveNetValidatorTx{}
 }
 
 func transformSubnetTx() txs.UnsignedTx {
-	return &txs.TransformSubnetTx{}
+	return &txs.TransformNetTx{}
 }
 
 func transferSubnetOwnershipTx() txs.UnsignedTx {
-	return &txs.TransferSubnetOwnershipTx{}
+	return &txs.TransferNetOwnershipTx{}
 }
 
-func addPermissionlessValidatorTx(subnetID ids.ID) txs.UnsignedTx {
+func addPermissionlessValidatorTx(netID ids.ID) txs.UnsignedTx {
 	return &txs.AddPermissionlessValidatorTx{
-		Subnet: subnetID,
+		Subnet: netID,
 	}
 }
 
-func addPermissionlessDelegatorTx(subnetID ids.ID) txs.UnsignedTx {
+func addPermissionlessDelegatorTx(netID ids.ID) txs.UnsignedTx {
 	return &txs.AddPermissionlessDelegatorTx{
-		Subnet: subnetID,
+		Subnet: netID,
 	}
 }
 

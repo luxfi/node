@@ -18,13 +18,13 @@ type Context struct {
 	BlockchainID                  ids.ID // Added for test compatibility
 	LUXAssetID                    ids.ID
 	BaseTxFee                     uint64
-	CreateSubnetTxFee             uint64
-	TransformSubnetTxFee          uint64
+	CreateNetTxFee             uint64
+	TransformNetTxFee          uint64
 	CreateBlockchainTxFee         uint64
 	AddPrimaryNetworkValidatorFee uint64
 	AddPrimaryNetworkDelegatorFee uint64
-	AddSubnetValidatorFee         uint64
-	AddSubnetDelegatorFee         uint64
+	AddNetValidatorFee         uint64
+	AddNetDelegatorFee         uint64
 }
 
 func NewContextFromURI(ctx context.Context, uri string) (*Context, error) {
@@ -58,13 +58,13 @@ func NewContextFromClients(
 		BlockchainID:                  ids.Empty, // Default to PlatformChainID (constants.PlatformChainID)
 		LUXAssetID:                    asset.AssetID,
 		BaseTxFee:                     uint64(txFees.TxFee),
-		CreateSubnetTxFee:             uint64(txFees.CreateSubnetTxFee),
-		TransformSubnetTxFee:          uint64(txFees.TransformSubnetTxFee),
+		CreateNetTxFee:             uint64(txFees.CreateNetTxFee),
+		TransformNetTxFee:          uint64(txFees.TransformNetTxFee),
 		CreateBlockchainTxFee:         uint64(txFees.CreateBlockchainTxFee),
 		AddPrimaryNetworkValidatorFee: uint64(txFees.AddPrimaryNetworkValidatorFee),
 		AddPrimaryNetworkDelegatorFee: uint64(txFees.AddPrimaryNetworkDelegatorFee),
-		AddSubnetValidatorFee:         uint64(txFees.AddSubnetValidatorFee),
-		AddSubnetDelegatorFee:         uint64(txFees.AddSubnetDelegatorFee),
+		AddNetValidatorFee:         uint64(txFees.AddNetValidatorFee),
+		AddNetDelegatorFee:         uint64(txFees.AddNetDelegatorFee),
 	}, nil
 }
 

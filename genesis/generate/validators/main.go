@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm"
-	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/wallet/net/primary"
 )
 
 // This fetches the current validator set of both Testnet and Mainnet.

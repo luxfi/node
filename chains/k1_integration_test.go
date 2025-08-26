@@ -36,7 +36,7 @@ func TestK1ConsensusIntegration(t *testing.T) {
 	// Test chain parameters with k=1
 	chainParams := ChainParameters{
 		ID:            constants.PlatformChainID,
-		SubnetID:      constants.PrimaryNetworkID,
+		NetID:      constants.PrimaryNetworkID,
 		GenesisData:   []byte("test-genesis"),
 		VMID:          constants.PlatformVMID,
 		FxIDs:         []ids.ID{},

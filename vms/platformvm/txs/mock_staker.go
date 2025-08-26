@@ -125,18 +125,18 @@ func (mr *MockStakerMockRecorder) StartTime() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartTime", reflect.TypeOf((*MockStaker)(nil).StartTime))
 }
 
-// SubnetID mocks base method.
-func (m *MockStaker) SubnetID() ids.ID {
+// NetID mocks base method.
+func (m *MockStaker) NetID() ids.ID {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubnetID")
+	ret := m.ctrl.Call(m, "NetID")
 	ret0, _ := ret[0].(ids.ID)
 	return ret0
 }
 
-// SubnetID indicates an expected call of SubnetID.
-func (mr *MockStakerMockRecorder) SubnetID() *gomock.Call {
+// NetID indicates an expected call of NetID.
+func (mr *MockStakerMockRecorder) NetID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubnetID", reflect.TypeOf((*MockStaker)(nil).SubnetID))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetID", reflect.TypeOf((*MockStaker)(nil).NetID))
 }
 
 // Weight mocks base method.

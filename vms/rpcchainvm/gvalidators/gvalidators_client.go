@@ -33,8 +33,8 @@ func (c *Client) GetCurrentHeight(ctx context.Context) (uint64, error) {
 	return resp.Height, nil
 }
 
-func (c *Client) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	resp, err := c.client.GetSubnetID(ctx, &validatorstatepb.GetSubnetIDRequest{
+func (c *Client) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	resp, err := c.client.GetNetID(ctx, &validatorstatepb.GetNetIDRequest{
 		ChainId: chainID[:],
 	})
 	if err != nil {
@@ -43,10 +43,10 @@ func (c *Client) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error
 	return ids.ToID(resp.SubnetId)
 }
 
-func (c *Client) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+func (c *Client) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	resp, err := c.client.GetValidatorSet(ctx, &validatorstatepb.GetValidatorSetRequest{
 		Height:   height,
-		SubnetId: subnetID[:],
+		SubnetId: netID[:],
 	})
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (c *Client) GetCurrentValidators(ctx context.Context, height uint64, netID 
 	return c.GetValidatorSet(ctx, height, netID)
 }
 
-func (c *Client) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*validators.GetValidatorOutput, uint64, error) {
+func (c *Client) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*validators.GetValidatorOutput, uint64, error) {
 	// For now, just return empty map and current height since we don't have full support for this
 	height, err := c.GetCurrentHeight(ctx)
 	if err != nil {

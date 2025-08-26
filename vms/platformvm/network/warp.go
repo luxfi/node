@@ -33,7 +33,7 @@ const (
 	ErrMismatchedConversionID
 
 	ErrInvalidJustificationType
-	ErrFailedToParseSubnetID
+	ErrFailedToParseNetID
 	ErrMismatchedValidationID
 	ErrValidationDoesNotExist
 	ErrValidationExists
@@ -56,7 +56,7 @@ type L1ValidatorInfo interface {
 type StateReader interface {
 	GetL1Validator(validationID ids.ID) (L1ValidatorInfo, error)
 	GetTimestamp() time.Time
-	// GetSubnetToL1Conversion(subnetID ids.ID) (interface{}, error) // Uncommented when needed
+	// GetSubnetToL1Conversion(netID ids.ID) (interface{}, error) // Uncommented when needed
 	// HasExpiry(entry interface{}) (bool, error) // Uncommented when needed
 }
 
@@ -113,8 +113,8 @@ func (s signatureRequestVerifier) verifySubnetToL1Conversion(
 	msg *message.SubnetToL1Conversion,
 	justification []byte,
 ) *common.AppError {
-	// Parse the justification as subnetID
-	_, err := ids.ToID(justification) // subnetID will be used when L1 conversion is implemented
+	// Parse the justification as netID
+	_, err := ids.ToID(justification) // netID will be used when L1 conversion is implemented
 	if err != nil {
 		return &common.AppError{
 			Code:    ErrFailedToParseJustification,
@@ -125,17 +125,17 @@ func (s signatureRequestVerifier) verifySubnetToL1Conversion(
 	s.stateLock.Lock()
 	defer s.stateLock.Unlock()
 
-	// conversion, err := s.state.GetSubnetToL1Conversion(subnetID)
+	// conversion, err := s.state.GetSubnetToL1Conversion(netID)
 	// if err == database.ErrNotFound {
 	// 	return &common.AppError{
 	// 		Code:    ErrConversionDoesNotExist,
-	// 		Message: fmt.Sprintf("subnet %q has not been converted", subnetID),
+	// 		Message: fmt.Sprintf("subnet %q has not been converted", netID),
 	// 	}
 	// }
 	// if err != nil {
 	// 	return &common.AppError{
 	// 		Code:    common.ErrUndefined.Code,
-	// 		Message: "failed to get subnet conversionID: " + err.Error(),
+	// 		Message: "failed to get net conversionID: " + err.Error(),
 	// 	}
 	// }
 
@@ -167,10 +167,10 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 	// }
 
 	// switch preimage := justification.GetPreimage().(type) {
-	// case *platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData:
-	// 	return s.verifySubnetValidatorNotCurrentlyRegistered(msg.ValidationID, preimage.ConvertSubnetToL1TxData)
+	// case *platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData:
+	// 	return s.verifyNetValidatorNotCurrentlyRegistered(msg.ValidationID, preimage.ConvertNetToL1TxData)
 	// case *platformvm.L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage:
-	// 	return s.verifySubnetValidatorCanNotValidate(msg.ValidationID, preimage.RegisterL1ValidatorMessage)
+	// 	return s.verifyNetValidatorCanNotValidate(msg.ValidationID, preimage.RegisterL1ValidatorMessage)
 	// default:
 	// 	return &common.AppError{
 	// 		Code:    ErrInvalidJustificationType,
@@ -207,22 +207,22 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistered(
 	return nil
 }
 
-// verifySubnetValidatorNotCurrentlyRegistered verifies that the validationID
-// could only correspond to a validator from a ConvertSubnetToL1Tx and that it
+// verifyNetValidatorNotCurrentlyRegistered verifies that the validationID
+// could only correspond to a validator from a ConvertNetToL1Tx and that it
 // is not currently a validator.
-func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
+func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 	validationID ids.ID,
-	justification *platformvm.SubnetIDIndex,
+	justification *platformvm.NetIDIndex,
 ) *common.AppError {
-	// subnetID, err := ids.ToID(justification.GetSubnetId())
+	// netID, err := ids.ToID(justification.GetSubnetId())
 	// if err != nil {
 	// 	return &common.AppError{
-	// 		Code:    ErrFailedToParseSubnetID,
-	// 		Message: "failed to parse subnetID: " + err.Error(),
+	// 		Code:    ErrFailedToParseNetID,
+	// 		Message: "failed to parse netID: " + err.Error(),
 	// 	}
 	// }
 
-	// justificationID := subnetID.Append(justification.GetIndex())
+	// justificationID := netID.Append(justification.GetIndex())
 	// if validationID != justificationID {
 	// 	return &common.AppError{
 	// 		Code:    ErrMismatchedValidationID,
@@ -233,18 +233,18 @@ func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
 	// s.stateLock.Lock()
 	// defer s.stateLock.Unlock()
 
-	// // Verify that the provided subnetID has been converted.
-	// _, err = s.state.GetSubnetToL1Conversion(subnetID)
+	// // Verify that the provided netID has been converted.
+	// _, err = s.state.GetSubnetToL1Conversion(netID)
 	// if err == database.ErrNotFound {
 	// 	return &common.AppError{
 	// 		Code:    ErrConversionDoesNotExist,
-	// 		Message: fmt.Sprintf("subnet %q has not been converted", subnetID),
+	// 		Message: fmt.Sprintf("subnet %q has not been converted", netID),
 	// 	}
 	// }
 	// if err != nil {
 	// 	return &common.AppError{
 	// 		Code:    common.ErrUndefined.Code,
-	// 		Message: "failed to get subnet conversionID: " + err.Error(),
+	// 		Message: "failed to get net conversionID: " + err.Error(),
 	// 	}
 	// }
 
@@ -264,13 +264,13 @@ func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
 	// }
 
 	// Either the validator was removed or it was never registered as part of
-	// the subnet conversion.
+	// the net conversion.
 	return nil
 }
 
-// verifySubnetValidatorCanNotValidate verifies that the validationID is not
+// verifyNetValidatorCanNotValidate verifies that the validationID is not
 // currently and can never become a validator.
-func (s signatureRequestVerifier) verifySubnetValidatorCanNotValidate(
+func (s signatureRequestVerifier) verifyNetValidatorCanNotValidate(
 	validationID ids.ID,
 	justificationBytes []byte,
 ) *common.AppError {

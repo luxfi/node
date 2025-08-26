@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 )

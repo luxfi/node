@@ -12,22 +12,22 @@ import (
 	"github.com/luxfi/node/utils/constants"
 )
 
-func TestSubnetValidatorVerifySubnetID(t *testing.T) {
+func TestNetValidatorVerifyNetID(t *testing.T) {
 	require := require.New(t)
 
 	// Error path
 	{
-		vdr := &SubnetValidator{
+		vdr := &NetValidator{
 			Subnet: constants.PrimaryNetworkID,
 		}
 
 		err := vdr.Verify()
-		require.ErrorIs(err, errBadSubnetID)
+		require.ErrorIs(err, errBadNetID)
 	}
 
 	// Happy path
 	{
-		vdr := &SubnetValidator{
+		vdr := &NetValidator{
 			Subnet: ids.GenerateTestID(),
 			Validator: Validator{
 				Wght: 1,

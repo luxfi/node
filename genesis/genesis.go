@@ -445,7 +445,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	platformvmArgs.Chains = []api.Chain{
 		{
 			GenesisData: xvmReply.Bytes,
-			SubnetID:    constants.PrimaryNetworkID,
+			NetID:    constants.PrimaryNetworkID,
 			VMID:        constants.XVMID,
 			FxIDs: []ids.ID{
 				secp256k1fx.ID,
@@ -456,7 +456,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		},
 		{
 			GenesisData: genesisStr,
-			SubnetID:    constants.PrimaryNetworkID,
+			NetID:    constants.PrimaryNetworkID,
 			VMID:        constants.EVMID,
 			Name:        "C-Chain",
 		},

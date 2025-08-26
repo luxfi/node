@@ -492,14 +492,14 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	require.IsType(&indexer{}, idxrIntf)
 	idxr := idxrIntf.(*indexer)
 
-	// Create chain1Ctx for a random subnet + chain.
+	// Create chain1Ctx for a random net + chain.
 	testChainID := ids.GenerateTestID()
 	chain1Ctx := consensustest.Context(t, testChainID)
 	
-	// Override the subnet ID to be non-primary (not ids.Empty)
-	nonPrimarySubnetID := ids.GenerateTestID()
+	// Override the net ID to be non-primary (not ids.Empty)
+	nonPrimaryNetID := ids.GenerateTestID()
 	idsStruct := luxconsensus.MustIDs(chain1Ctx)
-	idsStruct.SubnetID = nonPrimarySubnetID
+	idsStruct.NetID = nonPrimaryNetID
 	chain1Ctx = luxconsensus.WithIDs(chain1Ctx, idsStruct)
 
 	// RegisterChain should return without adding an index for this chain

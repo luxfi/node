@@ -26,8 +26,8 @@ var (
 // ValidatorState defines the functions that must be implemented to get
 // the canonical validator set for warp message validation.
 type ValidatorState interface {
-	GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error)
-	GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
+	GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error)
+	GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
 }
 
 type Validator struct {
@@ -41,17 +41,17 @@ func (v *Validator) Compare(o *Validator) int {
 	return bytes.Compare(v.PublicKeyBytes, o.PublicKeyBytes)
 }
 
-// GetCanonicalValidatorSet returns the validator set of [subnetID] at
+// GetCanonicalValidatorSet returns the validator set of [netID] at
 // [pChcainHeight] in a canonical ordering. Also returns the total weight on
-// [subnetID].
+// [netID].
 func GetCanonicalValidatorSet(
 	ctx context.Context,
 	pChainState ValidatorState,
 	pChainHeight uint64,
-	subnetID ids.ID,
+	netID ids.ID,
 ) ([]*Validator, uint64, error) {
 	// Get the validator set at the given height.
-	vdrSet, err := pChainState.GetValidatorSet(ctx, pChainHeight, subnetID)
+	vdrSet, err := pChainState.GetValidatorSet(ctx, pChainHeight, netID)
 	if err != nil {
 		return nil, 0, err
 	}

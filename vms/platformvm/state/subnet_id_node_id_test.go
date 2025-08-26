@@ -11,29 +11,29 @@ import (
 	"github.com/thepudds/fzgen/fuzzer"
 )
 
-func FuzzSubnetIDNodeIDMarshal(f *testing.F) {
+func FuzzNetIDNodeIDMarshal(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		require := require.New(t)
 
-		var v subnetIDNodeID
+		var v netIDNodeID
 		fz := fuzzer.NewFuzzer(data)
 		fz.Fill(&v)
 
 		marshalledData := v.Marshal()
 
-		var parsed subnetIDNodeID
+		var parsed netIDNodeID
 		require.NoError(parsed.Unmarshal(marshalledData))
 		require.Equal(v, parsed)
 	})
 }
 
-func FuzzSubnetIDNodeIDUnmarshal(f *testing.F) {
+func FuzzNetIDNodeIDUnmarshal(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		require := require.New(t)
 
-		var v subnetIDNodeID
+		var v netIDNodeID
 		if err := v.Unmarshal(data); err != nil {
-			require.ErrorIs(err, errUnexpectedSubnetIDNodeIDLength)
+			require.ErrorIs(err, errUnexpectedNetIDNodeIDLength)
 			return
 		}
 
@@ -42,16 +42,16 @@ func FuzzSubnetIDNodeIDUnmarshal(f *testing.F) {
 	})
 }
 
-func FuzzSubnetIDNodeIDOrdering(f *testing.F) {
+func FuzzNetIDNodeIDOrdering(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		var (
-			v0 subnetIDNodeID
-			v1 subnetIDNodeID
+			v0 netIDNodeID
+			v1 netIDNodeID
 		)
 		fz := fuzzer.NewFuzzer(data)
 		fz.Fill(&v0, &v1)
 
-		if v0.subnetID == v1.subnetID {
+		if v0.netID == v1.netID {
 			return
 		}
 
@@ -59,7 +59,7 @@ func FuzzSubnetIDNodeIDOrdering(f *testing.F) {
 		key1 := v1.Marshal()
 		require.Equal(
 			t,
-			v0.subnetID.Compare(v1.subnetID),
+			v0.netID.Compare(v1.netID),
 			bytes.Compare(key0, key1),
 		)
 	})

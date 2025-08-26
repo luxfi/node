@@ -42,7 +42,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 
 	avajson "github.com/luxfi/node/utils/json"
 	vmkeystore "github.com/luxfi/node/vms/components/keystore"
@@ -252,7 +252,7 @@ func TestGetTx(t *testing.T) {
 
 				builder, txSigner := factory.NewWallet(keys[0])
 				utx, err := builder.NewAddPermissionlessValidatorTx(
-					&txs.SubnetValidator{
+					&txs.NetValidator{
 						Validator: txs.Validator{
 							NodeID: ids.GenerateTestNodeID(),
 							Start:  uint64(service.vm.clock.Time().Add(txexecutor.SyncBound).Unix()),
@@ -379,7 +379,7 @@ func TestGetBalance(t *testing.T) {
 
 	var (
 		feeCalc         = fee.NewStaticCalculator(service.vm.Config.StaticFeeConfig, service.vm.Config.UpgradeConfig)
-		createSubnetFee = feeCalc.CalculateFee(&txs.CreateSubnetTx{}, service.vm.clock.Time())
+		createSubnetFee = feeCalc.CalculateFee(&txs.CreateNetTx{}, service.vm.clock.Time())
 	)
 
 	// Ensure GetStake is correct for each of the genesis validators
@@ -395,8 +395,8 @@ func TestGetBalance(t *testing.T) {
 		require.NoError(service.GetBalance(nil, &request, &reply))
 		balance := defaultBalance
 		if idx == 0 {
-			// we use the first key to fund a subnet creation in [defaultGenesis].
-			// As such we need to account for the subnet creation fee
+			// we use the first key to fund a net creation in [defaultGenesis].
+			// As such we need to account for the net creation fee
 			balance = defaultBalance - createSubnetFee
 		}
 		require.Equal(avajson.Uint64(balance), reply.Balance)
@@ -602,7 +602,7 @@ func TestGetCurrentValidators(t *testing.T) {
 	genesis, _ := defaultGenesis(t, service.vm.ctx.LUXAssetID)
 
 	// Call getValidators
-	args := GetCurrentValidatorsArgs{SubnetID: constants.PrimaryNetworkID}
+	args := GetCurrentValidatorsArgs{NetID: constants.PrimaryNetworkID}
 	response := GetCurrentValidatorsReply{}
 
 	require.NoError(service.GetCurrentValidators(nil, &args, &response))
@@ -668,7 +668,7 @@ func TestGetCurrentValidators(t *testing.T) {
 	service.vm.ctx.Lock.Unlock()
 
 	// Call getCurrentValidators
-	args = GetCurrentValidatorsArgs{SubnetID: constants.PrimaryNetworkID}
+	args = GetCurrentValidatorsArgs{NetID: constants.PrimaryNetworkID}
 	require.NoError(service.GetCurrentValidators(nil, &args, &response))
 	require.Len(response.Validators, len(genesis.Validators))
 
@@ -684,7 +684,7 @@ func TestGetCurrentValidators(t *testing.T) {
 		require.Nil(vdr.Delegators)
 
 		innerArgs := GetCurrentValidatorsArgs{
-			SubnetID: constants.PrimaryNetworkID,
+			NetID: constants.PrimaryNetworkID,
 			NodeIDs:  []ids.NodeID{vdr.NodeID},
 		}
 		innerResponse := GetCurrentValidatorsReply{}
@@ -711,7 +711,7 @@ func TestGetCurrentValidators(t *testing.T) {
 	require.NoError(err)
 	service.vm.state.AddTx(tx, status.Committed)
 	service.vm.state.DeleteCurrentDelegator(staker)
-	require.NoError(service.vm.state.SetDelegateeReward(staker.SubnetID, staker.NodeID, 100000))
+	require.NoError(service.vm.state.SetDelegateeReward(staker.NetID, staker.NodeID, 100000))
 	require.NoError(service.vm.state.Commit())
 
 	service.vm.ctx.Lock.Unlock()

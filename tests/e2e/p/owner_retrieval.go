@@ -18,7 +18,7 @@ var _ = e2e.DescribePChain("[P-Chain Wallet]", func() {
 	tc := e2e.NewTestContext()
 	require := require.New(tc)
 
-	ginkgo.It("should support retrieving subnet owners", func() {
+	ginkgo.It("should support retrieving net owners", func() {
 		env := e2e.GetEnv(tc)
 
 		nodeURI := env.GetRandomNodeURI()
@@ -36,22 +36,22 @@ var _ = e2e.DescribePChain("[P-Chain Wallet]", func() {
 		}
 
 		tc.By("creating a permissioned subnet")
-		subnetTx, err := pWallet.IssueCreateSubnetTx(
+		subnetTx, err := pWallet.IssueCreateNetTx(
 			owner,
 			tc.WithDefaultContext(),
 		)
 		require.NoError(err)
-		subnetID := subnetTx.ID()
-		require.NotEqual(subnetID, constants.PrimaryNetworkID)
+		netID := subnetTx.ID()
+		require.NotEqual(netID, constants.PrimaryNetworkID)
 
 		tc.By("verifying owner", func() {
 			subnetOwners, err := platformvm.GetSubnetOwners(
 				pChainClient,
 				tc.DefaultContext(),
-				subnetID,
+				netID,
 			)
 			require.NoError(err)
-			subnetOwnerInterface, found := subnetOwners[subnetID]
+			subnetOwnerInterface, found := subnetOwners[netID]
 			require.True(found)
 			subnetOwner, ok := subnetOwnerInterface.(*secp256k1fx.OutputOwners)
 			require.True(ok)
@@ -68,9 +68,9 @@ var _ = e2e.DescribePChain("[P-Chain Wallet]", func() {
 			},
 		}
 
-		tc.By("changing subnet owner")
-		_, err = pWallet.IssueTransferSubnetOwnershipTx(
-			subnetID,
+		tc.By("changing net owner")
+		_, err = pWallet.IssueTransferNetOwnershipTx(
+			netID,
 			newOwner,
 			tc.WithDefaultContext(),
 		)
@@ -80,10 +80,10 @@ var _ = e2e.DescribePChain("[P-Chain Wallet]", func() {
 			subnetOwners, err := platformvm.GetSubnetOwners(
 				pChainClient,
 				tc.DefaultContext(),
-				subnetID,
+				netID,
 			)
 			require.NoError(err)
-			subnetOwnerInterface, found := subnetOwners[subnetID]
+			subnetOwnerInterface, found := subnetOwners[netID]
 			require.True(found)
 			subnetOwner, ok := subnetOwnerInterface.(*secp256k1fx.OutputOwners)
 			require.True(ok)

@@ -17,27 +17,27 @@ import (
 var (
 	errWrongNumberOfCredentials       = errors.New("should have the same number of credentials as inputs")
 	errIsImmutable                    = errors.New("is immutable")
-	errUnauthorizedSubnetModification = errors.New("unauthorized subnet modification")
+	errUnauthorizedSubnetModification = errors.New("unauthorized net modification")
 )
 
 // verifyPoASubnetAuthorization carries out the validation for modifying a PoA
 // subnet. This is an extension of [verifySubnetAuthorization] that additionally
-// verifies that the subnet being modified is currently a PoA subnet.
+// verifies that the net being modified is currently a PoA subnet.
 func verifyPoASubnetAuthorization(
 	backend *Backend,
 	chainState state.Chain,
 	sTx *txs.Tx,
-	subnetID ids.ID,
+	netID ids.ID,
 	subnetAuth verify.Verifiable,
 ) ([]verify.Verifiable, error) {
-	creds, err := verifySubnetAuthorization(backend, chainState, sTx, subnetID, subnetAuth)
+	creds, err := verifySubnetAuthorization(backend, chainState, sTx, netID, subnetAuth)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = chainState.GetSubnetTransformation(subnetID)
+	_, err = chainState.GetSubnetTransformation(netID)
 	if err == nil {
-		return nil, fmt.Errorf("%q %w", subnetID, errIsImmutable)
+		return nil, fmt.Errorf("%q %w", netID, errIsImmutable)
 	}
 	if err != database.ErrNotFound {
 		return nil, err
@@ -47,25 +47,25 @@ func verifyPoASubnetAuthorization(
 }
 
 // verifySubnetAuthorization carries out the validation for modifying a subnet.
-// The last credential in [sTx.Creds] is used as the subnet authorization.
+// The last credential in [sTx.Creds] is used as the net authorization.
 // Returns the remaining tx credentials that should be used to authorize the
 // other operations in the tx.
 func verifySubnetAuthorization(
 	backend *Backend,
 	chainState state.Chain,
 	sTx *txs.Tx,
-	subnetID ids.ID,
+	netID ids.ID,
 	subnetAuth verify.Verifiable,
 ) ([]verify.Verifiable, error) {
 	if len(sTx.Creds) == 0 {
-		// Ensure there is at least one credential for the subnet authorization
+		// Ensure there is at least one credential for the net authorization
 		return nil, errWrongNumberOfCredentials
 	}
 
 	baseTxCredsLen := len(sTx.Creds) - 1
 	subnetCred := sTx.Creds[baseTxCredsLen]
 
-	subnetOwner, err := chainState.GetSubnetOwner(subnetID)
+	subnetOwner, err := chainState.GetSubnetOwner(netID)
 	if err != nil {
 		return nil, err
 	}

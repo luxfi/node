@@ -61,7 +61,7 @@ func (e *StandardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 		return err
 	}
 
-	baseTxCreds, err := verifyPoASubnetAuthorization(e.Backend, e.State, e.Tx, tx.SubnetID, tx.SubnetAuth)
+	baseTxCreds, err := verifyPoASubnetAuthorization(e.Backend, e.State, e.Tx, tx.NetID, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ func (e *StandardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return nil
 }
 
-func (e *StandardTxExecutor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
+func (e *StandardTxExecutor) CreateNetTx(tx *txs.CreateNetTx) error {
 	// Make sure this transaction is well formed.
 	if err := e.Tx.SyntacticVerify(e.Ctx); err != nil {
 		return err
@@ -137,8 +137,8 @@ func (e *StandardTxExecutor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 	lux.Consume(e.State, tx.Ins)
 	// Produce the UTXOS
 	lux.Produce(e.State, txID, tx.Outs)
-	// Add the new subnet to the database
-	e.State.AddSubnet(txID)
+	// Add the new net to the database
+	e.State.AddNet(txID)
 	e.State.SetSubnetOwner(txID, tx.Owner)
 	return nil
 }
@@ -347,8 +347,8 @@ func (e *StandardTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	return nil
 }
 
-func (e *StandardTxExecutor) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) error {
-	if err := verifyAddSubnetValidatorTx(
+func (e *StandardTxExecutor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
+	if err := verifyAddNetValidatorTx(
 		e.Backend,
 		e.State,
 		e.Tx,
@@ -387,13 +387,13 @@ func (e *StandardTxExecutor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
 	return nil
 }
 
-// Verifies a [*txs.RemoveSubnetValidatorTx] and, if it passes, executes it on
-// [e.State]. For verification rules, see [verifyRemoveSubnetValidatorTx]. This
+// Verifies a [*txs.RemoveNetValidatorTx] and, if it passes, executes it on
+// [e.State]. For verification rules, see [verifyRemoveNetValidatorTx]. This
 // transaction will result in [tx.NodeID] being removed as a validator of
-// [tx.SubnetID].
+// [tx.NetID].
 // Note: [tx.NodeID] may be either a current or pending validator.
-func (e *StandardTxExecutor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx) error {
-	staker, isCurrentValidator, err := verifyRemoveSubnetValidatorTx(
+func (e *StandardTxExecutor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
+	staker, isCurrentValidator, err := verifyRemoveNetValidatorTx(
 		e.Backend,
 		e.State,
 		e.Tx,
@@ -409,7 +409,7 @@ func (e *StandardTxExecutor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidat
 		e.State.DeletePendingValidator(staker)
 	}
 
-	// Invariant: There are no permissioned subnet delegators to remove.
+	// Invariant: There are no permissioned net delegators to remove.
 
 	txID := e.Tx.ID()
 	lux.Consume(e.State, tx.Ins)
@@ -418,7 +418,7 @@ func (e *StandardTxExecutor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidat
 	return nil
 }
 
-func (e *StandardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error {
+func (e *StandardTxExecutor) TransformNetTx(tx *txs.TransformNetTx) error {
 	if err := e.Tx.SyntacticVerify(e.Ctx); err != nil {
 		return err
 	}
@@ -470,8 +470,8 @@ func (e *StandardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error 
 	lux.Consume(e.State, tx.Ins)
 	// Produce the UTXOS
 	lux.Produce(e.State, txID, tx.Outs)
-	// Transform the new subnet in the database
-	e.State.AddSubnetTransformation(e.Tx)
+	// Transform the new net in the database
+	e.State.AddNetTransformation(e.Tx)
 	e.State.SetCurrentSupply(tx.Subnet, tx.InitialSupply)
 	return nil
 }
@@ -495,7 +495,7 @@ func (e *StandardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionl
 	lux.Produce(e.State, txID, tx.Outs)
 
 	if e.Config.PartialSyncPrimaryNetwork &&
-		tx.Subnet == constants.PrimaryNetworkID &&
+		tx.Net == constants.PrimaryNetworkID &&
 		tx.Validator.NodeID == e.NodeID {
 		if e.Log != nil {
 			e.Log.Warn("verified transaction that would cause this node to become unhealthy")
@@ -525,12 +525,12 @@ func (e *StandardTxExecutor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionl
 	return nil
 }
 
-// Verifies a [*txs.TransferSubnetOwnershipTx] and, if it passes, executes it on
-// [e.State]. For verification rules, see [verifyTransferSubnetOwnershipTx].
+// Verifies a [*txs.TransferNetOwnershipTx] and, if it passes, executes it on
+// [e.State]. For verification rules, see [verifyTransferNetOwnershipTx].
 // This transaction will result in the ownership of [tx.Subnet] being transferred
 // to [tx.Owner].
-func (e *StandardTxExecutor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
-	err := verifyTransferSubnetOwnershipTx(
+func (e *StandardTxExecutor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
+	err := verifyTransferNetOwnershipTx(
 		e.Backend,
 		e.State,
 		e.Tx,
@@ -612,13 +612,13 @@ func (e *StandardTxExecutor) putStaker(stakerTx txs.Staker) error {
 		// validator as there are no permissioned delegators
 		var potentialReward uint64
 		if !stakerTx.CurrentPriority().IsPermissionedValidator() {
-			subnetID := stakerTx.SubnetID()
-			currentSupply, err := e.State.GetCurrentSupply(subnetID)
+			netID := stakerTx.NetID()
+			currentSupply, err := e.State.GetCurrentSupply(netID)
 			if err != nil {
 				return err
 			}
 
-			rewards, err := GetRewardsCalculator(e.Backend, e.State, subnetID)
+			rewards, err := GetRewardsCalculator(e.Backend, e.State, netID)
 			if err != nil {
 				return err
 			}
@@ -632,7 +632,7 @@ func (e *StandardTxExecutor) putStaker(stakerTx txs.Staker) error {
 				currentSupply,
 			)
 
-			e.State.SetCurrentSupply(subnetID, currentSupply+potentialReward)
+			e.State.SetCurrentSupply(netID, currentSupply+potentialReward)
 		}
 
 		staker, err = state.NewCurrentStaker(txID, stakerTx, chainTime, potentialReward)
@@ -676,7 +676,7 @@ func (e *StandardTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeight
 	return nil
 }
 
-// ConvertSubnetToL1Tx handles converting a subnet to L1
-func (e *StandardTxExecutor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+// ConvertNetToL1Tx handles converting a net to L1
+func (e *StandardTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 	return nil
 }

@@ -167,7 +167,7 @@ func TestValidatorsSample(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
-			subnetID := ids.GenerateTestID()
+			netID := ids.GenerateTestID()
 			mockValidators := validatorsmock.NewState(t)
 
 			// Set up mock behavior
@@ -210,7 +210,7 @@ func TestValidatorsSample(t *testing.T) {
 			require.NoError(network.Connected(ctx, nodeID1, nil))
 			require.NoError(network.Connected(ctx, nodeID2, nil))
 
-			v := NewValidators(network.Peers, network.log, subnetID, mockValidators, tt.maxStaleness)
+			v := NewValidators(network.Peers, network.log, netID, mockValidators, tt.maxStaleness)
 			for _, call := range tt.calls {
 				v.lastUpdated = call.time
 				sampled := v.Sample(ctx, call.limit)
@@ -316,7 +316,7 @@ func TestValidatorsTop(t *testing.T) {
 				}
 			}
 
-			subnetID := ids.GenerateTestID()
+			netID := ids.GenerateTestID()
 			mockValidators := validatorsmock.NewState(t)
 
 			mockValidators.GetCurrentHeightF = func(context.Context) (uint64, error) {
@@ -335,7 +335,7 @@ func TestValidatorsTop(t *testing.T) {
 			require.NoError(network.Connected(ctx, nodeID1, nil))
 			require.NoError(network.Connected(ctx, nodeID2, nil))
 
-			v := NewValidators(network.Peers, network.log, subnetID, mockValidators, time.Second)
+			v := NewValidators(network.Peers, network.log, netID, mockValidators, time.Second)
 			nodeIDs := v.Top(ctx, test.percentage)
 			require.Equal(test.expected, nodeIDs)
 		})

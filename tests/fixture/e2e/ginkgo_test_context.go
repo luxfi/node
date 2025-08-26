@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 var _ tests.TestContext = (*GinkgoTestContext)(nil)

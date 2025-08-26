@@ -142,7 +142,7 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 			zap.String("chainName", chainName),
 		)
 		return
-	} else if ids.SubnetID != constants.PrimaryNetworkID {
+	} else if ids.NetID != constants.PrimaryNetworkID {
 		i.log.Debug("not registering chain to indexer",
 			zap.String("reason", "not in the primary network"),
 			zap.String("chainName", chainName),

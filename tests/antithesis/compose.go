@@ -181,7 +181,7 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 		"AVAWL_URIS": strings.Join(uris, " "),
 	}
 	chainIDs := []string{}
-	for _, subnet := range network.Subnets {
+	for _, net := range network.Subnets {
 		for _, chain := range subnet.Chains {
 			chainIDs = append(chainIDs, chain.ChainID.String())
 		}

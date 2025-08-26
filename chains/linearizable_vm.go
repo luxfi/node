@@ -51,7 +51,7 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 	// Convert consensus types to block types
 	chainCtx := &block.ChainContext{
 		NetworkID:    consensus.GetNetworkID(vm.ctx),
-		SubnetID:     consensus.GetSubnetID(vm.ctx),
+		NetID:     consensus.GetNetID(vm.ctx),
 		ChainID:      consensus.GetChainID(vm.ctx),
 		NodeID:       consensus.GetNodeID(vm.ctx),
 		PublicKey:    consensus.PK(vm.ctx),
@@ -234,7 +234,7 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	consensusCtx := context.Background()
 	consensusCtx = consensus.WithIDs(consensusCtx, consensus.IDs{
 		NetworkID: chainCtx.NetworkID,
-		SubnetID:  chainCtx.SubnetID,
+		NetID:  chainCtx.NetID,
 		ChainID:   chainCtx.ChainID,
 		NodeID:    chainCtx.NodeID,
 		PublicKey: chainCtx.PublicKey,

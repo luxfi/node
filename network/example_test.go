@@ -43,12 +43,12 @@ func (t *testExternalHandler) HandleInbound(_ context.Context, msg interface{}) 
 	}
 }
 
-func (t *testExternalHandler) Connected(nodeID ids.NodeID, version *version.Application, subnetID ids.ID) {
+func (t *testExternalHandler) Connected(nodeID ids.NodeID, version *version.Application, netID ids.ID) {
 	t.log.Info(
 		"connected",
 		zap.Stringer("nodeID", nodeID),
 		zap.Stringer("version", version),
-		zap.Stringer("subnetID", subnetID),
+		zap.Stringer("netID", netID),
 	)
 }
 

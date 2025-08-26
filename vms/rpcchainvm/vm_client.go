@@ -138,7 +138,7 @@ func (vm *VMClient) Initialize(
 	// Set IDs in context
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: chainCtx.NetworkID,
-		SubnetID:  chainCtx.SubnetID,
+		NetID:  chainCtx.NetID,
 		ChainID:   chainCtx.ChainID,
 		NodeID:    chainCtx.NodeID,
 		PublicKey: chainCtx.PublicKey,
@@ -219,7 +219,7 @@ func (vm *VMClient) Initialize(
 
 	resp, err := vm.client.Initialize(ctx, &vmpb.InitializeRequest{
 		NetworkId:    chainCtx.NetworkID,
-		SubnetId:     chainCtx.SubnetID[:],
+		SubnetId:     chainCtx.NetID[:],
 		ChainId:      chainCtx.ChainID[:],
 		NodeId:       chainCtx.NodeID.Bytes(),
 		PublicKey:    bls.PublicKeyToCompressedBytes(chainCtx.PublicKey),
@@ -1171,13 +1171,13 @@ func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, e
 	return v.vs.GetCurrentHeight()
 }
 
-func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return v.vs.GetSubnetID(ctx, chainID)
+func (v *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return v.vs.GetNetID(ctx, chainID)
 }
 
-func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	// Get the raw validator set
-	valSet, err := v.vs.GetValidatorSet(height, subnetID)
+	valSet, err := v.vs.GetValidatorSet(height, netID)
 	if err != nil {
 		return nil, err
 	}
@@ -1193,7 +1193,7 @@ func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint
 	return result, nil
 }
 
-func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
 	// Get current height first
 	height, err := v.vs.GetCurrentHeight()
 	if err != nil {
@@ -1201,7 +1201,7 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, subn
 	}
 	
 	// Get validators at current height
-	valSet, err := v.vs.GetValidatorSet(height, subnetID)
+	valSet, err := v.vs.GetValidatorSet(height, netID)
 	if err != nil {
 		return nil, 0, err
 	}

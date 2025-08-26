@@ -24,23 +24,23 @@ func NewValidatorsWrapper(manager validators.Manager) *validatorsWrapper {
 }
 
 // GetWeight returns the weight of a validator
-func (v *validatorsWrapper) GetWeight(subnetID ids.ID, nodeID ids.NodeID) uint64 {
-	return v.manager.GetWeight(subnetID, nodeID)
+func (v *validatorsWrapper) GetWeight(netID ids.ID, nodeID ids.NodeID) uint64 {
+	return v.manager.GetWeight(netID, nodeID)
 }
 
 // GetValidator returns validator info
-func (v *validatorsWrapper) GetValidator(subnetID ids.ID, nodeID ids.NodeID) (*validators.Validator, bool) {
-	return v.manager.GetValidator(subnetID, nodeID)
+func (v *validatorsWrapper) GetValidator(netID ids.ID, nodeID ids.NodeID) (*validators.Validator, bool) {
+	return v.manager.GetValidator(netID, nodeID)
 }
 
 // GetValidatorIDs returns all validator IDs for a subnet
-func (v *validatorsWrapper) GetValidatorIDs(subnetID ids.ID) []ids.NodeID {
-	return v.manager.GetValidatorIDs(subnetID)
+func (v *validatorsWrapper) GetValidatorIDs(netID ids.ID) []ids.NodeID {
+	return v.manager.GetValidatorIDs(netID)
 }
 
 // TotalWeight returns the total weight of all validators
-func (v *validatorsWrapper) TotalWeight(subnetID ids.ID) (uint64, error) {
-	return v.manager.TotalWeight(subnetID)
+func (v *validatorsWrapper) TotalWeight(netID ids.ID) (uint64, error) {
+	return v.manager.TotalWeight(netID)
 }
 
 // RegisterSetCallbackListener registers a callback listener

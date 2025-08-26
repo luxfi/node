@@ -24,8 +24,8 @@ type validatorStateWrapper struct {
 	state validators.State
 }
 
-func (w *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	valSet, err := w.state.GetValidatorSet(ctx, height, subnetID)
+func (w *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	valSet, err := w.state.GetValidatorSet(ctx, height, netID)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (w *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint
 	return result, nil
 }
 
-func (w *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+func (w *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	// For now, return an error
 	return ids.Empty, nil
 }
@@ -71,7 +71,7 @@ func (*warpVerifier) AddValidatorTx(*txs.AddValidatorTx) error {
 	return nil
 }
 
-func (*warpVerifier) AddSubnetValidatorTx(*txs.AddSubnetValidatorTx) error {
+func (*warpVerifier) AddNetValidatorTx(*txs.AddNetValidatorTx) error {
 	return nil
 }
 
@@ -83,7 +83,7 @@ func (*warpVerifier) CreateChainTx(*txs.CreateChainTx) error {
 	return nil
 }
 
-func (*warpVerifier) CreateSubnetTx(*txs.CreateSubnetTx) error {
+func (*warpVerifier) CreateNetTx(*txs.CreateNetTx) error {
 	return nil
 }
 
@@ -103,11 +103,11 @@ func (*warpVerifier) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return nil
 }
 
-func (*warpVerifier) RemoveSubnetValidatorTx(*txs.RemoveSubnetValidatorTx) error {
+func (*warpVerifier) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
 	return nil
 }
 
-func (*warpVerifier) TransformSubnetTx(*txs.TransformSubnetTx) error {
+func (*warpVerifier) TransformNetTx(*txs.TransformNetTx) error {
 	return nil
 }
 
@@ -119,7 +119,7 @@ func (*warpVerifier) AddPermissionlessDelegatorTx(*txs.AddPermissionlessDelegato
 	return nil
 }
 
-func (*warpVerifier) TransferSubnetOwnershipTx(*txs.TransferSubnetOwnershipTx) error {
+func (*warpVerifier) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
 	return nil
 }
 
@@ -127,7 +127,7 @@ func (*warpVerifier) BaseTx(*txs.BaseTx) error {
 	return nil
 }
 
-func (*warpVerifier) ConvertSubnetToL1Tx(*txs.ConvertSubnetToL1Tx) error {
+func (*warpVerifier) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
 	return nil
 }
 

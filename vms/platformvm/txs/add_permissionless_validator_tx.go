@@ -37,8 +37,8 @@ type AddPermissionlessValidatorTx struct {
 	BaseTx `serialize:"true"`
 	// Describes the validator
 	Validator `serialize:"true" json:"validator"`
-	// ID of the subnet this validator is validating
-	Subnet ids.ID `serialize:"true" json:"subnetID"`
+	// ID of the net this validator is validating
+	Net ids.ID `serialize:"true" json:"netID"`
 	// If the [Subnet] is the primary network, [Signer] is the BLS key for this
 	// validator. If the [Subnet] is not the primary network, this value is the
 	// empty signer
@@ -71,7 +71,7 @@ func (tx *AddPermissionlessValidatorTx) InitCtx(ctx context.Context) {
 	tx.DelegatorRewardsOwner.InitCtx(ctx)
 }
 
-func (tx *AddPermissionlessValidatorTx) SubnetID() ids.ID {
+func (tx *AddPermissionlessValidatorTx) NetID() ids.ID {
 	return tx.Subnet
 }
 
@@ -88,14 +88,14 @@ func (tx *AddPermissionlessValidatorTx) PublicKey() (*bls.PublicKey, bool, error
 }
 
 func (tx *AddPermissionlessValidatorTx) PendingPriority() Priority {
-	if tx.Subnet == constants.PrimaryNetworkID {
+	if tx.Net == constants.PrimaryNetworkID {
 		return PrimaryNetworkValidatorPendingPriority
 	}
 	return SubnetPermissionlessValidatorPendingPriority
 }
 
 func (tx *AddPermissionlessValidatorTx) CurrentPriority() Priority {
-	if tx.Subnet == constants.PrimaryNetworkID {
+	if tx.Net == constants.PrimaryNetworkID {
 		return PrimaryNetworkValidatorCurrentPriority
 	}
 	return SubnetPermissionlessValidatorCurrentPriority
@@ -140,7 +140,7 @@ func (tx *AddPermissionlessValidatorTx) SyntacticVerify(ctx context.Context) err
 	}
 
 	hasKey := tx.Signer.Key() != nil
-	isPrimaryNetwork := tx.Subnet == constants.PrimaryNetworkID
+	isPrimaryNetwork := tx.Net == constants.PrimaryNetworkID
 	if hasKey != isPrimaryNetwork {
 		return fmt.Errorf(
 			"%w: hasKey=%v != isPrimaryNetwork=%v",

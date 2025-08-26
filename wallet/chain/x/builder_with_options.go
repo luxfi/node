@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 var _ Builder = (*builderWithOptions)(nil)

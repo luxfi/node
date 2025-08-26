@@ -67,7 +67,7 @@ type State interface {
 		validators map[ids.NodeID]*validators.GetValidatorOutput,
 		startHeight uint64,
 		endHeight uint64,
-		subnetID ids.ID,
+		netID ids.ID,
 	) error
 
 	// ApplyValidatorPublicKeyDiffs iterates from [startHeight] towards the
@@ -121,8 +121,8 @@ type manager struct {
 	metrics metrics.Metrics
 	clk     *mockable.Clock
 
-	// Maps caches for each subnet that is currently tracked.
-	// Key: Subnet ID
+	// Maps caches for each net that is currently tracked.
+	// Key: Net ID
 	// Value: cache mapping height -> validator set map
 	caches map[ids.ID]cache.Cacher[uint64, map[ids.NodeID]*validators.GetValidatorOutput]
 
@@ -193,18 +193,18 @@ func (m *manager) getCurrentHeight(context.Context) (uint64, error) {
 func (m *manager) GetValidatorSet(
 	ctx context.Context,
 	targetHeight uint64,
-	subnetID ids.ID,
+	netID ids.ID,
 ) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-	return m.GetValidatorSetWithContext(ctx, targetHeight, subnetID)
+	return m.GetValidatorSetWithContext(ctx, targetHeight, netID)
 }
 
 // GetValidatorSetWithContext returns detailed validator information
 func (m *manager) GetValidatorSetWithContext(
 	ctx context.Context,
 	targetHeight uint64,
-	subnetID ids.ID,
+	netID ids.ID,
 ) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-	validatorSetsCache := m.getValidatorSetCache(subnetID)
+	validatorSetsCache := m.getValidatorSetCache(netID)
 
 	if validatorSet, ok := validatorSetsCache.Get(targetHeight); ok {
 		m.metrics.IncValidatorSetsCached()
@@ -219,10 +219,10 @@ func (m *manager) GetValidatorSetWithContext(
 		currentHeight uint64
 		err           error
 	)
-	if subnetID == constants.PrimaryNetworkID {
+	if netID == constants.PrimaryNetworkID {
 		validatorSet, currentHeight, err = m.makePrimaryNetworkValidatorSet(ctx, targetHeight)
 	} else {
-		validatorSet, currentHeight, err = m.makeSubnetValidatorSet(ctx, targetHeight, subnetID)
+		validatorSet, currentHeight, err = m.makeNetValidatorSet(ctx, targetHeight, netID)
 	}
 	if err != nil {
 		return nil, err
@@ -238,13 +238,13 @@ func (m *manager) GetValidatorSetWithContext(
 	return validatorSet, nil
 }
 
-func (m *manager) getValidatorSetCache(subnetID ids.ID) cache.Cacher[uint64, map[ids.NodeID]*validators.GetValidatorOutput] {
+func (m *manager) getValidatorSetCache(netID ids.ID) cache.Cacher[uint64, map[ids.NodeID]*validators.GetValidatorOutput] {
 	// Only cache tracked subnets
-	if subnetID != constants.PrimaryNetworkID && !m.cfg.TrackedSubnets.Contains(subnetID) {
+	if netID != constants.PrimaryNetworkID && !m.cfg.TrackedSubnets.Contains(netID) {
 		return &cache.Empty[uint64, map[ids.NodeID]*validators.GetValidatorOutput]{}
 	}
 
-	validatorSetsCache, exists := m.caches[subnetID]
+	validatorSetsCache, exists := m.caches[netID]
 	if exists {
 		return validatorSetsCache
 	}
@@ -252,7 +252,7 @@ func (m *manager) getValidatorSetCache(subnetID ids.ID) cache.Cacher[uint64, map
 	validatorSetsCache = &cache.LRU[uint64, map[ids.NodeID]*validators.GetValidatorOutput]{
 		Size: validatorSetsCacheSize,
 	}
-	m.caches[subnetID] = validatorSetsCache
+	m.caches[netID] = validatorSetsCache
 	return validatorSetsCache
 }
 
@@ -265,7 +265,7 @@ func (m *manager) makePrimaryNetworkValidatorSet(
 		return nil, 0, err
 	}
 	if currentHeight < targetHeight {
-		return nil, 0, fmt.Errorf("%w with SubnetID = %s: current P-chain height (%d) < requested P-Chain height (%d)",
+		return nil, 0, fmt.Errorf("%w with NetID = %s: current P-chain height (%d) < requested P-Chain height (%d)",
 			errUnfinalizedHeight,
 			constants.PrimaryNetworkID,
 			currentHeight,
@@ -309,25 +309,25 @@ func (m *manager) getCurrentPrimaryValidatorSet(
 	return primaryMap, currentHeight, err
 }
 
-func (m *manager) makeSubnetValidatorSet(
+func (m *manager) makeNetValidatorSet(
 	ctx context.Context,
 	targetHeight uint64,
-	subnetID ids.ID,
+	netID ids.ID,
 ) (map[ids.NodeID]*validators.GetValidatorOutput, uint64, error) {
-	subnetValidatorSet, primaryValidatorSet, currentHeight, err := m.getCurrentValidatorSets(ctx, subnetID)
+	subnetValidatorSet, primaryValidatorSet, currentHeight, err := m.getCurrentValidatorSets(ctx, netID)
 	if err != nil {
 		return nil, 0, err
 	}
 	if currentHeight < targetHeight {
-		return nil, 0, fmt.Errorf("%w with SubnetID = %s: current P-chain height (%d) < requested P-Chain height (%d)",
+		return nil, 0, fmt.Errorf("%w with NetID = %s: current P-chain height (%d) < requested P-Chain height (%d)",
 			errUnfinalizedHeight,
-			subnetID,
+			netID,
 			currentHeight,
 			targetHeight,
 		)
 	}
 
-	// Rebuild subnet validators at [targetHeight]
+	// Rebuild net validators at [targetHeight]
 	//
 	// Note: Since we are attempting to generate the validator set at
 	// [targetHeight], we want to apply the diffs from
@@ -339,13 +339,13 @@ func (m *manager) makeSubnetValidatorSet(
 		subnetValidatorSet,
 		currentHeight,
 		lastDiffHeight,
-		subnetID,
+		netID,
 	)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// Update the subnet validator set to include the public keys at
+	// Update the net validator set to include the public keys at
 	// [currentHeight]. When we apply the public key diffs, we will convert
 	// these keys to represent the public keys at [targetHeight]. If the subnet
 	// validator is not currently a primary network validator, it doesn't have a
@@ -369,15 +369,15 @@ func (m *manager) makeSubnetValidatorSet(
 
 func (m *manager) getCurrentValidatorSets(
 	ctx context.Context,
-	subnetID ids.ID,
+	netID ids.ID,
 ) (map[ids.NodeID]*validators.GetValidatorOutput, map[ids.NodeID]*validators.GetValidatorOutput, uint64, error) {
-	subnetMap := m.cfg.Validators.GetMap(subnetID)
+	subnetMap := m.cfg.Validators.GetMap(netID)
 	primaryMap := m.cfg.Validators.GetMap(constants.PrimaryNetworkID)
 	currentHeight, err := m.getCurrentHeight(ctx)
 	return subnetMap, primaryMap, currentHeight, err
 }
 
-func (m *manager) GetSubnetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
+func (m *manager) GetNetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
 	if chainID == constants.PlatformChainID {
 		return constants.PrimaryNetworkID, nil
 	}
@@ -394,7 +394,7 @@ func (m *manager) GetSubnetID(_ context.Context, chainID ids.ID) (ids.ID, error)
 	if !ok {
 		return ids.Empty, fmt.Errorf("%q is not a blockchain", chainID)
 	}
-	return chain.SubnetID, nil
+	return chain.NetID, nil
 }
 
 func (m *manager) OnAcceptedBlockID(blkID ids.ID) {
@@ -403,7 +403,7 @@ func (m *manager) OnAcceptedBlockID(blkID ids.ID) {
 
 func (m *manager) GetCurrentValidatorSet(
 	ctx context.Context,
-	subnetID ids.ID,
+	netID ids.ID,
 ) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
 	// For now, return an empty map with current height
 	// This is a stub implementation that needs to be properly implemented

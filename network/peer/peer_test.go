@@ -225,11 +225,11 @@ func TestSend(t *testing.T) {
 }
 
 func TestPingUptimes(t *testing.T) {
-	trackedSubnetID := ids.GenerateTestID()
-	untrackedSubnetID := ids.GenerateTestID()
+	trackedNetID := ids.GenerateTestID()
+	untrackedNetID := ids.GenerateTestID()
 
 	sharedConfig := newConfig(t)
-	sharedConfig.MySubnets = set.Of(trackedSubnetID)
+	sharedConfig.MySubnets = set.Of(trackedNetID)
 
 	testCases := []struct {
 		name        string
@@ -250,7 +250,7 @@ func TestPingUptimes(t *testing.T) {
 				require.True(ok)
 				require.Equal(uint32(1), uptime)
 
-				uptime, ok = peer.ObservedUptime(trackedSubnetID)
+				uptime, ok = peer.ObservedUptime(trackedNetID)
 				require.False(ok)
 				require.Zero(uptime)
 			},
@@ -262,7 +262,7 @@ func TestPingUptimes(t *testing.T) {
 					1,
 					[]*p2p.SubnetUptime{
 						{
-							SubnetId: trackedSubnetID[:],
+							SubnetId: trackedNetID[:],
 							Uptime:   1,
 						},
 					},
@@ -276,7 +276,7 @@ func TestPingUptimes(t *testing.T) {
 				require.True(ok)
 				require.Equal(uint32(1), uptime)
 
-				uptime, ok = peer.ObservedUptime(trackedSubnetID)
+				uptime, ok = peer.ObservedUptime(trackedNetID)
 				require.True(ok)
 				require.Equal(uint32(1), uptime)
 			},
@@ -288,13 +288,13 @@ func TestPingUptimes(t *testing.T) {
 					1,
 					[]*p2p.SubnetUptime{
 						{
-							// Providing the untrackedSubnetID here should cause
+							// Providing the untrackedNetID here should cause
 							// the remote peer to disconnect from us.
-							SubnetId: untrackedSubnetID[:],
+							SubnetId: untrackedNetID[:],
 							Uptime:   1,
 						},
 						{
-							SubnetId: trackedSubnetID[:],
+							SubnetId: trackedNetID[:],
 							Uptime:   1,
 						},
 					},
@@ -348,12 +348,12 @@ func TestTrackedSubnets(t *testing.T) {
 	rawPeer0 := newRawTestPeer(t, sharedConfig)
 	rawPeer1 := newRawTestPeer(t, sharedConfig)
 
-	makeSubnetIDs := func(numSubnets int) []ids.ID {
-		subnetIDs := make([]ids.ID, numSubnets)
-		for i := range subnetIDs {
-			subnetIDs[i] = ids.GenerateTestID()
+	makeNetIDs := func(numSubnets int) []ids.ID {
+		netIDs := make([]ids.ID, numSubnets)
+		for i := range netIDs {
+			netIDs[i] = ids.GenerateTestID()
 		}
-		return subnetIDs
+		return netIDs
 	}
 
 	tests := []struct {
@@ -363,22 +363,22 @@ func TestTrackedSubnets(t *testing.T) {
 	}{
 		{
 			name:             "primary network only",
-			trackedSubnets:   makeSubnetIDs(0),
+			trackedSubnets:   makeNetIDs(0),
 			shouldDisconnect: false,
 		},
 		{
 			name:             "single subnet",
-			trackedSubnets:   makeSubnetIDs(1),
+			trackedSubnets:   makeNetIDs(1),
 			shouldDisconnect: false,
 		},
 		{
 			name:             "max subnets",
-			trackedSubnets:   makeSubnetIDs(maxNumTrackedSubnets),
+			trackedSubnets:   makeNetIDs(maxNumTrackedSubnets),
 			shouldDisconnect: false,
 		},
 		{
 			name:             "too many subnets",
-			trackedSubnets:   makeSubnetIDs(maxNumTrackedSubnets + 1),
+			trackedSubnets:   makeNetIDs(maxNumTrackedSubnets + 1),
 			shouldDisconnect: true,
 		},
 	}

@@ -11,7 +11,7 @@ import (
 
 	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/nets"
 )
 
 func TestPOAConsensusParameters(t *testing.T) {
@@ -31,7 +31,7 @@ func TestPOAConsensusParameters(t *testing.T) {
 func TestPOASubnetConfig(t *testing.T) {
 	require := require.New(t)
 
-	// Test subnet config with POA enabled
+	// Test net config with POA enabled
 	cfg := subnets.Config{
 		POAEnabled:        true,
 		POASingleNodeMode: true,
@@ -50,7 +50,7 @@ func TestPOASubnetConfig(t *testing.T) {
 
 	// Verify configuration is valid
 	err := cfg.Valid()
-	require.NoError(err, "POA subnet config should be valid")
+	require.NoError(err, "POA net config should be valid")
 }
 
 func TestPOAConfigKeys(t *testing.T) {

@@ -25,16 +25,16 @@ type beaconManager struct {
 	onceOnSufficientlyConnected sync.Once
 }
 
-func (b *beaconManager) Connected(nodeID ids.NodeID, nodeVersion *version.Application, subnetID ids.ID) {
+func (b *beaconManager) Connected(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
 	_, isBeacon := b.beacons.GetValidator(constants.PrimaryNetworkID, nodeID)
 	if isBeacon &&
-		constants.PrimaryNetworkID == subnetID &&
+		constants.PrimaryNetworkID == netID &&
 		atomic.AddInt64(&b.numConns, 1) >= b.requiredConns {
 		b.onceOnSufficientlyConnected.Do(func() {
 			close(b.onSufficientlyConnected)
 		})
 	}
-	b.Router.Connected(nodeID, nodeVersion, subnetID)
+	b.Router.Connected(nodeID, nodeVersion, netID)
 }
 
 func (b *beaconManager) Disconnected(nodeID ids.NodeID) {

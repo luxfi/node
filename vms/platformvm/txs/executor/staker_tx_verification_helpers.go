@@ -26,9 +26,9 @@ type addValidatorRules struct {
 func getValidatorRules(
 	backend *Backend,
 	chainState state.Chain,
-	subnetID ids.ID,
+	netID ids.ID,
 ) (*addValidatorRules, error) {
-	if subnetID == constants.PrimaryNetworkID {
+	if netID == constants.PrimaryNetworkID {
 		return &addValidatorRules{
 			assetID:           backend.LUXAssetID,
 			minValidatorStake: backend.Config.MinValidatorStake,
@@ -39,7 +39,7 @@ func getValidatorRules(
 		}, nil
 	}
 
-	transformSubnet, err := GetTransformSubnetTx(chainState, subnetID)
+	transformSubnet, err := GetTransformNetTx(chainState, netID)
 	if err != nil {
 		return nil, err
 	}
@@ -66,9 +66,9 @@ type addDelegatorRules struct {
 func getDelegatorRules(
 	backend *Backend,
 	chainState state.Chain,
-	subnetID ids.ID,
+	netID ids.ID,
 ) (*addDelegatorRules, error) {
-	if subnetID == constants.PrimaryNetworkID {
+	if netID == constants.PrimaryNetworkID {
 		return &addDelegatorRules{
 			assetID:                  backend.LUXAssetID,
 			minDelegatorStake:        backend.Config.MinDelegatorStake,
@@ -79,7 +79,7 @@ func getDelegatorRules(
 		}, nil
 	}
 
-	transformSubnet, err := GetTransformSubnetTx(chainState, subnetID)
+	transformSubnet, err := GetTransformNetTx(chainState, netID)
 	if err != nil {
 		return nil, err
 	}
@@ -96,8 +96,8 @@ func getDelegatorRules(
 
 // GetValidator returns information about the given validator, which may be a
 // current validator or pending validator.
-func GetValidator(state state.Chain, subnetID ids.ID, nodeID ids.NodeID) (*state.Staker, error) {
-	validator, err := state.GetCurrentValidator(subnetID, nodeID)
+func GetValidator(state state.Chain, netID ids.ID, nodeID ids.NodeID) (*state.Staker, error) {
+	validator, err := state.GetCurrentValidator(netID, nodeID)
 	if err == nil {
 		// This node is currently validating the subnet.
 		return validator, nil
@@ -106,7 +106,7 @@ func GetValidator(state state.Chain, subnetID ids.ID, nodeID ids.NodeID) (*state
 		// Unexpected error occurred.
 		return nil, err
 	}
-	return state.GetPendingValidator(subnetID, nodeID)
+	return state.GetPendingValidator(netID, nodeID)
 }
 
 // overDelegated returns true if [validator] will be overdelegated when adding [delegator].
@@ -144,7 +144,7 @@ func GetMaxWeight(
 	startTime time.Time,
 	endTime time.Time,
 ) (uint64, error) {
-	currentDelegatorIterator, err := chainState.GetCurrentDelegatorIterator(validator.SubnetID, validator.NodeID)
+	currentDelegatorIterator, err := chainState.GetCurrentDelegatorIterator(validator.NetID, validator.NodeID)
 	if err != nil {
 		return 0, err
 	}
@@ -166,11 +166,11 @@ func GetMaxWeight(
 	}
 	currentDelegatorIterator.Release()
 
-	currentDelegatorIterator, err = chainState.GetCurrentDelegatorIterator(validator.SubnetID, validator.NodeID)
+	currentDelegatorIterator, err = chainState.GetCurrentDelegatorIterator(validator.NetID, validator.NodeID)
 	if err != nil {
 		return 0, err
 	}
-	pendingDelegatorIterator, err := chainState.GetPendingDelegatorIterator(validator.SubnetID, validator.NodeID)
+	pendingDelegatorIterator, err := chainState.GetPendingDelegatorIterator(validator.NetID, validator.NodeID)
 	if err != nil {
 		currentDelegatorIterator.Release()
 		return 0, err
@@ -216,15 +216,15 @@ func GetMaxWeight(
 	return max(currentMax, currentWeight), nil
 }
 
-func GetTransformSubnetTx(chain state.Chain, subnetID ids.ID) (*txs.TransformSubnetTx, error) {
-	transformSubnetIntf, err := chain.GetSubnetTransformation(subnetID)
+func GetTransformNetTx(chain state.Chain, netID ids.ID) (*txs.TransformNetTx, error) {
+	transformSubnetIntf, err := chain.GetSubnetTransformation(netID)
 	if err != nil {
 		return nil, err
 	}
 
-	transformSubnet, ok := transformSubnetIntf.Unsigned.(*txs.TransformSubnetTx)
+	transformSubnet, ok := transformSubnetIntf.Unsigned.(*txs.TransformNetTx)
 	if !ok {
-		return nil, ErrIsNotTransformSubnetTx
+		return nil, ErrIsNotTransformNetTx
 	}
 
 	return transformSubnet, nil

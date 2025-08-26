@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	subnetID = ids.GenerateTestID()
+	netID = ids.GenerateTestID()
 	testVdrs []*testValidator
 )
 
@@ -80,7 +80,7 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 				return &validatorStateAdapter{
 					state: &validatorsmock.State{
 					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-						if height == pChainHeight && sID == subnetID {
+						if height == pChainHeight && sID == netID {
 							return nil, errTest
 						}
 						return nil, nil
@@ -96,7 +96,7 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 				return &validatorStateAdapter{
 					state: &validatorsmock.State{
 					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-						if height == pChainHeight && sID == subnetID {
+						if height == pChainHeight && sID == netID {
 							return map[ids.NodeID]*validators.GetValidatorOutput{
 								testVdrs[0].nodeID: {
 									NodeID:    testVdrs[0].nodeID,
@@ -125,7 +125,7 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 				return &validatorStateAdapter{
 					state: &validatorsmock.State{
 					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-						if height == pChainHeight && sID == subnetID {
+						if height == pChainHeight && sID == netID {
 							return map[ids.NodeID]*validators.GetValidatorOutput{
 						testVdrs[0].nodeID: {
 							NodeID:    testVdrs[0].nodeID,
@@ -170,7 +170,7 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 				return &validatorStateAdapter{
 					state: &validatorsmock.State{
 					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-						if height == pChainHeight && sID == subnetID {
+						if height == pChainHeight && sID == netID {
 							return map[ids.NodeID]*validators.GetValidatorOutput{
 						testVdrs[0].nodeID: {
 							NodeID:    testVdrs[0].nodeID,
@@ -201,7 +201,7 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 
 			state := tt.stateF()
 
-			vdrs, weight, err := GetCanonicalValidatorSet(context.Background(), state, pChainHeight, subnetID)
+			vdrs, weight, err := GetCanonicalValidatorSet(context.Background(), state, pChainHeight, netID)
 			require.ErrorIs(err, tt.expectedErr)
 			if err != nil {
 				return
@@ -372,7 +372,7 @@ func TestSumWeight(t *testing.T) {
 
 func BenchmarkGetCanonicalValidatorSet(b *testing.B) {
 	pChainHeight := uint64(1)
-	subnetID := ids.GenerateTestID()
+	netID := ids.GenerateTestID()
 	numNodes := 10_000
 	getValidatorOutputs := make([]*validators.GetValidatorOutput, 0, numNodes)
 	for i := 0; i < numNodes; i++ {
@@ -403,7 +403,7 @@ func BenchmarkGetCanonicalValidatorSet(b *testing.B) {
 
 		b.Run(strconv.Itoa(size), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				_, _, err := GetCanonicalValidatorSet(context.Background(), validatorState, pChainHeight, subnetID)
+				_, _, err := GetCanonicalValidatorSet(context.Background(), validatorState, pChainHeight, netID)
 				require.NoError(b, err)
 			}
 		})

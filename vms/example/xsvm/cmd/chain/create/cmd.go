@@ -14,8 +14,8 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/keychain"
-	"github.com/luxfi/node/wallet/subnet/primary"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 func Command() *cobra.Command {
@@ -47,7 +47,7 @@ func createFunc(c *cobra.Command, args []string) error {
 		URI:              config.URI,
 		LUXKeychain:      walletKC,
 		EthKeychain:      walletKC,
-		PChainTxsToFetch: set.Of(config.SubnetID),
+		PChainTxsToFetch: set.Of(config.NetID),
 	})
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func createFunc(c *cobra.Command, args []string) error {
 
 	createChainStartTime := time.Now()
 	createChainTxID, err := pWallet.IssueCreateChainTx(
-		config.SubnetID,
+		config.NetID,
 		genesisBytes,
 		constants.XSVMID,
 		nil,

@@ -38,7 +38,7 @@ func (v *MempoolTxVerifier) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	return v.standardTx(tx)
 }
 
-func (v *MempoolTxVerifier) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) error {
+func (v *MempoolTxVerifier) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
 	return v.standardTx(tx)
 }
 
@@ -50,7 +50,7 @@ func (v *MempoolTxVerifier) CreateChainTx(tx *txs.CreateChainTx) error {
 	return v.standardTx(tx)
 }
 
-func (v *MempoolTxVerifier) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
+func (v *MempoolTxVerifier) CreateNetTx(tx *txs.CreateNetTx) error {
 	return v.standardTx(tx)
 }
 
@@ -62,11 +62,11 @@ func (v *MempoolTxVerifier) ExportTx(tx *txs.ExportTx) error {
 	return v.standardTx(tx)
 }
 
-func (v *MempoolTxVerifier) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx) error {
+func (v *MempoolTxVerifier) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
 	return v.standardTx(tx)
 }
 
-func (v *MempoolTxVerifier) TransformSubnetTx(tx *txs.TransformSubnetTx) error {
+func (v *MempoolTxVerifier) TransformNetTx(tx *txs.TransformNetTx) error {
 	return v.standardTx(tx)
 }
 
@@ -78,7 +78,7 @@ func (v *MempoolTxVerifier) AddPermissionlessDelegatorTx(tx *txs.AddPermissionle
 	return v.standardTx(tx)
 }
 
-func (v *MempoolTxVerifier) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
+func (v *MempoolTxVerifier) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
 	return v.standardTx(tx)
 }
 
@@ -164,7 +164,7 @@ func (v *MempoolTxVerifier) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightT
 	return nil
 }
 
-// ConvertSubnetToL1Tx handles converting a subnet to L1
-func (v *MempoolTxVerifier) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+// ConvertNetToL1Tx handles converting a net to L1
+func (v *MempoolTxVerifier) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 	return nil
 }

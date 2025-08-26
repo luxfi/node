@@ -119,7 +119,7 @@ func NewTestEnvironment(flagVars *FlagVars, desiredNetwork *tmpnet.Network) *Tes
 
 		// Wait for chains to have bootstrapped on all nodes
 		Eventually(func() bool {
-			for _, subnet := range network.Subnets {
+			for _, net := range network.Subnets {
 				for _, validatorID := range subnet.ValidatorIDs {
 					uri, err := network.GetURIForNodeID(validatorID)
 					require.NoError(err)

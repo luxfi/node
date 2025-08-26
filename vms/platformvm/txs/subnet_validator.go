@@ -8,24 +8,24 @@ import (
 	"github.com/luxfi/node/utils/constants"
 )
 
-// SubnetValidator validates a subnet on the Lux network.
-type SubnetValidator struct {
+// NetValidator validates a net on the Lux network.
+type NetValidator struct {
 	Validator `serialize:"true"`
 
-	// ID of the subnet this validator is validating
-	Subnet ids.ID `serialize:"true" json:"subnetID"`
+	// ID of the net this validator is validating
+	Net ids.ID `serialize:"true" json:"netID"`
 }
 
-// SubnetID is the ID of the subnet this validator is validating
-func (v *SubnetValidator) SubnetID() ids.ID {
+// NetID is the ID of the net this validator is validating
+func (v *NetValidator) NetID() ids.ID {
 	return v.Subnet
 }
 
 // Verify this validator is valid
-func (v *SubnetValidator) Verify() error {
-	switch v.Subnet {
+func (v *NetValidator) Verify() error {
+	switch v.Net {
 	case constants.PrimaryNetworkID:
-		return errBadSubnetID
+		return errBadNetID
 	default:
 		return v.Validator.Verify()
 	}

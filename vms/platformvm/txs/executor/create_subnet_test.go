@@ -21,7 +21,7 @@ import (
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 )
 
-func TestCreateSubnetTxAP3FeeChange(t *testing.T) {
+func TestCreateNetTxAP3FeeChange(t *testing.T) {
 	ap3Time := defaultGenesisTime.Add(time.Hour)
 	tests := []struct {
 		name        string
@@ -65,10 +65,10 @@ func TestCreateSubnetTxAP3FeeChange(t *testing.T) {
 			}
 
 			cfg := *env.config
-			cfg.StaticFeeConfig.CreateSubnetTxFee = test.fee
+			cfg.StaticFeeConfig.CreateNetTxFee = test.fee
 			factory := txstest.NewWalletFactory(env.ctx.Context, env.ctx.SharedMemory, &cfg, env.state)
 			builder, signer := factory.NewWallet(preFundedKeys...)
-			utx, err := builder.NewCreateSubnetTx(
+			utx, err := builder.NewCreateNetTx(
 				&secp256k1fx.OutputOwners{},
 			)
 			require.NoError(err)

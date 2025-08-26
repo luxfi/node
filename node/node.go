@@ -923,7 +923,7 @@ func (n *Node) initChains(genesisBytes []byte) error {
 
 	platformChain := chains.ChainParameters{
 		ID:            constants.PlatformChainID,
-		SubnetID:      constants.PrimaryNetworkID,
+		NetID:      constants.PrimaryNetworkID,
 		GenesisData:   genesisBytes, // Specifies other chains to create
 		VMID:          constants.PlatformVMID,
 		CustomBeacons: n.bootstrappers,
@@ -1435,13 +1435,13 @@ func (n *Node) initInfoAPI() error {
 			NetworkID:                     n.Config.NetworkID,
 			TxFee:                         n.Config.TxFee,
 			CreateAssetTxFee:              n.Config.CreateAssetTxFee,
-			CreateSubnetTxFee:             n.Config.CreateSubnetTxFee,
-			TransformSubnetTxFee:          n.Config.TransformSubnetTxFee,
+			CreateNetTxFee:             n.Config.CreateNetTxFee,
+			TransformNetTxFee:          n.Config.TransformNetTxFee,
 			CreateBlockchainTxFee:         n.Config.CreateBlockchainTxFee,
 			AddPrimaryNetworkValidatorFee: n.Config.AddPrimaryNetworkValidatorFee,
 			AddPrimaryNetworkDelegatorFee: n.Config.AddPrimaryNetworkDelegatorFee,
-			AddSubnetValidatorFee:         n.Config.AddSubnetValidatorFee,
-			AddSubnetDelegatorFee:         n.Config.AddSubnetDelegatorFee,
+			AddNetValidatorFee:         n.Config.AddNetValidatorFee,
+			AddNetDelegatorFee:         n.Config.AddNetDelegatorFee,
 			VMManager:                     n.VMManager,
 		},
 		n.Log,

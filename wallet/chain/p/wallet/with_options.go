@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/builder"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 
 	vmsigner "github.com/luxfi/node/vms/platformvm/signer"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
@@ -70,24 +70,24 @@ func (w *withOptions) IssueAddValidatorTx(
 	)
 }
 
-func (w *withOptions) IssueAddSubnetValidatorTx(
-	vdr *txs.SubnetValidator,
+func (w *withOptions) IssueAddNetValidatorTx(
+	vdr *txs.NetValidator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueAddSubnetValidatorTx(
+	return w.wallet.IssueAddNetValidatorTx(
 		vdr,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
-func (w *withOptions) IssueRemoveSubnetValidatorTx(
+func (w *withOptions) IssueRemoveNetValidatorTx(
 	nodeID ids.NodeID,
-	subnetID ids.ID,
+	netID ids.ID,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueRemoveSubnetValidatorTx(
+	return w.wallet.IssueRemoveNetValidatorTx(
 		nodeID,
-		subnetID,
+		netID,
 		common.UnionOptions(w.options, options)...,
 	)
 }
@@ -105,7 +105,7 @@ func (w *withOptions) IssueAddDelegatorTx(
 }
 
 func (w *withOptions) IssueCreateChainTx(
-	subnetID ids.ID,
+	netID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
 	fxIDs []ids.ID,
@@ -113,7 +113,7 @@ func (w *withOptions) IssueCreateChainTx(
 	options ...common.Option,
 ) (*txs.Tx, error) {
 	return w.wallet.IssueCreateChainTx(
-		subnetID,
+		netID,
 		genesis,
 		vmID,
 		fxIDs,
@@ -122,37 +122,37 @@ func (w *withOptions) IssueCreateChainTx(
 	)
 }
 
-func (w *withOptions) IssueCreateSubnetTx(
+func (w *withOptions) IssueCreateNetTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueCreateSubnetTx(
+	return w.wallet.IssueCreateNetTx(
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
-func (w *withOptions) IssueTransferSubnetOwnershipTx(
-	subnetID ids.ID,
+func (w *withOptions) IssueTransferNetOwnershipTx(
+	netID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueTransferSubnetOwnershipTx(
-		subnetID,
+	return w.wallet.IssueTransferNetOwnershipTx(
+		netID,
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
-func (w *withOptions) IssueConvertSubnetToL1Tx(
-	subnetID ids.ID,
+func (w *withOptions) IssueConvertNetToL1Tx(
+	netID ids.ID,
 	chainID ids.ID,
 	address []byte,
-	validators []*txs.ConvertSubnetToL1Validator,
+	validators []*txs.ConvertNetToL1Validator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueConvertSubnetToL1Tx(
-		subnetID,
+	return w.wallet.IssueConvertNetToL1Tx(
+		netID,
 		chainID,
 		address,
 		validators,
@@ -230,8 +230,8 @@ func (w *withOptions) IssueExportTx(
 	)
 }
 
-func (w *withOptions) IssueTransformSubnetTx(
-	subnetID ids.ID,
+func (w *withOptions) IssueTransformNetTx(
+	netID ids.ID,
 	assetID ids.ID,
 	initialSupply uint64,
 	maxSupply uint64,
@@ -247,8 +247,8 @@ func (w *withOptions) IssueTransformSubnetTx(
 	uptimeRequirement uint32,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueTransformSubnetTx(
-		subnetID,
+	return w.wallet.IssueTransformNetTx(
+		netID,
 		assetID,
 		initialSupply,
 		maxSupply,
@@ -267,7 +267,7 @@ func (w *withOptions) IssueTransformSubnetTx(
 }
 
 func (w *withOptions) IssueAddPermissionlessValidatorTx(
-	vdr *txs.SubnetValidator,
+	vdr *txs.NetValidator,
 	signer vmsigner.Signer,
 	assetID ids.ID,
 	validationRewardsOwner *secp256k1fx.OutputOwners,
@@ -287,7 +287,7 @@ func (w *withOptions) IssueAddPermissionlessValidatorTx(
 }
 
 func (w *withOptions) IssueAddPermissionlessDelegatorTx(
-	vdr *txs.SubnetValidator,
+	vdr *txs.NetValidator,
 	assetID ids.ID,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,

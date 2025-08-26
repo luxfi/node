@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	metric "github.com/luxfi/metric"
-	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms"
 )
@@ -88,10 +88,10 @@ func TestQueueChainCreation(t *testing.T) {
 
 	// Create test chain parameters
 	chainID := ids.GenerateTestID()
-	subnetID := ids.GenerateTestID()
+	netID := ids.GenerateTestID()
 	chainParams := ChainParameters{
 		ID:       chainID,
-		SubnetID: subnetID,
+		NetID: netID,
 		VMID:     ids.GenerateTestID(),
 	}
 
@@ -102,7 +102,7 @@ func TestQueueChainCreation(t *testing.T) {
 	queuedParams, ok := mImpl.chainsQueue.PopLeft()
 	require.True(ok)
 	require.Equal(chainParams.ID, queuedParams.ID)
-	require.Equal(chainParams.SubnetID, queuedParams.SubnetID)
+	require.Equal(chainParams.NetID, queuedParams.NetID)
 	require.Equal(chainParams.VMID, queuedParams.VMID)
 }
 

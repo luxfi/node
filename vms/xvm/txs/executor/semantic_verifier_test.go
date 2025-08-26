@@ -753,7 +753,7 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 	ctx := consensustest.Context(t, consensustest.XChainID)
 
 	validatorState := validatorsmock.NewState(ctrl)
-	validatorState.EXPECT().GetSubnetID(gomock.Any(), ctx.CChainID).AnyTimes().Return(ids.GenerateTestID(), nil)
+	validatorState.EXPECT().GetNetID(gomock.Any(), ctx.CChainID).AnyTimes().Return(ids.GenerateTestID(), nil)
 	ctx.ValidatorState = validatorState
 
 	typeToFxIndex := make(map[reflect.Type]int)
@@ -863,7 +863,7 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 		State:   state,
 		Tx:      tx,
 	})
-	require.ErrorIs(err, verify.ErrMismatchedSubnetIDs)
+	require.ErrorIs(err, verify.ErrMismatchedNetIDs)
 }
 
 func TestSemanticVerifierImportTx(t *testing.T) {

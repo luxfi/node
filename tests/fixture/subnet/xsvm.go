@@ -13,9 +13,9 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 )
 
-func NewXSVMOrPanic(name string, key *secp256k1.PrivateKey, nodes ...*tmpnet.Node) *tmpnet.Subnet {
+func NewXSVMOrPanic(name string, key *secp256k1.PrivateKey, nodes ...*tmpnet.Node) *tmpnet.Net {
 	if len(nodes) == 0 {
-		panic("a subnet must be validated by at least one node")
+		panic("a net must be validated by at least one node")
 	}
 
 	genesisBytes, err := genesis.Codec.Marshal(genesis.CodecVersion, &genesis.Genesis{

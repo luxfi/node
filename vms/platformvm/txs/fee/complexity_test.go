@@ -361,15 +361,15 @@ func TestInputComplexity(t *testing.T) {
 	}
 }
 
-func TestConvertSubnetToL1ValidatorComplexity(t *testing.T) {
+func TestConvertNetToL1ValidatorComplexity(t *testing.T) {
 	tests := []struct {
 		name     string
-		vdr      txs.ConvertSubnetToL1Validator
+		vdr      txs.ConvertNetToL1Validator
 		expected gas.Dimensions
 	}{
 		{
 			name: "any can spend",
-			vdr: txs.ConvertSubnetToL1Validator{
+			vdr: txs.ConvertNetToL1Validator{
 				NodeID:                ids.GenerateTestNodeID().Bytes(),
 				Weight:                1000,
 				Balance:               1000000,
@@ -385,7 +385,7 @@ func TestConvertSubnetToL1ValidatorComplexity(t *testing.T) {
 		},
 		{
 			name: "single remaining balance owner",
-			vdr: txs.ConvertSubnetToL1Validator{
+			vdr: txs.ConvertNetToL1Validator{
 				NodeID:                ids.GenerateTestNodeID().Bytes(),
 				Weight:                1000,
 				Balance:               1000000,
@@ -401,7 +401,7 @@ func TestConvertSubnetToL1ValidatorComplexity(t *testing.T) {
 		},
 		{
 			name: "single deactivation owner",
-			vdr: txs.ConvertSubnetToL1Validator{
+			vdr: txs.ConvertNetToL1Validator{
 				NodeID:                ids.GenerateTestNodeID().Bytes(),
 				Weight:                1000,
 				Balance:               1000000,
@@ -420,8 +420,8 @@ func TestConvertSubnetToL1ValidatorComplexity(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			// ConvertSubnetToL1ValidatorComplexity is not yet implemented
-			// actual, err := ConvertSubnetToL1ValidatorComplexity(&test.vdr)
+			// ConvertNetToL1ValidatorComplexity is not yet implemented
+			// actual, err := ConvertNetToL1ValidatorComplexity(&test.vdr)
 			actual := test.expected // Skip the complexity calculation for now
 			err := error(nil)
 			require.NoError(err)

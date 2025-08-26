@@ -33,9 +33,9 @@ require (
 	github.com/luxfi/trace v0.1.2
 	golang.org/x/mod v0.27.0
 	golang.org/x/tools v0.36.0
-	k8s.io/api v0.33.4
-	k8s.io/apimachinery v0.33.4
-	k8s.io/client-go v0.33.4
+	k8s.io/api v0.31.4
+	k8s.io/apimachinery v0.31.4
+	k8s.io/client-go v0.31.4
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 )
 
@@ -153,9 +153,11 @@ require (
 	github.com/google/pprof v0.0.0-20250820193118-f64d9cf942d6 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1 // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
+	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kasperdi/SPHINCSPLUS-golang v0.0.0-20231223193046-84468b93f7e9 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -209,7 +211,6 @@ require (
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250811230008-5f3141c8851a // indirect
-	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
@@ -235,3 +236,9 @@ replace github.com/luxfi/node => ../node
 replace github.com/luxfi/qzmq => ../qzmq
 
 replace github.com/luxfi/geth => ../geth
+
+replace github.com/luxfi/consensus => ../consensus
+
+replace github.com/luxfi/crypto => ../crypto
+
+replace github.com/luxfi/database => ../database

@@ -9,29 +9,29 @@ import (
 	"github.com/luxfi/ids"
 )
 
-// subnetIDNodeID = [subnetID] + [nodeID]
-const subnetIDNodeIDEntryLength = ids.IDLen + ids.NodeIDLen
+// netIDNodeID = [netID] + [nodeID]
+const netIDNodeIDEntryLength = ids.IDLen + ids.NodeIDLen
 
-var errUnexpectedSubnetIDNodeIDLength = fmt.Errorf("expected subnetID+nodeID entry length %d", subnetIDNodeIDEntryLength)
+var errUnexpectedNetIDNodeIDLength = fmt.Errorf("expected netID+nodeID entry length %d", netIDNodeIDEntryLength)
 
-type subnetIDNodeID struct {
-	subnetID ids.ID
+type netIDNodeID struct {
+	netID ids.ID
 	nodeID   ids.NodeID
 }
 
-func (s *subnetIDNodeID) Marshal() []byte {
-	data := make([]byte, subnetIDNodeIDEntryLength)
-	copy(data, s.subnetID[:])
+func (s *netIDNodeID) Marshal() []byte {
+	data := make([]byte, netIDNodeIDEntryLength)
+	copy(data, s.netID[:])
 	copy(data[ids.IDLen:], s.nodeID[:])
 	return data
 }
 
-func (s *subnetIDNodeID) Unmarshal(data []byte) error {
-	if len(data) != subnetIDNodeIDEntryLength {
-		return errUnexpectedSubnetIDNodeIDLength
+func (s *netIDNodeID) Unmarshal(data []byte) error {
+	if len(data) != netIDNodeIDEntryLength {
+		return errUnexpectedNetIDNodeIDLength
 	}
 
-	copy(s.subnetID[:], data)
+	copy(s.netID[:], data)
 	copy(s.nodeID[:], data[ids.IDLen:])
 	return nil
 }

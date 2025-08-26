@@ -28,8 +28,8 @@ func (a *validatorStateAdapter) GetMinimumHeight(ctx context.Context) (uint64, e
 	return a.state.GetMinimumHeight(ctx)
 }
 
-func (a *validatorStateAdapter) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	valSet, err := a.state.GetValidatorSet(context.Background(), height, subnetID)
+func (a *validatorStateAdapter) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	valSet, err := a.state.GetValidatorSet(context.Background(), height, netID)
 	if err != nil {
 		return nil, err
 	}
@@ -40,15 +40,15 @@ func (a *validatorStateAdapter) GetValidatorSet(height uint64, subnetID ids.ID) 
 	return result, nil
 }
 
-func (a *validatorStateAdapter) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	return a.state.GetSubnetID(context.Background(), chainID)
+func (a *validatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
+	return a.state.GetNetID(context.Background(), chainID)
 }
 
 var errMissing = errors.New("missing")
 
 func TestSameSubnet(t *testing.T) {
-	subnetID0 := ids.GenerateTestID()
-	subnetID1 := ids.GenerateTestID()
+	netID0 := ids.GenerateTestID()
+	netID1 := ids.GenerateTestID()
 	chainID0 := ids.GenerateTestID()
 	chainID1 := ids.GenerateTestID()
 
@@ -65,7 +65,7 @@ func TestSameSubnet(t *testing.T) {
 				adapter := &validatorStateAdapter{state: state}
 				ctx := context.Background()
 				ids := consensus.IDs{
-					SubnetID: subnetID0,
+					NetID: netID0,
 					ChainID:  chainID0,
 				}
 				ctx = consensus.WithIDs(ctx, ids)
@@ -79,13 +79,13 @@ func TestSameSubnet(t *testing.T) {
 			name: "unknown chain",
 			ctxF: func(t *testing.T) context.Context {
 				state := validatorsmock.NewState(t)
-				state.GetSubnetIDF = func(context.Context, ids.ID) (ids.ID, error) {
-					return subnetID1, errMissing
+				state.GetNetIDF = func(context.Context, ids.ID) (ids.ID, error) {
+					return netID1, errMissing
 				}
 				adapter := &validatorStateAdapter{state: state}
 				ctx := context.Background()
 				ids := consensus.IDs{
-					SubnetID: subnetID0,
+					NetID: netID0,
 					ChainID:  chainID0,
 				}
 				ctx = consensus.WithIDs(ctx, ids)
@@ -99,13 +99,13 @@ func TestSameSubnet(t *testing.T) {
 			name: "wrong subnet",
 			ctxF: func(t *testing.T) context.Context {
 				state := validatorsmock.NewState(t)
-				state.GetSubnetIDF = func(context.Context, ids.ID) (ids.ID, error) {
-					return subnetID1, nil
+				state.GetNetIDF = func(context.Context, ids.ID) (ids.ID, error) {
+					return netID1, nil
 				}
 				adapter := &validatorStateAdapter{state: state}
 				ctx := context.Background()
 				ids := consensus.IDs{
-					SubnetID: subnetID0,
+					NetID: netID0,
 					ChainID:  chainID0,
 				}
 				ctx = consensus.WithIDs(ctx, ids)
@@ -113,19 +113,19 @@ func TestSameSubnet(t *testing.T) {
 				return ctx
 			},
 			chainID: chainID1,
-			result:  ErrMismatchedSubnetIDs,
+			result:  ErrMismatchedNetIDs,
 		},
 		{
 			name: "same subnet",
 			ctxF: func(t *testing.T) context.Context {
 				state := validatorsmock.NewState(t)
-				state.GetSubnetIDF = func(context.Context, ids.ID) (ids.ID, error) {
-					return subnetID0, nil
+				state.GetNetIDF = func(context.Context, ids.ID) (ids.ID, error) {
+					return netID0, nil
 				}
 				adapter := &validatorStateAdapter{state: state}
 				ctx := context.Background()
 				ids := consensus.IDs{
-					SubnetID: subnetID0,
+					NetID: netID0,
 					ChainID:  chainID0,
 				}
 				ctx = consensus.WithIDs(ctx, ids)

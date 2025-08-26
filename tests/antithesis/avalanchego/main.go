@@ -33,8 +33,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary"
+	"github.com/luxfi/node/wallet/net/primary/common"
 
 	timerpkg "github.com/luxfi/node/utils/timer"
 	ptxs "github.com/luxfi/node/vms/platformvm/txs"

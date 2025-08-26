@@ -55,8 +55,8 @@ func (c *calculator) AddValidatorTx(*txs.AddValidatorTx) error {
 	return nil
 }
 
-func (c *calculator) AddSubnetValidatorTx(*txs.AddSubnetValidatorTx) error {
-	c.fee = c.staticCfg.AddSubnetValidatorFee
+func (c *calculator) AddNetValidatorTx(*txs.AddNetValidatorTx) error {
+	c.fee = c.staticCfg.AddNetValidatorFee
 	return nil
 }
 
@@ -74,9 +74,9 @@ func (c *calculator) CreateChainTx(*txs.CreateChainTx) error {
 	return nil
 }
 
-func (c *calculator) CreateSubnetTx(*txs.CreateSubnetTx) error {
+func (c *calculator) CreateNetTx(*txs.CreateNetTx) error {
 	if c.upgrades.IsApricotPhase3Activated(c.time) {
-		c.fee = c.staticCfg.CreateSubnetTxFee
+		c.fee = c.staticCfg.CreateNetTxFee
 	} else {
 		c.fee = c.staticCfg.CreateAssetTxFee
 	}
@@ -93,24 +93,24 @@ func (c *calculator) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return nil
 }
 
-func (c *calculator) RemoveSubnetValidatorTx(*txs.RemoveSubnetValidatorTx) error {
+func (c *calculator) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
 	c.fee = c.staticCfg.TxFee
 	return nil
 }
 
-func (c *calculator) TransformSubnetTx(*txs.TransformSubnetTx) error {
-	c.fee = c.staticCfg.TransformSubnetTxFee
+func (c *calculator) TransformNetTx(*txs.TransformNetTx) error {
+	c.fee = c.staticCfg.TransformNetTxFee
 	return nil
 }
 
-func (c *calculator) TransferSubnetOwnershipTx(*txs.TransferSubnetOwnershipTx) error {
+func (c *calculator) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
 	c.fee = c.staticCfg.TxFee
 	return nil
 }
 
 func (c *calculator) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
-	if tx.Subnet != constants.PrimaryNetworkID {
-		c.fee = c.staticCfg.AddSubnetValidatorFee
+	if tx.Net != constants.PrimaryNetworkID {
+		c.fee = c.staticCfg.AddNetValidatorFee
 	} else {
 		c.fee = c.staticCfg.AddPrimaryNetworkValidatorFee
 	}
@@ -118,8 +118,8 @@ func (c *calculator) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValid
 }
 
 func (c *calculator) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegatorTx) error {
-	if tx.Subnet != constants.PrimaryNetworkID {
-		c.fee = c.staticCfg.AddSubnetDelegatorFee
+	if tx.Net != constants.PrimaryNetworkID {
+		c.fee = c.staticCfg.AddNetDelegatorFee
 	} else {
 		c.fee = c.staticCfg.AddPrimaryNetworkDelegatorFee
 	}
@@ -161,7 +161,7 @@ func (c *calculator) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error {
 	return nil
 }
 
-func (c *calculator) ConvertSubnetToL1Tx(*txs.ConvertSubnetToL1Tx) error {
+func (c *calculator) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
 	c.fee = c.staticCfg.TxFee
 	return nil
 }

@@ -97,7 +97,7 @@ func NewServer(vm block.ChainVM, allowShutdown *utils.Atomic[bool]) *VMServer {
 }
 
 func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest) (*vmpb.InitializeResponse, error) {
-	subnetID, err := ids.ToID(req.SubnetId)
+	netID, err := ids.ToID(req.SubnetId)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	// Set IDs in context
 	vm.ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: req.NetworkId,
-		SubnetID:  subnetID,
+		NetID:  netID,
 		ChainID:   chainID,
 		NodeID:    nodeID,
 		PublicKey: publicKey,
@@ -249,7 +249,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	// Initialize the VM - convert back to block.ChainContext for the interface
 	blockChainCtx := &block.ChainContext{
 		NetworkID:      req.NetworkId,
-		SubnetID:       subnetID,
+		NetID:       netID,
 		ChainID:        chainID,
 		NodeID:         nodeID,
 		PublicKey:      publicKey,
@@ -1048,13 +1048,13 @@ func (v *serverValidatorStateWrapper) GetMinimumHeight(ctx context.Context) (uin
 	return v.client.GetMinimumHeight(ctx)
 }
 
-func (v *serverValidatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return v.client.GetSubnetID(ctx, chainID)
+func (v *serverValidatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return v.client.GetNetID(ctx, chainID)
 }
 
-func (v *serverValidatorStateWrapper) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
+func (v *serverValidatorStateWrapper) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
 	// Get the validator set from the client with context
-	valSet, err := v.client.GetValidatorSet(context.Background(), height, subnetID)
+	valSet, err := v.client.GetValidatorSet(context.Background(), height, netID)
 	if err != nil {
 		return nil, err
 	}

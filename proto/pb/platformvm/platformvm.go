@@ -21,16 +21,16 @@ func (j *L1ValidatorRegistrationJustification) Reset() {}
 func (j *L1ValidatorRegistrationJustification) String() string { return "" }
 
 // Justification type wrappers
-type L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData struct {
-	ConvertSubnetToL1TxData *SubnetIDIndex
+type L1ValidatorRegistrationJustification_ConvertNetToL1TxData struct {
+	ConvertNetToL1TxData *NetIDIndex
 }
 
 type L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage struct {
 	RegisterL1ValidatorMessage []byte
 }
 
-// SubnetIDIndex represents the index of a subnet ID
-type SubnetIDIndex struct {
-	SubnetID []byte `json:"subnetId"`
+// NetIDIndex represents the index of a net ID
+type NetIDIndex struct {
+	NetID []byte `json:"subnetId"`
 	Index    uint32 `json:"index"`
 }

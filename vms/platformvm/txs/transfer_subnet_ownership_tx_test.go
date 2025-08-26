@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/vms/types"
 )
 
-func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
+func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 	require := require.New(t)
 
 	addr := ids.ShortID{
@@ -50,14 +50,14 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
 		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
 	}
-	subnetID := ids.ID{
+	netID := ids.ID{
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
 		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
 	}
 
-	simpleTransferSubnetOwnershipTx := &TransferSubnetOwnershipTx{
+	simpleTransferNetOwnershipTx := &TransferNetOwnershipTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
 				NetworkID:    constants.MainnetID,
@@ -83,7 +83,7 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 				Memo: types.JSONByteSlice{},
 			},
 		},
-		Subnet: subnetID,
+		Subnet: netID,
 		SubnetAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{3},
 		},
@@ -102,12 +102,12 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
-	require.NoError(simpleTransferSubnetOwnershipTx.SyntacticVerify(ctx))
+	require.NoError(simpleTransferNetOwnershipTx.SyntacticVerify(ctx))
 
-	expectedUnsignedSimpleTransferSubnetOwnershipTxBytes := []byte{
+	expectedUnsignedSimpleTransferNetOwnershipTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
-		// TransferSubnetOwnershipTx Type ID
+		// TransferNetOwnershipTx Type ID
 		0x00, 0x00, 0x00, 0x21,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
@@ -143,7 +143,7 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x05,
 		// length of memo
 		0x00, 0x00, 0x00, 0x00,
-		// subnetID to modify
+		// netID to modify
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
@@ -167,12 +167,12 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
 		0x44, 0x55, 0x66, 0x77,
 	}
-	var unsignedSimpleTransferSubnetOwnershipTx UnsignedTx = simpleTransferSubnetOwnershipTx
-	unsignedSimpleTransferSubnetOwnershipTxBytes, err := Codec.Marshal(CodecVersion, &unsignedSimpleTransferSubnetOwnershipTx)
+	var unsignedSimpleTransferNetOwnershipTx UnsignedTx = simpleTransferNetOwnershipTx
+	unsignedSimpleTransferNetOwnershipTxBytes, err := Codec.Marshal(CodecVersion, &unsignedSimpleTransferNetOwnershipTx)
 	require.NoError(err)
-	require.Equal(expectedUnsignedSimpleTransferSubnetOwnershipTxBytes, unsignedSimpleTransferSubnetOwnershipTxBytes)
+	require.Equal(expectedUnsignedSimpleTransferNetOwnershipTxBytes, unsignedSimpleTransferNetOwnershipTxBytes)
 
-	complexTransferSubnetOwnershipTx := &TransferSubnetOwnershipTx{
+	complexTransferNetOwnershipTx := &TransferNetOwnershipTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
 				NetworkID:    constants.MainnetID,
@@ -266,7 +266,7 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 				Memo: types.JSONByteSlice("😅\nwell that's\x01\x23\x45!"),
 			},
 		},
-		Subnet: subnetID,
+		Subnet: netID,
 		SubnetAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{},
 		},
@@ -278,20 +278,20 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 			},
 		},
 	}
-	lux.SortTransferableOutputs(complexTransferSubnetOwnershipTx.Outs, Codec)
-	utils.Sort(complexTransferSubnetOwnershipTx.Ins)
+	lux.SortTransferableOutputs(complexTransferNetOwnershipTx.Outs, Codec)
+	utils.Sort(complexTransferNetOwnershipTx.Ins)
 	ctx2 := context.Background()
 	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
-	require.NoError(complexTransferSubnetOwnershipTx.SyntacticVerify(ctx2))
+	require.NoError(complexTransferNetOwnershipTx.SyntacticVerify(ctx2))
 
-	expectedUnsignedComplexTransferSubnetOwnershipTxBytes := []byte{
+	expectedUnsignedComplexTransferNetOwnershipTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
-		// TransferSubnetOwnershipTx Type ID
+		// TransferNetOwnershipTx Type ID
 		0x00, 0x00, 0x00, 0x21,
 		// Mainnet network ID
 		0x00, 0x00, 0x00, 0x01,
@@ -421,7 +421,7 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 		0xf0, 0x9f, 0x98, 0x85, 0x0a, 0x77, 0x65, 0x6c,
 		0x6c, 0x20, 0x74, 0x68, 0x61, 0x74, 0x27, 0x73,
 		0x01, 0x23, 0x45, 0x21,
-		// subnetID to modify
+		// netID to modify
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
@@ -443,10 +443,10 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
 		0x44, 0x55, 0x66, 0x77,
 	}
-	var unsignedComplexTransferSubnetOwnershipTx UnsignedTx = complexTransferSubnetOwnershipTx
-	unsignedComplexTransferSubnetOwnershipTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexTransferSubnetOwnershipTx)
+	var unsignedComplexTransferNetOwnershipTx UnsignedTx = complexTransferNetOwnershipTx
+	unsignedComplexTransferNetOwnershipTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexTransferNetOwnershipTx)
 	require.NoError(err)
-	require.Equal(expectedUnsignedComplexTransferSubnetOwnershipTxBytes, unsignedComplexTransferSubnetOwnershipTxBytes)
+	require.Equal(expectedUnsignedComplexTransferNetOwnershipTxBytes, unsignedComplexTransferNetOwnershipTxBytes)
 
 	aliaser := ids.NewAliaser()
 	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
@@ -459,9 +459,9 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 	})
 	testCtx := testcontext.New(ctx3)
 	testCtx.BCLookup = aliaser
-	unsignedComplexTransferSubnetOwnershipTx.InitCtx(testCtx)
+	unsignedComplexTransferNetOwnershipTx.InitCtx(testCtx)
 
-	unsignedComplexTransferSubnetOwnershipTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransferSubnetOwnershipTx, "", "\t")
+	unsignedComplexTransferNetOwnershipTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransferNetOwnershipTx, "", "\t")
 	require.NoError(err)
 	require.Equal(`{
 	"networkID": 1,
@@ -537,7 +537,7 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 		}
 	],
 	"memo": "0xf09f98850a77656c6c2074686174277301234521",
-	"subnetID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
+	"netID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
 	"subnetAuthorization": {
 		"signatureIndices": []
 	},
@@ -548,13 +548,13 @@ func TestTransferSubnetOwnershipTxSerialization(t *testing.T) {
 		"locktime": 876543210,
 		"threshold": 1
 	}
-}`, string(unsignedComplexTransferSubnetOwnershipTxJSONBytes))
+}`, string(unsignedComplexTransferNetOwnershipTxJSONBytes))
 }
 
-func TestTransferSubnetOwnershipTxSyntacticVerify(t *testing.T) {
+func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 	type test struct {
 		name        string
-		txFunc      func(*gomock.Controller) *TransferSubnetOwnershipTx
+		txFunc      func(*gomock.Controller) *TransferNetOwnershipTx
 		expectedErr error
 	}
 
@@ -594,23 +594,23 @@ func TestTransferSubnetOwnershipTxSyntacticVerify(t *testing.T) {
 	tests := []test{
 		{
 			name: "nil tx",
-			txFunc: func(*gomock.Controller) *TransferSubnetOwnershipTx {
+			txFunc: func(*gomock.Controller) *TransferNetOwnershipTx {
 				return nil
 			},
 			expectedErr: ErrNilTx,
 		},
 		{
 			name: "already verified",
-			txFunc: func(*gomock.Controller) *TransferSubnetOwnershipTx {
-				return &TransferSubnetOwnershipTx{BaseTx: verifiedBaseTx}
+			txFunc: func(*gomock.Controller) *TransferNetOwnershipTx {
+				return &TransferNetOwnershipTx{BaseTx: verifiedBaseTx}
 			},
 			expectedErr: nil,
 		},
 		{
 			name: "invalid BaseTx",
-			txFunc: func(*gomock.Controller) *TransferSubnetOwnershipTx {
-				return &TransferSubnetOwnershipTx{
-					// Set subnetID so we don't error on that check.
+			txFunc: func(*gomock.Controller) *TransferNetOwnershipTx {
+				return &TransferNetOwnershipTx{
+					// Set netID so we don't error on that check.
 					Subnet: ids.GenerateTestID(),
 					BaseTx: invalidBaseTx,
 				}
@@ -618,9 +618,9 @@ func TestTransferSubnetOwnershipTxSyntacticVerify(t *testing.T) {
 			expectedErr: lux.ErrWrongNetworkID,
 		},
 		{
-			name: "invalid subnetID",
-			txFunc: func(*gomock.Controller) *TransferSubnetOwnershipTx {
-				return &TransferSubnetOwnershipTx{
+			name: "invalid netID",
+			txFunc: func(*gomock.Controller) *TransferNetOwnershipTx {
+				return &TransferNetOwnershipTx{
 					BaseTx: validBaseTx,
 					Subnet: constants.PrimaryNetworkID,
 				}
@@ -629,12 +629,12 @@ func TestTransferSubnetOwnershipTxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "invalid subnetAuth",
-			txFunc: func(ctrl *gomock.Controller) *TransferSubnetOwnershipTx {
+			txFunc: func(ctrl *gomock.Controller) *TransferNetOwnershipTx {
 				// This SubnetAuth fails verification.
 				invalidSubnetAuth := verify.NewMockVerifiable(ctrl)
 				invalidSubnetAuth.EXPECT().Verify().Return(errInvalidSubnetAuth)
-				return &TransferSubnetOwnershipTx{
-					// Set subnetID so we don't error on that check.
+				return &TransferNetOwnershipTx{
+					// Set netID so we don't error on that check.
 					Subnet:     ids.GenerateTestID(),
 					BaseTx:     validBaseTx,
 					SubnetAuth: invalidSubnetAuth,
@@ -644,14 +644,14 @@ func TestTransferSubnetOwnershipTxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "passes verification",
-			txFunc: func(ctrl *gomock.Controller) *TransferSubnetOwnershipTx {
+			txFunc: func(ctrl *gomock.Controller) *TransferNetOwnershipTx {
 				// This SubnetAuth passes verification.
 				validSubnetAuth := verify.NewMockVerifiable(ctrl)
 				validSubnetAuth.EXPECT().Verify().Return(nil)
 				mockOwner := fx.NewMockOwner(ctrl)
 				mockOwner.EXPECT().Verify().Return(nil)
-				return &TransferSubnetOwnershipTx{
-					// Set subnetID so we don't error on that check.
+				return &TransferNetOwnershipTx{
+					// Set netID so we don't error on that check.
 					Subnet:     ids.GenerateTestID(),
 					BaseTx:     validBaseTx,
 					SubnetAuth: validSubnetAuth,

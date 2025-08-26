@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer"

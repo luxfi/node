@@ -91,13 +91,13 @@ func TestDiffCurrentValidator(t *testing.T) {
 	// Put a current validator
 	currentValidator := &Staker{
 		TxID:     ids.GenerateTestID(),
-		SubnetID: ids.GenerateTestID(),
+		NetID: ids.GenerateTestID(),
 		NodeID:   ids.GenerateTestNodeID(),
 	}
 	d.PutCurrentValidator(currentValidator)
 
 	// Assert that we get the current validator back
-	gotCurrentValidator, err := d.GetCurrentValidator(currentValidator.SubnetID, currentValidator.NodeID)
+	gotCurrentValidator, err := d.GetCurrentValidator(currentValidator.NetID, currentValidator.NodeID)
 	require.NoError(err)
 	require.Equal(currentValidator, gotCurrentValidator)
 
@@ -105,8 +105,8 @@ func TestDiffCurrentValidator(t *testing.T) {
 	d.DeleteCurrentValidator(currentValidator)
 
 	// Make sure the deletion worked
-	state.EXPECT().GetCurrentValidator(currentValidator.SubnetID, currentValidator.NodeID).Return(nil, database.ErrNotFound).Times(1)
-	_, err = d.GetCurrentValidator(currentValidator.SubnetID, currentValidator.NodeID)
+	state.EXPECT().GetCurrentValidator(currentValidator.NetID, currentValidator.NodeID).Return(nil, database.ErrNotFound).Times(1)
+	_, err = d.GetCurrentValidator(currentValidator.NetID, currentValidator.NodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 }
 
@@ -128,13 +128,13 @@ func TestDiffPendingValidator(t *testing.T) {
 	// Put a pending validator
 	pendingValidator := &Staker{
 		TxID:     ids.GenerateTestID(),
-		SubnetID: ids.GenerateTestID(),
+		NetID: ids.GenerateTestID(),
 		NodeID:   ids.GenerateTestNodeID(),
 	}
 	d.PutPendingValidator(pendingValidator)
 
 	// Assert that we get the pending validator back
-	gotPendingValidator, err := d.GetPendingValidator(pendingValidator.SubnetID, pendingValidator.NodeID)
+	gotPendingValidator, err := d.GetPendingValidator(pendingValidator.NetID, pendingValidator.NodeID)
 	require.NoError(err)
 	require.Equal(pendingValidator, gotPendingValidator)
 
@@ -142,8 +142,8 @@ func TestDiffPendingValidator(t *testing.T) {
 	d.DeletePendingValidator(pendingValidator)
 
 	// Make sure the deletion worked
-	state.EXPECT().GetPendingValidator(pendingValidator.SubnetID, pendingValidator.NodeID).Return(nil, database.ErrNotFound).Times(1)
-	_, err = d.GetPendingValidator(pendingValidator.SubnetID, pendingValidator.NodeID)
+	state.EXPECT().GetPendingValidator(pendingValidator.NetID, pendingValidator.NodeID).Return(nil, database.ErrNotFound).Times(1)
+	_, err = d.GetPendingValidator(pendingValidator.NetID, pendingValidator.NodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 }
 
@@ -153,7 +153,7 @@ func TestDiffCurrentDelegator(t *testing.T) {
 
 	currentDelegator := &Staker{
 		TxID:     ids.GenerateTestID(),
-		SubnetID: ids.GenerateTestID(),
+		NetID: ids.GenerateTestID(),
 		NodeID:   ids.GenerateTestNodeID(),
 	}
 
@@ -177,10 +177,10 @@ func TestDiffCurrentDelegator(t *testing.T) {
 	stateCurrentDelegatorIter.EXPECT().Next().Return(false).Times(2)
 	stateCurrentDelegatorIter.EXPECT().Release().Times(2)
 	state.EXPECT().GetCurrentDelegatorIterator(
-		currentDelegator.SubnetID,
+		currentDelegator.NetID,
 		currentDelegator.NodeID,
 	).Return(stateCurrentDelegatorIter, nil).Times(2)
-	gotCurrentDelegatorIter, err := d.GetCurrentDelegatorIterator(currentDelegator.SubnetID, currentDelegator.NodeID)
+	gotCurrentDelegatorIter, err := d.GetCurrentDelegatorIterator(currentDelegator.NetID, currentDelegator.NodeID)
 	require.NoError(err)
 	// The iterator should have the 1 delegator we put in [d]
 	require.True(gotCurrentDelegatorIter.Next())
@@ -191,7 +191,7 @@ func TestDiffCurrentDelegator(t *testing.T) {
 
 	// Make sure the deletion worked.
 	// The iterator should have no elements.
-	gotCurrentDelegatorIter, err = d.GetCurrentDelegatorIterator(currentDelegator.SubnetID, currentDelegator.NodeID)
+	gotCurrentDelegatorIter, err = d.GetCurrentDelegatorIterator(currentDelegator.NetID, currentDelegator.NodeID)
 	require.NoError(err)
 	require.False(gotCurrentDelegatorIter.Next())
 }
@@ -202,7 +202,7 @@ func TestDiffPendingDelegator(t *testing.T) {
 
 	pendingDelegator := &Staker{
 		TxID:     ids.GenerateTestID(),
-		SubnetID: ids.GenerateTestID(),
+		NetID: ids.GenerateTestID(),
 		NodeID:   ids.GenerateTestNodeID(),
 	}
 
@@ -226,10 +226,10 @@ func TestDiffPendingDelegator(t *testing.T) {
 	statePendingDelegatorIter.EXPECT().Next().Return(false).Times(2)
 	statePendingDelegatorIter.EXPECT().Release().Times(2)
 	state.EXPECT().GetPendingDelegatorIterator(
-		pendingDelegator.SubnetID,
+		pendingDelegator.NetID,
 		pendingDelegator.NodeID,
 	).Return(statePendingDelegatorIter, nil).Times(2)
-	gotPendingDelegatorIter, err := d.GetPendingDelegatorIterator(pendingDelegator.SubnetID, pendingDelegator.NodeID)
+	gotPendingDelegatorIter, err := d.GetPendingDelegatorIterator(pendingDelegator.NetID, pendingDelegator.NodeID)
 	require.NoError(err)
 	// The iterator should have the 1 delegator we put in [d]
 	require.True(gotPendingDelegatorIter.Next())
@@ -240,7 +240,7 @@ func TestDiffPendingDelegator(t *testing.T) {
 
 	// Make sure the deletion worked.
 	// The iterator should have no elements.
-	gotPendingDelegatorIter, err = d.GetPendingDelegatorIterator(pendingDelegator.SubnetID, pendingDelegator.NodeID)
+	gotPendingDelegatorIter, err = d.GetPendingDelegatorIterator(pendingDelegator.NetID, pendingDelegator.NodeID)
 	require.NoError(err)
 	require.False(gotPendingDelegatorIter.Next())
 }
@@ -252,19 +252,19 @@ func TestDiffSubnet(t *testing.T) {
 	state := newInitializedState(require)
 
 	// Initialize parent with one subnet
-	parentStateCreateSubnetTx := &txs.Tx{
-		Unsigned: &txs.CreateSubnetTx{
+	parentStateCreateNetTx := &txs.Tx{
+		Unsigned: &txs.CreateNetTx{
 			Owner: fx.NewMockOwner(ctrl),
 		},
 	}
-	state.AddSubnet(parentStateCreateSubnetTx.ID())
+	state.AddNet(parentStateCreateNetTx.ID())
 
 	// Verify parent returns one subnet
-	subnetIDs, err := state.GetSubnetIDs()
+	netIDs, err := state.GetNetIDs()
 	require.NoError(err)
 	require.Equal([]ids.ID{
-		parentStateCreateSubnetTx.ID(),
-	}, subnetIDs)
+		parentStateCreateNetTx.ID(),
+	}, netIDs)
 
 	states := NewMockVersions(ctrl)
 	lastAcceptedID := ids.GenerateTestID()
@@ -275,22 +275,22 @@ func TestDiffSubnet(t *testing.T) {
 
 	// Put a subnet
 	createSubnetTx := &txs.Tx{
-		Unsigned: &txs.CreateSubnetTx{
+		Unsigned: &txs.CreateNetTx{
 			Owner: fx.NewMockOwner(ctrl),
 		},
 	}
-	diff.AddSubnet(createSubnetTx.ID())
+	diff.AddNet(createSubnetTx.ID())
 
 	// Apply diff to parent state
 	require.NoError(diff.Apply(state))
 
 	// Verify parent now returns two subnets
-	subnetIDs, err = state.GetSubnetIDs()
+	netIDs, err = state.GetNetIDs()
 	require.NoError(err)
 	require.Equal([]ids.ID{
-		parentStateCreateSubnetTx.ID(),
+		parentStateCreateNetTx.ID(),
 		createSubnetTx.ID(),
-	}, subnetIDs)
+	}, netIDs)
 }
 
 func TestDiffChain(t *testing.T) {
@@ -298,18 +298,18 @@ func TestDiffChain(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	state := newInitializedState(require)
-	subnetID := ids.GenerateTestID()
+	netID := ids.GenerateTestID()
 
 	// Initialize parent with one chain
 	parentStateCreateChainTx := &txs.Tx{
 		Unsigned: &txs.CreateChainTx{
-			SubnetID: subnetID,
+			NetID: netID,
 		},
 	}
 	state.AddChain(parentStateCreateChainTx)
 
 	// Verify parent returns one chain
-	chains, err := state.GetChains(subnetID)
+	chains, err := state.GetChains(netID)
 	require.NoError(err)
 	require.Equal([]*txs.Tx{
 		parentStateCreateChainTx,
@@ -325,7 +325,7 @@ func TestDiffChain(t *testing.T) {
 	// Put a chain
 	createChainTx := &txs.Tx{
 		Unsigned: &txs.CreateChainTx{
-			SubnetID: subnetID, // note this is the same subnet as [parentStateCreateChainTx]
+			NetID: netID, // note this is the same net as [parentStateCreateChainTx]
 		},
 	}
 	diff.AddChain(createChainTx)
@@ -334,7 +334,7 @@ func TestDiffChain(t *testing.T) {
 	require.NoError(diff.Apply(state))
 
 	// Verify parent now returns two chains
-	chains, err = state.GetChains(subnetID)
+	chains, err = state.GetChains(netID)
 	require.NoError(err)
 	require.Equal([]*txs.Tx{
 		parentStateCreateChainTx,
@@ -358,10 +358,10 @@ func TestDiffTx(t *testing.T) {
 	require.NoError(err)
 
 	// Put a tx
-	subnetID := ids.GenerateTestID()
+	netID := ids.GenerateTestID()
 	tx := &txs.Tx{
 		Unsigned: &txs.CreateChainTx{
-			SubnetID: subnetID,
+			NetID: netID,
 		},
 	}
 	tx.SetBytes(utils.RandomBytes(16), utils.RandomBytes(16))
@@ -380,7 +380,7 @@ func TestDiffTx(t *testing.T) {
 		// [state] returns 1 tx.
 		parentTx := &txs.Tx{
 			Unsigned: &txs.CreateChainTx{
-				SubnetID: subnetID,
+				NetID: netID,
 			},
 		}
 		parentTx.SetBytes(utils.RandomBytes(16), utils.RandomBytes(16))
@@ -533,49 +533,49 @@ func TestDiffSubnetOwner(t *testing.T) {
 		owner2 = fx.NewMockOwner(ctrl)
 
 		createSubnetTx = &txs.Tx{
-			Unsigned: &txs.CreateSubnetTx{
+			Unsigned: &txs.CreateNetTx{
 				BaseTx: txs.BaseTx{},
 				Owner:  owner1,
 			},
 		}
 
-		subnetID = createSubnetTx.ID()
+		netID = createSubnetTx.ID()
 	)
 
-	// Create subnet on base state
-	owner, err := state.GetSubnetOwner(subnetID)
+	// Create net on base state
+	owner, err := state.GetSubnetOwner(netID)
 	require.ErrorIs(err, database.ErrNotFound)
 	require.Nil(owner)
 
-	state.AddSubnet(subnetID)
-	state.SetSubnetOwner(subnetID, owner1)
+	state.AddNet(netID)
+	state.SetSubnetOwner(netID, owner1)
 
-	owner, err = state.GetSubnetOwner(subnetID)
+	owner, err = state.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
-	// Create diff and verify that subnet owner returns correctly
+	// Create diff and verify that net owner returns correctly
 	d, err := NewDiff(lastAcceptedID, states)
 	require.NoError(err)
 
-	owner, err = d.GetSubnetOwner(subnetID)
+	owner, err = d.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
-	// Transferring subnet ownership on diff should be reflected on diff not state
-	d.SetSubnetOwner(subnetID, owner2)
-	owner, err = d.GetSubnetOwner(subnetID)
+	// Transferring net ownership on diff should be reflected on diff not state
+	d.SetSubnetOwner(netID, owner2)
+	owner, err = d.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner2, owner)
 
-	owner, err = state.GetSubnetOwner(subnetID)
+	owner, err = state.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
-	// State should reflect new subnet owner after diff is applied.
+	// State should reflect new net owner after diff is applied.
 	require.NoError(d.Apply(state))
 
-	owner, err = state.GetSubnetOwner(subnetID)
+	owner, err = state.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner2, owner)
 }
@@ -596,80 +596,80 @@ func TestDiffStacking(t *testing.T) {
 		owner3 = fx.NewMockOwner(ctrl)
 
 		createSubnetTx = &txs.Tx{
-			Unsigned: &txs.CreateSubnetTx{
+			Unsigned: &txs.CreateNetTx{
 				BaseTx: txs.BaseTx{},
 				Owner:  owner1,
 			},
 		}
 
-		subnetID = createSubnetTx.ID()
+		netID = createSubnetTx.ID()
 	)
 
-	// Create subnet on base state
-	owner, err := state.GetSubnetOwner(subnetID)
+	// Create net on base state
+	owner, err := state.GetSubnetOwner(netID)
 	require.ErrorIs(err, database.ErrNotFound)
 	require.Nil(owner)
 
-	state.AddSubnet(subnetID)
-	state.SetSubnetOwner(subnetID, owner1)
+	state.AddNet(netID)
+	state.SetSubnetOwner(netID, owner1)
 
-	owner, err = state.GetSubnetOwner(subnetID)
+	owner, err = state.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
-	// Create first diff and verify that subnet owner returns correctly
+	// Create first diff and verify that net owner returns correctly
 	statesDiff, err := NewDiff(lastAcceptedID, states)
 	require.NoError(err)
 
-	owner, err = statesDiff.GetSubnetOwner(subnetID)
+	owner, err = statesDiff.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
-	// Transferring subnet ownership on first diff should be reflected on first diff not state
-	statesDiff.SetSubnetOwner(subnetID, owner2)
-	owner, err = statesDiff.GetSubnetOwner(subnetID)
+	// Transferring net ownership on first diff should be reflected on first diff not state
+	statesDiff.SetSubnetOwner(netID, owner2)
+	owner, err = statesDiff.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner2, owner)
 
-	owner, err = state.GetSubnetOwner(subnetID)
+	owner, err = state.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
-	// Create a second diff on first diff and verify that subnet owner returns correctly
+	// Create a second diff on first diff and verify that net owner returns correctly
 	stackedDiff, err := NewDiffOn(statesDiff)
 	require.NoError(err)
-	owner, err = stackedDiff.GetSubnetOwner(subnetID)
+	owner, err = stackedDiff.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner2, owner)
 
 	// Transfer ownership on stacked diff and verify it is only reflected on stacked diff
-	stackedDiff.SetSubnetOwner(subnetID, owner3)
-	owner, err = stackedDiff.GetSubnetOwner(subnetID)
+	stackedDiff.SetSubnetOwner(netID, owner3)
+	owner, err = stackedDiff.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner3, owner)
 
-	owner, err = statesDiff.GetSubnetOwner(subnetID)
+	owner, err = statesDiff.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner2, owner)
 
-	owner, err = state.GetSubnetOwner(subnetID)
+	owner, err = state.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
 	// Applying both diffs successively should work as expected.
 	require.NoError(stackedDiff.Apply(statesDiff))
 
-	owner, err = statesDiff.GetSubnetOwner(subnetID)
+	owner, err = statesDiff.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner3, owner)
 
-	owner, err = state.GetSubnetOwner(subnetID)
+	owner, err = state.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
 	require.NoError(statesDiff.Apply(state))
 
-	owner, err = state.GetSubnetOwner(subnetID)
+	owner, err = state.GetSubnetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner3, owner)
 }

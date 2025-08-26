@@ -42,13 +42,13 @@ var (
 		StaticConfig: fee.StaticConfig{
 			TxFee:                         units.MilliLux,
 			CreateAssetTxFee:              units.MilliLux,
-			CreateSubnetTxFee:             100 * units.MilliLux,
-			TransformSubnetTxFee:          100 * units.MilliLux,
+			CreateNetTxFee:             100 * units.MilliLux,
+			TransformNetTxFee:          100 * units.MilliLux,
 			CreateBlockchainTxFee:         100 * units.MilliLux,
 			AddPrimaryNetworkValidatorFee: 0,
 			AddPrimaryNetworkDelegatorFee: 0,
-			AddSubnetValidatorFee:         units.MilliLux,
-			AddSubnetDelegatorFee:         units.MilliLux,
+			AddNetValidatorFee:         units.MilliLux,
+			AddNetDelegatorFee:         units.MilliLux,
 		},
 		StakingConfig: StakingConfig{
 			UptimeRequirement: .8, // 80%

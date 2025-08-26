@@ -34,7 +34,7 @@ import (
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/node"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
@@ -775,13 +775,13 @@ func getTxFeeConfig(v *viper.Viper, networkID uint32) fee.StaticConfig {
 		return fee.StaticConfig{
 			TxFee:                         v.GetUint64(TxFeeKey),
 			CreateAssetTxFee:              v.GetUint64(CreateAssetTxFeeKey),
-			CreateSubnetTxFee:             v.GetUint64(CreateSubnetTxFeeKey),
-			TransformSubnetTxFee:          v.GetUint64(TransformSubnetTxFeeKey),
+			CreateNetTxFee:             v.GetUint64(CreateNetTxFeeKey),
+			TransformNetTxFee:          v.GetUint64(TransformNetTxFeeKey),
 			CreateBlockchainTxFee:         v.GetUint64(CreateBlockchainTxFeeKey),
 			AddPrimaryNetworkValidatorFee: v.GetUint64(AddPrimaryNetworkValidatorFeeKey),
 			AddPrimaryNetworkDelegatorFee: v.GetUint64(AddPrimaryNetworkDelegatorFeeKey),
-			AddSubnetValidatorFee:         v.GetUint64(AddSubnetValidatorFeeKey),
-			AddSubnetDelegatorFee:         v.GetUint64(AddSubnetDelegatorFeeKey),
+			AddNetValidatorFee:         v.GetUint64(AddNetValidatorFeeKey),
+			AddNetDelegatorFee:         v.GetUint64(AddNetDelegatorFeeKey),
 		}
 	}
 	return genesis.GetTxFeeConfig(networkID)
@@ -824,25 +824,25 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.Stakin
 func getTrackedSubnets(v *viper.Viper) (set.Set[ids.ID], error) {
 	trackSubnetsStr := v.GetString(TrackSubnetsKey)
 	trackSubnetsStrs := strings.Split(trackSubnetsStr, ",")
-	trackedSubnetIDs := set.NewSet[ids.ID](len(trackSubnetsStrs))
+	trackedNetIDs := set.NewSet[ids.ID](len(trackSubnetsStrs))
 
-	for _, subnet := range trackSubnetsStrs {
-		if subnet == "" {
+	for _, net := range trackSubnetsStrs {
+		if net == "" {
 			continue
 		}
 
-		// Parse subnet ID
-		subnetID, err := ids.FromString(subnet)
+		// Parse net ID
+		netID, err := ids.FromString(subnet)
 
 		if err != nil {
-			return nil, fmt.Errorf("couldn't parse subnetID %q: %w", subnet, err)
+			return nil, fmt.Errorf("couldn't parse netID %q: %w", subnet, err)
 		}
-		if subnetID == constants.PrimaryNetworkID {
+		if netID == constants.PrimaryNetworkID {
 			return nil, errCannotTrackPrimaryNetwork
 		}
-		trackedSubnetIDs.Add(subnetID)
+		trackedNetIDs.Add(netID)
 	}
-	return trackedSubnetIDs, nil
+	return trackedNetIDs, nil
 }
 
 func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, error) {
@@ -1010,16 +1010,16 @@ func readChainConfigPath(chainConfigPath string) (map[string]chains.ChainConfig,
 	return chainConfigMap, nil
 }
 
-// getSubnetConfigs reads subnet configs from the correct place
+// getSubnetConfigs reads net configs from the correct place
 // (flag or file) and returns a non-nil map.
-func getSubnetConfigs(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]subnets.Config, error) {
+func getSubnetConfigs(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]subnets.Config, error) {
 	if v.IsSet(SubnetConfigContentKey) {
-		return getSubnetConfigsFromFlags(v, subnetIDs)
+		return getSubnetConfigsFromFlags(v, netIDs)
 	}
-	return getSubnetConfigsFromDir(v, subnetIDs)
+	return getSubnetConfigsFromDir(v, netIDs)
 }
 
-func getSubnetConfigsFromFlags(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]subnets.Config, error) {
+func getSubnetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]subnets.Config, error) {
 	subnetConfigContentB64 := v.GetString(SubnetConfigContentKey)
 	subnetConfigContent, err := base64.StdEncoding.DecodeString(subnetConfigContentB64)
 	if err != nil {
@@ -1027,14 +1027,14 @@ func getSubnetConfigsFromFlags(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]s
 	}
 
 	// partially parse configs to be filled by defaults later
-	subnetConfigs := make(map[ids.ID]json.RawMessage, len(subnetIDs))
+	subnetConfigs := make(map[ids.ID]json.RawMessage, len(netIDs))
 	if err := json.Unmarshal(subnetConfigContent, &subnetConfigs); err != nil {
 		return nil, fmt.Errorf("could not unmarshal JSON: %w", err)
 	}
 
 	res := make(map[ids.ID]subnets.Config)
-	for _, subnetID := range subnetIDs {
-		if rawSubnetConfigBytes, ok := subnetConfigs[subnetID]; ok {
+	for _, netID := range netIDs {
+		if rawSubnetConfigBytes, ok := subnetConfigs[netID]; ok {
 			// Start with defaults, then unmarshal on top
 			config := getDefaultSubnetConfig(v)
 			if err := json.Unmarshal(rawSubnetConfigBytes, &config); err != nil {
@@ -1051,14 +1051,14 @@ func getSubnetConfigsFromFlags(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]s
 				return nil, err
 			}
 
-			res[subnetID] = config
+			res[netID] = config
 		}
 	}
 	return res, nil
 }
 
 // getSubnetConfigs reads SubnetConfigs to node config map
-func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]subnets.Config, error) {
+func getSubnetConfigsFromDir(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]subnets.Config, error) {
 	subnetConfigPath, err := getPathFromDirKey(v, SubnetConfigDirKey)
 	if err != nil {
 		return nil, err
@@ -1066,17 +1066,17 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 
 	subnetConfigs := make(map[ids.ID]subnets.Config)
 	if len(subnetConfigPath) == 0 {
-		// subnet config path does not exist but not explicitly specified, so ignore it
+		// net config path does not exist but not explicitly specified, so ignore it
 		return subnetConfigs, nil
 	}
 
-	// reads subnet config files from a path and given subnetIDs and returns a map.
-	for _, subnetID := range subnetIDs {
-		filePath := filepath.Join(subnetConfigPath, subnetID.String()+subnetConfigFileExt)
+	// reads net config files from a path and given netIDs and returns a map.
+	for _, netID := range netIDs {
+		filePath := filepath.Join(subnetConfigPath, netID.String()+subnetConfigFileExt)
 		fileInfo, err := os.Stat(filePath)
 		switch {
 		case errors.Is(err, os.ErrNotExist):
-			// this subnet config does not exist, move to the next one
+			// this net config does not exist, move to the next one
 			continue
 		case err != nil:
 			return nil, err
@@ -1084,7 +1084,7 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 			return nil, fmt.Errorf("%q is a directory, expected a file", fileInfo.Name())
 		}
 
-		// subnetConfigDir/subnetID.json
+		// subnetConfigDir/netID.json
 		file, err := os.ReadFile(filePath)
 		if err != nil {
 			return nil, err
@@ -1106,7 +1106,7 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 			return nil, err
 		}
 
-		subnetConfigs[subnetID] = config
+		subnetConfigs[netID] = config
 	}
 
 	return subnetConfigs, nil
@@ -1362,10 +1362,10 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, err
 	}
 
-	// Subnet Configs
+	// Net Configs
 	subnetConfigs, err := getSubnetConfigs(v, nodeConfig.TrackedSubnets.List())
 	if err != nil {
-		return node.Config{}, fmt.Errorf("couldn't read subnet configs: %w", err)
+		return node.Config{}, fmt.Errorf("couldn't read net configs: %w", err)
 	}
 
 	primaryNetworkConfig := getDefaultSubnetConfig(v)

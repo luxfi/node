@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 var _ Backend = (*backend)(nil)
@@ -35,20 +35,20 @@ type backend struct {
 	context *builder.Context
 
 	subnetOwnerLock sync.RWMutex
-	subnetOwner     map[ids.ID]fx.Owner // subnetID -> owner
+	subnetOwner     map[ids.ID]fx.Owner // netID -> owner
 }
 
 func NewBackend(context *builder.Context, utxos common.ChainUTXOs, subnetTxs map[ids.ID]*txs.Tx) Backend {
 	subnetOwner := make(map[ids.ID]fx.Owner)
-	for txID, tx := range subnetTxs { // first get owners from the CreateSubnetTx
-		createSubnetTx, ok := tx.Unsigned.(*txs.CreateSubnetTx)
+	for txID, tx := range subnetTxs { // first get owners from the CreateNetTx
+		createSubnetTx, ok := tx.Unsigned.(*txs.CreateNetTx)
 		if !ok {
 			continue
 		}
 		subnetOwner[txID] = createSubnetTx.Owner
 	}
-	for _, tx := range subnetTxs { // then check for TransferSubnetOwnershipTx
-		transferSubnetOwnershipTx, ok := tx.Unsigned.(*txs.TransferSubnetOwnershipTx)
+	for _, tx := range subnetTxs { // then check for TransferNetOwnershipTx
+		transferSubnetOwnershipTx, ok := tx.Unsigned.(*txs.TransferNetOwnershipTx)
 		if !ok {
 			continue
 		}
@@ -94,20 +94,20 @@ func (b *backend) removeUTXOs(ctx context.Context, sourceChain ids.ID, utxoIDs s
 	return nil
 }
 
-func (b *backend) GetSubnetOwner(_ context.Context, subnetID ids.ID) (fx.Owner, error) {
+func (b *backend) GetSubnetOwner(_ context.Context, netID ids.ID) (fx.Owner, error) {
 	b.subnetOwnerLock.RLock()
 	defer b.subnetOwnerLock.RUnlock()
 
-	owner, exists := b.subnetOwner[subnetID]
+	owner, exists := b.subnetOwner[netID]
 	if !exists {
 		return nil, database.ErrNotFound
 	}
 	return owner, nil
 }
 
-func (b *backend) setSubnetOwner(subnetID ids.ID, owner fx.Owner) {
+func (b *backend) setSubnetOwner(netID ids.ID, owner fx.Owner) {
 	b.subnetOwnerLock.Lock()
 	defer b.subnetOwnerLock.Unlock()
 
-	b.subnetOwner[subnetID] = owner
+	b.subnetOwner[netID] = owner
 }

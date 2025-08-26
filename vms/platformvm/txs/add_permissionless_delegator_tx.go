@@ -28,8 +28,8 @@ type AddPermissionlessDelegatorTx struct {
 	BaseTx `serialize:"true"`
 	// Describes the validator
 	Validator `serialize:"true" json:"validator"`
-	// ID of the subnet this validator is validating
-	Subnet ids.ID `serialize:"true" json:"subnetID"`
+	// ID of the net this validator is validating
+	Net ids.ID `serialize:"true" json:"netID"`
 	// Where to send staked tokens when done validating
 	StakeOuts []*lux.TransferableOutput `serialize:"true" json:"stake"`
 	// Where to send staking rewards when done validating
@@ -48,7 +48,7 @@ func (tx *AddPermissionlessDelegatorTx) InitCtx(ctx context.Context) {
 	tx.DelegationRewardsOwner.InitCtx(ctx)
 }
 
-func (tx *AddPermissionlessDelegatorTx) SubnetID() ids.ID {
+func (tx *AddPermissionlessDelegatorTx) NetID() ids.ID {
 	return tx.Subnet
 }
 
@@ -61,14 +61,14 @@ func (*AddPermissionlessDelegatorTx) PublicKey() (*bls.PublicKey, bool, error) {
 }
 
 func (tx *AddPermissionlessDelegatorTx) PendingPriority() Priority {
-	if tx.Subnet == constants.PrimaryNetworkID {
+	if tx.Net == constants.PrimaryNetworkID {
 		return PrimaryNetworkDelegatorBanffPendingPriority
 	}
 	return SubnetPermissionlessDelegatorPendingPriority
 }
 
 func (tx *AddPermissionlessDelegatorTx) CurrentPriority() Priority {
-	if tx.Subnet == constants.PrimaryNetworkID {
+	if tx.Net == constants.PrimaryNetworkID {
 		return PrimaryNetworkDelegatorCurrentPriority
 	}
 	return SubnetPermissionlessDelegatorCurrentPriority

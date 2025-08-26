@@ -43,7 +43,7 @@ type Network struct {
 func New(
 	log log.Logger,
 	nodeID ids.NodeID,
-	subnetID ids.ID,
+	netID ids.ID,
 	vdrs validators.State,
 	txVerifier TxVerifier,
 	mempool mempool.Mempool,
@@ -61,7 +61,7 @@ func New(
 	validators := p2p.NewValidators(
 		p2pNetwork.Peers,
 		log,
-		subnetID,
+		netID,
 		vdrs,
 		config.MaxValidatorSetStaleness,
 	)
