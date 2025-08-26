@@ -241,4 +241,6 @@ replace github.com/luxfi/consensus => /Users/z/work/lux/consensus
 
 replace github.com/luxfi/crypto => ../crypto
 
-replace github.com/luxfi/database => ../database
+replace github.com/luxfi/database => /Users/z/work/lux/database
+
+replace github.com/luxfi/metric => /Users/z/work/lux/metric
