@@ -94,10 +94,10 @@ type Peer interface {
 	// be called after [Ready] returns true.
 	TrackedSubnets() set.Set[ids.ID]
 
-	// ObservedUptime returns the local node's subnet uptime according to the
+	// ObservedUptime returns the local node's net uptime according to the
 	// peer. The value ranges from [0, 100]. It should only be called after
 	// [Ready] returns true.
-	ObservedUptime(subnetID ids.ID) (uint32, bool)
+	ObservedUptime(netID ids.ID) (uint32, bool)
 
 	// Send attempts to send [msg] to the peer. The peer takes ownership of
 	// [msg] for reference counting. This returns false if the message is
@@ -143,7 +143,7 @@ type peer struct {
 	// version is the claimed version the peer is running that we received in
 	// the Handshake message.
 	version *version.Application
-	// trackedSubnets are the subnetIDs the peer sent us in the Handshake
+	// trackedSubnets are the netIDs the peer sent us in the Handshake
 	// message. The primary network ID is always included.
 	trackedSubnets set.Set[ids.ID]
 	// options of LPs provided in the Handshake message.
@@ -160,7 +160,7 @@ type peer struct {
 
 	observedUptimesLock sync.RWMutex
 	// [observedUptimesLock] must be held while accessing [observedUptime]
-	// Subnet ID --> Our uptime for the given subnet as perceived by the peer
+	// Net ID --> Our uptime for the given net as perceived by the peer
 	observedUptimes map[ids.ID]uint32
 
 	// True if this peer has sent us a valid Handshake message and
@@ -271,12 +271,12 @@ func (p *peer) AwaitReady(ctx context.Context) error {
 
 func (p *peer) Info() Info {
 	uptimes := make(map[ids.ID]json.Uint32, p.MySubnets.Len())
-	for subnetID := range p.MySubnets {
-		uptime, exist := p.ObservedUptime(subnetID)
+	for netID := range p.MySubnets {
+		uptime, exist := p.ObservedUptime(netID)
 		if !exist {
 			continue
 		}
-		uptimes[subnetID] = json.Uint32(uptime)
+		uptimes[netID] = json.Uint32(uptime)
 	}
 
 	primaryUptime, exist := p.ObservedUptime(constants.PrimaryNetworkID)
@@ -312,11 +312,11 @@ func (p *peer) TrackedSubnets() set.Set[ids.ID] {
 	return p.trackedSubnets
 }
 
-func (p *peer) ObservedUptime(subnetID ids.ID) (uint32, bool) {
+func (p *peer) ObservedUptime(netID ids.ID) (uint32, bool) {
 	p.observedUptimesLock.RLock()
 	defer p.observedUptimesLock.RUnlock()
 
-	uptime, exist := p.observedUptimes[subnetID]
+	uptime, exist := p.observedUptimes[netID]
 	return uptime, exist
 }
 
@@ -802,7 +802,7 @@ func (p *peer) handlePing(msg *p2p.Ping) {
 		p.Log.Debug(malformedMessageLog,
 			zap.Stringer("nodeID", p.id),
 			zap.Stringer("messageOp", message.PingOp),
-			zap.Stringer("subnetID", constants.PrimaryNetworkID),
+			zap.Stringer("netID", constants.PrimaryNetworkID),
 			zap.Uint32("uptime", msg.Uptime),
 		)
 		p.StartClose()
@@ -811,23 +811,23 @@ func (p *peer) handlePing(msg *p2p.Ping) {
 	p.observeUptime(constants.PrimaryNetworkID, msg.Uptime)
 
 	for _, subnetUptime := range msg.SubnetUptimes {
-		subnetID, err := ids.ToID(subnetUptime.SubnetId)
+		netID, err := ids.ToID(subnetUptime.SubnetId)
 		if err != nil {
 			p.Log.Debug(malformedMessageLog,
 				zap.Stringer("nodeID", p.id),
 				zap.Stringer("messageOp", message.PingOp),
-				zap.String("field", "subnetID"),
+				zap.String("field", "netID"),
 				zap.Error(err),
 			)
 			p.StartClose()
 			return
 		}
 
-		if !p.MySubnets.Contains(subnetID) {
+		if !p.MySubnets.Contains(netID) {
 			p.Log.Debug(malformedMessageLog,
 				zap.Stringer("nodeID", p.id),
 				zap.Stringer("messageOp", message.PingOp),
-				zap.Stringer("subnetID", subnetID),
+				zap.Stringer("netID", netID),
 				zap.String("reason", "not tracking subnet"),
 			)
 			p.StartClose()
@@ -839,13 +839,13 @@ func (p *peer) handlePing(msg *p2p.Ping) {
 			p.Log.Debug(malformedMessageLog,
 				zap.Stringer("nodeID", p.id),
 				zap.Stringer("messageOp", message.PingOp),
-				zap.Stringer("subnetID", subnetID),
+				zap.Stringer("netID", netID),
 				zap.Uint32("uptime", uptime),
 			)
 			p.StartClose()
 			return
 		}
-		p.observeUptime(subnetID, uptime)
+		p.observeUptime(netID, uptime)
 	}
 
 	pongMessage, err := p.MessageCreator.Pong()
@@ -867,31 +867,31 @@ func (p *peer) getUptimes() (uint32, []*p2p.SubnetUptime) {
 	if err != nil {
 		p.Log.Debug(failedToGetUptimeLog,
 			zap.Stringer("nodeID", p.id),
-			zap.Stringer("subnetID", constants.PrimaryNetworkID),
+			zap.Stringer("netID", constants.PrimaryNetworkID),
 			zap.Error(err),
 		)
 		primaryUptime = 0
 	}
 
 	subnetUptimes := make([]*p2p.SubnetUptime, 0, p.MySubnets.Len())
-	for subnetID := range p.MySubnets {
-		if !p.trackedSubnets.Contains(subnetID) {
+	for netID := range p.MySubnets {
+		if !p.trackedSubnets.Contains(netID) {
 			continue
 		}
 
-		subnetUptime, err := p.UptimeCalculator.CalculateUptimePercent(p.id, subnetID)
+		subnetUptime, err := p.UptimeCalculator.CalculateUptimePercent(p.id, netID)
 		if err != nil {
 			p.Log.Debug(failedToGetUptimeLog,
 				zap.Stringer("nodeID", p.id),
-				zap.Stringer("subnetID", subnetID),
+				zap.Stringer("netID", netID),
 				zap.Error(err),
 			)
 			continue
 		}
 
-		subnetID := subnetID
+		netID := netID
 		subnetUptimes = append(subnetUptimes, &p2p.SubnetUptime{
-			SubnetId: subnetID[:],
+			SubnetId: netID[:],
 			Uptime:   uint32(subnetUptime * 100),
 		})
 	}
@@ -902,13 +902,13 @@ func (p *peer) getUptimes() (uint32, []*p2p.SubnetUptime) {
 
 func (*peer) handlePong(*p2p.Pong) {}
 
-// Record that the given peer perceives our uptime for the given [subnetID]
+// Record that the given peer perceives our uptime for the given [netID]
 // to be [uptime].
-// Assumes [uptime] is in the range [0, 100] and [subnetID] is a valid ID of a
-// subnet this peer tracks.
-func (p *peer) observeUptime(subnetID ids.ID, uptime uint32) {
+// Assumes [uptime] is in the range [0, 100] and [netID] is a valid ID of a
+// net this peer tracks.
+func (p *peer) observeUptime(netID ids.ID, uptime uint32) {
 	p.observedUptimesLock.Lock()
-	p.observedUptimes[subnetID] = uptime // [0, 100] percentage
+	p.observedUptimes[netID] = uptime // [0, 100] percentage
 	p.observedUptimesLock.Unlock()
 }
 
@@ -976,7 +976,7 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 		)
 	}
 
-	// handle subnet IDs
+	// handle net IDs
 	if numTrackedSubnets := len(msg.TrackedSubnets); numTrackedSubnets > maxNumTrackedSubnets {
 		p.Log.Debug(malformedMessageLog,
 			zap.Stringer("nodeID", p.id),
@@ -989,8 +989,8 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 	}
 
 	p.trackedSubnets.Add(constants.PrimaryNetworkID)
-	for _, subnetIDBytes := range msg.TrackedSubnets {
-		subnetID, err := ids.ToID(subnetIDBytes)
+	for _, netIDBytes := range msg.TrackedSubnets {
+		netID, err := ids.ToID(netIDBytes)
 		if err != nil {
 			p.Log.Debug(malformedMessageLog,
 				zap.Stringer("nodeID", p.id),
@@ -1001,7 +1001,7 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 			p.StartClose()
 			return
 		}
-		p.trackedSubnets.Add(subnetID)
+		p.trackedSubnets.Add(netID)
 	}
 
 	for _, lp := range msg.SupportedLps {

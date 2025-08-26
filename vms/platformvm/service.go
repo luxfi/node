@@ -60,7 +60,7 @@ const (
 
 var (
 	errMissingDecisionBlock       = errors.New("should have a decision block within the past two blocks")
-	errPrimaryNetworkIsNotASubnet = errors.New("the primary network isn't a subnet")
+	errPrimaryNetworkIsNotANet = errors.New("the primary network isn't a subnet")
 	errNoAddresses                = errors.New("no addresses provided")
 	errMissingBlockchainID        = errors.New("argument 'blockchainID' not given")
 )
@@ -385,19 +385,19 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *ap
 
 // GetSubnetArgs are the arguments to GetSubnet
 type GetSubnetArgs struct {
-	// ID of the subnet to retrieve information about
-	SubnetID ids.ID `json:"subnetID"`
+	// ID of the net to retrieve information about
+	NetID ids.ID `json:"netID"`
 }
 
 // GetSubnetResponse is the response from calling GetSubnet
 type GetSubnetResponse struct {
 	// whether it is permissioned or not
 	IsPermissioned bool `json:"isPermissioned"`
-	// subnet auth information for a permissioned subnet
+	// net auth information for a permissioned subnet
 	ControlKeys []string       `json:"controlKeys"`
 	Threshold   avajson.Uint32 `json:"threshold"`
 	Locktime    avajson.Uint64 `json:"locktime"`
-	// subnet transformation tx ID for a permissionless subnet
+	// net transformation tx ID for a permissionless subnet
 	SubnetTransformationTxID ids.ID `json:"subnetTransformationTxID"`
 }
 
@@ -405,17 +405,17 @@ func (s *Service) GetSubnet(_ *http.Request, args *GetSubnetArgs, response *GetS
 	s.vm.log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getSubnet"),
-		zap.Stringer("subnetID", args.SubnetID),
+		zap.Stringer("netID", args.NetID),
 	)
 
-	if args.SubnetID == constants.PrimaryNetworkID {
+	if args.NetID == constants.PrimaryNetworkID {
 		return errPrimaryNetworkIsNotASubnet
 	}
 
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	subnetOwner, err := s.vm.state.GetSubnetOwner(args.SubnetID)
+	subnetOwner, err := s.vm.state.GetSubnetOwner(args.NetID)
 	if err != nil {
 		return err
 	}
@@ -436,7 +436,7 @@ func (s *Service) GetSubnet(_ *http.Request, args *GetSubnetArgs, response *GetS
 	response.Threshold = avajson.Uint32(owner.Threshold)
 	response.Locktime = avajson.Uint64(owner.Locktime)
 
-	switch subnetTransformationTx, err := s.vm.state.GetSubnetTransformation(args.SubnetID); err {
+	switch subnetTransformationTx, err := s.vm.state.GetSubnetTransformation(args.NetID); err {
 	case nil:
 		response.IsPermissioned = false
 		response.SubnetTransformationTxID = subnetTransformationTx.ID()
@@ -450,13 +450,13 @@ func (s *Service) GetSubnet(_ *http.Request, args *GetSubnetArgs, response *GetS
 	return nil
 }
 
-// APISubnet is a representation of a subnet used in API calls
-type APISubnet struct {
+// APINet is a representation of a net used in API calls
+type APINet struct {
 	// ID of the subnet
 	ID ids.ID `json:"id"`
 
 	// Each element of [ControlKeys] the address of a public key.
-	// A transaction to add a validator to this subnet requires
+	// A transaction to add a validator to this net requires
 	// signatures from [Threshold] of these keys to be valid.
 	ControlKeys []string       `json:"controlKeys"`
 	Threshold   avajson.Uint32 `json:"threshold"`
@@ -471,9 +471,9 @@ type GetSubnetsArgs struct {
 
 // GetSubnetsResponse is the response from calling GetSubnets
 type GetSubnetsResponse struct {
-	// Each element is a subnet that exists
+	// Each element is a net that exists
 	// Null if there are no subnets other than the primary network
-	Subnets []APISubnet `json:"subnets"`
+	Subnets []APINet `json:"subnets"`
 }
 
 // GetSubnets returns the subnets whose ID are in [args.IDs]
@@ -489,23 +489,23 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 
 	getAll := len(args.IDs) == 0
 	if getAll {
-		subnetIDs, err := s.vm.state.GetSubnetIDs() // all subnets
+		netIDs, err := s.vm.state.GetNetIDs() // all subnets
 		if err != nil {
 			return fmt.Errorf("error getting subnets from database: %w", err)
 		}
 
-		response.Subnets = make([]APISubnet, len(subnetIDs)+1)
-		for i, subnetID := range subnetIDs {
-			if _, err := s.vm.state.GetSubnetTransformation(subnetID); err == nil {
+		response.Subnets = make([]APISubnet, len(netIDs)+1)
+		for i, netID := range netIDs {
+			if _, err := s.vm.state.GetSubnetTransformation(netID); err == nil {
 				response.Subnets[i] = APISubnet{
-					ID:          subnetID,
+					ID:          netID,
 					ControlKeys: []string{},
 					Threshold:   avajson.Uint32(0),
 				}
 				continue
 			}
 
-			subnetOwner, err := s.vm.state.GetSubnetOwner(subnetID)
+			subnetOwner, err := s.vm.state.GetSubnetOwner(netID)
 			if err != nil {
 				return err
 			}
@@ -524,13 +524,13 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 				controlAddrs[i] = addr
 			}
 			response.Subnets[i] = APISubnet{
-				ID:          subnetID,
+				ID:          netID,
 				ControlKeys: controlAddrs,
 				Threshold:   avajson.Uint32(owner.Threshold),
 			}
 		}
 		// Include primary network
-		response.Subnets[len(subnetIDs)] = APISubnet{
+		response.Subnets[len(netIDs)] = APISubnet{
 			ID:          constants.PrimaryNetworkID,
 			ControlKeys: []string{},
 			Threshold:   avajson.Uint32(0),
@@ -539,13 +539,13 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 	}
 
 	subnetSet := set.NewSet[ids.ID](len(args.IDs))
-	for _, subnetID := range args.IDs {
-		if subnetSet.Contains(subnetID) {
+	for _, netID := range args.IDs {
+		if subnetSet.Contains(netID) {
 			continue
 		}
-		subnetSet.Add(subnetID)
+		subnetSet.Add(netID)
 
-		if subnetID == constants.PrimaryNetworkID {
+		if netID == constants.PrimaryNetworkID {
 			response.Subnets = append(response.Subnets,
 				APISubnet{
 					ID:          constants.PrimaryNetworkID,
@@ -556,16 +556,16 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 			continue
 		}
 
-		if _, err := s.vm.state.GetSubnetTransformation(subnetID); err == nil {
+		if _, err := s.vm.state.GetSubnetTransformation(netID); err == nil {
 			response.Subnets = append(response.Subnets, APISubnet{
-				ID:          subnetID,
+				ID:          netID,
 				ControlKeys: []string{},
 				Threshold:   avajson.Uint32(0),
 			})
 			continue
 		}
 
-		subnetOwner, err := s.vm.state.GetSubnetOwner(subnetID)
+		subnetOwner, err := s.vm.state.GetSubnetOwner(netID)
 		if err == database.ErrNotFound {
 			continue
 		}
@@ -588,7 +588,7 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 		}
 
 		response.Subnets = append(response.Subnets, APISubnet{
-			ID:          subnetID,
+			ID:          netID,
 			ControlKeys: controlAddrs,
 			Threshold:   avajson.Uint32(owner.Threshold),
 		})
@@ -598,7 +598,7 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 
 // GetStakingAssetIDArgs are the arguments to GetStakingAssetID
 type GetStakingAssetIDArgs struct {
-	SubnetID ids.ID `json:"subnetID"`
+	NetID ids.ID `json:"netID"`
 }
 
 // GetStakingAssetIDResponse is the response from calling GetStakingAssetID
@@ -614,7 +614,7 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 		zap.String("method", "getStakingAssetID"),
 	)
 
-	if args.SubnetID == constants.PrimaryNetworkID {
+	if args.NetID == constants.PrimaryNetworkID {
 		response.AssetID = s.vm.luxAssetID
 		return nil
 	}
@@ -622,18 +622,18 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	transformSubnetIntf, err := s.vm.state.GetSubnetTransformation(args.SubnetID)
+	transformSubnetIntf, err := s.vm.state.GetSubnetTransformation(args.NetID)
 	if err != nil {
 		return fmt.Errorf(
-			"failed fetching subnet transformation for %s: %w",
-			args.SubnetID,
+			"failed fetching net transformation for %s: %w",
+			args.NetID,
 			err,
 		)
 	}
-	transformSubnet, ok := transformSubnetIntf.Unsigned.(*txs.TransformSubnetTx)
+	transformSubnet, ok := transformSubnetIntf.Unsigned.(*txs.TransformNetTx)
 	if !ok {
 		return fmt.Errorf(
-			"unexpected subnet transformation tx type fetched %T",
+			"unexpected net transformation tx type fetched %T",
 			transformSubnetIntf.Unsigned,
 		)
 	}
@@ -644,9 +644,9 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 
 // GetCurrentValidatorsArgs are the arguments for calling GetCurrentValidators
 type GetCurrentValidatorsArgs struct {
-	// Subnet we're listing the validators of
+	// Net we're listing the validators of
 	// If omitted, defaults to primary network
-	SubnetID ids.ID `json:"subnetID"`
+	NetID ids.ID `json:"netID"`
 	// NodeIDs of validators to request. If [NodeIDs]
 	// is empty, it fetches all current validators. If
 	// some nodeIDs are not currently validators, they
@@ -731,7 +731,7 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 		}
 		for currentStakerIterator.Next() {
 			staker := currentStakerIterator.Value()
-			if args.SubnetID != staker.SubnetID {
+			if args.NetID != staker.NetID {
 				continue
 			}
 			targetStakers = append(targetStakers, staker)
@@ -739,7 +739,7 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 		currentStakerIterator.Release()
 	} else {
 		for nodeID := range nodeIDs {
-			staker, err := s.vm.state.GetCurrentValidator(args.SubnetID, nodeID)
+			staker, err := s.vm.state.GetCurrentValidator(args.NetID, nodeID)
 			switch err {
 			case nil:
 			case database.ErrNotFound:
@@ -750,7 +750,7 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			}
 			targetStakers = append(targetStakers, staker)
 
-			delegatorsIt, err := s.vm.state.GetCurrentDelegatorIterator(args.SubnetID, nodeID)
+			delegatorsIt, err := s.vm.state.GetCurrentDelegatorIterator(args.NetID, nodeID)
 			if err != nil {
 				return err
 			}
@@ -775,7 +775,7 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 		}
 		potentialReward := avajson.Uint64(currentStaker.PotentialReward)
 
-		delegateeReward, err := s.vm.state.GetDelegateeReward(currentStaker.SubnetID, currentStaker.NodeID)
+		delegateeReward, err := s.vm.state.GetDelegateeReward(currentStaker.NetID, currentStaker.NodeID)
 		if err != nil {
 			return err
 		}
@@ -797,7 +797,7 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			}
 
 			connected := false
-			if args.SubnetID == constants.PrimaryNetworkID {
+			if args.NetID == constants.PrimaryNetworkID {
 				connected = s.vm.uptimeManager.IsConnected(nodeID)
 			}
 			var (
@@ -864,7 +864,7 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 				return err
 			}
 			connected := false
-			if args.SubnetID == constants.PrimaryNetworkID {
+			if args.NetID == constants.PrimaryNetworkID {
 				connected = s.vm.uptimeManager.IsConnected(nodeID)
 			}
 			reply.Validators = append(reply.Validators, platformapi.PermissionedValidator{
@@ -911,7 +911,7 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 
 // GetCurrentSupplyArgs are the arguments for calling GetCurrentSupply
 type GetCurrentSupplyArgs struct {
-	SubnetID ids.ID `json:"subnetID"`
+	NetID ids.ID `json:"netID"`
 }
 
 // GetCurrentSupplyReply are the results from calling GetCurrentSupply
@@ -930,7 +930,7 @@ func (s *Service) GetCurrentSupply(r *http.Request, args *GetCurrentSupplyArgs, 
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	supply, err := s.vm.state.GetCurrentSupply(args.SubnetID)
+	supply, err := s.vm.state.GetCurrentSupply(args.NetID)
 	if err != nil {
 		return fmt.Errorf("fetching current supply failed: %w", err)
 	}
@@ -951,9 +951,9 @@ type SampleValidatorsArgs struct {
 	// Number of validators in the sample
 	Size avajson.Uint16 `json:"size"`
 
-	// ID of subnet to sample validators from
+	// ID of net to sample validators from
 	// If omitted, defaults to the primary network
-	SubnetID ids.ID `json:"subnetID"`
+	NetID ids.ID `json:"netID"`
 }
 
 // SampleValidatorsReply are the results from calling Sample
@@ -969,9 +969,9 @@ func (s *Service) SampleValidators(_ *http.Request, args *SampleValidatorsArgs, 
 		zap.Uint16("size", uint16(args.Size)),
 	)
 
-	sample, err := s.vm.Validators.Sample(args.SubnetID, int(args.Size))
+	sample, err := s.vm.Validators.Sample(args.NetID, int(args.Size))
 	if err != nil {
-		return fmt.Errorf("sampling %s errored with %w", args.SubnetID, err)
+		return fmt.Errorf("sampling %s errored with %w", args.NetID, err)
 	}
 
 	if sample == nil {
@@ -1064,7 +1064,7 @@ func (s *Service) nodeValidates(blockchainID ids.ID) bool {
 		return false
 	}
 
-	_, isValidator := s.vm.Validators.GetValidator(chain.SubnetID, s.vm.nodeID)
+	_, isValidator := s.vm.Validators.GetValidator(chain.NetID, s.vm.nodeID)
 	return isValidator
 }
 
@@ -1094,17 +1094,17 @@ func (s *Service) chainExists(ctx context.Context, blockID ids.ID, chainID ids.I
 
 // ValidatedByArgs is the arguments for calling ValidatedBy
 type ValidatedByArgs struct {
-	// ValidatedBy returns the ID of the Subnet validating the blockchain with this ID
+	// ValidatedBy returns the ID of the Net validating the blockchain with this ID
 	BlockchainID ids.ID `json:"blockchainID"`
 }
 
 // ValidatedByResponse is the reply from calling ValidatedBy
 type ValidatedByResponse struct {
-	// ID of the Subnet validating the specified blockchain
-	SubnetID ids.ID `json:"subnetID"`
+	// ID of the Net validating the specified blockchain
+	NetID ids.ID `json:"netID"`
 }
 
-// ValidatedBy returns the ID of the Subnet that validates [args.BlockchainID]
+// ValidatedBy returns the ID of the Net that validates [args.BlockchainID]
 func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *ValidatedByResponse) error {
 	s.vm.log.Debug("API called",
 		zap.String("service", "platform"),
@@ -1116,13 +1116,13 @@ func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *
 
 	var err error
 	ctx := r.Context()
-	response.SubnetID, err = s.vm.GetSubnetID(ctx, args.BlockchainID)
+	response.NetID, err = s.vm.GetNetID(ctx, args.BlockchainID)
 	return err
 }
 
 // ValidatesArgs are the arguments to Validates
 type ValidatesArgs struct {
-	SubnetID ids.ID `json:"subnetID"`
+	NetID ids.ID `json:"netID"`
 }
 
 // ValidatesResponse is the response from calling Validates
@@ -1130,7 +1130,7 @@ type ValidatesResponse struct {
 	BlockchainIDs []ids.ID `json:"blockchainIDs"`
 }
 
-// Validates returns the IDs of the blockchains validated by [args.SubnetID]
+// Validates returns the IDs of the blockchains validated by [args.NetID]
 func (s *Service) Validates(_ *http.Request, args *ValidatesArgs, response *ValidatesResponse) error {
 	s.vm.log.Debug("API called",
 		zap.String("service", "platform"),
@@ -1140,25 +1140,25 @@ func (s *Service) Validates(_ *http.Request, args *ValidatesArgs, response *Vali
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	if args.SubnetID != constants.PrimaryNetworkID {
-		subnetTx, _, err := s.vm.state.GetTx(args.SubnetID)
+	if args.NetID != constants.PrimaryNetworkID {
+		subnetTx, _, err := s.vm.state.GetTx(args.NetID)
 		if err != nil {
 			return fmt.Errorf(
-				"problem retrieving subnet %q: %w",
-				args.SubnetID,
+				"problem retrieving net %q: %w",
+				args.NetID,
 				err,
 			)
 		}
-		_, ok := subnetTx.Unsigned.(*txs.CreateSubnetTx)
+		_, ok := subnetTx.Unsigned.(*txs.CreateNetTx)
 		if !ok {
-			return fmt.Errorf("%q is not a subnet", args.SubnetID)
+			return fmt.Errorf("%q is not a subnet", args.NetID)
 		}
 	}
 
 	// Get the chains that exist
-	chains, err := s.vm.state.GetChains(args.SubnetID)
+	chains, err := s.vm.state.GetChains(args.NetID)
 	if err != nil {
-		return fmt.Errorf("problem retrieving chains for subnet %q: %w", args.SubnetID, err)
+		return fmt.Errorf("problem retrieving chains for net %q: %w", args.NetID, err)
 	}
 
 	response.BlockchainIDs = make([]ids.ID, len(chains))
@@ -1176,8 +1176,8 @@ type APIBlockchain struct {
 	// Blockchain's (non-unique) human-readable name
 	Name string `json:"name"`
 
-	// Subnet that validates the blockchain
-	SubnetID ids.ID `json:"subnetID"`
+	// Net that validates the blockchain
+	NetID ids.ID `json:"netID"`
 
 	// Virtual Machine the blockchain runs
 	VMID ids.ID `json:"vmID"`
@@ -1199,18 +1199,18 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	subnetIDs, err := s.vm.state.GetSubnetIDs()
+	netIDs, err := s.vm.state.GetNetIDs()
 	if err != nil {
 		return fmt.Errorf("couldn't retrieve subnets: %w", err)
 	}
 
 	response.Blockchains = []APIBlockchain{}
-	for _, subnetID := range subnetIDs {
-		chains, err := s.vm.state.GetChains(subnetID)
+	for _, netID := range netIDs {
+		chains, err := s.vm.state.GetChains(netID)
 		if err != nil {
 			return fmt.Errorf(
-				"couldn't retrieve chains for subnet %q: %w",
-				subnetID,
+				"couldn't retrieve chains for net %q: %w",
+				netID,
 				err,
 			)
 		}
@@ -1224,7 +1224,7 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 			response.Blockchains = append(response.Blockchains, APIBlockchain{
 				ID:       chainID,
 				Name:     chain.ChainName,
-				SubnetID: subnetID,
+				NetID: netID,
 				VMID:     chain.VMID,
 			})
 		}
@@ -1243,7 +1243,7 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 		response.Blockchains = append(response.Blockchains, APIBlockchain{
 			ID:       chainID,
 			Name:     chain.ChainName,
-			SubnetID: constants.PrimaryNetworkID,
+			NetID: constants.PrimaryNetworkID,
 			VMID:     chain.VMID,
 		})
 	}
@@ -1481,7 +1481,7 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 
 // GetMinStakeArgs are the arguments for calling GetMinStake.
 type GetMinStakeArgs struct {
-	SubnetID ids.ID `json:"subnetID"`
+	NetID ids.ID `json:"netID"`
 }
 
 // GetMinStakeReply is the response from calling GetMinStake.
@@ -1499,7 +1499,7 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 		zap.String("method", "getMinStake"),
 	)
 
-	if args.SubnetID == constants.PrimaryNetworkID {
+	if args.NetID == constants.PrimaryNetworkID {
 		reply.MinValidatorStake = avajson.Uint64(s.vm.MinValidatorStake)
 		reply.MinDelegatorStake = avajson.Uint64(s.vm.MinDelegatorStake)
 		return nil
@@ -1508,18 +1508,18 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	transformSubnetIntf, err := s.vm.state.GetSubnetTransformation(args.SubnetID)
+	transformSubnetIntf, err := s.vm.state.GetSubnetTransformation(args.NetID)
 	if err != nil {
 		return fmt.Errorf(
-			"failed fetching subnet transformation for %s: %w",
-			args.SubnetID,
+			"failed fetching net transformation for %s: %w",
+			args.NetID,
 			err,
 		)
 	}
-	transformSubnet, ok := transformSubnetIntf.Unsigned.(*txs.TransformSubnetTx)
+	transformSubnet, ok := transformSubnetIntf.Unsigned.(*txs.TransformNetTx)
 	if !ok {
 		return fmt.Errorf(
-			"unexpected subnet transformation tx type fetched %T",
+			"unexpected net transformation tx type fetched %T",
 			transformSubnetIntf.Unsigned,
 		)
 	}
@@ -1532,9 +1532,9 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 
 // GetTotalStakeArgs are the arguments for calling GetTotalStake
 type GetTotalStakeArgs struct {
-	// Subnet we're getting the total stake
+	// Net we're getting the total stake
 	// If omitted returns Primary network weight
-	SubnetID ids.ID `json:"subnetID"`
+	NetID ids.ID `json:"netID"`
 }
 
 // GetTotalStakeReply is the response from calling GetTotalStake.
@@ -1552,7 +1552,7 @@ func (s *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply 
 		zap.String("method", "getTotalStake"),
 	)
 
-	totalWeight, err := s.vm.Validators.TotalWeight(args.SubnetID)
+	totalWeight, err := s.vm.Validators.TotalWeight(args.NetID)
 	if err != nil {
 		return fmt.Errorf("couldn't get total weight: %w", err)
 	}
@@ -1629,7 +1629,7 @@ func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestamp
 // GetValidatorsAtArgs is the response from GetValidatorsAt
 type GetValidatorsAtArgs struct {
 	Height   avajson.Uint64 `json:"height"`
-	SubnetID ids.ID         `json:"subnetID"`
+	NetID ids.ID         `json:"netID"`
 }
 
 type jsonGetValidatorOutput struct {
@@ -1704,7 +1704,7 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 		zap.String("service", "platform"),
 		zap.String("method", "getValidatorsAt"),
 		zap.Uint64("height", height),
-		zap.Stringer("subnetID", args.SubnetID),
+		zap.Stringer("netID", args.NetID),
 	)
 
 	s.vm.lock.Lock()
@@ -1712,7 +1712,7 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 
 	ctx := r.Context()
 	var err error
-	reply.Validators, err = s.vm.GetValidatorSet(ctx, height, args.SubnetID)
+	reply.Validators, err = s.vm.GetValidatorSet(ctx, height, args.NetID)
 	if err != nil {
 		return fmt.Errorf("failed to get validator set: %w", err)
 	}
@@ -1795,13 +1795,13 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 
 func (s *Service) getAPIUptime(staker *state.Staker) (*avajson.Float32, error) {
 	// Only report uptimes that we have been actively tracking.
-	if constants.PrimaryNetworkID != staker.SubnetID && !s.vm.TrackedSubnets.Contains(staker.SubnetID) {
+	if constants.PrimaryNetworkID != staker.NetID && !s.vm.TrackedSubnets.Contains(staker.NetID) {
 		return nil, nil
 	}
 
 	rawUptime := float64(0)
 	var err error
-	if staker.SubnetID == constants.PrimaryNetworkID {
+	if staker.NetID == constants.PrimaryNetworkID {
 		rawUptime, err = s.vm.uptimeManager.CalculateUptimePercentFrom(staker.NodeID, staker.StartTime)
 	}
 	if err != nil {

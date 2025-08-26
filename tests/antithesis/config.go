@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/wallet/net/primary"
 )
 
 const (

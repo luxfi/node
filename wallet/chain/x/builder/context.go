@@ -28,7 +28,7 @@ func NewConsensusContext(
 	/* TODO: implement with values in context:
 	return &context.Context{
 		NetworkID:  networkID,
-		SubnetID:   constants.PrimaryNetworkID,
+		NetID:   constants.PrimaryNetworkID,
 		ChainID:    blockchainID,
 		XChainID:   blockchainID,
 		LUXAssetID: luxAssetID,

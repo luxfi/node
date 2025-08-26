@@ -63,21 +63,21 @@ func (m *mockValidatorState) GetCurrentHeight(ctx context.Context) (uint64, erro
 	return m.height, nil
 }
 
-func (m *mockValidatorState) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+func (m *mockValidatorState) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
 func (m *mockValidatorState) GetValidatorSet(
 	ctx context.Context,
 	height uint64,
-	subnetID ids.ID,
+	netID ids.ID,
 ) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return m.validators, nil
 }
 
 func (m *mockValidatorState) GetCurrentValidatorSet(
 	ctx context.Context,
-	subnetID ids.ID,
+	netID ids.ID,
 ) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
 	// Not used in this test
 	return nil, m.height, nil
@@ -204,7 +204,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			consensusCtx := consensustest.Context(t, ids.Empty)
 			// Extract values from context
 			nodeID := consensus.GetNodeID(consensusCtx)
-			subnetID := consensus.GetSubnetID(consensusCtx)
+			netID := consensus.GetNetID(consensusCtx)
 			// Use a simple test logger for now
 			logger := log.NoLog{}
 			// Create a mock validator state that returns sensible defaults
@@ -221,7 +221,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			n, err := New(
 				logger,
 				nodeID,
-				subnetID,
+				netID,
 				validatorState,
 				tt.txVerifier,
 				tt.mempoolFunc(ctrl),

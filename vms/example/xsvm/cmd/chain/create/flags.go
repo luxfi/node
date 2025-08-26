@@ -11,12 +11,12 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/wallet/net/primary"
 )
 
 const (
 	URIKey        = "uri"
-	SubnetIDKey   = "subnet-id"
+	NetIDKey   = "subnet-id"
 	AddressKey    = "address"
 	BalanceKey    = "balance"
 	NameKey       = "name"
@@ -25,7 +25,7 @@ const (
 
 func AddFlags(flags *pflag.FlagSet) {
 	flags.String(URIKey, primary.LocalAPIURI, "API URI to use to issue the chain creation transaction")
-	flags.String(SubnetIDKey, "", "Subnet to create the chain under")
+	flags.String(NetIDKey, "", "Net to create the chain under")
 	flags.String(AddressKey, genesis.EWOQKey.Address().String(), "Address to fund in the genesis")
 	flags.Uint64(BalanceKey, math.MaxUint64, "Amount to provide the funded address in the genesis")
 	flags.String(NameKey, "xs", "Name of the chain to create")
@@ -34,7 +34,7 @@ func AddFlags(flags *pflag.FlagSet) {
 
 type Config struct {
 	URI        string
-	SubnetID   ids.ID
+	NetID   ids.ID
 	Address    ids.ShortID
 	Balance    uint64
 	Name       string
@@ -55,12 +55,12 @@ func ParseFlags(flags *pflag.FlagSet, args []string) (*Config, error) {
 		return nil, err
 	}
 
-	subnetIDStr, err := flags.GetString(SubnetIDKey)
+	netIDStr, err := flags.GetString(NetIDKey)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetID, err := ids.FromString(subnetIDStr)
+	netID, err := ids.FromString(netIDStr)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func ParseFlags(flags *pflag.FlagSet, args []string) (*Config, error) {
 
 	return &Config{
 		URI:        uri,
-		SubnetID:   subnetID,
+		NetID:   netID,
 		Address:    addr,
 		Balance:    balance,
 		Name:       name,

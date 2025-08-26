@@ -32,7 +32,7 @@ func (*AtomicTxExecutor) AddValidatorTx(*txs.AddValidatorTx) error {
 	return ErrWrongTxType
 }
 
-func (*AtomicTxExecutor) AddSubnetValidatorTx(*txs.AddSubnetValidatorTx) error {
+func (*AtomicTxExecutor) AddNetValidatorTx(*txs.AddNetValidatorTx) error {
 	return ErrWrongTxType
 }
 
@@ -44,7 +44,7 @@ func (*AtomicTxExecutor) CreateChainTx(*txs.CreateChainTx) error {
 	return ErrWrongTxType
 }
 
-func (*AtomicTxExecutor) CreateSubnetTx(*txs.CreateSubnetTx) error {
+func (*AtomicTxExecutor) CreateNetTx(*txs.CreateNetTx) error {
 	return ErrWrongTxType
 }
 
@@ -56,15 +56,15 @@ func (*AtomicTxExecutor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return ErrWrongTxType
 }
 
-func (*AtomicTxExecutor) RemoveSubnetValidatorTx(*txs.RemoveSubnetValidatorTx) error {
+func (*AtomicTxExecutor) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
 	return ErrWrongTxType
 }
 
-func (*AtomicTxExecutor) TransformSubnetTx(*txs.TransformSubnetTx) error {
+func (*AtomicTxExecutor) TransformNetTx(*txs.TransformNetTx) error {
 	return ErrWrongTxType
 }
 
-func (*AtomicTxExecutor) TransferSubnetOwnershipTx(*txs.TransferSubnetOwnershipTx) error {
+func (*AtomicTxExecutor) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
 	return ErrWrongTxType
 }
 
@@ -129,7 +129,7 @@ func (e *AtomicTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx
 	return ErrWrongTxType
 }
 
-// ConvertSubnetToL1Tx handles converting a subnet to L1
-func (e *AtomicTxExecutor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+// ConvertNetToL1Tx handles converting a net to L1
+func (e *AtomicTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 	return ErrWrongTxType
 }

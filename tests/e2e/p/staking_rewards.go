@@ -126,7 +126,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 
 		ginkgo.By("adding alpha node as a validator", func() {
 			_, err := pWallet.IssueAddPermissionlessValidatorTx(
-				&txs.SubnetValidator{
+				&txs.NetValidator{
 					Validator: txs.Validator{
 						NodeID: alphaNodeID,
 						End:    uint64(alphaValidatorsEndTime.Unix()),
@@ -155,7 +155,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 
 		ginkgo.By("adding beta node as a validator", func() {
 			_, err := pWallet.IssueAddPermissionlessValidatorTx(
-				&txs.SubnetValidator{
+				&txs.NetValidator{
 					Validator: txs.Validator{
 						NodeID: betaNodeID,
 						End:    uint64(betaValidatorEndTime.Unix()),
@@ -188,7 +188,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 
 		ginkgo.By("adding gamma as delegator to the alpha node", func() {
 			_, err := pWallet.IssueAddPermissionlessDelegatorTx(
-				&txs.SubnetValidator{
+				&txs.NetValidator{
 					Validator: txs.Validator{
 						NodeID: alphaNodeID,
 						End:    uint64(gammaDelegatorEndTime.Unix()),
@@ -211,7 +211,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 
 		ginkgo.By("adding delta as delegator to the beta node", func() {
 			_, err := pWallet.IssueAddPermissionlessDelegatorTx(
-				&txs.SubnetValidator{
+				&txs.NetValidator{
 					Validator: txs.Validator{
 						NodeID: betaNodeID,
 						End:    uint64(deltaDelegatorEndTime.Unix()),

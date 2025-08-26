@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary"
+	"github.com/luxfi/node/wallet/net/primary"
 )
 
 // TODO(marun) What else does a test need? e.g. node URIs?
@@ -105,7 +105,7 @@ func CheckBootstrapIsPossible(tc tests.TestContext, network *tmpnet.Network) err
 		nodeIDs[node.NodeID] = true
 	}
 	
-	// Verify network has a valid subnet configuration
+	// Verify network has a valid net configuration
 	if network.Genesis == nil {
 		return fmt.Errorf("network genesis is not configured")
 	}

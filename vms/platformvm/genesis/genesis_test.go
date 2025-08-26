@@ -116,7 +116,7 @@ func TestGenesisWithChains(t *testing.T) {
 					Outs:         []*lux.TransferableOutput{},
 				},
 			},
-			SubnetID:    ids.GenerateTestID(),
+			NetID:    ids.GenerateTestID(),
 			ChainName:   "test chain",
 			VMID:        ids.GenerateTestID(),
 			FxIDs:       []ids.ID{},

@@ -192,8 +192,8 @@ type warpValidatorStateAdapter struct {
 	vs  consensus.ValidatorState
 }
 
-func (w *warpValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	validatorSet, err := w.vs.GetValidatorSet(height, subnetID)
+func (w *warpValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	validatorSet, err := w.vs.GetValidatorSet(height, netID)
 	if err != nil {
 		return nil, err
 	}
@@ -205,6 +205,6 @@ func (w *warpValidatorStateAdapter) GetValidatorSet(ctx context.Context, height 
 	return result, nil
 }
 
-func (w *warpValidatorStateAdapter) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return w.vs.GetSubnetID(chainID)
+func (w *warpValidatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return w.vs.GetNetID(chainID)
 }

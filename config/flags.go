@@ -104,13 +104,13 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// LUX fees
 	fs.Uint64(TxFeeKey, genesis.LocalParams.TxFee, "Transaction fee, in nLUX")
 	fs.Uint64(CreateAssetTxFeeKey, genesis.LocalParams.CreateAssetTxFee, "Transaction fee, in nLUX, for transactions that create new assets")
-	fs.Uint64(CreateSubnetTxFeeKey, genesis.LocalParams.CreateSubnetTxFee, "Transaction fee, in nLUX, for transactions that create new subnets")
-	fs.Uint64(TransformSubnetTxFeeKey, genesis.LocalParams.TransformSubnetTxFee, "Transaction fee, in nLUX, for transactions that transform subnets")
+	fs.Uint64(CreateNetTxFeeKey, genesis.LocalParams.CreateNetTxFee, "Transaction fee, in nLUX, for transactions that create new subnets")
+	fs.Uint64(TransformNetTxFeeKey, genesis.LocalParams.TransformNetTxFee, "Transaction fee, in nLUX, for transactions that transform subnets")
 	fs.Uint64(CreateBlockchainTxFeeKey, genesis.LocalParams.CreateBlockchainTxFee, "Transaction fee, in nLUX, for transactions that create new blockchains")
 	fs.Uint64(AddPrimaryNetworkValidatorFeeKey, genesis.LocalParams.AddPrimaryNetworkValidatorFee, "Transaction fee, in nLUX, for transactions that add new primary network validators")
 	fs.Uint64(AddPrimaryNetworkDelegatorFeeKey, genesis.LocalParams.AddPrimaryNetworkDelegatorFee, "Transaction fee, in nLUX, for transactions that add new primary network delegators")
-	fs.Uint64(AddSubnetValidatorFeeKey, genesis.LocalParams.AddSubnetValidatorFee, "Transaction fee, in nLUX, for transactions that add new subnet validators")
-	fs.Uint64(AddSubnetDelegatorFeeKey, genesis.LocalParams.AddSubnetDelegatorFee, "Transaction fee, in nLUX, for transactions that add new subnet delegators")
+	fs.Uint64(AddNetValidatorFeeKey, genesis.LocalParams.AddNetValidatorFee, "Transaction fee, in nLUX, for transactions that add new net validators")
+	fs.Uint64(AddNetDelegatorFeeKey, genesis.LocalParams.AddNetDelegatorFee, "Transaction fee, in nLUX, for transactions that add new net delegators")
 
 	// Database
 	fs.String(DBTypeKey, "pebbledb", "Default database type to use for all chains. Must be one of {leveldb, memdb, pebbledb, badgerdb}")
@@ -279,7 +279,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Duration(StakeMintingPeriodKey, genesis.LocalParams.RewardConfig.MintingPeriod, "Consumption period of the staking function")
 	fs.Uint64(StakeSupplyCapKey, genesis.LocalParams.RewardConfig.SupplyCap, "Supply cap of the staking function")
 	// Subnets
-	fs.String(TrackSubnetsKey, "", "List of subnets for the node to track. A node tracking a subnet will track the uptimes of the subnet validators and attempt to sync all the chains in the subnet. Before validating a subnet, a node should be tracking the subnet to avoid impacting their subnet validation uptime")
+	fs.String(TrackSubnetsKey, "", "List of subnets for the node to track. A node tracking a net will track the uptimes of the net validators and attempt to sync all the chains in the subnet. Before validating a subnet, a node should be tracking the net to avoid impacting their net validation uptime")
 
 	// State syncing
 	fs.String(StateSyncIPsKey, "", "Comma separated list of state sync peer ips to connect to. Example: 127.0.0.1:9630,127.0.0.1:9631")
@@ -322,7 +322,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// Config Directories
 	fs.String(ChainConfigDirKey, defaultChainConfigDir, fmt.Sprintf("Chain specific configurations parent directory. Ignored if %s is specified", ChainConfigContentKey))
 	fs.String(ChainConfigContentKey, "", "Specifies base64 encoded chains configurations")
-	fs.String(SubnetConfigDirKey, defaultSubnetConfigDir, fmt.Sprintf("Subnet specific configurations parent directory. Ignored if %s is specified", SubnetConfigContentKey))
+	fs.String(SubnetConfigDirKey, defaultSubnetConfigDir, fmt.Sprintf("Net specific configurations parent directory. Ignored if %s is specified", SubnetConfigContentKey))
 	fs.String(SubnetConfigContentKey, "", "Specifies base64 encoded subnets configurations")
 
 	// Chain Data Directory

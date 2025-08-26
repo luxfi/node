@@ -31,8 +31,8 @@ type validatorStateAdapter struct {
 	state validators.State
 }
 
-func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	validatorSet, err := v.state.GetValidatorSet(ctx, height, subnetID)
+func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	validatorSet, err := v.state.GetValidatorSet(ctx, height, netID)
 	if err != nil {
 		return nil, err
 	}
@@ -44,12 +44,12 @@ func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint
 	return result, nil
 }
 
-func (v *validatorStateAdapter) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return v.state.GetSubnetID(ctx, chainID)
+func (v *validatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return v.state.GetNetID(ctx, chainID)
 }
 
 func TestSignatureVerification(t *testing.T) {
-	subnetID := ids.GenerateTestID()
+	netID := ids.GenerateTestID()
 	sk0, err := bls.NewSecretKey()
 	require.NoError(t, err)
 	pk0 := bls.PublicFromSecretKey(sk0)
@@ -75,14 +75,14 @@ func TestSignatureVerification(t *testing.T) {
 		err       error
 	}{
 		{
-			name:      "can't get subnetID",
+			name:      "can't get netID",
 			networkID: constants.UnitTestID,
 			stateF: func() ValidatorState {
 				return &validatorStateAdapter{
 					state: &validatorsmock.State{
-						GetSubnetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+						GetNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 							if chainID == sourceChainID {
-								return subnetID, errTest
+								return netID, errTest
 							}
 							return ids.Empty, errTest
 						},
@@ -114,11 +114,11 @@ func TestSignatureVerification(t *testing.T) {
 			stateF: func() ValidatorState {
 				return &validatorStateAdapter{
 					state: &validatorsmock.State{
-					GetSubnetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-						return subnetID, nil
+					GetNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+						return netID, nil
 					},
 					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-						if height == pChainHeight && sID == subnetID {
+						if height == pChainHeight && sID == netID {
 							return nil, errTest
 						}
 						return nil, errTest
@@ -151,8 +151,8 @@ func TestSignatureVerification(t *testing.T) {
 			stateF: func() ValidatorState {
 				return &validatorStateAdapter{
 					state: &validatorsmock.State{
-					GetSubnetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-						return subnetID, nil
+					GetNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+						return netID, nil
 					},
 					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 						return map[ids.NodeID]*validators.GetValidatorOutput{
@@ -196,8 +196,8 @@ func TestSignatureVerification(t *testing.T) {
 			stateF: func() ValidatorState {
 				return &validatorStateAdapter{
 					state: &validatorsmock.State{
-					GetSubnetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-						return subnetID, nil
+					GetNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+						return netID, nil
 					},
 					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 						return map[ids.NodeID]*validators.GetValidatorOutput{
@@ -241,8 +241,8 @@ func TestSignatureVerification(t *testing.T) {
 			stateF: func() ValidatorState {
 				return &validatorStateAdapter{
 					state: &validatorsmock.State{
-					GetSubnetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-						return subnetID, nil
+					GetNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+						return netID, nil
 					},
 					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 						return map[ids.NodeID]*validators.GetValidatorOutput{

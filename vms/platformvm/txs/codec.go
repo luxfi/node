@@ -82,10 +82,10 @@ func RegisterUnsignedTxsTypes(targetCodec linearcodec.Codec) error {
 		targetCodec.RegisterType(&secp256k1fx.OutputOwners{}),
 
 		targetCodec.RegisterType(&AddValidatorTx{}),
-		targetCodec.RegisterType(&AddSubnetValidatorTx{}),
+		targetCodec.RegisterType(&AddNetValidatorTx{}),
 		targetCodec.RegisterType(&AddDelegatorTx{}),
 		targetCodec.RegisterType(&CreateChainTx{}),
-		targetCodec.RegisterType(&CreateSubnetTx{}),
+		targetCodec.RegisterType(&CreateNetTx{}),
 		targetCodec.RegisterType(&ImportTx{}),
 		targetCodec.RegisterType(&ExportTx{}),
 		targetCodec.RegisterType(&AdvanceTimeTx{}),
@@ -95,8 +95,8 @@ func RegisterUnsignedTxsTypes(targetCodec linearcodec.Codec) error {
 		targetCodec.RegisterType(&stakeable.LockOut{}),
 
 		// Banff additions:
-		targetCodec.RegisterType(&RemoveSubnetValidatorTx{}),
-		targetCodec.RegisterType(&TransformSubnetTx{}),
+		targetCodec.RegisterType(&RemoveNetValidatorTx{}),
+		targetCodec.RegisterType(&TransformNetTx{}),
 		targetCodec.RegisterType(&AddPermissionlessValidatorTx{}),
 		targetCodec.RegisterType(&AddPermissionlessDelegatorTx{}),
 
@@ -108,9 +108,9 @@ func RegisterUnsignedTxsTypes(targetCodec linearcodec.Codec) error {
 
 func RegisterDUnsignedTxsTypes(targetCodec linearcodec.Codec) error {
 	return errors.Join(
-		targetCodec.RegisterType(&TransferSubnetOwnershipTx{}),
+		targetCodec.RegisterType(&TransferNetOwnershipTx{}),
 		targetCodec.RegisterType(&BaseTx{}),
-		targetCodec.RegisterType(&ConvertSubnetToL1Tx{}),
+		targetCodec.RegisterType(&ConvertNetToL1Tx{}),
 		targetCodec.RegisterType(&RegisterL1ValidatorTx{}),
 		targetCodec.RegisterType(&SetL1ValidatorWeightTx{}),
 		targetCodec.RegisterType(&IncreaseL1ValidatorBalanceTx{}),

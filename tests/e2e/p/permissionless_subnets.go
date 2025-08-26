@@ -57,16 +57,16 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 				},
 			}
 
-			var subnetID ids.ID
+			var netID ids.ID
 			ginkgo.By("create a permissioned subnet", func() {
-				subnetTx, err := pWallet.IssueCreateSubnetTx(
+				subnetTx, err := pWallet.IssueCreateNetTx(
 					owner,
 					e2e.WithDefaultContext(),
 				)
 
-				subnetID = subnetTx.ID()
+				netID = subnetTx.ID()
 				require.NoError(err)
-				require.NotEqual(subnetID, constants.PrimaryNetworkID)
+				require.NotEqual(netID, constants.PrimaryNetworkID)
 			})
 
 			var subnetAssetID ids.ID
@@ -117,9 +117,9 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 				require.NoError(err)
 			})
 
-			ginkgo.By("make subnet permissionless", func() {
-				_, err := pWallet.IssueTransformSubnetTx(
-					subnetID,
+			ginkgo.By("make net permissionless", func() {
+				_, err := pWallet.IssueTransformNetTx(
+					netID,
 					subnetAssetID,
 					50*units.MegaLux,
 					100*units.MegaLux,
@@ -141,13 +141,13 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 			endTime := time.Now().Add(time.Minute)
 			ginkgo.By("add permissionless validator", func() {
 				_, err := pWallet.IssueAddPermissionlessValidatorTx(
-					&txs.SubnetValidator{
+					&txs.NetValidator{
 						Validator: txs.Validator{
 							NodeID: validatorID,
 							End:    uint64(endTime.Unix()),
 							Wght:   25 * units.MegaLux,
 						},
-						Subnet: subnetID,
+						Subnet: netID,
 					},
 					&signer.Empty{},
 					subnetAssetID,
@@ -161,13 +161,13 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 
 			ginkgo.By("add permissionless delegator", func() {
 				_, err := pWallet.IssueAddPermissionlessDelegatorTx(
-					&txs.SubnetValidator{
+					&txs.NetValidator{
 						Validator: txs.Validator{
 							NodeID: validatorID,
 							End:    uint64(endTime.Unix()),
 							Wght:   25 * units.MegaLux,
 						},
-						Subnet: subnetID,
+						Subnet: netID,
 					},
 					subnetAssetID,
 					&secp256k1fx.OutputOwners{},

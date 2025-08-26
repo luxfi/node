@@ -369,8 +369,8 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 
 			dummyHeight := uint64(1)
 
-			subnetID := testSubnet1.ID()
-			env.config.TrackedSubnets.Add(subnetID)
+			netID := testSubnet1.ID()
+			env.config.TrackedSubnets.Add(netID)
 
 			for _, staker := range test.stakers {
 				_, err := addPendingValidator(
@@ -385,15 +385,15 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 
 			for _, staker := range test.subnetStakers {
 				builder, signer := env.factory.NewWallet(preFundedKeys[0], preFundedKeys[1])
-				utx, err := builder.NewAddSubnetValidatorTx(
-					&txs.SubnetValidator{
+				utx, err := builder.NewAddNetValidatorTx(
+					&txs.NetValidator{
 						Validator: txs.Validator{
 							NodeID: staker.nodeID,
 							Start:  uint64(staker.startTime.Unix()),
 							End:    uint64(staker.endTime.Unix()),
 							Wght:   10,
 						},
-						Subnet: subnetID,
+						Subnet: netID,
 					},
 				)
 				require.NoError(err)
@@ -402,7 +402,7 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 
 				staker, err := state.NewPendingStaker(
 					tx.ID(),
-					tx.Unsigned.(*txs.AddSubnetValidatorTx),
+					tx.Unsigned.(*txs.AddNetValidatorTx),
 				)
 				require.NoError(err)
 
@@ -454,10 +454,10 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 			for stakerNodeID, status := range test.expectedSubnetStakers {
 				switch status {
 				case pending:
-					_, ok := env.config.Validators.GetValidator(subnetID, stakerNodeID)
+					_, ok := env.config.Validators.GetValidator(netID, stakerNodeID)
 					require.False(ok)
 				case current:
-					_, ok := env.config.Validators.GetValidator(subnetID, stakerNodeID)
+					_, ok := env.config.Validators.GetValidator(netID, stakerNodeID)
 					require.True(ok)
 				}
 			}
@@ -466,41 +466,41 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 }
 
 // Regression test for https://github.com/luxfi/node/pull/584
-// that ensures it fixes a bug where subnet validators are not removed
+// that ensures it fixes a bug where net validators are not removed
 // when timestamp is advanced and there is a pending staker whose start time
 // is after the new timestamp
-func TestAdvanceTimeTxRemoveSubnetValidator(t *testing.T) {
+func TestAdvanceTimeTxRemoveNetValidator(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, apricotPhase5)
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	subnetID := testSubnet1.ID()
-	env.config.TrackedSubnets.Add(subnetID)
+	netID := testSubnet1.ID()
+	env.config.TrackedSubnets.Add(netID)
 
 	dummyHeight := uint64(1)
-	// Add a subnet validator to the staker set
+	// Add a net validator to the staker set
 	subnetValidatorNodeID := genesisNodeIDs[0]
 	subnetVdr1StartTime := defaultValidateStartTime
 	subnetVdr1EndTime := defaultValidateStartTime.Add(defaultMinStakingDuration)
 
 	builder, signer := env.factory.NewWallet(preFundedKeys[0], preFundedKeys[1])
-	utx, err := builder.NewAddSubnetValidatorTx(
-		&txs.SubnetValidator{
+	utx, err := builder.NewAddNetValidatorTx(
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: subnetValidatorNodeID,
 				Start:  uint64(subnetVdr1StartTime.Unix()),
 				End:    uint64(subnetVdr1EndTime.Unix()),
 				Wght:   1,
 			},
-			Subnet: subnetID,
+			Subnet: netID,
 		},
 	)
 	require.NoError(err)
 	tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 	require.NoError(err)
 
-	addSubnetValTx := tx.Unsigned.(*txs.AddSubnetValidatorTx)
+	addSubnetValTx := tx.Unsigned.(*txs.AddNetValidatorTx)
 	staker, err := state.NewCurrentStaker(
 		tx.ID(),
 		addSubnetValTx,
@@ -518,15 +518,15 @@ func TestAdvanceTimeTxRemoveSubnetValidator(t *testing.T) {
 
 	// Queue a staker that joins the staker set after the above validator leaves
 	subnetVdr2NodeID := genesisNodeIDs[1]
-	utx, err = builder.NewAddSubnetValidatorTx(
-		&txs.SubnetValidator{
+	utx, err = builder.NewAddNetValidatorTx(
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: subnetVdr2NodeID,
 				Start:  uint64(subnetVdr1EndTime.Add(time.Second).Unix()),
 				End:    uint64(subnetVdr1EndTime.Add(time.Second).Add(defaultMinStakingDuration).Unix()),
 				Wght:   1,
 			},
-			Subnet: subnetID,
+			Subnet: netID,
 		},
 	)
 	require.NoError(err)
@@ -535,7 +535,7 @@ func TestAdvanceTimeTxRemoveSubnetValidator(t *testing.T) {
 
 	staker, err = state.NewPendingStaker(
 		tx.ID(),
-		tx.Unsigned.(*txs.AddSubnetValidatorTx),
+		tx.Unsigned.(*txs.AddNetValidatorTx),
 	)
 	require.NoError(err)
 
@@ -565,7 +565,7 @@ func TestAdvanceTimeTxRemoveSubnetValidator(t *testing.T) {
 	}
 	require.NoError(tx.Unsigned.Visit(&executor))
 
-	_, err = executor.OnCommitState.GetCurrentValidator(subnetID, subnetValidatorNodeID)
+	_, err = executor.OnCommitState.GetCurrentValidator(netID, subnetValidatorNodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 
 	// Check VM Validators are removed successfully
@@ -573,9 +573,9 @@ func TestAdvanceTimeTxRemoveSubnetValidator(t *testing.T) {
 
 	env.state.SetHeight(dummyHeight)
 	require.NoError(env.state.Commit())
-	_, ok := env.config.Validators.GetValidator(subnetID, subnetVdr2NodeID)
+	_, ok := env.config.Validators.GetValidator(netID, subnetVdr2NodeID)
 	require.False(ok)
-	_, ok = env.config.Validators.GetValidator(subnetID, subnetValidatorNodeID)
+	_, ok = env.config.Validators.GetValidator(netID, subnetValidatorNodeID)
 	require.False(ok)
 }
 
@@ -588,26 +588,26 @@ func TestTrackedSubnet(t *testing.T) {
 			defer env.ctx.Lock.Unlock()
 			dummyHeight := uint64(1)
 
-			subnetID := testSubnet1.ID()
+			netID := testSubnet1.ID()
 			if tracked {
-				env.config.TrackedSubnets.Add(subnetID)
+				env.config.TrackedSubnets.Add(netID)
 			}
 
-			// Add a subnet validator to the staker set
+			// Add a net validator to the staker set
 			subnetValidatorNodeID := genesisNodeIDs[0]
 
 			subnetVdr1StartTime := defaultValidateStartTime.Add(1 * time.Minute)
 			subnetVdr1EndTime := defaultValidateStartTime.Add(10 * defaultMinStakingDuration).Add(1 * time.Minute)
 			builder, signer := env.factory.NewWallet(preFundedKeys[0], preFundedKeys[1])
-			utx, err := builder.NewAddSubnetValidatorTx(
-				&txs.SubnetValidator{
+			utx, err := builder.NewAddNetValidatorTx(
+				&txs.NetValidator{
 					Validator: txs.Validator{
 						NodeID: subnetValidatorNodeID,
 						Start:  uint64(subnetVdr1StartTime.Unix()),
 						End:    uint64(subnetVdr1EndTime.Unix()),
 						Wght:   1,
 					},
-					Subnet: subnetID,
+					Subnet: netID,
 				},
 			)
 			require.NoError(err)
@@ -616,7 +616,7 @@ func TestTrackedSubnet(t *testing.T) {
 
 			staker, err := state.NewPendingStaker(
 				tx.ID(),
-				tx.Unsigned.(*txs.AddSubnetValidatorTx),
+				tx.Unsigned.(*txs.AddNetValidatorTx),
 			)
 			require.NoError(err)
 
@@ -648,7 +648,7 @@ func TestTrackedSubnet(t *testing.T) {
 
 			env.state.SetHeight(dummyHeight)
 			require.NoError(env.state.Commit())
-			_, ok := env.config.Validators.GetValidator(subnetID, subnetValidatorNodeID)
+			_, ok := env.config.Validators.GetValidator(netID, subnetValidatorNodeID)
 			require.True(ok)
 		})
 	}

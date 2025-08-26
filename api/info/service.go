@@ -52,13 +52,13 @@ type Parameters struct {
 	NetworkID                     uint32
 	TxFee                         uint64
 	CreateAssetTxFee              uint64
-	CreateSubnetTxFee             uint64
-	TransformSubnetTxFee          uint64
+	CreateNetTxFee             uint64
+	TransformNetTxFee          uint64
 	CreateBlockchainTxFee         uint64
 	AddPrimaryNetworkValidatorFee uint64
 	AddPrimaryNetworkDelegatorFee uint64
-	AddSubnetValidatorFee         uint64
-	AddSubnetDelegatorFee         uint64
+	AddNetValidatorFee         uint64
+	AddNetDelegatorFee         uint64
 	VMManager                     vms.Manager
 }
 
@@ -310,7 +310,7 @@ type UptimeResponse struct {
 
 type UptimeRequest struct {
 	// if omitted, defaults to primary network
-	SubnetID ids.ID `json:"subnetID"`
+	NetID ids.ID `json:"netID"`
 }
 
 func (i *Info) Uptime(_ *http.Request, args *UptimeRequest, reply *UptimeResponse) error {
@@ -319,7 +319,7 @@ func (i *Info) Uptime(_ *http.Request, args *UptimeRequest, reply *UptimeRespons
 		zap.String("method", "uptime"),
 	)
 
-	result, err := i.networking.NodeUptime(args.SubnetID)
+	result, err := i.networking.NodeUptime(args.NetID)
 	if err != nil {
 		return fmt.Errorf("couldn't get node uptime: %w", err)
 	}
@@ -390,13 +390,13 @@ func (i *Info) Lps(_ *http.Request, _ *struct{}, reply *LPsReply) error {
 type GetTxFeeResponse struct {
 	TxFee                         json.Uint64 `json:"txFee"`
 	CreateAssetTxFee              json.Uint64 `json:"createAssetTxFee"`
-	CreateSubnetTxFee             json.Uint64 `json:"createSubnetTxFee"`
-	TransformSubnetTxFee          json.Uint64 `json:"transformSubnetTxFee"`
+	CreateNetTxFee             json.Uint64 `json:"createSubnetTxFee"`
+	TransformNetTxFee          json.Uint64 `json:"transformSubnetTxFee"`
 	CreateBlockchainTxFee         json.Uint64 `json:"createBlockchainTxFee"`
 	AddPrimaryNetworkValidatorFee json.Uint64 `json:"addPrimaryNetworkValidatorFee"`
 	AddPrimaryNetworkDelegatorFee json.Uint64 `json:"addPrimaryNetworkDelegatorFee"`
-	AddSubnetValidatorFee         json.Uint64 `json:"addSubnetValidatorFee"`
-	AddSubnetDelegatorFee         json.Uint64 `json:"addSubnetDelegatorFee"`
+	AddNetValidatorFee         json.Uint64 `json:"addNetValidatorFee"`
+	AddNetDelegatorFee         json.Uint64 `json:"addSubnetDelegatorFee"`
 }
 
 // GetTxFee returns the transaction fee in nLUX.
@@ -408,13 +408,13 @@ func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) e
 
 	reply.TxFee = json.Uint64(i.TxFee)
 	reply.CreateAssetTxFee = json.Uint64(i.CreateAssetTxFee)
-	reply.CreateSubnetTxFee = json.Uint64(i.CreateSubnetTxFee)
-	reply.TransformSubnetTxFee = json.Uint64(i.TransformSubnetTxFee)
+	reply.CreateNetTxFee = json.Uint64(i.CreateNetTxFee)
+	reply.TransformNetTxFee = json.Uint64(i.TransformNetTxFee)
 	reply.CreateBlockchainTxFee = json.Uint64(i.CreateBlockchainTxFee)
 	reply.AddPrimaryNetworkValidatorFee = json.Uint64(i.AddPrimaryNetworkValidatorFee)
 	reply.AddPrimaryNetworkDelegatorFee = json.Uint64(i.AddPrimaryNetworkDelegatorFee)
-	reply.AddSubnetValidatorFee = json.Uint64(i.AddSubnetValidatorFee)
-	reply.AddSubnetDelegatorFee = json.Uint64(i.AddSubnetDelegatorFee)
+	reply.AddNetValidatorFee = json.Uint64(i.AddNetValidatorFee)
+	reply.AddNetDelegatorFee = json.Uint64(i.AddNetDelegatorFee)
 	return nil
 }
 

@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 var _ Builder = (*withOptions)(nil)
@@ -81,24 +81,24 @@ func (w *withOptions) NewAddValidatorTx(
 	)
 }
 
-func (w *withOptions) NewAddSubnetValidatorTx(
-	vdr *txs.SubnetValidator,
+func (w *withOptions) NewAddNetValidatorTx(
+	vdr *txs.NetValidator,
 	options ...common.Option,
-) (*txs.AddSubnetValidatorTx, error) {
-	return w.builder.NewAddSubnetValidatorTx(
+) (*txs.AddNetValidatorTx, error) {
+	return w.builder.NewAddNetValidatorTx(
 		vdr,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
-func (w *withOptions) NewRemoveSubnetValidatorTx(
+func (w *withOptions) NewRemoveNetValidatorTx(
 	nodeID ids.NodeID,
-	subnetID ids.ID,
+	netID ids.ID,
 	options ...common.Option,
-) (*txs.RemoveSubnetValidatorTx, error) {
-	return w.builder.NewRemoveSubnetValidatorTx(
+) (*txs.RemoveNetValidatorTx, error) {
+	return w.builder.NewRemoveNetValidatorTx(
 		nodeID,
-		subnetID,
+		netID,
 		common.UnionOptions(w.options, options)...,
 	)
 }
@@ -116,7 +116,7 @@ func (w *withOptions) NewAddDelegatorTx(
 }
 
 func (w *withOptions) NewCreateChainTx(
-	subnetID ids.ID,
+	netID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
 	fxIDs []ids.ID,
@@ -124,7 +124,7 @@ func (w *withOptions) NewCreateChainTx(
 	options ...common.Option,
 ) (*txs.CreateChainTx, error) {
 	return w.builder.NewCreateChainTx(
-		subnetID,
+		netID,
 		genesis,
 		vmID,
 		fxIDs,
@@ -133,37 +133,37 @@ func (w *withOptions) NewCreateChainTx(
 	)
 }
 
-func (w *withOptions) NewCreateSubnetTx(
+func (w *withOptions) NewCreateNetTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateSubnetTx, error) {
-	return w.builder.NewCreateSubnetTx(
+) (*txs.CreateNetTx, error) {
+	return w.builder.NewCreateNetTx(
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
-func (w *withOptions) NewTransferSubnetOwnershipTx(
-	subnetID ids.ID,
+func (w *withOptions) NewTransferNetOwnershipTx(
+	netID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.TransferSubnetOwnershipTx, error) {
-	return w.builder.NewTransferSubnetOwnershipTx(
-		subnetID,
+) (*txs.TransferNetOwnershipTx, error) {
+	return w.builder.NewTransferNetOwnershipTx(
+		netID,
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
-func (w *withOptions) NewConvertSubnetToL1Tx(
-	subnetID ids.ID,
+func (w *withOptions) NewConvertNetToL1Tx(
+	netID ids.ID,
 	chainID ids.ID,
 	address []byte,
-	validators []*txs.ConvertSubnetToL1Validator,
+	validators []*txs.ConvertNetToL1Validator,
 	options ...common.Option,
-) (*txs.ConvertSubnetToL1Tx, error) {
-	return w.builder.NewConvertSubnetToL1Tx(
-		subnetID,
+) (*txs.ConvertNetToL1Tx, error) {
+	return w.builder.NewConvertNetToL1Tx(
+		netID,
 		chainID,
 		address,
 		validators,
@@ -241,8 +241,8 @@ func (w *withOptions) NewExportTx(
 	)
 }
 
-func (w *withOptions) NewTransformSubnetTx(
-	subnetID ids.ID,
+func (w *withOptions) NewTransformNetTx(
+	netID ids.ID,
 	assetID ids.ID,
 	initialSupply uint64,
 	maxSupply uint64,
@@ -257,9 +257,9 @@ func (w *withOptions) NewTransformSubnetTx(
 	maxValidatorWeightFactor byte,
 	uptimeRequirement uint32,
 	options ...common.Option,
-) (*txs.TransformSubnetTx, error) {
-	return w.builder.NewTransformSubnetTx(
-		subnetID,
+) (*txs.TransformNetTx, error) {
+	return w.builder.NewTransformNetTx(
+		netID,
 		assetID,
 		initialSupply,
 		maxSupply,
@@ -278,7 +278,7 @@ func (w *withOptions) NewTransformSubnetTx(
 }
 
 func (w *withOptions) NewAddPermissionlessValidatorTx(
-	vdr *txs.SubnetValidator,
+	vdr *txs.NetValidator,
 	signer signer.Signer,
 	assetID ids.ID,
 	validationRewardsOwner *secp256k1fx.OutputOwners,
@@ -298,7 +298,7 @@ func (w *withOptions) NewAddPermissionlessValidatorTx(
 }
 
 func (w *withOptions) NewAddPermissionlessDelegatorTx(
-	vdr *txs.SubnetValidator,
+	vdr *txs.NetValidator,
 	assetID ids.ID,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,

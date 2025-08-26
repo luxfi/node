@@ -22,11 +22,11 @@ func (testManager) GetCurrentHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
-func (testManager) GetSubnetID(context.Context, ids.ID) (ids.ID, error) {
+func (testManager) GetNetID(context.Context, ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
-func (testManager) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+func (testManager) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return nil, nil
 }
 

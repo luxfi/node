@@ -15,7 +15,7 @@ type ChainDatabaseConfig struct {
 	XChainDBType string
 	CChainDBType string
 
-	// Additional subnet configurations can be added here
+	// Additional net configurations can be added here
 	// SubnetDBTypes map[ids.ID]string
 }
 

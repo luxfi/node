@@ -8,11 +8,11 @@ import (
 	"sync"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils/constants"
 )
 
-var ErrNoPrimaryNetworkConfig = errors.New("no subnet config for primary network found")
+var ErrNoPrimaryNetworkConfig = errors.New("no net config for primary network found")
 
 // Subnets holds the currently running subnets on this node
 type Subnets struct {
@@ -23,39 +23,39 @@ type Subnets struct {
 	subnets map[ids.ID]subnets.Subnet
 }
 
-// GetOrCreate returns a subnet running on this node, or creates one if it was
-// not running before. Returns the subnet and if the subnet was created.
-func (s *Subnets) GetOrCreate(subnetID ids.ID) (subnets.Subnet, bool) {
+// GetOrCreate returns a net running on this node, or creates one if it was
+// not running before. Returns the net and if the net was created.
+func (s *Subnets) GetOrCreate(netID ids.ID) (subnets.Subnet, bool) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if subnet, ok := s.subnets[subnetID]; ok {
+	if subnet, ok := s.subnets[netID]; ok {
 		return subnet, false
 	}
 
-	// Default to the primary network config if a subnet config was not
+	// Default to the primary network config if a net config was not
 	// specified
-	config, ok := s.configs[subnetID]
+	config, ok := s.configs[netID]
 	if !ok {
 		config = s.configs[constants.PrimaryNetworkID]
 	}
 
 	subnet := subnets.New(s.nodeID, config)
-	s.subnets[subnetID] = subnet
+	s.subnets[netID] = subnet
 
 	return subnet, true
 }
 
-// Bootstrapping returns the subnetIDs of any chains that are still
+// Bootstrapping returns the netIDs of any chains that are still
 // bootstrapping.
 func (s *Subnets) Bootstrapping() []ids.ID {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
 	subnetsBootstrapping := make([]ids.ID, 0, len(s.subnets))
-	for subnetID, subnet := range s.subnets {
+	for netID, net := range s.subnets {
 		if !subnet.IsBootstrapped() {
-			subnetsBootstrapping = append(subnetsBootstrapping, subnetID)
+			subnetsBootstrapping = append(subnetsBootstrapping, netID)
 		}
 	}
 

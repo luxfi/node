@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/x/builder"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 var (
@@ -427,7 +427,7 @@ func TestExportTx(t *testing.T) {
 		builder  = builder.New(set.Of(utxoAddr), testContext, backend)
 
 		// data to build the transaction
-		subnetID        = ids.GenerateTestID()
+		netID        = ids.GenerateTestID()
 		exportedOutputs = []*lux.TransferableOutput{{
 			Asset: lux.Asset{ID: luxAssetID},
 			Out: &secp256k1fx.TransferOutput{
@@ -441,7 +441,7 @@ func TestExportTx(t *testing.T) {
 	)
 
 	utx, err := builder.NewExportTx(
-		subnetID,
+		netID,
 		exportedOutputs,
 	)
 	require.NoError(err)

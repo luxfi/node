@@ -69,8 +69,8 @@ func New(t testing.TB, c Config) state.State {
 		c.Upgrades = upgradetest.GetConfig(upgradetest.Latest)
 	}
 	// Initialize fee configuration if not set
-	if c.Config.StaticFeeConfig.CreateSubnetTxFee == 0 {
-		c.Config.StaticFeeConfig.CreateSubnetTxFee = 1 * units.MilliLux
+	if c.Config.StaticFeeConfig.CreateNetTxFee == 0 {
+		c.Config.StaticFeeConfig.CreateNetTxFee = 1 * units.MilliLux
 		c.Config.StaticFeeConfig.CreateBlockchainTxFee = 1 * units.MilliLux
 	}
 	// Set validators manager in config if not set

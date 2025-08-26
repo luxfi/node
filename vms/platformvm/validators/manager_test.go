@@ -42,7 +42,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 	sk, err := localsigner.New()
 	require.NoError(err)
 	var (
-		subnetID      = ids.GenerateTestID()
+		netID      = ids.GenerateTestID()
 		startTime     = genesistest.DefaultValidatorStartTime
 		endTime       = startTime.Add(24 * time.Hour)
 		pk            = sk.PublicKey()
@@ -50,7 +50,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 			TxID:            ids.GenerateTestID(),
 			NodeID:          ids.GenerateTestNodeID(),
 			PublicKey:       pk,
-			SubnetID:        constants.PrimaryNetworkID,
+			NetID:        constants.PrimaryNetworkID,
 			Weight:          1,
 			StartTime:       startTime,
 			EndTime:         endTime,
@@ -60,14 +60,14 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 			TxID:      ids.GenerateTestID(),
 			NodeID:    primaryStaker.NodeID,
 			PublicKey: nil, // inherited from primaryStaker
-			SubnetID:  subnetID,
+			NetID:  netID,
 			Weight:    1,
 			StartTime: upgradeTime,
 			EndTime:   endTime,
 		}
 	)
 
-	// Add a subnet staker during the Etna upgrade
+	// Add a net staker during the Etna upgrade
 	{
 		blk, err := block.NewBanffStandardBlock(upgradeTime, s.GetLastAccepted(), 1, nil)
 		require.NoError(err)
@@ -83,7 +83,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 		require.NoError(s.Commit())
 	}
 
-	// Remove a subnet staker
+	// Remove a net staker
 	{
 		blk, err := block.NewBanffStandardBlock(s.GetTimestamp(), s.GetLastAccepted(), 2, nil)
 		require.NoError(err)
@@ -109,18 +109,18 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 	)
 
 	expectedValidators := []map[ids.NodeID]*validators.GetValidatorOutput{
-		{}, // Subnet staker didn't exist at genesis
+		{}, // Net staker didn't exist at genesis
 		{
 			subnetStaker.NodeID: {
 				NodeID:    subnetStaker.NodeID,
 				PublicKey: pk,
 				Weight:    subnetStaker.Weight,
 			},
-		}, // Subnet staker was added at height 1
-		{}, // Subnet staker was removed at height 2
+		}, // Net staker was added at height 1
+		{}, // Net staker was removed at height 2
 	}
 	for height, expected := range expectedValidators {
-		actual, err := m.GetValidatorSet(context.Background(), uint64(height), subnetID)
+		actual, err := m.GetValidatorSet(context.Background(), uint64(height), netID)
 		require.NoError(err)
 		require.Equal(expected, actual)
 	}

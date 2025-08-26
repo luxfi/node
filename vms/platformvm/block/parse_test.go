@@ -362,7 +362,7 @@ func testDecisionTxs() ([]*txs.Tx, error) {
 				}},
 				Memo: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			}},
-			SubnetID:    ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'},
+			NetID:    ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'},
 			ChainName:   "a chain",
 			VMID:        ids.GenerateTestID(),
 			FxIDs:       []ids.ID{ids.GenerateTestID()},

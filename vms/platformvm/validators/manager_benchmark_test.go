@@ -52,7 +52,7 @@ import (
 // This generates a single diff for each height. In practice there could be
 // multiple or zero diffs at a given height.
 //
-// Note: BenchmarkGetValidatorSet gets the validator set of a subnet rather than
+// Note: BenchmarkGetValidatorSet gets the validator set of a net rather than
 // the primary network because the primary network performs caching that would
 // interfere with the benchmark.
 func BenchmarkGetValidatorSet(b *testing.B) {
@@ -157,14 +157,14 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 		require.NoError(err)
 		nodeIDs = append(nodeIDs, nodeID)
 	}
-	subnetID := ids.GenerateTestID()
+	netID := ids.GenerateTestID()
 	for _, nodeID := range nodeIDs {
 		currentHeight++
-		require.NoError(addSubnetValidator(s, subnetID, genesisTime, genesisEndTime, nodeID, currentHeight))
+		require.NoError(addNetValidator(s, netID, genesisTime, genesisEndTime, nodeID, currentHeight))
 	}
 	for i := 0; i < 9900; i++ {
 		currentHeight++
-		require.NoError(addSubnetDelegator(s, subnetID, genesisTime, genesisEndTime, nodeIDs, currentHeight))
+		require.NoError(addSubnetDelegator(s, netID, genesisTime, genesisEndTime, nodeIDs, currentHeight))
 	}
 
 	ctx := context.Background()
@@ -175,7 +175,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := m.GetValidatorSet(ctx, 0, subnetID)
+		_, err := m.GetValidatorSet(ctx, 0, netID)
 		require.NoError(err)
 	}
 
@@ -198,7 +198,7 @@ func addPrimaryValidator(
 		TxID:            ids.GenerateTestID(),
 		NodeID:          nodeID,
 		PublicKey:       bls.PublicFromSecretKey(sk),
-		SubnetID:        constants.PrimaryNetworkID,
+		NetID:        constants.PrimaryNetworkID,
 		Weight:          2 * units.MegaLux,
 		StartTime:       startTime,
 		EndTime:         endTime,
@@ -217,9 +217,9 @@ func addPrimaryValidator(
 	return nodeID, s.Commit()
 }
 
-func addSubnetValidator(
+func addNetValidator(
 	s state.State,
-	subnetID ids.ID,
+	netID ids.ID,
 	startTime time.Time,
 	endTime time.Time,
 	nodeID ids.NodeID,
@@ -228,7 +228,7 @@ func addSubnetValidator(
 	s.PutCurrentValidator(&state.Staker{
 		TxID:            ids.GenerateTestID(),
 		NodeID:          nodeID,
-		SubnetID:        subnetID,
+		NetID:        netID,
 		Weight:          1 * units.Lux,
 		StartTime:       startTime,
 		EndTime:         endTime,
@@ -249,7 +249,7 @@ func addSubnetValidator(
 
 func addSubnetDelegator(
 	s state.State,
-	subnetID ids.ID,
+	netID ids.ID,
 	startTime time.Time,
 	endTime time.Time,
 	nodeIDs []ids.NodeID,
@@ -260,7 +260,7 @@ func addSubnetDelegator(
 	s.PutCurrentDelegator(&state.Staker{
 		TxID:            ids.GenerateTestID(),
 		NodeID:          nodeID,
-		SubnetID:        subnetID,
+		NetID:        netID,
 		Weight:          1 * units.Lux,
 		StartTime:       startTime,
 		EndTime:         endTime,

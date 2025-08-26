@@ -31,8 +31,8 @@ import (
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/xvm"
-	"github.com/luxfi/node/wallet/subnet/primary"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary"
+	"github.com/luxfi/node/wallet/net/primary/common"
 
 	ptxs "github.com/luxfi/node/vms/platformvm/txs"
 	xtxs "github.com/luxfi/node/vms/xvm/txs"

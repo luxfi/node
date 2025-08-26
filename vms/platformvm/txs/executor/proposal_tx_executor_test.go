@@ -150,7 +150,7 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 		{
 			description: "delegator starts before validator",
 			stakeAmount: env.config.MinDelegatorStake,
-			startTime:   newValidatorStartTime - 1, // start validating subnet before primary network
+			startTime:   newValidatorStartTime - 1, // start validating net before primary network
 			endTime:     newValidatorEndTime,
 			nodeID:      newValidatorID,
 			feeKeys:     []*secp256k1.PrivateKey{preFundedKeys[0]},
@@ -162,7 +162,7 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 			description: "delegator stops before validator",
 			stakeAmount: env.config.MinDelegatorStake,
 			startTime:   newValidatorStartTime,
-			endTime:     newValidatorEndTime + 1, // stop validating subnet after stopping validating primary network
+			endTime:     newValidatorEndTime + 1, // stop validating net after stopping validating primary network
 			nodeID:      newValidatorID,
 			feeKeys:     []*secp256k1.PrivateKey{preFundedKeys[0]},
 			setup:       addMinStakeValidator,
@@ -283,7 +283,7 @@ func TestProposalTxExecuteAddDelegator(t *testing.T) {
 	}
 }
 
-func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
+func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, apricotPhase5)
 	env.ctx.Lock.Lock()
@@ -292,11 +292,11 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 	nodeID := genesisNodeIDs[0]
 	{
 		// Case: Proposed validator currently validating primary network
-		// but stops validating subnet after stops validating primary network
+		// but stops validating net after stops validating primary network
 		// (note that keys[0] is a genesis validator)
 		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		utx, err := builder.NewAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  uint64(defaultValidateStartTime.Unix()) + 1,
@@ -328,12 +328,12 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 
 	{
 		// Case: Proposed validator currently validating primary network
-		// and proposed subnet validation period is subset of
+		// and proposed net validation period is subset of
 		// primary network validation period
 		// (note that keys[0] is a genesis validator)
 		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		utx, err := builder.NewAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  uint64(defaultValidateStartTime.Unix()) + 1,
@@ -389,11 +389,11 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 	{
 		// Case: Proposed validator isn't in pending or current validator sets
 		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		utx, err := builder.NewAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: pendingDSValidatorID,
-					Start:  uint64(dsStartTime.Unix()), // start validating subnet before primary network
+					Start:  uint64(dsStartTime.Unix()), // start validating net before primary network
 					End:    uint64(dsEndTime.Unix()),
 					Wght:   defaultWeight,
 				},
@@ -439,13 +439,13 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 
 	{
 		// Case: Proposed validator is pending validator of primary network
-		// but starts validating subnet before primary network
+		// but starts validating net before primary network
 		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		utx, err := builder.NewAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: pendingDSValidatorID,
-					Start:  uint64(dsStartTime.Unix()) - 1, // start validating subnet before primary network
+					Start:  uint64(dsStartTime.Unix()) - 1, // start validating net before primary network
 					End:    uint64(dsEndTime.Unix()),
 					Wght:   defaultWeight,
 				},
@@ -474,14 +474,14 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 
 	{
 		// Case: Proposed validator is pending validator of primary network
-		// but stops validating subnet after primary network
+		// but stops validating net after primary network
 		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		utx, err := builder.NewAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: pendingDSValidatorID,
 					Start:  uint64(dsStartTime.Unix()),
-					End:    uint64(dsEndTime.Unix()) + 1, // stop validating subnet after stopping validating primary network
+					End:    uint64(dsEndTime.Unix()) + 1, // stop validating net after stopping validating primary network
 					Wght:   defaultWeight,
 				},
 				Subnet: testSubnet1.ID(),
@@ -509,10 +509,10 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 
 	{
 		// Case: Proposed validator is pending validator of primary network and
-		// period validating subnet is subset of time validating primary network
+		// period validating net is subset of time validating primary network
 		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		utx, err := builder.NewAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: pendingDSValidatorID,
 					Start:  uint64(dsStartTime.Unix()), // same start time as for primary network
@@ -548,8 +548,8 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 
 	{
 		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		utx, err := builder.NewAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  uint64(newTimestamp.Unix()),
@@ -585,8 +585,8 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 	// Case: Proposed validator already validating the subnet
 	// First, add validator as validator of subnet
 	builder, signer = env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-	uSubnetTx, err := builder.NewAddSubnetValidatorTx(
-		&txs.SubnetValidator{
+	uSubnetTx, err := builder.NewAddNetValidatorTx(
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  uint64(defaultValidateStartTime.Unix()),
@@ -600,7 +600,7 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 	subnetTx, err := walletsigner.SignUnsigned(context.Background(), signer, uSubnetTx)
 	require.NoError(err)
 
-	addSubnetValTx := subnetTx.Unsigned.(*txs.AddSubnetValidatorTx)
+	addSubnetValTx := subnetTx.Unsigned.(*txs.AddNetValidatorTx)
 	staker, err = state.NewCurrentStaker(
 		subnetTx.ID(),
 		addSubnetValTx,
@@ -615,10 +615,10 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 	require.NoError(env.state.Commit())
 
 	{
-		// Node with ID nodeIDKey.PublicKey().Address() now validating subnet with ID testSubnet1.ID
+		// Node with ID nodeIDKey.PublicKey().Address() now validating net with ID testSubnet1.ID
 		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		utx, err := builder.NewAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  uint64(defaultValidateStartTime.Unix()) + 1,
@@ -655,8 +655,8 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 	{
 		// Case: Too few signatures
 		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		utx, err := builder.NewAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  uint64(defaultValidateStartTime.Unix()) + 1,
@@ -671,11 +671,11 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		require.NoError(err)
 
 		// Remove a signature
-		addSubnetValidatorTx := tx.Unsigned.(*txs.AddSubnetValidatorTx)
-		input := addSubnetValidatorTx.SubnetAuth.(*secp256k1fx.Input)
+		addNetValidatorTx := tx.Unsigned.(*txs.AddNetValidatorTx)
+		input := addNetValidatorTx.SubnetAuth.(*secp256k1fx.Input)
 		input.SigIndices = input.SigIndices[1:]
 		// This tx was syntactically verified when it was created...pretend it wasn't so we don't use cache
-		addSubnetValidatorTx.SyntacticallyVerified = false
+		addNetValidatorTx.SyntacticallyVerified = false
 
 		onCommitState, err := state.NewDiff(lastAcceptedID, env)
 		require.NoError(err)
@@ -696,8 +696,8 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 	{
 		// Case: Control Signature from invalid key (keys[3] is not a control key)
 		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], preFundedKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		utx, err := builder.NewAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  uint64(defaultValidateStartTime.Unix()) + 1,
@@ -736,8 +736,8 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		// Case: Proposed validator in pending validator set for subnet
 		// First, add validator to pending validator set of subnet
 		builder, signer := env.factory.NewWallet(testSubnet1ControlKeys[0], testSubnet1ControlKeys[1])
-		utx, err := builder.NewAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		utx, err := builder.NewAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  uint64(defaultValidateStartTime.Unix()) + 1,
@@ -751,7 +751,7 @@ func TestProposalTxExecuteAddSubnetValidator(t *testing.T) {
 		tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 		require.NoError(err)
 
-		addSubnetValTx := subnetTx.Unsigned.(*txs.AddSubnetValidatorTx)
+		addSubnetValTx := subnetTx.Unsigned.(*txs.AddNetValidatorTx)
 		staker, err = state.NewCurrentStaker(
 			subnetTx.ID(),
 			addSubnetValTx,

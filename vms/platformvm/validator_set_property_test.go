@@ -52,12 +52,12 @@ import (
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
-	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
+	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
 )
 
 const (
 	startPrimaryWithBLS uint8 = iota
-	startSubnetValidator
+	startNetValidator
 
 	failedValidatorSnapshotString = "could not take validators snapshot: "
 	failedBuildingEventSeqString  = "failed building events sequence: "
@@ -66,9 +66,9 @@ const (
 var errEmptyEventsList = errors.New("empty events list")
 
 // for a given (permissioned) subnet, the test stakes and restakes multiple
-// times a node as a primary and subnet validator. The BLS key of the node is
+// times a node as a primary and net validator. The BLS key of the node is
 // changed across staking periods, and it can even be nil. We test that
-// GetValidatorSet returns the correct primary and subnet validators data, with
+// GetValidatorSet returns the correct primary and net validators data, with
 // the right BLS key version at all relevant heights.
 func TestGetValidatorsSetProperty(t *testing.T) {
 	properties := gopter.NewProperties(nil)
@@ -79,7 +79,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 
 	properties.Property("check GetValidatorSet", prop.ForAll(
 		func(events []uint8) string {
-			vm, subnetID, err := buildVM(t)
+			vm, netID, err := buildVM(t)
 			if err != nil {
 				return "failed building vm: " + err.Error()
 			}
@@ -101,7 +101,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 				return "failed building events sequence: " + err.Error()
 			}
 
-			validatorSetByHeightAndSubnet := make(map[uint64]map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput)
+			validatorSetByHeightAndNet := make(map[uint64]map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput)
 			if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndSubnet); err != nil {
 				return failedValidatorSnapshotString + err.Error()
 			}
@@ -109,16 +109,16 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 			// insert validator sequence
 			var (
 				currentPrimaryValidator = (*state.Staker)(nil)
-				currentSubnetValidator  = (*state.Staker)(nil)
+				currentNetValidator  = (*state.Staker)(nil)
 			)
 			for _, ev := range validatorsTimes {
-				// at each step we remove at least a subnet validator
-				if currentSubnetValidator != nil {
-					err := terminateSubnetValidator(vm, currentSubnetValidator)
+				// at each step we remove at least a net validator
+				if currentNetValidator != nil {
+					err := terminateNetValidator(vm, currentNetValidator)
 					if err != nil {
-						return "could not terminate current subnet validator: " + err.Error()
+						return "could not terminate current net validator: " + err.Error()
 					}
-					currentSubnetValidator = nil
+					currentNetValidator = nil
 
 					if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndSubnet); err != nil {
 						return failedValidatorSnapshotString + err.Error()
@@ -126,10 +126,10 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 				}
 
 				switch ev.eventType {
-				case startSubnetValidator:
-					currentSubnetValidator, err = addSubnetValidator(vm, ev, subnetID)
+				case startNetValidator:
+					currentNetValidator, err = addNetValidator(vm, ev, netID)
 					if err != nil {
-						return "could not add subnet validator: " + err.Error()
+						return "could not add net validator: " + err.Error()
 					}
 					if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndSubnet); err != nil {
 						return failedValidatorSnapshotString + err.Error()
@@ -181,8 +181,8 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 				// within [snapShotHeight] and [nextSnapShotHeight], the validator set
 				// does not change and must be equal to snapshot at [snapShotHeight]
 				for height := snapShotHeight; height < nextSnapShotHeight; height++ {
-					for subnetID, validatorsSet := range validatorSetByHeightAndSubnet[snapShotHeight] {
-						res, err := vm.GetValidatorSet(context.Background(), height, subnetID)
+					for netID, validatorsSet := range validatorSetByHeightAndSubnet[snapShotHeight] {
+						res, err := vm.GetValidatorSet(context.Background(), height, netID)
 						if err != nil {
 							return fmt.Sprintf("failed GetValidatorSet at height %v: %v", height, err)
 						}
@@ -199,7 +199,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 			10,
 			gen.OneConstOf(
 				startPrimaryWithBLS,
-				startSubnetValidator,
+				startNetValidator,
 			),
 		).SuchThat(func(v interface{}) bool {
 			list := v.([]uint8)
@@ -210,9 +210,9 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 	properties.TestingRun(t)
 }
 
-func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndSubnet map[uint64]map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput) error {
-	if validatorsSetByHeightAndSubnet == nil {
-		validatorsSetByHeightAndSubnet = make(map[uint64]map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput)
+func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndNet map[uint64]map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput) error {
+	if validatorsSetByHeightAndNet == nil {
+		validatorsSetByHeightAndNet = make(map[uint64]map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput)
 	}
 
 	lastBlkID := vm.state.GetLastAccepted()
@@ -224,7 +224,7 @@ func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndSubne
 	validatorsSetBySubnet, ok := validatorsSetByHeightAndSubnet[height]
 	if !ok {
 		validatorsSetByHeightAndSubnet[height] = make(map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput)
-		validatorsSetBySubnet = validatorsSetByHeightAndSubnet[height]
+		validatorsSetByNet = validatorsSetByHeightAndSubnet[height]
 	}
 
 	stakerIt, err := vm.state.GetCurrentStakerIterator()
@@ -234,14 +234,14 @@ func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndSubne
 	defer stakerIt.Release()
 	for stakerIt.Next() {
 		v := stakerIt.Value()
-		validatorsSet, ok := validatorsSetBySubnet[v.SubnetID]
+		validatorsSet, ok := validatorsSetBySubnet[v.NetID]
 		if !ok {
-			validatorsSetBySubnet[v.SubnetID] = make(map[ids.NodeID]*validators.GetValidatorOutput)
-			validatorsSet = validatorsSetBySubnet[v.SubnetID]
+			validatorsSetBySubnet[v.NetID] = make(map[ids.NodeID]*validators.GetValidatorOutput)
+			validatorsSet = validatorsSetBySubnet[v.NetID]
 		}
 
 		blsKey := v.PublicKey
-		if v.SubnetID != constants.PrimaryNetworkID {
+		if v.NetID != constants.PrimaryNetworkID {
 			// pick bls key from primary validator
 			s, err := vm.state.GetCurrentValidator(constants.PlatformChainID, v.NodeID)
 			if err != nil {
@@ -259,19 +259,19 @@ func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndSubne
 	return nil
 }
 
-func addSubnetValidator(vm *VM, data *validatorInputData, subnetID ids.ID) (*state.Staker, error) {
+func addNetValidator(vm *VM, data *validatorInputData, netID ids.ID) (*state.Staker, error) {
 	// Create a nil shared memory for testing
 	factory := txstest.NewWalletFactory(vm.ctx, nil, &vm.Config, vm.state)
 	builder, signer := factory.NewWallet(keys[0], keys[1])
-	utx, err := builder.NewAddSubnetValidatorTx(
-		&txs.SubnetValidator{
+	utx, err := builder.NewAddNetValidatorTx(
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: data.nodeID,
 				Start:  uint64(data.startTime.Unix()),
 				End:    uint64(data.endTime.Unix()),
 				Wght:   vm.Config.MinValidatorStake,
 			},
-			Subnet: subnetID,
+			Subnet: netID,
 		},
 		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -279,11 +279,11 @@ func addSubnetValidator(vm *VM, data *validatorInputData, subnetID ids.ID) (*sta
 		}),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("could not build AddSubnetValidatorTx: %w", err)
+		return nil, fmt.Errorf("could not build AddNetValidatorTx: %w", err)
 	}
 	tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 	if err != nil {
-		return nil, fmt.Errorf("could not sign AddSubnetValidatorTx: %w", err)
+		return nil, fmt.Errorf("could not sign AddNetValidatorTx: %w", err)
 	}
 	return internalAddValidator(vm, tx)
 }
@@ -300,7 +300,7 @@ func addPrimaryValidatorWithBLSKey(vm *VM, data *validatorInputData) (*state.Sta
 	factory := txstest.NewWalletFactory(vm.ctx, nil, &vm.Config, vm.state)
 	builder, txSigner := factory.NewWallet(keys[0], keys[1])
 	utx, err := builder.NewAddPermissionlessValidatorTx(
-		&txs.SubnetValidator{
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: data.nodeID,
 				Start:  uint64(data.startTime.Unix()),
@@ -359,10 +359,10 @@ func internalAddValidator(vm *VM, signedTx *txs.Tx) (*state.Staker, error) {
 	}
 
 	stakerTx := signedTx.Unsigned.(txs.Staker)
-	return vm.state.GetCurrentValidator(stakerTx.SubnetID(), stakerTx.NodeID())
+	return vm.state.GetCurrentValidator(stakerTx.NetID(), stakerTx.NodeID())
 }
 
-func terminateSubnetValidator(vm *VM, validator *state.Staker) error {
+func terminateNetValidator(vm *VM, validator *state.Staker) error {
 	currentTime := validator.EndTime
 	vm.nodeClock.Set(currentTime)
 	vm.state.SetTimestamp(currentTime)
@@ -460,16 +460,16 @@ func buildTimestampsList(events []uint8, currentTime time.Time, nodeID ids.NodeI
 	}
 
 	// track current primary validator to make sure its staking period
-	// covers all of its subnet validators
+	// covers all of its net validators
 	currentPrimaryVal := res[0]
 	for i := 1; i < len(events); i++ {
 		currentTime = currentTime.Add(txexecutor.SyncBound)
 
 		switch currentEvent := events[i]; currentEvent {
-		case startSubnetValidator:
+		case startNetValidator:
 			endTime := currentTime.Add(defaultMinStakingDuration)
 			res = append(res, &validatorInputData{
-				eventType: startSubnetValidator,
+				eventType: startNetValidator,
 				startTime: currentTime,
 				endTime:   endTime,
 				nodeID:    nodeID,
@@ -517,10 +517,10 @@ func TestTimestampListGenerator(t *testing.T) {
 				return errEmptyEventsList.Error()
 			}
 
-			// nil out non subnet validators
+			// nil out non net validators
 			subnetIndexes := make([]int, 0)
 			for idx, ev := range validatorsTimes {
-				if ev.eventType == startSubnetValidator {
+				if ev.eventType == startNetValidator {
 					subnetIndexes = append(subnetIndexes, idx)
 				}
 			}
@@ -531,7 +531,7 @@ func TestTimestampListGenerator(t *testing.T) {
 			currentEventTime := currentTime
 			for i, ev := range validatorsTimes {
 				if ev == nil {
-					continue // a subnet validator
+					continue // a net validator
 				}
 				if currentEventTime.After(ev.startTime) {
 					return fmt.Sprintf("validator %d start time larger than current event time", i)
@@ -548,7 +548,7 @@ func TestTimestampListGenerator(t *testing.T) {
 		},
 		gen.SliceOf(gen.OneConstOf(
 			startPrimaryWithBLS,
-			startSubnetValidator,
+			startNetValidator,
 		)).SuchThat(func(v interface{}) bool {
 			list := v.([]uint8)
 			return len(list) > 0 && list[0] == startPrimaryWithBLS
@@ -568,10 +568,10 @@ func TestTimestampListGenerator(t *testing.T) {
 				return errEmptyEventsList.Error()
 			}
 
-			// nil out non subnet validators
+			// nil out non net validators
 			nonSubnetIndexes := make([]int, 0)
 			for idx, ev := range validatorsTimes {
-				if ev.eventType != startSubnetValidator {
+				if ev.eventType != startNetValidator {
 					nonSubnetIndexes = append(nonSubnetIndexes, idx)
 				}
 			}
@@ -599,7 +599,7 @@ func TestTimestampListGenerator(t *testing.T) {
 		},
 		gen.SliceOf(gen.OneConstOf(
 			startPrimaryWithBLS,
-			startSubnetValidator,
+			startNetValidator,
 		)).SuchThat(func(v interface{}) bool {
 			list := v.([]uint8)
 			return len(list) > 0 && list[0] == startPrimaryWithBLS
@@ -621,7 +621,7 @@ func TestTimestampListGenerator(t *testing.T) {
 
 			currentPrimaryValidator := validatorsTimes[0]
 			for i := 1; i < len(validatorsTimes); i++ {
-				if validatorsTimes[i].eventType != startSubnetValidator {
+				if validatorsTimes[i].eventType != startNetValidator {
 					currentPrimaryValidator = validatorsTimes[i]
 					continue
 				}
@@ -636,7 +636,7 @@ func TestTimestampListGenerator(t *testing.T) {
 		},
 		gen.SliceOf(gen.OneConstOf(
 			startPrimaryWithBLS,
-			startSubnetValidator,
+			startNetValidator,
 		)).SuchThat(func(v interface{}) bool {
 			list := v.([]uint8)
 			return len(list) > 0 && list[0] == startPrimaryWithBLS
@@ -657,8 +657,8 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		Validators:             validators.NewManager(),
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                 defaultTxFee,
-			CreateSubnetTxFee:     100 * defaultTxFee,
-			TransformSubnetTxFee:  100 * defaultTxFee,
+			CreateNetTxFee:     100 * defaultTxFee,
+			TransformNetTxFee:  100 * defaultTxFee,
 			CreateBlockchainTxFee: 100 * defaultTxFee,
 		},
 		MinValidatorStake: defaultMinValidatorStake,
@@ -728,13 +728,13 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		return nil, ids.Empty, err
 	}
 
-	// Create a subnet and store it in testSubnet1
+	// Create a net and store it in testSubnet1
 	// Note: following Banff activation, block acceptance will move
 	// chain time ahead
 	// Create a nil shared memory for testing
 	factory := txstest.NewWalletFactory(vm.ctx, nil, &vm.Config, vm.state)
 	builder, signer := factory.NewWallet(keys[len(keys)-1])
-	utx, err := builder.NewCreateSubnetTx(
+	utx, err := builder.NewCreateNetTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},

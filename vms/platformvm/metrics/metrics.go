@@ -37,7 +37,7 @@ type Metrics interface {
 	// Mark when this node will unstake from the Primary Network.
 	SetTimeUntilUnstake(time.Duration)
 	// Mark when this node will unstake from a subnet.
-	SetTimeUntilSubnetUnstake(subnetID ids.ID, timeUntilUnstake time.Duration)
+	SetTimeUntilSubnetUnstake(netID ids.ID, timeUntilUnstake time.Duration)
 }
 
 func New(registerer prometheus.Registerer) (Metrics, error) {
@@ -53,7 +53,7 @@ func New(registerer prometheus.Registerer) (Metrics, error) {
 				Name: "time_until_unstake_subnet",
 				Help: "Time (in ns) until this node leaves the subnet's validator set",
 			},
-			[]string{"subnetID"},
+			[]string{"netID"},
 		),
 		localStake: prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "local_staked",
@@ -149,6 +149,6 @@ func (m *metrics) SetTimeUntilUnstake(timeUntilUnstake time.Duration) {
 	m.timeUntilUnstake.Set(float64(timeUntilUnstake))
 }
 
-func (m *metrics) SetTimeUntilSubnetUnstake(subnetID ids.ID, timeUntilUnstake time.Duration) {
-	m.timeUntilSubnetUnstake.WithLabelValues(subnetID.String()).Set(float64(timeUntilUnstake))
+func (m *metrics) SetTimeUntilSubnetUnstake(netID ids.ID, timeUntilUnstake time.Duration) {
+	m.timeUntilSubnetUnstake.WithLabelValues(netID.String()).Set(float64(timeUntilUnstake))
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/builder"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 
 	vmsigner "github.com/luxfi/node/vms/platformvm/signer"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
@@ -52,18 +52,18 @@ type Wallet interface {
 		options ...common.Option,
 	) (*txs.Tx, error)
 
-	// IssueAddSubnetValidatorTx creates, signs, and issues a new validator of a
+	// IssueAddNetValidatorTx creates, signs, and issues a new validator of a
 	// subnet.
-	IssueAddSubnetValidatorTx(
-		vdr *txs.SubnetValidator,
+	IssueAddNetValidatorTx(
+		vdr *txs.NetValidator,
 		options ...common.Option,
 	) (*txs.Tx, error)
 
-	// IssueRemoveSubnetValidatorTx creates, signs, and issues a transaction
+	// IssueRemoveNetValidatorTx creates, signs, and issues a transaction
 	// that removes a validator of a subnet.
-	IssueRemoveSubnetValidatorTx(
+	IssueRemoveNetValidatorTx(
 		nodeID ids.NodeID,
-		subnetID ids.ID,
+		netID ids.ID,
 		options ...common.Option,
 	) (*txs.Tx, error)
 
@@ -78,7 +78,7 @@ type Wallet interface {
 	// IssueCreateChainTx creates, signs, and issues a new chain in the named
 	// subnet.
 	IssueCreateChainTx(
-		subnetID ids.ID,
+		netID ids.ID,
 		genesis []byte,
 		vmID ids.ID,
 		fxIDs []ids.ID,
@@ -86,28 +86,28 @@ type Wallet interface {
 		options ...common.Option,
 	) (*txs.Tx, error)
 
-	// IssueCreateSubnetTx creates, signs, and issues a new subnet with the
+	// IssueCreateNetTx creates, signs, and issues a new net with the
 	// specified owner.
-	IssueCreateSubnetTx(
+	IssueCreateNetTx(
 		owner *secp256k1fx.OutputOwners,
 		options ...common.Option,
 	) (*txs.Tx, error)
 
-	// IssueTransferSubnetOwnershipTx creates, signs, and issues a transaction that
+	// IssueTransferNetOwnershipTx creates, signs, and issues a transaction that
 	// changes the owner of the named subnet.
-	IssueTransferSubnetOwnershipTx(
-		subnetID ids.ID,
+	IssueTransferNetOwnershipTx(
+		netID ids.ID,
 		owner *secp256k1fx.OutputOwners,
 		options ...common.Option,
 	) (*txs.Tx, error)
 
-	// IssueConvertSubnetToL1Tx creates, signs, and issues a transaction that
-	// converts the subnet to a Permissionless L1.
-	IssueConvertSubnetToL1Tx(
-		subnetID ids.ID,
+	// IssueConvertNetToL1Tx creates, signs, and issues a transaction that
+	// converts the net to a Permissionless L1.
+	IssueConvertNetToL1Tx(
+		netID ids.ID,
 		chainID ids.ID,
 		address []byte,
-		validators []*txs.ConvertSubnetToL1Validator,
+		validators []*txs.ConvertNetToL1Validator,
 		options ...common.Option,
 	) (*txs.Tx, error)
 
@@ -157,9 +157,9 @@ type Wallet interface {
 		options ...common.Option,
 	) (*txs.Tx, error)
 
-	// IssueTransformSubnetTx creates a transform subnet transaction.
-	IssueTransformSubnetTx(
-		subnetID ids.ID,
+	// IssueTransformNetTx creates a transform net transaction.
+	IssueTransformNetTx(
+		netID ids.ID,
 		assetID ids.ID,
 		initialSupply uint64,
 		maxSupply uint64,
@@ -179,7 +179,7 @@ type Wallet interface {
 	// IssueAddPermissionlessValidatorTx creates, signs, and issues a new
 	// validator of the specified subnet.
 	IssueAddPermissionlessValidatorTx(
-		vdr *txs.SubnetValidator,
+		vdr *txs.NetValidator,
 		signer vmsigner.Signer,
 		assetID ids.ID,
 		validationRewardsOwner *secp256k1fx.OutputOwners,
@@ -191,7 +191,7 @@ type Wallet interface {
 	// IssueAddPermissionlessDelegatorTx creates, signs, and issues a new
 	// delegator of the specified subnet.
 	IssueAddPermissionlessDelegatorTx(
-		vdr *txs.SubnetValidator,
+		vdr *txs.NetValidator,
 		assetID ids.ID,
 		rewardsOwner *secp256k1fx.OutputOwners,
 		options ...common.Option,
@@ -254,23 +254,23 @@ func (w *wallet) IssueAddValidatorTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueAddSubnetValidatorTx(
-	vdr *txs.SubnetValidator,
+func (w *wallet) IssueAddNetValidatorTx(
+	vdr *txs.NetValidator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	utx, err := w.builder.NewAddSubnetValidatorTx(vdr, options...)
+	utx, err := w.builder.NewAddNetValidatorTx(vdr, options...)
 	if err != nil {
 		return nil, err
 	}
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueRemoveSubnetValidatorTx(
+func (w *wallet) IssueRemoveNetValidatorTx(
 	nodeID ids.NodeID,
-	subnetID ids.ID,
+	netID ids.ID,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	utx, err := w.builder.NewRemoveSubnetValidatorTx(nodeID, subnetID, options...)
+	utx, err := w.builder.NewRemoveNetValidatorTx(nodeID, netID, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -290,51 +290,51 @@ func (w *wallet) IssueAddDelegatorTx(
 }
 
 func (w *wallet) IssueCreateChainTx(
-	subnetID ids.ID,
+	netID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
 	fxIDs []ids.ID,
 	chainName string,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	utx, err := w.builder.NewCreateChainTx(subnetID, genesis, vmID, fxIDs, chainName, options...)
+	utx, err := w.builder.NewCreateChainTx(netID, genesis, vmID, fxIDs, chainName, options...)
 	if err != nil {
 		return nil, err
 	}
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueCreateSubnetTx(
+func (w *wallet) IssueCreateNetTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	utx, err := w.builder.NewCreateSubnetTx(owner, options...)
+	utx, err := w.builder.NewCreateNetTx(owner, options...)
 	if err != nil {
 		return nil, err
 	}
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueTransferSubnetOwnershipTx(
-	subnetID ids.ID,
+func (w *wallet) IssueTransferNetOwnershipTx(
+	netID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	utx, err := w.builder.NewTransferSubnetOwnershipTx(subnetID, owner, options...)
+	utx, err := w.builder.NewTransferNetOwnershipTx(netID, owner, options...)
 	if err != nil {
 		return nil, err
 	}
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueConvertSubnetToL1Tx(
-	subnetID ids.ID,
+func (w *wallet) IssueConvertNetToL1Tx(
+	netID ids.ID,
 	chainID ids.ID,
 	address []byte,
-	validators []*txs.ConvertSubnetToL1Validator,
+	validators []*txs.ConvertNetToL1Validator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	utx, err := w.builder.NewConvertSubnetToL1Tx(subnetID, chainID, address, validators, options...)
+	utx, err := w.builder.NewConvertNetToL1Tx(netID, chainID, address, validators, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -412,8 +412,8 @@ func (w *wallet) IssueExportTx(
 	return w.IssueUnsignedTx(utx, options...)
 }
 
-func (w *wallet) IssueTransformSubnetTx(
-	subnetID ids.ID,
+func (w *wallet) IssueTransformNetTx(
+	netID ids.ID,
 	assetID ids.ID,
 	initialSupply uint64,
 	maxSupply uint64,
@@ -429,8 +429,8 @@ func (w *wallet) IssueTransformSubnetTx(
 	uptimeRequirement uint32,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	utx, err := w.builder.NewTransformSubnetTx(
-		subnetID,
+	utx, err := w.builder.NewTransformNetTx(
+		netID,
 		assetID,
 		initialSupply,
 		maxSupply,
@@ -453,7 +453,7 @@ func (w *wallet) IssueTransformSubnetTx(
 }
 
 func (w *wallet) IssueAddPermissionlessValidatorTx(
-	vdr *txs.SubnetValidator,
+	vdr *txs.NetValidator,
 	signer vmsigner.Signer,
 	assetID ids.ID,
 	validationRewardsOwner *secp256k1fx.OutputOwners,
@@ -477,7 +477,7 @@ func (w *wallet) IssueAddPermissionlessValidatorTx(
 }
 
 func (w *wallet) IssueAddPermissionlessDelegatorTx(
-	vdr *txs.SubnetValidator,
+	vdr *txs.NetValidator,
 	assetID ids.ID,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,

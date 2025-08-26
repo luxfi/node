@@ -159,7 +159,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 			NetworkID:    c.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 		}},
-		SubnetID:   constants.PrimaryNetworkID,
+		NetID:   constants.PrimaryNetworkID,
 		ChainName:  XChainName,
 		VMID:       constants.XVMID,
 		SubnetAuth: &secp256k1fx.Input{},

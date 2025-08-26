@@ -114,15 +114,15 @@ func (mr *MockRouterMockRecorder) AppResponse(ctx, nodeID, requestID, appRespons
 }
 
 // Connected mocks base method.
-func (m *MockRouter) Connected(nodeID ids.NodeID, nodeVersion *version.Application, subnetID ids.ID) {
+func (m *MockRouter) Connected(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Connected", nodeID, nodeVersion, subnetID)
+	m.ctrl.Call(m, "Connected", nodeID, nodeVersion, netID)
 }
 
 // Connected indicates an expected call of Connected.
-func (mr *MockRouterMockRecorder) Connected(nodeID, nodeVersion, subnetID any) *gomock.Call {
+func (mr *MockRouterMockRecorder) Connected(nodeID, nodeVersion, netID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Connected", reflect.TypeOf((*MockRouter)(nil).Connected), nodeID, nodeVersion, subnetID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Connected", reflect.TypeOf((*MockRouter)(nil).Connected), nodeID, nodeVersion, netID)
 }
 
 // Disconnected mocks base method.

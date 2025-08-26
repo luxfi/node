@@ -101,10 +101,10 @@ func (c *client) GetTxFee(ctx context.Context, options ...rpc.Option) (*GetTxFee
 	return res, err
 }
 
-func (c *client) Uptime(ctx context.Context, subnetID ids.ID, options ...rpc.Option) (*UptimeResponse, error) {
+func (c *client) Uptime(ctx context.Context, netID ids.ID, options ...rpc.Option) (*UptimeResponse, error) {
 	res := &UptimeResponse{}
 	err := c.requester.SendRequest(ctx, "info.uptime", &UptimeRequest{
-		SubnetID: subnetID,
+		NetID: netID,
 	}, res, options...)
 	return res, err
 }

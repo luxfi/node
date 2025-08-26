@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/builder"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 
 	vmsigner "github.com/luxfi/node/vms/platformvm/signer"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
@@ -69,24 +69,24 @@ func (w *walletWithOptions) IssueAddValidatorTx(
 	)
 }
 
-func (w *walletWithOptions) IssueAddSubnetValidatorTx(
-	vdr *txs.SubnetValidator,
+func (w *walletWithOptions) IssueAddNetValidatorTx(
+	vdr *txs.NetValidator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueAddSubnetValidatorTx(
+	return w.wallet.IssueAddNetValidatorTx(
 		vdr,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
-func (w *walletWithOptions) IssueRemoveSubnetValidatorTx(
+func (w *walletWithOptions) IssueRemoveNetValidatorTx(
 	nodeID ids.NodeID,
-	subnetID ids.ID,
+	netID ids.ID,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueRemoveSubnetValidatorTx(
+	return w.wallet.IssueRemoveNetValidatorTx(
 		nodeID,
-		subnetID,
+		netID,
 		common.UnionOptions(w.options, options)...,
 	)
 }
@@ -104,7 +104,7 @@ func (w *walletWithOptions) IssueAddDelegatorTx(
 }
 
 func (w *walletWithOptions) IssueCreateChainTx(
-	subnetID ids.ID,
+	netID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
 	fxIDs []ids.ID,
@@ -112,7 +112,7 @@ func (w *walletWithOptions) IssueCreateChainTx(
 	options ...common.Option,
 ) (*txs.Tx, error) {
 	return w.wallet.IssueCreateChainTx(
-		subnetID,
+		netID,
 		genesis,
 		vmID,
 		fxIDs,
@@ -121,23 +121,23 @@ func (w *walletWithOptions) IssueCreateChainTx(
 	)
 }
 
-func (w *walletWithOptions) IssueCreateSubnetTx(
+func (w *walletWithOptions) IssueCreateNetTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueCreateSubnetTx(
+	return w.wallet.IssueCreateNetTx(
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
-func (w *walletWithOptions) IssueTransferSubnetOwnershipTx(
-	subnetID ids.ID,
+func (w *walletWithOptions) IssueTransferNetOwnershipTx(
+	netID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueTransferSubnetOwnershipTx(
-		subnetID,
+	return w.wallet.IssueTransferNetOwnershipTx(
+		netID,
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
@@ -167,8 +167,8 @@ func (w *walletWithOptions) IssueExportTx(
 	)
 }
 
-func (w *walletWithOptions) IssueTransformSubnetTx(
-	subnetID ids.ID,
+func (w *walletWithOptions) IssueTransformNetTx(
+	netID ids.ID,
 	assetID ids.ID,
 	initialSupply uint64,
 	maxSupply uint64,
@@ -184,8 +184,8 @@ func (w *walletWithOptions) IssueTransformSubnetTx(
 	uptimeRequirement uint32,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueTransformSubnetTx(
-		subnetID,
+	return w.wallet.IssueTransformNetTx(
+		netID,
 		assetID,
 		initialSupply,
 		maxSupply,
@@ -204,7 +204,7 @@ func (w *walletWithOptions) IssueTransformSubnetTx(
 }
 
 func (w *walletWithOptions) IssueAddPermissionlessValidatorTx(
-	vdr *txs.SubnetValidator,
+	vdr *txs.NetValidator,
 	signer vmsigner.Signer,
 	assetID ids.ID,
 	validationRewardsOwner *secp256k1fx.OutputOwners,
@@ -224,7 +224,7 @@ func (w *walletWithOptions) IssueAddPermissionlessValidatorTx(
 }
 
 func (w *walletWithOptions) IssueAddPermissionlessDelegatorTx(
-	vdr *txs.SubnetValidator,
+	vdr *txs.NetValidator,
 	assetID ids.ID,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,
@@ -237,15 +237,15 @@ func (w *walletWithOptions) IssueAddPermissionlessDelegatorTx(
 	)
 }
 
-func (w *walletWithOptions) IssueConvertSubnetToL1Tx(
-	subnetID ids.ID,
+func (w *walletWithOptions) IssueConvertNetToL1Tx(
+	netID ids.ID,
 	chainID ids.ID,
 	address []byte,
-	validators []*txs.ConvertSubnetToL1Validator,
+	validators []*txs.ConvertNetToL1Validator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueConvertSubnetToL1Tx(
-		subnetID,
+	return w.wallet.IssueConvertNetToL1Tx(
+		netID,
 		chainID,
 		address,
 		validators,

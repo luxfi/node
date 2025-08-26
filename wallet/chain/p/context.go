@@ -17,13 +17,13 @@ type Context interface {
 	NetworkID() uint32
 	LUXAssetID() ids.ID
 	BaseTxFee() uint64
-	CreateSubnetTxFee() uint64
-	TransformSubnetTxFee() uint64
+	CreateNetTxFee() uint64
+	TransformNetTxFee() uint64
 	CreateBlockchainTxFee() uint64
 	AddPrimaryNetworkValidatorFee() uint64
 	AddPrimaryNetworkDelegatorFee() uint64
-	AddSubnetValidatorFee() uint64
-	AddSubnetDelegatorFee() uint64
+	AddNetValidatorFee() uint64
+	AddNetDelegatorFee() uint64
 }
 
 type pContext struct {
@@ -35,7 +35,7 @@ type pContext struct {
 	createBlockchainTxFee         uint64
 	addPrimaryNetworkValidatorFee uint64
 	addPrimaryNetworkDelegatorFee uint64
-	addSubnetValidatorFee         uint64
+	addNetValidatorFee         uint64
 	addSubnetDelegatorFee         uint64
 }
 
@@ -69,13 +69,13 @@ func NewContextFromClients(
 		networkID,
 		asset.AssetID,
 		uint64(txFees.TxFee),
-		uint64(txFees.CreateSubnetTxFee),
-		uint64(txFees.TransformSubnetTxFee),
+		uint64(txFees.CreateNetTxFee),
+		uint64(txFees.TransformNetTxFee),
 		uint64(txFees.CreateBlockchainTxFee),
 		uint64(txFees.AddPrimaryNetworkValidatorFee),
 		uint64(txFees.AddPrimaryNetworkDelegatorFee),
-		uint64(txFees.AddSubnetValidatorFee),
-		uint64(txFees.AddSubnetDelegatorFee),
+		uint64(txFees.AddNetValidatorFee),
+		uint64(txFees.AddNetDelegatorFee),
 	), nil
 }
 
@@ -88,7 +88,7 @@ func NewContext(
 	createBlockchainTxFee uint64,
 	addPrimaryNetworkValidatorFee uint64,
 	addPrimaryNetworkDelegatorFee uint64,
-	addSubnetValidatorFee uint64,
+	addNetValidatorFee uint64,
 	addSubnetDelegatorFee uint64,
 ) Context {
 	return &pContext{
@@ -100,7 +100,7 @@ func NewContext(
 		createBlockchainTxFee:         createBlockchainTxFee,
 		addPrimaryNetworkValidatorFee: addPrimaryNetworkValidatorFee,
 		addPrimaryNetworkDelegatorFee: addPrimaryNetworkDelegatorFee,
-		addSubnetValidatorFee:         addSubnetValidatorFee,
+		addNetValidatorFee:         addNetValidatorFee,
 		addSubnetDelegatorFee:         addSubnetDelegatorFee,
 	}
 }
@@ -117,11 +117,11 @@ func (c *pContext) BaseTxFee() uint64 {
 	return c.baseTxFee
 }
 
-func (c *pContext) CreateSubnetTxFee() uint64 {
+func (c *pContext) CreateNetTxFee() uint64 {
 	return c.createSubnetTxFee
 }
 
-func (c *pContext) TransformSubnetTxFee() uint64 {
+func (c *pContext) TransformNetTxFee() uint64 {
 	return c.transformSubnetTxFee
 }
 
@@ -137,10 +137,10 @@ func (c *pContext) AddPrimaryNetworkDelegatorFee() uint64 {
 	return c.addPrimaryNetworkDelegatorFee
 }
 
-func (c *pContext) AddSubnetValidatorFee() uint64 {
-	return c.addSubnetValidatorFee
+func (c *pContext) AddNetValidatorFee() uint64 {
+	return c.addNetValidatorFee
 }
 
-func (c *pContext) AddSubnetDelegatorFee() uint64 {
+func (c *pContext) AddNetDelegatorFee() uint64 {
 	return c.addSubnetDelegatorFee
 }

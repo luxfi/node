@@ -100,7 +100,7 @@ func TestCreateChainTxWrongControlSig(t *testing.T) {
 	require.ErrorIs(err, errUnauthorizedSubnetModification)
 }
 
-// Ensure Execute fails when the Subnet the blockchain specifies as
+// Ensure Execute fails when the Net the blockchain specifies as
 // its validator set doesn't exist
 func TestCreateChainTxNoSuchSubnet(t *testing.T) {
 	require := require.New(t)
@@ -120,7 +120,7 @@ func TestCreateChainTxNoSuchSubnet(t *testing.T) {
 	tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 	require.NoError(err)
 
-	tx.Unsigned.(*txs.CreateChainTx).SubnetID = ids.GenerateTestID()
+	tx.Unsigned.(*txs.CreateChainTx).NetID = ids.GenerateTestID()
 
 	stateDiff, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)

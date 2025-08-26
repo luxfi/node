@@ -189,7 +189,7 @@ func createTestDecisionTxs(count int) ([]*txs.Tx, error) {
 					},
 				}},
 			}},
-			SubnetID:    ids.GenerateTestID(),
+			NetID:    ids.GenerateTestID(),
 			ChainName:   "chainName",
 			VMID:        ids.GenerateTestID(),
 			FxIDs:       []ids.ID{ids.GenerateTestID()},

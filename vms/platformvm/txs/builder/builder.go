@@ -66,7 +66,7 @@ type AtomicTxBuilder interface {
 }
 
 type DecisionTxBuilder interface {
-	// subnetID: ID of the subnet that validates the new chain
+	// netID: ID of the net that validates the new chain
 	// genesisData: byte repr. of genesis state of the new chain
 	// vmID: ID of VM this chain runs
 	// fxIDs: ids of features extensions this chain supports
@@ -74,7 +74,7 @@ type DecisionTxBuilder interface {
 	// keys: keys to sign the tx
 	// changeAddr: address to send change to, if there is any
 	NewCreateChainTx(
-		subnetID ids.ID,
+		netID ids.ID,
 		genesisData []byte,
 		vmID ids.ID,
 		fxIDs []ids.ID,
@@ -87,7 +87,7 @@ type DecisionTxBuilder interface {
 	// ownerAddrs: control addresses for the new subnet
 	// keys: keys to pay the fee
 	// changeAddr: address to send change to, if there is any
-	NewCreateSubnetTx(
+	NewCreateNetTx(
 		threshold uint32,
 		ownerAddrs []ids.ShortID,
 		keys []*secp256k1.PrivateKey,
@@ -147,37 +147,37 @@ type ProposalTxBuilder interface {
 	// startTime: unix time they start delegating
 	// endTime:  unix time they top delegating
 	// nodeID: ID of the node validating
-	// subnetID: ID of the subnet the validator will validate
+	// netID: ID of the net the validator will validate
 	// keys: keys to use for adding the validator
 	// changeAddr: address to send change to, if there is any
-	NewAddSubnetValidatorTx(
+	NewAddNetValidatorTx(
 		weight,
 		startTime,
 		endTime uint64,
 		nodeID ids.NodeID,
-		subnetID ids.ID,
+		netID ids.ID,
 		keys []*secp256k1.PrivateKey,
 		changeAddr ids.ShortID,
 	) (*txs.Tx, error)
 
 	// Creates a transaction that removes [nodeID]
-	// as a validator from [subnetID]
+	// as a validator from [netID]
 	// keys: keys to use for removing the validator
 	// changeAddr: address to send change to, if there is any
-	NewRemoveSubnetValidatorTx(
+	NewRemoveNetValidatorTx(
 		nodeID ids.NodeID,
-		subnetID ids.ID,
+		netID ids.ID,
 		keys []*secp256k1.PrivateKey,
 		changeAddr ids.ShortID,
 	) (*txs.Tx, error)
 
-	// Creates a transaction that transfers ownership of [subnetID]
+	// Creates a transaction that transfers ownership of [netID]
 	// threshold: [threshold] of [ownerAddrs] needed to manage this subnet
 	// ownerAddrs: control addresses for the new subnet
 	// keys: keys to use for modifying the subnet
 	// changeAddr: address to send change to, if there is any
-	NewTransferSubnetOwnershipTx(
-		subnetID ids.ID,
+	NewTransferNetOwnershipTx(
+		netID ids.ID,
 		threshold uint32,
 		ownerAddrs []ids.ShortID,
 		keys []*secp256k1.PrivateKey,
@@ -371,7 +371,7 @@ func (b *builder) NewExportTx(
 }
 
 func (b *builder) NewCreateChainTx(
-	subnetID ids.ID,
+	netID ids.ID,
 	genesisData []byte,
 	vmID ids.ID,
 	fxIDs []ids.ID,
@@ -386,9 +386,9 @@ func (b *builder) NewCreateChainTx(
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
 
-	subnetAuth, subnetSigners, err := b.Authorize(b.state, subnetID, keys)
+	subnetAuth, subnetSigners, err := b.Authorize(b.state, netID, keys)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't authorize tx's subnet restrictions: %w", err)
+		return nil, fmt.Errorf("couldn't authorize tx's net restrictions: %w", err)
 	}
 	signers = append(signers, subnetSigners)
 
@@ -403,7 +403,7 @@ func (b *builder) NewCreateChainTx(
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		SubnetID:    subnetID,
+		NetID:    netID,
 		ChainName:   chainName,
 		VMID:        vmID,
 		FxIDs:       fxIDs,
@@ -417,14 +417,14 @@ func (b *builder) NewCreateChainTx(
 	return tx, tx.SyntacticVerify(b.ctx)
 }
 
-func (b *builder) NewCreateSubnetTx(
+func (b *builder) NewCreateNetTx(
 	threshold uint32,
 	ownerAddrs []ids.ShortID,
 	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
 	timestamp := b.state.GetTimestamp()
-	createSubnetTxFee := b.cfg.GetCreateSubnetTxFee(timestamp)
+	createSubnetTxFee := b.cfg.GetCreateNetTxFee(timestamp)
 	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, createSubnetTxFee, changeAddr)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
@@ -434,7 +434,7 @@ func (b *builder) NewCreateSubnetTx(
 	utils.Sort(ownerAddrs)
 
 	// Create the tx
-	utx := &txs.CreateSubnetTx{
+	utx := &txs.CreateNetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
@@ -537,12 +537,12 @@ func (b *builder) NewAddDelegatorTx(
 	return tx, tx.SyntacticVerify(b.ctx)
 }
 
-func (b *builder) NewAddSubnetValidatorTx(
+func (b *builder) NewAddNetValidatorTx(
 	weight,
 	startTime,
 	endTime uint64,
 	nodeID ids.NodeID,
-	subnetID ids.ID,
+	netID ids.ID,
 	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
@@ -551,28 +551,28 @@ func (b *builder) NewAddSubnetValidatorTx(
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
 
-	subnetAuth, subnetSigners, err := b.Authorize(b.state, subnetID, keys)
+	subnetAuth, subnetSigners, err := b.Authorize(b.state, netID, keys)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't authorize tx's subnet restrictions: %w", err)
+		return nil, fmt.Errorf("couldn't authorize tx's net restrictions: %w", err)
 	}
 	signers = append(signers, subnetSigners)
 
 	// Create the tx
-	utx := &txs.AddSubnetValidatorTx{
+	utx := &txs.AddNetValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		SubnetValidator: txs.SubnetValidator{
+		NetValidator: txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  startTime,
 				End:    endTime,
 				Wght:   weight,
 			},
-			Subnet: subnetID,
+			Subnet: netID,
 		},
 		SubnetAuth: subnetAuth,
 	}
@@ -583,9 +583,9 @@ func (b *builder) NewAddSubnetValidatorTx(
 	return tx, tx.SyntacticVerify(b.ctx)
 }
 
-func (b *builder) NewRemoveSubnetValidatorTx(
+func (b *builder) NewRemoveNetValidatorTx(
 	nodeID ids.NodeID,
-	subnetID ids.ID,
+	netID ids.ID,
 	keys []*secp256k1.PrivateKey,
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
@@ -594,21 +594,21 @@ func (b *builder) NewRemoveSubnetValidatorTx(
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
 
-	subnetAuth, subnetSigners, err := b.Authorize(b.state, subnetID, keys)
+	subnetAuth, subnetSigners, err := b.Authorize(b.state, netID, keys)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't authorize tx's subnet restrictions: %w", err)
+		return nil, fmt.Errorf("couldn't authorize tx's net restrictions: %w", err)
 	}
 	signers = append(signers, subnetSigners)
 
 	// Create the tx
-	utx := &txs.RemoveSubnetValidatorTx{
+	utx := &txs.RemoveNetValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		Subnet:     subnetID,
+		Subnet:     netID,
 		NodeID:     nodeID,
 		SubnetAuth: subnetAuth,
 	}
@@ -638,8 +638,8 @@ func (b *builder) NewRewardValidatorTx(txID ids.ID) (*txs.Tx, error) {
 	return tx, tx.SyntacticVerify(b.ctx)
 }
 
-func (b *builder) NewTransferSubnetOwnershipTx(
-	subnetID ids.ID,
+func (b *builder) NewTransferNetOwnershipTx(
+	netID ids.ID,
 	threshold uint32,
 	ownerAddrs []ids.ShortID,
 	keys []*secp256k1.PrivateKey,
@@ -650,20 +650,20 @@ func (b *builder) NewTransferSubnetOwnershipTx(
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
 
-	subnetAuth, subnetSigners, err := b.Authorize(b.state, subnetID, keys)
+	subnetAuth, subnetSigners, err := b.Authorize(b.state, netID, keys)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't authorize tx's subnet restrictions: %w", err)
+		return nil, fmt.Errorf("couldn't authorize tx's net restrictions: %w", err)
 	}
 	signers = append(signers, subnetSigners)
 
-	utx := &txs.TransferSubnetOwnershipTx{
+	utx := &txs.TransferNetOwnershipTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		Subnet:     subnetID,
+		Subnet:     netID,
 		SubnetAuth: subnetAuth,
 		Owner: &secp256k1fx.OutputOwners{
 			Threshold: threshold,

@@ -19,7 +19,7 @@ type ingressConnectionCounter interface {
 }
 
 type validatorRetriever interface {
-	GetValidator(subnetID ids.ID, nodeID ids.NodeID) (*validators.Validator, bool)
+	GetValidator(netID ids.ID, nodeID ids.NodeID) (*validators.Validator, bool)
 }
 
 func checkNoIngressConnections(selfID ids.NodeID, ingressConnections ingressConnectionCounter, validators validatorRetriever) (interface{}, error) {

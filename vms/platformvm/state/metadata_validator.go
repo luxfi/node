@@ -78,68 +78,68 @@ func parseValidatorMetadata(bytes []byte, metadata *validatorMetadata) error {
 }
 
 type validatorState interface {
-	// LoadValidatorMetadata sets the [metadata] of [vdrID] on [subnetID].
+	// LoadValidatorMetadata sets the [metadata] of [vdrID] on [netID].
 	// GetUptime and SetUptime will return an error if the [vdrID] and
-	// [subnetID] hasn't been loaded. This call will not result in a write to
+	// [netID] hasn't been loaded. This call will not result in a write to
 	// disk.
 	LoadValidatorMetadata(
 		vdrID ids.NodeID,
-		subnetID ids.ID,
+		netID ids.ID,
 		metadata *validatorMetadata,
 	)
 
 	// GetUptime returns the current uptime measurements of [vdrID] on
-	// [subnetID].
+	// [netID].
 	GetUptime(
 		vdrID ids.NodeID,
-		subnetID ids.ID,
+		netID ids.ID,
 	) (upDuration time.Duration, lastUpdated time.Time, err error)
 
-	// SetUptime updates the uptime measurements of [vdrID] on [subnetID].
+	// SetUptime updates the uptime measurements of [vdrID] on [netID].
 	// Unless these measurements are deleted first, the next call to
 	// WriteUptimes will write this update to disk.
 	SetUptime(
 		vdrID ids.NodeID,
-		subnetID ids.ID,
+		netID ids.ID,
 		upDuration time.Duration,
 		lastUpdated time.Time,
 	) error
 
 	// GetDelegateeReward returns the current rewards accrued to [vdrID] on
-	// [subnetID].
+	// [netID].
 	GetDelegateeReward(
-		subnetID ids.ID,
+		netID ids.ID,
 		vdrID ids.NodeID,
 	) (amount uint64, err error)
 
-	// SetDelegateeReward updates the rewards accrued to [vdrID] on [subnetID].
+	// SetDelegateeReward updates the rewards accrued to [vdrID] on [netID].
 	// Unless these measurements are deleted first, the next call to
 	// WriteUptimes will write this update to disk.
 	SetDelegateeReward(
-		subnetID ids.ID,
+		netID ids.ID,
 		vdrID ids.NodeID,
 		amount uint64,
 	) error
 
 	// DeleteValidatorMetadata removes in-memory references to the metadata of
-	// [vdrID] on [subnetID]. If there were staged updates from a prior call to
+	// [vdrID] on [netID]. If there were staged updates from a prior call to
 	// SetUptime or SetDelegateeReward, the updates will be dropped. This call
 	// will not result in a write to disk.
-	DeleteValidatorMetadata(vdrID ids.NodeID, subnetID ids.ID)
+	DeleteValidatorMetadata(vdrID ids.NodeID, netID ids.ID)
 
 	// WriteValidatorMetadata writes all staged updates from prior calls to
 	// SetUptime or SetDelegateeReward.
 	WriteValidatorMetadata(
 		dbPrimary database.KeyValueWriter,
-		dbSubnet database.KeyValueWriter,
+		dbNet database.KeyValueWriter,
 		codecVersion uint16,
 	) error
 }
 
 type metadata struct {
-	metadata map[ids.NodeID]map[ids.ID]*validatorMetadata // vdrID -> subnetID -> metadata
+	metadata map[ids.NodeID]map[ids.ID]*validatorMetadata // vdrID -> netID -> metadata
 	// updatedMetadata tracks the updates since WriteValidatorMetadata was last called
-	updatedMetadata map[ids.NodeID]set.Set[ids.ID] // vdrID -> subnetIDs
+	updatedMetadata map[ids.NodeID]set.Set[ids.ID] // vdrID -> netIDs
 }
 
 func newValidatorState() validatorState {
@@ -151,7 +151,7 @@ func newValidatorState() validatorState {
 
 func (m *metadata) LoadValidatorMetadata(
 	vdrID ids.NodeID,
-	subnetID ids.ID,
+	netID ids.ID,
 	uptime *validatorMetadata,
 ) {
 	subnetMetadata, ok := m.metadata[vdrID]
@@ -159,14 +159,14 @@ func (m *metadata) LoadValidatorMetadata(
 		subnetMetadata = make(map[ids.ID]*validatorMetadata)
 		m.metadata[vdrID] = subnetMetadata
 	}
-	subnetMetadata[subnetID] = uptime
+	subnetMetadata[netID] = uptime
 }
 
 func (m *metadata) GetUptime(
 	vdrID ids.NodeID,
-	subnetID ids.ID,
+	netID ids.ID,
 ) (time.Duration, time.Time, error) {
-	metadata, exists := m.metadata[vdrID][subnetID]
+	metadata, exists := m.metadata[vdrID][netID]
 	if !exists {
 		return 0, time.Time{}, database.ErrNotFound
 	}
@@ -175,26 +175,26 @@ func (m *metadata) GetUptime(
 
 func (m *metadata) SetUptime(
 	vdrID ids.NodeID,
-	subnetID ids.ID,
+	netID ids.ID,
 	upDuration time.Duration,
 	lastUpdated time.Time,
 ) error {
-	metadata, exists := m.metadata[vdrID][subnetID]
+	metadata, exists := m.metadata[vdrID][netID]
 	if !exists {
 		return database.ErrNotFound
 	}
 	metadata.UpDuration = upDuration
 	metadata.lastUpdated = lastUpdated
 
-	m.addUpdatedMetadata(vdrID, subnetID)
+	m.addUpdatedMetadata(vdrID, netID)
 	return nil
 }
 
 func (m *metadata) GetDelegateeReward(
-	subnetID ids.ID,
+	netID ids.ID,
 	vdrID ids.NodeID,
 ) (uint64, error) {
-	metadata, exists := m.metadata[vdrID][subnetID]
+	metadata, exists := m.metadata[vdrID][netID]
 	if !exists {
 		return 0, database.ErrNotFound
 	}
@@ -202,29 +202,29 @@ func (m *metadata) GetDelegateeReward(
 }
 
 func (m *metadata) SetDelegateeReward(
-	subnetID ids.ID,
+	netID ids.ID,
 	vdrID ids.NodeID,
 	amount uint64,
 ) error {
-	metadata, exists := m.metadata[vdrID][subnetID]
+	metadata, exists := m.metadata[vdrID][netID]
 	if !exists {
 		return database.ErrNotFound
 	}
 	metadata.PotentialDelegateeReward = amount
 
-	m.addUpdatedMetadata(vdrID, subnetID)
+	m.addUpdatedMetadata(vdrID, netID)
 	return nil
 }
 
-func (m *metadata) DeleteValidatorMetadata(vdrID ids.NodeID, subnetID ids.ID) {
+func (m *metadata) DeleteValidatorMetadata(vdrID ids.NodeID, netID ids.ID) {
 	subnetMetadata := m.metadata[vdrID]
-	delete(subnetMetadata, subnetID)
+	delete(subnetMetadata, netID)
 	if len(subnetMetadata) == 0 {
 		delete(m.metadata, vdrID)
 	}
 
 	subnetUpdatedMetadata := m.updatedMetadata[vdrID]
-	subnetUpdatedMetadata.Remove(subnetID)
+	subnetUpdatedMetadata.Remove(netID)
 	if subnetUpdatedMetadata.Len() == 0 {
 		delete(m.updatedMetadata, vdrID)
 	}
@@ -232,12 +232,12 @@ func (m *metadata) DeleteValidatorMetadata(vdrID ids.NodeID, subnetID ids.ID) {
 
 func (m *metadata) WriteValidatorMetadata(
 	dbPrimary database.KeyValueWriter,
-	dbSubnet database.KeyValueWriter,
+	dbNet database.KeyValueWriter,
 	codecVersion uint16,
 ) error {
 	for vdrID, updatedSubnets := range m.updatedMetadata {
-		for subnetID := range updatedSubnets {
-			metadata := m.metadata[vdrID][subnetID]
+		for netID := range updatedSubnets {
+			metadata := m.metadata[vdrID][netID]
 			metadata.LastUpdated = uint64(metadata.lastUpdated.Unix())
 
 			metadataBytes, err := MetadataCodec.Marshal(codecVersion, metadata)
@@ -245,7 +245,7 @@ func (m *metadata) WriteValidatorMetadata(
 				return err
 			}
 			db := dbSubnet
-			if subnetID == constants.PrimaryNetworkID {
+			if netID == constants.PrimaryNetworkID {
 				db = dbPrimary
 			}
 			if err := db.Put(metadata.txID[:], metadataBytes); err != nil {
@@ -257,11 +257,11 @@ func (m *metadata) WriteValidatorMetadata(
 	return nil
 }
 
-func (m *metadata) addUpdatedMetadata(vdrID ids.NodeID, subnetID ids.ID) {
+func (m *metadata) addUpdatedMetadata(vdrID ids.NodeID, netID ids.ID) {
 	updatedSubnetMetadata, ok := m.updatedMetadata[vdrID]
 	if !ok {
 		updatedSubnetMetadata = set.Set[ids.ID]{}
 		m.updatedMetadata[vdrID] = updatedSubnetMetadata
 	}
-	updatedSubnetMetadata.Add(subnetID)
+	updatedSubnetMetadata.Add(netID)
 }

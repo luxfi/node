@@ -19,7 +19,7 @@ import (
 	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/nets"
 )
 
 const chainConfigFilenameExtention = ".ex"
@@ -365,7 +365,7 @@ func TestGetVMAliasesDirNotExists(t *testing.T) {
 }
 
 func TestGetSubnetConfigsFromFile(t *testing.T) {
-	subnetID, err := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
+	netID, err := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
 	require.NoError(t, err)
 
 	tests := map[string]struct {
@@ -436,7 +436,7 @@ func TestGetSubnetConfigsFromFile(t *testing.T) {
 			setupFile(t, subnetPath, test.fileName, test.givenJSON)
 
 			v := setupViper(configFilePath)
-			subnetConfigs, err := getSubnetConfigs(v, []ids.ID{subnetID})
+			subnetConfigs, err := getSubnetConfigs(v, []ids.ID{netID})
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
 				return
@@ -447,7 +447,7 @@ func TestGetSubnetConfigsFromFile(t *testing.T) {
 }
 
 func TestGetSubnetConfigsFromFlags(t *testing.T) {
-	subnetID, err := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
+	netID, err := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
 	require.NoError(t, err)
 
 	tests := map[string]struct {
@@ -531,7 +531,7 @@ func TestGetSubnetConfigsFromFlags(t *testing.T) {
 			v := setupViperFlags()
 			v.Set(SubnetConfigContentKey, encodedFileContent)
 
-			subnetConfigs, err := getSubnetConfigs(v, []ids.ID{subnetID})
+			subnetConfigs, err := getSubnetConfigs(v, []ids.ID{netID})
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
 				return

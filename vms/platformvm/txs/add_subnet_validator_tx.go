@@ -14,46 +14,46 @@ import (
 )
 
 var (
-	_ StakerTx        = (*AddSubnetValidatorTx)(nil)
-	_ ScheduledStaker = (*AddSubnetValidatorTx)(nil)
+	_ StakerTx        = (*AddNetValidatorTx)(nil)
+	_ ScheduledStaker = (*AddNetValidatorTx)(nil)
 
-	errAddPrimaryNetworkValidator = errors.New("can't add primary network validator with AddSubnetValidatorTx")
+	errAddPrimaryNetworkValidator = errors.New("can't add primary network validator with AddNetValidatorTx")
 )
 
-// AddSubnetValidatorTx is an unsigned addSubnetValidatorTx
-type AddSubnetValidatorTx struct {
+// AddNetValidatorTx is an unsigned addNetValidatorTx
+type AddNetValidatorTx struct {
 	// Metadata, inputs and outputs
 	BaseTx `serialize:"true"`
 	// The validator
-	SubnetValidator `serialize:"true" json:"validator"`
+	NetValidator `serialize:"true" json:"validator"`
 	// Auth that will be allowing this validator into the network
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
-func (tx *AddSubnetValidatorTx) NodeID() ids.NodeID {
-	return tx.SubnetValidator.NodeID
+func (tx *AddNetValidatorTx) NodeID() ids.NodeID {
+	return tx.NetValidator.NodeID
 }
 
-func (*AddSubnetValidatorTx) PublicKey() (*bls.PublicKey, bool, error) {
+func (*AddNetValidatorTx) PublicKey() (*bls.PublicKey, bool, error) {
 	return nil, false, nil
 }
 
-func (*AddSubnetValidatorTx) PendingPriority() Priority {
+func (*AddNetValidatorTx) PendingPriority() Priority {
 	return SubnetPermissionedValidatorPendingPriority
 }
 
-func (*AddSubnetValidatorTx) CurrentPriority() Priority {
+func (*AddNetValidatorTx) CurrentPriority() Priority {
 	return SubnetPermissionedValidatorCurrentPriority
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddSubnetValidatorTx) SyntacticVerify(ctx context.Context) error {
+func (tx *AddNetValidatorTx) SyntacticVerify(ctx context.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
 	case tx.SyntacticallyVerified: // already passed syntactic verification
 		return nil
-	case tx.Subnet == constants.PrimaryNetworkID:
+	case tx.Net == constants.PrimaryNetworkID:
 		return errAddPrimaryNetworkValidator
 	}
 
@@ -69,12 +69,12 @@ func (tx *AddSubnetValidatorTx) SyntacticVerify(ctx context.Context) error {
 	return nil
 }
 
-func (tx *AddSubnetValidatorTx) Visit(visitor Visitor) error {
-	return visitor.AddSubnetValidatorTx(tx)
+func (tx *AddNetValidatorTx) Visit(visitor Visitor) error {
+	return visitor.AddNetValidatorTx(tx)
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *AddSubnetValidatorTx) InitializeWithContext(ctx context.Context) error {
+func (tx *AddNetValidatorTx) InitializeWithContext(ctx context.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

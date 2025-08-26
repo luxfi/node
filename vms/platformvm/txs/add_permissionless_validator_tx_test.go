@@ -195,7 +195,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x01, 0x07, 0xdc, 0x39,
 		// Stake weight
 		0x00, 0x00, 0x01, 0xd1, 0xa9, 0x4a, 0x20, 0x00,
-		// Primary network subnetID
+		// Primary network netID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -613,7 +613,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x01, 0x07, 0xdc, 0x39,
 		// Stake weight
 		0x00, 0x00, 0x04, 0x8c, 0x27, 0x39, 0x50, 0x00,
-		// Primary Network subnet ID
+		// Primary Network net ID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -711,7 +711,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	require.Greater(len(unsignedComplexAddPrimaryTxBytes), 100)
 }
 
-func TestAddPermissionlessSubnetValidator(t *testing.T) {
+func TestAddPermissionlessNetValidator(t *testing.T) {
 	require := require.New(t)
 	
 	var ctx context.Context
@@ -745,14 +745,14 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 		0x11, 0x22, 0x33, 0x44,
 	})
-	subnetID := ids.ID{
+	netID := ids.ID{
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
 		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
 	}
 
-	simpleAddSubnetTx := &AddPermissionlessValidatorTx{
+	simpleAddNetTx := &AddPermissionlessValidatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
 				NetworkID:    constants.MainnetID,
@@ -799,7 +799,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 			End:    12346,
 			Wght:   1,
 		},
-		Subnet: subnetID,
+		Subnet: netID,
 		Signer: &signer.Empty{},
 		StakeOuts: []*lux.TransferableOutput{
 			{
@@ -834,18 +834,18 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		},
 		DelegationShares: reward.PercentDenominator,
 	}
-	lux.SortTransferableOutputs(simpleAddSubnetTx.Outs, Codec)
-	lux.SortTransferableOutputs(simpleAddSubnetTx.StakeOuts, Codec)
-	utils.Sort(simpleAddSubnetTx.Ins)
+	lux.SortTransferableOutputs(simpleAddNetTx.Outs, Codec)
+	lux.SortTransferableOutputs(simpleAddNetTx.StakeOuts, Codec)
+	utils.Sort(simpleAddNetTx.Ins)
 	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
-	require.NoError(simpleAddSubnetTx.SyntacticVerify(ctx))
+	require.NoError(simpleAddNetTx.SyntacticVerify(ctx))
 
-	expectedUnsignedSimpleAddSubnetTxBytes := []byte{
+	expectedUnsignedSimpleAddNetTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
 		// AddPermissionlessValidatorTx type ID
@@ -915,7 +915,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x3a,
 		// Stake weight
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-		// SubnetID
+		// NetID
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
@@ -970,12 +970,12 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		// delegation shares
 		0x00, 0x0f, 0x42, 0x40,
 	}
-	var unsignedSimpleAddSubnetTx UnsignedTx = simpleAddSubnetTx
-	unsignedSimpleAddSubnetTxBytes, err := Codec.Marshal(CodecVersion, &unsignedSimpleAddSubnetTx)
+	var unsignedSimpleAddNetTx UnsignedTx = simpleAddNetTx
+	unsignedSimpleAddNetTxBytes, err := Codec.Marshal(CodecVersion, &unsignedSimpleAddNetTx)
 	require.NoError(err)
-	require.Equal(expectedUnsignedSimpleAddSubnetTxBytes, unsignedSimpleAddSubnetTxBytes)
+	require.Equal(expectedUnsignedSimpleAddNetTxBytes, unsignedSimpleAddNetTxBytes)
 
-	complexAddSubnetTx := &AddPermissionlessValidatorTx{
+	complexAddNetTx := &AddPermissionlessValidatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
 				NetworkID:    constants.MainnetID,
@@ -1090,7 +1090,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 			End:    12345 + 1,
 			Wght:   9,
 		},
-		Subnet: subnetID,
+		Subnet: netID,
 		Signer: &signer.Empty{},
 		StakeOuts: []*lux.TransferableOutput{
 			{
@@ -1145,9 +1145,9 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		ChainID:    testChainID,
 		LUXAssetID: luxAssetID,
 	})
-	require.NoError(complexAddSubnetTx.SyntacticVerify(ctx))
+	require.NoError(complexAddNetTx.SyntacticVerify(ctx))
 
-	expectedUnsignedComplexAddSubnetTxBytes := []byte{
+	expectedUnsignedComplexAddNetTxBytes := []byte{
 		// Codec version
 		0x00, 0x00,
 		// AddPermissionlessValidatorTx type ID
@@ -1310,7 +1310,7 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x3a,
 		// Stake weight
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09,
-		// subnetID
+		// netID
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
@@ -1380,10 +1380,10 @@ func TestAddPermissionlessSubnetValidator(t *testing.T) {
 		// delegation shares
 		0x00, 0x0f, 0x42, 0x40,
 	}
-	var unsignedComplexAddSubnetTx UnsignedTx = complexAddSubnetTx
-	unsignedComplexAddSubnetTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexAddSubnetTx)
+	var unsignedComplexAddNetTx UnsignedTx = complexAddNetTx
+	unsignedComplexAddNetTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexAddNetTx)
 	require.NoError(err)
-	require.Equal(expectedUnsignedComplexAddSubnetTxBytes, unsignedComplexAddSubnetTxBytes)
+	require.Equal(expectedUnsignedComplexAddNetTxBytes, unsignedComplexAddNetTxBytes)
 }
 
 func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
@@ -1760,7 +1760,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 			err: errValidatorWeightMismatch,
 		},
 		{
-			name: "valid subnet validator",
+			name: "valid net validator",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessValidatorTx {
 				rewardsOwner := fx.NewMockOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()

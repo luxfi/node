@@ -32,7 +32,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 
 	type test struct {
 		description string
-		subnetID    ids.ID
+		netID    ids.ID
 		genesisData []byte
 		vmID        ids.ID
 		fxIDs       []ids.ID
@@ -45,7 +45,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 	tests := []test{
 		{
 			description: "tx is nil",
-			subnetID:    testSubnet1ID,
+			netID:    testSubnet1ID,
 			genesisData: nil,
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
@@ -58,7 +58,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 		},
 		{
 			description: "vm ID is empty",
-			subnetID:    testSubnet1ID,
+			netID:    testSubnet1ID,
 			genesisData: nil,
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
@@ -72,21 +72,21 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 		},
 		{
 			description: "subnet ID is primary network ID",
-			subnetID:    testSubnet1ID,
+			netID:    testSubnet1ID,
 			genesisData: nil,
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
 			chainName:   "yeet",
 			keys:        []*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 			setup: func(tx *CreateChainTx) *CreateChainTx {
-				tx.SubnetID = constants.PrimaryNetworkID
+				tx.NetID = constants.PrimaryNetworkID
 				return tx
 			},
 			expectedErr: ErrCantValidatePrimaryNetwork,
 		},
 		{
 			description: "chain name is too long",
-			subnetID:    testSubnet1ID,
+			netID:    testSubnet1ID,
 			genesisData: nil,
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
@@ -100,7 +100,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 		},
 		{
 			description: "chain name has invalid character",
-			subnetID:    testSubnet1ID,
+			netID:    testSubnet1ID,
 			genesisData: nil,
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
@@ -114,7 +114,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 		},
 		{
 			description: "genesis data is too long",
-			subnetID:    testSubnet1ID,
+			netID:    testSubnet1ID,
 			genesisData: nil,
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
@@ -164,7 +164,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 					Ins:          inputs,
 					Outs:         outputs,
 				}},
-				SubnetID:    test.subnetID,
+				NetID:    test.netID,
 				ChainName:   test.chainName,
 				VMID:        test.vmID,
 				FxIDs:       test.fxIDs,

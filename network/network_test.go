@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"

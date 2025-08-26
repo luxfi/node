@@ -81,7 +81,7 @@ import (
 
 	"github.com/luxfi/node/vms/secp256k1fx"
 
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 )
@@ -233,8 +233,8 @@ func newEnvironment(t *testing.T, f fork) *environment {
 			// Only stop tracking if it was started
 			_ = env.uptimes.StopTracking(validatorIDs)
 
-			for subnetID := range env.config.TrackedSubnets {
-				validatorIDs := env.config.Validators.GetValidatorIDs(subnetID)
+			for netID := range env.config.TrackedSubnets {
+				validatorIDs := env.config.Validators.GetValidatorIDs(netID)
 
 				_ = env.uptimes.StopTracking(validatorIDs)
 			}
@@ -253,7 +253,7 @@ func addSubnet(t *testing.T, env *environment) {
 	require := require.New(t)
 
 	builder, signer := env.factory.NewWallet(preFundedKeys[0])
-	utx, err := builder.NewCreateSubnetTx(
+	utx, err := builder.NewCreateNetTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 2,
 			Addrs: []ids.ShortID{
@@ -324,7 +324,7 @@ func defaultConfig(t *testing.T, f fork) *config.Config {
 		Validators:             validators.NewManager(),
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                 defaultTxFee,
-			CreateSubnetTxFee:     100 * defaultTxFee,
+			CreateNetTxFee:     100 * defaultTxFee,
 			CreateBlockchainTxFee: 100 * defaultTxFee,
 		},
 		MinValidatorStake: 5 * units.MilliLux,

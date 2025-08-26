@@ -53,9 +53,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 		activeForkTime = time.Unix(0, 0)
 		now            = time.Now().Truncate(time.Second) // after activeForkTime
 
-		subnetID            = ids.GenerateTestID()
+		netID            = ids.GenerateTestID()
 		customAssetID       = ids.GenerateTestID()
-		unsignedTransformTx = &txs.TransformSubnetTx{
+		unsignedTransformTx = &txs.TransformNetTx{
 			AssetID:           customAssetID,
 			MinValidatorStake: 1,
 			MaxValidatorStake: 2,
@@ -87,7 +87,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				End:  uint64(endTime.Unix()),
 				Wght: unsignedTransformTx.MinValidatorStake,
 			},
-			Subnet: subnetID,
+			Subnet: netID,
 			StakeOuts: []*lux.TransferableOutput{
 				{
 					Asset: lux.Asset{
@@ -192,7 +192,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
 				state.EXPECT().GetTimestamp().Return(now) // chain time is after latest fork activation since now.After(activeForkTime)
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
+				state.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
 				return state
 			},
 			sTxF: func() *txs.Tx {
@@ -219,7 +219,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
 				state.EXPECT().GetTimestamp().Return(now) // chain time is after latest fork activation since now.After(activeForkTime)
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
+				state.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
 				return state
 			},
 			sTxF: func() *txs.Tx {
@@ -246,7 +246,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
 				state.EXPECT().GetTimestamp().Return(now) // chain time is after latest fork activation since now.After(activeForkTime)
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
+				state.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
 				return state
 			},
 			sTxF: func() *txs.Tx {
@@ -274,7 +274,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
 				state.EXPECT().GetTimestamp().Return(now) // chain time is after latest fork activation since now.After(activeForkTime)
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
+				state.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
 				return state
 			},
 			sTxF: func() *txs.Tx {
@@ -305,7 +305,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
 				state.EXPECT().GetTimestamp().Return(time.Unix(1, 0)) // chain time is after fork activation since time.Unix(1, 0).After(activeForkTime)
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
+				state.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
 				return state
 			},
 			sTxF: func() *txs.Tx {
@@ -336,7 +336,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				mockState := state.NewMockChain(ctrl)
 				mockState.EXPECT().GetTimestamp().Return(now) // chain time is after latest fork activation since now.After(activeForkTime)
-				mockState.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
+				mockState.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
 				return mockState
 			},
 			sTxF: func() *txs.Tx {
@@ -369,9 +369,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				mockState := state.NewMockChain(ctrl)
 				mockState.EXPECT().GetTimestamp().Return(now) // chain time is after latest fork activation since now.After(activeForkTime)
-				mockState.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
+				mockState.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
 				// State says validator exists
-				mockState.EXPECT().GetCurrentValidator(subnetID, verifiedTx.NodeID()).Return(nil, nil)
+				mockState.EXPECT().GetCurrentValidator(netID, verifiedTx.NodeID()).Return(nil, nil)
 				return mockState
 			},
 			sTxF: func() *txs.Tx {
@@ -396,9 +396,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				mockState := state.NewMockChain(ctrl)
 				mockState.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after latest fork activation since now.After(activeForkTime)
-				mockState.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
-				mockState.EXPECT().GetCurrentValidator(subnetID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
-				mockState.EXPECT().GetPendingValidator(subnetID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
+				mockState.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
+				mockState.EXPECT().GetCurrentValidator(netID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
+				mockState.EXPECT().GetPendingValidator(netID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
 				// Validator time isn't subset of primary network validator time
 				primaryNetworkVdr := &state.Staker{
 					EndTime: verifiedTx.EndTime().Add(-1 * time.Second),
@@ -431,7 +431,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				).Return(ErrFlowCheckFailed)
 
 				cfg := defaultTestConfig(t, durango, activeForkTime)
-				cfg.StaticFeeConfig.AddSubnetValidatorFee = 1
+				cfg.StaticFeeConfig.AddNetValidatorFee = 1
 
 				return &Backend{
 					FlowChecker:  flowChecker,
@@ -443,9 +443,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				mockState := state.NewMockChain(ctrl)
 				mockState.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after latest fork activation since now.After(activeForkTime)
-				mockState.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
-				mockState.EXPECT().GetCurrentValidator(subnetID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
-				mockState.EXPECT().GetPendingValidator(subnetID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
+				mockState.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
+				mockState.EXPECT().GetCurrentValidator(netID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
+				mockState.EXPECT().GetPendingValidator(netID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
 				primaryNetworkVdr := &state.Staker{
 					EndTime: mockable.MaxTime,
 				}
@@ -477,7 +477,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				).Return(nil)
 
 				cfg := defaultTestConfig(t, durango, activeForkTime)
-				cfg.StaticFeeConfig.AddSubnetValidatorFee = 1
+				cfg.StaticFeeConfig.AddNetValidatorFee = 1
 
 				return &Backend{
 					FlowChecker:  flowChecker,
@@ -489,9 +489,9 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				mockState := state.NewMockChain(ctrl)
 				mockState.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after Durango fork activation since now.After(activeForkTime)
-				mockState.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
-				mockState.EXPECT().GetCurrentValidator(subnetID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
-				mockState.EXPECT().GetPendingValidator(subnetID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
+				mockState.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
+				mockState.EXPECT().GetCurrentValidator(netID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
+				mockState.EXPECT().GetPendingValidator(netID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
 				primaryNetworkVdr := &state.Staker{
 					EndTime: mockable.MaxTime,
 				}
@@ -528,7 +528,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 func TestGetValidatorRules(t *testing.T) {
 	type test struct {
 		name          string
-		subnetID      ids.ID
+		netID      ids.ID
 		backend       *Backend
 		chainStateF   func(*gomock.Controller) state.Chain
 		expectedRules *addValidatorRules
@@ -545,13 +545,13 @@ func TestGetValidatorRules(t *testing.T) {
 		}
 		luxAssetID    = ids.GenerateTestID()
 		customAssetID = ids.GenerateTestID()
-		subnetID      = ids.GenerateTestID()
+		netID      = ids.GenerateTestID()
 	)
 
 	tests := []test{
 		{
 			name:     "primary network",
-			subnetID: constants.PrimaryNetworkID,
+			netID: constants.PrimaryNetworkID,
 			backend: &Backend{
 				Config: config,
 				Ctx: context.Background(),
@@ -569,12 +569,12 @@ func TestGetValidatorRules(t *testing.T) {
 			},
 		},
 		{
-			name:     "can't get subnet transformation",
-			subnetID: subnetID,
+			name:     "can't get net transformation",
+			netID: netID,
 			backend:  nil,
 			chainStateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(nil, errTest)
+				state.EXPECT().GetSubnetTransformation(netID).Return(nil, errTest)
 				return state
 			},
 			expectedRules: &addValidatorRules{},
@@ -582,27 +582,27 @@ func TestGetValidatorRules(t *testing.T) {
 		},
 		{
 			name:     "invalid transformation tx",
-			subnetID: subnetID,
+			netID: netID,
 			backend:  nil,
 			chainStateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
 				tx := &txs.Tx{
 					Unsigned: &txs.AddDelegatorTx{},
 				}
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(tx, nil)
+				state.EXPECT().GetSubnetTransformation(netID).Return(tx, nil)
 				return state
 			},
 			expectedRules: &addValidatorRules{},
-			expectedErr:   ErrIsNotTransformSubnetTx,
+			expectedErr:   ErrIsNotTransformNetTx,
 		},
 		{
 			name:     "subnet",
-			subnetID: subnetID,
+			netID: netID,
 			backend:  nil,
 			chainStateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
 				tx := &txs.Tx{
-					Unsigned: &txs.TransformSubnetTx{
+					Unsigned: &txs.TransformNetTx{
 						AssetID:           customAssetID,
 						MinValidatorStake: config.MinValidatorStake,
 						MaxValidatorStake: config.MaxValidatorStake,
@@ -611,7 +611,7 @@ func TestGetValidatorRules(t *testing.T) {
 						MinDelegationFee:  config.MinDelegationFee,
 					},
 				}
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(tx, nil)
+				state.EXPECT().GetSubnetTransformation(netID).Return(tx, nil)
 				return state
 			},
 			expectedRules: &addValidatorRules{
@@ -632,7 +632,7 @@ func TestGetValidatorRules(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
 			chainState := tt.chainStateF(ctrl)
-			rules, err := getValidatorRules(tt.backend, chainState, tt.subnetID)
+			rules, err := getValidatorRules(tt.backend, chainState, tt.netID)
 			if tt.expectedErr != nil {
 				require.ErrorIs(err, tt.expectedErr)
 				return
@@ -646,7 +646,7 @@ func TestGetValidatorRules(t *testing.T) {
 func TestGetDelegatorRules(t *testing.T) {
 	type test struct {
 		name          string
-		subnetID      ids.ID
+		netID      ids.ID
 		backend       *Backend
 		chainStateF   func(*gomock.Controller) state.Chain
 		expectedRules *addDelegatorRules
@@ -661,12 +661,12 @@ func TestGetDelegatorRules(t *testing.T) {
 		}
 		luxAssetID    = ids.GenerateTestID()
 		customAssetID = ids.GenerateTestID()
-		subnetID      = ids.GenerateTestID()
+		netID      = ids.GenerateTestID()
 	)
 	tests := []test{
 		{
 			name:     "primary network",
-			subnetID: constants.PrimaryNetworkID,
+			netID: constants.PrimaryNetworkID,
 			backend: &Backend{
 				Config: config,
 				Ctx: context.Background(),
@@ -684,12 +684,12 @@ func TestGetDelegatorRules(t *testing.T) {
 			},
 		},
 		{
-			name:     "can't get subnet transformation",
-			subnetID: subnetID,
+			name:     "can't get net transformation",
+			netID: netID,
 			backend:  nil,
 			chainStateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(nil, errTest)
+				state.EXPECT().GetSubnetTransformation(netID).Return(nil, errTest)
 				return state
 			},
 			expectedRules: &addDelegatorRules{},
@@ -697,27 +697,27 @@ func TestGetDelegatorRules(t *testing.T) {
 		},
 		{
 			name:     "invalid transformation tx",
-			subnetID: subnetID,
+			netID: netID,
 			backend:  nil,
 			chainStateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
 				tx := &txs.Tx{
 					Unsigned: &txs.AddDelegatorTx{},
 				}
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(tx, nil)
+				state.EXPECT().GetSubnetTransformation(netID).Return(tx, nil)
 				return state
 			},
 			expectedRules: &addDelegatorRules{},
-			expectedErr:   ErrIsNotTransformSubnetTx,
+			expectedErr:   ErrIsNotTransformNetTx,
 		},
 		{
 			name:     "subnet",
-			subnetID: subnetID,
+			netID: netID,
 			backend:  nil,
 			chainStateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
 				tx := &txs.Tx{
-					Unsigned: &txs.TransformSubnetTx{
+					Unsigned: &txs.TransformNetTx{
 						AssetID:                  customAssetID,
 						MinDelegatorStake:        config.MinDelegatorStake,
 						MinValidatorStake:        config.MinValidatorStake,
@@ -728,7 +728,7 @@ func TestGetDelegatorRules(t *testing.T) {
 						MaxValidatorWeightFactor: 21,
 					},
 				}
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(tx, nil)
+				state.EXPECT().GetSubnetTransformation(netID).Return(tx, nil)
 				return state
 			},
 			expectedRules: &addDelegatorRules{
@@ -748,7 +748,7 @@ func TestGetDelegatorRules(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
 			chainState := tt.chainStateF(ctrl)
-			rules, err := getDelegatorRules(tt.backend, chainState, tt.subnetID)
+			rules, err := getDelegatorRules(tt.backend, chainState, tt.netID)
 			if tt.expectedErr != nil {
 				require.ErrorIs(err, tt.expectedErr)
 				return

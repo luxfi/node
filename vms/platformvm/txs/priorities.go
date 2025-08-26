@@ -11,22 +11,22 @@ const (
 	PrimaryNetworkValidatorPendingPriority
 	// then primary network banff delegators,
 	PrimaryNetworkDelegatorBanffPendingPriority
-	// then permissionless subnet validators,
+	// then permissionless net validators,
 	SubnetPermissionlessValidatorPendingPriority
-	// then permissionless subnet delegators.
+	// then permissionless net delegators.
 	SubnetPermissionlessDelegatorPendingPriority
-	// then permissioned subnet validators,
+	// then permissioned net validators,
 	SubnetPermissionedValidatorPendingPriority
 
-	// First permissioned subnet validators are removed from the current
+	// First permissioned net validators are removed from the current
 	// validator set,
 	// Invariant: All permissioned stakers must be removed first because they
 	//            are removed by the advancement of time. Permissionless stakers
 	//            are removed with a RewardValidatorTx after time has advanced.
 	SubnetPermissionedValidatorCurrentPriority
-	// then permissionless subnet delegators,
+	// then permissionless net delegators,
 	SubnetPermissionlessDelegatorCurrentPriority
-	// then permissionless subnet validators,
+	// then permissionless net validators,
 	SubnetPermissionlessValidatorCurrentPriority
 	// then primary network delegators,
 	PrimaryNetworkDelegatorCurrentPriority

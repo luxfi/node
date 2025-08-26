@@ -14,11 +14,11 @@ import (
 
 var (
 	ErrSameChainID         = errors.New("same chainID")
-	ErrMismatchedSubnetIDs = errors.New("mismatched subnetIDs")
+	ErrMismatchedNetIDs = errors.New("mismatched netIDs")
 )
 
-// SameSubnet verifies that the provided [ctx] was provided to a chain in the
-// same subnet as [peerChainID], but not the same chain. If this verification
+// SameNet verifies that the provided [ctx] was provided to a chain in the
+// same net as [peerChainID], but not the same chain. If this verification
 // fails, a non-nil error will be returned.
 func SameSubnet(ctx context.Context, chainCtx context.Context, peerChainID ids.ID) error {
 	chainID := consensus.GetChainID(chainCtx)
@@ -33,13 +33,13 @@ func SameSubnet(ctx context.Context, chainCtx context.Context, peerChainID ids.I
 	if vs == nil {
 		return fmt.Errorf("no validator state found in context")
 	}
-	subnetID, err := vs.GetSubnetID(peerChainID)
+	netID, err := vs.GetNetID(peerChainID)
 	if err != nil {
-		return fmt.Errorf("failed to get subnet of %q: %w", peerChainID, err)
+		return fmt.Errorf("failed to get net of %q: %w", peerChainID, err)
 	}
-	mySubnetID := consensus.GetSubnetID(chainCtx)
-	if mySubnetID != subnetID {
-		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedSubnetIDs, mySubnetID, subnetID)
+	myNetID := consensus.GetNetID(chainCtx)
+	if myNetID != netID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, myNetID, netID)
 	}
 	return nil
 }

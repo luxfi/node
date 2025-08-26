@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 var _ Backend = (*backend)(nil)
@@ -33,7 +33,7 @@ type backend struct {
 	common.ChainUTXOs
 
 	ownersLock sync.RWMutex
-	owners     map[ids.ID]fx.Owner // subnetID or validationID -> owner
+	owners     map[ids.ID]fx.Owner // netID or validationID -> owner
 }
 
 func NewBackend(utxos common.ChainUTXOs, owners map[ids.ID]fx.Owner) Backend {
@@ -43,11 +43,11 @@ func NewBackend(utxos common.ChainUTXOs, owners map[ids.ID]fx.Owner) Backend {
 	}
 }
 
-func (b *backend) GetSubnetOwner(_ context.Context, subnetID ids.ID) (fx.Owner, error) {
+func (b *backend) GetSubnetOwner(_ context.Context, netID ids.ID) (fx.Owner, error) {
 	b.ownersLock.RLock()
 	defer b.ownersLock.RUnlock()
 
-	owner, exists := b.owners[subnetID]
+	owner, exists := b.owners[netID]
 	if !exists {
 		return nil, database.ErrNotFound
 	}

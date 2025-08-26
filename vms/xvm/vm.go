@@ -501,7 +501,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	vm.network, err = network.New(
 		vm.log,
 		consensus.GetNodeID(vm.ctx),
-		consensus.GetSubnetID(vm.ctx),
+		consensus.GetNetID(vm.ctx),
 		validatorStateWrapper,
 		vm.parser,
 		network.NewLockedTxVerifier(
@@ -851,9 +851,9 @@ func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, e
 	return v.vs.GetCurrentHeight()
 }
 
-func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	// Get the validator set from consensus.ValidatorState
-	valSet, err := v.vs.GetValidatorSet(height, subnetID)
+	valSet, err := v.vs.GetValidatorSet(height, netID)
 	if err != nil {
 		return nil, err
 	}
@@ -869,7 +869,7 @@ func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint
 	return result, nil
 }
 
-func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, subnetID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
 	// Get current height
 	height, err := v.vs.GetCurrentHeight()
 	if err != nil {
@@ -877,7 +877,7 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, subn
 	}
 
 	// Get validators at current height
-	valSet, err := v.vs.GetValidatorSet(height, subnetID)
+	valSet, err := v.vs.GetValidatorSet(height, netID)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -901,6 +901,6 @@ func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, e
 	return v.vs.GetMinimumHeight(ctx)
 }
 
-func (v *validatorStateWrapper) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return v.vs.GetSubnetID(chainID)
+func (v *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return v.vs.GetNetID(chainID)
 }

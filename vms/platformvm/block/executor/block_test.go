@@ -322,13 +322,13 @@ func TestBlockOptions(t *testing.T) {
 				var (
 					stakerTxID = ids.GenerateTestID()
 					nodeID     = ids.GenerateTestNodeID()
-					subnetID   = ids.GenerateTestID()
+					netID   = ids.GenerateTestID()
 					stakerTx   = &txs.Tx{
 						Unsigned: &txs.AddPermissionlessValidatorTx{
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Subnet: subnetID,
+							Subnet: netID,
 						},
 					}
 				)
@@ -373,13 +373,13 @@ func TestBlockOptions(t *testing.T) {
 				var (
 					stakerTxID = ids.GenerateTestID()
 					nodeID     = ids.GenerateTestNodeID()
-					subnetID   = constants.PrimaryNetworkID
+					netID   = constants.PrimaryNetworkID
 					stakerTx   = &txs.Tx{
 						Unsigned: &txs.AddPermissionlessValidatorTx{
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Subnet: subnetID,
+							Subnet: netID,
 						},
 					}
 					primaryNetworkValidatorStartTime = time.Now()
@@ -424,18 +424,18 @@ func TestBlockOptions(t *testing.T) {
 			expectedPreferenceType: &block.BanffCommitBlock{},
 		},
 		{
-			name: "banff proposal block; failed fetching subnet transformation",
+			name: "banff proposal block; failed fetching net transformation",
 			blkF: func(ctrl *gomock.Controller) *Block {
 				var (
 					stakerTxID = ids.GenerateTestID()
 					nodeID     = ids.GenerateTestNodeID()
-					subnetID   = ids.GenerateTestID()
+					netID   = ids.GenerateTestID()
 					stakerTx   = &txs.Tx{
 						Unsigned: &txs.AddPermissionlessValidatorTx{
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Subnet: subnetID,
+							Subnet: netID,
 						},
 					}
 					primaryNetworkValidatorStartTime = time.Now()
@@ -447,7 +447,7 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(nil, database.ErrNotFound)
+				state.EXPECT().GetSubnetTransformation(netID).Return(nil, database.ErrNotFound)
 
 				uptimes := uptimemock.NewCalculator(ctrl)
 
@@ -485,13 +485,13 @@ func TestBlockOptions(t *testing.T) {
 				var (
 					stakerTxID = ids.GenerateTestID()
 					nodeID     = ids.GenerateTestNodeID()
-					subnetID   = ids.GenerateTestID()
+					netID   = ids.GenerateTestID()
 					stakerTx   = &txs.Tx{
 						Unsigned: &txs.AddPermissionlessValidatorTx{
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Subnet: subnetID,
+							Subnet: netID,
 						},
 					}
 					primaryNetworkValidatorStartTime = time.Now()
@@ -499,7 +499,7 @@ func TestBlockOptions(t *testing.T) {
 						StartTime: primaryNetworkValidatorStartTime,
 					}
 					transformSubnetTx = &txs.Tx{
-						Unsigned: &txs.TransformSubnetTx{
+						Unsigned: &txs.TransformNetTx{
 							UptimeRequirement: .2 * reward.PercentDenominator,
 						},
 					}
@@ -508,7 +508,7 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(transformSubnetTx, nil)
+				state.EXPECT().GetSubnetTransformation(netID).Return(transformSubnetTx, nil)
 
 				uptimes := uptimemock.NewCalculator(ctrl)
 				uptimes.EXPECT().CalculateUptimePercentFrom(gomock.Any(), gomock.Any()).Return(.5, nil)
@@ -547,13 +547,13 @@ func TestBlockOptions(t *testing.T) {
 				var (
 					stakerTxID = ids.GenerateTestID()
 					nodeID     = ids.GenerateTestNodeID()
-					subnetID   = ids.GenerateTestID()
+					netID   = ids.GenerateTestID()
 					stakerTx   = &txs.Tx{
 						Unsigned: &txs.AddPermissionlessValidatorTx{
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Subnet: subnetID,
+							Subnet: netID,
 						},
 					}
 					primaryNetworkValidatorStartTime = time.Now()
@@ -561,7 +561,7 @@ func TestBlockOptions(t *testing.T) {
 						StartTime: primaryNetworkValidatorStartTime,
 					}
 					transformSubnetTx = &txs.Tx{
-						Unsigned: &txs.TransformSubnetTx{
+						Unsigned: &txs.TransformNetTx{
 							UptimeRequirement: .6 * reward.PercentDenominator,
 						},
 					}
@@ -570,7 +570,7 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
-				state.EXPECT().GetSubnetTransformation(subnetID).Return(transformSubnetTx, nil)
+				state.EXPECT().GetSubnetTransformation(netID).Return(transformSubnetTx, nil)
 
 				uptimes := uptimemock.NewCalculator(ctrl)
 				uptimes.EXPECT().CalculateUptimePercentFrom(gomock.Any(), gomock.Any()).Return(.5, nil)

@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/signer"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
 	"github.com/luxfi/node/wallet/keychain"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 func NewWallet(
@@ -34,7 +34,7 @@ func NewWallet(
 	config *config.Config,
 	state state.State,
 	kc *secp256k1fx.Keychain,
-	subnetIDs []ids.ID,
+	netIDs []ids.ID,
 	validationIDs []ids.ID,
 	chainIDs []ids.ID,
 ) wallet.Wallet {
@@ -78,11 +78,11 @@ func NewWallet(
 		}
 	}
 
-	owners := make(map[ids.ID]fx.Owner, len(subnetIDs)+len(validationIDs))
-	for _, subnetID := range subnetIDs {
-		owner, err := state.GetSubnetOwner(subnetID)
+	owners := make(map[ids.ID]fx.Owner, len(netIDs)+len(validationIDs))
+	for _, netID := range netIDs {
+		owner, err := state.GetSubnetOwner(netID)
 		require.NoError(err)
-		owners[subnetID] = owner
+		owners[netID] = owner
 	}
 	for _, validationID := range validationIDs {
 		l1Validator, err := state.GetL1Validator(validationID)

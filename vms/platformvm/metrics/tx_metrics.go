@@ -41,7 +41,7 @@ func (m *txMetrics) AddValidatorTx(*txs.AddValidatorTx) error {
 	return nil
 }
 
-func (m *txMetrics) AddSubnetValidatorTx(*txs.AddSubnetValidatorTx) error {
+func (m *txMetrics) AddNetValidatorTx(*txs.AddNetValidatorTx) error {
 	m.numTxs.With(prometheus.Labels{
 		txLabel: "add_subnet_validator",
 	}).Inc()
@@ -62,7 +62,7 @@ func (m *txMetrics) CreateChainTx(*txs.CreateChainTx) error {
 	return nil
 }
 
-func (m *txMetrics) CreateSubnetTx(*txs.CreateSubnetTx) error {
+func (m *txMetrics) CreateNetTx(*txs.CreateNetTx) error {
 	m.numTxs.With(prometheus.Labels{
 		txLabel: "create_subnet",
 	}).Inc()
@@ -97,14 +97,14 @@ func (m *txMetrics) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return nil
 }
 
-func (m *txMetrics) RemoveSubnetValidatorTx(*txs.RemoveSubnetValidatorTx) error {
+func (m *txMetrics) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
 	m.numTxs.With(prometheus.Labels{
 		txLabel: "remove_subnet_validator",
 	}).Inc()
 	return nil
 }
 
-func (m *txMetrics) TransformSubnetTx(*txs.TransformSubnetTx) error {
+func (m *txMetrics) TransformNetTx(*txs.TransformNetTx) error {
 	m.numTxs.With(prometheus.Labels{
 		txLabel: "transform_subnet",
 	}).Inc()
@@ -125,7 +125,7 @@ func (m *txMetrics) AddPermissionlessDelegatorTx(*txs.AddPermissionlessDelegator
 	return nil
 }
 
-func (m *txMetrics) TransferSubnetOwnershipTx(*txs.TransferSubnetOwnershipTx) error {
+func (m *txMetrics) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
 	m.numTxs.With(prometheus.Labels{
 		txLabel: "transfer_subnet_ownership",
 	}).Inc()
@@ -168,7 +168,7 @@ func (m *txMetrics) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error {
 	return nil
 }
 
-func (m *txMetrics) ConvertSubnetToL1Tx(*txs.ConvertSubnetToL1Tx) error {
+func (m *txMetrics) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
 	m.numTxs.With(prometheus.Labels{
 		txLabel: "convert_subnet_to_l1",
 	}).Inc()
