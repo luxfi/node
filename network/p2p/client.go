@@ -136,21 +136,11 @@ func (c *Client) AppGossip(
 	ctxWithoutCancel := context.WithoutCancel(ctx)
 
 	// Extract nodeIDs from config
-	var nodeIDs set.Set[ids.NodeID]
-	if config.NodeIDs != nil {
-		switch v := config.NodeIDs.(type) {
-		case set.Set[ids.NodeID]:
-			nodeIDs = v
-		case []ids.NodeID:
-			nodeIDs = set.NewSet[ids.NodeID](len(v))
-			for _, id := range v {
-				nodeIDs.Add(id)
-			}
-		default:
-			nodeIDs = set.NewSet[ids.NodeID](0)
+	nodeIDs := set.NewSet[ids.NodeID](len(config.NodeIDs))
+	for _, nodeIDIntf := range config.NodeIDs {
+		if nodeID, ok := nodeIDIntf.(ids.NodeID); ok {
+			nodeIDs.Add(nodeID)
 		}
-	} else {
-		nodeIDs = set.NewSet[ids.NodeID](0)
 	}
 	
 	return c.sender.SendAppGossip(
