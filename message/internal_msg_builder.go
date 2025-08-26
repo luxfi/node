@@ -499,6 +499,9 @@ type ConnectedNet struct {
 	NetID ids.ID `json:"subnet_id,omitempty"`
 }
 
+// ConnectedSubnet is an alias for ConnectedNet for compatibility
+type ConnectedSubnet = ConnectedNet
+
 func (m *ConnectedSubnet) String() string {
 	return fmt.Sprintf(
 		"NetID: %s",
