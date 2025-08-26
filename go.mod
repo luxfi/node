@@ -237,7 +237,7 @@ replace github.com/luxfi/qzmq => ../qzmq
 
 replace github.com/luxfi/geth => ../geth
 
-replace github.com/luxfi/consensus => ../consensus
+replace github.com/luxfi/consensus => /Users/z/work/lux/consensus
 
 replace github.com/luxfi/crypto => ../crypto
 
