@@ -14,7 +14,7 @@ import (
 
 	luxmetrics "github.com/luxfi/metric"
 
-	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/consensus/router"
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	consensusset "github.com/luxfi/consensus/utils/set"
@@ -121,7 +121,7 @@ func StartTestPeer(
 			PongTimeout:          constants.DefaultPingPongTimeout,
 			MaxClockDifference:   time.Minute,
 			ResourceTracker:      resourceTracker,
-			UptimeCalculator:     uptime.NoOpCalculator,
+			UptimeCalculator:     &uptime.NoOpCalculator{},
 			IPSigner: NewIPSigner(
 				utils.NewAtomic(netip.AddrPortFrom(
 					netip.IPv6Loopback(),
@@ -146,8 +146,8 @@ func StartTestPeer(
 // testResourceTracker is a minimal implementation for testing
 type testResourceTracker struct{}
 
-func (t *testResourceTracker) CPUTracker() tracker.Tracker {
-	return &testTracker{}
+func (t *testResourceTracker) CPUTracker() tracker.CPUTracker {
+	return &testCPUTracker{}
 }
 
 func (t *testResourceTracker) DiskTracker() tracker.DiskTracker {
@@ -156,6 +156,12 @@ func (t *testResourceTracker) DiskTracker() tracker.DiskTracker {
 
 func (t *testResourceTracker) StartProcessing(ids.NodeID, time.Time) {}
 func (t *testResourceTracker) StopProcessing(ids.NodeID, time.Time)  {}
+
+// testCPUTracker is a minimal CPU tracker implementation
+type testCPUTracker struct{}
+
+func (t *testCPUTracker) Usage(ids.NodeID, time.Time) float64                         { return 0 }
+func (t *testCPUTracker) TimeUntilUsage(ids.NodeID, time.Time, float64) time.Duration { return 0 }
 
 // testTracker is a minimal tracker implementation
 type testTracker struct{}
@@ -174,7 +180,7 @@ func (t *testDiskTracker) AvailableDiskBytes() uint64 { return 1 << 30 } // 1GB
 // testValidatorManager is a minimal validator manager implementation for testing
 type testValidatorManager struct{}
 
-func (m *testValidatorManager) GetValidators(netID ids.ID) ([]ids.NodeID, error) {
+func (m *testValidatorManager) GetValidators(netID ids.ID) (validators.Set, error) {
 	return nil, nil
 }
 
@@ -182,7 +188,7 @@ func (m *testValidatorManager) GetValidatorIDs(netID ids.ID) []ids.NodeID {
 	return nil
 }
 
-func (m *testValidatorManager) GetValidator(netID ids.ID, nodeID ids.NodeID) (*validators.Validator, bool) {
+func (m *testValidatorManager) GetValidator(netID ids.ID, nodeID ids.NodeID) (*validators.GetValidatorOutput, bool) {
 	return nil, false
 }
 
@@ -190,7 +196,15 @@ func (m *testValidatorManager) GetWeight(netID ids.ID, nodeID ids.NodeID) uint64
 	return 0
 }
 
+func (m *testValidatorManager) GetLight(netID ids.ID, nodeID ids.NodeID) uint64 {
+	return 0
+}
+
 func (m *testValidatorManager) TotalWeight(netID ids.ID) (uint64, error) {
+	return 0, nil
+}
+
+func (m *testValidatorManager) TotalLight(netID ids.ID) (uint64, error) {
 	return 0, nil
 }
 

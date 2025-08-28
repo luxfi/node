@@ -11,6 +11,16 @@ import (
 	"github.com/luxfi/math/set"
 )
 
+type subnet struct {
+	lock             sync.RWMutex
+	bootstrapping    set.Set[ids.ID]
+	bootstrapped     set.Set[ids.ID]
+	once             sync.Once
+	bootstrappedSema chan struct{}
+	config           Config
+	myNodeID         ids.NodeID
+}
+
 var _ Net = (*subnet)(nil)
 
 type Allower interface {

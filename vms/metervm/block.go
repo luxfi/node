@@ -33,6 +33,11 @@ func (mb *meterBlock) ID() ids.ID {
 	return mb.innerBlock.ID()
 }
 
+// Parent returns the parent block's ID (chain.Block compatibility)
+func (mb *meterBlock) Parent() ids.ID {
+	return mb.innerBlock.Parent()
+}
+
 // ParentID returns the parent block's ID (block.Block expects ParentID)
 func (mb *meterBlock) ParentID() ids.ID {
 	return mb.innerBlock.Parent()
