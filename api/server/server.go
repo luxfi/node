@@ -21,7 +21,6 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
@@ -262,14 +261,15 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 // not done state-syncing/bootstrapping, writes back an error.
 func rejectMiddleware(handler http.Handler, ctx context.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO: Add chain state checking when interfaces are available
 		// Check if chain state is available in context
-		if stateHolder, ok := ctx.Value("stateHolder").(*interfaces.StateHolder); ok {
-			state := stateHolder.Get()
-			if state == interfaces.StateSyncing || state == interfaces.Bootstrapping {
-				w.WriteHeader(http.StatusServiceUnavailable)
-				return
-			}
-		}
+		// if stateHolder, ok := ctx.Value("stateHolder").(*interfaces.StateHolder); ok {
+		// 	state := stateHolder.Get()
+		// 	if state == interfaces.StateSyncing || state == interfaces.Bootstrapping {
+		// 		w.WriteHeader(http.StatusServiceUnavailable)
+		// 		return
+		// 	}
+		// }
 		handler.ServeHTTP(w, r)
 	})
 }
