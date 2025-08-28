@@ -13,11 +13,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/heap"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/version"
 
 	safemath "github.com/luxfi/math/math"
 )

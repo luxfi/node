@@ -8,14 +8,17 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/consensus/engine/vertex"
+	"github.com/luxfi/consensus/snow"
+	"github.com/luxfi/database/manager"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 var (
 	_ vertex.LinearizableVMWithEngine = (*vertexVM)(nil)
-	_ dag.Tx                          = (*meterTx)(nil)
+	_ dag.Transaction                 = (*meterTx)(nil)
 )
 
 func NewVertexVM(
@@ -37,13 +40,13 @@ type vertexVM struct {
 
 func (vm *vertexVM) Initialize(
 	ctx context.Context,
-	chainCtx interface{},
-	db interface{},
+	chainCtx *snow.Context,
+	dbManager manager.Manager,
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
-	toEngine chan<- interface{},
-	fxs []interface{},
+	toEngine chan<- core.Message,
+	fxs []*core.Fx,
 	appSender interface{},
 ) error {
 	if err := vm.vertexMetrics.Initialize(vm.registry); err != nil {
@@ -53,7 +56,7 @@ func (vm *vertexVM) Initialize(
 	return vm.LinearizableVMWithEngine.Initialize(
 		ctx,
 		chainCtx,
-		db,
+		dbManager,
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
@@ -63,7 +66,7 @@ func (vm *vertexVM) Initialize(
 	)
 }
 
-func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (dag.Tx, error) {
+func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (dag.Transaction, error) {
 	start := vm.clock.Time()
 	tx, err := vm.LinearizableVMWithEngine.ParseTx(ctx, b)
 	end := vm.clock.Time()
@@ -76,20 +79,20 @@ func (vm *vertexVM) ParseTx(ctx context.Context, b []byte) (dag.Tx, error) {
 
 	// Wrap it with meterTx
 	return &meterTx{
-		Tx: tx,
-		vm: vm,
+		Transaction: tx,
+		vm:          vm,
 	}, nil
 }
 
 type meterTx struct {
-	dag.Tx
+	dag.Transaction
 
 	vm *vertexVM
 }
 
 func (mtx *meterTx) Verify(ctx context.Context) error {
 	start := mtx.vm.clock.Time()
-	err := mtx.Tx.Verify(ctx)
+	err := mtx.Transaction.Verify(ctx)
 	end := mtx.vm.clock.Time()
 	duration := float64(end.Sub(start))
 	if err != nil {
@@ -102,7 +105,7 @@ func (mtx *meterTx) Verify(ctx context.Context) error {
 
 func (mtx *meterTx) Accept(ctx context.Context) error {
 	start := mtx.vm.clock.Time()
-	err := mtx.Tx.Accept(ctx)
+	err := mtx.Transaction.Accept(ctx)
 	end := mtx.vm.clock.Time()
 	mtx.vm.vertexMetrics.accept.Observe(float64(end.Sub(start)))
 	return err
