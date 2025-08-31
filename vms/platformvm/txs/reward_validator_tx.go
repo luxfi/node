@@ -36,6 +36,11 @@ func (tx *RewardValidatorTx) SetBytes(unsignedBytes []byte) {
 
 func (*RewardValidatorTx) InitCtx(context.Context) {}
 
+// InitializeContext initializes the context for this transaction
+func (*RewardValidatorTx) InitializeContext(context.Context) error {
+	return nil
+}
+
 func (tx *RewardValidatorTx) Bytes() []byte {
 	return tx.unsignedBytes
 }

@@ -51,7 +51,7 @@ func (tx *AddValidatorTx) InitCtx(ctx context.Context) {
 		out.FxID = secp256k1fx.ID
 		out.InitCtx(ctx)
 	}
-	tx.RewardsOwner.InitCtx(ctx)
+	// Owner doesn't have InitCtx method
 }
 
 func (*AddValidatorTx) NetID() ids.ID {

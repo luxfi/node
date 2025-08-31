@@ -25,10 +25,17 @@ type OperationTx struct {
 }
 
 func (t *OperationTx) InitCtx(ctx context.Context) {
-	for _, op := range t.Ops {
-		op.Op.InitCtx(ctx)
-	}
+	// FxOperation doesn't have InitCtx method
+	// for _, op := range t.Ops {
+	//     op.Op.InitCtx(ctx)
+	// }
 	t.BaseTx.InitCtx(ctx)
+}
+
+// InitializeContext initializes the context for this transaction
+func (t *OperationTx) InitializeContext(ctx context.Context) error {
+	t.InitCtx(ctx)
+	return nil
 }
 
 // Operations track which ops this transaction is performing. The returned array

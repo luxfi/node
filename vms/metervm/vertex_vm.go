@@ -113,7 +113,7 @@ func (mtx *meterTx) Accept(ctx context.Context) error {
 
 func (mtx *meterTx) Reject(ctx context.Context) error {
 	start := mtx.vm.clock.Time()
-	err := mtx.Tx.Reject(ctx)
+	err := mtx.Transaction.Reject(ctx)
 	end := mtx.vm.clock.Time()
 	mtx.vm.vertexMetrics.reject.Observe(float64(end.Sub(start)))
 	return err

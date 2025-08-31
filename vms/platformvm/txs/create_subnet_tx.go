@@ -24,7 +24,7 @@ type CreateNetTx struct {
 // the addresses can be json marshalled into human readable format
 func (tx *CreateNetTx) InitCtx(ctx context.Context) {
 	tx.BaseTx.InitCtx(ctx)
-	tx.Owner.InitCtx(ctx)
+	// Owner doesn't have InitCtx method
 }
 
 // SyntacticVerify verifies that this transaction is well-formed

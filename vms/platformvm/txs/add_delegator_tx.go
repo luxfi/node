@@ -48,7 +48,7 @@ func (tx *AddDelegatorTx) InitCtx(ctx context.Context) {
 		out.FxID = secp256k1fx.ID
 		out.InitCtx(ctx)
 	}
-	tx.DelegationRewardsOwner.InitCtx(ctx)
+	// Owner doesn't have InitCtx method
 }
 
 func (*AddDelegatorTx) NetID() ids.ID {

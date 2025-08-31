@@ -43,7 +43,7 @@ func (b *postForkOption) FPCVotes() [][]byte {
 }
 
 func (b *postForkOption) Timestamp() time.Time {
-	if b.Status() == choices.Accepted {
+	if choices.Status(b.Status()) == choices.Accepted {
 		return b.vm.lastAcceptedTime
 	}
 	return b.timestamp

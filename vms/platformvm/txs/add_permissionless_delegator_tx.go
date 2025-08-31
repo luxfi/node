@@ -45,11 +45,11 @@ func (tx *AddPermissionlessDelegatorTx) InitCtx(ctx context.Context) {
 		out.FxID = secp256k1fx.ID
 		out.InitCtx(ctx)
 	}
-	tx.DelegationRewardsOwner.InitCtx(ctx)
+	// Owner doesn't have InitCtx method
 }
 
 func (tx *AddPermissionlessDelegatorTx) NetID() ids.ID {
-	return tx.Subnet
+	return tx.Net
 }
 
 func (tx *AddPermissionlessDelegatorTx) NodeID() ids.NodeID {

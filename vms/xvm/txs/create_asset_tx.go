@@ -30,6 +30,12 @@ func (t *CreateAssetTx) InitCtx(ctx context.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 
+// InitializeContext initializes the context for this transaction
+func (t *CreateAssetTx) InitializeContext(ctx context.Context) error {
+	t.InitCtx(ctx)
+	return nil
+}
+
 // InitialStates track which virtual machines, and the initial state of these
 // machines, this asset uses. The returned array should not be modified.
 func (t *CreateAssetTx) InitialStates() []*InitialState {

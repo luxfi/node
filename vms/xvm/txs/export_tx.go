@@ -34,6 +34,12 @@ func (t *ExportTx) InitCtx(ctx context.Context) {
 	t.BaseTx.InitCtx(ctx)
 }
 
+// InitializeContext initializes the context for this transaction
+func (t *ExportTx) InitializeContext(ctx context.Context) error {
+	t.InitCtx(ctx)
+	return nil
+}
+
 func (t *ExportTx) Visit(v Visitor) error {
 	return v.ExportTx(t)
 }

@@ -18,7 +18,7 @@ type NetValidator struct {
 
 // NetID is the ID of the net this validator is validating
 func (v *NetValidator) NetID() ids.ID {
-	return v.Subnet
+	return v.Net
 }
 
 // Verify this validator is valid
