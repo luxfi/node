@@ -10,6 +10,7 @@ import (
 
 	"github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/consensus/engine/vertex"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/trace"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
@@ -29,34 +30,9 @@ func NewVertexVM(vm vertex.LinearizableVMWithEngine, tracer trace.Tracer) vertex
 	}
 }
 
-func (vm *vertexVM) Initialize(
-	ctx context.Context,
-	chainCtx interface{},
-	dbManager interface{},
-	genesisBytes []byte,
-	upgradeBytes []byte,
-	configBytes []byte,
-	msgChan chan<- interface{},
-	fxs []interface{},
-	appSender interface{},
-) error {
-	ctx, span := vm.tracer.Start(ctx, "vertexVM.Initialize")
-	defer span.End()
+// Initialize is not overridden - use the embedded implementation directly
 
-	return vm.LinearizableVMWithEngine.Initialize(
-		ctx,
-		chainCtx,
-		dbManager,
-		genesisBytes,
-		upgradeBytes,
-		configBytes,
-		msgChan,
-		fxs,
-		appSender,
-	)
-}
-
-func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (dag.Tx, error) {
+func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (dag.Transaction, error) {
 	ctx, span := vm.tracer.Start(ctx, "vertexVM.ParseTx", oteltrace.WithAttributes(
 		attribute.Int("txLen", len(txBytes)),
 	))
@@ -67,9 +43,45 @@ func (vm *vertexVM) ParseTx(ctx context.Context, txBytes []byte) (dag.Tx, error)
 		return nil, err
 	}
 
-	// Wrap it with tracedTx
-	return &tracedTx{
-		Tx:     tx,
-		tracer: vm.tracer,
+	// Wrap it with tracedTransaction
+	return &tracedTransaction{
+		Transaction: tx,
+		tracer:      vm.tracer,
 	}, nil
+}
+
+func (vm *vertexVM) GetTx(ctx context.Context, txID ids.ID) (dag.Transaction, error) {
+	ctx, span := vm.tracer.Start(ctx, "vertexVM.GetTx", oteltrace.WithAttributes(
+		attribute.Stringer("txID", txID),
+	))
+	defer span.End()
+
+	tx, err := vm.LinearizableVMWithEngine.GetTx(ctx, txID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wrap it with tracedTransaction
+	return &tracedTransaction{
+		Transaction: tx,
+		tracer:      vm.tracer,
+	}, nil
+}
+
+func (vm *vertexVM) PendingTxs(ctx context.Context) []dag.Transaction {
+	ctx, span := vm.tracer.Start(ctx, "vertexVM.PendingTxs")
+	defer span.End()
+
+	txs := vm.LinearizableVMWithEngine.PendingTxs(ctx)
+	
+	// Wrap all transactions
+	wrappedTxs := make([]dag.Transaction, len(txs))
+	for i, tx := range txs {
+		wrappedTxs[i] = &tracedTransaction{
+			Transaction: tx,
+			tracer:      vm.tracer,
+		}
+	}
+	
+	return wrappedTxs
 }

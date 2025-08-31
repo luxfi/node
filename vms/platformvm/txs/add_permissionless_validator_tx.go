@@ -67,12 +67,13 @@ func (tx *AddPermissionlessValidatorTx) InitCtx(ctx context.Context) {
 		out.FxID = secp256k1fx.ID
 		out.InitCtx(ctx)
 	}
-	tx.ValidatorRewardsOwner.InitCtx(ctx)
-	tx.DelegatorRewardsOwner.InitCtx(ctx)
+	// Owner doesn't have InitCtx method
+	// tx.ValidatorRewardsOwner.InitCtx(ctx)
+	// tx.DelegatorRewardsOwner.InitCtx(ctx)
 }
 
 func (tx *AddPermissionlessValidatorTx) NetID() ids.ID {
-	return tx.Subnet
+	return tx.Net
 }
 
 func (tx *AddPermissionlessValidatorTx) NodeID() ids.NodeID {

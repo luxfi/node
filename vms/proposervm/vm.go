@@ -15,11 +15,13 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/core/interfaces"
+	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
+	"github.com/luxfi/database/manager"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
@@ -136,19 +138,47 @@ func New(
 
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *block.ChainContext,
-	dbManager block.DBManager,
+	chainCtxIntf interface{},
+	dbManagerIntf interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- block.Message,
-	fxs []*block.Fx,
-	appSender block.AppSender,
+	toEngineIntf interface{},
+	fxsIntf []interface{},
+	appSender interface{},
 ) error {
+	// Type assert to proper types
+	chainCtx, ok := chainCtxIntf.(*block.ChainContext)
+	if !ok {
+		return fmt.Errorf("invalid chain context type")
+	}
+	// dbManagerIntf is actually a database.Database in practice
+	db, ok := dbManagerIntf.(database.Database)
+	if !ok {
+		// Try as manager
+		if _, ok := dbManagerIntf.(manager.Manager); ok {
+			// If it's a manager, we need to create/get a database from it
+			// For now, just error as we don't have the config
+			return fmt.Errorf("received manager instead of database")
+		}
+		return fmt.Errorf("invalid database type") 
+	}
+	_, ok = toEngineIntf.(chan<- block.Message)
+	if !ok {
+		return fmt.Errorf("invalid message channel type")
+	}
+	
+	// Convert fxs
+	var fxs []*block.Fx
+	for _, fx := range fxsIntf {
+		if blockFx, ok := fx.(*block.Fx); ok {
+			fxs = append(fxs, blockFx)
+		}
+	}
 	// Set IDs once at initialization
 	vm.ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: chainCtx.NetworkID,
-		NetID:  chainCtx.NetID,
+		NetID:  chainCtx.SubnetID,
 		ChainID:   chainCtx.ChainID,
 		NodeID:    chainCtx.NodeID,
 		PublicKey: chainCtx.PublicKey,
@@ -165,7 +195,6 @@ func (vm *VM) Initialize(
 	// Store log directly on VM
 	vm.log = chainCtx.Log
 
-	db := dbManager.Current()
 	vm.db = versiondb.New(prefixdb.New(dbPrefix, db))
 	baseState, err := state.NewMetered(vm.db, "state", vm.Config.Registerer)
 	if err != nil {
@@ -178,7 +207,7 @@ func (vm *VM) Initialize(
 	vs := consensus.GetValidatorState(vm.ctx)
 	if vs != nil {
 		validatorStateWrapper := &validatorStateWrapper{ctx: vm.ctx, vs: vs}
-		vm.Windower = proposer.New(validatorStateWrapper, chainCtx.NetID, chainCtx.ChainID)
+		vm.Windower = proposer.New(validatorStateWrapper, chainCtx.SubnetID, chainCtx.ChainID)
 	} else {
 		// Create a minimal implementation for now
 		vm.log.Warn("ValidatorState not found in context, Windower may not work correctly")
@@ -222,13 +251,13 @@ func (vm *VM) Initialize(
 
 	err = vm.ChainVM.Initialize(
 		ctx,
-		chainCtx,
-		dbManager,
+		chainCtxIntf,
+		dbManagerIntf,
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
-		toEngine,
-		fxs,
+		toEngineIntf,
+		fxsIntf,
 		appSender,
 	)
 	if err != nil {
@@ -308,7 +337,7 @@ func (vm *VM) SetState(ctx context.Context, newState interfaces.State) error {
 
 	oldState := vm.consensusState
 	vm.consensusState = newState
-	if oldState != interfaces.StateSyncing {
+	if interfaces.State(oldState) != interfaces.StateSyncing {
 		return nil
 	}
 
@@ -836,19 +865,25 @@ func (v *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (i
 	return v.vs.GetNetID(chainID)
 }
 
-func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	// For now, return empty set - need proper implementation
+	return make(map[ids.NodeID]*validators.GetValidatorOutput), nil
+}
+
+
+func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*validators.GetValidatorOutput, uint64, error) {
 	// For now, return empty set with current height - need proper implementation
 	height, err := v.vs.GetCurrentHeight()
 	if err != nil {
 		return nil, 0, err
 	}
-	return make(map[ids.ID]*validators.GetCurrentValidatorOutput), height, nil
+	return make(map[ids.ID]*validators.GetValidatorOutput), height, nil
 }
 
-// interfacesToConsensusValidatorStateAdapter adapts interfaces.ValidatorState to consensus.ValidatorState
+// interfacesToConsensusValidatorStateAdapter adapts ValidatorState from chainCtx
 type interfacesToConsensusValidatorStateAdapter struct {
 	ctx context.Context
-	vs  interfaces.ValidatorState
+	vs  consensuscontext.ValidatorState
 }
 
 func (a *interfacesToConsensusValidatorStateAdapter) GetMinimumHeight(ctx context.Context) (uint64, error) {
@@ -860,8 +895,16 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentHeight() (uint64,
 	return a.vs.GetCurrentHeight()
 }
 
+func (a *interfacesToConsensusValidatorStateAdapter) GetChainID(chainID ids.ID) (ids.ID, error) {
+	return a.vs.GetChainID(chainID)
+}
+
 func (a *interfacesToConsensusValidatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
-	return a.vs.GetNetID(a.ctx, chainID)
+	return a.vs.GetNetID(chainID)
+}
+
+func (a *interfacesToConsensusValidatorStateAdapter) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	return a.vs.GetSubnetID(chainID)
 }
 
 func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {

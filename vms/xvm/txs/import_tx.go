@@ -51,6 +51,20 @@ func (t *ImportTx) NumCredentials() int {
 	return t.BaseTx.NumCredentials() + len(t.ImportedIns)
 }
 
+func (t *ImportTx) InitCtx(ctx context.Context) {
+	// TransferableInput doesn't have InitCtx
+	// for _, in := range t.ImportedIns {
+	//     in.InitCtx(ctx)
+	// }
+	t.BaseTx.InitCtx(ctx)
+}
+
+// InitializeContext initializes the context for this transaction
+func (t *ImportTx) InitializeContext(ctx context.Context) error {
+	t.InitCtx(ctx)
+	return nil
+}
+
 func (t *ImportTx) Visit(v Visitor) error {
 	return v.ImportTx(t)
 }

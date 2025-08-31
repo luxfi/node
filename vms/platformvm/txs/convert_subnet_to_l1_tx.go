@@ -110,7 +110,7 @@ func (tx *ConvertNetToL1Tx) SyntacticVerify(ctx context.Context) error {
 		// already passed syntactic verification
 		return nil
 	case tx.Net == constants.PrimaryNetworkID:
-		return ErrConvertPermissionlessSubnet
+		return ErrConvertPermissionlessNet
 	case len(tx.Address) > MaxSubnetAddressLength:
 		return ErrAddressTooLong
 	case len(tx.Validators) == 0:

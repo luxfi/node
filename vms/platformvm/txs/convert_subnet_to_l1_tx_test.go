@@ -337,7 +337,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 				}},
 				Subnet: constants.PrimaryNetworkID,
 			},
-			expectedErr: ErrConvertPermissionlessSubnet,
+			expectedErr: ErrConvertPermissionlessNet,
 		},
 		{
 			name: "address too long",

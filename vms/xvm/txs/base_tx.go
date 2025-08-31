@@ -30,6 +30,12 @@ func (t *BaseTx) InitCtx(ctx context.Context) {
 	}
 }
 
+// InitializeContext initializes the context for this transaction
+func (t *BaseTx) InitializeContext(ctx context.Context) error {
+	t.InitCtx(ctx)
+	return nil
+}
+
 func (t *BaseTx) SetBytes(bytes []byte) {
 	t.bytes = bytes
 }

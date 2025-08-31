@@ -37,6 +37,11 @@ func (tx *AdvanceTimeTx) Bytes() []byte {
 
 func (*AdvanceTimeTx) InitCtx(context.Context) {}
 
+// InitializeContext initializes the context for this transaction
+func (*AdvanceTimeTx) InitializeContext(context.Context) error {
+	return nil
+}
+
 // Timestamp returns the time this block is proposing the chain should be set to
 func (tx *AdvanceTimeTx) Timestamp() time.Time {
 	return time.Unix(int64(tx.Time), 0)

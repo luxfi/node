@@ -49,9 +49,9 @@ func (mb *meterBlock) Height() uint64 {
 }
 
 // Timestamp returns the block's timestamp as time.Time
-// This satisfies the block.Block interface
+// This satisfies both the block.Block and chain.Block interfaces
 func (mb *meterBlock) Timestamp() time.Time {
-	return time.Unix(mb.innerBlock.Timestamp(), 0)
+	return mb.innerBlock.Timestamp()
 }
 
 // Status returns the block's status as uint8

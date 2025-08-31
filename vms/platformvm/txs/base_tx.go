@@ -68,6 +68,12 @@ func (tx *BaseTx) InitCtx(ctx context.Context) {
 	}
 }
 
+// InitializeContext initializes the context for this transaction
+func (tx *BaseTx) InitializeContext(ctx context.Context) error {
+	tx.InitCtx(ctx)
+	return nil
+}
+
 // SyntacticVerify returns nil iff this tx is well formed
 func (tx *BaseTx) SyntacticVerify(ctx context.Context) error {
 	switch {
