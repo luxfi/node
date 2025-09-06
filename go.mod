@@ -237,4 +237,3 @@ replace k8s.io/apimachinery => k8s.io/apimachinery v0.31.4
 // Fix genproto import ambiguity
 replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240826202546-f6391c0de4c7
 
-replace github.com/luxfi/consensus => /Users/z/work/lux/consensus
