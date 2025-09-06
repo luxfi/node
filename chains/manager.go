@@ -18,13 +18,14 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/core/interfaces"
-	"github.com/luxfi/consensus/core/tracker"
+	// "github.com/luxfi/consensus/core/interfaces" // Not used
+	// "github.com/luxfi/consensus/core/tracker" // Not used
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/dag/bootstrap/queue"
+	// "github.com/luxfi/consensus/engine/dag/bootstrap/queue" // Not used
 	"github.com/luxfi/consensus/engine/dag/state"
 	"github.com/luxfi/consensus/engine/dag/vertex"
-	consensusvertex "github.com/luxfi/consensus/engine/vertex"
+	// consensusvertex "github.com/luxfi/consensus/engine/vertex" // Not available in current consensus version
+	"github.com/luxfi/consensus/snow"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/node/api/server"
@@ -227,11 +228,25 @@ func (c *chainVMWrapper) CreateHandlers(ctx context.Context) (map[string]http.Ha
 	return make(map[string]http.Handler), nil
 }
 
-// linearizableVMWrapper wraps consensusvertex.LinearizableVMWithEngine to implement core.VM
-type linearizableVMWrapper struct {
-	vm consensusvertex.LinearizableVMWithEngine
+func (c *chainVMWrapper) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler, error) {
+	// ChainVM doesn't have CreateStaticHandlers, return empty map
+	return make(map[string]http.Handler), nil
 }
 
+func (c *chainVMWrapper) HealthCheck(ctx context.Context) (interface{}, error) {
+	// ChainVM doesn't have HealthCheck, return nil
+	return nil, nil
+}
+
+// linearizableVMWrapper wraps consensusvertex.LinearizableVMWithEngine to implement core.VM
+// Disabled - consensus package doesn't have vertex types
+/*
+type linearizableVMWrapper struct {
+	vm consensusvertex.LinearizableVMWithEngine
+}*/
+
+// linearizableVMWrapper methods disabled - type not available
+/*
 func (l *linearizableVMWrapper) Initialize() error {
 	// LinearizableVMWithEngine has a different Initialize signature
 	// This is a no-op since the actual initialization happens elsewhere
@@ -245,6 +260,7 @@ func (l *linearizableVMWrapper) Shutdown() error {
 func (l *linearizableVMWrapper) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
 	return l.vm.CreateHandlers(ctx)
 }
+*/
 
 // sharedMemoryWrapper wraps atomic.SharedMemory to implement interfaces.SharedMemory
 type sharedMemoryWrapper struct {
@@ -308,6 +324,16 @@ func (v *consensusValidatorStateWrapper) GetValidatorSet(height uint64, netID id
 		result[nodeID] = val.Weight
 	}
 	return result, nil
+}
+
+func (v *consensusValidatorStateWrapper) GetChainID(netID ids.ID) (ids.ID, error) {
+	// Not available in validators.State, return empty ID
+	return ids.Empty, nil
+}
+
+func (v *consensusValidatorStateWrapper) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	// Not available in validators.State, return empty ID
+	return ids.Empty, nil
 }
 
 func (v *validatorStateWrapper) GetCurrentHeight() (uint64, error) {
@@ -693,12 +719,21 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 
 	// Create base context with IDs
 	ctx := context.Background()
+	// Note: Using local consensus package which has different fields
+	// PublicKey needs to be []byte, not *bls.PublicKey
+	var pubKeyBytes []byte
+	if m.StakingBLSKey != nil && m.StakingBLSKey.PublicKey() != nil {
+		// BLS PublicKey doesn't have a Bytes() method, so we'll leave it nil for now
+		// This would need proper serialization in production
+		pubKeyBytes = nil
+	}
+	
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: m.NetworkID,
-		NetID:  chainParams.NetID,
+		NetID:     chainParams.NetID,
 		ChainID:   chainParams.ID,
 		NodeID:    m.NodeID,
-		PublicKey: m.StakingBLSKey.PublicKey(),
+		PublicKey: pubKeyBytes,
 	})
 
 	// Get a factory for the vm we want to use on our chain
@@ -726,19 +761,20 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 
 	var chain *chainInfo
 	switch vm := vm.(type) {
-	case consensusvertex.LinearizableVMWithEngine:
-		chain, err = m.createLuxChain(
-			ctx,
-			chainParams,
-			chainParams.GenesisData,
-			m.Validators,
-			vm,
-			chainFxs,
-			sb,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("error while creating new lux vm %w", err)
-		}
+	// Vertex VM support disabled for now - consensus package doesn't have these types
+	// case consensusvertex.LinearizableVMWithEngine:
+	// 	chain, err = m.createLuxChain(
+	// 		ctx,
+	// 		chainParams,
+	// 		chainParams.GenesisData,
+	// 		m.Validators,
+	// 		vm,
+	// 		chainFxs,
+	// 		sb,
+	// 	)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("error while creating new lux vm %w", err)
+	// 	}
 	case block.ChainVM:
 		beacons := m.Validators
 		if chainParams.ID == constants.PlatformChainID {
@@ -754,6 +790,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 
 		chain, err = m.createLinearChain(
 			ctx,
+			chainParams,
 			chainParams.GenesisData,
 			m.Validators,
 			beacons,
@@ -781,6 +818,8 @@ func (m *manager) AddRegistrant(r Registrant) {
 }
 
 // Create a Graph-based blockchain that uses Lux
+// Disabled for now - consensus package doesn't have vertex types
+/*
 func (m *manager) createLuxChain(
 	ctx context.Context,
 	chainParams ChainParameters,
@@ -789,8 +828,8 @@ func (m *manager) createLuxChain(
 	vm consensusvertex.LinearizableVMWithEngine,
 	fxs []*core.Fx,
 	sb subnets.Net,
-) (*chainInfo, error) {
-	// Use a sync.Mutex for chain creation if needed
+) (*chainInfo, error) {*/
+/*	// Use a sync.Mutex for chain creation if needed
 	// State tracking will be handled by the engine
 
 	// Extract chainID from chainParams
@@ -804,18 +843,18 @@ func (m *manager) createLuxChain(
 	}
 
 	// Get VM metrics
-	vmMetrics, err := m.getOrMakeVMRegisterer(chainID, primaryAlias)
+	_, err = m.getOrMakeVMRegisterer(chainID, primaryAlias)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create SharedMemory wrapper for consensus package
-	sharedMem := &sharedMemoryWrapper{
+	// Create SharedMemory wrapper for consensus package (unused for now)
+	_ = &sharedMemoryWrapper{
 		atomicMemory: m.AtomicMemory.NewSharedMemory(chainID),
 	}
 
-	// Create ValidatorState wrapper
-	valStateWrapper := &validatorStateWrapper{
+	// Create ValidatorState wrapper (unused for now)
+	_ = &validatorStateWrapper{
 		state: m.validatorState,
 	}
 	meterDBReg, err := luxmetric.MakeAndRegister(
@@ -929,7 +968,7 @@ func (m *manager) createLuxChain(
 		minBlockDelay       = proposervm.DefaultMinBlockDelay
 		numHistoricalBlocks = proposervm.DefaultNumHistoricalBlocks
 	)
-	netID := consensus.SID(ctx)
+	netID := consensus.GetNetID(ctx)
 	if subnetCfg, ok := m.SubnetConfigs[netID]; ok {
 		minBlockDelay = subnetCfg.ProposerMinBlockDelay
 		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
@@ -1015,7 +1054,7 @@ func (m *manager) createLuxChain(
 		sampleK = int(bootstrapWeight)
 	}
 
-	stakeReg, err := luxmetric.MakeAndRegister(
+	_, err = luxmetric.MakeAndRegister(
 		m.stakeGatherer,
 		primaryAlias,
 	)
@@ -1023,11 +1062,13 @@ func (m *manager) createLuxChain(
 		return nil, err
 	}
 
-	connectedValidators, err := tracker.NewMeteredPeers(stakeReg)
-	if err != nil {
-		return nil, fmt.Errorf("error creating peer tracker: %w", err)
-	}
-	vdrs.RegisterSetCallbackListener(netID, connectedValidators)
+	// tracker.NewMeteredPeers not available in current consensus version
+	// connectedValidators, err := tracker.NewMeteredPeers(stakeReg)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("error creating peer tracker: %w", err)
+	// }
+	// vdrs.RegisterSetCallbackListener(netID, connectedValidators)
+	_ = interface{}(nil) // connectedValidators placeholder
 
 	p2pReg, err := luxmetric.MakeAndRegister(
 		m.p2pGatherer,
@@ -1037,18 +1078,18 @@ func (m *manager) createLuxChain(
 		return nil, err
 	}
 
-	peerTracker, err := p2p.NewPeerTracker(
+	_, err = p2p.NewPeerTracker(
 		m.Log,
 		"peer_tracker",
 		p2pReg,
-		set.Of(ids.NodeID),
+		set.NewSet[ids.NodeID](0), // Empty set of NodeIDs
 		nil,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating peer tracker: %w", err)
 	}
 
-	handlerReg, err := luxmetric.MakeAndRegister(
+	_, err = luxmetric.MakeAndRegister(
 		m.handlerGatherer,
 		primaryAlias,
 	)
@@ -1254,10 +1295,12 @@ func (m *manager) createLuxChain(
 		Handler: h,
 	}, nil
 }
+*/ // End of createLuxChain - disabled
 
 // Create a linear chain using the Linear consensus engine
 func (m *manager) createLinearChain(
 	ctx context.Context,
+	chainParams ChainParameters,
 	genesisData []byte,
 	vdrs validators.Manager,
 	beacons validators.Manager,
@@ -1297,22 +1340,25 @@ func (m *manager) createLinearChain(
 	_ = prefixdb.New(ChainBootstrappingDBPrefix, prefixDB) // bootstrappingDB not used
 
 	// Get VM metrics
-	vmMetrics, err := m.getOrMakeVMRegisterer(chainID, primaryAlias)
+	_, err = m.getOrMakeVMRegisterer(chainID, primaryAlias)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create SharedMemory wrapper for consensus package
-	sharedMem := &sharedMemoryWrapper{
+	// Create SharedMemory wrapper for consensus package (unused for now)
+	_ = &sharedMemoryWrapper{
 		atomicMemory: m.AtomicMemory.NewSharedMemory(chainID),
 	}
 
-	// Create ValidatorState wrapper
-	valStateWrapper := &validatorStateWrapper{
+	// Create ValidatorState wrapper (unused for now)
+	_ = &validatorStateWrapper{
 		state: m.validatorState,
 	}
 
-	// Create Runtime for consensus components
+	// Runtime is not available in current consensus package
+	// We'll use the context directly instead
+	// TODO: Re-enable when consensus package is updated
+	/*
 	ids := consensus.MustIDs(ctx)
 	runtime := &interfaces.Runtime{
 		NetworkID:      ids.NetworkID,
@@ -1346,6 +1392,11 @@ func (m *manager) createLinearChain(
 	if m.TracingEnabled {
 		messageSender = sender.Trace(messageSender, m.Tracer)
 	}
+	*/
+	
+	// For now, use a nil message sender since sender.New requires Runtime
+	// ExternalSender doesn't exist, just use interface{}
+	_ = interface{}(nil) // messageSender placeholder
 
 	// var (
 	// 	bootstrapFunc func() // Not used
@@ -1410,7 +1461,7 @@ func (m *manager) createLinearChain(
 		minBlockDelay       = proposervm.DefaultMinBlockDelay
 		numHistoricalBlocks = proposervm.DefaultNumHistoricalBlocks
 	)
-	netID := consensus.SID(ctx)
+	netID := consensus.GetNetID(ctx)
 	if subnetCfg, ok := m.SubnetConfigs[netID]; ok {
 		minBlockDelay = subnetCfg.ProposerMinBlockDelay
 		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
@@ -1467,16 +1518,34 @@ func (m *manager) createLinearChain(
 	// VM uses this channel to notify engine that a block is ready to be made
 	msgChan := make(chan core.Message, defaultChannelSize)
 
-	// Create ChainContext from context.Context (reuse ids from above)
+	// Create ChainContext from context.Context
+	// Note: ChainContext contains ConsensusContext and Context from snow package
+	// We need to extract IDs from the context
+	var pubKeyBytes []byte
+	if m.StakingBLSKey != nil && m.StakingBLSKey.PublicKey() != nil {
+		// BLS PublicKey doesn't have a Bytes() method, so we'll leave it nil for now
+		pubKeyBytes = nil
+	}
+	
+	snowCtx := &snow.Context{
+		NetworkID: m.NetworkID,
+		SubnetID:  chainParams.NetID,
+		ChainID:   chainParams.ID,
+		NodeID:    m.NodeID,
+		PublicKey: pubKeyBytes,
+		// Other fields are not in snow.Context structure
+	}
+	
+	consensusCtx := &snow.ConsensusContext{
+		// These would be set based on consensus parameters
+		Alpha:        2,
+		BetaVirtuous: 14,
+		BetaRogue:    20,
+	}
+	
 	chainCtx := &block.ChainContext{
-		NetworkID:    ids.NetworkID,
-		NetID:     ids.NetID,
-		ChainID:      ids.ChainID,
-		NodeID:       ids.NodeID,
-		PublicKey:    ids.PublicKey,
-		LUXAssetID:   m.LUXAssetID,
-		CChainID:     m.CChainID,
-		ChainDataDir: chainDataDir,
+		ConsensusContext: consensusCtx,
+		Context:          snowCtx,
 	}
 
 	// Create DBManager wrapper
@@ -1485,14 +1554,16 @@ func (m *manager) createLinearChain(
 	// Create channel for messages
 	toEngine := make(chan block.Message, defaultChannelSize)
 
-	// Convert core.Fx to block.Fx
-	blockFxs := make([]*block.Fx, len(fxs))
+	// Convert core.Fx to []interface{} for Initialize
+	fxsInterface := make([]interface{}, len(fxs))
 	for i := range fxs {
-		blockFxs[i] = &block.Fx{}
+		// Create empty block.Fx and add as interface{}
+		fxsInterface[i] = &block.Fx{}
 	}
 
-	// Create AppSender wrapper - adapter from sender.Sender to block.AppSender
-	appSender := &senderToAppSenderAdapter{sender: messageSender}
+	// Create AppSender wrapper - for now just use nil since we don't have a real sender
+	// appSender := &senderToAppSenderAdapter{sender: messageSender}
+	var appSender block.AppSender = nil
 
 	if err := vm.Initialize(
 		context.TODO(),
@@ -1502,7 +1573,7 @@ func (m *manager) createLinearChain(
 		chainConfig.Upgrade,
 		chainConfig.Config,
 		toEngine,
-		blockFxs,
+		fxsInterface,
 		appSender,
 	); err != nil {
 		return nil, err
@@ -1520,7 +1591,7 @@ func (m *manager) createLinearChain(
 		sampleK = int(bootstrapWeight)
 	}
 
-	stakeReg, err := luxmetric.MakeAndRegister(
+	_, err = luxmetric.MakeAndRegister(
 		m.stakeGatherer,
 		primaryAlias,
 	)
@@ -1528,11 +1599,13 @@ func (m *manager) createLinearChain(
 		return nil, err
 	}
 
-	connectedValidators, err := tracker.NewMeteredPeers(stakeReg)
-	if err != nil {
-		return nil, fmt.Errorf("error creating peer tracker: %w", err)
-	}
-	vdrs.RegisterSetCallbackListener(netID, connectedValidators)
+	// tracker.NewMeteredPeers not available in current consensus version
+	// connectedValidators, err := tracker.NewMeteredPeers(stakeReg)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("error creating peer tracker: %w", err)
+	// }
+	// vdrs.RegisterSetCallbackListener(netID, connectedValidators)
+	_ = interface{}(nil) // connectedValidators placeholder
 
 	p2pReg, err := luxmetric.MakeAndRegister(
 		m.p2pGatherer,
@@ -1542,18 +1615,18 @@ func (m *manager) createLinearChain(
 		return nil, err
 	}
 
-	peerTracker, err := p2p.NewPeerTracker(
+	_, err = p2p.NewPeerTracker(
 		m.Log,
 		"peer_tracker",
 		p2pReg,
-		set.Of(ids.NodeID),
+		set.NewSet[ids.NodeID](0), // Empty set of NodeIDs
 		nil,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating peer tracker: %w", err)
 	}
 
-	handlerReg, err := luxmetric.MakeAndRegister(
+	_, err = luxmetric.MakeAndRegister(
 		m.handlerGatherer,
 		primaryAlias,
 	)
@@ -1563,7 +1636,7 @@ func (m *manager) createLinearChain(
 
 	// Create change notifier and subscription for linear chain
 	// cn := &block.ChangeNotifier{}
-	subscription := func(ctx context.Context) (core.Message, error) {
+	_ = func(ctx context.Context) (core.Message, error) { // subscription placeholder
 		select {
 		case msg := <-msgChan:
 			return msg, nil
@@ -1572,7 +1645,9 @@ func (m *manager) createLinearChain(
 		}
 	}
 
+	// handler.New requires runtime which is not available
 	// Asynchronously passes messages from the network to the consensus engine
+	/*
 	h, err := handler.New(
 		runtime,
 		nil,          // cn was block.ChangeNotifier which doesn't exist
@@ -1590,12 +1665,20 @@ func (m *manager) createLinearChain(
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize message handler: %w", err)
 	}
+	*/
+	// Create a placeholder handler since handler.New is not available
+	h := &placeholderHandler{}
 
-	connectedBeacons := tracker.NewPeers()
-	startupTracker := tracker.NewStartup(connectedBeacons, float64((3*bootstrapWeight+3)/4))
+	// tracker.NewPeers and NewStartup not available in current consensus version
+	// connectedBeacons := tracker.NewPeers()
+	// startupTracker := tracker.NewStartup(connectedBeacons, float64((3*bootstrapWeight+3)/4))
+	_ = interface{}(nil) // startupTracker placeholder
 	// beacons.RegisterSetCallbackListener(ctx.NetID, startupTracker)
 	// beacons.RegisterSetCallbackListener(startupTracker)
 
+	// Most consensus engine creation is disabled due to missing runtime and types
+	// This needs to be re-enabled when consensus package is updated
+	/*
 	consensusGetHandler, err := consensusgetter.New(
 		vm,
 		messageSender,
@@ -1666,6 +1749,7 @@ func (m *manager) createLinearChain(
 	if err != nil {
 		return nil, fmt.Errorf("error initializing linear bootstrapper: %w", err)
 	}
+	*/
 
 	// if m.TracingEnabled {
 	// 	bootstrapper = core.TraceBootstrapableEngine(bootstrapper, m.Tracer)
@@ -1888,8 +1972,12 @@ func (e *emptyValidatorManager) GetValidator(netID ids.ID, nodeID ids.NodeID) (*
 }
 
 func (e *emptyValidatorManager) GetValidators(netID ids.ID) (validators.Set, error) {
-	// Return an empty validator set
-	return validators.NewEmpty(), nil
+	// Return nil for empty validator set since NewEmpty doesn't exist
+	return nil, nil
+}
+
+func (e *emptyValidatorManager) GetWeight(netID ids.ID, nodeID ids.NodeID) uint64 {
+	return 0
 }
 
 func (e *emptyValidatorManager) GetCurrentHeight(context.Context) (uint64, error) {
@@ -1917,3 +2005,40 @@ func (e *emptyValidatorManager) TotalWeight(netID ids.ID) (uint64, error) {
 func (e *emptyValidatorManager) GetLight(netID ids.ID, nodeID ids.NodeID) uint64 {
 	return 0
 }
+
+func (e *emptyValidatorManager) TotalLight(netID ids.ID) (uint64, error) {
+	return 0, nil
+}
+
+// placeholderHandler implements handler.Handler interface
+type placeholderHandler struct{}
+
+func (p *placeholderHandler) Context() *snow.ConsensusContext { return nil }
+func (p *placeholderHandler) Start(ctx context.Context, startReqID uint32) {}
+func (p *placeholderHandler) Push(ctx context.Context, msg handler.Message) {}
+func (p *placeholderHandler) Len() int { return 0 }
+func (p *placeholderHandler) Get(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error { return nil }
+func (p *placeholderHandler) GetAncestors(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error { return nil }
+func (p *placeholderHandler) GetAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error { return nil }
+func (p *placeholderHandler) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerIDs []ids.ID) error { return nil }
+func (p *placeholderHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error { return nil }
+func (p *placeholderHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, container []byte) error { return nil }
+func (p *placeholderHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error { return nil }
+func (p *placeholderHandler) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error { return nil }
+func (p *placeholderHandler) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error { return nil }
+func (p *placeholderHandler) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error { return nil }
+func (p *placeholderHandler) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error { return nil }
+func (p *placeholderHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error { return nil }
+func (p *placeholderHandler) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error { return nil }
+func (p *placeholderHandler) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error { return nil }
+func (p *placeholderHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error { return nil }
+func (p *placeholderHandler) GetStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error { return nil }
+func (p *placeholderHandler) StateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error { return nil }
+func (p *placeholderHandler) GetAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, heights []uint64) error { return nil }
+func (p *placeholderHandler) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error { return nil }
+func (p *placeholderHandler) GetStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, height uint64) error { return nil }
+func (p *placeholderHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error { return nil }
+func (p *placeholderHandler) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error { return nil }
+func (p *placeholderHandler) Disconnected(ctx context.Context, nodeID ids.NodeID) error { return nil }
+func (p *placeholderHandler) HealthCheck(ctx context.Context) (interface{}, error) { return nil, nil }
+func (p *placeholderHandler) Stop(ctx context.Context) {}

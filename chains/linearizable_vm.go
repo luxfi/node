@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/consensus/core"
 	// "github.com/luxfi/consensus/engine/chain" // currently unused
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/dag/vertex"
+	// "github.com/luxfi/consensus/engine/dag/vertex" // Not used
 	consensusvertex "github.com/luxfi/consensus/engine/vertex"
 	"github.com/luxfi/consensus/snow"
 	"github.com/luxfi/consensus/utils/set"
