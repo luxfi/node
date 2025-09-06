@@ -22,8 +22,8 @@ import (
 	// "github.com/luxfi/consensus/core/tracker" // Not used
 	"github.com/luxfi/consensus/engine/chain/block"
 	// "github.com/luxfi/consensus/engine/dag/bootstrap/queue" // Not used
-	"github.com/luxfi/consensus/engine/dag/state"
-	"github.com/luxfi/consensus/engine/dag/vertex"
+	// "github.com/luxfi/consensus/engine/dag/state" // Not used
+	// "github.com/luxfi/consensus/engine/dag/vertex" // Not used
 	// consensusvertex "github.com/luxfi/consensus/engine/vertex" // Not available in current consensus version
 	"github.com/luxfi/consensus/snow"
 	"github.com/luxfi/node/api/health"
@@ -39,6 +39,7 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
+	dbmanager "github.com/luxfi/database/manager"
 	"github.com/luxfi/database/meterdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
@@ -67,15 +68,15 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/tracedvm"
 
-	smeng "github.com/luxfi/consensus/engine/chain"
-	smbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap"
-	consensusgetter "github.com/luxfi/consensus/engine/chain/getter"
-	aveng "github.com/luxfi/consensus/engine/dag"
-	dagbootstrap "github.com/luxfi/consensus/engine/dag/bootstrap"
-	daggetter "github.com/luxfi/consensus/engine/dag/getter"
+	// smeng "github.com/luxfi/consensus/engine/chain" // Not used
+	// smbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap" // Not used
+	// consensusgetter "github.com/luxfi/consensus/engine/chain/getter" // Not used
+	// aveng "github.com/luxfi/consensus/engine/dag" // Not used
+	// dagbootstrap "github.com/luxfi/consensus/engine/dag/bootstrap" // Not used
+	// daggetter "github.com/luxfi/consensus/engine/dag/getter" // Not used
 	timetracker "github.com/luxfi/consensus/networking/tracker"
 	// smcon "github.com/luxfi/consensus/protocol/chain" // currently unused
-	p2ppb "github.com/luxfi/node/proto/pb/p2p"
+	// p2ppb "github.com/luxfi/node/proto/pb/p2p" // Not used
 )
 
 const (
@@ -212,13 +213,23 @@ type chainVMWrapper struct {
 	vm block.ChainVM
 }
 
-func (c *chainVMWrapper) Initialize() error {
+func (c *chainVMWrapper) Initialize(
+	ctx context.Context,
+	snowCtx *snow.Context,
+	dbManager dbmanager.Manager,
+	genesisBytes []byte,
+	upgradeBytes []byte,
+	configBytes []byte,
+	msgChan chan<- core.Message,
+	fxs []*core.Fx,
+	appSender interface{},
+) error {
 	// ChainVM has a different Initialize signature
 	// This is a no-op since the actual initialization happens elsewhere
 	return nil
 }
 
-func (c *chainVMWrapper) Shutdown() error {
+func (c *chainVMWrapper) Shutdown(ctx context.Context) error {
 	// block.ChainVM doesn't have Shutdown method
 	return nil
 }
@@ -236,6 +247,16 @@ func (c *chainVMWrapper) CreateStaticHandlers(ctx context.Context) (map[string]h
 func (c *chainVMWrapper) HealthCheck(ctx context.Context) (interface{}, error) {
 	// ChainVM doesn't have HealthCheck, return nil
 	return nil, nil
+}
+
+func (c *chainVMWrapper) SetState(ctx context.Context, state snow.State) error {
+	// ChainVM doesn't have SetState, return nil
+	return nil
+}
+
+func (c *chainVMWrapper) Version(ctx context.Context) (string, error) {
+	// Return a default version
+	return "1.0.0", nil
 }
 
 // linearizableVMWrapper wraps consensusvertex.LinearizableVMWithEngine to implement core.VM
@@ -2038,7 +2059,9 @@ func (p *placeholderHandler) GetAcceptedStateSummary(ctx context.Context, nodeID
 func (p *placeholderHandler) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error { return nil }
 func (p *placeholderHandler) GetStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, height uint64) error { return nil }
 func (p *placeholderHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error { return nil }
-func (p *placeholderHandler) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error { return nil }
+func (p *placeholderHandler) Connected(ctx context.Context, nodeID ids.NodeID) error { return nil }
 func (p *placeholderHandler) Disconnected(ctx context.Context, nodeID ids.NodeID) error { return nil }
 func (p *placeholderHandler) HealthCheck(ctx context.Context) (interface{}, error) { return nil, nil }
 func (p *placeholderHandler) Stop(ctx context.Context) {}
+func (p *placeholderHandler) HandleInbound(ctx context.Context, msg handler.Message) error { return nil }
+func (p *placeholderHandler) HandleOutbound(ctx context.Context, msg handler.Message) error { return nil }
