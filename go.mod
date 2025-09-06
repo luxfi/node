@@ -24,8 +24,8 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
-	github.com/luxfi/consensus v1.13.4-lux.24
-	github.com/luxfi/crypto v1.16.15-lux
+	github.com/luxfi/consensus v1.16.16
+	github.com/luxfi/crypto v1.16.16
 	github.com/luxfi/database v1.1.13
 	github.com/luxfi/geth v1.16.34
 	github.com/luxfi/ids v1.0.2
@@ -69,16 +69,16 @@ require (
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/onsi/ginkgo/v2 v2.25.1
 	github.com/pires/go-proxyproto v0.8.1
-	github.com/prometheus/client_golang v1.23.0
+	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
-	github.com/prometheus/common v0.65.0
+	github.com/prometheus/common v0.66.1
 	github.com/rs/cors v1.11.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/cast v1.9.2
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.7
 	github.com/spf13/viper v1.20.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a // indirect
 	github.com/thepudds/fzgen v0.4.3
 	go.opentelemetry.io/otel v1.37.0
@@ -105,6 +105,7 @@ require (
 )
 
 require (
+	github.com/ALTree/bigfloat v0.2.0 // indirect
 	github.com/DataDog/zstd v1.5.7 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/VictoriaMetrics/fastcache v1.13.0 // indirect
@@ -167,6 +168,7 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/luxfi/czmq/v4 v4.2.0 // indirect
+	github.com/luxfi/ringtail v0.1.0 // indirect
 	github.com/luxfi/zmq/v4 v4.2.0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -177,6 +179,7 @@ require (
 	github.com/moby/spdystream v0.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/olekukonko/errors v1.1.0 // indirect
@@ -199,8 +202,10 @@ require (
 	github.com/supranational/blst v0.3.15 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
+	github.com/tuneinsight/lattigo/v5 v5.0.7 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
+	github.com/zeebo/blake3 v0.2.4 // indirect
 	github.com/zondax/hid v0.9.2 // indirect
 	github.com/zondax/ledger-go v1.0.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
@@ -236,4 +241,3 @@ replace k8s.io/apimachinery => k8s.io/apimachinery v0.31.4
 
 // Fix genproto import ambiguity
 replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240826202546-f6391c0de4c7
-

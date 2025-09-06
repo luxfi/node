@@ -13,8 +13,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus"
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/dag/vertex"
+	// "github.com/luxfi/consensus/engine/dag/vertex" // Not used anymore
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
@@ -133,8 +134,9 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
-	// Extract IDs from context
-	ids := consensus.MustIDs(ctx)
+	// Extract IDs from context using new helper functions
+	netID := consensuscontext.GetNetID(ctx)
+	chainID := consensuscontext.GetChainID(ctx)
 
 	if i.closed {
 		i.log.Debug("not registering chain to indexer",
@@ -142,15 +144,13 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 			zap.String("chainName", chainName),
 		)
 		return
-	} else if ids.NetID != constants.PrimaryNetworkID {
+	} else if netID != constants.PrimaryNetworkID {
 		i.log.Debug("not registering chain to indexer",
 			zap.String("reason", "not in the primary network"),
 			zap.String("chainName", chainName),
 		)
 		return
 	}
-
-	chainID := ids.ChainID
 	if i.blockIndices[chainID] != nil || i.txIndices[chainID] != nil || i.vtxIndices[chainID] != nil {
 		i.log.Warn("chain is already being indexed",
 			zap.Stringer("chainID", chainID),
@@ -268,7 +268,8 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 		zap.String("vmType", vmType),
 	)
 	switch vm.(type) {
-	case vertex.LinearizableVMWithEngine:
+	// vertex.LinearizableVMWithEngine no longer exists in consensus package
+	/*case vertex.LinearizableVMWithEngine:
 		vtxIndex, err := i.registerChainHelper(chainID, vtxPrefix, chainName, "vtx", i.vertexAcceptorGroup)
 		if err != nil {
 			i.log.Error("couldn't create index",
@@ -299,7 +300,7 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 			}
 			return
 		}
-		i.txIndices[chainID] = txIndex
+		i.txIndices[chainID] = txIndex*/
 	case block.ChainVM:
 		i.log.Debug("Matched block.ChainVM type, no additional indices needed")
 	default:
