@@ -16,6 +16,10 @@ type BurnOperation struct {
 
 func (*BurnOperation) InitCtx(context.Context) {}
 
+func (*BurnOperation) InitializeContext(context.Context) error {
+	return nil
+}
+
 func (*BurnOperation) Outs() []verify.State {
 	return nil
 }

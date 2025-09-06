@@ -42,6 +42,11 @@ type Block struct {
 	rejected bool
 }
 
+// ParentID returns the parent block ID
+func (b *Block) ParentID() ids.ID {
+	return b.Block.Parent()
+}
+
 // EpochBit returns the epoch bit for FPC
 func (b *Block) EpochBit() bool {
 	return false // XVM blocks don't support epoch bits yet
@@ -315,7 +320,7 @@ func (b *Block) Reject(ctx context.Context) error {
 	return nil
 }
 
-func (b *Block) Status() choices.Status {
+func (b *Block) Status() uint8 {
 	// If this block's reference was rejected, we should report it as rejected.
 	//
 	// We don't persist the rejection, but that's fine. The consensus engine
@@ -325,35 +330,35 @@ func (b *Block) Status() choices.Status {
 	// The consensus engine may then try to issue the block, but will discover
 	// that it was rejected due to a conflicting block having been accepted.
 	if b.rejected {
-		return choices.Rejected
+		return uint8(choices.Rejected)
 	}
 
 	blkID := b.ID()
 	// If this block is the last accepted block, we don't need to go to disk to
 	// check the status.
 	if b.manager.lastAccepted == blkID {
-		return choices.Accepted
+		return uint8(choices.Accepted)
 	}
 	// Check if the block is in memory. If so, it's processing.
 	if _, ok := b.manager.blkIDToState[blkID]; ok {
-		return choices.Processing
+		return uint8(choices.Processing)
 	}
 	// Block isn't in memory. Check in the database.
 	_, err := b.manager.state.GetBlock(blkID)
 	switch err {
 	case nil:
-		return choices.Accepted
+		return uint8(choices.Accepted)
 
 	case database.ErrNotFound:
 		// choices.Unknown means we don't have the bytes of the block.
 		// In this case, we do, so we return choices.Processing.
-		return choices.Processing
+		return uint8(choices.Processing)
 
 	default:
 		b.manager.backend.Log.Error(
 			"dropping unhandled database error",
 			zap.Error(err),
 		)
-		return choices.Processing
+		return uint8(choices.Processing)
 	}
 }

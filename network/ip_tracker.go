@@ -298,6 +298,8 @@ func (i *ipTracker) addGossipableID(nodeID ids.NodeID) {
 
 func (*ipTracker) OnValidatorWeightChanged(ids.NodeID, uint64, uint64) {}
 
+func (*ipTracker) OnValidatorLightChanged(ids.NodeID, uint64, uint64) {}
+
 func (i *ipTracker) OnValidatorRemoved(nodeID ids.NodeID, _ uint64) {
 	i.lock.Lock()
 	defer i.lock.Unlock()

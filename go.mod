@@ -8,19 +8,24 @@ go 1.24.6
 
 exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 
+exclude google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
+
+exclude google.golang.org/genproto v0.0.0-20210402141018-6c239bbf2bb1
+
 // Do not use go-ethereum directly
 exclude github.com/ethereum/go-ethereum v1.16.2
+
+exclude github.com/ethereum/go-ethereum v1.16.1
 
 require (
 	connectrpc.com/connect v1.18.1
 	github.com/StephenButtolph/canoto v0.17.2
 	github.com/dgraph-io/badger/v4 v4.8.0
-	github.com/ethereum/go-ethereum v1.16.1
-	github.com/golang/mock v1.5.0
+	github.com/golang/mock v1.6.0
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
-	github.com/luxfi/consensus v0.0.0-00010101000000-000000000000
-	github.com/luxfi/crypto v1.16.16
+	github.com/luxfi/consensus v1.13.4-lux.24
+	github.com/luxfi/crypto v1.16.15-lux
 	github.com/luxfi/database v1.1.13
 	github.com/luxfi/geth v1.16.34
 	github.com/luxfi/ids v1.0.2
@@ -157,7 +162,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kasperdi/SPHINCSPLUS-golang v0.0.0-20231223193046-84468b93f7e9 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -213,7 +217,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250811230008-5f3141c8851a // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gotest.tools/v3 v3.5.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250814151709-d7b6acb124c3 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
@@ -231,16 +234,7 @@ exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
 
 replace k8s.io/apimachinery => k8s.io/apimachinery v0.31.4
 
-replace github.com/luxfi/node => ../node
-
-replace github.com/luxfi/qzmq => ../qzmq
-
-replace github.com/luxfi/geth => ../geth
+// Fix genproto import ambiguity
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240826202546-f6391c0de4c7
 
 replace github.com/luxfi/consensus => /Users/z/work/lux/consensus
-
-replace github.com/luxfi/database => /Users/z/work/lux/database
-
-replace github.com/luxfi/metric => /Users/z/work/lux/metric
-
-replace github.com/luxfi/crypto => /Users/z/work/lux/crypto

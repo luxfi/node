@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
@@ -21,6 +20,12 @@ var (
 
 	ErrMismatchedChainIDs = errors.New("mismatched chainIDs")
 )
+
+// BCLookup provides blockchain alias lookup
+type BCLookup interface {
+	Lookup(string) (ids.ID, error)
+	PrimaryAlias(ids.ID) (string, error)
+}
 
 type AddressManager interface {
 	// ParseLocalAddress takes in an address for this chain and produces the ID
@@ -41,7 +46,7 @@ type AddressManager interface {
 
 type addressManager struct {
 	ctx      context.Context
-	bcLookup interfaces.BCLookup
+	bcLookup BCLookup
 }
 
 func NewAddressManager(ctx context.Context) AddressManager {

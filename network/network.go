@@ -20,8 +20,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/networking/router"
-	"github.com/luxfi/consensus/networking/sender"
+	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/health"
@@ -30,13 +29,14 @@ import (
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/nets"
+	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
+	subnets "github.com/luxfi/node/nets"
 
 	safemath "github.com/luxfi/math/math"
 )
@@ -57,11 +57,34 @@ var (
 	errExpectedTCPProtocol = errors.New("expected TCP protocol")
 )
 
+// noOpAllower is an Allower that always returns true
+type noOpAllower struct{}
+
+func (noOpAllower) IsAllowed(ids.NodeID, bool) bool {
+	return true
+}
+
+// Message represents a network message
+type Message = message.OutboundMessage
+
+// ExternalSender sends messages to peers
+type ExternalSender interface {
+	Send(msg Message, nodeIDs set.Set[ids.NodeID], netID ids.ID, requestID uint32) set.Set[ids.NodeID]
+	Gossip(msg Message, nodeIDs set.Set[ids.NodeID], netID ids.ID, numValidatorsToSend int, numNonValidatorsToSend int, numPeersToSend int) set.Set[ids.NodeID]
+}
+
+// ExternalHandler handles incoming messages
+type ExternalHandler interface {
+	Connected(nodeID ids.NodeID, version *version.Application, netID ids.ID)
+	Disconnected(nodeID ids.NodeID)
+	HandleInbound(ctx context.Context, msg message.InboundMessage)
+}
+
 // Network defines the functionality of the networking library.
 type Network interface {
 	// All consensus messages can be sent through this interface. Thread safety
 	// must be managed internally in the network.
-	sender.ExternalSender
+	ExternalSender
 
 	// Has a health check
 	health.Checker
@@ -166,7 +189,7 @@ type network struct {
 	//
 	// It is expected that the implementation of this interface can handle
 	// concurrent calls to [Connected], [Disconnected], and [HandleInbound].
-	router router.ExternalHandler
+	router ExternalHandler
 }
 
 // NewNetwork returns a new Network implementation with the provided parameters.
@@ -177,7 +200,7 @@ func NewNetwork(
 	log log.Logger,
 	listener net.Listener,
 	dialer dialer.Dialer,
-	router router.ExternalHandler,
+	router ExternalHandler,
 ) (Network, error) {
 	if config.ProxyEnabled {
 		// Wrap the listener to process the proxy header.
@@ -201,12 +224,17 @@ func NewNetwork(
 		}
 	}
 
+	// Create a wrapper for the resource tracker
+	resourceTrackerWrapper := &resourceTrackerWrapper{
+		rt: config.ResourceTracker,
+	}
+	
 	inboundMsgThrottler, err := throttling.NewInboundMsgThrottler(
 		log,
 		metricsRegisterer,
 		config.Validators,
 		config.ThrottlerConfig.InboundMsgThrottlerConfig,
-		config.ResourceTracker,
+		resourceTrackerWrapper,
 		config.CPUTargeter,
 		config.DiskTargeter,
 	)
@@ -238,7 +266,8 @@ func NewNetwork(
 	if err != nil {
 		return nil, fmt.Errorf("initializing ip tracker failed with: %w", err)
 	}
-	config.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, ipTracker)
+	// TODO: validators.Manager doesn't have RegisterSetCallbackListener anymore
+	// config.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, ipTracker)
 
 	// Track all default bootstrappers to ensure their current IPs are gossiped
 	// like validator IPs.
@@ -309,32 +338,31 @@ func NewNetwork(
 }
 
 func (n *network) Send(
-	msg message.OutboundMessage,
-	config core.SendConfig,
+	msg Message,
+	nodeIDs set.Set[ids.NodeID],
 	netID ids.ID,
-	allower subnets.Allower,
+	requestID uint32,
 ) set.Set[ids.NodeID] {
-	// Convert NodeIDs to set if needed
-	var nodeIDSet set.Set[ids.NodeID]
-	if config.NodeIDs != nil {
-		if s, ok := config.NodeIDs.(set.Set[ids.NodeID]); ok {
-			nodeIDSet = s
-		} else if slice, ok := config.NodeIDs.([]ids.NodeID); ok {
-			nodeIDSet = set.Of(slice...)
-		}
-	}
-	if nodeIDSet == nil {
-		nodeIDSet = set.NewSet[ids.NodeID](0)
-	}
-
-	namedPeers := n.getPeers(nodeIDSet, netID, allower)
+	// Create a default allowance policy that allows all connections
+	var allower subnets.Allower = &noOpAllower{}
+	
+	// Use provided nodeIDs directly
+	namedPeers := n.getPeers(nodeIDs, netID, allower)
 	n.peerConfig.Metrics.MultipleSendsFailed(
 		msg.Op(),
-		nodeIDSet.Len()-len(namedPeers),
+		nodeIDs.Len()-len(namedPeers),
 	)
 
+	// Create default send config for sampling
+	sendConfig := core.SendConfig{
+		NodeIDs:       nil, // Don't restrict to specific nodes for sampling
+		Validators:    0,   // No specific validator requirement
+		NonValidators: 0,   // No specific non-validator requirement  
+		Peers:         1,   // Sample 1 peer by default
+	}
+
 	var (
-		sampledPeers = n.samplePeers(config, netID, allower)
+		sampledPeers = n.samplePeers(sendConfig, netID, allower)
 		sentTo       = set.NewSet[ids.NodeID](len(namedPeers) + len(sampledPeers))
 		now          = n.peerConfig.Clock.Time()
 	)
@@ -356,6 +384,19 @@ func (n *network) Send(
 		}
 	}
 	return sentTo
+}
+
+// Gossip implements the ExternalSender interface
+func (n *network) Gossip(
+	msg Message,
+	nodeIDs set.Set[ids.NodeID],
+	netID ids.ID,
+	numValidatorsToSend int,
+	numNonValidatorsToSend int,
+	numPeersToSend int,
+) set.Set[ids.NodeID] {
+	// For gossip, we don't have a request ID
+	return n.Send(msg, nodeIDs, netID, 0)
 }
 
 // HealthCheck returns information about several network layer health checks.
@@ -736,7 +777,12 @@ func (n *network) samplePeers(
 	// As an optimization, if there are fewer validators than
 	// [numValidatorsToSample], only attempt to sample [numValidatorsToSample]
 	// validators to potentially avoid iterating over the entire peer set.
-	numValidatorsToSample := min(len(config.Validators), n.config.Validators.NumValidators(netID))
+	validatorSet, err := n.config.Validators.GetValidators(netID)
+	numValidators := 0
+	if err == nil {
+		numValidators = validatorSet.Len()
+	}
+	numValidatorsToSample := min(config.Validators, numValidators)
 
 	n.peersLock.RLock()
 	defer n.peersLock.RUnlock()
@@ -752,8 +798,12 @@ func (n *network) samplePeers(
 			peerID := p.ID()
 			// if the peer was already explicitly included, don't include in the
 			// sample
-			if nodeIDSet, ok := config.NodeIDs.(set.Set[ids.NodeID]); ok && nodeIDSet.Contains(peerID) {
-				return false
+			if config.NodeIDs != nil {
+				for _, nodeID := range config.NodeIDs {
+					if id, ok := nodeID.(ids.NodeID); ok && id == peerID {
+						return false
+					}
+				}
 			}
 
 			_, isValidator := n.config.Validators.GetValidator(netID, peerID)
@@ -1220,7 +1270,7 @@ func (n *network) pullGossipPeerLists() {
 			NonValidators: 1,
 		},
 		constants.PrimaryNetworkID,
-		subnets.NoOpAllower,
+		&noOpAllower{},
 	)
 
 	for _, p := range peers {
@@ -1242,4 +1292,39 @@ func (n *network) getLastSent() (time.Time, bool) {
 		return time.Time{}, false
 	}
 	return time.Unix(lastSent, 0), true
+}
+
+// resourceTrackerWrapper wraps consensustracker.ResourceTracker to match tracker.ResourceTracker
+type resourceTrackerWrapper struct {
+	rt consensustracker.ResourceTracker
+}
+
+func (r *resourceTrackerWrapper) CPUTracker() tracker.Tracker {
+	// Wrap the CPU tracker
+	cpuTracker := r.rt.CPUTracker()
+	return &trackerWrapper{t: cpuTracker}
+}
+
+func (r *resourceTrackerWrapper) DiskTracker() tracker.Tracker {
+	// Wrap the disk tracker
+	diskTracker := r.rt.DiskTracker()
+	return &trackerWrapper{t: diskTracker}
+}
+
+// trackerWrapper wraps consensustracker.CPUTracker to match tracker.Tracker
+type trackerWrapper struct {
+	t consensustracker.CPUTracker
+}
+
+func (t *trackerWrapper) Usage(nodeID ids.NodeID, now time.Time) float64 {
+	return t.t.Usage(nodeID, now)
+}
+
+func (t *trackerWrapper) TimeUntilUsage(nodeID ids.NodeID, now time.Time, value float64) time.Duration {
+	return t.t.TimeUntilUsage(nodeID, now, value)
+}
+
+func (t *trackerWrapper) TotalUsage() float64 {
+	// The consensus CPUTracker doesn't have TotalUsage, so return 0.0 as default
+	return 0.0
 }

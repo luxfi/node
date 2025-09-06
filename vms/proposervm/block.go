@@ -128,7 +128,7 @@ func (p *postForkCommonComponents) Verify(
 
 	// If the node is currently syncing - we don't assume that the P-chain has
 	// been synced up to this point yet.
-	if interfaces.State(p.vm.consensusState) == interfaces.NormalOp {
+	if p.vm.consensusState == interfaces.NormalOp {
 		vs := consensus.GetValidatorState(p.vm.ctx)
 		if vs == nil {
 			return fmt.Errorf("no validator state found")

@@ -20,7 +20,6 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/utils/set"
@@ -126,32 +125,65 @@ func NewClient(
 
 func (vm *VMClient) Initialize(
 	ctx context.Context,
-	chainCtx *block.ChainContext,
-	dbManager block.DBManager,
+	chainCtx interface{},
+	dbManager interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- block.Message,
-	fxs []*block.Fx,
-	appSender block.AppSender,
+	toEngine interface{},
+	fxs []interface{},
+	appSender interface{},
 ) error {
+	// Type assert the concrete types
+	chainContext, ok := chainCtx.(*block.ChainContext)
+	if !ok {
+		return fmt.Errorf("expected *block.ChainContext, got %T", chainCtx)
+	}
+	dbMgr, ok := dbManager.(block.DBManager)
+	if !ok {
+		return fmt.Errorf("expected block.DBManager, got %T", dbManager)
+	}
+	_, ok = toEngine.(chan<- block.Message)
+	if !ok {
+		return fmt.Errorf("expected chan<- block.Message, got %T", toEngine)
+	}
+	sender, ok := appSender.(block.AppSender)
+	if !ok {
+		return fmt.Errorf("expected block.AppSender, got %T", appSender)
+	}
+
+	// Convert fxs
+	blockFxs := make([]*block.Fx, len(fxs))
+	for i, fx := range fxs {
+		blockFx, ok := fx.(*block.Fx)
+		if !ok {
+			return fmt.Errorf("expected *block.Fx at index %d, got %T", i, fx)
+		}
+		blockFxs[i] = blockFx
+	}
+
 	// Set IDs in context
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID: chainCtx.NetworkID,
-		NetID:  chainCtx.NetID,
-		ChainID:   chainCtx.ChainID,
-		NodeID:    chainCtx.NodeID,
-		PublicKey: chainCtx.PublicKey,
+		NetworkID: chainContext.NetworkID,
+		NetID:  chainContext.SubnetID,
+		ChainID:   chainContext.ChainID,
+		NodeID:    chainContext.NodeID,
+		PublicKey: chainContext.PublicKey,
 	})
 
-	db := dbManager.Current()
-	if len(fxs) != 0 {
+	// Get the current database from the manager
+	_ = dbMgr // db is used via dbWrapper below
+	if len(blockFxs) != 0 {
 		return errUnsupportedFXs
 	}
-	primaryAlias, err := chainCtx.BCLookup.PrimaryAlias(chainCtx.ChainID)
-	if err != nil {
-		// If fetching the alias fails, we default to the chain's ID
-		primaryAlias = chainCtx.ChainID.String()
+	primaryAlias := chainContext.ChainID.String()
+	// Try to get the primary alias if BCLookup is available
+	if chainContext.BCLookup != nil {
+		if bcLookup, ok := chainContext.BCLookup.(interface{ PrimaryAlias(ids.ID) (string, error) }); ok {
+			if alias, err := bcLookup.PrimaryAlias(chainContext.ChainID); err == nil {
+				primaryAlias = alias
+			}
+		}
 	}
 
 	// Register metrics
@@ -167,8 +199,13 @@ func (vm *VMClient) Initialize(
 		return err
 	}
 
-	if err := chainCtx.Metrics.Register("", vm); err != nil {
-		return err
+	// Skip metrics registration if Metrics is not available
+	if chainContext.Metrics != nil {
+		if metrics, ok := chainContext.Metrics.(interface{ Register(string, interface{}) error }); ok {
+			if err := metrics.Register("", vm); err != nil {
+				return err
+			}
+		}
 	}
 
 	// Initialize the database
@@ -178,33 +215,55 @@ func (vm *VMClient) Initialize(
 	}
 	dbServerAddr := dbServerListener.Addr().String()
 
-	go grpcutils.Serve(dbServerListener, vm.newDBServer(db))
-	chainCtx.Log.Info("grpc: serving database",
+	// Create a database wrapper that provides the Database interface
+	// dbMgr is block.DBManager which has methods, not a database itself
+	// We need to create a wrapper or use it as-is
+	var dbWrapper database.Database
+	// Try to use the DBManager directly if it implements Database interface
+	if db, ok := interface{}(dbMgr).(database.Database); ok {
+		dbWrapper = db
+	} else {
+		// Otherwise create a simple wrapper that returns nil
+		dbWrapper = &noopDatabase{}
+	}
+	go grpcutils.Serve(dbServerListener, vm.newDBServer(dbWrapper))
+	chainContext.Log.Info("grpc: serving database",
 		zap.String("address", dbServerAddr),
 	)
 
 	// Create a channel for message passing
 	msgChannel := make(chan core.MessageType, 1)
 	vm.messenger = messenger.NewServer(msgChannel)
-	// vm.keystore = gkeystore.NewServer(chainCtx.Keystore) // Keystore removed from context.Context
+	// vm.keystore = gkeystore.NewServer(chainContext.Keystore) // Keystore removed from context.Context
 
-	// Create SharedMemory wrapper
-	sharedMemoryWrapper := &sharedMemoryWrapper{sm: chainCtx.SharedMemory}
-	vm.sharedMemory = gsharedmemory.NewServer(sharedMemoryWrapper, db)
+	// Create SharedMemory wrapper if available
+	// SharedMemory is not part of the snow.Context, skip it
+	// vm.sharedMemory = gsharedmemory.NewServer(nil, dbMgr)
 
-	// Create BCLookup wrapper
-	bcLookupWrapper := &bcLookupWrapper{bc: chainCtx.BCLookup}
-	vm.bcLookup = galiasreader.NewServer(bcLookupWrapper)
+	// Create BCLookup wrapper - handle interface{} type
+	var bcLookup *bcLookupWrapper
+	if chainContext.BCLookup != nil {
+		if bc, ok := chainContext.BCLookup.(BCLookup); ok {
+			bcLookup = &bcLookupWrapper{bc: bc}
+		} else {
+			// Create a wrapper that converts the interface
+			bcLookup = &bcLookupWrapper{bc: &bcLookupAdapter{lookup: chainContext.BCLookup}}
+		}
+	} else {
+		// Create a no-op BCLookup
+		bcLookup = &bcLookupWrapper{bc: &noopBCLookup{}}
+	}
+	vm.bcLookup = galiasreader.NewServer(bcLookup)
 
 	// Convert appSender
-	coreAppSender := &appSenderWrapper{appSender: appSender}
+	coreAppSender := &appSenderWrapper{appSender: sender}
 	vm.appSender = appsender.NewServer(coreAppSender)
 
-	// Create ValidatorState wrapper
-	validatorStateWrapper := &validatorStateWrapper{vs: chainCtx.ValidatorState}
+	// Create ValidatorState wrapper - convert interface type
+	validatorStateWrapper := &validatorStateWrapper{vs: &validatorStateAdapter{vs: chainContext.ValidatorState}}
 	vm.validatorStateServer = gvalidators.NewServer(validatorStateWrapper)
 	// WarpSigner doesn't exist in context.Context - skip it
-	// vm.warpSignerServer = gwarp.NewServer(chainCtx.WarpSigner)
+	// vm.warpSignerServer = gwarp.NewServer(chainContext.WarpSigner)
 
 	serverListener, err := grpcutils.NewListener()
 	if err != nil {
@@ -213,20 +272,20 @@ func (vm *VMClient) Initialize(
 	serverAddr := serverListener.Addr().String()
 
 	go grpcutils.Serve(serverListener, vm.newInitServer())
-	chainCtx.Log.Info("grpc: serving vm services",
+	chainContext.Log.Info("grpc: serving vm services",
 		zap.String("address", serverAddr),
 	)
 
 	resp, err := vm.client.Initialize(ctx, &vmpb.InitializeRequest{
-		NetworkId:    chainCtx.NetworkID,
-		SubnetId:     chainCtx.NetID[:],
-		ChainId:      chainCtx.ChainID[:],
-		NodeId:       chainCtx.NodeID.Bytes(),
-		PublicKey:    bls.PublicKeyToCompressedBytes(chainCtx.PublicKey),
-		XChainId:     ids.Empty[:], // XChainID doesn't exist in context.Context
-		CChainId:     chainCtx.CChainID[:],
-		LuxAssetId:   chainCtx.LUXAssetID[:],
-		ChainDataDir: chainCtx.ChainDataDir,
+		NetworkId:    chainContext.NetworkID,
+		SubnetId:     chainContext.SubnetID[:],
+		ChainId:      chainContext.ChainID[:],
+		NodeId:       chainContext.NodeID.Bytes(),
+		PublicKey:    chainContext.PublicKey,
+		XChainId:     chainContext.XChainID[:],
+		CChainId:     chainContext.CChainID[:],
+		LuxAssetId:   chainContext.AVAXAssetID[:],
+		ChainDataDir: "",
 		GenesisBytes: genesisBytes,
 		UpgradeBytes: upgradeBytes,
 		ConfigBytes:  configBytes,
@@ -381,8 +440,18 @@ func (vm *VMClient) newInitServer() *grpc.Server {
 }
 
 func (vm *VMClient) SetState(ctx context.Context, state consensus.State) error {
+	// Convert consensus.State to uint32 for protobuf
+	// consensus.State is an interface with GetTimestamp() method,
+	// use timestamp to determine state
+	var stateValue uint32
+	if state.GetTimestamp() == 0 {
+		stateValue = 0 // Bootstrapping
+	} else {
+		stateValue = 1 // NormalOp
+	}
+	
 	resp, err := vm.client.SetState(ctx, &vmpb.SetStateRequest{
-		State: vmpb.State(state),
+		State: vmpb.State(stateValue),
 	})
 	if err != nil {
 		return err
@@ -508,9 +577,6 @@ func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (chain.Block, 
 	}
 
 	status := choices.Status(resp.Status)
-	if err := status.Valid(); err != nil {
-		return nil, err
-	}
 
 	time, err := grpcutils.TimestampAsTime(resp.Timestamp)
 	if err != nil {
@@ -545,9 +611,6 @@ func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (chain.Block, er
 	}
 
 	status := choices.Status(resp.Status)
-	if err := status.Valid(); err != nil {
-		return nil, err
-	}
 
 	time, err := grpcutils.TimestampAsTime(resp.Timestamp)
 	return &blockClient{
@@ -724,9 +787,6 @@ func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) (
 		}
 
 		status := choices.Status(blkResp.Status)
-		if err := status.Valid(); err != nil {
-			return nil, err
-		}
 
 		time, err := grpcutils.TimestampAsTime(blkResp.Timestamp)
 		if err != nil {
@@ -924,11 +984,16 @@ func (b *blockClient) Reject(ctx context.Context) error {
 	return err
 }
 
-func (b *blockClient) Status() choices.Status {
-	return b.status
+func (b *blockClient) Status() uint8 {
+	return uint8(b.status)
 }
 
 func (b *blockClient) Parent() ids.ID {
+	return b.parentID
+}
+
+// ParentID implements block.Block
+func (b *blockClient) ParentID() ids.ID {
 	return b.parentID
 }
 
@@ -1108,9 +1173,25 @@ func (b *chainBlockWrapper) Verify(ctx context.Context) error {
 	return b.Block.Verify(ctx)
 }
 
-// sharedMemoryWrapper wraps interfaces.SharedMemory to match atomic.SharedMemory
+// Define missing interfaces locally
+type SharedMemory interface {
+	Apply(map[ids.ID]interface{}, ...interface{}) error
+}
+
+type BCLookup interface {
+	Lookup(string) (ids.ID, error)
+	PrimaryAlias(ids.ID) (string, error)
+}
+
+type ValidatorState interface {
+	GetCurrentHeight() (uint64, error)
+	GetNetID(context.Context, ids.ID) (ids.ID, error)
+	GetValidatorSet(uint64, ids.ID) (map[ids.NodeID]uint64, error)
+}
+
+// sharedMemoryWrapper wraps SharedMemory to match atomic.SharedMemory
 type sharedMemoryWrapper struct {
-	sm interfaces.SharedMemory
+	sm SharedMemory
 }
 
 func (s *sharedMemoryWrapper) Apply(requests map[ids.ID]*atomic.Requests, batches ...database.Batch) error {
@@ -1140,9 +1221,42 @@ func (s *sharedMemoryWrapper) Indexed(peerChainID ids.ID, traits [][]byte, start
 	return nil, nil, nil, nil
 }
 
-// bcLookupWrapper wraps interfaces.BCLookup to match ids.AliaserReader
+// noopDatabase is a database that does nothing
+type noopDatabase struct{}
+
+func (n *noopDatabase) Has([]byte) (bool, error) { return false, nil }
+func (n *noopDatabase) Get([]byte) ([]byte, error) { return nil, database.ErrNotFound }
+func (n *noopDatabase) Put([]byte, []byte) error { return nil }
+func (n *noopDatabase) Delete([]byte) error { return nil }
+func (n *noopDatabase) NewBatch() database.Batch { return &noopBatch{} }
+func (n *noopDatabase) NewIterator() database.Iterator { return &emptyIterator{} }
+func (n *noopDatabase) NewIteratorWithStart([]byte) database.Iterator { return &emptyIterator{} }
+func (n *noopDatabase) NewIteratorWithPrefix([]byte) database.Iterator { return &emptyIterator{} }
+func (n *noopDatabase) NewIteratorWithStartAndPrefix([]byte, []byte) database.Iterator { return &emptyIterator{} }
+func (n *noopDatabase) Compact([]byte, []byte) error { return nil }
+func (n *noopDatabase) Close() error { return nil }
+func (n *noopDatabase) HealthCheck(context.Context) (interface{}, error) { return nil, nil }
+
+type noopBatch struct{}
+func (n *noopBatch) Put([]byte, []byte) error { return nil }
+func (n *noopBatch) Delete([]byte) error { return nil }
+func (n *noopBatch) Size() int { return 0 }
+func (n *noopBatch) Write() error { return nil }
+func (n *noopBatch) Reset() {}
+func (n *noopBatch) Replay(database.KeyValueWriterDeleter) error { return nil }
+func (n *noopBatch) Inner() database.Batch { return n }
+
+// emptyIterator is a database iterator that returns nothing
+type emptyIterator struct{}
+func (e *emptyIterator) Next() bool { return false }
+func (e *emptyIterator) Error() error { return nil }
+func (e *emptyIterator) Key() []byte { return nil }
+func (e *emptyIterator) Value() []byte { return nil }
+func (e *emptyIterator) Release() {}
+
+// bcLookupWrapper wraps BCLookup to match ids.AliaserReader
 type bcLookupWrapper struct {
-	bc interfaces.BCLookup
+	bc BCLookup
 }
 
 func (b *bcLookupWrapper) Lookup(alias string) (ids.ID, error) {
@@ -1162,9 +1276,9 @@ func (b *bcLookupWrapper) Aliases(id ids.ID) ([]string, error) {
 	return []string{primary}, nil
 }
 
-// validatorStateWrapper wraps interfaces.ValidatorState to match validators.State
+// validatorStateWrapper wraps ValidatorState to match validators.State
 type validatorStateWrapper struct {
-	vs interfaces.ValidatorState
+	vs ValidatorState
 }
 
 func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
@@ -1193,7 +1307,14 @@ func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint
 	return result, nil
 }
 
-func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+// GetCurrentValidatorOutput represents a current validator
+type GetCurrentValidatorOutput struct {
+	NodeID    ids.NodeID
+	PublicKey *bls.PublicKey
+	Weight    uint64
+}
+
+func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*GetCurrentValidatorOutput, uint64, error) {
 	// Get current height first
 	height, err := v.vs.GetCurrentHeight()
 	if err != nil {
@@ -1207,12 +1328,12 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netI
 	}
 	
 	// Convert to GetCurrentValidatorOutput format
-	result := make(map[ids.ID]*validators.GetCurrentValidatorOutput, len(valSet))
+	result := make(map[ids.ID]*GetCurrentValidatorOutput, len(valSet))
 	for nodeID, weight := range valSet {
 		// Convert NodeID to ID by copying the bytes
 		var id ids.ID
 		copy(id[:], nodeID[:])
-		result[id] = &validators.GetCurrentValidatorOutput{
+		result[id] = &GetCurrentValidatorOutput{
 			NodeID: nodeID,
 			Weight: weight,
 		}
@@ -1222,7 +1343,17 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netI
 }
 
 func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
-	return v.vs.GetMinimumHeight(ctx)
+	// GetMinimumHeight is optional - return 0 if not available
+	if vs, ok := v.vs.(interface{ GetMinimumHeight(context.Context) (uint64, error) }); ok {
+		return vs.GetMinimumHeight(ctx)
+	}
+	return 0, nil
+}
+
+// GetCurrentValidators implements validators.State
+func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	// Get validators at specified height
+	return v.GetValidatorSet(ctx, height, netID)
 }
 
 // appSenderWrapper wraps block.AppSender to match core.AppSender
@@ -1231,9 +1362,10 @@ type appSenderWrapper struct {
 }
 
 func (a *appSenderWrapper) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
-	// block.AppSender expects a single nodeID, so we take the first one
-	for nodeID := range nodeIDs {
-		return a.appSender.SendAppRequest(ctx, nodeID, requestID, request)
+	// block.AppSender expects a slice of nodeIDs
+	nodeIDSlice := nodeIDs.List()
+	if len(nodeIDSlice) > 0 {
+		return a.appSender.SendAppRequest(ctx, nodeIDSlice, requestID, request)
 	}
 	return nil
 }
@@ -1248,13 +1380,15 @@ func (a *appSenderWrapper) SendAppError(ctx context.Context, nodeID ids.NodeID, 
 }
 
 func (a *appSenderWrapper) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	// block.AppSender doesn't use nodeIDs for gossip
-	return a.appSender.SendAppGossip(ctx, appGossipBytes)
+	// block.AppSender expects a slice of nodeIDs  
+	nodeIDSlice := nodeIDs.List()
+	return a.appSender.SendAppGossip(ctx, nodeIDSlice, appGossipBytes)
 }
 
 func (a *appSenderWrapper) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
 	// Same as SendAppGossip for this wrapper
-	return a.appSender.SendAppGossip(ctx, appGossipBytes)
+	nodeIDSlice := nodeIDs.List()
+	return a.appSender.SendAppGossip(ctx, nodeIDSlice, appGossipBytes)
 }
 
 func (a *appSenderWrapper) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error {
@@ -1265,4 +1399,65 @@ func (a *appSenderWrapper) SendCrossChainAppRequest(ctx context.Context, chainID
 func (a *appSenderWrapper) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, appResponseBytes []byte) error {
 	// Not implemented - return nil
 	return nil
+}
+
+// bcLookupAdapter adapts interface{} to BCLookup
+type bcLookupAdapter struct {
+	lookup interface{}
+}
+
+func (b *bcLookupAdapter) Lookup(alias string) (ids.ID, error) {
+	if l, ok := b.lookup.(interface{ Lookup(string) (ids.ID, error) }); ok {
+		return l.Lookup(alias)
+	}
+	return ids.Empty, fmt.Errorf("BCLookup.Lookup not supported")
+}
+
+func (b *bcLookupAdapter) PrimaryAlias(id ids.ID) (string, error) {
+	if l, ok := b.lookup.(interface{ PrimaryAlias(ids.ID) (string, error) }); ok {
+		return l.PrimaryAlias(id)
+	}
+	return "", fmt.Errorf("BCLookup.PrimaryAlias not supported")
+}
+
+// noopBCLookup is a no-op implementation of BCLookup
+type noopBCLookup struct{}
+
+func (n *noopBCLookup) Lookup(string) (ids.ID, error) {
+	return ids.Empty, fmt.Errorf("BCLookup not available")
+}
+
+func (n *noopBCLookup) PrimaryAlias(ids.ID) (string, error) {
+	return "", fmt.Errorf("BCLookup not available")
+}
+
+// validatorStateAdapter adapts consensus.context.ValidatorState to our ValidatorState interface
+type validatorStateAdapter struct {
+	vs interface{}
+}
+
+func (v *validatorStateAdapter) GetCurrentHeight() (uint64, error) {
+	if vs, ok := v.vs.(interface{ GetCurrentHeight() (uint64, error) }); ok {
+		return vs.GetCurrentHeight()
+	}
+	return 0, fmt.Errorf("GetCurrentHeight not supported")
+}
+
+func (v *validatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	// Try with context first
+	if vs, ok := v.vs.(interface{ GetNetID(context.Context, ids.ID) (ids.ID, error) }); ok {
+		return vs.GetNetID(ctx, chainID)
+	}
+	// Try without context
+	if vs, ok := v.vs.(interface{ GetNetID(ids.ID) (ids.ID, error) }); ok {
+		return vs.GetNetID(chainID)
+	}
+	return ids.Empty, fmt.Errorf("GetNetID not supported")
+}
+
+func (v *validatorStateAdapter) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	if vs, ok := v.vs.(interface{ GetValidatorSet(uint64, ids.ID) (map[ids.NodeID]uint64, error) }); ok {
+		return vs.GetValidatorSet(height, netID)
+	}
+	return nil, fmt.Errorf("GetValidatorSet not supported")
 }

@@ -6,15 +6,58 @@ package gossip
 import (
 	"context"
 
-	enginecore "github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 )
 
-// FakeSenderAdapter wraps enginecore.FakeSender to implement ExtendedAppSender
+// FakeSender is a test implementation
+type FakeSender struct {
+	SendAppRequestF  func(context.Context, set.Set[ids.NodeID], uint32, []byte) error
+	SendAppResponseF func(context.Context, ids.NodeID, uint32, []byte) error
+	SendAppGossipF   func(context.Context, set.Set[ids.NodeID], []byte) error
+	SendCrossChainAppRequestF  func(context.Context, ids.ID, uint32, []byte) error
+	SendCrossChainAppResponseF func(context.Context, ids.ID, uint32, []byte) error
+}
+
+func (f *FakeSender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
+	if f.SendAppRequestF != nil {
+		return f.SendAppRequestF(ctx, nodeIDs, requestID, request)
+	}
+	return nil
+}
+
+func (f *FakeSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+	if f.SendAppResponseF != nil {
+		return f.SendAppResponseF(ctx, nodeID, requestID, response)
+	}
+	return nil
+}
+
+func (f *FakeSender) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], gossip []byte) error {
+	if f.SendAppGossipF != nil {
+		return f.SendAppGossipF(ctx, nodeIDs, gossip)
+	}
+	return nil
+}
+
+func (f *FakeSender) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, request []byte) error {
+	if f.SendCrossChainAppRequestF != nil {
+		return f.SendCrossChainAppRequestF(ctx, chainID, requestID, request)
+	}
+	return nil
+}
+
+func (f *FakeSender) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
+	if f.SendCrossChainAppResponseF != nil {
+		return f.SendCrossChainAppResponseF(ctx, chainID, requestID, response)
+	}
+	return nil
+}
+
+// FakeSenderAdapter wraps FakeSender to implement ExtendedAppSender
 type FakeSenderAdapter struct {
-	*enginecore.FakeSender
+	*FakeSender
 }
 
 // Ensure FakeSenderAdapter implements ExtendedAppSender

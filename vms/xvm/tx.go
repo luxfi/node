@@ -35,6 +35,30 @@ func (tx *Tx) ID() ids.ID {
 	return tx.tx.ID()
 }
 
+// Height returns the height of this transaction (not used in XVM)
+func (tx *Tx) Height() uint64 {
+	return 0
+}
+
+// Parent returns the parent ID (not used in XVM DAG)
+func (tx *Tx) Parent() ids.ID {
+	return ids.Empty
+}
+
+// ParentIDs returns the IDs of the parent transactions (inputs)
+func (tx *Tx) ParentIDs() []ids.ID {
+	// Return the transaction IDs this transaction depends on
+	parents := []ids.ID{}
+	for _, in := range tx.tx.Unsigned.InputUTXOs() {
+		if in.Symbolic() {
+			continue
+		}
+		txID, _ := in.InputSource()
+		parents = append(parents, txID)
+	}
+	return parents
+}
+
 func (tx *Tx) Accept(ctx context.Context) error {
 	if s := tx.Status(); s != choices.Processing {
 		return fmt.Errorf("%w: %s", errTxNotProcessing, s)

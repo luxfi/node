@@ -15,7 +15,6 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
-	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
@@ -337,7 +336,7 @@ func (vm *VM) SetState(ctx context.Context, newState interfaces.State) error {
 
 	oldState := vm.consensusState
 	vm.consensusState = newState
-	if interfaces.State(oldState) != interfaces.StateSyncing {
+	if oldState != interfaces.StateSyncing {
 		return nil
 	}
 
@@ -883,7 +882,7 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netI
 // interfacesToConsensusValidatorStateAdapter adapts ValidatorState from chainCtx
 type interfacesToConsensusValidatorStateAdapter struct {
 	ctx context.Context
-	vs  consensuscontext.ValidatorState
+	vs  consensus.ValidatorState
 }
 
 func (a *interfacesToConsensusValidatorStateAdapter) GetMinimumHeight(ctx context.Context) (uint64, error) {
