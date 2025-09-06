@@ -18,9 +18,8 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/dag"
-	"github.com/luxfi/consensus/engine/dag/vertex"
+	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/validators"
 	consensusversion "github.com/luxfi/consensus/version"
@@ -61,9 +60,18 @@ var (
 	errUnknownFx                 = errors.New("unknown feature extension")
 	errGenesisAssetMustHaveState = errors.New("genesis asset must have non-empty state")
 	errUnknownState              = errors.New("unknown state")
-
-	_ vertex.LinearizableVMWithEngine = (*VM)(nil)
 )
+
+// BCLookup provides blockchain alias lookup
+type BCLookup interface {
+	Lookup(string) (ids.ID, error)
+	PrimaryAlias(ids.ID) (string, error)
+}
+
+// SharedMemory provides cross-chain shared memory
+type SharedMemory interface {
+	Apply(map[ids.ID]interface{}, ...interface{}) error
+}
 
 type VM struct {
 	network.Atomic
@@ -86,10 +94,10 @@ type VM struct {
 	lock sync.RWMutex
 
 	// BCLookup provides blockchain alias lookup
-	bcLookup interfaces.BCLookup
+	bcLookup BCLookup
 
 	// SharedMemory for cross-chain operations
-	sharedMemory interfaces.SharedMemory
+	sharedMemory SharedMemory
 
 	// Used to check local time
 	clock mockable.Clock
@@ -366,14 +374,12 @@ func (vm *VM) onNormalOperationsStarted() error {
 }
 
 func (vm *VM) SetState(_ context.Context, state consensus.State) error {
-	switch state {
-	case consensus.Bootstrapping:
+	// Check timestamp to determine if bootstrapping or normal operation
+	// Bootstrapping typically happens at the beginning (timestamp 0)
+	if state.GetTimestamp() == 0 {
 		return vm.onBootstrapStarted()
-	case consensus.NormalOp:
-		return vm.onNormalOperationsStarted()
-	default:
-		return errUnknownState
 	}
+	return vm.onNormalOperationsStarted()
 }
 
 func (vm *VM) Shutdown() error {
@@ -392,6 +398,11 @@ func (vm *VM) Shutdown() error {
 
 func (*VM) Version(context.Context) (string, error) {
 	return version.Current.String(), nil
+}
+
+func (vm *VM) CreateStaticHandlers(context.Context) (map[string]http.Handler, error) {
+	// Return static handlers (if any)
+	return nil, nil
 }
 
 func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
@@ -620,7 +631,8 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 	}
 
 	// secure this by defaulting to luxAsset
-	vm.feeAssetID = consensus.GetXAssetID(vm.ctx)
+	// Use empty ID as default, will be set by first genesis asset
+	vm.feeAssetID = ids.Empty
 
 	for index, genesisTx := range genesis.Txs {
 		if len(genesisTx.Outs) != 0 {
@@ -782,32 +794,44 @@ func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 }
 
 // BuildVertex builds a new vertex - required for LinearizableVMWithEngine
-func (vm *VM) BuildVertex(ctx context.Context) (dag.Vertex, error) {
+func (vm *VM) BuildVertex(ctx context.Context) (dagvertex.Vertex, error) {
 	// XVM doesn't use vertices, it uses blocks
 	return nil, errors.New("XVM does not support vertex building")
 }
 
 // GetVertex gets a vertex by ID - required for LinearizableVMWithEngine
-func (vm *VM) GetVertex(ctx context.Context, vtxID ids.ID) (dag.Vertex, error) {
+func (vm *VM) GetVertex(ctx context.Context, vtxID ids.ID) (dagvertex.Vertex, error) {
 	// XVM doesn't use vertices, it uses blocks
 	return nil, errors.New("XVM does not support vertex operations")
 }
 
 // ParseVertex parses vertex bytes - required for LinearizableVMWithEngine
-func (vm *VM) ParseVertex(ctx context.Context, vtxBytes []byte) (dag.Vertex, error) {
+func (vm *VM) ParseVertex(ctx context.Context, vtxBytes []byte) (dagvertex.Vertex, error) {
 	// XVM doesn't use vertices, it uses blocks
 	return nil, errors.New("XVM does not support vertex parsing")
 }
 
 // GetEngine returns the consensus engine - required for LinearizableVMWithEngine
-func (vm *VM) GetEngine() interface{} {
-	// XVM doesn't have a separate engine
-	return nil
+func (vm *VM) GetEngine() dag.Engine {
+	// XVM doesn't have a separate engine, return a new DAG engine
+	return dag.New()
 }
 
 // SetEngine sets the consensus engine - required for LinearizableVMWithEngine
 func (vm *VM) SetEngine(engine interface{}) {
 	// XVM doesn't use a separate engine
+}
+
+// GetTx returns a transaction by ID - required for LinearizableVMWithEngine
+func (vm *VM) GetTx(ctx context.Context, txID ids.ID) (dag.Transaction, error) {
+	tx, err := vm.state.GetTx(txID)
+	if err != nil {
+		return nil, err
+	}
+	return &Tx{
+		vm: vm,
+		tx: tx,
+	}, nil
 }
 
 // noOpAppHandler is a simple no-op implementation of core.AppHandler
@@ -825,20 +849,27 @@ func (n *noOpAppHandler) CrossChainAppResponse(context.Context, ids.ID, uint32, 
 	return nil
 }
 
-func (n *noOpAppHandler) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
+func (n *noOpAppHandler) AppRequest(ctx context.Context, nodeID interface{}, requestID uint32, deadline time.Time, request []byte) error {
 	return nil
 }
 
-func (n *noOpAppHandler) AppRequestFailed(context.Context, ids.NodeID, uint32, *core.AppError) error {
+func (n *noOpAppHandler) AppRequestFailed(ctx context.Context, nodeID interface{}, requestID uint32, err *core.AppError) error {
 	return nil
 }
 
-func (n *noOpAppHandler) AppResponse(context.Context, ids.NodeID, uint32, []byte) error {
+func (n *noOpAppHandler) AppResponse(ctx context.Context, nodeID interface{}, requestID uint32, response []byte) error {
 	return nil
 }
 
-func (n *noOpAppHandler) AppGossip(context.Context, ids.NodeID, []byte) error {
+func (n *noOpAppHandler) AppGossip(context.Context, interface{}, []byte) error {
 	return nil
+}
+
+// GetCurrentValidatorOutput represents current validator info
+type GetCurrentValidatorOutput struct {
+	NodeID    ids.NodeID
+	PublicKey interface{}
+	Weight    uint64
 }
 
 // validatorStateWrapper wraps consensus.ValidatorState to match network.ValidatorState
@@ -869,7 +900,7 @@ func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint
 	return result, nil
 }
 
-func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*GetCurrentValidatorOutput, uint64, error) {
 	// Get current height
 	height, err := v.vs.GetCurrentHeight()
 	if err != nil {
@@ -883,12 +914,12 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netI
 	}
 
 	// Convert to GetCurrentValidatorOutput format
-	result := make(map[ids.ID]*validators.GetCurrentValidatorOutput, len(valSet))
+	result := make(map[ids.ID]*GetCurrentValidatorOutput, len(valSet))
 	for nodeID, weight := range valSet {
 		// Convert NodeID to ID by copying the bytes
 		var id ids.ID
 		copy(id[:], nodeID[:])
-		result[id] = &validators.GetCurrentValidatorOutput{
+		result[id] = &GetCurrentValidatorOutput{
 			NodeID: nodeID,
 			Weight: weight,
 		}
@@ -903,4 +934,22 @@ func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, e
 
 func (v *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	return v.vs.GetNetID(chainID)
+}
+
+func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	// Get validators at specified height
+	valSet, err := v.vs.GetValidatorSet(height, netID)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Convert map[ids.NodeID]uint64 to map[ids.NodeID]*validators.GetValidatorOutput
+	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(valSet))
+	for nodeID, weight := range valSet {
+		result[nodeID] = &validators.GetValidatorOutput{
+			NodeID: nodeID,
+			Weight: weight,
+		}
+	}
+	return result, nil
 }

@@ -35,6 +35,11 @@ func (op *MintOperation) Outs() []verify.State {
 	}
 }
 
+func (op *MintOperation) InitializeContext(ctx context.Context) error {
+	op.InitCtx(ctx)
+	return nil
+}
+
 func (op *MintOperation) Verify() error {
 	switch {
 	case op == nil:

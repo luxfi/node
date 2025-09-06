@@ -27,6 +27,12 @@ func (op *MintOperation) InitCtx(ctx context.Context) {
 	}
 }
 
+// InitializeContext implements fxs.FxOperation
+func (op *MintOperation) InitializeContext(ctx context.Context) error {
+	op.InitCtx(ctx)
+	return nil
+}
+
 func (op *MintOperation) Cost() (uint64, error) {
 	return op.MintInput.Cost()
 }

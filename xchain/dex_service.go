@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/luxfi/qzmq"
 	"google.golang.org/grpc"

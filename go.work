@@ -1,0 +1,11 @@
+go 1.24.6
+
+use (
+	.
+	../consensus
+	../crypto
+	../database
+	../geth
+	../metric
+	../qzmq
+)

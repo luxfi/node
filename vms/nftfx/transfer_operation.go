@@ -30,6 +30,11 @@ func (op *TransferOperation) Outs() []verify.State {
 	return []verify.State{&op.Output}
 }
 
+func (op *TransferOperation) InitializeContext(ctx context.Context) error {
+	op.InitCtx(ctx)
+	return nil
+}
+
 func (op *TransferOperation) Verify() error {
 	switch {
 	case op == nil:

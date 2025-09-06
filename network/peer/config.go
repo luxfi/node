@@ -4,9 +4,9 @@
 package peer
 
 import (
+	"context"
 	"time"
 
-	"github.com/luxfi/consensus/router"
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
@@ -18,6 +18,11 @@ import (
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 )
+
+// InboundHandler handles inbound messages
+type InboundHandler interface {
+	HandleInbound(ctx context.Context, msg message.InboundMessage)
+}
 
 type Config struct {
 	// Size, in bytes, of the buffer this peer reads messages into
@@ -31,7 +36,7 @@ type Config struct {
 	Log                  log.Logger
 	InboundMsgThrottler  throttling.InboundMsgThrottler
 	Network              Network
-	Router               router.InboundHandler
+	Router               InboundHandler
 	VersionCompatibility version.Compatibility
 	// MySubnets does not include the primary network ID
 	MySubnets          set.Set[ids.ID]

@@ -15,7 +15,6 @@ import (
 	time "time"
 
 	core "github.com/luxfi/consensus/core"
-	router "github.com/luxfi/consensus/networking/router"
 	ids "github.com/luxfi/ids"
 	version "github.com/luxfi/node/version"
 	gomock "go.uber.org/mock/gomock"
@@ -165,7 +164,7 @@ func (mr *MockRouterMockRecorder) HealthCheck(ctx any) *gomock.Call {
 }
 
 // Initialize mocks base method.
-func (m *MockRouter) Initialize(nodeID ids.NodeID, log, timeoutManager any, closeTimeout time.Duration, criticalChains any, sybilProtectionEnabled bool, trackedSubnets any, onFatal func(int), healthConfig router.HealthConfig, metricsRegisterer any) error {
+func (m *MockRouter) Initialize(nodeID ids.NodeID, log, timeoutManager any, closeTimeout time.Duration, criticalChains any, sybilProtectionEnabled bool, trackedSubnets any, onFatal func(int), healthConfig interface{}, metricsRegisterer any) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Initialize", nodeID, log, timeoutManager, closeTimeout, criticalChains, sybilProtectionEnabled, trackedSubnets, onFatal, healthConfig, metricsRegisterer)
 	ret0, _ := ret[0].(error)

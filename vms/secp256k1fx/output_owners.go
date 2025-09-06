@@ -40,6 +40,12 @@ func (out *OutputOwners) InitializeWithContext(ctx context.Context) error {
 	return nil
 }
 
+// InitializeContext implements consensus.Contextualizable
+func (out *OutputOwners) InitializeContext(ctx context.Context) error {
+	out.ctx = ctx
+	return nil
+}
+
 // InitCtx allows addresses to be formatted into their human readable format
 // during json marshalling.
 func (out *OutputOwners) InitCtx(ctx context.Context) {

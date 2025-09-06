@@ -14,7 +14,6 @@ import (
 
 	luxmetrics "github.com/luxfi/metric"
 
-	"github.com/luxfi/consensus/router"
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	consensusset "github.com/luxfi/consensus/utils/set"
@@ -50,7 +49,7 @@ func StartTestPeer(
 	ctx context.Context,
 	ip netip.AddrPort,
 	networkID uint32,
-	router router.InboundHandler,
+	router InboundHandler,
 ) (Peer, error) {
 	dialer := net.Dialer{}
 	conn, err := dialer.DialContext(ctx, constants.NetworkType, ip.String())

@@ -29,13 +29,29 @@ func (v *validatorsWrapper) GetWeight(netID ids.ID, nodeID ids.NodeID) uint64 {
 }
 
 // GetValidator returns validator info
-func (v *validatorsWrapper) GetValidator(netID ids.ID, nodeID ids.NodeID) (*validators.Validator, bool) {
-	return v.manager.GetValidator(netID, nodeID)
+func (v *validatorsWrapper) GetValidator(netID ids.ID, nodeID ids.NodeID) (validators.Validator, bool) {
+	output, exists := v.manager.GetValidator(netID, nodeID)
+	if !exists {
+		return nil, false
+	}
+	// Convert GetValidatorOutput to Validator interface
+	return &validatorAdapter{output: output}, true
 }
 
 // GetValidatorIDs returns all validator IDs for a subnet
 func (v *validatorsWrapper) GetValidatorIDs(netID ids.ID) []ids.NodeID {
-	return v.manager.GetValidatorIDs(netID)
+	validatorSet, err := v.manager.GetValidators(netID)
+	if err != nil {
+		return nil
+	}
+	
+	validators := validatorSet.List()
+	nodeIDs := make([]ids.NodeID, len(validators))
+	for i, validator := range validators {
+		nodeIDs[i] = validator.ID()
+	}
+	
+	return nodeIDs
 }
 
 // TotalWeight returns the total weight of all validators
@@ -53,4 +69,17 @@ type SetCallbackListener interface {
 	OnValidatorAdded(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64)
 	OnValidatorRemoved(nodeID ids.NodeID, weight uint64)
 	OnValidatorWeightChanged(nodeID ids.NodeID, oldWeight, newWeight uint64)
+}
+
+// validatorAdapter adapts GetValidatorOutput to implement Validator interface
+type validatorAdapter struct {
+	output *validators.GetValidatorOutput
+}
+
+func (v *validatorAdapter) ID() ids.NodeID {
+	return v.output.NodeID
+}
+
+func (v *validatorAdapter) Light() uint64 {
+	return v.output.Light
 }

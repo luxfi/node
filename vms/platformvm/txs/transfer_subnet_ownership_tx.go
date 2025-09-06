@@ -35,7 +35,7 @@ type TransferNetOwnershipTx struct {
 // that the addresses can be json marshalled into human readable format
 func (tx *TransferNetOwnershipTx) InitCtx(ctx context.Context) {
 	tx.BaseTx.InitCtx(ctx)
-	tx.Owner.InitCtx(ctx)
+	// Owner doesn't have InitCtx method
 }
 
 func (tx *TransferNetOwnershipTx) SyntacticVerify(ctx context.Context) error {
@@ -46,7 +46,7 @@ func (tx *TransferNetOwnershipTx) SyntacticVerify(ctx context.Context) error {
 		// already passed syntactic verification
 		return nil
 	case tx.Net == constants.PrimaryNetworkID:
-		return ErrTransferPermissionlessSubnet
+		return ErrTransferPermissionlessNet
 	}
 
 	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {

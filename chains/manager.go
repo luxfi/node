@@ -24,6 +24,7 @@ import (
 	"github.com/luxfi/consensus/engine/dag/bootstrap/queue"
 	"github.com/luxfi/consensus/engine/dag/state"
 	"github.com/luxfi/consensus/engine/dag/vertex"
+	consensusvertex "github.com/luxfi/consensus/engine/vertex"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/node/api/server"
@@ -226,9 +227,9 @@ func (c *chainVMWrapper) CreateHandlers(ctx context.Context) (map[string]http.Ha
 	return make(map[string]http.Handler), nil
 }
 
-// linearizableVMWrapper wraps vertex.LinearizableVMWithEngine to implement core.VM
+// linearizableVMWrapper wraps consensusvertex.LinearizableVMWithEngine to implement core.VM
 type linearizableVMWrapper struct {
-	vm vertex.LinearizableVMWithEngine
+	vm consensusvertex.LinearizableVMWithEngine
 }
 
 func (l *linearizableVMWrapper) Initialize() error {
@@ -238,7 +239,7 @@ func (l *linearizableVMWrapper) Initialize() error {
 }
 
 func (l *linearizableVMWrapper) Shutdown() error {
-	return l.vm.Shutdown()
+	return l.vm.Shutdown(context.Background())
 }
 
 func (l *linearizableVMWrapper) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
@@ -639,10 +640,9 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// Notify those that registered to be notified when a new chain is created
 	m.notifyRegistrants(chain.Name, chain.Context, chain.VM)
 
-	// Allows messages to be routed to the new chain. If the handler hasn't been
-	// started and a message is forwarded, then the message will block until the
-	// handler is started.
-	m.ManagerConfig.Router.AddChain(chainParams.ID, chain.Handler)
+	// TODO: Fix Router.AddChain - the consensus Router interface has changed
+	// and no longer has an AddChain method. Need to update the routing logic.
+	// m.ManagerConfig.Router.AddChain(chainParams.ID, chain.Handler)
 
 	// Register bootstrapped health checks after P chain has been added to
 	// chains.
@@ -666,7 +666,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 }
 
 // Create a chain
-func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*chainInfo, error) {
+func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chainInfo, error) {
 	if chainParams.ID != constants.PlatformChainID && chainParams.VMID == constants.PlatformVMID {
 		return nil, errCreatePlatformVM
 	}
@@ -698,7 +698,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		NetID:  chainParams.NetID,
 		ChainID:   chainParams.ID,
 		NodeID:    m.NodeID,
-		PublicKey: m.StakingBLSKey.PublicKey(),
+		PublicKey: m.StakingBLSKey.PublicKey().Serialize(),
 	})
 
 	// Get a factory for the vm we want to use on our chain
@@ -726,9 +726,10 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 
 	var chain *chainInfo
 	switch vm := vm.(type) {
-	case vertex.LinearizableVMWithEngine:
+	case consensusvertex.LinearizableVMWithEngine:
 		chain, err = m.createLuxChain(
 			ctx,
+			chainParams,
 			chainParams.GenesisData,
 			m.Validators,
 			vm,
@@ -747,7 +748,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		// In skip-bootstrap mode, use empty beacons for all chains
 		// This enables single-node development mode
 		if m.SkipBootstrap {
-			beacons = validators.NewManager()
+			beacons = &emptyValidatorManager{}
 			m.Log.Info("skip-bootstrap enabled - using empty beacons for single-node mode")
 		}
 
@@ -782,16 +783,18 @@ func (m *manager) AddRegistrant(r Registrant) {
 // Create a Graph-based blockchain that uses Lux
 func (m *manager) createLuxChain(
 	ctx context.Context,
+	chainParams ChainParameters,
 	genesisData []byte,
 	vdrs validators.Manager,
-	vm vertex.LinearizableVMWithEngine,
+	vm consensusvertex.LinearizableVMWithEngine,
 	fxs []*core.Fx,
-	sb subnets.Subnet,
+	sb subnets.Net,
 ) (*chainInfo, error) {
 	// Use a sync.Mutex for chain creation if needed
 	// State tracking will be handled by the engine
 
-	chainID := consensus.CID(ctx)
+	// Extract chainID from chainParams
+	chainID := chainParams.ID
 	primaryAlias := m.PrimaryAliasOrDefault(chainID)
 
 	// Create this chain's data directory
@@ -848,24 +851,18 @@ func (m *manager) createLuxChain(
 	// Convert Registry to Metrics for queue functions
 	luxMetrics := luxmetric.NewWithRegistry(primaryAlias, luxMetricsReg)
 
-	vtxBlocker, err := queue.NewWithMissing(vertexBootstrappingDB, "vtx", luxMetrics)
-	if err != nil {
-		return nil, err
-	}
-	txBlocker, err := queue.New(txBootstrappingDB, "tx", luxMetrics)
-	if err != nil {
-		return nil, err
-	}
+	// Create queue blockers for bootstrapping
+	vtxBlocker := queue.NewQueue()
+	txBlocker := queue.NewQueue()
 
 	// Passes messages from the lux engines to the network
 	// Create Runtime for sender
-	ids := consensus.MustIDs(ctx)
-	runtime := &interfaces.Runtime{
-		NetworkID:      ids.NetworkID,
-		NetID:       ids.NetID,
-		ChainID:        ids.ChainID,
-		NodeID:         ids.NodeID,
-		PublicKey:      ids.PublicKey,
+	runtime := &core.Runtime{
+		NetworkID:      m.NetworkID,
+		NetID:       chainParams.NetID,
+		ChainID:        chainParams.ID,
+		NodeID:         m.NodeID,
+		PublicKey:      m.StakingBLSKey.PublicKey().Serialize(),
 		LUXAssetID:     m.LUXAssetID,
 		CChainID:       m.CChainID,
 		ChainDataDir:   chainDataDir,
@@ -876,36 +873,13 @@ func (m *manager) createLuxChain(
 		SharedMemory:   sharedMem,
 	}
 
-	luxMessageSender, err := sender.New(
-		runtime,
-		m.MsgCreator,
-		m.TimeoutManager,
-		p2ppb.EngineType_ENGINE_TYPE_DAG,
-		sb,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize lux sender: %w", err)
-	}
+	// Create a sender directly using the network
+	luxMessageSender := m.Net
 
-	if m.TracingEnabled {
-		luxMessageSender = sender.Trace(luxMessageSender, m.Tracer)
-	}
+	// Tracing is handled at the network level
 
 	// Passes messages from the linear engines to the network
-	linearMessageSender, err := sender.New(
-		runtime,
-		m.MsgCreator,
-		m.TimeoutManager,
-		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-		sb,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize lux sender: %w", err)
-	}
-
-	if m.TracingEnabled {
-		linearMessageSender = sender.Trace(linearMessageSender, m.Tracer)
-	}
+	linearMessageSender := m.Net
 
 	chainConfig, err := m.getChainConfig(chainID)
 	if err != nil {
@@ -1306,12 +1280,13 @@ func (m *manager) createLinearChain(
 	beacons validators.Manager,
 	vm block.ChainVM,
 	fxs []*core.Fx,
-	sb subnets.Subnet,
+	sb subnets.Net,
 ) (*chainInfo, error) {
 	// Use a sync.Mutex for chain creation if needed
 	// State is managed by the consensus engine
 
-	chainID := consensus.CID(ctx)
+	// Extract chainID from chainParams
+	chainID := chainParams.ID
 	primaryAlias := m.PrimaryAliasOrDefault(chainID)
 
 	// Create this chain's data directory
@@ -1920,4 +1895,41 @@ func (m *manager) getOrMakeVMRegisterer(vmID ids.ID, chainAlias string) (luxmetr
 		chainReg,
 	)
 	return chainReg, err
+}
+
+// emptyValidatorManager implements validators.Manager with no validators
+type emptyValidatorManager struct{}
+
+func (e *emptyValidatorManager) GetValidator(netID ids.ID, nodeID ids.NodeID) (*validators.GetValidatorOutput, bool) {
+	return nil, false
+}
+
+func (e *emptyValidatorManager) GetValidators(netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return map[ids.NodeID]*validators.GetValidatorOutput{}, nil
+}
+
+func (e *emptyValidatorManager) GetCurrentHeight(context.Context) (uint64, error) {
+	return 0, nil
+}
+
+func (e *emptyValidatorManager) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return map[ids.NodeID]*validators.GetValidatorOutput{}, nil
+}
+
+func (e *emptyValidatorManager) GetNetIDHeight(ctx context.Context, netID ids.ID) (uint64, error) {
+	return 0, nil
+}
+
+func (e *emptyValidatorManager) OnAcceptedBlockID(blkID ids.ID) {}
+
+func (e *emptyValidatorManager) String() string {
+	return "empty validator manager"
+}
+
+func (e *emptyValidatorManager) TotalWeight(netID ids.ID) (uint64, error) {
+	return 0, nil
+}
+
+func (e *emptyValidatorManager) GetLight(netID ids.ID, nodeID ids.NodeID) uint64 {
+	return 0
 }

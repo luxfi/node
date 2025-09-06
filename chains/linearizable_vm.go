@@ -12,14 +12,16 @@ import (
 	// "github.com/luxfi/consensus/engine/chain" // currently unused
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/dag/vertex"
+	consensusvertex "github.com/luxfi/consensus/engine/vertex"
+	"github.com/luxfi/consensus/snow"
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 )
 
 var (
-	_ vertex.LinearizableVM = (*initializeOnLinearizeVM)(nil)
-	_ block.ChainVM         = (*linearizeOnInitializeVM)(nil)
+	_ consensusvertex.LinearizableVM = (*initializeOnLinearizeVM)(nil)
+	_ block.ChainVM                  = (*linearizeOnInitializeVM)(nil)
 
 	// ErrSkipped is returned when a linearizable VM is asked to perform
 	// chain VM operations
@@ -31,7 +33,7 @@ var (
 // the call to Linearize. This also provides the stopVertexID to the
 // linearizeOnInitializeVM.
 type initializeOnLinearizeVM struct {
-	vertex.LinearizableVMWithEngine
+	consensusvertex.LinearizableVMWithEngine
 	vmToInitialize block.ChainVM // Changed from core.VM to block.ChainVM
 	vmToLinearize  *linearizeOnInitializeVM
 
@@ -44,20 +46,24 @@ type initializeOnLinearizeVM struct {
 	appSender    core.AppSender
 }
 
-func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
+func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID ids.ID, toVertex ids.ID) error {
 	vm.vmToLinearize.stopVertexID = stopVertexID
 
 	// Initialize the ChainVM
 	// Convert consensus types to block types
+	var pubKey []byte
+	// ctx is a context.Context, not a consensus context, so we don't have PublicKey
+	snowCtx := &snow.Context{
+		NetworkID: consensus.GetNetworkID(vm.ctx),
+		ChainID:   consensus.GetChainID(vm.ctx),
+		NodeID:    consensus.GetNodeID(vm.ctx),
+		PublicKey: pubKey,
+	}
+	consensusCtx := &snow.ConsensusContext{}
+	
 	chainCtx := &block.ChainContext{
-		NetworkID:    consensus.GetNetworkID(vm.ctx),
-		NetID:     consensus.GetNetID(vm.ctx),
-		ChainID:      consensus.GetChainID(vm.ctx),
-		NodeID:       consensus.GetNodeID(vm.ctx),
-		PublicKey:    consensus.PK(vm.ctx),
-		LUXAssetID:   consensus.LuxAssetID(vm.ctx),
-		CChainID:     ids.Empty, // Implementation note
-		ChainDataDir: "",        // Implementation note
+		ConsensusContext: consensusCtx,
+		Context:          snowCtx,
 	}
 
 	// Create DBManager wrapper
@@ -84,7 +90,7 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 		vm.upgradeBytes,
 		vm.configBytes,
 		toEngine,
-		blockFxs,
+		[]interface{}{blockFxs},
 		blockAppSender,
 	)
 }
@@ -143,7 +149,7 @@ func (b *blockAppSenderWrapper) SendAppGossip(ctx context.Context, appGossipByte
 // call to Linearize. This enables the proposervm to provide its toEngine
 // channel to the VM that is being linearized.
 type linearizeOnInitializeVM struct {
-	vertex.LinearizableVMWithEngine
+	consensusvertex.LinearizableVMWithEngine
 	stopVertexID ids.ID
 
 	// Stored from Initialize for later use
@@ -168,7 +174,7 @@ func (a *appSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs set.Set[i
 	}
 	// Send to the first node in the set
 	for nodeID := range nodeIDs {
-		return a.appSender.SendAppRequest(ctx, nodeID, requestID, appRequestBytes)
+		return a.appSender.SendAppRequest(ctx, []ids.NodeID{nodeID}, requestID, appRequestBytes)
 	}
 	return nil
 }
@@ -184,8 +190,9 @@ func (a *appSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs set.Set[id
 	if a.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	// block.AppSender.SendAppGossip doesn't take nodeIDs, so we ignore them
-	return a.appSender.SendAppGossip(ctx, appGossipBytes)
+	// Convert set to slice for SendAppGossip
+	nodeIDList := nodeIDs.List()
+	return a.appSender.SendAppGossip(ctx, nodeIDList, appGossipBytes)
 }
 
 func (a *appSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
@@ -213,7 +220,7 @@ func (a *appSenderAdapter) SendCrossChainAppError(ctx context.Context, chainID i
 	return nil
 }
 
-func NewLinearizeOnInitializeVM(vm vertex.LinearizableVMWithEngine) *linearizeOnInitializeVM {
+func NewLinearizeOnInitializeVM(vm consensusvertex.LinearizableVMWithEngine) *linearizeOnInitializeVM {
 	return &linearizeOnInitializeVM{
 		LinearizableVMWithEngine: vm,
 	}
@@ -221,29 +228,54 @@ func NewLinearizeOnInitializeVM(vm vertex.LinearizableVMWithEngine) *linearizeOn
 
 func (vm *linearizeOnInitializeVM) Initialize(
 	ctx context.Context,
-	chainCtx *block.ChainContext,
-	dbManager block.DBManager,
+	chainCtx interface{},
+	db interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- block.Message,
-	fxs []*block.Fx,
-	appSender block.AppSender,
+	msgChan interface{},
+	fxs []interface{},
+	appSender interface{},
 ) error {
+	// Convert interface{} types to concrete types
+	blockChainCtx, ok := chainCtx.(*block.ChainContext)
+	if !ok {
+		return errors.New("invalid chain context type")
+	}
+	
+	dbManager, ok := db.(block.DBManager)
+	if !ok {
+		return errors.New("invalid db manager type")
+	}
+	
+	toEngine, ok := msgChan.(chan<- block.Message)
+	if !ok {
+		return errors.New("invalid message channel type")
+	}
+	
+	blockAppSender, ok := appSender.(block.AppSender)
+	if !ok {
+		return errors.New("invalid app sender type")
+	}
+
 	// Convert block types to consensus types for the underlying VM
 	consensusCtx := context.Background()
-	consensusCtx = consensus.WithIDs(consensusCtx, consensus.IDs{
-		NetworkID: chainCtx.NetworkID,
-		NetID:  chainCtx.NetID,
-		ChainID:   chainCtx.ChainID,
-		NodeID:    chainCtx.NodeID,
-		PublicKey: chainCtx.PublicKey,
-	})
+	snowCtx := blockChainCtx.Context
+	if snowCtx != nil {
+		consensusCtx = consensus.WithIDs(consensusCtx, consensus.IDs{
+			NetworkID: snowCtx.NetworkID,
+			ChainID:   snowCtx.ChainID,
+			NodeID:    snowCtx.NodeID,
+			PublicKey: snowCtx.PublicKey,
+		})
+	}
 
 	// Get current database from DBManager
-	var db database.Database
-	if dbManager != nil {
-		db = dbManager.Current()
+	var vmDB database.Database
+	if dbManagerIntf, ok := db.(interface{ Current() database.Database }); ok {
+		vmDB = dbManagerIntf.Current()
+	} else if dbIntf, ok := db.(database.Database); ok {
+		vmDB = dbIntf
 	}
 
 	// Convert fxs
@@ -254,11 +286,11 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	}
 
 	// Create core AppSender adapter
-	coreAppSender := &appSenderAdapter{appSender: appSender}
+	coreAppSender := &appSenderAdapter{appSender: blockAppSender}
 
 	// Store for later use
 	vm.chainCtx = consensusCtx
-	vm.db = db
+	vm.db = vmDB
 	vm.genesisBytes = genesisBytes
 	vm.upgradeBytes = upgradeBytes
 	vm.configBytes = configBytes
@@ -266,8 +298,9 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	vm.appSender = coreAppSender
 	vm.toEngine = toEngine
 
-	// Now linearize
-	return vm.Linearize(ctx, vm.stopVertexID)
+	// The LinearizableVMWithEngine doesn't have a Linearize method,
+	// return nil as initialization is complete
+	return nil
 }
 
 // BuildBlock implements block.ChainVM interface

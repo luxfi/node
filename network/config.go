@@ -9,13 +9,14 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/luxfi/consensus/networking/tracker"
+	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
+	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/math/set"
@@ -167,7 +168,7 @@ type Config struct {
 	PeerWriteBufferSize int `json:"peerWriteBufferSize"`
 
 	// Tracks the CPU/disk usage caused by processing messages of each peer.
-	ResourceTracker tracker.ResourceTracker `json:"-"`
+	ResourceTracker consensustracker.ResourceTracker `json:"-"`
 
 	// Specifies how much CPU usage each peer can cause before
 	// we rate-limit them.

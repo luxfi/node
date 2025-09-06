@@ -20,12 +20,12 @@ type Subnets struct {
 	configs map[ids.ID]subnets.Config
 
 	lock    sync.RWMutex
-	subnets map[ids.ID]subnets.Subnet
+	subnets map[ids.ID]subnets.Net
 }
 
 // GetOrCreate returns a net running on this node, or creates one if it was
 // not running before. Returns the net and if the net was created.
-func (s *Subnets) GetOrCreate(netID ids.ID) (subnets.Subnet, bool) {
+func (s *Subnets) GetOrCreate(netID ids.ID) (subnets.Net, bool) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -53,7 +53,7 @@ func (s *Subnets) Bootstrapping() []ids.ID {
 	defer s.lock.RUnlock()
 
 	subnetsBootstrapping := make([]ids.ID, 0, len(s.subnets))
-	for netID, net := range s.subnets {
+	for netID, subnet := range s.subnets {
 		if !subnet.IsBootstrapped() {
 			subnetsBootstrapping = append(subnetsBootstrapping, netID)
 		}
@@ -74,7 +74,7 @@ func NewSubnets(
 	s := &Subnets{
 		nodeID:  nodeID,
 		configs: configs,
-		subnets: make(map[ids.ID]subnets.Subnet),
+		subnets: make(map[ids.ID]subnets.Net),
 	}
 
 	_, _ = s.GetOrCreate(constants.PrimaryNetworkID)

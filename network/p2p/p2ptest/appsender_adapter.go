@@ -5,19 +5,38 @@ package p2ptest
 
 import (
 	"context"
+	"testing"
 
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 )
 
-// SenderTestAdapter adapts core.SenderTest to p2p.ExtendedAppSender
-type SenderTestAdapter struct {
-	*core.SenderTest
+// SenderTest is a test implementation of AppSender
+type SenderTest struct {
+	T                      *testing.T
+	SendAppRequestF        func(context.Context, ids.NodeID, uint32, []byte) error
+	SendAppResponseF       func(context.Context, ids.NodeID, uint32, []byte) error
+	SendAppErrorF          func(context.Context, ids.NodeID, uint32, int32, string) error
+	SendAppGossipF         func(context.Context, []byte) error
+	SendCrossChainAppRequestF func(context.Context, ids.ID, uint32, []byte) error
+	SendCrossChainAppResponseF func(context.Context, ids.ID, uint32, []byte) error
+	SendCrossChainAppErrorF func(context.Context, ids.ID, uint32, int32, string) error
+	CantSendAppRequest     bool
+	CantSendAppResponse    bool
+	CantSendAppError       bool
+	CantSendAppGossip      bool
+	CantSendCrossChainAppRequest  bool
+	CantSendCrossChainAppResponse bool
+	CantSendCrossChainAppError    bool
 }
 
-func NewSenderTestAdapter(sender *core.SenderTest) p2p.ExtendedAppSender {
+// SenderTestAdapter adapts SenderTest to p2p.ExtendedAppSender
+type SenderTestAdapter struct {
+	*SenderTest
+}
+
+func NewSenderTestAdapter(sender *SenderTest) p2p.ExtendedAppSender {
 	return &SenderTestAdapter{SenderTest: sender}
 }
 
