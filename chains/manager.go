@@ -698,7 +698,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 		NetID:  chainParams.NetID,
 		ChainID:   chainParams.ID,
 		NodeID:    m.NodeID,
-		PublicKey: m.StakingBLSKey.PublicKey().Serialize(),
+		PublicKey: m.StakingBLSKey.PublicKey(),
 	})
 
 	// Get a factory for the vm we want to use on our chain
@@ -856,23 +856,6 @@ func (m *manager) createLuxChain(
 	txBlocker := queue.NewQueue()
 
 	// Passes messages from the lux engines to the network
-	// Create Runtime for sender
-	runtime := &core.Runtime{
-		NetworkID:      m.NetworkID,
-		NetID:       chainParams.NetID,
-		ChainID:        chainParams.ID,
-		NodeID:         m.NodeID,
-		PublicKey:      m.StakingBLSKey.PublicKey().Serialize(),
-		LUXAssetID:     m.LUXAssetID,
-		CChainID:       m.CChainID,
-		ChainDataDir:   chainDataDir,
-		Log:            m.Log,
-		Metrics:        vmMetrics,
-		ValidatorState: valStateWrapper,
-		BCLookup:       m,
-		SharedMemory:   sharedMem,
-	}
-
 	// Create a sender directly using the network
 	luxMessageSender := m.Net
 
@@ -1904,8 +1887,9 @@ func (e *emptyValidatorManager) GetValidator(netID ids.ID, nodeID ids.NodeID) (*
 	return nil, false
 }
 
-func (e *emptyValidatorManager) GetValidators(netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-	return map[ids.NodeID]*validators.GetValidatorOutput{}, nil
+func (e *emptyValidatorManager) GetValidators(netID ids.ID) (validators.Set, error) {
+	// Return an empty validator set
+	return validators.NewEmpty(), nil
 }
 
 func (e *emptyValidatorManager) GetCurrentHeight(context.Context) (uint64, error) {

@@ -155,6 +155,7 @@ type linearizeOnInitializeVM struct {
 	// Stored from Initialize for later use
 	chainCtx     context.Context
 	db           database.Database
+	dbManager    block.DBManager
 	genesisBytes []byte
 	upgradeBytes []byte
 	configBytes  []byte
@@ -243,7 +244,7 @@ func (vm *linearizeOnInitializeVM) Initialize(
 		return errors.New("invalid chain context type")
 	}
 	
-	dbManager, ok := db.(block.DBManager)
+	blockDBManager, ok := db.(block.DBManager)
 	if !ok {
 		return errors.New("invalid db manager type")
 	}
@@ -297,6 +298,7 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	vm.fxs = coreFxs
 	vm.appSender = coreAppSender
 	vm.toEngine = toEngine
+	vm.dbManager = blockDBManager // Store the DBManager for later use
 
 	// The LinearizableVMWithEngine doesn't have a Linearize method,
 	// return nil as initialization is complete
