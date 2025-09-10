@@ -20,6 +20,7 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/snow"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/crypto/bls"
@@ -60,19 +61,6 @@ var (
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )
-
-// simpleState implements consensus.State interface
-type simpleState struct {
-	timestamp int64
-}
-
-func (s *simpleState) GetTimestamp() int64 {
-	return s.timestamp
-}
-
-func (s *simpleState) SetTimestamp(timestamp int64) {
-	s.timestamp = timestamp
-}
 
 // VMServer is a VM that is managed over RPC.
 type VMServer struct {
@@ -257,9 +245,16 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	// Create a simple DBManager implementation
 	dbMgr := &dbManagerImpl{db: vm.db}
 
-	// Initialize the VM - create a simple block.Context
-	blockChainCtx := &block.Context{
-		PChainHeight: 0, // This will be updated later
+	// Initialize the VM - create a proper block.ChainContext
+	snowCtx := &snow.Context{
+		NetworkID: 96369, // LUX mainnet
+		ChainID:   ids.Empty, // Will be set later
+		NodeID:    ids.EmptyNodeID,
+	}
+	consensusCtx := &snow.ConsensusContext{}
+	blockChainCtx := &block.ChainContext{
+		ConsensusContext: consensusCtx,
+		Context:          snowCtx,
 	}
 	// Wrap core.AppSender to block.AppSender
 	blockAppSender := &blockAppSenderWrapper{appSender: appSenderClient}
@@ -313,9 +308,8 @@ func (vm *VMServer) SetState(ctx context.Context, stateReq *vmpb.SetStateRequest
 	}
 
 	if ss, ok := vm.vm.(stateSetter); ok {
-		// Create a simple state implementation
-		state := &simpleState{timestamp: time.Now().Unix()}
-		err := ss.SetState(ctx, state)
+		// Set state to NormalOp
+		err := ss.SetState(ctx, consensus.NormalOp)
 		if err != nil {
 			return nil, err
 		}
@@ -1079,8 +1073,9 @@ func (d *dbManagerImpl) Current() database.Database {
 	return d.db
 }
 
-func (d *dbManagerImpl) Get(version uint64) (database.Database, error) {
-	return d.db, nil
+func (d *dbManagerImpl) Database(id ids.ID) database.Database {
+	// For now, just return the current database
+	return d.db
 }
 
 func (d *dbManagerImpl) Close() error {
@@ -1092,19 +1087,28 @@ type blockAppSenderWrapper struct {
 	appSender core.AppSender
 }
 
-func (b *blockAppSenderWrapper) SendAppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, appRequestBytes []byte) error {
-	// Convert single nodeID to set for core.AppSender
-	nodeIDs := set.NewSet[ids.NodeID](1)
-	nodeIDs.Add(nodeID)
-	return b.appSender.SendAppRequest(ctx, nodeIDs, requestID, appRequestBytes)
+func (b *blockAppSenderWrapper) SendAppRequest(ctx context.Context, nodeIDs []ids.NodeID, requestID uint32, appRequestBytes []byte) error {
+	// Convert slice to set for core.AppSender
+	nodeIDSet := set.NewSet[ids.NodeID](len(nodeIDs))
+	for _, nodeID := range nodeIDs {
+		nodeIDSet.Add(nodeID)
+	}
+	return b.appSender.SendAppRequest(ctx, nodeIDSet, requestID, appRequestBytes)
 }
 
 func (b *blockAppSenderWrapper) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
 	return b.appSender.SendAppResponse(ctx, nodeID, requestID, appResponseBytes)
 }
 
-func (b *blockAppSenderWrapper) SendAppGossip(ctx context.Context, appGossipBytes []byte) error {
-	// core.AppSender requires nodeIDs, use empty set for broadcast
-	nodeIDs := set.NewSet[ids.NodeID](0)
-	return b.appSender.SendAppGossip(ctx, nodeIDs, appGossipBytes)
+func (b *blockAppSenderWrapper) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	return b.appSender.SendAppError(ctx, nodeID, requestID, errorCode, errorMessage)
+}
+
+func (b *blockAppSenderWrapper) SendAppGossip(ctx context.Context, nodeIDs []ids.NodeID, appGossipBytes []byte) error {
+	// Convert slice to set for core.AppSender
+	nodeIDSet := set.NewSet[ids.NodeID](len(nodeIDs))
+	for _, nodeID := range nodeIDs {
+		nodeIDSet.Add(nodeID)
+	}
+	return b.appSender.SendAppGossip(ctx, nodeIDSet, appGossipBytes)
 }

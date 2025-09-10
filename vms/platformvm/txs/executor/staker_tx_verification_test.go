@@ -87,7 +87,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				End:  uint64(endTime.Unix()),
 				Wght: unsignedTransformTx.MinValidatorStake,
 			},
-			Subnet: netID,
+			Net: netID,
 			StakeOuts: []*lux.TransferableOutput{
 				{
 					Asset: lux.Asset{

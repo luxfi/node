@@ -821,7 +821,7 @@ func (s *state) GetSubnetOwner(netID ids.ID) (fx.Owner, error) {
 
 	subnet, ok := subnetIntf.Unsigned.(*txs.CreateNetTx)
 	if !ok {
-		return nil, fmt.Errorf("%q %w", netID, errIsNotSubnet)
+		return nil, fmt.Errorf("%q %w", netID, errIsNotNet)
 	}
 
 	s.SetSubnetOwner(netID, subnet.Owner)
@@ -863,7 +863,7 @@ func (s *state) GetSubnetTransformation(netID ids.ID) (*txs.Tx, error) {
 
 func (s *state) AddNetTransformation(transformSubnetTxIntf *txs.Tx) {
 	transformSubnetTx := transformSubnetTxIntf.Unsigned.(*txs.TransformNetTx)
-	s.transformedSubnets[transformSubnetTx.Subnet] = transformSubnetTxIntf
+	s.transformedSubnets[transformSubnetTx.Net] = transformSubnetTxIntf
 }
 
 func (s *state) GetChains(netID ids.ID) ([]*txs.Tx, error) {
@@ -1221,7 +1221,7 @@ func (s *state) ApplyValidatorPublicKeyDiffs(
 			continue
 		}
 
-		vdr.PublicKey = bls.PublicKeyFromValidUncompressedBytes(pkBytes)
+		vdr.PublicKey = pkBytes
 	}
 
 	// Note: this does not fallback to the linkeddb index because the linkeddb

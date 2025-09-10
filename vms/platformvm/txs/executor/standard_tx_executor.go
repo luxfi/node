@@ -437,7 +437,7 @@ func (e *StandardTxExecutor) TransformNetTx(tx *txs.TransformNetTx) error {
 		return errMaxStakeDurationTooLarge
 	}
 
-	baseTxCreds, err := verifyPoASubnetAuthorization(e.Backend, e.State, e.Tx, tx.Subnet, tx.SubnetAuth)
+	baseTxCreds, err := verifyPoASubnetAuthorization(e.Backend, e.State, e.Tx, tx.Net, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
@@ -472,7 +472,7 @@ func (e *StandardTxExecutor) TransformNetTx(tx *txs.TransformNetTx) error {
 	lux.Produce(e.State, txID, tx.Outs)
 	// Transform the new net in the database
 	e.State.AddNetTransformation(e.Tx)
-	e.State.SetCurrentSupply(tx.Subnet, tx.InitialSupply)
+	e.State.SetCurrentSupply(tx.Net, tx.InitialSupply)
 	return nil
 }
 
@@ -527,7 +527,7 @@ func (e *StandardTxExecutor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionl
 
 // Verifies a [*txs.TransferNetOwnershipTx] and, if it passes, executes it on
 // [e.State]. For verification rules, see [verifyTransferNetOwnershipTx].
-// This transaction will result in the ownership of [tx.Subnet] being transferred
+// This transaction will result in the ownership of [tx.Net] being transferred
 // to [tx.Owner].
 func (e *StandardTxExecutor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
 	err := verifyTransferNetOwnershipTx(
@@ -540,7 +540,7 @@ func (e *StandardTxExecutor) TransferNetOwnershipTx(tx *txs.TransferNetOwnership
 		return err
 	}
 
-	e.State.SetSubnetOwner(tx.Subnet, tx.Owner)
+	e.State.SetSubnetOwner(tx.Net, tx.Owner)
 
 	txID := e.Tx.ID()
 	lux.Consume(e.State, tx.Ins)

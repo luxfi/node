@@ -15,12 +15,12 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
+	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/interfaces"
+	coreinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
-	"github.com/luxfi/database/manager"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
@@ -96,7 +96,7 @@ type VM struct {
 	// processing a GetAncestors message from a bootstrapping node.
 	innerBlkCache  cache.Cacher[ids.ID, chain.Block]
 	preferred      ids.ID
-	consensusState interfaces.State
+	consensusState coreinterfaces.State
 	context        context.Context
 	onShutdown     func()
 
@@ -137,43 +137,24 @@ func New(
 
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtxIntf interface{},
-	dbManagerIntf interface{},
+	chainCtx *block.ChainContext,
+	dbManagerIntf block.DBManager,
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngineIntf interface{},
-	fxsIntf []interface{},
-	appSender interface{},
+	toEngineIntf chan<- block.Message,
+	fxsIntf []*block.Fx,
+	appSender block.AppSender,
 ) error {
-	// Type assert to proper types
-	chainCtx, ok := chainCtxIntf.(*block.ChainContext)
-	if !ok {
-		return fmt.Errorf("invalid chain context type")
-	}
 	// dbManagerIntf is actually a database.Database in practice
 	db, ok := dbManagerIntf.(database.Database)
 	if !ok {
-		// Try as manager
-		if _, ok := dbManagerIntf.(manager.Manager); ok {
-			// If it's a manager, we need to create/get a database from it
-			// For now, just error as we don't have the config
-			return fmt.Errorf("received manager instead of database")
-		}
 		return fmt.Errorf("invalid database type") 
 	}
-	_, ok = toEngineIntf.(chan<- block.Message)
-	if !ok {
-		return fmt.Errorf("invalid message channel type")
-	}
+	// toEngineIntf is already the correct type chan<- block.Message
 	
-	// Convert fxs
-	var fxs []*block.Fx
-	for _, fx := range fxsIntf {
-		if blockFx, ok := fx.(*block.Fx); ok {
-			fxs = append(fxs, blockFx)
-		}
-	}
+	// fxsIntf is already the correct type []*block.Fx
+	fxs := fxsIntf
 	// Set IDs once at initialization
 	vm.ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: chainCtx.NetworkID,
@@ -250,13 +231,13 @@ func (vm *VM) Initialize(
 
 	err = vm.ChainVM.Initialize(
 		ctx,
-		chainCtxIntf,
+		chainCtx,
 		dbManagerIntf,
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
 		toEngineIntf,
-		fxsIntf,
+		fxs,
 		appSender,
 	)
 	if err != nil {
@@ -328,7 +309,7 @@ func (vm *VM) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (vm *VM) SetState(ctx context.Context, newState interfaces.State) error {
+func (vm *VM) SetState(ctx context.Context, newState coreinterfaces.State) error {
 	// ChainVM doesn't have SetState in new consensus
 	// if err := vm.ChainVM.SetState(ctx, newState); err != nil {
 	// 	return err
@@ -336,7 +317,7 @@ func (vm *VM) SetState(ctx context.Context, newState interfaces.State) error {
 
 	oldState := vm.consensusState
 	vm.consensusState = newState
-	if oldState != interfaces.StateSyncing {
+	if oldState != coreinterfaces.StateSyncing {
 		return nil
 	}
 
@@ -361,18 +342,30 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 		return nil, err
 	}
 
-	return preferredBlock.buildChild(ctx)
+	child, err := preferredBlock.buildChild(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &blockAdapter{Block: child}, nil
 }
 
 func (vm *VM) ParseBlock(ctx context.Context, b []byte) (block.Block, error) {
 	if blk, err := vm.parsePostForkBlock(ctx, b); err == nil {
-		return blk, nil
+		return &blockAdapter{Block: blk}, nil
 	}
-	return vm.parsePreForkBlock(ctx, b)
+	preFork, err := vm.parsePreForkBlock(ctx, b)
+	if err != nil {
+		return nil, err
+	}
+	return &blockAdapter{Block: preFork}, nil
 }
 
 func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
-	return vm.getBlock(ctx, id)
+	blk, err := vm.getBlock(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &blockAdapter{Block: blk}, nil
 }
 
 func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
@@ -649,10 +642,13 @@ func (vm *VM) parsePostForkBlock(ctx context.Context, b []byte) (PostForkBlock, 
 
 func (vm *VM) parsePreForkBlock(ctx context.Context, b []byte) (*preForkBlock, error) {
 	blk, err := vm.ChainVM.ParseBlock(ctx, b)
+	if err != nil {
+		return nil, err
+	}
 	return &preForkBlock{
-		Block: blk,
+		Block: &reverseBlockAdapter{Block: blk},
 		vm:    vm,
-	}, err
+	}, nil
 }
 
 func (vm *VM) getBlock(ctx context.Context, id ids.ID) (Block, error) {
@@ -700,11 +696,14 @@ func (vm *VM) getPostForkBlock(ctx context.Context, blkID ids.ID) (PostForkBlock
 }
 
 func (vm *VM) getPreForkBlock(ctx context.Context, blkID ids.ID) (*preForkBlock, error) {
-	blk, err := vm.ChainVM.GetBlock(ctx, blkID)
+	engineBlk, err := vm.ChainVM.GetBlock(ctx, blkID)
+	if err != nil {
+		return nil, err
+	}
 	return &preForkBlock{
-		Block: blk,
+		Block: &reverseBlockAdapter{Block: engineBlk},
 		vm:    vm,
-	}, err
+	}, nil
 }
 
 func (vm *VM) acceptPostForkBlock(blk PostForkBlock) error {
@@ -811,10 +810,11 @@ func (vm *VM) parseInnerBlock(ctx context.Context, outerBlkID ids.ID, innerBlkBy
 		return innerBlk, nil
 	}
 
-	innerBlk, err := vm.ChainVM.ParseBlock(ctx, innerBlkBytes)
+	engineBlk, err := vm.ChainVM.ParseBlock(ctx, innerBlkBytes)
 	if err != nil {
 		return nil, err
 	}
+	innerBlk := &reverseBlockAdapter{Block: engineBlk}
 	vm.cacheInnerBlock(outerBlkID, innerBlk)
 	return innerBlk, nil
 }
@@ -915,4 +915,23 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(height uint
 
 	// Already in the right format - map[ids.NodeID]uint64
 	return valSet, nil
+}
+
+func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*consContext.GetValidatorOutput, error) {
+	// Get the validator set from the interfaces version
+	valSet, err := a.vs.GetValidatorSet(height, netID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert map[ids.NodeID]uint64 to map[ids.NodeID]*GetValidatorOutput
+	result := make(map[ids.NodeID]*consContext.GetValidatorOutput, len(valSet))
+	for nodeID, weight := range valSet {
+		result[nodeID] = &consContext.GetValidatorOutput{
+			NodeID:    nodeID,
+			Weight:    weight,
+			PublicKey: nil, // Public key not available in this interface
+		}
+	}
+	return result, nil
 }

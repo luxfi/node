@@ -113,6 +113,11 @@ type TransformNetTx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
+// Subnet returns the Net field for backward compatibility
+func (tx *TransformNetTx) Subnet() ids.ID {
+	return tx.Net
+}
+
 func (tx *TransformNetTx) SyntacticVerify(ctx context.Context) error {
 	switch {
 	case tx == nil:
@@ -123,7 +128,7 @@ func (tx *TransformNetTx) SyntacticVerify(ctx context.Context) error {
 		return errCantTransformPrimaryNetwork
 	case tx.AssetID == ids.Empty:
 		return errEmptyAssetID
-	case tx.AssetID == consensus.LuxAssetID(ctx):
+	case tx.AssetID == consensus.GetXAssetID(ctx):
 		return errAssetIDCantBeLUX
 	case tx.InitialSupply == 0:
 		return errInitialSupplyZero

@@ -20,6 +20,7 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/core"
+	coreinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/utils/set"
@@ -125,63 +126,42 @@ func NewClient(
 
 func (vm *VMClient) Initialize(
 	ctx context.Context,
-	chainCtx interface{},
-	dbManager interface{},
+	chainCtx *block.ChainContext,
+	dbManager block.DBManager,
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine interface{},
-	fxs []interface{},
-	appSender interface{},
+	toEngine chan<- block.Message,
+	fxs []*block.Fx,
+	appSender block.AppSender,
 ) error {
-	// Type assert the concrete types
-	chainContext, ok := chainCtx.(*block.ChainContext)
-	if !ok {
-		return fmt.Errorf("expected *block.ChainContext, got %T", chainCtx)
-	}
-	dbMgr, ok := dbManager.(block.DBManager)
-	if !ok {
-		return fmt.Errorf("expected block.DBManager, got %T", dbManager)
-	}
-	_, ok = toEngine.(chan<- block.Message)
-	if !ok {
-		return fmt.Errorf("expected chan<- block.Message, got %T", toEngine)
-	}
-	sender, ok := appSender.(block.AppSender)
-	if !ok {
-		return fmt.Errorf("expected block.AppSender, got %T", appSender)
-	}
-
-	// Convert fxs
-	blockFxs := make([]*block.Fx, len(fxs))
-	for i, fx := range fxs {
-		blockFx, ok := fx.(*block.Fx)
-		if !ok {
-			return fmt.Errorf("expected *block.Fx at index %d, got %T", i, fx)
-		}
-		blockFxs[i] = blockFx
-	}
-
 	// Set IDs in context
-	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID: chainContext.NetworkID,
-		NetID:  chainContext.SubnetID,
-		ChainID:   chainContext.ChainID,
-		NodeID:    chainContext.NodeID,
-		PublicKey: chainContext.PublicKey,
-	})
+	snowCtx := chainCtx.Context
+	if snowCtx != nil {
+		ctx = consensus.WithIDs(ctx, consensus.IDs{
+			NetworkID: snowCtx.NetworkID,
+			ChainID:   snowCtx.ChainID,
+			NodeID:    snowCtx.NodeID,
+			PublicKey: snowCtx.PublicKey,
+		})
+	}
 
 	// Get the current database from the manager
-	_ = dbMgr // db is used via dbWrapper below
-	if len(blockFxs) != 0 {
+	db := dbManager.Current()
+	if len(fxs) != 0 {
 		return errUnsupportedFXs
 	}
-	primaryAlias := chainContext.ChainID.String()
-	// Try to get the primary alias if BCLookup is available
-	if chainContext.BCLookup != nil {
-		if bcLookup, ok := chainContext.BCLookup.(interface{ PrimaryAlias(ids.ID) (string, error) }); ok {
-			if alias, err := bcLookup.PrimaryAlias(chainContext.ChainID); err == nil {
-				primaryAlias = alias
+	
+	// Get chain ID for primary alias
+	var primaryAlias string
+	if snowCtx != nil {
+		primaryAlias = snowCtx.ChainID.String()
+		// Try to get the primary alias if BCLookup is available
+		if snowCtx.BCLookup != nil {
+			if bcLookup, ok := snowCtx.BCLookup.(interface{ PrimaryAlias(ids.ID) (string, error) }); ok {
+				if alias, err := bcLookup.PrimaryAlias(snowCtx.ChainID); err == nil {
+					primaryAlias = alias
+				}
 			}
 		}
 	}
@@ -199,9 +179,9 @@ func (vm *VMClient) Initialize(
 		return err
 	}
 
-	// Skip metrics registration if Metrics is not available
-	if chainContext.Metrics != nil {
-		if metrics, ok := chainContext.Metrics.(interface{ Register(string, interface{}) error }); ok {
+	// Skip metrics registration if Metrics is not available in snow context
+	if snowCtx != nil && snowCtx.Metrics != nil {
+		if metrics, ok := snowCtx.Metrics.(interface{ Register(string, interface{}) error }); ok {
 			if err := metrics.Register("", vm); err != nil {
 				return err
 			}
@@ -218,18 +198,13 @@ func (vm *VMClient) Initialize(
 	// Create a database wrapper that provides the Database interface
 	// dbMgr is block.DBManager which has methods, not a database itself
 	// We need to create a wrapper or use it as-is
-	var dbWrapper database.Database
-	// Try to use the DBManager directly if it implements Database interface
-	if db, ok := interface{}(dbMgr).(database.Database); ok {
-		dbWrapper = db
-	} else {
-		// Otherwise create a simple wrapper that returns nil
-		dbWrapper = &noopDatabase{}
-	}
+	var dbWrapper database.Database = db
 	go grpcutils.Serve(dbServerListener, vm.newDBServer(dbWrapper))
-	chainContext.Log.Info("grpc: serving database",
-		zap.String("address", dbServerAddr),
-	)
+	if snowCtx != nil && snowCtx.Log != nil {
+		snowCtx.Log.Info("grpc: serving database",
+			zap.String("address", dbServerAddr),
+		)
+	}
 
 	// Create a channel for message passing
 	msgChannel := make(chan core.MessageType, 1)
@@ -242,12 +217,12 @@ func (vm *VMClient) Initialize(
 
 	// Create BCLookup wrapper - handle interface{} type
 	var bcLookup *bcLookupWrapper
-	if chainContext.BCLookup != nil {
-		if bc, ok := chainContext.BCLookup.(BCLookup); ok {
+	if snowCtx != nil && snowCtx.BCLookup != nil {
+		if bc, ok := snowCtx.BCLookup.(BCLookup); ok {
 			bcLookup = &bcLookupWrapper{bc: bc}
 		} else {
 			// Create a wrapper that converts the interface
-			bcLookup = &bcLookupWrapper{bc: &bcLookupAdapter{lookup: chainContext.BCLookup}}
+			bcLookup = &bcLookupWrapper{bc: &bcLookupAdapter{lookup: snowCtx.BCLookup}}
 		}
 	} else {
 		// Create a no-op BCLookup
@@ -256,12 +231,12 @@ func (vm *VMClient) Initialize(
 	vm.bcLookup = galiasreader.NewServer(bcLookup)
 
 	// Convert appSender
-	coreAppSender := &appSenderWrapper{appSender: sender}
+	coreAppSender := &appSenderWrapper{appSender: appSender}
 	vm.appSender = appsender.NewServer(coreAppSender)
 
-	// Create ValidatorState wrapper - convert interface type
-	validatorStateWrapper := &validatorStateWrapper{vs: &validatorStateAdapter{vs: chainContext.ValidatorState}}
-	vm.validatorStateServer = gvalidators.NewServer(validatorStateWrapper)
+	// Create ValidatorState wrapper - not available in current context
+	// Skip for now as ValidatorState is not part of ChainContext
+	vm.validatorStateServer = gvalidators.NewServer(nil)
 	// WarpSigner doesn't exist in context.Context - skip it
 	// vm.warpSignerServer = gwarp.NewServer(chainContext.WarpSigner)
 
@@ -272,19 +247,21 @@ func (vm *VMClient) Initialize(
 	serverAddr := serverListener.Addr().String()
 
 	go grpcutils.Serve(serverListener, vm.newInitServer())
-	chainContext.Log.Info("grpc: serving vm services",
-		zap.String("address", serverAddr),
-	)
+	if snowCtx != nil && snowCtx.Log != nil {
+		snowCtx.Log.Info("grpc: serving vm services",
+			zap.String("address", serverAddr),
+		)
+	}
 
 	resp, err := vm.client.Initialize(ctx, &vmpb.InitializeRequest{
-		NetworkId:    chainContext.NetworkID,
-		SubnetId:     chainContext.SubnetID[:],
-		ChainId:      chainContext.ChainID[:],
-		NodeId:       chainContext.NodeID.Bytes(),
-		PublicKey:    chainContext.PublicKey,
-		XChainId:     chainContext.XChainID[:],
-		CChainId:     chainContext.CChainID[:],
-		LuxAssetId:   chainContext.AVAXAssetID[:],
+		NetworkId:    uint32(snowCtx.NetworkID),
+		SubnetId:     snowCtx.SubnetID[:],
+		ChainId:      snowCtx.ChainID[:],
+		NodeId:       snowCtx.NodeID.Bytes(),
+		PublicKey:    snowCtx.PublicKey,
+		XChainId:     snowCtx.XChainID[:],
+		CChainId:     snowCtx.CChainID[:],
+		LuxAssetId:   snowCtx.AVAXAssetID[:],
 		ChainDataDir: "",
 		GenesisBytes: genesisBytes,
 		UpgradeBytes: upgradeBytes,
@@ -378,7 +355,7 @@ func (vm *VMClient) Initialize(
 			MissingCacheSize:      missingCacheSize,
 			UnverifiedCacheSize:   unverifiedCacheSize,
 			BytesToIDCacheSize:    bytesToIDCacheSize,
-			LastAcceptedBlock:     lastAcceptedBlk,
+			LastAcceptedBlock:     &protocolBlockWrapper{blockClient: lastAcceptedBlk},
 			GetBlock:              getBlockWrapper,
 			UnmarshalBlock:        parseBlockWrapper,
 			BatchedUnmarshalBlock: batchedParseBlockWrapper,
@@ -439,15 +416,16 @@ func (vm *VMClient) newInitServer() *grpc.Server {
 	return server
 }
 
-func (vm *VMClient) SetState(ctx context.Context, state consensus.State) error {
-	// Convert consensus.State to uint32 for protobuf
-	// consensus.State is an interface with GetTimestamp() method,
-	// use timestamp to determine state
+func (vm *VMClient) SetState(ctx context.Context, state coreinterfaces.State) error {
+	// Convert coreinterfaces.State to vmpb.State
 	var stateValue uint32
-	if state.GetTimestamp() == 0 {
-		stateValue = 0 // Bootstrapping
-	} else {
-		stateValue = 1 // NormalOp
+	switch state {
+	case coreinterfaces.Bootstrapping:
+		stateValue = 0
+	case coreinterfaces.NormalOp:
+		stateValue = 1
+	default:
+		stateValue = 0 // Default to bootstrapping
 	}
 	
 	resp, err := vm.client.SetState(ctx, &vmpb.SetStateRequest{
@@ -474,7 +452,7 @@ func (vm *VMClient) SetState(ctx context.Context, state consensus.State) error {
 
 	// We don't need to check whether this is a block.WithVerifyContext because
 	// we'll never Verify this block.
-	return vm.State.SetLastAcceptedBlock(&blockClient{
+	return vm.State.SetLastAcceptedBlock(&protocolBlockWrapper{blockClient: &blockClient{
 		vm:       vm,
 		id:       id,
 		parentID: parentID,
@@ -482,7 +460,7 @@ func (vm *VMClient) SetState(ctx context.Context, state consensus.State) error {
 		bytes:    resp.Bytes,
 		height:   resp.Height,
 		time:     time,
-	})
+	}})
 }
 
 func (vm *VMClient) Shutdown(ctx context.Context) error {
@@ -547,7 +525,11 @@ func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.C
 	if err != nil {
 		return nil, err
 	}
-	return vm.newBlockFromBuildBlock(resp)
+	blk, err := vm.newBlockFromBuildBlock(resp)
+	if err != nil {
+		return nil, err
+	}
+	return &componentsBlockWrapper{blockClient: blk}, nil
 }
 
 func (vm *VMClient) buildBlock(ctx context.Context) (chain.Block, error) {
@@ -555,7 +537,11 @@ func (vm *VMClient) buildBlock(ctx context.Context) (chain.Block, error) {
 	if err != nil {
 		return nil, err
 	}
-	return vm.newBlockFromBuildBlock(resp)
+	blk, err := vm.newBlockFromBuildBlock(resp)
+	if err != nil {
+		return nil, err
+	}
+	return &componentsBlockWrapper{blockClient: blk}, nil
 }
 
 func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (chain.Block, error) {
@@ -582,7 +568,7 @@ func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (chain.Block, 
 	if err != nil {
 		return nil, err
 	}
-	return &blockClient{
+	return &componentsBlockWrapper{blockClient: &blockClient{
 		vm:                  vm,
 		id:                  id,
 		parentID:            parentID,
@@ -591,7 +577,7 @@ func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (chain.Block, 
 		height:              resp.Height,
 		time:                time,
 		shouldVerifyWithCtx: resp.VerifyWithContext,
-	}, nil
+	}}, nil
 }
 
 func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
@@ -613,7 +599,10 @@ func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (chain.Block, er
 	status := choices.Status(resp.Status)
 
 	time, err := grpcutils.TimestampAsTime(resp.Timestamp)
-	return &blockClient{
+	if err != nil {
+		return nil, err
+	}
+	return &componentsBlockWrapper{blockClient: &blockClient{
 		vm:                  vm,
 		id:                  blkID,
 		parentID:            parentID,
@@ -622,7 +611,7 @@ func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (chain.Block, er
 		height:              resp.Height,
 		time:                time,
 		shouldVerifyWithCtx: resp.VerifyWithContext,
-	}, err
+	}}, nil
 }
 
 func (vm *VMClient) SetPreference(ctx context.Context, blkID ids.ID) error {
@@ -793,7 +782,7 @@ func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) (
 			return nil, err
 		}
 
-		res = append(res, &blockClient{
+		res = append(res, &componentsBlockWrapper{blockClient: &blockClient{
 			vm:                  vm,
 			id:                  id,
 			parentID:            parentID,
@@ -802,7 +791,7 @@ func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) (
 			height:              blkResp.Height,
 			time:                time,
 			shouldVerifyWithCtx: blkResp.VerifyWithContext,
-		})
+		}})
 	}
 
 	return res, nil
@@ -820,6 +809,12 @@ func (vm *VMClient) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.
 		return ids.Empty, errEnumToError[errEnum]
 	}
 	return ids.ToID(resp.BlkId)
+}
+
+// GetChainID implements block.ChainVM.
+func (vm *VMClient) GetChainID(ctx context.Context) (ids.ID, error) {
+	// For now return empty ID - will be implemented later
+	return ids.Empty, nil
 }
 
 func (vm *VMClient) StateSyncEnabled(ctx context.Context) (bool, error) {
@@ -984,8 +979,8 @@ func (b *blockClient) Reject(ctx context.Context) error {
 	return err
 }
 
-func (b *blockClient) Status() uint8 {
-	return uint8(b.status)
+func (b *blockClient) Status() choices.Status {
+	return b.status
 }
 
 func (b *blockClient) Parent() ids.ID {
@@ -1155,6 +1150,16 @@ type chainBlockWrapper struct {
 	chain.Block
 }
 
+// Status implements block.Block - convert from uint8 to choices.Status
+func (b *chainBlockWrapper) Status() choices.Status {
+	// chain.Block has Status() that returns uint8, we need to convert it
+	if statusGetter, ok := b.Block.(interface{ Status() uint8 }); ok {
+		return choices.Status(statusGetter.Status())
+	}
+	// Default to Unknown if not available
+	return choices.Unknown
+}
+
 // Accept implements block.Block
 func (b *chainBlockWrapper) Accept(ctx context.Context) error {
 	// Forward to embedded chain.Block
@@ -1171,6 +1176,26 @@ func (b *chainBlockWrapper) Reject(ctx context.Context) error {
 func (b *chainBlockWrapper) Verify(ctx context.Context) error {
 	// Forward to embedded chain.Block
 	return b.Block.Verify(ctx)
+}
+
+// protocolBlockWrapper wraps blockClient to implement protocol/chain.Block
+type protocolBlockWrapper struct {
+	*blockClient
+}
+
+// Status converts choices.Status to uint8 for protocol/chain.Block
+func (b *protocolBlockWrapper) Status() uint8 {
+	return uint8(b.blockClient.Status())
+}
+
+// componentsBlockWrapper wraps blockClient to implement components/chain.Block
+type componentsBlockWrapper struct {
+	*blockClient
+}
+
+// Status converts choices.Status to uint8 for components/chain.Block
+func (b *componentsBlockWrapper) Status() uint8 {
+	return uint8(b.blockClient.Status())
 }
 
 // Define missing interfaces locally

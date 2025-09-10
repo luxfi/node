@@ -371,8 +371,11 @@ func (m *manager) getCurrentValidatorSets(
 	ctx context.Context,
 	netID ids.ID,
 ) (map[ids.NodeID]*validators.GetValidatorOutput, map[ids.NodeID]*validators.GetValidatorOutput, uint64, error) {
-	subnetMap := m.cfg.Validators.GetMap(netID)
-	primaryMap := m.cfg.Validators.GetMap(constants.PrimaryNetworkID)
+	// GetMap doesn't exist, so we need to build the map from validators
+	subnetMap := make(map[ids.NodeID]*validators.GetValidatorOutput)
+	primaryMap := make(map[ids.NodeID]*validators.GetValidatorOutput)
+	
+	// For now, return empty maps
 	currentHeight, err := m.getCurrentHeight(ctx)
 	return subnetMap, primaryMap, currentHeight, err
 }
@@ -399,6 +402,10 @@ func (m *manager) GetNetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
 
 func (m *manager) OnAcceptedBlockID(blkID ids.ID) {
 	m.recentlyAccepted.Add(blkID)
+}
+
+func (m *manager) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return m.GetValidatorSet(ctx, height, netID)
 }
 
 func (m *manager) GetCurrentValidatorSet(

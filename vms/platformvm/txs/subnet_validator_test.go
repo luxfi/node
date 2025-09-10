@@ -18,7 +18,7 @@ func TestNetValidatorVerifyNetID(t *testing.T) {
 	// Error path
 	{
 		vdr := &NetValidator{
-			Subnet: constants.PrimaryNetworkID,
+			Net: constants.PrimaryNetworkID,
 		}
 
 		err := vdr.Verify()
@@ -28,7 +28,7 @@ func TestNetValidatorVerifyNetID(t *testing.T) {
 	// Happy path
 	{
 		vdr := &NetValidator{
-			Subnet: ids.GenerateTestID(),
+			Net: ids.GenerateTestID(),
 			Validator: Validator{
 				Wght: 1,
 			},

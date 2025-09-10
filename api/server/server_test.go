@@ -4,16 +4,32 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"context"
-
 	"github.com/luxfi/consensus/core/interfaces"
 )
+
+// testStateHolder is a test implementation of state management
+type testStateHolder struct {
+	value atomic.Value
+}
+
+func (s *testStateHolder) Get() interfaces.State {
+	if val := s.value.Load(); val != nil {
+		return val.(interfaces.State)
+	}
+	return interfaces.NormalOp
+}
+
+func (s *testStateHolder) Set(state interfaces.State) {
+	s.value.Store(state)
+}
 
 func TestRejectMiddleware(t *testing.T) {
 	type test struct {
@@ -61,7 +77,7 @@ func TestRejectMiddleware(t *testing.T) {
 			require := require.New(t)
 
 			// Create a test context
-			stateHolder := &interfaces.StateHolder{}
+			stateHolder := &testStateHolder{}
 			stateHolder.Set(tt.state)
 			ctx := context.WithValue(context.Background(), "stateHolder", stateHolder)
 

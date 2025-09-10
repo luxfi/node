@@ -303,7 +303,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(defaultValidateEndTime.Unix()) + 1,
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -340,7 +340,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(defaultValidateEndTime.Unix()),
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -397,7 +397,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()),
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -449,7 +449,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()),
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -484,7 +484,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()) + 1, // stop validating net after stopping validating primary network
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -519,7 +519,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()),   // same end time as for primary network
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -556,7 +556,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(newTimestamp.Add(defaultMinStakingDuration).Unix()),
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -593,7 +593,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 				End:    uint64(defaultValidateEndTime.Unix()),
 				Wght:   defaultWeight,
 			},
-			Subnet: testSubnet1.ID(),
+			Net: testSubnet1.ID(),
 		},
 	)
 	require.NoError(err)
@@ -625,7 +625,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(defaultValidateEndTime.Unix()),
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -663,7 +663,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(defaultValidateStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -704,7 +704,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(defaultValidateStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -744,7 +744,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 					End:    uint64(defaultValidateStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)

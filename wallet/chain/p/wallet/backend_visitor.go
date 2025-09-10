@@ -113,7 +113,7 @@ func (b *backendVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessD
 
 func (b *backendVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
 	b.b.setOwner(
-		tx.Subnet,
+		tx.Net,
 		tx.Owner,
 	)
 	return b.baseTx(&tx.BaseTx)

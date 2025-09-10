@@ -83,7 +83,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 				Memo: types.JSONByteSlice{},
 			},
 		},
-		Subnet: netID,
+		Net: netID,
 		SubnetAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{3},
 		},
@@ -266,7 +266,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 				Memo: types.JSONByteSlice("😅\nwell that's\x01\x23\x45!"),
 			},
 		},
-		Subnet: netID,
+		Net: netID,
 		SubnetAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{},
 		},
@@ -611,7 +611,7 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransferNetOwnershipTx {
 				return &TransferNetOwnershipTx{
 					// Set netID so we don't error on that check.
-					Subnet: ids.GenerateTestID(),
+					Net: ids.GenerateTestID(),
 					BaseTx: invalidBaseTx,
 				}
 			},
@@ -622,7 +622,7 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransferNetOwnershipTx {
 				return &TransferNetOwnershipTx{
 					BaseTx: validBaseTx,
-					Subnet: constants.PrimaryNetworkID,
+					Net: constants.PrimaryNetworkID,
 				}
 			},
 			expectedErr: ErrTransferPermissionlessNet,
@@ -635,7 +635,7 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 				invalidSubnetAuth.EXPECT().Verify().Return(errInvalidSubnetAuth)
 				return &TransferNetOwnershipTx{
 					// Set netID so we don't error on that check.
-					Subnet:     ids.GenerateTestID(),
+					Net:     ids.GenerateTestID(),
 					BaseTx:     validBaseTx,
 					SubnetAuth: invalidSubnetAuth,
 				}
@@ -652,7 +652,7 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 				mockOwner.EXPECT().Verify().Return(nil)
 				return &TransferNetOwnershipTx{
 					// Set netID so we don't error on that check.
-					Subnet:     ids.GenerateTestID(),
+					Net:     ids.GenerateTestID(),
 					BaseTx:     validBaseTx,
 					SubnetAuth: validSubnetAuth,
 					Owner:      mockOwner,

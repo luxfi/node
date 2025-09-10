@@ -439,7 +439,7 @@ func (b *builder) NewAddNetValidatorTx(
 		return nil, err
 	}
 
-	subnetAuth, err := b.authorizeSubnet(vdr.Subnet, ops)
+	subnetAuth, err := b.authorizeSubnet(vdr.Net, ops)
 	if err != nil {
 		return nil, err
 	}
@@ -486,7 +486,7 @@ func (b *builder) NewRemoveNetValidatorTx(
 			Outs:         outputs,
 			Memo:         ops.Memo(),
 		}},
-		Subnet:     netID,
+		Net:     netID,
 		NodeID:     nodeID,
 		SubnetAuth: subnetAuth,
 	}
@@ -626,7 +626,7 @@ func (b *builder) NewTransferNetOwnershipTx(
 			Outs:         outputs,
 			Memo:         ops.Memo(),
 		}},
-		Subnet:     netID,
+		Net:     netID,
 		Owner:      owner,
 		SubnetAuth: subnetAuth,
 	}
@@ -820,7 +820,7 @@ func (b *builder) NewTransformNetTx(
 			Outs:         outputs,
 			Memo:         ops.Memo(),
 		}},
-		Subnet:                   netID,
+		Net:                   netID,
 		AssetID:                  assetID,
 		InitialSupply:            initialSupply,
 		MaximumSupply:            maxSupply,
@@ -875,7 +875,7 @@ func (b *builder) NewAddPermissionlessValidatorTx(
 			Memo:         ops.Memo(),
 		}},
 		Validator:             vdr.Validator,
-		Subnet:                vdr.Subnet,
+		Net:                vdr.Net,
 		Signer:                signer,
 		StakeOuts:             stakeOutputs,
 		ValidatorRewardsOwner: validationRewardsOwner,
@@ -917,7 +917,7 @@ func (b *builder) NewAddPermissionlessDelegatorTx(
 			Memo:         ops.Memo(),
 		}},
 		Validator:              vdr.Validator,
-		Subnet:                 vdr.Subnet,
+		Net:                 vdr.Net,
 		StakeOuts:              stakeOutputs,
 		DelegationRewardsOwner: rewardsOwner,
 	}

@@ -209,10 +209,11 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 
 	if parentTimestamp.Before(b.vm.ActivationTime) && !autominingEnabled {
 		// The chain hasn't forked yet (unless automining is enabled)
-		innerBlock, err := b.vm.ChainVM.BuildBlock(ctx)
+		engineBlock, err := b.vm.ChainVM.BuildBlock(ctx)
 		if err != nil {
 			return nil, err
 		}
+		innerBlock := &reverseBlockAdapter{Block: engineBlock}
 
 		b.vm.log.Info("built block",
 			zap.Stringer("blkID", innerBlock.ID()),
@@ -246,10 +247,11 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		return nil, err
 	}
 
-	innerBlock, err := b.vm.ChainVM.BuildBlock(ctx)
+	engineBlock, err := b.vm.ChainVM.BuildBlock(ctx)
 	if err != nil {
 		return nil, err
 	}
+	innerBlock := &reverseBlockAdapter{Block: engineBlock}
 
 	statelessBlock, err := block.BuildUnsigned(
 		parentID,

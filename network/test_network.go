@@ -19,6 +19,7 @@ import (
 
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
+	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
@@ -273,6 +274,18 @@ func (n *noOpValidatorsManager) GetLight(netID ids.ID, nodeID ids.NodeID) uint64
 func (n *noOpValidatorsManager) GetWeight(netID ids.ID, nodeID ids.NodeID) uint64 { return 0 }
 func (n *noOpValidatorsManager) TotalLight(netID ids.ID) (uint64, error) { return 0, nil }
 func (n *noOpValidatorsManager) TotalWeight(netID ids.ID) (uint64, error) { return 0, nil }
+func (n *noOpValidatorsManager) AddStaker(netID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error { return nil }
+func (n *noOpValidatorsManager) AddWeight(netID ids.ID, nodeID ids.NodeID, weight uint64) error { return nil }
+func (n *noOpValidatorsManager) RemoveWeight(netID ids.ID, nodeID ids.NodeID, weight uint64) error { return nil }
+func (n *noOpValidatorsManager) GetMap(netID ids.ID) map[ids.NodeID]*validators.GetValidatorOutput { return nil }
+func (n *noOpValidatorsManager) GetValidatorIDs(netID ids.ID) []ids.NodeID { return nil }
+func (n *noOpValidatorsManager) NumValidators(netID ids.ID) int { return 0 }
+func (n *noOpValidatorsManager) NumSubnets() int { return 0 }
+func (n *noOpValidatorsManager) SubsetWeight(netID ids.ID, nodeIDs consensusset.Set[ids.NodeID]) (uint64, error) { return 0, nil }
+func (n *noOpValidatorsManager) Sample(netID ids.ID, size int) ([]ids.NodeID, error) { return nil, nil }
+func (n *noOpValidatorsManager) Count(netID ids.ID) int { return 0 }
+func (n *noOpValidatorsManager) RegisterCallbackListener(listener validators.ManagerCallbackListener) {}
+func (n *noOpValidatorsManager) RegisterSetCallbackListener(netID ids.ID, listener validators.SetCallbackListener) {}
 
 // noOpValidatorSet is a no-op validator set for testing
 type noOpValidatorSet struct{}

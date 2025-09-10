@@ -91,7 +91,7 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 			},
 		},
 		NodeID: nodeID,
-		Subnet: netID,
+		Net: netID,
 		SubnetAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{3},
 		},
@@ -260,7 +260,7 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 			},
 		},
 		NodeID: nodeID,
-		Subnet: netID,
+		Net: netID,
 		SubnetAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{},
 		},
@@ -584,7 +584,7 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *RemoveNetValidatorTx {
 				return &RemoveNetValidatorTx{
 					// Set netID so we don't error on that check.
-					Subnet: ids.GenerateTestID(),
+					Net: ids.GenerateTestID(),
 					// Set NodeID so we don't error on that check.
 					NodeID: ids.GenerateTestNodeID(),
 					BaseTx: invalidBaseTx,
@@ -599,7 +599,7 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 					BaseTx: validBaseTx,
 					// Set NodeID so we don't error on that check.
 					NodeID: ids.GenerateTestNodeID(),
-					Subnet: constants.PrimaryNetworkID,
+					Net: constants.PrimaryNetworkID,
 				}
 			},
 			expectedErr: ErrRemovePrimaryNetworkValidator,
@@ -612,7 +612,7 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 				invalidSubnetAuth.EXPECT().Verify().Return(errInvalidSubnetAuth)
 				return &RemoveNetValidatorTx{
 					// Set netID so we don't error on that check.
-					Subnet: ids.GenerateTestID(),
+					Net: ids.GenerateTestID(),
 					// Set NodeID so we don't error on that check.
 					NodeID:     ids.GenerateTestNodeID(),
 					BaseTx:     validBaseTx,
@@ -629,7 +629,7 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 				validSubnetAuth.EXPECT().Verify().Return(nil)
 				return &RemoveNetValidatorTx{
 					// Set netID so we don't error on that check.
-					Subnet: ids.GenerateTestID(),
+					Net: ids.GenerateTestID(),
 					// Set NodeID so we don't error on that check.
 					NodeID:     ids.GenerateTestNodeID(),
 					BaseTx:     validBaseTx,

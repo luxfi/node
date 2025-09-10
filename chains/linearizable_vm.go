@@ -9,6 +9,7 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
+	coreinterfaces "github.com/luxfi/consensus/core/interfaces"
 	// "github.com/luxfi/consensus/engine/chain" // currently unused
 	"github.com/luxfi/consensus/engine/chain/block"
 	// "github.com/luxfi/consensus/engine/dag/vertex" // Not used
@@ -90,7 +91,7 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 		vm.upgradeBytes,
 		vm.configBytes,
 		toEngine,
-		[]interface{}{blockFxs},
+		blockFxs,
 		blockAppSender,
 	)
 }
@@ -104,9 +105,9 @@ func (d *dbManagerWrapper) Current() database.Database {
 	return d.db
 }
 
-func (d *dbManagerWrapper) Get(version uint64) (database.Database, error) {
+func (d *dbManagerWrapper) Database(id ids.ID) database.Database {
 	// For now, just return the current database
-	return d.db, nil
+	return d.db
 }
 
 func (d *dbManagerWrapper) Close() error {
@@ -121,12 +122,15 @@ type blockAppSenderWrapper struct {
 	appSender core.AppSender
 }
 
-func (b *blockAppSenderWrapper) SendAppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, appRequestBytes []byte) error {
+func (b *blockAppSenderWrapper) SendAppRequest(ctx context.Context, nodeIDs []ids.NodeID, requestID uint32, appRequestBytes []byte) error {
 	if b.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	nodeIDs := set.Of(nodeID)
-	return b.appSender.SendAppRequest(ctx, nodeIDs, requestID, appRequestBytes)
+	nodeIDSet := set.NewSet[ids.NodeID](len(nodeIDs))
+	for _, nodeID := range nodeIDs {
+		nodeIDSet.Add(nodeID)
+	}
+	return b.appSender.SendAppRequest(ctx, nodeIDSet, requestID, appRequestBytes)
 }
 
 func (b *blockAppSenderWrapper) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
@@ -136,13 +140,23 @@ func (b *blockAppSenderWrapper) SendAppResponse(ctx context.Context, nodeID ids.
 	return b.appSender.SendAppResponse(ctx, nodeID, requestID, appResponseBytes)
 }
 
-func (b *blockAppSenderWrapper) SendAppGossip(ctx context.Context, appGossipBytes []byte) error {
+func (b *blockAppSenderWrapper) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 	if b.appSender == nil {
 		return errors.New("app sender is nil")
 	}
-	// For gossip, we send to an empty set which means broadcast
-	nodeIDs := set.NewSet[ids.NodeID](0)
-	return b.appSender.SendAppGossip(ctx, nodeIDs, appGossipBytes)
+	return b.appSender.SendAppError(ctx, nodeID, requestID, errorCode, errorMessage)
+}
+
+func (b *blockAppSenderWrapper) SendAppGossip(ctx context.Context, nodeIDs []ids.NodeID, appGossipBytes []byte) error {
+	if b.appSender == nil {
+		return errors.New("app sender is nil")
+	}
+	// Convert slice to set
+	nodeIDSet := set.NewSet[ids.NodeID](len(nodeIDs))
+	for _, nodeID := range nodeIDs {
+		nodeIDSet.Add(nodeID)
+	}
+	return b.appSender.SendAppGossip(ctx, nodeIDSet, appGossipBytes)
 }
 
 // linearizeOnInitializeVM transforms the proposervm's call to Initialize into a
@@ -229,39 +243,18 @@ func NewLinearizeOnInitializeVM(vm consensusvertex.LinearizableVMWithEngine) *li
 
 func (vm *linearizeOnInitializeVM) Initialize(
 	ctx context.Context,
-	chainCtx interface{},
-	db interface{},
+	chainCtx *block.ChainContext,
+	db block.DBManager,
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	msgChan interface{},
-	fxs []interface{},
-	appSender interface{},
+	msgChan chan<- block.Message,
+	fxs []*block.Fx,
+	appSender block.AppSender,
 ) error {
-	// Convert interface{} types to concrete types
-	blockChainCtx, ok := chainCtx.(*block.ChainContext)
-	if !ok {
-		return errors.New("invalid chain context type")
-	}
-	
-	blockDBManager, ok := db.(block.DBManager)
-	if !ok {
-		return errors.New("invalid db manager type")
-	}
-	
-	toEngine, ok := msgChan.(chan<- block.Message)
-	if !ok {
-		return errors.New("invalid message channel type")
-	}
-	
-	blockAppSender, ok := appSender.(block.AppSender)
-	if !ok {
-		return errors.New("invalid app sender type")
-	}
-
 	// Convert block types to consensus types for the underlying VM
 	consensusCtx := context.Background()
-	snowCtx := blockChainCtx.Context
+	snowCtx := chainCtx.Context
 	if snowCtx != nil {
 		consensusCtx = consensus.WithIDs(consensusCtx, consensus.IDs{
 			NetworkID: snowCtx.NetworkID,
@@ -272,12 +265,7 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	}
 
 	// Get current database from DBManager
-	var vmDB database.Database
-	if dbManagerIntf, ok := db.(interface{ Current() database.Database }); ok {
-		vmDB = dbManagerIntf.Current()
-	} else if dbIntf, ok := db.(database.Database); ok {
-		vmDB = dbIntf
-	}
+	vmDB := db.Current()
 
 	// Convert fxs
 	var coreFxs []*core.Fx
@@ -287,7 +275,7 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	}
 
 	// Create core AppSender adapter
-	coreAppSender := &appSenderAdapter{appSender: blockAppSender}
+	coreAppSender := &appSenderAdapter{appSender: appSender}
 
 	// Store for later use
 	vm.chainCtx = consensusCtx
@@ -297,8 +285,8 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	vm.configBytes = configBytes
 	vm.fxs = coreFxs
 	vm.appSender = coreAppSender
-	vm.toEngine = toEngine
-	vm.dbManager = blockDBManager // Store the DBManager for later use
+	vm.toEngine = msgChan
+	vm.dbManager = db // Store the DBManager for later use
 
 	// The LinearizableVMWithEngine doesn't have a Linearize method,
 	// return nil as initialization is complete
@@ -339,4 +327,22 @@ func (vm *linearizeOnInitializeVM) LastAccepted(ctx context.Context) (ids.ID, er
 func (vm *linearizeOnInitializeVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
 	// This is a linearizable VM, not a chain VM, so we return an error
 	return ids.Empty, ErrSkipped
+}
+
+// GetChainID implements block.ChainVM interface
+func (vm *linearizeOnInitializeVM) GetChainID(ctx context.Context) (ids.ID, error) {
+	// This is a linearizable VM, not a chain VM, so we return an error
+	return ids.Empty, ErrSkipped
+}
+
+// Shutdown implements block.ChainVM interface
+func (vm *linearizeOnInitializeVM) Shutdown(ctx context.Context) error {
+	// This is a linearizable VM, not a chain VM, so we return an error
+	return ErrSkipped
+}
+
+// SetState implements block.ChainVM interface
+func (vm *linearizeOnInitializeVM) SetState(ctx context.Context, state coreinterfaces.State) error {
+	// This is a linearizable VM, not a chain VM, so we return an error
+	return ErrSkipped
 }

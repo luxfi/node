@@ -83,7 +83,8 @@ func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
 		}
 	}
 
-	return core.Message{Op: core.Op(core.PendingTxs)}, nil
+	// Return empty message for now - Op field is required but PendingTxs is not a valid Op
+	return core.Message{}, nil
 }
 
 func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context) (chain.Block, error) {

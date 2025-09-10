@@ -17,6 +17,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus"
+	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	// "github.com/luxfi/consensus/core/interfaces" // Not used
 	// "github.com/luxfi/consensus/core/tracker" // Not used
@@ -36,6 +37,7 @@ import (
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/sender"
 	"github.com/luxfi/consensus/networking/timeout"
+	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
@@ -357,6 +359,25 @@ func (v *consensusValidatorStateWrapper) GetSubnetID(chainID ids.ID) (ids.ID, er
 	return ids.Empty, nil
 }
 
+func (v *consensusValidatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*consContext.GetValidatorOutput, error) {
+	// Get the validator set from the underlying state
+	valSet, err := v.state.GetValidatorSet(ctx, height, netID)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Convert to GetValidatorOutput format
+	result := make(map[ids.NodeID]*consContext.GetValidatorOutput, len(valSet))
+	for nodeID, val := range valSet {
+		result[nodeID] = &consContext.GetValidatorOutput{
+			NodeID:    nodeID,
+			PublicKey: val.PublicKey,
+			Weight:    val.Weight,
+		}
+	}
+	return result, nil
+}
+
 func (v *validatorStateWrapper) GetCurrentHeight() (uint64, error) {
 	return v.state.GetCurrentHeight(context.Background())
 }
@@ -631,6 +652,8 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				zap.Stringer("netID", chainParams.NetID),
 				zap.Stringer("chainID", chainParams.ID),
 				zap.Stringer("vmID", chainParams.VMID),
+				zap.String("errorString", fmt.Sprintf("%v", err)),
+				zap.String("errorType", fmt.Sprintf("%T", err)),
 				zap.Error(err),
 			)
 			go m.ShutdownNodeFunc(1)
@@ -766,7 +789,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 	// Create the chain
 	vm, err := vmFactory.New(chainLog)
 	if err != nil {
-		return nil, fmt.Errorf("error while creating vm: %w", err)
+		return nil, fmt.Errorf("error while creating vm for chain %s: %w", chainParams.ID, err)
 	}
 
 	chainFxs := make([]*core.Fx, len(chainParams.FxIDs))
@@ -1575,11 +1598,11 @@ func (m *manager) createLinearChain(
 	// Create channel for messages
 	toEngine := make(chan block.Message, defaultChannelSize)
 
-	// Convert core.Fx to []interface{} for Initialize
-	fxsInterface := make([]interface{}, len(fxs))
+	// Convert core.Fx to []*block.Fx for Initialize
+	blockFxs := make([]*block.Fx, len(fxs))
 	for i := range fxs {
-		// Create empty block.Fx and add as interface{}
-		fxsInterface[i] = &block.Fx{}
+		// Create empty block.Fx
+		blockFxs[i] = &block.Fx{}
 	}
 
 	// Create AppSender wrapper - for now just use nil since we don't have a real sender
@@ -1594,7 +1617,7 @@ func (m *manager) createLinearChain(
 		chainConfig.Upgrade,
 		chainConfig.Config,
 		toEngine,
-		fxsInterface,
+		blockFxs,
 		appSender,
 	); err != nil {
 		return nil, err
@@ -2029,6 +2052,54 @@ func (e *emptyValidatorManager) GetLight(netID ids.ID, nodeID ids.NodeID) uint64
 
 func (e *emptyValidatorManager) TotalLight(netID ids.ID) (uint64, error) {
 	return 0, nil
+}
+
+func (e *emptyValidatorManager) AddStaker(netID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
+	return nil
+}
+
+func (e *emptyValidatorManager) AddWeight(netID ids.ID, nodeID ids.NodeID, weight uint64) error {
+	return nil
+}
+
+func (e *emptyValidatorManager) RemoveWeight(netID ids.ID, nodeID ids.NodeID, weight uint64) error {
+	return nil
+}
+
+func (e *emptyValidatorManager) GetMap(netID ids.ID) map[ids.NodeID]*validators.GetValidatorOutput {
+	return nil
+}
+
+func (e *emptyValidatorManager) GetValidatorIDs(netID ids.ID) []ids.NodeID {
+	return nil
+}
+
+func (e *emptyValidatorManager) NumValidators(netID ids.ID) int {
+	return 0
+}
+
+func (e *emptyValidatorManager) NumSubnets() int {
+	return 0
+}
+
+func (e *emptyValidatorManager) SubsetWeight(netID ids.ID, nodeIDs consensusset.Set[ids.NodeID]) (uint64, error) {
+	return 0, nil
+}
+
+func (e *emptyValidatorManager) Sample(netID ids.ID, size int) ([]ids.NodeID, error) {
+	return nil, nil
+}
+
+func (e *emptyValidatorManager) Count(netID ids.ID) int {
+	return 0
+}
+
+func (e *emptyValidatorManager) RegisterCallbackListener(listener validators.ManagerCallbackListener) {}
+
+func (e *emptyValidatorManager) RegisterSetCallbackListener(netID ids.ID, listener validators.SetCallbackListener) {}
+
+func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return nil, nil
 }
 
 // placeholderHandler implements handler.Handler interface
