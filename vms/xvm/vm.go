@@ -374,9 +374,8 @@ func (vm *VM) onNormalOperationsStarted() error {
 }
 
 func (vm *VM) SetState(_ context.Context, state consensus.State) error {
-	// Check timestamp to determine if bootstrapping or normal operation
-	// Bootstrapping typically happens at the beginning (timestamp 0)
-	if state.GetTimestamp() == 0 {
+	// Check if bootstrapping or normal operation based on state
+	if state == consensus.Bootstrapping {
 		return vm.onBootstrapStarted()
 	}
 	return vm.onNormalOperationsStarted()

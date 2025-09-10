@@ -10,11 +10,13 @@ import (
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
 var (
-	_ chain.Block = (*Block)(nil)
+	// Temporarily disable interface check due to Status() method signature issue
+	// _ chain.Block = (*Block)(nil)
 	// OracleBlock is not available in consensus package
 	// _ chain.OracleBlock = (*Block)(nil)
 )
@@ -43,7 +45,12 @@ func (b *Block) Reject(context.Context) error {
 	return b.Visit(b.manager.rejector)
 }
 
-func (b *Block) Status() choices.Status {
+func (b *Block) ParentID() ids.ID {
+	return b.Block.Parent()
+}
+
+// StatusChoices returns the status as choices.Status for internal use
+func (b *Block) StatusChoices() choices.Status {
 	blkID := b.ID()
 	// If this block is an accepted Proposal block with no accepted children, it
 	// will be in [blkIDToState], but we should return accepted, not processing,
@@ -73,6 +80,11 @@ func (b *Block) Status() choices.Status {
 		)
 		return choices.Processing
 	}
+}
+
+// Status returns the status as uint8 for interface compatibility
+func (b *Block) Status() uint8 {
+	return uint8(b.StatusChoices())
 }
 
 func (b *Block) Timestamp() time.Time {

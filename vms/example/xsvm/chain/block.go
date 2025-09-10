@@ -67,15 +67,19 @@ func (b *block) ID() ids.ID {
 	return b.id
 }
 
-func (b *block) Status() choices.Status {
+func (b *block) Status() uint8 {
 	if !b.status.Decided() {
 		b.status = b.calculateStatus()
 	}
-	return b.status
+	return uint8(b.status)
 }
 
 func (b *block) Parent() ids.ID {
-	return b.ParentID
+	return b.Stateless.ParentID
+}
+
+func (b *block) ParentID() ids.ID {
+	return b.Stateless.ParentID
 }
 
 func (b *block) Bytes() []byte {
@@ -113,7 +117,7 @@ func (b *block) Accept(context.Context) error {
 
 	b.status = choices.Accepted
 	b.chain.lastAccepted = b.id
-	delete(b.chain.verifiedBlocks, b.ParentID)
+	delete(b.chain.verifiedBlocks, b.Stateless.ParentID)
 	return nil
 }
 
@@ -135,7 +139,7 @@ func (b *block) VerifyWithContext(ctx context.Context, blockContext *smblock.Con
 	}
 
 	// parent block must be verified or accepted
-	parent, exists := b.chain.verifiedBlocks[b.ParentID]
+	parent, exists := b.chain.verifiedBlocks[b.Stateless.ParentID]
 	if !exists {
 		return errMissingParent
 	}
@@ -185,7 +189,7 @@ func (b *block) State() (database.Database, error) {
 	}
 
 	// States of accepted blocks other than the lastAccepted are undefined.
-	if b.Status() == choices.Accepted {
+	if b.Status() == uint8(choices.Accepted) {
 		return nil, errMissingState
 	}
 

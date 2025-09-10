@@ -386,7 +386,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(defaultValidateEndTime.Unix()) + 1,
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -419,7 +419,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(defaultValidateEndTime.Unix()),
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -472,7 +472,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()),
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -520,7 +520,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()),
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -551,7 +551,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()) + 1, // stop validating net after stopping validating primary network
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -582,7 +582,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(dsEndTime.Unix()),   // same end time as for primary network
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -614,7 +614,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(newTimestamp.Add(defaultMinStakingDuration).Unix()),
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -647,7 +647,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 				End:    uint64(defaultValidateEndTime.Unix()),
 				Wght:   defaultWeight,
 			},
-			Subnet: testSubnet1.ID(),
+			Net: testSubnet1.ID(),
 		},
 	)
 	require.NoError(err)
@@ -680,7 +680,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(defaultValidateEndTime.Unix()),
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -715,7 +715,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(startTime.Add(defaultMinStakingDuration).Unix()) + 1,
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -753,7 +753,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(startTime.Add(defaultMinStakingDuration).Unix()),
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -791,7 +791,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(startTime.Add(defaultMinStakingDuration).Unix()),
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -828,7 +828,7 @@ func TestApricotStandardTxExecutorAddNetValidator(t *testing.T) {
 					End:    uint64(startTime.Add(defaultMinStakingDuration).Unix()) + 1,
 					Wght:   defaultWeight,
 				},
-				Subnet: testSubnet1.ID(),
+				Net: testSubnet1.ID(),
 			},
 		)
 		require.NoError(err)
@@ -1166,7 +1166,7 @@ func TestDurangoMemoField(t *testing.T) {
 							End:    uint64(primaryValidator.EndTime.Unix()),
 							Wght:   defaultMinValidatorStake,
 						},
-						Subnet: testSubnet1.TxID,
+						Net: testSubnet1.TxID,
 					},
 					common.WithMemo(memoField),
 				)
@@ -1321,7 +1321,7 @@ func TestDurangoMemoField(t *testing.T) {
 							End:    uint64(endTime.Unix()),
 							Wght:   defaultWeight,
 						},
-						Subnet: testSubnet1.ID(),
+						Net: testSubnet1.ID(),
 					},
 				)
 				require.NoError(t, err)
@@ -1401,7 +1401,7 @@ func TestDurangoMemoField(t *testing.T) {
 							End:    uint64(endTime.Unix()),
 							Wght:   env.config.MinValidatorStake,
 						},
-						Subnet: constants.PrimaryNetworkID,
+						Net: constants.PrimaryNetworkID,
 					},
 					signer.NewProofOfPossession(sk),
 					env.ctx.LUXAssetID,
@@ -1451,7 +1451,7 @@ func TestDurangoMemoField(t *testing.T) {
 							End:    uint64(primaryValidator.EndTime.Unix()),
 							Wght:   defaultMinValidatorStake,
 						},
-						Subnet: constants.PrimaryNetworkID,
+						Net: constants.PrimaryNetworkID,
 					},
 					env.ctx.LUXAssetID,
 					&secp256k1fx.OutputOwners{
@@ -1597,7 +1597,7 @@ func newRemoveNetValidatorTx(t *testing.T) (*txs.RemoveNetValidatorTx, *txs.Tx) 
 				},
 			},
 		},
-		Subnet: ids.GenerateTestID(),
+		Net: ids.GenerateTestID(),
 		NodeID: ids.GenerateTestNodeID(),
 		SubnetAuth: &secp256k1fx.Credential{
 			Sigs: make([][65]byte, 1),
@@ -1663,9 +1663,9 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 
 				// Set dependency expectations.
 				env.state.EXPECT().GetTimestamp().Return(env.latestForkTime)
-				env.state.EXPECT().GetCurrentValidator(env.unsignedTx.Subnet, env.unsignedTx.NodeID).Return(env.staker, nil).Times(1)
+				env.state.EXPECT().GetCurrentValidator(env.unsignedTx.Net, env.unsignedTx.NodeID).Return(env.staker, nil).Times(1)
 				subnetOwner := fx.NewMockOwner(ctrl)
-				env.state.EXPECT().GetSubnetOwner(env.unsignedTx.Subnet).Return(subnetOwner, nil).Times(1)
+				env.state.EXPECT().GetSubnetOwner(env.unsignedTx.Net).Return(subnetOwner, nil).Times(1)
 				env.fx.EXPECT().VerifyPermission(env.unsignedTx, env.unsignedTx.SubnetAuth, env.tx.Creds[len(env.tx.Creds)-1], subnetOwner).Return(nil).Times(1)
 				env.flowChecker.EXPECT().VerifySpend(
 					env.unsignedTx, env.state, env.unsignedTx.Ins, env.unsignedTx.Outs, env.tx.Creds[:len(env.tx.Creds)-1], gomock.Any(),
@@ -1718,8 +1718,8 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 				env := newValidRemoveNetValidatorTxVerifyEnv(t, ctrl)
 				env.state = state.NewMockDiff(ctrl)
 				env.state.EXPECT().GetTimestamp().Return(env.latestForkTime)
-				env.state.EXPECT().GetCurrentValidator(env.unsignedTx.Subnet, env.unsignedTx.NodeID).Return(nil, database.ErrNotFound)
-				env.state.EXPECT().GetPendingValidator(env.unsignedTx.Subnet, env.unsignedTx.NodeID).Return(nil, database.ErrNotFound)
+				env.state.EXPECT().GetCurrentValidator(env.unsignedTx.Net, env.unsignedTx.NodeID).Return(nil, database.ErrNotFound)
+				env.state.EXPECT().GetPendingValidator(env.unsignedTx.Net, env.unsignedTx.NodeID).Return(nil, database.ErrNotFound)
 				e := &StandardTxExecutor{
 					Backend: &Backend{
 						Config:       defaultTestConfig(t, durango, env.latestForkTime),
@@ -1746,7 +1746,7 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 
 				// Set dependency expectations.
 				env.state.EXPECT().GetTimestamp().Return(env.latestForkTime)
-				env.state.EXPECT().GetCurrentValidator(env.unsignedTx.Subnet, env.unsignedTx.NodeID).Return(&staker, nil).Times(1)
+				env.state.EXPECT().GetCurrentValidator(env.unsignedTx.Net, env.unsignedTx.NodeID).Return(&staker, nil).Times(1)
 				e := &StandardTxExecutor{
 					Backend: &Backend{
 						Config:       defaultTestConfig(t, durango, env.latestForkTime),
@@ -1771,7 +1771,7 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 				env.tx.Creds = nil
 				env.state = state.NewMockDiff(ctrl)
 				env.state.EXPECT().GetTimestamp().Return(env.latestForkTime)
-				env.state.EXPECT().GetCurrentValidator(env.unsignedTx.Subnet, env.unsignedTx.NodeID).Return(env.staker, nil)
+				env.state.EXPECT().GetCurrentValidator(env.unsignedTx.Net, env.unsignedTx.NodeID).Return(env.staker, nil)
 				e := &StandardTxExecutor{
 					Backend: &Backend{
 						Config:       defaultTestConfig(t, durango, env.latestForkTime),
@@ -1794,8 +1794,8 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 				env := newValidRemoveNetValidatorTxVerifyEnv(t, ctrl)
 				env.state = state.NewMockDiff(ctrl)
 				env.state.EXPECT().GetTimestamp().Return(env.latestForkTime)
-				env.state.EXPECT().GetCurrentValidator(env.unsignedTx.Subnet, env.unsignedTx.NodeID).Return(env.staker, nil)
-				env.state.EXPECT().GetSubnetOwner(env.unsignedTx.Subnet).Return(nil, database.ErrNotFound)
+				env.state.EXPECT().GetCurrentValidator(env.unsignedTx.Net, env.unsignedTx.NodeID).Return(env.staker, nil)
+				env.state.EXPECT().GetSubnetOwner(env.unsignedTx.Net).Return(nil, database.ErrNotFound)
 				e := &StandardTxExecutor{
 					Backend: &Backend{
 						Config:       defaultTestConfig(t, durango, env.latestForkTime),
@@ -1818,9 +1818,9 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 				env := newValidRemoveNetValidatorTxVerifyEnv(t, ctrl)
 				env.state = state.NewMockDiff(ctrl)
 				env.state.EXPECT().GetTimestamp().Return(env.latestForkTime)
-				env.state.EXPECT().GetCurrentValidator(env.unsignedTx.Subnet, env.unsignedTx.NodeID).Return(env.staker, nil)
+				env.state.EXPECT().GetCurrentValidator(env.unsignedTx.Net, env.unsignedTx.NodeID).Return(env.staker, nil)
 				subnetOwner := fx.NewMockOwner(ctrl)
-				env.state.EXPECT().GetSubnetOwner(env.unsignedTx.Subnet).Return(subnetOwner, nil)
+				env.state.EXPECT().GetSubnetOwner(env.unsignedTx.Net).Return(subnetOwner, nil)
 				env.fx.EXPECT().VerifyPermission(gomock.Any(), env.unsignedTx.SubnetAuth, env.tx.Creds[len(env.tx.Creds)-1], subnetOwner).Return(errTest)
 				e := &StandardTxExecutor{
 					Backend: &Backend{
@@ -1844,9 +1844,9 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 				env := newValidRemoveNetValidatorTxVerifyEnv(t, ctrl)
 				env.state = state.NewMockDiff(ctrl)
 				env.state.EXPECT().GetTimestamp().Return(env.latestForkTime)
-				env.state.EXPECT().GetCurrentValidator(env.unsignedTx.Subnet, env.unsignedTx.NodeID).Return(env.staker, nil)
+				env.state.EXPECT().GetCurrentValidator(env.unsignedTx.Net, env.unsignedTx.NodeID).Return(env.staker, nil)
 				subnetOwner := fx.NewMockOwner(ctrl)
-				env.state.EXPECT().GetSubnetOwner(env.unsignedTx.Subnet).Return(subnetOwner, nil)
+				env.state.EXPECT().GetSubnetOwner(env.unsignedTx.Net).Return(subnetOwner, nil)
 				env.fx.EXPECT().VerifyPermission(gomock.Any(), env.unsignedTx.SubnetAuth, env.tx.Creds[len(env.tx.Creds)-1], subnetOwner).Return(nil)
 				env.flowChecker.EXPECT().VerifySpend(
 					gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
@@ -1927,7 +1927,7 @@ func newTransformNetTx(t *testing.T) (*txs.TransformNetTx, *txs.Tx) {
 				},
 			},
 		},
-		Subnet:                   ids.GenerateTestID(),
+		Net:                   ids.GenerateTestID(),
 		AssetID:                  ids.GenerateTestID(),
 		InitialSupply:            10,
 		MaximumSupply:            10,
@@ -2078,8 +2078,8 @@ func TestStandardExecutorTransformNetTx(t *testing.T) {
 				env.state = state.NewMockDiff(ctrl)
 				subnetOwner := fx.NewMockOwner(ctrl)
 				env.state.EXPECT().GetTimestamp().Return(env.latestForkTime)
-				env.state.EXPECT().GetSubnetOwner(env.unsignedTx.Subnet).Return(subnetOwner, nil)
-				env.state.EXPECT().GetSubnetTransformation(env.unsignedTx.Subnet).Return(nil, database.ErrNotFound).Times(1)
+				env.state.EXPECT().GetSubnetOwner(env.unsignedTx.Net).Return(subnetOwner, nil)
+				env.state.EXPECT().GetSubnetTransformation(env.unsignedTx.Net).Return(nil, database.ErrNotFound).Times(1)
 				env.fx.EXPECT().VerifyPermission(gomock.Any(), env.unsignedTx.SubnetAuth, env.tx.Creds[len(env.tx.Creds)-1], subnetOwner).Return(nil)
 				env.flowChecker.EXPECT().VerifySpend(
 					gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
@@ -2112,14 +2112,14 @@ func TestStandardExecutorTransformNetTx(t *testing.T) {
 				// Set dependency expectations.
 				subnetOwner := fx.NewMockOwner(ctrl)
 				env.state.EXPECT().GetTimestamp().Return(env.latestForkTime)
-				env.state.EXPECT().GetSubnetOwner(env.unsignedTx.Subnet).Return(subnetOwner, nil).Times(1)
-				env.state.EXPECT().GetSubnetTransformation(env.unsignedTx.Subnet).Return(nil, database.ErrNotFound).Times(1)
+				env.state.EXPECT().GetSubnetOwner(env.unsignedTx.Net).Return(subnetOwner, nil).Times(1)
+				env.state.EXPECT().GetSubnetTransformation(env.unsignedTx.Net).Return(nil, database.ErrNotFound).Times(1)
 				env.fx.EXPECT().VerifyPermission(env.unsignedTx, env.unsignedTx.SubnetAuth, env.tx.Creds[len(env.tx.Creds)-1], subnetOwner).Return(nil).Times(1)
 				env.flowChecker.EXPECT().VerifySpend(
 					env.unsignedTx, env.state, env.unsignedTx.Ins, env.unsignedTx.Outs, env.tx.Creds[:len(env.tx.Creds)-1], gomock.Any(),
 				).Return(nil).Times(1)
 				env.state.EXPECT().AddNetTransformation(env.tx)
-				env.state.EXPECT().SetCurrentSupply(env.unsignedTx.Subnet, env.unsignedTx.InitialSupply)
+				env.state.EXPECT().SetCurrentSupply(env.unsignedTx.Net, env.unsignedTx.InitialSupply)
 				env.state.EXPECT().DeleteUTXO(gomock.Any()).Times(len(env.unsignedTx.Ins))
 				env.state.EXPECT().AddUTXO(gomock.Any()).Times(len(env.unsignedTx.Outs))
 

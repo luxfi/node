@@ -56,6 +56,10 @@ func (b *Block) Parent() ids.ID {
 	return b.ParentV
 }
 
+func (b *Block) ParentID() ids.ID {
+	return b.ParentV
+}
+
 func (b *Block) Bytes() []byte {
 	return b.BytesV
 }

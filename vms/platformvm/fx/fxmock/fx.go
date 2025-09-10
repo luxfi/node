@@ -12,7 +12,7 @@ package fxmock
 import (
 	reflect "reflect"
 
-	gomock "github.com/luxfi/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // Fx is a mock of Fx interface.

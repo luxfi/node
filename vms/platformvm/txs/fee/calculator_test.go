@@ -228,13 +228,13 @@ func transferSubnetOwnershipTx() txs.UnsignedTx {
 
 func addPermissionlessValidatorTx(netID ids.ID) txs.UnsignedTx {
 	return &txs.AddPermissionlessValidatorTx{
-		Subnet: netID,
+		Net: netID,
 	}
 }
 
 func addPermissionlessDelegatorTx(netID ids.ID) txs.UnsignedTx {
 	return &txs.AddPermissionlessDelegatorTx{
-		Subnet: netID,
+		Net: netID,
 	}
 }
 

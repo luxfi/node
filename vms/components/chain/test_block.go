@@ -40,6 +40,10 @@ func (b *TestBlock) Parent() ids.ID {
 	return b.ParentV
 }
 
+func (b *TestBlock) ParentID() ids.ID {
+	return b.ParentV
+}
+
 func (b *TestBlock) Bytes() []byte {
 	return b.BytesV
 }

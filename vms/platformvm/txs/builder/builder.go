@@ -572,7 +572,7 @@ func (b *builder) NewAddNetValidatorTx(
 				End:    endTime,
 				Wght:   weight,
 			},
-			Subnet: netID,
+			Net: netID,
 		},
 		SubnetAuth: subnetAuth,
 	}
@@ -608,7 +608,7 @@ func (b *builder) NewRemoveNetValidatorTx(
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		Subnet:     netID,
+		Net:     netID,
 		NodeID:     nodeID,
 		SubnetAuth: subnetAuth,
 	}
@@ -663,7 +663,7 @@ func (b *builder) NewTransferNetOwnershipTx(
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		Subnet:     netID,
+		Net:     netID,
 		SubnetAuth: subnetAuth,
 		Owner: &secp256k1fx.OutputOwners{
 			Threshold: threshold,

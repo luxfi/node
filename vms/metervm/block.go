@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
 )
 
@@ -21,10 +21,9 @@ var (
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
 )
 
-// meterBlock wraps a chain.Block to satisfy the block.Block interface
-// while adding metrics
+// meterBlock wraps a block.Block to add metrics
 type meterBlock struct {
-	innerBlock chain.Block
+	innerBlock block.Block
 	vm         *blockVM
 }
 
@@ -33,14 +32,14 @@ func (mb *meterBlock) ID() ids.ID {
 	return mb.innerBlock.ID()
 }
 
-// Parent returns the parent block's ID (chain.Block compatibility)
+// Parent returns the parent block's ID
 func (mb *meterBlock) Parent() ids.ID {
 	return mb.innerBlock.Parent()
 }
 
-// ParentID returns the parent block's ID (block.Block expects ParentID)
+// ParentID returns the parent block's ID
 func (mb *meterBlock) ParentID() ids.ID {
-	return mb.innerBlock.Parent()
+	return mb.innerBlock.ParentID()
 }
 
 // Height returns the block's height
@@ -54,9 +53,9 @@ func (mb *meterBlock) Timestamp() time.Time {
 	return mb.innerBlock.Timestamp()
 }
 
-// Status returns the block's status as uint8
-func (mb *meterBlock) Status() uint8 {
-	return uint8(mb.innerBlock.Status())
+// Status returns the block's status as choices.Status
+func (mb *meterBlock) Status() choices.Status {
+	return mb.innerBlock.Status()
 }
 
 // Bytes returns the serialized block

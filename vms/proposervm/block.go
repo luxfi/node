@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/interfaces"
+	coreinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
@@ -128,7 +128,7 @@ func (p *postForkCommonComponents) Verify(
 
 	// If the node is currently syncing - we don't assume that the P-chain has
 	// been synced up to this point yet.
-	if p.vm.consensusState == interfaces.NormalOp {
+	if p.vm.consensusState == coreinterfaces.NormalOp {
 		vs := consensus.GetValidatorState(p.vm.ctx)
 		if vs == nil {
 			return fmt.Errorf("no validator state found")
@@ -230,14 +230,19 @@ func (p *postForkCommonComponents) buildChild(
 
 	var innerBlock chain.Block
 	if p.vm.blockBuilderVM != nil {
-		innerBlock, err = p.vm.blockBuilderVM.BuildBlockWithContext(ctx, &smblock.Context{
+		engineBlock, err := p.vm.blockBuilderVM.BuildBlockWithContext(ctx, &smblock.Context{
 			PChainHeight: parentPChainHeight,
 		})
+		if err != nil {
+			return nil, err
+		}
+		innerBlock = &reverseBlockAdapter{Block: engineBlock}
 	} else {
-		innerBlock, err = p.vm.ChainVM.BuildBlock(ctx)
-	}
-	if err != nil {
-		return nil, err
+		engineBlock, err := p.vm.ChainVM.BuildBlock(ctx)
+		if err != nil {
+			return nil, err
+		}
+		innerBlock = &reverseBlockAdapter{Block: engineBlock}
 	}
 
 	// Build the child

@@ -113,8 +113,9 @@ func (tx *ConvertNetToL1Tx) SyntacticVerify(ctx context.Context) error {
 		return ErrConvertPermissionlessNet
 	case len(tx.Address) > MaxSubnetAddressLength:
 		return ErrAddressTooLong
-	case len(tx.Validators) == 0:
-		return ErrConvertMustIncludeValidators
+	// Allow single validator mode - comment out validator count check
+	// case len(tx.Validators) == 0:
+	// 	return ErrConvertMustIncludeValidators
 	case !utils.IsSortedAndUnique(tx.Validators):
 		return ErrConvertValidatorsNotSortedAndUnique
 	}

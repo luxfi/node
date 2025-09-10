@@ -393,7 +393,7 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 							End:    uint64(staker.endTime.Unix()),
 							Wght:   10,
 						},
-						Subnet: netID,
+						Net: netID,
 					},
 				)
 				require.NoError(err)
@@ -493,7 +493,7 @@ func TestAdvanceTimeTxRemoveNetValidator(t *testing.T) {
 				End:    uint64(subnetVdr1EndTime.Unix()),
 				Wght:   1,
 			},
-			Subnet: netID,
+			Net: netID,
 		},
 	)
 	require.NoError(err)
@@ -526,7 +526,7 @@ func TestAdvanceTimeTxRemoveNetValidator(t *testing.T) {
 				End:    uint64(subnetVdr1EndTime.Add(time.Second).Add(defaultMinStakingDuration).Unix()),
 				Wght:   1,
 			},
-			Subnet: netID,
+			Net: netID,
 		},
 	)
 	require.NoError(err)
@@ -607,7 +607,7 @@ func TestTrackedSubnet(t *testing.T) {
 						End:    uint64(subnetVdr1EndTime.Unix()),
 						Wght:   1,
 					},
-					Subnet: netID,
+					Net: netID,
 				},
 			)
 			require.NoError(err)

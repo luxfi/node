@@ -6,7 +6,6 @@ package subnets
 import (
 	"sync"
 
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 )
@@ -32,7 +31,14 @@ type Allower interface {
 // chains in the net are currently bootstrapping, the net is considered
 // bootstrapped.
 type Net interface {
-	core.BootstrapTracker
+	// IsBootstrapped returns true if the chains in this subnet are done bootstrapping
+	IsBootstrapped() bool
+
+	// Bootstrapped marks the chain as done bootstrapping
+	Bootstrapped(chainID ids.ID)
+
+	// OnBootstrapCompleted is called when bootstrapping completes
+	OnBootstrapCompleted() error
 
 	// AddChain adds a chain to this Subnet
 	AddChain(chainID ids.ID) bool

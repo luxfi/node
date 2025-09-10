@@ -109,7 +109,7 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]block.Blo
 		blkID := statelessBlock.ID()
 		block, exists := vm.verifiedBlocks[blkID]
 		if exists {
-			blocks[blocksIndex] = block
+			blocks[blocksIndex] = &blockAdapter{Block: block}
 			continue
 		}
 
@@ -139,30 +139,30 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]block.Blo
 		}
 
 		if statelessSignedBlock, ok := statelessBlk.(statelessblock.SignedBlock); ok {
-			blocks[statelessBlockDesc.index] = &postForkBlock{
+			blocks[statelessBlockDesc.index] = &blockAdapter{Block: &postForkBlock{
 				SignedBlock: statelessSignedBlock,
 				postForkCommonComponents: postForkCommonComponents{
 					vm:       vm,
-					innerBlk: innerBlks[innerBlocksIndex],
+					innerBlk: &reverseBlockAdapter{Block: innerBlks[innerBlocksIndex]},
 					status:   status,
 				},
-			}
+			}}
 		} else {
-			blocks[statelessBlockDesc.index] = &postForkOption{
+			blocks[statelessBlockDesc.index] = &blockAdapter{Block: &postForkOption{
 				Block: statelessBlk,
 				postForkCommonComponents: postForkCommonComponents{
 					vm:       vm,
-					innerBlk: innerBlks[innerBlocksIndex],
+					innerBlk: &reverseBlockAdapter{Block: innerBlks[innerBlocksIndex]},
 					status:   status,
 				},
-			}
+			}}
 		}
 	}
 	for ; blocksIndex < len(blocks); blocksIndex, innerBlocksIndex = blocksIndex+1, innerBlocksIndex+1 {
-		blocks[blocksIndex] = &preForkBlock{
-			Block: innerBlks[innerBlocksIndex],
+		blocks[blocksIndex] = &blockAdapter{Block: &preForkBlock{
+			Block: &reverseBlockAdapter{Block: innerBlks[innerBlocksIndex]},
 			vm:    vm,
-		}
+		}}
 	}
 	return blocks, nil
 }

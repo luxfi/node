@@ -106,7 +106,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			End:    12345 + 200*24*60*60,
 			Wght:   2 * units.KiloLux,
 		},
-		Subnet: constants.PrimaryNetworkID,
+		Net: constants.PrimaryNetworkID,
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
@@ -351,7 +351,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 			End:    12345 + 200*24*60*60,
 			Wght:   5 * units.KiloLux,
 		},
-		Subnet: constants.PrimaryNetworkID,
+		Net: constants.PrimaryNetworkID,
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
@@ -850,7 +850,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 			End:    12346,
 			Wght:   1,
 		},
-		Subnet: netID,
+		Net: netID,
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
@@ -1116,7 +1116,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 			End:    12345 + 1,
 			Wght:   9,
 		},
-		Subnet: netID,
+		Net: netID,
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
@@ -1622,7 +1622,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 					Validator: Validator{
 						Wght: 1,
 					},
-					Subnet: ids.GenerateTestID(),
+					Net: ids.GenerateTestID(),
 					StakeOuts: []*lux.TransferableOutput{
 						{
 							Asset: lux.Asset{
@@ -1651,7 +1651,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 					Validator: Validator{
 						Wght: 1,
 					},
-					Subnet: ids.GenerateTestID(),
+					Net: ids.GenerateTestID(),
 					StakeOuts: []*lux.TransferableOutput{
 						{
 							Asset: lux.Asset{
@@ -1675,7 +1675,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 					Validator: Validator{
 						Wght: 1,
 					},
-					Subnet: ids.GenerateTestID(),
+					Net: ids.GenerateTestID(),
 					StakeOuts: []*lux.TransferableOutput{
 						{
 							Asset: lux.Asset{
@@ -1710,7 +1710,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 					Validator: Validator{
 						Wght: 1,
 					},
-					Subnet: ids.GenerateTestID(),
+					Net: ids.GenerateTestID(),
 					StakeOuts: []*lux.TransferableOutput{
 						{
 							Asset: lux.Asset{
@@ -1746,7 +1746,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 						NodeID: ids.GenerateTestNodeID(),
 						Wght:   1,
 					},
-					Subnet: ids.GenerateTestID(),
+					Net: ids.GenerateTestID(),
 					StakeOuts: []*lux.TransferableOutput{
 						{
 							Asset: lux.Asset{
@@ -1781,7 +1781,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 					Validator: Validator{
 						Wght: 1,
 					},
-					Subnet: ids.GenerateTestID(),
+					Net: ids.GenerateTestID(),
 					StakeOuts: []*lux.TransferableOutput{
 						{
 							Asset: lux.Asset{
@@ -1816,7 +1816,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 					Validator: Validator{
 						Wght: 2,
 					},
-					Subnet: ids.GenerateTestID(),
+					Net: ids.GenerateTestID(),
 					StakeOuts: []*lux.TransferableOutput{
 						{
 							Asset: lux.Asset{
@@ -1851,7 +1851,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 					Validator: Validator{
 						Wght: 2,
 					},
-					Subnet: constants.PrimaryNetworkID,
+					Net: constants.PrimaryNetworkID,
 					StakeOuts: []*lux.TransferableOutput{
 						{
 							Asset: lux.Asset{

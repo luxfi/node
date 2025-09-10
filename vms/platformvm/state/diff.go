@@ -313,10 +313,10 @@ func (d *diff) AddNetTransformation(transformSubnetTxIntf *txs.Tx) {
 	transformSubnetTx := transformSubnetTxIntf.Unsigned.(*txs.TransformNetTx)
 	if d.transformedSubnets == nil {
 		d.transformedSubnets = map[ids.ID]*txs.Tx{
-			transformSubnetTx.Subnet: transformSubnetTxIntf,
+			transformSubnetTx.Net: transformSubnetTxIntf,
 		}
 	} else {
-		d.transformedSubnets[transformSubnetTx.Subnet] = transformSubnetTxIntf
+		d.transformedSubnets[transformSubnetTx.Net] = transformSubnetTxIntf
 	}
 }
 

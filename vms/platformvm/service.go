@@ -60,7 +60,7 @@ const (
 
 var (
 	errMissingDecisionBlock       = errors.New("should have a decision block within the past two blocks")
-	errPrimaryNetworkIsNotANet = errors.New("the primary network isn't a subnet")
+	errPrimaryNetworkIsNotANet = errors.New("the primary network isn't a net")
 	errNoAddresses                = errors.New("no addresses provided")
 	errMissingBlockchainID        = errors.New("argument 'blockchainID' not given")
 )
@@ -409,7 +409,7 @@ func (s *Service) GetSubnet(_ *http.Request, args *GetSubnetArgs, response *GetS
 	)
 
 	if args.NetID == constants.PrimaryNetworkID {
-		return errPrimaryNetworkIsNotASubnet
+		return errPrimaryNetworkIsNotANet
 	}
 
 	s.vm.lock.Lock()
@@ -494,10 +494,10 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 			return fmt.Errorf("error getting subnets from database: %w", err)
 		}
 
-		response.Subnets = make([]APISubnet, len(netIDs)+1)
+		response.Subnets = make([]APINet, len(netIDs)+1)
 		for i, netID := range netIDs {
 			if _, err := s.vm.state.GetSubnetTransformation(netID); err == nil {
-				response.Subnets[i] = APISubnet{
+				response.Subnets[i] = APINet{
 					ID:          netID,
 					ControlKeys: []string{},
 					Threshold:   avajson.Uint32(0),
@@ -523,14 +523,14 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 				}
 				controlAddrs[i] = addr
 			}
-			response.Subnets[i] = APISubnet{
+			response.Subnets[i] = APINet{
 				ID:          netID,
 				ControlKeys: controlAddrs,
 				Threshold:   avajson.Uint32(owner.Threshold),
 			}
 		}
 		// Include primary network
-		response.Subnets[len(netIDs)] = APISubnet{
+		response.Subnets[len(netIDs)] = APINet{
 			ID:          constants.PrimaryNetworkID,
 			ControlKeys: []string{},
 			Threshold:   avajson.Uint32(0),
@@ -547,7 +547,7 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 
 		if netID == constants.PrimaryNetworkID {
 			response.Subnets = append(response.Subnets,
-				APISubnet{
+				APINet{
 					ID:          constants.PrimaryNetworkID,
 					ControlKeys: []string{},
 					Threshold:   avajson.Uint32(0),
@@ -557,7 +557,7 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 		}
 
 		if _, err := s.vm.state.GetSubnetTransformation(netID); err == nil {
-			response.Subnets = append(response.Subnets, APISubnet{
+			response.Subnets = append(response.Subnets, APINet{
 				ID:          netID,
 				ControlKeys: []string{},
 				Threshold:   avajson.Uint32(0),
@@ -587,7 +587,7 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 			controlAddrs[i] = addr
 		}
 
-		response.Subnets = append(response.Subnets, APISubnet{
+		response.Subnets = append(response.Subnets, APINet{
 			ID:          netID,
 			ControlKeys: controlAddrs,
 			Threshold:   avajson.Uint32(owner.Threshold),
@@ -797,9 +797,10 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			}
 
 			connected := false
-			if args.NetID == constants.PrimaryNetworkID {
-				connected = s.vm.uptimeManager.IsConnected(nodeID)
-			}
+			// TODO: Fix uptime manager connectivity check
+			// if args.NetID == constants.PrimaryNetworkID {
+			// 	connected = s.vm.uptimeManager.IsConnected(nodeID)
+			// }
 			var (
 				validationRewardOwner *platformapi.Owner
 				delegationRewardOwner *platformapi.Owner
@@ -864,9 +865,10 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 				return err
 			}
 			connected := false
-			if args.NetID == constants.PrimaryNetworkID {
-				connected = s.vm.uptimeManager.IsConnected(nodeID)
-			}
+			// TODO: Fix uptime manager connectivity check
+			// if args.NetID == constants.PrimaryNetworkID {
+			// 	connected = s.vm.uptimeManager.IsConnected(nodeID)
+			// }
 			reply.Validators = append(reply.Validators, platformapi.PermissionedValidator{
 				Staker:    apiStaker,
 				Connected: connected,
@@ -1116,7 +1118,7 @@ func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *
 
 	var err error
 	ctx := r.Context()
-	response.NetID, err = s.vm.GetNetID(ctx, args.BlockchainID)
+	response.NetID, err = s.vm.Validators.GetNetID(ctx, args.BlockchainID)
 	return err
 }
 

@@ -88,7 +88,7 @@ func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 				End:    uint64(clk.Time().Add(time.Hour).Unix()),
 				Wght:   validatorWeight,
 			},
-			Subnet: netID,
+			Net: netID,
 		},
 		SubnetAuth: subnetAuth,
 	}
@@ -206,7 +206,7 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 				End:    uint64(clk.Time().Add(time.Hour).Unix()),
 				Wght:   validatorWeight,
 			},
-			Subnet: netID,
+			Net: netID,
 		},
 		SubnetAuth: subnetAuth,
 	}

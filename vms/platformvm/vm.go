@@ -21,6 +21,7 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
@@ -111,7 +112,7 @@ type VM struct {
 	consensusClock consensusclock.Clock
 	nodeClock      mockable.Clock
 
-	uptimeManager uptime.Manager
+	uptimeManager uptime.Calculator
 
 	// The context of this vm
 	ctx context.Context
@@ -123,8 +124,8 @@ type VM struct {
 	lock         sync.RWMutex
 	luxAssetID   ids.ID
 	chainID      ids.ID
-	bcLookup     consensus.AliasLookup
-	sharedMemory consensus.SharedMemory
+	// bcLookup     consensus.AliasLookup
+	// sharedMemory consensus.SharedMemory
 	chainDataDir string
 
 	state state.State
@@ -133,7 +134,7 @@ type VM struct {
 	codecRegistry codec.Registry
 
 	// Bootstrapped remembers if this chain has finished bootstrapping or not
-	bootstrappedConsensus consensusutils.Atomic[bool]
+	bootstrappedConsensus utils.Atomic[bool]
 	bootstrapped          utils.Atomic[bool]
 
 	manager blockexecutor.Manager
@@ -142,6 +143,11 @@ type VM struct {
 	onShutdownCtx context.Context
 	// Call [onShutdownCtxCancel] to cancel [onShutdownCtx] during Shutdown()
 	onShutdownCtxCancel context.CancelFunc
+}
+
+// GetChainID returns the chain ID of this VM
+func (vm *VM) GetChainID(context.Context) (ids.ID, error) {
+	return constants.PlatformChainID, nil
 }
 
 // Initialize this blockchain.
@@ -633,7 +639,7 @@ func (vm *VM) onNormalOperationsStarted() error {
 	return nil
 }
 
-func (vm *VM) SetState(_ context.Context, state consensus.State) error {
+func (vm *VM) SetState(_ context.Context, state interfaces.State) error {
 	switch state {
 	case consensus.Bootstrapping:
 		return vm.onBootstrapStarted()
@@ -699,9 +705,8 @@ func (vm *VM) BuildBlock(ctx context.Context) (linearblock.Block, error) {
 	if err != nil {
 		return nil, err
 	}
-	// The Builder returns chain.Block which is compatible with linearblock.Block
-	// since linearblock.Block extends chain.Block
-	return blk, nil
+	// Wrap the chain.Block to implement linearblock.Block
+	return wrapBlock(blk), nil
 }
 
 func (vm *VM) ParseBlock(_ context.Context, b []byte) (linearblock.Block, error) {
@@ -711,11 +716,15 @@ func (vm *VM) ParseBlock(_ context.Context, b []byte) (linearblock.Block, error)
 	if err != nil {
 		return nil, err
 	}
-	return vm.manager.NewBlock(statelessBlk), nil
+	return wrapBlock(vm.manager.NewBlock(statelessBlk)), nil
 }
 
 func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (linearblock.Block, error) {
-	return vm.manager.GetBlock(blkID)
+	blk, err := vm.manager.GetBlock(blkID)
+	if err != nil {
+		return nil, err
+	}
+	return wrapBlock(blk), nil
 }
 
 // LastAccepted returns the block most recently accepted

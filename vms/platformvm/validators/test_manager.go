@@ -30,6 +30,10 @@ func (testManager) GetValidatorSet(ctx context.Context, height uint64, netID ids
 	return nil, nil
 }
 
+func (testManager) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return nil, nil
+}
+
 func (testManager) OnAcceptedBlockID(ids.ID) {}
 
 func (testManager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {

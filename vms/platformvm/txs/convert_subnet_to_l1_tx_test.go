@@ -119,7 +119,7 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 						},
 					},
 				}},
-				Subnet:     netID,
+				Net:     netID,
 				ChainID:    managerChainID,
 				Address:    managerAddress,
 				Validators: []*ConvertNetToL1Validator{}, // Empty array to match expected JSON
@@ -216,7 +216,7 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 					},
 					Memo: types.JSONByteSlice("😅\nwell that's\x01\x23\x45!"),
 				}},
-				Subnet:  netID,
+				Net:  netID,
 				ChainID: managerChainID,
 				Address: managerAddress,
 				Validators: []*ConvertNetToL1Validator{
@@ -284,7 +284,7 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 			}
 			// BLS public keys are derived after unmarshal, so compare without them
 			// Just verify the basic fields match
-			require.Equal(test.tx.Subnet, parsedTx.Subnet)
+			require.Equal(test.tx.Net, parsedTx.Net)
 			require.Equal(test.tx.ChainID, parsedTx.ChainID)
 			require.Equal(test.tx.Address, parsedTx.Address)
 			require.Equal(len(test.tx.Validators), len(parsedTx.Validators))
@@ -335,7 +335,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 					NetworkID:    1,
 					BlockchainID: testChainID,
 				}},
-				Subnet: constants.PrimaryNetworkID,
+				Net: constants.PrimaryNetworkID,
 			},
 			expectedErr: ErrConvertPermissionlessNet,
 		},
@@ -346,7 +346,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 					NetworkID:    1,
 					BlockchainID: testChainID,
 				}},
-				Subnet:  ids.GenerateTestID(),
+				Net:  ids.GenerateTestID(),
 				Address: make([]byte, MaxSubnetAddressLength+1),
 			},
 			expectedErr: ErrAddressTooLong,
@@ -358,7 +358,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 					NetworkID:    1,
 					BlockchainID: testChainID,
 				}},
-				Subnet:     ids.GenerateTestID(),
+				Net:     ids.GenerateTestID(),
 				Address:    []byte{1, 2, 3},
 				Validators: []*ConvertNetToL1Validator{},
 			},
@@ -371,7 +371,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 					NetworkID:    1,
 					BlockchainID: testChainID,
 				}},
-				Subnet:  ids.GenerateTestID(),
+				Net:  ids.GenerateTestID(),
 				Address: []byte{1, 2, 3},
 				Validators: []*ConvertNetToL1Validator{
 					{

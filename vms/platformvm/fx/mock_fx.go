@@ -162,6 +162,18 @@ func (mr *MockOwnerMockRecorder) InitCtx(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*MockOwner)(nil).InitCtx), arg0)
 }
 
+// InitializeContext mocks base method (delegates to InitCtx for compatibility).
+func (m *MockOwner) InitializeContext(arg0 context.Context) error {
+	m.InitCtx(arg0)
+	return nil
+}
+
+// InitializeContext indicates an expected call of InitializeContext.
+func (mr *MockOwnerMockRecorder) InitializeContext(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeContext", reflect.TypeOf((*MockOwner)(nil).InitializeContext), arg0)
+}
+
 // Verify mocks base method.
 func (m *MockOwner) Verify() error {
 	m.ctrl.T.Helper()

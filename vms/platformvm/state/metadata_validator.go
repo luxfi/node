@@ -244,7 +244,7 @@ func (m *metadata) WriteValidatorMetadata(
 			if err != nil {
 				return err
 			}
-			db := dbSubnet
+			db := dbNet
 			if netID == constants.PrimaryNetworkID {
 				db = dbPrimary
 			}

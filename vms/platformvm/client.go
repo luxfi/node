@@ -62,7 +62,7 @@ type Client interface {
 	// GetSubnets returns information about the specified subnets
 	//
 	// Deprecated: Subnets should be fetched from a dedicated indexer.
-	GetSubnets(ctx context.Context, netIDs []ids.ID, options ...rpc.Option) ([]ClientSubnet, error)
+	GetSubnets(ctx context.Context, netIDs []ids.ID, options ...rpc.Option) ([]ClientNet, error)
 	// GetStakingAssetID returns the assetID of the asset used for staking on
 	// net corresponding to [netID]
 	GetStakingAssetID(ctx context.Context, netID ids.ID, options ...rpc.Option) (ids.ID, error)
@@ -263,7 +263,7 @@ type ClientNet struct {
 	Threshold   uint32
 }
 
-func (c *client) GetSubnets(ctx context.Context, ids []ids.ID, options ...rpc.Option) ([]ClientSubnet, error) {
+func (c *client) GetSubnets(ctx context.Context, ids []ids.ID, options ...rpc.Option) ([]ClientNet, error) {
 	res := &GetSubnetsResponse{}
 	err := c.requester.SendRequest(ctx, "platform.getSubnets", &GetSubnetsArgs{
 		IDs: ids,
@@ -271,17 +271,17 @@ func (c *client) GetSubnets(ctx context.Context, ids []ids.ID, options ...rpc.Op
 	if err != nil {
 		return nil, err
 	}
-	subnets := make([]ClientSubnet, len(res.Subnets))
+	subnets := make([]ClientNet, len(res.Subnets))
 	for i, apiNet := range res.Subnets {
-		controlKeys, err := address.ParseToIDs(apiSubnet.ControlKeys)
+		controlKeys, err := address.ParseToIDs(apiNet.ControlKeys)
 		if err != nil {
 			return nil, err
 		}
 
-		subnets[i] = ClientSubnet{
-			ID:          apiSubnet.ID,
+		subnets[i] = ClientNet{
+			ID:          apiNet.ID,
 			ControlKeys: controlKeys,
-			Threshold:   uint32(apiSubnet.Threshold),
+			Threshold:   uint32(apiNet.Threshold),
 		}
 	}
 	return subnets, nil

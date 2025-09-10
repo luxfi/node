@@ -228,13 +228,13 @@ func verifyAddNetValidatorTx(
 		return err
 	}
 
-	_, err := GetValidator(chainState, tx.NetValidator.Subnet, tx.Validator.NodeID)
+	_, err := GetValidator(chainState, tx.NetValidator.Net, tx.Validator.NodeID)
 	if err == nil {
 		return fmt.Errorf(
 			"attempted to issue %w for %s on net %s",
 			ErrDuplicateValidator,
 			tx.Validator.NodeID,
-			tx.NetValidator.Subnet,
+			tx.NetValidator.Net,
 		)
 	}
 	if err != database.ErrNotFound {
@@ -249,7 +249,7 @@ func verifyAddNetValidatorTx(
 		return err
 	}
 
-	baseTxCreds, err := verifyPoASubnetAuthorization(backend, chainState, sTx, tx.NetValidator.Subnet, tx.SubnetAuth)
+	baseTxCreds, err := verifyPoASubnetAuthorization(backend, chainState, sTx, tx.NetValidator.Net, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
@@ -274,13 +274,13 @@ func verifyAddNetValidatorTx(
 	return nil
 }
 
-// Returns the representation of [tx.NodeID] validating [tx.Subnet].
-// Returns true if [tx.NodeID] is a current validator of [tx.Subnet].
+// Returns the representation of [tx.NodeID] validating [tx.Net].
+// Returns true if [tx.NodeID] is a current validator of [tx.Net].
 // Returns an error if the given tx is invalid.
 // The transaction is valid if:
-// * [tx.NodeID] is a current/pending PoA validator of [tx.Subnet].
+// * [tx.NodeID] is a current/pending PoA validator of [tx.Net].
 // * [sTx]'s creds authorize it to spend the stated inputs.
-// * [sTx]'s creds authorize it to remove a validator from [tx.Subnet].
+// * [sTx]'s creds authorize it to remove a validator from [tx.Net].
 // * The flow checker passes.
 func verifyRemoveNetValidatorTx(
 	backend *Backend,
@@ -302,9 +302,9 @@ func verifyRemoveNetValidatorTx(
 	}
 
 	isCurrentValidator := true
-	vdr, err := chainState.GetCurrentValidator(tx.Subnet, tx.NodeID)
+	vdr, err := chainState.GetCurrentValidator(tx.Net, tx.NodeID)
 	if err == database.ErrNotFound {
-		vdr, err = chainState.GetPendingValidator(tx.Subnet, tx.NodeID)
+		vdr, err = chainState.GetPendingValidator(tx.Net, tx.NodeID)
 		isCurrentValidator = false
 	}
 	if err != nil {
@@ -313,7 +313,7 @@ func verifyRemoveNetValidatorTx(
 			"%s %w of %s: %w",
 			tx.NodeID,
 			ErrNotValidator,
-			tx.Subnet,
+			tx.Net,
 			err,
 		)
 	}
@@ -327,7 +327,7 @@ func verifyRemoveNetValidatorTx(
 		return vdr, isCurrentValidator, nil
 	}
 
-	baseTxCreds, err := verifySubnetAuthorization(backend, chainState, sTx, tx.Subnet, tx.SubnetAuth)
+	baseTxCreds, err := verifySubnetAuthorization(backend, chainState, sTx, tx.Net, tx.SubnetAuth)
 	if err != nil {
 		return nil, false, err
 	}
@@ -505,7 +505,7 @@ func verifyAddPermissionlessValidatorTx(
 		return err
 	}
 
-	validatorRules, err := getValidatorRules(backend, chainState, tx.Subnet)
+	validatorRules, err := getValidatorRules(backend, chainState, tx.Net)
 	if err != nil {
 		return err
 	}
@@ -542,20 +542,20 @@ func verifyAddPermissionlessValidatorTx(
 		)
 	}
 
-	_, err = GetValidator(chainState, tx.Subnet, tx.Validator.NodeID)
+	_, err = GetValidator(chainState, tx.Net, tx.Validator.NodeID)
 	if err == nil {
 		return fmt.Errorf(
 			"%w: %s on %s",
 			ErrDuplicateValidator,
 			tx.Validator.NodeID,
-			tx.Subnet,
+			tx.Net,
 		)
 	}
 	if err != database.ErrNotFound {
 		return fmt.Errorf(
 			"failed to find whether %s is a validator on %s: %w",
 			tx.Validator.NodeID,
-			tx.Subnet,
+			tx.Net,
 			err,
 		)
 	}
@@ -628,7 +628,7 @@ func verifyAddPermissionlessDelegatorTx(
 		return err
 	}
 
-	delegatorRules, err := getDelegatorRules(backend, chainState, tx.Subnet)
+	delegatorRules, err := getDelegatorRules(backend, chainState, tx.Net)
 	if err != nil {
 		return err
 	}
@@ -657,12 +657,12 @@ func verifyAddPermissionlessDelegatorTx(
 		)
 	}
 
-	validator, err := GetValidator(chainState, tx.Subnet, tx.Validator.NodeID)
+	validator, err := GetValidator(chainState, tx.Net, tx.Validator.NodeID)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to fetch the validator for %s on %s: %w",
 			tx.Validator.NodeID,
-			tx.Subnet,
+			tx.Net,
 			err,
 		)
 	}
@@ -738,7 +738,7 @@ func verifyAddPermissionlessDelegatorTx(
 // Returns an error if the given tx is invalid.
 // The transaction is valid if:
 // * [sTx]'s creds authorize it to spend the stated inputs.
-// * [sTx]'s creds authorize it to transfer ownership of [tx.Subnet].
+// * [sTx]'s creds authorize it to transfer ownership of [tx.Net].
 // * The flow checker passes.
 func verifyTransferNetOwnershipTx(
 	backend *Backend,
@@ -764,7 +764,7 @@ func verifyTransferNetOwnershipTx(
 		return nil
 	}
 
-	baseTxCreds, err := verifySubnetAuthorization(backend, chainState, sTx, tx.Subnet, tx.SubnetAuth)
+	baseTxCreds, err := verifySubnetAuthorization(backend, chainState, sTx, tx.Net, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
