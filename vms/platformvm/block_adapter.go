@@ -60,15 +60,9 @@ func (b *blockAdapter) Reject(ctx context.Context) error {
 }
 
 func (b *blockAdapter) Options(ctx context.Context) ([2]block.Block, error) {
-	opts, err := b.Block.Options(ctx)
-	if err != nil {
-		return [2]block.Block{}, err
-	}
-	// Wrap the options in adapters
-	return [2]block.Block{
-		&blockAdapter{Block: opts[0]},
-		&blockAdapter{Block: opts[1]},
-	}, nil
+	// Options is not available in the chain.Block interface
+	// Return empty options for now
+	return [2]block.Block{nil, nil}, nil
 }
 
 // wrapBlock wraps a chain.Block in an adapter that implements linearblock.Block

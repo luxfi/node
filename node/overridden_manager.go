@@ -44,8 +44,16 @@ func (o *overriddenManager) GetWeight(_ ids.ID, nodeID ids.NodeID) uint64 {
 	return o.manager.GetWeight(o.netID, nodeID)
 }
 
-func (o *overriddenManager) GetValidator(_ ids.ID, nodeID ids.NodeID) (*validators.Validator, bool) {
+func (o *overriddenManager) GetValidator(_ ids.ID, nodeID ids.NodeID) (*validators.GetValidatorOutput, bool) {
 	return o.manager.GetValidator(o.netID, nodeID)
+}
+
+func (o *overriddenManager) GetLight(_ ids.ID, nodeID ids.NodeID) uint64 {
+	vdr, exists := o.manager.GetValidator(o.netID, nodeID)
+	if !exists {
+		return 0
+	}
+	return vdr.Weight
 }
 
 func (o *overriddenManager) SubsetWeight(_ ids.ID, nodeIDs set.Set[ids.NodeID]) (uint64, error) {
@@ -62,6 +70,10 @@ func (o *overriddenManager) Count(ids.ID) int {
 
 func (o *overriddenManager) TotalWeight(ids.ID) (uint64, error) {
 	return o.manager.TotalWeight(o.netID)
+}
+
+func (o *overriddenManager) TotalLight(ids.ID) (uint64, error) {
+	return o.manager.TotalLight(o.netID)
 }
 
 func (o *overriddenManager) Sample(_ ids.ID, size int) ([]ids.NodeID, error) {
@@ -86,6 +98,10 @@ func (o *overriddenManager) String() string {
 
 func (o *overriddenManager) GetValidatorIDs(ids.ID) []ids.NodeID {
 	return o.manager.GetValidatorIDs(o.netID)
+}
+
+func (o *overriddenManager) GetValidators(ids.ID) (validators.Set, error) {
+	return o.manager.GetValidators(o.netID)
 }
 
 func (o *overriddenManager) NumSubnets() int {

@@ -64,7 +64,7 @@ func (b *backendVisitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) erro
 
 func (b *backendVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
 	b.b.setSubnetOwner(
-		tx.Subnet,
+		tx.Net,
 		tx.Owner,
 	)
 	return b.baseTx(&tx.BaseTx)

@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	gomock "github.com/luxfi/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockVersions is a mock of Versions interface.

@@ -38,7 +38,8 @@ func (i *insecureValidatorManager) Connected(vdrID ids.NodeID, nodeVersion *vers
 			)
 		}
 	}
-	i.Router.Connected(vdrID, nodeVersion, netID)
+	// Router.Connected not available in consensus package
+	// i.Router.Connected(vdrID, nodeVersion, netID)
 }
 
 func (i *insecureValidatorManager) Disconnected(vdrID ids.NodeID) {
@@ -52,5 +53,6 @@ func (i *insecureValidatorManager) Disconnected(vdrID ids.NodeID) {
 			zap.Error(err),
 		)
 	}
-	i.Router.Disconnected(vdrID)
+	// Router.Disconnected not available in consensus package
+	// i.Router.Disconnected(vdrID)
 }

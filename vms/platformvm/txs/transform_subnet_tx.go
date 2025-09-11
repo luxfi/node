@@ -128,7 +128,7 @@ func (tx *TransformNetTx) SyntacticVerify(ctx context.Context) error {
 		return errCantTransformPrimaryNetwork
 	case tx.AssetID == ids.Empty:
 		return errEmptyAssetID
-	case tx.AssetID == consensus.GetXAssetID(ctx):
+	case tx.AssetID == consensus.XAssetID:
 		return errAssetIDCantBeLUX
 	case tx.InitialSupply == 0:
 		return errInitialSupplyZero

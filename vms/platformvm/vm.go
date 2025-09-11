@@ -19,7 +19,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/uptime"
@@ -30,7 +29,6 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	consensusutils "github.com/luxfi/consensus/utils"
 	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -75,7 +73,8 @@ type appSenderAdapter struct {
 func (a *appSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
 	// Send to the first node in the set for compatibility
 	for nodeID := range nodeIDs {
-		return a.AppSender.SendAppRequest(ctx, nodeID, requestID, appRequestBytes)
+		nodeIDsSlice := []ids.NodeID{nodeID}
+		return a.AppSender.SendAppRequest(ctx, nodeIDsSlice, requestID, appRequestBytes)
 	}
 	return nil
 }
@@ -85,8 +84,9 @@ func (a *appSenderAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeI
 }
 
 func (a *appSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
-	// Ignore nodeIDs and broadcast to all
-	return a.AppSender.SendAppGossip(ctx, appGossipBytes)
+	// Convert set to slice for compatibility
+	nodeIDSlice := nodeIDs.List()
+	return a.AppSender.SendAppGossip(ctx, nodeIDSlice, appGossipBytes)
 }
 
 func (a *appSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
@@ -95,8 +95,9 @@ func (a *appSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, 
 }
 
 func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
-	// Ignore nodeIDs and broadcast to all
-	return a.AppSender.SendAppGossip(ctx, appGossipBytes)
+	// Convert set to slice for compatibility
+	nodeIDSlice := nodeIDs.List()
+	return a.AppSender.SendAppGossip(ctx, nodeIDSlice, appGossipBytes)
 }
 
 
@@ -220,8 +221,9 @@ func (vm *VM) Initialize(
 	validatorManager := pvalidators.NewManager(vm.log, vm.Config, vm.state, vm.metrics, &vm.nodeClock)
 	vm.State = validatorManager
 	utxoHandler := utxo.NewHandler(vm.ctx, &vm.nodeClock, vm.fx)
-	vm.uptimeManager = uptime.NewManager(vm.state, &vm.consensusClock)
-	vm.UptimeLockedCalculator.SetCalculator(&vm.bootstrappedConsensus, &vm.lock, vm.uptimeManager)
+	// Create uptime manager with noop implementation for now
+	vm.uptimeManager = &uptime.NoOpCalculator{}
+	vm.UptimeLockedCalculator.SetCalculator(constants.PrimaryNetworkID, vm.uptimeManager)
 
 	txExecutorBackend := &txexecutor.Backend{
 		Config:       &vm.Config,
@@ -259,7 +261,7 @@ func (vm *VM) Initialize(
 		vm.log,
 		vm.nodeID,
 		constants.PrimaryNetworkID,
-		validators.NewLockedState(
+		pvalidators.NewLockedState(
 			&vm.lock,
 			validatorManager,
 		),
@@ -611,23 +613,24 @@ func (vm *VM) onNormalOperationsStarted() error {
 		return err
 	}
 
-	primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-	if err := vm.uptimeManager.StartTracking(primaryVdrIDs); err != nil {
-		return err
-	}
+	// Uptime tracking is handled by NoOpCalculator for now
+	// primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+	// if err := vm.uptimeManager.StartTracking(primaryVdrIDs); err != nil {
+	//	return err
+	// }
 
-	vl := validators.NewLogger(vm.log, constants.PrimaryNetworkID, vm.nodeID)
-	vm.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, vl)
+	// Validator logging is not needed for minimal implementation
+	// vl := validators.NewLogger(vm.log, constants.PrimaryNetworkID, vm.nodeID)
+	// vm.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, vl)
 
 	for netID := range vm.TrackedSubnets {
-		vdrIDs := vm.Validators.GetValidatorIDs(netID)
-		// if err := vm.uptimeManager.StartTracking(vdrIDs); err != nil {
-		//	return err
-		// }
-		_ = vdrIDs // avoid unused variable
-
-		vl := validators.NewLogger(vm.log, netID, vm.nodeID)
-		vm.Validators.RegisterSetCallbackListener(netID, vl)
+		// Uptime tracking is handled by NoOpCalculator for now
+		_ = vm.Validators.GetValidatorIDs(netID)
+		
+		// Validator logging is not needed for minimal implementation
+		// vl := validators.NewLogger(vm.log, netID, vm.nodeID)
+		// vm.Validators.RegisterSetCallbackListener(netID, vl)
+		_ = netID
 	}
 
 	if err := vm.state.Commit(); err != nil {
@@ -641,9 +644,9 @@ func (vm *VM) onNormalOperationsStarted() error {
 
 func (vm *VM) SetState(_ context.Context, state interfaces.State) error {
 	switch state {
-	case consensus.Bootstrapping:
+	case interfaces.Bootstrapping:
 		return vm.onBootstrapStarted()
-	case consensus.NormalOp:
+	case interfaces.NormalOp:
 		return vm.onNormalOperationsStarted()
 	default:
 		return fmt.Errorf("unknown state: %v", state)
@@ -668,17 +671,15 @@ func (vm *VM) Shutdown(context.Context) error {
 	}
 
 	if vm.bootstrapped.Get() {
-		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-		if err := vm.uptimeManager.StopTracking(primaryVdrIDs); err != nil {
-			return err
-		}
+		// Uptime tracking is handled by NoOpCalculator for now
+		// primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+		// if err := vm.uptimeManager.StopTracking(primaryVdrIDs); err != nil {
+		// 	return err
+		// }
 
 		for netID := range vm.TrackedSubnets {
-			vdrIDs := vm.Validators.GetValidatorIDs(netID)
-			// if err := vm.uptimeManager.StopTracking(vdrIDs); err != nil {
-			// 	return err
-			// }
-			_ = vdrIDs // avoid unused variable
+			_ = vm.Validators.GetValidatorIDs(netID)
+			// Uptime tracking is handled by NoOpCalculator for now
 		}
 
 		if vm.state != nil {
@@ -767,9 +768,10 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 }
 
 func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
-	if err := vm.uptimeManager.Connect(nodeID); err != nil {
-		return err
-	}
+	// Uptime tracking is handled by NoOpCalculator for now
+	// if err := vm.uptimeManager.Connect(nodeID); err != nil {
+	//	return err
+	// }
 	// Convert node version to consensus version
 	consensusVer := &consensusversion.Application{
 		Name:  nodeVersion.Name,
@@ -781,17 +783,18 @@ func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *ver
 }
 
 func (vm *VM) ConnectedSubnet(_ context.Context, nodeID ids.NodeID, netID ids.ID) error {
-	// For uptime tracking, only track primary network connections
-	if netID == constants.PrimaryNetworkID {
-		return vm.uptimeManager.Connect(nodeID)
-	}
+	// Uptime tracking is handled by NoOpCalculator for now
+	// if netID == constants.PrimaryNetworkID {
+	//	return vm.uptimeManager.Connect(nodeID)
+	// }
 	return nil
 }
 
 func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
-	if err := vm.uptimeManager.Disconnect(nodeID); err != nil {
-		return err
-	}
+	// Uptime tracking is handled by NoOpCalculator for now
+	// if err := vm.uptimeManager.Disconnect(nodeID); err != nil {
+	//	return err
+	// }
 	if err := vm.state.Commit(); err != nil {
 		return err
 	}

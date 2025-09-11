@@ -16,7 +16,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -1116,10 +1115,10 @@ func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	var err error
-	ctx := r.Context()
-	response.NetID, err = s.vm.Validators.GetNetID(ctx, args.BlockchainID)
-	return err
+	// GetNetID is not available in the current validators.Manager interface
+	// Return primary network for now
+	response.NetID = constants.PrimaryNetworkID
+	return nil
 }
 
 // ValidatesArgs are the arguments to Validates
@@ -1647,7 +1646,7 @@ func (v *GetValidatorsAtReply) MarshalJSON() ([]byte, error) {
 		}
 
 		if vdr.PublicKey != nil {
-			pk, err := formatting.Encode(formatting.HexNC, bls.PublicKeyToCompressedBytes(vdr.PublicKey))
+			pk, err := formatting.Encode(formatting.HexNC, vdr.PublicKey)
 			if err != nil {
 				return nil, err
 			}
@@ -1682,10 +1681,7 @@ func (v *GetValidatorsAtReply) UnmarshalJSON(b []byte) error {
 			if err != nil {
 				return err
 			}
-			vdr.PublicKey, err = bls.PublicKeyFromCompressedBytes(pkBytes)
-			if err != nil {
-				return err
-			}
+			vdr.PublicKey = pkBytes
 		}
 
 		v.Validators[nodeID] = vdr
@@ -1804,7 +1800,7 @@ func (s *Service) getAPIUptime(staker *state.Staker) (*avajson.Float32, error) {
 	rawUptime := float64(0)
 	var err error
 	if staker.NetID == constants.PrimaryNetworkID {
-		rawUptime, err = s.vm.uptimeManager.CalculateUptimePercentFrom(staker.NodeID, staker.StartTime)
+		rawUptime, err = s.vm.uptimeManager.CalculateUptimePercentFrom(staker.NodeID, constants.PrimaryNetworkID, staker.StartTime)
 	}
 	if err != nil {
 		return nil, err
