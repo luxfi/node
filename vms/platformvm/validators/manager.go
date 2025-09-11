@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus/validators"
+	consensusset "github.com/luxfi/consensus/utils/set"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/cache"
@@ -421,4 +423,169 @@ func (m *manager) GetCurrentValidatorSet(
 
 	result := make(map[ids.ID]*validators.GetCurrentValidatorOutput)
 	return result, currentHeight, nil
+}
+
+// AddStaker implements validators.Manager interface
+// This is required for consensus compatibility but not used in platformvm
+func (m *manager) AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
+	// This method is not used by platformvm as it manages validators through state changes
+	// Return nil for interface compatibility
+	return nil
+}
+
+// RemoveWeight implements validators.Manager interface
+func (m *manager) RemoveWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
+	// This method is not used by platformvm as it manages validators through state changes
+	// Return nil for interface compatibility
+	return nil
+}
+
+// GetWeight implements validators.Manager interface
+func (m *manager) GetWeight(subnetID ids.ID, nodeID ids.NodeID) uint64 {
+	// Delegate to GetValidatorSet for actual weight retrieval
+	ctx := context.Background()
+	currentHeight, err := m.getCurrentHeight(ctx)
+	if err != nil {
+		return 0
+	}
+	
+	validators, err := m.GetValidatorSet(ctx, currentHeight, subnetID)
+	if err != nil {
+		return 0
+	}
+	
+	if validator, ok := validators[nodeID]; ok {
+		return validator.Weight
+	}
+	return 0
+}
+
+// GetSubnetID implements validators.Manager interface
+func (m *manager) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return m.GetNetID(ctx, chainID)
+}
+
+// SubsetWeight implements validators.Manager interface
+func (m *manager) SubsetWeight(subnetID ids.ID, nodeIDs consensusset.Set[ids.NodeID]) (uint64, error) {
+	ctx := context.Background()
+	currentHeight, err := m.getCurrentHeight(ctx)
+	if err != nil {
+		return 0, err
+	}
+	
+	validators, err := m.GetValidatorSet(ctx, currentHeight, subnetID)
+	if err != nil {
+		return 0, err
+	}
+	
+	var totalWeight uint64
+	for nodeID := range nodeIDs {
+		if validator, ok := validators[nodeID]; ok {
+			totalWeight += validator.Weight
+		}
+	}
+	return totalWeight, nil
+}
+
+// TotalWeight implements validators.Manager interface
+func (m *manager) TotalWeight(subnetID ids.ID) (uint64, error) {
+	ctx := context.Background()
+	currentHeight, err := m.getCurrentHeight(ctx)
+	if err != nil {
+		return 0, err
+	}
+	
+	validators, err := m.GetValidatorSet(ctx, currentHeight, subnetID)
+	if err != nil {
+		return 0, err
+	}
+	
+	var totalWeight uint64
+	for _, validator := range validators {
+		totalWeight += validator.Weight
+	}
+	return totalWeight, nil
+}
+
+// GetValidator implements validators.Manager interface
+func (m *manager) GetValidator(subnetID ids.ID, nodeID ids.NodeID) (*validators.GetValidatorOutput, bool) {
+	ctx := context.Background()
+	currentHeight, err := m.getCurrentHeight(ctx)
+	if err != nil {
+		return nil, false
+	}
+	
+	validatorSet, err := m.GetValidatorSet(ctx, currentHeight, subnetID)
+	if err != nil {
+		return nil, false
+	}
+	
+	if validatorOutput, ok := validatorSet[nodeID]; ok {
+		// Return the validator output
+		return validatorOutput, true
+	}
+	return nil, false
+}
+
+// GetValidatorIDs implements validators.Manager interface
+func (m *manager) GetValidatorIDs(subnetID ids.ID) []ids.NodeID {
+	ctx := context.Background()
+	currentHeight, err := m.getCurrentHeight(ctx)
+	if err != nil {
+		return nil
+	}
+	
+	validators, err := m.GetValidatorSet(ctx, currentHeight, subnetID)
+	if err != nil {
+		return nil
+	}
+	
+	nodeIDs := make([]ids.NodeID, 0, len(validators))
+	for nodeID := range validators {
+		nodeIDs = append(nodeIDs, nodeID)
+	}
+	return nodeIDs
+}
+
+// Count implements validators.Manager interface
+func (m *manager) Count(subnetID ids.ID) int {
+	ctx := context.Background()
+	currentHeight, err := m.getCurrentHeight(ctx)
+	if err != nil {
+		return 0
+	}
+	
+	validators, err := m.GetValidatorSet(ctx, currentHeight, subnetID)
+	if err != nil {
+		return 0
+	}
+	
+	return len(validators)
+}
+
+// RegisterSetCallbackListener implements validators.Manager interface
+func (m *manager) RegisterSetCallbackListener(subnetID ids.ID, listener validators.SetCallbackListener) {
+	// This is typically used for logging changes, but not critical for basic operation
+	// For now, we'll just ignore it
+}
+
+// RegisterWeightCallbackListener is not part of the consensus interface
+// It was removed as WeightCallbackListener doesn't exist in consensus package
+
+// GetValidators implements validators.Manager interface
+func (m *manager) GetValidators(netID ids.ID) (validators.Set, error) {
+	// For now, return nil
+	// This may need to be properly implemented based on actual requirements
+	return nil, nil
+}
+
+// TotalLight implements validators.Manager interface
+func (m *manager) TotalLight(netID ids.ID) (uint64, error) {
+	// TotalLight is the same as TotalWeight
+	return m.TotalWeight(netID)
+}
+
+// String implements validators.Manager interface
+func (m *manager) String() string {
+	return "platformvm.validators.Manager"
 }

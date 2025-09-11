@@ -7,6 +7,8 @@ import (
 	"context"
 
 	"github.com/luxfi/consensus/validators"
+	consensusset "github.com/luxfi/consensus/utils/set"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 )
 
@@ -35,6 +37,71 @@ func (testManager) GetCurrentValidators(ctx context.Context, height uint64, netI
 }
 
 func (testManager) OnAcceptedBlockID(ids.ID) {}
+
+// AddStaker implements validators.Manager interface
+func (testManager) AddStaker(ids.ID, ids.NodeID, *bls.PublicKey, ids.ID, uint64) error {
+	return nil
+}
+
+// RemoveWeight implements validators.Manager interface
+func (testManager) RemoveWeight(ids.ID, ids.NodeID, uint64) error {
+	return nil
+}
+
+// GetWeight implements validators.Manager interface
+func (testManager) GetWeight(ids.ID, ids.NodeID) uint64 {
+	return 0
+}
+
+// GetSubnetID implements validators.Manager interface
+func (testManager) GetSubnetID(context.Context, ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+// SubsetWeight implements validators.Manager interface
+func (testManager) SubsetWeight(ids.ID, consensusset.Set[ids.NodeID]) (uint64, error) {
+	return 0, nil
+}
+
+// TotalWeight implements validators.Manager interface
+func (testManager) TotalWeight(ids.ID) (uint64, error) {
+	return 0, nil
+}
+
+// GetValidator implements validators.Manager interface
+func (testManager) GetValidator(ids.ID, ids.NodeID) (*validators.GetValidatorOutput, bool) {
+	return nil, false
+}
+
+// GetValidatorIDs implements validators.Manager interface
+func (testManager) GetValidatorIDs(ids.ID) []ids.NodeID {
+	return nil
+}
+
+// Count implements validators.Manager interface
+func (testManager) Count(ids.ID) int {
+	return 0
+}
+
+// RegisterSetCallbackListener implements validators.Manager interface
+func (testManager) RegisterSetCallbackListener(ids.ID, validators.SetCallbackListener) {}
+
+// RegisterWeightCallbackListener removed - doesn't exist in consensus
+
+// GetValidators implements validators.Manager interface
+func (testManager) GetValidators(ids.ID) (validators.Set, error) {
+	return nil, nil
+}
+
+// TotalLight implements validators.Manager interface
+func (testManager) TotalLight(ids.ID) (uint64, error) {
+	return 0, nil
+}
+
+// String implements validators.Manager interface
+func (testManager) String() string {
+	return "test_manager"
+}
 
 func (testManager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
 	return nil, 0, nil

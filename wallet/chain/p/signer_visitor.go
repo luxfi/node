@@ -72,7 +72,7 @@ func (s *signerVisitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.NetValidator.Subnet, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getSubnetSigners(tx.NetValidator.Net, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func (s *signerVisitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.Subnet, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getSubnetSigners(tx.Net, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func (s *signerVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) e
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.Subnet, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getSubnetSigners(tx.Net, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func (s *signerVisitor) TransformNetTx(tx *txs.TransformNetTx) error {
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.Subnet, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getSubnetSigners(tx.Net, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
@@ -394,7 +394,7 @@ func (s *signerVisitor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.Subnet, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getSubnetSigners(tx.Net, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}

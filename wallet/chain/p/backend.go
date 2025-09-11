@@ -52,7 +52,7 @@ func NewBackend(context *builder.Context, utxos common.ChainUTXOs, subnetTxs map
 		if !ok {
 			continue
 		}
-		subnetOwner[transferSubnetOwnershipTx.Subnet] = transferSubnetOwnershipTx.Owner
+		subnetOwner[transferSubnetOwnershipTx.Net] = transferSubnetOwnershipTx.Owner
 	}
 	return &backend{
 		ChainUTXOs:  utxos,

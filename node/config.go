@@ -166,7 +166,7 @@ type Config struct {
 	// Metrics
 	MeterVMEnabled bool `json:"meterVMEnabled"`
 
-	RouterHealthConfig       router.HealthConfig `json:"routerHealthConfig"`
+	RouterHealthConfig       HealthConfig `json:"routerHealthConfig"`
 	ConsensusShutdownTimeout time.Duration       `json:"consensusShutdownTimeout"`
 	// Poll for new frontiers every [FrontierPollFrequency]
 	FrontierPollFrequency time.Duration `json:"consensusGossipFreq"`
@@ -200,9 +200,9 @@ type Config struct {
 	// Larger halflife --> disk usage metrics change more slowly.
 	SystemTrackerDiskHalflife time.Duration `json:"systemTrackerDiskHalflife"`
 
-	CPUTargeterConfig tracker.TargeterConfig `json:"cpuTargeterConfig"`
+	CPUTargeterConfig TargeterConfig `json:"cpuTargeterConfig"`
 
-	DiskTargeterConfig tracker.TargeterConfig `json:"diskTargeterConfig"`
+	DiskTargeterConfig TargeterConfig `json:"diskTargeterConfig"`
 
 	RequiredAvailableDiskSpace         uint64 `json:"requiredAvailableDiskSpace"`
 	WarningThresholdAvailableDiskSpace uint64 `json:"warningThresholdAvailableDiskSpace"`

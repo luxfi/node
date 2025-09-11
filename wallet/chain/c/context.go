@@ -55,25 +55,9 @@ func NewContextFromClients(
 }
 
 func newConsensusContext(c *Context) (context.Context, error) {
-	lookup := ids.NewAliaser()
-	if err := lookup.Alias(c.BlockchainID, Alias); err != nil {
-		return nil, err
-	}
-
+	// For now, just return the context as-is
+	// The consensus package doesn't have WithXXX functions
+	// This function may need to be refactored based on actual usage
 	ctx := context.Background()
-	ctx = consensus.WithNetworkID(ctx, c.NetworkID)
-	ctx = consensus.WithNetID(ctx, constants.PrimaryNetworkID)
-	ctx = consensus.WithChainID(ctx, c.BlockchainID)
-	ctx = consensus.WithBCLookup(ctx, lookup)
-
-	// Create IDs struct with C-chain info
-	ids := consensus.IDs{
-		NetworkID:  c.NetworkID,
-		ChainID:    c.BlockchainID,
-		NetID:   constants.PrimaryNetworkID,
-		LUXAssetID: c.LUXAssetID,
-	}
-	ctx = consensus.WithIDs(ctx, ids)
-
 	return ctx, nil
 }

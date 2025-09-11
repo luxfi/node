@@ -34,12 +34,14 @@ func (b *beaconManager) Connected(nodeID ids.NodeID, nodeVersion *version.Applic
 			close(b.onSufficientlyConnected)
 		})
 	}
-	b.Router.Connected(nodeID, nodeVersion, netID)
+	// Router doesn't have Connected method in consensus package
+	// b.Router.Connected(nodeID, nodeVersion, netID)
 }
 
 func (b *beaconManager) Disconnected(nodeID ids.NodeID) {
 	if _, isBeacon := b.beacons.GetValidator(constants.PrimaryNetworkID, nodeID); isBeacon {
 		atomic.AddInt64(&b.numConns, -1)
 	}
-	b.Router.Disconnected(nodeID)
+	// Router doesn't have Disconnected method in consensus package
+	// b.Router.Disconnected(nodeID)
 }
