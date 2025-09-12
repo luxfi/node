@@ -1,26 +1,267 @@
+# github.com/luxfi/node/api/admin
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/api/admin [setup failed]
+# github.com/luxfi/node/api/info
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/api/info [setup failed]
+# github.com/luxfi/node/api/warp
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/api/warp [setup failed]
+# github.com/luxfi/node/app
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/app [setup failed]
+# github.com/luxfi/node/chains
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/chains [setup failed]
+# github.com/luxfi/node/config
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/config [setup failed]
+# github.com/luxfi/node/genesis/generate/checkpoints
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/genesis/generate/checkpoints [setup failed]
+# github.com/luxfi/node/genesis/generate/validators
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/genesis/generate/validators [setup failed]
+# github.com/luxfi/node/indexer
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/indexer [setup failed]
+# github.com/luxfi/node/indexer/examples/p-chain
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/indexer/examples/p-chain [setup failed]
+# github.com/luxfi/node/indexer/examples/x-chain-blocks
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/indexer/examples/x-chain-blocks [setup failed]
+# github.com/luxfi/node/main
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/main [setup failed]
+# github.com/luxfi/node/nets
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/nets [setup failed]
+# github.com/luxfi/node/network
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/network [setup failed]
+# github.com/luxfi/node/node
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/node [setup failed]
+# github.com/luxfi/node/tests/antithesis
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/antithesis [setup failed]
+# github.com/luxfi/node/tests/antithesis/avalanchego
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/antithesis/avalanchego [setup failed]
+# github.com/luxfi/node/tests/antithesis/avalanchego/gencomposeconfig
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/antithesis/avalanchego/gencomposeconfig [setup failed]
+# github.com/luxfi/node/tests/antithesis/luxd/gencomposeconfig
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/antithesis/luxd/gencomposeconfig [setup failed]
+# github.com/luxfi/node/tests/antithesis/xsvm/gencomposeconfig
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/antithesis/xsvm/gencomposeconfig [setup failed]
 # github.com/luxfi/node/tests/e2e
 package github.com/luxfi/node/tests/e2e_test
 	imports github.com/luxfi/node/tests/e2e/banff: build constraints exclude all Go files in /home/z/work/lux/node/tests/e2e/banff
 FAIL	github.com/luxfi/node/tests/e2e [setup failed]
+# github.com/luxfi/node/tests/e2e/p
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/e2e/p [setup failed]
+# github.com/luxfi/node/tests/fixture/bootstrapmonitor
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/fixture/bootstrapmonitor [setup failed]
+# github.com/luxfi/node/tests/fixture/bootstrapmonitor/cmd
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/fixture/bootstrapmonitor/cmd [setup failed]
+# github.com/luxfi/node/tests/fixture/bootstrapmonitor/e2e
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/fixture/bootstrapmonitor/e2e [setup failed]
+# github.com/luxfi/node/tests/fixture/e2e
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/fixture/e2e [setup failed]
+# github.com/luxfi/node/tests/fixture/subnet
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/fixture/subnet [setup failed]
+# github.com/luxfi/node/tests/fixture/tmpnet
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/fixture/tmpnet [setup failed]
+# github.com/luxfi/node/tests/fixture/tmpnet/cmd
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/fixture/tmpnet/cmd [setup failed]
+# github.com/luxfi/node/tests/fixture/tmpnet/flags
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/fixture/tmpnet/flags [setup failed]
+# github.com/luxfi/node/tests/fixture/tmpnet/local
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/fixture/tmpnet/local [setup failed]
+# github.com/luxfi/node/tests/fixture/tmpnet/tmpnetctl
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/fixture/tmpnet/tmpnetctl [setup failed]
+# github.com/luxfi/node/tests/integration
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/integration [setup failed]
+# github.com/luxfi/node/tests/load/main
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/load/main [setup failed]
+# github.com/luxfi/node/tests/poa
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/tests/poa [setup failed]
+# github.com/luxfi/node/utils/iterator
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/utils/iterator [setup failed]
+# github.com/luxfi/node/vms/example/xsvm/cmd/account
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/account [setup failed]
+# github.com/luxfi/node/vms/example/xsvm/cmd/chain
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/chain [setup failed]
+# github.com/luxfi/node/vms/example/xsvm/cmd/chain/create
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/chain/create [setup failed]
+# github.com/luxfi/node/vms/example/xsvm/cmd/issue
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue [setup failed]
+# github.com/luxfi/node/vms/example/xsvm/cmd/issue/export
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue/export [setup failed]
+# github.com/luxfi/node/vms/example/xsvm/cmd/issue/importtx
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue/importtx [setup failed]
+# github.com/luxfi/node/vms/example/xsvm/cmd/issue/transfer
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue/transfer [setup failed]
+# github.com/luxfi/node/vms/example/xsvm/cmd/xsvm
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/xsvm [setup failed]
+# github.com/luxfi/node/vms/platformvm
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/platformvm [setup failed]
+# github.com/luxfi/node/vms/platformvm/block/builder
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/platformvm/block/builder [setup failed]
+# github.com/luxfi/node/vms/platformvm/block/executor
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/platformvm/block/executor [setup failed]
+# github.com/luxfi/node/vms/platformvm/block/executor/executormock
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/platformvm/block/executor/executormock [setup failed]
+# github.com/luxfi/node/vms/platformvm/config
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/platformvm/config [setup failed]
+# github.com/luxfi/node/vms/platformvm/network
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/platformvm/network [setup failed]
+# github.com/luxfi/node/vms/platformvm/state
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/platformvm/state [setup failed]
+# github.com/luxfi/node/vms/platformvm/state/statetest
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/platformvm/state/statetest [setup failed]
+# github.com/luxfi/node/vms/platformvm/txs/builder
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/platformvm/txs/builder [setup failed]
+# github.com/luxfi/node/vms/platformvm/txs/executor
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/platformvm/txs/executor [setup failed]
+# github.com/luxfi/node/vms/platformvm/txs/txstest
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/platformvm/txs/txstest [setup failed]
+# github.com/luxfi/node/vms/platformvm/utxo
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/platformvm/utxo [setup failed]
+# github.com/luxfi/node/vms/platformvm/validators
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/platformvm/validators [setup failed]
+# github.com/luxfi/node/vms/platformvm/validators/validatorstest
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/vms/platformvm/validators/validatorstest [setup failed]
+# github.com/luxfi/node/wallet/chain/c
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/chain/c [setup failed]
+# github.com/luxfi/node/wallet/chain/p
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/chain/p [setup failed]
+# github.com/luxfi/node/wallet/chain/p/builder
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/chain/p/builder [setup failed]
+# github.com/luxfi/node/wallet/chain/p/wallet
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/chain/p/wallet [setup failed]
+# github.com/luxfi/node/wallet/chain/x
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/chain/x [setup failed]
+# github.com/luxfi/node/wallet/net/primary
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/add-permissioned-subnet-validator
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/add-permissioned-subnet-validator [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/add-primary-validator
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/add-primary-validator [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/c-chain-export
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/c-chain-export [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/c-chain-import
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/c-chain-import [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/convert-subnet-to-l1
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/convert-subnet-to-l1 [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/create-asset
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/create-asset [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/create-chain
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/create-chain [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/create-locked-stakeable
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/create-locked-stakeable [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/create-subnet
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/create-subnet [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/disable-l1-validator
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/disable-l1-validator [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/get-p-chain-balance
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/get-p-chain-balance [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/get-x-chain-balance
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/get-x-chain-balance [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/increase-l1-validator-balance
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/increase-l1-validator-balance [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/register-l1-validator
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/register-l1-validator [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/remove-subnet-validator
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/remove-subnet-validator [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/set-l1-validator-weight
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/set-l1-validator-weight [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-registration
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-registration [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-removal-genesis
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-removal-genesis [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-removal-registration
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-removal-registration [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-weight-update
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-weight-update [setup failed]
+# github.com/luxfi/node/wallet/net/primary/examples/sign-subnet-to-l1-conversion
+chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-subnet-to-l1-conversion [setup failed]
 ok  	github.com/luxfi/node	(cached)
 ?   	github.com/luxfi/node/api	[no test files]
-ok  	github.com/luxfi/node/api/admin	(cached)
 ok  	github.com/luxfi/node/api/auth	(cached)
 ?   	github.com/luxfi/node/api/connectclient	[no test files]
 ok  	github.com/luxfi/node/api/health	(cached)
-ok  	github.com/luxfi/node/api/info	(cached)
 ok  	github.com/luxfi/node/api/keystore	(cached)
 ?   	github.com/luxfi/node/api/keystore/gkeystore	[no test files]
 ok  	github.com/luxfi/node/api/metrics	(cached)
-# github.com/luxfi/node/wallet/chain/c
-wallet/chain/c/context.go:9:2: "github.com/luxfi/consensus" imported and not used
-wallet/chain/c/context.go:12:2: "github.com/luxfi/node/utils/constants" imported and not used
-# github.com/luxfi/node/indexer [github.com/luxfi/node/indexer.test]
-indexer/indexer_test.go:167:23: undefined: blockmock.NewChainVM
-indexer/indexer_test.go:285:23: undefined: blockmock.NewChainVM
-indexer/indexer_test.go:419:23: undefined: blockmock.NewChainVM
-indexer/indexer_test.go:501:28: undefined: luxconsensus.MustIDs
-indexer/indexer_test.go:506:23: undefined: blockmock.NewChainVM
 --- FAIL: TestRejectMiddleware (0.00s)
     --- FAIL: TestRejectMiddleware/chain_is_state_syncing (0.00s)
         server_test.go:47: 
@@ -43,80 +284,13 @@ indexer/indexer_test.go:506:23: undefined: blockmock.NewChainVM
             	Error:      	shouldn't have called handler
             	Test:       	TestRejectMiddleware/chain_is_bootstrapping
 FAIL
-FAIL	github.com/luxfi/node/api/server	0.012s
-?   	github.com/luxfi/node/api/warp	[no test files]
-?   	github.com/luxfi/node/app	[no test files]
+FAIL	github.com/luxfi/node/api/server	0.017s
 ?   	github.com/luxfi/node/benchlist	[no test files]
 ok  	github.com/luxfi/node/benchmarks	(cached) [no tests to run]
 ok  	github.com/luxfi/node/cache	(cached)
 ?   	github.com/luxfi/node/cache/cachetest	[no test files]
 ok  	github.com/luxfi/node/cache/lru	(cached)
 ?   	github.com/luxfi/node/cache/metercacher	[no test files]
-# github.com/luxfi/node/network [github.com/luxfi/node/network.test]
-network/handler_test.go:12:14: undefined: router.ExternalHandler
-network/handler_test.go:15:9: undefined: router.InboundHandler
-network/example_test.go:24:14: undefined: router.ExternalHandler
-network/example_test.go:113:3: cannot use handler (variable of type *testExternalHandler) as ExternalHandler value in argument to NewTestNetwork: *testExternalHandler does not implement ExternalHandler (wrong type for method HandleInbound)
-		have HandleInbound("context".Context, interface{})
-		want HandleInbound("context".Context, "github.com/luxfi/node/message".InboundMessage)
-network/network_test.go:140:29: undefined: uptime.NewManager
-network/network_test.go:140:47: undefined: uptime.NewTestState
-network/network_test.go:154:30: cannot use newDefaultTargeter(defaultConfig.ResourceTracker.CPUTracker()) (value of interface type "github.com/luxfi/consensus/networking/tracker".Targeter) as "github.com/luxfi/node/network/tracker".Targeter value in assignment: "github.com/luxfi/consensus/networking/tracker".Targeter does not implement "github.com/luxfi/node/network/tracker".Targeter (wrong type for method TargetUsage)
-		have TargetUsage() float64
-		want TargetUsage() uint64
-network/network_test.go:155:31: cannot use newDefaultTargeter(defaultConfig.ResourceTracker.DiskTracker()) (value of interface type "github.com/luxfi/consensus/networking/tracker".Targeter) as "github.com/luxfi/node/network/tracker".Targeter value in assignment: "github.com/luxfi/consensus/networking/tracker".Targeter does not implement "github.com/luxfi/node/network/tracker".Targeter (wrong type for method TargetUsage)
-		have TargetUsage() float64
-		want TargetUsage() uint64
-network/network_test.go:175:3: not enough arguments in call to tracker.NewResourceTracker
-	have (*prometheus.Registry, *noOpResourceManager, time.Duration)
-	want (interface{}, "github.com/luxfi/consensus/networking/tracker".ProcessTracker, time.Duration, time.Duration, "github.com/luxfi/consensus/networking/tracker".Targeter, "github.com/luxfi/consensus/networking/tracker".Targeter, interface{})
-network/network_test.go:234:67: undefined: router.InboundHandler
-network/network_test.go:155:31: too many errors
-# github.com/luxfi/node/network/p2p/p2ptest [github.com/luxfi/node/network/p2p/p2ptest.test]
-network/p2p/p2ptest/client_test.go:37:65: cannot use set.Of(nodeID) (value of map type "github.com/luxfi/consensus/utils/set".Set[ids.NodeID]) as []interface{} value in struct literal
-# github.com/luxfi/node/network/p2p/gossip [github.com/luxfi/node/network/p2p/gossip.test]
-network/p2p/gossip/gossip_test.go:16:2: "github.com/luxfi/consensus/core" imported and not used
-network/p2p/gossip/gossip_test.go:111:64: cannot use responseSender (variable of type *FakeSender) as core.AppSender value in argument to p2p.NewNetwork: *FakeSender does not implement appsender.AppSender (missing method SendAppError)
-network/p2p/gossip/gossip_test.go:141:63: cannot use requestSender (variable of type *FakeSender) as core.AppSender value in argument to p2p.NewNetwork: *FakeSender does not implement appsender.AppSender (missing method SendAppError)
-network/p2p/gossip/gossip_test.go:518:5: cannot use sender (variable of type *FakeSender) as core.AppSender value in argument to p2p.NewNetwork: *FakeSender does not implement appsender.AppSender (missing method SendAppError)
-network/p2p/gossip/gossip_test.go:528:21: undefined: validatorstest.State
-# github.com/luxfi/node/network/p2p [github.com/luxfi/node/network/p2p.test]
-network/p2p/fake_sender_test.go:104:6: SenderTest redeclared in this block
-	network/p2p/test_appsender.go:71:6: other declaration of SenderTest
-network/p2p/fake_sender_test.go:114:22: method SenderTest.SendAppRequest already declared at network/p2p/test_appsender.go:88:22
-network/p2p/fake_sender_test.go:116:33: cannot use nodeID (variable of array type ids.NodeID) as "github.com/luxfi/consensus/utils/set".Set[ids.NodeID] value in argument to s.SendAppRequestF
-network/p2p/fake_sender_test.go:121:22: method SenderTest.SendAppResponse already declared at network/p2p/test_appsender.go:98:22
-network/p2p/fake_sender_test.go:128:22: method SenderTest.SendAppGossip already declared at network/p2p/test_appsender.go:118:22
-network/p2p/fake_sender_test.go:130:32: cannot use nodeID (variable of array type ids.NodeID) as "github.com/luxfi/consensus/utils/set".Set[ids.NodeID] value in argument to s.SendAppGossipF
-network/p2p/fake_sender_test.go:135:22: method SenderTest.SendAppError already declared at network/p2p/test_appsender.go:108:22
-network/p2p/fake_sender_test.go:142:22: method SenderTest.SendCrossChainAppRequest already declared at network/p2p/test_appsender.go:138:22
-network/p2p/fake_sender_test.go:149:22: method SenderTest.SendCrossChainAppResponse already declared at network/p2p/test_appsender.go:148:22
-network/p2p/fake_sender_test.go:156:22: method SenderTest.SendCrossChainAppError already declared at network/p2p/test_appsender.go:158:22
-network/p2p/fake_sender_test.go:130:32: too many errors
-# github.com/luxfi/node/network/peer [github.com/luxfi/node/network/peer.test]
-network/peer/example_test.go:30:29: cannot convert func(_ context.Context, msgIntf interface{}) {…} (value of type func(_ context.Context, msgIntf interface{})) to type router.InboundHandlerFunc
-network/peer/peer_test.go:82:3: not enough arguments in call to tracker.NewResourceTracker
-	have ("github.com/luxfi/metric".Registry, *noOpResourceManager, time.Duration)
-	want (interface{}, "github.com/luxfi/consensus/networking/tracker".ProcessTracker, time.Duration, time.Duration, "github.com/luxfi/consensus/networking/tracker".Targeter, "github.com/luxfi/consensus/networking/tracker".Targeter, interface{})
-network/peer/peer_test.go:104:25: uptime.NoOpCalculator (type) is not an expression
-network/peer/peer_test.go:133:44: cannot convert func(_ context.Context, msg interface{}) {…} (value of type func(_ context.Context, msg interface{})) to type router.InboundHandlerFunc
-# github.com/luxfi/node/node [github.com/luxfi/node/node.test]
-node/beacon_manager_test.go:39:27: undefined: routermock.NewRouter
---- FAIL: TestK1ConsensusIntegration (0.00s)
-    k1_integration_test.go:31: 
-        	Error Trace:	/home/z/work/lux/node/chains/k1_integration_test.go:31
-        	Error:      	Received unexpected error:
-        	            	alpha must be between 0.5 and 1.0
-        	Test:       	TestK1ConsensusIntegration
---- FAIL: TestK1ConsensusValidation (0.00s)
-    --- FAIL: TestK1ConsensusValidation/valid_k=1 (0.00s)
-        k1_integration_test.go:113: 
-            	Error Trace:	/home/z/work/lux/node/chains/k1_integration_test.go:113
-            	Error:      	Received unexpected error:
-            	            	alpha must be between 0.5 and 1.0
-            	Test:       	TestK1ConsensusValidation/valid_k=1
-FAIL
-FAIL	github.com/luxfi/node/chains	0.087s
 ok  	github.com/luxfi/node/chains/atomic	(cached)
 ?   	github.com/luxfi/node/chains/atomic/atomicmock	[no test files]
 ?   	github.com/luxfi/node/chains/atomic/atomictest	[no test files]
@@ -134,42 +308,6 @@ ok  	github.com/luxfi/node/codec	(cached) [no tests to run]
 ?   	github.com/luxfi/node/codec/hierarchycodec	[no test files]
 ?   	github.com/luxfi/node/codec/linearcodec	[no test files]
 ok  	github.com/luxfi/node/codec/reflectcodec	(cached)
-# github.com/luxfi/node/upgrade [github.com/luxfi/node/upgrade.test]
-upgrade/upgrade_test.go:33:40: upgradeTest.upgrade.Validate undefined (type Config has no field or method Validate)
-upgrade/upgrade_test.go:46:17: upgrade.Validate undefined (type Config has no field or method Validate)
-# k8s.io/apimachinery/pkg/util/managedfields/internal
-/home/z/go/pkg/mod/k8s.io/apimachinery@v0.31.4/pkg/util/managedfields/internal/typeconverter.go:51:61: cannot use typeSchema.Types (variable of type []"sigs.k8s.io/structured-merge-diff/v6/schema".TypeDef) as []"sigs.k8s.io/structured-merge-diff/v4/schema".TypeDef value in struct literal
---- FAIL: TestGetSubnetConfigsFromFile (0.00s)
-    --- FAIL: TestGetSubnetConfigsFromFile/correct_config (0.00s)
-        config_test.go:440: 
-            	Error Trace:	/home/z/work/lux/node/config/config_test.go:440
-            	Error:      	Target error should be in err chain:
-            	            	expected: ""
-            	            	in chain: "invalid consensus parameters: alpha must be between 0.5 and 1.0"
-            	            		"invalid consensus parameters"
-            	            		"alpha must be between 0.5 and 1.0"
-            	Test:       	TestGetSubnetConfigsFromFile/correct_config
---- FAIL: TestGetSubnetConfigsFromFlags (0.00s)
-    --- FAIL: TestGetSubnetConfigsFromFlags/entry_with_no_config (0.00s)
-        config_test.go:535: 
-            	Error Trace:	/home/z/work/lux/node/config/config_test.go:535
-            	Error:      	Target error should be in err chain:
-            	            	expected: ""
-            	            	in chain: "invalid consensus parameters: alpha must be between 0.5 and 1.0"
-            	            		"invalid consensus parameters"
-            	            		"alpha must be between 0.5 and 1.0"
-            	Test:       	TestGetSubnetConfigsFromFlags/entry_with_no_config
-    --- FAIL: TestGetSubnetConfigsFromFlags/correct_config (0.00s)
-        config_test.go:535: 
-            	Error Trace:	/home/z/work/lux/node/config/config_test.go:535
-            	Error:      	Target error should be in err chain:
-            	            	expected: ""
-            	            	in chain: "invalid consensus parameters: alpha must be between 0.5 and 1.0"
-            	            		"invalid consensus parameters"
-            	            		"alpha must be between 0.5 and 1.0"
-            	Test:       	TestGetSubnetConfigsFromFlags/correct_config
-FAIL
-FAIL	github.com/luxfi/node/config	0.130s
 ok  	github.com/luxfi/node/config/node	(cached)
 ?   	github.com/luxfi/node/connectproto/pb/xsvm	[no test files]
 ?   	github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect	[no test files]
@@ -194,38 +332,41 @@ ok  	github.com/luxfi/node/consensus	(cached)
 ?   	github.com/luxfi/node/evm/ethclient	[no test files]
 ok  	github.com/luxfi/node/gas	(cached)
 ok  	github.com/luxfi/node/genesis	(cached)
-?   	github.com/luxfi/node/genesis/generate/checkpoints	[no test files]
-FAIL	github.com/luxfi/node/genesis/generate/validators [build failed]
 ok  	github.com/luxfi/node/ids/galiasreader	(cached)
-FAIL	github.com/luxfi/node/indexer [build failed]
-FAIL	github.com/luxfi/node/indexer/examples/p-chain [build failed]
-FAIL	github.com/luxfi/node/indexer/examples/x-chain-blocks [build failed]
-?   	github.com/luxfi/node/main	[no test files]
 ok  	github.com/luxfi/node/message	(cached)
+# github.com/luxfi/node/upgrade [github.com/luxfi/node/upgrade.test]
+upgrade/upgrade_test.go:33:40: upgradeTest.upgrade.Validate undefined (type Config has no field or method Validate)
+upgrade/upgrade_test.go:46:17: upgrade.Validate undefined (type Config has no field or method Validate)
+# github.com/luxfi/node/network/p2p/p2ptest [github.com/luxfi/node/network/p2p/p2ptest.test]
+network/p2p/p2ptest/client_test.go:37:65: cannot use set.Of(nodeID) (value of map type "github.com/luxfi/consensus/utils/set".Set[ids.NodeID]) as []interface{} value in struct literal
+# github.com/luxfi/node/network/p2p/gossip [github.com/luxfi/node/network/p2p/gossip.test]
+network/p2p/gossip/gossip_test.go:16:2: "github.com/luxfi/consensus/core" imported and not used
+network/p2p/gossip/gossip_test.go:111:64: cannot use responseSender (variable of type *FakeSender) as core.AppSender value in argument to p2p.NewNetwork: *FakeSender does not implement appsender.AppSender (missing method SendAppError)
+network/p2p/gossip/gossip_test.go:141:63: cannot use requestSender (variable of type *FakeSender) as core.AppSender value in argument to p2p.NewNetwork: *FakeSender does not implement appsender.AppSender (missing method SendAppError)
+network/p2p/gossip/gossip_test.go:518:5: cannot use sender (variable of type *FakeSender) as core.AppSender value in argument to p2p.NewNetwork: *FakeSender does not implement appsender.AppSender (missing method SendAppError)
+network/p2p/gossip/gossip_test.go:528:21: undefined: validatorstest.State
+# github.com/luxfi/node/network/p2p [github.com/luxfi/node/network/p2p.test]
+network/p2p/fake_sender_test.go:104:6: SenderTest redeclared in this block
+	network/p2p/test_appsender.go:71:6: other declaration of SenderTest
+network/p2p/fake_sender_test.go:114:22: method SenderTest.SendAppRequest already declared at network/p2p/test_appsender.go:88:22
+network/p2p/fake_sender_test.go:116:33: cannot use nodeID (variable of array type ids.NodeID) as "github.com/luxfi/consensus/utils/set".Set[ids.NodeID] value in argument to s.SendAppRequestF
+network/p2p/fake_sender_test.go:121:22: method SenderTest.SendAppResponse already declared at network/p2p/test_appsender.go:98:22
+network/p2p/fake_sender_test.go:128:22: method SenderTest.SendAppGossip already declared at network/p2p/test_appsender.go:118:22
+network/p2p/fake_sender_test.go:130:32: cannot use nodeID (variable of array type ids.NodeID) as "github.com/luxfi/consensus/utils/set".Set[ids.NodeID] value in argument to s.SendAppGossipF
+network/p2p/fake_sender_test.go:135:22: method SenderTest.SendAppError already declared at network/p2p/test_appsender.go:108:22
+network/p2p/fake_sender_test.go:142:22: method SenderTest.SendCrossChainAppRequest already declared at network/p2p/test_appsender.go:138:22
+network/p2p/fake_sender_test.go:149:22: method SenderTest.SendCrossChainAppResponse already declared at network/p2p/test_appsender.go:148:22
+network/p2p/fake_sender_test.go:156:22: method SenderTest.SendCrossChainAppError already declared at network/p2p/test_appsender.go:158:22
+network/p2p/fake_sender_test.go:130:32: too many errors
 ?   	github.com/luxfi/node/message/messagemock	[no test files]
 ?   	github.com/luxfi/node/nat	[no test files]
---- FAIL: TestValid (0.00s)
-    --- FAIL: TestValid/invalid_allowed_node_IDs (0.00s)
-        config_test.go:64: 
-            	Error Trace:	/home/z/work/lux/node/nets/config_test.go:64
-            	Error:      	Target error should be in err chain:
-            	            	expected: "allowedNodes can only be set when ValidatorOnly is true"
-            	            	in chain: "invalid consensus parameters: alpha must be between 0.5 and 1.0"
-            	            		"invalid consensus parameters"
-            	            		"alpha must be between 0.5 and 1.0"
-            	Test:       	TestValid/invalid_allowed_node_IDs
-    --- FAIL: TestValid/valid (0.00s)
-        config_test.go:64: 
-            	Error Trace:	/home/z/work/lux/node/nets/config_test.go:64
-            	Error:      	Target error should be in err chain:
-            	            	expected: ""
-            	            	in chain: "invalid consensus parameters: alpha must be between 0.5 and 1.0"
-            	            		"invalid consensus parameters"
-            	            		"alpha must be between 0.5 and 1.0"
-            	Test:       	TestValid/valid
-FAIL
-FAIL	github.com/luxfi/node/nets	0.008s
-FAIL	github.com/luxfi/node/network [build failed]
+# github.com/luxfi/node/network/peer [github.com/luxfi/node/network/peer.test]
+network/peer/example_test.go:30:29: cannot convert func(_ context.Context, msgIntf interface{}) {…} (value of type func(_ context.Context, msgIntf interface{})) to type router.InboundHandlerFunc
+network/peer/peer_test.go:82:3: not enough arguments in call to tracker.NewResourceTracker
+	have ("github.com/luxfi/metric".Registry, *noOpResourceManager, time.Duration)
+	want (interface{}, "github.com/luxfi/consensus/networking/tracker".ProcessTracker, time.Duration, time.Duration, "github.com/luxfi/consensus/networking/tracker".Targeter, "github.com/luxfi/consensus/networking/tracker".Targeter, interface{})
+network/peer/peer_test.go:104:25: uptime.NoOpCalculator (type) is not an expression
+network/peer/peer_test.go:133:44: cannot convert func(_ context.Context, msg interface{}) {…} (value of type func(_ context.Context, msg interface{})) to type router.InboundHandlerFunc
 ok  	github.com/luxfi/node/network/dialer	(cached)
 FAIL	github.com/luxfi/node/network/p2p [build failed]
 FAIL	github.com/luxfi/node/network/p2p/gossip [build failed]
@@ -237,7 +378,6 @@ ok  	github.com/luxfi/node/network/throttling	(cached)
 ?   	github.com/luxfi/node/network/throttling/trackermock	[no test files]
 ?   	github.com/luxfi/node/network/tracker	[no test files]
 ?   	github.com/luxfi/node/network/tracker/trackermock	[no test files]
-FAIL	github.com/luxfi/node/node [build failed]
 ?   	github.com/luxfi/node/node/mocks	[no test files]
 ?   	github.com/luxfi/node/proto/p2p	[no test files]
 ?   	github.com/luxfi/node/proto/pb/aliasreader	[no test files]
@@ -268,28 +408,25 @@ ok  	github.com/luxfi/node/pubsub/bloom	(cached)
 ?   	github.com/luxfi/node/snow/engine/enginetest	[no test files]
 ok  	github.com/luxfi/node/staking	(cached)
 ok  	github.com/luxfi/node/tests	(cached)
-FAIL	github.com/luxfi/node/tests/antithesis [build failed]
-FAIL	github.com/luxfi/node/tests/antithesis/avalanchego [build failed]
-FAIL	github.com/luxfi/node/tests/antithesis/avalanchego/gencomposeconfig [build failed]
-FAIL	github.com/luxfi/node/tests/antithesis/luxd/gencomposeconfig [build failed]
-FAIL	github.com/luxfi/node/tests/antithesis/xsvm/gencomposeconfig [build failed]
 ?   	github.com/luxfi/node/tests/e2e/c	[no test files]
-FAIL	github.com/luxfi/node/tests/e2e/p [build failed]
 ok  	github.com/luxfi/node/tests/fixture	(cached)
-FAIL	github.com/luxfi/node/tests/fixture/bootstrapmonitor [build failed]
-FAIL	github.com/luxfi/node/tests/fixture/bootstrapmonitor/cmd [build failed]
-FAIL	github.com/luxfi/node/tests/fixture/bootstrapmonitor/e2e [build failed]
-FAIL	github.com/luxfi/node/tests/fixture/e2e [build failed]
-FAIL	github.com/luxfi/node/tests/fixture/subnet [build failed]
-FAIL	github.com/luxfi/node/tests/fixture/tmpnet [build failed]
-FAIL	github.com/luxfi/node/tests/fixture/tmpnet/cmd [build failed]
-FAIL	github.com/luxfi/node/tests/fixture/tmpnet/flags [build failed]
-FAIL	github.com/luxfi/node/tests/fixture/tmpnet/local [build failed]
-FAIL	github.com/luxfi/node/tests/fixture/tmpnet/tmpnetctl [build failed]
-FAIL	github.com/luxfi/node/tests/integration [build failed]
 ?   	github.com/luxfi/node/tests/load	[no test files]
 ?   	github.com/luxfi/node/tests/load/contracts	[no test files]
-FAIL	github.com/luxfi/node/tests/load/main [build failed]
+?   	github.com/luxfi/node/tools	[no test files]
+ok  	github.com/luxfi/node/trace	(cached)
+FAIL	github.com/luxfi/node/upgrade [build failed]
+?   	github.com/luxfi/node/upgrade/upgradetest	[no test files]
+ok  	github.com/luxfi/node/utils	(cached)
+ok  	github.com/luxfi/node/utils/bag	(cached)
+ok  	github.com/luxfi/node/utils/beacon	(cached)
+ok  	github.com/luxfi/node/utils/bimap	(cached)
+ok  	github.com/luxfi/node/utils/bloom	(cached)
+ok  	github.com/luxfi/node/utils/buffer	(cached)
+ok  	github.com/luxfi/node/utils/cb58	(cached)
+ok  	github.com/luxfi/node/utils/compression	(cached)
+ok  	github.com/luxfi/node/utils/constants	(cached)
+?   	github.com/luxfi/node/utils/crypto/keychain	[no test files]
+?   	github.com/luxfi/node/utils/crypto/ledger	[no test files]
 # github.com/luxfi/node/utils/tree [github.com/luxfi/node/utils/tree.test]
 utils/tree/tree_test.go:22:24: cannot use block (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Get: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
 utils/tree/tree_test.go:25:9: cannot use block (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Add: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
@@ -311,12 +448,18 @@ vms/components/chain/blocktest/block.go:116:31: impossible type assertion: paren
 	*Block does not implement "github.com/luxfi/node/vms/components/chain".Block (wrong type for method Status)
 		have Status() "github.com/luxfi/node/vms/components/chain".Status
 		want Status() uint8
-# github.com/luxfi/node/vms/evm/metrics/prometheus_test [github.com/luxfi/node/vms/evm/metrics/prometheus.test]
-vms/evm/metrics/prometheus/enabled_test.go:20:25: undefined: metric.Enabled
-vms/evm/metrics/prometheus/enabled_test.go:21:29: undefined: metric.StandardCounter
-vms/evm/metrics/prometheus/enabled_test.go:21:52: not enough arguments in call to metric.NewCounter
-	have ()
-	want (string)
+# github.com/luxfi/node/vms/components/chain [github.com/luxfi/node/vms/components/chain.test]
+vms/components/chain/state_test.go:36:13: undefined: blocktest.Block
+vms/components/chain/state_test.go:45:35: undefined: consensustest.Accepted
+vms/components/chain/state_test.go:47:35: undefined: consensustest.Rejected
+vms/components/chain/state_test.go:64:57: undefined: blocktest.Block
+vms/components/chain/state_test.go:67:20: undefined: blocktest.Block
+vms/components/chain/state_test.go:68:28: undefined: consensustest.Decidable
+vms/components/chain/state_test.go:79:51: undefined: blocktest.Block
+vms/components/chain/state_test.go:80:28: undefined: blocktest.Block
+vms/components/chain/state_test.go:92:40: undefined: blocktest.Block
+vms/components/chain/state_test.go:96:49: undefined: blocktest.Block
+vms/components/chain/state_test.go:80:28: too many errors
 # github.com/luxfi/node/vms/components/verify [github.com/luxfi/node/vms/components/verify.test]
 vms/components/verify/subnet_test.go:20:24: undefined: validatorsmock.State
 vms/components/verify/subnet_test.go:64:29: undefined: validatorsmock.NewState
@@ -327,6 +470,12 @@ vms/components/verify/subnet_test.go:101:29: undefined: validatorsmock.NewState
 vms/components/verify/subnet_test.go:112:45: cannot use adapter (variable of type *validatorStateAdapter) as "github.com/luxfi/consensus/context".ValidatorState value in argument to consensus.WithValidatorState: *validatorStateAdapter does not implement "github.com/luxfi/consensus/context".ValidatorState (missing method GetChainID)
 vms/components/verify/subnet_test.go:121:29: undefined: validatorsmock.NewState
 vms/components/verify/subnet_test.go:132:45: cannot use adapter (variable of type *validatorStateAdapter) as "github.com/luxfi/consensus/context".ValidatorState value in argument to consensus.WithValidatorState: *validatorStateAdapter does not implement "github.com/luxfi/consensus/context".ValidatorState (missing method GetChainID)
+# github.com/luxfi/node/vms/evm/metrics/prometheus_test [github.com/luxfi/node/vms/evm/metrics/prometheus.test]
+vms/evm/metrics/prometheus/enabled_test.go:20:25: undefined: metric.Enabled
+vms/evm/metrics/prometheus/enabled_test.go:21:29: undefined: metric.StandardCounter
+vms/evm/metrics/prometheus/enabled_test.go:21:52: not enough arguments in call to metric.NewCounter
+	have ()
+	want (string)
 # github.com/luxfi/node/vms/evm/metrics/prometheus [github.com/luxfi/node/vms/evm/metrics/prometheus.test]
 vms/evm/metrics/prometheus/prometheus_test.go:73:21: undefined: metric.NewRegistry
 vms/evm/metrics/prometheus/prometheus_test.go:96:36: undefined: metric.NewHealthcheck
@@ -345,73 +494,8 @@ vms/evm/metrics/prometheus/prometheus_test.go:115:25: undefined: metric.NewGauge
 vms/evm/metrics/prometheus/prometheus_test.go:119:22: undefined: metric.NewGaugeInfo
 vms/evm/metrics/prometheus/prometheus_test.go:120:26: undefined: metric.GaugeInfoValue
 vms/evm/metrics/prometheus/prometheus_test.go:120:26: too many errors
-# github.com/luxfi/node/vms/components/chain [github.com/luxfi/node/vms/components/chain.test]
-vms/components/chain/state_test.go:36:13: undefined: blocktest.Block
-vms/components/chain/state_test.go:45:35: undefined: consensustest.Accepted
-vms/components/chain/state_test.go:47:35: undefined: consensustest.Rejected
-vms/components/chain/state_test.go:64:57: undefined: blocktest.Block
-vms/components/chain/state_test.go:67:20: undefined: blocktest.Block
-vms/components/chain/state_test.go:68:28: undefined: consensustest.Decidable
-vms/components/chain/state_test.go:79:51: undefined: blocktest.Block
-vms/components/chain/state_test.go:80:28: undefined: blocktest.Block
-vms/components/chain/state_test.go:92:40: undefined: blocktest.Block
-vms/components/chain/state_test.go:96:49: undefined: blocktest.Block
-vms/components/chain/state_test.go:80:28: too many errors
-# github.com/luxfi/node/vms/platformvm/state/statetest
-vms/platformvm/state/statetest/state.go:52:19: undefined: consensus.WithNetworkID
-vms/platformvm/state/statetest/state.go:53:19: undefined: consensus.WithNodeID
-vms/platformvm/state/statetest/state.go:54:19: undefined: consensus.WithLogger
-vms/platformvm/state/statetest/state.go:54:45: undefined: consensus.NoOpLogger
 # github.com/luxfi/node/vms/example/xsvm/api
 vms/example/xsvm/api/server.go:207:34: undefined: consensus.GetWarpSigner
-# github.com/luxfi/node/vms/platformvm/block/builder [github.com/luxfi/node/vms/platformvm/block/builder.test]
-vms/platformvm/block/builder/helpers_test.go:142:19: undefined: core.SenderTest
-vms/platformvm/block/builder/helpers_test.go:152:24: undefined: uptime.Manager
-vms/platformvm/block/builder/builder_test.go:38:10: env.ctx.Lock undefined (type "context".Context has no field or method Lock)
-vms/platformvm/block/builder/builder_test.go:39:16: env.ctx.Lock undefined (type "context".Context has no field or method Lock)
-vms/platformvm/block/builder/builder_test.go:56:10: env.ctx.Lock undefined (type "context".Context has no field or method Lock)
-vms/platformvm/block/builder/builder_test.go:58:10: env.ctx.Lock undefined (type "context".Context has no field or method Lock)
-vms/platformvm/block/builder/builder_test.go:81:10: env.ctx.Lock undefined (type "context".Context has no field or method Lock)
-vms/platformvm/block/builder/builder_test.go:82:16: env.ctx.Lock undefined (type "context".Context has no field or method Lock)
-vms/platformvm/block/builder/builder_test.go:98:10: env.ctx.Lock undefined (type "context".Context has no field or method Lock)
-vms/platformvm/block/builder/builder_test.go:99:16: env.ctx.Lock undefined (type "context".Context has no field or method Lock)
-vms/platformvm/block/builder/builder_test.go:99:16: too many errors
-# github.com/luxfi/node/vms/platformvm/block/executor [github.com/luxfi/node/vms/platformvm/block/executor.test]
-vms/platformvm/block/executor/block_test.go:147:27: undefined: uptimemock.NewCalculator
-vms/platformvm/block/executor/block_test.go:174:27: undefined: uptimemock.NewCalculator
-vms/platformvm/block/executor/block_test.go:210:27: undefined: uptimemock.NewCalculator
-vms/platformvm/block/executor/block_test.go:248:27: undefined: uptimemock.NewCalculator
-vms/platformvm/block/executor/block_test.go:289:27: undefined: uptimemock.NewCalculator
-vms/platformvm/block/executor/block_test.go:331:8: unknown field Subnet in struct literal of type "github.com/luxfi/node/vms/platformvm/txs".AddPermissionlessValidatorTx
-vms/platformvm/block/executor/block_test.go:340:27: undefined: uptimemock.NewCalculator
-vms/platformvm/block/executor/block_test.go:382:8: unknown field Subnet in struct literal of type "github.com/luxfi/node/vms/platformvm/txs".AddPermissionlessValidatorTx
-vms/platformvm/block/executor/block_test.go:395:27: undefined: uptimemock.NewCalculator
-vms/platformvm/block/executor/block_test.go:438:8: unknown field Subnet in struct literal of type "github.com/luxfi/node/vms/platformvm/txs".AddPermissionlessValidatorTx
-vms/platformvm/block/executor/block_test.go:438:8: too many errors
---- FAIL: TestPOASubnetConfig (0.00s)
-    poa_test.go:53: 
-        	Error Trace:	/home/z/work/lux/node/tests/poa/poa_test.go:53
-        	Error:      	Received unexpected error:
-        	            	invalid consensus parameters: alpha must be between 0.5 and 1.0
-        	Test:       	TestPOASubnetConfig
-        	Messages:   	POA net config should be valid
-FAIL
-FAIL	github.com/luxfi/node/tests/poa	0.108s
-?   	github.com/luxfi/node/tools	[no test files]
-ok  	github.com/luxfi/node/trace	(cached)
-FAIL	github.com/luxfi/node/upgrade [build failed]
-?   	github.com/luxfi/node/upgrade/upgradetest	[no test files]
-ok  	github.com/luxfi/node/utils	(cached)
-ok  	github.com/luxfi/node/utils/bag	(cached)
-ok  	github.com/luxfi/node/utils/beacon	(cached)
-ok  	github.com/luxfi/node/utils/bimap	(cached)
-ok  	github.com/luxfi/node/utils/bloom	(cached)
-ok  	github.com/luxfi/node/utils/buffer	(cached)
-ok  	github.com/luxfi/node/utils/cb58	(cached)
-ok  	github.com/luxfi/node/utils/compression	(cached)
-ok  	github.com/luxfi/node/utils/constants	(cached)
-?   	github.com/luxfi/node/utils/crypto/keychain	[no test files]
-?   	github.com/luxfi/node/utils/crypto/ledger	[no test files]
 ok  	github.com/luxfi/node/utils/dynamicip	(cached)
 ok  	github.com/luxfi/node/utils/filesystem	(cached)
 ?   	github.com/luxfi/node/utils/filesystem/filesystemmock	[no test files]
@@ -422,7 +506,6 @@ ok  	github.com/luxfi/node/utils/hashing/consistent	(cached)
 ?   	github.com/luxfi/node/utils/hashing/hashingmock	[no test files]
 ok  	github.com/luxfi/node/utils/heap	(cached)
 ok  	github.com/luxfi/node/utils/ips	(cached)
-ok  	github.com/luxfi/node/utils/iterator	(cached)
 ok  	github.com/luxfi/node/utils/json	(cached)
 ok  	github.com/luxfi/node/utils/linked	(cached)
 ok  	github.com/luxfi/node/utils/linkedhashmap	(cached)
@@ -452,45 +535,25 @@ FAIL	github.com/luxfi/node/utils/tree [build failed]
 ok  	github.com/luxfi/node/utils/window	(cached)
 ok  	github.com/luxfi/node/utils/wrappers	(cached)
 ?   	github.com/luxfi/node/validators	[no test files]
-# github.com/luxfi/node/vms/platformvm [github.com/luxfi/node/vms/platformvm.test]
-vms/platformvm/validator_set_property_test.go:255:15: cannot use blsKey (variable of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in struct literal
-vms/platformvm/validator_set_property_test.go:274:4: unknown field Subnet in struct literal of type "github.com/luxfi/node/vms/platformvm/txs".NetValidator
-vms/platformvm/validator_set_property_test.go:310:4: unknown field Subnet in struct literal of type "github.com/luxfi/node/vms/platformvm/txs".NetValidator
-vms/platformvm/validator_set_property_test.go:655:34: undefined: uptime.NewLockedCalculator
-vms/platformvm/validator_set_property_test.go:691:12: undefined: core.SenderTest
-vms/platformvm/validator_set_property_test.go:709:21: undefined: core.SenderTest
-vms/platformvm/validator_set_property_test.go:714:3: cannot use dbManager (variable of type *mockDBManager) as "github.com/luxfi/consensus/engine/chain/block".DBManager value in argument to vm.Initialize: *mockDBManager does not implement "github.com/luxfi/consensus/engine/chain/block".DBManager (missing method Database)
-vms/platformvm/validator_set_property_test.go:726:42: cannot use consensus.NormalOp (constant 2 of uint8 type consensus.State) as "github.com/luxfi/consensus/core/interfaces".State value in argument to vm.SetState
-vms/platformvm/vm_regression_test.go:474:34: undefined: uptime.NewLockedCalculator
-vms/platformvm/vm_regression_test.go:493:29: undefined: luxconsensus.MustIDs
-vms/platformvm/vm_regression_test.go:493:29: too many errors
-# github.com/luxfi/node/vms/platformvm/state [github.com/luxfi/node/vms/platformvm/state.test]
-vms/platformvm/state/state_test.go:179:17: cannot use staker.PublicKey (variable of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in struct literal
-vms/platformvm/state/state_test.go:859:3: unknown field Subnet in struct literal of type "github.com/luxfi/node/vms/platformvm/txs".AddPermissionlessValidatorTx
-vms/platformvm/state/state_test.go:925:3: unknown field Subnet in struct literal of type "github.com/luxfi/node/vms/platformvm/txs".AddPermissionlessDelegatorTx
-vms/platformvm/state/state_test.go:1164:17: cannot use stakers[1].PublicKey (variable of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in struct literal
-vms/platformvm/state/state_test.go:1175:17: cannot use stakers[1].PublicKey (variable of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in struct literal
-vms/platformvm/state/state_test.go:1192:17: cannot use stakers[1].PublicKey (variable of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in struct literal
-vms/platformvm/state/state_test.go:1291:48: cannot use vdr.PublicKey (variable of type []byte) as *"github.com/luxfi/crypto/bls".PublicKey value in argument to bls.PublicKeyToUncompressedBytes
-vms/platformvm/state/state_test.go:1292:24: cannot use bls.PublicKeyFromValidUncompressedBytes(pkBytes) (value of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in assignment
-vms/platformvm/state/state_test.go:1332:54: cannot use expectedVdr.PublicKey (variable of type []byte) as *"github.com/luxfi/crypto/bls".PublicKey value in argument to bls.PublicKeyToUncompressedBytes
-vms/platformvm/state/state_test.go:1333:52: cannot use actualVdr.PublicKey (variable of type []byte) as *"github.com/luxfi/crypto/bls".PublicKey value in argument to bls.PublicKeyToUncompressedBytes
-vms/platformvm/state/state_test.go:1333:52: too many errors
-# github.com/luxfi/node/vms/platformvm/txs/executor [github.com/luxfi/node/vms/platformvm/txs/executor.test]
-vms/platformvm/txs/executor/helpers_test.go:143:33: undefined: consensusuptime.Manager
-vms/platformvm/txs/executor/helpers_test.go:190:29: undefined: consensusuptime.NewManager
-vms/platformvm/txs/executor/helpers_test.go:323:43: undefined: consensusuptime.NewLockedCalculator
-vms/platformvm/txs/executor/helpers_test.go:408:21: clk.Time undefined (type *"github.com/luxfi/consensus/utils/timer/mockable".Clock has no field or method Time, but does have unexported field time)
-vms/platformvm/txs/executor/advance_time_test.go:870:25: env.clk.Time undefined (type *"github.com/luxfi/consensus/utils/timer/mockable".Clock has no field or method Time, but does have unexported field time)
-vms/platformvm/txs/executor/warp_verifier_test.go:41:16: cannot use sk.PublicKey() (value of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in struct literal
-vms/platformvm/txs/executor/warp_verifier_test.go:51:27: undefined: validatorstest.State
 --- FAIL: TestCurrentRPCChainVMCompatible (0.00s)
     constants_test.go:14: 
         	Error Trace:	/home/z/work/lux/node/version/constants_test.go:14
-        	Error:      	[]*version.Semantic{(*version.Semantic)(0xc00018dbc0)} does not contain &version.Semantic{Major:1, Minor:13, Patch:5, str:atomic.Value{v:interface {}(nil)}}
+        	Error:      	[]*version.Semantic{(*version.Semantic)(0xc00021c630)} does not contain &version.Semantic{Major:1, Minor:13, Patch:5, str:atomic.Value{v:interface {}(nil)}}
         	Test:       	TestCurrentRPCChainVMCompatible
 FAIL
-FAIL	github.com/luxfi/node/version	0.007s
+FAIL	github.com/luxfi/node/version	0.006s
+# github.com/luxfi/node/vms/platformvm/warp [github.com/luxfi/node/vms/platformvm/warp.test]
+vms/platformvm/warp/signature_test.go:48:17: v.state.GetNetID undefined (type validators.State has no field or method GetNetID)
+vms/platformvm/warp/signature_test.go:82:29: undefined: validatorsmock.State
+vms/platformvm/warp/signature_test.go:116:29: undefined: validatorsmock.State
+vms/platformvm/warp/signature_test.go:153:29: undefined: validatorsmock.State
+vms/platformvm/warp/signature_test.go:161:20: cannot use pk0 (variable of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in struct literal
+vms/platformvm/warp/signature_test.go:166:20: cannot use pk1 (variable of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in struct literal
+vms/platformvm/warp/signature_test.go:198:29: undefined: validatorsmock.State
+vms/platformvm/warp/signature_test.go:206:20: cannot use pk0 (variable of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in struct literal
+vms/platformvm/warp/signature_test.go:243:29: undefined: validatorsmock.State
+vms/platformvm/warp/signature_test.go:251:20: cannot use pk0 (variable of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in struct literal
+vms/platformvm/warp/signature_test.go:251:20: too many errors
 ok  	github.com/luxfi/node/vms	(cached) [no tests to run]
 FAIL	github.com/luxfi/node/vms/components/chain [build failed]
 FAIL	github.com/luxfi/node/vms/components/chain/blocktest [build failed]
@@ -511,19 +574,11 @@ FAIL	github.com/luxfi/node/vms/example/xsvm/api [build failed]
 ?   	github.com/luxfi/node/vms/example/xsvm/block	[no test files]
 ?   	github.com/luxfi/node/vms/example/xsvm/builder	[no test files]
 ?   	github.com/luxfi/node/vms/example/xsvm/chain	[no test files]
-FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/account [build failed]
-FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/chain [build failed]
-FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/chain/create [build failed]
 ?   	github.com/luxfi/node/vms/example/xsvm/cmd/chain/genesis	[no test files]
-FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue [build failed]
-FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue/export [build failed]
-FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue/importtx [build failed]
 ?   	github.com/luxfi/node/vms/example/xsvm/cmd/issue/status	[no test files]
-FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue/transfer [build failed]
 FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/run [build failed]
 FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/version [build failed]
 FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/versionjson [build failed]
-FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/xsvm [build failed]
 ?   	github.com/luxfi/node/vms/example/xsvm/execute	[no test files]
 ok  	github.com/luxfi/node/vms/example/xsvm/genesis	(cached)
 ?   	github.com/luxfi/node/vms/example/xsvm/state	[no test files]
@@ -532,29 +587,19 @@ ok  	github.com/luxfi/node/vms/example/xsvm/genesis	(cached)
 ?   	github.com/luxfi/node/vms/fx	[no test files]
 ?   	github.com/luxfi/node/vms/metervm	[no test files]
 ok  	github.com/luxfi/node/vms/nftfx	(cached)
-FAIL	github.com/luxfi/node/vms/platformvm [build failed]
 ok  	github.com/luxfi/node/vms/platformvm/api	(cached)
 ok  	github.com/luxfi/node/vms/platformvm/block	(cached)
-FAIL	github.com/luxfi/node/vms/platformvm/block/builder [build failed]
-FAIL	github.com/luxfi/node/vms/platformvm/block/executor [build failed]
-?   	github.com/luxfi/node/vms/platformvm/block/executor/executormock	[no test files]
-ok  	github.com/luxfi/node/vms/platformvm/config	(cached)
 ok  	github.com/luxfi/node/vms/platformvm/fx	(cached) [no tests to run]
 ?   	github.com/luxfi/node/vms/platformvm/fx/fxmock	[no test files]
 ok  	github.com/luxfi/node/vms/platformvm/genesis	(cached)
 ?   	github.com/luxfi/node/vms/platformvm/genesis/genesistest	[no test files]
 ?   	github.com/luxfi/node/vms/platformvm/metrics	[no test files]
-FAIL	github.com/luxfi/node/vms/platformvm/network [build failed]
 ok  	github.com/luxfi/node/vms/platformvm/reward	(cached)
 ok  	github.com/luxfi/node/vms/platformvm/signer	(cached)
 ?   	github.com/luxfi/node/vms/platformvm/signer/signermock	[no test files]
 ok  	github.com/luxfi/node/vms/platformvm/stakeable	(cached)
-FAIL	github.com/luxfi/node/vms/platformvm/state [build failed]
-FAIL	github.com/luxfi/node/vms/platformvm/state/statetest [build failed]
 ok  	github.com/luxfi/node/vms/platformvm/status	(cached)
 ?   	github.com/luxfi/node/vms/platformvm/testcontext	[no test files]
-# github.com/luxfi/node/vms/platformvm/validators/validatorstest
-vms/platformvm/validators/validatorstest/manager.go:15:36: cannot use manager{} (value of struct type manager) as "github.com/luxfi/node/vms/platformvm/validators".Manager value in variable declaration: manager does not implement "github.com/luxfi/node/vms/platformvm/validators".Manager (missing method GetCurrentValidators)
 # github.com/luxfi/node/vms/proposervm/tree [github.com/luxfi/node/vms/proposervm/tree.test]
 vms/proposervm/tree/tree_test.go:22:24: cannot use block (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Get: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
 vms/proposervm/tree/tree_test.go:25:9: cannot use block (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Add: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
@@ -567,6 +612,9 @@ vms/proposervm/tree/tree_test.go:46:9: cannot use blockToAccept (variable of typ
 vms/proposervm/tree/tree_test.go:47:24: cannot use blockToAccept (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Get: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
 vms/proposervm/tree/tree_test.go:50:9: cannot use blockToReject (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Add: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
 vms/proposervm/tree/tree_test.go:50:9: too many errors
+# github.com/luxfi/node/vms/types [github.com/luxfi/node/vms/types.test]
+vms/types/blob_data_test.go:22:18: undefined: nullStr
+vms/types/blob_data_test.go:54:40: undefined: nullStr
 # github.com/luxfi/node/vms/proposervm/scheduler [github.com/luxfi/node/vms/proposervm/scheduler.test]
 vms/proposervm/scheduler/scheduler_test.go:19:24: cannot use toEngine (variable of type chan core.Message) as chan<- core.MessageType value in argument to New
 vms/proposervm/scheduler/scheduler_test.go:34:24: cannot use toEngine (variable of type chan core.Message) as chan<- core.MessageType value in argument to New
@@ -585,18 +633,6 @@ vms/proposervm/indexer/height_indexer_test.go:139:27: undefined: consensustest.A
 vms/proposervm/indexer/height_indexer_test.go:220:29: undefined: chaintest.Block
 vms/proposervm/indexer/height_indexer_test.go:221:29: undefined: consensustest.Decidable
 vms/proposervm/indexer/height_indexer_test.go:223:27: undefined: consensustest.Accepted
-# github.com/luxfi/node/vms/platformvm/warp [github.com/luxfi/node/vms/platformvm/warp.test]
-vms/platformvm/warp/signature_test.go:48:17: v.state.GetNetID undefined (type validators.State has no field or method GetNetID)
-vms/platformvm/warp/signature_test.go:82:29: undefined: validatorsmock.State
-vms/platformvm/warp/signature_test.go:116:29: undefined: validatorsmock.State
-vms/platformvm/warp/signature_test.go:153:29: undefined: validatorsmock.State
-vms/platformvm/warp/signature_test.go:161:20: cannot use pk0 (variable of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in struct literal
-vms/platformvm/warp/signature_test.go:166:20: cannot use pk1 (variable of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in struct literal
-vms/platformvm/warp/signature_test.go:198:29: undefined: validatorsmock.State
-vms/platformvm/warp/signature_test.go:206:20: cannot use pk0 (variable of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in struct literal
-vms/platformvm/warp/signature_test.go:243:29: undefined: validatorsmock.State
-vms/platformvm/warp/signature_test.go:251:20: cannot use pk0 (variable of type *"github.com/luxfi/crypto/bls".PublicKey) as []byte value in struct literal
-vms/platformvm/warp/signature_test.go:251:20: too many errors
 # github.com/luxfi/node/vms/registry [github.com/luxfi/node/vms/registry.test]
 vms/registry/vm_getter_test.go:150:3: undefined: metric
 vms/registry/vm_registerer_test.go:59:14: undefined: block.NewMockChainVM
@@ -609,9 +645,31 @@ vms/registry/vm_registerer_test.go:251:14: undefined: block.NewMockChainVM
 vms/registry/vm_registerer_test.go:268:14: undefined: block.NewMockChainVM
 vms/registry/vm_registerer_test.go:285:14: undefined: block.NewMockChainVM
 vms/registry/vm_registerer_test.go:285:14: too many errors
-# github.com/luxfi/node/vms/types [github.com/luxfi/node/vms/types.test]
-vms/types/blob_data_test.go:22:18: undefined: nullStr
-vms/types/blob_data_test.go:54:40: undefined: nullStr
+# github.com/luxfi/node/vms/xvm/block/builder [github.com/luxfi/node/vms/xvm/block/builder.test]
+vms/xvm/block/builder/builder_test.go:48:2: mempool redeclared in this block
+	vms/xvm/block/builder/builder_test.go:20:2: other declaration of mempool
+vms/xvm/block/builder/builder_test.go:83:21: undefined: consensus.WithLogger
+vms/xvm/block/builder/builder_test.go:114:21: undefined: consensus.WithLogger
+vms/xvm/block/builder/builder_test.go:147:29: cannot use unsignedTx (variable of type *txs.MockUnsignedTx) as txs.UnsignedTx value in struct literal: *txs.MockUnsignedTx does not implement txs.UnsignedTx (missing method InitializeContext)
+vms/xvm/block/builder/builder_test.go:158:21: undefined: consensus.WithLogger
+vms/xvm/block/builder/builder_test.go:192:29: cannot use unsignedTx (variable of type *txs.MockUnsignedTx) as txs.UnsignedTx value in struct literal: *txs.MockUnsignedTx does not implement txs.UnsignedTx (missing method InitializeContext)
+vms/xvm/block/builder/builder_test.go:203:21: undefined: consensus.WithLogger
+vms/xvm/block/builder/builder_test.go:238:29: cannot use unsignedTx (variable of type *txs.MockUnsignedTx) as txs.UnsignedTx value in struct literal: *txs.MockUnsignedTx does not implement txs.UnsignedTx (missing method InitializeContext)
+vms/xvm/block/builder/builder_test.go:249:21: undefined: consensus.WithLogger
+vms/xvm/block/builder/builder_test.go:289:30: cannot use unsignedTx1 (variable of type *txs.MockUnsignedTx) as txs.UnsignedTx value in struct literal: *txs.MockUnsignedTx does not implement txs.UnsignedTx (missing method InitializeContext)
+vms/xvm/block/builder/builder_test.go:289:30: too many errors
+# github.com/luxfi/node/vms/xvm/block/executor [github.com/luxfi/node/vms/xvm/block/executor.test]
+vms/xvm/block/executor/block_test.go:44:13: cannot use mockBlock (variable of type *block.MockBlock) as block.Block value in struct literal: *block.MockBlock does not implement block.Block (missing method InitCtx)
+vms/xvm/block/executor/block_test.go:64:13: cannot use mockBlock (variable of type *block.MockBlock) as block.Block value in struct literal: *block.MockBlock does not implement block.Block (missing method InitCtx)
+vms/xvm/block/executor/block_test.go:84:13: cannot use mockBlock (variable of type *block.MockBlock) as block.Block value in struct literal: *block.MockBlock does not implement block.Block (missing method InitCtx)
+vms/xvm/block/executor/block_test.go:102:13: cannot use mockBlock (variable of type *block.MockBlock) as block.Block value in struct literal: *block.MockBlock does not implement block.Block (missing method InitCtx)
+vms/xvm/block/executor/block_test.go:122:16: cannot use mockUnsignedTx (variable of type *txs.MockUnsignedTx) as txs.UnsignedTx value in struct literal: *txs.MockUnsignedTx does not implement txs.UnsignedTx (missing method InitializeContext)
+vms/xvm/block/executor/block_test.go:129:13: cannot use mockBlock (variable of type *block.MockBlock) as block.Block value in struct literal: *block.MockBlock does not implement block.Block (missing method InitCtx)
+vms/xvm/block/executor/block_test.go:133:21: undefined: metrics
+vms/xvm/block/executor/block_test.go:152:16: cannot use mockUnsignedTx (variable of type *txs.MockUnsignedTx) as txs.UnsignedTx value in struct literal: *txs.MockUnsignedTx does not implement txs.UnsignedTx (missing method InitializeContext)
+vms/xvm/block/executor/block_test.go:162:13: cannot use mockBlock (variable of type *block.MockBlock) as block.Block value in struct literal: *block.MockBlock does not implement block.Block (missing method InitCtx)
+vms/xvm/block/executor/block_test.go:186:16: cannot use mockUnsignedTx (variable of type *txs.MockUnsignedTx) as txs.UnsignedTx value in struct literal: *txs.MockUnsignedTx does not implement txs.UnsignedTx (missing method InitializeContext)
+vms/xvm/block/executor/block_test.go:186:16: too many errors
 # github.com/luxfi/node/vms/proposervm [github.com/luxfi/node/vms/proposervm.test]
 vms/proposervm/batched_vm_test.go:83:24: undefined: blocktest.BuildChild
 vms/proposervm/batched_vm_test.go:819:13: undefined: blocktest.BatchedVM
@@ -636,31 +694,13 @@ vms/rpcchainvm/with_context_vm_test.go:41:12: undefined: blockmock.BuildBlockWit
 vms/rpcchainvm/with_context_vm_test.go:45:13: undefined: chainmock.Block
 vms/rpcchainvm/with_context_vm_test.go:46:13: undefined: blockmock.WithVerifyContext
 vms/rpcchainvm/state_syncable_vm_test.go:55:26: too many errors
-# github.com/luxfi/node/vms/xvm/block/executor [github.com/luxfi/node/vms/xvm/block/executor.test]
-vms/xvm/block/executor/block_test.go:44:13: cannot use mockBlock (variable of type *block.MockBlock) as block.Block value in struct literal: *block.MockBlock does not implement block.Block (missing method InitCtx)
-vms/xvm/block/executor/block_test.go:64:13: cannot use mockBlock (variable of type *block.MockBlock) as block.Block value in struct literal: *block.MockBlock does not implement block.Block (missing method InitCtx)
-vms/xvm/block/executor/block_test.go:84:13: cannot use mockBlock (variable of type *block.MockBlock) as block.Block value in struct literal: *block.MockBlock does not implement block.Block (missing method InitCtx)
-vms/xvm/block/executor/block_test.go:102:13: cannot use mockBlock (variable of type *block.MockBlock) as block.Block value in struct literal: *block.MockBlock does not implement block.Block (missing method InitCtx)
-vms/xvm/block/executor/block_test.go:122:16: cannot use mockUnsignedTx (variable of type *txs.MockUnsignedTx) as txs.UnsignedTx value in struct literal: *txs.MockUnsignedTx does not implement txs.UnsignedTx (missing method InitializeContext)
-vms/xvm/block/executor/block_test.go:129:13: cannot use mockBlock (variable of type *block.MockBlock) as block.Block value in struct literal: *block.MockBlock does not implement block.Block (missing method InitCtx)
-vms/xvm/block/executor/block_test.go:133:21: undefined: metrics
-vms/xvm/block/executor/block_test.go:152:16: cannot use mockUnsignedTx (variable of type *txs.MockUnsignedTx) as txs.UnsignedTx value in struct literal: *txs.MockUnsignedTx does not implement txs.UnsignedTx (missing method InitializeContext)
-vms/xvm/block/executor/block_test.go:162:13: cannot use mockBlock (variable of type *block.MockBlock) as block.Block value in struct literal: *block.MockBlock does not implement block.Block (missing method InitCtx)
-vms/xvm/block/executor/block_test.go:186:16: cannot use mockUnsignedTx (variable of type *txs.MockUnsignedTx) as txs.UnsignedTx value in struct literal: *txs.MockUnsignedTx does not implement txs.UnsignedTx (missing method InitializeContext)
-vms/xvm/block/executor/block_test.go:186:16: too many errors
-# github.com/luxfi/node/vms/xvm/block/builder [github.com/luxfi/node/vms/xvm/block/builder.test]
-vms/xvm/block/builder/builder_test.go:48:2: mempool redeclared in this block
-	vms/xvm/block/builder/builder_test.go:20:2: other declaration of mempool
-vms/xvm/block/builder/builder_test.go:83:21: undefined: consensus.WithLogger
-vms/xvm/block/builder/builder_test.go:114:21: undefined: consensus.WithLogger
-vms/xvm/block/builder/builder_test.go:147:29: cannot use unsignedTx (variable of type *txs.MockUnsignedTx) as txs.UnsignedTx value in struct literal: *txs.MockUnsignedTx does not implement txs.UnsignedTx (missing method InitializeContext)
-vms/xvm/block/builder/builder_test.go:158:21: undefined: consensus.WithLogger
-vms/xvm/block/builder/builder_test.go:192:29: cannot use unsignedTx (variable of type *txs.MockUnsignedTx) as txs.UnsignedTx value in struct literal: *txs.MockUnsignedTx does not implement txs.UnsignedTx (missing method InitializeContext)
-vms/xvm/block/builder/builder_test.go:203:21: undefined: consensus.WithLogger
-vms/xvm/block/builder/builder_test.go:238:29: cannot use unsignedTx (variable of type *txs.MockUnsignedTx) as txs.UnsignedTx value in struct literal: *txs.MockUnsignedTx does not implement txs.UnsignedTx (missing method InitializeContext)
-vms/xvm/block/builder/builder_test.go:249:21: undefined: consensus.WithLogger
-vms/xvm/block/builder/builder_test.go:289:30: cannot use unsignedTx1 (variable of type *txs.MockUnsignedTx) as txs.UnsignedTx value in struct literal: *txs.MockUnsignedTx does not implement txs.UnsignedTx (missing method InitializeContext)
-vms/xvm/block/builder/builder_test.go:289:30: too many errors
+# github.com/luxfi/node/vms/xvm/network [github.com/luxfi/node/vms/xvm/network.test]
+vms/xvm/network/gossip_test.go:68:47: cannot use toEngine (variable of type chan core.Message) as chan<- core.MessageType value in argument to mempool.New
+vms/xvm/network/gossip_test.go:105:47: cannot use toEngine (variable of type chan core.Message) as chan<- core.MessageType value in argument to mempool.New
+vms/xvm/network/network_test.go:136:24: appSender.EXPECT().SendAppGossip undefined (type *coremock.MockAppSenderExpects has no field or method SendAppGossip)
+vms/xvm/network/network_test.go:182:21: undefined: validatorstest.State
+vms/xvm/network/network_test.go:237:24: appSender.EXPECT().SendAppGossip undefined (type *coremock.MockAppSenderExpects has no field or method SendAppGossip)
+vms/xvm/network/network_test.go:276:21: undefined: validatorstest.State
 # github.com/luxfi/node/vms/xvm [github.com/luxfi/node/vms/xvm.test]
 vms/xvm/environment_test.go:128:32: undefined: consensustest.NewContext
 vms/xvm/environment_test.go:176:3: not enough arguments in call to vm.Initialize
@@ -677,22 +717,12 @@ vms/xvm/environment_test.go:513:9: vm.ctx.Lock undefined (type "context".Context
 vms/xvm/environment_test.go:514:15: vm.ctx.Lock undefined (type "context".Context has no field or method Lock)
 vms/xvm/index_test.go:41:19: env.vm.ctx.Lock undefined (type "context".Context has no field or method Lock)
 vms/xvm/index_test.go:41:19: too many errors
-# github.com/luxfi/node/vms/xvm/txs/mempool [github.com/luxfi/node/vms/xvm/txs/mempool.test]
-vms/xvm/txs/mempool/mempool_test.go:21:33: undefined: MessageType
-vms/xvm/txs/mempool/mempool_test.go:28:24: undefined: MessageType
 # github.com/luxfi/node/vms/xvm/txs [github.com/luxfi/node/vms/xvm/txs.test]
 vms/xvm/txs/operation_test.go:58:7: cannot use &testOperable{} (value of type *testOperable) as fxs.FxOperation value in struct literal: *testOperable does not implement fxs.FxOperation (missing method InitializeContext)
 vms/xvm/txs/operation_test.go:74:7: cannot use &testOperable{} (value of type *testOperable) as fxs.FxOperation value in struct literal: *testOperable does not implement fxs.FxOperation (missing method InitializeContext)
 vms/xvm/txs/operation_test.go:97:8: cannot use &testOperable{} (value of type *testOperable) as fxs.FxOperation value in struct literal: *testOperable does not implement fxs.FxOperation (missing method InitializeContext)
 vms/xvm/txs/operation_test.go:107:8: cannot use &testOperable{} (value of type *testOperable) as fxs.FxOperation value in struct literal: *testOperable does not implement fxs.FxOperation (missing method InitializeContext)
 vms/xvm/txs/operation_test.go:121:7: cannot use &testOperable{} (value of type *testOperable) as fxs.FxOperation value in struct literal: *testOperable does not implement fxs.FxOperation (missing method InitializeContext)
-# github.com/luxfi/node/vms/xvm/network [github.com/luxfi/node/vms/xvm/network.test]
-vms/xvm/network/gossip_test.go:68:47: cannot use toEngine (variable of type chan core.Message) as chan<- core.MessageType value in argument to mempool.New
-vms/xvm/network/gossip_test.go:105:47: cannot use toEngine (variable of type chan core.Message) as chan<- core.MessageType value in argument to mempool.New
-vms/xvm/network/network_test.go:136:24: appSender.EXPECT().SendAppGossip undefined (type *coremock.MockAppSenderExpects has no field or method SendAppGossip)
-vms/xvm/network/network_test.go:182:21: undefined: validatorstest.State
-vms/xvm/network/network_test.go:237:24: appSender.EXPECT().SendAppGossip undefined (type *coremock.MockAppSenderExpects has no field or method SendAppGossip)
-vms/xvm/network/network_test.go:276:21: undefined: validatorstest.State
 # github.com/luxfi/node/vms/xvm/txs/executor [github.com/luxfi/node/vms/xvm/txs/executor.test]
 vms/xvm/txs/executor/semantic_verifier_test.go:32:48: undefined: consensustest.XChainID
 vms/xvm/txs/executor/semantic_verifier_test.go:389:48: undefined: consensustest.XChainID
@@ -705,6 +735,12 @@ vms/xvm/txs/executor/semantic_verifier_test.go:803:25: ctx.CChainID undefined (t
 vms/xvm/txs/executor/semantic_verifier_test.go:870:48: undefined: consensustest.XChainID
 vms/xvm/txs/executor/semantic_verifier_test.go:873:43: ctx.ChainID undefined (type "context".Context has no field or method ChainID)
 vms/xvm/txs/executor/semantic_verifier_test.go:873:43: too many errors
+# github.com/luxfi/node/vms/xvm/txs/mempool [github.com/luxfi/node/vms/xvm/txs/mempool.test]
+vms/xvm/txs/mempool/mempool_test.go:21:33: undefined: MessageType
+vms/xvm/txs/mempool/mempool_test.go:28:24: undefined: MessageType
+# github.com/luxfi/qzmq
+../qzmq/mlkem_integration.go:37:35: assignment mismatch: 3 variables but mpk.key.Encapsulate returns 2 values
+../qzmq/mlkem_integration.go:89:35: assignment mismatch: 3 variables but mpk.key.Encapsulate returns 2 values
 --- FAIL: TestAddDelegatorTxSyntacticVerify (0.00s)
     add_delegator_test.go:119: 
         	Error Trace:	/home/z/work/lux/node/vms/platformvm/txs/add_delegator_test.go:119
@@ -928,7 +964,7 @@ vms/xvm/txs/executor/semantic_verifier_test.go:873:43: too many errors
         	Error:      	Received unexpected error:
         	            	metadata failed verification: tx has wrong network ID
         	Test:       	TestBaseTxSerialization
---- FAIL: TestConvertNetToL1TxSerialization (0.00s)
+--- FAIL: TestConvertNetToL1TxSerialization (0.01s)
     --- FAIL: TestConvertNetToL1TxSerialization/simple (0.00s)
         convert_subnet_to_l1_tx_test.go:301: 
             	Error Trace:	/home/z/work/lux/node/vms/platformvm/txs/convert_subnet_to_l1_tx_test.go:301
@@ -1024,19 +1060,13 @@ vms/xvm/txs/executor/semantic_verifier_test.go:873:43: too many errors
         controller.go:97: missing call(s) to *verify.MockVerifiable.Verify() /home/z/work/lux/node/vms/platformvm/txs/transform_subnet_tx_test.go:1026
         controller.go:97: aborting test due to missing call(s)
 FAIL
-FAIL	github.com/luxfi/node/vms/platformvm/txs	0.039s
-?   	github.com/luxfi/node/vms/platformvm/txs/builder	[no test files]
-FAIL	github.com/luxfi/node/vms/platformvm/txs/executor [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/txs	0.053s
 ok  	github.com/luxfi/node/vms/platformvm/txs/fee	(cached)
 ok  	github.com/luxfi/node/vms/platformvm/txs/mempool	(cached)
 ok  	github.com/luxfi/node/vms/platformvm/txs/txheap	(cached)
-?   	github.com/luxfi/node/vms/platformvm/txs/txstest	[no test files]
 ?   	github.com/luxfi/node/vms/platformvm/upgrade	[no test files]
-ok  	github.com/luxfi/node/vms/platformvm/utxo	(cached)
 ?   	github.com/luxfi/node/vms/platformvm/utxo/utxomock	[no test files]
-FAIL	github.com/luxfi/node/vms/platformvm/validators [build failed]
 ok  	github.com/luxfi/node/vms/platformvm/validators/fee	(cached)
-FAIL	github.com/luxfi/node/vms/platformvm/validators/validatorstest [build failed]
 FAIL	github.com/luxfi/node/vms/platformvm/warp [build failed]
 ?   	github.com/luxfi/node/vms/platformvm/warp/gwarp	[no test files]
 ok  	github.com/luxfi/node/vms/platformvm/warp/message	(cached)
@@ -1090,17 +1120,9 @@ FAIL	github.com/luxfi/node/vms/xvm/txs/mempool [build failed]
 ?   	github.com/luxfi/node/vms/xvm/txs/txstest	[no test files]
 ?   	github.com/luxfi/node/vms/xvm/utxo	[no test files]
 ?   	github.com/luxfi/node/wallet	[no test files]
-FAIL	github.com/luxfi/node/wallet/chain/c [build failed]
-?   	github.com/luxfi/node/wallet/chain/p	[no test files]
-ok  	github.com/luxfi/node/wallet/chain/p/builder	(cached)
 ?   	github.com/luxfi/node/wallet/chain/p/signer	[no test files]
-?   	github.com/luxfi/node/wallet/chain/p/wallet	[no test files]
-?   	github.com/luxfi/node/wallet/chain/x	[no test files]
 ?   	github.com/luxfi/node/wallet/chain/x/builder	[no test files]
 ?   	github.com/luxfi/node/wallet/chain/x/signer	[no test files]
-# github.com/luxfi/qzmq
-../qzmq/mlkem_integration.go:37:35: assignment mismatch: 3 variables but mpk.key.Encapsulate returns 2 values
-../qzmq/mlkem_integration.go:89:35: assignment mismatch: 3 variables but mpk.key.Encapsulate returns 2 values
 --- FAIL: TestPQKeychain_MLDSA65 (0.00s)
     pq_keychain_test.go:95: 
         	Error Trace:	/home/z/work/lux/node/wallet/keychain/pq_keychain_test.go:95
@@ -1116,31 +1138,9 @@ ok  	github.com/luxfi/node/wallet/chain/p/builder	(cached)
         	            	actual  : 4627
         	Test:       	TestPQKeychain_MLDSA87
 FAIL
-FAIL	github.com/luxfi/node/wallet/keychain	46.218s
-FAIL	github.com/luxfi/node/wallet/net/primary [build failed]
+FAIL	github.com/luxfi/node/wallet/keychain	46.748s
 ?   	github.com/luxfi/node/wallet/net/primary/common	[no test files]
 ?   	github.com/luxfi/node/wallet/net/primary/common/utxotest	[no test files]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/add-permissioned-subnet-validator [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/add-primary-validator [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/c-chain-export [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/c-chain-import [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/convert-subnet-to-l1 [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/create-asset [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/create-chain [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/create-locked-stakeable [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/create-subnet [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/disable-l1-validator [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/get-p-chain-balance [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/get-x-chain-balance [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/increase-l1-validator-balance [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/register-l1-validator [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/remove-subnet-validator [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/set-l1-validator-weight [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-registration [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-removal-genesis [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-removal-registration [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-weight-update [build failed]
-FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-subnet-to-l1-conversion [build failed]
 ?   	github.com/luxfi/node/warp	[no test files]
 ok  	github.com/luxfi/node/warp/socket	(cached)
 ok  	github.com/luxfi/node/x/archivedb	(cached)

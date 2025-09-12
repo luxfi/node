@@ -105,7 +105,7 @@ func TestGossiperGossip(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			responseSender := &core.FakeSender{
+			responseSender := &FakeSender{
 				SentAppResponse: make(chan []byte, 1),
 			}
 			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, metric.NewNoOpMetrics("test").Registry(), "")
@@ -134,7 +134,7 @@ func TestGossiperGossip(t *testing.T) {
 			require.NoError(err)
 			require.NoError(responseNetwork.AddHandler(0x0, handler))
 
-			requestSender := &core.FakeSender{
+			requestSender := &FakeSender{
 				SentAppRequest: make(chan []byte, 1),
 			}
 
@@ -510,7 +510,7 @@ func TestPushGossiper(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			sender := &core.FakeSender{
+			sender := &FakeSender{
 				SentAppGossip: make(chan []byte, 2),
 			}
 			network, err := p2p.NewNetwork(

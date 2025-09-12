@@ -20,14 +20,11 @@ import (
 
 	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/consensus/networking/benchlist"
-	"github.com/luxfi/consensus/networking/router"
-	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/consensus/prism"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/dialer"
@@ -204,8 +201,8 @@ func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 	}, nil
 }
 
-func getRouterHealthConfig(v *viper.Viper, halflife time.Duration) (router.HealthConfig, error) {
-	config := router.HealthConfig{
+func getRouterHealthConfig(v *viper.Viper, halflife time.Duration) (RouterHealthConfig, error) {
+	config := RouterHealthConfig{
 		MaxDropRate:            v.GetFloat64(RouterHealthMaxDropRateKey),
 		MaxOutstandingRequests: int(v.GetUint(RouterHealthMaxOutstandingRequestsKey)),
 		MaxOutstandingDuration: v.GetDuration(NetworkHealthMaxOutstandingDurationKey),
@@ -214,11 +211,11 @@ func getRouterHealthConfig(v *viper.Viper, halflife time.Duration) (router.Healt
 	}
 	switch {
 	case config.MaxDropRate < 0 || config.MaxDropRate > 1:
-		return router.HealthConfig{}, fmt.Errorf("%q must be in [0,1]", RouterHealthMaxDropRateKey)
+		return RouterHealthConfig{}, fmt.Errorf("%q must be in [0,1]", RouterHealthMaxDropRateKey)
 	case config.MaxOutstandingDuration <= 0:
-		return router.HealthConfig{}, fmt.Errorf("%q must be positive", NetworkHealthMaxOutstandingDurationKey)
+		return RouterHealthConfig{}, fmt.Errorf("%q must be positive", NetworkHealthMaxOutstandingDurationKey)
 	case config.MaxRunTimeRequests <= 0:
-		return router.HealthConfig{}, fmt.Errorf("%q must be positive", NetworkMaximumTimeoutKey)
+		return RouterHealthConfig{}, fmt.Errorf("%q must be positive", NetworkMaximumTimeoutKey)
 	}
 	return config, nil
 }
@@ -425,23 +422,23 @@ func getNetworkConfig(
 	return config, nil
 }
 
-func getBenchlistConfig(v *viper.Viper, consensusParameters prism.Parameters) (benchlist.Config, error) {
+func getBenchlistConfig(v *viper.Viper, consensusParameters PrismParameters) (BenchlistConfig, error) {
 	// AlphaConfidence is used here to ensure that benching can't cause a
 	// liveness failure. If AlphaPreference were used, the benchlist may grow to
 	// a point that committing would be extremely unlikely to happen.
 	alpha := consensusParameters.AlphaConfidence
 	k := consensusParameters.K
-	config := benchlist.Config{
-		Threshold:              v.GetInt(BenchlistFailThresholdKey),
+	config := BenchlistConfig{
+		FailThreshold:          v.GetInt(BenchlistFailThresholdKey),
 		Duration:               v.GetDuration(BenchlistDurationKey),
-		MinimumFailingDuration: v.GetDuration(BenchlistMinFailingDurationKey),
+		MinFailingDuration: v.GetDuration(BenchlistMinFailingDurationKey),
 		MaxPortion:             (1.0 - (float64(alpha) / float64(k))) / 3.0,
 	}
 	switch {
 	case config.Duration < 0:
-		return benchlist.Config{}, fmt.Errorf("%q must be >= 0", BenchlistDurationKey)
-	case config.MinimumFailingDuration < 0:
-		return benchlist.Config{}, fmt.Errorf("%q must be >= 0", BenchlistMinFailingDurationKey)
+		return BenchlistConfig{}, fmt.Errorf("%q must be >= 0", BenchlistDurationKey)
+	case config.MinFailingDuration < 0:
+		return BenchlistConfig{}, fmt.Errorf("%q must be >= 0", BenchlistMinFailingDurationKey)
 	}
 	return config, nil
 }
@@ -832,10 +829,10 @@ func getTrackedSubnets(v *viper.Viper) (set.Set[ids.ID], error) {
 		}
 
 		// Parse net ID
-		netID, err := ids.FromString(subnet)
+		netID, err := ids.FromString(net)
 
 		if err != nil {
-			return nil, fmt.Errorf("couldn't parse netID %q: %w", subnet, err)
+			return nil, fmt.Errorf("couldn't parse netID %q: %w", net, err)
 		}
 		if netID == constants.PrimaryNetworkID {
 			return nil, errCannotTrackPrimaryNetwork
@@ -1041,11 +1038,11 @@ func getSubnetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]subn
 				return nil, err
 			}
 
-			// Only override if Alpha is explicitly set (not zero)
-			if config.ConsensusParameters.Alpha != nil && *config.ConsensusParameters.Alpha > 0 {
-				config.ConsensusParameters.AlphaPreference = *config.ConsensusParameters.Alpha
-				config.ConsensusParameters.AlphaConfidence = config.ConsensusParameters.AlphaPreference
-			}
+			// Alpha override disabled - field not available in consensus.Parameters
+			// if config.ConsensusParameters.Alpha != nil && *config.ConsensusParameters.Alpha > 0 {
+			//     config.ConsensusParameters.AlphaPreference = *config.ConsensusParameters.Alpha
+			//     config.ConsensusParameters.AlphaConfidence = config.ConsensusParameters.AlphaPreference
+			// }
 
 			if err := config.Valid(); err != nil {
 				return nil, err
@@ -1097,10 +1094,11 @@ func getSubnetConfigsFromDir(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]subnet
 		}
 
 		// Only override if Alpha is explicitly set (not zero)
-		if config.ConsensusParameters.Alpha != nil && *config.ConsensusParameters.Alpha > 0 {
-			config.ConsensusParameters.AlphaPreference = *config.ConsensusParameters.Alpha
-			config.ConsensusParameters.AlphaConfidence = config.ConsensusParameters.AlphaPreference
-		}
+		// Alpha override disabled - field not available in consensus.Parameters
+		// if config.ConsensusParameters.Alpha != nil && *config.ConsensusParameters.Alpha > 0 {
+		//     config.ConsensusParameters.AlphaPreference = *config.ConsensusParameters.Alpha
+		//     config.ConsensusParameters.AlphaConfidence = config.ConsensusParameters.AlphaPreference
+		// }
 
 		if err := config.Valid(); err != nil {
 			return nil, err
@@ -1135,19 +1133,19 @@ func getDefaultSubnetConfig(v *viper.Viper) subnets.Config {
 	return config
 }
 
-func getCPUTargeterConfig(v *viper.Viper) (tracker.TargeterConfig, error) {
+func getCPUTargeterConfig(v *viper.Viper) (TrackerTargeterConfig, error) {
 	vdrAlloc := v.GetFloat64(CPUVdrAllocKey)
 	maxNonVdrUsage := v.GetFloat64(CPUMaxNonVdrUsageKey)
 	maxNonVdrNodeUsage := v.GetFloat64(CPUMaxNonVdrNodeUsageKey)
 	switch {
 	case vdrAlloc < 0:
-		return tracker.TargeterConfig{}, fmt.Errorf("%q (%f) < 0", CPUVdrAllocKey, vdrAlloc)
+		return TrackerTargeterConfig{}, fmt.Errorf("%q (%f) < 0", CPUVdrAllocKey, vdrAlloc)
 	case maxNonVdrUsage < 0:
-		return tracker.TargeterConfig{}, fmt.Errorf("%q (%f) < 0", CPUMaxNonVdrUsageKey, maxNonVdrUsage)
+		return TrackerTargeterConfig{}, fmt.Errorf("%q (%f) < 0", CPUMaxNonVdrUsageKey, maxNonVdrUsage)
 	case maxNonVdrNodeUsage < 0:
-		return tracker.TargeterConfig{}, fmt.Errorf("%q (%f) < 0", CPUMaxNonVdrNodeUsageKey, maxNonVdrNodeUsage)
+		return TrackerTargeterConfig{}, fmt.Errorf("%q (%f) < 0", CPUMaxNonVdrNodeUsageKey, maxNonVdrNodeUsage)
 	default:
-		return tracker.TargeterConfig{
+		return TrackerTargeterConfig{
 			VdrAlloc:           vdrAlloc,
 			MaxNonVdrUsage:     maxNonVdrUsage,
 			MaxNonVdrNodeUsage: maxNonVdrNodeUsage,
@@ -1166,19 +1164,19 @@ func getDiskSpaceConfig(v *viper.Viper) (requiredAvailableDiskSpace uint64, warn
 	}
 }
 
-func getDiskTargeterConfig(v *viper.Viper) (tracker.TargeterConfig, error) {
+func getDiskTargeterConfig(v *viper.Viper) (TrackerTargeterConfig, error) {
 	vdrAlloc := v.GetFloat64(DiskVdrAllocKey)
 	maxNonVdrUsage := v.GetFloat64(DiskMaxNonVdrUsageKey)
 	maxNonVdrNodeUsage := v.GetFloat64(DiskMaxNonVdrNodeUsageKey)
 	switch {
 	case vdrAlloc < 0:
-		return tracker.TargeterConfig{}, fmt.Errorf("%q (%f) < 0", DiskVdrAllocKey, vdrAlloc)
+		return TrackerTargeterConfig{}, fmt.Errorf("%q (%f) < 0", DiskVdrAllocKey, vdrAlloc)
 	case maxNonVdrUsage < 0:
-		return tracker.TargeterConfig{}, fmt.Errorf("%q (%f) < 0", DiskMaxNonVdrUsageKey, maxNonVdrUsage)
+		return TrackerTargeterConfig{}, fmt.Errorf("%q (%f) < 0", DiskMaxNonVdrUsageKey, maxNonVdrUsage)
 	case maxNonVdrNodeUsage < 0:
-		return tracker.TargeterConfig{}, fmt.Errorf("%q (%f) < 0", DiskMaxNonVdrNodeUsageKey, maxNonVdrNodeUsage)
+		return TrackerTargeterConfig{}, fmt.Errorf("%q (%f) < 0", DiskMaxNonVdrNodeUsageKey, maxNonVdrNodeUsage)
 	default:
-		return tracker.TargeterConfig{
+		return TrackerTargeterConfig{
 			VdrAlloc:           vdrAlloc,
 			MaxNonVdrUsage:     maxNonVdrUsage,
 			MaxNonVdrNodeUsage: maxNonVdrNodeUsage,
@@ -1337,9 +1335,19 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 
 	// Router
-	nodeConfig.RouterHealthConfig, err = getRouterHealthConfig(v, healthCheckAveragerHalflife)
+	routerHealthCfg, err := getRouterHealthConfig(v, healthCheckAveragerHalflife)
 	if err != nil {
 		return node.Config{}, err
+	}
+	// Convert RouterHealthConfig to node.HealthConfig
+	nodeConfig.RouterHealthConfig = node.HealthConfig{
+		MaxTimeSinceMsgReceived: routerHealthCfg.MaxOutstandingDuration,
+		MaxTimeSinceMsgSent:     routerHealthCfg.MaxOutstandingDuration,
+		MaxPortionSendQueueFull: routerHealthCfg.MaxDropRate,
+		MinConnectedPeers:       1,
+		ReadTimeout:             routerHealthCfg.MaxRunTimeRequests,
+		WriteTimeout:            routerHealthCfg.MaxRunTimeRequests,
+		MaxSendFailRate:         routerHealthCfg.MaxDropRate,
 	}
 
 	// Metrics
@@ -1377,9 +1385,20 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.SubnetConfigs = subnetConfigs
 
 	// Benchlist
-	nodeConfig.BenchlistConfig, err = getBenchlistConfig(v, primaryNetworkConfig.ConsensusParameters.ToPrismParameters())
+	// Convert consensus.Parameters to PrismParameters for benchlist config
+	prismParams := PrismParameters{
+		K:                primaryNetworkConfig.ConsensusParameters.K,
+		AlphaPreference:  primaryNetworkConfig.ConsensusParameters.AlphaPreference,
+		AlphaConfidence:  primaryNetworkConfig.ConsensusParameters.AlphaConfidence,
+	}
+	// getBenchlistConfig is called for validation only
+	_, err = getBenchlistConfig(v, prismParams)
 	if err != nil {
 		return node.Config{}, err
+	}
+	// benchlist.Config from consensus package only has Deprecated field
+	nodeConfig.BenchlistConfig = benchlist.Config{
+		Deprecated: false,
 	}
 
 	// File Descriptor Limit
@@ -1459,14 +1478,26 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, err
 	}
 
-	nodeConfig.CPUTargeterConfig, err = getCPUTargeterConfig(v)
+	cpuTargeterCfg, err := getCPUTargeterConfig(v)
 	if err != nil {
 		return node.Config{}, err
 	}
+	// Convert TrackerTargeterConfig to node.TargeterConfig
+	nodeConfig.CPUTargeterConfig = node.TargeterConfig{
+		VdrAlloc:           cpuTargeterCfg.VdrAlloc,
+		MaxNonVdrUsage:     cpuTargeterCfg.MaxNonVdrUsage,
+		MaxNonVdrNodeUsage: cpuTargeterCfg.MaxNonVdrNodeUsage,
+	}
 
-	nodeConfig.DiskTargeterConfig, err = getDiskTargeterConfig(v)
+	diskTargeterCfg, err := getDiskTargeterConfig(v)
 	if err != nil {
 		return node.Config{}, err
+	}
+	// Convert TrackerTargeterConfig to node.TargeterConfig
+	nodeConfig.DiskTargeterConfig = node.TargeterConfig{
+		VdrAlloc:           diskTargeterCfg.VdrAlloc,
+		MaxNonVdrUsage:     diskTargeterCfg.MaxNonVdrUsage,
+		MaxNonVdrNodeUsage: diskTargeterCfg.MaxNonVdrNodeUsage,
 	}
 
 	nodeConfig.TraceConfig, err = getTraceConfig(v)

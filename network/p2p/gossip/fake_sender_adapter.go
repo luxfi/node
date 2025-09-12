@@ -18,6 +18,11 @@ type FakeSender struct {
 	SendAppGossipF   func(context.Context, set.Set[ids.NodeID], []byte) error
 	SendCrossChainAppRequestF  func(context.Context, ids.ID, uint32, []byte) error
 	SendCrossChainAppResponseF func(context.Context, ids.ID, uint32, []byte) error
+	
+	// Fields for test channels
+	SentAppRequest  chan []byte
+	SentAppResponse chan []byte
+	SentAppGossip   chan []byte
 }
 
 func (f *FakeSender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {

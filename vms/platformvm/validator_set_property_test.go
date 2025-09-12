@@ -101,7 +101,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 				return "failed building events sequence: " + err.Error()
 			}
 
-			validatorSetByHeightAndNet := make(map[uint64]map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput)
+			validatorSetByHeightAndSubnet := make(map[uint64]map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput)
 			if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndSubnet); err != nil {
 				return failedValidatorSnapshotString + err.Error()
 			}
@@ -221,10 +221,10 @@ func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndNet m
 		return err
 	}
 	height := lastBlk.Height()
-	validatorsSetBySubnet, ok := validatorsSetByHeightAndSubnet[height]
+	validatorsSetBySubnet, ok := validatorsSetByHeightAndNet[height]
 	if !ok {
-		validatorsSetByHeightAndSubnet[height] = make(map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput)
-		validatorsSetByNet = validatorsSetByHeightAndSubnet[height]
+		validatorsSetByHeightAndNet[height] = make(map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput)
+		validatorsSetBySubnet = validatorsSetByHeightAndNet[height]
 	}
 
 	stakerIt, err := vm.state.GetCurrentStakerIterator()
