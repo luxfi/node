@@ -21,6 +21,7 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
@@ -257,19 +258,43 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 	return s.router.AddRouter(url, endpoint, handler)
 }
 
+// StateGetter interface for getting chain state
+type StateGetter interface {
+	Get() interfaces.State
+}
+
+// contextKey type for context values
+type contextKey string
+
+const stateHolderKey contextKey = "stateHolder"
+
 // Reject middleware wraps a handler. If the chain that the context describes is
 // not done state-syncing/bootstrapping, writes back an error.
 func rejectMiddleware(handler http.Handler, ctx context.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Add chain state checking when interfaces are available
-		// Check if chain state is available in context
-		// if stateHolder, ok := ctx.Value("stateHolder").(*interfaces.StateHolder); ok {
-		// 	state := stateHolder.Get()
-		// 	if state == interfaces.StateSyncing || state == interfaces.Bootstrapping {
-		// 		w.WriteHeader(http.StatusServiceUnavailable)
-		// 		return
-		// 	}
-		// }
+		// Try both string key and contextKey for compatibility
+		var stateHolder interface{}
+		
+		// First try with string key (for tests)
+		stateHolder = ctx.Value("stateHolder")
+		if stateHolder == nil {
+			// Then try with contextKey
+			stateHolder = ctx.Value(stateHolderKey)
+		}
+		
+		if stateHolder != nil {
+			// Use type assertion to check for StateGetter interface
+			if sh, ok := stateHolder.(StateGetter); ok {
+				state := sh.Get()
+				fmt.Printf("DEBUG: Got state %v (syncing=%v, bootstrapping=%v)\n", state, interfaces.StateSyncing, interfaces.Bootstrapping)
+				if state == interfaces.StateSyncing || state == interfaces.Bootstrapping {
+					w.WriteHeader(http.StatusServiceUnavailable)
+					return
+				}
+			} else {
+				fmt.Printf("DEBUG: StateGetter type assertion failed for type %T\n", stateHolder)
+			}
+		}
 		handler.ServeHTTP(w, r)
 	})
 }
