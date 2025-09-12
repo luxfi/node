@@ -31,9 +31,9 @@ var errFoo = &core.AppError{
 	Message: "foo",
 }
 
-// fakeSenderAdapter adapts core.FakeSender to appsender.AppSender interface
+// fakeSenderAdapter adapts FakeSender to appsender.AppSender interface
 type fakeSenderAdapter struct {
-	*core.FakeSender
+	*FakeSender
 }
 
 func (f *fakeSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
@@ -80,9 +80,9 @@ func (f *fakeSenderAdapter) SendCrossChainAppError(ctx context.Context, chainID 
 
 var _ ExtendedAppSender = (*fakeSenderAdapter)(nil)
 
-// senderTestAdapter adapts core.SenderTest to appsender.AppSender interface
+// senderTestAdapter adapts SenderTest to appsender.AppSender interface
 type senderTestAdapter struct {
-	*core.SenderTest
+	*SenderTest
 }
 
 func (s *senderTestAdapter) SendAppRequest(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
@@ -155,7 +155,7 @@ func TestMessageRouting(t *testing.T) {
 		},
 	}
 
-	fakeSender := &core.FakeSender{
+	fakeSender := &FakeSender{
 		SentAppGossip:            make(chan []byte, 1),
 		SentAppRequest:           make(chan []byte, 1),
 		SentCrossChainAppRequest: make(chan []byte, 1),
@@ -191,7 +191,7 @@ func TestClientPrefixesMessages(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	fakeSender := &core.FakeSender{
+	fakeSender := &FakeSender{
 		SentAppRequest:           make(chan []byte, 1),
 		SentAppGossip:            make(chan []byte, 1),
 		SentCrossChainAppRequest: make(chan []byte, 1),
@@ -251,7 +251,7 @@ func TestAppRequestResponse(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	fakeSender := &core.FakeSender{
+	fakeSender := &FakeSender{
 		SentAppRequest: make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
@@ -287,7 +287,7 @@ func TestAppRequestCancelledContext(t *testing.T) {
 	ctx := context.Background()
 
 	sentMessages := make(chan []byte, 1)
-	senderTest := &core.SenderTest{
+	senderTest := &SenderTest{
 		SendAppRequestF: func(ctx context.Context, _ ids.NodeID, _ uint32, msgBytes []byte) error {
 			require.NoError(ctx.Err())
 			sentMessages <- msgBytes
@@ -329,7 +329,7 @@ func TestAppRequestFailed(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	fakeSender := &core.FakeSender{
+	fakeSender := &FakeSender{
 		SentAppRequest: make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
@@ -360,7 +360,7 @@ func TestCrossChainAppRequestResponse(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	fakeSender := &core.FakeSender{
+	fakeSender := &FakeSender{
 		SentCrossChainAppRequest: make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
@@ -393,7 +393,7 @@ func TestCrossChainAppRequestCancelledContext(t *testing.T) {
 	ctx := context.Background()
 
 	sentMessages := make(chan []byte, 1)
-	senderTest := &core.SenderTest{
+	senderTest := &SenderTest{
 		SendCrossChainAppRequestF: func(ctx context.Context, _ ids.ID, _ uint32, msgBytes []byte) error {
 			require.NoError(ctx.Err())
 			sentMessages <- msgBytes
@@ -432,7 +432,7 @@ func TestCrossChainAppRequestFailed(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	fakeSender := &core.FakeSender{
+	fakeSender := &FakeSender{
 		SentCrossChainAppRequest: make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
@@ -531,7 +531,7 @@ func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
 			wantRequestID := uint32(111)
 
 			done := make(chan struct{})
-			senderTest := &core.SenderTest{}
+			senderTest := &SenderTest{}
 			senderTest.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 				defer close(done)
 
@@ -571,7 +571,7 @@ func TestAppError(t *testing.T) {
 	wantRequestID := uint32(111)
 
 	done := make(chan struct{})
-	senderTest := &core.SenderTest{}
+	senderTest := &SenderTest{}
 	senderTest.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 		defer close(done)
 
@@ -653,7 +653,7 @@ func TestAppRequestDuplicateRequestIDs(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	fakeSender := &core.FakeSender{
+	fakeSender := &FakeSender{
 		SentAppRequest: make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
@@ -740,7 +740,7 @@ func TestPeersSample(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			network, err := NewNetwork(log.NoLog{}, &fakeSenderAdapter{FakeSender: &core.FakeSender{}}, metric.NewNoOpMetrics("test").Registry(), "")
+			network, err := NewNetwork(log.NoLog{}, &fakeSenderAdapter{FakeSender: &FakeSender{}}, metric.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 
 			for connected := range tt.connected {
@@ -783,7 +783,7 @@ func TestAppRequestAnyNodeSelection(t *testing.T) {
 			require := require.New(t)
 
 			var sent ids.NodeID
-			senderTest := &core.SenderTest{
+			senderTest := &SenderTest{
 				SendAppRequestF: func(_ context.Context, nodeID ids.NodeID, _ uint32, _ []byte) error {
 					sent = nodeID
 					return nil
@@ -881,7 +881,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 			require := require.New(t)
 
 			done := make(chan struct{})
-			senderTest := &core.SenderTest{
+			senderTest := &SenderTest{
 				SendAppRequestF: func(_ context.Context, nodeID ids.NodeID, _ uint32, _ []byte) error {
 					if len(tt.expected) > 0 {
 						require.Contains(tt.expected, nodeID)
@@ -915,7 +915,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 func TestMultipleClients(t *testing.T) {
 	require := require.New(t)
 
-	senderTest := &core.SenderTest{}
+	senderTest := &SenderTest{}
 	sender := &senderTestAdapter{SenderTest: senderTest}
 	n, err := NewNetwork(log.NoLog{}, sender, metric.NewNoOpMetrics("test").Registry(), "")
 	require.NoError(err)
