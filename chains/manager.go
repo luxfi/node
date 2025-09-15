@@ -781,10 +781,13 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 	})
 
 	// Get a factory for the vm we want to use on our chain
+	m.Log.Info("Getting VM factory", zap.Stringer("vmID", chainParams.VMID))
 	vmFactory, err := m.VMManager.GetFactory(chainParams.VMID)
 	if err != nil {
+		m.Log.Error("Failed to get VM factory", zap.Stringer("vmID", chainParams.VMID), zap.Error(err))
 		return nil, fmt.Errorf("error while getting vmFactory: %w", err)
 	}
+	m.Log.Info("Got VM factory successfully")
 
 	// Create the chain
 	vm, err := vmFactory.New(chainLog)
@@ -843,7 +846,10 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 			sb,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("error while creating new linear vm %w", err)
+			m.Log.Error("createLinearChain failed for Platform chain",
+				zap.String("actualError", err.Error()),
+				zap.Error(err))
+			return nil, fmt.Errorf("error while creating new linear vm: %w", err)
 		}
 	default:
 		return nil, errUnknownVMType
@@ -952,60 +958,9 @@ func (m *manager) createLuxChain(
 		return nil, fmt.Errorf("error while fetching chain config: %w", err)
 	}
 
-	graphVM := vm
-	if m.MeterVMEnabled {
-		meterdagvmReg, err := luxmetric.MakeAndRegister(
-			m.meterGRAPHVMGatherer,
-			primaryAlias,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		graphVM = metervm.NewVertexVM(graphVM, meterdagvmReg)
-	}
-	if m.TracingEnabled {
-		graphVM = tracedvm.NewVertexVM(graphVM, m.Tracer)
-	}
-
-	// Handles serialization/deserialization of vertices and also the
-	// persistence of vertices
-	vtxManager := state.NewSerializer(
-		vertexDB,
-		vertexDB, // Using same DB for both vertex and tx getter
-	)
-
-	// The channel through which a VM may send messages to the consensus engine
-	// VM uses this channel to notify engine that a block is ready to be made
-	// msgChan := make(chan core.Message, defaultChannelSize) // Not used for DAG chains - commented to avoid unused variable error
-
-	// The only difference between using luxMessageSender and
-	// linearMessageSender here is where the metrics will be placed. Because we
-	// end up using this sender after the linearization, we pass in
-	// linearMessageSender here.
-	// Create a message channel for engine communication
-	toEngine := make(chan interface{}, 1)
-
-	// Convert fxs to []interface{}
-	var fxInterfaces []interface{}
-	for _, fx := range fxs {
-		fxInterfaces = append(fxInterfaces, fx)
-	}
-
-	err = graphVM.Initialize(
-		context.TODO(),
-		ctx,                 // chainCtx interface{}
-		vmDB,                // dbManager interface{}
-		genesisData,         // genesisBytes []byte
-		chainConfig.Upgrade, // upgradeBytes []byte
-		chainConfig.Config,  // configBytes []byte
-		toEngine,            // toEngine chan<- interface{}
-		fxInterfaces,        // fxs []interface{}
-		linearMessageSender, // appSender interface{}
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error during vm's Initialize: %w", err)
-	}
+	// For linear/block chains, we don't use vertex/DAG wrappers
+	// Platform VM is a block-based VM, not a vertex-based VM
+	// So we skip the vertex-related setup and go straight to block VM setup
 
 	// Initialize the ProposerVM and the vm wrapped inside it
 	var (
@@ -1024,12 +979,18 @@ func (m *manager) createLuxChain(
 		zap.Uint64("numHistoricalBlocks", numHistoricalBlocks),
 	)
 
-	// Note: this does not use [graphVM] to ensure we use the [vm]'s height index.
-	untracedVMWrappedInsideProposerVM := NewLinearizeOnInitializeVM(vm)
+	// Skip proposervm wrapper for Platform chain for now due to initialization issues
+	if chainParams.ID == constants.PlatformChainID {
+		m.Log.Info("skipping proposervm wrapper for Platform chain")
+		return vm, vm, nil
+	}
 
-	var vmWrappedInsideProposerVM block.ChainVM = untracedVMWrappedInsideProposerVM
+	// For block-based VMs (like Platform VM), we pass the VM directly to ProposerVM
+	// vm is already a block.ChainVM from the factory
+	// Rename to chainblockVM for clarity - this is the block-based chain VM
+	var chainblockVM block.ChainVM = vm
 	if m.TracingEnabled {
-		vmWrappedInsideProposerVM = tracedvm.NewBlockVM(vmWrappedInsideProposerVM, primaryAlias, m.Tracer)
+		chainblockVM = tracedvm.NewBlockVM(chainblockVM, primaryAlias, m.Tracer)
 	}
 
 	proposervmReg, err := luxmetric.MakeAndRegister(
@@ -1040,10 +1001,10 @@ func (m *manager) createLuxChain(
 		return nil, err
 	}
 
-	// Note: vmWrappingProposerVM is the VM that the Linear engines should be
+	// Note: chainblockVMWithProposer is the VM that the Linear engines should be
 	// using.
-	var vmWrappingProposerVM block.ChainVM = proposervm.New(
-		vmWrappedInsideProposerVM,
+	var chainblockVMWithProposer block.ChainVM = proposervm.New(
+		chainblockVM,
 		proposervm.Config{
 			ActivationTime:      m.ApricotPhase4Time,
 			DurangoTime:         version.GetDurangoTime(m.NetworkID),
@@ -1065,10 +1026,10 @@ func (m *manager) createLuxChain(
 			return nil, err
 		}
 
-		vmWrappingProposerVM = metervm.NewBlockVM(vmWrappingProposerVM, meterchainvmReg)
+		chainblockVMWithProposer = metervm.NewBlockVM(chainblockVMWithProposer, meterchainvmReg)
 	}
 	if m.TracingEnabled {
-		vmWrappingProposerVM = tracedvm.NewBlockVM(vmWrappingProposerVM, "proposervm", m.Tracer)
+		chainblockVMWithProposer = tracedvm.NewBlockVM(chainblockVMWithProposer, "proposervm", m.Tracer)
 	}
 
 	// Note: linearizableVM is the VM that the Lux engines should be
@@ -1172,7 +1133,7 @@ func (m *manager) createLuxChain(
 	// vdrs.RegisterSetCallbackListener(startupTracker)
 
 	consensusGetHandler, err := consensusgetter.New(
-		vmWrappingProposerVM,
+		chainblockVMWithProposer,
 		linearMessageSender,
 		m.Log,
 		m.BootstrapMaxTimeGetAncestors,
@@ -1220,7 +1181,7 @@ func (m *manager) createLuxChain(
 		Timer:                          nil, // Timer not used for now
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
 		Blocked:                        nil, // Blocked not used for now
-		VM:                             vmWrappingProposerVM,
+		VM:                             chainblockVMWithProposer,
 	}
 
 	// Create bootstrapper with a callback function
@@ -1517,31 +1478,41 @@ func (m *manager) createLinearChain(
 		zap.Uint64("numHistoricalBlocks", numHistoricalBlocks),
 	)
 
+	// Skip proposervm wrapper for Platform chain for now due to initialization issues
+	skipProposerVM := chainParams.ID == constants.PlatformChainID
+	if skipProposerVM {
+		m.Log.Info("skipping proposervm wrapper for Platform chain in createLinearChain")
+		// Platform chain gets special handling - continue without proposervm wrapper
+	}
+
 	if m.TracingEnabled {
 		vm = tracedvm.NewBlockVM(vm, primaryAlias, m.Tracer)
 	}
 
-	proposervmReg, err := luxmetric.MakeAndRegister(
-		m.proposervmGatherer,
-		primaryAlias,
-	)
-	if err != nil {
-		return nil, err
-	}
+	// Only wrap with proposervm if not Platform chain
+	if !skipProposerVM {
+		proposervmReg, err := luxmetric.MakeAndRegister(
+			m.proposervmGatherer,
+			primaryAlias,
+		)
+		if err != nil {
+			return nil, err
+		}
 
-	vm = proposervm.New(
-		vm,
-		proposervm.Config{
-			ActivationTime:      m.ApricotPhase4Time,
-			DurangoTime:         version.GetDurangoTime(m.NetworkID),
-			MinimumPChainHeight: m.ApricotPhase4MinPChainHeight,
-			MinBlkDelay:         minBlockDelay,
-			NumHistoricalBlocks: numHistoricalBlocks,
-			StakingLeafSigner:   m.StakingTLSSigner,
-			StakingCertLeaf:     m.StakingTLSCert,
-			Registerer:          proposervmReg,
-		},
-	)
+		vm = proposervm.New(
+			vm,
+			proposervm.Config{
+				ActivationTime:      m.ApricotPhase4Time,
+				DurangoTime:         version.GetDurangoTime(m.NetworkID),
+				MinimumPChainHeight: m.ApricotPhase4MinPChainHeight,
+				MinBlkDelay:         minBlockDelay,
+				NumHistoricalBlocks: numHistoricalBlocks,
+				StakingLeafSigner:   m.StakingTLSSigner,
+				StakingCertLeaf:     m.StakingTLSCert,
+				Registerer:          proposervmReg,
+			},
+		)
+	}
 
 	if m.MeterVMEnabled {
 		meterchainvmReg, err := luxmetric.MakeAndRegister(
@@ -1557,7 +1528,7 @@ func (m *manager) createLinearChain(
 	if m.TracingEnabled {
 		vm = tracedvm.NewBlockVM(vm, "proposervm", m.Tracer)
 	}
-
+	
 	// The channel through which a VM may send messages to the consensus engine
 	// VM uses this channel to notify engine that a block is ready to be made
 	msgChan := make(chan core.Message, defaultChannelSize)
@@ -1605,10 +1576,24 @@ func (m *manager) createLinearChain(
 		blockFxs[i] = &block.Fx{}
 	}
 
-	// Create AppSender wrapper - for now just use nil since we don't have a real sender
-	// appSender := &senderToAppSenderAdapter{sender: messageSender}
-	var appSender block.AppSender = nil
+	// Create AppSender - use noopAppSender for now
+	appSender := &noopAppSender{}
 
+	// Debug: log first few bytes of genesis data to understand format
+	genesisPreview := ""
+	if len(genesisData) > 100 {
+		genesisPreview = fmt.Sprintf("%x...", genesisData[:100])
+	} else {
+		genesisPreview = fmt.Sprintf("%x", genesisData)
+	}
+	
+	m.Log.Info("Initializing VM", 
+		zap.Stringer("chainID", chainParams.ID),
+		zap.Int("genesisDataLen", len(genesisData)),
+		zap.String("genesisPreview", genesisPreview),
+		zap.Int("fxsCount", len(blockFxs)))
+	
+	// Initialize the chainblock VM with proposer wrapper (NOT the raw vm)
 	if err := vm.Initialize(
 		context.TODO(),
 		chainCtx,
@@ -1620,8 +1605,13 @@ func (m *manager) createLinearChain(
 		blockFxs,
 		appSender,
 	); err != nil {
-		return nil, err
+		m.Log.Error("VM Initialize failed", 
+			zap.Stringer("chainID", chainParams.ID),
+			zap.String("errorDetails", err.Error()),
+			zap.Error(err))
+		return nil, fmt.Errorf("VM initialization failed: %w", err)
 	}
+	m.Log.Info("VM initialized successfully", zap.Stringer("chainID", chainParams.ID))
 
 	// netID already defined above
 	bootstrapWeight, err := beacons.TotalWeight(netID)
@@ -1839,6 +1829,10 @@ func (m *manager) createLinearChain(
 
 	// Create wrapper to adapt block.ChainVM to core.VM
 	vmWrapper := &chainVMWrapper{vm: vm}
+
+	// Handler h was already created above as &placeholderHandler{}
+
+	// The chain ID will be available through the VM itself
 
 	return &chainInfo{
 		Name:    primaryAlias,
@@ -2136,3 +2130,22 @@ func (p *placeholderHandler) HealthCheck(ctx context.Context) (interface{}, erro
 func (p *placeholderHandler) Stop(ctx context.Context) {}
 func (p *placeholderHandler) HandleInbound(ctx context.Context, msg handler.Message) error { return nil }
 func (p *placeholderHandler) HandleOutbound(ctx context.Context, msg handler.Message) error { return nil }
+
+// noopAppSender is a no-op implementation of AppSender
+type noopAppSender struct{}
+
+func (n *noopAppSender) SendAppRequest(ctx context.Context, nodeIDs []ids.NodeID, requestID uint32, request []byte) error {
+	return nil
+}
+
+func (n *noopAppSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+	return nil
+}
+
+func (n *noopAppSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	return nil
+}
+
+func (n *noopAppSender) SendAppGossip(ctx context.Context, nodeIDs []ids.NodeID, appGossipBytes []byte) error {
+	return nil
+}

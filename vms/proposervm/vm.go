@@ -146,11 +146,8 @@ func (vm *VM) Initialize(
 	fxsIntf []*block.Fx,
 	appSender block.AppSender,
 ) error {
-	// dbManagerIntf is actually a database.Database in practice
-	db, ok := dbManagerIntf.(database.Database)
-	if !ok {
-		return fmt.Errorf("invalid database type") 
-	}
+	// dbManagerIntf is a DBManager, get the current database
+	db := dbManagerIntf.Current()
 	// toEngineIntf is already the correct type chan<- block.Message
 	
 	// fxsIntf is already the correct type []*block.Fx

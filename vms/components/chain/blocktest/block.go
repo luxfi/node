@@ -81,8 +81,8 @@ func (b *Block) Reject(context.Context) error {
 	return b.ErrV
 }
 
-func (b *Block) Status() chain.Status {
-	return b.StatusV
+func (b *Block) Status() uint8 {
+	return uint8(b.StatusV)
 }
 
 func (b *Block) State() state.ReadOnlyChain {

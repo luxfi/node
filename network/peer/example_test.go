@@ -9,7 +9,6 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
 )
@@ -27,10 +26,8 @@ func ExampleStartTestPeer() {
 		ctx,
 		peerIP,
 		constants.LocalID,
-		router.InboundHandlerFunc(func(_ context.Context, msgIntf interface{}) {
-			if msg, ok := msgIntf.(message.InboundMessage); ok {
-				fmt.Printf("handling %s\n", msg.Op())
-			}
+		InboundHandlerFunc(func(_ context.Context, msg message.InboundMessage) {
+			fmt.Printf("handling %s\n", msg.Op())
 		}),
 	)
 	if err != nil {

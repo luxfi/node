@@ -24,6 +24,13 @@ type InboundHandler interface {
 	HandleInbound(ctx context.Context, msg message.InboundMessage)
 }
 
+// InboundHandlerFunc is a function adapter for InboundHandler
+type InboundHandlerFunc func(context.Context, message.InboundMessage)
+
+func (f InboundHandlerFunc) HandleInbound(ctx context.Context, msg message.InboundMessage) {
+	f(ctx, msg)
+}
+
 type Config struct {
 	// Size, in bytes, of the buffer this peer reads messages into
 	ReadBufferSize int

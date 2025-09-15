@@ -13,7 +13,7 @@ import (
 	fs "io/fs"
 	reflect "reflect"
 
-	gomock "github.com/luxfi/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // Reader is a mock of Reader interface.

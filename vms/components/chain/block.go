@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/protocol/chain"
 )
@@ -103,4 +104,20 @@ func (bw *BlockWrapper) Reject(ctx context.Context) error {
 	delete(bw.state.verifiedBlocks, blkID)
 	bw.state.decidedBlocks.Put(blkID, bw)
 	return bw.Block.Reject(ctx)
+}
+
+// OracleBlock is a block that can have multiple valid children, and one needs
+// to be chosen by an oracle.
+type OracleBlock interface {
+	Block
+
+	// Options returns the block options that may be chosen by the oracle.
+	Options(context.Context) ([2]Block, error)
+}
+
+// Block is the interface for a block in a chain VM.
+// This extends chain.Block with a SetStatus method for state management.
+type Block interface {
+	chain.Block
+	SetStatus(choices.Status)
 }

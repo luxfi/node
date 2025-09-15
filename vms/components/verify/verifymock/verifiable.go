@@ -12,7 +12,7 @@ package verifymock
 import (
 	reflect "reflect"
 
-	gomock "github.com/luxfi/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // Verifiable is a mock of Verifiable interface.

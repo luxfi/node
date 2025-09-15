@@ -77,8 +77,8 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, reply *api.G
 		zap.Stringer("encoding", args.Encoding),
 	)
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	if s.vm.chainManager == nil {
 		return errNotLinearized
@@ -123,8 +123,8 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 		zap.Uint64("height", uint64(args.Height)),
 	)
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	if s.vm.chainManager == nil {
 		return errNotLinearized
@@ -177,8 +177,8 @@ func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *api.GetHeightRe
 		zap.String("method", "getHeight"),
 	)
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	if s.vm.chainManager == nil {
 		return errNotLinearized
@@ -281,8 +281,8 @@ func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply 
 		zap.Uint64("pageSize", pageSize),
 	)
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	// Read transactions from the indexer
 	reply.TxIDs, err = s.vm.addressTxsIndexer.Read(address[:], assetID, cursor, pageSize)
@@ -317,8 +317,8 @@ func (s *Service) GetTxStatus(_ *http.Request, args *api.JSONTxID, reply *GetTxS
 		return errNilTxID
 	}
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	_, err := s.vm.state.GetTx(args.TxID)
 	switch err {
@@ -344,8 +344,8 @@ func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxRe
 		return errNilTxID
 	}
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	tx, err := s.vm.state.GetTx(args.TxID)
 	if err != nil {
@@ -427,8 +427,8 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.G
 		limit = int(maxPageSize)
 	}
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	if sourceChain == consensus.GetChainID(s.vm.ctx) {
 		utxos, endAddr, endUTXOID, err = lux.GetPaginatedUTXOs(
@@ -506,8 +506,8 @@ func (s *Service) GetAssetDescription(_ *http.Request, args *GetAssetDescription
 		return err
 	}
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	tx, err := s.vm.state.GetTx(assetID)
 	if err != nil {
@@ -564,8 +564,8 @@ func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBa
 
 	addrSet := set.Of(addr)
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	utxos, err := lux.GetAllUTXOs(s.vm.state, addrSet)
 	if err != nil {
@@ -634,8 +634,8 @@ func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, repl
 	}
 	addrSet := set.Of(address)
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	utxos, err := lux.GetAllUTXOs(s.vm.state, addrSet)
 	if err != nil {
@@ -745,8 +745,8 @@ func (s *Service) buildCreateAssetTx(args *CreateAssetArgs) (*txs.Tx, ids.ShortI
 		return nil, ids.ShortEmpty, err
 	}
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	// Get the UTXOs/keys for the from addresses
 	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, fromAddrs)
@@ -914,8 +914,8 @@ func (s *Service) buildCreateNFTAsset(args *CreateNFTAssetArgs) (*txs.Tx, ids.Sh
 		return nil, ids.ShortEmpty, err
 	}
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	// Get the UTXOs/keys for the from addresses
 	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, fromAddrs)
@@ -1180,8 +1180,8 @@ func (s *Service) buildSendMultiple(args *SendMultipleArgs) (*txs.Tx, ids.ShortI
 		return nil, ids.ShortEmpty, err
 	}
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	// Load user's UTXOs/keys
 	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, fromAddrs)
@@ -1358,8 +1358,8 @@ func (s *Service) buildMint(args *MintArgs) (*txs.Tx, ids.ShortID, error) {
 		return nil, ids.ShortEmpty, err
 	}
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	// Get the UTXOs/keys for the from addresses
 	feeUTXOs, feeKc, err := s.vm.LoadUser(args.Username, args.Password, fromAddrs)
@@ -1487,8 +1487,8 @@ func (s *Service) buildSendNFT(args *SendNFTArgs) (*txs.Tx, ids.ShortID, error) 
 		return nil, ids.ShortEmpty, err
 	}
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	// Get the UTXOs/keys for the from addresses
 	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, fromAddrs)
@@ -1617,8 +1617,8 @@ func (s *Service) buildMintNFT(args *MintNFTArgs) (*txs.Tx, ids.ShortID, error) 
 		return nil, ids.ShortEmpty, err
 	}
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	// Get the UTXOs/keys for the from addresses
 	feeUTXOs, feeKc, err := s.vm.LoadUser(args.Username, args.Password, fromAddrs)
@@ -1746,8 +1746,8 @@ func (s *Service) buildImport(args *ImportArgs) (*txs.Tx, error) {
 		return nil, fmt.Errorf("problem parsing to address %q: %w", args.To, err)
 	}
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, set.Set[ids.ShortID]{})
 	if err != nil {
@@ -1905,8 +1905,8 @@ func (s *Service) buildExport(args *ExportArgs) (*txs.Tx, ids.ShortID, error) {
 		return nil, ids.ShortEmpty, err
 	}
 
-	s.vm.lock.Lock()
-	defer s.vm.lock.Unlock()
+	s.vm.Lock.Lock()
+	defer s.vm.Lock.Unlock()
 
 	// Get the UTXOs/keys for the from addresses
 	utxos, kc, err := s.vm.LoadUser(args.Username, args.Password, fromAddrs)

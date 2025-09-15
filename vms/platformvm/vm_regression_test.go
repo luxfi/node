@@ -7,16 +7,18 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
-	luxconsensus "github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/consensus/snow"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -32,6 +34,7 @@ import (
 	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/lux"
@@ -41,7 +44,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
@@ -68,6 +70,45 @@ func (s *simpleDBManager) Get(version uint64) (database.Database, error) {
 
 func (s *simpleDBManager) Close() error {
 	return s.db.Close()
+}
+
+func (s *simpleDBManager) Database(ids.ID) database.Database {
+	return s.db
+}
+
+// testAppSender is a simple mock for AppSender
+type testAppSender struct{}
+
+func (t *testAppSender) SendAppGossip(context.Context, []ids.NodeID, []byte) error {
+	return nil
+}
+
+func (t *testAppSender) SendAppGossipSpecific(context.Context, set.Set[ids.NodeID], []byte) error {
+	return nil
+}
+
+func (t *testAppSender) SendAppRequest(context.Context, []ids.NodeID, uint32, []byte) error {
+	return nil
+}
+
+func (t *testAppSender) SendAppResponse(context.Context, ids.NodeID, uint32, []byte) error {
+	return nil
+}
+
+func (t *testAppSender) SendAppError(context.Context, ids.NodeID, uint32, int32, string) error {
+	return nil
+}
+
+func (t *testAppSender) SendCrossChainAppRequest(context.Context, ids.ID, uint32, []byte) error {
+	return nil
+}
+
+func (t *testAppSender) SendCrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
+	return nil
+}
+
+func (t *testAppSender) SendCrossChainAppError(context.Context, ids.ID, uint32, int32, string) error {
+	return nil
 }
 
 func TestAddDelegatorTxOverDelegatedRegression(t *testing.T) {
@@ -483,28 +524,40 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 		},
 	}}
 
-	ctx := consensustest.Context(t, consensustest.PChainID)
-	// Context is now context.Context, not the old test context with Lock
+	// Clean up VM on test completion
 	defer func() {
 		require.NoError(vm.Shutdown(context.Background()))
 	}()
 
-	// Get LUX asset ID from context
-	luxAssetID := luxconsensus.MustIDs(ctx).LUXAssetID
+	// Get LUX asset ID - use a test asset ID
+	luxAssetID := ids.GenerateTestID()
 	_, genesisBytes := defaultGenesis(t, luxAssetID)
 
-	// Create chain context from test context
-	idsInfo := luxconsensus.MustIDs(ctx)
+	// Create chain context
 	chainCtx := &linearblock.ChainContext{
-		NetworkID:  idsInfo.NetworkID,
-		NetID:   idsInfo.NetID,
-		ChainID:    idsInfo.ChainID,
-		NodeID:     idsInfo.NodeID,
-		PublicKey:  idsInfo.PublicKey,
-		LUXAssetID: idsInfo.LUXAssetID,
-		CChainID:   ids.Empty, // Not needed for this test
-		ChainDataDir: "",
-		Log:        log.NoLog{},
+		ConsensusContext: &snow.ConsensusContext{
+			Alpha:        1,
+			BetaVirtuous: 1,
+			BetaRogue:    1,
+		},
+		Context: &snow.Context{
+			NetworkID:      constants.UnitTestID,
+			SubnetID:       constants.PrimaryNetworkID,
+			ChainID:        consensustest.PChainID,
+			NodeID:         ids.GenerateTestNodeID(),
+			PublicKey:      nil,
+			XChainID:       ids.Empty,
+			CChainID:       ids.Empty,
+			AVAXAssetID:    luxAssetID,
+			Log:            log.NoLog{},
+			Lock:           &sync.RWMutex{},
+			Registerer:     prometheus.NewRegistry(),
+			StartTime:      time.Now(),
+			ValidatorState: nil,
+			Keystore:       nil,
+			BCLookup:       nil,
+			Metrics:        nil,
+		},
 	}
 	
 	// Create a simple DB manager
@@ -514,7 +567,7 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 	toEngine := make(chan linearblock.Message, 1)
 	
 	// Create app sender
-	appSender := &core.SenderTest{}
+	appSender := &testAppSender{}
 	
 	require.NoError(vm.Initialize(
 		context.Background(),
@@ -530,7 +583,7 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 
 	// Create SharedMemory for wallet factory
 	m := atomic.NewMemory(atomicDB)
-	sharedMemory := m.NewSharedMemory(idsInfo.ChainID)
+	sharedMemory := m.NewSharedMemory(consensustest.PChainID)
 
 	// set time to post Banff fork
 	vm.Clock().Set(latestForkTime.Add(time.Second))
@@ -647,7 +700,7 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 	require := require.New(t)
 
-	vm, factory, baseDB, mutableSharedMemory := defaultVM(t, cortina)
+	vm, factory, baseDB, mutableSharedMemory, _ := defaultVM(t, cortina)
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
@@ -855,7 +908,7 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 	require := require.New(t)
 
-	vm, factory, baseDB, mutableSharedMemory := defaultVM(t, cortina)
+	vm, factory, baseDB, mutableSharedMemory, _ := defaultVM(t, cortina)
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
@@ -1512,7 +1565,7 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionNotTracked(t
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   defaultMaxValidatorStake,
 			},
-			Subnet: createSubnetTx.ID(),
+			Net: createSubnetTx.ID(),
 		},
 		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -1661,7 +1714,7 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionTracked(t *t
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   defaultMaxValidatorStake,
 			},
-			Subnet: createSubnetTx.ID(),
+			Net: createSubnetTx.ID(),
 		},
 		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -1755,7 +1808,7 @@ func TestNetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 				End:    uint64(primaryEndTime.Unix()),
 				Wght:   vm.MinValidatorStake,
 			},
-			Subnet: constants.PrimaryNetworkID,
+			Net: constants.PrimaryNetworkID,
 		},
 		signer.NewProofOfPossession(sk1),
 		vm.luxAssetID,
@@ -1804,7 +1857,7 @@ func TestNetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 				End:    uint64(subnetEndTime.Unix()),
 				Wght:   1,
 			},
-			Subnet: netID,
+			Net: netID,
 		},
 		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -1889,7 +1942,7 @@ func TestNetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 				End:    uint64(primaryReEndTime.Unix()),
 				Wght:   vm.MinValidatorStake,
 			},
-			Subnet: constants.PrimaryNetworkID,
+			Net: constants.PrimaryNetworkID,
 		},
 		signer.NewProofOfPossession(sk2),
 		vm.luxAssetID,
@@ -2089,7 +2142,7 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 				End:    uint64(primaryEndTime2.Unix()),
 				Wght:   vm.MinValidatorStake,
 			},
-			Subnet: constants.PrimaryNetworkID,
+			Net: constants.PrimaryNetworkID,
 		},
 		signer.NewProofOfPossession(sk2),
 		vm.luxAssetID,
@@ -2219,7 +2272,7 @@ func TestNetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 				End:    uint64(subnetEndTime.Unix()),
 				Wght:   1,
 			},
-			Subnet: netID,
+			Net: netID,
 		},
 		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -2303,7 +2356,7 @@ func TestNetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 				End:    uint64(primaryEndTime2.Unix()),
 				Wght:   vm.MinValidatorStake,
 			},
-			Subnet: constants.PrimaryNetworkID,
+			Net: constants.PrimaryNetworkID,
 		},
 		signer.NewProofOfPossession(sk2),
 		vm.luxAssetID,
@@ -2437,7 +2490,7 @@ func TestNetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 				End:    uint64(subnetEndTime.Unix()),
 				Wght:   1,
 			},
-			Subnet: netID,
+			Net: netID,
 		},
 		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -2510,7 +2563,7 @@ func TestNetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 
 func TestValidatorSetRaceCondition(t *testing.T) {
 	require := require.New(t)
-	vm, _, _, _ := defaultVM(t, cortina)
+	vm, _, _, _, _ := defaultVM(t, cortina)
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
@@ -2607,13 +2660,13 @@ func checkValidatorBlsKeyIsSet(
 	switch {
 	case !found:
 		return database.ErrNotFound
-	case expectedBlsKey == val.PublicKey:
+	case expectedBlsKey == nil && val.PublicKey == nil:
 		return nil
 	case expectedBlsKey == nil && val.PublicKey != nil:
 		return errors.New("unexpected BLS key")
 	case expectedBlsKey != nil && val.PublicKey == nil:
 		return errors.New("missing BLS key")
-	case !bytes.Equal(bls.PublicKeyToUncompressedBytes(expectedBlsKey), bls.PublicKeyToUncompressedBytes(val.PublicKey)):
+	case !bytes.Equal(bls.PublicKeyToUncompressedBytes(expectedBlsKey), val.PublicKey):
 		return errors.New("incorrect BLS key")
 	default:
 		return nil

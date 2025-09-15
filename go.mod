@@ -38,9 +38,9 @@ require (
 	github.com/luxfi/trace v0.1.2
 	golang.org/x/mod v0.27.0
 	golang.org/x/tools v0.36.0
-	k8s.io/api v0.31.4
-	k8s.io/apimachinery v0.31.4
-	k8s.io/client-go v0.31.4
+	k8s.io/api v0.29.0
+	k8s.io/apimachinery v0.29.0
+	k8s.io/client-go v0.29.0
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 )
 
@@ -232,7 +232,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20250814151709-d7b6acb124c3 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.7.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
@@ -247,3 +247,7 @@ replace k8s.io/apimachinery => k8s.io/apimachinery v0.31.4
 
 // Fix genproto import ambiguity
 replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240826202546-f6391c0de4c7
+
+replace sigs.k8s.io/structured-merge-diff/v6 => sigs.k8s.io/structured-merge-diff/v4 v4.4.1
+
+replace sigs.k8s.io/structured-merge-diff/v4 => sigs.k8s.io/structured-merge-diff/v4 v4.4.3

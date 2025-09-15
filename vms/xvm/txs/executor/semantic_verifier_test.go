@@ -4,6 +4,7 @@
 package executor
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/luxfi/mock/gomock"
 
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/validators/validatorsmock"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -29,7 +29,8 @@ import (
 )
 
 func TestSemanticVerifierBaseTx(t *testing.T) {
-	ctx := consensustest.Context(t, consensustest.XChainID)
+	ctx := context.Background()
+	cChainID := ids.GenerateTestID()
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}
@@ -74,8 +75,9 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 		},
 	}
 
-	backend := &Backend{
-		Ctx:    ctx,
+	backendObj := &Backend{
+		Ctx:      ctx,
+		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
@@ -375,8 +377,8 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 			state := test.stateFunc(ctrl)
 			tx := test.txFunc(require)
 
-			err = tx.Unsigned.Visit(&SemanticVerifier{
-				Backend: backend,
+			err := tx.Unsigned.Visit(&SemanticVerifier{
+				Backend: backendObj,
 				State:   state,
 				Tx:      tx,
 			})
@@ -386,7 +388,8 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 }
 
 func TestSemanticVerifierExportTx(t *testing.T) {
-	ctx := consensustest.Context(t, consensustest.XChainID)
+	ctx := context.Background()
+	cChainID := ids.GenerateTestID()
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}
@@ -432,11 +435,12 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	}
 	exportTx := txs.ExportTx{
 		BaseTx:           baseTx,
-		DestinationChain: ctx.CChainID,
+		DestinationChain: cChainID,
 	}
 
-	backend := &Backend{
-		Ctx:    ctx,
+	backendObj := &Backend{
+		Ctx:      ctx,
+		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
@@ -736,8 +740,8 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 			state := test.stateFunc(ctrl)
 			tx := test.txFunc(require)
 
-			err = tx.Unsigned.Visit(&SemanticVerifier{
-				Backend: backend,
+			err := tx.Unsigned.Visit(&SemanticVerifier{
+				Backend: backendObj,
 				State:   state,
 				Tx:      tx,
 			})
@@ -747,14 +751,12 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 }
 
 func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
-	require := require.New(t)
 	ctrl := gomock.NewController(t)
-
-	ctx := consensustest.Context(t, consensustest.XChainID)
-
-	validatorState := validatorsmock.NewState(ctrl)
-	validatorState.EXPECT().GetNetID(gomock.Any(), ctx.CChainID).AnyTimes().Return(ids.GenerateTestID(), nil)
-	ctx.ValidatorState = validatorState
+	cChainID := ids.GenerateTestID()
+	
+	// Create a test context with ChainID
+	chainID := ids.GenerateTestID()
+	ctx := consensustest.Context(t, chainID)
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}
@@ -766,7 +768,7 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 			secpFx,
 		},
 	)
-	require.NoError(err)
+	require.NoError(t, err)
 
 	codec := parser.Codec()
 	txID := ids.GenerateTestID()
@@ -800,11 +802,12 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 	}
 	exportTx := txs.ExportTx{
 		BaseTx:           baseTx,
-		DestinationChain: ctx.CChainID,
+		DestinationChain: cChainID,
 	}
 
-	backend := &Backend{
-		Ctx:    ctx,
+	backendObj := &Backend{
+		Ctx:      ctx,
+		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
@@ -817,7 +820,7 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 		FeeAssetID:    ids.GenerateTestID(),
 		Bootstrapped:  true,
 	}
-	require.NoError(secpFx.Bootstrapped())
+	require.NoError(t, secpFx.Bootstrapped())
 
 	outputOwners := secp256k1fx.OutputOwners{
 		Threshold: 1,
@@ -851,7 +854,7 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 	tx := &txs.Tx{
 		Unsigned: &exportTx,
 	}
-	require.NoError(tx.SignSECP256K1Fx(
+	require.NoError(t, tx.SignSECP256K1Fx(
 		codec,
 		[][]*secp256k1.PrivateKey{
 			{keys[0]},
@@ -859,19 +862,19 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 	))
 
 	err = tx.Unsigned.Visit(&SemanticVerifier{
-		Backend: backend,
+		Backend: backendObj,
 		State:   state,
 		Tx:      tx,
 	})
-	require.ErrorIs(err, verify.ErrMismatchedNetIDs)
+	require.ErrorIs(t, err, verify.ErrMismatchedNetIDs)
 }
 
 func TestSemanticVerifierImportTx(t *testing.T) {
-	ctx := consensustest.Context(t, consensustest.XChainID)
-
+	ctx := context.Background()
+	cChainID := ids.GenerateTestID()
+	chainID := ids.GenerateTestID()
 	m := atomic.NewMemory(prefixdb.New([]byte{0}, memdb.New()))
-	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
-
+	
 	typeToFxIndex := make(map[reflect.Type]int)
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewCustomParser(
@@ -902,7 +905,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 	baseTx := txs.BaseTx{
 		BaseTx: lux.BaseTx{
 			NetworkID:    constants.UnitTestID,
-			BlockchainID: ctx.ChainID,
+			BlockchainID: chainID,
 			Outs: []*lux.TransferableOutput{{
 				Asset: asset,
 				Out: &secp256k1fx.TransferOutput{
@@ -924,7 +927,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 	}
 	unsignedImportTx := txs.ImportTx{
 		BaseTx:      baseTx,
-		SourceChain: ctx.CChainID,
+		SourceChain: cChainID,
 		ImportedIns: []*lux.TransferableInput{
 			&input,
 		},
@@ -939,8 +942,9 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 		},
 	))
 
-	backend := &Backend{
-		Ctx:    ctx,
+	backendObj := &Backend{
+		Ctx:      ctx,
+		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
@@ -967,9 +971,9 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 	utxoBytes, err := codec.Marshal(txs.CodecVersion, utxo)
 	require.NoError(t, err)
 
-	peerSharedMemory := m.NewSharedMemory(ctx.CChainID)
+	peerSharedMemory := m.NewSharedMemory(cChainID)
 	inputID := utxo.InputID()
-	require.NoError(t, peerSharedMemory.Apply(map[ids.ID]*atomic.Requests{ctx.ChainID: {PutRequests: []*atomic.Element{{
+	require.NoError(t, peerSharedMemory.Apply(map[ids.ID]*atomic.Requests{chainID: {PutRequests: []*atomic.Element{{
 		Key:   inputID[:],
 		Value: utxoBytes,
 		Traits: [][]byte{
@@ -1111,7 +1115,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 			state := test.stateFunc(ctrl)
 			tx := test.txFunc(require)
 			err := tx.Unsigned.Visit(&SemanticVerifier{
-				Backend: backend,
+				Backend: backendObj,
 				State:   state,
 				Tx:      tx,
 			})

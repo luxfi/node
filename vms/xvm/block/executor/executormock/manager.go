@@ -18,7 +18,7 @@ import (
 	block "github.com/luxfi/node/vms/xvm/block"
 	state "github.com/luxfi/node/vms/xvm/state"
 	txs "github.com/luxfi/node/vms/xvm/txs"
-	gomock "github.com/luxfi/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // Manager is a mock of Manager interface.

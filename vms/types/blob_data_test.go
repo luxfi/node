@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const nullStr = "null"
+
 func TestJSON(t *testing.T) {
 	tests := []struct {
 		name         string

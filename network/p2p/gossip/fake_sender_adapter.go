@@ -15,6 +15,7 @@ import (
 type FakeSender struct {
 	SendAppRequestF  func(context.Context, set.Set[ids.NodeID], uint32, []byte) error
 	SendAppResponseF func(context.Context, ids.NodeID, uint32, []byte) error
+	SendAppErrorF    func(context.Context, ids.NodeID, uint32, int32, string) error
 	SendAppGossipF   func(context.Context, set.Set[ids.NodeID], []byte) error
 	SendCrossChainAppRequestF  func(context.Context, ids.ID, uint32, []byte) error
 	SendCrossChainAppResponseF func(context.Context, ids.ID, uint32, []byte) error
@@ -39,11 +40,23 @@ func (f *FakeSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, req
 	return nil
 }
 
+func (f *FakeSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	if f.SendAppErrorF != nil {
+		return f.SendAppErrorF(ctx, nodeID, requestID, errorCode, errorMessage)
+	}
+	return nil
+}
+
 func (f *FakeSender) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], gossip []byte) error {
 	if f.SendAppGossipF != nil {
 		return f.SendAppGossipF(ctx, nodeIDs, gossip)
 	}
 	return nil
+}
+
+func (f *FakeSender) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], gossip []byte) error {
+	// Just delegate to SendAppGossip for test purposes
+	return f.SendAppGossip(ctx, nodeIDs, gossip)
 }
 
 func (f *FakeSender) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, request []byte) error {

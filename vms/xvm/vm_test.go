@@ -11,7 +11,8 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/consensus/consensustest"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -31,19 +32,21 @@ func TestInvalidGenesis(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := consensustest.Context(t, consensustest.XChainID)
+	ctx := consensustest.Context(t, ids.GenerateTestID())
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
 
+	toEngine := make(chan interface{}, 1)
 	err := vm.Initialize(
 		context.Background(),
-		ctx,         // context
-		memdb.New(), // database
-		nil,         // genesisState
+		ctx,         // chainCtx
+		memdb.New(), // dbManager
+		nil,         // genesisBytes
 		nil,         // upgradeBytes
 		nil,         // configBytes
+		toEngine,    // toEngine
 		nil,         // fxs
-		nil,         // AppSender
+		nil,         // appSender
 	)
 	require.ErrorIs(err, codec.ErrCantUnpackVersion)
 }
@@ -52,25 +55,26 @@ func TestInvalidFx(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := consensustest.Context(t, consensustest.XChainID)
+	ctx := consensustest.Context(t, ids.GenerateTestID())
 	ctx.Lock.Lock()
 	defer func() {
-		require.NoError(vm.Shutdown(context.Background()))
+		vm.Shutdown()
 		ctx.Lock.Unlock()
 	}()
 
 	genesisBytes := buildGenesisTest(t)
+	toEngine := make(chan interface{}, 1)
+	fxList := []interface{}{nil}
 	err := vm.Initialize(
 		context.Background(),
-		ctx,          // context
-		memdb.New(),  // database
-		genesisBytes, // genesisState
+		ctx,          // chainCtx
+		memdb.New(),  // dbManager
+		genesisBytes, // genesisBytes
 		nil,          // upgradeBytes
 		nil,          // configBytes
-		[]*core.Fx{ // fxs
-			nil,
-		},
-		nil, // AppSender
+		toEngine,     // toEngine
+		fxList,       // fxs
+		nil,          // appSender
 	)
 	require.ErrorIs(err, errIncompatibleFx)
 }
@@ -79,30 +83,35 @@ func TestFxInitializationFailure(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := consensustest.Context(t, consensustest.XChainID)
+	ctx := consensustest.Context(t, ids.GenerateTestID())
 	ctx.Lock.Lock()
 	defer func() {
-		require.NoError(vm.Shutdown(context.Background()))
+		vm.Shutdown()
 		ctx.Lock.Unlock()
 	}()
 
 	genesisBytes := buildGenesisTest(t)
-	err := vm.Initialize(
-		context.Background(),
-		ctx,          // context
-		memdb.New(),  // database
-		genesisBytes, // genesisState
-		nil,          // upgradeBytes
-		nil,          // configBytes
-		[]*core.Fx{{ // fxs
+	toEngine := make(chan interface{}, 1)
+	fxList := []interface{}{
+		&core.Fx{
 			ID: ids.Empty,
 			Fx: &FxTest{
 				InitializeF: func(interface{}) error {
 					return errUnknownFx
 				},
 			},
-		}},
-		nil, // AppSender
+		},
+	}
+	err := vm.Initialize(
+		context.Background(),
+		ctx,          // chainCtx
+		memdb.New(),  // dbManager
+		genesisBytes, // genesisBytes
+		nil,          // upgradeBytes
+		nil,          // configBytes
+		toEngine,     // toEngine
+		fxList,       // fxs
+		nil,          // appSender
 	)
 	require.ErrorIs(err, errUnknownFx)
 }
@@ -113,9 +122,9 @@ func TestIssueTx(t *testing.T) {
 	env := setup(t, &envConfig{
 		fork: latest,
 	})
-	env.vm.ctx.Lock.Unlock()
+	env.vm.Lock.Unlock()
 
-	tx := newTx(t, env.genesisBytes, env.vm.ctx.ChainID, env.vm.parser, "LUX")
+	tx := newTx(t, env.genesisBytes, env.vm.ChainID, env.vm.parser, "LUX")
 	issueAndAccept(require, env.vm, tx)
 }
 
@@ -126,7 +135,7 @@ func TestIssueNFT(t *testing.T) {
 	env := setup(t, &envConfig{
 		fork: latest,
 	})
-	env.vm.ctx.Lock.Unlock()
+	env.vm.Lock.Unlock()
 
 	var (
 		key = keys[0]
@@ -172,7 +181,9 @@ func TestIssueNFT(t *testing.T) {
 	issueAndAccept(require, env.vm, mintNFTTx)
 
 	// Move the NFT
-	utxos, err := lux.GetAllUTXOs(env.vm.state, kc.Addresses())
+	addrs := set.Set[ids.ShortID]{}
+	addrs.Add(kc.Addresses()...)
+	utxos, err := lux.GetAllUTXOs(env.vm.state, addrs)
 	require.NoError(err)
 	transferOp, _, err := env.vm.SpendNFT(
 		utxos,
@@ -203,7 +214,7 @@ func TestIssueProperty(t *testing.T) {
 			Fx: &propertyfx.Fx{},
 		}},
 	})
-	env.vm.ctx.Lock.Unlock()
+	env.vm.Lock.Unlock()
 
 	var (
 		key = keys[0]
@@ -288,10 +299,10 @@ func TestIssueTxWithFeeAsset(t *testing.T) {
 		fork:             latest,
 		isCustomFeeAsset: true,
 	})
-	env.vm.ctx.Lock.Unlock()
+	env.vm.Lock.Unlock()
 
 	// send first asset
-	tx := newTx(t, env.genesisBytes, env.vm.ctx.ChainID, env.vm.parser, feeAssetName)
+	tx := newTx(t, env.genesisBytes, env.vm.ChainID, env.vm.parser, feeAssetName)
 	issueAndAccept(require, env.vm, tx)
 }
 
@@ -302,7 +313,7 @@ func TestIssueTxWithAnotherAsset(t *testing.T) {
 		fork:             latest,
 		isCustomFeeAsset: true,
 	})
-	env.vm.ctx.Lock.Unlock()
+	env.vm.Lock.Unlock()
 
 	// send second asset
 	var (
@@ -348,7 +359,7 @@ func TestVMFormat(t *testing.T) {
 	env := setup(t, &envConfig{
 		fork: latest,
 	})
-	defer env.vm.ctx.Lock.Unlock()
+	defer env.vm.Lock.Unlock()
 
 	tests := []struct {
 		in       ids.ShortID
@@ -376,7 +387,7 @@ func TestTxAcceptAfterParseTx(t *testing.T) {
 		fork:          latest,
 		notLinearized: true,
 	})
-	defer env.vm.ctx.Lock.Unlock()
+	defer env.vm.Lock.Unlock()
 
 	var (
 		key = keys[0]
@@ -404,7 +415,7 @@ func TestTxAcceptAfterParseTx(t *testing.T) {
 	secondTx := &txs.Tx{Unsigned: &txs.BaseTx{
 		BaseTx: lux.BaseTx{
 			NetworkID:    constants.UnitTestID,
-			BlockchainID: env.vm.ctx.XChainID,
+			BlockchainID: env.vm.XChainID,
 			Ins: []*lux.TransferableInput{{
 				UTXOID: lux.UTXOID{
 					TxID:        firstTx.ID(),
@@ -450,7 +461,7 @@ func TestIssueImportTx(t *testing.T) {
 	env := setup(t, &envConfig{
 		fork: durango,
 	})
-	defer env.vm.ctx.Lock.Unlock()
+	defer env.vm.Lock.Unlock()
 
 	peerSharedMemory := env.sharedMemory.NewSharedMemory(constants.PlatformChainID)
 
@@ -489,7 +500,7 @@ func TestIssueImportTx(t *testing.T) {
 
 	inputID := importedUtxo.InputID()
 	require.NoError(peerSharedMemory.Apply(map[ids.ID]*atomic.Requests{
-		env.vm.ctx.ChainID: {
+		env.vm.ChainID: {
 			PutRequests: []*atomic.Element{{
 				Key:   inputID[:],
 				Value: utxoBytes,
@@ -507,17 +518,17 @@ func TestIssueImportTx(t *testing.T) {
 	)
 	require.NoError(err)
 
-	env.vm.ctx.Lock.Unlock()
+	env.vm.Lock.Unlock()
 
 	issueAndAccept(require, env.vm, tx)
 
-	env.vm.ctx.Lock.Lock()
+	env.vm.Lock.Lock()
 
 	assertIndexedTX(t, env.vm.db, 0, key.PublicKey().Address(), txAssetID.AssetID(), tx.ID())
 	assertLatestIdx(t, env.vm.db, key.PublicKey().Address(), luxID, 1)
 
 	id := utxoID.InputID()
-	_, err = env.vm.ctx.SharedMemory.Get(constants.PlatformChainID, [][]byte{id[:]})
+	_, err = env.vm.SharedMemory.Get(constants.PlatformChainID, [][]byte{id[:]})
 	require.ErrorIs(err, database.ErrNotFound)
 }
 
@@ -529,7 +540,7 @@ func TestForceAcceptImportTx(t *testing.T) {
 		fork:          durango,
 		notLinearized: true,
 	})
-	defer env.vm.ctx.Lock.Unlock()
+	defer env.vm.Lock.Unlock()
 
 	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
 	luxID := genesisTx.ID()
@@ -548,7 +559,7 @@ func TestForceAcceptImportTx(t *testing.T) {
 	tx := &txs.Tx{Unsigned: &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    constants.UnitTestID,
-			BlockchainID: env.vm.ctx.XChainID,
+			BlockchainID: env.vm.XChainID,
 			Outs: []*lux.TransferableOutput{{
 				Asset: txAssetID,
 				Out: &secp256k1fx.TransferOutput{
@@ -584,7 +595,7 @@ func TestForceAcceptImportTx(t *testing.T) {
 	assertLatestIdx(t, env.vm.db, key.PublicKey().Address(), luxID, 1)
 
 	id := utxoID.InputID()
-	_, err = env.vm.ctx.SharedMemory.Get(constants.PlatformChainID, [][]byte{id[:]})
+	_, err = env.vm.SharedMemory.Get(constants.PlatformChainID, [][]byte{id[:]})
 	require.ErrorIs(err, database.ErrNotFound)
 }
 
@@ -601,7 +612,7 @@ func TestIssueExportTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{fork: durango})
-	defer env.vm.ctx.Lock.Unlock()
+	defer env.vm.Lock.Unlock()
 
 	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
 
@@ -625,7 +636,7 @@ func TestIssueExportTx(t *testing.T) {
 
 	peerSharedMemory := env.sharedMemory.NewSharedMemory(constants.PlatformChainID)
 	utxoBytes, _, _, err := peerSharedMemory.Indexed(
-		env.vm.ctx.ChainID,
+		env.vm.ChainID,
 		[][]byte{
 			key.PublicKey().Address().Bytes(),
 		},
@@ -636,14 +647,14 @@ func TestIssueExportTx(t *testing.T) {
 	require.NoError(err)
 	require.Empty(utxoBytes)
 
-	env.vm.ctx.Lock.Unlock()
+	env.vm.Lock.Unlock()
 
 	issueAndAccept(require, env.vm, tx)
 
-	env.vm.ctx.Lock.Lock()
+	env.vm.Lock.Lock()
 
 	utxoBytes, _, _, err = peerSharedMemory.Indexed(
-		env.vm.ctx.ChainID,
+		env.vm.ChainID,
 		[][]byte{
 			key.PublicKey().Address().Bytes(),
 		},
@@ -661,7 +672,7 @@ func TestClearForceAcceptedExportTx(t *testing.T) {
 	env := setup(t, &envConfig{
 		fork: latest,
 	})
-	defer env.vm.ctx.Lock.Unlock()
+	defer env.vm.Lock.Unlock()
 
 	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
 
@@ -692,21 +703,21 @@ func TestClearForceAcceptedExportTx(t *testing.T) {
 
 	peerSharedMemory := env.sharedMemory.NewSharedMemory(constants.PlatformChainID)
 	require.NoError(peerSharedMemory.Apply(map[ids.ID]*atomic.Requests{
-		env.vm.ctx.ChainID: {
+		env.vm.ChainID: {
 			RemoveRequests: [][]byte{utxoID[:]},
 		},
 	}))
 
-	_, err = peerSharedMemory.Get(env.vm.ctx.ChainID, [][]byte{utxoID[:]})
+	_, err = peerSharedMemory.Get(env.vm.ChainID, [][]byte{utxoID[:]})
 	require.ErrorIs(err, database.ErrNotFound)
 
-	env.vm.ctx.Lock.Unlock()
+	env.vm.Lock.Unlock()
 
 	issueAndAccept(require, env.vm, tx)
 
-	env.vm.ctx.Lock.Lock()
+	env.vm.Lock.Lock()
 
-	_, err = peerSharedMemory.Get(env.vm.ctx.ChainID, [][]byte{utxoID[:]})
+	_, err = peerSharedMemory.Get(env.vm.ChainID, [][]byte{utxoID[:]})
 	require.ErrorIs(err, database.ErrNotFound)
 
 	assertIndexedTX(t, env.vm.db, 0, key.PublicKey().Address(), assetID.AssetID(), tx.ID())

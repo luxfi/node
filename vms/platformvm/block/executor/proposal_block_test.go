@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
 
-	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
@@ -581,7 +581,7 @@ func TestBanffProposalBlockUpdateStakers(t *testing.T) {
 							End:    uint64(subStaker.endTime.Unix()),
 							Wght:   10,
 						},
-						Subnet: netID,
+						Net: netID,
 					},
 					walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
 						Threshold: 1,
@@ -728,7 +728,7 @@ func TestBanffProposalBlockRemoveNetValidator(t *testing.T) {
 				End:    uint64(subnetVdr1EndTime.Unix()),
 				Wght:   1,
 			},
-			Subnet: netID,
+			Net: netID,
 		},
 	)
 	require.NoError(err)
@@ -760,7 +760,7 @@ func TestBanffProposalBlockRemoveNetValidator(t *testing.T) {
 				End:    uint64(subnetVdr1EndTime.Add(time.Second).Add(defaultMinStakingDuration).Unix()),
 				Wght:   1,
 			},
-			Subnet: netID,
+			Net: netID,
 		},
 	)
 	require.NoError(err)
@@ -888,7 +888,7 @@ func TestBanffProposalBlockTrackedSubnet(t *testing.T) {
 						End:    uint64(subnetVdr1EndTime.Unix()),
 						Wght:   1,
 					},
-					Subnet: netID,
+					Net: netID,
 				},
 			)
 			require.NoError(err)
@@ -1394,7 +1394,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   env.config.MinValidatorStake,
 			},
-			Subnet: constants.PrimaryNetworkID,
+			Net: constants.PrimaryNetworkID,
 		},
 		signer.NewProofOfPossession(sk),
 		env.ctx.LUXAssetID,
@@ -1478,7 +1478,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   env.config.MinValidatorStake,
 			},
-			Subnet: constants.PrimaryNetworkID,
+			Net: constants.PrimaryNetworkID,
 		},
 		signer.NewProofOfPossession(sk),
 		env.ctx.LUXAssetID,
@@ -1539,5 +1539,10 @@ func newRewardValidatorTx(t testing.TB, txID ids.ID) (*txs.Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	return tx, tx.SyntacticVerify(consensustest.Context(t, consensustest.PChainID))
+	// Create a context with the proper IDs
+	ctx := consensus.WithIDs(context.Background(), consensus.IDs{
+		NetworkID: constants.UnitTestID,
+		ChainID:   constants.PlatformChainID,
+	})
+	return tx, tx.SyntacticVerify(ctx)
 }

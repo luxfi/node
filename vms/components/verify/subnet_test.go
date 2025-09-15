@@ -11,37 +11,53 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/validators/validatorsmock"
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 )
 
-// validatorStateAdapter adapts validators.State to consensus.ValidatorState
-type validatorStateAdapter struct {
-	state *validatorsmock.State
+// testValidatorState is a test implementation of ValidatorState
+type testValidatorState struct {
+	height      uint64
+	validators  map[ids.ID]map[ids.NodeID]uint64
+	subnets     map[ids.ID]ids.ID // chainID -> subnetID
+	err         error
 }
 
-func (a *validatorStateAdapter) GetCurrentHeight() (uint64, error) {
-	return a.state.GetCurrentHeight(context.Background())
+func (s *testValidatorState) GetCurrentHeight() (uint64, error) {
+	return s.height, s.err
 }
 
-func (a *validatorStateAdapter) GetMinimumHeight(ctx context.Context) (uint64, error) {
-	return a.state.GetMinimumHeight(ctx)
+func (s *testValidatorState) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	return 0, nil
 }
 
-func (a *validatorStateAdapter) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
-	valSet, err := a.state.GetValidatorSet(context.Background(), height, netID)
-	if err != nil {
-		return nil, err
+func (s *testValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	if s.err != nil {
+		return nil, s.err
 	}
-	result := make(map[ids.NodeID]uint64, len(valSet))
-	for nodeID, val := range valSet {
-		result[nodeID] = val.Weight
-	}
-	return result, nil
+	return s.validators[netID], nil
 }
 
-func (a *validatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
-	return a.state.GetNetID(context.Background(), chainID)
+func (s *testValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
+	if s.err != nil {
+		return ids.Empty, s.err
+	}
+	if subnet, ok := s.subnets[chainID]; ok {
+		return subnet, nil
+	}
+	return ids.Empty, errMissing
+}
+
+func (s *testValidatorState) GetChainID(blockID ids.ID) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+func (s *testValidatorState) GetCurrentValidators(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*consensuscontext.GetValidatorOutput, error) {
+	return nil, nil
+}
+
+func (s *testValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	return s.GetNetID(chainID)
 }
 
 var errMissing = errors.New("missing")
@@ -61,15 +77,16 @@ func TestSameSubnet(t *testing.T) {
 		{
 			name: "same chain",
 			ctxF: func(t *testing.T) context.Context {
-				state := validatorsmock.NewState(t)
-				adapter := &validatorStateAdapter{state: state}
+				state := &testValidatorState{
+					subnets: make(map[ids.ID]ids.ID),
+				}
 				ctx := context.Background()
 				ids := consensus.IDs{
 					NetID: netID0,
 					ChainID:  chainID0,
 				}
 				ctx = consensus.WithIDs(ctx, ids)
-				ctx = consensus.WithValidatorState(ctx, adapter)
+				ctx = consensus.WithValidatorState(ctx, state)
 				return ctx
 			},
 			chainID: chainID0,
@@ -78,18 +95,16 @@ func TestSameSubnet(t *testing.T) {
 		{
 			name: "unknown chain",
 			ctxF: func(t *testing.T) context.Context {
-				state := validatorsmock.NewState(t)
-				state.GetNetIDF = func(context.Context, ids.ID) (ids.ID, error) {
-					return netID1, errMissing
+				state := &testValidatorState{
+					subnets: make(map[ids.ID]ids.ID),
 				}
-				adapter := &validatorStateAdapter{state: state}
 				ctx := context.Background()
 				ids := consensus.IDs{
 					NetID: netID0,
 					ChainID:  chainID0,
 				}
 				ctx = consensus.WithIDs(ctx, ids)
-				ctx = consensus.WithValidatorState(ctx, adapter)
+				ctx = consensus.WithValidatorState(ctx, state)
 				return ctx
 			},
 			chainID: chainID1,
@@ -98,18 +113,18 @@ func TestSameSubnet(t *testing.T) {
 		{
 			name: "wrong subnet",
 			ctxF: func(t *testing.T) context.Context {
-				state := validatorsmock.NewState(t)
-				state.GetNetIDF = func(context.Context, ids.ID) (ids.ID, error) {
-					return netID1, nil
+				state := &testValidatorState{
+					subnets: map[ids.ID]ids.ID{
+						chainID1: netID1,
+					},
 				}
-				adapter := &validatorStateAdapter{state: state}
 				ctx := context.Background()
 				ids := consensus.IDs{
 					NetID: netID0,
 					ChainID:  chainID0,
 				}
 				ctx = consensus.WithIDs(ctx, ids)
-				ctx = consensus.WithValidatorState(ctx, adapter)
+				ctx = consensus.WithValidatorState(ctx, state)
 				return ctx
 			},
 			chainID: chainID1,
@@ -118,18 +133,18 @@ func TestSameSubnet(t *testing.T) {
 		{
 			name: "same subnet",
 			ctxF: func(t *testing.T) context.Context {
-				state := validatorsmock.NewState(t)
-				state.GetNetIDF = func(context.Context, ids.ID) (ids.ID, error) {
-					return netID0, nil
+				state := &testValidatorState{
+					subnets: map[ids.ID]ids.ID{
+						chainID1: netID0,
+					},
 				}
-				adapter := &validatorStateAdapter{state: state}
 				ctx := context.Background()
 				ids := consensus.IDs{
 					NetID: netID0,
 					ChainID:  chainID0,
 				}
 				ctx = consensus.WithIDs(ctx, ids)
-				ctx = consensus.WithValidatorState(ctx, adapter)
+				ctx = consensus.WithValidatorState(ctx, state)
 				return ctx
 			},
 			chainID: chainID1,

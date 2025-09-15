@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	luxmetric "github.com/luxfi/metric"
-	"github.com/luxfi/node/version"
 )
 
 func TestPeerTracker(t *testing.T) {

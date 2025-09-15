@@ -13,6 +13,8 @@ import (
 	"github.com/luxfi/mock/gomock"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/node/utils/filesystem"
 
@@ -142,12 +144,12 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 	mockReader := filesystem.NewMockReader(ctrl)
 	mockManager := vms.NewMockManager(ctrl)
 	mockCPUTracker, err := resource.NewManager(
-		nil,
+		log.NewNoOpLogger(),
 		"",
 		time.Hour,
 		time.Hour,
 		time.Hour,
-		metric.NewTestRegistry(),
+		metric.NewNoOpRegistry(),
 	)
 	require.NoError(t, err)
 

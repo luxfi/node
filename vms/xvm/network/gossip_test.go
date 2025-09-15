@@ -63,7 +63,7 @@ func TestGossipMempoolAdd(t *testing.T) {
 	require := require.New(t)
 
 	metrics := metric.NewNoOpMetrics("test").Registry()
-	toEngine := make(chan core.Message, 1)
+	toEngine := make(chan core.MessageType, 1)
 
 	baseMempool, err := mempool.New("", metrics, toEngine)
 	require.NoError(err)
@@ -100,7 +100,7 @@ func TestGossipMempoolAddVerified(t *testing.T) {
 	require := require.New(t)
 
 	metrics := metric.NewNoOpMetrics("test").Registry()
-	toEngine := make(chan core.Message, 1)
+	toEngine := make(chan core.MessageType, 1)
 
 	baseMempool, err := mempool.New("", metrics, toEngine)
 	require.NoError(err)

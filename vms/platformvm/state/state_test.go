@@ -176,7 +176,7 @@ func TestPersistStakers(t *testing.T) {
 				r.True(found)
 				r.Equal(&validators.GetValidatorOutput{
 					NodeID:    staker.NodeID,
-					PublicKey: staker.PublicKey,
+					PublicKey: bls.PublicKeyToUncompressedBytes(staker.PublicKey),
 					Weight:    staker.Weight,
 				}, valOut)
 			},
@@ -856,7 +856,7 @@ func createPermissionlessValidatorTx(r *require.Assertions, netID ids.ID, valida
 			},
 		},
 		Validator: validatorsData,
-		Subnet:    netID,
+		Net:    netID,
 		Signer:    sig,
 
 		StakeOuts: []*lux.TransferableOutput{
@@ -922,7 +922,7 @@ func createPermissionlessDelegatorTx(netID ids.ID, delegatorData txs.Validator) 
 			},
 		},
 		Validator: delegatorData,
-		Subnet:    netID,
+		Net:    netID,
 
 		StakeOuts: []*lux.TransferableOutput{
 			{
@@ -1161,7 +1161,7 @@ func TestStateAddRemoveValidator(t *testing.T) {
 			expectedPrimaryValidatorSet: map[ids.NodeID]*validators.GetValidatorOutput{
 				stakers[1].NodeID: {
 					NodeID:    stakers[1].NodeID,
-					PublicKey: stakers[1].PublicKey,
+					PublicKey: bls.PublicKeyToUncompressedBytes(stakers[1].PublicKey),
 					Weight:    stakers[1].Weight,
 				},
 			},
@@ -1172,7 +1172,7 @@ func TestStateAddRemoveValidator(t *testing.T) {
 			expectedPrimaryValidatorSet: map[ids.NodeID]*validators.GetValidatorOutput{
 				stakers[1].NodeID: {
 					NodeID:    stakers[1].NodeID,
-					PublicKey: stakers[1].PublicKey,
+					PublicKey: bls.PublicKeyToUncompressedBytes(stakers[1].PublicKey),
 					Weight:    stakers[1].Weight,
 				},
 			},
@@ -1189,7 +1189,7 @@ func TestStateAddRemoveValidator(t *testing.T) {
 			expectedPrimaryValidatorSet: map[ids.NodeID]*validators.GetValidatorOutput{
 				stakers[1].NodeID: {
 					NodeID:    stakers[1].NodeID,
-					PublicKey: stakers[1].PublicKey,
+					PublicKey: bls.PublicKeyToUncompressedBytes(stakers[1].PublicKey),
 					Weight:    stakers[1].Weight,
 				},
 			},
@@ -1288,8 +1288,9 @@ func copyValidatorSet(
 		vdrCopy := *vdr
 		// Deep copy the public key if it exists
 		if vdr.PublicKey != nil {
-			pkBytes := bls.PublicKeyToUncompressedBytes(vdr.PublicKey)
-			vdrCopy.PublicKey = bls.PublicKeyFromValidUncompressedBytes(pkBytes)
+			// PublicKey is already []byte, just copy it
+			vdrCopy.PublicKey = make([]byte, len(vdr.PublicKey))
+			copy(vdrCopy.PublicKey, vdr.PublicKey)
 		}
 		result[nodeID] = &vdrCopy
 	}
@@ -1329,9 +1330,8 @@ func requireEqualPublicKeysValidatorSet(
 		} else if actualVdr.PublicKey == nil {
 			require.Fail("expected public key but got nil")
 		} else {
-			expectedBytes := bls.PublicKeyToUncompressedBytes(expectedVdr.PublicKey)
-			actualBytes := bls.PublicKeyToUncompressedBytes(actualVdr.PublicKey)
-			require.Equal(expectedBytes, actualBytes)
+			// PublicKey fields are already []byte
+			require.Equal(expectedVdr.PublicKey, actualVdr.PublicKey)
 		}
 	}
 }

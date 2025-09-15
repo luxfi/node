@@ -145,8 +145,8 @@ func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *a
 		return err
 	}
 
-	w.vm.lock.Lock()
-	defer w.vm.lock.Unlock()
+	w.vm.Lock.Lock()
+	defer w.vm.Lock.Unlock()
 
 	txID, err := w.issue(tx)
 	reply.TxID = txID
@@ -186,8 +186,8 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 		return fmt.Errorf("couldn't parse 'From' addresses: %w", err)
 	}
 
-	w.vm.lock.Lock()
-	defer w.vm.lock.Unlock()
+	w.vm.Lock.Lock()
+	defer w.vm.Lock.Unlock()
 
 	// Load user's UTXOs/keys
 	utxos, kc, err := w.vm.LoadUser(args.Username, args.Password, fromAddrs)

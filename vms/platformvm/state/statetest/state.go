@@ -17,6 +17,7 @@ import (
 
 	// "github.com/luxfi/node/snow" // snow package removed
 	"github.com/luxfi/consensus"
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -49,9 +50,12 @@ func New(t testing.TB, c Config) state.State {
 	}
 	if c.Context == nil {
 		ctx := context.Background()
-		ctx = consensus.WithNetworkID(ctx, constants.UnitTestID)
-		ctx = consensus.WithNodeID(ctx, DefaultNodeID)
-		ctx = consensus.WithLogger(ctx, consensus.NoOpLogger{})
+		// Use consensus/context package to set up IDs
+		idsStruct := consensuscontext.IDs{
+			NetworkID: constants.UnitTestID,
+			NodeID:    DefaultNodeID,
+		}
+		ctx = consensuscontext.WithIDs(ctx, idsStruct)
 		c.Context = ctx
 	}
 	if len(c.Genesis) == 0 {

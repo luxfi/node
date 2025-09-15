@@ -34,7 +34,7 @@ func TestClient_AppGossip(t *testing.T) {
 		nodeID,
 		testHandler,
 	)
-	require.NoError(client.AppGossip(ctx, core.SendConfig{NodeIDs: set.Of(nodeID)}, []byte("foobar")))
+	require.NoError(client.AppGossip(ctx, core.SendConfig{NodeIDs: []interface{}{nodeID}}, []byte("foobar")))
 	<-appGossipChan
 }
 

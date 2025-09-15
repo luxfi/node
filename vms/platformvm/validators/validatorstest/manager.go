@@ -37,3 +37,7 @@ func (manager) OnAcceptedBlockID(ids.ID) {}
 func (manager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
 	return nil, 0, nil
 }
+
+func (manager) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return nil, nil
+}

@@ -11,6 +11,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var (
@@ -35,7 +36,10 @@ type TransferNetOwnershipTx struct {
 // that the addresses can be json marshalled into human readable format
 func (tx *TransferNetOwnershipTx) InitCtx(ctx context.Context) {
 	tx.BaseTx.InitCtx(ctx)
-	// Owner doesn't have InitCtx method
+	// Initialize context for Owner if it's *secp256k1fx.OutputOwners
+	if owner, ok := tx.Owner.(*secp256k1fx.OutputOwners); ok {
+		owner.InitCtx(ctx)
+	}
 }
 
 func (tx *TransferNetOwnershipTx) SyntacticVerify(ctx context.Context) error {

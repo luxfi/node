@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/uptime/uptimemock"
+	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
@@ -25,6 +25,46 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
 )
+
+// mockCalculator is a simple mock for uptime.Calculator
+type mockCalculator struct {
+	calculateUptimeF func(ids.NodeID, ids.ID) (time.Duration, time.Duration, error)
+	calculateUptimePercentF func(ids.NodeID, ids.ID) (float64, error)
+	calculateUptimePercentFromF func(ids.NodeID, ids.ID, time.Time) (float64, error)
+	setCalculateUptimeF func(ids.NodeID, ids.ID, time.Duration)
+}
+
+func (m *mockCalculator) CalculateUptime(nodeID ids.NodeID, subnetID ids.ID) (time.Duration, time.Duration, error) {
+	if m.calculateUptimeF != nil {
+		return m.calculateUptimeF(nodeID, subnetID)
+	}
+	return 0, 0, nil
+}
+
+func (m *mockCalculator) CalculateUptimePercent(nodeID ids.NodeID, subnetID ids.ID) (float64, error) {
+	if m.calculateUptimePercentF != nil {
+		return m.calculateUptimePercentF(nodeID, subnetID)
+	}
+	return 1.0, nil
+}
+
+func (m *mockCalculator) CalculateUptimePercentFrom(nodeID ids.NodeID, subnetID ids.ID, startTime time.Time) (float64, error) {
+	if m.calculateUptimePercentFromF != nil {
+		return m.calculateUptimePercentFromF(nodeID, subnetID, startTime)
+	}
+	return 1.0, nil
+}
+
+func (m *mockCalculator) SetCalculateUptime(nodeID ids.NodeID, subnetID ids.ID, upDuration time.Duration) {
+	if m.setCalculateUptimeF != nil {
+		m.setCalculateUptimeF(nodeID, subnetID, upDuration)
+	}
+}
+
+func (m *mockCalculator) SetCalculator(ids.ID, uptime.Calculator) error {
+	// Mock implementation - do nothing
+	return nil
+}
 
 func TestStatus(t *testing.T) {
 	type test struct {
@@ -144,7 +184,7 @@ func TestBlockOptions(t *testing.T) {
 			blkF: func(ctrl *gomock.Controller) *Block {
 				state := state.NewMockState(ctrl)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
+				uptimes := &mockCalculator{}
 
 				manager := &manager{
 					backend: &backend{
@@ -171,7 +211,7 @@ func TestBlockOptions(t *testing.T) {
 			blkF: func(ctrl *gomock.Controller) *Block {
 				state := state.NewMockState(ctrl)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
+				uptimes := &mockCalculator{}
 
 				manager := &manager{
 					backend: &backend{
@@ -207,7 +247,7 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(nil, status.Unknown, database.ErrNotFound)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
+				uptimes := &mockCalculator{}
 
 				manager := &manager{
 					backend: &backend{
@@ -245,7 +285,7 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(nil, status.Unknown, database.ErrClosed)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
+				uptimes := &mockCalculator{}
 
 				manager := &manager{
 					backend: &backend{
@@ -286,7 +326,7 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
+				uptimes := &mockCalculator{}
 
 				manager := &manager{
 					backend: &backend{
@@ -328,7 +368,7 @@ func TestBlockOptions(t *testing.T) {
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Subnet: netID,
+							Net: netID,
 						},
 					}
 				)
@@ -337,7 +377,7 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(nil, database.ErrNotFound)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
+				uptimes := &mockCalculator{}
 
 				manager := &manager{
 					backend: &backend{
@@ -379,7 +419,7 @@ func TestBlockOptions(t *testing.T) {
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Subnet: netID,
+							Net: netID,
 						},
 					}
 					primaryNetworkValidatorStartTime = time.Now()
@@ -392,8 +432,11 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
-				uptimes.EXPECT().CalculateUptimePercentFrom(gomock.Any(), gomock.Any()).Return(0.0, database.ErrNotFound)
+				uptimes := &mockCalculator{
+					calculateUptimePercentFromF: func(ids.NodeID, ids.ID, time.Time) (float64, error) {
+						return 0.0, database.ErrNotFound
+					},
+				}
 
 				manager := &manager{
 					backend: &backend{
@@ -435,7 +478,7 @@ func TestBlockOptions(t *testing.T) {
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Subnet: netID,
+							Net: netID,
 						},
 					}
 					primaryNetworkValidatorStartTime = time.Now()
@@ -449,7 +492,7 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
 				state.EXPECT().GetSubnetTransformation(netID).Return(nil, database.ErrNotFound)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
+				uptimes := &mockCalculator{}
 
 				manager := &manager{
 					backend: &backend{
@@ -491,7 +534,7 @@ func TestBlockOptions(t *testing.T) {
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Subnet: netID,
+							Net: netID,
 						},
 					}
 					primaryNetworkValidatorStartTime = time.Now()
@@ -510,8 +553,11 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
 				state.EXPECT().GetSubnetTransformation(netID).Return(transformSubnetTx, nil)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
-				uptimes.EXPECT().CalculateUptimePercentFrom(gomock.Any(), gomock.Any()).Return(.5, nil)
+				uptimes := &mockCalculator{
+					calculateUptimePercentFromF: func(ids.NodeID, ids.ID, time.Time) (float64, error) {
+						return .5, nil
+					},
+				}
 
 				manager := &manager{
 					backend: &backend{
@@ -553,7 +599,7 @@ func TestBlockOptions(t *testing.T) {
 							Validator: txs.Validator{
 								NodeID: nodeID,
 							},
-							Subnet: netID,
+							Net: netID,
 						},
 					}
 					primaryNetworkValidatorStartTime = time.Now()
@@ -572,8 +618,11 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
 				state.EXPECT().GetSubnetTransformation(netID).Return(transformSubnetTx, nil)
 
-				uptimes := uptimemock.NewCalculator(ctrl)
-				uptimes.EXPECT().CalculateUptimePercentFrom(gomock.Any(), gomock.Any()).Return(.5, nil)
+				uptimes := &mockCalculator{
+					calculateUptimePercentFromF: func(ids.NodeID, ids.ID, time.Time) (float64, error) {
+						return .5, nil
+					},
+				}
 
 				manager := &manager{
 					backend: &backend{

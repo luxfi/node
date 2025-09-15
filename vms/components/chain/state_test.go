@@ -65,10 +65,8 @@ func NewTestBlock(i uint64, parentID ids.ID) *blocktest.Block {
 	b := []byte{byte(i)}
 	id := hashing.ComputeHash256Array(b)
 	return &blocktest.Block{
-		Decidable: consensustest.Decidable{
-			IDV:     id,
-			StatusV: choices.Processing,
-		},
+		IDV:     id,
+		StatusV: choices.Processing,
 		HeightV: i,
 		ParentV: parentID,
 		BytesV:  b,

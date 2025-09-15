@@ -320,6 +320,5 @@ Network Architecture:
                (gRPC)         (QZMQ)
 
 Both protocols share the same network infrastructure but
-provide different security guarantees for different operations.
-`)
+provide different security guarantees for different operations.`)
 }

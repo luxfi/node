@@ -7,17 +7,16 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/version"
 )
 
-var _ router.Router = (*beaconManager)(nil)
+var _ ChainRouter = (*beaconManager)(nil)
 
 type beaconManager struct {
-	router.Router
+	ChainRouter
 	beacons                     validators.Manager
 	requiredConns               int64
 	numConns                    int64

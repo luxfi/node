@@ -212,6 +212,13 @@ func GetConfig(networkID uint32) *Config {
 		return &TestnetConfig
 	case constants.LocalID:
 		return &LocalConfig
+	case constants.LuxMainnetID:
+		return LuxGenesisConfig()
+	case constants.LuxTestnetID:
+		// For now, use the same config as mainnet with different network ID
+		config := LuxGenesisConfig()
+		config.NetworkID = constants.LuxTestnetID
+		return config
 	default:
 		tempConfig := LocalConfig
 		tempConfig.NetworkID = networkID

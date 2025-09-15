@@ -7,6 +7,7 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/luxfi/consensus/snow"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/codec"
@@ -16,6 +17,7 @@ import (
 
 type Backend struct {
 	Ctx           context.Context
+	SnowCtx       *snow.Context // Snow context for tests
 	Config        *config.Config
 	Fxs           []*fxs.ParsedFx
 	TypeToFxIndex map[reflect.Type]int
@@ -24,6 +26,10 @@ type Backend struct {
 	// running in a subnet.
 	FeeAssetID   ids.ID
 	Bootstrapped bool
+
+	// Chain IDs for cross-chain operations
+	XChainID ids.ID
+	CChainID ids.ID
 
 	// Logger for this backend
 	Log log.Logger

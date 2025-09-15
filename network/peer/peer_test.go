@@ -13,7 +13,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
@@ -76,10 +75,24 @@ func newConfig(t *testing.T) Config {
 
 	// Create a no-op resource manager for testing
 	noOpManager := &noOpResourceManager{}
+	cpuTargeter := tracker.NewTargeter(&tracker.TargeterConfig{
+		VdrAlloc:           0.5,
+		MaxNonVdrUsage:     0.8,
+		MaxNonVdrNodeUsage: 0.1,
+	})
+	diskTargeter := tracker.NewTargeter(&tracker.TargeterConfig{
+		VdrAlloc:           0.5,
+		MaxNonVdrUsage:     0.8,
+		MaxNonVdrNodeUsage: 0.1,
+	})
 	resourceTracker, err := tracker.NewResourceTracker(
 		luxmetric.NewNoOpMetrics("test").Registry(),
 		noOpManager,
 		10*time.Second,
+		5*time.Minute,
+		cpuTargeter,
+		diskTargeter,
+		log.NewNoOpLogger(),
 	)
 	require.NoError(err)
 
@@ -101,7 +114,7 @@ func newConfig(t *testing.T) Config {
 		PongTimeout:          constants.DefaultPingPongTimeout,
 		MaxClockDifference:   time.Minute,
 		ResourceTracker:      resourceTracker,
-		UptimeCalculator:     uptime.NoOpCalculator,
+		UptimeCalculator:     &uptime.NoOpCalculator{},
 		IPSigner:             nil,
 	}
 }
@@ -130,10 +143,8 @@ func newRawTestPeer(t *testing.T, config Config) *rawTestPeer {
 	config.IPSigner = NewIPSigner(ip, tls, bls)
 
 	inboundMsgChan := make(chan message.InboundMessage)
-	config.Router = router.InboundHandlerFunc(func(_ context.Context, msg interface{}) {
-		if inboundMsg, ok := msg.(message.InboundMessage); ok {
-			inboundMsgChan <- inboundMsg
-		}
+	config.Router = InboundHandlerFunc(func(_ context.Context, inboundMsg message.InboundMessage) {
+		inboundMsgChan <- inboundMsg
 	})
 
 	return &rawTestPeer{

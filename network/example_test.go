@@ -34,13 +34,11 @@ type testExternalHandler struct {
 // implementation does not implicitly register timeouts, so this handler is only
 // called by messages explicitly sent by the peer. If timeouts are required,
 // that must be handled by the user of this utility.
-func (t *testExternalHandler) HandleInbound(_ context.Context, msg interface{}) {
-	if message, ok := msg.(message.InboundMessage); ok {
-		t.log.Info(
-			"receiving message",
-			zap.Stringer("op", message.Op()),
-		)
-	}
+func (t *testExternalHandler) HandleInbound(_ context.Context, msg message.InboundMessage) {
+	t.log.Info(
+		"receiving message",
+		zap.Stringer("op", msg.Op()),
+	)
 }
 
 func (t *testExternalHandler) Connected(nodeID ids.NodeID, version *version.Application, netID ids.ID) {
@@ -50,6 +48,18 @@ func (t *testExternalHandler) Connected(nodeID ids.NodeID, version *version.Appl
 		zap.Stringer("version", version),
 		zap.Stringer("netID", netID),
 	)
+}
+
+func (t *testExternalHandler) HandleGossip(_ context.Context, nodeID ids.NodeID, msg []byte) {
+	t.log.Info(
+		"received gossip",
+		zap.Stringer("nodeID", nodeID),
+		zap.Int("size", len(msg)),
+	)
+}
+
+func (t *testExternalHandler) HandleTimeout(_ context.Context) {
+	t.log.Info("timeout occurred")
 }
 
 func (t *testExternalHandler) Disconnected(nodeID ids.NodeID) {

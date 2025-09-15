@@ -24,6 +24,8 @@ type testOperable struct {
 
 func (*testOperable) InitCtx(context.Context) {}
 
+func (*testOperable) InitializeContext(context.Context) error { return nil }
+
 func (o *testOperable) Outs() []verify.State {
 	return o.Outputs
 }

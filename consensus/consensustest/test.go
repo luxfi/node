@@ -1,7 +1,13 @@
 // Package consensustest provides test utilities for consensus operations
 package consensustest
 
-import "testing"
+import (
+	"sync"
+	"testing"
+
+	"github.com/luxfi/consensus/context"
+	"github.com/luxfi/ids"
+)
 
 // TestConsensus represents a test consensus instance
 type TestConsensus struct {
@@ -20,4 +26,33 @@ func NewTestConsensus(id string) *TestConsensus {
 // Helper provides test helper functions
 func Helper(t *testing.T) {
 	t.Helper()
+}
+
+// TestLock is a simple lock implementation for tests
+type TestLock struct {
+	sync.RWMutex
+}
+
+// Lock acquires the lock
+func (l *TestLock) Lock() {
+	l.RWMutex.Lock()
+}
+
+// Unlock releases the lock
+func (l *TestLock) Unlock() {
+	l.RWMutex.Unlock()
+}
+
+// Context creates a test consensus context
+func Context(t *testing.T, chainID ids.ID) *context.Context {
+	t.Helper()
+	return &context.Context{
+		NetworkID: 1,
+		SubnetID:  ids.Empty,
+		ChainID:   chainID,
+		NodeID:    ids.GenerateTestNodeID(),
+		XAssetID:  ids.GenerateTestID(),
+		PChainID:  ids.GenerateTestID(),
+		Lock:      &TestLock{},
+	}
 }

@@ -6,7 +6,6 @@ package node
 import (
 	"go.uber.org/zap"
 
-	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -15,7 +14,7 @@ import (
 )
 
 type insecureValidatorManager struct {
-	router.Router
+	ChainRouter
 	log    log.Logger
 	vdrs   validators.Manager
 	weight uint64

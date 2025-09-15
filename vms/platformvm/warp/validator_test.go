@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorsmock"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
@@ -24,6 +23,29 @@ var (
 	netID = ids.GenerateTestID()
 	testVdrs []*testValidator
 )
+
+// validatorStateAdapter adapts validators.State to ValidatorState
+type validatorStateAdapter struct {
+	state validators.State
+}
+
+func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	validatorSet, err := v.state.GetValidatorSet(ctx, height, netID)
+	if err != nil {
+		return nil, err
+	}
+	
+	result := make(map[ids.NodeID]uint64, len(validatorSet))
+	for nodeID, validator := range validatorSet {
+		result[nodeID] = validator.Weight
+	}
+	return result, nil
+}
+
+func (v *validatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	// Mock implementation - validators.State doesn't have GetNetID
+	return netID, nil
+}
 
 type testValidator struct {
 	nodeID ids.NodeID
@@ -78,7 +100,7 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 			name: "can't get validator set",
 			stateF: func() ValidatorState {
 				return &validatorStateAdapter{
-					state: &validatorsmock.State{
+					state: &validatorstest.State{
 					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 						if height == pChainHeight && sID == netID {
 							return nil, errTest
@@ -94,18 +116,18 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 			name: "all validators have public keys; no duplicate pub keys",
 			stateF: func() ValidatorState {
 				return &validatorStateAdapter{
-					state: &validatorsmock.State{
+					state: &validatorstest.State{
 					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 						if height == pChainHeight && sID == netID {
 							return map[ids.NodeID]*validators.GetValidatorOutput{
 								testVdrs[0].nodeID: {
 									NodeID:    testVdrs[0].nodeID,
-									PublicKey: testVdrs[0].vdr.PublicKey,
+									PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
 									Weight:    testVdrs[0].vdr.Weight,
 								},
 								testVdrs[1].nodeID: {
 									NodeID:    testVdrs[1].nodeID,
-									PublicKey: testVdrs[1].vdr.PublicKey,
+									PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
 									Weight:    testVdrs[1].vdr.Weight,
 								},
 							}, nil
@@ -123,23 +145,23 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 			name: "all validators have public keys; duplicate pub keys",
 			stateF: func() ValidatorState {
 				return &validatorStateAdapter{
-					state: &validatorsmock.State{
+					state: &validatorstest.State{
 					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 						if height == pChainHeight && sID == netID {
 							return map[ids.NodeID]*validators.GetValidatorOutput{
 						testVdrs[0].nodeID: {
 							NodeID:    testVdrs[0].nodeID,
-							PublicKey: testVdrs[0].vdr.PublicKey,
+							PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
 							Weight:    testVdrs[0].vdr.Weight,
 						},
 						testVdrs[1].nodeID: {
 							NodeID:    testVdrs[1].nodeID,
-							PublicKey: testVdrs[1].vdr.PublicKey,
+							PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
 							Weight:    testVdrs[1].vdr.Weight,
 						},
 						testVdrs[2].nodeID: {
 							NodeID:    testVdrs[2].nodeID,
-							PublicKey: testVdrs[0].vdr.PublicKey,
+							PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
 							Weight:    testVdrs[0].vdr.Weight,
 						},
 							}, nil
@@ -168,7 +190,7 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 			name: "validator without public key; no duplicate pub keys",
 			stateF: func() ValidatorState {
 				return &validatorStateAdapter{
-					state: &validatorsmock.State{
+					state: &validatorstest.State{
 					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 						if height == pChainHeight && sID == netID {
 							return map[ids.NodeID]*validators.GetValidatorOutput{
@@ -179,7 +201,7 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 						},
 						testVdrs[1].nodeID: {
 							NodeID:    testVdrs[1].nodeID,
-							PublicKey: testVdrs[1].vdr.PublicKey,
+							PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
 							Weight:    testVdrs[1].vdr.Weight,
 						},
 							}, nil
@@ -382,7 +404,7 @@ func BenchmarkGetCanonicalValidatorSet(b *testing.B) {
 		blsPublicKey := bls.PublicFromSecretKey(blsPrivateKey)
 		getValidatorOutputs = append(getValidatorOutputs, &validators.GetValidatorOutput{
 			NodeID:    nodeID,
-			PublicKey: blsPublicKey,
+			PublicKey: bls.PublicKeyToUncompressedBytes(blsPublicKey),
 			Weight:    20,
 		})
 	}

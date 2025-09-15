@@ -94,3 +94,36 @@ var Mainnet = Config{
 	FortunaTime:           UnscheduledActivationTime,
 	GraniteTime:           UnscheduledActivationTime,
 }
+
+// Validate checks that upgrade times are in chronological order (or equal)
+func (c *Config) Validate() error {
+	times := []time.Time{
+		c.ApricotPhase1Time,
+		c.ApricotPhase2Time,
+		c.ApricotPhase3Time,
+		c.ApricotPhase4Time,
+		c.ApricotPhase5Time,
+		c.ApricotPhasePre6Time,
+		c.ApricotPhase6Time,
+		c.ApricotPhasePost6Time,
+		c.BanffTime,
+		c.CortinaTime,
+		c.DurangoTime,
+		c.EtnaTime,
+		c.FortunaTime,
+		c.GraniteTime,
+	}
+
+	for i := 1; i < len(times); i++ {
+		// Skip validation for unscheduled upgrades (max time value)
+		if times[i].Equal(UnscheduledActivationTime) || times[i-1].Equal(UnscheduledActivationTime) {
+			continue
+		}
+		// Allow equal times (for upgrades that are active from the same time)
+		// Only error if a later upgrade is scheduled before an earlier one
+		if times[i].Before(times[i-1]) {
+			return ErrInvalidUpgradeTimes
+		}
+	}
+	return nil
+}

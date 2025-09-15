@@ -408,16 +408,16 @@ func TestGetSubnetConfigsFromFile(t *testing.T) {
 		},
 		"correct config": {
 			fileName:  "2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i.json",
-			givenJSON: `{"validatorOnly": true, "consensusParameters":{"alphaConfidence":16} }`,
+			givenJSON: `{"validatorOnly": true, "consensusParameters":{"k":20, "alphaPreference":15, "alphaConfidence":15} }`,
 			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
 				id, _ := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
 				config, ok := given[id]
 				require.True(ok)
 
 				require.True(config.ValidatorOnly)
-				require.Equal(16, config.ConsensusParameters.AlphaConfidence)
-				// must still respect defaults (MainnetParameters.K = 21)
-				require.Equal(21, config.ConsensusParameters.K)
+				require.Equal(15, config.ConsensusParameters.AlphaConfidence)
+				require.Equal(15, config.ConsensusParameters.AlphaPreference)
+				require.Equal(20, config.ConsensusParameters.K)
 			},
 			expectedErr: nil,
 		},
@@ -463,14 +463,16 @@ func TestGetSubnetConfigsFromFlags(t *testing.T) {
 			expectedErr: nil,
 		},
 		"entry with no config": {
-			givenJSON: `{"2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i":{}}`,
+			givenJSON: `{"2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i":{"consensusParameters":{"k":20,"alphaPreference":15,"alphaConfidence":15}}}`,
 			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
 				require.Len(given, 1)
 				id, _ := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
 				config, ok := given[id]
 				require.True(ok)
-				// should respect defaults (MainnetParameters.K = 21)
-				require.Equal(21, config.ConsensusParameters.K)
+				// should have our specified params
+				require.Equal(20, config.ConsensusParameters.K)
+				require.Equal(15, config.ConsensusParameters.AlphaPreference)
+				require.Equal(15, config.ConsensusParameters.AlphaConfidence)
 			},
 			expectedErr: nil,
 		},
@@ -514,8 +516,8 @@ func TestGetSubnetConfigsFromFlags(t *testing.T) {
 				require.Equal(16, config.ConsensusParameters.AlphaPreference)
 				require.Equal(20, config.ConsensusParameters.AlphaConfidence)
 				require.Equal(30, config.ConsensusParameters.K)
-				// must still respect defaults (MainnetParameters.MaxOutstandingItems = 369)
-				require.Equal(369, config.ConsensusParameters.MaxOutstandingItems)
+				// must still respect defaults (MainnetParameters.MaxOutstandingItems = 1024)
+				require.Equal(1024, config.ConsensusParameters.MaxOutstandingItems)
 			},
 			expectedErr: nil,
 		},

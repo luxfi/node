@@ -15,9 +15,8 @@ import (
 
 	"github.com/luxfi/node/codec"
 
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/protocol/chain"
-	"github.com/luxfi/node/vms/xvm/txs/mempool"
 
 	"github.com/luxfi/database/memdb"
 
@@ -28,8 +27,6 @@ import (
 	"github.com/luxfi/node/utils/constants"
 
 	"github.com/luxfi/crypto/secp256k1"
-
-	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/utils/timer/mockable"
 
@@ -76,18 +73,17 @@ func TestBuilderBuildBlock(t *testing.T) {
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(nil, errTest)
 
-				mempool := mempool.NewMockMempool(ctrl)
-				mempool.EXPECT().RequestBuildBlock()
+				memPool := mempool.NewMockMempool(ctrl)
+				memPool.EXPECT().RequestBuildBlock()
 
 				ctx := context.Background()
-				ctx = consensus.WithLogger(ctx, log.NewNoOpLogger())
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
 					},
 					manager,
 					&mockable.Clock{},
-					mempool,
+					memPool,
 				)
 			},
 			expectedErr: errTest,
@@ -107,18 +103,17 @@ func TestBuilderBuildBlock(t *testing.T) {
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
 				manager.EXPECT().GetState(preferredID).Return(nil, false)
 
-				mempool := mempool.NewMockMempool(ctrl)
-				mempool.EXPECT().RequestBuildBlock()
+				memPool := mempool.NewMockMempool(ctrl)
+				memPool.EXPECT().RequestBuildBlock()
 
 				ctx := context.Background()
-				ctx = consensus.WithLogger(ctx, log.NewNoOpLogger())
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
 					},
 					manager,
 					&mockable.Clock{},
-					mempool,
+					memPool,
 				)
 			},
 			expectedErr: state.ErrMissingParentState,
@@ -146,23 +141,22 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().Visit(gomock.Any()).Return(errTest) // Fail semantic verification
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				mempool := mempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Peek().Return(tx, true)
-				mempool.EXPECT().Remove([]*txs.Tx{tx})
-				mempool.EXPECT().MarkDropped(tx.ID(), errTest)
+				memPool := mempool.NewMockMempool(ctrl)
+				memPool.EXPECT().Peek().Return(tx, true)
+				memPool.EXPECT().Remove([]*txs.Tx{tx})
+				memPool.EXPECT().MarkDropped(tx.ID(), errTest)
 				// Second loop iteration
-				mempool.EXPECT().Peek().Return(nil, false)
-				mempool.EXPECT().RequestBuildBlock()
+				memPool.EXPECT().Peek().Return(nil, false)
+				memPool.EXPECT().RequestBuildBlock()
 
 				ctx := context.Background()
-				ctx = consensus.WithLogger(ctx, log.NewNoOpLogger())
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
 					},
 					manager,
 					&mockable.Clock{},
-					mempool,
+					memPool,
 				)
 			},
 			expectedErr: ErrNoTransactions, // The only tx was invalid
@@ -191,23 +185,22 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().Visit(gomock.Any()).Return(errTest) // Fail execution
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				mempool := mempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Peek().Return(tx, true)
-				mempool.EXPECT().Remove([]*txs.Tx{tx})
-				mempool.EXPECT().MarkDropped(tx.ID(), errTest)
+				memPool := mempool.NewMockMempool(ctrl)
+				memPool.EXPECT().Peek().Return(tx, true)
+				memPool.EXPECT().Remove([]*txs.Tx{tx})
+				memPool.EXPECT().MarkDropped(tx.ID(), errTest)
 				// Second loop iteration
-				mempool.EXPECT().Peek().Return(nil, false)
-				mempool.EXPECT().RequestBuildBlock()
+				memPool.EXPECT().Peek().Return(nil, false)
+				memPool.EXPECT().RequestBuildBlock()
 
 				ctx := context.Background()
-				ctx = consensus.WithLogger(ctx, log.NewNoOpLogger())
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
 					},
 					manager,
 					&mockable.Clock{},
-					mempool,
+					memPool,
 				)
 			},
 			expectedErr: ErrNoTransactions, // The only tx was invalid
@@ -237,23 +230,22 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().Visit(gomock.Any()).Return(nil) // Pass execution
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				mempool := mempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Peek().Return(tx, true)
-				mempool.EXPECT().Remove([]*txs.Tx{tx})
-				mempool.EXPECT().MarkDropped(tx.ID(), errTest)
+				memPool := mempool.NewMockMempool(ctrl)
+				memPool.EXPECT().Peek().Return(tx, true)
+				memPool.EXPECT().Remove([]*txs.Tx{tx})
+				memPool.EXPECT().MarkDropped(tx.ID(), errTest)
 				// Second loop iteration
-				mempool.EXPECT().Peek().Return(nil, false)
-				mempool.EXPECT().RequestBuildBlock()
+				memPool.EXPECT().Peek().Return(nil, false)
+				memPool.EXPECT().RequestBuildBlock()
 
 				ctx := context.Background()
-				ctx = consensus.WithLogger(ctx, log.NewNoOpLogger())
 				return New(
 					&txexecutor.Backend{
 						Ctx: ctx,
 					},
 					manager,
 					&mockable.Clock{},
-					mempool,
+					memPool,
 				)
 			},
 			expectedErr: ErrNoTransactions, // The only tx was invalid
@@ -321,16 +313,16 @@ func TestBuilderBuildBlock(t *testing.T) {
 					},
 				)
 
-				mempool := mempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Peek().Return(tx1, true)
-				mempool.EXPECT().Remove([]*txs.Tx{tx1})
+				memPool := mempool.NewMockMempool(ctrl)
+				memPool.EXPECT().Peek().Return(tx1, true)
+				memPool.EXPECT().Remove([]*txs.Tx{tx1})
 				// Second loop iteration
-				mempool.EXPECT().Peek().Return(tx2, true)
-				mempool.EXPECT().Remove([]*txs.Tx{tx2})
-				mempool.EXPECT().MarkDropped(tx2.ID(), blkexecutor.ErrConflictingBlockTxs)
+				memPool.EXPECT().Peek().Return(tx2, true)
+				memPool.EXPECT().Remove([]*txs.Tx{tx2})
+				memPool.EXPECT().MarkDropped(tx2.ID(), blkexecutor.ErrConflictingBlockTxs)
 				// Third loop iteration
-				mempool.EXPECT().Peek().Return(nil, false)
-				mempool.EXPECT().RequestBuildBlock()
+				memPool.EXPECT().Peek().Return(nil, false)
+				memPool.EXPECT().RequestBuildBlock()
 
 				// To marshal the tx/block
 				codec := codec.NewMockManager(ctrl)
@@ -340,11 +332,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: consensus.WithLogger(context.Background(), log.NewNoOpLogger()),
+						Ctx: context.Background(),
 					},
 					manager,
 					&mockable.Clock{},
-					mempool,
+					memPool,
 				)
 			},
 			expectedErr: nil,
@@ -395,12 +387,12 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().SetBytes(gomock.Any()).AnyTimes()
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				mempool := mempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Peek().Return(tx, true)
-				mempool.EXPECT().Remove([]*txs.Tx{tx})
+				memPool := mempool.NewMockMempool(ctrl)
+				memPool.EXPECT().Peek().Return(tx, true)
+				memPool.EXPECT().Remove([]*txs.Tx{tx})
 				// Second loop iteration
-				mempool.EXPECT().Peek().Return(nil, false)
-				mempool.EXPECT().RequestBuildBlock()
+				memPool.EXPECT().Peek().Return(nil, false)
+				memPool.EXPECT().RequestBuildBlock()
 
 				// To marshal the tx/block
 				codec := codec.NewMockManager(ctrl)
@@ -410,11 +402,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: consensus.WithLogger(context.Background(), log.NewNoOpLogger()),
+						Ctx: context.Background(),
 					},
 					manager,
 					clock,
-					mempool,
+					memPool,
 				)
 			},
 			expectedErr: nil,
@@ -467,12 +459,12 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().SetBytes(gomock.Any()).AnyTimes()
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				mempool := mempool.NewMockMempool(ctrl)
-				mempool.EXPECT().Peek().Return(tx, true)
-				mempool.EXPECT().Remove([]*txs.Tx{tx})
+				memPool := mempool.NewMockMempool(ctrl)
+				memPool.EXPECT().Peek().Return(tx, true)
+				memPool.EXPECT().Remove([]*txs.Tx{tx})
 				// Second loop iteration
-				mempool.EXPECT().Peek().Return(nil, false)
-				mempool.EXPECT().RequestBuildBlock()
+				memPool.EXPECT().Peek().Return(nil, false)
+				memPool.EXPECT().RequestBuildBlock()
 
 				// To marshal the tx/block
 				codec := codec.NewMockManager(ctrl)
@@ -482,11 +474,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: consensus.WithLogger(context.Background(), log.NewNoOpLogger()),
+						Ctx: context.Background(),
 					},
 					manager,
 					clock,
-					mempool,
+					memPool,
 				)
 			},
 			expectedErr: nil,
@@ -510,15 +502,15 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	require := require.New(t)
 
 	registerer := prometheus.NewRegistry()
-	toEngine := make(chan chain.MessageType, 100)
-	mempool, err := mempool.New("mempool", registerer, toEngine)
+	toEngine := make(chan core.MessageType, 100)
+	memPool, err := mempool.New("mempool", registerer, toEngine)
 	require.NoError(err)
 	// add a tx to the mempool
 	tx := transactions[0]
 	txID := tx.ID()
-	require.NoError(mempool.Add(tx))
+	require.NoError(memPool.Add(tx))
 
-	_, ok := mempool.Get(txID)
+	_, ok := memPool.Get(txID)
 	require.True(ok)
 
 	parser, err := block.NewParser(
@@ -529,7 +521,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	require.NoError(err)
 
 	backend := &txexecutor.Backend{
-		Ctx:   consensus.WithLogger(context.Background(), log.NewNoOpLogger()),
+		Ctx:   context.Background(),
 		Codec: parser.Codec(),
 	}
 
@@ -551,14 +543,14 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	state.AddBlock(parentBlk)
 	state.SetLastAccepted(parentBlk.ID())
 
-	xvmMetrics, err := xvmmetrics.New("test", registerer)
+	xvmMetrics, err := xvmmetrics.New(registerer)
 	require.NoError(err)
 
-	manager := blkexecutor.NewManager(mempool, xvmMetrics, state, backend, clk, onAccept)
+	manager := blkexecutor.NewManager(memPool, xvmMetrics, state, backend, clk, onAccept)
 
 	manager.SetPreference(parentBlk.ID())
 
-	builder := New(backend, manager, clk, mempool)
+	builder := New(backend, manager, clk, memPool)
 
 	// show that build block fails if tx is invalid
 	_, err = builder.BuildBlock(context.Background())

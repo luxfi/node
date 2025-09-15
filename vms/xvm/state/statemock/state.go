@@ -18,7 +18,7 @@ import (
 	lux "github.com/luxfi/node/vms/components/lux"
 	block "github.com/luxfi/node/vms/xvm/block"
 	txs "github.com/luxfi/node/vms/xvm/txs"
-	gomock "github.com/luxfi/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // State is a mock of State interface.
@@ -58,15 +58,15 @@ func (mr *StateMockRecorder) Abort() *gomock.Call {
 }
 
 // AddBlock mocks base method.
-func (m *State) AddBlock(block block.Block) {
+func (m *State) AddBlock(arg0 block.Block) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddBlock", block)
+	m.ctrl.Call(m, "AddBlock", arg0)
 }
 
 // AddBlock indicates an expected call of AddBlock.
-func (mr *StateMockRecorder) AddBlock(block any) *gomock.Call {
+func (mr *StateMockRecorder) AddBlock(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBlock", reflect.TypeOf((*State)(nil).AddBlock), block)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBlock", reflect.TypeOf((*State)(nil).AddBlock), arg0)
 }
 
 // AddTx mocks base method.
@@ -93,18 +93,19 @@ func (mr *StateMockRecorder) AddUTXO(utxo any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUTXO", reflect.TypeOf((*State)(nil).AddUTXO), utxo)
 }
 
-// Checksum mocks base method.
-func (m *State) Checksum() ids.ID {
+// Checksums mocks base method.
+func (m *State) Checksums() (ids.ID, ids.ID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Checksum")
+	ret := m.ctrl.Call(m, "Checksums")
 	ret0, _ := ret[0].(ids.ID)
-	return ret0
+	ret1, _ := ret[1].(ids.ID)
+	return ret0, ret1
 }
 
-// Checksum indicates an expected call of Checksum.
-func (mr *StateMockRecorder) Checksum() *gomock.Call {
+// Checksums indicates an expected call of Checksums.
+func (mr *StateMockRecorder) Checksums() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checksum", reflect.TypeOf((*State)(nil).Checksum))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checksums", reflect.TypeOf((*State)(nil).Checksums))
 }
 
 // Close mocks base method.

@@ -13,7 +13,6 @@ import (
 
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/engine/chain/chaintest"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -22,6 +21,35 @@ import (
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/state"
 )
+
+// testBlock is a simple implementation for testing
+type testBlock struct {
+	consensustest.Decidable
+	HeightV uint64
+}
+
+func (b *testBlock) ID() ids.ID           { return b.IDV }
+func (b *testBlock) Parent() ids.ID       { return ids.Empty }
+func (b *testBlock) ParentID() ids.ID     { return ids.Empty }
+func (b *testBlock) Height() uint64       { return b.HeightV }
+func (b *testBlock) Timestamp() time.Time { return time.Now() }
+func (b *testBlock) Bytes() []byte        { return nil }
+func (b *testBlock) Status() uint8        { return uint8(b.StatusV) }
+func (b *testBlock) Accept(context.Context) error { 
+	if b.AcceptV != nil {
+		return b.AcceptV()
+	}
+	b.StatusV = choices.Accepted
+	return nil 
+}
+func (b *testBlock) Reject(context.Context) error { 
+	if b.RejectV != nil {
+		return b.RejectV()
+	}
+	b.StatusV = choices.Rejected
+	return nil 
+}
+func (b *testBlock) Verify(context.Context) error { return nil }
 
 func TestHeightBlockIndexPostFork(t *testing.T) {
 	require := require.New(t)
@@ -53,14 +81,14 @@ func TestHeightBlockIndexPostFork(t *testing.T) {
 		require.NoError(storedState.PutBlock(postForkStatelessBlk, choices.Accepted))
 
 		// ... and create a corresponding test block just for block server
-		postForkBlk := &chaintest.Block{
+		postForkBlk := &testBlock{
 			Decidable: consensustest.Decidable{
-				IDV:    postForkStatelessBlk.ID(),
-				Status: consensustest.Accepted,
+				IDV:     postForkStatelessBlk.ID(),
+				StatusV: choices.Accepted,
 			},
 			HeightV: blkHeight,
 		}
-		proBlks[postForkBlk.ID()] = postForkBlk
+		proBlks[postForkStatelessBlk.ID()] = postForkBlk
 
 		lastBlkID = postForkStatelessBlk.ID()
 	}
@@ -133,14 +161,14 @@ func TestHeightBlockIndexAcrossFork(t *testing.T) {
 		require.NoError(storedState.PutBlock(postForkStatelessBlk, choices.Accepted))
 
 		// ... and create a corresponding test block just for block server
-		postForkBlk := &chaintest.Block{
+		postForkBlk := &testBlock{
 			Decidable: consensustest.Decidable{
-				IDV:    postForkStatelessBlk.ID(),
-				Status: consensustest.Accepted,
+				IDV:     postForkStatelessBlk.ID(),
+				StatusV: choices.Accepted,
 			},
 			HeightV: blkHeight,
 		}
-		proBlks[postForkBlk.ID()] = postForkBlk
+		proBlks[postForkStatelessBlk.ID()] = postForkBlk
 
 		lastBlkID = postForkStatelessBlk.ID()
 	}
@@ -217,14 +245,14 @@ func TestHeightBlockIndexResumeFromCheckPoint(t *testing.T) {
 		require.NoError(storedState.PutBlock(postForkStatelessBlk, choices.Accepted))
 
 		// ... and create a corresponding test block just for block server
-		postForkBlk := &chaintest.Block{
+		postForkBlk := &testBlock{
 			Decidable: consensustest.Decidable{
-				IDV:    postForkStatelessBlk.ID(),
-				Status: consensustest.Accepted,
+				IDV:     postForkStatelessBlk.ID(),
+				StatusV: choices.Accepted,
 			},
 			HeightV: blkHeight,
 		}
-		proBlks[postForkBlk.ID()] = postForkBlk
+		proBlks[postForkStatelessBlk.ID()] = postForkBlk
 
 		lastBlkID = postForkStatelessBlk.ID()
 	}

@@ -16,9 +16,8 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/networking/router"
-	"github.com/luxfi/consensus/networking/tracker"
+	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/consensus/utils/timer/mockable"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
@@ -28,11 +27,10 @@ import (
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/version"
 	
@@ -41,10 +39,10 @@ import (
 
 // inboundHandlerFunc is a simple wrapper to make a function implement InboundHandler
 type inboundHandlerFunc struct {
-	f func(context.Context, interface{})
+	f func(context.Context, message.InboundMessage)
 }
 
-func (h inboundHandlerFunc) HandleInbound(ctx context.Context, msg interface{}) {
+func (h inboundHandlerFunc) HandleInbound(ctx context.Context, msg message.InboundMessage) {
 	h.f(ctx, msg)
 }
 
@@ -137,7 +135,7 @@ var (
 
 		CompressionType: constants.DefaultNetworkCompressionType,
 
-		UptimeCalculator:  uptime.NewManager(uptime.NewTestState(), &mockable.Clock{}),
+		UptimeCalculator:  &uptime.NoOpCalculator{},
 		UptimeMetricFreq:  30 * time.Second,
 		UptimeRequirement: .8,
 
@@ -151,28 +149,37 @@ var (
 )
 
 func init() {
-	defaultConfig.CPUTargeter = newDefaultTargeter(defaultConfig.ResourceTracker.CPUTracker())
-	defaultConfig.DiskTargeter = newDefaultTargeter(defaultConfig.ResourceTracker.DiskTracker())
+	// CPUTargeter and DiskTargeter are node tracker types, not consensus tracker types
+	// For tests, we can leave them as nil or create stubs
+	defaultConfig.CPUTargeter = &stubTargeter{}
+	defaultConfig.DiskTargeter = &stubTargeter{}
 }
 
-func newDefaultTargeter(t tracker.Tracker) tracker.Targeter {
-	return tracker.NewTargeter(
-		nil,
-		&tracker.TargeterConfig{
-			VdrAlloc:           10,
-			MaxNonVdrUsage:     10,
-			MaxNonVdrNodeUsage: 10,
-		},
-		validators.NewManager(),
-		t,
-	)
-}
+type stubTargeter struct{}
 
-func newDefaultResourceTracker() tracker.ResourceTracker {
-	tracker, err := tracker.NewResourceTracker(
+func (s *stubTargeter) TargetUsage() uint64 { return 50 }
+
+
+func newDefaultResourceTracker() consensustracker.ResourceTracker {
+	// Use the consensus tracker stub implementation
+	cpuTargeter := consensustracker.NewTargeter(&consensustracker.TargeterConfig{
+		VdrAlloc:           .5,
+		MaxNonVdrUsage:     .8,
+		MaxNonVdrNodeUsage: .8,
+	})
+	diskTargeter := consensustracker.NewTargeter(&consensustracker.TargeterConfig{
+		VdrAlloc:           .5,
+		MaxNonVdrUsage:     .8,
+		MaxNonVdrNodeUsage: .8,
+	})
+	tracker, err := consensustracker.NewResourceTracker(
 		prometheus.NewRegistry(),
-		&noOpResourceManager{},
+		nil,
 		10*time.Second,
+		time.Minute,
+		cpuTargeter,
+		diskTargeter,
+		nil,
 	)
 	if err != nil {
 		panic(err)
@@ -336,20 +343,14 @@ func TestSend(t *testing.T) {
 	nodeIDs, networks, wg := newFullyConnectedTestNetwork(
 		t,
 		[]router.InboundHandler{
-			inboundHandlerFunc{f: func(_ context.Context, msg interface{}) {
-				if _, ok := msg.(message.InboundMessage); ok {
-					require.FailNow("unexpected message received")
-				}
+			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+				require.FailNow("unexpected message received")
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg interface{}) {
-				if inMsg, ok := msg.(message.InboundMessage); ok {
-					received <- inMsg
-				}
+			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+				received <- msg
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg interface{}) {
-				if _, ok := msg.(message.InboundMessage); ok {
-					require.FailNow("unexpected message received")
-				}
+			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+				require.FailNow("unexpected message received")
 			}},
 		},
 	)
@@ -363,11 +364,9 @@ func TestSend(t *testing.T) {
 	toSend := set.Of(nodeIDs[1])
 	sentTo := net0.Send(
 		outboundGetMsg,
-		core.SendConfig{
-			NodeIDs: toSend,
-		},
+		toSend,
 		constants.PrimaryNetworkID,
-		subnets.NoOpAllower,
+		0, // requestID
 	)
 	require.Equal(toSend, sentTo)
 
@@ -387,20 +386,14 @@ func TestSendWithFilter(t *testing.T) {
 	nodeIDs, networks, wg := newFullyConnectedTestNetwork(
 		t,
 		[]router.InboundHandler{
-			inboundHandlerFunc{f: func(_ context.Context, msg interface{}) {
-				if _, ok := msg.(message.InboundMessage); ok {
-					require.FailNow("unexpected message received")
-				}
+			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+				require.FailNow("unexpected message received")
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg interface{}) {
-				if inMsg, ok := msg.(message.InboundMessage); ok {
-					received <- inMsg
-				}
+			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+				received <- msg
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg interface{}) {
-				if _, ok := msg.(message.InboundMessage); ok {
-					require.FailNow("unexpected message received")
-				}
+			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+				require.FailNow("unexpected message received")
 			}},
 		},
 	)
@@ -415,11 +408,9 @@ func TestSendWithFilter(t *testing.T) {
 	validNodeID := nodeIDs[1]
 	sentTo := net0.Send(
 		outboundGetMsg,
-		core.SendConfig{
-			NodeIDs: toSend,
-		},
+		toSend,
 		constants.PrimaryNetworkID,
-		newNodeIDConnector(validNodeID),
+		0, // requestID
 	)
 	require.Len(sentTo, 1)
 	require.Contains(sentTo, validNodeID)

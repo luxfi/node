@@ -11,6 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/prometheus/client_golang/prometheus"
 
+	common "github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils"
 
 	"github.com/luxfi/node/vms/xvm/txs"
@@ -18,14 +19,14 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 )
 
-func newMempool(toEngine chan<- MessageType) (Mempool, error) {
+func newMempool(toEngine chan<- common.MessageType) (Mempool, error) {
 	return New("mempool", prometheus.NewRegistry(), toEngine)
 }
 
 func TestRequestBuildBlock(t *testing.T) {
 	require := require.New(t)
 
-	toEngine := make(chan MessageType, 1)
+	toEngine := make(chan common.MessageType, 1)
 	mempool, err := newMempool(toEngine)
 	require.NoError(err)
 

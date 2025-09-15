@@ -22,6 +22,7 @@ import (
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/state"
+	"github.com/luxfi/node/vms/xvm/metrics"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/executor"
 	"github.com/luxfi/node/vms/xvm/txs/mempool"
@@ -288,7 +289,7 @@ func TestBlockVerify(t *testing.T) {
 					manager: &manager{
 						backend: defaultTestBackend(false, nil),
 						mempool: mempool,
-						metrics: metric.NewMockMetrics(ctrl),
+						metrics: metrics.NewMockMetrics(ctrl),
 						blkIDToState: map[ids.ID]*blockState{
 							parentID: {
 								onAcceptState:  mockParentState,
@@ -338,7 +339,7 @@ func TestBlockVerify(t *testing.T) {
 					Block: mockBlock,
 					manager: &manager{
 						mempool: mempool,
-						metrics: metric.NewMockMetrics(ctrl),
+						metrics: metrics.NewMockMetrics(ctrl),
 						backend: defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{
 							parentID: {
@@ -416,7 +417,7 @@ func TestBlockVerify(t *testing.T) {
 					Block: mockBlock,
 					manager: &manager{
 						mempool: mempool,
-						metrics: metric.NewMockMetrics(ctrl),
+						metrics: metrics.NewMockMetrics(ctrl),
 						backend: defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{
 							parentID: {
@@ -526,7 +527,7 @@ func TestBlockVerify(t *testing.T) {
 					Block: mockBlock,
 					manager: &manager{
 						mempool: mockMempool,
-						metrics: metric.NewMockMetrics(ctrl),
+						metrics: metrics.NewMockMetrics(ctrl),
 						backend: defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{
 							parentID: {
@@ -704,8 +705,8 @@ func TestBlockAccept(t *testing.T) {
 				mockOnAcceptState := state.NewMockDiff(ctrl)
 				mockOnAcceptState.EXPECT().Apply(mockManagerState)
 
-				metrics := metric.NewMockMetrics(ctrl)
-				metric.EXPECT().MarkBlockAccepted(gomock.Any()).Return(errTest)
+				metrics := metrics.NewMockMetrics(ctrl)
+				metrics.EXPECT().MarkBlockAccepted(gomock.Any()).Return(errTest)
 
 				return &Block{
 					Block: mockBlock,
@@ -750,8 +751,8 @@ func TestBlockAccept(t *testing.T) {
 				mockOnAcceptState := state.NewMockDiff(ctrl)
 				mockOnAcceptState.EXPECT().Apply(mockManagerState)
 
-				metrics := metric.NewMockMetrics(ctrl)
-				metric.EXPECT().MarkBlockAccepted(gomock.Any()).Return(nil)
+				metrics := metrics.NewMockMetrics(ctrl)
+				metrics.EXPECT().MarkBlockAccepted(gomock.Any()).Return(nil)
 
 				return &Block{
 					Block: mockBlock,
