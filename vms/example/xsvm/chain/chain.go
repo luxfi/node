@@ -32,7 +32,7 @@ type chain struct {
 	acceptedState database.Database
 
 	// chain state as driven by the consensus engine
-	chainState consensus.State
+	chainState consensusinterfaces.State
 
 	lastAccepted   ids.ID
 	verifiedBlocks map[ids.ID]*block
@@ -64,7 +64,7 @@ func (c *chain) LastAccepted() ids.ID {
 	return c.lastAccepted
 }
 
-func (c *chain) SetChainState(state consensus.State) {
+func (c *chain) SetChainState(state consensusinterfaces.State) {
 	c.chainState = state
 }
 
