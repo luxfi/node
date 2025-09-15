@@ -870,7 +870,9 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 }
 
 func TestSemanticVerifierImportTx(t *testing.T) {
-	ctx := context.Background()
+	// Create consensus context for chain operations
+	consensusCtx := consensustest.Context()
+	ctx := consensusCtx  // Use consensus context
 	cChainID := ids.GenerateTestID()
 	chainID := ids.GenerateTestID()
 	m := atomic.NewMemory(prefixdb.New([]byte{0}, memdb.New()))

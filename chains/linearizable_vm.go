@@ -14,7 +14,6 @@ import (
 	"github.com/luxfi/consensus/engine/chain/block"
 	// "github.com/luxfi/consensus/engine/dag/vertex" // Not used
 	consensusvertex "github.com/luxfi/consensus/engine/vertex"
-	"github.com/luxfi/consensus/snow"
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -54,27 +53,29 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 	// Convert consensus types to block types
 	var pubKey []byte
 	// ctx is a context.Context, not a consensus context, so we don't have PublicKey
-	snowCtx := &snow.Context{
-		NetworkID: consensus.GetNetworkID(vm.ctx),
+	luxCtx := &consensus.Context{
+		QuantumID: consensus.GetNetworkID(vm.ctx),
+		NetID:     ids.Empty,
 		ChainID:   consensus.GetChainID(vm.ctx),
 		NodeID:    consensus.GetNodeID(vm.ctx),
 		PublicKey: pubKey,
 	}
-	consensusCtx := &snow.ConsensusContext{}
+	// Use consensus.ConsensusContext 
+	consensusCtx := &block.ConsensusContext{}
 	
 	chainCtx := &block.ChainContext{
 		ConsensusContext: consensusCtx,
-		Context:          snowCtx,
+		Context:          luxCtx,
 	}
 
 	// Create DBManager wrapper
 	dbManager := &dbManagerWrapper{db: vm.db}
 
-	// Convert fxs - since core.Fx has no ID, we need to handle this differently
-	var blockFxs []*block.Fx
-	// For now, just create empty Fx entries
+	// Convert fxs to []interface{}
+	var fxsInterface []interface{}
 	for range vm.fxs {
-		blockFxs = append(blockFxs, &block.Fx{})
+		// Convert core.Fx to block.Fx
+		fxsInterface = append(fxsInterface, &block.Fx{})
 	}
 
 	// Create block AppSender wrapper
@@ -91,7 +92,7 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 		vm.upgradeBytes,
 		vm.configBytes,
 		toEngine,
-		blockFxs,
+		fxsInterface,
 		blockAppSender,
 	)
 }
@@ -243,29 +244,38 @@ func NewLinearizeOnInitializeVM(vm consensusvertex.LinearizableVMWithEngine) *li
 
 func (vm *linearizeOnInitializeVM) Initialize(
 	ctx context.Context,
-	chainCtx *block.ChainContext,
-	db block.DBManager,
+	chainCtx interface{},
+	db interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	msgChan chan<- block.Message,
-	fxs []*block.Fx,
-	appSender block.AppSender,
+	msgChan interface{},
+	fxs []interface{},
+	appSender interface{},
 ) error {
 	// Convert block types to consensus types for the underlying VM
 	consensusCtx := context.Background()
-	snowCtx := chainCtx.Context
-	if snowCtx != nil {
-		consensusCtx = consensus.WithIDs(consensusCtx, consensus.IDs{
-			NetworkID: snowCtx.NetworkID,
-			ChainID:   snowCtx.ChainID,
-			NodeID:    snowCtx.NodeID,
-			PublicKey: snowCtx.PublicKey,
-		})
+	if cc, ok := chainCtx.(*block.ChainContext); ok && cc != nil {
+		snowCtx := cc.Context
+		if snowCtx != nil {
+			consensusCtx = consensus.WithIDs(consensusCtx, consensus.IDs{
+				NetworkID: snowCtx.QuantumID,
+				ChainID:   snowCtx.ChainID,
+				NodeID:    snowCtx.NodeID,
+				PublicKey: snowCtx.PublicKey,
+			})
+		}
 	}
 
 	// Get current database from DBManager
-	vmDB := db.Current()
+	// db is an interface{}, need to type assert
+	var vmDB database.Database
+	if dbManager, ok := db.(interface{ Current() database.Database }); ok {
+		vmDB = dbManager.Current()
+	} else if database, ok := db.(database.Database); ok {
+		// If it's already a database, use it directly
+		vmDB = database
+	}
 
 	// Convert fxs
 	var coreFxs []*core.Fx
@@ -275,7 +285,10 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	}
 
 	// Create core AppSender adapter
-	coreAppSender := &appSenderAdapter{appSender: appSender}
+	var coreAppSender core.AppSender
+	if as, ok := appSender.(block.AppSender); ok {
+		coreAppSender = &appSenderAdapter{appSender: as}
+	}
 
 	// Store for later use
 	vm.chainCtx = consensusCtx
@@ -285,8 +298,16 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	vm.configBytes = configBytes
 	vm.fxs = coreFxs
 	vm.appSender = coreAppSender
-	vm.toEngine = msgChan
-	vm.dbManager = db // Store the DBManager for later use
+	
+	// Type assert msgChan
+	if toEngine, ok := msgChan.(chan<- block.Message); ok {
+		vm.toEngine = toEngine
+	}
+	
+	// Type assert db for DBManager
+	if dbManager, ok := db.(block.DBManager); ok {
+		vm.dbManager = dbManager
+	}
 
 	// The LinearizableVMWithEngine doesn't have a Linearize method,
 	// return nil as initialization is complete

@@ -46,7 +46,7 @@ func (b *testBlockAdapter) SetStatus(status choices.Status) {
 	case choices.Rejected:
 		b.Block.StatusV = consensustest.Rejected
 	default:
-		b.Block.StatusV = choices.Processing
+		b.Block.StatusV = consensustest.Processing
 	}
 }
 
@@ -65,8 +65,11 @@ func NewTestBlock(i uint64, parentID ids.ID) *blocktest.Block {
 	b := []byte{byte(i)}
 	id := hashing.ComputeHash256Array(b)
 	return &blocktest.Block{
-		IDV:     id,
-		StatusV: choices.Processing,
+		Decidable: consensustest.Decidable{
+			IDV:     id,
+			StatusV: choices.Processing,
+		},
+		StatusV: consensustest.Processing,
 		HeightV: i,
 		ParentV: parentID,
 		BytesV:  b,
@@ -118,7 +121,7 @@ func createInternalBlockFuncs(blks []*blocktest.Block) (
 			return nil, database.ErrNotFound
 		}
 		// Return blocks that are either decided (accepted/rejected) or have been parsed
-		if blk.StatusV == choices.Processing && !parsedBlocks[id] {
+		if blk.StatusV == consensustest.Processing && !parsedBlocks[id] {
 			return nil, database.ErrNotFound
 		}
 

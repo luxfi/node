@@ -4,7 +4,6 @@
 package proposervm
 
 import (
-	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/engine/chain/block"
 )
 
@@ -13,20 +12,9 @@ type blockAdapter struct {
 	Block // proposervm Block interface
 }
 
-func (ba *blockAdapter) Status() choices.Status {
-	// Convert uint8 status from proposervm Block to choices.Status
-	switch ba.Block.Status() {
-	case uint8(choices.Unknown):
-		return choices.Unknown
-	case uint8(choices.Processing):
-		return choices.Processing
-	case uint8(choices.Rejected):
-		return choices.Rejected
-	case uint8(choices.Accepted):
-		return choices.Accepted
-	default:
-		return choices.Unknown
-	}
+func (ba *blockAdapter) Status() uint8 {
+	// Return the uint8 status directly from proposervm Block
+	return ba.Block.Status()
 }
 
 // reverseBlockAdapter adapts an engine/chain/block.Block to implement the protocol/chain.Block interface
@@ -35,6 +23,6 @@ type reverseBlockAdapter struct {
 }
 
 func (rba *reverseBlockAdapter) Status() uint8 {
-	// Convert choices.Status from engine block to uint8
-	return uint8(rba.Block.Status())
+	// Return the uint8 status directly from engine block
+	return rba.Block.Status()
 }

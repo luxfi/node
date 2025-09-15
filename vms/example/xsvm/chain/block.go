@@ -8,16 +8,16 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/choices"
-	consensuschain "github.com/luxfi/consensus/protocol/chain"
+	consensusinterfaces "github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
+	consensuschain "github.com/luxfi/consensus/protocol/chain"
 	smblock "github.com/luxfi/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
@@ -68,7 +68,7 @@ func (b *block) ID() ids.ID {
 }
 
 func (b *block) Status() uint8 {
-	if !b.status.Decided() {
+	if b.status != choices.Accepted && b.status != choices.Rejected {
 		b.status = b.calculateStatus()
 	}
 	return uint8(b.status)
@@ -165,7 +165,7 @@ func (b *block) VerifyWithContext(ctx context.Context, blockContext *smblock.Con
 		ctx,
 		b.chain.chainContext,
 		blkState,
-		b.chain.chainState == consensus.Bootstrapping,
+		b.chain.chainState == consensusinterfaces.Bootstrapping,
 		blockContext,
 		b.Stateless,
 	)

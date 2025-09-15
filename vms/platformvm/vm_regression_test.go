@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/consensus/consensustest"
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/protocol/chain"
-	"github.com/luxfi/consensus/snow"
+	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -534,24 +534,19 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 	_, genesisBytes := defaultGenesis(t, luxAssetID)
 
 	// Create chain context
+	luxCtx := &consContext.Context{
+		QuantumID:      constants.UnitTestID,
+		NetID:          constants.PrimaryNetworkID,
+		ChainID:        consensustest.PChainID,
+		NodeID:         ids.GenerateTestNodeID(),
+		PublicKey:      nil,
+		XChainID:       ids.Empty,
+		CChainID:       ids.Empty,
+		LUXAssetID:     luxAssetID,
+	}
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &snow.ConsensusContext{
-			Alpha:        1,
-			BetaVirtuous: 1,
-			BetaRogue:    1,
-		},
-		Context: &snow.Context{
-			NetworkID:      constants.UnitTestID,
-			SubnetID:       constants.PrimaryNetworkID,
-			ChainID:        consensustest.PChainID,
-			NodeID:         ids.GenerateTestNodeID(),
-			PublicKey:      nil,
-			XChainID:       ids.Empty,
-			CChainID:       ids.Empty,
-			AVAXAssetID:    luxAssetID,
-			Log:            log.NoLog{},
-			Lock:           &sync.RWMutex{},
-			Registerer:     prometheus.NewRegistry(),
+		ConsensusContext: &linearblock.ConsensusContext{},
+		Context:          luxCtx,
 			StartTime:      time.Now(),
 			ValidatorState: nil,
 			Keystore:       nil,

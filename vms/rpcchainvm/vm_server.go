@@ -17,10 +17,9 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/snow"
+	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/crypto/bls"
@@ -28,6 +27,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	metric "github.com/luxfi/metric"
+	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/db/rpcdb"
@@ -246,15 +246,15 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	dbMgr := &dbManagerImpl{db: vm.db}
 
 	// Initialize the VM - create a proper block.ChainContext
-	snowCtx := &snow.Context{
-		NetworkID: 96369, // LUX mainnet
+	luxCtx := &consContext.Context{
+		QuantumID: 96369, // LUX mainnet
 		ChainID:   ids.Empty, // Will be set later
 		NodeID:    ids.EmptyNodeID,
 	}
-	consensusCtx := &snow.ConsensusContext{}
+	consensusCtx := &block.ConsensusContext{}
 	blockChainCtx := &block.ChainContext{
 		ConsensusContext: consensusCtx,
-		Context:          snowCtx,
+		Context:          luxCtx,
 	}
 	// Wrap core.AppSender to block.AppSender
 	blockAppSender := &blockAppSenderWrapper{appSender: appSenderClient}
@@ -304,12 +304,12 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 func (vm *VMServer) SetState(ctx context.Context, stateReq *vmpb.SetStateRequest) (*vmpb.SetStateResponse, error) {
 	// SetState not available in ChainVM interface, check if VM implements it
 	type stateSetter interface {
-		SetState(context.Context, consensus.State) error
+		SetState(context.Context, snow.State) error
 	}
 
 	if ss, ok := vm.vm.(stateSetter); ok {
-		// Set state to NormalOp
-		err := ss.SetState(ctx, consensus.NormalOp)
+		// Set state to NormalOp (1)
+		err := ss.SetState(ctx, snow.NormalOp)
 		if err != nil {
 			return nil, err
 		}

@@ -47,12 +47,12 @@ func (l *TestLock) Unlock() {
 func Context(t *testing.T, chainID ids.ID) *context.Context {
 	t.Helper()
 	return &context.Context{
-		NetworkID: 1,
-		SubnetID:  ids.Empty,
-		ChainID:   chainID,
-		NodeID:    ids.GenerateTestNodeID(),
-		XAssetID:  ids.GenerateTestID(),
-		PChainID:  ids.GenerateTestID(),
-		Lock:      &TestLock{},
+		QuantumID:   1,
+		NetID:       ids.Empty,
+		ChainID:     chainID,
+		NodeID:      ids.GenerateTestNodeID(),
+		XChainID:    ids.GenerateTestID(),
+		CChainID:    ids.GenerateTestID(),
+		AVAXAssetID: ids.GenerateTestID(),
 	}
 }

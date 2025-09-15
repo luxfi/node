@@ -26,7 +26,7 @@ import (
 	// "github.com/luxfi/consensus/engine/dag/state" // Not used
 	// "github.com/luxfi/consensus/engine/dag/vertex" // Not used
 	// consensusvertex "github.com/luxfi/consensus/engine/vertex" // Not available in current consensus version
-	"github.com/luxfi/consensus/snow"
+	consensusinterfaces "github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/node/api/server"
@@ -41,7 +41,6 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
-	dbmanager "github.com/luxfi/database/manager"
 	"github.com/luxfi/database/meterdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
@@ -178,7 +177,7 @@ type ChainParameters struct {
 type chainInfo struct {
 	Name    string
 	Context context.Context
-	VM      core.VM
+	VM      interface{} // Changed from core.VM since core.VM uses snow.Context
 	Handler handler.Handler
 	Engine  Engine // Added to handle Start/Stop operations
 }
@@ -217,13 +216,13 @@ type chainVMWrapper struct {
 
 func (c *chainVMWrapper) Initialize(
 	ctx context.Context,
-	snowCtx *snow.Context,
-	dbManager dbmanager.Manager,
+	snowCtx interface{},
+	dbManager interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	msgChan chan<- core.Message,
-	fxs []*core.Fx,
+	msgChan interface{},
+	fxs []interface{},
 	appSender interface{},
 ) error {
 	// ChainVM has a different Initialize signature
@@ -251,7 +250,7 @@ func (c *chainVMWrapper) HealthCheck(ctx context.Context) (interface{}, error) {
 	return nil, nil
 }
 
-func (c *chainVMWrapper) SetState(ctx context.Context, state snow.State) error {
+func (c *chainVMWrapper) SetState(ctx context.Context, state consensusinterfaces.State) error {
 	// ChainVM doesn't have SetState, return nil
 	return nil
 }
@@ -982,7 +981,9 @@ func (m *manager) createLuxChain(
 	// Skip proposervm wrapper for Platform chain for now due to initialization issues
 	if chainParams.ID == constants.PlatformChainID {
 		m.Log.Info("skipping proposervm wrapper for Platform chain")
-		return vm, vm, nil
+		// Create a wrapper for the platform VM
+		vmWrapper := &chainVMWrapper{vm: vm}
+		return vmWrapper, vm, nil
 	}
 
 	// For block-based VMs (like Platform VM), we pass the VM directly to ProposerVM
@@ -1542,25 +1543,21 @@ func (m *manager) createLinearChain(
 		pubKeyBytes = nil
 	}
 	
-	snowCtx := &snow.Context{
-		NetworkID: m.NetworkID,
-		SubnetID:  chainParams.NetID,
+	luxCtx := &consContext.Context{
+		QuantumID: m.NetworkID,
+		NetID:     chainParams.NetID,
 		ChainID:   chainParams.ID,
 		NodeID:    m.NodeID,
 		PublicKey: pubKeyBytes,
-		// Other fields are not in snow.Context structure
 	}
 	
-	consensusCtx := &snow.ConsensusContext{
+	consensusCtx := &block.ConsensusContext{
 		// These would be set based on consensus parameters
-		Alpha:        2,
-		BetaVirtuous: 14,
-		BetaRogue:    20,
 	}
 	
 	chainCtx := &block.ChainContext{
 		ConsensusContext: consensusCtx,
-		Context:          snowCtx,
+		Context:          luxCtx,
 	}
 
 	// Create DBManager wrapper
@@ -1593,6 +1590,12 @@ func (m *manager) createLinearChain(
 		zap.String("genesisPreview", genesisPreview),
 		zap.Int("fxsCount", len(blockFxs)))
 	
+	// Convert blockFxs to []interface{} for Initialize
+	var fxsInterface []interface{}
+	for _, fx := range blockFxs {
+		fxsInterface = append(fxsInterface, fx)
+	}
+
 	// Initialize the chainblock VM with proposer wrapper (NOT the raw vm)
 	if err := vm.Initialize(
 		context.TODO(),
@@ -1602,7 +1605,7 @@ func (m *manager) createLinearChain(
 		chainConfig.Upgrade,
 		chainConfig.Config,
 		toEngine,
-		blockFxs,
+		fxsInterface,
 		appSender,
 	); err != nil {
 		m.Log.Error("VM Initialize failed", 
@@ -1827,13 +1830,13 @@ func (m *manager) createLinearChain(
 	// 	return nil, fmt.Errorf("couldn't add health check for chain %s: %w", primaryAlias, err)
 	// }
 
-	// Create wrapper to adapt block.ChainVM to core.VM
-	vmWrapper := &chainVMWrapper{vm: vm}
-
 	// Handler h was already created above as &placeholderHandler{}
 
 	// The chain ID will be available through the VM itself
 
+	// Since block.ChainVM doesn't implement core.VM directly,
+	// we need to wrap it to implement core.VM
+	vmWrapper := &chainVMWrapper{vm: vm}
 	return &chainInfo{
 		Name:    primaryAlias,
 		Context: ctx,
@@ -1953,9 +1956,13 @@ func (m *manager) LookupVM(alias string) (ids.ID, error) {
 
 // Notify registrants [those who want to know about the creation of chains]
 // that the specified chain has been created
-func (m *manager) notifyRegistrants(name string, ctx context.Context, vm core.VM) {
+func (m *manager) notifyRegistrants(name string, ctx context.Context, vm interface{}) {
 	for _, registrant := range m.registrants {
-		registrant.RegisterChain(name, ctx, vm)
+		// registrant.RegisterChain expects core.VM, but we use interface{}
+		// since core.VM uses snow.Context which we're not using
+		if coreVM, ok := vm.(core.VM); ok {
+			registrant.RegisterChain(name, ctx, coreVM)
+		}
 	}
 }
 
@@ -2099,7 +2106,7 @@ func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height
 // placeholderHandler implements handler.Handler interface
 type placeholderHandler struct{}
 
-func (p *placeholderHandler) Context() *snow.ConsensusContext { return nil }
+func (p *placeholderHandler) Context() *block.ConsensusContext { return nil }
 func (p *placeholderHandler) Start(ctx context.Context, startReqID uint32) {}
 func (p *placeholderHandler) Push(ctx context.Context, msg handler.Message) {}
 func (p *placeholderHandler) Len() int { return 0 }

@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/consensus/core/interfaces"
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/protocol/chain"
-	"github.com/luxfi/consensus/snow"
+	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -681,31 +681,23 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	chainDB := prefixdb.New([]byte{0}, baseDB)
 	// atomicDB := prefixdb.New([]byte{1}, baseDB) // Currently unused due to context issues
 
-	// Create snow context for ChainContext
-	snowCtx := &snow.Context{
-		ConsensusContext: snow.ConsensusContext{
-			Alpha:        2,
-			BetaVirtuous: 14,
-			BetaRogue:    20,
-		},
-		NetworkID:   constants.UnitTestID,
-		SubnetID:    constants.PrimaryNetworkID,
+	// Create lux context for ChainContext
+	luxCtx := &consContext.Context{
+		QuantumID:   constants.UnitTestID,
+		NetID:       constants.PrimaryNetworkID,
 		ChainID:     constants.PlatformChainID,
 		NodeID:      ids.GenerateTestNodeID(),
 		PublicKey:   nil,
 		XChainID:    ids.GenerateTestID(),
 		CChainID:    ids.GenerateTestID(),
-		AVAXAssetID: ids.GenerateTestID(),
-		Log:         nil, // Will use the VM's logger
-		Lock:        &vm.lock,
-		Registerer:  nil,
+		LUXAssetID:  ids.GenerateTestID(),
 		StartTime:   time.Now(),
 	}
 	
 	// Create ChainContext
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &snowCtx.ConsensusContext,
-		Context:          snowCtx,
+		ConsensusContext: &linearblock.ConsensusContext{},
+		Context:          luxCtx,
 	}
 
 	// Use a fixed asset ID for testing

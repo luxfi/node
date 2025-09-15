@@ -25,9 +25,6 @@ import (
 	"github.com/luxfi/consensus"
 
 	consensusuptime "github.com/luxfi/consensus/uptime"
-	consensusmockable "github.com/luxfi/consensus/utils/timer/mockable"
-	"github.com/luxfi/node/utils/timer/mockable"
-
 	"github.com/luxfi/consensus/validators"
 
 	"github.com/luxfi/database"
@@ -51,9 +48,7 @@ import (
 	"github.com/luxfi/node/utils/json"
 
 	"github.com/luxfi/log"
-
 	"github.com/luxfi/node/utils/timer/mockable"
-
 	"github.com/luxfi/node/utils/units"
 
 	"github.com/luxfi/node/vms/platformvm/api"
@@ -141,7 +136,7 @@ type environment struct {
 	fx             fx.Fx
 	state          state.State
 	states         map[ids.ID]state.Chain
-	uptimes        consensusuptime.Manager
+	uptimes        consensusuptime.Calculator
 	utxosHandler   utxo.Verifier
 	factory        *txstest.WalletFactory
 	backend        Backend
@@ -188,7 +183,7 @@ func newEnvironment(t *testing.T, f fork) *environment {
 	rewards := reward.NewCalculator(config.RewardConfig)
 	baseState := defaultState(config, ctx, baseDB, rewards)
 
-	uptimes := consensusuptime.NewManager(baseState, clk)
+	uptimes := consensusuptime.NoOpCalculator{}
 	utxosHandler := utxo.NewHandler(ctx.Context, &mockable.Clock{}, fx)
 
 	factory := txstest.NewWalletFactory(ctx.Context, ctx.SharedMemory, config, baseState)
@@ -229,16 +224,7 @@ func newEnvironment(t *testing.T, f fork) *environment {
 		require := require.New(t)
 
 		if env.isBootstrapped.Get() {
-			validatorIDs := env.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-
-			// Only stop tracking if it was started
-			_ = env.uptimes.StopTracking(validatorIDs)
-
-			for netID := range env.config.TrackedSubnets {
-				validatorIDs := env.config.Validators.GetValidatorIDs(netID)
-
-				_ = env.uptimes.StopTracking(validatorIDs)
-			}
+			// NoOpCalculator doesn't track anything, so no need to stop tracking
 			env.state.SetHeight(math.MaxUint64)
 			require.NoError(env.state.Commit())
 		}

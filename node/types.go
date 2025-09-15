@@ -1,0 +1,29 @@
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package node
+
+import (
+	"time"
+
+	consensusTracker "github.com/luxfi/consensus/networking/tracker"
+)
+
+// Type aliases for router types
+type (
+	ChainRouter    = Router
+	TargeterConfig = consensusTracker.TargeterConfig
+	Targeter       = consensusTracker.Targeter
+)
+
+// HealthConfig for router health monitoring
+type HealthConfig struct {
+	Enabled                      bool          `json:"enabled"`
+	PollingInterval              time.Duration `json:"pollingInterval"`
+	MaxOutstandingRequestDuration time.Duration `json:"maxOutstandingRequestDuration"`
+	MaxTimeSinceMsgReceived      time.Duration `json:"maxTimeSinceMsgReceived"`
+	MaxTimeSinceMsgSent          time.Duration `json:"maxTimeSinceMsgSent"`
+	MaxPortionSentQueueBytesFull float64      `json:"maxPortionSentQueueBytesFull"`
+	MaxSendFailRate              float64      `json:"maxSendFailRate"`
+	MinConnectedPeers            int          `json:"minConnectedPeers"`
+}
