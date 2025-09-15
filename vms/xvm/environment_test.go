@@ -135,7 +135,8 @@ type environment struct {
 	sharedMemory *atomic.Memory
 	vm           *VM
 	txBuilder    *txstest.Builder
-	consensusCtx *consensusctx.Context // Store the consensus context for locking
+	consensusCtx *consensusctx.Context // Store the consensus context
+	testLock     *sync.RWMutex        // Lock for test synchronization
 }
 
 // setup the testing environment
@@ -162,18 +163,21 @@ func setup(tb testing.TB, c *envConfig) *environment {
 
 	// Create a proper consensus context for the tests
 	consensusCtx := &consensusctx.Context{
-		NetworkID:    10001,
-		SubnetID:     ids.GenerateTestID(), 
+		QuantumID:    10001,
+		NetID:        ids.GenerateTestID(), 
 		ChainID:      xChainID,
-		XAssetID:     ids.GenerateTestID(),
-		PChainID:     ids.GenerateTestID(),
-		Lock:         &sync.RWMutex{},
-		SharedMemory: m.NewSharedMemory(xChainID),
+		NodeID:       ids.GenerateTestNodeID(),
+		XChainID:     xChainID,
+		CChainID:     ids.GenerateTestID(),
+		AVAXAssetID:  ids.GenerateTestID(),
+		LUXAssetID:   ids.GenerateTestID(),
 	}
 
+	// Create a separate lock for synchronization in tests
+	testLock := &sync.RWMutex{}
 	// NB: this lock is intentionally left locked when this function returns.
 	// The caller of this function is responsible for unlocking.
-	consensusCtx.Lock.Lock()
+	testLock.Lock()
 	
 	// Create a regular context.Context for the VM
 	ctx := context.Background()
@@ -233,9 +237,10 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		vm:           vm,
 		txBuilder:    txstest.New(vm.parser.Codec(), ctx, &vm.Config, vm.feeAssetID, vm.state, m.NewSharedMemory(consensusCtx.ChainID)),
 		consensusCtx: consensusCtx,
+		testLock:     testLock,
 	}
 
-	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), 0)) // 0 = Bootstrapping
 	if c.notLinearized {
 		return env
 	}
@@ -245,11 +250,11 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		return env
 	}
 
-	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(vm.SetState(context.Background(), 1)) // 1 = NormalOp
 
 	tb.Cleanup(func() {
-		env.consensusCtx.Lock.Lock()
-		defer env.consensusCtx.Lock.Unlock()
+		env.testLock.Lock()
+		defer env.testLock.Unlock()
 
 		env.vm.Shutdown()
 	})

@@ -4,8 +4,9 @@
 package utxo
 
 import (
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/ids"
 )
 
-// XAssetID is the LUX asset ID - directly use the consensus XAssetID
-var XAssetID = consensus.XAssetID
+// XAssetID is the LUX asset ID
+// TODO: This should be properly initialized from the context
+var XAssetID ids.ID

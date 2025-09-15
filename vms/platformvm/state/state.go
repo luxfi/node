@@ -17,8 +17,10 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/consensus/validators"
+	consensusvalidators "github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/crypto/bls"
+	nodebls "github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/linkeddb"
@@ -158,7 +160,7 @@ type State interface {
 	// is less than [endHeight], no diffs will be applied.
 	ApplyValidatorWeightDiffs(
 		ctx context.Context,
-		validators map[ids.NodeID]*validators.GetValidatorOutput,
+		validators map[ids.NodeID]*consensusvalidators.GetValidatorOutput,
 		startHeight uint64,
 		endHeight uint64,
 		netID ids.ID,
@@ -177,7 +179,7 @@ type State interface {
 	// is less than [endHeight], no diffs will be applied.
 	ApplyValidatorPublicKeyDiffs(
 		ctx context.Context,
-		validators map[ids.NodeID]*validators.GetValidatorOutput,
+		validators map[ids.NodeID]*consensusvalidators.GetValidatorOutput,
 		startHeight uint64,
 		endHeight uint64,
 	) error
@@ -605,10 +607,14 @@ func newState(
 		return nil, err
 	}
 
+	// TODO: Fix validator manager type mismatch properly
+	// For now, create a new snow validators manager
+	snowValidators := validators.NewManager()
+	
 	return &state{
 		validatorState: newValidatorState(),
 
-		validators: cfg.Validators,
+		validators: snowValidators,
 		ctx:        ctx,
 		cfg:        cfg,
 		metrics:    metrics,
@@ -1014,9 +1020,8 @@ func (s *state) DeleteUTXO(utxoID ids.ID) {
 	s.modifiedUTXOs[utxoID] = nil
 }
 
-func (s *state) GetStartTime(nodeID ids.NodeID) (time.Time, error) {
-	// For uptime.State interface compatibility, use PrimaryNetworkID
-	netID := constants.PrimaryNetworkID
+func (s *state) GetStartTime(nodeID ids.NodeID, netID ids.ID) (time.Time, error) {
+	// Use the provided netID to get the staker
 	staker, err := s.currentStakers.GetValidator(netID, nodeID)
 	if err != nil {
 		return time.Time{}, err
@@ -1025,15 +1030,20 @@ func (s *state) GetStartTime(nodeID ids.NodeID) (time.Time, error) {
 }
 
 // GetUptime implements the uptime.State interface
-func (s *state) GetUptime(nodeID ids.NodeID) (time.Duration, time.Time, error) {
-	// For uptime.State interface compatibility, use PrimaryNetworkID
-	return s.validatorState.GetUptime(nodeID, constants.PrimaryNetworkID)
+func (s *state) GetUptime(nodeID ids.NodeID, netID ids.ID) (time.Duration, time.Duration, error) {
+	// Get the uptime and last updated time from validator state
+	upDuration, lastUpdated, err := s.validatorState.GetUptime(nodeID, netID)
+	if err != nil {
+		return 0, 0, err
+	}
+	// Convert time.Time to Duration since epoch
+	lastUpdatedDuration := time.Duration(lastUpdated.Unix()) * time.Second
+	return upDuration, lastUpdatedDuration, nil
 }
 
 // SetUptime implements the uptime.State interface
-func (s *state) SetUptime(nodeID ids.NodeID, upDuration time.Duration, lastUpdated time.Time) error {
-	// For uptime.State interface compatibility, use PrimaryNetworkID
-	return s.validatorState.SetUptime(nodeID, constants.PrimaryNetworkID, upDuration, lastUpdated)
+func (s *state) SetUptime(nodeID ids.NodeID, netID ids.ID, upDuration time.Duration, lastUpdated time.Time) error {
+	return s.validatorState.SetUptime(nodeID, netID, upDuration, lastUpdated)
 }
 
 func (s *state) GetTimestamp() time.Time {
@@ -1093,7 +1103,7 @@ func (s *state) SetCurrentSupply(netID ids.ID, cs uint64) {
 
 func (s *state) ApplyValidatorWeightDiffs(
 	ctx context.Context,
-	validators map[ids.NodeID]*validators.GetValidatorOutput,
+	validators map[ids.NodeID]*consensusvalidators.GetValidatorOutput,
 	startHeight uint64,
 	endHeight uint64,
 	netID ids.ID,
@@ -1147,14 +1157,14 @@ func (s *state) ApplyValidatorWeightDiffs(
 }
 
 func applyWeightDiff(
-	vdrs map[ids.NodeID]*validators.GetValidatorOutput,
+	vdrs map[ids.NodeID]*consensusvalidators.GetValidatorOutput,
 	nodeID ids.NodeID,
 	weightDiff *ValidatorWeightDiff,
 ) error {
 	vdr, ok := vdrs[nodeID]
 	if !ok {
 		// This node isn't in the current validator set.
-		vdr = &validators.GetValidatorOutput{
+		vdr = &consensusvalidators.GetValidatorOutput{
 			NodeID: nodeID,
 		}
 		vdrs[nodeID] = vdr
@@ -1185,7 +1195,7 @@ func applyWeightDiff(
 
 func (s *state) ApplyValidatorPublicKeyDiffs(
 	ctx context.Context,
-	validators map[ids.NodeID]*validators.GetValidatorOutput,
+	validators map[ids.NodeID]*consensusvalidators.GetValidatorOutput,
 	startHeight uint64,
 	endHeight uint64,
 ) error {
@@ -1636,7 +1646,14 @@ func (s *state) initValidatorSets() error {
 
 		for nodeID, validator := range validators {
 			validatorStaker := validator.validator
-			if err := s.validators.AddStaker(netID, nodeID, validatorStaker.PublicKey, validatorStaker.TxID, validatorStaker.Weight); err != nil {
+			// Convert crypto/bls.PublicKey to utils/crypto/bls.PublicKey
+			var nodePK *nodebls.PublicKey
+			if validatorStaker.PublicKey != nil {
+				// Convert by serializing and deserializing
+				pkBytes := bls.PublicKeyToUncompressedBytes(validatorStaker.PublicKey)
+				nodePK = nodebls.PublicKeyFromValidUncompressedBytes(pkBytes)
+			}
+			if err := s.validators.AddStaker(netID, nodeID, nodePK, validatorStaker.TxID, validatorStaker.Weight); err != nil {
 				return err
 			}
 
@@ -2002,10 +2019,16 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64, codecV
 			} else {
 				if validatorDiff.validatorStatus == added {
 					staker := validatorDiff.validator
+					// Convert crypto/bls.PublicKey to utils/crypto/bls.PublicKey
+					var nodePK *nodebls.PublicKey
+					if staker.PublicKey != nil {
+						pkBytes := bls.PublicKeyToUncompressedBytes(staker.PublicKey)
+						nodePK = nodebls.PublicKeyFromValidUncompressedBytes(pkBytes)
+					}
 					err = s.validators.AddStaker(
 						netID,
 						nodeID,
-						staker.PublicKey,
+						nodePK,
 						staker.TxID,
 						weightDiff.Amount,
 					)

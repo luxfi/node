@@ -413,7 +413,7 @@ func (m *manager) GetCurrentValidators(ctx context.Context, height uint64, netID
 func (m *manager) GetCurrentValidatorSet(
 	ctx context.Context,
 	netID ids.ID,
-) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+) (map[ids.ID]*validators.GetValidatorOutput, uint64, error) {
 	// For now, return an empty map with current height
 	// This is a stub implementation that needs to be properly implemented
 	currentHeight, err := m.getCurrentHeight(ctx)
@@ -421,7 +421,7 @@ func (m *manager) GetCurrentValidatorSet(
 		return nil, 0, err
 	}
 
-	result := make(map[ids.ID]*validators.GetCurrentValidatorOutput)
+	result := make(map[ids.ID]*validators.GetValidatorOutput)
 	return result, currentHeight, nil
 }
 
@@ -433,11 +433,23 @@ func (m *manager) AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKe
 	return nil
 }
 
+// AddWeight implements validators.Manager interface
+func (m *manager) AddWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
+	// This method is not used by platformvm as it manages validators through state changes
+	// Return nil for interface compatibility
+	return nil
+}
+
 // RemoveWeight implements validators.Manager interface
 func (m *manager) RemoveWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error {
 	// This method is not used by platformvm as it manages validators through state changes
 	// Return nil for interface compatibility
 	return nil
+}
+
+// NumValidators implements validators.Manager interface
+func (m *manager) NumValidators(subnetID ids.ID) int {
+	return m.Count(subnetID)
 }
 
 // GetWeight implements validators.Manager interface
