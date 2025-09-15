@@ -49,14 +49,14 @@ func NewBlockVM(
 
 func (vm *blockVM) Initialize(
 	ctx context.Context,
-	chainCtx *block.ChainContext,
-	dbManager block.DBManager,
+	chainCtx interface{},
+	dbManager interface{},
 	genesisBytes,
 	upgradeBytes,
 	configBytes []byte,
-	toEngine chan<- block.Message,
-	fxs []*block.Fx,
-	appSender block.AppSender,
+	toEngine interface{},
+	fxs []interface{},
+	appSender interface{},
 ) error {
 	err := vm.blockMetrics.Initialize(
 		vm.buildBlockVM != nil,

@@ -38,27 +38,18 @@ type networkAppHandlerAdapter struct {
 }
 
 // AppRequest implements core.AppHandler
-func (n *networkAppHandlerAdapter) AppRequest(ctx context.Context, nodeID interface{}, requestID uint32, deadline time.Time, msg []byte) error {
-	if id, ok := nodeID.(ids.NodeID); ok {
-		return n.Network.AppRequest(ctx, id, requestID, deadline, msg)
-	}
-	return errors.New("invalid nodeID type")
+func (n *networkAppHandlerAdapter) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
+	return n.Network.AppRequest(ctx, nodeID, requestID, deadline, msg)
 }
 
 // AppResponse implements core.AppHandler
-func (n *networkAppHandlerAdapter) AppResponse(ctx context.Context, nodeID interface{}, requestID uint32, msg []byte) error {
-	if id, ok := nodeID.(ids.NodeID); ok {
-		return n.Network.AppResponse(ctx, id, requestID, msg)
-	}
-	return errors.New("invalid nodeID type")
+func (n *networkAppHandlerAdapter) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
+	return n.Network.AppResponse(ctx, nodeID, requestID, msg)
 }
 
 // AppGossip implements core.AppHandler
-func (n *networkAppHandlerAdapter) AppGossip(ctx context.Context, nodeID interface{}, msg []byte) error {
-	if id, ok := nodeID.(ids.NodeID); ok {
-		return n.Network.AppGossip(ctx, id, msg)
-	}
-	return errors.New("invalid nodeID type")
+func (n *networkAppHandlerAdapter) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+	return n.Network.AppGossip(ctx, nodeID, msg)
 }
 
 // ClientOption configures Client

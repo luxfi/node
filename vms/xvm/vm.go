@@ -22,6 +22,7 @@ import (
 	"github.com/luxfi/consensus/engine/dag"
 	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
 	"github.com/luxfi/consensus/protocol/chain"
+	consensusinterfaces "github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/validators"
 	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/database"
@@ -382,9 +383,9 @@ func (vm *VM) onNormalOperationsStarted() error {
 	return nil
 }
 
-func (vm *VM) SetState(_ context.Context, state consensus.State) error {
+func (vm *VM) SetState(_ context.Context, state consensusinterfaces.State) error {
 	// Check if bootstrapping or normal operation based on state
-	if state == consensus.Bootstrapping {
+	if state == consensusinterfaces.Bootstrapping {
 		return vm.onBootstrapStarted()
 	}
 	return vm.onNormalOperationsStarted()
@@ -857,19 +858,19 @@ func (n *noOpAppHandler) CrossChainAppResponse(context.Context, ids.ID, uint32, 
 	return nil
 }
 
-func (n *noOpAppHandler) AppRequest(ctx context.Context, nodeID interface{}, requestID uint32, deadline time.Time, request []byte) error {
+func (n *noOpAppHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
 	return nil
 }
 
-func (n *noOpAppHandler) AppRequestFailed(ctx context.Context, nodeID interface{}, requestID uint32, err *core.AppError) error {
+func (n *noOpAppHandler) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, err *core.AppError) error {
 	return nil
 }
 
-func (n *noOpAppHandler) AppResponse(ctx context.Context, nodeID interface{}, requestID uint32, response []byte) error {
+func (n *noOpAppHandler) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
 	return nil
 }
 
-func (n *noOpAppHandler) AppGossip(context.Context, interface{}, []byte) error {
+func (n *noOpAppHandler) AppGossip(context.Context, ids.NodeID, []byte) error {
 	return nil
 }
 

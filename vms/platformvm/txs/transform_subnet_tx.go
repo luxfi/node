@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/consensus"
+	consensusContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/verify"
@@ -119,7 +119,7 @@ func (tx *TransformNetTx) Subnet() ids.ID {
 }
 
 func (tx *TransformNetTx) SyntacticVerify(ctx context.Context) error {
-	luxAssetID := consensus.GetLUXAssetID(ctx)
+	luxAssetID := consensusContext.GetLUXAssetID(ctx)
 	switch {
 	case tx == nil:
 		return ErrNilTx

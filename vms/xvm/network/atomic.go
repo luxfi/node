@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 )
 
@@ -78,7 +79,7 @@ func NewAtomic(h core.AppHandler) Atomic {
 
 func (a *atomic) AppRequest(
 	ctx context.Context,
-	nodeID interface{},
+	nodeID ids.NodeID,
 	requestID uint32,
 	deadline time.Time,
 	msg []byte,
@@ -95,7 +96,7 @@ func (a *atomic) AppRequest(
 
 func (a *atomic) AppRequestFailed(
 	ctx context.Context,
-	nodeID interface{},
+	nodeID ids.NodeID,
 	requestID uint32,
 	appErr *core.AppError,
 ) error {
@@ -106,7 +107,7 @@ func (a *atomic) AppRequestFailed(
 
 func (a *atomic) AppResponse(
 	ctx context.Context,
-	nodeID interface{},
+	nodeID ids.NodeID,
 	requestID uint32,
 	msg []byte,
 ) error {
@@ -121,7 +122,7 @@ func (a *atomic) AppResponse(
 
 func (a *atomic) AppGossip(
 	ctx context.Context,
-	nodeID interface{},
+	nodeID ids.NodeID,
 	msg []byte,
 ) error {
 	h := a.handler.Get()

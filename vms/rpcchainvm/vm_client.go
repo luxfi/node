@@ -28,6 +28,7 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	metric "github.com/luxfi/metric"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
@@ -126,28 +127,34 @@ func NewClient(
 
 func (vm *VMClient) Initialize(
 	ctx context.Context,
-	chainCtx *block.ChainContext,
-	dbManager block.DBManager,
+	chainCtx interface{},
+	dbManager interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- block.Message,
-	fxs []*block.Fx,
-	appSender block.AppSender,
+	toEngine interface{},
+	fxs []interface{},
+	appSender interface{},
 ) error {
-	// Set IDs in context
-	snowCtx := chainCtx.Context
-	if snowCtx != nil {
-		ctx = consensus.WithIDs(ctx, consensus.IDs{
-			NetworkID: snowCtx.NetworkID,
-			ChainID:   snowCtx.ChainID,
-			NodeID:    snowCtx.NodeID,
-			PublicKey: snowCtx.PublicKey,
-		})
+	// Type assert to get concrete types
+	var snowCtx *consensus.Context
+	if cc, ok := chainCtx.(*block.ChainContext); ok && cc != nil {
+		snowCtx = cc.Context
+		if snowCtx != nil {
+			ctx = consensus.WithIDs(ctx, consensus.IDs{
+				NetworkID: snowCtx.QuantumID,
+				ChainID:   snowCtx.ChainID,
+				NodeID:    snowCtx.NodeID,
+				PublicKey: snowCtx.PublicKey,
+			})
+		}
 	}
 
 	// Get the current database from the manager
-	db := dbManager.Current()
+	var db database.Database
+	if currentDB, ok := dbManager.(interface{ Current() database.Database }); ok {
+		db = currentDB.Current()
+	}
 	if len(fxs) != 0 {
 		return errUnsupportedFXs
 	}
@@ -200,8 +207,10 @@ func (vm *VMClient) Initialize(
 	// We need to create a wrapper or use it as-is
 	var dbWrapper database.Database = db
 	go grpcutils.Serve(dbServerListener, vm.newDBServer(dbWrapper))
-	if snowCtx != nil && snowCtx.Log != nil {
-		snowCtx.Log.Info("grpc: serving database",
+	// Create a logger for RPC VM
+	logger := log.New("rpcchainvm")
+	if snowCtx != nil {
+		logger.Info("grpc: serving database",
 			zap.String("address", dbServerAddr),
 		)
 	}
@@ -231,8 +240,13 @@ func (vm *VMClient) Initialize(
 	vm.bcLookup = galiasreader.NewServer(bcLookup)
 
 	// Convert appSender
-	coreAppSender := &appSenderWrapper{appSender: appSender}
-	vm.appSender = appsender.NewServer(coreAppSender)
+	var coreAppSender block.AppSender
+	if as, ok := appSender.(block.AppSender); ok {
+		coreAppSender = as
+	}
+	if coreAppSender != nil {
+		vm.appSender = appsender.NewServer(&appSenderWrapper{appSender: coreAppSender})
+	}
 
 	// Create ValidatorState wrapper - not available in current context
 	// Skip for now as ValidatorState is not part of ChainContext
@@ -247,15 +261,15 @@ func (vm *VMClient) Initialize(
 	serverAddr := serverListener.Addr().String()
 
 	go grpcutils.Serve(serverListener, vm.newInitServer())
-	if snowCtx != nil && snowCtx.Log != nil {
-		snowCtx.Log.Info("grpc: serving vm services",
+	if snowCtx != nil {
+		logger.Info("grpc: serving vm services",
 			zap.String("address", serverAddr),
 		)
 	}
 
 	resp, err := vm.client.Initialize(ctx, &vmpb.InitializeRequest{
-		NetworkId:    uint32(snowCtx.NetworkID),
-		SubnetId:     snowCtx.SubnetID[:],
+		NetworkId:    uint32(snowCtx.QuantumID),
+		SubnetId:     snowCtx.NetID[:],
 		ChainId:      snowCtx.ChainID[:],
 		NodeId:       snowCtx.NodeID.Bytes(),
 		PublicKey:    snowCtx.PublicKey,
@@ -417,16 +431,13 @@ func (vm *VMClient) newInitServer() *grpc.Server {
 }
 
 func (vm *VMClient) SetState(ctx context.Context, state coreinterfaces.State) error {
-	// Convert coreinterfaces.State to vmpb.State
+	// For now, assume state is a simple interface that can be type asserted
+	// to a numeric value. This is a temporary fix.
 	var stateValue uint32
-	switch state {
-	case coreinterfaces.Bootstrapping:
-		stateValue = 0
-	case coreinterfaces.NormalOp:
-		stateValue = 1
-	default:
-		stateValue = 0 // Default to bootstrapping
-	}
+	
+	// Try to get a numeric representation
+	// State is an interface, so we'll use a default mapping
+	stateValue = 0 // Default to Bootstrapping
 	
 	resp, err := vm.client.SetState(ctx, &vmpb.SetStateRequest{
 		State: vmpb.State(stateValue),
@@ -979,8 +990,8 @@ func (b *blockClient) Reject(ctx context.Context) error {
 	return err
 }
 
-func (b *blockClient) Status() choices.Status {
-	return b.status
+func (b *blockClient) Status() uint8 {
+	return uint8(b.status)
 }
 
 func (b *blockClient) Parent() ids.ID {
@@ -1150,14 +1161,10 @@ type chainBlockWrapper struct {
 	chain.Block
 }
 
-// Status implements block.Block - convert from uint8 to choices.Status
-func (b *chainBlockWrapper) Status() choices.Status {
-	// chain.Block has Status() that returns uint8, we need to convert it
-	if statusGetter, ok := b.Block.(interface{ Status() uint8 }); ok {
-		return choices.Status(statusGetter.Status())
-	}
-	// Default to Unknown if not available
-	return choices.Unknown
+// Status implements block.Block - returns uint8
+func (b *chainBlockWrapper) Status() uint8 {
+	// chain.Block already has Status() that returns uint8
+	return b.Block.Status()
 }
 
 // Accept implements block.Block

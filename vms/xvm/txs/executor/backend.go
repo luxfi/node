@@ -7,7 +7,7 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/luxfi/consensus/snow"
+	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/codec"
@@ -17,7 +17,7 @@ import (
 
 type Backend struct {
 	Ctx           context.Context
-	SnowCtx       *snow.Context // Snow context for tests
+	LuxCtx        *consContext.Context // Lux consensus context
 	Config        *config.Config
 	Fxs           []*fxs.ParsedFx
 	TypeToFxIndex map[reflect.Type]int

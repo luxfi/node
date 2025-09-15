@@ -30,8 +30,8 @@ type TestOptionsBlock struct {
 	optsErr error
 }
 
-func (tob TestOptionsBlock) Options(context.Context) ([2]chain.Block, error) {
-	return tob.opts, tob.optsErr
+func (tob TestOptionsBlock) Options(context.Context) ([]chain.Block, error) {
+	return tob.opts[:], tob.optsErr
 }
 
 // ProposerBlock.Verify tests section

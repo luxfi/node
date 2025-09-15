@@ -15,7 +15,8 @@ import (
 	"github.com/luxfi/consensus/core/interfaces"
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/benchlist"
-	"github.com/luxfi/consensus/snow"
+	consContext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -271,15 +272,10 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 	appSender := &testAppSender{}
 
 	// Create a ChainContext from the test context
-	// ChainContext embeds snow.ConsensusContext and snow.Context
-	snowCtx := &snow.Context{
-		ConsensusContext: snow.ConsensusContext{
-			Alpha:        2,
-			BetaVirtuous: 14,
-			BetaRogue:    20,
-		},
-		NetworkID:   ctx.NetworkID,
-		SubnetID:    ctx.NetID,
+	// ChainContext embeds ConsensusContext and Context
+	luxCtx := &consContext.Context{
+		QuantumID:   ctx.NetworkID,
+		NetID:       ctx.NetID,
 		ChainID:     ctx.ChainID,
 		NodeID:      ctx.NodeID,
 		PublicKey:   nil,
@@ -292,8 +288,8 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 		StartTime:   time.Now(),
 	}
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &snowCtx.ConsensusContext,
-		Context:          snowCtx,
+		ConsensusContext: &block.ConsensusContext{},
+		Context:          luxCtx,
 	}
 	
 	// Create DB manager
@@ -1268,28 +1264,22 @@ func TestRestartFullyAccepted(t *testing.T) {
 	firstVM.Clock().Set(initialClkTime)
 	firstCtx.Lock.Lock()
 
-	// Create snow context for chain context
-	snowCtx := snow.Context{
-		ConsensusContext: snow.ConsensusContext{
-			Alpha:        1,
-			BetaVirtuous: 1,
-			BetaRogue:    1,
-		},
-		NetworkID:   firstCtx.NetworkID,
+	// Create lux context for chain context
+	luxCtx := &consContext.Context{
+		QuantumID:   firstCtx.NetworkID,
 		NodeID:      firstCtx.NodeID,
 		PublicKey:   nil,
 		XChainID:    firstCtx.XChainID,
 		CChainID:    firstCtx.CChainID,
-		AVAXAssetID: firstCtx.LUXAssetID,
+		LUXAssetID:  firstCtx.LUXAssetID,
 		ChainID:     firstCtx.ChainID,
-		SubnetID:    constants.PrimaryNetworkID,
-		Log:         firstCtx.Log,
+		NetID:       constants.PrimaryNetworkID,
 		StartTime:   time.Now(),
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &snowCtx.ConsensusContext,
-		Context:          &snowCtx,
+		ConsensusContext: &block.ConsensusContext{},
+		Context:          luxCtx,
 	}
 
 	firstDB = prefixdb.New([]byte{}, memdb.New())
@@ -1385,28 +1375,22 @@ func TestRestartFullyAccepted(t *testing.T) {
 		secondCtx.Lock.Unlock()
 	}()
 
-	// Create snow context for chain context
-	snowCtx2 := snow.Context{
-		ConsensusContext: snow.ConsensusContext{
-			Alpha:        1,
-			BetaVirtuous: 1,
-			BetaRogue:    1,
-		},
-		NetworkID:   secondCtx.NetworkID,
+	// Create lux context for chain context
+	luxCtx2 := &consContext.Context{
+		QuantumID:   secondCtx.NetworkID,
 		NodeID:      secondCtx.NodeID,
 		PublicKey:   nil,
 		XChainID:    secondCtx.XChainID,
 		CChainID:    secondCtx.CChainID,
-		AVAXAssetID: secondCtx.LUXAssetID,
+		LUXAssetID:  secondCtx.LUXAssetID,
 		ChainID:     secondCtx.ChainID,
-		SubnetID:    constants.PrimaryNetworkID,
-		Log:         secondCtx.Log,
+		NetID:       constants.PrimaryNetworkID,
 		StartTime:   time.Now(),
 	}
 
 	chainCtx2 := &linearblock.ChainContext{
-		ConsensusContext: &snowCtx2.ConsensusContext,
-		Context:          &snowCtx2,
+		ConsensusContext: &block.ConsensusContext{},
+		Context:          luxCtx2,
 	}
 
 	secondDB := prefixdb.New([]byte{}, db)
@@ -1853,28 +1837,22 @@ func TestUnverifiedParent(t *testing.T) {
 
 	_, genesisBytes := defaultGenesis(t, ctx.LUXAssetID)
 
-	// Create snow context for chain context
-	snowCtx := snow.Context{
-		ConsensusContext: snow.ConsensusContext{
-			Alpha:        1,
-			BetaVirtuous: 1,
-			BetaRogue:    1,
-		},
-		NetworkID:   ctx.NetworkID,
-		SubnetID:    constants.PrimaryNetworkID,
+	// Create lux context for chain context
+	luxCtx := &consContext.Context{
+		QuantumID:   ctx.NetworkID,
+		NetID:       constants.PrimaryNetworkID,
 		ChainID:     ctx.ChainID,
 		NodeID:      ctx.NodeID,
 		PublicKey:   nil,
 		XChainID:    ctx.XChainID,
 		CChainID:    ctx.CChainID,
-		AVAXAssetID: ctx.LUXAssetID,
-		Log:         ctx.Log,
+		LUXAssetID:  ctx.LUXAssetID,
 		StartTime:   time.Now(),
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &snowCtx.ConsensusContext,
-		Context:          &snowCtx,
+		ConsensusContext: &block.ConsensusContext{},
+		Context:          luxCtx,
 	}
 
 	vmDB := memdb.New()
@@ -2041,28 +2019,22 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 
 	_, genesisBytes := defaultGenesis(t, firstCtx.LUXAssetID)
 
-	// Create snow context for chain context
-	snowCtx := snow.Context{
-		ConsensusContext: snow.ConsensusContext{
-			Alpha:        1,
-			BetaVirtuous: 1,
-			BetaRogue:    1,
-		},
-		NetworkID:   firstCtx.NetworkID,
-		SubnetID:    constants.PrimaryNetworkID,
+	// Create lux context for chain context
+	luxCtx := &consContext.Context{
+		QuantumID:   firstCtx.NetworkID,
+		NetID:       constants.PrimaryNetworkID,
 		ChainID:     firstCtx.ChainID,
 		NodeID:      firstCtx.NodeID,
 		PublicKey:   nil,
 		XChainID:    firstCtx.XChainID,
 		CChainID:    firstCtx.CChainID,
-		AVAXAssetID: firstCtx.LUXAssetID,
-		Log:         firstCtx.Log,
+		LUXAssetID:  firstCtx.LUXAssetID,
 		StartTime:   time.Now(),
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &snowCtx.ConsensusContext,
-		Context:          &snowCtx,
+		ConsensusContext: &block.ConsensusContext{},
+		Context:          luxCtx,
 	}
 
 	dbManager := &simpleDBManager{
@@ -2128,28 +2100,22 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	m := atomic.NewMemory(atomicDB)
 	secondCtx.SharedMemory = m.NewSharedMemory(secondCtx.ChainID)
 
-	// Create snow context for second VM
-	secondSnowCtx := snow.Context{
-		ConsensusContext: snow.ConsensusContext{
-			Alpha:        1,
-			BetaVirtuous: 1,
-			BetaRogue:    1,
-		},
-		NetworkID:   secondCtx.NetworkID,
-		SubnetID:    constants.PrimaryNetworkID,
+	// Create lux context for second VM
+	secondLuxCtx := &consContext.Context{
+		QuantumID:   secondCtx.NetworkID,
+		NetID:       constants.PrimaryNetworkID,
 		ChainID:     secondCtx.ChainID,
 		NodeID:      secondCtx.NodeID,
 		PublicKey:   nil,
 		XChainID:    secondCtx.XChainID,
 		CChainID:    secondCtx.CChainID,
-		AVAXAssetID: secondCtx.LUXAssetID,
-		Log:         secondCtx.Log,
+		LUXAssetID:  secondCtx.LUXAssetID,
 		StartTime:   time.Now(),
 	}
 
 	secondChainCtx := &linearblock.ChainContext{
-		ConsensusContext: &secondSnowCtx.ConsensusContext,
-		Context:          &secondSnowCtx,
+		ConsensusContext: &block.ConsensusContext{},
+		Context:          secondLuxCtx,
 	}
 
 	secondDBManager := &simpleDBManager{
@@ -2258,28 +2224,22 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	m := atomic.NewMemory(atomicDB)
 	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
 
-	// Create snow context for chain context
-	snowCtx := snow.Context{
-		ConsensusContext: snow.ConsensusContext{
-			Alpha:        1,
-			BetaVirtuous: 1,
-			BetaRogue:    1,
-		},
-		NetworkID:   ctx.NetworkID,
-		SubnetID:    constants.PrimaryNetworkID,
+	// Create lux context for chain context
+	luxCtx := &consContext.Context{
+		QuantumID:   ctx.NetworkID,
+		NetID:       constants.PrimaryNetworkID,
 		ChainID:     ctx.ChainID,
 		NodeID:      ctx.NodeID,
 		PublicKey:   nil,
 		XChainID:    ctx.XChainID,
 		CChainID:    ctx.CChainID,
-		AVAXAssetID: ctx.LUXAssetID,
-		Log:         ctx.Log,
+		LUXAssetID:  ctx.LUXAssetID,
 		StartTime:   time.Now(),
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &snowCtx.ConsensusContext,
-		Context:          &snowCtx,
+		ConsensusContext: &block.ConsensusContext{},
+		Context:          luxCtx,
 	}
 
 	dbManager := &simpleDBManager{

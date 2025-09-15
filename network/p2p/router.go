@@ -34,27 +34,18 @@ type routerAppHandlerAdapter struct {
 }
 
 // AppRequest implements core.AppHandler
-func (r *routerAppHandlerAdapter) AppRequest(ctx context.Context, nodeID interface{}, requestID uint32, deadline time.Time, msg []byte) error {
-	if id, ok := nodeID.(ids.NodeID); ok {
-		return r.router.AppRequest(ctx, id, requestID, deadline, msg)
-	}
-	return errors.New("invalid nodeID type")
+func (r *routerAppHandlerAdapter) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
+	return r.router.AppRequest(ctx, nodeID, requestID, deadline, msg)
 }
 
 // AppResponse implements core.AppHandler
-func (r *routerAppHandlerAdapter) AppResponse(ctx context.Context, nodeID interface{}, requestID uint32, msg []byte) error {
-	if id, ok := nodeID.(ids.NodeID); ok {
-		return r.router.AppResponse(ctx, id, requestID, msg)
-	}
-	return errors.New("invalid nodeID type")
+func (r *routerAppHandlerAdapter) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
+	return r.router.AppResponse(ctx, nodeID, requestID, msg)
 }
 
 // AppGossip implements core.AppHandler
-func (r *routerAppHandlerAdapter) AppGossip(ctx context.Context, nodeID interface{}, msg []byte) error {
-	if id, ok := nodeID.(ids.NodeID); ok {
-		return r.router.AppGossip(ctx, id, msg)
-	}
-	return errors.New("invalid nodeID type")
+func (r *routerAppHandlerAdapter) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+	return r.router.AppGossip(ctx, nodeID, msg)
 }
 
 type pendingAppRequest struct {

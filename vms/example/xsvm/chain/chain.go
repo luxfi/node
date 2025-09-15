@@ -6,8 +6,8 @@ package chain
 import (
 	"context"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
+	consensusinterfaces "github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/state"
@@ -19,7 +19,7 @@ var _ Chain = (*chain)(nil)
 
 type Chain interface {
 	LastAccepted() ids.ID
-	SetChainState(state consensus.State)
+	SetChainState(state consensusinterfaces.State)
 	GetBlock(blkID ids.ID) (Block, error)
 
 	// Creates a fully verifiable and executable block, which can be processed

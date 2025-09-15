@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/consensus/choices"
 	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
-	coreinterfaces "github.com/luxfi/consensus/core/interfaces"
+	coreinterfaces "github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
@@ -137,40 +137,74 @@ func New(
 
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *block.ChainContext,
-	dbManagerIntf block.DBManager,
+	chainCtxIntf interface{},
+	dbManagerIntf interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngineIntf chan<- block.Message,
-	fxsIntf []*block.Fx,
-	appSender block.AppSender,
+	toEngineIntf interface{},
+	fxsIntf []interface{},
+	appSenderIntf interface{},
 ) error {
-	// dbManagerIntf is a DBManager, get the current database
-	db := dbManagerIntf.Current()
-	// toEngineIntf is already the correct type chan<- block.Message
+	// Type assert to get concrete types
+	chainCtx, ok := chainCtxIntf.(*block.ChainContext)
+	if !ok || chainCtx == nil {
+		return fmt.Errorf("invalid chain context type")
+	}
 	
-	// fxsIntf is already the correct type []*block.Fx
-	fxs := fxsIntf
+	// Extract database from dbManagerIntf
+	// Try to get database directly if it's already a database.Database
+	var db database.Database
+	if dbObj, ok := dbManagerIntf.(database.Database); ok {
+		db = dbObj
+	} else {
+		// Otherwise, assume it's a manager with Current() method
+		type dbManager interface {
+			Current() database.Database
+		}
+		if mgr, ok := dbManagerIntf.(dbManager); ok {
+			db = mgr.Current()
+		} else {
+			return fmt.Errorf("invalid database manager type")
+		}
+	}
+	
+	// toEngine is passed through to the inner VM
+	_, ok = toEngineIntf.(chan<- block.Message)
+	if !ok {
+		return fmt.Errorf("invalid message channel type")
+	}
+	
+	// Validate fxs are the correct type - passed through to inner VM
+	for _, fx := range fxsIntf {
+		if _, ok := fx.(*block.Fx); !ok && fx != nil {
+			return fmt.Errorf("invalid fx type")
+		}
+	}
+	
+	// appSender is passed through to the inner VM
+	_, ok = appSenderIntf.(block.AppSender)
+	if !ok {
+		return fmt.Errorf("invalid app sender type")
+	}
+	
 	// Set IDs once at initialization
 	vm.ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID: chainCtx.NetworkID,
-		NetID:  chainCtx.SubnetID,
-		ChainID:   chainCtx.ChainID,
-		NodeID:    chainCtx.NodeID,
-		PublicKey: chainCtx.PublicKey,
+		NetworkID: chainCtx.Context.QuantumID,
+		NetID:  chainCtx.Context.NetID,
+		ChainID:   chainCtx.Context.ChainID,
+		NodeID:    chainCtx.Context.NodeID,
+		PublicKey: chainCtx.Context.PublicKey,
 	})
 
 	// Create an adapter for ValidatorState
-	// chainCtx.ValidatorState is interfaces.ValidatorState but we need consensus.ValidatorState
-	vsAdapter := &interfacesToConsensusValidatorStateAdapter{
-		ctx: vm.ctx,
-		vs:  chainCtx.ValidatorState,
+	// chainCtx.ConsensusContext.ValidatorState is consensus.ValidatorState
+	if chainCtx.ConsensusContext != nil && chainCtx.ConsensusContext.ValidatorState != nil {
+		vm.ctx = consensus.WithValidatorState(vm.ctx, chainCtx.ConsensusContext.ValidatorState)
 	}
-	vm.ctx = consensus.WithValidatorState(vm.ctx, vsAdapter)
 
-	// Store log directly on VM
-	vm.log = chainCtx.Log
+	// Create a logger for the VM
+	vm.log = log.New("proposervm")
 
 	vm.db = versiondb.New(prefixdb.New(dbPrefix, db))
 	baseState, err := state.NewMetered(vm.db, "state", vm.Config.Registerer)
@@ -184,7 +218,7 @@ func (vm *VM) Initialize(
 	vs := consensus.GetValidatorState(vm.ctx)
 	if vs != nil {
 		validatorStateWrapper := &validatorStateWrapper{ctx: vm.ctx, vs: vs}
-		vm.Windower = proposer.New(validatorStateWrapper, chainCtx.SubnetID, chainCtx.ChainID)
+		vm.Windower = proposer.New(validatorStateWrapper, chainCtx.Context.NetID, chainCtx.Context.ChainID)
 	} else {
 		// Create a minimal implementation for now
 		vm.log.Warn("ValidatorState not found in context, Windower may not work correctly")
@@ -228,14 +262,14 @@ func (vm *VM) Initialize(
 
 	err = vm.ChainVM.Initialize(
 		ctx,
-		chainCtx,
+		chainCtxIntf,
 		dbManagerIntf,
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
 		toEngineIntf,
-		fxs,
-		appSender,
+		fxsIntf,
+		appSenderIntf,
 	)
 	if err != nil {
 		return err
@@ -256,13 +290,13 @@ func (vm *VM) Initialize(
 	forkHeight, err := vm.GetForkHeight()
 	switch err {
 	case nil:
-		chainCtx.Log.Info("initialized proposervm",
+		vm.log.Info("initialized proposervm",
 			zap.String("state", "after fork"),
 			zap.Uint64("forkHeight", forkHeight),
 			zap.Uint64("lastAcceptedHeight", vm.lastAcceptedHeight),
 		)
 	case database.ErrNotFound:
-		chainCtx.Log.Info("initialized proposervm",
+		vm.log.Info("initialized proposervm",
 			zap.String("state", "before fork"),
 		)
 	default:

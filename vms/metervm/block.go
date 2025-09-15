@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
 )
@@ -53,9 +52,9 @@ func (mb *meterBlock) Timestamp() time.Time {
 	return mb.innerBlock.Timestamp()
 }
 
-// Status returns the block's status as choices.Status
-func (mb *meterBlock) Status() choices.Status {
-	return mb.innerBlock.Status()
+// Status returns the block's status as uint8
+func (mb *meterBlock) Status() uint8 {
+	return uint8(mb.innerBlock.Status())
 }
 
 // Bytes returns the serialized block

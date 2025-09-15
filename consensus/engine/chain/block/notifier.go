@@ -9,7 +9,6 @@ import (
 	"time"
 
 	consensusblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/ids"
 )
 
@@ -100,11 +99,6 @@ func (cn *ChangeNotifier) SetPreference(ctx context.Context, blkID ids.ID) error
 	}
 
 	return cn.ChainVM.SetPreference(ctx, blkID)
-}
-
-func (cn *ChangeNotifier) SetState(ctx context.Context, state interfaces.State) error {
-	defer cn.OnChange()
-	return cn.ChainVM.SetState(ctx, state)
 }
 
 func (cn *ChangeNotifier) BuildBlock(ctx context.Context) (consensusblock.Block, error) {

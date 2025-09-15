@@ -213,22 +213,22 @@ func (n *Network) IssueTxFromRPCWithoutVerification(tx *txs.Tx) error {
 }
 
 // AppGossip handles gossip messages
-func (n *Network) AppGossip(ctx context.Context, nodeID interface{}, msg []byte) error {
+func (n *Network) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
 	// Handle gossip message
 	return nil
 }
 
 // AppRequest handles app requests
-func (n *Network) AppRequest(ctx context.Context, nodeID interface{}, requestID uint32, deadline time.Time, msg []byte) error {
+func (n *Network) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
 	return nil
 }
 
 // AppRequestFailed handles failed app requests
-func (n *Network) AppRequestFailed(ctx context.Context, nodeID interface{}, requestID uint32, appErr *core.AppError) error {
+func (n *Network) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
 	return nil
 }
 
 // AppResponse handles app responses
-func (n *Network) AppResponse(ctx context.Context, nodeID interface{}, requestID uint32, msg []byte) error {
+func (n *Network) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
 	return nil
 }

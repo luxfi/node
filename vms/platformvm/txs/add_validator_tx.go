@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxfi/consensus"
+	consensusContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
@@ -120,7 +120,7 @@ func (tx *AddValidatorTx) SyntacticVerify(ctx context.Context) error {
 		totalStakeWeight = newWeight
 
 		assetID := out.AssetID()
-		luxAssetID := consensus.GetLUXAssetID(ctx)
+		luxAssetID := consensusContext.GetLUXAssetID(ctx)
 		if assetID != luxAssetID {
 			return fmt.Errorf("%w but is %q", errStakeMustBeLUX, assetID)
 		}
