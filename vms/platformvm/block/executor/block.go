@@ -87,6 +87,12 @@ func (b *Block) Status() uint8 {
 	return uint8(b.StatusChoices())
 }
 
+// SetStatus sets the block status  
+func (b *Block) SetStatus(status choices.Status) {
+	// This is a no-op as status is managed by the manager
+	// The actual status is tracked in manager.blkIDToState
+}
+
 func (b *Block) Timestamp() time.Time {
 	return b.manager.getTimestamp(b.ID())
 }

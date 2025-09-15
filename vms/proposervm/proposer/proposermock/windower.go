@@ -15,7 +15,7 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
-	gomock "github.com/luxfi/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // Windower is a mock of Windower interface.

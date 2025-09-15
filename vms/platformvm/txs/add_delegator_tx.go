@@ -107,7 +107,8 @@ func (tx *AddDelegatorTx) SyntacticVerify(ctx context.Context) error {
 		totalStakeWeight = newWeight
 
 		assetID := out.AssetID()
-		if assetID != consensus.XAssetID {
+		luxAssetID := consensus.GetLUXAssetID(ctx)
+		if assetID != luxAssetID {
 			return fmt.Errorf("%w but is %q", errStakeMustBeLUX, assetID)
 		}
 	}

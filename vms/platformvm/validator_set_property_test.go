@@ -17,11 +17,10 @@ import (
 	"github.com/leanovate/gopter/prop"
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/interfaces"
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/consensus/snow"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -30,11 +29,11 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/api"
@@ -250,9 +249,10 @@ func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndNet m
 			blsKey = s.PublicKey
 		}
 
+		pkBytes := bls.PublicKeyToUncompressedBytes(blsKey)
 		validatorsSet[v.NodeID] = &validators.GetValidatorOutput{
 			NodeID:    v.NodeID,
-			PublicKey: blsKey,
+			PublicKey: pkBytes,
 			Weight:    v.Weight,
 		}
 	}
@@ -271,7 +271,7 @@ func addNetValidator(vm *VM, data *validatorInputData, netID ids.ID) (*state.Sta
 				End:    uint64(data.endTime.Unix()),
 				Wght:   vm.Config.MinValidatorStake,
 			},
-			Subnet: netID,
+			Net: netID,
 		},
 		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -307,7 +307,7 @@ func addPrimaryValidatorWithBLSKey(vm *VM, data *validatorInputData) (*state.Sta
 				End:    uint64(data.endTime.Unix()),
 				Wght:   vm.Config.MinValidatorStake,
 			},
-			Subnet: constants.PrimaryNetworkID,
+			Net: constants.PrimaryNetworkID,
 		},
 		signer.NewProofOfPossession(sk),
 		vm.luxAssetID,
@@ -681,21 +681,36 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	chainDB := prefixdb.New([]byte{0}, baseDB)
 	// atomicDB := prefixdb.New([]byte{1}, baseDB) // Currently unused due to context issues
 
-	_ = consensustest.Context(t, consensustest.PChainID) // ctx
-
-	// m := atomic.NewMemory(atomicDB)
-	// ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
-	
-	// ctx.Lock.Lock()
-	// defer ctx.Lock.Unlock()
-	_ = &core.SenderTest{ // appSender 
-		SendAppGossipF: func(context.Context, []byte) error {
-			return nil
+	// Create snow context for ChainContext
+	snowCtx := &snow.Context{
+		ConsensusContext: snow.ConsensusContext{
+			Alpha:        2,
+			BetaVirtuous: 14,
+			BetaRogue:    20,
 		},
+		NetworkID:   constants.UnitTestID,
+		SubnetID:    constants.PrimaryNetworkID,
+		ChainID:     constants.PlatformChainID,
+		NodeID:      ids.GenerateTestNodeID(),
+		PublicKey:   nil,
+		XChainID:    ids.GenerateTestID(),
+		CChainID:    ids.GenerateTestID(),
+		AVAXAssetID: ids.GenerateTestID(),
+		Log:         nil, // Will use the VM's logger
+		Lock:        &vm.lock,
+		Registerer:  nil,
+		StartTime:   time.Now(),
+	}
+	
+	// Create ChainContext
+	chainCtx := &linearblock.ChainContext{
+		ConsensusContext: &snowCtx.ConsensusContext,
+		Context:          snowCtx,
 	}
 
-	// Use a fixed asset ID for testing since ctx doesn't have LUXAssetID
+	// Use a fixed asset ID for testing
 	luxAssetID := ids.GenerateTestID()
+	vm.luxAssetID = luxAssetID
 	genesisBytes, err := buildCustomGenesis(luxAssetID)
 	if err != nil {
 		return nil, ids.Empty, err
@@ -706,11 +721,11 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	// Create a message channel
 	toEngine := make(chan linearblock.Message, 1)
 	// Create a mock AppSender
-	appSender := &core.SenderTest{}
+	appSender := &mockAppSender{} // Use a mock instead of SenderTest
 	
 	err = vm.Initialize(
 		context.Background(),
-		nil, // ChainContext
+		chainCtx, // Pass proper ChainContext
 		dbManager,
 		genesisBytes,
 		nil, // upgradeBytes
@@ -723,7 +738,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		return nil, ids.Empty, err
 	}
 
-	err = vm.SetState(context.Background(), consensus.NormalOp)
+	err = vm.SetState(context.Background(), interfaces.NormalOp)
 	if err != nil {
 		return nil, ids.Empty, err
 	}
@@ -843,12 +858,51 @@ func buildCustomGenesis(luxAssetID ids.ID) ([]byte, error) {
 	return genesisBytes, nil
 }
 
+// mockAppSender is a stub for app sender
+type mockAppSender struct{}
+
+func (m *mockAppSender) SendAppGossip(ctx context.Context, nodeIDs []ids.NodeID, msg []byte) error {
+	return nil
+}
+
+func (m *mockAppSender) SendAppGossipSpecific(context.Context, set.Set[ids.NodeID], []byte, int) error {
+	return nil
+}
+
+func (m *mockAppSender) SendCrossChainAppRequest(context.Context, ids.ID, uint32, []byte) error {
+	return nil
+}
+
+func (m *mockAppSender) SendCrossChainAppError(context.Context, ids.ID, uint32, int32, string) error {
+	return nil
+}
+
+func (m *mockAppSender) SendCrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
+	return nil
+}
+
+func (m *mockAppSender) SendAppError(context.Context, ids.NodeID, uint32, int32, string) error {
+	return nil
+}
+
+func (m *mockAppSender) SendAppRequest(ctx context.Context, nodeIDs []ids.NodeID, requestID uint32, request []byte) error {
+	return nil
+}
+
+func (m *mockAppSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+	return nil
+}
+
 // mockDBManager implements linearblock.DBManager
 type mockDBManager struct {
 	db database.Database
 }
 
 func (m *mockDBManager) Current() database.Database {
+	return m.db
+}
+
+func (m *mockDBManager) Database(ids.ID) database.Database {
 	return m.db
 }
 

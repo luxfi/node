@@ -17,6 +17,7 @@ import (
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/coremock"
+	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -25,6 +26,41 @@ import (
 
 	pmempool "github.com/luxfi/node/vms/platformvm/txs/mempool"
 )
+
+// fakeSender is a simple mock AppSender for testing
+type fakeSender struct{}
+
+func (f *fakeSender) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], msg []byte) error {
+	return nil
+}
+
+func (f *fakeSender) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], msg []byte) error {
+	return nil
+}
+
+func (f *fakeSender) SendCrossChainAppRequest(context.Context, ids.ID, uint32, []byte) error {
+	return nil
+}
+
+func (f *fakeSender) SendCrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
+	return nil
+}
+
+func (f *fakeSender) SendCrossChainAppError(context.Context, ids.ID, uint32, int32, string) error {
+	return nil
+}
+
+func (f *fakeSender) SendAppError(context.Context, ids.NodeID, uint32, int32, string) error {
+	return nil
+}
+
+func (f *fakeSender) SendAppRequest(context.Context, set.Set[ids.NodeID], uint32, []byte) error {
+	return nil
+}
+
+func (f *fakeSender) SendAppResponse(context.Context, ids.NodeID, uint32, []byte) error {
+	return nil
+}
 
 var (
 	errTest = errors.New("test error")
@@ -75,6 +111,14 @@ func (m *mockValidatorState) GetValidatorSet(
 	return m.validators, nil
 }
 
+func (m *mockValidatorState) GetCurrentValidators(
+	ctx context.Context,
+	height uint64,
+	netID ids.ID,
+) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return m.validators, nil
+}
+
 func (m *mockValidatorState) GetCurrentValidatorSet(
 	ctx context.Context,
 	netID ids.ID,
@@ -114,7 +158,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return mempool
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				return &core.FakeSender{}
+				return &fakeSender{}
 			},
 			expectedErr: mempool.ErrDuplicateTx,
 		},
@@ -128,7 +172,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				// Shouldn't gossip the tx
-				return &core.FakeSender{}
+				return &fakeSender{}
 			},
 			expectedErr: errTest,
 		},
@@ -144,7 +188,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			txVerifier: testTxVerifier{err: errTest},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				// Shouldn't gossip the tx
-				return &core.FakeSender{}
+				return &fakeSender{}
 			},
 			expectedErr: errTest,
 		},
@@ -160,7 +204,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				// Shouldn't gossip the tx
-				return &core.FakeSender{}
+				return &fakeSender{}
 			},
 			expectedErr: errTest,
 		},
@@ -171,7 +215,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			},
 			partialSyncPrimaryNetwork: true,
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				return &core.FakeSender{}
+				return &fakeSender{}
 			},
 			expectedErr: errMempoolDisabledWithPartialSync,
 		},
@@ -188,8 +232,11 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return mempool
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := coremock.NewMockAppSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				appSender := &coremock.MockAppSender{
+					SendAppGossipF: func(context.Context, set.Set[ids.NodeID], []byte) error {
+						return nil
+					},
+				}
 				return appSender
 			},
 			expectedErr: nil,

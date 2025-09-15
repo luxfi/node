@@ -13,9 +13,32 @@ import (
 type JSONByteSlice []byte
 
 func (b JSONByteSlice) MarshalJSON() ([]byte, error) {
+	if b == nil {
+		return []byte("null"), nil
+	}
 	hexData, err := formatting.Encode(formatting.HexNC, b)
 	if err != nil {
 		return nil, err
 	}
 	return json.Marshal(hexData)
+}
+
+func (b *JSONByteSlice) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		// Keep the existing value when unmarshaling null
+		return nil
+	}
+	
+	var hexData string
+	if err := json.Unmarshal(data, &hexData); err != nil {
+		return err
+	}
+	
+	decoded, err := formatting.Decode(formatting.HexNC, hexData)
+	if err != nil {
+		return err
+	}
+	
+	*b = decoded
+	return nil
 }

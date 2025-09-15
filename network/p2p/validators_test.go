@@ -11,9 +11,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorsmock"
+	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	luxmetric "github.com/luxfi/metric"
@@ -168,7 +167,7 @@ func TestValidatorsSample(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 			netID := ids.GenerateTestID()
-			mockValidators := validatorsmock.NewState(t)
+			mockValidators := &validatorstest.TestState{}
 
 			// Set up mock behavior
 			callIndex := 0
@@ -201,7 +200,7 @@ func TestValidatorsSample(t *testing.T) {
 				return validatorSet, call.getValidatorSetErr
 			}
 
-			fakeSender := &core.FakeSender{}
+			fakeSender := &FakeSender{}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
 	network, err := NewNetwork(log.NoLog{}, sender, luxmetric.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
@@ -317,7 +316,7 @@ func TestValidatorsTop(t *testing.T) {
 			}
 
 			netID := ids.GenerateTestID()
-			mockValidators := validatorsmock.NewState(t)
+			mockValidators := &validatorstest.TestState{}
 
 			mockValidators.GetCurrentHeightF = func(context.Context) (uint64, error) {
 				return uint64(1), nil
@@ -326,7 +325,7 @@ func TestValidatorsTop(t *testing.T) {
 				return validatorSet, nil
 			}
 
-			fakeSender := &core.FakeSender{}
+			fakeSender := &FakeSender{}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
 	network, err := NewNetwork(log.NoLog{}, sender, luxmetric.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)

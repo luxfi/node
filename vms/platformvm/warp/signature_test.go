@@ -11,8 +11,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorsmock"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
@@ -26,43 +24,38 @@ var (
 	sourceChainID = ids.GenerateTestID()
 )
 
-// validatorStateAdapter adapts validators.State to ValidatorState
-type validatorStateAdapter struct {
-	state validators.State
+// mockValidatorState is a mock implementation of ValidatorState
+type mockValidatorState struct {
+	getValidatorSetF func(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error)
+	getNetIDF func(ctx context.Context, chainID ids.ID) (ids.ID, error)
 }
 
-func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
-	validatorSet, err := v.state.GetValidatorSet(ctx, height, netID)
-	if err != nil {
-		return nil, err
+func (m *mockValidatorState) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	if m.getValidatorSetF != nil {
+		return m.getValidatorSetF(ctx, height, netID)
 	}
-	
-	result := make(map[ids.NodeID]uint64, len(validatorSet))
-	for nodeID, validator := range validatorSet {
-		result[nodeID] = validator.Weight
-	}
-	return result, nil
+	return nil, nil
 }
 
-func (v *validatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return v.state.GetNetID(ctx, chainID)
+func (m *mockValidatorState) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	if m.getNetIDF != nil {
+		return m.getNetIDF(ctx, chainID)
+	}
+	return ids.Empty, nil
 }
 
 func TestSignatureVerification(t *testing.T) {
 	netID := ids.GenerateTestID()
 	sk0, err := bls.NewSecretKey()
 	require.NoError(t, err)
-	pk0 := bls.PublicFromSecretKey(sk0)
 	nodeID0 := ids.GenerateTestNodeID()
 
-	sk1, err := bls.NewSecretKey()
+	_, err = bls.NewSecretKey()
 	require.NoError(t, err)
-	pk1 := bls.PublicFromSecretKey(sk1)
 	nodeID1 := ids.GenerateTestNodeID()
 
 	sk2, err := bls.NewSecretKey()
 	require.NoError(t, err)
-	pk2 := bls.PublicFromSecretKey(sk2)
 	nodeID2 := ids.GenerateTestNodeID()
 
 	tests := []struct {
@@ -78,14 +71,12 @@ func TestSignatureVerification(t *testing.T) {
 			name:      "can't get netID",
 			networkID: constants.UnitTestID,
 			stateF: func() ValidatorState {
-				return &validatorStateAdapter{
-					state: &validatorsmock.State{
-						GetNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-							if chainID == sourceChainID {
-								return netID, errTest
-							}
-							return ids.Empty, errTest
-						},
+				return &mockValidatorState{
+					getNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+						if chainID == sourceChainID {
+							return netID, errTest
+						}
+						return ids.Empty, errTest
 					},
 				}
 			},
@@ -112,18 +103,16 @@ func TestSignatureVerification(t *testing.T) {
 			name:      "can't get validator set",
 			networkID: constants.UnitTestID,
 			stateF: func() ValidatorState {
-				return &validatorStateAdapter{
-					state: &validatorsmock.State{
-					GetNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+				return &mockValidatorState{
+					getNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 						return netID, nil
 					},
-					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]uint64, error) {
 						if height == pChainHeight && sID == netID {
 							return nil, errTest
 						}
 						return nil, errTest
 					},
-				},
 				}
 			},
 			quorumNum: 1,
@@ -149,26 +138,16 @@ func TestSignatureVerification(t *testing.T) {
 			name:      "weight overflow",
 			networkID: constants.UnitTestID,
 			stateF: func() ValidatorState {
-				return &validatorStateAdapter{
-					state: &validatorsmock.State{
-					GetNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+				return &mockValidatorState{
+					getNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 						return netID, nil
 					},
-					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-						return map[ids.NodeID]*validators.GetValidatorOutput{
-							nodeID0: {
-								NodeID:    nodeID0,
-								PublicKey: pk0,
-								Weight:    math.MaxUint64,
-							},
-							nodeID1: {
-								NodeID:    nodeID1,
-								PublicKey: pk1,
-								Weight:    math.MaxUint64,
-							},
+					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]uint64, error) {
+						return map[ids.NodeID]uint64{
+							nodeID0: math.MaxUint64,
+							nodeID1: math.MaxUint64,
 						}, nil
 					},
-				},
 				}
 			},
 			quorumNum: 1,
@@ -194,21 +173,15 @@ func TestSignatureVerification(t *testing.T) {
 			name:      "invalid bit set index",
 			networkID: constants.UnitTestID,
 			stateF: func() ValidatorState {
-				return &validatorStateAdapter{
-					state: &validatorsmock.State{
-					GetNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+				return &mockValidatorState{
+					getNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 						return netID, nil
 					},
-					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-						return map[ids.NodeID]*validators.GetValidatorOutput{
-							nodeID0: {
-								NodeID:    nodeID0,
-								PublicKey: pk0,
-								Weight:    50,
-							},
+					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]uint64, error) {
+						return map[ids.NodeID]uint64{
+							nodeID0: 50,
 						}, nil
 					},
-				},
 				}
 			},
 			quorumNum: 1,
@@ -239,31 +212,17 @@ func TestSignatureVerification(t *testing.T) {
 			name:      "valid signature",
 			networkID: constants.UnitTestID,
 			stateF: func() ValidatorState {
-				return &validatorStateAdapter{
-					state: &validatorsmock.State{
-					GetNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+				return &mockValidatorState{
+					getNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 						return netID, nil
 					},
-					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-						return map[ids.NodeID]*validators.GetValidatorOutput{
-							nodeID0: {
-								NodeID:    nodeID0,
-								PublicKey: pk0,
-								Weight:    50,
-							},
-							nodeID1: {
-								NodeID:    nodeID1,
-								PublicKey: pk1,
-								Weight:    50,
-							},
-							nodeID2: {
-								NodeID:    nodeID2,
-								PublicKey: pk2,
-								Weight:    50,
-							},
+					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]uint64, error) {
+						return map[ids.NodeID]uint64{
+							nodeID0: 50,
+							nodeID1: 50,
+							nodeID2: 50,
 						}, nil
 					},
-				},
 				}
 			},
 			quorumNum: 1,

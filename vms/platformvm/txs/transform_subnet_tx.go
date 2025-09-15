@@ -119,6 +119,7 @@ func (tx *TransformNetTx) Subnet() ids.ID {
 }
 
 func (tx *TransformNetTx) SyntacticVerify(ctx context.Context) error {
+	luxAssetID := consensus.GetLUXAssetID(ctx)
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -128,7 +129,7 @@ func (tx *TransformNetTx) SyntacticVerify(ctx context.Context) error {
 		return errCantTransformPrimaryNetwork
 	case tx.AssetID == ids.Empty:
 		return errEmptyAssetID
-	case tx.AssetID == consensus.XAssetID:
+	case tx.AssetID == luxAssetID:
 		return errAssetIDCantBeLUX
 	case tx.InitialSupply == 0:
 		return errInitialSupplyZero

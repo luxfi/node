@@ -4,6 +4,7 @@
 package executor
 
 import (
+	"context"
 	"math"
 	"strings"
 	"testing"
@@ -35,7 +36,9 @@ var (
 )
 
 func TestSyntacticVerifierBaseTx(t *testing.T) {
-	ctx := consensustest.Context(t, consensustest.XChainID)
+	chainID := consensustest.XChainID
+	cChainID := ids.GenerateTestID()
+	ctx := consensustest.Context(t, chainID)
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -80,7 +83,7 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 	}
 	baseTx := lux.BaseTx{
 		NetworkID:    constants.UnitTestID,
-		BlockchainID: ctx.ChainID,
+		BlockchainID: chainID,
 		Outs: []*lux.TransferableOutput{
 			&output,
 		},
@@ -97,7 +100,8 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 
 	codec := parser.Codec()
 	backend := &Backend{
-		Ctx:    ctx,
+		Ctx:      ctx,
+		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
@@ -407,7 +411,9 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 }
 
 func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
-	ctx := consensustest.Context(t, consensustest.XChainID)
+	chainID := consensustest.XChainID
+	cChainID := ids.GenerateTestID()
+	ctx := consensustest.Context(t, chainID)
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -452,7 +458,7 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 	}
 	baseTx := lux.BaseTx{
 		NetworkID:    constants.UnitTestID,
-		BlockchainID: ctx.ChainID,
+		BlockchainID: chainID,
 		Outs: []*lux.TransferableOutput{
 			&output,
 		},
@@ -484,7 +490,8 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 
 	codec := parser.Codec()
 	backend := &Backend{
-		Ctx:    ctx,
+		Ctx:      ctx,
+		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
@@ -1016,7 +1023,9 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 }
 
 func TestSyntacticVerifierOperationTx(t *testing.T) {
-	ctx := consensustest.Context(t, consensustest.XChainID)
+	chainID := consensustest.XChainID
+	cChainID := ids.GenerateTestID()
+	ctx := consensustest.Context(t, chainID)
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -1061,7 +1070,7 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 	}
 	baseTx := lux.BaseTx{
 		NetworkID:    constants.UnitTestID,
-		BlockchainID: ctx.ChainID,
+		BlockchainID: chainID,
 		Ins: []*lux.TransferableInput{
 			&input,
 		},
@@ -1101,7 +1110,8 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 
 	codec := parser.Codec()
 	backend := &Backend{
-		Ctx:    ctx,
+		Ctx:      ctx,
+		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
@@ -1505,7 +1515,9 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 }
 
 func TestSyntacticVerifierImportTx(t *testing.T) {
-	ctx := consensustest.Context(t, consensustest.XChainID)
+	ctx := context.Background()
+	chainID := consensustest.XChainID
+	cChainID := ids.GenerateTestID()
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -1550,14 +1562,14 @@ func TestSyntacticVerifierImportTx(t *testing.T) {
 	}
 	baseTx := lux.BaseTx{
 		NetworkID:    constants.UnitTestID,
-		BlockchainID: ctx.ChainID,
+		BlockchainID: chainID,
 		Outs: []*lux.TransferableOutput{
 			&output,
 		},
 	}
 	tx := txs.ImportTx{
 		BaseTx:      txs.BaseTx{BaseTx: baseTx},
-		SourceChain: ctx.CChainID,
+		SourceChain: cChainID,
 		ImportedIns: []*lux.TransferableInput{
 			&input,
 		},
@@ -1571,7 +1583,8 @@ func TestSyntacticVerifierImportTx(t *testing.T) {
 
 	codec := parser.Codec()
 	backend := &Backend{
-		Ctx:    ctx,
+		Ctx:      ctx,
+		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
@@ -1905,7 +1918,9 @@ func TestSyntacticVerifierImportTx(t *testing.T) {
 }
 
 func TestSyntacticVerifierExportTx(t *testing.T) {
-	ctx := consensustest.Context(t, consensustest.XChainID)
+	ctx := context.Background()
+	chainID := consensustest.XChainID
+	cChainID := ids.GenerateTestID()
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -1950,14 +1965,14 @@ func TestSyntacticVerifierExportTx(t *testing.T) {
 	}
 	baseTx := lux.BaseTx{
 		NetworkID:    constants.UnitTestID,
-		BlockchainID: ctx.ChainID,
+		BlockchainID: chainID,
 		Ins: []*lux.TransferableInput{
 			&input,
 		},
 	}
 	tx := txs.ExportTx{
 		BaseTx:           txs.BaseTx{BaseTx: baseTx},
-		DestinationChain: ctx.CChainID,
+		DestinationChain: cChainID,
 		ExportedOuts: []*lux.TransferableOutput{
 			&output,
 		},
@@ -1971,7 +1986,8 @@ func TestSyntacticVerifierExportTx(t *testing.T) {
 
 	codec := parser.Codec()
 	backend := &Backend{
-		Ctx:    ctx,
+		Ctx:      ctx,
+		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{

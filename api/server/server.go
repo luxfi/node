@@ -177,8 +177,16 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 	// Get chain ID from context
 	chainID := consensus.GetChainID(ctx)
 	if chainID == ids.Empty {
-		s.log.Error("no chain ID found in context")
-		return
+		// For Platform chain, use a hardcoded ID
+		if chainName == "platform" || chainName == "P" {
+			chainID = constants.PlatformChainID
+			s.log.Info("using hardcoded Platform chain ID",
+				zap.Stringer("chainID", chainID),
+			)
+		} else {
+			s.log.Error("no chain ID found in context")
+			return
+		}
 	}
 
 	s.lock.Lock()
@@ -286,13 +294,10 @@ func rejectMiddleware(handler http.Handler, ctx context.Context) http.Handler {
 			// Use type assertion to check for StateGetter interface
 			if sh, ok := stateHolder.(StateGetter); ok {
 				state := sh.Get()
-				fmt.Printf("DEBUG: Got state %v (syncing=%v, bootstrapping=%v)\n", state, interfaces.StateSyncing, interfaces.Bootstrapping)
 				if state == interfaces.StateSyncing || state == interfaces.Bootstrapping {
 					w.WriteHeader(http.StatusServiceUnavailable)
 					return
 				}
-			} else {
-				fmt.Printf("DEBUG: StateGetter type assertion failed for type %T\n", stateHolder)
 			}
 		}
 		handler.ServeHTTP(w, r)

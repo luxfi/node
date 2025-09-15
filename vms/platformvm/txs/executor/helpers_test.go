@@ -26,6 +26,7 @@ import (
 
 	consensusuptime "github.com/luxfi/consensus/uptime"
 	consensusmockable "github.com/luxfi/consensus/utils/timer/mockable"
+	"github.com/luxfi/node/utils/timer/mockable"
 
 	"github.com/luxfi/consensus/validators"
 
@@ -133,7 +134,7 @@ type mutableSharedMemory struct {
 type environment struct {
 	isBootstrapped *utils.Atomic[bool]
 	config         *config.Config
-	clk            *consensusmockable.Clock
+	clk            *mockable.Clock
 	baseDB         *versiondb.Database
 	ctx            *testcontext.Context
 	msm            *mutableSharedMemory
@@ -373,13 +374,13 @@ func defaultConfig(t *testing.T, f fork) *config.Config {
 	return c
 }
 
-func defaultClock(f fork) *consensusmockable.Clock {
+func defaultClock(f fork) *mockable.Clock {
 	now := defaultGenesisTime
 	if f >= banff {
 		// 1 second after active fork
 		now = defaultValidateEndTime.Add(-2 * time.Second)
 	}
-	clk := &consensusmockable.Clock{}
+	clk := &mockable.Clock{}
 	clk.Set(now)
 	return clk
 }
@@ -402,7 +403,7 @@ func (fvi *fxVMInt) Logger() log.Logger {
 	return fvi.log
 }
 
-func defaultFx(clk *consensusmockable.Clock, log log.Logger, isBootstrapped bool) fx.Fx {
+func defaultFx(clk *mockable.Clock, log log.Logger, isBootstrapped bool) fx.Fx {
 	// Convert consensus clock to utils clock
 	utilsClock := &mockable.Clock{}
 	utilsClock.Set(clk.Time())

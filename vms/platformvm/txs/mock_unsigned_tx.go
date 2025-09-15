@@ -62,10 +62,24 @@ func (m *MockUnsignedTx) InitCtx(ctx context.Context) {
 	m.ctrl.Call(m, "InitCtx", ctx)
 }
 
+// InitializeContext mocks base method (alias for InitCtx).
+func (m *MockUnsignedTx) InitializeContext(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InitializeContext", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
 // InitCtx indicates an expected call of InitCtx.
 func (mr *MockUnsignedTxMockRecorder) InitCtx(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*MockUnsignedTx)(nil).InitCtx), ctx)
+}
+
+// InitializeContext indicates an expected call of InitializeContext.
+func (mr *MockUnsignedTxMockRecorder) InitializeContext(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeContext", reflect.TypeOf((*MockUnsignedTx)(nil).InitializeContext), ctx)
 }
 
 // InputIDs mocks base method.

@@ -78,14 +78,6 @@ type Config struct {
 	GetBlockIDAtHeight    func(context.Context, uint64) (ids.ID, error)
 }
 
-// Block is an interface wrapping the normal chain.Block interface to be used in
-// association with passing in a non-nil function to GetBlockIDAtHeight
-type Block interface {
-	chain.Block
-
-	SetStatus(choices.Status)
-}
-
 // produceGetStatus creates a getStatus function that infers the status of a block by using a function
 // passed in from the VM that gets the block ID at a specific height. It is assumed that for any height
 // less than or equal to the last accepted block, getBlockIDAtHeight returns the accepted blockID at

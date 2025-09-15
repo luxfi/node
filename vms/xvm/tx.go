@@ -92,7 +92,7 @@ func (tx *Tx) Accept(ctx context.Context) error {
 	for chainID, reqs := range executor.AtomicRequests {
 		requests[chainID] = reqs
 	}
-	err = tx.vm.sharedMemory.Apply(
+	err = tx.vm.SharedMemory.Apply(
 		requests,
 		commitBatch,
 	)

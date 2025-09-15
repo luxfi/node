@@ -94,6 +94,7 @@ func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
 	// Standard consensus parameters
 	p := consensusconfig.Parameters{
 		K:                     v.GetInt(ConsensusSampleSizeKey),
+		Alpha:                 0.8, // Required for validation
 		AlphaPreference:       v.GetInt(ConsensusPreferenceQuorumSizeKey),
 		AlphaConfidence:       v.GetInt(ConsensusConfidenceQuorumSizeKey),
 		Beta:                  uint32(v.GetInt(ConsensusCommitThresholdKey)),

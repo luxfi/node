@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	message "github.com/luxfi/node/message"
-	gomock "github.com/luxfi/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // OutboundMessage is a mock of OutboundMessage interface.

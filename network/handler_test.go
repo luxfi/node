@@ -4,6 +4,8 @@
 package network
 
 import (
+	"context"
+	
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/version"
@@ -15,6 +17,7 @@ type testHandler struct {
 	router.InboundHandler
 	ConnectedF    func(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID)
 	DisconnectedF func(nodeID ids.NodeID)
+	HandleGossipF func(ctx context.Context, nodeID ids.NodeID, msg []byte)
 }
 
 func (h *testHandler) Connected(id ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
@@ -27,4 +30,14 @@ func (h *testHandler) Disconnected(id ids.NodeID) {
 	if h.DisconnectedF != nil {
 		h.DisconnectedF(id)
 	}
+}
+
+func (h *testHandler) HandleGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) {
+	if h.HandleGossipF != nil {
+		h.HandleGossipF(ctx, nodeID, msg)
+	}
+}
+
+func (h *testHandler) HandleTimeout(ctx context.Context) {
+	// No-op for tests
 }

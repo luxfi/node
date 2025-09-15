@@ -178,10 +178,13 @@ func (c *Client) CrossChainAppRequest(
 		)
 	}
 
+	// Prefix the message with handler ID for cross-chain requests
+	prefixedAppRequestBytes := PrefixMessage(c.handlerPrefix, appRequestBytes)
+	
 	// Check if sender supports cross-chain operations
 	var err error
 	if extSender, ok := c.router.sender.(ExtendedAppSender); ok {
-		err = extSender.SendCrossChainAppRequest(ctxWithoutCancel, chainID, requestID, appRequestBytes)
+		err = extSender.SendCrossChainAppRequest(ctxWithoutCancel, chainID, requestID, prefixedAppRequestBytes)
 	} else {
 		// Fallback: sender doesn't support cross-chain
 		err = fmt.Errorf("cross-chain app requests not supported by sender")

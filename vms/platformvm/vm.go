@@ -167,12 +167,26 @@ func (vm *VM) Initialize(
 	// Initialize logger
 	vm.log = log.NoLog{}
 	vm.log.Debug("initializing platform chain")
+	
+	// Log initialization parameters
+	fmt.Printf("PlatformVM Initialize called with:\n")
+	fmt.Printf("  - ctx: %v\n", ctx)
+	fmt.Printf("  - chainCtx: %v\n", chainCtx)
+	fmt.Printf("  - dbManager: %v\n", dbManager)
+	fmt.Printf("  - genesisBytes length: %d\n", len(genesisBytes))
+	fmt.Printf("  - upgradeBytes: %v\n", upgradeBytes)
+	fmt.Printf("  - configBytes: %v\n", configBytes)
+	fmt.Printf("  - toEngine: %v\n", toEngine)
+	fmt.Printf("  - fxs: %v\n", fxs)
+	fmt.Printf("  - appSender: %v\n", appSender)
 
 	execConfig, err := config.GetExecutionConfig(configBytes)
 	if err != nil {
-		return err
+		fmt.Printf("ERROR: Failed to get execution config: %v\n", err)
+		return fmt.Errorf("failed to get execution config: %w", err)
 	}
 	vm.log.Info("using VM execution config", zap.Reflect("config", execConfig))
+	fmt.Printf("Got execution config successfully\n")
 
 	// Use a prometheus registry for metrics
 	registerer := prometheus.NewRegistry()
@@ -204,6 +218,9 @@ func (vm *VM) Initialize(
 
 	rewards := reward.NewCalculator(vm.RewardConfig)
 
+	vm.log.Info("Creating Platform VM state",
+		zap.Int("genesisLen", len(genesisBytes)),
+	)
 	vm.state, err = state.New(
 		vm.db,
 		genesisBytes,
@@ -215,8 +232,10 @@ func (vm *VM) Initialize(
 		rewards,
 	)
 	if err != nil {
-		return err
+		vm.log.Error("Failed to create Platform VM state", zap.Error(err))
+		return fmt.Errorf("failed to create state: %w", err)
 	}
+	vm.log.Info("Platform VM state created successfully")
 
 	validatorManager := pvalidators.NewManager(vm.log, vm.Config, vm.state, vm.metrics, &vm.nodeClock)
 	vm.State = validatorManager

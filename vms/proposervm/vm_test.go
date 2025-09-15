@@ -45,8 +45,39 @@ var (
 )
 
 type fullVM struct {
-	*blocktest.VM
 	*blocktest.StateSyncableVM
+}
+
+// GetBlockIDAtHeight implements the method to resolve ambiguity
+func (vm *fullVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
+	if vm.StateSyncableVM != nil && vm.StateSyncableVM.VM.ChainVM != nil {
+		return vm.StateSyncableVM.VM.ChainVM.GetBlockIDAtHeight(ctx, height)
+	}
+	return ids.Empty, errors.New("not implemented")
+}
+
+// BuildBlock implements the method to resolve ambiguity
+func (vm *fullVM) BuildBlock(ctx context.Context) (block.Block, error) {
+	if vm.StateSyncableVM != nil && vm.StateSyncableVM.VM.ChainVM != nil {
+		return vm.StateSyncableVM.VM.ChainVM.BuildBlock(ctx)
+	}
+	return nil, errors.New("not implemented")
+}
+
+// ParseBlock implements the method to resolve ambiguity
+func (vm *fullVM) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
+	if vm.StateSyncableVM != nil && vm.StateSyncableVM.VM.ChainVM != nil {
+		return vm.StateSyncableVM.VM.ChainVM.ParseBlock(ctx, bytes)
+	}
+	return nil, errors.New("not implemented") 
+}
+
+// GetBlock implements the method to resolve ambiguity
+func (vm *fullVM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
+	if vm.StateSyncableVM != nil && vm.StateSyncableVM.VM.ChainVM != nil {
+		return vm.StateSyncableVM.VM.ChainVM.GetBlock(ctx, id)
+	}
+	return nil, errors.New("not implemented")
 }
 
 var (
@@ -2091,8 +2122,8 @@ func TestVMInnerBlkMarkedAcceptedRegression(t *testing.T) {
 }
 
 type blockWithVerifyContext struct {
-	*chainmock.Block
-	*blockmock.WithVerifyContext
+	*blocktest.Block
+	block.WithVerifyContext
 }
 
 // Ensures that we call [VerifyWithContext] rather than [Verify] on blocks that

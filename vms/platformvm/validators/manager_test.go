@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -113,7 +114,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 		{
 			subnetStaker.NodeID: {
 				NodeID:    subnetStaker.NodeID,
-				PublicKey: pk,
+				PublicKey: bls.PublicKeyToUncompressedBytes(pk),
 				Weight:    subnetStaker.Weight,
 			},
 		}, // Net staker was added at height 1

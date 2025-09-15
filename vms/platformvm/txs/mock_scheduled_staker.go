@@ -15,13 +15,14 @@ import (
 
 	bls "github.com/luxfi/crypto/bls"
 	ids "github.com/luxfi/ids"
-	gomock "github.com/luxfi/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockScheduledStaker is a mock of ScheduledStaker interface.
 type MockScheduledStaker struct {
 	ctrl     *gomock.Controller
 	recorder *MockScheduledStakerMockRecorder
+	isgomock struct{}
 }
 
 // MockScheduledStakerMockRecorder is the mock recorder for MockScheduledStaker.
@@ -67,6 +68,20 @@ func (m *MockScheduledStaker) EndTime() time.Time {
 func (mr *MockScheduledStakerMockRecorder) EndTime() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndTime", reflect.TypeOf((*MockScheduledStaker)(nil).EndTime))
+}
+
+// NetID mocks base method.
+func (m *MockScheduledStaker) NetID() ids.ID {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NetID")
+	ret0, _ := ret[0].(ids.ID)
+	return ret0
+}
+
+// NetID indicates an expected call of NetID.
+func (mr *MockScheduledStakerMockRecorder) NetID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetID", reflect.TypeOf((*MockScheduledStaker)(nil).NetID))
 }
 
 // NodeID mocks base method.
@@ -125,20 +140,6 @@ func (m *MockScheduledStaker) StartTime() time.Time {
 func (mr *MockScheduledStakerMockRecorder) StartTime() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartTime", reflect.TypeOf((*MockScheduledStaker)(nil).StartTime))
-}
-
-// NetID mocks base method.
-func (m *MockScheduledStaker) NetID() ids.ID {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NetID")
-	ret0, _ := ret[0].(ids.ID)
-	return ret0
-}
-
-// NetID indicates an expected call of NetID.
-func (mr *MockScheduledStakerMockRecorder) NetID() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetID", reflect.TypeOf((*MockScheduledStaker)(nil).NetID))
 }
 
 // Weight mocks base method.

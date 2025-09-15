@@ -14,7 +14,7 @@ import (
 
 	ids "github.com/luxfi/ids"
 	vms "github.com/luxfi/node/vms"
-	gomock "github.com/luxfi/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // VMGetter is a mock of VMGetter interface.

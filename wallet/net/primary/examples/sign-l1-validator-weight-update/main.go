@@ -14,7 +14,6 @@ import (
 	luxlog "github.com/luxfi/log"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/node/api/info"
 	p2psdk "github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/peer"
@@ -34,6 +33,12 @@ var l1ValidatorWeightJSON = []byte(`{
         "nonce": 1,
         "weight": 2
 }`)
+
+type simpleInboundHandler struct{}
+
+func (h *simpleInboundHandler) HandleInbound(_ context.Context, msg p2pmessage.InboundMessage) {
+	log.Printf("received %s: %s", msg.Op(), msg.Message())
+}
 
 func main() {
 	uri := primary.LocalAPIURI
@@ -77,10 +82,7 @@ func main() {
 			9651,
 		),
 		networkID,
-		router.InboundHandlerFunc(func(_ context.Context, msgIntf interface{}) {
-			msg := msgIntf.(p2pmessage.InboundMessage)
-			log.Printf("received %s: %s", msg.Op(), msg.Message())
-		}),
+		&simpleInboundHandler{},
 	)
 	if err != nil {
 		log.Fatalf("failed to start peer: %s\n", err)

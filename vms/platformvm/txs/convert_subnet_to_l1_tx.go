@@ -6,6 +6,8 @@ package txs
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	
 	"github.com/luxfi/ids"
@@ -101,6 +103,28 @@ type ConvertNetToL1Tx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
+// MarshalJSON marshals the ConvertNetToL1Tx to JSON with backward compatibility
+func (tx *ConvertNetToL1Tx) MarshalJSON() ([]byte, error) {
+	// Format address as hex string
+	addressHex := "0x" + hex.EncodeToString(tx.Address)
+	
+	// Create a map to represent the JSON structure
+	jsonMap := map[string]interface{}{
+		"networkID":    tx.BaseTx.NetworkID,
+		"blockchainID": tx.BaseTx.BlockchainID,
+		"outputs":      tx.BaseTx.Outs,
+		"inputs":       tx.BaseTx.Ins,
+		"memo":         tx.BaseTx.Memo,
+		"subnetID":     tx.Net, // Map Net to subnetID for backward compatibility
+		"chainID":      tx.ChainID,
+		"address":      addressHex,
+		"validators":   tx.Validators,
+		"subnetAuthorization": tx.SubnetAuth,
+	}
+	
+	return json.Marshal(jsonMap)
+}
+
 // SyntacticVerify performs syntactic verification of the transaction
 func (tx *ConvertNetToL1Tx) SyntacticVerify(ctx context.Context) error {
 	switch {
@@ -113,9 +137,8 @@ func (tx *ConvertNetToL1Tx) SyntacticVerify(ctx context.Context) error {
 		return ErrConvertPermissionlessNet
 	case len(tx.Address) > MaxSubnetAddressLength:
 		return ErrAddressTooLong
-	// Allow single validator mode - comment out validator count check
-	// case len(tx.Validators) == 0:
-	// 	return ErrConvertMustIncludeValidators
+	case len(tx.Validators) == 0:
+		return ErrConvertMustIncludeValidators
 	case !utils.IsSortedAndUnique(tx.Validators):
 		return ErrConvertValidatorsNotSortedAndUnique
 	}
@@ -128,8 +151,10 @@ func (tx *ConvertNetToL1Tx) SyntacticVerify(ctx context.Context) error {
 			return err
 		}
 	}
-	if err := tx.SubnetAuth.Verify(); err != nil {
-		return err
+	if tx.SubnetAuth != nil {
+		if err := tx.SubnetAuth.Verify(); err != nil {
+			return err
+		}
 	}
 
 	tx.SyntacticallyVerified = true

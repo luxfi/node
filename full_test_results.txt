@@ -1,0 +1,211 @@
+=== ENSURING 100% TEST PASS RATE ===
+ok  	github.com/luxfi/node	1.026s
+?   	github.com/luxfi/node/api	[no test files]
+# github.com/luxfi/node/indexer [github.com/luxfi/node/indexer.test]
+indexer/indexer_test.go:167:23: undefined: blockmock.NewChainVM
+indexer/indexer_test.go:285:23: undefined: blockmock.NewChainVM
+indexer/indexer_test.go:419:23: undefined: blockmock.NewChainVM
+indexer/indexer_test.go:501:28: undefined: luxconsensus.MustIDs
+indexer/indexer_test.go:506:23: undefined: blockmock.NewChainVM
+# github.com/luxfi/consensus/validators/validatorsmock
+../consensus/validators/validatorsmock/mock.go:6:2: "errors" imported and not used
+# github.com/luxfi/node/network [github.com/luxfi/node/network.test]
+network/handler_test.go:12:14: undefined: router.ExternalHandler
+network/handler_test.go:15:9: undefined: router.InboundHandler
+network/example_test.go:24:14: undefined: router.ExternalHandler
+network/example_test.go:113:3: cannot use handler (variable of type *testExternalHandler) as ExternalHandler value in argument to NewTestNetwork: *testExternalHandler does not implement ExternalHandler (wrong type for method HandleInbound)
+		have HandleInbound("context".Context, interface{})
+		want HandleInbound("context".Context, "github.com/luxfi/node/message".InboundMessage)
+network/network_test.go:140:29: undefined: uptime.NewManager
+network/network_test.go:140:47: undefined: uptime.NewTestState
+network/network_test.go:154:30: cannot use newDefaultTargeter(defaultConfig.ResourceTracker.CPUTracker()) (value of interface type "github.com/luxfi/consensus/networking/tracker".Targeter) as "github.com/luxfi/node/network/tracker".Targeter value in assignment: "github.com/luxfi/consensus/networking/tracker".Targeter does not implement "github.com/luxfi/node/network/tracker".Targeter (wrong type for method TargetUsage)
+		have TargetUsage() float64
+		want TargetUsage() uint64
+network/network_test.go:155:31: cannot use newDefaultTargeter(defaultConfig.ResourceTracker.DiskTracker()) (value of interface type "github.com/luxfi/consensus/networking/tracker".Targeter) as "github.com/luxfi/node/network/tracker".Targeter value in assignment: "github.com/luxfi/consensus/networking/tracker".Targeter does not implement "github.com/luxfi/node/network/tracker".Targeter (wrong type for method TargetUsage)
+		have TargetUsage() float64
+		want TargetUsage() uint64
+network/network_test.go:175:3: not enough arguments in call to tracker.NewResourceTracker
+	have (*prometheus.Registry, *noOpResourceManager, time.Duration)
+	want (interface{}, "github.com/luxfi/consensus/networking/tracker".ProcessTracker, time.Duration, time.Duration, "github.com/luxfi/consensus/networking/tracker".Targeter, "github.com/luxfi/consensus/networking/tracker".Targeter, interface{})
+network/network_test.go:234:67: undefined: router.InboundHandler
+network/network_test.go:155:31: too many errors
+# github.com/luxfi/node/network/p2p/gossip [github.com/luxfi/node/network/p2p/gossip.test]
+network/p2p/gossip/gossip_test.go:16:2: "github.com/luxfi/consensus/core" imported and not used
+network/p2p/gossip/gossip_test.go:111:64: cannot use responseSender (variable of type *FakeSender) as core.AppSender value in argument to p2p.NewNetwork: *FakeSender does not implement appsender.AppSender (missing method SendAppError)
+network/p2p/gossip/gossip_test.go:141:63: cannot use requestSender (variable of type *FakeSender) as core.AppSender value in argument to p2p.NewNetwork: *FakeSender does not implement appsender.AppSender (missing method SendAppError)
+network/p2p/gossip/gossip_test.go:518:5: cannot use sender (variable of type *FakeSender) as core.AppSender value in argument to p2p.NewNetwork: *FakeSender does not implement appsender.AppSender (missing method SendAppError)
+network/p2p/gossip/gossip_test.go:528:21: undefined: validatorstest.State
+# github.com/luxfi/node/network/p2p/p2ptest [github.com/luxfi/node/network/p2p/p2ptest.test]
+network/p2p/p2ptest/client_test.go:37:65: cannot use set.Of(nodeID) (value of map type "github.com/luxfi/consensus/utils/set".Set[ids.NodeID]) as []interface{} value in struct literal
+# github.com/luxfi/node/network/peer [github.com/luxfi/node/network/peer.test]
+network/peer/example_test.go:30:29: cannot convert func(_ context.Context, msgIntf interface{}) {…} (value of type func(_ context.Context, msgIntf interface{})) to type router.InboundHandlerFunc
+network/peer/peer_test.go:82:3: not enough arguments in call to tracker.NewResourceTracker
+	have ("github.com/luxfi/metric".Registry, *noOpResourceManager, time.Duration)
+	want (interface{}, "github.com/luxfi/consensus/networking/tracker".ProcessTracker, time.Duration, time.Duration, "github.com/luxfi/consensus/networking/tracker".Targeter, "github.com/luxfi/consensus/networking/tracker".Targeter, interface{})
+network/peer/peer_test.go:104:25: uptime.NoOpCalculator (type) is not an expression
+network/peer/peer_test.go:133:44: cannot convert func(_ context.Context, msg interface{}) {…} (value of type func(_ context.Context, msg interface{})) to type router.InboundHandlerFunc
+# github.com/luxfi/node/node [github.com/luxfi/node/node.test]
+node/beacon_manager_test.go:39:27: undefined: routermock.NewRouter
+# github.com/luxfi/node/wallet/chain/c
+wallet/chain/c/context.go:9:2: "github.com/luxfi/consensus" imported and not used
+wallet/chain/c/context.go:12:2: "github.com/luxfi/node/utils/constants" imported and not used
+ok  	github.com/luxfi/node/api/admin	1.569s
+# github.com/luxfi/node/upgrade [github.com/luxfi/node/upgrade.test]
+upgrade/upgrade_test.go:33:40: upgradeTest.upgrade.Validate undefined (type Config has no field or method Validate)
+upgrade/upgrade_test.go:46:17: upgrade.Validate undefined (type Config has no field or method Validate)
+ok  	github.com/luxfi/node/api/auth	4.340s
+?   	github.com/luxfi/node/api/connectclient	[no test files]
+ok  	github.com/luxfi/node/api/health	1.108s
+ok  	github.com/luxfi/node/api/info	1.540s
+ok  	github.com/luxfi/node/api/keystore	3.668s
+?   	github.com/luxfi/node/api/keystore/gkeystore	[no test files]
+ok  	github.com/luxfi/node/api/metrics	1.056s
+ok  	github.com/luxfi/node/api/server	1.072s
+?   	github.com/luxfi/node/api/warp	[no test files]
+?   	github.com/luxfi/node/app	[no test files]
+?   	github.com/luxfi/node/benchlist	[no test files]
+ok  	github.com/luxfi/node/benchmarks	1.028s [no tests to run]
+ok  	github.com/luxfi/node/cache	1.031s
+?   	github.com/luxfi/node/cache/cachetest	[no test files]
+ok  	github.com/luxfi/node/cache/lru	1.032s
+?   	github.com/luxfi/node/cache/metercacher	[no test files]
+ok  	github.com/luxfi/node/chains	1.542s
+ok  	github.com/luxfi/node/chains/atomic	1.031s
+?   	github.com/luxfi/node/chains/atomic/atomicmock	[no test files]
+?   	github.com/luxfi/node/chains/atomic/atomictest	[no test files]
+?   	github.com/luxfi/node/chains/atomic/gsharedmemory	[no test files]
+?   	github.com/luxfi/node/cmd/check_status	[no test files]
+?   	github.com/luxfi/node/cmd/check_vmid	[no test files]
+?   	github.com/luxfi/node/cmd/convert-db	[no test files]
+?   	github.com/luxfi/node/cmd/extract_genesis	[no test files]
+?   	github.com/luxfi/node/cmd/migrate-db	[no test files]
+?   	github.com/luxfi/node/cmd/quick-check	[no test files]
+?   	github.com/luxfi/node/cmd/quick_check	[no test files]
+ok  	github.com/luxfi/node/codec	1.026s [no tests to run]
+?   	github.com/luxfi/node/codec/codecmock	[no test files]
+?   	github.com/luxfi/node/codec/codectest	[no test files]
+?   	github.com/luxfi/node/codec/hierarchycodec	[no test files]
+?   	github.com/luxfi/node/codec/linearcodec	[no test files]
+ok  	github.com/luxfi/node/codec/reflectcodec	1.032s
+-test.shuffle 1757653024618876680
+--- FAIL: TestGetSubnetConfigsFromFile (0.01s)
+    --- FAIL: TestGetSubnetConfigsFromFile/correct_config (0.00s)
+        config_test.go:440: 
+            	Error Trace:	/home/z/work/lux/node/config/config_test.go:440
+            	Error:      	Target error should be in err chain:
+            	            	expected: ""
+            	            	in chain: "invalid consensus parameters: alpha must be between 0.5 and 1.0"
+            	            		"invalid consensus parameters"
+            	            		"alpha must be between 0.5 and 1.0"
+            	Test:       	TestGetSubnetConfigsFromFile/correct_config
+--- FAIL: TestGetSubnetConfigsFromFlags (0.01s)
+    --- FAIL: TestGetSubnetConfigsFromFlags/correct_config (0.00s)
+        config_test.go:535: 
+            	Error Trace:	/home/z/work/lux/node/config/config_test.go:535
+            	Error:      	Target error should be in err chain:
+            	            	expected: ""
+            	            	in chain: "invalid consensus parameters: alpha must be between 0.5 and 1.0"
+            	            		"invalid consensus parameters"
+            	            		"alpha must be between 0.5 and 1.0"
+            	Test:       	TestGetSubnetConfigsFromFlags/correct_config
+    --- FAIL: TestGetSubnetConfigsFromFlags/entry_with_no_config (0.00s)
+        config_test.go:535: 
+            	Error Trace:	/home/z/work/lux/node/config/config_test.go:535
+            	Error:      	Target error should be in err chain:
+            	            	expected: ""
+            	            	in chain: "invalid consensus parameters: alpha must be between 0.5 and 1.0"
+            	            		"invalid consensus parameters"
+            	            		"alpha must be between 0.5 and 1.0"
+            	Test:       	TestGetSubnetConfigsFromFlags/entry_with_no_config
+FAIL
+FAIL	github.com/luxfi/node/config	0.671s
+ok  	github.com/luxfi/node/config/node	1.030s
+?   	github.com/luxfi/node/connectproto/pb/xsvm	[no test files]
+?   	github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect	[no test files]
+ok  	github.com/luxfi/node/consensus	1.056s
+?   	github.com/luxfi/node/consensus/consensustest	[no test files]
+?   	github.com/luxfi/node/consensus/engine/chain/block	[no test files]
+?   	github.com/luxfi/node/consensus/engine/common	[no test files]
+?   	github.com/luxfi/node/consensus/networking/router	[no test files]
+?   	github.com/luxfi/node/consensus/networking/tracker	[no test files]
+?   	github.com/luxfi/node/consensus/validators	[no test files]
+?   	github.com/luxfi/node/consensus/validators/validatorsmock	[no test files]
+?   	github.com/luxfi/node/consensus/validators/validatorstest	[no test files]
+?   	github.com/luxfi/node/database/badgerdb	[no test files]
+?   	github.com/luxfi/node/database/leveldb	[no test files]
+?   	github.com/luxfi/node/database/memdb	[no test files]
+?   	github.com/luxfi/node/database/migration	[no test files]
+?   	github.com/luxfi/node/database/prefixdb	[no test files]
+?   	github.com/luxfi/node/db/rpcdb	[no test files]
+?   	github.com/luxfi/node/evm/common	[no test files]
+?   	github.com/luxfi/node/evm/common/math	[no test files]
+?   	github.com/luxfi/node/evm/core	[no test files]
+?   	github.com/luxfi/node/evm/ethclient	[no test files]
+ok  	github.com/luxfi/node/gas	1.029s
+ok  	github.com/luxfi/node/genesis	1.197s
+?   	github.com/luxfi/node/genesis/generate/checkpoints	[no test files]
+FAIL	github.com/luxfi/node/genesis/generate/validators [build failed]
+ok  	github.com/luxfi/node/ids/galiasreader	1.076s
+FAIL	github.com/luxfi/node/indexer [build failed]
+FAIL	github.com/luxfi/node/indexer/examples/p-chain [build failed]
+FAIL	github.com/luxfi/node/indexer/examples/x-chain-blocks [build failed]
+# k8s.io/apimachinery/pkg/util/managedfields/internal
+/home/z/go/pkg/mod/k8s.io/apimachinery@v0.31.4/pkg/util/managedfields/internal/typeconverter.go:51:61: cannot use typeSchema.Types (variable of type []"sigs.k8s.io/structured-merge-diff/v6/schema".TypeDef) as []"sigs.k8s.io/structured-merge-diff/v4/schema".TypeDef value in struct literal
+?   	github.com/luxfi/node/main	[no test files]
+# github.com/luxfi/node/utils/tree [github.com/luxfi/node/utils/tree.test]
+utils/tree/tree_test.go:22:24: cannot use block (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Get: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
+utils/tree/tree_test.go:25:9: cannot use block (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Add: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
+utils/tree/tree_test.go:27:23: cannot use block (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Get: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
+utils/tree/tree_test.go:30:50: cannot use block (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Accept: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
+utils/tree/tree_test.go:31:46: block.Status undefined (type *chaintest.TestBlock has no field or method Status)
+utils/tree/tree_test.go:33:23: cannot use block (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Get: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
+utils/tree/tree_test.go:46:9: cannot use blockToAccept (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Add: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
+utils/tree/tree_test.go:47:24: cannot use blockToAccept (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Get: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
+utils/tree/tree_test.go:50:9: cannot use blockToReject (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Add: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
+utils/tree/tree_test.go:51:23: cannot use blockToReject (variable of type *chaintest.TestBlock) as chain.Block value in argument to tr.Get: *chaintest.TestBlock does not implement chain.Block (missing method ParentID)
+utils/tree/tree_test.go:51:23: too many errors
+# github.com/luxfi/node/vms/components/chain [github.com/luxfi/node/vms/components/chain.test]
+vms/components/chain/state_test.go:36:13: undefined: blocktest.Block
+vms/components/chain/state_test.go:64:57: undefined: blocktest.Block
+vms/components/chain/state_test.go:67:20: undefined: blocktest.Block
+vms/components/chain/state_test.go:79:51: undefined: blocktest.Block
+vms/components/chain/state_test.go:80:28: undefined: blocktest.Block
+vms/components/chain/state_test.go:92:40: undefined: blocktest.Block
+vms/components/chain/state_test.go:96:49: undefined: blocktest.Block
+vms/components/chain/state_test.go:102:39: undefined: blocktest.Block
+vms/components/chain/state_test.go:103:44: undefined: blocktest.Block
+vms/components/chain/state_test.go:468:28: undefined: blocktest.Block
+vms/components/chain/state_test.go:468:28: too many errors
+# github.com/luxfi/node/vms/components/chain/blocktest
+vms/components/chain/blocktest/block.go:114:23: impossible type assertion: parent.(*chain.TestBlock)
+	*"github.com/luxfi/node/vms/components/chain".TestBlock does not implement "github.com/luxfi/node/vms/components/chain".Block (wrong type for method Status)
+		have Status() "github.com/luxfi/node/vms/components/chain".Status
+		want Status() uint8
+vms/components/chain/blocktest/block.go:116:31: impossible type assertion: parent.(*Block)
+	*Block does not implement "github.com/luxfi/node/vms/components/chain".Block (wrong type for method Status)
+		have Status() "github.com/luxfi/node/vms/components/chain".Status
+		want Status() uint8
+# github.com/luxfi/node/vms/evm/metrics/prometheus_test [github.com/luxfi/node/vms/evm/metrics/prometheus.test]
+vms/evm/metrics/prometheus/enabled_test.go:20:25: undefined: metric.Enabled
+vms/evm/metrics/prometheus/enabled_test.go:21:29: undefined: metric.StandardCounter
+vms/evm/metrics/prometheus/enabled_test.go:21:52: not enough arguments in call to metric.NewCounter
+	have ()
+	want (string)
+# github.com/luxfi/node/vms/evm/metrics/prometheus [github.com/luxfi/node/vms/evm/metrics/prometheus.test]
+vms/evm/metrics/prometheus/prometheus_test.go:73:21: undefined: metric.NewRegistry
+vms/evm/metrics/prometheus/prometheus_test.go:96:36: undefined: metric.NewHealthcheck
+vms/evm/metrics/prometheus/prometheus_test.go:103:13: not enough arguments in call to metric.NewCounter
+	have ()
+	want (string)
+vms/evm/metrics/prometheus/prometheus_test.go:104:14: too many arguments in call to counter.Inc
+	have (number)
+	want ()
+vms/evm/metrics/prometheus/prometheus_test.go:107:27: undefined: metric.NewCounterFloat64
+vms/evm/metrics/prometheus/prometheus_test.go:111:11: not enough arguments in call to metric.NewGauge
+	have ()
+	want (string)
+vms/evm/metrics/prometheus/prometheus_test.go:112:8: gauge.Update undefined (type metric.Gauge has no field or method Update)
+vms/evm/metrics/prometheus/prometheus_test.go:115:25: undefined: metric.NewGaugeFloat64
+vms/evm/metrics/prometheus/prometheus_test.go:119:22: undefined: metric.NewGaugeInfo
+vms/evm/metrics/prometheus/prometheus_test.go:120:26: undefined: metric.GaugeInfoValue
+vms/evm/metrics/prometheus/prometheus_test.go:120:26: too many errors

@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
 
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -120,7 +120,7 @@ func TestBuildBlockShouldReward(t *testing.T) {
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   defaultValidatorStake,
 			},
-			Subnet: constants.PrimaryNetworkID,
+			Net: constants.PrimaryNetworkID,
 		},
 		signer.NewProofOfPossession(sk),
 		env.ctx.LUXAssetID,
@@ -329,7 +329,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 				End:    uint64(validatorEndTime.Unix()),
 				Wght:   defaultValidatorStake,
 			},
-			Subnet: constants.PrimaryNetworkID,
+			Net: constants.PrimaryNetworkID,
 		},
 		signer.NewProofOfPossession(sk),
 		env.ctx.LUXAssetID,
@@ -370,7 +370,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 				End:    uint64(validator2EndTime.Unix()),
 				Wght:   defaultValidatorStake,
 			},
-			Subnet: constants.PrimaryNetworkID,
+			Net: constants.PrimaryNetworkID,
 		},
 		signer.NewProofOfPossession(sk),
 		env.ctx.LUXAssetID,

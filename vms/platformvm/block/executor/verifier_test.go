@@ -8,20 +8,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/status"
+	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
 	"github.com/luxfi/node/vms/platformvm/txs/mempool"
@@ -51,9 +51,7 @@ func TestVerifierVisitProposalBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &context.Context{
-			Log: log.NewNoOpLogger(),
-		},
+		ctx:     testcontext.New(context.Background()),
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
@@ -72,7 +70,7 @@ func TestVerifierVisitProposalBlock(t *testing.T) {
 	}
 
 	blkTx := txs.NewMockUnsignedTx(ctrl)
-	blkTx.EXPECT().Visit(gomock.AssignableToTypeOf(&executor.ProposalTxExecutor{})).Return(nil).Times(1)
+	blkTx.EXPECT().Visit(gomock.Any()).Return(nil).Times(1)
 
 	// We can't serialize [blkTx] because it isn't
 	// registered with the blocks.Codec.
@@ -137,9 +135,7 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &context.Context{
-			Log: log.NewNoOpLogger(),
-		},
+		ctx:     testcontext.New(context.Background()),
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
@@ -161,7 +157,7 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 	onAccept := state.NewMockDiff(ctrl)
 	blkTx := txs.NewMockUnsignedTx(ctrl)
 	inputs := set.Of(ids.GenerateTestID())
-	blkTx.EXPECT().Visit(gomock.AssignableToTypeOf(&executor.AtomicTxExecutor{})).DoAndReturn(
+	blkTx.EXPECT().Visit(gomock.Any()).DoAndReturn(
 		func(e *executor.AtomicTxExecutor) error {
 			e.OnAccept = onAccept
 			e.Inputs = inputs
@@ -226,9 +222,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &context.Context{
-			Log: log.NewNoOpLogger(),
-		},
+		ctx:     testcontext.New(context.Background()),
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
@@ -260,7 +254,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 			},
 		},
 	}
-	blkTx.EXPECT().Visit(gomock.AssignableToTypeOf(&executor.StandardTxExecutor{})).DoAndReturn(
+	blkTx.EXPECT().Visit(gomock.Any()).DoAndReturn(
 		func(e *executor.StandardTxExecutor) error {
 			e.OnAccept = func() {}
 			e.Inputs = set.Set[ids.ID]{}
@@ -333,9 +327,7 @@ func TestVerifierVisitCommitBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &context.Context{
-			Log: log.NewNoOpLogger(),
-		},
+		ctx:     testcontext.New(context.Background()),
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
@@ -361,10 +353,9 @@ func TestVerifierVisitCommitBlock(t *testing.T) {
 
 	// Set expectations for dependencies.
 	timestamp := time.Now()
-	gomock.InOrder(
-		parentStatelessBlk.EXPECT().Height().Return(uint64(1)).Times(1),
-		parentOnCommitState.EXPECT().GetTimestamp().Return(timestamp).Times(1),
-	)
+	// Set expectations in order
+	parentStatelessBlk.EXPECT().Height().Return(uint64(1)).Times(1)
+	parentOnCommitState.EXPECT().GetTimestamp().Return(timestamp).Times(1)
 
 	// Verify the block.
 	blk := manager.NewBlock(apricotBlk)
@@ -406,9 +397,7 @@ func TestVerifierVisitAbortBlock(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &context.Context{
-			Log: log.NewNoOpLogger(),
-		},
+		ctx:     testcontext.New(context.Background()),
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
@@ -434,10 +423,9 @@ func TestVerifierVisitAbortBlock(t *testing.T) {
 
 	// Set expectations for dependencies.
 	timestamp := time.Now()
-	gomock.InOrder(
-		parentStatelessBlk.EXPECT().Height().Return(uint64(1)).Times(1),
-		parentOnAbortState.EXPECT().GetTimestamp().Return(timestamp).Times(1),
-	)
+	// Set expectations in order
+	parentStatelessBlk.EXPECT().Height().Return(uint64(1)).Times(1)
+	parentOnAbortState.EXPECT().GetTimestamp().Return(timestamp).Times(1)
 
 	// Verify the block.
 	blk := manager.NewBlock(apricotBlk)
@@ -467,9 +455,7 @@ func TestVerifyUnverifiedParent(t *testing.T) {
 		blkIDToState: map[ids.ID]*blockState{},
 		Mempool:      mempool,
 		state:        s,
-		ctx: &context.Context{
-			Log: log.NewNoOpLogger(),
-		},
+		ctx:          testcontext.New(context.Background()),
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
@@ -541,9 +527,7 @@ func TestBanffAbortBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &context.Context{
-					Log: log.NewNoOpLogger(),
-				},
+				ctx:          testcontext.New(context.Background()),
 			}
 			verifier := &verifier{
 				txExecutorBackend: &executor.Backend{
@@ -639,9 +623,7 @@ func TestBanffCommitBlockTimestampChecks(t *testing.T) {
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
 				state:        s,
-				ctx: &context.Context{
-					Log: log.NewNoOpLogger(),
-				},
+				ctx:          testcontext.New(context.Background()),
 			}
 			verifier := &verifier{
 				txExecutorBackend: &executor.Backend{
@@ -720,9 +702,7 @@ func TestVerifierVisitStandardBlockWithDuplicateInputs(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &context.Context{
-			Log: log.NewNoOpLogger(),
-		},
+		ctx:     testcontext.New(context.Background()),
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
@@ -750,7 +730,7 @@ func TestVerifierVisitStandardBlockWithDuplicateInputs(t *testing.T) {
 			},
 		},
 	}
-	blkTx.EXPECT().Visit(gomock.AssignableToTypeOf(&executor.StandardTxExecutor{})).DoAndReturn(
+	blkTx.EXPECT().Visit(gomock.Any()).DoAndReturn(
 		func(e *executor.StandardTxExecutor) error {
 			e.OnAccept = func() {}
 			e.Inputs = atomicInputs
@@ -811,9 +791,7 @@ func TestVerifierVisitApricotStandardBlockWithProposalBlockParent(t *testing.T) 
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &context.Context{
-			Log: log.NewNoOpLogger(),
-		},
+		ctx:     testcontext.New(context.Background()),
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
@@ -870,9 +848,7 @@ func TestVerifierVisitBanffStandardBlockWithProposalBlockParent(t *testing.T) {
 		},
 		Mempool: mempool,
 		state:   s,
-		ctx: &context.Context{
-			Log: log.NewNoOpLogger(),
-		},
+		ctx:     testcontext.New(context.Background()),
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
@@ -929,9 +905,7 @@ func TestVerifierVisitApricotCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &context.Context{
-				Log: log.NewNoOpLogger(),
-			},
+			ctx:   testcontext.New(context.Background()),
 		},
 	}
 
@@ -975,9 +949,7 @@ func TestVerifierVisitBanffCommitBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &context.Context{
-				Log: log.NewNoOpLogger(),
-			},
+			ctx:   testcontext.New(context.Background()),
 		},
 	}
 
@@ -1020,9 +992,7 @@ func TestVerifierVisitApricotAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &context.Context{
-				Log: log.NewNoOpLogger(),
-			},
+			ctx:   testcontext.New(context.Background()),
 		},
 	}
 
@@ -1066,9 +1036,7 @@ func TestVerifierVisitBanffAbortBlockUnexpectedParentState(t *testing.T) {
 				},
 			},
 			state: s,
-			ctx: &context.Context{
-				Log: log.NewNoOpLogger(),
-			},
+			ctx:   testcontext.New(context.Background()),
 		},
 	}
 

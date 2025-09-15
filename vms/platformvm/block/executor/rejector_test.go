@@ -8,14 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/state"
+	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/mempool"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -127,9 +127,7 @@ func TestRejectBlock(t *testing.T) {
 			}
 			rejector := &rejector{
 				backend: &backend{
-					ctx: &context.Context{
-						Log: log.NewNoOpLogger(),
-					},
+					ctx:          testcontext.New(context.Background()),
 					blkIDToState: blkIDToState,
 					Mempool:      mempool,
 					state:        state,

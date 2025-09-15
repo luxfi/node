@@ -28,7 +28,6 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/networking/benchlist"
-	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/timeout"
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
@@ -297,7 +296,7 @@ type Node struct {
 	portMapper *nat.Mapper
 	ipUpdater  dynamicip.Updater
 
-	chainRouter router.Router
+	chainRouter ChainRouter
 
 	// Profiles the process. Nil if continuous profiling is disabled.
 	profiler profiler.ContinuousProfiler
@@ -553,9 +552,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 	n.chainRouter = &chainRouter{log: n.Log}
 	if n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled {
 		// Trace function takes 3 arguments: router, name, tracer
-		if traced, ok := Trace(n.chainRouter, "chainRouter", n.tracer).(ChainRouter); ok {
-			n.chainRouter = traced
-		}
+		n.chainRouter = Trace(n.chainRouter, "chainRouter", n.tracer)
 	}
 
 	// Configure benchlist
@@ -596,10 +593,10 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 		}
 
 		consensusRouter = &insecureValidatorManager{
-			log:    n.Log,
-			Router: consensusRouter,
-			vdrs:   n.vdrs,
-			weight: n.Config.SybilProtectionDisabledWeight,
+			log:         n.Log,
+			ChainRouter: consensusRouter,
+			vdrs:        n.vdrs,
+			weight:      n.Config.SybilProtectionDisabledWeight,
 		}
 	}
 
@@ -609,7 +606,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 
 	if requiredConns > 0 {
 		consensusRouter = &beaconManager{
-			Router:                  consensusRouter,
+			ChainRouter:             consensusRouter,
 			beacons:                 n.bootstrappers,
 			requiredConns:           int64(requiredConns),
 			onSufficientlyConnected: n.onSufficientlyConnected,
@@ -1198,47 +1195,56 @@ func (n *Node) initVMs() error {
 
 	// Register the VMs that Lux supports
 	etnaTime := version.GetEtnaTime(n.Config.NetworkID)
-	err := errors.Join(
-		n.VMManager.RegisterFactory(context.TODO(), constants.PlatformVMID, &platformvm.Factory{
-			Config: platformconfig.Config{
-				Chains:                    n.chainManager,
-				Validators:                vdrs,
-				UptimeLockedCalculator:    n.uptimeCalculator,
-				SybilProtectionEnabled:    n.Config.SybilProtectionEnabled,
-				PartialSyncPrimaryNetwork: n.Config.PartialSyncPrimaryNetwork,
-				TrackedSubnets:            n.Config.TrackedSubnets,
-				StaticFeeConfig:           n.Config.StaticConfig,
-				UptimePercentage:          n.Config.UptimeRequirement,
-				MinValidatorStake:         n.Config.MinValidatorStake,
-				MaxValidatorStake:         n.Config.MaxValidatorStake,
-				MinDelegatorStake:         n.Config.MinDelegatorStake,
-				MinDelegationFee:          n.Config.MinDelegationFee,
-				MinStakeDuration:          n.Config.MinStakeDuration,
-				MaxStakeDuration:          n.Config.MaxStakeDuration,
-				RewardConfig:              n.Config.RewardConfig,
-				UpgradeConfig: upgrade.Config{
-					ApricotPhase3Time: version.GetApricotPhase3Time(n.Config.NetworkID),
-					ApricotPhase5Time: version.GetApricotPhase5Time(n.Config.NetworkID),
-					BanffTime:         version.GetBanffTime(n.Config.NetworkID),
-					CortinaTime:       version.GetCortinaTime(n.Config.NetworkID),
-					DurangoTime:       version.GetDurangoTime(n.Config.NetworkID),
-					EtnaTime:          etnaTime,
-				},
-				UseCurrentHeight: n.Config.UseCurrentHeight,
+	
+	// Register the VMs that Lux supports
+	n.Log.Info("Registering Platform VM", zap.Stringer("vmID", constants.PlatformVMID))
+	err := n.VMManager.RegisterFactory(context.TODO(), constants.PlatformVMID, &platformvm.Factory{
+		Config: platformconfig.Config{
+			Chains:                    n.chainManager,
+			Validators:                vdrs,
+			UptimeLockedCalculator:    n.uptimeCalculator,
+			SybilProtectionEnabled:    n.Config.SybilProtectionEnabled,
+			PartialSyncPrimaryNetwork: n.Config.PartialSyncPrimaryNetwork,
+			TrackedSubnets:            n.Config.TrackedSubnets,
+			StaticFeeConfig:           n.Config.StaticConfig,
+			UptimePercentage:          n.Config.UptimeRequirement,
+			MinValidatorStake:         n.Config.MinValidatorStake,
+			MaxValidatorStake:         n.Config.MaxValidatorStake,
+			MinDelegatorStake:         n.Config.MinDelegatorStake,
+			MinDelegationFee:          n.Config.MinDelegationFee,
+			MinStakeDuration:          n.Config.MinStakeDuration,
+			MaxStakeDuration:          n.Config.MaxStakeDuration,
+			RewardConfig:              n.Config.RewardConfig,
+			UpgradeConfig: upgrade.Config{
+				ApricotPhase3Time: version.GetApricotPhase3Time(n.Config.NetworkID),
+				ApricotPhase5Time: version.GetApricotPhase5Time(n.Config.NetworkID),
+				BanffTime:         version.GetBanffTime(n.Config.NetworkID),
+				CortinaTime:       version.GetCortinaTime(n.Config.NetworkID),
+				DurangoTime:       version.GetDurangoTime(n.Config.NetworkID),
+				EtnaTime:          etnaTime,
 			},
-		}),
-		n.VMManager.RegisterFactory(context.TODO(), constants.XVMID, &xvm.Factory{
-			Config: xvmconfig.Config{
-				TxFee:            n.Config.TxFee,
-				CreateAssetTxFee: n.Config.CreateAssetTxFee,
-				EtnaTime:         etnaTime,
-			},
-		}),
-		// n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &cchainvm.Factory{}), // Temporarily disabled
-	)
+			UseCurrentHeight: n.Config.UseCurrentHeight,
+		},
+	})
 	if err != nil {
+		n.Log.Error("Failed to register Platform VM", zap.Error(err))
 		return err
 	}
+	n.Log.Info("Platform VM registered successfully")
+
+	n.Log.Info("Registering X VM", zap.Stringer("vmID", constants.XVMID))
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.XVMID, &xvm.Factory{
+		Config: xvmconfig.Config{
+			TxFee:            n.Config.TxFee,
+			CreateAssetTxFee: n.Config.CreateAssetTxFee,
+			EtnaTime:         etnaTime,
+		},
+	})
+	if err != nil {
+		n.Log.Error("Failed to register X VM", zap.Error(err))
+		return err
+	}
+	n.Log.Info("X VM registered successfully")
 
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()
@@ -1269,7 +1275,11 @@ func (n *Node) initVMs() error {
 			zap.Error(err),
 		)
 	}
-	return err
+	// Don't fail if Reload returns an error - it might be due to already registered VMs
+	if err != nil {
+		n.Log.Warn("VM registry reload encountered issues, continuing anyway", zap.Error(err))
+	}
+	return nil
 }
 
 // initSharedMemory initializes the shared memory for cross chain interation

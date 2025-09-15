@@ -17,6 +17,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/dag"
 	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
@@ -70,6 +71,7 @@ type BCLookup interface {
 
 // SharedMemory provides cross-chain shared memory
 type SharedMemory interface {
+	Get(peerChainID ids.ID, keys [][]byte) ([][]byte, error)
 	Apply(map[ids.ID]interface{}, ...interface{}) error
 }
 
@@ -90,14 +92,18 @@ type VM struct {
 	// Logger for this VM
 	log log.Logger
 
-	// Lock for thread safety
-	lock sync.RWMutex
+	// Lock for thread safety (exposed for tests)
+	Lock sync.RWMutex
+
+	// Chain information
+	ChainID  ids.ID
+	XChainID ids.ID
 
 	// BCLookup provides blockchain alias lookup
 	bcLookup BCLookup
 
 	// SharedMemory for cross-chain operations
-	sharedMemory SharedMemory
+	SharedMemory SharedMemory
 
 	// Used to check local time
 	clock mockable.Clock
@@ -197,10 +203,13 @@ func (vm *VM) Initialize(
 	fxs []interface{},
 	appSender interface{},
 ) error {
-	// Convert types to what we expect
-	consensusCtx, ok := chainCtx.(context.Context)
-	if !ok {
-		return errors.New("invalid chain context type")
+	// Try to get consensus context for chain info
+	if consensusCtx, ok := chainCtx.(*consensusctx.Context); ok {
+		// Store chain-specific info from consensus context
+		vm.ChainID = consensusCtx.ChainID
+		vm.XChainID = consensusCtx.ChainID // For XVM, this is the same
+		
+		// SharedMemory will be set by the chains manager when the VM is created
 	}
 
 	db, ok := dbManager.(database.Database)
@@ -223,7 +232,7 @@ func (vm *VM) Initialize(
 	// Ignore toEngine channel as XVM doesn't use it
 	_ = toEngine
 
-	return vm.initialize(ctx, consensusCtx, db, genesisBytes, upgradeBytes, configBytes, coreFxs, coreAppSender)
+	return vm.initialize(ctx, ctx, db, genesisBytes, upgradeBytes, configBytes, coreFxs, coreAppSender)
 }
 
 // Original Initialize method renamed to initialize
@@ -515,7 +524,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 		validatorStateWrapper,
 		vm.parser,
 		network.NewLockedTxVerifier(
-			&vm.lock,
+			&vm.Lock,
 			vm.chainManager,
 		),
 		mempool,
@@ -952,3 +961,4 @@ func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height
 	}
 	return result, nil
 }
+

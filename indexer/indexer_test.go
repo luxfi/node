@@ -12,9 +12,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/luxfi/mock/gomock"
 
-	luxconsensus "github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/database/memdb"
@@ -127,7 +125,6 @@ func TestMarkHasRunAndShutdown(t *testing.T) {
 // some vertices
 func TestIndexer(t *testing.T) {
 	require := require.New(t)
-	ctrl := gomock.NewController(t)
 
 	baseDB := memdb.New()
 	db := versiondb.New(baseDB)
@@ -164,7 +161,7 @@ func TestIndexer(t *testing.T) {
 	require.False(previouslyIndexed)
 
 	// Register this chain, creating a new index
-	chainVM := blockmock.NewChainVM(ctrl)
+	chainVM := blockmock.NewChainVM()
 	t.Logf("Before RegisterChain, closed=%v", idxr.closed)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	t.Logf("After RegisterChain, closed=%v", idxr.closed)
@@ -282,7 +279,7 @@ func TestIndexer(t *testing.T) {
 	chain2ChainID := ids.GenerateTestID()
 	chain2Ctx := consensustest.Context(t, chain2ChainID)
 	
-	graphVM := blockmock.NewChainVM(ctrl)
+	graphVM := blockmock.NewChainVM()
 	idxr.RegisterChain("chain2", chain2Ctx, graphVM)
 	// require.NoError(err)
 	// require.Equal(4, server.timesCalled) // block index for chain, block index for dag, vtx index, tx index
@@ -387,7 +384,6 @@ func TestIndexer(t *testing.T) {
 func TestIncompleteIndex(t *testing.T) {
 	// Create an indexer with indexing disabled
 	require := require.New(t)
-	ctrl := gomock.NewController(t)
 
 	baseDB := memdb.New()
 	config := Config{
@@ -416,7 +412,7 @@ func TestIncompleteIndex(t *testing.T) {
 	previouslyIndexed, err := idxr.previouslyIndexed(testChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
-	chainVM := blockmock.NewChainVM(ctrl)
+	chainVM := blockmock.NewChainVM()
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	isIncomplete, err = idxr.isIncomplete(testChainID)
 	require.NoError(err)
@@ -470,7 +466,6 @@ func TestIncompleteIndex(t *testing.T) {
 // Ensure we only index chains in the primary network
 func TestIgnoreNonDefaultChains(t *testing.T) {
 	require := require.New(t)
-	ctrl := gomock.NewController(t)
 
 	baseDB := memdb.New()
 	db := versiondb.New(baseDB)
@@ -494,16 +489,13 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 
 	// Create chain1Ctx for a random net + chain.
 	testChainID := ids.GenerateTestID()
-	chain1Ctx := consensustest.Context(t, testChainID)
+	testNetID := ids.GenerateTestID() // Non-primary network
+	chain1Ctx := consensustest.ContextWithNetID(t, testChainID, testNetID)
 	
-	// Override the net ID to be non-primary (not ids.Empty)
-	nonPrimaryNetID := ids.GenerateTestID()
-	idsStruct := luxconsensus.MustIDs(chain1Ctx)
-	idsStruct.NetID = nonPrimaryNetID
-	chain1Ctx = luxconsensus.WithIDs(chain1Ctx, idsStruct)
+	// The test context is configured correctly for a non-primary net
 
 	// RegisterChain should return without adding an index for this chain
-	chainVM := blockmock.NewChainVM(ctrl)
+	chainVM := blockmock.NewChainVM()
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	require.Empty(idxr.blockIndices)
 }

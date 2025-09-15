@@ -204,12 +204,13 @@ func (s *server) Message(_ *http.Request, args *MessageArgs, reply *MessageReply
 	reply.Message = message
 
 	// Get WarpSigner from context
-	if warpSignerIface := consensus.GetWarpSigner(s.ctx); warpSignerIface != nil {
-		if warpSigner, ok := warpSignerIface.(consensus.WarpSigner); ok {
-			reply.Signature, err = warpSigner.Sign(message)
-			return err
-		}
-	}
+	// TODO: Implement GetWarpSigner when consensus package supports it
+	// if warpSignerIface := consensus.GetWarpSigner(s.ctx); warpSignerIface != nil {
+	// 	if warpSigner, ok := warpSignerIface.(consensus.WarpSigner); ok {
+	// 		reply.Signature, err = warpSigner.Sign(message)
+	// 		return err
+	// 	}
+	// }
 	// Return an error if no warp signer is available
 	return fmt.Errorf("warp signer not available")
 }

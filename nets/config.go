@@ -67,12 +67,13 @@ func (c *Config) Valid() error {
 // GetPOAConsensusParameters returns sampling parameters optimized for POA mode
 func GetPOAConsensusParameters() config.Parameters {
 	return config.Parameters{
-		K:                     1, // Only query 1 node (ourselves)
-		AlphaPreference:       1, // Change preference with 1 vote
-		AlphaConfidence:       1, // Increase confidence with 1 vote
-		Beta:                  1, // Only need 1 successful query for finalization
-		ConcurrentPolls:       1, // Only 1 concurrent poll needed
-		OptimalProcessing:     1, // Single-node POA mode: only 1 block in processing
+		K:                     1,   // Only query 1 node (ourselves)
+		Alpha:                 1.0, // Required: must be between 0.5 and 1.0
+		AlphaPreference:       1,   // Change preference with 1 vote
+		AlphaConfidence:       1,   // Increase confidence with 1 vote
+		Beta:                  1,   // Only need 1 successful query for finalization
+		ConcurrentPolls:       1,   // Only 1 concurrent poll needed
+		OptimalProcessing:     1,   // Single-node POA mode: only 1 block in processing
 		MaxOutstandingItems:   256,
 		MaxItemProcessingTime: 30 * time.Second,
 	}

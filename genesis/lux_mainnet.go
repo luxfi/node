@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/units"
 	_ "embed"
 )
 
@@ -22,14 +24,23 @@ func LuxGenesisConfig() *Config {
 	
 	nodeID, _ := ids.NodeIDFromString("NodeID-111111111111111111116DBWJs")
 	
+	// Create a proper allocation with unlock schedule for staking
+	// The staker will have 10M LUX (10,000,000 * 1e9 nLUX)
+	stakingAmount := uint64(10000000) * units.Lux // 10M LUX
+	
 	return &Config{
-		NetworkID: LuxNetworkID,
+		NetworkID: constants.LuxMainnetID,
 		Allocations: []Allocation{
 			{
 				ETHAddr:       ethAddr,
 				LUXAddr:       luxAddr,
-				InitialAmount: 1000000000000000, // 1M LUX
-				UnlockSchedule: []LockedAmount{},
+				InitialAmount: 0, // All funds will be in unlock schedule for staking
+				UnlockSchedule: []LockedAmount{
+					{
+						Amount:   stakingAmount,
+						Locktime: 0, // Available immediately for staking
+					},
+				},
 			},
 		},
 		StartTime: uint64(time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC).Unix()),

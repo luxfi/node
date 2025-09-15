@@ -18,7 +18,7 @@ import (
 	block "github.com/luxfi/node/vms/platformvm/block"
 	state "github.com/luxfi/node/vms/platformvm/state"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
-	gomock "github.com/luxfi/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // Manager is a mock of Manager interface.
@@ -133,9 +133,11 @@ func (mr *ManagerMockRecorder) Preferred() *gomock.Call {
 }
 
 // SetPreference mocks base method.
-func (m *Manager) SetPreference(blkID ids.ID) {
+func (m *Manager) SetPreference(blkID ids.ID) bool {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetPreference", blkID)
+	ret := m.ctrl.Call(m, "SetPreference", blkID)
+	ret0, _ := ret[0].(bool)
+	return ret0
 }
 
 // SetPreference indicates an expected call of SetPreference.

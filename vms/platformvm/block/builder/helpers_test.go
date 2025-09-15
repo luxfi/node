@@ -18,9 +18,10 @@ import (
 
 	"github.com/luxfi/node/codec/linearcodec"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/coremock"
 
 	"github.com/luxfi/consensus/uptime"
 
@@ -35,6 +36,7 @@ import (
 	"github.com/luxfi/database/versiondb"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 
 	"github.com/luxfi/node/utils"
 
@@ -83,10 +85,14 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
+	"github.com/luxfi/node/vms/platformvm/testcontext"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 	pvalidators "github.com/luxfi/node/vms/platformvm/validators"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
+	
+	"github.com/luxfi/node/vms/platformvm/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
@@ -139,13 +145,13 @@ type environment struct {
 	blkManager blockexecutor.Manager
 	mempool    mempool.Mempool
 	network    *network.Network
-	sender     *core.SenderTest
+	sender     *coremock.MockAppSender
 
 	isBootstrapped *utils.Atomic[bool]
 	config         *config.Config
 	clk            *mockable.Clock
 	baseDB         *versiondb.Database
-	ctx            context.Context
+	ctx            *testcontext.Context
 	msm            *mutableSharedMemory
 	fx             fx.Fx
 	state          state.State
@@ -169,7 +175,9 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 	atomicDB := prefixdb.New([]byte{1}, res.baseDB)
 	m := atomic.NewMemory(atomicDB)
 
-	res.ctx = consensustest.Context(t, consensustest.PChainID)
+	// Create test context with Lock
+	baseCtx := consensustest.Context(t, consensustest.PChainID)
+	res.ctx = testcontext.New(baseCtx)
 	res.msm = &mutableSharedMemory{
 		SharedMemory: m.NewSharedMemory(res.ctx.ChainID),
 	}
@@ -183,13 +191,16 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 	rewardsCalc := reward.NewCalculator(res.config.RewardConfig)
 	res.state = defaultState(t, res.config, res.ctx, res.baseDB, rewardsCalc)
 
-	res.uptimes = uptime.NewManager(res.state, res.clk)
+	uptimeState := uptime.NewTestState()
+	res.uptimes = uptime.NewManager(uptimeState, res.clk)
 	res.utxosVerifier = utxo.NewHandler(res.ctx, res.clk, res.fx)
-	res.factory = txstest.NewWalletFactory(res.ctx, res.config, res.state)
+	res.factory = txstest.NewWalletFactory(res.ctx, res.ctx.SharedMemory, res.config, res.state)
 
 	// Start tracking uptimes for genesis validators
 	validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-	require.NoError(res.uptimes.StartTracking(validatorIDs))
+	for _, validatorID := range validatorIDs {
+		require.NoError(res.uptimes.StartTracking(validatorID))
+	}
 
 	genesisID := res.state.GetLastAccepted()
 	res.backend = txexecutor.Backend{
@@ -199,18 +210,18 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		Bootstrapped: res.isBootstrapped,
 		Fx:           res.fx,
 		FlowChecker:  res.utxosVerifier,
-		Uptimes:      res.uptimes,
+		Uptimes:      &uptime.NoOpCalculator{},
 		Rewards:      rewardsCalc,
 	}
 
-	registerer := metric.NewRegistry()
-	res.sender = &core.SenderTest{
-		SendAppGossipF: func(context.Context, core.SendConfig, []byte) error {
+	registerer := prometheus.NewRegistry()
+	res.sender = &coremock.MockAppSender{
+		SendAppGossipF: func(_ context.Context, _ set.Set[ids.NodeID], _ []byte) error {
 			return nil
 		},
 	}
 
-	metrics, err := metric.New(registerer)
+	metricsInstance, err := metrics.New(registerer)
 	require.NoError(err)
 
 	res.mempool, err = mempool.New("mempool", registerer, nil)
@@ -218,18 +229,22 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 
 	res.blkManager = blockexecutor.NewManager(
 		res.mempool,
-		metrics,
+		metricsInstance,
 		res.state,
 		&res.backend,
 		pvalidators.TestManager,
 	)
 
-	txVerifier := network.NewLockedTxVerifier(&res.ctx.Lock, res.blkManager)
+	validatorManager := pvalidators.NewManager(res.ctx.Log, *res.config, res.state, metricsInstance, res.clk)
+	txVerifier := network.NewLockedTxVerifier(res.ctx.Lock, res.blkManager)
 	res.network, err = network.New(
-		res.backend.Ctx.Log,
-		res.backend.Ctx.NodeID,
-		res.backend.Ctx.NetID,
-		res.backend.Ctx.ValidatorState,
+		res.ctx.Log,
+		res.ctx.NodeID,
+		res.ctx.NetID,
+		pvalidators.NewLockedState(
+			res.ctx.Lock,
+			validatorManager,
+		),
 		txVerifier,
 		res.mempool,
 		res.backend.Config.PartialSyncPrimaryNetwork,
@@ -258,7 +273,9 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		if res.isBootstrapped.Get() {
 			validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 
-			require.NoError(res.uptimes.StopTracking(validatorIDs))
+			for _, validatorID := range validatorIDs {
+				require.NoError(res.uptimes.StopTracking(validatorID))
+			}
 
 			require.NoError(res.state.Commit())
 		}
@@ -321,11 +338,11 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		metric.NewRegistry(),
+		prometheus.NewRegistry(),
 		cfg,
 		execCfg,
 		ctx,
-		metric.Noop,
+		metrics.Noop,
 		rewards,
 	)
 	require.NoError(err)
@@ -471,7 +488,7 @@ func buildGenesisTest(t *testing.T, ctx context.Context) []byte {
 
 	buildGenesisArgs := api.BuildGenesisArgs{
 		NetworkID:     json.Uint32(constants.UnitTestID),
-		LuxAssetID:    ctx.LUXAssetID,
+		LuxAssetID:    consensus.GetLUXAssetID(ctx),
 		UTXOs:         genesisUTXOs,
 		Validators:    genesisValidators,
 		Chains:        nil,

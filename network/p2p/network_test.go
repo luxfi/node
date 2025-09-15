@@ -18,7 +18,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	utils "github.com/luxfi/node/utils/set"
 )
 
 const (
@@ -37,11 +36,8 @@ type fakeSenderAdapter struct {
 }
 
 func (f *fakeSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
-	// FakeSender expects single node, so we'll use the first one
-	for nodeID := range nodeIDs {
-		return f.FakeSender.SendAppRequest(ctx, nodeID, requestID, appRequestBytes)
-	}
-	return nil
+	// FakeSender.SendAppRequest expects a set
+	return f.FakeSender.SendAppRequest(ctx, nodeIDs, requestID, appRequestBytes)
 }
 
 func (f *fakeSenderAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
@@ -53,17 +49,13 @@ func (f *fakeSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID,
 }
 
 func (f *fakeSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], appGossipBytes []byte) error {
-	// FakeSender's SendAppGossip doesn't take nodeIDs
-	return f.FakeSender.SendAppGossip(ctx, appGossipBytes)
+	// FakeSender.SendAppGossip expects nodeIDs
+	return f.FakeSender.SendAppGossip(ctx, nodeIDs, appGossipBytes)
 }
 
 func (f *fakeSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], appGossipBytes []byte) error {
-	// Convert consensus set to utils set for FakeSender
-	nodeSet := utils.NewSet[ids.NodeID](len(nodeIDs))
-	for nodeID := range nodeIDs {
-		nodeSet.Add(nodeID)
-	}
-	return f.FakeSender.SendAppGossipSpecific(ctx, nodeSet, appGossipBytes)
+	// FakeSender.SendAppGossipSpecific expects the same type
+	return f.FakeSender.SendAppGossipSpecific(ctx, nodeIDs, appGossipBytes)
 }
 
 func (f *fakeSenderAdapter) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error {
@@ -86,10 +78,8 @@ type senderTestAdapter struct {
 }
 
 func (s *senderTestAdapter) SendAppRequest(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
-	for nodeID := range nodeIDs {
-		return s.SenderTest.SendAppRequest(ctx, nodeID, requestID, appRequestBytes)
-	}
-	return nil
+	// SenderTest.SendAppRequest expects a set
+	return s.SenderTest.SendAppRequest(ctx, nodeIDs, requestID, appRequestBytes)
 }
 
 func (s *senderTestAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
@@ -101,16 +91,11 @@ func (s *senderTestAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID,
 }
 
 func (s *senderTestAdapter) SendAppGossip(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], appGossipBytes []byte) error {
-	return s.SenderTest.SendAppGossip(ctx, appGossipBytes)
+	return s.SenderTest.SendAppGossip(ctx, nodeIDs, appGossipBytes)
 }
 
 func (s *senderTestAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], appGossipBytes []byte) error {
-	// Convert consensus set to utils set for SenderTest
-	nodeSet := utils.NewSet[ids.NodeID](len(nodeIDs))
-	for nodeID := range nodeIDs {
-		nodeSet.Add(nodeID)
-	}
-	return s.SenderTest.SendAppGossipSpecific(ctx, nodeSet, appGossipBytes)
+	return s.SenderTest.SendAppGossipSpecific(ctx, nodeIDs, appGossipBytes)
 }
 
 func (s *senderTestAdapter) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error {
@@ -174,15 +159,33 @@ func TestMessageRouting(t *testing.T) {
 		},
 		wantMsg,
 	))
-	require.NoError(network.AppGossip(ctx, wantNodeID, <-fakeSender.SentAppGossip))
+	gossipBytes := <-fakeSender.SentAppGossip
+	t.Logf("Sent AppGossip bytes: %x", gossipBytes)
+	err = network.AppGossip(ctx, wantNodeID, gossipBytes)
+	if err != nil {
+		t.Logf("AppGossip error: %v", err)
+	}
+	require.NoError(err)
 	require.True(appGossipCalled)
 
 	require.NoError(client.AppRequest(ctx, consensusSet.Of(ids.EmptyNodeID), wantMsg, func(context.Context, ids.NodeID, []byte, error) {}))
-	require.NoError(network.AppRequest(ctx, wantNodeID, 1, time.Time{}, <-fakeSender.SentAppRequest))
+	requestBytes := <-fakeSender.SentAppRequest
+	t.Logf("Sent AppRequest bytes: %x", requestBytes)
+	err = network.AppRequest(ctx, wantNodeID, 1, time.Time{}, requestBytes)
+	if err != nil {
+		t.Logf("AppRequest error: %v", err)
+	}
+	require.NoError(err)
 	require.True(appRequestCalled)
 
 	require.NoError(client.CrossChainAppRequest(ctx, ids.Empty, wantMsg, func(context.Context, ids.ID, []byte, error) {}))
-	require.NoError(network.CrossChainAppRequest(ctx, wantChainID, 1, time.Time{}, <-fakeSender.SentCrossChainAppRequest))
+	sentBytes := <-fakeSender.SentCrossChainAppRequest
+	t.Logf("Sent CrossChainAppRequest bytes: %x", sentBytes)
+	err = network.CrossChainAppRequest(ctx, wantChainID, 1, time.Time{}, sentBytes)
+	if err != nil {
+		t.Logf("CrossChainAppRequest error: %v", err)
+	}
+	require.NoError(err)
 	require.True(crossChainAppRequestCalled)
 }
 
@@ -288,7 +291,7 @@ func TestAppRequestCancelledContext(t *testing.T) {
 
 	sentMessages := make(chan []byte, 1)
 	senderTest := &SenderTest{
-		SendAppRequestF: func(ctx context.Context, _ ids.NodeID, _ uint32, msgBytes []byte) error {
+		SendAppRequestF: func(ctx context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, msgBytes []byte) error {
 			require.NoError(ctx.Err())
 			sentMessages <- msgBytes
 			return nil
@@ -784,7 +787,8 @@ func TestAppRequestAnyNodeSelection(t *testing.T) {
 
 			var sent ids.NodeID
 			senderTest := &SenderTest{
-				SendAppRequestF: func(_ context.Context, nodeID ids.NodeID, _ uint32, _ []byte) error {
+				SendAppRequestF: func(_ context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, _ []byte) error {
+					nodeID := nodeIDs.List()[0]
 					sent = nodeID
 					return nil
 				},
@@ -882,7 +886,8 @@ func TestNodeSamplerClientOption(t *testing.T) {
 
 			done := make(chan struct{})
 			senderTest := &SenderTest{
-				SendAppRequestF: func(_ context.Context, nodeID ids.NodeID, _ uint32, _ []byte) error {
+				SendAppRequestF: func(_ context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, _ []byte) error {
+					nodeID := nodeIDs.List()[0]
 					if len(tt.expected) > 0 {
 						require.Contains(tt.expected, nodeID)
 					}

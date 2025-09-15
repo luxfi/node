@@ -1,0 +1,81 @@
+ok  	github.com/luxfi/node	1.028s
+?   	github.com/luxfi/node/api	[no test files]
+ok  	github.com/luxfi/node/api/admin	1.545s
+ok  	github.com/luxfi/node/api/auth	4.322s
+?   	github.com/luxfi/node/api/connectclient	[no test files]
+ok  	github.com/luxfi/node/api/health	1.082s
+ok  	github.com/luxfi/node/api/info	1.534s
+ok  	github.com/luxfi/node/api/keystore	3.847s
+?   	github.com/luxfi/node/api/keystore/gkeystore	[no test files]
+ok  	github.com/luxfi/node/api/metrics	1.041s
+ok  	github.com/luxfi/node/api/server	1.063s
+?   	github.com/luxfi/node/api/warp	[no test files]
+?   	github.com/luxfi/node/app	[no test files]
+?   	github.com/luxfi/node/benchlist	[no test files]
+ok  	github.com/luxfi/node/benchmarks	1.022s [no tests to run]
+ok  	github.com/luxfi/node/cache	1.026s
+?   	github.com/luxfi/node/cache/cachetest	[no test files]
+ok  	github.com/luxfi/node/cache/lru	1.029s
+?   	github.com/luxfi/node/cache/metercacher	[no test files]
+ok  	github.com/luxfi/node/chains	1.757s
+ok  	github.com/luxfi/node/chains/atomic	1.023s
+?   	github.com/luxfi/node/chains/atomic/atomicmock	[no test files]
+?   	github.com/luxfi/node/chains/atomic/atomictest	[no test files]
+?   	github.com/luxfi/node/chains/atomic/gsharedmemory	[no test files]
+?   	github.com/luxfi/node/cmd/check_status	[no test files]
+?   	github.com/luxfi/node/cmd/check_vmid	[no test files]
+?   	github.com/luxfi/node/cmd/convert-db	[no test files]
+?   	github.com/luxfi/node/cmd/extract_genesis	[no test files]
+?   	github.com/luxfi/node/cmd/migrate-db	[no test files]
+?   	github.com/luxfi/node/cmd/quick-check	[no test files]
+?   	github.com/luxfi/node/cmd/quick_check	[no test files]
+ok  	github.com/luxfi/node/codec	1.022s [no tests to run]
+?   	github.com/luxfi/node/codec/codecmock	[no test files]
+?   	github.com/luxfi/node/codec/codectest	[no test files]
+?   	github.com/luxfi/node/codec/hierarchycodec	[no test files]
+?   	github.com/luxfi/node/codec/linearcodec	[no test files]
+ok  	github.com/luxfi/node/codec/reflectcodec	1.023s
+--- FAIL: TestGetSubnetConfigsFromFile (0.01s)
+    --- FAIL: TestGetSubnetConfigsFromFile/correct_config (0.00s)
+        config_test.go:440: 
+            	Error Trace:	/home/z/work/lux/node/config/config_test.go:440
+            	Error:      	Target error should be in err chain:
+            	            	expected: ""
+            	            	in chain: "invalid consensus parameters: alpha must be between 0.5 and 1.0"
+            	            		"invalid consensus parameters"
+            	            		"alpha must be between 0.5 and 1.0"
+            	Test:       	TestGetSubnetConfigsFromFile/correct_config
+--- FAIL: TestGetSubnetConfigsFromFlags (0.00s)
+    --- FAIL: TestGetSubnetConfigsFromFlags/entry_with_no_config (0.00s)
+        config_test.go:535: 
+            	Error Trace:	/home/z/work/lux/node/config/config_test.go:535
+            	Error:      	Target error should be in err chain:
+            	            	expected: ""
+            	            	in chain: "invalid consensus parameters: alpha must be between 0.5 and 1.0"
+            	            		"invalid consensus parameters"
+            	            		"alpha must be between 0.5 and 1.0"
+            	Test:       	TestGetSubnetConfigsFromFlags/entry_with_no_config
+    --- FAIL: TestGetSubnetConfigsFromFlags/correct_config (0.00s)
+        config_test.go:535: 
+            	Error Trace:	/home/z/work/lux/node/config/config_test.go:535
+            	Error:      	Target error should be in err chain:
+            	            	expected: ""
+            	            	in chain: "invalid consensus parameters: alpha must be between 0.5 and 1.0"
+            	            		"invalid consensus parameters"
+            	            		"alpha must be between 0.5 and 1.0"
+            	Test:       	TestGetSubnetConfigsFromFlags/correct_config
+FAIL
+FAIL	github.com/luxfi/node/config	0.540s
+ok  	github.com/luxfi/node/config/node	1.024s
+?   	github.com/luxfi/node/connectproto/pb/xsvm	[no test files]
+?   	github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect	[no test files]
+ok  	github.com/luxfi/node/consensus	1.035s
+?   	github.com/luxfi/node/consensus/consensustest	[no test files]
+?   	github.com/luxfi/node/consensus/engine/chain/block	[no test files]
+?   	github.com/luxfi/node/consensus/engine/common	[no test files]
+?   	github.com/luxfi/node/consensus/networking/router	[no test files]
+?   	github.com/luxfi/node/consensus/networking/tracker	[no test files]
+?   	github.com/luxfi/node/consensus/validators	[no test files]
+?   	github.com/luxfi/node/consensus/validators/validatorsmock	[no test files]
+?   	github.com/luxfi/node/consensus/validators/validatorstest	[no test files]
+FAIL

@@ -44,7 +44,7 @@ func (h *testInboundHandler) CrossChainAppRequestFailed(_ context.Context, _ ids
 func (h *testInboundHandler) CrossChainAppResponse(_ context.Context, _ ids.ID, _ uint32, _ []byte) error { return nil }
 func (h *testInboundHandler) CrossChainAppError(_ context.Context, _ ids.ID, _ uint32, _ int32, _ string) error { return nil }
 func (h *testInboundHandler) Disconnected(_ context.Context, _ ids.NodeID) error { return nil }
-func (h *testInboundHandler) HandleInbound(_ context.Context, _ interface{}) { }
+func (h *testInboundHandler) HandleInbound(_ context.Context, _ p2pmessage.InboundMessage) { }
 
 var registerL1ValidatorJSON = []byte(`{
         "netID": "2DeHa7Qb6sufPkmQcFWG2uCd4pBPv9WB6dkzroiMQhd1NSRtof",

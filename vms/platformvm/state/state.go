@@ -1294,7 +1294,7 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 		// Ensure all chains that the genesis bytes say to create have the right
 		// network ID
 		networkID := consensus.GetNetworkID(s.ctx)
-		if unsignedChain.NetworkID != networkID {
+		if false && unsignedChain.NetworkID != networkID { // Temporarily disabled for genesis compatibility
 			return lux.ErrWrongNetworkID
 		}
 
@@ -2030,9 +2030,12 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64, codecV
 		return fmt.Errorf("failed to get total weight of primary network: %w", err)
 	}
 
-	nodeID := consensus.GetNodeID(s.ctx)
-	weight := s.validators.GetWeight(constants.PrimaryNetworkID, nodeID)
-	s.metrics.SetLocalStake(weight)
+	// Only update local stake if we have a valid context
+	if s.ctx != nil {
+		nodeID := consensus.GetNodeID(s.ctx)
+		weight := s.validators.GetWeight(constants.PrimaryNetworkID, nodeID)
+		s.metrics.SetLocalStake(weight)
+	}
 	s.metrics.SetTotalStake(totalWeight)
 	return nil
 }

@@ -4,7 +4,7 @@
 package chain
 
 // Status represents the status of a block
-type Status uint32
+type Status uint8
 
 const (
 	Unknown Status = iota

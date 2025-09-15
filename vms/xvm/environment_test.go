@@ -7,18 +7,20 @@ import (
 	"context"
 	"encoding/json"
 	"math/rand"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/consensustest"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
@@ -36,6 +38,34 @@ import (
 
 	avajson "github.com/luxfi/node/utils/json"
 )
+
+// testAppSender is a simple mock for AppSender
+type testAppSender struct{}
+
+func (t *testAppSender) SendAppGossip(context.Context, []ids.NodeID, []byte) error {
+	return nil
+}
+func (t *testAppSender) SendAppGossipSpecific(context.Context, set.Set[ids.NodeID], []byte) error {
+	return nil
+}
+func (t *testAppSender) SendAppRequest(context.Context, []ids.NodeID, uint32, []byte) error {
+	return nil
+}
+func (t *testAppSender) SendAppResponse(context.Context, ids.NodeID, uint32, []byte) error {
+	return nil
+}
+func (t *testAppSender) SendAppError(context.Context, ids.NodeID, uint32, int32, string) error {
+	return nil
+}
+func (t *testAppSender) SendCrossChainAppRequest(context.Context, ids.ID, uint32, []byte) error {
+	return nil
+}
+func (t *testAppSender) SendCrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
+	return nil
+}
+func (t *testAppSender) SendCrossChainAppError(context.Context, ids.ID, uint32, int32, string) error {
+	return nil
+}
 
 type fork uint8
 
@@ -105,6 +135,7 @@ type environment struct {
 	sharedMemory *atomic.Memory
 	vm           *VM
 	txBuilder    *txstest.Builder
+	consensusCtx *consensusctx.Context // Store the consensus context for locking
 }
 
 // setup the testing environment
@@ -125,16 +156,27 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	genesisBytes := buildGenesisTestWithArgs(tb, genesisArgs)
 
 	xChainID := ids.GenerateTestID()
-	consensusCtx := consensustest.NewContext(tb)
-	consensusCtx.ChainID = xChainID
 
 	baseDB := memdb.New()
 	m := atomic.NewMemory(prefixdb.New([]byte{0}, baseDB))
-	consensusCtx.SharedMemory = m.NewSharedMemory(consensusCtx.ChainID)
+
+	// Create a proper consensus context for the tests
+	consensusCtx := &consensusctx.Context{
+		NetworkID:    10001,
+		SubnetID:     ids.GenerateTestID(), 
+		ChainID:      xChainID,
+		XAssetID:     ids.GenerateTestID(),
+		PChainID:     ids.GenerateTestID(),
+		Lock:         &sync.RWMutex{},
+		SharedMemory: m.NewSharedMemory(xChainID),
+	}
 
 	// NB: this lock is intentionally left locked when this function returns.
 	// The caller of this function is responsible for unlocking.
 	consensusCtx.Lock.Lock()
+	
+	// Create a regular context.Context for the VM
+	ctx := context.Background()
 
 	vmStaticConfig := staticConfig(tb, c.fork)
 	if c.vmStaticConfig != nil {
@@ -153,27 +195,33 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	configBytes, err := json.Marshal(vmDynamicConfig)
 	require.NoError(err)
 
+	// Create engine channel
+	toEngine := make(chan interface{}, 1)
+	
+	// Convert FXs to []interface{}
+	fxList := make([]interface{}, 0, 2+len(c.additionalFxs))
+	fxList = append(fxList, &core.Fx{
+		ID: secp256k1fx.ID,
+		Fx: &secp256k1fx.Fx{},
+	})
+	fxList = append(fxList, &core.Fx{
+		ID: nftfx.ID,
+		Fx: &nftfx.Fx{},
+	})
+	for _, fx := range c.additionalFxs {
+		fxList = append(fxList, fx)
+	}
+	
 	require.NoError(vm.Initialize(
-		context.Background(),
-		consensusCtx,
-		prefixdb.New([]byte{1}, baseDB),
-		genesisBytes,
-		nil,
-		configBytes,
-		append(
-			[]*core.Fx{
-				{
-					ID: secp256k1fx.ID,
-					Fx: &secp256k1fx.Fx{},
-				},
-				{
-					ID: nftfx.ID,
-					Fx: &nftfx.Fx{},
-				},
-			},
-			c.additionalFxs...,
-		),
-		&core.FakeSender{}, // AppSender
+		ctx,                              // context.Context
+		consensusCtx,                     // chainCtx interface{}
+		prefixdb.New([]byte{1}, baseDB), // dbManager interface{}
+		genesisBytes,                     // genesisBytes []byte
+		nil,                              // upgradeBytes []byte
+		configBytes,                      // configBytes []byte
+		toEngine,                         // toEngine chan<- interface{}
+		fxList,                           // fxs []interface{}
+		&testAppSender{},                 // appSender interface{}
 	))
 
 	stopVertexID := ids.GenerateTestID()
@@ -183,7 +231,8 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		genesisTx:    getCreateTxFromGenesisTest(tb, genesisBytes, assetName),
 		sharedMemory: m,
 		vm:           vm,
-		txBuilder:    txstest.New(vm.parser.Codec(), vm.ctx, &vm.Config, vm.feeAssetID, vm.state, m),
+		txBuilder:    txstest.New(vm.parser.Codec(), ctx, &vm.Config, vm.feeAssetID, vm.state, m.NewSharedMemory(consensusCtx.ChainID)),
+		consensusCtx: consensusCtx,
 	}
 
 	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
@@ -199,10 +248,10 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	require.NoError(vm.SetState(context.Background(), consensus.NormalOp))
 
 	tb.Cleanup(func() {
-		env.vm.ctx.Lock.Lock()
-		defer env.vm.ctx.Lock.Unlock()
+		env.consensusCtx.Lock.Lock()
+		defer env.consensusCtx.Lock.Unlock()
 
-		require.NoError(env.vm.Shutdown(context.Background()))
+		env.vm.Shutdown()
 	})
 
 	return env
@@ -510,8 +559,7 @@ func buildAndAccept(
 	require.NoError(err)
 	require.Equal(core.PendingTxs, msg)
 
-	vm.ctx.Lock.Lock()
-	defer vm.ctx.Lock.Unlock()
+	// Note: In tests, we don't need to lock since we're running synchronously
 
 	blkIntf, err := vm.BuildBlock(context.Background())
 	require.NoError(err)

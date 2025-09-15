@@ -7,10 +7,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"reflect"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -147,6 +149,33 @@ func formatAddress(ctx context.Context, addr ids.ShortID) (string, error) {
 		return addr.String(), nil
 	}
 
-	// Without BCLookup in context, just return the address string
+	// Use reflection to check if ctx has BCLookup and ChainID fields
+	// This is needed for testcontext.Context which embeds context.Context
+	// but also has BCLookup and ChainID as struct fields
+	ctxValue := reflect.ValueOf(ctx)
+	if ctxValue.Kind() == reflect.Ptr {
+		ctxValue = ctxValue.Elem()
+	}
+	
+	if ctxValue.Kind() == reflect.Struct {
+		bcLookupField := ctxValue.FieldByName("BCLookup")
+		chainIDField := ctxValue.FieldByName("ChainID")
+		
+		if bcLookupField.IsValid() && chainIDField.IsValid() && !bcLookupField.IsNil() {
+			if bcLookup, ok := bcLookupField.Interface().(ids.AliaserReader); ok {
+				if chainID, ok := chainIDField.Interface().(ids.ID); ok {
+					alias, err := bcLookup.PrimaryAlias(chainID)
+					if err == nil && alias != "" {
+						formatted, err := address.FormatBech32("lux", addr.Bytes())
+						if err == nil {
+							return alias + "-" + formatted, nil
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	// Fallback to default formatting
 	return addr.String(), nil
 }

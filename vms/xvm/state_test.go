@@ -34,7 +34,7 @@ func TestSetsAndGets(t *testing.T) {
 			},
 		}},
 	})
-	defer env.vm.ctx.Lock.Unlock()
+	defer env.consensusCtx.Lock.Unlock()
 
 	utxo := &lux.UTXO{
 		UTXOID: lux.UTXOID{
@@ -48,7 +48,7 @@ func TestSetsAndGets(t *testing.T) {
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
 		NetworkID:    constants.UnitTestID,
-		BlockchainID: env.vm.ctx.XChainID,
+		BlockchainID: env.consensusCtx.XChainID,
 		Ins: []*lux.TransferableInput{{
 			UTXOID: lux.UTXOID{
 				TxID:        ids.Empty,
@@ -94,7 +94,7 @@ func TestFundingNoAddresses(t *testing.T) {
 			},
 		}},
 	})
-	defer env.vm.ctx.Lock.Unlock()
+	defer env.consensusCtx.Lock.Unlock()
 
 	utxo := &lux.UTXO{
 		UTXOID: lux.UTXOID{
@@ -124,7 +124,7 @@ func TestFundingAddresses(t *testing.T) {
 			},
 		}},
 	})
-	defer env.vm.ctx.Lock.Unlock()
+	defer env.consensusCtx.Lock.Unlock()
 
 	utxo := &lux.UTXO{
 		UTXOID: lux.UTXOID{

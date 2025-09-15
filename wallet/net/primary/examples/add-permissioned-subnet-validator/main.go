@@ -71,7 +71,7 @@ func main() {
 			End:    uint64(startTime.Add(duration).Unix()),
 			Wght:   weight,
 		},
-		Subnet: netID,
+		Net: netID,
 	})
 	if err != nil {
 		log.Fatalf("failed to issue add net validator transaction: %s\n", err)

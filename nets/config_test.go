@@ -15,9 +15,12 @@ import (
 
 var validParameters = config.Parameters{
 	K:                     1,
+	Alpha:                 0.8,  // Required for validation
+	Beta:                  1,
 	AlphaPreference:       1,
 	AlphaConfidence:       1,
-	Beta:                  1,
+	BetaVirtuous:          1,
+	BetaRogue:             1,
 	ConcurrentPolls:       1,
 	OptimalProcessing:     1,
 	MaxOutstandingItems:   1,
