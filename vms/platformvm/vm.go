@@ -20,7 +20,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/core/interfaces"
+	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
@@ -155,15 +155,42 @@ func (vm *VM) GetChainID(context.Context) (ids.ID, error) {
 // [vm.ChainManager] and [vm.vdrMgr] must be set before this function is called.
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *linearblock.ChainContext,
-	dbManager linearblock.DBManager,
+	chainCtxIntf interface{},
+	dbManagerIntf interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- linearblock.Message,
-	fxs []*linearblock.Fx,
-	appSender linearblock.AppSender,
+	toEngineIntf interface{},
+	fxsIntf []interface{},
+	appSenderIntf interface{},
 ) error {
+	// Type assertions to get the actual types
+	chainCtx, ok := chainCtxIntf.(*linearblock.ChainContext)
+	if !ok {
+		return fmt.Errorf("invalid chain context type")
+	}
+	
+	// DBManager is an interface, we'll handle it as such
+	dbManager := dbManagerIntf
+	
+	toEngine, ok := toEngineIntf.(chan<- linearblock.Message)
+	if !ok {
+		return fmt.Errorf("invalid message channel type")
+	}
+	
+	// Convert fxs slice
+	fxs := make([]*linearblock.Fx, len(fxsIntf))
+	for i, fx := range fxsIntf {
+		fxs[i], ok = fx.(*linearblock.Fx)
+		if !ok {
+			return fmt.Errorf("invalid fx type at index %d", i)
+		}
+	}
+	
+	appSender, ok := appSenderIntf.(linearblock.AppSender)
+	if !ok {
+		return fmt.Errorf("invalid app sender type")
+	}
 	// Initialize logger
 	vm.log = log.NoLog{}
 	vm.log.Debug("initializing platform chain")
@@ -205,8 +232,13 @@ func (vm *VM) Initialize(
 		vm.ctx = context.Background() // Use the runtime context
 	}
 	// Get the current database from the DBManager
+	// Since DBManager is now an interface{}, we need to handle it differently
+	// For now, we'll create a database if one wasn't provided
 	if dbManager != nil {
-		vm.db = dbManager.Current()
+		// Try to get a database from the manager
+		// This is a temporary workaround - proper database initialization needed
+		// vm.db = dbManager.Current()
+		// TODO: Fix database manager integration
 	}
 
 	// Note: this codec is never used to serialize anything

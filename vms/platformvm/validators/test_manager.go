@@ -43,6 +43,11 @@ func (testManager) AddStaker(ids.ID, ids.NodeID, *bls.PublicKey, ids.ID, uint64)
 	return nil
 }
 
+// AddWeight implements validators.Manager interface
+func (testManager) AddWeight(ids.ID, ids.NodeID, uint64) error {
+	return nil
+}
+
 // RemoveWeight implements validators.Manager interface
 func (testManager) RemoveWeight(ids.ID, ids.NodeID, uint64) error {
 	return nil
@@ -83,6 +88,11 @@ func (testManager) Count(ids.ID) int {
 	return 0
 }
 
+// NumValidators implements validators.Manager interface
+func (testManager) NumValidators(ids.ID) int {
+	return 0
+}
+
 // RegisterSetCallbackListener implements validators.Manager interface
 func (testManager) RegisterSetCallbackListener(ids.ID, validators.SetCallbackListener) {}
 
@@ -103,6 +113,6 @@ func (testManager) String() string {
 	return "test_manager"
 }
 
-func (testManager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+func (testManager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetValidatorOutput, uint64, error) {
 	return nil, 0, nil
 }

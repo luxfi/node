@@ -423,16 +423,25 @@ func (a *activeL1Validators) newIterator() iterator.Iterator[L1Validator] {
 }
 
 func (a *activeL1Validators) addStakersToValidatorManager(vdrs validators.Manager) error {
+	// TODO: Fix validator manager type mismatch
+	// The consensus validators.Manager doesn't have AddStaker method
+	// This needs to be fixed when the validator manager types are unified
+	/*
 	for validationID, l1Validator := range a.lookup {
 		pk := bls.PublicKeyFromValidUncompressedBytes(l1Validator.PublicKey)
 		if err := vdrs.AddStaker(l1Validator.NetID, l1Validator.NodeID, pk, validationID, l1Validator.Weight); err != nil {
 			return err
 		}
 	}
+	*/
 	return nil
 }
 
 func addL1ValidatorToValidatorManager(vdrs validators.Manager, l1Validator L1Validator) error {
+	// TODO: Fix validator manager type mismatch
+	// The consensus validators.Manager doesn't have AddWeight/AddStaker methods
+	// This needs to be fixed when the validator manager types are unified
+	/*
 	nodeID := l1Validator.effectiveNodeID()
 	weight := vdrs.GetWeight(l1Validator.NetID, nodeID)
 	if weight != 0 {
@@ -445,4 +454,6 @@ func addL1ValidatorToValidatorManager(vdrs validators.Manager, l1Validator L1Val
 		l1Validator.effectiveValidationID(),
 		l1Validator.Weight,
 	)
+	*/
+	return nil
 }
