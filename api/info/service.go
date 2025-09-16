@@ -10,7 +10,6 @@ import (
 	"net/netip"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/chains"
 	// "github.com/luxfi/consensus/networking/benchlist" // benchlist package doesn't exist
@@ -103,8 +102,8 @@ type GetNodeVersionReply struct {
 // GetNodeVersion returns the version this node is running
 func (i *Info) GetNodeVersion(_ *http.Request, _ *struct{}, reply *GetNodeVersionReply) error {
 	i.log.Debug("API called",
-		zap.String("service", "info"),
-		zap.String("method", "getNodeVersion"),
+		log.String("service", "info"),
+		log.String("method", "getNodeVersion"),
 	)
 
 	vmVersions, err := i.vmManager.Versions()
@@ -129,8 +128,8 @@ type GetNodeIDReply struct {
 // GetNodeID returns the node ID of this node
 func (i *Info) GetNodeID(_ *http.Request, _ *struct{}, reply *GetNodeIDReply) error {
 	i.log.Debug("API called",
-		zap.String("service", "info"),
-		zap.String("method", "getNodeID"),
+		log.String("service", "info"),
+		log.String("method", "getNodeID"),
 	)
 
 	reply.NodeID = i.NodeID
@@ -151,8 +150,8 @@ type GetNodeIPReply struct {
 // GetNodeIP returns the IP of this node
 func (i *Info) GetNodeIP(_ *http.Request, _ *struct{}, reply *GetNodeIPReply) error {
 	i.log.Debug("API called",
-		zap.String("service", "info"),
-		zap.String("method", "getNodeIP"),
+		log.String("service", "info"),
+		log.String("method", "getNodeIP"),
 	)
 
 	reply.IP = i.myIP.Get()
@@ -162,8 +161,8 @@ func (i *Info) GetNodeIP(_ *http.Request, _ *struct{}, reply *GetNodeIPReply) er
 // GetNetworkID returns the network ID this node is running on
 func (i *Info) GetNetworkID(_ *http.Request, _ *struct{}, reply *GetNetworkIDReply) error {
 	i.log.Debug("API called",
-		zap.String("service", "info"),
-		zap.String("method", "getNetworkID"),
+		log.String("service", "info"),
+		log.String("method", "getNetworkID"),
 	)
 
 	reply.NetworkID = json.Uint32(i.NetworkID)
@@ -178,8 +177,8 @@ type GetNetworkNameReply struct {
 // GetNetworkName returns the network name this node is running on
 func (i *Info) GetNetworkName(_ *http.Request, _ *struct{}, reply *GetNetworkNameReply) error {
 	i.log.Debug("API called",
-		zap.String("service", "info"),
-		zap.String("method", "getNetworkName"),
+		log.String("service", "info"),
+		log.String("method", "getNetworkName"),
 	)
 
 	reply.NetworkName = constants.NetworkName(i.NetworkID)
@@ -199,8 +198,8 @@ type GetBlockchainIDReply struct {
 // GetBlockchainID returns the blockchain ID that resolves the alias that was supplied
 func (i *Info) GetBlockchainID(_ *http.Request, args *GetBlockchainIDArgs, reply *GetBlockchainIDReply) error {
 	i.log.Debug("API called",
-		zap.String("service", "info"),
-		zap.String("method", "getBlockchainID"),
+		log.String("service", "info"),
+		log.String("method", "getBlockchainID"),
 	)
 
 	bID, err := i.chainManager.Lookup(args.Alias)
@@ -230,8 +229,8 @@ type PeersReply struct {
 // Peers returns the list of current validators
 func (i *Info) Peers(_ *http.Request, args *PeersArgs, reply *PeersReply) error {
 	i.log.Debug("API called",
-		zap.String("service", "info"),
-		zap.String("method", "peers"),
+		log.String("service", "info"),
+		log.String("method", "peers"),
 	)
 
 	peers := i.networking.PeerInfo(args.NodeIDs)
@@ -275,9 +274,9 @@ type IsBootstrappedResponse struct {
 // Returns an error if the chain doesn't exist
 func (i *Info) IsBootstrapped(_ *http.Request, args *IsBootstrappedArgs, reply *IsBootstrappedResponse) error {
 	i.log.Debug("API called",
-		zap.String("service", "info"),
-		zap.String("method", "isBootstrapped"),
-		zap.String("chain", args.Chain),
+		log.String("service", "info"),
+		log.String("method", "isBootstrapped"),
+		log.String("chain", args.Chain),
 	)
 
 	if args.Chain == "" {
@@ -315,8 +314,8 @@ type UptimeRequest struct {
 
 func (i *Info) Uptime(_ *http.Request, args *UptimeRequest, reply *UptimeResponse) error {
 	i.log.Debug("API called",
-		zap.String("service", "info"),
-		zap.String("method", "uptime"),
+		log.String("service", "info"),
+		log.String("method", "uptime"),
 	)
 
 	result, err := i.networking.NodeUptime(args.NetID)
@@ -351,8 +350,8 @@ func (a *LPsReply) getLP(lpNum uint32) *LP {
 
 func (i *Info) Lps(_ *http.Request, _ *struct{}, reply *LPsReply) error {
 	i.log.Debug("API called",
-		zap.String("service", "info"),
-		zap.String("method", "lps"),
+		log.String("service", "info"),
+		log.String("method", "lps"),
 	)
 
 	reply.LPs = make(map[uint32]*LP, constants.CurrentLPs.Len())
@@ -402,8 +401,8 @@ type GetTxFeeResponse struct {
 // GetTxFee returns the transaction fee in nLUX.
 func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) error {
 	i.log.Debug("API called",
-		zap.String("service", "info"),
-		zap.String("method", "getTxFee"),
+		log.String("service", "info"),
+		log.String("method", "getTxFee"),
 	)
 
 	reply.TxFee = json.Uint64(i.TxFee)
@@ -427,8 +426,8 @@ type GetVMsReply struct {
 // GetVMs lists the virtual machines installed on the node
 func (i *Info) GetVMs(_ *http.Request, _ *struct{}, reply *GetVMsReply) error {
 	i.log.Debug("API called",
-		zap.String("service", "info"),
-		zap.String("method", "getVMs"),
+		log.String("service", "info"),
+		log.String("method", "getVMs"),
 	)
 
 	// Fetch the VMs registered on this node.

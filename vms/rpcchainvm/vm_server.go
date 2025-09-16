@@ -12,6 +12,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -25,9 +26,6 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	metric "github.com/luxfi/metric"
-	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/db/rpcdb"
@@ -164,7 +162,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	}
 
 	// gRPC client metrics
-	grpcClientMetrics := grpc_metric.NewClientMetrics()
+	grpcClientMetrics := grpc_prometheus.NewClientMetrics()
 	if err := grpcMetrics.Register(grpcClientMetrics); err != nil {
 		return nil, err
 	}
@@ -303,13 +301,17 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 
 func (vm *VMServer) SetState(ctx context.Context, stateReq *vmpb.SetStateRequest) (*vmpb.SetStateResponse, error) {
 	// SetState not available in ChainVM interface, check if VM implements it
+	// Define State type locally since consensus package doesn't export it
+	type State uint32
+	const NormalOp State = 1
+
 	type stateSetter interface {
-		SetState(context.Context, consensus.State) error
+		SetState(context.Context, State) error
 	}
 
 	if ss, ok := vm.vm.(stateSetter); ok {
 		// Set state to NormalOp (1)
-		err := ss.SetState(ctx, consensus.NormalOp)
+		err := ss.SetState(ctx, NormalOp)
 		if err != nil {
 			return nil, err
 		}

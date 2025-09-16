@@ -13,7 +13,6 @@ import (
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/sampler"
@@ -334,13 +333,13 @@ func (i *ipTracker) updateMostRecentTrackedIP(ip *ips.ClaimedIPPort) {
 	if count := i.bloom.Count(); count >= i.maxBloomCount {
 		if err := i.resetBloom(); err != nil {
 			i.log.Error("failed to reset validator tracker bloom filter",
-				zap.Int("maxCount", i.maxBloomCount),
-				zap.Int("currentCount", count),
-				zap.Error(err),
+				"maxCount", i.maxBloomCount,
+				"currentCount", count,
+				"error", err,
 			)
 		} else {
 			i.log.Info("reset validator tracker bloom filter",
-				zap.Int("currentCount", count),
+				"currentCount", count,
 			)
 		}
 		return

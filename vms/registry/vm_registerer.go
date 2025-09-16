@@ -14,7 +14,6 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms"
@@ -108,8 +107,8 @@ func (r *vmRegisterer) createStaticHandlers(
 	handlers, err := commonVM.CreateHandlers(ctx)
 	if err != nil {
 		r.config.Log.Error("failed to create static API endpoints",
-			zap.Stringer("vmID", vmID),
-			zap.Error(err),
+			log.Stringer("vmID", vmID),
+			log.String("error", err.Error()),
 		)
 
 		if err := commonVM.Shutdown(ctx); err != nil {
@@ -124,8 +123,8 @@ func (r *vmRegisterer) createStaticEndpoints(pathAdder server.PathAdder, handler
 	// register the static endpoints
 	for extension, service := range handlers {
 		r.config.Log.Debug("adding static API endpoint",
-			zap.String("endpoint", defaultEndpoint),
-			zap.String("extension", extension),
+			log.String("endpoint", defaultEndpoint),
+			log.String("extension", extension),
 		)
 		if err := pathAdder.AddRoute(service, defaultEndpoint, extension); err != nil {
 			return fmt.Errorf(

@@ -17,7 +17,6 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/interfaces"
@@ -212,7 +211,7 @@ func (vm *VM) Initialize(
 		fmt.Printf("ERROR: Failed to get execution config: %v\n", err)
 		return fmt.Errorf("failed to get execution config: %w", err)
 	}
-	vm.log.Info("using VM execution config", zap.Reflect("config", execConfig))
+	vm.log.Info("using VM execution config", "config", execConfig)
 	fmt.Printf("Got execution config successfully\n")
 
 	// Use a prometheus registry for metrics
@@ -251,7 +250,7 @@ func (vm *VM) Initialize(
 	rewards := reward.NewCalculator(vm.RewardConfig)
 
 	vm.log.Info("Creating Platform VM state",
-		zap.Int("genesisLen", len(genesisBytes)),
+		"genesisLen", len(genesisBytes),
 	)
 	vm.state, err = state.New(
 		vm.db,
@@ -264,7 +263,7 @@ func (vm *VM) Initialize(
 		rewards,
 	)
 	if err != nil {
-		vm.log.Error("Failed to create Platform VM state", zap.Error(err))
+		vm.log.Error("Failed to create Platform VM state", "error", err)
 		return fmt.Errorf("failed to create state: %w", err)
 	}
 	vm.log.Info("Platform VM state created successfully")
@@ -349,7 +348,7 @@ func (vm *VM) Initialize(
 
 	lastAcceptedID := vm.state.GetLastAccepted()
 	vm.log.Info("initializing last accepted",
-		zap.Stringer("blkID", lastAcceptedID),
+		"blkID", lastAcceptedID,
 	)
 	if err := vm.SetPreference(ctx, lastAcceptedID); err != nil {
 		return err
@@ -370,7 +369,7 @@ func (vm *VM) Initialize(
 		err := vm.state.ReindexBlocks(&vm.lock, vm.log)
 		if err != nil {
 			vm.log.Warn("reindexing blocks failed",
-				zap.Error(err),
+				"error", err,
 			)
 		}
 	}()
@@ -389,7 +388,7 @@ func (vm *VM) periodicallyPruneMempool(frequency time.Duration) {
 		case <-ticker.C:
 			if err := vm.pruneMempool(); err != nil {
 				vm.log.Debug("pruning mempool failed",
-					zap.Error(err),
+					"error", err,
 				)
 			}
 		}
@@ -412,8 +411,8 @@ func (vm *VM) pruneMempool() error {
 		if err := vm.Builder.Add(tx); err != nil {
 			vm.log.Debug(
 				"failed to reissue tx",
-				zap.Stringer("txID", tx.ID()),
-				zap.Error(err),
+				"txID", tx.ID(),
+				"error", err,
 			)
 		}
 	}
@@ -427,20 +426,20 @@ func (vm *VM) checkExistingChains() error {
 	// We need the parent chainData directory, not the P-Chain specific one
 	chainDataDir := filepath.Dir(vm.chainDataDir)
 	vm.log.Info("checking for existing chains in chainData directory",
-		zap.String("chainDataDir", chainDataDir),
+		"chainDataDir", chainDataDir,
 	)
 
 	entries, err := os.ReadDir(chainDataDir)
 	if err != nil {
 		vm.log.Info("chainData directory read error",
-			zap.Error(err),
+			"error", err,
 		)
 		// Directory might not exist yet, that's ok
 		return nil
 	}
 
 	vm.log.Info("found chainData entries",
-		zap.Int("count", len(entries)),
+		"count", len(entries),
 	)
 
 	for _, entry := range entries {
@@ -449,15 +448,15 @@ func (vm *VM) checkExistingChains() error {
 		}
 
 		vm.log.Info("checking chainData entry",
-			zap.String("name", entry.Name()),
+			"name", entry.Name(),
 		)
 
 		// Try to parse as chain ID
 		chainID, err := ids.FromString(entry.Name())
 		if err != nil {
 			vm.log.Debug("failed to parse chain ID",
-				zap.String("name", entry.Name()),
-				zap.Error(err),
+				"name", entry.Name(),
+				"error", err,
 			)
 			continue
 		}
@@ -477,13 +476,13 @@ func (vm *VM) checkExistingChains() error {
 		if bytes.Contains(configData, []byte("chain-id")) || bytes.Contains(configData, []byte("chainId")) {
 			vmID = constants.EVMID
 			vm.log.Info("detected EVM chain from config",
-				zap.String("chainID", chainID.String()),
+				"chainID", chainID.String(),
 			)
 		} else {
 			// Check for other VM types by looking at other files
 			// For now, we'll skip non-EVM chains
 			vm.log.Debug("skipping non-EVM chain",
-				zap.String("chainID", chainID.String()),
+				"chainID", chainID.String(),
 			)
 			continue
 		}
@@ -495,8 +494,8 @@ func (vm *VM) checkExistingChains() error {
 		chains, err := vm.state.GetChains(netID)
 		if err != nil {
 			vm.log.Warn("failed to get chains for subnet",
-				zap.String("netID", netID.String()),
-				zap.Error(err),
+				"netID", netID.String(),
+				"error", err,
 			)
 			continue
 		}
@@ -512,10 +511,10 @@ func (vm *VM) checkExistingChains() error {
 		if !chainExists {
 			// This is an orphaned chain, queue it for creation
 			vm.log.Info("found orphaned chain, queuing for creation",
-				zap.String("chainID", chainID.String()),
-				zap.String("vmID", vmID.String()),
-				zap.String("netID", netID.String()),
-				zap.String("path", filepath.Join(chainDataDir, entry.Name())),
+				"chainID", chainID.String(),
+				"vmID", vmID.String(),
+				"netID", netID.String(),
+				"path", filepath.Join(chainDataDir, entry.Name()),
 			)
 
 			// For existing chains, we need to provide a minimal but valid genesis
@@ -558,7 +557,7 @@ func (vm *VM) checkExistingChains() error {
 			vm.Config.QueueExistingChainWithGenesis(chainID, netID, vmID, []byte(minimalGenesis))
 		} else {
 			vm.log.Debug("chain already registered",
-				zap.String("chainID", chainID.String()),
+				"chainID", chainID.String(),
 			)
 		}
 	}
@@ -571,7 +570,7 @@ func (vm *VM) initBlockchains() error {
 
 	// Check for existing chains in chainData directory
 	if err := vm.checkExistingChains(); err != nil {
-		vm.log.Warn("failed to check existing chains", zap.Error(err))
+		vm.log.Warn("failed to check existing chains", "error", err)
 	}
 
 	if vm.Config.PartialSyncPrimaryNetwork {
@@ -617,10 +616,10 @@ func (vm *VM) createSubnet(netID ids.ID) error {
 		// Check for chain ID mapping override
 		// Support mapping for C-Chain to use existing blockchain ID
 		vm.log.Info("Checking chain ID mapping",
-			zap.String("vmID", tx.VMID.String()),
-			zap.String("EVMID", constants.EVMID.String()),
-			zap.String("originalChainID", chainID.String()),
-			zap.String("envVar", os.Getenv("LUX_CHAIN_ID_MAPPING_C")),
+			"vmID", tx.VMID.String(),
+			"EVMID", constants.EVMID.String(),
+			"originalChainID", chainID.String(),
+			"envVar", os.Getenv("LUX_CHAIN_ID_MAPPING_C"),
 		)
 
 		if tx.VMID == constants.EVMID && os.Getenv("LUX_CHAIN_ID_MAPPING_C") != "" {
@@ -628,14 +627,14 @@ func (vm *VM) createSubnet(netID ids.ID) error {
 			parsedID, err := ids.FromString(mappedID)
 			if err == nil {
 				vm.log.Info("Using mapped blockchain ID for C-Chain",
-					zap.String("original", chainID.String()),
-					zap.String("mapped", parsedID.String()),
+					"original", chainID.String(),
+					"mapped", parsedID.String(),
 				)
 				chainID = parsedID
 			} else {
 				vm.log.Warn("Invalid chain ID mapping",
-					zap.String("mapping", mappedID),
-					zap.Error(err),
+					"mapping", mappedID,
+					"error", err,
 				)
 			}
 		}
@@ -875,8 +874,8 @@ func (vm *VM) issueTxFromRPC(tx *txs.Tx) error {
 	err := vm.Network.IssueTxFromRPC(tx)
 	if err != nil && !errors.Is(err, mempool.ErrDuplicateTx) {
 		vm.log.Debug("failed to add tx to mempool",
-			zap.Stringer("txID", tx.ID()),
-			zap.Error(err),
+			"txID", tx.ID(),
+			"error", err,
 		)
 		return err
 	}

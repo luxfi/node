@@ -9,6 +9,7 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
+	utils_metric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
@@ -16,7 +17,7 @@ import (
 var _ Metrics = (*metrics)(nil)
 
 type Metrics interface {
-	metric.APIInterceptor
+	utils_metric.APIInterceptor
 
 	// Mark that the given block was accepted.
 	MarkAccepted(block.Block) error
@@ -82,7 +83,7 @@ func New(registerer metric.Registerer) (Metrics, error) {
 	}
 
 	errs := wrappers.Errs{Err: err}
-	apiRequestMetrics, err := metric.NewAPIInterceptor(registerer)
+	apiRequestMetrics, err := utils_metric.NewAPIInterceptor(registerer)
 	errs.Add(err)
 	m.APIInterceptor = apiRequestMetrics
 	errs.Add(
@@ -101,12 +102,12 @@ func New(registerer metric.Registerer) (Metrics, error) {
 }
 
 type metrics struct {
-	metric.APIInterceptor
+	utils_metric.APIInterceptor
 
 	blockMetrics *blockMetrics
 
 	timeUntilUnstake       metric.Gauge
-	timeUntilSubnetUnstake *metric.GaugeVec
+	timeUntilSubnetUnstake metric.GaugeVec
 	localStake             metric.Gauge
 	totalStake             metric.Gauge
 

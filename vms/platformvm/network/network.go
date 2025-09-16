@@ -14,7 +14,6 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -194,7 +193,7 @@ func (n *Network) PullGossip(ctx context.Context) {
 func (n *Network) AppGossip(ctx context.Context, nodeID ids.NodeID, msgBytes []byte) error {
 	if n.partialSyncPrimaryNetwork {
 		n.log.Debug("dropping AppGossip message",
-			zap.String("reason", "primary network is not being fully synced"),
+			log.String("reason", "primary network is not being fully synced"),
 		)
 		return nil
 	}

@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
@@ -83,7 +81,7 @@ func newIndex(
 	if err == database.ErrNotFound {
 		// Couldn't find it in the database. Must not have accepted any containers in previous runs.
 		i.log.Info("created new index",
-			zap.Uint64("nextAcceptedIndex", i.nextAcceptedIndex),
+			"nextAcceptedIndex", i.nextAcceptedIndex,
 		)
 		return i, nil
 	}
@@ -92,7 +90,7 @@ func newIndex(
 	}
 	i.nextAcceptedIndex = nextAcceptedIndex
 	i.log.Info("created new index",
-		zap.Uint64("nextAcceptedIndex", i.nextAcceptedIndex),
+		"nextAcceptedIndex", i.nextAcceptedIndex,
 	)
 	return i, nil
 }
@@ -121,7 +119,7 @@ func (i *index) Accept(ctx context.Context, containerID ids.ID, containerBytes [
 	_, err := i.containerToIndex.Get(containerID[:])
 	if err == nil {
 		i.log.Debug("not indexing already accepted container",
-			zap.Stringer("containerID", containerID),
+			log.Stringer("containerID", containerID),
 		)
 		return nil
 	}
@@ -130,8 +128,8 @@ func (i *index) Accept(ctx context.Context, containerID ids.ID, containerBytes [
 	}
 
 	i.log.Debug("indexing container",
-		zap.Uint64("nextAcceptedIndex", i.nextAcceptedIndex),
-		zap.Stringer("containerID", containerID),
+		log.Uint64("nextAcceptedIndex", i.nextAcceptedIndex),
+		log.Stringer("containerID", containerID),
 	)
 	// Persist index --> Container
 	nextAcceptedIndexBytes := database.PackUInt64(i.nextAcceptedIndex)
@@ -189,7 +187,7 @@ func (i *index) getContainerByIndexBytes(indexBytes []byte) (Container, error) {
 	containerBytes, err := i.indexToContainer.Get(indexBytes)
 	if err != nil {
 		i.log.Error("couldn't read container from database",
-			zap.Error(err),
+			log.Err(err),
 		)
 		return Container{}, fmt.Errorf("couldn't read from database: %w", err)
 	}

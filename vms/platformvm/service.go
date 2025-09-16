@@ -13,8 +13,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
@@ -82,8 +80,8 @@ type stakerAttributes struct {
 // GetHeight returns the height of the last accepted block
 func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *api.GetHeightResponse) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getHeight"),
+		"service", "platform",
+		"method", "getHeight",
 	)
 
 	s.vm.lock.Lock()
@@ -110,8 +108,8 @@ type ExportKeyReply struct {
 // ExportKey returns a private key from the provided user
 func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportKeyReply) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "exportKey"),
+		"service", "platform",
+		"method", "exportKey",
 		"username", args.Username,
 	)
 
@@ -141,9 +139,9 @@ type GetBalanceResponse struct {
 // GetBalance gets the balance of an address
 func (s *Service) GetBalance(_ *http.Request, args *GetBalanceRequest, response *GetBalanceResponse) error {
 	s.vm.log.Debug("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getBalance"),
-		zap.Strings("addresses", args.Addresses),
+		"service", "platform",
+		"method", "getBalance",
+		"addresses", args.Addresses,
 	)
 
 	addrs, err := lux.ParseServiceAddresses(s.addrManager, args.Addresses)
@@ -190,7 +188,7 @@ utxoFor:
 			switch {
 			case !ok:
 				s.vm.log.Warn("unexpected output type in UTXO",
-					zap.String("type", fmt.Sprintf("%T", out.TransferableOut)),
+					"type", fmt.Sprintf("%T", out.TransferableOut),
 				)
 				continue utxoFor
 			case innerOut.Locktime > currentTime:
@@ -262,8 +260,8 @@ func newJSONBalanceMap(balanceMap map[ids.ID]uint64) map[ids.ID]avajson.Uint64 {
 // ListAddresses returns the addresses controlled by [args.Username]
 func (s *Service) ListAddresses(_ *http.Request, args *api.UserPass, response *api.JSONAddresses) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "listAddresses"),
+		"service", "platform",
+		"method", "listAddresses",
 		"username", args.Username,
 	)
 
@@ -281,8 +279,8 @@ type Index struct {
 // GetUTXOs returns the UTXOs controlled by the given addresses
 func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *api.GetUTXOsReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getUTXOs"),
+		"service", "platform",
+		"method", "getUTXOs",
 	)
 
 	if len(args.Addresses) == 0 {
@@ -401,9 +399,9 @@ type GetSubnetResponse struct {
 
 func (s *Service) GetSubnet(_ *http.Request, args *GetSubnetArgs, response *GetSubnetResponse) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getSubnet"),
-		zap.Stringer("netID", args.NetID),
+		"service", "platform",
+		"method", "getSubnet",
+		"netID", args.NetID,
 	)
 
 	if args.NetID == constants.PrimaryNetworkID {
@@ -478,8 +476,8 @@ type GetSubnetsResponse struct {
 // The response will include the primary network
 func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *GetSubnetsResponse) error {
 	s.vm.log.Debug("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getSubnets"),
+		"service", "platform",
+		"method", "getSubnets",
 	)
 
 	s.vm.lock.Lock()
@@ -608,8 +606,8 @@ type GetStakingAssetIDResponse struct {
 // provided subnet
 func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs, response *GetStakingAssetIDResponse) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getStakingAssetID"),
+		"service", "platform",
+		"method", "getStakingAssetID",
 	)
 
 	if args.NetID == constants.PrimaryNetworkID {
@@ -705,8 +703,8 @@ func (s *Service) loadStakerTxAttributes(txID ids.ID) (*stakerAttributes, error)
 // delegators' number and total weight is returned.
 func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidatorsArgs, reply *GetCurrentValidatorsReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getCurrentValidators"),
+		"service", "platform",
+		"method", "getCurrentValidators",
 	)
 
 	reply.Validators = []interface{}{}
@@ -923,8 +921,8 @@ type GetCurrentSupplyReply struct {
 // GetCurrentSupply returns an upper bound on the supply of LUX in the system
 func (s *Service) GetCurrentSupply(r *http.Request, args *GetCurrentSupplyArgs, reply *GetCurrentSupplyReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getCurrentSupply"),
+		"service", "platform",
+		"method", "getCurrentSupply",
 	)
 
 	s.vm.lock.Lock()
@@ -964,9 +962,9 @@ type SampleValidatorsReply struct {
 // SampleValidators returns a sampling of the list of current validators
 func (s *Service) SampleValidators(_ *http.Request, args *SampleValidatorsArgs, reply *SampleValidatorsReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "sampleValidators"),
-		zap.Uint16("size", uint16(args.Size)),
+		"service", "platform",
+		"method", "sampleValidators",
+		"size", uint16(args.Size),
 	)
 
 	// Sample is not available in consensus validators.Manager
@@ -996,8 +994,8 @@ type GetBlockchainStatusReply struct {
 // GetBlockchainStatus gets the status of a blockchain with the ID [args.BlockchainID].
 func (s *Service) GetBlockchainStatus(r *http.Request, args *GetBlockchainStatusArgs, reply *GetBlockchainStatusReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getBlockchainStatus"),
+		"service", "platform",
+		"method", "getBlockchainStatus",
 	)
 
 	if args.BlockchainID == "" {
@@ -1105,8 +1103,8 @@ type ValidatedByResponse struct {
 // ValidatedBy returns the ID of the Net that validates [args.BlockchainID]
 func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *ValidatedByResponse) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "validatedBy"),
+		"service", "platform",
+		"method", "validatedBy",
 	)
 
 	s.vm.lock.Lock()
@@ -1131,8 +1129,8 @@ type ValidatesResponse struct {
 // Validates returns the IDs of the blockchains validated by [args.NetID]
 func (s *Service) Validates(_ *http.Request, args *ValidatesArgs, response *ValidatesResponse) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "validates"),
+		"service", "platform",
+		"method", "validates",
 	)
 
 	s.vm.lock.Lock()
@@ -1190,8 +1188,8 @@ type GetBlockchainsResponse struct {
 // GetBlockchains returns all of the blockchains that exist
 func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBlockchainsResponse) error {
 	s.vm.log.Debug("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getBlockchains"),
+		"service", "platform",
+		"method", "getBlockchains",
 	)
 
 	s.vm.lock.Lock()
@@ -1251,8 +1249,8 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 
 func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, response *api.JSONTxID) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "issueTx"),
+		"service", "platform",
+		"method", "issueTx",
 	)
 
 	txBytes, err := formatting.Decode(args.Encoding, args.Tx)
@@ -1274,8 +1272,8 @@ func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, response *api.
 
 func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, response *api.GetTxReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getTx"),
+		"service", "platform",
+		"method", "getTx",
 	)
 
 	s.vm.lock.Lock()
@@ -1316,8 +1314,8 @@ type GetTxStatusResponse struct {
 // GetTxStatus gets a tx's status
 func (s *Service) GetTxStatus(_ *http.Request, args *GetTxStatusArgs, response *GetTxStatusResponse) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getTxStatus"),
+		"service", "platform",
+		"method", "getTxStatus",
 	)
 
 	s.vm.lock.Lock()
@@ -1397,8 +1395,8 @@ type GetStakeReply struct {
 // in a data structure rather than re-calculating it by iterating over stakers
 func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetStakeReply) error {
 	s.vm.log.Debug("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getStake"),
+		"service", "platform",
+		"method", "getStake",
 	)
 
 	if len(args.Addresses) > maxGetStakeAddrs {
@@ -1493,8 +1491,8 @@ type GetMinStakeReply struct {
 // GetMinStake returns the minimum staking amount in nLUX.
 func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *GetMinStakeReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getMinStake"),
+		"service", "platform",
+		"method", "getMinStake",
 	)
 
 	if args.NetID == constants.PrimaryNetworkID {
@@ -1546,8 +1544,8 @@ type GetTotalStakeReply struct {
 // GetTotalStake returns the total amount staked on the Primary Network
 func (s *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply *GetTotalStakeReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getTotalStake"),
+		"service", "platform",
+		"method", "getTotalStake",
 	)
 
 	totalWeight, err := s.vm.Validators.TotalWeight(args.NetID)
@@ -1574,8 +1572,8 @@ type GetRewardUTXOsReply struct {
 // transaction's staking period ended.
 func (s *Service) GetRewardUTXOs(_ *http.Request, args *api.GetTxArgs, reply *GetRewardUTXOsReply) error {
 	s.vm.log.Debug("deprecated API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getRewardUTXOs"),
+		"service", "platform",
+		"method", "getRewardUTXOs",
 	)
 
 	s.vm.lock.Lock()
@@ -1613,8 +1611,8 @@ type GetTimestampReply struct {
 // GetTimestamp returns the current timestamp on chain.
 func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestampReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getTimestamp"),
+		"service", "platform",
+		"method", "getTimestamp",
 	)
 
 	s.vm.lock.Lock()
@@ -1696,10 +1694,10 @@ type GetValidatorsAtReply struct {
 func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
 	height := uint64(args.Height)
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getValidatorsAt"),
-		zap.Uint64("height", height),
-		zap.Stringer("netID", args.NetID),
+		"service", "platform",
+		"method", "getValidatorsAt",
+		"height", height,
+		"netID", args.NetID,
 	)
 
 	s.vm.lock.Lock()
@@ -1716,10 +1714,10 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 
 func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *api.GetBlockResponse) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getBlock"),
-		zap.Stringer("blkID", args.BlockID),
-		zap.Stringer("encoding", args.Encoding),
+		"service", "platform",
+		"method", "getBlock",
+		"blkID", args.BlockID,
+		"encoding", args.Encoding,
 	)
 
 	s.vm.lock.Lock()
@@ -1749,10 +1747,10 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *ap
 // GetBlockByHeight returns the block at the given height.
 func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightArgs, response *api.GetBlockResponse) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getBlockByHeight"),
-		zap.Uint64("height", uint64(args.Height)),
-		zap.Stringer("encoding", args.Encoding),
+		"service", "platform",
+		"method", "getBlockByHeight",
+		"height", uint64(args.Height),
+		"encoding", args.Encoding,
 	)
 
 	s.vm.lock.Lock()
@@ -1766,8 +1764,8 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 	block, err := s.vm.manager.GetStatelessBlock(blockID)
 	if err != nil {
 		s.vm.log.Error("couldn't get accepted block",
-			zap.Stringer("blkID", blockID),
-			zap.Error(err),
+			"blkID", blockID,
+			"error", err,
 		)
 		return fmt.Errorf("couldn't get block with id %s: %w", blockID, err)
 	}

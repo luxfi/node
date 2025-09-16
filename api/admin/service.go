@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/luxfi/log"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -78,8 +77,8 @@ func NewService(config Config) (http.Handler, error) {
 // StartCPUProfiler starts a cpu profile writing to the specified file
 func (a *Admin) StartCPUProfiler(_ *http.Request, _ *struct{}, _ *api.EmptyReply) error {
 	a.Log.Debug("API called",
-		zap.String("service", "admin"),
-		zap.String("method", "startCPUProfiler"),
+		log.String("service", "admin"),
+		log.String("method", "startCPUProfiler"),
 	)
 
 	a.lock.Lock()
@@ -91,8 +90,8 @@ func (a *Admin) StartCPUProfiler(_ *http.Request, _ *struct{}, _ *api.EmptyReply
 // StopCPUProfiler stops the cpu profile
 func (a *Admin) StopCPUProfiler(_ *http.Request, _ *struct{}, _ *api.EmptyReply) error {
 	a.Log.Debug("API called",
-		zap.String("service", "admin"),
-		zap.String("method", "stopCPUProfiler"),
+		log.String("service", "admin"),
+		log.String("method", "stopCPUProfiler"),
 	)
 
 	a.lock.Lock()
@@ -104,8 +103,8 @@ func (a *Admin) StopCPUProfiler(_ *http.Request, _ *struct{}, _ *api.EmptyReply)
 // MemoryProfile runs a memory profile writing to the specified file
 func (a *Admin) MemoryProfile(_ *http.Request, _ *struct{}, _ *api.EmptyReply) error {
 	a.Log.Debug("API called",
-		zap.String("service", "admin"),
-		zap.String("method", "memoryProfile"),
+		log.String("service", "admin"),
+		log.String("method", "memoryProfile"),
 	)
 
 	a.lock.Lock()
@@ -117,8 +116,8 @@ func (a *Admin) MemoryProfile(_ *http.Request, _ *struct{}, _ *api.EmptyReply) e
 // LockProfile runs a mutex profile writing to the specified file
 func (a *Admin) LockProfile(_ *http.Request, _ *struct{}, _ *api.EmptyReply) error {
 	a.Log.Debug("API called",
-		zap.String("service", "admin"),
-		zap.String("method", "lockProfile"),
+		log.String("service", "admin"),
+		log.String("method", "lockProfile"),
 	)
 
 	a.lock.Lock()
@@ -136,10 +135,10 @@ type AliasArgs struct {
 // Alias attempts to alias an HTTP endpoint to a new name
 func (a *Admin) Alias(_ *http.Request, args *AliasArgs, _ *api.EmptyReply) error {
 	a.Log.Debug("API called",
-		zap.String("service", "admin"),
-		zap.String("method", "alias"),
-		zap.String("endpoint", args.Endpoint),
-		zap.String("alias", args.Alias),
+		log.String("service", "admin"),
+		log.String("method", "alias"),
+		log.String("endpoint", args.Endpoint),
+		log.String("alias", args.Alias),
 	)
 
 	if len(args.Alias) > maxAliasLength {
@@ -158,10 +157,10 @@ type AliasChainArgs struct {
 // AliasChain attempts to alias a chain to a new name
 func (a *Admin) AliasChain(_ *http.Request, args *AliasChainArgs, _ *api.EmptyReply) error {
 	a.Log.Debug("API called",
-		zap.String("service", "admin"),
-		zap.String("method", "aliasChain"),
-		zap.String("chain", args.Chain),
-		zap.String("alias", args.Alias),
+		log.String("service", "admin"),
+		log.String("method", "aliasChain"),
+		log.String("chain", args.Chain),
+		log.String("alias", args.Alias),
 	)
 
 	if len(args.Alias) > maxAliasLength {
@@ -197,9 +196,9 @@ type GetChainAliasesReply struct {
 // GetChainAliases returns the aliases of the chain
 func (a *Admin) GetChainAliases(_ *http.Request, args *GetChainAliasesArgs, reply *GetChainAliasesReply) error {
 	a.Log.Debug("API called",
-		zap.String("service", "admin"),
-		zap.String("method", "getChainAliases"),
-		zap.String("chain", args.Chain),
+		log.String("service", "admin"),
+		log.String("method", "getChainAliases"),
+		log.String("chain", args.Chain),
 	)
 
 	id, err := ids.FromString(args.Chain)
@@ -214,8 +213,8 @@ func (a *Admin) GetChainAliases(_ *http.Request, args *GetChainAliasesArgs, repl
 // Stacktrace returns the current global stacktrace
 func (a *Admin) Stacktrace(_ *http.Request, _ *struct{}, _ *api.EmptyReply) error {
 	a.Log.Debug("API called",
-		zap.String("service", "admin"),
-		zap.String("method", "stacktrace"),
+		log.String("service", "admin"),
+		log.String("method", "stacktrace"),
 	)
 
 	stacktrace := []byte(utils.GetStacktrace(true))
@@ -252,11 +251,11 @@ type LoggerLevelReply struct {
 // If args.DisplayLevel != nil, must be a valid string representation of a log level.
 func (a *Admin) SetLoggerLevel(_ *http.Request, args *SetLoggerLevelArgs, reply *LoggerLevelReply) error {
 	a.Log.Debug("API called",
-		zap.String("service", "admin"),
-		zap.String("method", "setLoggerLevel"),
-		zap.String("loggerName", args.LoggerName),
-		zap.Stringer("logLevel", args.LogLevel),
-		zap.Stringer("displayLevel", args.DisplayLevel),
+		log.String("service", "admin"),
+		log.String("method", "setLoggerLevel"),
+		log.String("loggerName", args.LoggerName),
+		log.Stringer("logLevel", args.LogLevel),
+		log.Stringer("displayLevel", args.DisplayLevel),
 	)
 
 	if args.LogLevel == nil && args.DisplayLevel == nil {
@@ -293,9 +292,9 @@ type GetLoggerLevelArgs struct {
 // GetLoggerLevel returns the log level and display level of all loggers.
 func (a *Admin) GetLoggerLevel(_ *http.Request, args *GetLoggerLevelArgs, reply *LoggerLevelReply) error {
 	a.Log.Debug("API called",
-		zap.String("service", "admin"),
-		zap.String("method", "getLoggerLevels"),
-		zap.String("loggerName", args.LoggerName),
+		log.String("service", "admin"),
+		log.String("method", "getLoggerLevels"),
+		log.String("loggerName", args.LoggerName),
 	)
 
 	a.lock.RLock()
@@ -311,8 +310,8 @@ func (a *Admin) GetLoggerLevel(_ *http.Request, args *GetLoggerLevelArgs, reply 
 // GetConfig returns the config that the node was started with.
 func (a *Admin) GetConfig(_ *http.Request, _ *struct{}, reply *interface{}) error {
 	a.Log.Debug("API called",
-		zap.String("service", "admin"),
-		zap.String("method", "getConfig"),
+		log.String("service", "admin"),
+		log.String("method", "getConfig"),
 	)
 	*reply = a.NodeConfig
 	return nil
@@ -329,8 +328,8 @@ type LoadVMsReply struct {
 // LoadVMs loads any new VMs available to the node and returns the added VMs.
 func (a *Admin) LoadVMs(r *http.Request, _ *struct{}, reply *LoadVMsReply) error {
 	a.Log.Debug("API called",
-		zap.String("service", "admin"),
-		zap.String("method", "loadVMs"),
+		log.String("service", "admin"),
+		log.String("method", "loadVMs"),
 	)
 
 	a.lock.Lock()
@@ -392,9 +391,9 @@ type DBGetReply struct {
 //nolint:stylecheck // renaming this method to DBGet would change the API method from "dbGet" to "dBGet"
 func (a *Admin) DbGet(_ *http.Request, args *DBGetArgs, reply *DBGetReply) error {
 	a.Log.Debug("API called",
-		zap.String("service", "admin"),
-		zap.String("method", "dbGet"),
-		zap.String("key", args.Key),
+		log.String("service", "admin"),
+		log.String("method", "dbGet"),
+		log.String("key", args.Key),
 	)
 
 	key, err := formatting.Decode(formatting.HexNC, args.Key)

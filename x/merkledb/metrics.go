@@ -89,8 +89,8 @@ type metrics interface {
 
 type prometheusMetrics struct {
 	hashes metric.Counter
-	io     *metric.CounterVec
-	lookup *metric.CounterVec
+	io     metric.CounterVec
+	lookup metric.CounterVec
 }
 
 func newMetrics(namespace string, reg metric.Registerer) (metrics, error) {

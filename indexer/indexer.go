@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"
@@ -141,20 +140,20 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 
 	if i.closed {
 		i.log.Debug("not registering chain to indexer",
-			zap.String("reason", "indexer is closed"),
-			zap.String("chainName", chainName),
+			log.String("reason", "indexer is closed"),
+			log.String("chainName", chainName),
 		)
 		return
 	} else if netID != constants.PrimaryNetworkID {
 		i.log.Debug("not registering chain to indexer",
-			zap.String("reason", "not in the primary network"),
-			zap.String("chainName", chainName),
+			log.String("reason", "not in the primary network"),
+			log.String("chainName", chainName),
 		)
 		return
 	}
 	if i.blockIndices[chainID] != nil || i.txIndices[chainID] != nil || i.vtxIndices[chainID] != nil {
 		i.log.Warn("chain is already being indexed",
-			zap.Stringer("chainID", chainID),
+			log.Stringer("chainID", chainID),
 		)
 		return
 	}
@@ -163,12 +162,12 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 	isIncomplete, err := i.isIncomplete(chainID)
 	if err != nil {
 		i.log.Error("couldn't get whether chain is incomplete",
-			zap.String("chainName", chainName),
-			zap.Error(err),
+			log.String("chainName", chainName),
+			log.Err(err),
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
-				zap.Error(err),
+				log.Err(err),
 			)
 		}
 		return
@@ -178,12 +177,12 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 	previouslyIndexed, err := i.previouslyIndexed(chainID)
 	if err != nil {
 		i.log.Error("couldn't get whether chain was previously indexed",
-			zap.String("chainName", chainName),
-			zap.Error(err),
+			log.String("chainName", chainName),
+			log.Err(err),
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
-				zap.Error(err),
+				log.Err(err),
 			)
 		}
 		return
@@ -194,11 +193,11 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 			// We indexed this chain in a previous run but not in this run.
 			// This would create an incomplete index, which is not allowed, so exit.
 			i.log.Error("running would cause index to become incomplete but incomplete indices are disabled",
-				zap.String("chainName", chainName),
+				log.String("chainName", chainName),
 			)
 			if err := i.close(); err != nil {
 				i.log.Error("failed to close indexer",
-					zap.Error(err),
+					log.Err(err),
 				)
 			}
 			return
@@ -210,12 +209,12 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 			return
 		}
 		i.log.Error("couldn't mark chain as incomplete",
-			zap.String("chainName", chainName),
-			zap.Error(err),
+			log.String("chainName", chainName),
+			log.Err(err),
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
-				zap.Error(err),
+				log.Err(err),
 			)
 		}
 		return
@@ -223,11 +222,11 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 
 	if !i.allowIncompleteIndex && isIncomplete && (previouslyIndexed || i.hasRunBefore) {
 		i.log.Error("index is incomplete but incomplete indices are disabled. Shutting down",
-			zap.String("chainName", chainName),
+			log.String("chainName", chainName),
 		)
 		if err := i.close(); err != nil{
 			i.log.Error("failed to close indexer",
-				zap.Error(err),
+				log.Err(err),
 			)
 		}
 		return
@@ -236,12 +235,12 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 	// Mark that in this run, this chain was indexed
 	if err := i.markPreviouslyIndexed(chainID); err != nil {
 		i.log.Error("couldn't mark chain as indexed",
-			zap.String("chainName", chainName),
-			zap.Error(err),
+			log.String("chainName", chainName),
+			log.Err(err),
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
-				zap.Error(err),
+				log.Err(err),
 			)
 		}
 		return
@@ -250,14 +249,14 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 	index, err := i.registerChainHelper(chainID, blockPrefix, chainName, "block", i.blockAcceptorGroup)
 	if err != nil {
 		i.log.Error("failed to create index",
-			zap.String("chainName", chainName),
-			zap.String("endpoint", "block"),
-			zap.Error(err),
-			zap.String("debug", "closing indexer due to block index creation failure"),
+			log.String("chainName", chainName),
+			log.String("endpoint", "block"),
+			log.Err(err),
+			log.String("debug", "closing indexer due to block index creation failure"),
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
-				zap.Error(err),
+				log.Err(err),
 			)
 		}
 		return
@@ -266,7 +265,7 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 
 	vmType := fmt.Sprintf("%T", vm)
 	i.log.Debug("RegisterChain VM type check",
-		zap.String("vmType", vmType),
+		log.String("vmType", vmType),
 	)
 	// Check if vm implements block.ChainVM interface
 	if _, ok := vm.(block.ChainVM); ok {
@@ -276,7 +275,7 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 	
 	// For testing, also accept anything that looks like a ChainVM mock
 	if strings.Contains(vmType, "ChainVM") || strings.Contains(vmType, "chainVM") {
-		i.log.Debug("Matched ChainVM-like type for testing", zap.String("vmType", vmType))
+		i.log.Debug("Matched ChainVM-like type for testing", log.String("vmType", vmType))
 		return
 	}
 	
@@ -286,13 +285,13 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 		vtxIndex, err := i.registerChainHelper(chainID, vtxPrefix, chainName, "vtx", i.vertexAcceptorGroup)
 		if err != nil {
 			i.log.Error("couldn't create index",
-				zap.String("chainName", chainName),
-				zap.String("endpoint", "vtx"),
-				zap.Error(err),
+				log.String("chainName", chainName),
+				log.String("endpoint", "vtx"),
+				log.Err(err),
 			)
 			if err := i.close(); err != nil {
 				i.log.Error("failed to close indexer",
-					zap.Error(err),
+					log.Err(err),
 				)
 			}
 			return
@@ -302,13 +301,13 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 		txIndex, err := i.registerChainHelper(chainID, txPrefix, chainName, "tx", i.txAcceptorGroup)
 		if err != nil {
 			i.log.Error("couldn't create index",
-				zap.String("chainName", chainName),
-				zap.String("endpoint", "tx"),
-				zap.Error(err),
+				log.String("chainName", chainName),
+				log.String("endpoint", "tx"),
+				log.Err(err),
 			)
 			if err := i.close(); err != nil {
 				i.log.Error("failed to close indexer",
-					zap.Error(err),
+					log.Err(err),
 				)
 			}
 			return
@@ -319,11 +318,11 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 	default:
 		vmType := fmt.Sprintf("%T", vm)
 		i.log.Error("got unexpected vm type",
-			zap.String("vmType", vmType),
+			log.String("vmType", vmType),
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
-				zap.Error(err),
+				log.Err(err),
 			)
 		}
 	}

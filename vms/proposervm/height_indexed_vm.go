@@ -55,8 +55,8 @@ func (vm *VM) updateHeightIndex(height uint64, blkID ids.ID) error {
 	}
 
 	vm.log.Debug("indexed block",
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", height),
+		log.Stringer("blkID", blkID),
+		log.Uint64("height", height),
 	)
 
 	if vm.NumHistoricalBlocks == 0 {
@@ -95,8 +95,8 @@ func (vm *VM) updateHeightIndex(height uint64, blkID ids.ID) error {
 	}
 
 	vm.log.Debug("deleted block",
-		zap.Stringer("blkID", blockToDelete),
-		zap.Uint64("height", heightToDelete),
+		log.Stringer("blkID", blockToDelete),
+		log.Uint64("height", heightToDelete),
 	)
 	return nil
 }
@@ -129,8 +129,8 @@ func (vm *VM) pruneOldBlocks() error {
 		}
 
 		vm.log.Debug("deleted block",
-			zap.Stringer("blkID", blockToDelete),
-			zap.Uint64("height", height),
+			log.Stringer("blkID", blockToDelete),
+			log.Uint64("height", height),
 		)
 
 		// Note: height is < vm.lastAcceptedHeight, so it is guaranteed not to

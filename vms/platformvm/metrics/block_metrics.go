@@ -19,7 +19,7 @@ var (
 
 type blockMetrics struct {
 	txMetrics *txMetrics
-	numBlocks *metric.CounterVec
+	numBlocks metric.CounterVec
 }
 
 func newBlockMetrics(registerer metric.Registerer) (*blockMetrics, error) {

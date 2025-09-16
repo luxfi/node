@@ -21,7 +21,7 @@ type metrics struct {
 
 	numTracked                      metric.Gauge
 	numPeers                        metric.Gauge
-	numSubnetPeers                  *metric.GaugeVec
+	numSubnetPeers                  metric.GaugeVec
 	timeSinceLastMsgSent            metric.Gauge
 	timeSinceLastMsgReceived        metric.Gauge
 	sendFailRate                    metric.Gauge
@@ -34,8 +34,8 @@ type metrics struct {
 	numUselessPeerListBytes         metric.Counter
 	nodeUptimeWeightedAverage       metric.Gauge
 	nodeUptimeRewardingStake        metric.Gauge
-	nodeSubnetUptimeWeightedAverage *metric.GaugeVec
-	nodeSubnetUptimeRewardingStake  *metric.GaugeVec
+	nodeSubnetUptimeWeightedAverage metric.GaugeVec
+	nodeSubnetUptimeRewardingStake  metric.GaugeVec
 	peerConnectedLifetimeAverage    metric.Gauge
 
 	lock                       sync.RWMutex

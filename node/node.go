@@ -24,7 +24,6 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/networking/timeout"
@@ -38,7 +37,6 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	metric "github.com/luxfi/metric"
 	"github.com/luxfi/node/api/admin"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/info"
@@ -124,10 +122,11 @@ func New(
 	}
 
 	n := &Node{
-		Log:              logger,
-		LogFactory:       logFactory,
-		StakingTLSSigner: config.StakingTLSCert.PrivateKey.(crypto.Signer),
-		StakingTLSCert:   stakingCert,
+		Log:               logger,
+		LogFactory:        logFactory,
+		MetricsRegisterer: metric.NewRegistry(),
+		StakingTLSSigner:  config.StakingTLSCert.PrivateKey.(crypto.Signer),
+		StakingTLSCert:    stakingCert,
 		ID: ids.NodeIDFromCert(&ids.Certificate{
 			Raw:       stakingCert.Raw,
 			PublicKey: stakingCert.PublicKey,
@@ -137,14 +136,18 @@ func New(
 
 	n.DoneShuttingDown.Add(1)
 
-	pop := signer.NewProofOfPossession(n.Config.StakingSigningKey)
+	blsSigner := NewBLSSignerWrapper(n.Config.StakingSigningKey)
+	pop, err := signer.NewProofOfPossession(blsSigner)
+	if err != nil {
+		return nil, err
+	}
 	logger.Info("initializing node",
-		zap.Stringer("version", version.CurrentApp),
-		zap.Stringer("nodeID", n.ID),
-		zap.Stringer("stakingKeyType", tlsCert.PublicKeyAlgorithm),
-		zap.Reflect("nodePOP", pop),
-		zap.Reflect("providedFlags", n.Config.ProvidedFlags),
-		zap.Reflect("config", n.Config),
+		"version", version.CurrentApp,
+		"nodeID", n.ID,
+		"stakingKeyType", tlsCert.PublicKeyAlgorithm,
+		"nodePOP", pop,
+		"providedFlags", n.Config.ProvidedFlags,
+		"config", n.Config,
 	)
 
 	n.VMFactoryLog = n.Log // Use main log instead of vm-factory specific log
@@ -279,9 +282,10 @@ func New(
 
 // Node is an instance of an Lux node.
 type Node struct {
-	Log          log.Logger
-	VMFactoryLog log.Logger
-	LogFactory   log.Factory
+	Log               log.Logger
+	VMFactoryLog      log.Logger
+	LogFactory        log.Factory
+	MetricsRegisterer metric.Registerer
 
 	// This node's unique ID used when communicating with other nodes
 	// (in consensus, for example)
@@ -495,7 +499,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 
 	if !ips.IsPublic(publicAddr) {
 		n.Log.Warn("P2P IP is private, you will not be publicly discoverable",
-			zap.Stringer("ip", publicAddr),
+			"ip", publicAddr,
 		)
 	}
 
@@ -510,7 +514,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	go n.ipUpdater.Dispatch(n.Log)
 
 	n.Log.Info("initializing networking",
-		zap.Stringer("ip", atomicIP.Get()),
+		"ip", atomicIP.Get(),
 	)
 
 	tlsKey, ok := n.Config.StakingTLSCert.PrivateKey.(crypto.Signer)
@@ -524,7 +528,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 			return err
 		}
 		n.Log.Warn("TLS key logging is enabled",
-			zap.String("filename", n.Config.NetworkConfig.TLSKeyLogFile),
+			"filename", n.Config.NetworkConfig.TLSKeyLogFile,
 		)
 	}
 
@@ -543,7 +547,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	}
 	if unknownLPs.Len() > 0 {
 		n.Log.Warn("gossiping unknown LPs",
-			zap.Reflect("lps", unknownLPs),
+			"lps", unknownLPs,
 		)
 	}
 
@@ -662,7 +666,7 @@ type NodeProcessContext struct {
 // Write process context to the configured path. Supports the use of
 // dynamically chosen network ports with local network orchestration.
 func (n *Node) writeProcessContext() error {
-	n.Log.Info("writing process context", zap.String("path", n.Config.ProcessContextFilePath))
+	n.Log.Info("writing process context", "path", n.Config.ProcessContextFilePath)
 
 	// Write the process context to disk
 	processContext := &NodeProcessContext{
@@ -695,7 +699,7 @@ func (n *Node) Dispatch() error {
 			}
 		}()
 		n.Log.Info("API server listening",
-			zap.String("uri", n.apiURI),
+			"uri", n.apiURI,
 		)
 		err := n.APIServer.Dispatch()
 		// When [n].Shutdown() is called, [n.APIServer].Close() is called.
@@ -703,7 +707,7 @@ func (n *Node) Dispatch() error {
 		// If that happened, don't log/return an error here.
 		if !n.shuttingDown.Get() {
 			n.Log.Error("API server dispatch failed",
-				zap.Error(err),
+				"error", err,
 			)
 		}
 		// If the API server isn't running, shut down the node.
@@ -723,8 +727,8 @@ func (n *Node) Dispatch() error {
 				return
 			}
 			n.Log.Warn("failed to connect to bootstrap nodes",
-				zap.String("bootstrappers", "validators.Manager"),
-				zap.Duration("duration", n.Config.BootstrapBeaconConnectionTimeout),
+				"bootstrappers", "validators.Manager",
+				"duration", n.Config.BootstrapBeaconConnectionTimeout,
 			)
 		case <-n.onSufficientlyConnected:
 		}
@@ -751,8 +755,8 @@ func (n *Node) Dispatch() error {
 		err := n.tlsKeyLogWriterCloser.Close()
 		if err != nil {
 			n.Log.Error("closing TLS key log file failed",
-				zap.String("filename", n.Config.NetworkConfig.TLSKeyLogFile),
-				zap.Error(err),
+				"filename", n.Config.NetworkConfig.TLSKeyLogFile,
+				"error", err,
 			)
 		}
 	}
@@ -764,8 +768,8 @@ func (n *Node) Dispatch() error {
 	// that the node is no longer running.
 	if err := os.Remove(n.Config.ProcessContextFilePath); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		n.Log.Error("removal of process context file failed",
-			zap.String("path", n.Config.ProcessContextFilePath),
-			zap.Error(err),
+			"path", n.Config.ProcessContextFilePath,
+			"error", err,
 		)
 	}
 
@@ -839,15 +843,15 @@ func (n *Node) initDatabase() error {
 		// Check if this is migrated data (network 96369)
 		if n.Config.NetworkID == 96369 {
 			n.Log.Warn("Genesis hash mismatch detected for network 96369, using migrated blockchain data",
-				zap.Stringer("dbGenesis", genesisHash),
-				zap.Stringer("expectedGenesis", expectedGenesisHash))
+				"dbGenesis", genesisHash,
+				"expectedGenesis", expectedGenesisHash)
 		} else {
 			return fmt.Errorf("db contains invalid genesis hash. DB Genesis: %s Generated Genesis: %s", genesisHash, expectedGenesisHash)
 		}
 	}
 
 	n.Log.Info("initializing database",
-		zap.Stringer("genesisHash", genesisHash),
+		"genesisHash", genesisHash,
 	)
 
 	ok, err := n.DB.Has(ungracefulShutdown)
@@ -975,17 +979,17 @@ func (n *Node) initAPIServer() error {
 		ip, err := ips.Lookup(n.Config.HTTPHost)
 		if err != nil {
 			n.Log.Error("failed to lookup HTTP host",
-				zap.String("host", n.Config.HTTPHost),
-				zap.Error(err),
+				"host", n.Config.HTTPHost,
+				"error", err,
 			)
 			return err
 		}
 		hostIsPublic = ips.IsPublic(ip)
 
 		n.Log.Debug("finished HTTP host lookup",
-			zap.String("host", n.Config.HTTPHost),
-			zap.Stringer("ip", ip),
-			zap.Bool("isPublic", hostIsPublic),
+			"host", n.Config.HTTPHost,
+			"ip", ip,
+			"isPublic", hostIsPublic,
 		)
 	}
 
@@ -1005,7 +1009,7 @@ func (n *Node) initAPIServer() error {
 	if hostIsPublic {
 		n.Log.Warn("HTTP server is binding to a potentially public host. "+
 			"You may be vulnerable to a DoS attack if your HTTP port is publicly accessible",
-			zap.String("host", n.Config.HTTPHost),
+			"host", n.Config.HTTPHost,
 		)
 
 		n.portMapper.Map(
@@ -1199,7 +1203,7 @@ func (n *Node) initVMs() error {
 	etnaTime := version.GetEtnaTime(n.Config.NetworkID)
 	
 	// Register the VMs that Lux supports
-	n.Log.Info("Registering Platform VM", zap.Stringer("vmID", constants.PlatformVMID))
+	n.Log.Info("Registering Platform VM", "vmID", constants.PlatformVMID)
 	err := n.VMManager.RegisterFactory(context.TODO(), constants.PlatformVMID, &platformvm.Factory{
 		Config: platformconfig.Config{
 			Chains:                    n.chainManager,
@@ -1229,12 +1233,12 @@ func (n *Node) initVMs() error {
 		},
 	})
 	if err != nil {
-		n.Log.Error("Failed to register Platform VM", zap.Error(err))
+		n.Log.Error("Failed to register Platform VM", "error", err)
 		return err
 	}
 	n.Log.Info("Platform VM registered successfully")
 
-	n.Log.Info("Registering X VM", zap.Stringer("vmID", constants.XVMID))
+	n.Log.Info("Registering X VM", "vmID", constants.XVMID)
 	err = n.VMManager.RegisterFactory(context.TODO(), constants.XVMID, &xvm.Factory{
 		Config: xvmconfig.Config{
 			TxFee:            n.Config.TxFee,
@@ -1243,7 +1247,7 @@ func (n *Node) initVMs() error {
 		},
 	})
 	if err != nil {
-		n.Log.Error("Failed to register X VM", zap.Error(err))
+		n.Log.Error("Failed to register X VM", "error", err)
 		return err
 	}
 	n.Log.Info("X VM registered successfully")
@@ -1273,13 +1277,13 @@ func (n *Node) initVMs() error {
 	_, failedVMs, err := n.VMRegistry.Reload(context.TODO())
 	for failedVM, err := range failedVMs {
 		n.Log.Error("failed to register VM",
-			zap.Stringer("vmID", failedVM),
-			zap.Error(err),
+			"vmID", failedVM,
+			"error", err,
 		)
 	}
 	// Don't fail if Reload returns an error - it might be due to already registered VMs
 	if err != nil {
-		n.Log.Warn("VM registry reload encountered issues, continuing anyway", zap.Error(err))
+		n.Log.Warn("VM registry reload encountered issues, continuing anyway", "error", err)
 	}
 	return nil
 }
@@ -1401,7 +1405,7 @@ func (n *Node) initProfiler() {
 		err := n.profiler.Dispatch()
 		if err != nil {
 			n.Log.Error("continuous profiler failed",
-				zap.Error(err),
+				"error", err,
 			)
 		}
 		n.Shutdown(1)
@@ -1416,11 +1420,17 @@ func (n *Node) initInfoAPI() error {
 
 	n.Log.Info("initializing info API")
 
+	blsSigner2 := NewBLSSignerWrapper(n.Config.StakingSigningKey)
+	nodePOP, err := signer.NewProofOfPossession(blsSigner2)
+	if err != nil {
+		return err
+	}
+
 	service, err := info.NewService(
 		info.Parameters{
 			Version:                       version.CurrentApp,
 			NodeID:                        n.ID,
-			NodePOP:                       signer.NewProofOfPossession(n.Config.StakingSigningKey),
+			NodePOP:                       nodePOP,
 			NetworkID:                     n.Config.NetworkID,
 			TxFee:                         n.Config.TxFee,
 			CreateAssetTxFee:              n.Config.CreateAssetTxFee,
@@ -1666,7 +1676,7 @@ func (n *Node) Shutdown(exitCode int) {
 
 func (n *Node) shutdown() {
 	n.Log.Info("shutting down node",
-		zap.Int("exitCode", n.ExitCode()),
+		"exitCode", n.ExitCode(),
 	)
 
 	if n.health != nil {
@@ -1680,7 +1690,7 @@ func (n *Node) shutdown() {
 		err := n.health.RegisterHealthCheck("shuttingDown", shuttingDownCheck, health.ApplicationTag)
 		if err != nil {
 			n.Log.Debug("couldn't register shuttingDown health check",
-				zap.Error(err),
+				"error", err,
 			)
 		}
 
@@ -1702,14 +1712,14 @@ func (n *Node) shutdown() {
 	}
 	if err := n.APIServer.Shutdown(); err != nil {
 		n.Log.Debug("error during API shutdown",
-			zap.Error(err),
+			"error", err,
 		)
 	}
 	n.portMapper.UnmapAllPorts()
 	n.ipUpdater.Stop()
 	if err := n.indexer.Close(); err != nil {
 		n.Log.Debug("error closing tx indexer",
-			zap.Error(err),
+			"error", err,
 		)
 	}
 
@@ -1721,13 +1731,13 @@ func (n *Node) shutdown() {
 		if err := n.DB.Delete(ungracefulShutdown); err != nil {
 			n.Log.Error(
 				"failed to delete ungraceful shutdown key",
-				zap.Error(err),
+				"error", err,
 			)
 		}
 
 		if err := n.DB.Close(); err != nil {
 			n.Log.Warn("error during DB shutdown",
-				zap.Error(err),
+				"error", err,
 			)
 		}
 	}
@@ -1738,7 +1748,7 @@ func (n *Node) shutdown() {
 
 	if err := n.tracer.Close(); err != nil {
 		n.Log.Warn("error during tracer shutdown",
-			zap.Error(err),
+			"error", err,
 		)
 	}
 

@@ -24,7 +24,6 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/utils/constants"
@@ -291,13 +290,13 @@ func (vm *VM) Initialize(
 	switch err {
 	case nil:
 		vm.log.Info("initialized proposervm",
-			zap.String("state", "after fork"),
-			zap.Uint64("forkHeight", forkHeight),
-			zap.Uint64("lastAcceptedHeight", vm.lastAcceptedHeight),
+			log.String("state", "after fork"),
+			log.Uint64("forkHeight", forkHeight),
+			log.Uint64("lastAcceptedHeight", vm.lastAcceptedHeight),
 		)
 	case database.ErrNotFound:
 		vm.log.Info("initialized proposervm",
-			zap.String("state", "before fork"),
+			log.String("state", "before fork"),
 		)
 	default:
 		return err
@@ -366,9 +365,9 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	preferredBlock, err := vm.getBlock(ctx, vm.preferred)
 	if err != nil {
 		vm.log.Error("unexpected build block failure",
-			zap.String("reason", "failed to fetch preferred block"),
-			zap.Stringer("parentID", vm.preferred),
-			zap.Error(err),
+			log.String("reason", "failed to fetch preferred block"),
+			log.Stringer("parentID", vm.preferred),
+			log.Reflect("error", err),
 		)
 		return nil, err
 	}
@@ -445,7 +444,7 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 	}
 	if err != nil {
 		vm.log.Debug("failed to fetch the expected delay",
-			zap.Error(err),
+			log.Reflect("error", err),
 		)
 
 		// A nil error is returned here because it is possible that
@@ -457,9 +456,9 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 	vm.Scheduler.SetBuildBlockTime(nextStartTime)
 
 	vm.log.Debug("set preference",
-		zap.Stringer("blkID", blk.ID()),
-		zap.Time("blockTimestamp", parentTimestamp),
-		zap.Time("nextStartTime", nextStartTime),
+		log.Stringer("blkID", blk.ID()),
+		log.Time("blockTimestamp", parentTimestamp),
+		log.Time("nextStartTime", nextStartTime),
 	)
 	return nil
 }
@@ -558,8 +557,8 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 	}
 
 	vm.log.Info("repairing accepted chain by height",
-		zap.Uint64("outerHeight", proLastAcceptedHeight),
-		zap.Uint64("innerHeight", innerLastAcceptedHeight),
+		log.Uint64("outerHeight", proLastAcceptedHeight),
+		log.Uint64("innerHeight", innerLastAcceptedHeight),
 	)
 
 	// The inner vm must be behind the proposer vm, so we must roll the

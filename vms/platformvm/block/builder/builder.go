@@ -14,7 +14,6 @@ import (
 
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
@@ -121,7 +120,7 @@ func (b *builder) StartBlockTimer() {
 				duration, err := b.durationToSleep()
 				if err != nil {
 					log.Error("block builder encountered a fatal error",
-						zap.Error(err),
+						"error", err,
 					)
 					return
 				}

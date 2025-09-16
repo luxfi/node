@@ -18,7 +18,7 @@ var (
 )
 
 type txMetrics struct {
-	numTxs *metric.CounterVec
+	numTxs metric.CounterVec
 }
 
 func newTxMetrics(registerer metric.Registerer) (*txMetrics, error) {
