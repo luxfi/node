@@ -126,7 +126,7 @@ func (c *stubClient) Sign(_ context.Context, in *signer.SignRequest, _ ...grpc.C
 			return nil, err
 		}
 
-		bytes := sig.Serialize()
+		bytes := bls.SignatureToBytes(sig)
 
 		return &signer.SignResponse{
 			// here, we're using the compressed signature length
@@ -161,7 +161,7 @@ func (c *stubClient) SignProofOfPossession(_ context.Context, in *signer.SignPro
 			return nil, err
 		}
 
-		bytes := sig.Serialize()
+		bytes := bls.SignatureToBytes(sig)
 
 		return &signer.SignProofOfPossessionResponse{
 			Signature: bytes[:bls.SignatureLen],

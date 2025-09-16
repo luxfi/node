@@ -4,7 +4,6 @@
 package registry
 
 import (
-	"errors"
 	"io/fs"
 	"testing"
 	"time"
