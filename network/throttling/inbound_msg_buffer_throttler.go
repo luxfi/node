@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/metric"
@@ -18,7 +18,7 @@ import (
 // See inbound_msg_throttler.go
 
 func newInboundMsgBufferThrottler(
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	maxProcessingMsgsPerNode uint64,
 ) (*inboundMsgBufferThrottler, error) {
 	t := &inboundMsgBufferThrottler{
@@ -125,10 +125,10 @@ func (t *inboundMsgBufferThrottler) release(nodeID ids.NodeID) {
 
 type inboundMsgBufferThrottlerMetrics struct {
 	acquireLatency  metric.Averager
-	awaitingAcquire prometheus.Gauge
+	awaitingAcquire metric.Gauge
 }
 
-func (m *inboundMsgBufferThrottlerMetrics) initialize(reg prometheus.Registerer) error {
+func (m *inboundMsgBufferThrottlerMetrics) initialize(reg metric.Registerer) error {
 	errs := wrappers.Errs{}
 	m.acquireLatency = metric.NewAveragerWithErrs(
 		"buffer_throttler_inbound_acquire_latency",
@@ -136,7 +136,7 @@ func (m *inboundMsgBufferThrottlerMetrics) initialize(reg prometheus.Registerer)
 		reg,
 		&errs,
 	)
-	m.awaitingAcquire = prometheus.NewGauge(prometheus.GaugeOpts{
+	m.awaitingAcquire = metric.NewGauge(metric.GaugeOpts{
 		Name: "buffer_throttler_inbound_awaiting_acquire",
 		Help: "Number of inbound messages waiting to take space on the inbound message buffer",
 	})

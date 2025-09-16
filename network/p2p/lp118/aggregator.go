@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/crypto/bls"

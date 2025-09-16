@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
+	nodeids "github.com/luxfi/node/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
@@ -58,10 +59,7 @@ func Build(
 		},
 		timestamp: timestamp,
 		cert:      cert,
-		proposer: ids.NodeIDFromCert(&ids.Certificate{
-			Raw:       cert.Raw,
-			PublicKey: cert.PublicKey,
-		}),
+		proposer: ids.NodeID(nodeids.NodeIDFromCert(cert)),
 	}
 	var blockIntf SignedBlock = block
 

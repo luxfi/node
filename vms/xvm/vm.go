@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus"
 	consensusctx "github.com/luxfi/consensus/context"
@@ -109,7 +109,7 @@ type VM struct {
 	// Used to check local time
 	clock mockable.Clock
 
-	registerer prometheus.Registerer
+	registerer metric.Registerer
 
 	connectedPeers map[ids.NodeID]*version.Application
 
@@ -260,7 +260,7 @@ func (vm *VM) initialize(
 	)
 
 	// Get metrics from a global registry or create new one
-	vm.registerer = prometheus.NewRegistry()
+	vm.registerer = metric.NewRegistry()
 
 	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
 

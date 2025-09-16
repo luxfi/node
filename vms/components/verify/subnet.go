@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/consensus"
+	luxids "github.com/luxfi/ids"
 	"github.com/luxfi/ids"
 )
 
@@ -22,10 +23,15 @@ var (
 // fails, a non-nil error will be returned.
 func SameSubnet(ctx context.Context, chainCtx context.Context, peerChainID ids.ID) error {
 	chainID := consensus.GetChainID(chainCtx)
-	if chainID == ids.Empty {
+	if chainID == luxids.Empty {
 		return fmt.Errorf("no chain ID found in context")
 	}
-	if peerChainID == chainID {
+	// Convert IDs for comparison
+	var peerChainIDBytes [32]byte
+	copy(peerChainIDBytes[:], peerChainID[:])
+	peerChainIDLux := luxids.ID(peerChainIDBytes)
+	
+	if peerChainIDLux == chainID {
 		return ErrSameChainID
 	}
 
@@ -33,7 +39,7 @@ func SameSubnet(ctx context.Context, chainCtx context.Context, peerChainID ids.I
 	if vs == nil {
 		return fmt.Errorf("no validator state found in context")
 	}
-	netID, err := vs.GetNetID(peerChainID)
+	netID, err := vs.GetNetID(peerChainIDLux)
 	if err != nil {
 		return fmt.Errorf("failed to get net of %q: %w", peerChainID, err)
 	}

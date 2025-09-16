@@ -7,7 +7,7 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/node/message"
 )
@@ -28,54 +28,54 @@ var (
 )
 
 type Metrics struct {
-	ClockSkewCount prometheus.Counter
-	ClockSkewSum   prometheus.Gauge
+	ClockSkewCount metric.Counter
+	ClockSkewSum   metric.Gauge
 
-	NumFailedToParse prometheus.Counter
-	NumSendFailed    *prometheus.CounterVec // op
+	NumFailedToParse metric.Counter
+	NumSendFailed    *metric.CounterVec // op
 
-	Messages   *prometheus.CounterVec // io + op + compressed
-	Bytes      *prometheus.CounterVec // io + op
-	BytesSaved *prometheus.GaugeVec   // io + op
+	Messages   *metric.CounterVec // io + op + compressed
+	Bytes      *metric.CounterVec // io + op
+	BytesSaved *metric.GaugeVec   // io + op
 }
 
-func NewMetrics(registerer prometheus.Registerer) (*Metrics, error) {
+func NewMetrics(registerer metric.Registerer) (*Metrics, error) {
 	m := &Metrics{
-		ClockSkewCount: prometheus.NewCounter(prometheus.CounterOpts{
+		ClockSkewCount: metric.NewCounter(metric.CounterOpts{
 			Name: "clock_skew_count",
 			Help: "number of handshake timestamps inspected (n)",
 		}),
-		ClockSkewSum: prometheus.NewGauge(prometheus.GaugeOpts{
+		ClockSkewSum: metric.NewGauge(metric.GaugeOpts{
 			Name: "clock_skew_sum",
 			Help: "sum of (peer timestamp - local timestamp) from handshake messages (s)",
 		}),
-		NumFailedToParse: prometheus.NewCounter(prometheus.CounterOpts{
+		NumFailedToParse: metric.NewCounter(metric.CounterOpts{
 			Name: "msgs_failed_to_parse",
 			Help: "number of received messages that could not be parsed",
 		}),
-		NumSendFailed: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
+		NumSendFailed: metric.NewCounterVec(
+			metric.CounterOpts{
 				Name: "msgs_failed_to_send",
 				Help: "number of messages that failed to be sent",
 			},
 			opLabels,
 		),
-		Messages: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
+		Messages: metric.NewCounterVec(
+			metric.CounterOpts{
 				Name: "msgs",
 				Help: "number of handled messages",
 			},
 			ioOpCompressedLabels,
 		),
-		Bytes: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
+		Bytes: metric.NewCounterVec(
+			metric.CounterOpts{
 				Name: "msgs_bytes",
 				Help: "number of message bytes",
 			},
 			ioOpLabels,
 		),
-		BytesSaved: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
+		BytesSaved: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Name: "msgs_bytes_saved",
 				Help: "number of message bytes saved",
 			},
@@ -100,13 +100,13 @@ func (m *Metrics) Sent(msg message.OutboundMessage) {
 	compressed := saved != 0 // assume that if [saved] == 0, [msg] wasn't compressed
 	compressedStr := strconv.FormatBool(compressed)
 
-	m.Messages.With(prometheus.Labels{
+	m.Messages.With(metric.Labels{
 		ioLabel:         sentLabel,
 		opLabel:         op,
 		compressedLabel: compressedStr,
 	}).Inc()
 
-	bytesLabel := prometheus.Labels{
+	bytesLabel := metric.Labels{
 		ioLabel: sentLabel,
 		opLabel: op,
 	}
@@ -115,7 +115,7 @@ func (m *Metrics) Sent(msg message.OutboundMessage) {
 }
 
 func (m *Metrics) MultipleSendsFailed(op message.Op, count int) {
-	m.NumSendFailed.With(prometheus.Labels{
+	m.NumSendFailed.With(metric.Labels{
 		opLabel: op.String(),
 	}).Add(float64(count))
 }
@@ -123,7 +123,7 @@ func (m *Metrics) MultipleSendsFailed(op message.Op, count int) {
 // SendFailed updates the metrics for having failed to send [msg].
 func (m *Metrics) SendFailed(msg message.OutboundMessage) {
 	op := msg.Op().String()
-	m.NumSendFailed.With(prometheus.Labels{
+	m.NumSendFailed.With(metric.Labels{
 		opLabel: op,
 	}).Inc()
 }
@@ -134,13 +134,13 @@ func (m *Metrics) Received(msg message.InboundMessage, msgLen uint32) {
 	compressed := saved != 0 // assume that if [saved] == 0, [msg] wasn't compressed
 	compressedStr := strconv.FormatBool(compressed)
 
-	m.Messages.With(prometheus.Labels{
+	m.Messages.With(metric.Labels{
 		ioLabel:         receivedLabel,
 		opLabel:         op,
 		compressedLabel: compressedStr,
 	}).Inc()
 
-	bytesLabel := prometheus.Labels{
+	bytesLabel := metric.Labels{
 		ioLabel: receivedLabel,
 		opLabel: op,
 	}

@@ -46,7 +46,7 @@ func (c *Client) GetCurrentHeight(ctx context.Context) (uint64, error) {
 }
 
 func (c *Client) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	resp, err := c.client.GetSubnetID(ctx, &pb.GetSubnetIDRequest{
+	resp, err := c.client.GetNetID(ctx, &pb.GetNetIDRequest{
 		ChainId: chainID[:],
 	})
 	if err != nil {

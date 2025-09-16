@@ -21,10 +21,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/networking/benchlist"
@@ -412,7 +412,7 @@ type Node struct {
 
 // Initialize the networking layer.
 // Assumes [n.vdrs], [n.CPUTracker], and [n.CPUTargeter] have been initialized.
-func (n *Node) initNetworking(reg prometheus.Registerer) error {
+func (n *Node) initNetworking(reg metric.Registerer) error {
 	// Providing either loopback address - `::1` for ipv6 and `127.0.0.1` for ipv4 - as the listen
 	// host will avoid the need for a firewall exception on recent MacOS:
 	//
@@ -558,7 +558,7 @@ func (n *Node) initNetworking(reg prometheus.Registerer) error {
 	// Configure benchlist
 	n.vdrs = n.vdrs
 	benchlistGatherer := metric.NewLabelGatherer(chains.ChainLabel)
-	// Don't assign to prometheus.DefaultRegisterer - it requires prometheus.Registerer interface
+	// Don't assign to metric.DefaultRegisterer - it requires metric.Registerer interface
 
 	err = n.MetricsGatherer.Register(
 		benchlistNamespace,

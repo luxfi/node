@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/luxfi/geth/ethclient"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/luxfi/node/tests"
@@ -36,7 +36,7 @@ func NewLoadGenerator(
 	workers []Worker,
 	chainID *big.Int,
 	metricsNamespace string,
-	registry *prometheus.Registry,
+	registry *metric.Registry,
 	test Test,
 ) (LoadGenerator, error) {
 	metrics, err := newMetrics(metricsNamespace, registry)

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	dto "github.com/prometheus/client_model/go"
 )
@@ -33,7 +33,7 @@ type labelGatherer struct {
 	labelName string
 }
 
-func (g *labelGatherer) Register(labelValue string, gatherer prometheus.Gatherer) error {
+func (g *labelGatherer) Register(labelValue string, gatherer metric.Gatherer) error {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
@@ -57,7 +57,7 @@ func (g *labelGatherer) Register(labelValue string, gatherer prometheus.Gatherer
 type labeledGatherer struct {
 	labelName  string
 	labelValue string
-	gatherer   prometheus.Gatherer
+	gatherer   metric.Gatherer
 }
 
 func (g *labeledGatherer) Gather() ([]*dto.MetricFamily, error) {

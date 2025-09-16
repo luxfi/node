@@ -8,8 +8,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
@@ -49,7 +49,7 @@ func New(
 	mempool mempool.Mempool,
 	partialSyncPrimaryNetwork bool,
 	appSender core.AppSender,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	config Config,
 ) (*Network, error) {
 	p2pNetwork, err := p2p.NewNetwork(log, appSender, registerer, "p2p")

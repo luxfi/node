@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/database/dbtest"
@@ -16,7 +16,7 @@ import (
 
 func newDB(t testing.TB) *Database {
 	folder := t.TempDir()
-	db, err := New(folder, nil, logging.NoLog{}, prometheus.NewRegistry())
+	db, err := New(folder, nil, logging.NoLog{}, metric.NewRegistry())
 	require.NoError(t, err)
 	return db.(*Database)
 }

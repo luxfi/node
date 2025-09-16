@@ -7,8 +7,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
@@ -23,7 +23,7 @@ import (
 
 func newInboundMsgByteThrottler(
 	log log.Logger,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	vdrs validators.Manager,
 	config MsgByteThrottlerConfig,
 ) (*inboundMsgByteThrottler, error) {
@@ -299,13 +299,13 @@ func (t *inboundMsgByteThrottler) release(metadata *msgMetadata, nodeID ids.Node
 
 type inboundMsgByteThrottlerMetrics struct {
 	acquireLatency        metric.Averager
-	remainingAtLargeBytes prometheus.Gauge
-	remainingVdrBytes     prometheus.Gauge
-	awaitingAcquire       prometheus.Gauge
-	awaitingRelease       prometheus.Gauge
+	remainingAtLargeBytes metric.Gauge
+	remainingVdrBytes     metric.Gauge
+	awaitingAcquire       metric.Gauge
+	awaitingRelease       metric.Gauge
 }
 
-func (m *inboundMsgByteThrottlerMetrics) initialize(reg prometheus.Registerer) error {
+func (m *inboundMsgByteThrottlerMetrics) initialize(reg metric.Registerer) error {
 	errs := wrappers.Errs{}
 	m.acquireLatency = metric.NewAveragerWithErrs(
 		"byte_throttler_inbound_acquire_latency",
@@ -313,19 +313,19 @@ func (m *inboundMsgByteThrottlerMetrics) initialize(reg prometheus.Registerer) e
 		reg,
 		&errs,
 	)
-	m.remainingAtLargeBytes = prometheus.NewGauge(prometheus.GaugeOpts{
+	m.remainingAtLargeBytes = metric.NewGauge(metric.GaugeOpts{
 		Name: "byte_throttler_inbound_remaining_at_large_bytes",
 		Help: "Bytes remaining in the at-large byte buffer",
 	})
-	m.remainingVdrBytes = prometheus.NewGauge(prometheus.GaugeOpts{
+	m.remainingVdrBytes = metric.NewGauge(metric.GaugeOpts{
 		Name: "byte_throttler_inbound_remaining_validator_bytes",
 		Help: "Bytes remaining in the validator byte buffer",
 	})
-	m.awaitingAcquire = prometheus.NewGauge(prometheus.GaugeOpts{
+	m.awaitingAcquire = metric.NewGauge(metric.GaugeOpts{
 		Name: "byte_throttler_inbound_awaiting_acquire",
 		Help: "Number of inbound messages waiting to acquire space on the inbound message byte buffer",
 	})
-	m.awaitingRelease = prometheus.NewGauge(prometheus.GaugeOpts{
+	m.awaitingRelease = metric.NewGauge(metric.GaugeOpts{
 		Name: "byte_throttler_inbound_awaiting_release",
 		Help: "Number of messages currently being read/handled",
 	})

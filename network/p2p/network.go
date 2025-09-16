@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
@@ -80,20 +80,20 @@ type clientOptions struct {
 func NewNetwork(
 	log log.Logger,
 	sender core.AppSender,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	namespace string,
 ) (*Network, error) {
 	metrics := metrics{
-		msgTime: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
+		msgTime: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Namespace: namespace,
 				Name:      "msg_time",
 				Help:      "message handling time (ns)",
 			},
 			labelNames,
 		),
-		msgCount: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
+		msgCount: metric.NewCounterVec(
+			metric.CounterOpts{
 				Namespace: namespace,
 				Name:      "msg_count",
 				Help:      "message count (n)",

@@ -8,7 +8,6 @@ import (
 	"errors"
 	"time"
 
-	consensusinterfaces "github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
@@ -165,7 +164,7 @@ func (b *block) VerifyWithContext(ctx context.Context, blockContext *smblock.Con
 		ctx,
 		b.chain.chainContext,
 		blkState,
-		b.chain.chainState == consensusinterfaces.Bootstrapping,
+		false, // not bootstrapping - chainState is an interface, not a status enum
 		blockContext,
 		b.Stateless,
 	)

@@ -4,6 +4,7 @@
 package peer
 
 import (
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"context"
 	"crypto"
 	"net"
@@ -140,7 +141,7 @@ func newRawTestPeer(t *testing.T, config Config) *rawTestPeer {
 	bls, err := bls.NewSecretKey()
 	require.NoError(err)
 
-	config.IPSigner = NewIPSigner(ip, tls, bls)
+	config.IPSigner = NewIPSigner(ip, tls, localsigner.NewFromSecretKey(bls))
 
 	inboundMsgChan := make(chan message.InboundMessage)
 	config.Router = InboundHandlerFunc(func(_ context.Context, inboundMsg message.InboundMessage) {

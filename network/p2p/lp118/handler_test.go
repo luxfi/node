@@ -4,6 +4,7 @@
 package lp118
 
 import (
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"context"
 	"testing"
 

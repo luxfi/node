@@ -8,6 +8,7 @@ import (
 	"net/netip"
 
 	"github.com/luxfi/ids"
+	nodeids "github.com/luxfi/node/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
@@ -50,10 +51,7 @@ func NewClaimedIPPort(
 		AddrPort:  ipPort,
 		Timestamp: timestamp,
 		Signature: signature,
-		NodeID: ids.NodeIDFromCert(&ids.Certificate{
-			Raw:       cert.Raw,
-			PublicKey: cert.PublicKey,
-		}),
+		NodeID: ids.NodeID(nodeids.NodeIDFromCert(cert)),
 	}
 
 	packer := wrappers.Packer{

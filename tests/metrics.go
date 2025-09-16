@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	dto "github.com/prometheus/client_model/go"
 	"github.com/luxfi/node/api/metrics"
@@ -45,7 +45,7 @@ func GetNodesMetrics(ctx context.Context, nodeURIs []string) (NodesMetrics, erro
 // returned.
 //
 // Only Counter and Gauge metrics are supported.
-func GetMetricValue(metrics NodeMetrics, name string, labels prometheus.Labels) (float64, bool) {
+func GetMetricValue(metrics NodeMetrics, name string, labels metric.Labels) (float64, bool) {
 	metricFamily, ok := metrics[name]
 	if !ok {
 		return 0, false
@@ -66,7 +66,7 @@ func GetMetricValue(metrics NodeMetrics, name string, labels prometheus.Labels) 
 	return 0, false
 }
 
-func labelsMatch(metric *dto.Metric, labels prometheus.Labels) bool {
+func labelsMatch(metric *dto.Metric, labels metric.Labels) bool {
 	var found int
 	for _, label := range metric.Label {
 		expectedValue, ok := labels[label.GetName()]

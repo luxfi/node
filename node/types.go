@@ -6,14 +6,13 @@ package node
 import (
 	"time"
 
-	consensusTracker "github.com/luxfi/consensus/networking/tracker"
+	"github.com/luxfi/node/network/tracker"
 )
 
 // Type aliases for router types
 type (
-	ChainRouter    = Router
-	TargeterConfig = consensusTracker.TargeterConfig
-	Targeter       = consensusTracker.Targeter
+	ChainRouter = Router
+	Targeter    = tracker.Targeter
 )
 
 // HealthConfig for router health monitoring

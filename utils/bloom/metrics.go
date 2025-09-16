@@ -6,45 +6,45 @@ package bloom
 import (
 	"errors"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 )
 
 // Metrics is a collection of commonly useful metrics when using a long-lived
 // bloom filter.
 type Metrics struct {
-	Count      prometheus.Gauge
-	NumHashes  prometheus.Gauge
-	NumEntries prometheus.Gauge
-	MaxCount   prometheus.Gauge
-	ResetCount prometheus.Counter
+	Count      metric.Gauge
+	NumHashes  metric.Gauge
+	NumEntries metric.Gauge
+	MaxCount   metric.Gauge
+	ResetCount metric.Counter
 }
 
 func NewMetrics(
 	namespace string,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 ) (*Metrics, error) {
 	m := &Metrics{
-		Count: prometheus.NewGauge(prometheus.GaugeOpts{
+		Count: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "count",
 			Help:      "Number of additions that have been performed to the bloom",
 		}),
-		NumHashes: prometheus.NewGauge(prometheus.GaugeOpts{
+		NumHashes: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "hashes",
 			Help:      "Number of hashes in the bloom",
 		}),
-		NumEntries: prometheus.NewGauge(prometheus.GaugeOpts{
+		NumEntries: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "entries",
 			Help:      "Number of bytes allocated to slots in the bloom",
 		}),
-		MaxCount: prometheus.NewGauge(prometheus.GaugeOpts{
+		MaxCount: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "max_count",
 			Help:      "Maximum number of additions that should be performed to the bloom before resetting",
 		}),
-		ResetCount: prometheus.NewCounter(prometheus.CounterOpts{
+		ResetCount: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "reset_count",
 			Help:      "Number times the bloom has been reset",

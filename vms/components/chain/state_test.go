@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/choices"
@@ -567,7 +567,7 @@ func TestBuildBlockError(t *testing.T) {
 func TestMeteredCache(t *testing.T) {
 	require := require.New(t)
 
-	registry := prometheus.NewRegistry()
+	registry := metric.NewRegistry()
 
 	testBlks := NewTestBlocks(1)
 	genesisBlock := testBlks[0]

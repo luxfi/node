@@ -28,10 +28,13 @@ type ProofOfPossession struct {
 	publicKey *bls.PublicKey
 }
 
-func NewProofOfPossession(sk *bls.SecretKey) *ProofOfPossession {
-	pk := sk.PublicKey()
+func NewProofOfPossession(signer bls.Signer) (*ProofOfPossession, error) {
+	pk := signer.PublicKey()
 	pkBytes := bls.PublicKeyToCompressedBytes(pk)
-	sig := sk.SignProofOfPossession(pkBytes)
+	sig, err := signer.SignProofOfPossession(pkBytes)
+	if err != nil {
+		return nil, err
+	}
 	sigBytes := bls.SignatureToBytes(sig)
 
 	pop := &ProofOfPossession{
@@ -39,7 +42,7 @@ func NewProofOfPossession(sk *bls.SecretKey) *ProofOfPossession {
 	}
 	copy(pop.PublicKey[:], pkBytes)
 	copy(pop.ProofOfPossession[:], sigBytes)
-	return pop
+	return pop, nil
 }
 
 func (p *ProofOfPossession) Verify() error {

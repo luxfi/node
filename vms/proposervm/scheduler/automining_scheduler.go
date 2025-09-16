@@ -6,7 +6,7 @@ package scheduler
 import (
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"

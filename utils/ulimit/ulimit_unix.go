@@ -10,8 +10,6 @@ import (
 	"fmt"
 	"syscall"
 
-	"go.uber.org/zap"
-
 	"github.com/luxfi/log"
 )
 
@@ -48,8 +46,8 @@ func Set(max uint64, log log.Logger) error {
 
 	if rLimit.Cur < DefaultFDLimit {
 		log.Warn("fd-limit is less than recommended and could result in reduced performance",
-			zap.Uint64("limit", rLimit.Cur),
-			zap.Uint64("recommendedLimit", DefaultFDLimit),
+			log.Uint64("limit", rLimit.Cur),
+			log.Uint64("recommendedLimit", DefaultFDLimit),
 		)
 	}
 

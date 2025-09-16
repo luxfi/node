@@ -4,7 +4,7 @@
 package mempool
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	common "github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/xvm/txs"
@@ -31,7 +31,7 @@ type mempool struct {
 
 func New(
 	namespace string,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	toEngine chan<- common.MessageType,
 ) (Mempool, error) {
 	metrics, err := txmempool.NewMetrics(namespace, registerer)

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/core"
@@ -173,7 +173,7 @@ func newDefaultResourceTracker() consensustracker.ResourceTracker {
 		MaxNonVdrNodeUsage: .8,
 	})
 	tracker, err := consensustracker.NewResourceTracker(
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		nil,
 		10*time.Second,
 		time.Minute,
@@ -253,7 +253,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 	)
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := prometheus.NewRegistry()
+		registry := metric.NewRegistry()
 
 		// Use a simple test validator manager since AddStaker isn't in the interface
 		beacons := &testAggressiveValidatorManager{Manager: validators.NewManager()}
@@ -479,7 +479,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := prometheus.NewRegistry()
+		registry := metric.NewRegistry()
 
 		// Use a simple test validator manager since AddStaker isn't in the interface
 		beacons := &testAggressiveValidatorManager{Manager: validators.NewManager()}
@@ -561,7 +561,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := prometheus.NewRegistry()
+		registry := metric.NewRegistry()
 
 		beacons := validators.NewManager()
 		// Note: Can't add stakers with consensus validators.Manager
@@ -714,7 +714,7 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := prometheus.NewRegistry()
+		registry := metric.NewRegistry()
 
 		beacons := validators.NewManager()
 		// Note: Can't add stakers with consensus validators.Manager

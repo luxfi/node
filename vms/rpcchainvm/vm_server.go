@@ -12,7 +12,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -74,7 +74,7 @@ type VMServer struct {
 
 	allowShutdown *utils.Atomic[bool]
 
-	metrics prometheus.Gatherer
+	metrics metric.Gatherer
 	db      database.Database
 	log     log.Logger
 
@@ -164,7 +164,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	}
 
 	// gRPC client metrics
-	grpcClientMetrics := grpc_prometheus.NewClientMetrics()
+	grpcClientMetrics := grpc_metric.NewClientMetrics()
 	if err := grpcMetrics.Register(grpcClientMetrics); err != nil {
 		return nil, err
 	}

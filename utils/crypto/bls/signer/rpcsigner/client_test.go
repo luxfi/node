@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/node/proto/pb/signer"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 )
 
 var (

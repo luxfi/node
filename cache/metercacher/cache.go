@@ -6,7 +6,7 @@ package metercacher
 import (
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/node/cache"
 )
@@ -21,7 +21,7 @@ type Cache[K comparable, V any] struct {
 
 func New[K comparable, V any](
 	namespace string,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	cache cache.Cacher[K, V],
 ) (*Cache[K, V], error) {
 	metrics, err := newMetrics(namespace, registerer)

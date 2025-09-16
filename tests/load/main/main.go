@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/luxfi/geth/ethclient"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/tests"
@@ -70,7 +70,7 @@ func main() {
 	wsURIs, err := tmpnet.GetNodeWebsocketURIs(network.Nodes, blockchainID)
 	require.NoError(err)
 
-	registry := prometheus.NewRegistry()
+	registry := metric.NewRegistry()
 	metricsServer, err := tests.NewPrometheusServer(registry)
 	require.NoError(err)
 	tc.DeferCleanup(func() {

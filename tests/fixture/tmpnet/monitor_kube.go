@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 

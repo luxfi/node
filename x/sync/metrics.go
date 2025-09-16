@@ -7,7 +7,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 )
 
 var (
@@ -50,24 +50,24 @@ func (m *mockMetrics) RequestSucceeded() {
 }
 
 type metrics struct {
-	requestsFailed    prometheus.Counter
-	requestsMade      prometheus.Counter
-	requestsSucceeded prometheus.Counter
+	requestsFailed    metric.Counter
+	requestsMade      metric.Counter
+	requestsSucceeded metric.Counter
 }
 
-func NewMetrics(namespace string, reg prometheus.Registerer) (SyncMetrics, error) {
+func NewMetrics(namespace string, reg metric.Registerer) (SyncMetrics, error) {
 	m := metrics{
-		requestsFailed: prometheus.NewCounter(prometheus.CounterOpts{
+		requestsFailed: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "requests_failed",
 			Help:      "cumulative amount of failed proof requests",
 		}),
-		requestsMade: prometheus.NewCounter(prometheus.CounterOpts{
+		requestsMade: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "requests_made",
 			Help:      "cumulative amount of proof requests made",
 		}),
-		requestsSucceeded: prometheus.NewCounter(prometheus.CounterOpts{
+		requestsSucceeded: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "requests_succeeded",
 			Help:      "cumulative amount of proof requests that were successful",

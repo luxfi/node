@@ -11,7 +11,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -35,7 +35,7 @@ const (
 	blksAcceptedMetric   = "lux_linear_blks_accepted_count"
 )
 
-var xChainMetricLabels = prometheus.Labels{
+var xChainMetricLabels = metric.Labels{
 	chains.ChainLabel: "X",
 }
 

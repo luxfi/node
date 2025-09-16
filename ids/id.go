@@ -11,8 +11,8 @@ import (
 
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/cb58"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/crypto/hashing"
+	"github.com/luxfi/ids/utils/wrappers"
 )
 
 const (

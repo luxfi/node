@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/engine/chain/block"
@@ -159,7 +159,7 @@ func NewState(config *Config) *State {
 }
 
 func NewMeteredState(
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	config *Config,
 ) (*State, error) {
 	decidedCache, err := metercacher.New[ids.ID, *BlockWrapper](

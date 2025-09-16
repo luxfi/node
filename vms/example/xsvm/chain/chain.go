@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/consensus/choices"
-	consensusinterfaces "github.com/luxfi/consensus/interfaces"
+	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/state"

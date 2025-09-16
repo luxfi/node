@@ -8,7 +8,7 @@ import (
 	"net/netip"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"

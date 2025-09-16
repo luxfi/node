@@ -14,9 +14,9 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/rs/cors"
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 	"golang.org/x/net/http2"
 
 	"github.com/luxfi/consensus"
@@ -114,7 +114,7 @@ func New(
 	nodeID ids.NodeID,
 	tracingEnabled bool,
 	tracer trace.Tracer,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	httpConfig HTTPConfig,
 	allowedHosts []string,
 ) (Server, error) {

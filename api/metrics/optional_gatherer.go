@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	dto "github.com/prometheus/client_model/go"
 )
@@ -24,16 +24,16 @@ var (
 // return no metrics and no error. If a gatherer is registered, Gather will
 // return the results of calling Gather on the provided gatherer.
 type OptionalGatherer interface {
-	prometheus.Gatherer
+	metric.Gatherer
 
 	// Register the provided gatherer. If a gatherer was previously registered,
 	// an error will be returned.
-	Register(gatherer prometheus.Gatherer) error
+	Register(gatherer metric.Gatherer) error
 }
 
 type optionalGatherer struct {
 	lock     sync.RWMutex
-	gatherer prometheus.Gatherer
+	gatherer metric.Gatherer
 }
 
 func NewOptionalGatherer() OptionalGatherer {
@@ -50,7 +50,7 @@ func (g *optionalGatherer) Gather() ([]*dto.MetricFamily, error) {
 	return g.gatherer.Gather()
 }
 
-func (g *optionalGatherer) Register(gatherer prometheus.Gatherer) error {
+func (g *optionalGatherer) Register(gatherer metric.Gatherer) error {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 

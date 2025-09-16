@@ -6,7 +6,7 @@ package metervm
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
@@ -27,13 +27,13 @@ type blockVM struct {
 	ssVM         block.StateSyncableVM
 
 	blockMetrics
-	registry prometheus.Registerer
+	registry metric.Registerer
 	clock    mockable.Clock
 }
 
 func NewBlockVM(
 	vm block.ChainVM,
-	reg prometheus.Registerer,
+	reg metric.Registerer,
 ) block.ChainVM {
 	buildBlockVM, _ := vm.(block.BuildBlockWithContextChainVM)
 	batchedVM, _ := vm.(block.BatchedChainVM)

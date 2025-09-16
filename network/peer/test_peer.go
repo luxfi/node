@@ -10,7 +10,7 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	luxmetrics "github.com/luxfi/metric"
 
@@ -19,6 +19,7 @@ import (
 	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
@@ -65,7 +66,7 @@ func StartTestPeer(
 	tlsConfg := TLSConfig(*tlsCert, nil)
 	clientUpgrader := NewTLSClientUpgrader(
 		tlsConfg,
-		prometheus.NewCounter(prometheus.CounterOpts{}),
+		metric.NewCounter(metric.CounterOpts{}),
 	)
 
 	peerID, conn, cert, err := clientUpgrader.Upgrade(conn)
@@ -74,7 +75,7 @@ func StartTestPeer(
 	}
 
 	// Create a prometheus registry for metrics
-	promRegistry := prometheus.NewRegistry()
+	promRegistry := metric.NewRegistry()
 
 	// Create a no-op metrics instance for message creator
 	metricsInstance := luxmetrics.NewNoOpMetrics("test")
@@ -98,7 +99,7 @@ func StartTestPeer(
 	resourceTracker := &testResourceTracker{}
 
 	tlsKey := tlsCert.PrivateKey.(crypto.Signer)
-	blsKey, err := bls.NewSecretKey()
+	blsKey, err := localsigner.New()
 	if err != nil {
 		return nil, err
 	}

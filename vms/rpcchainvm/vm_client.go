@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -76,7 +76,7 @@ var (
 	_ block.BuildBlockWithContextChainVM = (*VMClient)(nil)
 	_ block.BatchedChainVM               = (*VMClient)(nil)
 	_ block.StateSyncableVM              = (*VMClient)(nil)
-	_ prometheus.Gatherer                = (*VMClient)(nil)
+	_ metric.Gatherer                = (*VMClient)(nil)
 
 	_ block.Block             = (*blockClient)(nil)
 	_ block.WithVerifyContext = (*blockClient)(nil)
@@ -104,7 +104,7 @@ type VMClient struct {
 	serverCloser grpcutils.ServerCloser
 	conns        []*grpc.ClientConn
 
-	grpcServerMetrics *grpc_prometheus.ServerMetrics
+	grpcServerMetrics *grpc_metric.ServerMetrics
 }
 
 // NewClient returns a VM connected to a remote VM
@@ -181,7 +181,7 @@ func (vm *VMClient) Initialize(
 	if err != nil {
 		return err
 	}
-	vm.grpcServerMetrics = grpc_prometheus.NewServerMetrics()
+	vm.grpcServerMetrics = grpc_metric.NewServerMetrics()
 	if err := serverReg.Register(vm.grpcServerMetrics); err != nil {
 		return err
 	}
@@ -397,7 +397,7 @@ func (vm *VMClient) newDBServer(db database.Database) *grpc.Server {
 	healthpb.RegisterHealthServer(server, grpcHealth)
 
 	// Ensure metric counters are zeroed on restart
-	grpc_prometheus.Register(server)
+	grpc_metric.Register(server)
 
 	return server
 }
@@ -425,7 +425,7 @@ func (vm *VMClient) newInitServer() *grpc.Server {
 	warppb.RegisterSignerServer(server, vm.warpSignerServer)
 
 	// Ensure metric counters are zeroed on restart
-	grpc_prometheus.Register(server)
+	grpc_metric.Register(server)
 
 	return server
 }

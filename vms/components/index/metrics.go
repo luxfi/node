@@ -3,14 +3,14 @@
 
 package index
 
-import "github.com/prometheus/client_golang/prometheus"
+import "github.com/luxfi/metric"
 
 type metrics struct {
-	numTxsIndexed prometheus.Counter
+	numTxsIndexed metric.Counter
 }
 
-func (m *metrics) initialize(namespace string, registerer prometheus.Registerer) error {
-	m.numTxsIndexed = prometheus.NewCounter(prometheus.CounterOpts{
+func (m *metrics) initialize(namespace string, registerer metric.Registerer) error {
+	m.numTxsIndexed = metric.NewCounter(metric.CounterOpts{
 		Namespace: namespace,
 		Name:      "txs_indexed",
 		Help:      "Number of transactions indexed",

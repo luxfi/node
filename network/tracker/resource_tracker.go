@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 )
@@ -30,7 +30,7 @@ type resourceTracker struct {
 
 // NewResourceTracker creates a new ResourceTracker
 func NewResourceTracker(
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	manager ResourceManager,
 	frequency time.Duration,
 ) (ResourceTracker, error) {

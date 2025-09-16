@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
@@ -30,7 +30,7 @@ var (
 type worker struct {
 	log           log.Logger
 	name          string
-	failingChecks *prometheus.GaugeVec
+	failingChecks *metric.GaugeVec
 	checksLock    sync.RWMutex
 	checks        map[string]*taggedChecker
 
@@ -54,11 +54,11 @@ type taggedChecker struct {
 func newWorker(
 	log log.Logger,
 	name string,
-	failingChecks *prometheus.GaugeVec,
+	failingChecks *metric.GaugeVec,
 ) *worker {
 	// Initialize the number of failing checks to 0 for all checks
 	for _, tag := range []string{AllTag, ApplicationTag} {
-		failingChecks.With(prometheus.Labels{
+		failingChecks.With(metric.Labels{
 			CheckLabel: name,
 			TagLabel:   tag,
 		}).Set(0)
@@ -277,7 +277,7 @@ func (w *worker) updateMetrics(tc *taggedChecker, healthy bool, register bool) {
 	if tc.isApplicationCheck {
 		// Note: [w.tags] will include AllTag.
 		for tag := range w.tags {
-			gauge := w.failingChecks.With(prometheus.Labels{
+			gauge := w.failingChecks.With(metric.Labels{
 				CheckLabel: w.name,
 				TagLabel:   tag,
 			})
@@ -294,7 +294,7 @@ func (w *worker) updateMetrics(tc *taggedChecker, healthy bool, register bool) {
 		}
 	} else {
 		for _, tag := range tc.tags {
-			gauge := w.failingChecks.With(prometheus.Labels{
+			gauge := w.failingChecks.With(metric.Labels{
 				CheckLabel: w.name,
 				TagLabel:   tag,
 			})
@@ -309,7 +309,7 @@ func (w *worker) updateMetrics(tc *taggedChecker, healthy bool, register bool) {
 				}
 			}
 		}
-		gauge := w.failingChecks.With(prometheus.Labels{
+		gauge := w.failingChecks.With(metric.Labels{
 			CheckLabel: w.name,
 			TagLabel:   AllTag,
 		})

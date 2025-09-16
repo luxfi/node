@@ -12,26 +12,26 @@ import (
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Router is a complete router interface that works with Lux packages
 type Router interface {
 	Initialize(
 		nodeID ids.NodeID,
-		log logging.Logger,
-		timeouts handler.TimeoutManager,
+		log log.Logger,
+		timeouts *handler.AdaptiveTimeoutManager,
 		shutdownTimeout time.Duration,
 		criticalChains set.Set[ids.ID],
 		whitelistedSubnets set.Set[ids.ID],
 		onFatal func(exitCode int),
 		healthConfig HealthConfig,
-		reg prometheus.Registerer,
+		reg metric.Registerer,
 		metricsNamespace string,
 	) error
 	RegisterRequest(
@@ -59,10 +59,10 @@ type chainRouter struct {
 	log             log.Logger
 	lock            sync.RWMutex
 	chains          map[ids.ID]handler.Handler
-	timeoutManager  handler.TimeoutManager
+	timeoutManager  *handler.AdaptiveTimeoutManager
 	nodeID          ids.NodeID
 	healthConfig    HealthConfig
-	reg             prometheus.Registerer
+	reg             metric.Registerer
 	namespace       string
 	criticalChains  set.Set[ids.ID]
 	lastMsgTime     time.Time
@@ -70,8 +70,8 @@ type chainRouter struct {
 }
 
 // NewChainRouter creates a new router with full functionality
-func NewChainRouter(logger log.Logger, timeoutManager handler.TimeoutManager) Router {
-	// Create a wrapper for the consensus router that expects logging.Logger
+func NewChainRouter(logger log.Logger, timeoutManager *handler.AdaptiveTimeoutManager) Router {
+	// Create a wrapper for the consensus router that expects log.Logger
 	wrappedLogger := NewLoggerWrapper(logger)
 	return &chainRouter{
 		consensusRouter: router.NewRouter(wrappedLogger, timeoutManager),
@@ -85,13 +85,13 @@ func NewChainRouter(logger log.Logger, timeoutManager handler.TimeoutManager) Ro
 func (r *chainRouter) Initialize(
 	nodeID ids.NodeID,
 	logger log.Logger,
-	timeouts handler.TimeoutManager,
+	timeouts *handler.AdaptiveTimeoutManager,
 	shutdownTimeout time.Duration,
 	criticalChains set.Set[ids.ID],
 	whitelistedSubnets set.Set[ids.ID],
 	onFatal func(exitCode int),
 	healthConfig HealthConfig,
-	reg prometheus.Registerer,
+	reg metric.Registerer,
 	metricsNamespace string,
 ) error {
 	r.nodeID = nodeID
@@ -103,7 +103,7 @@ func (r *chainRouter) Initialize(
 	r.criticalChains = criticalChains
 	r.lastMsgTime = time.Now()
 	
-	// Create a wrapper for the consensus router that expects logging.Logger
+	// Create a wrapper for the consensus router that expects log.Logger
 	wrappedLogger := NewLoggerWrapper(logger)
 	
 	// Initialize the consensus router with the parameters it expects
@@ -230,7 +230,7 @@ func (r *chainRouter) HealthCheck(ctx context.Context) (interface{}, error) {
 
 // Helper types and functions
 
-type Registerer = prometheus.Registerer
+type Registerer = metric.Registerer
 
 type stubBenchlistManager struct{}
 
@@ -238,7 +238,7 @@ func (s *stubBenchlistManager) Deprecated() {}
 func (s *stubBenchlistManager) IsBenched(nodeID ids.NodeID, chainID ids.ID) bool { return false }
 func (s *stubBenchlistManager) GetBenched(chainID ids.ID) []ids.NodeID { return nil }
 
-func NewLockedCalculator(log logging.Logger, reg prometheus.Registerer, namespace string, calc tracker.Targeter) tracker.Targeter {
+func NewLockedCalculator(log log.Logger, reg metric.Registerer, namespace string, calc tracker.Targeter) tracker.Targeter {
 	return calc
 }
 
@@ -246,7 +246,7 @@ type externalHandlerWrapper struct {
 	handler handler.Handler
 }
 
-func Trace(log logging.Logger, name string, getTime func() time.Time) func() {
+func Trace(log log.Logger, name string, getTime func() time.Time) func() {
 	return func() {}
 }
 

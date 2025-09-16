@@ -9,14 +9,14 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/vms/evm/metrics"
 
 	dto "github.com/prometheus/client_model/go"
 )
 
 var (
-	_ prometheus.Gatherer = (*Gatherer)(nil)
+	_ metric.Gatherer = (*Gatherer)(nil)
 
 	errMetricSkip             = errors.New("metric skipped")
 	errMetricTypeNotSupported = errors.New("metric type is not supported")
@@ -25,7 +25,7 @@ var (
 	helpText                  = ""
 )
 
-// Gatherer implements the [prometheus.Gatherer] interface by gathering all
+// Gatherer implements the [metric.Gatherer] interface by gathering all
 // metrics from a [Registry].
 type Gatherer struct {
 	registry Registry

@@ -6,7 +6,7 @@ package metrics
 import (
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/metric"
@@ -40,43 +40,43 @@ type Metrics interface {
 	SetTimeUntilSubnetUnstake(netID ids.ID, timeUntilUnstake time.Duration)
 }
 
-func New(registerer prometheus.Registerer) (Metrics, error) {
+func New(registerer metric.Registerer) (Metrics, error) {
 	blockMetrics, err := newBlockMetrics(registerer)
 	m := &metrics{
 		blockMetrics: blockMetrics,
-		timeUntilUnstake: prometheus.NewGauge(prometheus.GaugeOpts{
+		timeUntilUnstake: metric.NewGauge(metric.GaugeOpts{
 			Name: "time_until_unstake",
 			Help: "Time (in ns) until this node leaves the Primary Network's validator set",
 		}),
-		timeUntilSubnetUnstake: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
+		timeUntilSubnetUnstake: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Name: "time_until_unstake_subnet",
 				Help: "Time (in ns) until this node leaves the subnet's validator set",
 			},
 			[]string{"netID"},
 		),
-		localStake: prometheus.NewGauge(prometheus.GaugeOpts{
+		localStake: metric.NewGauge(metric.GaugeOpts{
 			Name: "local_staked",
 			Help: "Amount (in nLUX) of LUX staked on this node",
 		}),
-		totalStake: prometheus.NewGauge(prometheus.GaugeOpts{
+		totalStake: metric.NewGauge(metric.GaugeOpts{
 			Name: "total_staked",
 			Help: "Amount (in nLUX) of LUX staked on the Primary Network",
 		}),
 
-		validatorSetsCached: prometheus.NewCounter(prometheus.CounterOpts{
+		validatorSetsCached: metric.NewCounter(metric.CounterOpts{
 			Name: "validator_sets_cached",
 			Help: "Total number of validator sets cached",
 		}),
-		validatorSetsCreated: prometheus.NewCounter(prometheus.CounterOpts{
+		validatorSetsCreated: metric.NewCounter(metric.CounterOpts{
 			Name: "validator_sets_created",
 			Help: "Total number of validator sets created from applying difflayers",
 		}),
-		validatorSetsHeightDiff: prometheus.NewGauge(prometheus.GaugeOpts{
+		validatorSetsHeightDiff: metric.NewGauge(metric.GaugeOpts{
 			Name: "validator_sets_height_diff_sum",
 			Help: "Total number of validator sets diffs applied for generating validator sets",
 		}),
-		validatorSetsDuration: prometheus.NewGauge(prometheus.GaugeOpts{
+		validatorSetsDuration: metric.NewGauge(metric.GaugeOpts{
 			Name: "validator_sets_duration_sum",
 			Help: "Total amount of time generating validator sets in nanoseconds",
 		}),
@@ -106,15 +106,15 @@ type metrics struct {
 
 	blockMetrics *blockMetrics
 
-	timeUntilUnstake       prometheus.Gauge
-	timeUntilSubnetUnstake *prometheus.GaugeVec
-	localStake             prometheus.Gauge
-	totalStake             prometheus.Gauge
+	timeUntilUnstake       metric.Gauge
+	timeUntilSubnetUnstake *metric.GaugeVec
+	localStake             metric.Gauge
+	totalStake             metric.Gauge
 
-	validatorSetsCached     prometheus.Counter
-	validatorSetsCreated    prometheus.Counter
-	validatorSetsHeightDiff prometheus.Gauge
-	validatorSetsDuration   prometheus.Gauge
+	validatorSetsCached     metric.Counter
+	validatorSetsCreated    metric.Counter
+	validatorSetsHeightDiff metric.Gauge
+	validatorSetsDuration   metric.Gauge
 }
 
 func (m *metrics) MarkAccepted(b block.Block) error {

@@ -7,7 +7,7 @@ import (
 	"crypto"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/node/staking"
 )
@@ -36,7 +36,7 @@ type Config struct {
 	StakingCertLeaf *staking.Certificate
 
 	// Registerer for prometheus metrics
-	Registerer prometheus.Registerer
+	Registerer metric.Registerer
 
 	// Automining configuration
 	AutominingEnabled bool

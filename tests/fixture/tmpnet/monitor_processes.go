@@ -19,7 +19,7 @@ import (
 	"syscall"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/luxfi/node/utils/logging"
@@ -300,7 +300,7 @@ func getServiceDiscoveryDir(cmdName string) (string, error) {
 
 // SDConfig represents a Prometheus service discovery config entry.
 //
-// file_sd_config docs: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#file_sd_config
+// file_sd_config docs: https://metric.io/docs/prometheus/latest/configuration/configuration/#file_sd_config
 type SDConfig struct {
 	Targets []string          `json:"targets"`
 	Labels  map[string]string `json:"labels"`

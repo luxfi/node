@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/process"
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/storage"
@@ -92,7 +92,7 @@ func NewManager(
 	frequency,
 	cpuHalflife,
 	diskHalflife time.Duration,
-	metricsRegisterer prometheus.Registerer,
+	metricsRegisterer metric.Registerer,
 ) (Manager, error) {
 	processMetrics, err := newMetrics(metricsRegisterer)
 	if err != nil {

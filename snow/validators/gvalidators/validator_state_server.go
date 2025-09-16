@@ -36,15 +36,15 @@ func (s *Server) GetCurrentHeight(ctx context.Context, _ *emptypb.Empty) (*pb.Ge
 	return &pb.GetCurrentHeightResponse{Height: height}, err
 }
 
-func (s *Server) GetSubnetID(ctx context.Context, req *pb.GetSubnetIDRequest) (*pb.GetSubnetIDResponse, error) {
+func (s *Server) GetNetID(ctx context.Context, req *pb.GetNetIDRequest) (*pb.GetNetIDResponse, error) {
 	chainID, err := ids.ToID(req.ChainId)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetID, err := s.state.GetSubnetID(ctx, chainID)
-	return &pb.GetSubnetIDResponse{
-		SubnetId: subnetID[:],
+	netID, err := s.state.GetSubnetID(ctx, chainID)
+	return &pb.GetNetIDResponse{
+		SubnetId: netID[:],
 	}, err
 }
 

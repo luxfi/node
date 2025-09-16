@@ -20,7 +20,7 @@ import (
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/utils/logging"
 )

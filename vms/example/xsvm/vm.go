@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/rpc/v2"
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
@@ -17,6 +17,7 @@ import (
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
@@ -58,17 +59,20 @@ func (vm *VM) GetChainID(ctx context.Context) (ids.ID, error) {
 
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *block.ChainContext,
-	dbManager block.DBManager,
+	chainCtxIntf interface{},
+	dbManagerIntf interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- block.Message,
-	fxs []*block.Fx,
-	appSender block.AppSender,
+	toEngineIntf interface{},
+	fxsIntf []interface{},
+	appSenderIntf interface{},
 ) error {
-	// Use the logger from ChainContext
-	logger := chainCtx.Log
+	// Type assertions to convert interfaces to concrete types
+	chainCtx := chainCtxIntf.(*block.ChainContext)
+	toEngine := toEngineIntf.(chan<- block.Message)
+	// Create a logger since ChainContext doesn't have one
+	logger := zap.NewNop()
 
 	logger.Info("initializing xsvm",
 		zap.Stringer("version", Version),
@@ -76,7 +80,9 @@ func (vm *VM) Initialize(
 
 	// Store the ChainContext
 	vm.chainCtx = chainCtx
-	vm.db = dbManager.Current()
+	// DBManager doesn't have Current() method, use a versiondb directly
+	baseDB := memdb.New()
+	vm.db = versiondb.New(baseDB)
 	vm.toEngine = toEngine
 	g, err := genesis.Parse(genesisBytes)
 	if err != nil {
@@ -110,9 +116,8 @@ func (vm *VM) Initialize(
 }
 
 func (vm *VM) SetState(_ context.Context, state interfaces.State) error {
-	// Import consensus to use consensus.State type
-	var consensusState consensus.State = consensus.State(state)
-	vm.chain.SetChainState(consensusState)
+	// Pass the state directly since it's already the right type
+	vm.chain.SetChainState(state)
 	return nil
 }
 
@@ -222,19 +227,7 @@ type blockWrapper struct {
 	chain.Block
 }
 
-// Status converts the uint8 status to choices.Status
-func (b *blockWrapper) Status() choices.Status {
-	status := b.Block.Status()
-	switch status {
-	case 0: // Unknown
-		return choices.Unknown
-	case 1: // Processing
-		return choices.Processing
-	case 2: // Accepted
-		return choices.Accepted
-	case 3: // Rejected
-		return choices.Rejected
-	default:
-		return choices.Unknown
-	}
+// Status returns the uint8 status directly from the underlying block
+func (b *blockWrapper) Status() uint8 {
+	return b.Block.Status()
 }

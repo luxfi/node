@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/consensus/networking/router"
@@ -772,7 +772,7 @@ func wrapWarpSignatureRequest(
 	justification []byte,
 ) (p2pmessage.OutboundMessage, error) {
 	p2pMessageFactory, err := p2pmessage.NewCreator(
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		p2pTimeout,
 	)

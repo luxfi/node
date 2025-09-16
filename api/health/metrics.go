@@ -3,17 +3,17 @@
 
 package health
 
-import "github.com/prometheus/client_golang/prometheus"
+import "github.com/luxfi/metric"
 
 type healthMetrics struct {
 	// failingChecks keeps track of the number of check failing
-	failingChecks *prometheus.GaugeVec
+	failingChecks *metric.GaugeVec
 }
 
-func newMetrics(namespace string, registerer prometheus.Registerer) (*healthMetrics, error) {
+func newMetrics(namespace string, registerer metric.Registerer) (*healthMetrics, error) {
 	metrics := &healthMetrics{
-		failingChecks: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
+		failingChecks: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Namespace: namespace,
 				Name:      "checks_failing",
 				Help:      "number of currently failing health checks",

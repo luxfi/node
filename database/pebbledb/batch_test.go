@@ -6,7 +6,7 @@ package pebbledb
 import (
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/utils/logging"
@@ -17,7 +17,7 @@ func TestBatch(t *testing.T) {
 	require := require.New(t)
 	dirName := t.TempDir()
 
-	db, err := New(dirName, nil, logging.NoLog{}, prometheus.NewRegistry())
+	db, err := New(dirName, nil, logging.NoLog{}, metric.NewRegistry())
 	require.NoError(err)
 
 	batchIntf := db.NewBatch()

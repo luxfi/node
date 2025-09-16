@@ -4,7 +4,7 @@
 package metrics
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/node/vms/platformvm/block"
 )
@@ -19,10 +19,10 @@ var (
 
 type blockMetrics struct {
 	txMetrics *txMetrics
-	numBlocks *prometheus.CounterVec
+	numBlocks *metric.CounterVec
 }
 
-func newBlockMetrics(registerer prometheus.Registerer) (*blockMetrics, error) {
+func newBlockMetrics(registerer metric.Registerer) (*blockMetrics, error) {
 	txMetrics, err := newTxMetrics(registerer)
 	if err != nil {
 		return nil, err
@@ -30,8 +30,8 @@ func newBlockMetrics(registerer prometheus.Registerer) (*blockMetrics, error) {
 
 	m := &blockMetrics{
 		txMetrics: txMetrics,
-		numBlocks: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
+		numBlocks: metric.NewCounterVec(
+			metric.CounterOpts{
 				Name: "blks_accepted",
 				Help: "number of blocks accepted",
 			},
@@ -42,21 +42,21 @@ func newBlockMetrics(registerer prometheus.Registerer) (*blockMetrics, error) {
 }
 
 func (m *blockMetrics) BanffAbortBlock(*block.BanffAbortBlock) error {
-	m.numBlocks.With(prometheus.Labels{
+	m.numBlocks.With(metric.Labels{
 		blkLabel: "abort",
 	}).Inc()
 	return nil
 }
 
 func (m *blockMetrics) BanffCommitBlock(*block.BanffCommitBlock) error {
-	m.numBlocks.With(prometheus.Labels{
+	m.numBlocks.With(metric.Labels{
 		blkLabel: "commit",
 	}).Inc()
 	return nil
 }
 
 func (m *blockMetrics) BanffProposalBlock(b *block.BanffProposalBlock) error {
-	m.numBlocks.With(prometheus.Labels{
+	m.numBlocks.With(metric.Labels{
 		blkLabel: "proposal",
 	}).Inc()
 	for _, tx := range b.Transactions {
@@ -68,7 +68,7 @@ func (m *blockMetrics) BanffProposalBlock(b *block.BanffProposalBlock) error {
 }
 
 func (m *blockMetrics) BanffStandardBlock(b *block.BanffStandardBlock) error {
-	m.numBlocks.With(prometheus.Labels{
+	m.numBlocks.With(metric.Labels{
 		blkLabel: "standard",
 	}).Inc()
 	for _, tx := range b.Transactions {
@@ -80,28 +80,28 @@ func (m *blockMetrics) BanffStandardBlock(b *block.BanffStandardBlock) error {
 }
 
 func (m *blockMetrics) ApricotAbortBlock(*block.ApricotAbortBlock) error {
-	m.numBlocks.With(prometheus.Labels{
+	m.numBlocks.With(metric.Labels{
 		blkLabel: "abort",
 	}).Inc()
 	return nil
 }
 
 func (m *blockMetrics) ApricotCommitBlock(*block.ApricotCommitBlock) error {
-	m.numBlocks.With(prometheus.Labels{
+	m.numBlocks.With(metric.Labels{
 		blkLabel: "commit",
 	}).Inc()
 	return nil
 }
 
 func (m *blockMetrics) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
-	m.numBlocks.With(prometheus.Labels{
+	m.numBlocks.With(metric.Labels{
 		blkLabel: "proposal",
 	}).Inc()
 	return b.Tx.Unsigned.Visit(m.txMetrics)
 }
 
 func (m *blockMetrics) ApricotStandardBlock(b *block.ApricotStandardBlock) error {
-	m.numBlocks.With(prometheus.Labels{
+	m.numBlocks.With(metric.Labels{
 		blkLabel: "standard",
 	}).Inc()
 	for _, tx := range b.Transactions {
@@ -113,7 +113,7 @@ func (m *blockMetrics) ApricotStandardBlock(b *block.ApricotStandardBlock) error
 }
 
 func (m *blockMetrics) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
-	m.numBlocks.With(prometheus.Labels{
+	m.numBlocks.With(metric.Labels{
 		blkLabel: "atomic",
 	}).Inc()
 	return b.Tx.Unsigned.Visit(m.txMetrics)

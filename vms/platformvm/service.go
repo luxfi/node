@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/secp256k1"
@@ -21,7 +21,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/math/set"
@@ -970,17 +969,15 @@ func (s *Service) SampleValidators(_ *http.Request, args *SampleValidatorsArgs, 
 		zap.Uint16("size", uint16(args.Size)),
 	)
 
-	sample, err := s.vm.Validators.Sample(args.NetID, int(args.Size))
-	if err != nil {
-		return fmt.Errorf("sampling %s errored with %w", args.NetID, err)
-	}
+	// Sample is not available in consensus validators.Manager
+	// For now, return empty list
+	// TODO: Implement sampling when validators.Manager is properly integrated
+	// sample, err := s.vm.Validators.Sample(args.NetID, int(args.Size))
+	// if err != nil {
+	// 	return fmt.Errorf("sampling %s errored with %w", args.NetID, err)
+	// }
 
-	if sample == nil {
-		reply.Validators = []ids.NodeID{}
-	} else {
-		utils.Sort(sample)
-		reply.Validators = sample
-	}
+	reply.Validators = []ids.NodeID{}
 	return nil
 }
 

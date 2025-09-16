@@ -6,7 +6,7 @@ package state
 import (
 	"errors"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/database"
@@ -67,7 +67,7 @@ func NewBlockState(db database.Database) BlockState {
 	}
 }
 
-func NewMeteredBlockState(db database.Database, namespace string, metrics prometheus.Registerer) (BlockState, error) {
+func NewMeteredBlockState(db database.Database, namespace string, metrics metric.Registerer) (BlockState, error) {
 	blkCache, err := metercacher.New[ids.ID, *blockWrapper](
 		metric.AppendNamespace(namespace, "block_cache"),
 		metrics,

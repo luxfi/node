@@ -6,7 +6,7 @@ package auth
 import (
 	"net/http"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/api"
 )

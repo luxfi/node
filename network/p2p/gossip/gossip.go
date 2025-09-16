@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
@@ -45,27 +45,27 @@ var (
 	_ Set[*testTx] = (*FullSet[*testTx])(nil)
 
 	ioTypeLabels   = []string{ioLabel, typeLabel}
-	sentPushLabels = prometheus.Labels{
+	sentPushLabels = metric.Labels{
 		ioLabel:   sentIO,
 		typeLabel: pushType,
 	}
-	receivedPushLabels = prometheus.Labels{
+	receivedPushLabels = metric.Labels{
 		ioLabel:   receivedIO,
 		typeLabel: pushType,
 	}
-	sentPullLabels = prometheus.Labels{
+	sentPullLabels = metric.Labels{
 		ioLabel:   sentIO,
 		typeLabel: pullType,
 	}
-	receivedPullLabels = prometheus.Labels{
+	receivedPullLabels = metric.Labels{
 		ioLabel:   receivedIO,
 		typeLabel: pullType,
 	}
 	typeLabels   = []string{typeLabel}
-	unsentLabels = prometheus.Labels{
+	unsentLabels = metric.Labels{
 		typeLabel: unsentType,
 	}
-	sentLabels = prometheus.Labels{
+	sentLabels = metric.Labels{
 		typeLabel: sentType,
 	}
 
@@ -97,50 +97,50 @@ type ValidatorGossiper struct {
 // Metrics that are tracked across a gossip protocol. A given protocol should
 // only use a single instance of Metrics.
 type Metrics struct {
-	count                   *prometheus.CounterVec
-	bytes                   *prometheus.CounterVec
-	tracking                *prometheus.GaugeVec
-	trackingLifetimeAverage prometheus.Gauge
-	topValidators           *prometheus.GaugeVec
+	count                   *metric.CounterVec
+	bytes                   *metric.CounterVec
+	tracking                *metric.GaugeVec
+	trackingLifetimeAverage metric.Gauge
+	topValidators           *metric.GaugeVec
 }
 
 // NewMetrics returns a common set of metrics
 func NewMetrics(
-	metrics prometheus.Registerer,
+	metrics metric.Registerer,
 	namespace string,
 ) (Metrics, error) {
 	m := Metrics{
-		count: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
+		count: metric.NewCounterVec(
+			metric.CounterOpts{
 				Namespace: namespace,
 				Name:      "gossip_count",
 				Help:      "amount of gossip (n)",
 			},
 			ioTypeLabels,
 		),
-		bytes: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
+		bytes: metric.NewCounterVec(
+			metric.CounterOpts{
 				Namespace: namespace,
 				Name:      "gossip_bytes",
 				Help:      "amount of gossip (bytes)",
 			},
 			ioTypeLabels,
 		),
-		tracking: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
+		tracking: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Namespace: namespace,
 				Name:      "gossip_tracking",
 				Help:      "number of gossipables being tracked",
 			},
 			typeLabels,
 		),
-		trackingLifetimeAverage: prometheus.NewGauge(prometheus.GaugeOpts{
+		trackingLifetimeAverage: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "gossip_tracking_lifetime_average",
 			Help:      "average duration a gossipable has been tracked (ns)",
 		}),
-		topValidators: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
+		topValidators: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Namespace: namespace,
 				Name:      "top_validators",
 				Help:      "number of validators gossipables are sent to due to stake",
@@ -158,7 +158,7 @@ func NewMetrics(
 	return m, err
 }
 
-func (m *Metrics) observeMessage(labels prometheus.Labels, count int, bytes int) error {
+func (m *Metrics) observeMessage(labels metric.Labels, count int, bytes int) error {
 	countMetric, err := m.count.GetMetricWith(labels)
 	if err != nil {
 		return fmt.Errorf("failed to get count metric: %w", err)
@@ -438,7 +438,7 @@ func (p *PushGossiper[T]) gossip(
 	toGossip buffer.Deque[T],
 	toRegossip buffer.Deque[T],
 	discarded cache.Cacher[ids.ID, struct{}],
-	metricsLabels prometheus.Labels,
+	metricsLabels metric.Labels,
 ) error {
 	var (
 		sentBytes                   = 0

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
@@ -808,7 +808,7 @@ func newStateFromDB(require *require.Assertions, db database.Database) *state {
 		},
 		execCfg,
 		context.Background(),
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		reward.NewCalculator(reward.Config{
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .1 * reward.PercentDenominator,

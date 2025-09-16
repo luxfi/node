@@ -6,7 +6,7 @@ package metercacher
 import (
 	"errors"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 )
 
 const (
@@ -17,62 +17,62 @@ const (
 
 var (
 	resultLabels = []string{resultLabel}
-	hitLabels    = prometheus.Labels{
+	hitLabels    = metric.Labels{
 		resultLabel: hitResult,
 	}
-	missLabels = prometheus.Labels{
+	missLabels = metric.Labels{
 		resultLabel: missResult,
 	}
 )
 
 type metrics struct {
-	getCount *prometheus.CounterVec
-	getTime  *prometheus.GaugeVec
+	getCount metric.CounterVec
+	getTime  metric.GaugeVec
 
-	putCount prometheus.Counter
-	putTime  prometheus.Gauge
+	putCount metric.Counter
+	putTime  metric.Gauge
 
-	len           prometheus.Gauge
-	portionFilled prometheus.Gauge
+	len           metric.Gauge
+	portionFilled metric.Gauge
 }
 
 func newMetrics(
 	namespace string,
-	reg prometheus.Registerer,
+	reg metric.Registerer,
 ) (*metrics, error) {
 	m := &metrics{
-		getCount: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
+		getCount: metric.NewCounterVec(
+			metric.CounterOpts{
 				Namespace: namespace,
 				Name:      "get_count",
 				Help:      "number of get calls",
 			},
 			resultLabels,
 		),
-		getTime: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
+		getTime: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Namespace: namespace,
 				Name:      "get_time",
 				Help:      "time spent (ns) in get calls",
 			},
 			resultLabels,
 		),
-		putCount: prometheus.NewCounter(prometheus.CounterOpts{
+		putCount: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "put_count",
 			Help:      "number of put calls",
 		}),
-		putTime: prometheus.NewGauge(prometheus.GaugeOpts{
+		putTime: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "put_time",
 			Help:      "time spent (ns) in put calls",
 		}),
-		len: prometheus.NewGauge(prometheus.GaugeOpts{
+		len: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "len",
 			Help:      "number of entries",
 		}),
-		portionFilled: prometheus.NewGauge(prometheus.GaugeOpts{
+		portionFilled: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "portion_filled",
 			Help:      "fraction of cache filled",

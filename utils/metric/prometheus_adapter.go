@@ -4,37 +4,37 @@
 package metric
 
 import (
-	metric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// PrometheusRegistryAdapter wraps a luxfi/metric Registry to implement prometheus.Registerer
+// PrometheusRegistryAdapter wraps a luxfi/metric Registry to implement metric.Registerer
 type PrometheusRegistryAdapter struct {
 	registry metric.Registry
 }
 
 // NewPrometheusRegistryAdapter creates a new adapter
-func NewPrometheusRegistryAdapter(registry metric.Registry) prometheus.Registerer {
+func NewPrometheusRegistryAdapter(registry metric.Registry) metric.Registerer {
 	return &PrometheusRegistryAdapter{
 		registry: registry,
 	}
 }
 
-// Register implements prometheus.Registerer
-func (p *PrometheusRegistryAdapter) Register(c prometheus.Collector) error {
+// Register implements metric.Registerer
+func (p *PrometheusRegistryAdapter) Register(c metric.Collector) error {
 	// For now, this is a no-op adapter for testing
 	// In production, we should properly convert between the two
 	return nil
 }
 
-// MustRegister implements prometheus.Registerer
-func (p *PrometheusRegistryAdapter) MustRegister(cs ...prometheus.Collector) {
+// MustRegister implements metric.Registerer
+func (p *PrometheusRegistryAdapter) MustRegister(cs ...metric.Collector) {
 	// For now, this is a no-op adapter for testing
 	// In production, we should properly convert between the two
 }
 
-// Unregister implements prometheus.Registerer
-func (p *PrometheusRegistryAdapter) Unregister(c prometheus.Collector) bool {
+// Unregister implements metric.Registerer
+func (p *PrometheusRegistryAdapter) Unregister(c metric.Collector) bool {
 	// For now, this is a no-op adapter for testing
 	return true
 }

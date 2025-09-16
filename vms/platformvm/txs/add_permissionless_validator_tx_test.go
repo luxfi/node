@@ -4,6 +4,7 @@
 package txs
 
 import (
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"context"
 	"encoding/hex"
 	"math"
@@ -101,7 +102,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			Wght:   2 * units.KiloLux,
 		},
 		Net: constants.PrimaryNetworkID,
-		Signer: signer.NewProofOfPossession(sk),
+		Signer: signer.NewProofOfPossession(localsigner.NewFromSecretKey(sk)),
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
@@ -394,7 +395,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			Wght:   5 * units.KiloLux,
 		},
 		Net: constants.PrimaryNetworkID,
-		Signer: signer.NewProofOfPossession(sk),
+		Signer: signer.NewProofOfPossession(localsigner.NewFromSecretKey(sk)),
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{

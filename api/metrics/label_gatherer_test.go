@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	metric "github.com/luxfi/metric"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
@@ -99,22 +99,22 @@ func TestLabelGatherer_Gather(t *testing.T) {
 			registerA := metric.NewNoOpRegistry()
 			require.NoError(gatherer.Register(labelValueA, registerA))
 			{
-				counterA := prometheus.NewCounterVec(
+				counterA := metric.NewCounterVec(
 					counterOpts,
 					[]string{test.labelName},
 				)
-				counterA.With(prometheus.Labels{test.labelName: customLabelValueA})
+				counterA.With(metric.Labels{test.labelName: customLabelValueA})
 				require.NoError(registerA.Register(counterA))
 			}
 
 			registerB := metric.NewNoOpRegistry()
 			require.NoError(gatherer.Register(labelValueB, registerB))
 			{
-				counterB := prometheus.NewCounterVec(
+				counterB := metric.NewCounterVec(
 					counterOpts,
 					[]string{customLabelName},
 				)
-				counterB.With(prometheus.Labels{customLabelName: customLabelValueB}).Inc()
+				counterB.With(metric.Labels{customLabelName: customLabelValueB}).Inc()
 				require.NoError(registerB.Register(counterB))
 			}
 
@@ -156,7 +156,7 @@ func TestLabelGatherer_Register(t *testing.T) {
 		return &labelGatherer{
 			multiGatherer: multiGatherer{
 				names: []string{firstLabeledGatherer.labelValue},
-				gatherers: prometheus.Gatherers{
+				gatherers: metric.Gatherers{
 					firstLabeledGatherer,
 				},
 			},
@@ -174,7 +174,7 @@ func TestLabelGatherer_Register(t *testing.T) {
 				firstLabeledGatherer.labelValue,
 				secondLabeledGatherer.labelValue,
 			},
-			gatherers: prometheus.Gatherers{
+			gatherers: metric.Gatherers{
 				firstLabeledGatherer,
 				secondLabeledGatherer,
 			},
@@ -185,7 +185,7 @@ func TestLabelGatherer_Register(t *testing.T) {
 		name                  string
 		labelGatherer         *labelGatherer
 		labelValue            string
-		gatherer              prometheus.Gatherer
+		gatherer              metric.Gatherer
 		expectedErr           error
 		expectedLabelGatherer *labelGatherer
 	}{

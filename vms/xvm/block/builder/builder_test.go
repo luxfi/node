@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
 
@@ -486,7 +486,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 
 	require := require.New(t)
 
-	registerer := prometheus.NewRegistry()
+	registerer := metric.NewRegistry()
 	toEngine := make(chan core.MessageType, 100)
 	memPool, err := mempool.New("mempool", registerer, toEngine)
 	require.NoError(err)

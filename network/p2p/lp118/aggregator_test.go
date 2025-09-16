@@ -4,6 +4,7 @@
 package lp118
 
 import (
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"context"
 	"math/big"
 	"testing"
@@ -28,20 +29,26 @@ func TestSignatureAggregator_AggregateSignatures(t *testing.T) {
 	nodeID0 := ids.GenerateTestNodeID()
 	sk0, err := bls.NewSecretKey()
 	require.NoError(t, err)
-	pk0 := sk0.PublicKey()
-	signer0 := warp.NewSigner(sk0, networkID, chainID)
+	blsSigner0, err := localsigner.FromBytes(bls.SecretKeyToBytes(sk0))
+	require.NoError(t, err)
+	pk0 := blsSigner0.PublicKey()
+	signer0 := warp.NewSigner(blsSigner0, networkID, chainID)
 
 	nodeID1 := ids.GenerateTestNodeID()
 	sk1, err := bls.NewSecretKey()
 	require.NoError(t, err)
-	pk1 := sk1.PublicKey()
-	signer1 := warp.NewSigner(sk1, networkID, chainID)
+	blsSigner1, err := localsigner.FromBytes(bls.SecretKeyToBytes(sk1))
+	require.NoError(t, err)
+	pk1 := blsSigner1.PublicKey()
+	signer1 := warp.NewSigner(blsSigner1, networkID, chainID)
 
 	nodeID2 := ids.GenerateTestNodeID()
 	sk2, err := bls.NewSecretKey()
 	require.NoError(t, err)
-	pk2 := sk2.PublicKey()
-	signer2 := warp.NewSigner(sk2, networkID, chainID)
+	blsSigner2, err := localsigner.FromBytes(bls.SecretKeyToBytes(sk2))
+	require.NoError(t, err)
+	pk2 := blsSigner2.PublicKey()
+	signer2 := warp.NewSigner(blsSigner2, networkID, chainID)
 
 	tests := []struct {
 		name           string

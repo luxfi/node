@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/log"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/luxfi/consensus/core"
@@ -95,7 +95,7 @@ func NewNetworkClient(
 	maxActiveRequests int64,
 	log log.Logger,
 	metricsNamespace string,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	minVersion *version.Application,
 ) (NetworkClient, error) {
 	peerTracker, err := p2p.NewPeerTracker(

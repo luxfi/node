@@ -46,6 +46,7 @@ func (l *TestLock) Unlock() {
 // Context creates a test consensus context
 func Context(t *testing.T, chainID ids.ID) *context.Context {
 	t.Helper()
+	
 	return &context.Context{
 		QuantumID:   1,
 		NetID:       ids.Empty,

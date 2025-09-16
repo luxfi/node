@@ -9,8 +9,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
@@ -69,7 +69,7 @@ func NewIndexer(
 	db database.Database,
 	log log.Logger,
 	metricsNamespace string,
-	metricsRegisterer prometheus.Registerer,
+	metricsRegisterer metric.Registerer,
 	allowIncompleteIndices bool,
 ) (AddressTxsIndexer, error) {
 	i := &indexer{

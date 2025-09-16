@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
