@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	dto "github.com/prometheus/client_model/go"
 )
@@ -70,7 +70,7 @@ func (g *multiGatherer) Deregister(name string) bool {
 	return false
 }
 
-func MakeAndRegister(gatherer MultiGatherer, name string) (metric.Registry, error) {
+func MakeAndRegister(gatherer MultiGatherer, name string) (metrics.Registry, error) {
 	reg := metric.NewRegistry()
 	if err := gatherer.Register(name, reg); err != nil {
 		return nil, fmt.Errorf("couldn't register %q metrics: %w", name, err)

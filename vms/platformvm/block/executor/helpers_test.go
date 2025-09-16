@@ -15,7 +15,7 @@ import (
 	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/vms/platformvm/metrics"

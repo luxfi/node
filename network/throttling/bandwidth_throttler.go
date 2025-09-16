@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	luxmetric "github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 
@@ -58,7 +58,7 @@ type BandwidthThrottlerConfig struct {
 
 func newBandwidthThrottler(
 	log log.Logger,
-	registerer luxmetric.Registerer,
+	registerer luxmetrics.Registerer,
 	config BandwidthThrottlerConfig,
 ) (bandwidthThrottler, error) {
 	errs := wrappers.Errs{}
@@ -73,7 +73,7 @@ func newBandwidthThrottler(
 				registerer,
 				&errs,
 			),
-			awaitingAcquire: luxmetric.NewGauge(luxmetric.GaugeOpts{
+			awaitingAcquire: luxmetrics.NewGauge(luxmetrics.GaugeOpts{
 				Name: "bandwidth_throttler_inbound_awaiting_acquire",
 				Help: "Number of inbound messages waiting to acquire bandwidth from the inbound bandwidth throttler",
 			}),
@@ -85,7 +85,7 @@ func newBandwidthThrottler(
 
 type bandwidthThrottlerMetrics struct {
 	acquireLatency  metric.Averager
-	awaitingAcquire luxmetric.Gauge
+	awaitingAcquire luxmetrics.Gauge
 }
 
 type bandwidthThrottlerImpl struct {
@@ -117,17 +117,17 @@ func (t *bandwidthThrottlerImpl) Acquire(
 	if !ok {
 		// This should never happen. If it is, the caller is misusing this struct.
 		t.log.Debug("tried to acquire throttler but the node isn't registered",
-			zap.Uint64("messageSize", msgSize),
-			zap.Stringer("nodeID", nodeID),
+			log.Uint64("messageSize", msgSize),
+			log.Stringer("nodeID", nodeID),
 		)
 		return
 	}
 	if err := limiter.WaitN(ctx, int(msgSize)); err != nil {
 		// This should only happen on shutdown.
 		t.log.Debug("error while waiting for throttler",
-			zap.Uint64("messageSize", msgSize),
-			zap.Stringer("nodeID", nodeID),
-			zap.Error(err),
+			log.Uint64("messageSize", msgSize),
+			log.Stringer("nodeID", nodeID),
+			log.Error(err),
 		)
 	}
 }
@@ -139,7 +139,7 @@ func (t *bandwidthThrottlerImpl) AddNode(nodeID ids.NodeID) {
 
 	if _, ok := t.limiters[nodeID]; ok {
 		t.log.Debug("tried to add peer but it's already registered",
-			zap.Stringer("nodeID", nodeID),
+			log.Stringer("nodeID", nodeID),
 		)
 		return
 	}
@@ -153,7 +153,7 @@ func (t *bandwidthThrottlerImpl) RemoveNode(nodeID ids.NodeID) {
 
 	if _, ok := t.limiters[nodeID]; !ok {
 		t.log.Debug("tried to remove peer but it isn't registered",
-			zap.Stringer("nodeID", nodeID),
+			log.Stringer("nodeID", nodeID),
 		)
 		return
 	}

@@ -7,7 +7,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/luxfi/geth/ethclient"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/tests"

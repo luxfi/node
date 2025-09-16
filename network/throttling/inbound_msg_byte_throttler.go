@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	luxmetric "github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus/validators"
@@ -23,7 +23,7 @@ import (
 
 func newInboundMsgByteThrottler(
 	log log.Logger,
-	registerer luxmetric.Registerer,
+	registerer luxmetrics.Registerer,
 	vdrs validators.Manager,
 	config MsgByteThrottlerConfig,
 ) (*inboundMsgByteThrottler, error) {
@@ -97,8 +97,8 @@ func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, n
 	// If there is already a message waiting, log the error and return
 	if existingID, exists := t.nodeToWaitingMsgID[nodeID]; exists {
 		t.log.Error("node already waiting on message",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint64("messageID", existingID),
+			log.Stringer("nodeID", nodeID),
+			log.Uint64("messageID", existingID),
 		)
 		t.lock.Unlock()
 		return t.metrics.awaitingRelease.Dec
@@ -134,7 +134,7 @@ func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, n
 		totalWeight, err := t.vdrs.TotalWeight(constants.PrimaryNetworkID)
 		if err != nil {
 			t.log.Error("couldn't get total weight of primary network",
-				zap.Error(err),
+				log.Error(err),
 			)
 		} else {
 			vdrAllocationSize = uint64(float64(t.maxVdrBytes) * float64(weight) / float64(totalWeight))
@@ -281,8 +281,8 @@ func (t *inboundMsgByteThrottler) release(metadata *msgMetadata, nodeID ids.Node
 		} else {
 			// This should never happen
 			t.log.Warn("couldn't find message",
-				zap.Stringer("nodeID", nodeID),
-				zap.Uint64("messageID", msgID),
+				log.Stringer("nodeID", nodeID),
+				log.Uint64("messageID", msgID),
 			)
 		}
 	}
@@ -299,13 +299,13 @@ func (t *inboundMsgByteThrottler) release(metadata *msgMetadata, nodeID ids.Node
 
 type inboundMsgByteThrottlerMetrics struct {
 	acquireLatency        metric.Averager
-	remainingAtLargeBytes luxmetric.Gauge
-	remainingVdrBytes     luxmetric.Gauge
-	awaitingAcquire       luxmetric.Gauge
-	awaitingRelease       luxmetric.Gauge
+	remainingAtLargeBytes luxmetrics.Gauge
+	remainingVdrBytes     luxmetrics.Gauge
+	awaitingAcquire       luxmetrics.Gauge
+	awaitingRelease       luxmetrics.Gauge
 }
 
-func (m *inboundMsgByteThrottlerMetrics) initialize(reg luxmetric.Registerer) error {
+func (m *inboundMsgByteThrottlerMetrics) initialize(reg luxmetrics.Registerer) error {
 	errs := wrappers.Errs{}
 	m.acquireLatency = metric.NewAveragerWithErrs(
 		"byte_throttler_inbound_acquire_latency",
@@ -313,19 +313,19 @@ func (m *inboundMsgByteThrottlerMetrics) initialize(reg luxmetric.Registerer) er
 		reg,
 		&errs,
 	)
-	m.remainingAtLargeBytes = luxmetric.NewGauge(luxmetric.GaugeOpts{
+	m.remainingAtLargeBytes = luxmetrics.NewGauge(luxmetrics.GaugeOpts{
 		Name: "byte_throttler_inbound_remaining_at_large_bytes",
 		Help: "Bytes remaining in the at-large byte buffer",
 	})
-	m.remainingVdrBytes = luxmetric.NewGauge(luxmetric.GaugeOpts{
+	m.remainingVdrBytes = luxmetrics.NewGauge(luxmetrics.GaugeOpts{
 		Name: "byte_throttler_inbound_remaining_validator_bytes",
 		Help: "Bytes remaining in the validator byte buffer",
 	})
-	m.awaitingAcquire = luxmetric.NewGauge(luxmetric.GaugeOpts{
+	m.awaitingAcquire = luxmetrics.NewGauge(luxmetrics.GaugeOpts{
 		Name: "byte_throttler_inbound_awaiting_acquire",
 		Help: "Number of inbound messages waiting to acquire space on the inbound message byte buffer",
 	})
-	m.awaitingRelease = luxmetric.NewGauge(luxmetric.GaugeOpts{
+	m.awaitingRelease = luxmetrics.NewGauge(luxmetrics.GaugeOpts{
 		Name: "byte_throttler_inbound_awaiting_release",
 		Help: "Number of messages currently being read/handled",
 	})

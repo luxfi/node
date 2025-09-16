@@ -75,7 +75,7 @@ func (vm *VM) Initialize(
 	logger := zap.NewNop()
 
 	logger.Info("initializing xsvm",
-		zap.Stringer("version", Version),
+		log.Stringer("version", Version),
 	)
 
 	// Store the ChainContext
@@ -110,7 +110,7 @@ func (vm *VM) Initialize(
 	vm.builder = builder.New(chainContext, vm.chain)
 
 	logger.Info("initialized xsvm",
-		zap.Stringer("lastAcceptedID", vm.chain.LastAccepted()),
+		log.Stringer("lastAcceptedID", vm.chain.LastAccepted()),
 	)
 	return nil
 }

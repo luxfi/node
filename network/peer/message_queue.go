@@ -92,7 +92,7 @@ func (q *throttledMessageQueue) Push(ctx context.Context, msg message.OutboundMe
 			"dropping outgoing message",
 			log.Stringer("messageOp", msg.Op()),
 			log.Stringer("nodeID", q.id),
-			log.Err(err),
+			log.Error(err),
 		)
 		q.onFailed.SendFailed(msg)
 		return false

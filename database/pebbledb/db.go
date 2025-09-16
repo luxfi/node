@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/cockroachdb/pebble"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	luxlog "github.com/luxfi/log"
 
 	"github.com/luxfi/node/database"
@@ -66,7 +66,7 @@ type Config struct {
 }
 
 // TODO: Add metrics
-func New(file string, configBytes []byte, log luxlog.Logger, _ metric.Registerer) (database.Database, error) {
+func New(file string, configBytes []byte, log luxlog.Logger, _ metrics.Registerer) (database.Database, error) {
 	cfg := DefaultConfig
 	if len(configBytes) > 0 {
 		if err := json.Unmarshal(configBytes, &cfg); err != nil {

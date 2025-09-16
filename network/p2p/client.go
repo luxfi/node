@@ -109,7 +109,7 @@ func (c *Client) AppRequest(
 				log.Stringer("op", message.AppRequestOp),
 				log.Stringer("nodeID", nodeID),
 				log.Uint32("requestID", requestID),
-				log.Err(err),
+				log.Error(err),
 			)
 			return err
 		}
@@ -195,7 +195,7 @@ func (c *Client) CrossChainAppRequest(
 			log.Stringer("op", message.CrossChainAppRequestOp),
 			log.Stringer("chainID", chainID),
 			log.Uint32("requestID", requestID),
-			log.Err(err),
+			log.Error(err),
 		)
 		return err
 	}

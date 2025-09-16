@@ -29,7 +29,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/chain"

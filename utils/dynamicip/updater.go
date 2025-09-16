@@ -85,7 +85,7 @@ func (u *updater) Dispatch(log luxlog.Logger) {
 			cancel()
 			if err != nil {
 				log.Warn("couldn't resolve public IP. If this machine's IP recently changed, it may be sharing the wrong public IP with peers",
-					luxlog.Err(err),
+					"error", err,
 				)
 				continue
 			}

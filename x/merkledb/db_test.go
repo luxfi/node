@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/math/set"

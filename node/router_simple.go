@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/set"
@@ -28,7 +28,7 @@ type SimpleRouter struct {
 	timeoutManager  timer.AdaptiveTimeoutManager
 	nodeID          ids.NodeID
 	healthConfig    HealthConfig
-	reg             metric.Registerer
+	reg             metrics.Registerer
 	namespace       string
 	criticalChains  set.Set[ids.ID]
 	lastMsgTime     time.Time
@@ -65,7 +65,7 @@ func (r *SimpleRouter) Initialize(
 	whitelistedSubnets set.Set[ids.ID],
 	onFatal func(exitCode int),
 	healthConfig HealthConfig,
-	reg metric.Registerer,
+	reg metrics.Registerer,
 	metricsNamespace string,
 ) error {
 	r.nodeID = nodeID

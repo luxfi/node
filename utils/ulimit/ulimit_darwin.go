@@ -11,8 +11,6 @@ import (
 	"syscall"
 
 	"github.com/luxfi/log"
-
-	"github.com/luxfi/log"
 )
 
 const DefaultFDLimit = 10 * 1024
@@ -52,8 +50,8 @@ func Set(max uint64, log log.Logger) error {
 
 	if rLimit.Cur < DefaultFDLimit {
 		log.Warn("fd-limit is less than recommended and could result in reduced performance",
-			zap.Uint64("currentLimit", rLimit.Cur),
-			zap.Uint64("recommendedLimit", DefaultFDLimit),
+			"currentLimit", rLimit.Cur,
+			"recommendedLimit", DefaultFDLimit,
 		)
 	}
 

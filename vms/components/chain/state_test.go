@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/choices"

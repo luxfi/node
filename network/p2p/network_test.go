@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	consensusSet "github.com/luxfi/consensus/utils/set"
-	metric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"

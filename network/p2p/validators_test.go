@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	luxmetric "github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 )
 
 func TestValidatorsSample(t *testing.T) {

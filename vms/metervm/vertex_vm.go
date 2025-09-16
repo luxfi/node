@@ -7,7 +7,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/ids"
@@ -41,7 +41,7 @@ var (
 
 func NewVertexVM(
 	vm LinearizableVMWithEngine,
-	reg metric.Registerer,
+	reg metrics.Registerer,
 ) LinearizableVMWithEngine {
 	return &vertexVM{
 		LinearizableVMWithEngine: vm,
@@ -52,7 +52,7 @@ func NewVertexVM(
 type vertexVM struct {
 	LinearizableVMWithEngine
 	vertexMetrics
-	registry metric.Registerer
+	registry metrics.Registerer
 	clock    mockable.Clock
 }
 

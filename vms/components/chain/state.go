@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/engine/chain/block"
@@ -159,7 +159,7 @@ func NewState(config *Config) *State {
 }
 
 func NewMeteredState(
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	config *Config,
 ) (*State, error) {
 	decidedCache, err := metercacher.New[ids.ID, *BlockWrapper](

@@ -37,24 +37,24 @@ type testExternalHandler struct {
 func (t *testExternalHandler) HandleInbound(_ context.Context, msg message.InboundMessage) {
 	t.log.Info(
 		"receiving message",
-		zap.Stringer("op", msg.Op()),
+		log.Stringer("op", msg.Op()),
 	)
 }
 
 func (t *testExternalHandler) Connected(nodeID ids.NodeID, version *version.Application, netID ids.ID) {
 	t.log.Info(
 		"connected",
-		zap.Stringer("nodeID", nodeID),
-		zap.Stringer("version", version),
-		zap.Stringer("netID", netID),
+		log.Stringer("nodeID", nodeID),
+		log.Stringer("version", version),
+		log.Stringer("netID", netID),
 	)
 }
 
 func (t *testExternalHandler) HandleGossip(_ context.Context, nodeID ids.NodeID, msg []byte) {
 	t.log.Info(
 		"received gossip",
-		zap.Stringer("nodeID", nodeID),
-		zap.Int("size", len(msg)),
+		log.Stringer("nodeID", nodeID),
+		log.Int("size", len(msg)),
 	)
 }
 
@@ -65,27 +65,27 @@ func (t *testExternalHandler) HandleTimeout(_ context.Context) {
 func (t *testExternalHandler) Disconnected(nodeID ids.NodeID) {
 	t.log.Info(
 		"disconnected",
-		zap.Stringer("nodeID", nodeID),
+		log.Stringer("nodeID", nodeID),
 	)
 }
 
 func (t *testExternalHandler) AppRequest(_ context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, appRequestBytes []byte) error {
-	t.log.Info("AppRequest", zap.Stringer("nodeID", nodeID), zap.Uint32("requestID", requestID))
+	t.log.Info("AppRequest", log.Stringer("nodeID", nodeID), log.Uint32("requestID", requestID))
 	return nil
 }
 
 func (t *testExternalHandler) AppRequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
-	t.log.Info("AppRequestFailed", zap.Stringer("nodeID", nodeID), zap.Uint32("requestID", requestID))
+	t.log.Info("AppRequestFailed", log.Stringer("nodeID", nodeID), log.Uint32("requestID", requestID))
 	return nil
 }
 
 func (t *testExternalHandler) AppResponse(_ context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
-	t.log.Info("AppResponse", zap.Stringer("nodeID", nodeID), zap.Uint32("requestID", requestID))
+	t.log.Info("AppResponse", log.Stringer("nodeID", nodeID), log.Uint32("requestID", requestID))
 	return nil
 }
 
 func (t *testExternalHandler) AppGossip(_ context.Context, nodeID ids.NodeID, appGossipBytes []byte) error {
-	t.log.Info("AppGossip", zap.Stringer("nodeID", nodeID))
+	t.log.Info("AppGossip", log.Stringer("nodeID", nodeID))
 	return nil
 }
 
@@ -125,7 +125,7 @@ func ExampleNewTestNetwork() {
 	if err != nil {
 		log.Error(
 			"failed to create test network",
-			zap.Error(err),
+			log.Error(err),
 		)
 		return
 	}
@@ -152,6 +152,6 @@ func ExampleNewTestNetwork() {
 	err = network.Dispatch()
 	log.Info(
 		"network exited",
-		zap.Error(err),
+		log.Error(err),
 	)
 }

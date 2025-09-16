@@ -225,8 +225,8 @@ func (h *handler) Spend(
 		if !ok { // should never happen
 			// TODO: Add logging when logger is available
 			// log.Warn("wrong input type",
-			// 	zap.String("expectedType", "lux.TransferableIn"),
-			// 	zap.String("actualType", fmt.Sprintf("%T", inIntf)),
+			// 	log.String("expectedType", "lux.TransferableIn"),
+			// 	log.String("actualType", fmt.Sprintf("%T", inIntf)),
 			// )
 			continue
 		}

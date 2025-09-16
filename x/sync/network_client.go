@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/log"
 	"golang.org/x/sync/semaphore"
 
@@ -95,7 +95,7 @@ func NewNetworkClient(
 	maxActiveRequests int64,
 	log log.Logger,
 	metricsNamespace string,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	minVersion *version.Application,
 ) (NetworkClient, error) {
 	peerTracker, err := p2p.NewPeerTracker(
@@ -129,9 +129,9 @@ func (c *networkClient) AppResponse(
 
 	c.log.Info(
 		"received AppResponse from peer",
-		zap.Stringer("nodeID", nodeID),
-		zap.Uint32("requestID", requestID),
-		zap.Int("responseLen", len(response)),
+		log.Stringer("nodeID", nodeID),
+		log.Uint32("requestID", requestID),
+		log.Int("responseLen", len(response)),
 	)
 
 	handler, exists := c.getRequestHandler(requestID)
@@ -140,9 +140,9 @@ func (c *networkClient) AppResponse(
 		// should be managing outstanding requests
 		c.log.Warn(
 			"received response to unknown request",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Int("responseLen", len(response)),
+			log.Stringer("nodeID", nodeID),
+			log.Uint32("requestID", requestID),
+			log.Int("responseLen", len(response)),
 		)
 		return nil
 	}
@@ -160,8 +160,8 @@ func (c *networkClient) AppRequestFailed(
 
 	c.log.Info(
 		"received AppRequestFailed from peer",
-		zap.Stringer("nodeID", nodeID),
-		zap.Uint32("requestID", requestID),
+		log.Stringer("nodeID", nodeID),
+		log.Uint32("requestID", requestID),
 	)
 
 	handler, exists := c.getRequestHandler(requestID)
@@ -170,8 +170,8 @@ func (c *networkClient) AppRequestFailed(
 		// should be managing outstanding requests
 		c.log.Warn(
 			"received request failed to unknown request",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
+			log.Stringer("nodeID", nodeID),
+			log.Uint32("requestID", requestID),
 		)
 		return nil
 	}
@@ -279,9 +279,9 @@ func (c *networkClient) sendRequestLocked(
 	c.requestID++
 
 	c.log.Debug("sending request to peer",
-		zap.Stringer("nodeID", nodeID),
-		zap.Uint32("requestID", requestID),
-		zap.Int("requestLen", len(request)),
+		log.Stringer("nodeID", nodeID),
+		log.Uint32("requestID", requestID),
+		log.Int("requestLen", len(request)),
 	)
 	c.peers.RegisterRequest(nodeID)
 
@@ -297,10 +297,10 @@ func (c *networkClient) sendRequestLocked(
 	if err := c.appSender.SendAppRequest(ctxWithoutCancel, nodeIDs, requestID, request); err != nil {
 		c.lock.Unlock()
 		c.log.Error("failed to send app request",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Int("requestLen", len(request)),
-			zap.Error(err),
+			log.Stringer("nodeID", nodeID),
+			log.Uint32("requestID", requestID),
+			log.Int("requestLen", len(request)),
+			log.Error(err),
 		)
 		return nil, fmt.Errorf("%w: %w", errAppSendFailed, err)
 	}
@@ -346,8 +346,8 @@ func (c *networkClient) awaitResponse(
 	c.peers.RegisterResponse(nodeID, bandwidth)
 
 	c.log.Debug("received response from peer",
-		zap.Stringer("nodeID", nodeID),
-		zap.Int("responseLen", len(response)),
+		log.Stringer("nodeID", nodeID),
+		log.Int("responseLen", len(response)),
 	)
 	return response, nil
 }
@@ -357,13 +357,13 @@ func (c *networkClient) Connected(
 	nodeID ids.NodeID,
 	nodeVersion *version.Application,
 ) error {
-	c.log.Debug("adding new peer", zap.Stringer("nodeID", nodeID))
+	c.log.Debug("adding new peer", log.Stringer("nodeID", nodeID))
 	c.peers.Connected(nodeID, nodeVersion)
 	return nil
 }
 
 func (c *networkClient) Disconnected(_ context.Context, nodeID ids.NodeID) error {
-	c.log.Debug("disconnecting peer", zap.Stringer("nodeID", nodeID))
+	c.log.Debug("disconnecting peer", log.Stringer("nodeID", nodeID))
 	c.peers.Disconnected(nodeID)
 	return nil
 }

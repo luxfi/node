@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	luxmetric "github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/metric"
@@ -18,7 +18,7 @@ import (
 // See inbound_msg_throttler.go
 
 func newInboundMsgBufferThrottler(
-	registerer luxmetric.Registerer,
+	registerer luxmetrics.Registerer,
 	maxProcessingMsgsPerNode uint64,
 ) (*inboundMsgBufferThrottler, error) {
 	t := &inboundMsgBufferThrottler{
@@ -125,10 +125,10 @@ func (t *inboundMsgBufferThrottler) release(nodeID ids.NodeID) {
 
 type inboundMsgBufferThrottlerMetrics struct {
 	acquireLatency  metric.Averager
-	awaitingAcquire luxmetric.Gauge
+	awaitingAcquire luxmetrics.Gauge
 }
 
-func (m *inboundMsgBufferThrottlerMetrics) initialize(reg luxmetric.Registerer) error {
+func (m *inboundMsgBufferThrottlerMetrics) initialize(reg luxmetrics.Registerer) error {
 	errs := wrappers.Errs{}
 	m.acquireLatency = metric.NewAveragerWithErrs(
 		"buffer_throttler_inbound_acquire_latency",
@@ -136,7 +136,7 @@ func (m *inboundMsgBufferThrottlerMetrics) initialize(reg luxmetric.Registerer) 
 		reg,
 		&errs,
 	)
-	m.awaitingAcquire = luxmetric.NewGauge(luxmetric.GaugeOpts{
+	m.awaitingAcquire = luxmetrics.NewGauge(luxmetrics.GaugeOpts{
 		Name: "buffer_throttler_inbound_awaiting_acquire",
 		Help: "Number of inbound messages waiting to take space on the inbound message buffer",
 	})

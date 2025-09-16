@@ -241,7 +241,7 @@ func WaitForNodeHealthy(
 		} else if err != nil {
 			// Error is potentially recoverable - log and continue
 			log.Debug("failed to check node health",
-				zap.Error(err),
+				log.Error(err),
 			)
 			return false, nil
 		}
@@ -368,7 +368,7 @@ func GetClientConfig(log log.Logger, path string, context string) (*restclient.C
 			return kubeconfig, nil
 		}
 		log.Warn("failed to create inClusterConfig, falling back to default config",
-			zap.Error(err),
+			log.Error(err),
 		)
 	}
 	overrides := &clientcmd.ConfigOverrides{}
@@ -457,9 +457,9 @@ func applyManifest(
 			return fmt.Errorf("failed to apply %s %s/%s: %w", gvk.Kind, resourceNamespace, obj.GetName(), err)
 		}
 		log.Info("applied resource",
-			zap.String("kind", gvk.Kind),
-			zap.String("namespace", resourceNamespace),
-			zap.String("name", obj.GetName()),
+			log.String("kind", gvk.Kind),
+			log.String("namespace", resourceNamespace),
+			log.String("name", obj.GetName()),
 		)
 	}
 

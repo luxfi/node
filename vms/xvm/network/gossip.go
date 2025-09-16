@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
@@ -70,7 +70,7 @@ func (g *txParser) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
 
 func newGossipMempool(
 	mempool xmempool.Mempool,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	log log.Logger,
 	txVerifier TxVerifier,
 	parser txs.Parser,

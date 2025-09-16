@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus"
@@ -108,7 +108,7 @@ type VM struct {
 	// Used to check local time
 	clock mockable.Clock
 
-	registerer metric.Registerer
+	registerer metrics.Registerer
 
 	connectedPeers map[ids.NodeID]*version.Application
 

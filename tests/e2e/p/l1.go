@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/log"
 	"google.golang.org/protobuf/proto"
@@ -195,9 +195,9 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			networkID,
 			router.InboundHandlerFunc(func(_ context.Context, m p2pmessage.InboundMessage) {
 				tc.Log().Info("received a message",
-					zap.Stringer("op", m.Op()),
-					zap.Stringer("message", m.Message()),
-					zap.Stringer("from", m.NodeID()),
+					log.Stringer("op", m.Op()),
+					log.Stringer("message", m.Message()),
+					log.Stringer("from", m.NodeID()),
 				)
 				genesisPeerMessages.PushRight(m)
 			}),

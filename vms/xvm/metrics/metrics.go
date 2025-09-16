@@ -4,7 +4,7 @@
 package metrics
 
 import (
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	utils_metric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
@@ -36,7 +36,7 @@ type Metrics interface {
 type metrics struct {
 	txMetrics *txMetrics
 
-	numTxRefreshes, numTxRefreshHits, numTxRefreshMisses metric.Counter
+	numTxRefreshes, numTxRefreshHits, numTxRefreshMisses metrics.Counter
 
 	utils_metric.APIInterceptor
 }
@@ -66,21 +66,21 @@ func (m *metrics) MarkTxAccepted(tx *txs.Tx) error {
 	return tx.Unsigned.Visit(m.txMetrics)
 }
 
-func New(registerer metric.Registerer) (Metrics, error) {
+func New(registerer metrics.Registerer) (Metrics, error) {
 	txMetrics, err := newTxMetrics(registerer)
 	errs := wrappers.Errs{Err: err}
 
 	m := &metrics{txMetrics: txMetrics}
 
-	m.numTxRefreshes = metric.NewCounter(metric.CounterOpts{
+	m.numTxRefreshes = metrics.NewCounter(metrics.CounterOpts{
 		Name: "tx_refreshes",
 		Help: "Number of times unique txs have been refreshed",
 	})
-	m.numTxRefreshHits = metric.NewCounter(metric.CounterOpts{
+	m.numTxRefreshHits = metrics.NewCounter(metrics.CounterOpts{
 		Name: "tx_refresh_hits",
 		Help: "Number of times unique txs have not been unique, but were cached",
 	})
-	m.numTxRefreshMisses = metric.NewCounter(metric.CounterOpts{
+	m.numTxRefreshMisses = metrics.NewCounter(metrics.CounterOpts{
 		Name: "tx_refresh_misses",
 		Help: "Number of times unique txs have not been unique and weren't cached",
 	})

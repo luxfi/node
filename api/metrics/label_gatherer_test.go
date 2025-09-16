@@ -6,7 +6,7 @@ package metrics
 import (
 	"testing"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
@@ -98,22 +98,22 @@ func TestLabelGatherer_Gather(t *testing.T) {
 			registerA := metric.NewNoOpRegistry()
 			require.NoError(gatherer.Register(labelValueA, registerA))
 			{
-				counterA := metric.NewCounterVec(
+				counterA := metrics.NewCounterVec(
 					counterOpts,
 					[]string{test.labelName},
 				)
-				counterA.With(metric.Labels{test.labelName: customLabelValueA})
+				counterA.With(metrics.Labels{test.labelName: customLabelValueA})
 				require.NoError(registerA.Register(counterA))
 			}
 
 			registerB := metric.NewNoOpRegistry()
 			require.NoError(gatherer.Register(labelValueB, registerB))
 			{
-				counterB := metric.NewCounterVec(
+				counterB := metrics.NewCounterVec(
 					counterOpts,
 					[]string{customLabelName},
 				)
-				counterB.With(metric.Labels{customLabelName: customLabelValueB}).Inc()
+				counterB.With(metrics.Labels{customLabelName: customLabelValueB}).Inc()
 				require.NoError(registerB.Register(counterB))
 			}
 

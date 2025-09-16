@@ -89,8 +89,8 @@ func deployKubeCollectors(
 	}
 	for _, collectorConfig := range collectorConfigs {
 		log.Info("deploying kube collector",
-			zap.String("cmd", collectorConfig.name),
-			zap.String("target", collectorConfig.target),
+			log.String("cmd", collectorConfig.name),
+			log.String("target", collectorConfig.target),
 		)
 		if err := deployKubeCollector(ctx, log, clientset, dynamicClient, collectorConfig); err != nil {
 			return err
@@ -146,8 +146,8 @@ func createCredentialSecret(
 	if err != nil {
 		if apierrors.IsAlreadyExists(err) {
 			log.Info("secret already exists",
-				zap.String("namespace", monitoringNamespace),
-				zap.String("name", secretName),
+				log.String("namespace", monitoringNamespace),
+				log.String("name", secretName),
 			)
 			return nil
 		}
@@ -155,8 +155,8 @@ func createCredentialSecret(
 	}
 
 	log.Info("created secret",
-		zap.String("namespace", monitoringNamespace),
-		zap.String("name", secretName),
+		log.String("namespace", monitoringNamespace),
+		log.String("name", secretName),
 	)
 
 	return nil

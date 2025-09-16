@@ -7,19 +7,19 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 )
 
 type metrics struct {
-	txsIssuedCounter      metric.Counter
+	txsIssuedCounter      metrics.Counter
 	txIssuanceLatency     metric.Histogram
 	txConfirmationLatency metric.Histogram
 	txTotalLatency        metric.Histogram
 }
 
-func newMetrics(namespace string, registry *metric.Registry) (metrics, error) {
+func newMetrics(namespace string, registry *metrics.Registry) (metrics, error) {
 	m := metrics{
-		txsIssuedCounter: metric.NewCounter(metric.CounterOpts{
+		txsIssuedCounter: metrics.NewCounter(metrics.CounterOpts{
 			Namespace: namespace,
 			Name:      "txs_issued",
 			Help:      "Number of transactions issued",

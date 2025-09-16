@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/rs/cors"
 	"github.com/luxfi/log"
 	"golang.org/x/net/http2"
@@ -114,7 +114,7 @@ func New(
 	nodeID ids.NodeID,
 	tracingEnabled bool,
 	tracer trace.Tracer,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	httpConfig HTTPConfig,
 	allowedHosts []string,
 ) (Server, error) {
@@ -194,7 +194,7 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 	if err != nil {
 		s.log.Error("failed to create handlers",
 			log.UserString("chainName", chainName),
-			log.Err(err),
+			log.Error(err),
 		)
 		return
 	}
@@ -212,13 +212,13 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 		if extension != "" && err != nil {
 			s.log.Error("could not add route to chain's API handler",
 				log.UserString("reason", "route is malformed"),
-				log.Err(err),
+				log.Error(err),
 			)
 			continue
 		}
 		if err := s.addChainRoute(chainName, handler, ctx, defaultEndpoint, extension); err != nil {
 			s.log.Error("error adding route",
-				log.Err(err),
+				log.Error(err),
 			)
 		}
 	}

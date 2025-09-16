@@ -8,7 +8,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/validators"
@@ -39,7 +39,7 @@ var _ validators.SetCallbackListener = (*ipTracker)(nil)
 
 func newIPTracker(
 	log log.Logger,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 ) (*ipTracker, error) {
 	bloomMetrics, err := bloom.NewMetrics("ip_bloom", registerer)
 	if err != nil {
@@ -47,11 +47,11 @@ func newIPTracker(
 	}
 	tracker := &ipTracker{
 		log: log,
-		numTrackedIPs: metric.NewGauge(metric.GaugeOpts{
+		numTrackedIPs: metrics.NewGauge(metrics.GaugeOpts{
 			Name: "tracked_ips",
 			Help: "Number of IPs this node is willing to dial",
 		}),
-		numGossipableIPs: metric.NewGauge(metric.GaugeOpts{
+		numGossipableIPs: metrics.NewGauge(metrics.GaugeOpts{
 			Name: "gossipable_ips",
 			Help: "Number of IPs this node is willing to gossip",
 		}),
@@ -73,8 +73,8 @@ func newIPTracker(
 
 type ipTracker struct {
 	log              log.Logger
-	numTrackedIPs    metric.Gauge
-	numGossipableIPs metric.Gauge
+	numTrackedIPs    metrics.Gauge
+	numGossipableIPs metrics.Gauge
 	bloomMetrics     *bloom.Metrics
 
 	lock sync.RWMutex

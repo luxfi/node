@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	luxmetric "github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 )
 
 func TestPeerTracker(t *testing.T) {

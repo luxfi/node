@@ -19,7 +19,7 @@ import (
 	"time"
 
 	// "github.com/luxfi/coreth/plugin/factory" // coreth not available
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/log"
 
@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/database/leveldb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/genesis"
 	// "github.com/luxfi/node/consensus/engine/enginetest"
@@ -134,12 +134,12 @@ func benchmarkReexecuteRange(b *testing.B, sourceBlockDir string, targetDir stri
 	)
 
 	log.Info("re-executing block range with params",
-		zap.String("source-block-dir", sourceBlockDir),
-		zap.String("target-db-dir", targetDBDir),
-		zap.String("chain-data-dir", chainDataDir),
-		zap.Uint64("start-block", startBlock),
-		zap.Uint64("end-block", endBlock),
-		zap.Int("chan-size", chanSize),
+		log.String("source-block-dir", sourceBlockDir),
+		log.String("target-db-dir", targetDBDir),
+		log.String("chain-data-dir", chainDataDir),
+		log.Uint64("start-block", startBlock),
+		log.Uint64("end-block", endBlock),
+		log.Int("chan-size", chanSize),
 	)
 
 	blockChan, err := createBlockChanFromLevelDB(b, sourceBlockDir, startBlock, endBlock, chanSize)
@@ -272,7 +272,7 @@ type blockResult struct {
 type vmExecutorConfig struct {
 	Log log.Logger
 	// Registry is the registry to register the metrics with.
-	Registry metric.Registerer
+	Registry metrics.Registerer
 	// ExecutionTimeout is the maximum timeout to continue executing blocks.
 	// If 0, no timeout is applied. If non-zero, the executor will exit early
 	// WITHOUT error after hitting the timeout.
@@ -331,8 +331,8 @@ func (e *vmExecutor) executeSequence(ctx context.Context, blkChan <-chan blockRe
 
 	start := time.Now()
 	e.config.Log.Info("last accepted block",
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", blk.Height()),
+		log.Stringer("blkID", blkID),
+		log.Uint64("height", blk.Height()),
 	)
 
 	if e.config.ExecutionTimeout > 0 {
@@ -353,8 +353,8 @@ func (e *vmExecutor) executeSequence(ctx context.Context, blkChan <-chan blockRe
 				e.config.EndBlock-e.config.StartBlock,
 			)
 			e.config.Log.Info("executing block",
-				zap.Uint64("height", blkResult.Height),
-				zap.Duration("eta", eta),
+				log.Uint64("height", blkResult.Height),
+				log.Duration("eta", eta),
 			)
 		}
 		if err := e.execute(ctx, blkResult.BlockBytes); err != nil {
@@ -363,9 +363,9 @@ func (e *vmExecutor) executeSequence(ctx context.Context, blkChan <-chan blockRe
 
 		if err := ctx.Err(); err != nil {
 			e.config.Log.Info("exiting early due to context timeout",
-				zap.Duration("elapsed", time.Since(start)),
-				zap.Duration("execution-timeout", e.config.ExecutionTimeout),
-				zap.Error(ctx.Err()),
+				log.Duration("elapsed", time.Since(start)),
+				log.Duration("execution-timeout", e.config.ExecutionTimeout),
+				log.Error(ctx.Err()),
 			)
 			return nil
 		}
@@ -466,7 +466,7 @@ func exportBlockRange(tb testing.TB, sourceDir string, targetDir string, startBl
 }
 
 type consensusMetrics struct {
-	lastAcceptedHeight metric.Gauge
+	lastAcceptedHeight metrics.Gauge
 }
 
 // newConsensusMetrics creates a subset of the metrics from chain consensus
@@ -475,9 +475,9 @@ type consensusMetrics struct {
 // The registry passed in is expected to be registered with the prefix
 // "lux_chain" and the chain label (ex. chain="C") that would be handled
 // by the[chain manager](../../../chains/manager.go).
-func newConsensusMetrics(registry metric.Registerer) (*consensusMetrics, error) {
+func newConsensusMetrics(registry metrics.Registerer) (*consensusMetrics, error) {
 	m := &consensusMetrics{
-		lastAcceptedHeight: metric.NewGauge(metric.GaugeOpts{
+		lastAcceptedHeight: metrics.NewGauge(metrics.GaugeOpts{
 			Name: "last_accepted_height",
 			Help: "last height accepted",
 		}),

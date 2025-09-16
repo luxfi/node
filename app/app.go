@@ -62,7 +62,7 @@ func New(config node.Config) (App, error) {
 	fdLimit := config.FdLimit
 	if err := ulimit.Set(fdLimit, logger); err != nil {
 		logger.Error("failed to set fd-limit",
-			zap.Error(err),
+			log.Error(err),
 		)
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func (a *app) Start() error {
 
 		err := a.node.Dispatch()
 		a.log.Debug("dispatch returned",
-			zap.Error(err),
+			log.Error(err),
 		)
 	}()
 	return nil

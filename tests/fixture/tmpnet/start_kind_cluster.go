@@ -79,13 +79,13 @@ func StartKindCluster(
 	}
 	if clusterRunning {
 		log.Info("local kind cluster already running",
-			zap.String("kubeconfig", configPath),
-			zap.String("kubeconfigContext", configContext),
+			log.String("kubeconfig", configPath),
+			log.String("kubeconfigContext", configContext),
 		)
 	} else {
 		log.Info("attempting to start local kind cluster",
-			zap.String("kubeconfig", configPath),
-			zap.String("kubeconfigContext", configContext),
+			log.String("kubeconfig", configPath),
+			log.String("kubeconfigContext", configContext),
 		)
 
 		startCtx, cancel := context.WithTimeout(ctx, DefaultNetworkTimeout)
@@ -143,7 +143,7 @@ func isKindClusterRunning(log log.Logger, configPath string, configContext strin
 	_, err := os.Stat(configPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		log.Info("specified kubeconfig path does not exist",
-			zap.String("kubeconfig", configPath),
+			log.String("kubeconfig", configPath),
 		)
 		return false, nil
 	}
@@ -155,8 +155,8 @@ func isKindClusterRunning(log log.Logger, configPath string, configContext strin
 	if err != nil {
 		if strings.Contains(err.Error(), missingContextMsg) {
 			log.Info("specified kubeconfig context does not exist",
-				zap.String("kubeconfig", configPath),
-				zap.String("kubeconfigContext", configContext),
+				log.String("kubeconfig", configPath),
+				log.String("kubeconfigContext", configContext),
 			)
 			return false, nil
 		} else {
@@ -171,9 +171,9 @@ func isKindClusterRunning(log log.Logger, configPath string, configContext strin
 	_, err = clientset.Discovery().ServerVersion()
 	if err != nil {
 		log.Info("failed to contact kubernetes cluster",
-			zap.String("kubeconfig", configPath),
-			zap.String("kubeconfigContext", configContext),
-			zap.Error(err),
+			log.String("kubeconfig", configPath),
+			log.String("kubeconfigContext", configContext),
+			log.Error(err),
 		)
 		return false, nil
 	}
@@ -186,7 +186,7 @@ func ensureNamespace(ctx context.Context, log log.Logger, clientset *kubernetes.
 	_, err := clientset.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err == nil {
 		log.Info("namespace already exists",
-			zap.String("namespace", namespace),
+			log.String("namespace", namespace),
 		)
 		return nil
 	}
@@ -195,7 +195,7 @@ func ensureNamespace(ctx context.Context, log log.Logger, clientset *kubernetes.
 	}
 
 	log.Info("namespace not found, creating",
-		zap.String("namespace", namespace),
+		log.String("namespace", namespace),
 	)
 	_, err = clientset.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -206,7 +206,7 @@ func ensureNamespace(ctx context.Context, log log.Logger, clientset *kubernetes.
 		return fmt.Errorf("failed to create namespace %s: %w", namespace, err)
 	}
 	log.Info("created namespace",
-		zap.String("namespace", namespace),
+		log.String("namespace", namespace),
 	)
 
 	return nil
@@ -221,7 +221,7 @@ func deployRBAC(
 	namespace string,
 ) error {
 	log.Info("deploying tmpnet RBAC resources",
-		zap.String("namespace", namespace),
+		log.String("namespace", namespace),
 	)
 
 	clientConfig, err := GetClientConfig(log, configPath, configContext)
@@ -239,7 +239,7 @@ func deployRBAC(
 	}
 
 	log.Info("successfully deployed tmpnet RBAC resources",
-		zap.String("namespace", namespace),
+		log.String("namespace", namespace),
 	)
 
 	return nil
@@ -264,15 +264,15 @@ func createServiceAccountKubeconfig(
 
 	if _, exists := config.Contexts[newContextName]; exists {
 		log.Info("service account kubeconfig context exists, recreating to ensure consistency with cluster state",
-			zap.String("kubeconfig", configPath),
-			zap.String("context", newContextName),
-			zap.String("namespace", namespace),
+			log.String("kubeconfig", configPath),
+			log.String("context", newContextName),
+			log.String("namespace", namespace),
 		)
 	} else {
 		log.Info("creating new service account kubeconfig context",
-			zap.String("kubeconfig", configPath),
-			zap.String("context", newContextName),
-			zap.String("namespace", namespace),
+			log.String("kubeconfig", configPath),
+			log.String("context", newContextName),
+			log.String("namespace", namespace),
 		)
 	}
 
@@ -319,9 +319,9 @@ func createServiceAccountKubeconfig(
 	}
 
 	log.Info("created service account kubeconfig context",
-		zap.String("kubeconfig", configPath),
-		zap.String("context", newContextName),
-		zap.String("namespace", namespace),
+		log.String("kubeconfig", configPath),
+		log.String("context", newContextName),
+		log.String("namespace", namespace),
 	)
 
 	return nil
@@ -411,8 +411,8 @@ func createDefaultsConfigMap(ctx context.Context, log log.Logger, configPath str
 	_, err = clientset.CoreV1().ConfigMaps(namespace).Get(ctx, configMapName, metav1.GetOptions{})
 	if err == nil {
 		log.Info("defaults ConfigMap already exists",
-			zap.String("namespace", namespace),
-			zap.String("configMap", configMapName),
+			log.String("namespace", namespace),
+			log.String("configMap", configMapName),
 		)
 		return nil
 	}
@@ -421,8 +421,8 @@ func createDefaultsConfigMap(ctx context.Context, log log.Logger, configPath str
 	}
 
 	log.Info("creating defaults ConfigMap",
-		zap.String("namespace", namespace),
-		zap.String("configMap", configMapName),
+		log.String("namespace", namespace),
+		log.String("configMap", configMapName),
 	)
 
 	configMap := &corev1.ConfigMap{
@@ -497,7 +497,7 @@ func deployChaosMesh(ctx context.Context, log log.Logger, configPath string, con
 
 	// Log access information
 	log.Info("Chaos Mesh installed successfully",
-		zap.String("dashboardURL", fmt.Sprintf("http://%s:%d", chaosMeshDashboardHost, ingressNodePort)),
+		log.String("dashboardURL", fmt.Sprintf("http://%s:%d", chaosMeshDashboardHost, ingressNodePort)),
 	)
 	log.Warn("Chaos Mesh dashboard security is disabled - use only for local development")
 
@@ -539,16 +539,16 @@ func waitForDeployment(ctx context.Context, log log.Logger, configPath string, c
 		deployment, err := clientset.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metav1.GetOptions{})
 		if err != nil {
 			log.Debug("failed to get "+displayName+" deployment",
-				zap.String("namespace", namespace),
-				zap.String("deployment", deploymentName),
-				zap.Error(err),
+				log.String("namespace", namespace),
+				log.String("deployment", deploymentName),
+				log.Error(err),
 			)
 			return false, nil
 		}
 		if deployment.Status.ReadyReplicas == 0 {
 			log.Debug("waiting for "+displayName+" to become ready",
-				zap.String("namespace", namespace),
-				zap.String("deployment", deploymentName),
+				log.String("namespace", namespace),
+				log.String("deployment", deploymentName),
 				zap.Int32("readyReplicas", deployment.Status.ReadyReplicas),
 				zap.Int32("replicas", deployment.Status.Replicas),
 			)
@@ -556,8 +556,8 @@ func waitForDeployment(ctx context.Context, log log.Logger, configPath string, c
 		}
 
 		log.Info(displayName+" is ready",
-			zap.String("namespace", namespace),
-			zap.String("deployment", deploymentName),
+			log.String("namespace", namespace),
+			log.String("deployment", deploymentName),
 			zap.Int32("readyReplicas", deployment.Status.ReadyReplicas),
 		)
 		return true, nil

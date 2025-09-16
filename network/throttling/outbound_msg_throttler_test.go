@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	metric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
 )

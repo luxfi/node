@@ -78,7 +78,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	wsConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		s.log.Debug("failed to upgrade",
-			log.Err(err),
+			log.Error(err),
 		)
 		return
 	}

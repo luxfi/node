@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 )
 
 func TestState(t *testing.T) {

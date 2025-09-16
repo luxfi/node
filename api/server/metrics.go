@@ -8,33 +8,33 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 )
 
 type metrics struct {
-	numProcessing metric.GaugeVec
-	numCalls      metric.CounterVec
-	totalDuration metric.GaugeVec
+	numProcessing metrics.GaugeVec
+	numCalls      metrics.CounterVec
+	totalDuration metrics.GaugeVec
 }
 
-func newMetrics(registerer metric.Registerer) (*metrics, error) {
+func newMetrics(registerer metrics.Registerer) (*metrics, error) {
 	m := &metrics{
-		numProcessing: metric.NewGaugeVec(
-			metric.GaugeOpts{
+		numProcessing: metrics.NewGaugeVec(
+			metrics.GaugeOpts{
 				Name: "calls_processing",
 				Help: "The number of calls this API is currently processing",
 			},
 			[]string{"base"},
 		),
-		numCalls: metric.NewCounterVec(
-			metric.CounterOpts{
+		numCalls: metrics.NewCounterVec(
+			metrics.CounterOpts{
 				Name: "calls",
 				Help: "The number of calls this API has processed",
 			},
 			[]string{"base"},
 		),
-		totalDuration: metric.NewGaugeVec(
-			metric.GaugeOpts{
+		totalDuration: metrics.NewGaugeVec(
+			metrics.GaugeOpts{
 				Name: "calls_duration",
 				Help: "The total amount of time, in nanoseconds, spent handling API calls",
 			},

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	dto "github.com/prometheus/client_model/go"
 )

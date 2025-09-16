@@ -76,7 +76,7 @@ func (tc *SimpleTestContext) RecoverAndExit() {
 		errorString, ok := r.(string)
 		if !ok || errorString != failNowMessage {
 			tc.log.Error("unexpected panic",
-				zap.Any("panic", r),
+				log.Any("panic", r),
 			)
 			if tc.panicHandler != nil {
 				tc.panicHandler(r)
@@ -127,7 +127,7 @@ func (tc *SimpleTestContext) recover(rethrow bool) {
 		errorString, ok := panicData.(string)
 		if !ok || errorString != failNowMessage {
 			tc.log.Error("unexpected panic",
-				zap.Any("panic", panicData),
+				log.Any("panic", panicData),
 			)
 			if tc.panicHandler != nil {
 				tc.panicHandler(panicData)
@@ -160,7 +160,7 @@ func (tc *SimpleTestContext) cleanup() bool {
 				if r := recover(); r != nil {
 					panicDuringCleanup = true
 					tc.log.Error("recovered from panic during cleanup",
-						zap.Any("panic", r),
+						log.Any("panic", r),
 					)
 				}
 			}()

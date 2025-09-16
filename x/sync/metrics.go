@@ -7,7 +7,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 )
 
 var (
@@ -50,24 +50,24 @@ func (m *mockMetrics) RequestSucceeded() {
 }
 
 type metrics struct {
-	requestsFailed    metric.Counter
-	requestsMade      metric.Counter
-	requestsSucceeded metric.Counter
+	requestsFailed    metrics.Counter
+	requestsMade      metrics.Counter
+	requestsSucceeded metrics.Counter
 }
 
-func NewMetrics(namespace string, reg metric.Registerer) (SyncMetrics, error) {
+func NewMetrics(namespace string, reg metrics.Registerer) (SyncMetrics, error) {
 	m := metrics{
-		requestsFailed: metric.NewCounter(metric.CounterOpts{
+		requestsFailed: metrics.NewCounter(metrics.CounterOpts{
 			Namespace: namespace,
 			Name:      "requests_failed",
 			Help:      "cumulative amount of failed proof requests",
 		}),
-		requestsMade: metric.NewCounter(metric.CounterOpts{
+		requestsMade: metrics.NewCounter(metrics.CounterOpts{
 			Namespace: namespace,
 			Name:      "requests_made",
 			Help:      "cumulative amount of proof requests made",
 		}),
-		requestsSucceeded: metric.NewCounter(metric.CounterOpts{
+		requestsSucceeded: metrics.NewCounter(metrics.CounterOpts{
 			Namespace: namespace,
 			Name:      "requests_succeeded",
 			Help:      "cumulative amount of proof requests that were successful",

@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/db/rpcdb"

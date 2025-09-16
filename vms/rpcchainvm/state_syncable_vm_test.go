@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"

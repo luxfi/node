@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	metric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms"

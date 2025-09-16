@@ -9,7 +9,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/database"
@@ -68,7 +68,7 @@ func NewIndexer(
 	db database.Database,
 	log log.Logger,
 	metricsNamespace string,
-	metricsRegisterer metric.Registerer,
+	metricsRegisterer metrics.Registerer,
 	allowIncompleteIndices bool,
 ) (AddressTxsIndexer, error) {
 	i := &indexer{

@@ -6,7 +6,7 @@ package metrics
 import (
 	"testing"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
@@ -22,14 +22,14 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 	registerA := metric.NewNoOpRegistry()
 	require.NoError(gatherer.Register("a", registerA))
 	{
-		counterA := metric.NewCounter(counterOpts)
+		counterA := metrics.NewCounter(counterOpts)
 		require.NoError(registerA.Register(counterA))
 	}
 
 	registerB := metric.NewNoOpRegistry()
 	require.NoError(gatherer.Register("b", registerB))
 	{
-		counterB := metric.NewCounter(counterOpts)
+		counterB := metrics.NewCounter(counterOpts)
 		counterB.Inc()
 		require.NoError(registerB.Register(counterB))
 	}
