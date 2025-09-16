@@ -4,66 +4,49 @@
 package server
 
 import (
-	"errors"
-	"net/http"
-	"time"
-
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
+	metrics "github.com/luxfi/metric"
 )
 
-type metrics struct {
-	numProcessing metric.GaugeVec
-	numCalls      metric.CounterVec
-	totalDuration metric.GaugeVec
+type serverMetrics struct {
+	requests  *prometheus.CounterVec
+	duration  *prometheus.HistogramVec
+	inflight  prometheus.Gauge
 }
 
-func newMetrics(registerer metric.Registerer) (*metrics, error) {
-	m := &metrics{
-		numProcessing: metric.NewGaugeVec(
-			metric.GaugeOpts{
-				Name: "calls_processing",
-				Help: "The number of calls this API is currently processing",
+func newMetrics(registerer metrics.Registerer) (*serverMetrics, error) {
+	m := &serverMetrics{
+		requests: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "api_requests_total",
+				Help: "Total number of API requests",
 			},
-			[]string{"base"},
+			[]string{"method", "endpoint"},
 		),
-		numCalls: metric.NewCounterVec(
-			metric.CounterOpts{
-				Name: "calls",
-				Help: "The number of calls this API has processed",
+		duration: prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "api_request_duration_seconds",
+				Help: "API request duration in seconds",
 			},
-			[]string{"base"},
+			[]string{"method", "endpoint"},
 		),
-		totalDuration: metric.NewGaugeVec(
-			metric.GaugeOpts{
-				Name: "calls_duration",
-				Help: "The total amount of time, in nanoseconds, spent handling API calls",
+		inflight: prometheus.NewGauge(
+			prometheus.GaugeOpts{
+				Name: "api_requests_inflight",
+				Help: "Number of inflight API requests",
 			},
-			[]string{"base"},
 		),
 	}
-
-	err := errors.Join(
-		registerer.Register(m.numProcessing),
-		registerer.Register(m.numCalls),
-		registerer.Register(m.totalDuration),
-	)
-	return m, err
-}
-
-func (m *metrics) wrapHandler(chainName string, handler http.Handler) http.Handler {
-	numProcessing := m.numProcessing.WithLabelValues(chainName)
-	numCalls := m.numCalls.WithLabelValues(chainName)
-	totalDuration := m.totalDuration.WithLabelValues(chainName)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		startTime := time.Now()
-		numProcessing.Inc()
-
-		defer func() {
-			numProcessing.Dec()
-			numCalls.Inc()
-			totalDuration.Add(float64(time.Since(startTime)))
-		}()
-
-		handler.ServeHTTP(w, r)
-	})
+	
+	if err := registerer.Register(m.requests); err != nil {
+		return nil, err
+	}
+	if err := registerer.Register(m.duration); err != nil {
+		return nil, err
+	}
+	if err := registerer.Register(m.inflight); err != nil {
+		return nil, err
+	}
+	
+	return m, nil
 }

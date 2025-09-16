@@ -3,17 +3,21 @@
 
 package index
 
-import "github.com/luxfi/metric"
+import "github.com/prometheus/client_golang/prometheus"
 
-type metrics struct {
-	numTxsIndexed metric.Counter
+type indexMetrics struct {
+	numObjects prometheus.Gauge
 }
 
-func (m *metrics) initialize(namespace string, registerer metric.Registerer) error {
-	m.numTxsIndexed = metric.NewCounter(metric.CounterOpts{
-		Namespace: namespace,
-		Name:      "txs_indexed",
-		Help:      "Number of transactions indexed",
-	})
-	return registerer.Register(m.numTxsIndexed)
+func newMetrics(registerer prometheus.Registerer) (*indexMetrics, error) {
+	m := &indexMetrics{
+		numObjects: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "index_num_objects",
+			Help: "Number of objects in the index",
+		}),
+	}
+	if err := registerer.Register(m.numObjects); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
