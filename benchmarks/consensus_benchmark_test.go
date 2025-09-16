@@ -130,7 +130,7 @@ func BenchmarkLoggerCreation(b *testing.B) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		_ = logging.NewLogger("")
+		_ = log.New()
 	}
 }
 
