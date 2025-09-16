@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	common "github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils"
@@ -20,7 +20,7 @@ import (
 )
 
 func newMempool(toEngine chan<- common.MessageType) (Mempool, error) {
-	return New("mempool", prometheus.NewRegistry(), toEngine)
+	return New("mempool", metric.NewRegistry(), toEngine)
 }
 
 func TestRequestBuildBlock(t *testing.T) {

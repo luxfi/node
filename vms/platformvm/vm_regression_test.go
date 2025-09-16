@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
@@ -547,12 +547,11 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 	chainCtx := &linearblock.ChainContext{
 		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
-			StartTime:      time.Now(),
-			ValidatorState: nil,
-			Keystore:       nil,
-			BCLookup:       nil,
-			Metrics:        nil,
-		},
+		StartTime:        time.Now(),
+		ValidatorState:   nil,
+		Keystore:         nil,
+		BCLookup:         nil,
+		Metrics:          nil,
 	}
 	
 	// Create a simple DB manager

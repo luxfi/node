@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/interfaces"
@@ -216,7 +216,7 @@ func (vm *VM) Initialize(
 	fmt.Printf("Got execution config successfully\n")
 
 	// Use a prometheus registry for metrics
-	registerer := prometheus.NewRegistry()
+	registerer := metric.NewRegistry()
 	if err != nil {
 		return err
 	}
@@ -676,7 +676,8 @@ func (vm *VM) onNormalOperationsStarted() error {
 
 	for netID := range vm.TrackedSubnets {
 		// Uptime tracking is handled by NoOpCalculator for now
-		_ = vm.Validators.GetValidatorIDs(netID)
+		// GetValidatorIDs is not available in consensus validators.Manager
+		// _ = vm.Validators.GetValidatorIDs(netID)
 		
 		// Validator logging is not needed for minimal implementation
 		// vl := validators.NewLogger(vm.log, netID, vm.nodeID)
@@ -729,8 +730,10 @@ func (vm *VM) Shutdown(context.Context) error {
 		// }
 
 		for netID := range vm.TrackedSubnets {
-			_ = vm.Validators.GetValidatorIDs(netID)
+			// GetValidatorIDs is not available in consensus validators.Manager
+			// _ = vm.Validators.GetValidatorIDs(netID)
 			// Uptime tracking is handled by NoOpCalculator for now
+			_ = netID
 		}
 
 		if vm.state != nil {

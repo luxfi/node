@@ -14,6 +14,7 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 )
 
 func TestIPSigner(t *testing.T) {
@@ -28,10 +29,11 @@ func TestIPSigner(t *testing.T) {
 	require.NoError(err)
 
 	tlsKey := tlsCert.PrivateKey.(crypto.Signer)
-	blsKey, err := bls.NewSecretKey()
+	blsSecretKey, err := bls.NewSecretKey()
 	require.NoError(err)
+	blsSigner := localsigner.NewFromSecretKey(blsSecretKey)
 
-	s := NewIPSigner(dynIP, tlsKey, blsKey)
+	s := NewIPSigner(dynIP, tlsKey, blsSigner)
 
 	s.clock.Set(time.Unix(10, 0))
 

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
+	nodeids "github.com/luxfi/node/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
@@ -98,10 +99,7 @@ func (b *statelessBlock) initialize(bytes []byte) error {
 		return fmt.Errorf("%w: %w", errInvalidCertificate, err)
 	}
 
-	b.proposer = ids.NodeIDFromCert(&ids.Certificate{
-		Raw:       b.cert.Raw,
-		PublicKey: b.cert.PublicKey,
-	})
+	b.proposer = ids.NodeID(nodeids.NodeIDFromCert(b.cert))
 	return nil
 }
 

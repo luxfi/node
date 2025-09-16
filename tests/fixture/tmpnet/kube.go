@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -74,8 +74,8 @@ func NewNodeStatefulSet(
 	}
 
 	podAnnotations := map[string]string{
-		"prometheus.io/scrape": "true",
-		"prometheus.io/path":   "/ext/metrics",
+		"metric.io/scrape": "true",
+		"metric.io/path":   "/ext/metrics",
 		"promtail/collect":     "true",
 	}
 

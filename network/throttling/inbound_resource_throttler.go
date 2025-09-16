@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/tracker"
@@ -57,24 +57,24 @@ type systemThrottler struct {
 }
 
 type systemThrottlerMetrics struct {
-	totalWaits      prometheus.Counter
-	totalNoWaits    prometheus.Counter
-	awaitingAcquire prometheus.Gauge
+	totalWaits      metric.Counter
+	totalNoWaits    metric.Counter
+	awaitingAcquire metric.Gauge
 }
 
-func newSystemThrottlerMetrics(namespace string, reg prometheus.Registerer) (*systemThrottlerMetrics, error) {
+func newSystemThrottlerMetrics(namespace string, reg metric.Registerer) (*systemThrottlerMetrics, error) {
 	m := &systemThrottlerMetrics{
-		totalWaits: prometheus.NewCounter(prometheus.CounterOpts{
+		totalWaits: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "throttler_total_waits",
 			Help:      "Number of times we've waited to read a message from a node because their usage was too high",
 		}),
-		totalNoWaits: prometheus.NewCounter(prometheus.CounterOpts{
+		totalNoWaits: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "throttler_total_no_waits",
 			Help:      "Number of times we didn't wait to read a message because their usage is too high",
 		}),
-		awaitingAcquire: prometheus.NewGauge(prometheus.GaugeOpts{
+		awaitingAcquire: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "throttler_awaiting_acquire",
 			Help:      "Number of nodes we're waiting to read a message from because their usage is too high",
@@ -90,7 +90,7 @@ func newSystemThrottlerMetrics(namespace string, reg prometheus.Registerer) (*sy
 
 func NewSystemThrottler(
 	namespace string,
-	reg prometheus.Registerer,
+	reg metric.Registerer,
 	config SystemThrottlerConfig,
 	tracker tracker.Tracker,
 	targeter tracker.Targeter,

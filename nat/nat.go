@@ -8,8 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
-
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
 )
@@ -78,14 +76,14 @@ func (m *Mapper) Map(
 	err := m.retryMapPort(intPort, extPort, desc, mapTimeout)
 	if err != nil {
 		m.log.Error("NAT traversal failed",
-			zap.Uint16("externalPort", extPort),
-			zap.Uint16("internalPort", intPort),
-			zap.Error(err),
+			log.Reflect("externalPort", extPort),
+			log.Reflect("internalPort", intPort),
+			log.Reflect("error", err),
 		)
 	} else {
 		m.log.Info("NAT traversal successful",
-			zap.Uint16("externalPort", extPort),
-			zap.Uint16("internalPort", intPort),
+			log.Reflect("externalPort", extPort),
+			log.Reflect("internalPort", intPort),
 		)
 	}
 

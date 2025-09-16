@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"

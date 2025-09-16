@@ -54,20 +54,36 @@ func New() Tree {
 }
 
 func (t *tree) Add(blk chain.Block) {
-	parentID := blk.Parent()
+	parentIDLux := blk.Parent()
+	// Convert luxids.ID to node/ids.ID
+	var parentIDBytes [32]byte
+	copy(parentIDBytes[:], parentIDLux[:])
+	parentID := ids.ID(parentIDBytes)
+	
 	children, exists := t.nodes[parentID]
 	if !exists {
 		children = make(map[ids.ID]chain.Block)
 		t.nodes[parentID] = children
 	}
-	blkID := blk.ID()
+	blkIDLux := blk.ID()
+	var blkIDBytes [32]byte
+	copy(blkIDBytes[:], blkIDLux[:])
+	blkID := ids.ID(blkIDBytes)
 	children[blkID] = blk
 }
 
 func (t *tree) Get(blk chain.Block) (chain.Block, bool) {
-	parentID := blk.Parent()
+	parentIDLux := blk.Parent()
+	// Convert luxids.ID to node/ids.ID
+	var parentIDBytes [32]byte
+	copy(parentIDBytes[:], parentIDLux[:])
+	parentID := ids.ID(parentIDBytes)
+	
 	children := t.nodes[parentID]
-	blkID := blk.ID()
+	blkIDLux := blk.ID()
+	var blkIDBytes [32]byte
+	copy(blkIDBytes[:], blkIDLux[:])
+	blkID := ids.ID(blkIDBytes)
 	originalBlk, exists := children[blkID]
 	return originalBlk, exists
 }
@@ -79,9 +95,17 @@ func (t *tree) Accept(ctx context.Context, blk chain.Block) error {
 	}
 
 	// get the siblings of the block
-	parentID := blk.Parent()
+	parentIDLux := blk.Parent()
+	// Convert luxids.ID to node/ids.ID
+	var parentIDBytes [32]byte
+	copy(parentIDBytes[:], parentIDLux[:])
+	parentID := ids.ID(parentIDBytes)
+	
 	children := t.nodes[parentID]
-	blkID := blk.ID()
+	blkIDLux := blk.ID()
+	var blkIDBytes [32]byte
+	copy(blkIDBytes[:], blkIDLux[:])
+	blkID := ids.ID(blkIDBytes)
 	delete(children, blkID)
 	delete(t.nodes, parentID)
 
@@ -100,10 +124,13 @@ func (t *tree) Accept(ctx context.Context, blk chain.Block) error {
 		}
 
 		// mark the progeny of this block as being rejectable
-		blkID := child.ID()
-		children := t.nodes[blkID]
+		childBlkIDLux := child.ID()
+		var childBlkIDBytes [32]byte
+		copy(childBlkIDBytes[:], childBlkIDLux[:])
+		childBlkID := ids.ID(childBlkIDBytes)
+		children := t.nodes[childBlkID]
 		childrenToReject = append(childrenToReject, maps.Values(children)...)
-		delete(t.nodes, blkID)
+		delete(t.nodes, childBlkID)
 	}
 	return nil
 }

@@ -6,7 +6,7 @@ package main
 import (
 	"os"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/antithesis"

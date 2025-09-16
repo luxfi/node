@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	metric "github.com/luxfi/metric"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
@@ -23,14 +23,14 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 	registerA := metric.NewNoOpRegistry()
 	require.NoError(gatherer.Register("a", registerA))
 	{
-		counterA := prometheus.NewCounter(counterOpts)
+		counterA := metric.NewCounter(counterOpts)
 		require.NoError(registerA.Register(counterA))
 	}
 
 	registerB := metric.NewNoOpRegistry()
 	require.NoError(gatherer.Register("b", registerB))
 	{
-		counterB := prometheus.NewCounter(counterOpts)
+		counterB := metric.NewCounter(counterOpts)
 		counterB.Inc()
 		require.NoError(registerB.Register(counterB))
 	}
@@ -91,7 +91,7 @@ func TestPrefixGatherer_Register(t *testing.T) {
 				names: []string{
 					firstPrefixedGatherer.prefix,
 				},
-				gatherers: prometheus.Gatherers{
+				gatherers: metric.Gatherers{
 					firstPrefixedGatherer,
 				},
 			},
@@ -109,7 +109,7 @@ func TestPrefixGatherer_Register(t *testing.T) {
 				firstPrefixedGatherer.prefix,
 				secondPrefixedGatherer.prefix,
 			},
-			gatherers: prometheus.Gatherers{
+			gatherers: metric.Gatherers{
 				firstPrefixedGatherer,
 				secondPrefixedGatherer,
 			},
@@ -120,7 +120,7 @@ func TestPrefixGatherer_Register(t *testing.T) {
 		name                   string
 		prefixGatherer         *prefixGatherer
 		prefix                 string
-		gatherer               prometheus.Gatherer
+		gatherer               metric.Gatherer
 		expectedErr            error
 		expectedPrefixGatherer *prefixGatherer
 	}{

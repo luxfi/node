@@ -4,7 +4,7 @@
 package validators
 
 import (
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"

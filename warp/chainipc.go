@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"golang.org/x/exp/maps"
 

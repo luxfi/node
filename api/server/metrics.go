@@ -8,33 +8,33 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 )
 
 type metrics struct {
-	numProcessing *prometheus.GaugeVec
-	numCalls      *prometheus.CounterVec
-	totalDuration *prometheus.GaugeVec
+	numProcessing *metric.GaugeVec
+	numCalls      *metric.CounterVec
+	totalDuration *metric.GaugeVec
 }
 
-func newMetrics(registerer prometheus.Registerer) (*metrics, error) {
+func newMetrics(registerer metric.Registerer) (*metrics, error) {
 	m := &metrics{
-		numProcessing: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
+		numProcessing: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Name: "calls_processing",
 				Help: "The number of calls this API is currently processing",
 			},
 			[]string{"base"},
 		),
-		numCalls: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
+		numCalls: metric.NewCounterVec(
+			metric.CounterOpts{
 				Name: "calls",
 				Help: "The number of calls this API has processed",
 			},
 			[]string{"base"},
 		),
-		totalDuration: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
+		totalDuration: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Name: "calls_duration",
 				Help: "The total amount of time, in nanoseconds, spent handling API calls",
 			},

@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/rpc/v2"
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"

@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/node/utils/metric"
@@ -31,7 +31,7 @@ type prefixGatherer struct {
 	multiGatherer
 }
 
-func (g *prefixGatherer) Register(prefix string, gatherer prometheus.Gatherer) error {
+func (g *prefixGatherer) Register(prefix string, gatherer metric.Gatherer) error {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
@@ -70,7 +70,7 @@ func (g *prefixGatherer) Deregister(prefix string) bool {
 
 type prefixedGatherer struct {
 	prefix   string
-	gatherer prometheus.Gatherer
+	gatherer metric.Gatherer
 }
 
 func (g *prefixedGatherer) Gather() ([]*dto.MetricFamily, error) {

@@ -1,6 +1,7 @@
 package signer
 
 import (
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -17,7 +18,7 @@ func TestBLSSingleNodeProofOfPossession(t *testing.T) {
 	require.NoError(err)
 
 	// Create proof of possession
-	pop := NewProofOfPossession(sk)
+	pop := NewProofOfPossession(localsigner.NewFromSecretKey(sk))
 	require.NotNil(pop)
 
 	// Verify proof of possession
@@ -73,7 +74,7 @@ func TestInvalidProofOfPossession(t *testing.T) {
 			name: "valid PoP",
 			setupPoP: func() *ProofOfPossession {
 				sk, _ := bls.NewSecretKey()
-				return NewProofOfPossession(sk)
+				return NewProofOfPossession(localsigner.NewFromSecretKey(sk))
 			},
 			expectErr: false,
 		},
@@ -81,7 +82,7 @@ func TestInvalidProofOfPossession(t *testing.T) {
 			name: "corrupted signature",
 			setupPoP: func() *ProofOfPossession {
 				sk, _ := bls.NewSecretKey()
-				pop := NewProofOfPossession(sk)
+				pop := NewProofOfPossession(localsigner.NewFromSecretKey(sk))
 				// Corrupt signature
 				pop.ProofOfPossession[0] ^= 0xFF
 				return pop
@@ -92,7 +93,7 @@ func TestInvalidProofOfPossession(t *testing.T) {
 			name: "corrupted public key",
 			setupPoP: func() *ProofOfPossession {
 				sk, _ := bls.NewSecretKey()
-				pop := NewProofOfPossession(sk)
+				pop := NewProofOfPossession(localsigner.NewFromSecretKey(sk))
 				// Corrupt public key
 				pop.PublicKey[0] ^= 0xFF
 				return pop
@@ -106,7 +107,7 @@ func TestInvalidProofOfPossession(t *testing.T) {
 				sk2, _ := bls.NewSecretKey()
 
 				// Use pk from sk1 but signature from sk2
-				pop := NewProofOfPossession(sk1)
+				pop := NewProofOfPossession(localsigner.NewFromSecretKey(sk1))
 				pk2 := sk2.PublicKey()
 				pk2Bytes := bls.PublicKeyToCompressedBytes(pk2)
 				sig2 := sk2.SignProofOfPossession(pk2Bytes)

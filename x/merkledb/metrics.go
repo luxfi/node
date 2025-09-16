@@ -7,7 +7,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 )
 
 const (
@@ -31,43 +31,43 @@ var (
 	_ metrics = (*mockMetrics)(nil)
 
 	ioLabels     = []string{ioType}
-	ioReadLabels = prometheus.Labels{
+	ioReadLabels = metric.Labels{
 		ioType: readType,
 	}
-	ioWriteLabels = prometheus.Labels{
+	ioWriteLabels = metric.Labels{
 		ioType: writeType,
 	}
 
 	lookupLabels            = []string{lookupType, lookupResult}
-	valueNodeCacheHitLabels = prometheus.Labels{
+	valueNodeCacheHitLabels = metric.Labels{
 		lookupType:   valueNodeCacheType,
 		lookupResult: hitResult,
 	}
-	valueNodeCacheMissLabels = prometheus.Labels{
+	valueNodeCacheMissLabels = metric.Labels{
 		lookupType:   valueNodeCacheType,
 		lookupResult: missResult,
 	}
-	intermediateNodeCacheHitLabels = prometheus.Labels{
+	intermediateNodeCacheHitLabels = metric.Labels{
 		lookupType:   intermediateNodeCacheType,
 		lookupResult: hitResult,
 	}
-	intermediateNodeCacheMissLabels = prometheus.Labels{
+	intermediateNodeCacheMissLabels = metric.Labels{
 		lookupType:   intermediateNodeCacheType,
 		lookupResult: missResult,
 	}
-	viewChangesValueHitLabels = prometheus.Labels{
+	viewChangesValueHitLabels = metric.Labels{
 		lookupType:   viewChangesValueType,
 		lookupResult: hitResult,
 	}
-	viewChangesValueMissLabels = prometheus.Labels{
+	viewChangesValueMissLabels = metric.Labels{
 		lookupType:   viewChangesValueType,
 		lookupResult: missResult,
 	}
-	viewChangesNodeHitLabels = prometheus.Labels{
+	viewChangesNodeHitLabels = metric.Labels{
 		lookupType:   viewChangesNodeType,
 		lookupResult: hitResult,
 	}
-	viewChangesNodeMissLabels = prometheus.Labels{
+	viewChangesNodeMissLabels = metric.Labels{
 		lookupType:   viewChangesNodeType,
 		lookupResult: missResult,
 	}
@@ -88,27 +88,27 @@ type metrics interface {
 }
 
 type prometheusMetrics struct {
-	hashes prometheus.Counter
-	io     *prometheus.CounterVec
-	lookup *prometheus.CounterVec
+	hashes metric.Counter
+	io     *metric.CounterVec
+	lookup *metric.CounterVec
 }
 
-func newMetrics(namespace string, reg prometheus.Registerer) (metrics, error) {
+func newMetrics(namespace string, reg metric.Registerer) (metrics, error) {
 	if reg == nil {
 		return &mockMetrics{}, nil
 	}
 	m := prometheusMetrics{
-		hashes: prometheus.NewCounter(prometheus.CounterOpts{
+		hashes: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "hashes",
 			Help:      "cumulative number of nodes hashed",
 		}),
-		io: prometheus.NewCounterVec(prometheus.CounterOpts{
+		io: metric.NewCounterVec(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "io",
 			Help:      "cumulative number of operations performed to the db",
 		}, ioLabels),
-		lookup: prometheus.NewCounterVec(prometheus.CounterOpts{
+		lookup: metric.NewCounterVec(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "lookup",
 			Help:      "cumulative number of in-memory lookups performed",

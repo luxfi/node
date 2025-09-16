@@ -4,7 +4,7 @@
 package lux
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/linkeddb"
@@ -106,7 +106,7 @@ func NewUTXOState(
 func NewMeteredUTXOState(
 	db database.Database,
 	codec codec.Manager,
-	metrics prometheus.Registerer,
+	metrics metric.Registerer,
 	trackChecksum bool,
 ) (UTXOState, error) {
 	utxoCache, err := metercacher.New[ids.ID, *UTXO](

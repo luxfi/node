@@ -8,8 +8,8 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
@@ -40,7 +40,7 @@ var _ validators.SetCallbackListener = (*ipTracker)(nil)
 
 func newIPTracker(
 	log log.Logger,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 ) (*ipTracker, error) {
 	bloomMetrics, err := bloom.NewMetrics("ip_bloom", registerer)
 	if err != nil {
@@ -48,11 +48,11 @@ func newIPTracker(
 	}
 	tracker := &ipTracker{
 		log: log,
-		numTrackedIPs: prometheus.NewGauge(prometheus.GaugeOpts{
+		numTrackedIPs: metric.NewGauge(metric.GaugeOpts{
 			Name: "tracked_ips",
 			Help: "Number of IPs this node is willing to dial",
 		}),
-		numGossipableIPs: prometheus.NewGauge(prometheus.GaugeOpts{
+		numGossipableIPs: metric.NewGauge(metric.GaugeOpts{
 			Name: "gossipable_ips",
 			Help: "Number of IPs this node is willing to gossip",
 		}),
@@ -74,8 +74,8 @@ func newIPTracker(
 
 type ipTracker struct {
 	log              log.Logger
-	numTrackedIPs    prometheus.Gauge
-	numGossipableIPs prometheus.Gauge
+	numTrackedIPs    metric.Gauge
+	numGossipableIPs metric.Gauge
 	bloomMetrics     *bloom.Metrics
 
 	lock sync.RWMutex

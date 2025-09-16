@@ -92,7 +92,7 @@ import (
 	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
 	
 	"github.com/luxfi/node/vms/platformvm/metrics"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 )
 
 const (
@@ -214,7 +214,7 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		Rewards:      rewardsCalc,
 	}
 
-	registerer := prometheus.NewRegistry()
+	registerer := metric.NewRegistry()
 	res.sender = &coremock.MockAppSender{
 		SendAppGossipF: func(_ context.Context, _ set.Set[ids.NodeID], _ []byte) error {
 			return nil
@@ -338,7 +338,7 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		cfg,
 		execCfg,
 		ctx,

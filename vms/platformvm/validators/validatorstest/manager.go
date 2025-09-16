@@ -34,7 +34,7 @@ func (manager) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID)
 
 func (manager) OnAcceptedBlockID(ids.ID) {}
 
-func (manager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+func (manager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetValidatorOutput, uint64, error) {
 	return nil, 0, nil
 }
 

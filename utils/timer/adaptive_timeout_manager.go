@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/heap"
@@ -74,9 +74,9 @@ type adaptiveTimeoutManager struct {
 	lock sync.Mutex
 	// Tells the time. Can be faked for testing.
 	clock                            mockable.Clock
-	networkTimeoutMetric, avgLatency prometheus.Gauge
-	numTimeouts                      prometheus.Counter
-	numPendingTimeouts               prometheus.Gauge
+	networkTimeoutMetric, avgLatency metric.Gauge
+	numTimeouts                      metric.Counter
+	numPendingTimeouts               metric.Gauge
 	// Averages the response time from all peers
 	averager math.Averager
 	// Timeout is [timeoutCoefficient] * average response time
@@ -91,7 +91,7 @@ type adaptiveTimeoutManager struct {
 
 func NewAdaptiveTimeoutManager(
 	config *AdaptiveTimeoutConfig,
-	reg prometheus.Registerer,
+	reg metric.Registerer,
 ) (AdaptiveTimeoutManager, error) {
 	switch {
 	case config.InitialTimeout > config.MaximumTimeout:
@@ -105,19 +105,19 @@ func NewAdaptiveTimeoutManager(
 	}
 
 	tm := &adaptiveTimeoutManager{
-		networkTimeoutMetric: prometheus.NewGauge(prometheus.GaugeOpts{
+		networkTimeoutMetric: metric.NewGauge(metric.GaugeOpts{
 			Name: "current_timeout",
 			Help: "Duration of current network timeout in nanoseconds",
 		}),
-		avgLatency: prometheus.NewGauge(prometheus.GaugeOpts{
+		avgLatency: metric.NewGauge(metric.GaugeOpts{
 			Name: "average_latency",
 			Help: "Average network latency in nanoseconds",
 		}),
-		numTimeouts: prometheus.NewCounter(prometheus.CounterOpts{
+		numTimeouts: metric.NewCounter(metric.CounterOpts{
 			Name: "timeouts",
 			Help: "Number of timed out requests",
 		}),
-		numPendingTimeouts: prometheus.NewGauge(prometheus.GaugeOpts{
+		numPendingTimeouts: metric.NewGauge(metric.GaugeOpts{
 			Name: "pending_timeouts",
 			Help: "Number of pending timeouts",
 		}),

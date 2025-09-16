@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 )
 
 type APIInterceptor interface {
@@ -23,28 +23,28 @@ type contextKey int
 const requestTimestampKey contextKey = iota
 
 type apiInterceptor struct {
-	requestDurationCount *prometheus.CounterVec
-	requestDurationSum   *prometheus.GaugeVec
-	requestErrors        *prometheus.CounterVec
+	requestDurationCount metric.CounterVec
+	requestDurationSum   metric.GaugeVec
+	requestErrors        metric.CounterVec
 }
 
-func NewAPIInterceptor(registerer prometheus.Registerer) (APIInterceptor, error) {
-	requestDurationCount := prometheus.NewCounterVec(
-		prometheus.CounterOpts{
+func NewAPIInterceptor(registerer metric.Registerer) (APIInterceptor, error) {
+	requestDurationCount := metric.NewCounterVec(
+		metric.CounterOpts{
 			Name: "request_duration_count",
 			Help: "Number of times this type of request was made",
 		},
 		[]string{"method"},
 	)
-	requestDurationSum := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
+	requestDurationSum := metric.NewGaugeVec(
+		metric.GaugeOpts{
 			Name: "request_duration_sum",
 			Help: "Amount of time in nanoseconds that has been spent handling this type of request",
 		},
 		[]string{"method"},
 	)
-	requestErrors := prometheus.NewCounterVec(
-		prometheus.CounterOpts{
+	requestErrors := metric.NewCounterVec(
+		metric.CounterOpts{
 			Name: "request_error_count",
 		},
 		[]string{"method"},
@@ -75,19 +75,19 @@ func (apr *apiInterceptor) AfterRequest(i *rpc.RequestInfo) {
 		return
 	}
 
-	durationMetricCount := apr.requestDurationCount.With(prometheus.Labels{
+	durationMetricCount := apr.requestDurationCount.With(metric.Labels{
 		"method": i.Method,
 	})
 	durationMetricCount.Inc()
 
 	duration := time.Since(timestamp)
-	durationMetricSum := apr.requestDurationSum.With(prometheus.Labels{
+	durationMetricSum := apr.requestDurationSum.With(metric.Labels{
 		"method": i.Method,
 	})
 	durationMetricSum.Add(float64(duration))
 
 	if i.Error != nil {
-		errMetric := apr.requestErrors.With(prometheus.Labels{
+		errMetric := apr.requestErrors.With(metric.Labels{
 			"method": i.Method,
 		})
 		errMetric.Inc()

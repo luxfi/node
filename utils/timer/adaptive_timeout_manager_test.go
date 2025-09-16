@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -83,7 +83,7 @@ func TestAdaptiveTimeoutManagerInit(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		_, err := NewAdaptiveTimeoutManager(&test.config, prometheus.NewRegistry())
+		_, err := NewAdaptiveTimeoutManager(&test.config, metric.NewRegistry())
 		require.ErrorIs(t, err, test.expectedErr)
 	}
 }
@@ -97,7 +97,7 @@ func TestAdaptiveTimeoutManager(t *testing.T) {
 			TimeoutHalflife:    5 * time.Minute,
 			TimeoutCoefficient: 1.25,
 		},
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 	)
 	require.NoError(t, err)
 	go tm.Dispatch()

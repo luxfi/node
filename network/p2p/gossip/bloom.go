@@ -6,7 +6,7 @@ package gossip
 import (
 	"crypto/rand"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/bloom"
@@ -19,7 +19,7 @@ import (
 // Invariant: The returned bloom filter is not safe to reset concurrently with
 // other operations. However, it is otherwise safe to access concurrently.
 func NewBloomFilter(
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	namespace string,
 	minTargetElements int,
 	targetFalsePositiveProbability,

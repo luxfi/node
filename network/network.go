@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"github.com/pires/go-proxyproto"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/core"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
@@ -196,7 +196,7 @@ type network struct {
 func NewNetwork(
 	config *Config,
 	msgCreator message.Creator,
-	metricsRegisterer prometheus.Registerer,
+	metricsRegisterer metric.Registerer,
 	log log.Logger,
 	listener net.Listener,
 	dialer dialer.Dialer,

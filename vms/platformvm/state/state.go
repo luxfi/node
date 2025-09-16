@@ -12,15 +12,14 @@ import (
 	"time"
 
 	"github.com/google/btree"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/uptime"
 	consensusvalidators "github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/crypto/bls"
-	nodebls "github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/linkeddb"
@@ -121,10 +120,8 @@ type Chain interface {
 	GetTx(txID ids.ID) (*txs.Tx, status.Status, error)
 	AddTx(tx *txs.Tx, status status.Status)
 
-	// L1 Validator support
-	GetL1Validator(validationID ids.ID) (L1Validator, error)
-	HasL1Validator(netID ids.ID, nodeID ids.NodeID) (bool, error)
-	WeightOfL1Validators(netID ids.ID) (uint64, error)
+	// L1 Validator support - most methods inherited from L1Validators interface
+	// Only PutL1Validator is Chain-specific
 	PutL1Validator(validator L1Validator) error
 }
 
@@ -456,7 +453,7 @@ func blockSize(_ ids.ID, blk block.Block) int {
 func New(
 	db database.Database,
 	genesisBytes []byte,
-	metricsReg prometheus.Registerer,
+	metricsReg metric.Registerer,
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
 	ctx context.Context,
@@ -492,7 +489,7 @@ func newState(
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
 	ctx context.Context,
-	metricsReg prometheus.Registerer,
+	metricsReg metric.Registerer,
 	rewards reward.Calculator,
 ) (*state, error) {
 	blockIDCache, err := metercacher.New[uint64, ids.ID](
@@ -1646,14 +1643,8 @@ func (s *state) initValidatorSets() error {
 
 		for nodeID, validator := range validators {
 			validatorStaker := validator.validator
-			// Convert crypto/bls.PublicKey to utils/crypto/bls.PublicKey
-			var nodePK *nodebls.PublicKey
-			if validatorStaker.PublicKey != nil {
-				// Convert by serializing and deserializing
-				pkBytes := bls.PublicKeyToUncompressedBytes(validatorStaker.PublicKey)
-				nodePK = nodebls.PublicKeyFromValidUncompressedBytes(pkBytes)
-			}
-			if err := s.validators.AddStaker(netID, nodeID, nodePK, validatorStaker.TxID, validatorStaker.Weight); err != nil {
+			// Use crypto/bls.PublicKey directly
+			if err := s.validators.AddStaker(netID, nodeID, validatorStaker.PublicKey, validatorStaker.TxID, validatorStaker.Weight); err != nil {
 				return err
 			}
 
@@ -2019,16 +2010,11 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64, codecV
 			} else {
 				if validatorDiff.validatorStatus == added {
 					staker := validatorDiff.validator
-					// Convert crypto/bls.PublicKey to utils/crypto/bls.PublicKey
-					var nodePK *nodebls.PublicKey
-					if staker.PublicKey != nil {
-						pkBytes := bls.PublicKeyToUncompressedBytes(staker.PublicKey)
-						nodePK = nodebls.PublicKeyFromValidUncompressedBytes(pkBytes)
-					}
+					// Use crypto/bls.PublicKey directly
 					err = s.validators.AddStaker(
 						netID,
 						nodeID,
-						nodePK,
+						staker.PublicKey,
 						staker.TxID,
 						weightDiff.Amount,
 					)

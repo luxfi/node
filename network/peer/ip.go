@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/hashing"
+	"github.com/luxfi/ids/utils/wrappers"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/wrappers"
 )
 
 var (
@@ -32,20 +32,26 @@ type UnsignedIP struct {
 }
 
 // Sign this IP with the provided signer and return the signed IP.
-func (ip *UnsignedIP) Sign(tlsSigner crypto.Signer, blsSigner *bls.SecretKey) (*SignedIP, error) {
+func (ip *UnsignedIP) Sign(tlsSigner crypto.Signer, blsSigner bls.Signer) (*SignedIP, error) {
 	ipBytes := ip.bytes()
 	tlsSignature, err := tlsSigner.Sign(
 		rand.Reader,
 		hashing.ComputeHash256(ipBytes),
 		crypto.SHA256,
 	)
-	blsSignature := blsSigner.SignProofOfPossession(ipBytes)
+	if err != nil {
+		return nil, err
+	}
+	blsSignature, err := blsSigner.SignProofOfPossession(ipBytes)
+	if err != nil {
+		return nil, err
+	}
 	return &SignedIP{
 		UnsignedIP:        *ip,
 		TLSSignature:      tlsSignature,
 		BLSSignature:      blsSignature,
 		BLSSignatureBytes: bls.SignatureToBytes(blsSignature),
-	}, err
+	}, nil
 }
 
 func (ip *UnsignedIP) bytes() []byte {

@@ -7,7 +7,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
@@ -19,11 +18,9 @@ type blockAdapter struct {
 }
 
 // Status returns the block status as choices.Status
-func (b *blockAdapter) Status() choices.Status {
-	// Get the uint8 status from the underlying block
-	statusUint := b.Block.Status()
-	// Convert uint8 to choices.Status
-	return choices.Status(statusUint)
+func (b *blockAdapter) Status() uint8 {
+	// Return the uint8 status from the underlying block
+	return b.Block.Status()
 }
 
 // All other methods are delegated to the underlying block

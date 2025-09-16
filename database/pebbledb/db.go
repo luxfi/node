@@ -11,8 +11,8 @@ import (
 	"sync"
 
 	"github.com/cockroachdb/pebble"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/utils/logging"
@@ -67,7 +67,7 @@ type Config struct {
 }
 
 // TODO: Add metrics
-func New(file string, configBytes []byte, log logging.Logger, _ prometheus.Registerer) (database.Database, error) {
+func New(file string, configBytes []byte, log logging.Logger, _ metric.Registerer) (database.Database, error) {
 	cfg := DefaultConfig
 	if len(configBytes) > 0 {
 		if err := json.Unmarshal(configBytes, &cfg); err != nil {

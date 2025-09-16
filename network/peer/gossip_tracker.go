@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -104,7 +104,7 @@ type gossipTracker struct {
 
 // NewGossipTracker returns an instance of gossipTracker
 func NewGossipTracker(
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	namespace string,
 ) (GossipTracker, error) {
 	m, err := newGossipTrackerMetrics(registerer, fmt.Sprintf("%s_gossip_tracker", namespace))

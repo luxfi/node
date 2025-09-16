@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	luxmetrics "github.com/luxfi/metric"
 
@@ -21,7 +21,6 @@ import (
 	"github.com/luxfi/consensus/uptime"
 	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
@@ -32,6 +31,8 @@ import (
 	subnets "github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 )
@@ -96,7 +97,8 @@ func NewTestNetwork(
 		return nil, err
 	}
 
-	blsKey, err := bls.NewSecretKey()
+	// Use localsigner for BLS key
+	blsKey, err := localsigner.New()
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +106,7 @@ func NewTestNetwork(
 	// TODO actually monitor usage
 	// TestNetwork doesn't use disk so we don't need to track it, but we should
 	// still have guardrails around cpu/memory usage.
-	promRegistry := prometheus.NewRegistry()
+	promRegistry := metric.NewRegistry()
 
 	resourceTracker := &noOpResourceTracker{}
 

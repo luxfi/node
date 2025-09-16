@@ -10,7 +10,7 @@ import (
 	"net/netip"
 
 	"github.com/gorilla/rpc/v2"
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/chains"
 	// "github.com/luxfi/consensus/networking/benchlist" // benchlist package doesn't exist

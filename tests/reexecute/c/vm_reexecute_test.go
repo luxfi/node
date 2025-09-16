@@ -19,9 +19,9 @@ import (
 	"time"
 
 	// "github.com/luxfi/coreth/plugin/factory" // coreth not available
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/protocol/chain"
@@ -119,7 +119,7 @@ func benchmarkReexecuteRange(b *testing.B, sourceBlockDir string, targetDir stri
 
 	// consensusRegistry includes the chain="C" label and the prefix "lux_snowman".
 	// The consensus registry is passed to the executor to mimic a subset of consensus metric.
-	consensusRegistry := prometheus.NewRegistry()
+	consensusRegistry := metric.NewRegistry()
 	r.NoError(prefixGatherer.Register("lux_snowman", consensusRegistry))
 
 	if metricsEnabled {
@@ -147,7 +147,7 @@ func benchmarkReexecuteRange(b *testing.B, sourceBlockDir string, targetDir stri
 
 	dbLogger := tests.NewDefaultLogger("db")
 
-	db, err := leveldb.New(targetDBDir, nil, dbLogger, prometheus.NewRegistry())
+	db, err := leveldb.New(targetDBDir, nil, dbLogger, metric.NewRegistry())
 	r.NoError(err)
 	defer func() {
 		log.Info("shutting down DB")
@@ -272,7 +272,7 @@ type blockResult struct {
 type vmExecutorConfig struct {
 	Log logging.Logger
 	// Registry is the registry to register the metrics with.
-	Registry prometheus.Registerer
+	Registry metric.Registerer
 	// ExecutionTimeout is the maximum timeout to continue executing blocks.
 	// If 0, no timeout is applied. If non-zero, the executor will exit early
 	// WITHOUT error after hitting the timeout.
@@ -379,7 +379,7 @@ func createBlockChanFromLevelDB(tb testing.TB, sourceDir string, startBlock, end
 	r := require.New(tb)
 	ch := make(chan blockResult, chanSize)
 
-	db, err := leveldb.New(sourceDir, nil, logging.NoLog{}, prometheus.NewRegistry())
+	db, err := leveldb.New(sourceDir, nil, logging.NoLog{}, metric.NewRegistry())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create leveldb database from %q: %w", sourceDir, err)
 	}
@@ -446,7 +446,7 @@ func exportBlockRange(tb testing.TB, sourceDir string, targetDir string, startBl
 	blockChan, err := createBlockChanFromLevelDB(tb, sourceDir, startBlock, endBlock, chanSize)
 	r.NoError(err)
 
-	db, err := leveldb.New(targetDir, nil, logging.NoLog{}, prometheus.NewRegistry())
+	db, err := leveldb.New(targetDir, nil, logging.NoLog{}, metric.NewRegistry())
 	r.NoError(err)
 	tb.Cleanup(func() {
 		r.NoError(db.Close())
@@ -466,7 +466,7 @@ func exportBlockRange(tb testing.TB, sourceDir string, targetDir string, startBl
 }
 
 type consensusMetrics struct {
-	lastAcceptedHeight prometheus.Gauge
+	lastAcceptedHeight metric.Gauge
 }
 
 // newConsensusMetrics creates a subset of the metrics from snowman consensus
@@ -475,9 +475,9 @@ type consensusMetrics struct {
 // The registry passed in is expected to be registered with the prefix
 // "lux_snowman" and the chain label (ex. chain="C") that would be handled
 // by the[chain manager](../../../chains/manager.go).
-func newConsensusMetrics(registry prometheus.Registerer) (*consensusMetrics, error) {
+func newConsensusMetrics(registry metric.Registerer) (*consensusMetrics, error) {
 	m := &consensusMetrics{
-		lastAcceptedHeight: prometheus.NewGauge(prometheus.GaugeOpts{
+		lastAcceptedHeight: metric.NewGauge(metric.GaugeOpts{
 			Name: "last_accepted_height",
 			Help: "last height accepted",
 		}),
@@ -490,7 +490,7 @@ func newConsensusMetrics(registry prometheus.Registerer) (*consensusMetrics, err
 
 // collectRegistry starts prometheus and collects metrics from the provided gatherer.
 // Attaches the provided labels + GitHub labels if available to the collected metric.
-func collectRegistry(tb testing.TB, name string, timeout time.Duration, gatherer prometheus.Gatherer, labels map[string]string) {
+func collectRegistry(tb testing.TB, name string, timeout time.Duration, gatherer metric.Gatherer, labels map[string]string) {
 	r := require.New(tb)
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -540,7 +540,7 @@ func parseLabels(labelsStr string) (map[string]string, error) {
 	return labels, nil
 }
 
-func getTopLevelMetrics(b *testing.B, registry prometheus.Gatherer, elapsed time.Duration) {
+func getTopLevelMetrics(b *testing.B, registry metric.Gatherer, elapsed time.Duration) {
 	r := require.New(b)
 
 	gasUsed, err := getCounterMetricValue(registry, "lux_evm_eth_chain_block_gas_used_processed")
@@ -549,7 +549,7 @@ func getTopLevelMetrics(b *testing.B, registry prometheus.Gatherer, elapsed time
 	b.ReportMetric(mgasPerSecond, "mgas/s")
 }
 
-func getCounterMetricValue(registry prometheus.Gatherer, query string) (float64, error) {
+func getCounterMetricValue(registry metric.Gatherer, query string) (float64, error) {
 	metricFamilies, err := registry.Gather()
 	if err != nil {
 		return 0, fmt.Errorf("failed to gather metrics: %w", err)

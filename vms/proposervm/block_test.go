@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
 
@@ -401,7 +401,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 		},
 		Windower:               windower,
 		Scheduler:              scheduler,
-		proposerBuildSlotGauge: prometheus.NewGauge(prometheus.GaugeOpts{}),
+		proposerBuildSlotGauge: metric.NewGauge(metric.GaugeOpts{}),
 	}
 	vm.Clock.Set(now)
 

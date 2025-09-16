@@ -26,16 +26,16 @@ type Signer interface {
 	Sign(msg *UnsignedMessage) ([]byte, error)
 }
 
-func NewSigner(sk *bls.SecretKey, networkID uint32, chainID ids.ID) Signer {
+func NewSigner(blsSigner bls.Signer, networkID uint32, chainID ids.ID) Signer {
 	return &signer{
-		sk:        sk,
+		blsSigner: blsSigner,
 		networkID: networkID,
 		chainID:   chainID,
 	}
 }
 
 type signer struct {
-	sk        *bls.SecretKey
+	blsSigner bls.Signer
 	networkID uint32
 	chainID   ids.ID
 }
@@ -49,6 +49,9 @@ func (s *signer) Sign(msg *UnsignedMessage) ([]byte, error) {
 	}
 
 	msgBytes := msg.Bytes()
-	sig := s.sk.Sign(msgBytes)
+	sig, err := s.blsSigner.Sign(msgBytes)
+	if err != nil {
+		return nil, err
+	}
 	return bls.SignatureToBytes(sig), nil
 }

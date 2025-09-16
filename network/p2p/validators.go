@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"

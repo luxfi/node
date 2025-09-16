@@ -54,21 +54,19 @@ func New() Tree {
 }
 
 func (t *tree) Add(blk chain.Block) {
-	parentID := blk.ParentID()
+	parentID := blk.Parent()
 	children, exists := t.nodes[parentID]
 	if !exists {
 		children = make(map[ids.ID]chain.Block)
 		t.nodes[parentID] = children
 	}
-	blkID := blk.ID()
-	children[blkID] = blk
+	children[blk.ID()] = blk
 }
 
 func (t *tree) Get(blk chain.Block) (chain.Block, bool) {
-	parentID := blk.ParentID()
+	parentID := blk.Parent()
 	children := t.nodes[parentID]
-	blkID := blk.ID()
-	originalBlk, exists := children[blkID]
+	originalBlk, exists := children[blk.ID()]
 	return originalBlk, exists
 }
 
@@ -79,10 +77,9 @@ func (t *tree) Accept(ctx context.Context, blk chain.Block) error {
 	}
 
 	// get the siblings of the block
-	parentID := blk.ParentID()
+	parentID := blk.Parent()
 	children := t.nodes[parentID]
-	blkID := blk.ID()
-	delete(children, blkID)
+	delete(children, blk.ID())
 	delete(t.nodes, parentID)
 
 	// mark the siblings of the accepted block as rejectable
@@ -100,10 +97,10 @@ func (t *tree) Accept(ctx context.Context, blk chain.Block) error {
 		}
 
 		// mark the progeny of this block as being rejectable
-		blkID := child.ID()
-		children := t.nodes[blkID]
+		childID := child.ID()
+		children := t.nodes[childID]
 		childrenToReject = append(childrenToReject, maps.Values(children)...)
-		delete(t.nodes, blkID)
+		delete(t.nodes, childID)
 	}
 	return nil
 }

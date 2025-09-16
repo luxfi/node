@@ -4,7 +4,7 @@
 package state
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
@@ -43,7 +43,7 @@ func New(db *versiondb.Database) State {
 	}
 }
 
-func NewMetered(db *versiondb.Database, namespace string, metrics prometheus.Registerer) (State, error) {
+func NewMetered(db *versiondb.Database, namespace string, metrics metric.Registerer) (State, error) {
 	chainDB := prefixdb.New(chainStatePrefix, db)
 	blockDB := prefixdb.New(blockStatePrefix, db)
 	heightDB := prefixdb.New(heightIndexPrefix, db)

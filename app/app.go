@@ -10,7 +10,7 @@ import (
 	"sync"
 	"syscall"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/luxfi/log"
