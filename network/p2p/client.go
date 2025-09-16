@@ -106,10 +106,10 @@ func (c *Client) AppRequest(
 			appRequestBytes,
 		); err != nil {
 			c.router.log.Error("unexpected error when sending message",
-				zap.Stringer("op", message.AppRequestOp),
-				zap.Stringer("nodeID", nodeID),
-				zap.Uint32("requestID", requestID),
-				zap.Error(err),
+				log.Stringer("op", message.AppRequestOp),
+				log.Stringer("nodeID", nodeID),
+				log.Uint32("requestID", requestID),
+				log.Err(err),
 			)
 			return err
 		}
@@ -192,10 +192,10 @@ func (c *Client) CrossChainAppRequest(
 	
 	if err != nil {
 		c.router.log.Error("unexpected error when sending message",
-			zap.Stringer("op", message.CrossChainAppRequestOp),
-			zap.Stringer("chainID", chainID),
-			zap.Uint32("requestID", requestID),
-			zap.Error(err),
+			log.Stringer("op", message.CrossChainAppRequestOp),
+			log.Stringer("chainID", chainID),
+			log.Uint32("requestID", requestID),
+			log.Err(err),
 		)
 		return err
 	}

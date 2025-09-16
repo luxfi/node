@@ -12,9 +12,9 @@ import (
 )
 
 type metrics struct {
-	numProcessing *metric.GaugeVec
-	numCalls      *metric.CounterVec
-	totalDuration *metric.GaugeVec
+	numProcessing metric.GaugeVec
+	numCalls      metric.CounterVec
+	totalDuration metric.GaugeVec
 }
 
 func newMetrics(registerer metric.Registerer) (*metrics, error) {

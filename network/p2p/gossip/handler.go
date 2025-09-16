@@ -7,11 +7,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/log"
+	luxlog "github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/bloom"
 )
@@ -19,7 +18,7 @@ import (
 var _ p2p.Handler = (*Handler[*testTx])(nil)
 
 func NewHandler[T Gossipable](
-	log log.Logger,
+	log luxlog.Logger,
 	marshaller Marshaller[T],
 	set Set[T],
 	metrics Metrics,
@@ -38,7 +37,7 @@ func NewHandler[T Gossipable](
 type Handler[T Gossipable] struct {
 	p2p.Handler
 	marshaller         Marshaller[T]
-	log                log.Logger
+	log                luxlog.Logger
 	set                Set[T]
 	metrics            Metrics
 	targetResponseSize int
@@ -77,9 +76,7 @@ func (h Handler[T]) AppRequest(_ context.Context, _ ids.NodeID, _ time.Time, req
 		return nil, p2p.ErrUnexpected
 	}
 
-	if err := h.metrics.observeMessage(sentPullLabels, len(gossipBytes), responseSize); err != nil {
-		return nil, p2p.ErrUnexpected
-	}
+	h.metrics.observeMessage(sentPullLabels, len(gossipBytes), responseSize)
 
 	response, err := MarshalAppResponse(gossipBytes)
 	if err != nil {
@@ -92,7 +89,7 @@ func (h Handler[T]) AppRequest(_ context.Context, _ ids.NodeID, _ time.Time, req
 func (h Handler[_]) AppGossip(_ context.Context, nodeID ids.NodeID, gossipBytes []byte) {
 	gossip, err := ParseAppGossip(gossipBytes)
 	if err != nil {
-		h.log.Debug("failed to unmarshal gossip", zap.Error(err))
+		h.log.Debug("failed to unmarshal gossip", luxlog.Reflect("error", err))
 		return
 	}
 
@@ -102,8 +99,8 @@ func (h Handler[_]) AppGossip(_ context.Context, nodeID ids.NodeID, gossipBytes 
 		gossipable, err := h.marshaller.UnmarshalGossip(bytes)
 		if err != nil {
 			h.log.Debug("failed to unmarshal gossip",
-				zap.Stringer("nodeID", nodeID),
-				zap.Error(err),
+				luxlog.Stringer("nodeID", nodeID),
+				luxlog.Reflect("error", err),
 			)
 			continue
 		}
@@ -111,16 +108,12 @@ func (h Handler[_]) AppGossip(_ context.Context, nodeID ids.NodeID, gossipBytes 
 		if err := h.set.Add(gossipable); err != nil {
 			h.log.Debug(
 				"failed to add gossip to the known set",
-				zap.Stringer("nodeID", nodeID),
-				zap.Stringer("id", gossipable.GossipID()),
-				zap.Error(err),
+				luxlog.Stringer("nodeID", nodeID),
+				luxlog.Stringer("id", gossipable.GossipID()),
+				luxlog.Reflect("error", err),
 			)
 		}
 	}
 
-	if err := h.metrics.observeMessage(receivedPushLabels, len(gossip), receivedBytes); err != nil {
-		h.log.Error("failed to update metrics",
-			zap.Error(err),
-		)
-	}
+	h.metrics.observeMessage(receivedPushLabels, len(gossip), receivedBytes)
 }

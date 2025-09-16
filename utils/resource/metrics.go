@@ -10,11 +10,11 @@ import (
 )
 
 type metrics struct {
-	numCPUCycles       *metric.GaugeVec
-	numDiskReads       *metric.GaugeVec
-	numDiskReadBytes   *metric.GaugeVec
-	numDiskWrites      *metric.GaugeVec
-	numDiskWritesBytes *metric.GaugeVec
+	numCPUCycles       metric.GaugeVec
+	numDiskReads       metric.GaugeVec
+	numDiskReadBytes   metric.GaugeVec
+	numDiskWrites      metric.GaugeVec
+	numDiskWritesBytes metric.GaugeVec
 }
 
 func newMetrics(registerer metric.Registerer) (*metrics, error) {

@@ -7,8 +7,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
@@ -92,9 +90,9 @@ func (q *throttledMessageQueue) Push(ctx context.Context, msg message.OutboundMe
 	if err := ctx.Err(); err != nil {
 		q.log.Debug(
 			"dropping outgoing message",
-			zap.Stringer("messageOp", msg.Op()),
-			zap.Stringer("nodeID", q.id),
-			zap.Error(err),
+			log.Stringer("messageOp", msg.Op()),
+			log.Stringer("nodeID", q.id),
+			log.Err(err),
 		)
 		q.onFailed.SendFailed(msg)
 		return false
@@ -104,9 +102,9 @@ func (q *throttledMessageQueue) Push(ctx context.Context, msg message.OutboundMe
 	if !q.outboundMsgThrottler.Acquire(msg, q.id) {
 		q.log.Debug(
 			"dropping outgoing message",
-			zap.String("reason", "rate-limiting"),
-			zap.Stringer("messageOp", msg.Op()),
-			zap.Stringer("nodeID", q.id),
+			log.String("reason", "rate-limiting"),
+			log.Stringer("messageOp", msg.Op()),
+			log.Stringer("nodeID", q.id),
 		)
 		q.onFailed.SendFailed(msg)
 		return false
@@ -122,9 +120,9 @@ func (q *throttledMessageQueue) Push(ctx context.Context, msg message.OutboundMe
 	if q.closed {
 		q.log.Debug(
 			"dropping outgoing message",
-			zap.String("reason", "closed queue"),
-			zap.Stringer("messageOp", msg.Op()),
-			zap.Stringer("nodeID", q.id),
+			log.String("reason", "closed queue"),
+			log.Stringer("messageOp", msg.Op()),
+			log.Stringer("nodeID", q.id),
 		)
 		q.outboundMsgThrottler.Release(msg, q.id)
 		q.onFailed.SendFailed(msg)
@@ -229,16 +227,16 @@ func (q *blockingMessageQueue) Push(ctx context.Context, msg message.OutboundMes
 	case <-q.closing:
 		q.log.Debug(
 			"dropping message",
-			zap.String("reason", "closed queue"),
-			zap.Stringer("messageOp", msg.Op()),
+			log.String("reason", "closed queue"),
+			log.Stringer("messageOp", msg.Op()),
 		)
 		q.onFailed.SendFailed(msg)
 		return false
 	case <-ctxDone:
 		q.log.Debug(
 			"dropping message",
-			zap.String("reason", "cancelled context"),
-			zap.Stringer("messageOp", msg.Op()),
+			log.String("reason", "cancelled context"),
+			log.Stringer("messageOp", msg.Op()),
 		)
 		q.onFailed.SendFailed(msg)
 		return false
@@ -251,16 +249,16 @@ func (q *blockingMessageQueue) Push(ctx context.Context, msg message.OutboundMes
 	case <-ctxDone:
 		q.log.Debug(
 			"dropping message",
-			zap.String("reason", "cancelled context"),
-			zap.Stringer("messageOp", msg.Op()),
+			log.String("reason", "cancelled context"),
+			log.Stringer("messageOp", msg.Op()),
 		)
 		q.onFailed.SendFailed(msg)
 		return false
 	case <-q.closing:
 		q.log.Debug(
 			"dropping message",
-			zap.String("reason", "closed queue"),
-			zap.Stringer("messageOp", msg.Op()),
+			log.String("reason", "closed queue"),
+			log.Stringer("messageOp", msg.Op()),
 		)
 		q.onFailed.SendFailed(msg)
 		return false

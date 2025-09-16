@@ -32,11 +32,11 @@ type Metrics struct {
 	ClockSkewSum   metric.Gauge
 
 	NumFailedToParse metric.Counter
-	NumSendFailed    *metric.CounterVec // op
+	NumSendFailed    metric.CounterVec // op
 
-	Messages   *metric.CounterVec // io + op + compressed
-	Bytes      *metric.CounterVec // io + op
-	BytesSaved *metric.GaugeVec   // io + op
+	Messages   metric.CounterVec // io + op + compressed
+	Bytes      metric.CounterVec // io + op
+	BytesSaved metric.GaugeVec   // io + op
 }
 
 func NewMetrics(registerer metric.Registerer) (*Metrics, error) {

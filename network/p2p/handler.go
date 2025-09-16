@@ -122,7 +122,7 @@ func (r *responder) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID
 			log.Time("deadline", deadline),
 			log.Uint64("handlerID", r.handlerID),
 			log.Binary("message", request),
-			log.Error(err),
+			log.Err(err),
 		)
 		return r.sender.SendAppError(ctx, nodeID, requestID, err.Code, err.Message)
 	}

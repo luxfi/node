@@ -10,9 +10,7 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/luxfi/log"
-
-	"github.com/luxfi/log"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/network/throttling"
 )
 
@@ -27,7 +25,7 @@ type Dialer interface {
 
 type dialer struct {
 	dialer    net.Dialer
-	log       log.Logger
+	log       luxlog.Logger
 	network   string
 	throttler throttling.DialThrottler
 }
@@ -42,7 +40,7 @@ type Config struct {
 // [dialerConfig.connectionTimeout] gives the timeout when dialing an IP.
 // [dialerConfig.throttleRps] gives the max number of outgoing connection attempts/second.
 // If [dialerConfig.throttleRps] == 0, outgoing connections aren't rate-limited.
-func NewDialer(network string, dialerConfig Config, log log.Logger) Dialer {
+func NewDialer(network string, dialerConfig Config, log luxlog.Logger) Dialer {
 	var throttler throttling.DialThrottler
 	if dialerConfig.ThrottleRps <= 0 {
 		throttler = throttling.NewNoDialThrottler()
@@ -51,8 +49,8 @@ func NewDialer(network string, dialerConfig Config, log log.Logger) Dialer {
 	}
 	log.Debug(
 		"creating dialer",
-		zap.Uint32("throttleRPS", dialerConfig.ThrottleRps),
-		zap.Duration("dialTimeout", dialerConfig.ConnectionTimeout),
+		luxlog.Uint32("throttleRPS", dialerConfig.ThrottleRps),
+		luxlog.Duration("dialTimeout", dialerConfig.ConnectionTimeout),
 	)
 	return &dialer{
 		dialer:    net.Dialer{Timeout: dialerConfig.ConnectionTimeout},
@@ -67,7 +65,7 @@ func (d *dialer) Dial(ctx context.Context, ip netip.AddrPort) (net.Conn, error) 
 		return nil, err
 	}
 	d.log.Debug("dialing",
-		zap.Stringer("ip", ip),
+		luxlog.Stringer("ip", ip),
 	)
 	conn, err := d.dialer.DialContext(ctx, d.network, ip.String())
 	if err != nil {

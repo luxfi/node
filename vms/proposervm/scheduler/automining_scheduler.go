@@ -6,8 +6,6 @@ package scheduler
 import (
 	"time"
 
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 )
@@ -79,7 +77,7 @@ func (s *autominingScheduler) Dispatch(buildBlockTime time.Time) {
 		case cmd := <-s.autominingControl:
 			if cmd.start {
 				s.log.Info("starting automining",
-					zap.Duration("interval", cmd.interval),
+					log.Duration("interval", cmd.interval),
 				)
 				s.autominingActive = true
 				s.autominingInterval = cmd.interval
@@ -128,8 +126,8 @@ func (s *autominingScheduler) Dispatch(buildBlockTime time.Time) {
 			default:
 				// If the channel to the engine is full, drop the message
 				s.log.Debug("dropping message from VM",
-					zap.String("reason", "channel to engine is full"),
-					zap.Any("message", msg),
+					log.String("reason", "channel to engine is full"),
+					log.Reflect("message", msg),
 				)
 			}
 		}
@@ -142,11 +140,11 @@ func (s *autominingScheduler) handleBuildRequest() {
 	select {
 	case s.toEngine <- msg:
 		s.log.Debug("sent build block request to engine",
-			zap.Bool("automining", s.autominingActive),
+			log.Bool("automining", s.autominingActive),
 		)
 	default:
 		s.log.Debug("dropping build block request",
-			zap.String("reason", "channel to engine is full"),
+			log.String("reason", "channel to engine is full"),
 		)
 	}
 }

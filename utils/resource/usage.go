@@ -178,7 +178,7 @@ func (m *manager) update(diskPath string, frequency, cpuHalflife, diskHalflife t
 			m.log.Debug("failed to lookup resource",
 				log.String("resource", "system disk"),
 				log.String("path", diskPath),
-				log.Error(getBytesErr),
+				log.Reflect("error", getBytesErr),
 			)
 		}
 
@@ -258,9 +258,9 @@ func (p *proc) getActiveUsage(secondsSinceLastUpdate float64) (float64, float64,
 	times, err := p.p.Times()
 	if err != nil {
 		p.log.Debug("failed to lookup resource",
-			zap.String("resource", "process CPU"),
-			zap.Int32("pid", p.p.Pid),
-			zap.Error(err),
+			log.String("resource", "process CPU"),
+			log.Reflect("pid", p.p.Pid),
+			log.Reflect("error", err),
 		)
 		times = &cpu.TimesStat{}
 	}
@@ -270,9 +270,9 @@ func (p *proc) getActiveUsage(secondsSinceLastUpdate float64) (float64, float64,
 	io, err := p.p.IOCounters()
 	if err != nil {
 		p.log.Debug("failed to lookup resource",
-			zap.String("resource", "process IO"),
-			zap.Int32("pid", p.p.Pid),
-			zap.Error(err),
+			log.String("resource", "process IO"),
+			log.Reflect("pid", p.p.Pid),
+			log.Reflect("error", err),
 		)
 		io = &process.IOCountersStat{}
 	}

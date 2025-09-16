@@ -598,6 +598,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 			ChainRouter: consensusRouter,
 			vdrs:        n.vdrs,
 			weight:      n.Config.SybilProtectionDisabledWeight,
+			validators:  make(map[ids.ID]map[ids.NodeID]uint64),
 		}
 	}
 

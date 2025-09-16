@@ -12,7 +12,6 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/vms/proposervm/state"
 )
@@ -144,9 +143,9 @@ func (hi *heightIndexer) doRepair(ctx context.Context, currentProBlkID ids.ID, l
 
 			// it will commit on exit
 			hi.log.Info("indexing finished",
-				zap.Int("numIndexedBlocks", indexedBlks),
-				zap.Duration("duration", time.Since(start)),
-				zap.Uint64("forkHeight", forkHeight),
+				log.Int("numIndexedBlocks", indexedBlks),
+				log.Duration("duration", time.Since(start)),
+				log.Uint64("forkHeight", forkHeight),
 			)
 			return nil
 		}
@@ -167,7 +166,7 @@ func (hi *heightIndexer) doRepair(ctx context.Context, currentProBlkID ids.ID, l
 			}
 
 			hi.log.Debug("indexed blocks",
-				zap.Int("numIndexBlocks", indexedBlks),
+				log.Int("numIndexBlocks", indexedBlks),
 			)
 			lastIndexedBlks = indexedBlks
 		}
@@ -183,8 +182,8 @@ func (hi *heightIndexer) doRepair(ctx context.Context, currentProBlkID ids.ID, l
 		if now.Sub(lastLogTime) > 15*time.Second {
 			lastLogTime = now
 			hi.log.Info("indexed blocks",
-				zap.Int("numIndexBlocks", indexedBlks),
-				zap.Uint64("lastIndexedHeight", lastIndexedHeight),
+				log.Int("numIndexBlocks", indexedBlks),
+				log.Uint64("lastIndexedHeight", lastIndexedHeight),
 			)
 		}
 

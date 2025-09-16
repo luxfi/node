@@ -99,9 +99,7 @@ func Bootstrap(
 	go func() {
 		_, err := io.Copy(config.Stdout, stdoutPipe)
 		if err != nil {
-			log.Error("stdout collector failed",
-				log.Err(err),
-			)
+			log.Error("stdout collector failed", "error", err)
 		}
 		stopper.Stop(context.TODO())
 
@@ -112,9 +110,7 @@ func Bootstrap(
 	go func() {
 		_, err := io.Copy(config.Stderr, stderrPipe)
 		if err != nil {
-			log.Error("stderr collector failed",
-				log.Err(err),
-			)
+			log.Error("stderr collector failed", "error", err)
 		}
 		stopper.Stop(context.TODO())
 
@@ -137,9 +133,7 @@ func Bootstrap(
 		return nil, nil, fmt.Errorf("%w: %w", runtime.ErrHandshakeFailed, intitializer.err)
 	}
 
-	log.Info("plugin handshake succeeded",
-		log.String("addr", intitializer.vmAddr),
-	)
+	log.Info("plugin handshake succeeded", "addr", intitializer.vmAddr)
 
 	status := &Status{
 		Pid:  cmd.Process.Pid,

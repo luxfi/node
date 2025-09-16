@@ -54,16 +54,20 @@ func (i *insecureValidatorManager) Connected(vdrID ids.NodeID, nodeVersion *vers
 }
 
 func (i *insecureValidatorManager) Disconnected(vdrID ids.NodeID) {
-	// RemoveWeight will only error here if there was an error reported during
-	// Add.
-	err := i.vdrs.RemoveWeight(constants.PrimaryNetworkID, vdrID, i.weight)
-	if err != nil {
-		i.log.Error("failed to remove weight",
-			log.Stringer("nodeID", vdrID),
-			log.Stringer("netID", constants.PrimaryNetworkID),
-			log.Error(err),
-		)
+	// Remove the validator from local tracking
+	i.mu.Lock()
+	if i.validators[constants.PrimaryNetworkID] != nil {
+		delete(i.validators[constants.PrimaryNetworkID], vdrID)
 	}
-	// Router.Disconnected not available in consensus package
-	// i.Router.Disconnected(vdrID)
+	i.mu.Unlock()
+
+	i.log.Debug("removed validator",
+		log.Stringer("nodeID", vdrID),
+		log.Stringer("netID", constants.PrimaryNetworkID),
+	)
+
+	// Forward to the underlying router
+	if i.ChainRouter != nil {
+		i.ChainRouter.Disconnected(vdrID)
+	}
 }

@@ -110,7 +110,7 @@ func (i *indexer) Accept(txID ids.ID, inputUTXOs []*lux.UTXO, outputUTXOs []*lux
 		out, ok := utxo.Out.(lux.Addressable)
 		if !ok {
 			i.log.Debug("skipping UTXO for indexing",
-				zap.Stringer("utxoID", utxo.InputID()),
+				log.Stringer("utxoID", utxo.InputID()),
 			)
 			continue
 		}
@@ -149,10 +149,10 @@ func (i *indexer) Accept(txID ids.ID, inputUTXOs []*lux.UTXO, outputUTXOs []*lux
 
 			// write the [txID] at the index
 			i.log.Debug("writing indexed tx to DB",
-				zap.String("address", address),
-				zap.Stringer("assetID", assetID),
-				zap.Uint64("index", idx),
-				zap.Stringer("txID", txID),
+				log.String("address", address),
+				log.Stringer("assetID", assetID),
+				log.Uint64("index", idx),
+				log.Stringer("txID", txID),
 			)
 			if err := assetPrefixDB.Put(idxBytes, txID[:]); err != nil {
 				return fmt.Errorf("failed to write txID while indexing %s: %w", txID, err)
