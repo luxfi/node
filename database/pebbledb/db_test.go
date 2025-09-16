@@ -7,16 +7,16 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/database/dbtest"
-	"github.com/luxfi/log"
 )
 
 func newDB(t testing.TB) *Database {
 	folder := t.TempDir()
-	db, err := New(folder, nil, logging.NoLog{}, metric.NewRegistry())
+	db, err := New(folder, nil, log.NewNoOpLogger(), metric.NewRegistry())
 	require.NoError(t, err)
 	return db.(*Database)
 }

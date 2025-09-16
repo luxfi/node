@@ -607,7 +607,11 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	}
 
 	n.onSufficientlyConnected = make(chan struct{})
-	numBootstrappers := len(n.bootstrappers.GetValidatorIDs(constants.PrimaryNetworkID))
+	bootstrapValidators, err := n.bootstrappers.GetValidators(constants.PrimaryNetworkID)
+	if err != nil {
+		return err
+	}
+	numBootstrappers := bootstrapValidators.Len()
 	requiredConns := (3*numBootstrappers + 3) / 4
 
 	if requiredConns > 0 {
@@ -629,7 +633,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	n.Config.NetworkConfig.Beacons = n.bootstrappers
 	n.Config.NetworkConfig.TLSConfig = tlsConfig
 	n.Config.NetworkConfig.TLSKey = tlsKey
-	n.Config.NetworkConfig.BLSKey = n.Config.StakingSigningKey
+	n.Config.NetworkConfig.BLSKey = NewBLSSignerWrapper(n.Config.StakingSigningKey)
 	n.Config.NetworkConfig.TrackedSubnets = n.Config.TrackedSubnets
 	n.Config.NetworkConfig.UptimeCalculator = n.uptimeCalculator
 	n.Config.NetworkConfig.UptimeRequirement = n.Config.UptimeRequirement
