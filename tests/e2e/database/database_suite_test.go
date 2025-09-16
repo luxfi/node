@@ -96,8 +96,10 @@ func testDataMigration(ctx context.Context) {
 	ginkgo.GinkgoHelper()
 
 	// Create source database (LevelDB)
-	sourceDir := tmpnet.TempDir(ginkgo.GinkgoT())
-	sourceDB, err := leveldb.New(sourceDir, nil, log.NewNoOpLogger(), 0, 0)
+	sourceDir, err := os.MkdirTemp("", "leveldb-test-*")
+	require.NoError(ginkgo.GinkgoT(), err)
+	defer os.RemoveAll(sourceDir)
+	sourceDB, err := leveldb.New(sourceDir, 1024, 1024, 1024)
 	require.NoError(ginkgo.GinkgoT(), err)
 	defer sourceDB.Close()
 
@@ -109,8 +111,10 @@ func testDataMigration(ctx context.Context) {
 	}
 
 	// Create destination database (PebbleDB)
-	destDir := tmpnet.TempDir(ginkgo.GinkgoT())
-	destDB, err := pebbledb.New(destDir, nil, log.NewNoOpLogger(), 0, 0)
+	destDir, err := os.MkdirTemp("", "pebbledb-test-*")
+	require.NoError(ginkgo.GinkgoT(), err)
+	defer os.RemoveAll(destDir)
+	destDB, err := pebbledb.New(destDir, 1024, 1024, "", false)
 	require.NoError(ginkgo.GinkgoT(), err)
 	defer destDB.Close()
 

@@ -14,7 +14,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/tests/fixture/tmpnet/flags"
@@ -85,7 +84,7 @@ func main() {
 				DefaultRuntimeConfig: *nodeRuntimeConfig,
 			}
 
-			timeout, err := nodeRuntimeConfig.GetNetworkStartTimeout(nodeCount)
+			timeout := 2 * time.Minute // Default network start timeout
 			if err != nil {
 				return err
 			}
@@ -95,11 +94,15 @@ func main() {
 
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
+			luxNodeExecPath := ""
+			pluginDir := ""
 			if err := tmpnet.BootstrapNewNetwork(
 				ctx,
-				log,
+				os.Stdout,
 				network,
 				startNetworkVars.RootNetworkDir,
+				luxNodeExecPath,
+				pluginDir,
 			); err != nil {
 				log.Error("failed to bootstrap network", "error", err)
 				return err
@@ -144,7 +147,7 @@ func main() {
 			if err != nil {
 				return err
 			}
-			if err := tmpnet.StopNetwork(ctx, log, networkDir); err != nil {
+			if err := tmpnet.StopNetwork(ctx, networkDir); err != nil {
 				return err
 			}
 			fmt.Fprintf(os.Stdout, "Stopped network configured at: %s\n", networkDir)
@@ -296,20 +299,19 @@ func main() {
 				return errKubeconfigRequired
 			}
 			// TODO(marun) Consider supporting other contexts. Will require modifying the kind cluster start script.
-			if len(kubeconfigVars.Context) > 0 && kubeconfigVars.Context != tmpnet.KindKubeconfigContext {
-				log.Warn("ignoring kubeconfig context for kind cluster",
-					log.UserString("providedContext", kubeconfigVars.Context),
-					log.UserString("requiredContext", tmpnet.KindKubeconfigContext),
-				)
+			if len(kubeconfigVars.Context) > 0 {
+				fmt.Printf("WARNING: ignoring provided kubeconfig context %s for kind cluster\n", kubeconfigVars.Context)
 			}
-			return tmpnet.StartKindCluster(
+			// TODO: Implement StartKindCluster when available
+			return fmt.Errorf("StartKindCluster not yet implemented")
+			/*return tmpnet.StartKindCluster(
 				ctx,
 				log,
 				kubeconfigVars.Path,
 				collectorVars.StartMetricsCollector,
 				collectorVars.StartLogsCollector,
 				installChaosMesh,
-			)
+			)*/
 		},
 	}
 	kubeconfigVars = flags.NewKubeconfigFlagSetVars(startKindClusterCmd.PersistentFlags())

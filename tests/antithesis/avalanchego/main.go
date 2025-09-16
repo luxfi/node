@@ -13,18 +13,18 @@ import (
 	"github.com/antithesishq/antithesis-sdk-go/assert"
 	"github.com/antithesishq/antithesis-sdk-go/lifecycle"
 	"github.com/stretchr/testify/require"
-	"github.com/luxfi/log"
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/antithesis"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/xvm"
@@ -66,7 +66,7 @@ func main() {
 	walletSyncStartTime := time.Now()
 	wallet := e2e.NewWallet(tc, kc, tmpnet.NodeURI{URI: c.URIs[0]})
 	tc.Log().Info("synced wallet",
-		log.UserString("duration", time.Since(walletSyncStartTime)),
+		log.UserString("duration", fmt.Sprintf("%v", time.Since(walletSyncStartTime))),
 	)
 
 	genesisWorkload := &workload{
@@ -111,7 +111,7 @@ func main() {
 		require.NoError(err, "failed to issue initial funding X-chain baseTx")
 		tc.Log().Info("issued initial funding X-chain baseTx",
 			log.UserString("txID", baseTx.ID()),
-			log.UserString("duration", time.Since(baseStartTime)),
+			log.UserString("duration", fmt.Sprintf("%v", time.Since(baseStartTime))),
 		)
 
 		require.NoError(genesisWorkload.confirmXChainTx(ctx, baseTx), "failed to confirm initial funding X-chain baseTx")
@@ -121,7 +121,7 @@ func main() {
 		walletSyncStartTime := time.Now()
 		wallet := e2e.NewWallet(tc, kc, tmpnet.NodeURI{URI: uri})
 		tc.Log().Info("synced wallet",
-			log.UserString("duration", time.Since(walletSyncStartTime)),
+			log.UserString("duration", fmt.Sprintf("%v", time.Since(walletSyncStartTime))),
 		)
 
 		workloads[i] = &workload{
@@ -294,7 +294,7 @@ func (w *workload) issueXChainBaseTx(ctx context.Context) {
 	}
 	w.log.Info("issued new X-chain baseTx",
 		log.UserString("txID", baseTx.ID()),
-		log.UserString("duration", time.Since(baseStartTime)),
+		log.UserString("duration", fmt.Sprintf("%v", time.Since(baseStartTime))),
 	)
 
 	if err := w.confirmXChainTx(ctx, baseTx); err != nil {
@@ -365,7 +365,7 @@ func (w *workload) issueXChainCreateAssetTx(ctx context.Context) {
 	}
 	w.log.Info("created new X-chain asset",
 		log.UserString("txID", createAssetTx.ID()),
-		log.UserString("duration", time.Since(createAssetStartTime)),
+		log.UserString("duration", fmt.Sprintf("%v", time.Since(createAssetStartTime))),
 	)
 
 	if err := w.confirmXChainTx(ctx, createAssetTx); err != nil {
@@ -437,7 +437,7 @@ func (w *workload) issueXChainOperationTx(ctx context.Context) {
 	}
 	w.log.Info("created new X-chain asset",
 		log.UserString("txID", createAssetTx.ID()),
-		log.UserString("duration", time.Since(createAssetStartTime)),
+		log.UserString("duration", fmt.Sprintf("%v", time.Since(createAssetStartTime))),
 	)
 
 	operationStartTime := time.Now()
@@ -453,7 +453,7 @@ func (w *workload) issueXChainOperationTx(ctx context.Context) {
 	}
 	w.log.Info("issued X-chain operation transaction",
 		log.UserString("txID", operationTx.ID()),
-		log.UserString("duration", time.Since(operationStartTime)),
+		log.UserString("duration", fmt.Sprintf("%v", time.Since(operationStartTime))),
 	)
 
 	if err := w.confirmXChainTx(ctx, createAssetTx); err != nil {
@@ -535,7 +535,7 @@ func (w *workload) issueXToPTransfer(ctx context.Context) {
 	}
 	w.log.Info("created X-chain export transaction",
 		log.UserString("txID", exportTx.ID()),
-		log.UserString("duration", time.Since(exportStartTime)),
+		log.UserString("duration", fmt.Sprintf("%v", time.Since(exportStartTime))),
 	)
 
 	var (
@@ -554,7 +554,7 @@ func (w *workload) issueXToPTransfer(ctx context.Context) {
 	}
 	w.log.Info("created P-chain import transaction",
 		log.UserString("txID", importTx.ID()),
-		log.UserString("duration", time.Since(importStartTime)),
+		log.UserString("duration", fmt.Sprintf("%v", time.Since(importStartTime))),
 	)
 
 	if err := w.confirmXChainTx(ctx, exportTx); err != nil {
@@ -639,7 +639,7 @@ func (w *workload) issuePToXTransfer(ctx context.Context) {
 	}
 	w.log.Info("created P-chain export transaction",
 		log.UserString("txID", exportTx.ID()),
-		log.UserString("duration", time.Since(exportStartTime)),
+		log.UserString("duration", fmt.Sprintf("%v", time.Since(exportStartTime))),
 	)
 
 	importStartTime := time.Now()
@@ -655,7 +655,7 @@ func (w *workload) issuePToXTransfer(ctx context.Context) {
 	}
 	w.log.Info("created X-chain import transaction",
 		log.UserString("txID", importTx.ID()),
-		log.UserString("duration", time.Since(importStartTime)),
+		log.UserString("duration", fmt.Sprintf("%v", time.Since(importStartTime))),
 	)
 
 	if err := w.confirmPChainTx(ctx, exportTx); err != nil {

@@ -284,7 +284,10 @@ func TestIndexer(t *testing.T) {
 	// Define chain2 context early
 	chain2ChainID := ids.GenerateTestID()
 	_ = consensustest.Context(t, chain2ChainID)
-	chain2Ctx := context.Background()
+	chain2Ctx := consensuscontext.WithIDs(context.Background(), consensuscontext.IDs{
+		NetID:   constants.PrimaryNetworkID,
+		ChainID: chain2ChainID,
+	})
 
 	graphVM := blockmock.NewChainVM()
 	idxr.RegisterChain("chain2", chain2Ctx, graphVM)
@@ -501,9 +504,9 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	// Create chain1Ctx for a random net + chain.
 	testChainID := ids.GenerateTestID()
 	testNetID := ids.GenerateTestID() // Non-primary network (testNetID)
-	testCtx := consensustest.Context(t, testChainID)
+	_ = consensustest.Context(t, testChainID)
 	// Set a non-primary network ID in the context
-	chain1Ctx := consensuscontext.WithIDs(testCtx, consensuscontext.IDs{
+	chain1Ctx := consensuscontext.WithIDs(context.Background(), consensuscontext.IDs{
 		NetID:   testNetID, // Non-primary network
 		ChainID: testChainID,
 	})
