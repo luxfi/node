@@ -62,12 +62,12 @@ func GetEnv(tc tests.TestContext) *TestEnvironment {
 }
 
 // NewWallet creates a new wallet for testing
-func NewWallet(tc tests.TestContext, keychain *secp256k1fx.Keychain, uri tmpnet.NodeURI) *primary.Wallet {
+func NewWallet(tc tests.TestContext, kc *secp256k1fx.Keychain, uri tmpnet.NodeURI) *primary.Wallet {
 	ctx := context.Background()
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:         uri.URI,
-		LUXKeychain: keychain,
-		EthKeychain: keychain,
+		LUXKeychain: kc,
+		EthKeychain: kc,
 	})
 	if err != nil {
 		tc.Log().Fatal("Failed to create wallet: " + err.Error())

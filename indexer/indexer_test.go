@@ -152,7 +152,8 @@ func TestIndexer(t *testing.T) {
 	// Assert state is right
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
-	chain1Ctx := consensustest.Context(t, testChainID)
+	_ = consensustest.Context(t, testChainID)
+	chain1Ctx := context.Background()
 	isIncomplete, err := idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -277,8 +278,9 @@ func TestIndexer(t *testing.T) {
 	// For now, use another ChainVM mock for the vertex chain
 	// Define chain2 context early
 	chain2ChainID := ids.GenerateTestID()
-	chain2Ctx := consensustest.Context(t, chain2ChainID)
-	
+	_ = consensustest.Context(t, chain2ChainID)
+	chain2Ctx := context.Background()
+
 	graphVM := blockmock.NewChainVM()
 	idxr.RegisterChain("chain2", chain2Ctx, graphVM)
 	// require.NoError(err)
@@ -405,7 +407,8 @@ func TestIncompleteIndex(t *testing.T) {
 
 	// Register a chain
 	testChainID := ids.GenerateTestID()
-	chain1Ctx := consensustest.Context(t, testChainID)
+	_ = consensustest.Context(t, testChainID)
+	chain1Ctx := context.Background()
 	isIncomplete, err := idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -489,8 +492,9 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 
 	// Create chain1Ctx for a random net + chain.
 	testChainID := ids.GenerateTestID()
-	testNetID := ids.GenerateTestID() // Non-primary network
-	chain1Ctx := consensustest.ContextWithNetID(t, testChainID, testNetID)
+	_ = ids.GenerateTestID() // Non-primary network (testNetID)
+	_ = consensustest.Context(t, testChainID)
+	chain1Ctx := context.Background()
 	
 	// The test context is configured correctly for a non-primary net
 

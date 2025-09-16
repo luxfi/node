@@ -15,7 +15,6 @@ import (
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/net/primary"
 )
 
@@ -25,7 +24,6 @@ func main() {
 	kc := secp256k1fx.NewKeychain(key)
 
 	// Create adapter for the keychain
-	adapter := keychain.NewLedgerAdapter(kc)
 	netIDStr := "29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL"
 	startTime := time.Now().Add(time.Minute)
 	duration := 2 * 7 * 24 * time.Hour // 2 weeks
@@ -51,8 +49,8 @@ func main() {
 	walletSyncStartTime := time.Now()
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:              uri,
-		LUXKeychain: adapter,
-		EthKeychain: adapter,
+		LUXKeychain: kc,
+		EthKeychain: kc,
 		PChainTxsToFetch: set.Of(netID),
 	})
 	if err != nil {

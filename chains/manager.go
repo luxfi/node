@@ -32,7 +32,7 @@ import (
 
 	// "github.com/luxfi/consensus/engine/chain/syncer" // Not used
 	"github.com/luxfi/consensus/networking/handler"
-	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/node/router"
 	"github.com/luxfi/consensus/networking/sender"
 	"github.com/luxfi/consensus/networking/timeout"
 	consensusset "github.com/luxfi/consensus/utils/set"

@@ -14,7 +14,6 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
-	"github.com/luxfi/node/wallet/keychain"
 )
 
 func NewWalletFactory(
@@ -45,10 +44,9 @@ func (w *WalletFactory) NewWallet(keys ...*secp256k1.PrivateKey) (builder.Builde
 		backend  = newBackend(addrSet, w.state, w.sharedMemory)
 		// Extract networkID and LUXAssetID from context
 		networkID  = consensus.GetNetworkID(w.ctx)
-		luxAssetID = consensus.GetXAssetID(w.ctx)
+		luxAssetID = consensus.GetXAssetID()
 		context    = newContext(w.ctx, networkID, luxAssetID, w.cfg, w.state.GetTimestamp())
 	)
 
-	kcAdapter := keychain.NewSecp256k1fxKeychain(kc)
-	return builder.New(addrSet, context, backend), signer.New(kcAdapter, backend)
+	return builder.New(addrSet, context, backend), signer.New(kc, backend)
 }

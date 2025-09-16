@@ -7,13 +7,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxfi/log"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
-
 	_ "embed"
 
 	"github.com/luxfi/log"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -88,10 +86,7 @@ func deployKubeCollectors(
 		},
 	}
 	for _, collectorConfig := range collectorConfigs {
-		log.Info("deploying kube collector",
-			zap.String("cmd", collectorConfig.name),
-			zap.String("target", collectorConfig.target),
-		)
+	log.Debug("log statement")
 		if err := deployKubeCollector(ctx, log, clientset, dynamicClient, collectorConfig); err != nil {
 			return err
 		}
@@ -145,19 +140,13 @@ func createCredentialSecret(
 	_, err := clientset.CoreV1().Secrets(monitoringNamespace).Create(ctx, secret, metav1.CreateOptions{})
 	if err != nil {
 		if apierrors.IsAlreadyExists(err) {
-			log.Info("secret already exists",
-				zap.String("namespace", monitoringNamespace),
-				zap.String("name", secretName),
-			)
+	log.Debug("log statement")
 			return nil
 		}
 		return fmt.Errorf("failed to create secret %s/%s: %w", monitoringNamespace, secretName, err)
 	}
 
-	log.Info("created secret",
-		zap.String("namespace", monitoringNamespace),
-		zap.String("name", secretName),
-	)
+	log.Debug("log statement")
 
 	return nil
 }

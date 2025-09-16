@@ -4,7 +4,6 @@
 package peer
 
 import (
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"context"
 	"crypto"
 	"net"
@@ -14,20 +13,20 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	luxmetric "github.com/luxfi/metric"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
+	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 )
 
@@ -76,24 +75,10 @@ func newConfig(t *testing.T) Config {
 
 	// Create a no-op resource manager for testing
 	noOpManager := &noOpResourceManager{}
-	cpuTargeter := tracker.NewTargeter(&tracker.TargeterConfig{
-		VdrAlloc:           0.5,
-		MaxNonVdrUsage:     0.8,
-		MaxNonVdrNodeUsage: 0.1,
-	})
-	diskTargeter := tracker.NewTargeter(&tracker.TargeterConfig{
-		VdrAlloc:           0.5,
-		MaxNonVdrUsage:     0.8,
-		MaxNonVdrNodeUsage: 0.1,
-	})
 	resourceTracker, err := tracker.NewResourceTracker(
 		luxmetric.NewNoOpMetrics("test").Registry(),
 		noOpManager,
 		10*time.Second,
-		5*time.Minute,
-		cpuTargeter,
-		diskTargeter,
-		log.NewNoOpLogger(),
 	)
 	require.NoError(err)
 
@@ -138,10 +123,10 @@ func newRawTestPeer(t *testing.T, config Config) *rawTestPeer {
 		1,
 	))
 	tls := tlsCert.PrivateKey.(crypto.Signer)
-	bls, err := bls.NewSecretKey()
+	blsKey, err := bls.NewSecretKey()
 	require.NoError(err)
 
-	config.IPSigner = NewIPSigner(ip, tls, func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(bls)); return s }())
+	config.IPSigner = NewIPSigner(ip, tls, blsKey)
 
 	inboundMsgChan := make(chan message.InboundMessage)
 	config.Router = InboundHandlerFunc(func(_ context.Context, inboundMsg message.InboundMessage) {
@@ -437,7 +422,7 @@ func TestInvalidBLSKeyDisconnects(t *testing.T) {
 	require.NoError(rawPeer0.config.Validators.AddStaker(
 		constants.PrimaryNetworkID,
 		rawPeer1.nodeID,
-		bls.PublicFromSecretKey(rawPeer1.config.IPSigner.blsSigner),
+		rawPeer1.config.IPSigner.PublicKey(),
 		ids.GenerateTestID(),
 		1,
 	))
@@ -447,7 +432,7 @@ func TestInvalidBLSKeyDisconnects(t *testing.T) {
 	require.NoError(rawPeer1.config.Validators.AddStaker(
 		constants.PrimaryNetworkID,
 		rawPeer0.nodeID,
-		bls.PublicFromSecretKey(bogusBLSKey), // This is the wrong BLS key for this peer
+		bogusBLSKey.PublicKey(), // This is the wrong BLS key for this peer
 		ids.GenerateTestID(),
 		1,
 	))
@@ -569,7 +554,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, vdrs.AddStaker(
 							constants.PrimaryNetworkID,
 							peerID,
-							bls.PublicFromSecretKey(blsKey),
+							blsKey.PublicKey(),
 							txID,
 							1,
 						))
@@ -589,7 +574,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, vdrs.AddStaker(
 							constants.PrimaryNetworkID,
 							peerID,
-							bls.PublicFromSecretKey(blsKey),
+							blsKey.PublicKey(),
 							txID,
 							1,
 						))
@@ -613,7 +598,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, vdrs.AddStaker(
 							constants.PrimaryNetworkID,
 							peerID,
-							bls.PublicFromSecretKey(blsKey),
+							blsKey.PublicKey(),
 							txID,
 							1,
 						))
@@ -633,7 +618,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, vdrs.AddStaker(
 							constants.PrimaryNetworkID,
 							peerID,
-							bls.PublicFromSecretKey(blsKey),
+							blsKey.PublicKey(),
 							txID,
 							1,
 						))
@@ -657,7 +642,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, vdrs.AddStaker(
 							constants.PrimaryNetworkID,
 							peerID,
-							bls.PublicFromSecretKey(blsKey),
+							blsKey.PublicKey(),
 							txID,
 							1,
 						))
@@ -679,7 +664,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, vdrs.AddStaker(
 							constants.PrimaryNetworkID,
 							peerID,
-							bls.PublicFromSecretKey(blsKey),
+							blsKey.PublicKey(),
 							txID,
 							1,
 						))
@@ -705,7 +690,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, vdrs.AddStaker(
 							constants.PrimaryNetworkID,
 							peerID,
-							bls.PublicFromSecretKey(blsKey),
+							blsKey.PublicKey(),
 							txID,
 							1,
 						))
@@ -727,7 +712,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, vdrs.AddStaker(
 							constants.PrimaryNetworkID,
 							peerID,
-							bls.PublicFromSecretKey(blsKey),
+							blsKey.PublicKey(),
 							txID,
 							1,
 						))

@@ -11,7 +11,6 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/luxfi/log"
 	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/ids"
@@ -153,7 +152,7 @@ func (m *Manager) Start(ctx context.Context) error {
 		return ErrAlreadyStarted
 	}
 
-	m.config.Log.Info("starting sync", zap.Stringer("target root", m.config.TargetRoot))
+	m.config.Log.Info("starting sync", log.Stringer("target root", m.config.TargetRoot))
 
 	// Add work item to fetch the entire key range.
 	// Note that this will be the first work item to be processed.
@@ -600,7 +599,7 @@ func (m *Manager) Wait(ctx context.Context) error {
 		return fmt.Errorf("%w: expected %s, got %s", ErrFinishedWithUnexpectedRoot, targetRootID, root)
 	}
 
-	m.config.Log.Info("completed", zap.Stringer("root", root))
+	m.config.Log.Info("completed", log.Stringer("root", root))
 	return nil
 }
 
@@ -622,7 +621,7 @@ func (m *Manager) UpdateSyncTarget(syncTargetRoot ids.ID) error {
 		return nil
 	}
 
-	m.config.Log.Debug("updated sync target", zap.Stringer("target", syncTargetRoot))
+	m.config.Log.Debug("updated sync target", log.Stringer("target", syncTargetRoot))
 	m.config.TargetRoot = syncTargetRoot
 
 	// move all completed ranges into the work heap with high priority
@@ -655,7 +654,7 @@ func (m *Manager) setError(err error) {
 	m.errLock.Lock()
 	defer m.errLock.Unlock()
 
-	m.config.Log.Error("sync errored", zap.Error(err))
+	m.config.Log.Error("sync errored", log.Reflect("error", err))
 	m.fatalError = err
 	// Call in goroutine because we might be holding [m.workLock]
 	// which [m.Close] will try to acquire.
@@ -718,10 +717,10 @@ func (m *Manager) completeWorkItem(ctx context.Context, work *workItem, largestH
 
 	// completed the range [work.start, lastKey], log and record in the completed work heap
 	m.config.Log.Debug("completed range",
-		zap.Stringer("start", work.start),
-		zap.Stringer("end", largestHandledKey),
-		zap.Stringer("rootID", rootID),
-		zap.Bool("stale", stale),
+		log.Stringer("start", work.start),
+		log.Stringer("end", largestHandledKey),
+		log.Stringer("rootID", rootID),
+		log.Bool("stale", stale),
 	)
 }
 

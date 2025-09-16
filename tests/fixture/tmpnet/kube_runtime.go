@@ -22,7 +22,6 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/log"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -109,8 +108,6 @@ func (c *KubeRuntimeConfig) ensureDefaults(ctx context.Context, log log.Logger) 
 	}
 
 	log.Info("attempting to retrieve configmap containing tmpnet defaults",
-		zap.String("namespace", c.Namespace),
-		zap.String("configMap", defaultsConfigMapName),
 	)
 
 	configMap, err := clientset.CoreV1().ConfigMaps(c.Namespace).Get(ctx, defaultsConfigMapName, metav1.GetOptions{})
@@ -125,13 +122,11 @@ func (c *KubeRuntimeConfig) ensureDefaults(ctx context.Context, log log.Logger) 
 		)
 		if len(c.SchedulingLabelKey) == 0 && len(schedulingLabelKey) > 0 {
 			log.Info("setting default value for SchedulingLabelKey",
-				zap.String("schedulingLabelKey", schedulingLabelKey),
 			)
 			c.SchedulingLabelKey = schedulingLabelKey
 		}
 		if len(c.SchedulingLabelValue) == 0 && len(schedulingLabelValue) > 0 {
 			log.Info("setting default value for SchedulingLabelValue",
-				zap.String("schedulingLabelValue", schedulingLabelValue),
 			)
 			c.SchedulingLabelValue = schedulingLabelValue
 		}
@@ -146,13 +141,11 @@ func (c *KubeRuntimeConfig) ensureDefaults(ctx context.Context, log log.Logger) 
 		)
 		if len(c.IngressHost) == 0 && len(ingressHost) > 0 {
 			log.Info("setting default value for IngressHost",
-				zap.String("ingressHost", ingressHost),
 			)
 			c.IngressHost = ingressHost
 		}
 		if len(c.IngressSecret) == 0 && len(ingressSecret) > 0 {
 			log.Info("setting default value for IngressSecret",
-				zap.String("ingressSecret", ingressSecret),
 			)
 			c.IngressSecret = ingressSecret
 		}
@@ -173,7 +166,6 @@ type KubeRuntime struct {
 // readState reads the URI and staking address for the node if the node is running.
 func (p *KubeRuntime) readState(ctx context.Context) error {
 	var (
-		log             = logging.NewLogger("")
 		nodeID          = p.node.NodeID.String()
 		runtimeConfig   = p.runtimeConfig()
 		namespace       = runtimeConfig.Namespace
@@ -181,9 +173,6 @@ func (p *KubeRuntime) readState(ctx context.Context) error {
 	)
 
 	log.Debug("reading state for node",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("statefulSet", statefulSetName),
 	)
 
 	// Validate that it will be possible to construct accessible URIs when running external to the kube cluster
@@ -197,16 +186,10 @@ func (p *KubeRuntime) readState(ctx context.Context) error {
 	}
 
 	log.Debug("checking if StatefulSet exists",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("statefulSet", statefulSetName),
 	)
 	scale, err := clientset.AppsV1().StatefulSets(namespace).GetScale(ctx, statefulSetName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		log.Debug("StatefulSet not found",
-			zap.String("nodeID", nodeID),
-			zap.String("namespace", namespace),
-			zap.String("statefulSet", statefulSetName),
 		)
 		p.setNotRunning()
 		return nil
@@ -217,9 +200,6 @@ func (p *KubeRuntime) readState(ctx context.Context) error {
 
 	if scale.Spec.Replicas == 0 {
 		log.Debug("StatefulSet has no replicas",
-			zap.String("nodeID", nodeID),
-			zap.String("namespace", namespace),
-			zap.String("statefulset", statefulSetName),
 		)
 		p.setNotRunning()
 		return nil
@@ -246,8 +226,8 @@ func (p *KubeRuntime) GetAccessibleURI() string {
 
 	var (
 		protocol      = "http"
-		nodeID        = p.node.NodeID.String()
 		networkUUID   = p.node.NetworkUUID
+		nodeID        = p.node.NodeID.String()
 		runtimeConfig = p.runtimeConfig()
 	)
 	// Assume tls is configured for an ingress secret
@@ -290,17 +270,13 @@ func (p *KubeRuntime) GetAccessibleStakingAddress(ctx context.Context) (netip.Ad
 // Start the node as a Kubernetes StatefulSet.
 func (p *KubeRuntime) Start(ctx context.Context) error {
 	var (
-		log             = logging.NewLogger("")
-		nodeID          = p.node.NodeID.String()
+		_          = p.node.NodeID.String()
 		runtimeConfig   = p.runtimeConfig()
 		namespace       = runtimeConfig.Namespace
 		statefulSetName = p.getStatefulSetName()
 	)
 
 	log.Trace("starting node",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("statefulSet", statefulSetName),
 	)
 
 	clientset, err := p.getClientset()
@@ -309,18 +285,12 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 	}
 
 	log.Debug("attempting to retrieve existing StatefulSet",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("statefulSet", statefulSetName),
 	)
 	_, err = clientset.AppsV1().StatefulSets(namespace).Get(ctx, statefulSetName, metav1.GetOptions{})
 	if err == nil {
 		// Stateful exists - make sure it is scaled up and running
 
 		log.Debug("attempting to retrieve scale for existing StatefulSet",
-			zap.String("nodeID", nodeID),
-			zap.String("namespace", namespace),
-			zap.String("statefulSet", statefulSetName),
 		)
 		scale, err := clientset.AppsV1().StatefulSets(namespace).GetScale(ctx, statefulSetName, metav1.GetOptions{})
 		if err != nil {
@@ -329,17 +299,11 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 
 		if scale.Spec.Replicas != 0 {
 			log.Debug("StatefulSet is already running",
-				zap.String("nodeID", nodeID),
-				zap.String("namespace", namespace),
-				zap.String("statefulSet", statefulSetName),
 			)
 			return nil
 		}
 
 		log.Debug("attempting to scale up StatefulSet",
-			zap.String("nodeID", nodeID),
-			zap.String("namespace", namespace),
-			zap.String("statefulSet", statefulSetName),
 		)
 		scale.Spec.Replicas = 1
 		_, err = clientset.AppsV1().StatefulSets(runtimeConfig.Namespace).UpdateScale(
@@ -353,9 +317,6 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 		}
 
 		log.Debug("scaled up StatefulSet",
-			zap.String("nodeID", nodeID),
-			zap.String("namespace", namespace),
-			zap.String("statefulSet", statefulSetName),
 		)
 
 		return nil
@@ -371,9 +332,6 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 	}
 
 	log.Debug("creating StatefulSet",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("statefulSet", statefulSetName),
 	)
 	statefulSet := NewNodeStatefulSet(
 		statefulSetName,
@@ -394,11 +352,6 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 		labelKey := runtimeConfig.SchedulingLabelKey
 		labelValue := runtimeConfig.SchedulingLabelValue
 		log.Debug("configuring exclusive scheduling",
-			zap.String("nodeID", nodeID),
-			zap.String("namespace", namespace),
-			zap.String("statefulSet", statefulSetName),
-			zap.String("schedulingLabelKey", labelKey),
-			zap.String("schedulingLabelValue", labelValue),
 		)
 		if labelKey == "" || labelValue == "" {
 			return errors.New("scheduling label key and value must be non-empty when exclusive scheduling is enabled")
@@ -415,9 +368,6 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to create StatefulSet: %w", err)
 	}
 	log.Debug("created StatefulSet",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", runtimeConfig.Namespace),
-		zap.String("statefulSet", statefulSetName),
 	)
 
 	if !IsRunningInCluster() {
@@ -443,17 +393,13 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 // Stop the Pod by setting the replicas to zero on the StatefulSet.
 func (p *KubeRuntime) InitiateStop(ctx context.Context) error {
 	var (
-		log             = logging.NewLogger("")
-		nodeID          = p.node.NodeID.String()
 		runtimeConfig   = p.runtimeConfig()
+		nodeID          = p.node.NodeID.String()
 		namespace       = runtimeConfig.Namespace
 		statefulSetName = p.getStatefulSetName()
 	)
 
 	log.Trace("initiating node stop",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("statefulSet", statefulSetName),
 	)
 
 	clientset, err := p.getClientset()
@@ -461,9 +407,6 @@ func (p *KubeRuntime) InitiateStop(ctx context.Context) error {
 		return err
 	}
 	log.Debug("retrieving StatefulSet scale",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("statefulSet", statefulSetName),
 	)
 	scale, err := clientset.AppsV1().StatefulSets(namespace).GetScale(ctx, statefulSetName, metav1.GetOptions{})
 	if err != nil {
@@ -476,9 +419,6 @@ func (p *KubeRuntime) InitiateStop(ctx context.Context) error {
 	}
 
 	log.Debug("setting StatefulSet replicas to zero",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("statefulSet", statefulSetName),
 	)
 	scale.Spec.Replicas = 0
 	_, err = clientset.AppsV1().StatefulSets(p.runtimeConfig().Namespace).UpdateScale(
@@ -492,9 +432,6 @@ func (p *KubeRuntime) InitiateStop(ctx context.Context) error {
 	}
 
 	log.Debug("StatefulSet replicas set to zero",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("statefulSet", statefulSetName),
 	)
 
 	p.setNotRunning()
@@ -506,17 +443,13 @@ func (p *KubeRuntime) InitiateStop(ctx context.Context) error {
 // TODO(marun) Consider using a watch instead
 func (p *KubeRuntime) WaitForStopped(ctx context.Context) error {
 	var (
-		log             = logging.NewLogger("")
-		nodeID          = p.node.NodeID.String()
 		runtimeConfig   = p.runtimeConfig()
+		nodeID          = p.node.NodeID.String()
 		namespace       = runtimeConfig.Namespace
 		statefulSetName = p.getStatefulSetName()
 	)
 
 	log.Trace("waiting for node to stop",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("statefulSet", statefulSetName),
 	)
 
 	clientset, err := p.getClientset()
@@ -532,27 +465,17 @@ func (p *KubeRuntime) WaitForStopped(ctx context.Context) error {
 			scale, err := clientset.AppsV1().StatefulSets(namespace).GetScale(ctx, statefulSetName, metav1.GetOptions{})
 			if apierrors.IsNotFound(err) {
 				log.Debug("node stopped: StatefulSet not found",
-					zap.String("nodeID", nodeID),
-					zap.String("namespace", namespace),
-					zap.String("statefulSet", statefulSetName),
 				)
 				p.setNotRunning()
 				return true, nil
 			}
 			if err != nil {
 				log.Warn("failed to retrieve StatefulSet scale",
-					zap.String("nodeID", nodeID),
-					zap.String("namespace", namespace),
-					zap.String("statefulSet", statefulSetName),
-					zap.Error(err),
 				)
 				return false, nil
 			}
 			if scale.Status.Replicas == 0 {
 				log.Debug("node stopped: StatefulSet scaled to zero replicas",
-					zap.String("nodeID", nodeID),
-					zap.String("namespace", namespace),
-					zap.String("statefulSet", statefulSetName),
 				)
 				p.setNotRunning()
 				return true, nil
@@ -570,17 +493,13 @@ func (p *KubeRuntime) WaitForStopped(ctx context.Context) error {
 // Restarts the node. Does not wait for readiness or health.
 func (p *KubeRuntime) Restart(ctx context.Context) error {
 	var (
-		log             = logging.NewLogger("")
-		nodeID          = p.node.NodeID.String()
 		runtimeConfig   = p.runtimeConfig()
+		nodeID          = p.node.NodeID.String()
 		namespace       = runtimeConfig.Namespace
 		statefulSetName = p.getStatefulSetName()
 	)
 
 	log.Trace("initiating node restart",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("statefulSet", statefulSetName),
 	)
 
 	clientset, err := p.getClientset()
@@ -622,9 +541,6 @@ func (p *KubeRuntime) Restart(ctx context.Context) error {
 	}
 
 	log.Debug("ensuring StatefulSet is up to date",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("statefulSet", statefulSetName),
 	)
 	updatedStatefulSet, err := clientset.AppsV1().StatefulSets(runtimeConfig.Namespace).Patch(
 		ctx,
@@ -640,9 +556,6 @@ func (p *KubeRuntime) Restart(ctx context.Context) error {
 
 	if updatedGeneration == statefulset.Generation {
 		log.Debug("StatefulSet generation unchanged. Forcing restart.",
-			zap.String("nodeID", nodeID),
-			zap.String("namespace", namespace),
-			zap.String("statefulSet", statefulSetName),
 		)
 
 		// Force a restart by scaling up and down
@@ -664,10 +577,6 @@ func (p *KubeRuntime) Restart(ctx context.Context) error {
 			statefulSet, err := clientset.AppsV1().StatefulSets(namespace).Get(ctx, statefulSetName, metav1.GetOptions{})
 			if err != nil {
 				log.Debug("failed to retrieve StatefulSet",
-					zap.String("nodeID", nodeID),
-					zap.String("namespace", namespace),
-					zap.String("statefulSet", statefulSetName),
-					zap.Error(err),
 				)
 				return false, nil
 			}
@@ -679,9 +588,6 @@ func (p *KubeRuntime) Restart(ctx context.Context) error {
 				status.UpdatedReplicas == replicas)
 			if finishedRollingOut {
 				log.Debug("StatefulSet finished rolling out",
-					zap.String("nodeID", nodeID),
-					zap.String("namespace", namespace),
-					zap.String("name", statefulSetName),
 				)
 			}
 			return finishedRollingOut, nil
@@ -710,9 +616,7 @@ func (p *KubeRuntime) IsHealthy(ctx context.Context) (bool, error) {
 	if err != nil && strings.Contains(err.Error(), "connection refused") {
 		return false, err
 	} else if err != nil {
-		logging.NewLogger("").Verbo("failed to check node health",
-			zap.String("nodeID", p.node.NodeID.String()),
-			zap.Error(err),
+		log.Debug("failed to check node health",
 		)
 		return false, nil
 	}
@@ -723,26 +627,19 @@ func (p *KubeRuntime) IsHealthy(ctx context.Context) (bool, error) {
 // running to ensure the availability of a bootstrap node.
 func (p *KubeRuntime) ensureBootstrapIP(ctx context.Context) error {
 	var (
-		log             = logging.NewLogger("")
-		nodeID          = p.node.NodeID.String()
+		_          = p.node.NodeID.String()
 		runtimeConfig   = p.runtimeConfig()
-		namespace       = runtimeConfig.Namespace
-		statefulSetName = p.getStatefulSetName()
+		_       = runtimeConfig.Namespace
+		_ = p.getStatefulSetName()
 	)
 	bootstrapIPs := []string{}
 	if len(bootstrapIPs) > 0 {
 		log.Debug("bootstrap IPs are already available so no need to wait for StatefulSet Pod to become ready",
-			zap.String("nodeID", nodeID),
-			zap.String("namespace", namespace),
-			zap.String("statefulSet", statefulSetName),
 		)
 		return nil
 	}
 
 	log.Trace("waiting for node readiness so that subsequent nodes will have a bootstrap target",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("statefulSet", statefulSetName),
 	)
 	return p.waitForPodReadiness(ctx)
 }
@@ -751,17 +648,13 @@ func (p *KubeRuntime) ensureBootstrapIP(ctx context.Context) error {
 // staking endpoints are capable of serving traffic.
 func (p *KubeRuntime) waitForPodReadiness(ctx context.Context) error {
 	var (
-		log           = logging.NewLogger("")
-		nodeID        = p.node.NodeID.String()
 		runtimeConfig = p.runtimeConfig()
 		namespace     = runtimeConfig.Namespace
+		_        = p.node.NodeID.String()
 		podName       = p.getPodName()
 	)
 
 	log.Debug("waiting for Pod to become ready",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("pod", podName),
 	)
 
 	clientset, err := p.getClientset()
@@ -773,15 +666,9 @@ func (p *KubeRuntime) waitForPodReadiness(ctx context.Context) error {
 		return err
 	}
 	log.Debug("pod is ready",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("pod", podName),
 	)
 
 	log.Debug("retrieving Pod IP",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("pod", podName),
 	)
 	pod, err := clientset.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
 	if err != nil {
@@ -806,11 +693,6 @@ func (p *KubeRuntime) waitForPodReadiness(ctx context.Context) error {
 		p.node.StakingAddress = stakingAddress.String()
 	}
 	log.Debug(readyMsg,
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("pod", podName),
-		zap.String("uri", uri),
-		zap.Stringer("stakingAddress", stakingAddress),
 	)
 
 	return nil
@@ -840,7 +722,7 @@ func (p *KubeRuntime) getKubeconfig() (*restclient.Config, error) {
 	if p.kubeConfig == nil {
 		runtimeConfig := p.runtimeConfig()
 		config, err := GetClientConfig(
-			logging.NewLogger(""),
+			log.NewNoOpLogger(),
 			runtimeConfig.ConfigPath,
 			runtimeConfig.ConfigContext,
 		)
@@ -899,8 +781,7 @@ func (p *KubeRuntime) forwardPort(ctx context.Context, port int) (uint16, chan s
 }
 
 func (p *KubeRuntime) setNotRunning() {
-	logging.NewLogger("").Debug("node is not running",
-		zap.Stringer("nodeID", p.node.NodeID),
+	log.Debug("node is not running",
 	)
 	p.node.URI = ""
 	p.node.StakingAddress = ""
@@ -967,20 +848,15 @@ func configureExclusiveScheduling(template *corev1.PodTemplateSpec, labelKey str
 		},
 	}
 }
-
 // createNodeService creates a Kubernetes Service for the node to enable ingress routing
 func (p *KubeRuntime) createNodeService(ctx context.Context, serviceName string) error {
 	var (
-		log           = logging.NewLogger("")
-		nodeID        = p.node.NodeID.String()
 		runtimeConfig = p.runtimeConfig()
 		namespace     = runtimeConfig.Namespace
+		nodeID        = p.node.NodeID.String()
 	)
 
 	log.Debug("creating Service for node",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("service", serviceName),
 	)
 
 	clientset, err := p.getClientset()
@@ -1021,9 +897,6 @@ func (p *KubeRuntime) createNodeService(ctx context.Context, serviceName string)
 	}
 
 	log.Debug("created Service",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("service", serviceName),
 	)
 
 	return nil
@@ -1032,17 +905,13 @@ func (p *KubeRuntime) createNodeService(ctx context.Context, serviceName string)
 // createNodeIngress creates a Kubernetes Ingress for the node to enable external access
 func (p *KubeRuntime) createNodeIngress(ctx context.Context, serviceName string) error {
 	var (
-		log           = logging.NewLogger("")
-		nodeID        = p.node.NodeID.String()
 		runtimeConfig = p.runtimeConfig()
 		namespace     = runtimeConfig.Namespace
+		nodeID        = p.node.NodeID.String()
 		networkUUID   = p.node.NetworkUUID
 	)
 
 	log.Debug("creating Ingress for node",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("service", serviceName),
 	)
 
 	clientset, err := p.getClientset()
@@ -1126,10 +995,6 @@ func (p *KubeRuntime) createNodeIngress(ctx context.Context, serviceName string)
 	}
 
 	log.Debug("created Ingress",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("ingress", serviceName),
-		zap.String("path", pathPattern),
 	)
 
 	return nil
@@ -1139,16 +1004,12 @@ func (p *KubeRuntime) createNodeIngress(ctx context.Context, serviceName string)
 // This prevents 503 errors when health checks are performed immediately after node start
 func (p *KubeRuntime) waitForIngressReadiness(ctx context.Context, serviceName string) error {
 	var (
-		log           = logging.NewLogger("")
-		nodeID        = p.node.NodeID.String()
 		runtimeConfig = p.runtimeConfig()
 		namespace     = runtimeConfig.Namespace
+		_        = p.node.NodeID.String()
 	)
 
 	log.Debug("waiting for Ingress readiness",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("ingress", serviceName),
 	)
 
 	clientset, err := p.getClientset()
@@ -1165,19 +1026,12 @@ func (p *KubeRuntime) waitForIngressReadiness(ctx context.Context, serviceName s
 			// Check if ingress exists and is processed by the controller
 			ingress, err := clientset.NetworkingV1().Ingresses(namespace).Get(ctx, serviceName, metav1.GetOptions{})
 			if apierrors.IsNotFound(err) {
-				log.Verbo("waiting for Ingress to be created",
-					zap.String("nodeID", nodeID),
-					zap.String("namespace", namespace),
-					zap.String("ingress", serviceName),
+				log.Debug("waiting for Ingress to be created",
 				)
 				return false, nil
 			}
 			if err != nil {
 				log.Warn("failed to retrieve Ingress",
-					zap.String("nodeID", nodeID),
-					zap.String("namespace", namespace),
-					zap.String("ingress", serviceName),
-					zap.Error(err),
 				)
 				return false, nil
 			}
@@ -1187,10 +1041,7 @@ func (p *KubeRuntime) waitForIngressReadiness(ctx context.Context, serviceName s
 			// when it has successfully processed and exposed the ingress
 			hasIngressIP := len(ingress.Status.LoadBalancer.Ingress) > 0
 			if !hasIngressIP {
-				log.Verbo("waiting for Ingress controller to process and expose the Ingress",
-					zap.String("nodeID", nodeID),
-					zap.String("namespace", namespace),
-					zap.String("ingress", serviceName),
+				log.Debug("waiting for Ingress controller to process and expose the Ingress",
 				)
 				return false, nil
 			}
@@ -1205,10 +1056,7 @@ func (p *KubeRuntime) waitForIngressReadiness(ctx context.Context, serviceName s
 			}
 
 			if !hasValidIngress {
-				log.Verbo("waiting for Ingress controller to assign IP or hostname",
-					zap.String("nodeID", nodeID),
-					zap.String("namespace", namespace),
-					zap.String("ingress", serviceName),
+				log.Debug("waiting for Ingress controller to assign IP or hostname",
 				)
 				return false, nil
 			}
@@ -1216,19 +1064,12 @@ func (p *KubeRuntime) waitForIngressReadiness(ctx context.Context, serviceName s
 			// Check if service endpoints are available
 			endpoints, err := clientset.CoreV1().Endpoints(namespace).Get(ctx, serviceName, metav1.GetOptions{})
 			if apierrors.IsNotFound(err) {
-				log.Verbo("waiting for Service endpoints to be created",
-					zap.String("nodeID", nodeID),
-					zap.String("namespace", namespace),
-					zap.String("service", serviceName),
+				log.Debug("waiting for Service endpoints to be created",
 				)
 				return false, nil
 			}
 			if err != nil {
 				log.Warn("failed to retrieve Service endpoints",
-					zap.String("nodeID", nodeID),
-					zap.String("namespace", namespace),
-					zap.String("service", serviceName),
-					zap.Error(err),
 				)
 				return false, nil
 			}
@@ -1243,18 +1084,12 @@ func (p *KubeRuntime) waitForIngressReadiness(ctx context.Context, serviceName s
 			}
 
 			if !hasReadyEndpoints {
-				log.Verbo("waiting for Service endpoints to have ready addresses",
-					zap.String("nodeID", nodeID),
-					zap.String("namespace", namespace),
-					zap.String("service", serviceName),
+				log.Debug("waiting for Service endpoints to have ready addresses",
 				)
 				return false, nil
 			}
 
 			log.Debug("Ingress is exposed by controller and Service endpoints are ready",
-				zap.String("nodeID", nodeID),
-				zap.String("namespace", namespace),
-				zap.String("ingress", serviceName),
 			)
 			return true, nil
 		},
@@ -1264,9 +1099,6 @@ func (p *KubeRuntime) waitForIngressReadiness(ctx context.Context, serviceName s
 	}
 
 	log.Debug("Ingress is ready",
-		zap.String("nodeID", nodeID),
-		zap.String("namespace", namespace),
-		zap.String("ingress", serviceName),
 	)
 
 	return nil

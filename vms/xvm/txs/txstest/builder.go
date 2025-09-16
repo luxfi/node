@@ -19,7 +19,6 @@ import (
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
-	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
@@ -229,7 +228,7 @@ func (b *Builder) builders(kc *secp256k1fx.Keychain) (builder.Builder, signer.Si
 			addrs: addrs,
 		}
 		builder = builder.New(addrs, b.ctx, wa)
-		kcAdapter = keychain.NewSecp256k1fxKeychain(kc)
+		kcAdapter = kc
 		signer  = signer.New(kcAdapter, wa)
 	)
 	return builder, signer

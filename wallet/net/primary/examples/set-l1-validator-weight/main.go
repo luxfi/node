@@ -19,7 +19,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/platformvm/warp/payload"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/net/primary"
 )
 
@@ -29,7 +28,6 @@ func main() {
 	kc := secp256k1fx.NewKeychain(key)
 
 	// Create adapter for the keychain
-	adapter := keychain.NewLedgerAdapter(kc)
 	chainID := ids.FromStringOrPanic("2BMFrJ9xeh5JdwZEx6uuFcjfZC2SV2hdbMT8ee5HrvjtfJb5br")
 	address := []byte{}
 	validationID := ids.FromStringOrPanic("2Y3ZZZXxpzm46geqVuqFXeSFVbeKihgrfeXRDaiF4ds6R2N8M5")
@@ -55,8 +53,8 @@ func main() {
 		ctx,
 		&primary.WalletConfig{
 			URI:         uri,
-			LUXKeychain: adapter,
-			EthKeychain: keychain.NewLedgerAdapter(secp256k1fx.NewKeychain()), // Empty ETH keychain
+			LUXKeychain: kc,
+			EthKeychain: secp256k1fx.NewKeychain(), // Empty ETH keychain
 		},
 	)
 	if err != nil {

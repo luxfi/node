@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
-	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 )
@@ -51,7 +50,5 @@ var _ = ginkgo.AfterEach(func() {
 		strconv.FormatInt(startTime, 10),
 		strconv.FormatInt(endTime, 10),
 	)
-	tc.Log().Info(tmpnet.MetricsAvailableMessage,
-		zap.String("uri", metricsLink),
-	)
+	tc.Log().Info(tmpnet.MetricsAvailableMessage, "uri", metricsLink)
 })

@@ -12,6 +12,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/proto/pb/p2p"
 )
 
 // Router handles message routing between chains
@@ -37,6 +38,8 @@ type Router interface {
 		chainID ids.ID,
 		requestID uint32,
 		op message.Op,
+		failedMsg message.InboundMessage,
+		engineType p2p.EngineType,
 	)
 
 	HandleInbound(ctx context.Context, msg message.InboundMessage)
@@ -47,4 +50,5 @@ type Router interface {
 	Benched(chainID ids.ID, nodeID ids.NodeID)
 	Unbenched(chainID ids.ID, nodeID ids.NodeID)
 	HealthCheck(ctx context.Context) (interface{}, error)
+	Deprecated() // Required for router.Router compatibility
 }

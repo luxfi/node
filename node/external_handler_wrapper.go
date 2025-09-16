@@ -6,15 +6,16 @@ package node
 import (
 	"context"
 
-	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/utils/set"
+	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/version"
 )
 
 // externalHandlerWrapper wraps a router to implement network.ExternalHandler
 type externalHandlerWrapper struct {
-	router router.Router
+	router Router
 }
 
 func (e *externalHandlerWrapper) HandleInbound(ctx context.Context, msg message.InboundMessage) {
@@ -30,8 +31,8 @@ func (e *externalHandlerWrapper) StopWithError(ctx context.Context, err error) {
 	e.router.Shutdown(ctx)
 }
 
-func (e *externalHandlerWrapper) Connected(nodeID ids.NodeID) {
-	e.router.Connected(nodeID, nil, ids.Empty)
+func (e *externalHandlerWrapper) Connected(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
+	e.router.Connected(nodeID, nodeVersion, netID)
 }
 
 func (e *externalHandlerWrapper) Disconnected(nodeID ids.NodeID) {
@@ -54,7 +55,7 @@ func (e *externalHandlerWrapper) RegisterRequest(
 	requestID uint32,
 	op message.Op,
 	timeoutMsg message.InboundMessage,
-	engineType int,
+	engineType p2p.EngineType,
 ) {
 	e.router.RegisterRequest(ctx, nodeID, chainID, requestID, op, timeoutMsg, engineType)
 }
@@ -66,7 +67,7 @@ func (e *externalHandlerWrapper) RegisterRequests(
 	requestID uint32,
 	op message.Op,
 	timeoutMsg message.InboundMessage,
-	engineType int,
+	engineType p2p.EngineType,
 ) {
 	// Register for each node
 	for nodeID := range nodeIDs {

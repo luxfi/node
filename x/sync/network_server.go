@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -79,17 +78,17 @@ func (s *NetworkServer) AppRequest(
 	if err := proto.Unmarshal(request, &req); err != nil {
 		s.log.Debug(
 			"failed to unmarshal AppRequest",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Int("requestLen", len(request)),
-			zap.Error(err),
+			log.Stringer("nodeID", nodeID),
+			log.Uint32("requestID", requestID),
+			log.Int("requestLen", len(request)),
+			log.Reflect("error", err),
 		)
 		return nil
 	}
 	s.log.Debug(
 		"processing AppRequest from node",
-		zap.Stringer("nodeID", nodeID),
-		zap.Uint32("requestID", requestID),
+		log.Stringer("nodeID", nodeID),
+		log.Uint32("requestID", requestID),
 	)
 
 	// bufferedDeadline is half the time till actual deadline so that the message has a
@@ -103,8 +102,8 @@ func (s *NetworkServer) AppRequest(
 		// Drop the request if we already missed the deadline to respond.
 		s.log.Info(
 			"deadline to process AppRequest has expired, skipping",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
+			log.Stringer("nodeID", nodeID),
+			log.Uint32("requestID", requestID),
 		)
 		return nil
 	}
@@ -121,10 +120,10 @@ func (s *NetworkServer) AppRequest(
 	default:
 		s.log.Debug(
 			"unknown AppRequest type",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Int("requestLen", len(request)),
-			zap.String("requestType", fmt.Sprintf("%T", req)),
+			log.Stringer("nodeID", nodeID),
+			log.Uint32("requestID", requestID),
+			log.Int("requestLen", len(request)),
+			log.UserString("requestType", fmt.Sprintf("%T", req)),
 		)
 		return nil
 	}
@@ -138,9 +137,9 @@ func (s *NetworkServer) AppRequest(
 			// log unexpected errors instead of returning them, since they are fatal.
 			s.log.Warn(
 				"unexpected error handling AppRequest",
-				zap.Stringer("nodeID", nodeID),
-				zap.Uint32("requestID", requestID),
-				zap.Error(err),
+				log.Stringer("nodeID", nodeID),
+				log.Uint32("requestID", requestID),
+				log.Reflect("error", err),
 			)
 		}
 	}
@@ -165,10 +164,10 @@ func (s *NetworkServer) HandleChangeProofRequest(
 	if err := validateChangeProofRequest(req); err != nil {
 		s.log.Debug(
 			"dropping invalid change proof request",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Stringer("req", req),
-			zap.Error(err),
+			log.Stringer("nodeID", nodeID),
+			log.Uint32("requestID", requestID),
+			log.Stringer("req", req),
+			log.Reflect("error", err),
 		)
 		return nil // dropping request
 	}
@@ -232,10 +231,10 @@ func (s *NetworkServer) HandleChangeProofRequest(
 			if err := s.appSender.SendAppResponse(ctx, nodeID, requestID, proofBytes); err != nil {
 				s.log.Error(
 					"failed to send app response",
-					zap.Stringer("nodeID", nodeID),
-					zap.Uint32("requestID", requestID),
-					zap.Int("responseLen", len(proofBytes)),
-					zap.Error(err),
+					log.Stringer("nodeID", nodeID),
+					log.Uint32("requestID", requestID),
+					log.Int("responseLen", len(proofBytes)),
+					log.Reflect("error", err),
 				)
 				return fmt.Errorf("%w: %w", errAppSendFailed, err)
 			}
@@ -256,10 +255,10 @@ func (s *NetworkServer) HandleChangeProofRequest(
 			if err := s.appSender.SendAppResponse(ctx, nodeID, requestID, proofBytes); err != nil {
 				s.log.Error(
 					"failed to send app response",
-					zap.Stringer("nodeID", nodeID),
-					zap.Uint32("requestID", requestID),
-					zap.Int("responseLen", len(proofBytes)),
-					zap.Error(err),
+					log.Stringer("nodeID", nodeID),
+					log.Uint32("requestID", requestID),
+					log.Int("responseLen", len(proofBytes)),
+					log.Reflect("error", err),
 				)
 				return fmt.Errorf("%w: %w", errAppSendFailed, err)
 			}
@@ -283,10 +282,10 @@ func (s *NetworkServer) HandleRangeProofRequest(
 	if err := validateRangeProofRequest(req); err != nil {
 		s.log.Debug(
 			"dropping invalid range proof request",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Stringer("req", req),
-			zap.Error(err),
+			log.Stringer("nodeID", nodeID),
+			log.Uint32("requestID", requestID),
+			log.Stringer("req", req),
+			log.Reflect("error", err),
 		)
 		return nil // drop request
 	}
@@ -309,10 +308,10 @@ func (s *NetworkServer) HandleRangeProofRequest(
 	if err := s.appSender.SendAppResponse(ctx, nodeID, requestID, proofBytes); err != nil {
 		s.log.Error(
 			"failed to send app response",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Int("responseLen", len(proofBytes)),
-			zap.Error(err),
+			log.Stringer("nodeID", nodeID),
+			log.Uint32("requestID", requestID),
+			log.Int("responseLen", len(proofBytes)),
+			log.Reflect("error", err),
 		)
 		return fmt.Errorf("%w: %w", errAppSendFailed, err)
 	}

@@ -14,13 +14,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luxfi/log"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/tests/fixture/tmpnet/flags"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 
 	corev1 "k8s.io/api/core/v1"
@@ -87,10 +86,10 @@ func setImageDetails(ctx context.Context, log log.Logger, clientset *kubernetes.
 		return fmt.Errorf("failed to patch statefulset %s.%s: %w", namespace, statefulSetName, err)
 	}
 	log.Info("Updated statefulset to target new image",
-		zap.String("namespace", namespace),
-		zap.String("statefulSetName", statefulSetName),
-		zap.String("image", imageDetails.Image),
-		zap.Reflect("versions", imageDetails.Versions),
+		"namespace", namespace,
+		"statefulSetName", statefulSetName,
+		"image", imageDetails.Image,
+		"versions", imageDetails.Versions,
 	)
 	return nil
 }

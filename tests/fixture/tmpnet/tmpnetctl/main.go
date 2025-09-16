@@ -13,12 +13,11 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/luxfi/log"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/tests/fixture/tmpnet/flags"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
 
@@ -44,7 +43,7 @@ func main() {
 		Short: "tmpnetctl commands",
 	}
 	rootCmd.PersistentFlags().StringVar(&networkDir, "network-dir", os.Getenv(tmpnet.NetworkDirEnvName), "The path to the configuration directory of a temporary network")
-	rootCmd.PersistentFlags().StringVar(&rawLogFormat, "log-format", logging.AutoString, logging.FormatDescription)
+	rootCmd.PersistentFlags().StringVar(&rawLogFormat, "log-format", "auto", "The structure of log format. Options: 'auto', 'plain', 'colors', 'json'")
 
 	versionCmd := &cobra.Command{
 		Use:   "version",

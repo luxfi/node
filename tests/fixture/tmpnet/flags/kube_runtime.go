@@ -17,6 +17,8 @@ const (
 	kubeRuntime     = "kube"
 	kubeFlagsPrefix = kubeRuntime + "-"
 	kubeDocPrefix   = "[kube runtime] "
+	
+	DefaultTmpnetNamespace = "tmpnet"
 )
 
 var (
@@ -49,7 +51,7 @@ func (v *kubeRuntimeVars) register(stringVar varFunc[string], uintVar varFunc[ui
 	stringVar(
 		&v.namespace,
 		"kube-namespace",
-		tmpnet.DefaultTmpnetNamespace,
+		DefaultTmpnetNamespace,
 		kubeDocPrefix+"The namespace in the target cluster to create nodes in",
 	)
 	stringVar(

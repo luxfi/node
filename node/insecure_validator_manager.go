@@ -22,7 +22,7 @@ type ExtendedManager interface {
 }
 
 type insecureValidatorManager struct {
-	ChainRouter
+	Router
 	log    log.Logger
 	vdrs   validators.Manager
 	weight uint64
@@ -48,9 +48,7 @@ func (i *insecureValidatorManager) Connected(vdrID ids.NodeID, nodeVersion *vers
 		)
 	}
 	// Forward to the underlying router
-	if i.ChainRouter != nil {
-		i.ChainRouter.Connected(vdrID, nodeVersion, netID)
-	}
+	i.Router.Connected(vdrID, nodeVersion, netID)
 }
 
 func (i *insecureValidatorManager) Disconnected(vdrID ids.NodeID) {
@@ -67,7 +65,5 @@ func (i *insecureValidatorManager) Disconnected(vdrID ids.NodeID) {
 	)
 
 	// Forward to the underlying router
-	if i.ChainRouter != nil {
-		i.ChainRouter.Disconnected(vdrID)
-	}
+	i.Router.Disconnected(vdrID)
 }

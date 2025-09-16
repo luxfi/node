@@ -19,7 +19,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/luxfi/log"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/luxfi/log"
@@ -132,24 +131,13 @@ func stopCollector(ctx context.Context, log log.Logger, cmdName string) error {
 		return err
 	}
 	if proc == nil {
-		log.Info("collector not running",
-			zap.String("cmd", cmdName),
-		)
 		return nil
 	}
 
-	log.Info("sending SIGTERM to collector process",
-		zap.String("cmd", cmdName),
-		zap.Int("pid", proc.Pid),
-	)
 	if err := proc.Signal(syscall.SIGTERM); err != nil {
 		return fmt.Errorf("failed to send SIGTERM to pid %d: %w", proc.Pid, err)
 	}
 
-	log.Info("waiting for collector process to stop",
-		zap.String("cmd", cmdName),
-		zap.Int("pid", proc.Pid),
-	)
 	err = pollUntilContextCancel(
 		ctx,
 		func(_ context.Context) (bool, error) {
@@ -162,11 +150,6 @@ func stopCollector(ctx context.Context, log log.Logger, cmdName string) error {
 
 				// Attempt to clear the PID file. Not critical that it is removed, just good housekeeping.
 				if err := clearStalePIDFile(log, cmdName, pidPath); err != nil {
-					log.Warn("failed to remove stale PID file",
-						zap.String("cmd", cmdName),
-						zap.String("pidFile", pidPath),
-						zap.Error(err),
-					)
 				}
 			}
 			return p == nil, nil
@@ -175,9 +158,6 @@ func stopCollector(ctx context.Context, log log.Logger, cmdName string) error {
 	if err != nil {
 		return err
 	}
-	log.Info("collector stopped",
-		zap.String("cmdName", cmdName),
-	)
 
 	return nil
 }
@@ -365,17 +345,6 @@ func applyGitHubLabels(sdConfig SDConfig) SDConfig {
 	return sdConfig
 }
 
-// GetGitHubLabels returns labels from GitHub environment variables
-func GetGitHubLabels() map[string]string {
-	labels := make(map[string]string)
-	githubEnvs := []string{"GH_REPO", "GH_SHA", "GH_WORKFLOW", "GH_RUN_ID", "GH_RUN_ATTEMPT"}
-	for _, env := range githubEnvs {
-		if value := os.Getenv(env); value != "" {
-			labels[strings.ToLower(env)] = value
-		}
-	}
-	return labels
-}
 
 func getLogFilename(cmdName string) string {
 	return cmdName + ".log"
@@ -420,9 +389,6 @@ func startCollector(
 	if process, err := processFromPIDFile(cmdName, pidPath); err != nil {
 		return err
 	} else if process != nil {
-		log.Info("collector already running",
-			zap.String("cmd", cmdName),
-		)
 		return nil
 	}
 
@@ -439,10 +405,6 @@ func startCollector(
 	// Write the collector config file
 	confFilename := cmdName + ".yaml"
 	confPath := filepath.Join(workingDir, confFilename)
-	log.Info("writing collector config",
-		zap.String("cmd", cmdName),
-		zap.String("path", confPath),
-	)
 	if err := os.WriteFile(confPath, []byte(config), perms.ReadWrite); err != nil {
 		return err
 	}
@@ -486,10 +448,6 @@ func clearStalePIDFile(log log.Logger, cmdName string, pidPath string) error {
 			return fmt.Errorf("failed to remove stale pid file: %w", err)
 		}
 	} else {
-		log.Info("deleted stale collector pid file",
-			zap.String("cmd", cmdName),
-			zap.String("path", pidPath),
-		)
 	}
 	return nil
 }
@@ -544,12 +502,6 @@ func startCollectorProcess(
 ) error {
 	logFilename := getLogFilename(cmdName)
 	fullCmd := "nohup " + cmdName + " " + args + " > " + logFilename + " 2>&1 & echo -n \"$!\" > " + pidPath
-	log.Info("starting collector",
-		zap.String("cmd", cmdName),
-		zap.String("workingDir", workingDir),
-		zap.String("fullCmd", fullCmd),
-		zap.String("logPath", filepath.Join(workingDir, logFilename)),
-	)
 
 	cmd := exec.Command("bash", "-c", fullCmd)
 	configureDetachedProcess(cmd) // Ensure the child process will outlive its parent
@@ -566,11 +518,6 @@ func startCollectorProcess(
 			var err error
 			pid, err = getPID(cmdName, pidPath)
 			if err != nil {
-				log.Warn("failed to read PID file",
-					zap.String("cmd", cmdName),
-					zap.String("pidPath", pidPath),
-					zap.Error(err),
-				)
 			}
 			return pid != 0, nil
 		},
@@ -578,10 +525,6 @@ func startCollectorProcess(
 	if err != nil {
 		return err
 	}
-	log.Info("started collector",
-		zap.String("cmd", cmdName),
-		zap.Int("pid", pid),
-	)
 
 	// Wait for non-empty log file. An empty log file should only occur if the command
 	// invocation is not correctly redirecting stderr and stdout to the expected file.
@@ -626,37 +569,23 @@ func checkReadiness(ctx context.Context, url string) (bool, string, error) {
 
 // waitForReadiness waits until the given readiness URL returns 200
 func waitForReadiness(ctx context.Context, log log.Logger, cmdName string, readinessURL string) error {
-	logPath, err := getLogPath(cmdName)
+	_, err := getLogPath(cmdName)
 	if err != nil {
 		return err
 	}
-	log.Info("waiting for collector readiness",
-		zap.String("cmd", cmdName),
-		zap.String("url", readinessURL),
-		zap.String("logPath", logPath),
-	)
 	err = pollUntilContextCancel(
 		ctx,
 		func(_ context.Context) (bool, error) {
-			ready, body, err := checkReadiness(ctx, readinessURL)
+			ready, _, err := checkReadiness(ctx, readinessURL)
 			if err == nil {
 				return ready, nil
 			}
-			log.Warn("failed to check readiness",
-				zap.String("cmd", cmdName),
-				zap.String("url", readinessURL),
-				zap.String("body", body),
-				zap.Error(err),
-			)
 			return false, nil
 		},
 	)
 	if err != nil {
 		return err
 	}
-	log.Info("collector ready",
-		zap.String("cmd", cmdName),
-	)
 	return nil
 }
 
@@ -664,15 +593,3 @@ func pollUntilContextCancel(ctx context.Context, condition wait.ConditionWithCon
 	return wait.PollUntilContextCancel(ctx, collectorTickerInterval, true /* immediate */, condition)
 }
 
-// getProcess returns an os.Process for the given PID
-func getProcess(pid int) (*os.Process, error) {
-	return os.FindProcess(pid)
-}
-
-// GetEnvWithDefault gets an environment variable with a default value
-func GetEnvWithDefault(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}

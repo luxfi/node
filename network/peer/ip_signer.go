@@ -80,3 +80,11 @@ func (s *IPSigner) GetSignedIP() (*SignedIP, error) {
 	s.signedIP = signedIP
 	return s.signedIP, nil
 }
+
+// PublicKey returns the BLS public key for this IPSigner
+func (s *IPSigner) PublicKey() *bls.PublicKey {
+	if s.blsSigner == nil {
+		return nil
+	}
+	return s.blsSigner.PublicKey()
+}

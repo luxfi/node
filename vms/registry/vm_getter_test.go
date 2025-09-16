@@ -26,9 +26,6 @@ import (
 var (
 	pluginDir = "plugin getter"
 
-	// errors
-	errTest = errors.New("non-nil error")
-
 	// vm names
 	registeredVMName   = "mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6"
 	unregisteredVMName = "tGas3T58KzdjLHhBDMnH2TvrddhqTji5iZAMZ3RXs2NLpSnhH"

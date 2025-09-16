@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/ledger-lux-go/keychain"
+	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/verify"
@@ -24,7 +24,7 @@ var (
 	_ keychain.Signer = (*luxSigner)(nil)
 )
 
-// luxSigner wraps a secp256k1.PrivateKey to implement ledger-lux-go/keychain.Signer
+// luxSigner wraps a secp256k1.PrivateKey to implement wallet/keychain.Signer
 type luxSigner struct {
 	key *secp256k1.PrivateKey
 }

@@ -40,9 +40,9 @@ const (
 )
 
 var (
-	chainConfigContentEnvName        = config.EnvVarName(config.EnvPrefix, config.ChainConfigContentKey)
-	networkEnvName                   = config.EnvVarName(config.EnvPrefix, config.NetworkNameKey)
-	partialSyncPrimaryNetworkEnvName = config.EnvVarName(config.EnvPrefix, config.PartialSyncPrimaryNetworkKey)
+	chainConfigContentEnvName        = "LUX_CHAIN_CONFIG_CONTENT"
+	networkEnvName                   = "LUX_NETWORK_NAME"
+	partialSyncPrimaryNetworkEnvName = "LUX_PARTIAL_SYNC_PRIMARY_NETWORK"
 
 	// Errors for bootstrapTestConfigForPod
 	errContainerNotFound          = errors.New("container not found")
