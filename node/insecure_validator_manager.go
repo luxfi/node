@@ -4,19 +4,25 @@
 package node
 
 import (
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/version"
 )
 
+// ExtendedManager extends the base validators.Manager with additional methods
+type ExtendedManager interface {
+	validators.Manager
+	AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error
+	RemoveWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error
+}
+
 type insecureValidatorManager struct {
 	ChainRouter
 	log    log.Logger
-	vdrs   validators.Manager
+	vdrs   ExtendedManager
 	weight uint64
 }
 
@@ -31,9 +37,9 @@ func (i *insecureValidatorManager) Connected(vdrID ids.NodeID, nodeVersion *vers
 		err := i.vdrs.AddStaker(constants.PrimaryNetworkID, vdrID, nil, dummyTxID, i.weight)
 		if err != nil {
 			i.log.Error("failed to add validator",
-				zap.Stringer("nodeID", vdrID),
-				zap.Stringer("netID", constants.PrimaryNetworkID),
-				zap.Error(err),
+				log.Stringer("nodeID", vdrID),
+				log.Stringer("netID", constants.PrimaryNetworkID),
+				log.Error(err),
 			)
 		}
 	}
@@ -47,9 +53,9 @@ func (i *insecureValidatorManager) Disconnected(vdrID ids.NodeID) {
 	err := i.vdrs.RemoveWeight(constants.PrimaryNetworkID, vdrID, i.weight)
 	if err != nil {
 		i.log.Error("failed to remove weight",
-			zap.Stringer("nodeID", vdrID),
-			zap.Stringer("netID", constants.PrimaryNetworkID),
-			zap.Error(err),
+			log.Stringer("nodeID", vdrID),
+			log.Stringer("netID", constants.PrimaryNetworkID),
+			log.Error(err),
 		)
 	}
 	// Router.Disconnected not available in consensus package

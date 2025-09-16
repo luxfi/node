@@ -17,6 +17,7 @@ import (
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
 )
 
@@ -25,7 +26,7 @@ type Router interface {
 	Initialize(
 		nodeID ids.NodeID,
 		log log.Logger,
-		timeouts *handler.AdaptiveTimeoutManager,
+		timeouts *timer.AdaptiveTimeoutManager,
 		shutdownTimeout time.Duration,
 		criticalChains set.Set[ids.ID],
 		whitelistedSubnets set.Set[ids.ID],
@@ -59,7 +60,7 @@ type chainRouter struct {
 	log             log.Logger
 	lock            sync.RWMutex
 	chains          map[ids.ID]handler.Handler
-	timeoutManager  *handler.AdaptiveTimeoutManager
+	timeoutManager  *timer.AdaptiveTimeoutManager
 	nodeID          ids.NodeID
 	healthConfig    HealthConfig
 	reg             metric.Registerer
@@ -70,7 +71,7 @@ type chainRouter struct {
 }
 
 // NewChainRouter creates a new router with full functionality
-func NewChainRouter(logger log.Logger, timeoutManager *handler.AdaptiveTimeoutManager) Router {
+func NewChainRouter(logger log.Logger, timeoutManager *timer.AdaptiveTimeoutManager) Router {
 	// Create a wrapper for the consensus router that expects log.Logger
 	wrappedLogger := NewLoggerWrapper(logger)
 	return &chainRouter{
