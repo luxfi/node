@@ -327,9 +327,9 @@ func getAndParse[T any](
 		}
 
 		client.log.Debug("request failed, retrying",
-			zap.Stringer("nodeID", nodeID),
-			zap.Int("attempt", attempt),
-			zap.Error(err),
+			log.Stringer("nodeID", nodeID),
+			log.Int("attempt", attempt),
+			log.Error(err),
 		)
 		// if [err] is being propagated from [ctx], avoid overwriting [lastErr].
 		if err != ctx.Err() {

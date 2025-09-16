@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
@@ -49,7 +49,7 @@ func New(
 	txVerifier TxVerifier,
 	mempool mempool.Mempool,
 	appSender core.AppSender,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	config Config,
 ) (*Network, error) {
 	p2pNetwork, err := p2p.NewNetwork(log, appSender, registerer, "p2p")

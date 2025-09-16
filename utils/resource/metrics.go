@@ -6,49 +6,49 @@ package resource
 import (
 	"errors"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type metrics struct {
-	numCPUCycles       metric.GaugeVec
-	numDiskReads       metric.GaugeVec
-	numDiskReadBytes   metric.GaugeVec
-	numDiskWrites      metric.GaugeVec
-	numDiskWritesBytes metric.GaugeVec
+	numCPUCycles       *prometheus.GaugeVec
+	numDiskReads       *prometheus.GaugeVec
+	numDiskReadBytes   *prometheus.GaugeVec
+	numDiskWrites      *prometheus.GaugeVec
+	numDiskWritesBytes *prometheus.GaugeVec
 }
 
-func newMetrics(registerer metric.Registerer) (*metrics, error) {
+func newMetrics(registerer prometheus.Registerer) (*metrics, error) {
 	m := &metrics{
-		numCPUCycles: metric.NewGaugeVec(
-			metric.GaugeOpts{
+		numCPUCycles: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
 				Name: "num_cpu_cycles",
 				Help: "Total number of CPU cycles",
 			},
 			[]string{"processID"},
 		),
-		numDiskReads: metric.NewGaugeVec(
-			metric.GaugeOpts{
+		numDiskReads: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
 				Name: "num_disk_reads",
 				Help: "Total number of disk reads",
 			},
 			[]string{"processID"},
 		),
-		numDiskReadBytes: metric.NewGaugeVec(
-			metric.GaugeOpts{
+		numDiskReadBytes: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
 				Name: "num_disk_read_bytes",
 				Help: "Total number of disk read bytes",
 			},
 			[]string{"processID"},
 		),
-		numDiskWrites: metric.NewGaugeVec(
-			metric.GaugeOpts{
+		numDiskWrites: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
 				Name: "num_disk_writes",
 				Help: "Total number of disk writes",
 			},
 			[]string{"processID"},
 		),
-		numDiskWritesBytes: metric.NewGaugeVec(
-			metric.GaugeOpts{
+		numDiskWritesBytes: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
 				Name: "num_disk_write_bytes",
 				Help: "Total number of disk write bytes",
 			},

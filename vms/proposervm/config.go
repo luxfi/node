@@ -7,7 +7,7 @@ import (
 	"crypto"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/node/staking"
 )
@@ -36,7 +36,7 @@ type Config struct {
 	StakingCertLeaf *staking.Certificate
 
 	// Registerer for prometheus metrics
-	Registerer metric.Registerer
+	Registerer metrics.Registerer
 
 	// Automining configuration
 	AutominingEnabled bool

@@ -12,8 +12,6 @@ import (
 
 	"github.com/luxfi/metric"
 
-	luxmetrics "github.com/luxfi/metric"
-
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	consensusset "github.com/luxfi/consensus/utils/set"
@@ -66,7 +64,7 @@ func StartTestPeer(
 	tlsConfg := TLSConfig(*tlsCert, nil)
 	clientUpgrader := NewTLSClientUpgrader(
 		tlsConfg,
-		metric.NewCounter(metric.CounterOpts{}),
+		metrics.NewCounter(metrics.CounterOpts{}),
 	)
 
 	peerID, conn, cert, err := clientUpgrader.Upgrade(conn)

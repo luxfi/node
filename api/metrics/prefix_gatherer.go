@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	utilmetric "github.com/luxfi/node/utils/metric"
 	"google.golang.org/protobuf/proto"
 

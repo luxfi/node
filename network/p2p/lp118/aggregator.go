@@ -154,7 +154,7 @@ func (s *SignatureAggregator) AggregateSignatures(
 				s.log.Debug(
 					"dropping response",
 					log.Stringer("nodeID", result.NodeID),
-					log.Err(result.Err),
+					log.Error(result.Err),
 				)
 				continue
 			}
@@ -164,7 +164,7 @@ func (s *SignatureAggregator) AggregateSignatures(
 				s.log.Debug(
 					"dropping duplicate signature",
 					log.Stringer("nodeID", result.NodeID),
-					log.Err(err),
+					log.Error(err),
 				)
 				continue
 			}

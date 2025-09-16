@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"
@@ -35,7 +35,7 @@ var DefaultNodeID = ids.GenerateTestNodeID()
 type Config struct {
 	DB         database.Database
 	Genesis    []byte
-	Registerer metric.Registerer
+	Registerer metrics.Registerer
 	Validators validators.Manager
 	Upgrades   upgrade.Config
 	Config     config.Config

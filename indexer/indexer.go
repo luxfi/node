@@ -163,11 +163,11 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 	if err != nil {
 		i.log.Error("couldn't get whether chain is incomplete",
 			log.String("chainName", chainName),
-			log.Err(err),
+			log.Error(err),
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
-				log.Err(err),
+				log.Error(err),
 			)
 		}
 		return
@@ -178,11 +178,11 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 	if err != nil {
 		i.log.Error("couldn't get whether chain was previously indexed",
 			log.String("chainName", chainName),
-			log.Err(err),
+			log.Error(err),
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
-				log.Err(err),
+				log.Error(err),
 			)
 		}
 		return
@@ -197,7 +197,7 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 			)
 			if err := i.close(); err != nil {
 				i.log.Error("failed to close indexer",
-					log.Err(err),
+					log.Error(err),
 				)
 			}
 			return
@@ -210,11 +210,11 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 		}
 		i.log.Error("couldn't mark chain as incomplete",
 			log.String("chainName", chainName),
-			log.Err(err),
+			log.Error(err),
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
-				log.Err(err),
+				log.Error(err),
 			)
 		}
 		return
@@ -226,7 +226,7 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 		)
 		if err := i.close(); err != nil{
 			i.log.Error("failed to close indexer",
-				log.Err(err),
+				log.Error(err),
 			)
 		}
 		return
@@ -236,11 +236,11 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 	if err := i.markPreviouslyIndexed(chainID); err != nil {
 		i.log.Error("couldn't mark chain as indexed",
 			log.String("chainName", chainName),
-			log.Err(err),
+			log.Error(err),
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
-				log.Err(err),
+				log.Error(err),
 			)
 		}
 		return
@@ -251,12 +251,12 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 		i.log.Error("failed to create index",
 			log.String("chainName", chainName),
 			log.String("endpoint", "block"),
-			log.Err(err),
+			log.Error(err),
 			log.String("debug", "closing indexer due to block index creation failure"),
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
-				log.Err(err),
+				log.Error(err),
 			)
 		}
 		return
@@ -287,11 +287,11 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 			i.log.Error("couldn't create index",
 				log.String("chainName", chainName),
 				log.String("endpoint", "vtx"),
-				log.Err(err),
+				log.Error(err),
 			)
 			if err := i.close(); err != nil {
 				i.log.Error("failed to close indexer",
-					log.Err(err),
+					log.Error(err),
 				)
 			}
 			return
@@ -303,11 +303,11 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 			i.log.Error("couldn't create index",
 				log.String("chainName", chainName),
 				log.String("endpoint", "tx"),
-				log.Err(err),
+				log.Error(err),
 			)
 			if err := i.close(); err != nil {
 				i.log.Error("failed to close indexer",
-					log.Err(err),
+					log.Error(err),
 				)
 			}
 			return
@@ -322,7 +322,7 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 		)
 		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
-				log.Err(err),
+				log.Error(err),
 			)
 		}
 	}

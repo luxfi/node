@@ -92,7 +92,7 @@ import (
 	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
 	
 	"github.com/luxfi/node/vms/platformvm/metrics"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 )
 
 const (

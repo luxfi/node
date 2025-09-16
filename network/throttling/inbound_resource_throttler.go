@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/tracker"
@@ -57,24 +57,24 @@ type systemThrottler struct {
 }
 
 type systemThrottlerMetrics struct {
-	totalWaits      metric.Counter
-	totalNoWaits    metric.Counter
-	awaitingAcquire metric.Gauge
+	totalWaits      metrics.Counter
+	totalNoWaits    metrics.Counter
+	awaitingAcquire metrics.Gauge
 }
 
-func newSystemThrottlerMetrics(namespace string, reg metric.Registerer) (*systemThrottlerMetrics, error) {
+func newSystemThrottlerMetrics(namespace string, reg metrics.Registerer) (*systemThrottlerMetrics, error) {
 	m := &systemThrottlerMetrics{
-		totalWaits: metric.NewCounter(metric.CounterOpts{
+		totalWaits: metrics.NewCounter(metrics.CounterOpts{
 			Namespace: namespace,
 			Name:      "throttler_total_waits",
 			Help:      "Number of times we've waited to read a message from a node because their usage was too high",
 		}),
-		totalNoWaits: metric.NewCounter(metric.CounterOpts{
+		totalNoWaits: metrics.NewCounter(metrics.CounterOpts{
 			Namespace: namespace,
 			Name:      "throttler_total_no_waits",
 			Help:      "Number of times we didn't wait to read a message because their usage is too high",
 		}),
-		awaitingAcquire: metric.NewGauge(metric.GaugeOpts{
+		awaitingAcquire: metrics.NewGauge(metrics.GaugeOpts{
 			Namespace: namespace,
 			Name:      "throttler_awaiting_acquire",
 			Help:      "Number of nodes we're waiting to read a message from because their usage is too high",
@@ -90,7 +90,7 @@ func newSystemThrottlerMetrics(namespace string, reg metric.Registerer) (*system
 
 func NewSystemThrottler(
 	namespace string,
-	reg metric.Registerer,
+	reg metrics.Registerer,
 	config SystemThrottlerConfig,
 	tracker tracker.Tracker,
 	targeter tracker.Targeter,

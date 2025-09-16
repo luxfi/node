@@ -6,24 +6,24 @@ package mempool
 import (
 	"errors"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var _ Metrics = (*metrics)(nil)
 
 type metrics struct {
-	numTxs               metric.Gauge
-	bytesAvailableMetric metric.Gauge
+	numTxs               prometheus.Gauge
+	bytesAvailableMetric prometheus.Gauge
 }
 
-func NewMetrics(namespace string, registerer metric.Registerer) (*metrics, error) {
+func NewMetrics(namespace string, registerer prometheus.Registerer) (*metrics, error) {
 	m := &metrics{
-		numTxs: metric.NewGauge(metric.GaugeOpts{
+		numTxs: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "count",
 			Help:      "Number of transactions in the mempool",
 		}),
-		bytesAvailableMetric: metric.NewGauge(metric.GaugeOpts{
+		bytesAvailableMetric: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "bytes_available",
 			Help:      "Number of bytes of space currently available in the mempool",

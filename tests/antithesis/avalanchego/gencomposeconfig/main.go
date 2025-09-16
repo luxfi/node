@@ -20,7 +20,7 @@ func main() {
 	network := tmpnet.LocalNetworkOrPanic()
 	if err := antithesis.GenerateComposeConfig(network, baseImageName, "", "docker-compose.yml"); err != nil {
 		tests.NewDefaultLogger("").Fatal("failed to generate compose config",
-			zap.Error(err),
+			log.Error(err),
 		)
 		os.Exit(1)
 	}

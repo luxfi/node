@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus"
@@ -109,7 +109,7 @@ type VM struct {
 
 	// proposerBuildSlotGauge reports the slot index when this node may attempt
 	// to build a block.
-	proposerBuildSlotGauge metric.Gauge
+	proposerBuildSlotGauge metrics.Gauge
 
 	// acceptedBlocksSlotHistogram reports the slots that accepted blocks were
 	// proposed in.
@@ -302,7 +302,7 @@ func (vm *VM) Initialize(
 		return err
 	}
 
-	vm.proposerBuildSlotGauge = metric.NewGauge(metric.GaugeOpts{
+	vm.proposerBuildSlotGauge = metrics.NewGauge(metrics.GaugeOpts{
 		Name: "block_building_slot",
 		Help: "the slot that this node may attempt to build a block",
 	})

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	luxmetric "github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 )
 
 var (

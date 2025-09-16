@@ -6,7 +6,7 @@ package throttling
 import (
 	"context"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/network/tracker"
@@ -53,7 +53,7 @@ type InboundMsgThrottlerConfig struct {
 // Returns a new, sybil-safe inbound message throttler.
 func NewInboundMsgThrottler(
 	log log.Logger,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	vdrs validators.Manager,
 	throttlerConfig InboundMsgThrottlerConfig,
 	resourceTracker tracker.ResourceTracker,

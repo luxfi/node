@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/google/btree"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/uptime"
@@ -451,7 +451,7 @@ func blockSize(_ ids.ID, blk block.Block) int {
 func New(
 	db database.Database,
 	genesisBytes []byte,
-	metricsReg metric.Registerer,
+	metricsReg metrics.Registerer,
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
 	ctx context.Context,
@@ -487,7 +487,7 @@ func newState(
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
 	ctx context.Context,
-	metricsReg metric.Registerer,
+	metricsReg metrics.Registerer,
 	rewards reward.Calculator,
 ) (*state, error) {
 	blockIDCache, err := metercacher.New[uint64, ids.ID](

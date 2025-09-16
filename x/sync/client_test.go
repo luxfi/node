@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	pb "github.com/luxfi/node/proto/pb/sync"
 	"github.com/luxfi/mock/gomock"
 	"google.golang.org/protobuf/proto"

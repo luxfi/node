@@ -3,14 +3,14 @@
 
 package index
 
-import "github.com/luxfi/metric"
+import metrics "github.com/luxfi/metric"
 
 type metrics struct {
-	numTxsIndexed metric.Counter
+	numTxsIndexed metrics.Counter
 }
 
-func (m *metrics) initialize(namespace string, registerer metric.Registerer) error {
-	m.numTxsIndexed = metric.NewCounter(metric.CounterOpts{
+func (m *metrics) initialize(namespace string, registerer metrics.Registerer) error {
+	m.numTxsIndexed = metrics.NewCounter(metrics.CounterOpts{
 		Namespace: namespace,
 		Name:      "txs_indexed",
 		Help:      "Number of transactions indexed",

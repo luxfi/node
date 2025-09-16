@@ -12,7 +12,7 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/exp/maps"
 
@@ -188,7 +188,7 @@ type Config struct {
 	// If [Reg] is nil, metrics are collected locally but not exported through
 	// Prometheus.
 	// This may be useful for testing.
-	Reg        metric.Registerer
+	Reg        metrics.Registerer
 	TraceLevel TraceLevel
 	Tracer     trace.Tracer
 }

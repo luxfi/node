@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	luxlog "github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/core"
@@ -44,27 +44,27 @@ var (
 	_ Set[*testTx] = (*FullSet[*testTx])(nil)
 
 	ioTypeLabels   = []string{ioLabel, typeLabel}
-	sentPushLabels = metric.Labels{
+	sentPushLabels = metrics.Labels{
 		ioLabel:   sentIO,
 		typeLabel: pushType,
 	}
-	receivedPushLabels = metric.Labels{
+	receivedPushLabels = metrics.Labels{
 		ioLabel:   receivedIO,
 		typeLabel: pushType,
 	}
-	sentPullLabels = metric.Labels{
+	sentPullLabels = metrics.Labels{
 		ioLabel:   sentIO,
 		typeLabel: pullType,
 	}
-	receivedPullLabels = metric.Labels{
+	receivedPullLabels = metrics.Labels{
 		ioLabel:   receivedIO,
 		typeLabel: pullType,
 	}
 	typeLabels   = []string{typeLabel}
-	unsentLabels = metric.Labels{
+	unsentLabels = metrics.Labels{
 		typeLabel: unsentType,
 	}
-	sentLabels = metric.Labels{
+	sentLabels = metrics.Labels{
 		typeLabel: sentType,
 	}
 
@@ -96,50 +96,50 @@ type ValidatorGossiper struct {
 // Metrics that are tracked across a gossip protocol. A given protocol should
 // only use a single instance of Metrics.
 type Metrics struct {
-	count                   metric.CounterVec
-	bytes                   metric.CounterVec
-	tracking                metric.GaugeVec
-	trackingLifetimeAverage metric.Gauge
-	topValidators           metric.GaugeVec
+	count                   metrics.CounterVec
+	bytes                   metrics.CounterVec
+	tracking                metrics.GaugeVec
+	trackingLifetimeAverage metrics.Gauge
+	topValidators           metrics.GaugeVec
 }
 
 // NewMetrics returns a common set of metrics
 func NewMetrics(
-	metrics metric.Registerer,
+	metrics metrics.Registerer,
 	namespace string,
 ) (Metrics, error) {
 	m := Metrics{
-		count: metric.NewCounterVec(
-			metric.CounterOpts{
+		count: metrics.NewCounterVec(
+			metrics.CounterOpts{
 				Namespace: namespace,
 				Name:      "gossip_count",
 				Help:      "amount of gossip (n)",
 			},
 			ioTypeLabels,
 		),
-		bytes: metric.NewCounterVec(
-			metric.CounterOpts{
+		bytes: metrics.NewCounterVec(
+			metrics.CounterOpts{
 				Namespace: namespace,
 				Name:      "gossip_bytes",
 				Help:      "amount of gossip (bytes)",
 			},
 			ioTypeLabels,
 		),
-		tracking: metric.NewGaugeVec(
-			metric.GaugeOpts{
+		tracking: metrics.NewGaugeVec(
+			metrics.GaugeOpts{
 				Namespace: namespace,
 				Name:      "gossip_tracking",
 				Help:      "number of gossipables being tracked",
 			},
 			typeLabels,
 		),
-		trackingLifetimeAverage: metric.NewGauge(metric.GaugeOpts{
+		trackingLifetimeAverage: metrics.NewGauge(metrics.GaugeOpts{
 			Namespace: namespace,
 			Name:      "gossip_tracking_lifetime_average",
 			Help:      "average duration a gossipable has been tracked (ns)",
 		}),
-		topValidators: metric.NewGaugeVec(
-			metric.GaugeOpts{
+		topValidators: metrics.NewGaugeVec(
+			metrics.GaugeOpts{
 				Namespace: namespace,
 				Name:      "top_validators",
 				Help:      "number of validators gossipables are sent to due to stake",
@@ -157,7 +157,7 @@ func NewMetrics(
 	return m, err
 }
 
-func (m *Metrics) observeMessage(labels metric.Labels, count int, bytes int) {
+func (m *Metrics) observeMessage(labels metrics.Labels, count int, bytes int) {
 	countMetric := m.count.With(labels)
 	bytesMetric := m.bytes.With(labels)
 
@@ -425,7 +425,7 @@ func (p *PushGossiper[T]) gossip(
 	toGossip buffer.Deque[T],
 	toRegossip buffer.Deque[T],
 	discarded cache.Cacher[ids.ID, struct{}],
-	metricsLabels metric.Labels,
+	metricsLabels metrics.Labels,
 ) error {
 	var (
 		sentBytes                   = 0

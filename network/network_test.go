@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/core"
@@ -33,8 +33,6 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/version"
-	
-	luxmetrics "github.com/luxfi/metric"
 )
 
 // inboundHandlerFunc is a simple wrapper to make a function implement InboundHandler

@@ -133,22 +133,22 @@ func stopCollector(ctx context.Context, log log.Logger, cmdName string) error {
 	}
 	if proc == nil {
 		log.Info("collector not running",
-			zap.String("cmd", cmdName),
+			log.String("cmd", cmdName),
 		)
 		return nil
 	}
 
 	log.Info("sending SIGTERM to collector process",
-		zap.String("cmd", cmdName),
-		zap.Int("pid", proc.Pid),
+		log.String("cmd", cmdName),
+		log.Int("pid", proc.Pid),
 	)
 	if err := proc.Signal(syscall.SIGTERM); err != nil {
 		return fmt.Errorf("failed to send SIGTERM to pid %d: %w", proc.Pid, err)
 	}
 
 	log.Info("waiting for collector process to stop",
-		zap.String("cmd", cmdName),
-		zap.Int("pid", proc.Pid),
+		log.String("cmd", cmdName),
+		log.Int("pid", proc.Pid),
 	)
 	err = pollUntilContextCancel(
 		ctx,
@@ -163,9 +163,9 @@ func stopCollector(ctx context.Context, log log.Logger, cmdName string) error {
 				// Attempt to clear the PID file. Not critical that it is removed, just good housekeeping.
 				if err := clearStalePIDFile(log, cmdName, pidPath); err != nil {
 					log.Warn("failed to remove stale PID file",
-						zap.String("cmd", cmdName),
-						zap.String("pidFile", pidPath),
-						zap.Error(err),
+						log.String("cmd", cmdName),
+						log.String("pidFile", pidPath),
+						log.Error(err),
 					)
 				}
 			}
@@ -176,7 +176,7 @@ func stopCollector(ctx context.Context, log log.Logger, cmdName string) error {
 		return err
 	}
 	log.Info("collector stopped",
-		zap.String("cmdName", cmdName),
+		log.String("cmdName", cmdName),
 	)
 
 	return nil
@@ -421,7 +421,7 @@ func startCollector(
 		return err
 	} else if process != nil {
 		log.Info("collector already running",
-			zap.String("cmd", cmdName),
+			log.String("cmd", cmdName),
 		)
 		return nil
 	}
@@ -440,8 +440,8 @@ func startCollector(
 	confFilename := cmdName + ".yaml"
 	confPath := filepath.Join(workingDir, confFilename)
 	log.Info("writing collector config",
-		zap.String("cmd", cmdName),
-		zap.String("path", confPath),
+		log.String("cmd", cmdName),
+		log.String("path", confPath),
 	)
 	if err := os.WriteFile(confPath, []byte(config), perms.ReadWrite); err != nil {
 		return err
@@ -487,8 +487,8 @@ func clearStalePIDFile(log log.Logger, cmdName string, pidPath string) error {
 		}
 	} else {
 		log.Info("deleted stale collector pid file",
-			zap.String("cmd", cmdName),
-			zap.String("path", pidPath),
+			log.String("cmd", cmdName),
+			log.String("path", pidPath),
 		)
 	}
 	return nil
@@ -545,10 +545,10 @@ func startCollectorProcess(
 	logFilename := getLogFilename(cmdName)
 	fullCmd := "nohup " + cmdName + " " + args + " > " + logFilename + " 2>&1 & echo -n \"$!\" > " + pidPath
 	log.Info("starting collector",
-		zap.String("cmd", cmdName),
-		zap.String("workingDir", workingDir),
-		zap.String("fullCmd", fullCmd),
-		zap.String("logPath", filepath.Join(workingDir, logFilename)),
+		log.String("cmd", cmdName),
+		log.String("workingDir", workingDir),
+		log.String("fullCmd", fullCmd),
+		log.String("logPath", filepath.Join(workingDir, logFilename)),
 	)
 
 	cmd := exec.Command("bash", "-c", fullCmd)
@@ -567,9 +567,9 @@ func startCollectorProcess(
 			pid, err = getPID(cmdName, pidPath)
 			if err != nil {
 				log.Warn("failed to read PID file",
-					zap.String("cmd", cmdName),
-					zap.String("pidPath", pidPath),
-					zap.Error(err),
+					log.String("cmd", cmdName),
+					log.String("pidPath", pidPath),
+					log.Error(err),
 				)
 			}
 			return pid != 0, nil
@@ -579,8 +579,8 @@ func startCollectorProcess(
 		return err
 	}
 	log.Info("started collector",
-		zap.String("cmd", cmdName),
-		zap.Int("pid", pid),
+		log.String("cmd", cmdName),
+		log.Int("pid", pid),
 	)
 
 	// Wait for non-empty log file. An empty log file should only occur if the command
@@ -631,9 +631,9 @@ func waitForReadiness(ctx context.Context, log log.Logger, cmdName string, readi
 		return err
 	}
 	log.Info("waiting for collector readiness",
-		zap.String("cmd", cmdName),
-		zap.String("url", readinessURL),
-		zap.String("logPath", logPath),
+		log.String("cmd", cmdName),
+		log.String("url", readinessURL),
+		log.String("logPath", logPath),
 	)
 	err = pollUntilContextCancel(
 		ctx,
@@ -643,10 +643,10 @@ func waitForReadiness(ctx context.Context, log log.Logger, cmdName string, readi
 				return ready, nil
 			}
 			log.Warn("failed to check readiness",
-				zap.String("cmd", cmdName),
-				zap.String("url", readinessURL),
-				zap.String("body", body),
-				zap.Error(err),
+				log.String("cmd", cmdName),
+				log.String("url", readinessURL),
+				log.String("body", body),
+				log.Error(err),
 			)
 			return false, nil
 		},
@@ -655,7 +655,7 @@ func waitForReadiness(ctx context.Context, log log.Logger, cmdName string, readi
 		return err
 	}
 	log.Info("collector ready",
-		zap.String("cmd", cmdName),
+		log.String("cmd", cmdName),
 	)
 	return nil
 }

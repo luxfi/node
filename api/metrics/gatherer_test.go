@@ -4,12 +4,12 @@
 package metrics
 
 import (
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	dto "github.com/prometheus/client_model/go"
 )
 
-var counterOpts = metric.CounterOpts{
+var counterOpts = metrics.CounterOpts{
 	Name: "counter",
 	Help: "help",
 }

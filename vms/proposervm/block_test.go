@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
 
@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/consensus/validators/validatorsmock"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -401,7 +401,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 		},
 		Windower:               windower,
 		Scheduler:              scheduler,
-		proposerBuildSlotGauge: metric.NewGauge(metric.GaugeOpts{}),
+		proposerBuildSlotGauge: metrics.NewGauge(metrics.GaugeOpts{}),
 	}
 	vm.Clock.Set(now)
 

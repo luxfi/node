@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	metrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/utils/rpc"

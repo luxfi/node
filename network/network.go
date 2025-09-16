@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/pires/go-proxyproto"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/core"
@@ -195,7 +195,7 @@ type network struct {
 func NewNetwork(
 	config *Config,
 	msgCreator message.Creator,
-	metricsRegisterer metric.Registerer,
+	metricsRegisterer metrics.Registerer,
 	log log.Logger,
 	listener net.Listener,
 	dialer dialer.Dialer,

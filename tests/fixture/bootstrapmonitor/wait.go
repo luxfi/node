@@ -48,7 +48,7 @@ func WaitForCompletion(
 		if err := json.Unmarshal(testDetailsBytes, &testDetails); err != nil {
 			return fmt.Errorf("failed to unmarshal test details: %w", err)
 		}
-		log.Info("Loaded test details", zap.Reflect("testDetails", testDetails))
+		log.Info("Loaded test details", log.Reflect("testDetails", testDetails))
 	}
 
 	clientset, err := getClientset(log)
@@ -60,15 +60,15 @@ func WaitForCompletion(
 	defer cancel()
 
 	log.Info("Retrieving pod to determine bootstrap test config",
-		zap.String("namespace", namespace),
-		zap.String("pod", podName),
-		zap.String("container", nodeContainerName),
+		log.String("namespace", namespace),
+		log.String("pod", podName),
+		log.String("container", nodeContainerName),
 	)
 	testConfig, err := GetBootstrapTestConfigFromPod(ctx, clientset, namespace, podName, nodeContainerName)
 	if err != nil {
 		return fmt.Errorf("failed to determine bootstrap test config: %w", err)
 	}
-	log.Info("Retrieved bootstrap test config", zap.Reflect("testConfig", testConfig))
+	log.Info("Retrieved bootstrap test config", log.Reflect("testConfig", testConfig))
 
 	// Avoid checking node health before it reports initial ready
 	log.Info("Waiting for pod readiness")
@@ -84,13 +84,13 @@ func WaitForCompletion(
 		// Define common fields for logging
 		diskUsage := getDiskUsage(log, dataDir)
 		commonFields := []zap.Field{
-			zap.String("diskUsage", diskUsage),
-			zap.Duration("duration", time.Since(testDetails.StartTime)),
+			log.String("diskUsage", diskUsage),
+			log.Duration("duration", time.Since(testDetails.StartTime)),
 		}
 
 		// Check whether the node is reporting healthy which indicates that bootstrap is complete
 		if healthy, err := tmpnet.CheckNodeHealth(ctx, nodeURL); err != nil {
-			log.Error("failed to check node health", zap.Error(err))
+			log.Error("failed to check node health", log.Error(err))
 			return false, nil
 		} else {
 			if !healthy.Healthy {
@@ -101,7 +101,7 @@ func WaitForCompletion(
 			log.Info("Node reported healthy")
 		}
 
-		commonFields = append(commonFields, zap.Reflect("testConfig", testConfig))
+		commonFields = append(commonFields, log.Reflect("testConfig", testConfig))
 		log.Info("Bootstrap completed successfully", commonFields...)
 
 		return true, nil
@@ -117,7 +117,7 @@ func WaitForCompletion(
 		log.Info("Starting pod to get the image id for the `latest` tag")
 		latestImageDetails, err := getLatestImageDetails(ctx, log, clientset, namespace, testConfig.Image, nodeContainerName)
 		if err != nil {
-			log.Error("failed to get latest image id", zap.Error(err))
+			log.Error("failed to get latest image id", log.Error(err))
 			return false, nil
 		}
 
@@ -127,13 +127,13 @@ func WaitForCompletion(
 		}
 
 		log.Info("Found updated image",
-			zap.String("image", latestImageDetails.Image),
-			zap.Reflect("versions", latestImageDetails.Versions),
+			log.String("image", latestImageDetails.Image),
+			log.Reflect("versions", latestImageDetails.Versions),
 		)
 
 		log.Info("Updating StatefulSet to trigger a new test")
 		if err := setImageDetails(ctx, log, clientset, namespace, podName, latestImageDetails); err != nil {
-			log.Error("failed to set container image", zap.Error(err))
+			log.Error("failed to set container image", log.Error(err))
 			return false, nil
 		}
 
@@ -160,7 +160,7 @@ func getDiskUsage(log log.Logger, dir string) string {
 	if err != nil {
 		exitError, ok := err.(*exec.ExitError)
 		if !ok {
-			log.Error("Error executing du", zap.Error(err))
+			log.Error("Error executing du", log.Error(err))
 			return ""
 		}
 		switch exitError.ExitCode() {
@@ -170,16 +170,16 @@ func getDiskUsage(log log.Logger, dir string) string {
 			// usage message can be printed.
 		case 2:
 			log.Error("Incorrect usage of du command for dir",
-				zap.String("dir", dir),
-				zap.String("stderr", stderr.String()),
-				zap.Error(err),
+				log.String("dir", dir),
+				log.String("stderr", stderr.String()),
+				log.Error(err),
 			)
 			return ""
 		default:
 			log.Error("du command failed for dir",
-				zap.String("dir", dir),
-				zap.String("stderr", stderr.String()),
-				zap.Error(err),
+				log.String("dir", dir),
+				log.String("stderr", stderr.String()),
+				log.Error(err),
 			)
 			return ""
 		}
@@ -188,7 +188,7 @@ func getDiskUsage(log log.Logger, dir string) string {
 	usageParts := strings.Split(string(output), "\t")
 	if len(usageParts) != 2 {
 		log.Error("Unexpected output from du command",
-			zap.String("output", string(output)),
+			log.String("output", string(output)),
 		)
 	}
 

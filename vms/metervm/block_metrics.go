@@ -4,7 +4,7 @@
 package metervm
 
 import (
-	luxmetric "github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
@@ -49,7 +49,7 @@ func (m *blockMetrics) Initialize(
 	supportsBlockBuildingWithContext bool,
 	supportsBatchedFetching bool,
 	supportsStateSync bool,
-	reg luxmetric.Registerer,
+	reg luxmetrics.Registerer,
 ) error {
 	errs := wrappers.Errs{}
 	m.buildBlock = newAverager("build_block", reg, &errs)

@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
@@ -88,12 +88,12 @@ func TestBlockClientsWithIncorrectRSAKeys(t *testing.T) {
 
 			config := peer.TLSConfig(serverCert, nil)
 
-			c := metric.NewCounter(metric.CounterOpts{})
+			c := metrics.NewCounter(metrics.CounterOpts{})
 
 			// Initialize upgrader with a mock counter.
 			// For test cases with invalid certs (expectedErr != nil), we expect the counter to be incremented.
 			// For test cases with valid certs (expectedErr == nil), we expect the counter NOT to be incremented.
-			var mockCounter metric.Counter
+			var mockCounter metrics.Counter
 			if testCase.expectedErr != nil {
 				// For invalid certs, allow increment
 				mockCounter = c
@@ -212,7 +212,7 @@ func basicCert() *x509.Certificate {
 }
 
 type mockPrometheusCounter struct {
-	metric.Counter
+	metrics.Counter
 	onIncrement func()
 }
 

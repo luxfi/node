@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -19,23 +19,23 @@ type Averager interface {
 }
 
 type averager struct {
-	count metric.Counter
-	sum   metric.Gauge
+	count prometheus.Counter
+	sum   prometheus.Gauge
 }
 
-func NewAverager(name, desc string, reg metric.Registerer) (Averager, error) {
+func NewAverager(name, desc string, reg prometheus.Registerer) (Averager, error) {
 	errs := wrappers.Errs{}
 	a := NewAveragerWithErrs(name, desc, reg, &errs)
 	return a, errs.Err
 }
 
-func NewAveragerWithErrs(name, desc string, reg metric.Registerer, errs *wrappers.Errs) Averager {
+func NewAveragerWithErrs(name, desc string, reg prometheus.Registerer, errs *wrappers.Errs) Averager {
 	a := averager{
-		count: metric.NewCounter(metric.CounterOpts{
+		count: prometheus.NewCounter(prometheus.CounterOpts{
 			Name: AppendNamespace(name, "count"),
 			Help: "Total # of observations of " + desc,
 		}),
-		sum: metric.NewGauge(metric.GaugeOpts{
+		sum: prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: AppendNamespace(name, "sum"),
 			Help: "Sum of " + desc,
 		}),

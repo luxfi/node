@@ -145,10 +145,10 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 			testConfig, err := bootstrapmonitor.GetBootstrapTestConfigFromPod(tc.DefaultContext(), clientset, namespace, bootstrapPodName, nodeContainerName)
 			if err != nil {
 				tc.Log().Debug("failed to determine image used by the pod container",
-					zap.String("container", nodeContainerName),
-					zap.String("namespace", namespace),
-					zap.String("pod", bootstrapPodName),
-					zap.Error(err),
+					log.String("container", nodeContainerName),
+					log.String("namespace", namespace),
+					log.String("pod", bootstrapPodName),
+					log.Error(err),
 				)
 				return false
 			}
@@ -185,9 +185,9 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 			}
 			if err != nil {
 				tc.Log().Debug("failed to retrieve pod",
-					zap.String("namespace", namespace),
-					zap.String("pod", bootstrapPodName),
-					zap.Error(err),
+					log.String("namespace", namespace),
+					log.String("pod", bootstrapPodName),
+					log.Error(err),
 				)
 				return false
 			}
@@ -205,10 +205,10 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 			testConfig, err := bootstrapmonitor.GetBootstrapTestConfigFromPod(tc.DefaultContext(), clientset, namespace, bootstrapPodName, nodeContainerName)
 			if err != nil {
 				tc.Log().Debug("failed to determine image used by the pod container",
-					zap.String("container", nodeContainerName),
-					zap.String("namespace", namespace),
-					zap.String("pod", bootstrapPodName),
-					zap.Error(err),
+					log.String("container", nodeContainerName),
+					log.String("namespace", namespace),
+					log.String("pod", bootstrapPodName),
+					log.Error(err),
 				)
 				return false
 			}
@@ -440,9 +440,9 @@ func waitForLogOutput(tc tests.TestContext, clientset *kubernetes.Clientset, nam
 	// TODO(marun) Figure out why log output is randomly truncated (not flushed?)
 
 	tc.Log().Info("log output from container (may not be complete)",
-		zap.String("namespace", namespace),
-		zap.String("pod", podName),
-		zap.String("container", containerName),
+		log.String("namespace", namespace),
+		log.String("pod", podName),
+		log.String("container", containerName),
 	)
 
 	req := clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{

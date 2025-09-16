@@ -43,7 +43,7 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	luxmetric "github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/p2p"
@@ -598,7 +598,7 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 		} else {
 			m.Log.Warn("Invalid chain ID mapping",
 				log.String("mapping", mappedID),
-				log.Err(err),
+				log.Error(err),
 			)
 		}
 	}
@@ -651,7 +651,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				log.Stringer("vmID", chainParams.VMID),
 				log.String("errorString", fmt.Sprintf("%v", err)),
 				log.String("errorType", fmt.Sprintf("%T", err)),
-				log.Err(err),
+				log.Error(err),
 			)
 			go m.ShutdownNodeFunc(1)
 			return
@@ -663,7 +663,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 			log.Stringer("chainID", chainParams.ID),
 			log.String("chainAlias", chainAlias),
 			log.Stringer("vmID", chainParams.VMID),
-			log.Err(err),
+			log.Error(err),
 		)
 
 		// Register the health check for this chain regardless of if it was
@@ -684,7 +684,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				log.Stringer("chainID", chainParams.ID),
 				log.String("chainAlias", chainAlias),
 				log.Stringer("vmID", chainParams.VMID),
-				log.Err(err),
+				log.Error(err),
 			)
 		}
 		return
@@ -700,7 +700,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 			log.Stringer("netID", chainParams.NetID),
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("vmID", chainParams.VMID),
-			log.Err(err),
+			log.Error(err),
 		)
 	}
 
@@ -781,7 +781,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 	m.Log.Info("Getting VM factory", log.Stringer("vmID", chainParams.VMID))
 	vmFactory, err := m.VMManager.GetFactory(chainParams.VMID)
 	if err != nil {
-		m.Log.Error("Failed to get VM factory", log.Stringer("vmID", chainParams.VMID), log.Err(err))
+		m.Log.Error("Failed to get VM factory", log.Stringer("vmID", chainParams.VMID), log.Error(err))
 		return nil, fmt.Errorf("error while getting vmFactory: %w", err)
 	}
 	m.Log.Info("Got VM factory successfully")
@@ -845,7 +845,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 		if err != nil {
 			m.Log.Error("createLinearChain failed for Platform chain",
 				log.String("actualError", err.Error()),
-				log.Err(err))
+				log.Error(err))
 			return nil, fmt.Errorf("error while creating new linear vm: %w", err)
 		}
 	default:
@@ -1609,7 +1609,7 @@ func (m *manager) createLinearChain(
 		m.Log.Error("VM Initialize failed", 
 			log.Stringer("chainID", chainParams.ID),
 			log.String("errorDetails", err.Error()),
-			log.Err(err))
+			log.Error(err))
 		return nil, fmt.Errorf("VM initialization failed: %w", err)
 	}
 	m.Log.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
@@ -1886,7 +1886,7 @@ func (m *manager) registerBootstrappedHealthChecks() error {
 		}
 
 		m.Log.Warn("node is a primary network validator",
-			log.Err(errPartialSyncAsAValidator),
+			log.Error(errPartialSyncAsAValidator),
 		)
 		return "node is a primary network validator", errPartialSyncAsAValidator
 	})

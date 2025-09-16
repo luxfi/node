@@ -22,8 +22,6 @@ func stop(_ context.Context, log log.Logger, cmd *exec.Cmd) {
 	if err == nil {
 		log.Debug("subprocess was killed")
 	} else {
-		log.Error("subprocess was killed",
-			log.Err(err),
-		)
+		log.Error("subprocess kill failed", "error", err)
 	}
 }

@@ -97,7 +97,7 @@ func (c *connection) readPump() {
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				c.s.log.Debug("unexpected close in websockets",
-					log.Err(err),
+					"error", err,
 				)
 			}
 			break
@@ -127,7 +127,7 @@ func (c *connection) writePump() {
 			if err := c.conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
 				c.s.log.Debug("closing the connection",
 					log.String("reason", "failed to set the write deadline"),
-					log.Err(err),
+					"error", err,
 				)
 				return
 			}
@@ -145,7 +145,7 @@ func (c *connection) writePump() {
 			if err := c.conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
 				c.s.log.Debug("closing the connection",
 					log.String("reason", "failed to set the write deadline"),
-					log.Err(err),
+					"error", err,
 				)
 				return
 			}

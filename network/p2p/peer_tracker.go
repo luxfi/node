@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
@@ -65,15 +65,15 @@ type PeerTracker struct {
 }
 
 type peerTrackerMetrics struct {
-	numTrackedPeers    metric.Gauge
-	numResponsivePeers metric.Gauge
-	averageBandwidth   metric.Gauge
+	numTrackedPeers    metrics.Gauge
+	numResponsivePeers metrics.Gauge
+	averageBandwidth   metrics.Gauge
 }
 
 func NewPeerTracker(
 	log log.Logger,
 	metricsNamespace string,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	ignoredNodes set.Set[ids.NodeID],
 	minVersion *version.Application,
 ) (*PeerTracker, error) {
@@ -87,22 +87,22 @@ func NewPeerTracker(
 		ignoredNodes:     ignoredNodes,
 		minVersion:       minVersion,
 		metrics: peerTrackerMetrics{
-			numTrackedPeers: metric.NewGauge(
-				metric.GaugeOpts{
+			numTrackedPeers: metrics.NewGauge(
+				metrics.GaugeOpts{
 					Namespace: metricsNamespace,
 					Name:      "num_tracked_peers",
 					Help:      "number of tracked peers",
 				},
 			),
-			numResponsivePeers: metric.NewGauge(
-				metric.GaugeOpts{
+			numResponsivePeers: metrics.NewGauge(
+				metrics.GaugeOpts{
 					Namespace: metricsNamespace,
 					Name:      "num_responsive_peers",
 					Help:      "number of responsive peers",
 				},
 			),
-			averageBandwidth: metric.NewGauge(
-				metric.GaugeOpts{
+			averageBandwidth: metrics.NewGauge(
+				metrics.GaugeOpts{
 					Namespace: metricsNamespace,
 					Name:      "average_bandwidth",
 					Help:      "average sync bandwidth used by peers",

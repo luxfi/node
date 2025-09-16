@@ -4,7 +4,7 @@
 package metervm
 
 import (
-	luxmetric "github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
@@ -19,7 +19,7 @@ type vertexMetrics struct {
 	reject metric.Averager
 }
 
-func (m *vertexMetrics) Initialize(reg luxmetric.Registerer) error {
+func (m *vertexMetrics) Initialize(reg luxmetrics.Registerer) error {
 	errs := wrappers.Errs{}
 	m.parse = newAverager("parse_tx", reg, &errs)
 	m.parseErr = newAverager("parse_tx_err", reg, &errs)

@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
@@ -80,20 +80,20 @@ type clientOptions struct {
 func NewNetwork(
 	log log.Logger,
 	sender core.AppSender,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	namespace string,
 ) (*Network, error) {
 	metrics := metrics{
-		msgTime: metric.NewGaugeVec(
-			metric.GaugeOpts{
+		msgTime: metrics.NewGaugeVec(
+			metrics.GaugeOpts{
 				Namespace: namespace,
 				Name:      "msg_time",
 				Help:      "message handling time (ns)",
 			},
 			labelNames,
 		),
-		msgCount: metric.NewCounterVec(
-			metric.CounterOpts{
+		msgCount: metrics.NewCounterVec(
+			metrics.CounterOpts{
 				Namespace: namespace,
 				Name:      "msg_count",
 				Help:      "message count (n)",

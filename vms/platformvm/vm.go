@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/interfaces"

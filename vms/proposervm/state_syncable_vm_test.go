@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/node/vms/components/chain"
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 

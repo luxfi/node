@@ -4,7 +4,7 @@
 package lux
 
 import (
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/linkeddb"
@@ -106,7 +106,7 @@ func NewUTXOState(
 func NewMeteredUTXOState(
 	db database.Database,
 	codec codec.Manager,
-	metrics metric.Registerer,
+	metrics metrics.Registerer,
 	trackChecksum bool,
 ) (UTXOState, error) {
 	utxoCache, err := metercacher.New[ids.ID, *UTXO](

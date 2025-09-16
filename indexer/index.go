@@ -187,7 +187,7 @@ func (i *index) getContainerByIndexBytes(indexBytes []byte) (Container, error) {
 	containerBytes, err := i.indexToContainer.Get(indexBytes)
 	if err != nil {
 		i.log.Error("couldn't read container from database",
-			log.Err(err),
+			log.Error(err),
 		)
 		return Container{}, fmt.Errorf("couldn't read from database: %w", err)
 	}

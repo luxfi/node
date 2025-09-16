@@ -4,7 +4,7 @@
 package metrics
 
 import (
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
@@ -18,13 +18,13 @@ var (
 )
 
 type txMetrics struct {
-	numTxs metric.CounterVec
+	numTxs metrics.CounterVec
 }
 
-func newTxMetrics(registerer metric.Registerer) (*txMetrics, error) {
+func newTxMetrics(registerer metrics.Registerer) (*txMetrics, error) {
 	m := &txMetrics{
-		numTxs: metric.NewCounterVec(
-			metric.CounterOpts{
+		numTxs: metrics.NewCounterVec(
+			metrics.CounterOpts{
 				Name: "txs_accepted",
 				Help: "number of transactions accepted",
 			},
@@ -35,105 +35,105 @@ func newTxMetrics(registerer metric.Registerer) (*txMetrics, error) {
 }
 
 func (m *txMetrics) AddValidatorTx(*txs.AddValidatorTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "add_validator",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) AddNetValidatorTx(*txs.AddNetValidatorTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "add_subnet_validator",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) AddDelegatorTx(*txs.AddDelegatorTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "add_delegator",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) CreateChainTx(*txs.CreateChainTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "create_chain",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) CreateNetTx(*txs.CreateNetTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "create_subnet",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) ImportTx(*txs.ImportTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "import",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) ExportTx(*txs.ExportTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "export",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "advance_time",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) RewardValidatorTx(*txs.RewardValidatorTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "reward_validator",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "remove_subnet_validator",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) TransformNetTx(*txs.TransformNetTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "transform_subnet",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) AddPermissionlessValidatorTx(*txs.AddPermissionlessValidatorTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "add_permissionless_validator",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) AddPermissionlessDelegatorTx(*txs.AddPermissionlessDelegatorTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "add_permissionless_delegator",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "transfer_subnet_ownership",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) BaseTx(*txs.BaseTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "base",
 	}).Inc()
 	return nil
@@ -141,35 +141,35 @@ func (m *txMetrics) BaseTx(*txs.BaseTx) error {
 
 // L1 Validator transaction methods
 func (m *txMetrics) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "disable_l1_validator",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) IncreaseL1ValidatorBalanceTx(*txs.IncreaseL1ValidatorBalanceTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "increase_l1_validator_balance",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "register_l1_validator",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "set_l1_validator_weight",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(metrics.Labels{
 		txLabel: "convert_subnet_to_l1",
 	}).Inc()
 	return nil
