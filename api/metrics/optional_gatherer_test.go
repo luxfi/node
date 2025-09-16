@@ -4,6 +4,7 @@
 package metrics
 
 import (
+	metrics "github.com/luxfi/metric"
 	"errors"
 	"testing"
 
