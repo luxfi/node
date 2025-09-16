@@ -109,8 +109,8 @@ func getBaseImageName(log log.Logger, imageName string) (string, error) {
 	case 2:
 		// Ambiguous image name - could contain a tag or a registry
 		log.Info("Derived tag-less image name from string",
-			log.UserString("tagLessImageName", imageNameParts[0]),
-			log.UserString("imageName", imageName),
+			"tagLessImageName", imageNameParts[0],
+			"imageName", imageName,
 		)
 		return imageNameParts[0], nil
 	case 3:

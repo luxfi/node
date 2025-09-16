@@ -352,7 +352,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		advanceProposerVMPChainHeight := func() {
 			// We must wait at least [RecentlyAcceptedWindowTTL] to ensure the
 			// next block will reference the last accepted P-chain height.
-			time.Sleep((5 * 5 * time.Second // RecentlyAcceptedWindowTTL) / 4)
+			time.Sleep((5 * 5 * time.Second) / 4) // RecentlyAcceptedWindowTTL
 		}
 
 		tc.By("creating the validator to register")
@@ -465,15 +465,15 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			})
 
 			tc.By("verifying the L1 validator can be fetched", func() {
-				l1Validator, _, err := // TODO: GetL1Validator not available yet
+				// TODO: GetL1Validator not available yet - uncomment when available
 				_ = genesisValidationID
-				//pClient.GetL1Validator(tc.DefaultContext(), registerValidationID)
+				/*
+				l1Validator, _, err := pClient.GetL1Validator(tc.DefaultContext(), registerValidationID)
 				require.NoError(err)
 
 				l1Validator.StartTime = 0
 				require.Equal(
-					// TODO: L1Validator type
-					//platformvm.L1Validator{
+					platformvm.L1Validator{
 						NetID:  netID,
 						NodeID:    subnetRegisterNode.NodeID,
 						PublicKey: registerNodePK,
@@ -489,6 +489,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 					},
 					l1Validator,
 				)
+				*/
 			})
 
 			tc.By("fetching the validator registration attestation", func() {
@@ -612,15 +613,15 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			})
 
 			tc.By("verifying the L1 validator can be fetched", func() {
-				l1Validator, _, err := // TODO: GetL1Validator not available yet
+				// TODO: GetL1Validator not available yet - uncomment when available
 				_ = genesisValidationID
-				//pClient.GetL1Validator(tc.DefaultContext(), registerValidationID)
+				/*
+				l1Validator, _, err := pClient.GetL1Validator(tc.DefaultContext(), registerValidationID)
 				require.NoError(err)
 
 				l1Validator.StartTime = 0
 				require.Equal(
-					// TODO: L1Validator type
-					//platformvm.L1Validator{
+					platformvm.L1Validator{
 						NetID:  netID,
 						NodeID:    subnetRegisterNode.NodeID,
 						PublicKey: registerNodePK,
@@ -636,6 +637,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 					},
 					l1Validator,
 				)
+				*/
 			})
 
 			tc.By("fetching the validator weight change attestation", func() {
