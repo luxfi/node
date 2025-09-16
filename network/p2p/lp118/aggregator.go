@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/node/vms/platformvm/warp"
@@ -154,8 +153,8 @@ func (s *SignatureAggregator) AggregateSignatures(
 			if result.Err != nil {
 				s.log.Debug(
 					"dropping response",
-					zap.Stringer("nodeID", result.NodeID),
-					zap.Error(result.Err),
+					log.Stringer("nodeID", result.NodeID),
+					log.Err(result.Err),
 				)
 				continue
 			}
@@ -164,8 +163,8 @@ func (s *SignatureAggregator) AggregateSignatures(
 			if signerBitSet.Contains(result.Validator.Index) {
 				s.log.Debug(
 					"dropping duplicate signature",
-					zap.Stringer("nodeID", result.NodeID),
-					zap.Error(err),
+					log.Stringer("nodeID", result.NodeID),
+					log.Err(err),
 				)
 				continue
 			}

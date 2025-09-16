@@ -13,6 +13,7 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/utils/constants"
+	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/proposervm/block"
@@ -67,7 +68,7 @@ func NewBlockState(db database.Database) BlockState {
 
 func NewMeteredBlockState(db database.Database, namespace string, metrics metric.Registerer) (BlockState, error) {
 	blkCache, err := metercacher.New[ids.ID, *blockWrapper](
-		metric.AppendNamespace(namespace, "block_cache"),
+		utilmetric.AppendNamespace(namespace, "block_cache"),
 		metrics,
 		cache.NewSizedLRU[ids.ID, *blockWrapper](
 			blockCacheSize,

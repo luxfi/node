@@ -87,12 +87,12 @@ func (v *Validators) refresh(ctx context.Context) {
 
 	height, err := v.validators.GetCurrentHeight(ctx)
 	if err != nil {
-		v.log.Warn("failed to get current height", log.Error(err))
+		v.log.Warn("failed to get current height", log.Reflect("error", err))
 		return
 	}
 	validatorSet, err := v.validators.GetValidatorSet(ctx, height, v.netID)
 	if err != nil {
-		v.log.Warn("failed to get validator set", log.Error(err))
+		v.log.Warn("failed to get validator set", log.Reflect("error", err))
 		return
 	}
 

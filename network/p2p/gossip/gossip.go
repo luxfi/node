@@ -11,11 +11,10 @@ import (
 	"time"
 
 	"github.com/luxfi/metric"
-	"github.com/luxfi/log"
+	luxlog "github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/bloom"
@@ -97,11 +96,11 @@ type ValidatorGossiper struct {
 // Metrics that are tracked across a gossip protocol. A given protocol should
 // only use a single instance of Metrics.
 type Metrics struct {
-	count                   *metric.CounterVec
-	bytes                   *metric.CounterVec
-	tracking                *metric.GaugeVec
+	count                   metric.CounterVec
+	bytes                   metric.CounterVec
+	tracking                metric.GaugeVec
 	trackingLifetimeAverage metric.Gauge
-	topValidators           *metric.GaugeVec
+	topValidators           metric.GaugeVec
 }
 
 // NewMetrics returns a common set of metrics
@@ -158,20 +157,12 @@ func NewMetrics(
 	return m, err
 }
 
-func (m *Metrics) observeMessage(labels metric.Labels, count int, bytes int) error {
-	countMetric, err := m.count.GetMetricWith(labels)
-	if err != nil {
-		return fmt.Errorf("failed to get count metric: %w", err)
-	}
-
-	bytesMetric, err := m.bytes.GetMetricWith(labels)
-	if err != nil {
-		return fmt.Errorf("failed to get bytes metric: %w", err)
-	}
+func (m *Metrics) observeMessage(labels metric.Labels, count int, bytes int) {
+	countMetric := m.count.With(labels)
+	bytesMetric := m.bytes.With(labels)
 
 	countMetric.Add(float64(count))
 	bytesMetric.Add(float64(bytes))
-	return nil
 }
 
 func (v ValidatorGossiper) Gossip(ctx context.Context) error {
@@ -183,7 +174,7 @@ func (v ValidatorGossiper) Gossip(ctx context.Context) error {
 }
 
 func NewPullGossiper[T Gossipable](
-	log log.Logger,
+	log luxlog.Logger,
 	marshaller Marshaller[T],
 	set Set[T],
 	client *p2p.Client,
@@ -201,7 +192,7 @@ func NewPullGossiper[T Gossipable](
 }
 
 type PullGossiper[T Gossipable] struct {
-	log        log.Logger
+	log        luxlog.Logger
 	marshaller Marshaller[T]
 	set        Set[T]
 	client     *p2p.Client
@@ -234,15 +225,15 @@ func (p *PullGossiper[_]) handleResponse(
 	if err != nil {
 		p.log.Debug(
 			"failed gossip request",
-			zap.Stringer("nodeID", nodeID),
-			zap.Error(err),
+			luxlog.Stringer("nodeID", nodeID),
+			luxlog.Reflect("error", err),
 		)
 		return
 	}
 
 	gossip, err := ParseAppResponse(responseBytes)
 	if err != nil {
-		p.log.Debug("failed to unmarshal gossip response", zap.Error(err))
+		p.log.Debug("failed to unmarshal gossip response", luxlog.Reflect("error", err))
 		return
 	}
 
@@ -254,8 +245,8 @@ func (p *PullGossiper[_]) handleResponse(
 		if err != nil {
 			p.log.Debug(
 				"failed to unmarshal gossip",
-				zap.Stringer("nodeID", nodeID),
-				zap.Error(err),
+				luxlog.Stringer("nodeID", nodeID),
+				luxlog.Reflect("error", err),
 			)
 			continue
 		}
@@ -263,25 +254,21 @@ func (p *PullGossiper[_]) handleResponse(
 		gossipID := gossipable.GossipID()
 		p.log.Debug(
 			"received gossip",
-			zap.Stringer("nodeID", nodeID),
-			zap.Stringer("id", gossipID),
+			luxlog.Stringer("nodeID", nodeID),
+			luxlog.Stringer("id", gossipID),
 		)
 		if err := p.set.Add(gossipable); err != nil {
 			p.log.Debug(
 				"failed to add gossip to the known set",
-				zap.Stringer("nodeID", nodeID),
-				zap.Stringer("id", gossipID),
-				zap.Error(err),
+				luxlog.Stringer("nodeID", nodeID),
+				luxlog.Stringer("id", gossipID),
+				luxlog.Reflect("error", err),
 			)
 			continue
 		}
 	}
 
-	if err := p.metrics.observeMessage(receivedPullLabels, len(gossip), receivedBytes); err != nil {
-		p.log.Error("failed to update metrics",
-			zap.Error(err),
-		)
-	}
+	p.metrics.observeMessage(receivedPullLabels, len(gossip), receivedBytes)
 }
 
 // NewPushGossiper returns an instance of PushGossiper
@@ -494,14 +481,9 @@ func (p *PushGossiper[T]) gossip(
 		return err
 	}
 
-	if err := p.metrics.observeMessage(sentPushLabels, len(gossip), sentBytes); err != nil {
-		return err
-	}
+	p.metrics.observeMessage(sentPushLabels, len(gossip), sentBytes)
 
-	topValidatorsMetric, err := p.metrics.topValidators.GetMetricWith(metricsLabels)
-	if err != nil {
-		return fmt.Errorf("failed to get top validators metric: %w", err)
-	}
+	topValidatorsMetric := p.metrics.topValidators.With(metricsLabels)
 
 	validatorsByStake := p.validators.Top(ctx, gossipParams.StakePercentage)
 	topValidatorsMetric.Set(float64(len(validatorsByStake)))
@@ -573,7 +555,7 @@ func (p *PushGossiper[_]) updateMetrics(nowUnixNano float64) {
 }
 
 // Every calls [Gossip] every [frequency] amount of time.
-func Every(ctx context.Context, log log.Logger, gossiper Gossiper, frequency time.Duration) {
+func Every(ctx context.Context, log luxlog.Logger, gossiper Gossiper, frequency time.Duration) {
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
 
@@ -581,7 +563,9 @@ func Every(ctx context.Context, log log.Logger, gossiper Gossiper, frequency tim
 		select {
 		case <-ticker.C:
 			if err := gossiper.Gossip(ctx); err != nil {
-				log.Warn("failed to gossip", zap.Error(err))
+				log.Warn("failed to gossip",
+					luxlog.Reflect("error", err),
+				)
 			}
 		case <-ctx.Done():
 			log.Debug("shutting down gossip")

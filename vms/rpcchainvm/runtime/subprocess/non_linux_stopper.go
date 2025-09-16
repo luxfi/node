@@ -11,8 +11,6 @@ import (
 	"os/exec"
 
 	"github.com/luxfi/log"
-
-	"github.com/luxfi/log"
 )
 
 func NewCmd(path string, args ...string) *exec.Cmd {
@@ -25,7 +23,7 @@ func stop(_ context.Context, log log.Logger, cmd *exec.Cmd) {
 		log.Debug("subprocess was killed")
 	} else {
 		log.Error("subprocess was killed",
-			zap.Error(err),
+			log.Err(err),
 		)
 	}
 }

@@ -4,8 +4,6 @@
 package peer
 
 import (
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -33,8 +31,8 @@ func (g *GossipTrackerCallback) OnValidatorAdded(
 	}
 	if !g.GossipTracker.AddValidator(vdr) {
 		g.Log.Error("failed to add a validator",
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint64("weight", weight),
+			log.Stringer("nodeID", nodeID),
+			log.Uint64("weight", weight),
 		)
 	}
 }
@@ -44,7 +42,7 @@ func (g *GossipTrackerCallback) OnValidatorAdded(
 func (g *GossipTrackerCallback) OnValidatorRemoved(nodeID ids.NodeID, _ uint64) {
 	if !g.GossipTracker.RemoveValidator(nodeID) {
 		g.Log.Error("failed to remove a validator",
-			zap.Stringer("nodeID", nodeID),
+			log.Stringer("nodeID", nodeID),
 		)
 	}
 }

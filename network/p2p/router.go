@@ -63,24 +63,16 @@ type meteredHandler struct {
 }
 
 type metrics struct {
-	msgTime  *metric.GaugeVec
-	msgCount *metric.CounterVec
+	msgTime  metric.GaugeVec
+	msgCount metric.CounterVec
 }
 
-func (m *metrics) observe(labels metric.Labels, start time.Time) error {
-	metricTime, err := m.msgTime.GetMetricWith(labels)
-	if err != nil {
-		return err
-	}
-
-	metricCount, err := m.msgCount.GetMetricWith(labels)
-	if err != nil {
-		return err
-	}
+func (m *metrics) observe(labels metric.Labels, start time.Time) {
+	metricTime := m.msgTime.With(labels)
+	metricCount := m.msgCount.With(labels)
 
 	metricTime.Add(float64(time.Since(start)))
 	metricCount.Inc()
-	return nil
 }
 
 // router routes incoming application messages to the corresponding registered
@@ -165,13 +157,14 @@ func (r *router) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID ui
 		return err
 	}
 
-	return r.metrics.observe(
+	r.metrics.observe(
 		metric.Labels{
 			opLabel:      message.AppRequestOp.String(),
 			handlerLabel: handlerID,
 		},
 		start,
 	)
+	return nil
 }
 
 // AppRequestFailed routes an AppRequestFailed message to the callback
@@ -189,13 +182,14 @@ func (r *router) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, reques
 
 	pending.callback(ctx, nodeID, nil, appErr)
 
-	return r.metrics.observe(
+	r.metrics.observe(
 		metric.Labels{
 			opLabel:      message.AppErrorOp.String(),
 			handlerLabel: pending.handlerID,
 		},
 		start,
 	)
+	return nil
 }
 
 // AppResponse routes an AppResponse message to the callback corresponding to
@@ -213,13 +207,14 @@ func (r *router) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID u
 
 	pending.callback(ctx, nodeID, response, nil)
 
-	return r.metrics.observe(
+	r.metrics.observe(
 		metric.Labels{
 			opLabel:      message.AppResponseOp.String(),
 			handlerLabel: pending.handlerID,
 		},
 		start,
 	)
+	return nil
 }
 
 // AppGossip routes an AppGossip message to a Handler based on the handler
@@ -241,13 +236,14 @@ func (r *router) AppGossip(ctx context.Context, nodeID ids.NodeID, gossip []byte
 
 	handler.AppGossip(ctx, nodeID, parsedMsg)
 
-	return r.metrics.observe(
+	r.metrics.observe(
 		metric.Labels{
 			opLabel:      message.AppGossipOp.String(),
 			handlerLabel: handlerID,
 		},
 		start,
 	)
+	return nil
 }
 
 // CrossChainAppRequest routes a CrossChainAppRequest message to a Handler
@@ -280,13 +276,14 @@ func (r *router) CrossChainAppRequest(
 		return err
 	}
 
-	return r.metrics.observe(
+	r.metrics.observe(
 		metric.Labels{
 			opLabel:      message.CrossChainAppRequestOp.String(),
 			handlerLabel: handlerID,
 		},
 		start,
 	)
+	return nil
 }
 
 // CrossChainAppRequestFailed routes a CrossChainAppRequestFailed message to
@@ -304,13 +301,14 @@ func (r *router) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID,
 
 	pending.callback(ctx, chainID, nil, appErr)
 
-	return r.metrics.observe(
+	r.metrics.observe(
 		metric.Labels{
 			opLabel:      message.CrossChainAppErrorOp.String(),
 			handlerLabel: pending.handlerID,
 		},
 		start,
 	)
+	return nil
 }
 
 // CrossChainAppResponse routes a CrossChainAppResponse message to the callback
@@ -328,13 +326,14 @@ func (r *router) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requ
 
 	pending.callback(ctx, chainID, response, nil)
 
-	return r.metrics.observe(
+	r.metrics.observe(
 		metric.Labels{
 			opLabel:      message.CrossChainAppResponseOp.String(),
 			handlerLabel: pending.handlerID,
 		},
 		start,
 	)
+	return nil
 }
 
 // Parse parses a gossip or request message and maps it to a corresponding

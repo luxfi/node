@@ -46,15 +46,11 @@ func stop(ctx context.Context, log log.Logger, cmd *exec.Cmd) {
 		if err == nil {
 			log.Debug("subprocess gracefully shutdown")
 		} else {
-			log.Error("subprocess graceful shutdown failed",
-				log.Err(err),
-			)
+			log.Error("subprocess graceful shutdown failed", "error", err)
 		}
 	case <-ctx.Done():
 		// force kill
 		err := cmd.Process.Kill()
-		log.Error("subprocess was killed",
-			log.Err(err),
-		)
+		log.Error("subprocess was killed", "error", err)
 	}
 }

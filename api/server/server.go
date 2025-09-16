@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strings"
 	"sync"
 	"time"
 
@@ -151,9 +152,7 @@ func New(
 		return nil, err
 	}
 
-	log.Info("API created",
-		log.Strings("allowedOrigins", allowedOrigins),
-	)
+	log.Info("API created with allowed origins: " + strings.Join(allowedOrigins, ","))
 
 	return &server{
 		log:             log,
@@ -195,7 +194,7 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 	if err != nil {
 		s.log.Error("failed to create handlers",
 			log.UserString("chainName", chainName),
-			log.Error(err),
+			log.Err(err),
 		)
 		return
 	}
@@ -213,13 +212,13 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 		if extension != "" && err != nil {
 			s.log.Error("could not add route to chain's API handler",
 				log.UserString("reason", "route is malformed"),
-				log.Error(err),
+				log.Err(err),
 			)
 			continue
 		}
 		if err := s.addChainRoute(chainName, handler, ctx, defaultEndpoint, extension); err != nil {
 			s.log.Error("error adding route",
-				log.Error(err),
+				log.Err(err),
 			)
 		}
 	}
