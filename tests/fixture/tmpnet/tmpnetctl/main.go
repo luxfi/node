@@ -90,7 +90,7 @@ func main() {
 				return err
 			}
 			log.Info("waiting for network to start",
-				zap.Float64("timeoutSeconds", timeout.Seconds()),
+				"timeoutSeconds", fmt.Sprintf("%.2f", timeout.Seconds()),
 			)
 
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -101,7 +101,7 @@ func main() {
 				network,
 				startNetworkVars.RootNetworkDir,
 			); err != nil {
-				log.Error("failed to bootstrap network", zap.Error(err))
+				log.Error("failed to bootstrap network", "error", err)
 				return err
 			}
 
@@ -298,8 +298,8 @@ func main() {
 			// TODO(marun) Consider supporting other contexts. Will require modifying the kind cluster start script.
 			if len(kubeconfigVars.Context) > 0 && kubeconfigVars.Context != tmpnet.KindKubeconfigContext {
 				log.Warn("ignoring kubeconfig context for kind cluster",
-					zap.String("providedContext", kubeconfigVars.Context),
-					zap.String("requiredContext", tmpnet.KindKubeconfigContext),
+					log.UserString("providedContext", kubeconfigVars.Context),
+					log.UserString("requiredContext", tmpnet.KindKubeconfigContext),
 				)
 			}
 			return tmpnet.StartKindCluster(
