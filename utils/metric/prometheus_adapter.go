@@ -5,7 +5,6 @@ package metric
 
 import (
 	"github.com/luxfi/metric"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 // PrometheusRegistryAdapter wraps a luxfi/metric Registry to implement metric.Registerer

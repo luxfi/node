@@ -14,10 +14,8 @@ import (
 
 	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
-
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 )
 
@@ -149,11 +147,11 @@ func (r *router) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID ui
 	parsedMsg, handler, handlerID, ok := r.parse(request)
 	if !ok {
 		r.log.Debug("received message for unregistered handler",
-			zap.Stringer("messageOp", message.AppRequestOp),
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Time("deadline", deadline),
-			zap.Binary("message", request),
+			log.Stringer("messageOp", message.AppRequestOp),
+			log.Stringer("nodeID", nodeID),
+			log.Uint32("requestID", requestID),
+			log.Time("deadline", deadline),
+			log.Binary("message", request),
 		)
 
 		// Send an error back to the requesting peer. Invalid requests that we
@@ -234,9 +232,9 @@ func (r *router) AppGossip(ctx context.Context, nodeID ids.NodeID, gossip []byte
 	parsedMsg, handler, handlerID, ok := r.parse(gossip)
 	if !ok {
 		r.log.Debug("received message for unregistered handler",
-			zap.Stringer("messageOp", message.AppGossipOp),
-			zap.Stringer("nodeID", nodeID),
-			zap.Binary("message", gossip),
+			log.Stringer("messageOp", message.AppGossipOp),
+			log.Stringer("nodeID", nodeID),
+			log.Binary("message", gossip),
 		)
 		return nil
 	}
@@ -269,11 +267,11 @@ func (r *router) CrossChainAppRequest(
 	parsedMsg, handler, handlerID, ok := r.parse(msg)
 	if !ok {
 		r.log.Debug("received message for unregistered handler",
-			zap.Stringer("messageOp", message.CrossChainAppRequestOp),
-			zap.Stringer("chainID", chainID),
-			zap.Uint32("requestID", requestID),
-			zap.Time("deadline", deadline),
-			zap.Binary("message", msg),
+			log.Stringer("messageOp", message.CrossChainAppRequestOp),
+			log.Stringer("chainID", chainID),
+			log.Uint32("requestID", requestID),
+			log.Time("deadline", deadline),
+			log.Binary("message", msg),
 		)
 		return nil
 	}

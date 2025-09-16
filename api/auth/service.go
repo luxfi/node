@@ -6,8 +6,6 @@ package auth
 import (
 	"net/http"
 
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/node/api"
 )
 

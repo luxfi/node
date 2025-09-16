@@ -47,6 +47,13 @@ import (
 	"github.com/luxfi/trace"
 )
 
+// TrackerTargeterConfig contains resource allocation configurations
+type TrackerTargeterConfig struct {
+	VdrAlloc           float64 `json:"vdrAlloc"`
+	MaxNonVdrUsage     float64 `json:"maxNonVdrUsage"`
+	MaxNonVdrNodeUsage float64 `json:"maxNonVdrNodeUsage"`
+}
+
 const (
 	chainConfigFileName  = "config"
 	chainUpgradeFileName = "upgrade"

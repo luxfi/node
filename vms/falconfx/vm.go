@@ -5,11 +5,11 @@ package falconfx
 
 import (
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 // VM defines the required VM interface for FALCON fx
 type VM interface {
 	CodecRegistry() codec.Registry
-	Logger() logging.Logger
+	Logger() log.Logger
 }

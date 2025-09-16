@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
@@ -24,7 +24,7 @@ type TestContext interface {
 	DeferCleanup(cleanup func())
 
 	// Returns a logger that can be used to log test output
-	Log() logging.Logger
+	Log() log.Logger
 
 	// Context helpers requiring cleanup with DeferCleanup
 	ContextWithTimeout(duration time.Duration) context.Context

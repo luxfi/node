@@ -23,7 +23,6 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/trace"
@@ -153,7 +152,7 @@ func New(
 	}
 
 	log.Info("API created",
-		zap.Strings("allowedOrigins", allowedOrigins),
+		log.Strings("allowedOrigins", allowedOrigins),
 	)
 
 	return &server{
@@ -181,7 +180,7 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 		if chainName == "platform" || chainName == "P" {
 			chainID = constants.PlatformChainID
 			s.log.Info("using hardcoded Platform chain ID",
-				zap.Stringer("chainID", chainID),
+				log.Stringer("chainID", chainID),
 			)
 		} else {
 			s.log.Error("no chain ID found in context")
@@ -195,13 +194,13 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 	handlers, err := vm.CreateHandlers(context.TODO())
 	if err != nil {
 		s.log.Error("failed to create handlers",
-			zap.String("chainName", chainName),
-			zap.Error(err),
+			log.UserString("chainName", chainName),
+			log.Error(err),
 		)
 		return
 	}
 	s.log.Debug("about to add API endpoints",
-		zap.Stringer("chainID", chainID),
+		log.Stringer("chainID", chainID),
 	)
 	// all subroutes to a chain begin with "bc/<the chain's ID>"
 	defaultEndpoint := path.Join(constants.ChainAliasPrefix, chainID.String())
@@ -213,14 +212,14 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 		_, err := url.ParseRequestURI(extension)
 		if extension != "" && err != nil {
 			s.log.Error("could not add route to chain's API handler",
-				zap.String("reason", "route is malformed"),
-				zap.Error(err),
+				log.UserString("reason", "route is malformed"),
+				log.Error(err),
 			)
 			continue
 		}
 		if err := s.addChainRoute(chainName, handler, ctx, defaultEndpoint, extension); err != nil {
 			s.log.Error("error adding route",
-				zap.Error(err),
+				log.Error(err),
 			)
 		}
 	}
@@ -229,8 +228,8 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 func (s *server) addChainRoute(chainName string, handler http.Handler, ctx context.Context, base, endpoint string) error {
 	url := fmt.Sprintf("%s/%s", baseURL, base)
 	s.log.Info("adding route",
-		zap.String("url", url),
-		zap.String("endpoint", endpoint),
+		log.UserString("url", url),
+		log.UserString("endpoint", endpoint),
 	)
 	if s.tracingEnabled {
 		handler = api.TraceHandler(handler, chainName, s.tracer)
@@ -254,8 +253,8 @@ func (s *server) AddRouteWithReadLock(handler http.Handler, base, endpoint strin
 func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 	url := fmt.Sprintf("%s/%s", baseURL, base)
 	s.log.Info("adding route",
-		zap.String("url", url),
-		zap.String("endpoint", endpoint),
+		log.UserString("url", url),
+		log.UserString("endpoint", endpoint),
 	)
 
 	if s.tracingEnabled {

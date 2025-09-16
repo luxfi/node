@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
+	luxmetric "github.com/luxfi/metric"
+	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -58,7 +58,7 @@ type BandwidthThrottlerConfig struct {
 
 func newBandwidthThrottler(
 	log log.Logger,
-	registerer metric.Registerer,
+	registerer luxmetric.Registerer,
 	config BandwidthThrottlerConfig,
 ) (bandwidthThrottler, error) {
 	errs := wrappers.Errs{}
@@ -73,7 +73,7 @@ func newBandwidthThrottler(
 				registerer,
 				&errs,
 			),
-			awaitingAcquire: metric.NewGauge(metric.GaugeOpts{
+			awaitingAcquire: luxmetric.NewGauge(luxmetric.GaugeOpts{
 				Name: "bandwidth_throttler_inbound_awaiting_acquire",
 				Help: "Number of inbound messages waiting to acquire bandwidth from the inbound bandwidth throttler",
 			}),
@@ -85,7 +85,7 @@ func newBandwidthThrottler(
 
 type bandwidthThrottlerMetrics struct {
 	acquireLatency  metric.Averager
-	awaitingAcquire metric.Gauge
+	awaitingAcquire luxmetric.Gauge
 }
 
 type bandwidthThrottlerImpl struct {

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
@@ -26,7 +26,7 @@ type PanicHandler func(any)
 
 type SimpleTestContext struct {
 	defaultContextParent context.Context
-	log                  logging.Logger
+	log                  log.Logger
 
 	cleanupFuncs  []func()
 	cleanupCalled bool
@@ -35,13 +35,13 @@ type SimpleTestContext struct {
 	panicHandler  PanicHandler
 }
 
-func NewTestContext(log logging.Logger) *SimpleTestContext {
+func NewTestContext(log log.Logger) *SimpleTestContext {
 	return NewTestContextWithArgs(context.Background(), log, nil, nil)
 }
 
 func NewTestContextWithArgs(
 	ctx context.Context,
-	log logging.Logger,
+	log log.Logger,
 	errorfHandler ErrorfHandler,
 	panicHandler PanicHandler,
 ) *SimpleTestContext {
@@ -185,7 +185,7 @@ func (tc *SimpleTestContext) By(msg string, callback ...func()) {
 	}
 }
 
-func (tc *SimpleTestContext) Log() logging.Logger {
+func (tc *SimpleTestContext) Log() log.Logger {
 	return tc.log
 }
 

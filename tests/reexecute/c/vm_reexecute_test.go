@@ -39,7 +39,7 @@ import (
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/warp"
@@ -270,7 +270,7 @@ type blockResult struct {
 }
 
 type vmExecutorConfig struct {
-	Log logging.Logger
+	Log log.Logger
 	// Registry is the registry to register the metrics with.
 	Registry metric.Registerer
 	// ExecutionTimeout is the maximum timeout to continue executing blocks.

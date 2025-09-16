@@ -22,7 +22,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -95,7 +95,7 @@ type KubeRuntimeConfig struct {
 }
 
 // ensureDefaults sets cluster-specific defaults for fields not already set by flags.
-func (c *KubeRuntimeConfig) ensureDefaults(ctx context.Context, log logging.Logger) error {
+func (c *KubeRuntimeConfig) ensureDefaults(ctx context.Context, log log.Logger) error {
 	// Only read defaults if necessary
 	requireSchedulingDefaults := c.UseExclusiveScheduling && (len(c.SchedulingLabelKey) == 0 || len(c.SchedulingLabelValue) == 0)
 	requireIngressDefaults := !IsRunningInCluster() && len(c.IngressHost) == 0

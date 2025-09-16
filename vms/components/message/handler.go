@@ -4,8 +4,6 @@
 package message
 
 import (
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 )

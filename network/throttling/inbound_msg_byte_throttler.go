@@ -7,12 +7,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
+	luxmetric "github.com/luxfi/metric"
+	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/metric"
@@ -23,7 +23,7 @@ import (
 
 func newInboundMsgByteThrottler(
 	log log.Logger,
-	registerer metric.Registerer,
+	registerer luxmetric.Registerer,
 	vdrs validators.Manager,
 	config MsgByteThrottlerConfig,
 ) (*inboundMsgByteThrottler, error) {
@@ -299,13 +299,13 @@ func (t *inboundMsgByteThrottler) release(metadata *msgMetadata, nodeID ids.Node
 
 type inboundMsgByteThrottlerMetrics struct {
 	acquireLatency        metric.Averager
-	remainingAtLargeBytes metric.Gauge
-	remainingVdrBytes     metric.Gauge
-	awaitingAcquire       metric.Gauge
-	awaitingRelease       metric.Gauge
+	remainingAtLargeBytes luxmetric.Gauge
+	remainingVdrBytes     luxmetric.Gauge
+	awaitingAcquire       luxmetric.Gauge
+	awaitingRelease       luxmetric.Gauge
 }
 
-func (m *inboundMsgByteThrottlerMetrics) initialize(reg metric.Registerer) error {
+func (m *inboundMsgByteThrottlerMetrics) initialize(reg luxmetric.Registerer) error {
 	errs := wrappers.Errs{}
 	m.acquireLatency = metric.NewAveragerWithErrs(
 		"byte_throttler_inbound_acquire_latency",
@@ -313,19 +313,19 @@ func (m *inboundMsgByteThrottlerMetrics) initialize(reg metric.Registerer) error
 		reg,
 		&errs,
 	)
-	m.remainingAtLargeBytes = metric.NewGauge(metric.GaugeOpts{
+	m.remainingAtLargeBytes = luxmetric.NewGauge(luxmetric.GaugeOpts{
 		Name: "byte_throttler_inbound_remaining_at_large_bytes",
 		Help: "Bytes remaining in the at-large byte buffer",
 	})
-	m.remainingVdrBytes = metric.NewGauge(metric.GaugeOpts{
+	m.remainingVdrBytes = luxmetric.NewGauge(luxmetric.GaugeOpts{
 		Name: "byte_throttler_inbound_remaining_validator_bytes",
 		Help: "Bytes remaining in the validator byte buffer",
 	})
-	m.awaitingAcquire = metric.NewGauge(metric.GaugeOpts{
+	m.awaitingAcquire = luxmetric.NewGauge(luxmetric.GaugeOpts{
 		Name: "byte_throttler_inbound_awaiting_acquire",
 		Help: "Number of inbound messages waiting to acquire space on the inbound message byte buffer",
 	})
-	m.awaitingRelease = metric.NewGauge(metric.GaugeOpts{
+	m.awaitingRelease = luxmetric.NewGauge(luxmetric.GaugeOpts{
 		Name: "byte_throttler_inbound_awaiting_release",
 		Help: "Number of messages currently being read/handled",
 	})

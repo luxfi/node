@@ -7,9 +7,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/log"
 )
 
 type Scheduler interface {
@@ -83,8 +81,8 @@ waitloop:
 					// If the channel to the engine is full, drop the message
 					// from the VM to avoid deadlock
 					s.log.Debug("dropping message from VM",
-						zap.String("reason", "channel to engine is full"),
-						zap.Stringer("message", msg),
+						log.UserString("reason", "channel to engine is full"),
+						log.Stringer("message", msg),
 					)
 				}
 			case buildBlockTime, ok := <-s.newBuildBlockTime:

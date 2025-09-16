@@ -11,18 +11,18 @@ import (
 	"github.com/antithesishq/antithesis-sdk-go/assert"
 
 	"github.com/luxfi/node/tests"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 // NewInstrumentedTestContext returns a test context that makes antithesis SDK assertions.
-func NewInstrumentedTestContext(log logging.Logger) *tests.SimpleTestContext {
+func NewInstrumentedTestContext(log log.Logger) *tests.SimpleTestContext {
 	return NewInstrumentedTestContextWithArgs(context.Background(), log, nil)
 }
 
 // NewInstrumentedTestContextWithArgs returns a test context that makes antithesis SDK assertions.
 func NewInstrumentedTestContextWithArgs(
 	ctx context.Context,
-	log logging.Logger,
+	log log.Logger,
 	details map[string]any,
 ) *tests.SimpleTestContext {
 	return tests.NewTestContextWithArgs(

@@ -27,9 +27,10 @@ import (
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/networking/benchlist"
 	"github.com/luxfi/consensus/networking/timeout"
-	"github.com/luxfi/consensus/networking/tracker"
+	consensustracker "github.com/luxfi/consensus/networking/tracker"
+	"github.com/luxfi/node/benchlist"
+	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
@@ -548,8 +549,8 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 
 	tlsConfig := peer.TLSConfig(n.Config.StakingTLSCert, n.tlsKeyLogWriterCloser)
 
-	// Create chain router
-	n.chainRouter = &chainRouter{log: n.Log}
+	// Create chain router using SimpleRouter
+	n.chainRouter = NewSimpleRouter(n.Log, nil)
 	if n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled {
 		// Trace function takes 3 arguments: router, name, tracer
 		n.chainRouter = Trace(n.chainRouter, "chainRouter", n.tracer)
@@ -568,10 +569,10 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 		return err
 	}
 
-	// Create a stub benchlist manager
-	n.benchlistManager = &stubBenchlistManager{}
+	// Create benchlist manager
+	n.benchlistManager = benchlist.NewManager(n.Log, n.MetricsRegisterer, &benchlist.Config{})
 
-	n.uptimeCalculator = NewLockedCalculator()
+	n.uptimeCalculator = uptime.NewLockedCalculator()
 
 	consensusRouter := n.chainRouter
 	if !n.Config.SybilProtectionEnabled {
@@ -1475,11 +1476,11 @@ func (n *Node) initHealthAPI() error {
 		return fmt.Errorf("couldn't register network health check: %w", err)
 	}
 
-	// Router health check disabled - stub router doesn't implement health.Checker
-	// err = n.health.RegisterHealthCheck("router", n.chainRouter, health.ApplicationTag)
-	// if err != nil {
-	// 	return fmt.Errorf("couldn't register router health check: %w", err)
-	// }
+	// Enable router health check - chainRouter now implements HealthCheck
+	err = n.health.RegisterHealthCheck("router", n.chainRouter, health.ApplicationTag)
+	if err != nil {
+		return fmt.Errorf("couldn't register router health check: %w", err)
+	}
 
 	err = n.health.RegisterHealthCheck("database", n.DB, health.ApplicationTag)
 	if err != nil {
@@ -1613,8 +1614,16 @@ func (n *Node) initResourceManager() error {
 	if err != nil {
 		return err
 	}
-	// Create a stub resource tracker
-	n.resourceTracker = &stubResourceTracker{}
+	// Create resource tracker
+	n.resourceTracker, err = tracker.NewResourceTracker(
+		n.Log,
+		n.MetricsRegisterer,
+		n.Config.SystemTrackerCPUHalflife,
+		n.Config.SystemTrackerDiskHalflife,
+	)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -1623,8 +1632,12 @@ func (n *Node) initResourceManager() error {
 func (n *Node) initCPUTargeter(
 	config *TargeterConfig,
 ) {
-	// Create a stub CPU targeter
-	n.cpuTargeter = &stubTargeter{}
+	// Create CPU targeter
+	n.cpuTargeter = tracker.NewTargeter(&tracker.TargeterConfig{
+		VdrAlloc:           config.VdrAlloc,
+		MaxNonVdrUsage:     config.MaxNonVdrUsage,
+		MaxNonVdrNodeUsage: config.MaxNonVdrNodeUsage,
+	})
 }
 
 // Initialize [n.diskTargeter].
@@ -1632,8 +1645,12 @@ func (n *Node) initCPUTargeter(
 func (n *Node) initDiskTargeter(
 	config *TargeterConfig,
 ) {
-	// Create a stub disk targeter
-	n.diskTargeter = &stubTargeter{}
+	// Create disk targeter
+	n.diskTargeter = tracker.NewTargeter(&tracker.TargeterConfig{
+		VdrAlloc:           config.VdrAlloc,
+		MaxNonVdrUsage:     config.MaxNonVdrUsage,
+		MaxNonVdrNodeUsage: config.MaxNonVdrNodeUsage,
+	})
 }
 
 // Shutdown this node
@@ -1732,53 +1749,4 @@ func (n *Node) ExitCode() int {
 	return n.shuttingDownExitCode.Get()
 }
 
-// Stub implementations for types not in router_stub.go
-
-type stubResourceTracker struct{}
-
-func (s *stubResourceTracker) CPUTracker() tracker.CPUTracker {
-	return &stubCPUTracker{}
-}
-
-func (s *stubResourceTracker) DiskTracker() tracker.DiskTracker {
-	return &stubDiskTracker{}
-}
-
-func (s *stubResourceTracker) RegisterRequest(ids.NodeID) {}
-func (s *stubResourceTracker) RegisterResponse(ids.NodeID) {}
-func (s *stubResourceTracker) ProcessingTime(ids.NodeID) time.Duration { return 0 }
-func (s *stubResourceTracker) StartProcessing(ids.NodeID, time.Time) {}
-func (s *stubResourceTracker) StopProcessing(ids.NodeID, time.Time) {}
-
-type stubCPUTracker struct{}
-
-func (s *stubCPUTracker) Usage(ids.NodeID, time.Time) float64 { return 0 }
-func (s *stubCPUTracker) TimeUntilUsage(ids.NodeID, time.Time, float64) time.Duration { return 0 }
-
-type stubTracker struct{}
-
-func (s *stubTracker) Usage(ids.NodeID, time.Time) float64 { return 0 }
-func (s *stubTracker) TimeUntilUsage(ids.NodeID, time.Time, float64) time.Duration { return 0 }
-
-type stubDiskTracker struct{}
-
-func (s *stubDiskTracker) Usage(ids.NodeID, time.Time) float64 { return 0 }
-func (s *stubDiskTracker) TimeUntilUsage(ids.NodeID, time.Time, float64) time.Duration { return 0 }
-
-type stubLockedCalculator struct{}
-
-func (s *stubLockedCalculator) CalculateUptime(ids.NodeID, ids.ID, time.Time, time.Time) (time.Duration, time.Duration, error) {
-	return 0, 0, nil
-}
-
-func (s *stubLockedCalculator) CalculateUptimePercent(ids.NodeID, ids.ID, time.Time, time.Time) (float64, error) {
-	return 1.0, nil
-}
-
-func (s *stubLockedCalculator) SetCalculator(ids.ID, uptime.Calculator) error {
-	return nil
-}
-
-type stubTargeter struct{}
-
-func (s *stubTargeter) TargetUsage() uint64 { return 80 }
+// Real implementations are now in network/tracker/ directory
