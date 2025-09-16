@@ -12,7 +12,6 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/process"
-	"github.com/luxfi/log"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/storage"

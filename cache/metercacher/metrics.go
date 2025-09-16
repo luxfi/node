@@ -4,8 +4,6 @@
 package metercacher
 
 import (
-	"errors"
-
 	"github.com/luxfi/metric"
 )
 
@@ -78,12 +76,7 @@ func newMetrics(
 			Help:      "fraction of cache filled",
 		}),
 	}
-	return m, errors.Join(
-		reg.Register(m.getCount),
-		reg.Register(m.getTime),
-		reg.Register(m.putCount),
-		reg.Register(m.putTime),
-		reg.Register(m.len),
-		reg.Register(m.portionFilled),
-	)
+	// The metrics are already registered when created with prometheus functions
+	// so we don't need to register them again
+	return m, nil
 }

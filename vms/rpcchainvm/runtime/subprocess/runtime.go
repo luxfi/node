@@ -14,8 +14,6 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/gruntime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
@@ -102,7 +100,7 @@ func Bootstrap(
 		_, err := io.Copy(config.Stdout, stdoutPipe)
 		if err != nil {
 			log.Error("stdout collector failed",
-				zap.Error(err),
+				log.Err(err),
 			)
 		}
 		stopper.Stop(context.TODO())
@@ -115,7 +113,7 @@ func Bootstrap(
 		_, err := io.Copy(config.Stderr, stderrPipe)
 		if err != nil {
 			log.Error("stderr collector failed",
-				zap.Error(err),
+				log.Err(err),
 			)
 		}
 		stopper.Stop(context.TODO())
@@ -140,7 +138,7 @@ func Bootstrap(
 	}
 
 	log.Info("plugin handshake succeeded",
-		zap.String("addr", intitializer.vmAddr),
+		log.String("addr", intitializer.vmAddr),
 	)
 
 	status := &Status{

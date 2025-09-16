@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/uptime"
 	consensusvalidators "github.com/luxfi/consensus/validators"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/node/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/database"
@@ -605,13 +605,13 @@ func newState(
 	}
 
 	// TODO: Fix validator manager type mismatch properly
-	// For now, create a new snow validators manager
-	snowValidators := validators.NewManager()
+	// For now, create a new consensus validators manager
+	consensusValidators := validators.NewManager()
 	
 	return &state{
 		validatorState: newValidatorState(),
 
-		validators: snowValidators,
+		validators: consensusValidators,
 		ctx:        ctx,
 		cfg:        cfg,
 		metrics:    metrics,

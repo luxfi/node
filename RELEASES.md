@@ -92,7 +92,7 @@ This was the version used for the first public Lux Network deployment in Decembe
 
 - Network ID 96369 for mainnet
 - Support for single-node development mode
-- Modified consensus parameters (snow-sample-size=1, snow-quorum-size=1)
+- Modified consensus parameters (consensus-sample-size=1, consensus-quorum-size=1)
 - APIs: admin, auth, health, info, keystore, metrics, platform, X-Chain
 
 ### Network Support

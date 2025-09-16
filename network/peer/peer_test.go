@@ -141,7 +141,7 @@ func newRawTestPeer(t *testing.T, config Config) *rawTestPeer {
 	bls, err := bls.NewSecretKey()
 	require.NoError(err)
 
-	config.IPSigner = NewIPSigner(ip, tls, localsigner.NewFromSecretKey(bls))
+	config.IPSigner = NewIPSigner(ip, tls, func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(bls)); return s }())
 
 	inboundMsgChan := make(chan message.InboundMessage)
 	config.Router = InboundHandlerFunc(func(_ context.Context, inboundMsg message.InboundMessage) {

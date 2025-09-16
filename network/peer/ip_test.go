@@ -98,7 +98,7 @@ func TestSignedIpVerify(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			signedIP, err := tt.ip.Sign(tt.tlsSigner, localsigner.NewFromSecretKey(tt.blsSigner))
+			signedIP, err := tt.ip.Sign(tt.tlsSigner, func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(tt.blsSigner)); return s }())
 			require.NoError(t, err)
 
 			err = signedIP.Verify(tt.expectedCert, tt.maxTimestamp)

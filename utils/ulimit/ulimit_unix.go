@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/luxfi/log"
+	luxlog "github.com/luxfi/log"
 )
 
 const DefaultFDLimit = 32 * 1024
@@ -21,7 +21,7 @@ const DefaultFDLimit = 32 * 1024
 // privileges. Bumping the Max limit further would require superuser privileges.
 // If the current Max is below our recommendation we will warn on start.
 // see: http://0pointer.net/blog/file-descriptor-limits.html
-func Set(max uint64, log log.Logger) error {
+func Set(max uint64, log luxlog.Logger) error {
 	var rLimit syscall.Rlimit
 	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
 	if err != nil {
@@ -46,8 +46,8 @@ func Set(max uint64, log log.Logger) error {
 
 	if rLimit.Cur < DefaultFDLimit {
 		log.Warn("fd-limit is less than recommended and could result in reduced performance",
-			log.Uint64("limit", rLimit.Cur),
-			log.Uint64("recommendedLimit", DefaultFDLimit),
+			luxlog.Uint64("limit", rLimit.Cur),
+			luxlog.Uint64("recommendedLimit", DefaultFDLimit),
 		)
 	}
 

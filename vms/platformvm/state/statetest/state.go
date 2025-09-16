@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 
-	// "github.com/luxfi/node/snow" // snow package removed
+	// "github.com/luxfi/node/consensus" // consensus package removed
 	"github.com/luxfi/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/validators"

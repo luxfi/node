@@ -97,8 +97,8 @@ func (h *health) Readiness(tags ...string) (map[string]Result, bool) {
 	results, healthy := h.readiness.Results(tags...)
 	if !healthy {
 		h.log.Warn("failing check",
-			zap.String("namespace", "readiness"),
-			zap.Reflect("reason", results),
+			log.UserString("namespace", "readiness"),
+			log.Reflect("reason", results),
 		)
 	}
 	return results, healthy
@@ -108,8 +108,8 @@ func (h *health) Health(tags ...string) (map[string]Result, bool) {
 	results, healthy := h.health.Results(tags...)
 	if !healthy {
 		h.log.Warn("failing check",
-			zap.String("namespace", "health"),
-			zap.Reflect("reason", results),
+			log.UserString("namespace", "health"),
+			log.Reflect("reason", results),
 		)
 	}
 	return results, healthy
@@ -119,8 +119,8 @@ func (h *health) Liveness(tags ...string) (map[string]Result, bool) {
 	results, healthy := h.liveness.Results(tags...)
 	if !healthy {
 		h.log.Warn("failing check",
-			zap.String("namespace", "liveness"),
-			zap.Reflect("reason", results),
+			log.UserString("namespace", "liveness"),
+			log.Reflect("reason", results),
 		)
 	}
 	return results, healthy

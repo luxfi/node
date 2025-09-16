@@ -193,8 +193,8 @@ ok  	github.com/luxfi/node/network/throttling	(cached)
 FAIL	github.com/luxfi/node/node [build failed]
 ok  	github.com/luxfi/node/pubsub	(cached)
 ok  	github.com/luxfi/node/pubsub/bloom	(cached)
-?   	github.com/luxfi/node/snow/engine/common	[no test files]
-?   	github.com/luxfi/node/snow/engine/enginetest	[no test files]
+?   	github.com/luxfi/node/consensus/engine/common	[no test files]
+?   	github.com/luxfi/node/consensus/engine/enginetest	[no test files]
 ok  	github.com/luxfi/node/staking	(cached)
 ok  	github.com/luxfi/node/tests	(cached)
 FAIL	github.com/luxfi/node/tests/antithesis [build failed]

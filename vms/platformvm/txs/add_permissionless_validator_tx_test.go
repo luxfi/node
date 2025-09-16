@@ -102,7 +102,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			Wght:   2 * units.KiloLux,
 		},
 		Net: constants.PrimaryNetworkID,
-		Signer: signer.NewProofOfPossession(localsigner.NewFromSecretKey(sk)),
+		Signer: signer.NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }()),
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
@@ -395,7 +395,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			Wght:   5 * units.KiloLux,
 		},
 		Net: constants.PrimaryNetworkID,
-		Signer: signer.NewProofOfPossession(localsigner.NewFromSecretKey(sk)),
+		Signer: signer.NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }()),
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{

@@ -34,7 +34,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/genesis"
-	// "github.com/luxfi/node/snow/engine/enginetest"
+	// "github.com/luxfi/node/consensus/engine/enginetest"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/upgrade"
@@ -117,10 +117,10 @@ func benchmarkReexecuteRange(b *testing.B, sourceBlockDir string, targetDir stri
 	vmMultiGatherer := metric.NewPrefixGatherer()
 	r.NoError(prefixGatherer.Register("lux_evm", vmMultiGatherer))
 
-	// consensusRegistry includes the chain="C" label and the prefix "lux_snowman".
+	// consensusRegistry includes the chain="C" label and the prefix "lux_chain".
 	// The consensus registry is passed to the executor to mimic a subset of consensus metric.
 	consensusRegistry := metric.NewRegistry()
-	r.NoError(prefixGatherer.Register("lux_snowman", consensusRegistry))
+	r.NoError(prefixGatherer.Register("lux_chain", consensusRegistry))
 
 	if metricsEnabled {
 		collectRegistry(b, "c-chain-reexecution", time.Minute, prefixGatherer, labels)
@@ -469,11 +469,11 @@ type consensusMetrics struct {
 	lastAcceptedHeight metric.Gauge
 }
 
-// newConsensusMetrics creates a subset of the metrics from snowman consensus
-// [engine](../../snow/engine/snowman/metric.go).
+// newConsensusMetrics creates a subset of the metrics from chain consensus
+// [engine](../../consensus/engine/chain/metric.go).
 //
 // The registry passed in is expected to be registered with the prefix
-// "lux_snowman" and the chain label (ex. chain="C") that would be handled
+// "lux_chain" and the chain label (ex. chain="C") that would be handled
 // by the[chain manager](../../../chains/manager.go).
 func newConsensusMetrics(registry metric.Registerer) (*consensusMetrics, error) {
 	m := &consensusMetrics{
