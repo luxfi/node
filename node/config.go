@@ -29,6 +29,18 @@ type APIIndexerConfig struct {
 	IndexAllowIncomplete bool `json:"indexAllowIncomplete"`
 }
 
+type TargeterConfig struct {
+	// VdrAlloc is the percentage of resource usage that is attributed to validators
+	// The range is [0, 1], defaults to 1 (100%)
+	VdrAlloc float64 `json:"vdrAlloc"`
+	// MaxNonVdrUsage is the maximum amount of resources that non-validators can use
+	// The range is [0, 1], defaults to 0
+	MaxNonVdrUsage float64 `json:"maxNonVdrUsage"`
+	// MaxNonVdrNodeUsage is the maximum amount of resources that a non-validator node can use
+	// The range is [0, 1], defaults to 0
+	MaxNonVdrNodeUsage float64 `json:"maxNonVdrNodeUsage"`
+}
+
 type HTTPConfig struct {
 	server.HTTPConfig
 	APIConfig `json:"apiConfig"`

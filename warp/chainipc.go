@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/luxfi/log"
-
 	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/consensus"
@@ -75,7 +73,7 @@ func NewChainIPCs(
 func (cipcs *ChainIPCs) Publish(chainID ids.ID) (*EventSockets, error) {
 	if es, ok := cipcs.chains[chainID]; ok {
 		cipcs.log.Info("returning existing event sockets",
-			zap.Stringer("blockchainID", chainID),
+			log.Stringer("blockchainID", chainID),
 		)
 		return es, nil
 	}
@@ -89,16 +87,16 @@ func (cipcs *ChainIPCs) Publish(chainID ids.ID) (*EventSockets, error) {
 	)
 	if err != nil {
 		cipcs.log.Error("can't create ipcs",
-			zap.Error(err),
+			log.Reflect("error", err),
 		)
 		return nil, err
 	}
 
 	cipcs.chains[chainID] = es
 	cipcs.log.Info("created IPC sockets",
-		zap.Stringer("blockchainID", chainID),
-		zap.String("consensusURL", es.ConsensusURL()),
-		zap.String("decisionsURL", es.DecisionsURL()),
+		log.Stringer("blockchainID", chainID),
+		log.UserString("consensusURL", es.ConsensusURL()),
+		log.UserString("decisionsURL", es.DecisionsURL()),
 	)
 	return es, nil
 }
