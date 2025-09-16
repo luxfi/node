@@ -8,6 +8,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"os"
 	"time"
 
 	"github.com/antithesishq/antithesis-sdk-go/assert"
@@ -25,7 +26,6 @@ import (
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/components/lux"
@@ -52,12 +52,8 @@ func main() {
 	defer tc.RecoverAndExit()
 	require := require.New(tc)
 
-	c := antithesis.NewConfig(
-		tc,
-		&tmpnet.Network{
-			Owner: "antithesis-luxd",
-		},
-	)
+	c, err := antithesis.NewConfig(os.Args[1:])
+	require.NoError(err)
 	ctx := tests.DefaultNotifyContext(c.Duration, tc.DeferCleanup)
 	// Ensure contexts sourced from the test context use the notify context as their parent
 	tc.SetDefaultContextParent(ctx)
@@ -147,7 +143,7 @@ func main() {
 type workload struct {
 	id     int
 	log    log.Logger
-	wallet *primary.Wallet
+	wallet primary.Wallet
 	addrs  set.Set[ids.ShortID]
 	uris   []string
 }
@@ -173,7 +169,25 @@ func (w *workload) run(ctx context.Context) {
 	defer tc.RecoverAndRethrow()
 	require := require.New(tc)
 
-	xLUX, pLUX := e2e.GetWalletBalances(tc, w.wallet)
+	// Get wallet balances
+	var (
+		xWallet  = w.wallet.X()
+		xBuilder = xWallet.Builder()
+		pWallet  = w.wallet.P()
+		pBuilder = pWallet.Builder()
+	)
+	xBalances, err := xBuilder.GetFTBalance()
+	require.NoError(err, "failed to fetch X-chain balances")
+	pBalances, err := pBuilder.GetBalance()
+	require.NoError(err, "failed to fetch P-chain balances")
+	
+	var (
+		xContext   = xBuilder.Context()
+		luxAssetID = xContext.LUXAssetID
+		xLUX       = xBalances[luxAssetID]
+		pLUX       = pBalances[luxAssetID]
+	)
+	
 	assert.Reachable("wallet starting", map[string]any{
 		"worker":   w.id,
 		"xBalance": xLUX,
