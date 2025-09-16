@@ -70,19 +70,19 @@ func InitBootstrapTest(log log.Logger, namespace string, podName string, nodeCon
 
 	var testDetails bootstrapTestDetails
 	if testDetailsBytes, err := os.ReadFile(testDetailsPath); errors.Is(err, os.ErrNotExist) {
-		log.Info("Test details file does not exist", zap.String("path", testDetailsPath))
+		log.Info("Test details file does not exist", log.UserString("path", testDetailsPath))
 	} else if err != nil {
 		return fmt.Errorf("failed to read test details file: %w", err)
 	} else {
 		if err := json.Unmarshal(testDetailsBytes, &testDetails); err != nil {
 			return fmt.Errorf("failed to unmarshal test details: %w", err)
 		}
-		log.Info("Loaded test details", zap.Reflect("testDetails", testDetails))
+		log.Info("Loaded test details", log.Reflect("testDetails", testDetails))
 	}
 
 	if testDetails.Image == testConfig.Image {
 		log.Info("Test details image matches test config image")
-		log.Info(BootstrapResumingMessage, zap.Reflect("testConfig", testConfig))
+		log.Info(BootstrapResumingMessage, log.Reflect("testConfig", testConfig))
 		return nil
 	} else if len(testDetails.Image) > 0 {
 		log.Info("Test details image differs from test config image")

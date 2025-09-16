@@ -13,6 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/database/memdb"
@@ -22,6 +23,7 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/constants"
 )
 
 var (
@@ -153,7 +155,10 @@ func TestIndexer(t *testing.T) {
 	// Use a test chain ID
 	testChainID := ids.GenerateTestID()
 	_ = consensustest.Context(t, testChainID)
-	chain1Ctx := context.Background()
+	chain1Ctx := consensuscontext.WithIDs(context.Background(), consensuscontext.IDs{
+		NetID:   constants.PrimaryNetworkID,
+		ChainID: testChainID,
+	})
 	isIncomplete, err := idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -408,7 +413,10 @@ func TestIncompleteIndex(t *testing.T) {
 	// Register a chain
 	testChainID := ids.GenerateTestID()
 	_ = consensustest.Context(t, testChainID)
-	chain1Ctx := context.Background()
+	chain1Ctx := consensuscontext.WithIDs(context.Background(), consensuscontext.IDs{
+		NetID:   constants.PrimaryNetworkID,
+		ChainID: testChainID,
+	})
 	isIncomplete, err := idxr.isIncomplete(testChainID)
 	require.NoError(err)
 	require.False(isIncomplete)
@@ -492,10 +500,14 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 
 	// Create chain1Ctx for a random net + chain.
 	testChainID := ids.GenerateTestID()
-	_ = ids.GenerateTestID() // Non-primary network (testNetID)
-	_ = consensustest.Context(t, testChainID)
-	chain1Ctx := context.Background()
-	
+	testNetID := ids.GenerateTestID() // Non-primary network (testNetID)
+	testCtx := consensustest.Context(t, testChainID)
+	// Set a non-primary network ID in the context
+	chain1Ctx := consensuscontext.WithIDs(testCtx, consensuscontext.IDs{
+		NetID:   testNetID, // Non-primary network
+		ChainID: testChainID,
+	})
+
 	// The test context is configured correctly for a non-primary net
 
 	// RegisterChain should return without adding an index for this chain
