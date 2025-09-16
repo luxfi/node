@@ -6,10 +6,9 @@ package pebbledb
 import (
 	"testing"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
-
-	"github.com/luxfi/log"
 )
 
 // Note: TestInterface tests other batch functionality.
@@ -17,7 +16,7 @@ func TestBatch(t *testing.T) {
 	require := require.New(t)
 	dirName := t.TempDir()
 
-	db, err := New(dirName, nil, logging.NoLog{}, metric.NewRegistry())
+	db, err := New(dirName, nil, log.NewNoOpLogger(), metric.NewRegistry())
 	require.NoError(err)
 
 	batchIntf := db.NewBatch()
