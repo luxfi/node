@@ -143,7 +143,7 @@ func main() {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()
-			log, err := tests.LoggerForFormat("", rawLogFormat)
+			_, err := tests.LoggerForFormat("", rawLogFormat)
 			if err != nil {
 				return err
 			}
@@ -280,16 +280,15 @@ func main() {
 
 	var (
 		kubeconfigVars   *flags.KubeconfigVars
-		collectorVars    *flags.CollectorVars
 		installChaosMesh bool
 	)
 	startKindClusterCmd := &cobra.Command{
 		Use:   "start-kind-cluster",
 		Short: "Starts a local kind cluster with an integrated registry",
 		RunE: func(*cobra.Command, []string) error {
-			ctx, cancel := context.WithTimeout(context.Background(), startKindClusterTimeout)
+			_, cancel := context.WithTimeout(context.Background(), startKindClusterTimeout)
 			defer cancel()
-			log, err := tests.LoggerForFormat("", rawLogFormat)
+			_, err := tests.LoggerForFormat("", rawLogFormat)
 			if err != nil {
 				return err
 			}
@@ -315,7 +314,7 @@ func main() {
 		},
 	}
 	kubeconfigVars = flags.NewKubeconfigFlagSetVars(startKindClusterCmd.PersistentFlags())
-	collectorVars = flags.NewCollectorFlagSetVars(startKindClusterCmd.PersistentFlags())
+	_ = flags.NewCollectorFlagSetVars(startKindClusterCmd.PersistentFlags())
 	startKindClusterCmd.PersistentFlags().BoolVar(&installChaosMesh, "install-chaos-mesh", false, "Install Chaos Mesh in the kind cluster")
 	rootCmd.AddCommand(startKindClusterCmd)
 
