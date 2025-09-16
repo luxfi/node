@@ -177,7 +177,7 @@ type ChainParameters struct {
 type chainInfo struct {
 	Name    string
 	Context context.Context
-	VM      interface{} // Changed from core.VM since core.VM uses snow.Context
+	VM      interface{} // Changed from core.VM since core.VM uses consensus.Context
 	Handler handler.Handler
 	Engine  Engine // Added to handle Start/Stop operations
 }
@@ -216,7 +216,7 @@ type chainVMWrapper struct {
 
 func (c *chainVMWrapper) Initialize(
 	ctx context.Context,
-	snowCtx interface{},
+	consensusCtx interface{},
 	dbManager interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -1535,7 +1535,7 @@ func (m *manager) createLinearChain(
 	msgChan := make(chan core.Message, defaultChannelSize)
 
 	// Create ChainContext from context.Context
-	// Note: ChainContext contains ConsensusContext and Context from snow package
+	// Note: ChainContext contains ConsensusContext and Context from consensus package
 	// We need to extract IDs from the context
 	var pubKeyBytes []byte
 	if m.StakingBLSKey != nil && m.StakingBLSKey.PublicKey() != nil {
@@ -1959,7 +1959,7 @@ func (m *manager) LookupVM(alias string) (ids.ID, error) {
 func (m *manager) notifyRegistrants(name string, ctx context.Context, vm interface{}) {
 	for _, registrant := range m.registrants {
 		// registrant.RegisterChain expects core.VM, but we use interface{}
-		// since core.VM uses snow.Context which we're not using
+		// since core.VM uses consensus.Context which we're not using
 		if coreVM, ok := vm.(core.VM); ok {
 			registrant.RegisterChain(name, ctx, coreVM)
 		}

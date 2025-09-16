@@ -18,7 +18,7 @@ func TestBLSSingleNodeProofOfPossession(t *testing.T) {
 	require.NoError(err)
 
 	// Create proof of possession
-	pop := NewProofOfPossession(localsigner.NewFromSecretKey(sk))
+	pop := NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
 	require.NotNil(pop)
 
 	// Verify proof of possession
@@ -74,7 +74,7 @@ func TestInvalidProofOfPossession(t *testing.T) {
 			name: "valid PoP",
 			setupPoP: func() *ProofOfPossession {
 				sk, _ := bls.NewSecretKey()
-				return NewProofOfPossession(localsigner.NewFromSecretKey(sk))
+				return NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
 			},
 			expectErr: false,
 		},
@@ -82,7 +82,7 @@ func TestInvalidProofOfPossession(t *testing.T) {
 			name: "corrupted signature",
 			setupPoP: func() *ProofOfPossession {
 				sk, _ := bls.NewSecretKey()
-				pop := NewProofOfPossession(localsigner.NewFromSecretKey(sk))
+				pop := NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
 				// Corrupt signature
 				pop.ProofOfPossession[0] ^= 0xFF
 				return pop
@@ -93,7 +93,7 @@ func TestInvalidProofOfPossession(t *testing.T) {
 			name: "corrupted public key",
 			setupPoP: func() *ProofOfPossession {
 				sk, _ := bls.NewSecretKey()
-				pop := NewProofOfPossession(localsigner.NewFromSecretKey(sk))
+				pop := NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
 				// Corrupt public key
 				pop.PublicKey[0] ^= 0xFF
 				return pop
@@ -107,7 +107,7 @@ func TestInvalidProofOfPossession(t *testing.T) {
 				sk2, _ := bls.NewSecretKey()
 
 				// Use pk from sk1 but signature from sk2
-				pop := NewProofOfPossession(localsigner.NewFromSecretKey(sk1))
+				pop := NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk1)); return s }())
 				pk2 := sk2.PublicKey()
 				pk2Bytes := bls.PublicKeyToCompressedBytes(pk2)
 				sig2 := sk2.SignProofOfPossession(pk2Bytes)

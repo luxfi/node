@@ -137,15 +137,15 @@ func (vm *VMClient) Initialize(
 	appSender interface{},
 ) error {
 	// Type assert to get concrete types
-	var snowCtx *consensus.Context
+	var consensusCtx *consensus.Context
 	if cc, ok := chainCtx.(*block.ChainContext); ok && cc != nil {
-		snowCtx = cc.Context
-		if snowCtx != nil {
+		consensusCtx = cc.Context
+		if consensusCtx != nil {
 			ctx = consensus.WithIDs(ctx, consensus.IDs{
-				NetworkID: snowCtx.QuantumID,
-				ChainID:   snowCtx.ChainID,
-				NodeID:    snowCtx.NodeID,
-				PublicKey: snowCtx.PublicKey,
+				NetworkID: consensusCtx.QuantumID,
+				ChainID:   consensusCtx.ChainID,
+				NodeID:    consensusCtx.NodeID,
+				PublicKey: consensusCtx.PublicKey,
 			})
 		}
 	}
@@ -161,12 +161,12 @@ func (vm *VMClient) Initialize(
 	
 	// Get chain ID for primary alias
 	var primaryAlias string
-	if snowCtx != nil {
-		primaryAlias = snowCtx.ChainID.String()
+	if consensusCtx != nil {
+		primaryAlias = consensusCtx.ChainID.String()
 		// Try to get the primary alias if BCLookup is available
-		if snowCtx.BCLookup != nil {
-			if bcLookup, ok := snowCtx.BCLookup.(interface{ PrimaryAlias(ids.ID) (string, error) }); ok {
-				if alias, err := bcLookup.PrimaryAlias(snowCtx.ChainID); err == nil {
+		if consensusCtx.BCLookup != nil {
+			if bcLookup, ok := consensusCtx.BCLookup.(interface{ PrimaryAlias(ids.ID) (string, error) }); ok {
+				if alias, err := bcLookup.PrimaryAlias(consensusCtx.ChainID); err == nil {
 					primaryAlias = alias
 				}
 			}
@@ -186,9 +186,9 @@ func (vm *VMClient) Initialize(
 		return err
 	}
 
-	// Skip metrics registration if Metrics is not available in snow context
-	if snowCtx != nil && snowCtx.Metrics != nil {
-		if metrics, ok := snowCtx.Metrics.(interface{ Register(string, interface{}) error }); ok {
+	// Skip metrics registration if Metrics is not available in consensus context
+	if consensusCtx != nil && consensusCtx.Metrics != nil {
+		if metrics, ok := consensusCtx.Metrics.(interface{ Register(string, interface{}) error }); ok {
 			if err := metrics.Register("", vm); err != nil {
 				return err
 			}
@@ -209,7 +209,7 @@ func (vm *VMClient) Initialize(
 	go grpcutils.Serve(dbServerListener, vm.newDBServer(dbWrapper))
 	// Create a logger for RPC VM
 	logger := log.New("rpcchainvm")
-	if snowCtx != nil {
+	if consensusCtx != nil {
 		logger.Info("grpc: serving database",
 			zap.String("address", dbServerAddr),
 		)
@@ -221,17 +221,17 @@ func (vm *VMClient) Initialize(
 	// vm.keystore = gkeystore.NewServer(chainContext.Keystore) // Keystore removed from context.Context
 
 	// Create SharedMemory wrapper if available
-	// SharedMemory is not part of the snow.Context, skip it
+	// SharedMemory is not part of the consensus.Context, skip it
 	// vm.sharedMemory = gsharedmemory.NewServer(nil, dbMgr)
 
 	// Create BCLookup wrapper - handle interface{} type
 	var bcLookup *bcLookupWrapper
-	if snowCtx != nil && snowCtx.BCLookup != nil {
-		if bc, ok := snowCtx.BCLookup.(BCLookup); ok {
+	if consensusCtx != nil && consensusCtx.BCLookup != nil {
+		if bc, ok := consensusCtx.BCLookup.(BCLookup); ok {
 			bcLookup = &bcLookupWrapper{bc: bc}
 		} else {
 			// Create a wrapper that converts the interface
-			bcLookup = &bcLookupWrapper{bc: &bcLookupAdapter{lookup: snowCtx.BCLookup}}
+			bcLookup = &bcLookupWrapper{bc: &bcLookupAdapter{lookup: consensusCtx.BCLookup}}
 		}
 	} else {
 		// Create a no-op BCLookup
@@ -261,21 +261,21 @@ func (vm *VMClient) Initialize(
 	serverAddr := serverListener.Addr().String()
 
 	go grpcutils.Serve(serverListener, vm.newInitServer())
-	if snowCtx != nil {
+	if consensusCtx != nil {
 		logger.Info("grpc: serving vm services",
 			zap.String("address", serverAddr),
 		)
 	}
 
 	resp, err := vm.client.Initialize(ctx, &vmpb.InitializeRequest{
-		NetworkId:    uint32(snowCtx.QuantumID),
-		SubnetId:     snowCtx.NetID[:],
-		ChainId:      snowCtx.ChainID[:],
-		NodeId:       snowCtx.NodeID.Bytes(),
-		PublicKey:    snowCtx.PublicKey,
-		XChainId:     snowCtx.XChainID[:],
-		CChainId:     snowCtx.CChainID[:],
-		LuxAssetId:   snowCtx.AVAXAssetID[:],
+		NetworkId:    uint32(consensusCtx.QuantumID),
+		SubnetId:     consensusCtx.NetID[:],
+		ChainId:      consensusCtx.ChainID[:],
+		NodeId:       consensusCtx.NodeID.Bytes(),
+		PublicKey:    consensusCtx.PublicKey,
+		XChainId:     consensusCtx.XChainID[:],
+		CChainId:     consensusCtx.CChainID[:],
+		LuxAssetId:   consensusCtx.AVAXAssetID[:],
 		ChainDataDir: "",
 		GenesisBytes: genesisBytes,
 		UpgradeBytes: upgradeBytes,

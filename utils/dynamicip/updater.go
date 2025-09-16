@@ -8,9 +8,7 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/luxfi/log"
-
-	"github.com/luxfi/log"
+	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
 )
 
@@ -24,7 +22,7 @@ type Updater interface {
 	// Start periodically resolving and updating our public IP.
 	// Doesn't return until after Stop() is called.
 	// Should be called in a goroutine.
-	Dispatch(log log.Logger)
+	Dispatch(log luxlog.Logger)
 	// Stop resolving and updating our public IP.
 	Stop()
 }
@@ -67,7 +65,7 @@ func NewUpdater(
 
 // Start updating [u.dynamicIP] every [u.updateFreq].
 // Stops when [dynamicIP.stopChan] is closed.
-func (u *updater) Dispatch(log log.Logger) {
+func (u *updater) Dispatch(log luxlog.Logger) {
 	ticker := time.NewTicker(u.updateFreq)
 	defer func() {
 		ticker.Stop()
@@ -87,7 +85,7 @@ func (u *updater) Dispatch(log log.Logger) {
 			cancel()
 			if err != nil {
 				log.Warn("couldn't resolve public IP. If this machine's IP recently changed, it may be sharing the wrong public IP with peers",
-					zap.Error(err),
+					luxlog.Err(err),
 				)
 				continue
 			}
@@ -95,8 +93,8 @@ func (u *updater) Dispatch(log log.Logger) {
 			if newAddr != oldAddr {
 				u.dynamicIP.Set(netip.AddrPortFrom(newAddr, port))
 				log.Info("updated public IP",
-					zap.Stringer("oldIP", oldAddr),
-					zap.Stringer("newIP", newAddr),
+					luxlog.String("oldIP", oldAddr.String()),
+					luxlog.String("newIP", newAddr.String()),
 				)
 				oldAddr = newAddr
 			}

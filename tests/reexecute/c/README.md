@@ -44,7 +44,7 @@ task reexecute-cchain-range CURRENT_STATE_DIR=$HOME/exec-data/current-state SOUR
 
 This initializes a `current-state` subdirectory inside of `$HOME/exec-data`, which will contain two subdirectories `chain-data-dir` and `db`.
 
-The `chain-data-dir` is the path passed in via `*snow.Context` to the VM as `snowContext.ChainDataDir`.
+The `chain-data-dir` is the path passed in via `*consensus.Context` to the VM as `consensusContext.ChainDataDir`.
 If the VM does not populate it, it may remain empty after a run.
 
 The `db` directory is used to initialize the leveldb instance used to create two nested PrefixDBs: the database passed into `vm.Initialize(...)` and the database used by shared memory.

@@ -15,8 +15,6 @@ import (
 	"syscall"
 
 	"github.com/luxfi/log"
-
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 )
@@ -49,14 +47,14 @@ func stop(ctx context.Context, log log.Logger, cmd *exec.Cmd) {
 			log.Debug("subprocess gracefully shutdown")
 		} else {
 			log.Error("subprocess graceful shutdown failed",
-				zap.Error(err),
+				log.Err(err),
 			)
 		}
 	case <-ctx.Done():
 		// force kill
 		err := cmd.Process.Kill()
 		log.Error("subprocess was killed",
-			zap.Error(err),
+			log.Err(err),
 		)
 	}
 }

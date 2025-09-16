@@ -60,5 +60,5 @@ cd /home/z/work/lux/node
     --log-level=info \
     --sybil-protection-enabled=false \
     --api-admin-enabled=true \
-    --snow-sample-size=1 \
-    --snow-quorum-size=1
+    --consensus-sample-size=1 \
+    --consensus-quorum-size=1

@@ -15,8 +15,6 @@ import (
 	"syscall"
 
 	"github.com/luxfi/log"
-
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -107,8 +105,8 @@ func (s *Socket) Send(msg []byte) {
 			if _, err := conn.Write(byteSlice); err != nil {
 				s.removeConn(conn)
 				s.log.Debug("failed to write message",
-					zap.Stringer("remoteAddress", conn.RemoteAddr()),
-					zap.Error(err),
+					log.Stringer("remoteAddress", conn.RemoteAddr()),
+					log.Reflect("error", err),
 				)
 			}
 		}
@@ -220,18 +218,18 @@ func accept(s *Socket, l net.Listener) {
 			return
 		}
 		s.log.Error("socket accept error",
-			zap.Error(err),
+			log.Reflect("error", err),
 		)
 	}
 	if conn, ok := conn.(*net.TCPConn); ok {
 		if err := conn.SetLinger(0); err != nil {
 			s.log.Warn("failed to set no linger",
-				zap.Error(err),
+				log.Reflect("error", err),
 			)
 		}
 		if err := conn.SetNoDelay(true); err != nil {
 			s.log.Warn("failed to set socket nodelay",
-				zap.Error(err),
+				log.Reflect("error", err),
 			)
 		}
 	}

@@ -1454,9 +1454,9 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 // 	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
 // 
 // 	msgChan := make(chan linearblock.Message, 1)
-// 	// Create snow context for chain context
-// 	snowCtx := snow.Context{
-// 		ConsensusContext: snow.ConsensusContext{
+// 	// Create consensus context for chain context
+// 	consensusCtx := consensus.Context{
+// 		ConsensusContext: consensus.ConsensusContext{
 // 			Alpha:        1,
 // 			BetaVirtuous: 1,
 // 			BetaRogue:    1,
@@ -1474,8 +1474,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 // 	}
 // 
 // 	chainCtx := &linearblock.ChainContext{
-// 		ConsensusContext: &snowCtx.ConsensusContext,
-// 		Context:          &snowCtx,
+// 		ConsensusContext: &consensusCtx.ConsensusContext,
+// 		Context:          &consensusCtx,
 // 	}
 // 
 // 	dbManager := &simpleDBManager{
@@ -1567,13 +1567,13 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 // 
 // 	// Passes messages from the consensus engine to the network
 // 	// sender, err := sender.New(
-// 	// 	&snowCtx,
+// 	// 	&consensusCtx,
 // 	// 	mc,
 // 	// 	externalSender,
 // 	// 	chainRouter,
 // 	// 	timeoutManager,
 // 	// 	p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-// 	// 	subnets.New(snowCtx.NodeID, subnets.Config{}),
+// 	// 	subnets.New(consensusCtx.NodeID, subnets.Config{}),
 // 	// 	metric.NewNoOpRegistry(),
 // 	// )
 // 	// require.NoError(err)

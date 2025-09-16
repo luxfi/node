@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fix the imports in the validators package to use only luxfi packages consistently
-cd /home/z/work/lux/node/snow/validators
+cd /home/z/work/lux/node/consensus/validators
 
 # Replace node/utils/crypto imports with luxfi/crypto
 sed -i 's|"github.com/luxfi/node/utils/crypto/bls"|"github.com/luxfi/crypto/bls"|g' *.go

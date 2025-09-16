@@ -102,10 +102,10 @@ func (m *Mapper) retryMapPort(intPort, extPort uint16, desc string, timeout time
 
 		// log a message, sleep a second and retry.
 		m.log.Warn("renewing port mapping failed",
-			zap.Int("attempt", retryCnt+1),
-			zap.Uint16("externalPort", extPort),
-			zap.Uint16("internalPort", intPort),
-			zap.Error(err),
+			log.Reflect("attempt", retryCnt+1),
+			log.Reflect("externalPort", extPort),
+			log.Reflect("internalPort", intPort),
+			log.Reflect("error", err),
 		)
 		time.Sleep(1 * time.Second)
 	}
@@ -127,14 +127,14 @@ func (m *Mapper) keepPortMapping(
 		updateTimer.Stop()
 
 		m.log.Debug("unmapping port",
-			zap.Uint16("externalPort", extPort),
+			log.Reflect("externalPort", extPort),
 		)
 
 		if err := m.r.UnmapPort(intPort, extPort); err != nil {
 			m.log.Debug("error unmapping port",
-				zap.Uint16("externalPort", extPort),
-				zap.Uint16("internalPort", intPort),
-				zap.Error(err),
+				log.Reflect("externalPort", extPort),
+				log.Reflect("internalPort", intPort),
+				log.Reflect("error", err),
 			)
 		}
 
@@ -147,9 +147,9 @@ func (m *Mapper) keepPortMapping(
 			err := m.retryMapPort(intPort, extPort, desc, mapTimeout)
 			if err != nil {
 				m.log.Warn("renew NAT traversal failed",
-					zap.Uint16("externalPort", extPort),
-					zap.Uint16("internalPort", intPort),
-					zap.Error(err),
+					log.Reflect("externalPort", extPort),
+					log.Reflect("internalPort", intPort),
+					log.Reflect("error", err),
 				)
 			}
 			m.updateIP(ip)
@@ -167,7 +167,7 @@ func (m *Mapper) updateIP(ip *utils.Atomic[netip.AddrPort]) {
 	newAddr, err := m.r.ExternalIP()
 	if err != nil {
 		m.log.Error("failed to get external IP",
-			zap.Error(err),
+			log.Reflect("error", err),
 		)
 		return
 	}
@@ -177,8 +177,8 @@ func (m *Mapper) updateIP(ip *utils.Atomic[netip.AddrPort]) {
 		port := oldAddrPort.Port()
 		ip.Set(netip.AddrPortFrom(newAddr, port))
 		m.log.Info("external IP updated",
-			zap.Stringer("oldIP", oldAddr),
-			zap.Stringer("newIP", newAddr),
+			log.Stringer("oldIP", oldAddr),
+			log.Stringer("newIP", newAddr),
 		)
 	}
 }

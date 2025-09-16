@@ -627,8 +627,8 @@ ok  	github.com/luxfi/node/network/throttling	2.448s
 ?   	github.com/luxfi/node/proto/rpcdb	[no test files]
 ok  	github.com/luxfi/node/pubsub	0.017s
 ok  	github.com/luxfi/node/pubsub/bloom	0.012s
-?   	github.com/luxfi/node/snow/engine/common	[no test files]
-?   	github.com/luxfi/node/snow/engine/enginetest	[no test files]
+?   	github.com/luxfi/node/consensus/engine/common	[no test files]
+?   	github.com/luxfi/node/consensus/engine/enginetest	[no test files]
 ok  	github.com/luxfi/node/staking	0.014s
 ok  	github.com/luxfi/node/tests	0.632s
 ?   	github.com/luxfi/node/tests/e2e/c	[no test files]

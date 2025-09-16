@@ -152,8 +152,8 @@ ok  	github.com/luxfi/node/network/throttling	3.502s
 FAIL	github.com/luxfi/node/node [build failed]
 ok  	github.com/luxfi/node/pubsub	1.040s
 ok  	github.com/luxfi/node/pubsub/bloom	1.037s
-?   	github.com/luxfi/node/snow/engine/common	[no test files]
-?   	github.com/luxfi/node/snow/engine/enginetest	[no test files]
+?   	github.com/luxfi/node/consensus/engine/common	[no test files]
+?   	github.com/luxfi/node/consensus/engine/enginetest	[no test files]
 ok  	github.com/luxfi/node/staking	1.029s
 ok  	github.com/luxfi/node/tests	1.894s
 FAIL	github.com/luxfi/node/tests/antithesis [build failed]

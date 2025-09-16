@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 )
 
-// Context provides a test context that mimics the old snow.Context
+// Context provides a test context that mimics the old consensus.Context
 // for compatibility with existing tests
 type Context struct {
 	context.Context

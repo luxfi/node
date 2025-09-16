@@ -31,9 +31,9 @@ type blockchainKeystore struct {
 
 func (bks *blockchainKeystore) GetDatabase(username, password string) (*encdb.Database, error) {
 	bks.ks.log.Warn("deprecated keystore called",
-		zap.String("method", "getDatabase"),
-		"username", username,
-		zap.Stringer("blockchainID", bks.blockchainID),
+		log.String("method", "getDatabase"),
+		log.String("username", username),
+		log.Stringer("blockchainID", bks.blockchainID),
 	)
 
 	return bks.ks.GetDatabase(bks.blockchainID, username, password)
@@ -41,9 +41,9 @@ func (bks *blockchainKeystore) GetDatabase(username, password string) (*encdb.Da
 
 func (bks *blockchainKeystore) GetRawDatabase(username, password string) (database.Database, error) {
 	bks.ks.log.Warn("deprecated keystore called",
-		zap.String("method", "getRawDatabase"),
-		"username", username,
-		zap.Stringer("blockchainID", bks.blockchainID),
+		log.String("method", "getRawDatabase"),
+		log.String("username", username),
+		log.Stringer("blockchainID", bks.blockchainID),
 	)
 
 	return bks.ks.GetRawDatabase(bks.blockchainID, username, password)

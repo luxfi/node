@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	metric "github.com/luxfi/metric"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/db/rpcdb"
@@ -304,12 +304,12 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 func (vm *VMServer) SetState(ctx context.Context, stateReq *vmpb.SetStateRequest) (*vmpb.SetStateResponse, error) {
 	// SetState not available in ChainVM interface, check if VM implements it
 	type stateSetter interface {
-		SetState(context.Context, snow.State) error
+		SetState(context.Context, consensus.State) error
 	}
 
 	if ss, ok := vm.vm.(stateSetter); ok {
 		// Set state to NormalOp (1)
-		err := ss.SetState(ctx, snow.NormalOp)
+		err := ss.SetState(ctx, consensus.NormalOp)
 		if err != nil {
 			return nil, err
 		}

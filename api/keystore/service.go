@@ -19,9 +19,9 @@ type service struct {
 
 func (s *service) CreateUser(_ *http.Request, args *api.UserPass, _ *api.EmptyReply) error {
 	s.ks.log.Warn("deprecated API called",
-		zap.String("service", "keystore"),
-		zap.String("method", "createUser"),
-		"username", args.Username,
+		log.String("service", "keystore"),
+		log.String("method", "createUser"),
+		log.String("username", args.Username),
 	)
 
 	return s.ks.CreateUser(args.Username, args.Password)
@@ -29,8 +29,8 @@ func (s *service) CreateUser(_ *http.Request, args *api.UserPass, _ *api.EmptyRe
 
 func (s *service) DeleteUser(_ *http.Request, args *api.UserPass, _ *api.EmptyReply) error {
 	s.ks.log.Warn("deprecated API called",
-		zap.String("service", "keystore"),
-		zap.String("method", "deleteUser"),
+		log.String("service", "keystore"),
+		log.String("method", "deleteUser"),
 		"username", args.Username,
 	)
 
@@ -43,8 +43,8 @@ type ListUsersReply struct {
 
 func (s *service) ListUsers(_ *http.Request, _ *struct{}, reply *ListUsersReply) error {
 	s.ks.log.Warn("deprecated API called",
-		zap.String("service", "keystore"),
-		zap.String("method", "listUsers"),
+		log.String("service", "keystore"),
+		log.String("method", "listUsers"),
 	)
 
 	var err error
@@ -63,8 +63,8 @@ type ImportUserArgs struct {
 
 func (s *service) ImportUser(_ *http.Request, args *ImportUserArgs, _ *api.EmptyReply) error {
 	s.ks.log.Warn("deprecated API called",
-		zap.String("service", "keystore"),
-		zap.String("method", "importUser"),
+		log.String("service", "keystore"),
+		log.String("method", "importUser"),
 		"username", args.Username,
 	)
 
@@ -93,8 +93,8 @@ type ExportUserReply struct {
 
 func (s *service) ExportUser(_ *http.Request, args *ExportUserArgs, reply *ExportUserReply) error {
 	s.ks.log.Warn("deprecated API called",
-		zap.String("service", "keystore"),
-		zap.String("method", "exportUser"),
+		log.String("service", "keystore"),
+		log.String("method", "exportUser"),
 		"username", args.Username,
 	)
 

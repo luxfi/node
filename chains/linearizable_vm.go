@@ -256,13 +256,13 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	// Convert block types to consensus types for the underlying VM
 	consensusCtx := context.Background()
 	if cc, ok := chainCtx.(*block.ChainContext); ok && cc != nil {
-		snowCtx := cc.Context
-		if snowCtx != nil {
+		consensusCtx := cc.Context
+		if consensusCtx != nil {
 			consensusCtx = consensus.WithIDs(consensusCtx, consensus.IDs{
-				NetworkID: snowCtx.QuantumID,
-				ChainID:   snowCtx.ChainID,
-				NodeID:    snowCtx.NodeID,
-				PublicKey: snowCtx.PublicKey,
+				NetworkID: consensusCtx.QuantumID,
+				ChainID:   consensusCtx.ChainID,
+				NodeID:    consensusCtx.NodeID,
+				PublicKey: consensusCtx.PublicKey,
 			})
 		}
 	}

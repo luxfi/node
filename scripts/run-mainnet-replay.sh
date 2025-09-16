@@ -49,7 +49,7 @@ echo -e "${GREEN}Generated Node ID: $NODE_ID${NC}"
 echo -e "${YELLOW}Creating C-Chain configuration...${NC}"
 cat > "$DATA_DIR/configs/chains/C/config.json" << EOF
 {
-  "snowman-api-enabled": false,
+  "chain-api-enabled": false,
   "coreth-admin-api-enabled": false,
   "pruning-enabled": false,
   "local-txs-enabled": true,
