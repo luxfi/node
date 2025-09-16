@@ -145,7 +145,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			height, err := pClient.GetHeight(tc.DefaultContext())
 			require.NoError(err)
 
-			subnetValidators, err := pClient.GetValidatorsAt(tc.DefaultContext(), netID, platformapi.Height(height))
+			subnetValidators, err := pClient.GetValidatorsAt(tc.DefaultContext(), netID, height)
 			require.NoError(err)
 			require.Equal(expectedValidators, subnetValidators)
 		}

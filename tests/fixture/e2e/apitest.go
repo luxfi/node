@@ -62,7 +62,7 @@ func GetEnv(tc tests.TestContext) *TestEnvironment {
 }
 
 // NewWallet creates a new wallet for testing
-func NewWallet(tc tests.TestContext, kc *secp256k1fx.Keychain, uri tmpnet.NodeURI) *primary.Wallet {
+func NewWallet(tc tests.TestContext, kc *secp256k1fx.Keychain, uri tmpnet.NodeURI) primary.Wallet {
 	ctx := context.Background()
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:         uri.URI,
@@ -72,7 +72,7 @@ func NewWallet(tc tests.TestContext, kc *secp256k1fx.Keychain, uri tmpnet.NodeUR
 	if err != nil {
 		tc.Log().Fatal("Failed to create wallet: " + err.Error())
 	}
-	return &wallet
+	return wallet
 }
 
 // CheckBootstrapIsPossible verifies that bootstrap is possible for the network
