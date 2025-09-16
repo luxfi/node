@@ -70,7 +70,7 @@ func (g *multiGatherer) Deregister(name string) bool {
 	return false
 }
 
-func MakeAndRegister(gatherer MultiGatherer, name string) (*metric.Registry, error) {
+func MakeAndRegister(gatherer MultiGatherer, name string) (metric.Registry, error) {
 	reg := metric.NewRegistry()
 	if err := gatherer.Register(name, reg); err != nil {
 		return nil, fmt.Errorf("couldn't register %q metrics: %w", name, err)

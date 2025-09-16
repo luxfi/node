@@ -28,7 +28,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/pubsub"
 	"github.com/luxfi/node/utils/json"
@@ -256,7 +255,7 @@ func (vm *VM) initialize(
 		return err
 	}
 	vm.log.Info("VM config initialized",
-		zap.Reflect("config", xvmConfig),
+		log.Reflect("config", xvmConfig),
 	)
 
 	// Get metrics from a global registry or create new one
@@ -613,8 +612,8 @@ func (vm *VM) issueTxFromRPC(tx *txs.Tx) (ids.ID, error) {
 	err := vm.network.IssueTxFromRPC(tx)
 	if err != nil && !errors.Is(err, mempool.ErrDuplicateTx) {
 		vm.log.Debug("failed to add tx to mempool",
-			zap.Stringer("txID", txID),
-			zap.Error(err),
+			log.Stringer("txID", txID),
+			log.String("error", err.Error()),
 		)
 		return txID, err
 	}
@@ -665,8 +664,8 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 		}
 		if index == 0 {
 			vm.log.Info("fee asset is established",
-				zap.String("alias", genesisTx.Alias),
-				zap.Stringer("assetID", txID),
+				log.String("alias", genesisTx.Alias),
+				log.Stringer("assetID", txID),
 			)
 			vm.feeAssetID = txID
 		}
@@ -682,7 +681,7 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 func (vm *VM) initState(tx *txs.Tx) {
 	txID := tx.ID()
 	vm.log.Info("initializing genesis asset",
-		zap.Stringer("txID", txID),
+		log.Stringer("txID", txID),
 	)
 	vm.state.AddTx(tx)
 	for _, utxo := range tx.UTXOs() {
@@ -755,9 +754,9 @@ func (vm *VM) onAccept(tx *txs.Tx) error {
 		utxo, err := vm.state.GetUTXO(utxoID.InputID())
 		if err == database.ErrNotFound {
 			vm.log.Debug("dropping utxo from index",
-				zap.Stringer("txID", txID),
-				zap.Stringer("utxoTxID", utxoID.TxID),
-				zap.Uint32("utxoOutputIndex", utxoID.OutputIndex),
+				log.Stringer("txID", txID),
+				log.Stringer("utxoTxID", utxoID.TxID),
+				log.Uint32("utxoOutputIndex", utxoID.OutputIndex),
 			)
 			continue
 		}

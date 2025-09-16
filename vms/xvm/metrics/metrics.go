@@ -6,6 +6,7 @@ package metrics
 import (
 	"github.com/luxfi/metric"
 
+	utils_metric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/txs"
@@ -14,7 +15,7 @@ import (
 var _ Metrics = (*metrics)(nil)
 
 type Metrics interface {
-	metric.APIInterceptor
+	utils_metric.APIInterceptor
 
 	IncTxRefreshes()
 	IncTxRefreshHits()
@@ -37,7 +38,7 @@ type metrics struct {
 
 	numTxRefreshes, numTxRefreshHits, numTxRefreshMisses metric.Counter
 
-	metric.APIInterceptor
+	utils_metric.APIInterceptor
 }
 
 func (m *metrics) IncTxRefreshes() {
@@ -84,7 +85,7 @@ func New(registerer metric.Registerer) (Metrics, error) {
 		Help: "Number of times unique txs have not been unique and weren't cached",
 	})
 
-	apiRequestMetric, err := metric.NewAPIInterceptor(registerer)
+	apiRequestMetric, err := utils_metric.NewAPIInterceptor(registerer)
 	m.APIInterceptor = apiRequestMetric
 	errs.Add(
 		err,

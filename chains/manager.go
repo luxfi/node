@@ -580,10 +580,10 @@ func New(config *ManagerConfig) (Manager, error) {
 func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 	// Check for chain ID mapping override for C-Chain
 	m.Log.Info("QueueChainCreation called",
-		zap.String("vmID", chainParams.VMID.String()),
-		zap.String("EVMID", constants.EVMID.String()),
-		zap.Bool("vmIDEqualsEVMID", chainParams.VMID == constants.EVMID),
-		zap.String("envVar", os.Getenv("LUX_CHAIN_ID_MAPPING_C")),
+		log.String("vmID", chainParams.VMID.String()),
+		log.String("EVMID", constants.EVMID.String()),
+		log.Bool("vmIDEqualsEVMID", chainParams.VMID == constants.EVMID),
+		log.String("envVar", os.Getenv("LUX_CHAIN_ID_MAPPING_C")),
 	)
 
 	if chainParams.VMID == constants.EVMID && os.Getenv("LUX_CHAIN_ID_MAPPING_C") != "" {
@@ -591,34 +591,34 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 		parsedID, err := ids.FromString(mappedID)
 		if err == nil {
 			m.Log.Info("Using mapped blockchain ID for C-Chain",
-				zap.String("original", chainParams.ID.String()),
-				zap.String("mapped", parsedID.String()),
+				log.String("original", chainParams.ID.String()),
+				log.String("mapped", parsedID.String()),
 			)
 			chainParams.ID = parsedID
 		} else {
 			m.Log.Warn("Invalid chain ID mapping",
-				zap.String("mapping", mappedID),
-				zap.Error(err),
+				log.String("mapping", mappedID),
+				log.Err(err),
 			)
 		}
 	}
 
 	if sb, _ := m.Subnets.GetOrCreate(chainParams.NetID); !sb.AddChain(chainParams.ID) {
 		m.Log.Debug("skipping chain creation",
-			zap.String("reason", "chain already staged"),
-			zap.Stringer("netID", chainParams.NetID),
-			zap.Stringer("chainID", chainParams.ID),
-			zap.Stringer("vmID", chainParams.VMID),
+			log.String("reason", "chain already staged"),
+			log.Stringer("netID", chainParams.NetID),
+			log.Stringer("chainID", chainParams.ID),
+			log.Stringer("vmID", chainParams.VMID),
 		)
 		return
 	}
 
 	if ok := m.chainsQueue.PushRight(chainParams); !ok {
 		m.Log.Warn("skipping chain creation",
-			zap.String("reason", "couldn't enqueue chain"),
-			zap.Stringer("netID", chainParams.NetID),
-			zap.Stringer("chainID", chainParams.ID),
-			zap.Stringer("vmID", chainParams.VMID),
+			log.String("reason", "couldn't enqueue chain"),
+			log.Stringer("netID", chainParams.NetID),
+			log.Stringer("chainID", chainParams.ID),
+			log.Stringer("vmID", chainParams.VMID),
 		)
 	}
 }
@@ -629,9 +629,9 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 // bootstrapping before this function is called
 func (m *manager) createChain(chainParams ChainParameters) {
 	m.Log.Info("creating chain",
-		zap.Stringer("netID", chainParams.NetID),
-		zap.Stringer("chainID", chainParams.ID),
-		zap.Stringer("vmID", chainParams.VMID),
+		log.Stringer("netID", chainParams.NetID),
+		log.Stringer("chainID", chainParams.ID),
+		log.Stringer("vmID", chainParams.VMID),
 	)
 
 	sb, _ := m.Subnets.GetOrCreate(chainParams.NetID)
@@ -646,12 +646,12 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		if m.CriticalChains.Contains(chainParams.ID) {
 			// Shut down if we fail to create a required chain (i.e. X, P or C)
 			m.Log.Error("error creating required chain",
-				zap.Stringer("netID", chainParams.NetID),
-				zap.Stringer("chainID", chainParams.ID),
-				zap.Stringer("vmID", chainParams.VMID),
-				zap.String("errorString", fmt.Sprintf("%v", err)),
-				zap.String("errorType", fmt.Sprintf("%T", err)),
-				zap.Error(err),
+				log.Stringer("netID", chainParams.NetID),
+				log.Stringer("chainID", chainParams.ID),
+				log.Stringer("vmID", chainParams.VMID),
+				log.String("errorString", fmt.Sprintf("%v", err)),
+				log.String("errorType", fmt.Sprintf("%T", err)),
+				log.Err(err),
 			)
 			go m.ShutdownNodeFunc(1)
 			return
@@ -659,11 +659,11 @@ func (m *manager) createChain(chainParams ChainParameters) {
 
 		chainAlias := m.PrimaryAliasOrDefault(chainParams.ID)
 		m.Log.Error("error creating chain",
-			zap.Stringer("netID", chainParams.NetID),
-			zap.Stringer("chainID", chainParams.ID),
-			zap.String("chainAlias", chainAlias),
-			zap.Stringer("vmID", chainParams.VMID),
-			zap.Error(err),
+			log.Stringer("netID", chainParams.NetID),
+			log.Stringer("chainID", chainParams.ID),
+			log.String("chainAlias", chainAlias),
+			log.Stringer("vmID", chainParams.VMID),
+			log.Err(err),
 		)
 
 		// Register the health check for this chain regardless of if it was
@@ -680,11 +680,11 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		)
 		if err != nil {
 			m.Log.Error("failed to register failing health check",
-				zap.Stringer("netID", chainParams.NetID),
-				zap.Stringer("chainID", chainParams.ID),
-				zap.String("chainAlias", chainAlias),
-				zap.Stringer("vmID", chainParams.VMID),
-				zap.Error(err),
+				log.Stringer("netID", chainParams.NetID),
+				log.Stringer("chainID", chainParams.ID),
+				log.String("chainAlias", chainAlias),
+				log.Stringer("vmID", chainParams.VMID),
+				log.Err(err),
 			)
 		}
 		return
@@ -697,10 +697,10 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// Associate the newly created chain with its default alias
 	if err := m.Alias(chainParams.ID, chainParams.ID.String()); err != nil {
 		m.Log.Error("failed to alias the new chain with itself",
-			zap.Stringer("netID", chainParams.NetID),
-			zap.Stringer("chainID", chainParams.ID),
-			zap.Stringer("vmID", chainParams.VMID),
-			zap.Error(err),
+			log.Stringer("netID", chainParams.NetID),
+			log.Stringer("chainID", chainParams.ID),
+			log.Stringer("vmID", chainParams.VMID),
+			log.Err(err),
 		)
 	}
 
@@ -778,10 +778,10 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 	})
 
 	// Get a factory for the vm we want to use on our chain
-	m.Log.Info("Getting VM factory", zap.Stringer("vmID", chainParams.VMID))
+	m.Log.Info("Getting VM factory", log.Stringer("vmID", chainParams.VMID))
 	vmFactory, err := m.VMManager.GetFactory(chainParams.VMID)
 	if err != nil {
-		m.Log.Error("Failed to get VM factory", zap.Stringer("vmID", chainParams.VMID), zap.Error(err))
+		m.Log.Error("Failed to get VM factory", log.Stringer("vmID", chainParams.VMID), log.Err(err))
 		return nil, fmt.Errorf("error while getting vmFactory: %w", err)
 	}
 	m.Log.Info("Got VM factory successfully")
@@ -844,8 +844,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 		)
 		if err != nil {
 			m.Log.Error("createLinearChain failed for Platform chain",
-				zap.String("actualError", err.Error()),
-				zap.Error(err))
+				log.String("actualError", err.Error()),
+				log.Err(err))
 			return nil, fmt.Errorf("error while creating new linear vm: %w", err)
 		}
 	default:
@@ -970,10 +970,10 @@ func (m *manager) createLuxChain(
 		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
 	}
 	m.Log.Info("creating proposervm wrapper",
-		zap.Time("activationTime", m.ApricotPhase4Time),
-		zap.Uint64("minPChainHeight", m.ApricotPhase4MinPChainHeight),
-		zap.Duration("minBlockDelay", minBlockDelay),
-		zap.Uint64("numHistoricalBlocks", numHistoricalBlocks),
+		log.Time("activationTime", m.ApricotPhase4Time),
+		log.Uint64("minPChainHeight", m.ApricotPhase4MinPChainHeight),
+		log.Duration("minBlockDelay", minBlockDelay),
+		log.Uint64("numHistoricalBlocks", numHistoricalBlocks),
 	)
 
 	// Skip proposervm wrapper for Platform chain for now due to initialization issues
@@ -1471,10 +1471,10 @@ func (m *manager) createLinearChain(
 		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
 	}
 	m.Log.Info("creating proposervm wrapper",
-		zap.Time("activationTime", m.ApricotPhase4Time),
-		zap.Uint64("minPChainHeight", m.ApricotPhase4MinPChainHeight),
-		zap.Duration("minBlockDelay", minBlockDelay),
-		zap.Uint64("numHistoricalBlocks", numHistoricalBlocks),
+		log.Time("activationTime", m.ApricotPhase4Time),
+		log.Uint64("minPChainHeight", m.ApricotPhase4MinPChainHeight),
+		log.Duration("minBlockDelay", minBlockDelay),
+		log.Uint64("numHistoricalBlocks", numHistoricalBlocks),
 	)
 
 	// Skip proposervm wrapper for Platform chain for now due to initialization issues
@@ -1583,10 +1583,10 @@ func (m *manager) createLinearChain(
 	}
 	
 	m.Log.Info("Initializing VM", 
-		zap.Stringer("chainID", chainParams.ID),
-		zap.Int("genesisDataLen", len(genesisData)),
-		zap.String("genesisPreview", genesisPreview),
-		zap.Int("fxsCount", len(blockFxs)))
+		log.Stringer("chainID", chainParams.ID),
+		log.Int("genesisDataLen", len(genesisData)),
+		log.String("genesisPreview", genesisPreview),
+		log.Int("fxsCount", len(blockFxs)))
 	
 	// Convert blockFxs to []interface{} for Initialize
 	var fxsInterface []interface{}
@@ -1607,12 +1607,12 @@ func (m *manager) createLinearChain(
 		appSender,
 	); err != nil {
 		m.Log.Error("VM Initialize failed", 
-			zap.Stringer("chainID", chainParams.ID),
-			zap.String("errorDetails", err.Error()),
-			zap.Error(err))
+			log.Stringer("chainID", chainParams.ID),
+			log.String("errorDetails", err.Error()),
+			log.Err(err))
 		return nil, fmt.Errorf("VM initialization failed: %w", err)
 	}
-	m.Log.Info("VM initialized successfully", zap.Stringer("chainID", chainParams.ID))
+	m.Log.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
 
 	// netID already defined above
 	bootstrapWeight, err := beacons.TotalWeight(netID)
@@ -1886,7 +1886,7 @@ func (m *manager) registerBootstrappedHealthChecks() error {
 		}
 
 		m.Log.Warn("node is a primary network validator",
-			zap.Error(errPartialSyncAsAValidator),
+			log.Err(errPartialSyncAsAValidator),
 		)
 		return "node is a primary network validator", errPartialSyncAsAValidator
 	})

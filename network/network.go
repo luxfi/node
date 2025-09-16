@@ -22,7 +22,6 @@ import (
 	"github.com/luxfi/consensus/core"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/message"
@@ -485,7 +484,7 @@ func (n *network) Connected(nodeID ids.NodeID) {
 	if !ok {
 		n.peerConfig.Log.Error(
 			"unexpectedly connected to peer when not marked as attempting to connect",
-			zap.Stringer("nodeID", nodeID),
+			"nodeID", nodeID.String(),
 		)
 		n.peersLock.Unlock()
 		return
@@ -586,7 +585,7 @@ func (n *network) Dispatch() error {
 
 		conn, err := n.listener.Accept() // Returns error when n.Close() is called
 		if err != nil {
-			n.peerConfig.Log.Debug("error during server accept", zap.Error(err))
+			n.peerConfig.Log.Debug("error during server accept", "error", err)
 			// Sleep for a small amount of time to try to wait for the
 			// error to go away.
 			time.Sleep(time.Millisecond)
@@ -605,8 +604,8 @@ func (n *network) Dispatch() error {
 			ip, err := ips.ParseAddrPort(remoteAddr)
 			if err != nil {
 				n.peerConfig.Log.Error("failed to parse remote address",
-					zap.String("peerIP", remoteAddr),
-					zap.Error(err),
+					"peerIP", remoteAddr,
+					"error", err,
 				)
 				_ = conn.Close()
 				return
@@ -614,8 +613,8 @@ func (n *network) Dispatch() error {
 
 			if !n.inboundConnUpgradeThrottler.ShouldUpgrade(ip) {
 				n.peerConfig.Log.Debug("failed to upgrade connection",
-					zap.String("reason", "rate-limiting"),
-					zap.Stringer("peerIP", ip),
+					"reason", "rate-limiting",
+					"peerIP", ip.String(),
 				)
 				n.metrics.inboundConnRateLimited.Inc()
 				_ = conn.Close()
@@ -624,14 +623,14 @@ func (n *network) Dispatch() error {
 			n.metrics.inboundConnAllowed.Inc()
 
 			n.peerConfig.Log.Debug("starting to upgrade connection",
-				zap.String("direction", "inbound"),
-				zap.Stringer("peerIP", ip),
+				"direction", "inbound",
+				"peerIP", ip.String(),
 			)
 
 			if err := n.upgrade(conn, n.serverUpgrader); err != nil {
 				n.peerConfig.Log.Debug("failed to upgrade connection",
-					zap.String("direction", "inbound"),
-					zap.Error(err),
+					"direction", "inbound",
+					"error", err,
 				)
 			}
 		}()
@@ -890,8 +889,8 @@ func (n *network) disconnectedFromConnected(peer peer.Peer, nodeID ids.NodeID) {
 // attempts.
 func (n *network) dial(nodeID ids.NodeID, ip *trackedIP) {
 	n.peerConfig.Log.Debug("attempting to dial node",
-		zap.Stringer("nodeID", nodeID),
-		zap.Stringer("ip", ip.ip),
+		"nodeID", nodeID.String(),
+		"ip", ip.ip.String(),
 	)
 	go func() {
 		n.metrics.numTracked.Inc()
@@ -939,8 +938,8 @@ func (n *network) dial(nodeID ids.NodeID, ip *trackedIP) {
 			if connecting || connected {
 				n.peerConfig.Log.Debug(
 					"exiting attempt to dial peer",
-					zap.String("reason", "already connected"),
-					zap.Stringer("nodeID", nodeID),
+					"reason", "already connected",
+					"nodeID", nodeID.String(),
 				)
 				return
 			}
@@ -963,10 +962,10 @@ func (n *network) dial(nodeID ids.NodeID, ip *trackedIP) {
 			// outbound connection with this IP.
 			if !n.config.AllowPrivateIPs && !ips.IsPublic(ip.ip.Addr()) {
 				n.peerConfig.Log.Debug("skipping connection dial",
-					zap.String("reason", "outbound connections to private IPs are prohibited"),
-					zap.Stringer("nodeID", nodeID),
-					zap.Stringer("peerIP", ip.ip),
-					zap.Duration("delay", ip.delay),
+					"reason", "outbound connections to private IPs are prohibited",
+					"nodeID", nodeID.String(),
+					"peerIP", ip.ip.String(),
+					"delay", ip.delay,
 				)
 				continue
 			}
@@ -975,26 +974,26 @@ func (n *network) dial(nodeID ids.NodeID, ip *trackedIP) {
 			if err != nil {
 				n.peerConfig.Log.Debug(
 					"failed to reach peer, attempting again",
-					zap.Stringer("nodeID", nodeID),
-					zap.Stringer("peerIP", ip.ip),
-					zap.Duration("delay", ip.delay),
+					"nodeID", nodeID.String(),
+					"peerIP", ip.ip.String(),
+					"delay", ip.delay,
 				)
 				continue
 			}
 
 			n.peerConfig.Log.Debug("starting to upgrade connection",
-				zap.String("direction", "outbound"),
-				zap.Stringer("nodeID", nodeID),
-				zap.Stringer("peerIP", ip.ip),
+				"direction", "outbound",
+				"nodeID", nodeID.String(),
+				"peerIP", ip.ip.String(),
 			)
 
 			err = n.upgrade(conn, n.clientUpgrader)
 			if err != nil {
 				n.peerConfig.Log.Debug(
 					"failed to upgrade, attempting again",
-					zap.Stringer("nodeID", nodeID),
-					zap.Stringer("peerIP", ip.ip),
-					zap.Duration("delay", ip.delay),
+					"nodeID", nodeID.String(),
+					"peerIP", ip.ip.String(),
+					"delay", ip.delay,
 				)
 				continue
 			}
@@ -1016,7 +1015,7 @@ func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader) error {
 	if err := conn.SetReadDeadline(upgradeTimeout); err != nil {
 		_ = conn.Close()
 		n.peerConfig.Log.Debug("failed to set the read deadline",
-			zap.Error(err),
+			"error", err,
 		)
 		return err
 	}
@@ -1025,7 +1024,7 @@ func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader) error {
 	if err != nil {
 		_ = conn.Close()
 		n.peerConfig.Log.Debug("failed to upgrade connection",
-			zap.Error(err),
+			"error", err,
 		)
 		return err
 	}
@@ -1033,7 +1032,7 @@ func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader) error {
 	if err := tlsConn.SetReadDeadline(time.Time{}); err != nil {
 		_ = tlsConn.Close()
 		n.peerConfig.Log.Debug("failed to clear the read deadline",
-			zap.Error(err),
+			"error", err,
 		)
 		return err
 	}
@@ -1051,7 +1050,7 @@ func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader) error {
 		_ = tlsConn.Close()
 		n.peerConfig.Log.Debug(
 			"dropping undesired connection",
-			zap.Stringer("nodeID", nodeID),
+			"nodeID", nodeID.String(),
 		)
 		return nil
 	}
@@ -1063,8 +1062,8 @@ func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader) error {
 		_ = tlsConn.Close()
 		n.peerConfig.Log.Debug(
 			"dropping connection",
-			zap.String("reason", "shutting down the p2p network"),
-			zap.Stringer("nodeID", nodeID),
+			"reason", "shutting down the p2p network",
+			"nodeID", nodeID.String(),
 		)
 		return nil
 	}
@@ -1075,8 +1074,8 @@ func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader) error {
 		_ = tlsConn.Close()
 		n.peerConfig.Log.Debug(
 			"dropping connection",
-			zap.String("reason", "already connecting to peer"),
-			zap.Stringer("nodeID", nodeID),
+			"reason", "already connecting to peer",
+			"nodeID", nodeID.String(),
 		)
 		return nil
 	}
@@ -1087,14 +1086,14 @@ func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader) error {
 		_ = tlsConn.Close()
 		n.peerConfig.Log.Debug(
 			"dropping connection",
-			zap.String("reason", "already connecting to peer"),
-			zap.Stringer("nodeID", nodeID),
+			"reason", "already connecting to peer",
+			"nodeID", nodeID.String(),
 		)
 		return nil
 	}
 
 	n.peerConfig.Log.Debug("starting handshake",
-		zap.Stringer("nodeID", nodeID),
+		"nodeID", nodeID.String(),
 	)
 
 	// peer.Start requires there is only ever one peer instance running with the
@@ -1133,7 +1132,7 @@ func (n *network) StartClose() {
 
 		if err := n.listener.Close(); err != nil {
 			n.peerConfig.Log.Debug("closing the network listener",
-				zap.Error(err),
+				"error", err,
 			)
 		}
 
@@ -1232,7 +1231,7 @@ func (n *network) runTimers() {
 		case <-resetPeerListBloom.C:
 			if err := n.ipTracker.ResetBloom(); err != nil {
 				n.peerConfig.Log.Error("failed to reset ip tracker bloom filter",
-					zap.Error(err),
+					"error", err,
 				)
 			} else {
 				n.peerConfig.Log.Debug("reset ip tracker bloom filter")
@@ -1241,7 +1240,7 @@ func (n *network) runTimers() {
 			primaryUptime, err := n.NodeUptime(constants.PrimaryNetworkID)
 			if err != nil {
 				n.peerConfig.Log.Debug("failed to get primary network uptime",
-					zap.Error(err),
+					"error", err,
 				)
 			}
 			n.metrics.nodeUptimeWeightedAverage.Set(primaryUptime.WeightedAveragePercentage)
@@ -1251,8 +1250,8 @@ func (n *network) runTimers() {
 				result, err := n.NodeUptime(netID)
 				if err != nil {
 					n.peerConfig.Log.Debug("failed to get net uptime",
-						zap.Stringer("netID", netID),
-						zap.Error(err),
+						"netID", netID.String(),
+						"error", err,
 					)
 				}
 				netIDStr := netID.String()

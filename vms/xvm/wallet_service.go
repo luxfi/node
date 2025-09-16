@@ -36,7 +36,7 @@ func (w *WalletService) decided(txID ids.ID) {
 	}
 
 	w.vm.log.Info("tx decided over wallet API",
-		zap.Stringer("txID", txID),
+		log.Stringer("txID", txID),
 	)
 	for {
 		txID, tx, ok := w.pendingTxs.Oldest()
@@ -47,7 +47,7 @@ func (w *WalletService) decided(txID ids.ID) {
 		err := w.vm.network.IssueTxFromRPCWithoutVerification(tx)
 		if err == nil {
 			w.vm.log.Info("issued tx to mempool over wallet API",
-				zap.Stringer("txID", txID),
+				log.Stringer("txID", txID),
 			)
 			return
 		}
@@ -57,8 +57,8 @@ func (w *WalletService) decided(txID ids.ID) {
 
 		w.pendingTxs.Delete(txID)
 		w.vm.log.Warn("dropping tx issued over wallet API",
-			zap.Stringer("txID", txID),
-			zap.Error(err),
+			log.Stringer("txID", txID),
+			log.String("error", err.Error()),
 		)
 	}
 }
@@ -66,12 +66,12 @@ func (w *WalletService) decided(txID ids.ID) {
 func (w *WalletService) issue(tx *txs.Tx) (ids.ID, error) {
 	txID := tx.ID()
 	w.vm.log.Info("issuing tx over wallet API",
-		zap.Stringer("txID", txID),
+		log.Stringer("txID", txID),
 	)
 
 	if _, ok := w.pendingTxs.Get(txID); ok {
 		w.vm.log.Warn("issuing duplicate tx over wallet API",
-			zap.Stringer("txID", txID),
+			log.Stringer("txID", txID),
 		)
 		return txID, nil
 	}
@@ -79,18 +79,18 @@ func (w *WalletService) issue(tx *txs.Tx) (ids.ID, error) {
 	if w.pendingTxs.Len() == 0 {
 		if err := w.vm.network.IssueTxFromRPCWithoutVerification(tx); err == nil {
 			w.vm.log.Info("issued tx to mempool over wallet API",
-				zap.Stringer("txID", txID),
+				log.Stringer("txID", txID),
 			)
 		} else if !errors.Is(err, mempool.ErrDuplicateTx) {
 			w.vm.log.Warn("failed to issue tx over wallet API",
-				zap.Stringer("txID", txID),
-				zap.Error(err),
+				log.Stringer("txID", txID),
+				log.String("error", err.Error()),
 			)
 			return ids.Empty, err
 		}
 	} else {
 		w.vm.log.Info("enqueueing tx over wallet API",
-			zap.Stringer("txID", txID),
+			log.Stringer("txID", txID),
 		)
 	}
 
@@ -130,9 +130,9 @@ func (w *WalletService) update(utxos []*lux.UTXO) ([]*lux.UTXO, error) {
 // IssueTx attempts to issue a transaction into consensus
 func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
 	w.vm.log.Warn("deprecated API called",
-		zap.String("service", "wallet"),
-		zap.String("method", "issueTx"),
-		zap.String("tx", args.Tx),
+		log.String("service", "wallet"),
+		log.String("method", "issueTx"),
+		log.String("tx", args.Tx),
 	)
 
 	txBytes, err := formatting.Decode(args.Encoding, args.Tx)
@@ -165,8 +165,8 @@ func (w *WalletService) Send(r *http.Request, args *SendArgs, reply *api.JSONTxI
 // SendMultiple sends a transaction with multiple outputs.
 func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *api.JSONTxIDChangeAddr) error {
 	w.vm.log.Warn("deprecated API called",
-		zap.String("service", "wallet"),
-		zap.String("method", "sendMultiple"),
+		log.String("service", "wallet"),
+		log.String("method", "sendMultiple"),
 		"username", args.Username,
 	)
 

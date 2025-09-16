@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database"
@@ -274,11 +272,11 @@ func (b *Block) Accept(ctx context.Context) error {
 	txChecksum, utxoChecksum := b.manager.state.Checksums()
 	b.manager.backend.Log.Trace(
 		"accepted block",
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-		zap.Stringer("txChecksum", txChecksum),
-		zap.Stringer("utxoChecksum", utxoChecksum),
+		"blkID", blkID.String(),
+		"height", b.Height(),
+		"parentID", b.Parent().String(),
+		"txChecksum", txChecksum.String(),
+		"utxoChecksum", utxoChecksum.String(),
 	)
 	return nil
 }
@@ -289,25 +287,25 @@ func (b *Block) Reject(ctx context.Context) error {
 
 	b.manager.backend.Log.Debug(
 		"rejecting block",
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
+		"blkID", blkID.String(),
+		"height", b.Height(),
+		"parentID", b.Parent().String(),
 	)
 
 	for _, tx := range b.Txs() {
 		if err := b.manager.VerifyTx(tx); err != nil {
 			b.manager.backend.Log.Debug("dropping invalidated tx",
-				zap.Stringer("txID", tx.ID()),
-				zap.Stringer("blkID", blkID),
-				zap.Error(err),
+				"txID", tx.ID().String(),
+				"blkID", blkID.String(),
+				"error", err,
 			)
 			continue
 		}
 		if err := b.manager.mempool.Add(tx); err != nil {
 			b.manager.backend.Log.Debug("dropping valid tx",
-				zap.Stringer("txID", tx.ID()),
-				zap.Stringer("blkID", blkID),
-				zap.Error(err),
+				"txID", tx.ID().String(),
+				"blkID", blkID.String(),
+				"error", err,
 			)
 		}
 	}
@@ -357,7 +355,7 @@ func (b *Block) Status() uint8 {
 	default:
 		b.manager.backend.Log.Error(
 			"dropping unhandled database error",
-			zap.Error(err),
+			"error", err,
 		)
 		return uint8(choices.Processing)
 	}

@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -28,8 +27,7 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	metric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/db/rpcdb"
@@ -104,7 +102,7 @@ type VMClient struct {
 	serverCloser grpcutils.ServerCloser
 	conns        []*grpc.ClientConn
 
-	grpcServerMetrics *grpc_metric.ServerMetrics
+	grpcServerMetrics *grpc_prometheus.ServerMetrics
 }
 
 // NewClient returns a VM connected to a remote VM
@@ -181,7 +179,7 @@ func (vm *VMClient) Initialize(
 	if err != nil {
 		return err
 	}
-	vm.grpcServerMetrics = grpc_metric.NewServerMetrics()
+	vm.grpcServerMetrics = grpc_prometheus.NewServerMetrics()
 	if err := serverReg.Register(vm.grpcServerMetrics); err != nil {
 		return err
 	}
@@ -211,7 +209,7 @@ func (vm *VMClient) Initialize(
 	logger := log.New("rpcchainvm")
 	if consensusCtx != nil {
 		logger.Info("grpc: serving database",
-			zap.String("address", dbServerAddr),
+			log.String("address", dbServerAddr),
 		)
 	}
 
@@ -263,7 +261,7 @@ func (vm *VMClient) Initialize(
 	go grpcutils.Serve(serverListener, vm.newInitServer())
 	if consensusCtx != nil {
 		logger.Info("grpc: serving vm services",
-			zap.String("address", serverAddr),
+			log.String("address", serverAddr),
 		)
 	}
 
@@ -397,7 +395,7 @@ func (vm *VMClient) newDBServer(db database.Database) *grpc.Server {
 	healthpb.RegisterHealthServer(server, grpcHealth)
 
 	// Ensure metric counters are zeroed on restart
-	grpc_metric.Register(server)
+	grpc_prometheus.Register(server)
 
 	return server
 }
@@ -425,7 +423,7 @@ func (vm *VMClient) newInitServer() *grpc.Server {
 	warppb.RegisterSignerServer(server, vm.warpSignerServer)
 
 	// Ensure metric counters are zeroed on restart
-	grpc_metric.Register(server)
+	grpc_prometheus.Register(server)
 
 	return server
 }

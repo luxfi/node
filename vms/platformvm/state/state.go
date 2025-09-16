@@ -13,12 +13,10 @@ import (
 
 	"github.com/google/btree"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/uptime"
-	consensusvalidators "github.com/luxfi/consensus/validators"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/database"
@@ -157,7 +155,7 @@ type State interface {
 	// is less than [endHeight], no diffs will be applied.
 	ApplyValidatorWeightDiffs(
 		ctx context.Context,
-		validators map[ids.NodeID]*consensusvalidators.GetValidatorOutput,
+		validators map[ids.NodeID]*validators.GetValidatorOutput,
 		startHeight uint64,
 		endHeight uint64,
 		netID ids.ID,
@@ -176,7 +174,7 @@ type State interface {
 	// is less than [endHeight], no diffs will be applied.
 	ApplyValidatorPublicKeyDiffs(
 		ctx context.Context,
-		validators map[ids.NodeID]*consensusvalidators.GetValidatorOutput,
+		validators map[ids.NodeID]*validators.GetValidatorOutput,
 		startHeight uint64,
 		endHeight uint64,
 	) error
@@ -604,14 +602,13 @@ func newState(
 		return nil, err
 	}
 
-	// TODO: Fix validator manager type mismatch properly
-	// For now, create a new consensus validators manager
-	consensusValidators := validators.NewManager()
-	
+	// Create validator manager
+	validatorManager := validators.NewManager()
+
 	return &state{
 		validatorState: newValidatorState(),
 
-		validators: consensusValidators,
+		validators: validatorManager,
 		ctx:        ctx,
 		cfg:        cfg,
 		metrics:    metrics,
@@ -1100,7 +1097,7 @@ func (s *state) SetCurrentSupply(netID ids.ID, cs uint64) {
 
 func (s *state) ApplyValidatorWeightDiffs(
 	ctx context.Context,
-	validators map[ids.NodeID]*consensusvalidators.GetValidatorOutput,
+	validators map[ids.NodeID]*validators.GetValidatorOutput,
 	startHeight uint64,
 	endHeight uint64,
 	netID ids.ID,
@@ -1124,12 +1121,12 @@ func (s *state) ApplyValidatorWeightDiffs(
 
 		if parsedHeight > prevHeight {
 			log.Error("unexpected parsed height",
-				zap.Stringer("netID", netID),
-				zap.Uint64("parsedHeight", parsedHeight),
-				zap.Stringer("nodeID", nodeID),
-				zap.Uint64("prevHeight", prevHeight),
-				zap.Uint64("startHeight", startHeight),
-				zap.Uint64("endHeight", endHeight),
+				log.Stringer("netID", netID),
+				log.Uint64("parsedHeight", parsedHeight),
+				log.Stringer("nodeID", nodeID),
+				log.Uint64("prevHeight", prevHeight),
+				log.Uint64("startHeight", startHeight),
+				log.Uint64("endHeight", endHeight),
 			)
 		}
 
@@ -1154,14 +1151,14 @@ func (s *state) ApplyValidatorWeightDiffs(
 }
 
 func applyWeightDiff(
-	vdrs map[ids.NodeID]*consensusvalidators.GetValidatorOutput,
+	vdrs map[ids.NodeID]*validators.GetValidatorOutput,
 	nodeID ids.NodeID,
 	weightDiff *ValidatorWeightDiff,
 ) error {
 	vdr, ok := vdrs[nodeID]
 	if !ok {
 		// This node isn't in the current validator set.
-		vdr = &consensusvalidators.GetValidatorOutput{
+		vdr = &validators.GetValidatorOutput{
 			NodeID: nodeID,
 		}
 		vdrs[nodeID] = vdr
@@ -1192,7 +1189,7 @@ func applyWeightDiff(
 
 func (s *state) ApplyValidatorPublicKeyDiffs(
 	ctx context.Context,
-	validators map[ids.NodeID]*consensusvalidators.GetValidatorOutput,
+	validators map[ids.NodeID]*validators.GetValidatorOutput,
 	startHeight uint64,
 	endHeight uint64,
 ) error {
@@ -1635,8 +1632,11 @@ func (s *state) loadPendingValidators() error {
 func (s *state) initValidatorSets() error {
 	for netID, validators := range s.currentStakers.validators {
 		// Check if there are any validators in the subnet
-		// Use NumValidators instead of GetValidatorSet
-		if s.validators.NumValidators(netID) != 0 {
+		validatorSet, err := s.validators.GetValidators(netID)
+		if err != nil {
+			return err
+		}
+		if validatorSet.Len() != 0 {
 			// Enforce the invariant that the validator set is empty here.
 			return fmt.Errorf("%w: %s", errValidatorSetAlreadyPopulated, netID)
 		}
@@ -2450,9 +2450,9 @@ func (s *state) ReindexBlocks(lock sync.Locker, log log.Logger) error {
 			)
 
 			log.Info("reindexing blocks",
-				zap.Int("numIndicesUpdated", numIndicesUpdated),
-				zap.Int("numIndicesChecked", numIndicesChecked),
-				zap.Duration("eta", eta),
+				"numIndicesUpdated", numIndicesUpdated,
+				"numIndicesChecked", numIndicesChecked,
+				"eta", eta,
 			)
 		}
 
@@ -2512,9 +2512,9 @@ func (s *state) ReindexBlocks(lock sync.Locker, log log.Logger) error {
 	defer lock.Unlock()
 
 	log.Info("finished block reindexing",
-		zap.Int("numIndicesUpdated", numIndicesUpdated),
-		zap.Int("numIndicesChecked", numIndicesChecked),
-		zap.Duration("duration", time.Since(startTime)),
+		"numIndicesUpdated", numIndicesUpdated,
+		"numIndicesChecked", numIndicesChecked,
+		"duration", time.Since(startTime),
 	)
 
 	return s.Commit()

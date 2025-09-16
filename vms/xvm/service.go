@@ -71,10 +71,10 @@ type Service struct{ vm *VM }
 // GetBlock returns the requested block.
 func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, reply *api.GetBlockResponse) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "getBlock"),
-		zap.Stringer("blkID", args.BlockID),
-		zap.Stringer("encoding", args.Encoding),
+		log.String("service", "xvm"),
+		log.String("method", "getBlock"),
+		log.Stringer("blkID", args.BlockID),
+		log.Stringer("encoding", args.Encoding),
 	)
 
 	s.vm.Lock.Lock()
@@ -118,9 +118,9 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, reply *api.G
 // GetBlockByHeight returns the block at the given height.
 func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightArgs, reply *api.GetBlockResponse) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "getBlockByHeight"),
-		zap.Uint64("height", uint64(args.Height)),
+		log.String("service", "xvm"),
+		log.String("method", "getBlockByHeight"),
+		log.Uint64("height", uint64(args.Height)),
 	)
 
 	s.vm.Lock.Lock()
@@ -138,8 +138,8 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 	block, err := s.vm.chainManager.GetStatelessBlock(blockID)
 	if err != nil {
 		s.vm.log.Error("couldn't get accepted block",
-			zap.Stringer("blkID", blockID),
-			zap.Error(err),
+			log.Stringer("blkID", blockID),
+			log.String("error", err.Error()),
 		)
 		return fmt.Errorf("couldn't get block with id %s: %w", blockID, err)
 	}
@@ -173,8 +173,8 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 // GetHeight returns the height of the last accepted block.
 func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *api.GetHeightResponse) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "getHeight"),
+		log.String("service", "xvm"),
+		log.String("method", "getHeight"),
 	)
 
 	s.vm.Lock.Lock()
@@ -188,8 +188,8 @@ func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *api.GetHeightRe
 	block, err := s.vm.chainManager.GetStatelessBlock(blockID)
 	if err != nil {
 		s.vm.log.Error("couldn't get last accepted block",
-			zap.Stringer("blkID", blockID),
-			zap.Error(err),
+			log.Stringer("blkID", blockID),
+			log.String("error", err.Error()),
 		)
 		return fmt.Errorf("couldn't get block with id %s: %w", blockID, err)
 	}
@@ -201,9 +201,9 @@ func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *api.GetHeightRe
 // IssueTx attempts to issue a transaction into consensus
 func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSONTxID) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "issueTx"),
-		zap.String("tx", args.Tx),
+		log.String("service", "xvm"),
+		log.String("method", "issueTx"),
+		log.String("tx", args.Tx),
 	)
 
 	txBytes, err := formatting.Decode(args.Encoding, args.Tx)
@@ -214,7 +214,7 @@ func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, reply *api.JSO
 	tx, err := s.vm.parser.ParseTx(txBytes)
 	if err != nil {
 		s.vm.log.Debug("failed to parse tx",
-			zap.Error(err),
+			log.String("error", err.Error()),
 		)
 		return err
 	}
@@ -249,12 +249,12 @@ func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply 
 	cursor := uint64(args.Cursor)
 	pageSize := uint64(args.PageSize)
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "getAddressTxs"),
-		zap.String("address", args.Address),
-		zap.String("assetID", args.AssetID),
-		zap.Uint64("cursor", cursor),
-		zap.Uint64("pageSize", pageSize),
+		log.String("service", "xvm"),
+		log.String("method", "getAddressTxs"),
+		log.String("address", args.Address),
+		log.String("assetID", args.AssetID),
+		log.Uint64("cursor", cursor),
+		log.Uint64("pageSize", pageSize),
 	)
 	if pageSize > maxPageSize {
 		return fmt.Errorf("pageSize > maximum allowed (%d)", maxPageSize)
@@ -275,10 +275,10 @@ func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply 
 	}
 
 	s.vm.log.Debug("fetching transactions",
-		zap.String("address", args.Address),
-		zap.String("assetID", args.AssetID),
-		zap.Uint64("cursor", cursor),
-		zap.Uint64("pageSize", pageSize),
+		log.String("address", args.Address),
+		log.String("assetID", args.AssetID),
+		log.Uint64("cursor", cursor),
+		log.Uint64("pageSize", pageSize),
 	)
 
 	s.vm.Lock.Lock()
@@ -290,9 +290,9 @@ func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply 
 		return err
 	}
 	s.vm.log.Debug("fetched transactions",
-		zap.String("address", args.Address),
-		zap.String("assetID", args.AssetID),
-		zap.Int("numTxs", len(reply.TxIDs)),
+		log.String("address", args.Address),
+		log.String("assetID", args.AssetID),
+		log.Int("numTxs", len(reply.TxIDs)),
 	)
 
 	// To get the next set of tx IDs, the user should provide this cursor.
@@ -308,9 +308,9 @@ func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply 
 // used instead to determine if the tx was accepted.
 func (s *Service) GetTxStatus(_ *http.Request, args *api.JSONTxID, reply *GetTxStatusReply) error {
 	s.vm.log.Debug("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "getTxStatus"),
-		zap.Stringer("txID", args.TxID),
+		log.String("service", "xvm"),
+		log.String("method", "getTxStatus"),
+		log.Stringer("txID", args.TxID),
 	)
 
 	if args.TxID == ids.Empty {
@@ -335,9 +335,9 @@ func (s *Service) GetTxStatus(_ *http.Request, args *api.JSONTxID, reply *GetTxS
 // GetTx returns the specified transaction
 func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "getTx"),
-		zap.Stringer("txID", args.TxID),
+		log.String("service", "xvm"),
+		log.String("method", "getTx"),
+		log.Stringer("txID", args.TxID),
 	)
 
 	if args.TxID == ids.Empty {
@@ -376,9 +376,9 @@ func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxRe
 // GetUTXOs gets all utxos for passed in addresses
 func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, reply *api.GetUTXOsReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "getUTXOs"),
-		zap.Strings("addresses", args.Addresses),
+		log.String("service", "xvm"),
+		log.String("method", "getUTXOs"),
+		log.Strings("addresses", args.Addresses),
 	)
 
 	if len(args.Addresses) == 0 {
@@ -496,9 +496,9 @@ type GetAssetDescriptionReply struct {
 // GetAssetDescription creates an empty account with the name passed in
 func (s *Service) GetAssetDescription(_ *http.Request, args *GetAssetDescriptionArgs, reply *GetAssetDescriptionReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "getAssetDescription"),
-		zap.String("assetID", args.AssetID),
+		log.String("service", "xvm"),
+		log.String("method", "getAssetDescription"),
+		log.String("assetID", args.AssetID),
 	)
 
 	assetID, err := s.vm.lookupAssetID(args.AssetID)
@@ -546,10 +546,10 @@ type GetBalanceReply struct {
 // address, and includes balances with locktime in the future.
 func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBalanceReply) error {
 	s.vm.log.Debug("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "getBalance"),
-		zap.String("address", args.Address),
-		zap.String("assetID", args.AssetID),
+		log.String("service", "xvm"),
+		log.String("method", "getBalance"),
+		log.String("address", args.Address),
+		log.String("assetID", args.AssetID),
 	)
 
 	addr, err := lux.ParseServiceAddress(s.vm, args.Address)
@@ -623,9 +623,9 @@ type GetAllBalancesReply struct {
 // address, and includes balances with locktime in the future.
 func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, reply *GetAllBalancesReply) error {
 	s.vm.log.Debug("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "getAllBalances"),
-		zap.String("address", args.Address),
+		log.String("service", "xvm"),
+		log.String("method", "getAllBalances"),
+		log.String("address", args.Address),
 	)
 
 	address, err := lux.ParseServiceAddress(s.vm, args.Address)
@@ -711,12 +711,12 @@ type AssetIDChangeAddr struct {
 // CreateAsset returns ID of the newly created asset
 func (s *Service) CreateAsset(_ *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "createAsset"),
-		zap.String("name", args.Name),
-		zap.String("symbol", args.Symbol),
-		zap.Int("numInitialHolders", len(args.InitialHolders)),
-		zap.Int("numMinters", len(args.MinterSets)),
+		log.String("service", "xvm"),
+		log.String("method", "createAsset"),
+		log.String("name", args.Name),
+		log.String("symbol", args.Symbol),
+		log.Int("numInitialHolders", len(args.InitialHolders)),
+		log.Int("numMinters", len(args.MinterSets)),
 	)
 
 	tx, changeAddr, err := s.buildCreateAssetTx(args)
@@ -847,11 +847,11 @@ func (s *Service) buildCreateAssetTx(args *CreateAssetArgs) (*txs.Tx, ids.ShortI
 // CreateFixedCapAsset returns ID of the newly created asset
 func (s *Service) CreateFixedCapAsset(r *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "createFixedCapAsset"),
-		zap.String("name", args.Name),
-		zap.String("symbol", args.Symbol),
-		zap.Int("numInitialHolders", len(args.InitialHolders)),
+		log.String("service", "xvm"),
+		log.String("method", "createFixedCapAsset"),
+		log.String("name", args.Name),
+		log.String("symbol", args.Symbol),
+		log.Int("numInitialHolders", len(args.InitialHolders)),
 	)
 
 	return s.CreateAsset(r, args, reply)
@@ -860,11 +860,11 @@ func (s *Service) CreateFixedCapAsset(r *http.Request, args *CreateAssetArgs, re
 // CreateVariableCapAsset returns ID of the newly created asset
 func (s *Service) CreateVariableCapAsset(r *http.Request, args *CreateAssetArgs, reply *AssetIDChangeAddr) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "createVariableCapAsset"),
-		zap.String("name", args.Name),
-		zap.String("symbol", args.Symbol),
-		zap.Int("numMinters", len(args.MinterSets)),
+		log.String("service", "xvm"),
+		log.String("method", "createVariableCapAsset"),
+		log.String("name", args.Name),
+		log.String("symbol", args.Symbol),
+		log.Int("numMinters", len(args.MinterSets)),
 	)
 
 	return s.CreateAsset(r, args, reply)
@@ -881,11 +881,11 @@ type CreateNFTAssetArgs struct {
 // CreateNFTAsset returns ID of the newly created asset
 func (s *Service) CreateNFTAsset(_ *http.Request, args *CreateNFTAssetArgs, reply *AssetIDChangeAddr) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "createNFTAsset"),
-		zap.String("name", args.Name),
-		zap.String("symbol", args.Symbol),
-		zap.Int("numMinters", len(args.MinterSets)),
+		log.String("service", "xvm"),
+		log.String("method", "createNFTAsset"),
+		log.String("name", args.Name),
+		log.String("symbol", args.Symbol),
+		log.Int("numMinters", len(args.MinterSets)),
 	)
 
 	tx, changeAddr, err := s.buildCreateNFTAsset(args)
@@ -1003,8 +1003,8 @@ func (s *Service) buildCreateNFTAsset(args *CreateNFTAssetArgs) (*txs.Tx, ids.Sh
 // CreateAddress creates an address for the user [args.Username]
 func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.JSONAddress) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "createAddress"),
+		log.String("service", "xvm"),
+		log.String("method", "createAddress"),
 		"username", args.Username,
 	)
 
@@ -1024,8 +1024,8 @@ func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, reply *api.
 // ListAddresses returns all of the addresses controlled by user [args.Username]
 func (s *Service) ListAddresses(_ *http.Request, args *api.UserPass, response *api.JSONAddresses) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "listAddresses"),
+		log.String("service", "xvm"),
+		log.String("method", "listAddresses"),
 		"username", args.Username,
 	)
 
@@ -1048,8 +1048,8 @@ type ExportKeyReply struct {
 // ExportKey returns a private key from the provided user
 func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportKeyReply) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "exportKey"),
+		log.String("service", "xvm"),
+		log.String("method", "exportKey"),
 		"username", args.Username,
 	)
 
@@ -1076,8 +1076,8 @@ type ImportKeyReply struct {
 // ImportKey adds a private key to the provided user
 func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSONAddress) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "importKey"),
+		log.String("service", "xvm"),
+		log.String("method", "importKey"),
 		"username", args.Username,
 	)
 
@@ -1145,8 +1145,8 @@ func (s *Service) Send(r *http.Request, args *SendArgs, reply *api.JSONTxIDChang
 // SendMultiple sends a transaction with multiple outputs.
 func (s *Service) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *api.JSONTxIDChangeAddr) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "sendMultiple"),
+		log.String("service", "xvm"),
+		log.String("method", "sendMultiple"),
 		"username", args.Username,
 	)
 
@@ -1311,8 +1311,8 @@ type MintArgs struct {
 // Mint issues a transaction that mints more of the asset
 func (s *Service) Mint(_ *http.Request, args *MintArgs, reply *api.JSONTxIDChangeAddr) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "mint"),
+		log.String("service", "xvm"),
+		log.String("method", "mint"),
 		"username", args.Username,
 	)
 
@@ -1333,8 +1333,8 @@ func (s *Service) Mint(_ *http.Request, args *MintArgs, reply *api.JSONTxIDChang
 
 func (s *Service) buildMint(args *MintArgs) (*txs.Tx, ids.ShortID, error) {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "mint"),
+		log.String("service", "xvm"),
+		log.String("method", "mint"),
 		"username", args.Username,
 	)
 
@@ -1448,8 +1448,8 @@ type SendNFTArgs struct {
 // SendNFT sends an NFT
 func (s *Service) SendNFT(_ *http.Request, args *SendNFTArgs, reply *api.JSONTxIDChangeAddr) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "sendNFT"),
+		log.String("service", "xvm"),
+		log.String("method", "sendNFT"),
 		"username", args.Username,
 	)
 
@@ -1575,8 +1575,8 @@ type MintNFTArgs struct {
 // MintNFT issues a MintNFT transaction and returns the ID of the newly created transaction
 func (s *Service) MintNFT(_ *http.Request, args *MintNFTArgs, reply *api.JSONTxIDChangeAddr) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "mintNFT"),
+		log.String("service", "xvm"),
+		log.String("method", "mintNFT"),
 		"username", args.Username,
 	)
 
@@ -1716,8 +1716,8 @@ type ImportArgs struct {
 // Returns the ID of the newly created atomic transaction
 func (s *Service) Import(_ *http.Request, args *ImportArgs, reply *api.JSONTxID) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "import"),
+		log.String("service", "xvm"),
+		log.String("method", "import"),
 		"username", args.Username,
 	)
 
@@ -1855,8 +1855,8 @@ type ExportArgs struct {
 // Returns the ID of the newly created atomic transaction
 func (s *Service) Export(_ *http.Request, args *ExportArgs, reply *api.JSONTxIDChangeAddr) error {
 	s.vm.log.Warn("deprecated API called",
-		zap.String("service", "xvm"),
-		zap.String("method", "export"),
+		log.String("service", "xvm"),
+		log.String("method", "export"),
 		"username", args.Username,
 	)
 

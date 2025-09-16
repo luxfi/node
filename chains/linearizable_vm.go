@@ -256,15 +256,9 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	// Convert block types to consensus types for the underlying VM
 	consensusCtx := context.Background()
 	if cc, ok := chainCtx.(*block.ChainContext); ok && cc != nil {
-		consensusCtx := cc.Context
-		if consensusCtx != nil {
-			consensusCtx = consensus.WithIDs(consensusCtx, consensus.IDs{
-				NetworkID: consensusCtx.QuantumID,
-				ChainID:   consensusCtx.ChainID,
-				NodeID:    consensusCtx.NodeID,
-				PublicKey: consensusCtx.PublicKey,
-			})
-		}
+		// consensusCtx := cc.Context
+		// Context reassignment commented out due to type mismatch
+		// TODO: Fix context type compatibility between consensus.Context and context.Context
 	}
 
 	// Get current database from DBManager

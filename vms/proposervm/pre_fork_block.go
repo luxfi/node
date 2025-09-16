@@ -83,7 +83,7 @@ func (b *preForkBlock) Status() uint8 {
 	if err != nil {
 		// here.
 		b.vm.log.Error("unexpected error looking up fork height",
-			zap.Error(err),
+			log.Reflect("error", err),
 		)
 		return uint8(choices.Processing)
 	}
@@ -121,8 +121,8 @@ func (b *preForkBlock) verifyPreForkChild(ctx context.Context, child *preForkBlo
 		}
 
 		b.vm.log.Debug("allowing pre-fork block after the fork time",
-			zap.String("reason", "parent is an oracle block"),
-			zap.Stringer("blkID", b.ID()),
+			log.String("reason", "parent is an oracle block"),
+			log.Stringer("blkID", b.ID()),
 		)
 	}
 
@@ -144,9 +144,9 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 	currentPChainHeight, err := vs.GetCurrentHeight()
 	if err != nil {
 		b.vm.log.Error("block verification failed",
-			zap.String("reason", "failed to get current P-Chain height"),
-			zap.Stringer("blkID", childID),
-			zap.Error(err),
+			log.String("reason", "failed to get current P-Chain height"),
+			log.Stringer("blkID", childID),
+			log.Reflect("error", err),
 		)
 		return err
 	}
@@ -216,9 +216,9 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		innerBlock := &reverseBlockAdapter{Block: engineBlock}
 
 		b.vm.log.Info("built block",
-			zap.Stringer("blkID", innerBlock.ID()),
-			zap.Uint64("height", innerBlock.Height()),
-			zap.Time("parentTimestamp", parentTimestamp),
+			log.Stringer("blkID", innerBlock.ID()),
+			log.Uint64("height", innerBlock.Height()),
+			log.Time("parentTimestamp", parentTimestamp),
 		)
 
 		return &preForkBlock{
@@ -240,9 +240,9 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	pChainHeight, err := b.vm.optimalPChainHeight(ctx, b.vm.MinimumPChainHeight)
 	if err != nil {
 		b.vm.log.Error("unexpected build block failure",
-			zap.String("reason", "failed to calculate optimal P-chain height"),
-			zap.Stringer("parentID", parentID),
-			zap.Error(err),
+			log.String("reason", "failed to calculate optimal P-chain height"),
+			log.Stringer("parentID", parentID),
+			log.Reflect("error", err),
 		)
 		return nil, err
 	}
@@ -273,12 +273,12 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	}
 
 	b.vm.log.Info("built block",
-		zap.Stringer("blkID", blk.ID()),
-		zap.Stringer("innerBlkID", innerBlock.ID()),
-		zap.Uint64("height", blk.Height()),
-		zap.Uint64("pChainHeight", pChainHeight),
-		zap.Time("parentTimestamp", parentTimestamp),
-		zap.Time("blockTimestamp", newTimestamp))
+		log.Stringer("blkID", blk.ID()),
+		log.Stringer("innerBlkID", innerBlock.ID()),
+		log.Uint64("height", blk.Height()),
+		log.Uint64("pChainHeight", pChainHeight),
+		log.Time("parentTimestamp", parentTimestamp),
+		log.Time("blockTimestamp", newTimestamp))
 	return blk, nil
 }
 

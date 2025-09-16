@@ -12,7 +12,7 @@ import (
 
 	"github.com/cockroachdb/pebble"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/log"
+	luxlog "github.com/luxfi/log"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/utils/set"
@@ -66,7 +66,7 @@ type Config struct {
 }
 
 // TODO: Add metrics
-func New(file string, configBytes []byte, log log.Logger, _ metric.Registerer) (database.Database, error) {
+func New(file string, configBytes []byte, log luxlog.Logger, _ metric.Registerer) (database.Database, error) {
 	cfg := DefaultConfig
 	if len(configBytes) > 0 {
 		if err := json.Unmarshal(configBytes, &cfg); err != nil {
@@ -88,7 +88,7 @@ func New(file string, configBytes []byte, log log.Logger, _ metric.Registerer) (
 
 	log.Info(
 		"opening pebble",
-		zap.Reflect("config", cfg),
+		luxlog.Reflect("config", cfg),
 	)
 
 	db, err := pebble.Open(file, opts)

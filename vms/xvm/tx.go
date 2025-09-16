@@ -118,8 +118,8 @@ func (tx *Tx) Status() choices.Status {
 		return choices.Processing
 	default:
 		tx.vm.log.Error("failed looking up tx status",
-			zap.Stringer("txID", txID),
-			zap.Error(err),
+			log.Stringer("txID", txID),
+			log.String("error", err.Error()),
 		)
 		return choices.Processing
 	}
