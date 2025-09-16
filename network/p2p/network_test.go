@@ -638,11 +638,11 @@ func TestResponseForUnrequestedRequest(t *testing.T) {
 
 			err = network.AppResponse(ctx, ids.EmptyNodeID, 0, []byte("foobar"))
 			require.ErrorIs(err, ErrUnrequestedResponse)
-			err = network.AppRequestFailed(ctx, ids.EmptyNodeID, 0, &core.AppError{Code: -1, Message: core.ErrTimeout.Error()})
+			err = network.AppRequestFailed(ctx, ids.EmptyNodeID, 0, &core.AppError{Code: -1, Message: "timeout"})
 			require.ErrorIs(err, ErrUnrequestedResponse)
 			err = network.CrossChainAppResponse(ctx, ids.Empty, 0, []byte("foobar"))
 			require.ErrorIs(err, ErrUnrequestedResponse)
-			err = network.CrossChainAppRequestFailed(ctx, ids.Empty, 0, &core.AppError{Code: -1, Message: core.ErrTimeout.Error()})
+			err = network.CrossChainAppRequestFailed(ctx, ids.Empty, 0, &core.AppError{Code: -1, Message: "timeout"})
 
 			require.ErrorIs(err, ErrUnrequestedResponse)
 		})
