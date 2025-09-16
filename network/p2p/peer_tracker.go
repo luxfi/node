@@ -12,10 +12,8 @@ import (
 
 	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
-
 	"github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/heap"
 	"github.com/luxfi/node/utils/set"
 
@@ -168,10 +166,10 @@ func (p *PeerTracker) SelectPeer() (ids.NodeID, bool) {
 	if p.shouldSelectUntrackedPeer() {
 		if nodeID, ok := p.untrackedPeers.Peek(); ok {
 			p.log.Debug("selecting peer",
-				zap.String("reason", "untracked"),
-				zap.Stringer("nodeID", nodeID),
-				zap.Int("trackedPeers", p.trackedPeers.Len()),
-				zap.Int("responsivePeers", p.responsivePeers.Len()),
+				log.UserString("reason", "untracked"),
+				log.Stringer("nodeID", nodeID),
+				log.Int("trackedPeers", p.trackedPeers.Len()),
+				log.Int("responsivePeers", p.responsivePeers.Len()),
 			)
 			return nodeID, true
 		}
@@ -181,17 +179,17 @@ func (p *PeerTracker) SelectPeer() (ids.NodeID, bool) {
 	if useBandwidthHeap {
 		if nodeID, bandwidth, ok := p.bandwidthHeap.Peek(); ok {
 			p.log.Debug("selecting peer",
-				zap.String("reason", "bandwidth"),
-				zap.Stringer("nodeID", nodeID),
-				zap.Float64("bandwidth", bandwidth.Read()),
+				log.UserString("reason", "bandwidth"),
+				log.Stringer("nodeID", nodeID),
+				log.Float64("bandwidth", bandwidth.Read()),
 			)
 			return nodeID, true
 		}
 	} else {
 		if nodeID, ok := p.responsivePeers.Peek(); ok {
 			p.log.Debug("selecting peer",
-				zap.String("reason", "responsive"),
-				zap.Stringer("nodeID", nodeID),
+				log.UserString("reason", "responsive"),
+				log.Stringer("nodeID", nodeID),
 			)
 			return nodeID, true
 		}
@@ -199,9 +197,9 @@ func (p *PeerTracker) SelectPeer() (ids.NodeID, bool) {
 
 	if nodeID, ok := p.trackedPeers.Peek(); ok {
 		p.log.Debug("selecting peer",
-			zap.String("reason", "tracked"),
-			zap.Stringer("nodeID", nodeID),
-			zap.Bool("checkedBandwidthHeap", useBandwidthHeap),
+			log.UserString("reason", "tracked"),
+			log.Stringer("nodeID", nodeID),
+			log.Bool("checkedBandwidthHeap", useBandwidthHeap),
 		)
 		return nodeID, true
 	}
@@ -245,7 +243,7 @@ func (p *PeerTracker) updateBandwidth(nodeID ids.NodeID, bandwidth float64, resp
 	if !p.trackedPeers.Contains(nodeID) {
 		// we're not tracking this peer, nothing to do here
 		p.log.Debug("tracking bandwidth for untracked peer",
-			zap.Stringer("nodeID", nodeID),
+			log.Stringer("nodeID", nodeID),
 		)
 		return
 	}

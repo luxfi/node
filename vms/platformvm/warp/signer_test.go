@@ -4,7 +4,6 @@
 package warp
 
 import (
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"testing"
 
 	"github.com/stretchr/testify/require"

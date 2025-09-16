@@ -9,8 +9,6 @@ import (
 
 	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
-
-	"github.com/luxfi/log"
 )
 
 const (

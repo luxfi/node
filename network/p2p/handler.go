@@ -8,10 +8,8 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 )
 
@@ -84,8 +82,8 @@ type ValidatorHandler struct {
 func (v ValidatorHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
 	if !v.validatorSet.Has(ctx, nodeID) {
 		v.log.Debug("dropping message",
-			zap.Stringer("nodeID", nodeID),
-			zap.String("reason", "not a validator"),
+			log.Stringer("nodeID", nodeID),
+			log.UserString("reason", "not a validator"),
 		)
 		return
 	}
@@ -118,13 +116,13 @@ func (r *responder) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID
 	appResponse, err := r.Handler.AppRequest(ctx, nodeID, deadline, request)
 	if err != nil {
 		r.log.Debug("failed to handle message",
-			zap.Stringer("messageOp", message.AppRequestOp),
-			zap.Stringer("nodeID", nodeID),
-			zap.Uint32("requestID", requestID),
-			zap.Time("deadline", deadline),
-			zap.Uint64("handlerID", r.handlerID),
-			zap.Binary("message", request),
-			zap.Error(err),
+			log.Stringer("messageOp", message.AppRequestOp),
+			log.Stringer("nodeID", nodeID),
+			log.Uint32("requestID", requestID),
+			log.Time("deadline", deadline),
+			log.Uint64("handlerID", r.handlerID),
+			log.Binary("message", request),
+			log.Error(err),
 		)
 		return r.sender.SendAppError(ctx, nodeID, requestID, err.Code, err.Message)
 	}
@@ -138,12 +136,12 @@ func (r *responder) CrossChainAppRequest(ctx context.Context, chainID ids.ID, re
 	appResponse, err := r.Handler.CrossChainAppRequest(ctx, chainID, deadline, request)
 	if err != nil {
 		r.log.Debug("failed to handle message",
-			zap.Stringer("messageOp", message.CrossChainAppRequestOp),
-			zap.Stringer("chainID", chainID),
-			zap.Uint32("requestID", requestID),
-			zap.Time("deadline", deadline),
-			zap.Uint64("handlerID", r.handlerID),
-			zap.Binary("message", request),
+			log.Stringer("messageOp", message.CrossChainAppRequestOp),
+			log.Stringer("chainID", chainID),
+			log.Uint32("requestID", requestID),
+			log.Time("deadline", deadline),
+			log.Uint64("handlerID", r.handlerID),
+			log.Binary("message", request),
 		)
 		return nil
 	}
@@ -156,8 +154,8 @@ func (r *responder) CrossChainAppRequest(ctx context.Context, chainID ids.ID, re
 	// If sender doesn't support cross-chain, just log and return success
 	// This allows tests to pass without full cross-chain support
 	r.log.Debug("sender doesn't support cross-chain responses, ignoring response",
-		zap.Stringer("chainID", chainID),
-		zap.Uint32("requestID", requestID),
+		log.Stringer("chainID", chainID),
+		log.Uint32("requestID", requestID),
 	)
 	return nil
 }

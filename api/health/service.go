@@ -7,8 +7,6 @@ import (
 	"net/http"
 
 	"github.com/luxfi/log"
-
-	"github.com/luxfi/log"
 )
 
 type Service struct {
@@ -30,9 +28,9 @@ type APIArgs struct {
 // Readiness returns if the node has finished initialization
 func (s *Service) Readiness(_ *http.Request, args *APIArgs, reply *APIReply) error {
 	s.log.Debug("API called",
-		zap.String("service", "health"),
-		zap.String("method", "readiness"),
-		zap.Strings("tags", args.Tags),
+		log.UserString("service", "health"),
+		log.UserString("method", "readiness"),
+		log.Reflect("tags", args.Tags),
 	)
 	reply.Checks, reply.Healthy = s.health.Readiness(args.Tags...)
 	return nil
@@ -41,9 +39,9 @@ func (s *Service) Readiness(_ *http.Request, args *APIArgs, reply *APIReply) err
 // Health returns a summation of the health of the node
 func (s *Service) Health(_ *http.Request, args *APIArgs, reply *APIReply) error {
 	s.log.Debug("API called",
-		zap.String("service", "health"),
-		zap.String("method", "health"),
-		zap.Strings("tags", args.Tags),
+		log.UserString("service", "health"),
+		log.UserString("method", "health"),
+		log.Reflect("tags", args.Tags),
 	)
 
 	reply.Checks, reply.Healthy = s.health.Health(args.Tags...)
@@ -53,9 +51,9 @@ func (s *Service) Health(_ *http.Request, args *APIArgs, reply *APIReply) error 
 // Liveness returns if the node is in need of a restart
 func (s *Service) Liveness(_ *http.Request, args *APIArgs, reply *APIReply) error {
 	s.log.Debug("API called",
-		zap.String("service", "health"),
-		zap.String("method", "liveness"),
-		zap.Strings("tags", args.Tags),
+		log.UserString("service", "health"),
+		log.UserString("method", "liveness"),
+		log.Reflect("tags", args.Tags),
 	)
 	reply.Checks, reply.Healthy = s.health.Liveness(args.Tags...)
 	return nil

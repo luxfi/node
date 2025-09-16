@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/luxfi/node/tests/fixture/bootstrapmonitor"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
 
@@ -122,7 +122,7 @@ func checkArgs(namespace string, podName string, nodeContainerName string, dataD
 	return nil
 }
 
-func newLogger(rawLogFormat string) (logging.Logger, error) {
+func newLogger(rawLogFormat string) (log.Logger, error) {
 	writeCloser := os.Stdout
 	logFormat, err := logging.ToFormat(rawLogFormat, writeCloser.Fd())
 	if err != nil {

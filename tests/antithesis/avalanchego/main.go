@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/xvm"
@@ -146,7 +146,7 @@ func main() {
 
 type workload struct {
 	id     int
-	log    logging.Logger
+	log    log.Logger
 	wallet *primary.Wallet
 	addrs  set.Set[ids.ShortID]
 	uris   []string

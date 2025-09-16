@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/constants"

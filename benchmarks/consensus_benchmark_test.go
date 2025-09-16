@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 // BenchmarkHashingComputeHash256 benchmarks SHA256 hashing performance

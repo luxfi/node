@@ -4,6 +4,8 @@
 package node
 
 import (
+	"sync"
+
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
@@ -22,29 +24,33 @@ type ExtendedManager interface {
 type insecureValidatorManager struct {
 	ChainRouter
 	log    log.Logger
-	vdrs   ExtendedManager
+	vdrs   validators.Manager
 	weight uint64
+	// Keep track of added validators locally
+	validators map[ids.ID]map[ids.NodeID]uint64
+	mu         sync.RWMutex
 }
 
 func (i *insecureValidatorManager) Connected(vdrID ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
 	if constants.PrimaryNetworkID == netID {
-		// Sybil protection is disabled so we don't have a txID that added the
-		// peer as a validator. Because each validator needs a txID associated
-		// with it, we hack one together by padding the nodeID with zeroes.
-		dummyTxID := ids.Empty
-		copy(dummyTxID[:], vdrID.Bytes())
-
-		err := i.vdrs.AddStaker(constants.PrimaryNetworkID, vdrID, nil, dummyTxID, i.weight)
-		if err != nil {
-			i.log.Error("failed to add validator",
-				log.Stringer("nodeID", vdrID),
-				log.Stringer("netID", constants.PrimaryNetworkID),
-				log.Error(err),
-			)
+		// Track the validator locally since we can't modify the validators.Manager
+		i.mu.Lock()
+		if i.validators[netID] == nil {
+			i.validators[netID] = make(map[ids.NodeID]uint64)
 		}
+		i.validators[netID][vdrID] = i.weight
+		i.mu.Unlock()
+
+		i.log.Debug("tracked validator connection",
+			log.Stringer("nodeID", vdrID),
+			log.Stringer("netID", netID),
+			log.Uint64("weight", i.weight),
+		)
 	}
-	// Router.Connected not available in consensus package
-	// i.Router.Connected(vdrID, nodeVersion, netID)
+	// Forward to the underlying router
+	if i.ChainRouter != nil {
+		i.ChainRouter.Connected(vdrID, nodeVersion, netID)
+	}
 }
 
 func (i *insecureValidatorManager) Disconnected(vdrID ids.NodeID) {

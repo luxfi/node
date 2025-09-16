@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 // TestCChainOperations tests C-Chain (EVM) operations

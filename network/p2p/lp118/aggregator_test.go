@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/p2ptest"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )

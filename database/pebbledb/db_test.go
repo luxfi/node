@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/database/dbtest"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 func newDB(t testing.TB) *Database {

@@ -7,7 +7,7 @@ import "github.com/luxfi/metric"
 
 type healthMetrics struct {
 	// failingChecks keeps track of the number of check failing
-	failingChecks *metric.GaugeVec
+	failingChecks metric.GaugeVec
 }
 
 func newMetrics(namespace string, registerer metric.Registerer) (*healthMetrics, error) {

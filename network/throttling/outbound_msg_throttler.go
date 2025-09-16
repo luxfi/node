@@ -6,12 +6,12 @@ package throttling
 import (
 	"errors"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
+	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
 )

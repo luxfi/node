@@ -11,10 +11,8 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/sampler"
 	"github.com/luxfi/math/set"
@@ -89,12 +87,12 @@ func (v *Validators) refresh(ctx context.Context) {
 
 	height, err := v.validators.GetCurrentHeight(ctx)
 	if err != nil {
-		v.log.Warn("failed to get current height", zap.Error(err))
+		v.log.Warn("failed to get current height", log.Error(err))
 		return
 	}
 	validatorSet, err := v.validators.GetValidatorSet(ctx, height, v.netID)
 	if err != nil {
-		v.log.Warn("failed to get validator set", zap.Error(err))
+		v.log.Warn("failed to get validator set", log.Error(err))
 		return
 	}
 

@@ -13,7 +13,6 @@ import (
 	"github.com/luxfi/log"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/node"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/ulimit"

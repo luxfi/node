@@ -12,10 +12,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/log"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/math/set"
 )
@@ -30,7 +29,7 @@ var (
 type worker struct {
 	log           log.Logger
 	name          string
-	failingChecks *metric.GaugeVec
+	failingChecks metric.GaugeVec
 	checksLock    sync.RWMutex
 	checks        map[string]*taggedChecker
 
@@ -54,7 +53,7 @@ type taggedChecker struct {
 func newWorker(
 	log log.Logger,
 	name string,
-	failingChecks *metric.GaugeVec,
+	failingChecks metric.GaugeVec,
 ) *worker {
 	// Initialize the number of failing checks to 0 for all checks
 	for _, tag := range []string{AllTag, ApplicationTag} {
@@ -113,9 +112,9 @@ func (w *worker) RegisterCheck(name string, check Checker, tags ...string) error
 
 	// Whenever a new check is added - it is failing
 	w.log.Info("registered new check and initialized its state to failing",
-		zap.String("name", w.name),
-		zap.String("name", name),
-		zap.Strings("tags", tags),
+		log.UserString("workerName", w.name),
+		log.UserString("checkName", name),
+		log.Reflect("tags", tags),
 	)
 
 	// If this is a new application-wide check, then all of the registered tags
@@ -250,18 +249,18 @@ func (w *worker) runCheck(ctx context.Context, wg *sync.WaitGroup, name string, 
 
 		if prevResult.Error == nil {
 			w.log.Warn("check started failing",
-				zap.String("name", w.name),
-				zap.String("name", name),
-				zap.Strings("tags", check.tags),
-				zap.Error(err),
+				log.UserString("workerName", w.name),
+				log.UserString("checkName", name),
+				log.Reflect("tags", check.tags),
+				log.Reflect("error", err),
 			)
 			w.updateMetrics(check, false /*=healthy*/, false /*=register*/)
 		}
 	} else if prevResult.Error != nil {
 		w.log.Info("check started passing",
-			zap.String("name", w.name),
-			zap.String("name", name),
-			zap.Strings("tags", check.tags),
+			log.UserString("workerName", w.name),
+			log.UserString("checkName", name),
+			log.Reflect("tags", check.tags),
 		)
 		w.updateMetrics(check, true /*=healthy*/, false /*=register*/)
 	}

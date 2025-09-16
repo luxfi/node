@@ -8,10 +8,8 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 )
 
 var _ Handler = (*ThrottlerHandler)(nil)
@@ -33,8 +31,8 @@ type ThrottlerHandler struct {
 func (t ThrottlerHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
 	if !t.throttler.Handle(nodeID) {
 		t.log.Debug("dropping message",
-			zap.Stringer("nodeID", nodeID),
-			zap.String("reason", "throttled"),
+			log.Stringer("nodeID", nodeID),
+			log.UserString("reason", "throttled"),
 		)
 		return
 	}
