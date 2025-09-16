@@ -59,7 +59,15 @@ func (o *overriddenManager) GetLight(_ ids.ID, nodeID ids.NodeID) uint64 {
 }
 
 func (o *overriddenManager) SubsetWeight(_ ids.ID, nodeIDs set.Set[ids.NodeID]) (uint64, error) {
-	return o.manager.SubsetWeight(o.netID, nodeIDs)
+	// Calculate subset weight by summing individual weights
+	var totalWeight uint64
+	for nodeID := range nodeIDs {
+		vdr, exists := o.manager.GetValidator(o.netID, nodeID)
+		if exists {
+			totalWeight += vdr.Weight
+		}
+	}
+	return totalWeight, nil
 }
 
 func (o *overriddenManager) RemoveWeight(_ ids.ID, nodeID ids.NodeID, weight uint64) error {

@@ -5,8 +5,7 @@ package secp256k1fx
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/crypto/keychain"
+	"github.com/luxfi/node/wallet/keychain"
 )
 
 // Ensure Keychain implements keychain.Keychain interface
@@ -23,8 +22,8 @@ func (kw *keychainWrapper) Get(addr ids.ShortID) (keychain.Signer, bool) {
 }
 
 // Addresses implements keychain.Keychain
-func (kw *keychainWrapper) Addresses() set.Set[ids.ShortID] {
-	return kw.Keychain.Addrs
+func (kw *keychainWrapper) Addresses() []ids.ShortID {
+	return kw.Keychain.Addresses()
 }
 
 // WrapKeychain wraps a Keychain to implement the ledger keychain interface

@@ -63,6 +63,7 @@ func TestWindowerRepeatedValidator(t *testing.T) {
 			return map[ids.NodeID]*validators.GetValidatorOutput{
 				validatorID: {
 					NodeID: validatorID,
+					Light:  10,
 					Weight: 10,
 				},
 			}, nil
@@ -456,6 +457,7 @@ func makeValidators(t testing.TB, count int) ([]ids.NodeID, *validatorstest.Stat
 			for _, id := range validatorIDs {
 				vdrs[id] = &validators.GetValidatorOutput{
 					NodeID: id,
+					Light:  1,
 					Weight: 1,
 				}
 			}

@@ -9,10 +9,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/luxfi/log"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
@@ -72,10 +70,10 @@ func (vm *VM) Initialize(
 	chainCtx := chainCtxIntf.(*block.ChainContext)
 	toEngine := toEngineIntf.(chan<- block.Message)
 	// Create a logger since ChainContext doesn't have one
-	logger := zap.NewNop()
+	logger := log.NewNoOpLogger()
 
 	logger.Info("initializing xsvm",
-		zap.Stringer("version", Version),
+		log.Stringer("version", Version),
 	)
 
 	// Store the ChainContext
@@ -110,7 +108,7 @@ func (vm *VM) Initialize(
 	vm.builder = builder.New(chainContext, vm.chain)
 
 	logger.Info("initialized xsvm",
-		zap.Stringer("lastAcceptedID", vm.chain.LastAccepted()),
+		log.Stringer("lastAcceptedID", vm.chain.LastAccepted()),
 	)
 	return nil
 }

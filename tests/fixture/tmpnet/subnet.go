@@ -21,7 +21,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/net/primary"
 	"github.com/luxfi/node/wallet/net/primary/common"
 )
@@ -59,6 +58,9 @@ func (c *Chain) WriteConfig(chainDir string) error {
 	return nil
 }
 
+// Subnet is an alias for Net to maintain backward compatibility
+type Subnet = Net
+
 type Net struct {
 	// A unique string that can be used to refer to the net across different temporary
 	// networks (since the NetID will be different every time the net is created)
@@ -81,8 +83,6 @@ type Net struct {
 // Retrieves a wallet configured for use with the subnet
 func (s *Subnet) GetWallet(ctx context.Context, uri string) (primary.Wallet, error) {
 	secp256Keychain := secp256k1fx.NewKeychain(s.OwningKey)
-	// Use the wallet keychain adapter
-	walletKeychain := keychain.NewWalletKeychain(secp256Keychain)
 
 	// Only fetch the net transaction if a net ID is present. This won't be true when
 	// the wallet is first used to create the subnet.
@@ -93,8 +93,8 @@ func (s *Subnet) GetWallet(ctx context.Context, uri string) (primary.Wallet, err
 
 	return primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:              uri,
-		LUXKeychain:      walletKeychain,
-		EthKeychain:      walletKeychain,
+		LUXKeychain:      secp256Keychain,
+		EthKeychain:      secp256Keychain,
 		PChainTxsToFetch: txIDs,
 	})
 }
@@ -191,7 +191,7 @@ func (s *Subnet) AddValidators(ctx context.Context, w io.Writer, apiURI string, 
 					End:    endTime,
 					Wght:   units.Schmeckle,
 				},
-				Subnet: s.NetID,
+				Net: s.NetID,
 			},
 			common.WithContext(ctx),
 		)

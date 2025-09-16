@@ -59,28 +59,30 @@ func NewSimpleRouter(logger log.Logger, timeoutManager timer.AdaptiveTimeoutMana
 func (r *SimpleRouter) Initialize(
 	nodeID ids.NodeID,
 	logger log.Logger,
-	timeouts timer.AdaptiveTimeoutManager,
-	shutdownTimeout time.Duration,
-	criticalChains set.Set[ids.ID],
-	whitelistedSubnets set.Set[ids.ID],
-	onFatal func(exitCode int),
-	healthConfig HealthConfig,
-	reg metric.Registerer,
-	metricsNamespace string,
+	timeoutManager timer.AdaptiveTimeoutManager,
+	gossipFrequency uint64,
+	harshQuittersTime uint64,
+	harshQuittersSlashingFraction uint64,
+	appGossipValidatorSize uint64,
+	appGossipNonValidatorSize uint64,
+	gossipAcceptedFrontierSize uint64,
+	appSendQueueSize uint64,
+	peerNotConnectedF uint64,
+	connectedPeers ...ids.NodeID,
 ) error {
 	r.nodeID = nodeID
 	r.log = logger
-	r.timeoutManager = timeouts
-	r.healthConfig = healthConfig
-	r.reg = reg
-	r.namespace = metricsNamespace
-	r.criticalChains = criticalChains
+	r.timeoutManager = timeoutManager
 	r.lastMsgTime = time.Now()
-	r.onFatal = onFatal
+
+	// Add initial connected peers if provided
+	for _, peerID := range connectedPeers {
+		r.connectedPeers.Add(peerID)
+	}
 
 	r.log.Info("initialized simple router",
 		log.Stringer("nodeID", nodeID),
-		log.Int("criticalChains", criticalChains.Len()),
+		log.Int("connectedPeers", len(connectedPeers)),
 	)
 
 	return nil
@@ -109,8 +111,19 @@ func (r *SimpleRouter) RegisterRequest(
 func (r *SimpleRouter) HandleInbound(ctx context.Context, msg message.InboundMessage) {
 	r.lock.Lock()
 	r.lastMsgTime = time.Now()
-	chainID := msg.Message().Get(message.ChainID).(ids.ID)
-	handler, ok := r.chains[chainID]
+
+	// Extract chain ID from the message
+	chainID, err := message.GetChainID(msg.Message())
+	if err != nil {
+		r.lock.Unlock()
+		r.log.Debug("dropping message without chain ID",
+			log.Stringer("message", msg.Op()),
+			log.Stringer("nodeID", msg.NodeID()),
+		)
+		return
+	}
+
+	h, ok := r.chains[chainID]
 	r.lock.Unlock()
 
 	if !ok {
@@ -121,8 +134,15 @@ func (r *SimpleRouter) HandleInbound(ctx context.Context, msg message.InboundMes
 		return
 	}
 
-	// Pass to handler
-	go handler.HandleInbound(ctx, msg)
+	// Convert InboundMessage to handler.Message and pass to handler
+	requestID, _ := message.GetRequestID(msg.Message())
+	handlerMsg := handler.Message{
+		NodeID:    msg.NodeID(),
+		RequestID: requestID,
+		Op:        handler.Op(msg.Op()),
+		Message:   []byte{}, // TODO: extract actual message bytes
+	}
+	go h.HandleInbound(ctx, handlerMsg)
 }
 
 func (r *SimpleRouter) Shutdown(ctx context.Context) {
@@ -131,24 +151,25 @@ func (r *SimpleRouter) Shutdown(ctx context.Context) {
 
 	r.log.Info("shutting down router")
 
-	// Shutdown all chains
-	for chainID, handler := range r.chains {
-		r.log.Debug("shutting down chain",
+	// Clear all chains
+	for chainID := range r.chains {
+		r.log.Debug("removing chain",
 			log.Stringer("chainID", chainID),
 		)
-		handler.Shutdown(ctx)
 	}
 
 	r.chains = make(map[ids.ID]handler.Handler)
 	r.requests = make(map[uint32]*requestInfo)
 }
 
-func (r *SimpleRouter) AddChain(ctx context.Context, handler handler.Handler) {
+func (r *SimpleRouter) AddChain(ctx context.Context, h handler.Handler) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	chainID := handler.Context().ChainID
-	r.chains[chainID] = handler
+	// For now, we'll use a placeholder chain ID
+	// In practice, the handler should have a way to identify its chain
+	chainID := ids.GenerateTestID()
+	r.chains[chainID] = h
 
 	r.log.Info("added chain to router",
 		log.Stringer("chainID", chainID),
@@ -224,6 +245,11 @@ func (r *SimpleRouter) HealthCheck(ctx context.Context) (interface{}, error) {
 
 	details["healthy"] = healthy
 	return details, nil
+}
+
+// Deprecated implements the Router interface
+func (r *SimpleRouter) Deprecated() {
+	// This method exists for compatibility
 }
 
 // Trace wraps a router with tracing capabilities

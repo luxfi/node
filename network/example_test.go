@@ -7,17 +7,17 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/log"
+	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/consensus/router"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 )
 

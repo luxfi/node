@@ -13,7 +13,6 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/net/primary"
 	"github.com/luxfi/node/wallet/net/primary/common"
 )
@@ -38,15 +37,14 @@ func createFunc(c *cobra.Command, args []string) error {
 
 	ctx := c.Context()
 	kc := secp256k1fx.NewKeychain(config.PrivateKey)
-	walletKC := keychain.NewWalletKeychain(kc)
 
 	// NewWalletFromURI fetches the available UTXOs owned by [kc] on the network
 	// that [uri] is hosting.
 	walletSyncStartTime := time.Now()
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:              config.URI,
-		LUXKeychain:      walletKC,
-		EthKeychain:      walletKC,
+		LUXKeychain:      kc,
+		EthKeychain:      kc,
 		PChainTxsToFetch: set.Of(config.NetID),
 	})
 	if err != nil {

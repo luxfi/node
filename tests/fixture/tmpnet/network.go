@@ -49,8 +49,8 @@ const (
 )
 
 var (
-	// Key expected to be funded for subnet-evm hardhat testing
-	// TODO(marun) Remove when subnet-evm configures the genesis with this key.
+	// Key expected to be funded for net-evm hardhat testing
+	// TODO(marun) Remove when net-evm configures the genesis with this key.
 	HardhatKey *secp256k1.PrivateKey
 
 	errInsufficientNodes = errors.New("at least one node is required")
@@ -624,14 +624,14 @@ func (n *Network) EnsureNodeConfig(node *Node) error {
 func (n *Network) TrackedSubnetsForNode(nodeID ids.NodeID) string {
 	netIDs := make([]string, 0, len(n.Subnets))
 	for _, net := range n.Subnets {
-		if subnet.NetID == ids.Empty {
+		if net.NetID == ids.Empty {
 			// Net has not yet been created
 			continue
 		}
 		// Only track subnets that this node validates
-		for _, validatorID := range subnet.ValidatorIDs {
+		for _, validatorID := range net.ValidatorIDs {
 			if validatorID == nodeID {
-				netIDs = append(netIDs, subnet.NetID.String())
+				netIDs = append(netIDs, net.NetID.String())
 				break
 			}
 		}
@@ -641,8 +641,8 @@ func (n *Network) TrackedSubnetsForNode(nodeID ids.NodeID) string {
 
 func (n *Network) GetSubnet(name string) *Net {
 	for _, net := range n.Subnets {
-		if subnet.Name == name {
-			return subnet
+		if net.Name == name {
+			return net
 		}
 	}
 	return nil
@@ -653,47 +653,47 @@ func (n *Network) GetSubnet(name string) *Net {
 func (n *Network) CreateNets(ctx context.Context, w io.Writer, apiURI string, restartRequired bool) error {
 	createdSubnets := make([]*Subnet, 0, len(n.Subnets))
 	for _, net := range n.Subnets {
-		if len(subnet.ValidatorIDs) == 0 {
-			return fmt.Errorf("subnet %s needs at least one validator", subnet.NetID)
+		if len(net.ValidatorIDs) == 0 {
+			return fmt.Errorf("net %s needs at least one validator", net.NetID)
 		}
-		if subnet.NetID != ids.Empty {
+		if net.NetID != ids.Empty {
 			// The net already exists
 			continue
 		}
 
-		if _, err := fmt.Fprintf(w, "Creating net %q\n", subnet.Name); err != nil {
+		if _, err := fmt.Fprintf(w, "Creating net %q\n", net.Name); err != nil {
 			return err
 		}
 
-		if subnet.OwningKey == nil {
+		if net.OwningKey == nil {
 			// Allocate a pre-funded key and remove it from the network so it won't be used for
 			// other purposes
 			if len(n.PreFundedKeys) == 0 {
-				return fmt.Errorf("no pre-funded keys available to create net %q", subnet.Name)
+				return fmt.Errorf("no pre-funded keys available to create net %q", net.Name)
 			}
-			subnet.OwningKey = n.PreFundedKeys[len(n.PreFundedKeys)-1]
+			net.OwningKey = n.PreFundedKeys[len(n.PreFundedKeys)-1]
 			n.PreFundedKeys = n.PreFundedKeys[:len(n.PreFundedKeys)-1]
 		}
 
 		// Create the net on the network
-		if err := subnet.Create(ctx, n.Nodes[0].URI); err != nil {
+		if err := net.Create(ctx, n.Nodes[0].URI); err != nil {
 			return err
 		}
 
-		if _, err := fmt.Fprintf(w, " created net %q as %q\n", subnet.Name, subnet.NetID); err != nil {
+		if _, err := fmt.Fprintf(w, " created net %q as %q\n", net.Name, net.NetID); err != nil {
 			return err
 		}
 
 		// Persist the net configuration
-		if err := subnet.Write(n.getSubnetDir(), n.getChainConfigDir()); err != nil {
+		if err := net.Write(n.getSubnetDir(), n.getChainConfigDir()); err != nil {
 			return err
 		}
 
-		if _, err := fmt.Fprintf(w, " wrote configuration for net %q\n", subnet.Name); err != nil {
+		if _, err := fmt.Fprintf(w, " wrote configuration for net %q\n", net.Name); err != nil {
 			return err
 		}
 
-		createdSubnets = append(createdSubnets, subnet)
+		createdSubnets = append(createdSubnets, net)
 	}
 
 	if len(createdSubnets) == 0 {
@@ -720,7 +720,7 @@ func (n *Network) CreateNets(ctx context.Context, w io.Writer, apiURI string, re
 	}
 
 	if restartRequired {
-		if _, err := fmt.Fprintln(w, "Restarting node(s) to enable them to track the new subnet(s)"); err != nil {
+		if _, err := fmt.Fprintln(w, "Restarting node(s) to enable them to track the new net(s)"); err != nil {
 			return err
 		}
 
@@ -735,15 +735,15 @@ func (n *Network) CreateNets(ctx context.Context, w io.Writer, apiURI string, re
 		}
 	}
 
-	// Add validators for the subnet
+	// Add validators for the net
 	for _, net := range createdSubnets {
-		if _, err := fmt.Fprintf(w, "Adding validators for net %q\n", subnet.Name); err != nil {
+		if _, err := fmt.Fprintf(w, "Adding validators for net %q\n", net.Name); err != nil {
 			return err
 		}
 
-		// Collect the nodes intended to validate the subnet
-		validatorIDs := set.NewSet[ids.NodeID](len(subnet.ValidatorIDs))
-		validatorIDs.Add(subnet.ValidatorIDs...)
+		// Collect the nodes intended to validate the net
+		validatorIDs := set.NewSet[ids.NodeID](len(net.ValidatorIDs))
+		validatorIDs.Add(net.ValidatorIDs...)
 		validatorNodes := []*Node{}
 		for _, node := range n.Nodes {
 			if !validatorIDs.Contains(node.NodeID) {
@@ -752,7 +752,7 @@ func (n *Network) CreateNets(ctx context.Context, w io.Writer, apiURI string, re
 			validatorNodes = append(validatorNodes, node)
 		}
 
-		if err := subnet.AddValidators(ctx, w, apiURI, validatorNodes...); err != nil {
+		if err := net.AddValidators(ctx, w, apiURI, validatorNodes...); err != nil {
 			return err
 		}
 	}
@@ -761,28 +761,28 @@ func (n *Network) CreateNets(ctx context.Context, w io.Writer, apiURI string, re
 	pChainClient := platformvm.NewClient(n.Nodes[0].URI)
 	validatorsToRestart := set.Set[ids.NodeID]{}
 	for _, net := range createdSubnets {
-		if err := waitForActiveValidators(ctx, w, pChainClient, subnet); err != nil {
+		if err := waitForActiveValidators(ctx, w, pChainClient, net); err != nil {
 			return err
 		}
 
-		// It should now be safe to create chains for the subnet
-		if err := subnet.CreateChains(ctx, w, n.Nodes[0].URI); err != nil {
+		// It should now be safe to create chains for the net
+		if err := net.CreateChains(ctx, w, n.Nodes[0].URI); err != nil {
 			return err
 		}
 
 		// Persist the chain configuration
-		if err := subnet.Write(n.getSubnetDir(), n.getChainConfigDir()); err != nil {
+		if err := net.Write(n.getSubnetDir(), n.getChainConfigDir()); err != nil {
 			return err
 		}
-		if _, err := fmt.Fprintf(w, " wrote chain configuration for net %q\n", subnet.Name); err != nil {
+		if _, err := fmt.Fprintf(w, " wrote chain configuration for net %q\n", net.Name); err != nil {
 			return err
 		}
 
 		// If one or more of the subnets chains have explicit configuration, the
-		// subnet's validator nodes will need to be restarted for those nodes to read
+		// net's validator nodes will need to be restarted for those nodes to read
 		// the newly written chain configuration and apply it to the chain(s).
-		if subnet.HasChainConfig() {
-			validatorsToRestart.Add(subnet.ValidatorIDs...)
+		if net.HasChainConfig() {
+			validatorsToRestart.Add(net.ValidatorIDs...)
 		}
 	}
 

@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/luxfi/consensus/config"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
@@ -296,17 +295,17 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint(BootstrapAncestorsMaxContainersReceivedKey, 2000, "This node reads at most this many containers from an incoming Ancestors message")
 
 	// Consensus - Use MainnetParameters as default for production
-	fs.Int(ConsensusSampleSizeKey, config.MainnetParameters.K, "Number of nodes to query for each network poll")
-	fs.Int(ConsensusQuorumSizeKey, config.MainnetParameters.AlphaConfidence, "Threshold of nodes required to update this node's preference and increase its confidence in a network poll")
-	fs.Int(ConsensusPreferenceQuorumSizeKey, config.MainnetParameters.AlphaPreference, fmt.Sprintf("Threshold of nodes required to update this node's preference in a network poll. Ignored if %s is provided", ConsensusQuorumSizeKey))
-	fs.Int(ConsensusConfidenceQuorumSizeKey, config.MainnetParameters.AlphaConfidence, fmt.Sprintf("Threshold of nodes required to increase this node's confidence in a network poll. Ignored if %s is provided", ConsensusQuorumSizeKey))
+	fs.Int(ConsensusSampleSizeKey, MainnetParameters.K, "Number of nodes to query for each network poll")
+	fs.Int(ConsensusQuorumSizeKey, MainnetParameters.AlphaConfidence, "Threshold of nodes required to update this node's preference and increase its confidence in a network poll")
+	fs.Int(ConsensusPreferenceQuorumSizeKey, MainnetParameters.AlphaPreference, fmt.Sprintf("Threshold of nodes required to update this node's preference in a network poll. Ignored if %s is provided", ConsensusQuorumSizeKey))
+	fs.Int(ConsensusConfidenceQuorumSizeKey, MainnetParameters.AlphaConfidence, fmt.Sprintf("Threshold of nodes required to increase this node's confidence in a network poll. Ignored if %s is provided", ConsensusQuorumSizeKey))
 
-	fs.Int(ConsensusCommitThresholdKey, int(config.MainnetParameters.Beta), "Beta value to use for consensus")
+	fs.Int(ConsensusCommitThresholdKey, int(MainnetParameters.Beta), "Beta value to use for consensus")
 
-	fs.Int(ConsensusConcurrentRepollsKey, config.MainnetParameters.ConcurrentPolls, "Minimum number of concurrent polls for finalizing consensus")
-	fs.Int(ConsensusOptimalProcessingKey, config.MainnetParameters.OptimalProcessing, "Optimal number of processing containers in consensus")
-	fs.Int(ConsensusMaxProcessingKey, config.MainnetParameters.MaxOutstandingItems, "Maximum number of processing items to be considered healthy")
-	fs.Duration(ConsensusMaxTimeProcessingKey, config.MainnetParameters.MaxItemProcessingTime, "Maximum amount of time an item should be processing and still be healthy")
+	fs.Int(ConsensusConcurrentRepollsKey, MainnetParameters.ConcurrentPolls, "Minimum number of concurrent polls for finalizing consensus")
+	fs.Int(ConsensusOptimalProcessingKey, MainnetParameters.OptimalProcessing, "Optimal number of processing containers in consensus")
+	fs.Int(ConsensusMaxProcessingKey, MainnetParameters.MaxOutstandingItems, "Maximum number of processing items to be considered healthy")
+	fs.Duration(ConsensusMaxTimeProcessingKey, MainnetParameters.MaxItemProcessingTime, "Maximum amount of time an item should be processing and still be healthy")
 
 	// ProposerVM
 	fs.Bool(ProposerVMUseCurrentHeightKey, false, "Have the ProposerVM always report the last accepted P-chain block height")

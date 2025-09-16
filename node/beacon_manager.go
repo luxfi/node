@@ -13,10 +13,10 @@ import (
 	"github.com/luxfi/node/version"
 )
 
-var _ ChainRouter = (*beaconManager)(nil)
+var _ Router = (*beaconManager)(nil)
 
 type beaconManager struct {
-	ChainRouter
+	Router
 	beacons                     validators.Manager
 	requiredConns               int64
 	numConns                    int64

@@ -12,7 +12,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -22,7 +22,7 @@ import (
 
 	_ "embed"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -65,7 +65,7 @@ var tmpnetRBACManifest []byte
 // StartKindCluster starts a new kind cluster with integrated registry if one is not already running.
 func StartKindCluster(
 	ctx context.Context,
-	log logging.Logger,
+	log log.Logger,
 	configPath string,
 	startMetricsCollector bool,
 	startLogsCollector bool,
@@ -139,7 +139,7 @@ func StartKindCluster(
 }
 
 // isKindClusterRunning determines if a kind cluster is running
-func isKindClusterRunning(log logging.Logger, configPath string, configContext string) (bool, error) {
+func isKindClusterRunning(log log.Logger, configPath string, configContext string) (bool, error) {
 	_, err := os.Stat(configPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		log.Info("specified kubeconfig path does not exist",
@@ -182,7 +182,7 @@ func isKindClusterRunning(log logging.Logger, configPath string, configContext s
 }
 
 // ensureNamespace ensures that the specified namespace exists in cluster targeted by the clientset.
-func ensureNamespace(ctx context.Context, log logging.Logger, clientset *kubernetes.Clientset, namespace string) error {
+func ensureNamespace(ctx context.Context, log log.Logger, clientset *kubernetes.Clientset, namespace string) error {
 	_, err := clientset.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err == nil {
 		log.Info("namespace already exists",
@@ -215,7 +215,7 @@ func ensureNamespace(ctx context.Context, log logging.Logger, clientset *kuberne
 // deployRBAC deploys the RBAC resources for tmpnet to a Kubernetes cluster.
 func deployRBAC(
 	ctx context.Context,
-	log logging.Logger,
+	log log.Logger,
 	configPath string,
 	configContext string,
 	namespace string,
@@ -250,7 +250,7 @@ func deployRBAC(
 // This function is called from StartKindCluster after the kubeconfig and context have been verified.
 func createServiceAccountKubeconfig(
 	ctx context.Context,
-	log logging.Logger,
+	log log.Logger,
 	configPath string,
 	configContext string,
 	namespace string,
@@ -328,7 +328,7 @@ func createServiceAccountKubeconfig(
 }
 
 // deployIngressController deploys the nginx ingress controller using Helm.
-func deployIngressController(ctx context.Context, log logging.Logger, configPath string, configContext string) error {
+func deployIngressController(ctx context.Context, log log.Logger, configPath string, configContext string) error {
 	log.Info("checking if nginx ingress controller is already running")
 
 	isRunning, err := isIngressControllerRunning(ctx, log, configPath, configContext)
@@ -378,7 +378,7 @@ func deployIngressController(ctx context.Context, log logging.Logger, configPath
 }
 
 // isIngressControllerRunning checks if the nginx ingress controller is already running.
-func isIngressControllerRunning(ctx context.Context, log logging.Logger, configPath string, configContext string) (bool, error) {
+func isIngressControllerRunning(ctx context.Context, log log.Logger, configPath string, configContext string) (bool, error) {
 	clientset, err := GetClientset(log, configPath, configContext)
 	if err != nil {
 		return false, err
@@ -399,7 +399,7 @@ func runHelmCommand(ctx context.Context, args ...string) error {
 }
 
 // createDefaultsConfigMap creates a ConfigMap containing defaults for the tmpnet namespace.
-func createDefaultsConfigMap(ctx context.Context, log logging.Logger, configPath string, configContext string, namespace string) error {
+func createDefaultsConfigMap(ctx context.Context, log log.Logger, configPath string, configContext string, namespace string) error {
 	clientset, err := GetClientset(log, configPath, configContext)
 	if err != nil {
 		return fmt.Errorf("failed to get clientset: %w", err)
@@ -444,7 +444,7 @@ func createDefaultsConfigMap(ctx context.Context, log logging.Logger, configPath
 }
 
 // deployChaosMesh deploys Chaos Mesh using Helm.
-func deployChaosMesh(ctx context.Context, log logging.Logger, configPath string, configContext string) error {
+func deployChaosMesh(ctx context.Context, log log.Logger, configPath string, configContext string) error {
 	log.Info("checking if chaos mesh is already running")
 
 	isRunning, err := isChaosMeshRunning(ctx, log, configPath, configContext)
@@ -505,7 +505,7 @@ func deployChaosMesh(ctx context.Context, log logging.Logger, configPath string,
 }
 
 // isChaosMeshRunning checks if Chaos Mesh is already running.
-func isChaosMeshRunning(ctx context.Context, log logging.Logger, configPath string, configContext string) (bool, error) {
+func isChaosMeshRunning(ctx context.Context, log log.Logger, configPath string, configContext string) (bool, error) {
 	clientset, err := GetClientset(log, configPath, configContext)
 	if err != nil {
 		return false, err
@@ -517,7 +517,7 @@ func isChaosMeshRunning(ctx context.Context, log logging.Logger, configPath stri
 }
 
 // waitForChaosMesh waits for Chaos Mesh components to be ready.
-func waitForChaosMesh(ctx context.Context, log logging.Logger, configPath string, configContext string) error {
+func waitForChaosMesh(ctx context.Context, log log.Logger, configPath string, configContext string) error {
 	// Wait for controller manager
 	if err := waitForDeployment(ctx, log, configPath, configContext, chaosMeshNamespace, chaosMeshControllerName, "chaos mesh controller manager"); err != nil {
 		return fmt.Errorf("controller manager not ready: %w", err)
@@ -528,7 +528,7 @@ func waitForChaosMesh(ctx context.Context, log logging.Logger, configPath string
 }
 
 // waitForDeployment waits for a deployment to have at least one ready replica.
-func waitForDeployment(ctx context.Context, log logging.Logger, configPath string, configContext string, namespace string, deploymentName string, displayName string) error {
+func waitForDeployment(ctx context.Context, log log.Logger, configPath string, configContext string, namespace string, deploymentName string, displayName string) error {
 	clientset, err := GetClientset(log, configPath, configContext)
 	if err != nil {
 		return fmt.Errorf("failed to get clientset: %w", err)

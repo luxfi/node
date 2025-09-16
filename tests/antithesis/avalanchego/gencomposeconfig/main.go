@@ -6,8 +6,6 @@ package main
 import (
 	"os"
 
-	"github.com/luxfi/log"
-
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/antithesis"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
@@ -19,9 +17,7 @@ const baseImageName = "antithesis-luxd"
 func main() {
 	network := tmpnet.LocalNetworkOrPanic()
 	if err := antithesis.GenerateComposeConfig(network, baseImageName, "", "docker-compose.yml"); err != nil {
-		tests.NewDefaultLogger("").Fatal("failed to generate compose config",
-			zap.Error(err),
-		)
+		tests.NewDefaultLogger("").Fatal("failed to generate compose config: " + err.Error())
 		os.Exit(1)
 	}
 }

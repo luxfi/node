@@ -15,7 +15,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/net/primary"
 )
 
@@ -25,7 +24,6 @@ func main() {
 	kc := secp256k1fx.NewKeychain(key)
 
 	// Create adapter for the keychain
-	adapter := keychain.NewLedgerAdapter(kc)
 	startTime := time.Now().Add(time.Minute)
 	duration := 3 * 7 * 24 * time.Hour // 3 weeks
 	weight := 2_000 * units.Lux
@@ -48,8 +46,8 @@ func main() {
 	walletSyncStartTime := time.Now()
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:         uri,
-		LUXKeychain: adapter,
-		EthKeychain: adapter,
+		LUXKeychain: kc,
+		EthKeychain: kc,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize wallet: %s\n", err)

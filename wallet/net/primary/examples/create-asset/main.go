@@ -13,7 +13,6 @@ import (
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/keychain"
 	"github.com/luxfi/node/wallet/net/primary"
 )
 
@@ -23,7 +22,6 @@ func main() {
 	kc := secp256k1fx.NewKeychain(key)
 
 	// Create adapter for the keychain
-	adapter := keychain.NewLedgerAdapter(kc)
 	subnetOwner := key.Address()
 
 	ctx := context.Background()
@@ -33,8 +31,8 @@ func main() {
 	walletSyncStartTime := time.Now()
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:         uri,
-		LUXKeychain: adapter,
-		EthKeychain: adapter,
+		LUXKeychain: kc,
+		EthKeychain: kc,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize wallet: %s\n", err)

@@ -27,11 +27,9 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/networking/timeout"
-	consensustracker "github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/node/benchlist"
-	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/factory"
 	"github.com/luxfi/database/prefixdb"
@@ -52,6 +50,7 @@ import (
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
+	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -301,7 +300,7 @@ type Node struct {
 	portMapper *nat.Mapper
 	ipUpdater  dynamicip.Updater
 
-	chainRouter ChainRouter
+	chainRouter Router
 
 	// Profiles the process. Nil if continuous profiling is disabled.
 	profiler profiler.ContinuousProfiler
@@ -399,11 +398,11 @@ type Node struct {
 
 	// Specifies how much CPU usage each peer can cause before
 	// we rate-limit them.
-	cpuTargeter Targeter
+	cpuTargeter tracker.Targeter
 
 	// Specifies how much disk usage each peer can cause before
 	// we rate-limit them.
-	diskTargeter Targeter
+	diskTargeter tracker.Targeter
 
 	// Closed when a sufficient amount of bootstrap nodes are connected to
 	onSufficientlyConnected chan struct{}
@@ -598,10 +597,10 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 		}
 
 		consensusRouter = &insecureValidatorManager{
-			log:         n.Log,
-			ChainRouter: consensusRouter,
-			vdrs:        n.vdrs,
-			weight:      n.Config.SybilProtectionDisabledWeight,
+			log:    n.Log,
+			Router: consensusRouter,
+			vdrs:   n.vdrs,
+			weight: n.Config.SybilProtectionDisabledWeight,
 			validators:  make(map[ids.ID]map[ids.NodeID]uint64),
 		}
 	}
@@ -616,9 +615,9 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 
 	if requiredConns > 0 {
 		consensusRouter = &beaconManager{
-			ChainRouter:             consensusRouter,
-			beacons:                 n.bootstrappers,
-			requiredConns:           int64(requiredConns),
+			Router:        consensusRouter,
+			beacons:       n.bootstrappers,
+			requiredConns: int64(requiredConns),
 			onSufficientlyConnected: n.onSufficientlyConnected,
 		}
 	} else {
@@ -637,7 +636,8 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	n.Config.NetworkConfig.TrackedSubnets = n.Config.TrackedSubnets
 	n.Config.NetworkConfig.UptimeCalculator = n.uptimeCalculator
 	n.Config.NetworkConfig.UptimeRequirement = n.Config.UptimeRequirement
-	n.Config.NetworkConfig.ResourceTracker = n.resourceTracker
+	// Wrap the resource tracker for consensus compatibility
+	n.Config.NetworkConfig.ResourceTracker = &resourceTrackerAdapter{tracker: n.resourceTracker}
 	n.Config.NetworkConfig.CPUTargeter = n.cpuTargeter
 	n.Config.NetworkConfig.DiskTargeter = n.diskTargeter
 
@@ -1143,7 +1143,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			VertexAcceptorGroup:                     n.VertexAcceptorGroup,
 			DB:                                      n.DB,
 			MsgCreator:                              n.msgCreator,
-			Router:                                  n.chainRouter,
+			Router:                                  NewRouterAdapter(n.chainRouter),
 			Net:                                     n.Net,
 			Validators:                              n.vdrs,
 			PartialSyncPrimaryNetwork:               n.Config.PartialSyncPrimaryNetwork,
@@ -1171,7 +1171,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			BootstrapAncestorsMaxContainersReceived: n.Config.BootstrapAncestorsMaxContainersReceived,
 			ApricotPhase4Time:                       version.GetApricotPhase4Time(n.Config.NetworkID),
 			ApricotPhase4MinPChainHeight:            version.ApricotPhase4MinPChainHeight[n.Config.NetworkID],
-			ResourceTracker:                         n.resourceTracker,
+			ResourceTracker:                         &resourceTrackerAdapter{tracker: n.resourceTracker},
 			StateSyncBeacons:                        n.Config.StateSyncIDs,
 			TracingEnabled:                          n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled,
 			Tracer:                                  n.tracer,
@@ -1629,12 +1629,12 @@ func (n *Node) initResourceManager() error {
 	if err != nil {
 		return err
 	}
-	// Create resource tracker
+	// Create resource tracker with wrapped resource manager
+	wrappedManager := NewResourceManagerWrapper(n.resourceManager)
 	n.resourceTracker, err = tracker.NewResourceTracker(
-		n.Log,
 		n.MetricsRegisterer,
-		n.Config.SystemTrackerCPUHalflife,
-		n.Config.SystemTrackerDiskHalflife,
+		wrappedManager,
+		n.Config.SystemTrackerFrequency,
 	)
 	if err != nil {
 		return err

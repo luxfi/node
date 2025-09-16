@@ -45,14 +45,7 @@ var ginkgoEncoderConfig = zapcore.EncoderConfig{
 
 // NewGinkgoLogger returns a logger with limited output
 func newGinkgoLogger(cfg zapcore.Encoder) log.Logger {
-	return logging.NewLogger(
-		"",
-		logging.NewWrappedCore(
-			logging.Info,
-			&ginkgoWriteCloser{},
-			cfg,
-		),
-	)
+	return log.New()
 }
 
 type GinkgoTestContext struct {
@@ -70,7 +63,7 @@ func NewEventHandlerTestContext() *GinkgoTestContext {
 
 // NewTestContext provides a logger with limited output to account for
 // the context already provided by ginkgo for test logging.
-func NewTestContext() *GinkgoTestContext {
+func NewGinkgoTestContext() *GinkgoTestContext {
 	return &GinkgoTestContext{
 		logger: newGinkgoLogger(
 			zapcore.NewConsoleEncoder(ginkgoEncoderConfig),

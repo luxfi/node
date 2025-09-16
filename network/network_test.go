@@ -16,7 +16,6 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/networking/router"
-	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -26,6 +25,7 @@ import (
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
+	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -159,32 +159,24 @@ type stubTargeter struct{}
 
 func (s *stubTargeter) TargetUsage() uint64 { return 50 }
 
+// noOpResourceManager implements resource.Manager for testing
+type noOpResourceManager struct{}
 
-func newDefaultResourceTracker() consensustracker.ResourceTracker {
-	// Use the consensus tracker stub implementation
-	cpuTargeter := consensustracker.NewTargeter(&consensustracker.TargeterConfig{
-		VdrAlloc:           .5,
-		MaxNonVdrUsage:     .8,
-		MaxNonVdrNodeUsage: .8,
-	})
-	diskTargeter := consensustracker.NewTargeter(&consensustracker.TargeterConfig{
-		VdrAlloc:           .5,
-		MaxNonVdrUsage:     .8,
-		MaxNonVdrNodeUsage: .8,
-	})
-	tracker, err := consensustracker.NewResourceTracker(
+func (n *noOpResourceManager) CPUUsage() float64                    { return 0 }
+func (n *noOpResourceManager) DiskUsage() (float64, float64)        { return 0, 0 }
+
+func newDefaultResourceTracker() tracker.ResourceTracker {
+	// Create a no-op resource manager for testing
+	noOpManager := &noOpResourceManager{}
+	resourceTracker, err := tracker.NewResourceTracker(
 		metric.NewRegistry(),
-		nil,
+		noOpManager,
 		10*time.Second,
-		time.Minute,
-		cpuTargeter,
-		diskTargeter,
-		nil,
 	)
 	if err != nil {
 		panic(err)
 	}
-	return tracker
+	return resourceTracker
 }
 
 func newTestNetwork(t *testing.T, count int) (*testDialer, []*testListener, []ids.NodeID, []*Config) {

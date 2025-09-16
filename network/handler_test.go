@@ -6,7 +6,7 @@ package network
 import (
 	"context"
 	
-	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/consensus/router"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/version"
 )

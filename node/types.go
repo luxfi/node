@@ -23,6 +23,9 @@ type HealthConfig struct {
 	MaxTimeSinceMsgReceived      time.Duration `json:"maxTimeSinceMsgReceived"`
 	MaxTimeSinceMsgSent          time.Duration `json:"maxTimeSinceMsgSent"`
 	MaxPortionSentQueueBytesFull float64      `json:"maxPortionSentQueueBytesFull"`
+	MaxPortionSendQueueFull      float64      `json:"maxPortionSendQueueFull"`
 	MaxSendFailRate              float64      `json:"maxSendFailRate"`
 	MinConnectedPeers            int          `json:"minConnectedPeers"`
+	ReadTimeout                  time.Duration `json:"readTimeout"`
+	WriteTimeout                 time.Duration `json:"writeTimeout"`
 }

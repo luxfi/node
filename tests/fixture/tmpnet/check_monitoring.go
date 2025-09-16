@@ -20,8 +20,7 @@ import (
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
-	"github.com/luxfi/log"
-
+	
 	"github.com/luxfi/log"
 )
 
@@ -34,17 +33,11 @@ func waitForCount(ctx context.Context, log log.Logger, name string, getCount get
 		func(_ context.Context) (bool, error) {
 			count, err := getCount()
 			if err != nil {
-				log.Warn("failed to query for collected count",
-					zap.String("type", name),
-					zap.Error(err),
-				)
+				log.Warn("failed to query for collected count")
 				return false, nil
 			}
 			if count > 0 {
-				log.Info("collected count is non-zero",
-					zap.String("type", name),
-					zap.Int("count", count),
-				)
+				log.Info("collected count is non-zero")
 			}
 			return count > 0, nil
 		},
@@ -75,10 +68,7 @@ func CheckLogsExist(ctx context.Context, log log.Logger, networkUUID string) err
 	}
 	query := fmt.Sprintf("sum(count_over_time({%s}[1h]))", selectors)
 
-	log.Info("checking if logs exist",
-		zap.String("url", url),
-		zap.String("query", query),
-	)
+	log.Info("checking if logs exist")
 
 	return waitForCount(
 		ctx,
@@ -182,10 +172,7 @@ func CheckMetricsExist(ctx context.Context, log log.Logger, networkUUID string) 
 	}
 	query := fmt.Sprintf("count({%s})", selectors)
 
-	log.Info("checking if metrics exist",
-		zap.String("url", url),
-		zap.String("query", query),
-	)
+	log.Info("checking if metrics exist")
 
 	return waitForCount(
 		ctx,
@@ -228,9 +215,7 @@ func queryPrometheus(
 		return 0, fmt.Errorf("query failed: %w", err)
 	}
 	if len(warnings) > 0 {
-		log.Warn("prometheus query warnings",
-			zap.Strings("warnings", warnings),
-		)
+		log.Warn("prometheus query warnings")
 	}
 
 	if matrix, ok := result.(model.Matrix); !ok {
@@ -260,7 +245,6 @@ func getSelectors(networkUUID string) (string, error) {
 	}
 
 	// Fall back to using Github labels as selectors
-	githubLabels := []string{"gh_repo", "gh_sha", "gh_workflow", "gh_run_id", "gh_run_attempt"}
 	selectors := []string{}
 	githubLabels := GetGitHubLabels()
 	for label, value := range githubLabels {

@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/luxfi/node/tests/fixture/tmpnet"
+	"github.com/luxfi/node/tests/fixture/tmpnet/local"
 )
 
 const (
@@ -21,7 +22,7 @@ const (
 	luxdPathFlag = "luxd-path"
 )
 
-var errLuxdRequired = fmt.Errorf("--%s or %s are required", luxdPathFlag, tmpnet.LuxdPathEnvName)
+var errLuxdRequired = fmt.Errorf("--%s or %s are required", luxdPathFlag, local.LuxdPathEnvName)
 
 type processRuntimeVars struct {
 	config tmpnet.ProcessRuntimeConfig
@@ -37,28 +38,13 @@ func (v *processRuntimeVars) registerWithFlagSet(flagSet *pflag.FlagSet) {
 
 func (v *processRuntimeVars) register(stringVar varFunc[string], boolVar varFunc[bool]) {
 	stringVar(
-		&v.config.LuxdPath,
+		&v.config.LuxNodePath,
 		luxdPathFlag,
-		os.Getenv(tmpnet.LuxdPathEnvName),
+		os.Getenv(local.LuxdPathEnvName),
 		processDocPrefix+fmt.Sprintf(
 			"The luxd executable path. Also possible to configure via the %s env variable.",
-			tmpnet.LuxdPathEnvName,
+			local.LuxdPathEnvName,
 		),
-	)
-	stringVar(
-		&v.config.PluginDir,
-		"plugin-dir",
-		tmpnet.GetEnvWithDefault(tmpnet.LuxdPluginDirEnvName, os.ExpandEnv("$HOME/.luxd/plugins")),
-		processDocPrefix+fmt.Sprintf(
-			"The dir containing VM plugins. Also possible to configure via the %s env variable.",
-			tmpnet.LuxdPluginDirEnvName,
-		),
-	)
-	boolVar(
-		&v.config.ReuseDynamicPorts,
-		"reuse-dynamic-ports",
-		false,
-		processDocPrefix+"Whether to attempt to reuse dynamically allocated ports across node restarts.",
 	)
 }
 
@@ -70,7 +56,7 @@ func (v *processRuntimeVars) getProcessRuntimeConfig() (*tmpnet.ProcessRuntimeCo
 }
 
 func (v *processRuntimeVars) validate() error {
-	path := v.config.LuxdPath
+	path := v.config.LuxNodePath
 
 	if len(path) == 0 {
 		return errLuxdRequired
