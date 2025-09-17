@@ -142,7 +142,7 @@ type state struct {
 func New(
 	db *versiondb.Database,
 	parser block.Parser,
-	metrics metrics.Registerer,
+	metric metric.Registerer,
 	trackChecksums bool,
 ) (State, error) {
 	utxoDB := prefixdb.New(utxoPrefix, db)
@@ -153,7 +153,7 @@ func New(
 
 	txCache, err := metercacher.New[ids.ID, *txs.Tx](
 		"tx_cache",
-		metrics,
+		metric,
 		&cache.LRU[ids.ID, *txs.Tx]{Size: txCacheSize},
 	)
 	if err != nil {
@@ -162,7 +162,7 @@ func New(
 
 	blockIDCache, err := metercacher.New[uint64, ids.ID](
 		"block_id_cache",
-		metrics,
+		metric,
 		&cache.LRU[uint64, ids.ID]{Size: blockIDCacheSize},
 	)
 	if err != nil {
@@ -171,14 +171,14 @@ func New(
 
 	blockCache, err := metercacher.New[ids.ID, block.Block](
 		"block_cache",
-		metrics,
+		metric,
 		&cache.LRU[ids.ID, block.Block]{Size: blockCacheSize},
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	utxoState, err := lux.NewMeteredUTXOState(utxoDB, parser.Codec(), metrics, trackChecksums)
+	utxoState, err := lux.NewMeteredUTXOState(utxoDB, parser.Codec(), metric, trackChecksums)
 	if err != nil {
 		return nil, err
 	}

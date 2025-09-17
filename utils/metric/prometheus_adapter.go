@@ -7,33 +7,33 @@ import (
 	"github.com/luxfi/metric"
 )
 
-// PrometheusRegistryAdapter wraps a luxfi/metric Registry to implement metrics.Registerer
+// PrometheusRegistryAdapter wraps a luxfi/metric Registry to implement metric.Registerer
 type PrometheusRegistryAdapter struct {
-	registry metrics.Registry
+	registry metric.Registry
 }
 
 // NewPrometheusRegistryAdapter creates a new adapter
-func NewPrometheusRegistryAdapter(registry metrics.Registry) metrics.Registerer {
+func NewPrometheusRegistryAdapter(registry metric.Registry) metric.Registerer {
 	return &PrometheusRegistryAdapter{
 		registry: registry,
 	}
 }
 
-// Register implements metrics.Registerer
-func (p *PrometheusRegistryAdapter) Register(c metrics.Collector) error {
+// Register implements metric.Registerer
+func (p *PrometheusRegistryAdapter) Register(c metric.Collector) error {
 	// For now, this is a no-op adapter for testing
 	// In production, we should properly convert between the two
 	return nil
 }
 
-// MustRegister implements metrics.Registerer
-func (p *PrometheusRegistryAdapter) MustRegister(cs ...metrics.Collector) {
+// MustRegister implements metric.Registerer
+func (p *PrometheusRegistryAdapter) MustRegister(cs ...metric.Collector) {
 	// For now, this is a no-op adapter for testing
 	// In production, we should properly convert between the two
 }
 
-// Unregister implements metrics.Registerer
-func (p *PrometheusRegistryAdapter) Unregister(c metrics.Collector) bool {
+// Unregister implements metric.Registerer
+func (p *PrometheusRegistryAdapter) Unregister(c metric.Collector) bool {
 	// For now, this is a no-op adapter for testing
 	return true
 }

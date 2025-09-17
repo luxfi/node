@@ -18,62 +18,62 @@ const (
 
 var (
 	resultLabels = []string{resultLabel}
-	hitLabels    = metrics.Labels{
+	hitLabels    = metric.Labels{
 		resultLabel: hitResult,
 	}
-	missLabels = metrics.Labels{
+	missLabels = metric.Labels{
 		resultLabel: missResult,
 	}
 )
 
 type metricsImpl struct {
-	getCount metrics.CounterVec
-	getTime  metrics.GaugeVec
+	getCount metric.CounterVec
+	getTime  metric.GaugeVec
 
-	putCount metrics.Counter
-	putTime  metrics.Gauge
+	putCount metric.Counter
+	putTime  metric.Gauge
 
-	len           metrics.Gauge
-	portionFilled metrics.Gauge
+	len           metric.Gauge
+	portionFilled metric.Gauge
 }
 
 func newMetrics(
 	namespace string,
-	reg metrics.Registerer,
+	reg metric.Registerer,
 ) (*metricsImpl, error) {
 	m := &metricsImpl{
-		getCount: metrics.NewCounterVec(
-			metrics.CounterOpts{
+		getCount: metric.NewCounterVec(
+			metric.CounterOpts{
 				Namespace: namespace,
 				Name:      "get_count",
 				Help:      "number of get calls",
 			},
 			resultLabels,
 		),
-		getTime: metrics.NewGaugeVec(
-			metrics.GaugeOpts{
+		getTime: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Namespace: namespace,
 				Name:      "get_time",
 				Help:      "time spent (ns) in get calls",
 			},
 			resultLabels,
 		),
-		putCount: metrics.NewCounter(metrics.CounterOpts{
+		putCount: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "put_count",
 			Help:      "number of put calls",
 		}),
-		putTime: metrics.NewGauge(metrics.GaugeOpts{
+		putTime: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "put_time",
 			Help:      "time spent (ns) in put calls",
 		}),
-		len: metrics.NewGauge(metrics.GaugeOpts{
+		len: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "len",
 			Help:      "number of entries",
 		}),
-		portionFilled: metrics.NewGauge(metrics.GaugeOpts{
+		portionFilled: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "portion_filled",
 			Help:      "fraction of cache filled",

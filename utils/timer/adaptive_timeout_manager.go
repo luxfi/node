@@ -75,9 +75,9 @@ type adaptiveTimeoutManager struct {
 	lock sync.Mutex
 	// Tells the time. Can be faked for testing.
 	clock                            mockable.Clock
-	networkTimeoutMetric, avgLatency metrics.Gauge
-	numTimeouts                      metrics.Counter
-	numPendingTimeouts               metrics.Gauge
+	networkTimeoutMetric, avgLatency metric.Gauge
+	numTimeouts                      metric.Counter
+	numPendingTimeouts               metric.Gauge
 	// Averages the response time from all peers
 	averager math.Averager
 	// Timeout is [timeoutCoefficient] * average response time
@@ -92,7 +92,7 @@ type adaptiveTimeoutManager struct {
 
 func NewAdaptiveTimeoutManager(
 	config *AdaptiveTimeoutConfig,
-	reg metrics.Registerer,
+	reg metric.Registerer,
 ) (AdaptiveTimeoutManager, error) {
 	switch {
 	case config.InitialTimeout > config.MaximumTimeout:
@@ -106,19 +106,19 @@ func NewAdaptiveTimeoutManager(
 	}
 
 	tm := &adaptiveTimeoutManager{
-		networkTimeoutMetric: metrics.NewGauge(metrics.GaugeOpts{
+		networkTimeoutMetric: metric.NewGauge(metric.GaugeOpts{
 			Name: "current_timeout",
 			Help: "Duration of current network timeout in nanoseconds",
 		}),
-		avgLatency: metrics.NewGauge(metrics.GaugeOpts{
+		avgLatency: metric.NewGauge(metric.GaugeOpts{
 			Name: "average_latency",
 			Help: "Average network latency in nanoseconds",
 		}),
-		numTimeouts: metrics.NewCounter(metrics.CounterOpts{
+		numTimeouts: metric.NewCounter(metric.CounterOpts{
 			Name: "timeouts",
 			Help: "Number of timed out requests",
 		}),
-		numPendingTimeouts: metrics.NewGauge(metrics.GaugeOpts{
+		numPendingTimeouts: metric.NewGauge(metric.GaugeOpts{
 			Name: "pending_timeouts",
 			Help: "Number of pending timeouts",
 		}),

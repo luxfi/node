@@ -10,13 +10,13 @@ import (
 
 type healthMetrics struct {
 	// failingChecks keeps track of the number of check failing
-	failingChecks metrics.GaugeVec
+	failingChecks metric.GaugeVec
 }
 
-func newMetrics(namespace string, registerer metrics.Registerer) (*healthMetrics, error) {
-	metrics := &healthMetrics{
-		failingChecks: metrics.NewGaugeVec(
-			metrics.GaugeOpts{
+func newMetrics(namespace string, registerer metric.Registerer) (*healthMetrics, error) {
+	metric := &healthMetrics{
+		failingChecks: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Namespace: namespace,
 				Name:      "checks_failing",
 				Help:      "number of currently failing health checks",
@@ -24,7 +24,7 @@ func newMetrics(namespace string, registerer metrics.Registerer) (*healthMetrics
 			[]string{"tag"},
 		),
 	}
-	metrics.failingChecks.WithLabelValues(AllTag).Set(0)
-	metrics.failingChecks.WithLabelValues(ApplicationTag).Set(0)
-	return metrics, registerer.Register(metrics.failingChecks.(prometheus.Collector))
+	metric.failingChecks.WithLabelValues(AllTag).Set(0)
+	metric.failingChecks.WithLabelValues(ApplicationTag).Set(0)
+	return metric, registerer.Register(metric.failingChecks.(prometheus.Collector))
 }

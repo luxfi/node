@@ -110,11 +110,11 @@ type VM struct {
 
 	// proposerBuildSlotGauge reports the slot index when this node may attempt
 	// to build a block.
-	proposerBuildSlotGauge metrics.Gauge
+	proposerBuildSlotGauge metric.Gauge
 
 	// acceptedBlocksSlotHistogram reports the slots that accepted blocks were
 	// proposed in.
-	acceptedBlocksSlotHistogram metrics.Histogram
+	acceptedBlocksSlotHistogram metric.Histogram
 }
 
 // New performs best when [minBlkDelay] is whole seconds. This is because block
@@ -303,11 +303,11 @@ func (vm *VM) Initialize(
 		return err
 	}
 
-	vm.proposerBuildSlotGauge = metrics.NewGauge(metrics.GaugeOpts{
+	vm.proposerBuildSlotGauge = metric.NewGauge(metric.GaugeOpts{
 		Name: "block_building_slot",
 		Help: "the slot that this node may attempt to build a block",
 	})
-	vm.acceptedBlocksSlotHistogram = metrics.NewHistogram(metrics.HistogramOpts{
+	vm.acceptedBlocksSlotHistogram = metric.NewHistogram(metric.HistogramOpts{
 		Name: "accepted_blocks_slot",
 		Help: "the slot accepted blocks were proposed in",
 		// define the following ranges:

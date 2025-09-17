@@ -49,7 +49,7 @@ func New(
 	txVerifier TxVerifier,
 	mempool mempool.Mempool,
 	appSender core.AppSender,
-	registerer metrics.Registerer,
+	registerer metric.Registerer,
 	config Config,
 ) (*Network, error) {
 	p2pNetwork, err := p2p.NewNetwork(log, appSender, registerer, "p2p")

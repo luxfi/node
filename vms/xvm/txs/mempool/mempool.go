@@ -31,15 +31,15 @@ type mempool struct {
 
 func New(
 	namespace string,
-	registerer metrics.Registerer,
+	registerer metric.Registerer,
 	toEngine chan<- common.MessageType,
 ) (Mempool, error) {
-	metrics, err := txmempool.NewMetrics(namespace, registerer)
+	metric, err := txmempool.NewMetrics(namespace, registerer)
 	if err != nil {
 		return nil, err
 	}
 	pool := txmempool.New[*txs.Tx](
-		metrics,
+		metric,
 	)
 	return &mempool{
 		Mempool:  pool,

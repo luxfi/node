@@ -30,7 +30,7 @@ type resourceTracker struct {
 
 // NewResourceTracker creates a new ResourceTracker
 func NewResourceTracker(
-	registerer metrics.Registerer,
+	registerer metric.Registerer,
 	manager ResourceManager,
 	frequency time.Duration,
 ) (ResourceTracker, error) {

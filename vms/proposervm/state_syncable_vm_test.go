@@ -29,10 +29,7 @@ import (
 func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	require := require.New(t)
 
-	innerVM := &fullVM{
-		VM:              &blocktest.VM{},
-		StateSyncableVM: &blocktest.StateSyncableVM{},
-	}
+	innerVM := &fullVM{}
 
 	// load innerVM expectations
 	innerVM.InitializeF = func(context.Context, context.Context, database.Database,
@@ -69,11 +66,13 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 		PublicKey: pTestCert.PublicKey,
 	})
 
+	// Fix the Initialize call to match the ChainVM interface
 	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
 		prefixdb.New([]byte{}, memdb.New()),
 		blocktest.GenesisBytes,
+		nil,
 		nil,
 		nil,
 		nil,

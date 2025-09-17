@@ -20,23 +20,23 @@ type Averager interface {
 }
 
 type averager struct {
-	count metrics.Counter
-	sum   metrics.Gauge
+	count metric.Counter
+	sum   metric.Gauge
 }
 
-func NewAverager(name, desc string, reg metrics.Registerer) (Averager, error) {
+func NewAverager(name, desc string, reg metric.Registerer) (Averager, error) {
 	errs := wrappers.Errs{}
 	a := NewAveragerWithErrs(name, desc, reg, &errs)
 	return a, errs.Err
 }
 
-func NewAveragerWithErrs(name, desc string, reg metrics.Registerer, errs *wrappers.Errs) Averager {
+func NewAveragerWithErrs(name, desc string, reg metric.Registerer, errs *wrappers.Errs) Averager {
 	a := averager{
-		count: metrics.NewCounter(metrics.CounterOpts{
+		count: metric.NewCounter(metric.CounterOpts{
 			Name: AppendNamespace(name, "count"),
 			Help: "Total # of observations of " + desc,
 		}),
-		sum: metrics.NewGauge(metrics.GaugeOpts{
+		sum: metric.NewGauge(metric.GaugeOpts{
 			Name: AppendNamespace(name, "sum"),
 			Help: "Sum of " + desc,
 		}),

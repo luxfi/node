@@ -90,7 +90,7 @@ type server struct {
 	tracingEnabled bool
 	tracer         trace.Tracer
 
-	metrics *serverMetrics
+	metric *serverMetrics
 
 	// Maps endpoints to handlers
 	router *router
@@ -114,7 +114,7 @@ func New(
 	nodeID ids.NodeID,
 	tracingEnabled bool,
 	tracer trace.Tracer,
-	registerer metrics.Registerer,
+	registerer metric.Registerer,
 	httpConfig HTTPConfig,
 	allowedHosts []string,
 ) (Server, error) {
@@ -160,7 +160,7 @@ func New(
 		shutdownTimeout: shutdownTimeout,
 		tracingEnabled:  tracingEnabled,
 		tracer:          tracer,
-		metrics:         m,
+		metric:         m,
 		router:          router,
 		srv:             httpServer,
 		listener:        listener,
@@ -235,8 +235,8 @@ func (s *server) addChainRoute(chainName string, handler http.Handler, ctx conte
 	}
 	// Apply middleware to reject calls to the handler before the chain finishes bootstrapping
 	handler = rejectMiddleware(handler, ctx)
-	// TODO: Add metrics wrapper when available
-	// handler = s.metrics.wrapHandler(chainName, handler)
+	// TODO: Add metric wrapper when available
+	// handler = s.metric.wrapHandler(chainName, handler)
 	return s.router.AddRouter(url, endpoint, handler)
 }
 
@@ -261,8 +261,8 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 		handler = api.TraceHandler(handler, url, s.tracer)
 	}
 
-	// TODO: Add metrics wrapper when available
-	// handler = s.metrics.wrapHandler(base, handler)
+	// TODO: Add metric wrapper when available
+	// handler = s.metric.wrapHandler(base, handler)
 	return s.router.AddRouter(url, endpoint, handler)
 }
 

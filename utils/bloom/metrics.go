@@ -13,39 +13,39 @@ import (
 // Metrics is a collection of commonly useful metrics when using a long-lived
 // bloom filter.
 type Metrics struct {
-	Count      metrics.Gauge
-	NumHashes  metrics.Gauge
-	NumEntries metrics.Gauge
-	MaxCount   metrics.Gauge
-	ResetCount metrics.Counter
+	Count      metric.Gauge
+	NumHashes  metric.Gauge
+	NumEntries metric.Gauge
+	MaxCount   metric.Gauge
+	ResetCount metric.Counter
 }
 
 func NewMetrics(
 	namespace string,
-	registerer metrics.Registerer,
+	registerer metric.Registerer,
 ) (*Metrics, error) {
 	m := &Metrics{
-		Count: metrics.NewGauge(metrics.GaugeOpts{
+		Count: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "count",
 			Help:      "Number of additions that have been performed to the bloom",
 		}),
-		NumHashes: metrics.NewGauge(metrics.GaugeOpts{
+		NumHashes: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "hashes",
 			Help:      "Number of hashes in the bloom",
 		}),
-		NumEntries: metrics.NewGauge(metrics.GaugeOpts{
+		NumEntries: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "entries",
 			Help:      "Number of bytes allocated to slots in the bloom",
 		}),
-		MaxCount: metrics.NewGauge(metrics.GaugeOpts{
+		MaxCount: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "max_count",
 			Help:      "Maximum number of additions that should be performed to the bloom before resetting",
 		}),
-		ResetCount: metrics.NewCounter(metrics.CounterOpts{
+		ResetCount: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "reset_count",
 			Help:      "Number times the bloom has been reset",

@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/xvm/block"
-	"github.com/luxfi/node/vms/xvm/metrics"
+	xvmmetric "github.com/luxfi/node/vms/xvm/metrics"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/executor"
@@ -50,7 +50,7 @@ type Manager interface {
 
 func NewManager(
 	mempool mempool.Mempool,
-	metrics metrics.Metrics,
+	metric xvmmetric.Metrics,
 	state state.State,
 	backend *executor.Backend,
 	clk *mockable.Clock,
@@ -60,7 +60,7 @@ func NewManager(
 	return &manager{
 		backend:      backend,
 		state:        state,
-		metrics:      metrics,
+		metric:      metric,
 		mempool:      mempool,
 		clk:          clk,
 		onAccept:     onAccept,
@@ -73,7 +73,7 @@ func NewManager(
 type manager struct {
 	backend *executor.Backend
 	state   state.State
-	metrics metrics.Metrics
+	metric xvmmetric.Metrics
 	mempool mempool.Mempool
 	clk     *mockable.Clock
 	// Invariant: onAccept is called when [tx] is being marked as accepted, but

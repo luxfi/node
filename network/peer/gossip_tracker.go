@@ -99,12 +99,12 @@ type gossipTracker struct {
 	// a mapping of each peer => the validators they know about
 	trackedPeers map[ids.NodeID]set.Bits
 
-	metrics gossipTrackerMetrics
+	metric gossipTrackerMetrics
 }
 
 // NewGossipTracker returns an instance of gossipTracker
 func NewGossipTracker(
-	registerer metrics.Registerer,
+	registerer metric.Registerer,
 	namespace string,
 ) (GossipTracker, error) {
 	m, err := newGossipTrackerMetrics(registerer, fmt.Sprintf("%s_gossip_tracker", namespace))
@@ -116,7 +116,7 @@ func NewGossipTracker(
 		txIDsToNodeIDs:   make(map[ids.ID]ids.NodeID),
 		nodeIDsToIndices: make(map[ids.NodeID]int),
 		trackedPeers:     make(map[ids.NodeID]set.Bits),
-		metrics:          m,
+		metric:          m,
 	}, nil
 }
 
@@ -141,8 +141,8 @@ func (g *gossipTracker) StartTrackingPeer(peerID ids.NodeID) bool {
 	// haven't sent them anything yet.
 	g.trackedPeers[peerID] = set.NewBits()
 
-	// emit metrics
-	g.metrics.trackedPeersSize.Set(float64(len(g.trackedPeers)))
+	// emit metric
+	g.metric.trackedPeersSize.Set(float64(len(g.trackedPeers)))
 
 	return true
 }
@@ -158,7 +158,7 @@ func (g *gossipTracker) StopTrackingPeer(peerID ids.NodeID) bool {
 
 	// stop tracking the peer by removing them
 	delete(g.trackedPeers, peerID)
-	g.metrics.trackedPeersSize.Set(float64(len(g.trackedPeers)))
+	g.metric.trackedPeersSize.Set(float64(len(g.trackedPeers)))
 
 	return true
 }
@@ -181,8 +181,8 @@ func (g *gossipTracker) AddValidator(validator ValidatorID) bool {
 	g.nodeIDsToIndices[validator.NodeID] = msb
 	g.validatorIDs = append(g.validatorIDs, validator)
 
-	// emit metrics
-	g.metrics.validatorsSize.Set(float64(len(g.validatorIDs)))
+	// emit metric
+	g.metric.validatorsSize.Set(float64(len(g.validatorIDs)))
 
 	return true
 }
@@ -236,8 +236,8 @@ func (g *gossipTracker) RemoveValidator(validatorID ids.NodeID) bool {
 		knownPeers.Remove(lastIndex)
 	}
 
-	// emit metrics
-	g.metrics.validatorsSize.Set(float64(len(g.validatorIDs)))
+	// emit metric
+	g.metric.validatorsSize.Set(float64(len(g.validatorIDs)))
 
 	return true
 }

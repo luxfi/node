@@ -25,7 +25,7 @@ var (
 	_ SystemThrottler = noSystemThrottler{}
 )
 
-// SystemThrottler rate-limits based on the system metrics usage caused by each
+// SystemThrottler rate-limits based on the system metric usage caused by each
 // peer. We will not read messages from peers whose messages cause excessive
 // usage until the usage caused by the peer drops to an acceptable level.
 type SystemThrottler interface {
@@ -48,7 +48,7 @@ type SystemThrottlerConfig struct {
 
 type systemThrottler struct {
 	SystemThrottlerConfig
-	metrics *systemThrottlerMetrics
+	metric *systemThrottlerMetrics
 	// Tells us the target utilization of each node.
 	targeter tracker.Targeter
 	// Tells us the utilization of each node.
@@ -58,24 +58,24 @@ type systemThrottler struct {
 }
 
 type systemThrottlerMetrics struct {
-	totalWaits      metrics.Counter
-	totalNoWaits    metrics.Counter
-	awaitingAcquire metrics.Gauge
+	totalWaits      metric.Counter
+	totalNoWaits    metric.Counter
+	awaitingAcquire metric.Gauge
 }
 
-func newSystemThrottlerMetrics(namespace string, reg metrics.Registerer) (*systemThrottlerMetrics, error) {
+func newSystemThrottlerMetrics(namespace string, reg metric.Registerer) (*systemThrottlerMetrics, error) {
 	m := &systemThrottlerMetrics{
-		totalWaits: metrics.NewCounter(metrics.CounterOpts{
+		totalWaits: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "throttler_total_waits",
 			Help:      "Number of times we've waited to read a message from a node because their usage was too high",
 		}),
-		totalNoWaits: metrics.NewCounter(metrics.CounterOpts{
+		totalNoWaits: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "throttler_total_no_waits",
 			Help:      "Number of times we didn't wait to read a message because their usage is too high",
 		}),
-		awaitingAcquire: metrics.NewGauge(metrics.GaugeOpts{
+		awaitingAcquire: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "throttler_awaiting_acquire",
 			Help:      "Number of nodes we're waiting to read a message from because their usage is too high",
@@ -91,17 +91,17 @@ func newSystemThrottlerMetrics(namespace string, reg metrics.Registerer) (*syste
 
 func NewSystemThrottler(
 	namespace string,
-	reg metrics.Registerer,
+	reg metric.Registerer,
 	config SystemThrottlerConfig,
 	tracker tracker.Tracker,
 	targeter tracker.Targeter,
 ) (SystemThrottler, error) {
-	metrics, err := newSystemThrottlerMetrics(namespace, reg)
+	metric, err := newSystemThrottlerMetrics(namespace, reg)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize system throttler metrics: %w", err)
+		return nil, fmt.Errorf("couldn't initialize system throttler metric: %w", err)
 	}
 	return &systemThrottler{
-		metrics:               metrics,
+		metric:               metric,
 		SystemThrottlerConfig: config,
 		targeter:              targeter,
 		tracker:               tracker,
@@ -125,12 +125,12 @@ func (t *systemThrottler) Acquire(ctx context.Context, nodeID ids.NodeID) {
 	var timer *time.Timer
 	defer func() {
 		if timer != nil { // We waited at least once for usage to fall.
-			t.metrics.totalWaits.Inc()
-			// Note that [t.metrics.awaitingAcquire.Inc()] was called once if
+			t.metric.totalWaits.Inc()
+			// Note that [t.metric.awaitingAcquire.Inc()] was called once if
 			// and only if [waited] is true.
-			t.metrics.awaitingAcquire.Dec()
+			t.metric.awaitingAcquire.Dec()
 		} else {
-			t.metrics.totalNoWaits.Inc()
+			t.metric.totalNoWaits.Inc()
 		}
 	}()
 
@@ -168,7 +168,7 @@ func (t *systemThrottler) Acquire(ctx context.Context, nodeID ids.NodeID) {
 		// Reset [timer].
 		if timer == nil {
 			// Note this is called at most once.
-			t.metrics.awaitingAcquire.Inc()
+			t.metric.awaitingAcquire.Inc()
 
 			timer = t.timerPool.Get().(*time.Timer)
 			defer func() {

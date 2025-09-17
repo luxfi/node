@@ -14,7 +14,7 @@ type serverMetrics struct {
 	inflight  prometheus.Gauge
 }
 
-func newMetrics(registerer metrics.Registerer) (*serverMetrics, error) {
+func newMetrics(registerer metric.Registerer) (*serverMetrics, error) {
 	m := &serverMetrics{
 		requests: prometheus.NewCounterVec(
 			prometheus.CounterOpts{

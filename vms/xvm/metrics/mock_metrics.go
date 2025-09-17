@@ -6,8 +6,8 @@
 //	mockgen -package=metrics -destination=vms/xvm/metrics/mock_metrics.go github.com/luxfi/node/vms/xvm/metrics Metrics
 //
 
-// Package metrics is a generated GoMock package.
-package metrics
+// Package metric is a generated GoMock package.
+package metric
 
 import (
 	http "net/http"

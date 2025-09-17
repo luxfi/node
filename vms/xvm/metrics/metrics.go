@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package metrics
+package metric
 
 import (
 	"github.com/luxfi/metric"
@@ -21,22 +21,22 @@ type Metrics interface {
 	IncTxRefreshHits()
 	IncTxRefreshMisses()
 
-	// MarkBlockAccepted updates all metrics relating to the acceptance of a
+	// MarkBlockAccepted updates all metric relating to the acceptance of a
 	// block, including the underlying acceptance of the contained transactions.
 	MarkBlockAccepted(b block.Block) error
-	// MarkTxAccepted updates all metrics relating to the acceptance of a
+	// MarkTxAccepted updates all metric relating to the acceptance of a
 	// transaction.
 	//
 	// Note: This is not intended to be called during the acceptance of a block,
 	// as MarkBlockAccepted already handles updating transaction related
-	// metrics.
+	// metric.
 	MarkTxAccepted(tx *txs.Tx) error
 }
 
 type metricsImpl struct {
 	txMetrics *txMetrics
 
-	numTxRefreshes, numTxRefreshHits, numTxRefreshMisses metrics.Counter
+	numTxRefreshes, numTxRefreshHits, numTxRefreshMisses metric.Counter
 
 	utils_metric.APIInterceptor
 }
@@ -66,21 +66,21 @@ func (m *metricsImpl) MarkTxAccepted(tx *txs.Tx) error {
 	return tx.Unsigned.Visit(m.txMetrics)
 }
 
-func New(registerer metrics.Registerer) (Metrics, error) {
+func New(registerer metric.Registerer) (Metrics, error) {
 	txMetrics, err := newTxMetrics(registerer)
 	errs := wrappers.Errs{Err: err}
 
 	m := &metricsImpl{txMetrics: txMetrics}
 
-	m.numTxRefreshes = metrics.NewCounter(metrics.CounterOpts{
+	m.numTxRefreshes = metric.NewCounter(metric.CounterOpts{
 		Name: "tx_refreshes",
 		Help: "Number of times unique txs have been refreshed",
 	})
-	m.numTxRefreshHits = metrics.NewCounter(metrics.CounterOpts{
+	m.numTxRefreshHits = metric.NewCounter(metric.CounterOpts{
 		Name: "tx_refresh_hits",
 		Help: "Number of times unique txs have not been unique, but were cached",
 	})
-	m.numTxRefreshMisses = metrics.NewCounter(metrics.CounterOpts{
+	m.numTxRefreshMisses = metric.NewCounter(metric.CounterOpts{
 		Name: "tx_refresh_misses",
 		Help: "Number of times unique txs have not been unique and weren't cached",
 	})

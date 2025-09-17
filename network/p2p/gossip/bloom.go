@@ -19,13 +19,13 @@ import (
 // Invariant: The returned bloom filter is not safe to reset concurrently with
 // other operations. However, it is otherwise safe to access concurrently.
 func NewBloomFilter(
-	registerer metrics.Registerer,
+	registerer metric.Registerer,
 	namespace string,
 	minTargetElements int,
 	targetFalsePositiveProbability,
 	resetFalsePositiveProbability float64,
 ) (*BloomFilter, error) {
-	metrics, err := bloom.NewMetrics(namespace, registerer)
+	metric, err := bloom.NewMetrics(namespace, registerer)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func NewBloomFilter(
 		targetFalsePositiveProbability: targetFalsePositiveProbability,
 		resetFalsePositiveProbability:  resetFalsePositiveProbability,
 
-		metrics: metrics,
+		metric: metric,
 	}
 	err = resetBloomFilter(
 		filter,
@@ -50,7 +50,7 @@ type BloomFilter struct {
 	targetFalsePositiveProbability float64
 	resetFalsePositiveProbability  float64
 
-	metrics *bloom.Metrics
+	metric *bloom.Metrics
 
 	maxCount int
 	bloom    *bloom.Filter
@@ -63,7 +63,7 @@ type BloomFilter struct {
 func (b *BloomFilter) Add(gossipable Gossipable) {
 	h := gossipable.GossipID()
 	bloom.Add(b.bloom, h[:], b.salt[:])
-	b.metrics.Count.Inc()
+	b.metric.Count.Inc()
 }
 
 func (b *BloomFilter) Has(gossipable Gossipable) bool {
@@ -126,6 +126,6 @@ func resetBloomFilter(
 	bloomFilter.bloom = newBloom
 	bloomFilter.salt = newSalt
 
-	bloomFilter.metrics.Reset(newBloom, bloomFilter.maxCount)
+	bloomFilter.metric.Reset(newBloom, bloomFilter.maxCount)
 	return nil
 }

@@ -91,7 +91,7 @@ func NewManager(
 	frequency,
 	cpuHalflife,
 	diskHalflife time.Duration,
-	metricsRegisterer metrics.Registerer,
+	metricsRegisterer metric.Registerer,
 ) (Manager, error) {
 	processMetrics, err := newMetrics(metricsRegisterer)
 	if err != nil {

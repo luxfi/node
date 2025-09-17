@@ -81,7 +81,7 @@ type VM struct {
 
 	config.Config
 
-	metrics xvmmetrics.Metrics
+	metric xvmmetrics.Metrics
 
 	lux.AddressManager
 	ids.Aliaser
@@ -109,7 +109,7 @@ type VM struct {
 	// Used to check local time
 	clock mockable.Clock
 
-	registerer metrics.Registerer
+	registerer metric.Registerer
 
 	connectedPeers map[ids.NodeID]*version.Application
 
@@ -259,15 +259,15 @@ func (vm *VM) initialize(
 		log.Reflect("config", xvmConfig),
 	)
 
-	// Get metrics from a global registry or create new one
+	// Get metric from a global registry or create new one
 	vm.registerer = prometheus.NewRegistry()
 
 	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
 
-	// Initialize metrics as soon as possible
-	vm.metrics, err = xvmmetrics.New(vm.registerer)
+	// Initialize metric as soon as possible
+	vm.metric, err = xvmmetrics.New(vm.registerer)
 	if err != nil {
-		return fmt.Errorf("failed to initialize metrics: %w", err)
+		return fmt.Errorf("failed to initialize metric: %w", err)
 	}
 
 	vm.AddressManager = lux.NewAddressManager(ctx)
@@ -420,8 +420,8 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	rpcServer := rpc.NewServer()
 	rpcServer.RegisterCodec(codec, "application/json")
 	rpcServer.RegisterCodec(codec, "application/json;charset=UTF-8")
-	rpcServer.RegisterInterceptFunc(vm.metrics.InterceptRequest)
-	rpcServer.RegisterAfterFunc(vm.metrics.AfterRequest)
+	rpcServer.RegisterInterceptFunc(vm.metric.InterceptRequest)
+	rpcServer.RegisterAfterFunc(vm.metric.AfterRequest)
 	// name this service "xvm"
 	if err := rpcServer.RegisterService(&Service{vm: vm}, "xvm"); err != nil {
 		return nil, err
@@ -430,8 +430,8 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	walletServer := rpc.NewServer()
 	walletServer.RegisterCodec(codec, "application/json")
 	walletServer.RegisterCodec(codec, "application/json;charset=UTF-8")
-	walletServer.RegisterInterceptFunc(vm.metrics.InterceptRequest)
-	walletServer.RegisterAfterFunc(vm.metrics.AfterRequest)
+	walletServer.RegisterInterceptFunc(vm.metric.InterceptRequest)
+	walletServer.RegisterAfterFunc(vm.metric.AfterRequest)
 	// name this service "wallet"
 	err := walletServer.RegisterService(&vm.walletService, "wallet")
 
@@ -495,7 +495,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 
 	vm.chainManager = blockexecutor.NewManager(
 		mempool,
-		vm.metrics,
+		vm.metric,
 		vm.state,
 		vm.txBackend,
 		&vm.clock,

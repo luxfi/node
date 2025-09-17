@@ -27,13 +27,13 @@ type blockVM struct {
 	ssVM         block.StateSyncableVM
 
 	blockMetrics
-	registry metrics.Registerer
+	registry metric.Registerer
 	clock    mockable.Clock
 }
 
 func NewBlockVM(
 	vm block.ChainVM,
-	reg metrics.Registerer,
+	reg metric.Registerer,
 ) block.ChainVM {
 	buildBlockVM, _ := vm.(block.BuildBlockWithContextChainVM)
 	batchedVM, _ := vm.(block.BatchedChainVM)

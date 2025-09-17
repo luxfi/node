@@ -39,12 +39,12 @@ type OutboundMsgThrottler interface {
 
 type outboundMsgThrottler struct {
 	commonMsgThrottler
-	metrics outboundMsgThrottlerMetrics
+	metric outboundMsgThrottlerMetrics
 }
 
 func NewSybilOutboundMsgThrottler(
 	log log.Logger,
-	registerer metrics.Registerer,
+	registerer metric.Registerer,
 	vdrs validators.Manager,
 	config MsgByteThrottlerConfig,
 ) (OutboundMsgThrottler, error) {
@@ -60,7 +60,7 @@ func NewSybilOutboundMsgThrottler(
 			nodeToAtLargeBytesUsed: make(map[ids.NodeID]uint64),
 		},
 	}
-	return t, t.metrics.initialize(registerer)
+	return t, t.metric.initialize(registerer)
 }
 
 func (t *outboundMsgThrottler) Acquire(msg message.OutboundMessage, nodeID ids.NodeID) bool {
@@ -112,7 +112,7 @@ func (t *outboundMsgThrottler) Acquire(msg message.OutboundMessage, nodeID ids.N
 	bytesNeeded -= vdrBytesUsed
 	if bytesNeeded != 0 {
 		// Can't acquire enough bytes to queue this message to be sent
-		t.metrics.acquireFailures.Inc()
+		t.metric.acquireFailures.Inc()
 		return false
 	}
 	// Can acquire enough bytes to queue this message to be sent.
@@ -120,16 +120,16 @@ func (t *outboundMsgThrottler) Acquire(msg message.OutboundMessage, nodeID ids.N
 	if atLargeBytesUsed > 0 {
 		t.remainingAtLargeBytes -= atLargeBytesUsed
 		t.nodeToAtLargeBytesUsed[nodeID] += atLargeBytesUsed
-		t.metrics.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
+		t.metric.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
 	}
 	if vdrBytesUsed > 0 {
 		// Mark that [nodeID] used [vdrBytesUsed] from its validator allocation
 		t.remainingVdrBytes -= vdrBytesUsed
 		t.nodeToVdrBytesUsed[nodeID] += vdrBytesUsed
-		t.metrics.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
+		t.metric.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
 	}
-	t.metrics.acquireSuccesses.Inc()
-	t.metrics.awaitingRelease.Inc()
+	t.metric.acquireSuccesses.Inc()
+	t.metric.awaitingRelease.Inc()
 	return true
 }
 
@@ -141,9 +141,9 @@ func (t *outboundMsgThrottler) Release(msg message.OutboundMessage, nodeID ids.N
 
 	t.lock.Lock()
 	defer func() {
-		t.metrics.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
-		t.metrics.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
-		t.metrics.awaitingRelease.Dec()
+		t.metric.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
+		t.metric.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
+		t.metric.awaitingRelease.Dec()
 		t.lock.Unlock()
 	}()
 
@@ -170,31 +170,31 @@ func (t *outboundMsgThrottler) Release(msg message.OutboundMessage, nodeID ids.N
 }
 
 type outboundMsgThrottlerMetrics struct {
-	acquireSuccesses      metrics.Counter
-	acquireFailures       metrics.Counter
-	remainingAtLargeBytes metrics.Gauge
-	remainingVdrBytes     metrics.Gauge
-	awaitingRelease       metrics.Gauge
+	acquireSuccesses      metric.Counter
+	acquireFailures       metric.Counter
+	remainingAtLargeBytes metric.Gauge
+	remainingVdrBytes     metric.Gauge
+	awaitingRelease       metric.Gauge
 }
 
-func (m *outboundMsgThrottlerMetrics) initialize(registerer metrics.Registerer) error {
-	m.acquireSuccesses = metrics.NewCounter(metrics.CounterOpts{
+func (m *outboundMsgThrottlerMetrics) initialize(registerer metric.Registerer) error {
+	m.acquireSuccesses = metric.NewCounter(metric.CounterOpts{
 		Name: "throttler_outbound_acquire_successes",
 		Help: "Outbound messages not dropped due to rate-limiting",
 	})
-	m.acquireFailures = metrics.NewCounter(metrics.CounterOpts{
+	m.acquireFailures = metric.NewCounter(metric.CounterOpts{
 		Name: "throttler_outbound_acquire_failures",
 		Help: "Outbound messages dropped due to rate-limiting",
 	})
-	m.remainingAtLargeBytes = metrics.NewGauge(metrics.GaugeOpts{
+	m.remainingAtLargeBytes = metric.NewGauge(metric.GaugeOpts{
 		Name: "throttler_outbound_remaining_at_large_bytes",
 		Help: "Bytes remaining in the at large byte allocation",
 	})
-	m.remainingVdrBytes = metrics.NewGauge(metrics.GaugeOpts{
+	m.remainingVdrBytes = metric.NewGauge(metric.GaugeOpts{
 		Name: "throttler_outbound_remaining_validator_bytes",
 		Help: "Bytes remaining in the validator byte allocation",
 	})
-	m.awaitingRelease = metrics.NewGauge(metrics.GaugeOpts{
+	m.awaitingRelease = metric.NewGauge(metric.GaugeOpts{
 		Name: "throttler_outbound_awaiting_release",
 		Help: "Number of messages waiting to be sent",
 	})

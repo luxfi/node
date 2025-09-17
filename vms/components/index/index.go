@@ -58,7 +58,7 @@ type AddressTxsIndexer interface {
 
 type indexer struct {
 	log     log.Logger
-	metrics indexMetrics
+	metric indexMetrics
 	db      database.Database
 }
 
@@ -68,7 +68,7 @@ func NewIndexer(
 	db database.Database,
 	log log.Logger,
 	metricsNamespace string,
-	metricsRegisterer metrics.Registerer,
+	metricsRegisterer metric.Registerer,
 	allowIncompleteIndices bool,
 ) (AddressTxsIndexer, error) {
 	i := &indexer{
@@ -79,12 +79,12 @@ func NewIndexer(
 	if err := checkIndexStatus(i.db, true, allowIncompleteIndices); err != nil {
 		return nil, err
 	}
-	// initialize the metrics
-	metrics, err := newMetrics(metricsRegisterer)
+	// initialize the metric
+	metric, err := newMetrics(metricsRegisterer)
 	if err != nil {
 		return nil, err
 	}
-	i.metrics = *metrics
+	i.metric = *metric
 	return i, nil
 }
 
@@ -169,7 +169,7 @@ func (i *indexer) Accept(txID ids.ID, inputUTXOs []*lux.UTXO, outputUTXOs []*lux
 			}
 		}
 	}
-	i.metrics.numTxsIndexed.Inc()
+	i.metric.numTxsIndexed.Inc()
 	return nil
 }
 

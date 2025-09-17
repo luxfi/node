@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package metrics
+package metric
 
 import (
 	"github.com/luxfi/metric"
@@ -18,13 +18,13 @@ var (
 )
 
 type txMetrics struct {
-	numTxs metrics.CounterVec
+	numTxs metric.CounterVec
 }
 
-func newTxMetrics(registerer metrics.Registerer) (*txMetrics, error) {
+func newTxMetrics(registerer metric.Registerer) (*txMetrics, error) {
 	m := &txMetrics{
-		numTxs: metrics.NewCounterVec(
-			metrics.CounterOpts{
+		numTxs: metric.NewCounterVec(
+			metric.CounterOpts{
 				Name: "txs_accepted",
 				Help: "number of transactions accepted",
 			},
@@ -35,35 +35,35 @@ func newTxMetrics(registerer metrics.Registerer) (*txMetrics, error) {
 }
 
 func (m *txMetrics) BaseTx(*txs.BaseTx) error {
-	m.numTxs.With(metrics.Labels{
+	m.numTxs.With(metric.Labels{
 		txLabel: "base",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) CreateAssetTx(*txs.CreateAssetTx) error {
-	m.numTxs.With(metrics.Labels{
+	m.numTxs.With(metric.Labels{
 		txLabel: "create_asset",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) OperationTx(*txs.OperationTx) error {
-	m.numTxs.With(metrics.Labels{
+	m.numTxs.With(metric.Labels{
 		txLabel: "operation",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) ImportTx(*txs.ImportTx) error {
-	m.numTxs.With(metrics.Labels{
+	m.numTxs.With(metric.Labels{
 		txLabel: "import",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) ExportTx(*txs.ExportTx) error {
-	m.numTxs.With(metrics.Labels{
+	m.numTxs.With(metric.Labels{
 		txLabel: "export",
 	}).Inc()
 	return nil

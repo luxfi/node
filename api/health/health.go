@@ -64,9 +64,9 @@ type health struct {
 	liveness  *worker
 }
 
-func New(log log.Logger, registerer metrics.Registerer) (Health, error) {
-	failingChecks := metrics.NewGaugeVec(
-		metrics.GaugeOpts{
+func New(log log.Logger, registerer metric.Registerer) (Health, error) {
+	failingChecks := metric.NewGaugeVec(
+		metric.GaugeOpts{
 			Name: "checks_failing",
 			Help: "number of currently failing health checks",
 		},

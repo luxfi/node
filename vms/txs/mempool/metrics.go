@@ -13,18 +13,18 @@ import (
 var _ Metrics = (*metricsImpl)(nil)
 
 type metricsImpl struct {
-	numTxs               metrics.Gauge
-	bytesAvailableMetric metrics.Gauge
+	numTxs               metric.Gauge
+	bytesAvailableMetric metric.Gauge
 }
 
-func NewMetrics(namespace string, registerer metrics.Registerer) (*metricsImpl, error) {
+func NewMetrics(namespace string, registerer metric.Registerer) (*metricsImpl, error) {
 	m := &metricsImpl{
-		numTxs: metrics.NewGauge(metrics.GaugeOpts{
+		numTxs: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "count",
 			Help:      "Number of transactions in the mempool",
 		}),
-		bytesAvailableMetric: metrics.NewGauge(metrics.GaugeOpts{
+		bytesAvailableMetric: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "bytes_available",
 			Help:      "Number of bytes of space currently available in the mempool",

@@ -66,10 +66,10 @@ func NewBlockState(db database.Database) BlockState {
 	}
 }
 
-func NewMeteredBlockState(db database.Database, namespace string, metrics metrics.Registerer) (BlockState, error) {
+func NewMeteredBlockState(db database.Database, namespace string, metric metric.Registerer) (BlockState, error) {
 	blkCache, err := metercacher.New[ids.ID, *blockWrapper](
 		utilmetric.AppendNamespace(namespace, "block_cache"),
-		metrics,
+		metric,
 		cache.NewSizedLRU[ids.ID, *blockWrapper](
 			blockCacheSize,
 			cachedBlockSize,

@@ -20,7 +20,6 @@ import (
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/consensus/engine/chain/chainmock"
 	"github.com/luxfi/consensus/validators"
@@ -45,39 +44,163 @@ var (
 )
 
 type fullVM struct {
+	*blocktest.VM
 	*blocktest.StateSyncableVM
+
+	// Override functions
+	InitializeF func(context.Context, context.Context, database.Database,
+		[]byte, []byte, []byte,
+		[]*core.Fx, core.AppSender,
+	) error
+	LastAcceptedF func(context.Context) (ids.ID, error)
+	GetBlockF func(context.Context, ids.ID) (chain.Block, error)
+	ParseBlockF func(context.Context, []byte) (chain.Block, error)
+	BuildBlockF func(context.Context) (chain.Block, error)
+	SetPreferenceF func(context.Context, ids.ID) error
+	GetBlockIDAtHeightF func(context.Context, uint64) (ids.ID, error)
+	StateSyncEnabledF func(context.Context) (bool, error)
+	GetOngoingSyncStateSummaryF func(context.Context) (block.StateSummary, error)
+	GetLastStateSummaryF func(context.Context) (block.StateSummary, error)
+	ParseStateSummaryF func(context.Context, []byte) (block.StateSummary, error)
+	GetStateSummaryF func(context.Context, uint64) (block.StateSummary, error)
 }
 
-// GetBlockIDAtHeight implements the method to resolve ambiguity
+// Initialize implements ChainVM
+func (vm *fullVM) Initialize(
+	ctx context.Context,
+	chainCtx interface{},
+	db interface{},
+	genesisBytes []byte,
+	upgradeBytes []byte,
+	configBytes []byte,
+	msgChan interface{},
+	fxs []interface{},
+	appSender interface{},
+) error {
+	if vm.InitializeF != nil {
+		// Convert to expected types
+		dbTyped, _ := db.(database.Database)
+		fxsTyped := make([]*core.Fx, 0)
+		appSenderTyped, _ := appSender.(core.AppSender)
+		return vm.InitializeF(ctx, ctx, dbTyped, genesisBytes, upgradeBytes, configBytes, fxsTyped, appSenderTyped)
+	}
+	return nil
+}
+
+// LastAccepted implements ChainVM
+func (vm *fullVM) LastAccepted(ctx context.Context) (ids.ID, error) {
+	if vm.LastAcceptedF != nil {
+		return vm.LastAcceptedF(ctx)
+	}
+	return ids.Empty, nil
+}
+
+// GetBlockIDAtHeight implements ChainVM
 func (vm *fullVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
-	if vm.StateSyncableVM != nil && vm.StateSyncableVM.VM.ChainVM != nil {
-		return vm.StateSyncableVM.VM.ChainVM.GetBlockIDAtHeight(ctx, height)
+	if vm.GetBlockIDAtHeightF != nil {
+		return vm.GetBlockIDAtHeightF(ctx, height)
 	}
 	return ids.Empty, errors.New("not implemented")
 }
 
-// BuildBlock implements the method to resolve ambiguity
+// BuildBlock implements ChainVM
 func (vm *fullVM) BuildBlock(ctx context.Context) (block.Block, error) {
-	if vm.StateSyncableVM != nil && vm.StateSyncableVM.VM.ChainVM != nil {
-		return vm.StateSyncableVM.VM.ChainVM.BuildBlock(ctx)
+	if vm.BuildBlockF != nil {
+		chainBlk, err := vm.BuildBlockF(ctx)
+		if err != nil {
+			return nil, err
+		}
+		// Adapter to convert chain.Block to block.Block
+		return &chainBlockAdapter{Block: chainBlk}, nil
 	}
 	return nil, errors.New("not implemented")
 }
 
-// ParseBlock implements the method to resolve ambiguity
+// ParseBlock implements ChainVM
 func (vm *fullVM) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
-	if vm.StateSyncableVM != nil && vm.StateSyncableVM.VM.ChainVM != nil {
-		return vm.StateSyncableVM.VM.ChainVM.ParseBlock(ctx, bytes)
-	}
-	return nil, errors.New("not implemented") 
-}
-
-// GetBlock implements the method to resolve ambiguity
-func (vm *fullVM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
-	if vm.StateSyncableVM != nil && vm.StateSyncableVM.VM.ChainVM != nil {
-		return vm.StateSyncableVM.VM.ChainVM.GetBlock(ctx, id)
+	if vm.ParseBlockF != nil {
+		chainBlk, err := vm.ParseBlockF(ctx, bytes)
+		if err != nil {
+			return nil, err
+		}
+		// Adapter to convert chain.Block to block.Block
+		return &chainBlockAdapter{Block: chainBlk}, nil
 	}
 	return nil, errors.New("not implemented")
+}
+
+// GetBlock implements ChainVM
+func (vm *fullVM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
+	if vm.GetBlockF != nil {
+		chainBlk, err := vm.GetBlockF(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		// Adapter to convert chain.Block to block.Block
+		return &chainBlockAdapter{Block: chainBlk}, nil
+	}
+	return nil, errors.New("not implemented")
+}
+
+// SetPreference implements ChainVM
+func (vm *fullVM) SetPreference(ctx context.Context, id ids.ID) error {
+	if vm.SetPreferenceF != nil {
+		return vm.SetPreferenceF(ctx, id)
+	}
+	return nil
+}
+
+// StateSyncEnabled implements StateSyncableVM
+func (vm *fullVM) StateSyncEnabled(ctx context.Context) (bool, error) {
+	if vm.StateSyncEnabledF != nil {
+		return vm.StateSyncEnabledF(ctx)
+	}
+	return false, nil
+}
+
+// GetOngoingSyncStateSummary implements StateSyncableVM
+func (vm *fullVM) GetOngoingSyncStateSummary(ctx context.Context) (block.StateSummary, error) {
+	if vm.GetOngoingSyncStateSummaryF != nil {
+		return vm.GetOngoingSyncStateSummaryF(ctx)
+	}
+	return nil, errors.New("not implemented")
+}
+
+// GetLastStateSummary implements StateSyncableVM
+func (vm *fullVM) GetLastStateSummary(ctx context.Context) (block.StateSummary, error) {
+	if vm.GetLastStateSummaryF != nil {
+		return vm.GetLastStateSummaryF(ctx)
+	}
+	return nil, errors.New("not implemented")
+}
+
+// ParseStateSummary implements StateSyncableVM
+func (vm *fullVM) ParseStateSummary(ctx context.Context, bytes []byte) (block.StateSummary, error) {
+	if vm.ParseStateSummaryF != nil {
+		return vm.ParseStateSummaryF(ctx, bytes)
+	}
+	return nil, errors.New("not implemented")
+}
+
+// GetStateSummary implements StateSyncableVM
+func (vm *fullVM) GetStateSummary(ctx context.Context, height uint64) (block.StateSummary, error) {
+	if vm.GetStateSummaryF != nil {
+		return vm.GetStateSummaryF(ctx, height)
+	}
+	return nil, errors.New("not implemented")
+}
+
+// chainBlockAdapter adapts chain.Block to block.Block
+type chainBlockAdapter struct {
+	chain.Block
+}
+
+func (b *chainBlockAdapter) ParentID() ids.ID {
+	return b.Block.Parent()
+}
+
+func (b *chainBlockAdapter) Status() uint8 {
+	return uint8(b.Block.Status())
 }
 
 var (
@@ -119,10 +242,7 @@ func initTestProposerVM(
 	require := require.New(t)
 
 	initialState := []byte("genesis state")
-	coreVM := &fullVM{
-		VM:              &blocktest.VM{},
-		StateSyncableVM: &blocktest.StateSyncableVM{},
-	}
+	coreVM := &fullVM{}
 
 	coreVM.InitializeF = func(context.Context, context.Context, database.Database,
 		[]byte, []byte, []byte,
