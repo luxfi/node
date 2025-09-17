@@ -4,11 +4,9 @@
 package metrics
 
 import (
-	metrics "github.com/luxfi/metric"
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/metric"
 
 	dto "github.com/prometheus/client_model/go"
 )
