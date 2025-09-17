@@ -4,7 +4,6 @@
 package metrics
 
 import (
-	"github.com/luxfi/metric"
 	"context"
 
 	dto "github.com/prometheus/client_model/go"
