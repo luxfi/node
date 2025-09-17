@@ -33,7 +33,7 @@ type labelGatherer struct {
 	labelName string
 }
 
-func (g *labelGatherer) Register(labelValue string, gatherer metrics.Gatherer) error {
+func (g *labelGatherer) Register(labelValue string, gatherer metric.Gatherer) error {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
@@ -57,7 +57,7 @@ func (g *labelGatherer) Register(labelValue string, gatherer metrics.Gatherer) e
 type labeledGatherer struct {
 	labelName  string
 	labelValue string
-	gatherer   metrics.Gatherer
+	gatherer   metric.Gatherer
 }
 
 func (g *labeledGatherer) Gather() ([]*dto.MetricFamily, error) {
