@@ -9,6 +9,7 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 
+	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 )
 
@@ -30,8 +31,7 @@ var _ = ginkgo.BeforeEach(func() {
 // This event handler attempts to emit a metrics link scoped to the duration
 // of the current spec.
 var _ = ginkgo.AfterEach(func() {
-	tc := NewTestContext()
-	env := GetEnv(tc)
+	env := Env
 	// The global env isn't guaranteed to be initialized by importers
 	// of this package since initializing a package-local env is also
 	// supported.
@@ -50,5 +50,5 @@ var _ = ginkgo.AfterEach(func() {
 		strconv.FormatInt(startTime, 10),
 		strconv.FormatInt(endTime, 10),
 	)
-	tc.Log().Info(tmpnet.MetricsAvailableMessage, "uri", metricsLink)
+	tests.Outf(tmpnet.MetricsAvailableMessage + " %s\n", metricsLink)
 })
