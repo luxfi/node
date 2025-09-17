@@ -4,7 +4,6 @@
 package throttling
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"context"
 	"sync"
 	"time"
@@ -19,7 +18,7 @@ import (
 // See inbound_msg_throttler.go
 
 func newInboundMsgBufferThrottler(
-	registerer luxmetrics.Registerer,
+	registerer luxmetric.Registerer,
 	maxProcessingMsgsPerNode uint64,
 ) (*inboundMsgBufferThrottler, error) {
 	t := &inboundMsgBufferThrottler{
@@ -126,10 +125,10 @@ func (t *inboundMsgBufferThrottler) release(nodeID ids.NodeID) {
 
 type inboundMsgBufferThrottlerMetrics struct {
 	acquireLatency  metric.Averager
-	awaitingAcquire luxmetrics.Gauge
+	awaitingAcquire luxmetric.Gauge
 }
 
-func (m *inboundMsgBufferThrottlerMetrics) initialize(reg luxmetrics.Registerer) error {
+func (m *inboundMsgBufferThrottlerMetrics) initialize(reg luxmetric.Registerer) error {
 	errs := wrappers.Errs{}
 	m.acquireLatency = metric.NewAveragerWithErrs(
 		"buffer_throttler_inbound_acquire_latency",
@@ -137,12 +136,12 @@ func (m *inboundMsgBufferThrottlerMetrics) initialize(reg luxmetrics.Registerer)
 		reg,
 		&errs,
 	)
-	m.awaitingAcquire = luxmetrics.NewGauge(luxmetrics.GaugeOpts{
+	m.awaitingAcquire = luxmetric.NewGauge(luxmetric.GaugeOpts{
 		Name: "buffer_throttler_inbound_awaiting_acquire",
 		Help: "Number of inbound messages waiting to take space on the inbound message buffer",
 	})
 	errs.Add(
-		reg.Register(m.awaitingAcquire.(prometheus.Collector)),
+		reg.Register(m.awaitingAcquire),
 	)
 	return errs.Err
 }

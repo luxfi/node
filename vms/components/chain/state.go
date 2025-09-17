@@ -159,7 +159,7 @@ func NewState(config *Config) *State {
 }
 
 func NewMeteredState(
-	registerer metrics.Registerer,
+	registerer metric.Registerer,
 	config *Config,
 ) (*State, error) {
 	decidedCache, err := metercacher.New[ids.ID, *BlockWrapper](

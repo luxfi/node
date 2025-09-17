@@ -41,7 +41,7 @@ var (
 
 func NewVertexVM(
 	vm LinearizableVMWithEngine,
-	reg metrics.Registerer,
+	reg metric.Registerer,
 ) LinearizableVMWithEngine {
 	return &vertexVM{
 		LinearizableVMWithEngine: vm,
@@ -52,7 +52,7 @@ func NewVertexVM(
 type vertexVM struct {
 	LinearizableVMWithEngine
 	vertexMetrics
-	registry metrics.Registerer
+	registry metric.Registerer
 	clock    mockable.Clock
 }
 

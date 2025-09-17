@@ -16,5 +16,5 @@ func TestMetricsEnabledByDefault(t *testing.T) {
 	t.Skip("Metric package has been refactored - test needs update")
 	// TODO: Update this test to work with new metric package structure
 	// require.True(t, metrics.Enabled, "metrics.Enabled")
-	// require.IsType(t, (*metrics.StandardCounter)(nil), metrics.NewCounter(), "metrics.NewCounter() returned wrong type")
+	// require.IsType(t, (*metrics.StandardCounter)(nil), metric.NewCounter(), "metric.NewCounter() returned wrong type")
 }

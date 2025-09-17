@@ -95,28 +95,28 @@ func TestGatherer_Gather(t *testing.T) {
 }
 
 /*func registerRealMetrics(t *testing.T, register func(t *testing.T, name string, collector any)) {
-	counter := metrics.NewCounter()
+	counter := metric.NewCounter()
 	counter.Inc(12345)
 	register(t, "test/counter", counter)
 
-	counterFloat64 := metrics.NewCounterFloat64()
+	counterFloat64 := metric.NewCounterFloat64()
 	counterFloat64.Inc(1.1)
 	register(t, "test/counter_float64", counterFloat64)
 
-	gauge := metrics.NewGauge()
+	gauge := metric.NewGauge()
 	gauge.Update(23456)
 	register(t, "test/gauge", gauge)
 
-	gaugeFloat64 := metrics.NewGaugeFloat64()
+	gaugeFloat64 := metric.NewGaugeFloat64()
 	gaugeFloat64.Update(34567.89)
 	register(t, "test/gauge_float64", gaugeFloat64)
 
-	gaugeInfo := metrics.NewGaugeInfo()
-	gaugeInfo.Update(metrics.GaugeInfoValue{"key": "value"})
+	gaugeInfo := metric.NewGaugeInfo()
+	gaugeInfo.Update(metric.GaugeInfoValue{"key": "value"})
 	register(t, "test/gauge_info", gaugeInfo) // skipped
 
 	sample := metrics.NewUniformSample(1028)
-	histogram := metrics.NewHistogram(sample)
+	histogram := metric.NewHistogram(sample)
 	register(t, "test/histogram", histogram)
 
 	meter := metrics.NewMeter()
@@ -151,14 +151,14 @@ func registerNilMetrics(t *testing.T, register func(t *testing.T, name string, c
 	metrics.Enabled = false
 	defer func() { metrics.Enabled = true }()
 
-	register(t, "nil/counter", metrics.NewCounter())
-	register(t, "nil/counter_float64", metrics.NewCounterFloat64())
+	register(t, "nil/counter", metric.NewCounter())
+	register(t, "nil/counter_float64", metric.NewCounterFloat64())
 	register(t, "nil/ewma", &metrics.NilEWMA{})
-	register(t, "nil/gauge", metrics.NewGauge())
-	register(t, "nil/gauge_float64", metrics.NewGaugeFloat64())
-	register(t, "nil/gauge_info", metrics.NewGaugeInfo())
+	register(t, "nil/gauge", metric.NewGauge())
+	register(t, "nil/gauge_float64", metric.NewGaugeFloat64())
+	register(t, "nil/gauge_info", metric.NewGaugeInfo())
 	register(t, "nil/healthcheck", metrics.NewHealthcheck(nil))
-	register(t, "nil/histogram", metrics.NewHistogram(nil))
+	register(t, "nil/histogram", metric.NewHistogram(nil))
 	register(t, "nil/meter", metrics.NewMeter())
 	register(t, "nil/resetting_timer", metrics.NewResettingTimer())
 	register(t, "nil/sample", metrics.NewUniformSample(1028))

@@ -4,7 +4,6 @@
 package peer
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"errors"
 	"strconv"
 
@@ -29,54 +28,54 @@ var (
 )
 
 type Metrics struct {
-	ClockSkewCount metrics.Counter
-	ClockSkewSum   metrics.Gauge
+	ClockSkewCount metric.Counter
+	ClockSkewSum   metric.Gauge
 
-	NumFailedToParse metrics.Counter
-	NumSendFailed    metrics.CounterVec // op
+	NumFailedToParse metric.Counter
+	NumSendFailed    metric.CounterVec // op
 
-	Messages   metrics.CounterVec // io + op + compressed
-	Bytes      metrics.CounterVec // io + op
-	BytesSaved metrics.GaugeVec   // io + op
+	Messages   metric.CounterVec // io + op + compressed
+	Bytes      metric.CounterVec // io + op
+	BytesSaved metric.GaugeVec   // io + op
 }
 
-func NewMetrics(registerer metrics.Registerer) (*Metrics, error) {
+func NewMetrics(registerer metric.Registerer) (*Metrics, error) {
 	m := &Metrics{
-		ClockSkewCount: metrics.NewCounter(metrics.CounterOpts{
+		ClockSkewCount: metric.NewCounter(metric.CounterOpts{
 			Name: "clock_skew_count",
 			Help: "number of handshake timestamps inspected (n)",
 		}),
-		ClockSkewSum: metrics.NewGauge(metrics.GaugeOpts{
+		ClockSkewSum: metric.NewGauge(metric.GaugeOpts{
 			Name: "clock_skew_sum",
 			Help: "sum of (peer timestamp - local timestamp) from handshake messages (s)",
 		}),
-		NumFailedToParse: metrics.NewCounter(metrics.CounterOpts{
+		NumFailedToParse: metric.NewCounter(metric.CounterOpts{
 			Name: "msgs_failed_to_parse",
 			Help: "number of received messages that could not be parsed",
 		}),
-		NumSendFailed: metrics.NewCounterVec(
-			metrics.CounterOpts{
+		NumSendFailed: metric.NewCounterVec(
+			metric.CounterOpts{
 				Name: "msgs_failed_to_send",
 				Help: "number of messages that failed to be sent",
 			},
 			opLabels,
 		),
-		Messages: metrics.NewCounterVec(
-			metrics.CounterOpts{
+		Messages: metric.NewCounterVec(
+			metric.CounterOpts{
 				Name: "msgs",
 				Help: "number of handled messages",
 			},
 			ioOpCompressedLabels,
 		),
-		Bytes: metrics.NewCounterVec(
-			metrics.CounterOpts{
+		Bytes: metric.NewCounterVec(
+			metric.CounterOpts{
 				Name: "msgs_bytes",
 				Help: "number of message bytes",
 			},
 			ioOpLabels,
 		),
-		BytesSaved: metrics.NewGaugeVec(
-			metrics.GaugeOpts{
+		BytesSaved: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Name: "msgs_bytes_saved",
 				Help: "number of message bytes saved",
 			},
@@ -84,13 +83,13 @@ func NewMetrics(registerer metrics.Registerer) (*Metrics, error) {
 		),
 	}
 	return m, errors.Join(
-		registerer.Register(m.ClockSkewCount.(prometheus.Collector)),
-		registerer.Register(m.ClockSkewSum.(prometheus.Collector)),
-		registerer.Register(m.NumFailedToParse.(prometheus.Collector)),
-		registerer.Register(m.NumSendFailed.(prometheus.Collector)),
-		registerer.Register(m.Messages.(prometheus.Collector)),
-		registerer.Register(m.Bytes.(prometheus.Collector)),
-		registerer.Register(m.BytesSaved.(prometheus.Collector)),
+		registerer.Register(m.ClockSkewCount),
+		registerer.Register(m.ClockSkewSum),
+		registerer.Register(m.NumFailedToParse),
+		registerer.Register(m.NumSendFailed),
+		registerer.Register(m.Messages),
+		registerer.Register(m.Bytes),
+		registerer.Register(m.BytesSaved),
 	)
 }
 
@@ -101,13 +100,13 @@ func (m *Metrics) Sent(msg message.OutboundMessage) {
 	compressed := saved != 0 // assume that if [saved] == 0, [msg] wasn't compressed
 	compressedStr := strconv.FormatBool(compressed)
 
-	m.Messages.With(metrics.Labels{
+	m.Messages.With(metric.Labels{
 		ioLabel:         sentLabel,
 		opLabel:         op,
 		compressedLabel: compressedStr,
 	}).Inc()
 
-	bytesLabel := metrics.Labels{
+	bytesLabel := metric.Labels{
 		ioLabel: sentLabel,
 		opLabel: op,
 	}
@@ -116,7 +115,7 @@ func (m *Metrics) Sent(msg message.OutboundMessage) {
 }
 
 func (m *Metrics) MultipleSendsFailed(op message.Op, count int) {
-	m.NumSendFailed.With(metrics.Labels{
+	m.NumSendFailed.With(metric.Labels{
 		opLabel: op.String(),
 	}).Add(float64(count))
 }
@@ -124,7 +123,7 @@ func (m *Metrics) MultipleSendsFailed(op message.Op, count int) {
 // SendFailed updates the metrics for having failed to send [msg].
 func (m *Metrics) SendFailed(msg message.OutboundMessage) {
 	op := msg.Op().String()
-	m.NumSendFailed.With(metrics.Labels{
+	m.NumSendFailed.With(metric.Labels{
 		opLabel: op,
 	}).Inc()
 }
@@ -135,13 +134,13 @@ func (m *Metrics) Received(msg message.InboundMessage, msgLen uint32) {
 	compressed := saved != 0 // assume that if [saved] == 0, [msg] wasn't compressed
 	compressedStr := strconv.FormatBool(compressed)
 
-	m.Messages.With(metrics.Labels{
+	m.Messages.With(metric.Labels{
 		ioLabel:         receivedLabel,
 		opLabel:         op,
 		compressedLabel: compressedStr,
 	}).Inc()
 
-	bytesLabel := metrics.Labels{
+	bytesLabel := metric.Labels{
 		ioLabel: receivedLabel,
 		opLabel: op,
 	}

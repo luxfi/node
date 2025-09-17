@@ -137,11 +137,11 @@ func TestGossiperGossip(t *testing.T) {
 				SentAppRequest: make(chan []byte, 1),
 			}
 
-			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, metrics.NewNoOpRegistry(), "")
+			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, metric.NewNoOpRegistry(), "")
 			require.NoError(err)
 			require.NoError(requestNetwork.Connected(context.Background(), ids.EmptyNodeID, nil))
 
-			bloom, err := NewBloomFilter(metrics.NewNoOpRegistry(), "", 1000, 0.01, 0.05)
+			bloom, err := NewBloomFilter(metric.NewNoOpRegistry(), "", 1000, 0.01, 0.05)
 			require.NoError(err)
 			requestSet := &testSet{
 				txs:   make(map[ids.ID]*testTx),

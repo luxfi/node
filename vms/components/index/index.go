@@ -68,7 +68,7 @@ func NewIndexer(
 	db database.Database,
 	log log.Logger,
 	metricsNamespace string,
-	metricsRegisterer metrics.Registerer,
+	metricsRegisterer metric.Registerer,
 	allowIncompleteIndices bool,
 ) (AddressTxsIndexer, error) {
 	i := &indexer{

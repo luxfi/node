@@ -64,7 +64,7 @@ func StartTestPeer(
 	tlsConfg := TLSConfig(*tlsCert, nil)
 	clientUpgrader := NewTLSClientUpgrader(
 		tlsConfg,
-		luxmetrics.NewCounter(luxmetrics.CounterOpts{}),
+		luxmetric.NewCounter(luxmetric.CounterOpts{}),
 	)
 
 	peerID, conn, cert, err := clientUpgrader.Upgrade(conn)

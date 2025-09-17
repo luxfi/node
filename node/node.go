@@ -283,7 +283,7 @@ type Node struct {
 	Log               log.Logger
 	VMFactoryLog      log.Logger
 	LogFactory        log.Factory
-	MetricsRegisterer metrics.Registerer
+	MetricsRegisterer metric.Registerer
 
 	// This node's unique ID used when communicating with other nodes
 	// (in consensus, for example)
@@ -415,7 +415,7 @@ type Node struct {
 
 // Initialize the networking layer.
 // Assumes [n.vdrs], [n.CPUTracker], and [n.CPUTargeter] have been initialized.
-func (n *Node) initNetworking(reg metrics.Registerer) error {
+func (n *Node) initNetworking(reg metric.Registerer) error {
 	// Providing either loopback address - `::1` for ipv6 and `127.0.0.1` for ipv4 - as the listen
 	// host will avoid the need for a firewall exception on recent MacOS:
 	//
@@ -561,7 +561,7 @@ func (n *Node) initNetworking(reg metrics.Registerer) error {
 	// Configure benchlist
 	n.vdrs = n.vdrs
 	benchlistGatherer := metrics.NewLabelGatherer(chains.ChainLabel)
-	// Don't assign to metrics.DefaultRegisterer - it requires metrics.Registerer interface
+	// Don't assign to metrics.DefaultRegisterer - it requires metric.Registerer interface
 
 	err = n.MetricsGatherer.Register(
 		benchlistNamespace,

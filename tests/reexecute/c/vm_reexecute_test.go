@@ -272,7 +272,7 @@ type blockResult struct {
 type vmExecutorConfig struct {
 	Log log.Logger
 	// Registry is the registry to register the metrics with.
-	Registry metrics.Registerer
+	Registry metric.Registerer
 	// ExecutionTimeout is the maximum timeout to continue executing blocks.
 	// If 0, no timeout is applied. If non-zero, the executor will exit early
 	// WITHOUT error after hitting the timeout.
@@ -466,7 +466,7 @@ func exportBlockRange(tb testing.TB, sourceDir string, targetDir string, startBl
 }
 
 type consensusMetrics struct {
-	lastAcceptedHeight metrics.Gauge
+	lastAcceptedHeight metric.Gauge
 }
 
 // newConsensusMetrics creates a subset of the metrics from chain consensus
@@ -475,9 +475,9 @@ type consensusMetrics struct {
 // The registry passed in is expected to be registered with the prefix
 // "lux_chain" and the chain label (ex. chain="C") that would be handled
 // by the[chain manager](../../../chains/manager.go).
-func newConsensusMetrics(registry metrics.Registerer) (*consensusMetrics, error) {
+func newConsensusMetrics(registry metric.Registerer) (*consensusMetrics, error) {
 	m := &consensusMetrics{
-		lastAcceptedHeight: metrics.NewGauge(metrics.GaugeOpts{
+		lastAcceptedHeight: metric.NewGauge(metric.GaugeOpts{
 			Name: "last_accepted_height",
 			Help: "last height accepted",
 		}),
@@ -490,7 +490,7 @@ func newConsensusMetrics(registry metrics.Registerer) (*consensusMetrics, error)
 
 // collectRegistry starts prometheus and collects metrics from the provided gatherer.
 // Attaches the provided labels + GitHub labels if available to the collected metrics.
-func collectRegistry(tb testing.TB, name string, timeout time.Duration, gatherer metrics.Gatherer, labels map[string]string) {
+func collectRegistry(tb testing.TB, name string, timeout time.Duration, gatherer metric.Gatherer, labels map[string]string) {
 	r := require.New(tb)
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -540,7 +540,7 @@ func parseLabels(labelsStr string) (map[string]string, error) {
 	return labels, nil
 }
 
-func getTopLevelMetrics(b *testing.B, registry metrics.Gatherer, elapsed time.Duration) {
+func getTopLevelMetrics(b *testing.B, registry metric.Gatherer, elapsed time.Duration) {
 	r := require.New(b)
 
 	gasUsed, err := getCounterMetricValue(registry, "lux_evm_eth_chain_block_gas_used_processed")
@@ -549,7 +549,7 @@ func getTopLevelMetrics(b *testing.B, registry metrics.Gatherer, elapsed time.Du
 	b.ReportMetric(mgasPerSecond, "mgas/s")
 }
 
-func getCounterMetricValue(registry metrics.Gatherer, query string) (float64, error) {
+func getCounterMetricValue(registry metric.Gatherer, query string) (float64, error) {
 	metricFamilies, err := registry.Gather()
 	if err != nil {
 		return 0, fmt.Errorf("failed to gather metrics: %w", err)

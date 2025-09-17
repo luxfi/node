@@ -88,12 +88,12 @@ func TestBlockClientsWithIncorrectRSAKeys(t *testing.T) {
 
 			config := peer.TLSConfig(serverCert, nil)
 
-			c := metrics.NewCounter(metrics.CounterOpts{})
+			c := metric.NewCounter(metric.CounterOpts{})
 
 			// Initialize upgrader with a mock counter.
 			// For test cases with invalid certs (expectedErr != nil), we expect the counter to be incremented.
 			// For test cases with valid certs (expectedErr == nil), we expect the counter NOT to be incremented.
-			var mockCounter metrics.Counter
+			var mockCounter metric.Counter
 			if testCase.expectedErr != nil {
 				// For invalid certs, allow increment
 				mockCounter = c
@@ -212,7 +212,7 @@ func basicCert() *x509.Certificate {
 }
 
 type mockPrometheusCounter struct {
-	metrics.Counter
+	metric.Counter
 	onIncrement func()
 }
 

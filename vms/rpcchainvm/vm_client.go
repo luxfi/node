@@ -74,7 +74,7 @@ var (
 	_ block.BuildBlockWithContextChainVM = (*VMClient)(nil)
 	_ block.BatchedChainVM               = (*VMClient)(nil)
 	_ block.StateSyncableVM              = (*VMClient)(nil)
-	_ metrics.Gatherer                = (*VMClient)(nil)
+	_ metric.Gatherer                = (*VMClient)(nil)
 
 	_ block.Block             = (*blockClient)(nil)
 	_ block.WithVerifyContext = (*blockClient)(nil)

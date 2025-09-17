@@ -401,7 +401,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 		},
 		Windower:               windower,
 		Scheduler:              scheduler,
-		proposerBuildSlotGauge: metrics.NewGauge(metrics.GaugeOpts{}),
+		proposerBuildSlotGauge: metric.NewGauge(metric.GaugeOpts{}),
 	}
 	vm.Clock.Set(now)
 

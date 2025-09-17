@@ -36,7 +36,7 @@ type Config struct {
 	StakingCertLeaf *staking.Certificate
 
 	// Registerer for prometheus metrics
-	Registerer metrics.Registerer
+	Registerer metric.Registerer
 
 	// Automining configuration
 	AutominingEnabled bool

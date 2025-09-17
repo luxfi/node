@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	luxmetrics "github.com/luxfi/metric"
 	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/version"
@@ -66,15 +65,15 @@ type PeerTracker struct {
 }
 
 type peerTrackerMetrics struct {
-	numTrackedPeers    luxmetrics.Gauge
-	numResponsivePeers luxmetrics.Gauge
-	averageBandwidth   luxmetrics.Gauge
+	numTrackedPeers    luxmetric.Gauge
+	numResponsivePeers luxmetric.Gauge
+	averageBandwidth   luxmetric.Gauge
 }
 
 func NewPeerTracker(
 	log log.Logger,
 	metricsNamespace string,
-	registerer luxmetrics.Registerer,
+	registerer luxmetric.Registerer,
 	ignoredNodes set.Set[ids.NodeID],
 	minVersion *version.Application,
 ) (*PeerTracker, error) {
@@ -88,22 +87,22 @@ func NewPeerTracker(
 		ignoredNodes:     ignoredNodes,
 		minVersion:       minVersion,
 		metrics: peerTrackerMetrics{
-			numTrackedPeers: luxmetrics.NewGauge(
-				luxmetrics.GaugeOpts{
+			numTrackedPeers: luxmetric.NewGauge(
+				luxmetric.GaugeOpts{
 					Namespace: metricsNamespace,
 					Name:      "num_tracked_peers",
 					Help:      "number of tracked peers",
 				},
 			),
-			numResponsivePeers: luxmetrics.NewGauge(
-				luxmetrics.GaugeOpts{
+			numResponsivePeers: luxmetric.NewGauge(
+				luxmetric.GaugeOpts{
 					Namespace: metricsNamespace,
 					Name:      "num_responsive_peers",
 					Help:      "number of responsive peers",
 				},
 			),
-			averageBandwidth: luxmetrics.NewGauge(
-				luxmetrics.GaugeOpts{
+			averageBandwidth: luxmetric.NewGauge(
+				luxmetric.GaugeOpts{
 					Namespace: metricsNamespace,
 					Name:      "average_bandwidth",
 					Help:      "average sync bandwidth used by peers",
@@ -113,9 +112,9 @@ func NewPeerTracker(
 	}
 
 	err := errors.Join(
-		registerer.Register(t.metrics.numTrackedPeers.(prometheus.Collector)),
-		registerer.Register(t.metrics.numResponsivePeers.(prometheus.Collector)),
-		registerer.Register(t.metrics.averageBandwidth.(prometheus.Collector)),
+		registerer.Register(t.metrics.numTrackedPeers),
+		registerer.Register(t.metrics.numResponsivePeers),
+		registerer.Register(t.metrics.averageBandwidth),
 	)
 	return t, err
 }

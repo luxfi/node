@@ -25,7 +25,7 @@ var (
 	helpText                  = ""
 )
 
-// Gatherer implements the [metrics.Gatherer] interface by gathering all
+// Gatherer implements the [metric.Gatherer] interface by gathering all
 // metrics from a [Registry].
 type Gatherer struct {
 	registry Registry

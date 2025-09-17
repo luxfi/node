@@ -70,7 +70,7 @@ func (g *txParser) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
 
 func newGossipMempool(
 	mempool xmempool.Mempool,
-	registerer metrics.Registerer,
+	registerer metric.Registerer,
 	log log.Logger,
 	txVerifier TxVerifier,
 	parser txs.Parser,

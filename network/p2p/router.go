@@ -58,7 +58,7 @@ type pendingCrossChainAppRequest struct {
 
 // routerMetrics defines the interface for collecting metrics
 type routerMetrics interface {
-	observe(labels luxmetrics.Labels, start time.Time)
+	observe(labels luxmetric.Labels, start time.Time)
 }
 
 // meteredHandler emits metrics for a Handler
@@ -68,11 +68,11 @@ type meteredHandler struct {
 }
 
 type metricsImpl struct {
-	msgTime  luxmetrics.GaugeVec
-	msgCount luxmetrics.CounterVec
+	msgTime  luxmetric.GaugeVec
+	msgCount luxmetric.CounterVec
 }
 
-func (m *metricsImpl) observe(labels luxmetrics.Labels, start time.Time) {
+func (m *metricsImpl) observe(labels luxmetric.Labels, start time.Time) {
 	metricTime := m.msgTime.With(labels)
 	metricCount := m.msgCount.With(labels)
 
@@ -163,7 +163,7 @@ func (r *router) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID ui
 	}
 
 	r.metrics.observe(
-		luxmetrics.Labels{
+		luxmetric.Labels{
 			opLabel:      message.AppRequestOp.String(),
 			handlerLabel: handlerID,
 		},
@@ -188,7 +188,7 @@ func (r *router) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, reques
 	pending.callback(ctx, nodeID, nil, appErr)
 
 	r.metrics.observe(
-		luxmetrics.Labels{
+		luxmetric.Labels{
 			opLabel:      message.AppErrorOp.String(),
 			handlerLabel: pending.handlerID,
 		},
@@ -213,7 +213,7 @@ func (r *router) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID u
 	pending.callback(ctx, nodeID, response, nil)
 
 	r.metrics.observe(
-		luxmetrics.Labels{
+		luxmetric.Labels{
 			opLabel:      message.AppResponseOp.String(),
 			handlerLabel: pending.handlerID,
 		},
@@ -242,7 +242,7 @@ func (r *router) AppGossip(ctx context.Context, nodeID ids.NodeID, gossip []byte
 	handler.AppGossip(ctx, nodeID, parsedMsg)
 
 	r.metrics.observe(
-		luxmetrics.Labels{
+		luxmetric.Labels{
 			opLabel:      message.AppGossipOp.String(),
 			handlerLabel: handlerID,
 		},
@@ -282,7 +282,7 @@ func (r *router) CrossChainAppRequest(
 	}
 
 	r.metrics.observe(
-		luxmetrics.Labels{
+		luxmetric.Labels{
 			opLabel:      message.CrossChainAppRequestOp.String(),
 			handlerLabel: handlerID,
 		},
@@ -307,7 +307,7 @@ func (r *router) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID,
 	pending.callback(ctx, chainID, nil, appErr)
 
 	r.metrics.observe(
-		luxmetrics.Labels{
+		luxmetric.Labels{
 			opLabel:      message.CrossChainAppErrorOp.String(),
 			handlerLabel: pending.handlerID,
 		},
@@ -332,7 +332,7 @@ func (r *router) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requ
 	pending.callback(ctx, chainID, response, nil)
 
 	r.metrics.observe(
-		luxmetrics.Labels{
+		luxmetric.Labels{
 			opLabel:      message.CrossChainAppResponseOp.String(),
 			handlerLabel: pending.handlerID,
 		},

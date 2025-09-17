@@ -94,7 +94,7 @@ func NewNetworkClient(
 	maxActiveRequests int64,
 	log log.Logger,
 	metricsNamespace string,
-	registerer metrics.Registerer,
+	registerer metric.Registerer,
 	minVersion *version.Application,
 ) (NetworkClient, error) {
 	peerTracker, err := p2p.NewPeerTracker(

@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
 
@@ -109,7 +108,7 @@ type VM struct {
 	// Used to check local time
 	clock mockable.Clock
 
-	registerer metrics.Registerer
+	registerer metric.Registerer
 
 	connectedPeers map[ids.NodeID]*version.Application
 

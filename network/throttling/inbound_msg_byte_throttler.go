@@ -4,7 +4,6 @@
 package throttling
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"context"
 	"time"
 
@@ -24,7 +23,7 @@ import (
 
 func newInboundMsgByteThrottler(
 	log log.Logger,
-	registerer luxmetrics.Registerer,
+	registerer luxmetric.Registerer,
 	vdrs validators.Manager,
 	config MsgByteThrottlerConfig,
 ) (*inboundMsgByteThrottler, error) {
@@ -300,13 +299,13 @@ func (t *inboundMsgByteThrottler) release(metadata *msgMetadata, nodeID ids.Node
 
 type inboundMsgByteThrottlerMetrics struct {
 	acquireLatency        metric.Averager
-	remainingAtLargeBytes luxmetrics.Gauge
-	remainingVdrBytes     luxmetrics.Gauge
-	awaitingAcquire       luxmetrics.Gauge
-	awaitingRelease       luxmetrics.Gauge
+	remainingAtLargeBytes luxmetric.Gauge
+	remainingVdrBytes     luxmetric.Gauge
+	awaitingAcquire       luxmetric.Gauge
+	awaitingRelease       luxmetric.Gauge
 }
 
-func (m *inboundMsgByteThrottlerMetrics) initialize(reg luxmetrics.Registerer) error {
+func (m *inboundMsgByteThrottlerMetrics) initialize(reg luxmetric.Registerer) error {
 	errs := wrappers.Errs{}
 	m.acquireLatency = metric.NewAveragerWithErrs(
 		"byte_throttler_inbound_acquire_latency",
@@ -314,27 +313,27 @@ func (m *inboundMsgByteThrottlerMetrics) initialize(reg luxmetrics.Registerer) e
 		reg,
 		&errs,
 	)
-	m.remainingAtLargeBytes = luxmetrics.NewGauge(luxmetrics.GaugeOpts{
+	m.remainingAtLargeBytes = luxmetric.NewGauge(luxmetric.GaugeOpts{
 		Name: "byte_throttler_inbound_remaining_at_large_bytes",
 		Help: "Bytes remaining in the at-large byte buffer",
 	})
-	m.remainingVdrBytes = luxmetrics.NewGauge(luxmetrics.GaugeOpts{
+	m.remainingVdrBytes = luxmetric.NewGauge(luxmetric.GaugeOpts{
 		Name: "byte_throttler_inbound_remaining_validator_bytes",
 		Help: "Bytes remaining in the validator byte buffer",
 	})
-	m.awaitingAcquire = luxmetrics.NewGauge(luxmetrics.GaugeOpts{
+	m.awaitingAcquire = luxmetric.NewGauge(luxmetric.GaugeOpts{
 		Name: "byte_throttler_inbound_awaiting_acquire",
 		Help: "Number of inbound messages waiting to acquire space on the inbound message byte buffer",
 	})
-	m.awaitingRelease = luxmetrics.NewGauge(luxmetrics.GaugeOpts{
+	m.awaitingRelease = luxmetric.NewGauge(luxmetric.GaugeOpts{
 		Name: "byte_throttler_inbound_awaiting_release",
 		Help: "Number of messages currently being read/handled",
 	})
 	errs.Add(
-		reg.Register(m.remainingAtLargeBytes.(prometheus.Collector)),
-		reg.Register(m.remainingVdrBytes.(prometheus.Collector)),
-		reg.Register(m.awaitingAcquire.(prometheus.Collector)),
-		reg.Register(m.awaitingRelease.(prometheus.Collector)),
+		reg.Register(m.remainingAtLargeBytes),
+		reg.Register(m.remainingVdrBytes),
+		reg.Register(m.awaitingAcquire),
+		reg.Register(m.awaitingRelease),
 	)
 	return errs.Err
 }

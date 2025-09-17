@@ -4,7 +4,6 @@
 package gossip
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"context"
 	"errors"
 	"fmt"
@@ -45,27 +44,27 @@ var (
 	_ Set[*testTx] = (*FullSet[*testTx])(nil)
 
 	ioTypeLabels   = []string{ioLabel, typeLabel}
-	sentPushLabels = luxmetrics.Labels{
+	sentPushLabels = luxmetric.Labels{
 		ioLabel:   sentIO,
 		typeLabel: pushType,
 	}
-	receivedPushLabels = luxmetrics.Labels{
+	receivedPushLabels = luxmetric.Labels{
 		ioLabel:   receivedIO,
 		typeLabel: pushType,
 	}
-	sentPullLabels = luxmetrics.Labels{
+	sentPullLabels = luxmetric.Labels{
 		ioLabel:   sentIO,
 		typeLabel: pullType,
 	}
-	receivedPullLabels = luxmetrics.Labels{
+	receivedPullLabels = luxmetric.Labels{
 		ioLabel:   receivedIO,
 		typeLabel: pullType,
 	}
 	typeLabels   = []string{typeLabel}
-	unsentLabels = luxmetrics.Labels{
+	unsentLabels = luxmetric.Labels{
 		typeLabel: unsentType,
 	}
-	sentLabels = luxmetrics.Labels{
+	sentLabels = luxmetric.Labels{
 		typeLabel: sentType,
 	}
 
@@ -97,50 +96,50 @@ type ValidatorGossiper struct {
 // Metrics that are tracked across a gossip protocol. A given protocol should
 // only use a single instance of Metrics.
 type Metrics struct {
-	count                   luxmetrics.CounterVec
-	bytes                   luxmetrics.CounterVec
-	tracking                luxmetrics.GaugeVec
-	trackingLifetimeAverage luxmetrics.Gauge
-	topValidators           luxmetrics.GaugeVec
+	count                   luxmetric.CounterVec
+	bytes                   luxmetric.CounterVec
+	tracking                luxmetric.GaugeVec
+	trackingLifetimeAverage luxmetric.Gauge
+	topValidators           luxmetric.GaugeVec
 }
 
 // NewMetrics returns a common set of metrics
 func NewMetrics(
-	metrics luxmetrics.Registerer,
+	metrics luxmetric.Registerer,
 	namespace string,
 ) (Metrics, error) {
 	m := Metrics{
-		count: luxmetrics.NewCounterVec(
-			luxmetrics.CounterOpts{
+		count: luxmetric.NewCounterVec(
+			luxmetric.CounterOpts{
 				Namespace: namespace,
 				Name:      "gossip_count",
 				Help:      "amount of gossip (n)",
 			},
 			ioTypeLabels,
 		),
-		bytes: luxmetrics.NewCounterVec(
-			luxmetrics.CounterOpts{
+		bytes: luxmetric.NewCounterVec(
+			luxmetric.CounterOpts{
 				Namespace: namespace,
 				Name:      "gossip_bytes",
 				Help:      "amount of gossip (bytes)",
 			},
 			ioTypeLabels,
 		),
-		tracking: luxmetrics.NewGaugeVec(
-			luxmetrics.GaugeOpts{
+		tracking: luxmetric.NewGaugeVec(
+			luxmetric.GaugeOpts{
 				Namespace: namespace,
 				Name:      "gossip_tracking",
 				Help:      "number of gossipables being tracked",
 			},
 			typeLabels,
 		),
-		trackingLifetimeAverage: luxmetrics.NewGauge(luxmetrics.GaugeOpts{
+		trackingLifetimeAverage: luxmetric.NewGauge(luxmetric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "gossip_tracking_lifetime_average",
 			Help:      "average duration a gossipable has been tracked (ns)",
 		}),
-		topValidators: luxmetrics.NewGaugeVec(
-			luxmetrics.GaugeOpts{
+		topValidators: luxmetric.NewGaugeVec(
+			luxmetric.GaugeOpts{
 				Namespace: namespace,
 				Name:      "top_validators",
 				Help:      "number of validators gossipables are sent to due to stake",
@@ -149,16 +148,16 @@ func NewMetrics(
 		),
 	}
 	err := errors.Join(
-		metrics.Register(m.count.(prometheus.Collector)),
-		metrics.Register(m.bytes.(prometheus.Collector)),
-		metrics.Register(m.tracking.(prometheus.Collector)),
-		metrics.Register(m.trackingLifetimeAverage.(prometheus.Collector)),
-		metrics.Register(m.topValidators.(prometheus.Collector)),
+		metrics.Register(m.count),
+		metrics.Register(m.bytes),
+		metrics.Register(m.tracking),
+		metrics.Register(m.trackingLifetimeAverage),
+		metrics.Register(m.topValidators),
 	)
 	return m, err
 }
 
-func (m *Metrics) observeMessage(labels luxmetrics.Labels, count int, bytes int) {
+func (m *Metrics) observeMessage(labels luxmetric.Labels, count int, bytes int) {
 	countMetric := m.count.With(labels)
 	bytesMetric := m.bytes.With(labels)
 
@@ -426,7 +425,7 @@ func (p *PushGossiper[T]) gossip(
 	toGossip buffer.Deque[T],
 	toRegossip buffer.Deque[T],
 	discarded cache.Cacher[ids.ID, struct{}],
-	metricsLabels luxmetrics.Labels,
+	metricsLabels luxmetric.Labels,
 ) error {
 	var (
 		sentBytes                   = 0
