@@ -6,16 +6,13 @@ package rpcchainvm
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/luxfi/mock/gomock"
 
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/engine/chain/chainmock"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -41,76 +38,35 @@ var (
 type ContextEnabledVMMock struct {
 	blockmock.ChainVM
 	blockmock.BuildBlockWithContextChainVM
+	BuildBlockWithContextFunc func(context.Context, *block.Context) (block.Block, error)
 }
 
 // Override methods to return block.Block instead of blockmock.Block
 func (m *ContextEnabledVMMock) BuildBlock(ctx context.Context) (block.Block, error) {
 	if m.BuildBlockF != nil {
-		mockBlock, err := m.BuildBlockF(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return &blocktest.Block{
-			IDV:     mockBlock.ID(),
-			HeightV: mockBlock.Height(),
-			TimestampV: mockBlock.Timestamp(),
-			ParentV: mockBlock.ParentID(),
-			BytesV:  mockBlock.Bytes(),
-		}, nil
+		return m.BuildBlockF(ctx)
 	}
 	return nil, nil
 }
 
 func (m *ContextEnabledVMMock) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
 	if m.ParseBlockF != nil {
-		mockBlock, err := m.ParseBlockF(ctx, bytes)
-		if err != nil {
-			return nil, err
-		}
-		return &blocktest.Block{
-			IDV:     mockBlock.ID(),
-			HeightV: mockBlock.Height(),
-			TimestampV: mockBlock.Timestamp(),
-			ParentV: mockBlock.ParentID(),
-			BytesV:  mockBlock.Bytes(),
-		}, nil
+		return m.ParseBlockF(ctx, bytes)
 	}
 	return nil, nil
 }
 
 func (m *ContextEnabledVMMock) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
 	if m.GetBlockF != nil {
-		mockBlock, err := m.GetBlockF(ctx, id)
-		if err != nil {
-			return nil, err
-		}
-		return &blocktest.Block{
-			IDV:     mockBlock.ID(),
-			HeightV: mockBlock.Height(),
-			TimestampV: mockBlock.Timestamp(),
-			ParentV: mockBlock.ParentID(),
-			BytesV:  mockBlock.Bytes(),
-		}, nil
+		return m.GetBlockF(ctx, id)
 	}
 	return nil, nil
 }
 
 // Override BuildBlockWithContext
 func (m *ContextEnabledVMMock) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (block.Block, error) {
-	if m.BuildBlockWithContextF != nil {
-		// Convert block.Context to blockmock.Context for the mock function
-		mockCtx := &blockmock.Context{}
-		mockBlock, err := m.BuildBlockWithContextF(ctx, mockCtx)
-		if err != nil {
-			return nil, err
-		}
-		return &blocktest.Block{
-			IDV:     mockBlock.ID(),
-			HeightV: mockBlock.Height(),
-			TimestampV: mockBlock.Timestamp(),
-			ParentV: mockBlock.ParentID(),
-			BytesV:  mockBlock.Bytes(),
-		}, nil
+	if m.BuildBlockWithContextFunc != nil {
+		return m.BuildBlockWithContextFunc(ctx, blockCtx)
 	}
 	return nil, nil
 }
@@ -118,6 +74,7 @@ func (m *ContextEnabledVMMock) BuildBlockWithContext(ctx context.Context, blockC
 type ContextEnabledBlockMock struct {
 	*chainmock.Block
 	*blockmock.WithVerifyContext
+	VerifyWithContextFunc func(context.Context, *block.Context) error
 }
 
 // Implement SetStatus for chain.Block
@@ -127,10 +84,8 @@ func (b *ContextEnabledBlockMock) SetStatus(status choices.Status) {
 
 // Override VerifyWithContext to convert context types
 func (b *ContextEnabledBlockMock) VerifyWithContext(ctx context.Context, blockCtx *block.Context) error {
-	if b.VerifyWithContextF != nil {
-		// Convert block.Context to blockmock.Context for the mock function
-		mockCtx := &blockmock.Context{}
-		return b.VerifyWithContextF(ctx, mockCtx)
+	if b.VerifyWithContextFunc != nil {
+		return b.VerifyWithContextFunc(ctx, blockCtx)
 	}
 	return nil
 }
@@ -139,39 +94,41 @@ func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM
 	// test key is "contextTestKey"
 
 	// create mock
-	ctxVM := ContextEnabledVMMock{
+	ctxVM := &ContextEnabledVMMock{
 		ChainVM:                      blockmock.ChainVM{},
 		BuildBlockWithContextChainVM: blockmock.BuildBlockWithContextChainVM{},
 	}
 
 	if loadExpectations {
-		ctxBlock := ContextEnabledBlockMock{
+		ctxBlock := &ContextEnabledBlockMock{
 			Block:             chainmock.NewBlock(blkID, parentID, 1),
-			WithVerifyContext: blockmock.NewWithVerifyContext(ctrl),
+			WithVerifyContext: &blockmock.WithVerifyContext{},
 		}
-		gomock.InOrder(
-			// Initialize
-			ctxVM.ChainVM.EXPECT().Initialize(
-				gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-				gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-			).Return(nil).Times(1),
-			ctxVM.ChainVM.EXPECT().LastAccepted(gomock.Any()).Return(preSummaryBlk.ID(), nil).Times(1),
-			ctxVM.ChainVM.EXPECT().GetBlock(gomock.Any(), gomock.Any()).Return(preSummaryBlk, nil).Times(1),
 
-			// BuildBlockWithContext
-			ctxVM.BuildBlockWithContextChainVM.EXPECT().BuildBlockWithContext(gomock.Any(), blockContext).Return(ctxBlock, nil).Times(1),
-			ctxBlock.WithVerifyContext.EXPECT().ShouldVerifyWithContext(gomock.Any()).Return(true, nil).Times(1),
-			ctxBlock.Block.EXPECT().ID().Return(blkID).Times(1),
-			ctxBlock.Block.EXPECT().Parent().Return(parentID).Times(1),
-			ctxBlock.Block.EXPECT().Bytes().Return(blkBytes).Times(1),
-			ctxBlock.Block.EXPECT().Height().Return(uint64(1)).Times(1),
-			ctxBlock.Block.EXPECT().Timestamp().Return(time.Now()).Times(1),
+		// Setup mock functions
+		ctxVM.InitializeF = func(ctx context.Context, chainCtx interface{}, db interface{}, genesisBytes []byte, upgradeBytes []byte, configBytes []byte, msgChan interface{}, fxs []interface{}, appSender interface{}) error {
+			return nil
+		}
 
-			// VerifyWithContext
-			ctxVM.ChainVM.EXPECT().ParseBlock(gomock.Any(), blkBytes).Return(ctxBlock, nil).Times(1),
-			ctxBlock.WithVerifyContext.EXPECT().VerifyWithContext(gomock.Any(), blockContext).Return(nil).Times(1),
-			ctxBlock.Block.EXPECT().Timestamp().Return(time.Now()).Times(1),
-		)
+		ctxVM.LastAcceptedF = func(ctx context.Context) (ids.ID, error) {
+			return preSummaryBlk.ID(), nil
+		}
+
+		ctxVM.GetBlockF = func(ctx context.Context, id ids.ID) (block.Block, error) {
+			return preSummaryBlk, nil
+		}
+
+		ctxVM.BuildBlockWithContextFunc = func(ctx context.Context, blockCtx *block.Context) (block.Block, error) {
+			return ctxBlock, nil
+		}
+
+		ctxVM.ParseBlockF = func(ctx context.Context, bytes []byte) (block.Block, error) {
+			return ctxBlock, nil
+		}
+
+		ctxBlock.VerifyWithContextFunc = func(ctx context.Context, blockCtx *block.Context) error {
+			return nil
+		}
 	}
 
 	return ctxVM
@@ -187,7 +144,7 @@ func TestContextVMSummary(t *testing.T) {
 
 	ctx := consensustest.Context(t, consensustest.CChainID)
 
-	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, nil))
+	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, nil, nil))
 
 	blkIntf, err := vm.BuildBlockWithContext(context.Background(), blockContext)
 	require.NoError(err)

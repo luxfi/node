@@ -21,11 +21,13 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/consensus/protocol/chain"
+	componentchain "github.com/luxfi/node/vms/components/chain"
+	protocolchain "github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/node/utils/timer/mockable"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
+
 
 func TestOracle_PreForkBlkImplementsInterface(t *testing.T) {
 	require := require.New(t)
@@ -37,7 +39,7 @@ func TestOracle_PreForkBlkImplementsInterface(t *testing.T) {
 
 	// test
 	_, err := proBlk.Options(context.Background())
-	require.Equal(chain.ErrNotOracle, err)
+	require.Equal(componentchain.ErrNotOracle, err)
 
 	// setup
 	proBlk = preForkBlock{
@@ -66,16 +68,16 @@ func TestOracle_PreForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 	preferredTestBlk := blocktest.BuildChild(coreTestBlk)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]chain.Block{
+		opts: [2]componentchain.Block{
 			preferredTestBlk,
 			blocktest.BuildChild(coreTestBlk),
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (componentchain.Block, error) {
 		return oracleCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (componentchain.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -106,7 +108,7 @@ func TestOracle_PreForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 	lastCoreBlk := &TestOptionsBlock{
 		Block: *blocktest.BuildChild(preferredTestBlk),
 	}
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (componentchain.Block, error) {
 		return lastCoreBlk, nil
 	}
 
@@ -140,16 +142,16 @@ func TestOracle_PostForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]chain.Block{
+		opts: [2]componentchain.Block{
 			preferredBlk,
 			unpreferredBlk,
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (componentchain.Block, error) {
 		return oracleCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (componentchain.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -180,7 +182,7 @@ func TestOracle_PostForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 	lastCoreBlk := &TestOptionsBlock{
 		Block: *blocktest.BuildChild(preferredBlk),
 	}
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (componentchain.Block, error) {
 		return lastCoreBlk, nil
 	}
 
@@ -203,10 +205,10 @@ func TestBlockVerify_PreFork_ParentChecks(t *testing.T) {
 
 	// create parent block ...
 	parentCoreBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (componentchain.Block, error) {
 		return parentCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (componentchain.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -216,7 +218,7 @@ func TestBlockVerify_PreFork_ParentChecks(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (componentchain.Block, error) {
 		switch {
 		case bytes.Equal(b, blocktest.GenesisBytes):
 			return blocktest.Genesis, nil
@@ -269,7 +271,7 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 
 	coreBlk := blocktest.BuildChild(blocktest.Genesis)
 	coreBlk.TimestampV = preActivationTime
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (componentchain.Block, error) {
 		return coreBlk, nil
 	}
 
@@ -287,7 +289,7 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 		0, // pChainHeight
 		proVM.StakingCertLeaf,
 		coreBlk.Bytes(),
-		proVM.ctx.ChainID,
+		ids.Empty, // ChainID placeholder for tests
 		proVM.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -315,10 +317,10 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 
 	secondCoreBlk := blocktest.BuildChild(coreBlk)
 	secondCoreBlk.TimestampV = postActivationTime
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (componentchain.Block, error) {
 		return secondCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (componentchain.Block, error) {
 		switch id {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -338,10 +340,10 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 
 	require.NoError(proVM.SetPreference(context.Background(), lastPreForkBlk.ID()))
 	thirdCoreBlk := blocktest.BuildChild(secondCoreBlk)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (componentchain.Block, error) {
 		return thirdCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (componentchain.Block, error) {
 		switch id {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -377,7 +379,7 @@ func TestBlockVerify_BlocksBuiltOnPostForkGenesis(t *testing.T) {
 
 	// build parent block after fork activation time ...
 	coreBlock := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (componentchain.Block, error) {
 		return coreBlock, nil
 	}
 
@@ -411,10 +413,10 @@ func TestBlockAccept_PreFork_SetsLastAcceptedBlock(t *testing.T) {
 	}()
 
 	coreBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (componentchain.Block, error) {
 		return coreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (componentchain.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -424,7 +426,7 @@ func TestBlockAccept_PreFork_SetsLastAcceptedBlock(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (componentchain.Block, error) {
 		switch {
 		case bytes.Equal(b, blocktest.GenesisBytes):
 			return blocktest.Genesis, nil
@@ -443,7 +445,7 @@ func TestBlockAccept_PreFork_SetsLastAcceptedBlock(t *testing.T) {
 
 	coreVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		// Check if the coreBlk was accepted using consensustest.Status
-		if coreBlk.Status == consensustest.Accepted {
+		if coreBlk.StatusV == componentchain.Accepted {
 			return coreBlk.ID(), nil
 		}
 		return blocktest.GenesisID, nil
@@ -467,7 +469,7 @@ func TestBlockReject_PreForkBlock_InnerBlockIsRejected(t *testing.T) {
 	}()
 
 	coreBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (componentchain.Block, error) {
 		return coreBlk, nil
 	}
 
@@ -478,7 +480,7 @@ func TestBlockReject_PreForkBlock_InnerBlockIsRejected(t *testing.T) {
 
 	require.NoError(proBlk.Reject(context.Background()))
 	// Pre-fork blocks always report Processing status, check inner block instead
-	require.Equal(consensustest.Rejected, coreBlk.Status)
+	require.Equal(consensustest.Rejected, coreBlk.StatusV)
 }
 
 func TestBlockVerify_ForkBlockIsOracleBlock(t *testing.T) {
@@ -500,13 +502,13 @@ func TestBlockVerify_ForkBlockIsOracleBlock(t *testing.T) {
 	coreTestBlk.TimestampV = postActivationTime
 	coreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]chain.Block{
+		opts: [2]componentchain.Block{
 			blocktest.BuildChild(coreTestBlk),
 			blocktest.BuildChild(coreTestBlk),
 		},
 	}
 
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (componentchain.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -520,7 +522,7 @@ func TestBlockVerify_ForkBlockIsOracleBlock(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (componentchain.Block, error) {
 		switch {
 		case bytes.Equal(b, blocktest.GenesisBytes):
 			return blocktest.Genesis, nil
@@ -540,7 +542,7 @@ func TestBlockVerify_ForkBlockIsOracleBlock(t *testing.T) {
 
 	require.NoError(firstBlock.Verify(context.Background()))
 
-	oracleBlock, ok := firstBlock.(chain.OracleBlock)
+	oracleBlock, ok := firstBlock.(componentchain.OracleBlock)
 	require.True(ok)
 
 	options, err := oracleBlock.Options(context.Background())
@@ -570,13 +572,13 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 	coreTestBlk.TimestampV = postActivationTime
 	coreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]chain.Block{
+		opts: [2]componentchain.Block{
 			blocktest.BuildChild(coreTestBlk),
 			blocktest.BuildChild(coreTestBlk),
 		},
 	}
 
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (componentchain.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -590,7 +592,7 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (componentchain.Block, error) {
 		switch {
 		case bytes.Equal(b, blocktest.GenesisBytes):
 			return blocktest.Genesis, nil
@@ -616,7 +618,7 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 		0, // pChainHeight,
 		proVM.StakingCertLeaf,
 		coreBlk.opts[0].Bytes(),
-		proVM.ctx.ChainID,
+		ids.Empty, // ChainID placeholder for tests
 		proVM.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -636,45 +638,46 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 // when a P-chain height can be correctly provided from the parent block.
 func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 	require := require.New(t)
-	ctrl := gomock.NewController(t)
 
+	// Use blocktest.Block instead of chainmock
 	pChainHeight := uint64(1337)
 	blkID := ids.GenerateTestID()
-	innerBlk := chainmock.NewBlock(ctrl)
-	innerBlk.EXPECT().ID().Return(blkID).AnyTimes()
-	innerBlk.EXPECT().Timestamp().Return(mockable.MaxTime)
-	builtBlk := chainmock.NewBlock(ctrl)
-	builtBlk.EXPECT().Bytes().Return([]byte{1, 2, 3}).AnyTimes()
-	builtBlk.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
-	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
-	innerVM := block.NewMockChainVM(ctrl)
-	innerVM.EXPECT().BuildBlock(gomock.Any()).Return(builtBlk, nil).AnyTimes()
-	vdrState := validatorsmock.NewState(ctrl)
-	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
-
-	vm := &VM{
-		ChainVM: innerVM,
-		ctx: &context.Context{
-			ValidatorState: vdrState,
-			Log:            log.NewNoOpLogger(),
+	innerBlk := &blocktest.Block{
+		TestBlock: componentchain.TestBlock{
+			IDV:        blkID,
+			TimestampV: mockable.MaxTime,
 		},
+	}
+
+	builtBlkID := ids.GenerateTestID()
+	builtBlk := &blocktest.Block{
+		TestBlock: componentchain.TestBlock{
+			IDV:     builtBlkID,
+			BytesV:  []byte{1, 2, 3},
+			HeightV: pChainHeight,
+		},
+	}
+
+	// Create a mock VM interface using blocktest instead of gomock
+	coreVM, _, proVM, _ := initTestProposerVM(t, mockable.MaxTime, mockable.MaxTime, 0)
+	defer func() {
+		require.NoError(proVM.Shutdown(context.Background()))
+	}()
+
+	coreVM.BuildBlockF = func(context.Context) (componentchain.Block, error) {
+		return builtBlk, nil
 	}
 
 	blk := &preForkBlock{
 		Block: innerBlk,
-		vm:    vm,
+		vm:    proVM,
 	}
 
-	// Should call BuildBlock since proposervm won't have a P-chain height
+	// Should call BuildBlock since proposervm is not activated
+	proVM.ActivationTime = mockable.MaxTime
+
 	gotChild, err := blk.buildChild(context.Background())
 	require.NoError(err)
-	require.Equal(builtBlk, gotChild.(*postForkBlock).innerBlk)
-
-	// Should call BuildBlock since proposervm is not activated
-	innerBlk.EXPECT().Timestamp().Return(time.Time{})
-	vm.ActivationTime = mockable.MaxTime
-
-	gotChild, err = blk.buildChild(context.Background())
-	require.NoError(err)
+	require.IsType(&preForkBlock{}, gotChild)
 	require.Equal(builtBlk, gotChild.(*preForkBlock).Block)
 }

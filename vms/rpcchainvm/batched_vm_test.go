@@ -93,7 +93,7 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 		blk2 := chainmock.NewBlock(blkID2, blkID1, 2)
 
 		parseBlockCallCount := 0
-		vm.ParseBlockF = func(ctx context.Context, bytes []byte) (blockmock.Block, error) {
+		vm.ParseBlockF = func(ctx context.Context, bytes []byte) (block.Block, error) {
 			parseBlockCallCount++
 			switch parseBlockCallCount {
 			case 1:
@@ -112,7 +112,7 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 			return preSummaryBlk.ID(), nil
 		}
 
-		vm.GetBlockF = func(ctx context.Context, id ids.ID) (blockmock.Block, error) {
+		vm.GetBlockF = func(ctx context.Context, id ids.ID) (block.Block, error) {
 			return preSummaryBlk, nil
 		}
 	}

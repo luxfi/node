@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/consensus/engine/chain/block"
+	linearblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
 )
@@ -56,14 +56,14 @@ func (b *blockAdapter) Reject(ctx context.Context) error {
 	return b.Block.Reject(ctx)
 }
 
-func (b *blockAdapter) Options(ctx context.Context) ([2]block.Block, error) {
+func (b *blockAdapter) Options(ctx context.Context) ([2]linearblock.Block, error) {
 	// Options is not available in the chain.Block interface
 	// Return empty options for now
-	return [2]block.Block{nil, nil}, nil
+	return [2]linearblock.Block{nil, nil}, nil
 }
 
 // wrapBlock wraps a chain.Block in an adapter that implements linearblock.Block
-func wrapBlock(blk chain.Block) block.Block {
+func wrapBlock(blk chain.Block) linearblock.Block {
 	if blk == nil {
 		return nil
 	}

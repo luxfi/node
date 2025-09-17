@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/components/chain/blocktest"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
@@ -467,9 +468,10 @@ func TestGetBlock_MutatedSignature(t *testing.T) {
 
 	// Make sure that we will be sampled to perform the proposals.
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+		nodeID := consensus.GetNodeID(proVM.ctx)
 		return map[ids.NodeID]*validators.GetValidatorOutput{
-			proVM.ctx.NodeID: {
-				NodeID: proVM.ctx.NodeID,
+			nodeID: {
+				NodeID: nodeID,
 				Weight: 10,
 			},
 		}, nil

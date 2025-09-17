@@ -39,7 +39,6 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 	chainID := consensustest.XChainID
 	cChainID := ids.GenerateTestID()
 	luxCtx := consensustest.Context(t, chainID)
-	ctx := context.Background()
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -415,7 +414,7 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 	chainID := consensustest.XChainID
 	cChainID := ids.GenerateTestID()
-	ctx := consensustest.Context(t, chainID)
+	luxCtx := consensustest.Context(t, chainID)
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -1028,7 +1027,7 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 func TestSyntacticVerifierOperationTx(t *testing.T) {
 	chainID := consensustest.XChainID
 	cChainID := ids.GenerateTestID()
-	ctx := consensustest.Context(t, chainID)
+	luxCtx := consensustest.Context(t, chainID)
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -1519,7 +1518,6 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 }
 
 func TestSyntacticVerifierImportTx(t *testing.T) {
-	ctx := context.Background()
 	chainID := consensustest.XChainID
 	luxCtx := consensustest.Context(t, chainID)
 	cChainID := ids.GenerateTestID()
@@ -1924,7 +1922,6 @@ func TestSyntacticVerifierImportTx(t *testing.T) {
 }
 
 func TestSyntacticVerifierExportTx(t *testing.T) {
-	ctx := context.Background()
 	chainID := consensustest.XChainID
 	luxCtx := consensustest.Context(t, chainID)
 	cChainID := ids.GenerateTestID()

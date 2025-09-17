@@ -172,17 +172,30 @@ func (vm *VM) Initialize(
 	// DBManager is an interface, we'll handle it as such
 	dbManager := dbManagerIntf
 	
-	toEngine, ok := toEngineIntf.(chan<- linearblock.Message)
-	if !ok {
-		return fmt.Errorf("invalid message channel type")
+	// Try multiple type assertions to handle different channel types
+	var toEngine chan<- linearblock.Message
+	switch ch := toEngineIntf.(type) {
+	case chan<- linearblock.Message:
+		toEngine = ch
+	case chan linearblock.Message:
+		toEngine = ch
+	default:
+		// Try to see what type we actually received
+		return fmt.Errorf("invalid message channel type: expected chan<- linearblock.Message, got %T", toEngineIntf)
 	}
 	
-	// Convert fxs slice
-	fxs := make([]*linearblock.Fx, len(fxsIntf))
-	for i, fx := range fxsIntf {
-		fxs[i], ok = fx.(*linearblock.Fx)
-		if !ok {
-			return fmt.Errorf("invalid fx type at index %d", i)
+	// Convert fxs slice (handle nil case)
+	var fxs []*linearblock.Fx
+	if fxsIntf != nil {
+		fxs = make([]*linearblock.Fx, len(fxsIntf))
+		for i, fx := range fxsIntf {
+			if fx == nil {
+				continue
+			}
+			fxs[i], ok = fx.(*linearblock.Fx)
+			if !ok {
+				return fmt.Errorf("invalid fx type at index %d", i)
+			}
 		}
 	}
 	
@@ -231,13 +244,17 @@ func (vm *VM) Initialize(
 		vm.ctx = context.Background() // Use the runtime context
 	}
 	// Get the current database from the DBManager
-	// Since DBManager is now an interface{}, we need to handle it differently
-	// For now, we'll create a database if one wasn't provided
+	// DBManager interface should have a Current() method that returns database.Database
 	if dbManager != nil {
-		// Try to get a database from the manager
-		// This is a temporary workaround - proper database initialization needed
-		// vm.db = dbManager.Current()
-		// TODO: Fix database manager integration
+		// Use reflection to call Current() method if it exists
+		// This handles both linearblock.DBManager and test mocks
+		if dbMgr, ok := dbManager.(interface{ Current() database.Database }); ok {
+			vm.db = dbMgr.Current()
+		} else {
+			return fmt.Errorf("invalid database manager type: expected DBManager with Current() method, got %T", dbManager)
+		}
+	} else {
+		return fmt.Errorf("database manager is required")
 	}
 
 	// Note: this codec is never used to serialize anything
@@ -695,6 +712,9 @@ func (vm *VM) onNormalOperationsStarted() error {
 
 func (vm *VM) SetState(_ context.Context, state interfaces.State) error {
 	switch state {
+	case interfaces.StateSyncing:
+		// State syncing is handled the same as bootstrapping for now
+		return vm.onBootstrapStarted()
 	case interfaces.Bootstrapping:
 		return vm.onBootstrapStarted()
 	case interfaces.NormalOp:
