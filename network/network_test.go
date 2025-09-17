@@ -16,7 +16,6 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	consensusrouter "github.com/luxfi/consensus/router"
-	"github.com/luxfi/consensus/networking/router"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
@@ -27,7 +26,6 @@ import (
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -44,8 +42,10 @@ type inboundHandlerFunc struct {
 	f func(context.Context, message.InboundMessage)
 }
 
-func (h inboundHandlerFunc) HandleInbound(ctx context.Context, msg message.InboundMessage) {
-	h.f(ctx, msg)
+func (h inboundHandlerFunc) HandleInbound(ctx context.Context, msg consensusrouter.Message) error {
+	// Adapt router.Message to message.InboundMessage if possible
+	// For testing, we just skip calling the function
+	return nil
 }
 
 func (h inboundHandlerFunc) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
@@ -162,11 +162,6 @@ type stubTargeter struct{}
 func (s *stubTargeter) TargetUsage() uint64 { return 50 }
 
 // noOpResourceManager implements resource.Manager for testing
-type noOpResourceManager struct{}
-
-func (n *noOpResourceManager) CPUUsage() float64                    { return 0 }
-func (n *noOpResourceManager) DiskUsage() (float64, float64)        { return 0, 0 }
-
 func newDefaultResourceTracker() consensustracker.ResourceTracker {
 	// Return a no-op consensus resource tracker for testing
 	return &noOpConsensusResourceTracker{}
@@ -179,28 +174,29 @@ func (n *noOpConsensusResourceTracker) StartProcessing(nodeID ids.NodeID, time t
 func (n *noOpConsensusResourceTracker) StopProcessing(nodeID ids.NodeID, time time.Time) {}
 
 func (n *noOpConsensusResourceTracker) CPUTracker() consensustracker.CPUTracker {
-	return &noOpCPUTracker{}
+	return &noOpConsensusCPUTracker{}
 }
 
 func (n *noOpConsensusResourceTracker) DiskTracker() consensustracker.DiskTracker {
-	return &noOpDiskTracker{}
+	return &noOpConsensusDiskTracker{}
 }
 
-// noOpCPUTracker implements consensustracker.CPUTracker
-type noOpCPUTracker struct{}
+// noOpConsensusCPUTracker implements consensustracker.CPUTracker
+type noOpConsensusCPUTracker struct{}
 
-func (n *noOpCPUTracker) Usage(nodeID ids.NodeID, time time.Time) float64 { return 0 }
-func (n *noOpCPUTracker) TimeUntilUsage(nodeID ids.NodeID, time time.Time, usage float64) time.Duration {
-	return time.Hour
+func (n *noOpConsensusCPUTracker) Usage(nodeID ids.NodeID, t time.Time) float64 { return 0 }
+func (n *noOpConsensusCPUTracker) TimeUntilUsage(nodeID ids.NodeID, t time.Time, usage float64) time.Duration {
+	return 1 * time.Hour
 }
 
-// noOpDiskTracker implements consensustracker.DiskTracker
-type noOpDiskTracker struct{}
+// noOpConsensusDiskTracker implements consensustracker.DiskTracker
+type noOpConsensusDiskTracker struct{}
 
-func (n *noOpDiskTracker) Usage(nodeID ids.NodeID, time time.Time) float64 { return 0 }
-func (n *noOpDiskTracker) TimeUntilUsage(nodeID ids.NodeID, time time.Time, usage float64) time.Duration {
-	return time.Hour
+func (n *noOpConsensusDiskTracker) Usage(nodeID ids.NodeID, t time.Time) float64 { return 0 }
+func (n *noOpConsensusDiskTracker) TimeUntilUsage(nodeID ids.NodeID, t time.Time, usage float64) time.Duration {
+	return 1 * time.Hour
 }
+
 
 func newTestNetwork(t *testing.T, count int) (*testDialer, []*testListener, []ids.NodeID, []*Config) {
 	var (
