@@ -6,18 +6,16 @@ package database_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/database"
 	"github.com/luxfi/database/leveldb"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/pebbledb"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/tests/fixture/e2e"
-	"github.com/luxfi/node/tests/fixture/tmpnet"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 )

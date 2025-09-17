@@ -13,6 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -22,7 +23,6 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
@@ -45,12 +45,35 @@ type rawTestPeer struct {
 // noOpResourceManager implements resource.Manager for testing
 type noOpResourceManager struct{}
 
-func (n *noOpResourceManager) CPUUsage() float64                    { return 0 }
-func (n *noOpResourceManager) DiskUsage() (float64, float64)        { return 0, 0 }
-func (n *noOpResourceManager) AvailableDiskBytes() uint64           { return 1 << 62 }
-func (n *noOpResourceManager) TrackProcess(pid int)                 {}
-func (n *noOpResourceManager) UntrackProcess(pid int)               {}
-func (n *noOpResourceManager) Shutdown()                            {}
+func (n *noOpResourceManager) CPUUsage() float64          { return 0 }
+func (n *noOpResourceManager) DiskUsage() float64         { return 0 }
+func (n *noOpResourceManager) AvailableDiskBytes() uint64 { return 1 << 62 }
+func (n *noOpResourceManager) TrackProcess(pid int)       {}
+func (n *noOpResourceManager) UntrackProcess(pid int)     {}
+func (n *noOpResourceManager) Shutdown()                  {}
+
+// noOpTracker implements consensustracker.Tracker for testing
+type noOpTracker struct{}
+
+func (n *noOpTracker) Usage(nodeID ids.NodeID, t time.Time) float64 { return 0 }
+func (n *noOpTracker) TimeUntilUsage(nodeID ids.NodeID, t time.Time, usage float64) time.Duration {
+	return time.Hour
+}
+
+// noOpConsensusResourceTracker implements consensustracker.ResourceTracker for testing
+type noOpConsensusResourceTracker struct {
+	cpuTracker  *noOpTracker
+	diskTracker *noOpTracker
+}
+
+func (n *noOpConsensusResourceTracker) StartProcessing(nodeID ids.NodeID, t time.Time) {}
+func (n *noOpConsensusResourceTracker) StopProcessing(nodeID ids.NodeID, t time.Time)  {}
+func (n *noOpConsensusResourceTracker) CPUTracker() consensustracker.CPUTracker {
+	return n.cpuTracker
+}
+func (n *noOpConsensusResourceTracker) DiskTracker() consensustracker.DiskTracker {
+	return n.diskTracker
+}
 
 func newMessageCreator(t *testing.T) message.Creator {
 	t.Helper()
@@ -73,14 +96,11 @@ func newConfig(t *testing.T) Config {
 	metrics, err := NewMetrics(luxmetric.NewNoOpMetrics("test").Registry())
 	require.NoError(err)
 
-	// Create a no-op resource manager for testing
-	noOpManager := &noOpResourceManager{}
-	resourceTracker, err := tracker.NewResourceTracker(
-		luxmetric.NewNoOpMetrics("test").Registry(),
-		noOpManager,
-		10*time.Second,
-	)
-	require.NoError(err)
+	// Create a no-op consensus resource tracker for testing
+	consensusResourceTracker := &noOpConsensusResourceTracker{
+		cpuTracker:  &noOpTracker{},
+		diskTracker: &noOpTracker{},
+	}
 
 	return Config{
 		ReadBufferSize:       constants.DefaultNetworkPeerReadBufferSize,
@@ -99,7 +119,7 @@ func newConfig(t *testing.T) Config {
 		PingFrequency:        constants.DefaultPingFrequency,
 		PongTimeout:          constants.DefaultPingPongTimeout,
 		MaxClockDifference:   time.Minute,
-		ResourceTracker:      resourceTracker,
+		ResourceTracker:      consensusResourceTracker,
 		UptimeCalculator:     &uptime.NoOpCalculator{},
 		IPSigner:             nil,
 	}
