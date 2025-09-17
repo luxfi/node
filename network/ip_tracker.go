@@ -74,8 +74,8 @@ func newIPTracker(
 
 type ipTracker struct {
 	log              log.Logger
-	numTrackedIPs    metrics.Gauge
-	numGossipableIPs metrics.Gauge
+	numTrackedIPs    metric.Gauge
+	numGossipableIPs metric.Gauge
 	bloomMetrics     *bloom.Metrics
 
 	lock sync.RWMutex
