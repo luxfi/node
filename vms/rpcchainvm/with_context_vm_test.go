@@ -11,9 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
 
+	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/engine/chain/chainmock"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -41,24 +43,110 @@ type ContextEnabledVMMock struct {
 	blockmock.BuildBlockWithContextChainVM
 }
 
+// Override methods to return block.Block instead of blockmock.Block
+func (m *ContextEnabledVMMock) BuildBlock(ctx context.Context) (block.Block, error) {
+	if m.BuildBlockF != nil {
+		mockBlock, err := m.BuildBlockF(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return &blocktest.Block{
+			IDV:     mockBlock.ID(),
+			HeightV: mockBlock.Height(),
+			TimestampV: mockBlock.Timestamp(),
+			ParentV: mockBlock.ParentID(),
+			BytesV:  mockBlock.Bytes(),
+		}, nil
+	}
+	return nil, nil
+}
+
+func (m *ContextEnabledVMMock) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
+	if m.ParseBlockF != nil {
+		mockBlock, err := m.ParseBlockF(ctx, bytes)
+		if err != nil {
+			return nil, err
+		}
+		return &blocktest.Block{
+			IDV:     mockBlock.ID(),
+			HeightV: mockBlock.Height(),
+			TimestampV: mockBlock.Timestamp(),
+			ParentV: mockBlock.ParentID(),
+			BytesV:  mockBlock.Bytes(),
+		}, nil
+	}
+	return nil, nil
+}
+
+func (m *ContextEnabledVMMock) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
+	if m.GetBlockF != nil {
+		mockBlock, err := m.GetBlockF(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return &blocktest.Block{
+			IDV:     mockBlock.ID(),
+			HeightV: mockBlock.Height(),
+			TimestampV: mockBlock.Timestamp(),
+			ParentV: mockBlock.ParentID(),
+			BytesV:  mockBlock.Bytes(),
+		}, nil
+	}
+	return nil, nil
+}
+
+// Override BuildBlockWithContext
+func (m *ContextEnabledVMMock) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (block.Block, error) {
+	if m.BuildBlockWithContextF != nil {
+		// Convert block.Context to blockmock.Context for the mock function
+		mockCtx := &blockmock.Context{}
+		mockBlock, err := m.BuildBlockWithContextF(ctx, mockCtx)
+		if err != nil {
+			return nil, err
+		}
+		return &blocktest.Block{
+			IDV:     mockBlock.ID(),
+			HeightV: mockBlock.Height(),
+			TimestampV: mockBlock.Timestamp(),
+			ParentV: mockBlock.ParentID(),
+			BytesV:  mockBlock.Bytes(),
+		}, nil
+	}
+	return nil, nil
+}
+
 type ContextEnabledBlockMock struct {
 	*chainmock.Block
 	*blockmock.WithVerifyContext
+}
+
+// Implement SetStatus for chain.Block
+func (b *ContextEnabledBlockMock) SetStatus(status choices.Status) {
+	// For testing, we don't need to actually set status
+}
+
+// Override VerifyWithContext to convert context types
+func (b *ContextEnabledBlockMock) VerifyWithContext(ctx context.Context, blockCtx *block.Context) error {
+	if b.VerifyWithContextF != nil {
+		// Convert block.Context to blockmock.Context for the mock function
+		mockCtx := &blockmock.Context{}
+		return b.VerifyWithContextF(ctx, mockCtx)
+	}
+	return nil
 }
 
 func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM {
 	// test key is "contextTestKey"
 
 	// create mock
-	ctrl := gomock.NewController(t)
 	ctxVM := ContextEnabledVMMock{
-		ChainVM:                      blockmock.NewChainVM(ctrl),
-		BuildBlockWithContextChainVM: blockmock.NewBuildBlockWithContextChainVM(ctrl),
+		ChainVM:                      blockmock.ChainVM{},
+		BuildBlockWithContextChainVM: blockmock.BuildBlockWithContextChainVM{},
 	}
 
 	if loadExpectations {
 		ctxBlock := ContextEnabledBlockMock{
-			Block:             chainmock.NewBlock(ctrl),
+			Block:             chainmock.NewBlock(blkID, parentID, 1),
 			WithVerifyContext: blockmock.NewWithVerifyContext(ctrl),
 		}
 		gomock.InOrder(

@@ -10,11 +10,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/luxfi/mock/gomock"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/consensustest"
+	coreinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/database/memdb"
@@ -36,10 +34,12 @@ var (
 	SummaryHeight    = uint64(2022)
 
 	// a summary to be returned in some UTs
-	mockedSummary = &blocktest.StateSummary{
-		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
-		HeightV: SummaryHeight,
-		BytesV:  []byte("summary"),
+	mockedSummary = &StateSummaryWrapper{
+		StateSummary: &blocktest.StateSummary{
+			IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
+			HeightV: SummaryHeight,
+			BytesV:  []byte("summary"),
+		},
 	}
 
 	// last accepted blocks data before and after summary is accepted
@@ -62,9 +62,185 @@ var (
 	errNothingToParse              = errors.New("nil summary bytes. Nothing to parse")
 )
 
+// StateSummaryWrapper wraps blocktest.StateSummary to implement block.StateSummary correctly
+type StateSummaryWrapper struct {
+	*blocktest.StateSummary
+	AcceptF func(context.Context) (block.StateSyncMode, error)
+}
+
+func (s *StateSummaryWrapper) Accept(ctx context.Context) (block.StateSyncMode, error) {
+	if s.AcceptF != nil {
+		return s.AcceptF(ctx)
+	}
+	// Default implementation - convert blocktest.StateSyncMode to block.StateSyncMode
+	blockTestMode, err := s.StateSummary.Accept(ctx)
+	if err != nil {
+		return block.StateSyncSkipped, err
+	}
+	// Convert from blocktest to block modes
+	switch blockTestMode {
+	case blocktest.StateSyncStatic:
+		return block.StateSyncStatic, nil
+	case blocktest.StateSyncDynamic:
+		return block.StateSyncDynamic, nil
+	default:
+		return block.StateSyncSkipped, nil
+	}
+}
+
+// mockState implements coreinterfaces.State for testing
+type mockState struct{}
+
+func (s *mockState) GetBlock(ctx context.Context, blockID ids.ID) (coreinterfaces.Block, error) {
+	return nil, nil
+}
+
+func (s *mockState) PutBlock(ctx context.Context, block coreinterfaces.Block) error {
+	return nil
+}
+
+func (s *mockState) GetLastAccepted(ctx context.Context) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+func (s *mockState) SetLastAccepted(ctx context.Context, blockID ids.ID) error {
+	return nil
+}
+
 type StateSyncEnabledMock struct {
 	blockmock.ChainVM
 	blockmock.StateSyncableVM
+
+	// Function fields for configurable behavior - these override the embedded methods
+	BuildBlockF                   func(context.Context) (blockmock.Block, error)
+	ParseBlockF                   func(context.Context, []byte) (blockmock.Block, error)
+	GetBlockF                     func(context.Context, ids.ID) (blockmock.Block, error)
+	GetOngoingSyncStateSummaryF   func(context.Context) (block.StateSummary, error)
+	GetLastStateSummaryF          func(context.Context) (block.StateSummary, error)
+	ParseStateSummaryF            func(context.Context, []byte) (block.StateSummary, error)
+	GetStateSummaryF              func(context.Context, uint64) (block.StateSummary, error)
+	StateSyncEnabledF             func(context.Context) (bool, error)
+	InitializeF                   func(context.Context, interface{}, interface{}, []byte, []byte, []byte, interface{}, []interface{}, interface{}) error
+	LastAcceptedF                 func(context.Context) (ids.ID, error)
+	SetStateF                     func(context.Context, coreinterfaces.State) error
+}
+
+// Override methods to return block.Block instead of blockmock.Block
+func (m *StateSyncEnabledMock) BuildBlock(ctx context.Context) (block.Block, error) {
+	if m.BuildBlockF != nil {
+		mockBlock, err := m.BuildBlockF(ctx)
+		if err != nil {
+			return nil, err
+		}
+		// Convert blockmock.Block to block.Block - mockBlock already implements block.Block interface
+		return mockBlock, nil
+	}
+	// Fallback to embedded ChainVM
+	mockBlock, err := m.ChainVM.BuildBlock(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return mockBlock, nil
+}
+
+func (m *StateSyncEnabledMock) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
+	if m.ParseBlockF != nil {
+		mockBlock, err := m.ParseBlockF(ctx, bytes)
+		if err != nil {
+			return nil, err
+		}
+		// mockBlock already implements block.Block interface
+		return mockBlock, nil
+	}
+	// Fallback to embedded ChainVM
+	mockBlock, err := m.ChainVM.ParseBlock(ctx, bytes)
+	if err != nil {
+		return nil, err
+	}
+	return mockBlock, nil
+}
+
+func (m *StateSyncEnabledMock) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
+	if m.GetBlockF != nil {
+		mockBlock, err := m.GetBlockF(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		// mockBlock already implements block.Block interface
+		return mockBlock, nil
+	}
+	// Fallback to embedded ChainVM
+	mockBlock, err := m.ChainVM.GetBlock(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return mockBlock, nil
+}
+
+// Override StateSyncableVM methods
+func (m *StateSyncEnabledMock) GetLastStateSummary(ctx context.Context) (block.StateSummary, error) {
+	if m.GetLastStateSummaryF != nil {
+		return m.GetLastStateSummaryF(ctx)
+	}
+	// Default implementation for testing
+	return nil, block.ErrStateSyncableVMNotImplemented
+}
+
+func (m *StateSyncEnabledMock) GetOngoingSyncStateSummary(ctx context.Context) (block.StateSummary, error) {
+	if m.GetOngoingSyncStateSummaryF != nil {
+		return m.GetOngoingSyncStateSummaryF(ctx)
+	}
+	// Default implementation for testing
+	return nil, block.ErrStateSyncableVMNotImplemented
+}
+
+func (m *StateSyncEnabledMock) ParseStateSummary(ctx context.Context, summaryBytes []byte) (block.StateSummary, error) {
+	if m.ParseStateSummaryF != nil {
+		return m.ParseStateSummaryF(ctx, summaryBytes)
+	}
+	// Default implementation for testing
+	return nil, block.ErrStateSyncableVMNotImplemented
+}
+
+func (m *StateSyncEnabledMock) GetStateSummary(ctx context.Context, height uint64) (block.StateSummary, error) {
+	if m.GetStateSummaryF != nil {
+		return m.GetStateSummaryF(ctx, height)
+	}
+	// Default implementation for testing
+	return nil, block.ErrStateSyncableVMNotImplemented
+}
+
+// Override additional methods
+func (m *StateSyncEnabledMock) StateSyncEnabled(ctx context.Context) (bool, error) {
+	if m.StateSyncEnabledF != nil {
+		return m.StateSyncEnabledF(ctx)
+	}
+	// Fallback to embedded StateSyncableVM
+	return m.StateSyncableVM.StateSyncEnabled(ctx)
+}
+
+func (m *StateSyncEnabledMock) Initialize(ctx context.Context, chainCtx interface{}, db interface{}, genesisBytes []byte, upgradeBytes []byte, configBytes []byte, msgChan interface{}, fxs []interface{}, appSender interface{}) error {
+	if m.InitializeF != nil {
+		return m.InitializeF(ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, msgChan, fxs, appSender)
+	}
+	// Fallback to embedded ChainVM
+	return m.ChainVM.Initialize(ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, msgChan, fxs, appSender)
+}
+
+func (m *StateSyncEnabledMock) LastAccepted(ctx context.Context) (ids.ID, error) {
+	if m.LastAcceptedF != nil {
+		return m.LastAcceptedF(ctx)
+	}
+	// Fallback to embedded ChainVM
+	return m.ChainVM.LastAccepted(ctx)
+}
+
+func (m *StateSyncEnabledMock) SetState(ctx context.Context, state coreinterfaces.State) error {
+	if m.SetStateF != nil {
+		return m.SetStateF(ctx, state)
+	}
+	// For testing, do nothing
+	return nil
 }
 
 func stateSyncEnabledTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM {
@@ -102,7 +278,7 @@ func getOngoingSyncStateSummaryTestPlugin(t *testing.T, loadExpectations bool) b
 
 	if loadExpectations {
 		callCount := 0
-		ssVM.StateSyncGetOngoingSyncStateSummaryF = func(context.Context) (block.StateSummary, error) {
+		ssVM.GetOngoingSyncStateSummaryF = func(context.Context) (block.StateSummary, error) {
 			callCount++
 			switch callCount {
 			case 1:
@@ -245,8 +421,7 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 
 	if loadExpectations {
 		ssVM.InitializeF = func(
-			context.Context, interface{}, interface{}, interface{},
-			interface{}, interface{}, interface{}, interface{},
+			context.Context, interface{}, interface{}, []byte, []byte, []byte, interface{}, []interface{}, interface{},
 		) error {
 			return nil
 		}
@@ -260,7 +435,7 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 			return summaryBlk.ID(), nil
 		}
 		
-		ssVM.GetBlockF = func(context.Context, ids.ID) (block.Block, error) {
+		ssVM.GetBlockF = func(context.Context, ids.ID) (blockmock.Block, error) {
 			if lastAcceptedCallCount <= 1 {
 				return preSummaryBlk, nil
 			}
@@ -275,7 +450,7 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 			return mockedSummary, nil
 		}
 		
-		ssVM.SetStateF = func(context.Context, uint8) error {
+		ssVM.SetStateF = func(context.Context, coreinterfaces.State) error {
 			return nil
 		}
 	}
@@ -286,14 +461,7 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 	process := helperProcess(testKey)
 
-	log := logging.NewLogger(
-		testKey,
-		logging.NewWrappedCore(
-			logging.Info,
-			originalStderr,
-			logging.Colors.ConsoleEncoder(),
-		),
-	)
+	logger := log.NoLog{}
 
 	listener, err := grpcutils.NewListener()
 	require.NoError(err)
@@ -305,7 +473,7 @@ func buildClientHelper(require *require.Assertions, testKey string) *VMClient {
 		&subprocess.Config{
 			Stderr:           originalStderr,
 			Stdout:           io.Discard,
-			Log:              logging.NoLog{},
+			Log:              logger,
 			HandshakeTimeout: runtime.DefaultHandshakeTimeout,
 		},
 	)
@@ -487,7 +655,7 @@ func TestLastAcceptedBlockPostStateSummaryAccept(t *testing.T) {
 	// Step 1: initialize VM and check initial LastAcceptedBlock
 	ctx := consensustest.Context(t, consensustest.CChainID)
 
-	require.NoError(vm.Initialize(context.Background(), ctx, prefixdb.New([]byte{}, memdb.New()), nil, nil, nil, nil, nil))
+	require.NoError(vm.Initialize(context.Background(), ctx, prefixdb.New([]byte{}, memdb.New()), nil, nil, nil, nil, nil, nil))
 
 	blkID, err := vm.LastAccepted(context.Background())
 	require.NoError(err)
@@ -515,7 +683,9 @@ func TestLastAcceptedBlockPostStateSummaryAccept(t *testing.T) {
 	require.Equal(preSummaryBlk.Height(), lastBlk.Height())
 
 	// Setting state to bootstrapping duly update last accepted block
-	require.NoError(vm.SetState(context.Background(), consensus.Bootstrapping))
+	// Create a mock state for testing
+	mockState := &mockState{}
+	require.NoError(vm.SetState(context.Background(), mockState))
 
 	blkID, err = vm.LastAccepted(context.Background())
 	require.NoError(err)

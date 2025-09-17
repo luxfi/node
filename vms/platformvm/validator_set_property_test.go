@@ -415,16 +415,21 @@ func terminatePrimaryValidator(vm *VM, validator *state.Staker) error {
 		if !ok {
 			return fmt.Errorf("failed retrieving commit option: expected BanffCommitBlock")
 		}
-	}
-	if err := blk.Accept(context.Background()); err != nil {
-		return fmt.Errorf("failed accepting block: %w", err)
-	}
 
-	if err := commit.Verify(context.Background()); err != nil {
-		return fmt.Errorf("failed verifying commit block: %w", err)
-	}
-	if err := commit.Accept(context.Background()); err != nil {
-		return fmt.Errorf("failed accepting commit block: %w", err)
+		if err := blk.Accept(context.Background()); err != nil {
+			return fmt.Errorf("failed accepting block: %w", err)
+		}
+
+		if err := commit.Verify(context.Background()); err != nil {
+			return fmt.Errorf("failed verifying commit block: %w", err)
+		}
+		if err := commit.Accept(context.Background()); err != nil {
+			return fmt.Errorf("failed accepting commit block: %w", err)
+		}
+	} else {
+		if err := blk.Accept(context.Background()); err != nil {
+			return fmt.Errorf("failed accepting block: %w", err)
+		}
 	}
 
 	if err := vm.SetPreference(context.Background(), vm.manager.LastAccepted()); err != nil {

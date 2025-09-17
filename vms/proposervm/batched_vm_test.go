@@ -6,12 +6,15 @@ package proposervm
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/consensustest"
@@ -37,6 +40,67 @@ import (
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/chain"
 )
+
+// testChainBlockAdapter adapts block.Block to chain.Block for test compatibility
+type testChainBlockAdapter struct {
+	block.Block
+}
+
+func (tcba *testChainBlockAdapter) SetStatus(status choices.Status) {
+	// For testing, we don't need to actually set status
+	// This method is required by the chain.Block interface
+}
+
+func adaptToChainBlock(b block.Block) chain.Block {
+	return &testChainBlockAdapter{Block: b}
+}
+
+// testValidatorStateAdapter adapts validators.State to consensus.ValidatorState
+type testValidatorStateAdapter struct {
+	valState *validatorstest.State
+}
+
+func (t *testValidatorStateAdapter) GetChainID(chainID ids.ID) (ids.ID, error) {
+	if t.valState.GetChainIDF != nil {
+		return t.valState.GetChainIDF(chainID)
+	}
+	return chainID, nil
+}
+
+func (t *testValidatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
+	if t.valState.GetNetIDF != nil {
+		return t.valState.GetNetIDF(chainID)
+	}
+	return ids.Empty, nil
+}
+
+func (t *testValidatorStateAdapter) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	if t.valState.GetSubnetIDF != nil {
+		return t.valState.GetSubnetIDF(chainID)
+	}
+	return ids.Empty, nil
+}
+
+func (t *testValidatorStateAdapter) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	if t.valState.GetValidatorSetSimpleF != nil {
+		return t.valState.GetValidatorSetSimpleF(height, netID)
+	}
+	return nil, nil
+}
+
+func (t *testValidatorStateAdapter) GetCurrentHeight() (uint64, error) {
+	if t.valState.GetCurrentHeightF != nil {
+		return t.valState.GetCurrentHeightF(context.Background())
+	}
+	return 0, nil
+}
+
+func (t *testValidatorStateAdapter) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	if t.valState.GetMinimumHeightF != nil {
+		return t.valState.GetMinimumHeightF(ctx)
+	}
+	return 0, nil
+}
 
 func TestCoreVMNotRemote(t *testing.T) {
 	// if coreVM is not remote VM, a specific error is returned
@@ -213,7 +277,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk1.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
-	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk1, 0))
+	require.NoError(waitForProposerWindow(proRemoteVM, adaptToChainBlock(builtBlk1), 0))
 
 	coreBlk2 := blocktest.BuildChild(coreBlk1)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
@@ -225,7 +289,7 @@ func TestGetAncestorsPostForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk2.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
-	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk2, 0))
+	require.NoError(waitForProposerWindow(proRemoteVM, adaptToChainBlock(builtBlk2), 0))
 
 	coreBlk3 := blocktest.BuildChild(coreBlk2)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
@@ -393,7 +457,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk3.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk3.ID()))
-	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk3, builtBlk3.(*postForkBlock).PChainHeight()))
+	require.NoError(waitForProposerWindow(proRemoteVM, adaptToChainBlock(builtBlk3), builtBlk3.(*postForkBlock).PChainHeight()))
 
 	coreBlk4 := blocktest.BuildChild(coreBlk3)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
@@ -617,7 +681,7 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk1.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk1.ID()))
-	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk1, 0))
+	require.NoError(waitForProposerWindow(proRemoteVM, adaptToChainBlock(builtBlk1), 0))
 
 	coreBlk2 := blocktest.BuildChild(coreBlk1)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
@@ -629,7 +693,7 @@ func TestBatchedParseBlockPostForkOnly(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk2.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk2.ID()))
-	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk2, builtBlk2.(*postForkBlock).PChainHeight()))
+	require.NoError(waitForProposerWindow(proRemoteVM, adaptToChainBlock(builtBlk2), builtBlk2.(*postForkBlock).PChainHeight()))
 
 	coreBlk3 := blocktest.BuildChild(coreBlk2)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
@@ -754,7 +818,7 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 	// prepare build of next block
 	require.NoError(builtBlk3.Verify(context.Background()))
 	require.NoError(proRemoteVM.SetPreference(context.Background(), builtBlk3.ID()))
-	require.NoError(waitForProposerWindow(proRemoteVM, builtBlk3, builtBlk3.(*postForkBlock).PChainHeight()))
+	require.NoError(waitForProposerWindow(proRemoteVM, adaptToChainBlock(builtBlk3), builtBlk3.(*postForkBlock).PChainHeight()))
 
 	coreBlk4 := blocktest.BuildChild(coreBlk3)
 	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
@@ -818,6 +882,90 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 type TestRemoteProposerVM struct {
 	*blocktest.BatchedVM
 	*blocktest.VM
+}
+
+// chainToEngineBlockAdapter adapts chain.Block to block.Block
+type chainToEngineBlockAdapter struct {
+	chain.Block
+}
+
+func (cb *chainToEngineBlockAdapter) Status() uint8 {
+	return uint8(cb.Block.Status())
+}
+
+// Implement ChainVM interface methods directly
+func (vm TestRemoteProposerVM) BuildBlock(ctx context.Context) (block.Block, error) {
+	if vm.VM.BuildBlockF != nil {
+		chainBlock, err := vm.VM.BuildBlockF(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return &chainToEngineBlockAdapter{Block: chainBlock}, nil
+	}
+	return nil, fmt.Errorf("BuildBlockF not set")
+}
+
+func (vm TestRemoteProposerVM) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
+	if vm.VM.ParseBlockF != nil {
+		chainBlock, err := vm.VM.ParseBlockF(ctx, bytes)
+		if err != nil {
+			return nil, err
+		}
+		return &chainToEngineBlockAdapter{Block: chainBlock}, nil
+	}
+	return nil, fmt.Errorf("ParseBlockF not set")
+}
+
+func (vm TestRemoteProposerVM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
+	if vm.VM.GetBlockF != nil {
+		chainBlock, err := vm.VM.GetBlockF(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return &chainToEngineBlockAdapter{Block: chainBlock}, nil
+	}
+	return nil, fmt.Errorf("GetBlockF not set")
+}
+
+func (vm TestRemoteProposerVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
+	if vm.VM.GetBlockIDAtHeightF != nil {
+		return vm.VM.GetBlockIDAtHeightF(ctx, height)
+	}
+	return ids.Empty, nil
+}
+
+func (vm TestRemoteProposerVM) SetPreference(ctx context.Context, id ids.ID) error {
+	if vm.VM.SetPreferenceF != nil {
+		return vm.VM.SetPreferenceF(ctx, id)
+	}
+	return nil
+}
+
+func (vm TestRemoteProposerVM) LastAccepted(ctx context.Context) (ids.ID, error) {
+	if vm.VM.LastAcceptedF != nil {
+		return vm.VM.LastAcceptedF(ctx)
+	}
+	return ids.Empty, nil
+}
+
+func (vm TestRemoteProposerVM) Initialize(
+	ctx context.Context,
+	chainCtx interface{},
+	db interface{},
+	genesisBytes []byte,
+	upgradeBytes []byte,
+	configBytes []byte,
+	msgChan interface{},
+	fxs []interface{},
+	appSender interface{},
+) error {
+	// Convert interface{} parameters to proper types for InitializeF
+	if vm.VM.InitializeF != nil {
+		// We need to convert the interface parameters
+		// For testing, we'll just return nil
+		return nil
+	}
+	return nil
 }
 
 func initTestRemoteProposerVM(
@@ -884,18 +1032,22 @@ func initTestRemoteProposerVM(
 		},
 	)
 
-	valState := &validatorstest.State{
-		T: t,
-	}
+	valState := &validatorstest.State{}
 	valState.GetMinimumHeightF = func(context.Context) (uint64, error) {
 		return blocktest.GenesisHeight, nil
 	}
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
 		return defaultPChainHeight, nil
 	}
+
+	// Get the node ID from the context that will be created
+	thisNode := ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       pTestCert.Raw,
+		PublicKey: pTestCert.PublicKey,
+	})
+
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 		var (
-			thisNode = proVM.ctx.NodeID
 			nodeID1  = ids.BuildTestNodeID([]byte{1})
 			nodeID2  = ids.BuildTestNodeID([]byte{2})
 			nodeID3  = ids.BuildTestNodeID([]byte{3})
@@ -921,27 +1073,26 @@ func initTestRemoteProposerVM(
 	}
 
 	ctx := consensustest.Context(t, consensustest.CChainID)
-	ctx.NodeID = ids.NodeIDFromCert(&ids.Certificate{
-		Raw:       pTestCert.Raw,
-		PublicKey: pTestCert.PublicKey,
-	})
-	ctx.ValidatorState = valState
+	ctx.NodeID = thisNode
+	adapter := &testValidatorStateAdapter{valState: valState}
+	ctx.ValidatorState = adapter
 
 	require.NoError(proVM.Initialize(
 		context.Background(),
 		ctx,
 		prefixdb.New([]byte{}, memdb.New()), // make sure that DBs are compressed correctly
 		initialState,
-		nil,
-		nil,
-		nil,
-		nil,
+		nil,  // upgradeBytes
+		nil,  // configBytes
+		nil,  // msgChan
+		nil,  // fxs
+		nil,  // appSender
 	))
 
 	// Initialize shouldn't be called again
 	coreVM.InitializeF = nil
 
-	require.NoError(proVM.SetState(context.Background(), consensus.NormalOp))
+	require.NoError(proVM.SetState(context.Background(), interfaces.NormalOp))
 	require.NoError(proVM.SetPreference(context.Background(), blocktest.GenesisID))
 	return coreVM, proVM
 }

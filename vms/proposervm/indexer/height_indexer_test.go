@@ -25,7 +25,9 @@ import (
 // testBlock is a simple implementation for testing
 type testBlock struct {
 	consensustest.Decidable
-	HeightV uint64
+	HeightV  uint64
+	AcceptV  func() error
+	RejectV  func() error
 }
 
 func (b *testBlock) ID() ids.ID           { return b.IDV }

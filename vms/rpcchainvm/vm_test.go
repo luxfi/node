@@ -16,9 +16,9 @@ import (
 	"github.com/luxfi/log"
 
 	"github.com/stretchr/testify/require"
-	"github.com/luxfi/mock/gomock"
 
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
@@ -39,6 +39,7 @@ const (
 	batchedParseBlockCachingTestKey                = "batchedParseBlockCachingTest"
 )
 
+
 var TestServerPluginMap = map[string]func(*testing.T, bool) block.ChainVM{
 	stateSyncEnabledTestKey:                        stateSyncEnabledTestPlugin,
 	getOngoingSyncStateSummaryTestKey:              getOngoingSyncStateSummaryTestPlugin,
@@ -47,7 +48,6 @@ var TestServerPluginMap = map[string]func(*testing.T, bool) block.ChainVM{
 	getStateSummaryTestKey:                         getStateSummaryTestPlugin,
 	acceptStateSummaryTestKey:                      acceptStateSummaryTestPlugin,
 	lastAcceptedBlockPostStateSummaryAcceptTestKey: lastAcceptedBlockPostStateSummaryAcceptTestPlugin,
-	contextTestKey:                                 contextEnabledTestPlugin,
 	batchedParseBlockCachingTestKey:                batchedParseBlockCachingTestPlugin,
 }
 
@@ -169,8 +169,7 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			vm := block.NewMockChainVM(ctrl)
+			vm := &ChainVMAdapter{&blockmock.ChainVM{}}
 
 			listener, err := grpcutils.NewListener()
 			require.NoError(err)

@@ -6,9 +6,12 @@ package blocktest
 import (
 	"context"
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/components/state"
@@ -135,15 +138,22 @@ func BuildChild(parent chain.Block) *Block {
 
 // VM is a test VM that implements basic VM functionality
 type VM struct {
-	BuildBlockF func(context.Context) (chain.Block, error)
-	GetBlockF   func(context.Context, ids.ID) (chain.Block, error)
-	GetAncestorsF func(context.Context, ids.ID, int, int, time.Duration) ([][]byte, error)
+	T                   *testing.T
+	BuildBlockF         func(context.Context) (chain.Block, error)
+	GetBlockF           func(context.Context, ids.ID) (chain.Block, error)
+	ParseBlockF         func(context.Context, []byte) (chain.Block, error)
+	GetAncestorsF       func(context.Context, ids.ID, int, int, time.Duration) ([][]byte, error)
+	InitializeF         func(context.Context, context.Context, database.Database, []byte, []byte, []byte, []*core.Fx, core.AppSender) error
+	LastAcceptedF       func(context.Context) (ids.ID, error)
+	GetBlockIDAtHeightF func(context.Context, uint64) (ids.ID, error)
+	SetPreferenceF      func(context.Context, ids.ID) error
 }
 
 // BatchedVM is a test VM that implements batched VM functionality
 type BatchedVM struct {
 	VM
-	GetAncestorsF func(context.Context, ids.ID, int, int, time.Duration) ([][]byte, error)
+	T                  *testing.T
+	BatchedParseBlockF func(context.Context, [][]byte) ([]chain.Block, error)
 }
 
 // StateSyncableVM is a test VM that implements state syncable VM functionality

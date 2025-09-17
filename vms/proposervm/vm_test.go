@@ -48,6 +48,69 @@ type fullVM struct {
 	*blocktest.StateSyncableVM
 }
 
+// LastAccepted implements ChainVM
+func (vm *fullVM) LastAccepted(ctx context.Context) (ids.ID, error) {
+	return ids.Empty, nil
+}
+
+// SetPreference implements ChainVM
+func (vm *fullVM) SetPreference(ctx context.Context, id ids.ID) error {
+	return nil
+}
+
+// GetOngoingSyncStateSummary implements StateSyncableVM
+func (vm *fullVM) GetOngoingSyncStateSummary(ctx context.Context) (block.StateSummary, error) {
+	if vm.StateSyncableVM != nil && vm.GetOngoingSyncStateSummaryF != nil {
+		summary, err := vm.GetOngoingSyncStateSummaryF(ctx)
+		if err != nil {
+			return nil, err
+		}
+		// Create a mock state summary
+		return &mockStateSummary{bytes: summary}, nil
+	}
+	return nil, fmt.Errorf("GetOngoingSyncStateSummary not implemented")
+}
+
+// StateSyncEnabled implements StateSyncableVM
+func (vm *fullVM) StateSyncEnabled(ctx context.Context) (bool, error) {
+	if vm.StateSyncableVM != nil && vm.StateSyncEnabledF != nil {
+		return vm.StateSyncEnabledF(ctx)
+	}
+	return false, nil
+}
+
+// ParseStateSummary implements StateSyncableVM
+func (vm *fullVM) ParseStateSummary(ctx context.Context, summaryBytes []byte) (block.StateSummary, error) {
+	return &mockStateSummary{bytes: summaryBytes}, nil
+}
+
+// GetStateSummary implements StateSyncableVM
+func (vm *fullVM) GetStateSummary(ctx context.Context, height uint64) (block.StateSummary, error) {
+	return &mockStateSummary{height: height}, nil
+}
+
+// mockStateSummary implements block.StateSummary for testing
+type mockStateSummary struct {
+	bytes  []byte
+	height uint64
+}
+
+func (s *mockStateSummary) ID() ids.ID {
+	return ids.Empty
+}
+
+func (s *mockStateSummary) Height() uint64 {
+	return s.height
+}
+
+func (s *mockStateSummary) Bytes() []byte {
+	return s.bytes
+}
+
+func (s *mockStateSummary) Accept(ctx context.Context) (block.StateSyncMode, error) {
+	return block.StateSyncSkipped, nil
+}
+
 // Initialize implements ChainVM
 func (vm *fullVM) Initialize(
 	ctx context.Context,

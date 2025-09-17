@@ -13,13 +13,13 @@ import (
 	"github.com/luxfi/mock/gomock"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/lux"
+	chainblock "github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -669,7 +669,7 @@ func TestBanffProposalBlockUpdateStakers(t *testing.T) {
 				// verify and accept the block
 				block := env.blkManager.NewBlock(statelessProposalBlock)
 				require.NoError(block.Verify(context.Background()))
-				options, err := block.(chain.OracleBlock).Options(context.Background())
+				options, err := block.(chainblock.OracleBlock).Options(context.Background())
 				require.NoError(err)
 
 				require.NoError(options[0].Verify(context.Background()))
@@ -844,7 +844,7 @@ func TestBanffProposalBlockRemoveNetValidator(t *testing.T) {
 	propBlk := env.blkManager.NewBlock(statelessProposalBlock)
 	require.NoError(propBlk.Verify(context.Background())) // verify and update staker set
 
-	options, err := propBlk.(chain.OracleBlock).Options(context.Background())
+	options, err := propBlk.(chainblock.OracleBlock).Options(context.Background())
 	require.NoError(err)
 	commitBlk := options[0]
 	require.NoError(commitBlk.Verify(context.Background()))
@@ -966,7 +966,7 @@ func TestBanffProposalBlockTrackedSubnet(t *testing.T) {
 			require.NoError(err)
 			propBlk := env.blkManager.NewBlock(statelessProposalBlock)
 			require.NoError(propBlk.Verify(context.Background())) // verify update staker set
-			options, err := propBlk.(chain.OracleBlock).Options(context.Background())
+			options, err := propBlk.(chainblock.OracleBlock).Options(context.Background())
 			require.NoError(err)
 			commitBlk := options[0]
 			require.NoError(commitBlk.Verify(context.Background()))
@@ -1058,7 +1058,7 @@ func TestBanffProposalBlockDelegatorStakerWeight(t *testing.T) {
 	propBlk := env.blkManager.NewBlock(statelessProposalBlock)
 	require.NoError(propBlk.Verify(context.Background()))
 
-	options, err := propBlk.(chain.OracleBlock).Options(context.Background())
+	options, err := propBlk.(chainblock.OracleBlock).Options(context.Background())
 	require.NoError(err)
 	commitBlk := options[0]
 	require.NoError(commitBlk.Verify(context.Background()))
@@ -1161,7 +1161,7 @@ func TestBanffProposalBlockDelegatorStakerWeight(t *testing.T) {
 	propBlk = env.blkManager.NewBlock(statelessProposalBlock)
 	require.NoError(propBlk.Verify(context.Background()))
 
-	options, err = propBlk.(chain.OracleBlock).Options(context.Background())
+	options, err = propBlk.(chainblock.OracleBlock).Options(context.Background())
 	require.NoError(err)
 	commitBlk = options[0]
 	require.NoError(commitBlk.Verify(context.Background()))
@@ -1255,7 +1255,7 @@ func TestBanffProposalBlockDelegatorStakers(t *testing.T) {
 	propBlk := env.blkManager.NewBlock(statelessProposalBlock)
 	require.NoError(propBlk.Verify(context.Background()))
 
-	options, err := propBlk.(chain.OracleBlock).Options(context.Background())
+	options, err := propBlk.(chainblock.OracleBlock).Options(context.Background())
 	require.NoError(err)
 	commitBlk := options[0]
 	require.NoError(commitBlk.Verify(context.Background()))
@@ -1356,7 +1356,7 @@ func TestBanffProposalBlockDelegatorStakers(t *testing.T) {
 	propBlk = env.blkManager.NewBlock(statelessProposalBlock)
 	require.NoError(propBlk.Verify(context.Background()))
 
-	options, err = propBlk.(chain.OracleBlock).Options(context.Background())
+	options, err = propBlk.(chainblock.OracleBlock).Options(context.Background())
 	require.NoError(err)
 	commitBlk = options[0]
 	require.NoError(commitBlk.Verify(context.Background()))
@@ -1519,7 +1519,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 	blk = env.blkManager.NewBlock(statelessProposalBlk)
 	require.NoError(blk.Verify(context.Background()))
 
-	options, err := blk.(chain.OracleBlock).Options(context.Background())
+	options, err := blk.(chainblock.OracleBlock).Options(context.Background())
 	require.NoError(err)
 	commitBlk := options[0]
 	require.NoError(commitBlk.Verify(context.Background()))
