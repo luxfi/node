@@ -14,7 +14,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/version"
 
 	corev1 "k8s.io/api/core/v1"

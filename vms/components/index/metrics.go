@@ -6,7 +6,8 @@ package index
 import "github.com/prometheus/client_golang/prometheus"
 
 type indexMetrics struct {
-	numObjects prometheus.Gauge
+	numObjects    prometheus.Gauge
+	numTxsIndexed prometheus.Counter
 }
 
 func newMetrics(registerer prometheus.Registerer) (*indexMetrics, error) {
@@ -15,9 +16,18 @@ func newMetrics(registerer prometheus.Registerer) (*indexMetrics, error) {
 			Name: "index_num_objects",
 			Help: "Number of objects in the index",
 		}),
+		numTxsIndexed: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "index_txs_indexed",
+			Help: "Number of transactions indexed",
+		}),
 	}
-	if err := registerer.Register(m.numObjects); err != nil {
-		return nil, err
+	if registerer != nil {
+		if err := registerer.Register(m.numObjects); err != nil {
+			return nil, err
+		}
+		if err := registerer.Register(m.numTxsIndexed); err != nil {
+			return nil, err
+		}
 	}
 	return m, nil
 }

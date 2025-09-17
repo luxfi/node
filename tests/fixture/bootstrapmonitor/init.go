@@ -45,7 +45,7 @@ func InitBootstrapTest(log log.Logger, namespace string, podName string, nodeCon
 	if err != nil {
 		return fmt.Errorf("failed to determine bootstrap test config: %w", err)
 	}
-	log.Info("Retrieved bootstrap test config", log.Reflect("testConfig", testConfig))
+	log.Info("Retrieved bootstrap test config", "testConfig", testConfig)
 
 	// If the image uses the latest tag, determine the latest image id and set the container image to that
 	if strings.HasSuffix(testConfig.Image, ":latest") {
@@ -56,7 +56,7 @@ func InitBootstrapTest(log log.Logger, namespace string, podName string, nodeCon
 		}
 		log.Info("Updating owning statefulset with image details",
 			"image", latestImageDetails.Image,
-			log.Reflect("versions", latestImageDetails.Versions),
+			"versions", latestImageDetails.Versions,
 		)
 		if err := setImageDetails(ctx, log, clientset, namespace, podName, latestImageDetails); err != nil {
 			return fmt.Errorf("failed to set container image: %w", err)
@@ -77,12 +77,12 @@ func InitBootstrapTest(log log.Logger, namespace string, podName string, nodeCon
 		if err := json.Unmarshal(testDetailsBytes, &testDetails); err != nil {
 			return fmt.Errorf("failed to unmarshal test details: %w", err)
 		}
-		log.Info("Loaded test details", log.Reflect("testDetails", testDetails))
+		log.Info("Loaded test details", "testDetails", testDetails)
 	}
 
 	if testDetails.Image == testConfig.Image {
 		log.Info("Test details image matches test config image")
-		log.Info(BootstrapResumingMessage, log.Reflect("testConfig", testConfig))
+		log.Info(BootstrapResumingMessage, "testConfig", testConfig)
 		return nil
 	} else if len(testDetails.Image) > 0 {
 		log.Info("Test details image differs from test config image")
@@ -95,7 +95,7 @@ func InitBootstrapTest(log log.Logger, namespace string, podName string, nodeCon
 	}
 
 	log.Info("Writing test details to file",
-		log.Reflect("testDetails", testDetails),
+		"testDetails", testDetails,
 		"path", testDetailsPath,
 	)
 	testDetails = bootstrapTestDetails{
@@ -111,7 +111,7 @@ func InitBootstrapTest(log log.Logger, namespace string, podName string, nodeCon
 	}
 
 	log.Info(BootstrapStartingMessage,
-		log.Reflect("testConfig", testConfig),
+		"testConfig", testConfig,
 		"startTime", testDetails.StartTime.Format(time.RFC3339),
 	)
 

@@ -58,7 +58,7 @@ type AddressTxsIndexer interface {
 
 type indexer struct {
 	log     log.Logger
-	metrics metrics
+	metrics indexMetrics
 	db      database.Database
 }
 
@@ -80,9 +80,11 @@ func NewIndexer(
 		return nil, err
 	}
 	// initialize the metrics
-	if err := i.metrics.initialize(metricsNamespace, metricsRegisterer); err != nil {
+	metrics, err := newMetrics(metricsRegisterer)
+	if err != nil {
 		return nil, err
 	}
+	i.metrics = *metrics
 	return i, nil
 }
 

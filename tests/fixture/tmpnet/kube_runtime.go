@@ -612,7 +612,7 @@ func (p *KubeRuntime) IsHealthy(ctx context.Context) (bool, error) {
 		return false, ErrNotRunning
 	}
 
-	healthy, err := checkNodeHealth(ctx, p.GetAccessibleURI())
+	healthReply, err := CheckNodeHealth(ctx, p.GetAccessibleURI())
 	if err != nil && strings.Contains(err.Error(), "connection refused") {
 		return false, err
 	} else if err != nil {
@@ -620,6 +620,7 @@ func (p *KubeRuntime) IsHealthy(ctx context.Context) (bool, error) {
 		)
 		return false, nil
 	}
+	healthy := healthReply != nil && healthReply.Healthy
 	return healthy, nil
 }
 

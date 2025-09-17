@@ -234,7 +234,8 @@ func WaitForNodeHealthy(
 		return ids.NodeID{}, fmt.Errorf("failed to retrieve node bootstrap ID: %w", err)
 	}
 	if err := wait.PollImmediateInfinite(healthCheckInterval, func() (bool, error) {
-		healthy, err := checkNodeHealth(ctx, localNodeURI)
+		healthReply, err := CheckNodeHealth(ctx, localNodeURI)
+		healthy := healthReply != nil && healthReply.Healthy
 		if err != nil && strings.Contains(err.Error(), "connection refused") {
 			return false, err
 		} else if err != nil {
