@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	luxmetric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"
@@ -34,12 +34,12 @@ var DefaultNodeID = ids.GenerateTestNodeID()
 type Config struct {
 	DB         database.Database
 	Genesis    []byte
-	Registerer luxmetric.Registerer
+	Registerer metrics.Registerer
 	Validators validators.Manager
 	Upgrades   upgrade.Config
 	Config     config.Config
 	Context    context.Context
-	Metrics    luxmetric.Metrics
+	Metrics    metrics.Metrics
 	Rewards    reward.Calculator
 }
 
@@ -63,7 +63,7 @@ func New(t testing.TB, c Config) state.State {
 		})
 	}
 	if c.Registerer == nil {
-		c.Registerer = luxmetric.NewPrometheusRegistry()
+		c.Registerer = metrics.NewPrometheusRegistry()
 	}
 	if c.Validators == nil {
 		c.Validators = validators.NewManager()
@@ -81,7 +81,7 @@ func New(t testing.TB, c Config) state.State {
 		c.Config.Validators = c.Validators
 	}
 	if c.Metrics == nil {
-		c.Metrics = luxmetric.NewNoOp()
+		c.Metrics = metrics.NewNoOp()
 	}
 	if c.Rewards == nil {
 		c.Rewards = reward.NewCalculator(reward.Config{

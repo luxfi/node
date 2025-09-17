@@ -26,7 +26,7 @@ type PublicKey = luxbls.PublicKey
 // PublicKeyToCompressedBytes returns the compressed big-endian format of the
 // public key.
 func PublicKeyToCompressedBytes(pk *PublicKey) []byte {
-	return pk.Compress()
+	return luxbls.PublicKeyToCompressedBytes(pk)
 }
 
 // PublicKeyFromCompressedBytes parses the compressed big-endian format of the
@@ -38,15 +38,25 @@ func PublicKeyFromCompressedBytes(pkBytes []byte) (*PublicKey, error) {
 // PublicKeyToUncompressedBytes returns the uncompressed big-endian format of
 // the public key.
 func PublicKeyToUncompressedBytes(key *PublicKey) []byte {
-	return key.Serialize()
+	return luxbls.PublicKeyToUncompressedBytes(key)
 }
 
 // PublicKeyFromUncompressedBytes parses the uncompressed big-endian format of
 // the public key into a public key.
 func PublicKeyFromUncompressedBytes(pkBytes []byte) (*PublicKey, error) {
-	// Convert from uncompressed to compressed and then parse
-	// This is a simplified implementation - may need adjustment based on actual format
-	return luxbls.PublicKeyFromCompressedBytes(pkBytes)
+	// luxfi/crypto handles uncompressed format
+	pk := luxbls.PublicKeyFromValidUncompressedBytes(pkBytes)
+	if pk == nil {
+		return nil, errInvalidPublicKey
+	}
+	return pk, nil
+}
+
+// PublicKeyFromValidUncompressedBytes parses the uncompressed big-endian format of
+// the public key into a public key without performing validation.
+// This should only be used when the public key is known to be valid.
+func PublicKeyFromValidUncompressedBytes(pkBytes []byte) *PublicKey {
+	return luxbls.PublicKeyFromValidUncompressedBytes(pkBytes)
 }
 
 // AggregatePublicKeys aggregates a non-zero number of public keys into a

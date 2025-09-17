@@ -16,7 +16,7 @@ import (
 
 func newDB(t testing.TB) *Database {
 	folder := t.TempDir()
-	db, err := New(folder, nil, log.NewNoOpLogger(), metrics.NewRegistry())
+	db, err := New(folder, nil, log.NewNoOpLogger(), metrics.NewNoOpRegistry())
 	require.NoError(t, err)
 	return db.(*Database)
 }
@@ -51,11 +51,10 @@ func FuzzNewIteratorWithStartAndPrefix(f *testing.F) {
 
 func BenchmarkInterface(b *testing.B) {
 	for _, size := range dbtest.BenchmarkSizes {
-		keys, values := dbtest.SetupBenchmark(b, size[0], size[1], size[2])
 		for name, bench := range dbtest.Benchmarks {
-			b.Run(fmt.Sprintf("pebble_%d_pairs_%d_keys_%d_values_%s", size[0], size[1], size[2], name), func(b *testing.B) {
+			b.Run(fmt.Sprintf("pebble_%d_pairs_%s", size, name), func(b *testing.B) {
 				db := newDB(b)
-				bench(b, db, keys, values)
+				bench(b, db, size)
 				_ = db.Close()
 			})
 		}

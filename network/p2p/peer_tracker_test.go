@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	luxmetric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 func TestPeerTracker(t *testing.T) {
@@ -19,7 +19,7 @@ func TestPeerTracker(t *testing.T) {
 	p, err := NewPeerTracker(
 		log.NoLog{},
 		"",
-		luxmetrics.NewNoOpMetrics("test").Registry(),
+		metrics.NewNoOpMetrics("test").Registry(),
 		nil,
 		nil,
 	)

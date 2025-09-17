@@ -19,17 +19,36 @@ var (
 	ErrFailedSignatureAggregation = luxbls.ErrFailedSignatureAggregation
 )
 
-type Signature = luxbls.Signature
+type (
+	SecretKey = luxbls.SecretKey
+	Signature = luxbls.Signature
+	Signer    = luxbls.Signer
+)
+
+// NewSecretKey generates a new secret key
+func NewSecretKey() (*SecretKey, error) {
+	return luxbls.NewSecretKey()
+}
+
+// SecretKeyFromBytes parses a secret key from bytes
+func SecretKeyFromBytes(skBytes []byte) (*SecretKey, error) {
+	return luxbls.SecretKeyFromBytes(skBytes)
+}
+
+// SecretKeyToBytes returns the big-endian format of the secret key.
+func SecretKeyToBytes(sk *SecretKey) []byte {
+	return luxbls.SecretKeyToBytes(sk)
+}
 
 // SignatureToBytes returns the compressed big-endian format of the signature.
 func SignatureToBytes(sig *Signature) []byte {
-	return sig.Compress()
+	return luxbls.SignatureToBytes(sig)
 }
 
 // SignatureFromBytes parses the compressed big-endian format of the signature
 // into a signature.
 func SignatureFromBytes(sigBytes []byte) (*Signature, error) {
-	return luxbls.SignatureFromCompressedBytes(sigBytes)
+	return luxbls.SignatureFromBytes(sigBytes)
 }
 
 // Verify the signature against the provided message and public key.
@@ -39,9 +58,12 @@ func Verify(pk *PublicKey, sig *Signature, msg []byte) bool {
 
 // VerifyProofOfPossession verifies that signature is a valid proof of
 // possession of the provided public key.
-func VerifyProofOfPossession(pk *PublicKey, sig *Signature) bool {
-	// In the pure Go version, we can use the public key bytes as the message
-	return Verify(pk, sig, PublicKeyToCompressedBytes(pk))
+func VerifyProofOfPossession(pk *PublicKey, sig *Signature, msg []byte) bool {
+	if pk == nil || sig == nil {
+		return false
+	}
+	// Pure Go implementation should verify with PoP domain
+	return luxbls.Verify(pk, sig, msg)
 }
 
 // AggregateSignatures aggregates a non-zero number of signatures into a single

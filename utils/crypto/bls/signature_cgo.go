@@ -40,15 +40,17 @@ func SecretKeyFromBytes(skBytes []byte) (*SecretKey, error) {
 
 // SignatureToBytes returns the compressed big-endian format of the signature.
 func SignatureToBytes(sig *Signature) []byte {
-	if sig == nil {
-		return nil
-	}
-	return sig.Compress()
+	return luxbls.SignatureToBytes(sig)
 }
 
 // SignatureFromBytes parses the compressed big-endian format of the signature into a signature.
 func SignatureFromBytes(sigBytes []byte) (*Signature, error) {
-	return luxbls.SignatureFromCompressedBytes(sigBytes)
+	return luxbls.SignatureFromBytes(sigBytes)
+}
+
+// SecretKeyToBytes returns the big-endian format of the secret key.
+func SecretKeyToBytes(sk *SecretKey) []byte {
+	return luxbls.SecretKeyToBytes(sk)
 }
 
 // Verify verifies that the signature was signed from the given public key on the given message.
