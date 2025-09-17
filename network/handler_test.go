@@ -6,7 +6,7 @@ package network
 import (
 	"context"
 
-	"github.com/luxfi/consensus/router"
+	consensusrouter "github.com/luxfi/consensus/router"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/version"
@@ -15,7 +15,7 @@ import (
 var _ ExternalHandler = (*testHandler)(nil)
 
 type testHandler struct {
-	router.InboundHandler
+	consensusrouter.InboundHandler
 	ConnectedF    func(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID)
 	DisconnectedF func(nodeID ids.NodeID)
 	HandleGossipF func(ctx context.Context, nodeID ids.NodeID, msg []byte)

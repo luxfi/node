@@ -15,7 +15,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/core"
+	consensusrouter "github.com/luxfi/consensus/router"
 	"github.com/luxfi/consensus/networking/router"
+	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -165,18 +167,39 @@ type noOpResourceManager struct{}
 func (n *noOpResourceManager) CPUUsage() float64                    { return 0 }
 func (n *noOpResourceManager) DiskUsage() (float64, float64)        { return 0, 0 }
 
-func newDefaultResourceTracker() tracker.ResourceTracker {
-	// Create a no-op resource manager for testing
-	noOpManager := &noOpResourceManager{}
-	resourceTracker, err := tracker.NewResourceTracker(
-		metric.NewRegistry(),
-		noOpManager,
-		10*time.Second,
-	)
-	if err != nil {
-		panic(err)
-	}
-	return resourceTracker
+func newDefaultResourceTracker() consensustracker.ResourceTracker {
+	// Return a no-op consensus resource tracker for testing
+	return &noOpConsensusResourceTracker{}
+}
+
+// noOpConsensusResourceTracker implements consensustracker.ResourceTracker
+type noOpConsensusResourceTracker struct{}
+
+func (n *noOpConsensusResourceTracker) StartProcessing(nodeID ids.NodeID, time time.Time) {}
+func (n *noOpConsensusResourceTracker) StopProcessing(nodeID ids.NodeID, time time.Time) {}
+
+func (n *noOpConsensusResourceTracker) CPUTracker() consensustracker.CPUTracker {
+	return &noOpCPUTracker{}
+}
+
+func (n *noOpConsensusResourceTracker) DiskTracker() consensustracker.DiskTracker {
+	return &noOpDiskTracker{}
+}
+
+// noOpCPUTracker implements consensustracker.CPUTracker
+type noOpCPUTracker struct{}
+
+func (n *noOpCPUTracker) Usage(nodeID ids.NodeID, time time.Time) float64 { return 0 }
+func (n *noOpCPUTracker) TimeUntilUsage(nodeID ids.NodeID, time time.Time, usage float64) time.Duration {
+	return time.Hour
+}
+
+// noOpDiskTracker implements consensustracker.DiskTracker
+type noOpDiskTracker struct{}
+
+func (n *noOpDiskTracker) Usage(nodeID ids.NodeID, time time.Time) float64 { return 0 }
+func (n *noOpDiskTracker) TimeUntilUsage(nodeID ids.NodeID, time time.Time, usage float64) time.Duration {
+	return time.Hour
 }
 
 func newTestNetwork(t *testing.T, count int) (*testDialer, []*testListener, []ids.NodeID, []*Config) {
@@ -230,7 +253,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 	return mc
 }
 
-func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler) ([]ids.NodeID, []*network, *sync.WaitGroup) {
+func newFullyConnectedTestNetwork(t *testing.T, handlers []consensusrouter.InboundHandler) ([]ids.NodeID, []*network, *sync.WaitGroup) {
 	require := require.New(t)
 
 	dialer, listeners, nodeIDs, configs := newTestNetwork(t, len(handlers))
@@ -321,7 +344,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 }
 
 func TestNewNetwork(t *testing.T) {
-	_, networks, wg := newFullyConnectedTestNetwork(t, []router.InboundHandler{nil, nil, nil})
+	_, networks, wg := newFullyConnectedTestNetwork(t, []consensusrouter.InboundHandler{nil, nil, nil})
 	for _, net := range networks {
 		net.StartClose()
 	}
@@ -334,7 +357,7 @@ func TestSend(t *testing.T) {
 	received := make(chan message.InboundMessage)
 	nodeIDs, networks, wg := newFullyConnectedTestNetwork(
 		t,
-		[]router.InboundHandler{
+		[]consensusrouter.InboundHandler{
 			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
 				require.FailNow("unexpected message received")
 			}},
@@ -377,7 +400,7 @@ func TestSendWithFilter(t *testing.T) {
 	received := make(chan message.InboundMessage)
 	nodeIDs, networks, wg := newFullyConnectedTestNetwork(
 		t,
-		[]router.InboundHandler{
+		[]consensusrouter.InboundHandler{
 			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
 				require.FailNow("unexpected message received")
 			}},
@@ -419,7 +442,7 @@ func TestSendWithFilter(t *testing.T) {
 func TestTrackVerifiesSignatures(t *testing.T) {
 	require := require.New(t)
 
-	_, networks, wg := newFullyConnectedTestNetwork(t, []router.InboundHandler{nil})
+	_, networks, wg := newFullyConnectedTestNetwork(t, []consensusrouter.InboundHandler{nil})
 
 	network := networks[0]
 
@@ -642,7 +665,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 // Test that cancelling the context passed into dial
 // causes dial to return immediately.
 func TestDialContext(t *testing.T) {
-	_, networks, wg := newFullyConnectedTestNetwork(t, []router.InboundHandler{nil})
+	_, networks, wg := newFullyConnectedTestNetwork(t, []consensusrouter.InboundHandler{nil})
 
 	dialer := newTestDialer()
 	network := networks[0]
