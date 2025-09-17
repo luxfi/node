@@ -356,19 +356,20 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		}
 
 		tc.By("creating the validator to register")
-		subnetRegisterNode := e2e.AddEphemeralNode(tc, env.GetNetwork(), tmpnet.NewEphemeralNode(tmpnet.FlagsMap{
+		subnetRegisterNode := e2e.AddEphemeralNode(env.GetNetwork(), tmpnet.FlagsMap{
 			config.TrackSubnetsKey: netID.String(),
-		}))
+		})
 
 		registerNodePoP, err := subnetRegisterNode.GetProofOfPossession()
 		require.NoError(err)
 
 		registerNodePK, err := bls.PublicKeyFromCompressedBytes(registerNodePoP.PublicKey[:])
 		require.NoError(err)
+		_ = registerNodePK // will be used later
 
 		tc.By("ensuring the net nodes are healthy", func() {
-			e2e.WaitForHealthy(tc, subnetGenesisNode)
-			e2e.WaitForHealthy(tc, subnetRegisterNode)
+			e2e.WaitForHealthy(subnetGenesisNode)
+			e2e.WaitForHealthy(subnetRegisterNode)
 		})
 
 		tc.By("creating the RegisterL1ValidatorMessage")

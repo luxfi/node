@@ -14,6 +14,9 @@ import (
 // flaking due to unexpected resource contention.
 const DefaultTimeout = 2 * time.Minute
 
+// Default polling interval for Eventually
+const DefaultPollingInterval = 500 * time.Millisecond
+
 // Helper simplifying use of a timed context by canceling the context with the test context.
 func ContextWithTimeout(tc TestContext, duration time.Duration) context.Context {
 	parent := tc.GetDefaultContextParent()
