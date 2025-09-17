@@ -29,15 +29,15 @@ type validatorStateAdapter struct {
 	state validators.State
 }
 
-func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	validatorSet, err := v.state.GetValidatorSet(ctx, height, netID)
 	if err != nil {
 		return nil, err
 	}
-	
-	result := make(map[ids.NodeID]uint64, len(validatorSet))
+
+	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(validatorSet))
 	for nodeID, validator := range validatorSet {
-		result[nodeID] = validator.Weight
+		result[nodeID] = validator
 	}
 	return result, nil
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
@@ -192,15 +193,20 @@ type warpValidatorStateAdapter struct {
 	vs  consensus.ValidatorState
 }
 
-func (w *warpValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+func (w *warpValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	validatorSet, err := w.vs.GetValidatorSet(height, netID)
 	if err != nil {
 		return nil, err
 	}
-	// Convert from GetValidatorOutput map to weight map
-	result := make(map[ids.NodeID]uint64, len(validatorSet))
-	for nodeID, output := range validatorSet {
-		result[nodeID] = output
+	// Convert from weight map to GetValidatorOutput map
+	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(validatorSet))
+	for nodeID, weight := range validatorSet {
+		result[nodeID] = &validators.GetValidatorOutput{
+			NodeID:    nodeID,
+			PublicKey: nil, // No public key available from consensus.ValidatorState
+			Weight:    weight,
+			Light:     weight, // Light is an alias for Weight
+		}
 	}
 	return result, nil
 }

@@ -48,6 +48,30 @@ type fullVM struct {
 	*blocktest.StateSyncableVM
 }
 
+// Initialize implements ChainVM
+func (vm *fullVM) Initialize(
+	ctx context.Context,
+	chainCtx interface{},
+	db interface{},
+	genesisBytes []byte,
+	upgradeBytes []byte,
+	configBytes []byte,
+	msgChan interface{},
+	fxs []interface{},
+	appSender interface{},
+) error {
+	// For testing, we don't need actual initialization
+	return nil
+}
+
+// GetLastStateSummary implements StateSyncableVM
+func (vm *fullVM) GetLastStateSummary(ctx context.Context) (block.StateSummary, error) {
+	if vm.StateSyncableVM != nil {
+		return vm.StateSyncableVM.GetLastStateSummary(ctx)
+	}
+	return nil, errors.New("not implemented")
+}
+
 // GetBlockIDAtHeight implements the method to resolve ambiguity
 func (vm *fullVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
 	if vm.StateSyncableVM != nil && vm.StateSyncableVM.VM.ChainVM != nil {

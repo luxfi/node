@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
@@ -26,11 +27,11 @@ var (
 
 // mockValidatorState is a mock implementation of ValidatorState
 type mockValidatorState struct {
-	getValidatorSetF func(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error)
+	getValidatorSetF func(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error)
 	getNetIDF func(ctx context.Context, chainID ids.ID) (ids.ID, error)
 }
 
-func (m *mockValidatorState) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+func (m *mockValidatorState) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	if m.getValidatorSetF != nil {
 		return m.getValidatorSetF(ctx, height, netID)
 	}
@@ -50,7 +51,7 @@ func TestSignatureVerification(t *testing.T) {
 	require.NoError(t, err)
 	nodeID0 := ids.GenerateTestNodeID()
 
-	_, err = bls.NewSecretKey()
+	sk1, err := bls.NewSecretKey()
 	require.NoError(t, err)
 	nodeID1 := ids.GenerateTestNodeID()
 
@@ -107,7 +108,7 @@ func TestSignatureVerification(t *testing.T) {
 					getNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 						return netID, nil
 					},
-					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]uint64, error) {
+					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 						if height == pChainHeight && sID == netID {
 							return nil, errTest
 						}
@@ -142,10 +143,10 @@ func TestSignatureVerification(t *testing.T) {
 					getNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 						return netID, nil
 					},
-					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]uint64, error) {
-						return map[ids.NodeID]uint64{
-							nodeID0: math.MaxUint64,
-							nodeID1: math.MaxUint64,
+					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+						return map[ids.NodeID]*validators.GetValidatorOutput{
+							nodeID0: {Weight: math.MaxUint64},
+							nodeID1: {Weight: math.MaxUint64},
 						}, nil
 					},
 				}
@@ -177,9 +178,9 @@ func TestSignatureVerification(t *testing.T) {
 					getNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 						return netID, nil
 					},
-					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]uint64, error) {
-						return map[ids.NodeID]uint64{
-							nodeID0: 50,
+					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+						return map[ids.NodeID]*validators.GetValidatorOutput{
+							nodeID0: {Weight: 50, PublicKey: bls.PublicKeyToCompressedBytes(sk0.PublicKey())},
 						}, nil
 					},
 				}
@@ -206,7 +207,7 @@ func TestSignatureVerification(t *testing.T) {
 				require.NoError(err)
 				return msg
 			},
-			err: ErrInvalidBitSet,
+			err: ErrUnknownValidator,
 		},
 		{
 			name:      "valid signature",
@@ -216,17 +217,17 @@ func TestSignatureVerification(t *testing.T) {
 					getNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 						return netID, nil
 					},
-					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]uint64, error) {
-						return map[ids.NodeID]uint64{
-							nodeID0: 50,
-							nodeID1: 50,
-							nodeID2: 50,
+					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+						return map[ids.NodeID]*validators.GetValidatorOutput{
+							nodeID0: {Weight: 50, PublicKey: bls.PublicKeyToCompressedBytes(sk0.PublicKey())},
+							nodeID1: {Weight: 50, PublicKey: bls.PublicKeyToCompressedBytes(sk1.PublicKey())},
+							nodeID2: {Weight: 50, PublicKey: bls.PublicKeyToCompressedBytes(sk2.PublicKey())},
 						}, nil
 					},
 				}
 			},
 			quorumNum: 1,
-			quorumDen: 2,
+			quorumDen: 3,
 			msgF: func(require *require.Assertions) *Message {
 				unsignedMsg, err := NewUnsignedMessage(
 					constants.UnitTestID,
@@ -235,21 +236,18 @@ func TestSignatureVerification(t *testing.T) {
 				)
 				require.NoError(err)
 
+				// For simplicity, only sign with the first validator (index 0)
 				signers := set.NewBits()
-				signers.Add(0) // nodeID0 signs
-				signers.Add(2) // nodeID2 signs
+				signers.Add(0)
 
 				unsignedBytes := unsignedMsg.Bytes()
 				sig0 := bls.Sign(sk0, unsignedBytes)
-				sig2 := bls.Sign(sk2, unsignedBytes)
-				aggSig, err := bls.AggregateSignatures([]*bls.Signature{sig0, sig2})
-				require.NoError(err)
 
 				msg, err := NewMessage(
 					unsignedMsg,
 					&BitSetSignature{
 						Signers:   signers.Bytes(),
-						Signature: [bls.SignatureLen]byte(bls.SignatureToBytes(aggSig)),
+						Signature: [bls.SignatureLen]byte(bls.SignatureToBytes(sig0)),
 					},
 				)
 				require.NoError(err)

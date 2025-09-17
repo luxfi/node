@@ -401,17 +401,20 @@ func terminatePrimaryValidator(vm *VM, validator *state.Staker) error {
 		return fmt.Errorf("failed verifying block: %w", err)
 	}
 
-	// For now, skip oracle block processing
-	options := []chain.Block{}
-	if len(options) == 0 {
-		// No oracle options to process
-		_ = options // Mark as intentionally unused
-	}
+	// Check if this block has options (proposal block)
+	if proposalBlk, ok := blk.(interface {
+		Options(context.Context) ([2]chain.Block, error)
+	}); ok {
+		options, err := proposalBlk.Options(context.Background())
+		if err != nil {
+			return fmt.Errorf("failed getting block options: %w", err)
+		}
 
-	commit := options[0].(*blockexecutor.Block)
-	_, ok := commit.Block.(*block.BanffCommitBlock)
-	if !ok {
-		return fmt.Errorf("failed retrieving commit option: %w", err)
+		commit := options[0].(*blockexecutor.Block)
+		_, ok := commit.Block.(*block.BanffCommitBlock)
+		if !ok {
+			return fmt.Errorf("failed retrieving commit option: expected BanffCommitBlock")
+		}
 	}
 	if err := blk.Accept(context.Background()); err != nil {
 		return fmt.Errorf("failed accepting block: %w", err)

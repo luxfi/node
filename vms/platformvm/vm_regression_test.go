@@ -1896,7 +1896,7 @@ func TestNetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 
 	// Check if this block has options (proposal block)
 	proposalBlk, ok := blk.(interface {
-		Options(context.Context) ([]block.Block, error)
+		Options(context.Context) ([2]block.Block, error)
 	})
 	require.True(ok, "expected block to be a proposal block")
 	options, err := proposalBlk.Options(context.Background())
@@ -2099,7 +2099,7 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 
 	// Check if this block has options (proposal block)
 	proposalBlk, ok := blk.(interface {
-		Options(context.Context) ([]block.Block, error)
+		Options(context.Context) ([2]block.Block, error)
 	})
 	require.True(ok, "expected block to be a proposal block")
 	options, err := proposalBlk.Options(context.Background())
@@ -2315,7 +2315,7 @@ func TestNetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 
 	// Check if this block has options (proposal block)
 	proposalBlk, ok := blk.(interface {
-		Options(context.Context) ([]block.Block, error)
+		Options(context.Context) ([2]block.Block, error)
 	})
 	require.True(ok, "expected block to be a proposal block")
 	options, err := proposalBlk.Options(context.Background())
@@ -2532,7 +2532,7 @@ func TestNetValidatorSetAfterPrimaryNetworkValidatorRemoval(t *testing.T) {
 
 	// Check if this block has options (proposal block)
 	proposalBlk, ok := blk.(interface {
-		Options(context.Context) ([]block.Block, error)
+		Options(context.Context) ([2]block.Block, error)
 	})
 	require.True(ok, "expected block to be a proposal block")
 	options, err := proposalBlk.Options(context.Background())

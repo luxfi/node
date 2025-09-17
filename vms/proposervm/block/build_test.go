@@ -29,7 +29,10 @@ func TestBuild(t *testing.T) {
 	cert, err := staking.ParseCertificate(tlsCert.Leaf.Raw)
 	require.NoError(err)
 	key := tlsCert.PrivateKey.(crypto.Signer)
-	nodeID := ids.NodeIDFromCert(cert)
+	nodeID := ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       cert.Raw,
+		PublicKey: cert.PublicKey,
+	})
 
 	builtBlock, err := Build(
 		parentID,
