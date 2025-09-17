@@ -145,7 +145,7 @@ type environment struct {
 	fx             fx.Fx
 	state          state.State
 	mockedState    *state.MockState
-	uptimes        uptime.Manager
+	uptimes        uptime.Calculator
 	utxosVerifier  utxo.Verifier
 	factory        *txstest.WalletFactory
 	backend        *executor.Backend
@@ -184,8 +184,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 
 	if ctrl == nil {
 		res.state = defaultState(res.config, res.ctx, res.baseDB, rewardsCalc)
-		uptimeState := uptime.NewTestState()
-		res.uptimes = uptime.NewManager(uptimeState, res.clk)
+		res.uptimes = &uptime.NoOpCalculator{}
 		res.utxosVerifier = utxo.NewHandler(res.ctx, nodeClock, res.fx)
 		res.factory = txstest.NewWalletFactory(
 			res.ctx,
@@ -196,8 +195,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 	} else {
 		genesisBlkID = ids.GenerateTestID()
 		res.mockedState = state.NewMockState(ctrl)
-		uptimeState := uptime.NewTestState()
-		res.uptimes = uptime.NewManager(uptimeState, res.clk)
+		res.uptimes = &uptime.NoOpCalculator{}
 		res.utxosVerifier = utxo.NewHandler(res.ctx, nodeClock, res.fx)
 		res.factory = txstest.NewWalletFactory(
 			res.ctx,

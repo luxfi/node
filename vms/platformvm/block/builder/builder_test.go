@@ -107,7 +107,7 @@ func TestBuildBlockShouldReward(t *testing.T) {
 		validatorEndTime      = validatorStartTime.Add(360 * 24 * time.Hour)
 	)
 
-	sk, err := bls.NewSecretKey()
+	_, err := bls.NewSecretKey()
 	require.NoError(err)
 
 	// Create a valid [AddPermissionlessValidatorTx]
@@ -122,7 +122,7 @@ func TestBuildBlockShouldReward(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		&signer.ProofOfPossession{},
 		env.ctx.LUXAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -317,7 +317,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 		validatorEndTime = now.Add(env.config.MaxStakeDuration)
 	)
 
-	sk, err := bls.NewSecretKey()
+	_, err := bls.NewSecretKey()
 	require.NoError(err)
 
 	builder1, signer1 := env.factory.NewWallet(preFundedKeys[0])
@@ -331,7 +331,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		&signer.ProofOfPossession{},
 		env.ctx.LUXAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -358,7 +358,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 	// Add a validator ending past [MaxStakeDuration]
 	validator2EndTime := now.Add(env.config.MaxStakeDuration + time.Second)
 
-	sk, err = bls.NewSecretKey()
+	_, err = bls.NewSecretKey()
 	require.NoError(err)
 
 	builder2, signer2 := env.factory.NewWallet(preFundedKeys[2])
@@ -372,7 +372,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		&signer.ProofOfPossession{},
 		env.ctx.LUXAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
