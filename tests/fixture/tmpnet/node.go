@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/netip"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -43,7 +44,7 @@ const (
 type NodeRuntime interface {
 	readState() error
 	Start(w io.Writer) error
-	InitiateStop() error
+	InitiateStop(ctx context.Context) error
 	WaitForStopped(ctx context.Context) error
 	IsHealthy(ctx context.Context) (bool, error)
 }
@@ -187,7 +188,7 @@ func (n *Node) InitiateStop(ctx context.Context) error {
 	if err := n.SaveMetricsSnapshot(ctx); err != nil {
 		return err
 	}
-	return n.getRuntime().InitiateStop()
+	return n.getRuntime().InitiateStop(ctx)
 }
 
 func (n *Node) WaitForStopped(ctx context.Context) error {
@@ -394,4 +395,30 @@ func (n *Node) SaveAPIPort() error {
 	}
 	n.Flags[config.HTTPPortKey] = port
 	return nil
+}
+
+// GetAccessibleURI returns the accessible URI for the node.
+// This method provides access to the node's URI.
+func (n *Node) GetAccessibleURI() string {
+	// For now, just return the node's URI directly since runtime delegation
+	// has interface compatibility issues that need to be resolved
+	return n.URI
+}
+
+// GetAccessibleStakingAddress returns the accessible staking address for the node.
+// This method parses the node's StakingAddress for general use.
+func (n *Node) GetAccessibleStakingAddress(ctx context.Context) (netip.AddrPort, func(), error) {
+	// For now, parse the StakingAddress directly since runtime delegation
+	// has interface compatibility issues that need to be resolved
+
+	if n.StakingAddress == "" {
+		return netip.AddrPort{}, func() {}, fmt.Errorf("staking address not available")
+	}
+
+	addr, err := netip.ParseAddrPort(n.StakingAddress)
+	if err != nil {
+		return netip.AddrPort{}, func() {}, fmt.Errorf("failed to parse staking address: %w", err)
+	}
+
+	return addr, func() {}, nil
 }

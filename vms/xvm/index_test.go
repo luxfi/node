@@ -38,7 +38,7 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{fork: durango})
-	defer env.consensusCtx.Lock.Unlock()
+	defer env.testLock.Unlock()
 
 	key := keys[0]
 	addr := key.PublicKey().Address()
@@ -57,11 +57,11 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 		tx := buildTX(env.consensusCtx.XChainID, utxoID, txAssetID, addr)
 		require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
 
-		env.consensusCtx.Lock.Unlock()
+		env.testLock.Unlock()
 
 		issueAndAccept(require, env.vm, tx)
 
-		env.consensusCtx.Lock.Lock()
+		env.testLock.Lock()
 
 		txs = append(txs, tx)
 	}
@@ -77,7 +77,7 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{fork: durango})
-	defer env.consensusCtx.Lock.Unlock()
+	defer env.testLock.Unlock()
 
 	addressTxMap := map[ids.ShortID]*txs.Tx{}
 	txAssetID := lux.Asset{ID: env.genesisTx.ID()}
@@ -96,12 +96,12 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 		tx := buildTX(env.consensusCtx.XChainID, utxoID, txAssetID, addr)
 		require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
 
-		env.consensusCtx.Lock.Unlock()
+		env.testLock.Unlock()
 
 		// issue transaction
 		issueAndAccept(require, env.vm, tx)
 
-		env.consensusCtx.Lock.Lock()
+		env.testLock.Lock()
 
 		addressTxMap[addr] = tx
 	}
@@ -120,7 +120,7 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{fork: durango})
-	defer env.consensusCtx.Lock.Unlock()
+	defer env.testLock.Unlock()
 
 	addrs := make([]ids.ShortID, len(keys))
 	for i, key := range keys {
@@ -144,11 +144,11 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 	tx := buildTX(env.consensusCtx.XChainID, utxoID, txAssetID, addrs...)
 	require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{key}}))
 
-	env.consensusCtx.Lock.Unlock()
+	env.testLock.Unlock()
 
 	issueAndAccept(require, env.vm, tx)
 
-	env.consensusCtx.Lock.Lock()
+	env.testLock.Lock()
 
 	assertIndexedTX(t, env.vm.db, 0, addr, txAssetID.ID, tx.ID())
 	assertLatestIdx(t, env.vm.db, addr, txAssetID.ID, 1)
@@ -158,7 +158,7 @@ func TestIndexer_Read(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{fork: durango})
-	defer env.consensusCtx.Lock.Unlock()
+	defer env.testLock.Unlock()
 
 	// generate test address and asset IDs
 	assetID := ids.GenerateTestID()

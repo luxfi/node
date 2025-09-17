@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/node/vms/components/chain/blocktest"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/consensus/engine/chain/chainmock"
 	"github.com/luxfi/consensus/validators"

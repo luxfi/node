@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/coremock"
@@ -122,7 +121,7 @@ func (m *mockValidatorState) GetCurrentValidators(
 func (m *mockValidatorState) GetCurrentValidatorSet(
 	ctx context.Context,
 	netID ids.ID,
-) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+) (map[ids.ID]*validators.GetValidatorOutput, uint64, error) {
 	// Not used in this test
 	return nil, m.height, nil
 }
@@ -250,8 +249,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 
 			consensusCtx := consensustest.Context(t, ids.Empty)
 			// Extract values from context
-			nodeID := consensus.GetNodeID(consensusCtx)
-			netID := consensus.GetNetID(consensusCtx)
+			nodeID := consensusCtx.NodeID
+			netID := consensusCtx.NetID
 			// Use a simple test logger for now
 			logger := log.NoLog{}
 			// Create a mock validator state that returns sensible defaults

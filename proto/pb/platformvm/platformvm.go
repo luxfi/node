@@ -1,5 +1,10 @@
 package platformvm
 
+import (
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/runtime/protoimpl"
+)
+
 // Platform VM protobuf definitions
 type PlatformVM struct {
 	// Add protobuf-generated fields as needed
@@ -7,12 +12,21 @@ type PlatformVM struct {
 
 // L1ValidatorRegistrationJustification represents justification for L1 validator registration
 type L1ValidatorRegistrationJustification struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
 	TypeId   uint32
 	Preimage interface{}
 }
 
 // ProtoMessage marks this as a protobuf message
 func (j *L1ValidatorRegistrationJustification) ProtoMessage() {}
+
+// ProtoReflect implements the protoreflect.ProtoMessage interface
+func (j *L1ValidatorRegistrationJustification) ProtoReflect() protoreflect.Message {
+	return nil // Stub implementation
+}
 
 // Reset stub for proto.Message interface
 func (j *L1ValidatorRegistrationJustification) Reset() {}

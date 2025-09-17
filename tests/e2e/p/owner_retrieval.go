@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build test
+
 package p
 
 import (
@@ -16,16 +18,16 @@ import (
 
 var _ = e2e.DescribePChain("[P-Chain Wallet]", func() {
 	tc := e2e.NewTestContext()
-	require := require.New(tc)
+	require := require.New(ginkgo.GinkgoT())
 
 	ginkgo.It("should support retrieving net owners", func() {
-		env := e2e.GetEnv(tc)
+		env := e2e.Env
 
 		nodeURI := env.GetRandomNodeURI()
 		pChainClient := platformvm.NewClient(nodeURI.URI)
 
-		keychain := env.NewKeychain()
-		baseWallet := e2e.NewWallet(tc, keychain, nodeURI)
+		keychain := env.NewKeychain(1)
+		baseWallet := e2e.NewWallet(keychain, nodeURI)
 		pWallet := baseWallet.P()
 
 		owner := &secp256k1fx.OutputOwners{
@@ -45,22 +47,17 @@ var _ = e2e.DescribePChain("[P-Chain Wallet]", func() {
 		require.NotEqual(netID, constants.PrimaryNetworkID)
 
 		tc.By("verifying owner", func() {
-			subnetOwners, err := platformvm.GetSubnetOwners(
-				pChainClient,
+			subnetResponse, err := pChainClient.GetSubnet(
 				tc.DefaultContext(),
 				netID,
 			)
 			require.NoError(err)
-			subnetOwnerInterface, found := subnetOwners[netID]
-			require.True(found)
-			subnetOwner, ok := subnetOwnerInterface.(*secp256k1fx.OutputOwners)
-			require.True(ok)
-			require.Equal(owner.Locktime, subnetOwner.Locktime)
-			require.Equal(owner.Threshold, subnetOwner.Threshold)
-			require.Equal(owner.Addrs, subnetOwner.Addrs)
+			require.True(subnetResponse.IsPermissioned)
+			require.Equal(owner.Threshold, subnetResponse.Threshold)
+			require.Equal(owner.Addrs, subnetResponse.ControlKeys)
 		})
 
-		newOwnerKey := e2e.NewPrivateKey(tc)
+		newOwnerKey := env.AllocatePreFundedKey()
 		newOwner := &secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs: []ids.ShortID{
@@ -77,21 +74,16 @@ var _ = e2e.DescribePChain("[P-Chain Wallet]", func() {
 		require.NoError(err)
 
 		tc.By("verifying new owner", func() {
-			subnetOwners, err := platformvm.GetSubnetOwners(
-				pChainClient,
+			subnetResponse, err := pChainClient.GetSubnet(
 				tc.DefaultContext(),
 				netID,
 			)
 			require.NoError(err)
-			subnetOwnerInterface, found := subnetOwners[netID]
-			require.True(found)
-			subnetOwner, ok := subnetOwnerInterface.(*secp256k1fx.OutputOwners)
-			require.True(ok)
-			require.Equal(newOwner.Locktime, subnetOwner.Locktime)
-			require.Equal(newOwner.Threshold, subnetOwner.Threshold)
-			require.Equal(newOwner.Addrs, subnetOwner.Addrs)
+			require.True(subnetResponse.IsPermissioned)
+			require.Equal(newOwner.Threshold, subnetResponse.Threshold)
+			require.Equal(newOwner.Addrs, subnetResponse.ControlKeys)
 		})
 
-		_ = e2e.CheckBootstrapIsPossible(tc, env.GetNetwork())
+		e2e.CheckBootstrapIsPossible(env.GetNetwork())
 	})
 })

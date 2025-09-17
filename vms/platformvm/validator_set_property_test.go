@@ -299,6 +299,10 @@ func addPrimaryValidatorWithBLSKey(vm *VM, data *validatorInputData) (*state.Sta
 	// Create a nil shared memory for testing
 	factory := txstest.NewWalletFactory(vm.ctx, nil, &vm.Config, vm.state)
 	builder, txSigner := factory.NewWallet(keys[0], keys[1])
+	pop, err := signer.NewProofOfPossession(sk)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create proof of possession: %w", err)
+	}
 	utx, err := builder.NewAddPermissionlessValidatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
@@ -309,7 +313,7 @@ func addPrimaryValidatorWithBLSKey(vm *VM, data *validatorInputData) (*state.Sta
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,

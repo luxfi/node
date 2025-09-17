@@ -100,7 +100,8 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 
 	codec := parser.Codec()
 	backend := &Backend{
-		Ctx:      ctx,
+		Ctx:        context.Background(),
+		LuxCtx:     luxCtx,
 		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
@@ -490,7 +491,8 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 
 	codec := parser.Codec()
 	backend := &Backend{
-		Ctx:      ctx,
+		Ctx:        context.Background(),
+		LuxCtx:     luxCtx,
 		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
@@ -1110,7 +1112,8 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 
 	codec := parser.Codec()
 	backend := &Backend{
-		Ctx:      ctx,
+		Ctx:        context.Background(),
+		LuxCtx:     luxCtx,
 		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
@@ -1517,6 +1520,7 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 func TestSyntacticVerifierImportTx(t *testing.T) {
 	ctx := context.Background()
 	chainID := consensustest.XChainID
+	luxCtx := consensustest.Context(t, chainID)
 	cChainID := ids.GenerateTestID()
 
 	fx := &secp256k1fx.Fx{}
@@ -1583,7 +1587,8 @@ func TestSyntacticVerifierImportTx(t *testing.T) {
 
 	codec := parser.Codec()
 	backend := &Backend{
-		Ctx:      ctx,
+		Ctx:        context.Background(),
+		LuxCtx:     luxCtx,
 		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
@@ -1920,6 +1925,7 @@ func TestSyntacticVerifierImportTx(t *testing.T) {
 func TestSyntacticVerifierExportTx(t *testing.T) {
 	ctx := context.Background()
 	chainID := consensustest.XChainID
+	luxCtx := consensustest.Context(t, chainID)
 	cChainID := ids.GenerateTestID()
 
 	fx := &secp256k1fx.Fx{}
@@ -1986,7 +1992,8 @@ func TestSyntacticVerifierExportTx(t *testing.T) {
 
 	codec := parser.Codec()
 	backend := &Backend{
-		Ctx:      ctx,
+		Ctx:        context.Background(),
+		LuxCtx:     luxCtx,
 		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{

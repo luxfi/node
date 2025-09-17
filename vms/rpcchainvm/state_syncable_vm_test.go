@@ -45,14 +45,14 @@ var (
 	// last accepted blocks data before and after summary is accepted
 	preSummaryBlk = &blocktest.Block{
 		IDV:     ids.ID{'f', 'i', 'r', 's', 't', 'B', 'l', 'K'},
-		StatusV: choices.Accepted,
+		StatusV: consensustest.Accepted,
 		HeightV: preSummaryHeight,
 		ParentV: ids.ID{'p', 'a', 'r', 'e', 'n', 't', 'B', 'l', 'k'},
 	}
 
 	summaryBlk = &blocktest.Block{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'B', 'l', 'K'},
-		StatusV: choices.Accepted,
+		StatusV: consensustest.Accepted,
 		HeightV: SummaryHeight,
 		ParentV: ids.ID{'p', 'a', 'r', 'e', 'n', 't', 'B', 'l', 'k'},
 	}

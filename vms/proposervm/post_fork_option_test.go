@@ -14,11 +14,11 @@ import (
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/node/vms/components/chain/blocktest"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 

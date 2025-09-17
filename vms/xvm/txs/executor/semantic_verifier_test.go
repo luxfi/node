@@ -30,6 +30,8 @@ import (
 
 func TestSemanticVerifierBaseTx(t *testing.T) {
 	ctx := context.Background()
+	chainID := ids.GenerateTestID()
+	luxCtx := consensustest.Context(t, chainID)
 	cChainID := ids.GenerateTestID()
 
 	typeToFxIndex := make(map[reflect.Type]int)
@@ -76,7 +78,8 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 	}
 
 	backendObj := &Backend{
-		Ctx:      ctx,
+		Ctx:        context.Background(),
+		LuxCtx:     luxCtx,
 		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
@@ -389,6 +392,8 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 
 func TestSemanticVerifierExportTx(t *testing.T) {
 	ctx := context.Background()
+	chainID := ids.GenerateTestID()
+	luxCtx := consensustest.Context(t, chainID)
 	cChainID := ids.GenerateTestID()
 
 	typeToFxIndex := make(map[reflect.Type]int)
@@ -439,7 +444,8 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	}
 
 	backendObj := &Backend{
-		Ctx:      ctx,
+		Ctx:        context.Background(),
+		LuxCtx:     luxCtx,
 		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
@@ -753,10 +759,11 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cChainID := ids.GenerateTestID()
-	
+
 	// Create a test context with ChainID
 	chainID := ids.GenerateTestID()
-	ctx := consensustest.Context(t, chainID)
+	luxCtx := consensustest.Context(t, chainID)
+	ctx := context.Background()
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}
@@ -806,7 +813,8 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 	}
 
 	backendObj := &Backend{
-		Ctx:      ctx,
+		Ctx:        context.Background(),
+		LuxCtx:     luxCtx,
 		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{
@@ -871,10 +879,10 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 
 func TestSemanticVerifierImportTx(t *testing.T) {
 	// Create consensus context for chain operations
-	consensusCtx := consensustest.Context()
-	ctx := consensusCtx  // Use consensus context
-	cChainID := ids.GenerateTestID()
 	chainID := ids.GenerateTestID()
+	luxCtx := consensustest.Context(t, chainID)
+	ctx := context.Background()
+	cChainID := ids.GenerateTestID()
 	m := atomic.NewMemory(prefixdb.New([]byte{0}, memdb.New()))
 	
 	typeToFxIndex := make(map[reflect.Type]int)
@@ -945,7 +953,8 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 	))
 
 	backendObj := &Backend{
-		Ctx:      ctx,
+		Ctx:        context.Background(),
+		LuxCtx:     luxCtx,
 		CChainID: cChainID,
 		Config: &feeConfig,
 		Fxs: []*fxs.ParsedFx{

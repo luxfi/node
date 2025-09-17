@@ -33,8 +33,8 @@ func TestInvalidGenesis(t *testing.T) {
 
 	vm := &VM{}
 	ctx := consensustest.Context(t, ids.GenerateTestID())
-	ctx.Lock.Lock()
-	defer ctx.Lock.Unlock()
+	vm.Lock.Lock()
+	defer vm.Lock.Unlock()
 
 	toEngine := make(chan interface{}, 1)
 	err := vm.Initialize(
@@ -56,10 +56,10 @@ func TestInvalidFx(t *testing.T) {
 
 	vm := &VM{}
 	ctx := consensustest.Context(t, ids.GenerateTestID())
-	ctx.Lock.Lock()
+	vm.Lock.Lock()
 	defer func() {
 		vm.Shutdown()
-		ctx.Lock.Unlock()
+		vm.Lock.Unlock()
 	}()
 
 	genesisBytes := buildGenesisTest(t)
@@ -84,10 +84,10 @@ func TestFxInitializationFailure(t *testing.T) {
 
 	vm := &VM{}
 	ctx := consensustest.Context(t, ids.GenerateTestID())
-	ctx.Lock.Lock()
+	vm.Lock.Lock()
 	defer func() {
 		vm.Shutdown()
-		ctx.Lock.Unlock()
+		vm.Lock.Unlock()
 	}()
 
 	genesisBytes := buildGenesisTest(t)

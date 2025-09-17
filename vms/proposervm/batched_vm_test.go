@@ -18,7 +18,7 @@ import (
 
 	"github.com/luxfi/consensus/engine/chain/block"
 
-	"github.com/luxfi/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/node/vms/components/chain/blocktest"
 
 	"github.com/luxfi/consensus/validators"
 

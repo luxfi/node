@@ -22,8 +22,6 @@ import (
 	"time"
 
 	"github.com/luxfi/metric"
-	"github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/networking/timeout"
@@ -1333,13 +1331,13 @@ func (n *Node) initMetricsAPI() error {
 	}
 
 	// Current state of process metric.
-	processCollector := collectors.NewProcessCollector(collectors.ProcessCollectorOpts{})
+	processCollector := metric.NewProcessCollector(metric.ProcessCollectorOpts{})
 	if err := processReg.Register(processCollector); err != nil {
 		return err
 	}
 
 	// Go process metrics using debug.GCStats.
-	goCollector := collectors.NewGoCollector()
+	goCollector := metric.NewGoCollector()
 	if err := processReg.Register(goCollector); err != nil {
 		return err
 	}
@@ -1347,10 +1345,7 @@ func (n *Node) initMetricsAPI() error {
 	n.Log.Info("initializing metrics API")
 
 	return n.APIServer.AddRoute(
-		promhttp.HandlerFor(
-			n.MetricsGatherer,
-			promhttp.HandlerOpts{},
-		),
+		metric.HandlerFor(n.MetricsGatherer),
 		"metrics",
 		"",
 	)

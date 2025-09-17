@@ -170,7 +170,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 		{
 			name:     "restricted timestamp",
 			maxTime:  genesistest.DefaultValidatorStartTime,
-			expected: genesistest.DefaultValidatorStartTime,
+			expected: genesistest.DefaultValidatorEndTime,
 		},
 	}
 	for _, test := range tests {

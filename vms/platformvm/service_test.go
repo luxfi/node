@@ -251,6 +251,8 @@ func TestGetTx(t *testing.T) {
 				}
 
 				builder, txSigner := factory.NewWallet(keys[0])
+				pop, err := signer.NewProofOfPossession(sk)
+				require.NoError(t, err)
 				utx, err := builder.NewAddPermissionlessValidatorTx(
 					&txs.NetValidator{
 						Validator: txs.Validator{
@@ -261,7 +263,7 @@ func TestGetTx(t *testing.T) {
 						},
 						Subnet: constants.PrimaryNetworkID,
 					},
-					signer.NewProofOfPossession(sk),
+					pop,
 					service.vm.ctx.LUXAssetID,
 					rewardsOwner,
 					rewardsOwner,

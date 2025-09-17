@@ -34,7 +34,7 @@ func TestSetsAndGets(t *testing.T) {
 			},
 		}},
 	})
-	defer env.consensusCtx.Lock.Unlock()
+	defer env.testLock.Unlock()
 
 	utxo := &lux.UTXO{
 		UTXOID: lux.UTXOID{
@@ -94,7 +94,7 @@ func TestFundingNoAddresses(t *testing.T) {
 			},
 		}},
 	})
-	defer env.consensusCtx.Lock.Unlock()
+	defer env.testLock.Unlock()
 
 	utxo := &lux.UTXO{
 		UTXOID: lux.UTXOID{
@@ -124,7 +124,7 @@ func TestFundingAddresses(t *testing.T) {
 			},
 		}},
 	})
-	defer env.consensusCtx.Lock.Unlock()
+	defer env.testLock.Unlock()
 
 	utxo := &lux.UTXO{
 		UTXOID: lux.UTXOID{

@@ -132,3 +132,24 @@ func BuildChild(parent chain.Block) *Block {
 		},
 	}
 }
+
+// VM is a test VM that implements basic VM functionality
+type VM struct {
+	BuildBlockF func(context.Context) (chain.Block, error)
+	GetBlockF   func(context.Context, ids.ID) (chain.Block, error)
+	GetAncestorsF func(context.Context, ids.ID, int, int, time.Duration) ([][]byte, error)
+}
+
+// BatchedVM is a test VM that implements batched VM functionality
+type BatchedVM struct {
+	VM
+	GetAncestorsF func(context.Context, ids.ID, int, int, time.Duration) ([][]byte, error)
+}
+
+// StateSyncableVM is a test VM that implements state syncable VM functionality
+type StateSyncableVM struct {
+	VM
+	StateSyncEnabledF func(context.Context) (bool, error)
+	GetOngoingSyncStateSummaryF func(context.Context) ([]byte, error)
+	GetLastStateSummaryF func(context.Context) ([]byte, error)
+}

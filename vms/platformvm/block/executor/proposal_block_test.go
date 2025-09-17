@@ -105,7 +105,7 @@ func TestApricotProposalBlockTimeVerification(t *testing.T) {
 	onParentAccept.EXPECT().GetCurrentSupply(constants.PrimaryNetworkID).Return(uint64(1000), nil).AnyTimes()
 	onParentAccept.EXPECT().GetDelegateeReward(constants.PrimaryNetworkID, utx.NodeID()).Return(uint64(0), nil).AnyTimes()
 
-	env.mockedState.EXPECT().GetUptime(gomock.Any()).Return(
+	env.mockedState.EXPECT().GetUptime(gomock.Any(), gomock.Any()).Return(
 		time.Microsecond, /*upDuration*/
 		time.Time{},      /*lastUpdated*/
 		nil,              /*err*/
@@ -219,7 +219,7 @@ func TestBanffProposalBlockTimeVerification(t *testing.T) {
 	pendingStakersIt.EXPECT().Release().AnyTimes()
 	onParentAccept.EXPECT().GetPendingStakerIterator().Return(pendingStakersIt, nil).AnyTimes()
 
-	env.mockedState.EXPECT().GetUptime(gomock.Any()).Return(
+	env.mockedState.EXPECT().GetUptime(gomock.Any(), gomock.Any()).Return(
 		time.Microsecond, /*upDuration*/
 		time.Time{},      /*lastUpdated*/
 		nil,              /*err*/
@@ -1386,6 +1386,8 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 	require.NoError(err)
 
 	builder, txSigner := env.factory.NewWallet(preFundedKeys[0], preFundedKeys[1], preFundedKeys[4])
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(err)
 	utx, err := builder.NewAddPermissionlessValidatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
@@ -1396,7 +1398,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		env.ctx.LUXAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -1470,6 +1472,8 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 	sk, err = bls.NewSecretKey()
 	require.NoError(err)
 
+	pop, err = signer.NewProofOfPossession(sk)
+	require.NoError(err)
 	utx2, err := builder.NewAddPermissionlessValidatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
@@ -1480,7 +1484,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		env.ctx.LUXAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,

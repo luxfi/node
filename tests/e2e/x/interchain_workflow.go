@@ -115,7 +115,7 @@ var _ = e2e.DescribeXChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 				xContext.BlockchainID,
 				recipientEthAddress,
 				e2e.WithDefaultContext(),
-				e2e.WithSuggestedGasPrice(ethClient),
+				e2e.WithSuggestedGasPrice(*ethClient),
 			)
 			require.NoError(err)
 		})

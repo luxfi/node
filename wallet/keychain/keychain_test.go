@@ -72,6 +72,10 @@ func TestCryptoKeychain_MLDSA(t *testing.T) {
 }
 
 func TestCryptoKeychain_SLHDSA(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping SLH-DSA tests in short mode due to expensive key generation")
+	}
+
 	require := require.New(t)
 	
 	testCases := []struct {
@@ -109,6 +113,10 @@ func TestCryptoKeychain_SLHDSA(t *testing.T) {
 // and PQKeychain doesn't support generating ML-KEM keys
 
 func TestCryptoKeychain_MultipleAlgorithms(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping multiple algorithms test in short mode due to expensive SLH-DSA key generation")
+	}
+
 	require := require.New(t)
 	
 	// Test different keychains with different default algorithms

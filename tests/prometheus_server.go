@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/luxfi/metric"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const defaultPrometheusListenAddr = "127.0.0.1:0"
@@ -42,7 +41,7 @@ func NewPrometheusServer(gatherer metric.Gatherer) (*PrometheusServer, error) {
 // start the Prometheus server on a dynamic port.
 func (s *PrometheusServer) start() error {
 	mux := http.NewServeMux()
-	mux.Handle("/ext/metrics", promhttp.HandlerFor(s.gatherer, promhttp.HandlerOpts{}))
+	mux.Handle("/ext/metrics", metric.HandlerFor(s.gatherer))
 
 	listener, err := net.Listen("tcp", defaultPrometheusListenAddr)
 	if err != nil {

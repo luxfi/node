@@ -30,7 +30,6 @@ func must[T any](t require.TestingT) func(T, error) T {
 
 func TestVerifyWarpMessages(t *testing.T) {
 	var (
-		netID     = ids.GenerateTestID()
 		chainID      = ids.GenerateTestID()
 		newValidator = func() (bls.Signer, *validators.GetValidatorOutput) {
 			sk, err := localsigner.New()
@@ -38,7 +37,7 @@ func TestVerifyWarpMessages(t *testing.T) {
 
 			return sk, &validators.GetValidatorOutput{
 				NodeID:    ids.GenerateTestNodeID(),
-				PublicKey: bls.PublicKeyToUncompressedBytes(sk.PublicKey()),
+				PublicKey: bls.PublicKeyToCompressedBytes(sk.PublicKey()),
 				Weight:    1,
 			}
 		}
@@ -49,9 +48,6 @@ func TestVerifyWarpMessages(t *testing.T) {
 			vdr1.NodeID: vdr1,
 		}
 		state = &validatorstest.State{
-			GetNetIDF: func(ids.ID) (ids.ID, error) {
-				return netID, nil
-			},
 			GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 				return vdrs, nil
 			},

@@ -4,49 +4,51 @@
 package server
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 type serverMetrics struct {
-	requests  *prometheus.CounterVec
-	duration  *prometheus.HistogramVec
-	inflight  prometheus.Gauge
+	requests  metric.CounterVec
+	duration  interface{} // Keep as interface{} since metric.HistogramVec doesn't have a constructor
+	inflight  metric.Gauge
 }
 
-func newMetrics(registerer metrics.Registerer) (*serverMetrics, error) {
+func newMetrics(registerer metric.Registerer) (*serverMetrics, error) {
+	// Create prometheus histogram directly since metric package doesn't provide wrapper
+	promHistogramVec := metric.NewHistogramVec(
+		metric.HistogramOpts{
+			Name: "api_request_duration_seconds",
+			Help: "API request duration in seconds",
+		},
+		[]string{"method", "endpoint"},
+	)
+
 	m := &serverMetrics{
-		requests: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
+		requests: metric.NewCounterVec(
+			metric.CounterOpts{
 				Name: "api_requests_total",
 				Help: "Total number of API requests",
 			},
 			[]string{"method", "endpoint"},
 		),
-		duration: prometheus.NewHistogramVec(
-			prometheus.HistogramOpts{
-				Name: "api_request_duration_seconds",
-				Help: "API request duration in seconds",
-			},
-			[]string{"method", "endpoint"},
-		),
-		inflight: prometheus.NewGauge(
-			prometheus.GaugeOpts{
+		duration: promHistogramVec,
+		inflight: metric.NewGauge(
+			metric.GaugeOpts{
 				Name: "api_requests_inflight",
 				Help: "Number of inflight API requests",
 			},
 		),
 	}
-	
-	if err := registerer.Register(m.requests); err != nil {
+
+	if err := registerer.Register(metric.AsCollector(m.requests)); err != nil {
 		return nil, err
 	}
-	if err := registerer.Register(m.duration); err != nil {
+	if err := registerer.Register(promHistogramVec); err != nil {
 		return nil, err
 	}
-	if err := registerer.Register(m.inflight); err != nil {
+	if err := registerer.Register(metric.AsCollector(m.inflight)); err != nil {
 		return nil, err
 	}
-	
+
 	return m, nil
 }

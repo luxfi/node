@@ -150,7 +150,7 @@ func (p *NodeProcess) Start(w io.Writer) error {
 }
 
 // Signals the node process to stop.
-func (p *NodeProcess) InitiateStop() error {
+func (p *NodeProcess) InitiateStop(ctx context.Context) error {
 	proc, err := p.getProcess()
 	if err != nil {
 		return fmt.Errorf("failed to retrieve process to stop: %w", err)

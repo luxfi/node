@@ -3,29 +3,29 @@
 
 package index
 
-import "github.com/prometheus/client_golang/prometheus"
+import "github.com/luxfi/metric"
 
 type indexMetrics struct {
-	numObjects    prometheus.Gauge
-	numTxsIndexed prometheus.Counter
+	numObjects    metric.Gauge
+	numTxsIndexed metric.Counter
 }
 
-func newMetrics(registerer prometheus.Registerer) (*indexMetrics, error) {
+func newMetrics(registerer metric.Registerer) (*indexMetrics, error) {
 	m := &indexMetrics{
-		numObjects: prometheus.NewGauge(prometheus.GaugeOpts{
+		numObjects: metric.NewGauge(metric.GaugeOpts{
 			Name: "index_num_objects",
 			Help: "Number of objects in the index",
 		}),
-		numTxsIndexed: prometheus.NewCounter(prometheus.CounterOpts{
+		numTxsIndexed: metric.NewCounter(metric.CounterOpts{
 			Name: "index_txs_indexed",
 			Help: "Number of transactions indexed",
 		}),
 	}
 	if registerer != nil {
-		if err := registerer.Register(m.numObjects); err != nil {
+		if err := registerer.Register(metric.AsCollector(m.numObjects)); err != nil {
 			return nil, err
 		}
-		if err := registerer.Register(m.numTxsIndexed); err != nil {
+		if err := registerer.Register(metric.AsCollector(m.numTxsIndexed)); err != nil {
 			return nil, err
 		}
 	}

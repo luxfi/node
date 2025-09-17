@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build test
+
 package p
 
 import (
@@ -66,13 +68,13 @@ var _ = e2e.DescribePChain("[L1]", func() {
 	require := require.New(tc)
 
 	ginkgo.It("creates and updates L1 validators", func() {
-		env := e2e.GetEnv(tc)
+		env := e2e.Env
 		nodeURI := env.GetRandomNodeURI()
 
 		tc.By("loading the wallet")
 		var (
-			keychain   = env.NewKeychain()
-			baseWallet = e2e.NewWallet(tc, keychain, nodeURI)
+			keychain   = env.NewKeychain(1)
+			baseWallet = e2e.NewWallet(keychain, nodeURI)
 			pWallet    = baseWallet.P()
 			pClient    = platformvm.NewClient(nodeURI.URI)
 			owner      = &secp256k1fx.OutputOwners{
@@ -178,7 +180,8 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		genesisNodePoP, err := subnetGenesisNode.GetProofOfPossession()
 		require.NoError(err)
 
-		genesisNodePK, err := bls.PublicKeyFromCompressedBytes(genesisNodePoP.PublicKey[:])
+		genesisNodePKBytes := genesisNodePoP.PublicKey[:]
+		genesisNodePK, err := bls.PublicKeyFromCompressedBytes(genesisNodePKBytes)
 		require.NoError(err)
 
 		tc.By("connecting to the genesis validator")
@@ -282,7 +285,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 				verifyValidatorSet(map[ids.NodeID]*consensusvalidators.GetValidatorOutput{
 					subnetGenesisNode.NodeID: {
 						NodeID:    subnetGenesisNode.NodeID,
-						PublicKey: genesisNodePK,
+						PublicKey: genesisNodePKBytes,
 						Weight:    genesisWeight,
 					},
 				})
@@ -303,7 +306,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 					platformvm.L1Validator{
 						NetID:  netID,
 						NodeID:    subnetGenesisNode.NodeID,
-						PublicKey: genesisNodePK,
+						PublicKey: genesisNodePKBytes,
 						RemainingBalanceOwner: &secp256k1fx.OutputOwners{
 							Addrs: []ids.ShortID{},
 						},
@@ -363,7 +366,8 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		registerNodePoP, err := subnetRegisterNode.GetProofOfPossession()
 		require.NoError(err)
 
-		registerNodePK, err := bls.PublicKeyFromCompressedBytes(registerNodePoP.PublicKey[:])
+		registerNodePKBytes := registerNodePoP.PublicKey[:]
+		registerNodePK, err := bls.PublicKeyFromCompressedBytes(registerNodePKBytes)
 		require.NoError(err)
 		_ = registerNodePK // will be used later
 
@@ -455,7 +459,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 				verifyValidatorSet(map[ids.NodeID]*consensusvalidators.GetValidatorOutput{
 					subnetGenesisNode.NodeID: {
 						NodeID:    subnetGenesisNode.NodeID,
-						PublicKey: genesisNodePK,
+						PublicKey: genesisNodePKBytes,
 						Weight:    genesisWeight,
 					},
 					ids.EmptyNodeID: { // The validator is not active
@@ -477,7 +481,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 					platformvm.L1Validator{
 						NetID:  netID,
 						NodeID:    subnetRegisterNode.NodeID,
-						PublicKey: registerNodePK,
+						PublicKey: registerNodePKBytes,
 						RemainingBalanceOwner: &secp256k1fx.OutputOwners{
 							Addrs: []ids.ShortID{},
 						},
@@ -603,7 +607,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 				verifyValidatorSet(map[ids.NodeID]*consensusvalidators.GetValidatorOutput{
 					subnetGenesisNode.NodeID: {
 						NodeID:    subnetGenesisNode.NodeID,
-						PublicKey: genesisNodePK,
+						PublicKey: genesisNodePKBytes,
 						Weight:    genesisWeight,
 					},
 					ids.EmptyNodeID: { // The validator is not active
@@ -625,7 +629,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 					platformvm.L1Validator{
 						NetID:  netID,
 						NodeID:    subnetRegisterNode.NodeID,
-						PublicKey: registerNodePK,
+						PublicKey: registerNodePKBytes,
 						RemainingBalanceOwner: &secp256k1fx.OutputOwners{
 							Addrs: []ids.ShortID{},
 						},
@@ -686,12 +690,12 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			verifyValidatorSet(map[ids.NodeID]*consensusvalidators.GetValidatorOutput{
 				subnetGenesisNode.NodeID: {
 					NodeID:    subnetGenesisNode.NodeID,
-					PublicKey: genesisNodePK,
+					PublicKey: genesisNodePKBytes,
 					Weight:    genesisWeight,
 				},
 				subnetRegisterNode.NodeID: {
 					NodeID:    subnetRegisterNode.NodeID,
-					PublicKey: registerNodePK,
+					PublicKey: registerNodePKBytes,
 					Weight:    updatedWeight,
 				},
 			})
@@ -708,7 +712,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			verifyValidatorSet(map[ids.NodeID]*consensusvalidators.GetValidatorOutput{
 				subnetGenesisNode.NodeID: {
 					NodeID:    subnetGenesisNode.NodeID,
-					PublicKey: genesisNodePK,
+					PublicKey: genesisNodePKBytes,
 					Weight:    genesisWeight,
 				},
 				ids.EmptyNodeID: {
@@ -729,7 +733,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 				verifyValidatorSet(map[ids.NodeID]*consensusvalidators.GetValidatorOutput{
 					subnetGenesisNode.NodeID: {
 						NodeID:    subnetGenesisNode.NodeID,
-						PublicKey: genesisNodePK,
+						PublicKey: genesisNodePKBytes,
 						Weight:    genesisWeight,
 					},
 				})
@@ -779,7 +783,7 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		genesisPeer.StartClose()
 		require.NoError(genesisPeer.AwaitClosed(tc.DefaultContext()))
 
-		_ = e2e.CheckBootstrapIsPossible(tc, env.GetNetwork())
+		e2e.CheckBootstrapIsPossible(env.GetNetwork())
 	})
 })
 
@@ -788,7 +792,8 @@ func wrapWarpSignatureRequest(
 	justification []byte,
 ) (p2pmessage.OutboundMessage, error) {
 	p2pMessageFactory, err := p2pmessage.NewCreator(
-		metric.NewRegistry(),
+		log.NewNoOpLogger(),
+		metric.NewNoOp(),
 		constants.DefaultNetworkCompressionType,
 		p2pTimeout,
 	)
@@ -810,7 +815,7 @@ func wrapWarpSignatureRequest(
 		0,
 		time.Hour,
 		p2psdk.PrefixMessage(
-			p2psdk.ProtocolPrefix(p2psdk.SignatureRequestHandlerID),
+			p2psdk.ProtocolPrefix(0), // SignatureRequestHandlerID
 			requestBytes,
 		),
 	)

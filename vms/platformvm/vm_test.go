@@ -16,7 +16,6 @@ import (
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/benchlist"
 	consContext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -254,8 +253,7 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 	atomicDB := prefixdb.New([]byte{1}, db)
 
 	vm.Clock().Set(latestForkTime)
-	baseCtx := consensustest.Context(t, consensustest.PChainID)
-	ctx := testcontext.New(baseCtx)
+	ctx := testcontext.New(context.Background())
 	ctx.ChainID = consensustest.PChainID
 	ctx.LUXAssetID = ids.GenerateTestID()
 
@@ -281,14 +279,11 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 		PublicKey:   nil,
 		XChainID:    ctx.XChainID,
 		CChainID:    ctx.CChainID,
-		AVAXAssetID: ctx.LUXAssetID,
-		Log:         ctx.Log,
-		Lock:        ctx.Lock,
-		Registerer:  nil,
+		LUXAssetID:  ctx.LUXAssetID,
 		StartTime:   time.Now(),
 	}
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &block.ConsensusContext{},
+		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 	
@@ -440,6 +435,8 @@ func TestAddValidatorCommit(t *testing.T) {
 
 	// create valid tx
 	builder, txSigner := factory.NewWallet(keys[0])
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(err)
 	utx, err := builder.NewAddPermissionlessValidatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
@@ -450,7 +447,7 @@ func TestAddValidatorCommit(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -611,6 +608,8 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 
 	// create valid tx
 	builder, txSigner := factory.NewWallet(keys[0])
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(err)
 	utx, err := builder.NewAddPermissionlessValidatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
@@ -621,7 +620,7 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -1208,7 +1207,7 @@ func TestOptimisticAtomicImport(t *testing.T) {
 	err = blk.Verify(context.Background())
 	require.ErrorIs(err, database.ErrNotFound) // erred due to missing shared memory UTXOs
 
-	require.NoError(vm.SetState(context.Background(), interfaces.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), interfaces.BootstrapOp))
 
 	require.NoError(blk.Verify(context.Background())) // skips shared memory UTXO verification during bootstrapping
 
@@ -1248,8 +1247,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 		},
 	}}
 
-	baseCtx1 := consensustest.Context(t, consensustest.PChainID)
-	firstCtx := testcontext.New(baseCtx1)
+	firstCtx := testcontext.New(context.Background())
 	firstCtx.ChainID = consensustest.PChainID
 	firstCtx.LUXAssetID = ids.GenerateTestID()
 
@@ -1278,7 +1276,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &block.ConsensusContext{},
+		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 
@@ -1363,8 +1361,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 		},
 	}}
 
-	baseCtx2 := consensustest.Context(t, consensustest.PChainID)
-	secondCtx := testcontext.New(baseCtx2)
+	secondCtx := testcontext.New(context.Background())
 	secondCtx.ChainID = consensustest.PChainID
 	secondCtx.LUXAssetID = firstCtx.LUXAssetID
 	secondCtx.SharedMemory = firstCtx.SharedMemory
@@ -1389,7 +1386,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 	}
 
 	chainCtx2 := &linearblock.ChainContext{
-		ConsensusContext: &block.ConsensusContext{},
+		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx2,
 	}
 
@@ -1825,8 +1822,7 @@ func TestUnverifiedParent(t *testing.T) {
 
 	initialClkTime := latestForkTime.Add(time.Second)
 	vm.Clock().Set(initialClkTime)
-	baseCtx := consensustest.Context(t, consensustest.PChainID)
-	ctx := testcontext.New(baseCtx)
+	ctx := testcontext.New(context.Background())
 	ctx.ChainID = consensustest.PChainID
 	ctx.LUXAssetID = ids.GenerateTestID()
 	ctx.Lock.Lock()
@@ -1851,7 +1847,7 @@ func TestUnverifiedParent(t *testing.T) {
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &block.ConsensusContext{},
+		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 
@@ -2011,8 +2007,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		},
 	}}
 
-	baseCtx1 := consensustest.Context(t, consensustest.PChainID)
-	firstCtx := testcontext.New(baseCtx1)
+	firstCtx := testcontext.New(context.Background())
 	firstCtx.ChainID = consensustest.PChainID
 	firstCtx.LUXAssetID = ids.GenerateTestID()
 	firstCtx.Lock.Lock()
@@ -2033,7 +2028,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &block.ConsensusContext{},
+		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 
@@ -2057,7 +2052,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	firstVM.Clock().Set(initialClkTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(firstVM.SetState(context.Background(), interfaces.Bootstrapping))
+	require.NoError(firstVM.SetState(context.Background(), interfaces.BootstrapOp))
 	require.NoError(firstVM.SetState(context.Background(), interfaces.NormalOp))
 
 	// Fast forward clock so that validators meet 20% uptime required for reward
@@ -2086,8 +2081,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		},
 	}}
 
-	baseCtx2 := consensustest.Context(t, consensustest.PChainID)
-	secondCtx := testcontext.New(baseCtx2)
+	secondCtx := testcontext.New(context.Background())
 	secondCtx.ChainID = consensustest.PChainID
 	secondCtx.LUXAssetID = firstCtx.LUXAssetID
 	secondCtx.Lock.Lock()
@@ -2114,7 +2108,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	}
 
 	secondChainCtx := &linearblock.ChainContext{
-		ConsensusContext: &block.ConsensusContext{},
+		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          secondLuxCtx,
 	}
 
@@ -2137,7 +2131,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	secondVM.Clock().Set(vmStopTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(secondVM.SetState(context.Background(), interfaces.Bootstrapping))
+	require.NoError(secondVM.SetState(context.Background(), interfaces.BootstrapOp))
 	require.NoError(secondVM.SetState(context.Background(), interfaces.NormalOp))
 
 	// after restart and change of uptime required for reward, push validators to their end of life
@@ -2212,8 +2206,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 		},
 	}}
 
-	baseCtx := consensustest.Context(t, consensustest.PChainID)
-	ctx := testcontext.New(baseCtx)
+	ctx := testcontext.New(context.Background())
 	ctx.ChainID = consensustest.PChainID
 	ctx.LUXAssetID = ids.GenerateTestID()
 	ctx.Lock.Lock()
@@ -2238,7 +2231,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &block.ConsensusContext{},
+		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 
@@ -2267,7 +2260,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	vm.Clock().Set(initialClkTime)
 
 	// Set VM state to NormalOp, to start tracking validators' uptime
-	require.NoError(vm.SetState(context.Background(), interfaces.Bootstrapping))
+	require.NoError(vm.SetState(context.Background(), interfaces.BootstrapOp))
 	require.NoError(vm.SetState(context.Background(), interfaces.NormalOp))
 
 	// Fast forward clock to time for genesis validators to leave
@@ -2341,6 +2334,8 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	require.NoError(err)
 
 	builder, txSigner := factory.NewWallet(keys[0])
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(err)
 	uAddValTx, err := builder.NewAddPermissionlessValidatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
@@ -2351,7 +2346,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -2691,6 +2686,8 @@ func TestPruneMempool(t *testing.T) {
 	require.NoError(err)
 
 	builder, txSigner = factory.NewWallet(keys[1])
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(err)
 	uAddValTx, err := builder.NewAddPermissionlessValidatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
@@ -2701,7 +2698,7 @@ func TestPruneMempool(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,

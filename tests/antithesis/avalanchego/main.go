@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build test
+
 package main
 
 import (
@@ -60,7 +62,7 @@ func main() {
 
 	kc := secp256k1fx.NewKeychain(genesis.EWOQKey)
 	walletSyncStartTime := time.Now()
-	wallet := e2e.NewWallet(tc, kc, tmpnet.NodeURI{URI: c.URIs[0]})
+	wallet := e2e.NewWallet(kc, tmpnet.NodeURI{URI: c.URIs[0]})
 	tc.Log().Info("synced wallet",
 		"duration", fmt.Sprintf("%v", time.Since(walletSyncStartTime)),
 	)
@@ -115,7 +117,7 @@ func main() {
 		uri := c.URIs[i%len(c.URIs)]
 		kc := secp256k1fx.NewKeychain(key)
 		walletSyncStartTime := time.Now()
-		wallet := e2e.NewWallet(tc, kc, tmpnet.NodeURI{URI: uri})
+		wallet := e2e.NewWallet(kc, tmpnet.NodeURI{URI: uri})
 		tc.Log().Info("synced wallet",
 			"duration", fmt.Sprintf("%v", time.Since(walletSyncStartTime)),
 		)

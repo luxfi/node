@@ -14,7 +14,6 @@ import (
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
-	"github.com/prometheus/client_golang/prometheus/collectors"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -142,13 +141,13 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	}
 
 	// Current state of process metrics
-	processCollector := collectors.NewProcessCollector(collectors.ProcessCollectorOpts{})
+	processCollector := metric.NewProcessCollector(metric.ProcessCollectorOpts{})
 	if err := processMetrics.Register(processCollector); err != nil {
 		return nil, err
 	}
 
 	// Go process metrics using debug.GCStats
-	goCollector := collectors.NewGoCollector()
+	goCollector := metric.NewGoCollector()
 	if err := processMetrics.Register(goCollector); err != nil {
 		return nil, err
 	}

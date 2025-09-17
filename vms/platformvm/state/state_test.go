@@ -177,15 +177,18 @@ func TestPersistStakers(t *testing.T) {
 				r.Equal(&validators.GetValidatorOutput{
 					NodeID:    staker.NodeID,
 					PublicKey: bls.PublicKeyToUncompressedBytes(staker.PublicKey),
+					Light:     staker.Weight,
 					Weight:    staker.Weight,
+					TxID:      staker.TxID,
 				}, valOut)
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
-				upDuration, lastUpdated, err := s.GetUptime(staker.NodeID)
+				upDuration, lastUpdated, err := s.GetUptime(staker.NodeID, staker.NetID)
 				if staker.NetID == constants.PrimaryNetworkID {
 					r.NoError(err)
 					r.Equal(upDuration, time.Duration(0))
-					r.Equal(lastUpdated, staker.StartTime)
+					expectedLastUpdated := time.Duration(staker.StartTime.Unix()) * time.Second
+					r.Equal(lastUpdated, expectedLastUpdated)
 				} else {
 					r.ErrorIs(err, database.ErrNotFound)
 				}
@@ -340,7 +343,7 @@ func TestPersistStakers(t *testing.T) {
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
 				// pending validators uptime is not tracked
-				_, _, err := s.GetUptime(staker.NodeID)
+				_, _, err := s.GetUptime(staker.NodeID, staker.NetID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
@@ -462,7 +465,7 @@ func TestPersistStakers(t *testing.T) {
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
 				// uptimes of delete validators are dropped
-				_, _, err := s.GetUptime(staker.NodeID)
+				_, _, err := s.GetUptime(staker.NodeID, staker.NetID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
@@ -616,7 +619,7 @@ func TestPersistStakers(t *testing.T) {
 				r.Empty(valsMap)
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
-				_, _, err := s.GetUptime(staker.NodeID)
+				_, _, err := s.GetUptime(staker.NodeID, staker.NetID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
@@ -826,7 +829,9 @@ func createPermissionlessValidatorTx(r *require.Assertions, netID ids.ID, valida
 	if netID == constants.PrimaryNetworkID {
 		sk, err := bls.NewSecretKey()
 		r.NoError(err)
-		sig = signer.NewProofOfPossession(sk)
+		pop, err := signer.NewProofOfPossession(sk)
+		r.NoError(err)
+		sig = pop
 	}
 
 	return &txs.AddPermissionlessValidatorTx{

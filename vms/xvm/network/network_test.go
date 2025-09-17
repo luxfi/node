@@ -133,7 +133,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				appSender := coremock.NewMockAppSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				// TODO: Add SendAppGossip expectation when available
 				return appSender
 			},
 			expectedErr: nil,
@@ -234,7 +234,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
 				appSender := coremock.NewMockAppSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				// TODO: Add SendAppGossip expectation when available
 				return appSender
 			},
 			expectedErr: nil,

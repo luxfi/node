@@ -100,8 +100,8 @@ var (
 	defaultGenesisTime        = time.Date(1997, 1, 1, 0, 0, 0, 0, time.UTC)
 	defaultValidateStartTime  = defaultGenesisTime
 	defaultValidateEndTime    = defaultValidateStartTime.Add(20 * defaultMinStakingDuration)
-	defaultMinValidatorStake  = 5 * units.MilliLux
-	defaultBalance            = 100 * defaultMinValidatorStake
+	defaultMinValidatorStake  = 100 * units.Lux    // 100 LUX for tests
+	defaultBalance            = 10000 * units.Lux  // 10000 LUX balance for testing
 	preFundedKeys             = secp256k1.TestKeys()
 	defaultTxFee              = uint64(100)
 	lastAcceptedID            = ids.GenerateTestID()
@@ -314,9 +314,9 @@ func defaultConfig(t *testing.T, f fork) *config.Config {
 			CreateNetTxFee:     100 * defaultTxFee,
 			CreateBlockchainTxFee: 100 * defaultTxFee,
 		},
-		MinValidatorStake: 5 * units.MilliLux,
-		MaxValidatorStake: 500 * units.MilliLux,
-		MinDelegatorStake: 1 * units.MilliLux,
+		MinValidatorStake: defaultMinValidatorStake,   // 100 LUX
+		MaxValidatorStake: 10000 * units.Lux,          // 10K LUX max
+		MinDelegatorStake: 25 * units.Lux,             // 25 LUX min delegation
 		MinStakeDuration:  defaultMinStakingDuration,
 		MaxStakeDuration:  defaultMaxStakingDuration,
 		RewardConfig: reward.Config{

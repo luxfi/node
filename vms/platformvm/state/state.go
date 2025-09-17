@@ -602,13 +602,10 @@ func newState(
 		return nil, err
 	}
 
-	// Create validator manager
-	validatorManager := validators.NewManager()
-
 	return &state{
 		validatorState: newValidatorState(),
 
-		validators: validatorManager,
+		validators: cfg.Validators,
 		ctx:        ctx,
 		cfg:        cfg,
 		metrics:    metrics,
@@ -1947,7 +1944,10 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64, codecV
 					return fmt.Errorf("failed to write current validator to list: %w", err)
 				}
 
-				s.validatorState.LoadValidatorMetadata(nodeID, netID, metadata)
+				// Only track uptime for primary network validators
+				if netID == constants.PrimaryNetworkID {
+					s.validatorState.LoadValidatorMetadata(nodeID, netID, metadata)
+				}
 			case deleted:
 				staker := validatorDiff.validator
 				weightDiff.Amount = staker.Weight
@@ -1975,7 +1975,10 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64, codecV
 					return fmt.Errorf("failed to delete current staker: %w", err)
 				}
 
-				s.validatorState.DeleteValidatorMetadata(nodeID, netID)
+				// Only track uptime for primary network validators
+				if netID == constants.PrimaryNetworkID {
+					s.validatorState.DeleteValidatorMetadata(nodeID, netID)
+				}
 			}
 
 			err := writeCurrentDelegatorDiff(

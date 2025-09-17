@@ -52,9 +52,9 @@ var (
 		},
 		StakingConfig: StakingConfig{
 			UptimeRequirement: .8, // 80%
-			MinValidatorStake: 2 * units.KiloLux,
-			MaxValidatorStake: 3 * units.MegaLux,
-			MinDelegatorStake: 25 * units.Lux,
+			MinValidatorStake: 100 * units.Lux,     // 100 LUX for local testing
+			MaxValidatorStake: 1 * units.MegaLux,   // 1M LUX maximum for local
+			MinDelegatorStake: 25 * units.Lux,      // 25 LUX minimum delegation
 			MinDelegationFee:  20000, // 2%
 			MinStakeDuration:  24 * time.Hour,
 			MaxStakeDuration:  365 * 24 * time.Hour,

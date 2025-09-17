@@ -1403,7 +1403,11 @@ func TestDurangoMemoField(t *testing.T) {
 						},
 						Net: constants.PrimaryNetworkID,
 					},
-					signer.NewProofOfPossession(sk),
+					func() *signer.ProofOfPossession {
+						pop, err := signer.NewProofOfPossession(sk)
+						require.NoError(t, err)
+						return pop
+					}(),
 					env.ctx.LUXAssetID,
 					&secp256k1fx.OutputOwners{
 						Threshold: 1,

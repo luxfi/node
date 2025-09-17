@@ -189,7 +189,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -216,7 +216,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -252,7 +252,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -290,7 +290,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -331,7 +331,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -382,7 +382,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -441,7 +441,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -497,7 +497,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -562,7 +562,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -627,7 +627,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{

@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
@@ -26,7 +27,7 @@ var (
 // ValidatorState defines the functions that must be implemented to get
 // the canonical validator set for warp message validation.
 type ValidatorState interface {
-	GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error)
+	GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error)
 	GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
 }
 
@@ -62,30 +63,62 @@ func GetCanonicalValidatorSet(
 
 // FlattenValidatorSet converts the provided [vdrSet] into a canonical ordering.
 // Also returns the total weight of the validator set.
-func FlattenValidatorSet(vdrSet map[ids.NodeID]uint64) ([]*Validator, uint64, error) {
+func FlattenValidatorSet(vdrSet map[ids.NodeID]*validators.GetValidatorOutput) ([]*Validator, uint64, error) {
 	var (
-		vdrs        = make([]*Validator, 0, len(vdrSet))
+		vdrs        = make(map[string]*Validator)
 		totalWeight uint64
 		err         error
 	)
-	for nodeID, weight := range vdrSet {
-		totalWeight, err = math.Add64(totalWeight, weight)
+	for nodeID, vdr := range vdrSet {
+		totalWeight, err = math.Add64(totalWeight, vdr.Weight)
 		if err != nil {
 			return nil, 0, fmt.Errorf("%w: %w", ErrWeightOverflow, err)
 		}
 
-		// For now, we'll create validators without BLS keys
-		// This is a simplified version for compatibility
-		vdr := &Validator{
-			Weight:  weight,
-			NodeIDs: []ids.NodeID{nodeID},
+		// Skip validators without BLS keys
+		if len(vdr.PublicKey) == 0 {
+			continue
 		}
-		vdrs = append(vdrs, vdr)
+
+		// Parse the BLS public key
+		pk, err := bls.PublicKeyFromCompressedBytes(vdr.PublicKey)
+		if err != nil {
+			// If it fails, try uncompressed format (96 bytes)
+			if len(vdr.PublicKey) == 96 {
+				pk = bls.PublicKeyFromValidUncompressedBytes(vdr.PublicKey)
+				if pk == nil {
+					continue // Skip invalid keys
+				}
+			} else {
+				continue // Skip invalid keys
+			}
+		}
+
+		pkBytes := bls.PublicKeyToCompressedBytes(pk)
+		pkStr := string(pkBytes)
+
+		uniqueVdr, ok := vdrs[pkStr]
+		if !ok {
+			uniqueVdr = &Validator{
+				PublicKey:      pk,
+				PublicKeyBytes: pkBytes,
+				Weight:         0,
+				NodeIDs:        []ids.NodeID{},
+			}
+			vdrs[pkStr] = uniqueVdr
+		}
+
+		uniqueVdr.Weight += vdr.Weight
+		uniqueVdr.NodeIDs = append(uniqueVdr.NodeIDs, nodeID)
 	}
 
-	// Sort validators by node ID for canonical ordering
-	utils.Sort(vdrs)
-	return vdrs, totalWeight, nil
+	// Convert map to slice and sort
+	vdrList := make([]*Validator, 0, len(vdrs))
+	for _, vdr := range vdrs {
+		vdrList = append(vdrList, vdr)
+	}
+	utils.Sort(vdrList)
+	return vdrList, totalWeight, nil
 }
 
 // FilterValidators returns the validators in [vdrs] whose bit is set to 1 in

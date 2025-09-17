@@ -24,18 +24,8 @@ type validatorStateWrapper struct {
 	state validators.State
 }
 
-func (w *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
-	valSet, err := w.state.GetValidatorSet(ctx, height, netID)
-	if err != nil {
-		return nil, err
-	}
-	
-	// Convert to simple weight map
-	result := make(map[ids.NodeID]uint64, len(valSet))
-	for nodeID, val := range valSet {
-		result[nodeID] = val.Weight
-	}
-	return result, nil
+func (w *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return w.state.GetValidatorSet(ctx, height, netID)
 }
 
 func (w *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {

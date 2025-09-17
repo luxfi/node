@@ -7,11 +7,9 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"sync"
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
@@ -27,7 +25,6 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/network/p2p"
@@ -547,11 +544,6 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 	chainCtx := &linearblock.ChainContext{
 		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
-		StartTime:        time.Now(),
-		ValidatorState:   nil,
-		Keystore:         nil,
-		BCLookup:         nil,
-		Metrics:          nil,
 	}
 	
 	// Create a simple DB manager
@@ -1794,6 +1786,8 @@ func TestNetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 
 	// build primary network validator with BLS key
 	builder, txSigner := factory.NewWallet(keys...)
+	pop1, err := signer.NewProofOfPossession(sk1)
+	require.NoError(err)
 	uPrimaryTx, err := builder.NewAddPermissionlessValidatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
@@ -1804,7 +1798,7 @@ func TestNetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk1),
+		pop1,
 		vm.luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -1928,6 +1922,8 @@ func TestNetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 	require.NotEqual(sk1, sk2)
 
 	builder, txSigner = factory.NewWallet(keys...)
+	pop2, err := signer.NewProofOfPossession(sk2)
+	require.NoError(err)
 	uPrimaryRestartTx, err := builder.NewAddPermissionlessValidatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
@@ -1938,7 +1934,7 @@ func TestNetValidatorBLSKeyDiffAfterExpiry(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk2),
+		pop2,
 		vm.luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -2128,6 +2124,8 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(err)
 
 	builder, txSigner = factory.NewWallet(keys...)
+	pop2, err := signer.NewProofOfPossession(sk2)
+	require.NoError(err)
 	uPrimaryRestartTx, err := builder.NewAddPermissionlessValidatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
@@ -2138,7 +2136,7 @@ func TestPrimaryNetworkValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk2),
+		pop2,
 		vm.luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -2342,6 +2340,8 @@ func TestNetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 	require.NoError(err)
 
 	builder, txSigner = factory.NewWallet(keys...)
+	pop2, err := signer.NewProofOfPossession(sk2)
+	require.NoError(err)
 	uPrimaryRestartTx, err := builder.NewAddPermissionlessValidatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
@@ -2352,7 +2352,7 @@ func TestNetValidatorPopulatedToEmptyBLSKeyDiff(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk2),
+		pop2,
 		vm.luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,

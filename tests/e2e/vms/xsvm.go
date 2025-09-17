@@ -59,19 +59,19 @@ var _ = ginkgo.Describe("[XSVM]", func() {
 		network := e2e.Env.GetNetwork()
 
 		sourceNet := network.GetSubnet(subnetAName)
-		require.NotNil(sourceSubnet)
+		require.NotNil(sourceNet)
 		destinationNet := network.GetSubnet(subnetBName)
-		require.NotNil(destinationSubnet)
+		require.NotNil(destinationNet)
 
-		sourceChain := sourceSubnet.Chains[0]
-		destinationChain := destinationSubnet.Chains[0]
+		sourceChain := sourceNet.Chains[0]
+		destinationChain := destinationNet.Chains[0]
 
-		sourceValidators := getNodesForIDs(network.Nodes, sourceSubnet.ValidatorIDs)
+		sourceValidators := getNodesForIDs(network.Nodes, sourceNet.ValidatorIDs)
 		require.NotEmpty(sourceValidators)
 		sourceAPINode := sourceValidators[0]
 		tests.Outf(" issuing transactions for source net on %s (%s)\n", sourceAPINode.NodeID, sourceAPINode.URI)
 
-		destinationValidators := getNodesForIDs(network.Nodes, destinationSubnet.ValidatorIDs)
+		destinationValidators := getNodesForIDs(network.Nodes, destinationNet.ValidatorIDs)
 		require.NotEmpty(destinationValidators)
 		destinationAPINode := destinationValidators[0]
 		tests.Outf(" issuing transactions for destination net on %s (%s)\n", destinationAPINode.NodeID, destinationAPINode.URI)
@@ -89,7 +89,7 @@ var _ = ginkgo.Describe("[XSVM]", func() {
 		require.NoError(err)
 		require.GreaterOrEqual(initialSourcedBalance, units.Schmeckle)
 
-		ginkgo.By(fmt.Sprintf("exporting from chain %s on net %s", sourceChain.ChainID, sourceSubnet.NetID))
+		ginkgo.By(fmt.Sprintf("exporting from chain %s on net %s", sourceChain.ChainID, sourceNet.NetID))
 		exportTxStatus, err := export.Export(
 			e2e.DefaultContext(),
 			&export.Config{
@@ -116,7 +116,7 @@ var _ = ginkgo.Describe("[XSVM]", func() {
 		}
 
 		ginkgo.By(fmt.Sprintf("issuing transaction on chain %s on net %s to activate linear++ consensus",
-			destinationChain.ChainID, destinationSubnet.NetID))
+			destinationChain.ChainID, destinationNet.NetID))
 		recipientKey, err := secp256k1.NewPrivateKey()
 		require.NoError(err)
 		transferTxStatus, err := transfer.Transfer(
@@ -133,7 +133,7 @@ var _ = ginkgo.Describe("[XSVM]", func() {
 		require.NoError(err)
 		tests.Outf(" issued transaction with ID: %s\n", transferTxStatus.TxID)
 
-		ginkgo.By(fmt.Sprintf("importing to blockchain %s on net %s", destinationChain.ChainID, destinationSubnet.NetID))
+		ginkgo.By(fmt.Sprintf("importing to blockchain %s on net %s", destinationChain.ChainID, destinationNet.NetID))
 		sourceURIs := make([]string, len(sourceValidators))
 		for i, node := range sourceValidators {
 			sourceURIs[i] = node.URI
