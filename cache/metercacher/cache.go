@@ -21,7 +21,7 @@ type Cache[K comparable, V any] struct {
 
 func New[K comparable, V any](
 	namespace string,
-	registerer metrics.Registerer,
+	registerer metric.Registerer,
 	cache cache.Cacher[K, V],
 ) (*Cache[K, V], error) {
 	metrics, err := newMetrics(namespace, registerer)
