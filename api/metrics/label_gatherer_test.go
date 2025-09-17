@@ -4,10 +4,8 @@
 package metrics
 
 import (
-	metrics "github.com/luxfi/metric"
 	"testing"
 
-	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 

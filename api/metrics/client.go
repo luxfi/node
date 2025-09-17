@@ -4,7 +4,6 @@
 package metrics
 
 import (
-	metrics "github.com/luxfi/metric"
 	"bytes"
 	"context"
 	"fmt"

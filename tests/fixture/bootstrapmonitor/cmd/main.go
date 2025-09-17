@@ -123,6 +123,6 @@ func checkArgs(namespace string, podName string, nodeContainerName string, dataD
 }
 
 func newLogger(rawLogFormat string) (log.Logger, error) {
-	// For simplicity, just return a new logger with default settings
-	return log.NewDefaultLogger(), nil
+	// For simplicity, just return a no-op logger
+	return log.NewNoOpLogger(), nil
 }
