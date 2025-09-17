@@ -72,7 +72,7 @@ type VMServer struct {
 
 	allowShutdown *utils.Atomic[bool]
 
-	metrics metric.Gatherer
+	metrics metrics.Gatherer
 	db      database.Database
 	log     log.Logger
 
@@ -130,10 +130,10 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 
-	pluginMetrics := metric.NewPrefixGatherer()
+	pluginMetrics := metrics.NewPrefixGatherer()
 	vm.metrics = pluginMetrics
 
-	processMetrics, err := metric.MakeAndRegister(
+	processMetrics, err := metrics.MakeAndRegister(
 		pluginMetrics,
 		"process",
 	)
@@ -153,7 +153,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 
-	grpcMetrics, err := metric.MakeAndRegister(
+	grpcMetrics, err := metrics.MakeAndRegister(
 		pluginMetrics,
 		"grpc",
 	)
@@ -167,7 +167,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 
-	vmMetrics := metric.NewPrefixGatherer()
+	vmMetrics := metrics.NewPrefixGatherer()
 	if err := pluginMetrics.Register("vm", vmMetrics); err != nil {
 		return nil, err
 	}
@@ -244,15 +244,13 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	dbMgr := &dbManagerImpl{db: vm.db}
 
 	// Initialize the VM - create a proper block.ChainContext
-	luxCtx := &consContext.Context{
+	consensusCtx := &consContext.Context{
 		QuantumID: 96369, // LUX mainnet
 		ChainID:   ids.Empty, // Will be set later
 		NodeID:    ids.EmptyNodeID,
 	}
-	consensusCtx := &block.ConsensusContext{}
 	blockChainCtx := &block.ChainContext{
-		ConsensusContext: consensusCtx,
-		Context:          luxCtx,
+		Context: consensusCtx,
 	}
 	// Wrap core.AppSender to block.AppSender
 	blockAppSender := &blockAppSenderWrapper{appSender: appSenderClient}

@@ -280,7 +280,7 @@ func getServiceDiscoveryDir(cmdName string) (string, error) {
 
 // SDConfig represents a Prometheus service discovery config entry.
 //
-// file_sd_config docs: https://metric.io/docs/prometheus/latest/configuration/configuration/#file_sd_config
+// file_sd_config docs: https://metrics.io/docs/prometheus/latest/configuration/configuration/#file_sd_config
 type SDConfig struct {
 	Targets []string          `json:"targets"`
 	Labels  map[string]string `json:"labels"`

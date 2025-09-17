@@ -35,7 +35,7 @@ const (
 	blksAcceptedMetric   = "lux_linear_blks_accepted_count"
 )
 
-var xChainMetricLabels = metric.Labels{
+var xChainMetricLabels = metrics.Labels{
 	chains.ChainLabel: "X",
 }
 

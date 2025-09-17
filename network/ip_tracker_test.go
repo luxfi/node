@@ -19,7 +19,7 @@ import (
 )
 
 func newTestIPTracker(t *testing.T) *ipTracker {
-	tracker, err := newIPTracker(log.NoLog{}, metric.NewRegistry())
+	tracker, err := newIPTracker(log.NoLog{}, metrics.NewRegistry())
 	require.NoError(t, err)
 	return tracker
 }

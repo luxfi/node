@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/snow"
+	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/database/manager"
 )
 
@@ -27,7 +27,7 @@ func newTestVM() *testVM {
 
 func (vm *testVM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consContext.Context,
 	db manager.Manager,
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -39,7 +39,7 @@ func (vm *testVM) Initialize(
 	return nil
 }
 
-func (vm *testVM) SetState(ctx context.Context, state snow.State) error {
+func (vm *testVM) SetState(ctx context.Context, state core.VMState) error {
 	return nil
 }
 

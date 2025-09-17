@@ -35,7 +35,7 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/version"
-	
+
 	luxmetrics "github.com/luxfi/metric"
 )
 
@@ -167,39 +167,18 @@ type noOpResourceManager struct{}
 func (n *noOpResourceManager) CPUUsage() float64                    { return 0 }
 func (n *noOpResourceManager) DiskUsage() (float64, float64)        { return 0, 0 }
 
-func newDefaultResourceTracker() consensustracker.ResourceTracker {
-	// Return a no-op consensus resource tracker for testing
-	return &noOpConsensusResourceTracker{}
-}
-
-// noOpConsensusResourceTracker implements consensustracker.ResourceTracker
-type noOpConsensusResourceTracker struct{}
-
-func (n *noOpConsensusResourceTracker) StartProcessing(nodeID ids.NodeID, time time.Time) {}
-func (n *noOpConsensusResourceTracker) StopProcessing(nodeID ids.NodeID, time time.Time) {}
-
-func (n *noOpConsensusResourceTracker) CPUTracker() consensustracker.CPUTracker {
-	return &noOpCPUTracker{}
-}
-
-func (n *noOpConsensusResourceTracker) DiskTracker() consensustracker.DiskTracker {
-	return &noOpDiskTracker{}
-}
-
-// noOpCPUTracker implements consensustracker.CPUTracker
-type noOpCPUTracker struct{}
-
-func (n *noOpCPUTracker) Usage(nodeID ids.NodeID, time time.Time) float64 { return 0 }
-func (n *noOpCPUTracker) TimeUntilUsage(nodeID ids.NodeID, time time.Time, usage float64) time.Duration {
-	return time.Hour
-}
-
-// noOpDiskTracker implements consensustracker.DiskTracker
-type noOpDiskTracker struct{}
-
-func (n *noOpDiskTracker) Usage(nodeID ids.NodeID, time time.Time) float64 { return 0 }
-func (n *noOpDiskTracker) TimeUntilUsage(nodeID ids.NodeID, time time.Time, usage float64) time.Duration {
-	return time.Hour
+func newDefaultResourceTracker() tracker.ResourceTracker {
+	// Create a no-op resource manager for testing
+	noOpManager := &noOpResourceManager{}
+	resourceTracker, err := tracker.NewResourceTracker(
+		metrics.NewRegistry(),
+		noOpManager,
+		10*time.Second,
+	)
+	if err != nil {
+		panic(err)
+	}
+	return resourceTracker
 }
 
 func newTestNetwork(t *testing.T, count int) (*testDialer, []*testListener, []ids.NodeID, []*Config) {
@@ -268,7 +247,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []consensusrouter.Inbou
 	)
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := metric.NewRegistry()
+		registry := metrics.NewRegistry()
 
 		// Use a simple test validator manager since AddStaker isn't in the interface
 		beacons := &testAggressiveValidatorManager{Manager: validators.NewManager()}
@@ -494,7 +473,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := metric.NewRegistry()
+		registry := metrics.NewRegistry()
 
 		// Use a simple test validator manager since AddStaker isn't in the interface
 		beacons := &testAggressiveValidatorManager{Manager: validators.NewManager()}
@@ -576,7 +555,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := metric.NewRegistry()
+		registry := metrics.NewRegistry()
 
 		beacons := validators.NewManager()
 		// Note: Can't add stakers with consensus validators.Manager
@@ -729,7 +708,7 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := metric.NewRegistry()
+		registry := metrics.NewRegistry()
 
 		beacons := validators.NewManager()
 		// Note: Can't add stakers with consensus validators.Manager

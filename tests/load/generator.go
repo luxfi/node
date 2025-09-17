@@ -36,7 +36,7 @@ func NewLoadGenerator(
 	workers []Worker,
 	chainID *big.Int,
 	metricsNamespace string,
-	registry metric.Registry,
+	registry metrics.Registry,
 	test Test,
 ) (LoadGenerator, error) {
 	metrics, err := newMetrics(metricsNamespace, registry)

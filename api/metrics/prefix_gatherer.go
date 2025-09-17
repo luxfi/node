@@ -30,7 +30,7 @@ type prefixGatherer struct {
 	multiGatherer
 }
 
-func (g *prefixGatherer) Register(prefix string, gatherer metric.Gatherer) error {
+func (g *prefixGatherer) Register(prefix string, gatherer metrics.Gatherer) error {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
@@ -69,7 +69,7 @@ func (g *prefixGatherer) Deregister(prefix string) bool {
 
 type prefixedGatherer struct {
 	prefix   string
-	gatherer metric.Gatherer
+	gatherer metrics.Gatherer
 }
 
 func (g *prefixedGatherer) Gather() ([]*dto.MetricFamily, error) {

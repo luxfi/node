@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
 
@@ -109,11 +110,11 @@ type VM struct {
 
 	// proposerBuildSlotGauge reports the slot index when this node may attempt
 	// to build a block.
-	proposerBuildSlotGauge metric.Gauge
+	proposerBuildSlotGauge metrics.Gauge
 
 	// acceptedBlocksSlotHistogram reports the slots that accepted blocks were
 	// proposed in.
-	acceptedBlocksSlotHistogram metric.Histogram
+	acceptedBlocksSlotHistogram metrics.Histogram
 }
 
 // New performs best when [minBlkDelay] is whole seconds. This is because block
@@ -197,9 +198,9 @@ func (vm *VM) Initialize(
 	})
 
 	// Create an adapter for ValidatorState
-	// chainCtx.ConsensusContext.ValidatorState is consensus.ValidatorState
-	if chainCtx.ConsensusContext != nil && chainCtx.ConsensusContext.ValidatorState != nil {
-		vm.ctx = consensus.WithValidatorState(vm.ctx, chainCtx.ConsensusContext.ValidatorState)
+	// chainCtx.Context.ValidatorState is consensus.ValidatorState
+	if chainCtx.Context != nil && chainCtx.Context.ValidatorState != nil {
+		vm.ctx = consensus.WithValidatorState(vm.ctx, chainCtx.Context.ValidatorState)
 	}
 
 	// Create a logger for the VM
@@ -302,11 +303,11 @@ func (vm *VM) Initialize(
 		return err
 	}
 
-	vm.proposerBuildSlotGauge = metric.NewGauge(metric.GaugeOpts{
+	vm.proposerBuildSlotGauge = metrics.NewGauge(metrics.GaugeOpts{
 		Name: "block_building_slot",
 		Help: "the slot that this node may attempt to build a block",
 	})
-	vm.acceptedBlocksSlotHistogram = metric.NewHistogram(metric.HistogramOpts{
+	vm.acceptedBlocksSlotHistogram = metrics.NewHistogram(metrics.HistogramOpts{
 		Name: "accepted_blocks_slot",
 		Help: "the slot accepted blocks were proposed in",
 		// define the following ranges:
@@ -320,8 +321,8 @@ func (vm *VM) Initialize(
 	})
 
 	return errors.Join(
-		vm.Config.Registerer.Register(vm.proposerBuildSlotGauge),
-		vm.Config.Registerer.Register(vm.acceptedBlocksSlotHistogram),
+		vm.Config.Registerer.Register(vm.proposerBuildSlotGauge.(prometheus.Collector)),
+		vm.Config.Registerer.Register(vm.acceptedBlocksSlotHistogram.(prometheus.Collector)),
 	)
 }
 

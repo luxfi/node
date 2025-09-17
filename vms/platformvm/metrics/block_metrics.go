@@ -19,10 +19,10 @@ var (
 
 type blockMetrics struct {
 	txMetrics *txMetrics
-	numBlocks metric.CounterVec
+	numBlocks metrics.CounterVec
 }
 
-func newBlockMetrics(registerer metric.Registerer) (*blockMetrics, error) {
+func newBlockMetrics(registerer metrics.Registerer) (*blockMetrics, error) {
 	txMetrics, err := newTxMetrics(registerer)
 	if err != nil {
 		return nil, err
@@ -30,33 +30,33 @@ func newBlockMetrics(registerer metric.Registerer) (*blockMetrics, error) {
 
 	m := &blockMetrics{
 		txMetrics: txMetrics,
-		numBlocks: metric.NewCounterVec(
-			metric.CounterOpts{
+		numBlocks: metrics.NewCounterVec(
+			metrics.CounterOpts{
 				Name: "blks_accepted",
 				Help: "number of blocks accepted",
 			},
 			blkLabels,
 		),
 	}
-	return m, registerer.Register(m.numBlocks)
+	return m, nil
 }
 
 func (m *blockMetrics) BanffAbortBlock(*block.BanffAbortBlock) error {
-	m.numBlocks.With(metric.Labels{
+	m.numBlocks.With(metrics.Labels{
 		blkLabel: "abort",
 	}).Inc()
 	return nil
 }
 
 func (m *blockMetrics) BanffCommitBlock(*block.BanffCommitBlock) error {
-	m.numBlocks.With(metric.Labels{
+	m.numBlocks.With(metrics.Labels{
 		blkLabel: "commit",
 	}).Inc()
 	return nil
 }
 
 func (m *blockMetrics) BanffProposalBlock(b *block.BanffProposalBlock) error {
-	m.numBlocks.With(metric.Labels{
+	m.numBlocks.With(metrics.Labels{
 		blkLabel: "proposal",
 	}).Inc()
 	for _, tx := range b.Transactions {
@@ -68,7 +68,7 @@ func (m *blockMetrics) BanffProposalBlock(b *block.BanffProposalBlock) error {
 }
 
 func (m *blockMetrics) BanffStandardBlock(b *block.BanffStandardBlock) error {
-	m.numBlocks.With(metric.Labels{
+	m.numBlocks.With(metrics.Labels{
 		blkLabel: "standard",
 	}).Inc()
 	for _, tx := range b.Transactions {
@@ -80,28 +80,28 @@ func (m *blockMetrics) BanffStandardBlock(b *block.BanffStandardBlock) error {
 }
 
 func (m *blockMetrics) ApricotAbortBlock(*block.ApricotAbortBlock) error {
-	m.numBlocks.With(metric.Labels{
+	m.numBlocks.With(metrics.Labels{
 		blkLabel: "abort",
 	}).Inc()
 	return nil
 }
 
 func (m *blockMetrics) ApricotCommitBlock(*block.ApricotCommitBlock) error {
-	m.numBlocks.With(metric.Labels{
+	m.numBlocks.With(metrics.Labels{
 		blkLabel: "commit",
 	}).Inc()
 	return nil
 }
 
 func (m *blockMetrics) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
-	m.numBlocks.With(metric.Labels{
+	m.numBlocks.With(metrics.Labels{
 		blkLabel: "proposal",
 	}).Inc()
 	return b.Tx.Unsigned.Visit(m.txMetrics)
 }
 
 func (m *blockMetrics) ApricotStandardBlock(b *block.ApricotStandardBlock) error {
-	m.numBlocks.With(metric.Labels{
+	m.numBlocks.With(metrics.Labels{
 		blkLabel: "standard",
 	}).Inc()
 	for _, tx := range b.Transactions {
@@ -113,7 +113,7 @@ func (m *blockMetrics) ApricotStandardBlock(b *block.ApricotStandardBlock) error
 }
 
 func (m *blockMetrics) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
-	m.numBlocks.With(metric.Labels{
+	m.numBlocks.With(metrics.Labels{
 		blkLabel: "atomic",
 	}).Inc()
 	return b.Tx.Unsigned.Visit(m.txMetrics)

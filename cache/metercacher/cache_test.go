@@ -39,7 +39,7 @@ func TestInterface(t *testing.T) {
 	for _, scenario := range scenarios {
 		for _, test := range cache.CacherTests {
 			baseCache := scenario.setup(test.Size)
-			c, err := New("", metric.NewRegistry(), baseCache)
+			c, err := New("", metrics.NewRegistry(), baseCache)
 			require.NoError(t, err)
 			test.Func(t, c)
 		}

@@ -52,7 +52,7 @@ func (m *mockResourceManager) Shutdown() {}
 
 func TestNewSystemThrottler(t *testing.T) {
 	require := require.New(t)
-	promReg := metric.NewNoOpMetrics("test").Registry()
+	promReg := metrics.NewNoOpMetrics("test").Registry()
 	clock := mockable.Clock{}
 	clock.Set(time.Now())
 	resourceManager := &mockResourceManager{}
@@ -87,7 +87,7 @@ func TestSystemThrottler(t *testing.T) {
 	}
 	vdrID, nonVdrID := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 	targeter := trackermock.NewTargeter(ctrl)
-	throttler, err := NewSystemThrottler("", metric.NewNoOpMetrics("test").Registry(), config, mockTracker, targeter)
+	throttler, err := NewSystemThrottler("", metrics.NewNoOpMetrics("test").Registry(), config, mockTracker, targeter)
 	require.NoError(err)
 
 	// Case: Actual usage <= target usage; should return immediately
@@ -169,7 +169,7 @@ func TestSystemThrottlerContextCancel(t *testing.T) {
 	}
 	vdrID := ids.GenerateTestNodeID()
 	targeter := trackermock.NewTargeter(ctrl)
-	throttler, err := NewSystemThrottler("", metric.NewNoOpMetrics("test").Registry(), config, mockTracker, targeter)
+	throttler, err := NewSystemThrottler("", metrics.NewNoOpMetrics("test").Registry(), config, mockTracker, targeter)
 	require.NoError(err)
 
 	// Case: Actual usage > target usage; we should wait.

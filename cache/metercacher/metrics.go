@@ -4,6 +4,9 @@
 package metercacher
 
 import (
+	"errors"
+
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/luxfi/metric"
 )
 
@@ -15,68 +18,75 @@ const (
 
 var (
 	resultLabels = []string{resultLabel}
-	hitLabels    = metric.Labels{
+	hitLabels    = metrics.Labels{
 		resultLabel: hitResult,
 	}
-	missLabels = metric.Labels{
+	missLabels = metrics.Labels{
 		resultLabel: missResult,
 	}
 )
 
-type metrics struct {
-	getCount metric.CounterVec
-	getTime  metric.GaugeVec
+type metricsImpl struct {
+	getCount metrics.CounterVec
+	getTime  metrics.GaugeVec
 
-	putCount metric.Counter
-	putTime  metric.Gauge
+	putCount metrics.Counter
+	putTime  metrics.Gauge
 
-	len           metric.Gauge
-	portionFilled metric.Gauge
+	len           metrics.Gauge
+	portionFilled metrics.Gauge
 }
 
 func newMetrics(
 	namespace string,
-	reg metric.Registerer,
-) (*metrics, error) {
-	m := &metrics{
-		getCount: metric.NewCounterVec(
-			metric.CounterOpts{
+	reg metrics.Registerer,
+) (*metricsImpl, error) {
+	m := &metricsImpl{
+		getCount: metrics.NewCounterVec(
+			metrics.CounterOpts{
 				Namespace: namespace,
 				Name:      "get_count",
 				Help:      "number of get calls",
 			},
 			resultLabels,
 		),
-		getTime: metric.NewGaugeVec(
-			metric.GaugeOpts{
+		getTime: metrics.NewGaugeVec(
+			metrics.GaugeOpts{
 				Namespace: namespace,
 				Name:      "get_time",
 				Help:      "time spent (ns) in get calls",
 			},
 			resultLabels,
 		),
-		putCount: metric.NewCounter(metric.CounterOpts{
+		putCount: metrics.NewCounter(metrics.CounterOpts{
 			Namespace: namespace,
 			Name:      "put_count",
 			Help:      "number of put calls",
 		}),
-		putTime: metric.NewGauge(metric.GaugeOpts{
+		putTime: metrics.NewGauge(metrics.GaugeOpts{
 			Namespace: namespace,
 			Name:      "put_time",
 			Help:      "time spent (ns) in put calls",
 		}),
-		len: metric.NewGauge(metric.GaugeOpts{
+		len: metrics.NewGauge(metrics.GaugeOpts{
 			Namespace: namespace,
 			Name:      "len",
 			Help:      "number of entries",
 		}),
-		portionFilled: metric.NewGauge(metric.GaugeOpts{
+		portionFilled: metrics.NewGauge(metrics.GaugeOpts{
 			Namespace: namespace,
 			Name:      "portion_filled",
 			Help:      "fraction of cache filled",
 		}),
 	}
-	// The metrics are already registered when created with prometheus functions
-	// so we don't need to register them again
-	return m, nil
+	err := errors.Join(
+		reg.Register(m.getCount.(prometheus.Collector)),
+		reg.Register(m.getTime.(prometheus.Collector)),
+		reg.Register(m.putCount.(prometheus.Collector)),
+		reg.Register(m.putTime.(prometheus.Collector)),
+		reg.Register(m.len.(prometheus.Collector)),
+		reg.Register(m.portionFilled.(prometheus.Collector)),
+	)
+	return m, err
 }
+

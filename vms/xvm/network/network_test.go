@@ -191,7 +191,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				txVerifierFunc(ctrl),
 				mempoolFunc(ctrl),
 				appSenderFunc(ctrl),
-				metric.NewNoOpMetrics("test").Registry(),
+				metrics.NewNoOpMetrics("test").Registry(),
 				testConfig,
 			)
 			require.NoError(err)
@@ -285,7 +285,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				executor.NewMockManager(ctrl), // Should never verify a tx
 				mempoolFunc(ctrl),
 				appSenderFunc(ctrl),
-				metric.NewNoOpMetrics("test").Registry(),
+				metrics.NewNoOpMetrics("test").Registry(),
 				testConfig,
 			)
 			require.NoError(err)

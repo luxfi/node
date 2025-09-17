@@ -19,7 +19,7 @@ func TestPeerTracker(t *testing.T) {
 	p, err := NewPeerTracker(
 		log.NoLog{},
 		"",
-		luxmetric.NewNoOpMetrics("test").Registry(),
+		luxmetrics.NewNoOpMetrics("test").Registry(),
 		nil,
 		nil,
 	)

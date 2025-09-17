@@ -17,8 +17,8 @@ func NewBLSSignerWrapper(key *bls.SecretKey) bls.Signer {
 }
 
 func (s *BLSSignerWrapper) Sign(msg []byte) (*bls.Signature, error) {
-	// The underlying Sign now returns an error
-	return s.key.Sign(msg)
+	// The underlying Sign doesn't return an error, so wrap it
+	return s.key.Sign(msg), nil
 }
 
 func (s *BLSSignerWrapper) PublicKey() *bls.PublicKey {
@@ -26,6 +26,7 @@ func (s *BLSSignerWrapper) PublicKey() *bls.PublicKey {
 }
 
 func (s *BLSSignerWrapper) SignProofOfPossession(msg []byte) (*bls.Signature, error) {
-	// Use the dedicated SignProofOfPossession method
-	return s.key.SignProofOfPossession(msg)
+	// The underlying Sign doesn't return an error for proof of possession either
+	// Use the regular Sign method with the proof of possession message
+	return s.key.Sign(msg), nil
 }

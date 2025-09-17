@@ -68,7 +68,7 @@ func (txMarshaller) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
 
 func newGossipMempool(
 	mempool pmempool.Mempool,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	log log.Logger,
 	txVerifier TxVerifier,
 	minTargetElements int,

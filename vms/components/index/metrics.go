@@ -22,10 +22,10 @@ func newMetrics(registerer prometheus.Registerer) (*indexMetrics, error) {
 		}),
 	}
 	if registerer != nil {
-		if err := registerer.Register(m.numObjects); err != nil {
+		if err := registerer.Register(m.numObjects.(prometheus.Collector)); err != nil {
 			return nil, err
 		}
-		if err := registerer.Register(m.numTxsIndexed); err != nil {
+		if err := registerer.Register(m.numTxsIndexed.(prometheus.Collector)); err != nil {
 			return nil, err
 		}
 	}

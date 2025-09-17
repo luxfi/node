@@ -274,7 +274,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				tt.mempoolFunc(ctrl),
 				tt.partialSyncPrimaryNetwork,
 				tt.appSenderFunc(ctrl),
-				metric.NewRegistry(),
+				metrics.NewRegistry(),
 				testConfig,
 			)
 			require.NoError(err)

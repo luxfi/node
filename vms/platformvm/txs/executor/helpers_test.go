@@ -284,7 +284,7 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		metric.NewRegistry(),
+		metrics.NewRegistry(),
 		cfg,
 		execCfg,
 		ctx.Context,

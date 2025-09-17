@@ -14,11 +14,11 @@ import (
 // MultiGatherer extends the Gatherer interface by allowing additional gatherers
 // to be registered.
 type MultiGatherer interface {
-	metric.Gatherer
+	metrics.Gatherer
 
 	// Register adds the outputs of [gatherer] to the results of future calls to
-	// Gather with the provided [name] added to the metric.
-	Register(name string, gatherer metric.Gatherer) error
+	// Gather with the provided [name] added to the metrics.
+	Register(name string, gatherer metrics.Gatherer) error
 
 	// Deregister removes the outputs of a gatherer with [name] from the results
 	// of future calls to Gather. Returns true if a gatherer with [name] was
@@ -35,17 +35,25 @@ func NewMultiGatherer() MultiGatherer {
 type multiGatherer struct {
 	lock      sync.RWMutex
 	names     []string
-	gatherers metric.Gatherers
+	gatherers []metrics.Gatherer
 }
 
 func (g *multiGatherer) Gather() ([]*dto.MetricFamily, error) {
 	g.lock.RLock()
 	defer g.lock.RUnlock()
 
-	return g.gatherers.Gather()
+	var allFamilies []*dto.MetricFamily
+	for _, gatherer := range g.gatherers {
+		families, err := gatherer.Gather()
+		if err != nil {
+			return allFamilies, err
+		}
+		allFamilies = append(allFamilies, families...)
+	}
+	return allFamilies, nil
 }
 
-func (g *multiGatherer) Register(name string, gatherer metric.Gatherer) error {
+func (g *multiGatherer) Register(name string, gatherer metrics.Gatherer) error {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
@@ -69,8 +77,8 @@ func (g *multiGatherer) Deregister(name string) bool {
 	return false
 }
 
-func MakeAndRegister(gatherer MultiGatherer, name string) (metric.Registry, error) {
-	reg := metric.NewRegistry()
+func MakeAndRegister(gatherer MultiGatherer, name string) (metrics.Registry, error) {
+	reg := metrics.NewNoOpRegistry()
 	if err := gatherer.Register(name, reg); err != nil {
 		return nil, fmt.Errorf("couldn't register %q metrics: %w", name, err)
 	}

@@ -4,7 +4,7 @@ module github.com/luxfi/node
 // CONTRIBUTING.md
 // README.md
 // go.mod (here)
-go 1.23
+go 1.25.1
 
 exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 
@@ -31,9 +31,7 @@ require (
 	github.com/luxfi/ledger-lux-go v1.0.0
 	github.com/luxfi/log v1.1.22
 	github.com/luxfi/math v0.1.0
-	github.com/luxfi/metric v1.3.0
 	github.com/luxfi/mock v0.1.0
-	github.com/luxfi/qzmq v0.1.1
 	github.com/luxfi/trace v0.1.2
 	github.com/supranational/blst v0.3.15
 	golang.org/x/mod v0.27.0

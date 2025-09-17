@@ -1546,7 +1546,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 // 
 // 	chainRouter := &router.ChainRouter{}
 // 
-// 	metricsInstance := metric.NewNoOpMetrics("test")
+// 	metricsInstance := metrics.NewNoOpMetrics("test")
 // 	mc, err := message.NewCreator(log.NewNoOpLogger(), metricsInstance, constants.DefaultNetworkCompressionType, 10*time.Second)
 // 	require.NoError(err)
 // 
@@ -1574,7 +1574,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 // 	// 	timeoutManager,
 // 	// 	p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 // 	// 	subnets.New(consensusCtx.NodeID, subnets.Config{}),
-// 	// 	metric.NewNoOpRegistry(),
+// 	// 	metrics.NewNoOpRegistry(),
 // 	// )
 // 	// require.NoError(err)
 // 
@@ -1633,7 +1633,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 // 
 // 	// Asynchronously passes messages from the network to the consensus engine
 // 	cpuTracker, err := timetracker.NewResourceTracker(
-// 		metric.NewNoOpRegistry(),
+// 		metrics.NewNoOpRegistry(),
 // 		resource.NoUsage,
 // 		meter.ContinuousFactory{},
 // 		time.Second,
@@ -1666,7 +1666,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 // 		subnets.New(ctx.NodeID, subnets.Config{}),
 // 		tracker.NewPeers(),
 // 		peerTracker,
-// 		metric.NewNoOpRegistry(),
+// 		metrics.NewNoOpRegistry(),
 // 		func() {},
 // 	)
 // 	require.NoError(err)

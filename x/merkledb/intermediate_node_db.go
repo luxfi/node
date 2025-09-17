@@ -31,7 +31,7 @@ type intermediateNodeDB struct {
 
 	// the number of bytes to evict during an eviction batch
 	evictionBatchSize int
-	metrics           metrics
+	metrics           merkleDBMetrics
 	tokenSize         int
 	hasher            Hasher
 }
@@ -39,7 +39,7 @@ type intermediateNodeDB struct {
 func newIntermediateNodeDB(
 	db database.Database,
 	bufferPool *utils.BytesPool,
-	metrics metrics,
+	metrics merkleDBMetrics,
 	cacheSize int,
 	writeBufferSize int,
 	evictionBatchSize int,

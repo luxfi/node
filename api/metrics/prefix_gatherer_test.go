@@ -19,17 +19,17 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 	gatherer := NewPrefixGatherer()
 	require.NotNil(gatherer)
 
-	registerA := metric.NewNoOpRegistry()
+	registerA := metrics.NewNoOpRegistry()
 	require.NoError(gatherer.Register("a", registerA))
 	{
-		counterA := metric.NewCounter(counterOpts)
+		counterA := metrics.NewCounter(counterOpts)
 		require.NoError(registerA.Register(counterA))
 	}
 
-	registerB := metric.NewNoOpRegistry()
+	registerB := metrics.NewNoOpRegistry()
 	require.NoError(gatherer.Register("b", registerB))
 	{
-		counterB := metric.NewCounter(counterOpts)
+		counterB := metrics.NewCounter(counterOpts)
 		counterB.Inc()
 		require.NoError(registerB.Register(counterB))
 	}
@@ -90,7 +90,7 @@ func TestPrefixGatherer_Register(t *testing.T) {
 				names: []string{
 					firstPrefixedGatherer.prefix,
 				},
-				gatherers: metric.Gatherers{
+				gatherers: metrics.Gatherers{
 					firstPrefixedGatherer,
 				},
 			},
@@ -108,7 +108,7 @@ func TestPrefixGatherer_Register(t *testing.T) {
 				firstPrefixedGatherer.prefix,
 				secondPrefixedGatherer.prefix,
 			},
-			gatherers: metric.Gatherers{
+			gatherers: metrics.Gatherers{
 				firstPrefixedGatherer,
 				secondPrefixedGatherer,
 			},
@@ -119,7 +119,7 @@ func TestPrefixGatherer_Register(t *testing.T) {
 		name                   string
 		prefixGatherer         *prefixGatherer
 		prefix                 string
-		gatherer               metric.Gatherer
+		gatherer               metrics.Gatherer
 		expectedErr            error
 		expectedPrefixGatherer *prefixGatherer
 	}{

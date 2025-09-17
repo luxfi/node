@@ -21,14 +21,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	metric "github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/networking/timeout"
 	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/factory"
@@ -123,7 +122,7 @@ func New(
 	n := &Node{
 		Log:               logger,
 		LogFactory:        logFactory,
-		MetricsRegisterer: metric.NewRegistry(),
+		MetricsRegisterer: metric.NewPrometheusRegistry(),
 		StakingTLSSigner:  config.StakingTLSCert.PrivateKey.(crypto.Signer),
 		StakingTLSCert:    stakingCert,
 		ID: ids.NodeIDFromCert(&ids.Certificate{
@@ -349,10 +348,10 @@ type Node struct {
 	tlsKeyLogWriterCloser io.WriteCloser
 
 	// this node's initial connections to the network
-	bootstrappers validators.Manager
+	bootstrappers nodevalidators.ExtendedManager
 
 	// current validators of the network
-	vdrs validators.Manager
+	vdrs nodevalidators.ExtendedManager
 
 	apiURI string
 

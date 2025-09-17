@@ -18,16 +18,16 @@ const defaultPrometheusListenAddr = "127.0.0.1:0"
 
 // PrometheusServer is a HTTP server that serves Prometheus metrics from the provided
 // gahterer.
-// Listens on localhost with a dynamic port and serves metrics at /ext/metric.
+// Listens on localhost with a dynamic port and serves metrics at /ext/metrics.
 type PrometheusServer struct {
-	gatherer metric.Gatherer
+	gatherer metrics.Gatherer
 	server   http.Server
 	errChan  chan error
 }
 
 // NewPrometheusServer creates and starts a Prometheus server with the provided gatherer
-// listening on 127.0.0.1:0 and serving /ext/metric.
-func NewPrometheusServer(gatherer metric.Gatherer) (*PrometheusServer, error) {
+// listening on 127.0.0.1:0 and serving /ext/metrics.
+func NewPrometheusServer(gatherer metrics.Gatherer) (*PrometheusServer, error) {
 	server := &PrometheusServer{
 		gatherer: gatherer,
 	}

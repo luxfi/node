@@ -62,7 +62,7 @@ func TestMarshaller(t *testing.T) {
 func TestGossipMempoolAdd(t *testing.T) {
 	require := require.New(t)
 
-	metrics := metric.NewNoOpMetrics("test").Registry()
+	metrics := metrics.NewNoOpMetrics("test").Registry()
 	toEngine := make(chan core.MessageType, 1)
 
 	baseMempool, err := mempool.New("", metrics, toEngine)
@@ -99,7 +99,7 @@ func TestGossipMempoolAdd(t *testing.T) {
 func TestGossipMempoolAddVerified(t *testing.T) {
 	require := require.New(t)
 
-	metrics := metric.NewNoOpMetrics("test").Registry()
+	metrics := metrics.NewNoOpMetrics("test").Registry()
 	toEngine := make(chan core.MessageType, 1)
 
 	baseMempool, err := mempool.New("", metrics, toEngine)

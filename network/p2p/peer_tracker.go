@@ -10,7 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
+	luxmetrics "github.com/luxfi/metric"
 	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
@@ -53,7 +54,7 @@ type PeerTracker struct {
 	// Max heap that contains the average bandwidth of peers that do not have an
 	// outstanding request.
 	bandwidthHeap heap.Map[ids.NodeID, safemath.Averager]
-	// Average bandwidth is only used for metric.
+	// Average bandwidth is only used for metrics.
 	averageBandwidth safemath.Averager
 
 	// The below fields are assumed to be constant and are not protected by the
@@ -65,15 +66,15 @@ type PeerTracker struct {
 }
 
 type peerTrackerMetrics struct {
-	numTrackedPeers    metric.Gauge
-	numResponsivePeers metric.Gauge
-	averageBandwidth   metric.Gauge
+	numTrackedPeers    luxmetrics.Gauge
+	numResponsivePeers luxmetrics.Gauge
+	averageBandwidth   luxmetrics.Gauge
 }
 
 func NewPeerTracker(
 	log log.Logger,
 	metricsNamespace string,
-	registerer metric.Registerer,
+	registerer luxmetrics.Registerer,
 	ignoredNodes set.Set[ids.NodeID],
 	minVersion *version.Application,
 ) (*PeerTracker, error) {
@@ -87,22 +88,22 @@ func NewPeerTracker(
 		ignoredNodes:     ignoredNodes,
 		minVersion:       minVersion,
 		metrics: peerTrackerMetrics{
-			numTrackedPeers: metric.NewGauge(
-				metric.GaugeOpts{
+			numTrackedPeers: luxmetrics.NewGauge(
+				luxmetrics.GaugeOpts{
 					Namespace: metricsNamespace,
 					Name:      "num_tracked_peers",
 					Help:      "number of tracked peers",
 				},
 			),
-			numResponsivePeers: metric.NewGauge(
-				metric.GaugeOpts{
+			numResponsivePeers: luxmetrics.NewGauge(
+				luxmetrics.GaugeOpts{
 					Namespace: metricsNamespace,
 					Name:      "num_responsive_peers",
 					Help:      "number of responsive peers",
 				},
 			),
-			averageBandwidth: metric.NewGauge(
-				metric.GaugeOpts{
+			averageBandwidth: luxmetrics.NewGauge(
+				luxmetrics.GaugeOpts{
 					Namespace: metricsNamespace,
 					Name:      "average_bandwidth",
 					Help:      "average sync bandwidth used by peers",
@@ -112,9 +113,9 @@ func NewPeerTracker(
 	}
 
 	err := errors.Join(
-		registerer.Register(t.metrics.numTrackedPeers),
-		registerer.Register(t.metrics.numResponsivePeers),
-		registerer.Register(t.metrics.averageBandwidth),
+		registerer.Register(t.metrics.numTrackedPeers.(prometheus.Collector)),
+		registerer.Register(t.metrics.numResponsivePeers.(prometheus.Collector)),
+		registerer.Register(t.metrics.averageBandwidth.(prometheus.Collector)),
 	)
 	return t, err
 }

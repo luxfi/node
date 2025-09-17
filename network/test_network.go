@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 
 	luxmetrics "github.com/luxfi/metric"
 
@@ -106,7 +106,7 @@ func NewTestNetwork(
 	// TODO actually monitor usage
 	// TestNetwork doesn't use disk so we don't need to track it, but we should
 	// still have guardrails around cpu/memory usage.
-	promRegistry := metric.NewRegistry()
+	promRegistry := prometheus.NewRegistry()
 
 	resourceTracker := &noOpResourceTracker{}
 

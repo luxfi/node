@@ -4,6 +4,7 @@
 package metric
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
 	"errors"
 	"fmt"
 
@@ -19,32 +20,32 @@ type Averager interface {
 }
 
 type averager struct {
-	count metric.Counter
-	sum   metric.Gauge
+	count metrics.Counter
+	sum   metrics.Gauge
 }
 
-func NewAverager(name, desc string, reg metric.Registerer) (Averager, error) {
+func NewAverager(name, desc string, reg metrics.Registerer) (Averager, error) {
 	errs := wrappers.Errs{}
 	a := NewAveragerWithErrs(name, desc, reg, &errs)
 	return a, errs.Err
 }
 
-func NewAveragerWithErrs(name, desc string, reg metric.Registerer, errs *wrappers.Errs) Averager {
+func NewAveragerWithErrs(name, desc string, reg metrics.Registerer, errs *wrappers.Errs) Averager {
 	a := averager{
-		count: metric.NewCounter(metric.CounterOpts{
+		count: metrics.NewCounter(metrics.CounterOpts{
 			Name: AppendNamespace(name, "count"),
 			Help: "Total # of observations of " + desc,
 		}),
-		sum: metric.NewGauge(metric.GaugeOpts{
+		sum: metrics.NewGauge(metrics.GaugeOpts{
 			Name: AppendNamespace(name, "sum"),
 			Help: "Sum of " + desc,
 		}),
 	}
 
-	if err := reg.Register(a.count); err != nil {
+	if err := reg.Register(a.count.(prometheus.Collector)); err != nil {
 		errs.Add(fmt.Errorf("%w: %w", ErrFailedRegistering, err))
 	}
-	if err := reg.Register(a.sum); err != nil {
+	if err := reg.Register(a.sum.(prometheus.Collector)); err != nil {
 		errs.Add(fmt.Errorf("%w: %w", ErrFailedRegistering, err))
 	}
 	return &a

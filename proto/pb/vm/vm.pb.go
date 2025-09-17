@@ -3491,7 +3491,7 @@ var file_vm_vm_proto_goTypes = []interface{}{
 	(*StateSummaryAcceptRequest)(nil),          // 46: vm.StateSummaryAcceptRequest
 	(*StateSummaryAcceptResponse)(nil),         // 47: vm.StateSummaryAcceptResponse
 	(*timestamppb.Timestamp)(nil),              // 48: google.protobuf.Timestamp
-	(*_go.MetricFamily)(nil),                   // 49: io.metric.client.MetricFamily
+	(*_go.MetricFamily)(nil),                   // 49: io.metrics.client.MetricFamily
 	(*emptypb.Empty)(nil),                      // 50: google.protobuf.Empty
 }
 var file_vm_vm_proto_depIdxs = []int32{
@@ -3510,7 +3510,7 @@ var file_vm_vm_proto_depIdxs = []int32{
 	48, // 12: vm.CrossChainAppRequestMsg.deadline:type_name -> google.protobuf.Timestamp
 	13, // 13: vm.BatchedParseBlockResponse.response:type_name -> vm.ParseBlockResponse
 	2,  // 14: vm.GetBlockIDAtHeightResponse.err:type_name -> vm.Error
-	49, // 15: vm.GatherResponse.metric_families:type_name -> io.metric.client.MetricFamily
+	49, // 15: vm.GatherResponse.metric_families:type_name -> io.metrics.client.MetricFamily
 	2,  // 16: vm.StateSyncEnabledResponse.err:type_name -> vm.Error
 	2,  // 17: vm.GetOngoingSyncStateSummaryResponse.err:type_name -> vm.Error
 	2,  // 18: vm.GetLastStateSummaryResponse.err:type_name -> vm.Error

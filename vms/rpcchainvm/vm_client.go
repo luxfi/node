@@ -74,7 +74,7 @@ var (
 	_ block.BuildBlockWithContextChainVM = (*VMClient)(nil)
 	_ block.BatchedChainVM               = (*VMClient)(nil)
 	_ block.StateSyncableVM              = (*VMClient)(nil)
-	_ metric.Gatherer                = (*VMClient)(nil)
+	_ metrics.Gatherer                = (*VMClient)(nil)
 
 	_ block.Block             = (*blockClient)(nil)
 	_ block.WithVerifyContext = (*blockClient)(nil)
@@ -89,7 +89,7 @@ type VMClient struct {
 	runtime         runtime.Stopper
 	pid             int
 	processTracker  resource.ProcessTracker
-	metricsGatherer metric.MultiGatherer
+	metricsGatherer metrics.MultiGatherer
 
 	messenger *messenger.Server
 	// keystore             *gkeystore.Server // Keystore removed
@@ -111,7 +111,7 @@ func NewClient(
 	runtime runtime.Stopper,
 	pid int,
 	processTracker resource.ProcessTracker,
-	metricsGatherer metric.MultiGatherer,
+	metricsGatherer metrics.MultiGatherer,
 ) *VMClient {
 	return &VMClient{
 		client:          vmpb.NewVMClient(clientConn),
@@ -172,7 +172,7 @@ func (vm *VMClient) Initialize(
 	}
 
 	// Register metrics
-	serverReg, err := metric.MakeAndRegister(
+	serverReg, err := metrics.MakeAndRegister(
 		vm.metricsGatherer,
 		primaryAlias,
 	)

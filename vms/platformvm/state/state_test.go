@@ -808,7 +808,7 @@ func newStateFromDB(require *require.Assertions, db database.Database) *state {
 		},
 		execCfg,
 		context.Background(),
-		metric.NewRegistry(),
+		metrics.NewRegistry(),
 		reward.NewCalculator(reward.Config{
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .1 * reward.PercentDenominator,

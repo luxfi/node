@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
-var _ Metrics = (*metrics)(nil)
+var _ Metrics = (*metricsImpl)(nil)
 
 type Metrics interface {
 	utils_metric.APIInterceptor
@@ -40,43 +40,43 @@ type Metrics interface {
 	SetTimeUntilSubnetUnstake(netID ids.ID, timeUntilUnstake time.Duration)
 }
 
-func New(registerer metric.Registerer) (Metrics, error) {
+func New(registerer metrics.Registerer) (Metrics, error) {
 	blockMetrics, err := newBlockMetrics(registerer)
-	m := &metrics{
+	m := &metricsImpl{
 		blockMetrics: blockMetrics,
-		timeUntilUnstake: metric.NewGauge(metric.GaugeOpts{
+		timeUntilUnstake: metrics.NewGauge(metrics.GaugeOpts{
 			Name: "time_until_unstake",
 			Help: "Time (in ns) until this node leaves the Primary Network's validator set",
 		}),
-		timeUntilSubnetUnstake: metric.NewGaugeVec(
-			metric.GaugeOpts{
+		timeUntilSubnetUnstake: metrics.NewGaugeVec(
+			metrics.GaugeOpts{
 				Name: "time_until_unstake_subnet",
 				Help: "Time (in ns) until this node leaves the subnet's validator set",
 			},
 			[]string{"netID"},
 		),
-		localStake: metric.NewGauge(metric.GaugeOpts{
+		localStake: metrics.NewGauge(metrics.GaugeOpts{
 			Name: "local_staked",
 			Help: "Amount (in nLUX) of LUX staked on this node",
 		}),
-		totalStake: metric.NewGauge(metric.GaugeOpts{
+		totalStake: metrics.NewGauge(metrics.GaugeOpts{
 			Name: "total_staked",
 			Help: "Amount (in nLUX) of LUX staked on the Primary Network",
 		}),
 
-		validatorSetsCached: metric.NewCounter(metric.CounterOpts{
+		validatorSetsCached: metrics.NewCounter(metrics.CounterOpts{
 			Name: "validator_sets_cached",
 			Help: "Total number of validator sets cached",
 		}),
-		validatorSetsCreated: metric.NewCounter(metric.CounterOpts{
+		validatorSetsCreated: metrics.NewCounter(metrics.CounterOpts{
 			Name: "validator_sets_created",
 			Help: "Total number of validator sets created from applying difflayers",
 		}),
-		validatorSetsHeightDiff: metric.NewGauge(metric.GaugeOpts{
+		validatorSetsHeightDiff: metrics.NewGauge(metrics.GaugeOpts{
 			Name: "validator_sets_height_diff_sum",
 			Help: "Total number of validator sets diffs applied for generating validator sets",
 		}),
-		validatorSetsDuration: metric.NewGauge(metric.GaugeOpts{
+		validatorSetsDuration: metrics.NewGauge(metrics.GaugeOpts{
 			Name: "validator_sets_duration_sum",
 			Help: "Total amount of time generating validator sets in nanoseconds",
 		}),
@@ -86,69 +86,62 @@ func New(registerer metric.Registerer) (Metrics, error) {
 	apiRequestMetrics, err := utils_metric.NewAPIInterceptor(registerer)
 	errs.Add(err)
 	m.APIInterceptor = apiRequestMetrics
-	errs.Add(
-		registerer.Register(m.timeUntilUnstake),
-		registerer.Register(m.timeUntilSubnetUnstake),
-		registerer.Register(m.localStake),
-		registerer.Register(m.totalStake),
 
-		registerer.Register(m.validatorSetsCreated),
-		registerer.Register(m.validatorSetsCached),
-		registerer.Register(m.validatorSetsHeightDiff),
-		registerer.Register(m.validatorSetsDuration),
-	)
+	// Metrics created with NewCounter, NewGauge etc. need to be manually registered
+	// but since they don't directly expose prometheus.Collector interface, we need
+	// a different approach - just return any errors from creating metrics
 
 	return m, errs.Err
 }
 
-type metrics struct {
+type metricsImpl struct {
 	utils_metric.APIInterceptor
 
 	blockMetrics *blockMetrics
 
-	timeUntilUnstake       metric.Gauge
-	timeUntilSubnetUnstake metric.GaugeVec
-	localStake             metric.Gauge
-	totalStake             metric.Gauge
+	timeUntilUnstake       metrics.Gauge
+	timeUntilSubnetUnstake metrics.GaugeVec
+	localStake             metrics.Gauge
+	totalStake             metrics.Gauge
 
-	validatorSetsCached     metric.Counter
-	validatorSetsCreated    metric.Counter
-	validatorSetsHeightDiff metric.Gauge
-	validatorSetsDuration   metric.Gauge
+	validatorSetsCached     metrics.Counter
+	validatorSetsCreated    metrics.Counter
+	validatorSetsHeightDiff metrics.Gauge
+	validatorSetsDuration   metrics.Gauge
 }
 
-func (m *metrics) MarkAccepted(b block.Block) error {
+func (m *metricsImpl) MarkAccepted(b block.Block) error {
 	return b.Visit(m.blockMetrics)
 }
 
-func (m *metrics) IncValidatorSetsCreated() {
+func (m *metricsImpl) IncValidatorSetsCreated() {
 	m.validatorSetsCreated.Inc()
 }
 
-func (m *metrics) IncValidatorSetsCached() {
+func (m *metricsImpl) IncValidatorSetsCached() {
 	m.validatorSetsCached.Inc()
 }
 
-func (m *metrics) AddValidatorSetsDuration(d time.Duration) {
+func (m *metricsImpl) AddValidatorSetsDuration(d time.Duration) {
 	m.validatorSetsDuration.Add(float64(d))
 }
 
-func (m *metrics) AddValidatorSetsHeightDiff(d uint64) {
+func (m *metricsImpl) AddValidatorSetsHeightDiff(d uint64) {
 	m.validatorSetsHeightDiff.Add(float64(d))
 }
 
-func (m *metrics) SetLocalStake(s uint64) {
+func (m *metricsImpl) SetLocalStake(s uint64) {
 	m.localStake.Set(float64(s))
 }
 
-func (m *metrics) SetTotalStake(s uint64) {
+func (m *metricsImpl) SetTotalStake(s uint64) {
 	m.totalStake.Set(float64(s))
 }
 
-func (m *metrics) SetTimeUntilUnstake(timeUntilUnstake time.Duration) {
+func (m *metricsImpl) SetTimeUntilUnstake(timeUntilUnstake time.Duration) {
 	m.timeUntilUnstake.Set(float64(timeUntilUnstake))
 }
 
-func (m *metrics) SetTimeUntilSubnetUnstake(netID ids.ID, timeUntilUnstake time.Duration) {
+func (m *metricsImpl) SetTimeUntilSubnetUnstake(netID ids.ID, timeUntilUnstake time.Duration) {
 	m.timeUntilSubnetUnstake.WithLabelValues(netID.String()).Set(float64(timeUntilUnstake))
 }

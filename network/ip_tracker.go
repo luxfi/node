@@ -4,6 +4,7 @@
 package network
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
 	"crypto/rand"
 	"errors"
 	"sync"
@@ -39,7 +40,7 @@ var _ validators.SetCallbackListener = (*ipTracker)(nil)
 
 func newIPTracker(
 	log log.Logger,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 ) (*ipTracker, error) {
 	bloomMetrics, err := bloom.NewMetrics("ip_bloom", registerer)
 	if err != nil {
@@ -47,11 +48,11 @@ func newIPTracker(
 	}
 	tracker := &ipTracker{
 		log: log,
-		numTrackedIPs: metric.NewGauge(metric.GaugeOpts{
+		numTrackedIPs: metrics.NewGauge(metrics.GaugeOpts{
 			Name: "tracked_ips",
 			Help: "Number of IPs this node is willing to dial",
 		}),
-		numGossipableIPs: metric.NewGauge(metric.GaugeOpts{
+		numGossipableIPs: metrics.NewGauge(metrics.GaugeOpts{
 			Name: "gossipable_ips",
 			Help: "Number of IPs this node is willing to gossip",
 		}),
@@ -62,8 +63,8 @@ func newIPTracker(
 		gossipableIndices:    make(map[ids.NodeID]int),
 	}
 	err = errors.Join(
-		registerer.Register(tracker.numTrackedIPs),
-		registerer.Register(tracker.numGossipableIPs),
+		registerer.Register(tracker.numTrackedIPs.(prometheus.Collector)),
+		registerer.Register(tracker.numGossipableIPs.(prometheus.Collector)),
 	)
 	if err != nil {
 		return nil, err
@@ -73,8 +74,8 @@ func newIPTracker(
 
 type ipTracker struct {
 	log              log.Logger
-	numTrackedIPs    metric.Gauge
-	numGossipableIPs metric.Gauge
+	numTrackedIPs    metrics.Gauge
+	numGossipableIPs metrics.Gauge
 	bloomMetrics     *bloom.Metrics
 
 	lock sync.RWMutex

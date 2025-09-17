@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/log"
-	metric "github.com/luxfi/metric"
+	luxmetrics "github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
@@ -22,14 +22,14 @@ type factory struct {
 	path            string
 	processTracker  resource.ProcessTracker
 	runtimeTracker  runtime.Tracker
-	metricsGatherer metric.MultiGatherer
+	metricsGatherer luxmetrics.MultiGatherer
 }
 
 func NewFactory(
 	path string,
 	processTracker resource.ProcessTracker,
 	runtimeTracker runtime.Tracker,
-	metricsGatherer metric.MultiGatherer,
+	metricsGatherer luxmetrics.MultiGatherer,
 ) vms.Factory {
 	return &factory{
 		path:            path,

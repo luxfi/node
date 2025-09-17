@@ -53,7 +53,7 @@ type InboundMsgThrottlerConfig struct {
 // Returns a new, sybil-safe inbound message throttler.
 func NewInboundMsgThrottler(
 	log log.Logger,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	vdrs validators.Manager,
 	throttlerConfig InboundMsgThrottlerConfig,
 	resourceTracker tracker.ResourceTracker,

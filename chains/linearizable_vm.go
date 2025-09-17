@@ -7,9 +7,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
 	coreinterfaces "github.com/luxfi/consensus/core/interfaces"
+	consContext "github.com/luxfi/consensus/context"
 	// "github.com/luxfi/consensus/engine/chain" // currently unused
 	"github.com/luxfi/consensus/engine/chain/block"
 	// "github.com/luxfi/consensus/engine/dag/vertex" // Not used
@@ -51,21 +51,11 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 
 	// Initialize the ChainVM
 	// Convert consensus types to block types
-	var pubKey []byte
-	// ctx is a context.Context, not a consensus context, so we don't have PublicKey
-	luxCtx := &consensus.Context{
-		QuantumID: consensus.GetNetworkID(vm.ctx),
-		NetID:     ids.Empty,
-		ChainID:   consensus.GetChainID(vm.ctx),
-		NodeID:    consensus.GetNodeID(vm.ctx),
-		PublicKey: pubKey,
-	}
 	// Use consensus.ConsensusContext 
-	consensusCtx := &block.ConsensusContext{}
+	consensusCtx := &consContext.Context{}
 	
 	chainCtx := &block.ChainContext{
-		ConsensusContext: consensusCtx,
-		Context:          luxCtx,
+		Context: consensusCtx,
 	}
 
 	// Create DBManager wrapper

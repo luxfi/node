@@ -65,7 +65,7 @@ func (r *routerAdapter) Initialize(
 	sybilProtectionEnabled bool,
 	onFatal func(int),
 	healthConfig router.HealthConfig,
-	reg metric.Registerer,
+	reg metrics.Registerer,
 	namespace string,
 ) error {
 	// The node Router has a different Initialize signature, so we can't directly delegate

@@ -67,7 +67,7 @@ type Manager interface {
 
 type manager struct {
 	log            log.Logger
-	processMetrics *metrics
+	processMetrics *metricsImpl
 
 	processesLock sync.Mutex
 	processes     map[int]*proc
@@ -91,7 +91,7 @@ func NewManager(
 	frequency,
 	cpuHalflife,
 	diskHalflife time.Duration,
-	metricsRegisterer metric.Registerer,
+	metricsRegisterer metrics.Registerer,
 ) (Manager, error) {
 	processMetrics, err := newMetrics(metricsRegisterer)
 	if err != nil {

@@ -188,7 +188,7 @@ type Config struct {
 	// If [Reg] is nil, metrics are collected locally but not exported through
 	// Prometheus.
 	// This may be useful for testing.
-	Reg        metric.Registerer
+	Reg        metrics.Registerer
 	TraceLevel TraceLevel
 	Tracer     trace.Tracer
 }
@@ -218,7 +218,7 @@ type merkleDB struct {
 	// True iff the db has been closed.
 	closed bool
 
-	metrics metrics
+	metrics merkleDBMetrics
 
 	debugTracer trace.Tracer
 	infoTracer  trace.Tracer
@@ -255,7 +255,7 @@ func newDatabase(
 	ctx context.Context,
 	db database.Database,
 	config Config,
-	metrics metrics,
+	metrics merkleDBMetrics,
 ) (*merkleDB, error) {
 	if err := config.BranchFactor.Valid(); err != nil {
 		return nil, err

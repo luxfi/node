@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/vms/xvm/txs"
 )
 
-var _ Metrics = (*metrics)(nil)
+var _ Metrics = (*metricsImpl)(nil)
 
 type Metrics interface {
 	utils_metric.APIInterceptor
@@ -29,31 +29,31 @@ type Metrics interface {
 	//
 	// Note: This is not intended to be called during the acceptance of a block,
 	// as MarkBlockAccepted already handles updating transaction related
-	// metric.
+	// metrics.
 	MarkTxAccepted(tx *txs.Tx) error
 }
 
-type metrics struct {
+type metricsImpl struct {
 	txMetrics *txMetrics
 
-	numTxRefreshes, numTxRefreshHits, numTxRefreshMisses metric.Counter
+	numTxRefreshes, numTxRefreshHits, numTxRefreshMisses metrics.Counter
 
 	utils_metric.APIInterceptor
 }
 
-func (m *metrics) IncTxRefreshes() {
+func (m *metricsImpl) IncTxRefreshes() {
 	m.numTxRefreshes.Inc()
 }
 
-func (m *metrics) IncTxRefreshHits() {
+func (m *metricsImpl) IncTxRefreshHits() {
 	m.numTxRefreshHits.Inc()
 }
 
-func (m *metrics) IncTxRefreshMisses() {
+func (m *metricsImpl) IncTxRefreshMisses() {
 	m.numTxRefreshMisses.Inc()
 }
 
-func (m *metrics) MarkBlockAccepted(b block.Block) error {
+func (m *metricsImpl) MarkBlockAccepted(b block.Block) error {
 	for _, tx := range b.Txs() {
 		if err := tx.Unsigned.Visit(m.txMetrics); err != nil {
 			return err
@@ -62,36 +62,32 @@ func (m *metrics) MarkBlockAccepted(b block.Block) error {
 	return nil
 }
 
-func (m *metrics) MarkTxAccepted(tx *txs.Tx) error {
+func (m *metricsImpl) MarkTxAccepted(tx *txs.Tx) error {
 	return tx.Unsigned.Visit(m.txMetrics)
 }
 
-func New(registerer metric.Registerer) (Metrics, error) {
+func New(registerer metrics.Registerer) (Metrics, error) {
 	txMetrics, err := newTxMetrics(registerer)
 	errs := wrappers.Errs{Err: err}
 
-	m := &metrics{txMetrics: txMetrics}
+	m := &metricsImpl{txMetrics: txMetrics}
 
-	m.numTxRefreshes = metric.NewCounter(metric.CounterOpts{
+	m.numTxRefreshes = metrics.NewCounter(metrics.CounterOpts{
 		Name: "tx_refreshes",
 		Help: "Number of times unique txs have been refreshed",
 	})
-	m.numTxRefreshHits = metric.NewCounter(metric.CounterOpts{
+	m.numTxRefreshHits = metrics.NewCounter(metrics.CounterOpts{
 		Name: "tx_refresh_hits",
 		Help: "Number of times unique txs have not been unique, but were cached",
 	})
-	m.numTxRefreshMisses = metric.NewCounter(metric.CounterOpts{
+	m.numTxRefreshMisses = metrics.NewCounter(metrics.CounterOpts{
 		Name: "tx_refresh_misses",
 		Help: "Number of times unique txs have not been unique and weren't cached",
 	})
 
 	apiRequestMetric, err := utils_metric.NewAPIInterceptor(registerer)
 	m.APIInterceptor = apiRequestMetric
-	errs.Add(
-		err,
-		registerer.Register(m.numTxRefreshes),
-		registerer.Register(m.numTxRefreshHits),
-		registerer.Register(m.numTxRefreshMisses),
-	)
+	errs.Add(err)
+	// Metrics are self-registering when created with NewCounter etc.
 	return m, errs.Err
 }
