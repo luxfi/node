@@ -119,7 +119,7 @@ func (tx *TransformNetTx) Subnet() ids.ID {
 }
 
 func (tx *TransformNetTx) SyntacticVerify(ctx context.Context) error {
-	luxAssetID := consensusContext.GetLUXAssetID(ctx)
+	luxAssetID := consensusContext.FromContext(ctx).AVAXAssetID
 	switch {
 	case tx == nil:
 		return ErrNilTx

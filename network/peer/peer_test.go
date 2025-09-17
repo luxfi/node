@@ -80,7 +80,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 
 	mc, err := message.NewCreator(
 		log.NoLog{},
-		luxmetric.NewNoOpMetrics("test"),
+		luxmetrics.NewNoOpMetrics("test"),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -93,7 +93,7 @@ func newConfig(t *testing.T) Config {
 	t.Helper()
 	require := require.New(t)
 
-	metrics, err := NewMetrics(luxmetric.NewNoOpMetrics("test").Registry())
+	metrics, err := NewMetrics(luxmetrics.NewNoOpMetrics("test").Registry())
 	require.NoError(err)
 
 	// Create a no-op consensus resource tracker for testing

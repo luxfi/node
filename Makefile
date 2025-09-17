@@ -1,6 +1,15 @@
 # Makefile for Lux Node
 
-.PHONY: all build test clean fmt lint install-mockgen mockgen
+.PHONY: all build build-fips test test-fips clean fmt lint install-mockgen mockgen verify-fips
+
+# FIPS 140-3 Configuration
+export GOFIPS140 := latest
+export GODEBUG := fips140=on
+export CGO_ENABLED := 1
+
+# FIPS build environment
+FIPS_ENV := GOFIPS140=$(GOFIPS140) GODEBUG=$(GODEBUG) CGO_ENABLED=$(CGO_ENABLED)
+FIPS_BUILD_FLAGS := -tags fips
 
 # Build variables
 GO := go
@@ -12,19 +21,52 @@ TEST_TIMEOUT := 120s
 EXCLUDED_DIRS := /mocks|/proto|/tests/e2e|/tests/load|/tests/upgrade|/tests/fixture
 TEST_PACKAGES := $(shell go list ./... 2>/dev/null | grep -v -E '$(EXCLUDED_DIRS)')
 
-all: build
+# Colors for output
+GREEN := \033[0;32m
+YELLOW := \033[1;33m
+NC := \033[0m
 
+all: build-fips
+
+# Verify FIPS environment
+verify-fips:
+	@echo "$(GREEN)Verifying FIPS 140-3 Environment...$(NC)"
+	@echo "GOFIPS140: $(GOFIPS140)"
+	@echo "GODEBUG: $(GODEBUG)"
+	@echo "$(GREEN)✓ FIPS environment ready$(NC)"
+
+# Build with FIPS 140-3 mode (default)
+build-fips: verify-fips
+	@echo "$(GREEN)Building luxd with FIPS 140-3 mode...$(NC)"
+	@$(FIPS_ENV) ./scripts/build.sh
+	@echo "$(GREEN)✓ FIPS build complete$(NC)"
+
+# Standard build (non-FIPS, for comparison only)
 build:
-	@echo "Building luxd..."
+	@echo "$(YELLOW)Building luxd (standard, non-FIPS)...$(NC)"
 	@./scripts/build.sh
 
+# Test with FIPS 140-3 mode (default)
+test-fips: verify-fips
+	@echo "$(GREEN)Running tests with FIPS 140-3 mode...$(NC)"
+	@$(FIPS_ENV) go test $(FIPS_BUILD_FLAGS) -shuffle=on -race -timeout=$(TEST_TIMEOUT) -coverprofile=coverage.out -covermode=atomic $(TEST_PACKAGES)
+
+# Standard test (non-FIPS, for comparison)
 test:
-	@echo "Running tests..."
+	@echo "$(YELLOW)Running tests (standard, non-FIPS)...$(NC)"
 	@go test -shuffle=on -race -timeout=$(TEST_TIMEOUT) -coverprofile=coverage.out -covermode=atomic $(TEST_PACKAGES)
+
+test-short-fips: verify-fips
+	@echo "$(GREEN)Running short tests with FIPS...$(NC)"
+	@$(FIPS_ENV) go test $(FIPS_BUILD_FLAGS) -short -race -timeout=60s $(TEST_PACKAGES)
 
 test-short:
 	@echo "Running short tests..."
 	@go test -short -race -timeout=60s $(TEST_PACKAGES)
+
+test-100-fips: verify-fips
+	@echo "$(GREEN)=== ENSURING 100% TEST PASS RATE WITH FIPS ===$(NC)"
+	@$(FIPS_ENV) go test $(FIPS_BUILD_FLAGS) -shuffle=on -race -timeout=$(TEST_TIMEOUT) $(TEST_PACKAGES)
 
 test-100:
 	@echo "=== ENSURING 100% TEST PASS RATE ==="

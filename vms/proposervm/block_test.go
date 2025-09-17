@@ -78,7 +78,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 			DurangoTime:       time.Unix(0, 0),
 			StakingCertLeaf:   &staking.Certificate{},
 			StakingLeafSigner: pk,
-			Registerer:        metric.NewNoOpMetrics("test").Registry(),
+			Registerer:        metrics.NewNoOpMetrics("test").Registry(),
 		},
 		ChainVM:        innerVM,
 		blockBuilderVM: innerBlockBuilderVM,
@@ -391,7 +391,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 			DurangoTime:       time.Unix(0, 0),
 			StakingCertLeaf:   &staking.Certificate{},
 			StakingLeafSigner: pk,
-			Registerer:        metric.NewNoOpMetrics("test").Registry(),
+			Registerer:        metrics.NewNoOpMetrics("test").Registry(),
 		},
 		ChainVM: block.NewMockChainVM(ctrl),
 		ctx: &context.Context{
@@ -401,7 +401,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 		},
 		Windower:               windower,
 		Scheduler:              scheduler,
-		proposerBuildSlotGauge: metric.NewGauge(metric.GaugeOpts{}),
+		proposerBuildSlotGauge: metrics.NewGauge(metrics.GaugeOpts{}),
 	}
 	vm.Clock.Set(now)
 

@@ -381,7 +381,7 @@ func (n *Node) EnsureNodeID() error {
 
 // Saves the currently allocated API port to the node's configuration
 // for use across restarts. Reusing the port ensures consistent
-// labeling of metric.
+// labeling of metrics.
 func (n *Node) SaveAPIPort() error {
 	hostPort := strings.TrimPrefix(n.URI, "http://")
 	if len(hostPort) == 0 {

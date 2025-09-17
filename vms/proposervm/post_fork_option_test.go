@@ -545,7 +545,7 @@ func TestOptionTimestampValidity(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metric.NewNoOpMetrics("test").Registry(),
+			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
 		},
 	)
 

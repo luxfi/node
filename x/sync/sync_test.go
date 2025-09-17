@@ -33,7 +33,7 @@ func newDefaultDBConfig() merkledb.Config {
 		ValueNodeCacheSize:          defaultRequestKeyLimit,
 		IntermediateWriteBufferSize: defaultRequestKeyLimit,
 		IntermediateNodeCacheSize:   defaultRequestKeyLimit,
-		Reg:                         luxmetric.NewNoOpMetrics("test").Registry(),
+		Reg:                         luxmetrics.NewNoOpMetrics("test").Registry(),
 		Tracer:                      trace.Noop,
 		BranchFactor:                merkledb.BranchFactor16,
 	}

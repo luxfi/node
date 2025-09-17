@@ -219,7 +219,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		Rewards:      rewardsCalc,
 	}
 
-	registerer := metric.NewPrometheusRegistry()
+	registerer := metrics.NewPrometheusRegistry()
 	res.sender = &coremock.MockAppSender{}
 
 	metricsInstance, err := metrics.New(registerer)
@@ -342,7 +342,7 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		metric.NewPrometheusRegistry(),
+		metrics.NewPrometheusRegistry(),
 		cfg,
 		execCfg,
 		ctx,

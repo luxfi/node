@@ -4,6 +4,7 @@
 package sync
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
 	"errors"
 	"sync"
 
@@ -12,7 +13,7 @@ import (
 
 var (
 	_ SyncMetrics = (*mockMetrics)(nil)
-	_ SyncMetrics = (*metrics)(nil)
+	_ SyncMetrics = (*metricsImpl)(nil)
 )
 
 type SyncMetrics interface {
@@ -49,46 +50,46 @@ func (m *mockMetrics) RequestSucceeded() {
 	m.requestsSucceeded++
 }
 
-type metrics struct {
-	requestsFailed    metric.Counter
-	requestsMade      metric.Counter
-	requestsSucceeded metric.Counter
+type metricsImpl struct {
+	requestsFailed    metrics.Counter
+	requestsMade      metrics.Counter
+	requestsSucceeded metrics.Counter
 }
 
-func NewMetrics(namespace string, reg metric.Registerer) (SyncMetrics, error) {
-	m := metrics{
-		requestsFailed: metric.NewCounter(metric.CounterOpts{
+func NewMetrics(namespace string, reg metrics.Registerer) (SyncMetrics, error) {
+	m := metricsImpl{
+		requestsFailed: metrics.NewCounter(metrics.CounterOpts{
 			Namespace: namespace,
 			Name:      "requests_failed",
 			Help:      "cumulative amount of failed proof requests",
 		}),
-		requestsMade: metric.NewCounter(metric.CounterOpts{
+		requestsMade: metrics.NewCounter(metrics.CounterOpts{
 			Namespace: namespace,
 			Name:      "requests_made",
 			Help:      "cumulative amount of proof requests made",
 		}),
-		requestsSucceeded: metric.NewCounter(metric.CounterOpts{
+		requestsSucceeded: metrics.NewCounter(metrics.CounterOpts{
 			Namespace: namespace,
 			Name:      "requests_succeeded",
 			Help:      "cumulative amount of proof requests that were successful",
 		}),
 	}
 	err := errors.Join(
-		reg.Register(m.requestsFailed),
-		reg.Register(m.requestsMade),
-		reg.Register(m.requestsSucceeded),
+		reg.Register(m.requestsFailed.(prometheus.Collector)),
+		reg.Register(m.requestsMade.(prometheus.Collector)),
+		reg.Register(m.requestsSucceeded.(prometheus.Collector)),
 	)
 	return &m, err
 }
 
-func (m *metrics) RequestFailed() {
+func (m *metricsImpl) RequestFailed() {
 	m.requestsFailed.Inc()
 }
 
-func (m *metrics) RequestMade() {
+func (m *metricsImpl) RequestMade() {
 	m.requestsMade.Inc()
 }
 
-func (m *metrics) RequestSucceeded() {
+func (m *metricsImpl) RequestSucceeded() {
 	m.requestsSucceeded.Inc()
 }

@@ -57,7 +57,7 @@ func TestBaseTxExecutor(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	registerer := metric.NewNoOpMetrics("test").Registry()
+	registerer := metrics.NewNoOpMetrics("test").Registry()
 	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 
@@ -164,7 +164,7 @@ func TestCreateAssetTxExecutor(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	registerer := metric.NewNoOpMetrics("test").Registry()
+	registerer := metrics.NewNoOpMetrics("test").Registry()
 	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 
@@ -309,7 +309,7 @@ func TestOperationTxExecutor(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	registerer := metric.NewNoOpMetrics("test").Registry()
+	registerer := metrics.NewNoOpMetrics("test").Registry()
 	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 

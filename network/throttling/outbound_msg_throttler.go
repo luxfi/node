@@ -4,6 +4,7 @@
 package throttling
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
 	"errors"
 
 	"github.com/luxfi/log"
@@ -43,7 +44,7 @@ type outboundMsgThrottler struct {
 
 func NewSybilOutboundMsgThrottler(
 	log log.Logger,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	vdrs validators.Manager,
 	config MsgByteThrottlerConfig,
 ) (OutboundMsgThrottler, error) {
@@ -169,40 +170,40 @@ func (t *outboundMsgThrottler) Release(msg message.OutboundMessage, nodeID ids.N
 }
 
 type outboundMsgThrottlerMetrics struct {
-	acquireSuccesses      metric.Counter
-	acquireFailures       metric.Counter
-	remainingAtLargeBytes metric.Gauge
-	remainingVdrBytes     metric.Gauge
-	awaitingRelease       metric.Gauge
+	acquireSuccesses      metrics.Counter
+	acquireFailures       metrics.Counter
+	remainingAtLargeBytes metrics.Gauge
+	remainingVdrBytes     metrics.Gauge
+	awaitingRelease       metrics.Gauge
 }
 
-func (m *outboundMsgThrottlerMetrics) initialize(registerer metric.Registerer) error {
-	m.acquireSuccesses = metric.NewCounter(metric.CounterOpts{
+func (m *outboundMsgThrottlerMetrics) initialize(registerer metrics.Registerer) error {
+	m.acquireSuccesses = metrics.NewCounter(metrics.CounterOpts{
 		Name: "throttler_outbound_acquire_successes",
 		Help: "Outbound messages not dropped due to rate-limiting",
 	})
-	m.acquireFailures = metric.NewCounter(metric.CounterOpts{
+	m.acquireFailures = metrics.NewCounter(metrics.CounterOpts{
 		Name: "throttler_outbound_acquire_failures",
 		Help: "Outbound messages dropped due to rate-limiting",
 	})
-	m.remainingAtLargeBytes = metric.NewGauge(metric.GaugeOpts{
+	m.remainingAtLargeBytes = metrics.NewGauge(metrics.GaugeOpts{
 		Name: "throttler_outbound_remaining_at_large_bytes",
 		Help: "Bytes remaining in the at large byte allocation",
 	})
-	m.remainingVdrBytes = metric.NewGauge(metric.GaugeOpts{
+	m.remainingVdrBytes = metrics.NewGauge(metrics.GaugeOpts{
 		Name: "throttler_outbound_remaining_validator_bytes",
 		Help: "Bytes remaining in the validator byte allocation",
 	})
-	m.awaitingRelease = metric.NewGauge(metric.GaugeOpts{
+	m.awaitingRelease = metrics.NewGauge(metrics.GaugeOpts{
 		Name: "throttler_outbound_awaiting_release",
 		Help: "Number of messages waiting to be sent",
 	})
 	return errors.Join(
-		registerer.Register(m.acquireSuccesses),
-		registerer.Register(m.acquireFailures),
-		registerer.Register(m.remainingAtLargeBytes),
-		registerer.Register(m.remainingVdrBytes),
-		registerer.Register(m.awaitingRelease),
+		registerer.Register(m.acquireSuccesses.(prometheus.Collector)),
+		registerer.Register(m.acquireFailures.(prometheus.Collector)),
+		registerer.Register(m.remainingAtLargeBytes.(prometheus.Collector)),
+		registerer.Register(m.remainingVdrBytes.(prometheus.Collector)),
+		registerer.Register(m.awaitingRelease.(prometheus.Collector)),
 	)
 }
 

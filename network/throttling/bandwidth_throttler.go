@@ -8,8 +8,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/luxfi/log"
-	luxmetric "github.com/luxfi/metric"
+	luxmetrics "github.com/luxfi/metric"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 
@@ -58,7 +60,7 @@ type BandwidthThrottlerConfig struct {
 
 func newBandwidthThrottler(
 	log log.Logger,
-	registerer luxmetric.Registerer,
+	registerer luxmetrics.Registerer,
 	config BandwidthThrottlerConfig,
 ) (bandwidthThrottler, error) {
 	errs := wrappers.Errs{}
@@ -73,19 +75,19 @@ func newBandwidthThrottler(
 				registerer,
 				&errs,
 			),
-			awaitingAcquire: luxmetric.NewGauge(luxmetric.GaugeOpts{
+			awaitingAcquire: luxmetrics.NewGauge(luxmetrics.GaugeOpts{
 				Name: "bandwidth_throttler_inbound_awaiting_acquire",
 				Help: "Number of inbound messages waiting to acquire bandwidth from the inbound bandwidth throttler",
 			}),
 		},
 	}
-	errs.Add(registerer.Register(t.metrics.awaitingAcquire))
+	errs.Add(registerer.Register(t.metrics.awaitingAcquire.(prometheus.Collector)))
 	return t, errs.Err
 }
 
 type bandwidthThrottlerMetrics struct {
 	acquireLatency  metric.Averager
-	awaitingAcquire luxmetric.Gauge
+	awaitingAcquire luxmetrics.Gauge
 }
 
 type bandwidthThrottlerImpl struct {

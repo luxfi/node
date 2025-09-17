@@ -4,6 +4,7 @@
 package throttling
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
 	"context"
 	"errors"
 	"fmt"
@@ -57,40 +58,40 @@ type systemThrottler struct {
 }
 
 type systemThrottlerMetrics struct {
-	totalWaits      metric.Counter
-	totalNoWaits    metric.Counter
-	awaitingAcquire metric.Gauge
+	totalWaits      metrics.Counter
+	totalNoWaits    metrics.Counter
+	awaitingAcquire metrics.Gauge
 }
 
-func newSystemThrottlerMetrics(namespace string, reg metric.Registerer) (*systemThrottlerMetrics, error) {
+func newSystemThrottlerMetrics(namespace string, reg metrics.Registerer) (*systemThrottlerMetrics, error) {
 	m := &systemThrottlerMetrics{
-		totalWaits: metric.NewCounter(metric.CounterOpts{
+		totalWaits: metrics.NewCounter(metrics.CounterOpts{
 			Namespace: namespace,
 			Name:      "throttler_total_waits",
 			Help:      "Number of times we've waited to read a message from a node because their usage was too high",
 		}),
-		totalNoWaits: metric.NewCounter(metric.CounterOpts{
+		totalNoWaits: metrics.NewCounter(metrics.CounterOpts{
 			Namespace: namespace,
 			Name:      "throttler_total_no_waits",
 			Help:      "Number of times we didn't wait to read a message because their usage is too high",
 		}),
-		awaitingAcquire: metric.NewGauge(metric.GaugeOpts{
+		awaitingAcquire: metrics.NewGauge(metrics.GaugeOpts{
 			Namespace: namespace,
 			Name:      "throttler_awaiting_acquire",
 			Help:      "Number of nodes we're waiting to read a message from because their usage is too high",
 		}),
 	}
 	err := errors.Join(
-		reg.Register(m.totalWaits),
-		reg.Register(m.totalNoWaits),
-		reg.Register(m.awaitingAcquire),
+		reg.Register(m.totalWaits.(prometheus.Collector)),
+		reg.Register(m.totalNoWaits.(prometheus.Collector)),
+		reg.Register(m.awaitingAcquire.(prometheus.Collector)),
 	)
 	return m, err
 }
 
 func NewSystemThrottler(
 	namespace string,
-	reg metric.Registerer,
+	reg metrics.Registerer,
 	config SystemThrottlerConfig,
 	tracker tracker.Tracker,
 	targeter tracker.Targeter,

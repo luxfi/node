@@ -142,7 +142,7 @@ type state struct {
 func New(
 	db *versiondb.Database,
 	parser block.Parser,
-	metrics metric.Registerer,
+	metrics metrics.Registerer,
 	trackChecksums bool,
 ) (State, error) {
 	utxoDB := prefixdb.New(utxoPrefix, db)

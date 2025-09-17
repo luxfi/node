@@ -70,7 +70,7 @@ func main() {
 	wsURIs, err := tmpnet.GetNodeWebsocketURIs(network.Nodes, blockchainID)
 	require.NoError(err)
 
-	registry := metric.NewRegistry()
+	registry := metrics.NewRegistry()
 	metricsServer, err := tests.NewPrometheusServer(registry)
 	require.NoError(err)
 	tc.DeferCleanup(func() {

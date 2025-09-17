@@ -12,8 +12,25 @@ import (
 	"github.com/luxfi/ids"
 )
 
+// ExtendedManager extends the base validators.Manager with additional methods needed by the node
+type ExtendedManager interface {
+	validators.Manager
+	AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error
+	AddWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error
+	RemoveWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error
+	GetValidatorIDs(subnetID ids.ID) []ids.NodeID
+	Sample(subnetID ids.ID, size int) ([]ids.NodeID, error)
+	GetMap(subnetID ids.ID) map[ids.NodeID]*validators.GetValidatorOutput
+	RegisterCallbackListener(listener validators.ManagerCallbackListener)
+	RegisterSetCallbackListener(subnetID ids.ID, listener validators.SetCallbackListener)
+	NumSubnets() int
+	NumValidators(subnetID ids.ID) int
+	Count(subnetID ids.ID) int
+	SubsetWeight(subnetID ids.ID, nodeIDs set.Set[ids.NodeID]) (uint64, error)
+}
+
 // NewManager returns a new validator manager
-func NewManager() validators.Manager {
+func NewManager() ExtendedManager {
 	return &manager{
 		validators: make(map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput),
 		mu:         &sync.RWMutex{},

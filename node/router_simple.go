@@ -28,7 +28,7 @@ type SimpleRouter struct {
 	timeoutManager  timer.AdaptiveTimeoutManager
 	nodeID          ids.NodeID
 	healthConfig    HealthConfig
-	reg             metric.Registerer
+	reg             metrics.Registerer
 	namespace       string
 	criticalChains  set.Set[ids.ID]
 	lastMsgTime     time.Time

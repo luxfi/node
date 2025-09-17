@@ -21,8 +21,8 @@ func TestDialOptsSmoke(t *testing.T) {
 	require.Len(opts, 3)
 
 	opts = newDialOpts(
-		WithChainUnaryInterceptor(grpc_metric.UnaryClientInterceptor),
-		WithChainStreamInterceptor(grpc_metric.StreamClientInterceptor),
+		WithChainUnaryInterceptor(grpc_metrics.UnaryClientInterceptor),
+		WithChainStreamInterceptor(grpc_metrics.StreamClientInterceptor),
 	)
 	require.Len(opts, 5)
 }

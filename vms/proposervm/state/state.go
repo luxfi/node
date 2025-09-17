@@ -43,7 +43,7 @@ func New(db *versiondb.Database) State {
 	}
 }
 
-func NewMetered(db *versiondb.Database, namespace string, metrics metric.Registerer) (State, error) {
+func NewMetered(db *versiondb.Database, namespace string, metrics metrics.Registerer) (State, error) {
 	chainDB := prefixdb.New(chainStatePrefix, db)
 	blockDB := prefixdb.New(blockStatePrefix, db)
 	heightDB := prefixdb.New(heightIndexPrefix, db)

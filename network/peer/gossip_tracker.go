@@ -104,7 +104,7 @@ type gossipTracker struct {
 
 // NewGossipTracker returns an instance of gossipTracker
 func NewGossipTracker(
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	namespace string,
 ) (GossipTracker, error) {
 	m, err := newGossipTrackerMetrics(registerer, fmt.Sprintf("%s_gossip_tracker", namespace))

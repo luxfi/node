@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
 
@@ -108,7 +109,7 @@ type VM struct {
 	// Used to check local time
 	clock mockable.Clock
 
-	registerer metric.Registerer
+	registerer metrics.Registerer
 
 	connectedPeers map[ids.NodeID]*version.Application
 
@@ -259,7 +260,7 @@ func (vm *VM) initialize(
 	)
 
 	// Get metrics from a global registry or create new one
-	vm.registerer = metric.NewRegistry()
+	vm.registerer = prometheus.NewRegistry()
 
 	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
 

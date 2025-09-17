@@ -567,7 +567,7 @@ func TestBuildBlockError(t *testing.T) {
 func TestMeteredCache(t *testing.T) {
 	require := require.New(t)
 
-	registry := metric.NewRegistry()
+	registry := metrics.NewRegistry()
 
 	testBlks := NewTestBlocks(1)
 	genesisBlock := testBlks[0]

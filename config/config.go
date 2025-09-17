@@ -1432,11 +1432,12 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		genesisStakingCfg.BLSPublicKey = bls.PublicKeyToCompressedBytes(pk)
 
 		// Generate proof of possession
-		sig, err := nodeConfig.StakingConfig.StakingSigningKey.SignProofOfPossession(genesisStakingCfg.BLSPublicKey)
-		if err != nil {
-			return nodeConfig, fmt.Errorf("failed to generate proof of possession: %w", err)
+		sig := nodeConfig.StakingConfig.StakingSigningKey.SignProofOfPossession(genesisStakingCfg.BLSPublicKey)
+		// Note: Our BLS implementation doesn't return an error for SignProofOfPossession
+		// If it returns nil, we'll handle it when converting to bytes
+		if sig != nil {
+			genesisStakingCfg.BLSProofOfPossession = bls.SignatureToBytes(sig)
 		}
-		genesisStakingCfg.BLSProofOfPossession = bls.SignatureToBytes(sig)
 	}
 
 	nodeConfig.GenesisBytes, nodeConfig.LuxAssetID, err = getGenesisData(v, nodeConfig.NetworkID, &genesisStakingCfg)

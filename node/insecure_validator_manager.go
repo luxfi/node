@@ -6,25 +6,17 @@ package node
 import (
 	"sync"
 
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/version"
+	nodevalidators "github.com/luxfi/node/validators"
 )
-
-// ExtendedManager extends the base validators.Manager with additional methods
-type ExtendedManager interface {
-	validators.Manager
-	AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error
-	RemoveWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error
-}
 
 type insecureValidatorManager struct {
 	Router
 	log    log.Logger
-	vdrs   validators.Manager
+	vdrs   nodevalidators.ExtendedManager
 	weight uint64
 	// Keep track of added validators locally
 	validators map[ids.ID]map[ids.NodeID]uint64

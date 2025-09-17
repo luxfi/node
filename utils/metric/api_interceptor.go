@@ -4,6 +4,7 @@
 package metric
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
 	"context"
 	"errors"
 	"net/http"
@@ -23,37 +24,37 @@ type contextKey int
 const requestTimestampKey contextKey = iota
 
 type apiInterceptor struct {
-	requestDurationCount metric.CounterVec
-	requestDurationSum   metric.GaugeVec
-	requestErrors        metric.CounterVec
+	requestDurationCount metrics.CounterVec
+	requestDurationSum   metrics.GaugeVec
+	requestErrors        metrics.CounterVec
 }
 
-func NewAPIInterceptor(registerer metric.Registerer) (APIInterceptor, error) {
-	requestDurationCount := metric.NewCounterVec(
-		metric.CounterOpts{
+func NewAPIInterceptor(registerer metrics.Registerer) (APIInterceptor, error) {
+	requestDurationCount := metrics.NewCounterVec(
+		metrics.CounterOpts{
 			Name: "request_duration_count",
 			Help: "Number of times this type of request was made",
 		},
 		[]string{"method"},
 	)
-	requestDurationSum := metric.NewGaugeVec(
-		metric.GaugeOpts{
+	requestDurationSum := metrics.NewGaugeVec(
+		metrics.GaugeOpts{
 			Name: "request_duration_sum",
 			Help: "Amount of time in nanoseconds that has been spent handling this type of request",
 		},
 		[]string{"method"},
 	)
-	requestErrors := metric.NewCounterVec(
-		metric.CounterOpts{
+	requestErrors := metrics.NewCounterVec(
+		metrics.CounterOpts{
 			Name: "request_error_count",
 		},
 		[]string{"method"},
 	)
 
 	err := errors.Join(
-		registerer.Register(requestDurationCount),
-		registerer.Register(requestDurationSum),
-		registerer.Register(requestErrors),
+		registerer.Register(requestDurationCount.(prometheus.Collector)),
+		registerer.Register(requestDurationSum.(prometheus.Collector)),
+		registerer.Register(requestErrors.(prometheus.Collector)),
 	)
 	return &apiInterceptor{
 		requestDurationCount: requestDurationCount,
@@ -75,19 +76,19 @@ func (apr *apiInterceptor) AfterRequest(i *rpc.RequestInfo) {
 		return
 	}
 
-	durationMetricCount := apr.requestDurationCount.With(metric.Labels{
+	durationMetricCount := apr.requestDurationCount.With(metrics.Labels{
 		"method": i.Method,
 	})
 	durationMetricCount.Inc()
 
 	duration := time.Since(timestamp)
-	durationMetricSum := apr.requestDurationSum.With(metric.Labels{
+	durationMetricSum := apr.requestDurationSum.With(metrics.Labels{
 		"method": i.Method,
 	})
 	durationMetricSum.Add(float64(duration))
 
 	if i.Error != nil {
-		errMetric := apr.requestErrors.With(metric.Labels{
+		errMetric := apr.requestErrors.With(metrics.Labels{
 			"method": i.Method,
 		})
 		errMetric.Inc()

@@ -16,12 +16,12 @@ var _ cache.Cacher[struct{}, struct{}] = (*Cache[struct{}, struct{}])(nil)
 type Cache[K comparable, V any] struct {
 	cache.Cacher[K, V]
 
-	metrics *metrics
+	metrics *metricsImpl
 }
 
 func New[K comparable, V any](
 	namespace string,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	cache cache.Cacher[K, V],
 ) (*Cache[K, V], error) {
 	metrics, err := newMetrics(namespace, registerer)
@@ -71,3 +71,4 @@ func (c *Cache[_, _]) Flush() {
 	c.metrics.len.Set(float64(c.Cacher.Len()))
 	c.metrics.portionFilled.Set(c.Cacher.PortionFilled())
 }
+

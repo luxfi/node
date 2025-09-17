@@ -1,4 +1,4 @@
-go 1.24.6
+go 1.25.1
 
 use (
 	.
@@ -6,6 +6,10 @@ use (
 	../crypto
 	../database
 	../geth
+	../ids
+	../log
 	../metric
 	../qzmq
+	../trace
+	../zmq
 )

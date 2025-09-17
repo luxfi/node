@@ -213,7 +213,7 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		Rewards:      rewardsCalc,
 	}
 
-	registerer := metric.NewRegistry()
+	registerer := metrics.NewRegistry()
 	res.sender = &coremock.MockAppSender{
 		SendAppGossipF: func(_ context.Context, _ set.Set[ids.NodeID], _ []byte) error {
 			return nil
@@ -337,7 +337,7 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		metric.NewRegistry(),
+		metrics.NewRegistry(),
 		cfg,
 		execCfg,
 		ctx,

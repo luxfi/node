@@ -114,7 +114,7 @@ func New(
 	nodeID ids.NodeID,
 	tracingEnabled bool,
 	tracer trace.Tracer,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	httpConfig HTTPConfig,
 	allowedHosts []string,
 ) (Server, error) {

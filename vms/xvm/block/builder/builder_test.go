@@ -486,7 +486,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 
 	require := require.New(t)
 
-	registerer := metric.NewRegistry()
+	registerer := metrics.NewRegistry()
 	toEngine := make(chan core.MessageType, 100)
 	memPool, err := mempool.New("mempool", registerer, toEngine)
 	require.NoError(err)

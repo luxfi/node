@@ -31,7 +31,7 @@ type mempool struct {
 
 func New(
 	namespace string,
-	registerer metric.Registerer,
+	registerer metrics.Registerer,
 	toEngine chan<- common.MessageType,
 ) (Mempool, error) {
 	metrics, err := txmempool.NewMetrics(namespace, registerer)

@@ -5,7 +5,7 @@ package server
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 type serverMetrics struct {
@@ -50,3 +50,4 @@ func newMetrics(registerer metrics.Registerer) (*serverMetrics, error) {
 	
 	return m, nil
 }
+

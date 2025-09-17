@@ -4,37 +4,38 @@
 package load
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
 	"errors"
 	"time"
 
 	"github.com/luxfi/metric"
 )
 
-type metrics struct {
-	txsIssuedCounter      metric.Counter
-	txIssuanceLatency     metric.Histogram
-	txConfirmationLatency metric.Histogram
-	txTotalLatency        metric.Histogram
+type metricsImpl struct {
+	txsIssuedCounter      metrics.Counter
+	txIssuanceLatency     metrics.Histogram
+	txConfirmationLatency metrics.Histogram
+	txTotalLatency        metrics.Histogram
 }
 
-func newMetrics(namespace string, registry metric.Registry) (metrics, error) {
-	m := metrics{
-		txsIssuedCounter: metric.NewCounter(metric.CounterOpts{
+func newMetrics(namespace string, registry metrics.Registry) (metricsImpl, error) {
+	m := metricsImpl{
+		txsIssuedCounter: metrics.NewCounter(metrics.CounterOpts{
 			Namespace: namespace,
 			Name:      "txs_issued",
 			Help:      "Number of transactions issued",
 		}),
-		txIssuanceLatency: metric.NewHistogram(metric.HistogramOpts{
+		txIssuanceLatency: metrics.NewHistogram(metrics.HistogramOpts{
 			Namespace: namespace,
 			Name:      "tx_issuance_latency",
 			Help:      "Issuance latency of transactions",
 		}),
-		txConfirmationLatency: metric.NewHistogram(metric.HistogramOpts{
+		txConfirmationLatency: metrics.NewHistogram(metrics.HistogramOpts{
 			Namespace: namespace,
 			Name:      "tx_confirmation_latency",
 			Help:      "Confirmation latency of transactions",
 		}),
-		txTotalLatency: metric.NewHistogram(metric.HistogramOpts{
+		txTotalLatency: metrics.NewHistogram(metrics.HistogramOpts{
 			Namespace: namespace,
 			Name:      "tx_total_latency",
 			Help:      "Total latency of transactions",
@@ -42,23 +43,23 @@ func newMetrics(namespace string, registry metric.Registry) (metrics, error) {
 	}
 
 	if err := errors.Join(
-		registry.Register(m.txsIssuedCounter),
-		registry.Register(m.txIssuanceLatency),
-		registry.Register(m.txConfirmationLatency),
-		registry.Register(m.txTotalLatency),
+		registry.Register(m.txsIssuedCounter.(prometheus.Collector)),
+		registry.Register(m.txIssuanceLatency.(prometheus.Collector)),
+		registry.Register(m.txConfirmationLatency.(prometheus.Collector)),
+		registry.Register(m.txTotalLatency.(prometheus.Collector)),
 	); err != nil {
-		return metrics{}, err
+		return metricsImpl{}, err
 	}
 
 	return m, nil
 }
 
-func (m metrics) issue(d time.Duration) {
+func (m metricsImpl) issue(d time.Duration) {
 	m.txsIssuedCounter.Inc()
 	m.txIssuanceLatency.Observe(float64(d.Milliseconds()))
 }
 
-func (m metrics) accept(confirmationDuration time.Duration, totalDuration time.Duration) {
+func (m metricsImpl) accept(confirmationDuration time.Duration, totalDuration time.Duration) {
 	m.txConfirmationLatency.Observe(float64(confirmationDuration.Milliseconds()))
 	m.txTotalLatency.Observe(float64(totalDuration.Milliseconds()))
 }

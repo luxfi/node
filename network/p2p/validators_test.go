@@ -202,7 +202,7 @@ func TestValidatorsSample(t *testing.T) {
 
 			fakeSender := &FakeSender{}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
-	network, err := NewNetwork(log.NoLog{}, sender, luxmetric.NewNoOpMetrics("test").Registry(), "")
+	network, err := NewNetwork(log.NoLog{}, sender, luxmetrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()
@@ -327,7 +327,7 @@ func TestValidatorsTop(t *testing.T) {
 
 			fakeSender := &FakeSender{}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
-	network, err := NewNetwork(log.NoLog{}, sender, luxmetric.NewNoOpMetrics("test").Registry(), "")
+	network, err := NewNetwork(log.NoLog{}, sender, luxmetrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()
