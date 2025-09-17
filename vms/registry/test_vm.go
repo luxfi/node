@@ -6,7 +6,14 @@ package registry
 import (
 	"context"
 	"net/http"
+
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/snow"
+	"github.com/luxfi/database/manager"
 )
+
+// Ensure testVM implements core.VM
+var _ core.VM = (*testVM)(nil)
 
 // testVM is a test VM implementation for testing the registry
 type testVM struct {
@@ -20,15 +27,19 @@ func newTestVM() *testVM {
 
 func (vm *testVM) Initialize(
 	ctx context.Context,
-	chainCtx interface{},
-	db interface{},
+	chainCtx *snow.Context,
+	db manager.Manager,
 	genesisBytes []byte,
-	upgradeBytes interface{},
-	configBytes interface{},
-	msgChan interface{},
-	fxs interface{},
+	upgradeBytes []byte,
+	configBytes []byte,
+	msgChan chan<- core.Message,
+	fxs []*core.Fx,
 	appSender interface{},
 ) error {
+	return nil
+}
+
+func (vm *testVM) SetState(ctx context.Context, state snow.State) error {
 	return nil
 }
 
@@ -39,11 +50,31 @@ func (vm *testVM) Shutdown(ctx context.Context) error {
 	return nil
 }
 
+func (vm *testVM) Version(ctx context.Context) (string, error) {
+	return "test-1.0.0", nil
+}
+
+func (vm *testVM) HealthCheck(ctx context.Context) (interface{}, error) {
+	return nil, nil
+}
+
 func (vm *testVM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
 	if vm.createHandlersF != nil {
 		return vm.createHandlersF(ctx)
 	}
 	return nil, nil
+}
+
+func (vm *testVM) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler, error) {
+	return nil, nil
+}
+
+func (vm *testVM) Connected(ctx context.Context, nodeID interface{}, nodeVersion interface{}) error {
+	return nil
+}
+
+func (vm *testVM) Disconnected(ctx context.Context, nodeID interface{}) error {
+	return nil
 }
 
 func (vm *testVM) BuildBlock(context.Context) (interface{}, error) {
