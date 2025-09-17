@@ -90,8 +90,11 @@ func TestClient_AppRequest(t *testing.T) {
 			testHandler := p2p.TestHandler{
 				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *core.AppError) {
 					if tt.appErr != nil {
+						if appErr, ok := tt.appErr.(*core.AppError); ok {
+							return nil, appErr
+						}
 						return nil, &core.AppError{
-							Code:    123,
+							Code:    500,
 							Message: tt.appErr.Error(),
 						}
 					}
@@ -111,7 +114,19 @@ func TestClient_AppRequest(t *testing.T) {
 				client,
 				func(_ context.Context, _ ids.NodeID, responseBytes []byte, err error) {
 					defer close(appRequestChan)
-					require.ErrorIs(err, tt.appErr)
+					if tt.appErr != nil {
+						require.Error(err)
+						if expectedAppErr, ok := tt.appErr.(*core.AppError); ok {
+							var appErr *core.AppError
+							require.ErrorAs(err, &appErr)
+							require.Equal(expectedAppErr.Code, appErr.Code)
+							require.Equal(expectedAppErr.Message, appErr.Message)
+						} else {
+							require.ErrorIs(err, tt.appErr)
+						}
+					} else {
+						require.NoError(err)
+					}
 					require.Equal(tt.appResponse, responseBytes)
 				},
 			))

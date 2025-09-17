@@ -108,12 +108,12 @@ func NewClientWithPeers(
 	}
 
 	peerSenders[clientNodeID].sendAppGossipF = func(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], gossipBytes []byte) error {
-		// Send the gossip to all connected peers asynchronously to avoid deadlock
+		// Send the gossip to all specified peers asynchronously to avoid deadlock
 		// when the server sends the response back to the client
-		for nodeID, network := range peerNetworks {
-			if nodeID != clientNodeID {
+		for nodeID := range nodeIDs {
+			if network, ok := peerNetworks[nodeID]; ok {
 				go func(nodeID ids.NodeID, network *p2p.Network) {
-					_ = network.AppGossip(ctx, nodeID, gossipBytes)
+					_ = network.AppGossip(ctx, clientNodeID, gossipBytes)
 				}(nodeID, network)
 			}
 		}
