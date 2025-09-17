@@ -56,15 +56,15 @@ type pendingCrossChainAppRequest struct {
 	callback  CrossChainAppResponseCallback
 }
 
-// metrics defines the interface for collecting metrics
-type metrics interface {
+// routerMetrics defines the interface for collecting metrics
+type routerMetrics interface {
 	observe(labels luxmetrics.Labels, start time.Time)
 }
 
 // meteredHandler emits metrics for a Handler
 type meteredHandler struct {
 	*responder
-	metrics
+	routerMetrics
 }
 
 type metricsImpl struct {
@@ -86,7 +86,7 @@ func (m *metricsImpl) observe(labels luxmetrics.Labels, start time.Time) {
 type router struct {
 	log     log.Logger
 	sender  core.AppSender
-	metrics metrics
+	metrics routerMetrics
 
 	lock                         sync.RWMutex
 	handlers                     map[uint64]*meteredHandler
@@ -99,7 +99,7 @@ type router struct {
 func newRouter(
 	log log.Logger,
 	sender core.AppSender,
-	metrics metrics,
+	metrics routerMetrics,
 ) *router {
 	return &router{
 		log:                          log,
@@ -128,7 +128,7 @@ func (r *router) addHandler(handlerID uint64, handler Handler) error {
 			log:       r.log,
 			sender:    r.sender,
 		},
-		metrics: r.metrics,
+		routerMetrics: r.metrics,
 	}
 
 	return nil

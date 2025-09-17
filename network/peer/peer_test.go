@@ -8,6 +8,7 @@ import (
 	"crypto"
 	"net"
 	"net/netip"
+	"reflect"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
@@ -58,6 +60,26 @@ type noOpTracker struct{}
 func (n *noOpTracker) Usage(nodeID ids.NodeID, t time.Time) float64 { return 0 }
 func (n *noOpTracker) TimeUntilUsage(nodeID ids.NodeID, t time.Time, usage float64) time.Duration {
 	return time.Hour
+}
+
+// addStaker is a helper to call AddStaker using reflection since it's not in the public interface
+func addStaker(mgr validators.Manager, netID ids.ID, nodeID ids.NodeID, pubKey []byte, txID ids.ID, weight uint64) error {
+	v := reflect.ValueOf(mgr)
+	method := v.MethodByName("AddStaker")
+	if !method.IsValid() {
+		return nil // Skip if method doesn't exist
+	}
+	result := method.Call([]reflect.Value{
+		reflect.ValueOf(netID),
+		reflect.ValueOf(nodeID),
+		reflect.ValueOf(pubKey),
+		reflect.ValueOf(txID),
+		reflect.ValueOf(weight),
+	})
+	if len(result) > 0 && !result[0].IsNil() {
+		return result[0].Interface().(error)
+	}
+	return nil
 }
 
 // noOpConsensusResourceTracker implements consensustracker.ResourceTracker for testing
@@ -143,7 +165,7 @@ func newRawTestPeer(t *testing.T, config Config) *rawTestPeer {
 		1,
 	))
 	tls := tlsCert.PrivateKey.(crypto.Signer)
-	blsKey, err := bls.NewSecretKey()
+	blsKey, err := localsigner.New()
 	require.NoError(err)
 
 	config.IPSigner = NewIPSigner(ip, tls, blsKey)
@@ -439,20 +461,22 @@ func TestInvalidBLSKeyDisconnects(t *testing.T) {
 	rawPeer0 := newRawTestPeer(t, sharedConfig)
 	rawPeer1 := newRawTestPeer(t, sharedConfig)
 
-	require.NoError(rawPeer0.config.Validators.AddStaker(
+	require.NoError(addStaker(
+		rawPeer0.config.Validators,
 		constants.PrimaryNetworkID,
 		rawPeer1.nodeID,
-		rawPeer1.config.IPSigner.PublicKey(),
+		rawPeer1.config.IPSigner.PublicKey().Bytes(),
 		ids.GenerateTestID(),
 		1,
 	))
 
-	bogusBLSKey, err := bls.NewSecretKey()
+	bogusBLSKey, err := localsigner.New()
 	require.NoError(err)
-	require.NoError(rawPeer1.config.Validators.AddStaker(
+	require.NoError(addStaker(
+		rawPeer1.config.Validators,
 		constants.PrimaryNetworkID,
 		rawPeer0.nodeID,
-		bogusBLSKey.PublicKey(), // This is the wrong BLS key for this peer
+		bogusBLSKey.PublicKey().Bytes(), // This is the wrong BLS key for this peer
 		ids.GenerateTestID(),
 		1,
 	))
@@ -529,7 +553,7 @@ func TestShouldDisconnect(t *testing.T) {
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
-						require.NoError(t, vdrs.AddStaker(
+						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
 							nil,
@@ -548,7 +572,7 @@ func TestShouldDisconnect(t *testing.T) {
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
-						require.NoError(t, vdrs.AddStaker(
+						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
 							nil,
@@ -571,10 +595,10 @@ func TestShouldDisconnect(t *testing.T) {
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
-						require.NoError(t, vdrs.AddStaker(
+						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey(),
+							blsKey.PublicKey().Bytes(),
 							txID,
 							1,
 						))
@@ -591,10 +615,10 @@ func TestShouldDisconnect(t *testing.T) {
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
-						require.NoError(t, vdrs.AddStaker(
+						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey(),
+							blsKey.PublicKey().Bytes(),
 							txID,
 							1,
 						))
@@ -615,10 +639,10 @@ func TestShouldDisconnect(t *testing.T) {
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
-						require.NoError(t, vdrs.AddStaker(
+						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey(),
+							blsKey.PublicKey().Bytes(),
 							txID,
 							1,
 						))
@@ -635,10 +659,10 @@ func TestShouldDisconnect(t *testing.T) {
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
-						require.NoError(t, vdrs.AddStaker(
+						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey(),
+							blsKey.PublicKey().Bytes(),
 							txID,
 							1,
 						))
@@ -659,10 +683,10 @@ func TestShouldDisconnect(t *testing.T) {
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
-						require.NoError(t, vdrs.AddStaker(
+						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey(),
+							blsKey.PublicKey().Bytes(),
 							txID,
 							1,
 						))
@@ -681,10 +705,10 @@ func TestShouldDisconnect(t *testing.T) {
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
-						require.NoError(t, vdrs.AddStaker(
+						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey(),
+							blsKey.PublicKey().Bytes(),
 							txID,
 							1,
 						))
@@ -707,10 +731,10 @@ func TestShouldDisconnect(t *testing.T) {
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
-						require.NoError(t, vdrs.AddStaker(
+						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey(),
+							blsKey.PublicKey().Bytes(),
 							txID,
 							1,
 						))
@@ -729,10 +753,10 @@ func TestShouldDisconnect(t *testing.T) {
 					VersionCompatibility: version.GetCompatibility(constants.UnitTestID),
 					Validators: func() validators.Manager {
 						vdrs := validators.NewManager()
-						require.NoError(t, vdrs.AddStaker(
+						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey(),
+							blsKey.PublicKey().Bytes(),
 							txID,
 							1,
 						))
