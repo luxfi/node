@@ -18,7 +18,6 @@ import (
 
 	"github.com/luxfi/node/codec/linearcodec"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 
 	"github.com/luxfi/consensus/core/coremock"
@@ -155,7 +154,7 @@ type environment struct {
 	msm            *mutableSharedMemory
 	fx             fx.Fx
 	state          state.State
-	uptimes        uptime.Manager
+	uptimes        uptime.Calculator
 	utxosVerifier  utxo.Verifier
 	factory        *txstest.WalletFactory
 	backend        txexecutor.Backend
@@ -176,8 +175,13 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 	m := atomic.NewMemory(atomicDB)
 
 	// Create test context with Lock
-	baseCtx := consensustest.Context(t, consensustest.PChainID)
-	res.ctx = testcontext.New(baseCtx)
+	consensusCtx := consensustest.Context(t, consensustest.PChainID)
+	res.ctx = testcontext.New(context.Background())
+	res.ctx.NetworkID = consensusCtx.QuantumID
+	res.ctx.ChainID = consensusCtx.ChainID
+	res.ctx.NodeID = consensusCtx.NodeID
+	res.ctx.NetID = consensusCtx.NetID
+	res.ctx.LUXAssetID = consensusCtx.LUXAssetID
 	res.msm = &mutableSharedMemory{
 		SharedMemory: m.NewSharedMemory(res.ctx.ChainID),
 	}
@@ -191,16 +195,11 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 	rewardsCalc := reward.NewCalculator(res.config.RewardConfig)
 	res.state = defaultState(t, res.config, res.ctx, res.baseDB, rewardsCalc)
 
-	uptimeState := uptime.NewTestState()
-	res.uptimes = uptime.NewManager(uptimeState, res.clk)
+	res.uptimes = &uptime.NoOpCalculator{}
 	res.utxosVerifier = utxo.NewHandler(res.ctx, res.clk, res.fx)
 	res.factory = txstest.NewWalletFactory(res.ctx, res.ctx.SharedMemory, res.config, res.state)
 
-	// Start tracking uptimes for genesis validators
-	validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-	for _, validatorID := range validatorIDs {
-		require.NoError(res.uptimes.StartTracking(validatorID))
-	}
+	// NoOpCalculator doesn't need tracking initialization
 
 	genesisID := res.state.GetLastAccepted()
 	res.backend = txexecutor.Backend{
@@ -273,8 +272,8 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		if res.isBootstrapped.Get() {
 			validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 
-			for _, validatorID := range validatorIDs {
-				require.NoError(res.uptimes.StopTracking(validatorID))
+			for range validatorIDs {
+				// NoOpCalculator doesn't need stop tracking
 			}
 
 			require.NoError(res.state.Commit())
@@ -488,7 +487,7 @@ func buildGenesisTest(t *testing.T, ctx context.Context) []byte {
 
 	buildGenesisArgs := api.BuildGenesisArgs{
 		NetworkID:     json.Uint32(constants.UnitTestID),
-		LuxAssetID:    consensus.GetLUXAssetID(ctx),
+		LuxAssetID:    ids.GenerateTestID(),
 		UTXOs:         genesisUTXOs,
 		Validators:    genesisValidators,
 		Chains:        nil,

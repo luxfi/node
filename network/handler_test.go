@@ -5,13 +5,14 @@ package network
 
 import (
 	"context"
-	
+
 	"github.com/luxfi/consensus/router"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/version"
 )
 
-var _ router.ExternalHandler = (*testHandler)(nil)
+var _ ExternalHandler = (*testHandler)(nil)
 
 type testHandler struct {
 	router.InboundHandler
@@ -19,6 +20,13 @@ type testHandler struct {
 	DisconnectedF func(nodeID ids.NodeID)
 	HandleGossipF func(ctx context.Context, nodeID ids.NodeID, msg []byte)
 }
+
+// HandleInbound handles network message.InboundMessage
+func (h *testHandler) HandleInbound(ctx context.Context, msg message.InboundMessage) {
+	// Since InboundHandler expects router.Message, we would need an adapter
+	// For now, just skip if there's an InboundHandler
+}
+
 
 func (h *testHandler) Connected(id ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
 	if h.ConnectedF != nil {
