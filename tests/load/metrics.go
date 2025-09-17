@@ -4,7 +4,6 @@
 package load
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"errors"
 	"time"
 
@@ -12,30 +11,30 @@ import (
 )
 
 type metricsImpl struct {
-	txsIssuedCounter      metrics.Counter
-	txIssuanceLatency     metrics.Histogram
-	txConfirmationLatency metrics.Histogram
-	txTotalLatency        metrics.Histogram
+	txsIssuedCounter      metric.Counter
+	txIssuanceLatency     metric.Histogram
+	txConfirmationLatency metric.Histogram
+	txTotalLatency        metric.Histogram
 }
 
-func newMetrics(namespace string, registry metrics.Registry) (metricsImpl, error) {
+func newMetrics(namespace string, registry metric.Registry) (metricsImpl, error) {
 	m := metricsImpl{
-		txsIssuedCounter: metrics.NewCounter(metrics.CounterOpts{
+		txsIssuedCounter: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "txs_issued",
 			Help:      "Number of transactions issued",
 		}),
-		txIssuanceLatency: metrics.NewHistogram(metrics.HistogramOpts{
+		txIssuanceLatency: metric.NewHistogram(metric.HistogramOpts{
 			Namespace: namespace,
 			Name:      "tx_issuance_latency",
 			Help:      "Issuance latency of transactions",
 		}),
-		txConfirmationLatency: metrics.NewHistogram(metrics.HistogramOpts{
+		txConfirmationLatency: metric.NewHistogram(metric.HistogramOpts{
 			Namespace: namespace,
 			Name:      "tx_confirmation_latency",
 			Help:      "Confirmation latency of transactions",
 		}),
-		txTotalLatency: metrics.NewHistogram(metrics.HistogramOpts{
+		txTotalLatency: metric.NewHistogram(metric.HistogramOpts{
 			Namespace: namespace,
 			Name:      "tx_total_latency",
 			Help:      "Total latency of transactions",
@@ -43,10 +42,10 @@ func newMetrics(namespace string, registry metrics.Registry) (metricsImpl, error
 	}
 
 	if err := errors.Join(
-		registry.Register(m.txsIssuedCounter.(prometheus.Collector)),
-		registry.Register(m.txIssuanceLatency.(prometheus.Collector)),
-		registry.Register(m.txConfirmationLatency.(prometheus.Collector)),
-		registry.Register(m.txTotalLatency.(prometheus.Collector)),
+		registry.Register(m.txsIssuedCounter),
+		registry.Register(m.txIssuanceLatency),
+		registry.Register(m.txConfirmationLatency),
+		registry.Register(m.txTotalLatency),
 	); err != nil {
 		return metricsImpl{}, err
 	}

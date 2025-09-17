@@ -260,7 +260,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []consensusrouter.Inbou
 	)
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := luxmetrics.NewNoOpRegistry()
+		registry := luxmetric.NewNoOpRegistry()
 
 		// Use a simple test validator manager since AddStaker isn't in the interface
 		beacons := &testAggressiveValidatorManager{Manager: validators.NewManager()}
@@ -486,7 +486,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := luxmetrics.NewNoOpRegistry()
+		registry := luxmetric.NewNoOpRegistry()
 
 		// Use a simple test validator manager since AddStaker isn't in the interface
 		beacons := &testAggressiveValidatorManager{Manager: validators.NewManager()}
@@ -568,7 +568,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := luxmetrics.NewNoOpRegistry()
+		registry := luxmetric.NewNoOpRegistry()
 
 		beacons := validators.NewManager()
 		// Note: Can't add stakers with consensus validators.Manager
@@ -721,7 +721,7 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := luxmetrics.NewNoOpRegistry()
+		registry := luxmetric.NewNoOpRegistry()
 
 		beacons := validators.NewManager()
 		// Note: Can't add stakers with consensus validators.Manager

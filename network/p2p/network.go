@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	luxmetrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/core"
@@ -81,20 +80,20 @@ type clientOptions struct {
 func NewNetwork(
 	log log.Logger,
 	sender core.AppSender,
-	registerer luxmetrics.Registerer,
+	registerer luxmetric.Registerer,
 	namespace string,
 ) (*Network, error) {
 	metrics := metricsImpl{
-		msgTime: luxmetrics.NewGaugeVec(
-			luxmetrics.GaugeOpts{
+		msgTime: luxmetric.NewGaugeVec(
+			luxmetric.GaugeOpts{
 				Namespace: namespace,
 				Name:      "msg_time",
 				Help:      "message handling time (ns)",
 			},
 			labelNames,
 		),
-		msgCount: luxmetrics.NewCounterVec(
-			luxmetrics.CounterOpts{
+		msgCount: luxmetric.NewCounterVec(
+			luxmetric.CounterOpts{
 				Namespace: namespace,
 				Name:      "msg_count",
 				Help:      "message count (n)",
@@ -104,8 +103,8 @@ func NewNetwork(
 	}
 
 	err := errors.Join(
-		registerer.Register(metrics.msgTime.(prometheus.Collector)),
-		registerer.Register(metrics.msgCount.(prometheus.Collector)),
+		registerer.Register(metrics.msgTime),
+		registerer.Register(metrics.msgCount),
 	)
 	if err != nil {
 		return nil, err

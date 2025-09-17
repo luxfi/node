@@ -4,7 +4,6 @@
 package health
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"context"
 	"time"
 
@@ -64,9 +63,9 @@ type health struct {
 	liveness  *worker
 }
 
-func New(log log.Logger, registerer metrics.Registerer) (Health, error) {
-	failingChecks := metrics.NewGaugeVec(
-		metrics.GaugeOpts{
+func New(log log.Logger, registerer metric.Registerer) (Health, error) {
+	failingChecks := metric.NewGaugeVec(
+		metric.GaugeOpts{
 			Name: "checks_failing",
 			Help: "number of currently failing health checks",
 		},
@@ -77,7 +76,7 @@ func New(log log.Logger, registerer metrics.Registerer) (Health, error) {
 		readiness: newWorker(log, "readiness", failingChecks),
 		health:    newWorker(log, "health", failingChecks),
 		liveness:  newWorker(log, "liveness", failingChecks),
-	}, registerer.Register(failingChecks.(prometheus.Collector))
+	}, registerer.Register(failingChecks)
 }
 
 func (h *health) RegisterReadinessCheck(name string, checker Checker, tags ...string) error {

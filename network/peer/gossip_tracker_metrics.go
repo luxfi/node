@@ -4,28 +4,27 @@
 package peer
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/node/utils"
 )
 
 type gossipTrackerMetrics struct {
-	trackedPeersSize metrics.Gauge
-	validatorsSize   metrics.Gauge
+	trackedPeersSize metric.Gauge
+	validatorsSize   metric.Gauge
 }
 
-func newGossipTrackerMetrics(registerer metrics.Registerer, namespace string) (gossipTrackerMetrics, error) {
+func newGossipTrackerMetrics(registerer metric.Registerer, namespace string) (gossipTrackerMetrics, error) {
 	m := gossipTrackerMetrics{
-		trackedPeersSize: metrics.NewGauge(
-			metrics.GaugeOpts{
+		trackedPeersSize: metric.NewGauge(
+			metric.GaugeOpts{
 				Namespace: namespace,
 				Name:      "tracked_peers_size",
 				Help:      "amount of peers that are being tracked",
 			},
 		),
-		validatorsSize: metrics.NewGauge(
-			metrics.GaugeOpts{
+		validatorsSize: metric.NewGauge(
+			metric.GaugeOpts{
 				Namespace: namespace,
 				Name:      "validators_size",
 				Help:      "number of validators this node is tracking",
@@ -34,8 +33,8 @@ func newGossipTrackerMetrics(registerer metrics.Registerer, namespace string) (g
 	}
 
 	err := utils.Err(
-		registerer.Register(m.trackedPeersSize.(prometheus.Collector)),
-		registerer.Register(m.validatorsSize.(prometheus.Collector)),
+		registerer.Register(m.trackedPeersSize),
+		registerer.Register(m.validatorsSize),
 	)
 	return m, err
 }

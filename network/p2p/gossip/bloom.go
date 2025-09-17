@@ -19,7 +19,7 @@ import (
 // Invariant: The returned bloom filter is not safe to reset concurrently with
 // other operations. However, it is otherwise safe to access concurrently.
 func NewBloomFilter(
-	registerer metrics.Registerer,
+	registerer metric.Registerer,
 	namespace string,
 	minTargetElements int,
 	targetFalsePositiveProbability,

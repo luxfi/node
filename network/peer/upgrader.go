@@ -28,10 +28,10 @@ type Upgrader interface {
 
 type tlsServerUpgrader struct {
 	config       *tls.Config
-	invalidCerts metrics.Counter
+	invalidCerts metric.Counter
 }
 
-func NewTLSServerUpgrader(config *tls.Config, invalidCerts metrics.Counter) Upgrader {
+func NewTLSServerUpgrader(config *tls.Config, invalidCerts metric.Counter) Upgrader {
 	return &tlsServerUpgrader{
 		config:       config,
 		invalidCerts: invalidCerts,
@@ -44,10 +44,10 @@ func (t *tlsServerUpgrader) Upgrade(conn net.Conn) (ids.NodeID, net.Conn, *staki
 
 type tlsClientUpgrader struct {
 	config       *tls.Config
-	invalidCerts metrics.Counter
+	invalidCerts metric.Counter
 }
 
-func NewTLSClientUpgrader(config *tls.Config, invalidCerts metrics.Counter) Upgrader {
+func NewTLSClientUpgrader(config *tls.Config, invalidCerts metric.Counter) Upgrader {
 	return &tlsClientUpgrader{
 		config:       config,
 		invalidCerts: invalidCerts,
@@ -58,7 +58,7 @@ func (t *tlsClientUpgrader) Upgrade(conn net.Conn) (ids.NodeID, net.Conn, *staki
 	return connToIDAndCert(tls.Client(conn, t.config), t.invalidCerts)
 }
 
-func connToIDAndCert(conn *tls.Conn, invalidCerts metrics.Counter) (ids.NodeID, net.Conn, *staking.Certificate, error) {
+func connToIDAndCert(conn *tls.Conn, invalidCerts metric.Counter) (ids.NodeID, net.Conn, *staking.Certificate, error) {
 	if err := conn.Handshake(); err != nil {
 		return ids.EmptyNodeID, nil, nil, err
 	}

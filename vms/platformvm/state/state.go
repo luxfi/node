@@ -451,7 +451,7 @@ func blockSize(_ ids.ID, blk block.Block) int {
 func New(
 	db database.Database,
 	genesisBytes []byte,
-	metricsReg luxmetrics.Registerer,
+	metricsReg luxmetric.Registerer,
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
 	ctx context.Context,
@@ -487,7 +487,7 @@ func newState(
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
 	ctx context.Context,
-	metricsReg luxmetrics.Registerer,
+	metricsReg luxmetric.Registerer,
 	rewards reward.Calculator,
 ) (*state, error) {
 	// Create platformvm-specific metrics

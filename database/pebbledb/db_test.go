@@ -16,7 +16,7 @@ import (
 
 func newDB(t testing.TB) *Database {
 	folder := t.TempDir()
-	db, err := New(folder, nil, log.NewNoOpLogger(), metrics.NewNoOpRegistry())
+	db, err := New(folder, nil, log.NewNoOpLogger(), metric.NewNoOpRegistry())
 	require.NoError(t, err)
 	return db.(*Database)
 }

@@ -72,7 +72,7 @@ type VMServer struct {
 
 	allowShutdown *utils.Atomic[bool]
 
-	metrics metrics.Gatherer
+	metrics metric.Gatherer
 	db      database.Database
 	log     log.Logger
 

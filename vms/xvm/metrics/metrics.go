@@ -36,7 +36,7 @@ type Metrics interface {
 type metricsImpl struct {
 	txMetrics *txMetrics
 
-	numTxRefreshes, numTxRefreshHits, numTxRefreshMisses metrics.Counter
+	numTxRefreshes, numTxRefreshHits, numTxRefreshMisses metric.Counter
 
 	utils_metric.APIInterceptor
 }
@@ -66,21 +66,21 @@ func (m *metricsImpl) MarkTxAccepted(tx *txs.Tx) error {
 	return tx.Unsigned.Visit(m.txMetrics)
 }
 
-func New(registerer metrics.Registerer) (Metrics, error) {
+func New(registerer metric.Registerer) (Metrics, error) {
 	txMetrics, err := newTxMetrics(registerer)
 	errs := wrappers.Errs{Err: err}
 
 	m := &metricsImpl{txMetrics: txMetrics}
 
-	m.numTxRefreshes = metrics.NewCounter(metrics.CounterOpts{
+	m.numTxRefreshes = metric.NewCounter(metric.CounterOpts{
 		Name: "tx_refreshes",
 		Help: "Number of times unique txs have been refreshed",
 	})
-	m.numTxRefreshHits = metrics.NewCounter(metrics.CounterOpts{
+	m.numTxRefreshHits = metric.NewCounter(metric.CounterOpts{
 		Name: "tx_refresh_hits",
 		Help: "Number of times unique txs have not been unique, but were cached",
 	})
-	m.numTxRefreshMisses = metrics.NewCounter(metrics.CounterOpts{
+	m.numTxRefreshMisses = metric.NewCounter(metric.CounterOpts{
 		Name: "tx_refresh_misses",
 		Help: "Number of times unique txs have not been unique and weren't cached",
 	})

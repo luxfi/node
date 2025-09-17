@@ -188,7 +188,7 @@ type Config struct {
 	// If [Reg] is nil, metrics are collected locally but not exported through
 	// Prometheus.
 	// This may be useful for testing.
-	Reg        metrics.Registerer
+	Reg        metric.Registerer
 	TraceLevel TraceLevel
 	Tracer     trace.Tracer
 }

@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 
 	luxmetrics "github.com/luxfi/metric"
 
@@ -305,6 +304,6 @@ func (n *noOpMetricsFactory) New(string) luxmetrics.Metrics {
 	return luxmetrics.NewNoOpMetrics("test")
 }
 
-func (n *noOpMetricsFactory) NewWithRegistry(string, luxmetrics.Registry) luxmetrics.Metrics {
+func (n *noOpMetricsFactory) NewWithRegistry(string, luxmetric.Registry) luxmetrics.Metrics {
 	return luxmetrics.NewNoOpMetrics("test")
 }

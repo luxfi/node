@@ -9,7 +9,7 @@ import (
 	dto "github.com/prometheus/client_model/go"
 )
 
-var counterOpts = metrics.CounterOpts{
+var counterOpts = metric.CounterOpts{
 	Name: "counter",
 	Help: "help",
 }

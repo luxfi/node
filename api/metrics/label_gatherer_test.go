@@ -95,27 +95,27 @@ func TestLabelGatherer_Gather(t *testing.T) {
 			gatherer := NewLabelGatherer(labelName)
 			require.NotNil(gatherer)
 
-			registerA := metrics.NewNoOpRegistry()
+			registerA := metric.NewNoOpRegistry()
 			require.NoError(gatherer.Register(labelValueA, registerA))
 			{
-				counterA := metrics.NewCounterVec(
+				counterA := metric.NewCounterVec(
 					counterOpts,
 					[]string{test.labelName},
 				)
-				counterA.With(metrics.Labels{test.labelName: customLabelValueA})
+				counterA.With(metric.Labels{test.labelName: customLabelValueA})
 				collector := metrics.AsCollector(counterA)
 				require.NotNil(collector)
 				require.NoError(registerA.Register(collector))
 			}
 
-			registerB := metrics.NewNoOpRegistry()
+			registerB := metric.NewNoOpRegistry()
 			require.NoError(gatherer.Register(labelValueB, registerB))
 			{
-				counterB := metrics.NewCounterVec(
+				counterB := metric.NewCounterVec(
 					counterOpts,
 					[]string{customLabelName},
 				)
-				counterB.With(metrics.Labels{customLabelName: customLabelValueB}).Inc()
+				counterB.With(metric.Labels{customLabelName: customLabelValueB}).Inc()
 				collector := metrics.AsCollector(counterB)
 				require.NotNil(collector)
 				require.NoError(registerB.Register(collector))
@@ -159,7 +159,7 @@ func TestLabelGatherer_Register(t *testing.T) {
 		return &labelGatherer{
 			multiGatherer: multiGatherer{
 				names: []string{firstLabeledGatherer.labelValue},
-				gatherers: []metrics.Gatherer{
+				gatherers: []metric.Gatherer{
 					firstLabeledGatherer,
 				},
 			},
@@ -177,7 +177,7 @@ func TestLabelGatherer_Register(t *testing.T) {
 				firstLabeledGatherer.labelValue,
 				secondLabeledGatherer.labelValue,
 			},
-			gatherers: []metrics.Gatherer{
+			gatherers: []metric.Gatherer{
 				firstLabeledGatherer,
 				secondLabeledGatherer,
 			},
@@ -188,7 +188,7 @@ func TestLabelGatherer_Register(t *testing.T) {
 		name                  string
 		labelGatherer         *labelGatherer
 		labelValue            string
-		gatherer              metrics.Gatherer
+		gatherer              metric.Gatherer
 		expectedErr           error
 		expectedLabelGatherer *labelGatherer
 	}{

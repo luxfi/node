@@ -4,7 +4,6 @@
 package merkledb
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"errors"
 	"sync"
 
@@ -32,43 +31,43 @@ var (
 	_ merkleDBMetrics = (*mockMetrics)(nil)
 
 	ioLabels     = []string{ioType}
-	ioReadLabels = metrics.Labels{
+	ioReadLabels = metric.Labels{
 		ioType: readType,
 	}
-	ioWriteLabels = metrics.Labels{
+	ioWriteLabels = metric.Labels{
 		ioType: writeType,
 	}
 
 	lookupLabels            = []string{lookupType, lookupResult}
-	valueNodeCacheHitLabels = metrics.Labels{
+	valueNodeCacheHitLabels = metric.Labels{
 		lookupType:   valueNodeCacheType,
 		lookupResult: hitResult,
 	}
-	valueNodeCacheMissLabels = metrics.Labels{
+	valueNodeCacheMissLabels = metric.Labels{
 		lookupType:   valueNodeCacheType,
 		lookupResult: missResult,
 	}
-	intermediateNodeCacheHitLabels = metrics.Labels{
+	intermediateNodeCacheHitLabels = metric.Labels{
 		lookupType:   intermediateNodeCacheType,
 		lookupResult: hitResult,
 	}
-	intermediateNodeCacheMissLabels = metrics.Labels{
+	intermediateNodeCacheMissLabels = metric.Labels{
 		lookupType:   intermediateNodeCacheType,
 		lookupResult: missResult,
 	}
-	viewChangesValueHitLabels = metrics.Labels{
+	viewChangesValueHitLabels = metric.Labels{
 		lookupType:   viewChangesValueType,
 		lookupResult: hitResult,
 	}
-	viewChangesValueMissLabels = metrics.Labels{
+	viewChangesValueMissLabels = metric.Labels{
 		lookupType:   viewChangesValueType,
 		lookupResult: missResult,
 	}
-	viewChangesNodeHitLabels = metrics.Labels{
+	viewChangesNodeHitLabels = metric.Labels{
 		lookupType:   viewChangesNodeType,
 		lookupResult: hitResult,
 	}
-	viewChangesNodeMissLabels = metrics.Labels{
+	viewChangesNodeMissLabels = metric.Labels{
 		lookupType:   viewChangesNodeType,
 		lookupResult: missResult,
 	}
@@ -89,36 +88,36 @@ type merkleDBMetrics interface {
 }
 
 type prometheusMetrics struct {
-	hashes metrics.Counter
-	io     metrics.CounterVec
-	lookup metrics.CounterVec
+	hashes metric.Counter
+	io     metric.CounterVec
+	lookup metric.CounterVec
 }
 
-func newMetrics(namespace string, reg metrics.Registerer) (merkleDBMetrics, error) {
+func newMetrics(namespace string, reg metric.Registerer) (merkleDBMetrics, error) {
 	if reg == nil {
 		return &mockMetrics{}, nil
 	}
 	m := prometheusMetrics{
-		hashes: metrics.NewCounter(metrics.CounterOpts{
+		hashes: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "hashes",
 			Help:      "cumulative number of nodes hashed",
 		}),
-		io: metrics.NewCounterVec(metrics.CounterOpts{
+		io: metric.NewCounterVec(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "io",
 			Help:      "cumulative number of operations performed to the db",
 		}, ioLabels),
-		lookup: metrics.NewCounterVec(metrics.CounterOpts{
+		lookup: metric.NewCounterVec(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "lookup",
 			Help:      "cumulative number of in-memory lookups performed",
 		}, lookupLabels),
 	}
 	err := errors.Join(
-		reg.Register(m.hashes.(prometheus.Collector)),
-		reg.Register(m.io.(prometheus.Collector)),
-		reg.Register(m.lookup.(prometheus.Collector)),
+		reg.Register(m.hashes),
+		reg.Register(m.io),
+		reg.Register(m.lookup),
 	)
 	return &m, err
 }

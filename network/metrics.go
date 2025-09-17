@@ -4,7 +4,6 @@
 package network
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"errors"
 	"sync"
 	"time"
@@ -20,24 +19,24 @@ type metricsImpl struct {
 	// trackedSubnets does not include the primary network ID
 	trackedSubnets set.Set[ids.ID]
 
-	numTracked                      metrics.Gauge
-	numPeers                        metrics.Gauge
-	numSubnetPeers                  metrics.GaugeVec
-	timeSinceLastMsgSent            metrics.Gauge
-	timeSinceLastMsgReceived        metrics.Gauge
-	sendFailRate                    metrics.Gauge
-	connected                       metrics.Counter
-	disconnected                    metrics.Counter
-	acceptFailed                    metrics.Counter
-	inboundConnRateLimited          metrics.Counter
-	inboundConnAllowed              metrics.Counter
-	tlsConnRejected                 metrics.Counter
-	numUselessPeerListBytes         metrics.Counter
-	nodeUptimeWeightedAverage       metrics.Gauge
-	nodeUptimeRewardingStake        metrics.Gauge
-	nodeSubnetUptimeWeightedAverage metrics.GaugeVec
-	nodeSubnetUptimeRewardingStake  metrics.GaugeVec
-	peerConnectedLifetimeAverage    metrics.Gauge
+	numTracked                      metric.Gauge
+	numPeers                        metric.Gauge
+	numSubnetPeers                  metric.GaugeVec
+	timeSinceLastMsgSent            metric.Gauge
+	timeSinceLastMsgReceived        metric.Gauge
+	sendFailRate                    metric.Gauge
+	connected                       metric.Counter
+	disconnected                    metric.Counter
+	acceptFailed                    metric.Counter
+	inboundConnRateLimited          metric.Counter
+	inboundConnAllowed              metric.Counter
+	tlsConnRejected                 metric.Counter
+	numUselessPeerListBytes         metric.Counter
+	nodeUptimeWeightedAverage       metric.Gauge
+	nodeUptimeRewardingStake        metric.Gauge
+	nodeSubnetUptimeWeightedAverage metric.GaugeVec
+	nodeSubnetUptimeRewardingStake  metric.GaugeVec
+	peerConnectedLifetimeAverage    metric.Gauge
 
 	lock                       sync.RWMutex
 	peerConnectedStartTimes    map[ids.NodeID]float64
@@ -45,90 +44,90 @@ type metricsImpl struct {
 }
 
 func newMetrics(
-	registerer metrics.Registerer,
+	registerer metric.Registerer,
 	trackedSubnets set.Set[ids.ID],
 ) (*metricsImpl, error) {
 	m := &metricsImpl{
 		trackedSubnets: trackedSubnets,
-		numPeers: metrics.NewGauge(metrics.GaugeOpts{
+		numPeers: metric.NewGauge(metric.GaugeOpts{
 			Name: "peers",
 			Help: "Number of network peers",
 		}),
-		numTracked: metrics.NewGauge(metrics.GaugeOpts{
+		numTracked: metric.NewGauge(metric.GaugeOpts{
 			Name: "tracked",
 			Help: "Number of currently tracked IPs attempting to be connected to",
 		}),
-		numSubnetPeers: metrics.NewGaugeVec(
-			metrics.GaugeOpts{
+		numSubnetPeers: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Name: "peers_subnet",
 				Help: "Number of peers that are validating a particular subnet",
 			},
 			[]string{"netID"},
 		),
-		timeSinceLastMsgReceived: metrics.NewGauge(metrics.GaugeOpts{
+		timeSinceLastMsgReceived: metric.NewGauge(metric.GaugeOpts{
 			Name: "time_since_last_msg_received",
 			Help: "Time (in ns) since the last msg was received",
 		}),
-		timeSinceLastMsgSent: metrics.NewGauge(metrics.GaugeOpts{
+		timeSinceLastMsgSent: metric.NewGauge(metric.GaugeOpts{
 			Name: "time_since_last_msg_sent",
 			Help: "Time (in ns) since the last msg was sent",
 		}),
-		sendFailRate: metrics.NewGauge(metrics.GaugeOpts{
+		sendFailRate: metric.NewGauge(metric.GaugeOpts{
 			Name: "send_fail_rate",
 			Help: "Portion of messages that recently failed to be sent over the network",
 		}),
-		connected: metrics.NewCounter(metrics.CounterOpts{
+		connected: metric.NewCounter(metric.CounterOpts{
 			Name: "times_connected",
 			Help: "Times this node successfully completed a handshake with a peer",
 		}),
-		disconnected: metrics.NewCounter(metrics.CounterOpts{
+		disconnected: metric.NewCounter(metric.CounterOpts{
 			Name: "times_disconnected",
 			Help: "Times this node disconnected from a peer it had completed a handshake with",
 		}),
-		acceptFailed: metrics.NewCounter(metrics.CounterOpts{
+		acceptFailed: metric.NewCounter(metric.CounterOpts{
 			Name: "accept_failed",
 			Help: "Times this node's listener failed to accept an inbound connection",
 		}),
-		inboundConnAllowed: metrics.NewCounter(metrics.CounterOpts{
+		inboundConnAllowed: metric.NewCounter(metric.CounterOpts{
 			Name: "inbound_conn_throttler_allowed",
 			Help: "Times this node allowed (attempted to upgrade) an inbound connection",
 		}),
-		tlsConnRejected: metrics.NewCounter(metrics.CounterOpts{
+		tlsConnRejected: metric.NewCounter(metric.CounterOpts{
 			Name: "tls_conn_rejected",
 			Help: "Times this node rejected a connection due to an unsupported TLS certificate",
 		}),
-		numUselessPeerListBytes: metrics.NewCounter(metrics.CounterOpts{
+		numUselessPeerListBytes: metric.NewCounter(metric.CounterOpts{
 			Name: "num_useless_peerlist_bytes",
 			Help: "Amount of useless bytes (i.e. information about nodes we already knew/don't want to connect to) received in PeerList messages",
 		}),
-		inboundConnRateLimited: metrics.NewCounter(metrics.CounterOpts{
+		inboundConnRateLimited: metric.NewCounter(metric.CounterOpts{
 			Name: "inbound_conn_throttler_rate_limited",
 			Help: "Times this node rejected an inbound connection due to rate-limiting",
 		}),
-		nodeUptimeWeightedAverage: metrics.NewGauge(metrics.GaugeOpts{
+		nodeUptimeWeightedAverage: metric.NewGauge(metric.GaugeOpts{
 			Name: "node_uptime_weighted_average",
 			Help: "This node's uptime average weighted by observing peer stakes",
 		}),
-		nodeUptimeRewardingStake: metrics.NewGauge(metrics.GaugeOpts{
+		nodeUptimeRewardingStake: metric.NewGauge(metric.GaugeOpts{
 			Name: "node_uptime_rewarding_stake",
 			Help: "The percentage of total stake which thinks this node is eligible for rewards",
 		}),
-		nodeSubnetUptimeWeightedAverage: metrics.NewGaugeVec(
-			metrics.GaugeOpts{
+		nodeSubnetUptimeWeightedAverage: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Name: "node_subnet_uptime_weighted_average",
 				Help: "This node's net uptime averages weighted by observing net peer stakes",
 			},
 			[]string{"netID"},
 		),
-		nodeSubnetUptimeRewardingStake: metrics.NewGaugeVec(
-			metrics.GaugeOpts{
+		nodeSubnetUptimeRewardingStake: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Name: "node_subnet_uptime_rewarding_stake",
 				Help: "The percentage of subnet's total stake which thinks this node is eligible for subnet's rewards",
 			},
 			[]string{"netID"},
 		),
-		peerConnectedLifetimeAverage: metrics.NewGauge(
-			metrics.GaugeOpts{
+		peerConnectedLifetimeAverage: metric.NewGauge(
+			metric.GaugeOpts{
 				Name: "peer_connected_duration_average",
 				Help: "The average duration of all peer connections in nanoseconds",
 			},
@@ -137,24 +136,24 @@ func newMetrics(
 	}
 
 	err := errors.Join(
-		registerer.Register(m.numTracked.(prometheus.Collector)),
-		registerer.Register(m.numPeers.(prometheus.Collector)),
-		registerer.Register(m.numSubnetPeers.(prometheus.Collector)),
-		registerer.Register(m.timeSinceLastMsgReceived.(prometheus.Collector)),
-		registerer.Register(m.timeSinceLastMsgSent.(prometheus.Collector)),
-		registerer.Register(m.sendFailRate.(prometheus.Collector)),
-		registerer.Register(m.connected.(prometheus.Collector)),
-		registerer.Register(m.disconnected.(prometheus.Collector)),
-		registerer.Register(m.acceptFailed.(prometheus.Collector)),
-		registerer.Register(m.inboundConnAllowed.(prometheus.Collector)),
-		registerer.Register(m.tlsConnRejected.(prometheus.Collector)),
-		registerer.Register(m.numUselessPeerListBytes.(prometheus.Collector)),
-		registerer.Register(m.inboundConnRateLimited.(prometheus.Collector)),
-		registerer.Register(m.nodeUptimeWeightedAverage.(prometheus.Collector)),
-		registerer.Register(m.nodeUptimeRewardingStake.(prometheus.Collector)),
-		registerer.Register(m.nodeSubnetUptimeWeightedAverage.(prometheus.Collector)),
-		registerer.Register(m.nodeSubnetUptimeRewardingStake.(prometheus.Collector)),
-		registerer.Register(m.peerConnectedLifetimeAverage.(prometheus.Collector)),
+		registerer.Register(m.numTracked),
+		registerer.Register(m.numPeers),
+		registerer.Register(m.numSubnetPeers),
+		registerer.Register(m.timeSinceLastMsgReceived),
+		registerer.Register(m.timeSinceLastMsgSent),
+		registerer.Register(m.sendFailRate),
+		registerer.Register(m.connected),
+		registerer.Register(m.disconnected),
+		registerer.Register(m.acceptFailed),
+		registerer.Register(m.inboundConnAllowed),
+		registerer.Register(m.tlsConnRejected),
+		registerer.Register(m.numUselessPeerListBytes),
+		registerer.Register(m.inboundConnRateLimited),
+		registerer.Register(m.nodeUptimeWeightedAverage),
+		registerer.Register(m.nodeUptimeRewardingStake),
+		registerer.Register(m.nodeSubnetUptimeWeightedAverage),
+		registerer.Register(m.nodeSubnetUptimeRewardingStake),
+		registerer.Register(m.peerConnectedLifetimeAverage),
 	)
 
 	// init net tracker metrics with tracked subnets

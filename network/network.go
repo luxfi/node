@@ -195,7 +195,7 @@ type network struct {
 func NewNetwork(
 	config *Config,
 	msgCreator message.Creator,
-	metricsRegisterer metrics.Registerer,
+	metricsRegisterer metric.Registerer,
 	log log.Logger,
 	listener net.Listener,
 	dialer dialer.Dialer,

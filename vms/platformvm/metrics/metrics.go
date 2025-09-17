@@ -40,43 +40,43 @@ type Metrics interface {
 	SetTimeUntilSubnetUnstake(netID ids.ID, timeUntilUnstake time.Duration)
 }
 
-func New(registerer metrics.Registerer) (Metrics, error) {
+func New(registerer metric.Registerer) (Metrics, error) {
 	blockMetrics, err := newBlockMetrics(registerer)
 	m := &metricsImpl{
 		blockMetrics: blockMetrics,
-		timeUntilUnstake: metrics.NewGauge(metrics.GaugeOpts{
+		timeUntilUnstake: metric.NewGauge(metric.GaugeOpts{
 			Name: "time_until_unstake",
 			Help: "Time (in ns) until this node leaves the Primary Network's validator set",
 		}),
-		timeUntilSubnetUnstake: metrics.NewGaugeVec(
-			metrics.GaugeOpts{
+		timeUntilSubnetUnstake: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Name: "time_until_unstake_subnet",
 				Help: "Time (in ns) until this node leaves the subnet's validator set",
 			},
 			[]string{"netID"},
 		),
-		localStake: metrics.NewGauge(metrics.GaugeOpts{
+		localStake: metric.NewGauge(metric.GaugeOpts{
 			Name: "local_staked",
 			Help: "Amount (in nLUX) of LUX staked on this node",
 		}),
-		totalStake: metrics.NewGauge(metrics.GaugeOpts{
+		totalStake: metric.NewGauge(metric.GaugeOpts{
 			Name: "total_staked",
 			Help: "Amount (in nLUX) of LUX staked on the Primary Network",
 		}),
 
-		validatorSetsCached: metrics.NewCounter(metrics.CounterOpts{
+		validatorSetsCached: metric.NewCounter(metric.CounterOpts{
 			Name: "validator_sets_cached",
 			Help: "Total number of validator sets cached",
 		}),
-		validatorSetsCreated: metrics.NewCounter(metrics.CounterOpts{
+		validatorSetsCreated: metric.NewCounter(metric.CounterOpts{
 			Name: "validator_sets_created",
 			Help: "Total number of validator sets created from applying difflayers",
 		}),
-		validatorSetsHeightDiff: metrics.NewGauge(metrics.GaugeOpts{
+		validatorSetsHeightDiff: metric.NewGauge(metric.GaugeOpts{
 			Name: "validator_sets_height_diff_sum",
 			Help: "Total number of validator sets diffs applied for generating validator sets",
 		}),
-		validatorSetsDuration: metrics.NewGauge(metrics.GaugeOpts{
+		validatorSetsDuration: metric.NewGauge(metric.GaugeOpts{
 			Name: "validator_sets_duration_sum",
 			Help: "Total amount of time generating validator sets in nanoseconds",
 		}),
@@ -99,15 +99,15 @@ type metricsImpl struct {
 
 	blockMetrics *blockMetrics
 
-	timeUntilUnstake       metrics.Gauge
-	timeUntilSubnetUnstake metrics.GaugeVec
-	localStake             metrics.Gauge
-	totalStake             metrics.Gauge
+	timeUntilUnstake       metric.Gauge
+	timeUntilSubnetUnstake metric.GaugeVec
+	localStake             metric.Gauge
+	totalStake             metric.Gauge
 
-	validatorSetsCached     metrics.Counter
-	validatorSetsCreated    metrics.Counter
-	validatorSetsHeightDiff metrics.Gauge
-	validatorSetsDuration   metrics.Gauge
+	validatorSetsCached     metric.Counter
+	validatorSetsCreated    metric.Counter
+	validatorSetsHeightDiff metric.Gauge
+	validatorSetsDuration   metric.Gauge
 }
 
 func (m *metricsImpl) MarkAccepted(b block.Block) error {

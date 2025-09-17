@@ -34,7 +34,7 @@ var DefaultNodeID = ids.GenerateTestNodeID()
 type Config struct {
 	DB         database.Database
 	Genesis    []byte
-	Registerer metrics.Registerer
+	Registerer metric.Registerer
 	Validators validators.Manager
 	Upgrades   upgrade.Config
 	Config     config.Config

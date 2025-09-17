@@ -4,34 +4,33 @@
 package server
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/luxfi/metric"
 )
 
 type serverMetrics struct {
-	requests  *prometheus.CounterVec
-	duration  *prometheus.HistogramVec
-	inflight  prometheus.Gauge
+	requests  *metric.CounterVec
+	duration  *metric.HistogramVec
+	inflight  metric.Gauge
 }
 
-func newMetrics(registerer metrics.Registerer) (*serverMetrics, error) {
+func newMetrics(registerer metric.Registerer) (*serverMetrics, error) {
 	m := &serverMetrics{
-		requests: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
+		requests: metric.NewCounterVec(
+			metric.CounterOpts{
 				Name: "api_requests_total",
 				Help: "Total number of API requests",
 			},
 			[]string{"method", "endpoint"},
 		),
-		duration: prometheus.NewHistogramVec(
-			prometheus.HistogramOpts{
+		duration: metric.NewHistogramVec(
+			metric.HistogramOpts{
 				Name: "api_request_duration_seconds",
 				Help: "API request duration in seconds",
 			},
 			[]string{"method", "endpoint"},
 		),
-		inflight: prometheus.NewGauge(
-			prometheus.GaugeOpts{
+		inflight: metric.NewGauge(
+			metric.GaugeOpts{
 				Name: "api_requests_inflight",
 				Help: "Number of inflight API requests",
 			},
