@@ -4,6 +4,7 @@
 package metrics
 
 import (
+	"github.com/luxfi/metric"
 	"errors"
 	"fmt"
 	"sync"
