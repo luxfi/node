@@ -15,7 +15,7 @@ import (
 
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/engine/chain/block/blockmock"
+	// "github.com/luxfi/consensus/engine/chain/block/blockmock" // Removed - mock not available
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
@@ -25,6 +25,9 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 )
+
+// mockChainVM is a simple mock for testing
+type mockChainVM struct{}
 
 var (
 	_ server.PathAdder = (*apiServerMock)(nil)
@@ -167,7 +170,7 @@ func TestIndexer(t *testing.T) {
 	require.False(previouslyIndexed)
 
 	// Register this chain, creating a new index
-	chainVM := blockmock.NewChainVM()
+	chainVM := &mockChainVM{} // Simple mock since interface accepts any type
 	t.Logf("Before RegisterChain, closed=%v", idxr.closed)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	t.Logf("After RegisterChain, closed=%v", idxr.closed)
@@ -289,7 +292,7 @@ func TestIndexer(t *testing.T) {
 		ChainID: chain2ChainID,
 	})
 
-	graphVM := blockmock.NewChainVM()
+	graphVM := &mockChainVM{}
 	idxr.RegisterChain("chain2", chain2Ctx, graphVM)
 	// require.NoError(err)
 	// require.Equal(4, server.timesCalled) // block index for chain, block index for dag, vtx index, tx index
@@ -426,7 +429,7 @@ func TestIncompleteIndex(t *testing.T) {
 	previouslyIndexed, err := idxr.previouslyIndexed(testChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
-	chainVM := blockmock.NewChainVM()
+	chainVM := &mockChainVM{}
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	isIncomplete, err = idxr.isIncomplete(testChainID)
 	require.NoError(err)
@@ -514,7 +517,7 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	// The test context is configured correctly for a non-primary net
 
 	// RegisterChain should return without adding an index for this chain
-	chainVM := blockmock.NewChainVM()
+	chainVM := &mockChainVM{}
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	require.Empty(idxr.blockIndices)
 }

@@ -172,7 +172,7 @@ func SendEthTransaction(ethClient *ethclient.Client, signedTx *types.Transaction
 
 // Determines the suggested gas price for the configured client that will
 // maximize the chances of transaction acceptance.
-func SuggestGasPrice(ethClient ethclient.Client) *big.Int {
+func SuggestGasPrice(ethClient *ethclient.Client) *big.Int {
 	gasPrice, err := ethClient.SuggestGasPrice(DefaultContext())
 	require.NoError(ginkgo.GinkgoT(), err)
 	// Double the suggested gas price to maximize the chances of
@@ -183,7 +183,7 @@ func SuggestGasPrice(ethClient ethclient.Client) *big.Int {
 }
 
 // Helper simplifying use via an option of a gas price appropriate for testing.
-func WithSuggestedGasPrice(ethClient ethclient.Client) common.Option {
+func WithSuggestedGasPrice(ethClient *ethclient.Client) common.Option {
 	baseFee := SuggestGasPrice(ethClient)
 	return common.WithBaseFee(baseFee)
 }

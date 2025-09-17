@@ -4,9 +4,6 @@
 package e2e
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
