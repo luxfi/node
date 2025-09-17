@@ -19,7 +19,7 @@ import (
 )
 
 func newTestIPTracker(t *testing.T) *ipTracker {
-	tracker, err := newIPTracker(log.NoLog{}, metrics.NewRegistry())
+	tracker, err := newIPTracker(log.NoLog{}, metrics.NewNoOpRegistry())
 	require.NoError(t, err)
 	return tracker
 }
@@ -49,10 +49,10 @@ func requireEqual(t *testing.T, expected, actual *ipTracker) {
 
 func requireMetricsConsistent(t *testing.T, tracker *ipTracker) {
 	require := require.New(t)
-	require.Equal(float64(len(tracker.mostRecentTrackedIPs)), testutil.ToFloat64(tracker.numTrackedIPs))
-	require.Equal(float64(len(tracker.gossipableIPs)), testutil.ToFloat64(tracker.numGossipableIPs))
-	require.Equal(float64(tracker.bloom.Count()), testutil.ToFloat64(tracker.bloomMetrics.Count))
-	require.Equal(float64(tracker.maxBloomCount), testutil.ToFloat64(tracker.bloomMetrics.MaxCount))
+	require.Equal(float64(len(tracker.mostRecentTrackedIPs)), testutil.ToFloat64(metrics.AsCollector(tracker.numTrackedIPs)))
+	require.Equal(float64(len(tracker.gossipableIPs)), testutil.ToFloat64(metrics.AsCollector(tracker.numGossipableIPs)))
+	require.Equal(float64(tracker.bloom.Count()), testutil.ToFloat64(metrics.AsCollector(tracker.bloomMetrics.Count)))
+	require.Equal(float64(tracker.maxBloomCount), testutil.ToFloat64(metrics.AsCollector(tracker.bloomMetrics.MaxCount)))
 }
 
 func TestIPTracker_ManuallyTrack(t *testing.T) {

@@ -103,7 +103,9 @@ func TestLabelGatherer_Gather(t *testing.T) {
 					[]string{test.labelName},
 				)
 				counterA.With(metrics.Labels{test.labelName: customLabelValueA})
-				require.NoError(registerA.Register(counterA))
+				collector := metrics.AsCollector(counterA)
+				require.NotNil(collector)
+				require.NoError(registerA.Register(collector))
 			}
 
 			registerB := metrics.NewNoOpRegistry()
@@ -114,7 +116,9 @@ func TestLabelGatherer_Gather(t *testing.T) {
 					[]string{customLabelName},
 				)
 				counterB.With(metrics.Labels{customLabelName: customLabelValueB}).Inc()
-				require.NoError(registerB.Register(counterB))
+				collector := metrics.AsCollector(counterB)
+				require.NotNil(collector)
+				require.NoError(registerB.Register(collector))
 			}
 
 			metrics, err := gatherer.Gather()
@@ -155,7 +159,7 @@ func TestLabelGatherer_Register(t *testing.T) {
 		return &labelGatherer{
 			multiGatherer: multiGatherer{
 				names: []string{firstLabeledGatherer.labelValue},
-				gatherers: metrics.Gatherers{
+				gatherers: []metrics.Gatherer{
 					firstLabeledGatherer,
 				},
 			},
@@ -173,7 +177,7 @@ func TestLabelGatherer_Register(t *testing.T) {
 				firstLabeledGatherer.labelValue,
 				secondLabeledGatherer.labelValue,
 			},
-			gatherers: metrics.Gatherers{
+			gatherers: []metrics.Gatherer{
 				firstLabeledGatherer,
 				secondLabeledGatherer,
 			},

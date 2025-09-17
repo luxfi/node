@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	metric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -122,7 +122,7 @@ func New(
 	n := &Node{
 		Log:               logger,
 		LogFactory:        logFactory,
-		MetricsRegisterer: metric.NewPrometheusRegistry(),
+		MetricsRegisterer: metrics.NewPrometheusRegistry(),
 		StakingTLSSigner:  config.StakingTLSCert.PrivateKey.(crypto.Signer),
 		StakingTLSCert:    stakingCert,
 		ID: ids.NodeIDFromCert(&ids.Certificate{
@@ -198,7 +198,7 @@ func New(
 	// and the engine (initChains) but after the metrics (initMetricsAPI)
 	// message.Creator currently record metrics under network namespace
 
-	networkRegisterer, err := metric.MakeAndRegister(
+	networkRegisterer, err := metrics.MakeAndRegister(
 		n.MetricsGatherer,
 		networkNamespace,
 	)
@@ -207,7 +207,7 @@ func New(
 	}
 
 	// Create luxfi/metric instance from prometheus registry
-	networkMetrics := metric.NewPrometheusMetrics(networkNamespace, networkRegisterer)
+	networkMetrics := metrics.NewPrometheusMetrics(networkNamespace, networkRegisterer)
 
 	n.msgCreator, err = message.NewCreator(
 		n.Log,
@@ -283,7 +283,7 @@ type Node struct {
 	Log               log.Logger
 	VMFactoryLog      log.Logger
 	LogFactory        log.Factory
-	MetricsRegisterer metric.Registerer
+	MetricsRegisterer metrics.Registerer
 
 	// This node's unique ID used when communicating with other nodes
 	// (in consensus, for example)
@@ -377,8 +377,8 @@ type Node struct {
 	DoneShuttingDown sync.WaitGroup
 
 	// Metrics Registerer
-	MetricsGatherer        metric.MultiGatherer
-	MeterDBMetricsGatherer metric.MultiGatherer
+	MetricsGatherer        metrics.MultiGatherer
+	MeterDBMetricsGatherer metrics.MultiGatherer
 
 	VMAliaser ids.Aliaser
 	VMManager vms.Manager
@@ -415,7 +415,7 @@ type Node struct {
 
 // Initialize the networking layer.
 // Assumes [n.vdrs], [n.CPUTracker], and [n.CPUTargeter] have been initialized.
-func (n *Node) initNetworking(reg metric.Registerer) error {
+func (n *Node) initNetworking(reg metrics.Registerer) error {
 	// Providing either loopback address - `::1` for ipv6 and `127.0.0.1` for ipv4 - as the listen
 	// host will avoid the need for a firewall exception on recent MacOS:
 	//
@@ -560,8 +560,8 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 
 	// Configure benchlist
 	n.vdrs = n.vdrs
-	benchlistGatherer := metric.NewLabelGatherer(chains.ChainLabel)
-	// Don't assign to metric.DefaultRegisterer - it requires metric.Registerer interface
+	benchlistGatherer := metrics.NewLabelGatherer(chains.ChainLabel)
+	// Don't assign to metrics.DefaultRegisterer - it requires metrics.Registerer interface
 
 	err = n.MetricsGatherer.Register(
 		benchlistNamespace,
@@ -786,7 +786,7 @@ func (n *Node) Dispatch() error {
  */
 
 func (n *Node) initDatabase() error {
-	// dbRegisterer, err := metric.MakeAndRegister(
+	// dbRegisterer, err := metrics.MakeAndRegister(
 	// 	n.MetricsGatherer,
 	// 	dbNamespace,
 	// )
@@ -946,8 +946,8 @@ func (n *Node) initChains(genesisBytes []byte) error {
 }
 
 func (n *Node) initMetrics() error {
-	n.MetricsGatherer = metric.NewPrefixGatherer()
-	n.MeterDBMetricsGatherer = metric.NewLabelGatherer(chains.ChainLabel)
+	n.MetricsGatherer = metrics.NewPrefixGatherer()
+	n.MeterDBMetricsGatherer = metrics.NewLabelGatherer(chains.ChainLabel)
 	return n.MetricsGatherer.Register(
 		meterDBNamespace,
 		n.MeterDBMetricsGatherer,
@@ -1040,7 +1040,7 @@ func (n *Node) initAPIServer() error {
 	}
 	n.apiURI = fmt.Sprintf("%s://%s", protocol, listener.Addr())
 
-	apiRegisterer, err := metric.MakeAndRegister(
+	apiRegisterer, err := metrics.MakeAndRegister(
 		n.MetricsGatherer,
 		apiNamespace,
 	)
@@ -1101,7 +1101,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 		cChainID,
 	)
 
-	_, err = metric.MakeAndRegister(
+	_, err = metrics.MakeAndRegister(
 		n.MetricsGatherer,
 		requestsNamespace,
 	)
@@ -1109,7 +1109,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 		return err
 	}
 
-	_, err = metric.MakeAndRegister(
+	_, err = metrics.MakeAndRegister(
 		n.MetricsGatherer,
 		responsesNamespace,
 	)
@@ -1258,7 +1258,7 @@ func (n *Node) initVMs() error {
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()
 
-	rpcchainvmMetricsGatherer := metric.NewLabelGatherer(chains.ChainLabel)
+	rpcchainvmMetricsGatherer := metrics.NewLabelGatherer(chains.ChainLabel)
 	if err := n.MetricsGatherer.Register(rpcchainvmNamespace, rpcchainvmMetricsGatherer); err != nil {
 		return err
 	}
@@ -1323,7 +1323,7 @@ func (n *Node) initMetricsAPI() error {
 		return nil
 	}
 
-	processReg, err := metric.MakeAndRegister(
+	processReg, err := metrics.MakeAndRegister(
 		n.MetricsGatherer,
 		processNamespace,
 	)
@@ -1331,7 +1331,7 @@ func (n *Node) initMetricsAPI() error {
 		return err
 	}
 
-	// Current state of process metric.
+	// Current state of process metrics.
 	processCollector := collectors.NewProcessCollector(collectors.ProcessCollectorOpts{})
 	if err := processReg.Register(processCollector); err != nil {
 		return err
@@ -1466,7 +1466,7 @@ func (n *Node) initInfoAPI() error {
 // initHealthAPI initializes the Health API service
 // Assumes n.Log, n.Net, n.APIServer, n.HTTPLog already initialized
 func (n *Node) initHealthAPI() error {
-	healthReg, err := metric.MakeAndRegister(
+	healthReg, err := metrics.MakeAndRegister(
 		n.MetricsGatherer,
 		healthNamespace,
 	)
@@ -1600,7 +1600,7 @@ func (n *Node) initAPIAliases(genesisBytes []byte) error {
 
 // Initialize [n.resourceManager].
 func (n *Node) initResourceManager() error {
-	systemResourcesRegisterer, err := metric.MakeAndRegister(
+	systemResourcesRegisterer, err := metrics.MakeAndRegister(
 		n.MetricsGatherer,
 		systemResourcesNamespace,
 	)
@@ -1621,7 +1621,7 @@ func (n *Node) initResourceManager() error {
 	n.resourceManager = resourceManager
 	n.resourceManager.TrackProcess(os.Getpid())
 
-	_, err = metric.MakeAndRegister(
+	_, err = metrics.MakeAndRegister(
 		n.MetricsGatherer,
 		resourceTrackerNamespace,
 	)

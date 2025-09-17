@@ -23,7 +23,9 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 	require.NoError(gatherer.Register("a", registerA))
 	{
 		counterA := metrics.NewCounter(counterOpts)
-		require.NoError(registerA.Register(counterA))
+		collector := metrics.AsCollector(counterA)
+		require.NotNil(collector)
+		require.NoError(registerA.Register(collector))
 	}
 
 	registerB := metrics.NewNoOpRegistry()
@@ -31,7 +33,9 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 	{
 		counterB := metrics.NewCounter(counterOpts)
 		counterB.Inc()
-		require.NoError(registerB.Register(counterB))
+		collector := metrics.AsCollector(counterB)
+		require.NotNil(collector)
+		require.NoError(registerB.Register(collector))
 	}
 
 	metrics, err := gatherer.Gather()
@@ -90,7 +94,7 @@ func TestPrefixGatherer_Register(t *testing.T) {
 				names: []string{
 					firstPrefixedGatherer.prefix,
 				},
-				gatherers: metrics.Gatherers{
+				gatherers: []metrics.Gatherer{
 					firstPrefixedGatherer,
 				},
 			},
@@ -108,7 +112,7 @@ func TestPrefixGatherer_Register(t *testing.T) {
 				firstPrefixedGatherer.prefix,
 				secondPrefixedGatherer.prefix,
 			},
-			gatherers: metrics.Gatherers{
+			gatherers: []metrics.Gatherer{
 				firstPrefixedGatherer,
 				secondPrefixedGatherer,
 			},

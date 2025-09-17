@@ -161,17 +161,13 @@ type stubTargeter struct{}
 
 func (s *stubTargeter) TargetUsage() uint64 { return 50 }
 
-// noOpResourceManager implements resource.Manager for testing
-type noOpResourceManager struct{}
-
-func (n *noOpResourceManager) CPUUsage() float64                    { return 0 }
-func (n *noOpResourceManager) DiskUsage() (float64, float64)        { return 0, 0 }
+// Use the noOpResourceManager from test_network.go instead of redefining
 
 func newDefaultResourceTracker() tracker.ResourceTracker {
 	// Create a no-op resource manager for testing
 	noOpManager := &noOpResourceManager{}
 	resourceTracker, err := tracker.NewResourceTracker(
-		metrics.NewRegistry(),
+		metrics.NewNoOpRegistry(),
 		noOpManager,
 		10*time.Second,
 	)

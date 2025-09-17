@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	luxmetric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 func TestValidatorsSample(t *testing.T) {
@@ -202,7 +202,7 @@ func TestValidatorsSample(t *testing.T) {
 
 			fakeSender := &FakeSender{}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
-	network, err := NewNetwork(log.NoLog{}, sender, luxmetrics.NewNoOpMetrics("test").Registry(), "")
+	network, err := NewNetwork(log.NoLog{}, sender, metrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()
@@ -327,7 +327,7 @@ func TestValidatorsTop(t *testing.T) {
 
 			fakeSender := &FakeSender{}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
-	network, err := NewNetwork(log.NoLog{}, sender, luxmetrics.NewNoOpMetrics("test").Registry(), "")
+	network, err := NewNetwork(log.NoLog{}, sender, metrics.NewNoOpMetrics("test").Registry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()

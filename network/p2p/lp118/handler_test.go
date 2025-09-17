@@ -13,6 +13,7 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/consensus/engine/common"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
@@ -78,7 +79,9 @@ func TestHandler(t *testing.T) {
 			pk := sk.PublicKey()
 			networkID := uint32(123)
 			chainID := ids.GenerateTestID()
-			signer := warp.NewSigner(sk, networkID, chainID)
+			localSigner, err := localsigner.FromBytes(bls.SecretKeyToBytes(sk))
+			require.NoError(err)
+			signer := warp.NewSigner(localSigner, networkID, chainID)
 			h := NewHandlerAdapter(NewCachedHandler(tt.cacher, tt.verifier, signer))
 			clientNodeID := ids.GenerateTestNodeID()
 			serverNodeID := ids.GenerateTestNodeID()
