@@ -32,6 +32,7 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/chain"
+	"github.com/luxfi/node/vms/components/chain/blocktest"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/state"
 
@@ -44,9 +45,6 @@ var (
 )
 
 type fullVM struct {
-	*blocktest.VM
-	*blocktest.StateSyncableVM
-
 	// Override functions
 	InitializeF func(context.Context, context.Context, database.Database,
 		[]byte, []byte, []byte,

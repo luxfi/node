@@ -18,13 +18,27 @@ import (
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/database"
+	"github.com/luxfi/node/vms/components/chain/blocktest"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/summary"
 )
+
+// testStateSummary is a test implementation of block.StateSummary
+type testStateSummary struct {
+	IDV     ids.ID
+	HeightV uint64
+	BytesV  []byte
+}
+
+func (s *testStateSummary) ID() ids.ID       { return s.IDV }
+func (s *testStateSummary) Height() uint64   { return s.HeightV }
+func (s *testStateSummary) Bytes() []byte    { return s.BytesV }
+func (s *testStateSummary) Accept(context.Context) (block.StateSyncMode, error) {
+	return block.StateSyncSkipped, nil
+}
 
 func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	require := require.New(t)
@@ -115,7 +129,7 @@ func TestStateSyncGetOngoingSyncStateSummary(t *testing.T) {
 		require.NoError(vm.Shutdown(context.Background()))
 	}()
 
-	innerSummary := &blocktest.StateSummary{
+	innerSummary := &testStateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: uint64(2022),
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -199,7 +213,7 @@ func TestStateSyncGetLastStateSummary(t *testing.T) {
 		require.NoError(vm.Shutdown(context.Background()))
 	}()
 
-	innerSummary := &blocktest.StateSummary{
+	innerSummary := &testStateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: uint64(2022),
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -284,7 +298,7 @@ func TestStateSyncGetStateSummary(t *testing.T) {
 	}()
 	reqHeight := uint64(1969)
 
-	innerSummary := &blocktest.StateSummary{
+	innerSummary := &testStateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: reqHeight,
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -370,7 +384,7 @@ func TestParseStateSummary(t *testing.T) {
 	}()
 	reqHeight := uint64(1969)
 
-	innerSummary := &blocktest.StateSummary{
+	innerSummary := &testStateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: reqHeight,
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -448,7 +462,7 @@ func TestStateSummaryAccept(t *testing.T) {
 	}()
 	reqHeight := uint64(1969)
 
-	innerSummary := &blocktest.StateSummary{
+	innerSummary := &testStateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: reqHeight,
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
@@ -515,7 +529,7 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 	}()
 	reqHeight := uint64(1969)
 
-	innerSummary := &blocktest.StateSummary{
+	innerSummary := &testStateSummary{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'I', 'D'},
 		HeightV: reqHeight,
 		BytesV:  []byte{'i', 'n', 'n', 'e', 'r'},
