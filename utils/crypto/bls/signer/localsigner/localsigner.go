@@ -113,12 +113,12 @@ func (s *LocalSigner) PublicKey() *bls.PublicKey {
 
 // Sign [msg] to authorize this message
 func (s *LocalSigner) Sign(msg []byte) (*bls.Signature, error) {
-	return s.sk.Sign(msg), nil
+	return s.sk.Sign(msg)
 }
 
 // Sign [msg] to prove the ownership
 func (s *LocalSigner) SignProofOfPossession(msg []byte) (*bls.Signature, error) {
-	return s.sk.SignProofOfPossession(msg), nil
+	return s.sk.SignProofOfPossession(msg)
 }
 
 func (*LocalSigner) Shutdown() error {

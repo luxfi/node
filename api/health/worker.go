@@ -29,7 +29,7 @@ var (
 type worker struct {
 	log           log.Logger
 	name          string
-	failingChecks metrics.GaugeVec
+	failingChecks metric.GaugeVec
 	checksLock    sync.RWMutex
 	checks        map[string]*taggedChecker
 
@@ -53,7 +53,7 @@ type taggedChecker struct {
 func newWorker(
 	log log.Logger,
 	name string,
-	failingChecks metrics.GaugeVec,
+	failingChecks metric.GaugeVec,
 ) *worker {
 	// Initialize the number of failing checks to 0 for all checks
 	for _, tag := range []string{AllTag, ApplicationTag} {

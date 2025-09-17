@@ -4,7 +4,6 @@
 package router
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"context"
 	"sync"
 	"time"
@@ -37,7 +36,7 @@ type Router interface {
 		sybilProtectionEnabled bool,
 		onFatal func(int),
 		healthConfig HealthConfig,
-		reg metrics.Registerer,
+		reg metric.Registerer,
 		namespace string,
 	) error
 
@@ -118,8 +117,8 @@ type requestInfo struct {
 }
 
 type routerMetrics struct {
-	droppedMsgs metrics.Counter
-	routedMsgs  metrics.Counter
+	droppedMsgs metric.Counter
+	routedMsgs  metric.Counter
 	// Add more metrics as needed
 }
 
@@ -141,7 +140,7 @@ func (r *routerImpl) Initialize(
 	sybilProtectionEnabled bool,
 	onFatal func(int),
 	healthConfig HealthConfig,
-	reg metrics.Registerer,
+	reg metric.Registerer,
 	namespace string,
 ) error {
 	r.nodeID = nodeID
@@ -154,22 +153,22 @@ func (r *routerImpl) Initialize(
 
 	// Initialize metrics
 	r.metrics = &routerMetrics{
-		droppedMsgs: metrics.NewCounter(metrics.CounterOpts{
+		droppedMsgs: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "dropped_msgs",
 			Help:      "Number of dropped messages",
 		}),
-		routedMsgs: metrics.NewCounter(metrics.CounterOpts{
+		routedMsgs: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "routed_msgs",
 			Help:      "Number of successfully routed messages",
 		}),
 	}
 
-	if err := reg.Register(r.metrics.droppedMsgs.(prometheus.Collector)); err != nil {
+	if err := reg.Register(r.metrics.droppedMsgs); err != nil {
 		return err
 	}
-	if err := reg.Register(r.metrics.routedMsgs.(prometheus.Collector)); err != nil {
+	if err := reg.Register(r.metrics.routedMsgs); err != nil {
 		return err
 	}
 
