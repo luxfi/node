@@ -11,7 +11,7 @@ import (
 )
 
 // NewManager creates a new benchlist manager
-func NewManager(log log.Logger, reg metrics.Registerer, config *Config) Manager {
+func NewManager(log log.Logger, reg metric.Registerer, config *Config) Manager {
 	return &manager{
 		log:          log,
 		benchedNodes: make(map[ids.ID]map[ids.NodeID]time.Time),

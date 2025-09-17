@@ -1,35 +1,261 @@
-ok  	github.com/luxfi/node	1.026s
-?   	github.com/luxfi/node/api	[no test files]
-ok  	github.com/luxfi/node/api/admin	1.489s
-ok  	github.com/luxfi/node/api/auth	4.418s
-?   	github.com/luxfi/node/api/connectclient	[no test files]
-ok  	github.com/luxfi/node/api/health	1.083s
-ok  	github.com/luxfi/node/api/info	1.680s
-ok  	github.com/luxfi/node/api/keystore	4.013s
-?   	github.com/luxfi/node/api/keystore/gkeystore	[no test files]
-ok  	github.com/luxfi/node/api/metrics	1.037s
-ok  	github.com/luxfi/node/api/server	1.050s
-?   	github.com/luxfi/node/api/warp	[no test files]
-?   	github.com/luxfi/node/app	[no test files]
-?   	github.com/luxfi/node/benchlist	[no test files]
-ok  	github.com/luxfi/node/benchmarks	1.025s [no tests to run]
-ok  	github.com/luxfi/node/cache	1.024s
-?   	github.com/luxfi/node/cache/cachetest	[no test files]
-ok  	github.com/luxfi/node/cache/lru	1.026s
-?   	github.com/luxfi/node/cache/metercacher	[no test files]
---- FAIL: TestK1ConsensusIntegration (0.00s)
-    k1_integration_test.go:31: 
-        	Error Trace:	/home/z/work/lux/node/chains/k1_integration_test.go:31
-        	Error:      	Received unexpected error:
-        	            	alpha must be between 0.5 and 1.0
-        	Test:       	TestK1ConsensusIntegration
---- FAIL: TestK1ConsensusValidation (0.00s)
-    --- FAIL: TestK1ConsensusValidation/valid_k=1 (0.00s)
-        k1_integration_test.go:113: 
-            	Error Trace:	/home/z/work/lux/node/chains/k1_integration_test.go:113
-            	Error:      	Received unexpected error:
-            	            	alpha must be between 0.5 and 1.0
-            	Test:       	TestK1ConsensusValidation/valid_k=1
+FAIL	github.com/luxfi/node/tests/e2e [setup failed]
+ok  	github.com/luxfi/node	(cached)
+FAIL	github.com/luxfi/node/api/admin [build failed]
+ok  	github.com/luxfi/node/api/auth	(cached)
+FAIL	github.com/luxfi/node/api/connectclient [build failed]
+FAIL	github.com/luxfi/node/api/health [build failed]
+FAIL	github.com/luxfi/node/api/info [build failed]
+ok  	github.com/luxfi/node/api/keystore	(cached)
+FAIL	github.com/luxfi/node/api/metrics [build failed]
+FAIL	github.com/luxfi/node/api/server [build failed]
+FAIL	github.com/luxfi/node/api/warp [build failed]
+FAIL	github.com/luxfi/node/app [build failed]
+ok  	github.com/luxfi/node/benchmarks	(cached) [no tests to run]
+ok  	github.com/luxfi/node/cache	(cached)
+ok  	github.com/luxfi/node/cache/lru	(cached)
+FAIL	github.com/luxfi/node/chains [build failed]
+ok  	github.com/luxfi/node/chains/atomic	(cached)
+ok  	github.com/luxfi/node/codec	(cached) [no tests to run]
+ok  	github.com/luxfi/node/codec/reflectcodec	(cached)
+FAIL	github.com/luxfi/node/config [build failed]
+ok  	github.com/luxfi/node/config/node	(cached)
+ok  	github.com/luxfi/node/consensus	(cached)
+FAIL	github.com/luxfi/node/consensus/engine/chain/block [build failed]
+FAIL	github.com/luxfi/node/database [build failed]
+FAIL	github.com/luxfi/node/database/badgerdb [build failed]
+FAIL	github.com/luxfi/node/database/databasemock [build failed]
+FAIL	github.com/luxfi/node/database/dbtest [build failed]
+FAIL	github.com/luxfi/node/database/leveldb [build failed]
+FAIL	github.com/luxfi/node/database/pebbledb [build failed]
+FAIL	github.com/luxfi/node/database/prefixdb [build failed]
+ok  	github.com/luxfi/node/gas	(cached)
+FAIL	github.com/luxfi/node/genesis [build failed]
+FAIL	github.com/luxfi/node/genesis/generate/checkpoints [build failed]
+FAIL	github.com/luxfi/node/genesis/generate/validators [build failed]
+ok  	github.com/luxfi/node/ids	(cached)
+ok  	github.com/luxfi/node/ids/galiasreader	(cached)
+FAIL	github.com/luxfi/node/indexer [build failed]
+FAIL	github.com/luxfi/node/indexer/examples/p-chain [build failed]
+FAIL	github.com/luxfi/node/indexer/examples/x-chain-blocks [build failed]
+FAIL	github.com/luxfi/node/main [build failed]
+FAIL	github.com/luxfi/node/message [build failed]
+ok  	github.com/luxfi/node/nets	(cached)
+FAIL	github.com/luxfi/node/network [build failed]
+FAIL	github.com/luxfi/node/network/dialer [build failed]
+FAIL	github.com/luxfi/node/network/p2p [build failed]
+FAIL	github.com/luxfi/node/network/p2p/gossip [build failed]
+FAIL	github.com/luxfi/node/network/p2p/lp118 [build failed]
+FAIL	github.com/luxfi/node/network/p2p/p2ptest [build failed]
+FAIL	github.com/luxfi/node/network/peer [build failed]
+FAIL	github.com/luxfi/node/network/throttling [build failed]
+FAIL	github.com/luxfi/node/node [build failed]
+FAIL	github.com/luxfi/node/node/mocks [build failed]
+ok  	github.com/luxfi/node/pubsub	0.011s
+ok  	github.com/luxfi/node/pubsub/bloom	0.011s
+FAIL	github.com/luxfi/node/router [build failed]
+ok  	github.com/luxfi/node/staking	(cached)
+FAIL	github.com/luxfi/node/tests [build failed]
+FAIL	github.com/luxfi/node/tests/e2e/database [build failed]
+FAIL	github.com/luxfi/node/tests/e2e/p [build failed]
+ok  	github.com/luxfi/node/tests/fixture	(cached)
+FAIL	github.com/luxfi/node/tests/fixture/bootstrapmonitor [build failed]
+FAIL	github.com/luxfi/node/tests/fixture/bootstrapmonitor/cmd [build failed]
+FAIL	github.com/luxfi/node/tests/fixture/bootstrapmonitor/e2e [build failed]
+FAIL	github.com/luxfi/node/tests/fixture/e2e [build failed]
+FAIL	github.com/luxfi/node/tests/fixture/subnet [build failed]
+FAIL	github.com/luxfi/node/tests/fixture/tmpnet [build failed]
+FAIL	github.com/luxfi/node/tests/fixture/tmpnet/cmd [build failed]
+FAIL	github.com/luxfi/node/tests/fixture/tmpnet/flags [build failed]
+FAIL	github.com/luxfi/node/tests/fixture/tmpnet/local [build failed]
+FAIL	github.com/luxfi/node/tests/fixture/tmpnet/tmpnetctl [build failed]
+FAIL	github.com/luxfi/node/tests/integration [build failed]
+FAIL	github.com/luxfi/node/tests/load [build failed]
+FAIL	github.com/luxfi/node/tests/load/main [build failed]
+FAIL	github.com/luxfi/node/tests/poa [build failed]
+ok  	github.com/luxfi/node/trace	(cached)
+ok  	github.com/luxfi/node/upgrade	(cached)
+ok  	github.com/luxfi/node/utils	(cached)
+ok  	github.com/luxfi/node/utils/bag	(cached)
+ok  	github.com/luxfi/node/utils/beacon	(cached)
+ok  	github.com/luxfi/node/utils/bimap	(cached)
+ok  	github.com/luxfi/node/utils/bloom	0.411s
+ok  	github.com/luxfi/node/utils/buffer	(cached)
+ok  	github.com/luxfi/node/utils/cb58	(cached)
+ok  	github.com/luxfi/node/utils/compression	(cached)
+ok  	github.com/luxfi/node/utils/constants	(cached)
 FAIL
-FAIL	github.com/luxfi/node/chains	0.520s
+FAIL	github.com/luxfi/node/utils/crypto/bls	0.016s
+FAIL	github.com/luxfi/node/utils/crypto/bls/signer/localsigner [build failed]
+FAIL	github.com/luxfi/node/utils/crypto/bls/signer/rpcsigner	0.014s
+ok  	github.com/luxfi/node/utils/dynamicip	(cached)
+ok  	github.com/luxfi/node/utils/filesystem	(cached)
+ok  	github.com/luxfi/node/utils/formatting	(cached)
+ok  	github.com/luxfi/node/utils/hashing	(cached) [no tests to run]
+ok  	github.com/luxfi/node/utils/hashing/consistent	(cached)
+ok  	github.com/luxfi/node/utils/heap	(cached)
+ok  	github.com/luxfi/node/utils/ips	(cached)
+FAIL	github.com/luxfi/node/utils/iterator [build failed]
+ok  	github.com/luxfi/node/utils/json	(cached)
+ok  	github.com/luxfi/node/utils/linked	(cached)
+ok  	github.com/luxfi/node/utils/linkedhashmap	(cached)
+ok  	github.com/luxfi/node/utils/lock	(cached)
+ok  	github.com/luxfi/node/utils/math	(cached)
+ok  	github.com/luxfi/node/utils/math/meter	(cached)
+ok  	github.com/luxfi/node/utils/maybe	(cached)
+FAIL	github.com/luxfi/node/utils/metric [build failed]
+ok  	github.com/luxfi/node/utils/password	(cached)
+ok  	github.com/luxfi/node/utils/profiler	(cached)
+FAIL	github.com/luxfi/node/utils/resource [build failed]
+ok  	github.com/luxfi/node/utils/sampler	(cached)
+ok  	github.com/luxfi/node/utils/set	(cached)
+ok  	github.com/luxfi/node/utils/setmap	(cached)
+FAIL	github.com/luxfi/node/utils/timer [build failed]
+ok  	github.com/luxfi/node/utils/timer/mockable	(cached)
+ok  	github.com/luxfi/node/utils/tree	(cached)
+ok  	github.com/luxfi/node/utils/window	(cached)
+ok  	github.com/luxfi/node/utils/wrappers	(cached)
+ok  	github.com/luxfi/node/version	(cached)
+FAIL	github.com/luxfi/node/vms [build failed]
+FAIL	github.com/luxfi/node/vms/components/chain [build failed]
+FAIL	github.com/luxfi/node/vms/components/chain/blocktest [build failed]
+ok  	github.com/luxfi/node/vms/components/gas	(cached)
+FAIL	github.com/luxfi/node/vms/components/index [build failed]
+ok  	github.com/luxfi/node/vms/components/keystore	(cached)
+FAIL	github.com/luxfi/node/vms/components/lux [build failed]
+ok  	github.com/luxfi/node/vms/components/message	(cached)
+ok  	github.com/luxfi/node/vms/components/verify	(cached)
+ok  	github.com/luxfi/node/vms/evm/metrics/prometheus	(cached)
+FAIL	github.com/luxfi/node/vms/example/xsvm [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/api [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/builder [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/chain [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/account [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/chain [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/chain/create [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/chain/genesis [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue/export [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue/importtx [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/issue/transfer [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/run [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/version [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/versionjson [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/cmd/xsvm [build failed]
+FAIL	github.com/luxfi/node/vms/example/xsvm/execute [build failed]
+ok  	github.com/luxfi/node/vms/example/xsvm/genesis	(cached)
+FAIL	github.com/luxfi/node/vms/metervm [build failed]
+ok  	github.com/luxfi/node/vms/nftfx	(cached)
+FAIL	github.com/luxfi/node/vms/platformvm [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/api [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/block [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/block/builder [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/block/executor [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/block/executor/executormock [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/config [build failed]
+ok  	github.com/luxfi/node/vms/platformvm/fx	(cached) [no tests to run]
+FAIL	github.com/luxfi/node/vms/platformvm/genesis [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/genesis/genesistest [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/metrics [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/network [build failed]
+ok  	github.com/luxfi/node/vms/platformvm/reward	(cached)
+FAIL	github.com/luxfi/node/vms/platformvm/signer [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/stakeable [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/state [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/state/statetest [build failed]
+ok  	github.com/luxfi/node/vms/platformvm/status	(cached)
+FAIL	github.com/luxfi/node/vms/platformvm/txs [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/txs/builder [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/txs/executor [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/txs/fee [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/txs/mempool [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/txs/txheap [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/txs/txstest [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/utxo [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/utxo/utxomock [build failed]
+FAIL	github.com/luxfi/node/vms/platformvm/validators [build failed]
+ok  	github.com/luxfi/node/vms/platformvm/validators/fee	(cached)
+FAIL	github.com/luxfi/node/vms/platformvm/validators/validatorstest [build failed]
+FAIL
+FAIL	github.com/luxfi/node/vms/platformvm/warp	0.031s
+ok  	github.com/luxfi/node/vms/platformvm/warp/message	(cached)
+ok  	github.com/luxfi/node/vms/platformvm/warp/payload	(cached)
+ok  	github.com/luxfi/node/vms/propertyfx	(cached)
+FAIL	github.com/luxfi/node/vms/proposervm [build failed]
+FAIL	github.com/luxfi/node/vms/proposervm/block [build failed]
+FAIL	github.com/luxfi/node/vms/proposervm/indexer [build failed]
+ok  	github.com/luxfi/node/vms/proposervm/proposer	(cached)
+FAIL	github.com/luxfi/node/vms/proposervm/scheduler [build failed]
+FAIL	github.com/luxfi/node/vms/proposervm/state [build failed]
+ok  	github.com/luxfi/node/vms/proposervm/summary	(cached)
+ok  	github.com/luxfi/node/vms/proposervm/tree	(cached)
+FAIL	github.com/luxfi/node/vms/registry [build failed]
+FAIL	github.com/luxfi/node/vms/registry/registrymock [build failed]
+FAIL	github.com/luxfi/node/vms/rpcchainvm [build failed]
+FAIL	github.com/luxfi/node/vms/rpcchainvm/appsender [build failed]
+ok  	github.com/luxfi/node/vms/rpcchainvm/ghttp	(cached)
+ok  	github.com/luxfi/node/vms/rpcchainvm/ghttp/gconn	(cached)
+ok  	github.com/luxfi/node/vms/rpcchainvm/ghttp/greader	(cached)
+FAIL	github.com/luxfi/node/vms/rpcchainvm/grpcutils [build failed]
+FAIL	github.com/luxfi/node/vms/rpcchainvm/messenger [build failed]
+ok  	github.com/luxfi/node/vms/secp256k1fx	(cached)
+FAIL	github.com/luxfi/node/vms/tracedvm [build failed]
+FAIL	github.com/luxfi/node/vms/txs/mempool [build failed]
+ok  	github.com/luxfi/node/vms/types	(cached)
+FAIL	github.com/luxfi/node/vms/vmsmock [build failed]
+FAIL	github.com/luxfi/node/vms/xvm [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/block [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/block/builder [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/block/executor [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/block/executor/executormock [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/fxs [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/metrics [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/metrics/metricsmock [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/network [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/state [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/state/statemock [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/txs [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/txs/executor [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/txs/mempool [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/txs/txsmock [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/txs/txstest [build failed]
+FAIL	github.com/luxfi/node/vms/xvm/utxo [build failed]
+FAIL	github.com/luxfi/node/wallet/chain/c [build failed]
+FAIL	github.com/luxfi/node/wallet/chain/p [build failed]
+FAIL	github.com/luxfi/node/wallet/chain/p/builder [build failed]
+FAIL	github.com/luxfi/node/wallet/chain/p/signer [build failed]
+FAIL	github.com/luxfi/node/wallet/chain/p/wallet [build failed]
+FAIL	github.com/luxfi/node/wallet/chain/x [build failed]
+FAIL	github.com/luxfi/node/wallet/chain/x/builder [build failed]
+FAIL	github.com/luxfi/node/wallet/chain/x/signer [build failed]
+ok  	github.com/luxfi/node/wallet/keychain	(cached)
+FAIL	github.com/luxfi/node/wallet/net/primary [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/common [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/common/utxotest [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/add-permissioned-subnet-validator [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/add-primary-validator [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/c-chain-export [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/c-chain-import [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/convert-subnet-to-l1 [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/create-asset [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/create-chain [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/create-locked-stakeable [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/create-subnet [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/disable-l1-validator [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/get-p-chain-balance [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/get-x-chain-balance [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/increase-l1-validator-balance [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/register-l1-validator [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/remove-subnet-validator [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/set-l1-validator-weight [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-registration [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-removal-genesis [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-removal-registration [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-l1-validator-weight-update [build failed]
+FAIL	github.com/luxfi/node/wallet/net/primary/examples/sign-subnet-to-l1-conversion [build failed]
+ok  	github.com/luxfi/node/warp/socket	(cached)
+FAIL	github.com/luxfi/node/x/archivedb [build failed]
+FAIL	github.com/luxfi/node/x/merkledb [build failed]
+FAIL	github.com/luxfi/node/x/sync [build failed]
+FAIL	github.com/luxfi/node/x/sync/g_db [build failed]
+ok  	github.com/luxfi/node/xchain	(cached)
 FAIL
