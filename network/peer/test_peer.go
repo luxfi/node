@@ -10,7 +10,7 @@ import (
 	"net/netip"
 	"time"
 
-	luxmetrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
@@ -64,7 +64,7 @@ func StartTestPeer(
 	tlsConfg := TLSConfig(*tlsCert, nil)
 	clientUpgrader := NewTLSClientUpgrader(
 		tlsConfg,
-		luxmetric.NewCounter(luxmetric.CounterOpts{}),
+		metric.NewCounter(metric.CounterOpts{}),
 	)
 
 	peerID, conn, cert, err := clientUpgrader.Upgrade(conn)
@@ -73,10 +73,10 @@ func StartTestPeer(
 	}
 
 	// Create a prometheus registry for metrics
-	promRegistry := luxmetrics.NewPrometheusRegistry()
+	promRegistry := metric.NewRegistry()
 
 	// Create a no-op metrics instance for message creator
-	metricsInstance := luxmetrics.NewNoOpMetrics("test")
+	metricsInstance := metric.NewNoOp()
 
 	mc, err := message.NewCreator(
 		nil,

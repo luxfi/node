@@ -184,6 +184,7 @@ func TestMultiGathererSorted(t *testing.T) {
 	mfs, err := g.Gather()
 	require.NoError(err)
 	require.Len(mfs, 2)
-	require.Equal(&name0, mfs[0].Name)
-	require.Equal(&name1, mfs[1].Name)
+	// Check that metrics are sorted by name
+	require.Equal(name0, *mfs[0].Name)
+	require.Equal(name1, *mfs[1].Name)
 }

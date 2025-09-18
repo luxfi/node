@@ -95,7 +95,7 @@ func TestLabelGatherer_Gather(t *testing.T) {
 			gatherer := NewLabelGatherer(labelName)
 			require.NotNil(gatherer)
 
-			registerA := metric.NewNoOpRegistry()
+			registerA := metric.NewRegistry()
 			require.NoError(gatherer.Register(labelValueA, registerA))
 			{
 				counterA := metric.NewCounterVec(
@@ -103,12 +103,12 @@ func TestLabelGatherer_Gather(t *testing.T) {
 					[]string{test.labelName},
 				)
 				counterA.With(metric.Labels{test.labelName: customLabelValueA})
-				collector := metrics.AsCollector(counterA)
+				collector := metric.AsCollector(counterA)
 				require.NotNil(collector)
 				require.NoError(registerA.Register(collector))
 			}
 
-			registerB := metric.NewNoOpRegistry()
+			registerB := metric.NewRegistry()
 			require.NoError(gatherer.Register(labelValueB, registerB))
 			{
 				counterB := metric.NewCounterVec(
@@ -116,7 +116,7 @@ func TestLabelGatherer_Gather(t *testing.T) {
 					[]string{customLabelName},
 				)
 				counterB.With(metric.Labels{customLabelName: customLabelValueB}).Inc()
-				collector := metrics.AsCollector(counterB)
+				collector := metric.AsCollector(counterB)
 				require.NotNil(collector)
 				require.NoError(registerB.Register(collector))
 			}

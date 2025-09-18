@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/luxfi/ids"
-	luxmetrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"
@@ -41,7 +41,7 @@ type VMGetterConfig struct {
 	PluginDirectory string
 	CPUTracker      resource.ProcessTracker
 	RuntimeTracker  runtime.Tracker
-	MetricsGatherer luxmetrics.MultiGatherer
+	MetricsGatherer metric.MultiGatherer
 }
 
 type vmGetter struct {

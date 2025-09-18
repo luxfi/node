@@ -112,14 +112,14 @@ func benchmarkReexecuteRange(b *testing.B, sourceBlockDir string, targetDir stri
 
 	// Create the prefix gatherer passed to the VM and register it with the top-level,
 	// labeled gatherer.
-	prefixGatherer := metrics.NewPrefixGatherer()
+	prefixGatherer := metric.NewPrefixGatherer()
 
-	vmMultiGatherer := metrics.NewPrefixGatherer()
+	vmMultiGatherer := metric.NewPrefixGatherer()
 	r.NoError(prefixGatherer.Register("lux_evm", vmMultiGatherer))
 
 	// consensusRegistry includes the chain="C" label and the prefix "lux_chain".
 	// The consensus registry is passed to the executor to mimic a subset of consensus metrics.
-	consensusRegistry := metrics.NewRegistry()
+	consensusRegistry := metric.NewRegistry()
 	r.NoError(prefixGatherer.Register("lux_chain", consensusRegistry))
 
 	if metricsEnabled {
@@ -147,7 +147,7 @@ func benchmarkReexecuteRange(b *testing.B, sourceBlockDir string, targetDir stri
 
 	dbLogger := tests.NewDefaultLogger("db")
 
-	db, err := leveldb.New(targetDBDir, nil, dbLogger, metrics.NewRegistry())
+	db, err := leveldb.New(targetDBDir, nil, dbLogger, metric.NewRegistry())
 	r.NoError(err)
 	defer func() {
 		log.Info("shutting down DB")
@@ -220,7 +220,7 @@ func newMainnetCChainVM(
 
 	if err := vm.Initialize(
 		ctx,
-		&consensus.Context{
+		&context.Context{
 			NetworkID:       constants.MainnetID,
 			NetID:        constants.PrimaryNetworkID,
 			ChainID:         mainnetCChainID,
@@ -379,7 +379,7 @@ func createBlockChanFromLevelDB(tb testing.TB, sourceDir string, startBlock, end
 	r := require.New(tb)
 	ch := make(chan blockResult, chanSize)
 
-	db, err := leveldb.New(sourceDir, nil, logging.NoLog{}, metrics.NewRegistry())
+	db, err := leveldb.New(sourceDir, nil, logging.NoLog{}, metric.NewRegistry())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create leveldb database from %q: %w", sourceDir, err)
 	}
@@ -446,7 +446,7 @@ func exportBlockRange(tb testing.TB, sourceDir string, targetDir string, startBl
 	blockChan, err := createBlockChanFromLevelDB(tb, sourceDir, startBlock, endBlock, chanSize)
 	r.NoError(err)
 
-	db, err := leveldb.New(targetDir, nil, logging.NoLog{}, metrics.NewRegistry())
+	db, err := leveldb.New(targetDir, nil, logging.NoLog{}, metric.NewRegistry())
 	r.NoError(err)
 	tb.Cleanup(func() {
 		r.NoError(db.Close())

@@ -17,7 +17,7 @@ type MintOutput struct {
 	OutputOwners `serialize:"true"`
 }
 
-// InitializeWithContext implements context.ContextInitializable
+// InitializeWithContext implements consensus.ContextInitializable
 func (out *MintOutput) InitializeWithContext(ctx context.Context) error {
 	return nil
 }

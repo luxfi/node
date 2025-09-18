@@ -259,7 +259,7 @@ func (vm *VM) initialize(
 	)
 
 	// Get metrics from a global registry or create new one
-	vm.registerer = prometheus.NewRegistry()
+	vm.registerer = metric.NewRegistry()
 
 	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
 

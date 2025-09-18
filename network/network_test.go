@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	luxmetrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
@@ -236,7 +236,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 
 	mc, err := message.NewCreator(
 		nil,
-		luxmetrics.NewNoOpMetrics("test"),
+		metric.NewNoOp(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -260,7 +260,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []consensusrouter.Inbou
 	)
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := luxmetric.NewNoOpRegistry()
+		registry := metric.NewNoOpRegistry()
 
 		// Use a simple test validator manager since AddStaker isn't in the interface
 		beacons := &testAggressiveValidatorManager{Manager: validators.NewManager()}
@@ -486,7 +486,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := luxmetric.NewNoOpRegistry()
+		registry := metric.NewNoOpRegistry()
 
 		// Use a simple test validator manager since AddStaker isn't in the interface
 		beacons := &testAggressiveValidatorManager{Manager: validators.NewManager()}
@@ -568,7 +568,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := luxmetric.NewNoOpRegistry()
+		registry := metric.NewNoOpRegistry()
 
 		beacons := validators.NewManager()
 		// Note: Can't add stakers with consensus validators.Manager
@@ -721,7 +721,7 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := luxmetric.NewNoOpRegistry()
+		registry := metric.NewNoOpRegistry()
 
 		beacons := validators.NewManager()
 		// Note: Can't add stakers with consensus validators.Manager

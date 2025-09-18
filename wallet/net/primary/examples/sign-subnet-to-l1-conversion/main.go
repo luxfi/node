@@ -81,7 +81,7 @@ func main() {
 
 	messageBuilder, err := p2pmessage.NewCreator(
 		luxlog.NewNoOpLogger(),
-		metrics.NewNoOp(),
+		metric.NewNoOp(),
 		compression.TypeZstd,
 		time.Hour,
 	)

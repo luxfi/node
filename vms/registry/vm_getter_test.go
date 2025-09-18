@@ -145,7 +145,7 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 		time.Hour,
 		time.Hour,
 		time.Hour,
-		metric.NewNoOpRegistry(),
+		metric.NewRegistry(),
 	)
 	require.NoError(t, err)
 

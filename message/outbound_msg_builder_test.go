@@ -19,7 +19,7 @@ func Test_newOutboundBuilder(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		nil,
-		metrics.NewNoOpMetrics("test"),
+		metric.NewNoOp(),
 		10*time.Second,
 	)
 	require.NoError(t, err)

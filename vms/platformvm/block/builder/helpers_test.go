@@ -213,28 +213,28 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		Rewards:      rewardsCalc,
 	}
 
-	registerer := metrics.NewRegistry()
+	registerer := metric.NewRegistry()
 	res.sender = &coremock.MockAppSender{
 		SendAppGossipF: func(_ context.Context, _ set.Set[ids.NodeID], _ []byte) error {
 			return nil
 		},
 	}
 
-	metricsInstance, err := metrics.New(registerer)
-	require.NoError(err)
+	platformMetrics := metrics.Noop
 
+	var err error
 	res.mempool, err = mempool.New("mempool", registerer, nil)
 	require.NoError(err)
 
 	res.blkManager = blockexecutor.NewManager(
 		res.mempool,
-		metricsInstance,
+		platformMetrics,
 		res.state,
 		&res.backend,
 		pvalidators.TestManager,
 	)
 
-	validatorManager := pvalidators.NewManager(res.ctx.Log, *res.config, res.state, metricsInstance, res.clk)
+	validatorManager := pvalidators.NewManager(res.ctx.Log, *res.config, res.state, platformMetrics, res.clk)
 	txVerifier := network.NewLockedTxVerifier(res.ctx.Lock, res.blkManager)
 	res.network, err = network.New(
 		res.ctx.Log,
@@ -337,11 +337,11 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		metrics.NewRegistry(),
+		metric.NewRegistry(),
 		cfg,
 		execCfg,
 		ctx,
-		metrics.Noop,
+		metric.NewNoOp(),
 		rewards,
 	)
 	require.NoError(err)

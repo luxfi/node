@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	luxmetrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus"
 	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
@@ -51,7 +51,7 @@ import (
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
-	utilsmetric "github.com/luxfi/node/utils/metric"
+	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
@@ -175,7 +175,7 @@ type ChainParameters struct {
 type chainInfo struct {
 	Name    string
 	Context context.Context
-	VM      interface{} // Changed from core.VM since core.VM uses consensus.Context
+	VM      interface{} // Changed from core.VM since core.VM uses context.Context
 	Handler handler.Handler
 	Engine  Engine // Added to handle Start/Stop operations
 }
@@ -448,8 +448,8 @@ type ManagerConfig struct {
 	ShutdownNodeFunc func(exitCode int)
 	MeterVMEnabled   bool // Should each VM be wrapped with a MeterVM
 
-	Metrics        luxmetrics.MultiGatherer
-	MeterDBMetrics luxmetrics.MultiGatherer
+	Metrics        metric.MultiGatherer
+	MeterDBMetrics metric.MultiGatherer
 
 	FrontierPollFrequency   time.Duration
 	ConsensusAppConcurrency int
@@ -502,55 +502,55 @@ type manager struct {
 	// linear++ related interface to allow validators retrieval
 	validatorState validators.State
 
-	luxGatherer          luxmetrics.MultiGatherer            // chainID
-	handlerGatherer      luxmetrics.MultiGatherer            // chainID
-	meterChainVMGatherer luxmetrics.MultiGatherer            // chainID
-	meterGRAPHVMGatherer luxmetrics.MultiGatherer            // chainID
-	proposervmGatherer   luxmetrics.MultiGatherer            // chainID
-	p2pGatherer          luxmetrics.MultiGatherer            // chainID
-	linearGatherer       luxmetrics.MultiGatherer            // chainID
-	stakeGatherer        luxmetrics.MultiGatherer            // chainID
-	vmGatherer           map[ids.ID]luxmetrics.MultiGatherer // vmID -> chainID
+	luxGatherer          metric.MultiGatherer            // chainID
+	handlerGatherer      metric.MultiGatherer            // chainID
+	meterChainVMGatherer metric.MultiGatherer            // chainID
+	meterGRAPHVMGatherer metric.MultiGatherer            // chainID
+	proposervmGatherer   metric.MultiGatherer            // chainID
+	p2pGatherer          metric.MultiGatherer            // chainID
+	linearGatherer       metric.MultiGatherer            // chainID
+	stakeGatherer        metric.MultiGatherer            // chainID
+	vmGatherer           map[ids.ID]metric.MultiGatherer // vmID -> chainID
 }
 
 // New returns a new Manager
 func New(config *ManagerConfig) (Manager, error) {
-	luxGatherer := luxmetrics.NewLabelGatherer(ChainLabel)
+	luxGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(luxNamespace, luxGatherer); err != nil {
 		return nil, err
 	}
 
-	handlerGatherer := luxmetrics.NewLabelGatherer(ChainLabel)
+	handlerGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(handlerNamespace, handlerGatherer); err != nil {
 		return nil, err
 	}
 
-	meterChainVMGatherer := luxmetrics.NewLabelGatherer(ChainLabel)
+	meterChainVMGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(meterchainvmNamespace, meterChainVMGatherer); err != nil {
 		return nil, err
 	}
 
-	meterGRAPHVMGatherer := luxmetrics.NewLabelGatherer(ChainLabel)
+	meterGRAPHVMGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(meterdagvmNamespace, meterGRAPHVMGatherer); err != nil {
 		return nil, err
 	}
 
-	proposervmGatherer := luxmetrics.NewLabelGatherer(ChainLabel)
+	proposervmGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(proposervmNamespace, proposervmGatherer); err != nil {
 		return nil, err
 	}
 
-	p2pGatherer := luxmetrics.NewLabelGatherer(ChainLabel)
+	p2pGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(p2pNamespace, p2pGatherer); err != nil {
 		return nil, err
 	}
 
-	linearGatherer := luxmetrics.NewLabelGatherer(ChainLabel)
+	linearGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(linearNamespace, linearGatherer); err != nil {
 		return nil, err
 	}
 
-	stakeGatherer := luxmetrics.NewLabelGatherer(ChainLabel)
+	stakeGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(stakeNamespace, stakeGatherer); err != nil {
 		return nil, err
 	}
@@ -571,7 +571,7 @@ func New(config *ManagerConfig) (Manager, error) {
 		p2pGatherer:          p2pGatherer,
 		linearGatherer:       linearGatherer,
 		stakeGatherer:        stakeGatherer,
-		vmGatherer:           make(map[ids.ID]luxmetrics.MultiGatherer),
+		vmGatherer:           make(map[ids.ID]metric.MultiGatherer),
 	}, nil
 }
 
@@ -750,7 +750,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 	chainLog := m.Log // Use main log instead of creating chain-specific log
 
 	// linearMetrics was here but not used in context.Context
-	// linearMetrics, err := luxmetrics.MakeAndRegister(
+	// linearMetrics, err := metric.MakeAndRegister(
 	// 	m.linearGatherer,
 	// 	primaryAlias,
 	// )
@@ -904,7 +904,7 @@ func (m *manager) createLuxChain(
 	_ = &validatorStateWrapper{
 		state: m.validatorState,
 	}
-	meterDBReg, err := luxmetrics.MakeAndRegister(
+	meterDBReg, err := metric.MakeAndRegister(
 		m.MeterDBMetrics,
 		primaryAlias,
 	)
@@ -913,7 +913,7 @@ func (m *manager) createLuxChain(
 	}
 
 	// Create Metrics from Registry for meterdb
-	meterDBMetrics := luxmetrics.NewWithRegistry(primaryAlias, meterDBReg)
+	meterDBMetrics := metric.NewWithRegistry(primaryAlias, meterDBReg)
 	meterDB, err := meterdb.New(meterDBMetrics, m.DB)
 	if err != nil {
 		return nil, err
@@ -926,7 +926,7 @@ func (m *manager) createLuxChain(
 	txBootstrappingDB := prefixdb.New(TxBootstrappingDBPrefix, prefixDB)
 	_ = prefixdb.New(BlockBootstrappingDBPrefix, prefixDB) // blockBootstrappingDB not used for DAG
 
-	luxMetricsReg, err := luxmetrics.MakeAndRegister(
+	luxMetricsReg, err := metric.MakeAndRegister(
 		m.luxGatherer,
 		primaryAlias,
 	)
@@ -935,7 +935,7 @@ func (m *manager) createLuxChain(
 	}
 
 	// Convert Registry to Metrics for queue functions
-	luxMetrics := luxmetrics.NewWithRegistry(primaryAlias, luxMetricsReg)
+	luxMetrics := metric.NewWithRegistry(primaryAlias, luxMetricsReg)
 
 	// Create queue blockers for bootstrapping
 	vtxBlocker := queue.NewQueue()
@@ -992,7 +992,7 @@ func (m *manager) createLuxChain(
 		chainblockVM = tracedvm.NewBlockVM(chainblockVM, primaryAlias, m.Tracer)
 	}
 
-	proposervmReg, err := luxmetrics.MakeAndRegister(
+	proposervmReg, err := metric.MakeAndRegister(
 		m.proposervmGatherer,
 		primaryAlias,
 	)
@@ -1017,7 +1017,7 @@ func (m *manager) createLuxChain(
 	)
 
 	if m.MeterVMEnabled {
-		meterchainvmReg, err := luxmetrics.MakeAndRegister(
+		meterchainvmReg, err := metric.MakeAndRegister(
 			m.meterChainVMGatherer,
 			primaryAlias,
 		)
@@ -1058,7 +1058,7 @@ func (m *manager) createLuxChain(
 		sampleK = int(bootstrapWeight)
 	}
 
-	_, err = luxmetrics.MakeAndRegister(
+	_, err = metric.MakeAndRegister(
 		m.stakeGatherer,
 		primaryAlias,
 	)
@@ -1074,7 +1074,7 @@ func (m *manager) createLuxChain(
 	// vdrs.RegisterSetCallbackListener(netID, connectedValidators)
 	_ = interface{}(nil) // connectedValidators placeholder
 
-	p2pReg, err := luxmetrics.MakeAndRegister(
+	p2pReg, err := metric.MakeAndRegister(
 		m.p2pGatherer,
 		primaryAlias,
 	)
@@ -1093,7 +1093,7 @@ func (m *manager) createLuxChain(
 		return nil, fmt.Errorf("error creating peer tracker: %w", err)
 	}
 
-	_, err = luxmetrics.MakeAndRegister(
+	_, err = metric.MakeAndRegister(
 		m.handlerGatherer,
 		primaryAlias,
 	)
@@ -1324,7 +1324,7 @@ func (m *manager) createLinearChain(
 	if err := os.MkdirAll(chainDataDir, perms.ReadWriteExecute); err != nil {
 		return nil, fmt.Errorf("error while creating chain data directory %w", err)
 	}
-	meterDBReg, err := luxmetrics.MakeAndRegister(
+	meterDBReg, err := metric.MakeAndRegister(
 		m.MeterDBMetrics,
 		primaryAlias,
 	)
@@ -1333,7 +1333,7 @@ func (m *manager) createLinearChain(
 	}
 
 	// Create Metrics from Registry for meterdb
-	meterDBMetrics := luxmetrics.NewWithRegistry(primaryAlias, meterDBReg)
+	meterDBMetrics := metric.NewWithRegistry(primaryAlias, meterDBReg)
 	meterDB, err := meterdb.New(meterDBMetrics, m.DB)
 	if err != nil {
 		return nil, err
@@ -1490,7 +1490,7 @@ func (m *manager) createLinearChain(
 
 	// Only wrap with proposervm if not Platform chain
 	if !skipProposerVM {
-		proposervmReg, err := luxmetrics.MakeAndRegister(
+		proposervmReg, err := metric.MakeAndRegister(
 			m.proposervmGatherer,
 			primaryAlias,
 		)
@@ -1514,7 +1514,7 @@ func (m *manager) createLinearChain(
 	}
 
 	if m.MeterVMEnabled {
-		meterchainvmReg, err := luxmetrics.MakeAndRegister(
+		meterchainvmReg, err := metric.MakeAndRegister(
 			m.meterChainVMGatherer,
 			primaryAlias,
 		)
@@ -1621,7 +1621,7 @@ func (m *manager) createLinearChain(
 		sampleK = int(bootstrapWeight)
 	}
 
-	_, err = luxmetrics.MakeAndRegister(
+	_, err = metric.MakeAndRegister(
 		m.stakeGatherer,
 		primaryAlias,
 	)
@@ -1637,7 +1637,7 @@ func (m *manager) createLinearChain(
 	// vdrs.RegisterSetCallbackListener(netID, connectedValidators)
 	_ = interface{}(nil) // connectedValidators placeholder
 
-	p2pReg, err := luxmetrics.MakeAndRegister(
+	p2pReg, err := metric.MakeAndRegister(
 		m.p2pGatherer,
 		primaryAlias,
 	)
@@ -1656,7 +1656,7 @@ func (m *manager) createLinearChain(
 		return nil, fmt.Errorf("error creating peer tracker: %w", err)
 	}
 
-	_, err = luxmetrics.MakeAndRegister(
+	_, err = metric.MakeAndRegister(
 		m.handlerGatherer,
 		primaryAlias,
 	)
@@ -1952,7 +1952,7 @@ func (m *manager) LookupVM(alias string) (ids.ID, error) {
 func (m *manager) notifyRegistrants(name string, ctx context.Context, vm interface{}) {
 	for _, registrant := range m.registrants {
 		// registrant.RegisterChain expects core.VM, but we use interface{}
-		// since core.VM uses consensus.Context which we're not using
+		// since core.VM uses context.Context which we're not using
 		if coreVM, ok := vm.(core.VM); ok {
 			registrant.RegisterChain(name, ctx, coreVM)
 		}
@@ -1978,12 +1978,12 @@ func (m *manager) getChainConfig(id ids.ID) (ChainConfig, error) {
 	return ChainConfig{}, nil
 }
 
-func (m *manager) getOrMakeVMRegisterer(vmID ids.ID, chainAlias string) (luxmetrics.MultiGatherer, error) {
+func (m *manager) getOrMakeVMRegisterer(vmID ids.ID, chainAlias string) (metric.MultiGatherer, error) {
 	vmGatherer, ok := m.vmGatherer[vmID]
 	if !ok {
 		vmName := constants.VMName(vmID)
-		vmNamespace := utilsmetric.AppendNamespace(constants.PlatformName, vmName)
-		vmGatherer = luxmetrics.NewLabelGatherer(ChainLabel)
+		vmNamespace := utilmetric.AppendNamespace(constants.PlatformName, vmName)
+		vmGatherer = metric.NewLabelGatherer(ChainLabel)
 		err := m.Metrics.Register(
 			vmNamespace,
 			vmGatherer,
@@ -1994,7 +1994,7 @@ func (m *manager) getOrMakeVMRegisterer(vmID ids.ID, chainAlias string) (luxmetr
 		m.vmGatherer[vmID] = vmGatherer
 	}
 
-	chainReg := luxmetrics.NewPrefixGatherer()
+	chainReg := metric.NewPrefixGatherer()
 	err := vmGatherer.Register(
 		chainAlias,
 		chainReg,

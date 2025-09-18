@@ -16,7 +16,7 @@ func TestBatch(t *testing.T) {
 	require := require.New(t)
 	dirName := t.TempDir()
 
-	db, err := New(dirName, nil, log.NewNoOpLogger(), metric.NewNoOpRegistry())
+	db, err := New(dirName, nil, log.NewNoOpLogger(), metric.NewRegistry())
 	require.NoError(err)
 
 	batchIntf := db.NewBatch()

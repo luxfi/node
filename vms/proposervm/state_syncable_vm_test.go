@@ -59,7 +59,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOp().Registry(),
 		},
 	)
 

@@ -39,7 +39,7 @@ type Config struct {
 	Upgrades   upgrade.Config
 	Config     config.Config
 	Context    context.Context
-	Metrics    metrics.Metrics
+	Metrics    metric.Metrics
 	Rewards    reward.Calculator
 }
 
@@ -63,7 +63,7 @@ func New(t testing.TB, c Config) state.State {
 		})
 	}
 	if c.Registerer == nil {
-		c.Registerer = metrics.NewPrometheusRegistry()
+		c.Registerer = metric.NewRegistry()
 	}
 	if c.Validators == nil {
 		c.Validators = validators.NewManager()
@@ -81,7 +81,7 @@ func New(t testing.TB, c Config) state.State {
 		c.Config.Validators = c.Validators
 	}
 	if c.Metrics == nil {
-		c.Metrics = metrics.NewNoOp()
+		c.Metrics = metric.NewNoOp()
 	}
 	if c.Rewards == nil {
 		c.Rewards = reward.NewCalculator(reward.Config{

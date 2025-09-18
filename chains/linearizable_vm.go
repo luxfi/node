@@ -248,7 +248,7 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	if cc, ok := chainCtx.(*block.ChainContext); ok && cc != nil {
 		// consensusCtx := cc.Context
 		// Context reassignment commented out due to type mismatch
-		// TODO: Fix context type compatibility between consensus.Context and context.Context
+		// TODO: Fix context type compatibility between context.Context and context.Context
 	}
 
 	// Get current database from DBManager

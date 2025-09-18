@@ -19,21 +19,21 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 	gatherer := NewPrefixGatherer()
 	require.NotNil(gatherer)
 
-	registerA := metric.NewNoOpRegistry()
+	registerA := metric.NewRegistry()
 	require.NoError(gatherer.Register("a", registerA))
 	{
 		counterA := metric.NewCounter(counterOpts)
-		collector := metrics.AsCollector(counterA)
+		collector := metric.AsCollector(counterA)
 		require.NotNil(collector)
 		require.NoError(registerA.Register(collector))
 	}
 
-	registerB := metric.NewNoOpRegistry()
+	registerB := metric.NewRegistry()
 	require.NoError(gatherer.Register("b", registerB))
 	{
 		counterB := metric.NewCounter(counterOpts)
 		counterB.Inc()
-		collector := metrics.AsCollector(counterB)
+		collector := metric.AsCollector(counterB)
 		require.NotNil(collector)
 		require.NoError(registerB.Register(collector))
 	}

@@ -65,11 +65,8 @@ func NewTestBlock(i uint64, parentID ids.ID) *blocktest.Block {
 	b := []byte{byte(i)}
 	id := hashing.ComputeHash256Array(b)
 	return &blocktest.Block{
-		Decidable: consensustest.Decidable{
-			IDV:     id,
-			StatusV: choices.Processing,
-		},
-		StatusV: consensustest.Processing,
+		IDV:     id,
+		StatusV: uint8(choices.Processing),
 		HeightV: i,
 		ParentV: parentID,
 		BytesV:  b,
@@ -567,7 +564,7 @@ func TestBuildBlockError(t *testing.T) {
 func TestMeteredCache(t *testing.T) {
 	require := require.New(t)
 
-	registry := metrics.NewRegistry()
+	registry := metric.NewRegistry()
 
 	testBlks := NewTestBlocks(1)
 	genesisBlock := testBlks[0]

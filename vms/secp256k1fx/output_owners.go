@@ -36,7 +36,7 @@ type OutputOwners struct {
 	ctx context.Context
 }
 
-// InitializeWithContext implements context.ContextInitializable
+// InitializeWithContext implements consensus.ContextInitializable
 func (out *OutputOwners) InitializeWithContext(ctx context.Context) error {
 	out.ctx = ctx
 	return nil

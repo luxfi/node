@@ -7,14 +7,13 @@
 package vm
 
 import (
-	reflect "reflect"
-	sync "sync"
-
 	_go "github.com/prometheus/client_model/go"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	reflect "reflect"
+	sync "sync"
 )
 
 const (
@@ -255,7 +254,7 @@ type InitializeRequest struct {
 	DbServerAddr string `protobuf:"bytes,13,opt,name=db_server_addr,json=dbServerAddr,proto3" json:"db_server_addr,omitempty"`
 	// server_addr is the address of the gRPC server which serves
 	// the messenger, keystore, shared memory, blockchain alias,
-	// net alias, and appSender services
+	// subnet alias, and appSender services
 	ServerAddr string `protobuf:"bytes,14,opt,name=server_addr,json=serverAddr,proto3" json:"server_addr,omitempty"`
 }
 
@@ -3491,7 +3490,7 @@ var file_vm_vm_proto_goTypes = []interface{}{
 	(*StateSummaryAcceptRequest)(nil),          // 46: vm.StateSummaryAcceptRequest
 	(*StateSummaryAcceptResponse)(nil),         // 47: vm.StateSummaryAcceptResponse
 	(*timestamppb.Timestamp)(nil),              // 48: google.protobuf.Timestamp
-	(*_go.MetricFamily)(nil),                   // 49: io.metrics.client.MetricFamily
+	(*_go.MetricFamily)(nil),                   // 49: io.prometheus.client.MetricFamily
 	(*emptypb.Empty)(nil),                      // 50: google.protobuf.Empty
 }
 var file_vm_vm_proto_depIdxs = []int32{
@@ -3510,7 +3509,7 @@ var file_vm_vm_proto_depIdxs = []int32{
 	48, // 12: vm.CrossChainAppRequestMsg.deadline:type_name -> google.protobuf.Timestamp
 	13, // 13: vm.BatchedParseBlockResponse.response:type_name -> vm.ParseBlockResponse
 	2,  // 14: vm.GetBlockIDAtHeightResponse.err:type_name -> vm.Error
-	49, // 15: vm.GatherResponse.metric_families:type_name -> io.metrics.client.MetricFamily
+	49, // 15: vm.GatherResponse.metric_families:type_name -> io.prometheus.client.MetricFamily
 	2,  // 16: vm.StateSyncEnabledResponse.err:type_name -> vm.Error
 	2,  // 17: vm.GetOngoingSyncStateSummaryResponse.err:type_name -> vm.Error
 	2,  // 18: vm.GetLastStateSummaryResponse.err:type_name -> vm.Error

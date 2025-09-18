@@ -5,6 +5,7 @@ package metrics
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/luxfi/metric"
@@ -17,7 +18,7 @@ type MultiGatherer interface {
 	metric.Gatherer
 
 	// Register adds the outputs of [gatherer] to the results of future calls to
-	// Gather with the provided [name] added to the metrics.
+	// Gather with the provided [name] added to the metric.
 	Register(name string, gatherer metric.Gatherer) error
 
 	// Deregister removes the outputs of a gatherer with [name] from the results
@@ -50,6 +51,12 @@ func (g *multiGatherer) Gather() ([]*dto.MetricFamily, error) {
 		}
 		allFamilies = append(allFamilies, families...)
 	}
+
+	// Sort metrics by name for consistent ordering
+	sort.Slice(allFamilies, func(i, j int) bool {
+		return *allFamilies[i].Name < *allFamilies[j].Name
+	})
+
 	return allFamilies, nil
 }
 
@@ -78,7 +85,7 @@ func (g *multiGatherer) Deregister(name string) bool {
 }
 
 func MakeAndRegister(gatherer MultiGatherer, name string) (metric.Registry, error) {
-	reg := metric.NewNoOpRegistry()
+	reg := metric.NewRegistry()
 	if err := gatherer.Register(name, reg); err != nil {
 		return nil, fmt.Errorf("couldn't register %q metrics: %w", name, err)
 	}
