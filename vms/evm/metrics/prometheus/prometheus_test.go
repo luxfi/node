@@ -65,7 +65,7 @@ func TestGatherer_Gather(t *testing.T) {
 	
 	/*metricstest.WithMetrics(t)
 
-	registry := metrics.NewRegistry()
+	registry := metric.NewRegistry()
 	register := func(t *testing.T, name string, collector any) {
 		t.Helper()
 		err := registry.Register(name, collector)
@@ -88,7 +88,7 @@ func TestGatherer_Gather(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test gathering with unsupported metric type
-	register(t, "unsupported", metrics.NewHealthcheck(nil))
+	register(t, "unsupported", metric.NewHealthcheck(nil))
 	metrics, err := gatherer.Gather()
 	require.ErrorIs(t, err, errMetricTypeNotSupported)
 	require.Equal(t, wantMetrics, metrics)*/
@@ -115,16 +115,16 @@ func TestGatherer_Gather(t *testing.T) {
 	gaugeInfo.Update(metric.GaugeInfoValue{"key": "value"})
 	register(t, "test/gauge_info", gaugeInfo) // skipped
 
-	sample := metrics.NewUniformSample(1028)
+	sample := metric.NewUniformSample(1028)
 	histogram := metric.NewHistogram(sample)
 	register(t, "test/histogram", histogram)
 
-	meter := metrics.NewMeter()
+	meter := metric.NewMeter()
 	t.Cleanup(meter.Stop)
 	meter.Mark(9999999)
 	register(t, "test/meter", meter)
 
-	timer := metrics.NewTimer()
+	timer := metric.NewTimer()
 	t.Cleanup(timer.Stop)
 	timer.Update(20 * time.Millisecond)
 	timer.Update(21 * time.Millisecond)
@@ -134,11 +134,11 @@ func TestGatherer_Gather(t *testing.T) {
 	timer.Update(24 * time.Millisecond)
 	register(t, "test/timer", timer)
 
-	resettingTimer := metrics.NewResettingTimer()
+	resettingTimer := metric.NewResettingTimer()
 	register(t, "test/resetting_timer", resettingTimer)
 	resettingTimer.Update(time.Second) // must be after register call
 
-	emptyResettingTimer := metrics.NewResettingTimer()
+	emptyResettingTimer := metric.NewResettingTimer()
 	register(t, "test/empty_resetting_timer", emptyResettingTimer)
 
 	emptyResettingTimer.Update(time.Second) // no effect because of snapshot below
@@ -157,10 +157,10 @@ func registerNilMetrics(t *testing.T, register func(t *testing.T, name string, c
 	register(t, "nil/gauge", metric.NewGauge())
 	register(t, "nil/gauge_float64", metric.NewGaugeFloat64())
 	register(t, "nil/gauge_info", metric.NewGaugeInfo())
-	register(t, "nil/healthcheck", metrics.NewHealthcheck(nil))
+	register(t, "nil/healthcheck", metric.NewHealthcheck(nil))
 	register(t, "nil/histogram", metric.NewHistogram(nil))
-	register(t, "nil/meter", metrics.NewMeter())
-	register(t, "nil/resetting_timer", metrics.NewResettingTimer())
-	register(t, "nil/sample", metrics.NewUniformSample(1028))
-	register(t, "nil/timer", metrics.NewTimer())
+	register(t, "nil/meter", metric.NewMeter())
+	register(t, "nil/resetting_timer", metric.NewResettingTimer())
+	register(t, "nil/sample", metric.NewUniformSample(1028))
+	register(t, "nil/timer", metric.NewTimer())
 }*/

@@ -7,11 +7,10 @@
 package p2p
 
 import (
-	reflect "reflect"
-	sync "sync"
-
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	reflect "reflect"
+	sync "sync"
 )
 
 const (
@@ -555,9 +554,9 @@ type SubnetUptime struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Net the peer is validating
+	// Subnet the peer is validating
 	SubnetId []byte `protobuf:"bytes,1,opt,name=subnet_id,json=subnetId,proto3" json:"subnet_id,omitempty"`
-	// Uptime percentage on the net [0, 100]
+	// Uptime percentage on the subnet [0, 100]
 	Uptime uint32 `protobuf:"varint,2,opt,name=uptime,proto3" json:"uptime,omitempty"`
 }
 

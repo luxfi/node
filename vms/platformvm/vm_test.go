@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/core/interfaces"
+	"github.com/luxfi/consensus/interfaces"
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/benchlist"
 	consContext "github.com/luxfi/consensus/context"
@@ -253,8 +253,7 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 	atomicDB := prefixdb.New([]byte{1}, db)
 
 	vm.Clock().Set(latestForkTime)
-	baseCtx := consensustest.Context(t, consensustest.PChainID)
-	ctx := testcontext.New(baseCtx)
+	ctx := testcontext.New(context.Background())
 	ctx.ChainID = consensustest.PChainID
 	ctx.LUXAssetID = ids.GenerateTestID()
 
@@ -281,13 +280,11 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 		XChainID:    ctx.XChainID,
 		CChainID:    ctx.CChainID,
 		AVAXAssetID: ctx.LUXAssetID,
-		Log:         ctx.Log,
-		Lock:        ctx.Lock,
-		Registerer:  nil,
+		LUXAssetID:  ctx.LUXAssetID,
 		StartTime:   time.Now(),
 	}
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &block.ConsensusContext{},
+		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 	
@@ -437,6 +434,10 @@ func TestAddValidatorCommit(t *testing.T) {
 	sk, err := bls.NewSecretKey()
 	require.NoError(err)
 
+	// Generate proof of possession
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(err)
+
 	// create valid tx
 	builder, txSigner := factory.NewWallet(keys[0])
 	utx, err := builder.NewAddPermissionlessValidatorTx(
@@ -449,7 +450,7 @@ func TestAddValidatorCommit(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -608,6 +609,10 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 	sk, err := bls.NewSecretKey()
 	require.NoError(err)
 
+	// Generate proof of possession
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(err)
+
 	// create valid tx
 	builder, txSigner := factory.NewWallet(keys[0])
 	utx, err := builder.NewAddPermissionlessValidatorTx(
@@ -620,7 +625,7 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -1247,8 +1252,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 		},
 	}}
 
-	baseCtx1 := consensustest.Context(t, consensustest.PChainID)
-	firstCtx := testcontext.New(baseCtx1)
+	firstCtx := testcontext.New(context.Background())
 	firstCtx.ChainID = consensustest.PChainID
 	firstCtx.LUXAssetID = ids.GenerateTestID()
 
@@ -1277,7 +1281,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &block.ConsensusContext{},
+		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 
@@ -1362,8 +1366,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 		},
 	}}
 
-	baseCtx2 := consensustest.Context(t, consensustest.PChainID)
-	secondCtx := testcontext.New(baseCtx2)
+	secondCtx := testcontext.New(context.Background())
 	secondCtx.ChainID = consensustest.PChainID
 	secondCtx.LUXAssetID = firstCtx.LUXAssetID
 	secondCtx.SharedMemory = firstCtx.SharedMemory
@@ -1388,7 +1391,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 	}
 
 	chainCtx2 := &linearblock.ChainContext{
-		ConsensusContext: &block.ConsensusContext{},
+		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx2,
 	}
 
@@ -1442,7 +1445,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 // 	initialClkTime := latestForkTime.Add(time.Second)
 // 	vm.Clock().Set(initialClkTime)
 // 	baseCtx := consensustest.Context(t, consensustest.PChainID)
-// 	ctx := testcontext.New(baseCtx)
+// 	ctx := testcontext.New(context.Background())
 // 	ctx.ChainID = consensustest.PChainID
 // 	ctx.LUXAssetID = ids.GenerateTestID()
 // 
@@ -1454,7 +1457,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 // 
 // 	msgChan := make(chan linearblock.Message, 1)
 // 	// Create consensus context for chain context
-// 	consensusCtx := consensus.Context{
+// 	consensusCtx := context.Context{
 // 		ConsensusContext: consensus.ConsensusContext{
 // 			Alpha:        1,
 // 			BetaVirtuous: 1,
@@ -1824,8 +1827,7 @@ func TestUnverifiedParent(t *testing.T) {
 
 	initialClkTime := latestForkTime.Add(time.Second)
 	vm.Clock().Set(initialClkTime)
-	baseCtx := consensustest.Context(t, consensustest.PChainID)
-	ctx := testcontext.New(baseCtx)
+	ctx := testcontext.New(context.Background())
 	ctx.ChainID = consensustest.PChainID
 	ctx.LUXAssetID = ids.GenerateTestID()
 	ctx.Lock.Lock()
@@ -1850,7 +1852,7 @@ func TestUnverifiedParent(t *testing.T) {
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &block.ConsensusContext{},
+		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 
@@ -2010,8 +2012,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		},
 	}}
 
-	baseCtx1 := consensustest.Context(t, consensustest.PChainID)
-	firstCtx := testcontext.New(baseCtx1)
+	firstCtx := testcontext.New(context.Background())
 	firstCtx.ChainID = consensustest.PChainID
 	firstCtx.LUXAssetID = ids.GenerateTestID()
 	firstCtx.Lock.Lock()
@@ -2032,7 +2033,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &block.ConsensusContext{},
+		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 
@@ -2085,8 +2086,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		},
 	}}
 
-	baseCtx2 := consensustest.Context(t, consensustest.PChainID)
-	secondCtx := testcontext.New(baseCtx2)
+	secondCtx := testcontext.New(context.Background())
 	secondCtx.ChainID = consensustest.PChainID
 	secondCtx.LUXAssetID = firstCtx.LUXAssetID
 	secondCtx.Lock.Lock()
@@ -2113,7 +2113,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	}
 
 	secondChainCtx := &linearblock.ChainContext{
-		ConsensusContext: &block.ConsensusContext{},
+		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          secondLuxCtx,
 	}
 
@@ -2211,8 +2211,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 		},
 	}}
 
-	baseCtx := consensustest.Context(t, consensustest.PChainID)
-	ctx := testcontext.New(baseCtx)
+	ctx := testcontext.New(context.Background())
 	ctx.ChainID = consensustest.PChainID
 	ctx.LUXAssetID = ids.GenerateTestID()
 	ctx.Lock.Lock()
@@ -2237,7 +2236,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &block.ConsensusContext{},
+		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 
@@ -2339,6 +2338,10 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	sk, err := bls.NewSecretKey()
 	require.NoError(err)
 
+	// Generate proof of possession
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(err)
+
 	builder, txSigner := factory.NewWallet(keys[0])
 	uAddValTx, err := builder.NewAddPermissionlessValidatorTx(
 		&txs.NetValidator{
@@ -2350,7 +2353,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -2689,6 +2692,10 @@ func TestPruneMempool(t *testing.T) {
 	sk, err := bls.NewSecretKey()
 	require.NoError(err)
 
+	// Generate proof of possession
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(err)
+
 	builder, txSigner = factory.NewWallet(keys[1])
 	uAddValTx, err := builder.NewAddPermissionlessValidatorTx(
 		&txs.NetValidator{
@@ -2700,7 +2707,7 @@ func TestPruneMempool(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,

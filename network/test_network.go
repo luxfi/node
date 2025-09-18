@@ -14,7 +14,7 @@ import (
 	"time"
 
 
-	luxmetrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
@@ -80,7 +80,7 @@ func NewTestNetwork(
 	trackedSubnets set.Set[ids.ID],
 	router ExternalHandler,
 ) (Network, error) {
-	m := luxmetrics.NewNoOpMetrics("test")
+	m := metric.NewNoOp()
 	msgCreator, err := message.NewCreator(
 		log,
 		m,
@@ -105,7 +105,7 @@ func NewTestNetwork(
 	// TODO actually monitor usage
 	// TestNetwork doesn't use disk so we don't need to track it, but we should
 	// still have guardrails around cpu/memory usage.
-	promRegistry := prometheus.NewRegistry()
+	promRegistry := metric.NewNoOpRegistry()
 
 	resourceTracker := &noOpResourceTracker{}
 
@@ -300,10 +300,10 @@ func (n *noOpValidatorSet) Sample(size int) ([]ids.NodeID, error)   { return nil
 // noOpMetricsFactory is a no-op metrics factory for testing
 type noOpMetricsFactory struct{}
 
-func (n *noOpMetricsFactory) New(string) luxmetrics.Metrics {
-	return luxmetrics.NewNoOpMetrics("test")
+func (n *noOpMetricsFactory) New(string) metric.Metrics {
+	return metric.NewNoOp()
 }
 
-func (n *noOpMetricsFactory) NewWithRegistry(string, luxmetric.Registry) luxmetrics.Metrics {
-	return luxmetrics.NewNoOpMetrics("test")
+func (n *noOpMetricsFactory) NewWithRegistry(string, metric.Registry) metric.Metrics {
+	return metric.NewNoOp()
 }

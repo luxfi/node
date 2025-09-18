@@ -5,11 +5,12 @@ package server
 
 import (
 	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type serverMetrics struct {
-	requests  *metric.CounterVec
-	duration  *metric.HistogramVec
+	requests  metric.CounterVec
+	duration  *prometheus.HistogramVec
 	inflight  metric.Gauge
 }
 
@@ -22,8 +23,8 @@ func newMetrics(registerer metric.Registerer) (*serverMetrics, error) {
 			},
 			[]string{"method", "endpoint"},
 		),
-		duration: metric.NewHistogramVec(
-			metric.HistogramOpts{
+		duration: prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
 				Name: "api_request_duration_seconds",
 				Help: "API request duration in seconds",
 			},

@@ -4,14 +4,14 @@
 package metervm
 
 import (
-	luxmetrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 
-	"github.com/luxfi/node/utils/metric"
+	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
-func newAverager(name string, reg luxmetrics.Registerer, errs *wrappers.Errs) metric.Averager {
-	return metric.NewAveragerWithErrs(
+func newAverager(name string, reg metric.Registerer, errs *wrappers.Errs) utilmetric.Averager {
+	return utilmetric.NewAveragerWithErrs(
 		name,
 		"time (in ns) of a "+name,
 		reg,

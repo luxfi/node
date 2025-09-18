@@ -23,7 +23,6 @@ import (
 	"github.com/luxfi/consensus/validators/validatorsmock"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -78,7 +77,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 			DurangoTime:       time.Unix(0, 0),
 			StakingCertLeaf:   &staking.Certificate{},
 			StakingLeafSigner: pk,
-			Registerer:        metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:        metric.NewNoOp().Registry(),
 		},
 		ChainVM:        innerVM,
 		blockBuilderVM: innerBlockBuilderVM,
@@ -391,7 +390,7 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 			DurangoTime:       time.Unix(0, 0),
 			StakingCertLeaf:   &staking.Certificate{},
 			StakingLeafSigner: pk,
-			Registerer:        metrics.NewNoOpMetrics("test").Registry(),
+			Registerer:        metric.NewNoOp().Registry(),
 		},
 		ChainVM: block.NewMockChainVM(ctrl),
 		ctx: &context.Context{

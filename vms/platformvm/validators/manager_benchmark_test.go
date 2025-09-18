@@ -121,7 +121,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	s, err := state.New(
 		db,
 		genesisBytes,
-		metrics.NewRegistry(),
+		metric.NewRegistry(),
 		&config.Config{
 			Validators: vdrs,
 		},

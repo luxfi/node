@@ -20,27 +20,12 @@ type Client struct {
 	client validatorstatepb.ValidatorStateClient
 }
 
-func (c *Client) GetMinimumHeight(ctx context.Context) (uint64, error) {
-	// validators.State doesn't have GetMinimumHeight - return 0
-	return 0, nil
-}
-
 func (c *Client) GetCurrentHeight(ctx context.Context) (uint64, error) {
 	resp, err := c.client.GetCurrentHeight(ctx, &emptypb.Empty{})
 	if err != nil {
 		return 0, err
 	}
 	return resp.Height, nil
-}
-
-func (c *Client) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	resp, err := c.client.GetNetID(ctx, &validatorstatepb.GetNetIDRequest{
-		ChainId: chainID[:],
-	})
-	if err != nil {
-		return ids.ID{}, err
-	}
-	return ids.ToID(resp.SubnetId)
 }
 
 func (c *Client) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
@@ -70,13 +55,4 @@ func (c *Client) GetValidatorSet(ctx context.Context, height uint64, netID ids.I
 func (c *Client) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	// Call GetValidatorSet with the same parameters
 	return c.GetValidatorSet(ctx, height, netID)
-}
-
-func (c *Client) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*validators.GetValidatorOutput, uint64, error) {
-	// For now, just return empty map and current height since we don't have full support for this
-	height, err := c.GetCurrentHeight(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	return nil, height, nil
 }

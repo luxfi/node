@@ -102,7 +102,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 
 	mc, err := message.NewCreator(
 		log.NoLog{},
-		metrics.NewNoOpMetrics("test"),
+		metric.NewNoOp(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -115,7 +115,7 @@ func newConfig(t *testing.T) Config {
 	t.Helper()
 	require := require.New(t)
 
-	metrics, err := NewMetrics(metrics.NewNoOpMetrics("test").Registry())
+	metrics, err := NewMetrics(metric.NewNoOp().Registry())
 	require.NoError(err)
 
 	// Create a no-op consensus resource tracker for testing
@@ -465,7 +465,7 @@ func TestInvalidBLSKeyDisconnects(t *testing.T) {
 		rawPeer0.config.Validators,
 		constants.PrimaryNetworkID,
 		rawPeer1.nodeID,
-		rawPeer1.config.IPSigner.PublicKey().Bytes(),
+		bls.PublicKeyToCompressedBytes(rawPeer1.config.IPSigner.PublicKey()),
 		ids.GenerateTestID(),
 		1,
 	))
@@ -476,7 +476,7 @@ func TestInvalidBLSKeyDisconnects(t *testing.T) {
 		rawPeer1.config.Validators,
 		constants.PrimaryNetworkID,
 		rawPeer0.nodeID,
-		bogusBLSKey.PublicKey().Bytes(), // This is the wrong BLS key for this peer
+		bls.PublicKeyToCompressedBytes(bogusBLSKey.PublicKey()), // This is the wrong BLS key for this peer
 		ids.GenerateTestID(),
 		1,
 	))
@@ -598,7 +598,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey().Bytes(),
+							bls.PublicKeyToCompressedBytes(blsKey.PublicKey()),
 							txID,
 							1,
 						))
@@ -618,7 +618,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey().Bytes(),
+							bls.PublicKeyToCompressedBytes(blsKey.PublicKey()),
 							txID,
 							1,
 						))
@@ -642,7 +642,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey().Bytes(),
+							bls.PublicKeyToCompressedBytes(blsKey.PublicKey()),
 							txID,
 							1,
 						))
@@ -662,7 +662,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey().Bytes(),
+							bls.PublicKeyToCompressedBytes(blsKey.PublicKey()),
 							txID,
 							1,
 						))
@@ -686,7 +686,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey().Bytes(),
+							bls.PublicKeyToCompressedBytes(blsKey.PublicKey()),
 							txID,
 							1,
 						))
@@ -708,7 +708,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey().Bytes(),
+							bls.PublicKeyToCompressedBytes(blsKey.PublicKey()),
 							txID,
 							1,
 						))
@@ -734,7 +734,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey().Bytes(),
+							bls.PublicKeyToCompressedBytes(blsKey.PublicKey()),
 							txID,
 							1,
 						))
@@ -756,7 +756,7 @@ func TestShouldDisconnect(t *testing.T) {
 						require.NoError(t, addStaker(vdrs,
 							constants.PrimaryNetworkID,
 							peerID,
-							blsKey.PublicKey().Bytes(),
+							bls.PublicKeyToCompressedBytes(blsKey.PublicKey()),
 							txID,
 							1,
 						))

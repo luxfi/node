@@ -215,7 +215,7 @@ func (vm *VM) Initialize(
 	fmt.Printf("Got execution config successfully\n")
 
 	// Use luxfi/metric registry for metrics
-	registerer := metrics.NewPrometheusRegistry()
+	registerer := metric.NewRegistry()
 
 	// Initialize platformvm-specific metrics
 	vm.metrics, err = platformvmmetrics.New(registerer)
@@ -224,7 +224,7 @@ func (vm *VM) Initialize(
 	}
 
 	// Create luxfi/metric.Metrics instance for state
-	stateMetrics := metrics.NewWithRegistry("", registerer)
+	stateMetrics := metric.NewWithRegistry("", registerer)
 
 	// ChainContext is compatible with context.Context
 	if chainCtx != nil {

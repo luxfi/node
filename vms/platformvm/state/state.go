@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/google/btree"
-	luxmetrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/uptime"
@@ -451,11 +451,11 @@ func blockSize(_ ids.ID, blk block.Block) int {
 func New(
 	db database.Database,
 	genesisBytes []byte,
-	metricsReg luxmetric.Registerer,
+	metricsReg metric.Registerer,
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
 	ctx context.Context,
-	metrics luxmetrics.Metrics,
+	metrics metric.Metrics,
 	rewards reward.Calculator,
 ) (State, error) {
 	s, err := newState(
@@ -483,11 +483,11 @@ func New(
 
 func newState(
 	db database.Database,
-	metricsIn luxmetrics.Metrics,
+	metricsIn metric.Metrics,
 	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
 	ctx context.Context,
-	metricsReg luxmetric.Registerer,
+	metricsReg metric.Registerer,
 	rewards reward.Calculator,
 ) (*state, error) {
 	// Create platformvm-specific metrics

@@ -219,13 +219,10 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		Rewards:      rewardsCalc,
 	}
 
-	registerer := metrics.NewPrometheusRegistry()
+	registerer := metric.NewRegistry()
 	res.sender = &coremock.MockAppSender{}
 
-	metricsInstance, err := metrics.New(registerer)
-	if err != nil {
-		panic(fmt.Errorf("failed to create metrics: %w", err))
-	}
+	platformMetrics := metrics.Noop
 
 	res.mempool, err = mempool.New("mempool", registerer, nil)
 	if err != nil {
@@ -235,7 +232,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 	if ctrl == nil {
 		res.blkManager = NewManager(
 			res.mempool,
-			metricsInstance,
+			platformMetrics,
 			res.state,
 			res.backend,
 			pvalidators.TestManager,
@@ -244,7 +241,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 	} else {
 		res.blkManager = NewManager(
 			res.mempool,
-			metricsInstance,
+			platformMetrics,
 			res.mockedState,
 			res.backend,
 			pvalidators.TestManager,
@@ -267,11 +264,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		if res.isBootstrapped.Get() {
 			validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 
-			// Only stop tracking if there are validators to stop
-			for _, validatorID := range validatorIDs {
-				// Ignore the error if tracking wasn't started
-				_ = res.uptimes.StopTracking(validatorID)
-			}
+			// NoOpCalculator doesn't track validators, so no need to stop
 			require.NoError(res.state.Commit())
 		}
 
@@ -342,11 +335,11 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		metrics.NewPrometheusRegistry(),
+		metric.NewRegistry(),
 		cfg,
 		execCfg,
 		ctx,
-		metrics.Noop,
+		metric.NewNoOp(),
 		rewards,
 	)
 	if err != nil {

@@ -33,8 +33,8 @@ func TestInvalidGenesis(t *testing.T) {
 
 	vm := &VM{}
 	ctx := consensustest.Context(t, ids.GenerateTestID())
-	ctx.Lock.Lock()
-	defer ctx.Lock.Unlock()
+	// Tests don't need locking as they run single-threaded
+	// Remove Lock references that don't exist in consensus context
 
 	toEngine := make(chan interface{}, 1)
 	err := vm.Initialize(
@@ -56,10 +56,8 @@ func TestInvalidFx(t *testing.T) {
 
 	vm := &VM{}
 	ctx := consensustest.Context(t, ids.GenerateTestID())
-	ctx.Lock.Lock()
 	defer func() {
 		vm.Shutdown()
-		ctx.Lock.Unlock()
 	}()
 
 	genesisBytes := buildGenesisTest(t)
@@ -84,10 +82,8 @@ func TestFxInitializationFailure(t *testing.T) {
 
 	vm := &VM{}
 	ctx := consensustest.Context(t, ids.GenerateTestID())
-	ctx.Lock.Lock()
 	defer func() {
 		vm.Shutdown()
-		ctx.Lock.Unlock()
 	}()
 
 	genesisBytes := buildGenesisTest(t)

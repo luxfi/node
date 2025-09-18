@@ -81,7 +81,7 @@ func TestMeteredBlockState(t *testing.T) {
 	a := require.New(t)
 
 	db := memdb.New()
-	bs, err := NewMeteredBlockState(db, "", metrics.NewNoOpMetrics("test").Registry())
+	bs, err := NewMeteredBlockState(db, "", metric.NewNoOp().Registry())
 	a.NoError(err)
 
 	testBlockState(a, bs)

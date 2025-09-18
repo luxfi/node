@@ -791,7 +791,7 @@ func wrapWarpSignatureRequest(
 ) (p2pmessage.OutboundMessage, error) {
 	p2pMessageFactory, err := p2pmessage.NewCreator(
 		log.NoLog{},
-		metrics.NewNoOpMetrics("").Registry(),
+		metric.NewNoOp().Registry(),
 		constants.DefaultNetworkCompressionType,
 		p2pTimeout,
 	)

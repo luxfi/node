@@ -24,6 +24,7 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/utils/set"
 	consensuschain "github.com/luxfi/consensus/protocol/chain"
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -89,7 +90,7 @@ type VMClient struct {
 	runtime         runtime.Stopper
 	pid             int
 	processTracker  resource.ProcessTracker
-	metricsGatherer metrics.MultiGatherer
+	metricsGatherer metric.MultiGatherer
 
 	messenger *messenger.Server
 	// keystore             *gkeystore.Server // Keystore removed
@@ -111,7 +112,7 @@ func NewClient(
 	runtime runtime.Stopper,
 	pid int,
 	processTracker resource.ProcessTracker,
-	metricsGatherer metrics.MultiGatherer,
+	metricsGatherer metric.MultiGatherer,
 ) *VMClient {
 	return &VMClient{
 		client:          vmpb.NewVMClient(clientConn),
@@ -135,7 +136,7 @@ func (vm *VMClient) Initialize(
 	appSender interface{},
 ) error {
 	// Type assert to get concrete types
-	var consensusCtx *consensus.Context
+	var consensusCtx *consensuscontext.Context
 	if cc, ok := chainCtx.(*block.ChainContext); ok && cc != nil {
 		consensusCtx = cc.Context
 		if consensusCtx != nil {
@@ -172,7 +173,7 @@ func (vm *VMClient) Initialize(
 	}
 
 	// Register metrics
-	serverReg, err := metrics.MakeAndRegister(
+	serverReg, err := metric.MakeAndRegister(
 		vm.metricsGatherer,
 		primaryAlias,
 	)
@@ -219,7 +220,7 @@ func (vm *VMClient) Initialize(
 	// vm.keystore = gkeystore.NewServer(chainContext.Keystore) // Keystore removed from context.Context
 
 	// Create SharedMemory wrapper if available
-	// SharedMemory is not part of the consensus.Context, skip it
+	// SharedMemory is not part of the context.Context, skip it
 	// vm.sharedMemory = gsharedmemory.NewServer(nil, dbMgr)
 
 	// Create BCLookup wrapper - handle interface{} type

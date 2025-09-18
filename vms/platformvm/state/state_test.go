@@ -46,8 +46,6 @@ import (
 
 	"github.com/luxfi/node/vms/platformvm/genesis"
 
-	"github.com/luxfi/node/vms/platformvm/metrics"
-
 	"github.com/luxfi/node/vms/platformvm/reward"
 
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -181,7 +179,7 @@ func TestPersistStakers(t *testing.T) {
 				}, valOut)
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
-				upDuration, lastUpdated, err := s.GetUptime(staker.NodeID)
+				upDuration, lastUpdated, err := s.GetUptime(staker.NodeID, staker.NetID)
 				if staker.NetID == constants.PrimaryNetworkID {
 					r.NoError(err)
 					r.Equal(upDuration, time.Duration(0))
@@ -340,7 +338,7 @@ func TestPersistStakers(t *testing.T) {
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
 				// pending validators uptime is not tracked
-				_, _, err := s.GetUptime(staker.NodeID)
+				_, _, err := s.GetUptime(staker.NodeID, staker.NetID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
@@ -462,7 +460,7 @@ func TestPersistStakers(t *testing.T) {
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
 				// uptimes of delete validators are dropped
-				_, _, err := s.GetUptime(staker.NodeID)
+				_, _, err := s.GetUptime(staker.NodeID, staker.NetID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
@@ -616,7 +614,7 @@ func TestPersistStakers(t *testing.T) {
 				r.Empty(valsMap)
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
-				_, _, err := s.GetUptime(staker.NodeID)
+				_, _, err := s.GetUptime(staker.NodeID, staker.NetID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
@@ -802,13 +800,13 @@ func newStateFromDB(require *require.Assertions, db database.Database) *state {
 	execCfg, _ := config.GetExecutionConfig(nil)
 	state, err := newState(
 		db,
-		metrics.Noop,
+		metric.NewNoOp(),
 		&config.Config{
 			Validators: validators.NewManager(),
 		},
 		execCfg,
 		context.Background(),
-		metrics.NewRegistry(),
+		metric.NewRegistry(),
 		reward.NewCalculator(reward.Config{
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .1 * reward.PercentDenominator,
@@ -826,7 +824,8 @@ func createPermissionlessValidatorTx(r *require.Assertions, netID ids.ID, valida
 	if netID == constants.PrimaryNetworkID {
 		sk, err := bls.NewSecretKey()
 		r.NoError(err)
-		sig = signer.NewProofOfPossession(sk)
+		sig, err = signer.NewProofOfPossession(sk)
+		r.NoError(err)
 	}
 
 	return &txs.AddPermissionlessValidatorTx{

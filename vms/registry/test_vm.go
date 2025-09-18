@@ -7,8 +7,9 @@ import (
 	"context"
 	"net/http"
 
+	consensusContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
-	consContext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/database/manager"
 )
 
@@ -27,7 +28,7 @@ func newTestVM() *testVM {
 
 func (vm *testVM) Initialize(
 	ctx context.Context,
-	chainCtx *consContext.Context,
+	chainCtx *consensusContext.Context,
 	db manager.Manager,
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -39,7 +40,7 @@ func (vm *testVM) Initialize(
 	return nil
 }
 
-func (vm *testVM) SetState(ctx context.Context, state core.VMState) error {
+func (vm *testVM) SetState(ctx context.Context, state interfaces.State) error {
 	return nil
 }
 

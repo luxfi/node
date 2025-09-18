@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	luxmetrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
@@ -53,7 +53,7 @@ type PeerTracker struct {
 	// Max heap that contains the average bandwidth of peers that do not have an
 	// outstanding request.
 	bandwidthHeap heap.Map[ids.NodeID, safemath.Averager]
-	// Average bandwidth is only used for metrics.
+	// Average bandwidth is only used for metric.
 	averageBandwidth safemath.Averager
 
 	// The below fields are assumed to be constant and are not protected by the
@@ -65,15 +65,15 @@ type PeerTracker struct {
 }
 
 type peerTrackerMetrics struct {
-	numTrackedPeers    luxmetric.Gauge
-	numResponsivePeers luxmetric.Gauge
-	averageBandwidth   luxmetric.Gauge
+	numTrackedPeers    metric.Gauge
+	numResponsivePeers metric.Gauge
+	averageBandwidth   metric.Gauge
 }
 
 func NewPeerTracker(
 	log log.Logger,
 	metricsNamespace string,
-	registerer luxmetric.Registerer,
+	registerer metric.Registerer,
 	ignoredNodes set.Set[ids.NodeID],
 	minVersion *version.Application,
 ) (*PeerTracker, error) {
@@ -87,22 +87,22 @@ func NewPeerTracker(
 		ignoredNodes:     ignoredNodes,
 		minVersion:       minVersion,
 		metrics: peerTrackerMetrics{
-			numTrackedPeers: luxmetric.NewGauge(
-				luxmetric.GaugeOpts{
+			numTrackedPeers: metric.NewGauge(
+				metric.GaugeOpts{
 					Namespace: metricsNamespace,
 					Name:      "num_tracked_peers",
 					Help:      "number of tracked peers",
 				},
 			),
-			numResponsivePeers: luxmetric.NewGauge(
-				luxmetric.GaugeOpts{
+			numResponsivePeers: metric.NewGauge(
+				metric.GaugeOpts{
 					Namespace: metricsNamespace,
 					Name:      "num_responsive_peers",
 					Help:      "number of responsive peers",
 				},
 			),
-			averageBandwidth: luxmetric.NewGauge(
-				luxmetric.GaugeOpts{
+			averageBandwidth: metric.NewGauge(
+				metric.GaugeOpts{
 					Namespace: metricsNamespace,
 					Name:      "average_bandwidth",
 					Help:      "average sync bandwidth used by peers",

@@ -51,7 +51,7 @@ func newDefaultConfig() Config {
 		IntermediateNodeCacheSize:   units.MiB,
 		IntermediateWriteBufferSize: units.KiB,
 		IntermediateWriteBatchSize:  256 * units.KiB,
-		Reg:                         metrics.NewNoOpMetrics("test").Registry(),
+		Reg:                         metric.NewNoOp().Registry(),
 		TraceLevel:                  InfoTrace,
 		Tracer:                      trace.Noop,
 	}

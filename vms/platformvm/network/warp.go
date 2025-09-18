@@ -167,8 +167,8 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 	// }
 
 	// switch preimage := justification.GetPreimage().(type) {
-	// case *platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData:
-	// 	return s.verifyNetValidatorNotCurrentlyRegistered(msg.ValidationID, preimage.ConvertNetToL1TxData)
+	// case *platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData:
+	// 	return s.verifyNetValidatorNotCurrentlyRegistered(msg.ValidationID, preimage.ConvertSubnetToL1TxData)
 	// case *platformvm.L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage:
 	// 	return s.verifyNetValidatorCanNotValidate(msg.ValidationID, preimage.RegisterL1ValidatorMessage)
 	// default:
@@ -212,7 +212,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistered(
 // is not currently a validator.
 func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 	validationID ids.ID,
-	justification *platformvm.NetIDIndex,
+	justification *platformvm.SubnetIDIndex,
 ) *common.AppError {
 	// netID, err := ids.ToID(justification.GetSubnetId())
 	// if err != nil {

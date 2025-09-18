@@ -26,7 +26,7 @@ func TestNew(t *testing.T) {
 		SkipBootstrap:    true,
 		EnableAutomining: true,
 		Log:              log.NewNoOpLogger(),
-		Metrics:          metrics.NewMultiGatherer(),
+		Metrics:          metric.NewMultiGatherer(),
 		VMManager:        vms.NewManager(nil, ids.NewAliaser()),
 		ChainDataDir:     t.TempDir(),
 	}
@@ -64,7 +64,7 @@ func TestQueueChainCreation(t *testing.T) {
 
 	config := &ManagerConfig{
 		Log:          log.NewNoOpLogger(),
-		Metrics:      metrics.NewMultiGatherer(),
+		Metrics:      metric.NewMultiGatherer(),
 		VMManager:    vms.NewManager(nil, ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
 		Subnets:      subnets,
@@ -101,7 +101,7 @@ func TestLookup(t *testing.T) {
 
 	config := &ManagerConfig{
 		Log:          log.NewNoOpLogger(),
-		Metrics:      metrics.NewMultiGatherer(),
+		Metrics:      metric.NewMultiGatherer(),
 		VMManager:    vms.NewManager(nil, ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
 	}
@@ -137,7 +137,7 @@ func TestIsBootstrapped(t *testing.T) {
 
 	config := &ManagerConfig{
 		Log:          log.NewNoOpLogger(),
-		Metrics:      metrics.NewMultiGatherer(),
+		Metrics:      metric.NewMultiGatherer(),
 		VMManager:    vms.NewManager(nil, ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
 	}

@@ -20,7 +20,7 @@ import (
 )
 
 func newMempool(toEngine chan<- common.MessageType) (Mempool, error) {
-	return New("mempool", metrics.NewRegistry(), toEngine)
+	return New("mempool", metric.NewRegistry(), toEngine)
 }
 
 func TestRequestBuildBlock(t *testing.T) {

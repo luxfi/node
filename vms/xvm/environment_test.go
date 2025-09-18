@@ -13,7 +13,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/crypto/secp256k1"

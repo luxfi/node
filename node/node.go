@@ -122,7 +122,7 @@ func New(
 	n := &Node{
 		Log:               logger,
 		LogFactory:        logFactory,
-		MetricsRegisterer: metrics.NewPrometheusRegistry(),
+		MetricsRegisterer: metric.NewRegistry(),
 		StakingTLSSigner:  config.StakingTLSCert.PrivateKey.(crypto.Signer),
 		StakingTLSCert:    stakingCert,
 		ID: ids.NodeIDFromCert(&ids.Certificate{
@@ -198,7 +198,7 @@ func New(
 	// and the engine (initChains) but after the metrics (initMetricsAPI)
 	// message.Creator currently record metrics under network namespace
 
-	networkRegisterer, err := metrics.MakeAndRegister(
+	networkRegisterer, err := metric.MakeAndRegister(
 		n.MetricsGatherer,
 		networkNamespace,
 	)
@@ -207,7 +207,7 @@ func New(
 	}
 
 	// Create luxfi/metric instance from prometheus registry
-	networkMetrics := metrics.NewPrometheusMetrics(networkNamespace, networkRegisterer)
+	networkMetrics := metric.NewPrometheusMetrics(networkNamespace, networkRegisterer)
 
 	n.msgCreator, err = message.NewCreator(
 		n.Log,
@@ -377,8 +377,8 @@ type Node struct {
 	DoneShuttingDown sync.WaitGroup
 
 	// Metrics Registerer
-	MetricsGatherer        metrics.MultiGatherer
-	MeterDBMetricsGatherer metrics.MultiGatherer
+	MetricsGatherer        metric.MultiGatherer
+	MeterDBMetricsGatherer metric.MultiGatherer
 
 	VMAliaser ids.Aliaser
 	VMManager vms.Manager
@@ -560,8 +560,8 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 
 	// Configure benchlist
 	n.vdrs = n.vdrs
-	benchlistGatherer := metrics.NewLabelGatherer(chains.ChainLabel)
-	// Don't assign to metrics.DefaultRegisterer - it requires metric.Registerer interface
+	benchlistGatherer := metric.NewLabelGatherer(chains.ChainLabel)
+	// Don't assign to metric.DefaultRegisterer - it requires metric.Registerer interface
 
 	err = n.MetricsGatherer.Register(
 		benchlistNamespace,
@@ -786,7 +786,7 @@ func (n *Node) Dispatch() error {
  */
 
 func (n *Node) initDatabase() error {
-	// dbRegisterer, err := metrics.MakeAndRegister(
+	// dbRegisterer, err := metric.MakeAndRegister(
 	// 	n.MetricsGatherer,
 	// 	dbNamespace,
 	// )
@@ -946,8 +946,8 @@ func (n *Node) initChains(genesisBytes []byte) error {
 }
 
 func (n *Node) initMetrics() error {
-	n.MetricsGatherer = metrics.NewPrefixGatherer()
-	n.MeterDBMetricsGatherer = metrics.NewLabelGatherer(chains.ChainLabel)
+	n.MetricsGatherer = metric.NewPrefixGatherer()
+	n.MeterDBMetricsGatherer = metric.NewLabelGatherer(chains.ChainLabel)
 	return n.MetricsGatherer.Register(
 		meterDBNamespace,
 		n.MeterDBMetricsGatherer,
@@ -1040,7 +1040,7 @@ func (n *Node) initAPIServer() error {
 	}
 	n.apiURI = fmt.Sprintf("%s://%s", protocol, listener.Addr())
 
-	apiRegisterer, err := metrics.MakeAndRegister(
+	apiRegisterer, err := metric.MakeAndRegister(
 		n.MetricsGatherer,
 		apiNamespace,
 	)
@@ -1101,7 +1101,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 		cChainID,
 	)
 
-	_, err = metrics.MakeAndRegister(
+	_, err = metric.MakeAndRegister(
 		n.MetricsGatherer,
 		requestsNamespace,
 	)
@@ -1109,7 +1109,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 		return err
 	}
 
-	_, err = metrics.MakeAndRegister(
+	_, err = metric.MakeAndRegister(
 		n.MetricsGatherer,
 		responsesNamespace,
 	)
@@ -1258,7 +1258,7 @@ func (n *Node) initVMs() error {
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()
 
-	rpcchainvmMetricsGatherer := metrics.NewLabelGatherer(chains.ChainLabel)
+	rpcchainvmMetricsGatherer := metric.NewLabelGatherer(chains.ChainLabel)
 	if err := n.MetricsGatherer.Register(rpcchainvmNamespace, rpcchainvmMetricsGatherer); err != nil {
 		return err
 	}
@@ -1323,7 +1323,7 @@ func (n *Node) initMetricsAPI() error {
 		return nil
 	}
 
-	processReg, err := metrics.MakeAndRegister(
+	processReg, err := metric.MakeAndRegister(
 		n.MetricsGatherer,
 		processNamespace,
 	)
@@ -1331,7 +1331,7 @@ func (n *Node) initMetricsAPI() error {
 		return err
 	}
 
-	// Current state of process metrics.
+	// Current state of process metric.
 	processCollector := collectors.NewProcessCollector(collectors.ProcessCollectorOpts{})
 	if err := processReg.Register(processCollector); err != nil {
 		return err
@@ -1466,7 +1466,7 @@ func (n *Node) initInfoAPI() error {
 // initHealthAPI initializes the Health API service
 // Assumes n.Log, n.Net, n.APIServer, n.HTTPLog already initialized
 func (n *Node) initHealthAPI() error {
-	healthReg, err := metrics.MakeAndRegister(
+	healthReg, err := metric.MakeAndRegister(
 		n.MetricsGatherer,
 		healthNamespace,
 	)
@@ -1600,7 +1600,7 @@ func (n *Node) initAPIAliases(genesisBytes []byte) error {
 
 // Initialize [n.resourceManager].
 func (n *Node) initResourceManager() error {
-	systemResourcesRegisterer, err := metrics.MakeAndRegister(
+	systemResourcesRegisterer, err := metric.MakeAndRegister(
 		n.MetricsGatherer,
 		systemResourcesNamespace,
 	)
@@ -1621,7 +1621,7 @@ func (n *Node) initResourceManager() error {
 	n.resourceManager = resourceManager
 	n.resourceManager.TrackProcess(os.Getpid())
 
-	_, err = metrics.MakeAndRegister(
+	_, err = metric.MakeAndRegister(
 		n.MetricsGatherer,
 		resourceTrackerNamespace,
 	)

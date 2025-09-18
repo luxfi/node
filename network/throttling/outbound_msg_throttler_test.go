@@ -32,7 +32,7 @@ func TestSybilOutboundMsgThrottler(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		log.NoLog{},
-		metrics.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOp().Registry(),
 		vdrs,
 		config,
 	)
@@ -173,7 +173,7 @@ func TestSybilOutboundMsgThrottlerMaxNonVdr(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		log.NoLog{},
-		metrics.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOp().Registry(),
 		vdrs,
 		config,
 	)
@@ -219,7 +219,7 @@ func TestBypassThrottling(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		log.NoLog{},
-		metrics.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOp().Registry(),
 		vdrs,
 		config,
 	)
