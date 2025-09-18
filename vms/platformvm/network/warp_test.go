@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/rand"
 
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"

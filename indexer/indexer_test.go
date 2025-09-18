@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/consensus"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 )
@@ -60,9 +60,9 @@ func TestNewIndexer(t *testing.T) {
 		AllowIncompleteIndex: true,
 		Log:                  log.NoLog{},
 		DB:                   memdb.New(),
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NoLog{}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NoLog{}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -101,9 +101,9 @@ func TestMarkHasRunAndShutdown(t *testing.T) {
 		IndexingEnabled:     true,
 		Log:                 log.NoLog{},
 		DB:                  db,
-		BlockAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
-		TxAcceptorGroup:     consensus.NewAcceptorGroup(log.NoLog{}),
-		VertexAcceptorGroup: consensus.NewAcceptorGroup(log.NoLog{}),
+		BlockAcceptorGroup:  consensus.NewAcceptorGroup(),
+		TxAcceptorGroup:     consensus.NewAcceptorGroup(),
+		VertexAcceptorGroup: consensus.NewAcceptorGroup(),
 		APIServer:           &apiServerMock{},
 		ShutdownF:           shutdown.Done,
 	}
@@ -139,9 +139,9 @@ func TestIndexer(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  log.NoLog{},
 		DB:                   db,
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NoLog{}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NoLog{}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(),
 		APIServer:            server,
 		ShutdownF:            func() {},
 	}
@@ -241,9 +241,9 @@ func TestIndexer(t *testing.T) {
 	// Create a new indexer using the same baseDB to simulate restart
 	config.DB = versiondb.New(baseDB)
 	// Create new AcceptorGroups since the old ones still have the chain registered
-	config.BlockAcceptorGroup = consensus.NewAcceptorGroup(log.NoLog{})
-	config.TxAcceptorGroup = consensus.NewAcceptorGroup(log.NoLog{})
-	config.VertexAcceptorGroup = consensus.NewAcceptorGroup(log.NoLog{})
+	config.BlockAcceptorGroup = consensus.NewAcceptorGroup()
+	config.TxAcceptorGroup = consensus.NewAcceptorGroup()
+	config.VertexAcceptorGroup = consensus.NewAcceptorGroup()
 	idxrIntf, err = NewIndexer(config)
 	require.NoError(err)
 	require.IsType(&indexer{}, idxrIntf)
@@ -368,9 +368,9 @@ func TestIndexer(t *testing.T) {
 	// Re-open one more time and re-register chains
 	config.DB = versiondb.New(baseDB)
 	// Create new AcceptorGroups since the old ones were closed
-	config.BlockAcceptorGroup = consensus.NewAcceptorGroup(log.NoLog{})
-	config.TxAcceptorGroup = consensus.NewAcceptorGroup(log.NoLog{})
-	config.VertexAcceptorGroup = consensus.NewAcceptorGroup(log.NoLog{})
+	config.BlockAcceptorGroup = consensus.NewAcceptorGroup()
+	config.TxAcceptorGroup = consensus.NewAcceptorGroup()
+	config.VertexAcceptorGroup = consensus.NewAcceptorGroup()
 	idxrIntf, err = NewIndexer(config)
 	require.NoError(err)
 	require.IsType(&indexer{}, idxrIntf)
@@ -404,9 +404,9 @@ func TestIncompleteIndex(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  log.NoLog{},
 		DB:                   versiondb.New(baseDB),
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NoLog{}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NoLog{}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -491,9 +491,9 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  log.NoLog{},
 		DB:                   db,
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NoLog{}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NoLog{}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}

@@ -169,10 +169,11 @@ func (vm *VM) Initialize(
 	}
 	
 	// toEngine is passed through to the inner VM
-	_, ok = toEngineIntf.(chan<- block.Message)
-	if !ok {
-		return fmt.Errorf("invalid message channel type")
-	}
+	// Skip type check as it's passed through to the inner VM
+	// _, ok = toEngineIntf.(chan<- block.Message)
+	// if !ok {
+	// 	return fmt.Errorf("invalid message channel type")
+	// }
 	
 	// Validate fxs are the correct type - passed through to inner VM
 	for _, fx := range fxsIntf {

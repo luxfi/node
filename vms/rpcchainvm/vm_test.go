@@ -19,6 +19,7 @@ import (
 	"github.com/luxfi/mock/gomock"
 
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
@@ -169,8 +170,7 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			vm := block.NewMockChainVM(ctrl)
+			vm := blockmock.NewChainVM()
 
 			listener, err := grpcutils.NewListener()
 			require.NoError(err)

@@ -38,7 +38,8 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 	require.NoError(t, err)
 	sk, err := bls.SecretKeyFromBytes(skBytes)
 	require.NoError(t, err)
-	pop := signer.NewProofOfPossession(sk)
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(t, err)
 
 	var (
 		// Use empty chain ID for serialization test to match expected bytes

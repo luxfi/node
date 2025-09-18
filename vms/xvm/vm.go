@@ -246,6 +246,9 @@ func (vm *VM) initialize(
 	fxs []*core.Fx,
 	appSender core.AppSender,
 ) error {
+	// Initialize logger first
+	vm.log = log.NoLog{}
+
 	// Create a simple no-op handler since core.NewNoOpAppHandler doesn't exist in consensus
 	noopMessageHandler := &noOpAppHandler{}
 	vm.Atomic = network.NewAtomic(noopMessageHandler)

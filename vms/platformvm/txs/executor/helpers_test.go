@@ -288,7 +288,7 @@ func defaultState(
 		cfg,
 		execCfg,
 		ctx.Context,
-		metrics.Noop,
+		metric.NewNoOp(),
 		rewards,
 	)
 	if err != nil {
