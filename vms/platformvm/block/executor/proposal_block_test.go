@@ -13,12 +13,12 @@ import (
 	"github.com/luxfi/mock/gomock"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -32,6 +32,12 @@ import (
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
 )
+
+func mustNewProofOfPossession(t *testing.T, sk *bls.SecretKey) *signer.ProofOfPossession {
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(t, err)
+	return pop
+}
 
 func TestApricotProposalBlockTimeVerification(t *testing.T) {
 	require := require.New(t)
@@ -105,7 +111,7 @@ func TestApricotProposalBlockTimeVerification(t *testing.T) {
 	onParentAccept.EXPECT().GetCurrentSupply(constants.PrimaryNetworkID).Return(uint64(1000), nil).AnyTimes()
 	onParentAccept.EXPECT().GetDelegateeReward(constants.PrimaryNetworkID, utx.NodeID()).Return(uint64(0), nil).AnyTimes()
 
-	env.mockedState.EXPECT().GetUptime(gomock.Any()).Return(
+	env.mockedState.EXPECT().GetUptime(gomock.Any(), gomock.Any()).Return(
 		time.Microsecond, /*upDuration*/
 		time.Time{},      /*lastUpdated*/
 		nil,              /*err*/
@@ -219,7 +225,7 @@ func TestBanffProposalBlockTimeVerification(t *testing.T) {
 	pendingStakersIt.EXPECT().Release().AnyTimes()
 	onParentAccept.EXPECT().GetPendingStakerIterator().Return(pendingStakersIt, nil).AnyTimes()
 
-	env.mockedState.EXPECT().GetUptime(gomock.Any()).Return(
+	env.mockedState.EXPECT().GetUptime(gomock.Any(), gomock.Any()).Return(
 		time.Microsecond, /*upDuration*/
 		time.Time{},      /*lastUpdated*/
 		nil,              /*err*/
@@ -1396,7 +1402,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		mustNewProofOfPossession(t, sk),
 		env.ctx.LUXAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -1480,7 +1486,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		mustNewProofOfPossession(t, sk),
 		env.ctx.LUXAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,

@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/node/proto/pb/platformvm"
 	"github.com/luxfi/node/vms/platformvm/warp"
@@ -127,20 +127,20 @@ func (s signatureRequestVerifier) verifySubnetToL1Conversion(
 
 	// conversion, err := s.state.GetSubnetToL1Conversion(netID)
 	// if err == database.ErrNotFound {
-	// 	return &common.AppError{
+	// 	return &core.AppError{
 	// 		Code:    ErrConversionDoesNotExist,
 	// 		Message: fmt.Sprintf("subnet %q has not been converted", netID),
 	// 	}
 	// }
 	// if err != nil {
-	// 	return &common.AppError{
-	// 		Code:    common.ErrUndefined.Code,
+	// 	return &core.AppError{
+	// 		Code:    -1, // Generic error code
 	// 		Message: "failed to get net conversionID: " + err.Error(),
 	// 	}
 	// }
 
 	// if msg.ID != conversion.ConversionID {
-	// 	return &common.AppError{
+	// 	return &core.AppError{
 	// 		Code:    ErrMismatchedConversionID,
 	// 		Message: fmt.Sprintf("provided conversionID %q != expected conversionID %q", msg.ID, conversion.ConversionID),
 	// 	}
@@ -160,7 +160,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 
 	// var justification platformvm.L1ValidatorRegistrationJustification
 	// if err := proto.Unmarshal(justificationBytes, &justification); err != nil {
-	// 	return &common.AppError{
+	// 	return &core.AppError{
 	// 		Code:    ErrFailedToParseJustification,
 	// 		Message: "failed to parse justification: " + err.Error(),
 	// 	}
@@ -172,7 +172,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 	// case *platformvm.L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage:
 	// 	return s.verifyNetValidatorCanNotValidate(msg.ValidationID, preimage.RegisterL1ValidatorMessage)
 	// default:
-	// 	return &common.AppError{
+	// 	return &core.AppError{
 	// 		Code:    ErrInvalidJustificationType,
 	// 		Message: fmt.Sprintf("invalid justification type: %T", justification.Preimage),
 	// 	}
@@ -200,7 +200,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistered(
 	}
 	if err != nil {
 		return &common.AppError{
-			Code:    common.ErrUndefined.Code,
+			Code:    -1, // Generic error code
 			Message: "failed to get L1 validator: " + err.Error(),
 		}
 	}
@@ -216,7 +216,7 @@ func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 ) *common.AppError {
 	// netID, err := ids.ToID(justification.GetSubnetId())
 	// if err != nil {
-	// 	return &common.AppError{
+	// 	return &core.AppError{
 	// 		Code:    ErrFailedToParseNetID,
 	// 		Message: "failed to parse netID: " + err.Error(),
 	// 	}
@@ -224,7 +224,7 @@ func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 
 	// justificationID := netID.Append(justification.GetIndex())
 	// if validationID != justificationID {
-	// 	return &common.AppError{
+	// 	return &core.AppError{
 	// 		Code:    ErrMismatchedValidationID,
 	// 		Message: fmt.Sprintf("validationID %q != justificationID %q", validationID, justificationID),
 	// 	}
@@ -236,14 +236,14 @@ func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 	// // Verify that the provided netID has been converted.
 	// _, err = s.state.GetSubnetToL1Conversion(netID)
 	// if err == database.ErrNotFound {
-	// 	return &common.AppError{
+	// 	return &core.AppError{
 	// 		Code:    ErrConversionDoesNotExist,
 	// 		Message: fmt.Sprintf("subnet %q has not been converted", netID),
 	// 	}
 	// }
 	// if err != nil {
-	// 	return &common.AppError{
-	// 		Code:    common.ErrUndefined.Code,
+	// 	return &core.AppError{
+	// 		Code:    -1, // Generic error code
 	// 		Message: "failed to get net conversionID: " + err.Error(),
 	// 	}
 	// }
@@ -251,14 +251,14 @@ func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 	// // Verify that the validator is not in the current state
 	// _, err = s.state.GetL1Validator(validationID)
 	// if err == nil {
-	// 	return &common.AppError{
+	// 	return &core.AppError{
 	// 		Code:    ErrValidationExists,
 	// 		Message: fmt.Sprintf("validation %q exists", validationID),
 	// 	}
 	// }
 	// if err != database.ErrNotFound {
-	// 	return &common.AppError{
-	// 		Code:    common.ErrUndefined.Code,
+	// 	return &core.AppError{
+	// 		Code:    -1, // Generic error code
 	// 		Message: "failed to lookup L1 validator: " + err.Error(),
 	// 	}
 	// }
@@ -303,7 +303,7 @@ func (s signatureRequestVerifier) verifyNetValidatorCanNotValidate(
 	}
 	if err != database.ErrNotFound {
 		return &common.AppError{
-			Code:    common.ErrUndefined.Code,
+			Code:    -1, // Generic error code
 			Message: "failed to lookup L1 validator: " + err.Error(),
 		}
 	}
@@ -320,13 +320,13 @@ func (s signatureRequestVerifier) verifyNetValidatorCanNotValidate(
 	// 	ValidationID: validationID,
 	// })
 	// if err != nil {
-	// 	return &common.AppError{
-	// 		Code:    common.ErrUndefined.Code,
+	// 	return &core.AppError{
+	// 		Code:    -1, // Generic error code
 	// 		Message: "failed to lookup expiry: " + err.Error(),
 	// 	}
 	// }
 	// if !hasExpiry {
-	// 	return &common.AppError{
+	// 	return &core.AppError{
 	// 		Code:    ErrValidationCouldBeRegistered,
 	// 		Message: fmt.Sprintf("validation %q can be registered until %d", validationID, justification.Expiry),
 	// 	}
@@ -360,7 +360,7 @@ func (s signatureRequestVerifier) verifyL1ValidatorWeight(
 		}
 	case err != nil:
 		return &common.AppError{
-			Code:    common.ErrUndefined.Code,
+			Code:    -1, // Generic error code
 			Message: "failed to get L1 validator: " + err.Error(),
 		}
 	case msg.Nonce+1 != l1Validator.GetMinNonce():

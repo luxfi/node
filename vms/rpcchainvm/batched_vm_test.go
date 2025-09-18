@@ -9,13 +9,11 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/luxfi/mock/gomock"
 
 	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/consensus/engine/chain/chainmock"
+	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/chain"
@@ -43,17 +41,19 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 	vm := &blockmock.ChainVM{}
 	
 	if loadExpectations {
-		blk1 := &chainmock.Block{
-			IDF:        func() ids.ID { return blkID1 },
-			ParentF:    func() ids.ID { return blkID0 },
-			HeightF:    func() uint64 { return 1 },
-			TimestampF: func() time.Time { return time1 },
+		blk1 := &blocktest.Block{
+			IDV:        blkID1,
+			ParentV:    blkID0,
+			HeightV:    1,
+			TimestampV: time1,
+			BytesV:     blkBytes1,
 		}
-		blk2 := &chainmock.Block{
-			IDF:        func() ids.ID { return blkID2 },
-			ParentF:    func() ids.ID { return blkID1 },
-			HeightF:    func() uint64 { return 2 },
-			TimestampF: func() time.Time { return time2 },
+		blk2 := &blocktest.Block{
+			IDV:        blkID2,
+			ParentV:    blkID1,
+			HeightV:    2,
+			TimestampV: time2,
+			BytesV:     blkBytes2,
 		}
 		
 		parseBlockCallCount := 0
@@ -93,7 +93,7 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 	defer vm.runtime.Stop(context.Background())
 
 	// Initialize the VM - using nil for all parameters as this is a test
-	require.NoError(vm.Initialize(context.Background(), nil, memdb.New(), nil, nil, nil, nil, nil, nil))
+	require.NoError(vm.Initialize(context.Background(), nil, memdb.New(), nil, nil, nil, nil, []interface{}{}, nil))
 
 	// Call should parse the first block
 	blk, err := vm.ParseBlock(context.Background(), blkBytes1)

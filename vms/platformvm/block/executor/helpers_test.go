@@ -224,6 +224,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 
 	platformMetrics := metrics.Noop
 
+	var err error
 	res.mempool, err = mempool.New("mempool", registerer, nil)
 	if err != nil {
 		panic(fmt.Errorf("failed to create mempool: %w", err))
@@ -262,7 +263,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		require := require.New(t)
 
 		if res.isBootstrapped.Get() {
-			validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+			_ = res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 
 			// NoOpCalculator doesn't track validators, so no need to stop
 			require.NoError(res.state.Commit())

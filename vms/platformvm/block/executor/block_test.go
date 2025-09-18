@@ -12,7 +12,6 @@ import (
 	"github.com/luxfi/mock/gomock"
 
 	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"

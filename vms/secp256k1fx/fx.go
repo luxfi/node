@@ -6,6 +6,7 @@ package secp256k1fx
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/hashing"
@@ -58,13 +59,25 @@ func (fx *Fx) Initialize(vmIntf interface{}) error {
 	cache := NewRecoverCache(defaultCacheSize)
 	fx.RecoverCacheType = cache
 	c := fx.VM.CodecRegistry()
-	return errors.Join(
-		c.RegisterType(&TransferInput{}),
-		c.RegisterType(&MintOutput{}),
-		c.RegisterType(&TransferOutput{}),
-		c.RegisterType(&MintOperation{}),
-		c.RegisterType(&Credential{}),
-	)
+
+	// Try to register types, but ignore duplicate registration errors
+	errs := []error{}
+	if err := c.RegisterType(&TransferInput{}); err != nil && !strings.Contains(err.Error(), "duplicate type registration") {
+		errs = append(errs, err)
+	}
+	if err := c.RegisterType(&MintOutput{}); err != nil && !strings.Contains(err.Error(), "duplicate type registration") {
+		errs = append(errs, err)
+	}
+	if err := c.RegisterType(&TransferOutput{}); err != nil && !strings.Contains(err.Error(), "duplicate type registration") {
+		errs = append(errs, err)
+	}
+	if err := c.RegisterType(&MintOperation{}); err != nil && !strings.Contains(err.Error(), "duplicate type registration") {
+		errs = append(errs, err)
+	}
+	if err := c.RegisterType(&Credential{}); err != nil && !strings.Contains(err.Error(), "duplicate type registration") {
+		errs = append(errs, err)
+	}
+	return errors.Join(errs...)
 }
 
 func (fx *Fx) InitializeVM(vmIntf interface{}) error {

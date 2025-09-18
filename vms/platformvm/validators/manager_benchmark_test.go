@@ -116,8 +116,6 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	execConfig, err := config.GetExecutionConfig(nil)
 	require.NoError(err)
 
-	metrics := metrics.Noop
-
 	s, err := state.New(
 		db,
 		genesisBytes,
@@ -127,7 +125,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 		},
 		execConfig,
 		context.Background(),
-		metrics,
+		metric.NewNoOp(),
 		reward.NewCalculator(reward.Config{
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .10 * reward.PercentDenominator,

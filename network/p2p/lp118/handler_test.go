@@ -11,7 +11,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"

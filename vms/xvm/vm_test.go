@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/consensus/consensustest"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -32,7 +32,9 @@ func TestInvalidGenesis(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := consensustest.Context(t, ids.GenerateTestID())
+	ctx := &consensusctx.Context{
+		ChainID: ids.GenerateTestID(),
+	}
 	// Tests don't need locking as they run single-threaded
 	// Remove Lock references that don't exist in consensus context
 
@@ -55,7 +57,9 @@ func TestInvalidFx(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := consensustest.Context(t, ids.GenerateTestID())
+	ctx := &consensusctx.Context{
+		ChainID: ids.GenerateTestID(),
+	}
 	defer func() {
 		vm.Shutdown()
 	}()
@@ -81,7 +85,9 @@ func TestFxInitializationFailure(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := consensustest.Context(t, ids.GenerateTestID())
+	ctx := &consensusctx.Context{
+		ChainID: ids.GenerateTestID(),
+	}
 	defer func() {
 		vm.Shutdown()
 	}()

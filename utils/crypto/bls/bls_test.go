@@ -4,32 +4,29 @@
 package bls
 
 import (
-	"crypto/rand"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/utils"
-
-	blst "github.com/supranational/blst/bindings/go"
 )
 
-func newKey(require *require.Assertions) *blst.SecretKey {
-	var ikm [32]byte
-	_, err := rand.Read(ikm[:])
+func newKey(require *require.Assertions) *SecretKey {
+	sk, err := NewSecretKey()
 	require.NoError(err)
-	sk := blst.KeyGen(ikm[:])
-	ikm = [32]byte{} // zero out the ikm
-
 	return sk
 }
 
-func publicKey(sk *blst.SecretKey) *PublicKey {
-	return new(PublicKey).From(sk)
+func publicKey(sk *SecretKey) *PublicKey {
+	return sk.PublicKey()
 }
 
-func sign(sk *blst.SecretKey, msg []byte) *Signature {
-	return new(Signature).Sign(sk, msg, CiphersuiteSignature.Bytes())
+func sign(sk *SecretKey, msg []byte) *Signature {
+	sig, err := sk.Sign(msg)
+	if err != nil {
+		panic(err)
+	}
+	return sig
 }
 
 func TestAggregationThreshold(t *testing.T) {

@@ -13,13 +13,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/appsender"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
@@ -38,32 +39,34 @@ import (
 	avajson "github.com/luxfi/node/utils/json"
 )
 
-// testAppSender is a simple mock for AppSender
-type testAppSender struct{}
+// testValidatorState is a mock implementation of consensus ValidatorState for tests
+type testValidatorState struct{}
 
-func (t *testAppSender) SendAppGossip(context.Context, []ids.NodeID, []byte) error {
-	return nil
+func (tvs *testValidatorState) GetCurrentHeight() (uint64, error) {
+	return 100, nil
 }
-func (t *testAppSender) SendAppGossipSpecific(context.Context, set.Set[ids.NodeID], []byte) error {
-	return nil
+
+func (tvs *testValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+	// Return a simple validator set for testing
+	return map[ids.NodeID]uint64{
+		ids.GenerateTestNodeID(): 1000,
+	}, nil
 }
-func (t *testAppSender) SendAppRequest(context.Context, []ids.NodeID, uint32, []byte) error {
-	return nil
+
+func (tvs *testValidatorState) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	return 0, nil
 }
-func (t *testAppSender) SendAppResponse(context.Context, ids.NodeID, uint32, []byte) error {
-	return nil
+
+func (tvs *testValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
+	return ids.GenerateTestID(), nil
 }
-func (t *testAppSender) SendAppError(context.Context, ids.NodeID, uint32, int32, string) error {
-	return nil
+
+func (tvs *testValidatorState) GetChainID(chainID ids.ID) (ids.ID, error) {
+	return chainID, nil
 }
-func (t *testAppSender) SendCrossChainAppRequest(context.Context, ids.ID, uint32, []byte) error {
-	return nil
-}
-func (t *testAppSender) SendCrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
-	return nil
-}
-func (t *testAppSender) SendCrossChainAppError(context.Context, ids.ID, uint32, int32, string) error {
-	return nil
+
+func (tvs *testValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+	return ids.GenerateTestID(), nil
 }
 
 type fork uint8
@@ -160,16 +163,20 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	baseDB := memdb.New()
 	m := atomic.NewMemory(prefixdb.New([]byte{0}, baseDB))
 
+	// Create a mock validator state for testing
+	mockValidatorState := &testValidatorState{}
+
 	// Create a proper consensus context for the tests
 	consensusCtx := &consensusctx.Context{
-		QuantumID:    10001,
-		NetID:        ids.GenerateTestID(), 
-		ChainID:      xChainID,
-		NodeID:       ids.GenerateTestNodeID(),
-		XChainID:     xChainID,
-		CChainID:     ids.GenerateTestID(),
-		AVAXAssetID:  ids.GenerateTestID(),
-		LUXAssetID:   ids.GenerateTestID(),
+		QuantumID:      10001,
+		NetID:          ids.GenerateTestID(),
+		ChainID:        xChainID,
+		NodeID:         ids.GenerateTestNodeID(),
+		XChainID:       xChainID,
+		CChainID:       ids.GenerateTestID(),
+		AVAXAssetID:    ids.GenerateTestID(),
+		LUXAssetID:     ids.GenerateTestID(),
+		ValidatorState: mockValidatorState,
 	}
 
 	// Create a separate lock for synchronization in tests
@@ -178,8 +185,8 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	// The caller of this function is responsible for unlocking.
 	testLock.Lock()
 	
-	// Create a regular context.Context for the VM
-	ctx := context.Background()
+	// Create a context with validator state for the VM
+	ctx := consensus.WithValidatorState(context.Background(), mockValidatorState)
 
 	vmStaticConfig := staticConfig(tb, c.fork)
 	if c.vmStaticConfig != nil {
@@ -224,7 +231,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		configBytes,                      // configBytes []byte
 		toEngine,                         // toEngine chan<- interface{}
 		fxList,                           // fxs []interface{}
-		&testAppSender{},                 // appSender interface{}
+		&appsender.FakeSender{},          // appSender interface{}
 	))
 
 	stopVertexID := ids.GenerateTestID()

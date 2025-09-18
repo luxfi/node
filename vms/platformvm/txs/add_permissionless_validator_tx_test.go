@@ -102,7 +102,13 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			Wght:   2 * units.KiloLux,
 		},
 		Net: constants.PrimaryNetworkID,
-		Signer: signer.NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }()),
+		Signer: func() *signer.ProofOfPossession {
+			pop, err := signer.NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
+			if err != nil {
+				panic(err)
+			}
+			return pop
+		}(),
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
@@ -395,7 +401,13 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			Wght:   5 * units.KiloLux,
 		},
 		Net: constants.PrimaryNetworkID,
-		Signer: signer.NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }()),
+		Signer: func() *signer.ProofOfPossession {
+			pop, err := signer.NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
+			if err != nil {
+				panic(err)
+			}
+			return pop
+		}(),
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
@@ -1421,7 +1433,8 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 	blsSK, err := bls.NewSecretKey()
 	require.NoError(t, err)
 
-	blsPOP := signer.NewProofOfPossession(blsSK)
+	blsPOP, err := signer.NewProofOfPossession(blsSK)
+	require.NoError(t, err)
 
 	// A BaseTx that fails syntactic verification.
 	invalidBaseTx := BaseTx{}
