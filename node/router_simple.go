@@ -22,20 +22,20 @@ import (
 
 // SimpleRouter implements Router interface
 type SimpleRouter struct {
-	log             log.Logger
-	lock            sync.RWMutex
-	chains          map[ids.ID]handler.Handler
-	timeoutManager  timer.AdaptiveTimeoutManager
-	nodeID          ids.NodeID
-	healthConfig    HealthConfig
-	reg             metric.Registerer
-	namespace       string
-	criticalChains  set.Set[ids.ID]
-	lastMsgTime     time.Time
-	connectedPeers  set.Set[ids.NodeID]
-	requests        map[uint32]*requestInfo
-	requestID       uint32
-	onFatal         func(int)
+	log            log.Logger
+	lock           sync.RWMutex
+	chains         map[ids.ID]handler.Handler
+	timeoutManager timer.AdaptiveTimeoutManager
+	nodeID         ids.NodeID
+	healthConfig   HealthConfig
+	reg            metric.Registerer
+	namespace      string
+	criticalChains set.Set[ids.ID]
+	lastMsgTime    time.Time
+	connectedPeers set.Set[ids.NodeID]
+	requests       map[uint32]*requestInfo
+	requestID      uint32
+	onFatal        func(int)
 }
 
 type requestInfo struct {
@@ -48,11 +48,11 @@ type requestInfo struct {
 // NewSimpleRouter creates a new router
 func NewSimpleRouter(logger log.Logger, timeoutManager timer.AdaptiveTimeoutManager) Router {
 	return &SimpleRouter{
-		log:             logger,
-		chains:          make(map[ids.ID]handler.Handler),
-		timeoutManager:  timeoutManager,
-		connectedPeers:  set.NewSet[ids.NodeID](10),
-		requests:        make(map[uint32]*requestInfo),
+		log:            logger,
+		chains:         make(map[ids.ID]handler.Handler),
+		timeoutManager: timeoutManager,
+		connectedPeers: set.NewSet[ids.NodeID](10),
+		requests:       make(map[uint32]*requestInfo),
 	}
 }
 

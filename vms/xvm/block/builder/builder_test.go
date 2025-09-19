@@ -10,28 +10,28 @@ import (
 	"time"
 
 	"github.com/luxfi/metric"
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/xvm/block"
+	blkexecutor "github.com/luxfi/node/vms/xvm/block/executor"
 	"github.com/luxfi/node/vms/xvm/fxs"
+	xvmmetrics "github.com/luxfi/node/vms/xvm/metrics"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/xvm/txs/mempool"
-	blkexecutor "github.com/luxfi/node/vms/xvm/block/executor"
-	xvmmetrics "github.com/luxfi/node/vms/xvm/metrics"
 	txexecutor "github.com/luxfi/node/vms/xvm/txs/executor"
+	"github.com/luxfi/node/vms/xvm/txs/mempool"
 )
 
 const trackChecksums = false
@@ -317,7 +317,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: context.Background(),
+						Ctx:   context.Background(),
 					},
 					manager,
 					&mockable.Clock{},
@@ -387,7 +387,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: context.Background(),
+						Ctx:   context.Background(),
 					},
 					manager,
 					clock,
@@ -459,7 +459,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				return New(
 					&txexecutor.Backend{
 						Codec: codec,
-						Ctx: context.Background(),
+						Ctx:   context.Background(),
 					},
 					manager,
 					clock,

@@ -103,7 +103,7 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 	backend := &Backend{
 		Ctx:      ctx,
 		CChainID: cChainID,
-		Config: &feeConfig,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,
@@ -494,7 +494,7 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 	backend := &Backend{
 		Ctx:      ctx,
 		CChainID: cChainID,
-		Config: &feeConfig,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,
@@ -1115,7 +1115,7 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 	backend := &Backend{
 		Ctx:      ctx,
 		CChainID: cChainID,
-		Config: &feeConfig,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,
@@ -1588,7 +1588,7 @@ func TestSyntacticVerifierImportTx(t *testing.T) {
 	backend := &Backend{
 		Ctx:      ctx,
 		CChainID: cChainID,
-		Config: &feeConfig,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,
@@ -1991,7 +1991,7 @@ func TestSyntacticVerifierExportTx(t *testing.T) {
 	backend := &Backend{
 		Ctx:      ctx,
 		CChainID: cChainID,
-		Config: &feeConfig,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,

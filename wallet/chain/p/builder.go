@@ -11,10 +11,10 @@ import (
 	stdcontext "context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/math/math"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
@@ -386,7 +386,7 @@ func (b *txBuilder) NewAddNetValidatorTx(
 			Memo:         ops.Memo(),
 		}},
 		NetValidator: *vdr,
-		SubnetAuth:      subnetAuth,
+		SubnetAuth:   subnetAuth,
 	}, nil
 }
 
@@ -418,7 +418,7 @@ func (b *txBuilder) NewRemoveNetValidatorTx(
 			Outs:         outputs,
 			Memo:         ops.Memo(),
 		}},
-		Net:     netID,
+		Net:        netID,
 		NodeID:     nodeID,
 		SubnetAuth: subnetAuth,
 	}, nil
@@ -489,7 +489,7 @@ func (b *txBuilder) NewCreateChainTx(
 			Outs:         outputs,
 			Memo:         ops.Memo(),
 		}},
-		NetID:    netID,
+		NetID:       netID,
 		ChainName:   chainName,
 		VMID:        vmID,
 		FxIDs:       fxIDs,
@@ -710,7 +710,7 @@ func (b *txBuilder) NewTransformNetTx(
 			Outs:         outputs,
 			Memo:         ops.Memo(),
 		}},
-		Net:                   netID,
+		Net:                      netID,
 		AssetID:                  assetID,
 		InitialSupply:            initialSupply,
 		MaximumSupply:            maxSupply,
@@ -764,7 +764,7 @@ func (b *txBuilder) NewAddPermissionlessValidatorTx(
 			Memo:         ops.Memo(),
 		}},
 		Validator:             vdr.Validator,
-		Net:                vdr.Net,
+		Net:                   vdr.Net,
 		Signer:                signer,
 		StakeOuts:             stakeOutputs,
 		ValidatorRewardsOwner: validationRewardsOwner,
@@ -805,7 +805,7 @@ func (b *txBuilder) NewAddPermissionlessDelegatorTx(
 			Memo:         ops.Memo(),
 		}},
 		Validator:              vdr.Validator,
-		Net:                 vdr.Net,
+		Net:                    vdr.Net,
 		StakeOuts:              stakeOutputs,
 		DelegationRewardsOwner: rewardsOwner,
 	}, nil

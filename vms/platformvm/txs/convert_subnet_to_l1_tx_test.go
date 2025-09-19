@@ -44,7 +44,7 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 	var (
 		// Use empty chain ID for serialization test to match expected bytes
 		testPlatformChainID = ids.Empty
-		addr = ids.ShortID{
+		addr                = ids.ShortID{
 			0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
 			0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
 			0x44, 0x55, 0x66, 0x77,
@@ -120,7 +120,7 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 						},
 					},
 				}},
-				Net:     netID,
+				Net:        netID,
 				ChainID:    managerChainID,
 				Address:    managerAddress,
 				Validators: []*ConvertNetToL1Validator{}, // Empty array to match expected JSON
@@ -145,8 +145,8 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 								TransferableOut: &secp256k1fx.TransferOutput{
 									Amt: 1, // Match expected JSON
 									OutputOwners: secp256k1fx.OutputOwners{
-										Locktime:  12345678, // Match expected JSON
-										Threshold: 0,         // Match expected JSON
+										Locktime:  12345678,        // Match expected JSON
+										Threshold: 0,               // Match expected JSON
 										Addrs:     []ids.ShortID{}, // Empty array to match expected JSON
 									},
 								},
@@ -217,14 +217,14 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 					},
 					Memo: types.JSONByteSlice("😅\nwell that's\x01\x23\x45!"),
 				}},
-				Net:  netID,
+				Net:     netID,
 				ChainID: managerChainID,
 				Address: managerAddress,
 				Validators: []*ConvertNetToL1Validator{
 					{
 						NodeID:  nodeID[:],
 						Weight:  72623859790382856, // Match expected JSON
-						Balance: 1000000000,       // Match expected JSON
+						Balance: 1000000000,        // Match expected JSON
 						Signer:  *pop,
 						RemainingBalanceOwner: message.PChainOwner{
 							Threshold: 1,
@@ -292,7 +292,7 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 
 			// Initialize context for JSON marshaling with FxID
 			test.tx.InitCtx(ctx)
-			
+
 			// Serialize to JSON
 			txJSON, err := json.Marshal(test.tx)
 			require.NoError(err)
@@ -347,7 +347,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 					NetworkID:    1,
 					BlockchainID: testChainID,
 				}},
-				Net:  ids.GenerateTestID(),
+				Net:     ids.GenerateTestID(),
 				Address: make([]byte, MaxSubnetAddressLength+1),
 			},
 			expectedErr: ErrAddressTooLong,
@@ -359,7 +359,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 					NetworkID:    1,
 					BlockchainID: testChainID,
 				}},
-				Net:     ids.GenerateTestID(),
+				Net:        ids.GenerateTestID(),
 				Address:    []byte{1, 2, 3},
 				Validators: []*ConvertNetToL1Validator{},
 			},
@@ -372,7 +372,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 					NetworkID:    1,
 					BlockchainID: testChainID,
 				}},
-				Net:  ids.GenerateTestID(),
+				Net:     ids.GenerateTestID(),
 				Address: []byte{1, 2, 3},
 				Validators: []*ConvertNetToL1Validator{
 					{

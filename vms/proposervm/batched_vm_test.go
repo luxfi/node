@@ -34,8 +34,8 @@ import (
 
 	"github.com/luxfi/consensus/core"
 
-	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/node/utils/timer/mockable"
 )
 
 // validatorStateAdapter adapts validatorstest.State to consensus ValidatorState interface

@@ -9,8 +9,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/version"
 	nodevalidators "github.com/luxfi/node/validators"
+	"github.com/luxfi/node/version"
 )
 
 type insecureValidatorManager struct {

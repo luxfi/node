@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	netID      = ids.GenerateTestID()
+	netID         = ids.GenerateTestID()
 	randomChainID = ids.GenerateTestID()
 	fixedChainID  = ids.ID{0, 2}
 )

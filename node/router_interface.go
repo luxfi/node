@@ -7,12 +7,12 @@ import (
 	"context"
 
 	"github.com/luxfi/consensus/networking/handler"
-	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/utils/timer"
+	"github.com/luxfi/node/version"
 )
 
 // Router handles message routing between chains

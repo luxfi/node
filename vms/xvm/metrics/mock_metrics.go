@@ -14,9 +14,9 @@ import (
 	reflect "reflect"
 
 	rpc "github.com/gorilla/rpc/v2"
+	gomock "github.com/luxfi/mock/gomock"
 	block "github.com/luxfi/node/vms/xvm/block"
 	txs "github.com/luxfi/node/vms/xvm/txs"
-	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockMetrics is a mock of Metrics interface.

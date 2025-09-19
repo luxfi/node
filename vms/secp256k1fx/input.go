@@ -6,8 +6,8 @@ package secp256k1fx
 import (
 	"errors"
 
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/math/math"
+	"github.com/luxfi/node/utils"
 )
 
 const (

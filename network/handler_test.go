@@ -27,7 +27,6 @@ func (h *testHandler) HandleInbound(ctx context.Context, msg message.InboundMess
 	// For now, just skip if there's an InboundHandler
 }
 
-
 func (h *testHandler) Connected(id ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
 	if h.ConnectedF != nil {
 		h.ConnectedF(id, nodeVersion, netID)

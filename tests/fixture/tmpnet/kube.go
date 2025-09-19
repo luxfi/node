@@ -75,7 +75,7 @@ func NewNodeStatefulSet(
 	podAnnotations := map[string]string{
 		"metrics.io/scrape": "true",
 		"metrics.io/path":   "/ext/metrics",
-		"promtail/collect":     "true",
+		"promtail/collect":  "true",
 	}
 
 	podLabels := map[string]string{

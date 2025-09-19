@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
-	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 )
 

@@ -59,7 +59,7 @@ func (t *tree) Add(blk chain.Block) {
 	var parentIDBytes [32]byte
 	copy(parentIDBytes[:], parentIDLux[:])
 	parentID := ids.ID(parentIDBytes)
-	
+
 	children, exists := t.nodes[parentID]
 	if !exists {
 		children = make(map[ids.ID]chain.Block)
@@ -78,7 +78,7 @@ func (t *tree) Get(blk chain.Block) (chain.Block, bool) {
 	var parentIDBytes [32]byte
 	copy(parentIDBytes[:], parentIDLux[:])
 	parentID := ids.ID(parentIDBytes)
-	
+
 	children := t.nodes[parentID]
 	blkIDLux := blk.ID()
 	var blkIDBytes [32]byte
@@ -100,7 +100,7 @@ func (t *tree) Accept(ctx context.Context, blk chain.Block) error {
 	var parentIDBytes [32]byte
 	copy(parentIDBytes[:], parentIDLux[:])
 	parentID := ids.ID(parentIDBytes)
-	
+
 	children := t.nodes[parentID]
 	blkIDLux := blk.ID()
 	var blkIDBytes [32]byte

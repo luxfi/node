@@ -345,7 +345,6 @@ func applyGitHubLabels(sdConfig SDConfig) SDConfig {
 	return sdConfig
 }
 
-
 func getLogFilename(cmdName string) string {
 	return cmdName + ".log"
 }
@@ -592,4 +591,3 @@ func waitForReadiness(ctx context.Context, log log.Logger, cmdName string, readi
 func pollUntilContextCancel(ctx context.Context, condition wait.ConditionWithContextFunc) error {
 	return wait.PollUntilContextCancel(ctx, collectorTickerInterval, true /* immediate */, condition)
 }
-

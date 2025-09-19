@@ -62,7 +62,7 @@ const expectedMetrics = `
 func TestGatherer_Gather(t *testing.T) {
 	t.Skip("Metric package has been refactored - test needs update")
 	return
-	
+
 	/*metricstest.WithMetrics(t)
 
 	registry := metric.NewRegistry()

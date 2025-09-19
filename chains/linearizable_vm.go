@@ -7,9 +7,9 @@ import (
 	"context"
 	"errors"
 
+	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	coreinterfaces "github.com/luxfi/consensus/core/interfaces"
-	consContext "github.com/luxfi/consensus/context"
 	// "github.com/luxfi/consensus/engine/chain" // currently unused
 	"github.com/luxfi/consensus/engine/chain/block"
 	// "github.com/luxfi/consensus/engine/dag/vertex" // Not used
@@ -51,9 +51,9 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 
 	// Initialize the ChainVM
 	// Convert consensus types to block types
-	// Use consensus.ConsensusContext 
+	// Use consensus.ConsensusContext
 	consensusCtx := &consContext.Context{}
-	
+
 	chainCtx := &block.ChainContext{
 		Context: consensusCtx,
 	}
@@ -282,12 +282,12 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	vm.configBytes = configBytes
 	vm.fxs = coreFxs
 	vm.appSender = coreAppSender
-	
+
 	// Type assert msgChan
 	if toEngine, ok := msgChan.(chan<- block.Message); ok {
 		vm.toEngine = toEngine
 	}
-	
+
 	// Type assert db for DBManager
 	if dbManager, ok := db.(block.DBManager); ok {
 		vm.dbManager = dbManager

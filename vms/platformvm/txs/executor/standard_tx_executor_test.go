@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
@@ -1600,7 +1600,7 @@ func newRemoveNetValidatorTx(t *testing.T) (*txs.RemoveNetValidatorTx, *txs.Tx) 
 				},
 			},
 		},
-		Net: ids.GenerateTestID(),
+		Net:    ids.GenerateTestID(),
 		NodeID: ids.GenerateTestNodeID(),
 		SubnetAuth: &secp256k1fx.Credential{
 			Sigs: make([][65]byte, 1),
@@ -1930,7 +1930,7 @@ func newTransformNetTx(t *testing.T) (*txs.TransformNetTx, *txs.Tx) {
 				},
 			},
 		},
-		Net:                   ids.GenerateTestID(),
+		Net:                      ids.GenerateTestID(),
 		AssetID:                  ids.GenerateTestID(),
 		InitialSupply:            10,
 		MaximumSupply:            10,

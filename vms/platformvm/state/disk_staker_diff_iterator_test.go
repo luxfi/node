@@ -18,9 +18,9 @@ func FuzzMarshalDiffKey(f *testing.F) {
 		require := require.New(t)
 
 		var (
-			netID ids.ID
-			height   uint64
-			nodeID   ids.NodeID
+			netID  ids.ID
+			height uint64
+			nodeID ids.NodeID
 		)
 		fz := fuzzer.NewFuzzer(data)
 		fz.Fill(&netID, &height, &nodeID)

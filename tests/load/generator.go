@@ -13,8 +13,8 @@ import (
 	"github.com/luxfi/metric"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/luxfi/node/tests"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/tests"
 )
 
 type Test interface {

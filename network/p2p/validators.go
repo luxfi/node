@@ -10,12 +10,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/sampler"
-	"github.com/luxfi/math/set"
 )
 
 var (
@@ -42,7 +42,7 @@ func NewValidators(
 	return &Validators{
 		peers:                    peers,
 		log:                      log,
-		netID:                 netID,
+		netID:                    netID,
 		validators:               validators,
 		maxValidatorSetStaleness: maxValidatorSetStaleness,
 	}
@@ -52,7 +52,7 @@ func NewValidators(
 type Validators struct {
 	peers                    *Peers
 	log                      log.Logger
-	netID                 ids.ID
+	netID                    ids.ID
 	validators               validators.State
 	maxValidatorSetStaleness time.Duration
 

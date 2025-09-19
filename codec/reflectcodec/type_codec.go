@@ -11,8 +11,8 @@ import (
 	"reflect"
 	"slices"
 
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/utils/wrappers"
 )
 

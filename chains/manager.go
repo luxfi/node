@@ -14,10 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus"
 	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/metric"
 	// "github.com/luxfi/consensus/core/interfaces" // Not used
 	// "github.com/luxfi/consensus/core/tracker" // Not used
 	"github.com/luxfi/consensus/engine/chain/block"
@@ -33,7 +33,6 @@ import (
 
 	// "github.com/luxfi/consensus/engine/chain/syncer" // Not used
 	"github.com/luxfi/consensus/networking/handler"
-	"github.com/luxfi/node/router"
 	"github.com/luxfi/consensus/networking/sender"
 	"github.com/luxfi/consensus/networking/timeout"
 	consensusset "github.com/luxfi/consensus/utils/set"
@@ -45,10 +44,11 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/router"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
 	utilmetric "github.com/luxfi/node/utils/metric"
@@ -362,7 +362,7 @@ func (v *consensusValidatorStateWrapper) GetCurrentValidators(ctx context.Contex
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Convert to GetValidatorOutput format
 	result := make(map[ids.NodeID]*consContext.GetValidatorOutput, len(valSet))
 	for nodeID, val := range valSet {
@@ -768,7 +768,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 		// This would need proper serialization in production
 		pubKeyBytes = nil
 	}
-	
+
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: m.NetworkID,
 		NetID:     chainParams.NetID,
@@ -1186,6 +1186,18 @@ func (m *manager) createLuxChain(
 	// Create bootstrapper with a callback function
 	bootstrapCallback := func(ctx context.Context, lastReqID uint32) error {
 		_ = lastReqID // Implementation note
+		
+		// CRITICAL: For Platform chain, unblock other chains when bootstrap completes
+		if chainParams.ID == constants.PlatformChainID {
+			m.Log.Info("Platform chain bootstrap complete - unblocking chain creator")
+			select {
+			case <-m.unblockChainCreatorCh:
+				// Channel already closed, ignore
+			default:
+				close(m.unblockChainCreatorCh)
+			}
+		}
+		
 		return linearEngine.Start(ctx)
 	}
 
@@ -1199,6 +1211,21 @@ func (m *manager) createLuxChain(
 
 	if m.TracingEnabled {
 		linearBootstrapper = smbootstrap.Trace(linearBootstrapper, m.Tracer)
+	}
+	
+	// CRITICAL FIX: When SkipBootstrap is enabled for single-node mode,
+	// immediately unblock chain creator for Platform chain
+	if m.SkipBootstrap && chainParams.ID == constants.PlatformChainID {
+		m.Log.Info("Skip-bootstrap mode: Platform chain starting - immediately unblocking chain creator")
+		// Unblock in a goroutine to avoid blocking
+		go func() {
+			select {
+			case <-m.unblockChainCreatorCh:
+				// Channel already closed, ignore
+			default:
+				close(m.unblockChainCreatorCh)
+			}
+		}()
 	}
 
 	// Create handler for DAG bootstrap
@@ -1363,49 +1390,45 @@ func (m *manager) createLinearChain(
 	// We'll use the context directly instead
 	// TODO: Re-enable when consensus package is updated
 	/*
-	ids := consensus.MustIDs(ctx)
-	runtime := &interfaces.Runtime{
-		NetworkID:      ids.NetworkID,
-		NetID:       ids.NetID,
-		ChainID:        ids.ChainID,
-		NodeID:         ids.NodeID,
-		PublicKey:      ids.PublicKey,
-		LUXAssetID:     m.LUXAssetID,
-		CChainID:       m.CChainID,
-		ChainDataDir:   chainDataDir,
-		Log:            m.Log,
-		Metrics:        vmMetrics,
-		ValidatorState: valStateWrapper,
-		BCLookup:       m,
-		SharedMemory:   sharedMem,
-	}
+		ids := consensus.MustIDs(ctx)
+		runtime := &interfaces.Runtime{
+			NetworkID:      ids.NetworkID,
+			NetID:       ids.NetID,
+			ChainID:        ids.ChainID,
+			NodeID:         ids.NodeID,
+			PublicKey:      ids.PublicKey,
+			LUXAssetID:     m.LUXAssetID,
+			CChainID:       m.CChainID,
+			ChainDataDir:   chainDataDir,
+			Log:            m.Log,
+			Metrics:        vmMetrics,
+			ValidatorState: valStateWrapper,
+			BCLookup:       m,
+			SharedMemory:   sharedMem,
+		}
 
-	// Passes messages from the consensus engine to the network
-	messageSender, err := sender.New(
-		runtime,
-		m.MsgCreator,
-		m.Net,                  // Passing network as interface{}
-		m.ManagerConfig.Router, // Passing router as interface{}
-		sb,
-		// ctx.Registerer doesn't exist in context.Context
-	)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize sender: %w", err)
-	}
+		// Passes messages from the consensus engine to the network
+		messageSender, err := sender.New(
+			runtime,
+			m.MsgCreator,
+			m.Net,                  // Passing network as interface{}
+			m.ManagerConfig.Router, // Passing router as interface{}
+			sb,
+			// ctx.Registerer doesn't exist in context.Context
+		)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't initialize sender: %w", err)
+		}
 
-	if m.TracingEnabled {
-		messageSender = sender.Trace(messageSender, m.Tracer)
-	}
+		if m.TracingEnabled {
+			messageSender = sender.Trace(messageSender, m.Tracer)
+		}
 	*/
-	
+
 	// For now, use a nil message sender since sender.New requires Runtime
 	// ExternalSender doesn't exist, just use interface{}
 	_ = interface{}(nil) // messageSender placeholder
 
-	// var (
-	// 	bootstrapFunc func() // Not used
-	// 	// subnetConnector interface{} // Not used
-	// )
 	// If [m.validatorState] is nil then we are creating the P-Chain. Since the
 	// P-Chain is the first chain to be created, we can use it to initialize
 	// required interfaces for the other chains
@@ -1444,9 +1467,8 @@ func (m *manager) createLinearChain(
 		//
 		// The linear bootstrapper ensures this function is only executed once, so
 		// we don't need to be concerned about closing this channel multiple times.
-		// bootstrapFunc = func() {
-		// 	close(m.unblockChainCreatorCh)
-		// }
+		// NOTE: The unblocking of chain creator is now handled directly in the
+		// bootstrap callback and skip-bootstrap logic
 
 		// Set up the net connector for the P-Chain
 		// subnetConnector, ok = vm.(validators.SubnetConnector)
@@ -1527,7 +1549,7 @@ func (m *manager) createLinearChain(
 	if m.TracingEnabled {
 		vm = tracedvm.NewBlockVM(vm, "proposervm", m.Tracer)
 	}
-	
+
 	// The channel through which a VM may send messages to the consensus engine
 	// VM uses this channel to notify engine that a block is ready to be made
 	msgChan := make(chan core.Message, defaultChannelSize)
@@ -1540,7 +1562,7 @@ func (m *manager) createLinearChain(
 		// BLS PublicKey doesn't have a Bytes() method, so we'll leave it nil for now
 		pubKeyBytes = nil
 	}
-	
+
 	consensusCtx := &consContext.Context{
 		QuantumID: m.NetworkID,
 		NetID:     chainParams.NetID,
@@ -1576,13 +1598,13 @@ func (m *manager) createLinearChain(
 	} else {
 		genesisPreview = fmt.Sprintf("%x", genesisData)
 	}
-	
-	m.Log.Info("Initializing VM", 
+
+	m.Log.Info("Initializing VM",
 		log.Stringer("chainID", chainParams.ID),
 		log.Int("genesisDataLen", len(genesisData)),
 		log.String("genesisPreview", genesisPreview),
 		log.Int("fxsCount", len(blockFxs)))
-	
+
 	// Convert blockFxs to []interface{} for Initialize
 	var fxsInterface []interface{}
 	for _, fx := range blockFxs {
@@ -1601,7 +1623,7 @@ func (m *manager) createLinearChain(
 		fxsInterface,
 		appSender,
 	); err != nil {
-		m.Log.Error("VM Initialize failed", 
+		m.Log.Error("VM Initialize failed",
 			log.Stringer("chainID", chainParams.ID),
 			log.String("errorDetails", err.Error()),
 			log.Err(err))
@@ -1678,23 +1700,23 @@ func (m *manager) createLinearChain(
 	// handler.New requires runtime which is not available
 	// Asynchronously passes messages from the network to the consensus engine
 	/*
-	h, err := handler.New(
-		runtime,
-		nil,          // cn was block.ChangeNotifier which doesn't exist
-		subscription, // Pass as interface{}
-		vdrs,
-		m.FrontierPollFrequency,
-		m.ConsensusAppConcurrency,
-		m.ResourceTracker, // Pass as interface{}
-		sb,
-		connectedValidators,
-		peerTracker, // Pass as interface{}
-		handlerReg,
-		// func() {} removed - signature doesn't accept this
-	)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize message handler: %w", err)
-	}
+		h, err := handler.New(
+			runtime,
+			nil,          // cn was block.ChangeNotifier which doesn't exist
+			subscription, // Pass as interface{}
+			vdrs,
+			m.FrontierPollFrequency,
+			m.ConsensusAppConcurrency,
+			m.ResourceTracker, // Pass as interface{}
+			sb,
+			connectedValidators,
+			peerTracker, // Pass as interface{}
+			handlerReg,
+			// func() {} removed - signature doesn't accept this
+		)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't initialize message handler: %w", err)
+		}
 	*/
 	// Create a placeholder handler since handler.New is not available
 	h := &placeholderHandler{}
@@ -1709,76 +1731,76 @@ func (m *manager) createLinearChain(
 	// Most consensus engine creation is disabled due to missing runtime and types
 	// This needs to be re-enabled when consensus package is updated
 	/*
-	consensusGetHandler, err := consensusgetter.New(
-		vm,
-		messageSender,
-		m.Log,
-		m.BootstrapMaxTimeGetAncestors,
-		m.BootstrapAncestorsMaxContainersSent,
-		// ctx.Registerer doesn't exist in context.Context
-	)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize consensus base message handler: %w", err)
-	}
+		consensusGetHandler, err := consensusgetter.New(
+			vm,
+			messageSender,
+			m.Log,
+			m.BootstrapMaxTimeGetAncestors,
+			m.BootstrapAncestorsMaxContainersSent,
+			// ctx.Registerer doesn't exist in context.Context
+		)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't initialize consensus base message handler: %w", err)
+		}
 
-	// var consensus smcon.Consensus
+		// var consensus smcon.Consensus
 
-	// Create engine, bootstrapper and state-syncer in this order,
-	// to make sure start callbacks are duly initialized
-	// chain.Parameters is an empty struct
-	chainParams := smeng.Parameters{}
+		// Create engine, bootstrapper and state-syncer in this order,
+		// to make sure start callbacks are duly initialized
+		// chain.Parameters is an empty struct
+		chainParams := smeng.Parameters{}
 
-	// engineConfig not used - using New directly
-	// engineConfig := smeng.Config{
-	// 	Ctx:                 ctx,
-	// 	AllGetsServer:       consensusGetHandler,
-	// 	VM:                  vm,
-	// 	Sender:              messageSender,
-	// 	Validators:          vdrs,
-	// 	ConnectedValidators: connectedValidators,
-	// 	Params:              chainParams,
-	// 	Consensus:           consensus,
-	// 	// PartialSync field removed - doesn't exist
-	// }
-	// var engine core.Engine
-	engine, err := smeng.New(runtime, chainParams)
-	if err != nil {
-		return nil, fmt.Errorf("error initializing linear engine: %w", err)
-	}
-	_ = engine // temporarily unused
+		// engineConfig not used - using New directly
+		// engineConfig := smeng.Config{
+		// 	Ctx:                 ctx,
+		// 	AllGetsServer:       consensusGetHandler,
+		// 	VM:                  vm,
+		// 	Sender:              messageSender,
+		// 	Validators:          vdrs,
+		// 	ConnectedValidators: connectedValidators,
+		// 	Params:              chainParams,
+		// 	Consensus:           consensus,
+		// 	// PartialSync field removed - doesn't exist
+		// }
+		// var engine core.Engine
+		engine, err := smeng.New(runtime, chainParams)
+		if err != nil {
+			return nil, fmt.Errorf("error initializing linear engine: %w", err)
+		}
+		_ = engine // temporarily unused
 
-	// if m.TracingEnabled {
-	// 	engine = core.TraceEngine(engine, m.Tracer)
-	// }
+		// if m.TracingEnabled {
+		// 	engine = core.TraceEngine(engine, m.Tracer)
+		// }
 
-	// create bootstrap gear
-	bootstrapCfg := smbootstrap.Config{
-		AllGetsServer:    consensusGetHandler,
-		Ctx:              runtime,
-		Beacons:          beacons,
-		SampleK:          sampleK,
-		StartupTracker:   startupTracker,
-		Sender:           messageSender,
-		BootstrapTracker: sb,
-		// Timer field removed - h,
-		// PeerTracker field removed - doesn't exist
-		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
-		// DB field removed - doesn't exist
-		VM: vm,
-		// Bootstrapped field removed - doesn't exist
-		// NonVerifyingParse field removed - doesn't exist
-		// Haltable field removed - doesn't exist
-	}
-	// var bootstrapper core.BootstrapableEngine
-	_, err = smbootstrap.New(
-		bootstrapCfg,
-		func(ctx context.Context, lastReqID uint32) error {
-			return engine.Start(ctx)
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error initializing linear bootstrapper: %w", err)
-	}
+		// create bootstrap gear
+		bootstrapCfg := smbootstrap.Config{
+			AllGetsServer:    consensusGetHandler,
+			Ctx:              runtime,
+			Beacons:          beacons,
+			SampleK:          sampleK,
+			StartupTracker:   startupTracker,
+			Sender:           messageSender,
+			BootstrapTracker: sb,
+			// Timer field removed - h,
+			// PeerTracker field removed - doesn't exist
+			AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
+			// DB field removed - doesn't exist
+			VM: vm,
+			// Bootstrapped field removed - doesn't exist
+			// NonVerifyingParse field removed - doesn't exist
+			// Haltable field removed - doesn't exist
+		}
+		// var bootstrapper core.BootstrapableEngine
+		_, err = smbootstrap.New(
+			bootstrapCfg,
+			func(ctx context.Context, lastReqID uint32) error {
+				return engine.Start(ctx)
+			},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error initializing linear bootstrapper: %w", err)
+		}
 	*/
 
 	// if m.TracingEnabled {
@@ -2088,9 +2110,11 @@ func (e *emptyValidatorManager) Count(netID ids.ID) int {
 	return 0
 }
 
-func (e *emptyValidatorManager) RegisterCallbackListener(listener validators.ManagerCallbackListener) {}
+func (e *emptyValidatorManager) RegisterCallbackListener(listener validators.ManagerCallbackListener) {
+}
 
-func (e *emptyValidatorManager) RegisterSetCallbackListener(netID ids.ID, listener validators.SetCallbackListener) {}
+func (e *emptyValidatorManager) RegisterSetCallbackListener(netID ids.ID, listener validators.SetCallbackListener) {
+}
 
 func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return nil, nil
@@ -2099,37 +2123,83 @@ func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height
 // placeholderHandler implements handler.Handler interface
 type placeholderHandler struct{}
 
-func (p *placeholderHandler) Context() *consContext.Context { return nil }
-func (p *placeholderHandler) Start(ctx context.Context, startReqID uint32) {}
+func (p *placeholderHandler) Context() *consContext.Context                 { return nil }
+func (p *placeholderHandler) Start(ctx context.Context, startReqID uint32)  {}
 func (p *placeholderHandler) Push(ctx context.Context, msg handler.Message) {}
-func (p *placeholderHandler) Len() int { return 0 }
-func (p *placeholderHandler) Get(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error { return nil }
-func (p *placeholderHandler) GetAncestors(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error { return nil }
-func (p *placeholderHandler) GetAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error { return nil }
-func (p *placeholderHandler) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerIDs []ids.ID) error { return nil }
-func (p *placeholderHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error { return nil }
-func (p *placeholderHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, container []byte) error { return nil }
-func (p *placeholderHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error { return nil }
-func (p *placeholderHandler) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error { return nil }
-func (p *placeholderHandler) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error { return nil }
-func (p *placeholderHandler) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error { return nil }
-func (p *placeholderHandler) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error { return nil }
-func (p *placeholderHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error { return nil }
-func (p *placeholderHandler) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error { return nil }
-func (p *placeholderHandler) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error { return nil }
-func (p *placeholderHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error { return nil }
-func (p *placeholderHandler) GetStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error { return nil }
-func (p *placeholderHandler) StateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error { return nil }
-func (p *placeholderHandler) GetAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, heights []uint64) error { return nil }
-func (p *placeholderHandler) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error { return nil }
-func (p *placeholderHandler) GetStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, height uint64) error { return nil }
-func (p *placeholderHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error { return nil }
-func (p *placeholderHandler) Connected(ctx context.Context, nodeID ids.NodeID) error { return nil }
+func (p *placeholderHandler) Len() int                                      { return 0 }
+func (p *placeholderHandler) Get(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
+	return nil
+}
+func (p *placeholderHandler) GetAncestors(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
+	return nil
+}
+func (p *placeholderHandler) GetAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
+	return nil
+}
+func (p *placeholderHandler) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerIDs []ids.ID) error {
+	return nil
+}
+func (p *placeholderHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error {
+	return nil
+}
+func (p *placeholderHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, container []byte) error {
+	return nil
+}
+func (p *placeholderHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
+	return nil
+}
+func (p *placeholderHandler) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+	return nil
+}
+func (p *placeholderHandler) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error {
+	return nil
+}
+func (p *placeholderHandler) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
+	return nil
+}
+func (p *placeholderHandler) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
+	return nil
+}
+func (p *placeholderHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
+	return nil
+}
+func (p *placeholderHandler) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+	return nil
+}
+func (p *placeholderHandler) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
+	return nil
+}
+func (p *placeholderHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+	return nil
+}
+func (p *placeholderHandler) GetStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
+	return nil
+}
+func (p *placeholderHandler) StateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
+	return nil
+}
+func (p *placeholderHandler) GetAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, heights []uint64) error {
+	return nil
+}
+func (p *placeholderHandler) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error {
+	return nil
+}
+func (p *placeholderHandler) GetStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, height uint64) error {
+	return nil
+}
+func (p *placeholderHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
+	return nil
+}
+func (p *placeholderHandler) Connected(ctx context.Context, nodeID ids.NodeID) error    { return nil }
 func (p *placeholderHandler) Disconnected(ctx context.Context, nodeID ids.NodeID) error { return nil }
-func (p *placeholderHandler) HealthCheck(ctx context.Context) (interface{}, error) { return nil, nil }
-func (p *placeholderHandler) Stop(ctx context.Context) {}
-func (p *placeholderHandler) HandleInbound(ctx context.Context, msg handler.Message) error { return nil }
-func (p *placeholderHandler) HandleOutbound(ctx context.Context, msg handler.Message) error { return nil }
+func (p *placeholderHandler) HealthCheck(ctx context.Context) (interface{}, error)      { return nil, nil }
+func (p *placeholderHandler) Stop(ctx context.Context)                                  {}
+func (p *placeholderHandler) HandleInbound(ctx context.Context, msg handler.Message) error {
+	return nil
+}
+func (p *placeholderHandler) HandleOutbound(ctx context.Context, msg handler.Message) error {
+	return nil
+}
 
 // noopAppSender is a no-op implementation of AppSender
 type noopAppSender struct{}

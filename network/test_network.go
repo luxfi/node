@@ -13,26 +13,25 @@ import (
 	"sync"
 	"time"
 
-
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
+	subnets "github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
-	subnets "github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 )
 
@@ -191,8 +190,8 @@ func NewTestNetwork(
 			PeerReadBufferSize:           constants.DefaultNetworkPeerReadBufferSize,
 			PeerWriteBufferSize:          constants.DefaultNetworkPeerWriteBufferSize,
 			ResourceTracker:              resourceTracker,
-			CPUTargeter:  &noOpTargeter{target: uint64(runtime.NumCPU())},
-			DiskTargeter: &noOpTargeter{target: 1000 * units.GiB},
+			CPUTargeter:                  &noOpTargeter{target: uint64(runtime.NumCPU())},
+			DiskTargeter:                 &noOpTargeter{target: 1000 * units.GiB},
 		},
 		msgCreator,
 		promRegistry,
@@ -253,7 +252,7 @@ func (n *noOpCPUTracker) TimeUntilUsage(nodeID ids.NodeID, now time.Time, value 
 }
 func (n *noOpCPUTracker) TotalUsage() float64 { return 0 }
 
-// noOpDiskTracker is a no-op disk tracker  
+// noOpDiskTracker is a no-op disk tracker
 type noOpDiskTracker struct{}
 
 func (n *noOpDiskTracker) Usage(nodeID ids.NodeID, now time.Time) float64 { return 0 }
@@ -271,31 +270,43 @@ func (n *noOpValidatorsManager) GetValidators(netID ids.ID) (validators.Set, err
 func (n *noOpValidatorsManager) GetValidator(netID ids.ID, nodeID ids.NodeID) (*validators.GetValidatorOutput, bool) {
 	return nil, false
 }
-func (n *noOpValidatorsManager) GetLight(netID ids.ID, nodeID ids.NodeID) uint64 { return 0 }
+func (n *noOpValidatorsManager) GetLight(netID ids.ID, nodeID ids.NodeID) uint64  { return 0 }
 func (n *noOpValidatorsManager) GetWeight(netID ids.ID, nodeID ids.NodeID) uint64 { return 0 }
-func (n *noOpValidatorsManager) TotalLight(netID ids.ID) (uint64, error) { return 0, nil }
-func (n *noOpValidatorsManager) TotalWeight(netID ids.ID) (uint64, error) { return 0, nil }
-func (n *noOpValidatorsManager) AddStaker(netID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error { return nil }
-func (n *noOpValidatorsManager) AddWeight(netID ids.ID, nodeID ids.NodeID, weight uint64) error { return nil }
-func (n *noOpValidatorsManager) RemoveWeight(netID ids.ID, nodeID ids.NodeID, weight uint64) error { return nil }
-func (n *noOpValidatorsManager) GetMap(netID ids.ID) map[ids.NodeID]*validators.GetValidatorOutput { return nil }
+func (n *noOpValidatorsManager) TotalLight(netID ids.ID) (uint64, error)          { return 0, nil }
+func (n *noOpValidatorsManager) TotalWeight(netID ids.ID) (uint64, error)         { return 0, nil }
+func (n *noOpValidatorsManager) AddStaker(netID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
+	return nil
+}
+func (n *noOpValidatorsManager) AddWeight(netID ids.ID, nodeID ids.NodeID, weight uint64) error {
+	return nil
+}
+func (n *noOpValidatorsManager) RemoveWeight(netID ids.ID, nodeID ids.NodeID, weight uint64) error {
+	return nil
+}
+func (n *noOpValidatorsManager) GetMap(netID ids.ID) map[ids.NodeID]*validators.GetValidatorOutput {
+	return nil
+}
 func (n *noOpValidatorsManager) GetValidatorIDs(netID ids.ID) []ids.NodeID { return nil }
-func (n *noOpValidatorsManager) NumValidators(netID ids.ID) int { return 0 }
-func (n *noOpValidatorsManager) NumSubnets() int { return 0 }
-func (n *noOpValidatorsManager) SubsetWeight(netID ids.ID, nodeIDs consensusset.Set[ids.NodeID]) (uint64, error) { return 0, nil }
+func (n *noOpValidatorsManager) NumValidators(netID ids.ID) int            { return 0 }
+func (n *noOpValidatorsManager) NumSubnets() int                           { return 0 }
+func (n *noOpValidatorsManager) SubsetWeight(netID ids.ID, nodeIDs consensusset.Set[ids.NodeID]) (uint64, error) {
+	return 0, nil
+}
 func (n *noOpValidatorsManager) Sample(netID ids.ID, size int) ([]ids.NodeID, error) { return nil, nil }
-func (n *noOpValidatorsManager) Count(netID ids.ID) int { return 0 }
-func (n *noOpValidatorsManager) RegisterCallbackListener(listener validators.ManagerCallbackListener) {}
-func (n *noOpValidatorsManager) RegisterSetCallbackListener(netID ids.ID, listener validators.SetCallbackListener) {}
+func (n *noOpValidatorsManager) Count(netID ids.ID) int                              { return 0 }
+func (n *noOpValidatorsManager) RegisterCallbackListener(listener validators.ManagerCallbackListener) {
+}
+func (n *noOpValidatorsManager) RegisterSetCallbackListener(netID ids.ID, listener validators.SetCallbackListener) {
+}
 
 // noOpValidatorSet is a no-op validator set for testing
 type noOpValidatorSet struct{}
 
-func (n *noOpValidatorSet) Has(ids.NodeID) bool                     { return false }
-func (n *noOpValidatorSet) Len() int                                 { return 0 }
-func (n *noOpValidatorSet) List() []validators.Validator             { return nil }
-func (n *noOpValidatorSet) Light() uint64                            { return 0 }
-func (n *noOpValidatorSet) Sample(size int) ([]ids.NodeID, error)   { return nil, nil }
+func (n *noOpValidatorSet) Has(ids.NodeID) bool                   { return false }
+func (n *noOpValidatorSet) Len() int                              { return 0 }
+func (n *noOpValidatorSet) List() []validators.Validator          { return nil }
+func (n *noOpValidatorSet) Light() uint64                         { return 0 }
+func (n *noOpValidatorSet) Sample(size int) ([]ids.NodeID, error) { return nil, nil }
 
 // noOpMetricsFactory is a no-op metrics factory for testing
 type noOpMetricsFactory struct{}

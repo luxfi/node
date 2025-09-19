@@ -13,13 +13,13 @@ import (
 
 // FakeSender is a test implementation
 type FakeSender struct {
-	SendAppRequestF  func(context.Context, set.Set[ids.NodeID], uint32, []byte) error
-	SendAppResponseF func(context.Context, ids.NodeID, uint32, []byte) error
-	SendAppErrorF    func(context.Context, ids.NodeID, uint32, int32, string) error
-	SendAppGossipF   func(context.Context, set.Set[ids.NodeID], []byte) error
+	SendAppRequestF            func(context.Context, set.Set[ids.NodeID], uint32, []byte) error
+	SendAppResponseF           func(context.Context, ids.NodeID, uint32, []byte) error
+	SendAppErrorF              func(context.Context, ids.NodeID, uint32, int32, string) error
+	SendAppGossipF             func(context.Context, set.Set[ids.NodeID], []byte) error
 	SendCrossChainAppRequestF  func(context.Context, ids.ID, uint32, []byte) error
 	SendCrossChainAppResponseF func(context.Context, ids.ID, uint32, []byte) error
-	
+
 	// Fields for test channels
 	SentAppRequest  chan []byte
 	SentAppResponse chan []byte

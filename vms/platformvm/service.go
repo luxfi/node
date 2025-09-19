@@ -17,11 +17,11 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/math/set"
 
 	// "github.com/luxfi/node/vms/components/keystore" // Removed - keystore functionality deprecated
 	"github.com/luxfi/node/vms/components/lux"
@@ -34,8 +34,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
-	avajson "github.com/luxfi/node/utils/json"
 	safemath "github.com/luxfi/math/math"
+	avajson "github.com/luxfi/node/utils/json"
 	platformapi "github.com/luxfi/node/vms/platformvm/api"
 )
 
@@ -55,10 +55,10 @@ const (
 )
 
 var (
-	errMissingDecisionBlock       = errors.New("should have a decision block within the past two blocks")
+	errMissingDecisionBlock    = errors.New("should have a decision block within the past two blocks")
 	errPrimaryNetworkIsNotANet = errors.New("the primary network isn't a net")
-	errNoAddresses                = errors.New("no addresses provided")
-	errMissingBlockchainID        = errors.New("argument 'blockchainID' not given")
+	errNoAddresses             = errors.New("no addresses provided")
+	errMissingBlockchainID     = errors.New("argument 'blockchainID' not given")
 )
 
 // Service defines the API calls that can be made to the platform chain
@@ -1218,10 +1218,10 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 				return fmt.Errorf("expected tx type *txs.CreateChainTx but got %T", chainTx.Unsigned)
 			}
 			response.Blockchains = append(response.Blockchains, APIBlockchain{
-				ID:       chainID,
-				Name:     chain.ChainName,
+				ID:    chainID,
+				Name:  chain.ChainName,
 				NetID: netID,
-				VMID:     chain.VMID,
+				VMID:  chain.VMID,
 			})
 		}
 	}
@@ -1237,10 +1237,10 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 			return fmt.Errorf("expected tx type *txs.CreateChainTx but got %T", chainTx.Unsigned)
 		}
 		response.Blockchains = append(response.Blockchains, APIBlockchain{
-			ID:       chainID,
-			Name:     chain.ChainName,
+			ID:    chainID,
+			Name:  chain.ChainName,
 			NetID: constants.PrimaryNetworkID,
-			VMID:     chain.VMID,
+			VMID:  chain.VMID,
 		})
 	}
 
@@ -1624,8 +1624,8 @@ func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestamp
 
 // GetValidatorsAtArgs is the response from GetValidatorsAt
 type GetValidatorsAtArgs struct {
-	Height   avajson.Uint64 `json:"height"`
-	NetID ids.ID         `json:"netID"`
+	Height avajson.Uint64 `json:"height"`
+	NetID  ids.ID         `json:"netID"`
 }
 
 type jsonGetValidatorOutput struct {

@@ -11,10 +11,10 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/math/math"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -408,7 +408,7 @@ func (b *builder) NewAddValidatorTx(
 	if blockchainID == ids.Empty {
 		blockchainID = constants.PlatformChainID
 	}
-	
+
 	tx := &txs.AddValidatorTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
@@ -453,7 +453,7 @@ func (b *builder) NewAddNetValidatorTx(
 			Memo:         ops.Memo(),
 		}},
 		NetValidator: *vdr,
-		SubnetAuth:      subnetAuth,
+		SubnetAuth:   subnetAuth,
 	}
 	return tx, b.initCtx(tx)
 }
@@ -486,7 +486,7 @@ func (b *builder) NewRemoveNetValidatorTx(
 			Outs:         outputs,
 			Memo:         ops.Memo(),
 		}},
-		Net:     netID,
+		Net:        netID,
 		NodeID:     nodeID,
 		SubnetAuth: subnetAuth,
 	}
@@ -559,7 +559,7 @@ func (b *builder) NewCreateChainTx(
 			Outs:         outputs,
 			Memo:         ops.Memo(),
 		}},
-		NetID:    netID,
+		NetID:       netID,
 		ChainName:   chainName,
 		VMID:        vmID,
 		FxIDs:       fxIDs,
@@ -626,7 +626,7 @@ func (b *builder) NewTransferNetOwnershipTx(
 			Outs:         outputs,
 			Memo:         ops.Memo(),
 		}},
-		Net:     netID,
+		Net:        netID,
 		Owner:      owner,
 		SubnetAuth: subnetAuth,
 	}
@@ -820,7 +820,7 @@ func (b *builder) NewTransformNetTx(
 			Outs:         outputs,
 			Memo:         ops.Memo(),
 		}},
-		Net:                   netID,
+		Net:                      netID,
 		AssetID:                  assetID,
 		InitialSupply:            initialSupply,
 		MaximumSupply:            maxSupply,
@@ -875,7 +875,7 @@ func (b *builder) NewAddPermissionlessValidatorTx(
 			Memo:         ops.Memo(),
 		}},
 		Validator:             vdr.Validator,
-		Net:                vdr.Net,
+		Net:                   vdr.Net,
 		Signer:                signer,
 		StakeOuts:             stakeOutputs,
 		ValidatorRewardsOwner: validationRewardsOwner,
@@ -917,7 +917,7 @@ func (b *builder) NewAddPermissionlessDelegatorTx(
 			Memo:         ops.Memo(),
 		}},
 		Validator:              vdr.Validator,
-		Net:                 vdr.Net,
+		Net:                    vdr.Net,
 		StakeOuts:              stakeOutputs,
 		DelegationRewardsOwner: rewardsOwner,
 	}

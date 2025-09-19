@@ -7,8 +7,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 )
 
 const (

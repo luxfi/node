@@ -14,10 +14,10 @@ import (
 	"path/filepath"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/vms/platformvm/signer"
 )
 

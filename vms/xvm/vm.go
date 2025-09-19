@@ -13,26 +13,26 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/dag"
 	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
-	"github.com/luxfi/consensus/protocol/chain"
 	consensusinterfaces "github.com/luxfi/consensus/interfaces"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/validators"
 	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/pubsub"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/index"
@@ -208,7 +208,7 @@ func (vm *VM) Initialize(
 		// Store chain-specific info from consensus context
 		vm.ChainID = consensusCtx.ChainID
 		vm.XChainID = consensusCtx.ChainID // For XVM, this is the same
-		
+
 		// SharedMemory will be set by the chains manager when the VM is created
 	}
 
@@ -953,7 +953,7 @@ func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Convert map[ids.NodeID]uint64 to map[ids.NodeID]*validators.GetValidatorOutput
 	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(valSet))
 	for nodeID, weight := range valSet {
@@ -964,4 +964,3 @@ func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height
 	}
 	return result, nil
 }
-

@@ -14,9 +14,9 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
@@ -30,7 +30,7 @@ func must[T any](t require.TestingT) func(T, error) T {
 
 func TestVerifyWarpMessages(t *testing.T) {
 	var (
-		netID     = ids.GenerateTestID()
+		netID        = ids.GenerateTestID()
 		chainID      = ids.GenerateTestID()
 		newValidator = func() (bls.Signer, *validators.GetValidatorOutput) {
 			sk, err := localsigner.New()

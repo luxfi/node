@@ -10,15 +10,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/cache"
 	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/network/p2p/p2ptest"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/network/p2p/p2ptest"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 

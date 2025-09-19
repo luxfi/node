@@ -37,7 +37,7 @@ func (kc *UnifiedKeychain) GenerateKey() (ids.ShortID, error) {
 	if err != nil {
 		return ids.ShortEmpty, err
 	}
-	
+
 	return kc.AddKey(privKey, pubKey), nil
 }
 
@@ -47,7 +47,7 @@ func (kc *UnifiedKeychain) GenerateKeyWithAlgo(algo crypto.Algorithm) (ids.Short
 	if err != nil {
 		return ids.ShortEmpty, err
 	}
-	
+
 	return kc.AddKey(privKey, pubKey), nil
 }
 
@@ -60,20 +60,20 @@ func (kc *UnifiedKeychain) AddKey(privKey crypto.PrivateKey, pubKey crypto.Publi
 		copy(padded, addrBytes)
 		addrBytes = padded
 	}
-	
+
 	addr := ids.ShortID{}
 	copy(addr[:], addrBytes[:20])
-	
+
 	signer := &UnifiedSigner{
 		privKey: privKey,
 		pubKey:  pubKey,
 		address: addr,
 		crypto:  kc.crypto,
 	}
-	
+
 	kc.keysByAddress[addr] = signer
 	kc.addressSet.Add(addr)
-	
+
 	return addr
 }
 

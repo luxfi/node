@@ -22,7 +22,7 @@ func (t *TestAppSender) SendAppRequest(ctx context.Context, nodeID ids.NodeID, r
 	return nil
 }
 
-// SendAppResponse is a no-op for tests  
+// SendAppResponse is a no-op for tests
 func (t *TestAppSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
 	return nil
 }

@@ -15,10 +15,10 @@ import (
 )
 
 var (
-	// Temporarily disable interface check due to Status() method signature issue
-	// _ chain.Block = (*Block)(nil)
-	// OracleBlock is not available in consensus package
-	// _ chain.OracleBlock = (*Block)(nil)
+// Temporarily disable interface check due to Status() method signature issue
+// _ chain.Block = (*Block)(nil)
+// OracleBlock is not available in consensus package
+// _ chain.OracleBlock = (*Block)(nil)
 )
 
 // Exported for testing in platformvm package.
@@ -86,7 +86,6 @@ func (b *Block) StatusChoices() choices.Status {
 func (b *Block) Status() uint8 {
 	return uint8(b.StatusChoices())
 }
-
 
 func (b *Block) Timestamp() time.Time {
 	return b.manager.getTimestamp(b.ID())

@@ -60,7 +60,7 @@ type Options struct {
 	pollFrequencySet bool
 	pollFrequency    time.Duration
 
-	postIssuanceFunc PostIssuanceFunc
+	postIssuanceFunc    PostIssuanceFunc
 	confirmationHandler ConfirmationHandler
 }
 

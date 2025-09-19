@@ -18,13 +18,13 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	coreinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/protocol/chain"
-	consensuscontext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/utils/set"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -58,7 +58,6 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
-
 var (
 	errUnsupportedFXs                       = errors.New("unsupported feature extensions")
 	errBatchedParseBlockWrongNumberOfBlocks = errors.New("BatchedParseBlock returned different number of blocks than expected")
@@ -67,7 +66,7 @@ var (
 	_ block.BuildBlockWithContextChainVM = (*VMClient)(nil)
 	_ block.BatchedChainVM               = (*VMClient)(nil)
 	_ block.StateSyncableVM              = (*VMClient)(nil)
-	_ metric.Gatherer                = (*VMClient)(nil)
+	_ metric.Gatherer                    = (*VMClient)(nil)
 
 	_ block.Block             = (*blockClient)(nil)
 	_ block.WithVerifyContext = (*blockClient)(nil)
@@ -151,7 +150,7 @@ func (vm *VMClient) Initialize(
 	if len(fxs) != 0 {
 		return errUnsupportedFXs
 	}
-	
+
 	// Get chain ID for primary alias
 	var primaryAlias string
 	if consensusCtx != nil {
@@ -181,7 +180,9 @@ func (vm *VMClient) Initialize(
 
 	// Skip metrics registration if Metrics is not available in consensus context
 	if consensusCtx != nil && consensusCtx.Metrics != nil {
-		if metrics, ok := consensusCtx.Metrics.(interface{ Register(string, interface{}) error }); ok {
+		if metrics, ok := consensusCtx.Metrics.(interface {
+			Register(string, interface{}) error
+		}); ok {
 			if err := metrics.Register("", vm); err != nil {
 				return err
 			}
@@ -268,7 +269,7 @@ func (vm *VMClient) Initialize(
 		PublicKey:    consensusCtx.PublicKey,
 		XChainId:     consensusCtx.XChainID[:],
 		CChainId:     consensusCtx.CChainID[:],
-		LuxAssetId:   consensusCtx.AVAXAssetID[:],
+		LuxAssetId:   consensusCtx.LUXAssetID[:],
 		ChainDataDir: "",
 		GenesisBytes: genesisBytes,
 		UpgradeBytes: upgradeBytes,
@@ -366,11 +367,11 @@ func (vm *VMClient) SetState(ctx context.Context, state coreinterfaces.State) er
 	// For now, assume state is a simple interface that can be type asserted
 	// to a numeric value. This is a temporary fix.
 	var stateValue uint32
-	
+
 	// Try to get a numeric representation
 	// State is an interface, so we'll use a default mapping
 	stateValue = 0 // Default to Bootstrapping
-	
+
 	resp, err := vm.client.SetState(ctx, &vmpb.SetStateRequest{
 		State: vmpb.State(stateValue),
 	})
@@ -977,7 +978,6 @@ func (b *blockClient) VerifyWithContext(ctx context.Context, blockCtx *block.Con
 	return err
 }
 
-
 type summaryClient struct {
 	vm *VMClient
 
@@ -1185,35 +1185,39 @@ func (s *sharedMemoryWrapper) Indexed(peerChainID ids.ID, traits [][]byte, start
 // noopDatabase is a database that does nothing
 type noopDatabase struct{}
 
-func (n *noopDatabase) Has([]byte) (bool, error) { return false, nil }
-func (n *noopDatabase) Get([]byte) ([]byte, error) { return nil, database.ErrNotFound }
-func (n *noopDatabase) Put([]byte, []byte) error { return nil }
-func (n *noopDatabase) Delete([]byte) error { return nil }
-func (n *noopDatabase) NewBatch() database.Batch { return &noopBatch{} }
-func (n *noopDatabase) NewIterator() database.Iterator { return &emptyIterator{} }
-func (n *noopDatabase) NewIteratorWithStart([]byte) database.Iterator { return &emptyIterator{} }
+func (n *noopDatabase) Has([]byte) (bool, error)                       { return false, nil }
+func (n *noopDatabase) Get([]byte) ([]byte, error)                     { return nil, database.ErrNotFound }
+func (n *noopDatabase) Put([]byte, []byte) error                       { return nil }
+func (n *noopDatabase) Delete([]byte) error                            { return nil }
+func (n *noopDatabase) NewBatch() database.Batch                       { return &noopBatch{} }
+func (n *noopDatabase) NewIterator() database.Iterator                 { return &emptyIterator{} }
+func (n *noopDatabase) NewIteratorWithStart([]byte) database.Iterator  { return &emptyIterator{} }
 func (n *noopDatabase) NewIteratorWithPrefix([]byte) database.Iterator { return &emptyIterator{} }
-func (n *noopDatabase) NewIteratorWithStartAndPrefix([]byte, []byte) database.Iterator { return &emptyIterator{} }
-func (n *noopDatabase) Compact([]byte, []byte) error { return nil }
-func (n *noopDatabase) Close() error { return nil }
+func (n *noopDatabase) NewIteratorWithStartAndPrefix([]byte, []byte) database.Iterator {
+	return &emptyIterator{}
+}
+func (n *noopDatabase) Compact([]byte, []byte) error                     { return nil }
+func (n *noopDatabase) Close() error                                     { return nil }
 func (n *noopDatabase) HealthCheck(context.Context) (interface{}, error) { return nil, nil }
 
 type noopBatch struct{}
-func (n *noopBatch) Put([]byte, []byte) error { return nil }
-func (n *noopBatch) Delete([]byte) error { return nil }
-func (n *noopBatch) Size() int { return 0 }
-func (n *noopBatch) Write() error { return nil }
-func (n *noopBatch) Reset() {}
+
+func (n *noopBatch) Put([]byte, []byte) error                    { return nil }
+func (n *noopBatch) Delete([]byte) error                         { return nil }
+func (n *noopBatch) Size() int                                   { return 0 }
+func (n *noopBatch) Write() error                                { return nil }
+func (n *noopBatch) Reset()                                      {}
 func (n *noopBatch) Replay(database.KeyValueWriterDeleter) error { return nil }
-func (n *noopBatch) Inner() database.Batch { return n }
+func (n *noopBatch) Inner() database.Batch                       { return n }
 
 // emptyIterator is a database iterator that returns nothing
 type emptyIterator struct{}
-func (e *emptyIterator) Next() bool { return false }
-func (e *emptyIterator) Error() error { return nil }
-func (e *emptyIterator) Key() []byte { return nil }
+
+func (e *emptyIterator) Next() bool    { return false }
+func (e *emptyIterator) Error() error  { return nil }
+func (e *emptyIterator) Key() []byte   { return nil }
 func (e *emptyIterator) Value() []byte { return nil }
-func (e *emptyIterator) Release() {}
+func (e *emptyIterator) Release()      {}
 
 // bcLookupWrapper wraps BCLookup to match ids.AliaserReader
 type bcLookupWrapper struct {
@@ -1256,7 +1260,7 @@ func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Convert map[ids.NodeID]uint64 to map[ids.NodeID]*validators.GetValidatorOutput
 	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(valSet))
 	for nodeID, weight := range valSet {
@@ -1281,13 +1285,13 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netI
 	if err != nil {
 		return nil, 0, err
 	}
-	
+
 	// Get validators at current height
 	valSet, err := v.vs.GetValidatorSet(height, netID)
 	if err != nil {
 		return nil, 0, err
 	}
-	
+
 	// Convert to GetCurrentValidatorOutput format
 	result := make(map[ids.ID]*GetCurrentValidatorOutput, len(valSet))
 	for nodeID, weight := range valSet {
@@ -1299,13 +1303,15 @@ func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netI
 			Weight: weight,
 		}
 	}
-	
+
 	return result, height, nil
 }
 
 func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
 	// GetMinimumHeight is optional - return 0 if not available
-	if vs, ok := v.vs.(interface{ GetMinimumHeight(context.Context) (uint64, error) }); ok {
+	if vs, ok := v.vs.(interface {
+		GetMinimumHeight(context.Context) (uint64, error)
+	}); ok {
 		return vs.GetMinimumHeight(ctx)
 	}
 	return 0, nil
@@ -1341,7 +1347,7 @@ func (a *appSenderWrapper) SendAppError(ctx context.Context, nodeID ids.NodeID, 
 }
 
 func (a *appSenderWrapper) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
-	// block.AppSender expects a slice of nodeIDs  
+	// block.AppSender expects a slice of nodeIDs
 	nodeIDSlice := nodeIDs.List()
 	return a.appSender.SendAppGossip(ctx, nodeIDSlice, appGossipBytes)
 }
@@ -1406,7 +1412,9 @@ func (v *validatorStateAdapter) GetCurrentHeight() (uint64, error) {
 
 func (v *validatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 	// Try with context first
-	if vs, ok := v.vs.(interface{ GetNetID(context.Context, ids.ID) (ids.ID, error) }); ok {
+	if vs, ok := v.vs.(interface {
+		GetNetID(context.Context, ids.ID) (ids.ID, error)
+	}); ok {
 		return vs.GetNetID(ctx, chainID)
 	}
 	// Try without context
@@ -1417,7 +1425,9 @@ func (v *validatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (i
 }
 
 func (v *validatorStateAdapter) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
-	if vs, ok := v.vs.(interface{ GetValidatorSet(uint64, ids.ID) (map[ids.NodeID]uint64, error) }); ok {
+	if vs, ok := v.vs.(interface {
+		GetValidatorSet(uint64, ids.ID) (map[ids.NodeID]uint64, error)
+	}); ok {
 		return vs.GetValidatorSet(height, netID)
 	}
 	return nil, fmt.Errorf("GetValidatorSet not supported")

@@ -10,24 +10,24 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
-	coreinterfaces "github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
+	coreinterfaces "github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 
@@ -150,7 +150,7 @@ func (vm *VM) Initialize(
 	if !ok || chainCtx == nil {
 		return fmt.Errorf("invalid chain context type")
 	}
-	
+
 	// Extract database from dbManagerIntf
 	// Try to get database directly if it's already a database.Database
 	var db database.Database
@@ -167,31 +167,31 @@ func (vm *VM) Initialize(
 			return fmt.Errorf("invalid database manager type")
 		}
 	}
-	
+
 	// toEngine is passed through to the inner VM
 	// Skip type check as it's passed through to the inner VM
 	// _, ok = toEngineIntf.(chan<- block.Message)
 	// if !ok {
 	// 	return fmt.Errorf("invalid message channel type")
 	// }
-	
+
 	// Validate fxs are the correct type - passed through to inner VM
 	for _, fx := range fxsIntf {
 		if _, ok := fx.(*block.Fx); !ok && fx != nil {
 			return fmt.Errorf("invalid fx type")
 		}
 	}
-	
+
 	// appSender is passed through to the inner VM
 	_, ok = appSenderIntf.(block.AppSender)
 	if !ok {
 		return fmt.Errorf("invalid app sender type")
 	}
-	
+
 	// Set IDs once at initialization
 	vm.ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: chainCtx.Context.QuantumID,
-		NetID:  chainCtx.Context.NetID,
+		NetID:     chainCtx.Context.NetID,
 		ChainID:   chainCtx.Context.ChainID,
 		NodeID:    chainCtx.Context.NodeID,
 		PublicKey: chainCtx.Context.PublicKey,
@@ -899,7 +899,6 @@ func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height
 	// For now, return empty set - need proper implementation
 	return make(map[ids.NodeID]*validators.GetValidatorOutput), nil
 }
-
 
 func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*validators.GetValidatorOutput, uint64, error) {
 	// For now, return empty set with current height - need proper implementation

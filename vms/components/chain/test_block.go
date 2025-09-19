@@ -13,13 +13,13 @@ import (
 
 // TestBlock is a test implementation of Block
 type TestBlock struct {
-	IDV        ids.ID
-	HeightV    uint64
-	TimestampV time.Time
-	ParentV    ids.ID
-	BytesV     []byte
-	StatusV    Status
-	ErrV       error
+	IDV           ids.ID
+	HeightV       uint64
+	TimestampV    time.Time
+	ParentV       ids.ID
+	BytesV        []byte
+	StatusV       Status
+	ErrV          error
 	ShouldVerifyV bool
 }
 
@@ -71,4 +71,3 @@ func (b *TestBlock) Status() uint8 {
 func (b *TestBlock) State() state.ReadOnlyChain {
 	return nil
 }
-

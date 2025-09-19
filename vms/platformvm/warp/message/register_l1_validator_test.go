@@ -111,7 +111,7 @@ func TestRegisterL1Validator_Verify(t *testing.T) {
 		{
 			name: "Invalid NodeID Length",
 			msg: &RegisterL1Validator{
-				NetID:     ids.GenerateTestID(),
+				NetID:        ids.GenerateTestID(),
 				NodeID:       nil,
 				BLSPublicKey: newBLSPublicKey(t),
 				Expiry:       rand.Uint64(), //#nosec G404

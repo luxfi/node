@@ -47,11 +47,11 @@ func createTestGenesis(t *testing.T) *Genesis {
 func TestParseGenesis(t *testing.T) {
 	// Test that parsing genesis works correctly
 	genesis := createTestGenesis(t)
-	
+
 	// Encode the genesis
 	bytes, err := Codec.Marshal(CodecVersion, genesis)
 	require.NoError(t, err)
-	
+
 	// Parse it back
 	parsed, err := Parse(bytes)
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func TestParseGenesis(t *testing.T) {
 func TestGenesisWithValidators(t *testing.T) {
 	// Test genesis with validators
 	require := require.New(t)
-	
+
 	// Create a validator tx (simplified for testing)
 	validatorTx := &txs.Tx{
 		Unsigned: &txs.AddValidatorTx{
@@ -80,10 +80,10 @@ func TestGenesisWithValidators(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := validatorTx.Initialize(txs.GenesisCodec)
 	require.NoError(err)
-	
+
 	genesis := &Genesis{
 		UTXOs:         []*UTXO{},
 		Validators:    []*txs.Tx{validatorTx},
@@ -92,11 +92,11 @@ func TestGenesisWithValidators(t *testing.T) {
 		InitialSupply: 123456789,
 		Message:       "Test Genesis with Validators",
 	}
-	
+
 	// Encode and parse
 	bytes, err := Codec.Marshal(CodecVersion, genesis)
 	require.NoError(err)
-	
+
 	parsed, err := Parse(bytes)
 	require.NoError(err)
 	require.Len(parsed.Validators, 1)
@@ -105,18 +105,18 @@ func TestGenesisWithValidators(t *testing.T) {
 func TestGenesisWithChains(t *testing.T) {
 	// Test genesis with chains
 	require := require.New(t)
-	
+
 	// Create a chain tx (simplified for testing)
 	chainTx := &txs.Tx{
 		Unsigned: &txs.CreateChainTx{
 			BaseTx: txs.BaseTx{
 				BaseTx: lux.BaseTx{
-					NetworkID:    1,
-					Ins:          []*lux.TransferableInput{},
-					Outs:         []*lux.TransferableOutput{},
+					NetworkID: 1,
+					Ins:       []*lux.TransferableInput{},
+					Outs:      []*lux.TransferableOutput{},
 				},
 			},
-			NetID:    ids.GenerateTestID(),
+			NetID:       ids.GenerateTestID(),
 			ChainName:   "test chain",
 			VMID:        ids.GenerateTestID(),
 			FxIDs:       []ids.ID{},
@@ -124,10 +124,10 @@ func TestGenesisWithChains(t *testing.T) {
 			SubnetAuth:  &secp256k1fx.Input{},
 		},
 	}
-	
+
 	err := chainTx.Initialize(txs.GenesisCodec)
 	require.NoError(err)
-	
+
 	genesis := &Genesis{
 		UTXOs:         []*UTXO{},
 		Validators:    []*txs.Tx{},
@@ -136,11 +136,11 @@ func TestGenesisWithChains(t *testing.T) {
 		InitialSupply: 123456789,
 		Message:       "Test Genesis with Chains",
 	}
-	
+
 	// Encode and parse
 	bytes, err := Codec.Marshal(CodecVersion, genesis)
 	require.NoError(err)
-	
+
 	parsed, err := Parse(bytes)
 	require.NoError(err)
 	require.Len(parsed.Chains, 1)
@@ -149,7 +149,7 @@ func TestGenesisWithChains(t *testing.T) {
 func TestGenesisUTXOMessage(t *testing.T) {
 	// Test that UTXO messages are preserved
 	require := require.New(t)
-	
+
 	message := []byte("important message")
 	utxo := &UTXO{
 		UTXO: lux.UTXO{
@@ -166,7 +166,7 @@ func TestGenesisUTXOMessage(t *testing.T) {
 		},
 		Message: message,
 	}
-	
+
 	genesis := &Genesis{
 		UTXOs:         []*UTXO{utxo},
 		Validators:    []*txs.Tx{},
@@ -175,11 +175,11 @@ func TestGenesisUTXOMessage(t *testing.T) {
 		InitialSupply: 999999,
 		Message:       "Genesis with UTXO message",
 	}
-	
+
 	// Encode and parse
 	bytes, err := Codec.Marshal(CodecVersion, genesis)
 	require.NoError(err)
-	
+
 	parsed, err := Parse(bytes)
 	require.NoError(err)
 	require.Len(parsed.UTXOs, 1)

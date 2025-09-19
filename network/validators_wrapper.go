@@ -44,13 +44,13 @@ func (v *validatorsWrapper) GetValidatorIDs(netID ids.ID) []ids.NodeID {
 	if err != nil {
 		return nil
 	}
-	
+
 	validators := validatorSet.List()
 	nodeIDs := make([]ids.NodeID, len(validators))
 	for i, validator := range validators {
 		nodeIDs[i] = validator.ID()
 	}
-	
+
 	return nodeIDs
 }
 

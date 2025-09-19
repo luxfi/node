@@ -71,4 +71,3 @@ func (c *Cache[_, _]) Flush() {
 	c.metrics.len.Set(float64(c.Cacher.Len()))
 	c.metrics.portionFilled.Set(c.Cacher.PortionFilled())
 }
-

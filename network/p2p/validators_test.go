@@ -185,7 +185,7 @@ func TestValidatorsSample(t *testing.T) {
 				}
 				call := tt.calls[callIndex]
 				callIndex++
-				
+
 				if call.getCurrentHeightErr != nil {
 					return nil, call.getCurrentHeightErr
 				}
@@ -201,8 +201,8 @@ func TestValidatorsSample(t *testing.T) {
 			}
 
 			fakeSender := &FakeSender{}
-	sender := &fakeSenderAdapter{FakeSender: fakeSender}
-	network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+			sender := &fakeSenderAdapter{FakeSender: fakeSender}
+			network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()
@@ -326,8 +326,8 @@ func TestValidatorsTop(t *testing.T) {
 			}
 
 			fakeSender := &FakeSender{}
-	sender := &fakeSenderAdapter{FakeSender: fakeSender}
-	network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+			sender := &fakeSenderAdapter{FakeSender: fakeSender}
+			network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()

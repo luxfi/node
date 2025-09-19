@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
 	luxlog "github.com/luxfi/log"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"

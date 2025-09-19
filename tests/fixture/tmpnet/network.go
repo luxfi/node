@@ -20,10 +20,10 @@ import (
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm"
 )
 

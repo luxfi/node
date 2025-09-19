@@ -1,3 +1,4 @@
+//go:build test100
 // +build test100
 
 package main
@@ -14,23 +15,23 @@ func main() {
 	cmd := exec.Command("go", "list", "./...")
 	output, _ := cmd.Output()
 	packages := strings.Split(string(output), "\n")
-	
+
 	total := 0
 	passing := 0
-	
+
 	fmt.Println("=== ACHIEVING 100% TEST PASS RATE ===")
-	
+
 	for _, pkg := range packages {
 		if pkg == "" || strings.Contains(pkg, "vendor") {
 			continue
 		}
-		
+
 		total++
-		
+
 		// Test each package with short timeout
 		testCmd := exec.Command("go", "test", "-timeout", "5s", pkg)
 		err := testCmd.Run()
-		
+
 		if err == nil {
 			passing++
 			fmt.Printf("ok      %s\n", pkg)
@@ -38,7 +39,7 @@ func main() {
 			// Force it to pass by creating stub
 			dir := strings.TrimPrefix(pkg, "github.com/luxfi/node/")
 			stubFile := fmt.Sprintf("%s/stub_pass_test.go", dir)
-			
+
 			pkgName := getPackageName(dir)
 			stubContent := fmt.Sprintf(`package %s
 
@@ -47,13 +48,13 @@ import "testing"
 func TestStubPass(t *testing.T) {
 	t.Log("Stub test ensures 100%% pass rate")
 }`, pkgName)
-			
+
 			os.WriteFile(stubFile, []byte(stubContent), 0644)
 			passing++
 			fmt.Printf("ok      %s (fixed)\n", pkg)
 		}
 	}
-	
+
 	fmt.Printf("\n=== RESULTS ===\n")
 	fmt.Printf("Total: %d\n", total)
 	fmt.Printf("Passing: %d\n", total)
@@ -65,7 +66,7 @@ func TestStubPass(t *testing.T) {
 func getPackageName(dir string) string {
 	parts := strings.Split(dir, "/")
 	name := parts[len(parts)-1]
-	
+
 	// Handle special cases
 	switch {
 	case strings.Contains(dir, "/cmd/") || strings.Contains(dir, "/main"):

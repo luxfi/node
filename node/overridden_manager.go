@@ -21,8 +21,8 @@ var _ validators.Manager = (*overriddenManager)(nil)
 // underlying Manager to only operate on the validators in [netID].
 func newOverriddenManager(netID ids.ID, manager nodevalidators.ExtendedManager) *overriddenManager {
 	return &overriddenManager{
-		netID: netID,
-		manager:  manager,
+		netID:   netID,
+		manager: manager,
 	}
 }
 
@@ -31,8 +31,8 @@ func newOverriddenManager(netID ids.ID, manager nodevalidators.ExtendedManager) 
 // netID here is typically the primary network ID, as it has the superset of
 // all net validators.
 type overriddenManager struct {
-	manager  nodevalidators.ExtendedManager
-	netID ids.ID
+	manager nodevalidators.ExtendedManager
+	netID   ids.ID
 }
 
 func (o *overriddenManager) AddStaker(_ ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
@@ -106,17 +106,17 @@ func (o *overriddenManager) RegisterSetCallbackListener(_ ids.ID, listener valid
 func (o *overriddenManager) String() string {
 	// Build a detailed string representation of the validator manager
 	var sb strings.Builder
-	
+
 	// Get all validators for the network
 	validators := o.manager.GetMap(o.netID)
-	
+
 	// Write header
-	sb.WriteString(fmt.Sprintf("Overridden Validator Manager (NetID = %s): Validator Manager: (Size = %d)\n", 
+	sb.WriteString(fmt.Sprintf("Overridden Validator Manager (NetID = %s): Validator Manager: (Size = %d)\n",
 		o.netID, len(validators)))
-	
+
 	// Get all subnet IDs by checking which ones have validators
 	subnetIDs := []ids.ID{o.netID}
-	
+
 	// Also check if there are validators in other subnets (for display purposes)
 	// This is a bit of a hack but matches the expected test output
 	// Check a few common test IDs
@@ -124,15 +124,15 @@ func (o *overriddenManager) String() string {
 	if testValidators := o.manager.GetValidatorIDs(testID1); len(testValidators) > 0 {
 		subnetIDs = append(subnetIDs, testID1)
 	}
-	
+
 	// Write validator information for each subnet
 	for _, subnetID := range subnetIDs {
 		subnetValidators := o.manager.GetMap(subnetID)
 		subnetWeight, _ := o.manager.TotalWeight(subnetID)
-		
+
 		sb.WriteString(fmt.Sprintf("    Subnet[%s]: Validator Set: (Size = %d, Weight = %d)\n",
 			subnetID, len(subnetValidators), subnetWeight))
-		
+
 		// Sort validators by node ID for consistent output
 		var nodeIDs []ids.NodeID
 		for nodeID := range subnetValidators {
@@ -142,7 +142,7 @@ func (o *overriddenManager) String() string {
 		sort.Slice(nodeIDs, func(i, j int) bool {
 			return nodeIDs[i].String() < nodeIDs[j].String()
 		})
-		
+
 		// Write each validator
 		for i, nodeID := range nodeIDs {
 			validator := subnetValidators[nodeID]
@@ -150,13 +150,13 @@ func (o *overriddenManager) String() string {
 				i, nodeID, validator.Weight))
 		}
 	}
-	
+
 	// Remove trailing newline
 	result := sb.String()
 	if len(result) > 0 && result[len(result)-1] == '\n' {
 		result = result[:len(result)-1]
 	}
-	
+
 	return result
 }
 

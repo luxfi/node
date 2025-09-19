@@ -89,9 +89,9 @@ import (
 	pvalidators "github.com/luxfi/node/vms/platformvm/validators"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
-	
-	"github.com/luxfi/node/vms/platformvm/metrics"
+
 	"github.com/luxfi/metric"
+	"github.com/luxfi/node/vms/platformvm/metrics"
 )
 
 const (
@@ -360,7 +360,7 @@ func defaultConfig(t *testing.T, f fork) *config.Config {
 		Validators:             validators.NewManager(),
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                 defaultTxFee,
-			CreateNetTxFee:     100 * defaultTxFee,
+			CreateNetTxFee:        100 * defaultTxFee,
 			CreateBlockchainTxFee: 100 * defaultTxFee,
 		},
 		MinValidatorStake: 5 * units.MilliLux,

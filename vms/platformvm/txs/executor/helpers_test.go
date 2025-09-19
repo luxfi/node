@@ -69,8 +69,8 @@ import (
 
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 
-	"github.com/luxfi/node/vms/platformvm/upgrade"
 	"github.com/luxfi/node/vms/platformvm/testcontext"
+	"github.com/luxfi/node/vms/platformvm/upgrade"
 
 	"github.com/luxfi/node/vms/platformvm/utxo"
 
@@ -311,7 +311,7 @@ func defaultConfig(t *testing.T, f fork) *config.Config {
 		Validators:             validators.NewManager(),
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                 defaultTxFee,
-			CreateNetTxFee:     100 * defaultTxFee,
+			CreateNetTxFee:        100 * defaultTxFee,
 			CreateBlockchainTxFee: 100 * defaultTxFee,
 		},
 		MinValidatorStake: 5 * units.MilliLux,
@@ -393,7 +393,7 @@ func defaultFx(clk *mockable.Clock, log log.Logger, isBootstrapped bool) fx.Fx {
 	// Convert consensus clock to utils clock
 	utilsClock := &mockable.Clock{}
 	utilsClock.Set(clk.Time())
-	
+
 	fxVMInt := &fxVMInt{
 		registry: linearcodec.NewDefault(),
 		clk:      utilsClock,

@@ -23,21 +23,21 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/node"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/storage"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
@@ -437,10 +437,10 @@ func getBenchlistConfig(v *viper.Viper, consensusParameters PrismParameters) (Be
 	alpha := consensusParameters.AlphaConfidence
 	k := consensusParameters.K
 	config := BenchlistConfig{
-		FailThreshold:          v.GetInt(BenchlistFailThresholdKey),
-		Duration:               v.GetDuration(BenchlistDurationKey),
+		FailThreshold:      v.GetInt(BenchlistFailThresholdKey),
+		Duration:           v.GetDuration(BenchlistDurationKey),
 		MinFailingDuration: v.GetDuration(BenchlistMinFailingDurationKey),
-		MaxPortion:             (1.0 - (float64(alpha) / float64(k))) / 3.0,
+		MaxPortion:         (1.0 - (float64(alpha) / float64(k))) / 3.0,
 	}
 	switch {
 	case config.Duration < 0:
@@ -780,13 +780,13 @@ func getTxFeeConfig(v *viper.Viper, networkID uint32) fee.StaticConfig {
 		return fee.StaticConfig{
 			TxFee:                         v.GetUint64(TxFeeKey),
 			CreateAssetTxFee:              v.GetUint64(CreateAssetTxFeeKey),
-			CreateNetTxFee:             v.GetUint64(CreateNetTxFeeKey),
-			TransformNetTxFee:          v.GetUint64(TransformNetTxFeeKey),
+			CreateNetTxFee:                v.GetUint64(CreateNetTxFeeKey),
+			TransformNetTxFee:             v.GetUint64(TransformNetTxFeeKey),
 			CreateBlockchainTxFee:         v.GetUint64(CreateBlockchainTxFeeKey),
 			AddPrimaryNetworkValidatorFee: v.GetUint64(AddPrimaryNetworkValidatorFeeKey),
 			AddPrimaryNetworkDelegatorFee: v.GetUint64(AddPrimaryNetworkDelegatorFeeKey),
-			AddNetValidatorFee:         v.GetUint64(AddNetValidatorFeeKey),
-			AddNetDelegatorFee:         v.GetUint64(AddNetDelegatorFeeKey),
+			AddNetValidatorFee:            v.GetUint64(AddNetValidatorFeeKey),
+			AddNetDelegatorFee:            v.GetUint64(AddNetDelegatorFeeKey),
 		}
 	}
 	return genesis.GetTxFeeConfig(networkID)
@@ -1395,9 +1395,9 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	// Benchlist
 	// Convert consensus.Parameters to PrismParameters for benchlist config
 	prismParams := PrismParameters{
-		K:                primaryNetworkConfig.ConsensusParameters.K,
-		AlphaPreference:  primaryNetworkConfig.ConsensusParameters.AlphaPreference,
-		AlphaConfidence:  primaryNetworkConfig.ConsensusParameters.AlphaConfidence,
+		K:               primaryNetworkConfig.ConsensusParameters.K,
+		AlphaPreference: primaryNetworkConfig.ConsensusParameters.AlphaPreference,
+		AlphaConfidence: primaryNetworkConfig.ConsensusParameters.AlphaConfidence,
 	}
 	// getBenchlistConfig is called for validation only
 	_, err = getBenchlistConfig(v, prismParams)

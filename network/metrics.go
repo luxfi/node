@@ -11,8 +11,8 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/network/peer"
 )
 
 type metricsImpl struct {

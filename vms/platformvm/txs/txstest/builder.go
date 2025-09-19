@@ -39,9 +39,9 @@ type WalletFactory struct {
 
 func (w *WalletFactory) NewWallet(keys ...*secp256k1.PrivateKey) (builder.Builder, signer.Signer) {
 	var (
-		kc       = secp256k1fx.NewKeychain(keys...)
-		addrSet  = kc.AddressSet()
-		backend  = newBackend(addrSet, w.state, w.sharedMemory)
+		kc      = secp256k1fx.NewKeychain(keys...)
+		addrSet = kc.AddressSet()
+		backend = newBackend(addrSet, w.state, w.sharedMemory)
 		// Extract networkID and LUXAssetID from context
 		networkID  = consensus.GetNetworkID(w.ctx)
 		luxAssetID = consensus.GetXAssetID()

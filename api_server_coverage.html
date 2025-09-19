@@ -1,0 +1,900 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>server: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/luxfi/node/api/server/allowed_hosts.go (100.0%)</option>
+				
+				<option value="file1">github.com/luxfi/node/api/server/metrics.go (75.0%)</option>
+				
+				<option value="file2">github.com/luxfi/node/api/server/mock_server.go (0.0%)</option>
+				
+				<option value="file3">github.com/luxfi/node/api/server/router.go (87.5%)</option>
+				
+				<option value="file4">github.com/luxfi/node/api/server/server.go (13.4%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package server
+
+import (
+        "encoding/json"
+        "net"
+        "net/http"
+        "strings"
+
+        "github.com/luxfi/math/set"
+)
+
+const wildcard = "*"
+
+var _ http.Handler = (*allowedHostsHandler)(nil)
+
+func filterInvalidHosts(
+        handler http.Handler,
+        allowed []string,
+) http.Handler <span class="cov8" title="1">{
+        s := set.Set[string]{}
+
+        for _, host := range allowed </span><span class="cov8" title="1">{
+                if host == wildcard </span><span class="cov8" title="1">{
+                        // wildcards match all hostnames, so just return the base handler
+                        return handler
+                }</span>
+                <span class="cov8" title="1">s.Add(strings.ToLower(host))</span>
+        }
+
+        <span class="cov8" title="1">return &amp;allowedHostsHandler{
+                handler: handler,
+                hosts:   s,
+        }</span>
+}
+
+// allowedHostsHandler is an implementation of http.Handler that validates the
+// http host header of incoming requests. This can prevent DNS rebinding attacks
+// which do not utilize CORS-headers. Http request host headers are validated
+// against a whitelist to determine whether the request should be dropped or
+// not.
+type allowedHostsHandler struct {
+        handler http.Handler
+        hosts   set.Set[string]
+}
+
+func (a *allowedHostsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        // if the host header is missing we can serve this request because dns
+        // rebinding attacks rely on this header
+        if r.Host == "" </span><span class="cov8" title="1">{
+                a.handler.ServeHTTP(w, r)
+                return
+        }</span>
+
+        <span class="cov8" title="1">host, _, err := net.SplitHostPort(r.Host)
+        if err != nil </span><span class="cov8" title="1">{
+                // either invalid (too many colons) or no port specified
+                host = r.Host
+        }</span>
+
+        <span class="cov8" title="1">if ipAddr := net.ParseIP(host); ipAddr != nil </span><span class="cov8" title="1">{
+                // accept requests from ips
+                a.handler.ServeHTTP(w, r)
+                return
+        }</span>
+
+        // a specific hostname - we need to check the whitelist to see if we should
+        // accept this r
+        <span class="cov8" title="1">if a.hosts.Contains(strings.ToLower(host)) </span><span class="cov8" title="1">{
+                a.handler.ServeHTTP(w, r)
+                return
+        }</span>
+
+        // Return error as JSON
+        <span class="cov8" title="1">w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusForbidden)
+        json.NewEncoder(w).Encode(map[string]interface{}{
+                "jsonrpc": "2.0",
+                "error": map[string]interface{}{
+                        "code":    -32001,
+                        "message": "invalid host specified",
+                        "data":    map[string]string{"host": host},
+                },
+                "id": nil,
+        })</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package server
+
+import (
+        "github.com/luxfi/metric"
+        "github.com/prometheus/client_golang/prometheus"
+)
+
+type serverMetrics struct {
+        requests *prometheus.CounterVec
+        duration *prometheus.HistogramVec
+        inflight prometheus.Gauge
+}
+
+func newMetrics(registerer metric.Registerer) (*serverMetrics, error) <span class="cov8" title="1">{
+        m := &amp;serverMetrics{
+                requests: prometheus.NewCounterVec(
+                        prometheus.CounterOpts{
+                                Name: "api_requests_total",
+                                Help: "Total number of API requests",
+                        },
+                        []string{"method", "endpoint"},
+                ),
+                duration: prometheus.NewHistogramVec(
+                        prometheus.HistogramOpts{
+                                Name: "api_request_duration_seconds",
+                                Help: "API request duration in seconds",
+                        },
+                        []string{"method", "endpoint"},
+                ),
+                inflight: prometheus.NewGauge(
+                        prometheus.GaugeOpts{
+                                Name: "api_requests_inflight",
+                                Help: "Number of inflight API requests",
+                        },
+                ),
+        }
+
+        if err := registerer.Register(m.requests); err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">if err := registerer.Register(m.duration); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">if err := registerer.Register(m.inflight); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return m, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">// Code generated by MockGen. DO NOT EDIT.
+// Source: github.com/luxfi/node/api/server (interfaces: Server)
+//
+// Generated by this command:
+//
+//        mockgen -package=server -destination=api/server/mock_server.go github.com/luxfi/node/api/server Server
+//
+
+// Package server is a generated GoMock package.
+package server
+
+import (
+        "context"
+        http "net/http"
+        reflect "reflect"
+
+        core "github.com/luxfi/consensus/core"
+        gomock "github.com/luxfi/mock/gomock"
+)
+
+// MockServer is a mock of Server interface.
+type MockServer struct {
+        ctrl     *gomock.Controller
+        recorder *MockServerMockRecorder
+}
+
+// MockServerMockRecorder is the mock recorder for MockServer.
+type MockServerMockRecorder struct {
+        mock *MockServer
+}
+
+// NewMockServer creates a new mock instance.
+func NewMockServer(ctrl *gomock.Controller) *MockServer <span class="cov0" title="0">{
+        mock := &amp;MockServer{ctrl: ctrl}
+        mock.recorder = &amp;MockServerMockRecorder{mock}
+        return mock
+}</span>
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockServer) EXPECT() *MockServerMockRecorder <span class="cov0" title="0">{
+        return m.recorder
+}</span>
+
+// AddAliases mocks base method.
+func (m *MockServer) AddAliases(arg0 string, arg1 ...string) error <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        varargs := []any{arg0}
+        for _, a := range arg1 </span><span class="cov0" title="0">{
+                varargs = append(varargs, a)
+        }</span>
+        <span class="cov0" title="0">ret := m.ctrl.Call(m, "AddAliases", varargs...)
+        ret0, _ := ret[0].(error)
+        return ret0</span>
+}
+
+// AddAliases indicates an expected call of AddAliases.
+func (mr *MockServerMockRecorder) AddAliases(arg0 any, arg1 ...any) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        varargs := append([]any{arg0}, arg1...)
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAliases", reflect.TypeOf((*MockServer)(nil).AddAliases), varargs...)
+}</span>
+
+// AddAliasesWithReadLock mocks base method.
+func (m *MockServer) AddAliasesWithReadLock(arg0 string, arg1 ...string) error <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        varargs := []any{arg0}
+        for _, a := range arg1 </span><span class="cov0" title="0">{
+                varargs = append(varargs, a)
+        }</span>
+        <span class="cov0" title="0">ret := m.ctrl.Call(m, "AddAliasesWithReadLock", varargs...)
+        ret0, _ := ret[0].(error)
+        return ret0</span>
+}
+
+// AddAliasesWithReadLock indicates an expected call of AddAliasesWithReadLock.
+func (mr *MockServerMockRecorder) AddAliasesWithReadLock(arg0 any, arg1 ...any) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        varargs := append([]any{arg0}, arg1...)
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAliasesWithReadLock", reflect.TypeOf((*MockServer)(nil).AddAliasesWithReadLock), varargs...)
+}</span>
+
+// AddRoute mocks base method.
+func (m *MockServer) AddRoute(arg0 http.Handler, arg1, arg2 string) error <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "AddRoute", arg0, arg1, arg2)
+        ret0, _ := ret[0].(error)
+        return ret0
+}</span>
+
+// AddRoute indicates an expected call of AddRoute.
+func (mr *MockServerMockRecorder) AddRoute(arg0, arg1, arg2 any) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRoute", reflect.TypeOf((*MockServer)(nil).AddRoute), arg0, arg1, arg2)
+}</span>
+
+// AddRouteWithReadLock mocks base method.
+func (m *MockServer) AddRouteWithReadLock(arg0 http.Handler, arg1, arg2 string) error <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "AddRouteWithReadLock", arg0, arg1, arg2)
+        ret0, _ := ret[0].(error)
+        return ret0
+}</span>
+
+// AddRouteWithReadLock indicates an expected call of AddRouteWithReadLock.
+func (mr *MockServerMockRecorder) AddRouteWithReadLock(arg0, arg1, arg2 any) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRouteWithReadLock", reflect.TypeOf((*MockServer)(nil).AddRouteWithReadLock), arg0, arg1, arg2)
+}</span>
+
+// Dispatch mocks base method.
+func (m *MockServer) Dispatch() error <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Dispatch")
+        ret0, _ := ret[0].(error)
+        return ret0
+}</span>
+
+// Dispatch indicates an expected call of Dispatch.
+func (mr *MockServerMockRecorder) Dispatch() *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Dispatch", reflect.TypeOf((*MockServer)(nil).Dispatch))
+}</span>
+
+// RegisterChain mocks base method.
+func (m *MockServer) RegisterChain(arg0 string, arg1 context.Context, arg2 core.VM) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        m.ctrl.Call(m, "RegisterChain", arg0, arg1, arg2)
+}</span>
+
+// RegisterChain indicates an expected call of RegisterChain.
+func (mr *MockServerMockRecorder) RegisterChain(arg0, arg1, arg2 any) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterChain", reflect.TypeOf((*MockServer)(nil).RegisterChain), arg0, arg1, arg2)
+}</span>
+
+// Shutdown mocks base method.
+func (m *MockServer) Shutdown() error <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Shutdown")
+        ret0, _ := ret[0].(error)
+        return ret0
+}</span>
+
+// Shutdown indicates an expected call of Shutdown.
+func (mr *MockServerMockRecorder) Shutdown() *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockServer)(nil).Shutdown))
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package server
+
+import (
+        "errors"
+        "fmt"
+        "net/http"
+        "sync"
+
+        "github.com/gorilla/mux"
+
+        "github.com/luxfi/math/set"
+)
+
+var (
+        errUnknownBaseURL  = errors.New("unknown base url")
+        errUnknownEndpoint = errors.New("unknown endpoint")
+        errAlreadyReserved = errors.New("route is either already aliased or already maps to a handle")
+)
+
+type router struct {
+        lock   sync.RWMutex
+        router *mux.Router
+
+        routeLock      sync.Mutex
+        reservedRoutes set.Set[string]                    // Reserves routes so that there can't be alias that conflict
+        aliases        map[string][]string                // Maps a route to a set of reserved routes
+        routes         map[string]map[string]http.Handler // Maps routes to a handler
+}
+
+func newRouter() *router <span class="cov8" title="1">{
+        return &amp;router{
+                router:         mux.NewRouter(),
+                reservedRoutes: set.Set[string]{},
+                aliases:        make(map[string][]string),
+                routes:         make(map[string]map[string]http.Handler),
+        }
+}</span>
+
+func (r *router) ServeHTTP(writer http.ResponseWriter, request *http.Request) <span class="cov0" title="0">{
+        r.lock.RLock()
+        defer r.lock.RUnlock()
+
+        r.router.ServeHTTP(writer, request)
+}</span>
+
+func (r *router) GetHandler(base, endpoint string) (http.Handler, error) <span class="cov8" title="1">{
+        r.routeLock.Lock()
+        defer r.routeLock.Unlock()
+
+        urlBase, exists := r.routes[base]
+        if !exists </span><span class="cov0" title="0">{
+                return nil, errUnknownBaseURL
+        }</span>
+        <span class="cov8" title="1">handler, exists := urlBase[endpoint]
+        if !exists </span><span class="cov0" title="0">{
+                return nil, errUnknownEndpoint
+        }</span>
+        <span class="cov8" title="1">return handler, nil</span>
+}
+
+func (r *router) AddRouter(base, endpoint string, handler http.Handler) error <span class="cov8" title="1">{
+        r.lock.Lock()
+        defer r.lock.Unlock()
+        r.routeLock.Lock()
+        defer r.routeLock.Unlock()
+
+        return r.addRouter(base, endpoint, handler)
+}</span>
+
+func (r *router) addRouter(base, endpoint string, handler http.Handler) error <span class="cov8" title="1">{
+        if r.reservedRoutes.Contains(base) </span><span class="cov8" title="1">{
+                return fmt.Errorf("%w: %s", errAlreadyReserved, base)
+        }</span>
+
+        <span class="cov8" title="1">return r.forceAddRouter(base, endpoint, handler)</span>
+}
+
+func (r *router) forceAddRouter(base, endpoint string, handler http.Handler) error <span class="cov8" title="1">{
+        endpoints := r.routes[base]
+        if endpoints == nil </span><span class="cov8" title="1">{
+                endpoints = make(map[string]http.Handler)
+        }</span>
+        <span class="cov8" title="1">url := base + endpoint
+        if _, exists := endpoints[endpoint]; exists </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create endpoint as %s already exists", url)
+        }</span>
+
+        <span class="cov8" title="1">endpoints[endpoint] = handler
+        r.routes[base] = endpoints
+
+        // Name routes based on their URL for easy retrieval in the future
+        route := r.router.Handle(url, handler)
+        if route == nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create new route for %s", url)
+        }</span>
+        <span class="cov8" title="1">route.Name(url)
+
+        var err error
+        if aliases, exists := r.aliases[base]; exists </span><span class="cov8" title="1">{
+                for _, alias := range aliases </span><span class="cov8" title="1">{
+                        if innerErr := r.forceAddRouter(alias, endpoint, handler); err == nil </span><span class="cov8" title="1">{
+                                err = innerErr
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">return err</span>
+}
+
+func (r *router) AddAlias(base string, aliases ...string) error <span class="cov8" title="1">{
+        r.lock.Lock()
+        defer r.lock.Unlock()
+        r.routeLock.Lock()
+        defer r.routeLock.Unlock()
+
+        for _, alias := range aliases </span><span class="cov8" title="1">{
+                if r.reservedRoutes.Contains(alias) </span><span class="cov8" title="1">{
+                        return fmt.Errorf("%w: %s", errAlreadyReserved, alias)
+                }</span>
+        }
+
+        <span class="cov8" title="1">for _, alias := range aliases </span><span class="cov8" title="1">{
+                r.reservedRoutes.Add(alias)
+        }</span>
+
+        <span class="cov8" title="1">r.aliases[base] = append(r.aliases[base], aliases...)
+
+        var err error
+        if endpoints, exists := r.routes[base]; exists </span><span class="cov8" title="1">{
+                for endpoint, handler := range endpoints </span><span class="cov8" title="1">{
+                        for _, alias := range aliases </span><span class="cov8" title="1">{
+                                if innerErr := r.forceAddRouter(alias, endpoint, handler); err == nil </span><span class="cov8" title="1">{
+                                        err = innerErr
+                                }</span>
+                        }
+                }
+        }
+        <span class="cov8" title="1">return err</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package server
+
+import (
+        "context"
+        "fmt"
+        "net"
+        "net/http"
+        "net/url"
+        "path"
+        "strings"
+        "sync"
+        "time"
+
+        "github.com/NYTimes/gziphandler"
+        "github.com/luxfi/log"
+        "github.com/luxfi/metric"
+        "github.com/rs/cors"
+        "golang.org/x/net/http2"
+
+        "github.com/luxfi/consensus"
+        "github.com/luxfi/consensus/core"
+        "github.com/luxfi/consensus/interfaces"
+        "github.com/luxfi/ids"
+        "github.com/luxfi/node/api"
+        "github.com/luxfi/node/utils/constants"
+        "github.com/luxfi/trace"
+)
+
+const (
+        baseURL              = "/ext"
+        maxConcurrentStreams = 64
+        HTTPHeaderRoute      = "X-Lux-Route"
+)
+
+var (
+        _ PathAdder = readPathAdder{}
+        _ Server    = (*server)(nil)
+)
+
+type PathAdder interface {
+        // AddRoute registers a route to a handler.
+        AddRoute(handler http.Handler, base, endpoint string) error
+
+        // AddAliases registers aliases to the server
+        AddAliases(endpoint string, aliases ...string) error
+}
+
+type PathAdderWithReadLock interface {
+        // AddRouteWithReadLock registers a route to a handler assuming the http
+        // read lock is currently held.
+        AddRouteWithReadLock(handler http.Handler, base, endpoint string) error
+
+        // AddAliasesWithReadLock registers aliases to the server assuming the http read
+        // lock is currently held.
+        AddAliasesWithReadLock(endpoint string, aliases ...string) error
+}
+
+// Server maintains the HTTP router
+type Server interface {
+        PathAdder
+        PathAdderWithReadLock
+        // Dispatch starts the API server
+        Dispatch() error
+        // RegisterChain registers the API endpoints associated with this chain.
+        // That is, add &lt;route, handler&gt; pairs to server so that API calls can be
+        // made to the VM.
+        RegisterChain(chainName string, ctx context.Context, vm core.VM)
+        // Shutdown this server
+        Shutdown() error
+}
+
+type HTTPConfig struct {
+        ReadTimeout       time.Duration `json:"readTimeout"`
+        ReadHeaderTimeout time.Duration `json:"readHeaderTimeout"`
+        WriteTimeout      time.Duration `json:"writeHeaderTimeout"`
+        IdleTimeout       time.Duration `json:"idleTimeout"`
+}
+
+type server struct {
+        // log this server writes to
+        log log.Logger
+        // generates new logs for chains to write to
+        factory log.Factory
+
+        shutdownTimeout time.Duration
+
+        tracingEnabled bool
+        tracer         trace.Tracer
+
+        metrics *serverMetrics
+
+        // Maps endpoints to handlers
+        router *router
+
+        // Mutex for thread-safe operations
+        lock sync.RWMutex
+
+        srv *http.Server
+
+        // Listener used to serve traffic
+        listener net.Listener
+}
+
+// New returns an instance of a Server.
+func New(
+        log log.Logger,
+        factory log.Factory,
+        listener net.Listener,
+        allowedOrigins []string,
+        shutdownTimeout time.Duration,
+        nodeID ids.NodeID,
+        tracingEnabled bool,
+        tracer trace.Tracer,
+        registerer metric.Registerer,
+        httpConfig HTTPConfig,
+        allowedHosts []string,
+) (Server, error) <span class="cov0" title="0">{
+        m, err := newMetrics(registerer)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">router := newRouter()
+        allowedHostsHandler := filterInvalidHosts(router, allowedHosts)
+        corsHandler := cors.New(cors.Options{
+                AllowedOrigins:   allowedOrigins,
+                AllowCredentials: true,
+        }).Handler(allowedHostsHandler)
+        gzipHandler := gziphandler.GzipHandler(corsHandler)
+        var handler http.Handler = http.HandlerFunc(
+                func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                        // Attach this node's ID as a header
+                        w.Header().Set("node-id", nodeID.String())
+                        gzipHandler.ServeHTTP(w, r)
+                }</span>,
+        )
+
+        <span class="cov0" title="0">httpServer := &amp;http.Server{
+                Handler:           handler,
+                ReadTimeout:       httpConfig.ReadTimeout,
+                ReadHeaderTimeout: httpConfig.ReadHeaderTimeout,
+                WriteTimeout:      httpConfig.WriteTimeout,
+                IdleTimeout:       httpConfig.IdleTimeout,
+        }
+        err = http2.ConfigureServer(httpServer, &amp;http2.Server{
+                MaxConcurrentStreams: maxConcurrentStreams,
+        })
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">log.Info("API created with allowed origins: " + strings.Join(allowedOrigins, ","))
+
+        return &amp;server{
+                log:             log,
+                factory:         factory,
+                shutdownTimeout: shutdownTimeout,
+                tracingEnabled:  tracingEnabled,
+                tracer:          tracer,
+                metrics:         m,
+                router:          router,
+                srv:             httpServer,
+                listener:        listener,
+        }, nil</span>
+}
+
+func (s *server) Dispatch() error <span class="cov0" title="0">{
+        return s.srv.Serve(s.listener)
+}</span>
+
+func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM) <span class="cov0" title="0">{
+        // Get chain ID from context
+        chainID := consensus.GetChainID(ctx)
+        if chainID == ids.Empty </span><span class="cov0" title="0">{
+                // For Platform chain, use a hardcoded ID
+                if chainName == "platform" || chainName == "P" </span><span class="cov0" title="0">{
+                        chainID = constants.PlatformChainID
+                        s.log.Info("using hardcoded Platform chain ID",
+                                log.Stringer("chainID", chainID),
+                        )
+                }</span> else<span class="cov0" title="0"> {
+                        s.log.Error("no chain ID found in context")
+                        return
+                }</span>
+        }
+
+        <span class="cov0" title="0">s.lock.Lock()
+        defer s.lock.Unlock()
+
+        handlers, err := vm.CreateHandlers(context.TODO())
+        if err != nil </span><span class="cov0" title="0">{
+                s.log.Error("failed to create handlers",
+                        log.UserString("chainName", chainName),
+                        log.Err(err),
+                )
+                return
+        }</span>
+        <span class="cov0" title="0">s.log.Debug("about to add API endpoints",
+                log.Stringer("chainID", chainID),
+        )
+        // all subroutes to a chain begin with "bc/&lt;the chain's ID&gt;"
+        defaultEndpoint := path.Join(constants.ChainAliasPrefix, chainID.String())
+
+        // Register each endpoint
+        for extension, handler := range handlers </span><span class="cov0" title="0">{
+                // Validate that the route being added is valid
+                // e.g. "/foo" and "" are ok but "\n" is not
+                _, err := url.ParseRequestURI(extension)
+                if extension != "" &amp;&amp; err != nil </span><span class="cov0" title="0">{
+                        s.log.Error("could not add route to chain's API handler",
+                                log.UserString("reason", "route is malformed"),
+                                log.Err(err),
+                        )
+                        continue</span>
+                }
+                <span class="cov0" title="0">if err := s.addChainRoute(chainName, handler, ctx, defaultEndpoint, extension); err != nil </span><span class="cov0" title="0">{
+                        s.log.Error("error adding route",
+                                log.Err(err),
+                        )
+                }</span>
+        }
+}
+
+func (s *server) addChainRoute(chainName string, handler http.Handler, ctx context.Context, base, endpoint string) error <span class="cov0" title="0">{
+        url := fmt.Sprintf("%s/%s", baseURL, base)
+        s.log.Info("adding route",
+                log.UserString("url", url),
+                log.UserString("endpoint", endpoint),
+        )
+        if s.tracingEnabled </span><span class="cov0" title="0">{
+                handler = api.TraceHandler(handler, chainName, s.tracer)
+        }</span>
+        // Apply middleware to reject calls to the handler before the chain finishes bootstrapping
+        <span class="cov0" title="0">handler = rejectMiddleware(handler, ctx)
+        // TODO: Add metrics wrapper when available
+        // handler = s.metrics.wrapHandler(chainName, handler)
+        return s.router.AddRouter(url, endpoint, handler)</span>
+}
+
+func (s *server) AddRoute(handler http.Handler, base, endpoint string) error <span class="cov0" title="0">{
+        return s.addRoute(handler, base, endpoint)
+}</span>
+
+func (s *server) AddRouteWithReadLock(handler http.Handler, base, endpoint string) error <span class="cov0" title="0">{
+        s.router.lock.RUnlock()
+        defer s.router.lock.RLock()
+        return s.addRoute(handler, base, endpoint)
+}</span>
+
+func (s *server) addRoute(handler http.Handler, base, endpoint string) error <span class="cov0" title="0">{
+        url := fmt.Sprintf("%s/%s", baseURL, base)
+        s.log.Info("adding route",
+                log.UserString("url", url),
+                log.UserString("endpoint", endpoint),
+        )
+
+        if s.tracingEnabled </span><span class="cov0" title="0">{
+                handler = api.TraceHandler(handler, url, s.tracer)
+        }</span>
+
+        // TODO: Add metrics wrapper when available
+        // handler = s.metrics.wrapHandler(base, handler)
+        <span class="cov0" title="0">return s.router.AddRouter(url, endpoint, handler)</span>
+}
+
+// StateGetter interface for getting chain state
+type StateGetter interface {
+        Get() interfaces.State
+}
+
+// contextKey type for context values
+type contextKey string
+
+const stateHolderKey contextKey = "stateHolder"
+
+// Reject middleware wraps a handler. If the chain that the context describes is
+// not done state-syncing/bootstrapping, writes back an error.
+func rejectMiddleware(handler http.Handler, ctx context.Context) http.Handler <span class="cov8" title="1">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
+                // Try both string key and contextKey for compatibility
+                var stateHolder interface{}
+
+                // First try with string key (for tests)
+                stateHolder = ctx.Value("stateHolder")
+                if stateHolder == nil </span><span class="cov0" title="0">{
+                        // Then try with contextKey
+                        stateHolder = ctx.Value(stateHolderKey)
+                }</span>
+
+                <span class="cov8" title="1">if stateHolder != nil </span><span class="cov8" title="1">{
+                        // Use type assertion to check for StateGetter interface
+                        if sh, ok := stateHolder.(StateGetter); ok </span><span class="cov8" title="1">{
+                                state := sh.Get()
+                                if state == interfaces.StateSyncing || state == interfaces.Bootstrapping </span><span class="cov8" title="1">{
+                                        w.WriteHeader(http.StatusServiceUnavailable)
+                                        return
+                                }</span>
+                        }
+                }
+                <span class="cov8" title="1">handler.ServeHTTP(w, r)</span>
+        })
+}
+
+func (s *server) AddAliases(endpoint string, aliases ...string) error <span class="cov0" title="0">{
+        url := fmt.Sprintf("%s/%s", baseURL, endpoint)
+        endpoints := make([]string, len(aliases))
+        for i, alias := range aliases </span><span class="cov0" title="0">{
+                endpoints[i] = fmt.Sprintf("%s/%s", baseURL, alias)
+        }</span>
+        <span class="cov0" title="0">return s.router.AddAlias(url, endpoints...)</span>
+}
+
+func (s *server) AddAliasesWithReadLock(endpoint string, aliases ...string) error <span class="cov0" title="0">{
+        // This is safe, as the read lock doesn't actually need to be held once the
+        // http handler is called. However, it is unlocked later, so this function
+        // must end with the lock held.
+        s.router.lock.RUnlock()
+        defer s.router.lock.RLock()
+
+        return s.AddAliases(endpoint, aliases...)
+}</span>
+
+func (s *server) Shutdown() error <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
+        err := s.srv.Shutdown(ctx)
+        cancel()
+
+        // If shutdown times out, make sure the server is still shutdown.
+        _ = s.srv.Close()
+        return err
+}</span>
+
+type readPathAdder struct {
+        pather PathAdderWithReadLock
+}
+
+func PathWriterFromWithReadLock(pather PathAdderWithReadLock) PathAdder <span class="cov0" title="0">{
+        return readPathAdder{
+                pather: pather,
+        }
+}</span>
+
+func (a readPathAdder) AddRoute(handler http.Handler, base, endpoint string) error <span class="cov0" title="0">{
+        return a.pather.AddRouteWithReadLock(handler, base, endpoint)
+}</span>
+
+func (a readPathAdder) AddAliases(endpoint string, aliases ...string) error <span class="cov0" title="0">{
+        return a.pather.AddAliasesWithReadLock(endpoint, aliases...)
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

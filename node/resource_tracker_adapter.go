@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus/networking/tracker"
-	nodetracker "github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/ids"
+	nodetracker "github.com/luxfi/node/network/tracker"
 )
 
 // resourceTrackerAdapter adapts node tracker to consensus tracker interface

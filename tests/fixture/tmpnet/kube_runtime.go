@@ -107,8 +107,7 @@ func (c *KubeRuntimeConfig) ensureDefaults(ctx context.Context, log log.Logger) 
 		return err
 	}
 
-	log.Info("attempting to retrieve configmap containing tmpnet defaults",
-	)
+	log.Info("attempting to retrieve configmap containing tmpnet defaults")
 
 	configMap, err := clientset.CoreV1().ConfigMaps(c.Namespace).Get(ctx, defaultsConfigMapName, metav1.GetOptions{})
 	if err != nil {
@@ -121,13 +120,11 @@ func (c *KubeRuntimeConfig) ensureDefaults(ctx context.Context, log log.Logger) 
 			schedulingLabelValue = configMap.Data["schedulingLabelValue"]
 		)
 		if len(c.SchedulingLabelKey) == 0 && len(schedulingLabelKey) > 0 {
-			log.Info("setting default value for SchedulingLabelKey",
-			)
+			log.Info("setting default value for SchedulingLabelKey")
 			c.SchedulingLabelKey = schedulingLabelKey
 		}
 		if len(c.SchedulingLabelValue) == 0 && len(schedulingLabelValue) > 0 {
-			log.Info("setting default value for SchedulingLabelValue",
-			)
+			log.Info("setting default value for SchedulingLabelValue")
 			c.SchedulingLabelValue = schedulingLabelValue
 		}
 		if len(c.SchedulingLabelKey) == 0 || len(c.SchedulingLabelValue) == 0 {
@@ -140,13 +137,11 @@ func (c *KubeRuntimeConfig) ensureDefaults(ctx context.Context, log log.Logger) 
 			ingressSecret = configMap.Data["ingressSecret"]
 		)
 		if len(c.IngressHost) == 0 && len(ingressHost) > 0 {
-			log.Info("setting default value for IngressHost",
-			)
+			log.Info("setting default value for IngressHost")
 			c.IngressHost = ingressHost
 		}
 		if len(c.IngressSecret) == 0 && len(ingressSecret) > 0 {
-			log.Info("setting default value for IngressSecret",
-			)
+			log.Info("setting default value for IngressSecret")
 			c.IngressSecret = ingressSecret
 		}
 		if len(c.IngressHost) == 0 {
@@ -172,8 +167,7 @@ func (p *KubeRuntime) readState(ctx context.Context) error {
 		statefulSetName = p.getStatefulSetName()
 	)
 
-	log.Debug("reading state for node",
-	)
+	log.Debug("reading state for node")
 
 	// Validate that it will be possible to construct accessible URIs when running external to the kube cluster
 	if !IsRunningInCluster() && len(runtimeConfig.IngressHost) == 0 {
@@ -185,12 +179,10 @@ func (p *KubeRuntime) readState(ctx context.Context) error {
 		return err
 	}
 
-	log.Debug("checking if StatefulSet exists",
-	)
+	log.Debug("checking if StatefulSet exists")
 	scale, err := clientset.AppsV1().StatefulSets(namespace).GetScale(ctx, statefulSetName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		log.Debug("StatefulSet not found",
-		)
+		log.Debug("StatefulSet not found")
 		p.setNotRunning()
 		return nil
 	}
@@ -199,8 +191,7 @@ func (p *KubeRuntime) readState(ctx context.Context) error {
 	}
 
 	if scale.Spec.Replicas == 0 {
-		log.Debug("StatefulSet has no replicas",
-		)
+		log.Debug("StatefulSet has no replicas")
 		p.setNotRunning()
 		return nil
 	}
@@ -270,41 +261,36 @@ func (p *KubeRuntime) GetAccessibleStakingAddress(ctx context.Context) (netip.Ad
 // Start the node as a Kubernetes StatefulSet.
 func (p *KubeRuntime) Start(ctx context.Context) error {
 	var (
-		_          = p.node.NodeID.String()
+		_               = p.node.NodeID.String()
 		runtimeConfig   = p.runtimeConfig()
 		namespace       = runtimeConfig.Namespace
 		statefulSetName = p.getStatefulSetName()
 	)
 
-	log.Trace("starting node",
-	)
+	log.Trace("starting node")
 
 	clientset, err := p.getClientset()
 	if err != nil {
 		return err
 	}
 
-	log.Debug("attempting to retrieve existing StatefulSet",
-	)
+	log.Debug("attempting to retrieve existing StatefulSet")
 	_, err = clientset.AppsV1().StatefulSets(namespace).Get(ctx, statefulSetName, metav1.GetOptions{})
 	if err == nil {
 		// Stateful exists - make sure it is scaled up and running
 
-		log.Debug("attempting to retrieve scale for existing StatefulSet",
-		)
+		log.Debug("attempting to retrieve scale for existing StatefulSet")
 		scale, err := clientset.AppsV1().StatefulSets(namespace).GetScale(ctx, statefulSetName, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to retrieve scale for StatefulSet %s/%s: %w", namespace, statefulSetName, err)
 		}
 
 		if scale.Spec.Replicas != 0 {
-			log.Debug("StatefulSet is already running",
-			)
+			log.Debug("StatefulSet is already running")
 			return nil
 		}
 
-		log.Debug("attempting to scale up StatefulSet",
-		)
+		log.Debug("attempting to scale up StatefulSet")
 		scale.Spec.Replicas = 1
 		_, err = clientset.AppsV1().StatefulSets(runtimeConfig.Namespace).UpdateScale(
 			ctx,
@@ -316,8 +302,7 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 			return fmt.Errorf("failed to scale up StatefulSet for %s: %w", p.node.NodeID.String(), err)
 		}
 
-		log.Debug("scaled up StatefulSet",
-		)
+		log.Debug("scaled up StatefulSet")
 
 		return nil
 	} else if !apierrors.IsNotFound(err) {
@@ -331,8 +316,7 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 		return err
 	}
 
-	log.Debug("creating StatefulSet",
-	)
+	log.Debug("creating StatefulSet")
 	statefulSet := NewNodeStatefulSet(
 		statefulSetName,
 		false, // generateName
@@ -344,15 +328,14 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 		flags,
 		map[string]string{
 			"network_uuid": p.node.NetworkUUID,
-			"node_id": p.node.NodeID.String(),
+			"node_id":      p.node.NodeID.String(),
 		},
 	)
 
 	if runtimeConfig.UseExclusiveScheduling {
 		labelKey := runtimeConfig.SchedulingLabelKey
 		labelValue := runtimeConfig.SchedulingLabelValue
-		log.Debug("configuring exclusive scheduling",
-		)
+		log.Debug("configuring exclusive scheduling")
 		if labelKey == "" || labelValue == "" {
 			return errors.New("scheduling label key and value must be non-empty when exclusive scheduling is enabled")
 		}
@@ -367,8 +350,7 @@ func (p *KubeRuntime) Start(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create StatefulSet: %w", err)
 	}
-	log.Debug("created StatefulSet",
-	)
+	log.Debug("created StatefulSet")
 
 	if !IsRunningInCluster() {
 		// If running outside the cluster, ensure the node's API port is accessible via ingress
@@ -399,15 +381,13 @@ func (p *KubeRuntime) InitiateStop(ctx context.Context) error {
 		statefulSetName = p.getStatefulSetName()
 	)
 
-	log.Trace("initiating node stop",
-	)
+	log.Trace("initiating node stop")
 
 	clientset, err := p.getClientset()
 	if err != nil {
 		return err
 	}
-	log.Debug("retrieving StatefulSet scale",
-	)
+	log.Debug("retrieving StatefulSet scale")
 	scale, err := clientset.AppsV1().StatefulSets(namespace).GetScale(ctx, statefulSetName, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to retrieve scale for StatefulSet %s/%s: %w", namespace, statefulSetName, err)
@@ -418,8 +398,7 @@ func (p *KubeRuntime) InitiateStop(ctx context.Context) error {
 		return nil
 	}
 
-	log.Debug("setting StatefulSet replicas to zero",
-	)
+	log.Debug("setting StatefulSet replicas to zero")
 	scale.Spec.Replicas = 0
 	_, err = clientset.AppsV1().StatefulSets(p.runtimeConfig().Namespace).UpdateScale(
 		ctx,
@@ -431,8 +410,7 @@ func (p *KubeRuntime) InitiateStop(ctx context.Context) error {
 		return fmt.Errorf("failed to replicas to zero for StatefulSet %s/%s for %s: %w", namespace, statefulSetName, nodeID, err)
 	}
 
-	log.Debug("StatefulSet replicas set to zero",
-	)
+	log.Debug("StatefulSet replicas set to zero")
 
 	p.setNotRunning()
 
@@ -449,8 +427,7 @@ func (p *KubeRuntime) WaitForStopped(ctx context.Context) error {
 		statefulSetName = p.getStatefulSetName()
 	)
 
-	log.Trace("waiting for node to stop",
-	)
+	log.Trace("waiting for node to stop")
 
 	clientset, err := p.getClientset()
 	if err != nil {
@@ -464,19 +441,16 @@ func (p *KubeRuntime) WaitForStopped(ctx context.Context) error {
 		func(ctx context.Context) (bool, error) {
 			scale, err := clientset.AppsV1().StatefulSets(namespace).GetScale(ctx, statefulSetName, metav1.GetOptions{})
 			if apierrors.IsNotFound(err) {
-				log.Debug("node stopped: StatefulSet not found",
-				)
+				log.Debug("node stopped: StatefulSet not found")
 				p.setNotRunning()
 				return true, nil
 			}
 			if err != nil {
-				log.Warn("failed to retrieve StatefulSet scale",
-				)
+				log.Warn("failed to retrieve StatefulSet scale")
 				return false, nil
 			}
 			if scale.Status.Replicas == 0 {
-				log.Debug("node stopped: StatefulSet scaled to zero replicas",
-				)
+				log.Debug("node stopped: StatefulSet scaled to zero replicas")
 				p.setNotRunning()
 				return true, nil
 			}
@@ -499,8 +473,7 @@ func (p *KubeRuntime) Restart(ctx context.Context) error {
 		statefulSetName = p.getStatefulSetName()
 	)
 
-	log.Trace("initiating node restart",
-	)
+	log.Trace("initiating node restart")
 
 	clientset, err := p.getClientset()
 	if err != nil {
@@ -540,8 +513,7 @@ func (p *KubeRuntime) Restart(ctx context.Context) error {
 		return err
 	}
 
-	log.Debug("ensuring StatefulSet is up to date",
-	)
+	log.Debug("ensuring StatefulSet is up to date")
 	updatedStatefulSet, err := clientset.AppsV1().StatefulSets(runtimeConfig.Namespace).Patch(
 		ctx,
 		p.getStatefulSetName(),
@@ -555,8 +527,7 @@ func (p *KubeRuntime) Restart(ctx context.Context) error {
 	updatedGeneration := updatedStatefulSet.Generation
 
 	if updatedGeneration == statefulset.Generation {
-		log.Debug("StatefulSet generation unchanged. Forcing restart.",
-		)
+		log.Debug("StatefulSet generation unchanged. Forcing restart.")
 
 		// Force a restart by scaling up and down
 		if err := p.InitiateStop(ctx); err != nil {
@@ -576,8 +547,7 @@ func (p *KubeRuntime) Restart(ctx context.Context) error {
 		func(ctx context.Context) (bool, error) {
 			statefulSet, err := clientset.AppsV1().StatefulSets(namespace).Get(ctx, statefulSetName, metav1.GetOptions{})
 			if err != nil {
-				log.Debug("failed to retrieve StatefulSet",
-				)
+				log.Debug("failed to retrieve StatefulSet")
 				return false, nil
 			}
 			status := statefulSet.Status
@@ -587,8 +557,7 @@ func (p *KubeRuntime) Restart(ctx context.Context) error {
 				status.CurrentReplicas == replicas &&
 				status.UpdatedReplicas == replicas)
 			if finishedRollingOut {
-				log.Debug("StatefulSet finished rolling out",
-				)
+				log.Debug("StatefulSet finished rolling out")
 			}
 			return finishedRollingOut, nil
 		},
@@ -616,8 +585,7 @@ func (p *KubeRuntime) IsHealthy(ctx context.Context) (bool, error) {
 	if err != nil && strings.Contains(err.Error(), "connection refused") {
 		return false, err
 	} else if err != nil {
-		log.Debug("failed to check node health",
-		)
+		log.Debug("failed to check node health")
 		return false, nil
 	}
 	healthy := healthReply != nil && healthReply.Healthy
@@ -628,20 +596,18 @@ func (p *KubeRuntime) IsHealthy(ctx context.Context) (bool, error) {
 // running to ensure the availability of a bootstrap node.
 func (p *KubeRuntime) ensureBootstrapIP(ctx context.Context) error {
 	var (
-		_          = p.node.NodeID.String()
-		runtimeConfig   = p.runtimeConfig()
-		_       = runtimeConfig.Namespace
-		_ = p.getStatefulSetName()
+		_             = p.node.NodeID.String()
+		runtimeConfig = p.runtimeConfig()
+		_             = runtimeConfig.Namespace
+		_             = p.getStatefulSetName()
 	)
 	bootstrapIPs := []string{}
 	if len(bootstrapIPs) > 0 {
-		log.Debug("bootstrap IPs are already available so no need to wait for StatefulSet Pod to become ready",
-		)
+		log.Debug("bootstrap IPs are already available so no need to wait for StatefulSet Pod to become ready")
 		return nil
 	}
 
-	log.Trace("waiting for node readiness so that subsequent nodes will have a bootstrap target",
-	)
+	log.Trace("waiting for node readiness so that subsequent nodes will have a bootstrap target")
 	return p.waitForPodReadiness(ctx)
 }
 
@@ -651,12 +617,11 @@ func (p *KubeRuntime) waitForPodReadiness(ctx context.Context) error {
 	var (
 		runtimeConfig = p.runtimeConfig()
 		namespace     = runtimeConfig.Namespace
-		_        = p.node.NodeID.String()
+		_             = p.node.NodeID.String()
 		podName       = p.getPodName()
 	)
 
-	log.Debug("waiting for Pod to become ready",
-	)
+	log.Debug("waiting for Pod to become ready")
 
 	clientset, err := p.getClientset()
 	if err != nil {
@@ -666,11 +631,9 @@ func (p *KubeRuntime) waitForPodReadiness(ctx context.Context) error {
 	if err := WaitForPodCondition(ctx, clientset, namespace, podName, corev1.PodReady); err != nil {
 		return err
 	}
-	log.Debug("pod is ready",
-	)
+	log.Debug("pod is ready")
 
-	log.Debug("retrieving Pod IP",
-	)
+	log.Debug("retrieving Pod IP")
 	pod, err := clientset.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -693,8 +656,7 @@ func (p *KubeRuntime) waitForPodReadiness(ctx context.Context) error {
 		p.node.URI = uri
 		p.node.StakingAddress = stakingAddress.String()
 	}
-	log.Debug(readyMsg,
-	)
+	log.Debug(readyMsg)
 
 	return nil
 }
@@ -782,8 +744,7 @@ func (p *KubeRuntime) forwardPort(ctx context.Context, port int) (uint16, chan s
 }
 
 func (p *KubeRuntime) setNotRunning() {
-	log.Debug("node is not running",
-	)
+	log.Debug("node is not running")
 	p.node.URI = ""
 	p.node.StakingAddress = ""
 }
@@ -849,6 +810,7 @@ func configureExclusiveScheduling(template *corev1.PodTemplateSpec, labelKey str
 		},
 	}
 }
+
 // createNodeService creates a Kubernetes Service for the node to enable ingress routing
 func (p *KubeRuntime) createNodeService(ctx context.Context, serviceName string) error {
 	var (
@@ -857,8 +819,7 @@ func (p *KubeRuntime) createNodeService(ctx context.Context, serviceName string)
 		nodeID        = p.node.NodeID.String()
 	)
 
-	log.Debug("creating Service for node",
-	)
+	log.Debug("creating Service for node")
 
 	clientset, err := p.getClientset()
 	if err != nil {
@@ -897,8 +858,7 @@ func (p *KubeRuntime) createNodeService(ctx context.Context, serviceName string)
 		return fmt.Errorf("failed to create Service: %w", err)
 	}
 
-	log.Debug("created Service",
-	)
+	log.Debug("created Service")
 
 	return nil
 }
@@ -912,8 +872,7 @@ func (p *KubeRuntime) createNodeIngress(ctx context.Context, serviceName string)
 		networkUUID   = p.node.NetworkUUID
 	)
 
-	log.Debug("creating Ingress for node",
-	)
+	log.Debug("creating Ingress for node")
 
 	clientset, err := p.getClientset()
 	if err != nil {
@@ -995,8 +954,7 @@ func (p *KubeRuntime) createNodeIngress(ctx context.Context, serviceName string)
 		return fmt.Errorf("failed to create Ingress: %w", err)
 	}
 
-	log.Debug("created Ingress",
-	)
+	log.Debug("created Ingress")
 
 	return nil
 }
@@ -1007,11 +965,10 @@ func (p *KubeRuntime) waitForIngressReadiness(ctx context.Context, serviceName s
 	var (
 		runtimeConfig = p.runtimeConfig()
 		namespace     = runtimeConfig.Namespace
-		_        = p.node.NodeID.String()
+		_             = p.node.NodeID.String()
 	)
 
-	log.Debug("waiting for Ingress readiness",
-	)
+	log.Debug("waiting for Ingress readiness")
 
 	clientset, err := p.getClientset()
 	if err != nil {
@@ -1027,13 +984,11 @@ func (p *KubeRuntime) waitForIngressReadiness(ctx context.Context, serviceName s
 			// Check if ingress exists and is processed by the controller
 			ingress, err := clientset.NetworkingV1().Ingresses(namespace).Get(ctx, serviceName, metav1.GetOptions{})
 			if apierrors.IsNotFound(err) {
-				log.Debug("waiting for Ingress to be created",
-				)
+				log.Debug("waiting for Ingress to be created")
 				return false, nil
 			}
 			if err != nil {
-				log.Warn("failed to retrieve Ingress",
-				)
+				log.Warn("failed to retrieve Ingress")
 				return false, nil
 			}
 
@@ -1042,8 +997,7 @@ func (p *KubeRuntime) waitForIngressReadiness(ctx context.Context, serviceName s
 			// when it has successfully processed and exposed the ingress
 			hasIngressIP := len(ingress.Status.LoadBalancer.Ingress) > 0
 			if !hasIngressIP {
-				log.Debug("waiting for Ingress controller to process and expose the Ingress",
-				)
+				log.Debug("waiting for Ingress controller to process and expose the Ingress")
 				return false, nil
 			}
 
@@ -1057,21 +1011,18 @@ func (p *KubeRuntime) waitForIngressReadiness(ctx context.Context, serviceName s
 			}
 
 			if !hasValidIngress {
-				log.Debug("waiting for Ingress controller to assign IP or hostname",
-				)
+				log.Debug("waiting for Ingress controller to assign IP or hostname")
 				return false, nil
 			}
 
 			// Check if service endpoints are available
 			endpoints, err := clientset.CoreV1().Endpoints(namespace).Get(ctx, serviceName, metav1.GetOptions{})
 			if apierrors.IsNotFound(err) {
-				log.Debug("waiting for Service endpoints to be created",
-				)
+				log.Debug("waiting for Service endpoints to be created")
 				return false, nil
 			}
 			if err != nil {
-				log.Warn("failed to retrieve Service endpoints",
-				)
+				log.Warn("failed to retrieve Service endpoints")
 				return false, nil
 			}
 
@@ -1085,13 +1036,11 @@ func (p *KubeRuntime) waitForIngressReadiness(ctx context.Context, serviceName s
 			}
 
 			if !hasReadyEndpoints {
-				log.Debug("waiting for Service endpoints to have ready addresses",
-				)
+				log.Debug("waiting for Service endpoints to have ready addresses")
 				return false, nil
 			}
 
-			log.Debug("Ingress is exposed by controller and Service endpoints are ready",
-			)
+			log.Debug("Ingress is exposed by controller and Service endpoints are ready")
 			return true, nil
 		},
 	)
@@ -1099,8 +1048,7 @@ func (p *KubeRuntime) waitForIngressReadiness(ctx context.Context, serviceName s
 		return fmt.Errorf("failed to wait for Ingress %s/%s readiness: %w", namespace, serviceName, err)
 	}
 
-	log.Debug("Ingress is ready",
-	)
+	log.Debug("Ingress is ready")
 
 	return nil
 }

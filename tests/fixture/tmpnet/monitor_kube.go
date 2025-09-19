@@ -86,7 +86,7 @@ func deployKubeCollectors(
 		},
 	}
 	for _, collectorConfig := range collectorConfigs {
-	log.Debug("log statement")
+		log.Debug("log statement")
 		if err := deployKubeCollector(ctx, log, clientset, dynamicClient, collectorConfig); err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func createCredentialSecret(
 	_, err := clientset.CoreV1().Secrets(monitoringNamespace).Create(ctx, secret, metav1.CreateOptions{})
 	if err != nil {
 		if apierrors.IsAlreadyExists(err) {
-	log.Debug("log statement")
+			log.Debug("log statement")
 			return nil
 		}
 		return fmt.Errorf("failed to create secret %s/%s: %w", monitoringNamespace, secretName, err)

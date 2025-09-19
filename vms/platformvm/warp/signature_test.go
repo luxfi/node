@@ -13,8 +13,8 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils/constants"
 )
 
 const pChainHeight uint64 = 1337
@@ -27,7 +27,7 @@ var (
 // mockValidatorState is a mock implementation of ValidatorState
 type mockValidatorState struct {
 	getValidatorSetF func(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error)
-	getNetIDF func(ctx context.Context, chainID ids.ID) (ids.ID, error)
+	getNetIDF        func(ctx context.Context, chainID ids.ID) (ids.ID, error)
 }
 
 func (m *mockValidatorState) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {

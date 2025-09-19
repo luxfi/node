@@ -14,9 +14,9 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/luxfi/consensus/consensustest"
+	consContext "github.com/luxfi/consensus/context"
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/protocol/chain"
-	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -532,14 +532,14 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 
 	// Create chain context
 	luxCtx := &consContext.Context{
-		QuantumID:      constants.UnitTestID,
-		NetID:          constants.PrimaryNetworkID,
-		ChainID:        consensustest.PChainID,
-		NodeID:         ids.GenerateTestNodeID(),
-		PublicKey:      nil,
-		XChainID:       ids.Empty,
-		CChainID:       ids.Empty,
-		LUXAssetID:     luxAssetID,
+		QuantumID:  constants.UnitTestID,
+		NetID:      constants.PrimaryNetworkID,
+		ChainID:    consensustest.PChainID,
+		NodeID:     ids.GenerateTestNodeID(),
+		PublicKey:  nil,
+		XChainID:   ids.Empty,
+		CChainID:   ids.Empty,
+		LUXAssetID: luxAssetID,
 	}
 	chainCtx := &linearblock.ChainContext{
 		ConsensusContext: &linearblock.ConsensusContext{
@@ -548,16 +548,16 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 		},
 		Context: luxCtx,
 	}
-	
+
 	// Create a simple DB manager
 	dbManager := &simpleDBManager{db: baseDB}
-	
+
 	// Create message channel
 	toEngine := make(chan linearblock.Message, 1)
-	
+
 	// Create app sender
 	appSender := &testAppSender{}
-	
+
 	require.NoError(vm.Initialize(
 		context.Background(),
 		chainCtx,

@@ -13,22 +13,22 @@ import (
 	"time"
 
 	"github.com/luxfi/metric"
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/engine/chain/chainmock"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/consensus/validators/validatorsmock"
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/scheduler"
 )
@@ -84,10 +84,10 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 			StakingLeafSigner: pk,
 			Registerer:        metric.NewNoOp().Registry(),
 		},
-		ChainVM:        innerVM,
+		ChainVM: innerVM,
 		// blockBuilderVM: innerBlockBuilderVM, // Disabled due to interface mismatch
-		ctx:            consensusCtx,
-		Windower:       windower,
+		ctx:      consensusCtx,
+		Windower: windower,
 	}
 
 	blk := &postForkCommonComponents{
@@ -359,81 +359,81 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 func _TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 	// Disabled due to mock interface issues
 	/*
-	require := require.New(t)
-	ctrl := gomock.NewController(t)
+		require := require.New(t)
+		ctrl := gomock.NewController(t)
 
-	var (
-		thisNodeID              = ids.GenerateTestNodeID()
-		selectedProposer        = ids.GenerateTestNodeID()
-		pChainHeight     uint64 = 1337
-		parentID                = ids.GenerateTestID()
-		parentTimestamp         = time.Now().Truncate(time.Second)
-		now                     = parentTimestamp.Add(12 * time.Second)
-		parentHeight     uint64 = 1234
-	)
-
-	innerBlk := chainmock.NewMockBlock(ctrl)
-	innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
-
-	vdrState := validatorsmock.NewState(ctrl)
-	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
-
-	windower := proposer.NewMockWindower(ctrl)
-	windower.EXPECT().ExpectedProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(selectedProposer, nil).AnyTimes() // return a proposer different from thisNode, to check whether scheduler is reset
-
-	scheduler := scheduler.NewMockScheduler(ctrl)
-
-	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	require.NoError(err)
-	vm := &VM{
-		Config: Config{
-			ActivationTime:    time.Unix(0, 0),
-			DurangoTime:       time.Unix(0, 0),
-			StakingCertLeaf:   &staking.Certificate{},
-			StakingLeafSigner: pk,
-			Registerer:        metric.NewNoOp().Registry(),
-		},
-		ChainVM: block.NewMockChainVM(ctrl),
-		ctx: &context.Context{
-			NodeID:         thisNodeID,
-			ValidatorState: vdrState,
-			Log:            log.NewNoOpLogger(),
-		},
-		Windower:               windower,
-		Scheduler:              scheduler,
-		proposerBuildSlotGauge: metric.NewGauge(metric.GaugeOpts{}),
-	}
-	vm.Clock.Set(now)
-
-	blk := &postForkCommonComponents{
-		innerBlk: innerBlk,
-		vm:       vm,
-	}
-
-	delays := []time.Duration{
-		proposer.MaxLookAheadWindow - time.Minute,
-		proposer.MaxLookAheadWindow,
-		proposer.MaxLookAheadWindow + time.Minute,
-	}
-
-	for _, delay := range delays {
-		windower.EXPECT().MinDelayForProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(delay, nil).Times(1)
-
-		// we mock the scheduler setting the exact time we expect it to be reset
-		// to
-		expectedSchedulerTime := parentTimestamp.Add(delay)
-		scheduler.EXPECT().SetBuildBlockTime(expectedSchedulerTime).Times(1)
-
-		_, err = blk.buildChild(
-			context.Background(),
-			parentID,
-			parentTimestamp,
-			pChainHeight-1,
+		var (
+			thisNodeID              = ids.GenerateTestNodeID()
+			selectedProposer        = ids.GenerateTestNodeID()
+			pChainHeight     uint64 = 1337
+			parentID                = ids.GenerateTestID()
+			parentTimestamp         = time.Now().Truncate(time.Second)
+			now                     = parentTimestamp.Add(12 * time.Second)
+			parentHeight     uint64 = 1234
 		)
-		require.ErrorIs(err, errUnexpectedProposer)
-	}
+
+		innerBlk := chainmock.NewMockBlock(ctrl)
+		innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
+
+		vdrState := validatorsmock.NewState(ctrl)
+		vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
+
+		windower := proposer.NewMockWindower(ctrl)
+		windower.EXPECT().ExpectedProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(selectedProposer, nil).AnyTimes() // return a proposer different from thisNode, to check whether scheduler is reset
+
+		scheduler := scheduler.NewMockScheduler(ctrl)
+
+		pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		require.NoError(err)
+		vm := &VM{
+			Config: Config{
+				ActivationTime:    time.Unix(0, 0),
+				DurangoTime:       time.Unix(0, 0),
+				StakingCertLeaf:   &staking.Certificate{},
+				StakingLeafSigner: pk,
+				Registerer:        metric.NewNoOp().Registry(),
+			},
+			ChainVM: block.NewMockChainVM(ctrl),
+			ctx: &context.Context{
+				NodeID:         thisNodeID,
+				ValidatorState: vdrState,
+				Log:            log.NewNoOpLogger(),
+			},
+			Windower:               windower,
+			Scheduler:              scheduler,
+			proposerBuildSlotGauge: metric.NewGauge(metric.GaugeOpts{}),
+		}
+		vm.Clock.Set(now)
+
+		blk := &postForkCommonComponents{
+			innerBlk: innerBlk,
+			vm:       vm,
+		}
+
+		delays := []time.Duration{
+			proposer.MaxLookAheadWindow - time.Minute,
+			proposer.MaxLookAheadWindow,
+			proposer.MaxLookAheadWindow + time.Minute,
+		}
+
+		for _, delay := range delays {
+			windower.EXPECT().MinDelayForProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(delay, nil).Times(1)
+
+			// we mock the scheduler setting the exact time we expect it to be reset
+			// to
+			expectedSchedulerTime := parentTimestamp.Add(delay)
+			scheduler.EXPECT().SetBuildBlockTime(expectedSchedulerTime).Times(1)
+
+			_, err = blk.buildChild(
+				context.Background(),
+				parentID,
+				parentTimestamp,
+				pChainHeight-1,
+			)
+			require.ErrorIs(err, errUnexpectedProposer)
+		}
 	*/
 }
 

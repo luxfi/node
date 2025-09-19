@@ -6,8 +6,8 @@ package scheduler
 import (
 	"time"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/log"
 )
 
 type Scheduler interface {

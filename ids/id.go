@@ -9,10 +9,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/cb58"
 	"github.com/luxfi/crypto/hashing"
 	"github.com/luxfi/ids/utils/wrappers"
+	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/cb58"
 )
 
 const (

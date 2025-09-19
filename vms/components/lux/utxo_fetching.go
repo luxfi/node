@@ -9,8 +9,8 @@ import (
 	"math"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils"
 
 	safemath "github.com/luxfi/math/math"
 )

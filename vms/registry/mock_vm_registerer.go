@@ -12,8 +12,8 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	vms "github.com/luxfi/node/vms"
 	gomock "github.com/luxfi/mock/gomock"
+	vms "github.com/luxfi/node/vms"
 )
 
 // MockVMRegisterer is a mock of VMRegisterer interface.

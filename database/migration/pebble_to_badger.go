@@ -83,8 +83,8 @@ func (m *PebbleToBadgerMigrator) Migrate() error {
 				return fmt.Errorf("failed to flush batch: %w", err)
 			}
 			batch = badgerDB.NewWriteBatch()
-			m.logger.Printf("Migrated %d/%d entries (%.1f%%)\n", 
-				migratedCount, totalEntries, 
+			m.logger.Printf("Migrated %d/%d entries (%.1f%%)\n",
+				migratedCount, totalEntries,
 				float64(migratedCount)*100/float64(totalEntries))
 		}
 	}
@@ -183,7 +183,7 @@ func (m *PebbleToBadgerMigrator) MigrateGenesis() error {
 	// Migrate genesis-specific keys
 	for _, prefix := range genesisKeys {
 		m.logger.Printf("Migrating %s data...\n", prefix)
-		
+
 		prefixBytes := []byte(prefix)
 		iter, _ := pebbleDB.NewIter(&pebble.IterOptions{
 			LowerBound: prefixBytes,

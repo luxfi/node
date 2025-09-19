@@ -9,7 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -23,7 +23,7 @@ import (
 const MaxSubnetAddressLength = 4096
 
 var (
-	ErrConvertPermissionlessNet         = errors.New("cannot convert a permissionless subnet")
+	ErrConvertPermissionlessNet            = errors.New("cannot convert a permissionless subnet")
 	ErrAddressTooLong                      = errors.New("address is too long")
 	ErrConvertMustIncludeValidators        = errors.New("conversion must include at least one validator")
 	ErrConvertValidatorsNotSortedAndUnique = errors.New("conversion validators must be sorted and unique")
@@ -34,20 +34,20 @@ var (
 type ConvertNetToL1Validator struct {
 	// NodeID of this validator
 	NodeID types.JSONByteSlice `serialize:"true" json:"nodeID"`
-	
+
 	// Weight of this validator used when sampling
 	Weight uint64 `serialize:"true" json:"weight"`
-	
+
 	// Initial balance for this validator
 	Balance uint64 `serialize:"true" json:"balance"`
-	
+
 	// Signer is the BLS key and proof of possession for this validator
 	Signer signer.ProofOfPossession `serialize:"true" json:"signer"`
-	
+
 	// Leftover LUX from the Balance will be issued to this owner once it is
 	// removed from the validator set
 	RemainingBalanceOwner message.PChainOwner `serialize:"true" json:"remainingBalanceOwner"`
-	
+
 	// This owner has the authority to manually deactivate this validator
 	DeactivationOwner message.PChainOwner `serialize:"true" json:"deactivationOwner"`
 }
@@ -86,19 +86,19 @@ func (v *ConvertNetToL1Validator) Verify() error {
 type ConvertNetToL1Tx struct {
 	// Metadata, inputs and outputs
 	BaseTx `serialize:"true"`
-	
+
 	// ID of the Net to transform
 	Net ids.ID `serialize:"true" json:"netID"`
-	
+
 	// Chain where the Net manager lives
 	ChainID ids.ID `serialize:"true" json:"chainID"`
-	
+
 	// Address of the Net manager
 	Address types.JSONByteSlice `serialize:"true" json:"address"`
-	
+
 	// Initial pay-as-you-go validators for the Subnet
 	Validators []*ConvertNetToL1Validator `serialize:"true" json:"validators"`
-	
+
 	// Authorizes this conversion
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
@@ -107,21 +107,21 @@ type ConvertNetToL1Tx struct {
 func (tx *ConvertNetToL1Tx) MarshalJSON() ([]byte, error) {
 	// Format address as hex string
 	addressHex := "0x" + hex.EncodeToString(tx.Address)
-	
+
 	// Create a map to represent the JSON structure
 	jsonMap := map[string]interface{}{
-		"networkID":    tx.BaseTx.NetworkID,
-		"blockchainID": tx.BaseTx.BlockchainID,
-		"outputs":      tx.BaseTx.Outs,
-		"inputs":       tx.BaseTx.Ins,
-		"memo":         tx.BaseTx.Memo,
-		"subnetID":     tx.Net, // Map Net to subnetID for backward compatibility
-		"chainID":      tx.ChainID,
-		"address":      addressHex,
-		"validators":   tx.Validators,
+		"networkID":           tx.BaseTx.NetworkID,
+		"blockchainID":        tx.BaseTx.BlockchainID,
+		"outputs":             tx.BaseTx.Outs,
+		"inputs":              tx.BaseTx.Ins,
+		"memo":                tx.BaseTx.Memo,
+		"subnetID":            tx.Net, // Map Net to subnetID for backward compatibility
+		"chainID":             tx.ChainID,
+		"address":             addressHex,
+		"validators":          tx.Validators,
 		"subnetAuthorization": tx.SubnetAuth,
 	}
-	
+
 	return json.Marshal(jsonMap)
 }
 

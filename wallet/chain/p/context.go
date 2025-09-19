@@ -35,7 +35,7 @@ type pContext struct {
 	createBlockchainTxFee         uint64
 	addPrimaryNetworkValidatorFee uint64
 	addPrimaryNetworkDelegatorFee uint64
-	addNetValidatorFee         uint64
+	addNetValidatorFee            uint64
 	addSubnetDelegatorFee         uint64
 }
 
@@ -100,7 +100,7 @@ func NewContext(
 		createBlockchainTxFee:         createBlockchainTxFee,
 		addPrimaryNetworkValidatorFee: addPrimaryNetworkValidatorFee,
 		addPrimaryNetworkDelegatorFee: addPrimaryNetworkDelegatorFee,
-		addNetValidatorFee:         addNetValidatorFee,
+		addNetValidatorFee:            addNetValidatorFee,
 		addSubnetDelegatorFee:         addSubnetDelegatorFee,
 	}
 }

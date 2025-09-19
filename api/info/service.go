@@ -16,12 +16,12 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/nftfx"
@@ -51,13 +51,13 @@ type Parameters struct {
 	NetworkID                     uint32
 	TxFee                         uint64
 	CreateAssetTxFee              uint64
-	CreateNetTxFee             uint64
-	TransformNetTxFee          uint64
+	CreateNetTxFee                uint64
+	TransformNetTxFee             uint64
 	CreateBlockchainTxFee         uint64
 	AddPrimaryNetworkValidatorFee uint64
 	AddPrimaryNetworkDelegatorFee uint64
-	AddNetValidatorFee         uint64
-	AddNetDelegatorFee         uint64
+	AddNetValidatorFee            uint64
+	AddNetDelegatorFee            uint64
 	VMManager                     vms.Manager
 }
 
@@ -389,13 +389,13 @@ func (i *Info) Lps(_ *http.Request, _ *struct{}, reply *LPsReply) error {
 type GetTxFeeResponse struct {
 	TxFee                         json.Uint64 `json:"txFee"`
 	CreateAssetTxFee              json.Uint64 `json:"createAssetTxFee"`
-	CreateNetTxFee             json.Uint64 `json:"createSubnetTxFee"`
-	TransformNetTxFee          json.Uint64 `json:"transformSubnetTxFee"`
+	CreateNetTxFee                json.Uint64 `json:"createSubnetTxFee"`
+	TransformNetTxFee             json.Uint64 `json:"transformSubnetTxFee"`
 	CreateBlockchainTxFee         json.Uint64 `json:"createBlockchainTxFee"`
 	AddPrimaryNetworkValidatorFee json.Uint64 `json:"addPrimaryNetworkValidatorFee"`
 	AddPrimaryNetworkDelegatorFee json.Uint64 `json:"addPrimaryNetworkDelegatorFee"`
-	AddNetValidatorFee         json.Uint64 `json:"addNetValidatorFee"`
-	AddNetDelegatorFee         json.Uint64 `json:"addSubnetDelegatorFee"`
+	AddNetValidatorFee            json.Uint64 `json:"addNetValidatorFee"`
+	AddNetDelegatorFee            json.Uint64 `json:"addSubnetDelegatorFee"`
 }
 
 // GetTxFee returns the transaction fee in nLUX.

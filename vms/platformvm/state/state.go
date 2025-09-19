@@ -18,7 +18,6 @@ import (
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/linkeddb"
 	"github.com/luxfi/database/prefixdb"
@@ -31,6 +30,7 @@ import (
 	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/hashing"
+	"github.com/luxfi/node/utils/iterator"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/components/lux"
@@ -57,7 +57,7 @@ var (
 	_ State = (*state)(nil)
 
 	errValidatorSetAlreadyPopulated = errors.New("validator set already populated")
-	errIsNotNet                  = errors.New("is not a subnet")
+	errIsNotNet                     = errors.New("is not a subnet")
 
 	BlockIDPrefix                 = []byte("blockID")
 	BlockPrefix                   = []byte("block")
@@ -66,7 +66,7 @@ var (
 	PendingPrefix                 = []byte("pending")
 	ValidatorPrefix               = []byte("validator")
 	DelegatorPrefix               = []byte("delegator")
-	NetValidatorPrefix         = []byte("subnetValidator")
+	NetValidatorPrefix            = []byte("subnetValidator")
 	SubnetDelegatorPrefix         = []byte("subnetDelegator")
 	ValidatorWeightDiffsPrefix    = []byte("flatValidatorDiffs")
 	ValidatorPublicKeyDiffsPrefix = []byte("flatPublicKeyDiffs")
@@ -206,7 +206,6 @@ type State interface {
 // Prior to https://github.com/luxfi/node/pull/1719, blocks were
 // stored as a map from blkID to stateBlk. Nodes synced prior to this PR may
 // still have blocks partially stored using this legacy format.
-//
 type stateBlk struct {
 	Bytes  []byte `serialize:"true"`
 	Status uint32 `serialize:"true"`
@@ -322,8 +321,8 @@ type state struct {
 	currentValidatorList         linkeddb.LinkedDB
 	currentDelegatorBaseDB       database.Database
 	currentDelegatorList         linkeddb.LinkedDB
-	currentNetValidatorBaseDB database.Database
-	currentNetValidatorList   linkeddb.LinkedDB
+	currentNetValidatorBaseDB    database.Database
+	currentNetValidatorList      linkeddb.LinkedDB
 	currentSubnetDelegatorBaseDB database.Database
 	currentSubnetDelegatorList   linkeddb.LinkedDB
 	pendingValidatorsDB          database.Database
@@ -331,8 +330,8 @@ type state struct {
 	pendingValidatorList         linkeddb.LinkedDB
 	pendingDelegatorBaseDB       database.Database
 	pendingDelegatorList         linkeddb.LinkedDB
-	pendingNetValidatorBaseDB database.Database
-	pendingNetValidatorList   linkeddb.LinkedDB
+	pendingNetValidatorBaseDB    database.Database
+	pendingNetValidatorList      linkeddb.LinkedDB
 	pendingSubnetDelegatorBaseDB database.Database
 	pendingSubnetDelegatorList   linkeddb.LinkedDB
 
@@ -353,8 +352,8 @@ type state struct {
 
 	cachedNetIDs []ids.ID // nil if the subnets haven't been loaded
 	addedNetIDs  []ids.ID
-	subnetBaseDB    database.Database
-	subnetDB        linkeddb.LinkedDB
+	subnetBaseDB database.Database
+	subnetDB     linkeddb.LinkedDB
 
 	subnetOwners     map[ids.ID]fx.Owner                  // map of netID -> owner
 	subnetOwnerCache cache.Cacher[ids.ID, fxOwnerAndSize] // cache of netID -> owner; if the entry is nil, it is not in the database
@@ -378,8 +377,8 @@ type state struct {
 	currentSupply, persistedCurrentSupply uint64
 	// [lastAccepted] is the most recently accepted block.
 	lastAccepted, persistedLastAccepted ids.ID
-	indexedHeights *heightRange
-	singletonDB    database.Database
+	indexedHeights                      *heightRange
+	singletonDB                         database.Database
 }
 
 // heightRange is used to track which heights are safe to use the native DB
@@ -633,7 +632,7 @@ func newState(
 
 		currentStakers: newBaseStakers(),
 		pendingStakers: newBaseStakers(),
-		
+
 		l1Validators: make(map[ids.ID]L1Validator),
 
 		validatorsDB:                 validatorsDB,
@@ -642,8 +641,8 @@ func newState(
 		currentValidatorList:         linkeddb.NewDefault(currentValidatorBaseDB),
 		currentDelegatorBaseDB:       currentDelegatorBaseDB,
 		currentDelegatorList:         linkeddb.NewDefault(currentDelegatorBaseDB),
-		currentNetValidatorBaseDB: currentNetValidatorBaseDB,
-		currentNetValidatorList:   linkeddb.NewDefault(currentNetValidatorBaseDB),
+		currentNetValidatorBaseDB:    currentNetValidatorBaseDB,
+		currentNetValidatorList:      linkeddb.NewDefault(currentNetValidatorBaseDB),
 		currentSubnetDelegatorBaseDB: currentSubnetDelegatorBaseDB,
 		currentSubnetDelegatorList:   linkeddb.NewDefault(currentSubnetDelegatorBaseDB),
 		pendingValidatorsDB:          pendingValidatorsDB,
@@ -651,8 +650,8 @@ func newState(
 		pendingValidatorList:         linkeddb.NewDefault(pendingValidatorBaseDB),
 		pendingDelegatorBaseDB:       pendingDelegatorBaseDB,
 		pendingDelegatorList:         linkeddb.NewDefault(pendingDelegatorBaseDB),
-		pendingNetValidatorBaseDB: pendingNetValidatorBaseDB,
-		pendingNetValidatorList:   linkeddb.NewDefault(pendingNetValidatorBaseDB),
+		pendingNetValidatorBaseDB:    pendingNetValidatorBaseDB,
+		pendingNetValidatorList:      linkeddb.NewDefault(pendingNetValidatorBaseDB),
 		pendingSubnetDelegatorBaseDB: pendingSubnetDelegatorBaseDB,
 		pendingSubnetDelegatorList:   linkeddb.NewDefault(pendingSubnetDelegatorBaseDB),
 		validatorWeightDiffsDB:       validatorWeightDiffsDB,
@@ -2345,12 +2344,12 @@ func init() {
 	// Create a codec that can handle stateBlk for backward compatibility
 	legacyStateBlockCodec = codec.NewManager(math.MaxInt32)
 	c := linearcodec.NewDefault()
-	
+
 	// Register stateBlk type
 	if err := RegisterStateBlockType(c); err != nil {
 		panic(fmt.Errorf("failed to register stateBlk: %w", err))
 	}
-	
+
 	// Register all block types needed for parsing
 	if err := block.RegisterApricotBlockTypes(c); err != nil {
 		panic(fmt.Errorf("failed to register Apricot block types: %w", err))
@@ -2364,7 +2363,7 @@ func init() {
 	if err := txs.RegisterDUnsignedTxsTypes(c); err != nil {
 		panic(fmt.Errorf("failed to register D unsigned tx types: %w", err))
 	}
-	
+
 	if err := legacyStateBlockCodec.RegisterCodec(block.CodecVersion, c); err != nil {
 		panic(fmt.Errorf("failed to register codec version %d: %w", block.CodecVersion, err))
 	}
@@ -2424,12 +2423,12 @@ func (s *state) ReindexBlocks(lock sync.Locker, log log.Logger) error {
 	for blockIterator.Next() {
 		keyBytes := blockIterator.Key()
 		valueBytes := blockIterator.Value()
-		
+
 		// Skip entries that are not 32 bytes (not block IDs)
 		if len(keyBytes) != ids.IDLen {
 			continue
 		}
-		
+
 		blk, isStateBlk, err := parseStoredBlock(valueBytes)
 		if err != nil {
 			// Skip entries that can't be parsed as blocks

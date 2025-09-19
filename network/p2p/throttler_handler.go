@@ -7,9 +7,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 )
 
 var _ Handler = (*ThrottlerHandler)(nil)

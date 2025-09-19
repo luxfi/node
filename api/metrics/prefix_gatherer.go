@@ -4,13 +4,12 @@
 package metrics
 
 import (
-	"github.com/luxfi/metric"
 	"errors"
 	"fmt"
+	"github.com/luxfi/metric"
 
 	utilmetric "github.com/luxfi/node/utils/metric"
 	"google.golang.org/protobuf/proto"
-
 )
 
 var (

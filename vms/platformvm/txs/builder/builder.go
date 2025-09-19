@@ -11,9 +11,9 @@ import (
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/math/math"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -403,7 +403,7 @@ func (b *builder) NewCreateChainTx(
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		NetID:    netID,
+		NetID:       netID,
 		ChainName:   chainName,
 		VMID:        vmID,
 		FxIDs:       fxIDs,
@@ -608,7 +608,7 @@ func (b *builder) NewRemoveNetValidatorTx(
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		Net:     netID,
+		Net:        netID,
 		NodeID:     nodeID,
 		SubnetAuth: subnetAuth,
 	}
@@ -663,7 +663,7 @@ func (b *builder) NewTransferNetOwnershipTx(
 			Ins:          ins,
 			Outs:         outs,
 		}},
-		Net:     netID,
+		Net:        netID,
 		SubnetAuth: subnetAuth,
 		Owner: &secp256k1fx.OutputOwners{
 			Threshold: threshold,

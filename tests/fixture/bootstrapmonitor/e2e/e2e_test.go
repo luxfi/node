@@ -13,9 +13,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/luxfi/log"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	"github.com/luxfi/log"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/luxfi/ids"

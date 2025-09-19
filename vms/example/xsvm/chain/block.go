@@ -8,16 +8,16 @@ import (
 	"errors"
 	"time"
 
+	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	protoconchain "github.com/luxfi/consensus/protocol/chain"
 	smblock "github.com/luxfi/consensus/engine/chain/block"
+	protoconchain "github.com/luxfi/consensus/protocol/chain"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 
@@ -41,7 +41,7 @@ type Block interface {
 
 	// Timestamp returns the block's timestamp
 	Timestamp() time.Time
-	
+
 	// State intends to return the new chain state following this block's
 	// acceptance. The new chain state is built (but not persisted) following a
 	// block's verification to allow block's descendants verification before

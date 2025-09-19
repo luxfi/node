@@ -14,10 +14,10 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/iterator"
-	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
@@ -83,8 +83,8 @@ type L1Validator struct {
 	// database, so it doesn't need to be stored in the value.
 	ValidationID ids.ID
 
-	NetID ids.ID     `serialize:"true"`
-	NodeID   ids.NodeID `serialize:"true"`
+	NetID  ids.ID     `serialize:"true"`
+	NodeID ids.NodeID `serialize:"true"`
 
 	// PublicKey is the uncompressed BLS public key of the validator. It is
 	// guaranteed to be populated.
@@ -297,8 +297,8 @@ func (d *l1ValidatorsDiff) getActiveL1ValidatorsIterator(parentIterator iterator
 
 func (d *l1ValidatorsDiff) hasL1Validator(netID ids.ID, nodeID ids.NodeID) (bool, bool) {
 	netIDNodeID := netIDNodeID{
-		netID: netID,
-		nodeID:   nodeID,
+		netID:  netID,
+		nodeID: nodeID,
 	}
 	has, modified := d.modifiedHasNodeIDs[netIDNodeID]
 	return has, modified
@@ -371,8 +371,8 @@ func (d *l1ValidatorsDiff) putL1Validator(state Chain, l1Validator L1Validator) 
 	d.modified[l1Validator.ValidationID] = l1Validator
 
 	netIDNodeID := netIDNodeID{
-		netID: l1Validator.NetID,
-		nodeID:   l1Validator.NodeID,
+		netID:  l1Validator.NetID,
+		nodeID: l1Validator.NodeID,
 	}
 	d.modifiedHasNodeIDs[netIDNodeID] = !l1Validator.isDeleted()
 	if l1Validator.IsActive() {
@@ -427,12 +427,12 @@ func (a *activeL1Validators) addStakersToValidatorManager(vdrs validators.Manage
 	// The consensus validators.Manager doesn't have AddStaker method
 	// This needs to be fixed when the validator manager types are unified
 	/*
-	for validationID, l1Validator := range a.lookup {
-		pk := bls.PublicKeyFromValidUncompressedBytes(l1Validator.PublicKey)
-		if err := vdrs.AddStaker(l1Validator.NetID, l1Validator.NodeID, pk, validationID, l1Validator.Weight); err != nil {
-			return err
+		for validationID, l1Validator := range a.lookup {
+			pk := bls.PublicKeyFromValidUncompressedBytes(l1Validator.PublicKey)
+			if err := vdrs.AddStaker(l1Validator.NetID, l1Validator.NodeID, pk, validationID, l1Validator.Weight); err != nil {
+				return err
+			}
 		}
-	}
 	*/
 	return nil
 }
@@ -442,18 +442,18 @@ func addL1ValidatorToValidatorManager(vdrs validators.Manager, l1Validator L1Val
 	// The consensus validators.Manager doesn't have AddWeight/AddStaker methods
 	// This needs to be fixed when the validator manager types are unified
 	/*
-	nodeID := l1Validator.effectiveNodeID()
-	weight := vdrs.GetWeight(l1Validator.NetID, nodeID)
-	if weight != 0 {
-		return vdrs.AddWeight(l1Validator.NetID, nodeID, l1Validator.Weight)
-	}
-	return vdrs.AddStaker(
-		l1Validator.NetID,
-		nodeID,
-		l1Validator.effectivePublicKey(),
-		l1Validator.effectiveValidationID(),
-		l1Validator.Weight,
-	)
+		nodeID := l1Validator.effectiveNodeID()
+		weight := vdrs.GetWeight(l1Validator.NetID, nodeID)
+		if weight != 0 {
+			return vdrs.AddWeight(l1Validator.NetID, nodeID, l1Validator.Weight)
+		}
+		return vdrs.AddStaker(
+			l1Validator.NetID,
+			nodeID,
+			l1Validator.effectivePublicKey(),
+			l1Validator.effectiveValidationID(),
+			l1Validator.Weight,
+		)
 	*/
 	return nil
 }

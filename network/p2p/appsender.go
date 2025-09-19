@@ -16,10 +16,10 @@ type ExtendedAppSender interface {
 
 	// SendCrossChainAppRequest sends a cross-chain app request
 	SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error
-	
+
 	// SendCrossChainAppResponse sends a cross-chain app response
 	SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, appResponseBytes []byte) error
-	
+
 	// SendCrossChainAppError sends a cross-chain app error
 	SendCrossChainAppError(ctx context.Context, chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) error
 }

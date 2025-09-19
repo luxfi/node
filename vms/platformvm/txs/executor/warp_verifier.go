@@ -29,7 +29,7 @@ func (w *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Convert to simple weight map
 	result := make(map[ids.NodeID]uint64, len(valSet))
 	for nodeID, val := range valSet {

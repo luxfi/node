@@ -12,9 +12,9 @@ import (
 
 	// "google.golang.org/protobuf/proto" // Commented out until L1 validators are implemented
 
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/node/proto/pb/platformvm"
 	"github.com/luxfi/node/vms/platformvm/warp"
