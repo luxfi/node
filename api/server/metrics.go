@@ -9,15 +9,15 @@ import (
 )
 
 type serverMetrics struct {
-	requests  metric.CounterVec
+	requests  *prometheus.CounterVec
 	duration  *prometheus.HistogramVec
-	inflight  metric.Gauge
+	inflight  prometheus.Gauge
 }
 
 func newMetrics(registerer metric.Registerer) (*serverMetrics, error) {
 	m := &serverMetrics{
-		requests: metric.NewCounterVec(
-			metric.CounterOpts{
+		requests: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
 				Name: "api_requests_total",
 				Help: "Total number of API requests",
 			},
@@ -30,14 +30,14 @@ func newMetrics(registerer metric.Registerer) (*serverMetrics, error) {
 			},
 			[]string{"method", "endpoint"},
 		),
-		inflight: metric.NewGauge(
-			metric.GaugeOpts{
+		inflight: prometheus.NewGauge(
+			prometheus.GaugeOpts{
 				Name: "api_requests_inflight",
 				Help: "Number of inflight API requests",
 			},
 		),
 	}
-	
+
 	if err := registerer.Register(m.requests); err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func newMetrics(registerer metric.Registerer) (*serverMetrics, error) {
 	if err := registerer.Register(m.inflight); err != nil {
 		return nil, err
 	}
-	
+
 	return m, nil
 }
 

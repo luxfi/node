@@ -71,7 +71,7 @@ import (
 	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/trace"
 
-	// "github.com/luxfi/node/vms/cchainvm" // Temporarily disabled - needs interface updates
+	"github.com/luxfi/node/vms/cchainvm"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 	xvmconfig "github.com/luxfi/node/vms/xvm/config"
 )
@@ -634,7 +634,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	n.Config.NetworkConfig.BLSKey = NewBLSSignerWrapper(n.Config.StakingSigningKey)
 	n.Config.NetworkConfig.TrackedSubnets = n.Config.TrackedSubnets
 	n.Config.NetworkConfig.UptimeCalculator = n.uptimeCalculator
-	n.Config.NetworkConfig.UptimeRequirement = n.Config.UptimeRequirement
+	n.Config.NetworkConfig.UptimeRequirement = n.Config.StakingConfig.UptimeRequirement
 	// Wrap the resource tracker for consensus compatibility
 	n.Config.NetworkConfig.ResourceTracker = &resourceTrackerAdapter{tracker: n.resourceTracker}
 	n.Config.NetworkConfig.CPUTargeter = n.cpuTargeter
@@ -1216,14 +1216,14 @@ func (n *Node) initVMs() error {
 			PartialSyncPrimaryNetwork: n.Config.PartialSyncPrimaryNetwork,
 			TrackedSubnets:            n.Config.TrackedSubnets,
 			StaticFeeConfig:           n.Config.StaticConfig,
-			UptimePercentage:          n.Config.UptimeRequirement,
-			MinValidatorStake:         n.Config.MinValidatorStake,
-			MaxValidatorStake:         n.Config.MaxValidatorStake,
-			MinDelegatorStake:         n.Config.MinDelegatorStake,
-			MinDelegationFee:          n.Config.MinDelegationFee,
-			MinStakeDuration:          n.Config.MinStakeDuration,
-			MaxStakeDuration:          n.Config.MaxStakeDuration,
-			RewardConfig:              n.Config.RewardConfig,
+			UptimePercentage:          n.Config.StakingConfig.UptimeRequirement,
+			MinValidatorStake:         n.Config.StakingConfig.MinValidatorStake,
+			MaxValidatorStake:         n.Config.StakingConfig.MaxValidatorStake,
+			MinDelegatorStake:         n.Config.StakingConfig.MinDelegatorStake,
+			MinDelegationFee:          n.Config.StakingConfig.MinDelegationFee,
+			MinStakeDuration:          n.Config.StakingConfig.MinStakeDuration,
+			MaxStakeDuration:          n.Config.StakingConfig.MaxStakeDuration,
+			RewardConfig:              n.Config.StakingConfig.RewardConfig,
 			UpgradeConfig: upgrade.Config{
 				ApricotPhase3Time: version.GetApricotPhase3Time(n.Config.NetworkID),
 				ApricotPhase5Time: version.GetApricotPhase5Time(n.Config.NetworkID),
@@ -1255,14 +1255,13 @@ func (n *Node) initVMs() error {
 	}
 	n.Log.Info("X VM registered successfully")
 
-	// TODO: Register C-Chain VM (EVM) - needs interface updates
-	// n.Log.Info("Registering C-Chain VM", "vmID", constants.EVMID)
-	// err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &cchainvm.Factory{})
-	// if err != nil {
-	// 	n.Log.Error("Failed to register C-Chain VM", "error", err)
-	// 	return err
-	// }
-	// n.Log.Info("C-Chain VM registered successfully")
+	n.Log.Info("Registering C-Chain VM", "vmID", constants.EVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &cchainvm.Factory{})
+	if err != nil {
+		n.Log.Error("Failed to register C-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("C-Chain VM registered successfully")
 
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()
