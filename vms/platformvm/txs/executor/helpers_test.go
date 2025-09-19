@@ -60,7 +60,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 
 	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/metrics"
 
 	"github.com/luxfi/node/vms/platformvm/status"
 
@@ -197,6 +196,7 @@ func newEnvironment(t *testing.T, f fork) *environment {
 		FlowChecker:  utxosHandler,
 		Uptimes:      uptimes,
 		Rewards:      rewards,
+		Lock:         ctx.Lock,
 	}
 
 	env := &environment{

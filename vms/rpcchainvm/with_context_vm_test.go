@@ -14,9 +14,9 @@ import (
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/components/chain"
 )
 
 var (
@@ -112,10 +112,6 @@ func (b *ContextEnabledBlockMock) Reject(ctx context.Context) error {
 	return nil
 }
 
-// SetStatus implements chain.Block interface
-func (b *ContextEnabledBlockMock) SetStatus(status choices.Status) {
-	b.statusV = status
-}
 
 // VerifyWithContext implements WithVerifyContext interface
 func (b *ContextEnabledBlockMock) VerifyWithContext(ctx context.Context, blockCtx *block.Context) error {

@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/log"
 
 	"github.com/stretchr/testify/require"
-	"github.com/luxfi/mock/gomock"
 
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"

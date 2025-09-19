@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build test
+
 package p
 
 import (
@@ -45,8 +47,6 @@ import (
 	"github.com/luxfi/node/network/p2p/lp118"
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
 	platformvmpb "github.com/luxfi/node/proto/pb/platformvm"
-	platformapi "github.com/luxfi/node/vms/platformvm/api"
-	platformvmvalidators "github.com/luxfi/node/vms/platformvm/validators"
 	warpmessage "github.com/luxfi/node/vms/platformvm/warp/message"
 )
 
@@ -791,7 +791,7 @@ func wrapWarpSignatureRequest(
 ) (p2pmessage.OutboundMessage, error) {
 	p2pMessageFactory, err := p2pmessage.NewCreator(
 		log.NoLog{},
-		metric.NewNoOp().Registry(),
+		metric.NewNoOp(),
 		constants.DefaultNetworkCompressionType,
 		p2pTimeout,
 	)

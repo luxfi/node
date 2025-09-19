@@ -211,6 +211,7 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		FlowChecker:  res.utxosVerifier,
 		Uptimes:      &uptime.NoOpCalculator{},
 		Rewards:      rewardsCalc,
+		Lock:         res.ctx.Lock,
 	}
 
 	registerer := metric.NewRegistry()

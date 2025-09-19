@@ -3,9 +3,7 @@
 
 package staking
 
-import "crypto"
+import "github.com/luxfi/ids"
 
-type Certificate struct {
-	Raw       []byte
-	PublicKey crypto.PublicKey
-}
+// Certificate is an alias to ids.Certificate
+type Certificate = ids.Certificate

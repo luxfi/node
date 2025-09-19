@@ -15,7 +15,7 @@ import (
 	"time"
 
 	// "github.com/luxfi/coreth"
-	"github.com/luxfi/geth"
+	ethereum "github.com/luxfi/geth"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/ethclient"
 	"github.com/stretchr/testify/require"
@@ -23,12 +23,34 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary"
 	"github.com/luxfi/node/wallet/net/primary/common"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 )
+
+// GetEnv returns a test environment
+func GetEnv(tc tests.TestContext) *TestEnvironment {
+	if Env != nil {
+		return Env
+	}
+	require.Fail(ginkgo.GinkgoT(), "Test environment not initialized. Call InitSharedTestEnvironment first.")
+	return nil
+}
+
+// NewPrivateKey creates a new private key
+func NewPrivateKey(tc tests.TestContext) *secp256k1.PrivateKey {
+	sk, err := secp256k1.NewPrivateKey()
+	require.NoError(ginkgo.GinkgoT(), err)
+	return sk
+}
+
+// NewWallet with TestContext - overloaded version for tests
+func NewWalletWithContext(tc tests.TestContext, keychain *secp256k1fx.Keychain, nodeURI tmpnet.NodeURI) primary.Wallet {
+	return NewWallet(keychain, nodeURI)
+}
 
 const (
 	// A long default timeout used to timeout failed operations but

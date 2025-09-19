@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	consensuschain "github.com/luxfi/consensus/protocol/chain"
+	protoconchain "github.com/luxfi/consensus/protocol/chain"
 	smblock "github.com/luxfi/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
@@ -36,7 +36,7 @@ var (
 )
 
 type Block interface {
-	consensuschain.Block
+	protoconchain.Block
 	smblock.WithVerifyContext
 
 	// Timestamp returns the block's timestamp

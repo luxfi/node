@@ -72,9 +72,9 @@ func main() {
 	}
 
 	justification := platformvm.L1ValidatorRegistrationJustification{
-		Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{
-			ConvertNetToL1TxData: &platformvm.NetIDIndex{
-				NetID: netID[:],
+		Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData{
+			ConvertSubnetToL1TxData: &platformvm.SubnetIDIndex{
+				SubnetId: netID[:],
 				Index:    validationIndex,
 			},
 		},

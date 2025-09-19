@@ -756,7 +756,8 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 	
 	// Create a test context with ChainID
 	chainID := ids.GenerateTestID()
-	ctx := consensustest.Context(t, chainID)
+	_ = consensustest.Context(t, chainID)
+	ctx := context.Background()
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}
@@ -871,10 +872,10 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 
 func TestSemanticVerifierImportTx(t *testing.T) {
 	// Create consensus context for chain operations
-	consensusCtx := consensustest.Context()
-	ctx := consensusCtx  // Use consensus context
 	cChainID := ids.GenerateTestID()
 	chainID := ids.GenerateTestID()
+	_ = consensustest.Context(t, chainID)
+	ctx := context.Background()  // Use standard context for Backend
 	m := atomic.NewMemory(prefixdb.New([]byte{0}, memdb.New()))
 	
 	typeToFxIndex := make(map[reflect.Type]int)

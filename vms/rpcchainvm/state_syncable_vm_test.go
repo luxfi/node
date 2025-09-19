@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/consensus/snow"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
@@ -44,14 +43,14 @@ var (
 	// last accepted blocks data before and after summary is accepted
 	preSummaryBlk = &blocktest.Block{
 		IDV:     ids.ID{'f', 'i', 'r', 's', 't', 'B', 'l', 'K'},
-		StatusV: uint8(choices.Accepted),
+		StatusV: choices.Accepted,
 		HeightV: preSummaryHeight,
 		ParentV: ids.ID{'p', 'a', 'r', 'e', 'n', 't', 'B', 'l', 'k'},
 	}
 
 	summaryBlk = &blocktest.Block{
 		IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'B', 'l', 'K'},
-		StatusV: uint8(choices.Accepted),
+		StatusV: choices.Accepted,
 		HeightV: SummaryHeight,
 		ParentV: ids.ID{'p', 'a', 'r', 'e', 'n', 't', 'B', 'l', 'k'},
 	}
@@ -586,8 +585,9 @@ func TestLastAcceptedBlockPostStateSummaryAccept(t *testing.T) {
 	require.Equal(preSummaryBlk.Height(), lastBlk.Height())
 
 	// Setting state to bootstrapping duly update last accepted block
-	// TODO: Fix SetState to handle snow.State properly
-	// require.NoError(vm.SetState(context.Background(), uint8(snow.Bootstrapping)))
+	// TODO: Fix SetState to handle consensus state properly
+	// Note: When uncommenting, import "github.com/luxfi/consensus/interfaces"
+	// require.NoError(vm.SetState(context.Background(), uint8(interfaces.Bootstrapping)))
 
 	blkID, err = vm.LastAccepted(context.Background())
 	require.NoError(err)

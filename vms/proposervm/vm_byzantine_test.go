@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/components/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 

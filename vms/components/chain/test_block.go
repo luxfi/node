@@ -7,7 +7,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/state"
 )
@@ -73,16 +72,3 @@ func (b *TestBlock) State() state.ReadOnlyChain {
 	return nil
 }
 
-func (b *TestBlock) SetStatus(status choices.Status) {
-	// Convert choices.Status to chain.Status
-	switch status {
-	case choices.Unknown:
-		b.StatusV = Unknown
-	case choices.Processing:
-		b.StatusV = Processing
-	case choices.Rejected:
-		b.StatusV = Rejected
-	case choices.Accepted:
-		b.StatusV = Accepted
-	}
-}

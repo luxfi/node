@@ -217,6 +217,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		FlowChecker:  res.utxosVerifier,
 		Uptimes:      &uptime.NoOpCalculator{},
 		Rewards:      rewardsCalc,
+		Lock:         res.ctx.Lock,
 	}
 
 	registerer := metric.NewRegistry()

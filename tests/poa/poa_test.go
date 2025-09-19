@@ -37,11 +37,12 @@ func TestPOASubnetConfig(t *testing.T) {
 		POASingleNodeMode: true,
 		POAMinBlockTime:   1 * time.Second,
 		ConsensusParameters: consensusconfig.Parameters{
-			K:                     5,
-			AlphaPreference:       3,
-			AlphaConfidence:       3,
-			Beta:                  uint32(20),
-			ConcurrentPolls:       4,
+			K:                     1,
+			Alpha:                 0.69, // Must be between 0.68 and 1.0
+			AlphaPreference:       1,
+			AlphaConfidence:       1,
+			Beta:                  uint32(1),
+			ConcurrentPolls:       1,
 			OptimalProcessing:     10,
 			MaxOutstandingItems:   256,
 			MaxItemProcessingTime: 30 * time.Second,

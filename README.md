@@ -14,7 +14,7 @@ a blockchains platform with high throughput, and blazing fast transactions.
 ## Features
 
 - **High Performance**: Optimized for throughput with sub-second finality
-- **Multiple Consensus**: Support for Snowball/Avalanche consensus
+- **Multiple Consensus**: Support for Flare/Focus/Horizon/Quasar consensus protocols
 - **EVM Compatible**: Full Ethereum Virtual Machine support on C-Chain  
 - **Multi-Chain Architecture**: Platform (P), Exchange (X), and Contract (C) chains
 - **Custom Subnets**: Create custom blockchain networks with configurable VMs
