@@ -585,6 +585,13 @@ func (vm *VM) initBlockchains() error {
 		return err
 	}
 
+	// Check if C-Chain needs to be created with migrated data
+	// This handles the case where we have migrated blockchain data but no CreateChainTx
+	if err := vm.createCChainIfNeeded(); err != nil {
+		vm.log.Error("Failed to create C-Chain with migrated data", "error", err)
+		// Don't fail initialization, just log the error
+	}
+
 	if vm.SybilProtectionEnabled {
 		for netID := range vm.TrackedSubnets {
 			if err := vm.createSubnet(netID); err != nil {
@@ -602,6 +609,87 @@ func (vm *VM) initBlockchains() error {
 			}
 		}
 	}
+	return nil
+}
+
+// createCChainIfNeeded creates the C-Chain if we have migrated data but no CreateChainTx
+func (vm *VM) createCChainIfNeeded() error {
+	// Check if C-Chain data exists in the chains directory
+	// Note: This is the actual blockchain ID generated for C-Chain
+	cChainID, _ := ids.FromString("2DZ8vjwArzfrRph2aFK7Zm9YLhx6PRuZqasVPQFH")
+	// Use the data directory from the node configuration
+	dataDir := os.Getenv("HOME") + "/.luxd"
+	chainDataPath := filepath.Join(dataDir, "chains", cChainID.String())
+
+	if _, err := os.Stat(chainDataPath); os.IsNotExist(err) {
+		// No C-Chain data, nothing to do
+		vm.log.Debug("No C-Chain data found, skipping creation")
+		return nil
+	}
+
+	// Check if C-Chain is already registered
+	chains, err := vm.state.GetChains(constants.PrimaryNetworkID)
+	if err != nil {
+		return fmt.Errorf("failed to get chains: %w", err)
+	}
+
+	for _, chain := range chains {
+		if chain.ID() == cChainID {
+			// C-Chain already exists
+			vm.log.Debug("C-Chain already registered", "chainID", cChainID)
+			return nil
+		}
+	}
+
+	// C-Chain data exists but not registered, create it
+	vm.log.Info("Creating C-Chain with migrated data",
+		"chainID", cChainID,
+		"vmID", constants.EVMID,
+		"dataPath", chainDataPath,
+	)
+
+	// Create minimal genesis for the migrated C-Chain
+	// This matches the migrated blockchain data at height 1,082,780
+	genesisBytes := []byte(`{
+		"config": {
+			"chainId": 96369,
+			"homesteadBlock": 0,
+			"eip150Block": 0,
+			"eip155Block": 0,
+			"eip158Block": 0,
+			"byzantiumBlock": 0,
+			"constantinopleBlock": 0,
+			"petersburgBlock": 0,
+			"istanbulBlock": 0,
+			"muirGlacierBlock": 0,
+			"berlinBlock": 0,
+			"londonBlock": 0,
+			"shanghaiTime": 1607144400,
+			"cancunTime": 253399622400,
+			"terminalTotalDifficulty": 0,
+			"terminalTotalDifficultyPassed": true
+		},
+		"nonce": "0x0",
+		"timestamp": "0x672485c2",
+		"gasLimit": "0xb71b00",
+		"difficulty": "0x0",
+		"alloc": {
+			"0x9011E888251AB053B7bD1cdB598Db4f9DEd94714": {
+				"balance": "0x193e5939a08ce9dbd480000000"
+			}
+		},
+		"useMigratedData": true
+	}`)
+
+	// Queue the C-Chain for creation
+	vm.Config.QueueExistingChainWithGenesis(
+		cChainID,
+		constants.PrimaryNetworkID,
+		constants.EVMID,
+		genesisBytes,
+	)
+
+	vm.log.Info("C-Chain queued for creation with migrated data")
 	return nil
 }
 

@@ -11,7 +11,6 @@ import (
 	utilmetric "github.com/luxfi/node/utils/metric"
 	"google.golang.org/protobuf/proto"
 
-	dto "github.com/prometheus/client_model/go"
 )
 
 var (
@@ -72,7 +71,7 @@ type prefixedGatherer struct {
 	gatherer metric.Gatherer
 }
 
-func (g *prefixedGatherer) Gather() ([]*dto.MetricFamily, error) {
+func (g *prefixedGatherer) Gather() ([]*metric.MetricFamily, error) {
 	// Gather returns partially filled metrics in the case of an error. So, it
 	// is expected to still return the metrics in the case an error is returned.
 	metricFamilies, err := g.gatherer.Gather()
