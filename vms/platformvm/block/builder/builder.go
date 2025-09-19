@@ -149,6 +149,11 @@ func (b *builder) StartBlockTimer() {
 }
 
 func (b *builder) durationToSleep() (time.Duration, error) {
+	// Check if builder is properly initialized
+	if b.txExecutorBackend == nil || b.txExecutorBackend.Lock == nil {
+		return 0, nil
+	}
+
 	// Grabbing the lock here enforces that this function is not called mid-way
 	// through modifying of the state.
 	b.txExecutorBackend.Lock.Lock()

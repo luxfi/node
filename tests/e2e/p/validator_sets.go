@@ -60,7 +60,7 @@ var _ = e2e.DescribePChain("[Validator Sets]", func() {
 							End:    uint64(endTime.Unix()),
 							Wght:   weight,
 						},
-						Subnet: constants.PrimaryNetworkID,
+						Net: constants.PrimaryNetworkID,
 					},
 					luxAssetID,
 					&secp256k1fx.OutputOwners{

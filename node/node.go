@@ -71,7 +71,7 @@ import (
 	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/trace"
 
-	// "github.com/luxfi/node/vms/cchainvm" // Temporarily disabled
+	// "github.com/luxfi/node/vms/cchainvm" // Temporarily disabled - needs interface updates
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 	xvmconfig "github.com/luxfi/node/vms/xvm/config"
 )
@@ -1254,6 +1254,15 @@ func (n *Node) initVMs() error {
 		return err
 	}
 	n.Log.Info("X VM registered successfully")
+
+	// TODO: Register C-Chain VM (EVM) - needs interface updates
+	// n.Log.Info("Registering C-Chain VM", "vmID", constants.EVMID)
+	// err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &cchainvm.Factory{})
+	// if err != nil {
+	// 	n.Log.Error("Failed to register C-Chain VM", "error", err)
+	// 	return err
+	// }
+	// n.Log.Info("C-Chain VM registered successfully")
 
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()

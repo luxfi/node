@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math/big"
 	"net/http"
 	"os"
@@ -59,6 +60,8 @@ type DatabaseReplayConfig struct {
 // VM implements the C-Chain VM interface using geth
 type VM struct {
 	ctx          context.Context
+	chainCtx     interface{} // Store original chain context for helper functions
+	log          *slog.Logger
 	db           database.Database
 	genesisBytes []byte
 	lastAccepted ids.ID
@@ -89,16 +92,29 @@ type VM struct {
 // Initialize implements the block.ChainVM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx context.Context,
-	db database.Database,
+	chainCtx interface{},
+	db interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	fxs []*core.Fx,
-	appSender core.AppSender,
+	msgChan interface{},
+	fxs []interface{},
+	appSender interface{},
 ) error {
-	vm.ctx = chainCtx
-	vm.db = db
+	// Store the original chain context
+	vm.chainCtx = chainCtx
+	vm.ctx = ctx // Use the regular context for now
+
+	// Create a logger
+	vm.log = slog.Default().With("vm", "cchain")
+
+	// Type assert the database interface
+	vmDB, ok := db.(database.Database)
+	if !ok {
+		return fmt.Errorf("db is not a database.Database")
+	}
+	vm.db = vmDB
+
 	vm.genesisBytes = genesisBytes
 	vm.shutdownChan = make(chan struct{})
 	vm.builtBlocks = make(map[ids.ID]*Block)
@@ -110,14 +126,13 @@ func (vm *VM) Initialize(
 	migratedBlockHash := common.Hash{}
 
 	// Create a database wrapper first (will be replaced if we have migrated data)
-	vm.ethDB = WrapDatabase(db)
+	vm.ethDB = WrapDatabase(vmDB)
 
 	// Check for LUX_GENESIS flag to trigger automatic replay
 	luxGenesis := os.Getenv("LUX_GENESIS") == "1"
 	if luxGenesis {
 		fmt.Printf("LUX_GENESIS=1 detected, checking for blocks to replay...\n")
-		logger := consensusNode.GetLogger(chainCtx)
-		logger.Info("LUX_GENESIS mode enabled for automatic block replay")
+		vm.log.Info("LUX_GENESIS mode enabled for automatic block replay")
 	}
 
 	// Check environment variables for imported blockchain data
@@ -136,14 +151,18 @@ func (vm *VM) Initialize(
 			fmt.Printf("DETECTED IMPORTED DATA AT HEIGHT %d, HASH %s\n", height, migratedBlockHash.Hex())
 
 			// Log to Lux logger too
-			logger := consensusNode.GetLogger(chainCtx)
-			logger.Info("Detected imported blockchain data from environment",
+			vm.log.Info("Detected imported blockchain data from environment",
 				"height", height,
 				"blockHash", migratedBlockHash.Hex(),
 			)
 
 			// Open the ethdb subdirectory directly for migrated data
-			chainDataDir := consensusNode.GetChainDataDir(chainCtx)
+			// Try to extract chain data dir from environment or use default
+			chainDataDir := os.Getenv("CHAIN_DATA_DIR")
+			if chainDataDir == "" {
+				// Use a default path
+				chainDataDir = "/home/z/.luxd/chainData/C/db"
+			}
 			ethdbPath := filepath.Join(chainDataDir, "ethdb")
 			if _, err := os.Stat(ethdbPath); err == nil {
 				fmt.Printf("Opening migrated ethdb at: %s\n", ethdbPath)
@@ -179,14 +198,14 @@ func (vm *VM) Initialize(
 			if blockLimitStr := os.Getenv("GENESIS_BLOCK_LIMIT"); blockLimitStr != "" {
 				if blockLimit, err := strconv.ParseUint(blockLimitStr, 10, 64); err == nil && blockLimit > 0 {
 					vm.replayConfig.TestLimit = blockLimit
-					vm.ctx.Log.Info("LUX_GENESIS: Limiting replay to blocks", "limit", blockLimit)
+					vm.log.Info("LUX_GENESIS: Limiting replay to blocks", "limit", blockLimit)
 				}
 			}
 
 			// Mark as having migrated data to use proper initialization path
 			hasMigratedData = true
 		} else {
-			vm.ctx.Log.Warn("LUX_GENESIS=1 set but source database not found", "path", sourcePath)
+			vm.log.Warn("LUX_GENESIS=1 set but source database not found", "path", sourcePath)
 		}
 	}
 
@@ -200,7 +219,7 @@ func (vm *VM) Initialize(
 				fmt.Printf("DETECTED MIGRATED DATA AT HEIGHT %d\n", height)
 
 				// Log to Lux logger too
-				vm.ctx.Log.Info("Detected migrated blockchain data",
+				vm.log.Info("Detected migrated blockchain data",
 					"height", height,
 				)
 			}
@@ -274,7 +293,7 @@ func (vm *VM) Initialize(
 			},
 		}
 
-		vm.ctx.Log.Info("Using imported blockchain genesis for replay",
+		vm.log.Info("Using imported blockchain genesis for replay",
 			"chainId", 96369,
 			"shanghaiTime", 1607144400,
 			"cancunTime", 253399622400,
@@ -285,7 +304,7 @@ func (vm *VM) Initialize(
 		if err := json.Unmarshal(genesisBytes, &genesisMap); err == nil {
 			// Check for useMigratedData flag - for using existing migrated blockchain data
 			if useMigrated, ok := genesisMap["useMigratedData"].(bool); ok && useMigrated {
-				vm.ctx.Log.Info("Using migrated blockchain data from existing database")
+				vm.log.Info("Using migrated blockchain data from existing database")
 				fmt.Printf("MIGRATED DATA MODE: Using existing blockchain at block 1,082,780\n")
 
 				// Mark as migrated data to skip genesis initialization
@@ -300,7 +319,7 @@ func (vm *VM) Initialize(
 				dbType, _ := genesisMap["dbType"].(string)
 				chainID, _ := genesisMap["chainId"].(float64)
 
-				vm.ctx.Log.Info("Database replay genesis detected",
+				vm.log.Info("Database replay genesis detected",
 					"dbPath", dbPath,
 					"dbType", dbType,
 					"chainId", chainID)
@@ -324,7 +343,7 @@ func (vm *VM) Initialize(
 
 				// Perform database replay if path is provided
 				if dbPath != "" {
-					vm.ctx.Log.Info("Starting database replay", "path", dbPath, "type", dbType)
+					vm.log.Info("Starting database replay", "path", dbPath, "type", dbType)
 
 					// Create replay config
 					replayConfig := &DatabaseReplayConfig{
@@ -335,7 +354,7 @@ func (vm *VM) Initialize(
 					if blockLimitStr := os.Getenv("GENESIS_BLOCK_LIMIT"); blockLimitStr != "" {
 						if blockLimit, err := strconv.ParseUint(blockLimitStr, 10, 64); err == nil && blockLimit > 0 {
 							replayConfig.TestLimit = blockLimit
-							vm.ctx.Log.Info("Limiting replay to blocks", "limit", blockLimit)
+							vm.log.Info("Limiting replay to blocks", "limit", blockLimit)
 						}
 					}
 
@@ -347,7 +366,7 @@ func (vm *VM) Initialize(
 			} else if hasMigratedData {
 				// PATCH: When we have migrated data from environment variables,
 				// don't parse the genesis JSON - it will conflict with our migrated data
-				vm.ctx.Log.Info("Skipping genesis parsing due to migrated data from environment")
+				vm.log.Info("Skipping genesis parsing due to migrated data from environment")
 				fmt.Printf("MIGRATION PATCH: Skipping genesis due to imported data at height %d\n", migratedHeight)
 				genesis = nil
 			} else {
@@ -371,7 +390,12 @@ func (vm *VM) Initialize(
 		}
 	} else {
 		// For network 96369, use genesis that matches migrated data
-		if vm.ctx.NetworkID == 96369 {
+		// Extract NetworkID from chainCtx if available
+		var networkID uint32 = 1 // default
+		if chainCtxWithID, ok := vm.chainCtx.(interface{ GetNetworkID() uint32 }); ok {
+			networkID = chainCtxWithID.GetNetworkID()
+		}
+		if networkID == 96369 {
 			genesis = &gethcore.Genesis{
 				Config: &params.ChainConfig{
 					ChainID:             big.NewInt(96369),
@@ -413,7 +437,7 @@ func (vm *VM) Initialize(
 				Coinbase:   common.Address{},
 				Alloc:      gethcore.GenesisAlloc{},
 			}
-			vm.ctx.Log.Info("Using genesis for migrated network 96369 data")
+			vm.log.Info("Using genesis for migrated network 96369 data")
 		} else {
 			// Use default dev genesis for other networks
 			genesis = &gethcore.Genesis{
@@ -496,7 +520,7 @@ func (vm *VM) Initialize(
 	// CRITICAL: If we have a replay config with genesis extraction, do it FIRST
 	var extractedGenesis *types.Block
 	if vm.replayConfig != nil && vm.replayConfig.ExtractGenesisFromSource {
-		vm.ctx.Log.Info("Extracting genesis from source database BEFORE backend creation",
+		vm.log.Info("Extracting genesis from source database BEFORE backend creation",
 			"source", vm.replayConfig.SourcePath)
 
 		// Create a temporary replayer just to extract genesis
@@ -518,7 +542,7 @@ func (vm *VM) Initialize(
 			return fmt.Errorf("failed to extract genesis from source: %w", err)
 		}
 
-		vm.ctx.Log.Info("Extracted genesis from source database",
+		vm.log.Info("Extracted genesis from source database",
 			"hash", extractedGenesis.Hash().Hex(),
 			"number", extractedGenesis.NumberU64(),
 			"stateRoot", extractedGenesis.Root().Hex(),
@@ -546,7 +570,7 @@ func (vm *VM) Initialize(
 		rawdb.WriteHeadBlockHash(vm.ethDB, extractedGenesis.Hash())
 		rawdb.WriteHeadHeaderHash(vm.ethDB, extractedGenesis.Hash())
 
-		vm.ctx.Log.Info("Pre-written extracted genesis to database")
+		vm.log.Info("Pre-written extracted genesis to database")
 
 		// CRITICAL: Clear the genesis variable so backend won't try to use it
 		genesis = nil
@@ -560,7 +584,13 @@ func (vm *VM) Initialize(
 
 		// If we opened the ethdb directly, use that instead of the wrapped DB
 		dbToUse := vm.ethDB
-		ethdbPath := filepath.Join(chainCtx.ChainDataDir, "ethdb")
+		// Extract ChainDataDir from chainCtx if available
+		ethdbPath := ""
+		if chainCtxWithDir, ok := vm.chainCtx.(interface{ GetChainDataDir() string }); ok {
+			ethdbPath = filepath.Join(chainCtxWithDir.GetChainDataDir(), "ethdb")
+		} else {
+			ethdbPath = filepath.Join(".", "ethdb") // fallback
+		}
 		if _, err := os.Stat(ethdbPath); err == nil {
 			// Re-open the ethdb with proper config for the backend
 			badgerConfig := BadgerDatabaseConfig{
@@ -614,7 +644,7 @@ func (vm *VM) Initialize(
 	// If we extracted genesis, verify it matches
 	if extractedGenesis != nil {
 		if vm.genesisHash != extractedGenesis.Hash() {
-			vm.ctx.Log.Warn("Genesis hash mismatch after backend creation",
+			vm.log.Warn("Genesis hash mismatch after backend creation",
 				"expected", extractedGenesis.Hash().Hex(),
 				"got", vm.genesisHash.Hex())
 			// Force the genesis hash to match
@@ -624,7 +654,7 @@ func (vm *VM) Initialize(
 
 	// Perform database replay if configured
 	if vm.replayConfig != nil {
-		vm.ctx.Log.Info("STARTING DATABASE REPLAY", "source", vm.replayConfig.SourcePath)
+		vm.log.Info("STARTING DATABASE REPLAY", "source", vm.replayConfig.SourcePath)
 		fmt.Printf("STARTING DATABASE REPLAY from %s\n", vm.replayConfig.SourcePath)
 
 		// Use unified replay system
@@ -641,7 +671,7 @@ func (vm *VM) Initialize(
 		if vm.replayConfig.TestLimit > 0 {
 			config.TestMode = true
 			config.TestLimit = vm.replayConfig.TestLimit
-			vm.ctx.Log.Info("TEST MODE: Limiting replay to blocks", "limit", config.TestLimit)
+			vm.log.Info("TEST MODE: Limiting replay to blocks", "limit", config.TestLimit)
 			fmt.Printf("TEST MODE: Limiting replay to %d blocks\n", config.TestLimit)
 		}
 
@@ -672,27 +702,27 @@ func (vm *VM) Initialize(
 					// Force snapshot generation for the current state
 					// This is necessary because we copied state nodes directly
 					if err := vm.blockChain.StateCache().TrieDB().Commit(header.Root, false); err != nil {
-						vm.ctx.Log.Warn("Failed to commit state after replay", "error", err)
+						vm.log.Warn("Failed to commit state after replay", "error", err)
 					}
 
 					// Update lastAccepted
 					vm.lastAccepted = ids.ID(headHash)
-					vm.ctx.Log.Info("Set blockchain head from replay",
+					vm.log.Info("Set blockchain head from replay",
 						"number", header.Number.Uint64(),
 						"hash", headHash.Hex())
 				}
 			}
 
 			if head := vm.blockChain.CurrentBlock(); head != nil {
-				vm.ctx.Log.Info("Database replay complete - blockchain updated",
+				vm.log.Info("Database replay complete - blockchain updated",
 					"blocks", head.Number.Uint64(),
 					"hash", head.Hash().Hex())
 			} else {
-				vm.ctx.Log.Info("Database replay complete - head set",
+				vm.log.Info("Database replay complete - head set",
 					"hash", headHash.Hex())
 			}
 		} else {
-			vm.ctx.Log.Warn("Database replay complete but no head block found")
+			vm.log.Warn("Database replay complete but no head block found")
 		}
 	}
 
@@ -700,7 +730,7 @@ func (vm *VM) Initialize(
 	// If we detected migrated data via environment variables, use that
 	if hasMigratedData && migratedBlockHash != (common.Hash{}) {
 		vm.lastAccepted = ids.ID(migratedBlockHash)
-		vm.ctx.Log.Info("Using imported blockchain data from environment",
+		vm.log.Info("Using imported blockchain data from environment",
 			"height", migratedHeight,
 			"hash", migratedBlockHash.Hex(),
 			"lastAccepted", vm.lastAccepted.String(),
@@ -715,7 +745,7 @@ func (vm *VM) Initialize(
 	if heightBytes, err := vm.ethDB.Get([]byte("Height")); err == nil && len(heightBytes) == 8 {
 		height := binary.BigEndian.Uint64(heightBytes)
 		if height > 0 {
-			vm.ctx.Log.Info("Found Height consensus key",
+			vm.log.Info("Found Height consensus key",
 				"height", height,
 			)
 
@@ -734,7 +764,7 @@ func (vm *VM) Initialize(
 				// Note: SetHead is not the right approach, we need to ensure the blockchain loads the data
 
 				vm.lastAccepted = ids.ID(hash)
-				vm.ctx.Log.Info("Found migrated blockchain data",
+				vm.log.Info("Found migrated blockchain data",
 					"height", height,
 					"hash", hash.Hex(),
 					"lastAccepted", vm.lastAccepted.String(),
@@ -752,7 +782,7 @@ func (vm *VM) Initialize(
 		// We have migrated data, set last accepted to current block
 		vm.lastAccepted = ids.ID(currentBlock.Hash())
 
-		vm.ctx.Log.Info("C-Chain VM found existing blockchain data",
+		vm.log.Info("C-Chain VM found existing blockchain data",
 			"currentHash", currentBlock.Hash().Hex(),
 			"currentHeight", currentBlock.Number.Uint64(),
 			"lastAccepted", vm.lastAccepted.String(),
@@ -761,19 +791,19 @@ func (vm *VM) Initialize(
 		// Fresh start, use genesis
 		vm.lastAccepted = ids.ID(vm.genesisHash)
 
-		vm.ctx.Log.Info("C-Chain VM starting from genesis",
+		vm.log.Info("C-Chain VM starting from genesis",
 			"genesisHash", vm.genesisHash.Hex(),
 			"lastAccepted", vm.lastAccepted.String(),
 		)
 
 		// If LUX_GENESIS=1 and we're at genesis, check for blocks to replay
 		if luxGenesis && (currentBlock == nil || (currentBlock != nil && currentBlock.Number.Uint64() == 0)) {
-			vm.ctx.Log.Info("LUX_GENESIS=1 detected at genesis, checking for blocks to replay...")
+			vm.log.Info("LUX_GENESIS=1 detected at genesis, checking for blocks to replay...")
 
 			// Before replaying, we need to ensure our genesis matches the imported data
 			// The imported blockchain has genesis hash: 0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e
 			// But our current genesis has a different hash
-			vm.ctx.Log.Info("WARNING: Genesis mismatch detected",
+			vm.log.Info("WARNING: Genesis mismatch detected",
 				"currentGenesisHash", vm.genesisHash.Hex(),
 				"expectedGenesisHash", "0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e",
 			)
@@ -785,7 +815,7 @@ func (vm *VM) Initialize(
 				currentBlock = vm.blockChain.CurrentBlock()
 				if currentBlock != nil && currentBlock.Number.Uint64() > 0 {
 					vm.lastAccepted = ids.ID(currentBlock.Hash())
-					vm.ctx.Log.Info("Successfully replayed blockchain data",
+					vm.log.Info("Successfully replayed blockchain data",
 						"currentHash", currentBlock.Hash().Hex(),
 						"currentHeight", currentBlock.Number.Uint64(),
 					)
@@ -797,8 +827,8 @@ func (vm *VM) Initialize(
 	// Log database statistics
 	vm.logDatabaseStatus()
 
-	vm.ctx.Log.Info("C-Chain VM initialized")
-	vm.ctx.Log.Info("Chain configuration",
+	vm.log.Info("C-Chain VM initialized")
+	vm.log.Info("Chain configuration",
 		"chainID", vm.chainConfig.ChainID.String(),
 		"genesisHash", vm.genesisHash.Hex(),
 	)
@@ -811,7 +841,7 @@ func (vm *VM) logDatabaseStatus() {
 	// Get current block info
 	currentBlock := vm.blockChain.CurrentBlock()
 	if currentBlock != nil {
-		vm.ctx.Log.Info("Current blockchain state",
+		vm.log.Info("Current blockchain state",
 			"height", currentBlock.Number.Uint64(),
 			"hash", currentBlock.Hash().Hex(),
 			"timestamp", currentBlock.Time,
@@ -821,14 +851,14 @@ func (vm *VM) logDatabaseStatus() {
 	// Get head block info
 	headBlock := vm.blockChain.CurrentHeader()
 	if headBlock != nil {
-		vm.ctx.Log.Info("Head block state",
+		vm.log.Info("Head block state",
 			"height", headBlock.Number.Uint64(),
 			"hash", headBlock.Hash().Hex(),
 		)
 	}
 
 	// Log database type
-	vm.ctx.Log.Info("Database info",
+	vm.log.Info("Database info",
 		"type", fmt.Sprintf("%T", vm.ethDB),
 	)
 }
@@ -871,7 +901,7 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 		return nil, fmt.Errorf("failed to register web3 API: %w", err)
 	}
 
-	vm.ctx.Log.Info("Registered API namespaces")
+	vm.log.Info("Registered API namespaces")
 
 	// Create HTTP handler
 	httpHandler := rpcServer
@@ -880,7 +910,7 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 	handlers["/rpc"] = httpHandler
 	handlers["/"] = httpHandler
 
-	vm.ctx.Log.Info("Created RPC handlers")
+	vm.log.Info("Created RPC handlers")
 
 	return handlers, nil
 }
@@ -890,11 +920,11 @@ func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 	return nil, nil
 }
 
-// WaitForEvent implements the block.ChainVM interface
-func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
-	<-ctx.Done()
-	return core.PendingTxs, ctx.Err()
-}
+// WaitForEvent is not part of the current ChainVM interface
+// func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
+// 	<-ctx.Done()
+// 	return core.PendingTxs, ctx.Err()
+// }
 
 // HealthCheck implements the block.ChainVM interface
 func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {

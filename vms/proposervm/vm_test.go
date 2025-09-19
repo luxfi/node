@@ -32,7 +32,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/components/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/state"
 
@@ -45,7 +45,7 @@ var (
 )
 
 type fullVM struct {
-	*blocktest.StateSyncableVM
+	*blockmock.StateSyncableVM
 }
 
 // GetBlockIDAtHeight implements the method to resolve ambiguity
@@ -54,6 +54,51 @@ func (vm *fullVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID
 		return vm.StateSyncableVM.VM.ChainVM.GetBlockIDAtHeight(ctx, height)
 	}
 	return ids.Empty, errors.New("not implemented")
+}
+
+// GetLastStateSummary wraps the mock to return the correct type
+func (vm *fullVM) GetLastStateSummary(ctx context.Context) (block.StateSummary, error) {
+	if vm.StateSyncableVM != nil && vm.StateSyncableVM.GetLastStateSummaryF != nil {
+		result, err := vm.StateSyncableVM.GetLastStateSummaryF(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if summary, ok := result.(block.StateSummary); ok {
+			return summary, nil
+		}
+		return nil, fmt.Errorf("invalid state summary type")
+	}
+	return nil, errors.New("not implemented")
+}
+
+// GetOngoingSyncStateSummary wraps the mock to return the correct type
+func (vm *fullVM) GetOngoingSyncStateSummary(ctx context.Context) (block.StateSummary, error) {
+	if vm.StateSyncableVM != nil && vm.StateSyncableVM.GetOngoingSyncStateSummaryF != nil {
+		result, err := vm.StateSyncableVM.GetOngoingSyncStateSummaryF(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if summary, ok := result.(block.StateSummary); ok {
+			return summary, nil
+		}
+		return nil, fmt.Errorf("invalid state summary type")
+	}
+	return nil, errors.New("not implemented")
+}
+
+// GetStateSummary wraps the mock to return the correct type
+func (vm *fullVM) GetStateSummary(ctx context.Context, height uint64) (block.StateSummary, error) {
+	if vm.StateSyncableVM != nil && vm.StateSyncableVM.GetStateSummaryF != nil {
+		result, err := vm.StateSyncableVM.GetStateSummaryF(ctx, height)
+		if err != nil {
+			return nil, err
+		}
+		if summary, ok := result.(block.StateSummary); ok {
+			return summary, nil
+		}
+		return nil, fmt.Errorf("invalid state summary type")
+	}
+	return nil, errors.New("not implemented")
 }
 
 // BuildBlock implements the method to resolve ambiguity

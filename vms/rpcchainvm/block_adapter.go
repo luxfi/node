@@ -1,11 +1,10 @@
 package rpcchainvm
 
 import (
-	"github.com/luxfi/node/vms/components/chain"
 	consChain "github.com/luxfi/consensus/protocol/chain"
 )
 
-// blockChainAdapter wraps blockClient to provide uint8 Status() method for chain.Block
+// blockChainAdapter wraps blockClient to provide uint8 Status() method for consChain.Block
 type blockChainAdapter struct {
 	*blockClient
 }
@@ -15,11 +14,11 @@ func (b *blockChainAdapter) Status() uint8 {
 	return uint8(b.blockClient.Status())
 }
 
-// Ensure blockChainAdapter implements chain.Block
-var _ chain.Block = (*blockChainAdapter)(nil)
+// Ensure blockChainAdapter implements consChain.Block
+var _ consChain.Block = (*blockChainAdapter)(nil)
 
-// wrapBlockForChain converts a blockClient to have the correct Status() signature for chain.Block
-func wrapBlockForChain(bc *blockClient) chain.Block {
+// wrapBlockForChain converts a blockClient to have the correct Status() signature for consChain.Block
+func wrapBlockForChain(bc *blockClient) consChain.Block {
 	if bc == nil {
 		return nil
 	}
@@ -36,7 +35,7 @@ func (b *blockConsensusAdapter) Status() uint8 {
 	return uint8(b.blockClient.Status())
 }
 
-// Ensure blockConsensusAdapter implements consensus chain.Block
+// Ensure blockConsensusAdapter implements consensus consChain.Block
 var _ consChain.Block = (*blockConsensusAdapter)(nil)
 
 // wrapBlockForConsensus converts a blockClient for consensus interfaces

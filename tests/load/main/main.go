@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build test
+
 package main
 
 import (
@@ -13,6 +15,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
@@ -64,10 +67,12 @@ func main() {
 		PreFundedKeys: keys,
 	}
 
-	e2e.NewTestEnvironment(tc, flagVars, network)
+	_ = e2e.NewTestEnvironment(flagVars, network)
 
 	ctx := tests.DefaultNotifyContext(0, tc.DeferCleanup)
-	wsURIs, err := tmpnet.GetNodeWebsocketURIs(network.Nodes, blockchainID)
+	// Create an ID from the blockchain string
+	blkID, _ := ids.FromString(blockchainID)
+	wsURIs, err := tmpnet.GetNodeWebsocketURIs(network.Nodes, blkID)
 	require.NoError(err)
 
 	registry := metric.NewRegistry()

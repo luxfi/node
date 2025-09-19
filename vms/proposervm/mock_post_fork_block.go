@@ -16,7 +16,7 @@ import (
 
 	choices "github.com/luxfi/consensus/choices"
 	ids "github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/components/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	block "github.com/luxfi/node/vms/proposervm/block"
 	gomock "github.com/luxfi/mock/gomock"
 )

@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
@@ -132,8 +133,11 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return txVerifier
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := coremock.NewMockAppSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				appSender := &coremock.MockAppSender{
+					SendAppGossipF: func(context.Context, set.Set[ids.NodeID], []byte) error {
+						return nil
+					},
+				}
 				return appSender
 			},
 			expectedErr: nil,
@@ -233,8 +237,11 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				return mempool
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := coremock.NewMockAppSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				appSender := &coremock.MockAppSender{
+					SendAppGossipF: func(context.Context, set.Set[ids.NodeID], []byte) error {
+						return nil
+					},
+				}
 				return appSender
 			},
 			expectedErr: nil,

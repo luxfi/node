@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus/engine/chain/block"
+	chain "github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/node/vms/components/chain"
 )
 
 // VM is a test VM that can be used for testing

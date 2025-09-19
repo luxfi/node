@@ -141,7 +141,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 			Validators: vdrs,
 		},
 		s,
-		metrics,
+		metrics.Noop,
 		new(mockable.Clock),
 	)
 

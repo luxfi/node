@@ -1392,6 +1392,9 @@ func TestDurangoMemoField(t *testing.T) {
 				sk, err := bls.NewSecretKey()
 				require.NoError(t, err)
 
+				pop, err := signer.NewProofOfPossession(sk)
+				require.NoError(t, err)
+
 				builder, txSigner := env.factory.NewWallet(preFundedKeys...)
 				utx, err := builder.NewAddPermissionlessValidatorTx(
 					&txs.NetValidator{
@@ -1403,7 +1406,7 @@ func TestDurangoMemoField(t *testing.T) {
 						},
 						Net: constants.PrimaryNetworkID,
 					},
-					signer.NewProofOfPossession(sk),
+					pop,
 					env.ctx.LUXAssetID,
 					&secp256k1fx.OutputOwners{
 						Threshold: 1,

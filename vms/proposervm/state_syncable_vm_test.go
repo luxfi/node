@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/metric"
-	"github.com/luxfi/node/vms/components/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 
 	"github.com/stretchr/testify/require"

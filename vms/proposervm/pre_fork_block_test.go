@@ -6,6 +6,7 @@ package proposervm
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -22,10 +23,13 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/protocol/chain"
+	engineBlock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/timer/mockable"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
+
+// Moved to post_fork_option_test.go to avoid redeclaration
 
 func TestOracle_PreForkBlkImplementsInterface(t *testing.T) {
 	require := require.New(t)
@@ -37,7 +41,7 @@ func TestOracle_PreForkBlkImplementsInterface(t *testing.T) {
 
 	// test
 	_, err := proBlk.Options(context.Background())
-	require.Equal(chain.ErrNotOracle, err)
+	require.Equal(ErrNotOracle, err)
 
 	// setup
 	proBlk = preForkBlock{
@@ -72,10 +76,10 @@ func TestOracle_PreForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
 		return oracleCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -106,7 +110,7 @@ func TestOracle_PreForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 	lastCoreBlk := &TestOptionsBlock{
 		Block: *blocktest.BuildChild(preferredTestBlk),
 	}
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
 		return lastCoreBlk, nil
 	}
 
@@ -146,10 +150,10 @@ func TestOracle_PostForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 		},
 	}
 
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
 		return oracleCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -180,7 +184,7 @@ func TestOracle_PostForkBlkCanBuiltOnPreForkOption(t *testing.T) {
 	lastCoreBlk := &TestOptionsBlock{
 		Block: *blocktest.BuildChild(preferredBlk),
 	}
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
 		return lastCoreBlk, nil
 	}
 
@@ -203,10 +207,10 @@ func TestBlockVerify_PreFork_ParentChecks(t *testing.T) {
 
 	// create parent block ...
 	parentCoreBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
 		return parentCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -216,7 +220,7 @@ func TestBlockVerify_PreFork_ParentChecks(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
 		switch {
 		case bytes.Equal(b, blocktest.GenesisBytes):
 			return blocktest.Genesis, nil
@@ -269,7 +273,7 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 
 	coreBlk := blocktest.BuildChild(blocktest.Genesis)
 	coreBlk.TimestampV = preActivationTime
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
 		return coreBlk, nil
 	}
 
@@ -315,10 +319,10 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 
 	secondCoreBlk := blocktest.BuildChild(coreBlk)
 	secondCoreBlk.TimestampV = postActivationTime
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
 		return secondCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (engineBlock.Block, error) {
 		switch id {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -338,10 +342,10 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 
 	require.NoError(proVM.SetPreference(context.Background(), lastPreForkBlk.ID()))
 	thirdCoreBlk := blocktest.BuildChild(secondCoreBlk)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
 		return thirdCoreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, id ids.ID) (engineBlock.Block, error) {
 		switch id {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -377,7 +381,7 @@ func TestBlockVerify_BlocksBuiltOnPostForkGenesis(t *testing.T) {
 
 	// build parent block after fork activation time ...
 	coreBlock := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
 		return coreBlock, nil
 	}
 
@@ -411,10 +415,10 @@ func TestBlockAccept_PreFork_SetsLastAcceptedBlock(t *testing.T) {
 	}()
 
 	coreBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
 		return coreBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -424,7 +428,7 @@ func TestBlockAccept_PreFork_SetsLastAcceptedBlock(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
 		switch {
 		case bytes.Equal(b, blocktest.GenesisBytes):
 			return blocktest.Genesis, nil
@@ -443,7 +447,7 @@ func TestBlockAccept_PreFork_SetsLastAcceptedBlock(t *testing.T) {
 
 	coreVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
 		// Check if the coreBlk was accepted using consensustest.Status
-		if coreBlk.Status == consensustest.Accepted {
+		if coreBlk.Status() == consensustest.Accepted {
 			return coreBlk.ID(), nil
 		}
 		return blocktest.GenesisID, nil
@@ -467,7 +471,7 @@ func TestBlockReject_PreForkBlock_InnerBlockIsRejected(t *testing.T) {
 	}()
 
 	coreBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (chain.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (engineBlock.Block, error) {
 		return coreBlk, nil
 	}
 
@@ -506,7 +510,7 @@ func TestBlockVerify_ForkBlockIsOracleBlock(t *testing.T) {
 		},
 	}
 
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -520,7 +524,7 @@ func TestBlockVerify_ForkBlockIsOracleBlock(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
 		switch {
 		case bytes.Equal(b, blocktest.GenesisBytes):
 			return blocktest.Genesis, nil
@@ -576,7 +580,7 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 		},
 	}
 
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (engineBlock.Block, error) {
 		switch blkID {
 		case blocktest.GenesisID:
 			return blocktest.Genesis, nil
@@ -590,7 +594,7 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 			return nil, database.ErrNotFound
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (chain.Block, error) {
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (engineBlock.Block, error) {
 		switch {
 		case bytes.Equal(b, blocktest.GenesisBytes):
 			return blocktest.Genesis, nil

@@ -910,3 +910,21 @@ func GetReusableNetworkPathForOwner(owner string) (string, error) {
 	}
 	return filepath.Join(networkPath, "latest_"+owner), nil
 }
+
+// GetNodeWebsocketURIs returns websocket URIs for nodes (stub)
+func GetNodeWebsocketURIs(nodes []*Node, blockchainID ids.ID) ([]string, error) {
+	var uris []string
+	for _, node := range nodes {
+		uri := fmt.Sprintf("ws://%s/ext/bc/%s/ws", node.URI, blockchainID)
+		uris = append(uris, uri)
+	}
+	return uris, nil
+}
+
+// GetMonitoringLabels returns monitoring labels for the network (stub)
+func (n *Network) GetMonitoringLabels() map[string]string {
+	return map[string]string{
+		"network": n.Owner,
+		"type":    "test",
+	}
+}

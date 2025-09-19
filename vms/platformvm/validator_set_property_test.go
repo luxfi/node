@@ -17,7 +17,7 @@ import (
 	"github.com/leanovate/gopter/prop"
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/consensus/core/interfaces"
+	"github.com/luxfi/consensus/interfaces"
 	linearblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/protocol/chain"
 	consContext "github.com/luxfi/consensus/context"

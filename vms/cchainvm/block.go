@@ -78,8 +78,8 @@ func (b *Block) Reject(ctx context.Context) error {
 }
 
 // Status implements the chain.Block interface
-func (b *Block) Status() choices.Status {
-	return b.status
+func (b *Block) Status() uint8 {
+	return uint8(b.status)
 }
 
 // Parent implements the chain.Block interface
@@ -89,6 +89,11 @@ func (b *Block) Parent() ids.ID {
 		return ids.Empty
 	}
 	return ids.ID(b.ethBlock.ParentHash())
+}
+
+// ParentID implements the chain.Block interface (alias for Parent)
+func (b *Block) ParentID() ids.ID {
+	return b.Parent()
 }
 
 // Verify implements the chain.Block interface

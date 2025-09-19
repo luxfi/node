@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/utils/set"
-	consensuschain "github.com/luxfi/consensus/protocol/chain"
+	"github.com/luxfi/consensus/protocol/chain"
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
@@ -34,10 +34,8 @@ import (
 	"github.com/luxfi/node/db/rpcdb"
 	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/node/utils/resource"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
 	"github.com/luxfi/node/vms/rpcchainvm/appsender"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
@@ -60,12 +58,6 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
-const (
-	decidedCacheSize    = 64 * units.MiB
-	missingCacheSize    = 2048
-	unverifiedCacheSize = 64 * units.MiB
-	bytesToIDCacheSize  = 64 * units.MiB
-)
 
 var (
 	errUnsupportedFXs                       = errors.New("unsupported feature extensions")
@@ -85,7 +77,6 @@ var (
 
 // VMClient is an implementation of a VM that talks over RPC.
 type VMClient struct {
-	*chain.State
 	client          vmpb.VMClient
 	runtime         runtime.Stopper
 	pid             int
@@ -93,6 +84,9 @@ type VMClient struct {
 	metricsGatherer metric.MultiGatherer
 
 	messenger *messenger.Server
+
+	// lastAcceptedBlock tracks the last accepted block
+	lastAcceptedBlock chain.Block
 	// keystore             *gkeystore.Server // Keystore removed
 	sharedMemory         *gsharedmemory.Server
 	bcLookup             *galiasreader.Server
@@ -312,71 +306,10 @@ func (vm *VMClient) Initialize(
 		time:     time,
 	}
 
-	// Create wrapper functions that convert between chain.Block types
-	getBlockWrapper := func(ctx context.Context, blkID ids.ID) (consensuschain.Block, error) {
-		blk, err := vm.getBlock(ctx, blkID)
-		if err != nil {
-			return nil, err
-		}
-		// blockClient already implements consensuschain.Block
-		return blk.(consensuschain.Block), nil
-	}
-
-	parseBlockWrapper := func(ctx context.Context, bytes []byte) (consensuschain.Block, error) {
-		blk, err := vm.parseBlock(ctx, bytes)
-		if err != nil {
-			return nil, err
-		}
-		// blockClient already implements consensuschain.Block
-		return blk.(consensuschain.Block), nil
-	}
-
-	batchedParseBlockWrapper := func(ctx context.Context, blksBytes [][]byte) ([]consensuschain.Block, error) {
-		blks, err := vm.batchedParseBlock(ctx, blksBytes)
-		if err != nil {
-			return nil, err
-		}
-		result := make([]consensuschain.Block, len(blks))
-		for i, blk := range blks {
-			result[i] = blk.(consensuschain.Block)
-		}
-		return result, nil
-	}
-
-	buildBlockWrapper := func(ctx context.Context) (consensuschain.Block, error) {
-		blk, err := vm.buildBlock(ctx)
-		if err != nil {
-			return nil, err
-		}
-		// blockClient already implements consensuschain.Block
-		return blk.(consensuschain.Block), nil
-	}
-
-	buildBlockWithContextWrapper := func(ctx context.Context, blockCtx *block.Context) (consensuschain.Block, error) {
-		blk, err := vm.buildBlockWithContext(ctx, blockCtx)
-		if err != nil {
-			return nil, err
-		}
-		// blockClient already implements consensuschain.Block
-		return blk.(consensuschain.Block), nil
-	}
-
-	vm.State, err = chain.NewMeteredState(
-		serverReg,
-		&chain.Config{
-			DecidedCacheSize:      decidedCacheSize,
-			MissingCacheSize:      missingCacheSize,
-			UnverifiedCacheSize:   unverifiedCacheSize,
-			BytesToIDCacheSize:    bytesToIDCacheSize,
-			LastAcceptedBlock:     &protocolBlockWrapper{blockClient: lastAcceptedBlk},
-			GetBlock:              getBlockWrapper,
-			UnmarshalBlock:        parseBlockWrapper,
-			BatchedUnmarshalBlock: batchedParseBlockWrapper,
-			BuildBlock:            buildBlockWrapper,
-			BuildBlockWithContext: buildBlockWithContextWrapper,
-		},
-	)
-	return err
+	// VMClient doesn't need a caching layer - it's just an RPC client
+	// The caching happens on the server side
+	vm.lastAcceptedBlock = &protocolBlockWrapper{blockClient: lastAcceptedBlk}
+	return nil
 }
 
 func (vm *VMClient) newDBServer(db database.Database) *grpc.Server {
@@ -462,7 +395,7 @@ func (vm *VMClient) SetState(ctx context.Context, state coreinterfaces.State) er
 
 	// We don't need to check whether this is a block.WithVerifyContext because
 	// we'll never Verify this block.
-	return vm.State.SetLastAcceptedBlock(&protocolBlockWrapper{blockClient: &blockClient{
+	vm.lastAcceptedBlock = &protocolBlockWrapper{blockClient: &blockClient{
 		vm:       vm,
 		id:       id,
 		parentID: parentID,
@@ -470,7 +403,8 @@ func (vm *VMClient) SetState(ctx context.Context, state coreinterfaces.State) er
 		bytes:    resp.Bytes,
 		height:   resp.Height,
 		time:     time,
-	}})
+	}}
+	return nil
 }
 
 func (vm *VMClient) Shutdown(ctx context.Context) error {
@@ -1043,10 +977,6 @@ func (b *blockClient) VerifyWithContext(ctx context.Context, blockCtx *block.Con
 	return err
 }
 
-// SetStatus sets the status of the block
-func (b *blockClient) SetStatus(status choices.Status) {
-	b.status = status
-}
 
 type summaryClient struct {
 	vm *VMClient
@@ -1137,7 +1067,7 @@ func (vm *VMClient) GetBlock(ctx context.Context, id ids.ID) (block.Block, error
 
 // LastAccepted implements the block.ChainVM interface
 func (vm *VMClient) LastAccepted(ctx context.Context) (ids.ID, error) {
-	lastAcceptedBlk := vm.State.LastAcceptedBlock()
+	lastAcceptedBlk := vm.lastAcceptedBlock
 	return lastAcceptedBlk.ID(), nil
 }
 
