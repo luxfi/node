@@ -98,7 +98,7 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 					TxID:      ids.GenerateTestID(),
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: nil,
-					NetID:  constants.PrimaryNetworkID,
+					NetID:     constants.PrimaryNetworkID,
 					Weight:    1,
 					StartTime: genesistest.DefaultValidatorStartTime.Add(time.Second),
 					EndTime:   genesistest.DefaultValidatorEndTime,

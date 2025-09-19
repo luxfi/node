@@ -21,8 +21,8 @@ import (
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/proto/pb/p2p"
@@ -506,7 +506,7 @@ func TestShouldDisconnect(t *testing.T) {
 		Minor: 0,
 		Patch: 0,
 	}
-	
+
 	tests := []struct {
 		name                     string
 		initialPeer              *peer

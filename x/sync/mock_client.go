@@ -13,9 +13,9 @@ import (
 	context "context"
 	reflect "reflect"
 
+	gomock "github.com/luxfi/mock/gomock"
 	sync "github.com/luxfi/node/proto/pb/sync"
 	merkledb "github.com/luxfi/node/x/merkledb"
-	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockClient is a mock of Client interface.

@@ -9,9 +9,9 @@ import (
 )
 
 type serverMetrics struct {
-	requests  *prometheus.CounterVec
-	duration  *prometheus.HistogramVec
-	inflight  prometheus.Gauge
+	requests *prometheus.CounterVec
+	duration *prometheus.HistogramVec
+	inflight prometheus.Gauge
 }
 
 func newMetrics(registerer metric.Registerer) (*serverMetrics, error) {
@@ -50,4 +50,3 @@ func newMetrics(registerer metric.Registerer) (*serverMetrics, error) {
 
 	return m, nil
 }
-

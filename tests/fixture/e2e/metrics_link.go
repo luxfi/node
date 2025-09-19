@@ -52,5 +52,5 @@ var _ = ginkgo.AfterEach(func() {
 		strconv.FormatInt(startTime, 10),
 		strconv.FormatInt(endTime, 10),
 	)
-	tests.Outf(tmpnet.MetricsAvailableMessage + " %s\n", metricsLink)
+	tests.Outf(tmpnet.MetricsAvailableMessage+" %s\n", metricsLink)
 })

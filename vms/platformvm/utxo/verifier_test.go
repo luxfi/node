@@ -1045,8 +1045,8 @@ func TestVerifySpendUTXOs(t *testing.T) {
 				&secp256k1fx.Credential{},
 			},
 			producedAmounts: map[ids.ID]uint64{
-				luxAssetID: 1,
-				customAssetID:    1,
+				luxAssetID:    1,
+				customAssetID: 1,
 			},
 			expectedErr: nil,
 		},

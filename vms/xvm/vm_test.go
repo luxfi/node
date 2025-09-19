@@ -11,12 +11,12 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/math/set"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/utils/constants"

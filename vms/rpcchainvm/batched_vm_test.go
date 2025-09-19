@@ -39,7 +39,7 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 
 	// create mock
 	vm := &blockmock.ChainVM{}
-	
+
 	if loadExpectations {
 		blk1 := &blocktest.Block{
 			IDV:        blkID1,
@@ -55,7 +55,7 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 			TimestampV: time2,
 			BytesV:     blkBytes2,
 		}
-		
+
 		parseBlockCallCount := 0
 		vm.ParseBlockF = func(ctx context.Context, bytes []byte) (block.Block, error) {
 			parseBlockCallCount++
@@ -71,11 +71,11 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 			}
 			return nil, nil
 		}
-		
+
 		vm.LastAcceptedF = func(context.Context) (ids.ID, error) {
 			return preSummaryBlk.ID(), nil
 		}
-		
+
 		vm.GetBlockF = func(context.Context, ids.ID) (block.Block, error) {
 			return preSummaryBlk, nil
 		}

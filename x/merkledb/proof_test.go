@@ -16,9 +16,9 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/math/set"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
 )

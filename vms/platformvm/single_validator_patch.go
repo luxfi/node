@@ -1,3 +1,4 @@
+//go:build singlevalidator
 // +build singlevalidator
 
 package platformvm
@@ -23,13 +24,13 @@ func (f *SingleValidatorFactory) New(logger interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Configure VM for single validator
 	if pvm, ok := vm.(*VM); ok {
 		// Override validation checks that require multiple validators
 		pvm.Config.MinValidators = 1
 		pvm.Config.RequireValidatorApproval = false
 	}
-	
+
 	return vm, nil
 }

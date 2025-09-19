@@ -17,10 +17,10 @@ import (
 )
 
 var (
-	ErrInvalidNetID = errors.New("invalid net ID")
-	ErrInvalidWeight   = errors.New("invalid weight")
-	ErrInvalidNodeID   = errors.New("invalid node ID")
-	ErrInvalidOwner    = errors.New("invalid owner")
+	ErrInvalidNetID  = errors.New("invalid net ID")
+	ErrInvalidWeight = errors.New("invalid weight")
+	ErrInvalidNodeID = errors.New("invalid node ID")
+	ErrInvalidOwner  = errors.New("invalid owner")
 )
 
 type PChainOwner struct {
@@ -35,7 +35,7 @@ type PChainOwner struct {
 type RegisterL1Validator struct {
 	payload
 
-	NetID              ids.ID                 `serialize:"true" json:"netID"`
+	NetID                 ids.ID                 `serialize:"true" json:"netID"`
 	NodeID                types.JSONByteSlice    `serialize:"true" json:"nodeID"`
 	BLSPublicKey          [bls.PublicKeyLen]byte `serialize:"true" json:"blsPublicKey"`
 	Expiry                uint64                 `serialize:"true" json:"expiry"`
@@ -91,7 +91,7 @@ func NewRegisterL1Validator(
 	weight uint64,
 ) (*RegisterL1Validator, error) {
 	msg := &RegisterL1Validator{
-		NetID:              netID,
+		NetID:                 netID,
 		NodeID:                nodeID[:],
 		BLSPublicKey:          blsPublicKey,
 		Expiry:                expiry,

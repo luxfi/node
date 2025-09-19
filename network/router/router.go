@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/ids"
 )
 
 // Router is the main interface for message routing
@@ -115,11 +115,11 @@ func (r *routerImpl) HandleInbound(ctx context.Context, msg message.InboundMessa
 		)
 		return
 	}
-	
+
 	r.mu.RLock()
 	handler, exists := r.handlers[chainID]
 	r.mu.RUnlock()
-	
+
 	if !exists {
 		r.log.Debug("no handler registered for chain",
 			"chainID", chainID,
@@ -127,7 +127,7 @@ func (r *routerImpl) HandleInbound(ctx context.Context, msg message.InboundMessa
 		)
 		return
 	}
-	
+
 	requestID, hasRequestID := message.GetRequestID(msg.Message())
 	if !hasRequestID {
 		r.log.Debug("no request ID in message",
@@ -136,14 +136,14 @@ func (r *routerImpl) HandleInbound(ctx context.Context, msg message.InboundMessa
 		)
 		requestID = 0 // Use 0 as default
 	}
-	
+
 	handlerMsg := HandlerMessage{
 		NodeID:    msg.NodeID(),
 		RequestID: requestID,
 		Op:        convertOp(msg.Op()),
 		Message:   []byte(fmt.Sprintf("%s", msg.Message())),
 	}
-	
+
 	if err := handler.HandleInbound(ctx, handlerMsg); err != nil {
 		r.log.Error("failed to handle inbound message",
 			"chainID", chainID,
@@ -157,7 +157,7 @@ func (r *routerImpl) HandleInbound(ctx context.Context, msg message.InboundMessa
 func (r *routerImpl) RegisterHandler(chainID ids.ID, handler Handler) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	r.handlers[chainID] = handler
 	r.log.Info("registered handler for chain", "chainID", chainID)
 }
@@ -166,7 +166,7 @@ func (r *routerImpl) RegisterHandler(chainID ids.ID, handler Handler) {
 func (r *routerImpl) UnregisterHandler(chainID ids.ID) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	delete(r.handlers, chainID)
 	r.log.Info("unregistered handler for chain", "chainID", chainID)
 }
@@ -225,7 +225,7 @@ type Message struct {
 
 // senderImpl implements the Sender interface
 type senderImpl struct {
-	log      log.Logger
+	log log.Logger
 	// In a real implementation, this would have network components
 	// For now, this is a stub implementation
 }
@@ -244,7 +244,7 @@ func (s *senderImpl) Send(ctx context.Context, msg Message) error {
 		"op", msg.Op,
 		"bytes", len(msg.Bytes),
 	)
-	
+
 	// TODO: Implement actual network sending
 	return fmt.Errorf("network sending not yet implemented")
 }
@@ -255,7 +255,7 @@ func (s *senderImpl) SendAppRequest(ctx context.Context, nodeIDs []ids.NodeID, r
 		"requestID", requestID,
 		"payloadSize", len(payload),
 	)
-	
+
 	// TODO: Implement actual app request sending
 	return fmt.Errorf("app request sending not yet implemented")
 }
@@ -266,7 +266,7 @@ func (s *senderImpl) SendAppResponse(ctx context.Context, nodeID ids.NodeID, req
 		"requestID", requestID,
 		"payloadSize", len(payload),
 	)
-	
+
 	// TODO: Implement actual app response sending
 	return fmt.Errorf("app response sending not yet implemented")
 }
@@ -276,7 +276,7 @@ func (s *senderImpl) SendAppGossip(ctx context.Context, nodeIDs []ids.NodeID, pa
 		"nodeIDs", nodeIDs,
 		"payloadSize", len(payload),
 	)
-	
+
 	// TODO: Implement actual app gossip sending
 	return fmt.Errorf("app gossip sending not yet implemented")
 }

@@ -13,8 +13,8 @@ import (
 	"context"
 	reflect "reflect"
 
-	verify "github.com/luxfi/node/vms/components/verify"
 	gomock "github.com/luxfi/mock/gomock"
+	verify "github.com/luxfi/node/vms/components/verify"
 )
 
 // TransferableOut is a mock of TransferableOut interface.

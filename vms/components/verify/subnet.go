@@ -9,12 +9,12 @@ import (
 	"fmt"
 
 	"github.com/luxfi/consensus"
-	luxids "github.com/luxfi/ids"
 	"github.com/luxfi/ids"
+	luxids "github.com/luxfi/ids"
 )
 
 var (
-	ErrSameChainID         = errors.New("same chainID")
+	ErrSameChainID      = errors.New("same chainID")
 	ErrMismatchedNetIDs = errors.New("mismatched netIDs")
 )
 
@@ -30,7 +30,7 @@ func SameSubnet(ctx context.Context, chainCtx context.Context, peerChainID ids.I
 	var peerChainIDBytes [32]byte
 	copy(peerChainIDBytes[:], peerChainID[:])
 	peerChainIDLux := luxids.ID(peerChainIDBytes)
-	
+
 	if peerChainIDLux == chainID {
 		return ErrSameChainID
 	}

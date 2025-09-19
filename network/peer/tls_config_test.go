@@ -6,6 +6,7 @@
 // The certificate validation logic has been moved to upgrader.go
 // TODO: Update tests to match new architecture
 
+//go:build ignore
 // +build ignore
 
 package peer_test

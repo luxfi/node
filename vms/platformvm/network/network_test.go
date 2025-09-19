@@ -10,15 +10,15 @@ import (
 	"time"
 
 	"github.com/luxfi/metric"
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/coremock"
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/txs"

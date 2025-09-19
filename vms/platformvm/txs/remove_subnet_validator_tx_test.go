@@ -9,8 +9,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
@@ -91,7 +91,7 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 			},
 		},
 		NodeID: nodeID,
-		Net: netID,
+		Net:    netID,
 		SubnetAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{3},
 		},
@@ -260,7 +260,7 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 			},
 		},
 		NodeID: nodeID,
-		Net: netID,
+		Net:    netID,
 		SubnetAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{},
 		},
@@ -599,7 +599,7 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 					BaseTx: validBaseTx,
 					// Set NodeID so we don't error on that check.
 					NodeID: ids.GenerateTestNodeID(),
-					Net: constants.PrimaryNetworkID,
+					Net:    constants.PrimaryNetworkID,
 				}
 			},
 			expectedErr: ErrRemovePrimaryNetworkValidator,

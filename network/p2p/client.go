@@ -11,9 +11,9 @@ import (
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/consensus/utils/set"
 )
 
 var (
@@ -142,7 +142,7 @@ func (c *Client) AppGossip(
 			nodeIDs.Add(nodeID)
 		}
 	}
-	
+
 	return c.sender.SendAppGossip(
 		ctxWithoutCancel,
 		nodeIDs,
@@ -180,7 +180,7 @@ func (c *Client) CrossChainAppRequest(
 
 	// Prefix the message with handler ID for cross-chain requests
 	prefixedAppRequestBytes := PrefixMessage(c.handlerPrefix, appRequestBytes)
-	
+
 	// Check if sender supports cross-chain operations
 	var err error
 	if extSender, ok := c.router.sender.(ExtendedAppSender); ok {
@@ -189,7 +189,7 @@ func (c *Client) CrossChainAppRequest(
 		// Fallback: sender doesn't support cross-chain
 		err = fmt.Errorf("cross-chain app requests not supported by sender")
 	}
-	
+
 	if err != nil {
 		c.router.log.Error("unexpected error when sending message",
 			log.Stringer("op", message.CrossChainAppRequestOp),

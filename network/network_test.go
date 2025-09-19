@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/core"
-	consensusrouter "github.com/luxfi/consensus/router"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
+	consensusrouter "github.com/luxfi/consensus/router"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls/signer/localsigner"

@@ -6,8 +6,8 @@ package validators
 import (
 	"context"
 
-	"github.com/luxfi/consensus/validators"
 	consensusset "github.com/luxfi/consensus/utils/set"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 )

@@ -15,12 +15,12 @@ import (
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils"
 )
 
 var (
-	netID = ids.GenerateTestID()
+	netID    = ids.GenerateTestID()
 	testVdrs []*testValidator
 )
 
@@ -34,7 +34,7 @@ func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint
 	if err != nil {
 		return nil, err
 	}
-	
+
 	result := make(map[ids.NodeID]uint64, len(validatorSet))
 	for nodeID, validator := range validatorSet {
 		result[nodeID] = validator.Weight
@@ -101,13 +101,13 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 			stateF: func() ValidatorState {
 				return &validatorStateAdapter{
 					state: &validatorstest.State{
-					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-						if height == pChainHeight && sID == netID {
-							return nil, errTest
-						}
-						return nil, nil
+						GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+							if height == pChainHeight && sID == netID {
+								return nil, errTest
+							}
+							return nil, nil
+						},
 					},
-				},
 				}
 			},
 			expectedErr: errTest,
@@ -117,24 +117,24 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 			stateF: func() ValidatorState {
 				return &validatorStateAdapter{
 					state: &validatorstest.State{
-					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-						if height == pChainHeight && sID == netID {
-							return map[ids.NodeID]*validators.GetValidatorOutput{
-								testVdrs[0].nodeID: {
-									NodeID:    testVdrs[0].nodeID,
-									PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
-									Weight:    testVdrs[0].vdr.Weight,
-								},
-								testVdrs[1].nodeID: {
-									NodeID:    testVdrs[1].nodeID,
-									PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
-									Weight:    testVdrs[1].vdr.Weight,
-								},
-							}, nil
-						}
-						return nil, nil
+						GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+							if height == pChainHeight && sID == netID {
+								return map[ids.NodeID]*validators.GetValidatorOutput{
+									testVdrs[0].nodeID: {
+										NodeID:    testVdrs[0].nodeID,
+										PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
+										Weight:    testVdrs[0].vdr.Weight,
+									},
+									testVdrs[1].nodeID: {
+										NodeID:    testVdrs[1].nodeID,
+										PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
+										Weight:    testVdrs[1].vdr.Weight,
+									},
+								}, nil
+							}
+							return nil, nil
+						},
 					},
-				},
 				}
 			},
 			expectedVdrs:   []*Validator{testVdrs[0].vdr, testVdrs[1].vdr},
@@ -146,29 +146,29 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 			stateF: func() ValidatorState {
 				return &validatorStateAdapter{
 					state: &validatorstest.State{
-					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-						if height == pChainHeight && sID == netID {
-							return map[ids.NodeID]*validators.GetValidatorOutput{
-						testVdrs[0].nodeID: {
-							NodeID:    testVdrs[0].nodeID,
-							PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
-							Weight:    testVdrs[0].vdr.Weight,
+						GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+							if height == pChainHeight && sID == netID {
+								return map[ids.NodeID]*validators.GetValidatorOutput{
+									testVdrs[0].nodeID: {
+										NodeID:    testVdrs[0].nodeID,
+										PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
+										Weight:    testVdrs[0].vdr.Weight,
+									},
+									testVdrs[1].nodeID: {
+										NodeID:    testVdrs[1].nodeID,
+										PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
+										Weight:    testVdrs[1].vdr.Weight,
+									},
+									testVdrs[2].nodeID: {
+										NodeID:    testVdrs[2].nodeID,
+										PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
+										Weight:    testVdrs[0].vdr.Weight,
+									},
+								}, nil
+							}
+							return nil, nil
 						},
-						testVdrs[1].nodeID: {
-							NodeID:    testVdrs[1].nodeID,
-							PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
-							Weight:    testVdrs[1].vdr.Weight,
-						},
-						testVdrs[2].nodeID: {
-							NodeID:    testVdrs[2].nodeID,
-							PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[0].vdr.PublicKey),
-							Weight:    testVdrs[0].vdr.Weight,
-						},
-							}, nil
-						}
-						return nil, nil
 					},
-				},
 				}
 			},
 			expectedVdrs: []*Validator{
@@ -191,24 +191,24 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 			stateF: func() ValidatorState {
 				return &validatorStateAdapter{
 					state: &validatorstest.State{
-					GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-						if height == pChainHeight && sID == netID {
-							return map[ids.NodeID]*validators.GetValidatorOutput{
-						testVdrs[0].nodeID: {
-							NodeID:    testVdrs[0].nodeID,
-							PublicKey: nil,
-							Weight:    testVdrs[0].vdr.Weight,
+						GetValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+							if height == pChainHeight && sID == netID {
+								return map[ids.NodeID]*validators.GetValidatorOutput{
+									testVdrs[0].nodeID: {
+										NodeID:    testVdrs[0].nodeID,
+										PublicKey: nil,
+										Weight:    testVdrs[0].vdr.Weight,
+									},
+									testVdrs[1].nodeID: {
+										NodeID:    testVdrs[1].nodeID,
+										PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
+										Weight:    testVdrs[1].vdr.Weight,
+									},
+								}, nil
+							}
+							return nil, nil
 						},
-						testVdrs[1].nodeID: {
-							NodeID:    testVdrs[1].nodeID,
-							PublicKey: bls.PublicKeyToUncompressedBytes(testVdrs[1].vdr.PublicKey),
-							Weight:    testVdrs[1].vdr.Weight,
-						},
-							}, nil
-						}
-						return nil, nil
 					},
-				},
 				}
 			},
 			expectedVdrs:   []*Validator{testVdrs[1].vdr},

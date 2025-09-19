@@ -6,8 +6,8 @@ package pubsub
 import (
 	"sync"
 
-	"github.com/luxfi/node/pubsub/bloom"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/pubsub/bloom"
 )
 
 type FilterParam struct {

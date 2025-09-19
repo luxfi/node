@@ -9,9 +9,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/stretchr/testify/require"
 )
 
 var _ TestContext = (*SimpleTestContext)(nil)

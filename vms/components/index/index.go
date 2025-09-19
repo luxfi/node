@@ -9,8 +9,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"

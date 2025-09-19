@@ -10,20 +10,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/engine/chain/block"
+	engineBlock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/engine/chain/chainmock"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/validators/validatorsmock"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/consensus/protocol/chain"
-	engineBlock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/timer/mockable"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
@@ -291,7 +292,7 @@ func TestBlockVerify_BlocksBuiltOnPreForkGenesis(t *testing.T) {
 		0, // pChainHeight
 		proVM.StakingCertLeaf,
 		coreBlk.Bytes(),
-		proVM.ctx.ChainID,
+		consensus.GetChainID(proVM.ctx),
 		proVM.StakingLeafSigner,
 	)
 	require.NoError(err)
@@ -620,7 +621,7 @@ func TestBlockVerify_ForkBlockIsOracleBlockButChildrenAreSigned(t *testing.T) {
 		0, // pChainHeight,
 		proVM.StakingCertLeaf,
 		coreBlk.opts[0].Bytes(),
-		proVM.ctx.ChainID,
+		consensus.GetChainID(proVM.ctx),
 		proVM.StakingLeafSigner,
 	)
 	require.NoError(err)

@@ -10,8 +10,8 @@ import (
 
 // ObjectPool provides a generic object pool for reducing allocations
 type ObjectPool[T any] struct {
-	pool sync.Pool
-	new  func() T
+	pool  sync.Pool
+	new   func() T
 	reset func(T)
 }
 

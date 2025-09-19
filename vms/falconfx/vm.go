@@ -4,8 +4,8 @@
 package falconfx
 
 import (
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/codec"
 )
 
 // VM defines the required VM interface for FALCON fx

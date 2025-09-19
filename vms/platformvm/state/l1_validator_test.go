@@ -234,7 +234,7 @@ func TestDeleteL1Validator(t *testing.T) {
 func newL1Validator() L1Validator {
 	return L1Validator{
 		ValidationID:          ids.GenerateTestID(),
-		NetID:              ids.GenerateTestID(),
+		NetID:                 ids.GenerateTestID(),
 		NodeID:                ids.GenerateTestNodeID(),
 		PublicKey:             utils.RandomBytes(bls.PublicKeyLen),
 		RemainingBalanceOwner: utils.RandomBytes(32),

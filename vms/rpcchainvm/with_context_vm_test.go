@@ -58,11 +58,11 @@ type ContextEnabledBlockMock struct {
 	statusV    choices.Status
 	bytesV     []byte
 
-	verifyWithContextF func(context.Context, *block.Context) error
+	verifyWithContextF       func(context.Context, *block.Context) error
 	shouldVerifyWithContextF func(context.Context) (bool, error)
-	verifyF func(context.Context) error
-	acceptF func(context.Context) error
-	rejectF func(context.Context) error
+	verifyF                  func(context.Context) error
+	acceptF                  func(context.Context) error
+	rejectF                  func(context.Context) error
 }
 
 // ID returns the block ID
@@ -111,7 +111,6 @@ func (b *ContextEnabledBlockMock) Reject(ctx context.Context) error {
 	b.statusV = choices.Rejected
 	return nil
 }
-
 
 // VerifyWithContext implements WithVerifyContext interface
 func (b *ContextEnabledBlockMock) VerifyWithContext(ctx context.Context, blockCtx *block.Context) error {

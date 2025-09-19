@@ -31,7 +31,6 @@ var (
 	labelNames   = []string{opLabel, handlerLabel}
 )
 
-
 // networkAppHandlerAdapter adapts Network to core.AppHandler
 type networkAppHandlerAdapter struct {
 	*Network

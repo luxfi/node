@@ -224,7 +224,7 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 		i.log.Error("index is incomplete but incomplete indices are disabled. Shutting down",
 			log.String("chainName", chainName),
 		)
-		if err := i.close(); err != nil{
+		if err := i.close(); err != nil {
 			i.log.Error("failed to close indexer",
 				log.Err(err),
 			)
@@ -272,47 +272,47 @@ func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interf
 		i.log.Debug("Matched block.ChainVM type, no additional indices needed")
 		return
 	}
-	
+
 	// For testing, also accept anything that looks like a ChainVM mock
 	if strings.Contains(vmType, "ChainVM") || strings.Contains(vmType, "chainVM") {
 		i.log.Debug("Matched ChainVM-like type for testing", log.String("vmType", vmType))
 		return
 	}
-	
+
 	switch vm.(type) {
 	// vertex.LinearizableVMWithEngine no longer exists in consensus package
 	/*case vertex.LinearizableVMWithEngine:
-		vtxIndex, err := i.registerChainHelper(chainID, vtxPrefix, chainName, "vtx", i.vertexAcceptorGroup)
-		if err != nil {
-			i.log.Error("couldn't create index",
-				log.String("chainName", chainName),
-				log.String("endpoint", "vtx"),
+	vtxIndex, err := i.registerChainHelper(chainID, vtxPrefix, chainName, "vtx", i.vertexAcceptorGroup)
+	if err != nil {
+		i.log.Error("couldn't create index",
+			log.String("chainName", chainName),
+			log.String("endpoint", "vtx"),
+			log.Err(err),
+		)
+		if err := i.close(); err != nil {
+			i.log.Error("failed to close indexer",
 				log.Err(err),
 			)
-			if err := i.close(); err != nil {
-				i.log.Error("failed to close indexer",
-					log.Err(err),
-				)
-			}
-			return
 		}
-		i.vtxIndices[chainID] = vtxIndex
+		return
+	}
+	i.vtxIndices[chainID] = vtxIndex
 
-		txIndex, err := i.registerChainHelper(chainID, txPrefix, chainName, "tx", i.txAcceptorGroup)
-		if err != nil {
-			i.log.Error("couldn't create index",
-				log.String("chainName", chainName),
-				log.String("endpoint", "tx"),
+	txIndex, err := i.registerChainHelper(chainID, txPrefix, chainName, "tx", i.txAcceptorGroup)
+	if err != nil {
+		i.log.Error("couldn't create index",
+			log.String("chainName", chainName),
+			log.String("endpoint", "tx"),
+			log.Err(err),
+		)
+		if err := i.close(); err != nil {
+			i.log.Error("failed to close indexer",
 				log.Err(err),
 			)
-			if err := i.close(); err != nil {
-				i.log.Error("failed to close indexer",
-					log.Err(err),
-				)
-			}
-			return
 		}
-		i.txIndices[chainID] = txIndex*/
+		return
+	}
+	i.txIndices[chainID] = txIndex*/
 	case block.ChainVM:
 		i.log.Debug("Matched block.ChainVM type, no additional indices needed")
 	default:

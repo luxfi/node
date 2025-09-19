@@ -156,11 +156,11 @@ func formatAddress(ctx context.Context, addr ids.ShortID) (string, error) {
 	if ctxValue.Kind() == reflect.Ptr {
 		ctxValue = ctxValue.Elem()
 	}
-	
+
 	if ctxValue.Kind() == reflect.Struct {
 		bcLookupField := ctxValue.FieldByName("BCLookup")
 		chainIDField := ctxValue.FieldByName("ChainID")
-		
+
 		if bcLookupField.IsValid() && chainIDField.IsValid() && !bcLookupField.IsNil() {
 			if bcLookup, ok := bcLookupField.Interface().(ids.AliaserReader); ok {
 				if chainID, ok := chainIDField.Interface().(ids.ID); ok {
@@ -175,7 +175,7 @@ func formatAddress(ctx context.Context, addr ids.ShortID) (string, error) {
 			}
 		}
 	}
-	
+
 	// Fallback to default formatting
 	return addr.String(), nil
 }

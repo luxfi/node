@@ -10,8 +10,8 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/luxfi/metric"
 	luxlog "github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/node/api/info"

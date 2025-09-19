@@ -6,8 +6,8 @@ package throttling
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"

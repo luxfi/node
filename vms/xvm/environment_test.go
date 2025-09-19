@@ -138,7 +138,7 @@ type environment struct {
 	vm           *VM
 	txBuilder    *txstest.Builder
 	consensusCtx *consensusctx.Context // Store the consensus context
-	testLock     *sync.RWMutex        // Lock for test synchronization
+	testLock     *sync.RWMutex         // Lock for test synchronization
 }
 
 // setup the testing environment
@@ -184,7 +184,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	// NB: this lock is intentionally left locked when this function returns.
 	// The caller of this function is responsible for unlocking.
 	testLock.Lock()
-	
+
 	// Create a context with validator state for the VM
 	ctx := consensus.WithValidatorState(context.Background(), mockValidatorState)
 
@@ -207,7 +207,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 
 	// Create engine channel
 	toEngine := make(chan interface{}, 1)
-	
+
 	// Convert FXs to []interface{}
 	fxList := make([]interface{}, 0, 2+len(c.additionalFxs))
 	fxList = append(fxList, &core.Fx{
@@ -221,17 +221,17 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	for _, fx := range c.additionalFxs {
 		fxList = append(fxList, fx)
 	}
-	
+
 	require.NoError(vm.Initialize(
-		ctx,                              // context.Context
-		consensusCtx,                     // chainCtx interface{}
+		ctx,                             // context.Context
+		consensusCtx,                    // chainCtx interface{}
 		prefixdb.New([]byte{1}, baseDB), // dbManager interface{}
-		genesisBytes,                     // genesisBytes []byte
-		nil,                              // upgradeBytes []byte
-		configBytes,                      // configBytes []byte
-		toEngine,                         // toEngine chan<- interface{}
-		fxList,                           // fxs []interface{}
-		&appsender.FakeSender{},          // appSender interface{}
+		genesisBytes,                    // genesisBytes []byte
+		nil,                             // upgradeBytes []byte
+		configBytes,                     // configBytes []byte
+		toEngine,                        // toEngine chan<- interface{}
+		fxList,                          // fxs []interface{}
+		&appsender.FakeSender{},         // appSender interface{}
 	))
 
 	stopVertexID := ids.GenerateTestID()

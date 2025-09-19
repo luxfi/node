@@ -17,10 +17,10 @@ import (
 	"github.com/leanovate/gopter/prop"
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/consensus/interfaces"
-	linearblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/protocol/chain"
 	consContext "github.com/luxfi/consensus/context"
+	linearblock "github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/interfaces"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -108,7 +108,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 			// insert validator sequence
 			var (
 				currentPrimaryValidator = (*state.Staker)(nil)
-				currentNetValidator  = (*state.Staker)(nil)
+				currentNetValidator     = (*state.Staker)(nil)
 			)
 			for _, ev := range validatorsTimes {
 				// at each step we remove at least a net validator
@@ -664,8 +664,8 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		Validators:             validators.NewManager(),
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                 defaultTxFee,
-			CreateNetTxFee:     100 * defaultTxFee,
-			TransformNetTxFee:  100 * defaultTxFee,
+			CreateNetTxFee:        100 * defaultTxFee,
+			TransformNetTxFee:     100 * defaultTxFee,
 			CreateBlockchainTxFee: 100 * defaultTxFee,
 		},
 		MinValidatorStake: defaultMinValidatorStake,
@@ -690,17 +690,17 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 
 	// Create lux context for ChainContext
 	luxCtx := &consContext.Context{
-		QuantumID:   constants.UnitTestID,
-		NetID:       constants.PrimaryNetworkID,
-		ChainID:     constants.PlatformChainID,
-		NodeID:      ids.GenerateTestNodeID(),
-		PublicKey:   nil,
-		XChainID:    ids.GenerateTestID(),
-		CChainID:    ids.GenerateTestID(),
-		LUXAssetID:  ids.GenerateTestID(),
-		StartTime:   time.Now(),
+		QuantumID:  constants.UnitTestID,
+		NetID:      constants.PrimaryNetworkID,
+		ChainID:    constants.PlatformChainID,
+		NodeID:     ids.GenerateTestNodeID(),
+		PublicKey:  nil,
+		XChainID:   ids.GenerateTestID(),
+		CChainID:   ids.GenerateTestID(),
+		LUXAssetID: ids.GenerateTestID(),
+		StartTime:  time.Now(),
 	}
-	
+
 	// Create ChainContext
 	chainCtx := &linearblock.ChainContext{
 		ConsensusContext: &linearblock.ConsensusContext{},
@@ -721,7 +721,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	toEngine := make(chan linearblock.Message, 1)
 	// Create a mock AppSender
 	appSender := &mockAppSender{} // Use a mock instead of SenderTest
-	
+
 	err = vm.Initialize(
 		context.Background(),
 		chainCtx, // Pass proper ChainContext

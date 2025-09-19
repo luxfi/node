@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/state"
 )

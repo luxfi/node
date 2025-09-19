@@ -19,7 +19,7 @@ import (
 type Context struct {
 	context.Context
 	NetworkID    uint32
-	NetID     ids.ID
+	NetID        ids.ID
 	ChainID      ids.ID
 	NodeID       ids.NodeID
 	XChainID     ids.ID

@@ -12,10 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/interfaces"
-	linearblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/node/benchlist"
 	consContext "github.com/luxfi/consensus/context"
+	linearblock "github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -24,13 +23,14 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+	mathset "github.com/luxfi/math/set"
+	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/json"
-	mathset "github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
@@ -228,8 +228,8 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 		Validators:             validators.NewManager(),
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                 defaultTxFee,
-			CreateNetTxFee:     100 * defaultTxFee,
-			TransformNetTxFee:  100 * defaultTxFee,
+			CreateNetTxFee:        100 * defaultTxFee,
+			TransformNetTxFee:     100 * defaultTxFee,
 			CreateBlockchainTxFee: 100 * defaultTxFee,
 		},
 		MinValidatorStake: defaultMinValidatorStake,
@@ -287,15 +287,15 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
-	
+
 	// Create DB manager
 	dbManager := &simpleDBManager{
 		db: chainDB,
 	}
-	
+
 	// Create message channel
 	toEngine := make(chan linearblock.Message, 1)
-	
+
 	dynamicConfigBytes := []byte(`{"network":{"max-validator-set-staleness":0}}`)
 	require.NoError(vm.Initialize(
 		context.Background(),
@@ -774,7 +774,6 @@ func (n *noOpBenchlist) Benchable(chainID ids.ID, nodeID ids.NodeID) benchlist.B
 func (n *noOpBenchlist) Benched(chainID ids.ID, nodeID ids.NodeID) {}
 
 func (n *noOpBenchlist) Unbenched(chainID ids.ID, nodeID ids.NodeID) {}
-
 
 func TestRewardValidatorAccept(t *testing.T) {
 	require := require.New(t)
@@ -1269,15 +1268,15 @@ func TestRestartFullyAccepted(t *testing.T) {
 
 	// Create lux context for chain context
 	luxCtx := &consContext.Context{
-		QuantumID:   firstCtx.NetworkID,
-		NodeID:      firstCtx.NodeID,
-		PublicKey:   nil,
-		XChainID:    firstCtx.XChainID,
-		CChainID:    firstCtx.CChainID,
-		LUXAssetID:  firstCtx.LUXAssetID,
-		ChainID:     firstCtx.ChainID,
-		NetID:       constants.PrimaryNetworkID,
-		StartTime:   time.Now(),
+		QuantumID:  firstCtx.NetworkID,
+		NodeID:     firstCtx.NodeID,
+		PublicKey:  nil,
+		XChainID:   firstCtx.XChainID,
+		CChainID:   firstCtx.CChainID,
+		LUXAssetID: firstCtx.LUXAssetID,
+		ChainID:    firstCtx.ChainID,
+		NetID:      constants.PrimaryNetworkID,
+		StartTime:  time.Now(),
 	}
 
 	chainCtx := &linearblock.ChainContext{
@@ -1379,15 +1378,15 @@ func TestRestartFullyAccepted(t *testing.T) {
 
 	// Create lux context for chain context
 	luxCtx2 := &consContext.Context{
-		QuantumID:   secondCtx.NetworkID,
-		NodeID:      secondCtx.NodeID,
-		PublicKey:   nil,
-		XChainID:    secondCtx.XChainID,
-		CChainID:    secondCtx.CChainID,
-		LUXAssetID:  secondCtx.LUXAssetID,
-		ChainID:     secondCtx.ChainID,
-		NetID:       constants.PrimaryNetworkID,
-		StartTime:   time.Now(),
+		QuantumID:  secondCtx.NetworkID,
+		NodeID:     secondCtx.NodeID,
+		PublicKey:  nil,
+		XChainID:   secondCtx.XChainID,
+		CChainID:   secondCtx.CChainID,
+		LUXAssetID: secondCtx.LUXAssetID,
+		ChainID:    secondCtx.ChainID,
+		NetID:      constants.PrimaryNetworkID,
+		StartTime:  time.Now(),
 	}
 
 	chainCtx2 := &linearblock.ChainContext{
@@ -1421,391 +1420,391 @@ func TestRestartFullyAccepted(t *testing.T) {
 func TestBootstrapPartiallyAccepted(t *testing.T) {
 	t.Skip("Test disabled - needs update for new consensus API")
 	return
-// 	require := require.New(t)
-// 
-// 	baseDB := memdb.New()
-// 	vmDB := prefixdb.New(chains.VMDBPrefix, baseDB)
-// 	bootstrappingDB := prefixdb.New(chains.ChainBootstrappingDBPrefix, baseDB)
-// 
-// 	vm := &VM{Config: config.Config{
-// 		Chains:                 chains.TestManager,
-// 		Validators:             validators.NewManager(),
-// 		UptimeLockedCalculator: uptime.NewLockedCalculator(),
-// 		MinStakeDuration:       defaultMinStakingDuration,
-// 		MaxStakeDuration:       defaultMaxStakingDuration,
-// 		RewardConfig:           defaultRewardConfig,
-// 		UpgradeConfig: upgrade.Config{
-// 			BanffTime:    latestForkTime,
-// 			CortinaTime:  latestForkTime,
-// 			DurangoTime:  latestForkTime,
-// 			EUpgradeTime: mockable.MaxTime,
-// 		},
-// 	}}
-// 
-// 	initialClkTime := latestForkTime.Add(time.Second)
-// 	vm.Clock().Set(initialClkTime)
-// 	baseCtx := consensustest.Context(t, consensustest.PChainID)
-// 	ctx := testcontext.New(context.Background())
-// 	ctx.ChainID = consensustest.PChainID
-// 	ctx.LUXAssetID = ids.GenerateTestID()
-// 
-// 	_, genesisBytes := defaultGenesis(t, ctx.LUXAssetID)
-// 
-// 	atomicDB := prefixdb.New([]byte{1}, baseDB)
-// 	m := atomic.NewMemory(atomicDB)
-// 	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
-// 
-// 	msgChan := make(chan linearblock.Message, 1)
-// 	// Create consensus context for chain context
-// 	consensusCtx := context.Context{
-// 		ConsensusContext: consensus.ConsensusContext{
-// 			Alpha:        1,
-// 			BetaVirtuous: 1,
-// 			BetaRogue:    1,
-// 		},
-// 		NetworkID:   ctx.NetworkID,
-// 		NodeID:      ctx.NodeID,
-// 		PublicKey:   nil,
-// 		XChainID:    ctx.XChainID,
-// 		CChainID:    ctx.CChainID,
-// 		AVAXAssetID: ctx.LUXAssetID,
-// 		ChainID:     ctx.ChainID,
-// 		SubnetID:    constants.PrimaryNetworkID,
-// 		Log:         ctx.Log,
-// 		StartTime:   time.Now(),
-// 	}
-// 
-// 	chainCtx := &linearblock.ChainContext{
-// 		ConsensusContext: &consensusCtx.ConsensusContext,
-// 		Context:          &consensusCtx,
-// 	}
-// 
-// 	dbManager := &simpleDBManager{
-// 		db: vmDB,
-// 	}
-// 
-// 	ctx.Lock.Lock()
-// 
-// 	require.NoError(vm.Initialize(
-// 		context.Background(),
-// 		chainCtx,
-// 		dbManager,
-// 		genesisBytes,
-// 		nil,
-// 		nil,
-// 		msgChan,
-// 		nil,
-// 		&testAppSender{},
-// 	))
-// 
-// 	// include a tx to make the block be accepted
-// 	tx := &txs.Tx{Unsigned: &txs.ImportTx{
-// 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-// 			NetworkID:    ctx.NetworkID,
-// 			BlockchainID: ctx.ChainID,
-// 		}},
-// 		SourceChain: ctx.XChainID,
-// 		ImportedInputs: []*lux.TransferableInput{{
-// 			UTXOID: lux.UTXOID{
-// 				TxID:        ids.Empty.Prefix(1),
-// 				OutputIndex: 1,
-// 			},
-// 			Asset: lux.Asset{ID: vm.luxAssetID},
-// 			In: &secp256k1fx.TransferInput{
-// 				Amt: 50000,
-// 			},
-// 		}},
-// 	}}
-// 	require.NoError(tx.Initialize(txs.Codec))
-// 
-// 	nextChainTime := initialClkTime.Add(time.Second)
-// 
-// 	preferredID := vm.manager.Preferred()
-// 	preferred, err := vm.manager.GetBlock(preferredID)
-// 	require.NoError(err)
-// 	preferredHeight := preferred.Height()
-// 
-// 	statelessBlk, err := block.NewBanffStandardBlock(
-// 		nextChainTime,
-// 		preferredID,
-// 		preferredHeight+1,
-// 		[]*txs.Tx{tx},
-// 	)
-// 	require.NoError(err)
-// 
-// 	advanceTimeBlk := vm.manager.NewBlock(statelessBlk)
-// 	require.NoError(err)
-// 
-// 	advanceTimeBlkID := advanceTimeBlk.ID()
-// 	advanceTimeBlkBytes := advanceTimeBlk.Bytes()
-// 
-// 	peerID := ids.BuildTestNodeID([]byte{1, 2, 3, 4, 5, 4, 3, 2, 1})
-// 	beacons := validators.NewManager()
-// 	require.NoError(beacons.AddStaker(ctx.NetID, peerID, nil, ids.Empty, 1))
-// 
-// 	benchlistManager := &noOpBenchlist{}
-// 	timeoutManager := timeout.NewManager(time.Second)
-// 
-// 	chainRouter := &router.ChainRouter{}
-// 
-// 	metricsInstance := metrics.NewNoOpMetrics("test")
-// 	mc, err := message.NewCreator(log.NewNoOpLogger(), metricsInstance, constants.DefaultNetworkCompressionType, 10*time.Second)
-// 	require.NoError(err)
-// 
-// 	require.NoError(chainRouter.Initialize(
-// 		ids.EmptyNodeID,
-// 		log.NewNoOpLogger(),
-// 		timeoutManager,
-// 		time.Second,
-// 		mathset.Set[ids.ID]{},
-// 		mathset.Set[ids.ID]{},
-// 		func(exitCode int) {},
-// 	))
-// 
-// 	// Comment out sender initialization as the API has changed
-// 	// TODO: Update to use new sender API
-// 	// externalSender := &sendertest.External{TB: t}
-// 	// externalSender.Default(true)
-// 
-// 	// Passes messages from the consensus engine to the network
-// 	// sender, err := sender.New(
-// 	// 	&consensusCtx,
-// 	// 	mc,
-// 	// 	externalSender,
-// 	// 	chainRouter,
-// 	// 	timeoutManager,
-// 	// 	p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-// 	// 	subnets.New(consensusCtx.NodeID, subnets.Config{}),
-// 	// 	metric.NewNoOpRegistry(),
-// 	// )
-// 	// require.NoError(err)
-// 
-// 	isBootstrapped := false
-// 	bootstrapTracker := &enginetest.BootstrapTracker{
-// 		T: t,
-// 		IsBootstrappedF: func() bool {
-// 			return isBootstrapped
-// 		},
-// 		BootstrappedF: func(ids.ID) {
-// 			isBootstrapped = true
-// 		},
-// 	}
-// 
-// 	peers := tracker.NewPeers()
-// 	totalWeight, err := beacons.TotalWeight(ctx.NetID)
-// 	require.NoError(err)
-// 	startup := tracker.NewStartup(peers, (totalWeight+1)/2)
-// 	beacons.RegisterSetCallbackListener(ctx.NetID, startup)
-// 
-// 	// The engine handles consensus
-// 	consensusGetHandler, err := consensusgetter.New(
-// 		vm,
-// 		sender,
-// 		consensusCtx.Log,
-// 		time.Second,
-// 		2000,
-// 		consensusCtx.Registerer,
-// 	)
-// 	require.NoError(err)
-// 
-// 	peerTracker, err := p2p.NewPeerTracker(
-// 		ctx.Log,
-// 		"peer_tracker",
-// 		consensusCtx.Registerer,
-// 		set.Of(ctx.NodeID),
-// 		nil,
-// 	)
-// 	require.NoError(err)
-// 
-// 	bootstrapConfig := bootstrap.Config{
-// 		AllGetsServer:                  consensusGetHandler,
-// 		Ctx:                            consensusCtx,
-// 		Beacons:                        beacons,
-// 		SampleK:                        beacons.NumValidators(ctx.NetID),
-// 		StartupTracker:                 startup,
-// 		PeerTracker:                    peerTracker,
-// 		Sender:                         sender,
-// 		BootstrapTracker:               bootstrapTracker,
-// 		AncestorsMaxContainersReceived: 2000,
-// 		DB:                             bootstrappingDB,
-// 		VM:                             vm,
-// 		Haltable:                       &core.Halter{},
-// 		NonVerifyingParse:              vm.ParseBlock,
-// 	}
-// 
-// 	// Asynchronously passes messages from the network to the consensus engine
-// 	cpuTracker, err := timetracker.NewResourceTracker(
-// 		metric.NewNoOpRegistry(),
-// 		resource.NoUsage,
-// 		meter.ContinuousFactory{},
-// 		time.Second,
-// 	)
-// 	require.NoError(err)
-// 
-// 	// Create a mock ChangeNotifier
-// 	changeNotifier := &engineblock.ChangeNotifier{
-// 		ChainVM: vm,
-// 	}
-// 
-// 	// Create a subscription that returns from msgChan
-// 	subscription := func(ctx context.Context) (core.Message, error) {
-// 		select {
-// 		case msg := <-msgChan:
-// 			return msg, nil
-// 		case <-ctx.Done():
-// 			return 0, ctx.Err()
-// 		}
-// 	}
-// 
-// 	h, err := handler.New(
-// 		bootstrapConfig.Ctx,
-// 		changeNotifier,
-// 		subscription,
-// 		beacons,
-// 		time.Hour,
-// 		2,
-// 		cpuTracker,
-// 		subnets.New(ctx.NodeID, subnets.Config{}),
-// 		tracker.NewPeers(),
-// 		peerTracker,
-// 		metric.NewNoOpRegistry(),
-// 		func() {},
-// 	)
-// 	require.NoError(err)
-// 
-// 	engineConfig := smeng.Config{
-// 		Ctx:           bootstrapConfig.Ctx,
-// 		AllGetsServer: consensusGetHandler,
-// 		VM:            bootstrapConfig.VM,
-// 		Sender:        bootstrapConfig.Sender,
-// 		Validators:    beacons,
-// 		Params: consensusconfig.Parameters{
-// 			K:                     1,
-// 			AlphaPreference:       1,
-// 			AlphaConfidence:       1,
-// 			Beta:                  20,
-// 			ConcurrentPolls:       1,
-// 			OptimalProcessing:     1,
-// 			MaxOutstandingItems:   1,
-// 			MaxItemProcessingTime: 1,
-// 		},
-// 		Consensus: &smcon.Topological{},
-// 	}
-// 	engine, err := smeng.New(engineConfig)
-// 	require.NoError(err)
-// 
-// 	bootstrapper, err := bootstrap.New(
-// 		bootstrapConfig,
-// 		engine.Start,
-// 	)
-// 	require.NoError(err)
-// 
-// 	h.SetEngineManager(&handler.EngineManager{
-// 		Dag: &handler.Engine{
-// 			StateSyncer:  nil,
-// 			Bootstrapper: bootstrapper,
-// 			Consensus:    engine,
-// 		},
-// 		Chain: &handler.Engine{
-// 			StateSyncer:  nil,
-// 			Bootstrapper: bootstrapper,
-// 			Consensus:    engine,
-// 		},
-// 	})
-// 
-// 	consensusCtx.State.Set(consensus.EngineState{
-// 		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
-// 		State: consensus.NormalOp,
-// 	})
-// 
-// 	// Allow incoming messages to be routed to the new chain
-// 	chainRouter.AddChain(context.Background(), h)
-// 	ctx.Lock.Unlock()
-// 
-// 	h.Start(context.Background(), false)
-// 
-// 	ctx.Lock.Lock()
-// 	var reqID uint32
-// 	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
-// 		inMsg, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
-// 		require.NoError(err)
-// 		require.Equal(message.GetAcceptedFrontierOp, inMsg.Op())
-// 
-// 		requestID, ok := message.GetRequestID(inMsg.Message())
-// 		require.True(ok)
-// 
-// 		reqID = requestID
-// 		return config.NodeIDs
-// 	}
-// 
-// 	peerTracker.Connected(peerID, version.CurrentApp)
-// 	require.NoError(bootstrapper.Connected(context.Background(), peerID, version.CurrentApp))
-// 
-// 	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
-// 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
-// 		require.NoError(err)
-// 		require.Equal(message.GetAcceptedOp, inMsgIntf.Op())
-// 		inMsg := inMsgIntf.Message().(*p2ppb.GetAccepted)
-// 
-// 		reqID = inMsg.RequestId
-// 		return config.NodeIDs
-// 	}
-// 
-// 	require.NoError(bootstrapper.AcceptedFrontier(context.Background(), peerID, reqID, advanceTimeBlkID))
-// 
-// 	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
-// 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
-// 		require.NoError(err)
-// 		require.Equal(message.GetAncestorsOp, inMsgIntf.Op())
-// 		inMsg := inMsgIntf.Message().(*p2ppb.GetAncestors)
-// 
-// 		reqID = inMsg.RequestId
-// 
-// 		containerID, err := ids.ToID(inMsg.ContainerId)
-// 		require.NoError(err)
-// 		require.Equal(advanceTimeBlkID, containerID)
-// 		return config.NodeIDs
-// 	}
-// 
-// 	frontier := set.Of(advanceTimeBlkID)
-// 	require.NoError(bootstrapper.Accepted(context.Background(), peerID, reqID, frontier))
-// 
-// 	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
-// 		inMsg, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
-// 		require.NoError(err)
-// 		require.Equal(message.GetAcceptedFrontierOp, inMsg.Op())
-// 
-// 		requestID, ok := message.GetRequestID(inMsg.Message())
-// 		require.True(ok)
-// 
-// 		reqID = requestID
-// 		return config.NodeIDs
-// 	}
-// 
-// 	require.NoError(bootstrapper.Ancestors(context.Background(), peerID, reqID, [][]byte{advanceTimeBlkBytes}))
-// 
-// 	externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
-// 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
-// 		require.NoError(err)
-// 		require.Equal(message.GetAcceptedOp, inMsgIntf.Op())
-// 		inMsg := inMsgIntf.Message().(*p2ppb.GetAccepted)
-// 
-// 		reqID = inMsg.RequestId
-// 		return config.NodeIDs
-// 	}
-// 
-// 	require.NoError(bootstrapper.AcceptedFrontier(context.Background(), peerID, reqID, advanceTimeBlkID))
-// 
-// 	externalSender.SendF = nil
-// 	externalSender.CantSend = false
-// 
-// 	require.NoError(bootstrapper.Accepted(context.Background(), peerID, reqID, frontier))
-// 	require.Equal(advanceTimeBlk.ID(), vm.manager.Preferred())
-// 
-// 	ctx.Lock.Unlock()
-// 	chainRouter.Shutdown(context.Background())
-// }
-} 
+	//		require := require.New(t)
+	//
+	//		baseDB := memdb.New()
+	//		vmDB := prefixdb.New(chains.VMDBPrefix, baseDB)
+	//		bootstrappingDB := prefixdb.New(chains.ChainBootstrappingDBPrefix, baseDB)
+	//
+	//		vm := &VM{Config: config.Config{
+	//			Chains:                 chains.TestManager,
+	//			Validators:             validators.NewManager(),
+	//			UptimeLockedCalculator: uptime.NewLockedCalculator(),
+	//			MinStakeDuration:       defaultMinStakingDuration,
+	//			MaxStakeDuration:       defaultMaxStakingDuration,
+	//			RewardConfig:           defaultRewardConfig,
+	//			UpgradeConfig: upgrade.Config{
+	//				BanffTime:    latestForkTime,
+	//				CortinaTime:  latestForkTime,
+	//				DurangoTime:  latestForkTime,
+	//				EUpgradeTime: mockable.MaxTime,
+	//			},
+	//		}}
+	//
+	//		initialClkTime := latestForkTime.Add(time.Second)
+	//		vm.Clock().Set(initialClkTime)
+	//		baseCtx := consensustest.Context(t, consensustest.PChainID)
+	//		ctx := testcontext.New(context.Background())
+	//		ctx.ChainID = consensustest.PChainID
+	//		ctx.LUXAssetID = ids.GenerateTestID()
+	//
+	//		_, genesisBytes := defaultGenesis(t, ctx.LUXAssetID)
+	//
+	//		atomicDB := prefixdb.New([]byte{1}, baseDB)
+	//		m := atomic.NewMemory(atomicDB)
+	//		ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
+	//
+	//		msgChan := make(chan linearblock.Message, 1)
+	//		// Create consensus context for chain context
+	//		consensusCtx := context.Context{
+	//			ConsensusContext: consensus.ConsensusContext{
+	//				Alpha:        1,
+	//				BetaVirtuous: 1,
+	//				BetaRogue:    1,
+	//			},
+	//			NetworkID:   ctx.NetworkID,
+	//			NodeID:      ctx.NodeID,
+	//			PublicKey:   nil,
+	//			XChainID:    ctx.XChainID,
+	//			CChainID:    ctx.CChainID,
+	//			AVAXAssetID: ctx.LUXAssetID,
+	//			ChainID:     ctx.ChainID,
+	//			SubnetID:    constants.PrimaryNetworkID,
+	//			Log:         ctx.Log,
+	//			StartTime:   time.Now(),
+	//		}
+	//
+	//		chainCtx := &linearblock.ChainContext{
+	//			ConsensusContext: &consensusCtx.ConsensusContext,
+	//			Context:          &consensusCtx,
+	//		}
+	//
+	//		dbManager := &simpleDBManager{
+	//			db: vmDB,
+	//		}
+	//
+	//		ctx.Lock.Lock()
+	//
+	//		require.NoError(vm.Initialize(
+	//			context.Background(),
+	//			chainCtx,
+	//			dbManager,
+	//			genesisBytes,
+	//			nil,
+	//			nil,
+	//			msgChan,
+	//			nil,
+	//			&testAppSender{},
+	//		))
+	//
+	//		// include a tx to make the block be accepted
+	//		tx := &txs.Tx{Unsigned: &txs.ImportTx{
+	//			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	//				NetworkID:    ctx.NetworkID,
+	//				BlockchainID: ctx.ChainID,
+	//			}},
+	//			SourceChain: ctx.XChainID,
+	//			ImportedInputs: []*lux.TransferableInput{{
+	//				UTXOID: lux.UTXOID{
+	//					TxID:        ids.Empty.Prefix(1),
+	//					OutputIndex: 1,
+	//				},
+	//				Asset: lux.Asset{ID: vm.luxAssetID},
+	//				In: &secp256k1fx.TransferInput{
+	//					Amt: 50000,
+	//				},
+	//			}},
+	//		}}
+	//		require.NoError(tx.Initialize(txs.Codec))
+	//
+	//		nextChainTime := initialClkTime.Add(time.Second)
+	//
+	//		preferredID := vm.manager.Preferred()
+	//		preferred, err := vm.manager.GetBlock(preferredID)
+	//		require.NoError(err)
+	//		preferredHeight := preferred.Height()
+	//
+	//		statelessBlk, err := block.NewBanffStandardBlock(
+	//			nextChainTime,
+	//			preferredID,
+	//			preferredHeight+1,
+	//			[]*txs.Tx{tx},
+	//		)
+	//		require.NoError(err)
+	//
+	//		advanceTimeBlk := vm.manager.NewBlock(statelessBlk)
+	//		require.NoError(err)
+	//
+	//		advanceTimeBlkID := advanceTimeBlk.ID()
+	//		advanceTimeBlkBytes := advanceTimeBlk.Bytes()
+	//
+	//		peerID := ids.BuildTestNodeID([]byte{1, 2, 3, 4, 5, 4, 3, 2, 1})
+	//		beacons := validators.NewManager()
+	//		require.NoError(beacons.AddStaker(ctx.NetID, peerID, nil, ids.Empty, 1))
+	//
+	//		benchlistManager := &noOpBenchlist{}
+	//		timeoutManager := timeout.NewManager(time.Second)
+	//
+	//		chainRouter := &router.ChainRouter{}
+	//
+	//		metricsInstance := metrics.NewNoOpMetrics("test")
+	//		mc, err := message.NewCreator(log.NewNoOpLogger(), metricsInstance, constants.DefaultNetworkCompressionType, 10*time.Second)
+	//		require.NoError(err)
+	//
+	//		require.NoError(chainRouter.Initialize(
+	//			ids.EmptyNodeID,
+	//			log.NewNoOpLogger(),
+	//			timeoutManager,
+	//			time.Second,
+	//			mathset.Set[ids.ID]{},
+	//			mathset.Set[ids.ID]{},
+	//			func(exitCode int) {},
+	//		))
+	//
+	//		// Comment out sender initialization as the API has changed
+	//		// TODO: Update to use new sender API
+	//		// externalSender := &sendertest.External{TB: t}
+	//		// externalSender.Default(true)
+	//
+	//		// Passes messages from the consensus engine to the network
+	//		// sender, err := sender.New(
+	//		// 	&consensusCtx,
+	//		// 	mc,
+	//		// 	externalSender,
+	//		// 	chainRouter,
+	//		// 	timeoutManager,
+	//		// 	p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+	//		// 	subnets.New(consensusCtx.NodeID, subnets.Config{}),
+	//		// 	metric.NewNoOpRegistry(),
+	//		// )
+	//		// require.NoError(err)
+	//
+	//		isBootstrapped := false
+	//		bootstrapTracker := &enginetest.BootstrapTracker{
+	//			T: t,
+	//			IsBootstrappedF: func() bool {
+	//				return isBootstrapped
+	//			},
+	//			BootstrappedF: func(ids.ID) {
+	//				isBootstrapped = true
+	//			},
+	//		}
+	//
+	//		peers := tracker.NewPeers()
+	//		totalWeight, err := beacons.TotalWeight(ctx.NetID)
+	//		require.NoError(err)
+	//		startup := tracker.NewStartup(peers, (totalWeight+1)/2)
+	//		beacons.RegisterSetCallbackListener(ctx.NetID, startup)
+	//
+	//		// The engine handles consensus
+	//		consensusGetHandler, err := consensusgetter.New(
+	//			vm,
+	//			sender,
+	//			consensusCtx.Log,
+	//			time.Second,
+	//			2000,
+	//			consensusCtx.Registerer,
+	//		)
+	//		require.NoError(err)
+	//
+	//		peerTracker, err := p2p.NewPeerTracker(
+	//			ctx.Log,
+	//			"peer_tracker",
+	//			consensusCtx.Registerer,
+	//			set.Of(ctx.NodeID),
+	//			nil,
+	//		)
+	//		require.NoError(err)
+	//
+	//		bootstrapConfig := bootstrap.Config{
+	//			AllGetsServer:                  consensusGetHandler,
+	//			Ctx:                            consensusCtx,
+	//			Beacons:                        beacons,
+	//			SampleK:                        beacons.NumValidators(ctx.NetID),
+	//			StartupTracker:                 startup,
+	//			PeerTracker:                    peerTracker,
+	//			Sender:                         sender,
+	//			BootstrapTracker:               bootstrapTracker,
+	//			AncestorsMaxContainersReceived: 2000,
+	//			DB:                             bootstrappingDB,
+	//			VM:                             vm,
+	//			Haltable:                       &core.Halter{},
+	//			NonVerifyingParse:              vm.ParseBlock,
+	//		}
+	//
+	//		// Asynchronously passes messages from the network to the consensus engine
+	//		cpuTracker, err := timetracker.NewResourceTracker(
+	//			metric.NewNoOpRegistry(),
+	//			resource.NoUsage,
+	//			meter.ContinuousFactory{},
+	//			time.Second,
+	//		)
+	//		require.NoError(err)
+	//
+	//		// Create a mock ChangeNotifier
+	//		changeNotifier := &engineblock.ChangeNotifier{
+	//			ChainVM: vm,
+	//		}
+	//
+	//		// Create a subscription that returns from msgChan
+	//		subscription := func(ctx context.Context) (core.Message, error) {
+	//			select {
+	//			case msg := <-msgChan:
+	//				return msg, nil
+	//			case <-ctx.Done():
+	//				return 0, ctx.Err()
+	//			}
+	//		}
+	//
+	//		h, err := handler.New(
+	//			bootstrapConfig.Ctx,
+	//			changeNotifier,
+	//			subscription,
+	//			beacons,
+	//			time.Hour,
+	//			2,
+	//			cpuTracker,
+	//			subnets.New(ctx.NodeID, subnets.Config{}),
+	//			tracker.NewPeers(),
+	//			peerTracker,
+	//			metric.NewNoOpRegistry(),
+	//			func() {},
+	//		)
+	//		require.NoError(err)
+	//
+	//		engineConfig := smeng.Config{
+	//			Ctx:           bootstrapConfig.Ctx,
+	//			AllGetsServer: consensusGetHandler,
+	//			VM:            bootstrapConfig.VM,
+	//			Sender:        bootstrapConfig.Sender,
+	//			Validators:    beacons,
+	//			Params: consensusconfig.Parameters{
+	//				K:                     1,
+	//				AlphaPreference:       1,
+	//				AlphaConfidence:       1,
+	//				Beta:                  20,
+	//				ConcurrentPolls:       1,
+	//				OptimalProcessing:     1,
+	//				MaxOutstandingItems:   1,
+	//				MaxItemProcessingTime: 1,
+	//			},
+	//			Consensus: &smcon.Topological{},
+	//		}
+	//		engine, err := smeng.New(engineConfig)
+	//		require.NoError(err)
+	//
+	//		bootstrapper, err := bootstrap.New(
+	//			bootstrapConfig,
+	//			engine.Start,
+	//		)
+	//		require.NoError(err)
+	//
+	//		h.SetEngineManager(&handler.EngineManager{
+	//			Dag: &handler.Engine{
+	//				StateSyncer:  nil,
+	//				Bootstrapper: bootstrapper,
+	//				Consensus:    engine,
+	//			},
+	//			Chain: &handler.Engine{
+	//				StateSyncer:  nil,
+	//				Bootstrapper: bootstrapper,
+	//				Consensus:    engine,
+	//			},
+	//		})
+	//
+	//		consensusCtx.State.Set(consensus.EngineState{
+	//			Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+	//			State: consensus.NormalOp,
+	//		})
+	//
+	//		// Allow incoming messages to be routed to the new chain
+	//		chainRouter.AddChain(context.Background(), h)
+	//		ctx.Lock.Unlock()
+	//
+	//		h.Start(context.Background(), false)
+	//
+	//		ctx.Lock.Lock()
+	//		var reqID uint32
+	//		externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	//			inMsg, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
+	//			require.NoError(err)
+	//			require.Equal(message.GetAcceptedFrontierOp, inMsg.Op())
+	//
+	//			requestID, ok := message.GetRequestID(inMsg.Message())
+	//			require.True(ok)
+	//
+	//			reqID = requestID
+	//			return config.NodeIDs
+	//		}
+	//
+	//		peerTracker.Connected(peerID, version.CurrentApp)
+	//		require.NoError(bootstrapper.Connected(context.Background(), peerID, version.CurrentApp))
+	//
+	//		externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	//			inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
+	//			require.NoError(err)
+	//			require.Equal(message.GetAcceptedOp, inMsgIntf.Op())
+	//			inMsg := inMsgIntf.Message().(*p2ppb.GetAccepted)
+	//
+	//			reqID = inMsg.RequestId
+	//			return config.NodeIDs
+	//		}
+	//
+	//		require.NoError(bootstrapper.AcceptedFrontier(context.Background(), peerID, reqID, advanceTimeBlkID))
+	//
+	//		externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	//			inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
+	//			require.NoError(err)
+	//			require.Equal(message.GetAncestorsOp, inMsgIntf.Op())
+	//			inMsg := inMsgIntf.Message().(*p2ppb.GetAncestors)
+	//
+	//			reqID = inMsg.RequestId
+	//
+	//			containerID, err := ids.ToID(inMsg.ContainerId)
+	//			require.NoError(err)
+	//			require.Equal(advanceTimeBlkID, containerID)
+	//			return config.NodeIDs
+	//		}
+	//
+	//		frontier := set.Of(advanceTimeBlkID)
+	//		require.NoError(bootstrapper.Accepted(context.Background(), peerID, reqID, frontier))
+	//
+	//		externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	//			inMsg, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
+	//			require.NoError(err)
+	//			require.Equal(message.GetAcceptedFrontierOp, inMsg.Op())
+	//
+	//			requestID, ok := message.GetRequestID(inMsg.Message())
+	//			require.True(ok)
+	//
+	//			reqID = requestID
+	//			return config.NodeIDs
+	//		}
+	//
+	//		require.NoError(bootstrapper.Ancestors(context.Background(), peerID, reqID, [][]byte{advanceTimeBlkBytes}))
+	//
+	//		externalSender.SendF = func(msg message.OutboundMessage, config core.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
+	//			inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
+	//			require.NoError(err)
+	//			require.Equal(message.GetAcceptedOp, inMsgIntf.Op())
+	//			inMsg := inMsgIntf.Message().(*p2ppb.GetAccepted)
+	//
+	//			reqID = inMsg.RequestId
+	//			return config.NodeIDs
+	//		}
+	//
+	//		require.NoError(bootstrapper.AcceptedFrontier(context.Background(), peerID, reqID, advanceTimeBlkID))
+	//
+	//		externalSender.SendF = nil
+	//		externalSender.CantSend = false
+	//
+	//		require.NoError(bootstrapper.Accepted(context.Background(), peerID, reqID, frontier))
+	//		require.Equal(advanceTimeBlk.ID(), vm.manager.Preferred())
+	//
+	//		ctx.Lock.Unlock()
+	//		chainRouter.Shutdown(context.Background())
+	//	}
+}
 
 func TestUnverifiedParent(t *testing.T) {
 	require := require.New(t)
@@ -1840,15 +1839,15 @@ func TestUnverifiedParent(t *testing.T) {
 
 	// Create lux context for chain context
 	luxCtx := &consContext.Context{
-		QuantumID:   ctx.NetworkID,
-		NetID:       constants.PrimaryNetworkID,
-		ChainID:     ctx.ChainID,
-		NodeID:      ctx.NodeID,
-		PublicKey:   nil,
-		XChainID:    ctx.XChainID,
-		CChainID:    ctx.CChainID,
-		LUXAssetID:  ctx.LUXAssetID,
-		StartTime:   time.Now(),
+		QuantumID:  ctx.NetworkID,
+		NetID:      constants.PrimaryNetworkID,
+		ChainID:    ctx.ChainID,
+		NodeID:     ctx.NodeID,
+		PublicKey:  nil,
+		XChainID:   ctx.XChainID,
+		CChainID:   ctx.CChainID,
+		LUXAssetID: ctx.LUXAssetID,
+		StartTime:  time.Now(),
 	}
 
 	chainCtx := &linearblock.ChainContext{
@@ -2021,15 +2020,15 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 
 	// Create lux context for chain context
 	luxCtx := &consContext.Context{
-		QuantumID:   firstCtx.NetworkID,
-		NetID:       constants.PrimaryNetworkID,
-		ChainID:     firstCtx.ChainID,
-		NodeID:      firstCtx.NodeID,
-		PublicKey:   nil,
-		XChainID:    firstCtx.XChainID,
-		CChainID:    firstCtx.CChainID,
-		LUXAssetID:  firstCtx.LUXAssetID,
-		StartTime:   time.Now(),
+		QuantumID:  firstCtx.NetworkID,
+		NetID:      constants.PrimaryNetworkID,
+		ChainID:    firstCtx.ChainID,
+		NodeID:     firstCtx.NodeID,
+		PublicKey:  nil,
+		XChainID:   firstCtx.XChainID,
+		CChainID:   firstCtx.CChainID,
+		LUXAssetID: firstCtx.LUXAssetID,
+		StartTime:  time.Now(),
 	}
 
 	chainCtx := &linearblock.ChainContext{
@@ -2101,15 +2100,15 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 
 	// Create lux context for second VM
 	secondLuxCtx := &consContext.Context{
-		QuantumID:   secondCtx.NetworkID,
-		NetID:       constants.PrimaryNetworkID,
-		ChainID:     secondCtx.ChainID,
-		NodeID:      secondCtx.NodeID,
-		PublicKey:   nil,
-		XChainID:    secondCtx.XChainID,
-		CChainID:    secondCtx.CChainID,
-		LUXAssetID:  secondCtx.LUXAssetID,
-		StartTime:   time.Now(),
+		QuantumID:  secondCtx.NetworkID,
+		NetID:      constants.PrimaryNetworkID,
+		ChainID:    secondCtx.ChainID,
+		NodeID:     secondCtx.NodeID,
+		PublicKey:  nil,
+		XChainID:   secondCtx.XChainID,
+		CChainID:   secondCtx.CChainID,
+		LUXAssetID: secondCtx.LUXAssetID,
+		StartTime:  time.Now(),
 	}
 
 	secondChainCtx := &linearblock.ChainContext{
@@ -2224,15 +2223,15 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 
 	// Create lux context for chain context
 	luxCtx := &consContext.Context{
-		QuantumID:   ctx.NetworkID,
-		NetID:       constants.PrimaryNetworkID,
-		ChainID:     ctx.ChainID,
-		NodeID:      ctx.NodeID,
-		PublicKey:   nil,
-		XChainID:    ctx.XChainID,
-		CChainID:    ctx.CChainID,
-		LUXAssetID:  ctx.LUXAssetID,
-		StartTime:   time.Now(),
+		QuantumID:  ctx.NetworkID,
+		NetID:      constants.PrimaryNetworkID,
+		ChainID:    ctx.ChainID,
+		NodeID:     ctx.NodeID,
+		PublicKey:  nil,
+		XChainID:   ctx.XChainID,
+		CChainID:   ctx.CChainID,
+		LUXAssetID: ctx.LUXAssetID,
+		StartTime:  time.Now(),
 	}
 
 	chainCtx := &linearblock.ChainContext{

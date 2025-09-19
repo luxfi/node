@@ -42,4 +42,3 @@ func (m *metricsImpl) Update(numTxs, bytesAvailable int) {
 	m.numTxs.Set(float64(numTxs))
 	m.bytesAvailableMetric.Set(float64(bytesAvailable))
 }
-

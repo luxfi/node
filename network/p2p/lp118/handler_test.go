@@ -12,6 +12,7 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/core/common"
+	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
@@ -20,7 +21,6 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/p2ptest"
 	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 

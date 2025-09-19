@@ -12,17 +12,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/engine/chain/chainmock"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/database"
@@ -32,7 +33,6 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/state"
 
@@ -114,7 +114,7 @@ func (vm *fullVM) ParseBlock(ctx context.Context, bytes []byte) (block.Block, er
 	if vm.StateSyncableVM != nil && vm.StateSyncableVM.VM.ChainVM != nil {
 		return vm.StateSyncableVM.VM.ChainVM.ParseBlock(ctx, bytes)
 	}
-	return nil, errors.New("not implemented") 
+	return nil, errors.New("not implemented")
 }
 
 // GetBlock implements the method to resolve ambiguity

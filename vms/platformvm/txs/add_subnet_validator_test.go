@@ -28,15 +28,15 @@ func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: constants.UnitTestID,
-		ChainID:    testChainID,
+		ChainID:   testChainID,
 		NodeID:    nodeID,
 	})
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
-		stx                  *Tx
+		stx               *Tx
 		addNetValidatorTx *AddNetValidatorTx
-		err                  error
+		err               error
 	)
 
 	// Case : signed tx is nil
@@ -153,15 +153,15 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: constants.UnitTestID,
-		ChainID:    testChainID,
+		ChainID:   testChainID,
 		NodeID:    nodeID,
 	})
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
-		stx                  *Tx
+		stx               *Tx
 		addNetValidatorTx *AddNetValidatorTx
-		err                  error
+		err               error
 	)
 
 	// create a valid tx

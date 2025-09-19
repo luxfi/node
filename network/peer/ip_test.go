@@ -4,8 +4,8 @@
 package peer
 
 import (
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"crypto"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"net/netip"
 	"testing"
 	"time"

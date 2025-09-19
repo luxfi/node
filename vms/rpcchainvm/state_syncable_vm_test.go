@@ -14,8 +14,8 @@ import (
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
@@ -64,10 +64,10 @@ type StateSyncEnabledMock struct {
 	blockmock.ChainVM
 
 	// Override ChainVM methods we need
-	InitializeF    func(context.Context, interface{}, interface{}, []byte, []byte, []byte, interface{}, []interface{}, interface{}) error
-	LastAcceptedF  func(context.Context) (ids.ID, error)
-	GetBlockF      func(context.Context, ids.ID) (block.Block, error)
-	SetStateF      func(context.Context, uint8) error
+	InitializeF   func(context.Context, interface{}, interface{}, []byte, []byte, []byte, interface{}, []interface{}, interface{}) error
+	LastAcceptedF func(context.Context) (ids.ID, error)
+	GetBlockF     func(context.Context, ids.ID) (block.Block, error)
+	SetStateF     func(context.Context, uint8) error
 
 	// Override StateSyncableVM methods to return the correct types
 	StateSyncEnabledF                    func(context.Context) (bool, error)
@@ -285,7 +285,7 @@ func acceptStateSummaryTestPlugin(t *testing.T, loadExpectations bool) block.Cha
 		ssVM.GetStateSummaryF = func(context.Context, uint64) (block.StateSummary, error) {
 			return mockedSummary, nil
 		}
-		
+
 		parseCallCount := 0
 		ssVM.ParseStateSummaryF = func(context.Context, []byte) (block.StateSummary, error) {
 			parseCallCount++
@@ -329,7 +329,7 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 		) error {
 			return nil
 		}
-		
+
 		lastAcceptedCallCount := 0
 		ssVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
 			lastAcceptedCallCount++
@@ -338,14 +338,14 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 			}
 			return summaryBlk.ID(), nil
 		}
-		
+
 		ssVM.GetBlockF = func(context.Context, ids.ID) (block.Block, error) {
 			if lastAcceptedCallCount <= 1 {
 				return preSummaryBlk, nil
 			}
 			return summaryBlk, nil
 		}
-		
+
 		ssVM.ParseStateSummaryF = func(context.Context, []byte) (block.StateSummary, error) {
 			// setup summary to be accepted before returning it
 			mockedSummary.AcceptF = func(context.Context) (block.StateSyncMode, error) {
@@ -353,7 +353,7 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 			}
 			return mockedSummary, nil
 		}
-		
+
 		ssVM.SetStateF = func(context.Context, uint8) error {
 			return nil
 		}

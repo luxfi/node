@@ -118,8 +118,8 @@ func (db *Database) Delete(key []byte) error {
 // NewBatch creates a new batch
 func (db *Database) NewBatch() database.Batch {
 	return &batch{
-		db:    db,
-		ops:   make([]batchOp, 0),
+		db:  db,
+		ops: make([]batchOp, 0),
 	}
 }
 
@@ -150,7 +150,7 @@ func (db *Database) NewIteratorWithStartAndPrefix(start, prefix []byte) database
 	txn := db.db.NewTransaction(false)
 	opts := badger.DefaultIteratorOptions
 	opts.Prefix = prefix
-	
+
 	iter := txn.NewIterator(opts)
 	if start != nil {
 		iter.Seek(start)

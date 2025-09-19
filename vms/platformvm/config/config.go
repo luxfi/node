@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
@@ -109,7 +109,7 @@ func (c *Config) CreateChain(chainID ids.ID, tx *txs.CreateChainTx) {
 
 	chainParams := chains.ChainParameters{
 		ID:          chainID,
-		NetID:    tx.NetID,
+		NetID:       tx.NetID,
 		GenesisData: tx.GenesisData,
 		VMID:        tx.VMID,
 		FxIDs:       tx.FxIDs,
@@ -133,7 +133,7 @@ func (c *Config) QueueExistingChain(chainID ids.ID, netID ids.ID, vmID ids.ID) {
 
 	chainParams := chains.ChainParameters{
 		ID:          chainID,
-		NetID:    netID,
+		NetID:       netID,
 		GenesisData: genesisData,
 		VMID:        vmID,
 		FxIDs:       nil, // No FxIDs for existing chains
@@ -152,7 +152,7 @@ func (c *Config) QueueExistingChainWithGenesis(chainID ids.ID, netID ids.ID, vmI
 
 	chainParams := chains.ChainParameters{
 		ID:          chainID,
-		NetID:    netID,
+		NetID:       netID,
 		GenesisData: genesisData,
 		VMID:        vmID,
 		FxIDs:       nil, // No FxIDs for existing chains

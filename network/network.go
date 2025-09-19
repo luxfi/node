@@ -15,9 +15,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pires/go-proxyproto"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
+	"github.com/pires/go-proxyproto"
 
 	"github.com/luxfi/consensus/core"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
@@ -25,6 +25,7 @@ import (
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/message"
+	subnets "github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
@@ -35,7 +36,6 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
-	subnets "github.com/luxfi/node/nets"
 
 	safemath "github.com/luxfi/math/math"
 )
@@ -227,7 +227,7 @@ func NewNetwork(
 	resourceTrackerWrapper := &resourceTrackerWrapper{
 		rt: config.ResourceTracker,
 	}
-	
+
 	inboundMsgThrottler, err := throttling.NewInboundMsgThrottler(
 		log,
 		metricsRegisterer,
@@ -344,7 +344,7 @@ func (n *network) Send(
 ) set.Set[ids.NodeID] {
 	// Create a default allowance policy that allows all connections
 	var allower subnets.Allower = &noOpAllower{}
-	
+
 	// Use provided nodeIDs directly
 	namedPeers := n.getPeers(nodeIDs, netID, allower)
 	n.peerConfig.Metrics.MultipleSendsFailed(
@@ -356,7 +356,7 @@ func (n *network) Send(
 	sendConfig := core.SendConfig{
 		NodeIDs:       nil, // Don't restrict to specific nodes for sampling
 		Validators:    0,   // No specific validator requirement
-		NonValidators: 0,   // No specific non-validator requirement  
+		NonValidators: 0,   // No specific non-validator requirement
 		Peers:         1,   // Sample 1 peer by default
 	}
 

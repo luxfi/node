@@ -28,7 +28,7 @@ func TestNetworkSerialization(t *testing.T) {
 		// ensuring full population of a key's in-memory representation.
 		_ = key.Address()
 	}
-	
+
 	// The original network comparison should work properly
 	require.Equal(network, loadedNetwork)
 }

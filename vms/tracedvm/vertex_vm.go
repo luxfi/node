@@ -94,7 +94,7 @@ func (vm *vertexVM) PendingTxs(ctx context.Context) []dag.Tx {
 	defer span.End()
 
 	txs := vm.LinearizableVMWithEngine.PendingTxs(ctx)
-	
+
 	// Wrap all transactions
 	wrappedTxs := make([]dag.Tx, len(txs))
 	for i, tx := range txs {
@@ -103,6 +103,6 @@ func (vm *vertexVM) PendingTxs(ctx context.Context) []dag.Tx {
 			tracer: vm.tracer,
 		}
 	}
-	
+
 	return wrappedTxs
 }

@@ -227,9 +227,9 @@ func (b *Builder) builders(kc *secp256k1fx.Keychain) (builder.Builder, signer.Si
 			utxos: b.utxos,
 			addrs: addrs,
 		}
-		builder = builder.New(addrs, b.ctx, wa)
+		builder   = builder.New(addrs, b.ctx, wa)
 		kcAdapter = kc
-		signer  = signer.New(kcAdapter, wa)
+		signer    = signer.New(kcAdapter, wa)
 	)
 	return builder, signer
 }

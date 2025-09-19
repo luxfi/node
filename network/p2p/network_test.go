@@ -12,12 +12,12 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	consensusSet "github.com/luxfi/consensus/utils/set"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/metric"
 )
 
 const (
@@ -545,7 +545,7 @@ func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
 
 				return nil
 			}
-	sender := &senderTestAdapter{SenderTest: senderTest}
+			sender := &senderTestAdapter{SenderTest: senderTest}
 			network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(network.AddHandler(handlerID, handler))
@@ -793,7 +793,7 @@ func TestAppRequestAnyNodeSelection(t *testing.T) {
 					return nil
 				},
 			}
-	sender := &senderTestAdapter{SenderTest: senderTest}
+			sender := &senderTestAdapter{SenderTest: senderTest}
 
 			n, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
 			require.NoError(err)
@@ -891,7 +891,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 					if len(tt.expected) > 0 {
 						require.Contains(tt.expected, nodeID)
 					}
-	
+
 					close(done)
 					return nil
 				},

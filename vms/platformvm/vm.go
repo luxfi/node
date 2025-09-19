@@ -21,7 +21,10 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/uptime"
+	consensusset "github.com/luxfi/consensus/utils/set"
+	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
 	"github.com/luxfi/consensus/validators"
+	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -29,12 +32,9 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
-	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
-	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/lux"
@@ -100,7 +100,6 @@ func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs co
 	return a.AppSender.SendAppGossip(ctx, nodeIDSlice, appGossipBytes)
 }
 
-
 type VM struct {
 	config.Config
 	blockbuilder.Builder
@@ -118,13 +117,13 @@ type VM struct {
 	// The context of this vm
 	ctx context.Context
 	db  database.Database
-	
+
 	// Additional fields needed for platformvm
-	log          log.Logger
-	nodeID       ids.NodeID
-	lock         sync.RWMutex
-	luxAssetID   ids.ID
-	chainID      ids.ID
+	log        log.Logger
+	nodeID     ids.NodeID
+	lock       sync.RWMutex
+	luxAssetID ids.ID
+	chainID    ids.ID
 	// bcLookup     consensus.AliasLookup
 	// sharedMemory consensus.SharedMemory
 	chainDataDir string
@@ -166,14 +165,14 @@ func (vm *VM) Initialize(
 ) error {
 	// Handle chain context as interface for now
 	_ = chainCtxIntf
-	
+
 	// DBManager is an interface, we'll handle it as such
 	dbManager := dbManagerIntf
-	
+
 	// Handle the message channel - it's passed as interface{}
 	// We'll handle it without type assertion for now
 	_ = toEngineIntf // Suppress unused warning
-	
+
 	// Handle fxs - for now we'll skip type assertions as they're not critical
 	_ = fxsIntf
 
@@ -189,7 +188,7 @@ func (vm *VM) Initialize(
 	// Initialize logger
 	vm.log = log.NoLog{}
 	vm.log.Debug("initializing platform chain")
-	
+
 	// Log initialization parameters
 	fmt.Printf("PlatformVM Initialize called with:\n")
 	fmt.Printf("  - ctx: %v\n", ctx)
@@ -771,7 +770,7 @@ func (vm *VM) onNormalOperationsStarted() error {
 		// Uptime tracking is handled by NoOpCalculator for now
 		// GetValidatorIDs is not available in consensus validators.Manager
 		// _ = vm.Validators.GetValidatorIDs(netID)
-		
+
 		// Validator logging is not needed for minimal implementation
 		// vl := validators.NewLogger(vm.log, netID, vm.nodeID)
 		// vm.Validators.RegisterSetCallbackListener(netID, vl)

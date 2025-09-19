@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -90,9 +90,9 @@ func TestDiffCurrentValidator(t *testing.T) {
 
 	// Put a current validator
 	currentValidator := &Staker{
-		TxID:     ids.GenerateTestID(),
-		NetID: ids.GenerateTestID(),
-		NodeID:   ids.GenerateTestNodeID(),
+		TxID:   ids.GenerateTestID(),
+		NetID:  ids.GenerateTestID(),
+		NodeID: ids.GenerateTestNodeID(),
 	}
 	d.PutCurrentValidator(currentValidator)
 
@@ -127,9 +127,9 @@ func TestDiffPendingValidator(t *testing.T) {
 
 	// Put a pending validator
 	pendingValidator := &Staker{
-		TxID:     ids.GenerateTestID(),
-		NetID: ids.GenerateTestID(),
-		NodeID:   ids.GenerateTestNodeID(),
+		TxID:   ids.GenerateTestID(),
+		NetID:  ids.GenerateTestID(),
+		NodeID: ids.GenerateTestNodeID(),
 	}
 	d.PutPendingValidator(pendingValidator)
 
@@ -152,9 +152,9 @@ func TestDiffCurrentDelegator(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	currentDelegator := &Staker{
-		TxID:     ids.GenerateTestID(),
-		NetID: ids.GenerateTestID(),
-		NodeID:   ids.GenerateTestNodeID(),
+		TxID:   ids.GenerateTestID(),
+		NetID:  ids.GenerateTestID(),
+		NodeID: ids.GenerateTestNodeID(),
 	}
 
 	state := NewMockState(ctrl)
@@ -201,9 +201,9 @@ func TestDiffPendingDelegator(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	pendingDelegator := &Staker{
-		TxID:     ids.GenerateTestID(),
-		NetID: ids.GenerateTestID(),
-		NodeID:   ids.GenerateTestNodeID(),
+		TxID:   ids.GenerateTestID(),
+		NetID:  ids.GenerateTestID(),
+		NodeID: ids.GenerateTestNodeID(),
 	}
 
 	state := NewMockState(ctrl)

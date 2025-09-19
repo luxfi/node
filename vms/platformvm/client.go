@@ -303,8 +303,8 @@ func (c *client) GetCurrentValidators(
 ) ([]ClientPermissionlessValidator, error) {
 	res := &GetCurrentValidatorsReply{}
 	err := c.requester.SendRequest(ctx, "platform.getCurrentValidators", &GetCurrentValidatorsArgs{
-		NetID: netID,
-		NodeIDs:  nodeIDs,
+		NetID:   netID,
+		NodeIDs: nodeIDs,
 	}, res, options...)
 	if err != nil {
 		return nil, err
@@ -324,7 +324,7 @@ func (c *client) SampleValidators(ctx context.Context, netID ids.ID, sampleSize 
 	res := &SampleValidatorsReply{}
 	err := c.requester.SendRequest(ctx, "platform.sampleValidators", &SampleValidatorsArgs{
 		NetID: netID,
-		Size:     json.Uint16(sampleSize),
+		Size:  json.Uint16(sampleSize),
 	}, res, options...)
 	return res.Validators, err
 }
@@ -486,8 +486,8 @@ func (c *client) GetValidatorsAt(
 ) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	res := &GetValidatorsAtReply{}
 	err := c.requester.SendRequest(ctx, "platform.getValidatorsAt", &GetValidatorsAtArgs{
-		NetID: netID,
-		Height:   json.Uint64(height),
+		NetID:  netID,
+		Height: json.Uint64(height),
 	}, res, options...)
 	return res.Validators, err
 }

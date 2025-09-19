@@ -11,8 +11,8 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/encdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 

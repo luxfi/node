@@ -28,7 +28,6 @@ type MultiGatherer interface {
 }
 
 // Deprecated: Use NewPrefixGatherer instead.
-//
 func NewMultiGatherer() MultiGatherer {
 	return NewPrefixGatherer()
 }

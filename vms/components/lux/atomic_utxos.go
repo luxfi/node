@@ -7,9 +7,9 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/math/set"
 )
 
 // GetAtomicUTXOs returns exported UTXOs such that at least one of the

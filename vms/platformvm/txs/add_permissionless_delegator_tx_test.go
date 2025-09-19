@@ -10,8 +10,8 @@ import (
 	"math"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
@@ -41,7 +41,7 @@ func testContext(networkID uint32, chainID, luxAssetID ids.ID) context.Context {
 
 func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	require := require.New(t)
-	
+
 	var ctx context.Context
 	// Use empty chain ID for serialization test to match expected bytes
 	testChainID := ids.Empty

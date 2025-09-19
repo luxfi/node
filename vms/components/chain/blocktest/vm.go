@@ -20,25 +20,25 @@ import (
 type VM struct {
 	T *testing.T
 
-	InitializeF            func(context.Context, context.Context, database.Database, []byte, []byte, []byte, interface{}, []ids.ID, metric.Registry) error
-	BuildBlockF            func(context.Context) (chain.Block, error)
-	ParseBlockF            func(context.Context, []byte) (chain.Block, error)
-	GetBlockF              func(context.Context, ids.ID) (chain.Block, error)
-	LastAcceptedF          func(context.Context) (ids.ID, error)
-	SetPreferenceF         func(context.Context, ids.ID) error
-	SetStateF              func(context.Context, uint8) error
-	VerifyHeightIndexF     func(context.Context) error
-	GetBlockIDAtHeightF    func(context.Context, uint64) (ids.ID, error)
-	GetStatelessBlockF     func(context.Context, ids.ID) (block.Block, error)
+	InitializeF         func(context.Context, context.Context, database.Database, []byte, []byte, []byte, interface{}, []ids.ID, metric.Registry) error
+	BuildBlockF         func(context.Context) (chain.Block, error)
+	ParseBlockF         func(context.Context, []byte) (chain.Block, error)
+	GetBlockF           func(context.Context, ids.ID) (chain.Block, error)
+	LastAcceptedF       func(context.Context) (ids.ID, error)
+	SetPreferenceF      func(context.Context, ids.ID) error
+	SetStateF           func(context.Context, uint8) error
+	VerifyHeightIndexF  func(context.Context) error
+	GetBlockIDAtHeightF func(context.Context, uint64) (ids.ID, error)
+	GetStatelessBlockF  func(context.Context, ids.ID) (block.Block, error)
 }
 
 // BatchedVM is a test VM that supports batch operations
 type BatchedVM struct {
 	T *testing.T
 
-	GetAncestorsF                      func(context.Context, ids.ID, int, time.Duration) ([][]byte, error)
-	BatchedParseBlockF                 func(context.Context, [][]byte) ([]block.Block, error)
-	GetBlockIDAtHeightF                func(context.Context, uint64) (ids.ID, error)
+	GetAncestorsF       func(context.Context, ids.ID, int, time.Duration) ([][]byte, error)
+	BatchedParseBlockF  func(context.Context, [][]byte) ([]block.Block, error)
+	GetBlockIDAtHeightF func(context.Context, uint64) (ids.ID, error)
 }
 
 // StateSyncableVM is a test VM that supports state sync

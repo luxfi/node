@@ -13,15 +13,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/consensustest"
+	consensuscontext "github.com/luxfi/consensus/context"
 	// "github.com/luxfi/consensus/engine/chain/block/blockmock" // Removed - mock not available
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 )
@@ -198,7 +198,7 @@ func TestIndexer(t *testing.T) {
 	// Accept the block through the index
 	blkIdx := idxr.blockIndices[testChainID]
 	require.NotNil(blkIdx)
-	
+
 	// Accept the container
 	err = blkIdx.Accept(context.Background(), blkID, blkBytes)
 	require.NoError(err)
@@ -315,7 +315,7 @@ func TestIndexer(t *testing.T) {
 	// Get the block index for chain2
 	blk2Idx := idxr.blockIndices[chain2ChainID]
 	require.NotNil(blk2Idx)
-	
+
 	// Accept the block
 	err = blk2Idx.Accept(context.Background(), blk2ID, blk2Bytes)
 	require.NoError(err)
@@ -349,12 +349,12 @@ func TestIndexer(t *testing.T) {
 	// Since chain2 is a block.ChainVM, it doesn't have vertex or tx indices
 	require.Empty(idxr.vtxIndices)
 	require.Empty(idxr.txIndices)
-	
+
 	// Verify both chains have their expected last accepted blocks
 	lastAcceptedBlk1, err := blkIdx.GetLastAccepted()
 	require.NoError(err)
 	require.Equal(blkID, lastAcceptedBlk1.ID)
-	
+
 	lastAcceptedBlk2, err := blk2Idx.GetLastAccepted()
 	require.NoError(err)
 	require.Equal(blk2ID, lastAcceptedBlk2.ID)
@@ -383,11 +383,11 @@ func TestIndexer(t *testing.T) {
 	lastAcceptedBlk1Again, err := idxr.blockIndices[testChainID].GetLastAccepted()
 	require.NoError(err)
 	require.Equal(blkID, lastAcceptedBlk1Again.ID)
-	
+
 	lastAcceptedBlk2Again, err := idxr.blockIndices[chain2ChainID].GetLastAccepted()
 	require.NoError(err)
 	require.Equal(blk2ID, lastAcceptedBlk2Again.ID)
-	
+
 	// No vertex or tx indices since we're using block chains
 	require.Empty(idxr.vtxIndices)
 	require.Empty(idxr.txIndices)

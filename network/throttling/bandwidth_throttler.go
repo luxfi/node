@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"go.uber.org/zap"

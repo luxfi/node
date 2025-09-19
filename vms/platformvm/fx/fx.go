@@ -5,14 +5,14 @@ package fx
 
 import (
 	"context"
-	
+
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
 var (
-	_ Fx    = (*secp256k1fx.Fx)(nil)
+	_ Fx = (*secp256k1fx.Fx)(nil)
 	// Note: secp256k1fx.OutputOwners may not implement Owner directly
 	// _ Owner = (*secp256k1fx.OutputOwners)(nil)
 	_ Owned = (*secp256k1fx.TransferOutput)(nil)

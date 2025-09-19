@@ -8,8 +8,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
@@ -19,8 +19,8 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
-	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
 )
@@ -611,7 +611,7 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransferNetOwnershipTx {
 				return &TransferNetOwnershipTx{
 					// Set netID so we don't error on that check.
-					Net: ids.GenerateTestID(),
+					Net:    ids.GenerateTestID(),
 					BaseTx: invalidBaseTx,
 				}
 			},
@@ -622,7 +622,7 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 			txFunc: func(*gomock.Controller) *TransferNetOwnershipTx {
 				return &TransferNetOwnershipTx{
 					BaseTx: validBaseTx,
-					Net: constants.PrimaryNetworkID,
+					Net:    constants.PrimaryNetworkID,
 				}
 			},
 			expectedErr: ErrTransferPermissionlessNet,
@@ -635,7 +635,7 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 				invalidSubnetAuth.EXPECT().Verify().Return(errInvalidSubnetAuth)
 				return &TransferNetOwnershipTx{
 					// Set netID so we don't error on that check.
-					Net:     ids.GenerateTestID(),
+					Net:        ids.GenerateTestID(),
 					BaseTx:     validBaseTx,
 					SubnetAuth: invalidSubnetAuth,
 				}
@@ -652,7 +652,7 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 				mockOwner.EXPECT().Verify().Return(nil)
 				return &TransferNetOwnershipTx{
 					// Set netID so we don't error on that check.
-					Net:     ids.GenerateTestID(),
+					Net:        ids.GenerateTestID(),
 					BaseTx:     validBaseTx,
 					SubnetAuth: validSubnetAuth,
 					Owner:      mockOwner,

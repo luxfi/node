@@ -68,8 +68,6 @@ func GetAPIEnv(tc tests.TestContext) *APITestEnvironment {
 	return APIEnv
 }
 
-
-
 // NewTestContext creates a new test context for ginkgo-based tests
 func NewTestContext() tests.TestContext {
 	return &ginkgoTestContext{}

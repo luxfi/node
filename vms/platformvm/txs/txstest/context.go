@@ -40,12 +40,12 @@ func newContext(
 		BlockchainID:                  chainID,
 		LUXAssetID:                    luxAssetID,
 		BaseTxFee:                     cfg.StaticFeeConfig.TxFee,
-		CreateNetTxFee:             createSubnetFee,
-		TransformNetTxFee:          cfg.StaticFeeConfig.TransformNetTxFee,
+		CreateNetTxFee:                createSubnetFee,
+		TransformNetTxFee:             cfg.StaticFeeConfig.TransformNetTxFee,
 		CreateBlockchainTxFee:         createChainFee,
 		AddPrimaryNetworkValidatorFee: cfg.StaticFeeConfig.AddPrimaryNetworkValidatorFee,
 		AddPrimaryNetworkDelegatorFee: cfg.StaticFeeConfig.AddPrimaryNetworkDelegatorFee,
-		AddNetValidatorFee:         cfg.StaticFeeConfig.AddNetValidatorFee,
-		AddNetDelegatorFee:         cfg.StaticFeeConfig.AddNetDelegatorFee,
+		AddNetValidatorFee:            cfg.StaticFeeConfig.AddNetValidatorFee,
+		AddNetDelegatorFee:            cfg.StaticFeeConfig.AddNetDelegatorFee,
 	}
 }

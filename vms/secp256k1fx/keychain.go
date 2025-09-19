@@ -12,10 +12,10 @@ import (
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/wallet/keychain"
-	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/wallet/keychain"
 )
 
 var (

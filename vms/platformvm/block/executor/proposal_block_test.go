@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/crypto/bls"
@@ -100,7 +100,7 @@ func TestApricotProposalBlockTimeVerification(t *testing.T) {
 	currentStakersIt.EXPECT().Value().Return(&state.Staker{
 		TxID:      addValTx.ID(),
 		NodeID:    utx.NodeID(),
-		NetID:  utx.NetID(),
+		NetID:     utx.NetID(),
 		StartTime: utx.StartTime(),
 		NextTime:  chainTime,
 		EndTime:   chainTime,

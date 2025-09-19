@@ -61,7 +61,7 @@ type server struct {
 
 type NetworkReply struct {
 	NetworkID uint32 `json:"networkID"`
-	NetID  ids.ID `json:"netID"`
+	NetID     ids.ID `json:"netID"`
 	ChainID   ids.ID `json:"chainID"`
 }
 

@@ -15,8 +15,8 @@ import (
 
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
-	maybe "github.com/luxfi/node/utils/maybe"
 	gomock "github.com/luxfi/mock/gomock"
+	maybe "github.com/luxfi/node/utils/maybe"
 )
 
 // MockMerkleDB is a mock of MerkleDB interface.

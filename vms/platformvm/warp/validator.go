@@ -11,9 +11,9 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/math/math"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils"
 )
 
 var (
