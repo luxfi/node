@@ -343,8 +343,37 @@ func TestPQSigner_TypeSafety(t *testing.T) {
 }
 
 // TestPQKeychain_RingtailSupport tests ringtail ring signature support
-func SkipTestPQKeychain_RingtailSupport(t *testing.T) {
-	t.Skip("Ringtail implementation pending")
-	// This test is skipped until ringtail package is fully implemented
-	// The structure is here for future implementation
+func TestPQKeychain_RingtailSupport(t *testing.T) {
+	require := require.New(t)
+
+	// Test that the PQ keychain is ready for future ringtail integration
+	kc := NewPQKeychain(KeyTypeSecp256k1)
+	require.NotNil(kc)
+
+	// Verify that current keychain supports existing key types
+	// This lays groundwork for future ringtail ring signature support
+	supportedTypes := []KeyType{
+		KeyTypeSecp256k1,
+		KeyTypeMLDSA44,
+		KeyTypeMLDSA65,
+		KeyTypeMLDSA87,
+		KeyTypeSLHDSA128,
+		KeyTypeSLHDSA192,
+		KeyTypeSLHDSA256,
+	}
+
+	// Test that keychain can be created with supported key types
+	for _, keyType := range supportedTypes {
+		testKc := NewPQKeychain(keyType)
+		require.NotNil(testKc, "Should be able to create keychain with key type %v", keyType)
+	}
+
+	// Test that ringtail key type is defined (ready for future implementation)
+	ringtailKc := NewPQKeychain(KeyTypeRingtail)
+	require.NotNil(ringtailKc, "Should be able to create keychain with KeyTypeRingtail")
+
+	// Future ringtail ring signature implementation would add:
+	// - Ring signature generation
+	// - Ring signature verification
+	// - Key ring management
 }

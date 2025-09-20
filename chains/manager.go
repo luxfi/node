@@ -1560,7 +1560,7 @@ func (m *manager) createLinearChain(
 		Context: consensusCtx,
 	}
 
-	// Create DBManager wrapper
+	// Create DBManager wrapper - but for C-Chain VM we'll pass the database directly
 	dbManager := &dbManagerWrapper{db: vmDB}
 
 	// Create channel for messages
@@ -1596,11 +1596,25 @@ func (m *manager) createLinearChain(
 		fxsInterface = append(fxsInterface, fx)
 	}
 
+	// Determine what database interface to pass based on the VM type
+	// C-Chain VM (cchainvm) expects database.Database directly
+	// Other VMs expect the dbManagerWrapper
+	var dbInterface interface{}
+	if chainParams.VMID == constants.EVMID {
+		// C-Chain VM expects database.Database directly
+		dbInterface = vmDB
+		m.Log.Info("Using direct database for C-Chain VM")
+	} else {
+		// Other VMs expect dbManagerWrapper
+		dbInterface = dbManager
+		m.Log.Info("Using dbManagerWrapper for VM", log.Stringer("vmID", chainParams.VMID))
+	}
+
 	// Initialize the chainblock VM with proposer wrapper (NOT the raw vm)
 	if err := vm.Initialize(
 		context.TODO(),
 		chainCtx,
-		dbManager,
+		dbInterface,
 		genesisData,
 		chainConfig.Upgrade,
 		chainConfig.Config,
