@@ -14,7 +14,7 @@ import (
 	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 )

@@ -1212,21 +1212,6 @@ func (m *manager) createLuxChain(
 	if m.TracingEnabled {
 		linearBootstrapper = smbootstrap.Trace(linearBootstrapper, m.Tracer)
 	}
-	
-	// CRITICAL FIX: When SkipBootstrap is enabled for single-node mode,
-	// immediately unblock chain creator for Platform chain
-	if m.SkipBootstrap && chainParams.ID == constants.PlatformChainID {
-		m.Log.Info("Skip-bootstrap mode: Platform chain starting - immediately unblocking chain creator")
-		// Unblock in a goroutine to avoid blocking
-		go func() {
-			select {
-			case <-m.unblockChainCreatorCh:
-				// Channel already closed, ignore
-			default:
-				close(m.unblockChainCreatorCh)
-			}
-		}()
-	}
 
 	// Create handler for DAG bootstrap
 	getHandler, err := daggetter.NewHandler(
@@ -1630,6 +1615,27 @@ func (m *manager) createLinearChain(
 		return nil, fmt.Errorf("VM initialization failed: %w", err)
 	}
 	m.Log.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
+
+	// CRITICAL FIX: When SkipBootstrap is enabled for single-node mode,
+	// immediately unblock chain creator for Platform chain
+	// Check both the expected PlatformChainID and the actual Platform VM
+	isPlatformChain := chainParams.ID == constants.PlatformChainID ||
+		chainParams.VMID == constants.PlatformVMID
+
+	if m.SkipBootstrap && isPlatformChain {
+		m.Log.Info("Skip-bootstrap mode: Platform chain initialized - immediately unblocking chain creator",
+			log.Stringer("chainID", chainParams.ID),
+			log.Stringer("vmID", chainParams.VMID))
+		// Unblock in a goroutine to avoid blocking
+		go func() {
+			select {
+			case <-m.unblockChainCreatorCh:
+				// Channel already closed, ignore
+			default:
+				close(m.unblockChainCreatorCh)
+			}
+		}()
+	}
 
 	// netID already defined above
 	bootstrapWeight, err := beacons.TotalWeight(netID)

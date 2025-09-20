@@ -54,7 +54,7 @@ test-fips: verify-fips
 # Standard test (non-FIPS, for comparison)
 test:
 	@echo "$(YELLOW)Running tests (standard, non-FIPS)...$(NC)"
-	@go test -shuffle=on -race -timeout=$(TEST_TIMEOUT) -coverprofile=coverage.out -covermode=atomic $(TEST_PACKAGES)
+	@go test -shuffle=on -race -timeout=$(TEST_TIMEOUT) $(TEST_PACKAGES)
 
 test-short-fips: verify-fips
 	@echo "$(GREEN)Running short tests with FIPS...$(NC)"

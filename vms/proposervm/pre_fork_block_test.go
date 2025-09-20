@@ -654,15 +654,15 @@ func TestPreForkBlock_BuildBlockWithContext(t *testing.T) {
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
 	innerVM := block.NewMockChainVM(ctrl)
 	innerVM.EXPECT().BuildBlock(gomock.Any()).Return(builtBlk, nil).AnyTimes()
-	vdrState := validatorsmock.NewState(ctrl)
-	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
+	vdrState := validatorsmock.NewState(t)
+	vdrState.GetMinimumHeightFunc = func(context.Context) (uint64, error) {
+		return pChainHeight, nil
+	}
 
+	testCtx := consensus.WithValidatorState(context.Background(), vdrState)
 	vm := &VM{
 		ChainVM: innerVM,
-		ctx: &context.Context{
-			ValidatorState: vdrState,
-			Log:            log.NewNoOpLogger(),
-		},
+		ctx:     testCtx,
 	}
 
 	blk := &preForkBlock{

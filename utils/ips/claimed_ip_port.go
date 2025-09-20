@@ -8,7 +8,7 @@ import (
 	"net/netip"
 
 	"github.com/luxfi/ids"
-	nodeids "github.com/luxfi/node/ids"
+	nodeids "github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"

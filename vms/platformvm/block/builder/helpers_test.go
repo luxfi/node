@@ -360,8 +360,8 @@ func defaultConfig(t *testing.T, f fork) *config.Config {
 		Validators:             validators.NewManager(),
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                 defaultTxFee,
-			CreateNetTxFee:        100 * defaultTxFee,
-			CreateBlockchainTxFee: 100 * defaultTxFee,
+			CreateNetTxFee:        10 * defaultTxFee, // Reduced for testing
+			CreateBlockchainTxFee: 10 * defaultTxFee, // Reduced for testing
 		},
 		MinValidatorStake: 5 * units.MilliLux,
 		MaxValidatorStake: 500 * units.MilliLux,
