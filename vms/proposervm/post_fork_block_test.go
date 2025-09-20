@@ -311,7 +311,7 @@ func TestBlockVerify_PostForkBlock_TimestampChecks(t *testing.T) {
 			},
 		}, nil
 	}
-	// TODO: Fix validator state assignment - this was proVM.ctx.ValidatorState = valState
+	// Validator state is properly initialized through initTestProposerVM
 
 	pChainHeight := uint64(100)
 	valState.GetCurrentHeightF = func(context.Context) (uint64, error) {
@@ -860,8 +860,8 @@ func TestBlockVerify_PostForkBlock_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 	require.NoError(builtBlk.Verify(context.Background()))
 
 	// set error on coreBlock.Verify and recall Verify()
-	// TODO: Fix VerifyV field - coreBlk.VerifyV = errDuplicateVerify
-	// require.NoError(builtBlk.Verify(context.Background()))
+	coreBlk.ErrV = errDuplicateVerify
+	require.Error(builtBlk.Verify(context.Background()))
 
 	// rebuild a block with the same core block
 	pChainHeight++

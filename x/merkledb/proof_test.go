@@ -1703,15 +1703,18 @@ func FuzzRangeProofInvariants(f *testing.F) {
 
 		// Make sure proof length is valid
 		if maxProofLen == 0 {
-			t.SkipNow()
+			// Skip when max proof length is 0
+			return
 		}
 		if numKeyValues == 0 {
-			t.SkipNow()
+			// Skip when no key values
+			return
 		}
 
 		// Make sure proof bounds are valid
 		if len(endBytes) != 0 && bytes.Compare(startBytes, endBytes) > 0 {
-			t.SkipNow()
+			// Skip when start > end
+			return
 		}
 
 		rand := rand.New(rand.NewSource(randSeed)) // #nosec G404

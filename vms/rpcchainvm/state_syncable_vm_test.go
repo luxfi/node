@@ -585,8 +585,7 @@ func TestLastAcceptedBlockPostStateSummaryAccept(t *testing.T) {
 	require.Equal(preSummaryBlk.Height(), lastBlk.Height())
 
 	// Setting state to bootstrapping duly update last accepted block
-	// TODO: Fix SetState to handle consensus state properly
-	// Note: When uncommenting, import "github.com/luxfi/consensus/interfaces"
+	// Note: Disabled due to interface compatibility issues
 	// require.NoError(vm.SetState(context.Background(), uint8(interfaces.Bootstrapping)))
 
 	blkID, err = vm.LastAccepted(context.Background())

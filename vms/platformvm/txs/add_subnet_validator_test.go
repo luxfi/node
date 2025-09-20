@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
-// TODO use table tests here
+// Note: Consider refactoring to use table tests for better test organization
 func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}

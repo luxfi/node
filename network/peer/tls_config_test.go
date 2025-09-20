@@ -1,10 +1,10 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// This test file is temporarily disabled as the ValidateCertificate function
+// This test file is disabled as the ValidateCertificate function
 // and related error constants have been removed from the peer package.
 // The certificate validation logic has been moved to upgrader.go
-// TODO: Update tests to match new architecture
+// Note: Tests need to be updated to match the new validation architecture
 
 //go:build ignore
 // +build ignore

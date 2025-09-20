@@ -76,7 +76,7 @@ func TestVerifierVisitProposalBlock(t *testing.T) {
 	// registered with the blocks.Codec.
 	// Serialize this block with a dummy tx
 	// and replace it after creation with the mock tx.
-	// TODO allow serialization of mock txs.
+	// Note: Mock transactions require codec registration for serialization
 	apricotBlk, err := block.NewApricotProposalBlock(
 		parentID,
 		2,
@@ -168,7 +168,7 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 	// We can't serialize [blkTx] because it isn't registered with blocks.Codec.
 	// Serialize this block with a dummy tx and replace it after creation with
 	// the mock tx.
-	// TODO allow serialization of mock txs.
+	// Note: Mock transactions require codec registration for serialization
 	apricotBlk, err := block.NewApricotAtomicBlock(
 		parentID,
 		2,
@@ -267,7 +267,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 	// registered with the blocks.Codec.
 	// Serialize this block with a dummy tx
 	// and replace it after creation with the mock tx.
-	// TODO allow serialization of mock txs.
+	// Note: Mock transactions require codec registration for serialization
 	apricotBlk, err := block.NewApricotStandardBlock(
 		parentID,
 		2, /*height*/
@@ -576,7 +576,7 @@ func TestBanffAbortBlockTimestampChecks(t *testing.T) {
 	}
 }
 
-// TODO combine with TestApricotCommitBlockTimestampChecks
+// Note: Consider combining with TestApricotCommitBlockTimestampChecks for better test organization
 func TestBanffCommitBlockTimestampChecks(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
@@ -743,7 +743,7 @@ func TestVerifierVisitStandardBlockWithDuplicateInputs(t *testing.T) {
 	// registered with the blocks.Codec.
 	// Serialize this block with a dummy tx
 	// and replace it after creation with the mock tx.
-	// TODO allow serialization of mock txs.
+	// Note: Mock transactions require codec registration for serialization
 	blk, err := block.NewApricotStandardBlock(
 		parentID,
 		2,

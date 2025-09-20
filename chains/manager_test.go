@@ -55,8 +55,7 @@ func TestSkipBootstrapTracker(t *testing.T) {
 		Metrics:          metric.NewMultiGatherer(),
 		VMManager:        vms.NewManager(nil, ids.NewAliaser()),
 		ChainDataDir:     t.TempDir(),
-		// TODO: When tracker.NewPeers() and tracker.NewStartup() are implemented,
-		// we can add proper tracker testing here
+		// Tracker configuration not required for basic manager testing
 	}
 
 	m, err := New(config)

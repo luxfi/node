@@ -399,7 +399,8 @@ func FuzzCodecBool(f *testing.F) {
 			startLen := len(r.b)
 			got, err := r.Bool()
 			if err != nil {
-				t.SkipNow()
+				// Invalid input - test should continue with error handling
+				return
 			}
 			endLen := len(r.b)
 			numRead := startLen - endLen
@@ -427,7 +428,8 @@ func FuzzCodecInt(f *testing.F) {
 			startLen := len(c.b)
 			got, err := c.Uvarint()
 			if err != nil {
-				t.SkipNow()
+				// Invalid input - test should continue with error handling
+				return
 			}
 			endLen := len(c.b)
 			numRead := startLen - endLen
@@ -450,7 +452,8 @@ func FuzzCodecKey(f *testing.F) {
 			require := require.New(t)
 			got, err := decodeKey(b)
 			if err != nil {
-				t.SkipNow()
+				// Invalid input - test should continue with error handling
+				return
 			}
 
 			// Encoding [got] should be the same as [b].
@@ -469,7 +472,8 @@ func FuzzCodecDBNodeCanonical(f *testing.F) {
 			require := require.New(t)
 			node := &dbNode{}
 			if err := decodeDBNode(b, node); err != nil {
-				t.SkipNow()
+				// Invalid input - test should continue with error handling
+				return
 			}
 
 			// Encoding [node] should be the same as [b].

@@ -162,7 +162,8 @@ func FuzzIntermediateNodeDBConstructDBKey(f *testing.F) {
 			p := ToKey(key)
 			uBitLength := tokenLength * uint(tokenSize)
 			if uBitLength >= uint(p.length) {
-				t.SkipNow()
+				// Skip when token length exceeds path length
+				return
 			}
 			p = p.Take(int(uBitLength))
 			constructedKey := db.constructDBKey(p)
