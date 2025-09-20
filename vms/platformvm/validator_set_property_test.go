@@ -664,9 +664,9 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		Validators:             validators.NewManager(),
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                 defaultTxFee,
-			CreateNetTxFee:        100 * defaultTxFee,
-			TransformNetTxFee:     100 * defaultTxFee,
-			CreateBlockchainTxFee: 100 * defaultTxFee,
+			CreateNetTxFee:        defaultTxFee, // Minimal fee for testing
+			TransformNetTxFee:     defaultTxFee, // Minimal fee for testing
+			CreateBlockchainTxFee: defaultTxFee, // Minimal fee for testing
 		},
 		MinValidatorStake: defaultMinValidatorStake,
 		MaxValidatorStake: defaultMaxValidatorStake,
@@ -826,7 +826,7 @@ func buildCustomGenesis(luxAssetID ids.ID) ([]byte, error) {
 			Addresses: []string{addr},
 		},
 		Staked: []api.UTXO{{
-			Amount:  json.Uint64(defaultWeight),
+			Amount:  json.Uint64(defaultWeight - 1000), // Reserve some balance for fees
 			Address: addr,
 		}},
 		DelegationFee: reward.PercentDenominator,

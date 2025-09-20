@@ -1,6 +1,6 @@
 package leveldb
 
-import "github.com/luxfi/node/database"
+import "github.com/luxfi/database"
 
 // Database wraps a LevelDB instance
 type Database struct {

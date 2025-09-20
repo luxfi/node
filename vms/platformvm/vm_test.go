@@ -65,7 +65,7 @@ const (
 
 	latestFork = durango
 
-	defaultWeight uint64 = 10000
+	defaultWeight uint64 = 5000 // Reduced to free up balance for fees
 )
 
 var (
@@ -100,7 +100,7 @@ var (
 	defaultMinDelegatorStake = 1 * units.MilliLux
 	defaultMinValidatorStake = 5 * defaultMinDelegatorStake
 	defaultMaxValidatorStake = 100 * defaultMinValidatorStake
-	defaultBalance           = 2 * defaultMaxValidatorStake // amount all genesis validators have in defaultVM
+	defaultBalance           = 2*defaultMaxValidatorStake + 100*units.Lux // amount all genesis validators have in defaultVM, with extra for fees
 
 	// net that exists at genesis in defaultVM
 	// Its controlKeys are keys[0], keys[1], keys[2]
@@ -157,7 +157,7 @@ func defaultGenesis(t *testing.T, luxAssetID ids.ID) (*api.BuildGenesisArgs, []b
 				Addresses: []string{addr},
 			},
 			Staked: []api.UTXO{{
-				Amount:  json.Uint64(defaultWeight),
+				Amount:  json.Uint64(defaultWeight - 1000), // Reserve some balance for fees
 				Address: addr,
 			}},
 			DelegationFee: reward.PercentDenominator,
@@ -228,9 +228,9 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 		Validators:             validators.NewManager(),
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                 defaultTxFee,
-			CreateNetTxFee:        100 * defaultTxFee,
-			TransformNetTxFee:     100 * defaultTxFee,
-			CreateBlockchainTxFee: 100 * defaultTxFee,
+			CreateNetTxFee:        defaultTxFee, // Minimal fee for testing
+			TransformNetTxFee:     defaultTxFee, // Minimal fee for testing
+			CreateBlockchainTxFee: defaultTxFee, // Minimal fee for testing
 		},
 		MinValidatorStake: defaultMinValidatorStake,
 		MaxValidatorStake: defaultMaxValidatorStake,

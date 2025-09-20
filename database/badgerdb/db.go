@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/dgraph-io/badger/v3"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 )
 
 var _ database.Database = (*Database)(nil)

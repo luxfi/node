@@ -361,6 +361,7 @@ func TestVMFormat(t *testing.T) {
 	env := setup(t, &envConfig{
 		fork: latest,
 	})
+	env.vm.Lock.Lock()
 	defer env.vm.Lock.Unlock()
 
 	tests := []struct {
