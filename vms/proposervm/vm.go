@@ -606,6 +606,14 @@ func (vm *VM) setLastAcceptedMetadata(ctx context.Context) error {
 	}
 
 	lastAccepted, err := vm.getPostForkBlock(ctx, lastAcceptedID)
+	if err == database.ErrNotFound {
+		// The last accepted block exists but is not a post-fork block
+		// (e.g., it's the genesis block or a pre-fork block)
+		// We treat this the same as if LastAccepted returned ErrNotFound
+		vm.lastAcceptedHeight = 0
+		vm.lastAcceptedTime = time.Time{}
+		return nil
+	}
 	if err != nil {
 		return err
 	}
