@@ -101,9 +101,8 @@ func NewTestNetwork(
 		return nil, err
 	}
 
-	// TODO actually monitor usage
-	// TestNetwork doesn't use disk so we don't need to track it, but we should
-	// still have guardrails around cpu/memory usage.
+	// Note: Resource monitoring disabled for test network
+	// TestNetwork doesn't use disk tracking, CPU/memory guardrails could be added in future
 	promRegistry := metric.NewNoOpRegistry()
 
 	resourceTracker := &noOpResourceTracker{}

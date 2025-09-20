@@ -21,7 +21,7 @@ import (
 	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
-// TODO(marun) What else does a test need? e.g. node URIs?
+// Additional test requirements: node URIs, network configuration, test timeouts
 type APITestFunction func(tc tests.TestContext, wallet primary.Wallet, ownerAddress ids.ShortID)
 
 // APITestEnvironment represents the test environment for API tests

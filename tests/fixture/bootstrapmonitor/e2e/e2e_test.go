@@ -437,7 +437,7 @@ func grantMonitorPermissions(tc tests.TestContext, clientset *kubernetes.Clients
 
 // waitForLogOutput streams the logs from the specified pod container until the desired output is found or the context times out.
 func waitForLogOutput(tc tests.TestContext, clientset *kubernetes.Clientset, namespace string, podName string, containerName string, desiredOutput string) {
-	// TODO(marun) Figure out why log output is randomly truncated (not flushed?)
+	// Note: Log output may be incomplete due to buffering/timing issues in k8s log streaming
 
 	tc.Log().Info("log output from container (may not be complete)",
 		zap.String("namespace", namespace),

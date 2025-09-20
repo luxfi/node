@@ -834,7 +834,8 @@ func FuzzMerkleDBEmptyRandomizedActions(f *testing.F) {
 			size uint,
 		) {
 			if size == 0 {
-				t.SkipNow()
+				// Skip when size is 0 - no meaningful test
+				return
 			}
 			require := require.New(t)
 			r := rand.New(rand.NewSource(randSeed)) // #nosec G404
@@ -862,7 +863,8 @@ func FuzzMerkleDBInitialValuesRandomizedActions(f *testing.F) {
 		randSeed int64,
 	) {
 		if numSteps == 0 {
-			t.SkipNow()
+			// Skip when no steps - no meaningful test
+			return
 		}
 		require := require.New(t)
 		r := rand.New(rand.NewSource(randSeed)) // #nosec G404

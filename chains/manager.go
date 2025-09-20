@@ -643,8 +643,46 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// upon start is dropped.
 	chain, err := m.buildChain(chainParams, sb)
 	if err != nil {
+		// Special handling for X-Chain in single validator mode
+		// Allow the node to continue without X-Chain when it fails with VM type error
+		isXChain := chainParams.ID == m.XChainID
+		isVMTypeError := err == errUnknownVMType
+		skipBootstrapMode := m.SkipBootstrap
+
+		// If X-Chain fails with VM type error in single validator mode, just log and continue
+		if isXChain && isVMTypeError && skipBootstrapMode {
+			chainAlias := m.PrimaryAliasOrDefault(chainParams.ID)
+			m.Log.Warn("X-Chain creation failed in single validator mode - continuing without X-Chain",
+				log.Stringer("netID", chainParams.NetID),
+				log.Stringer("chainID", chainParams.ID),
+				log.String("chainAlias", chainAlias),
+				log.Stringer("vmID", chainParams.VMID),
+				log.String("errorString", fmt.Sprintf("%v", err)),
+				log.Err(err),
+			)
+
+			// Register a health check that indicates X-Chain is not running
+			healthCheckErr := fmt.Errorf("X-Chain not running in single validator mode: %w", err)
+			err := m.Health.RegisterHealthCheck(
+				chainAlias,
+				health.CheckerFunc(func(context.Context) (interface{}, error) {
+					return nil, healthCheckErr
+				}),
+				chainParams.NetID.String(),
+			)
+			if err != nil {
+				m.Log.Error("failed to register X-Chain health check",
+					log.Stringer("chainID", chainParams.ID),
+					log.String("chainAlias", chainAlias),
+					log.Err(err),
+				)
+			}
+			return
+		}
+
 		if m.CriticalChains.Contains(chainParams.ID) {
 			// Shut down if we fail to create a required chain (i.e. X, P or C)
+			// unless it's X-Chain with VM type error in single validator mode (handled above)
 			m.Log.Error("error creating required chain",
 				log.Stringer("netID", chainParams.NetID),
 				log.Stringer("chainID", chainParams.ID),

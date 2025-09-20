@@ -483,7 +483,8 @@ func FuzzKeySkip(f *testing.F) {
 			// need bits to be a multiple of token size
 			ubitsToSkip := tokensToSkip * uint(ts)
 			if ubitsToSkip >= uint(key1.length) {
-				t.SkipNow()
+				// Skip this token size if no bits to skip
+				continue
 			}
 			bitsToSkip := int(ubitsToSkip)
 			key2 := key1.Skip(bitsToSkip)
@@ -506,7 +507,8 @@ func FuzzKeyTake(f *testing.F) {
 			key1 := ToKey(first)
 			uBitsToTake := uTokensToTake * uint(ts)
 			if uBitsToTake >= uint(key1.length) {
-				t.SkipNow()
+				// Skip this token size if no bits to take
+				continue
 			}
 			bitsToTake := int(uBitsToTake)
 			key2 := key1.Take(bitsToTake)
