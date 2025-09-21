@@ -414,6 +414,7 @@ github.com/labstack/gommon v0.4.0/go.mod h1:uW6kP17uPlLJsD3ijUYn3/M5bAxtlZhMI6m3
 github.com/leodido/go-urn v1.2.1 h1:BqpAaACuzVSgi/VLzGZIobT2z4v53pjosyNd9Yv6n/w=
 github.com/leodido/go-urn v1.2.1/go.mod h1:zt4jvISO2HfUBqxjfIshjdMTYS56ZS/qv49ictyFfxY=
 github.com/luxfi/consensus v1.13.4-lux.24/go.mod h1:ma0RxiKRmBm/hy88podPhhV2n6FkWZH/GlcE0x/4yBM=
+github.com/luxfi/consensus v1.17.0/go.mod h1:iRlIDt0/Aq/wp8r1m9kKfzbIaItfJ5T6riTR/QxrSqc=
 github.com/luxfi/crypto v1.1.1/go.mod h1:Wt4fomM14VWfQ/89PZh1dApz+0XteEG9x99Q9SHIRtY=
 github.com/luxfi/lattice/v6 v6.1.1 h1:zstSe88f7KxBE1GIUoxA95GYT5kQ3vjJk/1omLuPReQ=
 github.com/luxfi/lattice/v6 v6.1.1/go.mod h1://dbslzvr7A1eTB/CTthSG63DpKxl3+OG2HsvhdZlcA=
