@@ -842,6 +842,8 @@ github.com/leanovate/gopter v0.2.11/go.mod h1:aK3tzZP/C+p1m3SPRE4SYZFGP7jjkuSI4f
 github.com/leodido/go-urn v1.2.0/go.mod h1:+8+nEpDfqqsY+g338gtMEUOtuK+4dEMhiQEgxpxOKII=
 github.com/luxfi/consensus v1.17.0 h1:5BTMMxfJ9ZyWcTIivqPX5oSgNWQKEBUn1acTVYEoMIw=
 github.com/luxfi/consensus v1.17.0/go.mod h1:iRlIDt0/Aq/wp8r1m9kKfzbIaItfJ5T6riTR/QxrSqc=
+github.com/luxfi/consensus v1.18.0 h1:QBRauj3gogjQl1Idmv9eSTczTcJF9uKzrqT2mfhKOqI=
+github.com/luxfi/consensus v1.18.0/go.mod h1:oS/s/8B8KnoqebJKThklZbGAnK1cW51KxuljVjr1pbY=
 github.com/luxfi/crypto v1.17.0 h1:BwDsMqJkObzh/UgDBDEq7Y7pR7apk+kiLOf6dCvcLi4=
 github.com/luxfi/crypto v1.17.0/go.mod h1:n6R5hzuVqOcNoxyvPhpfMU0SOXLViNZHsiRB5kUxfmc=
 github.com/luxfi/czmq/v4 v4.2.0 h1:WCjCLg5b6RDIaATjmFbnMPXLLqjer35NWw44rT3/ubw=
