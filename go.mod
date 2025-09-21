@@ -233,5 +233,3 @@ replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240826
 // replace sigs.k8s.io/structured-merge-diff/v6 => sigs.k8s.io/structured-merge-diff/v4 v4.4.1
 
 replace sigs.k8s.io/structured-merge-diff/v4 => sigs.k8s.io/structured-merge-diff/v4 v4.4.3
-
-replace github.com/luxfi/consensus => ../consensus
