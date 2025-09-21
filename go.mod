@@ -23,15 +23,15 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
-	github.com/luxfi/consensus v1.18.0
-	github.com/luxfi/crypto v1.16.16
-	github.com/luxfi/database v1.1.13
+	github.com/luxfi/consensus v1.17.0
+	github.com/luxfi/crypto v1.17.0
+	github.com/luxfi/database v1.2.0
 	github.com/luxfi/geth v1.16.34
-	github.com/luxfi/ids v1.0.2
+	github.com/luxfi/ids v1.1.0
 	github.com/luxfi/ledger-lux-go v1.0.0
 	github.com/luxfi/log v1.1.22
 	github.com/luxfi/math v0.1.0
-	github.com/luxfi/metric v1.3.0
+	github.com/luxfi/metric v1.4.0
 	github.com/luxfi/mock v0.1.0
 	github.com/luxfi/qzmq v0.1.1
 	github.com/luxfi/trace v0.1.2
@@ -159,6 +159,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kasperdi/SPHINCSPLUS-golang v0.0.0-20231223193046-84468b93f7e9 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
