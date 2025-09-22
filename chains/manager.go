@@ -234,6 +234,12 @@ func (c *chainVMWrapper) Shutdown(ctx context.Context) error {
 }
 
 func (c *chainVMWrapper) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
+	// Check if the underlying VM has CreateHandlers method
+	if vm, ok := c.vm.(interface {
+		CreateHandlers(context.Context) (map[string]http.Handler, error)
+	}); ok {
+		return vm.CreateHandlers(ctx)
+	}
 	// ChainVM doesn't have CreateHandlers, return empty map
 	return make(map[string]http.Handler), nil
 }

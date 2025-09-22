@@ -803,7 +803,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.Stakin
 
 		// Auto-detect database type based on path if not specified
 		if genesisDBType == "" {
-			genesisDBType = "pebbledb" // Default is always pebbledb
+			genesisDBType = "badgerdb" // Default is always badgerdb
 		}
 
 		return genesis.FromDatabase(networkID, genesisDBPath, genesisDBType, stakingCfg)
