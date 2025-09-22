@@ -751,6 +751,39 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// Notify those that registered to be notified when a new chain is created
 	m.notifyRegistrants(chain.Name, chain.Context, chain.VM)
 
+	// Register HTTP handlers for this chain if the VM supports it
+	if vm, ok := chain.VM.(interface {
+		CreateHandlers(context.Context) (map[string]http.Handler, error)
+	}); ok {
+		handlers, err := vm.CreateHandlers(context.TODO())
+		if err != nil {
+			m.Log.Error("failed to create HTTP handlers",
+				log.Stringer("chainID", chainParams.ID),
+				log.Err(err),
+			)
+		} else {
+			// Register each handler with the HTTP server
+			for endpoint, handler := range handlers {
+				chainAlias := chainParams.ID.String()
+				// For C-Chain, also register under the "C" alias
+				if chainParams.ID == m.CChainID {
+					chainAlias = "C"
+				}
+				chainEndpoint := fmt.Sprintf("/ext/bc/%s%s", chainAlias, endpoint)
+				chainIDEndpoint := fmt.Sprintf("/ext/bc/%s%s", chainParams.ID.String(), endpoint)
+
+				m.Server.AddRoute(handler, "", chainEndpoint)
+				m.Server.AddRoute(handler, "", chainIDEndpoint)
+
+				m.Log.Info("Registered HTTP handler",
+					log.String("chainAlias", chainAlias),
+					log.Stringer("chainID", chainParams.ID),
+					log.String("endpoint", chainEndpoint),
+				)
+			}
+		}
+	}
+
 	// TODO: Fix Router.AddChain - the consensus Router interface has changed
 	// and no longer has an AddChain method. Need to update the routing logic.
 	// m.ManagerConfig.Router.AddChain(chainParams.ID, chain.Handler)
