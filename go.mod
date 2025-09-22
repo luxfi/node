@@ -6,8 +6,6 @@ module github.com/luxfi/node
 // go.mod (here)
 go 1.25.1
 
-replace github.com/luxfi/geth => ../geth
-
 exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 
 exclude google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
