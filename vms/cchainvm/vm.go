@@ -614,8 +614,24 @@ func (vm *VM) Initialize(
 		// Use the normal backend but DON'T pass a genesis - let it use what's in the database
 		fmt.Printf("MIGRATION MODE WITH REPLAY: Using extracted genesis from database\n")
 
-		// Pass nil genesis so the backend won't try to override what's already there
-		vm.backend, err = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, nil)
+		// Make sure genesis is written to database if not already there
+		if genesis != nil {
+			storedBlock := rawdb.ReadBlock(vm.ethDB, genesis.ToBlock().Hash(), 0)
+			if storedBlock == nil {
+				fmt.Printf("Writing genesis to database for replay: %s\n", genesis.ToBlock().Hash().Hex())
+				rawdb.WriteBlock(vm.ethDB, genesis.ToBlock())
+				rawdb.WriteCanonicalHash(vm.ethDB, genesis.ToBlock().Hash(), 0)
+				rawdb.WriteHeadHeaderHash(vm.ethDB, genesis.ToBlock().Hash())
+				rawdb.WriteHeadBlockHash(vm.ethDB, genesis.ToBlock().Hash())
+				rawdb.WriteHeadFastBlockHash(vm.ethDB, genesis.ToBlock().Hash())
+				rawdb.WriteChainConfig(vm.ethDB, genesis.ToBlock().Hash(), genesis.Config)
+			}
+			// Now pass the genesis to backend
+			vm.backend, err = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, genesis)
+		} else {
+			// If no genesis, try with nil
+			vm.backend, err = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, nil)
+		}
 		fmt.Printf("Backend creation result: err=%v, backend=%v\n", err, vm.backend != nil)
 	} else {
 		// Use normal backend (no migration)

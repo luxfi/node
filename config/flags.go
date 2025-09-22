@@ -90,7 +90,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 		GenesisFileContentKey))
 	fs.String(GenesisFileContentKey, "", "Specifies base64 encoded genesis content")
 	fs.String(GenesisDBKey, "", "Path to existing genesis database for replay. Cannot be used with genesis-file or genesis-file-content")
-	fs.String(GenesisDBTypeKey, "pebbledb", "Database type to use for genesis database. Must be one of {pebbledb, badgerdb}")
+	fs.String(GenesisDBTypeKey, "badgerdb", "Database type to use for genesis database. Must be one of {pebbledb, badgerdb}")
 	fs.Uint64(GenesisBlockLimitKey, 0, "Limit number of blocks to replay during genesis (0 = all blocks)")
 
 	// Network ID
@@ -112,7 +112,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint64(AddNetDelegatorFeeKey, genesis.LocalParams.AddNetDelegatorFee, "Transaction fee, in nLUX, for transactions that add new net delegators")
 
 	// Database
-	fs.String(DBTypeKey, "pebbledb", "Default database type to use for all chains. Must be one of {leveldb, memdb, pebbledb, badgerdb}")
+	fs.String(DBTypeKey, "badgerdb", "Default database type to use for all chains. Must be one of {leveldb, memdb, pebbledb, badgerdb}")
 	fs.Bool(DBReadOnlyKey, false, "If true, database writes are to memory and never persisted. May still initialize database directory/files on disk if they don't exist")
 	fs.String(DBPathKey, defaultDBDir, "Path to database directory")
 	fs.String(DBConfigFileKey, "", fmt.Sprintf("Path to database config file. Ignored if %s is specified", DBConfigContentKey))
