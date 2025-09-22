@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -522,6 +523,18 @@ func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 		return vm.ChainVM.LastAccepted(ctx)
 	}
 	return lastAccepted, err
+}
+
+// CreateHandlers delegates to the underlying ChainVM if it implements this method
+func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
+	// Check if underlying ChainVM has CreateHandlers
+	if handlerVM, ok := vm.ChainVM.(interface {
+		CreateHandlers(context.Context) (map[string]http.Handler, error)
+	}); ok {
+		return handlerVM.CreateHandlers(ctx)
+	}
+	// Return empty map if not supported
+	return make(map[string]http.Handler), nil
 }
 
 func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
