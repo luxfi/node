@@ -141,15 +141,85 @@ test-package:
 	@echo "Testing package: $(PKG)"
 	@go test -race -timeout=$(TEST_TIMEOUT) $(PKG)
 
+# Node runtime targets
+init-chains:
+	@echo "$(GREEN)Initializing chain directory structure...$(NC)"
+	@mkdir -p ./chains/{C,P,X,Q}/db
+	@mkdir -p ./logs
+	@echo "$(GREEN)✓ Chain directories created$(NC)"
+
+migrate-chain-data: init-chains
+	@echo "$(GREEN)Migrating existing chain data...$(NC)"
+	@if [ -d "$(HOME)/.luxd/chainData/C/db" ]; then \
+		cp -r $(HOME)/.luxd/chainData/C/db/* ./chains/C/db/ 2>/dev/null && \
+		echo "$(GREEN)✓ C-chain data migrated$(NC)"; \
+	fi
+
+run-mainnet: build-fips init-chains
+	@echo "$(GREEN)Starting Lux Mainnet (ID: 96369)...$(NC)"
+	@pkill -f luxd || true
+	@sleep 2
+	$(LUXD) \
+		--network-id=96369 \
+		--staking-enabled=false \
+		--http-host=0.0.0.0 \
+		--http-port=9650 \
+		--data-dir=./chains \
+		--db-dir=./chains \
+		--chain-data-dir=./chains \
+		--log-dir=./logs \
+		--index-enabled=true \
+		--snow-sample-size=1 \
+		--snow-quorum-size=1 \
+		--api-admin-enabled=true \
+		--http-allowed-origins="*"
+
+run-testnet: build-fips init-chains
+	@echo "$(GREEN)Starting Lux Testnet (ID: 96368)...$(NC)"
+	@pkill -f luxd || true
+	@sleep 2
+	$(LUXD) \
+		--network-id=96368 \
+		--staking-enabled=false \
+		--http-host=0.0.0.0 \
+		--http-port=9650 \
+		--data-dir=./chains \
+		--db-dir=./chains \
+		--chain-data-dir=./chains \
+		--log-dir=./logs \
+		--index-enabled=true
+
+node-status:
+	@echo "$(GREEN)Checking node status...$(NC)"
+	@curl -s -X POST --data '{"jsonrpc":"2.0","id":1,"method":"info.isBootstrapped","params":{}}' \
+		-H 'content-type:application/json;' http://localhost:9650/ext/info | jq
+
+stop-node:
+	@echo "$(YELLOW)Stopping Lux node...$(NC)"
+	@pkill -f luxd || echo "No running node found"
+
 # Help target
 help:
 	@echo "Available targets:"
-	@echo "  build         - Build luxd binary"
+	@echo "$(GREEN)Build & Test:$(NC)"
+	@echo "  build-fips    - Build luxd binary with FIPS 140-3"
+	@echo "  build         - Build luxd binary (standard)"
+	@echo "  test-fips     - Run all tests with FIPS"
 	@echo "  test          - Run all tests"
 	@echo "  test-short    - Run short tests only"
 	@echo "  test-100      - Ensure 100% test pass rate"
 	@echo "  test-unit     - Run unit tests"
 	@echo "  test-e2e      - Run end-to-end tests"
+	@echo ""
+	@echo "$(GREEN)Node Operations:$(NC)"
+	@echo "  run-mainnet   - Run Lux mainnet node (ID: 96369)"
+	@echo "  run-testnet   - Run Lux testnet node (ID: 96368)"
+	@echo "  node-status   - Check node bootstrap status"
+	@echo "  stop-node     - Stop running node"
+	@echo "  init-chains   - Initialize chain directories"
+	@echo "  migrate-chain-data - Migrate existing chain data"
+	@echo ""
+	@echo "$(GREEN)Development:$(NC)"
 	@echo "  fmt           - Format Go code"
 	@echo "  lint          - Run linters"
 	@echo "  clean         - Clean build artifacts"
