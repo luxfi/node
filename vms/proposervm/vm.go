@@ -31,6 +31,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms"
 
 	// Using consensus protocol/chain for Block interface
 	"github.com/luxfi/consensus/protocol/chain"
@@ -525,16 +526,9 @@ func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	return lastAccepted, err
 }
 
-// CreateHandlers delegates to the underlying ChainVM if it implements this method
+// CreateHandlers delegates to the underlying ChainVM using vms.DelegateHandlers
 func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	// Check if underlying ChainVM has CreateHandlers
-	if handlerVM, ok := vm.ChainVM.(interface {
-		CreateHandlers(context.Context) (map[string]http.Handler, error)
-	}); ok {
-		return handlerVM.CreateHandlers(ctx)
-	}
-	// Return empty map if not supported
-	return make(map[string]http.Handler), nil
+	return vms.DelegateHandlers(ctx, vm.ChainVM)
 }
 
 func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {

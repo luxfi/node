@@ -207,9 +207,19 @@ func (s *senderToAppSenderAdapter) SendAppGossip(ctx context.Context, appGossipB
 	return nil
 }
 
-// chainVMWrapper wraps block.ChainVM to implement core.VM
+// chainVMWrapper wraps block.ChainVM to implement core.VM.
+// Uses vms.HandlerDelegator for clean, DRY handler delegation.
 type chainVMWrapper struct {
 	vm block.ChainVM
+	*vms.HandlerDelegator[block.ChainVM]
+}
+
+// newChainVMWrapper creates a wrapper that properly delegates handlers
+func newChainVMWrapper(vm block.ChainVM) *chainVMWrapper {
+	return &chainVMWrapper{
+		vm:               vm,
+		HandlerDelegator: vms.NewHandlerDelegator(vm),
+	}
 }
 
 func (c *chainVMWrapper) Initialize(
@@ -233,24 +243,8 @@ func (c *chainVMWrapper) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (c *chainVMWrapper) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	// Check if the underlying VM has CreateHandlers method
-	if vm, ok := c.vm.(interface {
-		CreateHandlers(context.Context) (map[string]http.Handler, error)
-	}); ok {
-		handlers, err := vm.CreateHandlers(ctx)
-		fmt.Printf("DEBUG chainVMWrapper: CreateHandlers returned %d handlers, err=%v\n", len(handlers), err)
-		return handlers, err
-	}
-	// ChainVM doesn't have CreateHandlers, return empty map
-	fmt.Printf("DEBUG chainVMWrapper: VM type %T doesn't have CreateHandlers\n", c.vm)
-	return make(map[string]http.Handler), nil
-}
-
-func (c *chainVMWrapper) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	// ChainVM doesn't have CreateStaticHandlers, return empty map
-	return make(map[string]http.Handler), nil
-}
+// CreateHandlers and CreateStaticHandlers are inherited from HandlerDelegator.
+// No duplicate code needed - beautiful composition!
 
 func (c *chainVMWrapper) HealthCheck(ctx context.Context) (interface{}, error) {
 	// ChainVM doesn't have HealthCheck, return nil
@@ -772,16 +766,22 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				if chainParams.ID == m.CChainID {
 					chainAlias = "C"
 				}
-				chainEndpoint := fmt.Sprintf("/ext/bc/%s%s", chainAlias, endpoint)
-				chainIDEndpoint := fmt.Sprintf("/ext/bc/%s%s", chainParams.ID.String(), endpoint)
 
-				m.Server.AddRoute(handler, "", chainEndpoint)
-				m.Server.AddRoute(handler, "", chainIDEndpoint)
+				// The base is just "bc/<chainID>" and endpoint is "/rpc" or "/"
+				chainBase := fmt.Sprintf("bc/%s", chainAlias)
+				chainIDBase := fmt.Sprintf("bc/%s", chainParams.ID.String())
+
+				// AddRoute will build the full path as /ext/<base><endpoint>
+				m.Server.AddRoute(handler, chainBase, endpoint)
+				if chainAlias != chainParams.ID.String() {
+					m.Server.AddRoute(handler, chainIDBase, endpoint)
+				}
 
 				m.Log.Info("Registered HTTP handler",
 					log.String("chainAlias", chainAlias),
 					log.Stringer("chainID", chainParams.ID),
-					log.String("endpoint", chainEndpoint),
+					log.String("base", chainBase),
+					log.String("endpoint", endpoint),
 				)
 			}
 		}
@@ -965,16 +965,22 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 				if chainParams.ID == m.CChainID {
 					chainAlias = "C"
 				}
-				chainEndpoint := fmt.Sprintf("/ext/bc/%s%s", chainAlias, endpoint)
-				chainIDEndpoint := fmt.Sprintf("/ext/bc/%s%s", chainParams.ID.String(), endpoint)
 
-				m.Server.AddRoute(handler, "", chainEndpoint)
-				m.Server.AddRoute(handler, "", chainIDEndpoint)
+				// The base is just "bc/<chainID>" and endpoint is "/rpc" or "/"
+				chainBase := fmt.Sprintf("bc/%s", chainAlias)
+				chainIDBase := fmt.Sprintf("bc/%s", chainParams.ID.String())
+
+				// AddRoute will build the full path as /ext/<base><endpoint>
+				m.Server.AddRoute(handler, chainBase, endpoint)
+				if chainAlias != chainParams.ID.String() {
+					m.Server.AddRoute(handler, chainIDBase, endpoint)
+				}
 
 				m.Log.Info("Registered HTTP handler",
 					log.String("chainAlias", chainAlias),
 					log.Stringer("chainID", chainParams.ID),
-					log.String("endpoint", chainEndpoint),
+					log.String("base", chainBase),
+					log.String("endpoint", endpoint),
 				)
 			}
 		}
@@ -1107,7 +1113,7 @@ func (m *manager) createLuxChain(
 	if chainParams.ID == constants.PlatformChainID {
 		m.Log.Info("skipping proposervm wrapper for Platform chain")
 		// Create a wrapper for the platform VM
-		vmWrapper := &chainVMWrapper{vm: vm}
+		vmWrapper := newChainVMWrapper(vm)
 		return vmWrapper, vm, nil
 	}
 
@@ -1998,7 +2004,7 @@ func (m *manager) createLinearChain(
 
 	// Since block.ChainVM doesn't implement core.VM directly,
 	// we need to wrap it to implement core.VM
-	vmWrapper := &chainVMWrapper{vm: vm}
+	vmWrapper := newChainVMWrapper(vm)
 	return &chainInfo{
 		Name:    primaryAlias,
 		Context: ctx,

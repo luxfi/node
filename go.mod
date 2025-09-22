@@ -6,6 +6,8 @@ module github.com/luxfi/node
 // go.mod (here)
 go 1.25.1
 
+replace github.com/luxfi/geth => ../geth
+
 exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 
 exclude google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
@@ -26,7 +28,7 @@ require (
 	github.com/luxfi/consensus v1.18.0
 	github.com/luxfi/crypto v1.17.0
 	github.com/luxfi/database v1.2.0
-	github.com/luxfi/geth v1.16.34
+	github.com/luxfi/geth v1.16.35
 	github.com/luxfi/ids v1.1.0
 	github.com/luxfi/ledger-lux-go v1.0.0
 	github.com/luxfi/log v1.1.22
@@ -129,8 +131,8 @@ require (
 	github.com/emicklei/dot v1.9.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.1 // indirect
+	github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
-	github.com/fatih/color v1.18.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/ferranbt/fastssz v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
@@ -154,7 +156,7 @@ require (
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20250820193118-f64d9cf942d6 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1 // indirect
-	github.com/holiman/billy v0.0.0-20240216141850-2abb0c79d3c4 // indirect
+	github.com/holiman/billy v0.0.0-20250707135307-f2f9b9aae7db // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -168,7 +170,6 @@ require (
 	github.com/luxfi/zmq/v4 v4.2.0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
@@ -176,9 +177,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
-	github.com/olekukonko/errors v1.1.0 // indirect
-	github.com/olekukonko/ll v0.0.9 // indirect
-	github.com/olekukonko/tablewriter v1.0.9 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
@@ -206,7 +204,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250811230008-5f3141c8851a // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
