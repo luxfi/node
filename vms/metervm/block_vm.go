@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/luxfi/metric"
+	"github.com/luxfi/node/vms"
 
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
@@ -144,14 +145,7 @@ func (vm *blockVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.I
 	return blockID, err
 }
 
-// CreateHandlers delegates to the underlying VM if it implements this method
+// CreateHandlers delegates to the underlying VM using vms.DelegateHandlers
 func (vm *blockVM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	// Check if underlying ChainVM has CreateHandlers
-	if handlerVM, ok := vm.ChainVM.(interface {
-		CreateHandlers(context.Context) (map[string]http.Handler, error)
-	}); ok {
-		return handlerVM.CreateHandlers(ctx)
-	}
-	// Return empty map if not supported
-	return make(map[string]http.Handler), nil
+	return vms.DelegateHandlers(ctx, vm.ChainVM)
 }
