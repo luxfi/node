@@ -5,6 +5,7 @@ package metervm
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/luxfi/metric"
 
@@ -141,4 +142,16 @@ func (vm *blockVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.I
 	end := vm.clock.Time()
 	vm.blockMetrics.getBlockIDAtHeight.Observe(float64(end.Sub(start)))
 	return blockID, err
+}
+
+// CreateHandlers delegates to the underlying VM if it implements this method
+func (vm *blockVM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
+	// Check if underlying ChainVM has CreateHandlers
+	if handlerVM, ok := vm.ChainVM.(interface {
+		CreateHandlers(context.Context) (map[string]http.Handler, error)
+	}); ok {
+		return handlerVM.CreateHandlers(ctx)
+	}
+	// Return empty map if not supported
+	return make(map[string]http.Handler), nil
 }

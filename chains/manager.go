@@ -238,9 +238,12 @@ func (c *chainVMWrapper) CreateHandlers(ctx context.Context) (map[string]http.Ha
 	if vm, ok := c.vm.(interface {
 		CreateHandlers(context.Context) (map[string]http.Handler, error)
 	}); ok {
-		return vm.CreateHandlers(ctx)
+		handlers, err := vm.CreateHandlers(ctx)
+		fmt.Printf("DEBUG chainVMWrapper: CreateHandlers returned %d handlers, err=%v\n", len(handlers), err)
+		return handlers, err
 	}
 	// ChainVM doesn't have CreateHandlers, return empty map
+	fmt.Printf("DEBUG chainVMWrapper: VM type %T doesn't have CreateHandlers\n", c.vm)
 	return make(map[string]http.Handler), nil
 }
 
@@ -933,6 +936,53 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 	// if err := m.TimeoutManager.RegisterChain(ctx); err != nil {
 	// 	return nil, err
 	// }
+
+	// Register HTTP handlers for this chain if the VM supports it
+	m.Log.Info("Checking for CreateHandlers support",
+		log.Stringer("chainID", chainParams.ID),
+		log.String("vmType", fmt.Sprintf("%T", chain.VM)))
+
+	if vm, ok := chain.VM.(interface {
+		CreateHandlers(context.Context) (map[string]http.Handler, error)
+	}); ok {
+		m.Log.Info("VM supports CreateHandlers, calling it now",
+			log.Stringer("chainID", chainParams.ID))
+		handlers, err := vm.CreateHandlers(context.TODO())
+		m.Log.Info("CreateHandlers returned",
+			log.Stringer("chainID", chainParams.ID),
+			log.Int("numHandlers", len(handlers)),
+			log.Err(err))
+		if err != nil {
+			m.Log.Error("failed to create HTTP handlers",
+				log.Stringer("chainID", chainParams.ID),
+				log.Err(err),
+			)
+		} else {
+			// Register each handler with the HTTP server
+			for endpoint, handler := range handlers {
+				chainAlias := chainParams.ID.String()
+				// For C-Chain, also register under the "C" alias
+				if chainParams.ID == m.CChainID {
+					chainAlias = "C"
+				}
+				chainEndpoint := fmt.Sprintf("/ext/bc/%s%s", chainAlias, endpoint)
+				chainIDEndpoint := fmt.Sprintf("/ext/bc/%s%s", chainParams.ID.String(), endpoint)
+
+				m.Server.AddRoute(handler, "", chainEndpoint)
+				m.Server.AddRoute(handler, "", chainIDEndpoint)
+
+				m.Log.Info("Registered HTTP handler",
+					log.String("chainAlias", chainAlias),
+					log.Stringer("chainID", chainParams.ID),
+					log.String("endpoint", chainEndpoint),
+				)
+			}
+		}
+	} else {
+		m.Log.Info("VM does not support CreateHandlers",
+			log.Stringer("chainID", chainParams.ID),
+			log.String("vmType", fmt.Sprintf("%T", chain.VM)))
+	}
 
 	return chain, nil
 }
