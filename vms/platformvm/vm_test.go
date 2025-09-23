@@ -6,6 +6,7 @@ package platformvm
 import (
 	"bytes"
 	"context"
+	"math"
 	"testing"
 	"time"
 
@@ -100,7 +101,7 @@ var (
 	defaultMinDelegatorStake = 1 * units.MilliLux
 	defaultMinValidatorStake = 5 * defaultMinDelegatorStake
 	defaultMaxValidatorStake = 100 * defaultMinValidatorStake
-	defaultBalance           = 2*defaultMaxValidatorStake + 100*units.Lux // amount all genesis validators have in defaultVM, with extra for fees
+	defaultBalance           = 2*defaultMaxValidatorStake + 1000*units.Lux // amount all genesis validators have in defaultVM, with extra for fees
 
 	// net that exists at genesis in defaultVM
 	// Its controlKeys are keys[0], keys[1], keys[2]
@@ -144,7 +145,9 @@ func defaultGenesis(t *testing.T, luxAssetID ids.ID) (*api.BuildGenesisArgs, []b
 
 	genesisValidators := make([]api.GenesisPermissionlessValidator, len(genesisNodeIDs))
 	for i, nodeID := range genesisNodeIDs {
-		addr, err := address.FormatBech32(constants.UnitTestHRP, nodeID.Bytes())
+		// Use the actual key address, not the nodeID bytes as address
+		keyAddr := keys[i].PublicKey().Address()
+		addr, err := address.FormatBech32(constants.UnitTestHRP, keyAddr.Bytes())
 		require.NoError(err)
 		genesisValidators[i] = api.GenesisPermissionlessValidator{
 			GenesisValidator: api.GenesisValidator{
@@ -314,17 +317,37 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 
 	require.NoError(vm.SetState(context.Background(), interfaces.NormalOp))
 
-	factory := txstest.NewWalletFactory(
+	factory := txstest.NewWalletFactoryWithAssets(
 		ctx.Context,
 		ctx.SharedMemory,
 		&vm.Config,
 		vm.state,
+		ctx.LUXAssetID,
 	)
 
 	// Create a net and store it in testSubnet1
 	// Note: following Banff activation, block acceptance will move
 	// chain time ahead
 	builder, signer := factory.NewWallet(keys[0])
+
+	// Debug: check available UTXOs and fees
+	addr := keys[0].PublicKey().Address()
+	t.Logf("keys[0] address: %s", addr)
+	utxoIDs, _ := vm.state.UTXOIDs(addr.Bytes(), ids.Empty, math.MaxInt32)
+	t.Logf("Available UTXOs for keys[0]: %d", len(utxoIDs))
+	t.Logf("LUX AssetID: %s", ctx.LUXAssetID)
+	t.Logf("CreateNetTxFee: %d", vm.Config.StaticFeeConfig.CreateNetTxFee)
+	for _, utxoID := range utxoIDs {
+		utxo, _ := vm.state.GetUTXO(utxoID)
+		if utxo != nil {
+			out := utxo.Out
+			t.Logf("  UTXO %s: AssetID=%s OutType=%T", utxoID, utxo.AssetID(), out)
+			if transferOut, ok := out.(*secp256k1fx.TransferOutput); ok {
+				t.Logf("    Amount=%d Addrs=%v", transferOut.Amt, transferOut.Addrs)
+			}
+		}
+	}
+
 	utx, err := builder.NewCreateNetTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 2,
@@ -981,7 +1004,8 @@ func TestCreateNet(t *testing.T) {
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
 
-	builder, txSigner := factory.NewWallet(keys[0])
+	// Use keys[1] instead of keys[0] as keys[0] was used in defaultVM to create a net
+	builder, txSigner := factory.NewWallet(keys[1])
 	uCreateNetTx, err := builder.NewCreateNetTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -992,7 +1016,7 @@ func TestCreateNet(t *testing.T) {
 		},
 		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
 			Threshold: 1,
-			Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},
+			Addrs:     []ids.ShortID{keys[1].PublicKey().Address()},
 		}),
 	)
 	require.NoError(err)
