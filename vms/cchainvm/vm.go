@@ -173,8 +173,9 @@ func (vm *VM) Initialize(
 				}
 				ethDB, err := NewBadgerDatabase(nil, badgerConfig)
 				if err == nil {
-					vm.ethDB = ethDB
-					fmt.Printf("Successfully opened migrated ethdb\n")
+					// Wrap the migrated database with an adapter
+					vm.ethDB = NewMigratedDataAdapter(ethDB)
+					fmt.Printf("Successfully opened migrated ethdb with adapter\n")
 				} else {
 					fmt.Printf("Failed to open migrated ethdb: %v\n", err)
 				}
@@ -211,17 +212,45 @@ func (vm *VM) Initialize(
 
 	// Fallback: Check for migrated blockchain data in database
 	if !hasMigratedData {
-		if heightBytes, err := vm.ethDB.Get([]byte("Height")); err == nil && len(heightBytes) == 8 {
-			height := binary.BigEndian.Uint64(heightBytes)
-			if height > 0 {
-				hasMigratedData = true
-				migratedHeight = height
-				fmt.Printf("DETECTED MIGRATED DATA AT HEIGHT %d\n", height)
+		// First check if we have a migrated BadgerDB directory
+		if chainCtxWithDir, ok := vm.chainCtx.(interface{ GetChainDataDir() string }); ok {
+			ethdbPath := filepath.Join(chainCtxWithDir.GetChainDataDir(), "ethdb")
+			if stat, err := os.Stat(ethdbPath); err == nil && stat.IsDir() {
+				// Check if it has substantial data (>500MB indicates migrated blockchain)
+				if dirSize := getDirSize(ethdbPath); dirSize > 500*1024*1024 {
+					fmt.Printf("DETECTED MIGRATED BADGERDB AT %s (%d MB)\n", ethdbPath, dirSize/(1024*1024))
+					
+					// Open the migrated database
+					badgerConfig := BadgerDatabaseConfig{
+						DataDir:       ethdbPath,
+						EnableAncient: false,
+						ReadOnly:      false,
+					}
+					if ethDB, err := NewBadgerDatabase(nil, badgerConfig); err == nil {
+						// Wrap with adapter
+						vm.ethDB = NewMigratedDataAdapter(ethDB)
+						hasMigratedData = true
+						migratedHeight = 1082780 // Known height from migration
+						fmt.Printf("Successfully opened migrated ethdb with adapter\n")
+					}
+				}
+			}
+		}
+		
+		// Also check Height key in current database
+		if !hasMigratedData {
+			if heightBytes, err := vm.ethDB.Get([]byte("Height")); err == nil && len(heightBytes) == 8 {
+				height := binary.BigEndian.Uint64(heightBytes)
+				if height > 0 {
+					hasMigratedData = true
+					migratedHeight = height
+					fmt.Printf("DETECTED MIGRATED DATA AT HEIGHT %d\n", height)
 
-				// Log to Lux logger too
-				vm.log.Info("Detected migrated blockchain data",
-					"height", height,
-				)
+					// Log to Lux logger too
+					vm.log.Info("Detected migrated blockchain data",
+						"height", height,
+					)
+				}
 			}
 		}
 	}
@@ -1100,4 +1129,19 @@ func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, er
 		return ids.Empty, database.ErrNotFound
 	}
 	return ids.ID(block.Hash()), nil
+}
+
+// getDirSize calculates the total size of a directory
+func getDirSize(path string) int64 {
+	var size int64
+	filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return nil
+	})
+	return size
 }

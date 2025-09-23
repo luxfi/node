@@ -221,7 +221,14 @@ require (
 
 // Pin all OpenTelemetry modules (and metric sub-packages) to v1.37.0
 
-exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
+exclude (
+	google.golang.org/genproto v0.0.0-20190425155659-357c62f0e4bb
+	google.golang.org/genproto v0.0.0-20210310155132-4ce2db91004e
+	google.golang.org/genproto v0.0.0-20210319143718-93e7006c17a6
+	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
+)
 
 // Remove the v6 to v4 replacement as it causes conflicts
 // replace sigs.k8s.io/structured-merge-diff/v6 => sigs.k8s.io/structured-merge-diff/v4 v4.4.1
+
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240123012728-ef4313101c80
