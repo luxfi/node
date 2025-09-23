@@ -4,7 +4,7 @@ module github.com/luxfi/node
 // CONTRIBUTING.md
 // README.md
 // go.mod (here)
-go 1.23.4
+go 1.25.1
 
 exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 

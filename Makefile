@@ -163,7 +163,7 @@ run-mainnet: build-fips init-chains
 		--network-id=96369 \
 		--staking-enabled=false \
 		--http-host=0.0.0.0 \
-		--http-port=9650 \
+		--http-port=9630 \
 		--data-dir=./chains \
 		--db-dir=./chains \
 		--chain-data-dir=./chains \
@@ -182,7 +182,7 @@ run-testnet: build-fips init-chains
 		--network-id=96368 \
 		--staking-enabled=false \
 		--http-host=0.0.0.0 \
-		--http-port=9650 \
+		--http-port=9630 \
 		--data-dir=./chains \
 		--db-dir=./chains \
 		--chain-data-dir=./chains \
@@ -192,7 +192,7 @@ run-testnet: build-fips init-chains
 node-status:
 	@echo "$(GREEN)Checking node status...$(NC)"
 	@curl -s -X POST --data '{"jsonrpc":"2.0","id":1,"method":"info.isBootstrapped","params":{}}' \
-		-H 'content-type:application/json;' http://localhost:9650/ext/info | jq
+		-H 'content-type:application/json;' http://localhost:9630/ext/info | jq
 
 stop-node:
 	@echo "$(YELLOW)Stopping Lux node...$(NC)"
