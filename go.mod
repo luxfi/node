@@ -1,10 +1,11 @@
 module github.com/luxfi/node
 
+go 1.25.1
+
 // Changes to the minimum golang version must also be replicated in
 // CONTRIBUTING.md
 // README.md
 // go.mod (here)
-go 1.23.5
 
 exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 
