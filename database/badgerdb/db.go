@@ -11,7 +11,7 @@ import (
 
 	"github.com/dgraph-io/badger/v3"
 	"github.com/dgraph-io/badger/v3/options"
-	"github.com/luxfi/database"
+	"github.com/luxfi/node/database"
 )
 
 var _ database.Database = (*Database)(nil)
