@@ -56,29 +56,7 @@ func LuxGenesisConfig() *Config {
 				DelegationFee: 20000, // 2%
 			},
 		},
-		CChainGenesis: `{
-			"config": {
-				"chainId": 96369,
-				"homesteadBlock": 0,
-				"eip150Block": 0,
-				"eip155Block": 0,
-				"eip158Block": 0,
-				"byzantiumBlock": 0,
-				"constantinopleBlock": 0,
-				"petersburgBlock": 0,
-				"istanbulBlock": 0,
-				"muirGlacierBlock": 0,
-				"berlinBlock": 0,
-				"londonBlock": 0
-			},
-			"difficulty": "0x1",
-			"gasLimit": "0x1C9C380",
-			"alloc": {
-				"0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC": {
-					"balance": "0x21e19e0c9bab2400000"
-				}
-			}
-		}`,
+		CChainGenesis: string(GetCChainGenesisMainnetBytes()),
 		Message: "LUX Mainnet Genesis",
 	}
 }
