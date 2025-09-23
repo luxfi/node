@@ -218,7 +218,7 @@ func TestHandlerManager_HealthCheck(t *testing.T) {
 		"/rpc": unhealthyHandler,
 	})
 	// Registration succeeds even if health check fails
-	require.Error(t, err) // Will have registration errors due to health check
+	require.NoError(t, err) // Registration should succeed regardless of handler health
 
 	// Check health status
 	results := manager.HealthCheckAll()
