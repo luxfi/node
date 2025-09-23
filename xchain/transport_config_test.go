@@ -46,7 +46,7 @@ func TestDefaultTransportConfig(t *testing.T) {
 	require.Equal("0.0.0.0", config.NetworkPipes.ListenAddr)
 	require.Equal("", config.NetworkPipes.AdvertiseAddr)
 	require.Equal(9651, config.NetworkPipes.P2PPort)
-	require.Equal(9650, config.NetworkPipes.RPCPort)
+	require.Equal(9630, config.NetworkPipes.RPCPort)
 	require.Equal(256, config.NetworkPipes.MaxConnections)
 	require.Equal(1000, config.NetworkPipes.BandwidthLimit)
 }
@@ -92,7 +92,7 @@ func TestNewTransportManager_WithQZMQ(t *testing.T) {
 	config.QZMQConfig.ConsensusPort = 35000
 	config.QZMQConfig.DEXPort = 36000
 	config.NetworkPipes.P2PPort = 39651
-	config.NetworkPipes.RPCPort = 39650
+	config.NetworkPipes.RPCPort = 39630
 
 	tm, err := NewTransportManager(config)
 	require.NoError(err)
@@ -113,7 +113,7 @@ func TestNewTransportManager_QZMQOnly(t *testing.T) {
 	config.QZMQConfig.ConsensusPort = 45000
 	config.QZMQConfig.DEXPort = 46000
 	config.NetworkPipes.P2PPort = 49651
-	config.NetworkPipes.RPCPort = 49650
+	config.NetworkPipes.RPCPort = 49630
 
 	tm, err := NewTransportManager(config)
 	require.NoError(err)
@@ -171,7 +171,7 @@ func TestTransportManager_SendMessage_Hybrid(t *testing.T) {
 	config.QZMQConfig.ConsensusPort = 55000
 	config.QZMQConfig.DEXPort = 56000
 	config.NetworkPipes.P2PPort = 59651
-	config.NetworkPipes.RPCPort = 59650
+	config.NetworkPipes.RPCPort = 59630
 
 	tm, err := NewTransportManager(config)
 	require.NoError(err)
@@ -293,7 +293,7 @@ func TestNewNetworkPipeManager(t *testing.T) {
 	config := &NetworkPipeConfig{
 		ListenAddr:     "0.0.0.0",
 		P2PPort:        9651,
-		RPCPort:        9650,
+		RPCPort:        9630,
 		MaxConnections: 100,
 	}
 
@@ -361,7 +361,7 @@ func TestNetworkPipeConfig_Validation(t *testing.T) {
 		ListenAddr:     "0.0.0.0",
 		AdvertiseAddr:  "192.168.1.100",
 		P2PPort:        9651,
-		RPCPort:        9650,
+		RPCPort:        9630,
 		Peers:          []string{"peer1.example.com", "peer2.example.com"},
 		MaxConnections: 256,
 		BandwidthLimit: 1000,

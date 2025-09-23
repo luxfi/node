@@ -76,7 +76,7 @@ func IntegrationExample(
 
 		// Print developer-friendly message
 		if isDevMode && len(info.Endpoints) > 0 {
-			baseURL := "http://localhost:9650"
+			baseURL := "http://localhost:9630"
 			fmt.Printf("\n✅ Chain %s RPC endpoints ready:\n", chainID)
 			for _, endpoint := range info.Endpoints {
 				if info.ChainAlias != "" {

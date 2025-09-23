@@ -92,7 +92,7 @@ type NetworkPipeConfig struct {
 	// P2PPort is the main P2P port (9651)
 	P2PPort int
 
-	// RPCPort is the RPC port (9650)
+	// RPCPort is the RPC port (9630)
 	RPCPort int
 
 	// Peers list of peer addresses
@@ -130,7 +130,7 @@ func DefaultTransportConfig() *TransportConfig {
 			ListenAddr:     "0.0.0.0",
 			AdvertiseAddr:  "", // Auto-detect
 			P2PPort:        9651,
-			RPCPort:        9650,
+			RPCPort:        9630,
 			MaxConnections: 256,
 			BandwidthLimit: 1000, // 1Gbps
 		},
