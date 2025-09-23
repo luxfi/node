@@ -237,7 +237,7 @@ func ExampleHybridTransport() {
 
 		NetworkPipes: &NetworkPipeConfig{
 			P2PPort: 9651, // Standard Lux P2P port
-			RPCPort: 9650, // Standard Lux RPC port
+			RPCPort: 9630, // Standard Lux RPC port
 			Peers: []string{
 				"validator1.example.com",
 				"validator2.example.com",

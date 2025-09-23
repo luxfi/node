@@ -193,7 +193,7 @@ jobs:
             node/build/luxd \
               --network-id=${{ matrix.test-scenario.network_id }} \
               --http-host=0.0.0.0 \
-              --http-port=${HTTP_PORT:-9650} \
+              --http-port=${HTTP_PORT:-9630} \
               --staking-port=${STAKING_PORT:-9651} \
               --db-dir=/tmp/luxd-test/db \
               --log-dir=/tmp/luxd-test/logs \
@@ -211,7 +211,7 @@ jobs:
             sleep 20
             
             # Test HTTP endpoint
-            HTTP_PORT=${HTTP_PORT:-9650}
+            HTTP_PORT=${HTTP_PORT:-9630}
             if curl -f -s http://127.0.0.1:${HTTP_PORT}/ext/health | grep -q "healthy"; then
               echo "✓ Node is healthy"
             else
@@ -313,7 +313,7 @@ jobs:
           node/build/luxd \
             --network-id=96369 \
             --http-host=0.0.0.0 \
-            --http-port=9650 \
+            --http-port=9630 \
             --staking-port=9651 \
             --db-dir=/tmp/test-db \
             --log-dir=/tmp/test-logs \
@@ -336,7 +336,7 @@ jobs:
           )
           
           for endpoint in "${ENDPOINTS[@]}"; do
-            if curl -f -s http://127.0.0.1:9650${endpoint} > /dev/null; then
+            if curl -f -s http://127.0.0.1:9630${endpoint} > /dev/null; then
               echo "✓ Endpoint ${endpoint} is accessible"
             else
               echo "✗ Endpoint ${endpoint} failed"
@@ -397,7 +397,7 @@ jobs:
           timeout 30 node/build/luxd \
             --network-id=96369 \
             --http-host=127.0.0.1 \
-            --http-port=9650 \
+            --http-port=9630 \
             --staking-port=9651 \
             --db-dir=/tmp/test-skip-bootstrap \
             --log-dir=/tmp/test-logs \
@@ -458,7 +458,7 @@ jobs:
           node/build/luxd \
             --network-id=96369 \
             --http-host=0.0.0.0 \
-            --http-port=9650 \
+            --http-port=9630 \
             --staking-port=9651 \
             --db-dir=/tmp/perf-db \
             --log-dir=/tmp/perf-logs \
@@ -478,7 +478,7 @@ jobs:
           for i in {1..100}; do
             curl -s -X POST -H "Content-Type: application/json" \
               -d '{"jsonrpc":"2.0","method":"info.getNodeID","params":{},"id":1}' \
-              http://127.0.0.1:9650/ext/info > /dev/null
+              http://127.0.0.1:9630/ext/info > /dev/null
           done
           end_time=$(date +%s%N)
           

@@ -52,7 +52,7 @@
         "listenAddr": "0.0.0.0",
         "advertiseAddr": "auto",
         "p2pPort": 9651,
-        "rpcPort": 9650,
+        "rpcPort": 9630,
         "maxConnections": 256,
         "bandwidthLimit": 1000,
         "comment": "All traffic flows through the same network pipes, protocols are selected based on message type"
