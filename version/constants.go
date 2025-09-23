@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	Client = "node"
+	Client = "luxd"
 	// RPCChainVMProtocol should be bumped anytime changes are made which
 	// require the plugin vm to upgrade to latest node release to be
 	// compatible.
@@ -25,8 +25,8 @@ const (
 var (
 	Current = &Semantic{
 		Major: 1,
-		Minor: 13,
-		Patch: 6,
+		Minor: 17,
+		Patch: 1,
 	}
 	CurrentApp = &Application{
 		Name:  Client,
