@@ -223,10 +223,5 @@ require (
 
 exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
 
-// Fix genproto import ambiguity
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240826202546-f6391c0de4c7
-
 // Remove the v6 to v4 replacement as it causes conflicts
 // replace sigs.k8s.io/structured-merge-diff/v6 => sigs.k8s.io/structured-merge-diff/v4 v4.4.1
-
-replace sigs.k8s.io/structured-merge-diff/v4 => sigs.k8s.io/structured-merge-diff/v4 v4.4.3
