@@ -24,7 +24,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
-	github.com/luxfi/consensus v1.18.0
+	github.com/luxfi/consensus v1.18.1
 	github.com/luxfi/crypto v1.17.0
 	github.com/luxfi/database v1.2.0
 	github.com/luxfi/geth v1.16.35
