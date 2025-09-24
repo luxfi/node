@@ -131,7 +131,18 @@ func (s *State) ConsumeGas(
 			extraGasUsed,
 		)
 	}
-	newGas, err = newGas.ConsumeGas(gas.Gas(extraGasUsed.Uint64()))
+
+	// Additional validation to prevent malicious large values
+	extraGas := gas.Gas(extraGasUsed.Uint64())
+	const maxReasonableExtraGas = gas.Gas(1_000_000_000) // 1B gas max per operation
+	if extraGas > maxReasonableExtraGas {
+		return fmt.Errorf("%w: extraGasUsed (%d) exceeds reasonable limit",
+			gas.ErrInsufficientCapacity,
+			extraGas,
+		)
+	}
+
+	newGas, err = newGas.ConsumeGas(extraGas)
 	if err != nil {
 		return err
 	}
@@ -208,17 +219,20 @@ func scaleExcess(
 	bigTarget.SetUint64(uint64(previousTargetPerSecond))
 	bigExcess.Div(&bigExcess, &bigTarget)
 	if !bigExcess.IsUint64() {
-		return math.MaxUint64
+		// Return a deterministic maximum that won't cause consensus issues
+		// This is slightly below MaxUint64 to ensure consistent behavior
+		return gas.Gas(math.MaxUint64 - 1000)
 	}
 	return gas.Gas(bigExcess.Uint64())
 }
 
 // mulWithUpperBound multiplies two numbers and returns the result. If the
-// result overflows, it returns [math.MaxUint64].
+// result overflows, it returns a deterministic maximum value.
 func mulWithUpperBound(a, b gas.Gas) gas.Gas {
 	product, err := safemath.Mul64(uint64(a), uint64(b))
 	if err != nil {
-		return math.MaxUint64
+		// Return deterministic maximum to prevent consensus divergence
+		return gas.Gas(math.MaxUint64 - 1000)
 	}
 	return gas.Gas(product)
 }
