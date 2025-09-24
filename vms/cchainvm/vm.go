@@ -163,21 +163,29 @@ func (vm *VM) Initialize(
 				// Use a default path
 				chainDataDir = "/home/z/.luxd/chainData/C/db"
 			}
-			ethdbPath := filepath.Join(chainDataDir, "ethdb")
-			if _, err := os.Stat(ethdbPath); err == nil {
-				fmt.Printf("Opening migrated ethdb at: %s\n", ethdbPath)
-				badgerConfig := BadgerDatabaseConfig{
-					DataDir:       ethdbPath,
-					EnableAncient: false,
-					ReadOnly:      false,
-				}
-				ethDB, err := NewBadgerDatabase(nil, badgerConfig)
-				if err == nil {
-					// Wrap the migrated database with an adapter
-					vm.ethDB = NewMigratedDataAdapter(ethDB)
-					fmt.Printf("Successfully opened migrated ethdb with adapter\n")
-				} else {
-					fmt.Printf("Failed to open migrated ethdb: %v\n", err)
+			// Check both possible locations for ethdb
+			possiblePaths := []string{
+				filepath.Join(chainDataDir, "badgerdb", "ethdb"), // New location after migration
+				filepath.Join(chainDataDir, "ethdb"),              // Direct location
+			}
+
+			for _, ethdbPath := range possiblePaths {
+				if _, err := os.Stat(ethdbPath); err == nil {
+					fmt.Printf("Opening migrated ethdb at: %s\n", ethdbPath)
+					badgerConfig := BadgerDatabaseConfig{
+						DataDir:       ethdbPath,
+						EnableAncient: false,
+						ReadOnly:      false,
+					}
+					ethDB, err := NewBadgerDatabase(nil, badgerConfig)
+					if err == nil {
+						// Wrap the migrated database with an adapter
+						vm.ethDB = NewMigratedDataAdapter(ethDB)
+						fmt.Printf("Successfully opened migrated ethdb with adapter\n")
+						break
+					} else {
+						fmt.Printf("Failed to open migrated ethdb at %s: %v\n", ethdbPath, err)
+					}
 				}
 			}
 		}
@@ -214,24 +222,32 @@ func (vm *VM) Initialize(
 	if !hasMigratedData {
 		// First check if we have a migrated BadgerDB directory
 		if chainCtxWithDir, ok := vm.chainCtx.(interface{ GetChainDataDir() string }); ok {
-			ethdbPath := filepath.Join(chainCtxWithDir.GetChainDataDir(), "ethdb")
-			if stat, err := os.Stat(ethdbPath); err == nil && stat.IsDir() {
-				// Check if it has substantial data (>500MB indicates migrated blockchain)
-				if dirSize := getDirSize(ethdbPath); dirSize > 500*1024*1024 {
-					fmt.Printf("DETECTED MIGRATED BADGERDB AT %s (%d MB)\n", ethdbPath, dirSize/(1024*1024))
-					
-					// Open the migrated database
-					badgerConfig := BadgerDatabaseConfig{
-						DataDir:       ethdbPath,
-						EnableAncient: false,
-						ReadOnly:      false,
-					}
-					if ethDB, err := NewBadgerDatabase(nil, badgerConfig); err == nil {
-						// Wrap with adapter
-						vm.ethDB = NewMigratedDataAdapter(ethDB)
-						hasMigratedData = true
-						migratedHeight = 1082780 // Known height from migration
-						fmt.Printf("Successfully opened migrated ethdb with adapter\n")
+			// Check both possible locations
+			possiblePaths := []string{
+				filepath.Join(chainCtxWithDir.GetChainDataDir(), "badgerdb", "ethdb"),
+				filepath.Join(chainCtxWithDir.GetChainDataDir(), "ethdb"),
+			}
+
+			for _, ethdbPath := range possiblePaths {
+				if stat, err := os.Stat(ethdbPath); err == nil && stat.IsDir() {
+					// Check if it has substantial data (>500MB indicates migrated blockchain)
+					if dirSize := getDirSize(ethdbPath); dirSize > 500*1024*1024 {
+						fmt.Printf("DETECTED MIGRATED BADGERDB AT %s (%d MB)\n", ethdbPath, dirSize/(1024*1024))
+
+						// Open the migrated database
+						badgerConfig := BadgerDatabaseConfig{
+							DataDir:       ethdbPath,
+							EnableAncient: false,
+							ReadOnly:      false,
+						}
+						if ethDB, err := NewBadgerDatabase(nil, badgerConfig); err == nil {
+							// Wrap with adapter
+							vm.ethDB = NewMigratedDataAdapter(ethDB)
+							hasMigratedData = true
+							migratedHeight = 1082780 // Known height from migration
+							fmt.Printf("Successfully opened migrated ethdb with adapter\n")
+							break
+						}
 					}
 				}
 			}
@@ -616,11 +632,21 @@ func (vm *VM) Initialize(
 		// Extract ChainDataDir from chainCtx if available
 		ethdbPath := ""
 		if chainCtxWithDir, ok := vm.chainCtx.(interface{ GetChainDataDir() string }); ok {
-			ethdbPath = filepath.Join(chainCtxWithDir.GetChainDataDir(), "ethdb")
+			// Check both possible paths
+			possiblePaths := []string{
+				filepath.Join(chainCtxWithDir.GetChainDataDir(), "badgerdb", "ethdb"),
+				filepath.Join(chainCtxWithDir.GetChainDataDir(), "ethdb"),
+			}
+			for _, path := range possiblePaths {
+				if _, err := os.Stat(path); err == nil {
+					ethdbPath = path
+					break
+				}
+			}
 		} else {
 			ethdbPath = filepath.Join(".", "ethdb") // fallback
 		}
-		if _, err := os.Stat(ethdbPath); err == nil {
+		if ethdbPath != "" && ethdbPath != filepath.Join(".", "ethdb") {
 			// Re-open the ethdb with proper config for the backend
 			badgerConfig := BadgerDatabaseConfig{
 				DataDir:       ethdbPath,
@@ -629,7 +655,7 @@ func (vm *VM) Initialize(
 			}
 			if directDB, err := NewBadgerDatabase(nil, badgerConfig); err == nil {
 				dbToUse = directDB
-				fmt.Printf("Using direct ethdb for migrated backend\n")
+				fmt.Printf("Using direct ethdb for migrated backend from %s\n", ethdbPath)
 			}
 		}
 
