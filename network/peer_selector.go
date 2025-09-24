@@ -12,7 +12,6 @@ import (
 
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/utils/wrappers"
 )
 
 // ConsistentHashPeerSelector implements O(1) peer selection using consistent hashing
