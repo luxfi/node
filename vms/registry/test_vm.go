@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package registry
@@ -9,7 +9,6 @@ import (
 
 	consensusContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/database/manager"
 )
 
@@ -40,7 +39,7 @@ func (vm *testVM) Initialize(
 	return nil
 }
 
-func (vm *testVM) SetState(ctx context.Context, state interfaces.State) error {
+func (vm *testVM) SetState(ctx context.Context, state core.VMState) error {
 	return nil
 }
 
@@ -70,38 +69,4 @@ func (vm *testVM) CreateStaticHandlers(ctx context.Context) (map[string]http.Han
 	return nil, nil
 }
 
-func (vm *testVM) Connected(ctx context.Context, nodeID interface{}, nodeVersion interface{}) error {
-	return nil
-}
 
-func (vm *testVM) Disconnected(ctx context.Context, nodeID interface{}) error {
-	return nil
-}
-
-func (vm *testVM) BuildBlock(context.Context) (interface{}, error) {
-	return nil, nil
-}
-
-func (vm *testVM) ParseBlock(context.Context, []byte) (interface{}, error) {
-	return nil, nil
-}
-
-func (vm *testVM) GetBlock(context.Context, interface{}) (interface{}, error) {
-	return nil, nil
-}
-
-func (vm *testVM) SetPreference(context.Context, interface{}) error {
-	return nil
-}
-
-func (vm *testVM) LastAccepted(context.Context) (interface{}, error) {
-	return nil, nil
-}
-
-func (vm *testVM) VerifyHeightIndex(context.Context) error {
-	return nil
-}
-
-func (vm *testVM) GetBlockIDAtHeight(context.Context, uint64) (interface{}, error) {
-	return nil, nil
-}
