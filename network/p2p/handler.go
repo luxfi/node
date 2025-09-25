@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -7,9 +7,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
 )
 
@@ -150,7 +150,7 @@ func (r *responder) CrossChainAppRequest(ctx context.Context, chainID ids.ID, re
 	if extSender, ok := r.sender.(ExtendedAppSender); ok {
 		return extSender.SendCrossChainAppResponse(ctx, chainID, requestID, appResponse)
 	}
-	
+
 	// If sender doesn't support cross-chain, just log and return success
 	// This allows tests to pass without full cross-chain support
 	r.log.Debug("sender doesn't support cross-chain responses, ignoring response",

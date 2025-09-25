@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -32,7 +32,7 @@ var (
 	ErrStakeOverflow                   = errors.New("validator stake exceeds limit")
 	ErrPeriodMismatch                  = errors.New("proposed staking period is not inside dependant staking period")
 	ErrOverDelegated                   = errors.New("validator would be over delegated")
-	ErrIsNotTransformNetTx          = errors.New("is not a transform net tx")
+	ErrIsNotTransformNetTx             = errors.New("is not a transform net tx")
 	ErrTimestampNotBeforeStartTime     = errors.New("chain timestamp not before start time")
 	ErrAlreadyValidator                = errors.New("already a validator")
 	ErrDuplicateValidator              = errors.New("duplicate validator")

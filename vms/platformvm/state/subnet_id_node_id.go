@@ -15,8 +15,8 @@ const netIDNodeIDEntryLength = ids.IDLen + ids.NodeIDLen
 var errUnexpectedNetIDNodeIDLength = fmt.Errorf("expected netID+nodeID entry length %d", netIDNodeIDEntryLength)
 
 type netIDNodeID struct {
-	netID ids.ID
-	nodeID   ids.NodeID
+	netID  ids.ID
+	nodeID ids.NodeID
 }
 
 func (s *netIDNodeID) Marshal() []byte {

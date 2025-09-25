@@ -518,18 +518,18 @@ func (mr *MockStateMockRecorder) GetRewardUTXOs(txID any) *gomock.Call {
 }
 
 // GetStartTime mocks base method.
-func (m *MockState) GetStartTime(nodeID ids.NodeID) (time.Time, error) {
+func (m *MockState) GetStartTime(nodeID ids.NodeID, netID ids.ID) (time.Time, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetStartTime", nodeID)
+	ret := m.ctrl.Call(m, "GetStartTime", nodeID, netID)
 	ret0, _ := ret[0].(time.Time)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetStartTime indicates an expected call of GetStartTime.
-func (mr *MockStateMockRecorder) GetStartTime(nodeID any) *gomock.Call {
+func (mr *MockStateMockRecorder) GetStartTime(nodeID, netID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStartTime", reflect.TypeOf((*MockState)(nil).GetStartTime), nodeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStartTime", reflect.TypeOf((*MockState)(nil).GetStartTime), nodeID, netID)
 }
 
 // GetStatelessBlock mocks base method.
@@ -623,19 +623,19 @@ func (mr *MockStateMockRecorder) GetUTXO(utxoID any) *gomock.Call {
 }
 
 // GetUptime mocks base method.
-func (m *MockState) GetUptime(nodeID ids.NodeID) (time.Duration, time.Time, error) {
+func (m *MockState) GetUptime(nodeID ids.NodeID, netID ids.ID) (time.Duration, time.Duration, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUptime", nodeID)
+	ret := m.ctrl.Call(m, "GetUptime", nodeID, netID)
 	ret0, _ := ret[0].(time.Duration)
-	ret1, _ := ret[1].(time.Time)
+	ret1, _ := ret[1].(time.Duration)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // GetUptime indicates an expected call of GetUptime.
-func (mr *MockStateMockRecorder) GetUptime(nodeID any) *gomock.Call {
+func (mr *MockStateMockRecorder) GetUptime(nodeID, netID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUptime", reflect.TypeOf((*MockState)(nil).GetUptime), nodeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUptime", reflect.TypeOf((*MockState)(nil).GetUptime), nodeID, netID)
 }
 
 // HasL1Validator mocks base method.
@@ -818,17 +818,17 @@ func (mr *MockStateMockRecorder) SetTimestamp(tm any) *gomock.Call {
 }
 
 // SetUptime mocks base method.
-func (m *MockState) SetUptime(nodeID ids.NodeID, upDuration time.Duration, lastUpdated time.Time) error {
+func (m *MockState) SetUptime(nodeID ids.NodeID, netID ids.ID, uptime time.Duration, lastUpdated time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetUptime", nodeID, upDuration, lastUpdated)
+	ret := m.ctrl.Call(m, "SetUptime", nodeID, netID, uptime, lastUpdated)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetUptime indicates an expected call of SetUptime.
-func (mr *MockStateMockRecorder) SetUptime(nodeID, upDuration, lastUpdated any) *gomock.Call {
+func (mr *MockStateMockRecorder) SetUptime(nodeID, netID, uptime, lastUpdated any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUptime", reflect.TypeOf((*MockState)(nil).SetUptime), nodeID, upDuration, lastUpdated)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUptime", reflect.TypeOf((*MockState)(nil).SetUptime), nodeID, netID, uptime, lastUpdated)
 }
 
 // UTXOIDs mocks base method.

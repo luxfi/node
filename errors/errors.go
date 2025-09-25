@@ -60,14 +60,14 @@ var (
 type Category string
 
 const (
-	CategoryDatabase    Category = "database"
-	CategoryNetwork     Category = "network"
-	CategoryValidation  Category = "validation"
-	CategoryState       Category = "state"
-	CategoryResource    Category = "resource"
-	CategoryPermission  Category = "permission"
-	CategoryInternal    Category = "internal"
-	CategoryUnknown     Category = "unknown"
+	CategoryDatabase   Category = "database"
+	CategoryNetwork    Category = "network"
+	CategoryValidation Category = "validation"
+	CategoryState      Category = "state"
+	CategoryResource   Category = "resource"
+	CategoryPermission Category = "permission"
+	CategoryInternal   Category = "internal"
+	CategoryUnknown    Category = "unknown"
 )
 
 // WrappedError provides context around an error

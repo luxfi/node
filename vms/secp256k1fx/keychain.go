@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -12,10 +12,10 @@ import (
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/wallet/keychain"
-	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/wallet/keychain"
 )
 
 var (

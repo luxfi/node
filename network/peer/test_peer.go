@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -12,8 +12,6 @@ import (
 
 	"github.com/luxfi/metric"
 
-	luxmetrics "github.com/luxfi/metric"
-
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
 	consensusset "github.com/luxfi/consensus/utils/set"
@@ -21,12 +19,12 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 )
 
@@ -78,7 +76,7 @@ func StartTestPeer(
 	promRegistry := metric.NewRegistry()
 
 	// Create a no-op metrics instance for message creator
-	metricsInstance := luxmetrics.NewNoOpMetrics("test")
+	metricsInstance := metric.NewNoOp()
 
 	mc, err := message.NewCreator(
 		nil,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -60,7 +60,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 
 	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/metrics"
 
 	"github.com/luxfi/node/vms/platformvm/status"
 
@@ -70,8 +69,8 @@ import (
 
 	"github.com/luxfi/node/vms/platformvm/txs/txstest"
 
-	"github.com/luxfi/node/vms/platformvm/upgrade"
 	"github.com/luxfi/node/vms/platformvm/testcontext"
+	"github.com/luxfi/node/vms/platformvm/upgrade"
 
 	"github.com/luxfi/node/vms/platformvm/utxo"
 
@@ -197,6 +196,7 @@ func newEnvironment(t *testing.T, f fork) *environment {
 		FlowChecker:  utxosHandler,
 		Uptimes:      uptimes,
 		Rewards:      rewards,
+		Lock:         ctx.Lock,
 	}
 
 	env := &environment{
@@ -288,7 +288,7 @@ func defaultState(
 		cfg,
 		execCfg,
 		ctx.Context,
-		metrics.Noop,
+		metric.NewNoOp(),
 		rewards,
 	)
 	if err != nil {
@@ -311,8 +311,8 @@ func defaultConfig(t *testing.T, f fork) *config.Config {
 		Validators:             validators.NewManager(),
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                 defaultTxFee,
-			CreateNetTxFee:     100 * defaultTxFee,
-			CreateBlockchainTxFee: 100 * defaultTxFee,
+			CreateNetTxFee:        10 * defaultTxFee, // Reduced for testing
+			CreateBlockchainTxFee: 10 * defaultTxFee, // Reduced for testing
 		},
 		MinValidatorStake: 5 * units.MilliLux,
 		MaxValidatorStake: 500 * units.MilliLux,
@@ -393,7 +393,7 @@ func defaultFx(clk *mockable.Clock, log log.Logger, isBootstrapped bool) fx.Fx {
 	// Convert consensus clock to utils clock
 	utilsClock := &mockable.Clock{}
 	utilsClock.Set(clk.Time())
-	
+
 	fxVMInt := &fxVMInt{
 		registry: linearcodec.NewDefault(),
 		clk:      utilsClock,

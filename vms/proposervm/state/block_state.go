@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -6,10 +6,10 @@ package state
 import (
 	"errors"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/utils/constants"
@@ -42,8 +42,8 @@ type blockState struct {
 }
 
 type blockWrapper struct {
-	Block      []byte `serialize:"true"`
-	StatusInt  uint32 `serialize:"true"` // Store status as uint32 for serialization
+	Block     []byte `serialize:"true"`
+	StatusInt uint32 `serialize:"true"` // Store status as uint32 for serialization
 
 	block  block.Block
 	status choices.Status // Keep the actual status here

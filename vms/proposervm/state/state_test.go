@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -29,7 +29,7 @@ func TestMeteredState(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	s, err := NewMetered(vdb, "", metric.NewNoOpMetrics("test").Registry())
+	s, err := NewMetered(vdb, "", metric.NewNoOp().Registry())
 	a.NoError(err)
 
 	testBlockState(a, s)

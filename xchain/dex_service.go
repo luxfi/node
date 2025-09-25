@@ -14,20 +14,20 @@ import (
 type DEXService struct {
 	transport *TransportManager
 	config    *ServiceConfig
-	
+
 	// Separate handlers for different protocols
-	grpcHandler  *GRPCHandler
-	qzmqHandler  *QZMQHandler
+	grpcHandler *GRPCHandler
+	qzmqHandler *QZMQHandler
 }
 
 // ServiceConfig configures the DEX service
 type ServiceConfig struct {
 	// UseQZMQForDEX enables QZMQ for DEX operations
 	UseQZMQForDEX bool
-	
+
 	// UseGRPCForConsensus keeps gRPC for consensus (default)
 	UseGRPCForConsensus bool
-	
+
 	// EnableQuantumSecurity enables post-quantum crypto for DEX
 	EnableQuantumSecurity bool
 }
@@ -39,21 +39,21 @@ func NewDEXService(transportConfig *TransportConfig, serviceConfig *ServiceConfi
 	if err != nil {
 		return nil, err
 	}
-	
+
 	service := &DEXService{
 		transport: tm,
 		config:    serviceConfig,
 	}
-	
+
 	// Initialize protocol-specific handlers
 	if transportConfig.EnableGRPC {
 		service.grpcHandler = NewGRPCHandler(tm.grpcServer)
 	}
-	
+
 	if transportConfig.EnableQZMQ {
 		service.qzmqHandler = NewQZMQHandler(tm.qzmqTransport)
 	}
-	
+
 	return service, nil
 }
 
@@ -79,16 +79,16 @@ func NewQZMQHandler(transport *qzmq.XChainDEXTransport) *QZMQHandler {
 func (s *DEXService) SubmitOrder(ctx context.Context, order *Order) error {
 	// Check which transport to use
 	protocol := s.transport.GetProtocolForMessage("order")
-	
+
 	switch protocol {
 	case TransportQZMQ:
 		// Use QZMQ for quantum-secure order submission
 		return s.submitOrderViaQZMQ(order)
-		
+
 	case TransportGRPC:
 		// Use gRPC (default)
 		return s.submitOrderViaGRPC(ctx, order)
-		
+
 	default:
 		return fmt.Errorf("unknown protocol: %s", protocol)
 	}
@@ -106,11 +106,11 @@ func (s *DEXService) submitOrderViaQZMQ(order *Order) error {
 		UserAddr: order.UserAddress,
 		AssetID:  order.AssetID,
 	}
-	
+
 	// Sign with quantum-secure signature
 	qzmqOrder.Signature = s.signWithMLDSA(qzmqOrder)
 	qzmqOrder.Certificate = s.generateQuantumCertificate(qzmqOrder)
-	
+
 	// Submit via QZMQ transport
 	return s.qzmqHandler.transport.SubmitOrder(qzmqOrder)
 }
@@ -125,12 +125,12 @@ func (s *DEXService) submitOrderViaGRPC(ctx context.Context, order *Order) error
 func (s *DEXService) BroadcastBlock(ctx context.Context, block *Block) error {
 	// Consensus uses gRPC by default
 	protocol := s.transport.GetProtocolForMessage("block")
-	
+
 	if protocol == TransportGRPC {
 		// Use existing gRPC broadcast
 		return s.broadcastViaGRPC(ctx, block)
 	}
-	
+
 	// Could also use QZMQ if configured
 	return s.broadcastViaQZMQ(block)
 }
@@ -200,19 +200,19 @@ func (s *DEXService) Start() error {
 	if err := s.transport.Start(); err != nil {
 		return err
 	}
-	
+
 	log.Println("X-Chain DEX Service started")
-	
+
 	if s.config.UseGRPCForConsensus {
 		log.Println("  - Consensus: gRPC (default)")
 	}
-	
+
 	if s.config.UseQZMQForDEX {
 		log.Println("  - DEX Operations: QZMQ (quantum-secure)")
 	} else {
 		log.Println("  - DEX Operations: gRPC (default)")
 	}
-	
+
 	return nil
 }
 
@@ -223,45 +223,45 @@ func ExampleHybridTransport() {
 		Type:       TransportHybrid, // Use both protocols
 		EnableGRPC: true,            // gRPC for consensus and general ops
 		EnableQZMQ: true,            // QZMQ for DEX operations
-		
+
 		GRPCConfig: &GRPCTransportConfig{
 			Port:      9090,
 			EnableTLS: true,
 		},
-		
+
 		QZMQConfig: &QZMQTransportConfig{
-			EnableQuantum: true,        // Quantum security for DEX
+			EnableQuantum: true, // Quantum security for DEX
 			DEXPort:       6000,
 			SecurityMode:  "conservative",
 		},
-		
+
 		NetworkPipes: &NetworkPipeConfig{
-			P2PPort: 9651,    // Standard Lux P2P port
-			RPCPort: 9650,    // Standard Lux RPC port
+			P2PPort: 9651, // Standard Lux P2P port
+			RPCPort: 9630, // Standard Lux RPC port
 			Peers: []string{
 				"validator1.example.com",
 				"validator2.example.com",
 			},
 		},
 	}
-	
+
 	serviceConfig := &ServiceConfig{
-		UseGRPCForConsensus:   true,  // Keep gRPC for consensus
-		UseQZMQForDEX:        true,  // Enable QZMQ for DEX
-		EnableQuantumSecurity: true,  // Quantum-secure DEX operations
+		UseGRPCForConsensus:   true, // Keep gRPC for consensus
+		UseQZMQForDEX:         true, // Enable QZMQ for DEX
+		EnableQuantumSecurity: true, // Quantum-secure DEX operations
 	}
-	
+
 	// Create DEX service with hybrid transport
 	dexService, err := NewDEXService(transportConfig, serviceConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	// Start the service
 	if err := dexService.Start(); err != nil {
 		log.Fatal(err)
 	}
-	
+
 	// Example: Submit an order (will use QZMQ automatically)
 	order := &Order{
 		ID:       "order-123",
@@ -271,22 +271,22 @@ func ExampleHybridTransport() {
 		Price:    1000000000, // $10.00
 		Quantity: 100000000,  // 1.00 LUX
 	}
-	
+
 	ctx := context.Background()
 	if err := dexService.SubmitOrder(ctx, order); err != nil {
 		log.Printf("Failed to submit order: %v", err)
 	}
-	
+
 	// Example: Broadcast a block (will use gRPC by default)
 	block := &Block{
 		Height: 12345,
 		Data:   []byte("block data"),
 	}
-	
+
 	if err := dexService.BroadcastBlock(ctx, block); err != nil {
 		log.Printf("Failed to broadcast block: %v", err)
 	}
-	
+
 	fmt.Println(`
 Transport Protocol Usage:
 ========================

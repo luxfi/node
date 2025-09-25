@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
-	"github.com/luxfi/node/proto/pb/signer"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
+	"github.com/luxfi/node/proto/pb/signer"
 )
 
 var (
@@ -121,17 +121,9 @@ func (c *stubClient) Sign(_ context.Context, in *signer.SignRequest, _ ...grpc.C
 		}, nil
 	// the client expects a compressed signature so this signature is invalid
 	case string(uncompressedSignatureMsg):
-		sig, err := c.signer.Sign(in.Message)
-		if err != nil {
-			return nil, err
-		}
-
-		bytes := bls.SignatureToBytes(sig)
-
+		// Return an invalid uncompressed signature to trigger decompression error
 		return &signer.SignResponse{
-			// here, we're using the compressed signature length
-			// we could also use the full signature
-			Signature: bytes[:bls.SignatureLen],
+			Signature: make([]byte, 192), // Uncompressed BLS signature size
 		}, nil
 	case string(emptySignatureMsg):
 		return &signer.SignResponse{
@@ -156,15 +148,9 @@ func (c *stubClient) SignProofOfPossession(_ context.Context, in *signer.SignPro
 			Signature: bls.SignatureToBytes(sig),
 		}, nil
 	case string(uncompressedSignatureMsg):
-		sig, err := c.signer.SignProofOfPossession(in.Message)
-		if err != nil {
-			return nil, err
-		}
-
-		bytes := bls.SignatureToBytes(sig)
-
+		// Return an invalid uncompressed signature to trigger decompression error
 		return &signer.SignProofOfPossessionResponse{
-			Signature: bytes[:bls.SignatureLen],
+			Signature: make([]byte, 192), // Uncompressed BLS signature size
 		}, nil
 	case string(emptySignatureMsg):
 		return &signer.SignProofOfPossessionResponse{

@@ -22,7 +22,7 @@ type Wallet struct {
 	chainID *big.Int
 	signer  types.Signer
 	client  *ethclient.Client
-	metrics metrics
+	metrics metricsImpl
 }
 
 func newWallet(
@@ -30,7 +30,7 @@ func newWallet(
 	nonce uint64,
 	chainID *big.Int,
 	client *ethclient.Client,
-	metrics metrics,
+	metrics metricsImpl,
 ) *Wallet {
 	return &Wallet{
 		privKey: privKey,

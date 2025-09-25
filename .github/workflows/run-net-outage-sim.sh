@@ -17,7 +17,7 @@ wait_until_healthy () {
   do
     echo "Checking if local node is healthy..."
     # Ignore error in case of ephemeral failure to hit node's API
-    response=$(curl --write-out '%{http_code}' --silent --output /dev/null localhost:9650/ext/health)
+    response=$(curl --write-out '%{http_code}' --silent --output /dev/null localhost:9630/ext/health)
     echo "got status code $response from health endpoint"
     # check that 3 hours haven't passed
     now=$(date +%s)
@@ -59,7 +59,7 @@ echo "Creating Docker network..."
 docker network create controlled-net
 
 echo "Starting Docker container..."
-containerID=$(docker run --name="net_outage_simulation" --memory="12g" --memory-reservation="11g" --cpus="6.0" --net=controlled-net -p 9650:9650 -p 9651:9651 -v /var/lib/node/db:/db -d luxfi/node:latest /node/build/luxd --db-dir /db --http-host=0.0.0.0)
+containerID=$(docker run --name="net_outage_simulation" --memory="12g" --memory-reservation="11g" --cpus="6.0" --net=controlled-net -p 9630:9630 -p 9651:9651 -v /var/lib/node/db:/db -d luxfi/node:latest /node/build/luxd --db-dir /db --http-host=0.0.0.0)
 
 echo "Waiting 30 seconds for node to start..."
 sleep 30

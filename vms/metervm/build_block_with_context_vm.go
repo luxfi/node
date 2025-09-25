@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metervm
@@ -25,6 +25,6 @@ func (vm *blockVM) BuildBlockWithContext(ctx context.Context, blockCtx *block.Co
 	vm.blockMetrics.buildBlockWithContext.Observe(duration)
 	return &meterBlock{
 		innerBlock: blk,
-		vm:    vm,
+		vm:         vm,
 	}, nil
 }

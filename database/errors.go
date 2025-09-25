@@ -5,12 +5,10 @@ package database
 
 import (
 	"errors"
-
-	luxdb "github.com/luxfi/database"
 )
 
 // common errors
 var (
 	ErrClosed   = errors.New("closed")
-	ErrNotFound = luxdb.ErrNotFound
+	ErrNotFound = errors.New("not found")
 )

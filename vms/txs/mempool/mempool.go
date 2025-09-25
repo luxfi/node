@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package mempool
@@ -9,9 +9,9 @@ import (
 	"sync"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/setmap"
 	"github.com/luxfi/node/utils/units"
 )

@@ -17,7 +17,7 @@ const (
 	kubeRuntime     = "kube"
 	kubeFlagsPrefix = kubeRuntime + "-"
 	kubeDocPrefix   = "[kube runtime] "
-	
+
 	DefaultTmpnetNamespace = "tmpnet"
 )
 

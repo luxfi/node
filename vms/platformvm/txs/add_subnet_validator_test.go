@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
-// TODO use table tests here
+// Note: Consider refactoring to use table tests for better test organization
 func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
 	clk := mockable.Clock{}
@@ -28,15 +28,15 @@ func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: constants.UnitTestID,
-		ChainID:    testChainID,
+		ChainID:   testChainID,
 		NodeID:    nodeID,
 	})
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
-		stx                  *Tx
+		stx               *Tx
 		addNetValidatorTx *AddNetValidatorTx
-		err                  error
+		err               error
 	)
 
 	// Case : signed tx is nil
@@ -153,15 +153,15 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: constants.UnitTestID,
-		ChainID:    testChainID,
+		ChainID:   testChainID,
 		NodeID:    nodeID,
 	})
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
 
 	var (
-		stx                  *Tx
+		stx               *Tx
 		addNetValidatorTx *AddNetValidatorTx
-		err                  error
+		err               error
 	)
 
 	// create a valid tx

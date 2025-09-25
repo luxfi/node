@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	luxmetric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 func TestValidatorsSample(t *testing.T) {
@@ -185,7 +185,7 @@ func TestValidatorsSample(t *testing.T) {
 				}
 				call := tt.calls[callIndex]
 				callIndex++
-				
+
 				if call.getCurrentHeightErr != nil {
 					return nil, call.getCurrentHeightErr
 				}
@@ -201,8 +201,8 @@ func TestValidatorsSample(t *testing.T) {
 			}
 
 			fakeSender := &FakeSender{}
-	sender := &fakeSenderAdapter{FakeSender: fakeSender}
-	network, err := NewNetwork(log.NoLog{}, sender, luxmetric.NewNoOpMetrics("test").Registry(), "")
+			sender := &fakeSenderAdapter{FakeSender: fakeSender}
+			network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()
@@ -326,8 +326,8 @@ func TestValidatorsTop(t *testing.T) {
 			}
 
 			fakeSender := &FakeSender{}
-	sender := &fakeSenderAdapter{FakeSender: fakeSender}
-	network, err := NewNetwork(log.NoLog{}, sender, luxmetric.NewNoOpMetrics("test").Registry(), "")
+			sender := &fakeSenderAdapter{FakeSender: fakeSender}
+			network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()

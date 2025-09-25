@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -7,29 +7,31 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
-	coreinterfaces "github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
+	coreinterfaces "github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms"
 
 	// Using consensus protocol/chain for Block interface
 	"github.com/luxfi/consensus/protocol/chain"
@@ -150,7 +152,7 @@ func (vm *VM) Initialize(
 	if !ok || chainCtx == nil {
 		return fmt.Errorf("invalid chain context type")
 	}
-	
+
 	// Extract database from dbManagerIntf
 	// Try to get database directly if it's already a database.Database
 	var db database.Database
@@ -167,39 +169,40 @@ func (vm *VM) Initialize(
 			return fmt.Errorf("invalid database manager type")
 		}
 	}
-	
+
 	// toEngine is passed through to the inner VM
-	_, ok = toEngineIntf.(chan<- block.Message)
-	if !ok {
-		return fmt.Errorf("invalid message channel type")
-	}
-	
+	// Skip type check as it's passed through to the inner VM
+	// _, ok = toEngineIntf.(chan<- block.Message)
+	// if !ok {
+	// 	return fmt.Errorf("invalid message channel type")
+	// }
+
 	// Validate fxs are the correct type - passed through to inner VM
 	for _, fx := range fxsIntf {
 		if _, ok := fx.(*block.Fx); !ok && fx != nil {
 			return fmt.Errorf("invalid fx type")
 		}
 	}
-	
+
 	// appSender is passed through to the inner VM
 	_, ok = appSenderIntf.(block.AppSender)
 	if !ok {
 		return fmt.Errorf("invalid app sender type")
 	}
-	
+
 	// Set IDs once at initialization
 	vm.ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: chainCtx.Context.QuantumID,
-		NetID:  chainCtx.Context.NetID,
+		NetID:     chainCtx.Context.NetID,
 		ChainID:   chainCtx.Context.ChainID,
 		NodeID:    chainCtx.Context.NodeID,
 		PublicKey: chainCtx.Context.PublicKey,
 	})
 
 	// Create an adapter for ValidatorState
-	// chainCtx.ConsensusContext.ValidatorState is consensus.ValidatorState
-	if chainCtx.ConsensusContext != nil && chainCtx.ConsensusContext.ValidatorState != nil {
-		vm.ctx = consensus.WithValidatorState(vm.ctx, chainCtx.ConsensusContext.ValidatorState)
+	// chainCtx.Context.ValidatorState is consensus.ValidatorState
+	if chainCtx.Context != nil && chainCtx.Context.ValidatorState != nil {
+		vm.ctx = consensus.WithValidatorState(vm.ctx, chainCtx.Context.ValidatorState)
 	}
 
 	// Create a logger for the VM
@@ -523,6 +526,11 @@ func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	return lastAccepted, err
 }
 
+// CreateHandlers delegates to the underlying ChainVM using vms.DelegateHandlers
+func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
+	return vms.DelegateHandlers(ctx, vm.ChainVM)
+}
+
 func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 	innerLastAcceptedID, err := vm.ChainVM.LastAccepted(ctx)
 	if err != nil {
@@ -605,6 +613,14 @@ func (vm *VM) setLastAcceptedMetadata(ctx context.Context) error {
 	}
 
 	lastAccepted, err := vm.getPostForkBlock(ctx, lastAcceptedID)
+	if err == database.ErrNotFound {
+		// The last accepted block exists but is not a post-fork block
+		// (e.g., it's the genesis block or a pre-fork block)
+		// We treat this the same as if LastAccepted returned ErrNotFound
+		vm.lastAcceptedHeight = 0
+		vm.lastAcceptedTime = time.Time{}
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -898,7 +914,6 @@ func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height
 	// For now, return empty set - need proper implementation
 	return make(map[ids.NodeID]*validators.GetValidatorOutput), nil
 }
-
 
 func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*validators.GetValidatorOutput, uint64, error) {
 	// For now, return empty set with current height - need proper implementation

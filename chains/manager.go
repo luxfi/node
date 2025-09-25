@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chains
@@ -17,6 +17,7 @@ import (
 	"github.com/luxfi/consensus"
 	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/metric"
 	// "github.com/luxfi/consensus/core/interfaces" // Not used
 	// "github.com/luxfi/consensus/core/tracker" // Not used
 	"github.com/luxfi/consensus/engine/chain/block"
@@ -32,7 +33,6 @@ import (
 
 	// "github.com/luxfi/consensus/engine/chain/syncer" // Not used
 	"github.com/luxfi/consensus/networking/handler"
-	"github.com/luxfi/node/router"
 	"github.com/luxfi/consensus/networking/sender"
 	"github.com/luxfi/consensus/networking/timeout"
 	consensusset "github.com/luxfi/consensus/utils/set"
@@ -43,15 +43,15 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	luxmetric "github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/router"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/metric"
+	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
@@ -175,7 +175,7 @@ type ChainParameters struct {
 type chainInfo struct {
 	Name    string
 	Context context.Context
-	VM      interface{} // Changed from core.VM since core.VM uses consensus.Context
+	VM      interface{} // Changed from core.VM since core.VM uses context.Context
 	Handler handler.Handler
 	Engine  Engine // Added to handle Start/Stop operations
 }
@@ -207,9 +207,19 @@ func (s *senderToAppSenderAdapter) SendAppGossip(ctx context.Context, appGossipB
 	return nil
 }
 
-// chainVMWrapper wraps block.ChainVM to implement core.VM
+// chainVMWrapper wraps block.ChainVM to implement core.VM.
+// Uses vms.HandlerDelegator for clean, DRY handler delegation.
 type chainVMWrapper struct {
 	vm block.ChainVM
+	*vms.HandlerDelegator[block.ChainVM]
+}
+
+// newChainVMWrapper creates a wrapper that properly delegates handlers
+func newChainVMWrapper(vm block.ChainVM) *chainVMWrapper {
+	return &chainVMWrapper{
+		vm:               vm,
+		HandlerDelegator: vms.NewHandlerDelegator(vm),
+	}
 }
 
 func (c *chainVMWrapper) Initialize(
@@ -233,15 +243,8 @@ func (c *chainVMWrapper) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (c *chainVMWrapper) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	// ChainVM doesn't have CreateHandlers, return empty map
-	return make(map[string]http.Handler), nil
-}
-
-func (c *chainVMWrapper) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	// ChainVM doesn't have CreateStaticHandlers, return empty map
-	return make(map[string]http.Handler), nil
-}
+// CreateHandlers and CreateStaticHandlers are inherited from HandlerDelegator.
+// No duplicate code needed - beautiful composition!
 
 func (c *chainVMWrapper) HealthCheck(ctx context.Context) (interface{}, error) {
 	// ChainVM doesn't have HealthCheck, return nil
@@ -362,7 +365,7 @@ func (v *consensusValidatorStateWrapper) GetCurrentValidators(ctx context.Contex
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Convert to GetValidatorOutput format
 	result := make(map[ids.NodeID]*consContext.GetValidatorOutput, len(valSet))
 	for nodeID, val := range valSet {
@@ -448,8 +451,8 @@ type ManagerConfig struct {
 	ShutdownNodeFunc func(exitCode int)
 	MeterVMEnabled   bool // Should each VM be wrapped with a MeterVM
 
-	Metrics        luxmetric.MultiGatherer
-	MeterDBMetrics luxmetric.MultiGatherer
+	Metrics        metric.MultiGatherer
+	MeterDBMetrics metric.MultiGatherer
 
 	FrontierPollFrequency   time.Duration
 	ConsensusAppConcurrency int
@@ -502,55 +505,55 @@ type manager struct {
 	// linear++ related interface to allow validators retrieval
 	validatorState validators.State
 
-	luxGatherer          luxmetric.MultiGatherer            // chainID
-	handlerGatherer      luxmetric.MultiGatherer            // chainID
-	meterChainVMGatherer luxmetric.MultiGatherer            // chainID
-	meterGRAPHVMGatherer luxmetric.MultiGatherer            // chainID
-	proposervmGatherer   luxmetric.MultiGatherer            // chainID
-	p2pGatherer          luxmetric.MultiGatherer            // chainID
-	linearGatherer       luxmetric.MultiGatherer            // chainID
-	stakeGatherer        luxmetric.MultiGatherer            // chainID
-	vmGatherer           map[ids.ID]luxmetric.MultiGatherer // vmID -> chainID
+	luxGatherer          metric.MultiGatherer            // chainID
+	handlerGatherer      metric.MultiGatherer            // chainID
+	meterChainVMGatherer metric.MultiGatherer            // chainID
+	meterGRAPHVMGatherer metric.MultiGatherer            // chainID
+	proposervmGatherer   metric.MultiGatherer            // chainID
+	p2pGatherer          metric.MultiGatherer            // chainID
+	linearGatherer       metric.MultiGatherer            // chainID
+	stakeGatherer        metric.MultiGatherer            // chainID
+	vmGatherer           map[ids.ID]metric.MultiGatherer // vmID -> chainID
 }
 
 // New returns a new Manager
 func New(config *ManagerConfig) (Manager, error) {
-	luxGatherer := luxmetric.NewLabelGatherer(ChainLabel)
+	luxGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(luxNamespace, luxGatherer); err != nil {
 		return nil, err
 	}
 
-	handlerGatherer := luxmetric.NewLabelGatherer(ChainLabel)
+	handlerGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(handlerNamespace, handlerGatherer); err != nil {
 		return nil, err
 	}
 
-	meterChainVMGatherer := luxmetric.NewLabelGatherer(ChainLabel)
+	meterChainVMGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(meterchainvmNamespace, meterChainVMGatherer); err != nil {
 		return nil, err
 	}
 
-	meterGRAPHVMGatherer := luxmetric.NewLabelGatherer(ChainLabel)
+	meterGRAPHVMGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(meterdagvmNamespace, meterGRAPHVMGatherer); err != nil {
 		return nil, err
 	}
 
-	proposervmGatherer := luxmetric.NewLabelGatherer(ChainLabel)
+	proposervmGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(proposervmNamespace, proposervmGatherer); err != nil {
 		return nil, err
 	}
 
-	p2pGatherer := luxmetric.NewLabelGatherer(ChainLabel)
+	p2pGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(p2pNamespace, p2pGatherer); err != nil {
 		return nil, err
 	}
 
-	linearGatherer := luxmetric.NewLabelGatherer(ChainLabel)
+	linearGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(linearNamespace, linearGatherer); err != nil {
 		return nil, err
 	}
 
-	stakeGatherer := luxmetric.NewLabelGatherer(ChainLabel)
+	stakeGatherer := metric.NewLabelGatherer(ChainLabel)
 	if err := config.Metrics.Register(stakeNamespace, stakeGatherer); err != nil {
 		return nil, err
 	}
@@ -571,7 +574,7 @@ func New(config *ManagerConfig) (Manager, error) {
 		p2pGatherer:          p2pGatherer,
 		linearGatherer:       linearGatherer,
 		stakeGatherer:        stakeGatherer,
-		vmGatherer:           make(map[ids.ID]luxmetric.MultiGatherer),
+		vmGatherer:           make(map[ids.ID]metric.MultiGatherer),
 	}, nil
 }
 
@@ -643,8 +646,46 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// upon start is dropped.
 	chain, err := m.buildChain(chainParams, sb)
 	if err != nil {
+		// Special handling for X-Chain in single validator mode
+		// Allow the node to continue without X-Chain when it fails with VM type error
+		isXChain := chainParams.ID == m.XChainID
+		isVMTypeError := err == errUnknownVMType
+		skipBootstrapMode := m.SkipBootstrap
+
+		// If X-Chain fails with VM type error in single validator mode, just log and continue
+		if isXChain && isVMTypeError && skipBootstrapMode {
+			chainAlias := m.PrimaryAliasOrDefault(chainParams.ID)
+			m.Log.Warn("X-Chain creation failed in single validator mode - continuing without X-Chain",
+				log.Stringer("netID", chainParams.NetID),
+				log.Stringer("chainID", chainParams.ID),
+				log.String("chainAlias", chainAlias),
+				log.Stringer("vmID", chainParams.VMID),
+				log.String("errorString", fmt.Sprintf("%v", err)),
+				log.Err(err),
+			)
+
+			// Register a health check that indicates X-Chain is not running
+			healthCheckErr := fmt.Errorf("X-Chain not running in single validator mode: %w", err)
+			err := m.Health.RegisterHealthCheck(
+				chainAlias,
+				health.CheckerFunc(func(context.Context) (interface{}, error) {
+					return nil, healthCheckErr
+				}),
+				chainParams.NetID.String(),
+			)
+			if err != nil {
+				m.Log.Error("failed to register X-Chain health check",
+					log.Stringer("chainID", chainParams.ID),
+					log.String("chainAlias", chainAlias),
+					log.Err(err),
+				)
+			}
+			return
+		}
+
 		if m.CriticalChains.Contains(chainParams.ID) {
 			// Shut down if we fail to create a required chain (i.e. X, P or C)
+			// unless it's X-Chain with VM type error in single validator mode (handled above)
 			m.Log.Error("error creating required chain",
 				log.Stringer("netID", chainParams.NetID),
 				log.Stringer("chainID", chainParams.ID),
@@ -707,6 +748,45 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// Notify those that registered to be notified when a new chain is created
 	m.notifyRegistrants(chain.Name, chain.Context, chain.VM)
 
+	// Register HTTP handlers for this chain if the VM supports it
+	if vm, ok := chain.VM.(interface {
+		CreateHandlers(context.Context) (map[string]http.Handler, error)
+	}); ok {
+		handlers, err := vm.CreateHandlers(context.TODO())
+		if err != nil {
+			m.Log.Error("failed to create HTTP handlers",
+				log.Stringer("chainID", chainParams.ID),
+				log.Err(err),
+			)
+		} else {
+			// Register each handler with the HTTP server
+			for endpoint, handler := range handlers {
+				chainAlias := chainParams.ID.String()
+				// For C-Chain, also register under the "C" alias
+				if chainParams.ID == m.CChainID {
+					chainAlias = "C"
+				}
+
+				// The base is just "bc/<chainID>" and endpoint is "/rpc" or "/"
+				chainBase := fmt.Sprintf("bc/%s", chainAlias)
+				chainIDBase := fmt.Sprintf("bc/%s", chainParams.ID.String())
+
+				// AddRoute will build the full path as /ext/<base><endpoint>
+				m.Server.AddRoute(handler, chainBase, endpoint)
+				if chainAlias != chainParams.ID.String() {
+					m.Server.AddRoute(handler, chainIDBase, endpoint)
+				}
+
+				m.Log.Info("Registered HTTP handler",
+					log.String("chainAlias", chainAlias),
+					log.Stringer("chainID", chainParams.ID),
+					log.String("base", chainBase),
+					log.String("endpoint", endpoint),
+				)
+			}
+		}
+	}
+
 	// TODO: Fix Router.AddChain - the consensus Router interface has changed
 	// and no longer has an AddChain method. Need to update the routing logic.
 	// m.ManagerConfig.Router.AddChain(chainParams.ID, chain.Handler)
@@ -750,7 +830,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 	chainLog := m.Log // Use main log instead of creating chain-specific log
 
 	// linearMetrics was here but not used in context.Context
-	// linearMetrics, err := luxmetric.MakeAndRegister(
+	// linearMetrics, err := metric.MakeAndRegister(
 	// 	m.linearGatherer,
 	// 	primaryAlias,
 	// )
@@ -768,7 +848,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 		// This would need proper serialization in production
 		pubKeyBytes = nil
 	}
-	
+
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID: m.NetworkID,
 		NetID:     chainParams.NetID,
@@ -857,6 +937,59 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 	// 	return nil, err
 	// }
 
+	// Register HTTP handlers for this chain if the VM supports it
+	m.Log.Info("Checking for CreateHandlers support",
+		log.Stringer("chainID", chainParams.ID),
+		log.String("vmType", fmt.Sprintf("%T", chain.VM)))
+
+	if vm, ok := chain.VM.(interface {
+		CreateHandlers(context.Context) (map[string]http.Handler, error)
+	}); ok {
+		m.Log.Info("VM supports CreateHandlers, calling it now",
+			log.Stringer("chainID", chainParams.ID))
+		handlers, err := vm.CreateHandlers(context.TODO())
+		m.Log.Info("CreateHandlers returned",
+			log.Stringer("chainID", chainParams.ID),
+			log.Int("numHandlers", len(handlers)),
+			log.Err(err))
+		if err != nil {
+			m.Log.Error("failed to create HTTP handlers",
+				log.Stringer("chainID", chainParams.ID),
+				log.Err(err),
+			)
+		} else {
+			// Register each handler with the HTTP server
+			for endpoint, handler := range handlers {
+				chainAlias := chainParams.ID.String()
+				// For C-Chain, also register under the "C" alias
+				if chainParams.ID == m.CChainID {
+					chainAlias = "C"
+				}
+
+				// The base is just "bc/<chainID>" and endpoint is "/rpc" or "/"
+				chainBase := fmt.Sprintf("bc/%s", chainAlias)
+				chainIDBase := fmt.Sprintf("bc/%s", chainParams.ID.String())
+
+				// AddRoute will build the full path as /ext/<base><endpoint>
+				m.Server.AddRoute(handler, chainBase, endpoint)
+				if chainAlias != chainParams.ID.String() {
+					m.Server.AddRoute(handler, chainIDBase, endpoint)
+				}
+
+				m.Log.Info("Registered HTTP handler",
+					log.String("chainAlias", chainAlias),
+					log.Stringer("chainID", chainParams.ID),
+					log.String("base", chainBase),
+					log.String("endpoint", endpoint),
+				)
+			}
+		}
+	} else {
+		m.Log.Info("VM does not support CreateHandlers",
+			log.Stringer("chainID", chainParams.ID),
+			log.String("vmType", fmt.Sprintf("%T", chain.VM)))
+	}
+
 	return chain, nil
 }
 
@@ -904,7 +1037,7 @@ func (m *manager) createLuxChain(
 	_ = &validatorStateWrapper{
 		state: m.validatorState,
 	}
-	meterDBReg, err := luxmetric.MakeAndRegister(
+	meterDBReg, err := metric.MakeAndRegister(
 		m.MeterDBMetrics,
 		primaryAlias,
 	)
@@ -913,7 +1046,7 @@ func (m *manager) createLuxChain(
 	}
 
 	// Create Metrics from Registry for meterdb
-	meterDBMetrics := luxmetric.NewWithRegistry(primaryAlias, meterDBReg)
+	meterDBMetrics := metric.NewWithRegistry(primaryAlias, meterDBReg)
 	meterDB, err := meterdb.New(meterDBMetrics, m.DB)
 	if err != nil {
 		return nil, err
@@ -926,7 +1059,7 @@ func (m *manager) createLuxChain(
 	txBootstrappingDB := prefixdb.New(TxBootstrappingDBPrefix, prefixDB)
 	_ = prefixdb.New(BlockBootstrappingDBPrefix, prefixDB) // blockBootstrappingDB not used for DAG
 
-	luxMetricsReg, err := luxmetric.MakeAndRegister(
+	luxMetricsReg, err := metric.MakeAndRegister(
 		m.luxGatherer,
 		primaryAlias,
 	)
@@ -935,7 +1068,7 @@ func (m *manager) createLuxChain(
 	}
 
 	// Convert Registry to Metrics for queue functions
-	luxMetrics := luxmetric.NewWithRegistry(primaryAlias, luxMetricsReg)
+	luxMetrics := metric.NewWithRegistry(primaryAlias, luxMetricsReg)
 
 	// Create queue blockers for bootstrapping
 	vtxBlocker := queue.NewQueue()
@@ -980,7 +1113,7 @@ func (m *manager) createLuxChain(
 	if chainParams.ID == constants.PlatformChainID {
 		m.Log.Info("skipping proposervm wrapper for Platform chain")
 		// Create a wrapper for the platform VM
-		vmWrapper := &chainVMWrapper{vm: vm}
+		vmWrapper := newChainVMWrapper(vm)
 		return vmWrapper, vm, nil
 	}
 
@@ -992,7 +1125,7 @@ func (m *manager) createLuxChain(
 		chainblockVM = tracedvm.NewBlockVM(chainblockVM, primaryAlias, m.Tracer)
 	}
 
-	proposervmReg, err := luxmetric.MakeAndRegister(
+	proposervmReg, err := metric.MakeAndRegister(
 		m.proposervmGatherer,
 		primaryAlias,
 	)
@@ -1017,7 +1150,7 @@ func (m *manager) createLuxChain(
 	)
 
 	if m.MeterVMEnabled {
-		meterchainvmReg, err := luxmetric.MakeAndRegister(
+		meterchainvmReg, err := metric.MakeAndRegister(
 			m.meterChainVMGatherer,
 			primaryAlias,
 		)
@@ -1058,7 +1191,7 @@ func (m *manager) createLuxChain(
 		sampleK = int(bootstrapWeight)
 	}
 
-	_, err = luxmetric.MakeAndRegister(
+	_, err = metric.MakeAndRegister(
 		m.stakeGatherer,
 		primaryAlias,
 	)
@@ -1074,7 +1207,7 @@ func (m *manager) createLuxChain(
 	// vdrs.RegisterSetCallbackListener(netID, connectedValidators)
 	_ = interface{}(nil) // connectedValidators placeholder
 
-	p2pReg, err := luxmetric.MakeAndRegister(
+	p2pReg, err := metric.MakeAndRegister(
 		m.p2pGatherer,
 		primaryAlias,
 	)
@@ -1093,7 +1226,7 @@ func (m *manager) createLuxChain(
 		return nil, fmt.Errorf("error creating peer tracker: %w", err)
 	}
 
-	_, err = luxmetric.MakeAndRegister(
+	_, err = metric.MakeAndRegister(
 		m.handlerGatherer,
 		primaryAlias,
 	)
@@ -1186,6 +1319,18 @@ func (m *manager) createLuxChain(
 	// Create bootstrapper with a callback function
 	bootstrapCallback := func(ctx context.Context, lastReqID uint32) error {
 		_ = lastReqID // Implementation note
+		
+		// CRITICAL: For Platform chain, unblock other chains when bootstrap completes
+		if chainParams.ID == constants.PlatformChainID {
+			m.Log.Info("Platform chain bootstrap complete - unblocking chain creator")
+			select {
+			case <-m.unblockChainCreatorCh:
+				// Channel already closed, ignore
+			default:
+				close(m.unblockChainCreatorCh)
+			}
+		}
+		
 		return linearEngine.Start(ctx)
 	}
 
@@ -1324,7 +1469,7 @@ func (m *manager) createLinearChain(
 	if err := os.MkdirAll(chainDataDir, perms.ReadWriteExecute); err != nil {
 		return nil, fmt.Errorf("error while creating chain data directory %w", err)
 	}
-	meterDBReg, err := luxmetric.MakeAndRegister(
+	meterDBReg, err := metric.MakeAndRegister(
 		m.MeterDBMetrics,
 		primaryAlias,
 	)
@@ -1333,7 +1478,7 @@ func (m *manager) createLinearChain(
 	}
 
 	// Create Metrics from Registry for meterdb
-	meterDBMetrics := luxmetric.NewWithRegistry(primaryAlias, meterDBReg)
+	meterDBMetrics := metric.NewWithRegistry(primaryAlias, meterDBReg)
 	meterDB, err := meterdb.New(meterDBMetrics, m.DB)
 	if err != nil {
 		return nil, err
@@ -1363,49 +1508,45 @@ func (m *manager) createLinearChain(
 	// We'll use the context directly instead
 	// TODO: Re-enable when consensus package is updated
 	/*
-	ids := consensus.MustIDs(ctx)
-	runtime := &interfaces.Runtime{
-		NetworkID:      ids.NetworkID,
-		NetID:       ids.NetID,
-		ChainID:        ids.ChainID,
-		NodeID:         ids.NodeID,
-		PublicKey:      ids.PublicKey,
-		LUXAssetID:     m.LUXAssetID,
-		CChainID:       m.CChainID,
-		ChainDataDir:   chainDataDir,
-		Log:            m.Log,
-		Metrics:        vmMetrics,
-		ValidatorState: valStateWrapper,
-		BCLookup:       m,
-		SharedMemory:   sharedMem,
-	}
+		ids := consensus.MustIDs(ctx)
+		runtime := &interfaces.Runtime{
+			NetworkID:      ids.NetworkID,
+			NetID:       ids.NetID,
+			ChainID:        ids.ChainID,
+			NodeID:         ids.NodeID,
+			PublicKey:      ids.PublicKey,
+			LUXAssetID:     m.LUXAssetID,
+			CChainID:       m.CChainID,
+			ChainDataDir:   chainDataDir,
+			Log:            m.Log,
+			Metrics:        vmMetrics,
+			ValidatorState: valStateWrapper,
+			BCLookup:       m,
+			SharedMemory:   sharedMem,
+		}
 
-	// Passes messages from the consensus engine to the network
-	messageSender, err := sender.New(
-		runtime,
-		m.MsgCreator,
-		m.Net,                  // Passing network as interface{}
-		m.ManagerConfig.Router, // Passing router as interface{}
-		sb,
-		// ctx.Registerer doesn't exist in context.Context
-	)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize sender: %w", err)
-	}
+		// Passes messages from the consensus engine to the network
+		messageSender, err := sender.New(
+			runtime,
+			m.MsgCreator,
+			m.Net,                  // Passing network as interface{}
+			m.ManagerConfig.Router, // Passing router as interface{}
+			sb,
+			// ctx.Registerer doesn't exist in context.Context
+		)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't initialize sender: %w", err)
+		}
 
-	if m.TracingEnabled {
-		messageSender = sender.Trace(messageSender, m.Tracer)
-	}
+		if m.TracingEnabled {
+			messageSender = sender.Trace(messageSender, m.Tracer)
+		}
 	*/
-	
+
 	// For now, use a nil message sender since sender.New requires Runtime
 	// ExternalSender doesn't exist, just use interface{}
 	_ = interface{}(nil) // messageSender placeholder
 
-	// var (
-	// 	bootstrapFunc func() // Not used
-	// 	// subnetConnector interface{} // Not used
-	// )
 	// If [m.validatorState] is nil then we are creating the P-Chain. Since the
 	// P-Chain is the first chain to be created, we can use it to initialize
 	// required interfaces for the other chains
@@ -1444,9 +1585,8 @@ func (m *manager) createLinearChain(
 		//
 		// The linear bootstrapper ensures this function is only executed once, so
 		// we don't need to be concerned about closing this channel multiple times.
-		// bootstrapFunc = func() {
-		// 	close(m.unblockChainCreatorCh)
-		// }
+		// NOTE: The unblocking of chain creator is now handled directly in the
+		// bootstrap callback and skip-bootstrap logic
 
 		// Set up the net connector for the P-Chain
 		// subnetConnector, ok = vm.(validators.SubnetConnector)
@@ -1490,7 +1630,7 @@ func (m *manager) createLinearChain(
 
 	// Only wrap with proposervm if not Platform chain
 	if !skipProposerVM {
-		proposervmReg, err := luxmetric.MakeAndRegister(
+		proposervmReg, err := metric.MakeAndRegister(
 			m.proposervmGatherer,
 			primaryAlias,
 		)
@@ -1514,7 +1654,7 @@ func (m *manager) createLinearChain(
 	}
 
 	if m.MeterVMEnabled {
-		meterchainvmReg, err := luxmetric.MakeAndRegister(
+		meterchainvmReg, err := metric.MakeAndRegister(
 			m.meterChainVMGatherer,
 			primaryAlias,
 		)
@@ -1527,7 +1667,7 @@ func (m *manager) createLinearChain(
 	if m.TracingEnabled {
 		vm = tracedvm.NewBlockVM(vm, "proposervm", m.Tracer)
 	}
-	
+
 	// The channel through which a VM may send messages to the consensus engine
 	// VM uses this channel to notify engine that a block is ready to be made
 	msgChan := make(chan core.Message, defaultChannelSize)
@@ -1540,25 +1680,20 @@ func (m *manager) createLinearChain(
 		// BLS PublicKey doesn't have a Bytes() method, so we'll leave it nil for now
 		pubKeyBytes = nil
 	}
-	
-	luxCtx := &consContext.Context{
+
+	consensusCtx := &consContext.Context{
 		QuantumID: m.NetworkID,
 		NetID:     chainParams.NetID,
 		ChainID:   chainParams.ID,
 		NodeID:    m.NodeID,
 		PublicKey: pubKeyBytes,
 	}
-	
-	consensusCtx := &block.ConsensusContext{
-		// These would be set based on consensus parameters
-	}
-	
+
 	chainCtx := &block.ChainContext{
-		ConsensusContext: consensusCtx,
-		Context:          luxCtx,
+		Context: consensusCtx,
 	}
 
-	// Create DBManager wrapper
+	// Create DBManager wrapper - but for C-Chain VM we'll pass the database directly
 	dbManager := &dbManagerWrapper{db: vmDB}
 
 	// Create channel for messages
@@ -1581,24 +1716,38 @@ func (m *manager) createLinearChain(
 	} else {
 		genesisPreview = fmt.Sprintf("%x", genesisData)
 	}
-	
-	m.Log.Info("Initializing VM", 
+
+	m.Log.Info("Initializing VM",
 		log.Stringer("chainID", chainParams.ID),
 		log.Int("genesisDataLen", len(genesisData)),
 		log.String("genesisPreview", genesisPreview),
 		log.Int("fxsCount", len(blockFxs)))
-	
+
 	// Convert blockFxs to []interface{} for Initialize
 	var fxsInterface []interface{}
 	for _, fx := range blockFxs {
 		fxsInterface = append(fxsInterface, fx)
 	}
 
+	// Determine what database interface to pass based on the VM type
+	// C-Chain VM (cchainvm) expects database.Database directly
+	// Other VMs expect the dbManagerWrapper
+	var dbInterface interface{}
+	if chainParams.VMID == constants.EVMID {
+		// C-Chain VM expects database.Database directly
+		dbInterface = vmDB
+		m.Log.Info("Using direct database for C-Chain VM")
+	} else {
+		// Other VMs expect dbManagerWrapper
+		dbInterface = dbManager
+		m.Log.Info("Using dbManagerWrapper for VM", log.Stringer("vmID", chainParams.VMID))
+	}
+
 	// Initialize the chainblock VM with proposer wrapper (NOT the raw vm)
 	if err := vm.Initialize(
 		context.TODO(),
 		chainCtx,
-		dbManager,
+		dbInterface,
 		genesisData,
 		chainConfig.Upgrade,
 		chainConfig.Config,
@@ -1606,13 +1755,34 @@ func (m *manager) createLinearChain(
 		fxsInterface,
 		appSender,
 	); err != nil {
-		m.Log.Error("VM Initialize failed", 
+		m.Log.Error("VM Initialize failed",
 			log.Stringer("chainID", chainParams.ID),
 			log.String("errorDetails", err.Error()),
 			log.Err(err))
 		return nil, fmt.Errorf("VM initialization failed: %w", err)
 	}
 	m.Log.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
+
+	// CRITICAL FIX: When SkipBootstrap is enabled for single-node mode,
+	// immediately unblock chain creator for Platform chain
+	// Check both the expected PlatformChainID and the actual Platform VM
+	isPlatformChain := chainParams.ID == constants.PlatformChainID ||
+		chainParams.VMID == constants.PlatformVMID
+
+	if m.SkipBootstrap && isPlatformChain {
+		m.Log.Info("Skip-bootstrap mode: Platform chain initialized - immediately unblocking chain creator",
+			log.Stringer("chainID", chainParams.ID),
+			log.Stringer("vmID", chainParams.VMID))
+		// Unblock in a goroutine to avoid blocking
+		go func() {
+			select {
+			case <-m.unblockChainCreatorCh:
+				// Channel already closed, ignore
+			default:
+				close(m.unblockChainCreatorCh)
+			}
+		}()
+	}
 
 	// netID already defined above
 	bootstrapWeight, err := beacons.TotalWeight(netID)
@@ -1626,7 +1796,7 @@ func (m *manager) createLinearChain(
 		sampleK = int(bootstrapWeight)
 	}
 
-	_, err = luxmetric.MakeAndRegister(
+	_, err = metric.MakeAndRegister(
 		m.stakeGatherer,
 		primaryAlias,
 	)
@@ -1642,7 +1812,7 @@ func (m *manager) createLinearChain(
 	// vdrs.RegisterSetCallbackListener(netID, connectedValidators)
 	_ = interface{}(nil) // connectedValidators placeholder
 
-	p2pReg, err := luxmetric.MakeAndRegister(
+	p2pReg, err := metric.MakeAndRegister(
 		m.p2pGatherer,
 		primaryAlias,
 	)
@@ -1661,7 +1831,7 @@ func (m *manager) createLinearChain(
 		return nil, fmt.Errorf("error creating peer tracker: %w", err)
 	}
 
-	_, err = luxmetric.MakeAndRegister(
+	_, err = metric.MakeAndRegister(
 		m.handlerGatherer,
 		primaryAlias,
 	)
@@ -1683,23 +1853,23 @@ func (m *manager) createLinearChain(
 	// handler.New requires runtime which is not available
 	// Asynchronously passes messages from the network to the consensus engine
 	/*
-	h, err := handler.New(
-		runtime,
-		nil,          // cn was block.ChangeNotifier which doesn't exist
-		subscription, // Pass as interface{}
-		vdrs,
-		m.FrontierPollFrequency,
-		m.ConsensusAppConcurrency,
-		m.ResourceTracker, // Pass as interface{}
-		sb,
-		connectedValidators,
-		peerTracker, // Pass as interface{}
-		handlerReg,
-		// func() {} removed - signature doesn't accept this
-	)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize message handler: %w", err)
-	}
+		h, err := handler.New(
+			runtime,
+			nil,          // cn was block.ChangeNotifier which doesn't exist
+			subscription, // Pass as interface{}
+			vdrs,
+			m.FrontierPollFrequency,
+			m.ConsensusAppConcurrency,
+			m.ResourceTracker, // Pass as interface{}
+			sb,
+			connectedValidators,
+			peerTracker, // Pass as interface{}
+			handlerReg,
+			// func() {} removed - signature doesn't accept this
+		)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't initialize message handler: %w", err)
+		}
 	*/
 	// Create a placeholder handler since handler.New is not available
 	h := &placeholderHandler{}
@@ -1714,76 +1884,76 @@ func (m *manager) createLinearChain(
 	// Most consensus engine creation is disabled due to missing runtime and types
 	// This needs to be re-enabled when consensus package is updated
 	/*
-	consensusGetHandler, err := consensusgetter.New(
-		vm,
-		messageSender,
-		m.Log,
-		m.BootstrapMaxTimeGetAncestors,
-		m.BootstrapAncestorsMaxContainersSent,
-		// ctx.Registerer doesn't exist in context.Context
-	)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize consensus base message handler: %w", err)
-	}
+		consensusGetHandler, err := consensusgetter.New(
+			vm,
+			messageSender,
+			m.Log,
+			m.BootstrapMaxTimeGetAncestors,
+			m.BootstrapAncestorsMaxContainersSent,
+			// ctx.Registerer doesn't exist in context.Context
+		)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't initialize consensus base message handler: %w", err)
+		}
 
-	// var consensus smcon.Consensus
+		// var consensus smcon.Consensus
 
-	// Create engine, bootstrapper and state-syncer in this order,
-	// to make sure start callbacks are duly initialized
-	// chain.Parameters is an empty struct
-	chainParams := smeng.Parameters{}
+		// Create engine, bootstrapper and state-syncer in this order,
+		// to make sure start callbacks are duly initialized
+		// chain.Parameters is an empty struct
+		chainParams := smeng.Parameters{}
 
-	// engineConfig not used - using New directly
-	// engineConfig := smeng.Config{
-	// 	Ctx:                 ctx,
-	// 	AllGetsServer:       consensusGetHandler,
-	// 	VM:                  vm,
-	// 	Sender:              messageSender,
-	// 	Validators:          vdrs,
-	// 	ConnectedValidators: connectedValidators,
-	// 	Params:              chainParams,
-	// 	Consensus:           consensus,
-	// 	// PartialSync field removed - doesn't exist
-	// }
-	// var engine core.Engine
-	engine, err := smeng.New(runtime, chainParams)
-	if err != nil {
-		return nil, fmt.Errorf("error initializing linear engine: %w", err)
-	}
-	_ = engine // temporarily unused
+		// engineConfig not used - using New directly
+		// engineConfig := smeng.Config{
+		// 	Ctx:                 ctx,
+		// 	AllGetsServer:       consensusGetHandler,
+		// 	VM:                  vm,
+		// 	Sender:              messageSender,
+		// 	Validators:          vdrs,
+		// 	ConnectedValidators: connectedValidators,
+		// 	Params:              chainParams,
+		// 	Consensus:           consensus,
+		// 	// PartialSync field removed - doesn't exist
+		// }
+		// var engine core.Engine
+		engine, err := smeng.New(runtime, chainParams)
+		if err != nil {
+			return nil, fmt.Errorf("error initializing linear engine: %w", err)
+		}
+		_ = engine // temporarily unused
 
-	// if m.TracingEnabled {
-	// 	engine = core.TraceEngine(engine, m.Tracer)
-	// }
+		// if m.TracingEnabled {
+		// 	engine = core.TraceEngine(engine, m.Tracer)
+		// }
 
-	// create bootstrap gear
-	bootstrapCfg := smbootstrap.Config{
-		AllGetsServer:    consensusGetHandler,
-		Ctx:              runtime,
-		Beacons:          beacons,
-		SampleK:          sampleK,
-		StartupTracker:   startupTracker,
-		Sender:           messageSender,
-		BootstrapTracker: sb,
-		// Timer field removed - h,
-		// PeerTracker field removed - doesn't exist
-		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
-		// DB field removed - doesn't exist
-		VM: vm,
-		// Bootstrapped field removed - doesn't exist
-		// NonVerifyingParse field removed - doesn't exist
-		// Haltable field removed - doesn't exist
-	}
-	// var bootstrapper core.BootstrapableEngine
-	_, err = smbootstrap.New(
-		bootstrapCfg,
-		func(ctx context.Context, lastReqID uint32) error {
-			return engine.Start(ctx)
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error initializing linear bootstrapper: %w", err)
-	}
+		// create bootstrap gear
+		bootstrapCfg := smbootstrap.Config{
+			AllGetsServer:    consensusGetHandler,
+			Ctx:              runtime,
+			Beacons:          beacons,
+			SampleK:          sampleK,
+			StartupTracker:   startupTracker,
+			Sender:           messageSender,
+			BootstrapTracker: sb,
+			// Timer field removed - h,
+			// PeerTracker field removed - doesn't exist
+			AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
+			// DB field removed - doesn't exist
+			VM: vm,
+			// Bootstrapped field removed - doesn't exist
+			// NonVerifyingParse field removed - doesn't exist
+			// Haltable field removed - doesn't exist
+		}
+		// var bootstrapper core.BootstrapableEngine
+		_, err = smbootstrap.New(
+			bootstrapCfg,
+			func(ctx context.Context, lastReqID uint32) error {
+				return engine.Start(ctx)
+			},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error initializing linear bootstrapper: %w", err)
+		}
 	*/
 
 	// if m.TracingEnabled {
@@ -1834,7 +2004,7 @@ func (m *manager) createLinearChain(
 
 	// Since block.ChainVM doesn't implement core.VM directly,
 	// we need to wrap it to implement core.VM
-	vmWrapper := &chainVMWrapper{vm: vm}
+	vmWrapper := newChainVMWrapper(vm)
 	return &chainInfo{
 		Name:    primaryAlias,
 		Context: ctx,
@@ -1957,7 +2127,7 @@ func (m *manager) LookupVM(alias string) (ids.ID, error) {
 func (m *manager) notifyRegistrants(name string, ctx context.Context, vm interface{}) {
 	for _, registrant := range m.registrants {
 		// registrant.RegisterChain expects core.VM, but we use interface{}
-		// since core.VM uses consensus.Context which we're not using
+		// since core.VM uses context.Context which we're not using
 		if coreVM, ok := vm.(core.VM); ok {
 			registrant.RegisterChain(name, ctx, coreVM)
 		}
@@ -1983,12 +2153,12 @@ func (m *manager) getChainConfig(id ids.ID) (ChainConfig, error) {
 	return ChainConfig{}, nil
 }
 
-func (m *manager) getOrMakeVMRegisterer(vmID ids.ID, chainAlias string) (luxmetric.MultiGatherer, error) {
+func (m *manager) getOrMakeVMRegisterer(vmID ids.ID, chainAlias string) (metric.MultiGatherer, error) {
 	vmGatherer, ok := m.vmGatherer[vmID]
 	if !ok {
 		vmName := constants.VMName(vmID)
-		vmNamespace := metric.AppendNamespace(constants.PlatformName, vmName)
-		vmGatherer = luxmetric.NewLabelGatherer(ChainLabel)
+		vmNamespace := utilmetric.AppendNamespace(constants.PlatformName, vmName)
+		vmGatherer = metric.NewLabelGatherer(ChainLabel)
 		err := m.Metrics.Register(
 			vmNamespace,
 			vmGatherer,
@@ -1999,7 +2169,7 @@ func (m *manager) getOrMakeVMRegisterer(vmID ids.ID, chainAlias string) (luxmetr
 		m.vmGatherer[vmID] = vmGatherer
 	}
 
-	chainReg := luxmetric.NewPrefixGatherer()
+	chainReg := metric.NewPrefixGatherer()
 	err := vmGatherer.Register(
 		chainAlias,
 		chainReg,
@@ -2093,9 +2263,11 @@ func (e *emptyValidatorManager) Count(netID ids.ID) int {
 	return 0
 }
 
-func (e *emptyValidatorManager) RegisterCallbackListener(listener validators.ManagerCallbackListener) {}
+func (e *emptyValidatorManager) RegisterCallbackListener(listener validators.ManagerCallbackListener) {
+}
 
-func (e *emptyValidatorManager) RegisterSetCallbackListener(netID ids.ID, listener validators.SetCallbackListener) {}
+func (e *emptyValidatorManager) RegisterSetCallbackListener(netID ids.ID, listener validators.SetCallbackListener) {
+}
 
 func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return nil, nil
@@ -2104,37 +2276,83 @@ func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height
 // placeholderHandler implements handler.Handler interface
 type placeholderHandler struct{}
 
-func (p *placeholderHandler) Context() *block.ConsensusContext { return nil }
-func (p *placeholderHandler) Start(ctx context.Context, startReqID uint32) {}
+func (p *placeholderHandler) Context() *consContext.Context                 { return nil }
+func (p *placeholderHandler) Start(ctx context.Context, startReqID uint32)  {}
 func (p *placeholderHandler) Push(ctx context.Context, msg handler.Message) {}
-func (p *placeholderHandler) Len() int { return 0 }
-func (p *placeholderHandler) Get(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error { return nil }
-func (p *placeholderHandler) GetAncestors(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error { return nil }
-func (p *placeholderHandler) GetAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error { return nil }
-func (p *placeholderHandler) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerIDs []ids.ID) error { return nil }
-func (p *placeholderHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error { return nil }
-func (p *placeholderHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, container []byte) error { return nil }
-func (p *placeholderHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error { return nil }
-func (p *placeholderHandler) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error { return nil }
-func (p *placeholderHandler) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error { return nil }
-func (p *placeholderHandler) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error { return nil }
-func (p *placeholderHandler) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error { return nil }
-func (p *placeholderHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error { return nil }
-func (p *placeholderHandler) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error { return nil }
-func (p *placeholderHandler) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error { return nil }
-func (p *placeholderHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error { return nil }
-func (p *placeholderHandler) GetStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error { return nil }
-func (p *placeholderHandler) StateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error { return nil }
-func (p *placeholderHandler) GetAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, heights []uint64) error { return nil }
-func (p *placeholderHandler) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error { return nil }
-func (p *placeholderHandler) GetStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, height uint64) error { return nil }
-func (p *placeholderHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error { return nil }
-func (p *placeholderHandler) Connected(ctx context.Context, nodeID ids.NodeID) error { return nil }
+func (p *placeholderHandler) Len() int                                      { return 0 }
+func (p *placeholderHandler) Get(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
+	return nil
+}
+func (p *placeholderHandler) GetAncestors(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
+	return nil
+}
+func (p *placeholderHandler) GetAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
+	return nil
+}
+func (p *placeholderHandler) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerIDs []ids.ID) error {
+	return nil
+}
+func (p *placeholderHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error {
+	return nil
+}
+func (p *placeholderHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, container []byte) error {
+	return nil
+}
+func (p *placeholderHandler) PullQuery(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
+	return nil
+}
+func (p *placeholderHandler) QueryFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+	return nil
+}
+func (p *placeholderHandler) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error {
+	return nil
+}
+func (p *placeholderHandler) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
+	return nil
+}
+func (p *placeholderHandler) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
+	return nil
+}
+func (p *placeholderHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) error {
+	return nil
+}
+func (p *placeholderHandler) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+	return nil
+}
+func (p *placeholderHandler) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
+	return nil
+}
+func (p *placeholderHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+	return nil
+}
+func (p *placeholderHandler) GetStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
+	return nil
+}
+func (p *placeholderHandler) StateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
+	return nil
+}
+func (p *placeholderHandler) GetAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, heights []uint64) error {
+	return nil
+}
+func (p *placeholderHandler) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error {
+	return nil
+}
+func (p *placeholderHandler) GetStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, height uint64) error {
+	return nil
+}
+func (p *placeholderHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
+	return nil
+}
+func (p *placeholderHandler) Connected(ctx context.Context, nodeID ids.NodeID) error    { return nil }
 func (p *placeholderHandler) Disconnected(ctx context.Context, nodeID ids.NodeID) error { return nil }
-func (p *placeholderHandler) HealthCheck(ctx context.Context) (interface{}, error) { return nil, nil }
-func (p *placeholderHandler) Stop(ctx context.Context) {}
-func (p *placeholderHandler) HandleInbound(ctx context.Context, msg handler.Message) error { return nil }
-func (p *placeholderHandler) HandleOutbound(ctx context.Context, msg handler.Message) error { return nil }
+func (p *placeholderHandler) HealthCheck(ctx context.Context) (interface{}, error)      { return nil, nil }
+func (p *placeholderHandler) Stop(ctx context.Context)                                  {}
+func (p *placeholderHandler) HandleInbound(ctx context.Context, msg handler.Message) error {
+	return nil
+}
+func (p *placeholderHandler) HandleOutbound(ctx context.Context, msg handler.Message) error {
+	return nil
+}
 
 // noopAppSender is a no-op implementation of AppSender
 type noopAppSender struct{}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary"
 
@@ -55,8 +55,8 @@ func main() {
 	walletSyncStartTime := time.Now()
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
 		URI:              uri,
-		LUXKeychain: kc,
-		EthKeychain: kc,
+		LUXKeychain:      kc,
+		EthKeychain:      kc,
 		PChainTxsToFetch: set.Of(netID),
 	})
 	if err != nil {

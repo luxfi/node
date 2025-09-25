@@ -1,12 +1,12 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metervm
 
 import (
-	luxmetric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 
-	"github.com/luxfi/node/utils/metric"
+	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -16,10 +16,10 @@ type vertexMetrics struct {
 	verify,
 	verifyErr,
 	accept,
-	reject metric.Averager
+	reject utilmetric.Averager
 }
 
-func (m *vertexMetrics) Initialize(reg luxmetric.Registerer) error {
+func (m *vertexMetrics) Initialize(reg metric.Registerer) error {
 	errs := wrappers.Errs{}
 	m.parse = newAverager("parse_tx", reg, &errs)
 	m.parseErr = newAverager("parse_tx_err", reg, &errs)

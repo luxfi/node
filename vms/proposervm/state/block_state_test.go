@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -81,7 +81,7 @@ func TestMeteredBlockState(t *testing.T) {
 	a := require.New(t)
 
 	db := memdb.New()
-	bs, err := NewMeteredBlockState(db, "", metric.NewNoOpMetrics("test").Registry())
+	bs, err := NewMeteredBlockState(db, "", metric.NewNoOp().Registry())
 	a.NoError(err)
 
 	testBlockState(a, bs)

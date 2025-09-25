@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build skip
@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/validators"
@@ -684,8 +684,8 @@ func TestGetCurrentValidators(t *testing.T) {
 		require.Nil(vdr.Delegators)
 
 		innerArgs := GetCurrentValidatorsArgs{
-			NetID: constants.PrimaryNetworkID,
-			NodeIDs:  []ids.NodeID{vdr.NodeID},
+			NetID:   constants.PrimaryNetworkID,
+			NodeIDs: []ids.NodeID{vdr.NodeID},
 		}
 		innerResponse := GetCurrentValidatorsReply{}
 		require.NoError(service.GetCurrentValidators(nil, &innerArgs, &innerResponse))

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposer
@@ -13,8 +13,8 @@ import (
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/math/math"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/sampler"
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -99,7 +99,7 @@ type Windower interface {
 // delay for the block submission window of a given validator
 type windower struct {
 	state       validators.State
-	netID    ids.ID
+	netID       ids.ID
 	chainSource uint64
 }
 
@@ -107,7 +107,7 @@ func New(state validators.State, netID, chainID ids.ID) Windower {
 	w := wrappers.Packer{Bytes: chainID[:]}
 	return &windower{
 		state:       state,
-		netID:    netID,
+		netID:       netID,
 		chainSource: w.UnpackLong(),
 	}
 }

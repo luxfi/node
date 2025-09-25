@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -8,8 +8,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/crypto/secp256k1"
@@ -78,7 +78,7 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 	backendObj := &Backend{
 		Ctx:      ctx,
 		CChainID: cChainID,
-		Config: &feeConfig,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,
@@ -441,7 +441,7 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	backendObj := &Backend{
 		Ctx:      ctx,
 		CChainID: cChainID,
-		Config: &feeConfig,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,
@@ -753,10 +753,11 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cChainID := ids.GenerateTestID()
-	
+
 	// Create a test context with ChainID
 	chainID := ids.GenerateTestID()
-	ctx := consensustest.Context(t, chainID)
+	_ = consensustest.Context(t, chainID)
+	ctx := context.Background()
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}
@@ -808,7 +809,7 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 	backendObj := &Backend{
 		Ctx:      ctx,
 		CChainID: cChainID,
-		Config: &feeConfig,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,
@@ -871,12 +872,12 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 
 func TestSemanticVerifierImportTx(t *testing.T) {
 	// Create consensus context for chain operations
-	consensusCtx := consensustest.Context()
-	ctx := consensusCtx  // Use consensus context
 	cChainID := ids.GenerateTestID()
 	chainID := ids.GenerateTestID()
+	_ = consensustest.Context(t, chainID)
+	ctx := context.Background() // Use standard context for Backend
 	m := atomic.NewMemory(prefixdb.New([]byte{0}, memdb.New()))
-	
+
 	typeToFxIndex := make(map[reflect.Type]int)
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewCustomParser(
@@ -947,7 +948,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 	backendObj := &Backend{
 		Ctx:      ctx,
 		CChainID: cChainID,
-		Config: &feeConfig,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,

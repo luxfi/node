@@ -15,10 +15,10 @@ import (
 	chain "github.com/luxfi/consensus/protocol/chain"
 	ids "github.com/luxfi/ids"
 	set "github.com/luxfi/math/set"
+	gomock "github.com/luxfi/mock/gomock"
 	block "github.com/luxfi/node/vms/platformvm/block"
 	state "github.com/luxfi/node/vms/platformvm/state"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
-	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockManager is a mock of Manager interface.

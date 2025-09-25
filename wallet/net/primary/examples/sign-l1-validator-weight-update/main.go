@@ -10,8 +10,8 @@ import (
 	"net/netip"
 	"time"
 
-	metrics "github.com/luxfi/metric"
 	luxlog "github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/node/api/info"
@@ -90,7 +90,7 @@ func main() {
 
 	messageBuilder, err := p2pmessage.NewCreator(
 		luxlog.NewNoOpLogger(),
-		metrics.NewNoOp(),
+		metric.NewNoOp(),
 		compression.TypeZstd,
 		time.Hour,
 	)

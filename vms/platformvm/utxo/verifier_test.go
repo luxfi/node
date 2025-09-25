@@ -1,16 +1,16 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package utxo
 
 import (
+	"context"
 	"math"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -39,11 +39,10 @@ func TestVerifySpendUTXOs(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(&secp256k1fx.TestVM{}))
 	require.NoError(t, fx.Bootstrapped())
 
-	ctx := consensustest.Context(t, consensustest.PChainID)
 	luxAssetID := ids.GenerateTestID()
 
 	h := &handler{
-		ctx: ctx,
+		ctx: context.Background(),
 		clk: &mockable.Clock{},
 		fx:  fx,
 	}
@@ -1046,8 +1045,8 @@ func TestVerifySpendUTXOs(t *testing.T) {
 				&secp256k1fx.Credential{},
 			},
 			producedAmounts: map[ids.ID]uint64{
-				luxAssetID: 1,
-				customAssetID:    1,
+				luxAssetID:    1,
+				customAssetID: 1,
 			},
 			expectedErr: nil,
 		},

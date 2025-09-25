@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ledger
@@ -77,24 +77,24 @@ func (l *LedgerAdapter) SignTransaction(rawUnsignedHash []byte, addressIndices [
 	for i, idx := range addressIndices {
 		signingPaths[i] = fmt.Sprintf("%d'/0/0", idx)
 	}
-	
+
 	// Sign with all paths at once
 	pathPrefix := "44'/9000'"
 	resp, err := l.device.SignHash(pathPrefix, signingPaths, rawUnsignedHash)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Extract signatures
 	sigs := make([][]byte, 0, len(resp.Signature))
 	for _, sig := range resp.Signature {
 		sigs = append(sigs, sig)
 	}
-	
+
 	if len(sigs) != len(addressIndices) {
 		return nil, errors.New("incorrect number of signatures returned")
 	}
-	
+
 	return sigs, nil
 }
 

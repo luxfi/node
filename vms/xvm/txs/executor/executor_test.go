@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -57,7 +57,7 @@ func TestBaseTxExecutor(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	registerer := metric.NewNoOpMetrics("test").Registry()
+	registerer := metric.NewNoOp().Registry()
 	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 
@@ -164,7 +164,7 @@ func TestCreateAssetTxExecutor(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	registerer := metric.NewNoOpMetrics("test").Registry()
+	registerer := metric.NewNoOp().Registry()
 	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 
@@ -309,7 +309,7 @@ func TestOperationTxExecutor(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	registerer := metric.NewNoOpMetrics("test").Registry()
+	registerer := metric.NewNoOp().Registry()
 	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 

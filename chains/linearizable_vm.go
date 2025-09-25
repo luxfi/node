@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chains
@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/consensus"
+	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	coreinterfaces "github.com/luxfi/consensus/core/interfaces"
 	// "github.com/luxfi/consensus/engine/chain" // currently unused
@@ -51,21 +51,11 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 
 	// Initialize the ChainVM
 	// Convert consensus types to block types
-	var pubKey []byte
-	// ctx is a context.Context, not a consensus context, so we don't have PublicKey
-	luxCtx := &consensus.Context{
-		QuantumID: consensus.GetNetworkID(vm.ctx),
-		NetID:     ids.Empty,
-		ChainID:   consensus.GetChainID(vm.ctx),
-		NodeID:    consensus.GetNodeID(vm.ctx),
-		PublicKey: pubKey,
-	}
-	// Use consensus.ConsensusContext 
-	consensusCtx := &block.ConsensusContext{}
-	
+	// Use consensus.ConsensusContext
+	consensusCtx := &consContext.Context{}
+
 	chainCtx := &block.ChainContext{
-		ConsensusContext: consensusCtx,
-		Context:          luxCtx,
+		Context: consensusCtx,
 	}
 
 	// Create DBManager wrapper
@@ -258,7 +248,7 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	if cc, ok := chainCtx.(*block.ChainContext); ok && cc != nil {
 		// consensusCtx := cc.Context
 		// Context reassignment commented out due to type mismatch
-		// TODO: Fix context type compatibility between consensus.Context and context.Context
+		// TODO: Fix context type compatibility between context.Context and context.Context
 	}
 
 	// Get current database from DBManager
@@ -292,12 +282,12 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	vm.configBytes = configBytes
 	vm.fxs = coreFxs
 	vm.appSender = coreAppSender
-	
+
 	// Type assert msgChan
 	if toEngine, ok := msgChan.(chan<- block.Message); ok {
 		vm.toEngine = toEngine
 	}
-	
+
 	// Type assert db for DBManager
 	if dbManager, ok := db.(block.DBManager); ok {
 		vm.dbManager = dbManager

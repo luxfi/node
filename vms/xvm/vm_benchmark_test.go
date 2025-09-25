@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -22,7 +22,7 @@ func getAllUTXOsBenchmark(b *testing.B, utxoCount int, randSrc rand.Source) {
 	require := require.New(b)
 
 	env := setup(b, &envConfig{fork: latest})
-	defer env.consensusCtx.Lock.Unlock()
+	defer env.testLock.Unlock()
 
 	addr := ids.GenerateTestShortID()
 
@@ -32,7 +32,7 @@ func getAllUTXOsBenchmark(b *testing.B, utxoCount int, randSrc rand.Source) {
 				TxID:        ids.GenerateTestID(),
 				OutputIndex: uint32(randSrc.Int63()),
 			},
-			Asset: lux.Asset{ID: env.consensusCtx.XAssetID},
+			Asset: lux.Asset{ID: env.consensusCtx.LUXAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: 100000,
 				OutputOwners: secp256k1fx.OutputOwners{

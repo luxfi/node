@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build test
@@ -14,8 +14,8 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -39,13 +39,13 @@ var (
 		NetworkID:                     constants.UnitTestID,
 		LUXAssetID:                    luxAssetID,
 		BaseTxFee:                     units.MicroLux,
-		CreateNetTxFee:             19 * units.MicroLux,
-		TransformNetTxFee:          789 * units.MicroLux,
+		CreateNetTxFee:                19 * units.MicroLux,
+		TransformNetTxFee:             789 * units.MicroLux,
 		CreateBlockchainTxFee:         1234 * units.MicroLux,
 		AddPrimaryNetworkValidatorFee: 19 * units.MilliLux,
 		AddPrimaryNetworkDelegatorFee: 765 * units.MilliLux,
-		AddNetValidatorFee:         1010 * units.MilliLux,
-		AddNetDelegatorFee:         9 * units.Lux,
+		AddNetValidatorFee:            1010 * units.MilliLux,
+		AddNetDelegatorFee:            9 * units.Lux,
 	}
 )
 
@@ -107,7 +107,7 @@ func TestAddNetValidatorTx(t *testing.T) {
 			constants.PlatformChainID: utxos,
 		})
 
-		netID       = ids.GenerateTestID()
+		netID          = ids.GenerateTestID()
 		subnetAuthKey  = testKeys[0]
 		subnetAuthAddr = subnetAuthKey.Address()
 		subnetOwner    = &secp256k1fx.OutputOwners{
@@ -164,7 +164,7 @@ func TestRemoveNetValidatorTx(t *testing.T) {
 			constants.PlatformChainID: utxos,
 		})
 
-		netID       = ids.GenerateTestID()
+		netID          = ids.GenerateTestID()
 		subnetAuthKey  = testKeys[0]
 		subnetAuthAddr = subnetAuthKey.Address()
 		subnetOwner    = &secp256k1fx.OutputOwners{
@@ -215,7 +215,7 @@ func TestCreateChainTx(t *testing.T) {
 			constants.PlatformChainID: utxos,
 		})
 
-		netID       = ids.GenerateTestID()
+		netID          = ids.GenerateTestID()
 		subnetAuthKey  = testKeys[0]
 		subnetAuthAddr = subnetAuthKey.Address()
 		subnetOwner    = &secp256k1fx.OutputOwners{
@@ -274,7 +274,7 @@ func TestCreateNetTx(t *testing.T) {
 			constants.PlatformChainID: utxos,
 		})
 
-		netID       = ids.GenerateTestID()
+		netID          = ids.GenerateTestID()
 		subnetAuthKey  = testKeys[0]
 		subnetAuthAddr = subnetAuthKey.Address()
 		subnetOwner    = &secp256k1fx.OutputOwners{
@@ -322,7 +322,7 @@ func TestTransferNetOwnershipTx(t *testing.T) {
 			constants.PlatformChainID: utxos,
 		})
 
-		netID       = ids.GenerateTestID()
+		netID          = ids.GenerateTestID()
 		subnetAuthKey  = testKeys[0]
 		subnetAuthAddr = subnetAuthKey.Address()
 		subnetOwner    = &secp256k1fx.OutputOwners{
@@ -429,7 +429,7 @@ func TestExportTx(t *testing.T) {
 		builder  = builder.New(set.Of(utxoAddr), testContext, backend)
 
 		// data to build the transaction
-		netID        = ids.GenerateTestID()
+		netID           = ids.GenerateTestID()
 		exportedOutputs = []*lux.TransferableOutput{{
 			Asset: lux.Asset{ID: luxAssetID},
 			Out: &secp256k1fx.TransferOutput{
@@ -472,7 +472,7 @@ func TestTransformNetTx(t *testing.T) {
 			constants.PlatformChainID: utxos,
 		})
 
-		netID       = ids.GenerateTestID()
+		netID          = ids.GenerateTestID()
 		subnetAuthKey  = testKeys[0]
 		subnetAuthAddr = subnetAuthKey.Address()
 		subnetOwner    = &secp256k1fx.OutputOwners{

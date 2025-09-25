@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
@@ -1392,6 +1392,9 @@ func TestDurangoMemoField(t *testing.T) {
 				sk, err := bls.NewSecretKey()
 				require.NoError(t, err)
 
+				pop, err := signer.NewProofOfPossession(sk)
+				require.NoError(t, err)
+
 				builder, txSigner := env.factory.NewWallet(preFundedKeys...)
 				utx, err := builder.NewAddPermissionlessValidatorTx(
 					&txs.NetValidator{
@@ -1403,7 +1406,7 @@ func TestDurangoMemoField(t *testing.T) {
 						},
 						Net: constants.PrimaryNetworkID,
 					},
-					signer.NewProofOfPossession(sk),
+					pop,
 					env.ctx.LUXAssetID,
 					&secp256k1fx.OutputOwners{
 						Threshold: 1,
@@ -1597,7 +1600,7 @@ func newRemoveNetValidatorTx(t *testing.T) (*txs.RemoveNetValidatorTx, *txs.Tx) 
 				},
 			},
 		},
-		Net: ids.GenerateTestID(),
+		Net:    ids.GenerateTestID(),
 		NodeID: ids.GenerateTestNodeID(),
 		SubnetAuth: &secp256k1fx.Credential{
 			Sigs: make([][65]byte, 1),
@@ -1927,7 +1930,7 @@ func newTransformNetTx(t *testing.T) (*txs.TransformNetTx, *txs.Tx) {
 				},
 			},
 		},
-		Net:                   ids.GenerateTestID(),
+		Net:                      ids.GenerateTestID(),
 		AssetID:                  ids.GenerateTestID(),
 		InitialSupply:            10,
 		MaximumSupply:            10,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -34,7 +34,7 @@ func TestSetsAndGets(t *testing.T) {
 			},
 		}},
 	})
-	defer env.consensusCtx.Lock.Unlock()
+	defer env.testLock.Unlock()
 
 	utxo := &lux.UTXO{
 		UTXOID: lux.UTXOID{
@@ -94,7 +94,7 @@ func TestFundingNoAddresses(t *testing.T) {
 			},
 		}},
 	})
-	defer env.consensusCtx.Lock.Unlock()
+	defer env.testLock.Unlock()
 
 	utxo := &lux.UTXO{
 		UTXOID: lux.UTXOID{
@@ -124,7 +124,7 @@ func TestFundingAddresses(t *testing.T) {
 			},
 		}},
 	})
-	defer env.consensusCtx.Lock.Unlock()
+	defer env.testLock.Unlock()
 
 	utxo := &lux.UTXO{
 		UTXOID: lux.UTXOID{

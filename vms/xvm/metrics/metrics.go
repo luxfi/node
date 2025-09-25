@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -6,16 +6,16 @@ package metrics
 import (
 	"github.com/luxfi/metric"
 
-	utils_metric "github.com/luxfi/node/utils/metric"
+	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
 
-var _ Metrics = (*metrics)(nil)
+var _ Metrics = (*metricsImpl)(nil)
 
 type Metrics interface {
-	utils_metric.APIInterceptor
+	utilmetric.APIInterceptor
 
 	IncTxRefreshes()
 	IncTxRefreshHits()
@@ -29,31 +29,31 @@ type Metrics interface {
 	//
 	// Note: This is not intended to be called during the acceptance of a block,
 	// as MarkBlockAccepted already handles updating transaction related
-	// metric.
+	// metrics.
 	MarkTxAccepted(tx *txs.Tx) error
 }
 
-type metrics struct {
+type metricsImpl struct {
 	txMetrics *txMetrics
 
 	numTxRefreshes, numTxRefreshHits, numTxRefreshMisses metric.Counter
 
-	utils_metric.APIInterceptor
+	utilmetric.APIInterceptor
 }
 
-func (m *metrics) IncTxRefreshes() {
+func (m *metricsImpl) IncTxRefreshes() {
 	m.numTxRefreshes.Inc()
 }
 
-func (m *metrics) IncTxRefreshHits() {
+func (m *metricsImpl) IncTxRefreshHits() {
 	m.numTxRefreshHits.Inc()
 }
 
-func (m *metrics) IncTxRefreshMisses() {
+func (m *metricsImpl) IncTxRefreshMisses() {
 	m.numTxRefreshMisses.Inc()
 }
 
-func (m *metrics) MarkBlockAccepted(b block.Block) error {
+func (m *metricsImpl) MarkBlockAccepted(b block.Block) error {
 	for _, tx := range b.Txs() {
 		if err := tx.Unsigned.Visit(m.txMetrics); err != nil {
 			return err
@@ -62,7 +62,7 @@ func (m *metrics) MarkBlockAccepted(b block.Block) error {
 	return nil
 }
 
-func (m *metrics) MarkTxAccepted(tx *txs.Tx) error {
+func (m *metricsImpl) MarkTxAccepted(tx *txs.Tx) error {
 	return tx.Unsigned.Visit(m.txMetrics)
 }
 
@@ -70,7 +70,7 @@ func New(registerer metric.Registerer) (Metrics, error) {
 	txMetrics, err := newTxMetrics(registerer)
 	errs := wrappers.Errs{Err: err}
 
-	m := &metrics{txMetrics: txMetrics}
+	m := &metricsImpl{txMetrics: txMetrics}
 
 	m.numTxRefreshes = metric.NewCounter(metric.CounterOpts{
 		Name: "tx_refreshes",
@@ -85,13 +85,9 @@ func New(registerer metric.Registerer) (Metrics, error) {
 		Help: "Number of times unique txs have not been unique and weren't cached",
 	})
 
-	apiRequestMetric, err := utils_metric.NewAPIInterceptor(registerer)
+	apiRequestMetric, err := utilmetric.NewAPIInterceptor(registerer)
 	m.APIInterceptor = apiRequestMetric
-	errs.Add(
-		err,
-		registerer.Register(m.numTxRefreshes),
-		registerer.Register(m.numTxRefreshHits),
-		registerer.Register(m.numTxRefreshMisses),
-	)
+	errs.Add(err)
+	// Metrics are self-registering when created with NewCounter etc.
 	return m, errs.Err
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
@@ -12,7 +12,7 @@ import (
 
 var (
 	_ SyncMetrics = (*mockMetrics)(nil)
-	_ SyncMetrics = (*metrics)(nil)
+	_ SyncMetrics = (*metricsImpl)(nil)
 )
 
 type SyncMetrics interface {
@@ -49,14 +49,14 @@ func (m *mockMetrics) RequestSucceeded() {
 	m.requestsSucceeded++
 }
 
-type metrics struct {
+type metricsImpl struct {
 	requestsFailed    metric.Counter
 	requestsMade      metric.Counter
 	requestsSucceeded metric.Counter
 }
 
 func NewMetrics(namespace string, reg metric.Registerer) (SyncMetrics, error) {
-	m := metrics{
+	m := metricsImpl{
 		requestsFailed: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "requests_failed",
@@ -81,14 +81,14 @@ func NewMetrics(namespace string, reg metric.Registerer) (SyncMetrics, error) {
 	return &m, err
 }
 
-func (m *metrics) RequestFailed() {
+func (m *metricsImpl) RequestFailed() {
 	m.requestsFailed.Inc()
 }
 
-func (m *metrics) RequestMade() {
+func (m *metricsImpl) RequestMade() {
 	m.requestsMade.Inc()
 }
 
-func (m *metrics) RequestSucceeded() {
+func (m *metricsImpl) RequestSucceeded() {
 	m.requestsSucceeded.Inc()
 }

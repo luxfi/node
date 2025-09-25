@@ -25,7 +25,7 @@ func (c *Client) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID]
 	for nodeID := range nodeIDs {
 		nodeIDBytes = append(nodeIDBytes, nodeID[:])
 	}
-	
+
 	_, err := c.client.SendAppRequest(ctx, &appsenderpb.SendAppRequestMsg{
 		NodeIds:   nodeIDBytes,
 		RequestId: requestID,

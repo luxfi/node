@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -18,11 +18,11 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
-	consContext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/utils/set"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -79,9 +79,9 @@ type VMServer struct {
 	serverCloser grpcutils.ServerCloser
 	connCloser   wrappers.Closer
 
-	ctx       context.Context
-	closed    chan struct{}
-	
+	ctx    context.Context
+	closed chan struct{}
+
 	// Network information
 	networkID uint32
 	chainID   ids.ID
@@ -216,11 +216,11 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 				if !ok {
 					return
 				}
-				// Send message to client  
+				// Send message to client
 				// TODO: Implement proper message conversion from block.Message to core.MessageType
 				// For now, skip notification as the conversion is complex
-				_ = msg        // Acknowledge we received the message
-				_ = msgClient  // Acknowledge client exists for future use
+				_ = msg       // Acknowledge we received the message
+				_ = msgClient // Acknowledge client exists for future use
 			case <-vm.closed:
 				return
 			}
@@ -244,15 +244,13 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	dbMgr := &dbManagerImpl{db: vm.db}
 
 	// Initialize the VM - create a proper block.ChainContext
-	luxCtx := &consContext.Context{
-		QuantumID: 96369, // LUX mainnet
+	consensusCtx := &consContext.Context{
+		QuantumID: 96369,     // LUX mainnet
 		ChainID:   ids.Empty, // Will be set later
 		NodeID:    ids.EmptyNodeID,
 	}
-	consensusCtx := &block.ConsensusContext{}
 	blockChainCtx := &block.ChainContext{
-		ConsensusContext: consensusCtx,
-		Context:          luxCtx,
+		Context: consensusCtx,
 	}
 	// Wrap core.AppSender to block.AppSender
 	blockAppSender := &blockAppSenderWrapper{appSender: appSenderClient}
@@ -283,13 +281,13 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 	parentID := blk.Parent()
-	
+
 	// Try to get timestamp if block supports it
 	var timestamp *timestamppb.Timestamp
 	if timestampable, ok := blk.(interface{ Timestamp() time.Time }); ok {
 		timestamp = grpcutils.TimestampFromTime(timestampable.Timestamp())
 	}
-	
+
 	return &vmpb.InitializeResponse{
 		LastAcceptedId:       lastAccepted[:],
 		LastAcceptedParentId: parentID[:],
@@ -333,7 +331,7 @@ func (vm *VMServer) SetState(ctx context.Context, stateReq *vmpb.SetStateRequest
 	if timestampable, ok := blk.(interface{ Timestamp() time.Time }); ok {
 		timestamp = grpcutils.TimestampFromTime(timestampable.Timestamp())
 	}
-	
+
 	return &vmpb.SetStateResponse{
 		LastAcceptedId:       lastAccepted[:],
 		LastAcceptedParentId: parentID[:],
@@ -462,13 +460,13 @@ func (vm *VMServer) BuildBlock(ctx context.Context, req *vmpb.BuildBlockRequest)
 		blkID    = blk.ID()
 		parentID = blk.Parent()
 	)
-	
+
 	// Try to get timestamp if block supports it
 	var timestamp *timestamppb.Timestamp
 	if timestampable, ok := blk.(interface{ Timestamp() time.Time }); ok {
 		timestamp = grpcutils.TimestampFromTime(timestampable.Timestamp())
 	}
-	
+
 	return &vmpb.BuildBlockResponse{
 		Id:                blkID[:],
 		ParentId:          parentID[:],
@@ -497,13 +495,13 @@ func (vm *VMServer) ParseBlock(ctx context.Context, req *vmpb.ParseBlockRequest)
 		blkID    = blk.ID()
 		parentID = blk.Parent()
 	)
-	
+
 	// Try to get timestamp if block supports it
 	var timestamp *timestamppb.Timestamp
 	if timestampable, ok := blk.(interface{ Timestamp() time.Time }); ok {
 		timestamp = grpcutils.TimestampFromTime(timestampable.Timestamp())
 	}
-	
+
 	return &vmpb.ParseBlockResponse{
 		Id:       blkID[:],
 		ParentId: parentID[:],
@@ -535,13 +533,13 @@ func (vm *VMServer) GetBlock(ctx context.Context, req *vmpb.GetBlockRequest) (*v
 	}
 
 	parentID := blk.Parent()
-	
+
 	// Try to get timestamp if block supports it
 	var timestamp *timestamppb.Timestamp
 	if timestampable, ok := blk.(interface{ Timestamp() time.Time }); ok {
 		timestamp = grpcutils.TimestampFromTime(timestampable.Timestamp())
 	}
-	
+
 	return &vmpb.GetBlockResponse{
 		ParentId: parentID[:],
 		Bytes:    blk.Bytes(),
@@ -934,7 +932,7 @@ func (vm *VMServer) BlockVerify(ctx context.Context, req *vmpb.BlockVerifyReques
 	if timestampable, ok := blk.(interface{ Timestamp() time.Time }); ok {
 		timestamp = grpcutils.TimestampFromTime(timestampable.Timestamp())
 	}
-	
+
 	return &vmpb.BlockVerifyResponse{
 		Timestamp: timestamp,
 	}, nil
@@ -1057,7 +1055,7 @@ func (v *serverValidatorStateWrapper) GetValidatorSet(height uint64, netID ids.I
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Convert map[ids.NodeID]*validators.GetValidatorOutput to map[ids.NodeID]uint64
 	result := make(map[ids.NodeID]uint64, len(valSet))
 	for nodeID, validator := range valSet {

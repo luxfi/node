@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -17,10 +17,10 @@ import (
 	"github.com/leanovate/gopter/prop"
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/consensus/core/interfaces"
-	linearblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/protocol/chain"
 	consContext "github.com/luxfi/consensus/context"
+	linearblock "github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/interfaces"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
@@ -108,7 +108,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 			// insert validator sequence
 			var (
 				currentPrimaryValidator = (*state.Staker)(nil)
-				currentNetValidator  = (*state.Staker)(nil)
+				currentNetValidator     = (*state.Staker)(nil)
 			)
 			for _, ev := range validatorsTimes {
 				// at each step we remove at least a net validator
@@ -261,7 +261,7 @@ func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndNet m
 
 func addNetValidator(vm *VM, data *validatorInputData, netID ids.ID) (*state.Staker, error) {
 	// Create a nil shared memory for testing
-	factory := txstest.NewWalletFactory(vm.ctx, nil, &vm.Config, vm.state)
+	factory := txstest.NewWalletFactoryWithAssets(context.Background(), nil, &vm.Config, vm.state, vm.luxAssetID)
 	builder, signer := factory.NewWallet(keys[0], keys[1])
 	utx, err := builder.NewAddNetValidatorTx(
 		&txs.NetValidator{
@@ -297,8 +297,15 @@ func addPrimaryValidatorWithBLSKey(vm *VM, data *validatorInputData) (*state.Sta
 	}
 
 	// Create a nil shared memory for testing
-	factory := txstest.NewWalletFactory(vm.ctx, nil, &vm.Config, vm.state)
+	factory := txstest.NewWalletFactoryWithAssets(context.Background(), nil, &vm.Config, vm.state, vm.luxAssetID)
 	builder, txSigner := factory.NewWallet(keys[0], keys[1])
+
+	// Generate proof of possession
+	pop, err := signer.NewProofOfPossession(sk)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create proof of possession: %w", err)
+	}
+
 	utx, err := builder.NewAddPermissionlessValidatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
@@ -309,7 +316,7 @@ func addPrimaryValidatorWithBLSKey(vm *VM, data *validatorInputData) (*state.Sta
 			},
 			Net: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.luxAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -657,9 +664,9 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		Validators:             validators.NewManager(),
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                 defaultTxFee,
-			CreateNetTxFee:     100 * defaultTxFee,
-			TransformNetTxFee:  100 * defaultTxFee,
-			CreateBlockchainTxFee: 100 * defaultTxFee,
+			CreateNetTxFee:        defaultTxFee, // Minimal fee for testing
+			TransformNetTxFee:     defaultTxFee, // Minimal fee for testing
+			CreateBlockchainTxFee: defaultTxFee, // Minimal fee for testing
 		},
 		MinValidatorStake: defaultMinValidatorStake,
 		MaxValidatorStake: defaultMaxValidatorStake,
@@ -681,28 +688,28 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	chainDB := prefixdb.New([]byte{0}, baseDB)
 	// atomicDB := prefixdb.New([]byte{1}, baseDB) // Currently unused due to context issues
 
+	// Use a fixed asset ID for testing
+	luxAssetID := ids.GenerateTestID()
+	vm.luxAssetID = luxAssetID
+
 	// Create lux context for ChainContext
 	luxCtx := &consContext.Context{
-		QuantumID:   constants.UnitTestID,
-		NetID:       constants.PrimaryNetworkID,
-		ChainID:     constants.PlatformChainID,
-		NodeID:      ids.GenerateTestNodeID(),
-		PublicKey:   nil,
-		XChainID:    ids.GenerateTestID(),
-		CChainID:    ids.GenerateTestID(),
-		LUXAssetID:  ids.GenerateTestID(),
-		StartTime:   time.Now(),
+		QuantumID:  constants.UnitTestID,
+		NetID:      constants.PrimaryNetworkID,
+		ChainID:    constants.PlatformChainID,
+		NodeID:     ids.GenerateTestNodeID(),
+		PublicKey:  nil,
+		XChainID:   ids.GenerateTestID(),
+		CChainID:   ids.GenerateTestID(),
+		LUXAssetID: luxAssetID, // Use the same asset ID
+		StartTime:  time.Now(),
 	}
-	
+
 	// Create ChainContext
 	chainCtx := &linearblock.ChainContext{
 		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
-
-	// Use a fixed asset ID for testing
-	luxAssetID := ids.GenerateTestID()
-	vm.luxAssetID = luxAssetID
 	genesisBytes, err := buildCustomGenesis(luxAssetID)
 	if err != nil {
 		return nil, ids.Empty, err
@@ -714,7 +721,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	toEngine := make(chan linearblock.Message, 1)
 	// Create a mock AppSender
 	appSender := &mockAppSender{} // Use a mock instead of SenderTest
-	
+
 	err = vm.Initialize(
 		context.Background(),
 		chainCtx, // Pass proper ChainContext
@@ -738,8 +745,8 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	// Create a net and store it in testSubnet1
 	// Note: following Banff activation, block acceptance will move
 	// chain time ahead
-	// Create a nil shared memory for testing
-	factory := txstest.NewWalletFactory(vm.ctx, nil, &vm.Config, vm.state)
+	// Create a context with the LUX asset ID
+	factory := txstest.NewWalletFactoryWithAssets(context.Background(), nil, &vm.Config, vm.state, vm.luxAssetID)
 	builder, signer := factory.NewWallet(keys[len(keys)-1])
 	utx, err := builder.NewCreateNetTx(
 		&secp256k1fx.OutputOwners{
@@ -801,7 +808,10 @@ func buildCustomGenesis(luxAssetID ids.ID) ([]byte, error) {
 	// what happens with production code we push such validator at the end of
 	// times, so to avoid interference with our tests
 	nodeID := genesisNodeIDs[len(genesisNodeIDs)-1]
-	addr, err := address.FormatBech32(constants.UnitTestHRP, nodeID.Bytes())
+	// Use the corresponding key address, not nodeID bytes
+	keyIndex := len(genesisNodeIDs) - 1
+	keyAddr := keys[keyIndex].PublicKey().Address()
+	addr, err := address.FormatBech32(constants.UnitTestHRP, keyAddr.Bytes())
 	if err != nil {
 		return nil, err
 	}
@@ -819,7 +829,7 @@ func buildCustomGenesis(luxAssetID ids.ID) ([]byte, error) {
 			Addresses: []string{addr},
 		},
 		Staked: []api.UTXO{{
-			Amount:  json.Uint64(defaultWeight),
+			Amount:  json.Uint64(defaultWeight - 1000), // Reserve some balance for fees
 			Address: addr,
 		}},
 		DelegationFee: reward.PercentDenominator,

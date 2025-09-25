@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 
-	// "github.com/luxfi/node/consensus" // consensus package removed
+	// "github.com/luxfi/consensus" // consensus package removed
 	"github.com/luxfi/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/validators"
@@ -25,7 +25,6 @@ import (
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
-	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/state"
 )
@@ -40,7 +39,7 @@ type Config struct {
 	Upgrades   upgrade.Config
 	Config     config.Config
 	Context    context.Context
-	Metrics    metrics.Metrics
+	Metrics    metric.Metrics
 	Rewards    reward.Calculator
 }
 
@@ -82,7 +81,7 @@ func New(t testing.TB, c Config) state.State {
 		c.Config.Validators = c.Validators
 	}
 	if c.Metrics == nil {
-		c.Metrics = metrics.Noop
+		c.Metrics = metric.NewNoOp()
 	}
 	if c.Rewards == nil {
 		c.Rewards = reward.NewCalculator(reward.Config{

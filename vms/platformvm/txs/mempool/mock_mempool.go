@@ -14,8 +14,8 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
-	txs "github.com/luxfi/node/vms/platformvm/txs"
 	gomock "github.com/luxfi/mock/gomock"
+	txs "github.com/luxfi/node/vms/platformvm/txs"
 )
 
 // MockMempool is a mock of Mempool interface.

@@ -280,7 +280,7 @@ func getServiceDiscoveryDir(cmdName string) (string, error) {
 
 // SDConfig represents a Prometheus service discovery config entry.
 //
-// file_sd_config docs: https://metric.io/docs/prometheus/latest/configuration/configuration/#file_sd_config
+// file_sd_config docs: https://metrics.io/docs/prometheus/latest/configuration/configuration/#file_sd_config
 type SDConfig struct {
 	Targets []string          `json:"targets"`
 	Labels  map[string]string `json:"labels"`
@@ -344,7 +344,6 @@ func applyGitHubLabels(sdConfig SDConfig) SDConfig {
 	maps.Copy(sdConfig.Labels, GetGitHubLabels())
 	return sdConfig
 }
-
 
 func getLogFilename(cmdName string) string {
 	return cmdName + ".log"
@@ -592,4 +591,3 @@ func waitForReadiness(ctx context.Context, log log.Logger, cmdName string, readi
 func pollUntilContextCancel(ctx context.Context, condition wait.ConditionWithContextFunc) error {
 	return wait.PollUntilContextCancel(ctx, collectorTickerInterval, true /* immediate */, condition)
 }
-

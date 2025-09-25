@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -26,13 +26,13 @@ const (
 	LPObjectKey                      = "lp-object"
 	TxFeeKey                         = "tx-fee"
 	CreateAssetTxFeeKey              = "create-asset-tx-fee"
-	CreateNetTxFeeKey             = "create-subnet-tx-fee"
-	TransformNetTxFeeKey          = "transform-subnet-tx-fee"
+	CreateNetTxFeeKey                = "create-subnet-tx-fee"
+	TransformNetTxFeeKey             = "transform-subnet-tx-fee"
 	CreateBlockchainTxFeeKey         = "create-blockchain-tx-fee"
 	AddPrimaryNetworkValidatorFeeKey = "add-primary-network-validator-fee"
 	AddPrimaryNetworkDelegatorFeeKey = "add-primary-network-delegator-fee"
-	AddNetValidatorFeeKey         = "add-subnet-validator-fee"
-	AddNetDelegatorFeeKey         = "add-subnet-delegator-fee"
+	AddNetValidatorFeeKey            = "add-subnet-validator-fee"
+	AddNetDelegatorFeeKey            = "add-subnet-delegator-fee"
 	UptimeRequirementKey             = "uptime-requirement"
 	MinValidatorStakeKey             = "min-validator-stake"
 	MaxValidatorStakeKey             = "max-validator-stake"

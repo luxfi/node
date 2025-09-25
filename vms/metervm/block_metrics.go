@@ -1,12 +1,12 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metervm
 
 import (
-	luxmetric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 
-	"github.com/luxfi/node/utils/metric"
+	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -42,14 +42,14 @@ type blockMetrics struct {
 	parseStateSummary,
 	parseStateSummaryErr,
 	getStateSummary,
-	getStateSummaryErr metric.Averager
+	getStateSummaryErr utilmetric.Averager
 }
 
 func (m *blockMetrics) Initialize(
 	supportsBlockBuildingWithContext bool,
 	supportsBatchedFetching bool,
 	supportsStateSync bool,
-	reg luxmetric.Registerer,
+	reg metric.Registerer,
 ) error {
 	errs := wrappers.Errs{}
 	m.buildBlock = newAverager("build_block", reg, &errs)

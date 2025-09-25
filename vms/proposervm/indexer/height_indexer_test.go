@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/state"
 )
@@ -26,6 +27,8 @@ import (
 type testBlock struct {
 	consensustest.Decidable
 	HeightV uint64
+	AcceptF func() error
+	RejectF func() error
 }
 
 func (b *testBlock) ID() ids.ID           { return b.IDV }
@@ -35,19 +38,19 @@ func (b *testBlock) Height() uint64       { return b.HeightV }
 func (b *testBlock) Timestamp() time.Time { return time.Now() }
 func (b *testBlock) Bytes() []byte        { return nil }
 func (b *testBlock) Status() uint8        { return uint8(b.StatusV) }
-func (b *testBlock) Accept(context.Context) error { 
-	if b.AcceptV != nil {
-		return b.AcceptV()
+func (b *testBlock) Accept(context.Context) error {
+	if b.AcceptF != nil {
+		return b.AcceptF()
 	}
 	b.StatusV = choices.Accepted
-	return nil 
+	return nil
 }
-func (b *testBlock) Reject(context.Context) error { 
-	if b.RejectV != nil {
-		return b.RejectV()
+func (b *testBlock) Reject(context.Context) error {
+	if b.RejectF != nil {
+		return b.RejectF()
 	}
 	b.StatusV = choices.Rejected
-	return nil 
+	return nil
 }
 func (b *testBlock) Verify(context.Context) error { return nil }
 
@@ -110,7 +113,7 @@ func TestHeightBlockIndexPostFork(t *testing.T) {
 	}
 
 	hIndex := newHeightIndexer(blkSrv,
-		nil,
+		log.NoLog{},
 		storedState,
 	)
 	hIndex.commitFrequency = 0 // commit each block
@@ -190,7 +193,7 @@ func TestHeightBlockIndexAcrossFork(t *testing.T) {
 	}
 
 	hIndex := newHeightIndexer(blkSrv,
-		nil,
+		log.NoLog{},
 		storedState,
 	)
 	hIndex.commitFrequency = 0 // commit each block
@@ -274,7 +277,7 @@ func TestHeightBlockIndexResumeFromCheckPoint(t *testing.T) {
 	}
 
 	hIndex := newHeightIndexer(blkSrv,
-		nil,
+		log.NoLog{},
 		storedState,
 	)
 	hIndex.commitFrequency = 0 // commit each block

@@ -1,20 +1,20 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package server
 
 import (
+	"github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus"
-	metrics "github.com/luxfi/metric"
 )
 
 type serverMetrics struct {
-	requests  *prometheus.CounterVec
-	duration  *prometheus.HistogramVec
-	inflight  prometheus.Gauge
+	requests *prometheus.CounterVec
+	duration *prometheus.HistogramVec
+	inflight prometheus.Gauge
 }
 
-func newMetrics(registerer metrics.Registerer) (*serverMetrics, error) {
+func newMetrics(registerer metric.Registerer) (*serverMetrics, error) {
 	m := &serverMetrics{
 		requests: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
@@ -37,7 +37,7 @@ func newMetrics(registerer metrics.Registerer) (*serverMetrics, error) {
 			},
 		),
 	}
-	
+
 	if err := registerer.Register(m.requests); err != nil {
 		return nil, err
 	}
@@ -47,6 +47,6 @@ func newMetrics(registerer metrics.Registerer) (*serverMetrics, error) {
 	if err := registerer.Register(m.inflight); err != nil {
 		return nil, err
 	}
-	
+
 	return m, nil
 }

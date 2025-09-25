@@ -27,8 +27,8 @@ services:
       - STAKING_ENABLED=false
       - SYBIL_PROTECTION_ENABLED=false
       # POA mode for single node
-      - SNOW_SAMPLE_SIZE=1
-      - SNOW_QUORUM_SIZE=1
+      - CONSENSUS_SAMPLE_SIZE=1
+      - CONSENSUS_QUORUM_SIZE=1
     networks:
       - lux-network
     logging:

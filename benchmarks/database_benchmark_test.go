@@ -290,7 +290,7 @@ func BenchmarkDatabaseConcurrency(b *testing.B) {
 		i := 0
 		for pb.Next() {
 			key := []byte(fmt.Sprintf("key-%d", i%1000))
-			
+
 			// Mix of operations
 			switch i % 3 {
 			case 0:

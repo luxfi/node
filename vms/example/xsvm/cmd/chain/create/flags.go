@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package create
@@ -16,7 +16,7 @@ import (
 
 const (
 	URIKey        = "uri"
-	NetIDKey   = "subnet-id"
+	NetIDKey      = "subnet-id"
 	AddressKey    = "address"
 	BalanceKey    = "balance"
 	NameKey       = "name"
@@ -34,7 +34,7 @@ func AddFlags(flags *pflag.FlagSet) {
 
 type Config struct {
 	URI        string
-	NetID   ids.ID
+	NetID      ids.ID
 	Address    ids.ShortID
 	Balance    uint64
 	Name       string
@@ -98,7 +98,7 @@ func ParseFlags(flags *pflag.FlagSet, args []string) (*Config, error) {
 
 	return &Config{
 		URI:        uri,
-		NetID:   netID,
+		NetID:      netID,
 		Address:    addr,
 		Balance:    balance,
 		Name:       name,

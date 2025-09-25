@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/staking"
+	luxids "github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/hashing"
 )
@@ -76,7 +76,7 @@ func ToNodeID(bytes []byte) (NodeID, error) {
 	return NodeID(nodeID), err
 }
 
-func NodeIDFromCert(cert *staking.Certificate) NodeID {
+func NodeIDFromCert(cert *luxids.Certificate) NodeID {
 	return hashing.ComputeHash160Array(
 		hashing.ComputeHash256(cert.Raw),
 	)

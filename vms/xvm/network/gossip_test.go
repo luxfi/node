@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -62,7 +62,7 @@ func TestMarshaller(t *testing.T) {
 func TestGossipMempoolAdd(t *testing.T) {
 	require := require.New(t)
 
-	metrics := metric.NewNoOpMetrics("test").Registry()
+	metrics := metric.NewNoOp().Registry()
 	toEngine := make(chan core.MessageType, 1)
 
 	baseMempool, err := mempool.New("", metrics, toEngine)
@@ -99,7 +99,7 @@ func TestGossipMempoolAdd(t *testing.T) {
 func TestGossipMempoolAddVerified(t *testing.T) {
 	require := require.New(t)
 
-	metrics := metric.NewNoOpMetrics("test").Registry()
+	metrics := metric.NewNoOp().Registry()
 	toEngine := make(chan core.MessageType, 1)
 
 	baseMempool, err := mempool.New("", metrics, toEngine)

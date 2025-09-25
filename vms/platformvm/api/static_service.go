@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package api
@@ -10,11 +10,11 @@ import (
 	"net/http"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -32,7 +32,7 @@ import (
 
 var (
 	errUTXOHasNoValue         = errors.New("genesis UTXO has no value")
-	errValidatorHasNoWeight   = errors.New("validator has not weight")
+	errValidatorHasNoWeight   = errors.New("validator has no weight")
 	errValidatorAlreadyExited = errors.New("validator would have already unstaked")
 	errStakeOverflow          = errors.New("validator stake exceeds limit")
 
@@ -166,7 +166,7 @@ type Chain struct {
 	VMID        ids.ID   `json:"vmID"`
 	FxIDs       []ids.ID `json:"fxIDs"`
 	Name        string   `json:"name"`
-	NetID    ids.ID   `json:"netID"`
+	NetID       ids.ID   `json:"netID"`
 }
 
 // BuildGenesisArgs are the arguments used to create
@@ -362,7 +362,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 				NetworkID:    uint32(args.NetworkID),
 				BlockchainID: ids.Empty,
 			}},
-			NetID:    chain.NetID,
+			NetID:       chain.NetID,
 			ChainName:   chain.Name,
 			VMID:        chain.VMID,
 			FxIDs:       chain.FxIDs,

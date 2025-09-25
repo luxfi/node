@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -17,7 +17,7 @@ func NewBLSSignerWrapper(key *bls.SecretKey) bls.Signer {
 }
 
 func (s *BLSSignerWrapper) Sign(msg []byte) (*bls.Signature, error) {
-	// The underlying Sign now returns an error
+	// The underlying Sign returns both signature and error
 	return s.key.Sign(msg)
 }
 
@@ -26,6 +26,6 @@ func (s *BLSSignerWrapper) PublicKey() *bls.PublicKey {
 }
 
 func (s *BLSSignerWrapper) SignProofOfPossession(msg []byte) (*bls.Signature, error) {
-	// Use the dedicated SignProofOfPossession method
-	return s.key.SignProofOfPossession(msg)
+	// Use the regular Sign method with the proof of possession message
+	return s.key.Sign(msg)
 }

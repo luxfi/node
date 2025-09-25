@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -116,8 +116,6 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	execConfig, err := config.GetExecutionConfig(nil)
 	require.NoError(err)
 
-	metrics := metrics.Noop
-
 	s, err := state.New(
 		db,
 		genesisBytes,
@@ -127,7 +125,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 		},
 		execConfig,
 		context.Background(),
-		metrics,
+		metric.NewNoOp(),
 		reward.NewCalculator(reward.Config{
 			MaxConsumptionRate: .12 * reward.PercentDenominator,
 			MinConsumptionRate: .10 * reward.PercentDenominator,
@@ -143,7 +141,7 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 			Validators: vdrs,
 		},
 		s,
-		metrics,
+		metrics.Noop,
 		new(mockable.Clock),
 	)
 
@@ -198,7 +196,7 @@ func addPrimaryValidator(
 		TxID:            ids.GenerateTestID(),
 		NodeID:          nodeID,
 		PublicKey:       bls.PublicFromSecretKey(sk),
-		NetID:        constants.PrimaryNetworkID,
+		NetID:           constants.PrimaryNetworkID,
 		Weight:          2 * units.MegaLux,
 		StartTime:       startTime,
 		EndTime:         endTime,
@@ -228,7 +226,7 @@ func addNetValidator(
 	s.PutCurrentValidator(&state.Staker{
 		TxID:            ids.GenerateTestID(),
 		NodeID:          nodeID,
-		NetID:        netID,
+		NetID:           netID,
 		Weight:          1 * units.Lux,
 		StartTime:       startTime,
 		EndTime:         endTime,
@@ -260,7 +258,7 @@ func addSubnetDelegator(
 	s.PutCurrentDelegator(&state.Staker{
 		TxID:            ids.GenerateTestID(),
 		NodeID:          nodeID,
-		NetID:        netID,
+		NetID:           netID,
 		Weight:          1 * units.Lux,
 		StartTime:       startTime,
 		EndTime:         endTime,

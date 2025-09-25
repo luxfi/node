@@ -9,10 +9,10 @@ import (
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -99,7 +99,7 @@ func (c *Internal) CreateChain(chainID ids.ID, tx *txs.CreateChainTx) {
 
 	chainParams := chains.ChainParameters{
 		ID:          chainID,
-		NetID:    tx.NetID,
+		NetID:       tx.NetID,
 		GenesisData: tx.GenesisData,
 		VMID:        tx.VMID,
 		FxIDs:       tx.FxIDs,

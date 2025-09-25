@@ -5,7 +5,7 @@ set -euo pipefail
 # Configures prometheus and promtail to collect metrics and logs from
 # a local node.
 
-API_PORT="${API_PORT:-9650}"
+API_PORT="${API_PORT:-9630}"
 
 LOGS_PATH="${LOGS_PATH:-${HOME}/.luxd/logs}"
 

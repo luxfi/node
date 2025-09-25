@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -30,7 +30,6 @@ var (
 	handlerLabel = "handlerID"
 	labelNames   = []string{opLabel, handlerLabel}
 )
-
 
 // networkAppHandlerAdapter adapts Network to core.AppHandler
 type networkAppHandlerAdapter struct {
@@ -83,7 +82,7 @@ func NewNetwork(
 	registerer metric.Registerer,
 	namespace string,
 ) (*Network, error) {
-	metrics := metrics{
+	metrics := metricsImpl{
 		msgTime: metric.NewGaugeVec(
 			metric.GaugeOpts{
 				Namespace: namespace,
@@ -114,7 +113,7 @@ func NewNetwork(
 		Peers:  &Peers{},
 		log:    log,
 		sender: sender,
-		router: newRouter(log, sender, metrics),
+		router: newRouter(log, sender, &metrics),
 	}, nil
 }
 

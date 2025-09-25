@@ -19,9 +19,9 @@ import (
 	"github.com/gorilla/rpc/v2"
 
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/password"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 

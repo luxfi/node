@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -15,10 +15,10 @@ import (
 )
 
 var (
-	// Temporarily disable interface check due to Status() method signature issue
-	// _ chain.Block = (*Block)(nil)
-	// OracleBlock is not available in consensus package
-	// _ chain.OracleBlock = (*Block)(nil)
+// Temporarily disable interface check due to Status() method signature issue
+// _ chain.Block = (*Block)(nil)
+// OracleBlock is not available in consensus package
+// _ chain.OracleBlock = (*Block)(nil)
 )
 
 // Exported for testing in platformvm package.
@@ -85,12 +85,6 @@ func (b *Block) StatusChoices() choices.Status {
 // Status returns the status as uint8 for interface compatibility
 func (b *Block) Status() uint8 {
 	return uint8(b.StatusChoices())
-}
-
-// SetStatus sets the block status  
-func (b *Block) SetStatus(status choices.Status) {
-	// This is a no-op as status is managed by the manager
-	// The actual status is tracked in manager.blkIDToState
 }
 
 func (b *Block) Timestamp() time.Time {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -111,7 +111,7 @@ func TestState(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	s, err := New(vdb, parser, metric.NewNoOpMetrics("test").Registry(), trackChecksums)
+	s, err := New(vdb, parser, metric.NewNoOp().Registry(), trackChecksums)
 	require.NoError(err)
 
 	s.AddUTXO(populatedUTXO)
@@ -119,7 +119,7 @@ func TestState(t *testing.T) {
 	s.AddBlock(populatedBlk)
 	require.NoError(s.Commit())
 
-	s, err = New(vdb, parser, metric.NewNoOpMetrics("test").Registry(), trackChecksums)
+	s, err = New(vdb, parser, metric.NewNoOp().Registry(), trackChecksums)
 	require.NoError(err)
 
 	ChainUTXOTest(t, s)
@@ -132,7 +132,7 @@ func TestDiff(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	s, err := New(vdb, parser, metric.NewNoOpMetrics("test").Registry(), trackChecksums)
+	s, err := New(vdb, parser, metric.NewNoOp().Registry(), trackChecksums)
 	require.NoError(err)
 
 	s.AddUTXO(populatedUTXO)
@@ -292,7 +292,7 @@ func TestInitializeChainState(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	s, err := New(vdb, parser, metric.NewNoOpMetrics("test").Registry(), trackChecksums)
+	s, err := New(vdb, parser, metric.NewNoOp().Registry(), trackChecksums)
 	require.NoError(err)
 
 	stopVertexID := ids.GenerateTestID()

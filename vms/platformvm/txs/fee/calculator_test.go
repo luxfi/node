@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fee
@@ -20,13 +20,13 @@ func TestTxFees(t *testing.T) {
 	feeTestsDefaultCfg := StaticConfig{
 		TxFee:                         1 * units.Lux,
 		CreateAssetTxFee:              2 * units.Lux,
-		CreateNetTxFee:             3 * units.Lux,
-		TransformNetTxFee:          4 * units.Lux,
+		CreateNetTxFee:                3 * units.Lux,
+		TransformNetTxFee:             4 * units.Lux,
 		CreateBlockchainTxFee:         5 * units.Lux,
 		AddPrimaryNetworkValidatorFee: 6 * units.Lux,
 		AddPrimaryNetworkDelegatorFee: 7 * units.Lux,
-		AddNetValidatorFee:         8 * units.Lux,
-		AddNetDelegatorFee:         9 * units.Lux,
+		AddNetValidatorFee:            8 * units.Lux,
+		AddNetDelegatorFee:            9 * units.Lux,
 	}
 
 	latestForkTime := time.Unix(1713945427, 0)

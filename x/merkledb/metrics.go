@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package merkledb
@@ -27,8 +27,8 @@ const (
 )
 
 var (
-	_ metrics = (*prometheusMetrics)(nil)
-	_ metrics = (*mockMetrics)(nil)
+	_ merkleDBMetrics = (*prometheusMetrics)(nil)
+	_ merkleDBMetrics = (*mockMetrics)(nil)
 
 	ioLabels     = []string{ioType}
 	ioReadLabels = metric.Labels{
@@ -73,7 +73,7 @@ var (
 	}
 )
 
-type metrics interface {
+type merkleDBMetrics interface {
 	HashCalculated()
 	DatabaseNodeRead()
 	DatabaseNodeWrite()
@@ -93,7 +93,7 @@ type prometheusMetrics struct {
 	lookup metric.CounterVec
 }
 
-func newMetrics(namespace string, reg metric.Registerer) (metrics, error) {
+func newMetrics(namespace string, reg metric.Registerer) (merkleDBMetrics, error) {
 	if reg == nil {
 		return &mockMetrics{}, nil
 	}

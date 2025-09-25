@@ -16,10 +16,10 @@ type TransportType string
 const (
 	// TransportGRPC uses standard gRPC (default)
 	TransportGRPC TransportType = "grpc"
-	
+
 	// TransportQZMQ uses quantum-secure ZeroMQ (for X-Chain DEX)
 	TransportQZMQ TransportType = "qzmq"
-	
+
 	// TransportHybrid uses both gRPC and QZMQ
 	TransportHybrid TransportType = "hybrid"
 )
@@ -28,19 +28,19 @@ const (
 type TransportConfig struct {
 	// Type selects the transport protocol
 	Type TransportType
-	
+
 	// EnableQZMQ enables QZMQ for DEX operations
 	EnableQZMQ bool
-	
+
 	// EnableGRPC enables gRPC (default true)
 	EnableGRPC bool
-	
+
 	// QZMQConfig holds QZMQ-specific settings
 	QZMQConfig *QZMQTransportConfig
-	
+
 	// GRPCConfig holds gRPC-specific settings
 	GRPCConfig *GRPCTransportConfig
-	
+
 	// NetworkPipes shared network configuration
 	NetworkPipes *NetworkPipeConfig
 }
@@ -49,16 +49,16 @@ type TransportConfig struct {
 type QZMQTransportConfig struct {
 	// EnableQuantum enables post-quantum cryptography
 	EnableQuantum bool
-	
+
 	// ConsensusPort base port for consensus (5000-5002)
 	ConsensusPort int
-	
+
 	// DEXPort base port for DEX operations (6000-6003)
 	DEXPort int
-	
+
 	// KeyRotation interval for key rotation
 	KeyRotation time.Duration
-	
+
 	// SecurityMode: "performance", "balanced", "conservative"
 	SecurityMode string
 }
@@ -67,16 +67,16 @@ type QZMQTransportConfig struct {
 type GRPCTransportConfig struct {
 	// Port for gRPC server
 	Port int
-	
+
 	// MaxMessageSize in bytes
 	MaxMessageSize int
-	
+
 	// EnableTLS enables TLS encryption
 	EnableTLS bool
-	
+
 	// CertFile path to TLS certificate
 	CertFile string
-	
+
 	// KeyFile path to TLS key
 	KeyFile string
 }
@@ -85,22 +85,22 @@ type GRPCTransportConfig struct {
 type NetworkPipeConfig struct {
 	// ListenAddr is the address to listen on
 	ListenAddr string
-	
+
 	// AdvertiseAddr is the address to advertise to peers
 	AdvertiseAddr string
-	
+
 	// P2PPort is the main P2P port (9651)
 	P2PPort int
-	
-	// RPCPort is the RPC port (9650)
+
+	// RPCPort is the RPC port (9630)
 	RPCPort int
-	
+
 	// Peers list of peer addresses
 	Peers []string
-	
+
 	// MaxConnections per peer
 	MaxConnections int
-	
+
 	// Bandwidth limits in Mbps
 	BandwidthLimit int
 }
@@ -111,26 +111,26 @@ func DefaultTransportConfig() *TransportConfig {
 		Type:       TransportGRPC, // gRPC is default
 		EnableGRPC: true,
 		EnableQZMQ: false, // QZMQ opt-in for X-Chain DEX
-		
+
 		GRPCConfig: &GRPCTransportConfig{
 			Port:           9090,
 			MaxMessageSize: 100 * 1024 * 1024, // 100MB
 			EnableTLS:      true,
 		},
-		
+
 		QZMQConfig: &QZMQTransportConfig{
-			EnableQuantum:  true,
-			ConsensusPort:  5000,
-			DEXPort:        6000,
-			KeyRotation:    5 * time.Minute,
-			SecurityMode:   "balanced",
+			EnableQuantum: true,
+			ConsensusPort: 5000,
+			DEXPort:       6000,
+			KeyRotation:   5 * time.Minute,
+			SecurityMode:  "balanced",
 		},
-		
+
 		NetworkPipes: &NetworkPipeConfig{
 			ListenAddr:     "0.0.0.0",
 			AdvertiseAddr:  "", // Auto-detect
 			P2PPort:        9651,
-			RPCPort:        9650,
+			RPCPort:        9630,
 			MaxConnections: 256,
 			BandwidthLimit: 1000, // 1Gbps
 		},
@@ -140,8 +140,8 @@ func DefaultTransportConfig() *TransportConfig {
 // XChainDEXConfig returns configuration optimized for DEX
 func XChainDEXConfig() *TransportConfig {
 	config := DefaultTransportConfig()
-	config.Type = TransportHybrid // Use both protocols
-	config.EnableQZMQ = true       // Enable QZMQ for DEX
+	config.Type = TransportHybrid                   // Use both protocols
+	config.EnableQZMQ = true                        // Enable QZMQ for DEX
 	config.QZMQConfig.SecurityMode = "conservative" // Maximum security for DEX
 	config.QZMQConfig.EnableQuantum = true
 	return config
@@ -150,14 +150,14 @@ func XChainDEXConfig() *TransportConfig {
 // TransportManager manages both gRPC and QZMQ transports
 type TransportManager struct {
 	config *TransportConfig
-	
+
 	// gRPC components
 	grpcServer *grpc.Server
 	grpcClient *grpc.ClientConn
-	
+
 	// QZMQ components
 	qzmqTransport *qzmq.XChainDEXTransport
-	
+
 	// Shared network pipes
 	networkPipes *NetworkPipeManager
 }
@@ -167,24 +167,24 @@ func NewTransportManager(config *TransportConfig) (*TransportManager, error) {
 	tm := &TransportManager{
 		config: config,
 	}
-	
+
 	// Initialize network pipes (shared by both transports)
 	tm.networkPipes = NewNetworkPipeManager(config.NetworkPipes)
-	
+
 	// Initialize gRPC if enabled
 	if config.EnableGRPC {
 		if err := tm.initGRPC(); err != nil {
 			return nil, fmt.Errorf("failed to init gRPC: %w", err)
 		}
 	}
-	
+
 	// Initialize QZMQ if enabled (for X-Chain DEX)
 	if config.EnableQZMQ {
 		if err := tm.initQZMQ(); err != nil {
 			return nil, fmt.Errorf("failed to init QZMQ: %w", err)
 		}
 	}
-	
+
 	return tm, nil
 }
 
@@ -194,15 +194,15 @@ func (tm *TransportManager) initGRPC() error {
 		grpc.MaxRecvMsgSize(tm.config.GRPCConfig.MaxMessageSize),
 		grpc.MaxSendMsgSize(tm.config.GRPCConfig.MaxMessageSize),
 	}
-	
+
 	if tm.config.GRPCConfig.EnableTLS {
 		// Add TLS credentials
 		// creds, err := credentials.NewServerTLSFromFile(...)
 		// opts = append(opts, grpc.Creds(creds))
 	}
-	
+
 	tm.grpcServer = grpc.NewServer(opts...)
-	
+
 	// Create gRPC client
 	dialOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -211,7 +211,7 @@ func (tm *TransportManager) initGRPC() error {
 			grpc.MaxCallSendMsgSize(tm.config.GRPCConfig.MaxMessageSize),
 		),
 	}
-	
+
 	// Connect to peers via gRPC
 	// This would connect to the first peer as an example
 	if len(tm.config.NetworkPipes.Peers) > 0 {
@@ -224,19 +224,19 @@ func (tm *TransportManager) initGRPC() error {
 		}
 		tm.grpcClient = conn
 	}
-	
+
 	return nil
 }
 
 func (tm *TransportManager) initQZMQ() error {
 	// Load validator keys (would come from Lux key management)
 	validatorKeys := &qzmq.ValidatorKeys{
-		NodeID:  make([]byte, 32),   // Ed25519
-		BLSKey:  make([]byte, 32),   // BLS
-		PQKey:   make([]byte, 2400), // ML-KEM-768
-		DSAKey:  make([]byte, 4032), // ML-DSA-87
+		NodeID: make([]byte, 32),   // Ed25519
+		BLSKey: make([]byte, 32),   // BLS
+		PQKey:  make([]byte, 2400), // ML-KEM-768
+		DSAKey: make([]byte, 4032), // ML-DSA-87
 	}
-	
+
 	// Create QZMQ transport for X-Chain DEX
 	transport, err := qzmq.NewXChainDEXTransport(
 		fmt.Sprintf("http://%s:%d", tm.config.NetworkPipes.ListenAddr, tm.config.NetworkPipes.RPCPort),
@@ -247,9 +247,9 @@ func (tm *TransportManager) initQZMQ() error {
 	if err != nil {
 		return err
 	}
-	
+
 	tm.qzmqTransport = transport
-	
+
 	// Start QZMQ services on the same network pipes
 	if err := tm.qzmqTransport.Listen(
 		tm.config.QZMQConfig.ConsensusPort,
@@ -258,7 +258,7 @@ func (tm *TransportManager) initQZMQ() error {
 	); err != nil {
 		return err
 	}
-	
+
 	if err := tm.qzmqTransport.StartDEX(
 		tm.config.QZMQConfig.DEXPort,
 		tm.config.QZMQConfig.DEXPort+1,
@@ -267,12 +267,12 @@ func (tm *TransportManager) initQZMQ() error {
 	); err != nil {
 		return err
 	}
-	
+
 	// Connect to peers via QZMQ
 	if err := tm.qzmqTransport.ConnectToPeers(tm.config.NetworkPipes.Peers); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -281,10 +281,10 @@ func (tm *TransportManager) SendMessage(msgType string, data []byte) error {
 	switch tm.config.Type {
 	case TransportGRPC:
 		return tm.sendViaGRPC(msgType, data)
-		
+
 	case TransportQZMQ:
 		return tm.sendViaQZMQ(msgType, data)
-		
+
 	case TransportHybrid:
 		// Route based on message type
 		if isDEXMessage(msgType) {
@@ -293,7 +293,7 @@ func (tm *TransportManager) SendMessage(msgType string, data []byte) error {
 		}
 		// Other messages use gRPC (default)
 		return tm.sendViaGRPC(msgType, data)
-		
+
 	default:
 		return fmt.Errorf("unknown transport type: %s", tm.config.Type)
 	}
@@ -324,7 +324,7 @@ func isDEXMessage(msgType string) bool {
 // NetworkPipeManager manages shared network infrastructure
 type NetworkPipeManager struct {
 	config *NetworkPipeConfig
-	
+
 	// Shared TCP listeners that can be used by both gRPC and QZMQ
 	// Both protocols can run over the same network infrastructure
 }
@@ -341,7 +341,7 @@ func (tm *TransportManager) Start() error {
 	if err := tm.networkPipes.Start(); err != nil {
 		return err
 	}
-	
+
 	// gRPC and QZMQ are already started in init
 	return nil
 }
@@ -357,15 +357,15 @@ func (tm *TransportManager) Close() error {
 	if tm.grpcServer != nil {
 		tm.grpcServer.GracefulStop()
 	}
-	
+
 	if tm.grpcClient != nil {
 		tm.grpcClient.Close()
 	}
-	
+
 	if tm.qzmqTransport != nil {
 		tm.qzmqTransport.Close()
 	}
-	
+
 	return nil
 }
 

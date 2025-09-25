@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build test
+
 package e2e
 
 import (
@@ -50,5 +52,5 @@ var _ = ginkgo.AfterEach(func() {
 		strconv.FormatInt(startTime, 10),
 		strconv.FormatInt(endTime, 10),
 	)
-	tests.Outf(tmpnet.MetricsAvailableMessage + " %s\n", metricsLink)
+	tests.Outf(tmpnet.MetricsAvailableMessage+" %s\n", metricsLink)
 })

@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/luxfi/metric"
@@ -27,7 +28,6 @@ type MultiGatherer interface {
 }
 
 // Deprecated: Use NewPrefixGatherer instead.
-//
 func NewMultiGatherer() MultiGatherer {
 	return NewPrefixGatherer()
 }
@@ -35,14 +35,28 @@ func NewMultiGatherer() MultiGatherer {
 type multiGatherer struct {
 	lock      sync.RWMutex
 	names     []string
-	gatherers metric.Gatherers
+	gatherers []metric.Gatherer
 }
 
 func (g *multiGatherer) Gather() ([]*dto.MetricFamily, error) {
 	g.lock.RLock()
 	defer g.lock.RUnlock()
 
-	return g.gatherers.Gather()
+	var allFamilies []*dto.MetricFamily
+	for _, gatherer := range g.gatherers {
+		families, err := gatherer.Gather()
+		if err != nil {
+			return allFamilies, err
+		}
+		allFamilies = append(allFamilies, families...)
+	}
+
+	// Sort metrics by name for consistent ordering
+	sort.Slice(allFamilies, func(i, j int) bool {
+		return *allFamilies[i].Name < *allFamilies[j].Name
+	})
+
+	return allFamilies, nil
 }
 
 func (g *multiGatherer) Register(name string, gatherer metric.Gatherer) error {

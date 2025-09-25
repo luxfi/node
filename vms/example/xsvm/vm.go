@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xsvm
@@ -10,7 +10,6 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
@@ -18,6 +17,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
@@ -38,10 +38,10 @@ var (
 )
 
 type VM struct {
-	chainCtx     *block.ChainContext
-	db           database.Database
-	genesis      *genesis.Genesis
-	toEngine     chan<- block.Message
+	chainCtx *block.ChainContext
+	db       database.Database
+	genesis  *genesis.Genesis
+	toEngine chan<- block.Message
 
 	chain   chain.Chain
 	builder builder.Builder

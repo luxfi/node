@@ -1,12 +1,14 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metervm
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/luxfi/metric"
+	"github.com/luxfi/node/vms"
 
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/ids"
@@ -83,7 +85,7 @@ func (vm *blockVM) BuildBlock(ctx context.Context) (block.Block, error) {
 	vm.blockMetrics.buildBlock.Observe(duration)
 	return &meterBlock{
 		innerBlock: blk,
-		vm:    vm,
+		vm:         vm,
 	}, nil
 }
 
@@ -99,7 +101,7 @@ func (vm *blockVM) ParseBlock(ctx context.Context, b []byte) (block.Block, error
 	vm.blockMetrics.parseBlock.Observe(duration)
 	return &meterBlock{
 		innerBlock: blk,
-		vm:    vm,
+		vm:         vm,
 	}, nil
 }
 
@@ -115,7 +117,7 @@ func (vm *blockVM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error)
 	vm.blockMetrics.getBlock.Observe(duration)
 	return &meterBlock{
 		innerBlock: blk,
-		vm:    vm,
+		vm:         vm,
 	}, nil
 }
 
@@ -141,4 +143,9 @@ func (vm *blockVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.I
 	end := vm.clock.Time()
 	vm.blockMetrics.getBlockIDAtHeight.Observe(float64(end.Sub(start)))
 	return blockID, err
+}
+
+// CreateHandlers delegates to the underlying VM using vms.DelegateHandlers
+func (vm *blockVM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
+	return vms.DelegateHandlers(ctx, vm.ChainVM)
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package subprocess
@@ -43,7 +43,6 @@ type Status struct {
 //
 // The subprocess is expected to be stopped by the caller if a non-nil error is
 // returned. If piping the IO fails then the subprocess will be stopped.
-//
 func Bootstrap(
 	ctx context.Context,
 	listener net.Listener,

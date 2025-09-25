@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
@@ -14,12 +14,12 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/luxfi/consensus/core"
+	consensusset "github.com/luxfi/consensus/utils/set"
+	"github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/utils/set"
-	consensusset "github.com/luxfi/consensus/utils/set"
-	"github.com/luxfi/consensus/version"
 )
 
 // Minimum amount of time to handle a request

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -217,16 +217,15 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		FlowChecker:  res.utxosVerifier,
 		Uptimes:      &uptime.NoOpCalculator{},
 		Rewards:      rewardsCalc,
+		Lock:         res.ctx.Lock,
 	}
 
-	registerer := metric.NewPrometheusRegistry()
+	registerer := metric.NewRegistry()
 	res.sender = &coremock.MockAppSender{}
 
-	metricsInstance, err := metrics.New(registerer)
-	if err != nil {
-		panic(fmt.Errorf("failed to create metrics: %w", err))
-	}
+	platformMetrics := metrics.Noop
 
+	var err error
 	res.mempool, err = mempool.New("mempool", registerer, nil)
 	if err != nil {
 		panic(fmt.Errorf("failed to create mempool: %w", err))
@@ -235,7 +234,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 	if ctrl == nil {
 		res.blkManager = NewManager(
 			res.mempool,
-			metricsInstance,
+			platformMetrics,
 			res.state,
 			res.backend,
 			pvalidators.TestManager,
@@ -244,7 +243,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 	} else {
 		res.blkManager = NewManager(
 			res.mempool,
-			metricsInstance,
+			platformMetrics,
 			res.mockedState,
 			res.backend,
 			pvalidators.TestManager,
@@ -265,13 +264,9 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		require := require.New(t)
 
 		if res.isBootstrapped.Get() {
-			validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+			_ = res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 
-			// Only stop tracking if there are validators to stop
-			for _, validatorID := range validatorIDs {
-				// Ignore the error if tracking wasn't started
-				_ = res.uptimes.StopTracking(validatorID)
-			}
+			// NoOpCalculator doesn't track validators, so no need to stop
 			require.NoError(res.state.Commit())
 		}
 
@@ -342,11 +337,11 @@ func defaultState(
 	state, err := state.New(
 		db,
 		genesisBytes,
-		metric.NewPrometheusRegistry(),
+		metric.NewRegistry(),
 		cfg,
 		execCfg,
 		ctx,
-		metrics.Noop,
+		metric.NewNoOp(),
 		rewards,
 	)
 	if err != nil {
@@ -369,8 +364,8 @@ func defaultConfig(t *testing.T, f fork) *config.Config {
 		Validators:             validators.NewManager(),
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                 defaultTxFee,
-			CreateNetTxFee:        100 * defaultTxFee,
-			CreateBlockchainTxFee: 100 * defaultTxFee,
+			CreateNetTxFee:        10 * defaultTxFee, // Reduced for testing
+			CreateBlockchainTxFee: 10 * defaultTxFee, // Reduced for testing
 		},
 		MinValidatorStake: 5 * units.MilliLux,
 		MaxValidatorStake: 500 * units.MilliLux,

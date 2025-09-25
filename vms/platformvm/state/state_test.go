@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -13,8 +13,8 @@ import (
 
 	"github.com/luxfi/metric"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/choices"
 
@@ -45,8 +45,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/fx"
 
 	"github.com/luxfi/node/vms/platformvm/genesis"
-
-	"github.com/luxfi/node/vms/platformvm/metrics"
 
 	"github.com/luxfi/node/vms/platformvm/reward"
 
@@ -181,7 +179,7 @@ func TestPersistStakers(t *testing.T) {
 				}, valOut)
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
-				upDuration, lastUpdated, err := s.GetUptime(staker.NodeID)
+				upDuration, lastUpdated, err := s.GetUptime(staker.NodeID, staker.NetID)
 				if staker.NetID == constants.PrimaryNetworkID {
 					r.NoError(err)
 					r.Equal(upDuration, time.Duration(0))
@@ -340,7 +338,7 @@ func TestPersistStakers(t *testing.T) {
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
 				// pending validators uptime is not tracked
-				_, _, err := s.GetUptime(staker.NodeID)
+				_, _, err := s.GetUptime(staker.NodeID, staker.NetID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
@@ -462,7 +460,7 @@ func TestPersistStakers(t *testing.T) {
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
 				// uptimes of delete validators are dropped
-				_, _, err := s.GetUptime(staker.NodeID)
+				_, _, err := s.GetUptime(staker.NodeID, staker.NetID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
@@ -616,7 +614,7 @@ func TestPersistStakers(t *testing.T) {
 				r.Empty(valsMap)
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
-				_, _, err := s.GetUptime(staker.NodeID)
+				_, _, err := s.GetUptime(staker.NodeID, staker.NetID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
@@ -751,7 +749,7 @@ func newInitializedState(require *require.Assertions) State {
 	require.NoError(initialValidatorTx.Initialize(txs.Codec))
 
 	initialChain := &txs.CreateChainTx{
-		NetID:   constants.PrimaryNetworkID,
+		NetID:      constants.PrimaryNetworkID,
 		ChainName:  "x",
 		VMID:       constants.XVMID,
 		SubnetAuth: &secp256k1fx.Input{},
@@ -802,7 +800,7 @@ func newStateFromDB(require *require.Assertions, db database.Database) *state {
 	execCfg, _ := config.GetExecutionConfig(nil)
 	state, err := newState(
 		db,
-		metrics.Noop,
+		metric.NewNoOp(),
 		&config.Config{
 			Validators: validators.NewManager(),
 		},
@@ -826,7 +824,8 @@ func createPermissionlessValidatorTx(r *require.Assertions, netID ids.ID, valida
 	if netID == constants.PrimaryNetworkID {
 		sk, err := bls.NewSecretKey()
 		r.NoError(err)
-		sig = signer.NewProofOfPossession(sk)
+		sig, err = signer.NewProofOfPossession(sk)
+		r.NoError(err)
 	}
 
 	return &txs.AddPermissionlessValidatorTx{
@@ -856,7 +855,7 @@ func createPermissionlessValidatorTx(r *require.Assertions, netID ids.ID, valida
 			},
 		},
 		Validator: validatorsData,
-		Net:    netID,
+		Net:       netID,
 		Signer:    sig,
 
 		StakeOuts: []*lux.TransferableOutput{
@@ -922,7 +921,7 @@ func createPermissionlessDelegatorTx(netID ids.ID, delegatorData txs.Validator) 
 			},
 		},
 		Validator: delegatorData,
-		Net:    netID,
+		Net:       netID,
 
 		StakeOuts: []*lux.TransferableOutput{
 			{
@@ -1100,7 +1099,7 @@ func TestStateAddRemoveValidator(t *testing.T) {
 
 	var (
 		numNodes  = 3
-		netID  = ids.GenerateTestID()
+		netID     = ids.GenerateTestID()
 		startTime = time.Now()
 		endTime   = startTime.Add(24 * time.Hour)
 		stakers   = make([]Staker, numNodes)
@@ -1131,13 +1130,13 @@ func TestStateAddRemoveValidator(t *testing.T) {
 		removedValidators []Staker
 
 		expectedPrimaryValidatorSet map[ids.NodeID]*validators.GetValidatorOutput
-		expectedNetValidatorSet  map[ids.NodeID]*validators.GetValidatorOutput
+		expectedNetValidatorSet     map[ids.NodeID]*validators.GetValidatorOutput
 	}
 	diffs := []diff{
 		{
 			// Do nothing
 			expectedPrimaryValidatorSet: map[ids.NodeID]*validators.GetValidatorOutput{},
-			expectedNetValidatorSet:  map[ids.NodeID]*validators.GetValidatorOutput{},
+			expectedNetValidatorSet:     map[ids.NodeID]*validators.GetValidatorOutput{},
 		},
 		{
 			// Add a net validator
@@ -1154,7 +1153,7 @@ func TestStateAddRemoveValidator(t *testing.T) {
 			// Remove a net validator
 			removedValidators:           []Staker{stakers[0]},
 			expectedPrimaryValidatorSet: map[ids.NodeID]*validators.GetValidatorOutput{},
-			expectedNetValidatorSet:  map[ids.NodeID]*validators.GetValidatorOutput{},
+			expectedNetValidatorSet:     map[ids.NodeID]*validators.GetValidatorOutput{},
 		},
 		{ // Add a primary network validator
 			addedValidators: []Staker{stakers[1]},
@@ -1181,7 +1180,7 @@ func TestStateAddRemoveValidator(t *testing.T) {
 		{ // Remove a primary network validator
 			removedValidators:           []Staker{stakers[1]},
 			expectedPrimaryValidatorSet: map[ids.NodeID]*validators.GetValidatorOutput{},
-			expectedNetValidatorSet:  map[ids.NodeID]*validators.GetValidatorOutput{},
+			expectedNetValidatorSet:     map[ids.NodeID]*validators.GetValidatorOutput{},
 		},
 		{
 			// Add 2 net validators and a primary network validator
@@ -1208,7 +1207,7 @@ func TestStateAddRemoveValidator(t *testing.T) {
 			// Remove 2 net validators and a primary network validator.
 			removedValidators:           []Staker{stakers[0], stakers[1], stakers[2]},
 			expectedPrimaryValidatorSet: map[ids.NodeID]*validators.GetValidatorOutput{},
-			expectedNetValidatorSet:  map[ids.NodeID]*validators.GetValidatorOutput{},
+			expectedNetValidatorSet:     map[ids.NodeID]*validators.GetValidatorOutput{},
 		},
 	}
 	for currentIndex, diff := range diffs {
@@ -1323,7 +1322,7 @@ func requireEqualPublicKeysValidatorSet(
 
 		actualVdr := actual[nodeID]
 		require.Equal(expectedVdr.NodeID, actualVdr.NodeID)
-		
+
 		// Compare public key values, not pointers
 		if expectedVdr.PublicKey == nil {
 			require.Nil(actualVdr.PublicKey)
@@ -1388,7 +1387,7 @@ func TestReindexBlocks(t *testing.T) {
 		}
 		stBlkBytes, err := testCodec.Marshal(block.CodecVersion, &stBlk)
 		require.NoError(err)
-		
+
 		// Debug: Check what we marshaled
 		t.Logf("Marshaled stateBlk with version %d, got %d bytes", block.CodecVersion, len(stBlkBytes))
 		if len(stBlkBytes) > 10 {

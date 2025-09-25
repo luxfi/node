@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -12,17 +12,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/engine/chain/chainmock"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/database"
@@ -32,7 +33,6 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/state"
 
@@ -45,7 +45,7 @@ var (
 )
 
 type fullVM struct {
-	*blocktest.StateSyncableVM
+	*blockmock.StateSyncableVM
 }
 
 // GetBlockIDAtHeight implements the method to resolve ambiguity
@@ -54,6 +54,51 @@ func (vm *fullVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID
 		return vm.StateSyncableVM.VM.ChainVM.GetBlockIDAtHeight(ctx, height)
 	}
 	return ids.Empty, errors.New("not implemented")
+}
+
+// GetLastStateSummary wraps the mock to return the correct type
+func (vm *fullVM) GetLastStateSummary(ctx context.Context) (block.StateSummary, error) {
+	if vm.StateSyncableVM != nil && vm.StateSyncableVM.GetLastStateSummaryF != nil {
+		result, err := vm.StateSyncableVM.GetLastStateSummaryF(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if summary, ok := result.(block.StateSummary); ok {
+			return summary, nil
+		}
+		return nil, fmt.Errorf("invalid state summary type")
+	}
+	return nil, errors.New("not implemented")
+}
+
+// GetOngoingSyncStateSummary wraps the mock to return the correct type
+func (vm *fullVM) GetOngoingSyncStateSummary(ctx context.Context) (block.StateSummary, error) {
+	if vm.StateSyncableVM != nil && vm.StateSyncableVM.GetOngoingSyncStateSummaryF != nil {
+		result, err := vm.StateSyncableVM.GetOngoingSyncStateSummaryF(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if summary, ok := result.(block.StateSummary); ok {
+			return summary, nil
+		}
+		return nil, fmt.Errorf("invalid state summary type")
+	}
+	return nil, errors.New("not implemented")
+}
+
+// GetStateSummary wraps the mock to return the correct type
+func (vm *fullVM) GetStateSummary(ctx context.Context, height uint64) (block.StateSummary, error) {
+	if vm.StateSyncableVM != nil && vm.StateSyncableVM.GetStateSummaryF != nil {
+		result, err := vm.StateSyncableVM.GetStateSummaryF(ctx, height)
+		if err != nil {
+			return nil, err
+		}
+		if summary, ok := result.(block.StateSummary); ok {
+			return summary, nil
+		}
+		return nil, fmt.Errorf("invalid state summary type")
+	}
+	return nil, errors.New("not implemented")
 }
 
 // BuildBlock implements the method to resolve ambiguity
@@ -69,7 +114,7 @@ func (vm *fullVM) ParseBlock(ctx context.Context, bytes []byte) (block.Block, er
 	if vm.StateSyncableVM != nil && vm.StateSyncableVM.VM.ChainVM != nil {
 		return vm.StateSyncableVM.VM.ChainVM.ParseBlock(ctx, bytes)
 	}
-	return nil, errors.New("not implemented") 
+	return nil, errors.New("not implemented")
 }
 
 // GetBlock implements the method to resolve ambiguity
@@ -160,7 +205,7 @@ func initTestProposerVM(
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metric.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOp().Registry(),
 		},
 	)
 
@@ -842,7 +887,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metric.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOp().Registry(),
 		},
 	)
 
@@ -1146,7 +1191,7 @@ func TestInnerVMRollback(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metric.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOp().Registry(),
 		},
 	)
 
@@ -1221,7 +1266,7 @@ func TestInnerVMRollback(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metric.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOp().Registry(),
 		},
 	)
 
@@ -1617,7 +1662,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metric.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOp().Registry(),
 		},
 	)
 
@@ -1788,7 +1833,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metric.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOp().Registry(),
 		},
 	)
 
@@ -1925,7 +1970,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metric.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOp().Registry(),
 		},
 	)
 
@@ -2146,7 +2191,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metric.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOp().Registry(),
 		},
 	)
 
@@ -2347,7 +2392,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metric.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOp().Registry(),
 		},
 	)
 
@@ -2438,7 +2483,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 			NumHistoricalBlocks: numHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metric.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOp().Registry(),
 		},
 	)
 
@@ -2482,7 +2527,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 			NumHistoricalBlocks: newNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metric.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOp().Registry(),
 		},
 	)
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -52,8 +52,8 @@ func unmarshalDiffKey(key []byte) (ids.ID, uint64, ids.NodeID, error) {
 		return ids.Empty, 0, ids.EmptyNodeID, errUnexpectedDiffKeyLength
 	}
 	var (
-		netID ids.ID
-		nodeID   ids.NodeID
+		netID  ids.ID
+		nodeID ids.NodeID
 	)
 	copy(netID[:], key)
 	height := unpackIterableHeight(key[ids.IDLen:])

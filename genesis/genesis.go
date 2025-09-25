@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/platformvm/api"
 	"github.com/luxfi/node/vms/platformvm/genesis"
@@ -445,7 +445,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	platformvmArgs.Chains = []api.Chain{
 		{
 			GenesisData: xvmReply.Bytes,
-			NetID:    constants.PrimaryNetworkID,
+			NetID:       constants.PrimaryNetworkID,
 			VMID:        constants.XVMID,
 			FxIDs: []ids.ID{
 				secp256k1fx.ID,
@@ -456,7 +456,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		},
 		{
 			GenesisData: genesisStr,
-			NetID:    constants.PrimaryNetworkID,
+			NetID:       constants.PrimaryNetworkID,
 			VMID:        constants.EVMID,
 			Name:        "C-Chain",
 		},

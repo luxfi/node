@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build skip
@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/luxfi/metric"
-	pb "github.com/luxfi/node/proto/pb/sync"
 	"github.com/luxfi/mock/gomock"
+	pb "github.com/luxfi/node/proto/pb/sync"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/stretchr/testify/require"
@@ -35,7 +35,7 @@ func newDefaultDBConfig() merkledb.Config {
 		ValueNodeCacheSize:          defaultRequestKeyLimit,
 		IntermediateWriteBufferSize: defaultRequestKeyLimit,
 		IntermediateNodeCacheSize:   defaultRequestKeyLimit,
-		Reg:                         metric.NewNoOpMetrics("test").Registry(),
+		Reg:                         metric.NewNoOp().Registry(),
 		Tracer:                      trace.Noop,
 		BranchFactor:                merkledb.BranchFactor16,
 	}

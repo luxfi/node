@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package subnets
@@ -15,7 +15,7 @@ import (
 
 var validParameters = config.Parameters{
 	K:                     1,
-	Alpha:                 0.8,  // Required for validation
+	Alpha:                 0.8, // Required for validation
 	Beta:                  1,
 	AlphaPreference:       1,
 	AlphaConfidence:       1,

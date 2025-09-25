@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package mempool
@@ -9,15 +9,15 @@ import (
 	"github.com/luxfi/metric"
 )
 
-var _ Metrics = (*metrics)(nil)
+var _ Metrics = (*metricsImpl)(nil)
 
-type metrics struct {
+type metricsImpl struct {
 	numTxs               metric.Gauge
 	bytesAvailableMetric metric.Gauge
 }
 
-func NewMetrics(namespace string, registerer metric.Registerer) (*metrics, error) {
-	m := &metrics{
+func NewMetrics(namespace string, registerer metric.Registerer) (*metricsImpl, error) {
+	m := &metricsImpl{
 		numTxs: metric.NewGauge(metric.GaugeOpts{
 			Namespace: namespace,
 			Name:      "count",
@@ -38,7 +38,7 @@ func NewMetrics(namespace string, registerer metric.Registerer) (*metrics, error
 	return m, err
 }
 
-func (m *metrics) Update(numTxs, bytesAvailable int) {
+func (m *metricsImpl) Update(numTxs, bytesAvailable int) {
 	m.numTxs.Set(float64(numTxs))
 	m.bytesAvailableMetric.Set(float64(bytesAvailable))
 }

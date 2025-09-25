@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package e2e
@@ -47,7 +47,7 @@ func (v *FlagVars) ReuseNetwork() bool {
 func (v *FlagVars) NetworkShutdownDelay() time.Duration {
 	if v.delayNetworkShutdown {
 		// Only return a non-zero value if the delay is enabled.  Make sure this value takes
-		// into account the scrape_interval defined in scripts/run_metric.sh.
+		// into account the scrape_interval defined in scripts/run_metrics.sh.
 		return 12 * time.Second
 	}
 	return 0

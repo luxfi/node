@@ -10,15 +10,15 @@ import (
 	"github.com/luxfi/metric"
 )
 
-type metrics struct {
+type metricsImpl struct {
 	txsIssuedCounter      metric.Counter
 	txIssuanceLatency     metric.Histogram
 	txConfirmationLatency metric.Histogram
 	txTotalLatency        metric.Histogram
 }
 
-func newMetrics(namespace string, registry metric.Registry) (metrics, error) {
-	m := metrics{
+func newMetrics(namespace string, registry metric.Registry) (metricsImpl, error) {
+	m := metricsImpl{
 		txsIssuedCounter: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "txs_issued",
@@ -47,18 +47,18 @@ func newMetrics(namespace string, registry metric.Registry) (metrics, error) {
 		registry.Register(m.txConfirmationLatency),
 		registry.Register(m.txTotalLatency),
 	); err != nil {
-		return metrics{}, err
+		return metricsImpl{}, err
 	}
 
 	return m, nil
 }
 
-func (m metrics) issue(d time.Duration) {
+func (m metricsImpl) issue(d time.Duration) {
 	m.txsIssuedCounter.Inc()
 	m.txIssuanceLatency.Observe(float64(d.Milliseconds()))
 }
 
-func (m metrics) accept(confirmationDuration time.Duration, totalDuration time.Duration) {
+func (m metricsImpl) accept(confirmationDuration time.Duration, totalDuration time.Duration) {
 	m.txConfirmationLatency.Observe(float64(confirmationDuration.Milliseconds()))
 	m.txTotalLatency.Observe(float64(totalDuration.Milliseconds()))
 }

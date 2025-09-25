@@ -1,11 +1,12 @@
+//go:build singlevalidator
 // +build singlevalidator
 
 package platformvm
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/vms"
 )
 
 // SingleValidatorFactory creates a mock Platform VM for single validator mode
@@ -32,9 +33,9 @@ func (vm *singleValidatorVM) Initialize(
 	return nil
 }
 
-func (vm *singleValidatorVM) Bootstrapping() error { return nil }
-func (vm *singleValidatorVM) Bootstrapped() error { return nil }
-func (vm *singleValidatorVM) Shutdown() error { return nil }
+func (vm *singleValidatorVM) Bootstrapping() error     { return nil }
+func (vm *singleValidatorVM) Bootstrapped() error      { return nil }
+func (vm *singleValidatorVM) Shutdown() error          { return nil }
 func (vm *singleValidatorVM) Version() (string, error) { return "single-validator-1.0", nil }
 func (vm *singleValidatorVM) CreateHandlers() (map[string]interface{}, error) {
 	return map[string]interface{}{}, nil
@@ -43,4 +44,4 @@ func (vm *singleValidatorVM) CreateStaticHandlers() (map[string]interface{}, err
 	return map[string]interface{}{}, nil
 }
 func (vm *singleValidatorVM) Connected(ids.NodeID, *version.Application) error { return nil }
-func (vm *singleValidatorVM) Disconnected(ids.NodeID) error { return nil }
+func (vm *singleValidatorVM) Disconnected(ids.NodeID) error                    { return nil }

@@ -13,8 +13,8 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/warp"
 	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/warp"
 )
 
 type Service struct {

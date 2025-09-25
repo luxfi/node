@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
-	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 )
 
@@ -56,18 +56,23 @@ type pendingCrossChainAppRequest struct {
 	callback  CrossChainAppResponseCallback
 }
 
+// routerMetrics defines the interface for collecting metrics
+type routerMetrics interface {
+	observe(labels metric.Labels, start time.Time)
+}
+
 // meteredHandler emits metrics for a Handler
 type meteredHandler struct {
 	*responder
-	metrics
+	routerMetrics
 }
 
-type metrics struct {
+type metricsImpl struct {
 	msgTime  metric.GaugeVec
 	msgCount metric.CounterVec
 }
 
-func (m *metrics) observe(labels metric.Labels, start time.Time) {
+func (m *metricsImpl) observe(labels metric.Labels, start time.Time) {
 	metricTime := m.msgTime.With(labels)
 	metricCount := m.msgCount.With(labels)
 
@@ -81,7 +86,7 @@ func (m *metrics) observe(labels metric.Labels, start time.Time) {
 type router struct {
 	log     log.Logger
 	sender  core.AppSender
-	metrics metrics
+	metrics routerMetrics
 
 	lock                         sync.RWMutex
 	handlers                     map[uint64]*meteredHandler
@@ -94,7 +99,7 @@ type router struct {
 func newRouter(
 	log log.Logger,
 	sender core.AppSender,
-	metrics metrics,
+	metrics routerMetrics,
 ) *router {
 	return &router{
 		log:                          log,
@@ -123,7 +128,7 @@ func (r *router) addHandler(handlerID uint64, handler Handler) error {
 			log:       r.log,
 			sender:    r.sender,
 		},
-		metrics: r.metrics,
+		routerMetrics: r.metrics,
 	}
 
 	return nil

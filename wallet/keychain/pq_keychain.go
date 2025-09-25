@@ -31,8 +31,8 @@ type KeyType uint8
 const (
 	// Classical cryptography
 	KeyTypeSecp256k1 KeyType = iota
-	KeyTypeBLS       // BLS signatures for consensus
-	
+	KeyTypeBLS               // BLS signatures for consensus
+
 	// Post-quantum cryptography (NIST FIPS standards)
 	KeyTypeMLDSA44   // FIPS 204 - ML-DSA-44
 	KeyTypeMLDSA65   // FIPS 204 - ML-DSA-65
@@ -40,15 +40,15 @@ const (
 	KeyTypeSLHDSA128 // FIPS 205 - SLH-DSA-128
 	KeyTypeSLHDSA192 // FIPS 205 - SLH-DSA-192
 	KeyTypeSLHDSA256 // FIPS 205 - SLH-DSA-256
-	
+
 	// Key encapsulation (FIPS 203)
 	KeyTypeMLKEM512  // ML-KEM-512
 	KeyTypeMLKEM768  // ML-KEM-768
 	KeyTypeMLKEM1024 // ML-KEM-1024
-	
+
 	// Privacy-preserving
 	KeyTypeRingtail // Ring signatures
-	
+
 	// Hybrid modes (classical + post-quantum)
 	KeyTypeHybridSecp256k1MLDSA44
 	KeyTypeHybridSecp256k1SLHDSA128
@@ -59,15 +59,15 @@ const (
 type PQSigner struct {
 	keyType KeyType
 	address ids.ShortID
-	
+
 	// Classical keys
 	secp256k1Key *secp256k1.PrivateKey
-	
+
 	// Post-quantum keys
-	mldsaKey   interface{} // Can be *mldsa.PrivateKey44/65/87
-	slhdsaKey  interface{} // Can be *slhdsa.PrivateKey128/192/256
+	mldsaKey  interface{} // Can be *mldsa.PrivateKey44/65/87
+	slhdsaKey interface{} // Can be *slhdsa.PrivateKey128/192/256
 	// ringtailKey *ringtail.PrivateKey // TODO: implement when available
-	
+
 	// For hybrid modes, we store both
 	hybridClassical *secp256k1.PrivateKey
 	hybridPQ        interface{}
@@ -81,7 +81,7 @@ func (s *PQSigner) SignHash(hash []byte) ([]byte, error) {
 			return nil, ErrInvalidKeyType
 		}
 		return s.secp256k1Key.SignHash(hash)
-		
+
 	case KeyTypeMLDSA44, KeyTypeMLDSA65, KeyTypeMLDSA87:
 		if key, ok := s.mldsaKey.(*mldsa.PrivateKey); ok {
 			sig, err := key.Sign(nil, hash, crypto.Hash(0))
@@ -91,7 +91,7 @@ func (s *PQSigner) SignHash(hash []byte) ([]byte, error) {
 			return sig, nil
 		}
 		return nil, ErrInvalidKeyType
-		
+
 	case KeyTypeSLHDSA128, KeyTypeSLHDSA192, KeyTypeSLHDSA256:
 		if key, ok := s.slhdsaKey.(*slhdsa.PrivateKey); ok {
 			sig, err := key.Sign(nil, hash, crypto.Hash(0))
@@ -101,7 +101,7 @@ func (s *PQSigner) SignHash(hash []byte) ([]byte, error) {
 			return sig, nil
 		}
 		return nil, ErrInvalidKeyType
-		
+
 	// TODO: implement ringtail when available
 	// case KeyTypeRingtail:
 	//	if s.ringtailKey == nil {
@@ -110,18 +110,18 @@ func (s *PQSigner) SignHash(hash []byte) ([]byte, error) {
 	//	// Ringtail requires ring members for signing
 	//	// For now, we'll use a simple signature
 	//	return s.ringtailKey.Sign(hash), nil
-		
+
 	case KeyTypeHybridSecp256k1MLDSA44:
 		// Hybrid mode: concatenate both signatures
 		if s.hybridClassical == nil || s.hybridPQ == nil {
 			return nil, ErrInvalidKeyType
 		}
-		
+
 		classicalSig, err := s.hybridClassical.SignHash(hash)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		if key, ok := s.hybridPQ.(*mldsa.PrivateKey); ok {
 			pqSig, err := key.Sign(nil, hash, crypto.Hash(0))
 			if err != nil {
@@ -136,7 +136,7 @@ func (s *PQSigner) SignHash(hash []byte) ([]byte, error) {
 			return result, nil
 		}
 		return nil, ErrInvalidKeyType
-		
+
 	default:
 		return nil, ErrInvalidKeyType
 	}
@@ -153,23 +153,23 @@ func (s *PQSigner) Sign(msg []byte) ([]byte, error) {
 		hash := sha256.New()
 		hash.Write(msg)
 		return s.secp256k1Key.SignHash(hash.Sum(nil))
-		
+
 	case KeyTypeHybridSecp256k1MLDSA44, KeyTypeHybridSecp256k1SLHDSA128:
 		// For hybrid, we need to hash for the classical part
 		hash := sha256.New()
 		hash.Write(msg)
 		hashBytes := hash.Sum(nil)
-		
+
 		// Sign with both algorithms
 		if s.hybridClassical == nil || s.hybridPQ == nil {
 			return nil, ErrInvalidKeyType
 		}
-		
+
 		classicalSig, err := s.hybridClassical.SignHash(hashBytes)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		var pqSig []byte
 		switch pq := s.hybridPQ.(type) {
 		case *mldsa.PrivateKey:
@@ -182,7 +182,7 @@ func (s *PQSigner) Sign(msg []byte) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Concatenate signatures with length prefixes
 		result := make([]byte, 0, 2+len(classicalSig)+2+len(pqSig))
 		result = append(result, byte(len(classicalSig)>>8), byte(len(classicalSig)))
@@ -190,7 +190,7 @@ func (s *PQSigner) Sign(msg []byte) ([]byte, error) {
 		result = append(result, byte(len(pqSig)>>8), byte(len(pqSig)))
 		result = append(result, pqSig...)
 		return result, nil
-		
+
 	default:
 		// PQ algorithms sign the message directly
 		return s.SignHash(msg)
@@ -223,13 +223,13 @@ func (kc *PQKeychain) AddSecp256k1(key *secp256k1.PrivateKey) ids.ShortID {
 	pk := key.PublicKey()
 	addr := pk.Address()
 	shortAddr, _ := ids.ToShortID(addr[:])
-	
+
 	signer := &PQSigner{
 		keyType:      KeyTypeSecp256k1,
 		address:      shortAddr,
 		secp256k1Key: key,
 	}
-	
+
 	kc.keysByAddress[shortAddr] = signer
 	kc.addressSet.Add(shortAddr)
 	return shortAddr
@@ -241,13 +241,13 @@ func (kc *PQKeychain) AddMLDSA(key *mldsa.PrivateKey, keyType KeyType) ids.Short
 	pubKeyBytes := key.Bytes()
 	addrBytes := ids.ShortID{}
 	copy(addrBytes[:], pubKeyBytes[:20]) // Use first 20 bytes as address
-	
+
 	signer := &PQSigner{
 		keyType:  keyType,
 		address:  addrBytes,
 		mldsaKey: key,
 	}
-	
+
 	kc.keysByAddress[addrBytes] = signer
 	kc.addressSet.Add(addrBytes)
 	return addrBytes
@@ -258,13 +258,13 @@ func (kc *PQKeychain) AddSLHDSA(key *slhdsa.PrivateKey, keyType KeyType) ids.Sho
 	pubKeyBytes := key.Bytes()
 	addrBytes := ids.ShortID{}
 	copy(addrBytes[:], pubKeyBytes[:20])
-	
+
 	signer := &PQSigner{
 		keyType:   keyType,
 		address:   addrBytes,
 		slhdsaKey: key,
 	}
-	
+
 	kc.keysByAddress[addrBytes] = signer
 	kc.addressSet.Add(addrBytes)
 	return addrBytes
@@ -276,13 +276,13 @@ func (kc *PQKeychain) AddSLHDSA(key *slhdsa.PrivateKey, keyType KeyType) ids.Sho
 //	pubKey := key.PublicKey()
 //	addrBytes := ids.ShortID{}
 //	copy(addrBytes[:], pubKey.Bytes()[:20])
-//	
+//
 //	signer := &PQSigner{
 //		keyType:     KeyTypeRingtail,
 //		address:     addrBytes,
 //		ringtailKey: key,
 //	}
-//	
+//
 //	kc.keysByAddress[addrBytes] = signer
 //	kc.addressSet.Add(addrBytes)
 //	return addrBytes
@@ -294,7 +294,7 @@ func (kc *PQKeychain) AddHybrid(classical *secp256k1.PrivateKey, pq interface{})
 	pk := classical.PublicKey()
 	addr := pk.Address()
 	shortAddr, _ := ids.ToShortID(addr[:])
-	
+
 	var keyType KeyType
 	switch pq.(type) {
 	case *mldsa.PrivateKey:
@@ -304,14 +304,14 @@ func (kc *PQKeychain) AddHybrid(classical *secp256k1.PrivateKey, pq interface{})
 	default:
 		return ids.ShortEmpty
 	}
-	
+
 	signer := &PQSigner{
 		keyType:         keyType,
 		address:         shortAddr,
 		hybridClassical: classical,
 		hybridPQ:        pq,
 	}
-	
+
 	kc.keysByAddress[shortAddr] = signer
 	kc.addressSet.Add(shortAddr)
 	return shortAddr
@@ -326,49 +326,49 @@ func (kc *PQKeychain) GenerateKey() (ids.ShortID, error) {
 			return ids.ShortEmpty, err
 		}
 		return kc.AddSecp256k1(key), nil
-		
+
 	case KeyTypeMLDSA44:
 		key, err := mldsa.GenerateKey(rand.Reader, mldsa.MLDSA44)
 		if err != nil {
 			return ids.ShortEmpty, err
 		}
 		return kc.AddMLDSA(key, KeyTypeMLDSA44), nil
-		
+
 	case KeyTypeMLDSA65:
 		key, err := mldsa.GenerateKey(rand.Reader, mldsa.MLDSA65)
 		if err != nil {
 			return ids.ShortEmpty, err
 		}
 		return kc.AddMLDSA(key, KeyTypeMLDSA65), nil
-		
+
 	case KeyTypeMLDSA87:
 		key, err := mldsa.GenerateKey(rand.Reader, mldsa.MLDSA87)
 		if err != nil {
 			return ids.ShortEmpty, err
 		}
 		return kc.AddMLDSA(key, KeyTypeMLDSA87), nil
-		
+
 	case KeyTypeSLHDSA128:
 		key, err := slhdsa.GenerateKey(rand.Reader, slhdsa.SLHDSA128s)
 		if err != nil {
 			return ids.ShortEmpty, err
 		}
 		return kc.AddSLHDSA(key, KeyTypeSLHDSA128), nil
-		
+
 	case KeyTypeSLHDSA192:
 		key, err := slhdsa.GenerateKey(rand.Reader, slhdsa.SLHDSA192s)
 		if err != nil {
 			return ids.ShortEmpty, err
 		}
 		return kc.AddSLHDSA(key, KeyTypeSLHDSA192), nil
-		
+
 	case KeyTypeSLHDSA256:
 		key, err := slhdsa.GenerateKey(rand.Reader, slhdsa.SLHDSA256s)
 		if err != nil {
 			return ids.ShortEmpty, err
 		}
 		return kc.AddSLHDSA(key, KeyTypeSLHDSA256), nil
-		
+
 	// TODO: implement when ringtail is available
 	// case KeyTypeRingtail:
 	//	key, err := ringtail.GenerateKey(rand.Reader)
@@ -376,7 +376,7 @@ func (kc *PQKeychain) GenerateKey() (ids.ShortID, error) {
 	//		return ids.ShortEmpty, err
 	//	}
 	//	return kc.AddRingtail(key), nil
-		
+
 	case KeyTypeHybridSecp256k1MLDSA44:
 		classical, err := secp256k1.NewPrivateKey()
 		if err != nil {
@@ -387,7 +387,7 @@ func (kc *PQKeychain) GenerateKey() (ids.ShortID, error) {
 			return ids.ShortEmpty, err
 		}
 		return kc.AddHybrid(classical, pq), nil
-		
+
 	case KeyTypeHybridSecp256k1SLHDSA128:
 		classical, err := secp256k1.NewPrivateKey()
 		if err != nil {
@@ -398,7 +398,7 @@ func (kc *PQKeychain) GenerateKey() (ids.ShortID, error) {
 			return ids.ShortEmpty, err
 		}
 		return kc.AddHybrid(classical, pq), nil
-		
+
 	default:
 		return ids.ShortEmpty, fmt.Errorf("unsupported key type: %v", kc.defaultType)
 	}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package merkledb
@@ -18,9 +18,9 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/trace"
 
@@ -218,7 +218,7 @@ type merkleDB struct {
 	// True iff the db has been closed.
 	closed bool
 
-	metrics metrics
+	metrics merkleDBMetrics
 
 	debugTracer trace.Tracer
 	infoTracer  trace.Tracer
@@ -255,7 +255,7 @@ func newDatabase(
 	ctx context.Context,
 	db database.Database,
 	config Config,
-	metrics metrics,
+	metrics merkleDBMetrics,
 ) (*merkleDB, error) {
 	if err := config.BranchFactor.Valid(); err != nil {
 		return nil, err

@@ -15,10 +15,10 @@ import (
 	time "time"
 
 	choices "github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/protocol/chain"
 	ids "github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/components/chain"
-	block "github.com/luxfi/node/vms/proposervm/block"
 	gomock "github.com/luxfi/mock/gomock"
+	block "github.com/luxfi/node/vms/proposervm/block"
 )
 
 // MockPostForkBlock is a mock of PostForkBlock interface.

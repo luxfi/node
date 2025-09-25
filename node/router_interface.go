@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -7,12 +7,12 @@ import (
 	"context"
 
 	"github.com/luxfi/consensus/networking/handler"
-	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/utils/timer"
+	"github.com/luxfi/node/version"
 )
 
 // Router handles message routing between chains

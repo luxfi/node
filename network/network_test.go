@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -11,23 +11,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/core"
-	consensusrouter "github.com/luxfi/consensus/router"
-	"github.com/luxfi/consensus/networking/router"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
+	consensusrouter "github.com/luxfi/consensus/router"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -35,17 +33,16 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/version"
-	
-	luxmetrics "github.com/luxfi/metric"
 )
 
 // inboundHandlerFunc is a simple wrapper to make a function implement InboundHandler
 type inboundHandlerFunc struct {
-	f func(context.Context, message.InboundMessage)
+	f func(context.Context, consensusrouter.Message)
 }
 
-func (h inboundHandlerFunc) HandleInbound(ctx context.Context, msg message.InboundMessage) {
+func (h inboundHandlerFunc) HandleInbound(ctx context.Context, msg consensusrouter.Message) error {
 	h.f(ctx, msg)
+	return nil
 }
 
 func (h inboundHandlerFunc) AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error {
@@ -161,44 +158,39 @@ type stubTargeter struct{}
 
 func (s *stubTargeter) TargetUsage() uint64 { return 50 }
 
-// noOpResourceManager implements resource.Manager for testing
-type noOpResourceManager struct{}
-
-func (n *noOpResourceManager) CPUUsage() float64                    { return 0 }
-func (n *noOpResourceManager) DiskUsage() (float64, float64)        { return 0, 0 }
+// Use the noOpResourceManager from test_network.go instead of redefining
 
 func newDefaultResourceTracker() consensustracker.ResourceTracker {
-	// Return a no-op consensus resource tracker for testing
-	return &noOpConsensusResourceTracker{}
+	// Create a no-op consensus resource tracker for testing
+	return &noOpConsensusResourceTracker{
+		cpuTracker:  &noOpTracker{},
+		diskTracker: &noOpTracker{},
+	}
 }
 
-// noOpConsensusResourceTracker implements consensustracker.ResourceTracker
-type noOpConsensusResourceTracker struct{}
+// noOpConsensusResourceTracker implements consensustracker.ResourceTracker for testing
+type noOpConsensusResourceTracker struct {
+	cpuTracker  *noOpTracker
+	diskTracker *noOpTracker
+}
 
-func (n *noOpConsensusResourceTracker) StartProcessing(nodeID ids.NodeID, time time.Time) {}
-func (n *noOpConsensusResourceTracker) StopProcessing(nodeID ids.NodeID, time time.Time) {}
-
+func (n *noOpConsensusResourceTracker) StartProcessing(nodeID ids.NodeID, t time.Time) {}
+func (n *noOpConsensusResourceTracker) StopProcessing(nodeID ids.NodeID, t time.Time)  {}
 func (n *noOpConsensusResourceTracker) CPUTracker() consensustracker.CPUTracker {
-	return &noOpCPUTracker{}
+	return n.cpuTracker
 }
-
 func (n *noOpConsensusResourceTracker) DiskTracker() consensustracker.DiskTracker {
-	return &noOpDiskTracker{}
+	return n.diskTracker
 }
 
-// noOpCPUTracker implements consensustracker.CPUTracker
-type noOpCPUTracker struct{}
+// noOpTracker implements consensustracker.CPUTracker and consensustracker.DiskTracker for testing
+type noOpTracker struct{}
 
-func (n *noOpCPUTracker) Usage(nodeID ids.NodeID, time time.Time) float64 { return 0 }
-func (n *noOpCPUTracker) TimeUntilUsage(nodeID ids.NodeID, time time.Time, usage float64) time.Duration {
-	return time.Hour
+func (n *noOpTracker) Usage(nodeID ids.NodeID, t time.Time) float64 {
+	return 0
 }
 
-// noOpDiskTracker implements consensustracker.DiskTracker
-type noOpDiskTracker struct{}
-
-func (n *noOpDiskTracker) Usage(nodeID ids.NodeID, time time.Time) float64 { return 0 }
-func (n *noOpDiskTracker) TimeUntilUsage(nodeID ids.NodeID, time time.Time, usage float64) time.Duration {
+func (n *noOpTracker) TimeUntilUsage(nodeID ids.NodeID, t time.Time, usage float64) time.Duration {
 	return time.Hour
 }
 
@@ -222,7 +214,7 @@ func newTestNetwork(t *testing.T, count int) (*testDialer, []*testListener, []id
 			PublicKey: cert.PublicKey,
 		})
 
-		blsKey, err := bls.NewSecretKey()
+		blsKey, err := localsigner.New()
 		require.NoError(t, err)
 
 		config := defaultConfig
@@ -244,7 +236,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 
 	mc, err := message.NewCreator(
 		nil,
-		luxmetrics.NewNoOpMetrics("test"),
+		metric.NewNoOp(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -268,7 +260,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []consensusrouter.Inbou
 	)
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := metric.NewRegistry()
+		registry := metric.NewNoOpRegistry()
 
 		// Use a simple test validator manager since AddStaker isn't in the interface
 		beacons := &testAggressiveValidatorManager{Manager: validators.NewManager()}
@@ -354,17 +346,17 @@ func TestNewNetwork(t *testing.T) {
 func TestSend(t *testing.T) {
 	require := require.New(t)
 
-	received := make(chan message.InboundMessage)
+	received := make(chan consensusrouter.Message)
 	nodeIDs, networks, wg := newFullyConnectedTestNetwork(
 		t,
 		[]consensusrouter.InboundHandler{
-			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+			inboundHandlerFunc{f: func(_ context.Context, msg consensusrouter.Message) {
 				require.FailNow("unexpected message received")
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+			inboundHandlerFunc{f: func(_ context.Context, msg consensusrouter.Message) {
 				received <- msg
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+			inboundHandlerFunc{f: func(_ context.Context, msg consensusrouter.Message) {
 				require.FailNow("unexpected message received")
 			}},
 		},
@@ -397,17 +389,17 @@ func TestSend(t *testing.T) {
 func TestSendWithFilter(t *testing.T) {
 	require := require.New(t)
 
-	received := make(chan message.InboundMessage)
+	received := make(chan consensusrouter.Message)
 	nodeIDs, networks, wg := newFullyConnectedTestNetwork(
 		t,
 		[]consensusrouter.InboundHandler{
-			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+			inboundHandlerFunc{f: func(_ context.Context, msg consensusrouter.Message) {
 				require.FailNow("unexpected message received")
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+			inboundHandlerFunc{f: func(_ context.Context, msg consensusrouter.Message) {
 				received <- msg
 			}},
-			inboundHandlerFunc{f: func(_ context.Context, msg message.InboundMessage) {
+			inboundHandlerFunc{f: func(_ context.Context, msg consensusrouter.Message) {
 				require.FailNow("unexpected message received")
 			}},
 		},
@@ -494,7 +486,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := metric.NewRegistry()
+		registry := metric.NewNoOpRegistry()
 
 		// Use a simple test validator manager since AddStaker isn't in the interface
 		beacons := &testAggressiveValidatorManager{Manager: validators.NewManager()}
@@ -576,7 +568,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := metric.NewRegistry()
+		registry := metric.NewNoOpRegistry()
 
 		beacons := validators.NewManager()
 		// Note: Can't add stakers with consensus validators.Manager
@@ -729,7 +721,7 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 	networks := make([]Network, len(configs))
 	for i, config := range configs {
 		msgCreator := newMessageCreator(t)
-		registry := metric.NewRegistry()
+		registry := metric.NewNoOpRegistry()
 
 		beacons := validators.NewManager()
 		// Note: Can't add stakers with consensus validators.Manager

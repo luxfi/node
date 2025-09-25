@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -19,7 +19,7 @@ const (
 
 var (
 	ErrNotRunning = errors.New("not running")
-	
+
 	// MetricsAvailableMessage is the message logged when metrics are available
 	MetricsAvailableMessage = "Metrics available"
 )
@@ -31,11 +31,11 @@ func MetricsLinkForNetwork(networkUUID, startTime, endTime string) string {
 	// Use Grafana explore URL format if Grafana is configured
 	grafanaURL := GetEnvWithDefault("GRAFANA_URL", "")
 	if grafanaURL != "" {
-		return fmt.Sprintf("%s/explore?orgId=1&left=[\"now-%s\",\"now-%s\",\"Prometheus\",{\"expr\":\"up{network_uuid=\\\"%s\\\"}\"}]", 
+		return fmt.Sprintf("%s/explore?orgId=1&left=[\"now-%s\",\"now-%s\",\"Prometheus\",{\"expr\":\"up{network_uuid=\\\"%s\\\"}\"}]",
 			grafanaURL, startTime, endTime, networkUUID)
 	}
 	// Fall back to Prometheus graph URL
-	return fmt.Sprintf("%s/graph?g0.expr=up%%7Bnetwork_uuid%%3D%%22%s%%22%%7D&g0.tab=0&g0.range_input=%s", 
+	return fmt.Sprintf("%s/graph?g0.expr=up%%7Bnetwork_uuid%%3D%%22%s%%22%%7D&g0.tab=0&g0.range_input=%s",
 		prometheusURL, networkUUID, startTime)
 }
 

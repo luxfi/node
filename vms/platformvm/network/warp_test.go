@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/rand"
 
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
@@ -199,7 +199,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationRegistered(t *testing.T) {
 	var (
 		l1Validator = state.L1Validator{
 			ValidationID: ids.GenerateTestID(),
-			NetID:     ids.GenerateTestID(),
+			NetID:        ids.GenerateTestID(),
 			NodeID:       ids.GenerateTestNodeID(),
 			PublicKey:    bls.PublicKeyToUncompressedBytes(sk.PublicKey()),
 			Weight:       1,
@@ -370,7 +370,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 			name: "failed to parse netID",
 			justification: must[[]byte](t)(proto.Marshal(
 				&platformvm.L1ValidatorRegistrationJustification{
-					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{},
+					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData{},
 				},
 			)),
 			expectedErr: &common.AppError{
@@ -383,8 +383,8 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 			validationID: registerL1ValidatorNotToRegister.ValidationID(),
 			justification: must[[]byte](t)(proto.Marshal(
 				&platformvm.L1ValidatorRegistrationJustification{
-					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{
-						ConvertNetToL1TxData: &platformvm.NetIDIndex{
+					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData{
+						ConvertSubnetToL1TxData: &platformvm.SubnetIDIndex{
 							SubnetId: convertedNetID[:],
 							Index:    0,
 						},
@@ -401,8 +401,8 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 			validationID: convertSubnetToL1ValidationID,
 			justification: must[[]byte](t)(proto.Marshal(
 				&platformvm.L1ValidatorRegistrationJustification{
-					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{
-						ConvertNetToL1TxData: &platformvm.NetIDIndex{
+					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData{
+						ConvertSubnetToL1TxData: &platformvm.SubnetIDIndex{
 							SubnetId: convertedNetID[:],
 							Index:    0,
 						},
@@ -573,7 +573,7 @@ func TestSignatureRequestVerifyL1ValidatorWeight(t *testing.T) {
 	var (
 		l1Validator = state.L1Validator{
 			ValidationID: ids.GenerateTestID(),
-			NetID:     ids.GenerateTestID(),
+			NetID:        ids.GenerateTestID(),
 			NodeID:       ids.GenerateTestNodeID(),
 			PublicKey:    bls.PublicKeyToUncompressedBytes(sk.PublicKey()),
 			Weight:       weight,

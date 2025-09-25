@@ -12,9 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/utils"
 
-	. "github.com/luxfi/node/database"
+	. "github.com/luxfi/database"
 )
 
 func TestSortednessUint64(t *testing.T) {
@@ -62,14 +63,14 @@ func TestOrDefault(t *testing.T) {
 	)
 
 	// Key doesn't exist
-	v, err := WithDefault(GetUInt64, db, key, 1)
+	v, err := database.WithDefault(database.GetUInt64, db, key, 1)
 	require.NoError(err)
 	require.Equal(uint64(1), v)
 
-	require.NoError(PutUInt64(db, key, 2))
+	require.NoError(database.PutUInt64(db, key, 2))
 
 	// Key does exist
-	v, err = WithDefault(GetUInt64, db, key, 1)
+	v, err = database.WithDefault(database.GetUInt64, db, key, 1)
 	require.NoError(err)
 	require.Equal(uint64(2), v)
 }

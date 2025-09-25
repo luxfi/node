@@ -8,36 +8,47 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/consensus/choices"
+	chain "github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/components/state"
 )
 
 var (
 	GenesisID        = ids.GenerateTestID()
 	GenesisHeight    = uint64(0)
-	GenesisTimestamp = time.Unix(0, 0)
+	GenesisTimestamp = time.Unix(1, 0)
 	GenesisBytes     = []byte("genesis")
-	
-	Genesis = &Block{
-		TestBlock: chain.TestBlock{
-			IDV:        GenesisID,
-			HeightV:    GenesisHeight,
-			TimestampV: GenesisTimestamp,
-			ParentV:    ids.Empty,
-			BytesV:     GenesisBytes,
-			StatusV:    chain.Accepted,
-		},
-	}
-	
+
 	nextID = uint64(1)
+)
+
+// Status constants
+const (
+	Unknown    uint8 = 0
+	Processing uint8 = 1
+	Rejected   uint8 = 2
+	Accepted   uint8 = 3
 )
 
 // Block is a test block that implements chain.Block
 type Block struct {
-	chain.TestBlock
-	state state.ReadOnlyChain
+	IDV        ids.ID
+	HeightV    uint64
+	TimestampV time.Time
+	ParentV    ids.ID
+	BytesV     []byte
+	StatusV    uint8
+	ErrV       error
+	state      state.ReadOnlyChain
+}
+
+var Genesis = &Block{
+	IDV:        GenesisID,
+	HeightV:    GenesisHeight,
+	TimestampV: GenesisTimestamp,
+	ParentV:    ids.Empty,
+	BytesV:     GenesisBytes,
+	StatusV:    Accepted,
 }
 
 func (b *Block) ID() ids.ID {
@@ -65,42 +76,28 @@ func (b *Block) Bytes() []byte {
 }
 
 func (b *Block) Verify(context.Context) error {
-	if !b.ShouldVerifyV {
+	if b.ErrV != nil {
 		return b.ErrV
 	}
 	return nil
 }
 
+func (b *Block) Status() uint8 {
+	return b.StatusV
+}
+
 func (b *Block) Accept(context.Context) error {
-	b.StatusV = chain.Accepted
-	return b.ErrV
+	b.StatusV = Accepted
+	return nil
 }
 
 func (b *Block) Reject(context.Context) error {
-	b.StatusV = chain.Rejected
-	return b.ErrV
-}
-
-func (b *Block) Status() uint8 {
-	return uint8(b.StatusV)
+	b.StatusV = Rejected
+	return nil
 }
 
 func (b *Block) State() state.ReadOnlyChain {
 	return b.state
-}
-
-func (b *Block) SetStatus(status choices.Status) {
-	// Convert choices.Status to chain.Status
-	switch status {
-	case choices.Unknown:
-		b.StatusV = chain.Unknown
-	case choices.Processing:
-		b.StatusV = chain.Processing
-	case choices.Rejected:
-		b.StatusV = chain.Rejected
-	case choices.Accepted:
-		b.StatusV = chain.Accepted
-	}
 }
 
 // BuildChild creates a child block of the given parent
@@ -108,27 +105,15 @@ func BuildChild(parent chain.Block) *Block {
 	nextID++
 	blockID := ids.ID{}
 	copy(blockID[:], fmt.Sprintf("block_%d", nextID))
-	
-	// Get parent timestamp if available
-	var timestamp time.Time
-	if testParent, ok := parent.(*chain.TestBlock); ok {
-		timestamp = testParent.Timestamp().Add(time.Second)
-	} else if blockParent, ok := parent.(*Block); ok {
-		timestamp = blockParent.Timestamp().Add(time.Second)
-	} else {
-		// Default to current time if parent doesn't have timestamp
-		timestamp = time.Now()
-	}
-	
+
+	timestamp := parent.Timestamp().Add(time.Second)
+
 	return &Block{
-		TestBlock: chain.TestBlock{
-			IDV:        blockID,
-			HeightV:    parent.Height() + 1,
-			TimestampV: timestamp,
-			ParentV:    parent.ID(),
-			BytesV:     []byte(fmt.Sprintf("block_%d", nextID)),
-			StatusV:    chain.Processing,
-			ShouldVerifyV: true,
-		},
+		IDV:        blockID,
+		HeightV:    parent.Height() + 1,
+		TimestampV: timestamp,
+		ParentV:    parent.ID(),
+		BytesV:     []byte(fmt.Sprintf("block_%d", nextID)),
+		StatusV:    Processing,
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build test
@@ -22,10 +22,10 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/trace"
 )
@@ -51,7 +51,7 @@ func newDefaultConfig() Config {
 		IntermediateNodeCacheSize:   units.MiB,
 		IntermediateWriteBufferSize: units.KiB,
 		IntermediateWriteBatchSize:  256 * units.KiB,
-		Reg:                         metric.NewNoOpMetrics("test").Registry(),
+		Reg:                         metric.NewNoOp().Registry(),
 		TraceLevel:                  InfoTrace,
 		Tracer:                      trace.Noop,
 	}
@@ -834,7 +834,8 @@ func FuzzMerkleDBEmptyRandomizedActions(f *testing.F) {
 			size uint,
 		) {
 			if size == 0 {
-				t.SkipNow()
+				// Skip when size is 0 - no meaningful test
+				return
 			}
 			require := require.New(t)
 			r := rand.New(rand.NewSource(randSeed)) // #nosec G404
@@ -862,7 +863,8 @@ func FuzzMerkleDBInitialValuesRandomizedActions(f *testing.F) {
 		randSeed int64,
 	) {
 		if numSteps == 0 {
-			t.SkipNow()
+			// Skip when no steps - no meaningful test
+			return
 		}
 		require := require.New(t)
 		r := rand.New(rand.NewSource(randSeed)) // #nosec G404

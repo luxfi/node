@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -17,9 +17,9 @@ import (
 
 	"github.com/luxfi/log"
 
-
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/staking"
@@ -28,7 +28,6 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
 )

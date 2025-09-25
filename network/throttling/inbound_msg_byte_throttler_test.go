@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	metric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/constants"
 )
 
@@ -30,7 +30,7 @@ func TestInboundMsgByteThrottlerCancelContextDeadlock(t *testing.T) {
 
 	throttler, err := newInboundMsgByteThrottler(
 		log.NoLog{},
-		metric.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOp().Registry(),
 		vdrs,
 		config,
 	)
@@ -59,7 +59,7 @@ func TestInboundMsgByteThrottlerCancelContext(t *testing.T) {
 
 	throttler, err := newInboundMsgByteThrottler(
 		log.NoLog{},
-		metric.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOp().Registry(),
 		vdrs,
 		config,
 	)
@@ -116,7 +116,7 @@ func TestInboundMsgByteThrottler(t *testing.T) {
 
 	throttler, err := newInboundMsgByteThrottler(
 		log.NoLog{},
-		metric.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOp().Registry(),
 		vdrs,
 		config,
 	)
@@ -330,7 +330,7 @@ func TestSybilMsgThrottlerMaxNonVdr(t *testing.T) {
 	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttler, err := newInboundMsgByteThrottler(
 		log.NoLog{},
-		metric.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOp().Registry(),
 		vdrs,
 		config,
 	)
@@ -380,7 +380,7 @@ func TestMsgThrottlerNextMsg(t *testing.T) {
 	maxBytes := maxVdrBytes
 	throttler, err := newInboundMsgByteThrottler(
 		log.NoLog{},
-		metric.NewNoOpMetrics("test").Registry(),
+		metric.NewNoOp().Registry(),
 		vdrs,
 		config,
 	)

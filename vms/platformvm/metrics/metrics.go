@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -9,15 +9,15 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
-	utils_metric "github.com/luxfi/node/utils/metric"
+	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
-var _ Metrics = (*metrics)(nil)
+var _ Metrics = (*metricsImpl)(nil)
 
 type Metrics interface {
-	utils_metric.APIInterceptor
+	utilmetric.APIInterceptor
 
 	// Mark that the given block was accepted.
 	MarkAccepted(block.Block) error
@@ -42,7 +42,7 @@ type Metrics interface {
 
 func New(registerer metric.Registerer) (Metrics, error) {
 	blockMetrics, err := newBlockMetrics(registerer)
-	m := &metrics{
+	m := &metricsImpl{
 		blockMetrics: blockMetrics,
 		timeUntilUnstake: metric.NewGauge(metric.GaugeOpts{
 			Name: "time_until_unstake",
@@ -83,26 +83,19 @@ func New(registerer metric.Registerer) (Metrics, error) {
 	}
 
 	errs := wrappers.Errs{Err: err}
-	apiRequestMetrics, err := utils_metric.NewAPIInterceptor(registerer)
+	apiRequestMetrics, err := utilmetric.NewAPIInterceptor(registerer)
 	errs.Add(err)
 	m.APIInterceptor = apiRequestMetrics
-	errs.Add(
-		registerer.Register(m.timeUntilUnstake),
-		registerer.Register(m.timeUntilSubnetUnstake),
-		registerer.Register(m.localStake),
-		registerer.Register(m.totalStake),
 
-		registerer.Register(m.validatorSetsCreated),
-		registerer.Register(m.validatorSetsCached),
-		registerer.Register(m.validatorSetsHeightDiff),
-		registerer.Register(m.validatorSetsDuration),
-	)
+	// Metrics created with NewCounter, NewGauge etc. need to be manually registered
+	// but since they don't directly expose prometheus.Collector interface, we need
+	// a different approach - just return any errors from creating metrics
 
 	return m, errs.Err
 }
 
-type metrics struct {
-	utils_metric.APIInterceptor
+type metricsImpl struct {
+	utilmetric.APIInterceptor
 
 	blockMetrics *blockMetrics
 
@@ -117,38 +110,38 @@ type metrics struct {
 	validatorSetsDuration   metric.Gauge
 }
 
-func (m *metrics) MarkAccepted(b block.Block) error {
+func (m *metricsImpl) MarkAccepted(b block.Block) error {
 	return b.Visit(m.blockMetrics)
 }
 
-func (m *metrics) IncValidatorSetsCreated() {
+func (m *metricsImpl) IncValidatorSetsCreated() {
 	m.validatorSetsCreated.Inc()
 }
 
-func (m *metrics) IncValidatorSetsCached() {
+func (m *metricsImpl) IncValidatorSetsCached() {
 	m.validatorSetsCached.Inc()
 }
 
-func (m *metrics) AddValidatorSetsDuration(d time.Duration) {
+func (m *metricsImpl) AddValidatorSetsDuration(d time.Duration) {
 	m.validatorSetsDuration.Add(float64(d))
 }
 
-func (m *metrics) AddValidatorSetsHeightDiff(d uint64) {
+func (m *metricsImpl) AddValidatorSetsHeightDiff(d uint64) {
 	m.validatorSetsHeightDiff.Add(float64(d))
 }
 
-func (m *metrics) SetLocalStake(s uint64) {
+func (m *metricsImpl) SetLocalStake(s uint64) {
 	m.localStake.Set(float64(s))
 }
 
-func (m *metrics) SetTotalStake(s uint64) {
+func (m *metricsImpl) SetTotalStake(s uint64) {
 	m.totalStake.Set(float64(s))
 }
 
-func (m *metrics) SetTimeUntilUnstake(timeUntilUnstake time.Duration) {
+func (m *metricsImpl) SetTimeUntilUnstake(timeUntilUnstake time.Duration) {
 	m.timeUntilUnstake.Set(float64(timeUntilUnstake))
 }
 
-func (m *metrics) SetTimeUntilSubnetUnstake(netID ids.ID, timeUntilUnstake time.Duration) {
+func (m *metricsImpl) SetTimeUntilSubnetUnstake(netID ids.ID, timeUntilUnstake time.Duration) {
 	m.timeUntilSubnetUnstake.WithLabelValues(netID.String()).Set(float64(timeUntilUnstake))
 }

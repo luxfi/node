@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -17,11 +17,11 @@ import (
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	metric "github.com/luxfi/metric"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 )
 
@@ -107,10 +107,10 @@ func TestGossiperGossip(t *testing.T) {
 			responseSender := &FakeSender{
 				SentAppResponse: make(chan []byte, 1),
 			}
-			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, metric.NewNoOpMetrics("test").Registry(), "")
+			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, metric.NewNoOp().Registry(), "")
 			require.NoError(err)
 
-			responseBloom, err := NewBloomFilter(metric.NewNoOpMetrics("test").Registry(), "", 1000, 0.01, 0.05)
+			responseBloom, err := NewBloomFilter(metric.NewNoOp().Registry(), "", 1000, 0.01, 0.05)
 			require.NoError(err)
 			responseSet := &testSet{
 				txs:   make(map[ids.ID]*testTx),
@@ -120,14 +120,14 @@ func TestGossiperGossip(t *testing.T) {
 				require.NoError(responseSet.Add(item))
 			}
 
-			metrics, err := NewMetrics(metric.NewNoOpMetrics("test").Registry(), "")
+			testMetrics, err := NewMetrics(metric.NewNoOp().Registry(), "")
 			require.NoError(err)
 			marshaller := testMarshaller{}
 			handler := NewHandler[*testTx](
 				nil,
 				marshaller,
 				responseSet,
-				metrics,
+				testMetrics,
 				tt.targetResponseSize,
 			)
 			require.NoError(err)
@@ -137,11 +137,11 @@ func TestGossiperGossip(t *testing.T) {
 				SentAppRequest: make(chan []byte, 1),
 			}
 
-			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, metric.NewNoOpMetrics("test").Registry(), "")
+			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, metric.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(requestNetwork.Connected(context.Background(), ids.EmptyNodeID, nil))
 
-			bloom, err := NewBloomFilter(metric.NewNoOpMetrics("test").Registry(), "", 1000, 0.01, 0.05)
+			bloom, err := NewBloomFilter(metric.NewRegistry(), "", 1000, 0.01, 0.05)
 			require.NoError(err)
 			requestSet := &testSet{
 				txs:   make(map[ids.ID]*testTx),
@@ -159,7 +159,7 @@ func TestGossiperGossip(t *testing.T) {
 				marshaller,
 				requestSet,
 				requestClient,
-				metrics,
+				testMetrics,
 				1,
 			)
 			require.NoError(err)
@@ -515,7 +515,7 @@ func TestPushGossiper(t *testing.T) {
 			network, err := p2p.NewNetwork(
 				nil,
 				sender,
-				metric.NewNoOpMetrics("test").Registry(),
+				metric.NewNoOp().Registry(),
 				"",
 			)
 			require.NoError(err)
@@ -534,7 +534,7 @@ func TestPushGossiper(t *testing.T) {
 				},
 				time.Hour,
 			)
-			metrics, err := NewMetrics(metric.NewNoOpMetrics("test").Registry(), "")
+			metrics, err := NewMetrics(metric.NewNoOp().Registry(), "")
 			require.NoError(err)
 			marshaller := testMarshaller{}
 

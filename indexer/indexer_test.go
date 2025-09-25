@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
@@ -13,18 +13,21 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/engine/chain/block/blockmock"
+	consensuscontext "github.com/luxfi/consensus/context"
+	// "github.com/luxfi/consensus/engine/chain/block/blockmock" // Removed - mock not available
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 )
+
+// mockChainVM is a simple mock for testing
+type mockChainVM struct{}
 
 var (
 	_ server.PathAdder = (*apiServerMock)(nil)
@@ -57,9 +60,9 @@ func TestNewIndexer(t *testing.T) {
 		AllowIncompleteIndex: true,
 		Log:                  log.NoLog{},
 		DB:                   memdb.New(),
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NoLog{}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NoLog{}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -98,9 +101,9 @@ func TestMarkHasRunAndShutdown(t *testing.T) {
 		IndexingEnabled:     true,
 		Log:                 log.NoLog{},
 		DB:                  db,
-		BlockAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
-		TxAcceptorGroup:     consensus.NewAcceptorGroup(log.NoLog{}),
-		VertexAcceptorGroup: consensus.NewAcceptorGroup(log.NoLog{}),
+		BlockAcceptorGroup:  consensus.NewAcceptorGroup(),
+		TxAcceptorGroup:     consensus.NewAcceptorGroup(),
+		VertexAcceptorGroup: consensus.NewAcceptorGroup(),
 		APIServer:           &apiServerMock{},
 		ShutdownF:           shutdown.Done,
 	}
@@ -136,9 +139,9 @@ func TestIndexer(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  log.NoLog{},
 		DB:                   db,
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NoLog{}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NoLog{}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(),
 		APIServer:            server,
 		ShutdownF:            func() {},
 	}
@@ -167,7 +170,7 @@ func TestIndexer(t *testing.T) {
 	require.False(previouslyIndexed)
 
 	// Register this chain, creating a new index
-	chainVM := blockmock.NewChainVM()
+	chainVM := &mockChainVM{} // Simple mock since interface accepts any type
 	t.Logf("Before RegisterChain, closed=%v", idxr.closed)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	t.Logf("After RegisterChain, closed=%v", idxr.closed)
@@ -195,7 +198,7 @@ func TestIndexer(t *testing.T) {
 	// Accept the block through the index
 	blkIdx := idxr.blockIndices[testChainID]
 	require.NotNil(blkIdx)
-	
+
 	// Accept the container
 	err = blkIdx.Accept(context.Background(), blkID, blkBytes)
 	require.NoError(err)
@@ -238,9 +241,9 @@ func TestIndexer(t *testing.T) {
 	// Create a new indexer using the same baseDB to simulate restart
 	config.DB = versiondb.New(baseDB)
 	// Create new AcceptorGroups since the old ones still have the chain registered
-	config.BlockAcceptorGroup = consensus.NewAcceptorGroup(log.NoLog{})
-	config.TxAcceptorGroup = consensus.NewAcceptorGroup(log.NoLog{})
-	config.VertexAcceptorGroup = consensus.NewAcceptorGroup(log.NoLog{})
+	config.BlockAcceptorGroup = consensus.NewAcceptorGroup()
+	config.TxAcceptorGroup = consensus.NewAcceptorGroup()
+	config.VertexAcceptorGroup = consensus.NewAcceptorGroup()
 	idxrIntf, err = NewIndexer(config)
 	require.NoError(err)
 	require.IsType(&indexer{}, idxrIntf)
@@ -289,7 +292,7 @@ func TestIndexer(t *testing.T) {
 		ChainID: chain2ChainID,
 	})
 
-	graphVM := blockmock.NewChainVM()
+	graphVM := &mockChainVM{}
 	idxr.RegisterChain("chain2", chain2Ctx, graphVM)
 	// require.NoError(err)
 	// require.Equal(4, server.timesCalled) // block index for chain, block index for dag, vtx index, tx index
@@ -312,7 +315,7 @@ func TestIndexer(t *testing.T) {
 	// Get the block index for chain2
 	blk2Idx := idxr.blockIndices[chain2ChainID]
 	require.NotNil(blk2Idx)
-	
+
 	// Accept the block
 	err = blk2Idx.Accept(context.Background(), blk2ID, blk2Bytes)
 	require.NoError(err)
@@ -346,12 +349,12 @@ func TestIndexer(t *testing.T) {
 	// Since chain2 is a block.ChainVM, it doesn't have vertex or tx indices
 	require.Empty(idxr.vtxIndices)
 	require.Empty(idxr.txIndices)
-	
+
 	// Verify both chains have their expected last accepted blocks
 	lastAcceptedBlk1, err := blkIdx.GetLastAccepted()
 	require.NoError(err)
 	require.Equal(blkID, lastAcceptedBlk1.ID)
-	
+
 	lastAcceptedBlk2, err := blk2Idx.GetLastAccepted()
 	require.NoError(err)
 	require.Equal(blk2ID, lastAcceptedBlk2.ID)
@@ -365,9 +368,9 @@ func TestIndexer(t *testing.T) {
 	// Re-open one more time and re-register chains
 	config.DB = versiondb.New(baseDB)
 	// Create new AcceptorGroups since the old ones were closed
-	config.BlockAcceptorGroup = consensus.NewAcceptorGroup(log.NoLog{})
-	config.TxAcceptorGroup = consensus.NewAcceptorGroup(log.NoLog{})
-	config.VertexAcceptorGroup = consensus.NewAcceptorGroup(log.NoLog{})
+	config.BlockAcceptorGroup = consensus.NewAcceptorGroup()
+	config.TxAcceptorGroup = consensus.NewAcceptorGroup()
+	config.VertexAcceptorGroup = consensus.NewAcceptorGroup()
 	idxrIntf, err = NewIndexer(config)
 	require.NoError(err)
 	require.IsType(&indexer{}, idxrIntf)
@@ -380,11 +383,11 @@ func TestIndexer(t *testing.T) {
 	lastAcceptedBlk1Again, err := idxr.blockIndices[testChainID].GetLastAccepted()
 	require.NoError(err)
 	require.Equal(blkID, lastAcceptedBlk1Again.ID)
-	
+
 	lastAcceptedBlk2Again, err := idxr.blockIndices[chain2ChainID].GetLastAccepted()
 	require.NoError(err)
 	require.Equal(blk2ID, lastAcceptedBlk2Again.ID)
-	
+
 	// No vertex or tx indices since we're using block chains
 	require.Empty(idxr.vtxIndices)
 	require.Empty(idxr.txIndices)
@@ -401,9 +404,9 @@ func TestIncompleteIndex(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  log.NoLog{},
 		DB:                   versiondb.New(baseDB),
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NoLog{}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NoLog{}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -426,7 +429,7 @@ func TestIncompleteIndex(t *testing.T) {
 	previouslyIndexed, err := idxr.previouslyIndexed(testChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
-	chainVM := blockmock.NewChainVM()
+	chainVM := &mockChainVM{}
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	isIncomplete, err = idxr.isIncomplete(testChainID)
 	require.NoError(err)
@@ -488,9 +491,9 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 		AllowIncompleteIndex: false,
 		Log:                  log.NoLog{},
 		DB:                   db,
-		BlockAcceptorGroup:   consensus.NewAcceptorGroup(log.NoLog{}),
-		TxAcceptorGroup:      consensus.NewAcceptorGroup(log.NoLog{}),
-		VertexAcceptorGroup:  consensus.NewAcceptorGroup(log.NoLog{}),
+		BlockAcceptorGroup:   consensus.NewAcceptorGroup(),
+		TxAcceptorGroup:      consensus.NewAcceptorGroup(),
+		VertexAcceptorGroup:  consensus.NewAcceptorGroup(),
 		APIServer:            &apiServerMock{},
 		ShutdownF:            func() {},
 	}
@@ -514,7 +517,7 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	// The test context is configured correctly for a non-primary net
 
 	// RegisterChain should return without adding an index for this chain
-	chainVM := blockmock.NewChainVM()
+	chainVM := &mockChainVM{}
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	require.Empty(idxr.blockIndices)
 }

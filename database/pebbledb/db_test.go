@@ -51,9 +51,23 @@ func FuzzNewIteratorWithStartAndPrefix(f *testing.F) {
 
 func BenchmarkInterface(b *testing.B) {
 	for _, size := range dbtest.BenchmarkSizes {
-		keys, values := dbtest.SetupBenchmark(b, size[0], size[1], size[2])
+		numPairs, keySize, valueSize := size[0], size[1], size[2]
+		keys := make([][]byte, numPairs)
+		values := make([][]byte, numPairs)
+		for i := 0; i < numPairs; i++ {
+			keys[i] = make([]byte, keySize)
+			values[i] = make([]byte, valueSize)
+			// Fill with random data
+			for j := 0; j < keySize; j++ {
+				keys[i][j] = byte(i*keySize + j)
+			}
+			for j := 0; j < valueSize; j++ {
+				values[i][j] = byte(i*valueSize + j)
+			}
+		}
+
 		for name, bench := range dbtest.Benchmarks {
-			b.Run(fmt.Sprintf("pebble_%d_pairs_%d_keys_%d_values_%s", size[0], size[1], size[2], name), func(b *testing.B) {
+			b.Run(fmt.Sprintf("pebble_%d_pairs_%s", numPairs, name), func(b *testing.B) {
 				db := newDB(b)
 				bench(b, db, keys, values)
 				_ = db.Close()

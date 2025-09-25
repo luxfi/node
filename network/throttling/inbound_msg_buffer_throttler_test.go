@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -11,13 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	metric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 // Test inboundMsgBufferThrottler
 func TestMsgBufferThrottler(t *testing.T) {
 	require := require.New(t)
-	throttler, err := newInboundMsgBufferThrottler(metric.NewNoOpMetrics("test").Registry(), 3)
+	throttler, err := newInboundMsgBufferThrottler(metric.NewNoOp().Registry(), 3)
 	require.NoError(err)
 
 	nodeID1, nodeID2 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
@@ -69,7 +69,7 @@ func TestMsgBufferThrottler(t *testing.T) {
 // Test inboundMsgBufferThrottler when an acquire is cancelled
 func TestMsgBufferThrottlerContextCancelled(t *testing.T) {
 	require := require.New(t)
-	throttler, err := newInboundMsgBufferThrottler(metric.NewNoOpMetrics("test").Registry(), 3)
+	throttler, err := newInboundMsgBufferThrottler(metric.NewNoOp().Registry(), 3)
 	require.NoError(err)
 
 	vdr1Context, vdr1ContextCancelFunc := context.WithCancel(context.Background())

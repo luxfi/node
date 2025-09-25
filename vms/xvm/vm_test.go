@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -11,12 +11,12 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/consensus/consensustest"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/utils/constants"
@@ -32,9 +32,11 @@ func TestInvalidGenesis(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := consensustest.Context(t, ids.GenerateTestID())
-	ctx.Lock.Lock()
-	defer ctx.Lock.Unlock()
+	ctx := &consensusctx.Context{
+		ChainID: ids.GenerateTestID(),
+	}
+	// Tests don't need locking as they run single-threaded
+	// Remove Lock references that don't exist in consensus context
 
 	toEngine := make(chan interface{}, 1)
 	err := vm.Initialize(
@@ -55,11 +57,11 @@ func TestInvalidFx(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := consensustest.Context(t, ids.GenerateTestID())
-	ctx.Lock.Lock()
+	ctx := &consensusctx.Context{
+		ChainID: ids.GenerateTestID(),
+	}
 	defer func() {
 		vm.Shutdown()
-		ctx.Lock.Unlock()
 	}()
 
 	genesisBytes := buildGenesisTest(t)
@@ -83,11 +85,11 @@ func TestFxInitializationFailure(t *testing.T) {
 	require := require.New(t)
 
 	vm := &VM{}
-	ctx := consensustest.Context(t, ids.GenerateTestID())
-	ctx.Lock.Lock()
+	ctx := &consensusctx.Context{
+		ChainID: ids.GenerateTestID(),
+	}
 	defer func() {
 		vm.Shutdown()
-		ctx.Lock.Unlock()
 	}()
 
 	genesisBytes := buildGenesisTest(t)
@@ -359,6 +361,7 @@ func TestVMFormat(t *testing.T) {
 	env := setup(t, &envConfig{
 		fork: latest,
 	})
+	env.vm.Lock.Lock()
 	defer env.vm.Lock.Unlock()
 
 	tests := []struct {

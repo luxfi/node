@@ -19,7 +19,7 @@ type SubnetToL1ConversionValidatorData struct {
 }
 
 type SubnetToL1ConversionData struct {
-	NetID       ids.ID                              `serialize:"true" json:"netID"`
+	NetID          ids.ID                              `serialize:"true" json:"netID"`
 	ManagerChainID ids.ID                              `serialize:"true" json:"managerChainID"`
 	ManagerAddress types.JSONByteSlice                 `serialize:"true" json:"managerAddress"`
 	Validators     []SubnetToL1ConversionValidatorData `serialize:"true" json:"validators"`

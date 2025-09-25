@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build test
@@ -58,9 +58,9 @@ var _ = ginkgo.Describe("[XSVM]", func() {
 	ginkgo.It("should support transfers between subnets", func() {
 		network := e2e.Env.GetNetwork()
 
-		sourceNet := network.GetSubnet(subnetAName)
+		sourceSubnet := network.GetSubnet(subnetAName)
 		require.NotNil(sourceSubnet)
-		destinationNet := network.GetSubnet(subnetBName)
+		destinationSubnet := network.GetSubnet(subnetBName)
 		require.NotNil(destinationSubnet)
 
 		sourceChain := sourceSubnet.Chains[0]
