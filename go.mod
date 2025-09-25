@@ -6,10 +6,6 @@ go 1.25.1
 // CONTRIBUTING.md
 // README.md
 // go.mod (here)
-<<<<<<< HEAD
-go 1.25.1
-=======
->>>>>>> f8a51339b6d5a5a8e0e3f58bbc8a3a05ffc486ca
 
 exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 
