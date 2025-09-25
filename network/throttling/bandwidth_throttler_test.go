@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -9,10 +9,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	metric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 func TestBandwidthThrottler(t *testing.T) {
@@ -22,7 +22,7 @@ func TestBandwidthThrottler(t *testing.T) {
 		RefillRate:   8,
 		MaxBurstSize: 10,
 	}
-	throttlerIntf, err := newBandwidthThrottler(log.NoLog{}, metric.NewNoOpMetrics("test").Registry(), config)
+	throttlerIntf, err := newBandwidthThrottler(log.NoLog{}, metric.NewNoOp().Registry(), config)
 	require.NoError(err)
 	require.IsType(&bandwidthThrottlerImpl{}, throttlerIntf)
 	throttler := throttlerIntf.(*bandwidthThrottlerImpl)

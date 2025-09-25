@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -95,7 +95,7 @@ func TestLabelGatherer_Gather(t *testing.T) {
 			gatherer := NewLabelGatherer(labelName)
 			require.NotNil(gatherer)
 
-			registerA := metric.NewNoOpRegistry()
+			registerA := metric.NewRegistry()
 			require.NoError(gatherer.Register(labelValueA, registerA))
 			{
 				counterA := metric.NewCounterVec(
@@ -103,10 +103,12 @@ func TestLabelGatherer_Gather(t *testing.T) {
 					[]string{test.labelName},
 				)
 				counterA.With(metric.Labels{test.labelName: customLabelValueA})
-				require.NoError(registerA.Register(counterA))
+				collector := metric.AsCollector(counterA)
+				require.NotNil(collector)
+				require.NoError(registerA.Register(collector))
 			}
 
-			registerB := metric.NewNoOpRegistry()
+			registerB := metric.NewRegistry()
 			require.NoError(gatherer.Register(labelValueB, registerB))
 			{
 				counterB := metric.NewCounterVec(
@@ -114,7 +116,9 @@ func TestLabelGatherer_Gather(t *testing.T) {
 					[]string{customLabelName},
 				)
 				counterB.With(metric.Labels{customLabelName: customLabelValueB}).Inc()
-				require.NoError(registerB.Register(counterB))
+				collector := metric.AsCollector(counterB)
+				require.NotNil(collector)
+				require.NoError(registerB.Register(collector))
 			}
 
 			metrics, err := gatherer.Gather()
@@ -155,7 +159,7 @@ func TestLabelGatherer_Register(t *testing.T) {
 		return &labelGatherer{
 			multiGatherer: multiGatherer{
 				names: []string{firstLabeledGatherer.labelValue},
-				gatherers: metric.Gatherers{
+				gatherers: []metric.Gatherer{
 					firstLabeledGatherer,
 				},
 			},
@@ -173,7 +177,7 @@ func TestLabelGatherer_Register(t *testing.T) {
 				firstLabeledGatherer.labelValue,
 				secondLabeledGatherer.labelValue,
 			},
-			gatherers: metric.Gatherers{
+			gatherers: []metric.Gatherer{
 				firstLabeledGatherer,
 				secondLabeledGatherer,
 			},

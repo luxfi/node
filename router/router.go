@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package router
@@ -42,7 +42,7 @@ type Router interface {
 
 	// RegisterChain registers a handler for a specific chain
 	RegisterChain(chainID ids.ID, handler ChainHandler) error
-	
+
 	// UnregisterChain removes a handler for a specific chain
 	UnregisterChain(chainID ids.ID) error
 
@@ -323,9 +323,9 @@ func (r *routerImpl) HealthCheck(ctx context.Context) (interface{}, error) {
 	defer r.mu.RUnlock()
 
 	health := map[string]interface{}{
-		"connectedPeers": r.connectedPeers.Len(),
+		"connectedPeers":   r.connectedPeers.Len(),
 		"registeredChains": len(r.chains),
-		"pendingRequests": len(r.requests),
+		"pendingRequests":  len(r.requests),
 	}
 
 	// Check each chain's health
@@ -345,7 +345,7 @@ func (r *routerImpl) Shutdown(ctx context.Context) {
 	defer r.mu.Unlock()
 
 	r.log.Info("shutting down router")
-	
+
 	// Clear all state
 	r.chains = make(map[ids.ID]ChainHandler)
 	r.connectedPeers.Clear()
@@ -360,7 +360,7 @@ func getChainID(msg message.InboundMessage) (ids.ID, error) {
 	if msgFields == nil {
 		return ids.Empty, ErrNoChainID
 	}
-	
+
 	// Different message types may have chain ID in different fields
 	// You'll need to implement the actual extraction logic based on your message format
 	// For now, returning empty ID

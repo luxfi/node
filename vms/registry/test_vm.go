@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package registry
@@ -6,14 +6,17 @@ package registry
 import (
 	"context"
 	"net/http"
+	"time"
 
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/snow"
-	"github.com/luxfi/database/manager"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/version"
 )
 
-// Ensure testVM implements core.VM
-var _ core.VM = (*testVM)(nil)
+// Ensure testVM implements common.VM
+var _ common.VM = (*testVM)(nil)
 
 // testVM is a test VM implementation for testing the registry
 type testVM struct {
@@ -28,13 +31,12 @@ func newTestVM() *testVM {
 func (vm *testVM) Initialize(
 	ctx context.Context,
 	chainCtx *snow.Context,
-	db manager.Manager,
+	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	msgChan chan<- core.Message,
-	fxs []*core.Fx,
-	appSender interface{},
+	fxs []*common.Fx,
+	appSender common.AppSender,
 ) error {
 	return nil
 }
@@ -69,38 +71,42 @@ func (vm *testVM) CreateStaticHandlers(ctx context.Context) (map[string]http.Han
 	return nil, nil
 }
 
-func (vm *testVM) Connected(ctx context.Context, nodeID interface{}, nodeVersion interface{}) error {
+func (vm *testVM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+	return nil, nil
+}
+
+func (vm *testVM) WaitForEvent(ctx context.Context) (common.Message, error) {
+	return common.PendingTxs, nil
+}
+
+func (vm *testVM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
+	// No-op implementation for test VM
 	return nil
 }
 
-func (vm *testVM) Disconnected(ctx context.Context, nodeID interface{}) error {
+func (vm *testVM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	// No-op implementation for test VM
 	return nil
 }
 
-func (vm *testVM) BuildBlock(context.Context) (interface{}, error) {
-	return nil, nil
-}
+// AppHandler interface methods
 
-func (vm *testVM) ParseBlock(context.Context, []byte) (interface{}, error) {
-	return nil, nil
-}
-
-func (vm *testVM) GetBlock(context.Context, interface{}) (interface{}, error) {
-	return nil, nil
-}
-
-func (vm *testVM) SetPreference(context.Context, interface{}) error {
+func (vm *testVM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+	// No-op implementation for test VM
 	return nil
 }
 
-func (vm *testVM) LastAccepted(context.Context) (interface{}, error) {
-	return nil, nil
-}
-
-func (vm *testVM) VerifyHeightIndex(context.Context) error {
+func (vm *testVM) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+	// No-op implementation for test VM
 	return nil
 }
 
-func (vm *testVM) GetBlockIDAtHeight(context.Context, uint64) (interface{}, error) {
-	return nil, nil
+func (vm *testVM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+	// No-op implementation for test VM
+	return nil
+}
+
+func (vm *testVM) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+	// No-op implementation for test VM
+	return nil
 }

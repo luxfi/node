@@ -13,9 +13,9 @@ import (
 
 	secp256k1 "github.com/luxfi/crypto/secp256k1"
 	ids "github.com/luxfi/ids"
+	gomock "github.com/luxfi/mock/gomock"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
 	secp256k1fx "github.com/luxfi/node/vms/secp256k1fx"
-	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockBuilder is a mock of Builder interface.

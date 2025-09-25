@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -18,9 +18,9 @@ func FuzzMarshalDiffKey(f *testing.F) {
 		require := require.New(t)
 
 		var (
-			netID ids.ID
-			height   uint64
-			nodeID   ids.NodeID
+			netID  ids.ID
+			height uint64
+			nodeID ids.NodeID
 		)
 		fz := fuzzer.NewFuzzer(data)
 		fz.Fill(&netID, &height, &nodeID)

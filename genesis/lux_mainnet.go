@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -7,10 +7,10 @@ import (
 	"encoding/hex"
 	"time"
 
+	_ "embed"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
-	_ "embed"
 )
 
 // LuxGenesisConfig returns the genesis data to use for LUX mainnet
@@ -18,16 +18,16 @@ func LuxGenesisConfig() *Config {
 	// Parse addresses from hex
 	ethAddrBytes, _ := hex.DecodeString("8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC")
 	ethAddr, _ := ids.ToShortID(ethAddrBytes)
-	
+
 	// LUX address is the same as ETH address for simplicity
 	luxAddr := ethAddr
-	
+
 	nodeID, _ := ids.NodeIDFromString("NodeID-111111111111111111116DBWJs")
-	
+
 	// Create a proper allocation with unlock schedule for staking
 	// The staker will have 10M LUX (10,000,000 * 1e9 nLUX)
 	stakingAmount := uint64(10000000) * units.Lux // 10M LUX
-	
+
 	return &Config{
 		NetworkID: constants.LuxMainnetID,
 		Allocations: []Allocation{
@@ -43,42 +43,20 @@ func LuxGenesisConfig() *Config {
 				},
 			},
 		},
-		StartTime: uint64(time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC).Unix()),
-		InitialStakeDuration: uint64((365 * 24 * time.Hour).Seconds()),
+		StartTime:                  uint64(time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC).Unix()),
+		InitialStakeDuration:       uint64((365 * 24 * time.Hour).Seconds()),
 		InitialStakeDurationOffset: 0,
 		InitialStakedFunds: []ids.ShortID{
 			luxAddr,
 		},
 		InitialStakers: []Staker{
 			{
-				NodeID: nodeID,
+				NodeID:        nodeID,
 				RewardAddress: luxAddr,
 				DelegationFee: 20000, // 2%
 			},
 		},
-		CChainGenesis: `{
-			"config": {
-				"chainId": 96369,
-				"homesteadBlock": 0,
-				"eip150Block": 0,
-				"eip155Block": 0,
-				"eip158Block": 0,
-				"byzantiumBlock": 0,
-				"constantinopleBlock": 0,
-				"petersburgBlock": 0,
-				"istanbulBlock": 0,
-				"muirGlacierBlock": 0,
-				"berlinBlock": 0,
-				"londonBlock": 0
-			},
-			"difficulty": "0x1",
-			"gasLimit": "0x1C9C380",
-			"alloc": {
-				"0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC": {
-					"balance": "0x21e19e0c9bab2400000"
-				}
-			}
-		}`,
+		CChainGenesis: string(GetCChainGenesisMainnetBytes()),
 		Message: "LUX Mainnet Genesis",
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -223,7 +223,7 @@ func newTestStaker() *Staker {
 	return &Staker{
 		TxID:            ids.GenerateTestID(),
 		NodeID:          ids.GenerateTestNodeID(),
-		NetID:        ids.GenerateTestID(),
+		NetID:           ids.GenerateTestID(),
 		Weight:          1,
 		StartTime:       startTime,
 		EndTime:         endTime,

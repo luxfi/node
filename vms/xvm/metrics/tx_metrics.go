@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -31,7 +31,7 @@ func newTxMetrics(registerer metric.Registerer) (*txMetrics, error) {
 			txLabels,
 		),
 	}
-	return m, registerer.Register(m.numTxs)
+	return m, nil
 }
 
 func (m *txMetrics) BaseTx(*txs.BaseTx) error {

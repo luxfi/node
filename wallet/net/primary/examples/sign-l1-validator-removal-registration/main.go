@@ -10,8 +10,8 @@ import (
 	"net/netip"
 	"time"
 
-	metrics "github.com/luxfi/metric"
 	luxlog "github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/consensus/core"
@@ -35,16 +35,32 @@ import (
 type testInboundHandler struct{}
 
 func (h *testInboundHandler) AppGossip(_ context.Context, _ ids.NodeID, _ []byte) error { return nil }
-func (h *testInboundHandler) AppRequest(_ context.Context, _ ids.NodeID, _ uint32, _ time.Time, _ []byte) error { return nil }
-func (h *testInboundHandler) AppRequestFailed(_ context.Context, _ ids.NodeID, _ uint32, _ *core.AppError) error { return nil }
-func (h *testInboundHandler) AppResponse(_ context.Context, _ ids.NodeID, _ uint32, _ []byte) error { return nil }
-func (h *testInboundHandler) AppError(_ context.Context, _ ids.NodeID, _ uint32, _ int32, _ string) error { return nil }
-func (h *testInboundHandler) CrossChainAppRequest(_ context.Context, _ ids.ID, _ uint32, _ time.Time, _ []byte) error { return nil }
-func (h *testInboundHandler) CrossChainAppRequestFailed(_ context.Context, _ ids.ID, _ uint32, _ *core.AppError) error { return nil }
-func (h *testInboundHandler) CrossChainAppResponse(_ context.Context, _ ids.ID, _ uint32, _ []byte) error { return nil }
-func (h *testInboundHandler) CrossChainAppError(_ context.Context, _ ids.ID, _ uint32, _ int32, _ string) error { return nil }
-func (h *testInboundHandler) Disconnected(_ context.Context, _ ids.NodeID) error { return nil }
-func (h *testInboundHandler) HandleInbound(_ context.Context, _ p2pmessage.InboundMessage) { }
+func (h *testInboundHandler) AppRequest(_ context.Context, _ ids.NodeID, _ uint32, _ time.Time, _ []byte) error {
+	return nil
+}
+func (h *testInboundHandler) AppRequestFailed(_ context.Context, _ ids.NodeID, _ uint32, _ *core.AppError) error {
+	return nil
+}
+func (h *testInboundHandler) AppResponse(_ context.Context, _ ids.NodeID, _ uint32, _ []byte) error {
+	return nil
+}
+func (h *testInboundHandler) AppError(_ context.Context, _ ids.NodeID, _ uint32, _ int32, _ string) error {
+	return nil
+}
+func (h *testInboundHandler) CrossChainAppRequest(_ context.Context, _ ids.ID, _ uint32, _ time.Time, _ []byte) error {
+	return nil
+}
+func (h *testInboundHandler) CrossChainAppRequestFailed(_ context.Context, _ ids.ID, _ uint32, _ *core.AppError) error {
+	return nil
+}
+func (h *testInboundHandler) CrossChainAppResponse(_ context.Context, _ ids.ID, _ uint32, _ []byte) error {
+	return nil
+}
+func (h *testInboundHandler) CrossChainAppError(_ context.Context, _ ids.ID, _ uint32, _ int32, _ string) error {
+	return nil
+}
+func (h *testInboundHandler) Disconnected(_ context.Context, _ ids.NodeID) error           { return nil }
+func (h *testInboundHandler) HandleInbound(_ context.Context, _ p2pmessage.InboundMessage) {}
 
 var registerL1ValidatorJSON = []byte(`{
         "netID": "2DeHa7Qb6sufPkmQcFWG2uCd4pBPv9WB6dkzroiMQhd1NSRtof",
@@ -170,7 +186,7 @@ func main() {
 
 	// Create inbound handler for messages
 	inboundHandler := &testInboundHandler{}
-	
+
 	p, err := peer.StartTestPeer(
 		context.Background(),
 		netip.AddrPortFrom(
@@ -186,7 +202,7 @@ func main() {
 
 	messageBuilder, err := p2pmessage.NewCreator(
 		luxlog.NewNoOpLogger(),
-		metrics.NewNoOp(),
+		metric.NewNoOp(),
 		compression.TypeZstd,
 		time.Hour,
 	)

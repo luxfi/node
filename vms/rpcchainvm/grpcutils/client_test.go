@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package grpcutils
@@ -21,8 +21,8 @@ func TestDialOptsSmoke(t *testing.T) {
 	require.Len(opts, 3)
 
 	opts = newDialOpts(
-		WithChainUnaryInterceptor(grpc_metric.UnaryClientInterceptor),
-		WithChainStreamInterceptor(grpc_metric.StreamClientInterceptor),
+		WithChainUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor),
+		WithChainStreamInterceptor(grpc_prometheus.StreamClientInterceptor),
 	)
 	require.Len(opts, 5)
 }

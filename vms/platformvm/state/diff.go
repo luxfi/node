@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -430,7 +430,6 @@ func (d *diff) PutL1Validator(validator L1Validator) error {
 	return nil
 }
 
-
 func (d *diff) Apply(baseState Chain) error {
 	baseState.SetTimestamp(d.timestamp)
 	for netID, supply := range d.currentSupply {
@@ -514,6 +513,7 @@ func (d *diff) Apply(baseState Chain) error {
 	}
 	return nil
 }
+
 // GetActiveL1ValidatorsIterator implements L1Validators interface
 func (d *diff) GetActiveL1ValidatorsIterator() (iterator.Iterator[L1Validator], error) {
 	parentState, ok := d.stateVersions.GetState(d.parentID)

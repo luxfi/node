@@ -1,11 +1,9 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package staking
 
-import "crypto"
+import "github.com/luxfi/ids"
 
-type Certificate struct {
-	Raw       []byte
-	PublicKey crypto.PublicKey
-}
+// Certificate is an alias to ids.Certificate
+type Certificate = ids.Certificate

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -12,7 +12,7 @@ import (
 
 var (
 	ErrWeightTooSmall = errors.New("weight of this validator is too low")
-	errBadNetID    = errors.New("subnet ID can't be primary network ID")
+	errBadNetID       = errors.New("subnet ID can't be primary network ID")
 )
 
 // Validator is a validator.

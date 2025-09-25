@@ -1,17 +1,15 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
 
 import (
-	"github.com/luxfi/metric"
 	"errors"
 	"fmt"
+	"github.com/luxfi/metric"
 
 	utilmetric "github.com/luxfi/node/utils/metric"
 	"google.golang.org/protobuf/proto"
-
-	dto "github.com/prometheus/client_model/go"
 )
 
 var (
@@ -72,7 +70,7 @@ type prefixedGatherer struct {
 	gatherer metric.Gatherer
 }
 
-func (g *prefixedGatherer) Gather() ([]*dto.MetricFamily, error) {
+func (g *prefixedGatherer) Gather() ([]*metric.MetricFamily, error) {
 	// Gather returns partially filled metrics in the case of an error. So, it
 	// is expected to still return the metrics in the case an error is returned.
 	metricFamilies, err := g.gatherer.Gather()

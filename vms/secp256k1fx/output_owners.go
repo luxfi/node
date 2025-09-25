@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -36,7 +36,7 @@ type OutputOwners struct {
 	ctx context.Context
 }
 
-// InitializeWithContext implements context.ContextInitializable
+// InitializeWithContext implements consensus.ContextInitializable
 func (out *OutputOwners) InitializeWithContext(ctx context.Context) error {
 	out.ctx = ctx
 	return nil
@@ -156,11 +156,11 @@ func formatAddress(ctx context.Context, addr ids.ShortID) (string, error) {
 	if ctxValue.Kind() == reflect.Ptr {
 		ctxValue = ctxValue.Elem()
 	}
-	
+
 	if ctxValue.Kind() == reflect.Struct {
 		bcLookupField := ctxValue.FieldByName("BCLookup")
 		chainIDField := ctxValue.FieldByName("ChainID")
-		
+
 		if bcLookupField.IsValid() && chainIDField.IsValid() && !bcLookupField.IsNil() {
 			if bcLookup, ok := bcLookupField.Interface().(ids.AliaserReader); ok {
 				if chainID, ok := chainIDField.Interface().(ids.ID); ok {
@@ -175,7 +175,7 @@ func formatAddress(ctx context.Context, addr ids.ShortID) (string, error) {
 			}
 		}
 	}
-	
+
 	// Fallback to default formatting
 	return addr.String(), nil
 }

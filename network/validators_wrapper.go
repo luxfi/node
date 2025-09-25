@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -44,13 +44,13 @@ func (v *validatorsWrapper) GetValidatorIDs(netID ids.ID) []ids.NodeID {
 	if err != nil {
 		return nil
 	}
-	
+
 	validators := validatorSet.List()
 	nodeIDs := make([]ids.NodeID, len(validators))
 	for i, validator := range validators {
 		nodeIDs[i] = validator.ID()
 	}
-	
+
 	return nodeIDs
 }
 

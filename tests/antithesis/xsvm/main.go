@@ -1,30 +1,35 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
-
-//go:build antithesis
 
 package main
 
 import (
 	"context"
 	"crypto/rand"
-	"log"
+	"fmt"
 	"math/big"
-	"os"
 	"time"
 
 	"github.com/antithesishq/antithesis-sdk-go/assert"
 	"github.com/antithesishq/antithesis-sdk-go/lifecycle"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
-	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/antithesis"
-	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/tests/fixture/subnet"
+	"github.com/luxfi/node/tests/fixture/tmpnet"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/example/xsvm/api"
 	"github.com/luxfi/node/vms/example/xsvm/cmd/issue/status"
 	"github.com/luxfi/node/vms/example/xsvm/cmd/issue/transfer"
+
+	timerpkg "github.com/luxfi/node/utils/timer"
 )
 
 const (
@@ -33,26 +38,40 @@ const (
 )
 
 func main() {
-	c, err := antithesis.NewConfig(os.Args)
-	if err != nil {
-		log.Fatalf("invalid config: %s", err)
-	}
+	// TODO(marun) Support choosing the log format
+	tc := antithesis.NewInstrumentedTestContext(tests.NewDefaultLogger(""))
+	defer tc.RecoverAndExit()
+	require := require.New(tc)
 
-	ctx := context.Background()
-	if err := antithesis.AwaitHealthyNodes(ctx, c.URIs); err != nil {
-		log.Fatalf("failed to await healthy nodes: %s", err)
-	}
+	c := antithesis.NewConfigWithSubnets(
+		tc,
+		&tmpnet.Network{
+			Owner: "antithesis-xsvm",
+		},
+		func(nodes ...*tmpnet.Node) []*tmpnet.Subnet {
+			return []*tmpnet.Subnet{
+				subnet.NewXSVMOrPanic("xsvm", genesis.VMRQKey, nodes...),
+			}
+		},
+	)
+	ctx := tests.DefaultNotifyContext(c.Duration, tc.DeferCleanup)
+	// Ensure contexts sourced from the test context use the notify context as their parent
+	tc.SetDefaultContextParent(ctx)
 
-	if len(c.ChainIDs) != 1 {
-		log.Fatalf("expected 1 chainID, saw %d", len(c.ChainIDs))
-	}
+	require.Len(c.ChainIDs, 1)
+	tc.Log().Debug("raw chain ID",
+		zap.String("chainID", c.ChainIDs[0]),
+	)
 	chainID, err := ids.FromString(c.ChainIDs[0])
-	if err != nil {
-		log.Fatalf("failed to parse chainID: %s", err)
-	}
+	require.NoError(err, "failed to parse chainID")
+	tc.Log().Info("node and chain configuration",
+		zap.Stringer("chainID", chainID),
+		zap.Strings("uris", c.URIs),
+	)
 
 	genesisWorkload := &workload{
 		id:      0,
+		log:     tests.NewDefaultLogger(fmt.Sprintf("worker %d", 0)),
 		chainID: chainID,
 		key:     genesis.VMRQKey,
 		addrs:   set.Of(genesis.VMRQKey.Address()),
@@ -62,12 +81,10 @@ func main() {
 	workloads := make([]*workload, NumKeys)
 	workloads[0] = genesisWorkload
 
-	initialAmount := 100 * units.KiloLux
+	initialAmount := 100 * units.KiloAvax
 	for i := 1; i < NumKeys; i++ {
 		key, err := secp256k1.NewPrivateKey()
-		if err != nil {
-			log.Fatalf("failed to generate key: %s", err)
-		}
+		require.NoError(err, "failed to generate key")
 
 		var (
 			addr          = key.Address()
@@ -84,15 +101,17 @@ func main() {
 				PrivateKey: genesisWorkload.key,
 			},
 		)
-		if err != nil {
-			log.Fatalf("failed to issue initial funding transfer: %s", err)
-		}
-		log.Printf("issued initial funding transfer %s in %s", transferTxStatus.TxID, time.Since(baseStartTime))
+		require.NoError(err, "failed to issue initial funding transfer")
+		tc.Log().Info("issued initial funding transfer",
+			zap.Stringer("txID", transferTxStatus.TxID),
+			zap.Duration("duration", time.Since(baseStartTime)),
+		)
 
 		genesisWorkload.confirmTransferTx(ctx, transferTxStatus)
 
 		workloads[i] = &workload{
 			id:      i,
+			log:     tests.NewDefaultLogger(fmt.Sprintf("worker %d", i)),
 			chainID: chainID,
 			key:     key,
 			addrs:   set.Of(addr),
@@ -113,6 +132,7 @@ func main() {
 
 type workload struct {
 	id      int
+	log     logging.Logger
 	chainID ids.ID
 	key     *secp256k1.PrivateKey
 	addrs   set.Set[ids.ShortID]
@@ -120,26 +140,38 @@ type workload struct {
 }
 
 func (w *workload) run(ctx context.Context) {
-	timer := time.NewTimer(0)
-	if !timer.Stop() {
-		<-timer.C
-	}
+	timer := timerpkg.StoppedTimer()
+
+	tc := antithesis.NewInstrumentedTestContextWithArgs(
+		ctx,
+		w.log,
+		map[string]any{
+			"worker": w.id,
+		},
+	)
+	// Any assertion failure from this test context will result in process exit due to the
+	// panic being rethrown. This ensures that failures in test setup are fatal.
+	defer tc.RecoverAndRethrow()
+	require := require.New(tc)
 
 	uri := w.uris[w.id%len(w.uris)]
 
 	client := api.NewClient(uri, w.chainID.String())
 	balance, err := client.Balance(ctx, w.key.Address(), w.chainID)
-	if err != nil {
-		log.Fatalf("failed to fetch balance: %s", err)
-	}
-	log.Printf("worker %d starting with a balance of %d", w.id, balance)
+	require.NoError(err, "failed to fetch balance")
+	w.log.Info("worker starting",
+		zap.Int("worker", w.id),
+		zap.Uint64("balance", balance),
+	)
 	assert.Reachable("worker starting", map[string]any{
 		"worker":  w.id,
 		"balance": balance,
 	})
 
 	for {
-		log.Printf("worker %d executing transfer", w.id)
+		w.log.Info("executing transfer",
+			zap.Int("worker", w.id),
+		)
 		destAddress, _ := w.addrs.Peek()
 		txStatus, err := transfer.Transfer(
 			ctx,
@@ -153,16 +185,21 @@ func (w *workload) run(ctx context.Context) {
 			},
 		)
 		if err != nil {
-			log.Printf("worker %d failed to issue transfer: %s", w.id, err)
+			w.log.Warn("failed to issue transfer",
+				zap.Int("worker", w.id),
+				zap.Error(err),
+			)
 		} else {
-			log.Printf("worker %d issued transfer %s in %s", w.id, txStatus.TxID, time.Since(txStatus.StartTime))
+			w.log.Info("issued transfer",
+				zap.Int("worker", w.id),
+				zap.Stringer("txID", txStatus.TxID),
+				zap.Duration("duration", time.Since(txStatus.StartTime)),
+			)
 			w.confirmTransferTx(ctx, txStatus)
 		}
 
 		val, err := rand.Int(rand.Reader, big.NewInt(int64(time.Second)))
-		if err != nil {
-			log.Fatalf("failed to read randomness: %s", err)
-		}
+		require.NoError(err, "failed to read randomness")
 
 		timer.Reset(time.Duration(val.Int64()))
 		select {
@@ -177,9 +214,17 @@ func (w *workload) confirmTransferTx(ctx context.Context, tx *status.TxIssuance)
 	for _, uri := range w.uris {
 		client := api.NewClient(uri, w.chainID.String())
 		if err := api.AwaitTxAccepted(ctx, client, w.key.Address(), tx.Nonce, PollingInterval); err != nil {
-			log.Printf("worker %d failed to confirm transaction %s on %s: %s", w.id, tx.TxID, uri, err)
+			w.log.Warn("failed to confirm transaction",
+				zap.Int("worker", w.id),
+				zap.Stringer("txID", tx.TxID),
+				zap.String("uri", uri),
+				zap.Error(err),
+			)
 			return
 		}
 	}
-	log.Printf("worker %d confirmed transaction %s on all nodes", w.id, tx.TxID)
+	w.log.Info("confirmed transaction on all nodes",
+		zap.Int("worker", w.id),
+		zap.Stringer("txID", tx.TxID),
+	)
 }

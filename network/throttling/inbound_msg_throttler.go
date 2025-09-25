@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -9,9 +9,9 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/network/tracker"
 )
 
 var _ InboundMsgThrottler = (*inboundMsgThrottler)(nil)

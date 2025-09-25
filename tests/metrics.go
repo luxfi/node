@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tests
@@ -10,7 +10,6 @@ import (
 	"github.com/luxfi/metric"
 
 	dto "github.com/prometheus/client_model/go"
-	"github.com/luxfi/node/api/metrics"
 )
 
 // "metric name" -> "metric value"
@@ -21,7 +20,7 @@ type NodesMetrics map[string]NodeMetrics
 
 // GetNodeMetrics retrieves the specified metrics the provided node URI.
 func GetNodeMetrics(ctx context.Context, nodeURI string) (NodeMetrics, error) {
-	client := metrics.NewClient(nodeURI)
+	client := metric.NewClient(nodeURI)
 	return client.GetMetrics(ctx)
 }
 

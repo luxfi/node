@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -38,7 +38,7 @@ type Staker struct {
 	TxID            ids.ID
 	NodeID          ids.NodeID
 	PublicKey       *bls.PublicKey
-	NetID        ids.ID
+	NetID           ids.ID
 	Weight          uint64
 	StartTime       time.Time
 	EndTime         time.Time
@@ -98,7 +98,7 @@ func NewCurrentStaker(
 		TxID:            txID,
 		NodeID:          staker.NodeID(),
 		PublicKey:       publicKey,
-		NetID:        staker.NetID(),
+		NetID:           staker.NetID(),
 		Weight:          staker.Weight(),
 		StartTime:       startTime,
 		EndTime:         endTime,
@@ -118,7 +118,7 @@ func NewPendingStaker(txID ids.ID, staker txs.ScheduledStaker) (*Staker, error) 
 		TxID:      txID,
 		NodeID:    staker.NodeID(),
 		PublicKey: publicKey,
-		NetID:  staker.NetID(),
+		NetID:     staker.NetID(),
 		Weight:    staker.Weight(),
 		StartTime: startTime,
 		EndTime:   staker.EndTime(),

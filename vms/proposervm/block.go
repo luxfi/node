@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -451,7 +451,7 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPostDurango(
 		return false, err
 	}
 
-	// report the build slot to the metric.
+	// report the build slot to the metrics.
 	p.vm.proposerBuildSlotGauge.Set(float64(proposer.TimeToSlot(parentTimestamp, nextStartTime)))
 
 	// set the scheduler to let us know when the next block need to be built.

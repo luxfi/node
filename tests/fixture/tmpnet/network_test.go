@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -28,7 +28,7 @@ func TestNetworkSerialization(t *testing.T) {
 		// ensuring full population of a key's in-memory representation.
 		_ = key.Address()
 	}
-	
+
 	// The original network comparison should work properly
 	require.Equal(network, loadedNetwork)
 }

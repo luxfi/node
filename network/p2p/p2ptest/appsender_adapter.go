@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2ptest
@@ -14,18 +14,18 @@ import (
 
 // SenderTest is a test implementation of AppSender
 type SenderTest struct {
-	T                      *testing.T
-	SendAppRequestF        func(context.Context, ids.NodeID, uint32, []byte) error
-	SendAppResponseF       func(context.Context, ids.NodeID, uint32, []byte) error
-	SendAppErrorF          func(context.Context, ids.NodeID, uint32, int32, string) error
-	SendAppGossipF         func(context.Context, []byte) error
-	SendCrossChainAppRequestF func(context.Context, ids.ID, uint32, []byte) error
-	SendCrossChainAppResponseF func(context.Context, ids.ID, uint32, []byte) error
-	SendCrossChainAppErrorF func(context.Context, ids.ID, uint32, int32, string) error
-	CantSendAppRequest     bool
-	CantSendAppResponse    bool
-	CantSendAppError       bool
-	CantSendAppGossip      bool
+	T                             *testing.T
+	SendAppRequestF               func(context.Context, ids.NodeID, uint32, []byte) error
+	SendAppResponseF              func(context.Context, ids.NodeID, uint32, []byte) error
+	SendAppErrorF                 func(context.Context, ids.NodeID, uint32, int32, string) error
+	SendAppGossipF                func(context.Context, []byte) error
+	SendCrossChainAppRequestF     func(context.Context, ids.ID, uint32, []byte) error
+	SendCrossChainAppResponseF    func(context.Context, ids.ID, uint32, []byte) error
+	SendCrossChainAppErrorF       func(context.Context, ids.ID, uint32, int32, string) error
+	CantSendAppRequest            bool
+	CantSendAppResponse           bool
+	CantSendAppError              bool
+	CantSendAppGossip             bool
 	CantSendCrossChainAppRequest  bool
 	CantSendCrossChainAppResponse bool
 	CantSendCrossChainAppError    bool

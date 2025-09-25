@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
@@ -12,13 +12,13 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
-	luxmetric "github.com/luxfi/metric"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/x/merkledb"
 	"github.com/luxfi/trace"
@@ -33,7 +33,7 @@ func newDefaultDBConfig() merkledb.Config {
 		ValueNodeCacheSize:          defaultRequestKeyLimit,
 		IntermediateWriteBufferSize: defaultRequestKeyLimit,
 		IntermediateNodeCacheSize:   defaultRequestKeyLimit,
-		Reg:                         luxmetric.NewNoOpMetrics("test").Registry(),
+		Reg:                         metric.NewNoOp().Registry(),
 		Tracer:                      trace.Noop,
 		BranchFactor:                merkledb.BranchFactor16,
 	}

@@ -9,8 +9,8 @@ import (
 	"net/netip"
 	"time"
 
-	metrics "github.com/luxfi/metric"
 	luxlog "github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
@@ -72,9 +72,9 @@ func main() {
 	}
 
 	justification := platformvm.L1ValidatorRegistrationJustification{
-		Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{
-			ConvertNetToL1TxData: &platformvm.NetIDIndex{
-				NetID: netID[:],
+		Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData{
+			ConvertSubnetToL1TxData: &platformvm.SubnetIDIndex{
+				SubnetId: netID[:],
 				Index:    validationIndex,
 			},
 		},
@@ -102,7 +102,7 @@ func main() {
 
 	messageBuilder, err := p2pmessage.NewCreator(
 		luxlog.NewNoOpLogger(),
-		metrics.NewNoOp(),
+		metric.NewNoOp(),
 		compression.TypeZstd,
 		time.Hour,
 	)

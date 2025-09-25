@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build test
@@ -88,7 +88,7 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 					End:    uint64(time.Now().Add(72 * time.Hour).Unix()),
 					Wght:   minValStake,
 				},
-				Subnet: constants.PrimaryNetworkID,
+				Net: constants.PrimaryNetworkID,
 			}
 			rewardOwner := &secp256k1fx.OutputOwners{
 				Threshold: 1,
@@ -98,7 +98,8 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 
 			sk, err := bls.NewSecretKey()
 			require.NoError(err)
-			pop := signer.NewProofOfPossession(sk)
+			pop, err := signer.NewProofOfPossession(sk)
+			require.NoError(err)
 
 			ginkgo.By("issue add validator tx", func() {
 				_, err := pWallet.IssueAddPermissionlessValidatorTx(

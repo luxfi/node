@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chains
@@ -40,7 +40,7 @@ func TestSubnetsGetOrCreate(t *testing.T) {
 
 	type args struct {
 		netID ids.ID
-		want     bool
+		want  bool
 	}
 
 	tests := []struct {
@@ -52,7 +52,7 @@ func TestSubnetsGetOrCreate(t *testing.T) {
 			args: []args{
 				{
 					netID: testNetID,
-					want:     true,
+					want:  true,
 				},
 				{
 					netID: testNetID,
@@ -64,15 +64,15 @@ func TestSubnetsGetOrCreate(t *testing.T) {
 			args: []args{
 				{
 					netID: ids.GenerateTestID(),
-					want:     true,
+					want:  true,
 				},
 				{
 					netID: ids.GenerateTestID(),
-					want:     true,
+					want:  true,
 				},
 				{
 					netID: ids.GenerateTestID(),
-					want:     true,
+					want:  true,
 				},
 			},
 		},
@@ -99,10 +99,10 @@ func TestSubnetConfigs(t *testing.T) {
 	testNetID := ids.GenerateTestID()
 
 	tests := []struct {
-		name     string
-		config   map[ids.ID]subnets.Config
-		netID ids.ID
-		want     subnets.Config
+		name   string
+		config map[ids.ID]subnets.Config
+		netID  ids.ID
+		want   subnets.Config
 	}{
 		{
 			name: "default to primary network config",
@@ -110,7 +110,7 @@ func TestSubnetConfigs(t *testing.T) {
 				constants.PrimaryNetworkID: {},
 			},
 			netID: testNetID,
-			want:     subnets.Config{},
+			want:  subnets.Config{},
 		},
 		{
 			name: "use net config",

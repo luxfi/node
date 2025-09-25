@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -8,15 +8,15 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/sampler"
-	"github.com/luxfi/math/set"
 )
 
 const (

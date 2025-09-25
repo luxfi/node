@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build test
@@ -16,9 +16,9 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/math/set"
 
 	pb "github.com/luxfi/node/proto/pb/sync"
 )
@@ -1703,15 +1703,18 @@ func FuzzRangeProofInvariants(f *testing.F) {
 
 		// Make sure proof length is valid
 		if maxProofLen == 0 {
-			t.SkipNow()
+			// Skip when max proof length is 0
+			return
 		}
 		if numKeyValues == 0 {
-			t.SkipNow()
+			// Skip when no key values
+			return
 		}
 
 		// Make sure proof bounds are valid
 		if len(endBytes) != 0 && bytes.Compare(startBytes, endBytes) > 0 {
-			t.SkipNow()
+			// Skip when start > end
+			return
 		}
 
 		rand := rand.New(rand.NewSource(randSeed)) // #nosec G404

@@ -13,8 +13,8 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	vms "github.com/luxfi/node/vms"
 	gomock "github.com/luxfi/mock/gomock"
+	vms "github.com/luxfi/node/vms"
 )
 
 // MockVMGetter is a mock of VMGetter interface.

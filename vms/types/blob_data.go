@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package types
@@ -28,17 +28,17 @@ func (b *JSONByteSlice) UnmarshalJSON(data []byte) error {
 		// Keep the existing value when unmarshaling null
 		return nil
 	}
-	
+
 	var hexData string
 	if err := json.Unmarshal(data, &hexData); err != nil {
 		return err
 	}
-	
+
 	decoded, err := formatting.Decode(formatting.HexNC, hexData)
 	if err != nil {
 		return err
 	}
-	
+
 	*b = decoded
 	return nil
 }

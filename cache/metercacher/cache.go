@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metercacher
@@ -16,7 +16,7 @@ var _ cache.Cacher[struct{}, struct{}] = (*Cache[struct{}, struct{}])(nil)
 type Cache[K comparable, V any] struct {
 	cache.Cacher[K, V]
 
-	metrics *metrics
+	metrics *metricsImpl
 }
 
 func New[K comparable, V any](

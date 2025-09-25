@@ -14,8 +14,8 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	version "github.com/luxfi/node/version"
 	gomock "github.com/luxfi/mock/gomock"
+	version "github.com/luxfi/node/version"
 )
 
 // MockNetworkClient is a mock of NetworkClient interface.

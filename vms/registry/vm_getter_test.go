@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package registry
@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -145,7 +145,7 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 		time.Hour,
 		time.Hour,
 		time.Hour,
-		metric.NewNoOpRegistry(),
+		metric.NewRegistry(),
 	)
 	require.NoError(t, err)
 

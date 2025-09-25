@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -18,13 +18,13 @@ type Context struct {
 	BlockchainID                  ids.ID // Added for test compatibility
 	LUXAssetID                    ids.ID
 	BaseTxFee                     uint64
-	CreateNetTxFee             uint64
-	TransformNetTxFee          uint64
+	CreateNetTxFee                uint64
+	TransformNetTxFee             uint64
 	CreateBlockchainTxFee         uint64
 	AddPrimaryNetworkValidatorFee uint64
 	AddPrimaryNetworkDelegatorFee uint64
-	AddNetValidatorFee         uint64
-	AddNetDelegatorFee         uint64
+	AddNetValidatorFee            uint64
+	AddNetDelegatorFee            uint64
 }
 
 func NewContextFromURI(ctx context.Context, uri string) (*Context, error) {
@@ -58,13 +58,13 @@ func NewContextFromClients(
 		BlockchainID:                  ids.Empty, // Default to PlatformChainID (constants.PlatformChainID)
 		LUXAssetID:                    asset.AssetID,
 		BaseTxFee:                     uint64(txFees.TxFee),
-		CreateNetTxFee:             uint64(txFees.CreateNetTxFee),
-		TransformNetTxFee:          uint64(txFees.TransformNetTxFee),
+		CreateNetTxFee:                uint64(txFees.CreateNetTxFee),
+		TransformNetTxFee:             uint64(txFees.TransformNetTxFee),
 		CreateBlockchainTxFee:         uint64(txFees.CreateBlockchainTxFee),
 		AddPrimaryNetworkValidatorFee: uint64(txFees.AddPrimaryNetworkValidatorFee),
 		AddPrimaryNetworkDelegatorFee: uint64(txFees.AddPrimaryNetworkDelegatorFee),
-		AddNetValidatorFee:         uint64(txFees.AddNetValidatorFee),
-		AddNetDelegatorFee:         uint64(txFees.AddNetDelegatorFee),
+		AddNetValidatorFee:            uint64(txFees.AddNetValidatorFee),
+		AddNetDelegatorFee:            uint64(txFees.AddNetDelegatorFee),
 	}, nil
 }
 

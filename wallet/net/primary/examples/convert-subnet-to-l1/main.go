@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
@@ -48,7 +48,7 @@ func main() {
 
 	validationID := netID.Append(0)
 	conversionID, err := message.SubnetToL1ConversionID(message.SubnetToL1ConversionData{
-		NetID:       netID,
+		NetID:          netID,
 		ManagerChainID: chainID,
 		ManagerAddress: address,
 		Validators: []message.SubnetToL1ConversionValidatorData{
@@ -69,9 +69,9 @@ func main() {
 	wallet, err := primary.MakeWallet(
 		ctx,
 		&primary.WalletConfig{
-			URI:         uri,
-			LUXKeychain: kc,
-			EthKeychain: secp256k1fx.NewKeychain(), // Empty ETH keychain
+			URI:              uri,
+			LUXKeychain:      kc,
+			EthKeychain:      secp256k1fx.NewKeychain(), // Empty ETH keychain
 			PChainTxsToFetch: set.Of(netID),
 		},
 	)

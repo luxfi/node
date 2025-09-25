@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Package testcontext provides a test context for platformvm tests
@@ -14,12 +14,12 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 )
 
-// Context provides a test context that mimics the old consensus.Context
+// Context provides a test context that mimics the old context.Context
 // for compatibility with existing tests
 type Context struct {
 	context.Context
 	NetworkID    uint32
-	NetID     ids.ID
+	NetID        ids.ID
 	ChainID      ids.ID
 	NodeID       ids.NodeID
 	XChainID     ids.ID

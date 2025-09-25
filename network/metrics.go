@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -11,11 +11,11 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/network/peer"
 )
 
-type metrics struct {
+type metricsImpl struct {
 	// trackedSubnets does not include the primary network ID
 	trackedSubnets set.Set[ids.ID]
 
@@ -46,8 +46,8 @@ type metrics struct {
 func newMetrics(
 	registerer metric.Registerer,
 	trackedSubnets set.Set[ids.ID],
-) (*metrics, error) {
-	m := &metrics{
+) (*metricsImpl, error) {
+	m := &metricsImpl{
 		trackedSubnets: trackedSubnets,
 		numPeers: metric.NewGauge(metric.GaugeOpts{
 			Name: "peers",
@@ -168,7 +168,7 @@ func newMetrics(
 	return m, err
 }
 
-func (m *metrics) markConnected(peer peer.Peer) {
+func (m *metricsImpl) markConnected(peer peer.Peer) {
 	m.numPeers.Inc()
 	m.connected.Inc()
 
@@ -187,7 +187,7 @@ func (m *metrics) markConnected(peer peer.Peer) {
 	m.peerConnectedStartTimesSum += now
 }
 
-func (m *metrics) markDisconnected(peer peer.Peer) {
+func (m *metricsImpl) markDisconnected(peer peer.Peer) {
 	m.numPeers.Dec()
 	m.disconnected.Inc()
 
@@ -208,7 +208,7 @@ func (m *metrics) markDisconnected(peer peer.Peer) {
 	delete(m.peerConnectedStartTimes, peerID)
 }
 
-func (m *metrics) updatePeerConnectionLifetimeMetrics() {
+func (m *metricsImpl) updatePeerConnectionLifetimeMetrics() {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 

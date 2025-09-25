@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -13,7 +13,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
-	metric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/compression"
@@ -24,7 +24,7 @@ func TestMessage(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		nil,
-		metric.NewNoOpMetrics("test"),
+		metric.NewNoOp(),
 		5*time.Second,
 	)
 	require.NoError(t, err)
@@ -666,7 +666,7 @@ func TestInboundMessageToString(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		nil,
-		metric.NewNoOpMetrics("test"),
+		metric.NewNoOp(),
 		5*time.Second,
 	)
 	require.NoError(err)
@@ -696,7 +696,7 @@ func TestEmptyInboundMessage(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		nil,
-		metric.NewNoOpMetrics("test"),
+		metric.NewNoOp(),
 		5*time.Second,
 	)
 	require.NoError(err)
@@ -716,7 +716,7 @@ func TestNilInboundMessage(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		nil,
-		metric.NewNoOpMetrics("test"),
+		metric.NewNoOp(),
 		5*time.Second,
 	)
 	require.NoError(err)

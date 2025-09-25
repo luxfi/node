@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package propertyfx
@@ -18,7 +18,7 @@ type MintOutput struct {
 	secp256k1fx.OutputOwners `serialize:"true"`
 }
 
-// InitializeWithContext implements context.ContextInitializable
+// InitializeWithContext implements consensus.ContextInitializable
 func (out *MintOutput) InitializeWithContext(ctx context.Context) error {
 	return out.OutputOwners.InitializeWithContext(ctx)
 }

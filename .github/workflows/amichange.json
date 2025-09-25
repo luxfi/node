@@ -14,7 +14,7 @@
             "OperatingSystemName": "UBUNTU",
             "OperatingSystemVersion": "Ubuntu 20.04"
           },
-          "UsageInstructions": "Connect via SSH and you can make local calls to port 9650",
+          "UsageInstructions": "Connect via SSH and you can make local calls to port 9630",
           "RecommendedInstanceType": "c5.2xlarge",
           "SecurityGroups": [
             {

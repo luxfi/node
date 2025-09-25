@@ -11,8 +11,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/luxfi/node/tests/fixture/bootstrapmonitor"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/tests/fixture/bootstrapmonitor"
 	"github.com/luxfi/node/version"
 )
 

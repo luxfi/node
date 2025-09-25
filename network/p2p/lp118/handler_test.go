@@ -11,15 +11,16 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/node/consensus/engine/common"
+	"github.com/luxfi/consensus/engine/core/common"
+	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/p2ptest"
 	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
@@ -78,7 +79,9 @@ func TestHandler(t *testing.T) {
 			pk := sk.PublicKey()
 			networkID := uint32(123)
 			chainID := ids.GenerateTestID()
-			signer := warp.NewSigner(sk, networkID, chainID)
+			localSigner, err := localsigner.FromBytes(bls.SecretKeyToBytes(sk))
+			require.NoError(err)
+			signer := warp.NewSigner(localSigner, networkID, chainID)
 			h := NewHandlerAdapter(NewCachedHandler(tt.cacher, tt.verifier, signer))
 			clientNodeID := ids.GenerateTestNodeID()
 			serverNodeID := ids.GenerateTestNodeID()

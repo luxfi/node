@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build skip
@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus/core"
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/database"

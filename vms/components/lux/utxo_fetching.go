@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -9,8 +9,8 @@ import (
 	"math"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils"
 
 	safemath "github.com/luxfi/math/math"
 )

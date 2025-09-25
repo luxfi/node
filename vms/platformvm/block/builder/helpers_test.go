@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -89,9 +89,9 @@ import (
 	pvalidators "github.com/luxfi/node/vms/platformvm/validators"
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
-	
-	"github.com/luxfi/node/vms/platformvm/metrics"
+
 	"github.com/luxfi/metric"
+	"github.com/luxfi/node/vms/platformvm/metrics"
 )
 
 const (
@@ -211,6 +211,7 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		FlowChecker:  res.utxosVerifier,
 		Uptimes:      &uptime.NoOpCalculator{},
 		Rewards:      rewardsCalc,
+		Lock:         res.ctx.Lock,
 	}
 
 	registerer := metric.NewRegistry()
@@ -220,21 +221,21 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		},
 	}
 
-	metricsInstance, err := metrics.New(registerer)
-	require.NoError(err)
+	platformMetrics := metrics.Noop
 
+	var err error
 	res.mempool, err = mempool.New("mempool", registerer, nil)
 	require.NoError(err)
 
 	res.blkManager = blockexecutor.NewManager(
 		res.mempool,
-		metricsInstance,
+		platformMetrics,
 		res.state,
 		&res.backend,
 		pvalidators.TestManager,
 	)
 
-	validatorManager := pvalidators.NewManager(res.ctx.Log, *res.config, res.state, metricsInstance, res.clk)
+	validatorManager := pvalidators.NewManager(res.ctx.Log, *res.config, res.state, platformMetrics, res.clk)
 	txVerifier := network.NewLockedTxVerifier(res.ctx.Lock, res.blkManager)
 	res.network, err = network.New(
 		res.ctx.Log,
@@ -341,7 +342,7 @@ func defaultState(
 		cfg,
 		execCfg,
 		ctx,
-		metrics.Noop,
+		metric.NewNoOp(),
 		rewards,
 	)
 	require.NoError(err)
@@ -359,8 +360,8 @@ func defaultConfig(t *testing.T, f fork) *config.Config {
 		Validators:             validators.NewManager(),
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                 defaultTxFee,
-			CreateNetTxFee:     100 * defaultTxFee,
-			CreateBlockchainTxFee: 100 * defaultTxFee,
+			CreateNetTxFee:        10 * defaultTxFee, // Reduced for testing
+			CreateBlockchainTxFee: 10 * defaultTxFee, // Reduced for testing
 		},
 		MinValidatorStake: 5 * units.MilliLux,
 		MaxValidatorStake: 500 * units.MilliLux,

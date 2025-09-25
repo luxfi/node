@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
@@ -6,8 +6,8 @@ package sampler
 import (
 	"cmp"
 
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/math/math"
+	"github.com/luxfi/node/utils"
 )
 
 var (

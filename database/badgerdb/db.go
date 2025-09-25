@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package badgerdb
@@ -7,8 +7,10 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v3/options"
 	"github.com/luxfi/node/database"
 )
 
@@ -26,6 +28,31 @@ func New(path string, config *badger.Options) (*Database, error) {
 	if config == nil {
 		opts := badger.DefaultOptions(path)
 		opts.Logger = nil // Disable verbose logging
+
+		// Performance optimizations for blockchain workloads
+		opts.SyncWrites = false // Async writes for better performance
+		opts.NumCompactors = 4 // More compactors for faster background compaction
+		opts.NumLevelZeroTables = 10 // More L0 tables before stalling
+		opts.NumLevelZeroTablesStall = 15 // Stall writes if L0 tables exceed this
+		opts.NumMemtables = 5 // More memtables for better write throughput
+		opts.MemTableSize = 64 << 20 // 64 MB memtable size
+		opts.ValueLogFileSize = 1 << 30 // 1 GB value log files
+		opts.ValueLogMaxEntries = 1000000 // Max entries per value log file
+		opts.BlockCacheSize = 256 << 20 // 256 MB block cache
+		opts.IndexCacheSize = 100 << 20 // 100 MB index cache
+		opts.BloomFalsePositive = 0.01 // 1% false positive rate for bloom filter
+		opts.BaseTableSize = 64 << 20 // 64 MB base table size
+		opts.BaseLevelSize = 256 << 20 // 256 MB base level size
+		opts.LevelSizeMultiplier = 10 // Standard LSM tree multiplier
+		opts.MaxLevels = 7 // Standard number of levels
+		opts.ValueThreshold = 1024 // Store values > 1KB in value log
+		opts.NumVersionsToKeep = 1 // Only keep 1 version for blockchain data
+		opts.CompactL0OnClose = true // Compact L0 tables on close
+		// Note: KeepL0InMemory is not available in BadgerDB v3
+		opts.Compression = options.Snappy // Use Snappy compression
+		opts.ZSTDCompressionLevel = 1 // Fast ZSTD compression if used
+		opts.DetectConflicts = false // No conflict detection for single writer
+
 		config = &opts
 	}
 
@@ -33,6 +60,19 @@ func New(path string, config *badger.Options) (*Database, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open badger database: %w", err)
 	}
+
+	// Start garbage collection in background
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			lsm, vlog := db.Size()
+			if vlog > 1<<30 { // If value log > 1GB, run GC
+				db.RunValueLogGC(0.5)
+			}
+			_ = lsm // Avoid unused variable
+		}
+	}()
 
 	return &Database{
 		db: db,
@@ -118,8 +158,8 @@ func (db *Database) Delete(key []byte) error {
 // NewBatch creates a new batch
 func (db *Database) NewBatch() database.Batch {
 	return &batch{
-		db:    db,
-		ops:   make([]batchOp, 0),
+		db:  db,
+		ops: make([]batchOp, 0),
 	}
 }
 
@@ -150,7 +190,7 @@ func (db *Database) NewIteratorWithStartAndPrefix(start, prefix []byte) database
 	txn := db.db.NewTransaction(false)
 	opts := badger.DefaultIteratorOptions
 	opts.Prefix = prefix
-	
+
 	iter := txn.NewIterator(opts)
 	if start != nil {
 		iter.Seek(start)

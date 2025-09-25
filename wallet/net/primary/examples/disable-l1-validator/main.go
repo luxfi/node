@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary"
 )
@@ -31,9 +31,9 @@ func main() {
 	wallet, err := primary.MakeWallet(
 		ctx,
 		&primary.WalletConfig{
-			URI:         uri,
-			LUXKeychain: kc,
-			EthKeychain: secp256k1fx.NewKeychain(), // Empty ETH keychain
+			URI:              uri,
+			LUXKeychain:      kc,
+			EthKeychain:      secp256k1fx.NewKeychain(), // Empty ETH keychain
 			PChainTxsToFetch: set.Of(validationID),
 		},
 	)

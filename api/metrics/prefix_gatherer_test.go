@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -19,19 +19,23 @@ func TestPrefixGatherer_Gather(t *testing.T) {
 	gatherer := NewPrefixGatherer()
 	require.NotNil(gatherer)
 
-	registerA := metric.NewNoOpRegistry()
+	registerA := metric.NewRegistry()
 	require.NoError(gatherer.Register("a", registerA))
 	{
 		counterA := metric.NewCounter(counterOpts)
-		require.NoError(registerA.Register(counterA))
+		collector := metric.AsCollector(counterA)
+		require.NotNil(collector)
+		require.NoError(registerA.Register(collector))
 	}
 
-	registerB := metric.NewNoOpRegistry()
+	registerB := metric.NewRegistry()
 	require.NoError(gatherer.Register("b", registerB))
 	{
 		counterB := metric.NewCounter(counterOpts)
 		counterB.Inc()
-		require.NoError(registerB.Register(counterB))
+		collector := metric.AsCollector(counterB)
+		require.NotNil(collector)
+		require.NoError(registerB.Register(collector))
 	}
 
 	metrics, err := gatherer.Gather()
@@ -90,7 +94,7 @@ func TestPrefixGatherer_Register(t *testing.T) {
 				names: []string{
 					firstPrefixedGatherer.prefix,
 				},
-				gatherers: metric.Gatherers{
+				gatherers: []metric.Gatherer{
 					firstPrefixedGatherer,
 				},
 			},
@@ -108,7 +112,7 @@ func TestPrefixGatherer_Register(t *testing.T) {
 				firstPrefixedGatherer.prefix,
 				secondPrefixedGatherer.prefix,
 			},
-			gatherers: metric.Gatherers{
+			gatherers: []metric.Gatherer{
 				firstPrefixedGatherer,
 				secondPrefixedGatherer,
 			},

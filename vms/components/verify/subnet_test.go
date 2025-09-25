@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package verify
@@ -17,10 +17,10 @@ import (
 
 // testValidatorState is a test implementation of ValidatorState
 type testValidatorState struct {
-	height      uint64
-	validators  map[ids.ID]map[ids.NodeID]uint64
-	subnets     map[ids.ID]ids.ID // chainID -> subnetID
-	err         error
+	height     uint64
+	validators map[ids.ID]map[ids.NodeID]uint64
+	subnets    map[ids.ID]ids.ID // chainID -> subnetID
+	err        error
 }
 
 func (s *testValidatorState) GetCurrentHeight() (uint64, error) {
@@ -82,8 +82,8 @@ func TestSameSubnet(t *testing.T) {
 				}
 				ctx := context.Background()
 				ids := consensus.IDs{
-					NetID: netID0,
-					ChainID:  chainID0,
+					NetID:   netID0,
+					ChainID: chainID0,
 				}
 				ctx = consensus.WithIDs(ctx, ids)
 				ctx = consensus.WithValidatorState(ctx, state)
@@ -100,8 +100,8 @@ func TestSameSubnet(t *testing.T) {
 				}
 				ctx := context.Background()
 				ids := consensus.IDs{
-					NetID: netID0,
-					ChainID:  chainID0,
+					NetID:   netID0,
+					ChainID: chainID0,
 				}
 				ctx = consensus.WithIDs(ctx, ids)
 				ctx = consensus.WithValidatorState(ctx, state)
@@ -120,8 +120,8 @@ func TestSameSubnet(t *testing.T) {
 				}
 				ctx := context.Background()
 				ids := consensus.IDs{
-					NetID: netID0,
-					ChainID:  chainID0,
+					NetID:   netID0,
+					ChainID: chainID0,
 				}
 				ctx = consensus.WithIDs(ctx, ids)
 				ctx = consensus.WithValidatorState(ctx, state)
@@ -140,8 +140,8 @@ func TestSameSubnet(t *testing.T) {
 				}
 				ctx := context.Background()
 				ids := consensus.IDs{
-					NetID: netID0,
-					ChainID:  chainID0,
+					NetID:   netID0,
+					ChainID: chainID0,
 				}
 				ctx = consensus.WithIDs(ctx, ids)
 				ctx = consensus.WithValidatorState(ctx, state)

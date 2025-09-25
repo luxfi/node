@@ -3,7 +3,9 @@
 
 package health
 
-import "github.com/luxfi/metric"
+import (
+	"github.com/luxfi/metric"
+)
 
 type healthMetrics struct {
 	// failingChecks keeps track of the number of check failing

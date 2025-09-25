@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -119,7 +119,7 @@ func (tx *TransformNetTx) Subnet() ids.ID {
 }
 
 func (tx *TransformNetTx) SyntacticVerify(ctx context.Context) error {
-	luxAssetID := consensusContext.GetLUXAssetID(ctx)
+	luxAssetID := consensusContext.FromContext(ctx).LUXAssetID
 	switch {
 	case tx == nil:
 		return ErrNilTx

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package server
@@ -15,9 +15,9 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/rs/cors"
-	"github.com/luxfi/log"
 	"golang.org/x/net/http2"
 
 	"github.com/luxfi/consensus"
@@ -282,14 +282,14 @@ func rejectMiddleware(handler http.Handler, ctx context.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Try both string key and contextKey for compatibility
 		var stateHolder interface{}
-		
+
 		// First try with string key (for tests)
 		stateHolder = ctx.Value("stateHolder")
 		if stateHolder == nil {
 			// Then try with contextKey
 			stateHolder = ctx.Value(stateHolderKey)
 		}
-		
+
 		if stateHolder != nil {
 			// Use type assertion to check for StateGetter interface
 			if sh, ok := stateHolder.(StateGetter); ok {

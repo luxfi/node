@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/node/vms/components/chain"
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 
 	"github.com/stretchr/testify/require"
@@ -59,7 +59,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          metric.NewNoOpMetrics("test").Registry(),
+			Registerer:          metric.NewNoOp().Registry(),
 		},
 	)
 

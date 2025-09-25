@@ -85,7 +85,7 @@ func TestMain(m *testing.M) {
 	flag.DurationVar(&executionTimeout, "execution-timeout", 0, "Benchmark execution timeout. After this timeout has elapsed, terminate the benchmark without error. If 0, no timeout is applied.")
 
 	flag.BoolVar(&metricsEnabledArg, "metrics-enabled", true, "Enable metrics collection.")
-	flag.StringVar(&labelsArg, "labels", "", "Comma separated KV list of metric labels to attach to all exported metric. Ex. \"owner=tim,runner=snoopy\"")
+	flag.StringVar(&labelsArg, "labels", "", "Comma separated KV list of metric labels to attach to all exported metrics. Ex. \"owner=tim,runner=snoopy\"")
 
 	flag.Parse()
 
@@ -118,7 +118,7 @@ func benchmarkReexecuteRange(b *testing.B, sourceBlockDir string, targetDir stri
 	r.NoError(prefixGatherer.Register("lux_evm", vmMultiGatherer))
 
 	// consensusRegistry includes the chain="C" label and the prefix "lux_chain".
-	// The consensus registry is passed to the executor to mimic a subset of consensus metric.
+	// The consensus registry is passed to the executor to mimic a subset of consensus metrics.
 	consensusRegistry := metric.NewRegistry()
 	r.NoError(prefixGatherer.Register("lux_chain", consensusRegistry))
 
@@ -190,7 +190,7 @@ func newMainnetCChainVM(
 	vmAndSharedMemoryDB database.Database,
 	chainDataDir string,
 	configBytes []byte,
-	metricsGatherer metric.MultiGatherer,
+	metricsGatherer metrics.MultiGatherer,
 ) (chain.VM, error) {
 	factory := factory.Factory{}
 	vmIntf, err := factory.New(logging.NoLog{})
@@ -220,7 +220,7 @@ func newMainnetCChainVM(
 
 	if err := vm.Initialize(
 		ctx,
-		&consensus.Context{
+		&context.Context{
 			NetworkID:       constants.MainnetID,
 			NetID:        constants.PrimaryNetworkID,
 			ChainID:         mainnetCChainID,
@@ -470,7 +470,7 @@ type consensusMetrics struct {
 }
 
 // newConsensusMetrics creates a subset of the metrics from chain consensus
-// [engine](../../consensus/engine/chain/metric.go).
+// [engine](../../consensus/engine/chain/metrics.go).
 //
 // The registry passed in is expected to be registered with the prefix
 // "lux_chain" and the chain label (ex. chain="C") that would be handled
@@ -489,7 +489,7 @@ func newConsensusMetrics(registry metric.Registerer) (*consensusMetrics, error) 
 }
 
 // collectRegistry starts prometheus and collects metrics from the provided gatherer.
-// Attaches the provided labels + GitHub labels if available to the collected metric.
+// Attaches the provided labels + GitHub labels if available to the collected metrics.
 func collectRegistry(tb testing.TB, name string, timeout time.Duration, gatherer metric.Gatherer, labels map[string]string) {
 	r := require.New(tb)
 

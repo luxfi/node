@@ -1,11 +1,11 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
 
 import (
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"crypto"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"net/netip"
 	"testing"
 	"time"

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/proto/pb/p2p"
 )
 
 // Op is an opcode

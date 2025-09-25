@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -362,7 +362,7 @@ func testDecisionTxs() ([]*txs.Tx, error) {
 				}},
 				Memo: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			}},
-			NetID:    ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'},
+			NetID:       ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'},
 			ChainName:   "a chain",
 			VMID:        ids.GenerateTestID(),
 			FxIDs:       []ids.ID{ids.GenerateTestID()},

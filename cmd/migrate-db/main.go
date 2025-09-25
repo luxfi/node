@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -15,12 +15,12 @@ import (
 
 func main() {
 	var (
-		sourcePath   = flag.String("source", "", "Path to source Pebble database")
-		targetPath   = flag.String("target", "", "Path to target Badger database")
-		dataDir      = flag.String("data-dir", "/home/z/.luxd", "Data directory for Lux node")
-		genesisOnly  = flag.Bool("genesis-only", false, "Migrate only genesis data")
-		showStats    = flag.Bool("stats", false, "Show database statistics")
-		_ = flag.Bool("verbose", false, "Enable verbose logging")
+		sourcePath  = flag.String("source", "", "Path to source Pebble database")
+		targetPath  = flag.String("target", "", "Path to target Badger database")
+		dataDir     = flag.String("data-dir", "/home/z/.luxd", "Data directory for Lux node")
+		genesisOnly = flag.Bool("genesis-only", false, "Migrate only genesis data")
+		showStats   = flag.Bool("stats", false, "Show database statistics")
+		_           = flag.Bool("verbose", false, "Enable verbose logging")
 	)
 
 	flag.Parse()

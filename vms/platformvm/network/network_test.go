@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -10,15 +10,15 @@ import (
 	"time"
 
 	"github.com/luxfi/metric"
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/coremock"
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -119,10 +119,17 @@ func (m *mockValidatorState) GetCurrentValidators(
 	return m.validators, nil
 }
 
+// GetCurrentValidatorOutput represents a validator output
+type GetCurrentValidatorOutput struct {
+	NodeID    ids.NodeID
+	PublicKey *bls.PublicKey
+	Weight    uint64
+}
+
 func (m *mockValidatorState) GetCurrentValidatorSet(
 	ctx context.Context,
 	netID ids.ID,
-) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+) (map[ids.ID]*GetCurrentValidatorOutput, uint64, error) {
 	// Not used in this test
 	return nil, m.height, nil
 }
@@ -249,9 +256,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
 			consensusCtx := consensustest.Context(t, ids.Empty)
-			// Extract values from context
-			nodeID := consensus.GetNodeID(consensusCtx)
-			netID := consensus.GetNetID(consensusCtx)
+			// Extract values directly from consensus context
+			nodeID := consensusCtx.NodeID
+			netID := consensusCtx.NetID
 			// Use a simple test logger for now
 			logger := log.NoLog{}
 			// Create a mock validator state that returns sensible defaults

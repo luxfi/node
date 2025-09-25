@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -9,20 +9,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/config"
-	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/metrics"
+	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/executor"
 	"github.com/luxfi/node/vms/xvm/txs/mempool"
@@ -705,15 +705,15 @@ func TestBlockAccept(t *testing.T) {
 				mockOnAcceptState := state.NewMockDiff(ctrl)
 				mockOnAcceptState.EXPECT().Apply(mockManagerState)
 
-				metrics := metrics.NewMockMetrics(ctrl)
-				metrics.EXPECT().MarkBlockAccepted(gomock.Any()).Return(errTest)
+				metricsObj := metrics.NewMockMetrics(ctrl)
+				metricsObj.EXPECT().MarkBlockAccepted(gomock.Any()).Return(errTest)
 
 				return &Block{
 					Block: mockBlock,
 					manager: &manager{
 						state:   mockManagerState,
 						mempool: mempool,
-						metrics: metrics,
+						metrics: metricsObj,
 						backend: defaultTestBackend(false, mockSharedMemory),
 						blkIDToState: map[ids.ID]*blockState{
 							blockID: {
@@ -751,15 +751,15 @@ func TestBlockAccept(t *testing.T) {
 				mockOnAcceptState := state.NewMockDiff(ctrl)
 				mockOnAcceptState.EXPECT().Apply(mockManagerState)
 
-				metrics := metrics.NewMockMetrics(ctrl)
-				metrics.EXPECT().MarkBlockAccepted(gomock.Any()).Return(nil)
+				metricsObj := metrics.NewMockMetrics(ctrl)
+				metricsObj.EXPECT().MarkBlockAccepted(gomock.Any()).Return(nil)
 
 				return &Block{
 					Block: mockBlock,
 					manager: &manager{
 						state:   mockManagerState,
 						mempool: mempool,
-						metrics: metrics,
+						metrics: metricsObj,
 						backend: defaultTestBackend(false, mockSharedMemory),
 						blkIDToState: map[ids.ID]*blockState{
 							blockID: {

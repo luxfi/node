@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -8,11 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -28,10 +27,10 @@ import (
 
 // mockCalculator is a simple mock for uptime.Calculator
 type mockCalculator struct {
-	calculateUptimeF func(ids.NodeID, ids.ID) (time.Duration, time.Duration, error)
-	calculateUptimePercentF func(ids.NodeID, ids.ID) (float64, error)
+	calculateUptimeF            func(ids.NodeID, ids.ID) (time.Duration, time.Duration, error)
+	calculateUptimePercentF     func(ids.NodeID, ids.ID) (float64, error)
 	calculateUptimePercentFromF func(ids.NodeID, ids.ID, time.Time) (float64, error)
-	setCalculateUptimeF func(ids.NodeID, ids.ID, time.Duration)
+	setCalculateUptimeF         func(ids.NodeID, ids.ID, time.Duration)
 }
 
 func (m *mockCalculator) CalculateUptime(nodeID ids.NodeID, subnetID ids.ID) (time.Duration, time.Duration, error) {
@@ -189,7 +188,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -216,7 +215,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -252,7 +251,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -290,7 +289,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -331,7 +330,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -362,7 +361,7 @@ func TestBlockOptions(t *testing.T) {
 				var (
 					stakerTxID = ids.GenerateTestID()
 					nodeID     = ids.GenerateTestNodeID()
-					netID   = ids.GenerateTestID()
+					netID      = ids.GenerateTestID()
 					stakerTx   = &txs.Tx{
 						Unsigned: &txs.AddPermissionlessValidatorTx{
 							Validator: txs.Validator{
@@ -382,7 +381,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -413,7 +412,7 @@ func TestBlockOptions(t *testing.T) {
 				var (
 					stakerTxID = ids.GenerateTestID()
 					nodeID     = ids.GenerateTestNodeID()
-					netID   = constants.PrimaryNetworkID
+					netID      = constants.PrimaryNetworkID
 					stakerTx   = &txs.Tx{
 						Unsigned: &txs.AddPermissionlessValidatorTx{
 							Validator: txs.Validator{
@@ -441,7 +440,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -472,7 +471,7 @@ func TestBlockOptions(t *testing.T) {
 				var (
 					stakerTxID = ids.GenerateTestID()
 					nodeID     = ids.GenerateTestNodeID()
-					netID   = ids.GenerateTestID()
+					netID      = ids.GenerateTestID()
 					stakerTx   = &txs.Tx{
 						Unsigned: &txs.AddPermissionlessValidatorTx{
 							Validator: txs.Validator{
@@ -497,7 +496,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -528,7 +527,7 @@ func TestBlockOptions(t *testing.T) {
 				var (
 					stakerTxID = ids.GenerateTestID()
 					nodeID     = ids.GenerateTestNodeID()
-					netID   = ids.GenerateTestID()
+					netID      = ids.GenerateTestID()
 					stakerTx   = &txs.Tx{
 						Unsigned: &txs.AddPermissionlessValidatorTx{
 							Validator: txs.Validator{
@@ -562,7 +561,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{
@@ -593,7 +592,7 @@ func TestBlockOptions(t *testing.T) {
 				var (
 					stakerTxID = ids.GenerateTestID()
 					nodeID     = ids.GenerateTestNodeID()
-					netID   = ids.GenerateTestID()
+					netID      = ids.GenerateTestID()
 					stakerTx   = &txs.Tx{
 						Unsigned: &txs.AddPermissionlessValidatorTx{
 							Validator: txs.Validator{
@@ -627,7 +626,7 @@ func TestBlockOptions(t *testing.T) {
 				manager := &manager{
 					backend: &backend{
 						state: state,
-						ctx:   consensustest.Context(t, consensustest.PChainID),
+						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
 						Config: &config.Config{

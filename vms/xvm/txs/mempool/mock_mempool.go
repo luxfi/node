@@ -13,8 +13,8 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	txs "github.com/luxfi/node/vms/xvm/txs"
 	gomock "github.com/luxfi/mock/gomock"
+	txs "github.com/luxfi/node/vms/xvm/txs"
 )
 
 // MockMempool is a mock of Mempool interface.

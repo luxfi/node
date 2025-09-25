@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -8,17 +8,17 @@ import (
 	"sync"
 	"time"
 
-	luxmetric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/metric"
+	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
 // See inbound_msg_throttler.go
 
 func newInboundMsgBufferThrottler(
-	registerer luxmetric.Registerer,
+	registerer metric.Registerer,
 	maxProcessingMsgsPerNode uint64,
 ) (*inboundMsgBufferThrottler, error) {
 	t := &inboundMsgBufferThrottler{
@@ -124,19 +124,19 @@ func (t *inboundMsgBufferThrottler) release(nodeID ids.NodeID) {
 }
 
 type inboundMsgBufferThrottlerMetrics struct {
-	acquireLatency  metric.Averager
-	awaitingAcquire luxmetric.Gauge
+	acquireLatency  utilmetric.Averager
+	awaitingAcquire metric.Gauge
 }
 
-func (m *inboundMsgBufferThrottlerMetrics) initialize(reg luxmetric.Registerer) error {
+func (m *inboundMsgBufferThrottlerMetrics) initialize(reg metric.Registerer) error {
 	errs := wrappers.Errs{}
-	m.acquireLatency = metric.NewAveragerWithErrs(
+	m.acquireLatency = utilmetric.NewAveragerWithErrs(
 		"buffer_throttler_inbound_acquire_latency",
 		"average time (in ns) to get space on the inbound message buffer",
 		reg,
 		&errs,
 	)
-	m.awaitingAcquire = luxmetric.NewGauge(luxmetric.GaugeOpts{
+	m.awaitingAcquire = metric.NewGauge(metric.GaugeOpts{
 		Name: "buffer_throttler_inbound_awaiting_acquire",
 		Help: "Number of inbound messages waiting to take space on the inbound message buffer",
 	})

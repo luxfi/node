@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	nodeids "github.com/luxfi/node/ids"
+	nodeids "github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
@@ -59,7 +59,7 @@ func Build(
 		},
 		timestamp: timestamp,
 		cert:      cert,
-		proposer: ids.NodeID(nodeids.NodeIDFromCert(cert)),
+		proposer:  ids.NodeID(nodeids.NodeIDFromCert(cert)),
 	}
 	var blockIntf SignedBlock = block
 

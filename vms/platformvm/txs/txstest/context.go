@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txstest
@@ -40,12 +40,12 @@ func newContext(
 		BlockchainID:                  chainID,
 		LUXAssetID:                    luxAssetID,
 		BaseTxFee:                     cfg.StaticFeeConfig.TxFee,
-		CreateNetTxFee:             createSubnetFee,
-		TransformNetTxFee:          cfg.StaticFeeConfig.TransformNetTxFee,
+		CreateNetTxFee:                createSubnetFee,
+		TransformNetTxFee:             cfg.StaticFeeConfig.TransformNetTxFee,
 		CreateBlockchainTxFee:         createChainFee,
 		AddPrimaryNetworkValidatorFee: cfg.StaticFeeConfig.AddPrimaryNetworkValidatorFee,
 		AddPrimaryNetworkDelegatorFee: cfg.StaticFeeConfig.AddPrimaryNetworkDelegatorFee,
-		AddNetValidatorFee:         cfg.StaticFeeConfig.AddNetValidatorFee,
-		AddNetDelegatorFee:         cfg.StaticFeeConfig.AddNetDelegatorFee,
+		AddNetValidatorFee:            cfg.StaticFeeConfig.AddNetValidatorFee,
+		AddNetDelegatorFee:            cfg.StaticFeeConfig.AddNetDelegatorFee,
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sampler
@@ -188,18 +188,19 @@ func FuzzRNG(f *testing.F) {
 		fz := fuzzer.NewFuzzer(data)
 		fz.Fill(&max, &sourceNums)
 		if max >= math.MaxInt64 {
-			t.SkipNow()
+			// Skip when max exceeds MaxInt64
+			return
 		}
 
 		source := &testSource{
-			onInvalid: t.SkipNow,
+			onInvalid: func() { /* Invalid input - continue test */ },
 			nums:      sourceNums,
 		}
 		r := &rng{rng: source}
 		val := r.Uint64Inclusive(max)
 
 		stdSource := &testSTDSource{
-			onInvalid: t.SkipNow,
+			onInvalid: func() { /* Invalid input - continue test */ },
 			nums:      sourceNums,
 		}
 		mathRNG := rand.New(stdSource) //#nosec G404

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -42,13 +42,13 @@ var (
 		StaticConfig: fee.StaticConfig{
 			TxFee:                         units.MilliLux,
 			CreateAssetTxFee:              units.MilliLux,
-			CreateNetTxFee:             100 * units.MilliLux,
-			TransformNetTxFee:          100 * units.MilliLux,
+			CreateNetTxFee:                100 * units.MilliLux,
+			TransformNetTxFee:             100 * units.MilliLux,
 			CreateBlockchainTxFee:         100 * units.MilliLux,
 			AddPrimaryNetworkValidatorFee: 0,
 			AddPrimaryNetworkDelegatorFee: 0,
-			AddNetValidatorFee:         units.MilliLux,
-			AddNetDelegatorFee:         units.MilliLux,
+			AddNetValidatorFee:            units.MilliLux,
+			AddNetDelegatorFee:            units.MilliLux,
 		},
 		StakingConfig: StakingConfig{
 			UptimeRequirement: .8, // 80%

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build test
@@ -132,7 +132,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 						End:    uint64(alphaValidatorsEndTime.Unix()),
 						Wght:   weight,
 					},
-					Subnet: constants.PrimaryNetworkID,
+					Net: constants.PrimaryNetworkID,
 				},
 				alphaPOP,
 				pContext.LUXAssetID,
@@ -161,7 +161,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 						End:    uint64(betaValidatorEndTime.Unix()),
 						Wght:   weight,
 					},
-					Subnet: constants.PrimaryNetworkID,
+					Net: constants.PrimaryNetworkID,
 				},
 				betaPOP,
 				pContext.LUXAssetID,
@@ -194,7 +194,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 						End:    uint64(gammaDelegatorEndTime.Unix()),
 						Wght:   weight,
 					},
-					Subnet: constants.PrimaryNetworkID,
+					Net: constants.PrimaryNetworkID,
 				},
 				pContext.LUXAssetID,
 				&secp256k1fx.OutputOwners{
@@ -217,7 +217,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 						End:    uint64(deltaDelegatorEndTime.Unix()),
 						Wght:   weight,
 					},
-					Subnet: constants.PrimaryNetworkID,
+					Net: constants.PrimaryNetworkID,
 				},
 				pContext.LUXAssetID,
 				&secp256k1fx.OutputOwners{

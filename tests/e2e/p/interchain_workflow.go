@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build test
@@ -119,7 +119,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 						End:    uint64(endTime.Unix()),
 						Wght:   weight,
 					},
-					Subnet: constants.PrimaryNetworkID,
+					Net: constants.PrimaryNetworkID,
 				},
 				nodePOP,
 				pContext.LUXAssetID,
@@ -149,7 +149,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 						End:    uint64(endTime.Unix()),
 						Wght:   weight,
 					},
-					Subnet: constants.PrimaryNetworkID,
+					Net: constants.PrimaryNetworkID,
 				},
 				pContext.LUXAssetID,
 				&secp256k1fx.OutputOwners{

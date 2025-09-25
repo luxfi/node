@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package merkledb
@@ -27,7 +27,7 @@ type valueNodeDB struct {
 	// If a value is nil, the corresponding key isn't in the trie.
 	// Paths in [nodeCache] aren't prefixed with [valueNodePrefix].
 	nodeCache cache.Cacher[Key, *node]
-	metrics   metrics
+	metrics   merkleDBMetrics
 
 	hasher Hasher
 
@@ -37,7 +37,7 @@ type valueNodeDB struct {
 func newValueNodeDB(
 	db database.Database,
 	bufferPool *utils.BytesPool,
-	metrics metrics,
+	metrics merkleDBMetrics,
 	cacheSize int,
 	hasher Hasher,
 ) *valueNodeDB {

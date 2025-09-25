@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2ptest
@@ -13,19 +13,19 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/core"
+	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
-	consensusset "github.com/luxfi/consensus/utils/set"
 )
 
 // testAppSender implements core.AppSender for testing
 type testAppSender struct {
-	sendAppGossipF             func(context.Context, consensusset.Set[ids.NodeID], []byte) error
-	sendAppRequestF            func(context.Context, consensusset.Set[ids.NodeID], uint32, []byte) error
-	sendAppResponseF           func(context.Context, ids.NodeID, uint32, []byte) error
-	sendAppErrorF              func(context.Context, ids.NodeID, uint32, int32, string) error
-	sendAppGossipSpecificF     func(context.Context, consensusset.Set[ids.NodeID], []byte) error
+	sendAppGossipF         func(context.Context, consensusset.Set[ids.NodeID], []byte) error
+	sendAppRequestF        func(context.Context, consensusset.Set[ids.NodeID], uint32, []byte) error
+	sendAppResponseF       func(context.Context, ids.NodeID, uint32, []byte) error
+	sendAppErrorF          func(context.Context, ids.NodeID, uint32, int32, string) error
+	sendAppGossipSpecificF func(context.Context, consensusset.Set[ids.NodeID], []byte) error
 }
 
 func (t *testAppSender) SendAppGossip(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
@@ -134,7 +134,7 @@ func NewClientWithPeers(
 			go func() {
 				_ = network.AppRequest(ctx, clientNodeID, requestID, time.Time{}, requestBytes)
 			}()
-			
+
 			break // Only send to first node
 		}
 

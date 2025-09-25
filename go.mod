@@ -1,10 +1,15 @@
 module github.com/luxfi/node
 
+go 1.25.1
+
 // Changes to the minimum golang version must also be replicated in
 // CONTRIBUTING.md
 // README.md
 // go.mod (here)
+<<<<<<< HEAD
 go 1.25.1
+=======
+>>>>>>> f8a51339b6d5a5a8e0e3f58bbc8a3a05ffc486ca
 
 exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 
@@ -23,15 +28,15 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
-	github.com/luxfi/consensus v1.18.0
-	github.com/luxfi/crypto v1.16.16
-	github.com/luxfi/database v1.1.13
-	github.com/luxfi/geth v1.16.34
-	github.com/luxfi/ids v1.0.2
+	github.com/luxfi/consensus v1.18.1
+	github.com/luxfi/crypto v1.17.0
+	github.com/luxfi/database v1.2.0
+	github.com/luxfi/geth v1.16.35
+	github.com/luxfi/ids v1.1.0
 	github.com/luxfi/ledger-lux-go v1.0.0
 	github.com/luxfi/log v1.1.22
 	github.com/luxfi/math v0.1.0
-	github.com/luxfi/metric v1.3.0
+	github.com/luxfi/metric v1.4.0
 	github.com/luxfi/mock v0.1.0
 	github.com/luxfi/qzmq v0.1.1
 	github.com/luxfi/trace v0.1.2
@@ -47,10 +52,8 @@ require (
 require (
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/antithesishq/antithesis-sdk-go v0.4.4
 	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/cockroachdb/pebble v1.1.5
-	github.com/compose-spec/compose-go v1.20.2
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/google/btree v1.1.3
@@ -97,11 +100,11 @@ require (
 	golang.org/x/term v0.34.0
 	golang.org/x/time v0.12.0
 	gonum.org/v1/gonum v0.16.0
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c
-	google.golang.org/grpc v1.74.2
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
+	google.golang.org/grpc v1.75.1
 	google.golang.org/protobuf v1.36.8
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
-	gopkg.in/yaml.v3 v3.0.1
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (
@@ -127,15 +130,12 @@ require (
 	github.com/deckarep/golang-set/v2 v2.8.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.2.0 // indirect
-	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/go-connections v0.6.0 // indirect
-	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/emicklei/dot v1.9.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.1 // indirect
+	github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
-	github.com/fatih/color v1.18.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/ferranbt/fastssz v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
@@ -159,10 +159,12 @@ require (
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20250820193118-f64d9cf942d6 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1 // indirect
+	github.com/holiman/billy v0.0.0-20250707135307-f2f9b9aae7db // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kasperdi/SPHINCSPLUS-golang v0.0.0-20231223193046-84468b93f7e9 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -171,19 +173,13 @@ require (
 	github.com/luxfi/zmq/v4 v4.2.0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
-	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
-	github.com/olekukonko/errors v1.1.0 // indirect
-	github.com/olekukonko/ll v0.0.9 // indirect
-	github.com/olekukonko/tablewriter v1.0.9 // indirect
-	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
@@ -192,7 +188,6 @@ require (
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/sagikazarmark/locafero v0.10.0 // indirect
 	github.com/sanity-io/litter v1.5.5 // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
 	github.com/spf13/afero v1.14.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
@@ -206,14 +201,13 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel/metric v1.37.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.37.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250811230008-5f3141c8851a // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
@@ -231,12 +225,14 @@ require (
 
 // Pin all OpenTelemetry modules (and metric sub-packages) to v1.37.0
 
-exclude google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
-
-// Fix genproto import ambiguity
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240826202546-f6391c0de4c7
+exclude (
+	google.golang.org/genproto v0.0.0-20190425155659-357c62f0e4bb
+	google.golang.org/genproto v0.0.0-20210310155132-4ce2db91004e
+	google.golang.org/genproto v0.0.0-20210319143718-93e7006c17a6
+	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
+)
 
 // Remove the v6 to v4 replacement as it causes conflicts
 // replace sigs.k8s.io/structured-merge-diff/v6 => sigs.k8s.io/structured-merge-diff/v4 v4.4.1
 
-replace sigs.k8s.io/structured-merge-diff/v4 => sigs.k8s.io/structured-merge-diff/v4 v4.4.3
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240123012728-ef4313101c80

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package merkledb
@@ -162,7 +162,8 @@ func FuzzIntermediateNodeDBConstructDBKey(f *testing.F) {
 			p := ToKey(key)
 			uBitLength := tokenLength * uint(tokenSize)
 			if uBitLength >= uint(p.length) {
-				t.SkipNow()
+				// Skip when token length exceeds path length
+				return
 			}
 			p = p.Take(int(uBitLength))
 			constructedKey := db.constructDBKey(p)

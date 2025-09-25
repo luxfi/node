@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -20,10 +20,10 @@ import (
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm"
 )
 
@@ -481,7 +481,7 @@ func (n *Network) StartNode(ctx context.Context, w io.Writer, node *Node) error 
 // Restart a single node.
 func (n *Network) RestartNode(ctx context.Context, w io.Writer, node *Node) error {
 	// Ensure the node reuses the same API port across restarts to ensure
-	// consistent labeling of metric. Otherwise prometheus's automatic
+	// consistent labeling of metrics. Otherwise prometheus's automatic
 	// addition of the `instance` label (host:port) results in
 	// segmentation of results for a given node every time the port
 	// changes on restart. This segmentation causes graphs on the grafana
@@ -909,4 +909,22 @@ func GetReusableNetworkPathForOwner(owner string) (string, error) {
 		return "", err
 	}
 	return filepath.Join(networkPath, "latest_"+owner), nil
+}
+
+// GetNodeWebsocketURIs returns websocket URIs for nodes (stub)
+func GetNodeWebsocketURIs(nodes []*Node, blockchainID ids.ID) ([]string, error) {
+	var uris []string
+	for _, node := range nodes {
+		uri := fmt.Sprintf("ws://%s/ext/bc/%s/ws", node.URI, blockchainID)
+		uris = append(uris, uri)
+	}
+	return uris, nil
+}
+
+// GetMonitoringLabels returns monitoring labels for the network (stub)
+func (n *Network) GetMonitoringLabels() map[string]string {
+	return map[string]string{
+		"network": n.Owner,
+		"type":    "test",
+	}
 }

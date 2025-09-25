@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -38,7 +38,8 @@ var (
 func TestSyntacticVerifierBaseTx(t *testing.T) {
 	chainID := consensustest.XChainID
 	cChainID := ids.GenerateTestID()
-	ctx := consensustest.Context(t, chainID)
+	_ = consensustest.Context(t, chainID)
+	ctx := context.Background()
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -102,7 +103,7 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 	backend := &Backend{
 		Ctx:      ctx,
 		CChainID: cChainID,
-		Config: &feeConfig,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,
@@ -413,7 +414,8 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 	chainID := consensustest.XChainID
 	cChainID := ids.GenerateTestID()
-	ctx := consensustest.Context(t, chainID)
+	_ = consensustest.Context(t, chainID)
+	ctx := context.Background()
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -492,7 +494,7 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 	backend := &Backend{
 		Ctx:      ctx,
 		CChainID: cChainID,
-		Config: &feeConfig,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,
@@ -1025,7 +1027,8 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 func TestSyntacticVerifierOperationTx(t *testing.T) {
 	chainID := consensustest.XChainID
 	cChainID := ids.GenerateTestID()
-	ctx := consensustest.Context(t, chainID)
+	_ = consensustest.Context(t, chainID)
+	ctx := context.Background()
 
 	fx := &secp256k1fx.Fx{}
 	parser, err := txs.NewParser(
@@ -1112,7 +1115,7 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 	backend := &Backend{
 		Ctx:      ctx,
 		CChainID: cChainID,
-		Config: &feeConfig,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,
@@ -1585,7 +1588,7 @@ func TestSyntacticVerifierImportTx(t *testing.T) {
 	backend := &Backend{
 		Ctx:      ctx,
 		CChainID: cChainID,
-		Config: &feeConfig,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,
@@ -1988,7 +1991,7 @@ func TestSyntacticVerifierExportTx(t *testing.T) {
 	backend := &Backend{
 		Ctx:      ctx,
 		CChainID: cChainID,
-		Config: &feeConfig,
+		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
 			{
 				ID: secp256k1fx.ID,

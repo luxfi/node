@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
@@ -15,8 +15,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/node/x/merkledb"
 
 	pb "github.com/luxfi/node/proto/pb/sync"

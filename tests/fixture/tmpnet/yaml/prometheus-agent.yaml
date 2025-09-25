@@ -69,7 +69,7 @@ data:
             action: replace
             regex: (.*)
             # TODO(marun) Configure the port via an annotation
-            replacement: $1:9650
+            replacement: $1:9630
             target_label: __address__
             # Set the instance label to the pod name to ensure a stable identity across restarts.
           - source_labels: [__meta_kubernetes_pod_name]

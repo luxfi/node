@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gvalidators
@@ -35,9 +35,9 @@ func (s *Server) GetCurrentHeight(ctx context.Context, _ *emptypb.Empty) (*pb.Ge
 	return &pb.GetCurrentHeightResponse{Height: height}, err
 }
 
-func (s *Server) GetNetID(ctx context.Context, req *pb.GetNetIDRequest) (*pb.GetNetIDResponse, error) {
-	// validators.State doesn't have GetNetID - return empty ID
-	return &pb.GetNetIDResponse{
+func (s *Server) GetSubnetID(ctx context.Context, req *pb.GetSubnetIDRequest) (*pb.GetSubnetIDResponse, error) {
+	// validators.State doesn't have GetSubnetID - return empty ID
+	return &pb.GetSubnetIDResponse{
 		SubnetId: ids.Empty[:],
 	}, nil
 }

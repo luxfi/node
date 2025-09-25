@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build ignore
@@ -11,13 +11,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/ids"
-	metric "github.com/luxfi/metric"
 	"github.com/luxfi/math/math/meter"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/stretchr/testify/require"
 )
 
 // mockTargeter implements tracker.Targeter for testing
@@ -52,7 +52,7 @@ func (m *mockResourceManager) Shutdown() {}
 
 func TestNewSystemThrottler(t *testing.T) {
 	require := require.New(t)
-	promReg := metric.NewNoOpMetrics("test").Registry()
+	promReg := metric.NewNoOp().Registry()
 	clock := mockable.Clock{}
 	clock.Set(time.Now())
 	resourceManager := &mockResourceManager{}
@@ -87,7 +87,7 @@ func TestSystemThrottler(t *testing.T) {
 	}
 	vdrID, nonVdrID := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 	targeter := trackermock.NewTargeter(ctrl)
-	throttler, err := NewSystemThrottler("", metric.NewNoOpMetrics("test").Registry(), config, mockTracker, targeter)
+	throttler, err := NewSystemThrottler("", metric.NewNoOp().Registry(), config, mockTracker, targeter)
 	require.NoError(err)
 
 	// Case: Actual usage <= target usage; should return immediately
@@ -169,7 +169,7 @@ func TestSystemThrottlerContextCancel(t *testing.T) {
 	}
 	vdrID := ids.GenerateTestNodeID()
 	targeter := trackermock.NewTargeter(ctrl)
-	throttler, err := NewSystemThrottler("", metric.NewNoOpMetrics("test").Registry(), config, mockTracker, targeter)
+	throttler, err := NewSystemThrottler("", metric.NewNoOp().Registry(), config, mockTracker, targeter)
 	require.NoError(err)
 
 	// Case: Actual usage > target usage; we should wait.
@@ -199,8 +199,8 @@ func TestSystemThrottlerContextCancel(t *testing.T) {
 
 // MockTargeter is a mock implementation of tracker.Targeter
 type MockTargeter struct {
-	ctrl       *gomock.Controller
-	recorder   *MockTargeterMockRecorder
+	ctrl     *gomock.Controller
+	recorder *MockTargeterMockRecorder
 }
 
 // MockTargeterMockRecorder is the mock recorder for MockTargeter
@@ -234,7 +234,7 @@ func (mr *MockTargeterMockRecorder) TargetUsage() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TargetUsage", reflect.TypeOf((*MockTargeter)(nil).TargetUsage))
 }
 
-// MockTracker is a mock implementation of tracker.Tracker  
+// MockTracker is a mock implementation of tracker.Tracker
 type MockTracker struct {
 	ctrl     *gomock.Controller
 	recorder *MockTrackerMockRecorder
@@ -279,7 +279,7 @@ func (m *MockTracker) TotalUsage() float64 {
 	return ret0
 }
 
-// TotalUsage indicates an expected call of TotalUsage  
+// TotalUsage indicates an expected call of TotalUsage
 func (mr *MockTrackerMockRecorder) TotalUsage() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalUsage", reflect.TypeOf((*MockTracker)(nil).TotalUsage))

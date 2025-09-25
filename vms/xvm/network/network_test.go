@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
@@ -132,8 +133,11 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return txVerifier
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := coremock.NewMockAppSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				appSender := &coremock.MockAppSender{
+					SendAppGossipF: func(context.Context, set.Set[ids.NodeID], []byte) error {
+						return nil
+					},
+				}
 				return appSender
 			},
 			expectedErr: nil,
@@ -191,7 +195,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				txVerifierFunc(ctrl),
 				mempoolFunc(ctrl),
 				appSenderFunc(ctrl),
-				metric.NewNoOpMetrics("test").Registry(),
+				metric.NewNoOp().Registry(),
 				testConfig,
 			)
 			require.NoError(err)
@@ -233,8 +237,11 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				return mempool
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := coremock.NewMockAppSender(ctrl)
-				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				appSender := &coremock.MockAppSender{
+					SendAppGossipF: func(context.Context, set.Set[ids.NodeID], []byte) error {
+						return nil
+					},
+				}
 				return appSender
 			},
 			expectedErr: nil,
@@ -285,7 +292,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				executor.NewMockManager(ctrl), // Should never verify a tx
 				mempoolFunc(ctrl),
 				appSenderFunc(ctrl),
-				metric.NewNoOpMetrics("test").Registry(),
+				metric.NewNoOp().Registry(),
 				testConfig,
 			)
 			require.NoError(err)

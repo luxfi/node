@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build test
@@ -185,8 +185,13 @@ func (te *TestEnvironment) AllocatePreFundedKey() *secp256k1.PrivateKey {
 	return te.AllocatePreFundedKeys(1)[0]
 }
 
-// Create a new keychain with the specified number of test keys.
+// NewKeychain creates a new keychain with the specified number of test keys
 func (te *TestEnvironment) NewKeychain(count int) *secp256k1fx.Keychain {
+	return te.NewKeychainWithCount(count)
+}
+
+// NewKeychainWithCount creates a new keychain with the specified number of test keys.
+func (te *TestEnvironment) NewKeychainWithCount(count int) *secp256k1fx.Keychain {
 	keys := te.AllocatePreFundedKeys(count)
 	return secp256k1fx.NewKeychain(keys...)
 }

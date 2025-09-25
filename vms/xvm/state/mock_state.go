@@ -15,10 +15,10 @@ import (
 
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
+	gomock "github.com/luxfi/mock/gomock"
 	lux "github.com/luxfi/node/vms/components/lux"
 	block "github.com/luxfi/node/vms/xvm/block"
 	txs "github.com/luxfi/node/vms/xvm/txs"
-	gomock "github.com/luxfi/mock/gomock"
 )
 
 // MockChain is a mock of Chain interface.

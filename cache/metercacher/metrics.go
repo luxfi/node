@@ -1,9 +1,11 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metercacher
 
 import (
+	"errors"
+
 	"github.com/luxfi/metric"
 )
 
@@ -23,7 +25,7 @@ var (
 	}
 )
 
-type metrics struct {
+type metricsImpl struct {
 	getCount metric.CounterVec
 	getTime  metric.GaugeVec
 
@@ -37,8 +39,8 @@ type metrics struct {
 func newMetrics(
 	namespace string,
 	reg metric.Registerer,
-) (*metrics, error) {
-	m := &metrics{
+) (*metricsImpl, error) {
+	m := &metricsImpl{
 		getCount: metric.NewCounterVec(
 			metric.CounterOpts{
 				Namespace: namespace,
@@ -76,7 +78,13 @@ func newMetrics(
 			Help:      "fraction of cache filled",
 		}),
 	}
-	// The metrics are already registered when created with prometheus functions
-	// so we don't need to register them again
-	return m, nil
+	err := errors.Join(
+		reg.Register(m.getCount),
+		reg.Register(m.getTime),
+		reg.Register(m.putCount),
+		reg.Register(m.putTime),
+		reg.Register(m.len),
+		reg.Register(m.portionFilled),
+	)
+	return m, err
 }

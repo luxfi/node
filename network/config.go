@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -14,12 +14,12 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/math/set"
 )
 
 // HealthConfig describes parameters for network layer health checks.
@@ -141,7 +141,7 @@ type Config struct {
 	UptimeCalculator uptime.Calculator `json:"-"`
 
 	// UptimeMetricFreq marks how frequently this node will recalculate the
-	// observed average uptime metric.
+	// observed average uptime metrics.
 	UptimeMetricFreq time.Duration `json:"uptimeMetricFreq"`
 
 	// UptimeRequirement is the fraction of time a validator must be online and

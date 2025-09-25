@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -49,10 +49,10 @@ func requireEqual(t *testing.T, expected, actual *ipTracker) {
 
 func requireMetricsConsistent(t *testing.T, tracker *ipTracker) {
 	require := require.New(t)
-	require.Equal(float64(len(tracker.mostRecentTrackedIPs)), testutil.ToFloat64(tracker.numTrackedIPs))
-	require.Equal(float64(len(tracker.gossipableIPs)), testutil.ToFloat64(tracker.numGossipableIPs))
-	require.Equal(float64(tracker.bloom.Count()), testutil.ToFloat64(tracker.bloomMetrics.Count))
-	require.Equal(float64(tracker.maxBloomCount), testutil.ToFloat64(tracker.bloomMetrics.MaxCount))
+	require.Equal(float64(len(tracker.mostRecentTrackedIPs)), testutil.ToFloat64(metric.AsCollector(tracker.numTrackedIPs)))
+	require.Equal(float64(len(tracker.gossipableIPs)), testutil.ToFloat64(metric.AsCollector(tracker.numGossipableIPs)))
+	require.Equal(float64(tracker.bloom.Count()), testutil.ToFloat64(metric.AsCollector(tracker.bloomMetrics.Count)))
+	require.Equal(float64(tracker.maxBloomCount), testutil.ToFloat64(metric.AsCollector(tracker.bloomMetrics.MaxCount)))
 }
 
 func TestIPTracker_ManuallyTrack(t *testing.T) {

@@ -18,7 +18,7 @@ func TestBLSSingleNodeProofOfPossession(t *testing.T) {
 	require.NoError(err)
 
 	// Create proof of possession
-	pop := NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
+	pop, err := NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
 	require.NotNil(pop)
 
 	// Verify proof of possession
@@ -46,7 +46,8 @@ func TestBLSAggregateOfOne(t *testing.T) {
 	msg := []byte("consensus block data")
 
 	// Sign
-	sig := sk.Sign(msg)
+	sig, err := sk.Sign(msg)
+	require.NoError(err)
 	require.NotNil(sig)
 
 	// Create aggregate of 1
@@ -74,7 +75,8 @@ func TestInvalidProofOfPossession(t *testing.T) {
 			name: "valid PoP",
 			setupPoP: func() *ProofOfPossession {
 				sk, _ := bls.NewSecretKey()
-				return NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
+				pop, _ := NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
+				return pop
 			},
 			expectErr: false,
 		},
@@ -82,7 +84,7 @@ func TestInvalidProofOfPossession(t *testing.T) {
 			name: "corrupted signature",
 			setupPoP: func() *ProofOfPossession {
 				sk, _ := bls.NewSecretKey()
-				pop := NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
+				pop, _ := NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
 				// Corrupt signature
 				pop.ProofOfPossession[0] ^= 0xFF
 				return pop
@@ -93,7 +95,7 @@ func TestInvalidProofOfPossession(t *testing.T) {
 			name: "corrupted public key",
 			setupPoP: func() *ProofOfPossession {
 				sk, _ := bls.NewSecretKey()
-				pop := NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
+				pop, _ := NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
 				// Corrupt public key
 				pop.PublicKey[0] ^= 0xFF
 				return pop
@@ -107,10 +109,10 @@ func TestInvalidProofOfPossession(t *testing.T) {
 				sk2, _ := bls.NewSecretKey()
 
 				// Use pk from sk1 but signature from sk2
-				pop := NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk1)); return s }())
+				pop, _ := NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk1)); return s }())
 				pk2 := sk2.PublicKey()
 				pk2Bytes := bls.PublicKeyToCompressedBytes(pk2)
-				sig2 := sk2.SignProofOfPossession(pk2Bytes)
+				sig2, _ := sk2.SignProofOfPossession(pk2Bytes)
 				copy(pop.ProofOfPossession[:], bls.SignatureToBytes(sig2))
 
 				return pop

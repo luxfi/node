@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/consensus/validators"
 	consensusset "github.com/luxfi/consensus/utils/set"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -376,7 +376,7 @@ func (m *manager) getCurrentValidatorSets(
 	// GetMap doesn't exist, so we need to build the map from validators
 	subnetMap := make(map[ids.NodeID]*validators.GetValidatorOutput)
 	primaryMap := make(map[ids.NodeID]*validators.GetValidatorOutput)
-	
+
 	// For now, return empty maps
 	currentHeight, err := m.getCurrentHeight(ctx)
 	return subnetMap, primaryMap, currentHeight, err
@@ -460,12 +460,12 @@ func (m *manager) GetWeight(subnetID ids.ID, nodeID ids.NodeID) uint64 {
 	if err != nil {
 		return 0
 	}
-	
+
 	validators, err := m.GetValidatorSet(ctx, currentHeight, subnetID)
 	if err != nil {
 		return 0
 	}
-	
+
 	if validator, ok := validators[nodeID]; ok {
 		return validator.Weight
 	}
@@ -484,12 +484,12 @@ func (m *manager) SubsetWeight(subnetID ids.ID, nodeIDs consensusset.Set[ids.Nod
 	if err != nil {
 		return 0, err
 	}
-	
+
 	validators, err := m.GetValidatorSet(ctx, currentHeight, subnetID)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	var totalWeight uint64
 	for nodeID := range nodeIDs {
 		if validator, ok := validators[nodeID]; ok {
@@ -506,12 +506,12 @@ func (m *manager) TotalWeight(subnetID ids.ID) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	validators, err := m.GetValidatorSet(ctx, currentHeight, subnetID)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	var totalWeight uint64
 	for _, validator := range validators {
 		totalWeight += validator.Weight
@@ -526,12 +526,12 @@ func (m *manager) GetValidator(subnetID ids.ID, nodeID ids.NodeID) (*validators.
 	if err != nil {
 		return nil, false
 	}
-	
+
 	validatorSet, err := m.GetValidatorSet(ctx, currentHeight, subnetID)
 	if err != nil {
 		return nil, false
 	}
-	
+
 	if validatorOutput, ok := validatorSet[nodeID]; ok {
 		// Return the validator output
 		return validatorOutput, true
@@ -546,12 +546,12 @@ func (m *manager) GetValidatorIDs(subnetID ids.ID) []ids.NodeID {
 	if err != nil {
 		return nil
 	}
-	
+
 	validators, err := m.GetValidatorSet(ctx, currentHeight, subnetID)
 	if err != nil {
 		return nil
 	}
-	
+
 	nodeIDs := make([]ids.NodeID, 0, len(validators))
 	for nodeID := range validators {
 		nodeIDs = append(nodeIDs, nodeID)
@@ -566,12 +566,12 @@ func (m *manager) Count(subnetID ids.ID) int {
 	if err != nil {
 		return 0
 	}
-	
+
 	validators, err := m.GetValidatorSet(ctx, currentHeight, subnetID)
 	if err != nil {
 		return 0
 	}
-	
+
 	return len(validators)
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package antithesis
@@ -11,18 +11,18 @@ import (
 	"github.com/antithesishq/antithesis-sdk-go/assert"
 
 	"github.com/luxfi/node/tests"
-	"github.com/luxfi/log"
+	"github.com/luxfi/node/utils/logging"
 )
 
 // NewInstrumentedTestContext returns a test context that makes antithesis SDK assertions.
-func NewInstrumentedTestContext(log log.Logger) *tests.SimpleTestContext {
+func NewInstrumentedTestContext(log logging.Logger) *tests.SimpleTestContext {
 	return NewInstrumentedTestContextWithArgs(context.Background(), log, nil)
 }
 
 // NewInstrumentedTestContextWithArgs returns a test context that makes antithesis SDK assertions.
 func NewInstrumentedTestContextWithArgs(
 	ctx context.Context,
-	log log.Logger,
+	log logging.Logger,
 	details map[string]any,
 ) *tests.SimpleTestContext {
 	return tests.NewTestContextWithArgs(

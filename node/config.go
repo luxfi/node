@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -12,13 +12,13 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/nets"
+	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/utils/profiler"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/trace"
@@ -176,8 +176,8 @@ type Config struct {
 	// Metrics
 	MeterVMEnabled bool `json:"meterVMEnabled"`
 
-	RouterHealthConfig       HealthConfig `json:"routerHealthConfig"`
-	ConsensusShutdownTimeout time.Duration       `json:"consensusShutdownTimeout"`
+	RouterHealthConfig       HealthConfig  `json:"routerHealthConfig"`
+	ConsensusShutdownTimeout time.Duration `json:"consensusShutdownTimeout"`
 	// Poll for new frontiers every [FrontierPollFrequency]
 	FrontierPollFrequency time.Duration `json:"consensusGossipFreq"`
 	// ConsensusAppConcurrency defines the maximum number of goroutines to

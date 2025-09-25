@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build test
@@ -147,7 +147,7 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 							End:    uint64(endTime.Unix()),
 							Wght:   25 * units.MegaLux,
 						},
-						Subnet: netID,
+						Net: netID,
 					},
 					&signer.Empty{},
 					subnetAssetID,
@@ -167,7 +167,7 @@ var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
 							End:    uint64(endTime.Unix()),
 							Wght:   25 * units.MegaLux,
 						},
-						Subnet: netID,
+						Net: netID,
 					},
 					subnetAssetID,
 					&secp256k1fx.OutputOwners{},

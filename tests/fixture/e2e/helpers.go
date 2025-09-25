@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build test
@@ -15,11 +15,12 @@ import (
 	"time"
 
 	// "github.com/luxfi/coreth"
-	"github.com/luxfi/geth"
+	ethereum "github.com/luxfi/geth"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/ethclient"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
@@ -29,6 +30,27 @@ import (
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 )
+
+// GetEnv returns a test environment
+func GetEnv(tc tests.TestContext) *TestEnvironment {
+	if Env != nil {
+		return Env
+	}
+	require.Fail(ginkgo.GinkgoT(), "Test environment not initialized. Call InitSharedTestEnvironment first.")
+	return nil
+}
+
+// NewPrivateKey creates a new private key
+func NewPrivateKey(tc tests.TestContext) *secp256k1.PrivateKey {
+	sk, err := secp256k1.NewPrivateKey()
+	require.NoError(ginkgo.GinkgoT(), err)
+	return sk
+}
+
+// NewWallet with TestContext - overloaded version for tests
+func NewWalletWithContext(tc tests.TestContext, keychain *secp256k1fx.Keychain, nodeURI tmpnet.NodeURI) primary.Wallet {
+	return NewWallet(keychain, nodeURI)
+}
 
 const (
 	// A long default timeout used to timeout failed operations but
@@ -172,7 +194,7 @@ func SendEthTransaction(ethClient *ethclient.Client, signedTx *types.Transaction
 
 // Determines the suggested gas price for the configured client that will
 // maximize the chances of transaction acceptance.
-func SuggestGasPrice(ethClient ethclient.Client) *big.Int {
+func SuggestGasPrice(ethClient *ethclient.Client) *big.Int {
 	gasPrice, err := ethClient.SuggestGasPrice(DefaultContext())
 	require.NoError(ginkgo.GinkgoT(), err)
 	// Double the suggested gas price to maximize the chances of
@@ -183,7 +205,7 @@ func SuggestGasPrice(ethClient ethclient.Client) *big.Int {
 }
 
 // Helper simplifying use via an option of a gas price appropriate for testing.
-func WithSuggestedGasPrice(ethClient ethclient.Client) common.Option {
+func WithSuggestedGasPrice(ethClient *ethclient.Client) common.Option {
 	baseFee := SuggestGasPrice(ethClient)
 	return common.WithBaseFee(baseFee)
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	metric "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/compression"
 )
 
@@ -19,7 +19,7 @@ func Test_newOutboundBuilder(t *testing.T) {
 
 	mb, err := newMsgBuilder(
 		nil,
-		metric.NewNoOpMetrics("test"),
+		metric.NewNoOp(),
 		10*time.Second,
 	)
 	require.NoError(t, err)

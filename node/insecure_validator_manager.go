@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -6,25 +6,17 @@ package node
 import (
 	"sync"
 
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/constants"
+	nodevalidators "github.com/luxfi/node/validators"
 	"github.com/luxfi/node/version"
 )
-
-// ExtendedManager extends the base validators.Manager with additional methods
-type ExtendedManager interface {
-	validators.Manager
-	AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error
-	RemoveWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error
-}
 
 type insecureValidatorManager struct {
 	Router
 	log    log.Logger
-	vdrs   validators.Manager
+	vdrs   nodevalidators.ExtendedManager
 	weight uint64
 	// Keep track of added validators locally
 	validators map[ids.ID]map[ids.NodeID]uint64

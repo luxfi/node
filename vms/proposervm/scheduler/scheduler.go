@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package scheduler
@@ -6,8 +6,8 @@ package scheduler
 import (
 	"time"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/log"
 )
 
 type Scheduler interface {

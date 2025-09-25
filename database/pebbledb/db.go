@@ -11,8 +11,8 @@ import (
 	"sync"
 
 	"github.com/cockroachdb/pebble"
-	"github.com/luxfi/metric"
 	luxlog "github.com/luxfi/log"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/utils/set"

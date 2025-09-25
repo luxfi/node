@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -14,10 +14,10 @@ import (
 
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 

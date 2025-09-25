@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package resource
@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/metric"
 )
 
-type metrics struct {
+type metricsImpl struct {
 	numCPUCycles       metric.GaugeVec
 	numDiskReads       metric.GaugeVec
 	numDiskReadBytes   metric.GaugeVec
@@ -17,8 +17,8 @@ type metrics struct {
 	numDiskWritesBytes metric.GaugeVec
 }
 
-func newMetrics(registerer metric.Registerer) (*metrics, error) {
-	m := &metrics{
+func newMetrics(registerer metric.Registerer) (*metricsImpl, error) {
+	m := &metricsImpl{
 		numCPUCycles: metric.NewGaugeVec(
 			metric.GaugeOpts{
 				Name: "num_cpu_cycles",

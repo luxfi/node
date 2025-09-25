@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -18,10 +18,11 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/vms/platformvm/signer"
 )
 
@@ -323,11 +324,11 @@ func (n *Node) GetProofOfPossession() (*signer.ProofOfPossession, error) {
 	if err != nil {
 		return nil, err
 	}
-	secretKey, err := bls.SecretKeyFromBytes(signingKeyBytes)
+	localSigner, err := localsigner.FromBytes(signingKeyBytes)
 	if err != nil {
 		return nil, err
 	}
-	pop, err := signer.NewProofOfPossession(secretKey)
+	pop, err := signer.NewProofOfPossession(localSigner)
 	if err != nil {
 		return nil, err
 	}
@@ -381,7 +382,7 @@ func (n *Node) EnsureNodeID() error {
 
 // Saves the currently allocated API port to the node's configuration
 // for use across restarts. Reusing the port ensures consistent
-// labeling of metric.
+// labeling of metrics.
 func (n *Node) SaveAPIPort() error {
 	hostPort := strings.TrimPrefix(n.URI, "http://")
 	if len(hostPort) == 0 {

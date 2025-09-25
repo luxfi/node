@@ -1,16 +1,16 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
 
 import (
-	nodevalidators "github.com/luxfi/node/validators"
 	"context"
 	"crypto"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
+	nodevalidators "github.com/luxfi/node/validators"
 	"io"
 	"io/fs"
 	"net"
@@ -28,8 +28,6 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/networking/timeout"
 	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/factory"
 	"github.com/luxfi/database/prefixdb"
@@ -40,6 +38,7 @@ import (
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/api/keystore"
 	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/genesis"
@@ -72,7 +71,7 @@ import (
 	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/trace"
 
-	// "github.com/luxfi/node/vms/cchainvm" // Temporarily disabled
+	"github.com/luxfi/node/vms/cchainvm"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 	xvmconfig "github.com/luxfi/node/vms/xvm/config"
 )
@@ -349,10 +348,10 @@ type Node struct {
 	tlsKeyLogWriterCloser io.WriteCloser
 
 	// this node's initial connections to the network
-	bootstrappers validators.Manager
+	bootstrappers nodevalidators.ExtendedManager
 
 	// current validators of the network
-	vdrs validators.Manager
+	vdrs nodevalidators.ExtendedManager
 
 	apiURI string
 
@@ -560,7 +559,6 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	}
 
 	// Configure benchlist
-	n.vdrs = n.vdrs
 	benchlistGatherer := metric.NewLabelGatherer(chains.ChainLabel)
 	// Don't assign to metric.DefaultRegisterer - it requires metric.Registerer interface
 
@@ -597,11 +595,11 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 		}
 
 		consensusRouter = &insecureValidatorManager{
-			log:    n.Log,
-			Router: consensusRouter,
-			vdrs:   n.vdrs,
-			weight: n.Config.SybilProtectionDisabledWeight,
-			validators:  make(map[ids.ID]map[ids.NodeID]uint64),
+			log:        n.Log,
+			Router:     consensusRouter,
+			vdrs:       n.vdrs,
+			weight:     n.Config.SybilProtectionDisabledWeight,
+			validators: make(map[ids.ID]map[ids.NodeID]uint64),
 		}
 	}
 
@@ -615,9 +613,9 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 
 	if requiredConns > 0 {
 		consensusRouter = &beaconManager{
-			Router:        consensusRouter,
-			beacons:       n.bootstrappers,
-			requiredConns: int64(requiredConns),
+			Router:                  consensusRouter,
+			beacons:                 n.bootstrappers,
+			requiredConns:           int64(requiredConns),
 			onSufficientlyConnected: n.onSufficientlyConnected,
 		}
 	} else {
@@ -635,7 +633,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	n.Config.NetworkConfig.BLSKey = NewBLSSignerWrapper(n.Config.StakingSigningKey)
 	n.Config.NetworkConfig.TrackedSubnets = n.Config.TrackedSubnets
 	n.Config.NetworkConfig.UptimeCalculator = n.uptimeCalculator
-	n.Config.NetworkConfig.UptimeRequirement = n.Config.UptimeRequirement
+	n.Config.NetworkConfig.UptimeRequirement = n.Config.StakingConfig.UptimeRequirement
 	// Wrap the resource tracker for consensus compatibility
 	n.Config.NetworkConfig.ResourceTracker = &resourceTrackerAdapter{tracker: n.resourceTracker}
 	n.Config.NetworkConfig.CPUTargeter = n.cpuTargeter
@@ -936,7 +934,7 @@ func (n *Node) initChains(genesisBytes []byte) error {
 
 	platformChain := chains.ChainParameters{
 		ID:            constants.PlatformChainID,
-		NetID:      constants.PrimaryNetworkID,
+		NetID:         constants.PrimaryNetworkID,
 		GenesisData:   genesisBytes, // Specifies other chains to create
 		VMID:          constants.PlatformVMID,
 		CustomBeacons: n.bootstrappers,
@@ -1205,7 +1203,7 @@ func (n *Node) initVMs() error {
 
 	// Register the VMs that Lux supports
 	etnaTime := version.GetEtnaTime(n.Config.NetworkID)
-	
+
 	// Register the VMs that Lux supports
 	n.Log.Info("Registering Platform VM", "vmID", constants.PlatformVMID)
 	err := n.VMManager.RegisterFactory(context.TODO(), constants.PlatformVMID, &platformvm.Factory{
@@ -1217,14 +1215,14 @@ func (n *Node) initVMs() error {
 			PartialSyncPrimaryNetwork: n.Config.PartialSyncPrimaryNetwork,
 			TrackedSubnets:            n.Config.TrackedSubnets,
 			StaticFeeConfig:           n.Config.StaticConfig,
-			UptimePercentage:          n.Config.UptimeRequirement,
-			MinValidatorStake:         n.Config.MinValidatorStake,
-			MaxValidatorStake:         n.Config.MaxValidatorStake,
-			MinDelegatorStake:         n.Config.MinDelegatorStake,
-			MinDelegationFee:          n.Config.MinDelegationFee,
-			MinStakeDuration:          n.Config.MinStakeDuration,
-			MaxStakeDuration:          n.Config.MaxStakeDuration,
-			RewardConfig:              n.Config.RewardConfig,
+			UptimePercentage:          n.Config.StakingConfig.UptimeRequirement,
+			MinValidatorStake:         n.Config.StakingConfig.MinValidatorStake,
+			MaxValidatorStake:         n.Config.StakingConfig.MaxValidatorStake,
+			MinDelegatorStake:         n.Config.StakingConfig.MinDelegatorStake,
+			MinDelegationFee:          n.Config.StakingConfig.MinDelegationFee,
+			MinStakeDuration:          n.Config.StakingConfig.MinStakeDuration,
+			MaxStakeDuration:          n.Config.StakingConfig.MaxStakeDuration,
+			RewardConfig:              n.Config.StakingConfig.RewardConfig,
 			UpgradeConfig: upgrade.Config{
 				ApricotPhase3Time: version.GetApricotPhase3Time(n.Config.NetworkID),
 				ApricotPhase5Time: version.GetApricotPhase5Time(n.Config.NetworkID),
@@ -1255,6 +1253,14 @@ func (n *Node) initVMs() error {
 		return err
 	}
 	n.Log.Info("X VM registered successfully")
+
+	n.Log.Info("Registering C-Chain VM", "vmID", constants.EVMID)
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &cchainvm.Factory{})
+	if err != nil {
+		n.Log.Error("Failed to register C-Chain VM", "error", err)
+		return err
+	}
+	n.Log.Info("C-Chain VM registered successfully")
 
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()
@@ -1438,13 +1444,13 @@ func (n *Node) initInfoAPI() error {
 			NetworkID:                     n.Config.NetworkID,
 			TxFee:                         n.Config.TxFee,
 			CreateAssetTxFee:              n.Config.CreateAssetTxFee,
-			CreateNetTxFee:             n.Config.CreateNetTxFee,
-			TransformNetTxFee:          n.Config.TransformNetTxFee,
+			CreateNetTxFee:                n.Config.CreateNetTxFee,
+			TransformNetTxFee:             n.Config.TransformNetTxFee,
 			CreateBlockchainTxFee:         n.Config.CreateBlockchainTxFee,
 			AddPrimaryNetworkValidatorFee: n.Config.AddPrimaryNetworkValidatorFee,
 			AddPrimaryNetworkDelegatorFee: n.Config.AddPrimaryNetworkDelegatorFee,
-			AddNetValidatorFee:         n.Config.AddNetValidatorFee,
-			AddNetDelegatorFee:         n.Config.AddNetDelegatorFee,
+			AddNetValidatorFee:            n.Config.AddNetValidatorFee,
+			AddNetDelegatorFee:            n.Config.AddNetDelegatorFee,
 			VMManager:                     n.VMManager,
 		},
 		n.Log,

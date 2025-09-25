@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -26,7 +26,6 @@ func (h *testHandler) HandleInbound(ctx context.Context, msg message.InboundMess
 	// Since InboundHandler expects router.Message, we would need an adapter
 	// For now, just skip if there's an InboundHandler
 }
-
 
 func (h *testHandler) Connected(id ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
 	if h.ConnectedF != nil {
