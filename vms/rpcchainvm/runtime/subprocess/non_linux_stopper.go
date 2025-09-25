@@ -23,7 +23,7 @@ func stop(_ context.Context, log log.Logger, cmd *exec.Cmd) {
 		log.Debug("subprocess was killed")
 	} else {
 		log.Error("subprocess was killed",
-			log.Err(err),
+			"error", err,
 		)
 	}
 }
