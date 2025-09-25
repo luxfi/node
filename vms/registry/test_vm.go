@@ -6,14 +6,17 @@ package registry
 import (
 	"context"
 	"net/http"
+	"time"
 
-	consensusContext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/database/manager"
+	"github.com/luxfi/node/database"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/snow"
+	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/node/version"
 )
 
-// Ensure testVM implements core.VM
-var _ core.VM = (*testVM)(nil)
+// Ensure testVM implements common.VM
+var _ common.VM = (*testVM)(nil)
 
 // testVM is a test VM implementation for testing the registry
 type testVM struct {
@@ -27,19 +30,18 @@ func newTestVM() *testVM {
 
 func (vm *testVM) Initialize(
 	ctx context.Context,
-	chainCtx *consensusContext.Context,
-	db manager.Manager,
+	chainCtx *snow.Context,
+	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	msgChan chan<- core.Message,
-	fxs []*core.Fx,
-	appSender interface{},
+	fxs []*common.Fx,
+	appSender common.AppSender,
 ) error {
 	return nil
 }
 
-func (vm *testVM) SetState(ctx context.Context, state core.VMState) error {
+func (vm *testVM) SetState(ctx context.Context, state snow.State) error {
 	return nil
 }
 
@@ -69,4 +71,42 @@ func (vm *testVM) CreateStaticHandlers(ctx context.Context) (map[string]http.Han
 	return nil, nil
 }
 
+func (vm *testVM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+	return nil, nil
+}
 
+func (vm *testVM) WaitForEvent(ctx context.Context) (common.Message, error) {
+	return common.PendingTxs, nil
+}
+
+func (vm *testVM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
+	// No-op implementation for test VM
+	return nil
+}
+
+func (vm *testVM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	// No-op implementation for test VM
+	return nil
+}
+
+// AppHandler interface methods
+
+func (vm *testVM) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+	// No-op implementation for test VM
+	return nil
+}
+
+func (vm *testVM) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+	// No-op implementation for test VM
+	return nil
+}
+
+func (vm *testVM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+	// No-op implementation for test VM
+	return nil
+}
+
+func (vm *testVM) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+	// No-op implementation for test VM
+	return nil
+}
