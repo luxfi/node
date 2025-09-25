@@ -1,11 +1,15 @@
-go 1.24.6
+go 1.25.1
 
 use (
 	.
-	../consensus
-	../crypto
-	../database
-	../geth
-	../metric
-	../qzmq
+	../consensus-upstream
+	../crypto-upstream
+	../database-upstream
+	../geth-upstream
+	../metric-upstream
+	../ids-upstream
+	../log-upstream
+	../trace-upstream
+	../qzmq-upstream
+	../zmq-upstream
 )
