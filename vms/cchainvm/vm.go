@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/luxfi/geth/common"
@@ -50,6 +51,165 @@ var (
 	errInvalidBlock = errors.New("invalid block")
 )
 
+// ReplayState represents the state of database replay
+type ReplayState int32
+
+const (
+	ReplayNotStarted ReplayState = 0
+	ReplayInProgress ReplayState = 1
+	ReplayCompleted  ReplayState = 2
+	ReplayFailed     ReplayState = 3
+)
+
+// ReplayProgress tracks the progress of database replay
+type ReplayProgress struct {
+	state        atomic.Int32  // ReplayState
+	currentBlock atomic.Uint64
+	totalBlocks  atomic.Uint64
+	startTime    atomic.Value // time.Time
+	phase        atomic.Value // string
+	errorMsg     atomic.Value // string
+}
+
+// NewReplayProgress creates a new replay progress tracker
+func NewReplayProgress() *ReplayProgress {
+	p := &ReplayProgress{}
+	p.state.Store(int32(ReplayNotStarted))
+	p.phase.Store("")
+	p.errorMsg.Store("")
+	return p
+}
+
+// Start marks the replay as started
+func (p *ReplayProgress) Start(totalBlocks uint64) {
+	p.state.Store(int32(ReplayInProgress))
+	p.totalBlocks.Store(totalBlocks)
+	p.currentBlock.Store(0)
+	p.startTime.Store(time.Now())
+	p.phase.Store("starting")
+	p.errorMsg.Store("")
+}
+
+// SetPhase updates the current phase
+func (p *ReplayProgress) SetPhase(phase string) {
+	p.phase.Store(phase)
+}
+
+// UpdateBlock updates the current block number
+func (p *ReplayProgress) UpdateBlock(blockNum uint64) {
+	p.currentBlock.Store(blockNum)
+}
+
+// IncrementBlock increments the current block counter
+func (p *ReplayProgress) IncrementBlock() uint64 {
+	return p.currentBlock.Add(1)
+}
+
+// Complete marks the replay as completed
+func (p *ReplayProgress) Complete() {
+	p.state.Store(int32(ReplayCompleted))
+	p.phase.Store("completed")
+}
+
+// Fail marks the replay as failed
+func (p *ReplayProgress) Fail(err error) {
+	p.state.Store(int32(ReplayFailed))
+	p.phase.Store("failed")
+	p.errorMsg.Store(err.Error())
+}
+
+// GetStatus returns the current status
+func (p *ReplayProgress) GetStatus() map[string]interface{} {
+	state := ReplayState(p.state.Load())
+
+	if state == ReplayNotStarted {
+		return map[string]interface{}{
+			"replaying": false,
+			"state":     "not_started",
+		}
+	}
+
+	current := p.currentBlock.Load()
+	total := p.totalBlocks.Load()
+	phase := p.phase.Load().(string)
+
+	result := map[string]interface{}{
+		"state":        stateString(state),
+		"currentBlock": current,
+		"totalBlocks":  total,
+		"phase":        phase,
+	}
+
+	if state == ReplayInProgress {
+		result["replaying"] = true
+
+		// Calculate percentage
+		if total > 0 {
+			result["percentage"] = float64(current) * 100.0 / float64(total)
+		}
+
+		// Calculate rate and ETA
+		if startTimeVal := p.startTime.Load(); startTimeVal != nil {
+			if startTime, ok := startTimeVal.(time.Time); ok {
+				elapsed := time.Since(startTime).Seconds()
+				if elapsed > 0 && current > 0 {
+					rate := float64(current) / elapsed
+					result["blocksPerSecond"] = rate
+
+					if total > current && rate > 0 {
+						remaining := total - current
+						etaSeconds := float64(remaining) / rate
+						result["estimatedTimeRemaining"] = formatDuration(time.Duration(etaSeconds * float64(time.Second)))
+					}
+				}
+			}
+		}
+	} else if state == ReplayCompleted {
+		result["replaying"] = false
+		if startTimeVal := p.startTime.Load(); startTimeVal != nil {
+			if startTime, ok := startTimeVal.(time.Time); ok {
+				elapsed := time.Since(startTime)
+				result["totalTime"] = elapsed.String()
+				if elapsed.Seconds() > 0 && current > 0 {
+					result["averageRate"] = float64(current) / elapsed.Seconds()
+				}
+			}
+		}
+	} else if state == ReplayFailed {
+		result["replaying"] = false
+		if errMsg := p.errorMsg.Load(); errMsg != nil {
+			result["error"] = errMsg.(string)
+		}
+	}
+
+	return result
+}
+
+func stateString(state ReplayState) string {
+	switch state {
+	case ReplayNotStarted:
+		return "not_started"
+	case ReplayInProgress:
+		return "in_progress"
+	case ReplayCompleted:
+		return "completed"
+	case ReplayFailed:
+		return "failed"
+	default:
+		return "unknown"
+	}
+}
+
+func formatDuration(d time.Duration) string {
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	}
+	if d < time.Hour {
+		return fmt.Sprintf("%dm %ds", int(d.Minutes()), int(d.Seconds())%60)
+	}
+	return fmt.Sprintf("%dh %dm", int(d.Hours()), int(d.Minutes())%60)
+}
+
 // DatabaseReplayConfig holds configuration for database replay
 type DatabaseReplayConfig struct {
 	SourcePath               string // Path to source database
@@ -81,6 +241,9 @@ type VM struct {
 
 	// Database replay config (if using --genesis-db)
 	replayConfig *DatabaseReplayConfig
+
+	// Replay progress tracking
+	replayProgress *ReplayProgress
 
 	// Synchronization
 	mu           sync.RWMutex
@@ -118,6 +281,7 @@ func (vm *VM) Initialize(
 	vm.genesisBytes = genesisBytes
 	vm.shutdownChan = make(chan struct{})
 	vm.builtBlocks = make(map[ids.ID]*Block)
+	vm.replayProgress = NewReplayProgress()
 
 	// MIGRATION DETECTION: Check if we have migrated data BEFORE any initialization
 	// We need to check at the C-Chain database level, not the wrapped level
@@ -220,39 +384,49 @@ func (vm *VM) Initialize(
 
 	// Fallback: Check for migrated blockchain data in database
 	if !hasMigratedData {
-		// First check if we have a migrated BadgerDB directory
+		// ALWAYS check chainData/C/db first for C-Chain (no blockchain ID dependency)
+		dataDir := os.Getenv("DATA_DIR")
+		if dataDir == "" {
+			dataDir = "/home/z/.luxd"
+		}
+		baseDir := filepath.Join(dataDir, "chainData", "C", "db")
+		possiblePaths := []string{
+			filepath.Join(baseDir, "badgerdb", "ethdb"),
+			filepath.Join(baseDir, "ethdb"),
+		}
+
+		// Also check blockchain-ID-specific path as fallback
 		if chainCtxWithDir, ok := vm.chainCtx.(interface{ GetChainDataDir() string }); ok {
-			// Check both possible locations
-			possiblePaths := []string{
+			possiblePaths = append(possiblePaths,
 				filepath.Join(chainCtxWithDir.GetChainDataDir(), "badgerdb", "ethdb"),
 				filepath.Join(chainCtxWithDir.GetChainDataDir(), "ethdb"),
-			}
+			)
+		}
 
-			for _, ethdbPath := range possiblePaths {
-				if stat, err := os.Stat(ethdbPath); err == nil && stat.IsDir() {
-					// Check if it has substantial data (>500MB indicates migrated blockchain)
-					if dirSize := getDirSize(ethdbPath); dirSize > 500*1024*1024 {
-						fmt.Printf("DETECTED MIGRATED BADGERDB AT %s (%d MB)\n", ethdbPath, dirSize/(1024*1024))
+		for _, ethdbPath := range possiblePaths {
+			if stat, err := os.Stat(ethdbPath); err == nil && stat.IsDir() {
+				// Check if it has substantial data (>500MB indicates migrated blockchain)
+				if dirSize := getDirSize(ethdbPath); dirSize > 500*1024*1024 {
+					fmt.Printf("DETECTED MIGRATED BADGERDB AT %s (%d MB)\n", ethdbPath, dirSize/(1024*1024))
 
-						// Open the migrated database
-						badgerConfig := BadgerDatabaseConfig{
-							DataDir:       ethdbPath,
-							EnableAncient: false,
-							ReadOnly:      false,
-						}
-						if ethDB, err := NewBadgerDatabase(nil, badgerConfig); err == nil {
-							// Wrap with adapter
-							vm.ethDB = NewMigratedDataAdapter(ethDB)
-							hasMigratedData = true
-							migratedHeight = 1082780 // Known height from migration
-							fmt.Printf("Successfully opened migrated ethdb with adapter\n")
-							break
-						}
+					// Open the migrated database
+					badgerConfig := BadgerDatabaseConfig{
+						DataDir:       ethdbPath,
+						EnableAncient: false,
+						ReadOnly:      false,
+					}
+					if ethDB, err := NewBadgerDatabase(nil, badgerConfig); err == nil {
+						// Wrap with adapter
+						vm.ethDB = NewMigratedDataAdapter(ethDB)
+						hasMigratedData = true
+						migratedHeight = 1082780 // Known height from migration
+						fmt.Printf("Successfully opened migrated ethdb with adapter\n")
+						break
 					}
 				}
 			}
 		}
-		
+
 		// Also check Height key in current database
 		if !hasMigratedData {
 			if heightBytes, err := vm.ethDB.Get([]byte("Height")); err == nil && len(heightBytes) == 8 {
@@ -282,13 +456,27 @@ func (vm *VM) Initialize(
 	// Parse genesis or use default
 	var genesis *gethcore.Genesis
 
-	// When LUX_GENESIS=1, use the genesis from the imported blockchain data
+	// When LUX_GENESIS=1, load genesis from luxfi/genesis repository
 	if luxGenesis {
-		// Use the properly extracted genesis configuration from genesis package
-		// This genesis matches the imported blockchain with hash:
-		// 0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e
+		genesisPath := "/home/z/work/lux/genesis/lux-mainnet-96369/genesis.json"
+		fmt.Printf("LUX_GENESIS=1: Loading genesis from %s\n", genesisPath)
+		
+		genesisData, err := os.ReadFile(genesisPath)
+		if err != nil {
+			return fmt.Errorf("failed to read genesis file: %w", err)
+		}
+		
+		genesis = &gethcore.Genesis{}
+		if err := json.Unmarshal(genesisData, genesis); err != nil {
+			return fmt.Errorf("failed to unmarshal genesis: %w", err)
+		}
+		
+		fmt.Printf("Loaded genesis from luxfi/genesis repository\n")
+		fmt.Printf("  Chain ID: %d\n", genesis.Config.ChainID.Uint64())
+		fmt.Printf("  Genesis Hash (expected): 0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e\n")
+	} else if false { // Old hardcoded fallback (disabled)
 		genesis = &gethcore.Genesis{
-			Config: &params.ChainConfig{
+				Config: &params.ChainConfig{
 				ChainID:             big.NewInt(96369),
 				HomesteadBlock:      big.NewInt(0),
 				EIP150Block:         big.NewInt(0),
@@ -338,7 +526,7 @@ func (vm *VM) Initialize(
 			},
 		}
 
-		vm.log.Info("Using imported blockchain genesis for replay",
+		vm.log.Info("Using fallback genesis for replay",
 			"chainId", 96369,
 			"shanghaiTime", 1607144400,
 			"cancunTime", 253399622400,
@@ -629,21 +817,33 @@ func (vm *VM) Initialize(
 
 		// If we opened the ethdb directly, use that instead of the wrapped DB
 		dbToUse := vm.ethDB
-		// Extract ChainDataDir from chainCtx if available
-		ethdbPath := ""
+		// ALWAYS check chainData/C/db first for C-Chain (no blockchain ID dependency)
+		dataDir := os.Getenv("DATA_DIR")
+		if dataDir == "" {
+			dataDir = "/home/z/.luxd"
+		}
+		baseDir := filepath.Join(dataDir, "chainData", "C", "db")
+		possiblePaths := []string{
+			filepath.Join(baseDir, "badgerdb", "ethdb"),
+			filepath.Join(baseDir, "ethdb"),
+		}
+
+		// Also check blockchain-ID-specific path as fallback
 		if chainCtxWithDir, ok := vm.chainCtx.(interface{ GetChainDataDir() string }); ok {
-			// Check both possible paths
-			possiblePaths := []string{
+			possiblePaths = append(possiblePaths,
 				filepath.Join(chainCtxWithDir.GetChainDataDir(), "badgerdb", "ethdb"),
 				filepath.Join(chainCtxWithDir.GetChainDataDir(), "ethdb"),
+			)
+		}
+
+		ethdbPath := ""
+		for _, path := range possiblePaths {
+			if _, err := os.Stat(path); err == nil {
+				ethdbPath = path
+				break
 			}
-			for _, path := range possiblePaths {
-				if _, err := os.Stat(path); err == nil {
-					ethdbPath = path
-					break
-				}
-			}
-		} else {
+		}
+		if ethdbPath == "" {
 			ethdbPath = filepath.Join(".", "ethdb") // fallback
 		}
 		if ethdbPath != "" && ethdbPath != filepath.Join(".", "ethdb") {
@@ -752,9 +952,15 @@ func (vm *VM) Initialize(
 		}
 		defer replayer.Close()
 
+		// Set progress tracker
+		replayer.SetProgressTracker(vm.replayProgress)
+
 		if err := replayer.Run(); err != nil {
+			vm.replayProgress.Fail(err)
 			return fmt.Errorf("database replay failed: %w", err)
 		}
+
+		vm.replayProgress.Complete()
 
 		// After replay, force the blockchain to load the replayed blocks
 		// The replay should have written the head block hash
@@ -960,6 +1166,7 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 	ethAPI := NewEthAPI(vm.backend)
 	netAPI := &NetAPI{networkID: vm.ethConfig.NetworkId}
 	web3API := &Web3API{}
+	luxAPI := NewLuxAPI(vm)
 
 	// Register each API namespace
 	if err := rpcServer.RegisterName("eth", ethAPI); err != nil {
@@ -970,6 +1177,10 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 	}
 	if err := rpcServer.RegisterName("web3", web3API); err != nil {
 		return nil, fmt.Errorf("failed to register web3 API: %w", err)
+	}
+	// Register replay status under root namespace for easy access
+	if err := rpcServer.RegisterName("", luxAPI); err != nil {
+		return nil, fmt.Errorf("failed to register replay API: %w", err)
 	}
 
 	vm.log.Info("Registered API namespaces")

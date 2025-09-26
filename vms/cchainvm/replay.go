@@ -81,6 +81,7 @@ type UnifiedReplayer struct {
 	sourceDB     *pebble.DB
 	namespace    []byte
 	isNamespaced bool
+	progress     *ReplayProgress
 }
 
 // NewUnifiedReplayer creates a new unified database replayer
@@ -138,6 +139,11 @@ func NewUnifiedReplayer(config *UnifiedReplayConfig, targetDB ethdb.Database, bl
 	}
 
 	return replayer, nil
+}
+
+// SetProgressTracker sets the progress tracker for the replayer
+func (r *UnifiedReplayer) SetProgressTracker(progress *ReplayProgress) {
+	r.progress = progress
 }
 
 // detectDatabaseType attempts to detect if the database is namespaced or standard
@@ -306,6 +312,9 @@ func (r *UnifiedReplayer) replayNamespacedDatabase() error {
 	}
 
 	// Step 1: Collect canonical block mappings
+	if r.progress != nil {
+		r.progress.SetPhase("discovering blocks")
+	}
 	canonicalHashes, maxBlockNum, err := r.collectCanonicalMappings()
 	if err != nil {
 		return err
@@ -317,7 +326,15 @@ func (r *UnifiedReplayer) replayNamespacedDatabase() error {
 
 	log.Printf("Found %d canonical blocks, max height: %d", len(canonicalHashes), maxBlockNum)
 
+	// Initialize progress tracking
+	if r.progress != nil {
+		r.progress.Start(maxBlockNum + 1) // +1 because blocks are 0-indexed
+	}
+
 	// Step 2: Fetch headers and bodies
+	if r.progress != nil {
+		r.progress.SetPhase("fetching headers and bodies")
+	}
 	headers, bodies, err := r.fetchBlockData(canonicalHashes, maxBlockNum)
 	if err != nil {
 		return err
@@ -327,12 +344,18 @@ func (r *UnifiedReplayer) replayNamespacedDatabase() error {
 
 	// Step 3: Copy state data if requested
 	if r.config.CopyAllState || r.config.TestMode {
+		if r.progress != nil {
+			r.progress.SetPhase("copying state data")
+		}
 		if err := r.copyStateData(headers); err != nil {
 			return err
 		}
 	}
 
 	// Step 4: Replay blocks to target database
+	if r.progress != nil {
+		r.progress.SetPhase("replaying blocks")
+	}
 	replayedCount, err := r.replayBlocks(headers, bodies, maxBlockNum)
 	if err != nil {
 		return err
@@ -608,6 +631,9 @@ func (r *UnifiedReplayer) replayBlocks(headers map[uint64]*types.Header, bodies 
 		}
 
 		replayedCount++
+		if r.progress != nil {
+			r.progress.UpdateBlock(blockNum)
+		}
 		if replayedCount%10000 == 0 {
 			log.Printf("Replayed %d blocks...", replayedCount)
 		}

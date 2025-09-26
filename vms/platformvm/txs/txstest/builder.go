@@ -75,9 +75,18 @@ func (w *WalletFactory) NewWallet(keys ...*secp256k1.PrivateKey) (builder.Builde
 		// Extract networkID and LUXAssetID from context
 		networkID  = consensus.GetNetworkID(w.ctx)
 		// Get LUX asset ID from context - this should match the asset ID used in genesis
-		luxAssetID = consContext.GetLUXAssetID(w.ctx)
-		context    = newContext(w.ctx, networkID, luxAssetID, w.cfg, w.state.GetTimestamp())
+		luxAssetIDInterface = consensus.LuxAssetID(w.ctx)
+		luxAssetID ids.ID
 	)
+	
+	// Type assert the asset ID or use empty ID as fallback
+	if luxAssetIDInterface != nil {
+		if id, ok := luxAssetIDInterface.(ids.ID); ok {
+			luxAssetID = id
+		}
+	}
+	
+	context := newContext(w.ctx, networkID, luxAssetID, w.cfg, w.state.GetTimestamp())
 
 	// Debug: log the asset ID being used
 	//fmt.Printf("WalletFactory: Using LUX AssetID: %s\n", luxAssetID)
