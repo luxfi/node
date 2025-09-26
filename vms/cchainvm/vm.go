@@ -292,13 +292,6 @@ func (vm *VM) Initialize(
 	// Create a database wrapper first (will be replaced if we have migrated data)
 	vm.ethDB = WrapDatabase(vmDB)
 
-	// Check for LUX_GENESIS flag to trigger automatic replay
-	luxGenesis := os.Getenv("LUX_GENESIS") == "1"
-	if luxGenesis {
-		fmt.Printf("LUX_GENESIS=1 detected, checking for blocks to replay...\n")
-		vm.log.Info("LUX_GENESIS mode enabled for automatic block replay")
-	}
-
 	// Check environment variables for imported blockchain data
 	if importedHeight := os.Getenv("LUX_IMPORTED_HEIGHT"); importedHeight != "" {
 		if height, err := strconv.ParseUint(importedHeight, 10, 64); err == nil && height > 0 {
@@ -355,31 +348,13 @@ func (vm *VM) Initialize(
 		}
 	}
 
-	// CRITICAL: Check for LUX_GENESIS=1 environment variable for automatic replay
-	if luxGenesis && vm.replayConfig == nil {
-		// Set up automatic replay configuration when LUX_GENESIS=1 is set
-		sourcePath := "/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb"
-		if _, err := os.Stat(sourcePath); err == nil {
-			fmt.Printf("LUX_GENESIS=1: Setting up automatic replay from %s\n", sourcePath)
-			vm.replayConfig = &DatabaseReplayConfig{
-				SourcePath:               sourcePath,
-				TestLimit:                0,    // Will be set from GENESIS_BLOCK_LIMIT if available
-				ExtractGenesisFromSource: true, // Always extract genesis from source for consistency
-			}
-
-			// Check for block limit
-			if blockLimitStr := os.Getenv("GENESIS_BLOCK_LIMIT"); blockLimitStr != "" {
-				if blockLimit, err := strconv.ParseUint(blockLimitStr, 10, 64); err == nil && blockLimit > 0 {
-					vm.replayConfig.TestLimit = blockLimit
-					vm.log.Info("LUX_GENESIS: Limiting replay to blocks", "limit", blockLimit)
-				}
-			}
-
-			// Mark as having migrated data to use proper initialization path
-			hasMigratedData = true
-		} else {
-			vm.log.Warn("LUX_GENESIS=1 set but source database not found", "path", sourcePath)
-		}
+	// Check if replay config is set via CLI flags (--genesis-db)
+	if vm.replayConfig != nil {
+		vm.log.Info("Genesis database replay configured",
+			"sourcePath", vm.replayConfig.SourcePath,
+			"blockLimit", vm.replayConfig.TestLimit,
+		)
+		hasMigratedData = true
 	}
 
 	// Fallback: Check for migrated blockchain data in database
@@ -456,25 +431,7 @@ func (vm *VM) Initialize(
 	// Parse genesis or use default
 	var genesis *gethcore.Genesis
 
-	// When LUX_GENESIS=1, load genesis from luxfi/genesis repository
-	if luxGenesis {
-		genesisPath := "/home/z/work/lux/genesis/lux-mainnet-96369/genesis.json"
-		fmt.Printf("LUX_GENESIS=1: Loading genesis from %s\n", genesisPath)
-		
-		genesisData, err := os.ReadFile(genesisPath)
-		if err != nil {
-			return fmt.Errorf("failed to read genesis file: %w", err)
-		}
-		
-		genesis = &gethcore.Genesis{}
-		if err := json.Unmarshal(genesisData, genesis); err != nil {
-			return fmt.Errorf("failed to unmarshal genesis: %w", err)
-		}
-		
-		fmt.Printf("Loaded genesis from luxfi/genesis repository\n")
-		fmt.Printf("  Chain ID: %d\n", genesis.Config.ChainID.Uint64())
-		fmt.Printf("  Genesis Hash (expected): 0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e\n")
-	} else if false { // Old hardcoded fallback (disabled)
+	if false { // Old hardcoded fallback (disabled)
 		genesis = &gethcore.Genesis{
 				Config: &params.ChainConfig{
 				ChainID:             big.NewInt(96369),
@@ -581,14 +538,6 @@ func (vm *VM) Initialize(
 					// Create replay config
 					replayConfig := &DatabaseReplayConfig{
 						SourcePath: dbPath,
-					}
-
-					// Check for block limit
-					if blockLimitStr := os.Getenv("GENESIS_BLOCK_LIMIT"); blockLimitStr != "" {
-						if blockLimit, err := strconv.ParseUint(blockLimitStr, 10, 64); err == nil && blockLimit > 0 {
-							replayConfig.TestLimit = blockLimit
-							vm.log.Info("Limiting replay to blocks", "limit", blockLimit)
-						}
 					}
 
 					// After VM is initialized, we'll perform the replay
@@ -1072,33 +1021,6 @@ func (vm *VM) Initialize(
 			"genesisHash", vm.genesisHash.Hex(),
 			"lastAccepted", vm.lastAccepted.String(),
 		)
-
-		// If LUX_GENESIS=1 and we're at genesis, check for blocks to replay
-		if luxGenesis && (currentBlock == nil || (currentBlock != nil && currentBlock.Number.Uint64() == 0)) {
-			vm.log.Info("LUX_GENESIS=1 detected at genesis, checking for blocks to replay...")
-
-			// Before replaying, we need to ensure our genesis matches the imported data
-			// The imported blockchain has genesis hash: 0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e
-			// But our current genesis has a different hash
-			vm.log.Info("WARNING: Genesis mismatch detected",
-				"currentGenesisHash", vm.genesisHash.Hex(),
-				"expectedGenesisHash", "0x3f4fa2a0b0ce089f52bf0ae9199c75ffdd76ecafc987794050cb0d286f1ec61e",
-			)
-
-			// Blockchain replay is now handled by unified replay system above
-			// This old code path is deprecated
-			{
-				// Keep the else block structure intact
-				currentBlock = vm.blockChain.CurrentBlock()
-				if currentBlock != nil && currentBlock.Number.Uint64() > 0 {
-					vm.lastAccepted = ids.ID(currentBlock.Hash())
-					vm.log.Info("Successfully replayed blockchain data",
-						"currentHash", currentBlock.Hash().Hex(),
-						"currentHeight", currentBlock.Number.Uint64(),
-					)
-				}
-			}
-		}
 	}
 
 	// Log database statistics
