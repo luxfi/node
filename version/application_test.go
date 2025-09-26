@@ -20,7 +20,7 @@ func TestNewDefaultApplication(t *testing.T) {
 		Patch: 3,
 	}
 
-	require.Equal("node/1.2.3", v.String())
+	require.Equal("luxd/1.2.3", v.String())
 	require.NoError(v.Compatible(v))
 	require.False(v.Before(v))
 }
