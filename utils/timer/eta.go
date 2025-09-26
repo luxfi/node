@@ -50,9 +50,14 @@ func (e *EtaTracker) Update(progress, total uint64) {
 	// Simple implementation - just track the time
 }
 
-// AddSample adds a sample to the ETA tracker
-func (e *EtaTracker) AddSample(progress, total uint64) {
-	// Simple implementation - same as Update
+// AddSample adds a sample to the ETA tracker and returns ETA pointer and progress percentage
+func (e *EtaTracker) AddSample(progress, total uint64, sampleTime time.Time) (*time.Duration, float64) {
+	if total == 0 {
+		return nil, 0
+	}
+	eta := EstimateETA(e.startTime, progress, total)
+	progressPercent := float64(progress) / float64(total) * 100
+	return &eta, progressPercent
 }
 
 // ETA returns the estimated time remaining
