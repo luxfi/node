@@ -23,7 +23,6 @@ import (
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/message"
 	subnets "github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network/dialer"
@@ -270,14 +269,8 @@ func NewNetwork(
 
 	// Track all default bootstrappers to ensure their current IPs are gossiped
 	// like validator IPs.
-	for _, bootstrapper := range genesis.GetBootstrappers(config.NetworkID) {
-		ipTracker.ManuallyGossip(bootstrapper.ID)
-	}
-	// Track all recent validators to optimistically connect to them before the
-	// P-chain has finished syncing.
-	for nodeID := range genesis.GetValidators(config.NetworkID) {
-		ipTracker.ManuallyTrack(nodeID)
-	}
+	// Note: For single-validator networks, no bootstrappers or validators are needed from genesis
+	// The node will discover peers through other mechanisms
 
 	peerConfig := &peer.Config{
 		ReadBufferSize:  config.PeerReadBufferSize,

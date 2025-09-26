@@ -362,3 +362,18 @@ func (api *Web3API) ClientVersion() string {
 func (api *Web3API) Sha3(input hexutil.Bytes) hexutil.Bytes {
 	return crypto.Keccak256(input)
 }
+
+// LuxAPI provides Lux-specific RPC API
+type LuxAPI struct {
+	vm *VM
+}
+
+// NewLuxAPI creates a new Lux RPC API
+func NewLuxAPI(vm *VM) *LuxAPI {
+	return &LuxAPI{vm: vm}
+}
+
+// ReplayStatus returns the status of database replay
+func (api *LuxAPI) ReplayStatus() map[string]interface{} {
+	return api.vm.replayProgress.GetStatus()
+}

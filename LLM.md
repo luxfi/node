@@ -22,6 +22,17 @@ This is the Lux blockchain node implementation, a fork of Avalanche with modific
 
 ## Current State (as of last work session)
 
+### SubnetEVM Genesis Support (2025-09-25)
+- **Added SubnetEVM compatibility to coreth/geth**
+  - Extended `core.Genesis` struct to include SubnetEVM fields (AirdropHash, AirdropAmount)
+  - Added `params.ChainConfig` support for SubnetEVM-specific configurations:
+    - FeeConfig: Dynamic fee configuration
+    - WarpConfig: Warp messaging support
+    - SubnetEVMTimestamp: Network upgrade timestamps
+    - Durango, Etna, Fortuna upgrades
+  - Successfully loads both standard Ethereum and SubnetEVM genesis formats
+  - Tested with chain ID 96369 genesis files
+
 ### Test Coverage Status
 - **Overall Pass Rate**: ~80% (estimated)
 - Major areas fixed:
