@@ -6,7 +6,7 @@ package appsender
 import (
 	"context"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/utils/set"
 

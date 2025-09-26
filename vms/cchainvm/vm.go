@@ -292,6 +292,14 @@ func (vm *VM) Initialize(
 	// Create a database wrapper first (will be replaced if we have migrated data)
 	vm.ethDB = WrapDatabase(vmDB)
 
+	// Check for REPLAY environment variable to trigger database replay
+	if replayPath := os.Getenv("LUX_REPLAY_DB"); replayPath != "" {
+		vm.log.Info("Replay mode enabled via environment variable", "source", replayPath)
+		vm.replayConfig = &DatabaseReplayConfig{
+			SourcePath: replayPath,
+		}
+	}
+
 	// Check environment variables for imported blockchain data
 	if importedHeight := os.Getenv("LUX_IMPORTED_HEIGHT"); importedHeight != "" {
 		if height, err := strconv.ParseUint(importedHeight, 10, 64); err == nil && height > 0 {
@@ -569,6 +577,24 @@ func (vm *VM) Initialize(
 		// Set terminal total difficulty for PoS transition
 		if genesis != nil && genesis.Config != nil && genesis.Config.TerminalTotalDifficulty == nil {
 			genesis.Config.TerminalTotalDifficulty = common.Big0
+		}
+		
+		// CRITICAL FIX: Add BlobSchedule for Cancun fork if CancunTime is set
+		if genesis != nil && genesis.Config != nil && genesis.Config.CancunTime != nil {
+			if genesis.Config.BlobScheduleConfig == nil {
+				genesis.Config.BlobScheduleConfig = &params.BlobScheduleConfig{}
+			}
+			if genesis.Config.BlobScheduleConfig.Cancun == nil {
+				genesis.Config.BlobScheduleConfig.Cancun = &params.BlobConfig{}
+			}
+			// Always set these values even if struct exists (might have zeros from JSON unmarshal)
+			if genesis.Config.BlobScheduleConfig.Cancun.UpdateFraction == 0 {
+				genesis.Config.BlobScheduleConfig.Cancun.Target = 3
+				genesis.Config.BlobScheduleConfig.Cancun.Max = 6
+				genesis.Config.BlobScheduleConfig.Cancun.UpdateFraction = 3338477
+				vm.log.Info("Fixed BlobSchedule configuration for Cancun fork", 
+					"target", 3, "max", 6, "updateFraction", 3338477)
+			}
 		}
 	} else {
 		// For network 96369, use genesis that matches migrated data
@@ -895,19 +921,35 @@ func (vm *VM) Initialize(
 			fmt.Printf("TEST MODE: Limiting replay to %d blocks\n", config.TestLimit)
 		}
 
+		vm.log.Info("Creating unified replayer", "sourcePath", config.SourcePath)
+		fmt.Printf("DEBUG: About to create replayer with source: %s\n", config.SourcePath)
+		
 		replayer, err := NewUnifiedReplayer(config, vm.ethDB, vm.blockChain)
 		if err != nil {
+			vm.log.Error("Failed to create replayer", "error", err)
+			fmt.Printf("ERROR creating replayer: %v\n", err)
 			return fmt.Errorf("failed to create replayer: %w", err)
 		}
+		
+		vm.log.Info("Replayer created successfully")
+		fmt.Printf("DEBUG: Replayer created, about to run\n")
 		defer replayer.Close()
 
 		// Set progress tracker
 		replayer.SetProgressTracker(vm.replayProgress)
 
+		vm.log.Info("Starting replayer.Run()")
+		fmt.Printf("DEBUG: About to call replayer.Run()\n")
+		
 		if err := replayer.Run(); err != nil {
+			vm.log.Error("Replayer.Run() failed", "error", err)
+			fmt.Printf("ERROR in replayer.Run(): %v\n", err)
 			vm.replayProgress.Fail(err)
 			return fmt.Errorf("database replay failed: %w", err)
 		}
+		
+		vm.log.Info("Replayer completed successfully")
+		fmt.Printf("DEBUG: Replayer.Run() completed\n")
 
 		vm.replayProgress.Complete()
 
@@ -1079,31 +1121,53 @@ func (vm *VM) Version(ctx context.Context) (string, error) {
 
 // CreateHandlers implements the block.ChainVM interface
 func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
+	vm.log.Info("CreateHandlers called")
+	
+	defer func() {
+		if r := recover(); r != nil {
+			vm.log.Error("CreateHandlers panicked", "panic", r)
+		}
+	}()
+	
+	if vm.backend == nil {
+		vm.log.Error("Backend is nil in CreateHandlers")
+		return nil, fmt.Errorf("backend not initialized")
+	}
+	
 	handlers := make(map[string]http.Handler)
 
 	// Create RPC server and register APIs
 	rpcServer := rpc.NewServer()
 
 	// Manually register our minimal APIs to avoid any auto-start issues
+	vm.log.Info("Creating API instances")
 	ethAPI := NewEthAPI(vm.backend)
 	netAPI := &NetAPI{networkID: vm.ethConfig.NetworkId}
 	web3API := &Web3API{}
 	luxAPI := NewLuxAPI(vm)
 
 	// Register each API namespace
+	vm.log.Info("Registering eth API")
 	if err := rpcServer.RegisterName("eth", ethAPI); err != nil {
 		return nil, fmt.Errorf("failed to register eth API: %w", err)
 	}
+	vm.log.Info("Registered eth API")
+	vm.log.Info("Registering net API")
 	if err := rpcServer.RegisterName("net", netAPI); err != nil {
 		return nil, fmt.Errorf("failed to register net API: %w", err)
 	}
+	vm.log.Info("Registering web3 API")
 	if err := rpcServer.RegisterName("web3", web3API); err != nil {
 		return nil, fmt.Errorf("failed to register web3 API: %w", err)
 	}
-	// Register replay status under root namespace for easy access
-	if err := rpcServer.RegisterName("", luxAPI); err != nil {
-		return nil, fmt.Errorf("failed to register replay API: %w", err)
+	vm.log.Info("Registering lux API (replayStatus)")
+	// Register under "lux" namespace - accessible as lux_replayStatus
+	// NOTE: User wanted just "replayStatus" but RPC requires a namespace
+	if err := rpcServer.RegisterName("lux", luxAPI); err != nil {
+		vm.log.Error("Failed to register lux API", "error", err)
+		return nil, fmt.Errorf("failed to register lux API: %w", err)
 	}
+	vm.log.Info("Registered lux API")
 
 	vm.log.Info("Registered API namespaces")
 
@@ -1114,7 +1178,7 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 	handlers["/rpc"] = httpHandler
 	handlers["/"] = httpHandler
 
-	vm.log.Info("Created RPC handlers")
+	vm.log.Info("Created RPC handlers", "count", len(handlers))
 
 	return handlers, nil
 }

@@ -3,7 +3,7 @@
 
 package snowball
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 var (
 	SnowballFactory  Factory = snowballFactory{}

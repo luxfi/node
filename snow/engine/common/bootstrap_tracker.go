@@ -3,7 +3,7 @@
 
 package common
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 // BootstrapTracker describes the standard interface for tracking the status of
 // a subnet bootstrapping

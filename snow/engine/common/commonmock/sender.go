@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	common "github.com/luxfi/node/snow/engine/common"
 	set "github.com/luxfi/node/utils/set"
 	gomock "go.uber.org/mock/gomock"

@@ -12,10 +12,10 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/ava-labs/simplex"
+	"github.com/luxfi/bft"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/utils/logging"

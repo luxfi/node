@@ -29,7 +29,7 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/db/rpcdb"
-	"github.com/luxfi/node/ids/galiasreader"
+	"github.com/luxfi/node/internal/ids/galiasreader"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"

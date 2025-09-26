@@ -4,7 +4,7 @@
 package fxs
 
 import (
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/components/avax"
 	"github.com/luxfi/node/vms/components/verify"

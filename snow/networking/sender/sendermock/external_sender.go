@@ -12,7 +12,7 @@ package sendermock
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	message "github.com/luxfi/node/message"
 	common "github.com/luxfi/node/snow/engine/common"
 	subnets "github.com/luxfi/node/subnets"

@@ -6,7 +6,7 @@ package snowball
 import (
 	"fmt"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 func newNnarySlush(choice ids.ID) nnarySlush {

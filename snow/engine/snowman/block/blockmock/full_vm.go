@@ -15,8 +15,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	database "github.com/luxfi/node/database"
-	ids "github.com/luxfi/node/ids"
+	database "github.com/luxfi/database"
+	ids "github.com/luxfi/ids"
 	snow "github.com/luxfi/node/snow"
 	snowman "github.com/luxfi/node/snow/consensus/snowman"
 	common "github.com/luxfi/node/snow/engine/common"

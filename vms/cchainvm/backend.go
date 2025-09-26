@@ -486,6 +486,20 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 				// Create trie database for genesis initialization
 				tdb := triedb.NewDatabase(db, triedb.HashDefaults)
 
+				// DEBUG: Print genesis config before setup
+				if genesis != nil && genesis.Config != nil {
+					fmt.Printf("DEBUG: Genesis ChainID=%v\n", genesis.Config.ChainID)
+					fmt.Printf("DEBUG: Genesis CancunTime=%v\n", genesis.Config.CancunTime)
+					if genesis.Config.BlobScheduleConfig != nil && genesis.Config.BlobScheduleConfig.Cancun != nil {
+						fmt.Printf("DEBUG: BlobSchedule Cancun: Target=%d Max=%d UpdateFraction=%d\n",
+							genesis.Config.BlobScheduleConfig.Cancun.Target,
+							genesis.Config.BlobScheduleConfig.Cancun.Max,
+							genesis.Config.BlobScheduleConfig.Cancun.UpdateFraction)
+					} else {
+						fmt.Printf("DEBUG: BlobScheduleConfig is NIL or Cancun is NIL\n")
+					}
+				}
+
 				// Initialize genesis block normally
 				_, genesisHash, _, err := gethcore.SetupGenesisBlockWithOverride(db, tdb, genesis, nil)
 				if err != nil {

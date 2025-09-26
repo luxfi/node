@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ava-labs/simplex"
+	"github.com/luxfi/bft"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/snow/consensus/snowman"

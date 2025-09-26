@@ -6,7 +6,7 @@ package vertex
 import (
 	"context"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow/consensus/avalanche"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/hashing"

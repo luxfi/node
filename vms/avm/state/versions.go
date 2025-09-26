@@ -3,7 +3,7 @@
 
 package state
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 type Versions interface {
 	// GetState returns the state of the chain after [blkID] has been accepted.

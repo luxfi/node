@@ -7,13 +7,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ava-labs/coreth/ethclient"
-	"github.com/ava-labs/coreth/plugin/evm/atomic"
-	"github.com/ava-labs/coreth/plugin/evm/client"
+	"github.com/luxfi/geth/ethclient"
+	"github.com/luxfi/evm/plugin/evm/client"
 
 	"github.com/luxfi/node/api/info"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/rpc"
 	"github.com/luxfi/node/utils/set"
@@ -28,7 +28,7 @@ import (
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	xbuilder "github.com/luxfi/node/wallet/chain/x/builder"
 	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
-	ethcommon "github.com/ava-labs/libevm/common"
+	ethcommon "github.com/luxfi/geth/common"
 )
 
 const (
