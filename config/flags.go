@@ -97,7 +97,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(NetworkNameKey, constants.MainnetName, "Network ID this node will connect to")
 	fs.Bool(MainnetKey, false, "Connect to Lux mainnet (network ID 96369)")
 	fs.Bool(TestnetKey, false, "Connect to Lux testnet (network ID 96368)")
-	fs.Bool(LocalnetKey, false, "Connect to local network (network ID 31337)")
+	fs.Bool(LocalnetKey, false, "Connect to local network (network ID 1337)")
 
 	// LP flagging
 	fs.IntSlice(LPSupportKey, nil, "LPs to support adoption")
