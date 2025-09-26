@@ -37,7 +37,7 @@ var (
 	testContext = &builder.Context{
 		NetworkID:        constants.UnitTestID,
 		BlockchainID:     xChainID,
-		LUXAssetID:       luxAssetID,
+		XAssetID:       luxAssetID,
 		BaseTxFee:        units.MicroLux,
 		CreateAssetTxFee: 99 * units.MilliLux,
 	}

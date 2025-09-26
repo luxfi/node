@@ -1295,10 +1295,19 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	// 		return node.Config{}, err
 	// 	}
 	//
-	// Network ID
-	nodeConfig.NetworkID, err = constants.NetworkID(v.GetString(NetworkNameKey))
-	if err != nil {
-		return node.Config{}, err
+	// Network ID - handle shorthand boolean flags
+	if v.GetBool(MainnetKey) {
+		nodeConfig.NetworkID = constants.LuxMainnetID
+	} else if v.GetBool(TestnetKey) {
+		nodeConfig.NetworkID = constants.LuxTestnetID
+	} else if v.GetBool(LocalnetKey) {
+		nodeConfig.NetworkID = constants.LocalID
+	} else {
+		networkName := v.GetString(NetworkNameKey)
+		nodeConfig.NetworkID, err = constants.NetworkID(networkName)
+		if err != nil {
+			return node.Config{}, err
+		}
 	}
 
 	// Database

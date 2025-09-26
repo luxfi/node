@@ -166,11 +166,11 @@ func newEnvironment(t *testing.T, f fork) *environment {
 	baseCtx = consensus.WithIDs(baseCtx, consensus.IDs{
 		NetworkID:  constants.UnitTestID,
 		ChainID:    constants.PlatformChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	ctx := testcontext.New(baseCtx)
 	ctx.ChainID = constants.PlatformChainID
-	ctx.LUXAssetID = luxAssetID
+	ctx.XAssetID = luxAssetID
 	m := atomic.NewMemory(baseDB)
 	msm := &mutableSharedMemory{
 		SharedMemory: m.NewSharedMemory(ctx.ChainID),
@@ -451,7 +451,7 @@ func buildGenesisTest(ctx *testcontext.Context) []byte {
 
 	buildGenesisArgs := api.BuildGenesisArgs{
 		NetworkID:     json.Uint32(constants.UnitTestID),
-		LuxAssetID:    ctx.LUXAssetID,
+		LuxAssetID:    ctx.XAssetID,
 		UTXOs:         genesisUTXOs,
 		Validators:    genesisValidators,
 		Chains:        nil,

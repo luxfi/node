@@ -8,15 +8,11 @@ import (
 	"net/http"
 	"time"
 
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/version"
 )
-
-// Ensure testVM implements common.VM
-var _ common.VM = (*testVM)(nil)
 
 // testVM is a test VM implementation for testing the registry
 type testVM struct {
@@ -30,18 +26,19 @@ func newTestVM() *testVM {
 
 func (vm *testVM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensuscontext.Context,
 	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	msgChan chan<- interface{},
+	fxs []interface{},
+	appSender interface{},
 ) error {
 	return nil
 }
 
-func (vm *testVM) SetState(ctx context.Context, state snow.State) error {
+func (vm *testVM) SetState(ctx context.Context, state uint8) error {
 	return nil
 }
 
@@ -75,17 +72,11 @@ func (vm *testVM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 	return nil, nil
 }
 
-func (vm *testVM) WaitForEvent(ctx context.Context) (common.Message, error) {
-	return common.PendingTxs, nil
-}
-
 func (vm *testVM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
-	// No-op implementation for test VM
 	return nil
 }
 
 func (vm *testVM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
-	// No-op implementation for test VM
 	return nil
 }
 
@@ -101,7 +92,7 @@ func (vm *testVM) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID 
 	return nil
 }
 
-func (vm *testVM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+func (vm *testVM) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
 	// No-op implementation for test VM
 	return nil
 }

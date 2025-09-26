@@ -3,7 +3,7 @@
 This package supports testing with
 [Antithesis](https://antithesis.com/docs/introduction/how_antithesis_works),
 a SaaS offering that enables deployment of distributed systems (such
-as Avalanche) to a deterministic and simulated environment that
+as Lux) to a deterministic and simulated environment that
 enables discovery and reproduction of anomalous behavior.
 
 ## Package details
@@ -17,7 +17,7 @@ enables discovery and reproduction of anomalous behavior.
 | config.go                         | Defines common flags for the workload binary.                                      |
 | init_db.go                        | Initializes initial db state for subnet testing.                                   |
 | node_health.go                    | Helper to check node health.                                                       |
-| avalanchego/                      | Defines an antithesis test setup for avalanchego's primary chains.                 |
+| luxgo/                      | Defines an antithesis test setup for luxgo's primary chains.                 |
 | xsvm/                             | Defines an antithesis test setup for the xsvm VM.                                  |
 
 ## Instrumentation
@@ -32,7 +32,7 @@ on Macs, a local build will not be instrumented.
 
 ## Defining a new test setup
 
-When defining a new test setup - whether in the avalanchego repo or
+When defining a new test setup - whether in the luxgo repo or
 for a VM in another repo - following the example of an existing test
 setup is suggested. The following table enumerates the files defining
 a test setup:
@@ -57,9 +57,9 @@ In addition, github workflows are suggested to ensure
 To simplify building instrumented (for running in CI) and
 non-instrumented (for running locally) versions of the workload and
 node images, a common builder image is used. If on an amd64 host,
-`tests/antithesis/avalanchego/Dockerfile.builder-instrumented` is used
+`tests/antithesis/luxgo/Dockerfile.builder-instrumented` is used
 to create an instrumented builder. On an arm64 host,
-`tests/antithesis/avalanchego/Dockerfile.builder-uninstrumented` is
+`tests/antithesis/luxgo/Dockerfile.builder-uninstrumented` is
 used to create an uninstrumented builder. In both cases, the builder
 image is based on the default golang image and will include the source
 code necessary to build the node and workload binaries. The
@@ -71,11 +71,11 @@ test setup.
 
 ### Running a workload with an existing network
 
-The workload of the 'avalanchego' test setup can be invoked against an
+The workload of the 'luxgo' test setup can be invoked against an
 arbitrary network:
 
 ```bash
-$ AVAWL_URIS="http://10.0.20.3:9650 http://10.0.20.4:9650" go run ./tests/antithesis/avalanchego
+$ AVAWL_URIS="http://10.0.20.3:9650 http://10.0.20.4:9650" go run ./tests/antithesis/luxgo
 ```
 
 The workload of a subnet test setup like 'xsvm' additionally requires
@@ -89,11 +89,11 @@ $ AVAWL_URIS=... CHAIN_IDS="2S9ypz...AzMj9" go run ./tests/antithesis/xsvm
 ### Running a workload with a tmpnet network
 
 Just like with e2e tests, running an antithesis workload against a
-tmpnet network requires specifying an avalanchego path (either as an
+tmpnet network requires specifying an luxgo path (either as an
 argument or an env var):
 
 ```bash
-$ go run ./tests/antithesis/avalanchego --avalanchego-path=/path/to/avalanchego
+$ go run ./tests/antithesis/luxgo --luxgo-path=/path/to/luxgo
 ```
 
 All tmpnet flags are supported (e.g. `--reuse-network`,
@@ -139,7 +139,7 @@ When making changes to a test setup, it may be useful to manually
 trigger an Antithesis test run outside of the normal schedule. This
 can be performed against master or an arbitrary branch:
 
- - Navigate to the ['Actions' tab of the avalanchego
+ - Navigate to the ['Actions' tab of the luxgo
    repo](https://github.com/luxfi/node/actions).
  - Select the [Publish Antithesis
    Images](https://github.com/luxfi/node/actions/workflows/publish_antithesis_images.yml)
@@ -151,8 +151,8 @@ can be performed against master or an arbitrary branch:
    of the scheduled runs.
  - Wait for the publication job to complete successfully so that the
    images are available to be tested against.
- - Select one of the [Trigger Antithesis Avalanchego
-   Setup](https://github.com/luxfi/node/actions/workflows/trigger-antithesis-avalanchego.yml)
+ - Select one of the [Trigger Antithesis Luxgo
+   Setup](https://github.com/luxfi/node/actions/workflows/trigger-antithesis-luxgo.yml)
    or [Trigger Antithesis XSVM
    Setup](https://github.com/luxfi/node/actions/workflows/trigger-antithesis-xsvm.yml)
    workflows on the left.

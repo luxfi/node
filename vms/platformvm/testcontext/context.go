@@ -24,7 +24,7 @@ type Context struct {
 	NodeID       ids.NodeID
 	XChainID     ids.ID
 	CChainID     ids.ID
-	LUXAssetID   ids.ID
+	XAssetID   ids.ID
 	Log          log.Logger
 	Lock         *sync.RWMutex
 	SharedMemory atomic.SharedMemory
@@ -46,6 +46,6 @@ func (c *Context) WithIDs(ids consensus.IDs) *Context {
 	c.ChainID = ids.ChainID
 	c.NetID = ids.NetID
 	c.NodeID = ids.NodeID
-	c.LUXAssetID = ids.LUXAssetID
+	c.XAssetID = ids.XAssetID
 	return c
 }

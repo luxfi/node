@@ -332,7 +332,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("couldn't parse xvm genesis reply: %w", err)
 	}
-	luxAssetID, err := LUXAssetID(bytes)
+	luxAssetID, err := XAssetID(bytes)
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("couldn't generate LUX asset ID: %w", err)
 	}
@@ -558,7 +558,7 @@ func VMGenesis(genesisBytes []byte, vmID ids.ID) (*pchaintxs.Tx, error) {
 	return nil, fmt.Errorf("couldn't find blockchain with VM ID %s", vmID)
 }
 
-func LUXAssetID(xvmGenesisBytes []byte) (ids.ID, error) {
+func XAssetID(xvmGenesisBytes []byte) (ids.ID, error) {
 	parser, err := xchaintxs.NewParser(
 		[]fxs.Fx{
 			&secp256k1fx.Fx{},

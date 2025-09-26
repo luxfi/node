@@ -24,6 +24,18 @@ const (
 	LuxMainnetID uint32 = 96369
 	LuxTestnetID uint32 = 96368
 
+	// Zoo network IDs
+	ZooMainnetID uint32 = 200200
+	ZooTestnetID uint32 = 200201
+
+	// SPC network IDs
+	SPCMainnetID uint32 = 36911
+	SPCTestnetID uint32 = 36912
+
+	// Hanzo network IDs
+	HanzoMainnetID uint32 = 36963
+	HanzoTestnetID uint32 = 36962
+
 	LocalName    = "local"
 	MainnetName  = "mainnet"
 	TestnetName  = "testnet"
@@ -42,12 +54,18 @@ var (
 	PlatformChainID  = ids.Empty
 
 	NetworkIDToNetworkName = map[uint32]string{
-		LocalID:      LocalName,
-		MainnetID:    MainnetName,
-		TestnetID:    TestnetName,
-		UnitTestID:   UnitTestName,
-		LuxMainnetID: MainnetName, // Also map Lux IDs to the same names
-		LuxTestnetID: TestnetName,
+		LocalID:        LocalName,
+		MainnetID:      MainnetName,
+		TestnetID:      TestnetName,
+		UnitTestID:     UnitTestName,
+		LuxMainnetID:   MainnetName,
+		LuxTestnetID:   TestnetName,
+		ZooMainnetID:   "zoo-mainnet",
+		ZooTestnetID:   "zoo-testnet",
+		SPCMainnetID:   "spc-mainnet",
+		SPCTestnetID:   "spc-testnet",
+		HanzoMainnetID: "hanzo-mainnet",
+		HanzoTestnetID: "hanzo-testnet",
 	}
 	NetworkNameToNetworkID = map[string]uint32{
 		LocalName:    LocalID,
@@ -57,12 +75,18 @@ var (
 	}
 
 	NetworkIDToHRP = map[uint32]string{
-		LocalID:      LocalHRP,
-		MainnetID:    MainnetHRP,
-		TestnetID:    TestnetHRP,
-		UnitTestID:   UnitTestHRP,
-		LuxMainnetID: MainnetHRP, // Lux uses same HRP
-		LuxTestnetID: TestnetHRP,
+		LocalID:        LocalHRP,
+		MainnetID:      MainnetHRP,
+		TestnetID:      TestnetHRP,
+		UnitTestID:     UnitTestHRP,
+		LuxMainnetID:   MainnetHRP,
+		LuxTestnetID:   TestnetHRP,
+		ZooMainnetID:   "zoo",
+		ZooTestnetID:   "zoo",
+		SPCMainnetID:   "spc",
+		SPCTestnetID:   "spc",
+		HanzoMainnetID: "hanzo",
+		HanzoTestnetID: "hanzo",
 	}
 	NetworkHRPToNetworkID = map[string]uint32{
 		LocalHRP:    LocalID,

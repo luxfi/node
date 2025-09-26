@@ -85,7 +85,7 @@ func main() {
 			{
 				NodeID:                nodeID.Bytes(),
 				Weight:                weight,
-				Balance:               units.Avax,
+				Balance:               units.Lux,
 				Signer:                *nodePoP,
 				RemainingBalanceOwner: message.PChainOwner{},
 				DeactivationOwner:     message.PChainOwner{},

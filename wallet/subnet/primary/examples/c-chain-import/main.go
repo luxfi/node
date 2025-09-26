@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary"
 )
@@ -48,7 +48,7 @@ func main() {
 	// Pull out useful constants to use when issuing transactions.
 	cContext := cWallet.Builder().Context()
 	cChainID := cContext.BlockchainID
-	avaxAssetID := cContext.AVAXAssetID
+	avaxAssetID := cContext.LUXAssetID
 	owner := secp256k1fx.OutputOwners{
 		Threshold: 1,
 		Addrs: []ids.ShortID{
@@ -60,7 +60,7 @@ func main() {
 	exportTx, err := pWallet.IssueExportTx(cChainID, []*avax.TransferableOutput{{
 		Asset: avax.Asset{ID: avaxAssetID},
 		Out: &secp256k1fx.TransferOutput{
-			Amt:          units.Avax,
+			Amt:          units.Lux,
 			OutputOwners: owner,
 		},
 	}})

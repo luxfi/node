@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/utils/rpc"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/xvm"
-	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/c"
@@ -56,7 +56,7 @@ type UTXOClient interface {
 	) ([][]byte, ids.ShortID, ids.ID, error)
 }
 
-type AVAXState struct {
+type LUXState struct {
 	PClient *platformvm.Client
 	PCTX    *pbuilder.Context
 	XClient *xvm.Client
@@ -71,7 +71,7 @@ func FetchState(
 	uri string,
 	addrs set.Set[ids.ShortID],
 ) (
-	*AVAXState,
+	*LUXState,
 	error,
 ) {
 	infoClient := info.NewClient(uri)
@@ -133,7 +133,7 @@ func FetchState(
 			}
 		}
 	}
-	return &AVAXState{
+	return &LUXState{
 		PClient: pClient,
 		PCTX:    pCTX,
 		XClient: xClient,

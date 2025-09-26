@@ -19,7 +19,7 @@ import (
 
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 func TestNew_Params(t *testing.T) {
@@ -164,7 +164,7 @@ func TestNew_IndexFileErrors(t *testing.T) {
 			}
 
 			config := DefaultConfig().WithIndexDir(indexDir).WithDataDir(dataDir)
-			_, err := New(config, logging.NoLog{})
+			_, err := New(config, log.NoLog{})
 			require.Contains(t, err.Error(), tt.wantErrMsg)
 		})
 	}
@@ -187,7 +187,7 @@ func TestNew_IndexFileConfigPrecedence(t *testing.T) {
 	// set up db
 	tempDir := t.TempDir()
 	initialConfig := DefaultConfig().WithDir(tempDir).WithMinimumHeight(100).WithMaxDataFileSize(1024 * 1024)
-	db, err := New(initialConfig, logging.NoLog{})
+	db, err := New(initialConfig, log.NoLog{})
 	require.NoError(t, err)
 	require.NotNil(t, db)
 
@@ -201,7 +201,7 @@ func TestNew_IndexFileConfigPrecedence(t *testing.T) {
 
 	// Reopen with different config that has minimum height of 200 and smaller max data file size
 	differentConfig := DefaultConfig().WithDir(tempDir).WithMinimumHeight(200).WithMaxDataFileSize(512 * 1024)
-	db2, err := New(differentConfig, logging.NoLog{})
+	db2, err := New(differentConfig, log.NoLog{})
 	require.NoError(t, err)
 	require.NotNil(t, db2)
 	defer db2.Close()

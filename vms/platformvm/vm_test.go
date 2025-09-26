@@ -258,7 +258,7 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 	vm.Clock().Set(latestForkTime)
 	ctx := testcontext.New(context.Background())
 	ctx.ChainID = consensustest.PChainID
-	ctx.LUXAssetID = ids.GenerateTestID()
+	ctx.XAssetID = ids.GenerateTestID()
 
 	m := atomic.NewMemory(atomicDB)
 	msm := &mutableSharedMemory{
@@ -268,7 +268,7 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
-	_, genesisBytes := defaultGenesis(t, ctx.LUXAssetID)
+	_, genesisBytes := defaultGenesis(t, ctx.XAssetID)
 	// Create a simple app sender mock
 	appSender := &testAppSender{}
 
@@ -282,8 +282,8 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 		PublicKey:   nil,
 		XChainID:    ctx.XChainID,
 		CChainID:    ctx.CChainID,
-		AVAXAssetID: ctx.LUXAssetID,
-		LUXAssetID:  ctx.LUXAssetID,
+		XAssetID: ctx.XAssetID,
+		XAssetID:  ctx.XAssetID,
 		StartTime:   time.Now(),
 	}
 	chainCtx := &linearblock.ChainContext{
@@ -322,7 +322,7 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 		ctx.SharedMemory,
 		&vm.Config,
 		vm.state,
-		ctx.LUXAssetID,
+		ctx.XAssetID,
 	)
 
 	// Create a net and store it in testSubnet1
@@ -335,7 +335,7 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 	t.Logf("keys[0] address: %s", addr)
 	utxoIDs, _ := vm.state.UTXOIDs(addr.Bytes(), ids.Empty, math.MaxInt32)
 	t.Logf("Available UTXOs for keys[0]: %d", len(utxoIDs))
-	t.Logf("LUX AssetID: %s", ctx.LUXAssetID)
+	t.Logf("LUX AssetID: %s", ctx.XAssetID)
 	t.Logf("CreateNetTxFee: %d", vm.Config.StaticFeeConfig.CreateNetTxFee)
 	for _, utxoID := range utxoIDs {
 		utxo, _ := vm.state.GetUTXO(utxoID)
@@ -1277,9 +1277,9 @@ func TestRestartFullyAccepted(t *testing.T) {
 
 	firstCtx := testcontext.New(context.Background())
 	firstCtx.ChainID = consensustest.PChainID
-	firstCtx.LUXAssetID = ids.GenerateTestID()
+	firstCtx.XAssetID = ids.GenerateTestID()
 
-	_, genesisBytes := defaultGenesis(t, firstCtx.LUXAssetID)
+	_, genesisBytes := defaultGenesis(t, firstCtx.XAssetID)
 
 	baseDB := memdb.New()
 	atomicDB := prefixdb.New([]byte{1}, baseDB)
@@ -1297,7 +1297,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 		PublicKey:  nil,
 		XChainID:   firstCtx.XChainID,
 		CChainID:   firstCtx.CChainID,
-		LUXAssetID: firstCtx.LUXAssetID,
+		XAssetID: firstCtx.XAssetID,
 		ChainID:    firstCtx.ChainID,
 		NetID:      constants.PrimaryNetworkID,
 		StartTime:  time.Now(),
@@ -1340,7 +1340,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 				TxID:        ids.Empty.Prefix(1),
 				OutputIndex: 1,
 			},
-			Asset: lux.Asset{ID: firstCtx.LUXAssetID},
+			Asset: lux.Asset{ID: firstCtx.XAssetID},
 			In: &secp256k1fx.TransferInput{
 				Amt: 50000,
 			},
@@ -1391,7 +1391,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 
 	secondCtx := testcontext.New(context.Background())
 	secondCtx.ChainID = consensustest.PChainID
-	secondCtx.LUXAssetID = firstCtx.LUXAssetID
+	secondCtx.XAssetID = firstCtx.XAssetID
 	secondCtx.SharedMemory = firstCtx.SharedMemory
 	secondVM.Clock().Set(initialClkTime)
 	secondCtx.Lock.Lock()
@@ -1407,7 +1407,7 @@ func TestRestartFullyAccepted(t *testing.T) {
 		PublicKey:  nil,
 		XChainID:   secondCtx.XChainID,
 		CChainID:   secondCtx.CChainID,
-		LUXAssetID: secondCtx.LUXAssetID,
+		XAssetID: secondCtx.XAssetID,
 		ChainID:    secondCtx.ChainID,
 		NetID:      constants.PrimaryNetworkID,
 		StartTime:  time.Now(),
@@ -1479,7 +1479,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	vm.Clock().Set(latestForkTime)
 	ctx := testcontext.New(context.Background())
 	ctx.ChainID = consensustest.PChainID
-	ctx.LUXAssetID = ids.GenerateTestID()
+	ctx.XAssetID = ids.GenerateTestID()
 
 	m := atomic.NewMemory(atomicDB)
 	msm := &mutableSharedMemory{
@@ -1493,7 +1493,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	_, genesisBytes := defaultGenesis(t, ctx.LUXAssetID)
+	_, genesisBytes := defaultGenesis(t, ctx.XAssetID)
 
 	luxCtx := &consContext.Context{
 		QuantumID:  ctx.NetworkID,
@@ -1503,7 +1503,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		PublicKey:  nil,
 		XChainID:   ctx.XChainID,
 		CChainID:   ctx.CChainID,
-		LUXAssetID: ctx.LUXAssetID,
+		XAssetID: ctx.XAssetID,
 		StartTime:  time.Now(),
 	}
 
@@ -1570,14 +1570,14 @@ func TestUnverifiedParent(t *testing.T) {
 	vm.Clock().Set(initialClkTime)
 	ctx := testcontext.New(context.Background())
 	ctx.ChainID = consensustest.PChainID
-	ctx.LUXAssetID = ids.GenerateTestID()
+	ctx.XAssetID = ids.GenerateTestID()
 	ctx.Lock.Lock()
 	defer func() {
 		require.NoError(vm.Shutdown(context.Background()))
 		ctx.Lock.Unlock()
 	}()
 
-	_, genesisBytes := defaultGenesis(t, ctx.LUXAssetID)
+	_, genesisBytes := defaultGenesis(t, ctx.XAssetID)
 
 	// Create lux context for chain context
 	luxCtx := &consContext.Context{
@@ -1588,7 +1588,7 @@ func TestUnverifiedParent(t *testing.T) {
 		PublicKey:  nil,
 		XChainID:   ctx.XChainID,
 		CChainID:   ctx.CChainID,
-		LUXAssetID: ctx.LUXAssetID,
+		XAssetID: ctx.XAssetID,
 		StartTime:  time.Now(),
 	}
 
@@ -1755,10 +1755,10 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 
 	firstCtx := testcontext.New(context.Background())
 	firstCtx.ChainID = consensustest.PChainID
-	firstCtx.LUXAssetID = ids.GenerateTestID()
+	firstCtx.XAssetID = ids.GenerateTestID()
 	firstCtx.Lock.Lock()
 
-	_, genesisBytes := defaultGenesis(t, firstCtx.LUXAssetID)
+	_, genesisBytes := defaultGenesis(t, firstCtx.XAssetID)
 
 	// Create lux context for chain context
 	luxCtx := &consContext.Context{
@@ -1769,7 +1769,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		PublicKey:  nil,
 		XChainID:   firstCtx.XChainID,
 		CChainID:   firstCtx.CChainID,
-		LUXAssetID: firstCtx.LUXAssetID,
+		XAssetID: firstCtx.XAssetID,
 		StartTime:  time.Now(),
 	}
 
@@ -1829,7 +1829,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 
 	secondCtx := testcontext.New(context.Background())
 	secondCtx.ChainID = consensustest.PChainID
-	secondCtx.LUXAssetID = firstCtx.LUXAssetID
+	secondCtx.XAssetID = firstCtx.XAssetID
 	secondCtx.Lock.Lock()
 	defer func() {
 		require.NoError(secondVM.Shutdown(context.Background()))
@@ -1849,7 +1849,7 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		PublicKey:  nil,
 		XChainID:   secondCtx.XChainID,
 		CChainID:   secondCtx.CChainID,
-		LUXAssetID: secondCtx.LUXAssetID,
+		XAssetID: secondCtx.XAssetID,
 		StartTime:  time.Now(),
 	}
 
@@ -1954,10 +1954,10 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 
 	ctx := testcontext.New(context.Background())
 	ctx.ChainID = consensustest.PChainID
-	ctx.LUXAssetID = ids.GenerateTestID()
+	ctx.XAssetID = ids.GenerateTestID()
 	ctx.Lock.Lock()
 
-	_, genesisBytes := defaultGenesis(t, ctx.LUXAssetID)
+	_, genesisBytes := defaultGenesis(t, ctx.XAssetID)
 
 	atomicDB := prefixdb.New([]byte{1}, db)
 	m := atomic.NewMemory(atomicDB)
@@ -1972,7 +1972,7 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 		PublicKey:  nil,
 		XChainID:   ctx.XChainID,
 		CChainID:   ctx.CChainID,
-		LUXAssetID: ctx.LUXAssetID,
+		XAssetID: ctx.XAssetID,
 		StartTime:  time.Now(),
 	}
 

@@ -12,7 +12,7 @@ import (
 )
 
 // Defines a mapping of flag keys to values intended to be supplied to
-// an invocation of an AvalancheGo node.
+// an invocation of an LuxGo node.
 type FlagsMap map[string]string
 
 // Utility function simplifying construction of a FlagsMap from a file.

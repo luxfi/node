@@ -46,12 +46,12 @@ FAIL	github.com/luxfi/node/node [setup failed]
 # github.com/luxfi/node/tests/antithesis
 chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
 FAIL	github.com/luxfi/node/tests/antithesis [setup failed]
-# github.com/luxfi/node/tests/antithesis/avalanchego
+# github.com/luxfi/node/tests/antithesis/luxgo
 chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
-FAIL	github.com/luxfi/node/tests/antithesis/avalanchego [setup failed]
-# github.com/luxfi/node/tests/antithesis/avalanchego/gencomposeconfig
+FAIL	github.com/luxfi/node/tests/antithesis/luxgo [setup failed]
+# github.com/luxfi/node/tests/antithesis/luxgo/gencomposeconfig
 chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
-FAIL	github.com/luxfi/node/tests/antithesis/avalanchego/gencomposeconfig [setup failed]
+FAIL	github.com/luxfi/node/tests/antithesis/luxgo/gencomposeconfig [setup failed]
 # github.com/luxfi/node/tests/antithesis/luxd/gencomposeconfig
 chains/manager.go:54:2: found packages subnets (config.go) and nets (pass_test.go) in /home/z/work/lux/node/nets
 FAIL	github.com/luxfi/node/tests/antithesis/luxd/gencomposeconfig [setup failed]

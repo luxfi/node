@@ -157,8 +157,8 @@ ok  	github.com/luxfi/node/pubsub/bloom	1.037s
 ok  	github.com/luxfi/node/staking	1.029s
 ok  	github.com/luxfi/node/tests	1.894s
 FAIL	github.com/luxfi/node/tests/antithesis [build failed]
-FAIL	github.com/luxfi/node/tests/antithesis/avalanchego [build failed]
-FAIL	github.com/luxfi/node/tests/antithesis/avalanchego/gencomposeconfig [build failed]
+FAIL	github.com/luxfi/node/tests/antithesis/luxgo [build failed]
+FAIL	github.com/luxfi/node/tests/antithesis/luxgo/gencomposeconfig [build failed]
 FAIL	github.com/luxfi/node/tests/antithesis/luxd/gencomposeconfig [build failed]
 FAIL	github.com/luxfi/node/tests/antithesis/xsvm/gencomposeconfig [build failed]
 FAIL	github.com/luxfi/node/tests/integration [build failed]

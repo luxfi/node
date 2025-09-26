@@ -269,7 +269,7 @@ func (vm *VMClient) Initialize(
 		PublicKey:    consensusCtx.PublicKey,
 		XChainId:     consensusCtx.XChainID[:],
 		CChainId:     consensusCtx.CChainID[:],
-		LuxAssetId:   consensusCtx.LUXAssetID[:],
+		LuxAssetId:   consensusCtx.XAssetID[:],
 		ChainDataDir: "",
 		GenesisBytes: genesisBytes,
 		UpgradeBytes: upgradeBytes,

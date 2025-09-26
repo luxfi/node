@@ -149,7 +149,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	require.NoError(simpleAddPrimaryTx.SyntacticVerify(ctx))
 
@@ -459,7 +459,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	require.NoError(complexAddPrimaryTx.SyntacticVerify(ctx))
 
@@ -854,7 +854,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	require.NoError(simpleAddNetTx.SyntacticVerify(ctx))
 
@@ -1156,7 +1156,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	require.NoError(complexAddNetTx.SyntacticVerify(ctx))
 

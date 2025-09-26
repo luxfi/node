@@ -40,7 +40,7 @@ func TestAtomicTxImports(t *testing.T) {
 	peerSharedMemory := m.NewSharedMemory(env.ctx.XChainID)
 	utxo := &lux.UTXO{
 		UTXOID: utxoID,
-		Asset:  lux.Asset{ID: env.ctx.LUXAssetID},
+		Asset:  lux.Asset{ID: env.ctx.XAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: amount,
 			OutputOwners: secp256k1fx.OutputOwners{

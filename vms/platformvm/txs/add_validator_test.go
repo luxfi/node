@@ -31,7 +31,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  constants.UnitTestID,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 		NodeID:     nodeID,
 	})
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
@@ -163,7 +163,7 @@ func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  constants.UnitTestID,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 		NodeID:     nodeID,
 	})
 	signers := [][]*secp256k1.PrivateKey{preFundedKeys}

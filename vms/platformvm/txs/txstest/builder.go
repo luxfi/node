@@ -49,7 +49,7 @@ func NewWalletFactoryWithAssets(
 		ChainID:    ids.Empty,
 		NodeID:     ids.EmptyNodeID,
 		PublicKey:  nil,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	ctx = consContext.WithIDs(ctx, ctxIDs)
 	return &WalletFactory{
@@ -72,7 +72,7 @@ func (w *WalletFactory) NewWallet(keys ...*secp256k1.PrivateKey) (builder.Builde
 		kc      = secp256k1fx.NewKeychain(keys...)
 		addrSet = kc.AddressSet()
 		backend = newBackend(addrSet, w.state, w.sharedMemory)
-		// Extract networkID and LUXAssetID from context
+		// Extract networkID and XAssetID from context
 		networkID  = consensus.GetNetworkID(w.ctx)
 		// Get LUX asset ID from context - this should match the asset ID used in genesis
 		luxAssetIDInterface = consensus.LuxAssetID(w.ctx)

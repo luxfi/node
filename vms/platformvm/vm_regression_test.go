@@ -539,7 +539,7 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 		PublicKey:  nil,
 		XChainID:   ids.Empty,
 		CChainID:   ids.Empty,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	}
 	chainCtx := &linearblock.ChainContext{
 		ConsensusContext: &linearblock.ConsensusContext{

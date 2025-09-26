@@ -11,11 +11,11 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 // Waits for the nodes at the provided URIs to report healthy.
-func awaitHealthyNodes(ctx context.Context, log logging.Logger, uris []string) error {
+func awaitHealthyNodes(ctx context.Context, log log.Logger, uris []string) error {
 	for _, uri := range uris {
 		if err := awaitHealthyNode(ctx, log, uri); err != nil {
 			return err
@@ -25,7 +25,7 @@ func awaitHealthyNodes(ctx context.Context, log logging.Logger, uris []string) e
 	return nil
 }
 
-func awaitHealthyNode(ctx context.Context, log logging.Logger, uri string) error {
+func awaitHealthyNode(ctx context.Context, log log.Logger, uri string) error {
 	client := health.NewClient(uri)
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()

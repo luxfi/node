@@ -1,11 +1,11 @@
 # BUILDER_IMAGE_TAG should identify the builder image
 ARG BUILDER_IMAGE_TAG=INVALID # This value is not intended to be used but silences a warning
 
-# LUXD_NODE_IMAGE needs to identify an existing avalanchego node image and should include the tag
+# LUXD_NODE_IMAGE needs to identify an existing luxgo node image and should include the tag
 ARG LUXD_NODE_IMAGE="invalid-image" # This value is not intended to be used but silences a warning
 
 # ============= Compilation Stage ================
-FROM antithesis-avalanchego-builder:$BUILDER_IMAGE_TAG AS builder
+FROM antithesis-luxgo-builder:$BUILDER_IMAGE_TAG AS builder
 
 # The builder workdir will vary between instrumented and non-instrumented builders
 ARG BUILDER_WORKDIR
@@ -24,7 +24,7 @@ FROM $LUXD_NODE_IMAGE AS execution
 ARG BUILDER_WORKDIR
 
 # Configure the node with the location of the xsvm plugin
-ENV AVAGO_PLUGIN_DIR=/avalanchego/build/plugins
+ENV AVAGO_PLUGIN_DIR=/luxgo/build/plugins
 
 # Copy the executable into the container
 COPY --from=builder $BUILDER_WORKDIR/build/xsvm \

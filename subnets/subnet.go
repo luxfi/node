@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -22,7 +22,7 @@ type Allower interface {
 // chains in the subnet are currently bootstrapping, the subnet is considered
 // bootstrapped.
 type Subnet interface {
-	common.BootstrapTracker
+	core.BootstrapTracker
 
 	// AddChain adds a chain to this Subnet
 	AddChain(chainID ids.ID) bool

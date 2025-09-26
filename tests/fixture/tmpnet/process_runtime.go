@@ -26,25 +26,25 @@ import (
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/config/node"
 	"github.com/luxfi/node/tests/fixture/stacktrace"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 )
 
 const (
-	AvalancheGoPathEnvName = "LUXD_PATH"
+	LuxGoPathEnvName = "LUXD_PATH"
 
 	defaultNodeInitTimeout = 10 * time.Second
 )
 
 var (
-	AvalancheGoPluginDirEnvName = config.EnvVarName(config.EnvPrefix, config.PluginDirKey)
+	LuxGoPluginDirEnvName = config.EnvVarName(config.EnvPrefix, config.PluginDirKey)
 
 	errNodeAlreadyRunning = errors.New("failed to start node: node is already running")
 	errNotRunning         = errors.New("node is not running")
 )
 
 type ProcessRuntimeConfig struct {
-	AvalancheGoPath   string `json:"avalancheGoPath,omitempty"`
+	LuxGoPath   string `json:"luxGoPath,omitempty"`
 	PluginDir         string `json:"pluginDir,omitempty"`
 	ReuseDynamicPorts bool   `json:"reuseDynamicPorts,omitempty"`
 }
@@ -121,7 +121,7 @@ func (p *ProcessRuntime) Start(ctx context.Context) error {
 	}
 
 	// All arguments are provided in the flags file
-	cmd := exec.Command(runtimeConfig.AvalancheGoPath, "--config-file", p.node.GetFlagsPath()) // #nosec G204
+	cmd := exec.Command(runtimeConfig.LuxGoPath, "--config-file", p.node.GetFlagsPath()) // #nosec G204
 	// Ensure process is detached from the parent process so that an error in the parent will not affect the child
 	configureDetachedProcess(cmd)
 
@@ -451,7 +451,7 @@ func (p *ProcessRuntime) saveAPIPort() error {
 // Errors encountered while looking for FATAL log entries are considered potential rather
 // than positive indications of failure and are printed to the provided writer instead of
 // being provided to the cancelWithCause function.
-func watchLogFileForFatal(ctx context.Context, cancelWithCause context.CancelCauseFunc, log logging.Logger, path string) {
+func watchLogFileForFatal(ctx context.Context, cancelWithCause context.CancelCauseFunc, log log.Logger, path string) {
 	waitInterval := 100 * time.Millisecond
 	// Wait for the file to exist
 	fileExists := false

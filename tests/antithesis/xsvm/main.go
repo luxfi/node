@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/tests/fixture/subnet"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/example/xsvm/api"
@@ -81,7 +81,7 @@ func main() {
 	workloads := make([]*workload, NumKeys)
 	workloads[0] = genesisWorkload
 
-	initialAmount := 100 * units.KiloAvax
+	initialAmount := 100 * units.KiloLux
 	for i := 1; i < NumKeys; i++ {
 		key, err := secp256k1.NewPrivateKey()
 		require.NoError(err, "failed to generate key")
@@ -132,7 +132,7 @@ func main() {
 
 type workload struct {
 	id      int
-	log     logging.Logger
+	log     log.Logger
 	chainID ids.ID
 	key     *secp256k1.PrivateKey
 	addrs   set.Set[ids.ShortID]

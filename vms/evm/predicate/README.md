@@ -15,11 +15,11 @@ A byte slice of size N is encoded as:
 
 This defines how to encode `PredicateResults` within the block header's `Extra` data field.
 
-For more information on the motivation for encoding the results of predicate verification within a block, see [here](../../../vms/platformvm/warp/README.md#processing-historical-avalanche-interchain-messages).
+For more information on the motivation for encoding the results of predicate verification within a block, see [here](../../../vms/platformvm/warp/README.md#processing-historical-lux-interchain-messages).
 
 ### Serialization
 
-Results have a maximum size of 1MB enforced by the codec. The actual size depends on how much data the Precompile predicates may put into the results, the gas cost they charge, and the block gas limit. PredicateResults are encoded using the AvalancheGo codec, which serializes a map by serializing the length of the map as a `uint32` and then serializes each key-value pair sequentially.
+Results have a maximum size of 1MB enforced by the codec. The actual size depends on how much data the Precompile predicates may put into the results, the gas cost they charge, and the block gas limit. PredicateResults are encoded using the LuxGo codec, which serializes a map by serializing the length of the map as a `uint32` and then serializes each key-value pair sequentially.
 
 PredicateResults:
 

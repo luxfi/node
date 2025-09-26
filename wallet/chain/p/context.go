@@ -15,7 +15,7 @@ var _ Context = (*pContext)(nil)
 
 type Context interface {
 	NetworkID() uint32
-	LUXAssetID() ids.ID
+	XAssetID() ids.ID
 	BaseTxFee() uint64
 	CreateNetTxFee() uint64
 	TransformNetTxFee() uint64
@@ -109,7 +109,7 @@ func (c *pContext) NetworkID() uint32 {
 	return c.networkID
 }
 
-func (c *pContext) LUXAssetID() ids.ID {
+func (c *pContext) XAssetID() ids.ID {
 	return c.luxAssetID
 }
 

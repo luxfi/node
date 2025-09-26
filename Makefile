@@ -169,8 +169,8 @@ run-mainnet: build-fips init-chains
 		--chain-data-dir=./chains \
 		--log-dir=./logs \
 		--index-enabled=true \
-		--snow-sample-size=1 \
-		--snow-quorum-size=1 \
+		--consensus-sample-size=1 \
+		--consensus-quorum-size=1 \
 		--api-admin-enabled=true \
 		--http-allowed-origins="*"
 

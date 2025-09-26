@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 func newTestDatabase(t *testing.T, opts DatabaseConfig) (*Database, func()) {
@@ -24,7 +24,7 @@ func newTestDatabase(t *testing.T, opts DatabaseConfig) (*Database, func()) {
 	if config.DataDir == "" {
 		config = config.WithDataDir(dir)
 	}
-	db, err := New(config, logging.NoLog{})
+	db, err := New(config, log.NoLog{})
 	require.NoError(t, err, "failed to create database")
 
 	cleanup := func() {

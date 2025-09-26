@@ -181,7 +181,7 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 	res.ctx.ChainID = consensusCtx.ChainID
 	res.ctx.NodeID = consensusCtx.NodeID
 	res.ctx.NetID = consensusCtx.NetID
-	res.ctx.LUXAssetID = consensusCtx.LUXAssetID
+	res.ctx.XAssetID = consensusCtx.XAssetID
 	res.msm = &mutableSharedMemory{
 		SharedMemory: m.NewSharedMemory(res.ctx.ChainID),
 	}

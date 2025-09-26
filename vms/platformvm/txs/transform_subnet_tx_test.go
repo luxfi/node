@@ -121,7 +121,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	require.NoError(simpleTransformTx.SyntacticVerify(ctx))
 
@@ -349,7 +349,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	require.NoError(complexTransformTx.SyntacticVerify(ctx2))
 
@@ -537,7 +537,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	testCtx := testcontext.New(ctx3)
 	testCtx.BCLookup = aliaser
@@ -656,7 +656,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		ChainID:    chainID,
 		NetworkID:  networkID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 
 	// A BaseTx that already passed syntactic verification.

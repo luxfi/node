@@ -14,7 +14,7 @@ const Alias = "X"
 type Context struct {
 	NetworkID        uint32
 	BlockchainID     ids.ID
-	LUXAssetID       ids.ID
+	XAssetID       ids.ID
 	BaseTxFee        uint64
 	CreateAssetTxFee uint64
 }
@@ -31,7 +31,7 @@ func NewConsensusContext(
 		NetID:   constants.PrimaryNetworkID,
 		ChainID:    blockchainID,
 		XChainID:   blockchainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 		Log:        nil,
 		BCLookup:   lookup,
 	}, lookup.Alias(blockchainID, Alias)

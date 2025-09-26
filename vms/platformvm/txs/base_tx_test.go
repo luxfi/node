@@ -78,7 +78,7 @@ func TestBaseTxSerialization(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	require.NoError(simpleBaseTx.SyntacticVerify(ctx))
 
@@ -226,7 +226,7 @@ func TestBaseTxSerialization(t *testing.T) {
 	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	require.NoError(complexBaseTx.SyntacticVerify(ctx2))
 
@@ -376,7 +376,7 @@ func TestBaseTxSerialization(t *testing.T) {
 	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	testCtx := testcontext.New(ctx3)
 	testCtx.BCLookup = aliaser

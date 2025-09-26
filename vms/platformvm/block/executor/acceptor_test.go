@@ -14,8 +14,8 @@ import (
 	"github.com/luxfi/node/chains/atomic/atomicmock"
 	"github.com/luxfi/database/databasemock"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -52,8 +52,8 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 
 	acceptor := &acceptor{
 		backend: &backend{
-			ctx: &snow.Context{
-				Log: logging.NoLog{},
+			ctx: &consensus.Context{
+				Log: log.NoLog{},
 			},
 			blkIDToState: map[ids.ID]*blockState{
 				blkID: {},
@@ -90,8 +90,8 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &snow.Context{
-				Log:          logging.NoLog{},
+			ctx: &consensus.Context{
+				Log:          log.NoLog{},
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -168,8 +168,8 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &snow.Context{
-				Log:          logging.NoLog{},
+			ctx: &consensus.Context{
+				Log:          log.NoLog{},
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -255,8 +255,8 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &snow.Context{
-				Log:          logging.NoLog{},
+			ctx: &consensus.Context{
+				Log:          log.NoLog{},
 				SharedMemory: sharedMemory,
 			},
 		},
@@ -364,8 +364,8 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &snow.Context{
-				Log:          logging.NoLog{},
+			ctx: &consensus.Context{
+				Log:          log.NoLog{},
 				SharedMemory: sharedMemory,
 			},
 		},

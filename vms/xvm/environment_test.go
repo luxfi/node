@@ -174,8 +174,8 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		NodeID:         ids.GenerateTestNodeID(),
 		XChainID:       xChainID,
 		CChainID:       ids.GenerateTestID(),
-		AVAXAssetID:    ids.GenerateTestID(),
-		LUXAssetID:     ids.GenerateTestID(),
+		XAssetID:    ids.GenerateTestID(),
+		XAssetID:     ids.GenerateTestID(),
 		ValidatorState: mockValidatorState,
 	}
 

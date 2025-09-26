@@ -21,7 +21,7 @@ import (
 type Backend struct {
 	Config       *config.Config
 	Ctx          context.Context
-	LUXAssetID   ids.ID
+	XAssetID   ids.ID
 	NodeID       ids.NodeID
 	SharedMemory SharedMemory
 	Lock         sync.Locker

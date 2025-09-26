@@ -212,10 +212,11 @@ func formatDuration(d time.Duration) string {
 
 // DatabaseReplayConfig holds configuration for database replay
 type DatabaseReplayConfig struct {
-	SourcePath               string // Path to source database
-	TestLimit                uint64 // If > 0, limit replay to this many blocks
-	ExtractGenesisFromSource bool   // If true, extract genesis from block 0 of source
-	CopyAllState             bool   // If true, copy all state trie data
+	SourcePath               string `json:"source-path"`                  // Path to source database
+	DatabaseType             string `json:"database-type,omitempty"`      // Type: "auto", "namespaced", or "standard"
+	TestLimit                uint64 `json:"test-limit"`                   // If > 0, limit replay to this many blocks
+	ExtractGenesisFromSource bool   `json:"extract-genesis-from-source"`  // If true, extract genesis from block 0 of source
+	CopyAllState             bool   `json:"copy-all-state"`               // If true, copy all state trie data
 }
 
 // VM implements the C-Chain VM interface using geth
@@ -299,6 +300,17 @@ func (vm *VM) Initialize(
 		vm.replayConfig = &DatabaseReplayConfig{
 			SourcePath:   replayPath,
 			CopyAllState: true,
+		}
+	}
+
+	// Parse config file for database-replay configuration
+	if len(configBytes) > 0 && vm.replayConfig == nil {
+		var config struct {
+			DatabaseReplay *DatabaseReplayConfig `json:"database-replay"`
+		}
+		if err := json.Unmarshal(configBytes, &config); err == nil && config.DatabaseReplay != nil {
+			vm.log.Info("Replay mode enabled via config file", "source", config.DatabaseReplay.SourcePath)
+			vm.replayConfig = config.DatabaseReplay
 		}
 	}
 
@@ -866,8 +878,33 @@ func (vm *VM) Initialize(
 		}
 		fmt.Printf("Backend creation result: err=%v, backend=%v\n", err, vm.backend != nil)
 	} else {
+		// Check if database already has a genesis block
+		existingGenesisHash := rawdb.ReadCanonicalHash(vm.ethDB, 0)
+		if existingGenesisHash != (common.Hash{}) {
+			// Database has a genesis - check if it matches what we're trying to initialize with
+			expectedHash := genesis.ToBlock().Hash()
+			if existingGenesisHash != expectedHash {
+				vm.log.Warn("Database already has different genesis - using database genesis",
+					"dbGenesis", existingGenesisHash.Hex(),
+					"configGenesis", expectedHash.Hex())
+				fmt.Printf("GENESIS MISMATCH DETECTED:\n")
+				fmt.Printf("  Database has: %s\n", existingGenesisHash.Hex())
+				fmt.Printf("  Config wants:  %s\n", expectedHash.Hex())
+				fmt.Printf("  Using database genesis (passing nil to backend)\n")
+				
+				// Pass nil to use database genesis
+				genesis = nil
+			} else {
+				fmt.Printf("Database genesis matches config: %s\n", existingGenesisHash.Hex())
+			}
+		}
+		
 		// Use normal backend (no migration)
-		fmt.Printf("Creating normal backend with genesis hash: %s\n", genesis.ToBlock().Hash().Hex())
+		if genesis != nil {
+			fmt.Printf("Creating normal backend with genesis hash: %s\n", genesis.ToBlock().Hash().Hex())
+		} else {
+			fmt.Printf("Creating normal backend using database genesis\n")
+		}
 		vm.backend, err = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, genesis)
 		fmt.Printf("Backend creation result: err=%v, backend=%v\n", err, vm.backend != nil)
 	}
@@ -906,13 +943,14 @@ func (vm *VM) Initialize(
 		fmt.Printf("STARTING DATABASE REPLAY from %s\n", vm.replayConfig.SourcePath)
 
 		// Use unified replay system
+		dbType := AutoDetect
+		if vm.replayConfig.DatabaseType != "" {
+			dbType = DatabaseType(vm.replayConfig.DatabaseType)
+		}
 		config := &UnifiedReplayConfig{
-			SourcePath:               vm.replayConfig.SourcePath,
-			DatabaseType:             AutoDetect, // Auto-detect the database type
-			TestMode:                 false,      // Full replay by default
-			CopyAllState:             false,      // Don't copy all state (too large)
-			MaxStateNodes:            1000000,    // Limit to 1M nodes for safety
-			ExtractGenesisFromSource: false,      // Already extracted above
+			SourcePath:   vm.replayConfig.SourcePath,
+			DatabaseType: dbType,
+			CopyAllState: true,
 		}
 
 		// Check if test mode is requested
