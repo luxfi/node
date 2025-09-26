@@ -140,7 +140,7 @@ func TestGetTxStatus(t *testing.T) {
 			TxID:        ids.GenerateTestID(),
 			OutputIndex: uint32(randSrc.Int63()),
 		},
-		Asset: lux.Asset{ID: service.vm.ctx.LUXAssetID},
+		Asset: lux.Asset{ID: service.vm.ctx.XAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: 1234567,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -262,7 +262,7 @@ func TestGetTx(t *testing.T) {
 						Subnet: constants.PrimaryNetworkID,
 					},
 					signer.NewProofOfPossession(sk),
-					service.vm.ctx.LUXAssetID,
+					service.vm.ctx.XAssetID,
 					rewardsOwner,
 					rewardsOwner,
 					0,
@@ -282,7 +282,7 @@ func TestGetTx(t *testing.T) {
 				utx, err := builder.NewExportTx(
 					service.vm.ctx.XChainID,
 					[]*lux.TransferableOutput{{
-						Asset: lux.Asset{ID: service.vm.ctx.LUXAssetID},
+						Asset: lux.Asset{ID: service.vm.ctx.XAssetID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: 100,
 							OutputOwners: secp256k1fx.OutputOwners{
@@ -383,7 +383,7 @@ func TestGetBalance(t *testing.T) {
 	)
 
 	// Ensure GetStake is correct for each of the genesis validators
-	genesis, _ := defaultGenesis(t, service.vm.ctx.LUXAssetID)
+	genesis, _ := defaultGenesis(t, service.vm.ctx.XAssetID)
 	for idx, utxo := range genesis.UTXOs {
 		request := GetBalanceRequest{
 			Addresses: []string{
@@ -411,7 +411,7 @@ func TestGetStake(t *testing.T) {
 	service, _, factory := defaultService(t)
 
 	// Ensure GetStake is correct for each of the genesis validators
-	genesis, _ := defaultGenesis(t, service.vm.ctx.LUXAssetID)
+	genesis, _ := defaultGenesis(t, service.vm.ctx.XAssetID)
 	addrsStrs := []string{}
 	for i, validator := range genesis.Validators {
 		addr := "P-" + validator.RewardOwner.Addresses[0]
@@ -599,7 +599,7 @@ func TestGetCurrentValidators(t *testing.T) {
 	require := require.New(t)
 	service, _, factory := defaultService(t)
 
-	genesis, _ := defaultGenesis(t, service.vm.ctx.LUXAssetID)
+	genesis, _ := defaultGenesis(t, service.vm.ctx.XAssetID)
 
 	// Call getValidators
 	args := GetCurrentValidatorsArgs{NetID: constants.PrimaryNetworkID}

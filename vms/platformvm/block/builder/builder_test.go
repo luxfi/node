@@ -123,7 +123,7 @@ func TestBuildBlockShouldReward(t *testing.T) {
 			Net: constants.PrimaryNetworkID,
 		},
 		&signer.ProofOfPossession{},
-		env.ctx.LUXAssetID,
+		env.ctx.XAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
@@ -332,7 +332,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 			Net: constants.PrimaryNetworkID,
 		},
 		&signer.ProofOfPossession{},
-		env.ctx.LUXAssetID,
+		env.ctx.XAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
@@ -373,7 +373,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 			Net: constants.PrimaryNetworkID,
 		},
 		&signer.ProofOfPossession{},
-		env.ctx.LUXAssetID,
+		env.ctx.XAssetID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{preFundedKeys[2].PublicKey().Address()},

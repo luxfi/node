@@ -139,7 +139,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	require.NoError(simpleAddPrimaryTx.SyntacticVerify(ctx))
 
@@ -395,7 +395,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	require.NoError(complexAddPrimaryTx.SyntacticVerify(ctx))
 
@@ -628,7 +628,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	testCtx := testcontext.New(ctx2)
 	testCtx.BCLookup = aliaser
@@ -883,7 +883,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	require.NoError(simpleAddNetTx.SyntacticVerify(ctx))
 
@@ -1160,7 +1160,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	require.NoError(complexAddNetTx.SyntacticVerify(ctx))
 
@@ -1393,7 +1393,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	testCtx := testcontext.New(ctx2)
 	testCtx.BCLookup = aliaser

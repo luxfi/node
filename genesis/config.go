@@ -219,6 +219,36 @@ func GetConfig(networkID uint32) *Config {
 		config := LuxGenesisConfig()
 		config.NetworkID = constants.LuxTestnetID
 		return config
+	case constants.ZooMainnetID:
+		config := LuxGenesisConfig()
+		config.NetworkID = constants.ZooMainnetID
+		config.Message = "Zoo Mainnet Genesis"
+		return config
+	case constants.ZooTestnetID:
+		config := LuxGenesisConfig()
+		config.NetworkID = constants.ZooTestnetID
+		config.Message = "Zoo Testnet Genesis"
+		return config
+	case constants.SPCMainnetID:
+		config := LuxGenesisConfig()
+		config.NetworkID = constants.SPCMainnetID
+		config.Message = "SPC Mainnet Genesis"
+		return config
+	case constants.SPCTestnetID:
+		config := LuxGenesisConfig()
+		config.NetworkID = constants.SPCTestnetID
+		config.Message = "SPC Testnet Genesis"
+		return config
+	case constants.HanzoMainnetID:
+		config := LuxGenesisConfig()
+		config.NetworkID = constants.HanzoMainnetID
+		config.Message = "Hanzo Mainnet Genesis"
+		return config
+	case constants.HanzoTestnetID:
+		config := LuxGenesisConfig()
+		config.NetworkID = constants.HanzoTestnetID
+		config.Message = "Hanzo Testnet Genesis"
+		return config
 	default:
 		tempConfig := LocalConfig
 		tempConfig.NetworkID = networkID

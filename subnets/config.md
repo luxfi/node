@@ -3,7 +3,7 @@
 It is possible to provide parameters for a Subnet. Parameters here apply to all
 chains in the specified Subnet.
 
-AvalancheGo looks for files specified with `{subnetID}.json` under
+LuxGo looks for files specified with `{subnetID}.json` under
 `--subnet-config-dir` as documented
 [here](https://build.avax.network/docs/nodes/configure/configs-flags#subnet-configs).
 
@@ -28,7 +28,7 @@ Here is an example of Subnet config file:
 If `true` this node does not expose Subnet blockchain contents to non-validators
 via P2P messages. Defaults to `false`.
 
-Avalanche Subnets are public by default. It means that every node can sync and
+Lux Subnets are public by default. It means that every node can sync and
 listen ongoing transactions/blocks in Subnets, even they're not validating the
 listened Subnet.
 
@@ -61,23 +61,23 @@ this configuration in order to properly allow a node in the private Subnet.
 Subnet configs supports loading new consensus parameters. JSON keys are
 different from their matching `CLI` keys. These parameters must be grouped under
 `consensusParameters` key. The consensus parameters of a Subnet default to the
-same values used for the Primary Network, which are given [CLI Snow Parameters](https://build.avax.network/docs/nodes/configure/configs-flags#snow-parameters).
+same values used for the Primary Network, which are given [CLI Snow Parameters](https://build.avax.network/docs/nodes/configure/configs-flags#consensus-parameters).
 
 | CLI Key                          | JSON Key              |
 | :------------------------------- | :-------------------- |
-| --snow-sample-size               | k                     |
-| --snow-quorum-size               | alpha                 |
-| --snow-commit-threshold          | `beta`                |
-| --snow-concurrent-repolls        | concurrentRepolls     |
-| --snow-optimal-processing        | `optimalProcessing`   |
-| --snow-max-processing            | maxOutstandingItems   |
-| --snow-max-time-processing       | maxItemProcessingTime |
-| --snow-avalanche-batch-size      | `batchSize`           |
-| --snow-avalanche-num-parents     | `parentSize`          |
+| --consensus-sample-size               | k                     |
+| --consensus-quorum-size               | alpha                 |
+| --consensus-commit-threshold          | `beta`                |
+| --consensus-concurrent-repolls        | concurrentRepolls     |
+| --consensus-optimal-processing        | `optimalProcessing`   |
+| --consensus-max-processing            | maxOutstandingItems   |
+| --consensus-max-time-processing       | maxItemProcessingTime |
+| --consensus-lux-batch-size      | `batchSize`           |
+| --consensus-lux-num-parents     | `parentSize`          |
 
 #### `proposerMinBlockDelay` (duration)
 
-The minimum delay performed when building snowman++ blocks. Default is set to 1 second.
+The minimum delay performed when building chain++ blocks. Default is set to 1 second.
 
 As one of the ways to control network congestion, Snowman++ will only build a
 block `proposerMinBlockDelay` after the parent block's timestamp. Some

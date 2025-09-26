@@ -126,7 +126,7 @@ type testContext struct {
 	NodeID       ids.NodeID
 	XChainID     ids.ID
 	CChainID     ids.ID
-	LUXAssetID   ids.ID
+	XAssetID   ids.ID
 	Log          log.Logger
 	Lock         *sync.RWMutex
 	SharedMemory atomic.SharedMemory
@@ -168,7 +168,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		NetworkID:    constants.UnitTestID,
 		SubnetID:     constants.PrimaryNetworkID,
 		ChainID:      constants.PlatformChainID,
-		LUXAssetID:   luxAssetID,
+		XAssetID:   luxAssetID,
 		Log:          log.NewNoOpLogger(),
 		Lock:         &sync.RWMutex{},
 		SharedMemory: m.NewSharedMemory(constants.PlatformChainID),
@@ -495,7 +495,7 @@ func buildGenesisTest(ctx *testContext) []byte {
 
 	buildGenesisArgs := api.BuildGenesisArgs{
 		NetworkID:     json.Uint32(constants.UnitTestID),
-		LuxAssetID:    ctx.LUXAssetID,
+		LuxAssetID:    ctx.XAssetID,
 		UTXOs:         genesisUTXOs,
 		Validators:    genesisValidators,
 		Chains:        nil,

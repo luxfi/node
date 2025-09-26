@@ -7,7 +7,7 @@ ok  	github.com/luxfi/node	(cached)
 # github.com/luxfi/node/vms/registry
 vms/registry/test_vm.go:16:17: cannot use (*testVM)(nil) (value of type *testVM) as core.VM value in variable declaration: *testVM does not implement core.VM (wrong type for method Initialize)
 		have Initialize("context".Context, *"github.com/luxfi/consensus/context".Context, "github.com/luxfi/database/manager".Manager, []byte, []byte, []byte, chan<- core.Message, []*core.Fx, interface{}) error
-		want Initialize("context".Context, *snow.Context, "github.com/luxfi/database/manager".Manager, []byte, []byte, []byte, chan<- core.Message, []*core.Fx, interface{}) error
+		want Initialize("context".Context, *consensus.Context, "github.com/luxfi/database/manager".Manager, []byte, []byte, []byte, chan<- core.Message, []*core.Fx, interface{}) error
 vms/registry/test_vm.go:42:60: undefined: core.VMState
 # github.com/luxfi/node/database/pebbledb [github.com/luxfi/node/database/pebbledb.test]
 database/pebbledb/db_test.go:57:18: not enough arguments in call to bench
@@ -245,7 +245,7 @@ network/p2p/gossip/gossip_test.go:537:31: undefined: metric
 # github.com/luxfi/node/vms/registry [github.com/luxfi/node/main]
 vms/registry/test_vm.go:16:17: cannot use (*testVM)(nil) (value of type *testVM) as core.VM value in variable declaration: *testVM does not implement core.VM (wrong type for method Initialize)
 		have Initialize("context".Context, *"github.com/luxfi/consensus/context".Context, "github.com/luxfi/database/manager".Manager, []byte, []byte, []byte, chan<- core.Message, []*core.Fx, interface{}) error
-		want Initialize("context".Context, *snow.Context, "github.com/luxfi/database/manager".Manager, []byte, []byte, []byte, chan<- core.Message, []*core.Fx, interface{}) error
+		want Initialize("context".Context, *consensus.Context, "github.com/luxfi/database/manager".Manager, []byte, []byte, []byte, chan<- core.Message, []*core.Fx, interface{}) error
 vms/registry/test_vm.go:42:60: undefined: core.VMState
 # github.com/luxfi/node/network/peer [github.com/luxfi/node/network/peer.test]
 network/peer/peer_test.go:468:40: rawPeer1.config.IPSigner.PublicKey().Bytes undefined (type *"github.com/luxfi/crypto/bls".PublicKey has no field or method Bytes)

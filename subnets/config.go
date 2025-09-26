@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/consensus/config"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -24,16 +24,16 @@ type Config struct {
 	// AllowedNodes is the set of node IDs that are explicitly allowed to connect to this Subnet when
 	// ValidatorOnly is enabled.
 	AllowedNodes        set.Set[ids.NodeID] `json:"allowedNodes"        yaml:"allowedNodes"`
-	ConsensusParameters snowball.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
+	ConsensusParameters config.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
 
 	// ProposerMinBlockDelay is the minimum delay this node will enforce when
-	// building a snowman++ block.
+	// building a chain++ block.
 	//
 	// TODO: Remove this flag once all VMs throttle their own block production.
 	ProposerMinBlockDelay time.Duration `json:"proposerMinBlockDelay" yaml:"proposerMinBlockDelay"`
-	// ProposerNumHistoricalBlocks is the number of historical snowman++ blocks
+	// ProposerNumHistoricalBlocks is the number of historical chain++ blocks
 	// this node will index per chain. If set to 0, the node will index all
-	// snowman++ blocks.
+	// chain++ blocks.
 	//
 	// Note: The last accepted block is not considered a historical block. This
 	// prevents the user from only storing the last accepted block, which can

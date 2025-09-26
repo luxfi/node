@@ -37,7 +37,7 @@ var (
 
 	testContext = &builder.Context{
 		NetworkID:                     constants.UnitTestID,
-		LUXAssetID:                    luxAssetID,
+		XAssetID:                    luxAssetID,
 		BaseTxFee:                     units.MicroLux,
 		CreateNetTxFee:                19 * units.MicroLux,
 		TransformNetTxFee:             789 * units.MicroLux,

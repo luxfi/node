@@ -100,7 +100,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	require.NoError(simpleTransferNetOwnershipTx.SyntacticVerify(ctx))
 
@@ -284,7 +284,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	require.NoError(complexTransferNetOwnershipTx.SyntacticVerify(ctx2))
 
@@ -455,7 +455,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: luxAssetID,
+		XAssetID: luxAssetID,
 	})
 	testCtx := testcontext.New(ctx3)
 	testCtx.BCLookup = aliaser

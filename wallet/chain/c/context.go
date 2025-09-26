@@ -16,7 +16,7 @@ const Alias = "C"
 type Context struct {
 	NetworkID    uint32
 	BlockchainID ids.ID
-	LUXAssetID   ids.ID
+	XAssetID   ids.ID
 }
 
 func NewContextFromURI(ctx context.Context, uri string) (*Context, error) {
@@ -48,7 +48,7 @@ func NewContextFromClients(
 	return &Context{
 		NetworkID:    networkID,
 		BlockchainID: blockchainID,
-		LUXAssetID:   luxAsset.AssetID,
+		XAssetID:   luxAsset.AssetID,
 	}, nil
 }
 

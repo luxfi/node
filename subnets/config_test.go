@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow/consensus/snowball"
+	"github.com/luxfi/consensus/config"
 	"github.com/luxfi/node/utils/set"
 )
 
-var validParameters = snowball.Parameters{
+var validParameters = config.Parameters{
 	K:                     1,
 	AlphaPreference:       1,
 	AlphaConfidence:       1,
@@ -33,12 +33,12 @@ func TestValid(t *testing.T) {
 		{
 			name: "invalid consensus parameters",
 			s: Config{
-				ConsensusParameters: snowball.Parameters{
+				ConsensusParameters: config.Parameters{
 					K:               2,
 					AlphaPreference: 1,
 				},
 			},
-			expectedErr: snowball.ErrParametersInvalid,
+			expectedErr: consensusball.ErrParametersInvalid,
 		},
 		{
 			name: "invalid allowed node IDs",

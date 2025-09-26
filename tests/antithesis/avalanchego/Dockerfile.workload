@@ -5,7 +5,7 @@ ARG BUILDER_IMAGE_TAG=INVALID # This value is not intended to be used but silenc
 ARG LUXD_NODE_IMAGE="invalid-image" # This value is not intended to be used but silences a warning
 
 # ============= Compilation Stage ================
-FROM antithesis-avalanchego-builder:$BUILDER_IMAGE_TAG AS builder
+FROM antithesis-luxgo-builder:$BUILDER_IMAGE_TAG AS builder
 
 # The builder workdir will vary between instrumented and non-instrumented builders
 ARG BUILDER_WORKDIR
@@ -13,7 +13,7 @@ ARG BUILDER_WORKDIR
 WORKDIR $BUILDER_WORKDIR
 
 # Build the workload
-RUN ./scripts/build_antithesis_avalanchego_workload.sh
+RUN ./scripts/build_antithesis_luxgo_workload.sh
 
 # ============= Cleanup Stage ================
 # Base the workflow on the node image to support bootstrap testing
@@ -23,6 +23,6 @@ FROM $LUXD_NODE_IMAGE AS execution
 ARG BUILDER_WORKDIR
 
 # Copy the executable into the container
-COPY --from=builder $BUILDER_WORKDIR/build/antithesis-avalanchego-workload ./workload
+COPY --from=builder $BUILDER_WORKDIR/build/antithesis-luxgo-workload ./workload
 
 CMD [ "./workload" ]

@@ -701,7 +701,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		PublicKey:  nil,
 		XChainID:   ids.GenerateTestID(),
 		CChainID:   ids.GenerateTestID(),
-		LUXAssetID: luxAssetID, // Use the same asset ID
+		XAssetID: luxAssetID, // Use the same asset ID
 		StartTime:  time.Now(),
 	}
 

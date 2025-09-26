@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 )
 
@@ -30,8 +30,8 @@ const (
 var (
 	errTargetPathEnvVarNotSet = errors.New(targetPathEnvName + " environment variable not set")
 	errImageTagEnvVarNotSet   = errors.New(imageTagEnvName + " environment variable not set")
-	errAvalancheGoEvVarNotSet = errors.New(tmpnet.AvalancheGoPathEnvName + " environment variable not set")
-	errPluginDirEnvVarNotSet  = errors.New(tmpnet.AvalancheGoPluginDirEnvName + " environment variable not set")
+	errLuxGoEvVarNotSet = errors.New(tmpnet.LuxGoPathEnvName + " environment variable not set")
+	errPluginDirEnvVarNotSet  = errors.New(tmpnet.LuxGoPluginDirEnvName + " environment variable not set")
 )
 
 // Creates docker compose configuration for an antithesis test setup. Configuration is via env vars to
@@ -50,20 +50,20 @@ func GenerateComposeConfig(network *tmpnet.Network, baseImageName string) error 
 
 	// Subnet testing requires creating an initial db state for the bootstrap node
 	if len(network.Subnets) > 0 {
-		avalancheGoPath := os.Getenv(tmpnet.AvalancheGoPathEnvName)
-		if len(avalancheGoPath) == 0 {
-			return errAvalancheGoEvVarNotSet
+		luxGoPath := os.Getenv(tmpnet.LuxGoPathEnvName)
+		if len(luxGoPath) == 0 {
+			return errLuxGoEvVarNotSet
 		}
 
 		// Plugin dir configured here is only used for initializing the bootstrap db.
-		pluginDir := os.Getenv(tmpnet.AvalancheGoPluginDirEnvName)
+		pluginDir := os.Getenv(tmpnet.LuxGoPluginDirEnvName)
 		if len(pluginDir) == 0 {
 			return errPluginDirEnvVarNotSet
 		}
 
 		network.DefaultRuntimeConfig = tmpnet.NodeRuntimeConfig{
 			Process: &tmpnet.ProcessRuntimeConfig{
-				AvalancheGoPath: avalancheGoPath,
+				LuxGoPath: luxGoPath,
 				PluginDir:       pluginDir,
 			},
 		}
@@ -136,7 +136,7 @@ func initComposeConfig(
 // Create a new docker compose project for an antithesis test setup
 // for the provided network configuration.
 func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadImageName string) (*types.Project, error) {
-	networkName := "avalanche-testnet"
+	networkName := "lux-testnet"
 	baseNetworkAddress := "10.0.20"
 
 	services := make(types.Services, len(network.Nodes)+1)
@@ -168,9 +168,9 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 
 		env := types.Mapping{
 			config.NetworkNameKey:             constants.LocalName,
-			config.LogLevelKey:                logging.Debug.String(),
-			config.LogDisplayLevelKey:         logging.Trace.String(),
-			config.LogFormatKey:               logging.JSONString,
+			config.LogLevelKey:                log.Debug.String(),
+			config.LogDisplayLevelKey:         log.Trace.String(),
+			config.LogFormatKey:               log.JSONString,
 			config.HTTPHostKey:                "0.0.0.0",
 			config.PublicIPKey:                address,
 			config.StakingTLSKeyContentKey:    tlsKey,
@@ -188,7 +188,7 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 			{
 				Type:   types.VolumeTypeBind,
 				Source: fmt.Sprintf("./volumes/%s/logs", serviceName),
-				Target: "/root/.avalanchego/logs",
+				Target: "/root/.luxgo/logs",
 			},
 		}
 
@@ -200,7 +200,7 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 				volumes = append(volumes, types.ServiceVolumeConfig{
 					Type:   types.VolumeTypeBind,
 					Source: fmt.Sprintf("./volumes/%s/db", serviceName),
-					Target: "/root/.avalanchego/db",
+					Target: "/root/.luxgo/db",
 				})
 			}
 		}
@@ -279,7 +279,7 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 	}, nil
 }
 
-// Convert a mapping of avalanche config keys to a mapping of env vars
+// Convert a mapping of lux config keys to a mapping of env vars
 func keyMapToEnvVarMap(keyMap types.Mapping) types.Mapping {
 	envVarMap := make(types.Mapping, len(keyMap))
 	for key, val := range keyMap {
@@ -293,7 +293,7 @@ func keyMapToEnvVarMap(keyMap types.Mapping) types.Mapping {
 // GenerateComposeConfig and InitDBVolumes to ensure consistency
 // between db volumes configuration and volume paths.
 func getServiceName(index int) string {
-	baseName := "avalanche"
+	baseName := "lux"
 	if index == 0 {
 		return baseName + "-bootstrap-node"
 	}

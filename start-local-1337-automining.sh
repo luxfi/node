@@ -18,12 +18,12 @@ rm -rf "$DATA_DIR"
   --http-port=9630 \
   --staking-port=9631 \
   --data-dir="$DATA_DIR" \
-  --snow-sample-size=1 \
-  --snow-quorum-size=1 \
-  --snow-virtuous-commit-threshold=1 \
-  --snow-rogue-commit-threshold=2 \
-  --snow-concurrent-repolls=1 \
-  --snow-optimal-processing=10 \
+  --consensus-sample-size=1 \
+  --consensus-quorum-size=1 \
+  --consensus-virtuous-commit-threshold=1 \
+  --consensus-rogue-commit-threshold=2 \
+  --consensus-concurrent-repolls=1 \
+  --consensus-optimal-processing=10 \
   --index-enabled=false \
   --api-admin-enabled \
   --keystore-enabled \

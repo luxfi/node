@@ -437,7 +437,7 @@ type ManagerConfig struct {
 	Server                    server.Server // Handles HTTP API calls
 	Keystore                  keystore.Keystore
 	AtomicMemory              *atomic.Memory
-	LUXAssetID                ids.ID
+	XAssetID                ids.ID
 	SkipBootstrap             bool            // Skip bootstrapping and start processing immediately
 	EnableAutomining          bool            // Enable automining in POA mode
 	XChainID                  ids.ID          // ID of the X-Chain,
@@ -1515,7 +1515,7 @@ func (m *manager) createLinearChain(
 			ChainID:        ids.ChainID,
 			NodeID:         ids.NodeID,
 			PublicKey:      ids.PublicKey,
-			LUXAssetID:     m.LUXAssetID,
+			XAssetID:     m.LUXAssetID,
 			CChainID:       m.CChainID,
 			ChainDataDir:   chainDataDir,
 			Log:            m.Log,

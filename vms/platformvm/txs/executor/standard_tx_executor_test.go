@@ -1240,7 +1240,7 @@ func TestDurangoMemoField(t *testing.T) {
 					sourceKey,
 					sourceChain,
 					map[ids.ID]uint64{
-						env.ctx.LUXAssetID: sourceAmount,
+						env.ctx.XAssetID: sourceAmount,
 					},
 					rand.NewSource(0),
 				)
@@ -1273,7 +1273,7 @@ func TestDurangoMemoField(t *testing.T) {
 				utx, err := builder.NewExportTx(
 					env.ctx.XChainID,
 					[]*lux.TransferableOutput{{
-						Asset: lux.Asset{ID: env.ctx.LUXAssetID},
+						Asset: lux.Asset{ID: env.ctx.XAssetID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: units.Lux,
 							OutputOwners: secp256k1fx.OutputOwners{
@@ -1407,7 +1407,7 @@ func TestDurangoMemoField(t *testing.T) {
 						Net: constants.PrimaryNetworkID,
 					},
 					pop,
-					env.ctx.LUXAssetID,
+					env.ctx.XAssetID,
 					&secp256k1fx.OutputOwners{
 						Threshold: 1,
 						Addrs:     []ids.ShortID{ids.ShortEmpty},
@@ -1456,7 +1456,7 @@ func TestDurangoMemoField(t *testing.T) {
 						},
 						Net: constants.PrimaryNetworkID,
 					},
-					env.ctx.LUXAssetID,
+					env.ctx.XAssetID,
 					&secp256k1fx.OutputOwners{
 						Threshold: 1,
 						Addrs:     []ids.ShortID{ids.ShortEmpty},
@@ -1502,7 +1502,7 @@ func TestDurangoMemoField(t *testing.T) {
 				utx, err := builder.NewBaseTx(
 					[]*lux.TransferableOutput{
 						{
-							Asset: lux.Asset{ID: env.ctx.LUXAssetID},
+							Asset: lux.Asset{ID: env.ctx.XAssetID},
 							Out: &secp256k1fx.TransferOutput{
 								Amt: 1,
 								OutputOwners: secp256k1fx.OutputOwners{

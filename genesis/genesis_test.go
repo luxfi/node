@@ -457,7 +457,7 @@ func TestVMGenesis(t *testing.T) {
 	}
 }
 
-func TestLUXAssetID(t *testing.T) {
+func TestXAssetID(t *testing.T) {
 	tests := []struct {
 		networkID  uint32
 		expectedID string

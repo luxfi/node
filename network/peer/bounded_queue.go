@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 var (
@@ -56,11 +56,11 @@ type BoundedMessageQueue struct {
 
 	// Control
 	closed atomic.Bool
-	log    logging.Logger
+	log    log.Logger
 }
 
 // NewBoundedMessageQueue creates a new bounded message queue
-func NewBoundedMessageQueue(maxSize int64, maxMessages int, log logging.Logger) *BoundedMessageQueue {
+func NewBoundedMessageQueue(maxSize int64, maxMessages int, log log.Logger) *BoundedMessageQueue {
 	if maxSize <= 0 {
 		maxSize = DefaultMaxQueueSize
 	}

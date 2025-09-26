@@ -34,7 +34,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/genesis"
-	// "github.com/luxfi/node/consensus/engine/enginetest"
+	// "github.com/luxfi/consensus/engine/enginetest"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/upgrade"
@@ -193,7 +193,7 @@ func newMainnetCChainVM(
 	metricsGatherer metrics.MultiGatherer,
 ) (chain.VM, error) {
 	factory := factory.Factory{}
-	vmIntf, err := factory.New(logging.NoLog{})
+	vmIntf, err := factory.New(log.NoLog{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VM from factory: %w", err)
 	}
@@ -230,7 +230,7 @@ func newMainnetCChainVM(
 
 			XChainID:   mainnetXChainID,
 			CChainID:   mainnetCChainID,
-			LUXAssetID: mainnetLuxAssetID,
+			XAssetID: mainnetLuxAssetID,
 
 			Log:          tests.NewDefaultLogger("mainnet-vm-reexecution"),
 			SharedMemory: atomicMemory.NewSharedMemory(mainnetCChainID),
@@ -379,7 +379,7 @@ func createBlockChanFromLevelDB(tb testing.TB, sourceDir string, startBlock, end
 	r := require.New(tb)
 	ch := make(chan blockResult, chanSize)
 
-	db, err := leveldb.New(sourceDir, nil, logging.NoLog{}, metric.NewRegistry())
+	db, err := leveldb.New(sourceDir, nil, log.NoLog{}, metric.NewRegistry())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create leveldb database from %q: %w", sourceDir, err)
 	}
@@ -446,7 +446,7 @@ func exportBlockRange(tb testing.TB, sourceDir string, targetDir string, startBl
 	blockChan, err := createBlockChanFromLevelDB(tb, sourceDir, startBlock, endBlock, chanSize)
 	r.NoError(err)
 
-	db, err := leveldb.New(targetDir, nil, logging.NoLog{}, metric.NewRegistry())
+	db, err := leveldb.New(targetDir, nil, log.NoLog{}, metric.NewRegistry())
 	r.NoError(err)
 	tb.Cleanup(func() {
 		r.NoError(db.Close())

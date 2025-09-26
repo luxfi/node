@@ -13,11 +13,11 @@ import (
 	_ "embed"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -30,7 +30,7 @@ var registerL1ValidatorTxJSON []byte
 func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 	require := require.New(t)
 
-	const balance = units.Avax
+	const balance = units.Lux
 
 	skBytes, err := hex.DecodeString("6668fecd4595b81e4d568398c820bbf3f073cb222902279fa55ebb84764ed2e3")
 	require.NoError(err)
@@ -117,7 +117,7 @@ func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 							ID: avaxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
-							Amt: units.Avax,
+							Amt: units.Lux,
 							Input: secp256k1fx.Input{
 								SigIndices: []uint32{2, 5},
 							},
@@ -182,7 +182,7 @@ func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 		// Number of outputs
 		0x00, 0x00, 0x00, 0x02,
 		// Outputs[0]
-		// AVAX assetID
+		// LUX assetID
 		0x21, 0xe6, 0x73, 0x17, 0xcb, 0xc4, 0xbe, 0x2a,
 		0xeb, 0x00, 0x67, 0x7a, 0xd6, 0x46, 0x27, 0x78,
 		0xa8, 0xf5, 0x22, 0x74, 0xb9, 0xd6, 0x05, 0xdf,
@@ -235,14 +235,14 @@ func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
 		// Tx output index
 		0x00, 0x00, 0x00, 0x01,
-		// AVAX assetID
+		// LUX assetID
 		0x21, 0xe6, 0x73, 0x17, 0xcb, 0xc4, 0xbe, 0x2a,
 		0xeb, 0x00, 0x67, 0x7a, 0xd6, 0x46, 0x27, 0x78,
 		0xa8, 0xf5, 0x22, 0x74, 0xb9, 0xd6, 0x05, 0xdf,
 		0x25, 0x91, 0xb2, 0x30, 0x27, 0xa8, 0x7d, 0xff,
 		// secp256k1fx transfer input type ID
 		0x00, 0x00, 0x00, 0x05,
-		// input amount = 1 Avax
+		// input amount = 1 Lux
 		0x00, 0x00, 0x00, 0x00, 0x3b, 0x9a, 0xca, 0x00,
 		// number of signatures needed in input
 		0x00, 0x00, 0x00, 0x02,
@@ -322,7 +322,7 @@ func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 	}
 	require.Equal(expectedBytes, txBytes)
 
-	ctx := snowtest.Context(t, constants.PlatformChainID)
+	ctx := consensustest.Context(t, constants.PlatformChainID)
 	unsignedTx.InitCtx(ctx)
 
 	txJSON, err := json.MarshalIndent(unsignedTx, "", "\t")
@@ -331,7 +331,7 @@ func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 }
 
 func TestRegisterL1ValidatorTxSyntacticVerify(t *testing.T) {
-	ctx := snowtest.Context(t, ids.GenerateTestID())
+	ctx := consensustest.Context(t, ids.GenerateTestID())
 	tests := []struct {
 		name        string
 		tx          *RegisterL1ValidatorTx

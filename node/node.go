@@ -1150,7 +1150,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			Server:                                  n.APIServer,
 			Keystore:                                n.keystore,
 			AtomicMemory:                            n.sharedMemory,
-			LUXAssetID:                              luxAssetID,
+			XAssetID:                              luxAssetID,
 			XChainID:                                xChainID,
 			CChainID:                                cChainID,
 			CriticalChains:                          criticalChains,

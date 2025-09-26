@@ -153,7 +153,7 @@ type Builder interface {
 type Context struct {
 	NetworkID        uint32
 	BlockchainID     ids.ID
-	LUXAssetID       ids.ID
+	XAssetID       ids.ID
 	BaseTxFee        uint64
 	CreateAssetTxFee uint64
 }
@@ -163,7 +163,7 @@ type Context struct {
 type BuilderBackend interface {
 	Context() *builder.Context
 	BlockchainID() ids.ID
-	LUXAssetID() ids.ID
+	XAssetID() ids.ID
 	BaseTxFee() uint64
 	CreateAssetTxFee() uint64
 

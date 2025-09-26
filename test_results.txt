@@ -711,13 +711,13 @@ FAIL	github.com/luxfi/node/internal/database/rpcdb [build failed]
     --- PASS: TestInterface/Remove_Alias} (0.00s)
 PASS
 ok  	github.com/luxfi/node/internal/ids/galiasreader	0.031s
-# github.com/luxfi/node/snow/networking/handler
-snow/networking/handler/handler.go:734:101: msg.AcceptedHeight undefined (type *"github.com/luxfi/node/proto/pb/p2p".Chits has no field or method AcceptedHeight)
-snow/networking/handler/handler.go:739:14: undefined: p2ppb.Simplex
-snow/networking/handler/handler.go:752:34: cannot use msg.NodeVersion (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to h.p2pTracker.Connected
+# github.com/luxfi/node/consensus/networking/handler
+consensus/networking/handler/handler.go:734:101: msg.AcceptedHeight undefined (type *"github.com/luxfi/node/proto/pb/p2p".Chits has no field or method AcceptedHeight)
+consensus/networking/handler/handler.go:739:14: undefined: p2ppb.Simplex
+consensus/networking/handler/handler.go:752:34: cannot use msg.NodeVersion (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to h.p2pTracker.Connected
 FAIL	github.com/luxfi/node/main [build failed]
-# github.com/luxfi/node/snow/engine/common/appsender
-snow/engine/common/appsender/appsender_server.go:18:37: cannot use (*Server)(nil) (value of type *Server) as "github.com/luxfi/node/proto/pb/appsender".AppSenderServer value in variable declaration: *Server does not implement "github.com/luxfi/node/proto/pb/appsender".AppSenderServer (missing method SendCrossChainAppError)
+# github.com/luxfi/node/consensus/engine/common/appsender
+consensus/engine/common/appsender/appsender_server.go:18:37: cannot use (*Server)(nil) (value of type *Server) as "github.com/luxfi/node/proto/pb/appsender".AppSenderServer value in variable declaration: *Server does not implement "github.com/luxfi/node/proto/pb/appsender".AppSenderServer (missing method SendCrossChainAppError)
 === RUN   Test_newMsgBuilder
 === PAUSE Test_newMsgBuilder
 === RUN   TestInboundMsgBuilder
@@ -1024,19 +1024,19 @@ ok  	github.com/luxfi/node/network/dialer	0.013s
     --- PASS: TestValidatorsTop/top_50%_bound (0.00s)
 PASS
 ok  	github.com/luxfi/node/network/p2p	0.030s
-# github.com/luxfi/node/snow/engine/avalanche/bootstrap [github.com/luxfi/node/snow/engine/avalanche/bootstrap.test]
-snow/engine/avalanche/bootstrap/bootstrapper_test.go:96:3: cannot use logging.NoLog{} (value of struct type logging.NoLog) as "github.com/luxfi/log".Logger value in argument to p2p.NewPeerTracker: logging.NoLog does not implement "github.com/luxfi/log".Logger (missing method Crit)
-snow/engine/avalanche/bootstrap/bootstrapper_test.go:100:3: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to p2p.NewPeerTracker
-snow/engine/avalanche/bootstrap/bootstrapper_test.go:104:29: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to p2pTracker.Connected
-# github.com/luxfi/node/snow/engine/snowman/bootstrap [github.com/luxfi/node/snow/engine/snowman/bootstrap.test]
-snow/engine/snowman/bootstrap/bootstrapper_test.go:83:3: cannot use ctx.Log (variable of interface type logging.Logger) as "github.com/luxfi/log".Logger value in argument to p2p.NewPeerTracker: logging.Logger does not implement "github.com/luxfi/log".Logger (missing method Crit)
-snow/engine/snowman/bootstrap/bootstrapper_test.go:91:30: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to peerTracker.Connected
-snow/engine/snowman/bootstrap/bootstrapper_test.go:137:3: cannot use ctx.Log (variable of interface type logging.Logger) as "github.com/luxfi/log".Logger value in argument to p2p.NewPeerTracker: logging.Logger does not implement "github.com/luxfi/log".Logger (missing method Crit)
-snow/engine/snowman/bootstrap/bootstrapper_test.go:201:30: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to peerTracker.Connected
-snow/engine/snowman/bootstrap/bootstrapper_test.go:211:29: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to peerTracker.Connected
-snow/engine/snowman/bootstrap/bootstrapper_test.go:381:53: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to bs.PeerTracker.Connected
-snow/engine/snowman/bootstrap/bootstrapper_test.go:677:3: cannot use ctx.Log (variable of interface type logging.Logger) as "github.com/luxfi/log".Logger value in argument to p2p.NewPeerTracker: logging.Logger does not implement "github.com/luxfi/log".Logger (missing method Crit)
-snow/engine/snowman/bootstrap/bootstrapper_test.go:685:30: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to peerTracker.Connected
+# github.com/luxfi/node/consensus/engine/lux/bootstrap [github.com/luxfi/node/consensus/engine/lux/bootstrap.test]
+consensus/engine/lux/bootstrap/bootstrapper_test.go:96:3: cannot use logging.NoLog{} (value of struct type logging.NoLog) as "github.com/luxfi/log".Logger value in argument to p2p.NewPeerTracker: logging.NoLog does not implement "github.com/luxfi/log".Logger (missing method Crit)
+consensus/engine/lux/bootstrap/bootstrapper_test.go:100:3: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to p2p.NewPeerTracker
+consensus/engine/lux/bootstrap/bootstrapper_test.go:104:29: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to p2pTracker.Connected
+# github.com/luxfi/node/consensus/engine/chain/bootstrap [github.com/luxfi/node/consensus/engine/chain/bootstrap.test]
+consensus/engine/chain/bootstrap/bootstrapper_test.go:83:3: cannot use ctx.Log (variable of interface type logging.Logger) as "github.com/luxfi/log".Logger value in argument to p2p.NewPeerTracker: logging.Logger does not implement "github.com/luxfi/log".Logger (missing method Crit)
+consensus/engine/chain/bootstrap/bootstrapper_test.go:91:30: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to peerTracker.Connected
+consensus/engine/chain/bootstrap/bootstrapper_test.go:137:3: cannot use ctx.Log (variable of interface type logging.Logger) as "github.com/luxfi/log".Logger value in argument to p2p.NewPeerTracker: logging.Logger does not implement "github.com/luxfi/log".Logger (missing method Crit)
+consensus/engine/chain/bootstrap/bootstrapper_test.go:201:30: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to peerTracker.Connected
+consensus/engine/chain/bootstrap/bootstrapper_test.go:211:29: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to peerTracker.Connected
+consensus/engine/chain/bootstrap/bootstrapper_test.go:381:53: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to bs.PeerTracker.Connected
+consensus/engine/chain/bootstrap/bootstrapper_test.go:677:3: cannot use ctx.Log (variable of interface type logging.Logger) as "github.com/luxfi/log".Logger value in argument to p2p.NewPeerTracker: logging.Logger does not implement "github.com/luxfi/log".Logger (missing method Crit)
+consensus/engine/chain/bootstrap/bootstrapper_test.go:685:30: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to peerTracker.Connected
 # github.com/luxfi/node/utils/crypto/keychain [github.com/luxfi/node/utils/crypto/keychain.test]
 utils/crypto/keychain/keychain_test.go:27:30: cannot use ledger (variable of type *keychainmock.Ledger) as Ledger value in argument to NewLedgerKeychain: *keychainmock.Ledger does not implement Ledger (missing method GetAddresses)
 utils/crypto/keychain/keychain_test.go:27:38: cannot use 0 (untyped int constant) as []uint32 value in argument to NewLedgerKeychain
@@ -1054,10 +1054,10 @@ utils/crypto/ledger/ledger_test.go:26:17: undefined: New
 # github.com/luxfi/node/vms/components/avax [github.com/luxfi/node/vms/components/avax.test]
 vms/components/avax/transferables_test.go:121:8: cannot use &secp256k1fx.TransferOutput{…} (value of type *secp256k1fx.TransferOutput) as TransferableOut value in struct literal: *secp256k1fx.TransferOutput does not implement TransferableOut (wrong type for method InitCtx)
 		have InitCtx("context".Context)
-		want InitCtx(*snow.Context)
+		want InitCtx(*consensus.Context)
 vms/components/avax/transferables_test.go:279:7: cannot use &secp256k1fx.TransferInput{…} (value of type *secp256k1fx.TransferInput) as TransferableIn value in struct literal: *secp256k1fx.TransferInput does not implement TransferableIn (wrong type for method InitCtx)
 		have InitCtx("context".Context)
-		want InitCtx(*snow.Context)
+		want InitCtx(*consensus.Context)
 # github.com/luxfi/node/vms/components/chain [github.com/luxfi/node/vms/components/chain.test]
 vms/components/chain/state_test.go:71:3: unknown field IDV in struct literal of type blocktest.Block
 vms/components/chain/state_test.go:72:12: cannot use choices.Processing (constant 1 of uint8 type choices.Status) as uint8 value in struct literal
@@ -1074,23 +1074,23 @@ vms/components/chain/state_test.go:451:25: too many errors
 vms/platformvm/txs/disable_l1_validator_tx_test.go:65:12: cannot use avax.BaseTx{…} (value of struct type avax.BaseTx) as lux.BaseTx value in struct literal
 vms/platformvm/txs/disable_l1_validator_tx_test.go:73:12: cannot use &stakeable.LockOut{…} (value of type *stakeable.LockOut) as avax.TransferableOut value in struct literal: *stakeable.LockOut does not implement avax.TransferableOut (wrong type for method InitCtx)
 		have InitCtx("context".Context)
-		want InitCtx(*snow.Context)
+		want InitCtx(*consensus.Context)
 vms/platformvm/txs/disable_l1_validator_tx_test.go:89:12: cannot use &stakeable.LockOut{…} (value of type *stakeable.LockOut) as avax.TransferableOut value in struct literal: *stakeable.LockOut does not implement avax.TransferableOut (wrong type for method InitCtx)
 		have InitCtx("context".Context)
-		want InitCtx(*snow.Context)
+		want InitCtx(*consensus.Context)
 vms/platformvm/txs/disable_l1_validator_tx_test.go:113:11: cannot use &secp256k1fx.TransferInput{…} (value of type *secp256k1fx.TransferInput) as avax.TransferableIn value in struct literal: *secp256k1fx.TransferInput does not implement avax.TransferableIn (wrong type for method InitCtx)
 		have InitCtx("context".Context)
-		want InitCtx(*snow.Context)
-vms/platformvm/txs/disable_l1_validator_tx_test.go:114:19: undefined: units.Avax
+		want InitCtx(*consensus.Context)
+vms/platformvm/txs/disable_l1_validator_tx_test.go:114:19: undefined: units.Lux
 vms/platformvm/txs/disable_l1_validator_tx_test.go:128:11: cannot use &stakeable.LockIn{…} (value of type *stakeable.LockIn) as avax.TransferableIn value in struct literal: *stakeable.LockIn does not implement avax.TransferableIn (wrong type for method InitCtx)
 		have InitCtx("context".Context)
-		want InitCtx(*snow.Context)
+		want InitCtx(*consensus.Context)
 vms/platformvm/txs/disable_l1_validator_tx_test.go:146:11: cannot use &secp256k1fx.TransferInput{…} (value of type *secp256k1fx.TransferInput) as avax.TransferableIn value in struct literal: *secp256k1fx.TransferInput does not implement avax.TransferableIn (wrong type for method InitCtx)
 		have InitCtx("context".Context)
-		want InitCtx(*snow.Context)
-vms/platformvm/txs/disable_l1_validator_tx_test.go:313:21: cannot use ctx (variable of type *snow.Context) as "context".Context value in argument to unsignedTx.InitCtx: *snow.Context does not implement "context".Context (missing method Deadline)
+		want InitCtx(*consensus.Context)
+vms/platformvm/txs/disable_l1_validator_tx_test.go:313:21: cannot use ctx (variable of type *consensus.Context) as "context".Context value in argument to unsignedTx.InitCtx: *consensus.Context does not implement "context".Context (missing method Deadline)
 vms/platformvm/txs/disable_l1_validator_tx_test.go:324:12: cannot use avax.BaseTx{…} (value of struct type avax.BaseTx) as lux.BaseTx value in struct literal
-vms/platformvm/txs/disable_l1_validator_tx_test.go:384:35: cannot use ctx (variable of type *snow.Context) as "context".Context value in argument to test.tx.SyntacticVerify: *snow.Context does not implement "context".Context (missing method Deadline)
+vms/platformvm/txs/disable_l1_validator_tx_test.go:384:35: cannot use ctx (variable of type *consensus.Context) as "context".Context value in argument to test.tx.SyntacticVerify: *consensus.Context does not implement "context".Context (missing method Deadline)
 vms/platformvm/txs/disable_l1_validator_tx_test.go:384:35: too many errors
 # github.com/luxfi/node/vms/proposervm [github.com/luxfi/node/vms/proposervm.test]
 vms/proposervm/mocks_test.go:24:6: MockPostForkBlock redeclared in this block

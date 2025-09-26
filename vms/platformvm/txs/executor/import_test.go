@@ -54,7 +54,7 @@ func TestNewImportTx(t *testing.T) {
 				sourceKey,
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.LUXAssetID: env.config.StaticFeeConfig.TxFee - 1,
+					env.ctx.XAssetID: env.config.StaticFeeConfig.TxFee - 1,
 				},
 				randSrc,
 			),
@@ -70,7 +70,7 @@ func TestNewImportTx(t *testing.T) {
 				sourceKey,
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.LUXAssetID: env.config.StaticFeeConfig.TxFee,
+					env.ctx.XAssetID: env.config.StaticFeeConfig.TxFee,
 				},
 				randSrc,
 			),
@@ -86,7 +86,7 @@ func TestNewImportTx(t *testing.T) {
 				sourceKey,
 				env.ctx.CChainID,
 				map[ids.ID]uint64{
-					env.ctx.LUXAssetID: env.config.StaticFeeConfig.TxFee,
+					env.ctx.XAssetID: env.config.StaticFeeConfig.TxFee,
 				},
 				randSrc,
 			),
@@ -103,7 +103,7 @@ func TestNewImportTx(t *testing.T) {
 				sourceKey,
 				env.ctx.XChainID,
 				map[ids.ID]uint64{
-					env.ctx.LUXAssetID: env.config.StaticFeeConfig.TxFee,
+					env.ctx.XAssetID: env.config.StaticFeeConfig.TxFee,
 					customAssetID:      1,
 				},
 				randSrc,

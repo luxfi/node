@@ -1,14 +1,14 @@
 # LLM.md - Lux Node Project
 
 ## Project Overview
-This is the Lux blockchain node implementation, a fork of Avalanche with modifications for the Lux network ecosystem. The project is written in Go and implements a multi-chain blockchain platform with support for multiple subnets.
+This is the Lux blockchain node implementation, a fork of Lux with modifications for the Lux network ecosystem. The project is written in Go and implements a multi-chain blockchain platform with support for multiple subnets.
 
 ## Architecture
 
 ### Core Components
 - **Node Implementation** (`/home/z/work/lux/node/`)
   - Main blockchain node with consensus, networking, and VM support
-  - Modified from Avalanche to support Lux-specific features
+  - Modified from Lux to support Lux-specific features
   - Version: v0.1.0-lux.15
 
 ### Key Modules
@@ -157,4 +157,4 @@ go build -o luxd ./app
 - **/home/z/work/lux/geth** - C-Chain implementation
 - **/home/z/work/lux/evm** - Subnet EVM
 - **/home/z/work/lux/cli** - Management CLI
-- **/home/z/work/lux/ava/avalanchego** - Upstream Avalanche reference
+- **/home/z/work/lux/ava/luxgo** - Upstream Lux reference

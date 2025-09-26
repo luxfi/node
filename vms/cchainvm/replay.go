@@ -154,17 +154,8 @@ func (r *UnifiedReplayer) SetProgressTracker(progress *ReplayProgress) {
 func (r *UnifiedReplayer) detectDatabaseType() error {
 	log.Printf("Auto-detecting database type...")
 
-	// Check for standard geth database markers
-	if _, closer, err := r.sourceDB.Get([]byte("LastBlock")); err == nil {
-		if closer != nil {
-			closer.Close()
-		}
-		r.isNamespaced = false
-		log.Printf("Detected standard geth database")
-		return nil
-	}
-
-	// Check for namespaced database with common namespace
+	// Check for namespaced database with common namespace FIRST
+	// (SubnetEVM databases have namespace prefix on keys)
 	testNamespace := []byte{
 		0x33, 0x7f, 0xb7, 0x3f, 0x9b, 0xcd, 0xac, 0x8c,
 		0x31, 0xa2, 0xd5, 0xf7, 0xb8, 0x77, 0xab, 0x1e,
@@ -186,7 +177,17 @@ func (r *UnifiedReplayer) detectDatabaseType() error {
 	if iter.First() && iter.Valid() {
 		r.isNamespaced = true
 		r.namespace = testNamespace
-		log.Printf("Detected namespaced SubnetEVM database")
+		log.Printf("Detected namespaced SubnetEVM database with namespace %x", testNamespace)
+		return nil
+	}
+
+	// Check for standard geth database markers
+	if _, closer, err := r.sourceDB.Get([]byte("LastBlock")); err == nil {
+		if closer != nil {
+			closer.Close()
+		}
+		r.isNamespaced = false
+		log.Printf("Detected standard geth database")
 		return nil
 	}
 

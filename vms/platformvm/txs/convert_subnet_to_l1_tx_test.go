@@ -255,7 +255,7 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 			ctx = consensus.WithIDs(ctx, consensus.IDs{
 				NetworkID:  test.tx.NetworkID,
 				ChainID:    testPlatformChainID,
-				LUXAssetID: luxAssetID,
+				XAssetID: luxAssetID,
 			})
 
 			// Sort inputs/outputs
@@ -316,7 +316,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		NetworkID:  1,
 		ChainID:    testChainID,
-		LUXAssetID: ids.GenerateTestID(),
+		XAssetID: ids.GenerateTestID(),
 	})
 
 	tests := []struct {

@@ -57,7 +57,7 @@ func TestNewExportTx(t *testing.T) {
 			utx, err := builder.NewExportTx(
 				tt.destinationChainID,
 				[]*lux.TransferableOutput{{
-					Asset: lux.Asset{ID: env.ctx.LUXAssetID},
+					Asset: lux.Asset{ID: env.ctx.XAssetID},
 					Out: &secp256k1fx.TransferOutput{
 						Amt: defaultBalance - defaultTxFee,
 						OutputOwners: secp256k1fx.OutputOwners{

@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 )
 
-const baseImageName = "antithesis-avalanchego"
+const baseImageName = "antithesis-luxgo"
 
 // Creates docker-compose.yml and its associated volumes in the target path.
 func main() {

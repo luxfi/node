@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/components/avax"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/subnet/primary"
@@ -22,7 +22,7 @@ func main() {
 	key := genesis.EWOQKey
 	uri := primary.LocalAPIURI
 	kc := secp256k1fx.NewKeychain(key)
-	amount := 500 * units.MilliAvax
+	amount := 500 * units.MilliLux
 	locktime := uint64(time.Date(2030, 1, 1, 0, 0, 0, 0, time.UTC).Unix())
 	destAddrStr := "P-local18jma8ppw3nhx5r4ap8clazz0dps7rv5u00z96u"
 
@@ -54,7 +54,7 @@ func main() {
 	tx, err := wallet.IssueBaseTx([]*avax.TransferableOutput{
 		{
 			Asset: avax.Asset{
-				ID: context.AVAXAssetID,
+				ID: context.LUXAssetID,
 			},
 			Out: &stakeable.LockOut{
 				Locktime: locktime,
