@@ -386,7 +386,10 @@ func (b *Bootstrapper) GetAcceptedFailed(ctx context.Context, nodeID ids.NodeID,
 
 func (b *Bootstrapper) startSyncing(ctx context.Context, acceptedBlockIDs []ids.ID) error {
 	knownBlockIDs := genesis.GetCheckpoints(b.Ctx.NetworkID, b.Ctx.ChainID)
-	b.missingBlockIDs.Union(knownBlockIDs)
+	// Convert luxfi/math/set to luxfi/node/utils/set
+	for id := range knownBlockIDs {
+		b.missingBlockIDs.Add(id)
+	}
 	b.missingBlockIDs.Add(acceptedBlockIDs...)
 	numMissingBlockIDs := b.missingBlockIDs.Len()
 

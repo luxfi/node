@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
+	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
@@ -128,7 +129,9 @@ func (s *SignatureAggregator) AggregateSignatures(
 		results:             results,
 	}
 
-	if err := s.client.AppRequest(ctx, set.Of(nonSigners...), requestBytes, handler.HandleResponse); err != nil {
+	// Convert node/utils/set to consensus/utils/set
+	nodeIDSet := consensusset.Of(nonSigners...)
+	if err := s.client.AppRequest(ctx, nodeIDSet, requestBytes, handler.HandleResponse); err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to send aggregation request: %w", err)
 	}
 

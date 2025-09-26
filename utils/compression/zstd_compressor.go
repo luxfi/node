@@ -15,6 +15,10 @@ var (
 )
 
 func NewZstdCompressor(maxSize int64) (Compressor, error) {
+	return NewZstdCompressorWithLevel(maxSize, zstd.SpeedDefault)
+}
+
+func NewZstdCompressorWithLevel(maxSize int64, level zstd.EncoderLevel) (Compressor, error) {
 	if maxSize == math.MaxInt64 {
 		// "Decompress" creates "io.LimitReader" with max size + 1:
 		// if the max size + 1 overflows, "io.LimitReader" reads nothing
@@ -23,7 +27,7 @@ func NewZstdCompressor(maxSize int64) (Compressor, error) {
 		return nil, ErrInvalidMaxSizeCompressor
 	}
 
-	encoder, err := zstd.NewWriter(nil)
+	encoder, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(level))
 	if err != nil {
 		return nil, err
 	}
