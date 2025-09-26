@@ -6,8 +6,8 @@ package snowmantest
 import (
 	"context"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow/snowtest"
 )
 

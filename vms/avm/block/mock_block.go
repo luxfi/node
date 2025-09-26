@@ -14,7 +14,7 @@ import (
 	time "time"
 
 	codec "github.com/luxfi/node/codec"
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	snow "github.com/luxfi/node/snow"
 	txs "github.com/luxfi/node/vms/avm/txs"
 	gomock "go.uber.org/mock/gomock"

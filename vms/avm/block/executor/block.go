@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/vms/avm/block"
 	"github.com/luxfi/node/vms/avm/state"

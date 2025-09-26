@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/luxfi/node/database/migration"
+	"github.com/luxfi/node/internal/database/migration"
 )
 
 func main() {

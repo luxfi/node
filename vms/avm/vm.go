@@ -16,9 +16,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/consensus/snowstorm"

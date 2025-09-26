@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow/consensus/snowball"
 	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
 	"github.com/luxfi/node/snow/snowtest"

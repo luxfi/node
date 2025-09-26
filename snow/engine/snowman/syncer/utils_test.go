@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/engine/common/tracker"
 	"github.com/luxfi/node/snow/engine/enginetest"

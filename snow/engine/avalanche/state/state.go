@@ -7,8 +7,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/engine/avalanche/vertex"
 	"github.com/luxfi/node/utils/logging"

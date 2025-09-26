@@ -11,7 +11,7 @@ import (
 
 	_ "embed"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"

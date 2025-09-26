@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	// "github.com/luxfi/coreth"
+	// "github.com/luxfi/geth"
 	ethereum "github.com/luxfi/geth"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/ethclient"
@@ -199,7 +199,7 @@ func SuggestGasPrice(ethClient *ethclient.Client) *big.Int {
 	require.NoError(ginkgo.GinkgoT(), err)
 	// Double the suggested gas price to maximize the chances of
 	// acceptance. Maybe this can be revisited pending resolution of
-	// https://github.com/luxfi/coreth/issues/314.
+	// https://github.com/luxfi/geth/issues/314.
 	gasPrice.Add(gasPrice, gasPrice)
 	return gasPrice
 }

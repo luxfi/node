@@ -6,7 +6,7 @@ package predicate
 import (
 	"fmt"
 
-	"github.com/ava-labs/libevm/common"
+	"github.com/luxfi/geth/common"
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"

@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ava-labs/libevm/common"
-	"github.com/ava-labs/libevm/core/types"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/core/types"
 )
 
 // delimiter separates the actual predicate bytes from the padded zero bytes.

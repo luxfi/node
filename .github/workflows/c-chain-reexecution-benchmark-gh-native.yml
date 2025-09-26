@@ -77,7 +77,7 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.define-matrix.outputs.matrix) }}
     timeout-minutes: ${{ matrix.timeout-minutes }}
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == 'ava-labs/avalanchego' }}
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == 'luxfi/node' }}
     permissions:
       id-token: write
       contents: write
@@ -95,7 +95,7 @@ jobs:
           prometheus-push-url: ${{ secrets.PROMETHEUS_PUSH_URL || '' }}
           prometheus-username: ${{ secrets.PROMETHEUS_USERNAME || '' }}
           prometheus-password: ${{ secrets.PROMETHEUS_PASSWORD || '' }}
-          push-github-action-benchmark: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.repository == 'ava-labs/avalanchego' && github.ref_name == 'master') }}
+          push-github-action-benchmark: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.repository == 'luxfi/node' && github.ref_name == 'master') }}
           aws-role: ${{ github.event.inputs.push-post-state != '' && secrets.AWS_S3_RW_ROLE || secrets.AWS_S3_READ_ONLY_ROLE }}
           aws-region: 'us-east-2'
           github-token: ${{ secrets.GITHUB_TOKEN }}

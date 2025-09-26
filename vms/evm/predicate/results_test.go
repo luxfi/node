@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/ava-labs/libevm/common"
+	"github.com/luxfi/geth/common"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/codec"

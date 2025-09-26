@@ -11,8 +11,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
 	"github.com/luxfi/node/utils/logging"

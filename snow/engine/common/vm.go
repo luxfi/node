@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/validators"
 )

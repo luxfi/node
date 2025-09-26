@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ava-labs/simplex"
+	"github.com/luxfi/bft"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/snow/engine/common"

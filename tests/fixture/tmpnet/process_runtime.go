@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	AvalancheGoPathEnvName = "AVALANCHEGO_PATH"
+	AvalancheGoPathEnvName = "LUXD_PATH"
 
 	defaultNodeInitTimeout = 10 * time.Second
 )

@@ -4,7 +4,7 @@
 package txstest
 
 import (
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/avm/config"
 	"github.com/luxfi/node/wallet/chain/x/builder"

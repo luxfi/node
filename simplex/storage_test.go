@@ -7,11 +7,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ava-labs/simplex"
+	"github.com/luxfi/bft"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
 	"github.com/luxfi/node/snow/engine/snowman/block"
 	"github.com/luxfi/node/snow/snowtest"

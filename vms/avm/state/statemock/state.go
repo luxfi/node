@@ -13,8 +13,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	database "github.com/luxfi/node/database"
-	ids "github.com/luxfi/node/ids"
+	database "github.com/luxfi/database"
+	ids "github.com/luxfi/ids"
 	block "github.com/luxfi/node/vms/avm/block"
 	txs "github.com/luxfi/node/vms/avm/txs"
 	avax "github.com/luxfi/node/vms/components/avax"

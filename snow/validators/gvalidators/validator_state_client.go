@@ -9,7 +9,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/utils/crypto/bls"
 

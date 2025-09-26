@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 func nameVertices(pg *prefixGroup) map[*prefixGroup]string {

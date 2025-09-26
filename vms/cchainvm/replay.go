@@ -86,10 +86,13 @@ type UnifiedReplayer struct {
 
 // NewUnifiedReplayer creates a new unified database replayer
 func NewUnifiedReplayer(config *UnifiedReplayConfig, targetDB ethdb.Database, blockchain *core.BlockChain) (*UnifiedReplayer, error) {
+	log.Printf("NewUnifiedReplayer: Starting initialization")
+	
 	if config.SourcePath == "" {
 		return nil, fmt.Errorf("source database path is required")
 	}
 
+	log.Printf("NewUnifiedReplayer: Setting defaults")
 	// Set defaults
 	if config.TestMode && config.TestLimit == 0 {
 		config.TestLimit = 100
@@ -104,6 +107,7 @@ func NewUnifiedReplayer(config *UnifiedReplayConfig, targetDB ethdb.Database, bl
 		config.BatchSize = 100000 // Default to 100k batch size
 	}
 
+	log.Printf("NewUnifiedReplayer: Opening source database at %s", config.SourcePath)
 	sourceDB, err := pebble.Open(config.SourcePath, &pebble.Options{ReadOnly: true})
 	if err != nil {
 		return nil, fmt.Errorf("CRITICAL: Cannot open source database at %s: %v", config.SourcePath, err)

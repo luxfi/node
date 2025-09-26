@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	// "github.com/luxfi/coreth/plugin/factory" // coreth not available
+	// "github.com/luxfi/geth/plugin/factory" // coreth not available
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"github.com/luxfi/log"

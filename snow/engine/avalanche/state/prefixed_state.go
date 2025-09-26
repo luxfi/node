@@ -6,7 +6,7 @@ package state
 import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/engine/avalanche/vertex"
 )
