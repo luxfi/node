@@ -29,12 +29,12 @@ require (
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
 	github.com/luxfi/bft v0.1.0
-	github.com/luxfi/consensus v1.18.1
-	github.com/luxfi/crypto v1.17.0
-	github.com/luxfi/database v1.2.0
+	github.com/luxfi/consensus v1.19.3
+	github.com/luxfi/crypto v1.17.4
+	github.com/luxfi/database v1.2.1
 	github.com/luxfi/evm v1.16.18
 	github.com/luxfi/geth v1.16.35
-	github.com/luxfi/ids v1.1.0
+	github.com/luxfi/ids v1.1.1
 	github.com/luxfi/ledger-lux-go v1.0.0
 	github.com/luxfi/log v1.1.22
 	github.com/luxfi/math v0.1.1
