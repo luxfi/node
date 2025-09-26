@@ -215,6 +215,7 @@ type DatabaseReplayConfig struct {
 	SourcePath               string // Path to source database
 	TestLimit                uint64 // If > 0, limit replay to this many blocks
 	ExtractGenesisFromSource bool   // If true, extract genesis from block 0 of source
+	CopyAllState             bool   // If true, copy all state trie data
 }
 
 // VM implements the C-Chain VM interface using geth
@@ -296,7 +297,8 @@ func (vm *VM) Initialize(
 	if replayPath := os.Getenv("LUX_REPLAY_DB"); replayPath != "" {
 		vm.log.Info("Replay mode enabled via environment variable", "source", replayPath)
 		vm.replayConfig = &DatabaseReplayConfig{
-			SourcePath: replayPath,
+			SourcePath:   replayPath,
+			CopyAllState: true,
 		}
 	}
 

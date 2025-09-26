@@ -10,6 +10,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
@@ -18,7 +19,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
-const HandlerID = p2p.SignatureRequestHandlerID
+const HandlerID = 0x0
 
 var _ p2p.Handler = (*Handler)(nil)
 
@@ -74,10 +75,10 @@ func (h *Handler) AppRequest(
 	_ ids.NodeID,
 	_ time.Time,
 	requestBytes []byte,
-) ([]byte, *common.AppError) {
+) ([]byte, *core.AppError) {
 	request := &sdk.SignatureRequest{}
 	if err := proto.Unmarshal(requestBytes, request); err != nil {
-		return nil, &common.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("failed to unmarshal request: %s", err),
 		}
@@ -85,7 +86,7 @@ func (h *Handler) AppRequest(
 
 	msg, err := warp.ParseUnsignedMessage(request.Message)
 	if err != nil {
-		return nil, &common.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("failed to parse warp unsigned message: %s", err),
 		}
@@ -105,7 +106,7 @@ func (h *Handler) AppRequest(
 	// populated with the expected values.
 	signature, err := h.signer.Sign(msg)
 	if err != nil {
-		return nil, &common.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("failed to sign message: %s", err),
 		}
@@ -115,14 +116,14 @@ func (h *Handler) AppRequest(
 	return signatureToResponse(signature)
 }
 
-func signatureToResponse(signature []byte) ([]byte, *common.AppError) {
+func signatureToResponse(signature []byte) ([]byte, *core.AppError) {
 	response := &sdk.SignatureResponse{
 		Signature: signature,
 	}
 
 	responseBytes, err := proto.Marshal(response)
 	if err != nil {
-		return nil, &common.AppError{
+		return nil, &core.AppError{
 			Code:    p2p.ErrUnexpected.Code,
 			Message: fmt.Sprintf("failed to marshal response: %s", err),
 		}
