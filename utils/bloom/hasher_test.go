@@ -4,6 +4,7 @@
 package bloom
 
 import (
+	metrics "github.com/luxfi/metric"
 	"testing"
 
 	"github.com/stretchr/testify/require"

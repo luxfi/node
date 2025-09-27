@@ -7,8 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
-
 	"github.com/luxfi/ids"
 )
 
@@ -30,7 +28,6 @@ type resourceTracker struct {
 
 // NewResourceTracker creates a new ResourceTracker
 func NewResourceTracker(
-	registerer metric.Registerer,
 	manager ResourceManager,
 	frequency time.Duration,
 ) (ResourceTracker, error) {

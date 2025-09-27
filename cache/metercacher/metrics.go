@@ -4,9 +4,7 @@
 package metercacher
 
 import (
-	"errors"
-
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 )
 
 const (
@@ -17,74 +15,58 @@ const (
 
 var (
 	resultLabels = []string{resultLabel}
-	hitLabels    = metric.Labels{
+	hitLabels    = metrics.Labels{
 		resultLabel: hitResult,
 	}
-	missLabels = metric.Labels{
+	missLabels = metrics.Labels{
 		resultLabel: missResult,
 	}
 )
 
-type metricsImpl struct {
-	getCount metric.CounterVec
-	getTime  metric.GaugeVec
+type cacheMetrics struct {
+	getCount metrics.CounterVec
+	getTime  metrics.GaugeVec
 
-	putCount metric.Counter
-	putTime  metric.Gauge
+	putCount metrics.Counter
+	putTime  metrics.Gauge
 
-	len           metric.Gauge
-	portionFilled metric.Gauge
+	len           metrics.Gauge
+	portionFilled metrics.Gauge
 }
 
 func newMetrics(
 	namespace string,
-	reg metric.Registerer,
-) (*metricsImpl, error) {
-	m := &metricsImpl{
-		getCount: metric.NewCounterVec(
-			metric.CounterOpts{
-				Namespace: namespace,
-				Name:      "get_count",
-				Help:      "number of get calls",
-			},
+	registry metrics.Registry,
+) (*cacheMetrics, error) {
+	metricsInstance := metrics.NewWithRegistry(namespace, registry)
+
+	m := &cacheMetrics{
+		getCount: metricsInstance.NewCounterVec(
+			"get_count",
+			"number of get calls",
 			resultLabels,
 		),
-		getTime: metric.NewGaugeVec(
-			metric.GaugeOpts{
-				Namespace: namespace,
-				Name:      "get_time",
-				Help:      "time spent (ns) in get calls",
-			},
+		getTime: metricsInstance.NewGaugeVec(
+			"get_time",
+			"time spent (ns) in get calls",
 			resultLabels,
 		),
-		putCount: metric.NewCounter(metric.CounterOpts{
-			Namespace: namespace,
-			Name:      "put_count",
-			Help:      "number of put calls",
-		}),
-		putTime: metric.NewGauge(metric.GaugeOpts{
-			Namespace: namespace,
-			Name:      "put_time",
-			Help:      "time spent (ns) in put calls",
-		}),
-		len: metric.NewGauge(metric.GaugeOpts{
-			Namespace: namespace,
-			Name:      "len",
-			Help:      "number of entries",
-		}),
-		portionFilled: metric.NewGauge(metric.GaugeOpts{
-			Namespace: namespace,
-			Name:      "portion_filled",
-			Help:      "fraction of cache filled",
-		}),
+		putCount: metricsInstance.NewCounter(
+			"put_count",
+			"number of put calls",
+		),
+		putTime: metricsInstance.NewGauge(
+			"put_time",
+			"time spent (ns) in put calls",
+		),
+		len: metricsInstance.NewGauge(
+			"len",
+			"number of entries",
+		),
+		portionFilled: metricsInstance.NewGauge(
+			"portion_filled",
+			"fraction of cache filled",
+		),
 	}
-	err := errors.Join(
-		reg.Register(m.getCount),
-		reg.Register(m.getTime),
-		reg.Register(m.putCount),
-		reg.Register(m.putTime),
-		reg.Register(m.len),
-		reg.Register(m.portionFilled),
-	)
-	return m, err
+	return m, nil
 }

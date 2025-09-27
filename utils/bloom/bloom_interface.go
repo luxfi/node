@@ -3,6 +3,7 @@
 
 package bloom
 
+
 // BloomFilter is the interface for bloom filter implementations that support
 // adding and checking raw byte slices
 type BloomFilter interface {

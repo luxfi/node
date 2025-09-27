@@ -3,6 +3,7 @@
 
 package bloom
 
+
 import "math"
 
 const ln2Squared = math.Ln2 * math.Ln2

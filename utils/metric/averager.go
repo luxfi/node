@@ -5,9 +5,8 @@ package metric
 
 import (
 	"errors"
-	"fmt"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -19,34 +18,30 @@ type Averager interface {
 }
 
 type averager struct {
-	count metric.Counter
-	sum   metric.Gauge
+	count metrics.Counter
+	sum   metrics.Gauge
 }
 
-func NewAverager(name, desc string, reg metric.Registerer) (Averager, error) {
+func NewAverager(name, desc string, registry metrics.Registry) (Averager, error) {
 	errs := wrappers.Errs{}
-	a := NewAveragerWithErrs(name, desc, reg, &errs)
+	a := NewAveragerWithErrs(name, desc, registry, &errs)
 	return a, errs.Err
 }
 
-func NewAveragerWithErrs(name, desc string, reg metric.Registerer, errs *wrappers.Errs) Averager {
+func NewAveragerWithErrs(name, desc string, registry metrics.Registry, errs *wrappers.Errs) Averager {
+	metricsInstance := metrics.NewWithRegistry("", registry)
+
 	a := averager{
-		count: metric.NewCounter(metric.CounterOpts{
-			Name: AppendNamespace(name, "count"),
-			Help: "Total # of observations of " + desc,
-		}),
-		sum: metric.NewGauge(metric.GaugeOpts{
-			Name: AppendNamespace(name, "sum"),
-			Help: "Sum of " + desc,
-		}),
+		count: metricsInstance.NewCounter(
+			AppendNamespace(name, "count"),
+			"Total # of observations of " + desc,
+		),
+		sum: metricsInstance.NewGauge(
+			AppendNamespace(name, "sum"),
+			"Sum of " + desc,
+		),
 	}
 
-	if err := reg.Register(a.count); err != nil {
-		errs.Add(fmt.Errorf("%w: %w", ErrFailedRegistering, err))
-	}
-	if err := reg.Register(a.sum); err != nil {
-		errs.Add(fmt.Errorf("%w: %w", ErrFailedRegistering, err))
-	}
 	return &a
 }
 

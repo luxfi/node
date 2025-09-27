@@ -4,60 +4,48 @@
 package bloom
 
 import (
-	"errors"
-
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 )
 
 // Metrics is a collection of commonly useful metrics when using a long-lived
 // bloom filter.
 type Metrics struct {
-	Count      metric.Gauge
-	NumHashes  metric.Gauge
-	NumEntries metric.Gauge
-	MaxCount   metric.Gauge
-	ResetCount metric.Counter
+	Count      metrics.Gauge
+	NumHashes  metrics.Gauge
+	NumEntries metrics.Gauge
+	MaxCount   metrics.Gauge
+	ResetCount metrics.Counter
 }
 
 func NewMetrics(
 	namespace string,
-	registerer metric.Registerer,
+	registry metrics.Registry,
 ) (*Metrics, error) {
+	metricsInstance := metrics.NewWithRegistry(namespace, registry)
+
 	m := &Metrics{
-		Count: metric.NewGauge(metric.GaugeOpts{
-			Namespace: namespace,
-			Name:      "count",
-			Help:      "Number of additions that have been performed to the bloom",
-		}),
-		NumHashes: metric.NewGauge(metric.GaugeOpts{
-			Namespace: namespace,
-			Name:      "hashes",
-			Help:      "Number of hashes in the bloom",
-		}),
-		NumEntries: metric.NewGauge(metric.GaugeOpts{
-			Namespace: namespace,
-			Name:      "entries",
-			Help:      "Number of bytes allocated to slots in the bloom",
-		}),
-		MaxCount: metric.NewGauge(metric.GaugeOpts{
-			Namespace: namespace,
-			Name:      "max_count",
-			Help:      "Maximum number of additions that should be performed to the bloom before resetting",
-		}),
-		ResetCount: metric.NewCounter(metric.CounterOpts{
-			Namespace: namespace,
-			Name:      "reset_count",
-			Help:      "Number times the bloom has been reset",
-		}),
+		Count: metricsInstance.NewGauge(
+			"count",
+			"Number of additions that have been performed to the bloom",
+		),
+		NumHashes: metricsInstance.NewGauge(
+			"hashes",
+			"Number of hashes in the bloom",
+		),
+		NumEntries: metricsInstance.NewGauge(
+			"entries",
+			"Number of bytes allocated to slots in the bloom",
+		),
+		MaxCount: metricsInstance.NewGauge(
+			"max_count",
+			"Maximum number of additions that should be performed to the bloom before resetting",
+		),
+		ResetCount: metricsInstance.NewCounter(
+			"reset_count",
+			"Number times the bloom has been reset",
+		),
 	}
-	err := errors.Join(
-		registerer.Register(m.Count),
-		registerer.Register(m.NumHashes),
-		registerer.Register(m.NumEntries),
-		registerer.Register(m.MaxCount),
-		registerer.Register(m.ResetCount),
-	)
-	return m, err
+	return m, nil
 }
 
 // Reset the metrics to align with the provided bloom filter and max count.

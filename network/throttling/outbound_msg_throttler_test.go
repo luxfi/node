@@ -4,6 +4,7 @@
 package throttling
 
 import (
+	metrics metrics "github.com/luxfi/metric"
 	"testing"
 
 	"github.com/luxfi/mock/gomock"
@@ -12,7 +13,7 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/constants"
 )
