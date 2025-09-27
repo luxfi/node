@@ -15,6 +15,7 @@ import (
 
 var validParameters = config.Parameters{
 	K:                     1,
+	Alpha:                 0.69,
 	AlphaPreference:       1,
 	AlphaConfidence:       1,
 	Beta:                  1,
@@ -34,11 +35,18 @@ func TestValid(t *testing.T) {
 			name: "invalid consensus parameters",
 			s: Config{
 				ConsensusParameters: config.Parameters{
-					K:               2,
-					AlphaPreference: 1,
+					K:                     20,
+					Alpha:                 0.5, // Too low, must be >= 0.68
+					AlphaPreference:       15,
+					AlphaConfidence:       20,
+					Beta:                  1,
+					ConcurrentRepolls:     1,
+					OptimalProcessing:     1,
+					MaxOutstandingItems:   1,
+					MaxItemProcessingTime: 1,
 				},
 			},
-			expectedErr: consensusball.ErrParametersInvalid,
+			expectedErr: config.ErrInvalidAlpha,
 		},
 		{
 			name: "invalid allowed node IDs",

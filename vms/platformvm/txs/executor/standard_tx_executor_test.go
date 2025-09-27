@@ -14,6 +14,7 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
@@ -1968,6 +1969,16 @@ type transformSubnetTxVerifyEnv struct {
 	staker         *state.Staker
 }
 
+// testContext creates a context.Context with consensus IDs for testing
+func testContext() context.Context {
+	luxAssetID := ids.GenerateTestID()
+	return consensus.WithIDs(context.Background(), consensus.IDs{
+		NetworkID: constants.UnitTestID,
+		ChainID:   constants.PlatformChainID,
+		XAssetID:  luxAssetID,
+	})
+}
+
 // Returns mock implementations that can be used in tests
 // for verifying TransformNetTx.
 func newValidTransformNetTxVerifyEnv(t *testing.T, ctrl *gomock.Controller) transformSubnetTxVerifyEnv {
@@ -2013,7 +2024,7 @@ func TestStandardExecutorTransformNetTx(t *testing.T) {
 						Bootstrapped: &utils.Atomic[bool]{},
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          context.Background(),
+						Ctx:          testContext(),
 					},
 					Tx:    env.tx,
 					State: env.state,
@@ -2036,7 +2047,7 @@ func TestStandardExecutorTransformNetTx(t *testing.T) {
 						Bootstrapped: &utils.Atomic[bool]{},
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          context.Background(),
+						Ctx:          testContext(),
 					},
 					Tx:    env.tx,
 					State: env.state,
@@ -2064,7 +2075,7 @@ func TestStandardExecutorTransformNetTx(t *testing.T) {
 						Bootstrapped: &utils.Atomic[bool]{},
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          context.Background(),
+						Ctx:          testContext(),
 					},
 					Tx:    env.tx,
 					State: env.state,
@@ -2097,7 +2108,7 @@ func TestStandardExecutorTransformNetTx(t *testing.T) {
 						Bootstrapped: &utils.Atomic[bool]{},
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          context.Background(),
+						Ctx:          testContext(),
 					},
 					Tx:    env.tx,
 					State: env.state,
@@ -2135,7 +2146,7 @@ func TestStandardExecutorTransformNetTx(t *testing.T) {
 						Bootstrapped: &utils.Atomic[bool]{},
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          context.Background(),
+						Ctx:          testContext(),
 					},
 					Tx:    env.tx,
 					State: env.state,

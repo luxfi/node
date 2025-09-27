@@ -95,7 +95,6 @@ import (
 )
 
 const (
-	defaultWeight = 10000
 	trackChecksum = false
 
 	apricotPhase3 fork = iota
@@ -115,6 +114,7 @@ var (
 	defaultValidateStartTime  = defaultGenesisTime
 	defaultValidateEndTime    = defaultValidateStartTime.Add(10 * defaultMinStakingDuration)
 	defaultMinValidatorStake  = 5 * units.MilliLux
+	defaultWeight             = defaultMinValidatorStake
 	defaultBalance            = 100 * defaultMinValidatorStake
 	preFundedKeys             = secp256k1.TestKeys()
 	defaultTxFee              = uint64(100)
@@ -177,7 +177,7 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 	// Create test context with Lock
 	consensusCtx := consensustest.Context(t, consensustest.PChainID)
 	res.ctx = testcontext.New(context.Background())
-	res.ctx.NetworkID = consensusCtx.QuantumID
+	res.ctx.NetworkID = consensusCtx.NetworkID
 	res.ctx.ChainID = consensusCtx.ChainID
 	res.ctx.NodeID = consensusCtx.NodeID
 	res.ctx.NetID = consensusCtx.NetID
@@ -271,10 +271,11 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		res.Builder.ShutdownBlockTimer()
 
 		if res.isBootstrapped.Get() {
-			validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-
-			for range validatorIDs {
-				// NoOpCalculator doesn't need stop tracking
+			validatorSet, err := res.config.Validators.GetValidators(constants.PrimaryNetworkID)
+			if err == nil {
+				for range validatorSet.Len() {
+					// NoOpCalculator doesn't need stop tracking
+				}
 			}
 
 			require.NoError(res.state.Commit())

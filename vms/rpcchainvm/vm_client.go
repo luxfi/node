@@ -134,7 +134,7 @@ func (vm *VMClient) Initialize(
 		consensusCtx = cc.Context
 		if consensusCtx != nil {
 			ctx = consensus.WithIDs(ctx, consensus.IDs{
-				NetworkID: consensusCtx.QuantumID,
+				NetworkID: consensusCtx.NetworkID,
 				ChainID:   consensusCtx.ChainID,
 				NodeID:    consensusCtx.NodeID,
 				PublicKey: consensusCtx.PublicKey,
@@ -262,7 +262,7 @@ func (vm *VMClient) Initialize(
 	}
 
 	resp, err := vm.client.Initialize(ctx, &vmpb.InitializeRequest{
-		NetworkId:    uint32(consensusCtx.QuantumID),
+		NetworkId:    uint32(consensusCtx.NetworkID),
 		SubnetId:     consensusCtx.NetID[:],
 		ChainId:      consensusCtx.ChainID[:],
 		NodeId:       consensusCtx.NodeID.Bytes(),

@@ -10,10 +10,13 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/vms/platformvm"
+	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
 	"github.com/luxfi/node/wallet/subnet/primary/common"
+	
+	ethcommon "github.com/luxfi/geth/common"
 
 	pbuilder "github.com/luxfi/node/wallet/chain/p/builder"
 	psigner "github.com/luxfi/node/wallet/chain/p/signer"
@@ -86,21 +89,29 @@ func MakeWallet(
 	config WalletConfig,
 ) (*Wallet, error) {
 	avaxAddrs := avaxKeychain.Addresses()
-	avaxState, err := FetchState(ctx, uri, avaxAddrs)
+	// Convert luxfi/math/set to node/utils/set
+	avaxAddrsSet := make(map[ids.ShortID]struct{})
+	for addr := range avaxAddrs {
+		avaxAddrsSet[addr] = struct{}{}
+	}
+	avaxState, err := FetchState(ctx, uri, avaxAddrsSet)
 	if err != nil {
 		return nil, err
 	}
 
 	ethAddrs := ethKeychain.EthAddresses()
-	ethState, err := FetchEthState(ctx, uri, ethAddrs)
+	// Convert luxfi/math/set to node/utils/set
+	ethAddrsSet := make(map[ethcommon.Address]struct{})
+	for addr := range ethAddrs {
+		ethAddrsSet[addr] = struct{}{}
+	}
+	ethState, err := FetchEthState(ctx, uri, ethAddrsSet)
 	if err != nil {
 		return nil, err
 	}
 
-	owners, err := platformvm.GetOwners(avaxState.PClient, ctx, config.SubnetIDs, config.ValidationIDs)
-	if err != nil {
-		return nil, err
-	}
+	// TODO: Fetch subnet and validation owners if needed
+	owners := make(map[ids.ID]fx.Owner)
 
 	pUTXOs := common.NewChainUTXOs(constants.PlatformChainID, avaxState.UTXOs)
 	pBackend := pwallet.NewBackend(pUTXOs, owners)

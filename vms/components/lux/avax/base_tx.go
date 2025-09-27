@@ -50,7 +50,7 @@ func (t *BaseTx) Verify(ctx *consensus.Context) error {
 	switch {
 	case t == nil:
 		return ErrNilTx
-	case t.QuantumID != ctx.QuantumID:
+	case t.NetworkID != ctx.NetworkID:
 		return ErrWrongNetworkID
 	case t.BlockchainID != ctx.ChainID:
 		return ErrWrongChainID

@@ -50,7 +50,7 @@ func TestBaseTxSerialization(t *testing.T) {
 
 	simpleBaseTx := &BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:    constants.MainnetID,
+			NetworkID:   constants.MainnetID,
 			BlockchainID: ids.Empty, // Use empty for serialization test
 			Outs:         []*lux.TransferableOutput{},
 			Ins: []*lux.TransferableInput{
@@ -76,7 +76,7 @@ func TestBaseTxSerialization(t *testing.T) {
 	testChainID := ids.Empty // Use empty for serialization test
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -129,7 +129,7 @@ func TestBaseTxSerialization(t *testing.T) {
 
 	complexBaseTx := &BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:    constants.MainnetID,
+			NetworkID:   constants.MainnetID,
 			BlockchainID: ids.Empty, // Use empty for serialization test
 			Outs: []*lux.TransferableOutput{
 				{
@@ -224,7 +224,7 @@ func TestBaseTxSerialization(t *testing.T) {
 	utils.Sort(complexBaseTx.Ins)
 	ctx2 := context.Background()
 	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -374,7 +374,7 @@ func TestBaseTxSerialization(t *testing.T) {
 
 	ctx3 := context.Background()
 	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})

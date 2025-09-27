@@ -45,7 +45,7 @@ var _ = e2e.DescribePChain("[Validator Sets]", func() {
 		ginkgo.By(fmt.Sprintf("adding %d delegators", delegatorCount), func() {
 			rewardKey, err := secp256k1.NewPrivateKey()
 			require.NoError(err)
-			luxAssetID := pContext.LUXAssetID
+			luxAssetID := pContext.XAssetID
 			startTime := time.Now().Add(tmpnet.DefaultValidatorStartTimeDiff)
 			endTime := startTime.Add(time.Second * 360)
 			// This is the default flag value for MinDelegatorStake.

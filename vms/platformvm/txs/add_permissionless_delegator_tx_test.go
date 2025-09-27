@@ -34,7 +34,7 @@ var errCustom = errors.New("custom error")
 func testContext(networkID uint32, chainID, luxAssetID ids.ID) context.Context {
 	ctx := context.Background()
 	return consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID: networkID,
+		QuantumID: networkID,
 		ChainID:   chainID,
 	})
 }
@@ -77,7 +77,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	simpleAddPrimaryTx := &AddPermissionlessDelegatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
+				NetworkID:   constants.MainnetID,
 				BlockchainID: testChainID,
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
@@ -137,7 +137,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	utils.Sort(simpleAddPrimaryTx.Ins)
 	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -239,7 +239,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	complexAddPrimaryTx := &AddPermissionlessDelegatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
+				NetworkID:   constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs: []*lux.TransferableOutput{
 					{
@@ -393,7 +393,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 	}
 	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -626,7 +626,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 
 	ctx2 := context.Background()
 	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -806,7 +806,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	simpleAddNetTx := &AddPermissionlessDelegatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
+				NetworkID:   constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
@@ -881,7 +881,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	utils.Sort(simpleAddNetTx.Ins)
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -1004,7 +1004,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	complexAddNetTx := &AddPermissionlessDelegatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
+				NetworkID:   constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs: []*lux.TransferableOutput{
 					{
@@ -1158,7 +1158,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 	}
 	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -1391,7 +1391,7 @@ func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
 
 	ctx2 := context.Background()
 	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -1543,7 +1543,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID: networkID,
+		QuantumID: networkID,
 		ChainID:   chainID,
 	})
 
@@ -1555,7 +1555,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:    networkID,
+			NetworkID:   networkID,
 			BlockchainID: chainID,
 		},
 	}
@@ -1884,7 +1884,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 			tx := tt.txFunc(ctrl)
 			testCtx := context.Background()
 			testCtx = consensus.WithIDs(testCtx, consensus.IDs{
-				NetworkID: networkID,
+				QuantumID: networkID,
 				ChainID:   chainID,
 			})
 			err := tx.SyntacticVerify(testCtx)

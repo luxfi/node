@@ -21,7 +21,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID: constants.UnitTestID,
+		QuantumID: constants.UnitTestID,
 		ChainID:   testChainID,
 	})
 	testSubnet1ID := ids.GenerateTestID()
@@ -159,7 +159,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 
 			createChainTx := &CreateChainTx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:    consensus.GetNetworkID(ctx),
+					NetworkID:   consensus.GetNetworkID(ctx),
 					BlockchainID: consensus.GetChainID(ctx),
 					Ins:          inputs,
 					Outs:         outputs,

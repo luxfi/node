@@ -264,7 +264,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 		require := require.New(t)
 
 		if res.isBootstrapped.Get() {
-			_ = res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+			_, _ = res.config.Validators.GetValidators(constants.PrimaryNetworkID)
 
 			// NoOpCalculator doesn't track validators, so no need to stop
 			require.NoError(res.state.Commit())

@@ -29,7 +29,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  constants.UnitTestID,
+		QuantumID: constants.UnitTestID,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 		NodeID:     nodeID,
@@ -88,7 +88,7 @@ func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	}}
 	addValidatorTx = &AddValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    consensus.GetNetworkID(ctx),
+			NetworkID:   consensus.GetNetworkID(ctx),
 			BlockchainID: consensus.GetChainID(ctx),
 			Ins:          inputs,
 			Outs:         outputs,
@@ -161,7 +161,7 @@ func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  constants.UnitTestID,
+		QuantumID: constants.UnitTestID,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 		NodeID:     nodeID,
@@ -213,7 +213,7 @@ func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	}}
 	addValidatorTx = &AddValidatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    consensus.GetNetworkID(ctx),
+			NetworkID:   consensus.GetNetworkID(ctx),
 			BlockchainID: consensus.GetChainID(ctx),
 			Ins:          inputs,
 			Outs:         outputs,

@@ -661,10 +661,10 @@ ok  	github.com/luxfi/node/gas	0.018s
     --- PASS: TestVMGenesis/testnet-mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6 (0.00s)
     --- FAIL: TestVMGenesis/local-jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq (0.00s)
     --- FAIL: TestVMGenesis/local-mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6 (0.00s)
-=== RUN   TestLUXAssetID
-=== RUN   TestLUXAssetID/mainnet
-=== RUN   TestLUXAssetID/testnet
-=== RUN   TestLUXAssetID/local
+=== RUN   TestXAssetID
+=== RUN   TestXAssetID/mainnet
+=== RUN   TestXAssetID/testnet
+=== RUN   TestXAssetID/local
     genesis_test.go:487: 
         	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:487
         	Error:      	Not equal: 
@@ -677,12 +677,12 @@ ok  	github.com/luxfi/node/gas	0.018s
         	            	@@ -1 +1 @@
         	            	-2QLSdF6mNa6tbRLodYBqQcZY3evjw3etbBswv3ciTbxiebXa7q
         	            	+2Gufh3bny5mPu3Xe2omAePPi4bLan28wjV8c4Sh99LYozQd45T
-        	Test:       	TestLUXAssetID/local
+        	Test:       	TestXAssetID/local
         	Messages:   	LUX assetID with networkID 31337 mismatch
---- FAIL: TestLUXAssetID (0.00s)
-    --- PASS: TestLUXAssetID/mainnet (0.00s)
-    --- PASS: TestLUXAssetID/testnet (0.00s)
-    --- FAIL: TestLUXAssetID/local (0.00s)
+--- FAIL: TestXAssetID (0.00s)
+    --- PASS: TestXAssetID/mainnet (0.00s)
+    --- PASS: TestXAssetID/testnet (0.00s)
+    --- FAIL: TestXAssetID/local (0.00s)
 FAIL
 FAIL	github.com/luxfi/node/genesis	0.150s
 FAIL	github.com/luxfi/node/genesis/generate/checkpoints [build failed]

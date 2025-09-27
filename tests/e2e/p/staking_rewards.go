@@ -135,7 +135,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 					Net: constants.PrimaryNetworkID,
 				},
 				alphaPOP,
-				pContext.LUXAssetID,
+				pContext.XAssetID,
 				&secp256k1fx.OutputOwners{
 					Threshold: 1,
 					Addrs:     []ids.ShortID{alphaValidationRewardKey.Address()},
@@ -164,7 +164,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 					Net: constants.PrimaryNetworkID,
 				},
 				betaPOP,
-				pContext.LUXAssetID,
+				pContext.XAssetID,
 				&secp256k1fx.OutputOwners{
 					Threshold: 1,
 					Addrs:     []ids.ShortID{betaValidationRewardKey.Address()},
@@ -196,7 +196,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 					},
 					Net: constants.PrimaryNetworkID,
 				},
-				pContext.LUXAssetID,
+				pContext.XAssetID,
 				&secp256k1fx.OutputOwners{
 					Threshold: 1,
 					Addrs:     []ids.ShortID{gammaDelegationRewardKey.Address()},
@@ -219,7 +219,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 					},
 					Net: constants.PrimaryNetworkID,
 				},
-				pContext.LUXAssetID,
+				pContext.XAssetID,
 				&secp256k1fx.OutputOwners{
 					Threshold: 1,
 					Addrs:     []ids.ShortID{deltaDelegationRewardKey.Address()},
@@ -281,7 +281,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 			pWallet := baseWallet.P()
 			balances, err := pWallet.Builder().GetBalance()
 			require.NoError(err)
-			rewardBalances[rewardKey.Address()] = balances[pContext.LUXAssetID]
+			rewardBalances[rewardKey.Address()] = balances[pContext.XAssetID]
 		}
 		require.Len(rewardBalances, len(rewardKeys))
 

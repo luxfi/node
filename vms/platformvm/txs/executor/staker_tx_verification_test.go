@@ -553,8 +553,9 @@ func TestGetValidatorRules(t *testing.T) {
 			name:  "primary network",
 			netID: constants.PrimaryNetworkID,
 			backend: &Backend{
-				Config: config,
-				Ctx:    context.Background(),
+				Config:   config,
+				Ctx:      context.Background(),
+				XAssetID: luxAssetID,
 			},
 			chainStateF: func(*gomock.Controller) state.Chain {
 				return nil
@@ -668,8 +669,9 @@ func TestGetDelegatorRules(t *testing.T) {
 			name:  "primary network",
 			netID: constants.PrimaryNetworkID,
 			backend: &Backend{
-				Config: config,
-				Ctx:    context.Background(),
+				Config:   config,
+				Ctx:      context.Background(),
+				XAssetID: luxAssetID,
 			},
 			chainStateF: func(*gomock.Controller) state.Chain {
 				return nil

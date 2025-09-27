@@ -60,7 +60,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 	simpleTransferNetOwnershipTx := &TransferNetOwnershipTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
+				NetworkID:   constants.MainnetID,
 				BlockchainID: ids.Empty, // Use empty for serialization test
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
@@ -98,7 +98,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -175,7 +175,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 	complexTransferNetOwnershipTx := &TransferNetOwnershipTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
+				NetworkID:   constants.MainnetID,
 				BlockchainID: ids.Empty, // Use empty for serialization test
 				Outs: []*lux.TransferableOutput{
 					{
@@ -282,7 +282,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 	utils.Sort(complexTransferNetOwnershipTx.Ins)
 	ctx2 := context.Background()
 	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -453,7 +453,7 @@ func TestTransferNetOwnershipTxSerialization(t *testing.T) {
 
 	ctx3 := context.Background()
 	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -566,7 +566,7 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		ChainID:   chainID,
-		NetworkID: networkID,
+		QuantumID: networkID,
 	})
 
 	// A BaseTx that already passed syntactic verification.
@@ -579,7 +579,7 @@ func TestTransferNetOwnershipTxSyntacticVerify(t *testing.T) {
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:    networkID,
+			NetworkID:   networkID,
 			BlockchainID: chainID,
 		},
 	}

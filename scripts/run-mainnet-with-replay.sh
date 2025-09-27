@@ -9,7 +9,7 @@ NODE_DIR="$(dirname "$SCRIPT_DIR")"
 # Configuration
 NETWORK_ID=96369
 DATA_DIR="$HOME/.luxd-mainnet-replay"
-GENESIS_DB="/home/z/work/lux/genesis/state/chaindata/lux-mainnet-96369/db"
+GENESIS_DB="/home/z/work/lux/genesis/state/chaindata/lux-mainnet-96369/db/pebbledb"
 HTTP_PORT=9630
 STAKING_PORT=9631
 
@@ -66,4 +66,5 @@ exec "$NODE_DIR/build/luxd" \
     --staking-tls-key-file=/tmp/staker.key \
     --staking-signer-key-file=/tmp/signer.key \
     --chain-data-dir="$DATA_DIR/chainData" \
-    --log-level=info
+    --log-level=info \
+    --skip-bootstrap

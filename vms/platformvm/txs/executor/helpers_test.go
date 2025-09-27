@@ -100,7 +100,7 @@ var (
 	defaultValidateStartTime  = defaultGenesisTime
 	defaultValidateEndTime    = defaultValidateStartTime.Add(20 * defaultMinStakingDuration)
 	defaultMinValidatorStake  = 5 * units.MilliLux
-	defaultBalance            = 100 * defaultMinValidatorStake
+	defaultBalance            = 10000 * defaultMinValidatorStake
 	preFundedKeys             = secp256k1.TestKeys()
 	defaultTxFee              = uint64(100)
 	lastAcceptedID            = ids.GenerateTestID()

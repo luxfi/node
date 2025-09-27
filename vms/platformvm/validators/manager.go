@@ -586,9 +586,90 @@ func (m *manager) RegisterSetCallbackListener(subnetID ids.ID, listener validato
 
 // GetValidators implements validators.Manager interface
 func (m *manager) GetValidators(netID ids.ID) (validators.Set, error) {
-	// For now, return nil
-	// This may need to be properly implemented based on actual requirements
-	return nil, nil
+	ctx := context.Background()
+	currentHeight, err := m.getCurrentHeight(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	validatorMap, err := m.GetValidatorSet(ctx, currentHeight, netID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &validatorSet{
+		vdrs: validatorMap,
+	}, nil
+}
+
+// validatorSet implements validators.Set
+type validatorSet struct {
+	vdrs map[ids.NodeID]*validators.GetValidatorOutput
+}
+
+func (v *validatorSet) Has(nodeID ids.NodeID) bool {
+	_, ok := v.vdrs[nodeID]
+	return ok
+}
+
+func (v *validatorSet) Len() int {
+	return len(v.vdrs)
+}
+
+func (v *validatorSet) List() []validators.Validator {
+	list := make([]validators.Validator, 0, len(v.vdrs))
+	for nodeID, vdr := range v.vdrs {
+		list = append(list, &validatorImpl{
+			nodeID: nodeID,
+			weight: vdr.Weight,
+		})
+	}
+	return list
+}
+
+func (v *validatorSet) Light() uint64 {
+	var total uint64
+	for _, vdr := range v.vdrs {
+		total += vdr.Weight
+	}
+	return total
+}
+
+func (v *validatorSet) Sample(size int) ([]ids.NodeID, error) {
+	list := make([]ids.NodeID, 0, len(v.vdrs))
+	for nodeID := range v.vdrs {
+		list = append(list, nodeID)
+	}
+	if size > len(list) {
+		size = len(list)
+	}
+	return list[:size], nil
+}
+
+func (v *validatorSet) TotalWeight() uint64 {
+	var total uint64
+	for _, vdr := range v.vdrs {
+		total += vdr.Weight
+	}
+	return total
+}
+
+func (v *validatorSet) String() string {
+	return fmt.Sprintf("validatorSet{len=%d}", len(v.vdrs))
+}
+
+// validatorImpl implements validators.Validator
+type validatorImpl struct {
+	nodeID ids.NodeID
+	weight uint64
+}
+
+func (v *validatorImpl) ID() ids.NodeID {
+	return v.nodeID
+}
+
+func (v *validatorImpl) Light() uint64 {
+	return v.weight
 }
 
 // TotalLight implements validators.Manager interface

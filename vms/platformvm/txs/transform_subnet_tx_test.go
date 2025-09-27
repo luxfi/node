@@ -60,7 +60,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 	simpleTransformTx := &TransformNetTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
+				NetworkID:   constants.MainnetID,
 				BlockchainID: ids.Empty, // Use empty for serialization test
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
@@ -119,7 +119,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -234,7 +234,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 	complexTransformTx := &TransformNetTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
+				NetworkID:   constants.MainnetID,
 				BlockchainID: ids.Empty, // Use empty for serialization test
 				Outs: []*lux.TransferableOutput{
 					{
@@ -347,7 +347,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 	utils.Sort(complexTransformTx.Ins)
 	ctx2 := context.Background()
 	ctx2 = consensus.WithIDs(ctx2, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -535,7 +535,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 
 	ctx3 := context.Background()
 	ctx3 = consensus.WithIDs(ctx3, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -655,7 +655,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
 		ChainID:    chainID,
-		NetworkID:  networkID,
+		QuantumID: networkID,
 		XAssetID: luxAssetID,
 	})
 
@@ -667,7 +667,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:    networkID,
+			NetworkID:   networkID,
 			BlockchainID: chainID,
 		},
 	}

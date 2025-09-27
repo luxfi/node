@@ -573,6 +573,22 @@ func NewMinimalEthBackend(db ethdb.Database, config *ethconfig.Config, genesis *
 			rawdb.WriteChainConfig(db, existingGenesisHash, storedConfig)
 		}
 
+		// CRITICAL FIX: Ensure stored config has BlobSchedule for Cancun
+		if storedConfig.CancunTime != nil {
+			if storedConfig.BlobScheduleConfig == nil {
+				storedConfig.BlobScheduleConfig = &params.BlobScheduleConfig{}
+			}
+			if storedConfig.BlobScheduleConfig.Cancun == nil {
+				storedConfig.BlobScheduleConfig.Cancun = &params.BlobConfig{
+					Target:         3,
+					Max:            6,
+					UpdateFraction: 3338477,
+				}
+				// Update database with fixed config
+				rawdb.WriteChainConfig(db, existingGenesisHash, storedConfig)
+			}
+		}
+
 		// Create the blockchain directly without genesis setup
 		blockchain, err = createBlockchainWithoutGenesis(db, storedConfig, engine, options)
 		if err != nil {
@@ -673,6 +689,45 @@ func createBlockchainWithoutGenesis(db ethdb.Database, chainConfig *params.Chain
 		// The only way around this is to modify the geth code itself
 		// or to use the exact genesis that matches our extracted one
 		return nil, fmt.Errorf("failed to create blockchain: %w", err)
+	}
+
+	// CRITICAL: After creating blockchain from replayed data, advance to HEAD
+	// The blockchain loads headers correctly but CurrentBlock stays at genesis
+	// because blocks weren't inserted through the normal validation pipeline
+	headHash := rawdb.ReadHeadBlockHash(db)
+	fmt.Printf("DEBUG: headHash=%s, genesisHash=%s, empty=%v, different=%v\n",
+		headHash.Hex(), genesisHash.Hex(), 
+		headHash == (common.Hash{}), headHash != genesisHash)
+	if headHash != (common.Hash{}) && headHash != genesisHash {
+		headNumber, ok := rawdb.ReadHeaderNumber(db, headHash)
+		if ok {
+			headHeader := rawdb.ReadHeader(db, headHash, headNumber)
+			if headHeader != nil {
+				fmt.Printf("Advancing blockchain to HEAD block %d (hash: %s)\n", 
+					headNumber, headHash.Hex())
+				
+				// The blockchain's currentBlock is at genesis but we need it at HEAD
+				// We can't call writeHeadBlock (private method) but we can use reflection
+				// or just manually insert the final block through InsertChain
+				
+				// WORKAROUND: Read the full head block and force insert it
+				headBlock := rawdb.ReadBlock(db, headHash, headNumber)
+				if headBlock != nil {
+					// Try InsertChain with just the head block
+					// This will validate and set it as current
+					fmt.Printf("Inserting HEAD block to advance blockchain...\n")
+					_, err := blockchain.InsertChain([]*types.Block{headBlock})
+					if err != nil {
+						fmt.Printf("WARNING: Failed to insert HEAD block: %v\n", err)
+						fmt.Printf("Blockchain will remain at genesis, balance queries may fail\n")
+					} else {
+						fmt.Printf("✅ Blockchain advanced to block %d\n", headBlock.NumberU64())
+					}
+				} else {
+					fmt.Printf("WARNING: HEAD block body not found in database\n")
+				}
+			}
+		}
 	}
 
 	return blockchain, nil

@@ -5,7 +5,6 @@ package subnets
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/luxfi/ids"
@@ -52,8 +51,8 @@ type Config struct {
 }
 
 func (c *Config) Valid() error {
-	if err := c.ConsensusParameters.Verify(); err != nil {
-		return fmt.Errorf("consensus %w", err)
+	if err := c.ConsensusParameters.Valid(); err != nil {
+		return err
 	}
 	if !c.ValidatorOnly && c.AllowedNodes.Len() > 0 {
 		return errAllowedNodesWhenNotValidatorOnly

@@ -29,15 +29,19 @@ type validatorStateAdapter struct {
 	state validators.State
 }
 
-func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*ValidatorData, error) {
 	validatorSet, err := v.state.GetValidatorSet(ctx, height, netID)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make(map[ids.NodeID]uint64, len(validatorSet))
+	result := make(map[ids.NodeID]*ValidatorData, len(validatorSet))
 	for nodeID, validator := range validatorSet {
-		result[nodeID] = validator.Weight
+		result[nodeID] = &ValidatorData{
+			NodeID:    validator.NodeID,
+			PublicKey: validator.PublicKey,
+			Weight:    validator.Weight,
+		}
 	}
 	return result, nil
 }
@@ -212,7 +216,7 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 				}
 			},
 			expectedVdrs:   []*Validator{testVdrs[1].vdr},
-			expectedWeight: 6,
+			expectedWeight: 3, // Only count validators with valid public keys
 			expectedErr:    nil,
 		},
 	}

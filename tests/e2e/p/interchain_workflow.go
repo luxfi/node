@@ -66,7 +66,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 
 		ginkgo.By("defining common configuration")
 		recipientEthAddress := tmpnet.GetEthAddress(recipientKey)
-		luxAssetID := xContext.LUXAssetID
+		luxAssetID := xContext.XAssetID
 		// Use the same owner for sending to X-Chain and importing funds to P-Chain
 		recipientOwner := secp256k1fx.OutputOwners{
 			Threshold: 1,
@@ -122,7 +122,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 					Net: constants.PrimaryNetworkID,
 				},
 				nodePOP,
-				pContext.LUXAssetID,
+				pContext.XAssetID,
 				&secp256k1fx.OutputOwners{
 					Threshold: 1,
 					Addrs:     []ids.ShortID{rewardKey.Address()},
@@ -151,7 +151,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 					},
 					Net: constants.PrimaryNetworkID,
 				},
-				pContext.LUXAssetID,
+				pContext.XAssetID,
 				&secp256k1fx.OutputOwners{
 					Threshold: 1,
 					Addrs:     []ids.ShortID{rewardKey.Address()},

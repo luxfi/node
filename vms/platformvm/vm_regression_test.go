@@ -542,10 +542,6 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 		XAssetID: luxAssetID,
 	}
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &linearblock.ConsensusContext{
-			ValidatorState: nil,
-			Metrics:        nil,
-		},
 		Context: luxCtx,
 	}
 

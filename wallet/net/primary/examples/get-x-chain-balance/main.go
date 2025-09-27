@@ -47,7 +47,7 @@ func main() {
 		log.Fatalf("failed to get the balance: %s\n", err)
 	}
 
-	luxID := state.XCTX.LUXAssetID
+	luxID := state.XCTX.XAssetID
 	luxBalance := currentBalances[luxID]
 	log.Printf("current LUX balance of %s is %d nLUX\n", addrStr, luxBalance)
 }

@@ -53,7 +53,7 @@ func main() {
 	// Pull out useful constants to use when issuing transactions.
 	cContext := cWallet.Builder().Context()
 	cChainID := cContext.BlockchainID
-	luxAssetID := cContext.LUXAssetID
+	luxAssetID := cContext.XAssetID
 	owner := secp256k1fx.OutputOwners{
 		Threshold: 1,
 		Addrs: []ids.ShortID{
