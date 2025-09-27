@@ -29,7 +29,7 @@ require (
 	github.com/holiman/uint256 v1.3.2
 	github.com/klauspost/compress v1.18.0
 	github.com/luxfi/bft v0.1.0
-	github.com/luxfi/consensus v1.19.3
+	github.com/luxfi/consensus v1.19.6
 	github.com/luxfi/crypto v1.17.4
 	github.com/luxfi/database v1.2.1
 	github.com/luxfi/evm v1.16.18
