@@ -4,26 +4,25 @@
 package health
 
 import (
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 )
 
 type healthMetrics struct {
 	// failingChecks keeps track of the number of check failing
-	failingChecks metric.GaugeVec
+	failingChecks metrics.GaugeVec
 }
 
-func newMetrics(namespace string, registerer metric.Registerer) (*healthMetrics, error) {
-	metrics := &healthMetrics{
-		failingChecks: metric.NewGaugeVec(
-			metric.GaugeOpts{
-				Namespace: namespace,
-				Name:      "checks_failing",
-				Help:      "number of currently failing health checks",
-			},
+func newMetrics(namespace string, registry metrics.Registry) (*healthMetrics, error) {
+	metricsInstance := metrics.NewWithRegistry(namespace, registry)
+
+	m := &healthMetrics{
+		failingChecks: metricsInstance.NewGaugeVec(
+			"checks_failing",
+			"number of currently failing health checks",
 			[]string{"tag"},
 		),
 	}
-	metrics.failingChecks.WithLabelValues(AllTag).Set(0)
-	metrics.failingChecks.WithLabelValues(ApplicationTag).Set(0)
-	return metrics, registerer.Register(metrics.failingChecks)
+	m.failingChecks.WithLabelValues(AllTag).Set(0)
+	m.failingChecks.WithLabelValues(ApplicationTag).Set(0)
+	return m, nil
 }

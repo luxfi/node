@@ -4,6 +4,7 @@
 package throttling
 
 import (
+	metrics metrics "github.com/luxfi/metric"
 	"context"
 	"net"
 

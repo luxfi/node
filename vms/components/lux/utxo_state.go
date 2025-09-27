@@ -4,7 +4,7 @@
 package lux
 
 import (
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/linkeddb"

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/math"
@@ -74,9 +74,9 @@ type adaptiveTimeoutManager struct {
 	lock sync.Mutex
 	// Tells the time. Can be faked for testing.
 	clock                            mockable.Clock
-	networkTimeoutMetric, avgLatency metric.Gauge
-	numTimeouts                      metric.Counter
-	numPendingTimeouts               metric.Gauge
+	networkTimeoutMetric, avgLatency metrics.Gauge
+	numTimeouts                      metrics.Counter
+	numPendingTimeouts               metrics.Gauge
 	// Averages the response time from all peers
 	averager math.Averager
 	// Timeout is [timeoutCoefficient] * average response time
@@ -91,7 +91,7 @@ type adaptiveTimeoutManager struct {
 
 func NewAdaptiveTimeoutManager(
 	config *AdaptiveTimeoutConfig,
-	reg metric.Registerer,
+	registry metrics.Registry,
 ) (AdaptiveTimeoutManager, error) {
 	switch {
 	case config.InitialTimeout > config.MaximumTimeout:
@@ -104,23 +104,25 @@ func NewAdaptiveTimeoutManager(
 		return nil, errNonPositiveHalflife
 	}
 
+	metricsInstance := metrics.NewWithRegistry("adaptive_timeout", registry)
+
 	tm := &adaptiveTimeoutManager{
-		networkTimeoutMetric: metric.NewGauge(metric.GaugeOpts{
-			Name: "current_timeout",
-			Help: "Duration of current network timeout in nanoseconds",
-		}),
-		avgLatency: metric.NewGauge(metric.GaugeOpts{
-			Name: "average_latency",
-			Help: "Average network latency in nanoseconds",
-		}),
-		numTimeouts: metric.NewCounter(metric.CounterOpts{
-			Name: "timeouts",
-			Help: "Number of timed out requests",
-		}),
-		numPendingTimeouts: metric.NewGauge(metric.GaugeOpts{
-			Name: "pending_timeouts",
-			Help: "Number of pending timeouts",
-		}),
+		networkTimeoutMetric: metricsInstance.NewGauge(
+			"current_timeout",
+			"Duration of current network timeout in nanoseconds",
+		),
+		avgLatency: metricsInstance.NewGauge(
+			"average_latency",
+			"Average network latency in nanoseconds",
+		),
+		numTimeouts: metricsInstance.NewCounter(
+			"timeouts",
+			"Number of timed out requests",
+		),
+		numPendingTimeouts: metricsInstance.NewGauge(
+			"pending_timeouts",
+			"Number of pending timeouts",
+		),
 		minimumTimeout:     config.MinimumTimeout,
 		maximumTimeout:     config.MaximumTimeout,
 		currentTimeout:     config.InitialTimeout,
@@ -132,13 +134,7 @@ func NewAdaptiveTimeoutManager(
 	tm.timer = NewTimer(tm.timeout)
 	tm.averager = math.NewAverager(float64(config.InitialTimeout), config.TimeoutHalflife, tm.clock.Time())
 
-	err := errors.Join(
-		reg.Register(tm.networkTimeoutMetric),
-		reg.Register(tm.avgLatency),
-		reg.Register(tm.numTimeouts),
-		reg.Register(tm.numPendingTimeouts),
-	)
-	return tm, err
+	return tm, nil
 }
 
 func (tm *adaptiveTimeoutManager) TimeoutDuration() time.Duration {

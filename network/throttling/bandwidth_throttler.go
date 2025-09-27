@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 

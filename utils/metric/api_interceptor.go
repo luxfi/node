@@ -5,12 +5,11 @@ package metric
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 )
 
 type APIInterceptor interface {
@@ -23,43 +22,35 @@ type contextKey int
 const requestTimestampKey contextKey = iota
 
 type apiInterceptor struct {
-	requestDurationCount metric.CounterVec
-	requestDurationSum   metric.GaugeVec
-	requestErrors        metric.CounterVec
+	requestDurationCount metrics.CounterVec
+	requestDurationSum   metrics.GaugeVec
+	requestErrors        metrics.CounterVec
 }
 
-func NewAPIInterceptor(registerer metric.Registerer) (APIInterceptor, error) {
-	requestDurationCount := metric.NewCounterVec(
-		metric.CounterOpts{
-			Name: "request_duration_count",
-			Help: "Number of times this type of request was made",
-		},
+func NewAPIInterceptor(registry metrics.Registry) (APIInterceptor, error) {
+	metricsInstance := metrics.NewWithRegistry("api_interceptor", registry)
+
+	requestDurationCount := metricsInstance.NewCounterVec(
+		"request_duration_count",
+		"Number of times this type of request was made",
 		[]string{"method"},
 	)
-	requestDurationSum := metric.NewGaugeVec(
-		metric.GaugeOpts{
-			Name: "request_duration_sum",
-			Help: "Amount of time in nanoseconds that has been spent handling this type of request",
-		},
+	requestDurationSum := metricsInstance.NewGaugeVec(
+		"request_duration_sum",
+		"Amount of time in nanoseconds that has been spent handling this type of request",
 		[]string{"method"},
 	)
-	requestErrors := metric.NewCounterVec(
-		metric.CounterOpts{
-			Name: "request_error_count",
-		},
+	requestErrors := metricsInstance.NewCounterVec(
+		"request_error_count",
+		"Number of request errors",
 		[]string{"method"},
 	)
 
-	err := errors.Join(
-		registerer.Register(requestDurationCount),
-		registerer.Register(requestDurationSum),
-		registerer.Register(requestErrors),
-	)
 	return &apiInterceptor{
 		requestDurationCount: requestDurationCount,
 		requestDurationSum:   requestDurationSum,
 		requestErrors:        requestErrors,
-	}, err
+	}, nil
 }
 
 func (*apiInterceptor) InterceptRequest(i *rpc.RequestInfo) *http.Request {
@@ -75,19 +66,19 @@ func (apr *apiInterceptor) AfterRequest(i *rpc.RequestInfo) {
 		return
 	}
 
-	durationMetricCount := apr.requestDurationCount.With(metric.Labels{
+	durationMetricCount := apr.requestDurationCount.With(metrics.Labels{
 		"method": i.Method,
 	})
 	durationMetricCount.Inc()
 
 	duration := time.Since(timestamp)
-	durationMetricSum := apr.requestDurationSum.With(metric.Labels{
+	durationMetricSum := apr.requestDurationSum.With(metrics.Labels{
 		"method": i.Method,
 	})
 	durationMetricSum.Add(float64(duration))
 
 	if i.Error != nil {
-		errMetric := apr.requestErrors.With(metric.Labels{
+		errMetric := apr.requestErrors.With(metrics.Labels{
 			"method": i.Method,
 		})
 		errMetric.Inc()

@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus/validators"

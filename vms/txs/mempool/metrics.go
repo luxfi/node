@@ -4,41 +4,36 @@
 package mempool
 
 import (
-	"errors"
+	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 )
 
-var _ Metrics = (*metricsImpl)(nil)
-
-type metricsImpl struct {
-	numTxs               metric.Gauge
-	bytesAvailableMetric metric.Gauge
+type mempoolMetrics struct {
+	numTxs prometheus.Gauge
+	bytesUsed prometheus.Gauge
 }
 
-func NewMetrics(namespace string, registerer metric.Registerer) (*metricsImpl, error) {
-	m := &metricsImpl{
-		numTxs: metric.NewGauge(metric.GaugeOpts{
-			Namespace: namespace,
-			Name:      "count",
-			Help:      "Number of transactions in the mempool",
+func newMetrics(registerer metrics.Registerer) (*mempoolMetrics, error) {
+	m := &mempoolMetrics{
+		numTxs: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "mempool_num_txs",
+			Help: "Number of transactions in mempool",
 		}),
-		bytesAvailableMetric: metric.NewGauge(metric.GaugeOpts{
-			Namespace: namespace,
-			Name:      "bytes_available",
-			Help:      "Number of bytes of space currently available in the mempool",
+		bytesUsed: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "mempool_bytes_used",
+			Help: "Number of bytes used by mempool",
 		}),
 	}
 
-	err := errors.Join(
-		registerer.Register(m.numTxs),
-		registerer.Register(m.bytesAvailableMetric),
-	)
+	err := registerer.Register(m.numTxs)
+	if err != nil {
+		return nil, err
+	}
+	err = registerer.Register(m.bytesUsed)
+	if err != nil {
+		return nil, err
+	}
 
-	return m, err
-}
-
-func (m *metricsImpl) Update(numTxs, bytesAvailable int) {
-	m.numTxs.Set(float64(numTxs))
-	m.bytesAvailableMetric.Set(float64(bytesAvailable))
+	return m, nil
 }

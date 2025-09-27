@@ -6,7 +6,7 @@ package metercacher
 import (
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/node/cache"
 )
@@ -16,15 +16,15 @@ var _ cache.Cacher[struct{}, struct{}] = (*Cache[struct{}, struct{}])(nil)
 type Cache[K comparable, V any] struct {
 	cache.Cacher[K, V]
 
-	metrics *metricsImpl
+	metrics *cacheMetrics
 }
 
 func New[K comparable, V any](
 	namespace string,
-	registerer metric.Registerer,
+	registry metrics.Registry,
 	cache cache.Cacher[K, V],
 ) (*Cache[K, V], error) {
-	metrics, err := newMetrics(namespace, registerer)
+	metrics, err := newMetrics(namespace, registry)
 	return &Cache[K, V]{
 		Cacher:  cache,
 		metrics: metrics,

@@ -4,6 +4,7 @@
 package lux
 
 import (
+	metrics "github.com/luxfi/metric"
 	"fmt"
 
 	"github.com/luxfi/ids"

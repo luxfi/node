@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/tracker"
