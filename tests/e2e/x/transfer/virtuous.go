@@ -94,7 +94,7 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx LUX]", func() {
 				xWallet := baseWallet.X()
 				xBuilder := xWallet.Builder()
 				xContext := xBuilder.Context()
-				luxAssetID := xContext.LUXAssetID
+				luxAssetID := xContext.XAssetID
 
 				wallets := make([]primary.Wallet, len(testKeys))
 				shortAddrs := make([]ids.ShortID, len(testKeys))

@@ -4,6 +4,7 @@
 package txs
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -12,11 +13,13 @@ import (
 	_ "embed"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
 )
@@ -56,12 +59,12 @@ func TestSetL1ValidatorWeightTxSerialization(t *testing.T) {
 
 	var unsignedTx UnsignedTx = &SetL1ValidatorWeightTx{
 		BaseTx: BaseTx{
-			BaseTx: avax.BaseTx{
+			BaseTx: lux.BaseTx{
 				NetworkID:    constants.UnitTestID,
 				BlockchainID: constants.PlatformChainID,
-				Outs: []*avax.TransferableOutput{
+				Outs: []*lux.TransferableOutput{
 					{
-						Asset: avax.Asset{
+						Asset: lux.Asset{
 							ID: avaxAssetID,
 						},
 						Out: &stakeable.LockOut{
@@ -77,7 +80,7 @@ func TestSetL1ValidatorWeightTxSerialization(t *testing.T) {
 						},
 					},
 					{
-						Asset: avax.Asset{
+						Asset: lux.Asset{
 							ID: customAssetID,
 						},
 						Out: &stakeable.LockOut{
@@ -95,13 +98,13 @@ func TestSetL1ValidatorWeightTxSerialization(t *testing.T) {
 						},
 					},
 				},
-				Ins: []*avax.TransferableInput{
+				Ins: []*lux.TransferableInput{
 					{
-						UTXOID: avax.UTXOID{
+						UTXOID: lux.UTXOID{
 							TxID:        txID,
 							OutputIndex: 1,
 						},
-						Asset: avax.Asset{
+						Asset: lux.Asset{
 							ID: avaxAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
@@ -112,11 +115,11 @@ func TestSetL1ValidatorWeightTxSerialization(t *testing.T) {
 						},
 					},
 					{
-						UTXOID: avax.UTXOID{
+						UTXOID: lux.UTXOID{
 							TxID:        txID,
 							OutputIndex: 2,
 						},
-						Asset: avax.Asset{
+						Asset: lux.Asset{
 							ID: customAssetID,
 						},
 						In: &stakeable.LockIn{
@@ -130,11 +133,11 @@ func TestSetL1ValidatorWeightTxSerialization(t *testing.T) {
 						},
 					},
 					{
-						UTXOID: avax.UTXOID{
+						UTXOID: lux.UTXOID{
 							TxID:        txID,
 							OutputIndex: 3,
 						},
-						Asset: avax.Asset{
+						Asset: lux.Asset{
 							ID: customAssetID,
 						},
 						In: &secp256k1fx.TransferInput{
@@ -159,7 +162,7 @@ func TestSetL1ValidatorWeightTxSerialization(t *testing.T) {
 		// SetL1ValidatorWeightTx Type ID
 		0x00, 0x00, 0x00, 0x25,
 		// Network ID
-		0x00, 0x00, 0x00, 0x0a,
+		0x00, 0x00, 0x01, 0x71,
 		// P-chain blockchain ID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -293,8 +296,15 @@ func TestSetL1ValidatorWeightTxSerialization(t *testing.T) {
 	}
 	require.Equal(expectedBytes, txBytes)
 
+	aliaser := ids.NewAliaser()
+	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
+
 	ctx := consensustest.Context(t, constants.PlatformChainID)
-	unsignedTx.InitCtx(ctx)
+	goCtx := context.Background()
+	goCtx = consensus.WithContext(goCtx, ctx)
+	testCtx := testcontext.New(goCtx)
+	testCtx.BCLookup = aliaser
+	unsignedTx.InitCtx(testCtx)
 
 	txJSON, err := json.MarshalIndent(unsignedTx, "", "\t")
 	require.NoError(err)
@@ -329,14 +339,14 @@ func TestSetL1ValidatorWeightTxSyntacticVerify(t *testing.T) {
 			tx: &SetL1ValidatorWeightTx{
 				BaseTx: BaseTx{},
 			},
-			expectedErr: avax.ErrWrongNetworkID,
+			expectedErr: lux.ErrWrongNetworkID,
 		},
 		{
 			name: "passes verification",
 			tx: &SetL1ValidatorWeightTx{
 				BaseTx: BaseTx{
-					BaseTx: avax.BaseTx{
-						NetworkID:    ctx.NetworkID,
+					BaseTx: lux.BaseTx{
+						NetworkID:    ctx.QuantumID,
 						BlockchainID: ctx.ChainID,
 					},
 				},
@@ -349,7 +359,8 @@ func TestSetL1ValidatorWeightTxSyntacticVerify(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			err := test.tx.SyntacticVerify(ctx)
+			goCtx := consensus.WithContext(context.Background(), ctx)
+			err := test.tx.SyntacticVerify(goCtx)
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
 				return

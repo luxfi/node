@@ -90,7 +90,7 @@ var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
 		xContext := xBuilder.Context()
 		cBuilder := cWallet.Builder()
 		cContext := cBuilder.Context()
-		luxAssetID := xContext.LUXAssetID
+		luxAssetID := xContext.XAssetID
 		// Use the same owner for import funds to X-Chain and P-Chain
 		recipientOwner := secp256k1fx.OutputOwners{
 			Threshold: 1,

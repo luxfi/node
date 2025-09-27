@@ -707,8 +707,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 
 	// Create ChainContext
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &linearblock.ConsensusContext{},
-		Context:          luxCtx,
+		Context: luxCtx,
 	}
 	genesisBytes, err := buildCustomGenesis(luxAssetID)
 	if err != nil {

@@ -72,7 +72,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	simpleAddPrimaryTx := &AddPermissionlessValidatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
+				NetworkID:   constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
@@ -147,7 +147,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	utils.Sort(simpleAddPrimaryTx.Ins)
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -288,7 +288,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	complexAddPrimaryTx := &AddPermissionlessValidatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
+				NetworkID:   constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs: []*lux.TransferableOutput{
 					{
@@ -457,7 +457,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	}
 	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -768,7 +768,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	simpleAddNetTx := &AddPermissionlessValidatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
+				NetworkID:   constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs:         []*lux.TransferableOutput{},
 				Ins: []*lux.TransferableInput{
@@ -852,7 +852,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	utils.Sort(simpleAddNetTx.Ins)
 	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -991,7 +991,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	complexAddNetTx := &AddPermissionlessValidatorTx{
 		BaseTx: BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
+				NetworkID:   constants.MainnetID,
 				BlockchainID: constants.PlatformChainID,
 				Outs: []*lux.TransferableOutput{
 					{
@@ -1154,7 +1154,7 @@ func TestAddPermissionlessNetValidator(t *testing.T) {
 	}
 	ctx = context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 	})
@@ -1413,7 +1413,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID: networkID,
+		QuantumID: networkID,
 		ChainID:   chainID,
 	})
 
@@ -1425,7 +1425,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 	// A BaseTx that passes syntactic verification.
 	validBaseTx := BaseTx{
 		BaseTx: lux.BaseTx{
-			NetworkID:    networkID,
+			NetworkID:   networkID,
 			BlockchainID: chainID,
 		},
 	}

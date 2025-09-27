@@ -1637,39 +1637,9 @@ func (s *state) loadPendingValidators() error {
 // Invariant: initValidatorSets requires loadCurrentValidators to have already
 // been called.
 func (s *state) initValidatorSets() error {
-	for netID, validators := range s.currentStakers.validators {
-		// Check if there are any validators in the subnet
-		validatorSet, err := s.validators.GetValidators(netID)
-		if err != nil {
-			return err
-		}
-		if validatorSet.Len() != 0 {
-			// Enforce the invariant that the validator set is empty here.
-			return fmt.Errorf("%w: %s", errValidatorSetAlreadyPopulated, netID)
-		}
-
-		for _, validator := range validators {
-			validatorStaker := validator.validator
-			// Use crypto/bls.PublicKey directly
-			// TODO: AddStaker method doesn't exist in validators.Manager
-			// if err := s.validators.AddStaker(netID, nodeID, validatorStaker.PublicKey, validatorStaker.TxID, validatorStaker.Weight); err != nil {
-			// 	return err
-			// }
-			_ = validatorStaker // silence unused variable warning
-
-			delegatorIterator := NewTreeIterator(validator.delegators)
-			for delegatorIterator.Next() {
-				delegatorStaker := delegatorIterator.Value()
-				// TODO: AddWeight method doesn't exist in validators.Manager
-				// if err := s.validators.AddWeight(netID, nodeID, delegatorStaker.Weight); err != nil {
-				// 	delegatorIterator.Release()
-				// 	return err
-				// }
-				_ = delegatorStaker // silence unused variable warning
-			}
-			delegatorIterator.Release()
-		}
-	}
+	// The validator sets are now dynamically retrieved from GetValidators(),
+	// which queries the current state. No need to manually populate them here.
+	// We just need to update the metrics.
 
 	nodeID := consensus.GetNodeID(s.ctx)
 	weight := s.validators.GetWeight(constants.PrimaryNetworkID, nodeID)

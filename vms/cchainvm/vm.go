@@ -301,16 +301,30 @@ func (vm *VM) Initialize(
 			SourcePath:   replayPath,
 			CopyAllState: true,
 		}
+		
+		// Check for test limit
+		if limitStr := os.Getenv("LUX_REPLAY_LIMIT"); limitStr != "" {
+			if limit, err := strconv.ParseUint(limitStr, 10, 64); err == nil && limit > 0 {
+				vm.replayConfig.TestLimit = limit
+				fmt.Printf("TEST MODE: Will limit replay to %d blocks\n", limit)
+			}
+		}
 	}
 
 	// Parse config file for database-replay configuration
+	fmt.Printf("DEBUG: configBytes length=%d, content=%s\n", len(configBytes), string(configBytes))
 	if len(configBytes) > 0 && vm.replayConfig == nil {
 		var config struct {
 			DatabaseReplay *DatabaseReplayConfig `json:"database-replay"`
 		}
 		if err := json.Unmarshal(configBytes, &config); err == nil && config.DatabaseReplay != nil {
 			vm.log.Info("Replay mode enabled via config file", "source", config.DatabaseReplay.SourcePath)
+			fmt.Printf("DEBUG: Replay config found! source=%s, copyAllState=%v\n", config.DatabaseReplay.SourcePath, config.DatabaseReplay.CopyAllState)
 			vm.replayConfig = config.DatabaseReplay
+		} else if err != nil {
+			fmt.Printf("DEBUG: Failed to parse config: %v\n", err)
+		} else {
+			fmt.Printf("DEBUG: Config parsed but DatabaseReplay is nil\n")
 		}
 	}
 
@@ -899,6 +913,21 @@ func (vm *VM) Initialize(
 			}
 		}
 		
+		// CRITICAL FIX: Ensure BlobSchedule is set before creating backend
+		if genesis != nil && genesis.Config != nil && genesis.Config.CancunTime != nil {
+			if genesis.Config.BlobScheduleConfig == nil {
+				genesis.Config.BlobScheduleConfig = &params.BlobScheduleConfig{}
+			}
+			if genesis.Config.BlobScheduleConfig.Cancun == nil {
+				genesis.Config.BlobScheduleConfig.Cancun = &params.BlobConfig{
+					Target:         3,
+					Max:            6,
+					UpdateFraction: 3338477,
+				}
+				vm.log.Info("Fixed BlobSchedule before initial backend creation")
+			}
+		}
+
 		// Use normal backend (no migration)
 		if genesis != nil {
 			fmt.Printf("Creating normal backend with genesis hash: %s\n", genesis.ToBlock().Hash().Hex())
@@ -918,6 +947,45 @@ func (vm *VM) Initialize(
 
 	vm.blockChain = vm.backend.BlockChain()
 	vm.txPool = vm.backend.TxPool()
+	
+	fmt.Printf("DEBUG: After getting blockchain and txPool, blockchain=%v\n", vm.blockChain != nil)
+
+	// CRITICAL FIX: After blockchain creation, advance CurrentBlock to HEAD
+	// The blockchain loads headers correctly but CurrentBlock stays at genesis
+	// The issue is that ReadHeadBlockHash returns genesis because loadLastState reset it
+	// We need to check the CurrentHeader (which is at HEAD) vs CurrentBlock (which is at genesis)
+	currentHeader := vm.blockChain.CurrentHeader()
+	currentBlock := vm.blockChain.CurrentBlock()
+	
+	fmt.Printf("DEBUG: currentHeader=%d, currentBlock=%d, different=%v\n", 
+		currentHeader.Number.Uint64(), currentBlock.Number.Uint64(), 
+		currentHeader.Hash() != currentBlock.Hash())
+	
+	// If CurrentHeader is ahead of CurrentBlock, we need to advance
+	if currentHeader.Number.Uint64() > currentBlock.Number.Uint64() {
+		fmt.Printf("Blockchain state: CurrentBlock=%d, CurrentHeader=%d, advancing to HEAD\n", 
+			currentBlock.Number.Uint64(), currentHeader.Number.Uint64())
+
+		headHash := currentHeader.Hash()
+		headNumber := currentHeader.Number.Uint64()
+
+		fmt.Printf("Advancing blockchain to HEAD block %d (hash: %s)\n", headNumber, headHash.Hex())
+
+		// Read the full head block and insert it to advance the blockchain
+		headBlock := rawdb.ReadBlock(vm.ethDB, headHash, headNumber)
+		if headBlock != nil {
+			fmt.Printf("Inserting HEAD block to advance blockchain...\n")
+			_, err := vm.blockChain.InsertChain([]*types.Block{headBlock})
+			if err != nil {
+				fmt.Printf("WARNING: Failed to insert HEAD block: %v\n", err)
+				fmt.Printf("Blockchain will remain at genesis, state queries may fail\n")
+			} else {
+				fmt.Printf("✅ Blockchain advanced to block %d\n", headBlock.NumberU64())
+			}
+		} else {
+			fmt.Printf("ERROR: Could not read HEAD block %d from database\n", headNumber)
+		}
+	}
 
 	// Get genesis hash
 	genesisBlock := vm.blockChain.Genesis()
@@ -993,44 +1061,96 @@ func (vm *VM) Initialize(
 
 		vm.replayProgress.Complete()
 
-		// After replay, force the blockchain to load the replayed blocks
-		// The replay should have written the head block hash
-		headHash := rawdb.ReadHeadBlockHash(vm.ethDB)
-		if headHash != (common.Hash{}) {
-			// First get the block number for this hash
-			number, ok := rawdb.ReadHeaderNumber(vm.ethDB, headHash)
-			if ok {
-				// Now get the full header
-				header := rawdb.ReadHeader(vm.ethDB, headHash, number)
-				if header != nil {
-					// Force blockchain to recognize this state
-					// Important: After copying state directly, we need to regenerate indexes
-					vm.blockChain.SetHead(header.Number.Uint64())
+		// CRITICAL: After replay, we must recreate the backend and blockchain
+		// The existing blockchain object doesn't know about the replayed blocks
+		// because they were written directly to the database
+		vm.log.Info("Recreating backend to load replayed blockchain data...")
+		fmt.Printf("DEBUG: Recreating backend after replay\n")
 
-					// Force snapshot generation for the current state
-					// This is necessary because we copied state nodes directly
-					if err := vm.blockChain.StateCache().TrieDB().Commit(header.Root, false); err != nil {
-						vm.log.Warn("Failed to commit state after replay", "error", err)
-					}
+		// IMPORTANT: Save the head hash written by replay
+		// SetupGenesisBlockWithOverride will overwrite it back to genesis!
+		savedHeadHash := rawdb.ReadHeadBlockHash(vm.ethDB)
+		savedHeadNumber := uint64(0)
+		if savedHeadHash != (common.Hash{}) {
+			if number, ok := rawdb.ReadHeaderNumber(vm.ethDB, savedHeadHash); ok {
+				savedHeadNumber = number
+			}
+		}
+		fmt.Printf("Saved head before backend creation: block %d, hash %s\n", savedHeadNumber, savedHeadHash.Hex())
 
-					// Update lastAccepted
-					vm.lastAccepted = ids.ID(headHash)
-					vm.log.Info("Set blockchain head from replay",
-						"number", header.Number.Uint64(),
-						"hash", headHash.Hex())
+		// CRITICAL FIX: Ensure BlobSchedule is set before recreating backend
+		if genesis != nil && genesis.Config != nil && genesis.Config.CancunTime != nil {
+			if genesis.Config.BlobScheduleConfig == nil {
+				genesis.Config.BlobScheduleConfig = &params.BlobScheduleConfig{}
+			}
+			if genesis.Config.BlobScheduleConfig.Cancun == nil {
+				genesis.Config.BlobScheduleConfig.Cancun = &params.BlobConfig{
+					Target:         3,
+					Max:            6,
+					UpdateFraction: 3338477,
 				}
+				vm.log.Info("Fixed BlobSchedule before backend recreation")
 			}
+		}
 
-			if head := vm.blockChain.CurrentBlock(); head != nil {
-				vm.log.Info("Database replay complete - blockchain updated",
-					"blocks", head.Number.Uint64(),
-					"hash", head.Hash().Hex())
-			} else {
-				vm.log.Info("Database replay complete - head set",
-					"hash", headHash.Hex())
-			}
+		// Recreate backend with the genesis (it will load replayed blocks from disk)
+		var err2 error
+		vm.backend, err2 = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, genesis)
+		if err2 != nil {
+			vm.log.Error("Failed to recreate backend after replay", "error", err2)
+			return fmt.Errorf("failed to recreate backend after replay: %w", err2)
+		}
+
+		// Update blockchain reference
+		vm.blockChain = vm.backend.BlockChain()
+		vm.txPool = vm.backend.TxPool()
+
+		// DEBUG: Check if state still exists after backend recreation
+		fmt.Printf("DEBUG: Checking if state exists after backend recreation...\n")
+		testStateRoot := common.HexToHash("0x5b7259be9c69ab17b946f9ca806bdba68b148ad1e9928aad77c9aa31bc233947") // block 10's state root
+		testKey := append([]byte("s"), testStateRoot.Bytes()...)
+		if has, err := vm.ethDB.Has(testKey); err == nil && has {
+			fmt.Printf("✅ State root %x still exists after backend recreation\n", testStateRoot[:8])
 		} else {
-			vm.log.Warn("Database replay complete but no head block found")
+			fmt.Printf("❌ State root %x NOT FOUND after backend recreation! err=%v\n", testStateRoot[:8], err)
+		}
+
+		// RESTORE the head hash that was overwritten by genesis setup
+		if savedHeadHash != (common.Hash{}) && savedHeadNumber > 0 {
+			fmt.Printf("Restoring head to block %d (hash: %s)\n", savedHeadNumber, savedHeadHash.Hex())
+			rawdb.WriteHeadBlockHash(vm.ethDB, savedHeadHash)
+			rawdb.WriteHeadHeaderHash(vm.ethDB, savedHeadHash)
+			rawdb.WriteHeadFastBlockHash(vm.ethDB, savedHeadHash)
+			
+			// Force blockchain to reload with correct head
+			vm.blockChain.SetHead(savedHeadNumber)
+		}
+
+		// Check what the blockchain sees now
+		headHash := rawdb.ReadHeadBlockHash(vm.ethDB)
+		currentBlock := vm.blockChain.CurrentBlock()
+		currentHeader := vm.blockChain.CurrentHeader()
+
+		fmt.Printf("After backend recreation:\n")
+		fmt.Printf("  DB HeadBlockHash: %s\n", headHash.Hex())
+		if currentBlock != nil {
+			fmt.Printf("  CurrentBlock: %d (hash: %s)\n", currentBlock.Number.Uint64(), currentBlock.Hash().Hex())
+			fmt.Printf("  CurrentBlock StateRoot: %s\n", currentBlock.Root.Hex())
+		} else {
+			fmt.Printf("  CurrentBlock: nil\n")
+		}
+		if currentHeader != nil {
+			fmt.Printf("  CurrentHeader: %d (hash: %s)\n", currentHeader.Number.Uint64(), currentHeader.Hash().Hex())
+		}
+
+		if currentBlock != nil {
+			vm.lastAccepted = ids.ID(currentBlock.Hash())
+			vm.log.Info("Database replay complete - blockchain loaded from disk",
+				"blocks", currentBlock.Number.Uint64(),
+				"hash", currentBlock.Hash().Hex(),
+				"stateRoot", currentBlock.Root.Hex())
+		} else {
+			vm.log.Warn("Database replay complete but blockchain still at genesis")
 		}
 	}
 
@@ -1085,7 +1205,7 @@ func (vm *VM) Initialize(
 		}
 	}
 
-	currentBlock := vm.blockChain.CurrentBlock()
+	currentBlock = vm.blockChain.CurrentBlock()
 	if currentBlock != nil && currentBlock.Number.Uint64() > 0 {
 		// We have migrated data, set last accepted to current block
 		vm.lastAccepted = ids.ID(currentBlock.Hash())

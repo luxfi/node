@@ -353,7 +353,7 @@ func (b *builder) NewBaseTx(
 	options ...common.Option,
 ) (*txs.BaseTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.LUXAssetID: b.context.BaseTxFee,
+		b.context.XAssetID: b.context.BaseTxFee,
 	}
 	for _, out := range outputs {
 		assetID := out.AssetID()
@@ -389,7 +389,7 @@ func (b *builder) NewAddValidatorTx(
 	shares uint32,
 	options ...common.Option,
 ) (*txs.AddValidatorTx, error) {
-	luxAssetID := b.context.LUXAssetID
+	luxAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{
 		luxAssetID: b.context.AddPrimaryNetworkValidatorFee,
 	}
@@ -430,7 +430,7 @@ func (b *builder) NewAddNetValidatorTx(
 	options ...common.Option,
 ) (*txs.AddNetValidatorTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.LUXAssetID: b.context.AddNetValidatorFee,
+		b.context.XAssetID: b.context.AddNetValidatorFee,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -464,7 +464,7 @@ func (b *builder) NewRemoveNetValidatorTx(
 	options ...common.Option,
 ) (*txs.RemoveNetValidatorTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.LUXAssetID: b.context.BaseTxFee,
+		b.context.XAssetID: b.context.BaseTxFee,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -498,7 +498,7 @@ func (b *builder) NewAddDelegatorTx(
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.AddDelegatorTx, error) {
-	luxAssetID := b.context.LUXAssetID
+	luxAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{
 		luxAssetID: b.context.AddPrimaryNetworkDelegatorFee,
 	}
@@ -536,7 +536,7 @@ func (b *builder) NewCreateChainTx(
 	options ...common.Option,
 ) (*txs.CreateChainTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.LUXAssetID: b.context.CreateBlockchainTxFee,
+		b.context.XAssetID: b.context.CreateBlockchainTxFee,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -574,7 +574,7 @@ func (b *builder) NewCreateNetTx(
 	options ...common.Option,
 ) (*txs.CreateNetTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.LUXAssetID: b.context.CreateNetTxFee,
+		b.context.XAssetID: b.context.CreateNetTxFee,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -603,7 +603,7 @@ func (b *builder) NewTransferNetOwnershipTx(
 	options ...common.Option,
 ) (*txs.TransferNetOwnershipTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.LUXAssetID: b.context.BaseTxFee,
+		b.context.XAssetID: b.context.BaseTxFee,
 	}
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
@@ -647,7 +647,7 @@ func (b *builder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.addrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID      = b.context.LUXAssetID
+		luxAssetID      = b.context.XAssetID
 		txFee           = b.context.BaseTxFee
 
 		importedInputs  = make([]*lux.TransferableInput, 0, len(utxos))
@@ -746,7 +746,7 @@ func (b *builder) NewExportTx(
 	options ...common.Option,
 ) (*txs.ExportTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.LUXAssetID: b.context.BaseTxFee,
+		b.context.XAssetID: b.context.BaseTxFee,
 	}
 	for _, out := range outputs {
 		assetID := out.AssetID()
@@ -797,7 +797,7 @@ func (b *builder) NewTransformNetTx(
 	options ...common.Option,
 ) (*txs.TransformNetTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.LUXAssetID: b.context.TransformNetTxFee,
+		b.context.XAssetID: b.context.TransformNetTxFee,
 		assetID:              maxSupply - initialSupply,
 	}
 	toStake := map[ids.ID]uint64{}
@@ -848,7 +848,7 @@ func (b *builder) NewAddPermissionlessValidatorTx(
 	shares uint32,
 	options ...common.Option,
 ) (*txs.AddPermissionlessValidatorTx, error) {
-	luxAssetID := b.context.LUXAssetID
+	luxAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{}
 	if vdr.Net == constants.PrimaryNetworkID {
 		toBurn[luxAssetID] = b.context.AddPrimaryNetworkValidatorFee
@@ -891,7 +891,7 @@ func (b *builder) NewAddPermissionlessDelegatorTx(
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.AddPermissionlessDelegatorTx, error) {
-	luxAssetID := b.context.LUXAssetID
+	luxAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{}
 	if vdr.Net == constants.PrimaryNetworkID {
 		toBurn[luxAssetID] = b.context.AddPrimaryNetworkDelegatorFee
@@ -1234,7 +1234,7 @@ func (b *builder) authorizeSubnet(netID ids.ID, options *common.Options) (*secp2
 }
 
 func (b *builder) initCtx(tx txs.UnsignedTx) error {
-	ctx, err := NewConsensusContext(b.context.NetworkID, b.context.LUXAssetID)
+	ctx, err := NewConsensusContext(b.context.NetworkID, b.context.XAssetID)
 	if err != nil {
 		return err
 	}

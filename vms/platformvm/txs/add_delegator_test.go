@@ -30,7 +30,7 @@ func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  constants.UnitTestID,
+		QuantumID: constants.UnitTestID,
 		ChainID:    testChainID,
 		XAssetID: luxAssetID,
 		NodeID:     nodeID,
@@ -88,7 +88,7 @@ func TestAddDelegatorTxSyntacticVerify(t *testing.T) {
 	}}
 	addDelegatorTx = &AddDelegatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    consensus.GetNetworkID(ctx),
+			NetworkID:   consensus.GetNetworkID(ctx),
 			BlockchainID: consensus.GetChainID(ctx),
 			Outs:         outputs,
 			Ins:          inputs,
@@ -144,7 +144,7 @@ func TestAddDelegatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID: constants.UnitTestID,
+		QuantumID: constants.UnitTestID,
 		ChainID:   testChainID,
 		NodeID:    nodeID,
 	})
@@ -194,7 +194,7 @@ func TestAddDelegatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	}}
 	addDelegatorTx = &AddDelegatorTx{
 		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    consensus.GetNetworkID(ctx),
+			NetworkID:   consensus.GetNetworkID(ctx),
 			BlockchainID: consensus.GetChainID(ctx),
 			Outs:         outputs,
 			Ins:          inputs,

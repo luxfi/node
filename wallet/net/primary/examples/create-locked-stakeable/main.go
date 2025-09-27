@@ -52,7 +52,7 @@ func main() {
 	pWallet := wallet.P()
 	pBuilder := pWallet.Builder()
 	pContext := pBuilder.Context()
-	luxAssetID := pContext.LUXAssetID
+	luxAssetID := pContext.XAssetID
 
 	issueTxStartTime := time.Now()
 	tx, err := pWallet.IssueBaseTx([]*lux.TransferableOutput{

@@ -192,7 +192,7 @@ func (vm *VM) Initialize(
 
 	// Set IDs once at initialization
 	vm.ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID: chainCtx.Context.QuantumID,
+		NetworkID: chainCtx.Context.NetworkID,
 		NetID:     chainCtx.Context.NetID,
 		ChainID:   chainCtx.Context.ChainID,
 		NodeID:    chainCtx.Context.NodeID,

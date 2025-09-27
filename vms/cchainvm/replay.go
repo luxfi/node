@@ -490,117 +490,74 @@ func (r *UnifiedReplayer) fetchBlockData(canonicalHashes map[uint64]common.Hash,
 	return headers, bodies, nil
 }
 
-// copyStateData copies state trie nodes for the blocks being replayed
+// copyStateData copies ALL state data (not just trie nodes) for the blocks being replayed
 func (r *UnifiedReplayer) copyStateData(headers map[uint64]*types.Header) error {
-	log.Printf("Copying state data for blocks...")
+	log.Printf("Copying ALL state data (trie nodes + accounts + storage + code)...")
 
-	// Collect unique state roots
-	stateRoots := make(map[common.Hash]bool)
-	for _, header := range headers {
-		if header != nil {
-			stateRoots[header.Root] = true
-		}
+	// SIMPLE APPROACH: Copy ALL keys with the namespace prefix
+	// This includes trie nodes, account data, storage, code, etc.
+	iter, err := r.sourceDB.NewIter(&pebble.IterOptions{
+		LowerBound: r.namespace,
+		UpperBound: append(r.namespace, 0xFF),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create iterator: %w", err)
 	}
-
-	log.Printf("Found %d unique state roots to copy", len(stateRoots))
-
-	// Copy state nodes - optimized for parallel processing
-	log.Printf("Copying state trie nodes for %d blocks...", len(stateRoots))
-	copiedCount := 0
-	processedNodes := make(map[string]bool)
-
-	// Create a batch for faster writes
+	defer iter.Close()
+	
 	batch := r.targetDB.NewBatch()
 	batchSize := 0
-	const maxBatchSize = 100000 // Increased batch size for better performance
-
-	// Recursive function to copy a trie node and its children
-	var copyTrieNode func(hash []byte, depth int) error
-	copyTrieNode = func(hash []byte, depth int) error {
-		if len(hash) != 32 {
-			return nil
-		}
-
-		hashStr := hex.EncodeToString(hash)
-		if processedNodes[hashStr] {
-			return nil // Already processed
-		}
-		processedNodes[hashStr] = true
-
-		// Build key: namespace + hash
-		nodeKey := append([]byte(nil), r.namespace...)
-		nodeKey = append(nodeKey, hash...)
-
-		// Get node data from source
-		nodeData, closer, err := r.sourceDB.Get(nodeKey)
+	copiedCount := 0
+	const maxBatchSize = 10000
+	
+	// Iterate through ALL namespaced keys and copy them
+	for iter.First(); iter.Valid(); iter.Next() {
+		sourceKey := iter.Key()
+		value, err := iter.ValueAndErr()
 		if err != nil {
-			// This is CRITICAL - if we can't find a node, the state will be incomplete
-			if depth == 0 {
-				// Root nodes MUST exist
-				return fmt.Errorf("CRITICAL: Root node %x not found in source database: %v", hash, err)
-			}
-			// For child nodes, log but continue (might be pruned)
-			log.Printf("WARNING: Child node %x at depth %d not found: %v", hash, depth, err)
-			return nil
+			log.Printf("ERROR: Failed to read value for key %x: %v", sourceKey[:min(40, len(sourceKey))], err)
+			continue
 		}
-		defer closer.Close()
-
-		// Add to batch (just the hash, no namespace)
-		if err := batch.Put(hash, nodeData); err != nil {
-			return fmt.Errorf("failed to batch node %x: %v", hash, err)
+		
+		// Remove namespace prefix and write to target with appropriate prefix
+		if len(sourceKey) <= 32 {
+			continue // Skip if key is just namespace
 		}
-
+		
+		// Copy the key without namespace to target
+		targetKey := make([]byte, len(sourceKey)-32)
+		copy(targetKey, sourceKey[32:])
+		
+		if err := batch.Put(targetKey, value); err != nil {
+			return fmt.Errorf("failed to batch key %x: %v", targetKey[:min(40, len(targetKey))], err)
+		}
+		
 		copiedCount++
 		batchSize++
-
-		// Write batch when it gets large enough
+		
+		// Write batch periodically
 		if batchSize >= maxBatchSize {
+			log.Printf("Writing batch with %d items (total: %d)...", batchSize, copiedCount)
 			if err := batch.Write(); err != nil {
-				log.Printf("Failed to write batch: %v", err)
+				return fmt.Errorf("failed to write state batch: %w", err)
 			}
 			batch.Reset()
 			batchSize = 0
-			log.Printf("Copied %d state trie nodes...", copiedCount)
 		}
-
-		// Parse node to find children and recurse
-		var nodeList []interface{}
-		if err := rlp.DecodeBytes(nodeData, &nodeList); err == nil {
-			// Process branch and extension nodes recursively
-			for _, item := range nodeList {
-				if child, ok := item.([]byte); ok && len(child) == 32 {
-					if err := copyTrieNode(child, depth+1); err != nil {
-						return err
-					}
-				}
-			}
-		}
-
-		return nil
 	}
-
-	// Copy state tries for each unique root
-	for root := range stateRoots {
-		log.Printf("Copying state trie from root %x", root)
-		if err := copyTrieNode(root.Bytes(), 0); err != nil {
-			// FAIL LOUDLY - we CANNOT continue with incomplete state
-			return fmt.Errorf("FAILED TO COPY STATE: Root %x copy failed: %v", root, err)
-		}
-		log.Printf("Successfully copied tree for root %x", root)
-	}
-
-	// Write any remaining batch
+	
+	// Write remaining batch
 	if batchSize > 0 {
+		log.Printf("Writing final batch with %d items...", batchSize)
 		if err := batch.Write(); err != nil {
-			log.Printf("Failed to write final batch: %v", err)
+			return fmt.Errorf("failed to write final state batch: %w", err)
 		}
+		log.Printf("✅ Copied %d total state keys", copiedCount)
 	}
-
-	log.Printf("Copied %d state trie nodes for %d blocks", copiedCount, len(stateRoots))
+	
 	return nil
 }
 
-// replayBlocks writes the blocks to the target database
 func (r *UnifiedReplayer) replayBlocks(headers map[uint64]*types.Header, bodies map[common.Hash]*types.Body, maxBlockNum uint64) (int, error) {
 	log.Printf("Replaying %d blocks to target database...", len(headers))
 	replayedCount := 0
@@ -1028,3 +985,10 @@ func (r *UnifiedReplayer) replayBlocksBatched(headers map[uint64]*types.Header, 
 }
 
 // encodeBlockNumber is defined in backend.go
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}

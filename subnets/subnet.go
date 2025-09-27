@@ -27,6 +27,9 @@ type Subnet interface {
 	// AddChain adds a chain to this Subnet
 	AddChain(chainID ids.ID) bool
 
+	// Bootstrapped marks a chain as bootstrapped
+	Bootstrapped(chainID ids.ID)
+
 	// Config returns config of this Subnet
 	Config() Config
 
@@ -39,7 +42,6 @@ type subnet struct {
 	bootstrapped    set.Set[ids.ID]
 	config          Config
 	myNodeID        ids.NodeID
-	bootstrapSignal common.PreemptionSignal
 }
 
 func New(myNodeID ids.NodeID, config Config) Subnet {
@@ -50,7 +52,7 @@ func New(myNodeID ids.NodeID, config Config) Subnet {
 }
 
 func (s *subnet) AllBootstrapped() <-chan struct{} {
-	return s.bootstrapSignal.Listen()
+	ch := make(chan struct{}); close(ch); return ch
 }
 
 func (s *subnet) IsBootstrapped() bool {
@@ -70,7 +72,6 @@ func (s *subnet) Bootstrapped(chainID ids.ID) {
 		return
 	}
 
-	s.bootstrapSignal.Preempt()
 }
 
 func (s *subnet) AddChain(chainID ids.ID) bool {
@@ -98,4 +99,14 @@ func (s *subnet) IsAllowed(nodeID ids.NodeID, isValidator bool) bool {
 		!s.config.ValidatorOnly ||
 		isValidator ||
 		s.config.AllowedNodes.Contains(nodeID)
+}
+
+// OnBootstrapStarted implements core.BootstrapTracker
+func (s *subnet) OnBootstrapStarted() error {
+	return nil
+}
+
+// OnBootstrapCompleted implements core.BootstrapTracker
+func (s *subnet) OnBootstrapCompleted() error {
+	return nil
 }

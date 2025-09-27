@@ -282,12 +282,10 @@ func defaultVM(t *testing.T, f fork) (*VM, *txstest.WalletFactory, database.Data
 		PublicKey:   nil,
 		XChainID:    ctx.XChainID,
 		CChainID:    ctx.CChainID,
-		XAssetID: ctx.XAssetID,
-		XAssetID:  ctx.XAssetID,
+		XAssetID:    ctx.XAssetID,
 		StartTime:   time.Now(),
 	}
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 
@@ -427,8 +425,9 @@ func TestGenesis(t *testing.T) {
 	}
 
 	// Ensure current validator set of primary network is correct
-	validatorIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-	require.Len(genesisState.Validators, len(validatorIDs))
+	validatorSet, err := vm.Validators.GetValidators(constants.PrimaryNetworkID)
+	require.NoError(err)
+	require.Len(genesisState.Validators, validatorSet.Len())
 
 	for _, nodeID := range genesisNodeIDs {
 		_, ok := vm.Validators.GetValidator(constants.PrimaryNetworkID, nodeID)
@@ -1304,7 +1303,6 @@ func TestRestartFullyAccepted(t *testing.T) {
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 
@@ -1414,7 +1412,6 @@ func TestRestartFullyAccepted(t *testing.T) {
 	}
 
 	chainCtx2 := &linearblock.ChainContext{
-		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx2,
 	}
 
@@ -1508,7 +1505,6 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 
@@ -1593,7 +1589,6 @@ func TestUnverifiedParent(t *testing.T) {
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 
@@ -1774,7 +1769,6 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 
@@ -1854,7 +1848,6 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	}
 
 	secondChainCtx := &linearblock.ChainContext{
-		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          secondLuxCtx,
 	}
 
@@ -1977,7 +1970,6 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	}
 
 	chainCtx := &linearblock.ChainContext{
-		ConsensusContext: &linearblock.ConsensusContext{},
 		Context:          luxCtx,
 	}
 

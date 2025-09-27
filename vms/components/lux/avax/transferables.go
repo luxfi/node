@@ -12,6 +12,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/vms/components/verify"
 )
@@ -32,7 +33,7 @@ var (
 
 // Amounter is a data structure that has an amount of something associated with it
 type Amounter interface {
-	consensus.ContextInitializable
+	lux.ContextInitializable
 	// Amount returns how much value this element represents of the asset in its
 	// transaction.
 	Amount() uint64
@@ -56,7 +57,7 @@ type TransferableIn interface {
 // TransferableOut is the interface a feature extension must provide to transfer
 // value between features extensions.
 type TransferableOut interface {
-	consensus.ContextInitializable
+	lux.ContextInitializable
 	verify.State
 	Amounter
 }

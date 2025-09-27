@@ -48,7 +48,7 @@ var _ = e2e.DescribeXChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 		xContext := xBuilder.Context()
 		cBuilder := cWallet.Builder()
 		cContext := cBuilder.Context()
-		luxAssetID := xContext.LUXAssetID
+		luxAssetID := xContext.XAssetID
 		// Use the same owner for sending to X-Chain and importing funds to P-Chain
 		recipientOwner := secp256k1fx.OutputOwners{
 			Threshold: 1,

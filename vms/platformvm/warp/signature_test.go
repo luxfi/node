@@ -4,6 +4,7 @@
 package warp
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"math"
@@ -14,6 +15,7 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 )
 
@@ -26,11 +28,11 @@ var (
 
 // mockValidatorState is a mock implementation of ValidatorState
 type mockValidatorState struct {
-	getValidatorSetF func(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error)
+	getValidatorSetF func(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*ValidatorData, error)
 	getNetIDF        func(ctx context.Context, chainID ids.ID) (ids.ID, error)
 }
 
-func (m *mockValidatorState) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+func (m *mockValidatorState) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*ValidatorData, error) {
 	if m.getValidatorSetF != nil {
 		return m.getValidatorSetF(ctx, height, netID)
 	}
@@ -50,7 +52,7 @@ func TestSignatureVerification(t *testing.T) {
 	require.NoError(t, err)
 	nodeID0 := ids.GenerateTestNodeID()
 
-	_, err = bls.NewSecretKey()
+	sk1, err := bls.NewSecretKey()
 	require.NoError(t, err)
 	nodeID1 := ids.GenerateTestNodeID()
 
@@ -107,7 +109,7 @@ func TestSignatureVerification(t *testing.T) {
 					getNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 						return netID, nil
 					},
-					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]uint64, error) {
+					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*ValidatorData, error) {
 						if height == pChainHeight && sID == netID {
 							return nil, errTest
 						}
@@ -142,10 +144,10 @@ func TestSignatureVerification(t *testing.T) {
 					getNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 						return netID, nil
 					},
-					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]uint64, error) {
-						return map[ids.NodeID]uint64{
-							nodeID0: math.MaxUint64,
-							nodeID1: math.MaxUint64,
+					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*ValidatorData, error) {
+						return map[ids.NodeID]*ValidatorData{
+							nodeID0: {NodeID: nodeID0, Weight: math.MaxUint64},
+							nodeID1: {NodeID: nodeID1, Weight: math.MaxUint64},
 						}, nil
 					},
 				}
@@ -177,9 +179,10 @@ func TestSignatureVerification(t *testing.T) {
 					getNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 						return netID, nil
 					},
-					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]uint64, error) {
-						return map[ids.NodeID]uint64{
-							nodeID0: 50,
+					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*ValidatorData, error) {
+						pk0 := bls.PublicFromSecretKey(sk0)
+						return map[ids.NodeID]*ValidatorData{
+							nodeID0: {NodeID: nodeID0, PublicKey: bls.PublicKeyToUncompressedBytes(pk0), Weight: 50},
 						}, nil
 					},
 				}
@@ -206,7 +209,7 @@ func TestSignatureVerification(t *testing.T) {
 				require.NoError(err)
 				return msg
 			},
-			err: ErrInvalidBitSet,
+			err: ErrUnknownValidator, // Index out of bounds
 		},
 		{
 			name:      "valid signature",
@@ -216,11 +219,14 @@ func TestSignatureVerification(t *testing.T) {
 					getNetIDF: func(ctx context.Context, chainID ids.ID) (ids.ID, error) {
 						return netID, nil
 					},
-					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]uint64, error) {
-						return map[ids.NodeID]uint64{
-							nodeID0: 50,
-							nodeID1: 50,
-							nodeID2: 50,
+					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*ValidatorData, error) {
+						pk0 := bls.PublicFromSecretKey(sk0)
+						pk1 := bls.PublicFromSecretKey(sk1)
+						pk2 := bls.PublicFromSecretKey(sk2)
+						return map[ids.NodeID]*ValidatorData{
+							nodeID0: {NodeID: nodeID0, PublicKey: bls.PublicKeyToUncompressedBytes(pk0), Weight: 50},
+							nodeID1: {NodeID: nodeID1, PublicKey: bls.PublicKeyToUncompressedBytes(pk1), Weight: 50},
+							nodeID2: {NodeID: nodeID2, PublicKey: bls.PublicKeyToUncompressedBytes(pk2), Weight: 50},
 						}, nil
 					},
 				}
@@ -235,9 +241,36 @@ func TestSignatureVerification(t *testing.T) {
 				)
 				require.NoError(err)
 
+				// Create the sorted validator list to determine indices
+				pk0 := bls.PublicFromSecretKey(sk0)
+				pk1 := bls.PublicFromSecretKey(sk1)
+				pk2 := bls.PublicFromSecretKey(sk2)
+				
+				// Create validators in the same way FlattenValidatorSet does
+				vdrs := []*Validator{
+					{PublicKey: pk0, PublicKeyBytes: bls.PublicKeyToUncompressedBytes(pk0)},
+					{PublicKey: pk1, PublicKeyBytes: bls.PublicKeyToUncompressedBytes(pk1)},
+					{PublicKey: pk2, PublicKeyBytes: bls.PublicKeyToUncompressedBytes(pk2)},
+				}
+				// Sort to get canonical order
+				utils.Sort(vdrs)
+				
+				// Find which indices correspond to pk0 and pk2
+				var idx0, idx2 int
+				pk0Bytes := bls.PublicKeyToUncompressedBytes(pk0)
+				pk2Bytes := bls.PublicKeyToUncompressedBytes(pk2)
+				for i, v := range vdrs {
+					if bytes.Equal(v.PublicKeyBytes, pk0Bytes) {
+						idx0 = i
+					}
+					if bytes.Equal(v.PublicKeyBytes, pk2Bytes) {
+						idx2 = i
+					}
+				}
+
 				signers := set.NewBits()
-				signers.Add(0) // nodeID0 signs
-				signers.Add(2) // nodeID2 signs
+				signers.Add(idx0)
+				signers.Add(idx2)
 
 				unsignedBytes := unsignedMsg.Bytes()
 				sig0 := bls.Sign(sk0, unsignedBytes)

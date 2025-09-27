@@ -57,9 +57,9 @@ type UTXOClient interface {
 }
 
 type LUXState struct {
-	PClient *platformvm.Client
-	PCTX    *pbuilder.Context
-	XClient *xvm.Client
+	PClient platformvm.Client
+	PCTX    p.Context
+	XClient xvm.Client
 	XCTX    *xbuilder.Context
 	CClient client.Client
 	CCTX    *c.Context
@@ -77,9 +77,9 @@ func FetchState(
 	infoClient := info.NewClient(uri)
 	pClient := platformvm.NewClient(uri)
 	xClient := xvm.NewClient(uri, "X")
-	cClient := client.NewCChainClient(uri)
+	cClient := client.NewClient(uri, "C")
 
-	pCTX, err := p.NewContextFromClients(ctx, infoClient, pClient)
+	pCTX, err := p.NewContextFromClients(ctx, infoClient, xClient)
 	if err != nil {
 		return nil, err
 	}
@@ -110,11 +110,6 @@ func FetchState(
 			id:     xCTX.BlockchainID,
 			client: xClient,
 			codec:  xbuilder.Parser.Codec(),
-		},
-		{
-			id:     cCTX.BlockchainID,
-			client: cClient,
-			codec:  atomic.Codec,
 		},
 	}
 	for _, destinationChain := range chains {
@@ -149,15 +144,16 @@ func FetchPState(
 	uri string,
 	addrs set.Set[ids.ShortID],
 ) (
-	*platformvm.Client,
-	*pbuilder.Context,
+	platformvm.Client,
+	p.Context,
 	walletcommon.UTXOs,
 	error,
 ) {
 	infoClient := info.NewClient(uri)
+	xClient := xvm.NewClient(uri, "X")
 	chainClient := platformvm.NewClient(uri)
 
-	context, err := p.NewContextFromClients(ctx, infoClient, chainClient)
+	context, err := p.NewContextFromClients(ctx, infoClient, xClient)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -249,7 +245,7 @@ func AddAllUTXOs(
 		}
 
 		for _, utxoBytes := range utxosBytes {
-			var utxo avax.UTXO
+			var utxo lux.UTXO
 			_, err := codec.Unmarshal(utxoBytes, &utxo)
 			if err != nil {
 				return err

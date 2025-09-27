@@ -101,7 +101,7 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 			name: "simple",
 			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:    10, // Match expected JSON
+					NetworkID:   10, // Match expected JSON
 					BlockchainID: testPlatformChainID,
 					Outs:         []*lux.TransferableOutput{},
 					Ins: []*lux.TransferableInput{
@@ -135,7 +135,7 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 			name: "complex",
 			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:    10, // Match expected JSON
+					NetworkID:   10, // Match expected JSON
 					BlockchainID: testPlatformChainID,
 					Outs: []*lux.TransferableOutput{
 						{
@@ -253,7 +253,7 @@ func TestConvertNetToL1TxSerialization(t *testing.T) {
 			ctx := context.Background()
 			// Use the NetworkID from the test tx for consistency
 			ctx = consensus.WithIDs(ctx, consensus.IDs{
-				NetworkID:  test.tx.NetworkID,
+				QuantumID: test.tx.NetworkID,
 				ChainID:    testPlatformChainID,
 				XAssetID: luxAssetID,
 			})
@@ -314,7 +314,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 	testChainID := ids.GenerateTestID()
 	ctx := context.Background()
 	ctx = consensus.WithIDs(ctx, consensus.IDs{
-		NetworkID:  1,
+		QuantumID: 1,
 		ChainID:    testChainID,
 		XAssetID: ids.GenerateTestID(),
 	})
@@ -333,7 +333,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 			name: "primary network",
 			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:    1,
+					NetworkID:   1,
 					BlockchainID: testChainID,
 				}},
 				Net: constants.PrimaryNetworkID,
@@ -344,7 +344,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 			name: "address too long",
 			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:    1,
+					NetworkID:   1,
 					BlockchainID: testChainID,
 				}},
 				Net:     ids.GenerateTestID(),
@@ -356,7 +356,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 			name: "no validators",
 			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:    1,
+					NetworkID:   1,
 					BlockchainID: testChainID,
 				}},
 				Net:        ids.GenerateTestID(),
@@ -369,7 +369,7 @@ func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 			name: "validators not sorted",
 			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:    1,
+					NetworkID:   1,
 					BlockchainID: testChainID,
 				}},
 				Net:     ids.GenerateTestID(),

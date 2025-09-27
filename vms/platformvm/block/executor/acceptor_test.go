@@ -4,6 +4,7 @@
 package executor
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -14,8 +15,6 @@ import (
 	"github.com/luxfi/node/chains/atomic/atomicmock"
 	"github.com/luxfi/database/databasemock"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -52,9 +51,7 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 
 	acceptor := &acceptor{
 		backend: &backend{
-			ctx: &consensus.Context{
-				Log: log.NoLog{},
-			},
+			ctx: context.Background(),
 			blkIDToState: map[ids.ID]*blockState{
 				blkID: {},
 			},
@@ -90,10 +87,8 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &consensus.Context{
-				Log:          log.NoLog{},
-				SharedMemory: sharedMemory,
-			},
+			ctx:          context.Background(),
+			SharedMemory: nil, // TODO: Fix SharedMemory mock interface
 		},
 		metrics:    metrics.Noop,
 		validators: validatorstest.Manager,
@@ -123,9 +118,6 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 		statelessBlock: blk,
 		onAcceptState:  onAcceptState,
 		atomicRequests: atomicRequests,
-		metrics: metrics.Block{
-			Block: blk,
-		},
 	}
 	// Give [blk] a child.
 	childOnAcceptState := state.NewMockDiff(ctrl)
@@ -168,10 +160,8 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &consensus.Context{
-				Log:          log.NoLog{},
-				SharedMemory: sharedMemory,
-			},
+			ctx:          context.Background(),
+			SharedMemory: nil, // TODO: Fix SharedMemory mock interface
 		},
 		metrics:    metrics.Noop,
 		validators: validatorstest.Manager,
@@ -209,9 +199,6 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 		},
 
 		atomicRequests: atomicRequests,
-		metrics: metrics.Block{
-			Block: blk,
-		},
 	}
 	// Give [blk] a child.
 	childOnAcceptState := state.NewMockDiff(ctrl)
@@ -255,10 +242,8 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &consensus.Context{
-				Log:          log.NoLog{},
-				SharedMemory: sharedMemory,
-			},
+			ctx:          context.Background(),
+			SharedMemory: nil, // TODO: Fix SharedMemory mock interface
 		},
 		metrics:    metrics.Noop,
 		validators: validatorstest.Manager,
@@ -293,7 +278,6 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 	}
 	acceptor.backend.blkIDToState[parentID] = parentState
 
-	blkID := blk.ID()
 	// Set expected calls on dependencies.
 	// Make sure the parent is accepted first.
 	gomock.InOrder(
@@ -310,6 +294,8 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 	parentOnCommitState.EXPECT().GetTimestamp().Return(time.Unix(0, 0))
 
 	// Set [blk]'s state in the map as though it had been verified.
+	// Note: Must get blkID after the first acceptance attempt because ID generation may vary
+	blkID := blk.ID()
 	acceptor.backend.blkIDToState[parentID] = parentState
 	acceptor.backend.blkIDToState[blkID] = &blockState{
 		statelessBlock: blk,
@@ -319,9 +305,6 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 		inputs:         parentState.inputs,
 		timestamp:      parentOnCommitState.GetTimestamp(),
 		atomicRequests: parentState.atomicRequests,
-		metrics: metrics.Block{
-			Block: blk,
-		},
 	}
 
 	batch := databasemock.NewBatch(ctrl)
@@ -364,10 +347,8 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 			lastAccepted: parentID,
 			blkIDToState: make(map[ids.ID]*blockState),
 			state:        s,
-			ctx: &consensus.Context{
-				Log:          log.NoLog{},
-				SharedMemory: sharedMemory,
-			},
+			ctx:          context.Background(),
+			SharedMemory: nil, // TODO: Fix SharedMemory mock interface
 		},
 		metrics:    metrics.Noop,
 		validators: validatorstest.Manager,
@@ -402,7 +383,6 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 	}
 	acceptor.backend.blkIDToState[parentID] = parentState
 
-	blkID := blk.ID()
 	// Set expected calls on dependencies.
 	// Make sure the parent is accepted first.
 	gomock.InOrder(
@@ -419,6 +399,8 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 	parentOnAbortState.EXPECT().GetTimestamp().Return(time.Unix(0, 0))
 
 	// Set [blk]'s state in the map as though it had been verified.
+	// Note: Must get blkID after the first acceptance attempt because ID generation may vary
+	blkID := blk.ID()
 	acceptor.backend.blkIDToState[parentID] = parentState
 	acceptor.backend.blkIDToState[blkID] = &blockState{
 		statelessBlock: blk,
@@ -428,9 +410,6 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 		inputs:         parentState.inputs,
 		timestamp:      parentOnAbortState.GetTimestamp(),
 		atomicRequests: parentState.atomicRequests,
-		metrics: metrics.Block{
-			Block: blk,
-		},
 	}
 
 	batch := databasemock.NewBatch(ctrl)

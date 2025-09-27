@@ -92,7 +92,7 @@ ctx := context.Background()
 ctx = consensus.WithIDs(ctx, consensus.IDs{
     NetworkID:  1,
     ChainID:    constants.PlatformChainID,
-    LUXAssetID: luxAssetID,
+    XAssetID: luxAssetID,
 })
 ```
 

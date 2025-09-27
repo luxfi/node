@@ -54,7 +54,7 @@ func main() {
 	tx, err := wallet.IssueBaseTx([]*avax.TransferableOutput{
 		{
 			Asset: avax.Asset{
-				ID: context.LUXAssetID,
+				ID: context.XAssetID,
 			},
 			Out: &stakeable.LockOut{
 				Locktime: locktime,

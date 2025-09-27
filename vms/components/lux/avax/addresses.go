@@ -74,7 +74,7 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 		return ids.Empty, ids.ShortID{}, err
 	}
 
-	expectedHRP := constants.GetHRP(a.ctx.QuantumID)
+	expectedHRP := constants.GetHRP(a.ctx.NetworkID)
 	if hrp != expectedHRP {
 		return ids.Empty, ids.ShortID{}, fmt.Errorf(
 			"expected hrp %q but got %q",
@@ -96,7 +96,7 @@ func (a *addressManager) FormatLocalAddress(addr ids.ShortID) (string, error) {
 
 func (a *addressManager) FormatAddress(chainID ids.ID, addr ids.ShortID) (string, error) {
 	chainIDAlias := chainID.String()
-	hrp := constants.GetHRP(a.ctx.QuantumID)
+	hrp := constants.GetHRP(a.ctx.NetworkID)
 	return address.Format(chainIDAlias, hrp, addr.Bytes())
 }
 
