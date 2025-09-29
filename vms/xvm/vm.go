@@ -783,7 +783,7 @@ func (vm *VM) onAccept(tx *txs.Tx) error {
 }
 
 // WaitForEvent implements the core.VM interface
-func (vm *VM) WaitForEvent(ctx context.Context) (core.MessageType, error) {
+func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 	if vm.toEngine == nil {
 		// Before linearization, no events to wait for
 		<-ctx.Done()

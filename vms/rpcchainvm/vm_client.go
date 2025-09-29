@@ -1012,7 +1012,7 @@ func (s *summaryClient) Accept(ctx context.Context) (block.StateSyncMode, error)
 }
 
 // WaitForEvent implements the core.VM interface
-func (vm *VMClient) WaitForEvent(ctx context.Context) (core.MessageType, error) {
+func (vm *VMClient) WaitForEvent(ctx context.Context) (interface{}, error) {
 	// The RPC VM client doesn't directly handle events,
 	// it relies on the server-side VM for event handling
 	<-ctx.Done()

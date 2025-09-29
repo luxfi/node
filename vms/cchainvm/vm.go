@@ -1348,11 +1348,11 @@ func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 	return nil, nil
 }
 
-// WaitForEvent is not part of the current ChainVM interface
-// func (vm *VM) WaitForEvent(ctx context.Context) (core.Message, error) {
-// 	<-ctx.Done()
-// 	return core.PendingTxs, ctx.Err()
-// }
+// WaitForEvent implements the block.ChainVM interface
+func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
+	<-ctx.Done()
+	return core.PendingTxs, ctx.Err()
+}
 
 // HealthCheck implements the block.ChainVM interface
 func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
