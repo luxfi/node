@@ -351,3 +351,10 @@ func (vm *linearizeOnInitializeVM) SetState(ctx context.Context, state coreinter
 	// This is a linearizable VM, not a chain VM, so we return an error
 	return ErrSkipped
 }
+
+// WaitForEvent implements block.ChainVM interface
+func (vm *linearizeOnInitializeVM) WaitForEvent(ctx context.Context) (interface{}, error) {
+	// This is a linearizable VM, not a chain VM, so we just wait for context cancellation
+	<-ctx.Done()
+	return nil, ctx.Err()
+}

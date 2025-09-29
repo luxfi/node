@@ -984,7 +984,7 @@ func (vm *VM) NewHTTPHandler(context.Context) (http.Handler, error) {
 
 // WaitForEvent blocks until either the given context is cancelled, or a message is returned
 // This is required by the linearblock.ChainVM interface
-func (vm *VM) WaitForEvent(ctx context.Context) (core.MessageType, error) {
+func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 	// For now, just block until context is cancelled
 	<-ctx.Done()
 	return core.MessageType(0), ctx.Err()
