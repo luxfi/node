@@ -50,7 +50,7 @@ type Manager interface {
 
 func NewManager(
 	mempool mempool.Mempool,
-	metrics metrics.Metrics,
+	m metrics.Metrics,
 	state state.State,
 	backend *executor.Backend,
 	clk *mockable.Clock,
@@ -60,7 +60,7 @@ func NewManager(
 	return &manager{
 		backend:      backend,
 		state:        state,
-		metrics:      metrics,
+		metrics:      m,
 		mempool:      mempool,
 		clk:          clk,
 		onAccept:     onAccept,

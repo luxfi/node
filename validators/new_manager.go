@@ -23,6 +23,11 @@ type Manager interface {
 	Sample(subnetID ids.ID, size int) ([]ids.NodeID, error)
 	GetValidatorIDs(subnetID ids.ID) []ids.NodeID
 	SubsetWeight(subnetID ids.ID, nodeIDs set.Set[ids.NodeID]) (uint64, error)
+	GetMap(subnetID ids.ID) map[ids.NodeID]*validators.GetValidatorOutput
+	RegisterCallbackListener(listener validators.ManagerCallbackListener)
+	RegisterSetCallbackListener(subnetID ids.ID, listener validators.SetCallbackListener)
+	NumSubnets() int
+	NumValidators(subnetID ids.ID) int
 }
 
 // NewManager returns a new validator manager

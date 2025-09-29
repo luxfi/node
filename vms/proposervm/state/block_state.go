@@ -67,9 +67,13 @@ func NewBlockState(db database.Database) BlockState {
 }
 
 func NewMeteredBlockState(db database.Database, namespace string, metrics metric.Registerer) (BlockState, error) {
+	registry, ok := metrics.(metric.Registry)
+	if !ok {
+		return nil, errors.New("metrics must be a Registry")
+	}
 	blkCache, err := metercacher.New[ids.ID, *blockWrapper](
 		utilmetric.AppendNamespace(namespace, "block_cache"),
-		metrics,
+		registry,
 		cache.NewSizedLRU[ids.ID, *blockWrapper](
 			blockCacheSize,
 			cachedBlockSize,

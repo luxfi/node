@@ -180,10 +180,10 @@ func (vm *VMClient) Initialize(
 
 	// Skip metrics registration if Metrics is not available in consensus context
 	if consensusCtx != nil && consensusCtx.Metrics != nil {
-		if metrics, ok := consensusCtx.Metrics.(interface {
+		if metricsReg, ok := consensusCtx.Metrics.(interface {
 			Register(string, interface{}) error
 		}); ok {
-			if err := metrics.Register("", vm); err != nil {
+			if err := metricsReg.Register("", vm); err != nil {
 				return err
 			}
 		}

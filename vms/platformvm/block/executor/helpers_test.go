@@ -223,7 +223,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f fork) *environment 
 	registerer := metric.NewRegistry()
 	res.sender = &coremock.MockAppSender{}
 
-	platformMetrics := metrics.Noop
+	platformMetrics := metric.Noop
 
 	var err error
 	res.mempool, err = mempool.New("mempool", registerer, nil)

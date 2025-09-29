@@ -4,7 +4,7 @@
 package metercacher
 
 import (
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 const (
@@ -15,30 +15,30 @@ const (
 
 var (
 	resultLabels = []string{resultLabel}
-	hitLabels    = metrics.Labels{
+	hitLabels    = metric.Labels{
 		resultLabel: hitResult,
 	}
-	missLabels = metrics.Labels{
+	missLabels = metric.Labels{
 		resultLabel: missResult,
 	}
 )
 
 type cacheMetrics struct {
-	getCount metrics.CounterVec
-	getTime  metrics.GaugeVec
+	getCount metric.CounterVec
+	getTime  metric.GaugeVec
 
-	putCount metrics.Counter
-	putTime  metrics.Gauge
+	putCount metric.Counter
+	putTime  metric.Gauge
 
-	len           metrics.Gauge
-	portionFilled metrics.Gauge
+	len           metric.Gauge
+	portionFilled metric.Gauge
 }
 
 func newMetrics(
 	namespace string,
-	registry metrics.Registry,
+	registry metric.Registry,
 ) (*cacheMetrics, error) {
-	metricsInstance := metrics.NewWithRegistry(namespace, registry)
+	metricsInstance := metric.NewWithRegistry(namespace, registry)
 
 	m := &cacheMetrics{
 		getCount: metricsInstance.NewCounterVec(

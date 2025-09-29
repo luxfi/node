@@ -6,7 +6,7 @@
 package throttling
 
 import (
-	metrics metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"context"
 	"reflect"
 	"testing"
@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/math/meter"
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/stretchr/testify/require"

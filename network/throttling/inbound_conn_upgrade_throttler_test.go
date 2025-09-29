@@ -4,7 +4,7 @@
 package throttling
 
 import (
-	metrics metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"net/netip"
 	"testing"
 	"time"

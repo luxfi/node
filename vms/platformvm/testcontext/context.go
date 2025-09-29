@@ -46,6 +46,6 @@ func (c *Context) WithIDs(ids consensus.IDs) *Context {
 	c.ChainID = ids.ChainID
 	c.NetID = ids.NetID
 	c.NodeID = ids.NodeID
-	c.XAssetID = ids.XAssetID
+	c.XAssetID = ids.LUXAssetID
 	return c
 }

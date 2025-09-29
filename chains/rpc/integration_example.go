@@ -58,7 +58,7 @@ func IntegrationExample(
 			log.String("action", "Chain will operate without HTTP/RPC access"))
 
 		// Could emit metrics here if available
-		// metrics.HandlerRegistrationFailed.Inc()
+		// metric.HandlerRegistrationFailed.Inc()
 
 		// Non-fatal: return nil to allow chain to continue
 		// Change to 'return err' if you want this to be fatal

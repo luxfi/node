@@ -226,9 +226,13 @@ func (vm *VM) Initialize(
 		vm.log.Warn("ValidatorState not found in context, Windower may not work correctly")
 	}
 	vm.Tree = tree.New()
+	registry, ok := vm.Config.Registerer.(metric.Registry)
+	if !ok {
+		return errors.New("registerer must be a Registry")
+	}
 	innerBlkCache, err := metercacher.New(
 		"inner_block_cache",
-		vm.Config.Registerer,
+		registry,
 		cache.NewSizedLRU(
 			innerBlkCacheSize,
 			cachedBlockSize,

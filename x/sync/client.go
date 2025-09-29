@@ -369,7 +369,7 @@ func (c *client) get(ctx context.Context, request []byte) (ids.NodeID, []byte, e
 		err      error
 	)
 
-	c.metrics.RequestMade()
+	c.metric.RequestMade()
 
 	if len(c.stateSyncNodes) == 0 {
 		nodeID, response, err = c.networkClient.RequestAny(ctx, request)
@@ -382,10 +382,10 @@ func (c *client) get(ctx context.Context, request []byte) (ids.NodeID, []byte, e
 		response, err = c.networkClient.Request(ctx, nodeID, request)
 	}
 	if err != nil {
-		c.metrics.RequestFailed()
+		c.metric.RequestFailed()
 		return nodeID, response, err
 	}
 
-	c.metrics.RequestSucceeded()
+	c.metric.RequestSucceeded()
 	return nodeID, response, nil
 }

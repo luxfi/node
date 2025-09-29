@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2"
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 type APIInterceptor interface {
@@ -22,13 +22,13 @@ type contextKey int
 const requestTimestampKey contextKey = iota
 
 type apiInterceptor struct {
-	requestDurationCount metrics.CounterVec
-	requestDurationSum   metrics.GaugeVec
-	requestErrors        metrics.CounterVec
+	requestDurationCount metric.CounterVec
+	requestDurationSum   metric.GaugeVec
+	requestErrors        metric.CounterVec
 }
 
-func NewAPIInterceptor(registry metrics.Registry) (APIInterceptor, error) {
-	metricsInstance := metrics.NewWithRegistry("api_interceptor", registry)
+func NewAPIInterceptor(registry metric.Registry) (APIInterceptor, error) {
+	metricsInstance := metric.NewWithRegistry("api_interceptor", registry)
 
 	requestDurationCount := metricsInstance.NewCounterVec(
 		"request_duration_count",
@@ -66,19 +66,19 @@ func (apr *apiInterceptor) AfterRequest(i *rpc.RequestInfo) {
 		return
 	}
 
-	durationMetricCount := apr.requestDurationCount.With(metrics.Labels{
+	durationMetricCount := apr.requestDurationCount.With(metric.Labels{
 		"method": i.Method,
 	})
 	durationMetricCount.Inc()
 
 	duration := time.Since(timestamp)
-	durationMetricSum := apr.requestDurationSum.With(metrics.Labels{
+	durationMetricSum := apr.requestDurationSum.With(metric.Labels{
 		"method": i.Method,
 	})
 	durationMetricSum.Add(float64(duration))
 
 	if i.Error != nil {
-		errMetric := apr.requestErrors.With(metrics.Labels{
+		errMetric := apr.requestErrors.With(metric.Labels{
 			"method": i.Method,
 		})
 		errMetric.Inc()

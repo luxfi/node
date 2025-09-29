@@ -4,16 +4,16 @@
 package health
 
 import (
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 type healthMetrics struct {
 	// failingChecks keeps track of the number of check failing
-	failingChecks metrics.GaugeVec
+	failingChecks metric.GaugeVec
 }
 
-func newMetrics(namespace string, registry metrics.Registry) (*healthMetrics, error) {
-	metricsInstance := metrics.NewWithRegistry(namespace, registry)
+func newMetrics(namespace string, registry metric.Registry) (*healthMetrics, error) {
+	metricsInstance := metric.NewWithRegistry(namespace, registry)
 
 	m := &healthMetrics{
 		failingChecks: metricsInstance.NewGaugeVec(

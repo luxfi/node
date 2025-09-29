@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 	utilmetric "github.com/luxfi/node/utils/metric"
@@ -130,10 +130,15 @@ type inboundMsgBufferThrottlerMetrics struct {
 
 func (m *inboundMsgBufferThrottlerMetrics) initialize(reg metric.Registerer) error {
 	errs := wrappers.Errs{}
+	registry, ok := reg.(metric.Registry)
+	if !ok {
+		errs.Add(nil)
+		return errs.Err
+	}
 	m.acquireLatency = utilmetric.NewAveragerWithErrs(
 		"buffer_throttler_inbound_acquire_latency",
 		"average time (in ns) to get space on the inbound message buffer",
-		reg,
+		registry,
 		&errs,
 	)
 	m.awaitingAcquire = metric.NewGauge(metric.GaugeOpts{

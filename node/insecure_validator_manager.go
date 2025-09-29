@@ -16,7 +16,7 @@ import (
 type insecureValidatorManager struct {
 	Router
 	log    log.Logger
-	vdrs   nodevalidators.ExtendedManager
+	vdrs   nodevalidators.Manager
 	weight uint64
 	// Keep track of added validators locally
 	validators map[ids.ID]map[ids.NodeID]uint64
@@ -25,7 +25,7 @@ type insecureValidatorManager struct {
 
 func (i *insecureValidatorManager) Connected(vdrID ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
 	if constants.PrimaryNetworkID == netID {
-		// Track the validator locally since we can't modify the validators.Manager
+		// Track the validator locally since we can't modify the nodevalidators.Manager
 		i.mu.Lock()
 		if i.validators[netID] == nil {
 			i.validators[netID] = make(map[ids.NodeID]uint64)

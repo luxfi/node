@@ -131,7 +131,7 @@ func TestBlockVerify(t *testing.T) {
 					manager: &manager{
 						backend:      defaultTestBackend(false, nil),
 						mempool:      mempool,
-						metrics:      metrics.NewMockMetrics(ctrl),
+						metrics:      metric.NewMockMetrics(ctrl),
 						blkIDToState: map[ids.ID]*blockState{},
 						clk:          &mockable.Clock{},
 					},
@@ -289,7 +289,7 @@ func TestBlockVerify(t *testing.T) {
 					manager: &manager{
 						backend: defaultTestBackend(false, nil),
 						mempool: mempool,
-						metrics: metrics.NewMockMetrics(ctrl),
+						metrics: metric.NewMockMetrics(ctrl),
 						blkIDToState: map[ids.ID]*blockState{
 							parentID: {
 								onAcceptState:  mockParentState,
@@ -339,7 +339,7 @@ func TestBlockVerify(t *testing.T) {
 					Block: mockBlock,
 					manager: &manager{
 						mempool: mempool,
-						metrics: metrics.NewMockMetrics(ctrl),
+						metrics: metric.NewMockMetrics(ctrl),
 						backend: defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{
 							parentID: {
@@ -417,7 +417,7 @@ func TestBlockVerify(t *testing.T) {
 					Block: mockBlock,
 					manager: &manager{
 						mempool: mempool,
-						metrics: metrics.NewMockMetrics(ctrl),
+						metrics: metric.NewMockMetrics(ctrl),
 						backend: defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{
 							parentID: {
@@ -527,7 +527,7 @@ func TestBlockVerify(t *testing.T) {
 					Block: mockBlock,
 					manager: &manager{
 						mempool: mockMempool,
-						metrics: metrics.NewMockMetrics(ctrl),
+						metrics: metric.NewMockMetrics(ctrl),
 						backend: defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{
 							parentID: {
@@ -601,7 +601,7 @@ func TestBlockAccept(t *testing.T) {
 					Block: mockBlock,
 					manager: &manager{
 						mempool:      mempool,
-						metrics:      metrics.NewMockMetrics(ctrl),
+						metrics:      metric.NewMockMetrics(ctrl),
 						backend:      defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{},
 					},
@@ -705,7 +705,7 @@ func TestBlockAccept(t *testing.T) {
 				mockOnAcceptState := state.NewMockDiff(ctrl)
 				mockOnAcceptState.EXPECT().Apply(mockManagerState)
 
-				metricsObj := metrics.NewMockMetrics(ctrl)
+				metricsObj := metric.NewMockMetrics(ctrl)
 				metricsObj.EXPECT().MarkBlockAccepted(gomock.Any()).Return(errTest)
 
 				return &Block{
@@ -751,7 +751,7 @@ func TestBlockAccept(t *testing.T) {
 				mockOnAcceptState := state.NewMockDiff(ctrl)
 				mockOnAcceptState.EXPECT().Apply(mockManagerState)
 
-				metricsObj := metrics.NewMockMetrics(ctrl)
+				metricsObj := metric.NewMockMetrics(ctrl)
 				metricsObj.EXPECT().MarkBlockAccepted(gomock.Any()).Return(nil)
 
 				return &Block{
@@ -854,7 +854,7 @@ func TestBlockReject(t *testing.T) {
 					manager: &manager{
 						lastAccepted: lastAcceptedID,
 						mempool:      mempool,
-						metrics:      metrics.NewMockMetrics(ctrl),
+						metrics:      metric.NewMockMetrics(ctrl),
 						backend:      defaultTestBackend(true, nil),
 						state:        mockState,
 						blkIDToState: map[ids.ID]*blockState{
@@ -907,7 +907,7 @@ func TestBlockReject(t *testing.T) {
 					manager: &manager{
 						lastAccepted: lastAcceptedID,
 						mempool:      mempool,
-						metrics:      metrics.NewMockMetrics(ctrl),
+						metrics:      metric.NewMockMetrics(ctrl),
 						backend:      defaultTestBackend(true, nil),
 						state:        mockState,
 						blkIDToState: map[ids.ID]*blockState{

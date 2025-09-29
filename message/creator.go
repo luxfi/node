@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/compression"
 )
 
@@ -25,7 +25,7 @@ type creator struct {
 
 func NewCreator(
 	log log.Logger,
-	m metrics.Metrics,
+	m metric.Metrics,
 	compressionType compression.Type,
 	maxMessageTimeout time.Duration,
 ) (Creator, error) {

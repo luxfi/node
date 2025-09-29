@@ -11,10 +11,15 @@ import (
 )
 
 func newAverager(name string, reg metric.Registerer, errs *wrappers.Errs) utilmetric.Averager {
+	registry, ok := reg.(metric.Registry)
+	if !ok {
+		errs.Add(nil)
+		return nil
+	}
 	return utilmetric.NewAveragerWithErrs(
 		name,
 		"time (in ns) of a "+name,
-		reg,
+		registry,
 		errs,
 	)
 }

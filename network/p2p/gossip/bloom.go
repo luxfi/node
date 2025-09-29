@@ -5,6 +5,7 @@ package gossip
 
 import (
 	"crypto/rand"
+	"errors"
 
 	"github.com/luxfi/metric"
 
@@ -25,7 +26,11 @@ func NewBloomFilter(
 	targetFalsePositiveProbability,
 	resetFalsePositiveProbability float64,
 ) (*BloomFilter, error) {
-	metrics, err := bloom.NewMetrics(namespace, registerer)
+	registry, ok := registerer.(metric.Registry)
+	if !ok {
+		return nil, errors.New("registerer must be a Registry")
+	}
+	metrics, err := bloom.NewMetrics(namespace, registry)
 	if err != nil {
 		return nil, err
 	}

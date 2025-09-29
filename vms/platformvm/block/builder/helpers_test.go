@@ -221,7 +221,7 @@ func newEnvironment(t *testing.T, f fork) *environment { //nolint:unparam
 		},
 	}
 
-	platformMetrics := metrics.Noop
+	platformMetrics := metric.Noop
 
 	var err error
 	res.mempool, err = mempool.New("mempool", registerer, nil)

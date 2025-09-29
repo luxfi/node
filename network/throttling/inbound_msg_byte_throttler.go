@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus/validators"
@@ -307,10 +307,15 @@ type inboundMsgByteThrottlerMetrics struct {
 
 func (m *inboundMsgByteThrottlerMetrics) initialize(reg metric.Registerer) error {
 	errs := wrappers.Errs{}
+	registry, ok := reg.(metric.Registry)
+	if !ok {
+		errs.Add(nil)
+		return errs.Err
+	}
 	m.acquireLatency = utilmetric.NewAveragerWithErrs(
 		"byte_throttler_inbound_acquire_latency",
 		"average time (in ns) to get space on the inbound message byte buffer",
-		reg,
+		registry,
 		&errs,
 	)
 	m.remainingAtLargeBytes = metric.NewGauge(metric.GaugeOpts{

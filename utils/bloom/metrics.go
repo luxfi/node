@@ -4,24 +4,24 @@
 package bloom
 
 import (
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 // Metrics is a collection of commonly useful metrics when using a long-lived
 // bloom filter.
 type Metrics struct {
-	Count      metrics.Gauge
-	NumHashes  metrics.Gauge
-	NumEntries metrics.Gauge
-	MaxCount   metrics.Gauge
-	ResetCount metrics.Counter
+	Count      metric.Gauge
+	NumHashes  metric.Gauge
+	NumEntries metric.Gauge
+	MaxCount   metric.Gauge
+	ResetCount metric.Counter
 }
 
 func NewMetrics(
 	namespace string,
-	registry metrics.Registry,
+	registry metric.Registry,
 ) (*Metrics, error) {
-	metricsInstance := metrics.NewWithRegistry(namespace, registry)
+	metricsInstance := metric.NewWithRegistry(namespace, registry)
 
 	m := &Metrics{
 		Count: metricsInstance.NewGauge(

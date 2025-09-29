@@ -18,15 +18,15 @@ func TestNewMetrics(t *testing.T) {
 	metrics, err := newMetrics(reg)
 	require.NoError(t, err)
 	require.NotNil(t, metrics)
-	require.NotNil(t, metrics.requests)
-	require.NotNil(t, metrics.duration)
-	require.NotNil(t, metrics.inflight)
+	require.NotNil(t, metric.requests)
+	require.NotNil(t, metric.duration)
+	require.NotNil(t, metric.inflight)
 
 	// Test basic operations to ensure they work
-	metrics.requests.WithLabelValues("GET", "/test").Inc()
-	metrics.duration.WithLabelValues("POST", "/api").Observe(0.5)
-	metrics.inflight.Inc()
-	metrics.inflight.Dec()
+	metric.requests.WithLabelValues("GET", "/test").Inc()
+	metric.duration.WithLabelValues("POST", "/api").Observe(0.5)
+	metric.inflight.Inc()
+	metric.inflight.Dec()
 }
 
 func TestMetricsRegistrationFailure(t *testing.T) {
@@ -65,14 +65,14 @@ func TestMetricsOperations(t *testing.T) {
 
 	for _, tc := range testCases {
 		// Increment request counter
-		metrics.requests.WithLabelValues(tc.method, tc.endpoint).Inc()
+		metric.requests.WithLabelValues(tc.method, tc.endpoint).Inc()
 
 		// Observe duration
-		metrics.duration.WithLabelValues(tc.method, tc.endpoint).Observe(tc.duration)
+		metric.duration.WithLabelValues(tc.method, tc.endpoint).Observe(tc.duration)
 
 		// Simulate inflight request
-		metrics.inflight.Inc()
-		metrics.inflight.Dec()
+		metric.inflight.Inc()
+		metric.inflight.Dec()
 	}
 
 	// Operations completed successfully without panics

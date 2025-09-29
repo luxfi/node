@@ -4,12 +4,13 @@
 package lux
 
 import (
-	metrics "github.com/luxfi/metric"
+	"errors"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/linkeddb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/codec"
@@ -109,9 +110,13 @@ func NewMeteredUTXOState(
 	metrics metric.Registerer,
 	trackChecksum bool,
 ) (UTXOState, error) {
+	registry, ok := metrics.(metric.Registry)
+	if !ok {
+		return nil, errors.New("metrics must be a Registry")
+	}
 	utxoCache, err := metercacher.New[ids.ID, *UTXO](
 		"utxo_cache",
-		metrics,
+		registry,
 		&cache.LRU[ids.ID, *UTXO]{Size: utxoCacheSize},
 	)
 	if err != nil {
@@ -120,7 +125,7 @@ func NewMeteredUTXOState(
 
 	indexCache, err := metercacher.New[string, linkeddb.LinkedDB](
 		"index_cache",
-		metrics,
+		registry,
 		&cache.LRU[string, linkeddb.LinkedDB]{
 			Size: indexCacheSize,
 		},
