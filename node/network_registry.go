@@ -6,7 +6,7 @@ import (
 
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/database"
-	"github.com/luxfi/nodevalidators"
+	"github.com/luxfi/node/nodevalidators"
 	"github.com/luxfi/node/config"
 )
 
