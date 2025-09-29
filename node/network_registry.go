@@ -6,7 +6,7 @@ import (
 
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/database"
-	"github.com/luxfi/node/nodevalidators"
+	"github.com/luxfi/node/validators"
 	"github.com/luxfi/node/config"
 )
 
@@ -14,9 +14,9 @@ import (
 type NetworkContext struct {
 	NetworkID     uint32
 	ChainManager  chains.Manager
-	Validators    *nodevalidators.Manager
+	Validators    *validators.Manager
 	Database      database.Database
-	Bootstrappers *nodevalidators.Manager
+	Bootstrappers *validators.Manager
 	Config        *config.Config
 	ChainDataDir  string
 	Active        bool
