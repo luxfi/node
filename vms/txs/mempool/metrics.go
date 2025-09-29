@@ -6,7 +6,7 @@ package mempool
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 type mempoolMetrics struct {
@@ -14,7 +14,7 @@ type mempoolMetrics struct {
 	bytesUsed prometheus.Gauge
 }
 
-func newMetrics(registerer metrics.Registerer) (*mempoolMetrics, error) {
+func newMetrics(registerer metric.Registerer) (*mempoolMetrics, error) {
 	m := &mempoolMetrics{
 		numTxs: prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "mempool_num_txs",
@@ -36,4 +36,14 @@ func newMetrics(registerer metrics.Registerer) (*mempoolMetrics, error) {
 	}
 
 	return m, nil
+}
+
+func (m *mempoolMetrics) Update(numTxs, bytesAvailable int) {
+	m.numTxs.Set(float64(numTxs))
+	m.bytesUsed.Set(float64(maxMempoolSize - bytesAvailable))
+}
+
+// NewMetrics creates a new Metrics instance
+func NewMetrics(namespace string, registerer metric.Registerer) (Metrics, error) {
+	return newMetrics(registerer)
 }

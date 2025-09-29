@@ -348,10 +348,10 @@ type Node struct {
 	tlsKeyLogWriterCloser io.WriteCloser
 
 	// this node's initial connections to the network
-	bootstrappers nodevalidators.ExtendedManager
+	bootstrappers nodevalidators.Manager
 
 	// current validators of the network
-	vdrs nodevalidators.ExtendedManager
+	vdrs nodevalidators.Manager
 
 	apiURI string
 
@@ -729,7 +729,7 @@ func (n *Node) Dispatch() error {
 				return
 			}
 			n.Log.Warn("failed to connect to bootstrap nodes",
-				"bootstrappers", "validators.Manager",
+				"bootstrappers", "nodevalidators.Manager",
 				"duration", n.Config.BootstrapBeaconConnectionTimeout,
 			)
 		case <-n.onSufficientlyConnected:
@@ -794,15 +794,18 @@ func (n *Node) initDatabase() error {
 	// }
 	var err error
 
+	// Include network ID in database path to allow parallel validation of multiple networks
+	networkSpecificPath := filepath.Join(n.Config.DatabaseConfig.Path, fmt.Sprintf("network-%d", n.Config.NetworkID))
+
 	// start the db
-	dbPath := filepath.Join(n.Config.DatabaseConfig.Path, version.CurrentDatabase.String())
+	dbPath := filepath.Join(networkSpecificPath, version.CurrentDatabase.String())
 
 	// Special path handling for specific database types
 	switch n.Config.DatabaseConfig.Name {
 	case "pebbledb":
-		dbPath = filepath.Join(n.Config.DatabaseConfig.Path, "pebble")
+		dbPath = filepath.Join(networkSpecificPath, "pebble")
 	case "badgerdb":
-		dbPath = filepath.Join(n.Config.DatabaseConfig.Path, "badger")
+		dbPath = filepath.Join(networkSpecificPath, "badger")
 	}
 
 	// Use the database factory to create the database
@@ -1173,7 +1176,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			StateSyncBeacons:                        n.Config.StateSyncIDs,
 			TracingEnabled:                          n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled,
 			Tracer:                                  n.tracer,
-			ChainDataDir:                            n.Config.ChainDataDir,
+			ChainDataDir:                            filepath.Join(n.Config.ChainDataDir, fmt.Sprintf("network-%d", n.Config.NetworkID)),
 			Subnets:                                 subnets,
 			SkipBootstrap:                           n.Config.SkipBootstrap,
 			EnableAutomining:                        n.Config.EnableAutomining,
@@ -1638,7 +1641,6 @@ func (n *Node) initResourceManager() error {
 	// Create resource tracker with wrapped resource manager
 	wrappedManager := NewResourceManagerWrapper(n.resourceManager)
 	n.resourceTracker, err = tracker.NewResourceTracker(
-		n.MetricsRegisterer,
 		wrappedManager,
 		n.Config.SystemTrackerFrequency,
 	)

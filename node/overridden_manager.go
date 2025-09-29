@@ -15,11 +15,11 @@ import (
 	nodevalidators "github.com/luxfi/node/validators"
 )
 
-var _ validators.Manager = (*overriddenManager)(nil)
+var _ nodevalidators.Manager = (*overriddenManager)(nil)
 
 // newOverriddenManager returns a Manager that overrides of all calls to the
 // underlying Manager to only operate on the validators in [netID].
-func newOverriddenManager(netID ids.ID, manager nodevalidators.ExtendedManager) *overriddenManager {
+func newOverriddenManager(netID ids.ID, manager nodevalidators.Manager) *overriddenManager {
 	return &overriddenManager{
 		netID:   netID,
 		manager: manager,
@@ -31,7 +31,7 @@ func newOverriddenManager(netID ids.ID, manager nodevalidators.ExtendedManager) 
 // netID here is typically the primary network ID, as it has the superset of
 // all net validators.
 type overriddenManager struct {
-	manager nodevalidators.ExtendedManager
+	manager nodevalidators.Manager
 	netID   ids.ID
 }
 

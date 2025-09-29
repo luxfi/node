@@ -41,7 +41,11 @@ func newIPTracker(
 	log log.Logger,
 	registerer metric.Registerer,
 ) (*ipTracker, error) {
-	bloomMetrics, err := bloom.NewMetrics("ip_bloom", registerer)
+	registry, ok := registerer.(metric.Registry)
+	if !ok {
+		return nil, errors.New("registerer must be a Registry")
+	}
+	bloomMetrics, err := bloom.NewMetrics("ip_bloom", registry)
 	if err != nil {
 		return nil, err
 	}

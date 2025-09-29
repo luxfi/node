@@ -5,7 +5,7 @@
 
 package metercacher
 
-import metrics "github.com/luxfi/metric"
+import "github.com/luxfi/metric"
 
 import (
 	"testing"

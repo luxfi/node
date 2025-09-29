@@ -22,11 +22,16 @@ func LuxGenesisConfig() *Config {
 	// LUX address is the same as ETH address for simplicity
 	luxAddr := ethAddr
 
-	nodeID, _ := ids.NodeIDFromString("NodeID-111111111111111111116DBWJs")
+	// 5 validator nodes for Lux mainnet
+	nodeID1, _ := ids.NodeIDFromString("NodeID-Bj4Q9cEsRctbDaeshW2H5SqwEUiu3Yf88")
+	nodeID2, _ := ids.NodeIDFromString("NodeID-7epimZACwGDCo8NNN8p4pPbF5caY5CEdq")
+	nodeID3, _ := ids.NodeIDFromString("NodeID-KE6LnWkzMgX7kqymggKPcAc8S1q9ipPY9")
+	nodeID4, _ := ids.NodeIDFromString("NodeID-PSmbKYD8YaqvvFM2rUSSgMoeszq5FXz2j")
+	nodeID5, _ := ids.NodeIDFromString("NodeID-CdUqb58yQQuYYK4ZiEkfjaV2JCYgFnLqU")
 
 	// Create a proper allocation with unlock schedule for staking
-	// The staker will have 10M LUX (10,000,000 * 1e9 nLUX)
-	stakingAmount := uint64(10000000) * units.Lux // 10M LUX
+	// Each staker will have 1B LUX (1,000,000,000 * 1e9 nLUX) = 5B total
+	stakingAmount := uint64(1000000000) * units.Lux // 1B LUX per validator
 
 	return &Config{
 		NetworkID: constants.LuxMainnetID,
@@ -37,8 +42,8 @@ func LuxGenesisConfig() *Config {
 				InitialAmount: 0, // All funds will be in unlock schedule for staking
 				UnlockSchedule: []LockedAmount{
 					{
-						Amount:   stakingAmount,
-						Locktime: 0, // Available immediately for staking
+						Amount:   stakingAmount * 5, // 5B total for 5 validators
+						Locktime: 0,                 // Available immediately for staking
 					},
 				},
 			},
@@ -51,12 +56,32 @@ func LuxGenesisConfig() *Config {
 		},
 		InitialStakers: []Staker{
 			{
-				NodeID:        nodeID,
+				NodeID:        nodeID1,
+				RewardAddress: luxAddr,
+				DelegationFee: 20000, // 2%
+			},
+			{
+				NodeID:        nodeID2,
+				RewardAddress: luxAddr,
+				DelegationFee: 20000, // 2%
+			},
+			{
+				NodeID:        nodeID3,
+				RewardAddress: luxAddr,
+				DelegationFee: 20000, // 2%
+			},
+			{
+				NodeID:        nodeID4,
+				RewardAddress: luxAddr,
+				DelegationFee: 20000, // 2%
+			},
+			{
+				NodeID:        nodeID5,
 				RewardAddress: luxAddr,
 				DelegationFee: 20000, // 2%
 			},
 		},
 		CChainGenesis: string(GetCChainGenesisMainnetBytes()),
-		Message: "LUX Mainnet Genesis",
+		Message: "LUX Mainnet Genesis - 5 Validator Network",
 	}
 }

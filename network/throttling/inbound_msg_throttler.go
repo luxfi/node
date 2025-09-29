@@ -4,10 +4,9 @@
 package throttling
 
 import (
-	metrics metrics "github.com/luxfi/metric"
 	"context"
 
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"

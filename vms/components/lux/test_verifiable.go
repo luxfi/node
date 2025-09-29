@@ -4,7 +4,6 @@
 package lux
 
 import (
-	metrics "github.com/luxfi/metric"
 	"context"
 
 	"github.com/luxfi/node/vms/components/verify"

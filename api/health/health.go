@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 const (
@@ -63,8 +63,8 @@ type health struct {
 	liveness  *worker
 }
 
-func New(log log.Logger, registry metrics.Registry) (Health, error) {
-	metricsInstance := metrics.NewWithRegistry("health", registry)
+func New(log log.Logger, registry metric.Registry) (Health, error) {
+	metricsInstance := metric.NewWithRegistry("health", registry)
 
 	failingChecks := metricsInstance.NewGaugeVec(
 		"checks_failing",

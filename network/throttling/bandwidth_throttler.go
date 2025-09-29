@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 
@@ -62,6 +62,11 @@ func newBandwidthThrottler(
 	config BandwidthThrottlerConfig,
 ) (bandwidthThrottler, error) {
 	errs := wrappers.Errs{}
+	registry, ok := registerer.(metric.Registry)
+	if !ok {
+		errs.Add(nil)
+		return nil, errs.Err
+	}
 	t := &bandwidthThrottlerImpl{
 		BandwidthThrottlerConfig: config,
 		log:                      log,
@@ -70,7 +75,7 @@ func newBandwidthThrottler(
 			acquireLatency: utilmetric.NewAveragerWithErrs(
 				"bandwidth_throttler_inbound_acquire_latency",
 				"average time (in ns) to acquire bytes from the inbound bandwidth throttler",
-				registerer,
+				registry,
 				&errs,
 			),
 			awaitingAcquire: metric.NewGauge(metric.GaugeOpts{

@@ -145,12 +145,12 @@ func TestGatherer_Gather(t *testing.T) {
 func registerNilMetrics(t *testing.T, register func(t *testing.T, name string, collector any)) {
 	// The NewXXX metrics functions return nil metrics types when the metrics
 	// are disabled.
-	metrics.Enabled = false
-	defer func() { metrics.Enabled = true }()
+	metric.Enabled = false
+	defer func() { metric.Enabled = true }()
 
 	register(t, "nil/counter", metric.NewCounter())
 	register(t, "nil/counter_float64", metric.NewCounterFloat64())
-	register(t, "nil/ewma", &metrics.NilEWMA{})
+	register(t, "nil/ewma", &metric.NilEWMA{})
 	register(t, "nil/gauge", metric.NewGauge())
 	register(t, "nil/gauge_float64", metric.NewGaugeFloat64())
 	register(t, "nil/gauge_info", metric.NewGaugeInfo())

@@ -4,6 +4,7 @@
 package metrics
 
 import (
+	"errors"
 	"time"
 
 	"github.com/luxfi/metric"
@@ -83,7 +84,11 @@ func New(registerer metric.Registerer) (Metrics, error) {
 	}
 
 	errs := wrappers.Errs{Err: err}
-	apiRequestMetrics, err := utilmetric.NewAPIInterceptor(registerer)
+	registry, ok := registerer.(metric.Registry)
+	if !ok {
+		return nil, errors.New("registerer must be a Registry")
+	}
+	apiRequestMetrics, err := utilmetric.NewAPIInterceptor(registry)
 	errs.Add(err)
 	m.APIInterceptor = apiRequestMetrics
 

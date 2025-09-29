@@ -151,9 +151,14 @@ func New(
 	blockDB := prefixdb.New(blockPrefix, db)
 	singletonDB := prefixdb.New(singletonPrefix, db)
 
+	registry, ok := metrics.(metric.Registry)
+	if !ok {
+		return nil, errors.New("metrics must be a Registry")
+	}
+
 	txCache, err := metercacher.New[ids.ID, *txs.Tx](
 		"tx_cache",
-		metrics,
+		registry,
 		&cache.LRU[ids.ID, *txs.Tx]{Size: txCacheSize},
 	)
 	if err != nil {
@@ -162,7 +167,7 @@ func New(
 
 	blockIDCache, err := metercacher.New[uint64, ids.ID](
 		"block_id_cache",
-		metrics,
+		registry,
 		&cache.LRU[uint64, ids.ID]{Size: blockIDCacheSize},
 	)
 	if err != nil {
@@ -171,7 +176,7 @@ func New(
 
 	blockCache, err := metercacher.New[ids.ID, block.Block](
 		"block_cache",
-		metrics,
+		registry,
 		&cache.LRU[ids.ID, block.Block]{Size: blockCacheSize},
 	)
 	if err != nil {

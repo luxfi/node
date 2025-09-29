@@ -4,7 +4,7 @@
 package throttling
 
 import (
-	metrics metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"context"
 	"sync"
 	"testing"
@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 func TestBandwidthThrottler(t *testing.T) {

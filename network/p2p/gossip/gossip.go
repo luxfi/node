@@ -148,11 +148,11 @@ func NewMetrics(
 		),
 	}
 	err := errors.Join(
-		metrics.Register(m.count),
-		metrics.Register(m.bytes),
-		metrics.Register(m.tracking),
-		metrics.Register(m.trackingLifetimeAverage),
-		metrics.Register(m.topValidators),
+		metric.Register(m.count),
+		metric.Register(m.bytes),
+		metric.Register(m.tracking),
+		metric.Register(m.trackingLifetimeAverage),
+		metric.Register(m.topValidators),
 	)
 	return m, err
 }

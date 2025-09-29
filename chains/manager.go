@@ -1515,7 +1515,7 @@ func (m *manager) createLinearChain(
 			ChainID:        ids.ChainID,
 			NodeID:         ids.NodeID,
 			PublicKey:      ids.PublicKey,
-			XAssetID:     m.LUXAssetID,
+			XAssetID:     m.XAssetID,
 			CChainID:       m.CChainID,
 			ChainDataDir:   chainDataDir,
 			Log:            m.Log,

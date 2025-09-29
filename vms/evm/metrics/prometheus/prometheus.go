@@ -70,7 +70,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 	name = strings.ReplaceAll(name, "/", "_")
 
 	switch m := metric.(type) {
-	case metrics.Counter:
+	case metric.Counter:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -81,7 +81,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metrics.CounterFloat64:
+	case metric.CounterFloat64:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -92,7 +92,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metrics.Gauge:
+	case metric.Gauge:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -103,7 +103,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metrics.GaugeFloat64:
+	case metric.GaugeFloat64:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -114,9 +114,9 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metrics.GaugeInfo:
+	case metric.GaugeInfo:
 		return nil, fmt.Errorf("%w: %q is a %T", errMetricSkip, name, m)
-	case metrics.Histogram:
+	case metric.Histogram:
 		snapshot := m.Snapshot()
 		thresholds := snapshot.Percentiles(quantiles)
 		dtoQuantiles := make([]*dto.Quantile, len(quantiles))
@@ -138,7 +138,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metrics.Meter:
+	case metric.Meter:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -149,7 +149,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metrics.Timer:
+	case metric.Timer:
 		snapshot := m.Snapshot()
 		thresholds := snapshot.Percentiles(quantiles)
 		dtoQuantiles := make([]*dto.Quantile, len(quantiles))
@@ -171,7 +171,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metrics.ResettingTimer:
+	case metric.ResettingTimer:
 		snapshot := m.Snapshot()
 		thresholds := snapshot.Percentiles(pvShortPercent)
 		dtoQuantiles := make([]*dto.Quantile, len(pvShortPercent))

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/math"
@@ -74,9 +74,9 @@ type adaptiveTimeoutManager struct {
 	lock sync.Mutex
 	// Tells the time. Can be faked for testing.
 	clock                            mockable.Clock
-	networkTimeoutMetric, avgLatency metrics.Gauge
-	numTimeouts                      metrics.Counter
-	numPendingTimeouts               metrics.Gauge
+	networkTimeoutMetric, avgLatency metric.Gauge
+	numTimeouts                      metric.Counter
+	numPendingTimeouts               metric.Gauge
 	// Averages the response time from all peers
 	averager math.Averager
 	// Timeout is [timeoutCoefficient] * average response time
@@ -91,7 +91,7 @@ type adaptiveTimeoutManager struct {
 
 func NewAdaptiveTimeoutManager(
 	config *AdaptiveTimeoutConfig,
-	registry metrics.Registry,
+	registry metric.Registry,
 ) (AdaptiveTimeoutManager, error) {
 	switch {
 	case config.InitialTimeout > config.MaximumTimeout:
@@ -104,7 +104,7 @@ func NewAdaptiveTimeoutManager(
 		return nil, errNonPositiveHalflife
 	}
 
-	metricsInstance := metrics.NewWithRegistry("adaptive_timeout", registry)
+	metricsInstance := metric.NewWithRegistry("adaptive_timeout", registry)
 
 	tm := &adaptiveTimeoutManager{
 		networkTimeoutMetric: metricsInstance.NewGauge(

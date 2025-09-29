@@ -101,7 +101,7 @@ func (db *intermediateNodeDB) addToBatch(b database.KeyValueWriterDeleter, key K
 	dbKey := db.constructDBKey(key)
 	defer db.bufferPool.Put(dbKey)
 
-	db.metrics.DatabaseNodeWrite()
+	db.metric.DatabaseNodeWrite()
 	if n == nil {
 		return b.Delete(*dbKey)
 	}
@@ -110,25 +110,25 @@ func (db *intermediateNodeDB) addToBatch(b database.KeyValueWriterDeleter, key K
 
 func (db *intermediateNodeDB) Get(key Key) (*node, error) {
 	if cachedValue, isCached := db.nodeCache.Get(key); isCached {
-		db.metrics.IntermediateNodeCacheHit()
+		db.metric.IntermediateNodeCacheHit()
 		if cachedValue == nil {
 			return nil, database.ErrNotFound
 		}
 		return cachedValue, nil
 	}
 	if cachedValue, isCached := db.writeBuffer.Get(key); isCached {
-		db.metrics.IntermediateNodeCacheHit()
+		db.metric.IntermediateNodeCacheHit()
 		if cachedValue == nil {
 			return nil, database.ErrNotFound
 		}
 		return cachedValue, nil
 	}
-	db.metrics.IntermediateNodeCacheMiss()
+	db.metric.IntermediateNodeCacheMiss()
 
 	dbKey := db.constructDBKey(key)
 	defer db.bufferPool.Put(dbKey)
 
-	db.metrics.DatabaseNodeRead()
+	db.metric.DatabaseNodeRead()
 	nodeBytes, err := db.baseDB.Get(*dbKey)
 	if err != nil {
 		return nil, err

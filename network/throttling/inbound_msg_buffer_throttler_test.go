@@ -4,7 +4,7 @@
 package throttling
 
 import (
-	metrics metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 	"context"
 	"testing"
 	"time"
@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 )
 
 // Test inboundMsgBufferThrottler

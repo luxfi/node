@@ -6,7 +6,7 @@ package metric
 import (
 	"errors"
 
-	metrics "github.com/luxfi/metric"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -18,18 +18,18 @@ type Averager interface {
 }
 
 type averager struct {
-	count metrics.Counter
-	sum   metrics.Gauge
+	count metric.Counter
+	sum   metric.Gauge
 }
 
-func NewAverager(name, desc string, registry metrics.Registry) (Averager, error) {
+func NewAverager(name, desc string, registry metric.Registry) (Averager, error) {
 	errs := wrappers.Errs{}
 	a := NewAveragerWithErrs(name, desc, registry, &errs)
 	return a, errs.Err
 }
 
-func NewAveragerWithErrs(name, desc string, registry metrics.Registry, errs *wrappers.Errs) Averager {
-	metricsInstance := metrics.NewWithRegistry("", registry)
+func NewAveragerWithErrs(name, desc string, registry metric.Registry, errs *wrappers.Errs) Averager {
+	metricsInstance := metric.NewWithRegistry("", registry)
 
 	a := averager{
 		count: metricsInstance.NewCounter(

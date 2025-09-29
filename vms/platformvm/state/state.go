@@ -496,10 +496,14 @@ func newState(
 	if err != nil {
 		return nil, err
 	}
+	registry, ok := metricsReg.(metric.Registry)
+	if !ok {
+		return nil, errors.New("metricsReg must be a Registry")
+	}
 
 	blockIDCache, err := metercacher.New[uint64, ids.ID](
 		"block_id_cache",
-		metricsReg,
+		registry,
 		&cache.LRU[uint64, ids.ID]{Size: execCfg.BlockIDCacheSize},
 	)
 	if err != nil {
@@ -508,7 +512,7 @@ func newState(
 
 	blockCache, err := metercacher.New[ids.ID, block.Block](
 		"block_cache",
-		metricsReg,
+		registry,
 		cache.NewSizedLRU[ids.ID, block.Block](execCfg.BlockCacheSize, blockSize),
 	)
 	if err != nil {
@@ -536,7 +540,7 @@ func newState(
 
 	txCache, err := metercacher.New(
 		"tx_cache",
-		metricsReg,
+		registry,
 		cache.NewSizedLRU[ids.ID, *txAndStatus](execCfg.TxCacheSize, txAndStatusSize),
 	)
 	if err != nil {
@@ -546,7 +550,7 @@ func newState(
 	rewardUTXODB := prefixdb.New(RewardUTXOsPrefix, baseDB)
 	rewardUTXOsCache, err := metercacher.New[ids.ID, []*lux.UTXO](
 		"reward_utxos_cache",
-		metricsReg,
+		registry,
 		&cache.LRU[ids.ID, []*lux.UTXO]{Size: execCfg.RewardUTXOsCacheSize},
 	)
 	if err != nil {
@@ -564,7 +568,7 @@ func newState(
 	subnetOwnerDB := prefixdb.New(SubnetOwnerPrefix, baseDB)
 	subnetOwnerCache, err := metercacher.New[ids.ID, fxOwnerAndSize](
 		"subnet_owner_cache",
-		metricsReg,
+		registry,
 		cache.NewSizedLRU[ids.ID, fxOwnerAndSize](execCfg.FxOwnerCacheSize, func(_ ids.ID, f fxOwnerAndSize) int {
 			return ids.IDLen + f.size
 		}),
@@ -575,7 +579,7 @@ func newState(
 
 	transformedSubnetCache, err := metercacher.New(
 		"transformed_subnet_cache",
-		metricsReg,
+		registry,
 		cache.NewSizedLRU[ids.ID, *txs.Tx](execCfg.TransformedSubnetTxCacheSize, txSize),
 	)
 	if err != nil {
@@ -584,7 +588,7 @@ func newState(
 
 	supplyCache, err := metercacher.New[ids.ID, *uint64](
 		"supply_cache",
-		metricsReg,
+		registry,
 		&cache.LRU[ids.ID, *uint64]{Size: execCfg.ChainCacheSize},
 	)
 	if err != nil {
@@ -593,7 +597,7 @@ func newState(
 
 	chainCache, err := metercacher.New[ids.ID, []*txs.Tx](
 		"chain_cache",
-		metricsReg,
+		registry,
 		&cache.LRU[ids.ID, []*txs.Tx]{Size: execCfg.ChainCacheSize},
 	)
 	if err != nil {
@@ -602,7 +606,7 @@ func newState(
 
 	chainDBCache, err := metercacher.New[ids.ID, linkeddb.LinkedDB](
 		"chain_db_cache",
-		metricsReg,
+		registry,
 		&cache.LRU[ids.ID, linkeddb.LinkedDB]{Size: execCfg.ChainDBCacheSize},
 	)
 	if err != nil {

@@ -57,7 +57,7 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 			},
 			state: s,
 		},
-		metrics:    metrics.Noop,
+		metrics:    metric.Noop,
 		validators: validatorstest.Manager,
 	}
 
@@ -90,7 +90,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 			ctx:          context.Background(),
 			SharedMemory: nil, // TODO: Fix SharedMemory mock interface
 		},
-		metrics:    metrics.Noop,
+		metrics:    metric.Noop,
 		validators: validatorstest.Manager,
 	}
 
@@ -163,7 +163,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 			ctx:          context.Background(),
 			SharedMemory: nil, // TODO: Fix SharedMemory mock interface
 		},
-		metrics:    metrics.Noop,
+		metrics:    metric.Noop,
 		validators: validatorstest.Manager,
 	}
 
@@ -245,7 +245,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 			ctx:          context.Background(),
 			SharedMemory: nil, // TODO: Fix SharedMemory mock interface
 		},
-		metrics:    metrics.Noop,
+		metrics:    metric.Noop,
 		validators: validatorstest.Manager,
 	}
 
@@ -350,7 +350,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 			ctx:          context.Background(),
 			SharedMemory: nil, // TODO: Fix SharedMemory mock interface
 		},
-		metrics:    metrics.Noop,
+		metrics:    metric.Noop,
 		validators: validatorstest.Manager,
 	}
 
