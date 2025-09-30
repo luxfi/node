@@ -1,6 +1,6 @@
 module github.com/luxfi/node
 
-go 1.23
+go 1.25.1
 
 // Changes to the minimum golang version must also be replicated in
 // CONTRIBUTING.md
