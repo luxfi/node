@@ -116,7 +116,7 @@ function build_images {
     # Ensure node and xsvm binaries are available to create an initial db state that includes subnets.
     "${LUX_PATH}"/scripts/build.sh
     "${LUX_PATH}"/scripts/build_xsvm.sh
-    COMPOSE_ENV="${COMPOSE_ENV} LUXD_PATH=${LUX_PATH}/build/node LUXD_PLUGIN_DIR=${HOME}/.node/plugins"
+    COMPOSE_ENV="${COMPOSE_ENV} LUXD_PATH=${LUX_PATH}/build/node LUXD_PLUGIN_DIR=${HOME}/.luxd/plugins"
   fi
 
   # Generate compose config for copying into the config image

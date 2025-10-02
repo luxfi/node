@@ -66,6 +66,7 @@ import (
 	"github.com/luxfi/node/vms/proposervm"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/tracedvm"
+	"github.com/luxfi/node/vms/xvm"
 
 	// smeng "github.com/luxfi/consensus/engine/chain" // Not used
 	// smbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap" // Not used
@@ -646,22 +647,12 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// upon start is dropped.
 	chain, err := m.buildChain(chainParams, sb)
 
-	// Handle stub chain being created for X-Chain
-	if chain != nil && chain.Engine == nil && m.SkipBootstrap && chainParams.ID == m.XChainID {
-		m.Log.Warn("X-Chain created as stub in single-validator mode",
-			log.Stringer("chainID", chainParams.ID))
-		// Register basic handlers even for stub
-		m.chainsLock.Lock()
-		m.chains[chainParams.ID] = chain
-		m.chainsLock.Unlock()
-		sb.OnBootstrapCompleted()
-		return
-	}
-
 	if err != nil {
 		// Special handling for X-Chain in single validator mode
 		// Allow the node to continue without X-Chain when it fails with VM type error
-		isXChain := chainParams.ID == m.XChainID
+		// X-Chain ID: w68fJWq2nmQYuEKvbKRrKvDXB8xGnzuVGpoosXF3YV2N3G6nY
+		xChainID, _ := ids.FromString("w68fJWq2nmQYuEKvbKRrKvDXB8xGnzuVGpoosXF3YV2N3G6nY")
+		isXChain := chainParams.ID == xChainID
 		isVMTypeError := err == errUnknownVMType
 		skipBootstrapMode := m.SkipBootstrap
 
@@ -943,17 +934,107 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 		}
 	default:
 		// In skip-bootstrap mode, create X-Chain with single-node DAG mode
-		if m.SkipBootstrap && chainParams.ID == m.XChainID {
-			m.Log.Info("X-Chain disabled in single-node mode for now",
+		// X-Chain ID: w68fJWq2nmQYuEKvbKRrKvDXB8xGnzuVGpoosXF3YV2N3G6nY
+		xChainID, _ := ids.FromString("w68fJWq2nmQYuEKvbKRrKvDXB8xGnzuVGpoosXF3YV2N3G6nY")
+		if m.SkipBootstrap && chainParams.ID == xChainID {
+			m.Log.Info("Creating X-Chain with single-node DAG consensus (k=1)",
 				log.Stringer("chainID", chainParams.ID),
 				log.Stringer("vmID", chainParams.VMID))
 
-			// Create a stub chain so the system doesn't crash
-			// We'll need a more complete implementation for X-Chain DAG consensus
-			chain = &chainInfo{
-				VM: vm,
-				Engine: nil,
+			// Create database for X-Chain
+			chainID := chainParams.ID
+			primaryAlias := m.PrimaryAliasOrDefault(chainID)
+
+			// Check if DB is available
+			if m.DB == nil {
+				m.Log.Error("m.DB is nil in X-Chain initialization")
+				return nil, fmt.Errorf("database not initialized for X-Chain")
 			}
+
+			// Check if MeterDBMetrics is available
+			if m.MeterDBMetrics == nil {
+				m.Log.Error("m.MeterDBMetrics is nil in X-Chain initialization")
+				return nil, fmt.Errorf("MeterDBMetrics not initialized for X-Chain")
+			}
+
+			// Create DB metrics
+			meterDBReg, err := metric.MakeAndRegister(
+				m.MeterDBMetrics,
+				primaryAlias,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			meterDBMetrics := metric.NewWithRegistry(primaryAlias, meterDBReg)
+			meterDB, err := meterdb.New(meterDBMetrics, m.DB)
+			if err != nil {
+				return nil, err
+			}
+
+			prefixDB := prefixdb.New(chainID[:], meterDB)
+			vmDB := prefixdb.New(VMDBPrefix, prefixDB)
+
+			// Create consensus context
+			var pubKeyBytes []byte
+			if m.StakingBLSKey != nil && m.StakingBLSKey.PublicKey() != nil {
+				pubKeyBytes = nil
+			}
+
+			chainCtx := consensus.WithIDs(ctx, consensus.IDs{
+				NetworkID: m.NetworkID,
+				NetID:     chainParams.NetID,
+				ChainID:   chainParams.ID,
+				NodeID:    m.NodeID,
+				PublicKey: pubKeyBytes,
+			})
+
+			// X-Chain expects database.Database directly, not a wrapper
+
+			// Cast to XVM
+			xvmInstance := vm.(*xvm.VM)
+
+			// Convert fxs to []interface{} for Initialize
+			var fxsInterface []interface{}
+			for _, fx := range chainFxs {
+				fxsInterface = append(fxsInterface, fx)
+			}
+
+			// Initialize XVM with minimal setup for single-node mode
+			// Cast vmDB explicitly to database.Database interface
+			var dbInterface database.Database = vmDB
+			if err := xvmInstance.Initialize(
+				context.TODO(),
+				chainCtx,
+				dbInterface, // Pass database as interface
+				chainParams.GenesisData,
+				nil, // upgradeBytes
+				nil, // configBytes
+				make(chan interface{}, 1), // toEngine channel
+				fxsInterface,
+				nil, // Pass nil - XVM will create its own noOpAppSender
+			); err != nil {
+				return nil, fmt.Errorf("failed to initialize X-Chain VM: %w", err)
+			}
+
+			m.Log.Info("XVM initialized successfully")
+
+			// Create chainInfo for X-Chain
+			chain = &chainInfo{
+				VM:     xvmInstance,
+				Engine: nil, // DAG engine will be handled differently
+				Name:   "X",
+			}
+
+			// Register the chain
+			m.chainsLock.Lock()
+			m.chains[chainParams.ID] = chain
+			m.chainsLock.Unlock()
+
+			// Mark as bootstrapped for single node
+			sb.OnBootstrapCompleted()
+
+			m.Log.Info("X-Chain created successfully for single-node operation with k=1 consensus")
 			return chain, nil
 		}
 		return nil, errUnknownVMType
@@ -2407,5 +2488,39 @@ func (n *noopAppSender) SendAppError(ctx context.Context, nodeID ids.NodeID, req
 }
 
 func (n *noopAppSender) SendAppGossip(ctx context.Context, nodeIDs []ids.NodeID, appGossipBytes []byte) error {
+	return nil
+}
+
+// singleNodeAppSender implements core.AppSender interface for single-node mode
+// It's a no-op implementation since there's no network communication in single-node mode
+type singleNodeAppSender struct {
+	log log.Logger
+}
+
+// Ensure singleNodeAppSender implements core.AppSender
+var _ core.AppSender = (*singleNodeAppSender)(nil)
+
+func (s *singleNodeAppSender) SendAppRequest(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
+	s.log.Debug("SendAppRequest called in single-node mode (no-op)")
+	return nil
+}
+
+func (s *singleNodeAppSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
+	s.log.Debug("SendAppResponse called in single-node mode (no-op)")
+	return nil
+}
+
+func (s *singleNodeAppSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	s.log.Debug("SendAppError called in single-node mode (no-op)")
+	return nil
+}
+
+func (s *singleNodeAppSender) SendAppGossip(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
+	s.log.Debug("SendAppGossip called in single-node mode (no-op)")
+	return nil
+}
+
+func (s *singleNodeAppSender) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
+	s.log.Debug("SendAppGossipSpecific called in single-node mode (no-op)")
 	return nil
 }
