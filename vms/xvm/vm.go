@@ -23,6 +23,7 @@ import (
 	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
 	consensusinterfaces "github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/protocol/chain"
+	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
 	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/database"
@@ -224,9 +225,21 @@ func (vm *VM) Initialize(
 		}
 	}
 
+	// Debug: Check appSender type
+	if appSender == nil {
+		// In single-node mode, we can work without an AppSender
+		// Create a no-op AppSender
+		appSender = &noOpAppSender{}
+	}
+
 	coreAppSender, ok := appSender.(core.AppSender)
 	if !ok {
-		return errors.New("invalid app sender type")
+		// Debug: Print actual type received
+		actualType := "nil"
+		if appSender != nil {
+			actualType = fmt.Sprintf("%T", appSender)
+		}
+		return fmt.Errorf("invalid app sender type: expected core.AppSender, got %s", actualType)
 	}
 
 	// Ignore toEngine channel as XVM doesn't use it
@@ -963,4 +976,29 @@ func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height
 		}
 	}
 	return result, nil
+}
+
+// noOpAppSender is a minimal implementation of core.AppSender for single-node mode
+type noOpAppSender struct{}
+
+var _ core.AppSender = (*noOpAppSender)(nil)
+
+func (n *noOpAppSender) SendAppRequest(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
+	return nil
+}
+
+func (n *noOpAppSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
+	return nil
+}
+
+func (n *noOpAppSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	return nil
+}
+
+func (n *noOpAppSender) SendAppGossip(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
+	return nil
+}
+
+func (n *noOpAppSender) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
+	return nil
 }

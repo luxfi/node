@@ -68,3 +68,10 @@ staking
 # Go workspace files
 go.work
 go.work.sum
+
+# AI/LLM instruction symlinks
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+QWEN.md
+GROK.md

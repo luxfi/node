@@ -72,7 +72,7 @@ func RegisterFlags() *FlagVars {
 	flag.StringVar(
 		&vars.pluginDir,
 		"plugin-dir",
-		os.ExpandEnv("$HOME/.node/plugins"),
+		os.ExpandEnv("$HOME/.luxd/plugins"),
 		"[optional] the dir containing VM plugins.",
 	)
 	flag.StringVar(
