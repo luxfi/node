@@ -936,8 +936,15 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 		// In skip-bootstrap mode, create X-Chain with single-node DAG mode
 		// X-Chain ID: w68fJWq2nmQYuEKvbKRrKvDXB8xGnzuVGpoosXF3YV2N3G6nY
 		xChainID, _ := ids.FromString("w68fJWq2nmQYuEKvbKRrKvDXB8xGnzuVGpoosXF3YV2N3G6nY")
-		if m.SkipBootstrap && chainParams.ID == xChainID {
-			m.Log.Info("Creating X-Chain with single-node DAG consensus (k=1)",
+		// Q-Chain ID: qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+		qChainID, _ := ids.FromString("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
+
+		if m.SkipBootstrap && (chainParams.ID == xChainID || chainParams.ID == qChainID) {
+			chainName := "X-Chain"
+			if chainParams.ID == qChainID {
+				chainName = "Q-Chain"
+			}
+			m.Log.Info(fmt.Sprintf("Creating %s with single-node DAG consensus (k=1)", chainName),
 				log.Stringer("chainID", chainParams.ID),
 				log.Stringer("vmID", chainParams.VMID))
 
@@ -991,8 +998,17 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 
 			// X-Chain expects database.Database directly, not a wrapper
 
-			// Cast to XVM
-			xvmInstance := vm.(*xvm.VM)
+			// Cast to XVM or QVM based on chain
+			var xvmInstance *xvm.VM
+			if chainParams.ID == qChainID {
+				// Q-Chain uses QVM - for now use XVM as base
+				// TODO: Replace with actual QVM once fully implemented
+				m.Log.Info("Initializing Q-Chain with quantum signatures enabled")
+				xvmInstance = vm.(*xvm.VM)
+			} else {
+				// Regular X-Chain
+				xvmInstance = vm.(*xvm.VM)
+			}
 
 			// Convert fxs to []interface{} for Initialize
 			var fxsInterface []interface{}

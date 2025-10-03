@@ -1,0 +1,158 @@
+// Copyright (C) 2025, Lux Industries Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package genesis
+
+import (
+	"time"
+
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/vms/platformvm/txs/fee"
+)
+
+// QChainParams defines the parameters for Q-Chain
+var (
+	QChainMainnetParams = Params{
+		StakingConfig: StakingConfig{
+			UptimeRequirement: .8, // 80%
+			MinValidatorStake: 100 * Units,
+			MaxValidatorStake: 10_000 * Units,
+			MinDelegatorStake: 25 * Units,
+			MinDelegationFee:  20000, // 2%
+			MinStakeDuration:  14 * 24 * time.Hour,
+			MaxStakeDuration:  365 * 24 * time.Hour,
+			RewardConfig: reward.Config{
+				MaxConsumptionRate: .12 * reward.PercentDenominator,
+				MinConsumptionRate: .10 * reward.PercentDenominator,
+				MintingPeriod:      365 * 24 * time.Hour,
+				SupplyCap:          1_000_000_000 * Units, // 1 billion Q tokens
+			},
+		},
+		StaticConfig: fee.StaticConfig{
+			TxFee:                         Units / 100,
+			CreateAssetTxFee:              10 * Units / 100,
+			CreateSubnetTxFee:             100 * Units,
+			TransformSubnetTxFee:          100 * Units,
+			CreateBlockchainTxFee:         100 * Units,
+			AddPrimaryNetworkValidatorFee: 0,
+			AddPrimaryNetworkDelegatorFee: 0,
+			AddSubnetValidatorFee:         Units / 100,
+			AddSubnetDelegatorFee:         Units / 100,
+			ValidatorWeightDifferenceCap:  5,
+			FeeDistribution: fee.Distribution{
+				Shares: 10_000, // 100% to validators
+				Burn:   0,      // 0% burned
+			},
+		},
+	}
+
+	QChainTestnetParams = Params{
+		StakingConfig: StakingConfig{
+			UptimeRequirement: .6, // 60% for testnet
+			MinValidatorStake: 10 * Units,
+			MaxValidatorStake: 1_000 * Units,
+			MinDelegatorStake: 1 * Units,
+			MinDelegationFee:  10000, // 1%
+			MinStakeDuration:  24 * time.Hour,
+			MaxStakeDuration:  90 * 24 * time.Hour,
+			RewardConfig: reward.Config{
+				MaxConsumptionRate: .20 * reward.PercentDenominator,
+				MinConsumptionRate: .15 * reward.PercentDenominator,
+				MintingPeriod:      90 * 24 * time.Hour,
+				SupplyCap:          100_000_000 * Units, // 100 million for testnet
+			},
+		},
+		StaticConfig: fee.StaticConfig{
+			TxFee:                         Units / 1000,
+			CreateAssetTxFee:              Units / 100,
+			CreateSubnetTxFee:             10 * Units,
+			TransformSubnetTxFee:          10 * Units,
+			CreateBlockchainTxFee:         10 * Units,
+			AddPrimaryNetworkValidatorFee: 0,
+			AddPrimaryNetworkDelegatorFee: 0,
+			AddSubnetValidatorFee:         Units / 1000,
+			AddSubnetDelegatorFee:         Units / 1000,
+			ValidatorWeightDifferenceCap:  10,
+			FeeDistribution: fee.Distribution{
+				Shares: 10_000, // 100% to validators
+				Burn:   0,      // 0% burned
+			},
+		},
+	}
+)
+
+// QChainConfig represents Q-Chain specific configuration
+type QChainConfig struct {
+	// Quantum-resistant parameters
+	QuantumEnabled     bool
+	SignatureAlgorithm string
+	HashFunction       string
+	MinValidators      int
+	MaxValidators      int
+	ConsensusThreshold int
+
+	// Chain identification
+	ChainID    ids.ID
+	ChainAlias string
+	VMID       ids.ID
+
+	// Network parameters
+	NetworkID uint32
+}
+
+// GetQChainParams returns the Q-Chain parameters for the given network ID
+func GetQChainParams(networkID uint32) Params {
+	switch networkID {
+	case constants.QChainMainnetID:
+		return QChainMainnetParams
+	case constants.QChainTestnetID:
+		return QChainTestnetParams
+	default:
+		return QChainTestnetParams
+	}
+}
+
+// GetQChainConfig returns the Q-Chain configuration for the given network ID
+func GetQChainConfig(networkID uint32) QChainConfig {
+	switch networkID {
+	case constants.QChainMainnetID:
+		return QChainConfig{
+			QuantumEnabled:     true,
+			SignatureAlgorithm: "dilithium3",
+			HashFunction:       "sha3-256",
+			MinValidators:      5,
+			MaxValidators:      100,
+			ConsensusThreshold: 3,
+			ChainID:            constants.QChainID,
+			ChainAlias:         "Q",
+			VMID:               constants.QVMID,
+			NetworkID:          constants.QChainMainnetID,
+		}
+	case constants.QChainTestnetID:
+		return QChainConfig{
+			QuantumEnabled:     true,
+			SignatureAlgorithm: "dilithium3",
+			HashFunction:       "sha3-256",
+			MinValidators:      3,
+			MaxValidators:      50,
+			ConsensusThreshold: 2,
+			ChainID:            constants.QChainID,
+			ChainAlias:         "Q",
+			VMID:               constants.QVMID,
+			NetworkID:          constants.QChainTestnetID,
+		}
+	default:
+		return QChainConfig{
+			QuantumEnabled:     false,
+			MinValidators:      1,
+			MaxValidators:      10,
+			ConsensusThreshold: 1,
+			ChainID:            constants.QChainID,
+			ChainAlias:         "Q",
+			VMID:               constants.QVMID,
+			NetworkID:          networkID,
+		}
+	}
+}

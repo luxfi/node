@@ -36,6 +36,10 @@ const (
 	HanzoMainnetID uint32 = 36963
 	HanzoTestnetID uint32 = 36962
 
+	// Q-Chain network IDs (Quantum-resistant chain)
+	QChainMainnetID uint32 = 99999
+	QChainTestnetID uint32 = 99998
+
 	LocalName    = "local"
 	MainnetName  = "mainnet"
 	TestnetName  = "testnet"
@@ -52,20 +56,24 @@ const (
 var (
 	PrimaryNetworkID = ids.Empty
 	PlatformChainID  = ids.Empty
+	// Q-Chain ID for quantum-resistant chain
+	QChainID = ids.FromStringOrPanic("2QTQfPNhYWJUhmemsBFzqGjRdvXn4LQyJCx4VTxxKjzV6h5J2q")
 
 	NetworkIDToNetworkName = map[uint32]string{
-		LocalID:        LocalName,
-		MainnetID:      MainnetName,
-		TestnetID:      TestnetName,
-		UnitTestID:     UnitTestName,
-		LuxMainnetID:   MainnetName,
-		LuxTestnetID:   TestnetName,
-		ZooMainnetID:   "zoo-mainnet",
-		ZooTestnetID:   "zoo-testnet",
-		SPCMainnetID:   "spc-mainnet",
-		SPCTestnetID:   "spc-testnet",
-		HanzoMainnetID: "hanzo-mainnet",
-		HanzoTestnetID: "hanzo-testnet",
+		LocalID:         LocalName,
+		MainnetID:       MainnetName,
+		TestnetID:       TestnetName,
+		UnitTestID:      UnitTestName,
+		LuxMainnetID:    MainnetName,
+		LuxTestnetID:    TestnetName,
+		ZooMainnetID:    "zoo-mainnet",
+		ZooTestnetID:    "zoo-testnet",
+		SPCMainnetID:    "spc-mainnet",
+		SPCTestnetID:    "spc-testnet",
+		HanzoMainnetID:  "hanzo-mainnet",
+		HanzoTestnetID:  "hanzo-testnet",
+		QChainMainnetID: "qchain-mainnet",
+		QChainTestnetID: "qchain-testnet",
 	}
 	NetworkNameToNetworkID = map[string]uint32{
 		LocalName:    LocalID,
@@ -75,18 +83,20 @@ var (
 	}
 
 	NetworkIDToHRP = map[uint32]string{
-		LocalID:        LocalHRP,
-		MainnetID:      MainnetHRP,
-		TestnetID:      TestnetHRP,
-		UnitTestID:     UnitTestHRP,
-		LuxMainnetID:   MainnetHRP,
-		LuxTestnetID:   TestnetHRP,
-		ZooMainnetID:   "zoo",
-		ZooTestnetID:   "zoo",
-		SPCMainnetID:   "spc",
-		SPCTestnetID:   "spc",
-		HanzoMainnetID: "hanzo",
-		HanzoTestnetID: "hanzo",
+		LocalID:         LocalHRP,
+		MainnetID:       MainnetHRP,
+		TestnetID:       TestnetHRP,
+		UnitTestID:      UnitTestHRP,
+		LuxMainnetID:    MainnetHRP,
+		LuxTestnetID:    TestnetHRP,
+		ZooMainnetID:    "zoo",
+		ZooTestnetID:    "zoo",
+		SPCMainnetID:    "spc",
+		SPCTestnetID:    "spc",
+		HanzoMainnetID:  "hanzo",
+		HanzoTestnetID:  "hanzo",
+		QChainMainnetID: "qchain",
+		QChainTestnetID: "qtest",
 	}
 	NetworkHRPToNetworkID = map[string]uint32{
 		LocalHRP:    LocalID,
