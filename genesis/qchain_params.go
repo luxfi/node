@@ -6,6 +6,7 @@ package genesis
 import (
 	"time"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -17,9 +18,9 @@ var (
 	QChainMainnetParams = Params{
 		StakingConfig: StakingConfig{
 			UptimeRequirement: .8, // 80%
-			MinValidatorStake: 100 * units.LUX,
-			MaxValidatorStake: 10_000 * units.LUX,
-			MinDelegatorStake: 25 * units.LUX,
+			MinValidatorStake: 100 * units.Lux,
+			MaxValidatorStake: 10_000 * units.Lux,
+			MinDelegatorStake: 25 * units.Lux,
 			MinDelegationFee:  20000, // 2%
 			MinStakeDuration:  14 * 24 * time.Hour,
 			MaxStakeDuration:  365 * 24 * time.Hour,
@@ -27,19 +28,19 @@ var (
 				MaxConsumptionRate: .12 * reward.PercentDenominator,
 				MinConsumptionRate: .10 * reward.PercentDenominator,
 				MintingPeriod:      365 * 24 * time.Hour,
-				SupplyCap:          1_000_000_000 * units.LUX, // 1 billion Q tokens
+				SupplyCap:          1_000_000_000 * units.Lux, // 1 billion Q tokens
 			},
 		},
 		StaticConfig: fee.StaticConfig{
-			TxFee:                         units.MilliLUX,
-			CreateAssetTxFee:              10 * units.MilliLUX,
-			CreateNetTxFee:                100 * units.LUX,
-			TransformNetTxFee:             100 * units.LUX,
-			CreateBlockchainTxFee:         100 * units.LUX,
+			TxFee:                         units.MilliLux,
+			CreateAssetTxFee:              10 * units.MilliLux,
+			CreateNetTxFee:                100 * units.Lux,
+			TransformNetTxFee:             100 * units.Lux,
+			CreateBlockchainTxFee:         100 * units.Lux,
 			AddPrimaryNetworkValidatorFee: 0,
 			AddPrimaryNetworkDelegatorFee: 0,
-			AddNetValidatorFee:            units.MilliLUX,
-			AddNetDelegatorFee:            units.MilliLUX,
+			AddNetValidatorFee:            units.MilliLux,
+			AddNetDelegatorFee:            units.MilliLux,
 			ValidatorWeightDifferenceCap:  5,
 			FeeDistribution: fee.Distribution{
 				Shares: 10_000, // 100% to validators
