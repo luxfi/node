@@ -9,6 +9,10 @@ go 1.25.1
 
 exclude google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 
+exclude github.com/ethereum/go-ethereum v1.10.26
+
+exclude github.com/ethereum/go-ethereum v1.16.3
+
 exclude google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
 
 exclude google.golang.org/genproto v0.0.0-20210402141018-6c239bbf2bb1
@@ -32,7 +36,7 @@ require (
 	github.com/luxfi/crypto v1.17.4
 	github.com/luxfi/database v1.2.1
 	github.com/luxfi/evm v1.16.18
-	github.com/luxfi/geth v1.16.35
+	github.com/luxfi/geth v1.16.38
 	github.com/luxfi/ids v1.1.1
 	github.com/luxfi/ledger-lux-go v1.0.0
 	github.com/luxfi/log v1.1.22

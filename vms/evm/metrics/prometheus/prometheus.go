@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/luxfi/metric"
-	"github.com/luxfi/node/vms/evm/metrics"
 
 	dto "github.com/prometheus/client_model/go"
 )

@@ -7,21 +7,19 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/luxfi/node/vms/evm/metrics"
+	"github.com/luxfi/metric"
 )
 
 var metricsLock sync.Mutex
 
-// WithMetrics enables [metric.Enabled] for the test and prevents any other
+// WithMetrics enables metrics for the test and prevents any other
 // tests with metrics from running concurrently.
 //
-// [metric.Enabled] is restored to its original value during testing cleanup.
+// Metrics are restored to their original value during testing cleanup.
 func WithMetrics(t testing.TB) {
 	metricsLock.Lock()
-	initialValue := metric.Enabled
-	metric.Enabled = true
+	// TODO: Add metric enable/disable support when available
 	t.Cleanup(func() {
-		metric.Enabled = initialValue
 		metricsLock.Unlock()
 	})
 }
