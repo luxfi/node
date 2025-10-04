@@ -4,11 +4,11 @@
 package qvm
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
 	"time"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/qvm/quantum"
 )

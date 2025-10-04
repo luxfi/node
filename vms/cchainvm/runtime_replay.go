@@ -405,3 +405,34 @@ func TriggerRuntimeReplay(vm *VM) error {
 	manager := NewRuntimeReplayManager(vm)
 	return manager.DetectAndLoadMigratedData()
 }
+
+// InitializeWithReplay initializes the VM with migrated blockchain data
+func (vm *VM) InitializeWithReplay() error {
+	// Check if replay is needed based on configuration or environment
+	if vm.replayConfig == nil {
+		// Check environment variable
+		if replayPath := os.Getenv("LUX_REPLAY_DB"); replayPath != "" {
+			vm.replayConfig = &DatabaseReplayConfig{
+				SourcePath:   replayPath,
+				CopyAllState: true,
+			}
+		} else {
+			// Use default path if migrated data exists
+			defaultPath := "/home/z/.luxd/chainData/C/db/badgerdb"
+			if stat, err := os.Stat(defaultPath); err == nil && stat.IsDir() {
+				vm.replayConfig = &DatabaseReplayConfig{
+					SourcePath:   defaultPath,
+					CopyAllState: true,
+				}
+			}
+		}
+	}
+
+	if vm.replayConfig != nil {
+		vm.log.Info("Initializing with database replay",
+			"source", vm.replayConfig.SourcePath)
+		return TriggerRuntimeReplay(vm)
+	}
+
+	return nil
+}

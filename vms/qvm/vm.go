@@ -16,16 +16,6 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/consensus"
-	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/dag"
-	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
-	consensusinterfaces "github.com/luxfi/consensus/interfaces"
-	"github.com/luxfi/consensus/protocol/chain"
-	consensusset "github.com/luxfi/consensus/utils/set"
-	"github.com/luxfi/consensus/validators"
-	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
@@ -77,10 +67,10 @@ type VM struct {
 
 	// Core components
 	ctx             context.Context
-	consensusCtx    *consensusctx.Context
+	// consensusCtx    *consensusctx.Context
 	log             log.Logger
 	db              database.Database
-	versiondb       versiondb.DB
+	versiondb       *versiondb.Database
 	blockchainID    ids.ID
 	ChainAlias      string
 	NetworkID       uint32
@@ -90,9 +80,9 @@ type VM struct {
 	quantumCache    *cache.LRU[ids.ID, *quantum.QuantumSignature]
 
 	// Consensus and validation
-	validators      validators.Manager
-	versionManager  consensusversion.Manager
-	consensusEngine consensus.Consensus
+	// validators      validators.Manager
+	// versionManager  consensusversion.Manager
+	// consensusEngine consensus.Consensus
 
 	// Metrics and monitoring
 	metrics         metric.Registry
@@ -125,7 +115,8 @@ type VM struct {
 // Initialize initializes the VM with the given context
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *consensusctx.Context,
+	// chainCtx *consensusctx.Context,
+	chainCtx interface{},
 	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -139,20 +130,20 @@ func (vm *VM) Initialize(
 
 	// Set up basic context
 	vm.ctx = ctx
-	vm.consensusCtx = chainCtx
+	// vm.consensusCtx = chainCtx
 	vm.db = db
-	vm.blockchainID = chainCtx.ChainID
-	vm.NetworkID = chainCtx.NetworkID
+	// vm.blockchainID = chainCtx.ChainID
+	// vm.NetworkID = chainCtx.NetworkID
 
 	// Initialize logger
-	if vm.log == nil {
-		vm.log = chainCtx.Log
-	}
-	vm.log.Info("initializing QVM",
-		"version", Version,
-		"chainID", vm.blockchainID,
-		"networkID", vm.NetworkID,
-	)
+	// if vm.log == nil {
+	//	vm.log = chainCtx.Log
+	// }
+	// vm.log.Info("initializing QVM",
+	//	"version", Version,
+	//	"chainID", vm.blockchainID,
+	//	"networkID", vm.NetworkID,
+	// )
 
 	// Initialize quantum components
 	vm.quantumSigner = quantum.NewQuantumSigner(
