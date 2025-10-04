@@ -63,13 +63,13 @@ var (
 		StaticConfig: fee.StaticConfig{
 			TxFee:                         units.Lux / 1000,
 			CreateAssetTxFee:              units.Lux / 100,
-			CreateSubnetTxFee:             10 * units.Lux,
-			TransformSubnetTxFee:          10 * units.Lux,
+			CreateNetTxFee:                10 * units.Lux,
+			TransformNetTxFee:             10 * units.Lux,
 			CreateBlockchainTxFee:         10 * units.Lux,
 			AddPrimaryNetworkValidatorFee: 0,
 			AddPrimaryNetworkDelegatorFee: 0,
-			AddSubnetValidatorFee:         units.Lux / 1000,
-			AddSubnetDelegatorFee:         units.Lux / 1000,
+			AddNetValidatorFee:            units.Lux / 1000,
+			AddNetDelegatorFee:            units.Lux / 1000,
 		},
 	}
 )
