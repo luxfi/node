@@ -357,9 +357,16 @@ func (vm *VM) Initialize(
 				chainDataDir = "/home/z/.luxd/chainData/C/db"
 			}
 			// Check both possible locations for ethdb
+			// CRITICAL FIX: Use the correct migrated database paths
+			// The ACTUAL SubnetEVM migrated data is in the state directory
 			possiblePaths := []string{
-				filepath.Join(chainDataDir, "badgerdb", "ethdb"), // New location after migration
-				filepath.Join(chainDataDir, "ethdb"),              // Direct location
+				"/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb",  // ACTUAL migrated SubnetEVM data
+				"/home/z/.luxd/node4/chainData/C/db/ethdb/ethdb",                  // Node4 location
+				"/home/z/.luxd/chainData/C/db/ethdb/ethdb",                        // Primary location
+				"/home/z/.luxd/chainData/C/db/badgerdb/ethdb",                     // BadgerDB location
+				filepath.Join(chainDataDir, "ethdb", "ethdb"),                      // Double ethdb path
+				filepath.Join(chainDataDir, "badgerdb", "ethdb"),                   // Relative location
+				filepath.Join(chainDataDir, "ethdb"),                               // Direct location fallback
 			}
 
 			for _, ethdbPath := range possiblePaths {
@@ -372,9 +379,19 @@ func (vm *VM) Initialize(
 					}
 					ethDB, err := NewBadgerDatabase(nil, badgerConfig)
 					if err == nil {
-						// Wrap the migrated database with an adapter
-						vm.ethDB = NewMigratedDataAdapter(ethDB)
-						fmt.Printf("Successfully opened migrated ethdb with adapter\n")
+						// CRITICAL: Wrap with namespace stripper for SubnetEVM compatibility
+						vm.ethDB = NewSubnetNamespaceStripper(ethDB)
+						fmt.Printf("Successfully opened migrated ethdb with namespace stripper\n")
+
+						// Try to load the last block to get the actual height
+						if stripper, ok := vm.ethDB.(*SubnetNamespaceStripper); ok {
+							if lastBlock, err := stripper.LoadLastBlock(); err == nil {
+								migratedHeight = lastBlock.NumberU64()
+								migratedBlockHash = lastBlock.Hash()
+								fmt.Printf("Loaded last block from migrated data: height=%d, hash=%s\n",
+									migratedHeight, migratedBlockHash.Hex())
+							}
+						}
 						break
 					} else {
 						fmt.Printf("Failed to open migrated ethdb at %s: %v\n", ethdbPath, err)
@@ -396,14 +413,13 @@ func (vm *VM) Initialize(
 	// Fallback: Check for migrated blockchain data in database
 	if !hasMigratedData {
 		// ALWAYS check chainData/C/db first for C-Chain (no blockchain ID dependency)
-		dataDir := os.Getenv("DATA_DIR")
-		if dataDir == "" {
-			dataDir = "/home/z/.luxd"
-		}
-		baseDir := filepath.Join(dataDir, "chainData", "C", "db")
+		// CRITICAL FIX: Check all possible migrated database paths
 		possiblePaths := []string{
-			filepath.Join(baseDir, "badgerdb", "ethdb"),
-			filepath.Join(baseDir, "ethdb"),
+			"/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb",  // ACTUAL migrated SubnetEVM data
+			"/home/z/.luxd/node4/chainData/C/db/ethdb/ethdb",                  // Node4 migrated location
+			"/home/z/.luxd/chainData/C/db/ethdb/ethdb",                        // Primary migrated location
+			"/home/z/.luxd/chainData/C/db/badgerdb/ethdb",                     // BadgerDB migrated location
+			"/home/z/.luxd-node1/chainData/C/db/ethdb",                        // Alternative node1 location
 		}
 
 		// Also check blockchain-ID-specific path as fallback
@@ -416,9 +432,9 @@ func (vm *VM) Initialize(
 
 		for _, ethdbPath := range possiblePaths {
 			if stat, err := os.Stat(ethdbPath); err == nil && stat.IsDir() {
-				// Check if it has substantial data (>500MB indicates migrated blockchain)
-				if dirSize := getDirSize(ethdbPath); dirSize > 500*1024*1024 {
-					fmt.Printf("DETECTED MIGRATED BADGERDB AT %s (%d MB)\n", ethdbPath, dirSize/(1024*1024))
+				// Check if it has substantial data (>100KB indicates migrated blockchain)
+				if dirSize := getDirSize(ethdbPath); dirSize > 100*1024 {
+					fmt.Printf("DETECTED MIGRATED BADGERDB AT %s (%d KB)\n", ethdbPath, dirSize/1024)
 
 					// Open the migrated database
 					badgerConfig := BadgerDatabaseConfig{
@@ -427,11 +443,25 @@ func (vm *VM) Initialize(
 						ReadOnly:      false,
 					}
 					if ethDB, err := NewBadgerDatabase(nil, badgerConfig); err == nil {
-						// Wrap with adapter
-						vm.ethDB = NewMigratedDataAdapter(ethDB)
+						// CRITICAL: Wrap with namespace stripper for SubnetEVM compatibility
+						vm.ethDB = NewSubnetNamespaceStripper(ethDB)
 						hasMigratedData = true
-						migratedHeight = 1082780 // Known height from migration
-						fmt.Printf("Successfully opened migrated ethdb with adapter\n")
+
+						// Try to load actual height from the database
+						if stripper, ok := vm.ethDB.(*SubnetNamespaceStripper); ok {
+							if lastBlock, err := stripper.LoadLastBlock(); err == nil {
+								migratedHeight = lastBlock.NumberU64()
+								migratedBlockHash = lastBlock.Hash()
+								fmt.Printf("Loaded actual height from migrated data: %d (hash: %s)\n",
+									migratedHeight, migratedBlockHash.Hex())
+							} else {
+								// Fallback to known height
+								migratedHeight = 1082780 // Known height from migration
+								fmt.Printf("Using fallback height: %d\n", migratedHeight)
+							}
+						}
+
+						fmt.Printf("Successfully opened migrated ethdb with namespace stripper\n")
 						break
 					}
 				}
@@ -744,13 +774,8 @@ func (vm *VM) Initialize(
 			fmt.Printf("Marked database as initialized\n")
 		}
 
-		// Skip old loader if using new replay
-		if vm.replayConfig == nil {
-			// Load all blocks from SubnetEVM database (old method)
-			if err := LoadSubnetEVMDatabase(vm.ethDB); err != nil {
-				fmt.Printf("Warning: Failed to load SubnetEVM database: %v\n", err)
-			}
-		}
+		// Skip old loader - we're using the migrated database directly
+		// The migrated BadgerDB already contains all the data we need
 	}
 
 	// CRITICAL: If we have a replay config with genesis extraction, do it FIRST
@@ -818,47 +843,23 @@ func (vm *VM) Initialize(
 		// CRITICAL: Skip all genesis processing for migrated data (old method)
 		fmt.Printf("MIGRATION MODE ACTIVE: Loading blockchain from height %d\n", migratedHeight)
 
-		// If we opened the ethdb directly, use that instead of the wrapped DB
+		// Use the ethDB we already opened (it's the correct migrated database)
 		dbToUse := vm.ethDB
-		// ALWAYS check chainData/C/db first for C-Chain (no blockchain ID dependency)
-		dataDir := os.Getenv("DATA_DIR")
-		if dataDir == "" {
-			dataDir = "/home/z/.luxd"
-		}
-		baseDir := filepath.Join(dataDir, "chainData", "C", "db")
-		possiblePaths := []string{
-			filepath.Join(baseDir, "badgerdb", "ethdb"),
-			filepath.Join(baseDir, "ethdb"),
-		}
 
-		// Also check blockchain-ID-specific path as fallback
-		if chainCtxWithDir, ok := vm.chainCtx.(interface{ GetChainDataDir() string }); ok {
-			possiblePaths = append(possiblePaths,
-				filepath.Join(chainCtxWithDir.GetChainDataDir(), "badgerdb", "ethdb"),
-				filepath.Join(chainCtxWithDir.GetChainDataDir(), "ethdb"),
-			)
-		}
-
-		ethdbPath := ""
-		for _, path := range possiblePaths {
-			if _, err := os.Stat(path); err == nil {
-				ethdbPath = path
-				break
-			}
-		}
-		if ethdbPath == "" {
-			ethdbPath = filepath.Join(".", "ethdb") // fallback
-		}
-		if ethdbPath != "" && ethdbPath != filepath.Join(".", "ethdb") {
-			// Re-open the ethdb with proper config for the backend
-			badgerConfig := BadgerDatabaseConfig{
-				DataDir:       ethdbPath,
-				EnableAncient: false,
-				ReadOnly:      false,
-			}
-			if directDB, err := NewBadgerDatabase(nil, badgerConfig); err == nil {
-				dbToUse = directDB
-				fmt.Printf("Using direct ethdb for migrated backend from %s\n", ethdbPath)
+		// If we haven't opened the correct database yet, open it now
+		if dbToUse == nil {
+			ethdbPath := "/home/z/.luxd/chainData/C/db/badgerdb/ethdb"
+			if _, err := os.Stat(ethdbPath); err == nil {
+				badgerConfig := BadgerDatabaseConfig{
+					DataDir:       ethdbPath,
+					EnableAncient: false,
+					ReadOnly:      false,
+				}
+				if directDB, err := NewBadgerDatabase(nil, badgerConfig); err == nil {
+					dbToUse = directDB
+					vm.ethDB = directDB
+					fmt.Printf("Using migrated ethdb from %s\n", ethdbPath)
+				}
 			}
 		}
 
@@ -1043,21 +1044,21 @@ func (vm *VM) Initialize(
 		fmt.Printf("DEBUG: Replayer created, about to run\n")
 		defer replayer.Close()
 
-		// Set progress tracker
-		replayer.SetProgressTracker(vm.replayProgress)
+		// Progress is tracked internally in the replayer
+		// vm.replayProgress = replayer.progress // If you need access to progress
 
-		vm.log.Info("Starting replayer.Run()")
-		fmt.Printf("DEBUG: About to call replayer.Run()\n")
-		
-		if err := replayer.Run(); err != nil {
-			vm.log.Error("Replayer.Run() failed", "error", err)
-			fmt.Printf("ERROR in replayer.Run(): %v\n", err)
+		vm.log.Info("Starting replayer.ReplayWithEVM()")
+		fmt.Printf("DEBUG: About to call replayer.ReplayWithEVM()\n")
+
+		if err := replayer.ReplayWithEVM(); err != nil {
+			vm.log.Error("Replayer.ReplayWithEVM() failed", "error", err)
+			fmt.Printf("ERROR in replayer.ReplayWithEVM(): %v\n", err)
 			vm.replayProgress.Fail(err)
 			return fmt.Errorf("database replay failed: %w", err)
 		}
-		
+
 		vm.log.Info("Replayer completed successfully")
-		fmt.Printf("DEBUG: Replayer.Run() completed\n")
+		fmt.Printf("DEBUG: Replayer.ReplayWithEVM() completed\n")
 
 		vm.replayProgress.Complete()
 

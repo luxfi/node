@@ -1,0 +1,88 @@
+// Test program to examine database keys
+package main
+
+import (
+	"encoding/hex"
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/cockroachdb/pebble"
+)
+
+func main() {
+	if len(os.Args) < 2 {
+		log.Fatal("Usage: test_db_keys <database-path>")
+	}
+
+	dbPath := os.Args[1]
+	db, err := pebble.Open(dbPath, &pebble.Options{ReadOnly: true})
+	if err != nil {
+		log.Fatalf("Failed to open database: %v", err)
+	}
+	defer db.Close()
+
+	// Sample some keys
+	iter, err := db.NewIter(nil)
+	if err != nil {
+		log.Fatalf("Failed to create iterator: %v", err)
+	}
+	defer iter.Close()
+
+	fmt.Println("First 20 keys in database:")
+	count := 0
+	for iter.First(); iter.Valid() && count < 20; iter.Next() {
+		key := iter.Key()
+		keyHex := hex.EncodeToString(key)
+
+		// Try to decode key structure
+		keyStr := ""
+		if len(key) > 0 {
+			// Check if it starts with a namespace (32 bytes)
+			if len(key) > 32 {
+				namespace := key[:32]
+				remainder := key[32:]
+				keyStr = fmt.Sprintf("Namespace[%x...] + %s", namespace[:8], describeKey(remainder))
+			} else {
+				keyStr = describeKey(key)
+			}
+		}
+
+		fmt.Printf("Key %d: [%d bytes] %s => %s\n", count, len(key), keyHex[:min(80, len(keyHex))], keyStr)
+		count++
+	}
+}
+
+func describeKey(key []byte) string {
+	if len(key) == 0 {
+		return "empty"
+	}
+
+	prefix := string(key[0])
+	switch prefix {
+	case "h":
+		return fmt.Sprintf("header: '%s'...", prefix)
+	case "b":
+		return fmt.Sprintf("body: '%s'...", prefix)
+	case "r":
+		return fmt.Sprintf("receipt: '%s'...", prefix)
+	case "H":
+		return fmt.Sprintf("headerNumber: '%s'...", prefix)
+	case "n":
+		return fmt.Sprintf("blockNumber: '%s'...", prefix)
+	case "t":
+		return fmt.Sprintf("trie: '%s'...", prefix)
+	default:
+		if key[0] >= 32 && key[0] <= 126 {
+			return fmt.Sprintf("'%s'...", string(key[0]))
+		}
+		return fmt.Sprintf("0x%02x...", key[0])
+	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}

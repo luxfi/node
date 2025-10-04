@@ -1,0 +1,289 @@
+// Copyright (C) 2019-2025 Ava Labs, Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package cchainvm
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"math/big"
+	"os"
+	"path/filepath"
+	"time"
+
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/log"
+	"github.com/luxfi/geth/params"
+)
+
+// GetDefaultChainConfig returns the default chain configuration for LUX C-Chain
+func GetDefaultChainConfig() *params.ChainConfig {
+	return &params.ChainConfig{
+		ChainID:             big.NewInt(96369),
+		HomesteadBlock:      big.NewInt(0),
+		EIP150Block:         big.NewInt(0),
+		EIP155Block:         big.NewInt(0),
+		EIP158Block:         big.NewInt(0),
+		ByzantiumBlock:      big.NewInt(0),
+		ConstantinopleBlock: big.NewInt(0),
+		PetersburgBlock:     big.NewInt(0),
+		IstanbulBlock:       big.NewInt(0),
+		BerlinBlock:         big.NewInt(0),
+		LondonBlock:         big.NewInt(0),
+		ShanghaiTime:        new(uint64),
+		CancunTime:          new(uint64),
+		Ethash:              &params.EthashConfig{},
+	}
+}
+
+// ImportCommand represents the import command structure
+type ImportCommand struct {
+	Type         string `json:"type"`
+	SourcePath   string `json:"source_path"`
+	TargetPath   string `json:"target_path"`
+	StartBlock   uint64 `json:"start_block"`
+	EndBlock     uint64 `json:"end_block"`
+	BatchSize    int    `json:"batch_size"`
+	Workers      int    `json:"workers"`
+	TargetWallet string `json:"target_wallet"`
+	Options      struct {
+		VerifyState    bool `json:"verify_state"`
+		RebuildState   bool `json:"rebuild_state"`
+		StripNamespace bool `json:"strip_namespace"`
+	} `json:"options"`
+}
+
+// VMImportHooks provides import functionality for C-Chain VM
+type VMImportHooks struct {
+	vm interface{} // Reference to the C-Chain VM instance (interface to avoid circular dependency)
+}
+
+// NewVMImportHooks creates new VM import hooks
+func NewVMImportHooks(vm interface{}) *VMImportHooks {
+	return &VMImportHooks{vm: vm}
+}
+
+// ExecuteImport runs the import process integrated with the VM
+func (h *VMImportHooks) ExecuteImport(cmd *ImportCommand) error {
+	log.Info("Executing SubnetEVM import via C-Chain VM",
+		"source", cmd.SourcePath,
+		"target", cmd.TargetPath,
+		"blocks", fmt.Sprintf("%d-%d", cmd.StartBlock, cmd.EndBlock),
+	)
+
+	// Validate paths
+	if err := h.validatePaths(cmd); err != nil {
+		return err
+	}
+
+	// Note: VM lifecycle management would be handled externally
+	// The VM should be stopped before import and restarted after
+
+	// Run the import
+	err := ImportSubnetEVM(
+		cmd.SourcePath,
+		cmd.TargetPath,
+		cmd.EndBlock,
+		cmd.TargetWallet,
+	)
+
+	return err
+}
+
+// validatePaths validates the import paths
+func (h *VMImportHooks) validatePaths(cmd *ImportCommand) error {
+	// Check source path exists
+	if _, err := os.Stat(cmd.SourcePath); err != nil {
+		return fmt.Errorf("source path does not exist: %w", err)
+	}
+
+	// Check if source is a valid database directory
+	dbPath := filepath.Join(cmd.SourcePath, "db", "pebbledb")
+	if _, err := os.Stat(dbPath); err != nil {
+		// Try direct path
+		if _, err := os.Stat(cmd.SourcePath); err != nil {
+			return fmt.Errorf("source database not found: %w", err)
+		}
+	}
+
+	// Create target directory if it doesn't exist
+	targetDir := filepath.Dir(cmd.TargetPath)
+	if err := os.MkdirAll(targetDir, 0755); err != nil {
+		return fmt.Errorf("failed to create target directory: %w", err)
+	}
+
+	return nil
+}
+
+// LoadImportCommand loads import command from JSON file
+func LoadImportCommand(path string) (*ImportCommand, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var cmd ImportCommand
+	if err := json.Unmarshal(data, &cmd); err != nil {
+		return nil, err
+	}
+
+	// Set defaults
+	if cmd.Type == "" {
+		cmd.Type = "subnet_evm_import"
+	}
+	if cmd.BatchSize == 0 {
+		cmd.BatchSize = 1000
+	}
+	if cmd.Workers == 0 {
+		cmd.Workers = 4
+	}
+	if !cmd.Options.RebuildState {
+		cmd.Options.RebuildState = true
+	}
+	if !cmd.Options.StripNamespace {
+		cmd.Options.StripNamespace = true
+	}
+
+	return &cmd, nil
+}
+
+// RunImportFromFile runs import from a JSON configuration file
+func RunImportFromFile(configPath string) error {
+	cmd, err := LoadImportCommand(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to load import config: %w", err)
+	}
+
+	hooks := &VMImportHooks{}
+	return hooks.ExecuteImport(cmd)
+}
+
+// QuickImport provides a simple import interface for the VM
+func QuickImport(sourcePath, targetPath string, targetHeight uint64) error {
+	cmd := &ImportCommand{
+		Type:       "subnet_evm_import",
+		SourcePath: sourcePath,
+		TargetPath: targetPath,
+		StartBlock: 0,
+		EndBlock:   targetHeight,
+		BatchSize:  1000,
+		Workers:    4,
+		Options: struct {
+			VerifyState    bool `json:"verify_state"`
+			RebuildState   bool `json:"rebuild_state"`
+			StripNamespace bool `json:"strip_namespace"`
+		}{
+			VerifyState:    false,
+			RebuildState:   true,
+			StripNamespace: true,
+		},
+	}
+
+	hooks := &VMImportHooks{}
+	return hooks.ExecuteImport(cmd)
+}
+
+// ImportSubnetEVMDatabase provides a template for C-Chain VM integration
+// This shows how the import could be integrated into the VM
+// The actual VM implementation would need to call this appropriately
+/*
+func (vm *VM) ImportSubnetEVMDatabase(sourcePath string, targetHeight uint64) error {
+	log.Info("C-Chain VM: Starting SubnetEVM database import",
+		"source", sourcePath,
+		"height", targetHeight,
+	)
+
+	// Use the VM's database path as target
+	targetPath := vm.dbPath
+
+	// Create import configuration
+	config := &ImportConfig{
+		SourcePath:     sourcePath,
+		TargetPath:     targetPath,
+		StartBlock:     0,
+		EndBlock:       targetHeight,
+		BatchSize:      1000,
+		Workers:        4,
+		VerifyState:    false,
+		RebuildState:   true,
+		StripNamespace: true,
+		ChainConfig:    vm.chainConfig,
+		TargetWallet:   vm.config.ImportTargetWallet, // Can be configured in VM config
+	}
+
+	// Create context with VM's context
+	ctx := context.Background()
+	if vm.ctx != nil {
+		ctx = vm.ctx.Context()
+	}
+
+	// Create importer with VM context
+	importer := &Importer{
+		config: config,
+		ctx:    ctx,
+		stats: &ImportStats{
+			StartTime: time.Now(),
+		},
+	}
+
+	// Run the import
+	if err := importer.Run(); err != nil {
+		return fmt.Errorf("import failed: %w", err)
+	}
+
+	// Reload the blockchain with imported data
+	return vm.reloadBlockchain()
+}
+*/
+
+// ImportSubnetEVMDatabaseStandalone runs import without VM dependency
+func ImportSubnetEVMDatabaseStandalone(sourcePath, targetPath string, targetHeight uint64, targetWallet string) error {
+	log.Info("Starting SubnetEVM database import (standalone)",
+		"source", sourcePath,
+		"target", targetPath,
+		"height", targetHeight,
+	)
+
+	// Parse wallet address
+	var wallet common.Address
+	if targetWallet != "" {
+		wallet = common.HexToAddress(targetWallet)
+	}
+
+	// Create import configuration
+	config := &ImportConfig{
+		SourcePath:     sourcePath,
+		TargetPath:     targetPath,
+		StartBlock:     0,
+		EndBlock:       targetHeight,
+		BatchSize:      1000,
+		Workers:        4,
+		VerifyState:    false,
+		RebuildState:   true,
+		StripNamespace: true,
+		TargetWallet:   wallet,
+		ChainConfig:    GetDefaultChainConfig(), // Use default config for standalone
+	}
+
+	// Create importer
+	importer, err := NewImporter(config)
+	if err != nil {
+		return err
+	}
+
+	// Run the import
+	return importer.Run()
+}
+
+// ImportStatus provides import progress information
+type ImportStatus struct {
+	Running         bool   `json:"running"`
+	CurrentBlock    uint64 `json:"current_block"`
+	TargetBlock     uint64 `json:"target_block"`
+	ProcessedBlocks uint64 `json:"processed_blocks"`
+	ProcessedTxs    uint64 `json:"processed_txs"`
+	Errors          uint64 `json:"errors"`
+	ElapsedTime     string `json:"elapsed_time"`
+	ETA             string `json:"eta"`
+}

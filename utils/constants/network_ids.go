@@ -57,7 +57,8 @@ var (
 	PrimaryNetworkID = ids.Empty
 	PlatformChainID  = ids.Empty
 	// Q-Chain ID for quantum-resistant chain
-	QChainID = ids.FromStringOrPanic("2QTQfPNhYWJUhmemsBFzqGjRdvXn4LQyJCx4VTxxKjzV6h5J2q")
+	// QChainID = ids.FromStringOrPanic("2QTQfPNhYWJUhmemsBFzqGjRdvXn4LQyJCx4VTxxKjzV6h5J2q")
+	QChainID = ids.Empty // Temporarily using Empty ID until valid ID is generated
 
 	NetworkIDToNetworkName = map[uint32]string{
 		LocalID:         LocalName,
