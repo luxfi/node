@@ -41,20 +41,15 @@ var (
 			AddPrimaryNetworkDelegatorFee: 0,
 			AddNetValidatorFee:            units.MilliLux,
 			AddNetDelegatorFee:            units.MilliLux,
-			ValidatorWeightDifferenceCap:  5,
-			FeeDistribution: fee.Distribution{
-				Shares: 10_000, // 100% to validators
-				Burn:   0,      // 0% burned
-			},
 		},
 	}
 
 	QChainTestnetParams = Params{
 		StakingConfig: StakingConfig{
 			UptimeRequirement: .6, // 60% for testnet
-			MinValidatorStake: 10 * Units,
-			MaxValidatorStake: 1_000 * Units,
-			MinDelegatorStake: 1 * Units,
+			MinValidatorStake: 10 * units.Lux,
+			MaxValidatorStake: 1_000 * units.Lux,
+			MinDelegatorStake: 1 * units.Lux,
 			MinDelegationFee:  10000, // 1%
 			MinStakeDuration:  24 * time.Hour,
 			MaxStakeDuration:  90 * 24 * time.Hour,
@@ -62,24 +57,19 @@ var (
 				MaxConsumptionRate: .20 * reward.PercentDenominator,
 				MinConsumptionRate: .15 * reward.PercentDenominator,
 				MintingPeriod:      90 * 24 * time.Hour,
-				SupplyCap:          100_000_000 * Units, // 100 million for testnet
+				SupplyCap:          100_000_000 * units.Lux, // 100 million for testnet
 			},
 		},
 		StaticConfig: fee.StaticConfig{
-			TxFee:                         Units / 1000,
-			CreateAssetTxFee:              Units / 100,
-			CreateSubnetTxFee:             10 * Units,
-			TransformSubnetTxFee:          10 * Units,
-			CreateBlockchainTxFee:         10 * Units,
+			TxFee:                         units.Lux / 1000,
+			CreateAssetTxFee:              units.Lux / 100,
+			CreateSubnetTxFee:             10 * units.Lux,
+			TransformSubnetTxFee:          10 * units.Lux,
+			CreateBlockchainTxFee:         10 * units.Lux,
 			AddPrimaryNetworkValidatorFee: 0,
 			AddPrimaryNetworkDelegatorFee: 0,
-			AddSubnetValidatorFee:         Units / 1000,
-			AddSubnetDelegatorFee:         Units / 1000,
-			ValidatorWeightDifferenceCap:  10,
-			FeeDistribution: fee.Distribution{
-				Shares: 10_000, // 100% to validators
-				Burn:   0,      // 0% burned
-			},
+			AddSubnetValidatorFee:         units.Lux / 1000,
+			AddSubnetDelegatorFee:         units.Lux / 1000,
 		},
 	}
 )

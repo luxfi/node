@@ -4,24 +4,33 @@
 package cchainvm
 
 import (
-	"bytes"
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
+	"io"
 	"log"
 	"math/big"
-	"runtime"
+	"os"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/cockroachdb/pebble"
+	"github.com/dgraph-io/badger/v4"
+	"github.com/holiman/uint256"
 	"github.com/luxfi/geth/common"
+	"github.com/luxfi/geth/consensus"
 	"github.com/luxfi/geth/core"
 	"github.com/luxfi/geth/core/rawdb"
+	"github.com/luxfi/geth/core/state"
+	"github.com/luxfi/geth/core/state/snapshot"
 	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/core/vm"
+	"github.com/luxfi/geth/crypto"
 	"github.com/luxfi/geth/ethdb"
+	"github.com/luxfi/geth/params"
 	"github.com/luxfi/geth/rlp"
+	"github.com/luxfi/geth/triedb"
 )
 
 // SubnetEVMHeader is the SubnetEVM header format with additional optional fields
@@ -47,6 +56,18 @@ type SubnetEVMHeader struct {
 	ExtDataHash     common.Hash      `rlp:"optional"`
 }
 
+// DatabaseBackend represents the storage backend type
+type DatabaseBackend string
+
+const (
+	// PebbleBackend uses PebbleDB
+	PebbleBackend DatabaseBackend = "pebbledb"
+	// BadgerBackend uses BadgerDB
+	BadgerBackend DatabaseBackend = "badgerdb"
+	// AutoDetectBackend will attempt to detect the backend type
+	AutoDetectBackend DatabaseBackend = "auto"
+)
+
 // DatabaseType represents the type of database to replay from
 type DatabaseType string
 
@@ -61,16 +82,143 @@ const (
 
 // UnifiedReplayConfig holds configuration for database replay
 type UnifiedReplayConfig struct {
-	SourcePath               string       // Path to source database
-	DatabaseType             DatabaseType // Type of source database
-	Namespace                []byte       // Namespace for namespaced databases (optional)
-	TestMode                 bool         // If true, only replay first 100 blocks
-	TestLimit                uint64       // Number of blocks to replay in test mode
-	CopyAllState             bool         // If true, copy all state data (can be large)
-	MaxStateNodes            uint64       // Maximum state nodes to copy (0 = unlimited)
-	ExtractGenesisFromSource bool         // If true, extract genesis from block 0
-	ParallelWorkers          int          // Number of parallel workers for processing (default: 8)
-	BatchSize                int          // Batch size for database writes (default: 100000)
+	SourcePath               string          // Path to source database
+	DatabaseBackend          DatabaseBackend // Storage backend type (pebbledb/badgerdb/auto)
+	DatabaseType             DatabaseType    // Type of source database
+	Namespace                []byte          // Namespace for namespaced databases (optional)
+	TestMode                 bool            // If true, only replay first 100 blocks
+	TestLimit                uint64          // Number of blocks to replay in test mode
+	CopyAllState             bool            // If true, copy all state data (can be large)
+	MaxStateNodes            uint64          // Maximum state nodes to copy (0 = unlimited)
+	ExtractGenesisFromSource bool            // If true, extract genesis from block 0
+	ParallelWorkers          int             // Number of parallel workers for processing (default: 8)
+	BatchSize                int             // Batch size for database writes (default: 100000)
+	TargetWallet             common.Address  // Wallet to track balance changes
+	TargetHeight             uint64          // Target block height to process to
+	ChainConfig              *params.ChainConfig // Chain configuration for EVM
+	ReplayTransactions       bool            // If true, replay transactions through EVM (default: true)
+	VerifyStateRoots         bool            // If true, verify state roots after each block
+	LogInterval              uint64          // Log progress every N blocks (default: 1000)
+}
+
+// EVMReplayProgress tracks the progress of replaying blocks (renamed to avoid conflict)
+type EVMReplayProgress struct {
+	StartTime          time.Time
+	CurrentBlock       uint64
+	TotalBlocks        uint64
+	ProcessedTxs       uint64
+	FailedTxs          uint64
+	StateVerifications uint64
+	TargetWalletBalance *uint256.Int
+	LastLogTime        time.Time
+	mu                 sync.RWMutex
+}
+
+// SourceDatabase is an interface for different database backends
+type SourceDatabase interface {
+	Get(key []byte) ([]byte, io.Closer, error)
+	Close() error
+	NewIterator(prefix []byte, upperBound []byte) (DatabaseIterator, error)
+}
+
+// DatabaseIterator abstracts iteration over database keys
+type DatabaseIterator interface {
+	First() bool
+	Valid() bool
+	Next() bool
+	Key() []byte
+	Value() []byte
+	Close()
+}
+
+// pebbleDBWrapper wraps PebbleDB to implement SourceDatabase
+type pebbleDBWrapper struct {
+	db *pebble.DB
+}
+
+func (p *pebbleDBWrapper) Get(key []byte) ([]byte, io.Closer, error) {
+	return p.db.Get(key)
+}
+
+func (p *pebbleDBWrapper) Close() error {
+	return p.db.Close()
+}
+
+func (p *pebbleDBWrapper) NewIterator(prefix []byte, upperBound []byte) (DatabaseIterator, error) {
+	iter, err := p.db.NewIter(&pebble.IterOptions{
+		LowerBound: prefix,
+		UpperBound: upperBound,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &pebbleIterWrapper{iter: iter}, nil
+}
+
+type pebbleIterWrapper struct {
+	iter *pebble.Iterator
+}
+
+func (p *pebbleIterWrapper) First() bool       { return p.iter.First() }
+func (p *pebbleIterWrapper) Valid() bool        { return p.iter.Valid() }
+func (p *pebbleIterWrapper) Next() bool         { return p.iter.Next() }
+func (p *pebbleIterWrapper) Key() []byte        { return p.iter.Key() }
+func (p *pebbleIterWrapper) Value() []byte      { return p.iter.Value() }
+func (p *pebbleIterWrapper) Close()             { p.iter.Close() }
+
+// badgerDBWrapper wraps BadgerDB to implement SourceDatabase
+type badgerDBWrapper struct {
+	db *badger.DB
+}
+
+func (b *badgerDBWrapper) Get(key []byte) ([]byte, io.Closer, error) {
+	var value []byte
+	err := b.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(key)
+		if err != nil {
+			return err
+		}
+		value, err = item.ValueCopy(nil)
+		return err
+	})
+	return value, nil, err
+}
+
+func (b *badgerDBWrapper) Close() error {
+	return b.db.Close()
+}
+
+func (b *badgerDBWrapper) NewIterator(prefix []byte, upperBound []byte) (DatabaseIterator, error) {
+	txn := b.db.NewTransaction(false)
+	opts := badger.DefaultIteratorOptions
+	opts.Prefix = prefix
+	iter := txn.NewIterator(opts)
+	return &badgerIterWrapper{iter: iter, txn: txn}, nil
+}
+
+type badgerIterWrapper struct {
+	iter *badger.Iterator
+	txn  *badger.Txn
+}
+
+func (b *badgerIterWrapper) First() bool {
+	b.iter.Rewind()
+	return b.iter.Valid()
+}
+
+func (b *badgerIterWrapper) Valid() bool { return b.iter.Valid() }
+func (b *badgerIterWrapper) Next() bool {
+	b.iter.Next()
+	return b.iter.Valid()
+}
+func (b *badgerIterWrapper) Key() []byte { return b.iter.Item().Key() }
+func (b *badgerIterWrapper) Value() []byte {
+	val, _ := b.iter.Item().ValueCopy(nil)
+	return val
+}
+func (b *badgerIterWrapper) Close() {
+	b.iter.Close()
+	b.txn.Discard()
 }
 
 // UnifiedReplayer handles replaying blocks from various database formats
@@ -78,21 +226,27 @@ type UnifiedReplayer struct {
 	config       *UnifiedReplayConfig
 	targetDB     ethdb.Database
 	blockchain   *core.BlockChain
-	sourceDB     *pebble.DB
+	sourceDB     SourceDatabase
 	namespace    []byte
 	isNamespaced bool
-	progress     *ReplayProgress
+	progress     *EVMReplayProgress
+	stateDB      *state.StateDB
+	stateCache   state.Database
+	chainConfig  *params.ChainConfig
+	engine       consensus.Engine
+	vmConfig     vm.Config
+	trieDB       *triedb.Database
+	snapshots    *snapshot.Tree
 }
 
 // NewUnifiedReplayer creates a new unified database replayer
 func NewUnifiedReplayer(config *UnifiedReplayConfig, targetDB ethdb.Database, blockchain *core.BlockChain) (*UnifiedReplayer, error) {
-	log.Printf("NewUnifiedReplayer: Starting initialization")
-	
+	log.Printf("NewUnifiedReplayer: Starting initialization for replay to height %d", config.TargetHeight)
+
 	if config.SourcePath == "" {
 		return nil, fmt.Errorf("source database path is required")
 	}
 
-	log.Printf("NewUnifiedReplayer: Setting defaults")
 	// Set defaults
 	if config.TestMode && config.TestLimit == 0 {
 		config.TestLimit = 100
@@ -101,24 +255,102 @@ func NewUnifiedReplayer(config *UnifiedReplayConfig, targetDB ethdb.Database, bl
 		config.MaxStateNodes = 1000000 // Default to 1M nodes if not copying all
 	}
 	if config.ParallelWorkers == 0 {
-		config.ParallelWorkers = 8 // Default to 8 parallel workers
+		config.ParallelWorkers = 8
 	}
 	if config.BatchSize == 0 {
-		config.BatchSize = 100000 // Default to 100k batch size
+		config.BatchSize = 100000
+	}
+	if config.LogInterval == 0 {
+		config.LogInterval = 1000
+	}
+	if config.ReplayTransactions {
+		// Default to replaying transactions for proper state building
+		config.ReplayTransactions = true
 	}
 
-	log.Printf("NewUnifiedReplayer: Opening source database at %s", config.SourcePath)
-	sourceDB, err := pebble.Open(config.SourcePath, &pebble.Options{ReadOnly: true})
-	if err != nil {
-		return nil, fmt.Errorf("CRITICAL: Cannot open source database at %s: %v", config.SourcePath, err)
+	// Set chain config if not provided
+	if config.ChainConfig == nil {
+		config.ChainConfig = &params.ChainConfig{
+			ChainID:             big.NewInt(96369), // LUX mainnet
+			HomesteadBlock:      big.NewInt(0),
+			EIP150Block:         big.NewInt(0),
+			EIP155Block:         big.NewInt(0),
+			EIP158Block:         big.NewInt(0),
+			ByzantiumBlock:      big.NewInt(0),
+			ConstantinopleBlock: big.NewInt(0),
+			PetersburgBlock:     big.NewInt(0),
+			IstanbulBlock:       big.NewInt(0),
+			BerlinBlock:         big.NewInt(0),
+			LondonBlock:         big.NewInt(0),
+		}
 	}
-	log.Printf("Successfully opened source database at %s", config.SourcePath)
+
+	// Detect or open database backend
+	backend := config.DatabaseBackend
+	if backend == AutoDetectBackend || backend == "" {
+		detectedBackend, err := detectDatabaseBackend(config.SourcePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to detect database backend: %v", err)
+		}
+		backend = detectedBackend
+		log.Printf("Auto-detected database backend: %s", backend)
+	}
+
+	// Open source database with appropriate backend
+	var sourceDB SourceDatabase
+	switch backend {
+	case BadgerBackend:
+		log.Printf("Opening BadgerDB at %s", config.SourcePath)
+		opts := badger.DefaultOptions(config.SourcePath)
+		opts.ReadOnly = true
+		opts.Logger = nil // Disable BadgerDB logging
+		db, err := badger.Open(opts)
+		if err != nil {
+			return nil, fmt.Errorf("cannot open BadgerDB at %s: %v", config.SourcePath, err)
+		}
+		sourceDB = &badgerDBWrapper{db: db}
+		log.Printf("Successfully opened BadgerDB")
+
+	case PebbleBackend:
+		log.Printf("Opening PebbleDB at %s", config.SourcePath)
+		db, err := pebble.Open(config.SourcePath, &pebble.Options{ReadOnly: true})
+		if err != nil {
+			return nil, fmt.Errorf("cannot open PebbleDB at %s: %v", config.SourcePath, err)
+		}
+		sourceDB = &pebbleDBWrapper{db: db}
+		log.Printf("Successfully opened PebbleDB")
+
+	default:
+		return nil, fmt.Errorf("unsupported database backend: %s", backend)
+	}
+
+	// Initialize trie database and state cache
+	trieDB := triedb.NewDatabase(targetDB, nil)
+	snapshots, _ := snapshot.New(snapshot.Config{
+		CacheSize:  256,
+		Recovery:   true,
+		NoBuild:    false,
+		AsyncBuild: true,
+	}, targetDB, trieDB, common.Hash{})
 
 	replayer := &UnifiedReplayer{
-		config:     config,
-		targetDB:   targetDB,
-		blockchain: blockchain,
-		sourceDB:   sourceDB,
+		config:      config,
+		targetDB:    targetDB,
+		blockchain:  blockchain,
+		sourceDB:    sourceDB,
+		chainConfig: config.ChainConfig,
+		vmConfig:    vm.Config{},
+		trieDB:      trieDB,
+		snapshots:   snapshots,
+		stateCache:  state.NewDatabase(trieDB, snapshots),
+	}
+
+	// Initialize progress tracker
+	replayer.progress = &EVMReplayProgress{
+		StartTime:           time.Now(),
+		TotalBlocks:         config.TargetHeight,
+		TargetWalletBalance: uint256.NewInt(0),
+		LastLogTime:         time.Now(),
 	}
 
 	// Auto-detect database type if needed
@@ -145,17 +377,72 @@ func NewUnifiedReplayer(config *UnifiedReplayConfig, targetDB ethdb.Database, bl
 	return replayer, nil
 }
 
-// SetProgressTracker sets the progress tracker for the replayer
-func (r *UnifiedReplayer) SetProgressTracker(progress *ReplayProgress) {
-	r.progress = progress
+// detectDatabaseBackend attempts to detect the database backend type
+func detectDatabaseBackend(dbPath string) (DatabaseBackend, error) {
+	// Check for BadgerDB manifest file
+	manifestPath := filepath.Join(dbPath, "MANIFEST")
+	if _, err := os.Stat(manifestPath); err == nil {
+		// Read first few bytes to check for BadgerDB magic
+		file, err := os.Open(manifestPath)
+		if err != nil {
+			return "", fmt.Errorf("failed to open MANIFEST: %v", err)
+		}
+		defer file.Close()
+
+		magic := make([]byte, 4)
+		if _, err := file.Read(magic); err != nil {
+			return "", fmt.Errorf("failed to read MANIFEST: %v", err)
+		}
+
+		// BadgerDB manifest starts with "Bdgr" magic bytes
+		if string(magic) == "Bdgr" {
+			return BadgerBackend, nil
+		}
+	}
+
+	// Check for BadgerDB .vlog files (another indicator)
+	files, err := os.ReadDir(dbPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read directory: %v", err)
+	}
+
+	for _, file := range files {
+		if filepath.Ext(file.Name()) == ".vlog" {
+			return BadgerBackend, nil
+		}
+		// PebbleDB uses .sst files but so does BadgerDB, so check for PebbleDB-specific files
+		if file.Name() == "CURRENT" {
+			// Read CURRENT file to check for PebbleDB
+			currentPath := filepath.Join(dbPath, "CURRENT")
+			data, err := os.ReadFile(currentPath)
+			if err == nil && len(data) > 0 {
+				// PebbleDB CURRENT file contains MANIFEST filename
+				if !contains(string(data), "Bdgr") {
+					return PebbleBackend, nil
+				}
+			}
+		}
+	}
+
+	// Default to BadgerDB if we find .sst files but no clear PebbleDB indicators
+	for _, file := range files {
+		if filepath.Ext(file.Name()) == ".sst" {
+			return BadgerBackend, nil
+		}
+	}
+
+	return "", fmt.Errorf("unable to detect database backend")
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && s[:len(substr)] == substr
 }
 
 // detectDatabaseType attempts to detect if the database is namespaced or standard
 func (r *UnifiedReplayer) detectDatabaseType() error {
 	log.Printf("Auto-detecting database type...")
 
-	// Check for namespaced database with common namespace FIRST
-	// (SubnetEVM databases have namespace prefix on keys)
+	// Check for namespaced database with common namespace
 	testNamespace := []byte{
 		0x33, 0x7f, 0xb7, 0x3f, 0x9b, 0xcd, 0xac, 0x8c,
 		0x31, 0xa2, 0xd5, 0xf7, 0xb8, 0x77, 0xab, 0x1e,
@@ -165,10 +452,7 @@ func (r *UnifiedReplayer) detectDatabaseType() error {
 
 	// Look for headers with namespace prefix
 	headerPrefix := append(testNamespace, 'h')
-	iter, err := r.sourceDB.NewIter(&pebble.IterOptions{
-		LowerBound: headerPrefix,
-		UpperBound: append(headerPrefix, 0xFF),
-	})
+	iter, err := r.sourceDB.NewIterator(headerPrefix, append(headerPrefix, 0xFF))
 	if err != nil {
 		return fmt.Errorf("failed to create iterator: %v", err)
 	}
@@ -177,11 +461,11 @@ func (r *UnifiedReplayer) detectDatabaseType() error {
 	if iter.First() && iter.Valid() {
 		r.isNamespaced = true
 		r.namespace = testNamespace
-		log.Printf("Detected namespaced SubnetEVM database with namespace %x", testNamespace)
+		log.Printf("Detected namespaced SubnetEVM database")
 		return nil
 	}
 
-	// Check for standard geth database markers
+	// Check for standard geth database
 	if _, closer, err := r.sourceDB.Get([]byte("LastBlock")); err == nil {
 		if closer != nil {
 			closer.Close()
@@ -194,51 +478,243 @@ func (r *UnifiedReplayer) detectDatabaseType() error {
 	return fmt.Errorf("unable to detect database type")
 }
 
-// ExtractGenesis extracts the genesis block from the source database
-func (r *UnifiedReplayer) ExtractGenesis() (*types.Block, error) {
-	if !r.isNamespaced {
-		return nil, fmt.Errorf("genesis extraction only supported for namespaced databases")
+// ReplayWithEVM replays blocks by executing transactions through the EVM
+func (r *UnifiedReplayer) ReplayWithEVM() error {
+	log.Printf("Starting EVM-based replay up to block %d", r.config.TargetHeight)
+	log.Printf("Target wallet to track: %s", r.config.TargetWallet.Hex())
+
+	// Initialize genesis state
+	genesis, err := r.ExtractGenesis()
+	if err != nil {
+		return fmt.Errorf("failed to extract genesis: %v", err)
 	}
 
-	// Get block 0 (genesis)
-	// Canonical hash key for block 0: namespace + 'h' + blocknum(8) + 'n'
-	canonicalKey := append([]byte(nil), r.namespace...)
-	canonicalKey = append(canonicalKey, 'h')
-	canonicalKey = append(canonicalKey, encodeBlockNumber(0)...)
-	canonicalKey = append(canonicalKey, 'n')
+	// Initialize state database from genesis
+	statedb, err := state.New(genesis.Root(), r.stateCache)
+	if err != nil {
+		return fmt.Errorf("failed to create state database: %v", err)
+	}
+	r.stateDB = statedb
 
+	// Process blocks sequentially
+	for blockNum := uint64(1); blockNum <= r.config.TargetHeight; blockNum++ {
+		if err := r.replayBlock(blockNum); err != nil {
+			log.Printf("ERROR: Failed to replay block %d: %v", blockNum, err)
+			if r.config.TestMode {
+				continue // Skip errors in test mode
+			}
+			return err
+		}
+
+		// Log progress
+		if blockNum%r.config.LogInterval == 0 || blockNum == r.config.TargetHeight {
+			r.logProgress(blockNum)
+		}
+	}
+
+	// Final wallet balance check
+	if r.config.TargetWallet != (common.Address{}) {
+		balance := r.stateDB.GetBalance(r.config.TargetWallet)
+		balanceBig := balance.ToBig()
+		log.Printf("FINAL: Wallet %s balance after replay: %s LUX",
+			r.config.TargetWallet.Hex(),
+			new(big.Float).Quo(new(big.Float).SetInt(balanceBig), big.NewFloat(1e18)).String())
+	}
+
+	return nil
+}
+
+// replayBlock replays a single block by executing its transactions
+func (r *UnifiedReplayer) replayBlock(blockNum uint64) error {
+	// Get block hash from canonical chain
+	canonicalKey := r.buildCanonicalKey(blockNum)
 	hashData, closer, err := r.sourceDB.Get(canonicalKey)
 	if err != nil {
-		return nil, fmt.Errorf("genesis block hash not found: %v", err)
+		return fmt.Errorf("block %d not found in canonical chain", blockNum)
 	}
 	defer closer.Close()
 
-	if len(hashData) != 32 {
-		return nil, fmt.Errorf("invalid genesis hash length: %d", len(hashData))
+	blockHash := common.BytesToHash(hashData)
+
+	// Get header
+	header, err := r.getHeader(blockNum, blockHash)
+	if err != nil {
+		return fmt.Errorf("failed to get header for block %d: %v", blockNum, err)
 	}
 
-	genesisHash := common.BytesToHash(hashData)
-	log.Printf("Found genesis hash in source: %s", genesisHash.Hex())
+	// Get body (transactions)
+	body, err := r.getBody(blockNum, blockHash)
+	if err != nil {
+		return fmt.Errorf("failed to get body for block %d: %v", blockNum, err)
+	}
 
-	// Get the header: namespace + 'h' + blocknum(8) + hash(32)
+	// Create block
+	block := types.NewBlockWithHeader(header).WithBody(*body)
+
+	// Execute transactions
+	receipts, err := r.executeBlock(block)
+	if err != nil {
+		return fmt.Errorf("failed to execute block %d: %v", blockNum, err)
+	}
+
+	// Verify state root if configured
+	if r.config.VerifyStateRoots {
+		stateRoot := r.stateDB.IntermediateRoot(true)
+		if stateRoot != header.Root {
+			log.Printf("WARNING: State root mismatch at block %d: computed %s, expected %s",
+				blockNum, stateRoot.Hex(), header.Root.Hex())
+		} else {
+			atomic.AddUint64(&r.progress.StateVerifications, 1)
+		}
+	}
+
+	// Track wallet balance
+	if r.config.TargetWallet != (common.Address{}) {
+		balance := r.stateDB.GetBalance(r.config.TargetWallet)
+		r.progress.mu.Lock()
+		r.progress.TargetWalletBalance = balance
+		r.progress.mu.Unlock()
+	}
+
+	// Store block and receipts in target database
+	rawdb.WriteBlock(r.targetDB, block)
+	rawdb.WriteReceipts(r.targetDB, block.Hash(), block.NumberU64(), receipts)
+	rawdb.WriteCanonicalHash(r.targetDB, block.Hash(), block.NumberU64())
+	rawdb.WriteHeadBlockHash(r.targetDB, block.Hash())
+
+	// Commit state changes
+	root, err := r.stateDB.Commit(block.NumberU64(), true, true)
+	if err != nil {
+		return fmt.Errorf("failed to commit state for block %d: %v", blockNum, err)
+	}
+
+	// Prepare for next block
+	r.stateDB, err = state.New(root, r.stateCache)
+	if err != nil {
+		return fmt.Errorf("failed to create new state for block %d: %v", blockNum, err)
+	}
+
+	atomic.StoreUint64(&r.progress.CurrentBlock, blockNum)
+	return nil
+}
+
+// executeBlock executes all transactions in a block
+func (r *UnifiedReplayer) executeBlock(block *types.Block) (types.Receipts, error) {
+	header := block.Header()
+
+	// Create EVM block context
+	blockContext := core.NewEVMBlockContext(header, &fakeChainContext{config: r.chainConfig}, &header.Coinbase)
+
+	// Process transactions
+	var (
+		receipts types.Receipts
+		usedGas  = new(uint64)
+		gp       = new(core.GasPool).AddGas(header.GasLimit)
+	)
+
+	// Create EVM instance for this block
+	evm := vm.NewEVM(blockContext, r.stateDB, r.chainConfig, r.vmConfig)
+
+	for i, tx := range block.Transactions() {
+		r.stateDB.SetTxContext(tx.Hash(), i)
+
+		// Create transaction message
+		msg, err := core.TransactionToMessage(tx, types.MakeSigner(r.chainConfig, header.Number, header.Time), header.BaseFee)
+		if err != nil {
+			atomic.AddUint64(&r.progress.FailedTxs, 1)
+			continue
+		}
+
+		// Set transaction context in EVM
+		evm.SetTxContext(core.NewEVMTxContext(msg))
+
+		// Apply transaction
+		result, err := core.ApplyMessage(evm, msg, gp)
+		if err != nil {
+			atomic.AddUint64(&r.progress.FailedTxs, 1)
+			log.Printf("Failed to apply tx %s in block %d: %v", tx.Hash().Hex(), header.Number.Uint64(), err)
+			continue
+		}
+
+		*usedGas += result.UsedGas
+
+		// Create receipt based on execution result
+		var root []byte
+		var status uint64
+		if r.chainConfig.IsByzantium(header.Number) {
+			status = types.ReceiptStatusSuccessful
+			if result.Failed() {
+				status = types.ReceiptStatusFailed
+			}
+		} else {
+			root = r.stateDB.IntermediateRoot(r.chainConfig.IsEIP158(header.Number)).Bytes()
+		}
+
+		// Build receipt
+		receipt := &types.Receipt{
+			Type:              tx.Type(),
+			PostState:         root,
+			Status:            status,
+			CumulativeGasUsed: *usedGas,
+			Bloom:             types.Bloom{}, // Will be calculated later
+			Logs:              r.stateDB.GetLogs(tx.Hash(), block.NumberU64(), block.Hash(), uint64(i)),
+			TxHash:            tx.Hash(),
+			GasUsed:           result.UsedGas,
+			BlockHash:         block.Hash(),
+			BlockNumber:       block.Number(),
+			TransactionIndex:  uint(i),
+		}
+
+		// Set contract address for contract creation
+		if msg.To == nil {
+			receipt.ContractAddress = crypto.CreateAddress(msg.From, tx.Nonce())
+		}
+
+		receipts = append(receipts, receipt)
+		atomic.AddUint64(&r.progress.ProcessedTxs, 1)
+	}
+
+	// Calculate and set bloom for each receipt
+	if len(receipts) > 0 {
+		for _, receipt := range receipts {
+			receipt.Bloom = types.CreateBloom(receipt)
+		}
+	}
+
+	// Finalize block state
+	r.stateDB.Finalise(true)
+
+	return receipts, nil
+}
+
+// Helper functions for building keys and fetching data
+
+func (r *UnifiedReplayer) buildCanonicalKey(blockNum uint64) []byte {
+	key := append([]byte(nil), r.namespace...)
+	key = append(key, 'h')
+	key = append(key, encodeReplayBlockNumber(blockNum)...)
+	key = append(key, 'n')
+	return key
+}
+
+func (r *UnifiedReplayer) getHeader(blockNum uint64, hash common.Hash) (*types.Header, error) {
 	headerKey := append([]byte(nil), r.namespace...)
 	headerKey = append(headerKey, 'h')
-	headerKey = append(headerKey, encodeBlockNumber(0)...)
-	headerKey = append(headerKey, genesisHash.Bytes()...)
+	headerKey = append(headerKey, encodeReplayBlockNumber(blockNum)...)
+	headerKey = append(headerKey, hash.Bytes()...)
 
-	headerData, closer2, err := r.sourceDB.Get(headerKey)
+	headerData, closer, err := r.sourceDB.Get(headerKey)
 	if err != nil {
-		return nil, fmt.Errorf("genesis header not found: %v", err)
+		return nil, err
 	}
-	defer closer2.Close()
+	defer closer.Close()
 
-	// Try to decode header
 	var header types.Header
 	if err := rlp.DecodeBytes(headerData, &header); err != nil {
 		// Try SubnetEVM format
 		var subnetHeader SubnetEVMHeader
 		if err2 := rlp.DecodeBytes(headerData, &subnetHeader); err2 != nil {
-			return nil, fmt.Errorf("failed to decode genesis header: %v", err)
+			return nil, fmt.Errorf("failed to decode header: %v", err)
 		}
 		// Convert to standard header
 		header = types.Header{
@@ -261,734 +737,126 @@ func (r *UnifiedReplayer) ExtractGenesis() (*types.Block, error) {
 		}
 	}
 
-	// Get the body: namespace + 'b' + blocknum(8) + hash(32)
+	return &header, nil
+}
+
+func (r *UnifiedReplayer) getBody(blockNum uint64, hash common.Hash) (*types.Body, error) {
 	bodyKey := append([]byte(nil), r.namespace...)
 	bodyKey = append(bodyKey, 'b')
-	bodyKey = append(bodyKey, encodeBlockNumber(0)...)
-	bodyKey = append(bodyKey, genesisHash.Bytes()...)
+	bodyKey = append(bodyKey, encodeReplayBlockNumber(blockNum)...)
+	bodyKey = append(bodyKey, hash.Bytes()...)
 
-	bodyData, closer3, err := r.sourceDB.Get(bodyKey)
+	bodyData, closer, err := r.sourceDB.Get(bodyKey)
 	if err != nil {
-		// Genesis might not have a body, that's ok
-		return types.NewBlockWithHeader(&header), nil
+		return nil, err
 	}
-	defer closer3.Close()
+	defer closer.Close()
 
 	var body types.Body
 	if err := rlp.DecodeBytes(bodyData, &body); err != nil {
-		// If body decode fails, just use empty body
-		return types.NewBlockWithHeader(&header), nil
+		return nil, fmt.Errorf("failed to decode body: %v", err)
 	}
 
-	genesis := types.NewBlockWithHeader(&header).WithBody(body)
-	log.Printf("Extracted genesis block: number=%d, hash=%s, stateRoot=%s",
-		genesis.NumberU64(), genesis.Hash().Hex(), genesis.Root().Hex())
+	return &body, nil
+}
 
+// ExtractGenesis extracts the genesis block from the source database
+func (r *UnifiedReplayer) ExtractGenesis() (*types.Block, error) {
+	// Get block 0 (genesis)
+	canonicalKey := r.buildCanonicalKey(0)
+	hashData, closer, err := r.sourceDB.Get(canonicalKey)
+	if err != nil {
+		return nil, fmt.Errorf("genesis block hash not found: %v", err)
+	}
+	defer closer.Close()
+
+	genesisHash := common.BytesToHash(hashData)
+	log.Printf("Found genesis hash: %s", genesisHash.Hex())
+
+	// Get genesis header
+	header, err := r.getHeader(0, genesisHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get genesis header: %v", err)
+	}
+
+	// Get genesis body (usually empty)
+	body, err := r.getBody(0, genesisHash)
+	if err != nil {
+		// Genesis might not have a body
+		body = &types.Body{}
+	}
+
+	// Create genesis block
+	genesis := types.NewBlockWithHeader(header).WithBody(*body)
+
+	// Write genesis to target database
+	rawdb.WriteBlock(r.targetDB, genesis)
+	rawdb.WriteCanonicalHash(r.targetDB, genesis.Hash(), 0)
+	rawdb.WriteHeadBlockHash(r.targetDB, genesis.Hash())
+
+	log.Printf("Genesis block imported: number=%d hash=%s", genesis.NumberU64(), genesis.Hash().Hex())
 	return genesis, nil
 }
 
-// Run executes the database replay
-func (r *UnifiedReplayer) Run() error {
-	if r.isNamespaced {
-		log.Printf("Starting namespaced database replay from %s", r.config.SourcePath)
-		return r.replayNamespacedDatabase()
-	} else {
-		log.Printf("Starting standard database replay from %s", r.config.SourcePath)
-		return r.replayStandardDatabase()
+func (r *UnifiedReplayer) logProgress(blockNum uint64) {
+	r.progress.mu.RLock()
+	defer r.progress.mu.RUnlock()
+
+	elapsed := time.Since(r.progress.StartTime)
+	blocksPerSecond := float64(blockNum) / elapsed.Seconds()
+	remainingBlocks := r.config.TargetHeight - blockNum
+	eta := time.Duration(float64(remainingBlocks) / blocksPerSecond * float64(time.Second))
+
+	walletInfo := ""
+	if r.config.TargetWallet != (common.Address{}) {
+		balanceBig := r.progress.TargetWalletBalance.ToBig()
+		balanceLux := new(big.Float).Quo(
+			new(big.Float).SetInt(balanceBig),
+			big.NewFloat(1e18),
+		)
+		walletInfo = fmt.Sprintf(" | Wallet Balance: %s LUX", balanceLux.String())
 	}
+
+	log.Printf("Progress: Block %d/%d (%.2f%%) | %.2f blocks/s | ETA: %s | Txs: %d (failed: %d)%s",
+		blockNum,
+		r.config.TargetHeight,
+		float64(blockNum)/float64(r.config.TargetHeight)*100,
+		blocksPerSecond,
+		eta,
+		r.progress.ProcessedTxs,
+		r.progress.FailedTxs,
+		walletInfo,
+	)
 }
 
-// replayStandardDatabase replays a standard geth/coreth database
-func (r *UnifiedReplayer) replayStandardDatabase() error {
-	// Implementation for standard database replay
-	// This would be similar to the existing replay.go logic
-	log.Printf("Standard database replay not yet implemented")
-	return fmt.Errorf("standard database replay not yet implemented")
+// Helper function to encode block number (renamed to avoid conflict)
+func encodeReplayBlockNumber(num uint64) []byte {
+	enc := make([]byte, 8)
+	binary.BigEndian.PutUint64(enc, num)
+	return enc
 }
 
-// replayNamespacedDatabase replays a namespaced SubnetEVM database
-func (r *UnifiedReplayer) replayNamespacedDatabase() error {
-	startTime := time.Now()
+// fakeChainContext implements core.ChainContext for EVM execution
+type fakeChainContext struct {
+	config *params.ChainConfig
+}
 
-	log.Printf("Namespace: %x", r.namespace)
-
-	if r.config.TestMode {
-		log.Printf("🧪 TEST MODE: Limiting to %d blocks", r.config.TestLimit)
-	}
-
-	// Step 1: Collect canonical block mappings
-	if r.progress != nil {
-		r.progress.SetPhase("discovering blocks")
-	}
-	canonicalHashes, maxBlockNum, err := r.collectCanonicalMappings()
-	if err != nil {
-		return err
-	}
-
-	if len(canonicalHashes) == 0 {
-		return fmt.Errorf("no canonical blocks found in database")
-	}
-
-	log.Printf("Found %d canonical blocks, max height: %d", len(canonicalHashes), maxBlockNum)
-
-	// Initialize progress tracking
-	if r.progress != nil {
-		r.progress.Start(maxBlockNum + 1) // +1 because blocks are 0-indexed
-	}
-
-	// Step 2: Fetch headers and bodies
-	if r.progress != nil {
-		r.progress.SetPhase("fetching headers and bodies")
-	}
-	headers, bodies, err := r.fetchBlockData(canonicalHashes, maxBlockNum)
-	if err != nil {
-		return err
-	}
-
-	log.Printf("Fetched %d headers and %d bodies", len(headers), len(bodies))
-
-	// Step 3: Copy state data if requested
-	if r.config.CopyAllState || r.config.TestMode {
-		if r.progress != nil {
-			r.progress.SetPhase("copying state data")
-		}
-		if err := r.copyStateData(headers); err != nil {
-			return err
-		}
-	}
-
-	// Step 4: Replay blocks to target database
-	if r.progress != nil {
-		r.progress.SetPhase("replaying blocks")
-	}
-	replayedCount, err := r.replayBlocks(headers, bodies, maxBlockNum)
-	if err != nil {
-		return err
-	}
-
-	log.Printf("✅ Database replay complete!")
-	log.Printf("   Blocks replayed: %d", replayedCount)
-	log.Printf("   Time taken: %v", time.Since(startTime))
-	if replayedCount > 0 {
-		rate := float64(replayedCount) / time.Since(startTime).Seconds()
-		log.Printf("   Rate: %.1f blocks/sec", rate)
-	}
-
+func (f *fakeChainContext) Engine() consensus.Engine {
 	return nil
 }
 
-// collectCanonicalMappings finds all canonical block number to hash mappings
-func (r *UnifiedReplayer) collectCanonicalMappings() (map[uint64]common.Hash, uint64, error) {
-	canonicalHashes := make(map[uint64]common.Hash)
-	var maxBlockNum uint64
-
-	// Look for canonical mappings: namespace + 'h' + blocknum(8) + 'n' -> hash(32)
-	headerPrefix := append(r.namespace, 'h')
-
-	iter, err := r.sourceDB.NewIter(&pebble.IterOptions{
-		LowerBound: headerPrefix,
-		UpperBound: append(headerPrefix, 0xFF),
-	})
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to create iterator: %v", err)
-	}
-	defer iter.Close()
-
-	for iter.First(); iter.Valid(); iter.Next() {
-		key := iter.Key()
-		val, _ := iter.ValueAndErr()
-
-		// Check for canonical mapping format
-		if len(key) == 42 && bytes.Equal(key[:32], r.namespace) && key[32] == 'h' && key[41] == 'n' {
-			blockNum := binary.BigEndian.Uint64(key[33:41])
-
-			// Apply test limit if in test mode
-			if r.config.TestMode && blockNum > r.config.TestLimit {
-				continue
-			}
-
-			if len(val) == 32 {
-				hash := common.BytesToHash(val)
-				canonicalHashes[blockNum] = hash
-				if blockNum > maxBlockNum {
-					maxBlockNum = blockNum
-				}
-			}
-		}
-	}
-
-	return canonicalHashes, maxBlockNum, nil
-}
-
-// fetchBlockData retrieves headers and bodies for the canonical blocks
-func (r *UnifiedReplayer) fetchBlockData(canonicalHashes map[uint64]common.Hash, maxBlockNum uint64) (map[uint64]*types.Header, map[common.Hash]*types.Body, error) {
-	headers := make(map[uint64]*types.Header)
-	bodies := make(map[common.Hash]*types.Body)
-
-	// Fetch headers
-	for blockNum, hash := range canonicalHashes {
-		// Build header key: namespace + 'h' + blocknum(8) + hash(32)
-		headerKey := append(r.namespace, 'h')
-		headerKey = append(headerKey, encodeBlockNumber(blockNum)...)
-		headerKey = append(headerKey, hash.Bytes()...)
-
-		headerData, closer, err := r.sourceDB.Get(headerKey)
-		if err == nil && closer != nil {
-			// Try to decode as standard header
-			var header types.Header
-			if err := rlp.DecodeBytes(headerData, &header); err != nil {
-				// Try SubnetEVM header format
-				var subnetHeader SubnetEVMHeader
-				if err2 := rlp.DecodeBytes(headerData, &subnetHeader); err2 == nil {
-					// Convert to standard header
-					header = types.Header{
-						ParentHash:  subnetHeader.ParentHash,
-						UncleHash:   subnetHeader.UncleHash,
-						Coinbase:    subnetHeader.Coinbase,
-						Root:        subnetHeader.Root,
-						TxHash:      subnetHeader.TxHash,
-						ReceiptHash: subnetHeader.ReceiptHash,
-						Bloom:       subnetHeader.Bloom,
-						Difficulty:  subnetHeader.Difficulty,
-						Number:      subnetHeader.Number,
-						GasLimit:    subnetHeader.GasLimit,
-						GasUsed:     subnetHeader.GasUsed,
-						Time:        subnetHeader.Time,
-						Extra:       subnetHeader.Extra,
-						MixDigest:   subnetHeader.MixDigest,
-						Nonce:       subnetHeader.Nonce,
-						BaseFee:     subnetHeader.BaseFee,
-					}
-				}
-			}
-			headers[blockNum] = &header
-			closer.Close()
-		}
-	}
-
-	// Fetch bodies
-	bodyPrefix := append(r.namespace, 'b')
-	iter, _ := r.sourceDB.NewIter(&pebble.IterOptions{
-		LowerBound: bodyPrefix,
-		UpperBound: append(bodyPrefix, 0xFF),
-	})
-	defer iter.Close()
-
-	for iter.First(); iter.Valid(); iter.Next() {
-		key := iter.Key()
-		val, _ := iter.ValueAndErr()
-
-		if len(key) == 73 && key[32] == 'b' {
-			blockHash := common.BytesToHash(key[41:73])
-			var body types.Body
-			if err := rlp.DecodeBytes(val, &body); err == nil {
-				bodies[blockHash] = &body
-			}
-		}
-	}
-
-	return headers, bodies, nil
-}
-
-// copyStateData copies ALL state data (not just trie nodes) for the blocks being replayed
-func (r *UnifiedReplayer) copyStateData(headers map[uint64]*types.Header) error {
-	log.Printf("Copying ALL state data (trie nodes + accounts + storage + code)...")
-
-	// SIMPLE APPROACH: Copy ALL keys with the namespace prefix
-	// This includes trie nodes, account data, storage, code, etc.
-	iter, err := r.sourceDB.NewIter(&pebble.IterOptions{
-		LowerBound: r.namespace,
-		UpperBound: append(r.namespace, 0xFF),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create iterator: %w", err)
-	}
-	defer iter.Close()
-	
-	batch := r.targetDB.NewBatch()
-	batchSize := 0
-	copiedCount := 0
-	const maxBatchSize = 10000
-	
-	// Iterate through ALL namespaced keys and copy them
-	for iter.First(); iter.Valid(); iter.Next() {
-		sourceKey := iter.Key()
-		value, err := iter.ValueAndErr()
-		if err != nil {
-			log.Printf("ERROR: Failed to read value for key %x: %v", sourceKey[:min(40, len(sourceKey))], err)
-			continue
-		}
-		
-		// Remove namespace prefix and write to target with appropriate prefix
-		if len(sourceKey) <= 32 {
-			continue // Skip if key is just namespace
-		}
-		
-		// Copy the key without namespace to target
-		targetKey := make([]byte, len(sourceKey)-32)
-		copy(targetKey, sourceKey[32:])
-		
-		if err := batch.Put(targetKey, value); err != nil {
-			return fmt.Errorf("failed to batch key %x: %v", targetKey[:min(40, len(targetKey))], err)
-		}
-		
-		copiedCount++
-		batchSize++
-		
-		// Write batch periodically
-		if batchSize >= maxBatchSize {
-			log.Printf("Writing batch with %d items (total: %d)...", batchSize, copiedCount)
-			if err := batch.Write(); err != nil {
-				return fmt.Errorf("failed to write state batch: %w", err)
-			}
-			batch.Reset()
-			batchSize = 0
-		}
-	}
-	
-	// Write remaining batch
-	if batchSize > 0 {
-		log.Printf("Writing final batch with %d items...", batchSize)
-		if err := batch.Write(); err != nil {
-			return fmt.Errorf("failed to write final state batch: %w", err)
-		}
-		log.Printf("✅ Copied %d total state keys", copiedCount)
-	}
-	
+func (f *fakeChainContext) GetHeader(hash common.Hash, number uint64) *types.Header {
 	return nil
 }
 
-func (r *UnifiedReplayer) replayBlocks(headers map[uint64]*types.Header, bodies map[common.Hash]*types.Body, maxBlockNum uint64) (int, error) {
-	log.Printf("Replaying %d blocks to target database...", len(headers))
-	replayedCount := 0
-
-	// Process blocks in order
-	for blockNum := uint64(0); blockNum <= maxBlockNum; blockNum++ {
-		header, hasHeader := headers[blockNum]
-		if !hasHeader {
-			continue
-		}
-
-		// Get or create body
-		body, hasBody := bodies[header.Hash()]
-		if !hasBody {
-			body = &types.Body{}
-		}
-
-		// Create block
-		block := types.NewBlockWithHeader(header).WithBody(*body)
-
-		// Write to target database
-		rawdb.WriteBlock(r.targetDB, block)
-		rawdb.WriteCanonicalHash(r.targetDB, block.Hash(), block.NumberU64())
-		rawdb.WriteHeader(r.targetDB, header)
-		rawdb.WriteBody(r.targetDB, block.Hash(), block.NumberU64(), body)
-		rawdb.WriteReceipts(r.targetDB, block.Hash(), block.NumberU64(), nil)
-
-		// Update head periodically
-		if blockNum == maxBlockNum || blockNum%10000 == 0 {
-			rawdb.WriteHeadBlockHash(r.targetDB, block.Hash())
-			rawdb.WriteHeadHeaderHash(r.targetDB, block.Hash())
-			rawdb.WriteHeadFastBlockHash(r.targetDB, block.Hash())
-		}
-
-		replayedCount++
-		if r.progress != nil {
-			r.progress.UpdateBlock(blockNum)
-		}
-		if replayedCount%10000 == 0 {
-			log.Printf("Replayed %d blocks...", replayedCount)
-		}
-	}
-
-	// Set final head
-	if replayedCount > 0 {
-		for blockNum := maxBlockNum; blockNum >= 0; blockNum-- {
-			if header, exists := headers[blockNum]; exists {
-				log.Printf("Setting final head to block %d (hash: %s)", blockNum, header.Hash().Hex())
-				rawdb.WriteHeadBlockHash(r.targetDB, header.Hash())
-				rawdb.WriteHeadHeaderHash(r.targetDB, header.Hash())
-				rawdb.WriteHeadFastBlockHash(r.targetDB, header.Hash())
-				rawdb.WriteLastPivotNumber(r.targetDB, blockNum)
-				break
-			}
-		}
-	}
-
-	return replayedCount, nil
+func (f *fakeChainContext) Config() *params.ChainConfig {
+	return f.config
 }
 
-// Close closes the replayer
+// Close closes the replayer and cleans up resources
 func (r *UnifiedReplayer) Close() error {
 	if r.sourceDB != nil {
 		return r.sourceDB.Close()
 	}
 	return nil
-}
-
-// ParallelReplay performs optimized parallel replay of the entire database
-func (r *UnifiedReplayer) ParallelReplay() error {
-	startTime := time.Now()
-	log.Printf("Starting OPTIMIZED parallel database replay with %d workers", r.config.ParallelWorkers)
-
-	// Use all CPU cores if not in test mode
-	if !r.config.TestMode {
-		runtime.GOMAXPROCS(runtime.NumCPU())
-	}
-
-	// First, get all canonical blocks in parallel
-	log.Printf("Phase 1: Discovering all canonical blocks...")
-	canonicalBlocks, maxHeight := r.discoverCanonicalBlocksParallel()
-	log.Printf("Found %d canonical blocks, max height: %d", len(canonicalBlocks), maxHeight)
-
-	if r.config.TestMode && maxHeight > r.config.TestLimit {
-		maxHeight = r.config.TestLimit
-		log.Printf("TEST MODE: Limiting to %d blocks", maxHeight)
-	}
-
-	// Phase 2: Fetch headers and bodies in parallel batches
-	log.Printf("Phase 2: Fetching headers and bodies in parallel...")
-	headers, bodies := r.fetchBlockDataParallel(canonicalBlocks, maxHeight)
-
-	// Phase 3: Copy state data with parallel workers
-	log.Printf("Phase 3: Copying state data with parallel workers...")
-	if err := r.copyStateDataParallel(headers); err != nil {
-		return fmt.Errorf("state copy failed: %v", err)
-	}
-
-	// Phase 4: Write blocks to database in large batches
-	log.Printf("Phase 4: Writing blocks in optimized batches...")
-	replayedCount, err := r.replayBlocksBatched(headers, bodies, maxHeight)
-	if err != nil {
-		return fmt.Errorf("block replay failed: %v", err)
-	}
-
-	elapsed := time.Since(startTime)
-	rate := float64(replayedCount) / elapsed.Seconds()
-	log.Printf("✅ OPTIMIZED replay complete! Replayed %d blocks in %v (%.1f blocks/sec)",
-		replayedCount, elapsed, rate)
-
-	return nil
-}
-
-// discoverCanonicalBlocksParallel discovers all canonical blocks in parallel
-func (r *UnifiedReplayer) discoverCanonicalBlocksParallel() (map[uint64]common.Hash, uint64) {
-	canonicalBlocks := make(map[uint64]common.Hash)
-	var maxHeight uint64
-	var mu sync.Mutex
-
-	// Create workers to scan ranges in parallel
-	numWorkers := r.config.ParallelWorkers
-	blockRangeSize := uint64(100000) // Each worker scans 100k blocks
-
-	var wg sync.WaitGroup
-	for worker := 0; worker < numWorkers; worker++ {
-		wg.Add(1)
-		startBlock := uint64(worker) * blockRangeSize
-		endBlock := startBlock + blockRangeSize
-
-		go func(start, end uint64) {
-			defer wg.Done()
-
-			for blockNum := start; blockNum < end; blockNum++ {
-				// Build canonical key
-				canonicalKey := append([]byte(nil), r.namespace...)
-				canonicalKey = append(canonicalKey, 'h')
-				canonicalKey = append(canonicalKey, encodeBlockNumber(blockNum)...)
-				canonicalKey = append(canonicalKey, 'n')
-
-				if hashData, closer, err := r.sourceDB.Get(canonicalKey); err == nil {
-					if len(hashData) == 32 {
-						hash := common.BytesToHash(hashData)
-						mu.Lock()
-						canonicalBlocks[blockNum] = hash
-						if blockNum > maxHeight {
-							maxHeight = blockNum
-						}
-						mu.Unlock()
-					}
-					closer.Close()
-				}
-			}
-		}(startBlock, endBlock)
-	}
-
-	wg.Wait()
-	return canonicalBlocks, maxHeight
-}
-
-// fetchBlockDataParallel fetches headers and bodies in parallel
-func (r *UnifiedReplayer) fetchBlockDataParallel(canonicalBlocks map[uint64]common.Hash, maxHeight uint64) (map[uint64]*types.Header, map[common.Hash]*types.Body) {
-	headers := make(map[uint64]*types.Header)
-	bodies := make(map[common.Hash]*types.Body)
-	var headerMu, bodyMu sync.Mutex
-
-	// Process blocks in chunks
-	chunkSize := uint64(10000)
-	numChunks := (maxHeight / chunkSize) + 1
-
-	var wg sync.WaitGroup
-	processedBlocks := int32(0)
-
-	for chunk := uint64(0); chunk < numChunks; chunk++ {
-		wg.Add(1)
-		startBlock := chunk * chunkSize
-		endBlock := startBlock + chunkSize
-		if endBlock > maxHeight {
-			endBlock = maxHeight + 1
-		}
-
-		go func(start, end uint64) {
-			defer wg.Done()
-
-			// Create local batch for this chunk
-			localHeaders := make(map[uint64]*types.Header)
-			localBodies := make(map[common.Hash]*types.Body)
-
-			for blockNum := start; blockNum < end; blockNum++ {
-				hash, exists := canonicalBlocks[blockNum]
-				if !exists {
-					continue
-				}
-
-				// Fetch header
-				headerKey := append([]byte(nil), r.namespace...)
-				headerKey = append(headerKey, 'h')
-				headerKey = append(headerKey, encodeBlockNumber(blockNum)...)
-				headerKey = append(headerKey, hash.Bytes()...)
-
-				if headerData, closer, err := r.sourceDB.Get(headerKey); err == nil {
-					var header types.Header
-					if err := rlp.DecodeBytes(headerData, &header); err == nil {
-						localHeaders[blockNum] = &header
-
-						// Fetch body
-						bodyKey := append([]byte(nil), r.namespace...)
-						bodyKey = append(bodyKey, 'b')
-						bodyKey = append(bodyKey, encodeBlockNumber(blockNum)...)
-						bodyKey = append(bodyKey, hash.Bytes()...)
-
-						if bodyData, bodyCloser, err := r.sourceDB.Get(bodyKey); err == nil {
-							var body types.Body
-							if err := rlp.DecodeBytes(bodyData, &body); err == nil {
-								localBodies[hash] = &body
-							}
-							bodyCloser.Close()
-						}
-					}
-					closer.Close()
-				}
-
-				// Update progress
-				processed := atomic.AddInt32(&processedBlocks, 1)
-				if processed%10000 == 0 {
-					log.Printf("Fetched %d blocks...", processed)
-				}
-			}
-
-			// Merge local results
-			headerMu.Lock()
-			for k, v := range localHeaders {
-				headers[k] = v
-			}
-			headerMu.Unlock()
-
-			bodyMu.Lock()
-			for k, v := range localBodies {
-				bodies[k] = v
-			}
-			bodyMu.Unlock()
-		}(startBlock, endBlock)
-	}
-
-	wg.Wait()
-	log.Printf("Fetched %d headers and %d bodies", len(headers), len(bodies))
-	return headers, bodies
-}
-
-// copyStateDataParallel copies state data using parallel workers
-func (r *UnifiedReplayer) copyStateDataParallel(headers map[uint64]*types.Header) error {
-	// Collect unique state roots
-	stateRoots := make(map[common.Hash]bool)
-	for _, header := range headers {
-		if header != nil {
-			stateRoots[header.Root] = true
-		}
-	}
-
-	log.Printf("Copying state for %d unique roots using %d workers", len(stateRoots), r.config.ParallelWorkers)
-
-	// Create work queue
-	workQueue := make(chan common.Hash, len(stateRoots))
-	for root := range stateRoots {
-		workQueue <- root
-	}
-	close(workQueue)
-
-	// Track progress
-	var copiedNodes int64
-	var errorCount int32
-
-	// Create parallel workers
-	var wg sync.WaitGroup
-	for i := 0; i < r.config.ParallelWorkers; i++ {
-		wg.Add(1)
-		go func(workerID int) {
-			defer wg.Done()
-
-			// Each worker gets its own batch
-			batch := r.targetDB.NewBatch()
-			batchSize := 0
-			processedNodes := make(map[string]bool)
-
-			var copyNode func(hash []byte) error
-			copyNode = func(hash []byte) error {
-				if len(hash) != 32 {
-					return nil
-				}
-
-				hashStr := hex.EncodeToString(hash)
-				if processedNodes[hashStr] {
-					return nil
-				}
-				processedNodes[hashStr] = true
-
-				// Build key with namespace
-				nodeKey := append([]byte(nil), r.namespace...)
-				nodeKey = append(nodeKey, hash...)
-
-				// Get node data
-				nodeData, closer, err := r.sourceDB.Get(nodeKey)
-				if err != nil {
-					return nil // Node might not exist
-				}
-				defer closer.Close()
-
-				// Add to batch
-				batch.Put(hash, nodeData)
-				batchSize++
-
-				// Write batch when full
-				if batchSize >= r.config.BatchSize {
-					if err := batch.Write(); err != nil {
-						atomic.AddInt32(&errorCount, 1)
-						return err
-					}
-					batch.Reset()
-					copied := atomic.AddInt64(&copiedNodes, int64(batchSize))
-					if copied%100000 == 0 {
-						log.Printf("Worker %d: Copied %d state nodes total", workerID, copied)
-					}
-					batchSize = 0
-				}
-
-				// Parse for children
-				var nodeList []interface{}
-				if err := rlp.DecodeBytes(nodeData, &nodeList); err == nil {
-					for _, item := range nodeList {
-						if child, ok := item.([]byte); ok && len(child) == 32 {
-							if err := copyNode(child); err != nil {
-								return err
-							}
-						}
-					}
-				}
-
-				return nil
-			}
-
-			// Process work queue
-			for root := range workQueue {
-				if err := copyNode(root.Bytes()); err != nil {
-					log.Printf("Worker %d: Error copying root %x: %v", workerID, root, err)
-				}
-			}
-
-			// Flush remaining batch
-			if batchSize > 0 {
-				batch.Write()
-				atomic.AddInt64(&copiedNodes, int64(batchSize))
-			}
-		}(i)
-	}
-
-	wg.Wait()
-
-	if errorCount > 0 {
-		return fmt.Errorf("encountered %d errors during state copy", errorCount)
-	}
-
-	log.Printf("Successfully copied %d state nodes", copiedNodes)
-	return nil
-}
-
-// replayBlocksBatched writes blocks in large batches for maximum performance
-func (r *UnifiedReplayer) replayBlocksBatched(headers map[uint64]*types.Header, bodies map[common.Hash]*types.Body, maxHeight uint64) (int, error) {
-	log.Printf("Writing %d blocks to database in batches...", len(headers))
-
-	batch := r.targetDB.NewBatch()
-	batchSize := 0
-	replayedCount := 0
-
-	for blockNum := uint64(0); blockNum <= maxHeight; blockNum++ {
-		header, hasHeader := headers[blockNum]
-		if !hasHeader {
-			continue
-		}
-
-		body, hasBody := bodies[header.Hash()]
-		if !hasBody {
-			body = &types.Body{}
-		}
-
-		// Create block
-		block := types.NewBlockWithHeader(header).WithBody(*body)
-
-		// Add all writes to batch
-		rawdb.WriteBlock(batch, block)
-		rawdb.WriteCanonicalHash(batch, block.Hash(), block.NumberU64())
-		rawdb.WriteHeader(batch, header)
-		rawdb.WriteBody(batch, block.Hash(), block.NumberU64(), body)
-		rawdb.WriteReceipts(batch, block.Hash(), block.NumberU64(), nil)
-
-		batchSize++
-		replayedCount++
-
-		// Write batch when full
-		if batchSize >= r.config.BatchSize {
-			if err := batch.Write(); err != nil {
-				return replayedCount, fmt.Errorf("batch write failed: %v", err)
-			}
-			batch.Reset()
-			log.Printf("Wrote batch of %d blocks (total: %d)", batchSize, replayedCount)
-			batchSize = 0
-		}
-	}
-
-	// Write final batch
-	if batchSize > 0 {
-		if err := batch.Write(); err != nil {
-			return replayedCount, fmt.Errorf("final batch write failed: %v", err)
-		}
-	}
-
-	// Set final head
-	if lastHeader, exists := headers[maxHeight]; exists {
-		rawdb.WriteHeadBlockHash(r.targetDB, lastHeader.Hash())
-		rawdb.WriteHeadHeaderHash(r.targetDB, lastHeader.Hash())
-		rawdb.WriteHeadFastBlockHash(r.targetDB, lastHeader.Hash())
-		rawdb.WriteLastPivotNumber(r.targetDB, maxHeight)
-		log.Printf("Set final head to block %d (hash: %s)", maxHeight, lastHeader.Hash().Hex())
-	}
-
-	return replayedCount, nil
-}
-
-// encodeBlockNumber is defined in backend.go
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

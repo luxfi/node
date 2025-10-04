@@ -1,19 +1,30 @@
 package cchainvm
 
 import (
-	"bytes"
 	"fmt"
 
+	"github.com/luxfi/geth/ethdb"
+)
+
+// LoadSubnetEVMDatabase is DEPRECATED - we now use the migrated BadgerDB directly
+// The migrated data is at /home/z/.luxd/chainData/C/db/badgerdb/ethdb
+func LoadSubnetEVMDatabase(targetDB ethdb.Database) error {
+	// This function is no longer used - we load directly from the migrated BadgerDB
+	return fmt.Errorf("LoadSubnetEVMDatabase is deprecated - use migrated BadgerDB at /home/z/.luxd/chainData/C/db/badgerdb/ethdb")
+}
+
+// Original implementation kept for reference but commented out
+/*
+import (
+	"bytes"
 	"github.com/cockroachdb/pebble"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/rawdb"
 	"github.com/luxfi/geth/core/types"
-	"github.com/luxfi/geth/ethdb"
 	"github.com/luxfi/geth/rlp"
 )
 
-// LoadSubnetEVMDatabase directly copies all blocks from SubnetEVM database
-func LoadSubnetEVMDatabase(targetDB ethdb.Database) error {
+func LoadSubnetEVMDatabase_OLD(targetDB ethdb.Database) error {
 	fmt.Println("Loading SubnetEVM database...")
 
 	// Hardcoded path to SubnetEVM database
@@ -155,3 +166,4 @@ func LoadSubnetEVMDatabase(targetDB ethdb.Database) error {
 
 	return nil
 }
+*/
