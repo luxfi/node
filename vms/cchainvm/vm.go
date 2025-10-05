@@ -411,7 +411,12 @@ func (vm *VM) Initialize(
 	}
 
 	// Fallback: Check for migrated blockchain data in database
-	if !hasMigratedData {
+	// Allow skipping migration detection via environment variable
+	if os.Getenv("DISABLE_MIGRATION_DETECTION") != "" {
+		fmt.Printf("MIGRATION DETECTION DISABLED via environment variable\n")
+		vm.log.Info("Migration detection disabled via DISABLE_MIGRATION_DETECTION environment variable")
+		hasMigratedData = false
+	} else if !hasMigratedData {
 		// ALWAYS check chainData/C/db first for C-Chain (no blockchain ID dependency)
 		// CRITICAL FIX: Check all possible migrated database paths
 		possiblePaths := []string{
