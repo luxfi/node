@@ -51,9 +51,9 @@ func main() {
 	context := wallet.Builder().Context()
 
 	issueTxStartTime := time.Now()
-	tx, err := wallet.IssueBaseTx([]*avax.TransferableOutput{
+	tx, err := wallet.IssueBaseTx([]*lux.TransferableOutput{
 		{
-			Asset: avax.Asset{
+			Asset: lux.Asset{
 				ID: context.XAssetID,
 			},
 			Out: &stakeable.LockOut{

@@ -393,6 +393,30 @@ func (r *RuntimeReplayManager) loadCriticalState() error {
 	return nil
 }
 
+// triggerStateReplay initiates coreth state replay after blocks are loaded
+func (r *RuntimeReplayManager) triggerStateReplay() error {
+	r.log.Info("Phase 2: Starting state replay through EVM",
+		"blocks", r.lastHeight)
+
+	// Call the VM's state replay method
+	// This will be implemented when we connect to the actual blockchain
+	if r.vm.blockChain != nil {
+		// Note: This requires the StateReplayManager from coreth
+		// For now, log that we would trigger it
+		r.log.Info("Blockchain available for state replay",
+			"lastHeight", r.lastHeight,
+			"lastHash", r.lastHash.Hex())
+
+		// The actual integration will happen in vm.go when blockchain is initialized
+		// At that point, we can call:
+		// return vm.ReplayStateFromBlocks(0, r.lastHeight)
+
+		r.log.Warn("State replay integration pending - requires blockchain initialization")
+	}
+
+	return nil
+}
+
 // encodeBlockNumberReplay encodes block number for database keys (renamed to avoid conflict)
 func encodeBlockNumberReplay(number uint64) []byte {
 	enc := make([]byte, 8)
@@ -403,7 +427,18 @@ func encodeBlockNumberReplay(number uint64) []byte {
 // TriggerRuntimeReplay is the main entry point to trigger replay at runtime
 func TriggerRuntimeReplay(vm *VM) error {
 	manager := NewRuntimeReplayManager(vm)
-	return manager.DetectAndLoadMigratedData()
+
+	// Phase 1: Load blocks from BadgerDB to LevelDB
+	if err := manager.DetectAndLoadMigratedData(); err != nil {
+		return fmt.Errorf("phase 1 (block loading) failed: %w", err)
+	}
+
+	// Phase 2: Replay state through EVM (trigger coreth integration)
+	if err := manager.triggerStateReplay(); err != nil {
+		return fmt.Errorf("phase 2 (state replay) failed: %w", err)
+	}
+
+	return nil
 }
 
 // InitializeWithReplay initializes the VM with migrated blockchain data
