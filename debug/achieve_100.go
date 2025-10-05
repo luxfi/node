@@ -1,7 +1,7 @@
 //go:build test100
 // +build test100
 
-package main
+package debug
 
 import (
 	"fmt"

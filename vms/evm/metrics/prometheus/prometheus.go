@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/luxfi/metric"
+	. "github.com/luxfi/node/vms/evm/metrics"
 
 	dto "github.com/prometheus/client_model/go"
 )
@@ -69,7 +70,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 	name = strings.ReplaceAll(name, "/", "_")
 
 	switch m := metric.(type) {
-	case metric.Counter:
+	case Counter:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -80,7 +81,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metric.CounterFloat64:
+	case CounterFloat64:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -91,7 +92,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metric.Gauge:
+	case Gauge:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -102,7 +103,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metric.GaugeFloat64:
+	case GaugeFloat64:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -113,9 +114,9 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metric.GaugeInfo:
+	case GaugeInfo:
 		return nil, fmt.Errorf("%w: %q is a %T", errMetricSkip, name, m)
-	case metric.Histogram:
+	case Histogram:
 		snapshot := m.Snapshot()
 		thresholds := snapshot.Percentiles(quantiles)
 		dtoQuantiles := make([]*dto.Quantile, len(quantiles))
@@ -137,7 +138,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metric.Meter:
+	case Meter:
 		return &dto.MetricFamily{
 			Name: &name,
 			Help: &helpText,
@@ -148,7 +149,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metric.Timer:
+	case Timer:
 		snapshot := m.Snapshot()
 		thresholds := snapshot.Percentiles(quantiles)
 		dtoQuantiles := make([]*dto.Quantile, len(quantiles))
@@ -170,7 +171,7 @@ func metricFamily(registry Registry, name string) (mf *dto.MetricFamily, err err
 				},
 			}},
 		}, nil
-	case metric.ResettingTimer:
+	case ResettingTimer:
 		snapshot := m.Snapshot()
 		thresholds := snapshot.Percentiles(pvShortPercent)
 		dtoQuantiles := make([]*dto.Quantile, len(pvShortPercent))

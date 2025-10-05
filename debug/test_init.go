@@ -1,7 +1,7 @@
 //go:build !no_override
 // +build !no_override
 
-package main
+package debug
 
 import (
 	"os"

@@ -853,6 +853,18 @@ func (f *fakeChainContext) Config() *params.ChainConfig {
 	return f.config
 }
 
+func (f *fakeChainContext) CurrentHeader() *types.Header {
+	return nil
+}
+
+func (f *fakeChainContext) GetHeaderByHash(hash common.Hash) *types.Header {
+	return nil
+}
+
+func (f *fakeChainContext) GetHeaderByNumber(number uint64) *types.Header {
+	return nil
+}
+
 // Close closes the replayer and cleans up resources
 func (r *UnifiedReplayer) Close() error {
 	if r.sourceDB != nil {

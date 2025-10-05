@@ -6,8 +6,6 @@ package metricstest
 import (
 	"sync"
 	"testing"
-
-	"github.com/luxfi/metric"
 )
 
 var metricsLock sync.Mutex

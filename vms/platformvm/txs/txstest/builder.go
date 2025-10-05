@@ -49,7 +49,7 @@ func NewWalletFactoryWithAssets(
 		ChainID:    ids.Empty,
 		NodeID:     ids.EmptyNodeID,
 		PublicKey:  nil,
-		XAssetID: luxAssetID,
+		LUXAssetID: luxAssetID,
 	}
 	ctx = consContext.WithIDs(ctx, ctxIDs)
 	return &WalletFactory{

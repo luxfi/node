@@ -8,22 +8,18 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"math/big"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/vms/qvm/quantum"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/crypto/mldsa"
-	"github.com/luxfi/crypto/mlkem"
 	"github.com/luxfi/crypto/slhdsa"
 )
 
@@ -203,7 +199,7 @@ func (qs *QuantumStamper) initSLHDSA(mode slhdsa.Mode) error {
 	qs.slhdsaSigner = &SLHDSASigner{
 		mode:    mode,
 		privKey: priv,
-		pubKey:  priv.PublicKey,
+		pubKey:  &priv.PublicKey,
 	}
 
 	qs.log.Info("SLH-DSA signer initialized", "mode", mode)
@@ -415,7 +411,10 @@ func (qs *QuantumStamper) signWithSLHDSA(stamp *QuantumStamp, data []byte) error
 		return errors.New("SLH-DSA signer not initialized")
 	}
 
-	signature := qs.slhdsaSigner.privKey.Sign(data)
+	signature, err := qs.slhdsaSigner.privKey.Sign(rand.Reader, data, nil)
+	if err != nil {
+		return fmt.Errorf("failed to sign with SLH-DSA: %w", err)
+	}
 	stamp.SLHDSASignature = signature
 	stamp.PublicKeySLH = qs.slhdsaSigner.pubKey.Bytes()
 
@@ -512,7 +511,7 @@ func (qs *QuantumStamper) verifyMLDSA(stamp *QuantumStamp, data []byte) bool {
 	}
 
 	// Recreate public key from bytes
-	pubKey, err := mldsa.NewPublicKey(mldsa.MLDSA65, stamp.PublicKeyML)
+	pubKey, err := mldsa.PublicKeyFromBytes(stamp.PublicKeyML, mldsa.MLDSA65)
 	if err != nil {
 		return false
 	}
@@ -527,12 +526,12 @@ func (qs *QuantumStamper) verifySLHDSA(stamp *QuantumStamp, data []byte) bool {
 	}
 
 	// Recreate public key from bytes
-	pubKey, err := slhdsa.NewPublicKey(slhdsa.SLHDSA128f, stamp.PublicKeySLH)
+	pubKey, err := slhdsa.PublicKeyFromBytes(stamp.PublicKeySLH, slhdsa.SLHDSA128f)
 	if err != nil {
 		return false
 	}
 
-	return pubKey.Verify(data, stamp.SLHDSASignature)
+	return pubKey.Verify(data, stamp.SLHDSASignature, nil)
 }
 
 // GetStampForBlock retrieves a stamp for a specific block

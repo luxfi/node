@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"strings"
 
+	ethereum "github.com/luxfi/geth"
 	"github.com/luxfi/geth/accounts/abi"
 	"github.com/luxfi/geth/accounts/abi/bind"
 	"github.com/luxfi/geth/common"

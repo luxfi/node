@@ -23,15 +23,17 @@ import (
 const bootstrapIndex = 0
 
 const (
-	targetPathEnvName = "TARGET_PATH"
-	imageTagEnvName   = "IMAGE_TAG"
+	targetPathEnvName        = "TARGET_PATH"
+	imageTagEnvName          = "IMAGE_TAG"
+	luxGoPathEnvName         = "LUXGO_PATH"
+	luxGoPluginDirEnvName    = "LUXGO_PLUGIN_DIR"
 )
 
 var (
 	errTargetPathEnvVarNotSet = errors.New(targetPathEnvName + " environment variable not set")
 	errImageTagEnvVarNotSet   = errors.New(imageTagEnvName + " environment variable not set")
-	errLuxGoEvVarNotSet = errors.New(tmpnet.LuxGoPathEnvName + " environment variable not set")
-	errPluginDirEnvVarNotSet  = errors.New(tmpnet.LuxGoPluginDirEnvName + " environment variable not set")
+	errLuxGoEvVarNotSet = errors.New(luxGoPathEnvName + " environment variable not set")
+	errPluginDirEnvVarNotSet  = errors.New(luxGoPluginDirEnvName + " environment variable not set")
 )
 
 // Creates docker compose configuration for an antithesis test setup. Configuration is via env vars to
@@ -50,23 +52,27 @@ func GenerateComposeConfig(network *tmpnet.Network, baseImageName string) error 
 
 	// Subnet testing requires creating an initial db state for the bootstrap node
 	if len(network.Subnets) > 0 {
-		luxGoPath := os.Getenv(tmpnet.LuxGoPathEnvName)
+		luxGoPath := os.Getenv(luxGoPathEnvName)
 		if len(luxGoPath) == 0 {
 			return errLuxGoEvVarNotSet
 		}
 
 		// Plugin dir configured here is only used for initializing the bootstrap db.
-		pluginDir := os.Getenv(tmpnet.LuxGoPluginDirEnvName)
+		pluginDir := os.Getenv(luxGoPluginDirEnvName)
 		if len(pluginDir) == 0 {
 			return errPluginDirEnvVarNotSet
 		}
 
 		network.DefaultRuntimeConfig = tmpnet.NodeRuntimeConfig{
 			Process: &tmpnet.ProcessRuntimeConfig{
-				LuxGoPath: luxGoPath,
-				PluginDir:       pluginDir,
+				LuxNodePath: luxGoPath,
 			},
 		}
+		// Set plugin dir in network flags
+		if network.DefaultFlags == nil {
+			network.DefaultFlags = make(tmpnet.FlagsMap)
+		}
+		network.DefaultFlags[config.PluginDirKey] = pluginDir
 
 		bootstrapVolumePath, err := getBootstrapVolumePath(targetPath)
 		if err != nil {
@@ -146,13 +152,13 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 		bootstrapIDs string
 	)
 
-	if network.PrimaryChainConfigs == nil {
-		network.PrimaryChainConfigs = make(map[string]tmpnet.ConfigMap)
+	if network.ChainConfigs == nil {
+		network.ChainConfigs = make(map[string]tmpnet.FlagsMap)
 	}
-	if network.PrimaryChainConfigs["C"] == nil {
-		network.PrimaryChainConfigs["C"] = make(tmpnet.ConfigMap)
+	if network.ChainConfigs["C"] == nil {
+		network.ChainConfigs["C"] = make(tmpnet.FlagsMap)
 	}
-	network.PrimaryChainConfigs["C"]["log-json-format"] = true
+	network.ChainConfigs["C"]["log-json-format"] = true
 
 	chainConfigContent, err := network.GetChainConfigContent()
 	if err != nil {

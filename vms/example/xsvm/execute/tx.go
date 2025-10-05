@@ -192,15 +192,19 @@ type warpValidatorStateAdapter struct {
 	vs  consensus.ValidatorState
 }
 
-func (w *warpValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
+func (w *warpValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*warp.ValidatorData, error) {
 	validatorSet, err := w.vs.GetValidatorSet(height, netID)
 	if err != nil {
 		return nil, err
 	}
-	// Convert from GetValidatorOutput map to weight map
-	result := make(map[ids.NodeID]uint64, len(validatorSet))
-	for nodeID, output := range validatorSet {
-		result[nodeID] = output
+	// Convert from weight map to ValidatorData map
+	result := make(map[ids.NodeID]*warp.ValidatorData, len(validatorSet))
+	for nodeID, weight := range validatorSet {
+		result[nodeID] = &warp.ValidatorData{
+			NodeID:    nodeID,
+			PublicKey: nil, // We don't have public key info here
+			Weight:    weight,
+		}
 	}
 	return result, nil
 }
