@@ -7,8 +7,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/config"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -48,6 +48,11 @@ type Config struct {
 	// TODO: Move this flag once the proposervm is configurable on a per-chain
 	// basis.
 	ProposerNumHistoricalBlocks uint64 `json:"proposerNumHistoricalBlocks" yaml:"proposerNumHistoricalBlocks"`
+
+	// POA Mode Configuration
+	POAEnabled         bool          `json:"poaEnabled"         yaml:"poaEnabled"`         // Enable Proof of Authority mode
+	POASingleNodeMode  bool          `json:"poaSingleNodeMode"  yaml:"poaSingleNodeMode"`  // Enable single node validation (K=1)
+	POAMinBlockTime    time.Duration `json:"poaMinBlockTime"    yaml:"poaMinBlockTime"`    // Minimum time between blocks in POA mode
 }
 
 func (c *Config) Valid() error {
@@ -58,4 +63,10 @@ func (c *Config) Valid() error {
 		return errAllowedNodesWhenNotValidatorOnly
 	}
 	return nil
+}
+
+// GetPOAConsensusParameters returns consensus parameters for POA mode
+// When POASingleNodeMode is true, returns K=1 parameters for single validator
+func GetPOAConsensusParameters() config.Parameters {
+	return config.SingleValidatorParams()
 }

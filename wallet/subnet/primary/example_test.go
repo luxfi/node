@@ -81,9 +81,9 @@ func ExampleWallet() {
 	exportStartTime := time.Now()
 	exportTx, err := xWallet.IssueExportTx(
 		constants.PlatformChainID,
-		[]*avax.TransferableOutput{
+		[]*lux.TransferableOutput{
 			{
-				Asset: avax.Asset{
+				Asset: lux.Asset{
 					ID: createAssetTxID,
 				},
 				Out: &secp256k1fx.TransferOutput{

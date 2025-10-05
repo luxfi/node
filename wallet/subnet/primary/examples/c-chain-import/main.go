@@ -21,7 +21,7 @@ func main() {
 	key := genesis.EWOQKey
 	uri := primary.LocalAPIURI
 	kc := secp256k1fx.NewKeychain(key)
-	avaxAddr := key.Address()
+	luxAddr := key.Address()
 	ethAddr := key.PublicKey().EthAddress()
 
 	ctx := context.Background()
@@ -48,17 +48,17 @@ func main() {
 	// Pull out useful constants to use when issuing transactions.
 	cContext := cWallet.Builder().Context()
 	cChainID := cContext.BlockchainID
-	avaxAssetID := cContext.XAssetID
+	luxAssetID := cContext.XAssetID
 	owner := secp256k1fx.OutputOwners{
 		Threshold: 1,
 		Addrs: []ids.ShortID{
-			avaxAddr,
+			luxAddr,
 		},
 	}
 
 	exportStartTime := time.Now()
-	exportTx, err := pWallet.IssueExportTx(cChainID, []*avax.TransferableOutput{{
-		Asset: avax.Asset{ID: avaxAssetID},
+	exportTx, err := pWallet.IssueExportTx(cChainID, []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: luxAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt:          units.Lux,
 			OutputOwners: owner,

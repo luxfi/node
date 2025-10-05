@@ -20,7 +20,7 @@ func main() {
 	key := genesis.EWOQKey
 	uri := primary.LocalAPIURI
 	kc := secp256k1fx.NewKeychain(key)
-	avaxAddr := key.Address()
+	luxAddr := key.Address()
 
 	ctx := context.Background()
 
@@ -48,7 +48,7 @@ func main() {
 	owner := secp256k1fx.OutputOwners{
 		Threshold: 1,
 		Addrs: []ids.ShortID{
-			avaxAddr,
+			luxAddr,
 		},
 	}
 

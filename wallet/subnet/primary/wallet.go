@@ -84,17 +84,17 @@ type WalletConfig struct {
 func MakeWallet(
 	ctx context.Context,
 	uri string,
-	avaxKeychain keychain.Keychain,
+	luxKeychain keychain.Keychain,
 	ethKeychain c.EthKeychain,
 	config WalletConfig,
 ) (*Wallet, error) {
-	avaxAddrs := avaxKeychain.Addresses()
+	luxAddrs := luxKeychain.Addresses()
 	// Convert luxfi/math/set to node/utils/set
-	avaxAddrsSet := make(map[ids.ShortID]struct{})
-	for addr := range avaxAddrs {
-		avaxAddrsSet[addr] = struct{}{}
+	luxAddrsSet := make(map[ids.ShortID]struct{})
+	for addr := range luxAddrs {
+		luxAddrsSet[addr] = struct{}{}
 	}
-	avaxState, err := FetchState(ctx, uri, avaxAddrsSet)
+	luxState, err := FetchState(ctx, uri, luxAddrsSet)
 	if err != nil {
 		return nil, err
 	}
@@ -113,28 +113,28 @@ func MakeWallet(
 	// TODO: Fetch subnet and validation owners if needed
 	owners := make(map[ids.ID]fx.Owner)
 
-	pUTXOs := common.NewChainUTXOs(constants.PlatformChainID, avaxState.UTXOs)
+	pUTXOs := common.NewChainUTXOs(constants.PlatformChainID, luxState.UTXOs)
 	pBackend := pwallet.NewBackend(pUTXOs, owners)
-	pClient := p.NewClient(avaxState.PClient, pBackend)
-	pBuilder := pbuilder.New(avaxAddrs, avaxState.PCTX, pBackend)
-	pSigner := psigner.New(avaxKeychain, pBackend)
+	pClient := p.NewClient(luxState.PClient, pBackend)
+	pBuilder := pbuilder.New(luxAddrs, luxState.PCTX, pBackend)
+	pSigner := psigner.New(luxKeychain, pBackend)
 
-	xChainID := avaxState.XCTX.BlockchainID
-	xUTXOs := common.NewChainUTXOs(xChainID, avaxState.UTXOs)
-	xBackend := x.NewBackend(avaxState.XCTX, xUTXOs)
-	xBuilder := xbuilder.New(avaxAddrs, avaxState.XCTX, xBackend)
-	xSigner := xsigner.New(avaxKeychain, xBackend)
+	xChainID := luxState.XCTX.BlockchainID
+	xUTXOs := common.NewChainUTXOs(xChainID, luxState.UTXOs)
+	xBackend := x.NewBackend(luxState.XCTX, xUTXOs)
+	xBuilder := xbuilder.New(luxAddrs, luxState.XCTX, xBackend)
+	xSigner := xsigner.New(luxKeychain, xBackend)
 
-	cChainID := avaxState.CCTX.BlockchainID
-	cUTXOs := common.NewChainUTXOs(cChainID, avaxState.UTXOs)
+	cChainID := luxState.CCTX.BlockchainID
+	cUTXOs := common.NewChainUTXOs(cChainID, luxState.UTXOs)
 	cBackend := c.NewBackend(cUTXOs, ethState.Accounts)
-	cBuilder := c.NewBuilder(avaxAddrs, ethAddrs, avaxState.CCTX, cBackend)
-	cSigner := c.NewSigner(avaxKeychain, ethKeychain, cBackend)
+	cBuilder := c.NewBuilder(luxAddrs, ethAddrs, luxState.CCTX, cBackend)
+	cSigner := c.NewSigner(luxKeychain, ethKeychain, cBackend)
 
 	return NewWallet(
 		pwallet.New(pClient, pBuilder, pSigner),
-		x.NewWallet(xBuilder, xSigner, avaxState.XClient, xBackend),
-		c.NewWallet(cBuilder, cSigner, avaxState.CClient, ethState.Client, cBackend),
+		x.NewWallet(xBuilder, xSigner, luxState.XClient, xBackend),
+		c.NewWallet(cBuilder, cSigner, luxState.CClient, ethState.Client, cBackend),
 	), nil
 }
 
