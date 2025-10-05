@@ -9,8 +9,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"encoding/json"
+
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/qvm/quantum"
 )
 

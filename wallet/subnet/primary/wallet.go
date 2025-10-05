@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 	
 	ethcommon "github.com/luxfi/geth/common"
 

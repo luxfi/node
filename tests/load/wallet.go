@@ -67,7 +67,7 @@ func (w *Wallet) SendTx(
 	}
 
 	issuanceDuration := time.Since(startTime)
-	w.metric.issue(issuanceDuration)
+	w.metrics.issue(issuanceDuration)
 
 	err = w.awaitTx(
 		ctx,
@@ -81,7 +81,7 @@ func (w *Wallet) SendTx(
 
 	totalDuration := time.Since(startTime)
 	confirmationDuration := totalDuration - issuanceDuration
-	w.metric.accept(confirmationDuration, totalDuration)
+	w.metrics.accept(confirmationDuration, totalDuration)
 
 	w.nonce++
 

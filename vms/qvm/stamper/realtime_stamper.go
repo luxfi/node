@@ -5,7 +5,6 @@ package stamper
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"sync"
@@ -17,7 +16,6 @@ import (
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/ethdb"
 	"github.com/luxfi/geth/event"
-	"github.com/luxfi/node/vms/qvm/quantum"
 )
 
 var (
@@ -195,7 +193,12 @@ func (rts *RealtimeQuantumStamper) blockProcessor() {
 			}
 
 			rts.metrics.BlocksReceived++
-			block := event.Block
+			// Get the block from the header
+			block := rts.blockchain.GetBlock(event.Header.Hash(), event.Header.Number.Uint64())
+			if block == nil {
+				rts.logger.Error("Failed to get block", "hash", event.Header.Hash(), "number", event.Header.Number)
+				continue
+			}
 
 			// Add to batch
 			rts.batchMu.Lock()

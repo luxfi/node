@@ -6,6 +6,7 @@ package lux
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
@@ -112,7 +113,7 @@ func NewMeteredUTXOState(
 ) (UTXOState, error) {
 	utxoCache, err := metercacher.New[ids.ID, *UTXO](
 		"utxo_cache",
-		metrics,
+		metrics.(metric.Registry),
 		lru.NewCache[ids.ID, *UTXO](utxoCacheSize),
 	)
 	if err != nil {
@@ -121,7 +122,7 @@ func NewMeteredUTXOState(
 
 	indexCache, err := metercacher.New[string, linkeddb.LinkedDB](
 		"index_cache",
-		metrics,
+		metrics.(metric.Registry),
 		lru.NewCache[string, linkeddb.LinkedDB](indexCacheSize),
 	)
 	if err != nil {
