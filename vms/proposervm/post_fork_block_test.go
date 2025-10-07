@@ -18,7 +18,8 @@ import (
 	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
 	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/snow/validators"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/upgrade/upgradetest"
+	"github.com/luxfi/node/vms/proposervm/acp181"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 )
@@ -234,6 +235,14 @@ func TestBlockVerify_PostForkBlock_PostDurango_ParentChecks(t *testing.T) {
 	}
 
 	require.NoError(waitForProposerWindow(proVM, parentBlk, parentBlk.(*postForkBlock).PChainHeight()))
+	parentPChainHeight := parentBlk.(*postForkBlock).PChainHeight()
+	nextEpoch := acp181.NewEpoch(
+		proVM.Upgrades,
+		parentPChainHeight,
+		block.Epoch{},
+		parentBlk.Timestamp(),
+		proVM.Time(),
+	)
 
 	{
 		// child block referring unknown parent does not verify
@@ -241,6 +250,7 @@ func TestBlockVerify_PostForkBlock_PostDurango_ParentChecks(t *testing.T) {
 			ids.Empty, // refer unknown parent
 			proVM.Time(),
 			pChainHeight,
+			nextEpoch,
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
 			proVM.ctx.ChainID,
@@ -259,6 +269,7 @@ func TestBlockVerify_PostForkBlock_PostDurango_ParentChecks(t *testing.T) {
 			parentBlk.ID(),
 			proVM.Time(),
 			pChainHeight,
+			nextEpoch,
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
 			proVM.ctx.ChainID,
@@ -542,12 +553,22 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 		},
 	}
 
+	parentBlkPChainHeight := parentBlk.(*postForkBlock).PChainHeight()
+	nextEpoch := acp181.NewEpoch(
+		proVM.Upgrades,
+		parentBlkPChainHeight,
+		block.Epoch{},
+		parentBlk.Timestamp(),
+		proVM.Time(),
+	)
+
 	{
 		// child P-Chain height must not precede parent P-Chain height
 		childSlb, err := block.Build(
 			parentBlk.ID(),
 			proVM.Time(),
 			parentBlkPChainHeight-1,
+			nextEpoch,
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
 			proVM.ctx.ChainID,
@@ -566,6 +587,7 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 			parentBlk.ID(),
 			proVM.Time(),
 			parentBlkPChainHeight,
+			nextEpoch,
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
 			proVM.ctx.ChainID,
@@ -583,6 +605,7 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 			parentBlk.ID(),
 			proVM.Time(),
 			parentBlkPChainHeight,
+			nextEpoch,
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
 			proVM.ctx.ChainID,
@@ -601,6 +624,7 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 			parentBlk.ID(),
 			proVM.Time(),
 			currPChainHeight,
+			nextEpoch,
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
 			proVM.ctx.ChainID,
@@ -618,6 +642,7 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 			parentBlk.ID(),
 			proVM.Time(),
 			currPChainHeight*2,
+			nextEpoch,
 			proVM.StakingCertLeaf,
 			childCoreBlk.Bytes(),
 			proVM.ctx.ChainID,
