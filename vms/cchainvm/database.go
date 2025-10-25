@@ -44,6 +44,11 @@ func WrapDatabase(db database.Database) ethdb.Database {
 	return &DatabaseWrapper{db: db}
 }
 
+// DB returns the underlying database for unwrapping
+func (d *DatabaseWrapper) DB() database.Database {
+	return d.db
+}
+
 // Has retrieves if a key is present in the key-value data store
 func (d *DatabaseWrapper) Has(key []byte) (bool, error) {
 	return d.db.Has(key)
