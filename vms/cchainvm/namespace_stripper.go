@@ -16,6 +16,14 @@ import (
 	"github.com/luxfi/geth/rlp"
 )
 
+// SubnetEVM namespace for LUX mainnet (blockchain ID 4aYc2FXx...)
+var SubnetEVMNamespace = []byte{
+	0x33, 0x7f, 0xb7, 0x3f, 0x9b, 0xcd, 0xac, 0x8c,
+	0x31, 0xa2, 0xd5, 0xf7, 0xb8, 0x77, 0xab, 0x1e,
+	0x8a, 0x2b, 0x7f, 0x2a, 0x1e, 0x9b, 0xf0, 0x2a,
+	0x0a, 0x0e, 0x6c, 0x6f, 0xd1, 0x64, 0xf1, 0xd1,
+}
+
 // SubnetNamespaceStripper wraps a database and strips the 32-byte namespace prefix
 // from SubnetEVM migrated data, making it readable by C-Chain
 type SubnetNamespaceStripper struct {
@@ -26,13 +34,7 @@ type SubnetNamespaceStripper struct {
 
 // NewSubnetNamespaceStripper creates a new namespace stripping wrapper
 func NewSubnetNamespaceStripper(db ethdb.Database) ethdb.Database {
-	// SubnetEVM namespace for LUX mainnet (blockchain ID)
-	namespace := []byte{
-		0x33, 0x7f, 0xb7, 0x3f, 0x9b, 0xcd, 0xac, 0x8c,
-		0x31, 0xa2, 0xd5, 0xf7, 0xb8, 0x77, 0xab, 0x1e,
-		0x8a, 0x2b, 0x7f, 0x2a, 0x1e, 0x9b, 0xf0, 0x2a,
-		0x0a, 0x0e, 0x6c, 0x6f, 0xd1, 0x64, 0xf1, 0xd1,
-	}
+	namespace := SubnetEVMNamespace
 
 	return &SubnetNamespaceStripper{
 		db:        db,
@@ -138,6 +140,64 @@ func (s *SubnetNamespaceStripper) Get(key []byte) ([]byte, error) {
 		nsKey := s.addNamespace(key)
 		if val, err := s.db.Get(nsKey); err == nil {
 			return val, nil
+		}
+	}
+
+	// STATE DATABASE KEYS - These are CRITICAL for account balances and storage
+	// Handle all state-related key prefixes that geth uses
+	if len(key) > 0 {
+		prefix := key[0]
+
+		// Check if this is a state-related key prefix
+		isStateKey := false
+		keyType := ""
+		switch prefix {
+		case 'a': // SnapshotAccountPrefix - account snapshot data
+			isStateKey = true
+			keyType = "SnapshotAccount"
+		case 'o': // SnapshotStoragePrefix - storage snapshot data
+			isStateKey = true
+			keyType = "SnapshotStorage"
+		case 'c': // CodePrefix - contract code
+			isStateKey = true
+			keyType = "Code"
+		case 'A': // TrieNodeAccountPrefix - account trie nodes
+			isStateKey = true
+			keyType = "TrieNodeAccount"
+		case 'O': // TrieNodeStoragePrefix - storage trie nodes
+			isStateKey = true
+			keyType = "TrieNodeStorage"
+		case 'L': // stateIDPrefix - state ID mappings
+			isStateKey = true
+			keyType = "StateID"
+		case 's': // state trie path keys (sometimes used)
+			isStateKey = true
+			keyType = "StateTrie"
+		}
+
+		if isStateKey {
+			fmt.Printf("🔍 [STATE KEY ACCESS] Type: %s, KeyLen: %d, Key: %x\n", keyType, len(key), key)
+
+			// CRITICAL: State keys are stored WITH namespace in SubnetEVM database
+			// We MUST add the namespace to find them
+			nsKey := s.addNamespace(key)
+			fmt.Printf("   Trying with namespace: %x\n", nsKey)
+
+			if val, err := s.db.Get(nsKey); err == nil {
+				fmt.Printf("   ✅ FOUND with namespace! ValueLen: %d\n", len(val))
+				return val, nil
+			} else {
+				fmt.Printf("   ❌ NOT FOUND with namespace: %v\n", err)
+			}
+
+			// Also try without namespace as fallback
+			fmt.Printf("   Trying without namespace...\n")
+			if val, err := s.db.Get(key); err == nil {
+				fmt.Printf("   ✅ FOUND without namespace! ValueLen: %d\n", len(val))
+				return val, nil
+			} else {
+				fmt.Printf("   ❌ NOT FOUND without namespace: %v\n", err)
+			}
 		}
 	}
 
