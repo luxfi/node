@@ -6,20 +6,13 @@ package compression
 import (
 	"bytes"
 	"compress/gzip"
-	"errors"
 	"fmt"
 	"io"
 	"math"
 	"sync"
 )
 
-var (
-	_ Compressor = (*gzipCompressor)(nil)
-
-	ErrInvalidMaxSizeCompressor = errors.New("invalid gzip compressor max size")
-	ErrDecompressedMsgTooLarge  = errors.New("decompressed msg too large")
-	ErrMsgTooLarge              = errors.New("msg too large to be compressed")
-)
+var _ Compressor = (*gzipCompressor)(nil)
 
 type gzipCompressor struct {
 	maxSize        int64

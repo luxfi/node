@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/choices"
 	"github.com/luxfi/node/snow/consensus/lux"
@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	_ cache.Evictable[ids.ID] = (*uniqueVertex)(nil)
+	_ lru.Evictable[ids.ID] = (*uniqueVertex)(nil)
 	_ lux.Vertex        = (*uniqueVertex)(nil)
 
 	errGetParents = errors.New("failed to get parents for vertex")

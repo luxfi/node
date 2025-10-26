@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/simplex"
+	"github.com/luxfi/bft"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/ids"

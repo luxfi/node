@@ -151,7 +151,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_LUX,
+				Type:  p2p.EngineType_ENGINE_TYPE_AVALANCHE,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -257,7 +257,7 @@ func TestBootstrapperByzantineResponses(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_LUX,
+				Type:  p2p.EngineType_ENGINE_TYPE_AVALANCHE,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -423,7 +423,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_LUX,
+				Type:  p2p.EngineType_ENGINE_TYPE_AVALANCHE,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -546,7 +546,7 @@ func TestBootstrapperIncompleteAncestors(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_LUX,
+				Type:  p2p.EngineType_ENGINE_TYPE_AVALANCHE,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -655,7 +655,7 @@ func TestBootstrapperUnexpectedVertex(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_LUX,
+				Type:  p2p.EngineType_ENGINE_TYPE_AVALANCHE,
 				State: snow.NormalOp,
 			})
 			return nil

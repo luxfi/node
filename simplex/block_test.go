@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/StephenButtolph/canoto"
-	"github.com/luxfi/simplex"
+	"github.com/luxfi/bft"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/snow/consensus/snowman"

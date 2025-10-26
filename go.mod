@@ -78,6 +78,15 @@ require (
 	k8s.io/apimachinery v0.34.1
 	k8s.io/client-go v0.34.1
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
+	github.com/luxfi/consensus v0.0.0
+	github.com/luxfi/ids v1.1.1
+	github.com/luxfi/log v1.1.22
+	github.com/luxfi/metric v1.4.0
+	github.com/luxfi/math v0.1.1
+	github.com/luxfi/database v1.2.1
+	github.com/luxfi/crypto v1.17.4
+	github.com/luxfi/bft v0.1.0
+	github.com/luxfi/mock v0.1.0
 )
 
 require (
@@ -215,5 +224,23 @@ require (
 replace github.com/luxfi/geth => ../geth
 
 replace github.com/luxfi/ledger-lux/go => ../ledger-lux-go
+
+replace github.com/luxfi/consensus => ../consensus
+
+replace github.com/luxfi/ids => ../ids
+
+replace github.com/luxfi/log => ../log
+
+replace github.com/luxfi/metric => ../metric
+
+replace github.com/luxfi/math => ../math
+
+replace github.com/luxfi/database => ../database
+
+replace github.com/luxfi/crypto => ../crypto
+
+replace github.com/luxfi/bft => ../bft
+
+replace github.com/luxfi/mock => ../mock
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090
