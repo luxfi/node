@@ -79,12 +79,12 @@ require (
 	k8s.io/client-go v0.34.1
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 	github.com/luxfi/consensus v0.0.0
-	github.com/luxfi/ids v1.1.1
+	github.com/luxfi/ids v1.1.2
 	github.com/luxfi/log v1.1.22
-	github.com/luxfi/metric v1.4.0
-	github.com/luxfi/math v0.1.1
-	github.com/luxfi/database v1.2.1
-	github.com/luxfi/crypto v1.17.4
+	github.com/luxfi/metric v1.4.3
+	github.com/luxfi/math v0.1.2
+	github.com/luxfi/database v1.2.3
+	github.com/luxfi/crypto v1.4.17
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/mock v0.1.0
 )
