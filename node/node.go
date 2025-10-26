@@ -80,7 +80,7 @@ import (
 	databasefactory "github.com/luxfi/node/database/factory"
 	avmconfig "github.com/luxfi/node/vms/avm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
-	geth "github.com/luxfi/geth/plugin/factory"
+	// geth "github.com/luxfi/geth/plugin/factory" // TODO: C-Chain EVM currently disabled - plugin/factory package doesn't exist
 )
 
 const (
@@ -1196,7 +1196,7 @@ func (n *Node) initVMs() error {
 				CreateAssetTxFee: n.Config.CreateAssetTxFee,
 			},
 		}),
-		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &geth.Factory{}),
+		// n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &geth.Factory{}), // TODO: C-Chain EVM currently disabled
 	)
 	if err != nil {
 		return err

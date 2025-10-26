@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luxfi/simplex"
+	"github.com/luxfi/bft"
 
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/engine/snowman/block"

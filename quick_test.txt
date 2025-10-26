@@ -1,0 +1,7 @@
+FAIL	github.com/luxfi/node/api/metrics [setup failed]
+FAIL	github.com/luxfi/node/network [setup failed]
+FAIL	github.com/luxfi/node/vms/xvm [setup failed]
+ok  	github.com/luxfi/node/database/pebbledb	(cached)
+ok  	github.com/luxfi/node/network/throttling	(cached)
+ok  	github.com/luxfi/node/vms/components/chain	(cached)
+FAIL

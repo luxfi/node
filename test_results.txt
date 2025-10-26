@@ -1,0 +1,1121 @@
+# github.com/luxfi/node/tests/e2e
+package github.com/luxfi/node/tests/e2e_test
+	imports github.com/luxfi/node/tests/e2e/banff: build constraints exclude all Go files in /home/z/work/lux/node/tests/e2e/banff
+FAIL	github.com/luxfi/node/tests/e2e [setup failed]
+# github.com/luxfi/node/network/peer
+network/peer/peer.go:1007:16: undefined: constants.CurrentLPs
+network/peer/peer.go:1012:16: undefined: constants.CurrentLPs
+?   	github.com/luxfi/node	[no test files]
+# github.com/luxfi/node/debug [github.com/luxfi/node/debug.test]
+debug/badger_scanner.go:12:6: main redeclared in this block
+	debug/analyze_key_format.go:12:6: other declaration of main
+debug/debug_migrated_db.go:13:6: main redeclared in this block
+	debug/analyze_key_format.go:12:6: other declaration of main
+debug/debug_migrated_db_simple.go:12:6: main redeclared in this block
+	debug/analyze_key_format.go:12:6: other declaration of main
+debug/fix_genesis_block.go:14:6: main redeclared in this block
+	debug/analyze_key_format.go:12:6: other declaration of main
+debug/fix_genesis_simple.go:12:6: main redeclared in this block
+	debug/analyze_key_format.go:12:6: other declaration of main
+debug/get_real_hash.go:29:6: main redeclared in this block
+	debug/analyze_key_format.go:12:6: other declaration of main
+debug/inspect_geth_badger.go:12:6: main redeclared in this block
+	debug/analyze_key_format.go:12:6: other declaration of main
+debug/inspect_migrated_db.go:13:6: main redeclared in this block
+	debug/analyze_key_format.go:12:6: other declaration of main
+debug/rlp_decode_header.go:16:2: targetBlock redeclared in this block
+	debug/get_real_hash.go:12:2: other declaration of targetBlock
+debug/rlp_decode_header.go:17:2: dbPath redeclared in this block
+	debug/get_real_hash.go:13:2: other declaration of dbPath
+debug/rlp_decode_header.go:17:2: too many errors
+# github.com/luxfi/node/network/peer [github.com/luxfi/node/main]
+network/peer/peer.go:1007:16: undefined: constants.CurrentLPs
+network/peer/peer.go:1012:16: undefined: constants.CurrentLPs
+# github.com/luxfi/node/internal/database/rpcdb [github.com/luxfi/node/internal/database/rpcdb.test]
+internal/database/rpcdb/db_test.go:124:43: cannot use logging.NoLog{} (value of struct type logging.NoLog) as "github.com/luxfi/log".Logger value in argument to corruptabledb.New: logging.NoLog does not implement "github.com/luxfi/log".Logger (missing method Crit)
+?   	github.com/luxfi/node/api	[no test files]
+FAIL	github.com/luxfi/node/api/admin [build failed]
+=== RUN   TestNewTokenWrongPassword
+--- PASS: TestNewTokenWrongPassword (0.07s)
+=== RUN   TestNewTokenHappyPath
+--- PASS: TestNewTokenHappyPath (0.07s)
+=== RUN   TestTokenHasWrongSig
+--- PASS: TestTokenHasWrongSig (0.04s)
+=== RUN   TestChangePassword
+--- PASS: TestChangePassword (0.36s)
+=== RUN   TestRevokeToken
+--- PASS: TestRevokeToken (0.10s)
+=== RUN   TestWrapHandlerHappyPath
+--- PASS: TestWrapHandlerHappyPath (0.05s)
+=== RUN   TestWrapHandlerRevokedToken
+--- PASS: TestWrapHandlerRevokedToken (0.10s)
+=== RUN   TestWrapHandlerExpiredToken
+--- PASS: TestWrapHandlerExpiredToken (0.06s)
+=== RUN   TestWrapHandlerNoAuthToken
+--- PASS: TestWrapHandlerNoAuthToken (0.00s)
+=== RUN   TestWrapHandlerUnauthorizedEndpoint
+--- PASS: TestWrapHandlerUnauthorizedEndpoint (0.05s)
+=== RUN   TestWrapHandlerAuthEndpoint
+--- PASS: TestWrapHandlerAuthEndpoint (0.05s)
+=== RUN   TestWrapHandlerAccessAll
+--- PASS: TestWrapHandlerAccessAll (0.06s)
+=== RUN   TestWriteUnauthorizedResponse
+--- PASS: TestWriteUnauthorizedResponse (0.00s)
+=== RUN   TestWrapHandlerMutatedRevokedToken
+--- PASS: TestWrapHandlerMutatedRevokedToken (0.10s)
+=== RUN   TestWrapHandlerInvalidSigningMethod
+--- PASS: TestWrapHandlerInvalidSigningMethod (0.00s)
+PASS
+ok  	github.com/luxfi/node/api/auth	1.312s
+?   	github.com/luxfi/node/api/connectclient	[no test files]
+=== RUN   TestNewClient
+--- PASS: TestNewClient (0.00s)
+=== RUN   TestClient
+--- PASS: TestClient (0.00s)
+=== RUN   TestDuplicatedRegistations
+--- PASS: TestDuplicatedRegistations (0.00s)
+=== RUN   TestDefaultFailing
+--- PASS: TestDefaultFailing (0.00s)
+=== RUN   TestPassingChecks
+--- PASS: TestPassingChecks (0.00s)
+=== RUN   TestPassingThenFailingChecks
+--- PASS: TestPassingThenFailingChecks (0.00s)
+=== RUN   TestDeadlockRegression
+--- PASS: TestDeadlockRegression (0.01s)
+=== RUN   TestTags
+--- PASS: TestTags (0.00s)
+=== RUN   TestServiceResponses
+--- PASS: TestServiceResponses (0.00s)
+=== RUN   TestServiceTagResponse
+=== RUN   TestServiceTagResponse/Readiness
+=== RUN   TestServiceTagResponse/Health
+=== RUN   TestServiceTagResponse/Liveness
+--- PASS: TestServiceTagResponse (0.00s)
+    --- PASS: TestServiceTagResponse/Readiness (0.00s)
+    --- PASS: TestServiceTagResponse/Health (0.00s)
+    --- PASS: TestServiceTagResponse/Liveness (0.00s)
+PASS
+ok  	github.com/luxfi/node/api/health	0.028s
+FAIL	github.com/luxfi/node/api/info [build failed]
+=== RUN   TestServiceListNoUsers
+--- PASS: TestServiceListNoUsers (0.00s)
+=== RUN   TestServiceCreateUser
+--- PASS: TestServiceCreateUser (0.08s)
+=== RUN   TestServiceCreateUserArgsCheck
+--- PASS: TestServiceCreateUserArgsCheck (0.00s)
+=== RUN   TestServiceCreateUserWeakPassword
+--- PASS: TestServiceCreateUserWeakPassword (0.00s)
+=== RUN   TestServiceCreateDuplicate
+--- PASS: TestServiceCreateDuplicate (0.07s)
+=== RUN   TestServiceCreateUserNoName
+--- PASS: TestServiceCreateUserNoName (0.00s)
+=== RUN   TestServiceUseBlockchainDB
+--- PASS: TestServiceUseBlockchainDB (0.14s)
+=== RUN   TestServiceExportImport
+--- PASS: TestServiceExportImport (0.25s)
+=== RUN   TestServiceDeleteUser
+=== RUN   TestServiceDeleteUser/empty_user_name_case
+=== RUN   TestServiceDeleteUser/user_not_exists_case
+=== RUN   TestServiceDeleteUser/user_exists_and_invalid_password_case
+=== RUN   TestServiceDeleteUser/user_exists_and_valid_password_case
+=== RUN   TestServiceDeleteUser/delete_a_user,_imported_from_import_api_case
+--- PASS: TestServiceDeleteUser (0.39s)
+    --- PASS: TestServiceDeleteUser/empty_user_name_case (0.00s)
+    --- PASS: TestServiceDeleteUser/user_not_exists_case (0.00s)
+    --- PASS: TestServiceDeleteUser/user_exists_and_invalid_password_case (0.09s)
+    --- PASS: TestServiceDeleteUser/user_exists_and_valid_password_case (0.11s)
+    --- PASS: TestServiceDeleteUser/delete_a_user,_imported_from_import_api_case (0.18s)
+PASS
+ok  	github.com/luxfi/node/api/keystore	1.064s
+?   	github.com/luxfi/node/api/keystore/gkeystore	[no test files]
+=== RUN   TestLabelGatherer_Gather
+=== RUN   TestLabelGatherer_Gather/no_overlap
+=== RUN   TestLabelGatherer_Gather/has_overlap
+--- PASS: TestLabelGatherer_Gather (0.00s)
+    --- PASS: TestLabelGatherer_Gather/no_overlap (0.00s)
+    --- PASS: TestLabelGatherer_Gather/has_overlap (0.00s)
+=== RUN   TestLabelGatherer_Register
+=== RUN   TestLabelGatherer_Register/first_registration
+=== RUN   TestLabelGatherer_Register/second_registration
+=== RUN   TestLabelGatherer_Register/conflicts_with_previous_registration
+--- PASS: TestLabelGatherer_Register (0.00s)
+    --- PASS: TestLabelGatherer_Register/first_registration (0.00s)
+    --- PASS: TestLabelGatherer_Register/second_registration (0.00s)
+    --- PASS: TestLabelGatherer_Register/conflicts_with_previous_registration (0.00s)
+=== RUN   TestMultiGathererEmptyGather
+--- PASS: TestMultiGathererEmptyGather (0.00s)
+=== RUN   TestMultiGathererDuplicatedPrefix
+--- PASS: TestMultiGathererDuplicatedPrefix (0.00s)
+=== RUN   TestMultiGathererAddedError
+--- PASS: TestMultiGathererAddedError (0.00s)
+=== RUN   TestMultiGathererNoAddedPrefix
+--- PASS: TestMultiGathererNoAddedPrefix (0.00s)
+=== RUN   TestMultiGathererAddedPrefix
+--- PASS: TestMultiGathererAddedPrefix (0.00s)
+=== RUN   TestMultiGathererJustPrefix
+--- PASS: TestMultiGathererJustPrefix (0.00s)
+=== RUN   TestMultiGathererSorted
+--- PASS: TestMultiGathererSorted (0.00s)
+=== RUN   TestOptionalGathererEmptyGather
+--- PASS: TestOptionalGathererEmptyGather (0.00s)
+=== RUN   TestOptionalGathererDuplicated
+--- PASS: TestOptionalGathererDuplicated (0.00s)
+=== RUN   TestOptionalGathererAddedError
+--- PASS: TestOptionalGathererAddedError (0.00s)
+=== RUN   TestMultiGathererAdded
+--- PASS: TestMultiGathererAdded (0.00s)
+=== RUN   TestPrefixGatherer_Gather
+--- PASS: TestPrefixGatherer_Gather (0.00s)
+=== RUN   TestPrefixGatherer_Register
+=== RUN   TestPrefixGatherer_Register/first_registration
+=== RUN   TestPrefixGatherer_Register/second_registration
+=== RUN   TestPrefixGatherer_Register/conflicts_with_previous_registration
+--- PASS: TestPrefixGatherer_Register (0.00s)
+    --- PASS: TestPrefixGatherer_Register/first_registration (0.00s)
+    --- PASS: TestPrefixGatherer_Register/second_registration (0.00s)
+    --- PASS: TestPrefixGatherer_Register/conflicts_with_previous_registration (0.00s)
+=== RUN   TestEitherIsPrefix
+=== RUN   TestEitherIsPrefix/empty_strings
+=== RUN   TestEitherIsPrefix/an_empty_string
+=== RUN   TestEitherIsPrefix/same_strings
+=== RUN   TestEitherIsPrefix/different_strings
+=== RUN   TestEitherIsPrefix/splits_namespace
+=== RUN   TestEitherIsPrefix/is_prefix_before_separator
+--- PASS: TestEitherIsPrefix (0.00s)
+    --- PASS: TestEitherIsPrefix/empty_strings (0.00s)
+    --- PASS: TestEitherIsPrefix/an_empty_string (0.00s)
+    --- PASS: TestEitherIsPrefix/same_strings (0.00s)
+    --- PASS: TestEitherIsPrefix/different_strings (0.00s)
+    --- PASS: TestEitherIsPrefix/splits_namespace (0.00s)
+    --- PASS: TestEitherIsPrefix/is_prefix_before_separator (0.00s)
+PASS
+ok  	github.com/luxfi/node/api/metrics	0.008s
+=== RUN   TestAllowedHostsHandler_ServeHTTP
+=== RUN   TestAllowedHostsHandler_ServeHTTP/no_host_header
+=== RUN   TestAllowedHostsHandler_ServeHTTP/ip
+=== RUN   TestAllowedHostsHandler_ServeHTTP/hostname_not_allowed
+=== RUN   TestAllowedHostsHandler_ServeHTTP/hostname_allowed
+=== RUN   TestAllowedHostsHandler_ServeHTTP/wildcard
+--- PASS: TestAllowedHostsHandler_ServeHTTP (0.00s)
+    --- PASS: TestAllowedHostsHandler_ServeHTTP/no_host_header (0.00s)
+    --- PASS: TestAllowedHostsHandler_ServeHTTP/ip (0.00s)
+    --- PASS: TestAllowedHostsHandler_ServeHTTP/hostname_not_allowed (0.00s)
+    --- PASS: TestAllowedHostsHandler_ServeHTTP/hostname_allowed (0.00s)
+    --- PASS: TestAllowedHostsHandler_ServeHTTP/wildcard (0.00s)
+=== RUN   TestNewMetrics
+--- PASS: TestNewMetrics (0.00s)
+=== RUN   TestMetricsRegistrationFailure
+--- PASS: TestMetricsRegistrationFailure (0.00s)
+=== RUN   TestMetricsOperations
+--- PASS: TestMetricsOperations (0.00s)
+=== RUN   TestPass
+    pass_test.go:7: Test passes
+--- PASS: TestPass (0.00s)
+=== RUN   TestAliasing
+--- PASS: TestAliasing (0.00s)
+=== RUN   TestBlock
+--- PASS: TestBlock (0.00s)
+=== RUN   TestRejectMiddleware
+=== RUN   TestRejectMiddleware/chain_is_state_syncing
+=== RUN   TestRejectMiddleware/chain_is_bootstrapping
+=== RUN   TestRejectMiddleware/chain_is_done_bootstrapping
+--- PASS: TestRejectMiddleware (0.00s)
+    --- PASS: TestRejectMiddleware/chain_is_state_syncing (0.00s)
+    --- PASS: TestRejectMiddleware/chain_is_bootstrapping (0.00s)
+    --- PASS: TestRejectMiddleware/chain_is_done_bootstrapping (0.00s)
+PASS
+ok  	github.com/luxfi/node/api/server	0.011s
+FAIL	github.com/luxfi/node/api/warp [build failed]
+FAIL	github.com/luxfi/node/app [build failed]
+?   	github.com/luxfi/node/benchlist	[no test files]
+testing: warning: no tests to run
+PASS
+ok  	github.com/luxfi/node/benchmarks	0.019s [no tests to run]
+=== RUN   TestEvictableLRU
+--- PASS: TestEvictableLRU (0.00s)
+PASS
+ok  	github.com/luxfi/node/cache	0.017s
+?   	github.com/luxfi/node/cache/cachetest	[no test files]
+=== RUN   TestCache
+--- PASS: TestCache (0.00s)
+=== RUN   TestCacheEviction
+--- PASS: TestCacheEviction (0.00s)
+=== RUN   TestDeduplicator
+--- PASS: TestDeduplicator (0.00s)
+=== RUN   TestSizedCache
+--- PASS: TestSizedCache (0.00s)
+=== RUN   TestSizedCacheEviction
+--- PASS: TestSizedCacheEviction (0.00s)
+=== RUN   TestSizedCacheWrongKeyEvictionRegression
+--- PASS: TestSizedCacheWrongKeyEvictionRegression (0.00s)
+=== RUN   TestSizedLRUSizeAlteringRegression
+--- PASS: TestSizedLRUSizeAlteringRegression (0.00s)
+PASS
+ok  	github.com/luxfi/node/cache/lru	0.008s
+?   	github.com/luxfi/node/cache/metercacher	[no test files]
+FAIL	github.com/luxfi/node/chains [build failed]
+=== RUN   TestSharedID
+--- PASS: TestSharedID (0.00s)
+=== RUN   TestMemoryMakeReleaseLock
+--- PASS: TestMemoryMakeReleaseLock (0.00s)
+=== RUN   TestMemoryUnknownFree
+--- PASS: TestMemoryUnknownFree (0.00s)
+PASS
+ok  	github.com/luxfi/node/chains/atomic	0.021s
+?   	github.com/luxfi/node/chains/atomic/atomicmock	[no test files]
+?   	github.com/luxfi/node/chains/atomic/atomictest	[no test files]
+?   	github.com/luxfi/node/chains/atomic/gsharedmemory	[no test files]
+=== RUN   TestHandlerManager_RegisterChainHandlers
+=== RUN   TestHandlerManager_RegisterChainHandlers/successful_registration_with_alias
+=== RUN   TestHandlerManager_RegisterChainHandlers/successful_registration_without_alias
+=== RUN   TestHandlerManager_RegisterChainHandlers/nil_handler_validation
+=== RUN   TestHandlerManager_RegisterChainHandlers/empty_endpoint_validation
+=== RUN   TestHandlerManager_RegisterChainHandlers/no_handlers_provided
+=== RUN   TestHandlerManager_RegisterChainHandlers/invalid_endpoint_format
+--- PASS: TestHandlerManager_RegisterChainHandlers (0.00s)
+    --- PASS: TestHandlerManager_RegisterChainHandlers/successful_registration_with_alias (0.00s)
+    --- PASS: TestHandlerManager_RegisterChainHandlers/successful_registration_without_alias (0.00s)
+    --- PASS: TestHandlerManager_RegisterChainHandlers/nil_handler_validation (0.00s)
+    --- PASS: TestHandlerManager_RegisterChainHandlers/empty_endpoint_validation (0.00s)
+    --- PASS: TestHandlerManager_RegisterChainHandlers/no_handlers_provided (0.00s)
+    --- PASS: TestHandlerManager_RegisterChainHandlers/invalid_endpoint_format (0.00s)
+=== RUN   TestHandlerManager_RetryLogic
+--- PASS: TestHandlerManager_RetryLogic (0.03s)
+=== RUN   TestHandlerManager_HealthCheck
+--- PASS: TestHandlerManager_HealthCheck (0.00s)
+=== RUN   TestHandlerManager_GetBasePaths
+--- PASS: TestHandlerManager_GetBasePaths (0.00s)
+=== RUN   TestHandlerManager_ContextCancellation
+--- PASS: TestHandlerManager_ContextCancellation (0.00s)
+PASS
+ok  	github.com/luxfi/node/chains/rpc	0.054s
+?   	github.com/luxfi/node/cmd/check_status	[no test files]
+?   	github.com/luxfi/node/cmd/check_vmid	[no test files]
+?   	github.com/luxfi/node/cmd/convert-db	[no test files]
+?   	github.com/luxfi/node/cmd/extract_genesis	[no test files]
+?   	github.com/luxfi/node/cmd/keygen	[no test files]
+?   	github.com/luxfi/node/cmd/migrate-db	[no test files]
+?   	github.com/luxfi/node/cmd/quick-check	[no test files]
+?   	github.com/luxfi/node/cmd/quick_check	[no test files]
+testing: warning: no tests to run
+PASS
+ok  	github.com/luxfi/node/codec	0.010s [no tests to run]
+?   	github.com/luxfi/node/codec/codecmock	[no test files]
+?   	github.com/luxfi/node/codec/codectest	[no test files]
+?   	github.com/luxfi/node/codec/hierarchycodec	[no test files]
+?   	github.com/luxfi/node/codec/linearcodec	[no test files]
+=== RUN   TestSizeWithNil
+--- PASS: TestSizeWithNil (0.00s)
+PASS
+ok  	github.com/luxfi/node/codec/reflectcodec	0.019s
+FAIL	github.com/luxfi/node/config [build failed]
+=== RUN   TestProcessContext
+=== RUN   TestProcessContext/ipv4_loopback
+=== RUN   TestProcessContext/ipv6_loopback
+--- PASS: TestProcessContext (0.00s)
+    --- PASS: TestProcessContext/ipv4_loopback (0.00s)
+    --- PASS: TestProcessContext/ipv6_loopback (0.00s)
+PASS
+ok  	github.com/luxfi/node/config/node	0.018s
+?   	github.com/luxfi/node/connectproto/pb/xsvm	[no test files]
+?   	github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect	[no test files]
+?   	github.com/luxfi/node/db/rpcdb	[no test files]
+FAIL	github.com/luxfi/node/debug [build failed]
+?   	github.com/luxfi/node/errors	[no test files]
+?   	github.com/luxfi/node/evm/common	[no test files]
+?   	github.com/luxfi/node/evm/common/math	[no test files]
+?   	github.com/luxfi/node/evm/core	[no test files]
+?   	github.com/luxfi/node/evm/ethclient	[no test files]
+=== RUN   Test_Dimensions_Add
+=== RUN   Test_Dimensions_Add/no_error_single_entry
+=== RUN   Test_Dimensions_Add/no_error_multiple_entries
+=== RUN   Test_Dimensions_Add/bandwidth_overflow
+=== RUN   Test_Dimensions_Add/db_read_overflow
+=== RUN   Test_Dimensions_Add/db_write_overflow
+=== RUN   Test_Dimensions_Add/compute_overflow
+--- PASS: Test_Dimensions_Add (0.00s)
+    --- PASS: Test_Dimensions_Add/no_error_single_entry (0.00s)
+    --- PASS: Test_Dimensions_Add/no_error_multiple_entries (0.00s)
+    --- PASS: Test_Dimensions_Add/bandwidth_overflow (0.00s)
+    --- PASS: Test_Dimensions_Add/db_read_overflow (0.00s)
+    --- PASS: Test_Dimensions_Add/db_write_overflow (0.00s)
+    --- PASS: Test_Dimensions_Add/compute_overflow (0.00s)
+=== RUN   Test_Dimensions_Sub
+=== RUN   Test_Dimensions_Sub/no_error_single_entry
+=== RUN   Test_Dimensions_Sub/no_error_multiple_entries
+=== RUN   Test_Dimensions_Sub/bandwidth_underflow
+=== RUN   Test_Dimensions_Sub/db_read_underflow
+=== RUN   Test_Dimensions_Sub/db_write_underflow
+=== RUN   Test_Dimensions_Sub/compute_underflow
+--- PASS: Test_Dimensions_Sub (0.00s)
+    --- PASS: Test_Dimensions_Sub/no_error_single_entry (0.00s)
+    --- PASS: Test_Dimensions_Sub/no_error_multiple_entries (0.00s)
+    --- PASS: Test_Dimensions_Sub/bandwidth_underflow (0.00s)
+    --- PASS: Test_Dimensions_Sub/db_read_underflow (0.00s)
+    --- PASS: Test_Dimensions_Sub/db_write_underflow (0.00s)
+    --- PASS: Test_Dimensions_Sub/compute_underflow (0.00s)
+=== RUN   Test_Dimensions_ToGas
+=== RUN   Test_Dimensions_ToGas/no_error
+=== RUN   Test_Dimensions_ToGas/multiplication_overflow
+=== RUN   Test_Dimensions_ToGas/addition_overflow
+--- PASS: Test_Dimensions_ToGas (0.00s)
+    --- PASS: Test_Dimensions_ToGas/no_error (0.00s)
+    --- PASS: Test_Dimensions_ToGas/multiplication_overflow (0.00s)
+    --- PASS: Test_Dimensions_ToGas/addition_overflow (0.00s)
+=== RUN   Test_Gas_Cost
+--- PASS: Test_Gas_Cost (0.00s)
+=== RUN   Test_Gas_AddPerSecond
+=== RUN   Test_Gas_AddPerSecond/5+1*2=7
+=== RUN   Test_Gas_AddPerSecond/5+18446744073709551615*2=18446744073709551615
+=== RUN   Test_Gas_AddPerSecond/18446744073709551615+1*2=18446744073709551615
+=== RUN   Test_Gas_AddPerSecond/18446744073709551615+18446744073709551615*18446744073709551615=18446744073709551615
+--- PASS: Test_Gas_AddPerSecond (0.00s)
+    --- PASS: Test_Gas_AddPerSecond/5+1*2=7 (0.00s)
+    --- PASS: Test_Gas_AddPerSecond/5+18446744073709551615*2=18446744073709551615 (0.00s)
+    --- PASS: Test_Gas_AddPerSecond/18446744073709551615+1*2=18446744073709551615 (0.00s)
+    --- PASS: Test_Gas_AddPerSecond/18446744073709551615+18446744073709551615*18446744073709551615=18446744073709551615 (0.00s)
+=== RUN   Test_Gas_SubPerSecond
+=== RUN   Test_Gas_SubPerSecond/5-1*2=3
+=== RUN   Test_Gas_SubPerSecond/5-18446744073709551615*2=0
+=== RUN   Test_Gas_SubPerSecond/1-1*2=0
+=== RUN   Test_Gas_SubPerSecond/18446744073709551615-18446744073709551615*18446744073709551615=0
+--- PASS: Test_Gas_SubPerSecond (0.00s)
+    --- PASS: Test_Gas_SubPerSecond/5-1*2=3 (0.00s)
+    --- PASS: Test_Gas_SubPerSecond/5-18446744073709551615*2=0 (0.00s)
+    --- PASS: Test_Gas_SubPerSecond/1-1*2=0 (0.00s)
+    --- PASS: Test_Gas_SubPerSecond/18446744073709551615-18446744073709551615*18446744073709551615=0 (0.00s)
+=== RUN   Test_CalculatePrice
+=== RUN   Test_CalculatePrice/1*e^(0/1)=1
+=== RUN   Test_CalculatePrice/1*e^(1/1)=2
+=== RUN   Test_CalculatePrice/1*e^(2/1)=6
+=== RUN   Test_CalculatePrice/1*e^(10000/10000)=2
+=== RUN   Test_CalculatePrice/1*e^(1000000/10000)=18446744073709551615
+=== RUN   Test_CalculatePrice/10*e^(10000000/1000000)=220264
+=== RUN   Test_CalculatePrice/18446744073709551615*e^(18446744073709551615/1)=18446744073709551615
+=== RUN   Test_CalculatePrice/4294967295*e^(1/1)=11674931546
+=== RUN   Test_CalculatePrice/6786177901268885274*e^(1/1)=18446744073709551604
+=== RUN   Test_CalculatePrice/6786177901268885274*e^(18446744073709551615/18446744073709551615)=18446744073709551614
+--- PASS: Test_CalculatePrice (0.00s)
+    --- PASS: Test_CalculatePrice/1*e^(0/1)=1 (0.00s)
+    --- PASS: Test_CalculatePrice/1*e^(1/1)=2 (0.00s)
+    --- PASS: Test_CalculatePrice/1*e^(2/1)=6 (0.00s)
+    --- PASS: Test_CalculatePrice/1*e^(10000/10000)=2 (0.00s)
+    --- PASS: Test_CalculatePrice/1*e^(1000000/10000)=18446744073709551615 (0.00s)
+    --- PASS: Test_CalculatePrice/10*e^(10000000/1000000)=220264 (0.00s)
+    --- PASS: Test_CalculatePrice/18446744073709551615*e^(18446744073709551615/1)=18446744073709551615 (0.00s)
+    --- PASS: Test_CalculatePrice/4294967295*e^(1/1)=11674931546 (0.00s)
+    --- PASS: Test_CalculatePrice/6786177901268885274*e^(1/1)=18446744073709551604 (0.00s)
+    --- PASS: Test_CalculatePrice/6786177901268885274*e^(18446744073709551615/18446744073709551615)=18446744073709551614 (0.00s)
+=== RUN   Test_State_AdvanceTime
+=== RUN   Test_State_AdvanceTime/cap_capacity
+=== RUN   Test_State_AdvanceTime/increase_capacity
+=== RUN   Test_State_AdvanceTime/avoid_excess_underflow
+=== RUN   Test_State_AdvanceTime/reduce_excess
+--- PASS: Test_State_AdvanceTime (0.00s)
+    --- PASS: Test_State_AdvanceTime/cap_capacity (0.00s)
+    --- PASS: Test_State_AdvanceTime/increase_capacity (0.00s)
+    --- PASS: Test_State_AdvanceTime/avoid_excess_underflow (0.00s)
+    --- PASS: Test_State_AdvanceTime/reduce_excess (0.00s)
+=== RUN   Test_State_ConsumeGas
+=== RUN   Test_State_ConsumeGas/consume_some_gas
+=== RUN   Test_State_ConsumeGas/consume_all_gas
+=== RUN   Test_State_ConsumeGas/consume_too_much_gas
+=== RUN   Test_State_ConsumeGas/maximum_excess
+--- PASS: Test_State_ConsumeGas (0.00s)
+    --- PASS: Test_State_ConsumeGas/consume_some_gas (0.00s)
+    --- PASS: Test_State_ConsumeGas/consume_all_gas (0.00s)
+    --- PASS: Test_State_ConsumeGas/consume_too_much_gas (0.00s)
+    --- PASS: Test_State_ConsumeGas/maximum_excess (0.00s)
+PASS
+ok  	github.com/luxfi/node/gas	0.018s
+=== RUN   TestSampleBootstrappers
+    bootstrappers_test.go:20: testnet bootstrappers: [{ID:NodeID-4CWTbdvgXHY1CLXqQNAp22nJDo5nAmts6 IP:13.55.124.229:9631} {ID:NodeID-CZmZ9xpCzkWqjAyS7L4htzh5Lg6kf1k18 IP:34.248.69.195:9631} {ID:NodeID-BFa1padLXBj7VHa2JYvYGzcTBPQGjPhUy IP:16.163.75.62:9631} {ID:NodeID-4KXitMCoE9p2BHA6VzXtaTxLoEjNDo2Pt IP:54.207.25.7:9631} {ID:NodeID-CYKruAjwH1BmV3m37sXNuprbr7dGQuJwG IP:18.167.242.179:9631} {ID:NodeID-JjvzhxnLHLUQ5HjVRkvG827ivbLXPwA9u IP:3.76.143.200:9631} {ID:NodeID-FesGqwKq7z5nPFHa5iwZctHE5EZV9Lpdq IP:54.66.120.144:9631} {ID:NodeID-LegbVf6qaMKcsXPnLStkdc1JVktmmiDxy IP:16.163.84.252:9631} {ID:NodeID-NpagUxt6KQiwPch9Sd4osv8kD1TZnkjdk IP:3.97.255.92:9631} {ID:NodeID-3VWnZNViBP2b56QBY7pNJSLzN2rkTyqnK IP:15.184.142.50:9631}]
+    bootstrappers_test.go:20: local bootstrappers: []
+    bootstrappers_test.go:20: mainnet bootstrappers: [{ID:NodeID-Drv1Qh7iJvW3zGBBeRnYfCzk56VCRM2GQ IP:13.245.185.253:9631} {ID:NodeID-DAtCoXfLT6Y83dgJ7FmQg8eR53hz37J79 IP:13.246.169.11:9631} {ID:NodeID-6SwnPJLH8cWfrJ162JjZekbmzaFpjPcf IP:13.124.187.98:9631} {ID:NodeID-A8jypu63CWp76STwKdqP6e9hjL675kdiG IP:3.24.26.175:9631} {ID:NodeID-FYv1Lb29SqMpywYXH7yNkcFAzRF2jvm3K IP:13.36.28.133:9631} {ID:NodeID-9CkG9MBNavnw7EVSRsuFr7ws9gascDQy3 IP:18.216.88.69:9631} {ID:NodeID-kZNuQMHhydefgnwjYX1fhHMpRNAs9my1 IP:3.74.3.14:9631} {ID:NodeID-HCw7S2TVbFPDWNBo1GnFWqJ47f9rDJtt1 IP:13.39.184.151:9631} {ID:NodeID-GSgaA47umS1px2ohVjodW9621Ks63xDxD IP:54.232.142.167:9631} {ID:NodeID-HsBEx3L71EHWSXaE6gvk2VsNntFEZsxqc IP:52.64.55.185:9631}]
+    bootstrappers_test.go:20: testnet bootstrappers: [{ID:NodeID-4B4rc5vdD1758JSBYL1xyvE5NHGzz6xzH IP:176.34.80.199:9631} {ID:NodeID-BFa1padLXBj7VHa2JYvYGzcTBPQGjPhUy IP:16.163.75.62:9631} {ID:NodeID-LegbVf6qaMKcsXPnLStkdc1JVktmmiDxy IP:16.163.84.252:9631} {ID:NodeID-3VWnZNViBP2b56QBY7pNJSLzN2rkTyqnK IP:15.184.142.50:9631} {ID:NodeID-CZmZ9xpCzkWqjAyS7L4htzh5Lg6kf1k18 IP:34.248.69.195:9631} {ID:NodeID-hArafGhY2HFTbwaaVh1CSCUCUCiJ2Vfb IP:52.67.156.131:9631} {ID:NodeID-2m38qc95mhHXtrhjyGbe7r2NhniqHHJRB IP:18.192.93.241:9631} {ID:NodeID-NpagUxt6KQiwPch9Sd4osv8kD1TZnkjdk IP:3.97.255.92:9631} {ID:NodeID-HGZ8ae74J3odT8ESreAdCtdnvWG1J4X5n IP:13.237.111.196:9631} {ID:NodeID-CYKruAjwH1BmV3m37sXNuprbr7dGQuJwG IP:18.167.242.179:9631}]
+    bootstrappers_test.go:20: testing bootstrappers: []
+    bootstrappers_test.go:20: mainnet bootstrappers: [{ID:NodeID-HCw7S2TVbFPDWNBo1GnFWqJ47f9rDJtt1 IP:13.39.184.151:9631} {ID:NodeID-BQEo5Fy1FRKLbX51ejqDd14cuSXJKArH2 IP:3.39.67.183:9631} {ID:NodeID-9CkG9MBNavnw7EVSRsuFr7ws9gascDQy3 IP:18.216.88.69:9631} {ID:NodeID-A7GwTSd47AcDVqpTVj7YtxtjHREM33EJw IP:3.135.107.20:9631} {ID:NodeID-Hr78Fy8uDYiRYocRYHXp4eLCYeb8x5UuM IP:3.77.28.168:9631} {ID:NodeID-HiFv1DpKXkAAfJ1NHWVqQoojjznibZXHP IP:13.233.176.118:9631} {ID:NodeID-HsBEx3L71EHWSXaE6gvk2VsNntFEZsxqc IP:52.64.55.185:9631} {ID:NodeID-QKGoUvqcgormCoMj6yPw9isY7DX9H4mdd IP:18.163.169.191:9631} {ID:NodeID-FYv1Lb29SqMpywYXH7yNkcFAzRF2jvm3K IP:13.36.28.133:9631} {ID:NodeID-DAtCoXfLT6Y83dgJ7FmQg8eR53hz37J79 IP:13.246.169.11:9631}]
+--- PASS: TestSampleBootstrappers (0.00s)
+=== RUN   TestAllocationCompare
+=== RUN   TestAllocationCompare/equal
+=== RUN   TestAllocationCompare/initial_amount_smaller
+=== RUN   TestAllocationCompare/bytes_smaller
+--- PASS: TestAllocationCompare (0.00s)
+    --- PASS: TestAllocationCompare/equal (0.00s)
+    --- PASS: TestAllocationCompare/initial_amount_smaller (0.00s)
+    --- PASS: TestAllocationCompare/bytes_smaller (0.00s)
+=== RUN   TestValidateConfig
+=== RUN   TestValidateConfig/testnet
+=== RUN   TestValidateConfig/invalid_stake_offset
+    genesis_test.go:175: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:175
+        	Error:      	Target error should be in err chain:
+        	            	expected: "initial stake duration is too low"
+        	            	in chain: "conflicting networkIDs: expected 12345 but config contains 1337"
+        	            		"conflicting networkIDs"
+        	Test:       	TestValidateConfig/invalid_stake_offset
+=== RUN   TestValidateConfig/initial_staked_funds_not_in_allocations
+    genesis_test.go:175: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:175
+        	Error:      	Target error should be in err chain:
+        	            	expected: "no allocation to stake"
+        	            	in chain: "conflicting networkIDs: expected 12345 but config contains 1337"
+        	            		"conflicting networkIDs"
+        	Test:       	TestValidateConfig/initial_staked_funds_not_in_allocations
+=== RUN   TestValidateConfig/empty_C-Chain_genesis
+    genesis_test.go:175: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:175
+        	Error:      	Target error should be in err chain:
+        	            	expected: "C-Chain genesis cannot be empty"
+        	            	in chain: "conflicting networkIDs: expected 12345 but config contains 1337"
+        	            		"conflicting networkIDs"
+        	Test:       	TestValidateConfig/empty_C-Chain_genesis
+=== RUN   TestValidateConfig/empty_message
+    genesis_test.go:175: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:175
+        	Error:      	Target error should be in err chain:
+        	            	expected: ""
+        	            	in chain: "conflicting networkIDs: expected 12345 but config contains 1337"
+        	            		"conflicting networkIDs"
+        	Test:       	TestValidateConfig/empty_message
+=== RUN   TestValidateConfig/local
+    genesis_test.go:175: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:175
+        	Error:      	Target error should be in err chain:
+        	            	expected: ""
+        	            	in chain: "conflicting networkIDs: expected 12345 but config contains 1337"
+        	            		"conflicting networkIDs"
+        	Test:       	TestValidateConfig/local
+=== RUN   TestValidateConfig/invalid_start_time
+    genesis_test.go:175: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:175
+        	Error:      	Target error should be in err chain:
+        	            	expected: "startTime cannot be in the future"
+        	            	in chain: "conflicting networkIDs: expected 12345 but config contains 1337"
+        	            		"conflicting networkIDs"
+        	Test:       	TestValidateConfig/invalid_start_time
+=== RUN   TestValidateConfig/no_initial_stakers
+    genesis_test.go:175: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:175
+        	Error:      	Target error should be in err chain:
+        	            	expected: "initial stakers must be > 0"
+        	            	in chain: "conflicting networkIDs: expected 12345 but config contains 1337"
+        	            		"conflicting networkIDs"
+        	Test:       	TestValidateConfig/no_initial_stakers
+=== RUN   TestValidateConfig/mainnet_(networkID_mismatch)
+=== RUN   TestValidateConfig/too_large_initial_stake_duration
+    genesis_test.go:175: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:175
+        	Error:      	Target error should be in err chain:
+        	            	expected: "initial stake duration larger than maximum configured"
+        	            	in chain: "conflicting networkIDs: expected 12345 but config contains 1337"
+        	            		"conflicting networkIDs"
+        	Test:       	TestValidateConfig/too_large_initial_stake_duration
+=== RUN   TestValidateConfig/mainnet
+=== RUN   TestValidateConfig/no_initial_supply
+    genesis_test.go:175: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:175
+        	Error:      	Target error should be in err chain:
+        	            	expected: "initial supply must be > 0"
+        	            	in chain: "conflicting networkIDs: expected 12345 but config contains 1337"
+        	            		"conflicting networkIDs"
+        	Test:       	TestValidateConfig/no_initial_supply
+=== RUN   TestValidateConfig/invalid_initial_stake_duration
+    genesis_test.go:175: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:175
+        	Error:      	Target error should be in err chain:
+        	            	expected: "initial stake duration must be > 0"
+        	            	in chain: "conflicting networkIDs: expected 12345 but config contains 1337"
+        	            		"conflicting networkIDs"
+        	Test:       	TestValidateConfig/invalid_initial_stake_duration
+=== RUN   TestValidateConfig/empty_initial_staked_funds
+    genesis_test.go:175: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:175
+        	Error:      	Target error should be in err chain:
+        	            	expected: "initial staked funds cannot be empty"
+        	            	in chain: "conflicting networkIDs: expected 12345 but config contains 1337"
+        	            		"conflicting networkIDs"
+        	Test:       	TestValidateConfig/empty_initial_staked_funds
+=== RUN   TestValidateConfig/duplicate_initial_staked_funds
+    genesis_test.go:175: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:175
+        	Error:      	Target error should be in err chain:
+        	            	expected: "duplicate initially staked address"
+        	            	in chain: "conflicting networkIDs: expected 12345 but config contains 1337"
+        	            		"conflicting networkIDs"
+        	Test:       	TestValidateConfig/duplicate_initial_staked_funds
+--- FAIL: TestValidateConfig (0.00s)
+    --- PASS: TestValidateConfig/testnet (0.00s)
+    --- FAIL: TestValidateConfig/invalid_stake_offset (0.00s)
+    --- FAIL: TestValidateConfig/initial_staked_funds_not_in_allocations (0.00s)
+    --- FAIL: TestValidateConfig/empty_C-Chain_genesis (0.00s)
+    --- FAIL: TestValidateConfig/empty_message (0.00s)
+    --- FAIL: TestValidateConfig/local (0.00s)
+    --- FAIL: TestValidateConfig/invalid_start_time (0.00s)
+    --- FAIL: TestValidateConfig/no_initial_stakers (0.00s)
+    --- PASS: TestValidateConfig/mainnet_(networkID_mismatch) (0.00s)
+    --- FAIL: TestValidateConfig/too_large_initial_stake_duration (0.00s)
+    --- PASS: TestValidateConfig/mainnet (0.00s)
+    --- FAIL: TestValidateConfig/no_initial_supply (0.00s)
+    --- FAIL: TestValidateConfig/invalid_initial_stake_duration (0.00s)
+    --- FAIL: TestValidateConfig/empty_initial_staked_funds (0.00s)
+    --- FAIL: TestValidateConfig/duplicate_initial_staked_funds (0.00s)
+=== RUN   TestGenesisFromFile
+=== RUN   TestGenesisFromFile/custom_(invalid_format)
+=== RUN   TestGenesisFromFile/custom_(missing_filepath)
+=== RUN   TestGenesisFromFile/local
+=== RUN   TestGenesisFromFile/custom
+=== RUN   TestGenesisFromFile/mainnet
+=== RUN   TestGenesisFromFile/testnet
+=== RUN   TestGenesisFromFile/testnet_(with_custom_specified)
+=== RUN   TestGenesisFromFile/local_(with_custom_specified)
+=== RUN   TestGenesisFromFile/custom_(networkID_mismatch)
+--- PASS: TestGenesisFromFile (0.11s)
+    --- PASS: TestGenesisFromFile/custom_(invalid_format) (0.07s)
+    --- PASS: TestGenesisFromFile/custom_(missing_filepath) (0.00s)
+    --- PASS: TestGenesisFromFile/local (0.01s)
+    --- PASS: TestGenesisFromFile/custom (0.01s)
+    --- PASS: TestGenesisFromFile/mainnet (0.00s)
+    --- PASS: TestGenesisFromFile/testnet (0.00s)
+    --- PASS: TestGenesisFromFile/testnet_(with_custom_specified) (0.00s)
+    --- PASS: TestGenesisFromFile/local_(with_custom_specified) (0.00s)
+    --- PASS: TestGenesisFromFile/custom_(networkID_mismatch) (0.00s)
+=== RUN   TestGenesisFromFlag
+=== RUN   TestGenesisFromFlag/custom_(missing_content)
+=== RUN   TestGenesisFromFlag/mainnet
+=== RUN   TestGenesisFromFlag/testnet
+=== RUN   TestGenesisFromFlag/local
+=== RUN   TestGenesisFromFlag/local_(with_custom_specified)
+=== RUN   TestGenesisFromFlag/custom
+=== RUN   TestGenesisFromFlag/custom_(networkID_mismatch)
+=== RUN   TestGenesisFromFlag/custom_(invalid_format)
+--- PASS: TestGenesisFromFlag (0.00s)
+    --- PASS: TestGenesisFromFlag/custom_(missing_content) (0.00s)
+    --- PASS: TestGenesisFromFlag/mainnet (0.00s)
+    --- PASS: TestGenesisFromFlag/testnet (0.00s)
+    --- PASS: TestGenesisFromFlag/local (0.00s)
+    --- PASS: TestGenesisFromFlag/local_(with_custom_specified) (0.00s)
+    --- PASS: TestGenesisFromFlag/custom (0.00s)
+    --- PASS: TestGenesisFromFlag/custom_(networkID_mismatch) (0.00s)
+    --- PASS: TestGenesisFromFlag/custom_(invalid_format) (0.00s)
+=== RUN   TestGenesis
+=== RUN   TestGenesis/mainnet
+=== RUN   TestGenesis/testnet
+=== RUN   TestGenesis/local
+    genesis_test.go:377: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:377
+        	Error:      	Not equal: 
+        	            	expected: "2ASgccyNavJxfhGkfb5d3Xt6QyKJmU6YabQnK1dd4Noei1XqBH"
+        	            	actual  : "swCVuXUHtc8V5C46b23JEm6KpaSnK6BWP9pS4KUL7XEQNQQa"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-2ASgccyNavJxfhGkfb5d3Xt6QyKJmU6YabQnK1dd4Noei1XqBH
+        	            	+swCVuXUHtc8V5C46b23JEm6KpaSnK6BWP9pS4KUL7XEQNQQa
+        	Test:       	TestGenesis/local
+--- FAIL: TestGenesis (0.00s)
+    --- PASS: TestGenesis/mainnet (0.00s)
+    --- PASS: TestGenesis/testnet (0.00s)
+    --- FAIL: TestGenesis/local (0.00s)
+=== RUN   TestVMGenesis
+=== RUN   TestVMGenesis/mainnet-jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
+=== RUN   TestVMGenesis/mainnet-mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+=== RUN   TestVMGenesis/testnet-jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
+=== RUN   TestVMGenesis/testnet-mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+=== RUN   TestVMGenesis/local-jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
+    genesis_test.go:448: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:448
+        	Error:      	Not equal: 
+        	            	expected: "dnETgw1RTLQwSLbuhQEnjisfsvEz84CLgwGTYByyvAjjgLY4B"
+        	            	actual  : "2FytBCb9nSYAz36dCsFXnur2frWDjhYfKUAzkLbSppqwppWpco"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-dnETgw1RTLQwSLbuhQEnjisfsvEz84CLgwGTYByyvAjjgLY4B
+        	            	+2FytBCb9nSYAz36dCsFXnur2frWDjhYfKUAzkLbSppqwppWpco
+        	Test:       	TestVMGenesis/local-jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
+        	Messages:   	jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq genesisID with networkID 31337 mismatch
+=== RUN   TestVMGenesis/local-mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+    genesis_test.go:448: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:448
+        	Error:      	Not equal: 
+        	            	expected: "2WokyoVujr7NqByCPvaaSNRqqnKSJM7jahC58RhRyaktPjNPqz"
+        	            	actual  : "aT3BptYRtzztY3BMXL1WEkNMyN9Nw6JxTMfBWEsgViA4bYWh6"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-2WokyoVujr7NqByCPvaaSNRqqnKSJM7jahC58RhRyaktPjNPqz
+        	            	+aT3BptYRtzztY3BMXL1WEkNMyN9Nw6JxTMfBWEsgViA4bYWh6
+        	Test:       	TestVMGenesis/local-mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+        	Messages:   	mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6 genesisID with networkID 31337 mismatch
+--- FAIL: TestVMGenesis (0.00s)
+    --- PASS: TestVMGenesis/mainnet-jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq (0.00s)
+    --- PASS: TestVMGenesis/mainnet-mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6 (0.00s)
+    --- PASS: TestVMGenesis/testnet-jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq (0.00s)
+    --- PASS: TestVMGenesis/testnet-mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6 (0.00s)
+    --- FAIL: TestVMGenesis/local-jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq (0.00s)
+    --- FAIL: TestVMGenesis/local-mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6 (0.00s)
+=== RUN   TestXAssetID
+=== RUN   TestXAssetID/mainnet
+=== RUN   TestXAssetID/testnet
+=== RUN   TestXAssetID/local
+    genesis_test.go:487: 
+        	Error Trace:	/home/z/work/lux/node/genesis/genesis_test.go:487
+        	Error:      	Not equal: 
+        	            	expected: "2QLSdF6mNa6tbRLodYBqQcZY3evjw3etbBswv3ciTbxiebXa7q"
+        	            	actual  : "2Gufh3bny5mPu3Xe2omAePPi4bLan28wjV8c4Sh99LYozQd45T"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-2QLSdF6mNa6tbRLodYBqQcZY3evjw3etbBswv3ciTbxiebXa7q
+        	            	+2Gufh3bny5mPu3Xe2omAePPi4bLan28wjV8c4Sh99LYozQd45T
+        	Test:       	TestXAssetID/local
+        	Messages:   	LUX assetID with networkID 31337 mismatch
+--- FAIL: TestXAssetID (0.00s)
+    --- PASS: TestXAssetID/mainnet (0.00s)
+    --- PASS: TestXAssetID/testnet (0.00s)
+    --- FAIL: TestXAssetID/local (0.00s)
+FAIL
+FAIL	github.com/luxfi/node/genesis	0.150s
+FAIL	github.com/luxfi/node/genesis/generate/checkpoints [build failed]
+FAIL	github.com/luxfi/node/genesis/generate/validators [build failed]
+FAIL	github.com/luxfi/node/indexer [build failed]
+FAIL	github.com/luxfi/node/indexer/examples/p-chain [build failed]
+FAIL	github.com/luxfi/node/indexer/examples/x-chain-blocks [build failed]
+?   	github.com/luxfi/node/internal/database	[no test files]
+?   	github.com/luxfi/node/internal/database/migration	[no test files]
+FAIL	github.com/luxfi/node/internal/database/rpcdb [build failed]
+=== RUN   TestInterface
+=== RUN   TestInterface/Lookup_Error}
+=== RUN   TestInterface/Lookup}
+=== RUN   TestInterface/Aliases_Empty}
+=== RUN   TestInterface/Aliases}
+=== RUN   TestInterface/Primary_Alias}
+=== RUN   TestInterface/Alias_Clash}
+=== RUN   TestInterface/Remove_Alias}
+--- PASS: TestInterface (0.02s)
+    --- PASS: TestInterface/Lookup_Error} (0.00s)
+    --- PASS: TestInterface/Lookup} (0.00s)
+    --- PASS: TestInterface/Aliases_Empty} (0.00s)
+    --- PASS: TestInterface/Aliases} (0.00s)
+    --- PASS: TestInterface/Primary_Alias} (0.00s)
+    --- PASS: TestInterface/Alias_Clash} (0.00s)
+    --- PASS: TestInterface/Remove_Alias} (0.00s)
+PASS
+ok  	github.com/luxfi/node/internal/ids/galiasreader	0.031s
+# github.com/luxfi/node/consensus/networking/handler
+consensus/networking/handler/handler.go:734:101: msg.AcceptedHeight undefined (type *"github.com/luxfi/node/proto/pb/p2p".Chits has no field or method AcceptedHeight)
+consensus/networking/handler/handler.go:739:14: undefined: p2ppb.Simplex
+consensus/networking/handler/handler.go:752:34: cannot use msg.NodeVersion (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to h.p2pTracker.Connected
+FAIL	github.com/luxfi/node/main [build failed]
+# github.com/luxfi/node/consensus/engine/common/appsender
+consensus/engine/common/appsender/appsender_server.go:18:37: cannot use (*Server)(nil) (value of type *Server) as "github.com/luxfi/node/proto/pb/appsender".AppSenderServer value in variable declaration: *Server does not implement "github.com/luxfi/node/proto/pb/appsender".AppSenderServer (missing method SendCrossChainAppError)
+=== RUN   Test_newMsgBuilder
+=== PAUSE Test_newMsgBuilder
+=== RUN   TestInboundMsgBuilder
+=== RUN   TestInboundMsgBuilder/InboundGetStateSummaryFrontier
+=== RUN   TestInboundMsgBuilder/InboundStateSummaryFrontier
+=== RUN   TestInboundMsgBuilder/InboundGetAcceptedStateSummary
+=== RUN   TestInboundMsgBuilder/InboundAcceptedStateSummary
+=== RUN   TestInboundMsgBuilder/InboundGetAcceptedFrontier
+=== RUN   TestInboundMsgBuilder/InboundAcceptedFrontier
+=== RUN   TestInboundMsgBuilder/InboundGetAccepted
+=== RUN   TestInboundMsgBuilder/InboundAccepted
+=== RUN   TestInboundMsgBuilder/InboundPushQuery
+=== RUN   TestInboundMsgBuilder/InboundPullQuery
+=== RUN   TestInboundMsgBuilder/InboundChits
+=== RUN   TestInboundMsgBuilder/InboundAppRequest
+=== RUN   TestInboundMsgBuilder/InboundAppResponse
+--- PASS: TestInboundMsgBuilder (0.00s)
+    --- PASS: TestInboundMsgBuilder/InboundGetStateSummaryFrontier (0.00s)
+    --- PASS: TestInboundMsgBuilder/InboundStateSummaryFrontier (0.00s)
+    --- PASS: TestInboundMsgBuilder/InboundGetAcceptedStateSummary (0.00s)
+    --- PASS: TestInboundMsgBuilder/InboundAcceptedStateSummary (0.00s)
+    --- PASS: TestInboundMsgBuilder/InboundGetAcceptedFrontier (0.00s)
+    --- PASS: TestInboundMsgBuilder/InboundAcceptedFrontier (0.00s)
+    --- PASS: TestInboundMsgBuilder/InboundGetAccepted (0.00s)
+    --- PASS: TestInboundMsgBuilder/InboundAccepted (0.00s)
+    --- PASS: TestInboundMsgBuilder/InboundPushQuery (0.00s)
+    --- PASS: TestInboundMsgBuilder/InboundPullQuery (0.00s)
+    --- PASS: TestInboundMsgBuilder/InboundChits (0.00s)
+    --- PASS: TestInboundMsgBuilder/InboundAppRequest (0.00s)
+    --- PASS: TestInboundMsgBuilder/InboundAppResponse (0.00s)
+=== RUN   TestAppError
+--- PASS: TestAppError (0.00s)
+=== RUN   TestMessage
+=== PAUSE TestMessage
+=== RUN   TestInboundMessageToString
+=== PAUSE TestInboundMessageToString
+=== RUN   TestEmptyInboundMessage
+=== PAUSE TestEmptyInboundMessage
+=== RUN   TestNilInboundMessage
+=== PAUSE TestNilInboundMessage
+=== RUN   Test_newOutboundBuilder
+=== PAUSE Test_newOutboundBuilder
+=== CONT  Test_newMsgBuilder
+--- PASS: Test_newMsgBuilder (0.00s)
+=== CONT  TestMessage
+=== CONT  TestInboundMessageToString
+=== CONT  TestEmptyInboundMessage
+--- PASS: TestEmptyInboundMessage (0.00s)
+=== CONT  Test_newOutboundBuilder
+=== RUN   Test_newOutboundBuilder/none
+--- PASS: TestInboundMessageToString (0.00s)
+=== CONT  TestNilInboundMessage
+--- PASS: TestNilInboundMessage (0.00s)
+=== NAME  Test_newOutboundBuilder/none
+    outbound_msg_builder_test.go:41: outbound message with compression type none built message with size 53
+=== RUN   Test_newOutboundBuilder/zstd
+=== RUN   TestMessage/ping_message_with_no_compression_no_net_uptimes
+=== RUN   TestMessage/pong_message_with_no_compression
+=== RUN   TestMessage/ping_message_with_no_compression_and_net_uptimes
+=== RUN   TestMessage/Handshake_message_with_no_compression
+=== RUN   TestMessage/get_peer_list_message_with_no_compression
+=== RUN   TestMessage/get_peer_list_message_with_zstd_compression
+=== NAME  Test_newOutboundBuilder/zstd
+    outbound_msg_builder_test.go:41: outbound message with compression type zstd built message with size 68
+--- PASS: Test_newOutboundBuilder (0.02s)
+    --- PASS: Test_newOutboundBuilder/none (0.00s)
+    --- PASS: Test_newOutboundBuilder/zstd (0.02s)
+=== RUN   TestMessage/peer_list_message_with_no_compression
+=== RUN   TestMessage/peer_list_message_with_zstd_compression
+=== RUN   TestMessage/get_state_summary_frontier_message_with_no_compression
+=== RUN   TestMessage/state_summary_frontier_message_with_no_compression
+=== RUN   TestMessage/state_summary_frontier_message_with_zstd_compression
+=== RUN   TestMessage/get_accepted_state_summary_message_with_no_compression
+=== RUN   TestMessage/get_accepted_state_summary_message_with_zstd_compression
+=== RUN   TestMessage/accepted_state_summary_message_with_no_compression
+=== RUN   TestMessage/accepted_state_summary_message_with_zstd_compression
+=== RUN   TestMessage/get_accepted_frontier_message_with_no_compression
+=== RUN   TestMessage/accepted_frontier_message_with_no_compression
+=== RUN   TestMessage/get_accepted_message_with_no_compression
+=== RUN   TestMessage/accepted_message_with_no_compression
+=== RUN   TestMessage/get_ancestors_message_with_no_compression
+=== RUN   TestMessage/ancestors_message_with_no_compression
+=== RUN   TestMessage/ancestors_message_with_zstd_compression
+=== RUN   TestMessage/get_message_with_no_compression
+=== RUN   TestMessage/put_message_with_no_compression
+=== RUN   TestMessage/put_message_with_zstd_compression
+=== RUN   TestMessage/push_query_message_with_no_compression
+=== RUN   TestMessage/push_query_message_with_zstd_compression
+=== RUN   TestMessage/pull_query_message_with_no_compression
+=== RUN   TestMessage/chits_message_with_no_compression
+=== RUN   TestMessage/app_request_message_with_no_compression
+=== RUN   TestMessage/app_request_message_with_zstd_compression
+=== RUN   TestMessage/app_response_message_with_no_compression
+=== RUN   TestMessage/app_response_message_with_zstd_compression
+=== RUN   TestMessage/app_gossip_message_with_no_compression
+=== RUN   TestMessage/app_gossip_message_with_zstd_compression
+--- PASS: TestMessage (0.03s)
+    --- PASS: TestMessage/ping_message_with_no_compression_no_net_uptimes (0.00s)
+    --- PASS: TestMessage/pong_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/ping_message_with_no_compression_and_net_uptimes (0.00s)
+    --- PASS: TestMessage/Handshake_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/get_peer_list_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/get_peer_list_message_with_zstd_compression (0.01s)
+    --- PASS: TestMessage/peer_list_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/peer_list_message_with_zstd_compression (0.00s)
+    --- PASS: TestMessage/get_state_summary_frontier_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/state_summary_frontier_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/state_summary_frontier_message_with_zstd_compression (0.00s)
+    --- PASS: TestMessage/get_accepted_state_summary_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/get_accepted_state_summary_message_with_zstd_compression (0.00s)
+    --- PASS: TestMessage/accepted_state_summary_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/accepted_state_summary_message_with_zstd_compression (0.00s)
+    --- PASS: TestMessage/get_accepted_frontier_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/accepted_frontier_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/get_accepted_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/accepted_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/get_ancestors_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/ancestors_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/ancestors_message_with_zstd_compression (0.00s)
+    --- PASS: TestMessage/get_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/put_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/put_message_with_zstd_compression (0.00s)
+    --- PASS: TestMessage/push_query_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/push_query_message_with_zstd_compression (0.00s)
+    --- PASS: TestMessage/pull_query_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/chits_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/app_request_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/app_request_message_with_zstd_compression (0.00s)
+    --- PASS: TestMessage/app_response_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/app_response_message_with_zstd_compression (0.00s)
+    --- PASS: TestMessage/app_gossip_message_with_no_compression (0.00s)
+    --- PASS: TestMessage/app_gossip_message_with_zstd_compression (0.00s)
+PASS
+ok  	github.com/luxfi/node/message	0.048s
+?   	github.com/luxfi/node/message/messagemock	[no test files]
+?   	github.com/luxfi/node/nat	[no test files]
+=== RUN   TestValid
+=== RUN   TestValid/invalid_consensus_parameters
+=== RUN   TestValid/invalid_allowed_node_IDs
+=== RUN   TestValid/valid
+--- PASS: TestValid (0.00s)
+    --- PASS: TestValid/invalid_consensus_parameters (0.00s)
+    --- PASS: TestValid/invalid_allowed_node_IDs (0.00s)
+    --- PASS: TestValid/valid (0.00s)
+=== RUN   TestSubnet
+--- PASS: TestSubnet (0.00s)
+=== RUN   TestIsAllowed
+--- PASS: TestIsAllowed (0.00s)
+PASS
+ok  	github.com/luxfi/node/nets	0.012s
+FAIL	github.com/luxfi/node/network [build failed]
+=== RUN   TestDialerCancelDial
+--- PASS: TestDialerCancelDial (0.00s)
+PASS
+ok  	github.com/luxfi/node/network/dialer	0.013s
+=== RUN   TestValidatorHandlerAppGossip
+=== RUN   TestValidatorHandlerAppGossip/message_dropped
+=== RUN   TestValidatorHandlerAppGossip/message_handled
+--- PASS: TestValidatorHandlerAppGossip (0.00s)
+    --- PASS: TestValidatorHandlerAppGossip/message_dropped (0.00s)
+    --- PASS: TestValidatorHandlerAppGossip/message_handled (0.00s)
+=== RUN   TestValidatorHandlerAppRequest
+=== RUN   TestValidatorHandlerAppRequest/message_dropped
+=== RUN   TestValidatorHandlerAppRequest/message_handled
+--- PASS: TestValidatorHandlerAppRequest (0.00s)
+    --- PASS: TestValidatorHandlerAppRequest/message_dropped (0.00s)
+    --- PASS: TestValidatorHandlerAppRequest/message_handled (0.00s)
+=== RUN   TestMessageRouting
+    network_test.go:163: Sent AppGossip bytes: 016d657373616765
+    network_test.go:173: Sent AppRequest bytes: 016d657373616765
+    network_test.go:183: Sent CrossChainAppRequest bytes: 016d657373616765
+--- PASS: TestMessageRouting (0.00s)
+=== RUN   TestClientPrefixesMessages
+--- PASS: TestClientPrefixesMessages (0.00s)
+=== RUN   TestAppRequestResponse
+--- PASS: TestAppRequestResponse (0.00s)
+=== RUN   TestAppRequestCancelledContext
+--- PASS: TestAppRequestCancelledContext (0.00s)
+=== RUN   TestAppRequestFailed
+--- PASS: TestAppRequestFailed (0.00s)
+=== RUN   TestCrossChainAppRequestResponse
+--- PASS: TestCrossChainAppRequestResponse (0.00s)
+=== RUN   TestCrossChainAppRequestCancelledContext
+--- PASS: TestCrossChainAppRequestCancelledContext (0.00s)
+=== RUN   TestCrossChainAppRequestFailed
+--- PASS: TestCrossChainAppRequestFailed (0.00s)
+=== RUN   TestAppGossipMessageForUnregisteredHandler
+=== RUN   TestAppGossipMessageForUnregisteredHandler/nil
+=== RUN   TestAppGossipMessageForUnregisteredHandler/empty
+=== RUN   TestAppGossipMessageForUnregisteredHandler/non-empty
+--- PASS: TestAppGossipMessageForUnregisteredHandler (0.00s)
+    --- PASS: TestAppGossipMessageForUnregisteredHandler/nil (0.00s)
+    --- PASS: TestAppGossipMessageForUnregisteredHandler/empty (0.00s)
+    --- PASS: TestAppGossipMessageForUnregisteredHandler/non-empty (0.00s)
+=== RUN   TestAppRequestMessageForUnregisteredHandler
+=== RUN   TestAppRequestMessageForUnregisteredHandler/nil
+=== RUN   TestAppRequestMessageForUnregisteredHandler/empty
+=== RUN   TestAppRequestMessageForUnregisteredHandler/non-empty
+--- PASS: TestAppRequestMessageForUnregisteredHandler (0.00s)
+    --- PASS: TestAppRequestMessageForUnregisteredHandler/nil (0.00s)
+    --- PASS: TestAppRequestMessageForUnregisteredHandler/empty (0.00s)
+    --- PASS: TestAppRequestMessageForUnregisteredHandler/non-empty (0.00s)
+=== RUN   TestAppError
+--- PASS: TestAppError (0.00s)
+=== RUN   TestResponseForUnrequestedRequest
+=== RUN   TestResponseForUnrequestedRequest/nil
+=== RUN   TestResponseForUnrequestedRequest/empty
+=== RUN   TestResponseForUnrequestedRequest/non-empty
+--- PASS: TestResponseForUnrequestedRequest (0.00s)
+    --- PASS: TestResponseForUnrequestedRequest/nil (0.00s)
+    --- PASS: TestResponseForUnrequestedRequest/empty (0.00s)
+    --- PASS: TestResponseForUnrequestedRequest/non-empty (0.00s)
+=== RUN   TestAppRequestDuplicateRequestIDs
+--- PASS: TestAppRequestDuplicateRequestIDs (0.00s)
+=== RUN   TestPeersSample
+=== RUN   TestPeersSample/no_peers
+=== RUN   TestPeersSample/one_peer_connected
+=== RUN   TestPeersSample/multiple_peers_connected
+=== RUN   TestPeersSample/peer_connects_and_disconnects_-_1
+=== RUN   TestPeersSample/peer_connects_and_disconnects_-_2
+=== RUN   TestPeersSample/peer_connects_and_disconnects_-_2#01
+=== RUN   TestPeersSample/less_than_limit_peers
+=== RUN   TestPeersSample/limit_peers
+=== RUN   TestPeersSample/more_than_limit_peers
+--- PASS: TestPeersSample (0.00s)
+    --- PASS: TestPeersSample/no_peers (0.00s)
+    --- PASS: TestPeersSample/one_peer_connected (0.00s)
+    --- PASS: TestPeersSample/multiple_peers_connected (0.00s)
+    --- PASS: TestPeersSample/peer_connects_and_disconnects_-_1 (0.00s)
+    --- PASS: TestPeersSample/peer_connects_and_disconnects_-_2 (0.00s)
+    --- PASS: TestPeersSample/peer_connects_and_disconnects_-_2#01 (0.00s)
+    --- PASS: TestPeersSample/less_than_limit_peers (0.00s)
+    --- PASS: TestPeersSample/limit_peers (0.00s)
+    --- PASS: TestPeersSample/more_than_limit_peers (0.00s)
+=== RUN   TestAppRequestAnyNodeSelection
+=== RUN   TestAppRequestAnyNodeSelection/no_peers
+=== RUN   TestAppRequestAnyNodeSelection/has_peers
+--- PASS: TestAppRequestAnyNodeSelection (0.00s)
+    --- PASS: TestAppRequestAnyNodeSelection/no_peers (0.00s)
+    --- PASS: TestAppRequestAnyNodeSelection/has_peers (0.00s)
+=== RUN   TestNodeSamplerClientOption
+=== RUN   TestNodeSamplerClientOption/default
+=== RUN   TestNodeSamplerClientOption/validator_connected
+=== RUN   TestNodeSamplerClientOption/validator_disconnected
+--- PASS: TestNodeSamplerClientOption (0.00s)
+    --- PASS: TestNodeSamplerClientOption/default (0.00s)
+    --- PASS: TestNodeSamplerClientOption/validator_connected (0.00s)
+    --- PASS: TestNodeSamplerClientOption/validator_disconnected (0.00s)
+=== RUN   TestMultipleClients
+--- PASS: TestMultipleClients (0.00s)
+=== RUN   TestPeerTracker
+--- PASS: TestPeerTracker (0.00s)
+=== RUN   TestThrottlerHandlerAppGossip
+=== RUN   TestThrottlerHandlerAppGossip/not_throttled
+=== RUN   TestThrottlerHandlerAppGossip/throttled
+--- PASS: TestThrottlerHandlerAppGossip (0.00s)
+    --- PASS: TestThrottlerHandlerAppGossip/not_throttled (0.00s)
+    --- PASS: TestThrottlerHandlerAppGossip/throttled (0.00s)
+=== RUN   TestThrottlerHandlerAppRequest
+=== RUN   TestThrottlerHandlerAppRequest/not_throttled
+=== RUN   TestThrottlerHandlerAppRequest/throttled
+--- PASS: TestThrottlerHandlerAppRequest (0.00s)
+    --- PASS: TestThrottlerHandlerAppRequest/not_throttled (0.00s)
+    --- PASS: TestThrottlerHandlerAppRequest/throttled (0.00s)
+=== RUN   TestSlidingWindowThrottlerHandle
+=== RUN   TestSlidingWindowThrottlerHandle/throttled_in_current_window
+=== RUN   TestSlidingWindowThrottlerHandle/throttled_from_previous_window
+=== RUN   TestSlidingWindowThrottlerHandle/throttled_over_multiple_evaluation_periods
+=== RUN   TestSlidingWindowThrottlerHandle/one_hit_per_period
+=== RUN   TestSlidingWindowThrottlerHandle/current_window_needs_to_be_reset
+--- PASS: TestSlidingWindowThrottlerHandle (0.00s)
+    --- PASS: TestSlidingWindowThrottlerHandle/throttled_in_current_window (0.00s)
+    --- PASS: TestSlidingWindowThrottlerHandle/throttled_from_previous_window (0.00s)
+    --- PASS: TestSlidingWindowThrottlerHandle/throttled_over_multiple_evaluation_periods (0.00s)
+    --- PASS: TestSlidingWindowThrottlerHandle/one_hit_per_period (0.00s)
+    --- PASS: TestSlidingWindowThrottlerHandle/current_window_needs_to_be_reset (0.00s)
+=== RUN   TestValidatorsSample
+=== RUN   TestValidatorsSample/drop_disconnected_validators
+=== RUN   TestValidatorsSample/less_than_limit_validators
+=== RUN   TestValidatorsSample/equal_to_limit_validators
+=== RUN   TestValidatorsSample/less_than_limit_validators#01
+=== RUN   TestValidatorsSample/within_max_staleness_threshold
+=== RUN   TestValidatorsSample/beyond_max_staleness_threshold
+=== RUN   TestValidatorsSample/fail_to_get_current_height
+=== RUN   TestValidatorsSample/second_get_validator_set_call_fails
+--- PASS: TestValidatorsSample (0.00s)
+    --- PASS: TestValidatorsSample/drop_disconnected_validators (0.00s)
+    --- PASS: TestValidatorsSample/less_than_limit_validators (0.00s)
+    --- PASS: TestValidatorsSample/equal_to_limit_validators (0.00s)
+    --- PASS: TestValidatorsSample/less_than_limit_validators#01 (0.00s)
+    --- PASS: TestValidatorsSample/within_max_staleness_threshold (0.00s)
+    --- PASS: TestValidatorsSample/beyond_max_staleness_threshold (0.00s)
+    --- PASS: TestValidatorsSample/fail_to_get_current_height (0.00s)
+    --- PASS: TestValidatorsSample/second_get_validator_set_call_fails (0.00s)
+=== RUN   TestValidatorsTop
+=== RUN   TestValidatorsTop/top_0%_is_empty
+=== RUN   TestValidatorsTop/top_100%_is_full
+=== RUN   TestValidatorsTop/top_50%_takes_larger_validator
+=== RUN   TestValidatorsTop/top_50%_bound
+--- PASS: TestValidatorsTop (0.00s)
+    --- PASS: TestValidatorsTop/top_0%_is_empty (0.00s)
+    --- PASS: TestValidatorsTop/top_100%_is_full (0.00s)
+    --- PASS: TestValidatorsTop/top_50%_takes_larger_validator (0.00s)
+    --- PASS: TestValidatorsTop/top_50%_bound (0.00s)
+PASS
+ok  	github.com/luxfi/node/network/p2p	0.030s
+# github.com/luxfi/node/consensus/engine/lux/bootstrap [github.com/luxfi/node/consensus/engine/lux/bootstrap.test]
+consensus/engine/lux/bootstrap/bootstrapper_test.go:96:3: cannot use logging.NoLog{} (value of struct type logging.NoLog) as "github.com/luxfi/log".Logger value in argument to p2p.NewPeerTracker: logging.NoLog does not implement "github.com/luxfi/log".Logger (missing method Crit)
+consensus/engine/lux/bootstrap/bootstrapper_test.go:100:3: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to p2p.NewPeerTracker
+consensus/engine/lux/bootstrap/bootstrapper_test.go:104:29: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to p2pTracker.Connected
+# github.com/luxfi/node/consensus/engine/chain/bootstrap [github.com/luxfi/node/consensus/engine/chain/bootstrap.test]
+consensus/engine/chain/bootstrap/bootstrapper_test.go:83:3: cannot use ctx.Log (variable of interface type logging.Logger) as "github.com/luxfi/log".Logger value in argument to p2p.NewPeerTracker: logging.Logger does not implement "github.com/luxfi/log".Logger (missing method Crit)
+consensus/engine/chain/bootstrap/bootstrapper_test.go:91:30: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to peerTracker.Connected
+consensus/engine/chain/bootstrap/bootstrapper_test.go:137:3: cannot use ctx.Log (variable of interface type logging.Logger) as "github.com/luxfi/log".Logger value in argument to p2p.NewPeerTracker: logging.Logger does not implement "github.com/luxfi/log".Logger (missing method Crit)
+consensus/engine/chain/bootstrap/bootstrapper_test.go:201:30: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to peerTracker.Connected
+consensus/engine/chain/bootstrap/bootstrapper_test.go:211:29: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to peerTracker.Connected
+consensus/engine/chain/bootstrap/bootstrapper_test.go:381:53: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to bs.PeerTracker.Connected
+consensus/engine/chain/bootstrap/bootstrapper_test.go:677:3: cannot use ctx.Log (variable of interface type logging.Logger) as "github.com/luxfi/log".Logger value in argument to p2p.NewPeerTracker: logging.Logger does not implement "github.com/luxfi/log".Logger (missing method Crit)
+consensus/engine/chain/bootstrap/bootstrapper_test.go:685:30: cannot use version.CurrentApp (variable of type *"github.com/luxfi/node/version".Application) as *"github.com/luxfi/consensus/version".Application value in argument to peerTracker.Connected
+# github.com/luxfi/node/utils/crypto/keychain [github.com/luxfi/node/utils/crypto/keychain.test]
+utils/crypto/keychain/keychain_test.go:27:30: cannot use ledger (variable of type *keychainmock.Ledger) as Ledger value in argument to NewLedgerKeychain: *keychainmock.Ledger does not implement Ledger (missing method GetAddresses)
+utils/crypto/keychain/keychain_test.go:27:38: cannot use 0 (untyped int constant) as []uint32 value in argument to NewLedgerKeychain
+utils/crypto/keychain/keychain_test.go:33:29: cannot use ledger (variable of type *keychainmock.Ledger) as Ledger value in argument to NewLedgerKeychain: *keychainmock.Ledger does not implement Ledger (missing method GetAddresses)
+utils/crypto/keychain/keychain_test.go:33:37: cannot use 1 (untyped int constant) as []uint32 value in argument to NewLedgerKeychain
+utils/crypto/keychain/keychain_test.go:39:29: cannot use ledger (variable of type *keychainmock.Ledger) as Ledger value in argument to NewLedgerKeychain: *keychainmock.Ledger does not implement Ledger (missing method GetAddresses)
+utils/crypto/keychain/keychain_test.go:39:37: cannot use 1 (untyped int constant) as []uint32 value in argument to NewLedgerKeychain
+utils/crypto/keychain/keychain_test.go:45:29: cannot use ledger (variable of type *keychainmock.Ledger) as Ledger value in argument to NewLedgerKeychain: *keychainmock.Ledger does not implement Ledger (missing method GetAddresses)
+utils/crypto/keychain/keychain_test.go:45:37: cannot use 1 (untyped int constant) as []uint32 value in argument to NewLedgerKeychain
+utils/crypto/keychain/keychain_test.go:60:31: cannot use ledger (variable of type *keychainmock.Ledger) as Ledger value in argument to NewLedgerKeychain: *keychainmock.Ledger does not implement Ledger (missing method GetAddresses)
+utils/crypto/keychain/keychain_test.go:60:39: cannot use 1 (untyped int constant) as []uint32 value in argument to NewLedgerKeychain
+utils/crypto/keychain/keychain_test.go:60:39: too many errors
+# github.com/luxfi/node/utils/crypto/ledger [github.com/luxfi/node/utils/crypto/ledger.test]
+utils/crypto/ledger/ledger_test.go:26:17: undefined: New
+# github.com/luxfi/node/vms/components/avax [github.com/luxfi/node/vms/components/avax.test]
+vms/components/avax/transferables_test.go:121:8: cannot use &secp256k1fx.TransferOutput{…} (value of type *secp256k1fx.TransferOutput) as TransferableOut value in struct literal: *secp256k1fx.TransferOutput does not implement TransferableOut (wrong type for method InitCtx)
+		have InitCtx("context".Context)
+		want InitCtx(*consensus.Context)
+vms/components/avax/transferables_test.go:279:7: cannot use &secp256k1fx.TransferInput{…} (value of type *secp256k1fx.TransferInput) as TransferableIn value in struct literal: *secp256k1fx.TransferInput does not implement TransferableIn (wrong type for method InitCtx)
+		have InitCtx("context".Context)
+		want InitCtx(*consensus.Context)
+# github.com/luxfi/node/vms/components/chain [github.com/luxfi/node/vms/components/chain.test]
+vms/components/chain/state_test.go:71:3: unknown field IDV in struct literal of type blocktest.Block
+vms/components/chain/state_test.go:72:12: cannot use choices.Processing (constant 1 of uint8 type choices.Status) as uint8 value in struct literal
+vms/components/chain/state_test.go:124:21: invalid operation: blk.StatusV == choices.Processing (mismatched types uint8 and choices.Status)
+vms/components/chain/state_test.go:148:22: invalid operation: blk.StatusV == choices.Accepted (mismatched types uint8 and choices.Status)
+vms/components/chain/state_test.go:224:25: cannot use choices.Accepted (constant 3 of uint8 type choices.Status) as uint8 value in assignment
+vms/components/chain/state_test.go:308:25: cannot use choices.Accepted (constant 3 of uint8 type choices.Status) as uint8 value in assignment
+vms/components/chain/state_test.go:315:18: cannot use choices.Accepted (constant 3 of uint8 type choices.Status) as uint8 value in assignment
+vms/components/chain/state_test.go:350:25: cannot use choices.Accepted (constant 3 of uint8 type choices.Status) as uint8 value in assignment
+vms/components/chain/state_test.go:408:25: cannot use choices.Accepted (constant 3 of uint8 type choices.Status) as uint8 value in assignment
+vms/components/chain/state_test.go:451:25: cannot use choices.Accepted (constant 3 of uint8 type choices.Status) as uint8 value in assignment
+vms/components/chain/state_test.go:451:25: too many errors
+# github.com/luxfi/node/vms/platformvm/txs [github.com/luxfi/node/vms/platformvm/txs.test]
+vms/platformvm/txs/disable_l1_validator_tx_test.go:65:12: cannot use avax.BaseTx{…} (value of struct type avax.BaseTx) as lux.BaseTx value in struct literal
+vms/platformvm/txs/disable_l1_validator_tx_test.go:73:12: cannot use &stakeable.LockOut{…} (value of type *stakeable.LockOut) as avax.TransferableOut value in struct literal: *stakeable.LockOut does not implement avax.TransferableOut (wrong type for method InitCtx)
+		have InitCtx("context".Context)
+		want InitCtx(*consensus.Context)
+vms/platformvm/txs/disable_l1_validator_tx_test.go:89:12: cannot use &stakeable.LockOut{…} (value of type *stakeable.LockOut) as avax.TransferableOut value in struct literal: *stakeable.LockOut does not implement avax.TransferableOut (wrong type for method InitCtx)
+		have InitCtx("context".Context)
+		want InitCtx(*consensus.Context)
+vms/platformvm/txs/disable_l1_validator_tx_test.go:113:11: cannot use &secp256k1fx.TransferInput{…} (value of type *secp256k1fx.TransferInput) as avax.TransferableIn value in struct literal: *secp256k1fx.TransferInput does not implement avax.TransferableIn (wrong type for method InitCtx)
+		have InitCtx("context".Context)
+		want InitCtx(*consensus.Context)
+vms/platformvm/txs/disable_l1_validator_tx_test.go:114:19: undefined: units.Lux
+vms/platformvm/txs/disable_l1_validator_tx_test.go:128:11: cannot use &stakeable.LockIn{…} (value of type *stakeable.LockIn) as avax.TransferableIn value in struct literal: *stakeable.LockIn does not implement avax.TransferableIn (wrong type for method InitCtx)
+		have InitCtx("context".Context)
+		want InitCtx(*consensus.Context)
+vms/platformvm/txs/disable_l1_validator_tx_test.go:146:11: cannot use &secp256k1fx.TransferInput{…} (value of type *secp256k1fx.TransferInput) as avax.TransferableIn value in struct literal: *secp256k1fx.TransferInput does not implement avax.TransferableIn (wrong type for method InitCtx)
+		have InitCtx("context".Context)
+		want InitCtx(*consensus.Context)
+vms/platformvm/txs/disable_l1_validator_tx_test.go:313:21: cannot use ctx (variable of type *consensus.Context) as "context".Context value in argument to unsignedTx.InitCtx: *consensus.Context does not implement "context".Context (missing method Deadline)
+vms/platformvm/txs/disable_l1_validator_tx_test.go:324:12: cannot use avax.BaseTx{…} (value of struct type avax.BaseTx) as lux.BaseTx value in struct literal
+vms/platformvm/txs/disable_l1_validator_tx_test.go:384:35: cannot use ctx (variable of type *consensus.Context) as "context".Context value in argument to test.tx.SyntacticVerify: *consensus.Context does not implement "context".Context (missing method Deadline)
+vms/platformvm/txs/disable_l1_validator_tx_test.go:384:35: too many errors
+# github.com/luxfi/node/vms/proposervm [github.com/luxfi/node/vms/proposervm.test]
+vms/proposervm/mocks_test.go:24:6: MockPostForkBlock redeclared in this block
+	vms/proposervm/mock_post_fork_block.go:25:6: other declaration of MockPostForkBlock
+vms/proposervm/mocks_test.go:31:6: MockPostForkBlockMockRecorder redeclared in this block
+	vms/proposervm/mock_post_fork_block.go:31:6: other declaration of MockPostForkBlockMockRecorder
+vms/proposervm/mocks_test.go:36:6: NewMockPostForkBlock redeclared in this block
+	vms/proposervm/mock_post_fork_block.go:36:6: other declaration of NewMockPostForkBlock
+vms/proposervm/mocks_test.go:56:42: method MockPostForkBlockMockRecorder.Accept already declared at vms/proposervm/mock_post_fork_block.go:56:42
+vms/proposervm/mocks_test.go:70:42: method MockPostForkBlockMockRecorder.Bytes already declared at vms/proposervm/mock_post_fork_block.go:70:42
+vms/proposervm/mocks_test.go:84:42: method MockPostForkBlockMockRecorder.Height already declared at vms/proposervm/mock_post_fork_block.go:84:42
+vms/proposervm/mocks_test.go:98:42: method MockPostForkBlockMockRecorder.ID already declared at vms/proposervm/mock_post_fork_block.go:98:42
+vms/proposervm/mocks_test.go:112:42: method MockPostForkBlockMockRecorder.Parent already declared at vms/proposervm/mock_post_fork_block.go:112:42
+vms/proposervm/mocks_test.go:126:42: method MockPostForkBlockMockRecorder.Reject already declared at vms/proposervm/mock_post_fork_block.go:126:42
+vms/proposervm/mocks_test.go:140:42: method MockPostForkBlockMockRecorder.Timestamp already declared at vms/proposervm/mock_post_fork_block.go:154:42
+vms/proposervm/mocks_test.go:140:42: too many errors
+# github.com/luxfi/node/vms/rpcchainvm [github.com/luxfi/node/vms/rpcchainvm.test]
+vms/rpcchainvm/state_syncable_vm_test.go:37:29: undefined: blocktest.StateSummary
+vms/rpcchainvm/state_syncable_vm_test.go:45:3: unknown field IDV in struct literal of type blocktest.Block
+vms/rpcchainvm/state_syncable_vm_test.go:46:12: cannot use choices.Accepted (constant 3 of uint8 type choices.Status) as uint8 value in struct literal
+vms/rpcchainvm/state_syncable_vm_test.go:52:3: unknown field IDV in struct literal of type blocktest.Block
+vms/rpcchainvm/state_syncable_vm_test.go:53:12: cannot use choices.Accepted (constant 3 of uint8 type choices.Status) as uint8 value in struct literal
+vms/rpcchainvm/state_syncable_vm_test.go:64:12: undefined: blockmock.ChainVM
+vms/rpcchainvm/with_context_vm_test.go:39:12: undefined: blockmock.ChainVM
+vms/rpcchainvm/batched_vm_test.go:41:19: undefined: blockmock.ChainVM
+vms/rpcchainvm/batched_vm_test.go:45:4: unknown field IDV in struct literal of type blocktest.Block
+vms/rpcchainvm/batched_vm_test.go:52:4: unknown field IDV in struct literal of type blocktest.Block
+vms/rpcchainvm/batched_vm_test.go:52:4: too many errors

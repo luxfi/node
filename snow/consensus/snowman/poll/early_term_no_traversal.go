@@ -4,7 +4,6 @@
 package poll
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -15,21 +14,8 @@ import (
 )
 
 var (
-	errPollDurationVectorMetrics = errors.New("failed to register poll_duration vector metrics")
-	errPollCountVectorMetrics    = errors.New("failed to register poll_count vector metrics")
-
-	terminationReason    = "reason"
-	exhaustedReason      = "exhausted"
-	earlyFailReason      = "early_fail"
 	earlyAlphaPrefReason = "early_alpha_pref"
 	earlyAlphaConfReason = "early_alpha_conf"
-
-	exhaustedLabel = prometheus.Labels{
-		terminationReason: exhaustedReason,
-	}
-	earlyFailLabel = prometheus.Labels{
-		terminationReason: earlyFailReason,
-	}
 	earlyAlphaPrefLabel = prometheus.Labels{
 		terminationReason: earlyAlphaPrefReason,
 	}
