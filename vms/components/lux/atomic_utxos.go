@@ -14,26 +14,6 @@ import (
 
 var _ AtomicUTXOManager = (*atomicUTXOManager)(nil)
 
-type AtomicUTXOManager interface {
-	// GetAtomicUTXOs returns exported UTXOs such that at least one of the
-	// addresses in [addrs] is referenced.
-	//
-	// Returns at most [limit] UTXOs.
-	//
-	// Returns:
-	// * The fetched UTXOs
-	// * The address associated with the last UTXO fetched
-	// * The ID of the last UTXO fetched
-	// * Any error that may have occurred upstream.
-	GetAtomicUTXOs(
-		chainID ids.ID,
-		addrs set.Set[ids.ShortID],
-		startAddr ids.ShortID,
-		startUTXOID ids.ID,
-		limit int,
-	) ([]*UTXO, ids.ShortID, ids.ID, error)
-}
-
 type atomicUTXOManager struct {
 	sm    atomic.SharedMemory
 	codec codec.Manager

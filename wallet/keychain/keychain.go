@@ -4,14 +4,15 @@
 package keychain
 
 import (
-	"github.com/luxfi/ids"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/set"
 )
 
 // Keychain interface that wallet signers can use
 // This allows both secp256k1fx.Keychain and ledger-lux-go/keychain.Keychain to be used
 // Generic across chains, DAGs, and post-quantum crypto
 type Keychain interface {
-	Addresses() []ids.ShortID
+	Addresses() set.Set[ids.ShortID]
 	Get(ids.ShortID) (Signer, bool)
 }
 

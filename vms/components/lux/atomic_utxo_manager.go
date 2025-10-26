@@ -4,8 +4,8 @@
 package lux
 
 import (
-	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/ids"
+	"github.com/luxfi/node/utils/set"
 )
 
 // AtomicUTXOManager defines the interface for managing atomic UTXOs

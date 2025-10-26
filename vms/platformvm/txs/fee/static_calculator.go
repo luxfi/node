@@ -119,3 +119,28 @@ func (c *staticVisitor) ExportTx(*txs.ExportTx) error {
 	c.fee = c.config.TxFee
 	return nil
 }
+
+func (c *staticVisitor) ConvertSubnetToL1Tx(*txs.ConvertSubnetToL1Tx) error {
+	c.fee = c.config.TransformSubnetTxFee
+	return nil
+}
+
+func (c *staticVisitor) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
+	c.fee = c.config.TxFee
+	return nil
+}
+
+func (c *staticVisitor) IncreaseL1ValidatorBalanceTx(*txs.IncreaseL1ValidatorBalanceTx) error {
+	c.fee = c.config.TxFee
+	return nil
+}
+
+func (c *staticVisitor) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
+	c.fee = c.config.AddSubnetValidatorFee
+	return nil
+}
+
+func (c *staticVisitor) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error {
+	c.fee = c.config.TxFee
+	return nil
+}
