@@ -35,6 +35,7 @@ func TestParseBlocks(t *testing.T) {
 		parentID,
 		timestamp,
 		pChainHeight,
+		Epoch{},
 		cert,
 		innerBlockBytes,
 		chainID,
@@ -95,6 +96,7 @@ func TestParse(t *testing.T) {
 		parentID,
 		timestamp,
 		pChainHeight,
+		Epoch{},
 		cert,
 		innerBlockBytes,
 		chainID,
@@ -102,10 +104,10 @@ func TestParse(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	unsignedBlock, err := BuildUnsigned(parentID, timestamp, pChainHeight, innerBlockBytes)
+	unsignedBlock, err := BuildUnsigned(parentID, timestamp, pChainHeight, Epoch{}, innerBlockBytes)
 	require.NoError(t, err)
 
-	signedWithoutCertBlockIntf, err := BuildUnsigned(parentID, timestamp, pChainHeight, innerBlockBytes)
+	signedWithoutCertBlockIntf, err := BuildUnsigned(parentID, timestamp, pChainHeight, Epoch{}, innerBlockBytes)
 	require.NoError(t, err)
 	signedWithoutCertBlock := signedWithoutCertBlockIntf.(*statelessBlock)
 	signedWithoutCertBlock.Signature = []byte{5}

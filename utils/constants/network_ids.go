@@ -25,6 +25,12 @@ const (
 	UnitTestID uint32 = 10
 	LocalID    uint32 = 12345
 
+	// Lux-specific network IDs
+	LuxMainnetID    uint32 = 96369  // Lux mainnet
+	LuxTestnetID    uint32 = 96370  // Lux testnet
+	QChainMainnetID uint32 = 96380  // Q-Chain mainnet
+	QChainTestnetID uint32 = 96381  // Q-Chain testnet
+
 	MainnetName  = "mainnet"
 	CascadeName  = "cascade"
 	DenaliName   = "denali"
@@ -48,6 +54,10 @@ const (
 var (
 	PrimaryNetworkID = ids.Empty
 	PlatformChainID  = ids.Empty
+
+	// Q-Chain specific IDs
+	QChainID = ids.ID{'q', 'c', 'h', 'a', 'i', 'n'}
+	QVMID    = ids.ID{'q', 'v', 'm'}
 
 	NetworkIDToNetworkName = map[uint32]string{
 		MainnetID:  MainnetName,

@@ -55,12 +55,12 @@ func CreateStaticService() *StaticService {
 
 // BuildGenesisArgs are arguments for BuildGenesis
 type BuildGenesisArgs struct {
-	NetworkID   avajson.Uint32             `json:"networkID"`
-	GenesisData map[string]AssetDefinition `json:"genesisData"`
-	Encoding    formatting.Encoding        `json:"encoding"`
+	NetworkID   avajson.Uint32                         `json:"networkID"`
+	GenesisData map[string]BuildGenesisAssetDefinition `json:"genesisData"`
+	Encoding    formatting.Encoding                    `json:"encoding"`
 }
 
-type AssetDefinition struct {
+type BuildGenesisAssetDefinition struct {
 	Name         string                   `json:"name"`
 	Symbol       string                   `json:"symbol"`
 	Denomination avajson.Uint8            `json:"denomination"`

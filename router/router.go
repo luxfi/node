@@ -165,12 +165,7 @@ func (r *routerImpl) Initialize(
 		}),
 	}
 
-	if err := reg.Register(r.metrics.droppedMsgs); err != nil {
-		return err
-	}
-	if err := reg.Register(r.metrics.routedMsgs); err != nil {
-		return err
-	}
+	// Metrics are self-registering via metric.NewCounter
 
 	r.log.Info("router initialized",
 		log.Stringer("nodeID", nodeID),

@@ -23,7 +23,7 @@ type prefixedState struct {
 	state *state
 
 	vtx, status cache.Cacher[ids.ID, ids.ID]
-	uniqueVtx   lru.Deduplicator[ids.ID, *uniqueVertex]
+	uniqueVtx   *lru.Deduplicator[ids.ID, *uniqueVertex]
 }
 
 func newPrefixedState(state *state, idCacheSizes int) *prefixedState {
@@ -31,7 +31,7 @@ func newPrefixedState(state *state, idCacheSizes int) *prefixedState {
 		state:     state,
 		vtx:       &cache.LRU[ids.ID, ids.ID]{Size: idCacheSizes},
 		status:    &cache.LRU[ids.ID, ids.ID]{Size: idCacheSizes},
-		uniqueVtx: lru.NewDeduplicator[ids.ID, *uniqueVertex](lru.NewSizedLRU[ids.ID, *uniqueVertex](idCacheSizes, func(_ ids.ID, v *uniqueVertex) int { return v.vtx.Bytes().Len() })),
+		uniqueVtx: lru.NewDeduplicator[ids.ID, *uniqueVertex](idCacheSizes),
 	}
 }
 

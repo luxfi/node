@@ -6,9 +6,10 @@ package genesis
 import (
 	"time"
 
-	"github.com/luxfi/ids"
+	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/utils/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 )
@@ -34,13 +35,13 @@ var (
 		StaticConfig: fee.StaticConfig{
 			TxFee:                         units.MilliLux,
 			CreateAssetTxFee:              10 * units.MilliLux,
-			CreateNetTxFee:                100 * units.Lux,
-			TransformNetTxFee:             100 * units.Lux,
+			CreateSubnetTxFee:             100 * units.Lux,
+			TransformSubnetTxFee:          100 * units.Lux,
 			CreateBlockchainTxFee:         100 * units.Lux,
 			AddPrimaryNetworkValidatorFee: 0,
 			AddPrimaryNetworkDelegatorFee: 0,
-			AddNetValidatorFee:            units.MilliLux,
-			AddNetDelegatorFee:            units.MilliLux,
+			AddSubnetValidatorFee:         units.MilliLux,
+			AddSubnetDelegatorFee:         units.MilliLux,
 		},
 	}
 
@@ -63,13 +64,13 @@ var (
 		StaticConfig: fee.StaticConfig{
 			TxFee:                         units.Lux / 1000,
 			CreateAssetTxFee:              units.Lux / 100,
-			CreateNetTxFee:                10 * units.Lux,
-			TransformNetTxFee:             10 * units.Lux,
+			CreateSubnetTxFee:             10 * units.Lux,
+			TransformSubnetTxFee:          10 * units.Lux,
 			CreateBlockchainTxFee:         10 * units.Lux,
 			AddPrimaryNetworkValidatorFee: 0,
 			AddPrimaryNetworkDelegatorFee: 0,
-			AddNetValidatorFee:            units.Lux / 1000,
-			AddNetDelegatorFee:            units.Lux / 1000,
+			AddSubnetValidatorFee:         units.Lux / 1000,
+			AddSubnetDelegatorFee:         units.Lux / 1000,
 		},
 	}
 )

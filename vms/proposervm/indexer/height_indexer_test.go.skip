@@ -46,6 +46,7 @@ func TestHeightBlockIndexPostFork(t *testing.T) {
 			lastBlkID,
 			dummyTS,
 			dummyPCH,
+			block.Epoch{},
 			blockBytes[:],
 		)
 		require.NoError(err)
@@ -126,6 +127,7 @@ func TestHeightBlockIndexAcrossFork(t *testing.T) {
 			lastBlkID,
 			dummyTS,
 			dummyPCH,
+			block.Epoch{},
 			blockBytes[:],
 		)
 		require.NoError(err)
@@ -210,6 +212,7 @@ func TestHeightBlockIndexResumeFromCheckPoint(t *testing.T) {
 			lastBlkID,
 			dummyTS,
 			dummyPCH,
+			block.Epoch{},
 			blockBytes[:],
 		)
 		require.NoError(err)
