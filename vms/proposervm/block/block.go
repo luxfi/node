@@ -21,6 +21,13 @@ var (
 	errInvalidCertificate  = errors.New("invalid certificate")
 )
 
+// Epoch represents a P-Chain epoch for validator set coordination
+type Epoch struct {
+	PChainHeight uint64 `serialize:"true" json:"pChainHeight"`
+	Number       uint64 `serialize:"true" json:"number"`
+	StartTime    int64  `serialize:"true" json:"startTime"`
+}
+
 type Block interface {
 	ID() ids.ID
 	ParentID() ids.ID
@@ -35,6 +42,7 @@ type SignedBlock interface {
 	Block
 
 	PChainHeight() uint64
+	PChainEpoch() Epoch
 	Timestamp() time.Time
 
 	// Proposer returns the ID of the node that proposed this block. If no node
@@ -46,6 +54,7 @@ type statelessUnsignedBlock struct {
 	ParentID     ids.ID `serialize:"true"`
 	Timestamp    int64  `serialize:"true"`
 	PChainHeight uint64 `serialize:"true"`
+	Epoch        Epoch  `serialize:"true"`
 	Certificate  []byte `serialize:"true"`
 	Block        []byte `serialize:"true"`
 }
@@ -125,6 +134,10 @@ func (b *statelessBlock) verify(chainID ids.ID) error {
 
 func (b *statelessBlock) PChainHeight() uint64 {
 	return b.StatelessBlock.PChainHeight
+}
+
+func (b *statelessBlock) PChainEpoch() Epoch {
+	return b.StatelessBlock.Epoch
 }
 
 func (b *statelessBlock) Timestamp() time.Time {
