@@ -1,8 +1,4 @@
-<<<<<<< HEAD:ids/galiasreader/alias_reader_server.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:internal/ids/galiasreader/alias_reader_server.go
 // See the file LICENSE for licensing terms.
 
 package galiasreader

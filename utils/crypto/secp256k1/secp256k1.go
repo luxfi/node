@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/luxfi/geth/common"
+	"github.com/luxfi/crypto"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
 
 	"github.com/luxfi/node/cache"
@@ -181,7 +181,8 @@ func (k *PublicKey) Address() ids.ShortID {
 }
 
 func (k *PublicKey) EthAddress() common.Address {
-	return crypto.PubkeyToAddress(*(k.ToECDSA()))
+	cryptoAddr := crypto.PubkeyToAddress(*(k.ToECDSA()))
+	return common.Address(cryptoAddr)
 }
 
 func (k *PublicKey) Bytes() []byte {
@@ -209,7 +210,8 @@ func (k *PrivateKey) Address() ids.ShortID {
 }
 
 func (k *PrivateKey) EthAddress() common.Address {
-	return crypto.PubkeyToAddress(*(k.PublicKey().ToECDSA()))
+	cryptoAddr := crypto.PubkeyToAddress(*(k.PublicKey().ToECDSA()))
+	return common.Address(cryptoAddr)
 }
 
 func (k *PrivateKey) Sign(msg []byte) ([]byte, error) {

@@ -14,6 +14,22 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
+// StakerIterator is an iterator for Staker objects.
+// Iterators should be released when they are no longer needed.
+type StakerIterator interface {
+	// Next advances the iterator to the next staker.
+	// Returns false if there are no more stakers.
+	Next() bool
+
+	// Value returns the current staker.
+	// Should only be called after Next() returns true.
+	Value() *Staker
+
+	// Release frees any resources associated with the iterator.
+	// Must be called when the iterator is no longer needed.
+	Release()
+}
+
 var _ btree.LessFunc[*Staker] = (*Staker).Less
 
 // Staker contains all information required to represent a validator or
@@ -41,6 +57,9 @@ type Staker struct {
 	// [priorities.go] and depends on if the stakers are in the pending or
 	// current validator set.
 	Priority txs.Priority
+
+	// ValidatorNFT contains NFT information if this validator is using NFT staking
+	ValidatorNFT *txs.ValidatorNFTInfo
 }
 
 // A *Staker is considered to be less than another *Staker when:

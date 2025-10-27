@@ -15,7 +15,7 @@ import (
 
 	"go.uber.org/zap"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
+	ethcommon "github.com/luxfi/geth/common"
 	
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/ids"

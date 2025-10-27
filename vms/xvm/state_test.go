@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/state_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/state_test.go
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -14,14 +10,9 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD:vms/avm/state_test.go
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/upgrade/upgradetest"
-=======
-	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/ids"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/state_test.go
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
@@ -33,13 +24,8 @@ func TestSetsAndGets(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-<<<<<<< HEAD:vms/avm/state_test.go
 		fork: upgradetest.Latest,
 		additionalFxs: []*common.Fx{{
-=======
-		fork: latest,
-		additionalFxs: []*core.Fx{{
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/state_test.go
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {
@@ -98,13 +84,8 @@ func TestSetsAndGets(t *testing.T) {
 
 func TestFundingNoAddresses(t *testing.T) {
 	env := setup(t, &envConfig{
-<<<<<<< HEAD:vms/avm/state_test.go
 		fork: upgradetest.Latest,
 		additionalFxs: []*common.Fx{{
-=======
-		fork: latest,
-		additionalFxs: []*core.Fx{{
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/state_test.go
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {
@@ -133,13 +114,8 @@ func TestFundingAddresses(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-<<<<<<< HEAD:vms/avm/state_test.go
 		fork: upgradetest.Latest,
 		additionalFxs: []*common.Fx{{
-=======
-		fork: latest,
-		additionalFxs: []*core.Fx{{
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/state_test.go
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {

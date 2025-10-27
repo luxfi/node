@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/components/avax/utxo_state.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/components/lux/lux/utxo_state.go
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -117,11 +113,7 @@ func NewMeteredUTXOState(
 ) (UTXOState, error) {
 	utxoCache, err := metercacher.New[ids.ID, *UTXO](
 		"utxo_cache",
-<<<<<<< HEAD:vms/components/avax/utxo_state.go
 		metrics,
-=======
-		metrics.(metric.Registry),
->>>>>>> origin/regenesis-runtime-replay:vms/components/lux/lux/utxo_state.go
 		lru.NewCache[ids.ID, *UTXO](utxoCacheSize),
 	)
 	if err != nil {
@@ -130,11 +122,7 @@ func NewMeteredUTXOState(
 
 	indexCache, err := metercacher.New[string, linkeddb.LinkedDB](
 		"index_cache",
-<<<<<<< HEAD:vms/components/avax/utxo_state.go
 		metrics,
-=======
-		metrics.(metric.Registry),
->>>>>>> origin/regenesis-runtime-replay:vms/components/lux/lux/utxo_state.go
 		lru.NewCache[string, linkeddb.LinkedDB](indexCacheSize),
 	)
 	if err != nil {

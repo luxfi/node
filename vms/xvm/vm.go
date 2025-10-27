@@ -494,13 +494,17 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
  ******************************************************************************
  */
 
-func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
+func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- common.Message) error {
 	time := version.GetCortinaTime(consensus.GetNetworkID(vm.ctx))
 	err := vm.state.InitializeChainState(stopVertexID, time)
 	if err != nil {
 		return err
 	}
 
+	// Note: toEngine parameter is for compatibility with LinearizableVMWithEngine interface
+	// The XVM uses its own internal channel for mempool communication
+	_ = toEngine
+	
 	// Create a channel for mempool to engine communication
 	vm.toEngine = make(chan core.MessageType, 1)
 	mempool, err := xmempool.New("mempool", vm.registerer, vm.toEngine)

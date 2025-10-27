@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/block/executor/block.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block.go
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -18,17 +14,11 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
-<<<<<<< HEAD:vms/avm/block/executor/block.go
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/vms/avm/block"
 	"github.com/luxfi/node/vms/avm/state"
 	"github.com/luxfi/node/vms/avm/txs/executor"
-=======
-	"github.com/luxfi/node/vms/xvm/block"
-	"github.com/luxfi/node/vms/xvm/state"
-	"github.com/luxfi/node/vms/xvm/txs/executor"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block.go
 )
 
 const SyncBound = 10 * time.Second
@@ -282,23 +272,12 @@ func (b *Block) Accept(ctx context.Context) error {
 		return err
 	}
 
-<<<<<<< HEAD:vms/avm/block/executor/block.go
 	b.manager.backend.Ctx.Log.Trace(
 		"accepted block",
 		zap.Stringer("blkID", blkID),
 		zap.Uint64("height", b.Height()),
 		zap.Stringer("parentID", b.Parent()),
 		zap.Stringer("checksum", b.manager.state.Checksum()),
-=======
-	txChecksum, utxoChecksum := b.manager.state.Checksums()
-	b.manager.backend.Log.Trace(
-		"accepted block",
-		"blkID", blkID.String(),
-		"height", b.Height(),
-		"parentID", b.Parent().String(),
-		"txChecksum", txChecksum.String(),
-		"utxoChecksum", utxoChecksum.String(),
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block.go
 	)
 	return nil
 }

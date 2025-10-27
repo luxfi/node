@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/block/executor/manager.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/manager.go
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -15,21 +11,12 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/timer/mockable"
-<<<<<<< HEAD:vms/avm/block/executor/manager.go
 	"github.com/luxfi/node/vms/avm/block"
 	"github.com/luxfi/node/vms/avm/metrics"
 	"github.com/luxfi/node/vms/avm/state"
 	"github.com/luxfi/node/vms/avm/txs"
 	"github.com/luxfi/node/vms/avm/txs/executor"
 	"github.com/luxfi/node/vms/txs/mempool"
-=======
-	"github.com/luxfi/node/vms/xvm/block"
-	"github.com/luxfi/node/vms/xvm/metrics"
-	"github.com/luxfi/node/vms/xvm/state"
-	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/xvm/txs/executor"
-	"github.com/luxfi/node/vms/xvm/txs/mempool"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/manager.go
 )
 
 var (
@@ -62,13 +49,8 @@ type Manager interface {
 }
 
 func NewManager(
-<<<<<<< HEAD:vms/avm/block/executor/manager.go
 	mempool mempool.Mempool[*txs.Tx],
 	metrics metrics.Metrics,
-=======
-	mempool mempool.Mempool,
-	m metrics.Metrics,
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/manager.go
 	state state.State,
 	backend *executor.Backend,
 	clk *mockable.Clock,

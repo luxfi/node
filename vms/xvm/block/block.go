@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/block/block.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/block.go
 // See the file LICENSE for licensing terms.
 
 package block

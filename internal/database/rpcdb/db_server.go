@@ -1,8 +1,4 @@
-<<<<<<< HEAD:database/rpcdb/db_server.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:internal/database/rpcdb/db_server.go
 // See the file LICENSE for licensing terms.
 
 package rpcdb

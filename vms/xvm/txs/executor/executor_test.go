@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/txs/executor/executor_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/txs/executor/executor_test.go
 // See the file LICENSE for licensing terms.
 
 package executor

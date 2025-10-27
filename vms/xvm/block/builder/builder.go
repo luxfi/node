@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/block/builder/builder.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder.go
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -11,7 +7,6 @@ import (
 	"context"
 	"errors"
 
-<<<<<<< HEAD:vms/avm/block/builder/builder.go
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/consensus/snowman"
 	"github.com/luxfi/node/snow/engine/common"
@@ -22,17 +17,6 @@ import (
 	"github.com/luxfi/node/vms/avm/state"
 	"github.com/luxfi/node/vms/avm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
-=======
-	"github.com/luxfi/consensus/protocol/chain"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/xvm/block"
-	"github.com/luxfi/node/vms/xvm/state"
-	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/xvm/txs/mempool"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder.go
 
 	blockexecutor "github.com/luxfi/node/vms/xvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/xvm/txs/executor"
@@ -84,16 +68,9 @@ func (b *builder) WaitForEvent(ctx context.Context) (common.Message, error) {
 }
 
 // BuildBlock builds a block to be added to consensus.
-<<<<<<< HEAD:vms/avm/block/builder/builder.go
 func (b *builder) BuildBlock(context.Context) (snowman.Block, error) {
 	ctx := b.backend.Ctx
 	ctx.Log.Debug("starting to attempt to build a block")
-=======
-func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
-	defer b.mempool.RequestBuildBlock()
-
-	b.backend.Log.Debug("starting to attempt to build a block")
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder.go
 
 	// Get the block to build on top of and retrieve the new block's context.
 	preferredID := b.manager.Preferred()

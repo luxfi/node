@@ -1,8 +1,4 @@
-<<<<<<< HEAD:database/rpcdb/db_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:internal/database/rpcdb/db_test.go
 // See the file LICENSE for licensing terms.
 
 package rpcdb
@@ -14,17 +10,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD:database/rpcdb/db_test.go
 	"github.com/luxfi/node/database/corruptabledb"
 	"github.com/luxfi/node/database/dbtest"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/utils/logging"
-=======
-	"github.com/luxfi/database/corruptabledb"
-	"github.com/luxfi/database/dbtest"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/log"
->>>>>>> origin/regenesis-runtime-replay:internal/database/rpcdb/db_test.go
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
@@ -132,11 +121,7 @@ func TestHealthCheck(t *testing.T) {
 			require := require.New(t)
 
 			baseDB := setupDB(t)
-<<<<<<< HEAD:database/rpcdb/db_test.go
 			db := corruptabledb.New(baseDB.server, logging.NoLog{})
-=======
-			db := corruptabledb.New(baseDB.server, log.NoLog{})
->>>>>>> origin/regenesis-runtime-replay:internal/database/rpcdb/db_test.go
 			defer db.Close()
 			require.NoError(scenario.testFn(db))
 

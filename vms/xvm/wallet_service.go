@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/wallet_service.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/wallet_service.go
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -12,12 +8,7 @@ import (
 	"fmt"
 	"net/http"
 
-<<<<<<< HEAD:vms/avm/wallet_service.go
 	"go.uber.org/zap"
-=======
-	"github.com/luxfi/log"
-	"golang.org/x/exp/maps"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/wallet_service.go
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
@@ -25,13 +16,8 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/linked"
-<<<<<<< HEAD:vms/avm/wallet_service.go
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/avm/txs"
-=======
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/secp256k1fx"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/wallet_service.go
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/txs"
 )

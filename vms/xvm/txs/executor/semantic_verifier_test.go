@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/txs/executor/semantic_verifier_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/txs/executor/semantic_verifier_test.go
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -22,24 +18,12 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
-<<<<<<< HEAD:vms/avm/txs/executor/semantic_verifier_test.go
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/snow/validators/validatorsmock"
-=======
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/txs/executor/semantic_verifier_test.go
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/timer/mockable"
-<<<<<<< HEAD:vms/avm/txs/executor/semantic_verifier_test.go
-	"github.com/luxfi/node/vms/avm/fxs"
-	"github.com/luxfi/node/vms/avm/state"
-	"github.com/luxfi/node/vms/avm/state/statemock"
-	"github.com/luxfi/node/vms/avm/txs"
-=======
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/txs/executor/semantic_verifier_test.go
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -774,18 +758,11 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cChainID := ids.GenerateTestID()
 
-<<<<<<< HEAD:vms/avm/txs/executor/semantic_verifier_test.go
 	ctx := snowtest.Context(t, snowtest.XChainID)
 
 	validatorState := validatorsmock.NewState(ctrl)
 	validatorState.EXPECT().GetSubnetID(gomock.Any(), ctx.CChainID).AnyTimes().Return(ids.GenerateTestID(), nil)
 	ctx.ValidatorState = validatorState
-=======
-	// Create a test context with ChainID
-	chainID := ids.GenerateTestID()
-	_ = consensustest.Context(t, chainID)
-	ctx := context.Background()
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/txs/executor/semantic_verifier_test.go
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}

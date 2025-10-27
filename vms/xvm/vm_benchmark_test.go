@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/vm_benchmark_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_benchmark_test.go
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -13,19 +9,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD:vms/avm/vm_benchmark_test.go
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/set"
-=======
-	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_benchmark_test.go
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
-<<<<<<< HEAD:vms/avm/vm_benchmark_test.go
 =======
 // BenchmarkLoadUser has been removed - keystore functionality is no longer supported
 
@@ -37,10 +27,6 @@ func getAllUTXOsBenchmark(b *testing.B, utxoCount int, randSrc rand.Source) {
 <<<<<<< HEAD:vms/avm/vm_benchmark_test.go
 	env := setup(b, &envConfig{fork: upgradetest.Latest})
 	defer env.vm.ctx.Lock.Unlock()
-=======
-	env := setup(b, &envConfig{fork: latest})
-	defer env.testLock.Unlock()
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_benchmark_test.go
 
 	addr := ids.GenerateTestShortID()
 

@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/state/state_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/state/state_test.go
 // See the file LICENSE for licensing terms.
 
 package state
@@ -13,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD:vms/avm/state/state_test.go
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/versiondb"
@@ -22,25 +17,6 @@ import (
 	"github.com/luxfi/node/vms/avm/block"
 	"github.com/luxfi/node/vms/avm/fxs"
 	"github.com/luxfi/node/vms/avm/txs"
-=======
-	"github.com/luxfi/database"
-	"github.com/luxfi/metric"
-
-	"github.com/luxfi/database/memdb"
-
-	"github.com/luxfi/database/versiondb"
-
-	"github.com/luxfi/ids"
-
-	"github.com/luxfi/node/version"
-
-	"github.com/luxfi/node/vms/xvm/block"
-
-	"github.com/luxfi/node/vms/xvm/fxs"
-
-	"github.com/luxfi/node/vms/xvm/txs"
-
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/state/state_test.go
 	"github.com/luxfi/node/vms/components/lux"
 
 	"github.com/luxfi/node/vms/secp256k1fx"

@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/block/executor/manager_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/manager_test.go
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -15,20 +11,12 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD:vms/avm/block/executor/manager_test.go
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/avm/block"
 	"github.com/luxfi/node/vms/avm/state/statemock"
 	"github.com/luxfi/node/vms/avm/txs"
 	"github.com/luxfi/node/vms/avm/txs/txsmock"
-=======
-	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/xvm/block"
-	"github.com/luxfi/node/vms/xvm/state"
-	"github.com/luxfi/node/vms/xvm/txs"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/manager_test.go
 )
 
 var (

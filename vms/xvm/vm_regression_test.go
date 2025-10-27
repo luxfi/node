@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/vm_regression_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_regression_test.go
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -12,12 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD:vms/avm/vm_regression_test.go
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
-=======
-	"github.com/luxfi/ids"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_regression_test.go
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
@@ -27,13 +19,8 @@ import (
 func TestVerifyFxUsage(t *testing.T) {
 	require := require.New(t)
 
-<<<<<<< HEAD:vms/avm/vm_regression_test.go
 	env := setup(t, &envConfig{fork: upgradetest.Latest})
 	env.vm.ctx.Lock.Unlock()
-=======
-	env := setup(t, &envConfig{fork: latest})
-	env.testLock.Unlock()
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_regression_test.go
 
 	var (
 		key = keys[0]

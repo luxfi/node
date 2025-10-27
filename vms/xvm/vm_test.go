@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/vm_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_test.go
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -23,55 +19,12 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-<<<<<<< HEAD:vms/avm/vm_test.go
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/upgrade/upgradetest"
-=======
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_test.go
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/xvm/txs"
-)
-
-func TestInvalidGenesis(t *testing.T) {
-	require := require.New(t)
-
-	vm := &VM{}
-	ctx := &consensusctx.Context{
-		ChainID: ids.GenerateTestID(),
-	}
-	// Tests don't need locking as they run single-threaded
-	// Remove Lock references that don't exist in consensus context
-
-	toEngine := make(chan interface{}, 1)
-	err := vm.Initialize(
-		context.Background(),
-<<<<<<< HEAD:vms/avm/vm_test.go
-		ctx,         // context
-		memdb.New(), // database
-		nil,         // genesisState
-		nil,         // upgradeBytes
-		nil,         // configBytes
-		nil,         // fxs
-		nil,         // AppSender
-=======
-		ctx,         // chainCtx
-		memdb.New(), // dbManager
-		nil,         // genesisBytes
-		nil,         // upgradeBytes
-		nil,         // configBytes
-		toEngine,    // toEngine
-		nil,         // fxs
-		nil,         // appSender
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_test.go
 	)
 	require.ErrorIs(err, codec.ErrCantUnpackVersion)
 }
@@ -87,7 +40,6 @@ func TestInvalidFx(t *testing.T) {
 		vm.Shutdown()
 	}()
 
-<<<<<<< HEAD:vms/avm/vm_test.go
 	genesisBytes := newGenesisBytesTest(t)
 	err := vm.Initialize(
 		context.Background(),
@@ -100,21 +52,6 @@ func TestInvalidFx(t *testing.T) {
 			nil,
 		},
 		nil,
-=======
-	genesisBytes := buildGenesisTest(t)
-	toEngine := make(chan interface{}, 1)
-	fxList := []interface{}{nil}
-	err := vm.Initialize(
-		context.Background(),
-		ctx,          // chainCtx
-		memdb.New(),  // dbManager
-		genesisBytes, // genesisBytes
-		nil,          // upgradeBytes
-		nil,          // configBytes
-		toEngine,     // toEngine
-		fxList,       // fxs
-		nil,          // appSender
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_test.go
 	)
 	require.ErrorIs(err, errIncompatibleFx)
 }
@@ -130,7 +67,6 @@ func TestFxInitializationFailure(t *testing.T) {
 		vm.Shutdown()
 	}()
 
-<<<<<<< HEAD:vms/avm/vm_test.go
 	genesisBytes := newGenesisBytesTest(t)
 	err := vm.Initialize(
 		context.Background(),
@@ -140,12 +76,6 @@ func TestFxInitializationFailure(t *testing.T) {
 		nil,          // upgradeBytes
 		nil,          // configBytes
 		[]*common.Fx{{ // fxs
-=======
-	genesisBytes := buildGenesisTest(t)
-	toEngine := make(chan interface{}, 1)
-	fxList := []interface{}{
-		&core.Fx{
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_test.go
 			ID: ids.Empty,
 			Fx: &FxTest{
 				InitializeF: func(interface{}) error {
@@ -176,11 +106,7 @@ func TestIssueTx(t *testing.T) {
 	})
 	env.vm.Lock.Unlock()
 
-<<<<<<< HEAD:vms/avm/vm_test.go
 	tx := newTx(t, env.genesisBytes, env.vm.ctx.ChainID, env.vm.parser, "LUX")
-=======
-	tx := newTx(t, env.genesisBytes, env.vm.ChainID, env.vm.parser, "LUX")
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_test.go
 	issueAndAccept(require, env.vm, tx)
 }
 
@@ -264,13 +190,8 @@ func TestIssueProperty(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-<<<<<<< HEAD:vms/avm/vm_test.go
 		fork: upgradetest.Latest,
 		additionalFxs: []*common.Fx{{
-=======
-		fork: latest,
-		additionalFxs: []*core.Fx{{
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_test.go
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -363,11 +284,7 @@ func TestIssueTxWithFeeAsset(t *testing.T) {
 	env.vm.Lock.Unlock()
 
 	// send first asset
-<<<<<<< HEAD:vms/avm/vm_test.go
 	tx := newTx(t, env.genesisBytes, env.vm.ctx.ChainID, env.vm.parser, feeAssetName)
-=======
-	tx := newTx(t, env.genesisBytes, env.vm.ChainID, env.vm.parser, feeAssetName)
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_test.go
 	issueAndAccept(require, env.vm, tx)
 }
 
@@ -671,13 +588,8 @@ func TestImportTxNotState(t *testing.T) {
 func TestIssueExportTx(t *testing.T) {
 	require := require.New(t)
 
-<<<<<<< HEAD:vms/avm/vm_test.go
 	env := setup(t, &envConfig{fork: upgradetest.Durango})
 	defer env.vm.ctx.Lock.Unlock()
-=======
-	env := setup(t, &envConfig{fork: durango})
-	defer env.vm.Lock.Unlock()
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_test.go
 
 	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
 
@@ -742,12 +654,7 @@ func TestClearForceAcceptedExportTx(t *testing.T) {
 	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
 
 	var (
-<<<<<<< HEAD:vms/avm/vm_test.go
 		luxID     = genesisTx.ID()
-=======
-		luxID      = genesisTx.ID()
-		assetID    = lux.Asset{ID: luxID}
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_test.go
 		key        = keys[0]
 		kc         = secp256k1fx.NewKeychain(key)
 		to         = key.PublicKey().Address()

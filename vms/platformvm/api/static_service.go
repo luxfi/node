@@ -108,6 +108,7 @@ type Owner struct {
 // APIs.
 type PermissionlessValidator struct {
 	Staker
+	BaseL1Validator
 	// Deprecated: RewardOwner has been replaced by ValidationRewardOwner and
 	//             DelegationRewardOwner.
 	RewardOwner *Owner `json:"rewardOwner,omitempty"`
@@ -121,7 +122,7 @@ type PermissionlessValidator struct {
 	DelegationFee          json.Float32              `json:"delegationFee"`
 	ExactDelegationFee     *json.Uint32              `json:"exactDelegationFee,omitempty"`
 	Uptime                 *json.Float32             `json:"uptime,omitempty"`
-	Connected              bool                      `json:"connected"`
+	Connected              *bool                     `json:"connected,omitempty"`
 	Staked                 []UTXO                    `json:"staked,omitempty"`
 	Signer                 *signer.ProofOfPossession `json:"signer,omitempty"`
 

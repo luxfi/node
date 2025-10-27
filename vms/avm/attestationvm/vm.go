@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-		"github.com/ethereum/go-ethereum/common"
-		"github.com/ethereum/go-ethereum/crypto"
+		"github.com/luxfi/geth/common"
+		"github.com/luxfi/crypto"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/database"

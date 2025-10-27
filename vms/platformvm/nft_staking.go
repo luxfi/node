@@ -11,7 +11,7 @@ import (
 	"sync"
 
 		"github.com/luxfi/geth/accounts/abi/bind"
-		"github.com/ethereum/go-ethereum/common"
+		"github.com/luxfi/geth/common"
 		"github.com/luxfi/geth/ethclient"
 	"go.uber.org/zap"
 	

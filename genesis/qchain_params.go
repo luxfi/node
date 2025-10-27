@@ -9,14 +9,37 @@ import (
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/utils/gas"
+	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/txs/fee"
+	"github.com/luxfi/node/vms/platformvm/validators/fee"
 )
 
 // QChainParams defines the parameters for Q-Chain
 var (
 	QChainMainnetParams = Params{
+		TxFeeConfig: TxFeeConfig{
+			CreateAssetTxFee: 10 * units.MilliLux,
+			TxFee:            units.MilliLux,
+			DynamicFeeConfig: gas.Config{
+				Weights: gas.Dimensions{
+					gas.Bandwidth: 1,
+					gas.DBRead:    1_000,
+					gas.DBWrite:   1_000,
+					gas.Compute:   4,
+				},
+				MaxCapacity:              1_000_000,
+				MaxPerSecond:             100_000,
+				TargetPerSecond:          50_000,
+				MinPrice:                 1,
+				ExcessConversionConstant: 2_164_043,
+			},
+			ValidatorFeeConfig: fee.Config{
+				Capacity:                 20_000,
+				Target:                   10_000,
+				MinPrice:                 gas.Price(512 * units.NanoLux),
+				ExcessConversionConstant: 1_246_488_515,
+			},
+		},
 		StakingConfig: StakingConfig{
 			UptimeRequirement: .8, // 80%
 			MinValidatorStake: 100 * units.Lux,
@@ -32,20 +55,32 @@ var (
 				SupplyCap:          1_000_000_000 * units.Lux, // 1 billion Q tokens
 			},
 		},
-		StaticConfig: fee.StaticConfig{
-			TxFee:                         units.MilliLux,
-			CreateAssetTxFee:              10 * units.MilliLux,
-			CreateSubnetTxFee:             100 * units.Lux,
-			TransformSubnetTxFee:          100 * units.Lux,
-			CreateBlockchainTxFee:         100 * units.Lux,
-			AddPrimaryNetworkValidatorFee: 0,
-			AddPrimaryNetworkDelegatorFee: 0,
-			AddSubnetValidatorFee:         units.MilliLux,
-			AddSubnetDelegatorFee:         units.MilliLux,
-		},
 	}
 
 	QChainTestnetParams = Params{
+		TxFeeConfig: TxFeeConfig{
+			CreateAssetTxFee: units.Lux / 100,
+			TxFee:            units.Lux / 1000,
+			DynamicFeeConfig: gas.Config{
+				Weights: gas.Dimensions{
+					gas.Bandwidth: 1,
+					gas.DBRead:    1_000,
+					gas.DBWrite:   1_000,
+					gas.Compute:   4,
+				},
+				MaxCapacity:              1_000_000,
+				MaxPerSecond:             100_000,
+				TargetPerSecond:          50_000,
+				MinPrice:                 1,
+				ExcessConversionConstant: 2_164_043,
+			},
+			ValidatorFeeConfig: fee.Config{
+				Capacity:                 20_000,
+				Target:                   10_000,
+				MinPrice:                 gas.Price(512 * units.NanoLux),
+				ExcessConversionConstant: 1_246_488_515,
+			},
+		},
 		StakingConfig: StakingConfig{
 			UptimeRequirement: .6, // 60% for testnet
 			MinValidatorStake: 10 * units.Lux,
@@ -60,17 +95,6 @@ var (
 				MintingPeriod:      90 * 24 * time.Hour,
 				SupplyCap:          100_000_000 * units.Lux, // 100 million for testnet
 			},
-		},
-		StaticConfig: fee.StaticConfig{
-			TxFee:                         units.Lux / 1000,
-			CreateAssetTxFee:              units.Lux / 100,
-			CreateSubnetTxFee:             10 * units.Lux,
-			TransformSubnetTxFee:          10 * units.Lux,
-			CreateBlockchainTxFee:         10 * units.Lux,
-			AddPrimaryNetworkValidatorFee: 0,
-			AddPrimaryNetworkDelegatorFee: 0,
-			AddSubnetValidatorFee:         units.Lux / 1000,
-			AddSubnetDelegatorFee:         units.Lux / 1000,
 		},
 	}
 )

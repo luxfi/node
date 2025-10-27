@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/network/network_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/network_test.go
 // See the file LICENSE for licensing terms.
 
 package network
@@ -15,7 +11,6 @@ import (
 
 	"github.com/luxfi/mock/gomock"
 
-<<<<<<< HEAD:vms/avm/network/network_test.go
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/engine/common/commonmock"
@@ -26,17 +21,6 @@ import (
 	"github.com/luxfi/node/vms/avm/fxs"
 	"github.com/luxfi/node/vms/avm/txs"
 	"github.com/luxfi/node/vms/components/lux"
-=======
-	"github.com/stretchr/testify/require"
-
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/core/coremock"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorstest"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/metric"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/network_test.go
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -75,12 +59,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		name           string
 		mempool        mempool.Mempool[*txs.Tx]
 		txVerifierFunc func(*gomock.Controller) TxVerifier
-<<<<<<< HEAD:vms/avm/network/network_test.go
 		appSenderFunc  func(*gomock.Controller) common.AppSender
 		tx             *txs.Tx
-=======
-		appSenderFunc  func(*gomock.Controller) core.AppSender
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/network_test.go
 		expectedErr    error
 	}
 
@@ -210,18 +190,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				txVerifier.EXPECT().VerifyTx(gomock.Any()).Return(nil)
 				return txVerifier
 			},
-<<<<<<< HEAD:vms/avm/network/network_test.go
 			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
 				appSender := commonmock.NewSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-=======
-			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := &coremock.MockAppSender{
-					SendAppGossipF: func(context.Context, set.Set[ids.NodeID], []byte) error {
-						return nil
-					},
-				}
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/network_test.go
 				return appSender
 			},
 			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
@@ -250,13 +221,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				txVerifierFunc = tt.txVerifierFunc
 			}
 
-<<<<<<< HEAD:vms/avm/network/network_test.go
 			appSenderFunc := func(ctrl *gomock.Controller) common.AppSender {
 				return commonmock.NewSender(ctrl)
-=======
-			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
-				return coremock.NewMockAppSender(ctrl)
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/network_test.go
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
@@ -293,13 +259,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 	type test struct {
 		name          string
-<<<<<<< HEAD:vms/avm/network/network_test.go
 		mempool       mempool.Mempool[*txs.Tx]
 		appSenderFunc func(*gomock.Controller) common.AppSender
-=======
-		mempoolFunc   func(*gomock.Controller) xmempool.Mempool
-		appSenderFunc func(*gomock.Controller) core.AppSender
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/network_test.go
 		expectedErr   error
 	}
 
@@ -310,20 +271,10 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				mempool, err := xmempool.New("", prometheus.NewRegistry())
 				require.NoError(t, err)
 				return mempool
-<<<<<<< HEAD:vms/avm/network/network_test.go
 			}(),
 			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
 				appSender := commonmock.NewSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-=======
-			},
-			appSenderFunc: func(ctrl *gomock.Controller) core.AppSender {
-				appSender := &coremock.MockAppSender{
-					SendAppGossipF: func(context.Context, set.Set[ids.NodeID], []byte) error {
-						return nil
-					},
-				}
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/network_test.go
 				return appSender
 			},
 			expectedErr: nil,
@@ -344,20 +295,8 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 			)
 			require.NoError(err)
 
-<<<<<<< HEAD:vms/avm/network/network_test.go
 			appSenderFunc := func(ctrl *gomock.Controller) common.AppSender {
 				return commonmock.NewSender(ctrl)
-=======
-			mempoolFunc := func(ctrl *gomock.Controller) xmempool.Mempool {
-				return xmempool.NewMockMempool(ctrl)
-			}
-			if tt.mempoolFunc != nil {
-				mempoolFunc = tt.mempoolFunc
-			}
-
-			appSenderFunc := func(ctrl *gomock.Controller) core.AppSender {
-				return coremock.NewMockAppSender(ctrl)
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/network_test.go
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
