@@ -4,6 +4,7 @@
 package node
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"crypto/tls"
@@ -1456,7 +1457,7 @@ func (n *Node) initHealthAPI() error {
 		}
 
 		nodePK := n.Config.StakingSigningKey.PublicKey()
-		if nodePK.Equals(vdrPK) {
+		if bytes.Equal(bls.PublicKeyToCompressedBytes(nodePK), bls.PublicKeyToCompressedBytes(vdrPK)) {
 			return "node has the correct BLS key", nil
 		}
 		return nil, fmt.Errorf("node has BLS key 0x%x, but is registered to the validator set with 0x%x",

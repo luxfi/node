@@ -12,11 +12,7 @@ package luxmock
 import (
 	reflect "reflect"
 
-<<<<<<< HEAD:vms/components/avax/avaxmock/transferable_out.go
 	snow "github.com/luxfi/node/snow"
-=======
-	consensus "github.com/luxfi/consensus"
->>>>>>> origin/regenesis-runtime-replay:vms/components/lux/lux/avaxmock/transferable_out.go
 	verify "github.com/luxfi/node/vms/components/verify"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -61,11 +57,7 @@ func (mr *TransferableOutMockRecorder) Amount() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-<<<<<<< HEAD:vms/components/avax/avaxmock/transferable_out.go
 func (m *TransferableOut) InitCtx(arg0 *snow.Context) {
-=======
-func (m *TransferableOut) InitCtx(arg0 *consensus.Context) {
->>>>>>> origin/regenesis-runtime-replay:vms/components/lux/lux/avaxmock/transferable_out.go
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", arg0)
 }

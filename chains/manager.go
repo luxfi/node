@@ -760,7 +760,9 @@ func (m *manager) createLuxChain(
 	)
 
 	// Note: this does not use [dagVM] to ensure we use the [vm]'s height index.
-	untracedVMWrappedInsideProposerVM := NewLinearizeOnInitializeVM(vm)
+	// Create a channel for engine communication - this will be used by the VM's Linearize method
+	toEngine := make(chan common.Message, 1)
+	untracedVMWrappedInsideProposerVM := NewLinearizeOnInitializeVM(vm, toEngine)
 
 	var vmWrappedInsideProposerVM block.ChainVM = untracedVMWrappedInsideProposerVM
 	if m.TracingEnabled {
@@ -987,7 +989,7 @@ func (m *manager) createLuxChain(
 	}
 
 	// create engine gear
-	luxEngine := aveng.New(ctx, avaGetHandler)
+	luxEngine := aveng.New(ctx, avaGetHandler, linearizableVM)
 	if m.TracingEnabled {
 		luxEngine = common.TraceEngine(luxEngine, m.Tracer)
 	}
@@ -996,15 +998,14 @@ func (m *manager) createLuxChain(
 	luxBootstrapperConfig := avbootstrap.Config{
 		AllGetsServer:                  avaGetHandler,
 		Ctx:                            ctx,
+		Beacons:                        vdrs,
 		StartupTracker:                 startupTracker,
 		Sender:                         luxMessageSender,
-		PeerTracker:                    peerTracker,
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
 		VtxBlocked:                     vtxBlocker,
 		TxBlocked:                      txBlocker,
 		Manager:                        vtxManager,
 		VM:                             linearizableVM,
-		Haltable:                       &halter,
 	}
 	if ctx.ChainID == m.XChainID {
 		luxBootstrapperConfig.StopVertexID = m.Upgrades.CortinaXChainStopVertexID
@@ -1014,7 +1015,6 @@ func (m *manager) createLuxChain(
 	luxBootstrapper, err = avbootstrap.New(
 		luxBootstrapperConfig,
 		snowmanBootstrapper.Start,
-		luxMetrics,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing lux bootstrapper: %w", err)

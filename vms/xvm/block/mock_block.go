@@ -87,11 +87,7 @@ func (mr *MockBlockMockRecorder) ID() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-<<<<<<< HEAD:vms/avm/block/mock_block.go
 func (m *MockBlock) InitCtx(ctx *snow.Context) {
-=======
-func (m *MockBlock) InitCtx(arg0 context.Context) {
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/mock_block.go
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", ctx)
 }

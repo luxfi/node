@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/genesis.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/genesis.go
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -14,7 +10,6 @@ import (
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils"
-<<<<<<< HEAD:vms/avm/genesis.go
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/vms/avm/fxs"
 	"github.com/luxfi/node/vms/avm/txs"
@@ -23,9 +18,6 @@ import (
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
-=======
-	"github.com/luxfi/node/vms/xvm/txs"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/genesis.go
 )
 
 var (

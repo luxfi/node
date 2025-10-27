@@ -72,11 +72,13 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 type linearizeOnInitializeVM struct {
 	vertex.LinearizableVMWithEngine
 	stopVertexID ids.ID
+	toEngine     chan<- common.Message
 }
 
-func NewLinearizeOnInitializeVM(vm vertex.LinearizableVMWithEngine) *linearizeOnInitializeVM {
+func NewLinearizeOnInitializeVM(vm vertex.LinearizableVMWithEngine, toEngine chan<- common.Message) *linearizeOnInitializeVM {
 	return &linearizeOnInitializeVM{
 		LinearizableVMWithEngine: vm,
+		toEngine:                 toEngine,
 	}
 }
 
@@ -90,5 +92,5 @@ func (vm *linearizeOnInitializeVM) Initialize(
 	_ []*common.Fx,
 	_ common.AppSender,
 ) error {
-	return vm.Linearize(ctx, vm.stopVertexID)
+	return vm.Linearize(ctx, vm.stopVertexID, vm.toEngine)
 }

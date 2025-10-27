@@ -9,9 +9,9 @@ import (
 	"math/big"
 	"time"
 
-		"github.com/ethereum/go-ethereum/common"
+		"github.com/luxfi/geth/common"
 		"github.com/ethereum/go-ethereum/core/types"
-		"github.com/ethereum/go-ethereum/crypto"
+		"github.com/luxfi/crypto"
 	
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"

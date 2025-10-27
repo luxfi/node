@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/block/builder/builder_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder_test.go
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -24,29 +20,12 @@ import (
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-<<<<<<< HEAD:vms/avm/block/builder/builder_test.go
 	"github.com/luxfi/node/codec/codecmock"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/versiondb"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/snow/consensus/snowman"
-=======
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder_test.go
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/timer/mockable"
-<<<<<<< HEAD:vms/avm/block/builder/builder_test.go
-	"github.com/luxfi/node/vms/avm/block"
-	"github.com/luxfi/node/vms/avm/block/executor/executormock"
-	"github.com/luxfi/node/vms/avm/fxs"
-	"github.com/luxfi/node/vms/avm/metrics"
-	"github.com/luxfi/node/vms/avm/state"
-	"github.com/luxfi/node/vms/avm/state/statemock"
-	"github.com/luxfi/node/vms/avm/txs"
-	"github.com/luxfi/node/vms/avm/txs/mempool"
-	"github.com/luxfi/node/vms/avm/txs/txsmock"
-=======
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder_test.go
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/xvm/block"
@@ -83,13 +62,8 @@ func TestBuilderBuildBlock(t *testing.T) {
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(nil, errTest)
 
-<<<<<<< HEAD:vms/avm/block/builder/builder_test.go
 				mempool, err := mempool.New("", prometheus.NewRegistry())
 				require.NoError(t, err)
-=======
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().RequestBuildBlock()
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder_test.go
 
 				ctx := context.Background()
 				return New(
@@ -118,13 +92,8 @@ func TestBuilderBuildBlock(t *testing.T) {
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
 				manager.EXPECT().GetState(preferredID).Return(nil, false)
 
-<<<<<<< HEAD:vms/avm/block/builder/builder_test.go
 				mempool, err := mempool.New("", prometheus.NewRegistry())
 				require.NoError(t, err)
-=======
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().RequestBuildBlock()
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder_test.go
 
 				ctx := context.Background()
 				return New(
@@ -162,19 +131,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-<<<<<<< HEAD:vms/avm/block/builder/builder_test.go
 				mempool, err := mempool.New("", prometheus.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, mempool.Add(tx))
-=======
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().Peek().Return(tx, true)
-				memPool.EXPECT().Remove([]*txs.Tx{tx})
-				memPool.EXPECT().MarkDropped(tx.ID(), errTest)
-				// Second loop iteration
-				memPool.EXPECT().Peek().Return(nil, false)
-				memPool.EXPECT().RequestBuildBlock()
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder_test.go
 
 				ctx := context.Background()
 				return New(
@@ -213,19 +172,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-<<<<<<< HEAD:vms/avm/block/builder/builder_test.go
 				mempool, err := mempool.New("", prometheus.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, mempool.Add(tx))
-=======
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().Peek().Return(tx, true)
-				memPool.EXPECT().Remove([]*txs.Tx{tx})
-				memPool.EXPECT().MarkDropped(tx.ID(), errTest)
-				// Second loop iteration
-				memPool.EXPECT().Peek().Return(nil, false)
-				memPool.EXPECT().RequestBuildBlock()
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder_test.go
 
 				ctx := context.Background()
 				return New(
@@ -265,19 +214,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-<<<<<<< HEAD:vms/avm/block/builder/builder_test.go
 				mempool, err := mempool.New("", prometheus.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, mempool.Add(tx))
-=======
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().Peek().Return(tx, true)
-				memPool.EXPECT().Remove([]*txs.Tx{tx})
-				memPool.EXPECT().MarkDropped(tx.ID(), errTest)
-				// Second loop iteration
-				memPool.EXPECT().Peek().Return(nil, false)
-				memPool.EXPECT().RequestBuildBlock()
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder_test.go
 
 				ctx := context.Background()
 				return New(
@@ -356,23 +295,10 @@ func TestBuilderBuildBlock(t *testing.T) {
 					},
 				)
 
-<<<<<<< HEAD:vms/avm/block/builder/builder_test.go
 				mempool, err := mempool.New("", prometheus.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, mempool.Add(tx1))
 				require.NoError(t, mempool.Add(tx2))
-=======
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().Peek().Return(tx1, true)
-				memPool.EXPECT().Remove([]*txs.Tx{tx1})
-				// Second loop iteration
-				memPool.EXPECT().Peek().Return(tx2, true)
-				memPool.EXPECT().Remove([]*txs.Tx{tx2})
-				memPool.EXPECT().MarkDropped(tx2.ID(), blkexecutor.ErrConflictingBlockTxs)
-				// Third loop iteration
-				memPool.EXPECT().Peek().Return(nil, false)
-				memPool.EXPECT().RequestBuildBlock()
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder_test.go
 
 				// To marshal the tx/block
 				codec := codecmock.NewManager(ctrl)
@@ -438,18 +364,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-<<<<<<< HEAD:vms/avm/block/builder/builder_test.go
 				mempool, err := mempool.New("", prometheus.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, mempool.Add(tx))
-=======
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().Peek().Return(tx, true)
-				memPool.EXPECT().Remove([]*txs.Tx{tx})
-				// Second loop iteration
-				memPool.EXPECT().Peek().Return(nil, false)
-				memPool.EXPECT().RequestBuildBlock()
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder_test.go
 
 				// To marshal the tx/block
 				codec := codecmock.NewManager(ctrl)
@@ -517,18 +434,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-<<<<<<< HEAD:vms/avm/block/builder/builder_test.go
 				mempool, err := mempool.New("", prometheus.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, mempool.Add(tx))
-=======
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().Peek().Return(tx, true)
-				memPool.EXPECT().Remove([]*txs.Tx{tx})
-				// Second loop iteration
-				memPool.EXPECT().Peek().Return(nil, false)
-				memPool.EXPECT().RequestBuildBlock()
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder_test.go
 
 				// To marshal the tx/block
 				codec := codecmock.NewManager(ctrl)
@@ -565,14 +473,8 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 
 	require := require.New(t)
 
-<<<<<<< HEAD:vms/avm/block/builder/builder_test.go
 	registerer := prometheus.NewRegistry()
 	mempool, err := mempool.New("mempool", registerer)
-=======
-	registerer := metric.NewRegistry()
-	toEngine := make(chan core.MessageType, 100)
-	memPool, err := mempool.New("mempool", registerer, toEngine)
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/builder/builder_test.go
 	require.NoError(err)
 	// add a tx to the mempool
 	tx := transactions[0]

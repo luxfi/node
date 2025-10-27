@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/network/gossip.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/gossip.go
 // See the file LICENSE for licensing terms.
 
 package network
@@ -13,20 +9,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
+	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/txs/mempool"
-<<<<<<< HEAD:vms/avm/network/gossip.go
-=======
 	"github.com/luxfi/node/vms/xvm/txs"
-
-	xmempool "github.com/luxfi/node/vms/xvm/txs/mempool"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/gossip.go
 )
 
 var (
@@ -76,15 +69,9 @@ func (g *txParser) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
 }
 
 func newGossipMempool(
-<<<<<<< HEAD:vms/avm/network/gossip.go
 	mempool mempool.Mempool[*txs.Tx],
 	registerer prometheus.Registerer,
 	log logging.Logger,
-=======
-	mempool xmempool.Mempool,
-	registerer metric.Registerer,
-	log log.Logger,
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/gossip.go
 	txVerifier TxVerifier,
 	minTargetElements int,
 	targetFalsePositiveProbability,
@@ -100,13 +87,8 @@ func newGossipMempool(
 }
 
 type gossipMempool struct {
-<<<<<<< HEAD:vms/avm/network/gossip.go
 	mempool.Mempool[*txs.Tx]
 	log        logging.Logger
-=======
-	xmempool.Mempool
-	log        log.Logger
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/gossip.go
 	txVerifier TxVerifier
 
 	lock  sync.RWMutex

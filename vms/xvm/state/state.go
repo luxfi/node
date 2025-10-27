@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/state/state.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/state/state.go
 // See the file LICENSE for licensing terms.
 
 package state
@@ -160,13 +156,8 @@ func New(
 
 	txCache, err := metercacher.New[ids.ID, *txs.Tx](
 		"tx_cache",
-<<<<<<< HEAD:vms/avm/state/state.go
 		metrics,
 		lru.NewCache[ids.ID, *txs.Tx](txCacheSize),
-=======
-		registry,
-		&cache.LRU[ids.ID, *txs.Tx]{Size: txCacheSize},
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/state/state.go
 	)
 	if err != nil {
 		return nil, err
@@ -174,13 +165,8 @@ func New(
 
 	blockIDCache, err := metercacher.New[uint64, ids.ID](
 		"block_id_cache",
-<<<<<<< HEAD:vms/avm/state/state.go
 		metrics,
 		lru.NewCache[uint64, ids.ID](blockIDCacheSize),
-=======
-		registry,
-		&cache.LRU[uint64, ids.ID]{Size: blockIDCacheSize},
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/state/state.go
 	)
 	if err != nil {
 		return nil, err
@@ -188,13 +174,8 @@ func New(
 
 	blockCache, err := metercacher.New[ids.ID, block.Block](
 		"block_cache",
-<<<<<<< HEAD:vms/avm/state/state.go
 		metrics,
 		lru.NewCache[ids.ID, block.Block](blockCacheSize),
-=======
-		registry,
-		&cache.LRU[ids.ID, block.Block]{Size: blockCacheSize},
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/state/state.go
 	)
 	if err != nil {
 		return nil, err

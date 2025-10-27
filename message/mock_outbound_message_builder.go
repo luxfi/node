@@ -15,7 +15,7 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/node/ids"
-	p2p "github.com/luxfi/node/proto/p2p"
+	p2p "github.com/luxfi/node/proto/pb/p2p"
 	ips "github.com/luxfi/node/utils/ips"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -314,9 +314,9 @@ func (mr *MockOutboundMsgBuilderMockRecorder) PeerList(arg0, arg1 any) *gomock.C
 }
 
 // Ping mocks base method.
-func (m *MockOutboundMsgBuilder) Ping(arg0 uint32, arg1 []*p2p.SubnetUptime) (OutboundMessage, error) {
+func (m *MockOutboundMsgBuilder) Ping(arg0 uint32) (OutboundMessage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Ping", arg0, arg1)
+	ret := m.ctrl.Call(m, "Ping", arg0)
 	ret0, _ := ret[0].(OutboundMessage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1

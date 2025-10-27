@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -13,11 +9,7 @@ import (
 	"testing"
 	"time"
 
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
 	"github.com/prometheus/client_golang/prometheus"
-=======
-	"github.com/luxfi/mock/gomock"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/choices"
@@ -25,33 +17,10 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
 	"github.com/luxfi/node/chains/atomic/atomicmock"
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/upgrade/upgradetest"
-=======
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/timer/mockable"
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
-	"github.com/luxfi/node/vms/avm/block"
-	"github.com/luxfi/node/vms/avm/config"
-	"github.com/luxfi/node/vms/avm/metrics/metricsmock"
-	"github.com/luxfi/node/vms/avm/state/statemock"
-	"github.com/luxfi/node/vms/avm/txs"
-	"github.com/luxfi/node/vms/avm/txs/executor"
-	"github.com/luxfi/node/vms/avm/txs/mempool"
-	"github.com/luxfi/node/vms/avm/txs/txsmock"
-=======
-	"github.com/luxfi/node/vms/xvm/block"
-	"github.com/luxfi/node/vms/xvm/config"
-	"github.com/luxfi/node/vms/xvm/metrics"
-	"github.com/luxfi/node/vms/xvm/state"
-	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/xvm/txs/executor"
-	"github.com/luxfi/node/vms/xvm/txs/mempool"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
 )
 
 func TestBlockVerify(t *testing.T) {
@@ -157,11 +126,7 @@ func TestBlockVerify(t *testing.T) {
 					manager: &manager{
 						backend:      defaultTestBackend(false, nil),
 						mempool:      mempool,
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
 						metrics:      metricsmock.NewMetrics(ctrl),
-=======
-						metrics:      metric.NewMockMetrics(ctrl),
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
 						blkIDToState: map[ids.ID]*blockState{},
 						clk:          &mockable.Clock{},
 					},
@@ -319,11 +284,7 @@ func TestBlockVerify(t *testing.T) {
 					manager: &manager{
 						backend: defaultTestBackend(false, nil),
 						mempool: mempool,
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
 						metrics: metricsmock.NewMetrics(ctrl),
-=======
-						metrics: metric.NewMockMetrics(ctrl),
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
 						blkIDToState: map[ids.ID]*blockState{
 							parentID: {
 								onAcceptState:  mockParentState,
@@ -373,11 +334,7 @@ func TestBlockVerify(t *testing.T) {
 					Block: mockBlock,
 					manager: &manager{
 						mempool: mempool,
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
 						metrics: metricsmock.NewMetrics(ctrl),
-=======
-						metrics: metric.NewMockMetrics(ctrl),
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
 						backend: defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{
 							parentID: {
@@ -455,11 +412,7 @@ func TestBlockVerify(t *testing.T) {
 					Block: mockBlock,
 					manager: &manager{
 						mempool: mempool,
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
 						metrics: metricsmock.NewMetrics(ctrl),
-=======
-						metrics: metric.NewMockMetrics(ctrl),
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
 						backend: defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{
 							parentID: {
@@ -570,13 +523,8 @@ func TestBlockVerify(t *testing.T) {
 				return &Block{
 					Block: mockBlock,
 					manager: &manager{
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
 						mempool: mempool,
 						metrics: metricsmock.NewMetrics(ctrl),
-=======
-						mempool: mockMempool,
-						metrics: metric.NewMockMetrics(ctrl),
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
 						backend: defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{
 							parentID: {
@@ -650,11 +598,7 @@ func TestBlockAccept(t *testing.T) {
 					Block: mockBlock,
 					manager: &manager{
 						mempool:      mempool,
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
 						metrics:      metricsmock.NewMetrics(ctrl),
-=======
-						metrics:      metric.NewMockMetrics(ctrl),
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
 						backend:      defaultTestBackend(false, nil),
 						blkIDToState: map[ids.ID]*blockState{},
 					},
@@ -758,13 +702,8 @@ func TestBlockAccept(t *testing.T) {
 				mockOnAcceptState := statemock.NewDiff(ctrl)
 				mockOnAcceptState.EXPECT().Apply(mockManagerState)
 
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
 				metrics := metricsmock.NewMetrics(ctrl)
 				metrics.EXPECT().MarkBlockAccepted(gomock.Any()).Return(errTest)
-=======
-				metricsObj := metric.NewMockMetrics(ctrl)
-				metricsObj.EXPECT().MarkBlockAccepted(gomock.Any()).Return(errTest)
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
 
 				return &Block{
 					Block: mockBlock,
@@ -809,13 +748,8 @@ func TestBlockAccept(t *testing.T) {
 				mockOnAcceptState := statemock.NewDiff(ctrl)
 				mockOnAcceptState.EXPECT().Apply(mockManagerState)
 
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
 				metrics := metricsmock.NewMetrics(ctrl)
 				metrics.EXPECT().MarkBlockAccepted(gomock.Any()).Return(nil)
-=======
-				metricsObj := metric.NewMockMetrics(ctrl)
-				metricsObj.EXPECT().MarkBlockAccepted(gomock.Any()).Return(nil)
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
 
 				return &Block{
 					Block: mockBlock,
@@ -917,11 +851,7 @@ func TestBlockReject(t *testing.T) {
 					manager: &manager{
 						lastAccepted: lastAcceptedID,
 						mempool:      mempool,
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
 						metrics:      metricsmock.NewMetrics(ctrl),
-=======
-						metrics:      metric.NewMockMetrics(ctrl),
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
 						backend:      defaultTestBackend(true, nil),
 						state:        mockState,
 						blkIDToState: map[ids.ID]*blockState{
@@ -974,11 +904,7 @@ func TestBlockReject(t *testing.T) {
 					manager: &manager{
 						lastAccepted: lastAcceptedID,
 						mempool:      mempool,
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
 						metrics:      metricsmock.NewMetrics(ctrl),
-=======
-						metrics:      metric.NewMockMetrics(ctrl),
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
 						backend:      defaultTestBackend(true, nil),
 						state:        mockState,
 						blkIDToState: map[ids.ID]*blockState{
@@ -1013,11 +939,7 @@ func defaultTestBackend(bootstrapped bool, sharedMemory atomic.SharedMemory) *ex
 		Bootstrapped: bootstrapped,
 		Ctx:          ctx,
 		Config: &config.Config{
-<<<<<<< HEAD:vms/avm/block/executor/block_test.go
 			Upgrades:         upgradetest.GetConfig(upgradetest.Durango),
-=======
-			EtnaTime:         mockable.MaxTime,
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block_test.go
 			TxFee:            0,
 			CreateAssetTxFee: 0,
 		},

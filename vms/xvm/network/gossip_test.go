@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/network/gossip_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/gossip_test.go
 // See the file LICENSE for licensing terms.
 
 package network
@@ -12,25 +8,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD:vms/avm/network/gossip_test.go
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/avm/fxs"
 	"github.com/luxfi/node/vms/avm/txs"
 	"github.com/luxfi/node/vms/avm/txs/mempool"
-=======
-	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
-
-	"github.com/luxfi/consensus/core"
-
-	"github.com/luxfi/node/vms/xvm/fxs"
-
-	"github.com/luxfi/node/vms/xvm/txs"
-
-	"github.com/luxfi/node/vms/xvm/txs/mempool"
-
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/gossip_test.go
 	"github.com/luxfi/node/vms/components/lux"
 
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -74,12 +56,7 @@ func TestMarshaller(t *testing.T) {
 func TestGossipMempoolAdd(t *testing.T) {
 	require := require.New(t)
 
-<<<<<<< HEAD:vms/avm/network/gossip_test.go
 	metrics := prometheus.NewRegistry()
-=======
-	metrics := metric.NewNoOp().Registry()
-	toEngine := make(chan core.MessageType, 1)
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/gossip_test.go
 
 	baseMempool, err := mempool.New("", metrics)
 	require.NoError(err)
@@ -111,12 +88,7 @@ func TestGossipMempoolAdd(t *testing.T) {
 func TestGossipMempoolAddVerified(t *testing.T) {
 	require := require.New(t)
 
-<<<<<<< HEAD:vms/avm/network/gossip_test.go
 	metrics := prometheus.NewRegistry()
-=======
-	metrics := metric.NewNoOp().Registry()
-	toEngine := make(chan core.MessageType, 1)
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/gossip_test.go
 
 	baseMempool, err := mempool.New("", metrics)
 	require.NoError(err)

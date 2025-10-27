@@ -86,16 +86,37 @@ func (v *MempoolTxVerifier) BaseTx(tx *txs.BaseTx) error {
 	return v.standardTx(tx)
 }
 
+// Etna Transactions:
+func (v *MempoolTxVerifier) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+	return v.standardTx(tx)
+}
+
+func (v *MempoolTxVerifier) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
+	return v.standardTx(tx)
+}
+
+func (v *MempoolTxVerifier) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
+	return v.standardTx(tx)
+}
+
+func (v *MempoolTxVerifier) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
+	return v.standardTx(tx)
+}
+
+func (v *MempoolTxVerifier) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
+	return v.standardTx(tx)
+}
+
 func (v *MempoolTxVerifier) standardTx(tx txs.UnsignedTx) error {
 	baseState, err := v.standardBaseState()
 	if err != nil {
 		return err
 	}
 
-	executor := StandardTxExecutor{
-		Backend: v.Backend,
-		State:   baseState,
-		Tx:      v.Tx,
+	executor := standardTxExecutor{
+		backend: v.Backend,
+		state:   baseState,
+		tx:      v.Tx,
 	}
 	err = tx.Visit(&executor)
 	// We ignore [errFutureStakeTime] here because the time will be advanced
@@ -134,7 +155,11 @@ func (v *MempoolTxVerifier) nextBlockTime(chainState state.Diff) (time.Time, err
 	if parentTime.After(nextBlkTime) {
 		nextBlkTime = parentTime
 	}
-	nextStakerChangeTime, err := state.GetNextStakerChangeTime(chainState)
+	nextStakerChangeTime, err := state.GetNextStakerChangeTime(
+		v.Backend.Config.ValidatorFeeConfig,
+		chainState,
+		nextBlkTime,
+	)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("could not calculate next staker change time: %w", err)
 	}

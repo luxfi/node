@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/txs/executor/syntactic_verifier_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/txs/executor/syntactic_verifier_test.go
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -15,7 +11,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD:vms/avm/txs/executor/syntactic_verifier_test.go
 	"github.com/luxfi/node/ids"
 	"github.com/luxfi/node/snow/snowtest"
 	"github.com/luxfi/node/upgrade/upgradetest"
@@ -24,13 +19,6 @@ import (
 	"github.com/luxfi/node/vms/avm/config"
 	"github.com/luxfi/node/vms/avm/fxs"
 	"github.com/luxfi/node/vms/avm/txs"
-=======
-	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/timer/mockable"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/txs/executor/syntactic_verifier_test.go
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"

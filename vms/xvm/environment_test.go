@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/environment_test.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/environment_test.go
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -10,16 +6,12 @@ package xvm
 import (
 	"context"
 	"encoding/json"
-<<<<<<< HEAD:vms/avm/environment_test.go
-=======
 	"math/rand"
 	"sync"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/environment_test.go
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD:vms/avm/environment_test.go
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
@@ -42,66 +34,6 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
-=======
-	"github.com/luxfi/consensus"
-	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/core/appsender"
-	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/prefixdb"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/sampler"
-	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/xvm/block/executor"
-	"github.com/luxfi/node/vms/xvm/config"
-	"github.com/luxfi/node/vms/xvm/fxs"
-	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/xvm/txs/txstest"
-
-	avajson "github.com/luxfi/node/utils/json"
-)
-
-// testValidatorState is a mock implementation of consensus ValidatorState for tests
-type testValidatorState struct{}
-
-func (tvs *testValidatorState) GetCurrentHeight() (uint64, error) {
-	return 100, nil
-}
-
-func (tvs *testValidatorState) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
-	// Return a simple validator set for testing
-	return map[ids.NodeID]uint64{
-		ids.GenerateTestNodeID(): 1000,
-	}, nil
-}
-
-func (tvs *testValidatorState) GetMinimumHeight(ctx context.Context) (uint64, error) {
-	return 0, nil
-}
-
-func (tvs *testValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
-	return ids.GenerateTestID(), nil
-}
-
-func (tvs *testValidatorState) GetChainID(chainID ids.ID) (ids.ID, error) {
-	return chainID, nil
-}
-
-func (tvs *testValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	return ids.GenerateTestID(), nil
-}
-
-type fork uint8
-
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/environment_test.go
 const (
 	testTxFee    uint64 = 1000
 	startBalance uint64 = 50000
@@ -111,8 +43,6 @@ const (
 )
 
 var (
-<<<<<<< HEAD:vms/avm/environment_test.go
-=======
 	testChangeAddr = ids.GenerateTestShortID()
 	testCases      = []struct {
 		name     string
@@ -128,7 +58,6 @@ var (
 		},
 	}
 
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/environment_test.go
 	assetID = ids.ID{1, 2, 3}
 
 	keys  = secp256k1.TestKeys()[:3] // Implementation note
@@ -210,18 +139,11 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	// The caller of this function is responsible for unlocking.
 	testLock.Lock()
 
-<<<<<<< HEAD:vms/avm/environment_test.go
 	vmStaticConfig := config.Config{
 		Upgrades:         upgradetest.GetConfig(c.fork),
 		TxFee:            testTxFee,
 		CreateAssetTxFee: testTxFee,
 	}
-=======
-	// Create a context with validator state for the VM
-	ctx := consensus.WithValidatorState(context.Background(), mockValidatorState)
-
-	vmStaticConfig := staticConfig(tb, c.fork)
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/environment_test.go
 	if c.vmStaticConfig != nil {
 		vmStaticConfig = *c.vmStaticConfig
 	}
@@ -255,7 +177,6 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	}
 
 	require.NoError(vm.Initialize(
-<<<<<<< HEAD:vms/avm/environment_test.go
 		context.Background(),
 		ctx,
 		prefixdb.New([]byte{1}, baseDB),
@@ -276,17 +197,6 @@ func setup(tb testing.TB, c *envConfig) *environment {
 			c.additionalFxs...,
 		),
 		&enginetest.Sender{},
-=======
-		ctx,                             // context.Context
-		consensusCtx,                    // chainCtx interface{}
-		prefixdb.New([]byte{1}, baseDB), // dbManager interface{}
-		genesisBytes,                    // genesisBytes []byte
-		nil,                             // upgradeBytes []byte
-		configBytes,                     // configBytes []byte
-		toEngine,                        // toEngine chan<- interface{}
-		fxList,                          // fxs []interface{}
-		&appsender.FakeSender{},         // appSender interface{}
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/environment_test.go
 	))
 
 	stopVertexID := ids.GenerateTestID()
@@ -323,8 +233,6 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	return env
 }
 
-<<<<<<< HEAD:vms/avm/environment_test.go
-=======
 func staticConfig(tb testing.TB, f fork) config.Config {
 	c := config.Config{
 		TxFee:            testTxFee,
@@ -343,7 +251,6 @@ func staticConfig(tb testing.TB, f fork) config.Config {
 	return c
 }
 
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/environment_test.go
 // Returns:
 //
 //  1. tx in genesis that creates asset
@@ -587,16 +494,9 @@ func buildAndAccept(
 	vm *VM,
 	txID ids.ID,
 ) {
-<<<<<<< HEAD:vms/avm/environment_test.go
 	msg, err := vm.WaitForEvent(context.Background())
 	require.NoError(err)
 	require.Equal(common.PendingTxs, msg)
-=======
-	// Wait for the VM to signal that there are pending transactions
-	msg, err := vm.WaitForEvent(context.Background())
-	require.NoError(err)
-	require.Equal(core.PendingTxs, msg)
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/environment_test.go
 
 	// Note: In tests, we don't need to lock since we're running synchronously
 

@@ -1,8 +1,4 @@
-<<<<<<< HEAD:vms/avm/network/network.go
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
-=======
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/network.go
 // See the file LICENSE for licensing terms.
 
 package network
@@ -19,16 +15,11 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
-<<<<<<< HEAD:vms/avm/network/network.go
 	"github.com/luxfi/node/snow/engine/common"
 	"github.com/luxfi/node/snow/validators"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/avm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
-=======
-	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/xvm/txs/mempool"
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/network.go
 )
 
 var (
@@ -39,15 +30,8 @@ var (
 type Network struct {
 	*p2p.Network
 
-<<<<<<< HEAD:vms/avm/network/network.go
 	log     logging.Logger
 	mempool *gossipMempool
-=======
-	log       log.Logger
-	parser    txs.Parser
-	mempool   *gossipMempool
-	appSender core.AppSender
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/network.go
 
 	txPushGossiper        *gossip.PushGossiper[*txs.Tx]
 	txPushGossipFrequency time.Duration
@@ -62,15 +46,9 @@ func New(
 	vdrs validators.State,
 	parser txs.Parser,
 	txVerifier TxVerifier,
-<<<<<<< HEAD:vms/avm/network/network.go
 	mempool mempool.Mempool[*txs.Tx],
 	appSender common.AppSender,
 	registerer prometheus.Registerer,
-=======
-	mempool mempool.Mempool,
-	appSender core.AppSender,
-	registerer metric.Registerer,
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/network/network.go
 	config Config,
 ) (*Network, error) {
 	p2pNetwork, err := p2p.NewNetwork(log, appSender, registerer, "p2p")
