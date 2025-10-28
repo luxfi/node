@@ -1,4 +1,4 @@
-// Copyright (C) 2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2025, Lux Partners Limited All rights reserved.
 // FALCON transfer input and output types for post-quantum UTXO transactions
 
 package falconfx

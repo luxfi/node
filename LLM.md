@@ -460,7 +460,7 @@ All Lux repositories have been synced with upstream Avalanche (ava-labs) reposit
 2. **Branding Changes**
    - AVAX → LUX throughout codebase
    - luxfi package namespace
-   - Lux Industries Inc. copyright headers
+   - Lux Partners Limited copyright headers
 
 3. **Network Customizations**
    - Network ID 96369 (Lux Mainnet)
