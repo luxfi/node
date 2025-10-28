@@ -30,8 +30,17 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/leanovate/gopter v0.2.11
-	github.com/luxfi/geth v0.0.0-00010101000000-000000000000
+	github.com/luxfi/bft v0.1.0
+	github.com/luxfi/consensus v0.0.0
+	github.com/luxfi/crypto v1.17.4
+	github.com/luxfi/database v1.2.3
+	github.com/luxfi/geth v1.16.34
+	github.com/luxfi/ids v1.1.2
 	github.com/luxfi/ledger-lux/go v0.0.0-20241009183145-e6f90a8a1a60
+	github.com/luxfi/log v1.1.22
+	github.com/luxfi/math v0.1.2
+	github.com/luxfi/metric v1.4.3
+	github.com/luxfi/mock v0.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
@@ -69,24 +78,15 @@ require (
 	golang.org/x/time v0.12.0
 	golang.org/x/tools v0.36.0
 	gonum.org/v1/gonum v0.16.0
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251022142026-3a174f9686a8
 	google.golang.org/grpc v1.75.1
-	google.golang.org/protobuf v1.36.8
+	google.golang.org/protobuf v1.36.10
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.34.1
 	k8s.io/apimachinery v0.34.1
 	k8s.io/client-go v0.34.1
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
-	github.com/luxfi/consensus v0.0.0
-	github.com/luxfi/ids v1.1.2
-	github.com/luxfi/log v1.1.22
-	github.com/luxfi/metric v1.4.3
-	github.com/luxfi/math v0.1.2
-	github.com/luxfi/database v1.2.3
-	github.com/luxfi/crypto v1.4.17
-	github.com/luxfi/bft v0.1.0
-	github.com/luxfi/mock v0.1.0
 )
 
 require (
@@ -181,7 +181,7 @@ require (
 )
 
 require (
-	github.com/ethereum/go-ethereum v1.16.3
+	github.com/ethereum/go-ethereum v1.16.4
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72
 )
@@ -195,21 +195,20 @@ require (
 	github.com/ethereum/c-kzg-4844/v2 v2.1.3 // indirect
 	github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
-	github.com/fatih/color v1.16.0 // indirect
+	github.com/fatih/color v1.18.0 // indirect
 	github.com/ferranbt/fastssz v1.0.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/luxfi/crypto v1.17.4 // indirect
-	github.com/luxfi/ids v1.1.1 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/olekukonko/errors v1.1.0 // indirect
 	github.com/olekukonko/ll v0.0.9 // indirect
 	github.com/sagikazarmark/locafero v0.10.0 // indirect
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/zondax/golem v0.27.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
