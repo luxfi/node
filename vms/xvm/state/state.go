@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
@@ -140,7 +140,7 @@ type state struct {
 func New(
 	db *versiondb.Database,
 	parser block.Parser,
-	metrics metric.Registerer,
+	metrics prometheus.Registerer,
 	trackChecksums bool,
 ) (State, error) {
 	utxoDB := prefixdb.New(utxoPrefix, db)
@@ -148,11 +148,6 @@ func New(
 	blockIDDB := prefixdb.New(blockIDPrefix, db)
 	blockDB := prefixdb.New(blockPrefix, db)
 	singletonDB := prefixdb.New(singletonPrefix, db)
-
-	registry, ok := metrics.(metric.Registry)
-	if !ok {
-		return nil, errors.New("metrics must be a Registry")
-	}
 
 	txCache, err := metercacher.New[ids.ID, *txs.Tx](
 		"tx_cache",
