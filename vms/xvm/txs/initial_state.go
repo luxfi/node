@@ -4,6 +4,7 @@
 package txs
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
 	"bytes"
 	"cmp"
 	"context"
@@ -31,7 +32,7 @@ type InitialState struct {
 	Outs    []verify.State `serialize:"true"  json:"outputs"`
 }
 
-func (is *InitialState) InitCtx(ctx context.Context) {
+func (is *InitialState) InitCtx(ctx *consensusctx.Context) {
 	// verify.State doesn't have InitCtx method
 	// The InitCtx is handled at a higher level
 }

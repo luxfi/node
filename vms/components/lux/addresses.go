@@ -69,9 +69,10 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 		return ids.ID{}, ids.ShortID{}, err
 	}
 
-	chainID, err := a.ctx.BCLookup.Lookup(chainIDAlias)
+	// Try to parse chainIDAlias as an ID directly since consensus context doesn't have BCLookup
+	chainID, err := ids.FromString(chainIDAlias)
 	if err != nil {
-		return ids.ID{}, ids.ShortID{}, err
+		return ids.ID{}, ids.ShortID{}, fmt.Errorf("failed to parse chain ID %q: %w", chainIDAlias, err)
 	}
 
 	expectedHRP := constants.GetHRP(a.ctx.NetworkID)
@@ -95,10 +96,8 @@ func (a *addressManager) FormatLocalAddress(addr ids.ShortID) (string, error) {
 }
 
 func (a *addressManager) FormatAddress(chainID ids.ID, addr ids.ShortID) (string, error) {
-	chainIDAlias, err := a.ctx.BCLookup.PrimaryAlias(chainID)
-	if err != nil {
-		return "", err
-	}
+	// Use ChainID directly - consensus context doesn't have BCLookup
+	chainIDAlias := chainID.String()
 	hrp := constants.GetHRP(a.ctx.NetworkID)
 	return address.Format(chainIDAlias, hrp, addr.Bytes())
 }

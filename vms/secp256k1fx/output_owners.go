@@ -137,10 +137,8 @@ func formatAddress(ctx *consensusctx.Context, addr ids.ShortID) (string, error) 
 		return addr.String(), nil
 	}
 
-	chainIDAlias, err := ctx.BCLookup.PrimaryAlias(ctx.ChainID)
-	if err != nil {
-		return "", err
-	}
+	// Use ChainID directly - consensus context doesn't have BCLookup
+	chainIDAlias := ctx.ChainID.String()
 
 	hrp := constants.GetHRP(ctx.NetworkID)
 	return address.Format(chainIDAlias, hrp, addr.Bytes())

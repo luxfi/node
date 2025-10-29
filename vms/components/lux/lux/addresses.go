@@ -69,9 +69,10 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 		return ids.Empty, ids.ShortID{}, err
 	}
 
-	chainID, err := a.ctx.BCLookup.Lookup(chainIDAlias)
+	// Try to parse chainIDAlias as an ID directly since consensus context doesn't have BCLookup
+	chainID, err := ids.FromString(chainIDAlias)
 	if err != nil {
-		return ids.Empty, ids.ShortID{}, err
+		return ids.Empty, ids.ShortID{}, fmt.Errorf("failed to parse chain ID %q: %w", chainIDAlias, err)
 	}
 
 	expectedHRP := constants.GetHRP(a.ctx.NetworkID)

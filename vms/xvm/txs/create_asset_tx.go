@@ -4,7 +4,7 @@
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
 
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -23,7 +23,7 @@ type CreateAssetTx struct {
 	States       []*InitialState `serialize:"true" json:"initialStates"`
 }
 
-func (t *CreateAssetTx) InitCtx(ctx context.Context) {
+func (t *CreateAssetTx) InitCtx(ctx *consensusctx.Context) {
 	for _, state := range t.States {
 		state.InitCtx(ctx)
 	}
@@ -31,7 +31,7 @@ func (t *CreateAssetTx) InitCtx(ctx context.Context) {
 }
 
 // InitializeContext initializes the context for this transaction
-func (t *CreateAssetTx) InitializeContext(ctx context.Context) error {
+func (t *CreateAssetTx) InitializeContext(ctx *consensusctx.Context) error {
 	t.InitCtx(ctx)
 	return nil
 }
