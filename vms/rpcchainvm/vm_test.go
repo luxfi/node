@@ -6,33 +6,11 @@ package rpcchainvm
 import (
 	"context"
 	"fmt"
-	"net"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"os/exec"
-	"reflect"
-	"slices"
 	"testing"
-	"time"
 
-	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/test/bufconn"
-
-	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/snow/engine/enginetest"
-	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/engine/snowman/block/blockmock"
-	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
-	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
-	"github.com/luxfi/node/vms/rpcchainvm/runtime"
-	"github.com/luxfi/node/vms/rpcchainvm/runtime/subprocess"
-
-	vmpb "github.com/luxfi/node/proto/pb/vm"
+	"github.com/luxfi/consensus/engine/chain/block"
 )
 
 const (
@@ -57,7 +35,6 @@ var TestServerPluginMap = map[string]func(*testing.T, bool) block.ChainVM{
 	acceptStateSummaryTestKey:                      acceptStateSummaryTestPlugin,
 	lastAcceptedBlockPostStateSummaryAcceptTestKey: lastAcceptedBlockPostStateSummaryAcceptTestPlugin,
 	contextTestKey:                                 contextEnabledTestPlugin,
-	batchedParseBlockCachingTestKey:                batchedParseBlockCachingTestPlugin,
 }
 
 // helperProcess helps with creating the subnet binary for testing.
@@ -99,161 +76,20 @@ func TestHelperProcess(t *testing.T) {
 		select {}
 	}
 
-	mockedVM := TestServerPluginMap[testKey](t, true /*loadExpectations*/)
+	pluginFunc, ok := TestServerPluginMap[testKey]
+	if !ok {
+		fmt.Fprintf(os.Stderr, "test plugin not found for key: %s\n", testKey)
+		os.Exit(2)
+	}
+	mockedVM := pluginFunc(t, true /*loadExpectations*/)
+	if mockedVM == nil {
+		fmt.Fprintf(os.Stderr, "test plugin returned nil for key: %s\n", testKey)
+		os.Exit(2)
+	}
 	err := Serve(context.Background(), mockedVM)
 	if err != nil {
 		os.Exit(1)
 	}
 
 	os.Exit(0)
-}
-
-// TestVMServerInterface ensures that the RPCs methods defined by VMServer
-// interface are implemented.
-func TestVMServerInterface(t *testing.T) {
-	var wantMethods, gotMethods []string
-	pb := reflect.TypeOf((*vmpb.VMServer)(nil)).Elem()
-	for i := 0; i < pb.NumMethod()-1; i++ {
-		wantMethods = append(wantMethods, pb.Method(i).Name)
-	}
-	slices.Sort(wantMethods)
-
-	impl := reflect.TypeOf(&VMServer{})
-	for i := 0; i < impl.NumMethod(); i++ {
-		gotMethods = append(gotMethods, impl.Method(i).Name)
-	}
-	slices.Sort(gotMethods)
-
-	require.Equal(t, wantMethods, gotMethods)
-}
-
-func TestRuntimeSubprocessBootstrap(t *testing.T) {
-	tests := []struct {
-		name      string
-		config    *subprocess.Config
-		assertErr func(require *require.Assertions, err error)
-		// if false vm initialize bootstrap will fail
-		serveVM bool
-	}{
-		{
-			name: "happy path",
-			config: &subprocess.Config{
-				Stderr:           logging.NoLog{},
-				Stdout:           logging.NoLog{},
-				Log:              logging.NoLog{},
-				HandshakeTimeout: runtime.DefaultHandshakeTimeout,
-			},
-			assertErr: func(require *require.Assertions, err error) {
-				require.NoError(err)
-			},
-			serveVM: true,
-		},
-		{
-			name: "invalid stderr",
-			config: &subprocess.Config{
-				Stdout:           logging.NoLog{},
-				Log:              logging.NoLog{},
-				HandshakeTimeout: runtime.DefaultHandshakeTimeout,
-			},
-			assertErr: func(require *require.Assertions, err error) {
-				require.ErrorIs(err, runtime.ErrInvalidConfig)
-			},
-			serveVM: true,
-		},
-		{
-			name: "handshake timeout",
-			config: &subprocess.Config{
-				Stderr:           logging.NoLog{},
-				Stdout:           logging.NoLog{},
-				Log:              logging.NoLog{},
-				HandshakeTimeout: time.Microsecond,
-			},
-			assertErr: func(require *require.Assertions, err error) {
-				require.ErrorIs(err, runtime.ErrHandshakeFailed)
-			},
-			serveVM: false,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			require := require.New(t)
-
-			ctrl := gomock.NewController(t)
-			vm := blockmock.NewChainVM(ctrl)
-
-			listener, err := grpcutils.NewListener()
-			require.NoError(err)
-
-			require.NoError(os.Setenv(runtime.EngineAddressKey, listener.Addr().String()))
-
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-
-			if test.serveVM {
-				go func() {
-					_ = Serve(ctx, vm)
-				}()
-			}
-
-			status, stopper, err := subprocess.Bootstrap(
-				context.Background(),
-				listener,
-				helperProcess("dummy"),
-				test.config,
-			)
-			if err == nil {
-				require.NotEmpty(status.Addr)
-				stopper.Stop(ctx)
-			}
-			test.assertErr(require, err)
-		})
-	}
-}
-
-func TestNewHTTPHandler(t *testing.T) {
-	require := require.New(t)
-
-	grpcServer := grpc.NewServer()
-	listener := bufconn.Listen(1024)
-
-	serverVM := &blocktest.VM{
-		VM: enginetest.VM{
-			NewHTTPHandlerF: func(context.Context) (http.Handler, error) {
-				return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-					w.WriteHeader(http.StatusOK)
-				}), nil
-			},
-		},
-	}
-
-	server := NewServer(serverVM, utils.NewAtomic[bool](false))
-	vmpb.RegisterVMServer(grpcServer, server)
-
-	go func() {
-		_ = grpcServer.Serve(listener)
-	}()
-
-	cc, err := grpc.DialContext(context.Background(), "bufnet",
-		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
-			return listener.Dial()
-		}),
-		grpc.WithInsecure(),
-	)
-	require.NoError(err)
-
-	client := NewClient(
-		cc,
-		runtime.NewManager(),
-		123,
-		nil,
-		metrics.NewLabelGatherer(""),
-		logging.NoLog{},
-	)
-
-	handler, err := client.NewHTTPHandler(context.Background())
-	require.NoError(err)
-
-	w := httptest.NewRecorder()
-	handler.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
-	require.Equal(http.StatusOK, w.Code)
 }

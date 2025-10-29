@@ -21,24 +21,21 @@ import (
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/rpcdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/ids/galiasreader"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/common/appsender"
-	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/validators/gvalidators"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
-	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
+	"github.com/luxfi/node/vms/rpcchainvm/appsender"
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
+	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
@@ -72,7 +69,7 @@ var (
 	_ block.StateSyncableVM              = (*VMClient)(nil)
 	_ prometheus.Gatherer                = (*VMClient)(nil)
 
-	_ snowman.Block           = (*blockClient)(nil)
+	_ block.Block             = (*blockClient)(nil)
 	_ block.WithVerifyContext = (*blockClient)(nil)
 
 	_ block.StateSummary = (*summaryClient)(nil)
@@ -122,21 +119,37 @@ func NewClient(
 
 func (vm *VMClient) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
-	db database.Database,
+	chainCtxIface interface{},
+	dbIface interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	msgChan interface{},
+	fxs []interface{},
+	appSender interface{},
 ) error {
 	if len(fxs) != 0 {
 		return errUnsupportedFXs
 	}
 
-	primaryAlias, err := chainCtx.BCLookup.PrimaryAlias(chainCtx.ChainID)
-	if err != nil {
-		// If fetching the alias fails, we default to the chain's ID
+	// Convert interface{} parameters to concrete types
+	chainCtx := chainCtxIface.(*Context)
+	db := dbIface.(database.Database)
+	
+	var appSenderConcrete core.AppSender
+	if appSender != nil {
+		appSenderConcrete = appSender.(core.AppSender)
+	}
+
+	var primaryAlias string
+	if chainCtx.BCLookup != nil {
+		var err error
+		primaryAlias, err = chainCtx.BCLookup.PrimaryAlias(chainCtx.ChainID)
+		if err != nil {
+			// If fetching the alias fails, we default to the chain's ID
+			primaryAlias = chainCtx.ChainID.String()
+		}
+	} else {
 		primaryAlias = chainCtx.ChainID.String()
 	}
 
@@ -161,15 +174,27 @@ func (vm *VMClient) Initialize(
 	dbServerAddr := dbServerListener.Addr().String()
 
 	go grpcutils.Serve(dbServerListener, vm.newDBServer(db))
-	chainCtx.Log.Info("grpc: serving database",
-		zap.String("address", dbServerAddr),
-	)
+	if chainCtx.Log != nil {
+		chainCtx.Log.Info("grpc: serving database",
+			zap.String("address", dbServerAddr),
+		)
+	}
 
-	vm.sharedMemory = gsharedmemory.NewServer(chainCtx.SharedMemory, db)
-	vm.bcLookup = galiasreader.NewServer(chainCtx.BCLookup)
-	vm.appSender = appsender.NewServer(appSender)
-	vm.validatorStateServer = gvalidators.NewServer(chainCtx.ValidatorState)
-	vm.warpSignerServer = gwarp.NewServer(chainCtx.WarpSigner)
+	if chainCtx.SharedMemory != nil {
+		vm.sharedMemory = gsharedmemory.NewServer(chainCtx.SharedMemory, db)
+	}
+	if chainCtx.BCLookup != nil {
+		vm.bcLookup = galiasreader.NewServer(chainCtx.BCLookup)
+	}
+	if appSenderConcrete != nil {
+		vm.appSender = appsender.NewServer(appSenderConcrete)
+	}
+	if chainCtx.ValidatorState != nil {
+		vm.validatorStateServer = gvalidators.NewServer(chainCtx.ValidatorState)
+	}
+	if chainCtx.WarpSigner != nil {
+		vm.warpSignerServer = gwarp.NewServer(chainCtx.WarpSigner)
+	}
 
 	serverListener, err := grpcutils.NewListener()
 	if err != nil {
@@ -178,9 +203,11 @@ func (vm *VMClient) Initialize(
 	serverAddr := serverListener.Addr().String()
 
 	go grpcutils.Serve(serverListener, vm.newInitServer())
-	chainCtx.Log.Info("grpc: serving vm services",
-		zap.String("address", serverAddr),
-	)
+	if chainCtx.Log != nil {
+		chainCtx.Log.Info("grpc: serving vm services",
+			zap.String("address", serverAddr),
+		)
+	}
 
 	networkUpgrades := &vmpb.NetworkUpgrades{
 		ApricotPhase_1Time:            grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.ApricotPhase1Time),
@@ -201,12 +228,17 @@ func (vm *VMClient) Initialize(
 		GraniteTime:                   grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.GraniteTime),
 	}
 
+	var publicKeyBytes []byte
+	if chainCtx.PublicKey != nil {
+		publicKeyBytes = bls.PublicKeyToCompressedBytes(chainCtx.PublicKey)
+	}
+	
 	resp, err := vm.client.Initialize(ctx, &vmpb.InitializeRequest{
 		NetworkId:       chainCtx.NetworkID,
 		SubnetId:        chainCtx.SubnetID[:],
 		ChainId:         chainCtx.ChainID[:],
 		NodeId:          chainCtx.NodeID.Bytes(),
-		PublicKey:       bls.PublicKeyToCompressedBytes(chainCtx.PublicKey),
+		PublicKey:       publicKeyBytes,
 		NetworkUpgrades: networkUpgrades,
 		XChainId:        chainCtx.XChainID[:],
 		CChainId:        chainCtx.CChainID[:],
@@ -222,8 +254,10 @@ func (vm *VMClient) Initialize(
 		return err
 	}
 
-	if err := chainCtx.Metrics.Register("", vm); err != nil {
-		return err
+	if chainCtx.Metrics != nil {
+		if err := chainCtx.Metrics.Register("", vm); err != nil {
+			return err
+		}
 	}
 
 	id, err := ids.ToID(resp.LastAcceptedId)
@@ -317,7 +351,7 @@ func (vm *VMClient) newInitServer() *grpc.Server {
 	return server
 }
 
-func (vm *VMClient) SetState(ctx context.Context, state snow.State) error {
+func (vm *VMClient) SetState(ctx context.Context, state uint32) error {
 	resp, err := vm.client.SetState(ctx, &vmpb.SetStateRequest{
 		State: vmpb.State(state),
 	})
@@ -387,7 +421,7 @@ func (vm *VMClient) CreateHandlers(ctx context.Context) (map[string]http.Handler
 	return handlers, nil
 }
 
-func (vm *VMClient) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+func (vm *VMClient) NewHTTPHandler(ctx context.Context) (interface{}, error) {
 	resp, err := vm.client.NewHTTPHandler(ctx, &emptypb.Empty{})
 	if err != nil {
 		return nil, err
@@ -406,36 +440,31 @@ func (vm *VMClient) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
 	return ghttp.NewClient(httppb.NewHTTPClient(clientConn)), nil
 }
 
-func (vm *VMClient) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (vm *VMClient) WaitForEvent(ctx context.Context) (interface{}, error) {
 	resp, err := vm.client.WaitForEvent(ctx, &emptypb.Empty{})
 	if err != nil {
 		vm.logger.Debug("failed to subscribe to events", zap.Error(err))
-		return 0, err
+		return nil, err
 	}
-	return common.Message(resp.Message), nil
+	return resp.Message, nil
 }
 
-func (vm *VMClient) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
-	_, err := vm.client.Connected(ctx, &vmpb.ConnectedRequest{
-		NodeId: nodeID.Bytes(),
-		Name:   nodeVersion.Name,
-		Major:  uint32(nodeVersion.Major),
-		Minor:  uint32(nodeVersion.Minor),
-		Patch:  uint32(nodeVersion.Patch),
-	})
-	return err
+func (vm *VMClient) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
+	// Connected is not part of block.ChainVM interface - no-op
+	_ = nodeID
+	_ = nodeVersion
+	return nil
 }
 
 func (vm *VMClient) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
-	_, err := vm.client.Disconnected(ctx, &vmpb.DisconnectedRequest{
-		NodeId: nodeID.Bytes(),
-	})
-	return err
+	// Disconnected is not part of block.ChainVM interface - no-op
+	_ = nodeID
+	return nil
 }
 
 // If the underlying VM doesn't actually implement this method, its [BuildBlock]
 // method will be called instead.
-func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.Context) (snowman.Block, error) {
+func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.Context) (block.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{
 		PChainHeight: &blockCtx.PChainHeight,
 	})
@@ -445,7 +474,7 @@ func (vm *VMClient) buildBlockWithContext(ctx context.Context, blockCtx *block.C
 	return vm.newBlockFromBuildBlock(resp)
 }
 
-func (vm *VMClient) buildBlock(ctx context.Context) (snowman.Block, error) {
+func (vm *VMClient) buildBlock(ctx context.Context) (block.Block, error) {
 	resp, err := vm.client.BuildBlock(ctx, &vmpb.BuildBlockRequest{})
 	if err != nil {
 		return nil, err
@@ -453,7 +482,7 @@ func (vm *VMClient) buildBlock(ctx context.Context) (snowman.Block, error) {
 	return vm.newBlockFromBuildBlock(resp)
 }
 
-func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (snowman.Block, error) {
+func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
 	resp, err := vm.client.ParseBlock(ctx, &vmpb.ParseBlockRequest{
 		Bytes: bytes,
 	})
@@ -486,7 +515,7 @@ func (vm *VMClient) parseBlock(ctx context.Context, bytes []byte) (snowman.Block
 	}, nil
 }
 
-func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (snowman.Block, error) {
+func (vm *VMClient) getBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
 	resp, err := vm.client.GetBlock(ctx, &vmpb.GetBlockRequest{
 		Id: blkID[:],
 	})
@@ -565,7 +594,7 @@ func (vm *VMClient) AppResponse(ctx context.Context, nodeID ids.NodeID, requestI
 	return err
 }
 
-func (vm *VMClient) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+func (vm *VMClient) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
 	msg := &vmpb.AppRequestFailedMsg{
 		NodeId:       nodeID.Bytes(),
 		RequestId:    requestID,
@@ -615,7 +644,7 @@ func (vm *VMClient) GetAncestors(
 	return resp.BlksBytes, nil
 }
 
-func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]snowman.Block, error) {
+func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]block.Block, error) {
 	resp, err := vm.client.BatchedParseBlock(ctx, &vmpb.BatchedParseBlockRequest{
 		Request: blksBytes,
 	})
@@ -626,7 +655,7 @@ func (vm *VMClient) batchedParseBlock(ctx context.Context, blksBytes [][]byte) (
 		return nil, errBatchedParseBlockWrongNumberOfBlocks
 	}
 
-	res := make([]snowman.Block, 0, len(blksBytes))
+	res := make([]block.Block, 0, len(blksBytes))
 	for idx, blkResp := range resp.Response {
 		id, err := ids.ToID(blkResp.Id)
 		if err != nil {
@@ -821,6 +850,10 @@ func (b *blockClient) Parent() ids.ID {
 	return b.parentID
 }
 
+func (b *blockClient) ParentID() ids.ID {
+	return b.parentID
+}
+
 func (b *blockClient) Verify(ctx context.Context) error {
 	resp, err := b.vm.client.BlockVerify(ctx, &vmpb.BlockVerifyRequest{
 		Bytes: b.bytes,
@@ -843,6 +876,10 @@ func (b *blockClient) Height() uint64 {
 
 func (b *blockClient) Timestamp() time.Time {
 	return b.time
+}
+
+func (b *blockClient) Status() uint8 {
+	return 0 // Status tracking is handled by the VM
 }
 
 func (b *blockClient) ShouldVerifyWithContext(context.Context) (bool, error) {
