@@ -27,6 +27,11 @@ func (op *MintOperation) InitCtx(ctx *consensusctx.Context) {
 	}
 }
 
+func (op *MintOperation) InitializeContext(ctx *consensusctx.Context) error {
+	op.InitCtx(ctx)
+	return nil
+}
+
 func (op *MintOperation) Cost() (uint64, error) {
 	return op.MintInput.Cost()
 }

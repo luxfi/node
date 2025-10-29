@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/nftfx"
@@ -141,7 +141,7 @@ func (s *spender) Spend(
 			// this input doesn't have an amount, so I don't care about it here
 			continue
 		}
-		newAmountSpent, err := math.Add(amountSpent, input.Amount())
+		newAmountSpent, err := math.Add64(amountSpent, input.Amount())
 		if err != nil {
 			// there was an error calculating the consumed amount, just error
 			return nil, nil, nil, errSpendOverflow
@@ -271,7 +271,7 @@ func (s *spender) SpendAll(
 			// this input doesn't have an amount, so I don't care about it here
 			continue
 		}
-		newAmountSpent, err := math.Add(amountSpent, input.Amount())
+		newAmountSpent, err := math.Add64(amountSpent, input.Amount())
 		if err != nil {
 			// there was an error calculating the consumed amount, just error
 			return nil, nil, nil, errSpendOverflow

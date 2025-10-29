@@ -22,6 +22,11 @@ func (op *TransferOperation) InitCtx(ctx *consensusctx.Context) {
 	op.Output.OutputOwners.InitCtx(ctx)
 }
 
+func (op *TransferOperation) InitializeContext(ctx *consensusctx.Context) error {
+	op.InitCtx(ctx)
+	return nil
+}
+
 func (op *TransferOperation) Cost() (uint64, error) {
 	return op.Input.Cost()
 }
