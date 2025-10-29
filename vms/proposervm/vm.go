@@ -378,11 +378,11 @@ func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
 	//
 	// TODO: Correctly handle dynamic state sync here. When the innerVM is
 	// dynamically state syncing, we should return here as well.
-	if vm.consensusState != snow.NormalOp {
+	if vm.consensusState != uint32(consensuscore.VMNormalOp) {
 		return time.Time{}, false, nil
 	}
 
-	// Because the VM in marked as being in the [snow.NormalOp] state, we know
+	// Because the VM in marked as being in the [VMNormalOp] state, we know
 	// that [VM.SetPreference] must have already been called.
 	blk, err := vm.getPostForkBlock(ctx, vm.preferred)
 	// If the preferred block is pre-fork, we should wait for events on the
