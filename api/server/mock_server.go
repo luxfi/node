@@ -13,8 +13,8 @@ import (
 	http "net/http"
 	reflect "reflect"
 
-	snow "github.com/luxfi/node/snow"
-	common "github.com/luxfi/node/snow/engine/common"
+	consensuscontext "github.com/luxfi/consensus/context"
+	core "github.com/luxfi/consensus/core"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -122,7 +122,7 @@ func (mr *MockServerMockRecorder) Dispatch() *gomock.Call {
 }
 
 // RegisterChain mocks base method.
-func (m *MockServer) RegisterChain(arg0 string, arg1 *snow.ConsensusContext, arg2 common.VM) {
+func (m *MockServer) RegisterChain(arg0 string, arg1 *consensuscontext.Context, arg2 core.VM) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RegisterChain", arg0, arg1, arg2)
 }

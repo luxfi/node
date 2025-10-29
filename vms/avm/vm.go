@@ -18,12 +18,12 @@ import (
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowstorm"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/dag"
+	"github.com/luxfi/consensus/engine/dag/vertex"
+	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -327,11 +327,11 @@ func (*VM) NewHTTPHandler(context.Context) (http.Handler, error) {
  ******************************************************************************
  */
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
 	return vm.chainManager.GetBlock(blkID)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (snowman.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (chain.Block, error) {
 	blk, err := vm.parser.ParseBlock(blkBytes)
 	if err != nil {
 		return nil, err

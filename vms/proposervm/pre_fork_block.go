@@ -11,8 +11,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/ids"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
@@ -23,7 +23,7 @@ var (
 )
 
 type preForkBlock struct {
-	snowman.Block
+	chainblock.Block
 	vm *VM
 }
 
@@ -50,18 +50,18 @@ func (b *preForkBlock) Verify(ctx context.Context) error {
 	return parent.verifyPreForkChild(ctx, b)
 }
 
-func (b *preForkBlock) Options(ctx context.Context) ([2]snowman.Block, error) {
-	oracleBlk, ok := b.Block.(snowman.OracleBlock)
+func (b *preForkBlock) Options(ctx context.Context) ([2]chainblock.Block, error) {
+	oracleBlk, ok := b.Block.(chainblock.OracleBlock)
 	if !ok {
-		return [2]snowman.Block{}, snowman.ErrNotOracle
+		return [2]chainblock.Block{}, chainblock.ErrNotOracle
 	}
 
 	options, err := oracleBlk.Options(ctx)
 	if err != nil {
-		return [2]snowman.Block{}, err
+		return [2]chainblock.Block{}, err
 	}
 	// A pre-fork block's child options are always pre-fork blocks
-	return [2]snowman.Block{
+	return [2]chainblock.Block{
 		&preForkBlock{
 			Block: options[0],
 			vm:    b.vm,
@@ -73,7 +73,7 @@ func (b *preForkBlock) Options(ctx context.Context) ([2]snowman.Block, error) {
 	}, nil
 }
 
-func (b *preForkBlock) getInnerBlk() snowman.Block {
+func (b *preForkBlock) getInnerBlk() chainblock.Block {
 	return b.Block
 }
 
@@ -207,11 +207,11 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		return nil, err
 	}
 
-	statelessBlock, err := block.BuildUnsigned(
+	statelessBlock, err := chainblock.BuildUnsigned(
 		parentID,
 		newTimestamp,
 		pChainHeight,
-		block.Epoch{}, // Pre-fork blocks don't have epochs
+		chainblock.Epoch{}, // Pre-fork blocks don't have epochs
 		innerBlock.Bytes(),
 	)
 	if err != nil {
@@ -240,8 +240,8 @@ func (*preForkBlock) pChainHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
-func (*preForkBlock) pChainEpoch(context.Context) (block.Epoch, error) {
-	return block.Epoch{}, nil
+func (*preForkBlock) pChainEpoch(context.Context) (chainblock.Epoch, error) {
+	return chainblock.Epoch{}, nil
 }
 
 func (b *preForkBlock) selectChildPChainHeight(ctx context.Context) (uint64, error) {

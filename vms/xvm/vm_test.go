@@ -21,9 +21,9 @@ import (
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	)
 	require.ErrorIs(err, codec.ErrCantUnpackVersion)

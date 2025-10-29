@@ -8,11 +8,13 @@ import (
 	"sync"
 
 	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/core/appsender"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/engine/dag/vertex"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/chain/block"
 )
 
 var (
@@ -26,21 +28,21 @@ var (
 // linearizeOnInitializeVM.
 type initializeOnLinearizeVM struct {
 	vertex.DAGVM
-	vmToInitialize common.VM
+	vmToInitialize core.VM
 	vmToLinearize  *linearizeOnInitializeVM
 
-	ctx              *snow.Context
+	ctx              *consensusctx.Context
 	db               database.Database
 	genesisBytes     []byte
 	upgradeBytes     []byte
 	configBytes      []byte
-	fxs              []*common.Fx
-	appSender        common.AppSender
+	fxs              []*consensus.Fx
+	appSender        appsender.AppSender
 	waitForLinearize chan struct{}
 	linearizeOnce    sync.Once
 }
 
-func (vm *initializeOnLinearizeVM) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (vm *initializeOnLinearizeVM) WaitForEvent(ctx context.Context) (block.Message, error) {
 	select {
 	case <-vm.waitForLinearize:
 		return vm.vmToInitialize.WaitForEvent(ctx)
@@ -72,10 +74,10 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 type linearizeOnInitializeVM struct {
 	vertex.LinearizableVMWithEngine
 	stopVertexID ids.ID
-	toEngine     chan<- common.Message
+	toEngine     chan<- block.Message
 }
 
-func NewLinearizeOnInitializeVM(vm vertex.LinearizableVMWithEngine, toEngine chan<- common.Message) *linearizeOnInitializeVM {
+func NewLinearizeOnInitializeVM(vm vertex.LinearizableVMWithEngine, toEngine chan<- block.Message) *linearizeOnInitializeVM {
 	return &linearizeOnInitializeVM{
 		LinearizableVMWithEngine: vm,
 		toEngine:                 toEngine,
@@ -84,13 +86,13 @@ func NewLinearizeOnInitializeVM(vm vertex.LinearizableVMWithEngine, toEngine cha
 
 func (vm *linearizeOnInitializeVM) Initialize(
 	ctx context.Context,
-	_ *snow.Context,
+	_ *consensusctx.Context,
 	_ database.Database,
 	_ []byte,
 	_ []byte,
 	_ []byte,
-	_ []*common.Fx,
-	_ common.AppSender,
+	_ []*consensus.Fx,
+	_ appsender.AppSender,
 ) error {
 	return vm.Linearize(ctx, vm.stopVertexID, vm.toEngine)
 }

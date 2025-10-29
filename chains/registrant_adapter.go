@@ -5,8 +5,7 @@ package chains
 
 import (
 	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/consensus/engine/core"
 )
 
 // registrantAdapter adapts a Server to implement chains.Registrant
@@ -19,6 +18,6 @@ func NewRegistrantAdapter(s server.Server) Registrant {
 	return &registrantAdapter{server: s}
 }
 
-func (r *registrantAdapter) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm common.VM) {
+func (r *registrantAdapter) RegisterChain(chainName string, ctx *snow.ConsensusContext, vm core.VM) {
 	r.server.RegisterChain(chainName, ctx, vm)
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/crypto/mldsa"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/crypto/slhdsa"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 )
 

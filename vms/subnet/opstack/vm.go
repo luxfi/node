@@ -13,8 +13,8 @@ import (
 		"github.com/ethereum/go-ethereum/core/types"
 		"github.com/luxfi/crypto"
 	
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms"
 )

@@ -8,7 +8,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"flag"
@@ -20,7 +19,7 @@ import (
 
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 )
 
@@ -152,7 +151,15 @@ func main() {
 			continue
 		}
 		
-		nodeID := ids.NodeIDFromCert(staking.CertificateFromX509(cert.Leaf))
+		// Convert x509.Certificate to staking.Certificate
+		stakingCert := &staking.Certificate{
+			Raw:       cert.Leaf.Raw,
+			PublicKey: cert.Leaf.PublicKey,
+		}
+		nodeID := ids.NodeIDFromCert(&ids.Certificate{
+			Raw:       stakingCert.Raw,
+			PublicKey: stakingCert.PublicKey,
+		})
 
 		fmt.Printf("Validator %d (account %d):\n", i+1, accountIndex)
 		fmt.Printf("  NodeID:      %s\n", nodeID)

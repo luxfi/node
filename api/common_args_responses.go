@@ -6,7 +6,7 @@ package api
 import (
 	"encoding/json"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/formatting"
 
 	avajson "github.com/luxfi/node/utils/json"
@@ -16,6 +16,12 @@ import (
 
 // EmptyReply indicates that an api doesn't have a response to return.
 type EmptyReply struct{}
+
+// UserPass contains a username and password
+type UserPass struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
 
 // JSONTxID contains the ID of a transaction
 type JSONTxID struct {

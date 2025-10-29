@@ -4,11 +4,11 @@
 package lux
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/types"
 )
 
@@ -46,7 +46,7 @@ func (t *BaseTx) NumCredentials() int {
 }
 
 // Verify ensures that transaction metadata is valid
-func (t *BaseTx) Verify(ctx *snow.Context) error {
+func (t *BaseTx) Verify(ctx *consensusctx.Context) error {
 	switch {
 	case t == nil:
 		return ErrNilTx

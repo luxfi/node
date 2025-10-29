@@ -14,9 +14,9 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/luxfi/node/ids"
-	choices "github.com/luxfi/node/snow/choices"
-	snowman "github.com/luxfi/node/snow/consensus/snowman"
+	ids "github.com/luxfi/ids"
+	choices "github.com/luxfi/consensus/choices"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	block "github.com/luxfi/node/vms/proposervm/block"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -214,10 +214,10 @@ func (mr *MockPostForkBlockMockRecorder) buildChild(arg0 any) *gomock.Call {
 }
 
 // getInnerBlk mocks base method.
-func (m *MockPostForkBlock) getInnerBlk() snowman.Block {
+func (m *MockPostForkBlock) getInnerBlk() chainblock.Block {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "getInnerBlk")
-	ret0, _ := ret[0].(snowman.Block)
+	ret0, _ := ret[0].(chainblock.Block)
 	return ret0
 }
 
@@ -228,10 +228,10 @@ func (mr *MockPostForkBlockMockRecorder) getInnerBlk() *gomock.Call {
 }
 
 // getStatelessBlk mocks base method.
-func (m *MockPostForkBlock) getStatelessBlk() block.Block {
+func (m *MockPostForkBlock) getStatelessBlk() chainblock.Block {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "getStatelessBlk")
-	ret0, _ := ret[0].(block.Block)
+	ret0, _ := ret[0].(chainblock.Block)
 	return ret0
 }
 
@@ -257,7 +257,7 @@ func (mr *MockPostForkBlockMockRecorder) pChainHeight(arg0 any) *gomock.Call {
 }
 
 // setInnerBlk mocks base method.
-func (m *MockPostForkBlock) setInnerBlk(arg0 snowman.Block) {
+func (m *MockPostForkBlock) setInnerBlk(arg0 chainblock.Block) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "setInnerBlk", arg0)
 }

@@ -12,26 +12,31 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/snow/networking/router"
-	"github.com/luxfi/node/snow/networking/tracker"
-	"github.com/luxfi/node/snow/uptime"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/node/network/tracker"
+	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/math/meter"
-	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 )
 
 const maxMessageToSend = 1024
+
+// noOpResourceManager implements tracker.ResourceManager for testing
+type noOpResourceManager struct{}
+
+func (*noOpResourceManager) CPUUsage() float64  { return 0 }
+func (*noOpResourceManager) DiskUsage() float64 { return 0 }
+func (*noOpResourceManager) Shutdown()          {}
 
 // StartTestPeer provides a simple interface to create a peer that has finished
 // the p2p handshake.
@@ -89,10 +94,10 @@ func StartTestPeer(
 		return nil, err
 	}
 
+	// Create a no-op resource manager for testing
+	noOpManager := &noOpResourceManager{}
 	resourceTracker, err := tracker.NewResourceTracker(
-		prometheus.NewRegistry(),
-		resource.NoUsage,
-		meter.ContinuousFactory{},
+		noOpManager,
 		10*time.Second,
 	)
 	if err != nil {
@@ -122,7 +127,7 @@ func StartTestPeer(
 			PongTimeout:          constants.DefaultPingPongTimeout,
 			MaxClockDifference:   time.Minute,
 			ResourceTracker:      resourceTracker,
-			UptimeCalculator:     uptime.NoOpCalculator,
+			UptimeCalculator:     uptime.NoOpCalculator{},
 			IPSigner: NewIPSigner(
 				utils.NewAtomic(netip.AddrPortFrom(
 					netip.IPv6Loopback(),

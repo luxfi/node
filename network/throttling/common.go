@@ -6,8 +6,8 @@ package throttling
 import (
 	"sync"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/logging"
 )
 

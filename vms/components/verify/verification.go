@@ -3,14 +3,11 @@
 
 package verify
 
-import "github.com/luxfi/node/snow"
-
 type Verifiable interface {
 	Verify() error
 }
 
 type State interface {
-	snow.ContextInitializable
 	Verifiable
 	IsState
 }

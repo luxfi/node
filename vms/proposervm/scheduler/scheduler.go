@@ -8,7 +8,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/node/utils/logging"
 )
 
@@ -84,7 +84,7 @@ waitloop:
 					// from the VM to avoid deadlock
 					s.log.Debug("dropping message from VM",
 						zap.String("reason", "channel to engine is full"),
-						zap.Stringer("messageString", msg),
+						zap.String("messageType", msg.Type.String()),
 					)
 				}
 			case buildBlockTime, ok := <-s.newBuildBlockTime:

@@ -4,8 +4,7 @@
 package builder
 
 import (
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/components/gas"
@@ -20,9 +19,9 @@ type Context struct {
 	GasPrice          gas.Price
 }
 
-func NewSnowContext(networkID uint32, luxAssetID ids.ID) (*snow.Context, error) {
+func NewSnowContext(networkID uint32, luxAssetID ids.ID) (*consensusctx.Context, error) {
 	lookup := ids.NewAliaser()
-	return &snow.Context{
+	return &consensusctx.Context{
 		NetworkID:   networkID,
 		SubnetID:    constants.PrimaryNetworkID,
 		ChainID:     constants.PlatformChainID,

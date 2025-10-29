@@ -6,8 +6,8 @@ package block
 import (
 	"time"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 

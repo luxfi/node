@@ -6,7 +6,7 @@ package gossip
 import (
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/sdk"
 	"github.com/luxfi/node/utils/bloom"
 )

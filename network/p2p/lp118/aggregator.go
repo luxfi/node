@@ -12,7 +12,6 @@ import (
 	"github.com/luxfi/log"
 	"google.golang.org/protobuf/proto"
 
-	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
@@ -128,7 +127,7 @@ func (s *SignatureAggregator) AggregateSignatures(
 		results:             results,
 	}
 
-	if err := s.client.AppRequest(ctx, consensusset.Of(nonSigners...), requestBytes, handler.HandleResponse); err != nil {
+	if err := s.client.AppRequest(ctx, set.Of(nonSigners...), requestBytes, handler.HandleResponse); err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to send aggregation request: %w", err)
 	}
 

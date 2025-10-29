@@ -5,7 +5,7 @@ package state
 
 import (
 	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 const (

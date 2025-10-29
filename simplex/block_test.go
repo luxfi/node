@@ -13,10 +13,10 @@ import (
 	"github.com/luxfi/bft"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmantest"
-	"github.com/luxfi/node/snow/engine/enginetest"
-	"github.com/luxfi/node/snow/engine/snowman/block/blocktest"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/chain/chaintest"
+	"github.com/luxfi/consensus/engine/core/coretest"
+	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 )
 
 func TestBlockSerialization(t *testing.T) {
@@ -41,14 +41,14 @@ func TestBlockSerialization(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		parseFunc     func(context.Context, []byte) (snowman.Block, error)
+		parseFunc     func(context.Context, []byte) (chain.Block, error)
 		expectedError error
 		blockBytes    []byte
 	}{
 		{
 			name:       "block serialization",
 			blockBytes: blockBytes,
-			parseFunc: func(_ context.Context, b []byte) (snowman.Block, error) {
+			parseFunc: func(_ context.Context, b []byte) (chain.Block, error) {
 				if !bytes.Equal(testBlock.BytesV, b) {
 					return nil, unexpectedBlockBytes
 				}
@@ -60,7 +60,7 @@ func TestBlockSerialization(t *testing.T) {
 			name:          "block deserialization error",
 			blockBytes:    blockBytes,
 			expectedError: unexpectedBlockBytes,
-			parseFunc: func(_ context.Context, _ []byte) (snowman.Block, error) {
+			parseFunc: func(_ context.Context, _ []byte) (chain.Block, error) {
 				return nil, unexpectedBlockBytes
 			},
 		},
@@ -68,7 +68,7 @@ func TestBlockSerialization(t *testing.T) {
 			name:          "corrupted block data",
 			blockBytes:    []byte("corrupted data"),
 			expectedError: canoto.ErrInvalidWireType,
-			parseFunc: func(_ context.Context, _ []byte) (snowman.Block, error) {
+			parseFunc: func(_ context.Context, _ []byte) (chain.Block, error) {
 				return nil, nil
 			},
 		},

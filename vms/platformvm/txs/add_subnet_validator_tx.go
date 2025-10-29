@@ -6,8 +6,7 @@ package txs
 import (
 	"errors"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/vms/components/verify"
@@ -47,7 +46,7 @@ func (*AddSubnetValidatorTx) CurrentPriority() Priority {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddSubnetValidatorTx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *AddSubnetValidatorTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

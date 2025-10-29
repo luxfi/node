@@ -4,9 +4,9 @@
 package propertyfx
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
 	"errors"
 
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -19,7 +19,7 @@ type MintOperation struct {
 	OwnedOutput OwnedOutput       `serialize:"true" json:"ownedOutput"`
 }
 
-func (op *MintOperation) InitCtx(ctx *snow.Context) {
+func (op *MintOperation) InitCtx(ctx *consensusctx.Context) {
 	op.MintOutput.OutputOwners.InitCtx(ctx)
 	op.OwnedOutput.OutputOwners.InitCtx(ctx)
 }

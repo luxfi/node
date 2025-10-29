@@ -6,7 +6,7 @@ package gwarp
 import (
 	"context"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/warp"
 
 	pb "github.com/luxfi/node/proto/pb/warp"

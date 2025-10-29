@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 func TestNewBanffAbortBlock(t *testing.T) {

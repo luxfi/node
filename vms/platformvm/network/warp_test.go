@@ -15,9 +15,9 @@ import (
 	"golang.org/x/exp/rand"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/platformvm"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"

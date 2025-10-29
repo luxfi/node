@@ -4,9 +4,9 @@
 package secp256k1fx
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
 	"errors"
 
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -18,7 +18,7 @@ type MintOperation struct {
 	TransferOutput TransferOutput `serialize:"true" json:"transferOutput"`
 }
 
-func (op *MintOperation) InitCtx(ctx *snow.Context) {
+func (op *MintOperation) InitCtx(ctx *consensusctx.Context) {
 	op.MintOutput.OutputOwners.InitCtx(ctx)
 	op.TransferOutput.OutputOwners.InitCtx(ctx)
 }

@@ -7,8 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -112,7 +111,7 @@ type TransformSubnetTx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
-func (tx *TransformSubnetTx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *TransformSubnetTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

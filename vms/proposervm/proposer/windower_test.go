@@ -12,9 +12,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/validators"
-	"github.com/luxfi/node/snow/validators/validatorstest"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/consensus/validators/validatorstest"
 
 	safemath "github.com/luxfi/node/utils/math"
 )

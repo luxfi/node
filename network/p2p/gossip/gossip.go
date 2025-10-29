@@ -15,13 +15,12 @@ import (
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/set"
 )
 
 const (
@@ -505,10 +504,16 @@ func (p *PushGossiper[T]) gossip(
 	validatorsByStake := p.validators.Top(ctx, gossipParams.StakePercentage)
 	topValidatorsMetric.Set(float64(len(validatorsByStake)))
 
+	// Convert []ids.NodeID to []interface{} for SendConfig
+	nodeIDsInterface := make([]interface{}, len(validatorsByStake))
+	for i, nodeID := range validatorsByStake {
+		nodeIDsInterface[i] = nodeID
+	}
+
 	return p.client.AppGossip(
 		ctx,
-		common.SendConfig{
-			NodeIDs:       set.Of(validatorsByStake...),
+		core.SendConfig{
+			NodeIDs:       nodeIDsInterface,
 			Validators:    gossipParams.Validators,
 			NonValidators: gossipParams.NonValidators,
 			Peers:         gossipParams.Peers,

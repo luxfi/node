@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/logging"
 )
 
@@ -58,7 +58,7 @@ func TestThrottlerHandlerAppRequest(t *testing.T) {
 	tests := []struct {
 		name        string
 		Throttler   Throttler
-		expectedErr *common.AppError
+		expectedErr *core.AppError
 	}{
 		{
 			name:      "not throttled",

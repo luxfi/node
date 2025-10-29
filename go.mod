@@ -31,10 +31,10 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/leanovate/gopter v0.2.11
 	github.com/luxfi/bft v0.1.0
-	github.com/luxfi/consensus v0.0.0
+	github.com/luxfi/consensus v1.19.11
 	github.com/luxfi/crypto v1.17.4
 	github.com/luxfi/database v1.2.3
-	github.com/luxfi/geth v1.16.34
+	github.com/luxfi/geth v1.16.38
 	github.com/luxfi/ids v1.1.2
 	github.com/luxfi/ledger-lux/go v0.0.0-20241009183145-e6f90a8a1a60
 	github.com/luxfi/log v1.1.22
@@ -202,6 +202,9 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
+	github.com/luxfi/czmq/v4 v4.2.0 // indirect
+	github.com/luxfi/qzmq v0.1.1 // indirect
+	github.com/luxfi/zmq/v4 v4.2.2 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/olekukonko/errors v1.1.0 // indirect
 	github.com/olekukonko/ll v0.0.9 // indirect
@@ -222,24 +225,6 @@ require (
 
 replace github.com/luxfi/geth => ../geth
 
-replace github.com/luxfi/ledger-lux/go => ../ledger-lux-go
-
-replace github.com/luxfi/consensus => ../consensus
-
-replace github.com/luxfi/ids => ../ids
-
-replace github.com/luxfi/log => ../log
-
-replace github.com/luxfi/metric => ../metric
-
-replace github.com/luxfi/math => ../math
-
-replace github.com/luxfi/database => ../database
-
-replace github.com/luxfi/crypto => ../crypto
-
-replace github.com/luxfi/bft => ../bft
-
-replace github.com/luxfi/mock => ../mock
+replace github.com/luxfi/ledger-lux/go => github.com/luxfi/ledger-lux-go v1.0.0
 
 replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090

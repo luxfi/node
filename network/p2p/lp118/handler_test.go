@@ -37,12 +37,12 @@ func TestHandler(t *testing.T) {
 			name:   "signature fails verification",
 			cacher: &cache.Empty[ids.ID, []byte]{},
 			verifier: &testVerifier{
-				Errs: []*common.AppError{
+				Errs: []*core.AppError{
 					{Code: 123},
 				},
 			},
 			expectedErrs: []error{
-				&common.AppError{Code: 123},
+				&core.AppError{Code: 123},
 			},
 		},
 		{
@@ -57,7 +57,7 @@ func TestHandler(t *testing.T) {
 			name:   "signature is cached",
 			cacher: lru.NewCache[ids.ID, []byte](1),
 			verifier: &testVerifier{
-				Errs: []*common.AppError{
+				Errs: []*core.AppError{
 					nil,
 					{Code: 123}, // The valid response should be cached
 				},
@@ -120,7 +120,7 @@ func TestHandler(t *testing.T) {
 
 				if expectedErr != nil {
 					require.Error(appErr)
-					if expectedAppErr, ok := expectedErr.(*common.AppError); ok {
+					if expectedAppErr, ok := expectedErr.(*core.AppError); ok {
 						actualAppErr, ok := appErr.(*core.AppError)
 						require.True(ok, "expected AppError but got %T", appErr)
 						require.Equal(int32(expectedAppErr.Code), actualAppErr.Code)
@@ -157,14 +157,14 @@ func TestHandler(t *testing.T) {
 
 // The zero value of testVerifier allows signing
 type testVerifier struct {
-	Errs []*common.AppError
+	Errs []*core.AppError
 }
 
 func (t *testVerifier) Verify(
 	context.Context,
 	*warp.UnsignedMessage,
 	[]byte,
-) *common.AppError {
+) *core.AppError {
 	if len(t.Errs) == 0 {
 		return nil
 	}

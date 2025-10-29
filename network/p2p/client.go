@@ -10,9 +10,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/set"
 )
 
@@ -35,7 +35,7 @@ type Client struct {
 	handlerIDStr  string
 	handlerPrefix []byte
 	router        *router
-	sender        common.AppSender
+	sender        core.AppSender
 	options       *clientOptions
 }
 
@@ -88,7 +88,7 @@ func (c *Client) AppRequest(
 
 		if err := c.sender.SendAppRequest(
 			ctxWithoutCancel,
-			set.Of(nodeID),
+			toConsensusSet(set.Of(nodeID)),
 			requestID,
 			appRequestBytes,
 		); err != nil {
@@ -114,7 +114,7 @@ func (c *Client) AppRequest(
 // AppGossip sends a gossip message to a random set of peers.
 func (c *Client) AppGossip(
 	ctx context.Context,
-	config common.SendConfig,
+	config core.SendConfig,
 	appGossipBytes []byte,
 ) error {
 	// Cancellation is removed from this context to avoid erroring unexpectedly.
@@ -124,7 +124,7 @@ func (c *Client) AppGossip(
 
 	return c.sender.SendAppGossip(
 		ctxWithoutCancel,
-		config,
+		sendConfigToSet(config),
 		PrefixMessage(c.handlerPrefix, appGossipBytes),
 	)
 }

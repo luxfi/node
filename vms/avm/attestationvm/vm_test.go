@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 	
 	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/node/utils/logging"
 )
 

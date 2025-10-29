@@ -7,8 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -35,7 +34,7 @@ type ExportTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [UnsignedExportTx]. Also sets the [ctx] to the given [vm.ctx] so that
 // the addresses can be json marshalled into human readable format
-func (tx *ExportTx) InitCtx(ctx *snow.Context) {
+func (tx *ExportTx) InitCtx(ctx *consensusctx.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	for _, out := range tx.ExportedOutputs {
 		out.FxID = secp256k1fx.ID
@@ -44,7 +43,7 @@ func (tx *ExportTx) InitCtx(ctx *snow.Context) {
 }
 
 // SyntacticVerify this transaction is well-formed
-func (tx *ExportTx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *ExportTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

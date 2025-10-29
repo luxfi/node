@@ -7,8 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/avm"
@@ -55,9 +54,9 @@ func NewContextFromClients(
 	}, nil
 }
 
-func newSnowContext(c *Context) (*snow.Context, error) {
+func newSnowContext(c *Context) (*consensusctx.Context, error) {
 	lookup := ids.NewAliaser()
-	return &snow.Context{
+	return &consensusctx.Context{
 		NetworkID:   c.NetworkID,
 		SubnetID:    constants.PrimaryNetworkID,
 		ChainID:     c.BlockchainID,

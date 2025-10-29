@@ -4,8 +4,7 @@
 package txs
 
 import (
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 )
@@ -33,7 +32,7 @@ func (tx *RewardValidatorTx) SetBytes(unsignedBytes []byte) {
 	tx.unsignedBytes = unsignedBytes
 }
 
-func (*RewardValidatorTx) InitCtx(*snow.Context) {}
+func (*RewardValidatorTx) InitCtx(*consensusctx.Context) {}
 
 func (tx *RewardValidatorTx) Bytes() []byte {
 	return tx.unsignedBytes
@@ -47,7 +46,7 @@ func (*RewardValidatorTx) Outputs() []*lux.TransferableOutput {
 	return nil
 }
 
-func (*RewardValidatorTx) SyntacticVerify(*snow.Context) error {
+func (*RewardValidatorTx) SyntacticVerify(*consensusctx.Context) error {
 	return nil
 }
 

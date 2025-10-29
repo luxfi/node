@@ -4,7 +4,6 @@
 package txs
 
 import (
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/types"
 )
 
@@ -18,7 +17,7 @@ type SetL1ValidatorWeightTx struct {
 	Message types.JSONByteSlice `serialize:"true" json:"message"`
 }
 
-func (tx *SetL1ValidatorWeightTx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *SetL1ValidatorWeightTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

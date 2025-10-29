@@ -12,8 +12,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/networking/tracker"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/utils/timer/mockable"
 
 	timerpkg "github.com/luxfi/node/utils/timer"
@@ -133,8 +133,9 @@ func (t *systemThrottler) Acquire(ctx context.Context, nodeID ids.NodeID) {
 
 	for {
 		now := t.Clock.Time()
-		// Get target usage for this node.
-		target := t.targeter.TargetUsage(nodeID)
+		// Get target usage (system-wide, not per-node).
+		targetUint := t.targeter.TargetUsage()
+		target := float64(targetUint)
 		// Get actual usage for this node.
 		usage := t.tracker.Usage(nodeID, now)
 		if usage <= target {

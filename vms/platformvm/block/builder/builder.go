@@ -12,10 +12,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/txs/mempool"
 
-	smblock "github.com/luxfi/node/snow/engine/snowman/block"
+	smblock "github.com/luxfi/consensus/engine/chain/block"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 )
@@ -56,7 +56,7 @@ type Builder interface {
 	mempool.Mempool[*txs.Tx]
 
 	// BuildBlock can be called to attempt to create a new block
-	BuildBlock(context.Context) (snowman.Block, error)
+	BuildBlock(context.Context) (chain.Block, error)
 
 	// PackAllBlockTxs returns an array of all txs that could be packed into a
 	// valid block of infinite size. The returned txs are all verified against
@@ -153,7 +153,7 @@ func (b *builder) durationToSleep() (time.Duration, error) {
 	return nextStakerChangeTime.Sub(now), nil
 }
 
-func (b *builder) BuildBlock(ctx context.Context) (snowman.Block, error) {
+func (b *builder) BuildBlock(ctx context.Context) (chain.Block, error) {
 	return b.BuildBlockWithContext(
 		ctx,
 		&smblock.Context{
@@ -165,7 +165,7 @@ func (b *builder) BuildBlock(ctx context.Context) (snowman.Block, error) {
 func (b *builder) BuildBlockWithContext(
 	ctx context.Context,
 	blockContext *smblock.Context,
-) (snowman.Block, error) {
+) (chain.Block, error) {
 	b.txExecutorBackend.Ctx.Log.Debug("starting to attempt to build a block")
 
 	// Get the block to build on top of and retrieve the new block's context.

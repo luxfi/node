@@ -15,11 +15,14 @@ import (
 
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/validators"
+	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/core/appsender"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/version"
 )
 
@@ -29,25 +32,25 @@ const (
 )
 
 var (
-	_ common.VM = (*VM)(nil)
+	_ core.VM = (*VM)(nil)
 	_ health.Checker = (*VM)(nil)
 	_ validators.Connector = (*VM)(nil)
 
 	errNotImplemented = errors.New("not implemented")
 )
 
-// VM implements the snowman.ChainVM interface for the AI Chain (A-Chain)
+// VM implements the chain.ChainVM interface for the AI Chain (A-Chain)
 // This chain is specialized for AI computation and agent coordination
 type VM struct {
-	ctx         *snow.Context
+	ctx         *consensusctx.Context
 	db          database.Database
 	genesisData []byte
-	toEngine    chan<- common.Message
-	fxs         []*common.Fx
-	appSender   common.AppSender
+	toEngine    chan<- block.Message
+	fxs         []*consensus.Fx
+	appSender   appsender.AppSender
 
 	// State management
-	state       snow.State
+	state       core.State
 	baseDB      database.Database
 	preferredID ids.ID
 
@@ -93,17 +96,17 @@ const (
 	TaskFailed
 )
 
-// Initialize implements the common.VM interface
+// Initialize implements the core.VM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensusctx.Context,
 	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- common.Message,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	toEngine chan<- block.Message,
+	fxs []*consensus.Fx,
+	appSender appsender.AppSender,
 ) error {
 	vm.ctx = chainCtx
 	vm.db = db
@@ -132,13 +135,13 @@ func (vm *VM) Initialize(
 	return nil
 }
 
-// SetState implements the common.VM interface
-func (vm *VM) SetState(ctx context.Context, state snow.State) error {
+// SetState implements the core.VM interface
+func (vm *VM) SetState(ctx context.Context, state core.State) error {
 	vm.state = state
 	return nil
 }
 
-// Shutdown implements the common.VM interface
+// Shutdown implements the core.VM interface
 func (vm *VM) Shutdown(context.Context) error {
 	if vm.db != nil {
 		return vm.db.Close()
@@ -146,12 +149,12 @@ func (vm *VM) Shutdown(context.Context) error {
 	return nil
 }
 
-// Version implements the common.VM interface
+// Version implements the core.VM interface
 func (vm *VM) Version(context.Context) (string, error) {
 	return vmVersion, nil
 }
 
-// CreateHandlers implements the common.VM interface
+// CreateHandlers implements the core.VM interface
 func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	handler := &apiHandler{vm: vm}
 	return map[string]http.Handler{
@@ -208,49 +211,49 @@ func (vm *VM) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) erro
 	return nil
 }
 
-// CrossChainAppRequest implements the common.VM interface
+// CrossChainAppRequest implements the core.VM interface
 func (vm *VM) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, msg []byte) error {
 	return nil
 }
 
-// CrossChainAppRequestFailed implements the common.VM interface
+// CrossChainAppRequestFailed implements the core.VM interface
 func (vm *VM) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *common.AppError) error {
 	return nil
 }
 
-// CrossChainAppResponse implements the common.VM interface
+// CrossChainAppResponse implements the core.VM interface
 func (vm *VM) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, msg []byte) error {
 	return nil
 }
 
-// BuildBlock implements the snowman.ChainVM interface
-func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
+// BuildBlock implements the chain.ChainVM interface
+func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	// Build a new block containing pending AI tasks
 	return nil, errNotImplemented
 }
 
-// ParseBlock implements the snowman.ChainVM interface
-func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (snowman.Block, error) {
+// ParseBlock implements the chain.ChainVM interface
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (block.Block, error) {
 	return nil, errNotImplemented
 }
 
-// GetBlock implements the snowman.ChainVM interface
-func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (snowman.Block, error) {
+// GetBlock implements the chain.ChainVM interface
+func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
 	return nil, errNotImplemented
 }
 
-// SetPreference implements the snowman.ChainVM interface
+// SetPreference implements the chain.ChainVM interface
 func (vm *VM) SetPreference(ctx context.Context, blkID ids.ID) error {
 	vm.preferredID = blkID
 	return nil
 }
 
-// LastAccepted implements the snowman.ChainVM interface
+// LastAccepted implements the chain.ChainVM interface
 func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 	return vm.preferredID, nil
 }
 
-// GetBlockIDAtHeight implements the snowman.ChainVM interface
+// GetBlockIDAtHeight implements the chain.ChainVM interface
 func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
 	return ids.Empty, database.ErrNotFound
 }

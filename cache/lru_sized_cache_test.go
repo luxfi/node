@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/cachetest"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 func TestSizedLRU(t *testing.T) {

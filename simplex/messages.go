@@ -6,7 +6,7 @@ package simplex
 import (
 	"github.com/luxfi/bft"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 )
 

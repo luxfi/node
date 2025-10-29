@@ -7,9 +7,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
@@ -36,7 +36,7 @@ type Builder interface {
 	// builder.
 	WaitForEvent(ctx context.Context) (common.Message, error)
 	// BuildBlock can be called to attempt to create a new block
-	BuildBlock(context.Context) (snowman.Block, error)
+	BuildBlock(context.Context) (chain.Block, error)
 }
 
 // builder implements a simple builder to convert txs into valid blocks
@@ -68,7 +68,7 @@ func (b *builder) WaitForEvent(ctx context.Context) (common.Message, error) {
 }
 
 // BuildBlock builds a block to be added to consensus.
-func (b *builder) BuildBlock(context.Context) (snowman.Block, error) {
+func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
 	ctx := b.backend.Ctx
 	ctx.Log.Debug("starting to attempt to build a block")
 

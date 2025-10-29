@@ -12,10 +12,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/enginetest"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 )
@@ -64,7 +63,7 @@ func NewClientWithPeers(
 		peerNetworks[nodeID] = peerNetwork
 	}
 
-	peerSenders[clientNodeID].SendAppGossipF = func(ctx context.Context, sendConfig common.SendConfig, gossipBytes []byte) error {
+	peerSenders[clientNodeID].SendAppGossipF = func(ctx context.Context, sendConfig core.SendConfig, gossipBytes []byte) error {
 		// Send the request asynchronously to avoid deadlock when the server
 		// sends the response back to the client
 		for nodeID := range sendConfig.NodeIDs {
@@ -108,7 +107,7 @@ func NewClientWithPeers(
 	for nodeID := range peers {
 		peerSenders[nodeID].SendAppErrorF = func(ctx context.Context, _ ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 			go func() {
-				_ = peerNetworks[clientNodeID].AppRequestFailed(ctx, nodeID, requestID, &common.AppError{
+				_ = peerNetworks[clientNodeID].AppRequestFailed(ctx, nodeID, requestID, &core.AppError{
 					Code:    errorCode,
 					Message: errorMessage,
 				})

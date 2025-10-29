@@ -18,11 +18,11 @@ import (
 	ethcommon "github.com/luxfi/geth/common"
 	
 	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/version"
 )
 
@@ -40,7 +40,7 @@ var (
 	errChallengeFailed = errors.New("challenge failed")
 )
 
-// VM implements the snowman.ChainVM interface for the Zero-Knowledge Chain (Z-Chain)
+// VM implements the chain.ChainVM interface for the Zero-Knowledge Chain (Z-Chain)
 // This chain provides ZK proof verification and fraud proof processing
 type VM struct {
 	ctx         *snow.Context
@@ -283,34 +283,34 @@ func (vm *VM) CrossChainAppResponse(ctx context.Context, chainID ids.ID, request
 	return nil
 }
 
-// BuildBlock implements the snowman.ChainVM interface
-func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
+// BuildBlock implements the chain.ChainVM interface
+func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	// Build a new block containing challenges and proofs
 	return nil, errNotImplemented
 }
 
-// ParseBlock implements the snowman.ChainVM interface
-func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (snowman.Block, error) {
+// ParseBlock implements the chain.ChainVM interface
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, error) {
 	return nil, errNotImplemented
 }
 
-// GetBlock implements the snowman.ChainVM interface
-func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (snowman.Block, error) {
+// GetBlock implements the chain.ChainVM interface
+func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 	return nil, errNotImplemented
 }
 
-// SetPreference implements the snowman.ChainVM interface
+// SetPreference implements the chain.ChainVM interface
 func (vm *VM) SetPreference(ctx context.Context, blkID ids.ID) error {
 	vm.preferredID = blkID
 	return nil
 }
 
-// LastAccepted implements the snowman.ChainVM interface
+// LastAccepted implements the chain.ChainVM interface
 func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 	return vm.preferredID, nil
 }
 
-// GetBlockIDAtHeight implements the snowman.ChainVM interface
+// GetBlockIDAtHeight implements the chain.ChainVM interface
 func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
 	return ids.Empty, database.ErrNotFound
 }

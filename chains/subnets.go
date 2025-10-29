@@ -7,7 +7,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/constants"
 )

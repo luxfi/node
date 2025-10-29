@@ -11,8 +11,8 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/logging"
 )
 
@@ -113,7 +113,7 @@ func (m *manager) RegisterFactory(ctx context.Context, vmID ids.ID, factory Fact
 		return err
 	}
 
-	commonVM, ok := vm.(common.VM)
+	commonVM, ok := vm.(core.VM)
 	if !ok {
 		return nil
 	}

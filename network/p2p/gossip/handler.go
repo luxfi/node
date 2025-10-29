@@ -9,9 +9,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/logging"
 )
@@ -44,7 +44,7 @@ type Handler[T Gossipable] struct {
 	targetResponseSize int
 }
 
-func (h Handler[T]) AppRequest(_ context.Context, _ ids.NodeID, _ time.Time, requestBytes []byte) ([]byte, *common.AppError) {
+func (h Handler[T]) AppRequest(_ context.Context, _ ids.NodeID, _ time.Time, requestBytes []byte) ([]byte, *core.AppError) {
 	filter, salt, err := ParseAppRequest(requestBytes)
 	if err != nil {
 		return nil, p2p.ErrUnexpected

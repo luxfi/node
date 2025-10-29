@@ -9,8 +9,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/engine/common"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/vms/avm/txs"
 	"github.com/luxfi/node/vms/components/lux"

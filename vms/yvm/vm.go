@@ -23,11 +23,11 @@ import (
 
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/version"
 )
@@ -134,7 +134,7 @@ type EpochRootTx struct {
 	SPHINCSig   []byte             `json:"sphincsSig"`
 }
 
-// Initialize implements the snowman.ChainVM interface
+// Initialize implements the chain.ChainVM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
 	chainCtx *snow.Context,
@@ -245,8 +245,8 @@ func (vm *VM) Initialize(
 	return vm.putBlock(genesisBlock)
 }
 
-// BuildBlock implements the snowman.ChainVM interface
-func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
+// BuildBlock implements the chain.ChainVM interface
+func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
 	
@@ -391,8 +391,8 @@ func (vm *VM) SubmitEpochRoot(nodeID ids.NodeID, tx *EpochRootTx) error {
 	return nil
 }
 
-// GetBlock implements the snowman.ChainVM interface
-func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (snowman.Block, error) {
+// GetBlock implements the chain.ChainVM interface
+func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (chain.Block, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 	
@@ -404,8 +404,8 @@ func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (snowman.Block, error) {
 	return vm.getBlock(id)
 }
 
-// ParseBlock implements the snowman.ChainVM interface
-func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (snowman.Block, error) {
+// ParseBlock implements the chain.ChainVM interface
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, error) {
 	block := &Block{vm: vm}
 	if _, err := Codec.Unmarshal(blockBytes, block); err != nil {
 		return nil, err
@@ -415,7 +415,7 @@ func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (snowman.Block,
 	return block, nil
 }
 
-// SetPreference implements the snowman.ChainVM interface
+// SetPreference implements the chain.ChainVM interface
 func (vm *VM) SetPreference(ctx context.Context, id ids.ID) error {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
@@ -424,7 +424,7 @@ func (vm *VM) SetPreference(ctx context.Context, id ids.ID) error {
 	return nil
 }
 
-// LastAccepted implements the snowman.ChainVM interface
+// LastAccepted implements the chain.ChainVM interface
 func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()

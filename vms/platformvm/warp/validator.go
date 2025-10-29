@@ -11,8 +11,8 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/math"
@@ -87,11 +87,17 @@ func FlattenValidatorSet(vdrSet map[ids.NodeID]*validators.GetValidatorOutput) (
 			continue
 		}
 
-		pkBytes := bls.PublicKeyToUncompressedBytes(vdr.PublicKey)
+		// Convert []byte to *bls.PublicKey
+		blsPK, err := bls.PublicKeyFromCompressedBytes(vdr.PublicKey)
+		if err != nil {
+			continue // Skip invalid public keys
+		}
+
+		pkBytes := bls.PublicKeyToUncompressedBytes(blsPK)
 		uniqueVdr, ok := vdrs[string(pkBytes)]
 		if !ok {
 			uniqueVdr = &Validator{
-				PublicKey:      vdr.PublicKey,
+				PublicKey:      blsPK,
 				PublicKeyBytes: pkBytes,
 			}
 			vdrs[string(pkBytes)] = uniqueVdr
@@ -168,10 +174,7 @@ func GetCanonicalValidatorSetFromChainID(ctx context.Context,
 	pChainHeight uint64,
 	sourceChainID ids.ID,
 ) (CanonicalValidatorSet, error) {
-	subnetID, err := pChainState.GetSubnetID(ctx, sourceChainID)
-	if err != nil {
-		return CanonicalValidatorSet{}, err
-	}
-
-	return GetCanonicalValidatorSetFromSubnetID(ctx, pChainState, pChainHeight, subnetID)
+	// In the new architecture, use sourceChainID as the subnet ID
+	// This assumes a 1:1 mapping between chains and subnets
+	return GetCanonicalValidatorSetFromSubnetID(ctx, pChainState, pChainHeight, sourceChainID)
 }

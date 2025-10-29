@@ -7,8 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/math"
@@ -41,7 +40,7 @@ type AddDelegatorTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [UnsignedAddDelegatorTx]. Also sets the [ctx] to the given [vm.ctx] so that
 // the addresses can be json marshalled into human readable format
-func (tx *AddDelegatorTx) InitCtx(ctx *snow.Context) {
+func (tx *AddDelegatorTx) InitCtx(ctx *consensusctx.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	for _, out := range tx.StakeOuts {
 		out.FxID = secp256k1fx.ID
@@ -79,7 +78,7 @@ func (tx *AddDelegatorTx) RewardsOwner() fx.Owner {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddDelegatorTx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *AddDelegatorTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 )
@@ -33,7 +32,7 @@ func (h *HandlerAdapter) AppRequest(ctx context.Context, nodeID ids.NodeID, dead
 	resp, err := h.handler.AppRequest(ctx, nodeID, deadline, requestBytes)
 	if err != nil {
 		// Check if error is already an AppError from our own package
-		if appErr, ok := err.(*common.AppError); ok {
+		if appErr, ok := err.(*core.AppError); ok {
 			return nil, &core.AppError{
 				Code:    appErr.Code,
 				Message: appErr.Message,

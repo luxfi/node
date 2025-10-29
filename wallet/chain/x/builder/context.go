@@ -4,8 +4,7 @@
 package builder
 
 import (
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 )
@@ -24,9 +23,9 @@ func NewSnowContext(
 	networkID uint32,
 	blockchainID ids.ID,
 	luxAssetID ids.ID,
-) (*snow.Context, error) {
+) (*consensusctx.Context, error) {
 	lookup := ids.NewAliaser()
-	return &snow.Context{
+	return &consensusctx.Context{
 		NetworkID:   networkID,
 		SubnetID:    constants.PrimaryNetworkID,
 		ChainID:     blockchainID,

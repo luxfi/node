@@ -8,8 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 )
 
 var (
@@ -17,10 +16,22 @@ var (
 	ErrMismatchedSubnetIDs = errors.New("mismatched subnetIDs")
 )
 
+// ChainContext provides context for chain operations
+type ChainContext struct {
+	ChainID        ids.ID
+	SubnetID       ids.ID
+	ValidatorState ValidatorState
+}
+
+// ValidatorState provides validator state lookups
+type ValidatorState interface {
+	GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
+}
+
 // SameSubnet verifies that the provided [ctx] was provided to a chain in the
 // same subnet as [peerChainID], but not the same chain. If this verification
 // fails, a non-nil error will be returned.
-func SameSubnet(ctx context.Context, chainCtx *snow.Context, peerChainID ids.ID) error {
+func SameSubnet(ctx context.Context, chainCtx *ChainContext, peerChainID ids.ID) error {
 	if peerChainID == chainCtx.ChainID {
 		return ErrSameChainID
 	}

@@ -4,9 +4,9 @@
 package secp256k1fx
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
 	"errors"
 
-	"github.com/luxfi/node/snow"
 )
 
 var ErrNoValueInput = errors.New("input has no value")
@@ -16,7 +16,7 @@ type TransferInput struct {
 	Input `serialize:"true"`
 }
 
-func (*TransferInput) InitCtx(*snow.Context) {}
+func (*TransferInput) InitCtx(*consensusctx.Context) {}
 
 // Amount returns the quantity of the asset this input produces
 func (in *TransferInput) Amount() uint64 {

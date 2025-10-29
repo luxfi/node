@@ -12,9 +12,9 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/snowtest"
-	"github.com/luxfi/node/snow/uptime/uptimemock"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus/uptime/uptimemock"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"

@@ -3,30 +3,30 @@
 
 package p2p
 
-import "github.com/luxfi/node/snow/engine/common"
+import "github.com/luxfi/consensus/core"
 
 var (
 	// ErrUnexpected should be used to indicate that a request failed due to a
 	// generic error
-	ErrUnexpected = &common.AppError{
+	ErrUnexpected = &core.AppError{
 		Code:    -1,
 		Message: "unexpected error",
 	}
 	// ErrUnregisteredHandler should be used to indicate that a request failed
 	// due to it not matching a registered handler
-	ErrUnregisteredHandler = &common.AppError{
+	ErrUnregisteredHandler = &core.AppError{
 		Code:    -2,
 		Message: "unregistered handler",
 	}
 	// ErrNotValidator should be used to indicate that a request failed due to
 	// the requesting peer not being a validator
-	ErrNotValidator = &common.AppError{
+	ErrNotValidator = &core.AppError{
 		Code:    -3,
 		Message: "not a validator",
 	}
 	// ErrThrottled should be used to indicate that a request failed due to the
 	// requesting peer exceeding a rate limit
-	ErrThrottled = &common.AppError{
+	ErrThrottled = &core.AppError{
 		Code:    -4,
 		Message: "throttled",
 	}

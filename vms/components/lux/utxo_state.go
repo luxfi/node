@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/linkeddb"
 	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 const (

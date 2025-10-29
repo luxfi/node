@@ -18,12 +18,15 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/ids"
+	consensuscontext "github.com/luxfi/consensus/context"
+	consensuscore "github.com/luxfi/consensus/core"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	enginecore "github.com/luxfi/consensus/engine/core"
+	consensusinterfaces "github.com/luxfi/consensus/interfaces"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
@@ -46,23 +49,23 @@ const (
 )
 
 var (
-	_ block.ChainVM         = (*VM)(nil)
-	_ block.BatchedChainVM  = (*VM)(nil)
-	_ block.StateSyncableVM = (*VM)(nil)
+	_ chainblock.ChainVM         = (*VM)(nil)
+	_ chainblock.BatchedChainVM  = (*VM)(nil)
+	_ chainblock.StateSyncableVM = (*VM)(nil)
 
 	dbPrefix = []byte("proposervm")
 )
 
-func cachedBlockSize(_ ids.ID, blk snowman.Block) int {
+func cachedBlockSize(_ ids.ID, blk chainblock.Block) int {
 	return ids.IDLen + len(blk.Bytes()) + constants.PointerOverhead
 }
 
 type VM struct {
-	block.ChainVM
+	chainblock.ChainVM
 	Config
-	blockBuilderVM block.BuildBlockWithContextChainVM
-	batchedVM      block.BatchedChainVM
-	ssVM           block.StateSyncableVM
+	blockBuilderVM chainblock.BuildBlockWithContextChainVM
+	batchedVM      chainblock.BatchedChainVM
+	ssVM           chainblock.StateSyncableVM
 
 	state.State
 
@@ -70,8 +73,10 @@ type VM struct {
 	tree.Tree
 	mockable.Clock
 
-	ctx *snow.Context
-	db  *versiondb.Database
+	ctx            *consensuscontext.Context
+	db             *versiondb.Database
+	logger         logging.Logger
+	validatorState validators.State
 
 	// Block ID --> Block
 	// Each element is a block that passed verification but
@@ -81,9 +86,9 @@ type VM struct {
 	// Only contains post-fork blocks near the tip so that the cache doesn't get
 	// filled with random blocks every time this node parses blocks while
 	// processing a GetAncestors message from a bootstrapping node.
-	innerBlkCache  cache.Cacher[ids.ID, snowman.Block]
+	innerBlkCache  cache.Cacher[ids.ID, chainblock.Block]
 	preferred      ids.ID
-	consensusState snow.State
+	consensusState uint32 // Consensus state: StateSyncing, Bootstrapping, NormalOp
 
 	// lastAcceptedTime is set to the last accepted PostForkBlock's timestamp
 	// if the last accepted block has been a PostForkOption block since having
@@ -109,12 +114,12 @@ type VM struct {
 // New performs best when [minBlkDelay] is whole seconds. This is because block
 // timestamps are only specific to the second.
 func New(
-	vm block.ChainVM,
+	vm chainblock.ChainVM,
 	config Config,
 ) *VM {
-	blockBuilderVM, _ := vm.(block.BuildBlockWithContextChainVM)
-	batchedVM, _ := vm.(block.BatchedChainVM)
-	ssVM, _ := vm.(block.StateSyncableVM)
+	blockBuilderVM, _ := vm.(chainblock.BuildBlockWithContextChainVM)
+	batchedVM, _ := vm.(chainblock.BatchedChainVM)
+	ssVM, _ := vm.(chainblock.StateSyncableVM)
 	return &VM{
 		ChainVM:        vm,
 		Config:         config,
@@ -126,22 +131,33 @@ func New(
 
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
-	db database.Database,
+	chainCtx interface{},
+	db interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	msgChan interface{},
+	fxs []interface{},
+	appSender interface{},
 ) error {
-	vm.ctx = chainCtx
-	vm.db = versiondb.New(prefixdb.New(dbPrefix, db))
+	// Type assert the interface{} parameters to their concrete types
+	chainContext := chainCtx.(*consensuscontext.Context)
+	vmDB := db.(database.Database)
+
+	// Explicit type conversions for interface{} fields - Rob Pike approach: no hiding complexity
+	logger := chainContext.Log.(logging.Logger)
+	validatorState := chainContext.ValidatorState.(validators.State)
+	
+	vm.ctx = chainContext
+	vm.logger = logger
+	vm.validatorState = validatorState
+	vm.db = versiondb.New(prefixdb.New(dbPrefix, vmDB))
 	baseState, err := state.NewMetered(vm.db, "state", vm.Config.Registerer)
 	if err != nil {
 		return err
 	}
 	vm.State = baseState
-	vm.Windower = proposer.New(chainCtx.ValidatorState, chainCtx.SubnetID, chainCtx.ChainID)
+	vm.Windower = proposer.New(validatorState, chainContext.SubnetID, chainContext.ChainID)
 	vm.Tree = tree.New()
 	innerBlkCache, err := metercacher.New(
 		"inner_block_cache",
@@ -162,6 +178,7 @@ func (vm *VM) Initialize(
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
+		msgChan,
 		fxs,
 		appSender,
 	)
@@ -184,13 +201,13 @@ func (vm *VM) Initialize(
 	forkHeight, err := vm.GetForkHeight()
 	switch err {
 	case nil:
-		chainCtx.Log.Info("initialized proposervm",
+		logger.Info("initialized proposervm",
 			zap.String("state", "after fork"),
 			zap.Uint64("forkHeight", forkHeight),
 			zap.Uint64("lastAcceptedHeight", vm.lastAcceptedHeight),
 		)
 	case database.ErrNotFound:
-		chainCtx.Log.Info("initialized proposervm",
+		logger.Info("initialized proposervm",
 			zap.String("state", "before fork"),
 		)
 	default:
@@ -236,14 +253,14 @@ func (vm *VM) Shutdown(ctx context.Context) error {
 	return vm.ChainVM.Shutdown(ctx)
 }
 
-func (vm *VM) SetState(ctx context.Context, newState snow.State) error {
+func (vm *VM) SetState(ctx context.Context, newState uint32) error {
 	if err := vm.ChainVM.SetState(ctx, newState); err != nil {
 		return err
 	}
 
 	oldState := vm.consensusState
 	vm.consensusState = newState
-	if oldState != snow.StateSyncing {
+	if oldState != uint32(consensusinterfaces.StateSyncing) {
 		return nil
 	}
 
@@ -257,10 +274,10 @@ func (vm *VM) SetState(ctx context.Context, newState snow.State) error {
 	return vm.setLastAcceptedMetadata(ctx)
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (chainblock.Block, error) {
 	preferredBlock, err := vm.getBlock(ctx, vm.preferred)
 	if err != nil {
-		vm.ctx.Log.Error("unexpected build block failure",
+		vm.logger.Error("unexpected build block failure",
 			zap.String("reason", "failed to fetch preferred block"),
 			zap.Stringer("parentID", vm.preferred),
 			zap.Error(err),
@@ -271,21 +288,21 @@ func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
 	return preferredBlock.buildChild(ctx)
 }
 
-func (vm *VM) ParseBlock(ctx context.Context, b []byte) (snowman.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, b []byte) (chainblock.Block, error) {
 	if blk, err := vm.parsePostForkBlock(ctx, b, true); err == nil {
 		return blk, nil
 	}
 	return vm.parsePreForkBlock(ctx, b)
 }
 
-func (vm *VM) ParseLocalBlock(ctx context.Context, b []byte) (snowman.Block, error) {
+func (vm *VM) ParseLocalBlock(ctx context.Context, b []byte) (chainblock.Block, error) {
 	if blk, err := vm.parsePostForkBlock(ctx, b, false); err == nil {
 		return blk, nil
 	}
 	return vm.parsePreForkBlock(ctx, b)
 }
 
-func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (snowman.Block, error) {
+func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (chainblock.Block, error) {
 	return vm.getBlock(ctx, id)
 }
 
@@ -305,40 +322,40 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 		return err
 	}
 
-	vm.ctx.Log.Debug("set preference",
+	vm.logger.Debug("set preference",
 		zap.Stringer("blkID", preferred),
 		zap.Stringer("innerBlkID", innerBlkID),
 	)
 	return nil
 }
 
-func (vm *VM) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 	for {
 		if err := ctx.Err(); err != nil {
-			vm.ctx.Log.Debug("Aborting WaitForEvent, context is done", zap.Error(err))
+			vm.logger.Debug("Aborting WaitForEvent, context is done", zap.Error(err))
 			return 0, err
 		}
 
 		timeToBuild, shouldWait, err := vm.timeToBuild(ctx)
 		if err != nil {
-			vm.ctx.Log.Debug("Aborting WaitForEvent", zap.Error(err))
+			vm.logger.Debug("Aborting WaitForEvent", zap.Error(err))
 			return 0, err
 		}
 
 		// If we are pre-fork or haven't finished bootstrapping yet, we should
 		// directly forward the inner VM's events.
 		if !shouldWait {
-			vm.ctx.Log.Debug("Waiting for inner VM event (pre-fork or before normal operation)")
+			vm.logger.Debug("Waiting for inner VM event (pre-fork or before normal operation)")
 			return vm.ChainVM.WaitForEvent(ctx)
 		}
 
 		duration := time.Until(timeToBuild)
 		if duration <= 0 {
-			vm.ctx.Log.Debug("Can build a block without waiting")
+			vm.logger.Debug("Can build a block without waiting")
 			return vm.ChainVM.WaitForEvent(ctx)
 		}
 
-		vm.ctx.Log.Debug("Waiting until we should build a block", zap.Duration("duration", duration))
+		vm.logger.Debug("Waiting until we should build a block", zap.Duration("duration", duration))
 
 		// Wait until it is our turn to build a block.
 		select {
@@ -404,7 +421,7 @@ func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
 		)
 	}
 	if err != nil {
-		vm.ctx.Log.Debug("failed to fetch the expected delay",
+		vm.logger.Debug("failed to fetch the expected delay",
 			zap.Error(err),
 		)
 
@@ -511,7 +528,7 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		return nil
 	}
 
-	vm.ctx.Log.Info("repairing accepted chain by height",
+	vm.logger.Info("repairing accepted chain by height",
 		zap.Uint64("outerHeight", proLastAcceptedHeight),
 		zap.Uint64("innerHeight", innerLastAcceptedHeight),
 	)
@@ -705,7 +722,7 @@ func (vm *VM) acceptPostForkBlock(blk PostForkBlock) error {
 	return vm.db.Commit()
 }
 
-func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Context, postFork PostForkBlock) error {
+func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *chainblock.Context, postFork PostForkBlock) error {
 	innerBlk := postFork.getInnerBlk()
 	postForkID := postFork.ID()
 	originalInnerBlock, previouslyVerified := vm.Tree.Get(innerBlk)
@@ -719,11 +736,11 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Conte
 
 	var (
 		shouldVerifyWithCtx = blockCtx != nil
-		blkWithCtx          block.WithVerifyContext
+		blkWithCtx          chainblock.WithVerifyContext
 		err                 error
 	)
 	if shouldVerifyWithCtx {
-		blkWithCtx, shouldVerifyWithCtx = innerBlk.(block.WithVerifyContext)
+		blkWithCtx, shouldVerifyWithCtx = innerBlk.(chainblock.WithVerifyContext)
 		if shouldVerifyWithCtx {
 			shouldVerifyWithCtx, err = blkWithCtx.ShouldVerifyWithContext(ctx)
 			if err != nil {
@@ -742,7 +759,7 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *block.Conte
 		// times with multiple contexts.
 		err = blkWithCtx.VerifyWithContext(ctx, blockCtx)
 	} else if !previouslyVerified {
-		// This isn't a [block.WithVerifyContext] so we only call [Verify] once.
+		// This isn't a [chainblock.WithVerifyContext] so we only call [Verify] once.
 		err = innerBlk.Verify(ctx)
 	}
 	if err != nil {
@@ -788,7 +805,7 @@ func (vm *VM) selectChildPChainHeight(ctx context.Context, minPChainHeight uint6
 // parseInnerBlock attempts to parse the provided bytes as an inner block. If
 // the inner block happens to be cached, then the inner block will not be
 // parsed.
-func (vm *VM) parseInnerBlock(ctx context.Context, outerBlkID ids.ID, innerBlkBytes []byte) (snowman.Block, error) {
+func (vm *VM) parseInnerBlock(ctx context.Context, outerBlkID ids.ID, innerBlkBytes []byte) (chainblock.Block, error) {
 	if innerBlk, ok := vm.innerBlkCache.Get(outerBlkID); ok {
 		return innerBlk, nil
 	}
@@ -803,7 +820,7 @@ func (vm *VM) parseInnerBlock(ctx context.Context, outerBlkID ids.ID, innerBlkBy
 
 // Caches proposervm block ID --> inner block if the inner block's height
 // is within [innerBlkCacheSize] of the last accepted block's height.
-func (vm *VM) cacheInnerBlock(outerBlkID ids.ID, innerBlk snowman.Block) {
+func (vm *VM) cacheInnerBlock(outerBlkID ids.ID, innerBlk chainblock.Block) {
 	diff := math.AbsDiff(innerBlk.Height(), vm.lastAcceptedHeight)
 	if diff < innerBlkCacheSize {
 		vm.innerBlkCache.Put(outerBlkID, innerBlk)

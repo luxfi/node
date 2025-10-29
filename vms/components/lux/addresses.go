@@ -4,11 +4,11 @@
 package lux
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/set"
@@ -38,10 +38,10 @@ type AddressManager interface {
 }
 
 type addressManager struct {
-	ctx *snow.Context
+	ctx *consensusctx.Context
 }
 
-func NewAddressManager(ctx *snow.Context) AddressManager {
+func NewAddressManager(ctx *consensusctx.Context) AddressManager {
 	return &addressManager{
 		ctx: ctx,
 	}

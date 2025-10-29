@@ -12,10 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/networking/sender/sendermock"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/networking/sender/sendermock"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/set"
 )

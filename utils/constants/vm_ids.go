@@ -3,7 +3,7 @@
 
 package constants
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 const (
 	PlatformVMName = "platformvm"

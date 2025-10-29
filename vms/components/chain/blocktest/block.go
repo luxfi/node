@@ -30,7 +30,7 @@ const (
 	Accepted   uint8 = 3
 )
 
-// Block is a test block that implements chain.Block
+// Block is a test block that implements block.Block
 type Block struct {
 	IDV        ids.ID
 	HeightV    uint64
@@ -101,7 +101,7 @@ func (b *Block) State() state.ReadOnlyChain {
 }
 
 // BuildChild creates a child block of the given parent
-func BuildChild(parent chain.Block) *Block {
+func BuildChild(parent block.Block) *Block {
 	nextID++
 	blockID := ids.ID{}
 	copy(blockID[:], fmt.Sprintf("block_%d", nextID))

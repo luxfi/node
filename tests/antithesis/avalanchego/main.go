@@ -17,7 +17,7 @@ import (
 
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/antithesis"
 	"github.com/luxfi/node/tests/fixture/e2e"

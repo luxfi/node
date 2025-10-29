@@ -13,8 +13,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/choices"
 )
 
 // Block represents a block in the Y-Chain quantum checkpoint ledger

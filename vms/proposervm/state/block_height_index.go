@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/prefixdb"
 	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 const cacheSize = 8192 // max cache entries

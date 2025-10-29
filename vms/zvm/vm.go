@@ -14,11 +14,11 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/version"
 )
@@ -210,7 +210,7 @@ func (vm *VM) Initialize(
 }
 
 // BuildBlock builds a new block
-func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
 	
@@ -269,7 +269,7 @@ func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
 }
 
 // ParseBlock parses a block from bytes
-func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (snowman.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, error) {
 	block := &Block{vm: vm}
 	if _, err := Codec.Unmarshal(blockBytes, block); err != nil {
 		return nil, err
@@ -280,7 +280,7 @@ func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (snowman.Block,
 }
 
 // GetBlock retrieves a block by ID
-func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (snowman.Block, error) {
+func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 	

@@ -21,26 +21,26 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/database"
+	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/database/meterdb"
 	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowball"
-	"github.com/luxfi/node/snow/engine/lux/bootstrap/queue"
-	"github.com/luxfi/node/snow/engine/lux/state"
-	"github.com/luxfi/node/snow/engine/lux/vertex"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/engine/common/tracker"
-	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/engine/snowman/syncer"
-	"github.com/luxfi/node/snow/networking/handler"
-	"github.com/luxfi/node/snow/networking/router"
-	"github.com/luxfi/node/snow/networking/sender"
-	"github.com/luxfi/node/snow/networking/timeout"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/consensus/engine/dag/bootstrap/queue"
+	"github.com/luxfi/consensus/engine/dag/state"
+	"github.com/luxfi/consensus/engine/dag/vertex"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/core/tracker"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/chain/syncer"
+	"github.com/luxfi/consensus/networking/handler"
+	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/consensus/networking/sender"
+	"github.com/luxfi/consensus/networking/timeout"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
@@ -54,23 +54,23 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/fx"
-	"github.com/luxfi/node/vms/metervm"
+	// "github.com/luxfi/node/vms/metervm" // Temporarily disabled - needs consensus package updates
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/proposervm"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/tracedvm"
+	// "github.com/luxfi/node/vms/tracedvm" // Temporarily disabled - needs consensus package updates
 
 	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	smcon "github.com/luxfi/node/snow/consensus/snowman"
-	aveng "github.com/luxfi/node/snow/engine/lux"
-	avbootstrap "github.com/luxfi/node/snow/engine/lux/bootstrap"
-	avagetter "github.com/luxfi/node/snow/engine/lux/getter"
-	smeng "github.com/luxfi/node/snow/engine/snowman"
-	smbootstrap "github.com/luxfi/node/snow/engine/snowman/bootstrap"
-	snowgetter "github.com/luxfi/node/snow/engine/snowman/getter"
-	timetracker "github.com/luxfi/node/snow/networking/tracker"
+	smcon "github.com/luxfi/consensus/engine/chain"
+	aveng "github.com/luxfi/consensus/engine/dag"
+	avbootstrap "github.com/luxfi/consensus/engine/dag/bootstrap"
+	avagetter "github.com/luxfi/consensus/engine/dag/getter"
+	smeng "github.com/luxfi/consensus/engine/chain"
+	smbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap"
+	snowgetter "github.com/luxfi/consensus/engine/chain/getter"
+	timetracker "github.com/luxfi/node/network/tracker"
 )
 
 const (
@@ -85,7 +85,7 @@ const (
 	meterdagvmNamespace   = constants.PlatformName + metric.NamespaceSeparator + "meterdagvm"
 	proposervmNamespace   = constants.PlatformName + metric.NamespaceSeparator + "proposervm"
 	p2pNamespace          = constants.PlatformName + metric.NamespaceSeparator + "p2p"
-	snowmanNamespace      = constants.PlatformName + metric.NamespaceSeparator + "snowman"
+	chainNamespace      = constants.PlatformName + metric.NamespaceSeparator + "snowman"
 	stakeNamespace        = constants.PlatformName + metric.NamespaceSeparator + "stake"
 )
 
@@ -102,7 +102,7 @@ var (
 	// Bootstrapping prefixes for ChainVMs
 	ChainBootstrappingDBPrefix = []byte("interval_bs")
 
-	errUnknownVMType           = errors.New("the vm should have type lux.DAGVM or snowman.ChainVM")
+	errUnknownVMType           = errors.New("the vm should have type lux.DAGVM or chain.ChainVM")
 	errCreatePlatformVM        = errors.New("attempted to create a chain running the PlatformVM")
 	errNotBootstrapped         = errors.New("subnets not bootstrapped")
 	errPartialSyncAsAValidator = errors.New("partial sync should not be configured for a validator")
@@ -170,7 +170,7 @@ type ChainParameters struct {
 type chain struct {
 	Name    string
 	Context *snow.ConsensusContext
-	VM      common.VM
+	VM      core.VM
 	Handler handler.Handler
 }
 
@@ -268,7 +268,7 @@ type manager struct {
 	// Value: The chain
 	chains map[ids.ID]handler.Handler
 
-	// snowman++ related interface to allow validators retrieval
+	// chain++ related interface to allow validators retrieval
 	validatorState validators.State
 
 	luxGatherer    metrics.MultiGatherer            // chainID
@@ -315,7 +315,7 @@ func New(config *ManagerConfig) (Manager, error) {
 	}
 
 	snowmanGatherer := metrics.NewLabelGatherer(ChainLabel)
-	if err := config.Metrics.Register(snowmanNamespace, snowmanGatherer); err != nil {
+	if err := config.Metrics.Register(chainNamespace, snowmanGatherer); err != nil {
 		return nil, err
 	}
 
@@ -491,7 +491,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 	}
 
 	ctx := &snow.ConsensusContext{
-		Context: &snow.Context{
+		Context: &consensusctx.Context{
 			NetworkID:       m.NetworkID,
 			SubnetID:        chainParams.SubnetID,
 			ChainID:         chainParams.ID,
@@ -533,14 +533,14 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 	}
 	// TODO: Shutdown VM if an error occurs
 
-	chainFxs := make([]*common.Fx, len(chainParams.FxIDs))
+	chainFxs := make([]*consensus.Fx, len(chainParams.FxIDs))
 	for i, fxID := range chainParams.FxIDs {
 		fxFactory, ok := fxs[fxID]
 		if !ok {
 			return nil, fmt.Errorf("fx %s not found", fxID)
 		}
 
-		chainFxs[i] = &common.Fx{
+		chainFxs[i] = &consensus.Fx{
 			ID: fxID,
 			Fx: fxFactory.New(),
 		}
@@ -576,7 +576,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 			sb,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("error while creating new snowman vm %w", err)
+			return nil, fmt.Errorf("error while creating new chain vm %w", err)
 		}
 	default:
 		return nil, errUnknownVMType
@@ -608,7 +608,7 @@ func (m *manager) createLuxChain(
 	genesisData []byte,
 	vdrs validators.Manager,
 	vm vertex.LinearizableVMWithEngine,
-	fxs []*common.Fx,
+	fxs []*consensus.Fx,
 	sb subnets.Subnet,
 ) (*chain, error) {
 	ctx.Lock.Lock()
@@ -676,7 +676,7 @@ func (m *manager) createLuxChain(
 		luxMessageSender = sender.Trace(luxMessageSender, m.Tracer)
 	}
 
-	// Passes messages from the snowman engines to the network
+	// Passes messages from the chain engines to the network
 	snowmanMessageSender, err := sender.New(
 		ctx,
 		m.MsgCreator,
@@ -710,10 +710,10 @@ func (m *manager) createLuxChain(
 			return nil, err
 		}
 
-		dagVM = metervm.NewVertexVM(dagVM, meterdagvmReg)
+		// dagVM = metervm.NewVertexVM(dagVM, meterdagvmReg)
 	}
 	if m.TracingEnabled {
-		dagVM = tracedvm.NewVertexVM(dagVM, m.Tracer)
+		// dagVM = tracedvm.NewVertexVM(dagVM, m.Tracer)
 	}
 
 	// Handles serialization/deserialization of vertices and also the
@@ -761,12 +761,12 @@ func (m *manager) createLuxChain(
 
 	// Note: this does not use [dagVM] to ensure we use the [vm]'s height index.
 	// Create a channel for engine communication - this will be used by the VM's Linearize method
-	toEngine := make(chan common.Message, 1)
+	toEngine := make(chan block.Message, 1)
 	untracedVMWrappedInsideProposerVM := NewLinearizeOnInitializeVM(vm, toEngine)
 
 	var vmWrappedInsideProposerVM block.ChainVM = untracedVMWrappedInsideProposerVM
 	if m.TracingEnabled {
-		vmWrappedInsideProposerVM = tracedvm.NewBlockVM(vmWrappedInsideProposerVM, primaryAlias, m.Tracer)
+		// vmWrappedInsideProposerVM = tracedvm.NewBlockVM(vmWrappedInsideProposerVM, primaryAlias, m.Tracer)
 	}
 
 	proposervmReg, err := metrics.MakeAndRegister(
@@ -789,7 +789,7 @@ func (m *manager) createLuxChain(
 		},
 	)
 
-	// Note: vmWrappingProposerVM is the VM that the Snowman engines should be
+	// Note: vmWrappingProposerVM is the VM that the Chain engines should be
 	// using.
 	var vmWrappingProposerVM block.ChainVM = proposerVM
 
@@ -802,10 +802,10 @@ func (m *manager) createLuxChain(
 			return nil, err
 		}
 
-		vmWrappingProposerVM = metervm.NewBlockVM(vmWrappingProposerVM, meterchainvmReg)
+		// vmWrappingProposerVM = metervm.NewBlockVM(vmWrappingProposerVM, meterchainvmReg)
 	}
 	if m.TracingEnabled {
-		vmWrappingProposerVM = tracedvm.NewBlockVM(vmWrappingProposerVM, "proposervm", m.Tracer)
+		// vmWrappingProposerVM = tracedvm.NewBlockVM(vmWrappingProposerVM, "proposervm", m.Tracer)
 	}
 
 	cn := &block.ChangeNotifier{
@@ -920,7 +920,7 @@ func (m *manager) createLuxChain(
 		return nil, fmt.Errorf("couldn't initialize snow base message handler: %w", err)
 	}
 
-	var snowmanConsensus smcon.Consensus = &smcon.Topological{Factory: snowball.SnowflakeFactory}
+	var snowmanConsensus smcon.Consensus = &smcon.Topological{Factory: consensus.SnowflakeFactory}
 	if m.TracingEnabled {
 		snowmanConsensus = smcon.Trace(snowmanConsensus, m.Tracer)
 	}
@@ -940,7 +940,7 @@ func (m *manager) createLuxChain(
 	var snowmanEngine common.Engine
 	snowmanEngine, err = smeng.New(snowmanEngineConfig)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing snowman engine: %w", err)
+		return nil, fmt.Errorf("error initializing chain engine: %w", err)
 	}
 
 	if m.TracingEnabled {
@@ -969,7 +969,7 @@ func (m *manager) createLuxChain(
 		snowmanEngine.Start,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing snowman bootstrapper: %w", err)
+		return nil, fmt.Errorf("error initializing chain bootstrapper: %w", err)
 	}
 
 	if m.TracingEnabled {
@@ -1050,14 +1050,14 @@ func (m *manager) createLuxChain(
 	}, nil
 }
 
-// Create a linear chain using the Snowman consensus engine
+// Create a linear chain using the Chain consensus engine
 func (m *manager) createSnowmanChain(
 	ctx *snow.ConsensusContext,
 	genesisData []byte,
 	vdrs validators.Manager,
 	beacons validators.Manager,
 	vm block.ChainVM,
-	fxs []*common.Fx,
+	fxs []*consensus.Fx,
 	sb subnets.Subnet,
 ) (*chain, error) {
 	ctx.Lock.Lock()
@@ -1137,7 +1137,7 @@ func (m *manager) createSnowmanChain(
 
 		// Set this func only for platform
 		//
-		// The snowman bootstrapper ensures this function is only executed once, so
+		// The chain bootstrapper ensures this function is only executed once, so
 		// we don't need to be concerned about closing this channel multiple times.
 		bootstrapFunc = func() {
 			close(m.unblockChainCreatorCh)
@@ -1311,7 +1311,7 @@ func (m *manager) createSnowmanChain(
 		return nil, fmt.Errorf("couldn't initialize snow base message handler: %w", err)
 	}
 
-	var consensus smcon.Consensus = &smcon.Topological{Factory: snowball.SnowflakeFactory}
+	var consensus smcon.Consensus = &smcon.Topological{Factory: consensus.SnowflakeFactory}
 	if m.TracingEnabled {
 		consensus = smcon.Trace(consensus, m.Tracer)
 	}
@@ -1332,7 +1332,7 @@ func (m *manager) createSnowmanChain(
 	var engine common.Engine
 	engine, err = smeng.New(engineConfig)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing snowman engine: %w", err)
+		return nil, fmt.Errorf("error initializing chain engine: %w", err)
 	}
 
 	if m.TracingEnabled {
@@ -1362,7 +1362,7 @@ func (m *manager) createSnowmanChain(
 		engine.Start,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing snowman bootstrapper: %w", err)
+		return nil, fmt.Errorf("error initializing chain bootstrapper: %w", err)
 	}
 
 	if m.TracingEnabled {
@@ -1525,7 +1525,7 @@ func (m *manager) LookupVM(alias string) (ids.ID, error) {
 
 // Notify registrants [those who want to know about the creation of chains]
 // that the specified chain has been created
-func (m *manager) notifyRegistrants(name string, ctx *snow.ConsensusContext, vm common.VM) {
+func (m *manager) notifyRegistrants(name string, ctx *snow.ConsensusContext, vm core.VM) {
 	for _, registrant := range m.registrants {
 		registrant.RegisterChain(name, ctx, vm)
 	}

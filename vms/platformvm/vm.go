@@ -18,12 +18,12 @@ import (
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/uptime"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
@@ -42,7 +42,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
 
-	snowmanblock "github.com/luxfi/node/snow/engine/snowman/block"
+	snowmanblock "github.com/luxfi/consensus/engine/chain/block"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	platformvmmetrics "github.com/luxfi/node/vms/platformvm/metrics"
@@ -404,7 +404,7 @@ func (vm *VM) Shutdown(context.Context) error {
 	)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, b []byte) (snowman.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, b []byte) (chain.Block, error) {
 	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
 	// rather than blocks.GenesisCodec
 	statelessBlk, err := block.Parse(block.Codec, b)
@@ -414,7 +414,7 @@ func (vm *VM) ParseBlock(_ context.Context, b []byte) (snowman.Block, error) {
 	return vm.manager.NewBlock(statelessBlk), nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (snowman.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
 	return vm.manager.GetBlock(blkID)
 }
 
