@@ -5,7 +5,7 @@ package fxs
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
@@ -52,7 +52,7 @@ type Fx interface {
 
 type FxOperation interface {
 	verify.Verifiable
-	snow.ContextInitializable
+	consensus.ContextInitializable
 	lux.Coster
 
 	Outs() []verify.State

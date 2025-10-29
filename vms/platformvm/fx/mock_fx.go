@@ -13,7 +13,6 @@ import (
 	consensusctx "github.com/luxfi/consensus/context"
 	reflect "reflect"
 
-	snow "github.com/luxfi/consensus/core"
 	verify "github.com/luxfi/node/vms/components/verify"
 	gomock "go.uber.org/mock/gomock"
 )
