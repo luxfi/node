@@ -131,7 +131,7 @@ func (p *postForkCommonComponents) Verify(
 
 	// If the node is currently syncing - we don't assume that the P-chain has
 	// been synced up to this point yet.
-	if p.vm.consensusState == snow.NormalOp {
+	if p.vm.consensusState == uint32(core.VMNormalOp) {
 		currentPChainHeight, err := p.vm.validatorState.GetCurrentHeight(ctx)
 		if err != nil {
 			p.vm.logger.Error("block verification failed",
@@ -263,9 +263,9 @@ func (p *postForkCommonComponents) buildChild(
 	}
 
 	// Build the child
-	var statelessChild chainblock.SignedBlock
+	var statelessChild block.SignedBlock
 	if shouldBuildSignedBlock {
-		statelessChild, err = chainblock.Build(
+		statelessChild, err = block.Build(
 			parentID,
 			newTimestamp,
 			pChainHeight,
@@ -276,7 +276,7 @@ func (p *postForkCommonComponents) buildChild(
 			p.vm.StakingLeafSigner,
 		)
 	} else {
-		statelessChild, err = chainblock.BuildUnsigned(
+		statelessChild, err = block.BuildUnsigned(
 			parentID,
 			newTimestamp,
 			pChainHeight,

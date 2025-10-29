@@ -117,7 +117,7 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chainbloc
 	innerBlockBytes = append(innerBlockBytes, blks[blocksIndex:]...)
 
 	// parse all inner blocks at once
-	innerBlks, err := chainblock.BatchedParseBlock(ctx, vm.ChainVM, innerBlockBytes)
+	innerBlks, err := vm.batchedVM.BatchedParseBlock(ctx, innerBlockBytes)
 	if err != nil {
 		return nil, err
 	}
