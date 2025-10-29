@@ -14,7 +14,6 @@ import (
 
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms"
@@ -100,20 +99,26 @@ func (r *vmRegisterer) createStaticHandlers(
 		return nil, err
 	}
 
-	commonVM, ok := vm.(common.VM)
+	handlerProvider, ok := vm.(vms.HandlerProvider)
 	if !ok {
 		return nil, fmt.Errorf("%s is %w", vmID, errNotVM)
 	}
 
-	handlers, err := commonVM.CreateHandlers(ctx)
+	handlers, err := handlerProvider.CreateHandlers(ctx)
 	if err != nil {
 		r.config.Log.Error("failed to create static API endpoints",
 			zap.Stringer("vmID", vmID),
 			zap.Error(err),
 		)
 
-		if err := commonVM.Shutdown(ctx); err != nil {
-			return nil, fmt.Errorf("shutting down VM errored with: %w", err)
+		// Try to shutdown the VM if it supports it
+		type Shutdowner interface {
+			Shutdown(context.Context) error
+		}
+		if shutdownVM, ok := vm.(Shutdowner); ok {
+			if err := shutdownVM.Shutdown(ctx); err != nil {
+				return nil, fmt.Errorf("shutting down VM errored with: %w", err)
+			}
 		}
 		return nil, err
 	}
