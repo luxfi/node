@@ -4,7 +4,7 @@
 package propertyfx
 
 import (
-	"github.com/luxfi/node/snow"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -13,7 +13,7 @@ type BurnOperation struct {
 	secp256k1fx.Input `serialize:"true"`
 }
 
-func (*BurnOperation) InitCtx(*snow.Context) {}
+func (*BurnOperation) InitCtx(*consensusctx.Context) {}
 
 func (*BurnOperation) Outs() []verify.State {
 	return nil

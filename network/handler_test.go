@@ -4,8 +4,8 @@
 package network
 
 import (
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/networking/router"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/node/version"
 )
 

@@ -4,19 +4,20 @@
 package ipcs
 
 import (
+	"context"
 	"errors"
 	"os"
 	"syscall"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/ipcs/socket"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
-var _ snow.Acceptor = (*EventSockets)(nil)
+var _ consensus.Acceptor = (*EventSockets)(nil)
 
 // EventSockets is a set of named eventSockets
 type EventSockets struct {
@@ -26,11 +27,11 @@ type EventSockets struct {
 
 // newEventSockets creates a *ChainIPCs with both consensus and decisions IPCs
 func newEventSockets(
-	ctx context,
+	ctx ipcContext,
 	chainID ids.ID,
-	blockAcceptorGroup snow.AcceptorGroup,
-	txAcceptorGroup snow.AcceptorGroup,
-	vertexAcceptorGroup snow.AcceptorGroup,
+	blockAcceptorGroup consensus.AcceptorGroup,
+	txAcceptorGroup consensus.AcceptorGroup,
+	vertexAcceptorGroup consensus.AcceptorGroup,
 ) (*EventSockets, error) {
 	consensusIPC, err := newEventIPCSocket(
 		ctx,
@@ -61,7 +62,7 @@ func newEventSockets(
 }
 
 // Accept delivers a message to the underlying eventSockets
-func (ipcs *EventSockets) Accept(ctx *snow.ConsensusContext, containerID ids.ID, container []byte) error {
+func (ipcs *EventSockets) Accept(ctx context.Context, containerID ids.ID, container []byte) error {
 	if ipcs.consensusSocket != nil {
 		if err := ipcs.consensusSocket.Accept(ctx, containerID, container); err != nil {
 			return err
@@ -113,11 +114,11 @@ type eventSocket struct {
 // newEventIPCSocket creates a *eventSocket for the given chain and
 // EventDispatcher that writes to a local IPC socket
 func newEventIPCSocket(
-	ctx context,
+	ctx ipcContext,
 	chainID ids.ID,
 	name string,
-	snowmanAcceptorGroup snow.AcceptorGroup,
-	luxAcceptorGroup snow.AcceptorGroup,
+	blockAcceptorGroup consensus.AcceptorGroup,
+	txAcceptorGroup consensus.AcceptorGroup,
 ) (*eventSocket, error) {
 	var (
 		url     = ipcURL(ctx, chainID, name)
@@ -135,8 +136,8 @@ func newEventIPCSocket(
 		socket: socket.NewSocket(url, ctx.log),
 		unregisterFn: func() error {
 			return utils.Err(
-				snowmanAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
-				luxAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
+				blockAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
+				txAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
 			)
 		},
 	}
@@ -148,14 +149,14 @@ func newEventIPCSocket(
 		return nil, err
 	}
 
-	if err := snowmanAcceptorGroup.RegisterAcceptor(chainID, ipcName, eis, false); err != nil {
+	if err := blockAcceptorGroup.RegisterAcceptor(chainID, ipcName, eis, false); err != nil {
 		if err := eis.stop(); err != nil {
 			return nil, err
 		}
 		return nil, err
 	}
 
-	if err := luxAcceptorGroup.RegisterAcceptor(chainID, ipcName, eis, false); err != nil {
+	if err := txAcceptorGroup.RegisterAcceptor(chainID, ipcName, eis, false); err != nil {
 		if err := eis.stop(); err != nil {
 			return nil, err
 		}
@@ -166,7 +167,7 @@ func newEventIPCSocket(
 }
 
 // Accept delivers a message to the eventSocket
-func (eis *eventSocket) Accept(_ *snow.ConsensusContext, _ ids.ID, container []byte) error {
+func (eis *eventSocket) Accept(_ context.Context, _ ids.ID, container []byte) error {
 	eis.socket.Send(container)
 	return nil
 }

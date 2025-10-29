@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/set"

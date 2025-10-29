@@ -9,11 +9,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/avm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"

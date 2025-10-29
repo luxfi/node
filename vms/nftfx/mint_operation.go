@@ -4,9 +4,9 @@
 package nftfx
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
 	"errors"
 
-	"github.com/luxfi/node/snow"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
@@ -21,7 +21,7 @@ type MintOperation struct {
 	Outputs   []*secp256k1fx.OutputOwners `serialize:"true" json:"outputs"`
 }
 
-func (op *MintOperation) InitCtx(ctx *snow.Context) {
+func (op *MintOperation) InitCtx(ctx *consensusctx.Context) {
 	for _, out := range op.Outputs {
 		out.InitCtx(ctx)
 	}

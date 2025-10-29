@@ -6,12 +6,12 @@ package lp118
 import (
 	"context"
 
-	"github.com/luxfi/consensus/engine/core/common"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
 // Verifier verifies warp messages according to LP-118
 type Verifier interface {
 	// Verify verifies an unsigned warp message with justification
-	Verify(ctx context.Context, unsignedMessage *warp.UnsignedMessage, justification []byte) *common.AppError
+	Verify(ctx context.Context, unsignedMessage *warp.UnsignedMessage, justification []byte) *core.AppError
 }

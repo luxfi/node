@@ -7,7 +7,7 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/set"
 )

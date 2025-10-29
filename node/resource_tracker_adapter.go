@@ -6,7 +6,7 @@ package node
 import (
 	"time"
 
-	"github.com/luxfi/consensus/networking/tracker"
+	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/ids"
 	nodetracker "github.com/luxfi/node/network/tracker"
 )

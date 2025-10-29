@@ -7,8 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
@@ -58,7 +57,7 @@ func (tx *BaseTx) Outputs() []*lux.TransferableOutput {
 // InitCtx sets the FxID fields in the inputs and outputs of this [BaseTx]. Also
 // sets the [ctx] to the given [vm.ctx] so that the addresses can be json
 // marshalled into human readable format
-func (tx *BaseTx) InitCtx(ctx *snow.Context) {
+func (tx *BaseTx) InitCtx(ctx *consensusctx.Context) {
 	for _, in := range tx.BaseTx.Ins {
 		in.FxID = secp256k1fx.ID
 	}
@@ -69,7 +68,7 @@ func (tx *BaseTx) InitCtx(ctx *snow.Context) {
 }
 
 // SyntacticVerify returns nil iff this tx is well formed
-func (tx *BaseTx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *BaseTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

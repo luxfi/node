@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/proposervm/state"
@@ -78,7 +78,7 @@ func (hi *heightIndexer) MarkRepaired(repaired bool) {
 }
 
 // RepairHeightIndex ensures the height -> proBlkID height block index is well formed.
-// Starting from the checkpoint, it will go back to snowman++ activation fork
+// Starting from the checkpoint, it will go back to chain++ activation fork
 // or genesis. PreFork blocks will be handled by innerVM height index.
 // RepairHeightIndex can take a non-trivial time to complete; hence we make sure
 // the process has limited memory footprint, can be resumed from periodic checkpoints

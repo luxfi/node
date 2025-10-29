@@ -4,7 +4,7 @@
 package txs
 
 import (
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 

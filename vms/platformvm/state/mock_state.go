@@ -16,8 +16,8 @@ import (
 	time "time"
 
 	database "github.com/luxfi/node/database"
-	ids "github.com/luxfi/node/ids"
-	validators "github.com/luxfi/node/snow/validators"
+	ids "github.com/luxfi/ids"
+	validators "github.com/luxfi/consensus/validators"
 	iterator "github.com/luxfi/node/utils/iterator"
 	logging "github.com/luxfi/node/utils/logging"
 	lux "github.com/luxfi/node/vms/components/lux"

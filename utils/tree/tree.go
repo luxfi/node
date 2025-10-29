@@ -31,11 +31,11 @@ import (
 // (it may be held by a different proposervm block).
 type Tree interface {
 	// Add places the block in the tree
-	Add(chain.Block)
+	Add(block.Block)
 
 	// Get returns the block that was added to this tree whose parent and ID
 	// match the provided block. If non-exists, then false will be returned.
-	Get(chain.Block) (chain.Block, bool)
+	Get(block.Block) (block.Block, bool)
 
 	// Accept marks the provided block as accepted and rejects every conflicting
 	// block.
@@ -53,7 +53,7 @@ func New() Tree {
 	}
 }
 
-func (t *tree) Add(blk chain.Block) {
+func (t *tree) Add(blk block.Block) {
 	parentIDLux := blk.Parent()
 	// Convert luxids.ID to node/ids.ID
 	var parentIDBytes [32]byte
@@ -72,7 +72,7 @@ func (t *tree) Add(blk chain.Block) {
 	children[blkID] = blk
 }
 
-func (t *tree) Get(blk chain.Block) (chain.Block, bool) {
+func (t *tree) Get(blk block.Block) (block.Block, bool) {
 	parentIDLux := blk.Parent()
 	// Convert luxids.ID to node/ids.ID
 	var parentIDBytes [32]byte
@@ -88,7 +88,7 @@ func (t *tree) Get(blk chain.Block) (chain.Block, bool) {
 	return originalBlk, exists
 }
 
-func (t *tree) Accept(ctx context.Context, blk chain.Block) error {
+func (t *tree) Accept(ctx context.Context, blk block.Block) error {
 	// accept the provided block
 	if err := blk.Accept(ctx); err != nil {
 		return err

@@ -11,14 +11,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/vms/proposervm/acp181"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
-
-	smblock "github.com/luxfi/node/snow/engine/snowman/block"
 )
 
 const (
@@ -43,9 +41,9 @@ var (
 )
 
 type Block interface {
-	snowman.Block
+	chainblock.Block
 
-	getInnerBlk() snowman.Block
+	getInnerBlk() chainblock.Block
 
 	// After a state sync, we may need to update last accepted block data
 	// without propagating any changes to the innerVM.
@@ -61,21 +59,21 @@ type Block interface {
 	buildChild(context.Context) (Block, error)
 
 	pChainHeight(context.Context) (uint64, error)
-	pChainEpoch(context.Context) (block.Epoch, error)
+	pChainEpoch(context.Context) (chainblock.Epoch, error)
 	selectChildPChainHeight(context.Context) (uint64, error)
 }
 
 type PostForkBlock interface {
 	Block
 
-	getStatelessBlk() block.Block
-	setInnerBlk(snowman.Block)
+	getStatelessBlk() chainblock.Block
+	setInnerBlk(chainblock.Block)
 }
 
 // field of postForkBlock and postForkOption
 type postForkCommonComponents struct {
 	vm       *VM
-	innerBlk snowman.Block
+	innerBlk chainblock.Block
 }
 
 // Return the inner block's height
@@ -98,7 +96,7 @@ func (p *postForkCommonComponents) Verify(
 	ctx context.Context,
 	parentTimestamp time.Time,
 	parentPChainHeight uint64,
-	parentEpoch block.Epoch,
+	parentEpoch chainblock.Epoch,
 	child *postForkBlock,
 ) error {
 	if err := verifyIsNotOracleBlock(ctx, p.innerBlk); err != nil {
@@ -134,9 +132,9 @@ func (p *postForkCommonComponents) Verify(
 	// If the node is currently syncing - we don't assume that the P-chain has
 	// been synced up to this point yet.
 	if p.vm.consensusState == snow.NormalOp {
-		currentPChainHeight, err := p.vm.ctx.ValidatorState.GetCurrentHeight(ctx)
+		currentPChainHeight, err := p.vm.validatorState.GetCurrentHeight(ctx)
 		if err != nil {
-			p.vm.ctx.Log.Error("block verification failed",
+			p.vm.logger.Error("block verification failed",
 				zap.String("reason", "failed to get current P-Chain height"),
 				zap.Stringer("blkID", child.ID()),
 				zap.Error(err),
@@ -166,7 +164,7 @@ func (p *postForkCommonComponents) Verify(
 			return fmt.Errorf("%w: shouldHaveProposer (%v) != hasProposer (%v)", errProposerMismatch, shouldHaveProposer, hasProposer)
 		}
 
-		p.vm.ctx.Log.Debug("verified post-fork block",
+		p.vm.logger.Debug("verified post-fork block",
 			zap.Stringer("blkID", child.ID()),
 			zap.Time("parentTimestamp", parentTimestamp),
 			zap.Time("blockTimestamp", childTimestamp),
@@ -198,7 +196,7 @@ func (p *postForkCommonComponents) buildChild(
 	parentID ids.ID,
 	parentTimestamp time.Time,
 	parentPChainHeight uint64,
-	parentEpoch block.Epoch,
+	parentEpoch chainblock.Epoch,
 ) (Block, error) {
 	// Child's timestamp is the later of now and this block's timestamp
 	newTimestamp := p.vm.Time().Truncate(time.Second)
@@ -210,7 +208,7 @@ func (p *postForkCommonComponents) buildChild(
 	// is at least the parent's P-Chain height
 	pChainHeight, err := p.vm.selectChildPChainHeight(ctx, parentPChainHeight)
 	if err != nil {
-		p.vm.ctx.Log.Error("unexpected build block failure",
+		p.vm.logger.Error("unexpected build block failure",
 			zap.String("reason", "failed to calculate optimal P-chain height"),
 			zap.Stringer("parentID", parentID),
 			zap.Error(err),
@@ -252,7 +250,7 @@ func (p *postForkCommonComponents) buildChild(
 		contextPChainHeight = parentPChainHeight
 	}
 
-	var innerBlock snowman.Block
+	var innerBlock chainblock.Block
 	if p.vm.blockBuilderVM != nil {
 		innerBlock, err = p.vm.blockBuilderVM.BuildBlockWithContext(ctx, &smblock.Context{
 			PChainHeight: contextPChainHeight,
@@ -265,9 +263,9 @@ func (p *postForkCommonComponents) buildChild(
 	}
 
 	// Build the child
-	var statelessChild block.SignedBlock
+	var statelessChild chainblock.SignedBlock
 	if shouldBuildSignedBlock {
-		statelessChild, err = block.Build(
+		statelessChild, err = chainblock.Build(
 			parentID,
 			newTimestamp,
 			pChainHeight,
@@ -278,7 +276,7 @@ func (p *postForkCommonComponents) buildChild(
 			p.vm.StakingLeafSigner,
 		)
 	} else {
-		statelessChild, err = block.BuildUnsigned(
+		statelessChild, err = chainblock.BuildUnsigned(
 			parentID,
 			newTimestamp,
 			pChainHeight,
@@ -287,7 +285,7 @@ func (p *postForkCommonComponents) buildChild(
 		)
 	}
 	if err != nil {
-		p.vm.ctx.Log.Error("unexpected build block failure",
+		p.vm.logger.Error("unexpected build block failure",
 			zap.String("reason", "failed to generate proposervm block header"),
 			zap.Stringer("parentID", parentID),
 			zap.Stringer("blkID", innerBlock.ID()),
@@ -304,7 +302,7 @@ func (p *postForkCommonComponents) buildChild(
 		},
 	}
 
-	p.vm.ctx.Log.Info("built block",
+	p.vm.logger.Info("built block",
 		zap.Stringer("blkID", child.ID()),
 		zap.Stringer("innerBlkID", innerBlock.ID()),
 		zap.Uint64("height", child.Height()),
@@ -316,19 +314,19 @@ func (p *postForkCommonComponents) buildChild(
 	return child, nil
 }
 
-func (p *postForkCommonComponents) getInnerBlk() snowman.Block {
+func (p *postForkCommonComponents) getInnerBlk() chainblock.Block {
 	return p.innerBlk
 }
 
-func (p *postForkCommonComponents) setInnerBlk(innerBlk snowman.Block) {
+func (p *postForkCommonComponents) setInnerBlk(innerBlk chainblock.Block) {
 	p.innerBlk = innerBlk
 }
 
-func verifyIsOracleBlock(ctx context.Context, b snowman.Block) error {
-	oracle, ok := b.(snowman.OracleBlock)
+func verifyIsOracleBlock(ctx context.Context, b chainblock.Block) error {
+	oracle, ok := b.(chainblock.OracleBlock)
 	if !ok {
 		return fmt.Errorf(
-			"%w: expected block %s to be a snowman.OracleBlock but it's a %T",
+			"%w: expected block %s to be a chainblock.OracleBlock but it's a %T",
 			errUnexpectedBlockType, b.ID(), b,
 		)
 	}
@@ -336,8 +334,8 @@ func verifyIsOracleBlock(ctx context.Context, b snowman.Block) error {
 	return err
 }
 
-func verifyIsNotOracleBlock(ctx context.Context, b snowman.Block) error {
-	oracle, ok := b.(snowman.OracleBlock)
+func verifyIsNotOracleBlock(ctx context.Context, b chainblock.Block) error {
+	oracle, ok := b.(chainblock.OracleBlock)
 	if !ok {
 		return nil
 	}
@@ -348,7 +346,7 @@ func verifyIsNotOracleBlock(ctx context.Context, b snowman.Block) error {
 			"%w: expected block %s not to be an oracle block but it's a %T",
 			errUnexpectedBlockType, b.ID(), b,
 		)
-	case snowman.ErrNotOracle:
+	case chainblock.ErrNotOracle:
 		return nil
 	default:
 		return err
@@ -374,7 +372,7 @@ func (p *postForkCommonComponents) verifyPreDurangoBlockDelay(
 		proposer.MaxVerifyWindows,
 	)
 	if err != nil {
-		p.vm.ctx.Log.Error("unexpected block verification failure",
+		p.vm.logger.Error("unexpected block verification failure",
 			zap.String("reason", "failed to calculate required timestamp delay"),
 			zap.Stringer("blkID", blk.ID()),
 			zap.Error(err),
@@ -416,7 +414,7 @@ func (p *postForkCommonComponents) verifyPostDurangoBlockDelay(
 	case errors.Is(err, proposer.ErrAnyoneCanPropose):
 		return false, nil // block should be unsigned
 	case err != nil:
-		p.vm.ctx.Log.Error("unexpected block verification failure",
+		p.vm.logger.Error("unexpected block verification failure",
 			zap.String("reason", "failed to calculate expected proposer"),
 			zap.Stringer("blkID", blk.ID()),
 			zap.Error(err),
@@ -448,7 +446,7 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPostDurango(
 	case errors.Is(err, proposer.ErrAnyoneCanPropose):
 		return false, nil // build an unsigned block
 	case err != nil:
-		p.vm.ctx.Log.Error("unexpected build block failure",
+		p.vm.logger.Error("unexpected build block failure",
 			zap.String("reason", "failed to calculate expected proposer"),
 			zap.Stringer("parentID", parentID),
 			zap.Error(err),
@@ -461,7 +459,7 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPostDurango(
 	// It's not our turn to propose a block yet. This is likely caused by having
 	// previously notified the consensus engine to attempt to build a block on
 	// top of a block that is no longer the preferred block.
-	p.vm.ctx.Log.Debug("build block dropped",
+	p.vm.logger.Debug("build block dropped",
 		zap.Time("parentTimestamp", parentTimestamp),
 		zap.Time("blockTimestamp", newTimestamp),
 		zap.Uint64("slot", currentSlot),
@@ -486,7 +484,7 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPreDurango(
 	proposerID := p.vm.ctx.NodeID
 	minDelay, err := p.vm.Windower.Delay(ctx, parentHeight+1, parentPChainHeight, proposerID, proposer.MaxBuildWindows)
 	if err != nil {
-		p.vm.ctx.Log.Error("unexpected build block failure",
+		p.vm.logger.Error("unexpected build block failure",
 			zap.String("reason", "failed to calculate required timestamp delay"),
 			zap.Stringer("parentID", parentID),
 			zap.Error(err),
@@ -503,7 +501,7 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPreDurango(
 	// It's not our turn to propose a block yet. This is likely caused by having
 	// previously notified the consensus engine to attempt to build a block on
 	// top of a block that is no longer the preferred block.
-	p.vm.ctx.Log.Debug("build block dropped",
+	p.vm.logger.Debug("build block dropped",
 		zap.Time("parentTimestamp", parentTimestamp),
 		zap.Duration("minDelay", minDelay),
 		zap.Time("blockTimestamp", newTimestamp),

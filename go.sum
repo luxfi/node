@@ -418,8 +418,14 @@ github.com/leanovate/gopter v0.2.11 h1:vRjThO1EKPb/1NsDXuDrzldR28RLkBflWYcU9CvzW
 github.com/leanovate/gopter v0.2.11/go.mod h1:aK3tzZP/C+p1m3SPRE4SYZFGP7jjkuSI4f7Xvpt0S9c=
 github.com/luxfi/crypto v1.17.4 h1:JcFaMC9EHjx/47XypQjl2woAysztl7a9kMsDY+pQh8I=
 github.com/luxfi/crypto v1.17.4/go.mod h1:Y+TkHDuHXe2vlwNlwkdI5TYds6C2d4OZcvmXjcMRZCQ=
+github.com/luxfi/czmq/v4 v4.2.0 h1:WCjCLg5b6RDIaATjmFbnMPXLLqjer35NWw44rT3/ubw=
+github.com/luxfi/czmq/v4 v4.2.0/go.mod h1:WFY9ldUbeU900P8bcIRr7Jim23veOhJL5A5zSpTogdU=
 github.com/luxfi/ids v1.1.1 h1:In7esJFBCESXlknpOhU9t1bbPRHUpzlIi2JGkB55QlY=
 github.com/luxfi/ids v1.1.1/go.mod h1:hRG14SG9YCX4HwzyUMI1KS45USe2vapf5bzvzLMrNXM=
+github.com/luxfi/qzmq v0.1.1 h1:MQY0pqvrO7kFQoca7iuXyMVnr+7WkRikLq3RmJk9chc=
+github.com/luxfi/qzmq v0.1.1/go.mod h1:apLrv12OGXac4f2FGFGCs8uYs2czB85Nt8DAYzY7BXc=
+github.com/luxfi/zmq/v4 v4.2.0 h1:AuDrENqru24bmcrh0sUzNDfZFiBMohxB0l1fAy6O0nY=
+github.com/luxfi/zmq/v4 v4.2.0/go.mod h1:9pwlKvDYtZu0YkPV1hdLAS8dbLpI73KTJzhs5C3obks=
 github.com/magiconair/properties v1.8.5/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=
 github.com/mailru/easyjson v0.9.0 h1:PrnmzHw7262yW8sTBwxi1PdJA3Iw/EKBa8psRf7d9a4=
 github.com/mailru/easyjson v0.9.0/go.mod h1:1+xMtQp2MRNVL/V1bOzuP3aP8VNwRW55fQUto+XFtTU=
@@ -616,6 +622,7 @@ github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a h1:1ur3QoCqvE5f
 github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a/go.mod h1:RRCYJbIwD5jmqPI9XoAFR0OcDxqUctll6zUj/+B4S48=
 github.com/thepudds/fzgen v0.4.3 h1:srUP/34BulQaEwPP/uHZkdjUcUjIzL7Jkf4CBVryiP8=
 github.com/thepudds/fzgen v0.4.3/go.mod h1:BhhwtRhzgvLWAjjcHDJ9pEiLD2Z9hrVIFjBCHJ//zJ4=
+github.com/tilinna/z85 v1.0.0/go.mod h1:EfpFU/DUY4ddEy6CRvk2l+UQNEzHbh+bqBQS+04Nkxs=
 github.com/tklauser/go-sysconf v0.3.15 h1:VE89k0criAymJ/Os65CSn1IXaol+1wrsFHEB8Ol49K4=
 github.com/tklauser/go-sysconf v0.3.15/go.mod h1:Dmjwr6tYFIseJw7a3dRLJfsHAMXZ3nEnL/aZY+0IuI4=
 github.com/tklauser/numcpus v0.10.0 h1:18njr6LDBk1zuna922MgdjQuJFjrdppsZG60sHGfjso=

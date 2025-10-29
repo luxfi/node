@@ -12,7 +12,7 @@ package mempoolmock
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
+	ids "github.com/luxfi/ids"
 	txs "github.com/luxfi/node/vms/avm/txs"
 	gomock "go.uber.org/mock/gomock"
 )

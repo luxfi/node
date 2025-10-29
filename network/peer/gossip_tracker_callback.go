@@ -6,9 +6,8 @@ package peer
 import (
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/validators"
-	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/logging"
 )
 
@@ -23,20 +22,14 @@ type GossipTrackerCallback struct {
 
 // OnValidatorAdded adds [validatorID] to the set of validators that can be
 // gossiped about
-func (g *GossipTrackerCallback) OnValidatorAdded(
-	nodeID ids.NodeID,
-	_ *bls.PublicKey,
-	txID ids.ID,
-	_ uint64,
-) {
+func (g *GossipTrackerCallback) OnValidatorAdded(nodeID ids.NodeID, _ uint64) {
 	vdr := ValidatorID{
 		NodeID: nodeID,
-		TxID:   txID,
+		TxID:   ids.Empty, // No longer provided, use empty ID
 	}
 	if !g.GossipTracker.AddValidator(vdr) {
 		g.Log.Error("failed to add a validator",
 			zap.Stringer("nodeID", nodeID),
-			zap.Stringer("txID", txID),
 		)
 	}
 }
@@ -51,6 +44,6 @@ func (g *GossipTrackerCallback) OnValidatorRemoved(nodeID ids.NodeID, _ uint64) 
 	}
 }
 
-// OnValidatorWeightChanged does nothing because PeerList gossip doesn't care
+// OnValidatorLightChanged does nothing because PeerList gossip doesn't care
 // about validator weights.
-func (*GossipTrackerCallback) OnValidatorWeightChanged(ids.NodeID, uint64, uint64) {}
+func (*GossipTrackerCallback) OnValidatorLightChanged(ids.NodeID, uint64, uint64) {}

@@ -12,8 +12,8 @@ package block
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
-	snow "github.com/luxfi/node/snow"
+	ids "github.com/luxfi/ids"
+	snow "github.com/luxfi/consensus/core"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )

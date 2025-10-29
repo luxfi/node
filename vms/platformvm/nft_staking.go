@@ -15,7 +15,7 @@ import (
 		"github.com/luxfi/geth/ethclient"
 	"go.uber.org/zap"
 	
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/vms/platformvm/state"
 )

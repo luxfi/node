@@ -9,7 +9,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 const (

@@ -8,10 +8,10 @@ import (
 	"errors"
 
 	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
-	smblock "github.com/luxfi/node/snow/engine/snowman/block"
+	smblock "github.com/luxfi/consensus/engine/chain/block"
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
 )
 

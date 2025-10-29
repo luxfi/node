@@ -6,8 +6,7 @@ package txs
 import (
 	"time"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/vms/components/lux"
 )
@@ -35,7 +34,7 @@ func (tx *AdvanceTimeTx) Bytes() []byte {
 	return tx.unsignedBytes
 }
 
-func (*AdvanceTimeTx) InitCtx(*snow.Context) {}
+func (*AdvanceTimeTx) InitCtx(*consensusctx.Context) {}
 
 // Timestamp returns the time this block is proposing the chain should be set to
 func (tx *AdvanceTimeTx) Timestamp() time.Time {
@@ -50,7 +49,7 @@ func (*AdvanceTimeTx) Outputs() []*lux.TransferableOutput {
 	return nil
 }
 
-func (*AdvanceTimeTx) SyntacticVerify(*snow.Context) error {
+func (*AdvanceTimeTx) SyntacticVerify(*consensusctx.Context) error {
 	return nil
 }
 

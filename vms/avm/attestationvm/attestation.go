@@ -8,7 +8,7 @@ import (
 	"encoding/binary"
 	"time"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/crypto/aggregated"
 )
 

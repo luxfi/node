@@ -7,7 +7,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/crypto/ringtail"
@@ -34,13 +34,13 @@ func (m *BLSManager) CreateKeyPair() (*bls.SecretKey, *bls.PublicKey, error) {
 		return nil, nil, err
 	}
 	
-	pk := bls.PublicFromSecretKey(sk)
+	pk := sk.PublicKey()
 	return sk, pk, nil
 }
 
 // Sign creates a BLS signature
 func (m *BLSManager) Sign(sk *bls.SecretKey, message []byte) (*bls.Signature, error) {
-	sig := bls.Sign(sk, message)
+	sig := sk.Sign(message)
 	return sig, nil
 }
 

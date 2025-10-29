@@ -7,21 +7,26 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/ids"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
 var _ PostForkBlock = (*postForkBlock)(nil)
 
 type postForkBlock struct {
-	block.SignedBlock
+	chainblock.SignedBlock
 	postForkCommonComponents
 
 	// slot of the proposer that produced this block.
 	// It is populated in verifyPostDurangoBlockDelay.
 	// It is used to report metrics during Accept.
 	slot *uint64
+}
+
+// Height returns the height of the inner block - explicit to resolve ambiguity
+func (b *postForkBlock) Height() uint64 {
+	return b.postForkCommonComponents.Height()
 }
 
 // Accept:
@@ -89,29 +94,29 @@ func (b *postForkBlock) Verify(ctx context.Context) error {
 }
 
 // Return the two options for the block that follows [b]
-func (b *postForkBlock) Options(ctx context.Context) ([2]snowman.Block, error) {
-	innerOracleBlk, ok := b.innerBlk.(snowman.OracleBlock)
+func (b *postForkBlock) Options(ctx context.Context) ([2]chainblock.Block, error) {
+	innerOracleBlk, ok := b.innerBlk.(chainblock.OracleBlock)
 	if !ok {
 		// [b]'s innerBlk isn't an oracle block
-		return [2]snowman.Block{}, snowman.ErrNotOracle
+		return [2]chainblock.Block{}, chainblock.ErrNotOracle
 	}
 
 	// The inner block's child options
 	innerOptions, err := innerOracleBlk.Options(ctx)
 	if err != nil {
-		return [2]snowman.Block{}, err
+		return [2]chainblock.Block{}, err
 	}
 
 	parentID := b.ID()
-	outerOptions := [2]snowman.Block{}
+	outerOptions := [2]chainblock.Block{}
 	for i, innerOption := range innerOptions {
 		// Wrap the inner block's child option
-		statelessOuterOption, err := block.BuildOption(
+		statelessOuterOption, err := chainblock.BuildOption(
 			parentID,
 			innerOption.Bytes(),
 		)
 		if err != nil {
-			return [2]snowman.Block{}, err
+			return [2]chainblock.Block{}, err
 		}
 
 		outerOptions[i] = &postForkOption{
@@ -173,7 +178,7 @@ func (b *postForkBlock) pChainHeight(context.Context) (uint64, error) {
 	return b.PChainHeight(), nil
 }
 
-func (b *postForkBlock) pChainEpoch(context.Context) (block.Epoch, error) {
+func (b *postForkBlock) pChainEpoch(context.Context) (chainblock.Epoch, error) {
 	return b.PChainEpoch(), nil
 }
 
@@ -181,6 +186,6 @@ func (b *postForkBlock) selectChildPChainHeight(ctx context.Context) (uint64, er
 	return b.vm.selectChildPChainHeight(ctx, b.PChainHeight())
 }
 
-func (b *postForkBlock) getStatelessBlk() block.Block {
+func (b *postForkBlock) getStatelessBlk() chainblock.Block {
 	return b.SignedBlock
 }

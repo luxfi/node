@@ -3,7 +3,7 @@
 
 package indexer
 
-import "github.com/luxfi/node/ids"
+import "github.com/luxfi/ids"
 
 // Container is something that gets accepted
 // (a block, transaction or vertex)

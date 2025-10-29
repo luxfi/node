@@ -6,16 +6,17 @@ package proposervm
 import (
 	"context"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/node/vms/proposervm/indexer"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 )
 
 var _ indexer.BlockServer = (*VM)(nil)
 
 // Note: this is a contention heavy call that should be avoided
 // for frequent/repeated indexer ops
-func (vm *VM) GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (snowman.Block, error) {
+func (vm *VM) GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (chainblock.Block, error) {
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 

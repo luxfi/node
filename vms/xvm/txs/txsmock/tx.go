@@ -12,8 +12,8 @@ package txsmock
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
-	snow "github.com/luxfi/node/snow"
+	ids "github.com/luxfi/ids"
+	snow "github.com/luxfi/consensus/core"
 	set "github.com/luxfi/node/utils/set"
 	txs "github.com/luxfi/node/vms/avm/txs"
 	lux "github.com/luxfi/node/vms/components/lux"

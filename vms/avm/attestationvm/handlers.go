@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 )
 
 // AttestationHandler handles attestation-related HTTP requests

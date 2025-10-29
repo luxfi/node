@@ -13,17 +13,17 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/engine/common"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/validators"
+	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/version"
 )
 
 var (
 	_ validators.Connector = (*Network)(nil)
-	_ common.AppHandler    = (*Network)(nil)
+	_ core.AppHandler    = (*Network)(nil)
 	_ NodeSampler          = (*PeerSampler)(nil)
 
 	opLabel      = "op"
@@ -58,7 +58,7 @@ type clientOptions struct {
 // NewNetwork returns an instance of Network
 func NewNetwork(
 	log logging.Logger,
-	sender common.AppSender,
+	sender core.AppSender,
 	registerer prometheus.Registerer,
 	namespace string,
 ) (*Network, error) {
@@ -103,7 +103,7 @@ type Network struct {
 	Peers *Peers
 
 	log    logging.Logger
-	sender common.AppSender
+	sender core.AppSender
 
 	router *router
 }
@@ -116,7 +116,7 @@ func (n *Network) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID 
 	return n.router.AppResponse(ctx, nodeID, requestID, response)
 }
 
-func (n *Network) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *common.AppError) error {
+func (n *Network) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *core.AppError) error {
 	return n.router.AppRequestFailed(ctx, nodeID, requestID, appErr)
 }
 
@@ -124,7 +124,7 @@ func (n *Network) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) 
 	return n.router.AppGossip(ctx, nodeID, msg)
 }
 
-func (n *Network) Connected(_ context.Context, nodeID ids.NodeID, _ *version.Application) error {
+func (n *Network) Connected(_ context.Context, nodeID ids.NodeID, _ *consensusversion.Application) error {
 	n.Peers.add(nodeID)
 	return nil
 }

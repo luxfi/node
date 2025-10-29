@@ -4,13 +4,13 @@
 package lux
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
 	"bytes"
 	"errors"
 	"sort"
 
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/vms/components/verify"
@@ -32,7 +32,6 @@ var (
 
 // Amounter is a data structure that has an amount of something associated with it
 type Amounter interface {
-	snow.ContextInitializable
 	// Amount returns how much value this element represents of the asset in its
 	// transaction.
 	Amount() uint64
@@ -56,9 +55,9 @@ type TransferableIn interface {
 // TransferableOut is the interface a feature extension must provide to transfer
 // value between features extensions.
 type TransferableOut interface {
-	snow.ContextInitializable
 	verify.State
 	Amounter
+	InitCtx(*consensusctx.Context)
 }
 
 type TransferableOutput struct {
@@ -68,7 +67,7 @@ type TransferableOutput struct {
 	Out  TransferableOut `serialize:"true"  json:"output"`
 }
 
-func (out *TransferableOutput) InitCtx(ctx *snow.Context) {
+func (out *TransferableOutput) InitCtx(ctx *consensusctx.Context) {
 	out.Out.InitCtx(ctx)
 }
 

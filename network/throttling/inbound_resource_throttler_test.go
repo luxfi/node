@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/networking/tracker"
-	"github.com/luxfi/node/snow/networking/tracker/trackermock"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/network/tracker"
+	"github.com/luxfi/node/network/tracker/trackermock"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/timer/mockable"

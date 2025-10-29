@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luxfi/geth/plugin/evm/upgrade/acp176"
-	"github.com/luxfi/geth/plugin/evm/upgrade/cortina"
+	"github.com/luxfi/geth/plugin/evm/upgrade/lp176"
+	"github.com/luxfi/geth/plugin/evm/upgrade/lp118"
 	"github.com/luxfi/geth/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/luxfi/geth/core/types"
@@ -106,9 +106,9 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 
 			now := time.Now()
 			if upgrades.IsFortunaActivated(now) {
-				gasLimit = acp176.MinMaxCapacity
+				gasLimit = lp176.MinMaxCapacity
 			} else {
-				gasLimit = cortina.GasLimit
+				gasLimit = lp118.GasLimit
 			}
 		})
 		tc.Log().Info("set gas limit",

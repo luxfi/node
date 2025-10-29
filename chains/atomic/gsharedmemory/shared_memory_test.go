@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/database"
 	"github.com/luxfi/node/database/memdb"
 	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"

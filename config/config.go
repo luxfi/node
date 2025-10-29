@@ -22,14 +22,13 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/config/node"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/snow/consensus/snowball"
-	"github.com/luxfi/node/snow/networking/benchlist"
-	"github.com/luxfi/node/snow/networking/router"
-	"github.com/luxfi/node/snow/networking/tracker"
+	"github.com/luxfi/consensus/networking/benchlist"
+	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/trace"
@@ -85,19 +84,19 @@ var (
 	errFileDoesNotExist                       = errors.New("file does not exist")
 )
 
-func getConsensusConfig(v *viper.Viper) snowball.Parameters {
-	p := snowball.Parameters{
-		K:                     v.GetInt(SnowSampleSizeKey),
-		AlphaPreference:       v.GetInt(SnowPreferenceQuorumSizeKey),
-		AlphaConfidence:       v.GetInt(SnowConfidenceQuorumSizeKey),
-		Beta:                  v.GetInt(SnowCommitThresholdKey),
-		ConcurrentRepolls:     v.GetInt(SnowConcurrentRepollsKey),
-		OptimalProcessing:     v.GetInt(SnowOptimalProcessingKey),
-		MaxOutstandingItems:   v.GetInt(SnowMaxProcessingKey),
-		MaxItemProcessingTime: v.GetDuration(SnowMaxTimeProcessingKey),
+func getConsensusConfig(v *viper.Viper) consensus.Parameters {
+	p := consensus.Parameters{
+		K:                     v.GetInt(ConsensusSampleSizeKey),
+		AlphaPreference:       v.GetInt(ConsensusPreferenceQuorumSizeKey),
+		AlphaConfidence:       v.GetInt(ConsensusConfidenceQuorumSizeKey),
+		Beta:                  v.GetInt(ConsensusCommitThresholdKey),
+		ConcurrentRepolls:     v.GetInt(ConsensusConcurrentRepollsKey),
+		OptimalProcessing:     v.GetInt(ConsensusOptimalProcessingKey),
+		MaxOutstandingItems:   v.GetInt(ConsensusMaxProcessingKey),
+		MaxItemProcessingTime: v.GetDuration(ConsensusMaxTimeProcessingKey),
 	}
-	if v.IsSet(SnowQuorumSizeKey) {
-		p.AlphaPreference = v.GetInt(SnowQuorumSizeKey)
+	if v.IsSet(ConsensusQuorumSizeKey) {
+		p.AlphaPreference = v.GetInt(ConsensusQuorumSizeKey)
 		p.AlphaConfidence = p.AlphaPreference
 	}
 	return p
@@ -416,7 +415,7 @@ func getNetworkConfig(
 	return config, nil
 }
 
-func getBenchlistConfig(v *viper.Viper, consensusParameters snowball.Parameters) (benchlist.Config, error) {
+func getBenchlistConfig(v *viper.Viper, consensusParameters consensus.Parameters) (benchlist.Config, error) {
 	// AlphaConfidence is used here to ensure that benching can't cause a
 	// liveness failure. If AlphaPreference were used, the benchlist may grow to
 	// a point that committing would be extremely unlikely to happen.

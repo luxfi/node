@@ -6,7 +6,7 @@ package avm
 import (
 	"reflect"
 
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/avm/fxs"
 	"github.com/luxfi/node/vms/avm/txs"
 )

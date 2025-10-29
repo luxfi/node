@@ -12,10 +12,10 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/snow/networking/router"
-	"github.com/luxfi/node/snow/validators"
+	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"

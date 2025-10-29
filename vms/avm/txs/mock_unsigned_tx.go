@@ -12,8 +12,8 @@ package txs
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
-	snow "github.com/luxfi/node/snow"
+	ids "github.com/luxfi/ids"
+	snow "github.com/luxfi/consensus/core"
 	set "github.com/luxfi/node/utils/set"
 	lux "github.com/luxfi/node/vms/components/lux"
 	gomock "go.uber.org/mock/gomock"

@@ -8,14 +8,15 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/choices"
-	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/hashing"
 )
 
 var (
-	_ snowman.Block = (*Block)(nil)
+	_ chain.Block = (*Block)(nil)
 
 	errInvalidBlock = errors.New("invalid block")
 )
@@ -46,12 +47,12 @@ type TaskResult struct {
 	ComputeTime uint64      `json:"computeTime"`
 }
 
-// ID implements the snowman.Block interface
+// ID implements the chain.Block interface
 func (b *Block) ID() ids.ID {
 	return b.id
 }
 
-// Accept implements the snowman.Block interface
+// Accept implements the chain.Block interface
 func (b *Block) Accept(context.Context) error {
 	b.status = choices.Accepted
 	
@@ -75,33 +76,33 @@ func (b *Block) Accept(context.Context) error {
 	return nil
 }
 
-// Reject implements the snowman.Block interface
+// Reject implements the chain.Block interface
 func (b *Block) Reject(context.Context) error {
 	b.status = choices.Rejected
 	return nil
 }
 
-// Status implements the snowman.Block interface
+// Status implements the chain.Block interface
 func (b *Block) Status() choices.Status {
 	return b.status
 }
 
-// Parent implements the snowman.Block interface
+// Parent implements the chain.Block interface
 func (b *Block) Parent() ids.ID {
 	return b.parentID
 }
 
-// Height implements the snowman.Block interface
+// Height implements the chain.Block interface
 func (b *Block) Height() uint64 {
 	return b.height
 }
 
-// Timestamp implements the snowman.Block interface
+// Timestamp implements the chain.Block interface
 func (b *Block) Timestamp() time.Time {
 	return b.timestamp
 }
 
-// Verify implements the snowman.Block interface
+// Verify implements the chain.Block interface
 func (b *Block) Verify(ctx context.Context) error {
 	// Verify block structure
 	if b.height == 0 && b.parentID != ids.Empty {
@@ -130,7 +131,7 @@ func (b *Block) Verify(ctx context.Context) error {
 	return nil
 }
 
-// Bytes implements the snowman.Block interface
+// Bytes implements the chain.Block interface
 func (b *Block) Bytes() []byte {
 	if b.bytes == nil {
 		// TODO: Implement proper serialization

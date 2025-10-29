@@ -9,18 +9,24 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 )
 
 var _ PostForkBlock = (*postForkOption)(nil)
 
 // The parent of a *postForkOption must be a *postForkBlock.
 type postForkOption struct {
-	block.Block
+	chainblock.Block
 	postForkCommonComponents
 
 	timestamp time.Time
+}
+
+// Height returns the height of the inner block - explicit to resolve ambiguity
+func (b *postForkOption) Height() uint64 {
+	return b.postForkCommonComponents.Height()
 }
 
 func (b *postForkOption) Timestamp() time.Time {
@@ -139,10 +145,10 @@ func (b *postForkOption) pChainHeight(ctx context.Context) (uint64, error) {
 	return parent.pChainHeight(ctx)
 }
 
-func (b *postForkOption) pChainEpoch(ctx context.Context) (block.Epoch, error) {
+func (b *postForkOption) pChainEpoch(ctx context.Context) (chainblock.Epoch, error) {
 	parent, err := b.vm.getBlock(ctx, b.ParentID())
 	if err != nil {
-		return block.Epoch{}, err
+		return chainblock.Epoch{}, err
 	}
 	return parent.pChainEpoch(ctx)
 }
@@ -156,6 +162,6 @@ func (b *postForkOption) selectChildPChainHeight(ctx context.Context) (uint64, e
 	return b.vm.selectChildPChainHeight(ctx, pChainHeight)
 }
 
-func (b *postForkOption) getStatelessBlk() block.Block {
+func (b *postForkOption) getStatelessBlk() chainblock.Block {
 	return b.Block
 }

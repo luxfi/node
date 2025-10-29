@@ -12,8 +12,8 @@ package txsmock
 import (
 	reflect "reflect"
 
-	ids "github.com/luxfi/node/ids"
-	snow "github.com/luxfi/node/snow"
+	ids "github.com/luxfi/ids"
+	snow "github.com/luxfi/consensus/core"
 	set "github.com/luxfi/node/utils/set"
 	avax "github.com/luxfi/node/vms/components/avax"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
@@ -58,7 +58,7 @@ func (mr *UnsignedTxMockRecorder) Bytes() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *UnsignedTx) InitCtx(ctx *snow.Context) {
+func (m *UnsignedTx) InitCtx(ctx *consensusctx.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", ctx)
 }
@@ -110,7 +110,7 @@ func (mr *UnsignedTxMockRecorder) SetBytes(unsignedBytes any) *gomock.Call {
 }
 
 // SyntacticVerify mocks base method.
-func (m *UnsignedTx) SyntacticVerify(ctx *snow.Context) error {
+func (m *UnsignedTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SyntacticVerify", ctx)
 	ret0, _ := ret[0].(error)

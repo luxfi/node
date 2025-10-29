@@ -17,7 +17,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/staking"
@@ -463,9 +463,7 @@ func (p *peer) readMessages() {
 		// handled (in the event this message is handled at the network level)
 		// or the time the message is handed to the router (in the event this
 		// message is not handled at the network level.)
-		// [p.CPUTracker.StopProcessing] must be called when this loop iteration is
-		// finished.
-		p.ResourceTracker.StartProcessing(p.id, p.Clock.Time())
+		// Resource tracking is now handled internally by ResourceTracker
 
 		p.Log.Verbo("parsing message",
 			zap.Stringer("nodeID", p.id),
@@ -485,7 +483,6 @@ func (p *peer) readMessages() {
 
 			// Couldn't parse the message. Read the next one.
 			onFinishedHandling()
-			p.ResourceTracker.StopProcessing(p.id, p.Clock.Time())
 			continue
 		}
 
@@ -496,7 +493,6 @@ func (p *peer) readMessages() {
 		// Handle the message. Note that when we are done handling this message,
 		// we must call [msg.OnFinishedHandling()].
 		p.handle(msg)
-		p.ResourceTracker.StopProcessing(p.id, p.Clock.Time())
 	}
 }
 
@@ -717,8 +713,19 @@ func (p *peer) shouldDisconnect() bool {
 		return false
 	}
 
+	// Convert []byte public key to *bls.PublicKey
+	blsPublicKey, err := bls.PublicKeyFromCompressedBytes(vdr.PublicKey)
+	if err != nil {
+		p.Log.Debug(disconnectingLog,
+			zap.String("reason", "invalid BLS public key"),
+			zap.Stringer("nodeID", p.id),
+			zap.Error(err),
+		)
+		return true
+	}
+
 	validSignature := bls.VerifyProofOfPossession(
-		vdr.PublicKey,
+		blsPublicKey,
 		p.ip.BLSSignature,
 		p.ip.UnsignedIP.bytes(),
 	)
@@ -803,6 +810,7 @@ func (p *peer) handlePing(msg *p2p.Ping) {
 func (p *peer) getUptime() uint32 {
 	primaryUptime, err := p.UptimeCalculator.CalculateUptimePercent(
 		p.id,
+		constants.PrimaryNetworkID,
 	)
 	if err != nil {
 		p.Log.Debug(failedToGetUptimeLog,

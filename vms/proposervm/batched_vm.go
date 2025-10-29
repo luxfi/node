@@ -7,15 +7,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/ids"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/wrappers"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
 
-var _ block.BatchedChainVM = (*VM)(nil)
+var _ chainblock.BatchedChainVM = (*VM)(nil)
 
 func (vm *VM) GetAncestors(
 	ctx context.Context,
@@ -25,14 +24,14 @@ func (vm *VM) GetAncestors(
 	maxBlocksRetrievalTime time.Duration,
 ) ([][]byte, error) {
 	if vm.batchedVM == nil {
-		return nil, block.ErrRemoteVMNotImplemented
+		return nil, chainblock.ErrRemoteVMNotImplemented
 	}
 
 	res := make([][]byte, 0, maxBlocksNum)
 	currentByteLength := 0
 	startTime := vm.Clock.Time()
 
-	// hereinafter loop over proposerVM cache and DB, possibly till snowman++
+	// hereinafter loop over proposerVM cache and DB, possibly till chain++
 	// fork is hit
 	for {
 		blk, err := vm.getStatelessBlk(blkID)
@@ -59,7 +58,7 @@ func (vm *VM) GetAncestors(
 		}
 	}
 
-	// snowman++ fork may have been hit.
+	// chain++ fork may have been hit.
 	preMaxBlocksNum := maxBlocksNum - len(res)
 	preMaxBlocksSize := maxBlocksSize - currentByteLength
 	preMaxBlocksRetrivalTime := maxBlocksRetrievalTime - time.Since(startTime)
@@ -80,14 +79,14 @@ func (vm *VM) GetAncestors(
 	return res, nil
 }
 
-func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.Block, error) {
+func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chainblock.Block, error) {
 	type partialData struct {
 		index int
 		block statelessblock.Block
 	}
 	var (
 		blocksIndex int
-		blocks      = make([]snowman.Block, len(blks))
+		blocks      = make([]chainblock.Block, len(blks))
 
 		innerBlocksIndex    int
 		statelessBlockDescs = make([]partialData, 0, len(blks))
@@ -118,7 +117,7 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]snowman.B
 	innerBlockBytes = append(innerBlockBytes, blks[blocksIndex:]...)
 
 	// parse all inner blocks at once
-	innerBlks, err := block.BatchedParseBlock(ctx, vm.ChainVM, innerBlockBytes)
+	innerBlks, err := chainblock.BatchedParseBlock(ctx, vm.ChainVM, innerBlockBytes)
 	if err != nil {
 		return nil, err
 	}

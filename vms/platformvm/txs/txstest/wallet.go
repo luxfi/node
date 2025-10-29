@@ -10,8 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/snow"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -28,7 +27,7 @@ import (
 
 func NewWallet(
 	t testing.TB,
-	ctx *snow.Context,
+	ctx *consensusctx.Context,
 	config *config.Internal,
 	state state.State,
 	kc *secp256k1fx.Keychain,

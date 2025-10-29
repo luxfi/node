@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/api/connectclient"
 	"github.com/luxfi/node/connectproto/pb/xsvm"
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/subnet"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
@@ -135,7 +135,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 			))
 		}
 
-		tc.By(fmt.Sprintf("issuing transaction on chain %s on subnet %s to activate snowman++ consensus",
+		tc.By(fmt.Sprintf("issuing transaction on chain %s on subnet %s to activate chain++ consensus",
 			destinationChain.ChainID, destinationSubnet.SubnetID))
 		recipientKey := e2e.NewPrivateKey(tc)
 		transferTxStatus, err := transfer.Transfer(
