@@ -20,12 +20,21 @@ type Cache[K comparable, V any] struct {
 	lock     sync.Mutex
 	elements *linked.Hashmap[K, V]
 	size     int
+
+	// onEvict is called with the key and value of an entry before eviction.
+	onEvict func(K, V)
 }
 
 func NewCache[K comparable, V any](size int) *Cache[K, V] {
+	return NewCacheWithOnEvict(size, func(K, V) {})
+}
+
+// NewCacheWithOnEvict creates a new LRU cache with the given size and eviction callback.
+func NewCacheWithOnEvict[K comparable, V any](size int, onEvict func(K, V)) *Cache[K, V] {
 	return &Cache[K, V]{
 		elements: linked.NewHashmap[K, V](),
 		size:     max(size, 1),
+		onEvict:  onEvict,
 	}
 }
 
@@ -34,8 +43,11 @@ func (c *Cache[K, V]) Put(key K, value V) {
 	defer c.lock.Unlock()
 
 	if c.elements.Len() == c.size {
-		oldestKey, _, _ := c.elements.Oldest()
+		oldestKey, oldestVal, _ := c.elements.Oldest()
 		c.elements.Delete(oldestKey)
+		if c.onEvict != nil {
+			c.onEvict(oldestKey, oldestVal)
+		}
 	}
 	c.elements.Put(key, value)
 }

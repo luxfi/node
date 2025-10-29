@@ -17,6 +17,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/consensus/engine/core"
+	cset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/node/utils/logging"
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
@@ -85,11 +86,11 @@ type networkClient struct {
 	// tracking of peers & bandwidth usage
 	peers *p2p.PeerTracker
 	// For sending messages to peers
-	appSender common.AppSender
+	appSender core.AppSender
 }
 
 func NewNetworkClient(
-	appSender common.AppSender,
+	appSender core.AppSender,
 	myNodeID ids.NodeID,
 	maxActiveRequests int64,
 	log logging.Logger,
@@ -285,7 +286,7 @@ func (c *networkClient) sendRequestLocked(
 	c.peers.RegisterRequest(nodeID)
 
 	// Send an app request to the peer.
-	nodeIDs := set.Of(nodeID)
+	nodeIDs := cset.Of(nodeID)
 	// Cancellation is removed from this context to avoid erroring unexpectedly.
 	// SendAppRequest should be non-blocking and any error other than context
 	// cancellation is unexpected.
