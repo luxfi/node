@@ -5,7 +5,8 @@ package metrics
 
 import (
 	"errors"
-	"github.com/luxfi/metric"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
@@ -37,7 +38,7 @@ type Metrics interface {
 type metricsImpl struct {
 	txMetrics *txMetrics
 
-	numTxRefreshes, numTxRefreshHits, numTxRefreshMisses metric.Counter
+	numTxRefreshes, numTxRefreshHits, numTxRefreshMisses prometheus.Counter
 
 	utilmetric.APIInterceptor
 }
@@ -67,30 +68,26 @@ func (m *metricsImpl) MarkTxAccepted(tx *txs.Tx) error {
 	return tx.Unsigned.Visit(m.txMetrics)
 }
 
-func New(registerer metric.Registerer) (Metrics, error) {
+func New(registerer prometheus.Registerer) (Metrics, error) {
 	txMetrics, err := newTxMetrics(registerer)
 	errs := wrappers.Errs{Err: err}
 
 	m := &metricsImpl{txMetrics: txMetrics}
 
-	m.numTxRefreshes = metric.NewCounter(metric.CounterOpts{
+	m.numTxRefreshes = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "tx_refreshes",
 		Help: "Number of times unique txs have been refreshed",
 	})
-	m.numTxRefreshHits = metric.NewCounter(metric.CounterOpts{
+	m.numTxRefreshHits = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "tx_refresh_hits",
 		Help: "Number of times unique txs have not been unique, but were cached",
 	})
-	m.numTxRefreshMisses = metric.NewCounter(metric.CounterOpts{
+	m.numTxRefreshMisses = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "tx_refresh_misses",
 		Help: "Number of times unique txs have not been unique and weren't cached",
 	})
 
-	registry, ok := registerer.(metric.Registry)
-	if !ok {
-		return nil, errors.New("registerer must be a Registry")
-	}
-	apiRequestMetric, err := utilmetric.NewAPIInterceptor(registry)
+	apiRequestMetric, err := utilmetric.NewAPIInterceptor(registerer)
 	m.APIInterceptor = apiRequestMetric
 	errs.Add(err)
 	// Metrics are self-registering when created with NewCounter etc.
