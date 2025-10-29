@@ -4,11 +4,11 @@
 package txs
 
 import (
-	"context"
-
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
+
+	consensusctx "github.com/luxfi/consensus/context"
 )
 
 var (
@@ -27,7 +27,7 @@ type ExportTx struct {
 	ExportedOuts []*lux.TransferableOutput `serialize:"true" json:"exportedOutputs"`
 }
 
-func (t *ExportTx) InitCtx(ctx context.Context) {
+func (t *ExportTx) InitCtx(ctx *consensusctx.Context) {
 	for _, out := range t.ExportedOuts {
 		out.InitCtx(ctx)
 	}
@@ -35,7 +35,7 @@ func (t *ExportTx) InitCtx(ctx context.Context) {
 }
 
 // InitializeContext initializes the context for this transaction
-func (t *ExportTx) InitializeContext(ctx context.Context) error {
+func (t *ExportTx) InitializeContext(ctx *consensusctx.Context) error {
 	t.InitCtx(ctx)
 	return nil
 }

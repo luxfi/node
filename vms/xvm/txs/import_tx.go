@@ -4,7 +4,7 @@
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -51,7 +51,7 @@ func (t *ImportTx) NumCredentials() int {
 	return t.BaseTx.NumCredentials() + len(t.ImportedIns)
 }
 
-func (t *ImportTx) InitCtx(ctx context.Context) {
+func (t *ImportTx) InitCtx(ctx *consensusctx.Context) {
 	// TransferableInput doesn't have InitCtx
 	// for _, in := range t.ImportedIns {
 	//     in.InitCtx(ctx)
@@ -60,7 +60,7 @@ func (t *ImportTx) InitCtx(ctx context.Context) {
 }
 
 // InitializeContext initializes the context for this transaction
-func (t *ImportTx) InitializeContext(ctx context.Context) error {
+func (t *ImportTx) InitializeContext(ctx *consensusctx.Context) error {
 	t.InitCtx(ctx)
 	return nil
 }

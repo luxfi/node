@@ -6,7 +6,6 @@ package lux
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"

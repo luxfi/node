@@ -4,12 +4,12 @@
 package txs
 
 import (
-	"context"
-
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
+
+	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/math/set"
 )
 
 var (
@@ -24,14 +24,14 @@ type BaseTx struct {
 	bytes []byte
 }
 
-func (t *BaseTx) InitCtx(ctx context.Context) {
+func (t *BaseTx) InitCtx(ctx *consensusctx.Context) {
 	for _, out := range t.Outs {
 		out.InitCtx(ctx)
 	}
 }
 
 // InitializeContext initializes the context for this transaction
-func (t *BaseTx) InitializeContext(ctx context.Context) error {
+func (t *BaseTx) InitializeContext(ctx *consensusctx.Context) error {
 	t.InitCtx(ctx)
 	return nil
 }
@@ -71,7 +71,8 @@ func (t *BaseTx) NumCredentials() int {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *BaseTx) InitializeWithContext(ctx context.Context) error {
+func (tx *BaseTx) InitializeWithContext(ctx *consensusctx.Context) error {
 	// Initialize any context-dependent fields here
+	tx.InitCtx(ctx)
 	return nil
 }
