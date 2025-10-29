@@ -4,11 +4,11 @@
 package block
 
 import (
-	"context"
 	"fmt"
 	"time"
 
 	"github.com/luxfi/ids"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/xvm/txs"
@@ -41,7 +41,7 @@ func (b *StandardBlock) initialize(bytes []byte, cm codec.Manager) error {
 	return nil
 }
 
-func (b *StandardBlock) InitCtx(ctx context.Context) {
+func (b *StandardBlock) InitCtx(ctx *consensusctx.Context) {
 	for _, tx := range b.Transactions {
 		tx.Unsigned.InitCtx(ctx)
 	}
@@ -103,7 +103,7 @@ func NewStandardBlock(
 }
 
 // InitializeWithContext initializes the block with consensus context
-func (b *StandardBlock) InitializeWithContext(ctx context.Context) error {
+func (b *StandardBlock) InitializeWithContext(ctx *consensusctx.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }
