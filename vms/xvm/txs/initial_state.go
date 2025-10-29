@@ -4,13 +4,12 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
 	"bytes"
 	"cmp"
-	"context"
 	"errors"
 	"sort"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/utils"

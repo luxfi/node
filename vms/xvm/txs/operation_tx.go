@@ -72,7 +72,7 @@ func (t *OperationTx) Visit(v Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *OperationTx) InitializeWithContext(ctx context.Context) error {
+func (tx *OperationTx) InitializeWithContext(ctx *consensusctx.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

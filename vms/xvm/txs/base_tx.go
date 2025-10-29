@@ -45,7 +45,7 @@ func (t *BaseTx) Bytes() []byte {
 }
 
 func (t *BaseTx) InputIDs() set.Set[ids.ID] {
-	inputIDs := set.NewSet[ids.ID](len(t.Ins))
+	inputIDs := make(set.Set[ids.ID], len(t.Ins))
 	for _, in := range t.Ins {
 		inputIDs.Add(in.InputID())
 	}
