@@ -5,12 +5,31 @@ package rpcchainvm
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/utils/logging"
 )
+
+// Message represents a notification message type
+type Message uint32
+
+const (
+	_ Message = iota
+	// PendingTxs indicates pending transactions notification
+	PendingTxs
+)
+
+func (m Message) String() string {
+	switch m {
+	case PendingTxs:
+		return "PendingTxs"
+	default:
+		return fmt.Sprintf("Unknown(%d)", m)
+	}
+}
 
 // Subscription is a function that blocks until either the given context is cancelled, or a message is returned.
 // It is used to receive messages from a VM such as Pending transactions, state sync completion, etc.
