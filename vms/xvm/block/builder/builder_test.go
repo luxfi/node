@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -20,8 +20,12 @@ import (
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/codec/codecmock"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/xvm/block"
@@ -54,12 +58,12 @@ func TestBuilderBuildBlock(t *testing.T) {
 			name: "can't get stateless block",
 			builderFunc: func(ctrl *gomock.Controller) Builder {
 				preferredID := ids.GenerateTestID()
-				manager := blkexecutor.NewMockManager(ctrl)
+				manager := executormock.NewManager(ctrl)
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(nil, errTest)
 
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().RequestBuildBlock()
+				mempool, err := mempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
 
 				ctx := context.Background()
 				return New(
@@ -83,13 +87,13 @@ func TestBuilderBuildBlock(t *testing.T) {
 				preferredBlock.EXPECT().Height().Return(preferredHeight)
 				preferredBlock.EXPECT().Timestamp().Return(preferredTimestamp)
 
-				manager := blkexecutor.NewMockManager(ctrl)
+				manager := executormock.NewManager(ctrl)
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
 				manager.EXPECT().GetState(preferredID).Return(nil, false)
 
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().RequestBuildBlock()
+				mempool, err := mempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
 
 				ctx := context.Background()
 				return New(
@@ -113,26 +117,23 @@ func TestBuilderBuildBlock(t *testing.T) {
 				preferredBlock.EXPECT().Height().Return(preferredHeight)
 				preferredBlock.EXPECT().Timestamp().Return(preferredTimestamp)
 
-				preferredState := state.NewMockChain(ctrl)
+				preferredState := statemock.NewChain(ctrl)
 				preferredState.EXPECT().GetLastAccepted().Return(preferredID)
 				preferredState.EXPECT().GetTimestamp().Return(preferredTimestamp)
 
-				manager := blkexecutor.NewMockManager(ctrl)
+				manager := executormock.NewManager(ctrl)
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
 				manager.EXPECT().GetState(preferredID).Return(preferredState, true)
 
-				unsignedTx := txs.NewMockUnsignedTx(ctrl)
+				unsignedTx := txsmock.NewUnsignedTx(ctrl)
 				unsignedTx.EXPECT().Visit(gomock.Any()).Return(errTest) // Fail semantic verification
+				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().Peek().Return(tx, true)
-				memPool.EXPECT().Remove([]*txs.Tx{tx})
-				memPool.EXPECT().MarkDropped(tx.ID(), errTest)
-				// Second loop iteration
-				memPool.EXPECT().Peek().Return(nil, false)
-				memPool.EXPECT().RequestBuildBlock()
+				mempool, err := mempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
+				require.NoError(t, mempool.Add(tx))
 
 				ctx := context.Background()
 				return New(
@@ -156,27 +157,24 @@ func TestBuilderBuildBlock(t *testing.T) {
 				preferredBlock.EXPECT().Height().Return(preferredHeight)
 				preferredBlock.EXPECT().Timestamp().Return(preferredTimestamp)
 
-				preferredState := state.NewMockChain(ctrl)
+				preferredState := statemock.NewChain(ctrl)
 				preferredState.EXPECT().GetLastAccepted().Return(preferredID)
 				preferredState.EXPECT().GetTimestamp().Return(preferredTimestamp)
 
-				manager := blkexecutor.NewMockManager(ctrl)
+				manager := executormock.NewManager(ctrl)
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
 				manager.EXPECT().GetState(preferredID).Return(preferredState, true)
 
-				unsignedTx := txs.NewMockUnsignedTx(ctrl)
+				unsignedTx := txsmock.NewUnsignedTx(ctrl)
 				unsignedTx.EXPECT().Visit(gomock.Any()).Return(nil)     // Pass semantic verification
 				unsignedTx.EXPECT().Visit(gomock.Any()).Return(errTest) // Fail execution
+				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().Peek().Return(tx, true)
-				memPool.EXPECT().Remove([]*txs.Tx{tx})
-				memPool.EXPECT().MarkDropped(tx.ID(), errTest)
-				// Second loop iteration
-				memPool.EXPECT().Peek().Return(nil, false)
-				memPool.EXPECT().RequestBuildBlock()
+				mempool, err := mempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
+				require.NoError(t, mempool.Add(tx))
 
 				ctx := context.Background()
 				return New(
@@ -200,28 +198,25 @@ func TestBuilderBuildBlock(t *testing.T) {
 				preferredBlock.EXPECT().Height().Return(preferredHeight)
 				preferredBlock.EXPECT().Timestamp().Return(preferredTimestamp)
 
-				preferredState := state.NewMockChain(ctrl)
+				preferredState := statemock.NewChain(ctrl)
 				preferredState.EXPECT().GetLastAccepted().Return(preferredID)
 				preferredState.EXPECT().GetTimestamp().Return(preferredTimestamp)
 
-				manager := blkexecutor.NewMockManager(ctrl)
+				manager := executormock.NewManager(ctrl)
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
 				manager.EXPECT().GetState(preferredID).Return(preferredState, true)
 				manager.EXPECT().VerifyUniqueInputs(preferredID, gomock.Any()).Return(errTest)
 
-				unsignedTx := txs.NewMockUnsignedTx(ctrl)
+				unsignedTx := txsmock.NewUnsignedTx(ctrl)
 				unsignedTx.EXPECT().Visit(gomock.Any()).Return(nil) // Pass semantic verification
 				unsignedTx.EXPECT().Visit(gomock.Any()).Return(nil) // Pass execution
+				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().Peek().Return(tx, true)
-				memPool.EXPECT().Remove([]*txs.Tx{tx})
-				memPool.EXPECT().MarkDropped(tx.ID(), errTest)
-				// Second loop iteration
-				memPool.EXPECT().Peek().Return(nil, false)
-				memPool.EXPECT().RequestBuildBlock()
+				mempool, err := mempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
+				require.NoError(t, mempool.Add(tx))
 
 				ctx := context.Background()
 				return New(
@@ -245,14 +240,14 @@ func TestBuilderBuildBlock(t *testing.T) {
 				preferredBlock.EXPECT().Height().Return(preferredHeight)
 				preferredBlock.EXPECT().Timestamp().Return(preferredTimestamp)
 
-				preferredState := state.NewMockChain(ctrl)
+				preferredState := statemock.NewChain(ctrl)
 				preferredState.EXPECT().GetLastAccepted().Return(preferredID)
 				preferredState.EXPECT().GetTimestamp().Return(preferredTimestamp)
 
 				// tx1 and tx2 both consume [inputID].
 				// tx1 is added to the block first, so tx2 should be dropped.
 				inputID := ids.GenerateTestID()
-				unsignedTx1 := txs.NewMockUnsignedTx(ctrl)
+				unsignedTx1 := txsmock.NewUnsignedTx(ctrl)
 				unsignedTx1.EXPECT().Visit(gomock.Any()).Return(nil)  // Pass semantic verification
 				unsignedTx1.EXPECT().Visit(gomock.Any()).DoAndReturn( // Pass execution
 					func(visitor txs.Visitor) error {
@@ -263,13 +258,14 @@ func TestBuilderBuildBlock(t *testing.T) {
 					},
 				)
 				unsignedTx1.EXPECT().SetBytes(gomock.Any()).AnyTimes()
+				unsignedTx1.EXPECT().InputIDs().Return(nil)
 				tx1 := &txs.Tx{Unsigned: unsignedTx1}
 				// Set the bytes of tx1 to something other than nil
 				// so we can check that the remainingSize is updated
 				tx1Bytes := []byte{1, 2, 3}
 				tx1.SetBytes(nil, tx1Bytes)
 
-				unsignedTx2 := txs.NewMockUnsignedTx(ctrl)
+				unsignedTx2 := txsmock.NewUnsignedTx(ctrl)
 				unsignedTx2.EXPECT().Visit(gomock.Any()).Return(nil)  // Pass semantic verification
 				unsignedTx2.EXPECT().Visit(gomock.Any()).DoAndReturn( // Pass execution
 					func(visitor txs.Visitor) error {
@@ -279,9 +275,10 @@ func TestBuilderBuildBlock(t *testing.T) {
 						return nil
 					},
 				)
+				unsignedTx2.EXPECT().InputIDs().Return(nil)
 				tx2 := &txs.Tx{Unsigned: unsignedTx2}
 
-				manager := blkexecutor.NewMockManager(ctrl)
+				manager := executormock.NewManager(ctrl)
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
 				manager.EXPECT().GetState(preferredID).Return(preferredState, true)
@@ -298,19 +295,13 @@ func TestBuilderBuildBlock(t *testing.T) {
 					},
 				)
 
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().Peek().Return(tx1, true)
-				memPool.EXPECT().Remove([]*txs.Tx{tx1})
-				// Second loop iteration
-				memPool.EXPECT().Peek().Return(tx2, true)
-				memPool.EXPECT().Remove([]*txs.Tx{tx2})
-				memPool.EXPECT().MarkDropped(tx2.ID(), blkexecutor.ErrConflictingBlockTxs)
-				// Third loop iteration
-				memPool.EXPECT().Peek().Return(nil, false)
-				memPool.EXPECT().RequestBuildBlock()
+				mempool, err := mempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
+				require.NoError(t, mempool.Add(tx1))
+				require.NoError(t, mempool.Add(tx2))
 
 				// To marshal the tx/block
-				codec := codec.NewMockManager(ctrl)
+				codec := codecmock.NewManager(ctrl)
 				codec.EXPECT().Marshal(gomock.Any(), gomock.Any()).Return([]byte{1, 2, 3}, nil).AnyTimes()
 				codec.EXPECT().Size(gomock.Any(), gomock.Any()).Return(2, nil).AnyTimes()
 
@@ -341,11 +332,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				clock := &mockable.Clock{}
 				clock.Set(preferredTimestamp.Add(-2 * time.Second))
 
-				preferredState := state.NewMockChain(ctrl)
+				preferredState := statemock.NewChain(ctrl)
 				preferredState.EXPECT().GetLastAccepted().Return(preferredID)
 				preferredState.EXPECT().GetTimestamp().Return(preferredTimestamp)
 
-				manager := blkexecutor.NewMockManager(ctrl)
+				manager := executormock.NewManager(ctrl)
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
 				manager.EXPECT().GetState(preferredID).Return(preferredState, true)
@@ -359,7 +350,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				)
 
 				inputID := ids.GenerateTestID()
-				unsignedTx := txs.NewMockUnsignedTx(ctrl)
+				unsignedTx := txsmock.NewUnsignedTx(ctrl)
 				unsignedTx.EXPECT().Visit(gomock.Any()).Return(nil)  // Pass semantic verification
 				unsignedTx.EXPECT().Visit(gomock.Any()).DoAndReturn( // Pass execution
 					func(visitor txs.Visitor) error {
@@ -370,17 +361,15 @@ func TestBuilderBuildBlock(t *testing.T) {
 					},
 				)
 				unsignedTx.EXPECT().SetBytes(gomock.Any()).AnyTimes()
+				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().Peek().Return(tx, true)
-				memPool.EXPECT().Remove([]*txs.Tx{tx})
-				// Second loop iteration
-				memPool.EXPECT().Peek().Return(nil, false)
-				memPool.EXPECT().RequestBuildBlock()
+				mempool, err := mempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
+				require.NoError(t, mempool.Add(tx))
 
 				// To marshal the tx/block
-				codec := codec.NewMockManager(ctrl)
+				codec := codecmock.NewManager(ctrl)
 				codec.EXPECT().Marshal(gomock.Any(), gomock.Any()).Return([]byte{1, 2, 3}, nil).AnyTimes()
 				codec.EXPECT().Size(gomock.Any(), gomock.Any()).Return(2, nil).AnyTimes()
 
@@ -413,11 +402,11 @@ func TestBuilderBuildBlock(t *testing.T) {
 				clock := &mockable.Clock{}
 				clock.Set(now)
 
-				preferredState := state.NewMockChain(ctrl)
+				preferredState := statemock.NewChain(ctrl)
 				preferredState.EXPECT().GetLastAccepted().Return(preferredID)
 				preferredState.EXPECT().GetTimestamp().Return(preferredTimestamp)
 
-				manager := blkexecutor.NewMockManager(ctrl)
+				manager := executormock.NewManager(ctrl)
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
 				manager.EXPECT().GetState(preferredID).Return(preferredState, true)
@@ -431,7 +420,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				)
 
 				inputID := ids.GenerateTestID()
-				unsignedTx := txs.NewMockUnsignedTx(ctrl)
+				unsignedTx := txsmock.NewUnsignedTx(ctrl)
 				unsignedTx.EXPECT().Visit(gomock.Any()).Return(nil)  // Pass semantic verification
 				unsignedTx.EXPECT().Visit(gomock.Any()).DoAndReturn( // Pass execution
 					func(visitor txs.Visitor) error {
@@ -442,17 +431,15 @@ func TestBuilderBuildBlock(t *testing.T) {
 					},
 				)
 				unsignedTx.EXPECT().SetBytes(gomock.Any()).AnyTimes()
+				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				memPool := mempool.NewMockMempool(ctrl)
-				memPool.EXPECT().Peek().Return(tx, true)
-				memPool.EXPECT().Remove([]*txs.Tx{tx})
-				// Second loop iteration
-				memPool.EXPECT().Peek().Return(nil, false)
-				memPool.EXPECT().RequestBuildBlock()
+				mempool, err := mempool.New("", prometheus.NewRegistry())
+				require.NoError(t, err)
+				require.NoError(t, mempool.Add(tx))
 
 				// To marshal the tx/block
-				codec := codec.NewMockManager(ctrl)
+				codec := codecmock.NewManager(ctrl)
 				codec.EXPECT().Marshal(gomock.Any(), gomock.Any()).Return([]byte{1, 2, 3}, nil).AnyTimes()
 				codec.EXPECT().Size(gomock.Any(), gomock.Any()).Return(2, nil).AnyTimes()
 
@@ -486,9 +473,8 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 
 	require := require.New(t)
 
-	registerer := metric.NewRegistry()
-	toEngine := make(chan core.MessageType, 100)
-	memPool, err := mempool.New("mempool", registerer, toEngine)
+	registerer := prometheus.NewRegistry()
+	mempool, err := mempool.New("mempool", registerer)
 	require.NoError(err)
 	// add a tx to the mempool
 	tx := transactions[0]
@@ -516,7 +502,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	require.NoError(err)
 
 	clk := &mockable.Clock{}
-	onAccept := func(*txs.Tx) error { return nil }
+	onAccept := func(*txs.Tx) {}
 	now := time.Now()
 	parentTimestamp := now.Add(-2 * time.Second)
 	parentID := ids.GenerateTestID()

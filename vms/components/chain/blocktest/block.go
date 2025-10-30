@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blocktest
@@ -30,7 +30,7 @@ const (
 	Accepted   uint8 = 3
 )
 
-// Block is a test block that implements chain.Block
+// Block is a test block that implements block.Block
 type Block struct {
 	IDV        ids.ID
 	HeightV    uint64
@@ -101,7 +101,7 @@ func (b *Block) State() state.ReadOnlyChain {
 }
 
 // BuildChild creates a child block of the given parent
-func BuildChild(parent chain.Block) *Block {
+func BuildChild(parent block.Block) *Block {
 	nextID++
 	blockID := ids.ID{}
 	copy(blockID[:], fmt.Sprintf("block_%d", nextID))

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fee
@@ -10,11 +10,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -23,18 +23,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
-
-// txTests is a slice of test cases for transaction complexity
-var txTests = []struct {
-	name                  string
-	tx                    string // hex encoded transaction
-	expectedComplexity    gas.Dimensions
-	expectedComplexityErr error
-	expectedDynamicFee    uint64
-	expectedDynamicFeeErr error
-}{
-	// Add test cases here as needed
-}
 
 func TestTxComplexity_Individual(t *testing.T) {
 	for _, test := range txTests {
@@ -361,18 +349,16 @@ func TestInputComplexity(t *testing.T) {
 	}
 }
 
-func TestConvertNetToL1ValidatorComplexity(t *testing.T) {
+func TestConvertSubnetToL1ValidatorComplexity(t *testing.T) {
 	tests := []struct {
 		name     string
-		vdr      txs.ConvertNetToL1Validator
+		vdr      txs.ConvertSubnetToL1Validator
 		expected gas.Dimensions
 	}{
 		{
 			name: "any can spend",
-			vdr: txs.ConvertNetToL1Validator{
-				NodeID:                ids.GenerateTestNodeID().Bytes(),
-				Weight:                1000,
-				Balance:               1000000,
+			vdr: txs.ConvertSubnetToL1Validator{
+				NodeID:                make([]byte, ids.NodeIDLen),
 				Signer:                signer.ProofOfPossession{},
 				RemainingBalanceOwner: message.PChainOwner{},
 				DeactivationOwner:     message.PChainOwner{},
@@ -385,13 +371,16 @@ func TestConvertNetToL1ValidatorComplexity(t *testing.T) {
 		},
 		{
 			name: "single remaining balance owner",
-			vdr: txs.ConvertNetToL1Validator{
-				NodeID:                ids.GenerateTestNodeID().Bytes(),
-				Weight:                1000,
-				Balance:               1000000,
-				Signer:                signer.ProofOfPossession{},
-				RemainingBalanceOwner: message.PChainOwner{Threshold: 1, Addresses: []ids.ShortID{ids.GenerateTestShortID()}},
-				DeactivationOwner:     message.PChainOwner{},
+			vdr: txs.ConvertSubnetToL1Validator{
+				NodeID: make([]byte, ids.NodeIDLen),
+				Signer: signer.ProofOfPossession{},
+				RemainingBalanceOwner: message.PChainOwner{
+					Threshold: 1,
+					Addresses: []ids.ShortID{
+						ids.GenerateTestShortID(),
+					},
+				},
+				DeactivationOwner: message.PChainOwner{},
 			},
 			expected: gas.Dimensions{
 				gas.Bandwidth: 220,
@@ -401,13 +390,16 @@ func TestConvertNetToL1ValidatorComplexity(t *testing.T) {
 		},
 		{
 			name: "single deactivation owner",
-			vdr: txs.ConvertNetToL1Validator{
-				NodeID:                ids.GenerateTestNodeID().Bytes(),
-				Weight:                1000,
-				Balance:               1000000,
+			vdr: txs.ConvertSubnetToL1Validator{
+				NodeID:                make([]byte, ids.NodeIDLen),
 				Signer:                signer.ProofOfPossession{},
 				RemainingBalanceOwner: message.PChainOwner{},
-				DeactivationOwner:     message.PChainOwner{Threshold: 1, Addresses: []ids.ShortID{ids.GenerateTestShortID()}},
+				DeactivationOwner: message.PChainOwner{
+					Threshold: 1,
+					Addresses: []ids.ShortID{
+						ids.GenerateTestShortID(),
+					},
+				},
 			},
 			expected: gas.Dimensions{
 				gas.Bandwidth: 220,
@@ -420,14 +412,11 @@ func TestConvertNetToL1ValidatorComplexity(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			// ConvertNetToL1ValidatorComplexity is not yet implemented
-			// actual, err := ConvertNetToL1ValidatorComplexity(&test.vdr)
-			actual := test.expected // Skip the complexity calculation for now
-			err := error(nil)
+			actual, err := ConvertSubnetToL1ValidatorComplexity(&test.vdr)
 			require.NoError(err)
 			require.Equal(test.expected, actual)
 
-			vdrBytes, err := txs.Codec.Marshal(txs.CodecVersion, &test.vdr)
+			vdrBytes, err := txs.Codec.Marshal(txs.CodecVersion, test.vdr)
 			require.NoError(err)
 
 			numBytesWithoutCodecVersion := uint64(len(vdrBytes) - codec.VersionSize)

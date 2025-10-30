@@ -1,16 +1,17 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"errors"
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -58,7 +59,7 @@ func (tx *BaseTx) Outputs() []*lux.TransferableOutput {
 // InitCtx sets the FxID fields in the inputs and outputs of this [BaseTx]. Also
 // sets the [ctx] to the given [vm.ctx] so that the addresses can be json
 // marshalled into human readable format
-func (tx *BaseTx) InitCtx(ctx context.Context) {
+func (tx *BaseTx) InitCtx(ctx *consensusctx.Context) {
 	for _, in := range tx.BaseTx.Ins {
 		in.FxID = secp256k1fx.ID
 	}
@@ -75,7 +76,7 @@ func (tx *BaseTx) InitializeContext(ctx context.Context) error {
 }
 
 // SyntacticVerify returns nil iff this tx is well formed
-func (tx *BaseTx) SyntacticVerify(ctx context.Context) error {
+func (tx *BaseTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

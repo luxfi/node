@@ -14,10 +14,10 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
-	lux "github.com/luxfi/node/vms/components/lux"
 	block "github.com/luxfi/node/vms/xvm/block"
 	state "github.com/luxfi/node/vms/xvm/state"
 	txs "github.com/luxfi/node/vms/xvm/txs"
+	lux "github.com/luxfi/node/vms/components/lux"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -46,15 +46,15 @@ func (m *Diff) EXPECT() *DiffMockRecorder {
 }
 
 // AddBlock mocks base method.
-func (m *Diff) AddBlock(arg0 block.Block) {
+func (m *Diff) AddBlock(block block.Block) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddBlock", arg0)
+	m.ctrl.Call(m, "AddBlock", block)
 }
 
 // AddBlock indicates an expected call of AddBlock.
-func (mr *DiffMockRecorder) AddBlock(arg0 any) *gomock.Call {
+func (mr *DiffMockRecorder) AddBlock(block any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBlock", reflect.TypeOf((*Diff)(nil).AddBlock), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBlock", reflect.TypeOf((*Diff)(nil).AddBlock), block)
 }
 
 // AddTx mocks base method.

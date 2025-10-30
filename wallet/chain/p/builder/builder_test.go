@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -13,6 +13,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -117,8 +118,8 @@ func TestUnwrapOutput(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		output           lux.TransferableOut
-		expectedOutput   lux.TransferableOut
+		output           verify.State
+		expectedOutput   *secp256k1fx.TransferOutput
 		expectedLocktime uint64
 		expectedErr      error
 	}{
@@ -168,59 +169,4 @@ func TestUnwrapOutput(t *testing.T) {
 			require.Equal(test.expectedLocktime, locktime)
 		})
 	}
-}
-
-// Helper types and functions for tests
-
-type utxosByLocktime struct {
-	unlocked []*lux.UTXO
-	locked   []*lux.UTXO
-}
-
-func splitByLocktime(utxos []*lux.UTXO, unlockedTime uint64) utxosByLocktime {
-	result := utxosByLocktime{}
-	for _, utxo := range utxos {
-		if stakeableOut, ok := utxo.Out.(*stakeable.LockOut); ok {
-			// For stakeable outputs, check the stakeable locktime
-			if stakeableOut.Locktime <= unlockedTime {
-				result.unlocked = append(result.unlocked, utxo)
-			} else {
-				result.locked = append(result.locked, utxo)
-			}
-		} else if _, ok := utxo.Out.(*secp256k1fx.TransferOutput); ok {
-			// Regular transfer outputs are always unlocked (no stakeable locktime)
-			result.unlocked = append(result.unlocked, utxo)
-		}
-	}
-	return result
-}
-
-type utxosByAssetID struct {
-	requested []*lux.UTXO
-	other     []*lux.UTXO
-}
-
-func splitByAssetID(utxos []*lux.UTXO, assetID ids.ID) utxosByAssetID {
-	result := utxosByAssetID{}
-	for _, utxo := range utxos {
-		if utxo.AssetID() == assetID {
-			result.requested = append(result.requested, utxo)
-		} else {
-			result.other = append(result.other, utxo)
-		}
-	}
-	return result
-}
-
-func unwrapOutput(output lux.TransferableOut) (lux.TransferableOut, uint64, error) {
-	if output == nil {
-		return nil, 0, ErrUnknownOutputType
-	}
-	if stakeableOut, ok := output.(*stakeable.LockOut); ok {
-		return stakeableOut.TransferableOut, stakeableOut.Locktime, nil
-	}
-	if transferOut, ok := output.(*secp256k1fx.TransferOutput); ok {
-		return transferOut, 0, nil
-	}
-	return output, 0, nil
 }

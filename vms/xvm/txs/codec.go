@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -8,6 +8,7 @@ import (
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/codec"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/secp256k1fx"

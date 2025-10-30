@@ -1,12 +1,12 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
 
 import (
-	"context"
-
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/constants"
 )
 
 const Alias = "X"
@@ -23,17 +23,14 @@ func NewConsensusContext(
 	networkID uint32,
 	blockchainID ids.ID,
 	luxAssetID ids.ID,
-) (context.Context, error) {
-	return context.Background(), nil // Implementation note
-	/* TODO: implement with values in context:
-	return &context.Context{
-		NetworkID:  networkID,
-		NetID:   constants.PrimaryNetworkID,
-		ChainID:    blockchainID,
-		XChainID:   blockchainID,
-		XAssetID: luxAssetID,
-		Log:        nil,
-		BCLookup:   lookup,
-	}, lookup.Alias(blockchainID, Alias)
-	*/
+) (*consensusctx.Context, error) {
+	lookup := ids.NewAliaser()
+	ctx := &consensusctx.Context{
+		NetworkID:   networkID,
+		SubnetID:    constants.PrimaryNetworkID,
+		ChainID:     blockchainID,
+		XChainID:    blockchainID,
+		LUXAssetID: luxAssetID,
+	}
+	return ctx, lookup.Alias(blockchainID, Alias)
 }

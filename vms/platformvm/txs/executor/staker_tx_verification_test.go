@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -11,9 +11,11 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
@@ -23,7 +25,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/utxo"
+	"github.com/luxfi/node/vms/platformvm/utxo/utxomock"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
@@ -117,12 +119,17 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			name: "fail syntactic verification",
 			backendF: func(*gomock.Controller) *Backend {
 				return &Backend{
-					Ctx:    ctx,
-					Config: defaultTestConfig(t, durango, activeForkTime),
+					Ctx: ctx,
+					Config: &config.Internal{
+						UpgradeConfig: upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, activeForkTime),
+					},
 				}
 			},
-			stateF: func(*gomock.Controller) state.Chain {
-				return nil
+
+			stateF: func(ctrl *gomock.Controller) state.Chain {
+				mockState := state.NewMockChain(ctrl)
+				mockState.EXPECT().GetTimestamp().Return(now)
+				return mockState
 			},
 			sTxF: func() *txs.Tx {
 				return nil
@@ -136,14 +143,16 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 			name: "not bootstrapped",
 			backendF: func(*gomock.Controller) *Backend {
 				return &Backend{
-					Ctx:          ctx,
-					Config:       defaultTestConfig(t, durango, activeForkTime),
+					Ctx: ctx,
+					Config: &config.Internal{
+						UpgradeConfig: upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, activeForkTime),
+					},
 					Bootstrapped: &utils.Atomic[bool]{},
 				}
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				mockState := state.NewMockChain(ctrl)
-				mockState.EXPECT().GetTimestamp().Return(now) // chain time is after Durango fork activation since now.After(activeForkTime)
+				mockState.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after Durango fork activation since now.After(activeForkTime)
 				return mockState
 			},
 			sTxF: func() *txs.Tx {
@@ -160,14 +169,16 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				bootstrapped := &utils.Atomic[bool]{}
 				bootstrapped.Set(true)
 				return &Backend{
-					Ctx:          ctx,
-					Config:       defaultTestConfig(t, cortina, activeForkTime),
+					Ctx: ctx,
+					Config: &config.Internal{
+						UpgradeConfig: upgradetest.GetConfigWithUpgradeTime(upgradetest.Cortina, activeForkTime),
+					},
 					Bootstrapped: bootstrapped,
 				}
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
-				state.EXPECT().GetTimestamp().Return(verifiedTx.StartTime())
+				state.EXPECT().GetTimestamp().Return(verifiedTx.StartTime()).Times(2)
 				return state
 			},
 			sTxF: func() *txs.Tx {
@@ -184,15 +195,17 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				bootstrapped := &utils.Atomic[bool]{}
 				bootstrapped.Set(true)
 				return &Backend{
-					Ctx:          ctx,
-					Config:       defaultTestConfig(t, durango, activeForkTime),
+					Ctx: ctx,
+					Config: &config.Internal{
+						UpgradeConfig: upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, activeForkTime),
+					},
 					Bootstrapped: bootstrapped,
 				}
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
-				state.EXPECT().GetTimestamp().Return(now) // chain time is after latest fork activation since now.After(activeForkTime)
-				state.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
+				state.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after latest fork activation since now.After(activeForkTime)
+				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
 				return state
 			},
 			sTxF: func() *txs.Tx {
@@ -211,15 +224,17 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				bootstrapped := &utils.Atomic[bool]{}
 				bootstrapped.Set(true)
 				return &Backend{
-					Ctx:          ctx,
-					Config:       defaultTestConfig(t, durango, activeForkTime),
+					Ctx: ctx,
+					Config: &config.Internal{
+						UpgradeConfig: upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, activeForkTime),
+					},
 					Bootstrapped: bootstrapped,
 				}
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
-				state.EXPECT().GetTimestamp().Return(now) // chain time is after latest fork activation since now.After(activeForkTime)
-				state.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
+				state.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after latest fork activation since now.After(activeForkTime)
+				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
 				return state
 			},
 			sTxF: func() *txs.Tx {
@@ -238,15 +253,17 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				bootstrapped := &utils.Atomic[bool]{}
 				bootstrapped.Set(true)
 				return &Backend{
-					Ctx:          ctx,
-					Config:       defaultTestConfig(t, durango, activeForkTime),
+					Ctx: ctx,
+					Config: &config.Internal{
+						UpgradeConfig: upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, activeForkTime),
+					},
 					Bootstrapped: bootstrapped,
 				}
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
-				state.EXPECT().GetTimestamp().Return(now) // chain time is after latest fork activation since now.After(activeForkTime)
-				state.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
+				state.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after latest fork activation since now.After(activeForkTime)
+				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
 				return state
 			},
 			sTxF: func() *txs.Tx {
@@ -266,15 +283,17 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				bootstrapped := &utils.Atomic[bool]{}
 				bootstrapped.Set(true)
 				return &Backend{
-					Ctx:          ctx,
-					Config:       defaultTestConfig(t, durango, activeForkTime),
+					Ctx: ctx,
+					Config: &config.Internal{
+						UpgradeConfig: upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, activeForkTime),
+					},
 					Bootstrapped: bootstrapped,
 				}
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
-				state.EXPECT().GetTimestamp().Return(now) // chain time is after latest fork activation since now.After(activeForkTime)
-				state.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
+				state.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after latest fork activation since now.After(activeForkTime)
+				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
 				return state
 			},
 			sTxF: func() *txs.Tx {
@@ -297,15 +316,17 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				bootstrapped := &utils.Atomic[bool]{}
 				bootstrapped.Set(true)
 				return &Backend{
-					Ctx:          ctx,
-					Config:       defaultTestConfig(t, durango, activeForkTime),
+					Ctx: ctx,
+					Config: &config.Internal{
+						UpgradeConfig: upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, activeForkTime),
+					},
 					Bootstrapped: bootstrapped,
 				}
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				state := state.NewMockChain(ctrl)
-				state.EXPECT().GetTimestamp().Return(time.Unix(1, 0)) // chain time is after fork activation since time.Unix(1, 0).After(activeForkTime)
-				state.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
+				state.EXPECT().GetTimestamp().Return(time.Unix(1, 0)).Times(2) // chain time is after fork activation since time.Unix(1, 0).After(activeForkTime)
+				state.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
 				return state
 			},
 			sTxF: func() *txs.Tx {
@@ -328,15 +349,17 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				bootstrapped := &utils.Atomic[bool]{}
 				bootstrapped.Set(true)
 				return &Backend{
-					Ctx:          ctx,
-					Config:       defaultTestConfig(t, durango, activeForkTime),
+					Ctx: ctx,
+					Config: &config.Internal{
+						UpgradeConfig: upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, activeForkTime),
+					},
 					Bootstrapped: bootstrapped,
 				}
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				mockState := state.NewMockChain(ctrl)
-				mockState.EXPECT().GetTimestamp().Return(now) // chain time is after latest fork activation since now.After(activeForkTime)
-				mockState.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
+				mockState.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after latest fork activation since now.After(activeForkTime)
+				mockState.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
 				return mockState
 			},
 			sTxF: func() *txs.Tx {
@@ -361,15 +384,17 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				bootstrapped := &utils.Atomic[bool]{}
 				bootstrapped.Set(true)
 				return &Backend{
-					Ctx:          ctx,
-					Config:       defaultTestConfig(t, durango, activeForkTime),
+					Ctx: ctx,
+					Config: &config.Internal{
+						UpgradeConfig: upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, activeForkTime),
+					},
 					Bootstrapped: bootstrapped,
 				}
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				mockState := state.NewMockChain(ctrl)
-				mockState.EXPECT().GetTimestamp().Return(now) // chain time is after latest fork activation since now.After(activeForkTime)
-				mockState.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
+				mockState.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after latest fork activation since now.After(activeForkTime)
+				mockState.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
 				// State says validator exists
 				mockState.EXPECT().GetCurrentValidator(netID, verifiedTx.NodeID()).Return(nil, nil)
 				return mockState
@@ -388,17 +413,19 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				bootstrapped := &utils.Atomic[bool]{}
 				bootstrapped.Set(true)
 				return &Backend{
-					Ctx:          ctx,
-					Config:       defaultTestConfig(t, durango, activeForkTime),
+					Ctx: ctx,
+					Config: &config.Internal{
+						UpgradeConfig: upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, activeForkTime),
+					},
 					Bootstrapped: bootstrapped,
 				}
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				mockState := state.NewMockChain(ctrl)
-				mockState.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after latest fork activation since now.After(activeForkTime)
-				mockState.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
-				mockState.EXPECT().GetCurrentValidator(netID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
-				mockState.EXPECT().GetPendingValidator(netID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
+				mockState.EXPECT().GetTimestamp().Return(now).Times(3) // chain time is after latest fork activation since now.After(activeForkTime)
+				mockState.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
+				mockState.EXPECT().GetCurrentValidator(subnetID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
+				mockState.EXPECT().GetPendingValidator(subnetID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
 				// Validator time isn't subset of primary network validator time
 				primaryNetworkVdr := &state.Staker{
 					EndTime: verifiedTx.EndTime().Add(-1 * time.Second),
@@ -420,7 +447,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				bootstrapped := &utils.Atomic[bool]{}
 				bootstrapped.Set(true)
 
-				flowChecker := utxo.NewMockVerifier(ctrl)
+				flowChecker := utxomock.NewVerifier(ctrl)
 				flowChecker.EXPECT().VerifySpend(
 					gomock.Any(),
 					gomock.Any(),
@@ -430,22 +457,21 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 					gomock.Any(),
 				).Return(ErrFlowCheckFailed)
 
-				cfg := defaultTestConfig(t, durango, activeForkTime)
-				cfg.StaticFeeConfig.AddNetValidatorFee = 1
-
 				return &Backend{
-					FlowChecker:  flowChecker,
-					Config:       cfg,
+					FlowChecker: flowChecker,
+					Config: &config.Internal{
+						UpgradeConfig: upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, activeForkTime),
+					},
 					Ctx:          ctx,
 					Bootstrapped: bootstrapped,
 				}
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				mockState := state.NewMockChain(ctrl)
-				mockState.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after latest fork activation since now.After(activeForkTime)
-				mockState.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
-				mockState.EXPECT().GetCurrentValidator(netID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
-				mockState.EXPECT().GetPendingValidator(netID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
+				mockState.EXPECT().GetTimestamp().Return(now).Times(3) // chain time is after latest fork activation since now.After(activeForkTime)
+				mockState.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
+				mockState.EXPECT().GetCurrentValidator(subnetID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
+				mockState.EXPECT().GetPendingValidator(subnetID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
 				primaryNetworkVdr := &state.Staker{
 					EndTime: mockable.MaxTime,
 				}
@@ -466,7 +492,7 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 				bootstrapped := &utils.Atomic[bool]{}
 				bootstrapped.Set(true)
 
-				flowChecker := utxo.NewMockVerifier(ctrl)
+				flowChecker := utxomock.NewVerifier(ctrl)
 				flowChecker.EXPECT().VerifySpend(
 					gomock.Any(),
 					gomock.Any(),
@@ -476,22 +502,21 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 					gomock.Any(),
 				).Return(nil)
 
-				cfg := defaultTestConfig(t, durango, activeForkTime)
-				cfg.StaticFeeConfig.AddNetValidatorFee = 1
-
 				return &Backend{
-					FlowChecker:  flowChecker,
-					Config:       cfg,
+					FlowChecker: flowChecker,
+					Config: &config.Internal{
+						UpgradeConfig: upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, activeForkTime),
+					},
 					Ctx:          ctx,
 					Bootstrapped: bootstrapped,
 				}
 			},
 			stateF: func(ctrl *gomock.Controller) state.Chain {
 				mockState := state.NewMockChain(ctrl)
-				mockState.EXPECT().GetTimestamp().Return(now).Times(2) // chain time is after Durango fork activation since now.After(activeForkTime)
-				mockState.EXPECT().GetSubnetTransformation(netID).Return(&transformTx, nil)
-				mockState.EXPECT().GetCurrentValidator(netID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
-				mockState.EXPECT().GetPendingValidator(netID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
+				mockState.EXPECT().GetTimestamp().Return(now).Times(3) // chain time is after Durango fork activation since now.After(activeForkTime)
+				mockState.EXPECT().GetSubnetTransformation(subnetID).Return(&transformTx, nil)
+				mockState.EXPECT().GetCurrentValidator(subnetID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
+				mockState.EXPECT().GetPendingValidator(subnetID, verifiedTx.NodeID()).Return(nil, database.ErrNotFound)
 				primaryNetworkVdr := &state.Staker{
 					EndTime: mockable.MaxTime,
 				}
@@ -514,12 +539,13 @@ func TestVerifyAddPermissionlessValidatorTx(t *testing.T) {
 
 			var (
 				backend = tt.backendF(ctrl)
-				state   = tt.stateF(ctrl)
+				chain   = tt.stateF(ctrl)
 				sTx     = tt.sTxF()
 				tx      = tt.txF()
 			)
 
-			err := verifyAddPermissionlessValidatorTx(backend, state, sTx, tx)
+			feeCalculator := state.PickFeeCalculator(backend.Config, chain)
+			err := verifyAddPermissionlessValidatorTx(backend, feeCalculator, chain, sTx, tx)
 			require.ErrorIs(t, err, tt.expectedErr)
 		})
 	}
@@ -536,7 +562,7 @@ func TestGetValidatorRules(t *testing.T) {
 	}
 
 	var (
-		config = &config.Config{
+		config = &config.Internal{
 			MinValidatorStake: 1,
 			MaxValidatorStake: 2,
 			MinStakeDuration:  time.Second,
@@ -654,7 +680,7 @@ func TestGetDelegatorRules(t *testing.T) {
 		expectedErr   error
 	}
 	var (
-		config = &config.Config{
+		config = &config.Internal{
 			MinDelegatorStake: 1,
 			MaxValidatorStake: 2,
 			MinStakeDuration:  time.Second,

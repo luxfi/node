@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -9,17 +9,20 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/math"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary/common"
 )
@@ -147,6 +150,65 @@ type Builder interface {
 		owner *secp256k1fx.OutputOwners,
 		options ...common.Option,
 	) (*txs.TransferNetOwnershipTx, error)
+
+	// NewConvertSubnetToL1Tx converts the subnet to a Permissionless L1.
+	//
+	// - [subnetID] specifies the subnet to be converted
+	// - [chainID] specifies which chain the manager is deployed on
+	// - [address] specifies the address of the manager
+	// - [validators] specifies the initial L1 validators of the L1
+	NewConvertSubnetToL1Tx(
+		subnetID ids.ID,
+		chainID ids.ID,
+		address []byte,
+		validators []*txs.ConvertSubnetToL1Validator,
+		options ...common.Option,
+	) (*txs.ConvertSubnetToL1Tx, error)
+
+	// NewRegisterL1ValidatorTx adds a validator to an L1.
+	//
+	// - [balance] that the validator should allocate to continuous fees
+	// - [proofOfPossession] is the BLS PoP for the key included in the Warp
+	//   message
+	// - [message] is the Warp message that authorizes this validator to be
+	//   added
+	NewRegisterL1ValidatorTx(
+		balance uint64,
+		proofOfPossession [bls.SignatureLen]byte,
+		message []byte,
+		options ...common.Option,
+	) (*txs.RegisterL1ValidatorTx, error)
+
+	// NewSetL1ValidatorWeightTx sets the weight of a validator on an L1.
+	//
+	// - [message] is the Warp message that authorizes this validator's weight
+	//   to be changed
+	NewSetL1ValidatorWeightTx(
+		message []byte,
+		options ...common.Option,
+	) (*txs.SetL1ValidatorWeightTx, error)
+
+	// NewIncreaseL1ValidatorBalanceTx increases the balance of a validator on
+	// an L1 for the continuous fee.
+	// the continuous fee.
+	//
+	// - [validationID] of the validator
+	// - [balance] amount to increase the validator's balance by
+	NewIncreaseL1ValidatorBalanceTx(
+		validationID ids.ID,
+		balance uint64,
+		options ...common.Option,
+	) (*txs.IncreaseL1ValidatorBalanceTx, error)
+
+	// NewDisableL1ValidatorTx disables an L1 validator and returns the
+	// remaining funds allocated to the continuous fee to the remaining balance
+	// owner.
+	//
+	// - [validationID] of the validator to disable
+	NewDisableL1ValidatorTx(
+		validationID ids.ID,
+		options ...common.Option,
+	) (*txs.DisableL1ValidatorTx, error)
 
 	// NewImportTx creates an import transaction that attempts to consume all
 	// the available UTXOs and import the funds to [to].
@@ -293,7 +355,7 @@ type Builder interface {
 
 type Backend interface {
 	UTXOs(ctx context.Context, sourceChainID ids.ID) ([]*lux.UTXO, error)
-	GetSubnetOwner(ctx context.Context, netID ids.ID) (fx.Owner, error)
+	GetOwner(ctx context.Context, ownerID ids.ID) (fx.Owner, error)
 }
 
 type builder struct {
@@ -352,12 +414,10 @@ func (b *builder) NewBaseTx(
 	outputs []*lux.TransferableOutput,
 	options ...common.Option,
 ) (*txs.BaseTx, error) {
-	toBurn := map[ids.ID]uint64{
-		b.context.XAssetID: b.context.BaseTxFee,
-	}
+	toBurn := map[ids.ID]uint64{}
 	for _, out := range outputs {
 		assetID := out.AssetID()
-		amountToBurn, err := math.Add64(toBurn[assetID], out.Out.Amount())
+		amountToBurn, err := math.Add(toBurn[assetID], out.Out.Amount())
 		if err != nil {
 			return nil, err
 		}
@@ -366,7 +426,30 @@ func (b *builder) NewBaseTx(
 	toStake := map[ids.ID]uint64{}
 
 	ops := common.NewOptions(options)
-	inputs, changeOutputs, _, err := b.spend(toBurn, toStake, ops)
+	memo := ops.Memo()
+	memoComplexity := gas.Dimensions{
+		gas.Bandwidth: uint64(len(memo)),
+	}
+	outputComplexity, err := fee.OutputComplexity(outputs...)
+	if err != nil {
+		return nil, err
+	}
+	complexity, err := fee.IntrinsicBaseTxComplexities.Add(
+		&memoComplexity,
+		&outputComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, changeOutputs, _, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		complexity,
+		nil,
+		ops,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -378,7 +461,7 @@ func (b *builder) NewBaseTx(
 		BlockchainID: b.getBlockchainID(),
 		Ins:          inputs,
 		Outs:         outputs,
-		Memo:         ops.Memo(),
+		Memo:         memo,
 	}}
 	return tx, b.initCtx(tx)
 }
@@ -389,15 +472,20 @@ func (b *builder) NewAddValidatorTx(
 	shares uint32,
 	options ...common.Option,
 ) (*txs.AddValidatorTx, error) {
-	luxAssetID := b.context.XAssetID
-	toBurn := map[ids.ID]uint64{
-		luxAssetID: b.context.AddPrimaryNetworkValidatorFee,
-	}
+	luxAssetID := b.context.LUXAssetID
+	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{
 		luxAssetID: vdr.Wght,
 	}
 	ops := common.NewOptions(options)
-	inputs, baseOutputs, stakeOutputs, err := b.spend(toBurn, toStake, ops)
+	inputs, baseOutputs, stakeOutputs, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		gas.Dimensions{},
+		nil,
+		ops,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -428,18 +516,40 @@ func (b *builder) NewAddValidatorTx(
 func (b *builder) NewAddNetValidatorTx(
 	vdr *txs.NetValidator,
 	options ...common.Option,
-) (*txs.AddNetValidatorTx, error) {
-	toBurn := map[ids.ID]uint64{
-		b.context.XAssetID: b.context.AddNetValidatorFee,
-	}
+) (*txs.AddSubnetValidatorTx, error) {
+	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
+
 	ops := common.NewOptions(options)
-	inputs, outputs, _, err := b.spend(toBurn, toStake, ops)
+	subnetAuth, err := b.authorize(vdr.Subnet, ops)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetAuth, err := b.authorizeSubnet(vdr.Net, ops)
+	memo := ops.Memo()
+	memoComplexity := gas.Dimensions{
+		gas.Bandwidth: uint64(len(memo)),
+	}
+	authComplexity, err := fee.AuthComplexity(subnetAuth)
+	if err != nil {
+		return nil, err
+	}
+	complexity, err := fee.IntrinsicAddSubnetValidatorTxComplexities.Add(
+		&memoComplexity,
+		&authComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, outputs, _, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		complexity,
+		nil,
+		ops,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -450,7 +560,7 @@ func (b *builder) NewAddNetValidatorTx(
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
-			Memo:         ops.Memo(),
+			Memo:         memo,
 		}},
 		NetValidator: *vdr,
 		SubnetAuth:   subnetAuth,
@@ -462,18 +572,40 @@ func (b *builder) NewRemoveNetValidatorTx(
 	nodeID ids.NodeID,
 	netID ids.ID,
 	options ...common.Option,
-) (*txs.RemoveNetValidatorTx, error) {
-	toBurn := map[ids.ID]uint64{
-		b.context.XAssetID: b.context.BaseTxFee,
-	}
+) (*txs.RemoveSubnetValidatorTx, error) {
+	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
+
 	ops := common.NewOptions(options)
-	inputs, outputs, _, err := b.spend(toBurn, toStake, ops)
+	subnetAuth, err := b.authorize(subnetID, ops)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetAuth, err := b.authorizeSubnet(netID, ops)
+	memo := ops.Memo()
+	memoComplexity := gas.Dimensions{
+		gas.Bandwidth: uint64(len(memo)),
+	}
+	authComplexity, err := fee.AuthComplexity(subnetAuth)
+	if err != nil {
+		return nil, err
+	}
+	complexity, err := fee.IntrinsicRemoveSubnetValidatorTxComplexities.Add(
+		&memoComplexity,
+		&authComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, outputs, _, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		complexity,
+		nil,
+		ops,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -498,15 +630,20 @@ func (b *builder) NewAddDelegatorTx(
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.AddDelegatorTx, error) {
-	luxAssetID := b.context.XAssetID
-	toBurn := map[ids.ID]uint64{
-		luxAssetID: b.context.AddPrimaryNetworkDelegatorFee,
-	}
+	luxAssetID := b.context.LUXAssetID
+	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{
 		luxAssetID: vdr.Wght,
 	}
 	ops := common.NewOptions(options)
-	inputs, baseOutputs, stakeOutputs, err := b.spend(toBurn, toStake, ops)
+	inputs, baseOutputs, stakeOutputs, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		gas.Dimensions{},
+		nil,
+		ops,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -535,17 +672,55 @@ func (b *builder) NewCreateChainTx(
 	chainName string,
 	options ...common.Option,
 ) (*txs.CreateChainTx, error) {
-	toBurn := map[ids.ID]uint64{
-		b.context.XAssetID: b.context.CreateBlockchainTxFee,
-	}
+	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
+
 	ops := common.NewOptions(options)
-	inputs, outputs, _, err := b.spend(toBurn, toStake, ops)
+	subnetAuth, err := b.authorize(subnetID, ops)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetAuth, err := b.authorizeSubnet(netID, ops)
+	memo := ops.Memo()
+	bandwidth, err := math.Mul(uint64(len(fxIDs)), ids.IDLen)
+	if err != nil {
+		return nil, err
+	}
+	bandwidth, err = math.Add(bandwidth, uint64(len(chainName)))
+	if err != nil {
+		return nil, err
+	}
+	bandwidth, err = math.Add(bandwidth, uint64(len(genesis)))
+	if err != nil {
+		return nil, err
+	}
+	bandwidth, err = math.Add(bandwidth, uint64(len(memo)))
+	if err != nil {
+		return nil, err
+	}
+	dynamicComplexity := gas.Dimensions{
+		gas.Bandwidth: bandwidth,
+	}
+	authComplexity, err := fee.AuthComplexity(subnetAuth)
+	if err != nil {
+		return nil, err
+	}
+	complexity, err := fee.IntrinsicCreateChainTxComplexities.Add(
+		&dynamicComplexity,
+		&authComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, outputs, _, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		complexity,
+		nil,
+		ops,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -557,7 +732,7 @@ func (b *builder) NewCreateChainTx(
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
-			Memo:         ops.Memo(),
+			Memo:         memo,
 		}},
 		NetID:       netID,
 		ChainName:   chainName,
@@ -572,13 +747,35 @@ func (b *builder) NewCreateChainTx(
 func (b *builder) NewCreateNetTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateNetTx, error) {
-	toBurn := map[ids.ID]uint64{
-		b.context.XAssetID: b.context.CreateNetTxFee,
-	}
+) (*txs.CreateSubnetTx, error) {
+	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
+
 	ops := common.NewOptions(options)
-	inputs, outputs, _, err := b.spend(toBurn, toStake, ops)
+	memo := ops.Memo()
+	memoComplexity := gas.Dimensions{
+		gas.Bandwidth: uint64(len(memo)),
+	}
+	ownerComplexity, err := fee.OwnerComplexity(owner)
+	if err != nil {
+		return nil, err
+	}
+	complexity, err := fee.IntrinsicCreateSubnetTxComplexities.Add(
+		&memoComplexity,
+		&ownerComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, outputs, _, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		complexity,
+		nil,
+		ops,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -590,7 +787,7 @@ func (b *builder) NewCreateNetTx(
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
-			Memo:         ops.Memo(),
+			Memo:         memo,
 		}},
 		Owner: owner,
 	}
@@ -601,18 +798,45 @@ func (b *builder) NewTransferNetOwnershipTx(
 	netID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.TransferNetOwnershipTx, error) {
-	toBurn := map[ids.ID]uint64{
-		b.context.XAssetID: b.context.BaseTxFee,
-	}
+) (*txs.TransferSubnetOwnershipTx, error) {
+	toBurn := map[ids.ID]uint64{}
 	toStake := map[ids.ID]uint64{}
+
 	ops := common.NewOptions(options)
-	inputs, outputs, _, err := b.spend(toBurn, toStake, ops)
+	subnetAuth, err := b.authorize(subnetID, ops)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetAuth, err := b.authorizeSubnet(netID, ops)
+	memo := ops.Memo()
+	memoComplexity := gas.Dimensions{
+		gas.Bandwidth: uint64(len(memo)),
+	}
+	authComplexity, err := fee.AuthComplexity(subnetAuth)
+	if err != nil {
+		return nil, err
+	}
+	ownerComplexity, err := fee.OwnerComplexity(owner)
+	if err != nil {
+		return nil, err
+	}
+	complexity, err := fee.IntrinsicTransferSubnetOwnershipTxComplexities.Add(
+		&memoComplexity,
+		&authComplexity,
+		&ownerComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, outputs, _, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		complexity,
+		nil,
+		ops,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -624,11 +848,307 @@ func (b *builder) NewTransferNetOwnershipTx(
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
-			Memo:         ops.Memo(),
+			Memo:         memo,
 		}},
 		Net:        netID,
 		Owner:      owner,
 		SubnetAuth: subnetAuth,
+	}
+	return tx, b.initCtx(tx)
+}
+
+func (b *builder) NewConvertSubnetToL1Tx(
+	subnetID ids.ID,
+	chainID ids.ID,
+	address []byte,
+	validators []*txs.ConvertSubnetToL1Validator,
+	options ...common.Option,
+) (*txs.ConvertSubnetToL1Tx, error) {
+	var luxToBurn uint64
+	for _, vdr := range validators {
+		var err error
+		luxToBurn, err = math.Add(luxToBurn, vdr.Balance)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var (
+		toBurn = map[ids.ID]uint64{
+			b.context.LUXAssetID: luxToBurn,
+		}
+		toStake = map[ids.ID]uint64{}
+		ops     = common.NewOptions(options)
+	)
+	subnetAuth, err := b.authorize(subnetID, ops)
+	if err != nil {
+		return nil, err
+	}
+
+	memo := ops.Memo()
+	additionalBytes, err := math.Add(uint64(len(memo)), uint64(len(address)))
+	if err != nil {
+		return nil, err
+	}
+	bytesComplexity := gas.Dimensions{
+		gas.Bandwidth: additionalBytes,
+	}
+	validatorComplexity, err := fee.ConvertSubnetToL1ValidatorComplexity(validators...)
+	if err != nil {
+		return nil, err
+	}
+	authComplexity, err := fee.AuthComplexity(subnetAuth)
+	if err != nil {
+		return nil, err
+	}
+	complexity, err := fee.IntrinsicConvertSubnetToL1TxComplexities.Add(
+		&bytesComplexity,
+		&validatorComplexity,
+		&authComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, outputs, _, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		complexity,
+		nil,
+		ops,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	utils.Sort(validators)
+	tx := &txs.ConvertSubnetToL1Tx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+			NetworkID:    b.context.NetworkID,
+			BlockchainID: constants.PlatformChainID,
+			Ins:          inputs,
+			Outs:         outputs,
+			Memo:         memo,
+		}},
+		Subnet:     subnetID,
+		ChainID:    chainID,
+		Address:    address,
+		Validators: validators,
+		SubnetAuth: subnetAuth,
+	}
+	return tx, b.initCtx(tx)
+}
+
+func (b *builder) NewRegisterL1ValidatorTx(
+	balance uint64,
+	proofOfPossession [bls.SignatureLen]byte,
+	message []byte,
+	options ...common.Option,
+) (*txs.RegisterL1ValidatorTx, error) {
+	var (
+		toBurn = map[ids.ID]uint64{
+			b.context.LUXAssetID: balance,
+		}
+		toStake = map[ids.ID]uint64{}
+
+		ops            = common.NewOptions(options)
+		memo           = ops.Memo()
+		memoComplexity = gas.Dimensions{
+			gas.Bandwidth: uint64(len(memo)),
+		}
+	)
+	warpComplexity, err := fee.WarpComplexity(message)
+	if err != nil {
+		return nil, err
+	}
+	complexity, err := fee.IntrinsicRegisterL1ValidatorTxComplexities.Add(
+		&memoComplexity,
+		&warpComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, outputs, _, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		complexity,
+		nil,
+		ops,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	tx := &txs.RegisterL1ValidatorTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+			NetworkID:    b.context.NetworkID,
+			BlockchainID: constants.PlatformChainID,
+			Ins:          inputs,
+			Outs:         outputs,
+			Memo:         memo,
+		}},
+		Balance:           balance,
+		ProofOfPossession: proofOfPossession,
+		Message:           message,
+	}
+	return tx, b.initCtx(tx)
+}
+
+func (b *builder) NewSetL1ValidatorWeightTx(
+	message []byte,
+	options ...common.Option,
+) (*txs.SetL1ValidatorWeightTx, error) {
+	var (
+		toBurn         = map[ids.ID]uint64{}
+		toStake        = map[ids.ID]uint64{}
+		ops            = common.NewOptions(options)
+		memo           = ops.Memo()
+		memoComplexity = gas.Dimensions{
+			gas.Bandwidth: uint64(len(memo)),
+		}
+	)
+	warpComplexity, err := fee.WarpComplexity(message)
+	if err != nil {
+		return nil, err
+	}
+	complexity, err := fee.IntrinsicSetL1ValidatorWeightTxComplexities.Add(
+		&memoComplexity,
+		&warpComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, outputs, _, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		complexity,
+		nil,
+		ops,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	tx := &txs.SetL1ValidatorWeightTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+			NetworkID:    b.context.NetworkID,
+			BlockchainID: constants.PlatformChainID,
+			Ins:          inputs,
+			Outs:         outputs,
+			Memo:         memo,
+		}},
+		Message: message,
+	}
+	return tx, b.initCtx(tx)
+}
+
+func (b *builder) NewIncreaseL1ValidatorBalanceTx(
+	validationID ids.ID,
+	balance uint64,
+	options ...common.Option,
+) (*txs.IncreaseL1ValidatorBalanceTx, error) {
+	var (
+		toBurn = map[ids.ID]uint64{
+			b.context.LUXAssetID: balance,
+		}
+		toStake        = map[ids.ID]uint64{}
+		ops            = common.NewOptions(options)
+		memo           = ops.Memo()
+		memoComplexity = gas.Dimensions{
+			gas.Bandwidth: uint64(len(memo)),
+		}
+	)
+	complexity, err := fee.IntrinsicIncreaseL1ValidatorBalanceTxComplexities.Add(
+		&memoComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, outputs, _, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		complexity,
+		nil,
+		ops,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	tx := &txs.IncreaseL1ValidatorBalanceTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+			NetworkID:    b.context.NetworkID,
+			BlockchainID: constants.PlatformChainID,
+			Ins:          inputs,
+			Outs:         outputs,
+			Memo:         memo,
+		}},
+		ValidationID: validationID,
+		Balance:      balance,
+	}
+	return tx, b.initCtx(tx)
+}
+
+func (b *builder) NewDisableL1ValidatorTx(
+	validationID ids.ID,
+	options ...common.Option,
+) (*txs.DisableL1ValidatorTx, error) {
+	var (
+		toBurn  = map[ids.ID]uint64{}
+		toStake = map[ids.ID]uint64{}
+		ops     = common.NewOptions(options)
+	)
+	disableAuth, err := b.authorize(validationID, ops)
+	if err != nil {
+		return nil, err
+	}
+
+	memo := ops.Memo()
+	memoComplexity := gas.Dimensions{
+		gas.Bandwidth: uint64(len(memo)),
+	}
+	authComplexity, err := fee.AuthComplexity(disableAuth)
+	if err != nil {
+		return nil, err
+	}
+
+	complexity, err := fee.IntrinsicDisableL1ValidatorTxComplexities.Add(
+		&memoComplexity,
+		&authComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, outputs, _, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		complexity,
+		nil,
+		ops,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	tx := &txs.DisableL1ValidatorTx{
+		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+			NetworkID:    b.context.NetworkID,
+			BlockchainID: constants.PlatformChainID,
+			Ins:          inputs,
+			Outs:         outputs,
+			Memo:         memo,
+		}},
+		ValidationID: validationID,
+		DisableAuth:  disableAuth,
 	}
 	return tx, b.initCtx(tx)
 }
@@ -647,8 +1167,7 @@ func (b *builder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.addrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		luxAssetID      = b.context.XAssetID
-		txFee           = b.context.BaseTxFee
+		luxAssetID     = b.context.LUXAssetID
 
 		importedInputs  = make([]*lux.TransferableInput, 0, len(utxos))
 		importedAmounts = make(map[ids.ID]uint64)
@@ -678,7 +1197,7 @@ func (b *builder) NewImportTx(
 		})
 
 		assetID := utxo.AssetID()
-		newImportedAmount, err := math.Add64(importedAmounts[assetID], out.Amt)
+		newImportedAmount, err := math.Add(importedAmounts[assetID], out.Amt)
 		if err != nil {
 			return nil, err
 		}
@@ -693,29 +1212,12 @@ func (b *builder) NewImportTx(
 		)
 	}
 
-	var (
-		inputs      []*lux.TransferableInput
-		outputs     = make([]*lux.TransferableOutput, 0, len(importedAmounts))
-		importedLUX = importedAmounts[luxAssetID]
-	)
-	if importedLUX > txFee {
-		importedAmounts[luxAssetID] -= txFee
-	} else {
-		if importedLUX < txFee { // imported amount goes toward paying tx fee
-			toBurn := map[ids.ID]uint64{
-				luxAssetID: txFee - importedLUX,
-			}
-			toStake := map[ids.ID]uint64{}
-			var err error
-			inputs, outputs, _, err = b.spend(toBurn, toStake, ops)
-			if err != nil {
-				return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
-			}
-		}
-		delete(importedAmounts, luxAssetID)
-	}
-
+	outputs := make([]*lux.TransferableOutput, 0, len(importedAmounts))
 	for assetID, amount := range importedAmounts {
+		if assetID == luxAssetID {
+			continue
+		}
+
 		outputs = append(outputs, &lux.TransferableOutput{
 			Asset: lux.Asset{ID: assetID},
 			Out: &secp256k1fx.TransferOutput{
@@ -725,6 +1227,46 @@ func (b *builder) NewImportTx(
 		})
 	}
 
+	memo := ops.Memo()
+	memoComplexity := gas.Dimensions{
+		gas.Bandwidth: uint64(len(memo)),
+	}
+	inputComplexity, err := fee.InputComplexity(importedInputs...)
+	if err != nil {
+		return nil, err
+	}
+	outputComplexity, err := fee.OutputComplexity(outputs...)
+	if err != nil {
+		return nil, err
+	}
+	complexity, err := fee.IntrinsicImportTxComplexities.Add(
+		&memoComplexity,
+		&inputComplexity,
+		&outputComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		toBurn  = map[ids.ID]uint64{}
+		toStake = map[ids.ID]uint64{}
+	)
+	excessLUX := importedAmounts[luxAssetID]
+
+	inputs, changeOutputs, _, err := b.spend(
+		toBurn,
+		toStake,
+		excessLUX,
+		complexity,
+		to,
+		ops,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
+	}
+	outputs = append(outputs, changeOutputs...)
+
 	lux.SortTransferableOutputs(outputs, txs.Codec) // sort imported outputs
 	tx := &txs.ImportTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
@@ -732,7 +1274,7 @@ func (b *builder) NewImportTx(
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
-			Memo:         ops.Memo(),
+			Memo:         memo,
 		}},
 		SourceChain:    sourceChainID,
 		ImportedInputs: importedInputs,
@@ -745,12 +1287,10 @@ func (b *builder) NewExportTx(
 	outputs []*lux.TransferableOutput,
 	options ...common.Option,
 ) (*txs.ExportTx, error) {
-	toBurn := map[ids.ID]uint64{
-		b.context.XAssetID: b.context.BaseTxFee,
-	}
+	toBurn := map[ids.ID]uint64{}
 	for _, out := range outputs {
 		assetID := out.AssetID()
-		amountToBurn, err := math.Add64(toBurn[assetID], out.Out.Amount())
+		amountToBurn, err := math.Add(toBurn[assetID], out.Out.Amount())
 		if err != nil {
 			return nil, err
 		}
@@ -759,7 +1299,30 @@ func (b *builder) NewExportTx(
 
 	toStake := map[ids.ID]uint64{}
 	ops := common.NewOptions(options)
-	inputs, changeOutputs, _, err := b.spend(toBurn, toStake, ops)
+	memo := ops.Memo()
+	memoComplexity := gas.Dimensions{
+		gas.Bandwidth: uint64(len(memo)),
+	}
+	outputComplexity, err := fee.OutputComplexity(outputs...)
+	if err != nil {
+		return nil, err
+	}
+	complexity, err := fee.IntrinsicExportTxComplexities.Add(
+		&memoComplexity,
+		&outputComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, changeOutputs, _, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		complexity,
+		nil,
+		ops,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -771,7 +1334,7 @@ func (b *builder) NewExportTx(
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         changeOutputs,
-			Memo:         ops.Memo(),
+			Memo:         memo,
 		}},
 		DestinationChain: chainID,
 		ExportedOutputs:  outputs,
@@ -797,17 +1360,24 @@ func (b *builder) NewTransformNetTx(
 	options ...common.Option,
 ) (*txs.TransformNetTx, error) {
 	toBurn := map[ids.ID]uint64{
-		b.context.XAssetID: b.context.TransformNetTxFee,
-		assetID:              maxSupply - initialSupply,
+		assetID: maxSupply - initialSupply,
 	}
 	toStake := map[ids.ID]uint64{}
+
 	ops := common.NewOptions(options)
-	inputs, outputs, _, err := b.spend(toBurn, toStake, ops)
+	subnetAuth, err := b.authorize(subnetID, ops)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetAuth, err := b.authorizeSubnet(netID, ops)
+	inputs, outputs, _, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		gas.Dimensions{},
+		nil,
+		ops,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -848,18 +1418,46 @@ func (b *builder) NewAddPermissionlessValidatorTx(
 	shares uint32,
 	options ...common.Option,
 ) (*txs.AddPermissionlessValidatorTx, error) {
-	luxAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{}
-	if vdr.Net == constants.PrimaryNetworkID {
-		toBurn[luxAssetID] = b.context.AddPrimaryNetworkValidatorFee
-	} else {
-		toBurn[luxAssetID] = b.context.AddNetValidatorFee
-	}
 	toStake := map[ids.ID]uint64{
 		assetID: vdr.Wght,
 	}
+
 	ops := common.NewOptions(options)
-	inputs, baseOutputs, stakeOutputs, err := b.spend(toBurn, toStake, ops)
+	memo := ops.Memo()
+	memoComplexity := gas.Dimensions{
+		gas.Bandwidth: uint64(len(memo)),
+	}
+	signerComplexity, err := fee.SignerComplexity(signer)
+	if err != nil {
+		return nil, err
+	}
+	validatorOwnerComplexity, err := fee.OwnerComplexity(validationRewardsOwner)
+	if err != nil {
+		return nil, err
+	}
+	delegatorOwnerComplexity, err := fee.OwnerComplexity(delegationRewardsOwner)
+	if err != nil {
+		return nil, err
+	}
+	complexity, err := fee.IntrinsicAddPermissionlessValidatorTxComplexities.Add(
+		&memoComplexity,
+		&signerComplexity,
+		&validatorOwnerComplexity,
+		&delegatorOwnerComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, baseOutputs, stakeOutputs, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		complexity,
+		nil,
+		ops,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -872,7 +1470,7 @@ func (b *builder) NewAddPermissionlessValidatorTx(
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         baseOutputs,
-			Memo:         ops.Memo(),
+			Memo:         memo,
 		}},
 		Validator:             vdr.Validator,
 		Net:                   vdr.Net,
@@ -891,18 +1489,36 @@ func (b *builder) NewAddPermissionlessDelegatorTx(
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.AddPermissionlessDelegatorTx, error) {
-	luxAssetID := b.context.XAssetID
 	toBurn := map[ids.ID]uint64{}
-	if vdr.Net == constants.PrimaryNetworkID {
-		toBurn[luxAssetID] = b.context.AddPrimaryNetworkDelegatorFee
-	} else {
-		toBurn[luxAssetID] = b.context.AddNetDelegatorFee
-	}
 	toStake := map[ids.ID]uint64{
 		assetID: vdr.Wght,
 	}
+
 	ops := common.NewOptions(options)
-	inputs, baseOutputs, stakeOutputs, err := b.spend(toBurn, toStake, ops)
+	memo := ops.Memo()
+	memoComplexity := gas.Dimensions{
+		gas.Bandwidth: uint64(len(memo)),
+	}
+	ownerComplexity, err := fee.OwnerComplexity(rewardsOwner)
+	if err != nil {
+		return nil, err
+	}
+	complexity, err := fee.IntrinsicAddPermissionlessDelegatorTxComplexities.Add(
+		&memoComplexity,
+		&ownerComplexity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, baseOutputs, stakeOutputs, err := b.spend(
+		toBurn,
+		toStake,
+		0,
+		complexity,
+		nil,
+		ops,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -914,7 +1530,7 @@ func (b *builder) NewAddPermissionlessDelegatorTx(
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         baseOutputs,
-			Memo:         ops.Memo(),
+			Memo:         memo,
 		}},
 		Validator:              vdr.Validator,
 		Net:                    vdr.Net,
@@ -964,7 +1580,7 @@ func (b *builder) getBalance(
 		}
 
 		assetID := utxo.AssetID()
-		balance[assetID], err = math.Add64(balance[assetID], out.Amt)
+		balance[assetID], err = math.Add(balance[assetID], out.Amt)
 		if err != nil {
 			return nil, err
 		}
@@ -974,18 +1590,28 @@ func (b *builder) getBalance(
 
 // spend takes in the requested burn amounts and the requested stake amounts.
 //
-//   - [amountsToBurn] maps assetID to the amount of the asset to spend without
+//   - [toBurn] maps assetID to the amount of the asset to spend without
 //     producing an output. This is typically used for fees. However, it can
 //     also be used to consume some of an asset that will be produced in
 //     separate outputs, such as ExportedOutputs. Only unlocked UTXOs are able
 //     to be burned here.
-//   - [amountsToStake] maps assetID to the amount of the asset to spend and
-//     place into the staked outputs. First locked UTXOs are attempted to be
-//     used for these funds, and then unlocked UTXOs will be attempted to be
-//     used. There is no preferential ordering on the unlock times.
+//   - [toStake] maps assetID to the amount of the asset to spend and place into
+//     the staked outputs. First locked UTXOs are attempted to be used for these
+//     funds, and then unlocked UTXOs will be attempted to be used. There is no
+//     preferential ordering on the unlock times.
+//   - [excessLUX] contains the amount of extra LUX that spend can produce in
+//     the change outputs in addition to the consumed and not burned LUX.
+//   - [complexity] contains the currently accrued transaction complexity that
+//     will be used to calculate the required fees to be burned.
+//   - [ownerOverride] optionally specifies the output owners to use for the
+//     unlocked LUX change output if no additional LUX was needed to be
+//     burned. If this value is nil, the default change owner is used.
 func (b *builder) spend(
-	amountsToBurn map[ids.ID]uint64,
-	amountsToStake map[ids.ID]uint64,
+	toBurn map[ids.ID]uint64,
+	toStake map[ids.ID]uint64,
+	excessLUX uint64,
+	complexity gas.Dimensions,
+	ownerOverride *secp256k1fx.OutputOwners,
 	options *common.Options,
 ) (
 	inputs []*lux.TransferableInput,
@@ -1009,41 +1635,36 @@ func (b *builder) spend(
 		Threshold: 1,
 		Addrs:     []ids.ShortID{addr},
 	})
+	if ownerOverride == nil {
+		ownerOverride = changeOwner
+	}
 
-	// Initialize the return values with empty slices to preserve backward
-	// compatibility of the json representation of transactions with no
-	// inputs or outputs.
-	inputs = make([]*lux.TransferableInput, 0)
-	changeOutputs = make([]*lux.TransferableOutput, 0)
-	stakeOutputs = make([]*lux.TransferableOutput, 0)
+	s := spendHelper{
+		weights:  b.context.ComplexityWeights,
+		gasPrice: b.context.GasPrice,
 
-	// Iterate over the locked UTXOs
-	for _, utxo := range utxos {
+		toBurn:     toBurn,
+		toStake:    toStake,
+		complexity: complexity,
+
+		// Initialize the return values with empty slices to preserve backward
+		// compatibility of the json representation of transactions with no
+		// inputs or outputs.
+		inputs:        make([]*lux.TransferableInput, 0),
+		changeOutputs: make([]*lux.TransferableOutput, 0),
+		stakeOutputs:  make([]*lux.TransferableOutput, 0),
+	}
+
+	utxosByLocktime := splitByLocktime(utxos, minIssuanceTime)
+	for _, utxo := range utxosByLocktime.locked {
 		assetID := utxo.AssetID()
-		remainingAmountToStake := amountsToStake[assetID]
-
-		// If we have staked enough of the asset, then we have no need burn
-		// more.
-		if remainingAmountToStake == 0 {
+		if !s.shouldConsumeLockedAsset(assetID) {
 			continue
 		}
 
-		outIntf := utxo.Out
-		lockedOut, ok := outIntf.(*stakeable.LockOut)
-		if !ok {
-			// This output isn't locked, so it will be handled during the next
-			// iteration of the UTXO set
-			continue
-		}
-		if minIssuanceTime >= lockedOut.Locktime {
-			// This output isn't locked, so it will be handled during the next
-			// iteration of the UTXO set
-			continue
-		}
-
-		out, ok := lockedOut.TransferableOut.(*secp256k1fx.TransferOutput)
-		if !ok {
-			return nil, nil, nil, ErrUnknownOutputType
+		out, locktime, err := unwrapOutput(utxo.Out)
+		if err != nil {
+			return nil, nil, nil, err
 		}
 
 		inputSigIndices, ok := common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
@@ -1052,11 +1673,11 @@ func (b *builder) spend(
 			continue
 		}
 
-		inputs = append(inputs, &lux.TransferableInput{
+		err = s.addInput(&lux.TransferableInput{
 			UTXOID: utxo.UTXOID,
 			Asset:  utxo.Asset,
 			In: &stakeable.LockIn{
-				Locktime: lockedOut.Locktime,
+				Locktime: locktime,
 				TransferableIn: &secp256k1fx.TransferInput{
 					Amt: out.Amt,
 					Input: secp256k1fx.Input{
@@ -1065,66 +1686,76 @@ func (b *builder) spend(
 				},
 			},
 		})
+		if err != nil {
+			return nil, nil, nil, err
+		}
 
-		// Stake any value that should be staked
-		amountToStake := min(
-			remainingAmountToStake, // Amount we still need to stake
-			out.Amt,                // Amount available to stake
-		)
-
-		// Add the output to the staked outputs
-		stakeOutputs = append(stakeOutputs, &lux.TransferableOutput{
+		excess := s.consumeLockedAsset(assetID, out.Amt)
+		err = s.addStakedOutput(&lux.TransferableOutput{
 			Asset: utxo.Asset,
 			Out: &stakeable.LockOut{
-				Locktime: lockedOut.Locktime,
+				Locktime: locktime,
 				TransferableOut: &secp256k1fx.TransferOutput{
-					Amt:          amountToStake,
+					Amt:          out.Amt - excess,
 					OutputOwners: out.OutputOwners,
 				},
 			},
 		})
-
-		amountsToStake[assetID] -= amountToStake
-		if remainingAmount := out.Amt - amountToStake; remainingAmount > 0 {
-			// This input had extra value, so some of it must be returned
-			changeOutputs = append(changeOutputs, &lux.TransferableOutput{
-				Asset: utxo.Asset,
-				Out: &stakeable.LockOut{
-					Locktime: lockedOut.Locktime,
-					TransferableOut: &secp256k1fx.TransferOutput{
-						Amt:          remainingAmount,
-						OutputOwners: out.OutputOwners,
-					},
-				},
-			})
+		if err != nil {
+			return nil, nil, nil, err
 		}
-	}
 
-	// Iterate over the unlocked UTXOs
-	for _, utxo := range utxos {
-		assetID := utxo.AssetID()
-		remainingAmountToStake := amountsToStake[assetID]
-		remainingAmountToBurn := amountsToBurn[assetID]
-
-		// If we have consumed enough of the asset, then we have no need burn
-		// more.
-		if remainingAmountToStake == 0 && remainingAmountToBurn == 0 {
+		if excess == 0 {
 			continue
 		}
 
-		outIntf := utxo.Out
-		if lockedOut, ok := outIntf.(*stakeable.LockOut); ok {
-			if lockedOut.Locktime > minIssuanceTime {
-				// This output is currently locked, so this output can't be
-				// burned.
-				continue
-			}
-			outIntf = lockedOut.TransferableOut
+		// This input had extra value, so some of it must be returned
+		err = s.addChangeOutput(&lux.TransferableOutput{
+			Asset: utxo.Asset,
+			Out: &stakeable.LockOut{
+				Locktime: locktime,
+				TransferableOut: &secp256k1fx.TransferOutput{
+					Amt:          excess,
+					OutputOwners: out.OutputOwners,
+				},
+			},
+		})
+		if err != nil {
+			return nil, nil, nil, err
+		}
+	}
+
+	// Add all the remaining stake amounts assuming unlocked UTXOs.
+	for assetID, amount := range s.toStake {
+		if amount == 0 {
+			continue
 		}
 
-		out, ok := outIntf.(*secp256k1fx.TransferOutput)
-		if !ok {
-			return nil, nil, nil, ErrUnknownOutputType
+		err = s.addStakedOutput(&lux.TransferableOutput{
+			Asset: lux.Asset{
+				ID: assetID,
+			},
+			Out: &secp256k1fx.TransferOutput{
+				Amt:          amount,
+				OutputOwners: *changeOwner,
+			},
+		})
+		if err != nil {
+			return nil, nil, nil, err
+		}
+	}
+
+	// LUX is handled last to account for fees.
+	utxosByLUXAssetID := splitByAssetID(utxosByLocktime.unlocked, b.context.LUXAssetID)
+	for _, utxo := range utxosByLUXAssetID.other {
+		assetID := utxo.AssetID()
+		if !s.shouldConsumeAsset(assetID) {
+			continue
+		}
+
+		out, _, err := unwrapOutput(utxo.Out)
+		if err != nil {
+			return nil, nil, nil, err
 		}
 
 		inputSigIndices, ok := common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
@@ -1133,7 +1764,7 @@ func (b *builder) spend(
 			continue
 		}
 
-		inputs = append(inputs, &lux.TransferableInput{
+		err = s.addInput(&lux.TransferableInput{
 			UTXOID: utxo.UTXOID,
 			Asset:  utxo.Asset,
 			In: &secp256k1fx.TransferInput{
@@ -1143,76 +1774,130 @@ func (b *builder) spend(
 				},
 			},
 		})
+		if err != nil {
+			return nil, nil, nil, err
+		}
 
-		// Burn any value that should be burned
-		amountToBurn := min(
-			remainingAmountToBurn, // Amount we still need to burn
-			out.Amt,               // Amount available to burn
-		)
-		amountsToBurn[assetID] -= amountToBurn
+		excess := s.consumeAsset(assetID, out.Amt)
+		if excess == 0 {
+			continue
+		}
 
-		amountAvalibleToStake := out.Amt - amountToBurn
-		// Burn any value that should be burned
-		amountToStake := min(
-			remainingAmountToStake, // Amount we still need to stake
-			amountAvalibleToStake,  // Amount available to stake
-		)
-		amountsToStake[assetID] -= amountToStake
-		if amountToStake > 0 {
-			// Some of this input was put for staking
-			stakeOutputs = append(stakeOutputs, &lux.TransferableOutput{
-				Asset: utxo.Asset,
-				Out: &secp256k1fx.TransferOutput{
-					Amt:          amountToStake,
-					OutputOwners: *changeOwner,
+		// This input had extra value, so some of it must be returned
+		err = s.addChangeOutput(&lux.TransferableOutput{
+			Asset: utxo.Asset,
+			Out: &secp256k1fx.TransferOutput{
+				Amt:          excess,
+				OutputOwners: *changeOwner,
+			},
+		})
+		if err != nil {
+			return nil, nil, nil, err
+		}
+	}
+
+	for _, utxo := range utxosByLUXAssetID.requested {
+		requiredFee, err := s.calculateFee()
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		// If we don't need to burn or stake additional LUX and we have
+		// consumed enough LUX to pay the required fee, we should stop
+		// consuming UTXOs.
+		if !s.shouldConsumeAsset(b.context.LUXAssetID) && excessLUX >= requiredFee {
+			break
+		}
+
+		out, _, err := unwrapOutput(utxo.Out)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		inputSigIndices, ok := common.MatchOwners(&out.OutputOwners, addrs, minIssuanceTime)
+		if !ok {
+			// We couldn't spend this UTXO, so we skip to the next one
+			continue
+		}
+
+		err = s.addInput(&lux.TransferableInput{
+			UTXOID: utxo.UTXOID,
+			Asset:  utxo.Asset,
+			In: &secp256k1fx.TransferInput{
+				Amt: out.Amt,
+				Input: secp256k1fx.Input{
+					SigIndices: inputSigIndices,
 				},
-			})
+			},
+		})
+		if err != nil {
+			return nil, nil, nil, err
 		}
-		if remainingAmount := amountAvalibleToStake - amountToStake; remainingAmount > 0 {
-			// This input had extra value, so some of it must be returned
-			changeOutputs = append(changeOutputs, &lux.TransferableOutput{
-				Asset: utxo.Asset,
-				Out: &secp256k1fx.TransferOutput{
-					Amt:          remainingAmount,
-					OutputOwners: *changeOwner,
-				},
-			})
+
+		excess := s.consumeAsset(b.context.LUXAssetID, out.Amt)
+		excessLUX, err = math.Add(excessLUX, excess)
+		if err != nil {
+			return nil, nil, nil, err
 		}
+
+		// If we need to consume additional LUX, we should be returning the
+		// change to the change address.
+		ownerOverride = changeOwner
 	}
 
-	for assetID, amount := range amountsToStake {
-		if amount != 0 {
-			return nil, nil, nil, fmt.Errorf(
-				"%w: provided UTXOs need %d more units of asset %q to stake",
-				ErrInsufficientFunds,
-				amount,
-				assetID,
-			)
-		}
-	}
-	for assetID, amount := range amountsToBurn {
-		if amount != 0 {
-			return nil, nil, nil, fmt.Errorf(
-				"%w: provided UTXOs need %d more units of asset %q",
-				ErrInsufficientFunds,
-				amount,
-				assetID,
-			)
-		}
+	if err := s.verifyAssetsConsumed(); err != nil {
+		return nil, nil, nil, err
 	}
 
-	utils.Sort(inputs)                                    // sort inputs
-	lux.SortTransferableOutputs(changeOutputs, txs.Codec) // sort the change outputs
-	lux.SortTransferableOutputs(stakeOutputs, txs.Codec)  // sort stake outputs
-	return inputs, changeOutputs, stakeOutputs, nil
+	requiredFee, err := s.calculateFee()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if excessLUX < requiredFee {
+		return nil, nil, nil, fmt.Errorf(
+			"%w: provided UTXOs needed %d more nLUX (%q)",
+			ErrInsufficientFunds,
+			requiredFee-excessLUX,
+			b.context.LUXAssetID,
+		)
+	}
+
+	secpExcessLUXOutput := &secp256k1fx.TransferOutput{
+		Amt:          0, // Populated later if used
+		OutputOwners: *ownerOverride,
+	}
+	excessLUXOutput := &lux.TransferableOutput{
+		Asset: lux.Asset{
+			ID: b.context.LUXAssetID,
+		},
+		Out: secpExcessLUXOutput,
+	}
+	if err := s.addOutputComplexity(excessLUXOutput); err != nil {
+		return nil, nil, nil, err
+	}
+
+	requiredFeeWithChange, err := s.calculateFee()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if excessLUX > requiredFeeWithChange {
+		// It is worth adding the change output
+		secpExcessLUXOutput.Amt = excessLUX - requiredFeeWithChange
+		s.changeOutputs = append(s.changeOutputs, excessLUXOutput)
+	}
+
+	utils.Sort(s.inputs)                                     // sort inputs
+	lux.SortTransferableOutputs(s.changeOutputs, txs.Codec) // sort the change outputs
+	lux.SortTransferableOutputs(s.stakeOutputs, txs.Codec)  // sort stake outputs
+	return s.inputs, s.changeOutputs, s.stakeOutputs, nil
 }
 
-func (b *builder) authorizeSubnet(netID ids.ID, options *common.Options) (*secp256k1fx.Input, error) {
-	ownerIntf, err := b.backend.GetSubnetOwner(options.Context(), netID)
+func (b *builder) authorize(ownerID ids.ID, options *common.Options) (*secp256k1fx.Input, error) {
+	ownerIntf, err := b.backend.GetOwner(options.Context(), ownerID)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"failed to fetch net owner for %q: %w",
-			netID,
+			"failed to fetch owner for %q: %w",
+			ownerID,
 			err,
 		)
 	}
@@ -1243,45 +1928,182 @@ func (b *builder) initCtx(tx txs.UnsignedTx) error {
 	return nil
 }
 
-// L1 Validator transaction implementations
+type spendHelper struct {
+	weights  gas.Dimensions
+	gasPrice gas.Price
 
-func (b *builder) NewConvertNetToL1Tx(
-	netID ids.ID,
-	chainID ids.ID,
-	address []byte,
-	validators []*txs.ConvertNetToL1Validator,
-	options ...common.Option,
-) (*txs.ConvertNetToL1Tx, error) {
-	return &txs.ConvertNetToL1Tx{}, nil
+	toBurn     map[ids.ID]uint64
+	toStake    map[ids.ID]uint64
+	complexity gas.Dimensions
+
+	inputs        []*lux.TransferableInput
+	changeOutputs []*lux.TransferableOutput
+	stakeOutputs  []*lux.TransferableOutput
 }
 
-func (b *builder) NewRegisterL1ValidatorTx(
-	balance uint64,
-	proofOfPossession [bls.SignatureLen]byte,
-	message []byte,
-	options ...common.Option,
-) (*txs.RegisterL1ValidatorTx, error) {
-	return &txs.RegisterL1ValidatorTx{}, nil
+func (s *spendHelper) addInput(input *lux.TransferableInput) error {
+	newInputComplexity, err := fee.InputComplexity(input)
+	if err != nil {
+		return err
+	}
+	s.complexity, err = s.complexity.Add(&newInputComplexity)
+	if err != nil {
+		return err
+	}
+
+	s.inputs = append(s.inputs, input)
+	return nil
 }
 
-func (b *builder) NewSetL1ValidatorWeightTx(
-	message []byte,
-	options ...common.Option,
-) (*txs.SetL1ValidatorWeightTx, error) {
-	return &txs.SetL1ValidatorWeightTx{}, nil
+func (s *spendHelper) addChangeOutput(output *lux.TransferableOutput) error {
+	s.changeOutputs = append(s.changeOutputs, output)
+	return s.addOutputComplexity(output)
 }
 
-func (b *builder) NewIncreaseL1ValidatorBalanceTx(
-	validationID ids.ID,
-	balance uint64,
-	options ...common.Option,
-) (*txs.IncreaseL1ValidatorBalanceTx, error) {
-	return &txs.IncreaseL1ValidatorBalanceTx{}, nil
+func (s *spendHelper) addStakedOutput(output *lux.TransferableOutput) error {
+	s.stakeOutputs = append(s.stakeOutputs, output)
+	return s.addOutputComplexity(output)
 }
 
-func (b *builder) NewDisableL1ValidatorTx(
-	validationID ids.ID,
-	options ...common.Option,
-) (*txs.DisableL1ValidatorTx, error) {
-	return &txs.DisableL1ValidatorTx{}, nil
+func (s *spendHelper) addOutputComplexity(output *lux.TransferableOutput) error {
+	newOutputComplexity, err := fee.OutputComplexity(output)
+	if err != nil {
+		return err
+	}
+	s.complexity, err = s.complexity.Add(&newOutputComplexity)
+	return err
+}
+
+func (s *spendHelper) shouldConsumeLockedAsset(assetID ids.ID) bool {
+	return s.toStake[assetID] != 0
+}
+
+func (s *spendHelper) shouldConsumeAsset(assetID ids.ID) bool {
+	return s.toBurn[assetID] != 0 || s.shouldConsumeLockedAsset(assetID)
+}
+
+func (s *spendHelper) consumeLockedAsset(assetID ids.ID, amount uint64) uint64 {
+	// Stake any value that should be staked
+	toStake := min(
+		s.toStake[assetID], // Amount we still need to stake
+		amount,             // Amount available to stake
+	)
+	s.toStake[assetID] -= toStake
+	return amount - toStake
+}
+
+func (s *spendHelper) consumeAsset(assetID ids.ID, amount uint64) uint64 {
+	// Burn any value that should be burned
+	toBurn := min(
+		s.toBurn[assetID], // Amount we still need to burn
+		amount,            // Amount available to burn
+	)
+	s.toBurn[assetID] -= toBurn
+
+	// Stake any remaining value that should be staked
+	return s.consumeLockedAsset(assetID, amount-toBurn)
+}
+
+func (s *spendHelper) calculateFee() (uint64, error) {
+	gas, err := s.complexity.ToGas(s.weights)
+	if err != nil {
+		return 0, err
+	}
+	return gas.Cost(s.gasPrice)
+}
+
+func (s *spendHelper) verifyAssetsConsumed() error {
+	for assetID, amount := range s.toStake {
+		if amount == 0 {
+			continue
+		}
+
+		return fmt.Errorf(
+			"%w: provided UTXOs need %d more units of asset %q to stake",
+			ErrInsufficientFunds,
+			amount,
+			assetID,
+		)
+	}
+	for assetID, amount := range s.toBurn {
+		if amount == 0 {
+			continue
+		}
+
+		return fmt.Errorf(
+			"%w: provided UTXOs need %d more units of asset %q",
+			ErrInsufficientFunds,
+			amount,
+			assetID,
+		)
+	}
+	return nil
+}
+
+type utxosByLocktime struct {
+	unlocked []*lux.UTXO
+	locked   []*lux.UTXO
+}
+
+// splitByLocktime separates the provided UTXOs into two slices:
+// 1. UTXOs that are unlocked with the provided issuance time
+// 2. UTXOs that are locked with the provided issuance time
+func splitByLocktime(utxos []*lux.UTXO, minIssuanceTime uint64) utxosByLocktime {
+	split := utxosByLocktime{
+		unlocked: make([]*lux.UTXO, 0, len(utxos)),
+		locked:   make([]*lux.UTXO, 0, len(utxos)),
+	}
+	for _, utxo := range utxos {
+		if lockedOut, ok := utxo.Out.(*stakeable.LockOut); ok && minIssuanceTime < lockedOut.Locktime {
+			split.locked = append(split.locked, utxo)
+		} else {
+			split.unlocked = append(split.unlocked, utxo)
+		}
+	}
+	return split
+}
+
+type utxosByAssetID struct {
+	requested []*lux.UTXO
+	other     []*lux.UTXO
+}
+
+// splitByAssetID separates the provided UTXOs into two slices:
+// 1. UTXOs with the provided assetID
+// 2. UTXOs with a different assetID
+func splitByAssetID(utxos []*lux.UTXO, assetID ids.ID) utxosByAssetID {
+	split := utxosByAssetID{
+		requested: make([]*lux.UTXO, 0, len(utxos)),
+		other:     make([]*lux.UTXO, 0, len(utxos)),
+	}
+	for _, utxo := range utxos {
+		if utxo.AssetID() == assetID {
+			split.requested = append(split.requested, utxo)
+		} else {
+			split.other = append(split.other, utxo)
+		}
+	}
+	return split
+}
+
+// unwrapOutput returns the *secp256k1fx.TransferOutput that was, potentially,
+// wrapped by a *stakeable.LockOut.
+//
+// If the output was stakeable and locked, the locktime is returned. Otherwise,
+// the locktime returned will be 0.
+//
+// If the output is not a, potentially wrapped, *secp256k1fx.TransferOutput, an
+// error is returned.
+func unwrapOutput(output verify.State) (*secp256k1fx.TransferOutput, uint64, error) {
+	var locktime uint64
+	if lockedOut, ok := output.(*stakeable.LockOut); ok {
+		output = lockedOut.TransferableOut
+		locktime = lockedOut.Locktime
+	}
+
+	unwrappedOutput, ok := output.(*secp256k1fx.TransferOutput)
+	if !ok {
+		return nil, 0, ErrUnknownOutputType
+	}
+	return unwrappedOutput, locktime, nil
 }

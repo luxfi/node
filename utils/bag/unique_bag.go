@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bag
@@ -11,6 +11,7 @@ import (
 
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/math/set"
 )
 
 // Maps a key to a bitset.

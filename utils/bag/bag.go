@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bag
@@ -11,6 +11,7 @@ import (
 
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/math/set"
 )
 
 const minBagSize = 16
@@ -175,11 +176,10 @@ func (b *Bag[_]) String() string {
 	return b.PrefixedString("")
 }
 
-// Clone returns a shallow copy of the bag, preserving counts of all elements.
 func (b *Bag[T]) Clone() Bag[T] {
 	var clone Bag[T]
-	for elt, count := range b.counts {
-		clone.AddCount(elt, count)
+	for id, count := range b.counts {
+		clone.AddCount(id, count)
 	}
 	return clone
 }

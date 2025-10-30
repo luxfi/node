@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package pubsub
@@ -10,6 +10,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/pubsub/bloom"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"

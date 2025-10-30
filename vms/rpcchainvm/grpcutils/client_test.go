@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package grpcutils
@@ -11,6 +11,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/rpcdb"
+
+	pb "github.com/luxfi/node/proto/pb/rpcdb"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 )
 
@@ -27,7 +31,7 @@ func TestDialOptsSmoke(t *testing.T) {
 	require.Len(opts, 5)
 }
 
-// Test_WaitForReady shows the expected results from the DialOption during
+// TestWaitForReady shows the expected results from the DialOption during
 // client creation.  If true the client will block and wait forever for the
 // server to become Ready even if the listener is closed.
 // ref. https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md

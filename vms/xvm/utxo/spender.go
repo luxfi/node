@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package utxo
@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/codec"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/nftfx"
@@ -189,9 +189,6 @@ func (s *spender) SpendNFT(
 	keys := [][]*secp256k1.PrivateKey{}
 
 	for _, utxo := range utxos {
-		// makes sure that the variable isn't overwritten with the next iteration
-		utxo := utxo
-
 		if len(ops) > 0 {
 			// we have already been able to create the operation needed
 			break
@@ -311,9 +308,6 @@ func (s *spender) Mint(
 	keys := [][]*secp256k1.PrivateKey{}
 
 	for _, utxo := range utxos {
-		// makes sure that the variable isn't overwritten with the next iteration
-		utxo := utxo
-
 		assetID := utxo.AssetID()
 		amount := amounts[assetID]
 		if amount == 0 {
@@ -385,9 +379,6 @@ func (s *spender) MintNFT(
 	keys := [][]*secp256k1.PrivateKey{}
 
 	for _, utxo := range utxos {
-		// makes sure that the variable isn't overwritten with the next iteration
-		utxo := utxo
-
 		if len(ops) > 0 {
 			// we have already been able to create the operation needed
 			break

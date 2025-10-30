@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package registry
@@ -15,7 +15,9 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 )
 
@@ -99,20 +101,26 @@ func (r *vmRegisterer) createStaticHandlers(
 		return nil, err
 	}
 
-	commonVM, ok := vm.(core.VM)
+	handlerProvider, ok := vm.(vms.HandlerProvider)
 	if !ok {
 		return nil, fmt.Errorf("%s is %w", vmID, errNotVM)
 	}
 
-	handlers, err := commonVM.CreateHandlers(ctx)
+	handlers, err := handlerProvider.CreateHandlers(ctx)
 	if err != nil {
 		r.config.Log.Error("failed to create static API endpoints",
 			log.Stringer("vmID", vmID),
 			log.String("error", err.Error()),
 		)
 
-		if err := commonVM.Shutdown(ctx); err != nil {
-			return nil, fmt.Errorf("shutting down VM errored with: %w", err)
+		// Try to shutdown the VM if it supports it
+		type Shutdowner interface {
+			Shutdown(context.Context) error
+		}
+		if shutdownVM, ok := vm.(Shutdowner); ok {
+			if err := shutdownVM.Shutdown(ctx); err != nil {
+				return nil, fmt.Errorf("shutting down VM errored with: %w", err)
+			}
 		}
 		return nil, err
 	}

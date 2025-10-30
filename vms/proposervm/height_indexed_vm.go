@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -54,9 +54,9 @@ func (vm *VM) updateHeightIndex(height uint64, blkID ids.ID) error {
 		return err
 	}
 
-	vm.log.Debug("indexed block",
-		log.Stringer("blkID", blkID),
-		log.Uint64("height", height),
+	vm.logger.Debug("indexed block",
+		zap.Stringer("blkID", blkID),
+		zap.Uint64("height", height),
 	)
 
 	if vm.NumHistoricalBlocks == 0 {
@@ -94,9 +94,9 @@ func (vm *VM) updateHeightIndex(height uint64, blkID ids.ID) error {
 		return err
 	}
 
-	vm.log.Debug("deleted block",
-		log.Stringer("blkID", blockToDelete),
-		log.Uint64("height", heightToDelete),
+	vm.logger.Debug("deleted block",
+		zap.Stringer("blkID", blockToDelete),
+		zap.Uint64("height", heightToDelete),
 	)
 	return nil
 }
@@ -128,9 +128,9 @@ func (vm *VM) pruneOldBlocks() error {
 			return err
 		}
 
-		vm.log.Debug("deleted block",
-			log.Stringer("blkID", blockToDelete),
-			log.Uint64("height", height),
+		vm.logger.Debug("deleted block",
+			zap.Stringer("blkID", blockToDelete),
+			zap.Uint64("height", height),
 		)
 
 		// Note: height is < vm.lastAcceptedHeight, so it is guaranteed not to

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chain
@@ -8,11 +8,10 @@ import (
 	"errors"
 
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/protocol/chain"
 )
 
 var (
-	_ chain.Block             = (*BlockWrapper)(nil)
+	_ block.Block           = (*BlockWrapper)(nil)
 	_ block.WithVerifyContext = (*BlockWrapper)(nil)
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
@@ -21,7 +20,7 @@ var (
 // BlockWrapper wraps a linear Block while adding a smart caching layer to improve
 // VM performance.
 type BlockWrapper struct {
-	chain.Block
+	block.Block
 
 	state *State
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -8,10 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/node/utils/linked"
+	"github.com/luxfi/node/utils/lock"
 	"github.com/luxfi/node/vms/example/xsvm/chain"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
@@ -27,26 +29,26 @@ var _ Builder = (*builder)(nil)
 type Builder interface {
 	SetPreference(preferred ids.ID)
 	AddTx(ctx context.Context, tx *tx.Tx) error
-	WaitForEvent(ctx context.Context) (core.Message, error)
+	WaitForEvent(ctx context.Context) (common.Message, error)
 	BuildBlock(ctx context.Context, blockContext *smblock.Context) (chain.Block, error)
 }
 
 type builder struct {
-	chainContext context.Context
+	chainContext *snow.Context
 	chain        chain.Chain
 
 	preference ids.ID
 	// pendingTxsCond is awoken once there is at least one pending transaction.
-	pendingTxsCond *sync.Cond
+	pendingTxsCond *lock.Cond
 	pendingTxs     *linked.Hashmap[ids.ID, *tx.Tx]
 }
 
-func New(chainContext context.Context, chain chain.Chain) Builder {
+func New(chainContext *snow.Context, chain chain.Chain) Builder {
 	return &builder{
 		chainContext:   chainContext,
 		chain:          chain,
 		preference:     chain.LastAccepted(),
-		pendingTxsCond: sync.NewCond(&sync.Mutex{}),
+		pendingTxsCond: lock.NewCond(&sync.Mutex{}),
 		pendingTxs:     linked.NewHashmap[ids.ID, *tx.Tx](),
 	}
 }
@@ -69,22 +71,17 @@ func (b *builder) AddTx(_ context.Context, newTx *tx.Tx) error {
 	return nil
 }
 
-func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
+func (b *builder) WaitForEvent(ctx context.Context) (common.Message, error) {
 	b.pendingTxsCond.L.Lock()
 	defer b.pendingTxsCond.L.Unlock()
 
-	// Wait until we have pending transactions or context is cancelled
 	for b.pendingTxs.Len() == 0 {
-		select {
-		case <-ctx.Done():
-			return core.Message{}, ctx.Err()
-		default:
-			b.pendingTxsCond.Wait()
+		if err := b.pendingTxsCond.Wait(ctx); err != nil {
+			return 0, err
 		}
 	}
 
-	// Return empty message for now - Op field is required but PendingTxs is not a valid Op
-	return core.Message{}, nil
+	return common.PendingTxs, nil
 }
 
 func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context) (chain.Block, error) {
@@ -98,13 +95,6 @@ func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context)
 		return nil, err
 	}
 
-	// Signal if we still have pending transactions after building this block
-	defer func() {
-		if b.pendingTxs.Len() > 0 {
-			b.pendingTxsCond.Broadcast()
-		}
-	}()
-
 	parentTimestamp := preferredBlk.Timestamp()
 	timestamp := time.Now().Truncate(time.Second)
 	if timestamp.Before(parentTimestamp) {
@@ -116,6 +106,9 @@ func (b *builder) BuildBlock(ctx context.Context, blockContext *smblock.Context)
 		Timestamp: timestamp.Unix(),
 		Height:    preferredBlk.Height() + 1,
 	}
+
+	b.pendingTxsCond.L.Lock()
+	defer b.pendingTxsCond.L.Unlock()
 
 	currentState := versiondb.New(preferredState)
 	for len(wipBlock.Txs) < MaxTxsPerBlock {

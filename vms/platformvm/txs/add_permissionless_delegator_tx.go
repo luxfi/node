@@ -1,15 +1,14 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"fmt"
 
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
@@ -39,7 +38,7 @@ type AddPermissionlessDelegatorTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [AddPermissionlessDelegatorTx]. Also sets the [ctx] to the given [vm.ctx] so
 // that the addresses can be json marshalled into human readable format
-func (tx *AddPermissionlessDelegatorTx) InitCtx(ctx context.Context) {
+func (tx *AddPermissionlessDelegatorTx) InitCtx(ctx *consensusctx.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	for _, out := range tx.StakeOuts {
 		out.FxID = secp256k1fx.ID
@@ -83,7 +82,7 @@ func (tx *AddPermissionlessDelegatorTx) RewardsOwner() fx.Owner {
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx *AddPermissionlessDelegatorTx) SyntacticVerify(ctx context.Context) error {
+func (tx *AddPermissionlessDelegatorTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -110,7 +109,7 @@ func (tx *AddPermissionlessDelegatorTx) SyntacticVerify(ctx context.Context) err
 	stakedAssetID := firstStakeOutput.AssetID()
 	totalStakeWeight := firstStakeOutput.Output().Amount()
 	for _, out := range tx.StakeOuts[1:] {
-		newWeight, err := math.Add64(totalStakeWeight, out.Output().Amount())
+		newWeight, err := math.Add(totalStakeWeight, out.Output().Amount())
 		if err != nil {
 			return err
 		}

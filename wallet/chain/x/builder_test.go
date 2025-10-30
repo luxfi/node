@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build test
@@ -10,10 +10,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/chain/x/builder"
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/subnet/primary/common/utxotest"
 )
 
 var (
@@ -53,8 +53,8 @@ func TestBaseTx(t *testing.T) {
 		// backend
 		utxosKey       = testKeys[1]
 		utxos          = makeTestUTXOs(utxosKey)
-		genericBackend = common.NewDeterministicChainUTXOs(
-			require,
+		genericBackend = utxotest.NewDeterministicChainUTXOs(
+			t,
 			map[ids.ID][]*lux.UTXO{
 				xChainID: utxos,
 			},
@@ -102,8 +102,8 @@ func TestCreateAssetTx(t *testing.T) {
 		// backend
 		utxosKey       = testKeys[1]
 		utxos          = makeTestUTXOs(utxosKey)
-		genericBackend = common.NewDeterministicChainUTXOs(
-			require,
+		genericBackend = utxotest.NewDeterministicChainUTXOs(
+			t,
 			map[ids.ID][]*lux.UTXO{
 				xChainID: utxos,
 			},
@@ -191,8 +191,8 @@ func TestMintNFTOperation(t *testing.T) {
 		// backend
 		utxosKey       = testKeys[1]
 		utxos          = makeTestUTXOs(utxosKey)
-		genericBackend = common.NewDeterministicChainUTXOs(
-			require,
+		genericBackend = utxotest.NewDeterministicChainUTXOs(
+			t,
 			map[ids.ID][]*lux.UTXO{
 				xChainID: utxos,
 			},
@@ -236,8 +236,8 @@ func TestMintFTOperation(t *testing.T) {
 		// backend
 		utxosKey       = testKeys[1]
 		utxos          = makeTestUTXOs(utxosKey)
-		genericBackend = common.NewDeterministicChainUTXOs(
-			require,
+		genericBackend = utxotest.NewDeterministicChainUTXOs(
+			t,
 			map[ids.ID][]*lux.UTXO{
 				xChainID: utxos,
 			},
@@ -283,8 +283,8 @@ func TestMintPropertyOperation(t *testing.T) {
 		// backend
 		utxosKey       = testKeys[1]
 		utxos          = makeTestUTXOs(utxosKey)
-		genericBackend = common.NewDeterministicChainUTXOs(
-			require,
+		genericBackend = utxotest.NewDeterministicChainUTXOs(
+			t,
 			map[ids.ID][]*lux.UTXO{
 				xChainID: utxos,
 			},
@@ -326,8 +326,8 @@ func TestBurnPropertyOperation(t *testing.T) {
 		// backend
 		utxosKey       = testKeys[1]
 		utxos          = makeTestUTXOs(utxosKey)
-		genericBackend = common.NewDeterministicChainUTXOs(
-			require,
+		genericBackend = utxotest.NewDeterministicChainUTXOs(
+			t,
 			map[ids.ID][]*lux.UTXO{
 				xChainID: utxos,
 			},
@@ -364,8 +364,8 @@ func TestImportTx(t *testing.T) {
 		utxos          = makeTestUTXOs(utxosKey)
 		sourceChainID  = ids.GenerateTestID()
 		importedUTXOs  = utxos[:1]
-		genericBackend = common.NewDeterministicChainUTXOs(
-			require,
+		genericBackend = utxotest.NewDeterministicChainUTXOs(
+			t,
 			map[ids.ID][]*lux.UTXO{
 				xChainID:      utxos,
 				sourceChainID: importedUTXOs,
@@ -414,8 +414,8 @@ func TestExportTx(t *testing.T) {
 		// backend
 		utxosKey       = testKeys[1]
 		utxos          = makeTestUTXOs(utxosKey)
-		genericBackend = common.NewDeterministicChainUTXOs(
-			require,
+		genericBackend = utxotest.NewDeterministicChainUTXOs(
+			t,
 			map[ids.ID][]*lux.UTXO{
 				xChainID: utxos,
 			},

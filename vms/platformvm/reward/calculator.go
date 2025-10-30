@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package reward
@@ -63,11 +63,7 @@ func (c *calculator) Calculate(stakedDuration time.Duration, stakedAmount, curre
 	}
 
 	finalReward := reward.Uint64()
-	if finalReward > remainingSupply {
-		return remainingSupply
-	}
-
-	return finalReward
+	return min(remainingSupply, finalReward)
 }
 
 // Split [totalAmount] into [totalAmount * shares percentage] and the remainder.
@@ -78,7 +74,7 @@ func Split(totalAmount uint64, shares uint32) (uint64, uint64) {
 	remainderAmount := remainderShares * (totalAmount / PercentDenominator)
 
 	// Delay rounding as long as possible for small numbers
-	if optimisticReward, err := math.Mul64(remainderShares, totalAmount); err == nil {
+	if optimisticReward, err := math.Mul(remainderShares, totalAmount); err == nil {
 		remainderAmount = optimisticReward / PercentDenominator
 	}
 

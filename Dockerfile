@@ -1,14 +1,10 @@
 # The version is supplied as a build argument rather than hard-coded
 # to minimize the cost of version changes.
-# Using 1.23 which is the latest available on Docker Hub
-ARG GO_VERSION=1.23
+ARG GO_VERSION=INVALID # This value is not intended to be used but silences a warning
 
 # ============= Compilation Stage ================
 # Always use the native platform to ensure fast builds
 FROM --platform=$BUILDPLATFORM golang:$GO_VERSION-bookworm AS builder
-
-# Install custom Go 1.24.6 if available, otherwise use the base version
-# This allows us to use our advanced Go features while maintaining Docker compatibility
 
 WORKDIR /build
 
@@ -40,7 +36,7 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ] && [ "$BUILDPLATFORM" != "linux/arm
     echo "export CC=gcc" > ./build_env.sh \
     ; fi
 
-# Build luxd. The build environment is configured with build_env.sh from the step
+# Build node. The build environment is configured with build_env.sh from the step
 # enabling cross-compilation.
 ARG RACE_FLAG=""
 ARG BUILD_SCRIPT=build.sh

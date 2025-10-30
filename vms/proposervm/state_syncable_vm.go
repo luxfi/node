@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -9,8 +9,8 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/vms/proposervm/summary"
 )
 
@@ -22,9 +22,9 @@ func (vm *VM) StateSyncEnabled(ctx context.Context) (bool, error) {
 	return vm.ssVM.StateSyncEnabled(ctx)
 }
 
-func (vm *VM) GetOngoingSyncStateSummary(ctx context.Context) (block.StateSummary, error) {
+func (vm *VM) GetOngoingSyncStateSummary(ctx context.Context) (chainblock.StateSummary, error) {
 	if vm.ssVM == nil {
-		return nil, block.ErrStateSyncableVMNotImplemented
+		return nil, chainblock.ErrStateSyncableVMNotImplemented
 	}
 
 	innerSummary, err := vm.ssVM.GetOngoingSyncStateSummary(ctx)
@@ -35,9 +35,9 @@ func (vm *VM) GetOngoingSyncStateSummary(ctx context.Context) (block.StateSummar
 	return vm.buildStateSummary(ctx, innerSummary)
 }
 
-func (vm *VM) GetLastStateSummary(ctx context.Context) (block.StateSummary, error) {
+func (vm *VM) GetLastStateSummary(ctx context.Context) (chainblock.StateSummary, error) {
 	if vm.ssVM == nil {
-		return nil, block.ErrStateSyncableVMNotImplemented
+		return nil, chainblock.ErrStateSyncableVMNotImplemented
 	}
 
 	// Extract inner vm's last state summary
@@ -51,9 +51,9 @@ func (vm *VM) GetLastStateSummary(ctx context.Context) (block.StateSummary, erro
 
 // Note: it's important that ParseStateSummary do not use any index or state
 // to allow summaries being parsed also by freshly started node with no previous state.
-func (vm *VM) ParseStateSummary(ctx context.Context, summaryBytes []byte) (block.StateSummary, error) {
+func (vm *VM) ParseStateSummary(ctx context.Context, summaryBytes []byte) (chainblock.StateSummary, error) {
 	if vm.ssVM == nil {
-		return nil, block.ErrStateSyncableVMNotImplemented
+		return nil, chainblock.ErrStateSyncableVMNotImplemented
 	}
 
 	statelessSummary, err := summary.Parse(summaryBytes)
@@ -66,7 +66,7 @@ func (vm *VM) ParseStateSummary(ctx context.Context, summaryBytes []byte) (block
 	if err != nil {
 		return nil, fmt.Errorf("could not parse inner summary due to: %w", err)
 	}
-	block, err := vm.parsePostForkBlock(ctx, statelessSummary.BlockBytes())
+	block, err := vm.parsePostForkBlock(ctx, statelessSummary.BlockBytes(), true)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse proposervm block bytes from summary due to: %w", err)
 	}
@@ -79,9 +79,9 @@ func (vm *VM) ParseStateSummary(ctx context.Context, summaryBytes []byte) (block
 	}, nil
 }
 
-func (vm *VM) GetStateSummary(ctx context.Context, height uint64) (block.StateSummary, error) {
+func (vm *VM) GetStateSummary(ctx context.Context, height uint64) (chainblock.StateSummary, error) {
 	if vm.ssVM == nil {
-		return nil, block.ErrStateSyncableVMNotImplemented
+		return nil, chainblock.ErrStateSyncableVMNotImplemented
 	}
 
 	innerSummary, err := vm.ssVM.GetStateSummary(ctx, height)
@@ -93,7 +93,7 @@ func (vm *VM) GetStateSummary(ctx context.Context, height uint64) (block.StateSu
 }
 
 // Note: building state summary requires a well formed height index.
-func (vm *VM) buildStateSummary(ctx context.Context, innerSummary block.StateSummary) (block.StateSummary, error) {
+func (vm *VM) buildStateSummary(ctx context.Context, innerSummary chainblock.StateSummary) (chainblock.StateSummary, error) {
 	forkHeight, err := vm.GetForkHeight()
 	switch err {
 	case nil:
@@ -103,9 +103,9 @@ func (vm *VM) buildStateSummary(ctx context.Context, innerSummary block.StateSum
 	case database.ErrNotFound:
 		// fork has not been reached since there is not fork height
 		// just return innerSummary
-		vm.log.Debug("built pre-fork summary",
-			log.Stringer("summaryID", innerSummary.ID()),
-			log.Uint64("summaryHeight", innerSummary.Height()),
+		vm.logger.Debug("built pre-fork summary",
+			zap.Stringer("summaryID", innerSummary.ID()),
+			zap.Uint64("summaryHeight", innerSummary.Height()),
 		)
 		return innerSummary, nil
 	default:
@@ -115,18 +115,18 @@ func (vm *VM) buildStateSummary(ctx context.Context, innerSummary block.StateSum
 	height := innerSummary.Height()
 	blkID, err := vm.GetBlockIDAtHeight(ctx, height)
 	if err != nil {
-		vm.log.Debug("failed to fetch proposervm block ID",
-			log.Uint64("height", height),
-			log.Reflect("error", err),
+		vm.logger.Debug("failed to fetch proposervm block ID",
+			zap.Uint64("height", height),
+			zap.Error(err),
 		)
 		return nil, err
 	}
 	block, err := vm.getPostForkBlock(ctx, blkID)
 	if err != nil {
-		vm.log.Warn("failed to fetch proposervm block",
-			log.Stringer("blkID", blkID),
-			log.Uint64("height", height),
-			log.Reflect("error", err),
+		vm.logger.Warn("failed to fetch proposervm block",
+			zap.Stringer("blkID", blkID),
+			zap.Uint64("height", height),
+			zap.Error(err),
 		)
 		return nil, err
 	}
@@ -136,9 +136,9 @@ func (vm *VM) buildStateSummary(ctx context.Context, innerSummary block.StateSum
 		return nil, err
 	}
 
-	vm.log.Debug("built post-fork summary",
-		log.Stringer("summaryID", statelessSummary.ID()),
-		log.Uint64("summaryHeight", forkHeight),
+	vm.logger.Debug("built post-fork summary",
+		zap.Stringer("summaryID", statelessSummary.ID()),
+		zap.Uint64("summaryHeight", forkHeight),
 	)
 	return &stateSummary{
 		StateSummary: statelessSummary,

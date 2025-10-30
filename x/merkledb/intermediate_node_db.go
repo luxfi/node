@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package merkledb
@@ -6,6 +6,8 @@ package merkledb
 import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/lru"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils"
 )
 
@@ -53,7 +55,7 @@ func newIntermediateNodeDB(
 		evictionBatchSize: evictionBatchSize,
 		tokenSize:         tokenSize,
 		hasher:            hasher,
-		nodeCache:         cache.NewSizedLRU(cacheSize, cacheEntrySize),
+		nodeCache:         lru.NewSizedCache(cacheSize, cacheEntrySize),
 	}
 	result.writeBuffer = newOnEvictCache(
 		writeBufferSize,

@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"time"
 
 	"github.com/luxfi/ids"
@@ -35,12 +36,7 @@ func (tx *AdvanceTimeTx) Bytes() []byte {
 	return tx.unsignedBytes
 }
 
-func (*AdvanceTimeTx) InitCtx(context.Context) {}
-
-// InitializeContext initializes the context for this transaction
-func (*AdvanceTimeTx) InitializeContext(context.Context) error {
-	return nil
-}
+func (*AdvanceTimeTx) InitCtx(*consensusctx.Context) {}
 
 // Timestamp returns the time this block is proposing the chain should be set to
 func (tx *AdvanceTimeTx) Timestamp() time.Time {
@@ -55,7 +51,7 @@ func (*AdvanceTimeTx) Outputs() []*lux.TransferableOutput {
 	return nil
 }
 
-func (*AdvanceTimeTx) SyntacticVerify(context.Context) error {
+func (*AdvanceTimeTx) SyntacticVerify(*consensusctx.Context) error {
 	return nil
 }
 

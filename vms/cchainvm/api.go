@@ -7,12 +7,13 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"os"
 
-	"github.com/luxfi/crypto"
 	"github.com/luxfi/geth/common"
 	"github.com/luxfi/geth/common/hexutil"
 	"github.com/luxfi/geth/core/rawdb"
 	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/crypto"
 	"github.com/luxfi/geth/rpc"
 )
 
@@ -375,5 +376,201 @@ func NewLuxAPI(vm *VM) *LuxAPI {
 
 // ReplayStatus returns the status of database replay
 func (api *LuxAPI) ReplayStatus() map[string]interface{} {
+	// CRITICAL FIX: Check if vm and replayProgress are initialized
+	if api.vm == nil || api.vm.replayProgress == nil {
+		// Return a safe default status if not initialized
+		return map[string]interface{}{
+			"replaying": false,
+			"state":     "not_initialized",
+			"error":     "VM or replay progress not initialized",
+		}
+	}
 	return api.vm.replayProgress.GetStatus()
+}
+
+// StartReplayRequest represents the request for starting database replay
+type StartReplayRequest struct {
+	SourcePath string `json:"sourcePath"`
+	StartBlock uint64 `json:"startBlock"`
+	EndBlock   uint64 `json:"endBlock"`
+	BatchSize  uint64 `json:"batchSize"`
+}
+
+// ReplayStart starts the database replay process from the specified source
+// This is the lux_replayStart RPC method
+func (api *LuxAPI) ReplayStart(req StartReplayRequest) (map[string]interface{}, error) {
+	// CRITICAL FIX: Check if vm is initialized
+	if api.vm == nil {
+		return nil, fmt.Errorf("VM not initialized")
+	}
+
+	// CRITICAL FIX: Initialize replayProgress if it's nil
+	if api.vm.replayProgress == nil {
+		api.vm.replayProgress = NewReplayProgress()
+	}
+
+	// Check if replay is already in progress
+	if api.vm.replayProgress.IsReplaying() {
+		return nil, fmt.Errorf("replay already in progress")
+	}
+
+	// Use default source if not provided
+	if req.SourcePath == "" {
+		req.SourcePath = "/home/z/.avalanche-cli/runs/network_current/node1/chainData/dnmzhuf6poM6PUNQCe7MWWfBdTJEnddhHRNXz2x7H6qSmyBEJ/db/pebbledb"
+	}
+
+	// Check if source exists
+	if _, err := os.Stat(req.SourcePath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("source path does not exist: %s", req.SourcePath)
+	}
+
+	// Set default values if not provided
+	if req.EndBlock == 0 {
+		req.EndBlock = 1100000
+	}
+	if req.BatchSize == 0 {
+		req.BatchSize = 100
+	}
+
+	// Start replay in background goroutine
+	go func() {
+		api.vm.log.Info("Starting runtime replay via RPC",
+			"source", req.SourcePath,
+			"start", req.StartBlock,
+			"end", req.EndBlock,
+			"batch", req.BatchSize)
+
+		// Update progress
+		api.vm.replayProgress.Start(req.EndBlock - req.StartBlock)
+		api.vm.replayProgress.UpdatePhase("Initializing replay")
+
+		// Create the replay coordinator
+		config := &DatabaseReplayConfig{
+			SourcePath:          req.SourcePath,
+			SubnetReplayEnabled: true,
+			SubnetReplayStart:   req.StartBlock,
+			SubnetReplayEnd:     req.EndBlock,
+			SubnetReplayBatch:   req.BatchSize,
+			CopyAllState:        true,
+			DatabaseType:        "pebbledb",
+		}
+
+		// Run the actual replay
+		if err := api.vm.RunReplay(config); err != nil {
+			api.vm.log.Error("Replay failed", "error", err)
+			api.vm.replayProgress.UpdatePhase(fmt.Sprintf("Failed: %v", err))
+		} else {
+			api.vm.replayProgress.UpdatePhase("Completed successfully")
+			api.vm.log.Info("Replay completed successfully")
+		}
+	}()
+
+	return map[string]interface{}{
+		"started":     true,
+		"sourcePath":  req.SourcePath,
+		"startBlock":  req.StartBlock,
+		"endBlock":    req.EndBlock,
+		"batchSize":   req.BatchSize,
+		"message":     "Replay started in background",
+	}, nil
+}
+
+// ReloadBlockchain forces the blockchain to reload and recognize database changes
+// This is useful after replay or direct database modifications
+func (api *LuxAPI) ReloadBlockchain() (map[string]interface{}, error) {
+	if api.vm == nil {
+		return nil, fmt.Errorf("VM not initialized")
+	}
+
+	// Ensure logger
+	api.vm.ensureLogger()
+
+	result := make(map[string]interface{})
+
+	// Get current state before reload
+	var beforeBlock uint64
+	if api.vm.blockChain != nil {
+		if currentBlock := api.vm.blockChain.CurrentBlock(); currentBlock != nil {
+			beforeBlock = currentBlock.Number.Uint64()
+			result["beforeBlockNumber"] = beforeBlock
+			result["beforeBlockHash"] = currentBlock.Hash().Hex()
+		}
+	}
+
+	// Get database head
+	dbHeadHash := rawdb.ReadHeadBlockHash(api.vm.ethDB)
+	dbHeadNumber := uint64(0)
+	if dbHeadHash != (common.Hash{}) {
+		if num, ok := rawdb.ReadHeaderNumber(api.vm.ethDB, dbHeadHash); ok {
+			dbHeadNumber = num
+		}
+	}
+	result["databaseHeadNumber"] = dbHeadNumber
+	result["databaseHeadHash"] = dbHeadHash.Hex()
+
+	// Perform reload
+	err := api.vm.ReloadBlockchainState()
+	if err != nil {
+		result["success"] = false
+		result["error"] = err.Error()
+	} else {
+		result["success"] = true
+	}
+
+	// Get state after reload
+	if api.vm.blockChain != nil {
+		if currentBlock := api.vm.blockChain.CurrentBlock(); currentBlock != nil {
+			result["afterBlockNumber"] = currentBlock.Number.Uint64()
+			result["afterBlockHash"] = currentBlock.Hash().Hex()
+			result["blocksRecovered"] = currentBlock.Number.Uint64() - beforeBlock
+		}
+	}
+
+	return result, nil
+}
+
+// VerifyBlockchain checks the integrity of the blockchain
+func (api *LuxAPI) VerifyBlockchain() (map[string]interface{}, error) {
+	if api.vm == nil {
+		return nil, fmt.Errorf("VM not initialized")
+	}
+
+	// Ensure logger
+	api.vm.ensureLogger()
+
+	result := make(map[string]interface{})
+
+	// Run integrity check
+	err := api.vm.VerifyBlockchainIntegrity()
+	if err != nil {
+		result["healthy"] = false
+		result["error"] = err.Error()
+	} else {
+		result["healthy"] = true
+	}
+
+	// Add current state info
+	if api.vm.blockChain != nil {
+		if currentBlock := api.vm.blockChain.CurrentBlock(); currentBlock != nil {
+			result["currentBlockNumber"] = currentBlock.Number.Uint64()
+			result["currentBlockHash"] = currentBlock.Hash().Hex()
+			result["stateRoot"] = currentBlock.Root.Hex()
+		}
+
+		if currentHeader := api.vm.blockChain.CurrentHeader(); currentHeader != nil {
+			result["currentHeaderNumber"] = currentHeader.Number.Uint64()
+			result["currentHeaderHash"] = currentHeader.Hash().Hex()
+		}
+	}
+
+	// Add database head info
+	dbHeadHash := rawdb.ReadHeadBlockHash(api.vm.ethDB)
+	if dbHeadHash != (common.Hash{}) {
+		result["databaseHeadHash"] = dbHeadHash.Hex()
+		if num, ok := rawdb.ReadHeaderNumber(api.vm.ethDB, dbHeadHash); ok {
+			result["databaseHeadNumber"] = num
+		}
+	}
+
+	return result, nil
 }

@@ -1,5 +1,5 @@
 ---
-tags: [Nodes, Lux Node]
+tags: [Nodes, LuxGo]
 description: Reference for all available X-chain config options and flags.
 pagination_label: X-Chain Configs
 sidebar_position: 2
@@ -19,8 +19,6 @@ values for this config are:
 
 ```json
 {
-  "index-transactions": false,
-  "index-allow-incomplete": false,
   "checksums-enabled": false
 }
 ```
@@ -29,6 +27,8 @@ Default values are overridden only if explicitly specified in the config.
 
 The parameters are as follows:
 
+<<<<<<< HEAD:vms/avm/config.md
+=======
 ## Transaction Indexing
 
 ### `index-transactions`
@@ -54,6 +54,7 @@ _Boolean_
 Allows incomplete indices. This config value is ignored if there is no X-Chain indexed data in the DB and
 `index-transactions` is set to `false`.
 
+>>>>>>> origin/regenesis-runtime-replay:vms/xvm/config.md
 ### `checksums-enabled`
 
 _Boolean_

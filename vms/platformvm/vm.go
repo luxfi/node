@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,23 +17,21 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/interfaces"
-	"github.com/luxfi/consensus/uptime"
-	consensusset "github.com/luxfi/consensus/utils/set"
-	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
-	"github.com/luxfi/consensus/validators"
-	consensusversion "github.com/luxfi/consensus/version"
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/lux"
@@ -49,7 +46,7 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
 
-	linearblock "github.com/luxfi/consensus/engine/chain/block"
+	snowmanblock "github.com/luxfi/consensus/engine/chain/block"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	platformvmmetrics "github.com/luxfi/node/vms/platformvm/metrics"
@@ -59,10 +56,10 @@ import (
 )
 
 var (
-	_ linearblock.ChainVM = (*VM)(nil)
-	_ secp256k1fx.VM      = (*VM)(nil)
-	_ validators.State    = (*VM)(nil)
-	// _ validators.SubnetConnector = (*VM)(nil) // Type no longer exists
+	_ snowmanblock.ChainVM                      = (*VM)(nil)
+	_ snowmanblock.BuildBlockWithContextChainVM = (*VM)(nil)
+	_ secp256k1fx.VM                            = (*VM)(nil)
+	_ validators.State                          = (*VM)(nil)
 )
 
 // appSenderAdapter adapts linearblock.AppSender to appsender.AppSender (for network.New)
@@ -101,7 +98,7 @@ func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs co
 }
 
 type VM struct {
-	config.Config
+	config.Internal
 	blockbuilder.Builder
 	*network.Network
 	validators.State
@@ -159,9 +156,8 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngineIntf interface{},
-	fxsIntf []interface{},
-	appSenderIntf interface{},
+	_ []*common.Fx,
+	appSender common.AppSender,
 ) error {
 	// Handle chain context as interface for now
 	_ = chainCtxIntf
@@ -201,7 +197,7 @@ func (vm *VM) Initialize(
 	fmt.Printf("  - fxs: %v\n", fxsIntf)
 	fmt.Printf("  - appSender: %v\n", appSenderIntf)
 
-	execConfig, err := config.GetExecutionConfig(configBytes)
+	execConfig, err := config.GetConfig(configBytes)
 	if err != nil {
 		fmt.Printf("ERROR: Failed to get execution config: %v\n", err)
 		return fmt.Errorf("failed to get execution config: %w", err)
@@ -260,8 +256,9 @@ func (vm *VM) Initialize(
 	vm.state, err = state.New(
 		vm.db,
 		genesisBytes,
-		stateRegistry, // Use separate registry to avoid duplicate registration
-		&vm.Config,
+		registerer,
+		vm.Internal.Validators,
+		vm.Internal.UpgradeConfig,
 		execConfig,
 		vm.ctx,
 		stateMetrics,
@@ -273,7 +270,7 @@ func (vm *VM) Initialize(
 	}
 	vm.log.Info("Platform VM state created successfully")
 
-	validatorManager := pvalidators.NewManager(vm.log, vm.Config, vm.state, vm.metrics, &vm.nodeClock)
+	validatorManager := pvalidators.NewManager(vm.Internal, vm.state, vm.metrics, &vm.clock)
 	vm.State = validatorManager
 	utxoHandler := utxo.NewHandler(vm.ctx, &vm.nodeClock, vm.fx)
 	// Create uptime manager with noop implementation for now
@@ -281,7 +278,7 @@ func (vm *VM) Initialize(
 	vm.UptimeLockedCalculator.SetCalculator(constants.PrimaryNetworkID, vm.uptimeManager)
 
 	txExecutorBackend := &txexecutor.Backend{
-		Config:       &vm.Config,
+		Config:       &vm.Internal,
 		Ctx:          vm.ctx,
 		Clk:          &vm.nodeClock,
 		Fx:           vm.fx,
@@ -291,10 +288,7 @@ func (vm *VM) Initialize(
 		Bootstrapped: &vm.bootstrapped,
 	}
 
-	// Create a channel for mempool to engine communication
-	// Convert the linearblock.Message channel to core.MessageType channel
-	mempoolToEngine := make(chan core.MessageType, 1)
-	mempool, err := pmempool.New("mempool", mempoolRegistry, mempoolToEngine)
+	mempool, err := pmempool.New("mempool", registerer)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
 	}
@@ -323,9 +317,12 @@ func (vm *VM) Initialize(
 		txVerifier,
 		mempool,
 		txExecutorBackend.Config.PartialSyncPrimaryNetwork,
-		appSenderWrapper,
-		networkRegistry, // Use separate registry to avoid duplicate registration
-		networkConfig,
+		appSender,
+		chainCtx.Lock.RLocker(),
+		vm.state,
+		chainCtx.WarpSigner,
+		registerer,
+		execConfig.Network,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to initialize network: %w", err)
@@ -407,7 +404,7 @@ func (vm *VM) pruneMempool() error {
 	// Packing all of the transactions in order performs additional checks that
 	// the MempoolTxVerifier doesn't include. So, evicting transactions from
 	// here is expected to happen occasionally.
-	blockTxs, err := vm.Builder.PackBlockTxs(math.MaxInt)
+	blockTxs, err := vm.Builder.PackAllBlockTxs()
 	if err != nil {
 		return err
 	}
@@ -571,15 +568,8 @@ func (vm *VM) checkExistingChains() error {
 
 // Create all chains that exist that this node validates.
 func (vm *VM) initBlockchains() error {
-	vm.log.Info("initBlockchains called")
-
-	// Check for existing chains in chainData directory
-	if err := vm.checkExistingChains(); err != nil {
-		vm.log.Warn("failed to check existing chains", "error", err)
-	}
-
-	if vm.Config.PartialSyncPrimaryNetwork {
-		vm.log.Info("skipping primary network chain creation")
+	if vm.Internal.PartialSyncPrimaryNetwork {
+		vm.ctx.Log.Info("skipping primary network chain creation")
 	} else if err := vm.createSubnet(constants.PrimaryNetworkID); err != nil {
 		return err
 	}
@@ -703,36 +693,7 @@ func (vm *VM) createSubnet(netID ids.ID) error {
 		if !ok {
 			return fmt.Errorf("expected tx type *txs.CreateChainTx but got %T", chain.Unsigned)
 		}
-
-		chainID := chain.ID()
-
-		// Check for chain ID mapping override
-		// Support mapping for C-Chain to use existing blockchain ID
-		vm.log.Info("Checking chain ID mapping",
-			"vmID", tx.VMID.String(),
-			"EVMID", constants.EVMID.String(),
-			"originalChainID", chainID.String(),
-			"envVar", os.Getenv("LUX_CHAIN_ID_MAPPING_C"),
-		)
-
-		if tx.VMID == constants.EVMID && os.Getenv("LUX_CHAIN_ID_MAPPING_C") != "" {
-			mappedID := os.Getenv("LUX_CHAIN_ID_MAPPING_C")
-			parsedID, err := ids.FromString(mappedID)
-			if err == nil {
-				vm.log.Info("Using mapped blockchain ID for C-Chain",
-					"original", chainID.String(),
-					"mapped", parsedID.String(),
-				)
-				chainID = parsedID
-			} else {
-				vm.log.Warn("Invalid chain ID mapping",
-					"mapping", mappedID,
-					"error", err,
-				)
-			}
-		}
-
-		vm.Config.CreateChain(chainID, tx)
+		vm.Internal.CreateChain(chain.ID(), tx)
 	}
 	return nil
 }
@@ -756,34 +717,23 @@ func (vm *VM) onNormalOperationsStarted() error {
 		return err
 	}
 
-	// Uptime tracking is handled by NoOpCalculator for now
-	// primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-	// if err := vm.uptimeManager.StartTracking(primaryVdrIDs); err != nil {
-	//	return err
-	// }
+	if !vm.uptimeManager.StartedTracking() {
+		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+		if err := vm.uptimeManager.StartTracking(primaryVdrIDs); err != nil {
+			return err
+		}
+	}
 
 	// Validator logging is not needed for minimal implementation
 	// vl := validators.NewLogger(vm.log, constants.PrimaryNetworkID, vm.nodeID)
 	// vm.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, vl)
 
-	for netID := range vm.TrackedSubnets {
-		// Uptime tracking is handled by NoOpCalculator for now
-		// GetValidatorIDs is not available in consensus validators.Manager
-		// _ = vm.Validators.GetValidatorIDs(netID)
-
-		// Validator logging is not needed for minimal implementation
-		// vl := validators.NewLogger(vm.log, netID, vm.nodeID)
-		// vm.Validators.RegisterSetCallbackListener(netID, vl)
-		_ = netID
+	for subnetID := range vm.TrackedSubnets {
+		vl := validators.NewLogger(vm.ctx.Log, subnetID, vm.ctx.NodeID)
+		vm.Validators.RegisterSetCallbackListener(subnetID, vl)
 	}
 
-	if err := vm.state.Commit(); err != nil {
-		return err
-	}
-
-	// Start the block builder
-	vm.Builder.StartBlockTimer()
-	return nil
+	return vm.state.Commit()
 }
 
 func (vm *VM) SetState(_ context.Context, state interfaces.State) error {
@@ -803,35 +753,16 @@ func (vm *VM) Shutdown(context.Context) error {
 		return nil
 	}
 
-	// Check if already shutdown by seeing if cancel function exists
-	if vm.onShutdownCtxCancel != nil {
-		vm.onShutdownCtxCancel()
-		vm.onShutdownCtxCancel = nil // Prevent multiple calls
-	}
+	vm.onShutdownCtxCancel()
 
-	// Builder might be nil if Initialize failed or wasn't fully completed
-	if vm.Builder != nil {
-		vm.Builder.ShutdownBlockTimer()
-	}
-
-	if vm.bootstrapped.Get() {
-		// Uptime tracking is handled by NoOpCalculator for now
-		// primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-		// if err := vm.uptimeManager.StopTracking(primaryVdrIDs); err != nil {
-		// 	return err
-		// }
-
-		for netID := range vm.TrackedSubnets {
-			// GetValidatorIDs is not available in consensus validators.Manager
-			// _ = vm.Validators.GetValidatorIDs(netID)
-			// Uptime tracking is handled by NoOpCalculator for now
-			_ = netID
+	if vm.uptimeManager.StartedTracking() {
+		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+		if err := vm.uptimeManager.StopTracking(primaryVdrIDs); err != nil {
+			return err
 		}
 
-		if vm.state != nil {
-			if err := vm.state.Commit(); err != nil {
-				return err
-			}
+		if err := vm.state.Commit(); err != nil {
+			return err
 		}
 	}
 
@@ -846,17 +777,7 @@ func (vm *VM) Shutdown(context.Context) error {
 	return errors.Join(errs...)
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (linearblock.Block, error) {
-	// Use the embedded Builder to build a block
-	blk, err := vm.Builder.BuildBlock(ctx)
-	if err != nil {
-		return nil, err
-	}
-	// Wrap the chain.Block to implement linearblock.Block
-	return wrapBlock(blk), nil
-}
-
-func (vm *VM) ParseBlock(_ context.Context, b []byte) (linearblock.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, b []byte) (chain.Block, error) {
 	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
 	// rather than blocks.GenesisCodec
 	statelessBlk, err := block.Parse(block.Codec, b)
@@ -866,12 +787,8 @@ func (vm *VM) ParseBlock(_ context.Context, b []byte) (linearblock.Block, error)
 	return wrapBlock(vm.manager.NewBlock(statelessBlk)), nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (linearblock.Block, error) {
-	blk, err := vm.manager.GetBlock(blkID)
-	if err != nil {
-		return nil, err
-	}
-	return wrapBlock(blk), nil
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	return vm.manager.GetBlock(blkID)
 }
 
 // LastAccepted returns the block most recently accepted
@@ -881,9 +798,7 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 
 // SetPreference sets the preferred block to be the one with ID [blkID]
 func (vm *VM) SetPreference(_ context.Context, blkID ids.ID) error {
-	if vm.manager.SetPreference(blkID) {
-		vm.Builder.ResetBlockTimer()
-	}
+	vm.manager.SetPreference(blkID)
 	return nil
 }
 
@@ -901,11 +816,9 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	server.RegisterInterceptFunc(vm.metrics.InterceptRequest)
 	server.RegisterAfterFunc(vm.metrics.AfterRequest)
 	service := &Service{
-		vm:          vm,
-		addrManager: lux.NewAddressManager(vm.ctx),
-		stakerAttributesCache: &cache.LRU[ids.ID, *stakerAttributes]{
-			Size: stakerAttributesCacheSize,
-		},
+		vm:                    vm,
+		addrManager:           lux.NewAddressManager(vm.ctx),
+		stakerAttributesCache: lru.NewCache[ids.ID, *stakerAttributes](stakerAttributesCacheSize),
 	}
 	err := server.RegisterService(service, "platform")
 	return map[string]http.Handler{
@@ -913,27 +826,15 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	}, err
 }
 
-func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
-	// Uptime tracking is handled by NoOpCalculator for now
-	// if err := vm.uptimeManager.Connect(nodeID); err != nil {
-	//	return err
-	// }
-	// Convert node version to consensus version
-	consensusVer := &consensusversion.Application{
-		Name:  nodeVersion.Name,
-		Major: nodeVersion.Major,
-		Minor: nodeVersion.Minor,
-		Patch: nodeVersion.Patch,
-	}
-	return vm.Network.Connected(ctx, nodeID, consensusVer)
+func (*VM) NewHTTPHandler(context.Context) (http.Handler, error) {
+	return nil, nil
 }
 
-func (vm *VM) ConnectedSubnet(_ context.Context, nodeID ids.NodeID, netID ids.ID) error {
-	// Uptime tracking is handled by NoOpCalculator for now
-	// if netID == constants.PrimaryNetworkID {
-	//	return vm.uptimeManager.Connect(nodeID)
-	// }
-	return nil
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
+	if err := vm.uptimeManager.Connect(nodeID); err != nil {
+		return err
+	}
+	return vm.Network.Connected(ctx, nodeID, consensusVer)
 }
 
 func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
@@ -956,7 +857,7 @@ func (vm *VM) Clock() *mockable.Clock {
 }
 
 func (vm *VM) Logger() log.Logger {
-	return vm.log
+	return vm.ctx.Log
 }
 
 func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, error) {

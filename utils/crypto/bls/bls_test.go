@@ -1,32 +1,35 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bls
 
 import (
+	"crypto/rand"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/utils"
+
+	blst "github.com/supranational/blst/bindings/go"
 )
 
-func newKey(require *require.Assertions) *SecretKey {
-	sk, err := NewSecretKey()
+func newKey(require *require.Assertions) *blst.SecretKey {
+	var ikm [32]byte
+	_, err := rand.Read(ikm[:])
 	require.NoError(err)
+	sk := blst.KeyGen(ikm[:])
+	ikm = [32]byte{} // zero out the ikm
+
 	return sk
 }
 
-func publicKey(sk *SecretKey) *PublicKey {
-	return sk.PublicKey()
+func publicKey(sk *blst.SecretKey) *PublicKey {
+	return new(PublicKey).From(sk)
 }
 
-func sign(sk *SecretKey, msg []byte) *Signature {
-	sig, err := sk.Sign(msg)
-	if err != nil {
-		panic(err)
-	}
-	return sig
+func sign(sk *blst.SecretKey, msg []byte) *Signature {
+	return new(Signature).Sign(sk, msg, CiphersuiteSignature.Bytes())
 }
 
 func TestAggregationThreshold(t *testing.T) {

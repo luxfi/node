@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fee
@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/vms/components/gas"
+
+	safemath "github.com/luxfi/node/utils/math"
 )
 
 const (
@@ -531,16 +533,18 @@ func FuzzStateSecondsRemaining(f *testing.F) {
 // unoptimizedCostOf is a naive implementation of CostOf that is used for
 // differential fuzzing.
 func (s State) unoptimizedCostOf(c Config, seconds uint64) uint64 {
-	var cost uint64
+	var (
+		cost uint64
+		err  error
+	)
 	for i := uint64(0); i < seconds; i++ {
 		s = s.AdvanceTime(c.Target, 1)
 
 		price := gas.CalculatePrice(c.MinPrice, s.Excess, c.ExcessConversionConstant)
-		priceUint := uint64(price)
-		if cost > math.MaxUint64-priceUint {
+		cost, err = safemath.Add(cost, uint64(price))
+		if err != nil {
 			return math.MaxUint64
 		}
-		cost += priceUint
 	}
 	return cost
 }

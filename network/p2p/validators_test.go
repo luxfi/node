@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -11,11 +11,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/engine/core/coretest"
+	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/consensus/validators/validatorsmock"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
 )
 
 func TestValidatorsSample(t *testing.T) {
@@ -166,8 +166,9 @@ func TestValidatorsSample(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
-			netID := ids.GenerateTestID()
-			mockValidators := &validatorstest.TestState{}
+			subnetID := ids.GenerateTestID()
+			ctrl := gomock.NewController(t)
+			mockValidators := validatorsmock.NewState(ctrl)
 
 			// Set up mock behavior
 			callIndex := 0
@@ -200,9 +201,7 @@ func TestValidatorsSample(t *testing.T) {
 				return validatorSet, call.getValidatorSetErr
 			}
 
-			fakeSender := &FakeSender{}
-			sender := &fakeSenderAdapter{FakeSender: fakeSender}
-			network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+			network, err := NewNetwork(logging.NoLog{}, &enginetest.SenderStub{}, prometheus.NewRegistry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()
@@ -302,6 +301,31 @@ func TestValidatorsTop(t *testing.T) {
 				nodeID1,
 			},
 		},
+		{
+			name: "top ignores inactive validators",
+			validators: []validator{
+				{
+					nodeID: ids.EmptyNodeID,
+					weight: 4,
+				},
+				{
+					nodeID: nodeID1,
+					weight: 2,
+				},
+				{
+					nodeID: nodeID2,
+					weight: 1,
+				},
+				{
+					nodeID: nodeID3,
+					weight: 1,
+				},
+			},
+			percentage: .5,
+			expected: []ids.NodeID{
+				nodeID1,
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -315,8 +339,8 @@ func TestValidatorsTop(t *testing.T) {
 				}
 			}
 
-			netID := ids.GenerateTestID()
-			mockValidators := &validatorstest.TestState{}
+			subnetID := ids.GenerateTestID()
+			mockValidators := validatorsmock.NewState(ctrl)
 
 			mockValidators.GetCurrentHeightF = func(context.Context) (uint64, error) {
 				return uint64(1), nil
@@ -325,9 +349,7 @@ func TestValidatorsTop(t *testing.T) {
 				return validatorSet, nil
 			}
 
-			fakeSender := &FakeSender{}
-			sender := &fakeSenderAdapter{FakeSender: fakeSender}
-			network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+			network, err := NewNetwork(logging.NoLog{}, &enginetest.SenderStub{}, prometheus.NewRegistry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()

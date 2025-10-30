@@ -1,23 +1,26 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"context"
-
-	"github.com/luxfi/consensus"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
+// ContextInitializable defines the interface for initializing context
+type ContextInitializable interface {
+	InitCtx(ctx *consensusctx.Context)
+}
+
 // UnsignedTx is an unsigned transaction
 type UnsignedTx interface {
-	// xvm.
-	consensus.ContextInitializable
-	consensus.Contextualizable
+	// TODO: Remove this initialization pattern from both the platformvm and the
+	// avm.
+	ContextInitializable
 	secp256k1fx.UnsignedTx
 	SetBytes(unsignedBytes []byte)
 
@@ -27,7 +30,7 @@ type UnsignedTx interface {
 	Outputs() []*lux.TransferableOutput
 
 	// Attempts to verify this transaction without any provided state.
-	SyntacticVerify(ctx context.Context) error
+	SyntacticVerify(ctx *consensusctx.Context) error
 
 	// Visit calls [visitor] with this transaction's concrete type
 	Visit(visitor Visitor) error

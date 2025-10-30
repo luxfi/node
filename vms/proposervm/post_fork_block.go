@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -7,9 +7,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
@@ -23,6 +22,16 @@ type postForkBlock struct {
 	// It is populated in verifyPostDurangoBlockDelay.
 	// It is used to report metrics during Accept.
 	slot *uint64
+}
+
+// Status returns the status of the inner block
+func (b *postForkBlock) Status() uint8 {
+	return b.innerBlk.Status()
+}
+
+// Height returns the height of the inner block - explicit to resolve ambiguity
+func (b *postForkBlock) Height() uint64 {
+	return b.postForkCommonComponents.Height()
 }
 
 // Accept:
@@ -39,12 +48,23 @@ func (b *postForkBlock) Accept(ctx context.Context) error {
 	if b.slot != nil {
 		b.vm.acceptedBlocksSlotHistogram.Observe(float64(*b.slot))
 	}
+	b.updateLastAcceptedTimestampMetric(outerBlockTypeMetricLabel, b.Timestamp())
+	b.updateLastAcceptedTimestampMetric(innerBlockTypeMetricLabel, b.innerBlk.Timestamp())
 	return nil
+}
+
+const (
+	innerBlockTypeMetricLabel = "inner"
+	outerBlockTypeMetricLabel = "proposervm"
+)
+
+func (b *postForkBlock) updateLastAcceptedTimestampMetric(blockTypeLabel string, t time.Time) {
+	g := b.vm.lastAcceptedTimestampGaugeVec.WithLabelValues(blockTypeLabel)
+	g.Set(float64(t.Unix()))
 }
 
 func (b *postForkBlock) acceptOuterBlk() error {
 	// Update in-memory references
-	b.status = choices.Accepted
 	b.vm.lastAcceptedTime = b.Timestamp()
 
 	return b.vm.acceptPostForkBlock(b)
@@ -59,15 +79,7 @@ func (b *postForkBlock) acceptInnerBlk(ctx context.Context) error {
 func (b *postForkBlock) Reject(ctx context.Context) error {
 	// We do not reject the inner block here because it may be accepted later
 	delete(b.vm.verifiedBlocks, b.ID())
-	b.status = choices.Rejected
 	return nil
-}
-
-func (b *postForkBlock) Status() uint8 {
-	if b.status == choices.Accepted && b.Height() > b.vm.lastAcceptedHeight {
-		return uint8(choices.Processing)
-	}
-	return uint8(b.status)
 }
 
 // Return this block's parent, or a *missing.Block if
@@ -110,10 +122,40 @@ func (b *postForkBlock) Verify(ctx context.Context) error {
 }
 
 // Return the two options for the block that follows [b]
-func (b *postForkBlock) Options(ctx context.Context) ([2]chain.Block, error) {
-	// OracleBlock not supported in new consensus - return empty
-	// Oracle blocks are not used in the current implementation
-	return [2]chain.Block{}, nil
+func (b *postForkBlock) Options(ctx context.Context) ([2]chainblock.Block, error) {
+	innerOracleBlk, ok := b.innerBlk.(OracleBlock)
+	if !ok {
+		// [b]'s innerBlk isn't an oracle block
+		return [2]chainblock.Block{}, errNotOracle
+	}
+
+	// The inner block's child options
+	innerOptions, err := innerOracleBlk.Options(ctx)
+	if err != nil {
+		return [2]chainblock.Block{}, err
+	}
+
+	parentID := b.ID()
+	outerOptions := [2]chainblock.Block{}
+	for i, innerOption := range innerOptions {
+		// Wrap the inner block's child option
+		statelessOuterOption, err := block.BuildOption(
+			parentID,
+			innerOption.Bytes(),
+		)
+		if err != nil {
+			return [2]chainblock.Block{}, err
+		}
+
+		outerOptions[i] = &postForkOption{
+			Block: statelessOuterOption,
+			postForkCommonComponents: postForkCommonComponents{
+				vm:       b.vm,
+				innerBlk: innerOption,
+			},
+		}
+	}
+	return outerOptions, nil
 }
 
 // A post-fork block can never have a pre-fork child
@@ -124,10 +166,12 @@ func (*postForkBlock) verifyPreForkChild(context.Context, *preForkBlock) error {
 func (b *postForkBlock) verifyPostForkChild(ctx context.Context, child *postForkBlock) error {
 	parentTimestamp := b.Timestamp()
 	parentPChainHeight := b.PChainHeight()
+	parentEpoch := toChainBlockEpoch(b.PChainEpoch())
 	return b.postForkCommonComponents.Verify(
 		ctx,
 		parentTimestamp,
 		parentPChainHeight,
+		parentEpoch,
 		child,
 	)
 }
@@ -154,6 +198,7 @@ func (b *postForkBlock) buildChild(ctx context.Context) (Block, error) {
 		b.ID(),
 		b.Timestamp(),
 		b.PChainHeight(),
+		toChainBlockEpoch(b.PChainEpoch()),
 	)
 }
 
@@ -161,10 +206,15 @@ func (b *postForkBlock) pChainHeight(context.Context) (uint64, error) {
 	return b.PChainHeight(), nil
 }
 
-func (b *postForkBlock) setStatus(status choices.Status) {
-	b.status = status
+func (b *postForkBlock) pChainEpoch(context.Context) (chainblock.Epoch, error) {
+	return toChainBlockEpoch(b.PChainEpoch()), nil
+}
+
+func (b *postForkBlock) selectChildPChainHeight(ctx context.Context) (uint64, error) {
+	return b.vm.selectChildPChainHeight(ctx, b.PChainHeight())
 }
 
 func (b *postForkBlock) getStatelessBlk() block.Block {
+	// Return the embedded stateless block.SignedBlock
 	return b.SignedBlock
 }

@@ -1,0 +1,40 @@
+# Multi-chain node builder
+FROM golang:1.23-alpine AS builder
+
+ARG CHAIN_TYPE=platform
+
+RUN apk add --no-cache git make gcc musl-dev linux-headers
+
+WORKDIR /build
+COPY . .
+
+# Build specific chain binary based on CHAIN_TYPE
+RUN if [ "$CHAIN_TYPE" = "platform" ]; then \
+        go build -o luxd-p-chain ./cmd/luxd; \
+    elif [ "$CHAIN_TYPE" = "exchange" ]; then \
+        go build -tags ringtail -o luxd-x-chain ./cmd/luxd; \
+    elif [ "$CHAIN_TYPE" = "contract" ]; then \
+        go build -tags evm -o luxd-c-chain ./cmd/luxd; \
+    else \
+        go build -o luxd ./cmd/luxd; \
+    fi
+
+# Runtime image
+FROM alpine:3.18
+
+RUN apk add --no-cache ca-certificates bash
+
+WORKDIR /app
+
+# Copy the appropriate binary
+COPY --from=builder /build/luxd* /usr/local/bin/luxd
+
+# Create data directory
+RUN mkdir -p /data
+
+# Copy chain configs if they exist
+COPY --from=builder /build/configs /configs
+
+EXPOSE 9650 9651
+
+ENTRYPOINT ["/usr/local/bin/luxd"]

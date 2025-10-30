@@ -1,24 +1,23 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package compression
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 
 	"github.com/klauspost/compress/zstd"
 )
 
-var (
-	_ Compressor = (*zstdCompressor)(nil)
-)
+var _ Compressor = (*zstdCompressor)(nil)
 
 func NewZstdCompressor(maxSize int64) (Compressor, error) {
-	return NewZstdCompressorWithLevel(maxSize, zstd.SpeedDefault)
+	return NewZstdCompressorWithLevel(maxSize, zstd.DefaultCompression)
 }
 
-func NewZstdCompressorWithLevel(maxSize int64, level zstd.EncoderLevel) (Compressor, error) {
+func NewZstdCompressorWithLevel(maxSize int64, level int) (Compressor, error) {
 	if maxSize == math.MaxInt64 {
 		// "Decompress" creates "io.LimitReader" with max size + 1:
 		// if the max size + 1 overflows, "io.LimitReader" reads nothing
@@ -26,37 +25,22 @@ func NewZstdCompressorWithLevel(maxSize int64, level zstd.EncoderLevel) (Compres
 		// require max size < math.MaxInt64 to prevent int64 overflows
 		return nil, ErrInvalidMaxSizeCompressor
 	}
-
-	encoder, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(level))
-	if err != nil {
-		return nil, err
-	}
-	// Configure decoder with memory limit to prevent zip bomb attacks
-	// Use maxSize as the memory limit to prevent excessive allocation
-	decoder, err := zstd.NewReader(nil, zstd.WithDecoderMaxMemory(uint64(maxSize)))
-	if err != nil {
-		encoder.Close()
-		return nil, err
-	}
-
 	return &zstdCompressor{
 		maxSize: maxSize,
-		encoder: encoder,
-		decoder: decoder,
+		level:   level,
 	}, nil
 }
 
 type zstdCompressor struct {
 	maxSize int64
-	encoder *zstd.Encoder
-	decoder *zstd.Decoder
+	level   int
 }
 
 func (z *zstdCompressor) Compress(msg []byte) ([]byte, error) {
 	if int64(len(msg)) > z.maxSize {
 		return nil, fmt.Errorf("%w: (%d) > (%d)", ErrMsgTooLarge, len(msg), z.maxSize)
 	}
-	return z.encoder.EncodeAll(msg, nil), nil
+	return zstd.CompressLevel(nil, msg, z.level)
 }
 
 func (z *zstdCompressor) Decompress(msg []byte) ([]byte, error) {

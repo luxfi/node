@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package mempool
@@ -9,53 +9,22 @@ import (
 
 	"github.com/luxfi/metric"
 
-	common "github.com/luxfi/consensus/core"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
 
 	txmempool "github.com/luxfi/node/vms/txs/mempool"
 )
 
 var (
-	_ Mempool = (*mempool)(nil)
-
 	ErrCantIssueAdvanceTimeTx     = errors.New("can not issue an advance time tx")
 	ErrCantIssueRewardValidatorTx = errors.New("can not issue a reward validator tx")
 	errMempoolFull                = errors.New("mempool is full")
 )
 
-type Mempool interface {
+type Mempool struct {
 	txmempool.Mempool[*txs.Tx]
-
-	// RequestBuildBlock notifies the consensus engine that a block should be
-	// built. If [emptyBlockPermitted] is true, the notification will be sent
-	// regardless of whether there are no transactions in the mempool. If not,
-	// a notification will only be sent if there is at least one transaction in
-	// the mempool.
-	RequestBuildBlock(emptyBlockPermitted bool)
-
-	// Additional methods for compatibility
-	HasTxs() bool
-	Has(txID ids.ID) bool
-	PeekTxs(n int) []*txs.Tx
-	DropExpiredStakerTxs(minStartTime time.Time) []ids.ID
 }
 
-type mempool struct {
-	txmempool.Mempool[*txs.Tx]
-
-	toEngine       chan<- common.MessageType
-	bytesAvailable int // Exposed for tests
-
-	// Keep track of tx sizes for removal
-	txSizes map[ids.ID]int
-}
-
-func New(
-	namespace string,
-	registerer metric.Registerer,
-	toEngine chan<- common.MessageType,
-) (Mempool, error) {
+func New(namespace string, registerer prometheus.Registerer) (*Mempool, error) {
 	metrics, err := txmempool.NewMetrics(namespace, registerer)
 	if err != nil {
 		return nil, err
@@ -63,45 +32,17 @@ func New(
 	pool := txmempool.New[*txs.Tx](
 		metrics,
 	)
-	return &mempool{
-		Mempool:        pool,
-		toEngine:       toEngine,
-		bytesAvailable: 64 * 1024 * 1024, // 64 MiB default
-		txSizes:        make(map[ids.ID]int),
-	}, nil
+	return &Mempool{Mempool: pool}, nil
 }
 
-func (m *mempool) Add(tx *txs.Tx) error {
+func (m *Mempool) Add(tx *txs.Tx) error {
 	switch tx.Unsigned.(type) {
 	case *txs.AdvanceTimeTx:
 		return ErrCantIssueAdvanceTimeTx
 	case *txs.RewardValidatorTx:
 		return ErrCantIssueRewardValidatorTx
 	default:
-	}
-
-	// Check if mempool has space
-	txSize := len(tx.Bytes())
-	if txSize > m.bytesAvailable {
-		return errMempoolFull
-	}
-
-	err := m.Mempool.Add(tx)
-	if err == nil {
-		m.bytesAvailable -= txSize
-		m.txSizes[tx.ID()] = txSize
-	}
-	return err
-}
-
-func (m *mempool) RequestBuildBlock(emptyBlockPermitted bool) {
-	if !emptyBlockPermitted && m.Len() == 0 {
-		return
-	}
-
-	select {
-	case m.toEngine <- common.PendingTxs:
-	default:
+		return m.Mempool.Add(tx)
 	}
 }
 

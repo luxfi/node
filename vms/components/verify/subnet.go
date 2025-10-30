@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package verify
@@ -8,9 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
-	luxids "github.com/luxfi/ids"
 )
 
 var (
@@ -18,20 +16,23 @@ var (
 	ErrMismatchedNetIDs = errors.New("mismatched netIDs")
 )
 
-// SameNet verifies that the provided [ctx] was provided to a chain in the
-// same net as [peerChainID], but not the same chain. If this verification
-// fails, a non-nil error will be returned.
-func SameSubnet(ctx context.Context, chainCtx context.Context, peerChainID ids.ID) error {
-	chainID := consensus.GetChainID(chainCtx)
-	if chainID == luxids.Empty {
-		return fmt.Errorf("no chain ID found in context")
-	}
-	// Convert IDs for comparison
-	var peerChainIDBytes [32]byte
-	copy(peerChainIDBytes[:], peerChainID[:])
-	peerChainIDLux := luxids.ID(peerChainIDBytes)
+// ChainContext provides context for chain operations
+type ChainContext struct {
+	ChainID        ids.ID
+	SubnetID       ids.ID
+	ValidatorState ValidatorState
+}
 
-	if peerChainIDLux == chainID {
+// ValidatorState provides validator state lookups
+type ValidatorState interface {
+	GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
+}
+
+// SameSubnet verifies that the provided [ctx] was provided to a chain in the
+// same subnet as [peerChainID], but not the same chain. If this verification
+// fails, a non-nil error will be returned.
+func SameSubnet(ctx context.Context, chainCtx *ChainContext, peerChainID ids.ID) error {
+	if peerChainID == chainCtx.ChainID {
 		return ErrSameChainID
 	}
 

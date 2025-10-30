@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gas
@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"math"
 
-	safemath "github.com/luxfi/math/math"
+	safemath "github.com/luxfi/node/utils/math"
 )
 
 var ErrInsufficientCapacity = errors.New("insufficient capacity")
@@ -48,7 +48,7 @@ func (s State) ConsumeGas(gas Gas) (State, error) {
 		return State{}, fmt.Errorf("%w: capacity (%d) < gas (%d)", ErrInsufficientCapacity, s.Capacity, gas)
 	}
 
-	newExcess, err := safemath.Add64(uint64(s.Excess), uint64(gas))
+	newExcess, err := safemath.Add(uint64(s.Excess), uint64(gas))
 	if err != nil {
 		//nolint:nilerr // excess is capped at MaxUint64
 		return State{

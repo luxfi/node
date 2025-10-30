@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package keystore
@@ -11,6 +11,7 @@ import (
 
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/log"
 )
 
 type service struct {

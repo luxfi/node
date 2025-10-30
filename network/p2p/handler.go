@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -7,10 +7,20 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/consensus/core"
+	"go.uber.org/zap"
+
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/log"
+)
+
+// Standardized identifiers for application protocol handlers
+const (
+	TxGossipHandlerID = iota
+	AtomicTxGossipHandlerID
+	// SignatureRequestHandlerID is specified in ACP-118: https://github.com/lux-foundation/ACPs/tree/main/ACPs/118-warp-signature-request
+	SignatureRequestHandlerID
 )
 
 var (
@@ -36,15 +46,6 @@ type Handler interface {
 		deadline time.Time,
 		requestBytes []byte,
 	) ([]byte, *core.AppError)
-	// CrossChainAppRequest is called when handling a CrossChainAppRequest
-	// message.
-	// Returns the bytes for the response corresponding to [requestBytes]
-	CrossChainAppRequest(
-		ctx context.Context,
-		chainID ids.ID,
-		deadline time.Time,
-		requestBytes []byte,
-	) ([]byte, error)
 }
 
 // NoOpHandler drops all messages
@@ -53,10 +54,6 @@ type NoOpHandler struct{}
 func (NoOpHandler) AppGossip(context.Context, ids.NodeID, []byte) {}
 
 func (NoOpHandler) AppRequest(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *core.AppError) {
-	return nil, nil
-}
-
-func (NoOpHandler) CrossChainAppRequest(context.Context, ids.ID, time.Time, []byte) ([]byte, error) {
 	return nil, nil
 }
 
@@ -99,10 +96,6 @@ func (v ValidatorHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, dea
 	return v.handler.AppRequest(ctx, nodeID, deadline, requestBytes)
 }
 
-func (v ValidatorHandler) CrossChainAppRequest(ctx context.Context, chainID ids.ID, deadline time.Time, requestBytes []byte) ([]byte, error) {
-	return v.handler.CrossChainAppRequest(ctx, chainID, deadline, requestBytes)
-}
-
 // responder automatically sends the response for a given request
 type responder struct {
 	Handler
@@ -130,40 +123,9 @@ func (r *responder) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID
 	return r.sender.SendAppResponse(ctx, nodeID, requestID, appResponse)
 }
 
-// CrossChainAppRequest calls the underlying handler and sends back the response
-// to chainID
-func (r *responder) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
-	appResponse, err := r.Handler.CrossChainAppRequest(ctx, chainID, deadline, request)
-	if err != nil {
-		r.log.Debug("failed to handle message",
-			log.Stringer("messageOp", message.CrossChainAppRequestOp),
-			log.Stringer("chainID", chainID),
-			log.Uint32("requestID", requestID),
-			log.Time("deadline", deadline),
-			log.Uint64("handlerID", r.handlerID),
-			log.Binary("message", request),
-		)
-		return nil
-	}
-
-	// Check if sender supports ExtendedAppSender interface for cross-chain responses
-	if extSender, ok := r.sender.(ExtendedAppSender); ok {
-		return extSender.SendCrossChainAppResponse(ctx, chainID, requestID, appResponse)
-	}
-
-	// If sender doesn't support cross-chain, just log and return success
-	// This allows tests to pass without full cross-chain support
-	r.log.Debug("sender doesn't support cross-chain responses, ignoring response",
-		log.Stringer("chainID", chainID),
-		log.Uint32("requestID", requestID),
-	)
-	return nil
-}
-
 type TestHandler struct {
-	AppGossipF            func(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte)
-	AppRequestF           func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *core.AppError)
-	CrossChainAppRequestF func(ctx context.Context, chainID ids.ID, deadline time.Time, requestBytes []byte) ([]byte, error)
+	AppGossipF  func(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte)
+	AppRequestF func(ctx context.Context, nodeID ids.NodeID, deadline time.Time, requestBytes []byte) ([]byte, *core.AppError)
 }
 
 func (t TestHandler) AppGossip(ctx context.Context, nodeID ids.NodeID, gossipBytes []byte) {
@@ -180,12 +142,4 @@ func (t TestHandler) AppRequest(ctx context.Context, nodeID ids.NodeID, deadline
 	}
 
 	return t.AppRequestF(ctx, nodeID, deadline, requestBytes)
-}
-
-func (t TestHandler) CrossChainAppRequest(ctx context.Context, chainID ids.ID, deadline time.Time, requestBytes []byte) ([]byte, error) {
-	if t.CrossChainAppRequestF == nil {
-		return nil, nil
-	}
-
-	return t.CrossChainAppRequestF(ctx, chainID, deadline, requestBytes)
 }

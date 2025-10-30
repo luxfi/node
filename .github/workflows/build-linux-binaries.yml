@@ -28,7 +28,9 @@ jobs:
         run: ./scripts/run_task.sh build -tags pebbledb
 
       - name: Install aws cli
-        run: sudo snap install aws-cli --classic
+        run: |
+          sudo apt update
+          sudo apt -y install awscli
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -54,7 +56,7 @@ jobs:
       - name: Create tgz package structure and upload to S3
         run: ./.github/workflows/build-tgz-pkg.sh
         env:
-          PKG_ROOT: ${{ github.workspace }}/luxd-pkg
+          PKG_ROOT: /tmp/avalanchego
           TAG: ${{ env.TAG }}
           BUCKET: ${{ secrets.BUCKET }}
           ARCH: "amd64"
@@ -80,6 +82,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: ./.github/actions/install-focal-deps
+
       - uses: ./.github/actions/setup-go-for-project
 
       - run: go version
@@ -88,7 +92,9 @@ jobs:
         run: ./scripts/run_task.sh build -tags pebbledb
 
       - name: Install aws cli
-        run: sudo snap install aws-cli --classic
+        run: |
+          sudo apt update
+          sudo apt -y install awscli
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -114,7 +120,7 @@ jobs:
       - name: Create tgz package structure and upload to S3
         run: ./.github/workflows/build-tgz-pkg.sh
         env:
-          PKG_ROOT: ${{ github.workspace }}/luxd-pkg
+          PKG_ROOT: /tmp/avalanchego
           TAG: ${{ env.TAG }}
           BUCKET: ${{ secrets.BUCKET }}
           ARCH: "arm64"

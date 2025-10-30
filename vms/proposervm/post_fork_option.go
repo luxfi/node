@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -9,8 +9,8 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/ids"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
@@ -24,26 +24,18 @@ type postForkOption struct {
 	timestamp time.Time
 }
 
-// EpochBit returns the epoch bit for FPC
-func (b *postForkOption) EpochBit() bool {
-	// Forward to inner block if it supports it
-	if innerBlk, ok := b.innerBlk.(interface{ EpochBit() bool }); ok {
-		return innerBlk.EpochBit()
-	}
-	return false
+// Status returns the status of the inner block
+func (b *postForkOption) Status() uint8 {
+	return b.innerBlk.Status()
 }
 
-// FPCVotes returns embedded fast-path vote references
-func (b *postForkOption) FPCVotes() [][]byte {
-	// Forward to inner block if it supports it
-	if innerBlk, ok := b.innerBlk.(interface{ FPCVotes() [][]byte }); ok {
-		return innerBlk.FPCVotes()
-	}
-	return nil
+// Height returns the height of the inner block - explicit to resolve ambiguity
+func (b *postForkOption) Height() uint64 {
+	return b.postForkCommonComponents.Height()
 }
 
 func (b *postForkOption) Timestamp() time.Time {
-	if choices.Status(b.Status()) == choices.Accepted {
+	if b.Height() <= b.vm.lastAcceptedHeight {
 		return b.vm.lastAcceptedTime
 	}
 	return b.timestamp
@@ -57,9 +49,6 @@ func (b *postForkOption) Accept(ctx context.Context) error {
 }
 
 func (b *postForkOption) acceptOuterBlk() error {
-	// Update in-memory references
-	b.status = choices.Accepted
-
 	return b.vm.acceptPostForkBlock(b)
 }
 
@@ -74,15 +63,7 @@ func (b *postForkOption) Reject(ctx context.Context) error {
 	// in the proposer block that causing this block to be rejected.
 
 	delete(b.vm.verifiedBlocks, b.ID())
-	b.status = choices.Rejected
 	return nil
-}
-
-func (b *postForkOption) Status() uint8 {
-	if b.status == choices.Accepted && b.Height() > b.vm.lastAcceptedHeight {
-		return uint8(choices.Processing)
-	}
-	return uint8(b.status)
 }
 
 func (b *postForkOption) Parent() ids.ID {
@@ -117,10 +98,16 @@ func (b *postForkOption) verifyPostForkChild(ctx context.Context, child *postFor
 	if err != nil {
 		return err
 	}
+	parentEpoch, err := b.pChainEpoch(ctx)
+	if err != nil {
+		return err
+	}
+
 	return b.postForkCommonComponents.Verify(
 		ctx,
 		parentTimestamp,
 		parentPChainHeight,
+		parentEpoch,
 		child,
 	)
 }
@@ -134,18 +121,29 @@ func (b *postForkOption) buildChild(ctx context.Context) (Block, error) {
 	parentID := b.ID()
 	parentPChainHeight, err := b.pChainHeight(ctx)
 	if err != nil {
-		b.vm.log.Error("unexpected build block failure",
-			log.String("reason", "failed to fetch parent's P-chain height"),
-			log.Stringer("parentID", parentID),
-			log.Reflect("error", err),
+		b.vm.logger.Error("unexpected build block failure",
+			zap.String("reason", "failed to fetch parent's P-chain height"),
+			zap.Stringer("parentID", parentID),
+			zap.Error(err),
 		)
 		return nil, err
 	}
+	parentEpoch, err := b.pChainEpoch(ctx)
+	if err != nil {
+		b.vm.logger.Error("unexpected build block failure",
+			zap.String("reason", "failed to fetch parent's epoch"),
+			zap.Stringer("parentID", parentID),
+			zap.Error(err),
+		)
+		return nil, err
+	}
+
 	return b.postForkCommonComponents.buildChild(
 		ctx,
 		parentID,
 		b.Timestamp(),
 		parentPChainHeight,
+		parentEpoch,
 	)
 }
 
@@ -158,10 +156,24 @@ func (b *postForkOption) pChainHeight(ctx context.Context) (uint64, error) {
 	return parent.pChainHeight(ctx)
 }
 
-func (b *postForkOption) setStatus(status choices.Status) {
-	b.status = status
+func (b *postForkOption) pChainEpoch(ctx context.Context) (chainblock.Epoch, error) {
+	parent, err := b.vm.getBlock(ctx, b.ParentID())
+	if err != nil {
+		return chainblock.Epoch{}, err
+	}
+	return parent.pChainEpoch(ctx)
+}
+
+func (b *postForkOption) selectChildPChainHeight(ctx context.Context) (uint64, error) {
+	pChainHeight, err := b.pChainHeight(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	return b.vm.selectChildPChainHeight(ctx, pChainHeight)
 }
 
 func (b *postForkOption) getStatelessBlk() block.Block {
+	// Return the embedded stateless block.Block
 	return b.Block
 }

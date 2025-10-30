@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tree
@@ -8,8 +8,8 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 )
 
 // Tree handles the propagation of block acceptance and rejection to inner
@@ -31,46 +31,46 @@ import (
 // (it may be held by a different proposervm block).
 type Tree interface {
 	// Add places the block in the tree
-	Add(chain.Block)
+	Add(chainblock.Block)
 
 	// Get returns the block that was added to this tree whose parent and ID
 	// match the provided block. If non-exists, then false will be returned.
-	Get(chain.Block) (chain.Block, bool)
+	Get(chainblock.Block) (chainblock.Block, bool)
 
 	// Accept marks the provided block as accepted and rejects every conflicting
 	// block.
-	Accept(context.Context, chain.Block) error
+	Accept(context.Context, chainblock.Block) error
 }
 
 type tree struct {
 	// parentID -> childID -> childBlock
-	nodes map[ids.ID]map[ids.ID]chain.Block
+	nodes map[ids.ID]map[ids.ID]chainblock.Block
 }
 
 func New() Tree {
 	return &tree{
-		nodes: make(map[ids.ID]map[ids.ID]chain.Block),
+		nodes: make(map[ids.ID]map[ids.ID]chainblock.Block),
 	}
 }
 
-func (t *tree) Add(blk chain.Block) {
+func (t *tree) Add(blk chainblock.Block) {
 	parentID := blk.Parent()
 	children, exists := t.nodes[parentID]
 	if !exists {
-		children = make(map[ids.ID]chain.Block)
+		children = make(map[ids.ID]chainblock.Block)
 		t.nodes[parentID] = children
 	}
 	children[blk.ID()] = blk
 }
 
-func (t *tree) Get(blk chain.Block) (chain.Block, bool) {
+func (t *tree) Get(blk chainblock.Block) (chainblock.Block, bool) {
 	parentID := blk.Parent()
 	children := t.nodes[parentID]
 	originalBlk, exists := children[blk.ID()]
 	return originalBlk, exists
 }
 
-func (t *tree) Accept(ctx context.Context, blk chain.Block) error {
+func (t *tree) Accept(ctx context.Context, blk chainblock.Block) error {
 	// accept the provided block
 	if err := blk.Accept(ctx); err != nil {
 		return err

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package warp
@@ -11,18 +11,22 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 )
 
 func TestMessage(t *testing.T) {
 	require := require.New(t)
 
+	payload := []byte("payload")
+
 	unsignedMsg, err := NewUnsignedMessage(
 		constants.UnitTestID,
 		ids.GenerateTestID(),
-		[]byte("payload"),
+		payload,
 	)
 	require.NoError(err)
+	require.Len(unsignedMsg.Bytes(), 42+len(payload))
 
 	msg, err := NewMessage(
 		unsignedMsg,

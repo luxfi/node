@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -6,13 +6,13 @@ package config
 import (
 	"time"
 
+	"github.com/luxfi/node/chains"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -25,7 +25,7 @@ type Internal struct {
 	// The node's chain manager
 	Chains chains.Manager
 
-	// Node's validator set maps netID -> validators of the subnet
+	// Node's validator set maps subnetID -> validators of the subnet
 	//
 	// Invariant: The primary network's validator set should have been added to
 	//            the manager before calling VM.Initialize.
@@ -89,17 +89,17 @@ type Internal struct {
 }
 
 // Create the blockchain described in [tx], but only if this node is a member of
-// the net that validates the chain
+// the subnet that validates the chain
 func (c *Internal) CreateChain(chainID ids.ID, tx *txs.CreateChainTx) {
 	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all chains
-		constants.PrimaryNetworkID != tx.NetID && // All nodes must validate the primary network
-		!c.TrackedSubnets.Contains(tx.NetID) { // This node doesn't validate this blockchain
+		constants.PrimaryNetworkID != tx.SubnetID && // All nodes must validate the primary network
+		!c.TrackedSubnets.Contains(tx.SubnetID) { // This node doesn't validate this blockchain
 		return
 	}
 
 	chainParams := chains.ChainParameters{
 		ID:          chainID,
-		NetID:       tx.NetID,
+		SubnetID:    tx.SubnetID,
 		GenesisData: tx.GenesisData,
 		VMID:        tx.VMID,
 		FxIDs:       tx.FxIDs,

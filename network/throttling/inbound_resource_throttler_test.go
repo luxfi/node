@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build ignore
@@ -12,10 +12,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/consensus/networking/tracker"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/math/meter"
-	"github.com/luxfi/metric"
+	"github.com/luxfi/node/network/tracker"
+	"github.com/luxfi/node/network/tracker/trackermock"
+	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/stretchr/testify/require"
@@ -65,8 +69,8 @@ func TestNewSystemThrottler(t *testing.T) {
 		Clock:           clock,
 		MaxRecheckDelay: time.Second,
 	}
-	targeter := &mockTargeter{}
-	throttlerIntf, err := NewSystemThrottler("", promReg, config, cpuTracker, targeter)
+	targeter := trackermock.NewTargeter(ctrl)
+	throttlerIntf, err := NewSystemThrottler("", reg, config, cpuTracker, targeter)
 	require.NoError(err)
 	require.IsType(&systemThrottler{}, throttlerIntf)
 	throttler := throttlerIntf.(*systemThrottler)
@@ -88,7 +92,7 @@ func TestSystemThrottler(t *testing.T) {
 	}
 	vdrID, nonVdrID := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 	targeter := trackermock.NewTargeter(ctrl)
-	throttler, err := NewSystemThrottler("", metric.NewNoOp().Registry(), config, mockTracker, targeter)
+	throttler, err := NewSystemThrottler("", prometheus.NewRegistry(), config, mockTracker, targeter)
 	require.NoError(err)
 
 	// Case: Actual usage <= target usage; should return immediately
@@ -170,7 +174,7 @@ func TestSystemThrottlerContextCancel(t *testing.T) {
 	}
 	vdrID := ids.GenerateTestNodeID()
 	targeter := trackermock.NewTargeter(ctrl)
-	throttler, err := NewSystemThrottler("", metric.NewNoOp().Registry(), config, mockTracker, targeter)
+	throttler, err := NewSystemThrottler("", prometheus.NewRegistry(), config, mockTracker, targeter)
 	require.NoError(err)
 
 	// Case: Actual usage > target usage; we should wait.

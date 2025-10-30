@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -8,13 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"sort"
+	"slices"
 	"testing"
 	"time"
 
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
 	"github.com/leanovate/gopter/prop"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 
 	consContext "github.com/luxfi/consensus/context"
@@ -29,29 +30,33 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/core/coretest"
+	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/node/vms/platformvm/api"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
+	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/fee"
-	"github.com/luxfi/node/vms/platformvm/txs/txstest"
-	"github.com/luxfi/node/vms/platformvm/upgrade"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
-	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
-	walletcommon "github.com/luxfi/node/wallet/net/primary/common"
+	walletcommon "github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 const (
@@ -89,8 +94,8 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 			}()
 			nodeID := ids.GenerateTestNodeID()
 
-			currentTime := defaultGenesisTime
-			vm.nodeClock.Set(currentTime)
+			currentTime := genesistest.DefaultValidatorStartTime
+			vm.clock.Set(currentTime)
 			vm.state.SetTimestamp(currentTime)
 
 			// build a valid sequence of validators start/end times, given the
@@ -125,11 +130,8 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 				}
 
 				switch ev.eventType {
-				case startNetValidator:
-					currentNetValidator, err = addNetValidator(vm, ev, netID)
-					if err != nil {
-						return "could not add net validator: " + err.Error()
-					}
+				case startSubnetValidator:
+					currentSubnetValidator = addSubnetValidator(t, vm, ev, subnetID)
 					if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndSubnet); err != nil {
 						return failedValidatorSnapshotString + err.Error()
 					}
@@ -149,10 +151,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 							return failedValidatorSnapshotString + err.Error()
 						}
 					}
-					currentPrimaryValidator, err = addPrimaryValidatorWithBLSKey(vm, ev)
-					if err != nil {
-						return "could not add primary validator with BLS key: " + err.Error()
-					}
+					currentPrimaryValidator = addPrimaryValidatorWithBLSKey(t, vm, ev)
 					if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndSubnet); err != nil {
 						return failedValidatorSnapshotString + err.Error()
 					}
@@ -165,7 +164,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 			// Checks: let's look back at validator sets at previous heights and
 			// make sure they match the snapshots already taken
 			snapshotHeights := maps.Keys(validatorSetByHeightAndSubnet)
-			sort.Slice(snapshotHeights, func(i, j int) bool { return snapshotHeights[i] < snapshotHeights[j] })
+			slices.Sort(snapshotHeights)
 			for idx, snapShotHeight := range snapshotHeights {
 				lastAcceptedHeight, err := vm.GetCurrentHeight(context.Background())
 				if err != nil {
@@ -259,87 +258,66 @@ func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndNet m
 	return nil
 }
 
-func addNetValidator(vm *VM, data *validatorInputData, netID ids.ID) (*state.Staker, error) {
-	// Create a nil shared memory for testing
-	factory := txstest.NewWalletFactoryWithAssets(context.Background(), nil, &vm.Config, vm.state, vm.luxAssetID)
-	builder, signer := factory.NewWallet(keys[0], keys[1])
-	utx, err := builder.NewAddNetValidatorTx(
-		&txs.NetValidator{
+func addSubnetValidator(t testing.TB, vm *VM, data *validatorInputData, subnetID ids.ID) *state.Staker {
+	require := require.New(t)
+
+	wallet := newWallet(t, vm, walletConfig{
+		subnetIDs: []ids.ID{subnetID},
+	})
+	tx, err := wallet.IssueAddSubnetValidatorTx(
+		&txs.SubnetValidator{
 			Validator: txs.Validator{
 				NodeID: data.nodeID,
 				Start:  uint64(data.startTime.Unix()),
 				End:    uint64(data.endTime.Unix()),
-				Wght:   vm.Config.MinValidatorStake,
+				Wght:   vm.Internal.MinValidatorStake,
 			},
 			Net: netID,
 		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},
-		}),
 	)
-	if err != nil {
-		return nil, fmt.Errorf("could not build AddNetValidatorTx: %w", err)
-	}
-	tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
-	if err != nil {
-		return nil, fmt.Errorf("could not sign AddNetValidatorTx: %w", err)
-	}
-	return internalAddValidator(vm, tx)
+	require.NoError(err)
+
+	staker, err := internalAddValidator(vm, tx)
+	require.NoError(err)
+	return staker
 }
 
-func addPrimaryValidatorWithBLSKey(vm *VM, data *validatorInputData) (*state.Staker, error) {
-	addr := keys[0].PublicKey().Address()
+func addPrimaryValidatorWithBLSKey(t testing.TB, vm *VM, data *validatorInputData) *state.Staker {
+	require := require.New(t)
 
-	sk, err := bls.NewSecretKey()
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate BLS key: %w", err)
-	}
+	wallet := newWallet(t, vm, walletConfig{})
 
-	// Create a nil shared memory for testing
-	factory := txstest.NewWalletFactoryWithAssets(context.Background(), nil, &vm.Config, vm.state, vm.luxAssetID)
-	builder, txSigner := factory.NewWallet(keys[0], keys[1])
-
-	// Generate proof of possession
+	sk, err := localsigner.New()
+	require.NoError(err)
 	pop, err := signer.NewProofOfPossession(sk)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create proof of possession: %w", err)
+	require.NoError(err)
+
+	rewardsOwner := &secp256k1fx.OutputOwners{
+		Threshold: 1,
+		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 	}
 
-	utx, err := builder.NewAddPermissionlessValidatorTx(
-		&txs.NetValidator{
+	tx, err := wallet.IssueAddPermissionlessValidatorTx(
+		&txs.SubnetValidator{
 			Validator: txs.Validator{
 				NodeID: data.nodeID,
 				Start:  uint64(data.startTime.Unix()),
 				End:    uint64(data.endTime.Unix()),
-				Wght:   vm.Config.MinValidatorStake,
+				Wght:   vm.Internal.MinValidatorStake,
 			},
 			Net: constants.PrimaryNetworkID,
 		},
 		pop,
-		vm.luxAssetID,
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		},
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		},
+		vm.ctx.LUXAssetID,
+		rewardsOwner,
+		rewardsOwner,
 		reward.PercentDenominator,
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{addr},
-		}),
 	)
-	if err != nil {
-		return nil, fmt.Errorf("could not build AddPermissionlessValidatorTx: %w", err)
-	}
-	tx, err := walletsigner.SignUnsigned(context.Background(), txSigner, utx)
-	if err != nil {
-		return nil, fmt.Errorf("could not sign AddPermissionlessValidatorTx: %w", err)
-	}
-	return internalAddValidator(vm, tx)
+	require.NoError(err)
+
+	staker, err := internalAddValidator(vm, tx)
+	require.NoError(err)
+	return staker
 }
 
 func internalAddValidator(vm *VM, signedTx *txs.Tx) (*state.Staker, error) {
@@ -404,11 +382,10 @@ func terminatePrimaryValidator(vm *VM, validator *state.Staker) error {
 		return fmt.Errorf("failed verifying block: %w", err)
 	}
 
-	// For now, skip oracle block processing
-	options := []chain.Block{}
-	if len(options) == 0 {
-		// No oracle options to process
-		_ = options // Mark as intentionally unused
+	proposalBlk := blk.(chain.OracleBlock)
+	options, err := proposalBlk.Options(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed retrieving options: %w", err)
 	}
 
 	commit := options[0].(*blockexecutor.Block)
@@ -439,7 +416,6 @@ type validatorInputData struct {
 	startTime time.Time
 	endTime   time.Time
 	nodeID    ids.NodeID
-	publicKey *bls.PublicKey
 }
 
 // buildTimestampsList creates validators start and end time, given the event list.
@@ -450,17 +426,11 @@ func buildTimestampsList(events []uint8, currentTime time.Time, nodeID ids.NodeI
 	currentTime = currentTime.Add(txexecutor.SyncBound)
 	switch endTime := currentTime.Add(defaultMinStakingDuration); events[0] {
 	case startPrimaryWithBLS:
-		sk, err := bls.NewSecretKey()
-		if err != nil {
-			return nil, fmt.Errorf("could not make private key: %w", err)
-		}
-
 		res = append(res, &validatorInputData{
 			eventType: startPrimaryWithBLS,
 			startTime: currentTime,
 			endTime:   endTime,
 			nodeID:    nodeID,
-			publicKey: bls.PublicFromSecretKey(sk),
 		})
 	default:
 		return nil, fmt.Errorf("unexpected initial event %d", events[0])
@@ -480,7 +450,6 @@ func buildTimestampsList(events []uint8, currentTime time.Time, nodeID ids.NodeI
 				startTime: currentTime,
 				endTime:   endTime,
 				nodeID:    nodeID,
-				publicKey: nil,
 			})
 
 			currentPrimaryVal.endTime = endTime.Add(time.Second)
@@ -488,18 +457,12 @@ func buildTimestampsList(events []uint8, currentTime time.Time, nodeID ids.NodeI
 
 		case startPrimaryWithBLS:
 			currentTime = currentPrimaryVal.endTime.Add(txexecutor.SyncBound)
-			sk, err := bls.NewSecretKey()
-			if err != nil {
-				return nil, fmt.Errorf("could not make private key: %w", err)
-			}
-
 			endTime := currentTime.Add(defaultMinStakingDuration)
 			val := &validatorInputData{
 				eventType: startPrimaryWithBLS,
 				startTime: currentTime,
 				endTime:   endTime,
 				nodeID:    nodeID,
-				publicKey: bls.PublicFromSecretKey(sk),
 			}
 			res = append(res, val)
 			currentPrimaryVal = val
@@ -656,80 +619,51 @@ func TestTimestampListGenerator(t *testing.T) {
 // add a single validator at the end of times,
 // to make sure it won't pollute our tests
 func buildVM(t *testing.T) (*VM, ids.ID, error) {
-	forkTime := defaultGenesisTime
-	vm := &VM{Config: config.Config{
+	vm := &VM{Internal: config.Internal{
 		Chains:                 chains.TestManager,
 		UptimeLockedCalculator: uptime.NewLockedCalculator(),
 		SybilProtectionEnabled: true,
 		Validators:             validators.NewManager(),
-		StaticFeeConfig: fee.StaticConfig{
-			TxFee:                 defaultTxFee,
-			CreateNetTxFee:        defaultTxFee, // Minimal fee for testing
-			TransformNetTxFee:     defaultTxFee, // Minimal fee for testing
-			CreateBlockchainTxFee: defaultTxFee, // Minimal fee for testing
-		},
-		MinValidatorStake: defaultMinValidatorStake,
-		MaxValidatorStake: defaultMaxValidatorStake,
-		MinDelegatorStake: defaultMinDelegatorStake,
-		MinStakeDuration:  defaultMinStakingDuration,
-		MaxStakeDuration:  defaultMaxStakingDuration,
-		RewardConfig:      defaultRewardConfig,
-		UpgradeConfig: upgrade.Config{
-			ApricotPhase3Time: forkTime,
-			ApricotPhase5Time: forkTime,
-			BanffTime:         forkTime,
-			CortinaTime:       forkTime,
-			EUpgradeTime:      mockable.MaxTime,
-		},
+		MinValidatorStake:      defaultMinValidatorStake,
+		MaxValidatorStake:      defaultMaxValidatorStake,
+		MinDelegatorStake:      defaultMinDelegatorStake,
+		MinStakeDuration:       defaultMinStakingDuration,
+		MaxStakeDuration:       defaultMaxStakingDuration,
+		RewardConfig:           defaultRewardConfig,
+		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, genesistest.DefaultValidatorStartTime),
 	}}
-	vm.nodeClock.Set(forkTime.Add(time.Second))
+	vm.clock.Set(genesistest.DefaultValidatorStartTime.Add(time.Second))
 
 	baseDB := memdb.New()
 	chainDB := prefixdb.New([]byte{0}, baseDB)
 	// atomicDB := prefixdb.New([]byte{1}, baseDB) // Currently unused due to context issues
 
-	// Use a fixed asset ID for testing
-	luxAssetID := ids.GenerateTestID()
-	vm.luxAssetID = luxAssetID
+	ctx := snowtest.Context(t, snowtest.PChainID)
 
-	// Create lux context for ChainContext
-	luxCtx := &consContext.Context{
-		QuantumID:  constants.UnitTestID,
-		NetID:      constants.PrimaryNetworkID,
-		ChainID:    constants.PlatformChainID,
-		NodeID:     ids.GenerateTestNodeID(),
-		PublicKey:  nil,
-		XChainID:   ids.GenerateTestID(),
-		CChainID:   ids.GenerateTestID(),
-		XAssetID: luxAssetID, // Use the same asset ID
-		StartTime:  time.Now(),
+	m := atomic.NewMemory(atomicDB)
+	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
+
+	ctx.Lock.Lock()
+	defer ctx.Lock.Unlock()
+	appSender := &enginetest.Sender{}
+	appSender.CantSendAppGossip = true
+	appSender.SendAppGossipF = func(context.Context, common.SendConfig, []byte) error {
+		return nil
 	}
 
-	// Create ChainContext
-	chainCtx := &linearblock.ChainContext{
-		Context: luxCtx,
-	}
-	genesisBytes, err := buildCustomGenesis(luxAssetID)
-	if err != nil {
-		return nil, ids.Empty, err
-	}
-
-	// Create a mock DBManager
-	dbManager := &mockDBManager{db: chainDB}
-	// Create a message channel
-	toEngine := make(chan linearblock.Message, 1)
-	// Create a mock AppSender
-	appSender := &mockAppSender{} // Use a mock instead of SenderTest
-
-	err = vm.Initialize(
+	err := vm.Initialize(
 		context.Background(),
-		chainCtx, // Pass proper ChainContext
-		dbManager,
-		genesisBytes,
-		nil, // upgradeBytes
-		nil, // configBytes
-		toEngine,
-		nil, // fxs
+		ctx,
+		chainDB,
+		genesistest.NewBytes(t, genesistest.Config{
+			NodeIDs: []ids.NodeID{
+				genesistest.DefaultNodeIDs[len(genesistest.DefaultNodeIDs)-1],
+			},
+			ValidatorEndTime: mockable.MaxTime,
+		}),
+		nil,
+		nil,
+		nil,
 		appSender,
 	)
 	if err != nil {
@@ -744,27 +678,20 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	// Create a net and store it in testSubnet1
 	// Note: following Banff activation, block acceptance will move
 	// chain time ahead
-	// Create a context with the LUX asset ID
-	factory := txstest.NewWalletFactoryWithAssets(context.Background(), nil, &vm.Config, vm.state, vm.luxAssetID)
-	builder, signer := factory.NewWallet(keys[len(keys)-1])
-	utx, err := builder.NewCreateNetTx(
-		&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},
-		},
-		walletcommon.WithChangeOwner(&secp256k1fx.OutputOwners{
-			Threshold: 1,
-			Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},
-		}),
+	wallet := newWallet(t, vm, walletConfig{})
+	owner := &secp256k1fx.OutputOwners{
+		Threshold: 1,
+		Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
+	}
+	testSubnet1, err = wallet.IssueCreateSubnetTx(
+		owner,
+		walletcommon.WithChangeOwner(owner),
 	)
 	if err != nil {
 		return nil, ids.Empty, err
 	}
-	testSubnet1, err = walletsigner.SignUnsigned(context.Background(), signer, utx)
-	if err != nil {
-		return nil, ids.Empty, err
-	}
-	vm.lock.Unlock()
+
+	vm.ctx.Lock.Unlock()
 	err = vm.issueTxFromRPC(testSubnet1)
 	vm.lock.Lock()
 	if err != nil {
@@ -786,131 +713,4 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	}
 
 	return vm, testSubnet1.ID(), nil
-}
-
-func buildCustomGenesis(luxAssetID ids.ID) ([]byte, error) {
-	genesisUTXOs := make([]api.UTXO, len(keys))
-	for i, key := range keys {
-		id := key.PublicKey().Address()
-		addr, err := address.FormatBech32(constants.UnitTestHRP, id.Bytes())
-		if err != nil {
-			return nil, err
-		}
-		genesisUTXOs[i] = api.UTXO{
-			Amount:  json.Uint64(defaultBalance),
-			Address: addr,
-		}
-	}
-
-	// we need at least a validator, otherwise BuildBlock would fail, since it
-	// won't find next staker to promote/evict from stakers set. Contrary to
-	// what happens with production code we push such validator at the end of
-	// times, so to avoid interference with our tests
-	nodeID := genesisNodeIDs[len(genesisNodeIDs)-1]
-	// Use the corresponding key address, not nodeID bytes
-	keyIndex := len(genesisNodeIDs) - 1
-	keyAddr := keys[keyIndex].PublicKey().Address()
-	addr, err := address.FormatBech32(constants.UnitTestHRP, keyAddr.Bytes())
-	if err != nil {
-		return nil, err
-	}
-
-	starTime := mockable.MaxTime.Add(-1 * defaultMinStakingDuration)
-	endTime := mockable.MaxTime
-	genesisValidator := api.GenesisPermissionlessValidator{
-		GenesisValidator: api.GenesisValidator{
-			StartTime: json.Uint64(starTime.Unix()),
-			EndTime:   json.Uint64(endTime.Unix()),
-			NodeID:    nodeID,
-		},
-		RewardOwner: &api.Owner{
-			Threshold: 1,
-			Addresses: []string{addr},
-		},
-		Staked: []api.UTXO{{
-			Amount:  json.Uint64(defaultWeight - 1000), // Reserve some balance for fees
-			Address: addr,
-		}},
-		DelegationFee: reward.PercentDenominator,
-	}
-
-	buildGenesisArgs := api.BuildGenesisArgs{
-		Encoding:      formatting.Hex,
-		NetworkID:     json.Uint32(constants.UnitTestID),
-		LuxAssetID:    luxAssetID,
-		UTXOs:         genesisUTXOs,
-		Validators:    []api.GenesisPermissionlessValidator{genesisValidator},
-		Chains:        nil,
-		Time:          json.Uint64(defaultGenesisTime.Unix()),
-		InitialSupply: json.Uint64(360 * units.MegaLux),
-	}
-
-	buildGenesisResponse := api.BuildGenesisReply{}
-	platformvmSS := api.StaticService{}
-	if err := platformvmSS.BuildGenesis(nil, &buildGenesisArgs, &buildGenesisResponse); err != nil {
-		return nil, err
-	}
-
-	genesisBytes, err := formatting.Decode(buildGenesisResponse.Encoding, buildGenesisResponse.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return genesisBytes, nil
-}
-
-// mockAppSender is a stub for app sender
-type mockAppSender struct{}
-
-func (m *mockAppSender) SendAppGossip(ctx context.Context, nodeIDs []ids.NodeID, msg []byte) error {
-	return nil
-}
-
-func (m *mockAppSender) SendAppGossipSpecific(context.Context, set.Set[ids.NodeID], []byte, int) error {
-	return nil
-}
-
-func (m *mockAppSender) SendCrossChainAppRequest(context.Context, ids.ID, uint32, []byte) error {
-	return nil
-}
-
-func (m *mockAppSender) SendCrossChainAppError(context.Context, ids.ID, uint32, int32, string) error {
-	return nil
-}
-
-func (m *mockAppSender) SendCrossChainAppResponse(context.Context, ids.ID, uint32, []byte) error {
-	return nil
-}
-
-func (m *mockAppSender) SendAppError(context.Context, ids.NodeID, uint32, int32, string) error {
-	return nil
-}
-
-func (m *mockAppSender) SendAppRequest(ctx context.Context, nodeIDs []ids.NodeID, requestID uint32, request []byte) error {
-	return nil
-}
-
-func (m *mockAppSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
-	return nil
-}
-
-// mockDBManager implements linearblock.DBManager
-type mockDBManager struct {
-	db database.Database
-}
-
-func (m *mockDBManager) Current() database.Database {
-	return m.db
-}
-
-func (m *mockDBManager) Database(ids.ID) database.Database {
-	return m.db
-}
-
-func (m *mockDBManager) Get(version uint64) (database.Database, error) {
-	return m.db, nil
-}
-
-func (m *mockDBManager) Close() error {
-	return nil
 }

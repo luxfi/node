@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package api
@@ -10,7 +10,6 @@ import (
 	"net/http"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
@@ -106,6 +105,7 @@ type Owner struct {
 // APIs.
 type PermissionlessValidator struct {
 	Staker
+	BaseL1Validator
 	// Deprecated: RewardOwner has been replaced by ValidationRewardOwner and
 	//             DelegationRewardOwner.
 	RewardOwner *Owner `json:"rewardOwner,omitempty"`
@@ -119,7 +119,7 @@ type PermissionlessValidator struct {
 	DelegationFee          json.Float32              `json:"delegationFee"`
 	ExactDelegationFee     *json.Uint32              `json:"exactDelegationFee,omitempty"`
 	Uptime                 *json.Float32             `json:"uptime,omitempty"`
-	Connected              bool                      `json:"connected"`
+	Connected              *bool                     `json:"connected,omitempty"`
 	Staked                 []UTXO                    `json:"staked,omitempty"`
 	Signer                 *signer.ProofOfPossession `json:"signer,omitempty"`
 
@@ -278,7 +278,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 			}
 			stake[i] = utxo
 
-			newWeight, err := math.Add64(weight, uint64(apiUTXO.Amount))
+			newWeight, err := math.Add(weight, uint64(apiUTXO.Amount))
 			if err != nil {
 				return errStakeOverflow
 			}

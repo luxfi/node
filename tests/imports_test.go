@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tests
@@ -16,11 +16,11 @@ func TestMustNotImport(t *testing.T) {
 	require := require.New(t)
 
 	mustNotImport := map[string][]string{
-		// Importing these packages configures geth globally. This must not be
-		// done to support both coreth and subnet-evm.
+		// Importing these packages configures the EVM plugin globally. This must not be
+		// done to support both geth (go-ethereum) and subnet-evm.
 		"tests/...": {
-			"github.com/luxfi/coreth/params",
-			"github.com/luxfi/coreth/plugin/evm/customtypes",
+			"github.com/luxfi/geth/params",
+			"github.com/luxfi/geth/plugin/evm/customtypes",
 		},
 	}
 	for packageName, forbiddenImports := range mustNotImport {

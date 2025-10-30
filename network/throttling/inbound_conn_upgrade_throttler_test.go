@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -25,7 +25,6 @@ func TestNoInboundConnUpgradeThrottler(t *testing.T) {
 
 	{
 		throttler := NewInboundConnUpgradeThrottler(
-			nil,
 			InboundConnUpgradeThrottlerConfig{
 				UpgradeCooldown:        0,
 				MaxRecentConnsUpgraded: 5,
@@ -38,7 +37,6 @@ func TestNoInboundConnUpgradeThrottler(t *testing.T) {
 	}
 	{
 		throttler := NewInboundConnUpgradeThrottler(
-			nil,
 			InboundConnUpgradeThrottlerConfig{
 				UpgradeCooldown:        time.Second,
 				MaxRecentConnsUpgraded: 0,
@@ -56,7 +54,6 @@ func TestInboundConnUpgradeThrottler(t *testing.T) {
 
 	cooldown := 5 * time.Second
 	throttlerIntf := NewInboundConnUpgradeThrottler(
-		nil,
 		InboundConnUpgradeThrottlerConfig{
 			UpgradeCooldown:        cooldown,
 			MaxRecentConnsUpgraded: 3,

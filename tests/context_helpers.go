@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tests
@@ -7,20 +7,16 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 // A long default timeout used to timeout failed operations but unlikely to induce
 // flaking due to unexpected resource contention.
 const DefaultTimeout = 2 * time.Minute
 
-// Default polling interval for Eventually
-const DefaultPollingInterval = 500 * time.Millisecond
-
 // Helper simplifying use of a timed context by canceling the context with the test context.
 func ContextWithTimeout(tc TestContext, duration time.Duration) context.Context {
-	parent := tc.GetDefaultContextParent()
-	ctx, cancel := context.WithTimeout(parent, duration)
+	ctx, cancel := context.WithTimeout(context.Background(), duration)
 	tc.DeferCleanup(cancel)
 	return ctx
 }

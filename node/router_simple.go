@@ -11,10 +11,10 @@ import (
 	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
+	metric "github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/trace"
@@ -123,7 +123,7 @@ func (r *SimpleRouter) HandleInbound(ctx context.Context, msg message.InboundMes
 		return
 	}
 
-	h, ok := r.chains[chainID]
+	h, ok := r.chains[ids.ID(chainID)]
 	r.lock.Unlock()
 
 	if !ok {
@@ -137,7 +137,7 @@ func (r *SimpleRouter) HandleInbound(ctx context.Context, msg message.InboundMes
 	// Convert InboundMessage to handler.Message and pass to handler
 	requestID, _ := message.GetRequestID(msg.Message())
 	handlerMsg := handler.Message{
-		NodeID:    msg.NodeID(),
+		NodeID:    ids.NodeID(msg.NodeID()),
 		RequestID: requestID,
 		Op:        handler.Op(msg.Op()),
 		Message:   []byte{}, // TODO: extract actual message bytes

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -16,9 +16,13 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/lru"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/buffer"
+	"github.com/luxfi/log"
 )
 
 const (
@@ -40,7 +44,6 @@ var (
 	_ Gossiper = (*PullGossiper[*testTx])(nil)
 	_ Gossiper = (*NoOpGossiper)(nil)
 
-	_ Set[*testTx] = (*EmptySet[*testTx])(nil)
 	_ Set[*testTx] = (*FullSet[*testTx])(nil)
 
 	ioTypeLabels   = []string{ioLabel, typeLabel}
@@ -75,8 +78,6 @@ var (
 	ErrInvalidDiscardedSize     = errors.New("discarded size cannot be negative")
 	ErrInvalidTargetGossipSize  = errors.New("target gossip size cannot be negative")
 	ErrInvalidRegossipFrequency = errors.New("re-gossip frequency cannot be negative")
-
-	errEmptySetCantAdd = errors.New("empty set can not add")
 )
 
 // Gossiper gossips Gossipables to other nodes
@@ -174,7 +175,7 @@ func (v ValidatorGossiper) Gossip(ctx context.Context) error {
 }
 
 func NewPullGossiper[T Gossipable](
-	log luxlog.Logger,
+	log log.Logger,
 	marshaller Marshaller[T],
 	set Set[T],
 	client *p2p.Client,
@@ -192,7 +193,7 @@ func NewPullGossiper[T Gossipable](
 }
 
 type PullGossiper[T Gossipable] struct {
-	log        luxlog.Logger
+	log        log.Logger
 	marshaller Marshaller[T]
 	set        Set[T]
 	client     *p2p.Client
@@ -313,7 +314,7 @@ func NewPushGossiper[T Gossipable](
 		tracking:   make(map[ids.ID]*tracking),
 		toGossip:   buffer.NewUnboundedDeque[T](0),
 		toRegossip: buffer.NewUnboundedDeque[T](0),
-		discarded:  &cache.LRU[ids.ID, struct{}]{Size: discardedSize},
+		discarded:  lru.NewCache[ids.ID, struct{}](discardedSize),
 	}, nil
 }
 
@@ -335,7 +336,7 @@ type PushGossiper[T Gossipable] struct {
 	addedTimeSum float64 // unix nanoseconds
 	toGossip     buffer.Deque[T]
 	toRegossip   buffer.Deque[T]
-	discarded    *cache.LRU[ids.ID, struct{}] // discarded attempts to avoid overgossiping transactions that are frequently dropped
+	discarded    *lru.Cache[ids.ID, struct{}] // discarded attempts to avoid overgossiping transactions that are frequently dropped
 }
 
 type BranchingFactor struct {
@@ -488,15 +489,19 @@ func (p *PushGossiper[T]) gossip(
 	validatorsByStake := p.validators.Top(ctx, gossipParams.StakePercentage)
 	topValidatorsMetric.Set(float64(len(validatorsByStake)))
 
-	// Combine validators from stake percentage with additional validators
-	allValidators := validatorsByStake
-
-	// and non-validators based on gossipParams.NonValidators count
+	// Convert []ids.NodeID to []interface{} for SendConfig
+	nodeIDsInterface := make([]interface{}, len(validatorsByStake))
+	for i, nodeID := range validatorsByStake {
+		nodeIDsInterface[i] = nodeID
+	}
 
 	return p.client.AppGossip(
 		ctx,
 		core.SendConfig{
-			Validators: len(allValidators),
+			NodeIDs:       nodeIDsInterface,
+			Validators:    gossipParams.Validators,
+			NonValidators: gossipParams.NonValidators,
+			Peers:         gossipParams.Peers,
 		},
 		msgBytes,
 	)
@@ -555,7 +560,7 @@ func (p *PushGossiper[_]) updateMetrics(nowUnixNano float64) {
 }
 
 // Every calls [Gossip] every [frequency] amount of time.
-func Every(ctx context.Context, log luxlog.Logger, gossiper Gossiper, frequency time.Duration) {
+func Every(ctx context.Context, log log.Logger, gossiper Gossiper, frequency time.Duration) {
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
 
@@ -586,26 +591,6 @@ type TestGossiper struct {
 
 func (t *TestGossiper) Gossip(ctx context.Context) error {
 	return t.GossipF(ctx)
-}
-
-type EmptySet[T Gossipable] struct{}
-
-func (EmptySet[_]) Gossip(context.Context) error {
-	return nil
-}
-
-func (EmptySet[T]) Add(T) error {
-	return errEmptySetCantAdd
-}
-
-func (EmptySet[T]) Has(ids.ID) bool {
-	return false
-}
-
-func (EmptySet[T]) Iterate(func(gossipable T) bool) {}
-
-func (EmptySet[_]) GetFilter() ([]byte, []byte) {
-	return bloom.EmptyFilter.Marshal(), ids.Empty[:]
 }
 
 type FullSet[T Gossipable] struct{}

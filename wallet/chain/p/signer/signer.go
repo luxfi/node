@@ -1,12 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package signer
 
 import (
-	stdcontext "context"
-
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -29,7 +28,7 @@ type Signer interface {
 
 type Backend interface {
 	GetUTXO(ctx stdcontext.Context, chainID, utxoID ids.ID) (*lux.UTXO, error)
-	GetSubnetOwner(ctx stdcontext.Context, netID ids.ID) (fx.Owner, error)
+	GetOwner(ctx stdcontext.Context, ownerID ids.ID) (fx.Owner, error)
 }
 
 type txSigner struct {

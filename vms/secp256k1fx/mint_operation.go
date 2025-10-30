@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
 	"errors"
 
 	"github.com/luxfi/node/vms/components/verify"
@@ -18,9 +18,14 @@ type MintOperation struct {
 	TransferOutput TransferOutput `serialize:"true" json:"transferOutput"`
 }
 
-func (op *MintOperation) InitCtx(ctx context.Context) {
+func (op *MintOperation) InitCtx(ctx *consensusctx.Context) {
 	op.MintOutput.OutputOwners.InitCtx(ctx)
 	op.TransferOutput.OutputOwners.InitCtx(ctx)
+}
+
+func (op *MintOperation) InitializeContext(ctx *consensusctx.Context) error {
+	op.InitCtx(ctx)
+	return nil
 }
 
 func (op *MintOperation) Cost() (uint64, error) {
@@ -37,10 +42,9 @@ func (op *MintOperation) InitializeContext(ctx context.Context) error {
 }
 
 func (op *MintOperation) Verify() error {
-	switch {
-	case op == nil:
+	if op == nil {
 		return errNilMintOperation
-	default:
-		return verify.All(&op.MintInput, &op.MintOutput, &op.TransferOutput)
 	}
+
+	return verify.All(&op.MintInput, &op.MintOutput, &op.TransferOutput)
 }

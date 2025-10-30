@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
@@ -9,11 +9,13 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/consensus"
+	"go.uber.org/zap"
+
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
@@ -77,17 +79,16 @@ func newIndex(
 	}
 
 	// Get next accepted index from db
-	nextAcceptedIndex, err := database.GetUInt64(i.vDB, nextAcceptedIndexKey)
-	if err == database.ErrNotFound {
-		// Couldn't find it in the database. Must not have accepted any containers in previous runs.
-		i.log.Info("created new index",
-			"nextAcceptedIndex", i.nextAcceptedIndex,
-		)
-		return i, nil
-	}
+	nextAcceptedIndex, err := database.WithDefault(
+		database.GetUInt64,
+		i.vDB,
+		nextAcceptedIndexKey,
+		0,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get next accepted index from database: %w", err)
 	}
+
 	i.nextAcceptedIndex = nextAcceptedIndex
 	i.log.Info("created new index",
 		"nextAcceptedIndex", i.nextAcceptedIndex,

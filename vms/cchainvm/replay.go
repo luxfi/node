@@ -237,10 +237,16 @@ type UnifiedReplayer struct {
 	vmConfig     vm.Config
 	trieDB       *triedb.Database
 	snapshots    *snapshot.Tree
+	useExternalTrieDB bool  // If true, don't close trieDB on cleanup
 }
 
-// NewUnifiedReplayer creates a new unified database replayer
+// NewUnifiedReplayer creates a new unified database replayer (backward compatibility)
 func NewUnifiedReplayer(config *UnifiedReplayConfig, targetDB ethdb.Database, blockchain *core.BlockChain) (*UnifiedReplayer, error) {
+	return NewUnifiedReplayerWithTrieDB(config, targetDB, blockchain, nil, nil)
+}
+
+// NewUnifiedReplayerWithTrieDB creates a new unified database replayer with optional external trie database
+func NewUnifiedReplayerWithTrieDB(config *UnifiedReplayConfig, targetDB ethdb.Database, blockchain *core.BlockChain, trieDB *triedb.Database, stateCache state.Database) (*UnifiedReplayer, error) {
 	log.Printf("NewUnifiedReplayer: Starting initialization for replay to height %d", config.TargetHeight)
 
 	if config.SourcePath == "" {
@@ -325,13 +331,33 @@ func NewUnifiedReplayer(config *UnifiedReplayConfig, targetDB ethdb.Database, bl
 	}
 
 	// Initialize trie database and state cache
-	trieDB := triedb.NewDatabase(targetDB, nil)
-	snapshots, _ := snapshot.New(snapshot.Config{
-		CacheSize:  256,
-		Recovery:   true,
-		NoBuild:    false,
-		AsyncBuild: true,
-	}, targetDB, trieDB, common.Hash{})
+	// CRITICAL FIX: Use blockchain's existing trie database if provided
+	var useExternalTrieDB bool
+	if trieDB == nil {
+		// Create our own trie database if not provided
+		trieDB = triedb.NewDatabase(targetDB, nil)
+		useExternalTrieDB = false
+		log.Printf("Creating new trie database for replay")
+	} else {
+		// Use the provided trie database from the blockchain
+		useExternalTrieDB = true
+		log.Printf("Using blockchain's existing trie database for replay")
+	}
+
+	// Create snapshots if not provided with state cache
+	var snapshots *snapshot.Tree
+	if stateCache == nil {
+		snapshots, _ = snapshot.New(snapshot.Config{
+			CacheSize:  256,
+			Recovery:   true,
+			NoBuild:    false,
+			AsyncBuild: true,
+		}, targetDB, trieDB, common.Hash{})
+		stateCache = state.NewDatabase(trieDB, snapshots)
+		log.Printf("Created new state cache for replay")
+	} else {
+		log.Printf("Using blockchain's existing state cache for replay")
+	}
 
 	replayer := &UnifiedReplayer{
 		config:      config,
@@ -342,7 +368,8 @@ func NewUnifiedReplayer(config *UnifiedReplayConfig, targetDB ethdb.Database, bl
 		vmConfig:    vm.Config{},
 		trieDB:      trieDB,
 		snapshots:   snapshots,
-		stateCache:  state.NewDatabase(trieDB, snapshots),
+		stateCache:  stateCache,
+		useExternalTrieDB: useExternalTrieDB,
 	}
 
 	// Initialize progress tracker
@@ -586,6 +613,16 @@ func (r *UnifiedReplayer) replayBlock(blockNum uint64) error {
 	root, err := r.stateDB.Commit(block.NumberU64(), true, true)
 	if err != nil {
 		return fmt.Errorf("failed to commit state for block %d: %v", blockNum, err)
+	}
+
+	// CRITICAL FIX: When using external trie database, force a flush to disk
+	// This ensures state changes are persisted immediately
+	if r.useExternalTrieDB && r.trieDB != nil {
+		// The blockchain's trie database needs the commits to be written
+		// Force the trie database to persist the state changes
+		if err := r.trieDB.Commit(root, false); err != nil {
+			log.Printf("WARNING: Failed to commit trie database at block %d: %v", blockNum, err)
+		}
 	}
 
 	// Prepare for next block

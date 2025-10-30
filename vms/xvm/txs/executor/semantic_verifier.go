@@ -1,11 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
 
 import (
-	"context"
 	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/luxfi/ids"
@@ -36,19 +36,19 @@ func (v *SemanticVerifier) BaseTx(tx *txs.BaseTx) error {
 		// syntactic verification, which happens before semantic verification.
 		cred := v.Tx.Creds[i].Credential
 		if err := v.verifyTransfer(tx, in, cred); err != nil {
-			return err
+			return fmt.Errorf("failed to verify transfer: %w", err)
 		}
 	}
 
 	for _, out := range tx.Outs {
 		fxIndex, err := v.getFx(out.Out)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get fx: %w", err)
 		}
 
 		assetID := out.AssetID()
 		if err := v.verifyFxUsage(fxIndex, assetID); err != nil {
-			return err
+			return fmt.Errorf("failed to verify fx usage: %w", err)
 		}
 	}
 
@@ -89,7 +89,7 @@ func (v *SemanticVerifier) ImportTx(tx *txs.ImportTx) error {
 		return nil
 	}
 
-	if err := verify.SameSubnet(context.TODO(), v.Ctx, tx.SourceChain); err != nil {
+	if err := verify.SameSubnet(v.Ctx, v.ToChainContext(), tx.SourceChain); err != nil {
 		return err
 	}
 
@@ -127,7 +127,7 @@ func (v *SemanticVerifier) ExportTx(tx *txs.ExportTx) error {
 	}
 
 	if v.Bootstrapped {
-		if err := verify.SameSubnet(context.TODO(), v.Ctx, tx.DestinationChain); err != nil {
+		if err := verify.SameSubnet(v.Ctx, v.ToChainContext(), tx.DestinationChain); err != nil {
 			return err
 		}
 	}
@@ -153,7 +153,7 @@ func (v *SemanticVerifier) verifyTransfer(
 ) error {
 	utxo, err := v.State.GetUTXO(in.UTXOID.InputID())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get utxo %s: %w", in.UTXOID.InputID(), err)
 	}
 	return v.verifyTransferOfUTXO(tx, in, cred, utxo)
 }

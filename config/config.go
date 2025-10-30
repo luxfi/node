@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -26,23 +26,34 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/config/node"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/nets"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/node"
+	"github.com/luxfi/consensus/networking/benchlist"
+	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/trace"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/ips"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/storage"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/txs/fee"
+	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/proposervm"
 	"github.com/luxfi/trace"
 )
@@ -58,15 +69,12 @@ const (
 	chainConfigFileName  = "config"
 	chainUpgradeFileName = "upgrade"
 	subnetConfigFileExt  = ".json"
-
-	keystoreDeprecationMsg = "keystore API is deprecated"
 )
 
 var (
 	// Deprecated key --> deprecation message (i.e. which key replaces it)
-	deprecatedKeys = map[string]string{
-		KeystoreAPIEnabledKey: keystoreDeprecationMsg,
-	}
+	// TODO: deprecate "BootstrapIDsKey" and "BootstrapIPsKey"
+	deprecatedKeys = map[string]string{}
 
 	errConflictingLPOpinion                   = errors.New("supporting and objecting to the same LP")
 	errConflictingImplicitLPOpinion           = errors.New("objecting to enabled LP")
@@ -84,28 +92,19 @@ var (
 	errStakingKeyContentUnset                 = fmt.Errorf("%s key not set but %s set", StakingTLSKeyContentKey, StakingCertContentKey)
 	errStakingCertContentUnset                = fmt.Errorf("%s key set but %s not set", StakingTLSKeyContentKey, StakingCertContentKey)
 	errMissingStakingSigningKeyFile           = errors.New("missing staking signing key file")
-	errTracingEndpointEmpty                   = fmt.Errorf("%s cannot be empty", TracingEndpointKey)
 	errPluginDirNotADirectory                 = errors.New("plugin dir is not a directory")
 	errCannotReadDirectory                    = errors.New("cannot read directory")
 	errUnmarshalling                          = errors.New("unmarshalling failed")
 	errFileDoesNotExist                       = errors.New("file does not exist")
 )
 
-func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
-	// Check if dev mode is enabled
-	if v.GetBool(DevModeKey) {
-		// Return dev mode optimized parameters
-		return subnets.GetPOAConsensusParameters()
-	}
-
-	// Standard consensus parameters
-	p := consensusconfig.Parameters{
+func getConsensusConfig(v *viper.Viper) consensus.Parameters {
+	p := consensus.Parameters{
 		K:                     v.GetInt(ConsensusSampleSizeKey),
-		Alpha:                 0.8, // Required for validation
 		AlphaPreference:       v.GetInt(ConsensusPreferenceQuorumSizeKey),
 		AlphaConfidence:       v.GetInt(ConsensusConfidenceQuorumSizeKey),
-		Beta:                  uint32(v.GetInt(ConsensusCommitThresholdKey)),
-		ConcurrentPolls:       v.GetInt(ConsensusConcurrentRepollsKey),
+		Beta:                  v.GetInt(ConsensusCommitThresholdKey),
+		ConcurrentRepolls:     v.GetInt(ConsensusConcurrentRepollsKey),
 		OptimalProcessing:     v.GetInt(ConsensusOptimalProcessingKey),
 		MaxOutstandingItems:   v.GetInt(ConsensusMaxProcessingKey),
 		MaxItemProcessingTime: v.GetDuration(ConsensusMaxTimeProcessingKey),
@@ -117,31 +116,31 @@ func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
 	return p
 }
 
-// func getLoggingConfig(v *viper.Viper) (log.Config, error) {
-// 	loggingConfig := log.Config{}
-// 	loggingConfig.Directory = GetExpandedArg(v, LogsDirKey)
-// 	var err error
-// 	loggingConfig.LogLevel, err = log.ToLevel(v.GetString(LogLevelKey))
-// 	if err != nil {
-// 		return loggingConfig, err
-// 	}
-// 	logDisplayLevel := v.GetString(LogLevelKey)
-// 	if v.IsSet(LogDisplayLevelKey) {
-// 		logDisplayLevel = v.GetString(LogDisplayLevelKey)
-// 	}
-// 	loggingConfig.DisplayLevel, err = log.ToLevel(logDisplayLevel)
-// 	if err != nil {
-// 		return loggingConfig, err
-// 	}
-// 	loggingConfig.LogFormat, err = log.ToFormat(v.GetString(LogFormatKey), os.Stdout.Fd())
-// 	loggingConfig.DisableWriterDisplaying = v.GetBool(LogDisableDisplayPluginLogsKey)
-// 	loggingConfig.MaxSize = int(v.GetUint(LogRotaterMaxSizeKey))
-// 	loggingConfig.MaxFiles = int(v.GetUint(LogRotaterMaxFilesKey))
-// 	loggingConfig.MaxAge = int(v.GetUint(LogRotaterMaxAgeKey))
-// 	loggingConfig.Compress = v.GetBool(LogRotaterCompressEnabledKey)
-//
-// 	return loggingConfig, err
-// }
+func getLoggingConfig(v *viper.Viper) (logging.Config, error) {
+	loggingConfig := logging.Config{}
+	loggingConfig.Directory = getExpandedArg(v, LogsDirKey)
+	var err error
+	loggingConfig.LogLevel, err = logging.ToLevel(v.GetString(LogLevelKey))
+	if err != nil {
+		return loggingConfig, err
+	}
+	logDisplayLevel := v.GetString(LogLevelKey)
+	if v.IsSet(LogDisplayLevelKey) {
+		logDisplayLevel = v.GetString(LogDisplayLevelKey)
+	}
+	loggingConfig.DisplayLevel, err = logging.ToLevel(logDisplayLevel)
+	if err != nil {
+		return loggingConfig, err
+	}
+	loggingConfig.LogFormat, err = logging.ToFormat(v.GetString(LogFormatKey), os.Stdout.Fd())
+	loggingConfig.DisableWriterDisplaying = v.GetBool(LogDisableDisplayPluginLogsKey)
+	loggingConfig.MaxSize = int(v.GetUint(LogRotaterMaxSizeKey))
+	loggingConfig.MaxFiles = int(v.GetUint(LogRotaterMaxFilesKey))
+	loggingConfig.MaxAge = int(v.GetUint(LogRotaterMaxAgeKey))
+	loggingConfig.Compress = v.GetBool(LogRotaterCompressEnabledKey)
+
+	return loggingConfig, err
+}
 
 func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 	var (
@@ -157,7 +156,7 @@ func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 			return node.HTTPConfig{}, fmt.Errorf("unable to decode base64 content: %w", err)
 		}
 	case v.IsSet(HTTPSKeyFileKey):
-		httpsKeyFilepath := GetExpandedArg(v, HTTPSKeyFileKey)
+		httpsKeyFilepath := getExpandedArg(v, HTTPSKeyFileKey)
 		httpsKey, err = os.ReadFile(filepath.Clean(httpsKeyFilepath))
 		if err != nil {
 			return node.HTTPConfig{}, err
@@ -172,7 +171,7 @@ func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 			return node.HTTPConfig{}, fmt.Errorf("unable to decode base64 content: %w", err)
 		}
 	case v.IsSet(HTTPSCertFileKey):
-		httpsCertFilepath := GetExpandedArg(v, HTTPSCertFileKey)
+		httpsCertFilepath := getExpandedArg(v, HTTPSCertFileKey)
 		httpsCert, err = os.ReadFile(filepath.Clean(httpsCertFilepath))
 		if err != nil {
 			return node.HTTPConfig{}, err
@@ -191,11 +190,10 @@ func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 				IndexAPIEnabled:      v.GetBool(IndexEnabledKey),
 				IndexAllowIncomplete: v.GetBool(IndexAllowIncompleteKey),
 			},
-			AdminAPIEnabled:    v.GetBool(AdminAPIEnabledKey),
-			InfoAPIEnabled:     v.GetBool(InfoAPIEnabledKey),
-			KeystoreAPIEnabled: v.GetBool(KeystoreAPIEnabledKey),
-			MetricsAPIEnabled:  v.GetBool(MetricsAPIEnabledKey),
-			HealthAPIEnabled:   v.GetBool(HealthAPIEnabledKey),
+			AdminAPIEnabled:   v.GetBool(AdminAPIEnabledKey),
+			InfoAPIEnabled:    v.GetBool(InfoAPIEnabledKey),
+			MetricsAPIEnabled: v.GetBool(MetricsAPIEnabledKey),
+			HealthAPIEnabled:  v.GetBool(HealthAPIEnabledKey),
 		},
 		HTTPHost:           v.GetString(HTTPHostKey),
 		HTTPPort:           uint16(v.GetUint(HTTPPortKey)),
@@ -341,13 +339,14 @@ func getNetworkConfig(
 		},
 
 		HealthConfig: network.HealthConfig{
-			Enabled:                      sybilProtectionEnabled,
-			MaxTimeSinceMsgSent:          v.GetDuration(NetworkHealthMaxTimeSinceMsgSentKey),
-			MaxTimeSinceMsgReceived:      v.GetDuration(NetworkHealthMaxTimeSinceMsgReceivedKey),
-			MaxPortionSendQueueBytesFull: v.GetFloat64(NetworkHealthMaxPortionSendQueueFillKey),
-			MinConnectedPeers:            v.GetUint(NetworkHealthMinPeersKey),
-			MaxSendFailRate:              v.GetFloat64(NetworkHealthMaxSendFailRateKey),
-			SendFailRateHalflife:         halflife,
+			Enabled:                                 sybilProtectionEnabled,
+			MaxTimeSinceMsgSent:                     v.GetDuration(NetworkHealthMaxTimeSinceMsgSentKey),
+			MaxTimeSinceMsgReceived:                 v.GetDuration(NetworkHealthMaxTimeSinceMsgReceivedKey),
+			MaxPortionSendQueueBytesFull:            v.GetFloat64(NetworkHealthMaxPortionSendQueueFillKey),
+			MinConnectedPeers:                       v.GetUint(NetworkHealthMinPeersKey),
+			MaxSendFailRate:                         v.GetFloat64(NetworkHealthMaxSendFailRateKey),
+			SendFailRateHalflife:                    halflife,
+			NoIngressValidatorConnectionGracePeriod: v.GetDuration(NetworkNoIngressValidatorConnectionsGracePeriodKey),
 		},
 
 		ProxyEnabled:           v.GetBool(NetworkTCPProxyEnabledKey),
@@ -430,7 +429,7 @@ func getNetworkConfig(
 	return config, nil
 }
 
-func getBenchlistConfig(v *viper.Viper, consensusParameters PrismParameters) (BenchlistConfig, error) {
+func getBenchlistConfig(v *viper.Viper, consensusParameters consensus.Parameters) (benchlist.Config, error) {
 	// AlphaConfidence is used here to ensure that benching can't cause a
 	// liveness failure. If AlphaPreference were used, the benchlist may grow to
 	// a point that committing would be extremely unlikely to happen.
@@ -573,7 +572,7 @@ func getIPConfig(v *viper.Viper) (node.IPConfig, error) {
 
 func getProfilerConfig(v *viper.Viper) (profiler.Config, error) {
 	config := profiler.Config{
-		Dir:         GetExpandedArg(v, ProfileDirKey),
+		Dir:         getExpandedArg(v, ProfileDirKey),
 		Enabled:     v.GetBool(ProfileContinuousEnabledKey),
 		Freq:        v.GetDuration(ProfileContinuousFreqKey),
 		MaxNumFiles: v.GetInt(ProfileContinuousMaxFilesKey),
@@ -607,8 +606,8 @@ func getStakingTLSCertFromFlag(v *viper.Viper) (tls.Certificate, error) {
 
 func getStakingTLSCertFromFile(v *viper.Viper) (tls.Certificate, error) {
 	// Parse the staking key/cert paths and expand environment variables
-	stakingKeyPath := GetExpandedArg(v, StakingTLSKeyPathKey)
-	stakingCertPath := GetExpandedArg(v, StakingCertPathKey)
+	stakingKeyPath := getExpandedArg(v, StakingTLSKeyPathKey)
+	stakingCertPath := getExpandedArg(v, StakingCertPathKey)
 
 	// If staking key/cert locations are specified but not found, error
 	if v.IsSet(StakingTLSKeyPathKey) || v.IsSet(StakingCertPathKey) {
@@ -654,9 +653,9 @@ func getStakingTLSCert(v *viper.Viper) (tls.Certificate, error) {
 	}
 }
 
-func getStakingSigner(v *viper.Viper) (*bls.SecretKey, error) {
+func getStakingSigner(v *viper.Viper) (bls.Signer, error) {
 	if v.GetBool(StakingEphemeralSignerEnabledKey) {
-		key, err := bls.NewSecretKey()
+		key, err := localsigner.New()
 		if err != nil {
 			return nil, fmt.Errorf("couldn't generate ephemeral signing key: %w", err)
 		}
@@ -669,21 +668,21 @@ func getStakingSigner(v *viper.Viper) (*bls.SecretKey, error) {
 		if err != nil {
 			return nil, fmt.Errorf("unable to decode base64 content: %w", err)
 		}
-		key, err := bls.SecretKeyFromBytes(signerKeyContent)
+		key, err := localsigner.FromBytes(signerKeyContent)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't parse signing key: %w", err)
 		}
 		return key, nil
 	}
 
-	signingKeyPath := GetExpandedArg(v, StakingSignerKeyPathKey)
+	signingKeyPath := getExpandedArg(v, StakingSignerKeyPathKey)
 	_, err := os.Stat(signingKeyPath)
 	if !errors.Is(err, fs.ErrNotExist) {
 		signingKeyBytes, err := os.ReadFile(signingKeyPath)
 		if err != nil {
 			return nil, err
 		}
-		key, err := bls.SecretKeyFromBytes(signingKeyBytes)
+		key, err := localsigner.FromBytes(signingKeyBytes)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't parse signing key: %w", err)
 		}
@@ -694,7 +693,7 @@ func getStakingSigner(v *viper.Viper) (*bls.SecretKey, error) {
 		return nil, errMissingStakingSigningKeyFile
 	}
 
-	key, err := bls.NewSecretKey()
+	key, err := localsigner.New()
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate new signing key: %w", err)
 	}
@@ -703,7 +702,7 @@ func getStakingSigner(v *viper.Viper) (*bls.SecretKey, error) {
 		return nil, fmt.Errorf("couldn't create path for signing key at %s: %w", signingKeyPath, err)
 	}
 
-	keyBytes := bls.SecretKeyToBytes(key)
+	keyBytes := key.ToBytes()
 	if err := os.WriteFile(signingKeyPath, keyBytes, perms.ReadWrite); err != nil {
 		return nil, fmt.Errorf("couldn't write new signing key to %s: %w", signingKeyPath, err)
 	}
@@ -718,9 +717,9 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 		SybilProtectionEnabled:        v.GetBool(SybilProtectionEnabledKey),
 		SybilProtectionDisabledWeight: v.GetUint64(SybilProtectionDisabledWeightKey),
 		PartialSyncPrimaryNetwork:     v.GetBool(PartialSyncPrimaryNetworkKey),
-		StakingKeyPath:                GetExpandedArg(v, StakingTLSKeyPathKey),
-		StakingCertPath:               GetExpandedArg(v, StakingCertPathKey),
-		StakingSignerPath:             GetExpandedArg(v, StakingSignerKeyPathKey),
+		StakingKeyPath:                getExpandedArg(v, StakingTLSKeyPathKey),
+		StakingCertPath:               getExpandedArg(v, StakingCertPathKey),
+		StakingSignerPath:             getExpandedArg(v, StakingSignerKeyPathKey),
 	}
 	if !config.SybilProtectionEnabled && config.SybilProtectionDisabledWeight == 0 {
 		return node.StakingConfig{}, errSybilProtectionDisabledStakerWeights
@@ -775,21 +774,71 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 	return config, nil
 }
 
-func getTxFeeConfig(v *viper.Viper, networkID uint32) fee.StaticConfig {
-	if networkID != constants.MainnetID && networkID != constants.TestnetID {
-		return fee.StaticConfig{
-			TxFee:                         v.GetUint64(TxFeeKey),
-			CreateAssetTxFee:              v.GetUint64(CreateAssetTxFeeKey),
-			CreateNetTxFee:                v.GetUint64(CreateNetTxFeeKey),
-			TransformNetTxFee:             v.GetUint64(TransformNetTxFeeKey),
-			CreateBlockchainTxFee:         v.GetUint64(CreateBlockchainTxFeeKey),
-			AddPrimaryNetworkValidatorFee: v.GetUint64(AddPrimaryNetworkValidatorFeeKey),
-			AddPrimaryNetworkDelegatorFee: v.GetUint64(AddPrimaryNetworkDelegatorFeeKey),
-			AddNetValidatorFee:            v.GetUint64(AddNetValidatorFeeKey),
-			AddNetDelegatorFee:            v.GetUint64(AddNetDelegatorFeeKey),
+func getTxFeeConfig(v *viper.Viper, networkID uint32) genesis.TxFeeConfig {
+	if networkID != constants.MainnetID && networkID != constants.FujiID {
+		return genesis.TxFeeConfig{
+			CreateAssetTxFee: v.GetUint64(CreateAssetTxFeeKey),
+			TxFee:            v.GetUint64(TxFeeKey),
+			DynamicFeeConfig: gas.Config{
+				Weights: gas.Dimensions{
+					gas.Bandwidth: v.GetUint64(DynamicFeesBandwidthWeightKey),
+					gas.DBRead:    v.GetUint64(DynamicFeesDBReadWeightKey),
+					gas.DBWrite:   v.GetUint64(DynamicFeesDBWriteWeightKey),
+					gas.Compute:   v.GetUint64(DynamicFeesComputeWeightKey),
+				},
+				MaxCapacity:              gas.Gas(v.GetUint64(DynamicFeesMaxGasCapacityKey)),
+				MaxPerSecond:             gas.Gas(v.GetUint64(DynamicFeesMaxGasPerSecondKey)),
+				TargetPerSecond:          gas.Gas(v.GetUint64(DynamicFeesTargetGasPerSecondKey)),
+				MinPrice:                 gas.Price(v.GetUint64(DynamicFeesMinGasPriceKey)),
+				ExcessConversionConstant: gas.Gas(v.GetUint64(DynamicFeesExcessConversionConstantKey)),
+			},
+			ValidatorFeeConfig: fee.Config{
+				Capacity:                 gas.Gas(v.GetUint64(ValidatorFeesCapacityKey)),
+				Target:                   gas.Gas(v.GetUint64(ValidatorFeesTargetKey)),
+				MinPrice:                 gas.Price(v.GetUint64(ValidatorFeesMinPriceKey)),
+				ExcessConversionConstant: gas.Gas(v.GetUint64(ValidatorFeesExcessConversionConstantKey)),
+			},
 		}
 	}
 	return genesis.GetTxFeeConfig(networkID)
+}
+
+func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) {
+	if !v.IsSet(UpgradeFileKey) && !v.IsSet(UpgradeFileContentKey) {
+		return upgrade.GetConfig(networkID), nil
+	}
+
+	switch networkID {
+	case constants.MainnetID, constants.TestnetID, constants.LocalID:
+		return upgrade.Config{}, fmt.Errorf("cannot configure upgrades for networkID: %s",
+			constants.NetworkName(networkID),
+		)
+	}
+
+	var (
+		upgradeBytes []byte
+		err          error
+	)
+	switch {
+	case v.IsSet(UpgradeFileKey):
+		upgradeFileName := getExpandedArg(v, UpgradeFileKey)
+		upgradeBytes, err = os.ReadFile(upgradeFileName)
+		if err != nil {
+			return upgrade.Config{}, fmt.Errorf("unable to read upgrade file: %w", err)
+		}
+	case v.IsSet(UpgradeFileContentKey):
+		upgradeContent := v.GetString(UpgradeFileContentKey)
+		upgradeBytes, err = base64.StdEncoding.DecodeString(upgradeContent)
+		if err != nil {
+			return upgrade.Config{}, fmt.Errorf("unable to decode upgrade base64 content: %w", err)
+		}
+	}
+
+	var upgradeConfig upgrade.Config
+	if err := json.Unmarshal(upgradeBytes, &upgradeConfig); err != nil {
+		return upgrade.Config{}, fmt.Errorf("unable to unmarshal upgrade bytes: %w", err)
+	}
+	return upgradeConfig, nil
 }
 
 func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.StakingConfig) ([]byte, ids.ID, error) {
@@ -817,7 +866,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.Stakin
 
 	// if content is not specified go for the file
 	if v.IsSet(GenesisFileKey) {
-		genesisFileName := GetExpandedArg(v, GenesisFileKey)
+		genesisFileName := getExpandedArg(v, GenesisFileKey)
 		return genesis.FromFile(networkID, genesisFileName, stakingCfg)
 	}
 
@@ -862,7 +911,7 @@ func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, e
 			return node.DatabaseConfig{}, fmt.Errorf("unable to decode base64 content: %w", err)
 		}
 	} else if v.IsSet(DBConfigFileKey) {
-		path := GetExpandedArg(v, DBConfigFileKey)
+		path := getExpandedArg(v, DBConfigFileKey)
 		configBytes, err = os.ReadFile(path)
 		if err != nil {
 			return node.DatabaseConfig{}, err
@@ -873,7 +922,7 @@ func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, e
 		Name:     v.GetString(DBTypeKey),
 		ReadOnly: v.GetBool(DBReadOnlyKey),
 		Path: filepath.Join(
-			GetExpandedArg(v, DBPathKey),
+			getExpandedArg(v, DBPathKey),
 			constants.NetworkName(networkID),
 		),
 		Config: configBytes,
@@ -890,7 +939,7 @@ func getAliases(v *viper.Viper, name string, contentKey string, fileKey string) 
 			return nil, fmt.Errorf("unable to decode base64 content for %s: %w", name, err)
 		}
 	} else {
-		aliasFilePath := filepath.Clean(GetExpandedArg(v, fileKey))
+		aliasFilePath := filepath.Clean(getExpandedArg(v, fileKey))
 		exists, err := storage.FileExists(aliasFilePath)
 		if err != nil {
 			return nil, err
@@ -926,7 +975,7 @@ func getChainAliases(v *viper.Viper) (map[ids.ID][]string, error) {
 
 // getPathFromDirKey reads flag value from viper instance and then checks the folder existence
 func getPathFromDirKey(v *viper.Viper, configKey string) (string, error) {
-	configDir := GetExpandedArg(v, configKey)
+	configDir := getExpandedArg(v, configKey)
 	cleanPath := filepath.Clean(configDir)
 	ok, err := storage.FolderExists(cleanPath)
 	if err != nil {
@@ -1038,10 +1087,10 @@ func getSubnetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]subn
 	}
 
 	res := make(map[ids.ID]subnets.Config)
-	for _, netID := range netIDs {
-		if rawSubnetConfigBytes, ok := subnetConfigs[netID]; ok {
-			// Start with defaults, then unmarshal on top
-			config := getDefaultSubnetConfig(v)
+	for _, subnetID := range subnetIDs {
+		config := getDefaultSubnetConfig(v)
+
+		if rawSubnetConfigBytes, ok := subnetConfigs[subnetID]; ok {
 			if err := json.Unmarshal(rawSubnetConfigBytes, &config); err != nil {
 				return nil, err
 			}
@@ -1055,33 +1104,38 @@ func getSubnetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]subn
 			if err := config.Valid(); err != nil {
 				return nil, err
 			}
-
-			res[netID] = config
 		}
+
+		res[subnetID] = config
 	}
 	return res, nil
 }
 
-// getSubnetConfigs reads SubnetConfigs to node config map
-func getSubnetConfigsFromDir(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]subnets.Config, error) {
+// getSubnetConfigsFromDir reads SubnetConfigs to node config map
+func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]subnets.Config, error) {
 	subnetConfigPath, err := getPathFromDirKey(v, SubnetConfigDirKey)
 	if err != nil {
 		return nil, err
 	}
 
 	subnetConfigs := make(map[ids.ID]subnets.Config)
-	if len(subnetConfigPath) == 0 {
-		// net config path does not exist but not explicitly specified, so ignore it
-		return subnetConfigs, nil
-	}
 
-	// reads net config files from a path and given netIDs and returns a map.
-	for _, netID := range netIDs {
-		filePath := filepath.Join(subnetConfigPath, netID.String()+subnetConfigFileExt)
+	// reads subnet config files from a path and given subnetIDs and returns a map.
+	for _, subnetID := range subnetIDs {
+		// Ensure default configuration
+		config := getDefaultSubnetConfig(v)
+		subnetConfigs[subnetID] = config
+
+		if len(subnetConfigPath) == 0 {
+			// subnet config path does not exist but not explicitly specified, so ignore it
+			continue
+		}
+
+		filePath := filepath.Join(subnetConfigPath, subnetID.String()+subnetConfigFileExt)
 		fileInfo, err := os.Stat(filePath)
 		switch {
 		case errors.Is(err, os.ErrNotExist):
-			// this net config does not exist, move to the next one
+			// this subnet config does not exist, the default configuration will be used
 			continue
 		case err != nil:
 			return nil, err
@@ -1095,8 +1149,7 @@ func getSubnetConfigsFromDir(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]subnet
 			return nil, err
 		}
 
-		// Start with defaults, then unmarshal on top
-		config := getDefaultSubnetConfig(v)
+		// Update the default config with the values from the file
 		if err := json.Unmarshal(file, &config); err != nil {
 			return nil, fmt.Errorf("%w: %w", errUnmarshalling, err)
 		}
@@ -1122,7 +1175,7 @@ func getDefaultSubnetConfig(v *viper.Viper) subnets.Config {
 	config := subnets.Config{
 		ConsensusParameters:         getConsensusConfig(v),
 		ValidatorOnly:               false,
-		ProposerMinBlockDelay:       proposervm.DefaultMinBlockDelay,
+		ProposerMinBlockDelay:       v.GetDuration(ProposerVMMinBlockDelayKey),
 		ProposerNumHistoricalBlocks: proposervm.DefaultNumHistoricalBlocks,
 		POAEnabled:                  v.GetBool(DevModeKey) || v.GetBool(POAModeEnabledKey),
 		POASingleNodeMode:           v.GetBool(DevModeKey) || v.GetBool(POASingleNodeModeKey),
@@ -1193,26 +1246,16 @@ func getDiskTargeterConfig(v *viper.Viper) (TrackerTargeterConfig, error) {
 }
 
 func getTraceConfig(v *viper.Viper) (trace.Config, error) {
-	enabled := v.GetBool(TracingEnabledKey)
-	if !enabled {
-		return trace.Config{}, nil
-	}
-
 	exporterTypeStr := v.GetString(TracingExporterTypeKey)
 	exporterType, err := trace.ExporterTypeFromString(exporterTypeStr)
 	if err != nil {
 		return trace.Config{}, err
 	}
 
-	endpoint := v.GetString(TracingEndpointKey)
-	if endpoint == "" {
-		return trace.Config{}, errTracingEndpointEmpty
-	}
-
 	return trace.Config{
 		ExporterConfig: trace.ExporterConfig{
 			Type:     exporterType,
-			Endpoint: endpoint,
+			Endpoint: v.GetString(TracingEndpointKey),
 			Insecure: v.GetBool(TracingInsecureKey),
 			Headers:  v.GetStringMapString(TracingHeadersKey),
 		},
@@ -1224,7 +1267,7 @@ func getTraceConfig(v *viper.Viper) (trace.Config, error) {
 
 // Returns the path to the directory that contains VM binaries.
 func getPluginDir(v *viper.Viper) (string, error) {
-	pluginDir := GetExpandedString(v, v.GetString(PluginDirKey))
+	pluginDir := getExpandedArg(v, PluginDirKey)
 
 	if v.IsSet(PluginDirKey) {
 		// If the flag was given, assert it exists and is a directory
@@ -1376,6 +1419,12 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, err
 	}
 
+	// Upgrade config
+	nodeConfig.UpgradeConfig, err = getUpgradeConfig(v, nodeConfig.NetworkID)
+	if err != nil {
+		return node.Config{}, err
+	}
+
 	// Network Config
 	nodeConfig.NetworkConfig, err = getNetworkConfig(
 		v,
@@ -1422,7 +1471,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.FdLimit = v.GetUint64(FdLimitKey)
 
 	// Tx Fee
-	nodeConfig.StaticConfig = getTxFeeConfig(v, nodeConfig.NetworkID)
+	nodeConfig.TxFeeConfig = getTxFeeConfig(v, nodeConfig.NetworkID)
 
 	// Genesis Data
 	genesisStakingCfg := nodeConfig.StakingConfig.StakingConfig
@@ -1527,10 +1576,9 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, err
 	}
 
-	nodeConfig.ChainDataDir = GetExpandedArg(v, ChainDataDirKey)
-	nodeConfig.ImportChainData = GetExpandedArg(v, ImportChainDataKey)
+	nodeConfig.ChainDataDir = getExpandedArg(v, ChainDataDirKey)
 
-	nodeConfig.ProcessContextFilePath = GetExpandedArg(v, ProcessContextFileKey)
+	nodeConfig.ProcessContextFilePath = getExpandedArg(v, ProcessContextFileKey)
 
 	nodeConfig.ProvidedFlags = providedFlags(v)
 

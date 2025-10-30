@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gconn
@@ -7,6 +7,7 @@ import (
 	"context"
 	"io"
 	"net"
+	"os"
 	"testing"
 	"time"
 
@@ -98,8 +99,5 @@ func TestOSErrDeadlineExceeded(t *testing.T) {
 	buf := make([]byte, 1)
 	n, err := client.Read(buf)
 	require.Zero(n)
-	// The error is serialized as a string through gRPC, so we can't check the type
-	// Just verify it contains the timeout message
-	require.Error(err)
-	require.Contains(err.Error(), "timeout")
+	require.ErrorIs(err, os.ErrDeadlineExceeded)
 }

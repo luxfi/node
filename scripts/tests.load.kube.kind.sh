@@ -12,10 +12,10 @@ fi
 # This script will use kubeconfig arguments if supplied
 ./scripts/start_kind_cluster.sh "$@"
 
-# Build Luxd image
-LUXD_IMAGE="localhost:5001/luxd"
+# Build LuxGo image
+LUXD_IMAGE="localhost:5001/node"
 if [[ -n "${SKIP_BUILD_IMAGE:-}" ]]; then
-  echo "Skipping build of luxd image due to SKIP_BUILD_IMAGE=${SKIP_BUILD_IMAGE}"
+  echo "Skipping build of node image due to SKIP_BUILD_IMAGE=${SKIP_BUILD_IMAGE}"
 else
   DOCKER_IMAGE="$LUXD_IMAGE" FORCE_TAG_LATEST=1 ./scripts/build_image.sh
 fi
@@ -33,4 +33,4 @@ else
     echo "Defaulting to limited-permission context 'kind-kind-tmpnet' to test RBAC Role permissions"
 fi
 
-go run ./tests/load/main --runtime=kube --kube-image="$LUXD_IMAGE" "$KUBECONFIG_CONTEXT" "$@"
+go run ./tests/load/c/main --runtime=kube --kube-image="$LUXD_IMAGE" "$KUBECONFIG_CONTEXT" "$@"

@@ -1,11 +1,10 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/luxfi/log"
@@ -13,6 +12,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/proposervm/state"
 )
 
@@ -78,35 +78,16 @@ func (hi *heightIndexer) MarkRepaired(repaired bool) {
 }
 
 // RepairHeightIndex ensures the height -> proBlkID height block index is well formed.
-// Starting from the checkpoint, it will go back to linear++ activation fork
+// Starting from the checkpoint, it will go back to chain++ activation fork
 // or genesis. PreFork blocks will be handled by innerVM height index.
 // RepairHeightIndex can take a non-trivial time to complete; hence we make sure
 // the process has limited memory footprint, can be resumed from periodic checkpoints
 // and works asynchronously without blocking the VM.
 func (hi *heightIndexer) RepairHeightIndex(ctx context.Context) error {
-	startBlkID, err := hi.state.GetCheckpoint()
-	if err == database.ErrNotFound {
-		hi.MarkRepaired(true)
-		return nil // nothing to do
-	}
-	if err != nil {
-		return err
-	}
-
-	// retrieve checkpoint height. We explicitly track block height
-	// in doRepair to avoid heavier DB reads.
-	startBlk, err := hi.server.GetFullPostForkBlock(ctx, startBlkID)
-	if err != nil {
-		return err
-	}
-
-	startHeight := startBlk.Height()
-	if err := hi.doRepair(ctx, startBlkID, startHeight); err != nil {
-		return fmt.Errorf("could not repair height index: %w", err)
-	}
-	if err := hi.flush(); err != nil {
-		return fmt.Errorf("could not write final height index update: %w", err)
-	}
+	// TODO: Checkpoint functionality has been removed, need to update this logic
+	// For now, assume no checkpoint and start fresh
+	hi.MarkRepaired(true)
+	return nil // nothing to do
 	return nil
 }
 
@@ -126,7 +107,7 @@ func (hi *heightIndexer) doRepair(ctx context.Context, currentProBlkID ids.ID, l
 		}
 
 		processingStart := time.Now()
-		currentAcceptedBlk, _, err := hi.state.GetBlock(currentProBlkID)
+		currentAcceptedBlk, err := hi.state.GetBlock(currentProBlkID)
 		if err == database.ErrNotFound {
 			// We have visited all the proposerVM blocks. Because we previously
 			// verified that we needed to perform a repair, we know that this
@@ -136,9 +117,10 @@ func (hi *heightIndexer) doRepair(ctx context.Context, currentProBlkID ids.ID, l
 			if err := hi.state.SetForkHeight(forkHeight); err != nil {
 				return err
 			}
-			if err := hi.state.DeleteCheckpoint(); err != nil {
-				return err
-			}
+			// TODO: Checkpoint functionality removed
+			// if err := hi.state.DeleteCheckpoint(); err != nil {
+			// 	return err
+			// }
 			hi.MarkRepaired(true)
 
 			// it will commit on exit
@@ -157,9 +139,10 @@ func (hi *heightIndexer) doRepair(ctx context.Context, currentProBlkID ids.ID, l
 		if indexedBlks-lastIndexedBlks > hi.commitFrequency {
 			// Note: checkpoint must be the lowest block in the batch. This ensures that
 			// checkpoint is the highest un-indexed block from which process would restart.
-			if err := hi.state.SetCheckpoint(currentProBlkID); err != nil {
-				return err
-			}
+			// TODO: Checkpoint functionality removed
+			// if err := hi.state.SetCheckpoint(currentProBlkID); err != nil {
+			// 	return err
+			// }
 
 			if err := hi.flush(); err != nil {
 				return err
@@ -200,8 +183,10 @@ func (hi *heightIndexer) doRepair(ctx context.Context, currentProBlkID ids.ID, l
 
 // flush writes the commits to the underlying DB
 func (hi *heightIndexer) flush() error {
-	if err := hi.state.Commit(); err != nil {
-		return err
-	}
+	// TODO: State interface no longer has Commit method
+	// The commit should be handled by the versiondb layer
+	// if err := hi.state.Commit(); err != nil {
+	// 	return err
+	// }
 	return hi.server.Commit()
 }

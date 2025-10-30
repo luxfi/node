@@ -11,13 +11,13 @@ if ! [[ "$0" =~ scripts/tests.upgrade.sh ]]; then
   exit 255
 fi
 
-# The Lux Node local network does not support long-lived
+# The LuxGo local network does not support long-lived
 # backwards-compatible networks. When a breaking change is made to the
 # local network, this flag must be updated to the last compatible
 # version with the latest code.
 #
-# v1.11.0 activates Durango.
-DEFAULT_VERSION="1.11.0"
+# v1.13.0 is the earliest version that supports Fortuna.
+DEFAULT_VERSION="1.13.0"
 
 VERSION="${1:-${DEFAULT_VERSION}}"
 if [[ -z "${VERSION}" ]]; then
@@ -63,16 +63,8 @@ find "/tmp/node-v${VERSION}"
 source ./scripts/constants.sh
 
 #################################
-echo "building upgrade.test"
-# to install the ginkgo binary (required for test build and run)
-go install -v github.com/onsi/ginkgo/v2/ginkgo@v2.13.1
-ACK_GINKGO_RC=true ginkgo build --tags test ./tests/upgrade
-./tests/upgrade/upgrade.test --help
-
-#################################
 # By default, it runs all upgrade test cases!
 echo "running upgrade tests against the local cluster with ${LUXD_PATH}"
-./tests/upgrade/upgrade.test \
-  --ginkgo.v \
+./bin/ginkgo -v ./tests/upgrade -- \
   --node-path="/tmp/node-v${VERSION}/node" \
   --node-path-to-upgrade-to="${LUXD_PATH}"

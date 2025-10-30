@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package nftfx
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
 	"errors"
 
 	"github.com/luxfi/node/vms/components/verify"
@@ -18,8 +18,13 @@ type TransferOperation struct {
 	Output TransferOutput    `serialize:"true" json:"output"`
 }
 
-func (op *TransferOperation) InitCtx(ctx context.Context) {
+func (op *TransferOperation) InitCtx(ctx *consensusctx.Context) {
 	op.Output.OutputOwners.InitCtx(ctx)
+}
+
+func (op *TransferOperation) InitializeContext(ctx *consensusctx.Context) error {
+	op.InitCtx(ctx)
+	return nil
 }
 
 func (op *TransferOperation) Cost() (uint64, error) {
@@ -36,10 +41,9 @@ func (op *TransferOperation) InitializeContext(ctx context.Context) error {
 }
 
 func (op *TransferOperation) Verify() error {
-	switch {
-	case op == nil:
+	if op == nil {
 		return errNilTransferOperation
-	default:
-		return verify.All(&op.Input, &op.Output)
 	}
+
+	return verify.All(&op.Input, &op.Output)
 }

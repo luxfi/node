@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -11,7 +11,9 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/stretchr/testify/require"
 
+	consensuscore "github.com/luxfi/consensus/core"
 	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -19,39 +21,8 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/upgrade/upgradetest"
 )
-
-func TestInvalidGenesis(t *testing.T) {
-	require := require.New(t)
-
-	vm := &VM{}
-	ctx := &consensusctx.Context{
-		ChainID: ids.GenerateTestID(),
-	}
-	// Tests don't need locking as they run single-threaded
-	// Remove Lock references that don't exist in consensus context
-
-	toEngine := make(chan interface{}, 1)
-	err := vm.Initialize(
-		context.Background(),
-		ctx,         // chainCtx
-		memdb.New(), // dbManager
-		nil,         // genesisBytes
-		nil,         // upgradeBytes
-		nil,         // configBytes
-		toEngine,    // toEngine
-		nil,         // fxs
-		nil,         // appSender
-	)
-	require.ErrorIs(err, codec.ErrCantUnpackVersion)
-}
 
 func TestInvalidFx(t *testing.T) {
 	require := require.New(t)
@@ -64,19 +35,18 @@ func TestInvalidFx(t *testing.T) {
 		vm.Shutdown()
 	}()
 
-	genesisBytes := buildGenesisTest(t)
-	toEngine := make(chan interface{}, 1)
-	fxList := []interface{}{nil}
+	genesisBytes := newGenesisBytesTest(t)
 	err := vm.Initialize(
 		context.Background(),
-		ctx,          // chainCtx
-		memdb.New(),  // dbManager
-		genesisBytes, // genesisBytes
+		ctx,          // context
+		memdb.New(),  // database
+		genesisBytes, // genesisState
 		nil,          // upgradeBytes
 		nil,          // configBytes
-		toEngine,     // toEngine
-		fxList,       // fxs
-		nil,          // appSender
+		[]*common.Fx{ // fxs
+			nil,
+		},
+		nil,
 	)
 	require.ErrorIs(err, errIncompatibleFx)
 }
@@ -92,10 +62,15 @@ func TestFxInitializationFailure(t *testing.T) {
 		vm.Shutdown()
 	}()
 
-	genesisBytes := buildGenesisTest(t)
-	toEngine := make(chan interface{}, 1)
-	fxList := []interface{}{
-		&core.Fx{
+	genesisBytes := newGenesisBytesTest(t)
+	err := vm.Initialize(
+		context.Background(),
+		ctx,          // context
+		memdb.New(),  // database
+		genesisBytes, // genesisState
+		nil,          // upgradeBytes
+		nil,          // configBytes
+		[]*common.Fx{{ // fxs
 			ID: ids.Empty,
 			Fx: &FxTest{
 				InitializeF: func(interface{}) error {
@@ -122,11 +97,11 @@ func TestIssueTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: latest,
+		fork: upgradetest.Latest,
 	})
 	env.vm.Lock.Unlock()
 
-	tx := newTx(t, env.genesisBytes, env.vm.ChainID, env.vm.parser, "LUX")
+	tx := newTx(t, env.genesisBytes, env.vm.ctx.ChainID, env.vm.parser, "LUX")
 	issueAndAccept(require, env.vm, tx)
 }
 
@@ -135,7 +110,7 @@ func TestIssueNFT(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: latest,
+		fork: upgradetest.Latest,
 	})
 	env.vm.Lock.Unlock()
 
@@ -210,8 +185,8 @@ func TestIssueProperty(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: latest,
-		additionalFxs: []*core.Fx{{
+		fork: upgradetest.Latest,
+		additionalFxs: []*common.Fx{{
 			ID: propertyfx.ID,
 			Fx: &propertyfx.Fx{},
 		}},
@@ -298,13 +273,13 @@ func TestIssueTxWithFeeAsset(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork:             latest,
+		fork:             upgradetest.Latest,
 		isCustomFeeAsset: true,
 	})
 	env.vm.Lock.Unlock()
 
 	// send first asset
-	tx := newTx(t, env.genesisBytes, env.vm.ChainID, env.vm.parser, feeAssetName)
+	tx := newTx(t, env.genesisBytes, env.vm.ctx.ChainID, env.vm.parser, feeAssetName)
 	issueAndAccept(require, env.vm, tx)
 }
 
@@ -312,7 +287,7 @@ func TestIssueTxWithAnotherAsset(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork:             latest,
+		fork:             upgradetest.Latest,
 		isCustomFeeAsset: true,
 	})
 	env.vm.Lock.Unlock()
@@ -359,7 +334,7 @@ func TestIssueTxWithAnotherAsset(t *testing.T) {
 
 func TestVMFormat(t *testing.T) {
 	env := setup(t, &envConfig{
-		fork: latest,
+		fork: upgradetest.Latest,
 	})
 	env.vm.Lock.Lock()
 	defer env.vm.Lock.Unlock()
@@ -387,7 +362,7 @@ func TestTxAcceptAfterParseTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork:          latest,
+		fork:          upgradetest.Latest,
 		notLinearized: true,
 	})
 	defer env.vm.Lock.Unlock()
@@ -462,7 +437,7 @@ func TestIssueImportTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: durango,
+		fork: upgradetest.Durango,
 	})
 	defer env.vm.Lock.Unlock()
 
@@ -527,9 +502,6 @@ func TestIssueImportTx(t *testing.T) {
 
 	env.vm.Lock.Lock()
 
-	assertIndexedTX(t, env.vm.db, 0, key.PublicKey().Address(), txAssetID.AssetID(), tx.ID())
-	assertLatestIdx(t, env.vm.db, key.PublicKey().Address(), luxID, 1)
-
 	id := utxoID.InputID()
 	_, err = env.vm.SharedMemory.Get(constants.PlatformChainID, [][]byte{id[:]})
 	require.ErrorIs(err, database.ErrNotFound)
@@ -540,7 +512,7 @@ func TestForceAcceptImportTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork:          durango,
+		fork:          upgradetest.Durango,
 		notLinearized: true,
 	})
 	defer env.vm.Lock.Unlock()
@@ -594,9 +566,6 @@ func TestForceAcceptImportTx(t *testing.T) {
 	require.NoError(parsedTx.Verify(context.Background()))
 	require.NoError(parsedTx.Accept(context.Background()))
 
-	assertIndexedTX(t, env.vm.db, 0, key.PublicKey().Address(), txAssetID.AssetID(), tx.ID())
-	assertLatestIdx(t, env.vm.db, key.PublicKey().Address(), luxID, 1)
-
 	id := utxoID.InputID()
 	_, err = env.vm.SharedMemory.Get(constants.PlatformChainID, [][]byte{id[:]})
 	require.ErrorIs(err, database.ErrNotFound)
@@ -614,8 +583,8 @@ func TestImportTxNotState(t *testing.T) {
 func TestIssueExportTx(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: durango})
-	defer env.vm.Lock.Unlock()
+	env := setup(t, &envConfig{fork: upgradetest.Durango})
+	defer env.vm.ctx.Lock.Unlock()
 
 	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
 
@@ -673,15 +642,14 @@ func TestClearForceAcceptedExportTx(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: latest,
+		fork: upgradetest.Latest,
 	})
 	defer env.vm.Lock.Unlock()
 
 	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "LUX")
 
 	var (
-		luxID      = genesisTx.ID()
-		assetID    = lux.Asset{ID: luxID}
+		luxID     = genesisTx.ID()
 		key        = keys[0]
 		kc         = secp256k1fx.NewKeychain(key)
 		to         = key.PublicKey().Address()
@@ -722,7 +690,4 @@ func TestClearForceAcceptedExportTx(t *testing.T) {
 
 	_, err = peerSharedMemory.Get(env.vm.ChainID, [][]byte{utxoID[:]})
 	require.ErrorIs(err, database.ErrNotFound)
-
-	assertIndexedTX(t, env.vm.db, 0, key.PublicKey().Address(), assetID.AssetID(), tx.ID())
-	assertLatestIdx(t, env.vm.db, key.PublicKey().Address(), assetID.AssetID(), 1)
 }

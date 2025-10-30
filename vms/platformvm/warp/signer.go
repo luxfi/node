@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package warp
@@ -6,8 +6,8 @@ package warp
 import (
 	"errors"
 
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/crypto/bls"
 )
 
 var (
@@ -26,7 +26,7 @@ type Signer interface {
 	Sign(msg *UnsignedMessage) ([]byte, error)
 }
 
-func NewSigner(blsSigner bls.Signer, networkID uint32, chainID ids.ID) Signer {
+func NewSigner(sk bls.Signer, networkID uint32, chainID ids.ID) Signer {
 	return &signer{
 		blsSigner: blsSigner,
 		networkID: networkID,
@@ -35,7 +35,7 @@ func NewSigner(blsSigner bls.Signer, networkID uint32, chainID ids.ID) Signer {
 }
 
 type signer struct {
-	blsSigner bls.Signer
+	sk        bls.Signer
 	networkID uint32
 	chainID   ids.ID
 }
@@ -49,7 +49,7 @@ func (s *signer) Sign(msg *UnsignedMessage) ([]byte, error) {
 	}
 
 	msgBytes := msg.Bytes()
-	sig, err := s.blsSigner.Sign(msgBytes)
+	sig, err := s.sk.Sign(msgBytes)
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package atomictest
@@ -9,9 +9,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/units"
 )
 
@@ -217,6 +217,7 @@ func TestSharedMemoryCantDuplicateRemove(t *testing.T, _, chainID1 ids.ID, sm0, 
 	require.NoError(sm0.Apply(map[ids.ID]*atomic.Requests{chainID1: {RemoveRequests: [][]byte{{0}}}}))
 
 	err := sm0.Apply(map[ids.ID]*atomic.Requests{chainID1: {RemoveRequests: [][]byte{{0}}}})
+	// TODO: require error to be errDuplicatedOperation
 	require.Error(err) //nolint:forbidigo // currently returns grpc errors too
 }
 

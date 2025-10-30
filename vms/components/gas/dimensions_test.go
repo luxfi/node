@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gas
@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	safemath "github.com/luxfi/math/math"
+	safemath "github.com/luxfi/node/utils/math"
 )
 
 func Test_Dimensions_Add(t *testing.T) {

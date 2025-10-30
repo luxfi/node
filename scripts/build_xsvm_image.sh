@@ -4,7 +4,7 @@ set -euo pipefail
 
 # e.g.,
 # ./scripts/build_image.sh                                                   # Build local single-arch image
-# LUXD_IMAGE=localhost:5001/luxd ./scripts/build_xsvm_image.sh # Build and push image to private registry
+# LUXD_IMAGE=localhost:5001/node ./scripts/build_xsvm_image.sh # Build and push image to private registry
 
 if ! [[ "$0" =~ scripts/build_xsvm_image.sh ]]; then
   echo "must be run from repository root"
@@ -13,10 +13,10 @@ fi
 
 source ./scripts/image_tag.sh
 
-LUXD_IMAGE="${LUXD_IMAGE:-luxd}"
-XSVM_IMAGE="${XSVM_IMAGE:-luxd-xsvm}"
+LUXD_IMAGE="${LUXD_IMAGE:-node}"
+XSVM_IMAGE="${XSVM_IMAGE:-node-xsvm}"
 
-# Build the luxd base image
+# Build the node base image
 SKIP_BUILD_RACE=1 DOCKER_IMAGE="${LUXD_IMAGE}" bash -x ./scripts/build_image.sh
 
 DOCKER_CMD=("docker" "buildx" "build")
@@ -31,5 +31,5 @@ fi
 
 GO_VERSION="$(go list -m -f '{{.GoVersion}}')"
 
-"${DOCKER_CMD[@]}" --build-arg GO_VERSION="${GO_VERSION}" --build-arg LUXD_IMAGE="${LUXD_IMAGE}:${image_tag}" \
+"${DOCKER_CMD[@]}" --build-arg GO_VERSION="${GO_VERSION}" --build-arg LUXD_NODE_IMAGE="${LUXD_IMAGE}:${image_tag}" \
   -t "${XSVM_IMAGE}" -f ./vms/example/xsvm/Dockerfile .

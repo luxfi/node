@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package auth
@@ -21,7 +21,9 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/password"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 

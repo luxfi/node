@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesistest
@@ -9,11 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
+	snowtest "github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -34,7 +34,7 @@ const (
 )
 
 var (
-	LUXAsset = lux.Asset{ID: consensustest.LUXAssetID}
+	LUXAsset = lux.Asset{ID: snowtest.LUXAssetID}
 
 	DefaultValidatorStartTime     = upgrade.InitiallyActiveTime
 	DefaultValidatorStartTimeUnix = uint64(DefaultValidatorStartTime.Unix())
@@ -102,7 +102,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 	for i, key := range c.FundedKeys {
 		genesis.UTXOs[i] = &platformvmgenesis.UTXO{UTXO: lux.UTXO{
 			UTXOID: lux.UTXOID{
-				TxID:        consensustest.LUXAssetID,
+				TxID:        snowtest.LUXAssetID,
 				OutputIndex: uint32(i),
 			},
 			Asset: LUXAsset,
@@ -159,9 +159,9 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 			NetworkID:    c.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 		}},
-		NetID:      constants.PrimaryNetworkID,
+		SubnetID:   constants.PrimaryNetworkID,
 		ChainName:  XChainName,
-		VMID:       constants.XVMID,
+		VMID:       constants.AVMID,
 		SubnetAuth: &secp256k1fx.Input{},
 	}
 	chainTx := &txs.Tx{Unsigned: chain}

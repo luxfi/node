@@ -12,9 +12,8 @@ package state
 import (
 	reflect "reflect"
 
-	choices "github.com/luxfi/consensus/choices"
 	ids "github.com/luxfi/ids"
-	gomock "github.com/luxfi/mock/gomock"
+	choices "github.com/luxfi/consensus/choices"
 	block "github.com/luxfi/node/vms/proposervm/block"
 )
 

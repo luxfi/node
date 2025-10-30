@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -6,13 +6,13 @@ package builder
 import (
 	"time"
 
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 var _ Builder = (*withOptions)(nil)
@@ -81,24 +81,24 @@ func (w *withOptions) NewAddValidatorTx(
 	)
 }
 
-func (w *withOptions) NewAddNetValidatorTx(
-	vdr *txs.NetValidator,
+func (w *withOptions) NewAddSubnetValidatorTx(
+	vdr *txs.SubnetValidator,
 	options ...common.Option,
-) (*txs.AddNetValidatorTx, error) {
-	return w.builder.NewAddNetValidatorTx(
+) (*txs.AddSubnetValidatorTx, error) {
+	return w.builder.NewAddSubnetValidatorTx(
 		vdr,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
-func (w *withOptions) NewRemoveNetValidatorTx(
+func (w *withOptions) NewRemoveSubnetValidatorTx(
 	nodeID ids.NodeID,
-	netID ids.ID,
+	subnetID ids.ID,
 	options ...common.Option,
-) (*txs.RemoveNetValidatorTx, error) {
-	return w.builder.NewRemoveNetValidatorTx(
+) (*txs.RemoveSubnetValidatorTx, error) {
+	return w.builder.NewRemoveSubnetValidatorTx(
 		nodeID,
-		netID,
+		subnetID,
 		common.UnionOptions(w.options, options)...,
 	)
 }
@@ -116,7 +116,7 @@ func (w *withOptions) NewAddDelegatorTx(
 }
 
 func (w *withOptions) NewCreateChainTx(
-	netID ids.ID,
+	subnetID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
 	fxIDs []ids.ID,
@@ -124,7 +124,7 @@ func (w *withOptions) NewCreateChainTx(
 	options ...common.Option,
 ) (*txs.CreateChainTx, error) {
 	return w.builder.NewCreateChainTx(
-		netID,
+		subnetID,
 		genesis,
 		vmID,
 		fxIDs,
@@ -133,37 +133,37 @@ func (w *withOptions) NewCreateChainTx(
 	)
 }
 
-func (w *withOptions) NewCreateNetTx(
+func (w *withOptions) NewCreateSubnetTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.CreateNetTx, error) {
-	return w.builder.NewCreateNetTx(
+) (*txs.CreateSubnetTx, error) {
+	return w.builder.NewCreateSubnetTx(
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
-func (w *withOptions) NewTransferNetOwnershipTx(
-	netID ids.ID,
+func (w *withOptions) NewTransferSubnetOwnershipTx(
+	subnetID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
-) (*txs.TransferNetOwnershipTx, error) {
-	return w.builder.NewTransferNetOwnershipTx(
-		netID,
+) (*txs.TransferSubnetOwnershipTx, error) {
+	return w.builder.NewTransferSubnetOwnershipTx(
+		subnetID,
 		owner,
 		common.UnionOptions(w.options, options)...,
 	)
 }
 
-func (w *withOptions) NewConvertNetToL1Tx(
-	netID ids.ID,
+func (w *withOptions) NewConvertSubnetToL1Tx(
+	subnetID ids.ID,
 	chainID ids.ID,
 	address []byte,
-	validators []*txs.ConvertNetToL1Validator,
+	validators []*txs.ConvertSubnetToL1Validator,
 	options ...common.Option,
-) (*txs.ConvertNetToL1Tx, error) {
-	return w.builder.NewConvertNetToL1Tx(
-		netID,
+) (*txs.ConvertSubnetToL1Tx, error) {
+	return w.builder.NewConvertSubnetToL1Tx(
+		subnetID,
 		chainID,
 		address,
 		validators,
@@ -241,8 +241,8 @@ func (w *withOptions) NewExportTx(
 	)
 }
 
-func (w *withOptions) NewTransformNetTx(
-	netID ids.ID,
+func (w *withOptions) NewTransformSubnetTx(
+	subnetID ids.ID,
 	assetID ids.ID,
 	initialSupply uint64,
 	maxSupply uint64,
@@ -257,9 +257,9 @@ func (w *withOptions) NewTransformNetTx(
 	maxValidatorWeightFactor byte,
 	uptimeRequirement uint32,
 	options ...common.Option,
-) (*txs.TransformNetTx, error) {
-	return w.builder.NewTransformNetTx(
-		netID,
+) (*txs.TransformSubnetTx, error) {
+	return w.builder.NewTransformSubnetTx(
+		subnetID,
 		assetID,
 		initialSupply,
 		maxSupply,
@@ -278,7 +278,7 @@ func (w *withOptions) NewTransformNetTx(
 }
 
 func (w *withOptions) NewAddPermissionlessValidatorTx(
-	vdr *txs.NetValidator,
+	vdr *txs.SubnetValidator,
 	signer signer.Signer,
 	assetID ids.ID,
 	validationRewardsOwner *secp256k1fx.OutputOwners,
@@ -298,7 +298,7 @@ func (w *withOptions) NewAddPermissionlessValidatorTx(
 }
 
 func (w *withOptions) NewAddPermissionlessDelegatorTx(
-	vdr *txs.NetValidator,
+	vdr *txs.SubnetValidator,
 	assetID ids.ID,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ledger
@@ -8,9 +8,11 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	ledger "github.com/luxfi/ledger-lux-go"
 	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/version"
+
+	ledger "github.com/luxfi/ledger-lux-go"
+	bip32 "github.com/tyler-smith/go-bip32"
 )
 
 // LedgerAdapter wraps ledger.LedgerLux to implement keychain.Ledger interface

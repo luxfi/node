@@ -1,14 +1,13 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/types"
 )
@@ -47,10 +46,7 @@ func (t *BaseTx) NumCredentials() int {
 }
 
 // Verify ensures that transaction metadata is valid
-func (t *BaseTx) Verify(ctx context.Context) error {
-	networkID := consensus.GetNetworkID(ctx)
-	chainID := consensus.GetChainID(ctx)
-	// Note: chainID can be ids.Empty for Platform chain (constants.PlatformChainID)
+func (t *BaseTx) Verify(ctx *consensusctx.Context) error {
 	switch {
 	case t == nil:
 		return ErrNilTx
@@ -70,6 +66,7 @@ func (t *BaseTx) Verify(ctx context.Context) error {
 	}
 }
 
+// VerifyMemoFieldLength validates memo field length based on Durango activation status
 func VerifyMemoFieldLength(memo types.JSONByteSlice, isDurangoActive bool) error {
 	if !isDurangoActive {
 		// SyntacticVerify validates this field pre-Durango

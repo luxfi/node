@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -7,8 +7,10 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+
+	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
@@ -64,10 +66,11 @@ func (f *factory) New(log log.Logger) (interface{}, error) {
 
 	clientConn, err := grpcutils.Dial(status.Addr)
 	if err != nil {
+		log.Error("failed to dial VM gRPC service", zap.Error(err))
 		return nil, err
 	}
 
 	f.processTracker.TrackProcess(status.Pid)
 	f.runtimeTracker.TrackRuntime(stopper)
-	return NewClient(clientConn, stopper, status.Pid, f.processTracker, f.metricsGatherer), nil
+	return NewClient(clientConn, stopper, status.Pid, f.processTracker, f.metricsGatherer, log), nil
 }

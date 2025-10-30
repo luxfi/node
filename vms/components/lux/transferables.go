@@ -1,9 +1,10 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
 	"bytes"
 	"context"
 	"errors"
@@ -13,7 +14,9 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -33,7 +36,6 @@ var (
 
 // Amounter is a data structure that has an amount of something associated with it
 type Amounter interface {
-	consensus.ContextInitializable
 	// Amount returns how much value this element represents of the asset in its
 	// transaction.
 	Amount() uint64
@@ -57,9 +59,9 @@ type TransferableIn interface {
 // TransferableOut is the interface a feature extension must provide to transfer
 // value between features extensions.
 type TransferableOut interface {
-	consensus.ContextInitializable
 	verify.State
 	Amounter
+	InitCtx(*consensusctx.Context)
 }
 
 type TransferableOutput struct {
@@ -69,11 +71,8 @@ type TransferableOutput struct {
 	Out  TransferableOut `serialize:"true"  json:"output"`
 }
 
-func (out *TransferableOutput) InitCtx(ctx context.Context) {
-	// Initialize the context for the underlying output if it supports it
-	if contextOutput, ok := out.Out.(interface{ InitCtx(context.Context) }); ok {
-		contextOutput.InitCtx(ctx)
-	}
+func (out *TransferableOutput) InitCtx(ctx *consensusctx.Context) {
+	out.Out.InitCtx(ctx)
 }
 
 // Output returns the feature extension output that this Output is using.
@@ -163,6 +162,10 @@ func (in *TransferableInput) Verify() error {
 	default:
 		return verify.All(&in.UTXOID, &in.Asset, in.In)
 	}
+}
+
+func (in *TransferableInput) Compare(other *TransferableInput) int {
+	return in.UTXOID.Compare(&other.UTXOID)
 }
 
 func (in *TransferableInput) Compare(other *TransferableInput) int {

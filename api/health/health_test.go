@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package health
@@ -17,6 +17,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/log"
 )
 
 const (
@@ -48,7 +49,7 @@ func awaitLiveness(t *testing.T, r Reporter, liveness bool) {
 	}, awaitTimeout, awaitFreq)
 }
 
-func TestDuplicatedRegistations(t *testing.T) {
+func TestDuplicatedRegistrations(t *testing.T) {
 	require := require.New(t)
 
 	check := CheckerFunc(func(context.Context) (interface{}, error) {
@@ -137,7 +138,7 @@ func TestPassingChecks(t *testing.T) {
 		require.Contains(readinessResult, "check")
 
 		result := readinessResult["check"]
-		require.Equal("", result.Details)
+		require.Empty(result.Details)
 		require.Nil(result.Error)
 		require.Zero(result.ContiguousFailures)
 		require.True(readiness)
@@ -151,7 +152,7 @@ func TestPassingChecks(t *testing.T) {
 		require.Contains(healthResult, "check")
 
 		result := healthResult["check"]
-		require.Equal("", result.Details)
+		require.Empty(result.Details)
 		require.Nil(result.Error)
 		require.Zero(result.ContiguousFailures)
 		require.True(health)
@@ -165,7 +166,7 @@ func TestPassingChecks(t *testing.T) {
 		require.Contains(livenessResult, "check")
 
 		result := livenessResult["check"]
-		require.Equal("", result.Details)
+		require.Empty(result.Details)
 		require.Nil(result.Error)
 		require.Zero(result.ContiguousFailures)
 		require.True(liveness)

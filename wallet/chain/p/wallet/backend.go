@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package wallet
@@ -9,14 +9,14 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 var _ Backend = (*backend)(nil)
@@ -33,7 +33,7 @@ type backend struct {
 	common.ChainUTXOs
 
 	ownersLock sync.RWMutex
-	owners     map[ids.ID]fx.Owner // netID or validationID -> owner
+	owners     map[ids.ID]fx.Owner // subnetID or validationID -> owner
 }
 
 func NewBackend(utxos common.ChainUTXOs, owners map[ids.ID]fx.Owner) Backend {
@@ -41,17 +41,6 @@ func NewBackend(utxos common.ChainUTXOs, owners map[ids.ID]fx.Owner) Backend {
 		ChainUTXOs: utxos,
 		owners:     owners,
 	}
-}
-
-func (b *backend) GetSubnetOwner(_ context.Context, netID ids.ID) (fx.Owner, error) {
-	b.ownersLock.RLock()
-	defer b.ownersLock.RUnlock()
-
-	owner, exists := b.owners[netID]
-	if !exists {
-		return nil, database.ErrNotFound
-	}
-	return owner, nil
 }
 
 func (b *backend) AcceptTx(ctx context.Context, tx *txs.Tx) error {

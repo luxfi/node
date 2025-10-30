@@ -1,14 +1,14 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"context"
-
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
+
+	consensusctx "github.com/luxfi/consensus/context"
 )
 
 var (
@@ -27,7 +27,7 @@ type ExportTx struct {
 	ExportedOuts []*lux.TransferableOutput `serialize:"true" json:"exportedOutputs"`
 }
 
-func (t *ExportTx) InitCtx(ctx context.Context) {
+func (t *ExportTx) InitCtx(ctx *consensusctx.Context) {
 	for _, out := range t.ExportedOuts {
 		out.InitCtx(ctx)
 	}
@@ -35,7 +35,7 @@ func (t *ExportTx) InitCtx(ctx context.Context) {
 }
 
 // InitializeContext initializes the context for this transaction
-func (t *ExportTx) InitializeContext(ctx context.Context) error {
+func (t *ExportTx) InitializeContext(ctx *consensusctx.Context) error {
 	t.InitCtx(ctx)
 	return nil
 }
@@ -45,7 +45,7 @@ func (t *ExportTx) Visit(v Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *ExportTx) InitializeWithContext(ctx context.Context) error {
+func (tx *ExportTx) InitializeWithContext(ctx *consensusctx.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

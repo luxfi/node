@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -8,12 +8,12 @@ import (
 	"errors"
 	"math/big"
 
-	// "github.com/luxfi/evm/plugin/evm"
+	"github.com/luxfi/geth/plugin/evm/atomic"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/math"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/wallet/net/primary/common"
@@ -71,7 +71,7 @@ type Builder interface {
 		to ethcommon.Address,
 		baseFee *big.Int,
 		options ...common.Option,
-	) (*UnsignedImportTx, error)
+	) (*atomic.UnsignedImportTx, error)
 
 	// NewExportTx creates an export transaction that attempts to send all the
 	// provided [outputs] to the requested [chainID].
@@ -84,7 +84,7 @@ type Builder interface {
 		outputs []*secp256k1fx.TransferOutput,
 		baseFee *big.Int,
 		options ...common.Option,
-	) (*UnsignedExportTx, error)
+	) (*atomic.UnsignedExportTx, error)
 }
 
 // BuilderBackend specifies the required information needed to build unsigned
@@ -170,7 +170,7 @@ func (b *builder) GetImportableBalance(
 			continue
 		}
 
-		newBalance, err := math.Add64(balance, amount)
+		newBalance, err := math.Add(balance, amount)
 		if err != nil {
 			return 0, err
 		}
@@ -185,7 +185,7 @@ func (b *builder) NewImportTx(
 	to ethcommon.Address,
 	baseFee *big.Int,
 	options ...common.Option,
-) (*UnsignedImportTx, error) {
+) (*atomic.UnsignedImportTx, error) {
 	ops := common.NewOptions(options)
 	utxos, err := b.backend.UTXOs(ops.Context(), chainID)
 	if err != nil {
@@ -218,7 +218,7 @@ func (b *builder) NewImportTx(
 			},
 		})
 
-		newImportedAmount, err := math.Add64(importedAmount, amount)
+		newImportedAmount, err := math.Add(importedAmount, amount)
 		if err != nil {
 			return nil, err
 		}
@@ -226,18 +226,16 @@ func (b *builder) NewImportTx(
 	}
 
 	utils.Sort(importedInputs)
-	tx := &UnsignedImportTx{
-		BaseTx: BaseTx{
-			NetworkID:    b.context.NetworkID,
-			BlockchainID: b.context.BlockchainID,
-		},
+	tx := &atomic.UnsignedImportTx{
+		NetworkID:      b.context.NetworkID,
+		BlockchainID:   b.context.BlockchainID,
 		SourceChain:    chainID,
 		ImportedInputs: importedInputs,
 	}
 
 	// We must initialize the bytes of the tx to calculate the initial cost
-	wrappedTx := &Tx{UnsignedAtomicTx: tx}
-	if err := wrappedTx.Sign(Codec, nil); err != nil {
+	wrappedTx := &atomic.Tx{UnsignedAtomicTx: tx}
+	if err := wrappedTx.Sign(atomic.Codec, nil); err != nil {
 		return nil, err
 	}
 
@@ -245,9 +243,9 @@ func (b *builder) NewImportTx(
 	if err != nil {
 		return nil, err
 	}
-	gasUsedWithOutput := gasUsedWithoutOutput + EVMOutputGas
+	gasUsedWithOutput := gasUsedWithoutOutput + atomic.EVMOutputGas
 
-	txFee, err := CalculateDynamicFee(gasUsedWithOutput, baseFee)
+	txFee, err := atomic.CalculateDynamicFee(gasUsedWithOutput, baseFee)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +254,7 @@ func (b *builder) NewImportTx(
 		return nil, errInsufficientFunds
 	}
 
-	tx.Outs = []*EVMOutput{{
+	tx.Outs = []atomic.EVMOutput{{
 		Address: to,
 		Amount:  importedAmount - txFee,
 	}}
@@ -268,7 +266,7 @@ func (b *builder) NewExportTx(
 	outputs []*secp256k1fx.TransferOutput,
 	baseFee *big.Int,
 	options ...common.Option,
-) (*UnsignedExportTx, error) {
+) (*atomic.UnsignedExportTx, error) {
 	var (
 		luxAssetID      = b.context.XAssetID
 		exportedOutputs = make([]*lux.TransferableOutput, len(outputs))
@@ -281,26 +279,24 @@ func (b *builder) NewExportTx(
 			Out:   output,
 		}
 
-		newExportedAmount, err := math.Add64(exportedAmount, output.Amt)
+		newExportedAmount, err := math.Add(exportedAmount, output.Amt)
 		if err != nil {
 			return nil, err
 		}
 		exportedAmount = newExportedAmount
 	}
 
-	lux.SortTransferableOutputs(exportedOutputs, Codec)
-	tx := &UnsignedExportTx{
-		BaseTx: BaseTx{
-			NetworkID:    b.context.NetworkID,
-			BlockchainID: b.context.BlockchainID,
-		},
+	lux.SortTransferableOutputs(exportedOutputs, atomic.Codec)
+	tx := &atomic.UnsignedExportTx{
+		NetworkID:        b.context.NetworkID,
+		BlockchainID:     b.context.BlockchainID,
 		DestinationChain: chainID,
 		ExportedOutputs:  exportedOutputs,
 	}
 
 	// We must initialize the bytes of the tx to calculate the initial cost
-	wrappedTx := &Tx{UnsignedAtomicTx: tx}
-	if err := wrappedTx.Sign(Codec, nil); err != nil {
+	wrappedTx := &atomic.Tx{UnsignedAtomicTx: tx}
+	if err := wrappedTx.Sign(atomic.Codec, nil); err != nil {
 		return nil, err
 	}
 
@@ -309,12 +305,12 @@ func (b *builder) NewExportTx(
 		return nil, err
 	}
 
-	initialFee, err := CalculateDynamicFee(cost, baseFee)
+	initialFee, err := atomic.CalculateDynamicFee(cost, baseFee)
 	if err != nil {
 		return nil, err
 	}
 
-	amountToConsume, err := math.Add64(exportedAmount, initialFee)
+	amountToConsume, err := math.Add(exportedAmount, initialFee)
 	if err != nil {
 		return nil, err
 	}
@@ -323,20 +319,20 @@ func (b *builder) NewExportTx(
 		ops    = common.NewOptions(options)
 		ctx    = ops.Context()
 		addrs  = ops.EthAddresses(b.ethAddrs)
-		inputs = make([]*EVMInput, 0, addrs.Len())
+		inputs = make([]atomic.EVMInput, 0, addrs.Len())
 	)
 	for addr := range addrs {
 		if amountToConsume == 0 {
 			break
 		}
 
-		prevFee, err := CalculateDynamicFee(cost, baseFee)
+		prevFee, err := atomic.CalculateDynamicFee(cost, baseFee)
 		if err != nil {
 			return nil, err
 		}
 
-		newCost := cost + EVMInputGas
-		newFee, err := CalculateDynamicFee(newCost, baseFee)
+		newCost := cost + atomic.EVMInputGas
+		newFee, err := atomic.CalculateDynamicFee(newCost, baseFee)
 		if err != nil {
 			return nil, err
 		}
@@ -363,7 +359,7 @@ func (b *builder) NewExportTx(
 		// Update the cost for the next iteration
 		cost = newCost
 
-		amountToConsume, err = math.Add64(amountToConsume, additionalFee)
+		amountToConsume, err = math.Add(amountToConsume, additionalFee)
 		if err != nil {
 			return nil, err
 		}
@@ -374,7 +370,7 @@ func (b *builder) NewExportTx(
 		}
 
 		inputAmount := min(amountToConsume, luxBalance)
-		inputs = append(inputs, &EVMInput{
+		inputs = append(inputs, atomic.EVMInput{
 			Address: addr,
 			Amount:  inputAmount,
 			AssetID: luxAssetID,

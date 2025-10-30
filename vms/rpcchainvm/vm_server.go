@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -12,25 +12,24 @@ import (
 	"os"
 	"time"
 
-	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus/collectors"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	consContext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/node/api/metrics"
+	"github.com/luxfi/node/chains/atomic/gsharedmemory"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/corruptabledb"
+	"github.com/luxfi/database/rpcdb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/utils/set"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/database"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/chains/atomic/gsharedmemory"
-	"github.com/luxfi/node/db/rpcdb"
-	"github.com/luxfi/node/internal/ids/galiasreader"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
@@ -38,13 +37,11 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/ghttp"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
-	"github.com/luxfi/node/vms/rpcchainvm/messenger"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
-	messengerpb "github.com/luxfi/node/proto/pb/messenger"
 	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
@@ -58,6 +55,7 @@ var (
 	originalStderr = os.Stderr
 
 	errExpectedBlockWithVerifyContext = errors.New("expected block.WithVerifyContext")
+	errNilNetworkUpgradesPB           = errors.New("network upgrades protobuf is nil")
 )
 
 // VMServer is a VM that is managed over RPC.
@@ -69,17 +67,19 @@ type VMServer struct {
 	bVM block.BuildBlockWithContextChainVM
 	// If nil, the underlying VM doesn't implement the interface.
 	ssVM block.StateSyncableVM
+	// If nil, the underlying VM doesn't implement the interface.
+	appHandler core.AppHandler
 
 	allowShutdown *utils.Atomic[bool]
 
-	metrics metric.Gatherer
+	metrics metrics.MultiGatherer
 	db      database.Database
 	log     log.Logger
 
 	serverCloser grpcutils.ServerCloser
 	connCloser   wrappers.Closer
 
-	ctx    context.Context
+	ctx    *Context
 	closed chan struct{}
 
 	// Network information
@@ -92,12 +92,16 @@ type VMServer struct {
 func NewServer(vm block.ChainVM, allowShutdown *utils.Atomic[bool]) *VMServer {
 	bVM, _ := vm.(block.BuildBlockWithContextChainVM)
 	ssVM, _ := vm.(block.StateSyncableVM)
-	return &VMServer{
+	appHandler, _ := vm.(core.AppHandler)
+	vmSrv := &VMServer{
+		metrics:       metrics.NewPrefixGatherer(),
 		vm:            vm,
 		bVM:           bVM,
 		ssVM:          ssVM,
+		appHandler:    appHandler,
 		allowShutdown: allowShutdown,
 	}
+	return vmSrv
 }
 
 func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest) (*vmpb.InitializeResponse, error) {
@@ -113,11 +117,21 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	if err != nil {
 		return nil, err
 	}
-	_, err = bls.PublicKeyFromCompressedBytes(req.PublicKey) // publicKey not used in block.Context
+	var publicKey *bls.PublicKey
+	if len(req.PublicKey) > 0 {
+		var err error
+		publicKey, err = bls.PublicKeyFromCompressedBytes(req.PublicKey)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't decompress public key: %w", err)
+		}
+	}
+
+	networkUpgrades, err := convertNetworkUpgrades(req.NetworkUpgrades)
 	if err != nil {
 		return nil, err
 	}
-	_, err = ids.ToID(req.XChainId) // xChainID not used in context.Context
+
+	xChainID, err := ids.ToID(req.XChainId)
 	if err != nil {
 		return nil, err
 	}
@@ -130,11 +144,8 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 
-	pluginMetrics := metric.NewPrefixGatherer()
-	vm.metrics = pluginMetrics
-
-	processMetrics, err := metric.MakeAndRegister(
-		pluginMetrics,
+	processMetrics, err := metrics.MakeAndRegister(
+		vm.metrics,
 		"process",
 	)
 	if err != nil {
@@ -153,8 +164,8 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 
-	grpcMetrics, err := metric.MakeAndRegister(
-		pluginMetrics,
+	grpcMetrics, err := metrics.MakeAndRegister(
+		vm.metrics,
 		"grpc",
 	)
 	if err != nil {
@@ -167,8 +178,8 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 
-	vmMetrics := metric.NewPrefixGatherer()
-	if err := pluginMetrics.Register("vm", vmMetrics); err != nil {
+	vmMetrics := metrics.NewPrefixGatherer()
+	if err := vm.metrics.Register("vm", vmMetrics); err != nil {
 		return nil, err
 	}
 
@@ -182,9 +193,13 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 	vm.connCloser.Add(dbClientConn)
-	vm.db = rpcdb.NewClient(rpcdbpb.NewDatabaseClient(dbClientConn))
 
 	vm.log = nil // No logger needed
+
+	vm.db = corruptabledb.New(
+		rpcdb.NewClient(rpcdbpb.NewDatabaseClient(dbClientConn)),
+		vm.log,
+	)
 
 	clientConn, err := grpcutils.Dial(
 		req.ServerAddr,
@@ -199,65 +214,45 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 
 	vm.connCloser.Add(clientConn)
 
-	msgClient := messenger.NewClient(messengerpb.NewMessengerClient(clientConn))
-	// keystoreClient := gkeystore.NewClient(keystorepb.NewKeystoreClient(clientConn)) // Keystore removed
 	sharedMemoryClient := gsharedmemory.NewClient(sharedmemorypb.NewSharedMemoryClient(clientConn))
 	bcLookupClient := galiasreader.NewClient(aliasreaderpb.NewAliasReaderClient(clientConn))
 	appSenderClient := appsender.NewClient(appsenderpb.NewAppSenderClient(clientConn))
 	validatorStateClient := gvalidators.NewClient(validatorstatepb.NewValidatorStateClient(clientConn))
 	_ = gwarp.NewClient(warppb.NewSignerClient(clientConn)) // warpSignerClient not used
 
-	toEngine := make(chan block.Message, 1)
 	vm.closed = make(chan struct{})
-	go func() {
-		for {
-			select {
-			case msg, ok := <-toEngine:
-				if !ok {
-					return
-				}
-				// Send message to client
-				// TODO: Implement proper message conversion from block.Message to core.MessageType
-				// For now, skip notification as the conversion is complex
-				_ = msg       // Acknowledge we received the message
-				_ = msgClient // Acknowledge client exists for future use
-			case <-vm.closed:
-				return
-			}
-		}
-	}()
 
-	// Create wrappers (not currently used but may be needed for future functionality)
-	_ = &serverSharedMemoryWrapper{sm: sharedMemoryClient}
-	_ = &serverBCLookupWrapper{client: bcLookupClient}
-	_ = &serverValidatorStateWrapper{client: validatorStateClient}
+	vm.ctx = &Context{
+		NetworkID:       req.NetworkId,
+		SubnetID:        subnetID,
+		ChainID:         chainID,
+		NodeID:          nodeID,
+		PublicKey:       publicKey,
+		NetworkUpgrades: networkUpgrades,
 
 	// Store network information
 	vm.networkID = req.NetworkId
 	vm.chainID = chainID
 	vm.nodeID = nodeID
 
-	// The VM already has a log field
-	vm.metrics = vmMetrics
+		Log:          vm.log,
+		SharedMemory: sharedMemoryClient,
+		BCLookup:     bcLookupClient,
+		Metrics:      vmMetrics,
 
 	// Create a simple DBManager implementation
 	dbMgr := &dbManagerImpl{db: vm.db}
 
-	// Initialize the VM - create a proper block.ChainContext
-	consensusCtx := &consContext.Context{
-		QuantumID: 96369,     // LUX mainnet
-		ChainID:   ids.Empty, // Will be set later
-		NodeID:    ids.EmptyNodeID,
+		ValidatorState: validatorStateClient,
+
+		ChainDataDir: req.ChainDataDir,
 	}
-	blockChainCtx := &block.ChainContext{
-		Context: consensusCtx,
-	}
-	// Wrap core.AppSender to block.AppSender
-	blockAppSender := &blockAppSenderWrapper{appSender: appSenderClient}
-	if err := vm.vm.Initialize(ctx, blockChainCtx, dbMgr, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, toEngine, nil, blockAppSender); err != nil {
+
+	if err := vm.vm.Initialize(ctx, vm.ctx, vm.db, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, nil, nil, appSenderClient); err != nil {
 		// Ignore errors closing resources to return the original error
 		_ = vm.connCloser.Close()
 		close(vm.closed)
+		vm.log.Error("failed to initialize vm", zap.Error(err))
 		return nil, err
 	}
 
@@ -268,6 +263,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		// _ = vm.vm.Shutdown(ctx)
 		_ = vm.connCloser.Close()
 		close(vm.closed)
+		vm.log.Error("failed to get last accepted block ID", zap.Error(err))
 		return nil, err
 	}
 
@@ -278,6 +274,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		// _ = vm.vm.Shutdown(ctx)
 		_ = vm.connCloser.Close()
 		close(vm.closed)
+		vm.log.Error("failed to get last accepted block", zap.Error(err))
 		return nil, err
 	}
 	parentID := blk.Parent()
@@ -298,21 +295,9 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 }
 
 func (vm *VMServer) SetState(ctx context.Context, stateReq *vmpb.SetStateRequest) (*vmpb.SetStateResponse, error) {
-	// SetState not available in ChainVM interface, check if VM implements it
-	// Define State type locally since consensus package doesn't export it
-	type State uint32
-	const NormalOp State = 1
-
-	type stateSetter interface {
-		SetState(context.Context, State) error
-	}
-
-	if ss, ok := vm.vm.(stateSetter); ok {
-		// Set state to NormalOp (1)
-		err := ss.SetState(ctx, NormalOp)
-		if err != nil {
-			return nil, err
-		}
+	err := vm.vm.SetState(ctx, uint32(stateReq.State))
+	if err != nil {
+		return nil, err
 	}
 
 	lastAccepted, err := vm.vm.LastAccepted(ctx)
@@ -356,21 +341,18 @@ func (vm *VMServer) Shutdown(ctx context.Context, _ *emptypb.Empty) (*emptypb.Em
 }
 
 func (vm *VMServer) CreateHandlers(ctx context.Context, _ *emptypb.Empty) (*vmpb.CreateHandlersResponse, error) {
-	// CreateHandlers not available in ChainVM interface, check if VM implements it
-	type handlerCreator interface {
+	type vmWithHandlers interface {
 		CreateHandlers(context.Context) (map[string]http.Handler, error)
 	}
-
-	var handlers map[string]http.Handler
-	if hc, ok := vm.vm.(handlerCreator); ok {
-		var err error
-		handlers, err = hc.CreateHandlers(ctx)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		// Return empty handlers if not implemented
-		handlers = make(map[string]http.Handler)
+	
+	handlerVM, ok := vm.vm.(vmWithHandlers)
+	if !ok {
+		return &vmpb.CreateHandlersResponse{}, nil
+	}
+	
+	handlers, err := handlerVM.CreateHandlers(ctx)
+	if err != nil {
+		return nil, err
 	}
 	resp := &vmpb.CreateHandlersResponse{}
 	for prefix, handler := range handlers {
@@ -393,40 +375,86 @@ func (vm *VMServer) CreateHandlers(ctx context.Context, _ *emptypb.Empty) (*vmpb
 	return resp, nil
 }
 
-func (vm *VMServer) Connected(ctx context.Context, req *vmpb.ConnectedRequest) (*emptypb.Empty, error) {
-	nodeID, err := ids.ToNodeID(req.NodeId)
+func (vm *VMServer) NewHTTPHandler(ctx context.Context, _ *emptypb.Empty) (*vmpb.NewHTTPHandlerResponse, error) {
+	type vmWithHTTPHandler interface {
+		NewHTTPHandler(context.Context) (interface{}, error)
+	}
+	
+	handlerVM, ok := vm.vm.(vmWithHTTPHandler)
+	if !ok {
+		return &vmpb.NewHTTPHandlerResponse{}, nil
+	}
+	
+	handlerIface, err := handlerVM.NewHTTPHandler(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	peerVersion := &version.Application{
+	if handlerIface == nil {
+		return &vmpb.NewHTTPHandlerResponse{}, nil
+	}
+	
+	handler, ok := handlerIface.(http.Handler)
+	if !ok {
+		return nil, errors.New("NewHTTPHandler did not return http.Handler")
+	}
+
+	serverListener, err := grpcutils.NewListener()
+	if err != nil {
+		return nil, err
+	}
+	server := grpcutils.NewServer()
+	vm.serverCloser.Add(server)
+	httppb.RegisterHTTPServer(server, ghttp.NewServer(handler))
+
+	// Start HTTP service
+	go grpcutils.Serve(serverListener, server)
+
+	return &vmpb.NewHTTPHandlerResponse{
+		ServerAddr: serverListener.Addr().String(),
+	}, nil
+}
+
+func (vm *VMServer) WaitForEvent(ctx context.Context, _ *emptypb.Empty) (*vmpb.WaitForEventResponse, error) {
+	message, err := vm.vm.WaitForEvent(ctx)
+	if err != nil {
+		vm.log.Debug("Received error while waiting for event", zap.Error(err))
+	}
+	
+	var msgEnum vmpb.Message
+	if message != nil {
+		if msgVal, ok := message.(int32); ok {
+			msgEnum = vmpb.Message(msgVal)
+		}
+	}
+	
+	return &vmpb.WaitForEventResponse{
+		Message: msgEnum,
+	}, err
+}
+
+func (vm *VMServer) Connected(ctx context.Context, req *vmpb.ConnectedRequest) (*emptypb.Empty, error) {
+	_, err := ids.ToNodeID(req.NodeId)
+	if err != nil {
+		return nil, err
+	}
+
+	_ = &version.Application{
 		Name:  req.Name,
 		Major: int(req.Major),
 		Minor: int(req.Minor),
 		Patch: int(req.Patch),
 	}
-	// Check if VM implements network.Handler interface
-	type connectedHandler interface {
-		Connected(context.Context, ids.NodeID, *version.Application) error
-	}
-	if handler, ok := vm.vm.(connectedHandler); ok {
-		return &emptypb.Empty{}, handler.Connected(ctx, nodeID, peerVersion)
-	}
+	// Connected is not part of block.ChainVM interface
 	return &emptypb.Empty{}, nil
 }
 
 func (vm *VMServer) Disconnected(ctx context.Context, req *vmpb.DisconnectedRequest) (*emptypb.Empty, error) {
-	nodeID, err := ids.ToNodeID(req.NodeId)
+	_, err := ids.ToNodeID(req.NodeId)
 	if err != nil {
 		return nil, err
 	}
-	// Check if VM implements network.Handler interface
-	type disconnectedHandler interface {
-		Disconnected(context.Context, ids.NodeID) error
-	}
-	if handler, ok := vm.vm.(disconnectedHandler); ok {
-		return &emptypb.Empty{}, handler.Disconnected(ctx, nodeID)
-	}
+	// Disconnected is not part of block.ChainVM interface
 	return &emptypb.Empty{}, nil
 }
 
@@ -503,9 +531,8 @@ func (vm *VMServer) ParseBlock(ctx context.Context, req *vmpb.ParseBlockRequest)
 	}
 
 	return &vmpb.ParseBlockResponse{
-		Id:       blkID[:],
-		ParentId: parentID[:],
-		// Status:            vmpb.Status(blk.Status()), // Status method no longer exists on chain.Block
+		Id:                blkID[:],
+		ParentId:          parentID[:],
 		Height:            blk.Height(),
 		Timestamp:         timestamp,
 		VerifyWithContext: verifyWithCtx,
@@ -541,9 +568,8 @@ func (vm *VMServer) GetBlock(ctx context.Context, req *vmpb.GetBlockRequest) (*v
 	}
 
 	return &vmpb.GetBlockResponse{
-		ParentId: parentID[:],
-		Bytes:    blk.Bytes(),
-		// Status:            vmpb.Status(blk.Status()), // Status method no longer exists on chain.Block
+		ParentId:          parentID[:],
+		Bytes:             blk.Bytes(),
 		Height:            blk.Height(),
 		Timestamp:         timestamp,
 		VerifyWithContext: verifyWithCtx,
@@ -559,21 +585,19 @@ func (vm *VMServer) SetPreference(ctx context.Context, req *vmpb.SetPreferenceRe
 }
 
 func (vm *VMServer) Health(ctx context.Context, _ *emptypb.Empty) (*vmpb.HealthResponse, error) {
-	// HealthCheck not available in ChainVM interface, check if VM implements it
-	type healthChecker interface {
+	type vmWithHealthCheck interface {
 		HealthCheck(context.Context) (interface{}, error)
 	}
-
+	
 	var vmHealth interface{}
-	if hc, ok := vm.vm.(healthChecker); ok {
+	if healthVM, ok := vm.vm.(vmWithHealthCheck); ok {
 		var err error
-		vmHealth, err = hc.HealthCheck(ctx)
+		vmHealth, err = healthVM.HealthCheck(ctx)
 		if err != nil {
 			return &vmpb.HealthResponse{}, err
 		}
-	} else {
-		vmHealth = map[string]interface{}{"status": "healthy"}
 	}
+	
 	dbHealth, err := vm.db.HealthCheck(ctx)
 	if err != nil {
 		return &vmpb.HealthResponse{}, err
@@ -608,45 +632,6 @@ func (vm *VMServer) Version(ctx context.Context, _ *emptypb.Empty) (*vmpb.Versio
 	}, err
 }
 
-func (vm *VMServer) CrossChainAppRequest(ctx context.Context, msg *vmpb.CrossChainAppRequestMsg) (*emptypb.Empty, error) {
-	_, err := ids.ToID(msg.ChainId)
-	if err != nil {
-		return nil, err
-	}
-	_, err = grpcutils.TimestampAsTime(msg.Deadline)
-	if err != nil {
-		return nil, err
-	}
-	// CrossChainAppRequest method no longer exists on ChainVM interface
-	// return &emptypb.Empty{}, vm.vm.CrossChainAppRequest(ctx, chainID, msg.RequestId, deadline, msg.Request)
-	return &emptypb.Empty{}, nil
-}
-
-func (vm *VMServer) CrossChainAppRequestFailed(ctx context.Context, msg *vmpb.CrossChainAppRequestFailedMsg) (*emptypb.Empty, error) {
-	_, err := ids.ToID(msg.ChainId)
-	if err != nil {
-		return nil, err
-	}
-
-	_ = &core.AppError{
-		Code:    msg.ErrorCode,
-		Message: msg.ErrorMessage,
-	}
-	// CrossChainAppRequestFailed method no longer exists on ChainVM interface
-	// return &emptypb.Empty{}, vm.vm.CrossChainAppRequestFailed(ctx, chainID, msg.RequestId, appErr)
-	return &emptypb.Empty{}, nil
-}
-
-func (vm *VMServer) CrossChainAppResponse(ctx context.Context, msg *vmpb.CrossChainAppResponseMsg) (*emptypb.Empty, error) {
-	_, err := ids.ToID(msg.ChainId)
-	if err != nil {
-		return nil, err
-	}
-	// CrossChainAppResponse method no longer exists on ChainVM interface
-	// return &emptypb.Empty{}, vm.vm.CrossChainAppResponse(ctx, chainID, msg.RequestId, msg.Response)
-	return &emptypb.Empty{}, nil
-}
-
 func (vm *VMServer) AppRequest(ctx context.Context, req *vmpb.AppRequestMsg) (*emptypb.Empty, error) {
 	nodeID, err := ids.ToNodeID(req.NodeId)
 	if err != nil {
@@ -656,14 +641,10 @@ func (vm *VMServer) AppRequest(ctx context.Context, req *vmpb.AppRequestMsg) (*e
 	if err != nil {
 		return nil, err
 	}
-	// Check if VM implements AppHandler interface
-	type appHandler interface {
-		AppRequest(context.Context, ids.NodeID, uint32, time.Time, []byte) error
+	if vm.appHandler == nil {
+		return nil, errors.New("AppRequest not implemented")
 	}
-	if handler, ok := vm.vm.(appHandler); ok {
-		return &emptypb.Empty{}, handler.AppRequest(ctx, nodeID, req.RequestId, deadline, req.Request)
-	}
-	return &emptypb.Empty{}, nil
+	return &emptypb.Empty{}, vm.appHandler.AppRequest(ctx, nodeID, req.RequestId, deadline, req.Request)
 }
 
 func (vm *VMServer) AppRequestFailed(ctx context.Context, req *vmpb.AppRequestFailedMsg) (*emptypb.Empty, error) {
@@ -676,13 +657,16 @@ func (vm *VMServer) AppRequestFailed(ctx context.Context, req *vmpb.AppRequestFa
 		Code:    req.ErrorCode,
 		Message: req.ErrorMessage,
 	}
-	// Check if VM implements AppHandler interface
-	type appFailHandler interface {
+	
+	type vmWithAppRequestFailed interface {
 		AppRequestFailed(context.Context, ids.NodeID, uint32, *core.AppError) error
 	}
-	if handler, ok := vm.vm.(appFailHandler); ok {
-		return &emptypb.Empty{}, handler.AppRequestFailed(ctx, nodeID, req.RequestId, appErr)
+	
+	if failedVM, ok := vm.vm.(vmWithAppRequestFailed); ok {
+		return &emptypb.Empty{}, failedVM.AppRequestFailed(ctx, nodeID, req.RequestId, appErr)
 	}
+	
+	// AppRequestFailed is optional
 	return &emptypb.Empty{}, nil
 }
 
@@ -691,14 +675,10 @@ func (vm *VMServer) AppResponse(ctx context.Context, req *vmpb.AppResponseMsg) (
 	if err != nil {
 		return nil, err
 	}
-	// Check if VM implements AppHandler interface
-	type appRespHandler interface {
-		AppResponse(context.Context, ids.NodeID, uint32, []byte) error
+	if vm.appHandler == nil {
+		return nil, errors.New("AppResponse not implemented")
 	}
-	if handler, ok := vm.vm.(appRespHandler); ok {
-		return &emptypb.Empty{}, handler.AppResponse(ctx, nodeID, req.RequestId, req.Response)
-	}
-	return &emptypb.Empty{}, nil
+	return &emptypb.Empty{}, vm.appHandler.AppResponse(ctx, nodeID, req.RequestId, req.Response)
 }
 
 func (vm *VMServer) AppGossip(ctx context.Context, req *vmpb.AppGossipMsg) (*emptypb.Empty, error) {
@@ -706,14 +686,10 @@ func (vm *VMServer) AppGossip(ctx context.Context, req *vmpb.AppGossipMsg) (*emp
 	if err != nil {
 		return nil, err
 	}
-	// Check if VM implements AppHandler interface
-	type appGossipHandler interface {
-		AppGossip(context.Context, ids.NodeID, []byte) error
+	if vm.appHandler == nil {
+		return nil, errors.New("AppGossip not implemented")
 	}
-	if handler, ok := vm.vm.(appGossipHandler); ok {
-		return &emptypb.Empty{}, handler.AppGossip(ctx, nodeID, req.Msg)
-	}
-	return &emptypb.Empty{}, nil
+	return &emptypb.Empty{}, vm.appHandler.AppGossip(ctx, nodeID, req.Msg)
 }
 
 func (vm *VMServer) Gather(context.Context, *emptypb.Empty) (*vmpb.GatherResponse, error) {
@@ -730,24 +706,14 @@ func (vm *VMServer) GetAncestors(ctx context.Context, req *vmpb.GetAncestorsRequ
 	maxBlksSize := int(req.MaxBlocksSize)
 	_ = time.Duration(req.MaxBlocksRetrivalTime) // Not used in simple implementation
 
-	// GetAncestors implementation - get blocks iteratively
-	var blocks [][]byte
-	currentID := blkID
-	for i := 0; i < maxBlksNum; i++ {
-		blk, err := vm.vm.GetBlock(ctx, currentID)
-		if err != nil {
-			break // Stop when we can't get more blocks
-		}
-		blkBytes := blk.Bytes()
-		if len(blkBytes) > maxBlksSize {
-			break // Stop if block is too large
-		}
-		blocks = append(blocks, blkBytes)
-		currentID = blk.Parent()
-		if currentID == ids.Empty {
-			break // Reached genesis
-		}
-	}
+	blocks, err := block.GetAncestors(
+		ctx,
+		vm.vm,
+		blkID,
+		maxBlksNum,
+		maxBlksSize,
+		maxBlocksRetrivalTime,
+	)
 	return &vmpb.GetAncestorsResponse{
 		BlksBytes: blocks,
 	}, nil
@@ -992,123 +958,89 @@ func (vm *VMServer) StateSummaryAccept(
 	}, errorToRPCError(err)
 }
 
-// Server-specific wrapper types
-
-type serverSharedMemoryWrapper struct {
-	sm *gsharedmemory.Client
-}
-
-func (s *serverSharedMemoryWrapper) Get(peerChainID ids.ID, keys [][]byte) ([][]byte, error) {
-	return s.sm.Get(peerChainID, keys)
-}
-
-func (s *serverSharedMemoryWrapper) Apply(requests map[ids.ID]interface{}, batches ...interface{}) error {
-	// Convert interface{} back to proper types
-	reqMap := make(map[ids.ID]*atomic.Requests, len(requests))
-	for k, v := range requests {
-		if r, ok := v.(*atomic.Requests); ok {
-			reqMap[k] = r
-		}
+func convertNetworkUpgrades(pbUpgrades *vmpb.NetworkUpgrades) (upgrade.Config, error) {
+	if pbUpgrades == nil {
+		return upgrade.Config{}, errNilNetworkUpgradesPB
 	}
-	batchSlice := make([]database.Batch, 0, len(batches))
-	for _, b := range batches {
-		if batch, ok := b.(database.Batch); ok {
-			batchSlice = append(batchSlice, batch)
-		}
-	}
-	return s.sm.Apply(reqMap, batchSlice...)
-}
 
-type serverBCLookupWrapper struct {
-	client *galiasreader.Client
-}
-
-func (b *serverBCLookupWrapper) PrimaryAlias(chainID ids.ID) (string, error) {
-	return b.client.PrimaryAlias(chainID)
-}
-
-func (b *serverBCLookupWrapper) Lookup(alias string) (ids.ID, error) {
-	return b.client.Lookup(alias)
-}
-
-type serverValidatorStateWrapper struct {
-	client validators.State
-}
-
-func (v *serverValidatorStateWrapper) GetCurrentHeight() (uint64, error) {
-	return v.client.GetCurrentHeight(context.Background())
-}
-
-func (v *serverValidatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
-	// GetMinimumHeight not available in validators.State interface, return current height
-	return v.client.GetCurrentHeight(ctx)
-}
-
-func (v *serverValidatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	// GetNetID not available in validators.State interface, return empty ID
-	return ids.Empty, nil
-}
-
-func (v *serverValidatorStateWrapper) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {
-	// Get the validator set from the client with context
-	valSet, err := v.client.GetValidatorSet(context.Background(), height, netID)
+	ap1, err := grpcutils.TimestampAsTime(pbUpgrades.ApricotPhase_1Time)
 	if err != nil {
-		return nil, err
+		return upgrade.Config{}, err
+	}
+	ap2, err := grpcutils.TimestampAsTime(pbUpgrades.ApricotPhase_2Time)
+	if err != nil {
+		return upgrade.Config{}, err
+	}
+	ap3, err := grpcutils.TimestampAsTime(pbUpgrades.ApricotPhase_3Time)
+	if err != nil {
+		return upgrade.Config{}, err
+	}
+	ap4, err := grpcutils.TimestampAsTime(pbUpgrades.ApricotPhase_4Time)
+	if err != nil {
+		return upgrade.Config{}, err
+	}
+	ap5, err := grpcutils.TimestampAsTime(pbUpgrades.ApricotPhase_5Time)
+	if err != nil {
+		return upgrade.Config{}, err
+	}
+	apPre6, err := grpcutils.TimestampAsTime(pbUpgrades.ApricotPhasePre_6Time)
+	if err != nil {
+		return upgrade.Config{}, err
+	}
+	ap6, err := grpcutils.TimestampAsTime(pbUpgrades.ApricotPhase_6Time)
+	if err != nil {
+		return upgrade.Config{}, err
+	}
+	apPost6, err := grpcutils.TimestampAsTime(pbUpgrades.ApricotPhasePost_6Time)
+	if err != nil {
+		return upgrade.Config{}, err
+	}
+	banff, err := grpcutils.TimestampAsTime(pbUpgrades.BanffTime)
+	if err != nil {
+		return upgrade.Config{}, err
+	}
+	cortina, err := grpcutils.TimestampAsTime(pbUpgrades.CortinaTime)
+	if err != nil {
+		return upgrade.Config{}, err
+	}
+	durango, err := grpcutils.TimestampAsTime(pbUpgrades.DurangoTime)
+	if err != nil {
+		return upgrade.Config{}, err
+	}
+	etna, err := grpcutils.TimestampAsTime(pbUpgrades.EtnaTime)
+	if err != nil {
+		return upgrade.Config{}, err
+	}
+	fortuna, err := grpcutils.TimestampAsTime(pbUpgrades.FortunaTime)
+	if err != nil {
+		return upgrade.Config{}, err
+	}
+	granite, err := grpcutils.TimestampAsTime(pbUpgrades.GraniteTime)
+	if err != nil {
+		return upgrade.Config{}, err
 	}
 
-	// Convert map[ids.NodeID]*validators.GetValidatorOutput to map[ids.NodeID]uint64
-	result := make(map[ids.NodeID]uint64, len(valSet))
-	for nodeID, validator := range valSet {
-		result[nodeID] = validator.Weight
+	cortinaXChainStopVertexID, err := ids.ToID(pbUpgrades.CortinaXChainStopVertexId)
+	if err != nil {
+		return upgrade.Config{}, err
 	}
-	return result, nil
-}
 
-// dbManagerImpl is a simple DBManager implementation
-type dbManagerImpl struct {
-	db database.Database
-}
-
-func (d *dbManagerImpl) Current() database.Database {
-	return d.db
-}
-
-func (d *dbManagerImpl) Database(id ids.ID) database.Database {
-	// For now, just return the current database
-	return d.db
-}
-
-func (d *dbManagerImpl) Close() error {
-	return nil
-}
-
-// blockAppSenderWrapper wraps a core.AppSender to implement block.AppSender
-type blockAppSenderWrapper struct {
-	appSender core.AppSender
-}
-
-func (b *blockAppSenderWrapper) SendAppRequest(ctx context.Context, nodeIDs []ids.NodeID, requestID uint32, appRequestBytes []byte) error {
-	// Convert slice to set for core.AppSender
-	nodeIDSet := set.NewSet[ids.NodeID](len(nodeIDs))
-	for _, nodeID := range nodeIDs {
-		nodeIDSet.Add(nodeID)
-	}
-	return b.appSender.SendAppRequest(ctx, nodeIDSet, requestID, appRequestBytes)
-}
-
-func (b *blockAppSenderWrapper) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
-	return b.appSender.SendAppResponse(ctx, nodeID, requestID, appResponseBytes)
-}
-
-func (b *blockAppSenderWrapper) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
-	return b.appSender.SendAppError(ctx, nodeID, requestID, errorCode, errorMessage)
-}
-
-func (b *blockAppSenderWrapper) SendAppGossip(ctx context.Context, nodeIDs []ids.NodeID, appGossipBytes []byte) error {
-	// Convert slice to set for core.AppSender
-	nodeIDSet := set.NewSet[ids.NodeID](len(nodeIDs))
-	for _, nodeID := range nodeIDs {
-		nodeIDSet.Add(nodeID)
-	}
-	return b.appSender.SendAppGossip(ctx, nodeIDSet, appGossipBytes)
+	return upgrade.Config{
+		ApricotPhase1Time:            ap1,
+		ApricotPhase2Time:            ap2,
+		ApricotPhase3Time:            ap3,
+		ApricotPhase4Time:            ap4,
+		ApricotPhase4MinPChainHeight: pbUpgrades.ApricotPhase_4MinPChainHeight,
+		ApricotPhase5Time:            ap5,
+		ApricotPhasePre6Time:         apPre6,
+		ApricotPhase6Time:            ap6,
+		ApricotPhasePost6Time:        apPost6,
+		BanffTime:                    banff,
+		CortinaTime:                  cortina,
+		CortinaXChainStopVertexID:    cortinaXChainStopVertexID,
+		DurangoTime:                  durango,
+		EtnaTime:                     etna,
+		FortunaTime:                  fortuna,
+		GraniteTime:                  granite,
+	}, nil
 }

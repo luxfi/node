@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"fmt"
 
 	"github.com/luxfi/ids"
@@ -28,7 +29,7 @@ func (b *ApricotAtomicBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *ApricotAtomicBlock) InitCtx(ctx context.Context) {
+func (b *ApricotAtomicBlock) InitCtx(ctx *consensusctx.Context) {
 	b.Tx.Unsigned.InitCtx(ctx)
 }
 

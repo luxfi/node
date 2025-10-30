@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -42,10 +42,12 @@ func (ip *UnsignedIP) Sign(tlsSigner crypto.Signer, blsSigner bls.Signer) (*Sign
 	if err != nil {
 		return nil, err
 	}
+
 	blsSignature, err := blsSigner.SignProofOfPossession(ipBytes)
 	if err != nil {
 		return nil, err
 	}
+
 	return &SignedIP{
 		UnsignedIP:        *ip,
 		TLSSignature:      tlsSignature,

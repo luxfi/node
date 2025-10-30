@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -6,18 +6,18 @@ package proposervm
 import (
 	"context"
 
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/indexer"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 )
 
 var _ indexer.BlockServer = (*VM)(nil)
 
 // Note: this is a contention heavy call that should be avoided
 // for frequent/repeated indexer ops
-func (vm *VM) GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
-	vm.lock.Lock()
-	defer vm.lock.Unlock()
+func (vm *VM) GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (chainblock.Block, error) {
+	vm.ctx.Lock.Lock()
+	defer vm.ctx.Lock.Unlock()
 
 	return vm.getPostForkBlock(ctx, blkID)
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -13,18 +13,18 @@ import (
 
 	"github.com/luxfi/metric"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/version"
-	"github.com/luxfi/ids"
+	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 )
 
 var (
 	_ validators.Connector = (*Network)(nil)
-	_ core.AppHandler      = (*networkAppHandlerAdapter)(nil)
-	_ NodeSampler          = (*peerSampler)(nil)
+	_ core.AppHandler    = (*Network)(nil)
+	_ NodeSampler          = (*PeerSampler)(nil)
 
 	opLabel      = "op"
 	handlerLabel = "handlerID"
@@ -79,7 +79,7 @@ type clientOptions struct {
 func NewNetwork(
 	log log.Logger,
 	sender core.AppSender,
-	registerer metric.Registerer,
+	registerer prometheus.Registerer,
 	namespace string,
 ) (*Network, error) {
 	metrics := metricsImpl{
@@ -144,19 +144,7 @@ func (n *Network) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) 
 	return n.router.AppGossip(ctx, nodeID, msg)
 }
 
-func (n *Network) CrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
-	return n.router.CrossChainAppRequest(ctx, chainID, requestID, deadline, request)
-}
-
-func (n *Network) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, response []byte) error {
-	return n.router.CrossChainAppResponse(ctx, chainID, requestID, response)
-}
-
-func (n *Network) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *core.AppError) error {
-	return n.router.CrossChainAppRequestFailed(ctx, chainID, requestID, appErr)
-}
-
-func (n *Network) Connected(_ context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
+func (n *Network) Connected(_ context.Context, nodeID ids.NodeID, _ *consensusversion.Application) error {
 	n.Peers.add(nodeID)
 	return nil
 }
@@ -170,14 +158,13 @@ func (n *Network) Disconnected(_ context.Context, nodeID ids.NodeID) error {
 // corresponding protocol.
 func (n *Network) NewClient(handlerID uint64, options ...ClientOption) *Client {
 	client := &Client{
-		handlerID:     handlerID,
 		handlerIDStr:  strconv.FormatUint(handlerID, 10),
 		handlerPrefix: ProtocolPrefix(handlerID),
 		sender:        n.sender,
 		router:        n.router,
 		options: &clientOptions{
-			nodeSampler: &peerSampler{
-				peers: n.Peers,
+			nodeSampler: &PeerSampler{
+				Peers: n.Peers,
 			},
 		},
 	}
@@ -229,12 +216,13 @@ func (p *Peers) Sample(limit int) []ids.NodeID {
 	return p.set.Sample(limit)
 }
 
-type peerSampler struct {
-	peers *Peers
+// PeerSampler implements NodeSampler
+type PeerSampler struct {
+	Peers *Peers
 }
 
-func (p peerSampler) Sample(_ context.Context, limit int) []ids.NodeID {
-	return p.peers.Sample(limit)
+func (p PeerSampler) Sample(_ context.Context, limit int) []ids.NodeID {
+	return p.Peers.Sample(limit)
 }
 
 func ProtocolPrefix(handlerID uint64) []byte {

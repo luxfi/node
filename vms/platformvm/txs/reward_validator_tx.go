@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -34,12 +34,7 @@ func (tx *RewardValidatorTx) SetBytes(unsignedBytes []byte) {
 	tx.unsignedBytes = unsignedBytes
 }
 
-func (*RewardValidatorTx) InitCtx(context.Context) {}
-
-// InitializeContext initializes the context for this transaction
-func (*RewardValidatorTx) InitializeContext(context.Context) error {
-	return nil
-}
+func (*RewardValidatorTx) InitCtx(*consensusctx.Context) {}
 
 func (tx *RewardValidatorTx) Bytes() []byte {
 	return tx.unsignedBytes
@@ -53,7 +48,7 @@ func (*RewardValidatorTx) Outputs() []*lux.TransferableOutput {
 	return nil
 }
 
-func (*RewardValidatorTx) SyntacticVerify(context.Context) error {
+func (*RewardValidatorTx) SyntacticVerify(*consensusctx.Context) error {
 	return nil
 }
 

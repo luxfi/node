@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package execute
@@ -8,10 +8,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/example/xsvm/state"
@@ -165,22 +165,20 @@ func (t *Tx) Import(i *tx.Import) error {
 		return errs.Err
 	}
 
-	// Create adapter for ValidatorState
-	vs := consensus.GetValidatorState(t.ChainContext)
-	if vs == nil {
-		return fmt.Errorf("validator state not available")
-	}
-	vsAdapter := &warpValidatorStateAdapter{
-		ctx: t.ChainContext,
-		vs:  vs,
+	validators, err := warp.GetCanonicalValidatorSetFromChainID(
+		t.Context,
+		t.ChainContext.ValidatorState,
+		t.BlockContext.PChainHeight,
+		message.SourceChainID,
+	)
+	if err != nil {
+		return err
 	}
 
 	return message.Signature.Verify(
-		t.Context,
 		&message.UnsignedMessage,
-		consensus.GetNetworkID(t.ChainContext),
-		vsAdapter,
-		t.BlockContext.PChainHeight,
+		t.ChainContext.NetworkID,
+		validators,
 		QuorumNumerator,
 		QuorumDenominator,
 	)

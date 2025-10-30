@@ -18,16 +18,11 @@ type Factory struct{}
 
 // New creates a new C-Chain VM instance
 func (f *Factory) New(logger log.Logger) (interface{}, error) {
-	// Get the handler from the logger, or create a default one if nil
-	handler := logger.Handler()
-	if handler == nil {
-		// Create a simple text handler that writes to stderr
-		handler = slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-			Level: slog.LevelInfo,
-		})
-	}
-
-	// Create slog.Logger from the handler
+	// Convert log.Logger to slog.Logger
+	// For now, create a basic slog logger
+	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	})
 	slogLogger := slog.New(handler)
 
 	return &VM{

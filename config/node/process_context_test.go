@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -21,7 +21,7 @@ func TestProcessContext(t *testing.T) {
 			name: "ipv4 loopback",
 			context: ProcessContext{
 				PID: 1,
-				URI: "http://localhost:9630",
+				URI: "http://localhost:9650",
 				StakingAddress: netip.AddrPortFrom(
 					netip.AddrFrom4([4]byte{127, 0, 0, 1}),
 					9651,
@@ -29,7 +29,7 @@ func TestProcessContext(t *testing.T) {
 			},
 			expected: `{
 	"pid": 1,
-	"uri": "http://localhost:9630",
+	"uri": "http://localhost:9650",
 	"stakingAddress": "127.0.0.1:9651"
 }`,
 		},
@@ -37,7 +37,7 @@ func TestProcessContext(t *testing.T) {
 			name: "ipv6 loopback",
 			context: ProcessContext{
 				PID: 1,
-				URI: "http://localhost:9630",
+				URI: "http://localhost:9650",
 				StakingAddress: netip.AddrPortFrom(
 					netip.IPv6Loopback(),
 					9651,
@@ -45,7 +45,7 @@ func TestProcessContext(t *testing.T) {
 			},
 			expected: `{
 	"pid": 1,
-	"uri": "http://localhost:9630",
+	"uri": "http://localhost:9650",
 	"stakingAddress": "[::1]:9651"
 }`,
 		},

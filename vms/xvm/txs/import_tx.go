@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -51,7 +51,7 @@ func (t *ImportTx) NumCredentials() int {
 	return t.BaseTx.NumCredentials() + len(t.ImportedIns)
 }
 
-func (t *ImportTx) InitCtx(ctx context.Context) {
+func (t *ImportTx) InitCtx(ctx *consensusctx.Context) {
 	// TransferableInput doesn't have InitCtx
 	// for _, in := range t.ImportedIns {
 	//     in.InitCtx(ctx)
@@ -60,7 +60,7 @@ func (t *ImportTx) InitCtx(ctx context.Context) {
 }
 
 // InitializeContext initializes the context for this transaction
-func (t *ImportTx) InitializeContext(ctx context.Context) error {
+func (t *ImportTx) InitializeContext(ctx *consensusctx.Context) error {
 	t.InitCtx(ctx)
 	return nil
 }
@@ -70,7 +70,7 @@ func (t *ImportTx) Visit(v Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *ImportTx) InitializeWithContext(ctx context.Context) error {
+func (tx *ImportTx) InitializeWithContext(ctx *consensusctx.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -8,8 +8,6 @@ import (
 
 	"github.com/google/btree"
 )
-
-const defaultTreeDegree = 2
 
 var _ StakerIterator = (*treeIterator)(nil)
 

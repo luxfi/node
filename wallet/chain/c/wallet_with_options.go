@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
 
 import (
-	// "github.com/luxfi/evm/plugin/evm"
+	"github.com/luxfi/geth/plugin/evm/atomic"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -41,7 +41,7 @@ func (w *walletWithOptions) IssueImportTx(
 	chainID ids.ID,
 	to ethcommon.Address,
 	options ...common.Option,
-) (*Tx, error) {
+) (*atomic.Tx, error) {
 	return w.Wallet.IssueImportTx(
 		chainID,
 		to,
@@ -53,7 +53,7 @@ func (w *walletWithOptions) IssueExportTx(
 	chainID ids.ID,
 	outputs []*secp256k1fx.TransferOutput,
 	options ...common.Option,
-) (*Tx, error) {
+) (*atomic.Tx, error) {
 	return w.Wallet.IssueExportTx(
 		chainID,
 		outputs,
@@ -62,9 +62,9 @@ func (w *walletWithOptions) IssueExportTx(
 }
 
 func (w *walletWithOptions) IssueUnsignedAtomicTx(
-	utx UnsignedAtomicTx,
+	utx atomic.UnsignedAtomicTx,
 	options ...common.Option,
-) (*Tx, error) {
+) (*atomic.Tx, error) {
 	return w.Wallet.IssueUnsignedAtomicTx(
 		utx,
 		common.UnionOptions(w.options, options)...,
@@ -72,7 +72,7 @@ func (w *walletWithOptions) IssueUnsignedAtomicTx(
 }
 
 func (w *walletWithOptions) IssueAtomicTx(
-	tx *Tx,
+	tx *atomic.Tx,
 	options ...common.Option,
 ) error {
 	return w.Wallet.IssueAtomicTx(

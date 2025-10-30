@@ -1,15 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
 
 import (
-	"context"
-	"sync"
-
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -19,12 +15,8 @@ import (
 )
 
 type Backend struct {
-	Config       *config.Config
-	Ctx          context.Context
-	XAssetID   ids.ID
-	NodeID       ids.NodeID
-	SharedMemory SharedMemory
-	Lock         sync.Locker
+	Config       *config.Internal
+	Ctx          *consensusctx.Context
 	Clk          *mockable.Clock
 	Fx           fx.Fx
 	FlowChecker  utxo.Verifier

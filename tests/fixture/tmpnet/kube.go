@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -7,6 +7,7 @@ import (
 	"cmp"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luxfi/log"
+	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -30,9 +31,10 @@ import (
 	"k8s.io/client-go/transport/spdy"
 	"k8s.io/utils/ptr"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/config"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -40,20 +42,20 @@ import (
 	restclient "k8s.io/client-go/rest"
 )
 
-// DefaultPodFlags defines common flags for luxd nodes running in a pod.
+// DefaultPodFlags defines common flags for node nodes running in a pod.
 func DefaultPodFlags(networkName string, dataDir string) map[string]string {
 	return map[string]string{
 		config.DataDirKey:                dataDir,
 		config.NetworkNameKey:            networkName,
 		config.SybilProtectionEnabledKey: "false",
 		config.HealthCheckFreqKey:        "500ms", // Ensure rapid detection of a healthy state
-		config.LogDisplayLevelKey:        "debug",
-		config.LogLevelKey:               "debug",
+		config.LogDisplayLevelKey:        logging.Debug.String(),
+		config.LogLevelKey:               logging.Debug.String(),
 		config.HTTPHostKey:               "0.0.0.0", // Need to bind to pod IP to ensure kubelet can access the http port for the readiness check
 	}
 }
 
-// NewNodeStatefulSet returns a statefulset for an luxd node.
+// NewNodeStatefulSet returns a statefulset for an node node.
 func NewNodeStatefulSet(
 	name string,
 	generateName bool,
@@ -73,9 +75,9 @@ func NewNodeStatefulSet(
 	}
 
 	podAnnotations := map[string]string{
-		"metric.io/scrape": "true",
-		"metric.io/path":   "/ext/metrics",
-		"promtail/collect":  "true",
+		"prometheus.io/scrape": "true",
+		"prometheus.io/path":   "/ext/metrics",
+		"promtail/collect":     "true",
 	}
 
 	podLabels := map[string]string{
@@ -162,21 +164,14 @@ func NewNodeStatefulSet(
 	}
 }
 
-// EnvVarName returns the environment variable name for a given prefix and key
-func EnvVarName(prefix, key string) string {
-	return fmt.Sprintf("%s_%s", prefix, strings.ToUpper(strings.ReplaceAll(key, "-", "_")))
-}
-
 // stringMapToEnvVarSlice converts a string map to a kube EnvVar slice.
 func flagsToEnvVarSlice(flags FlagsMap) []corev1.EnvVar {
 	envVars := make([]corev1.EnvVar, len(flags))
 	var i int
 	for k, v := range flags {
-		// Convert flag key to environment variable name with LUXD_ prefix
-		envName := strings.ToUpper(strings.ReplaceAll(config.EnvPrefix+"_"+k, "-", "_"))
 		envVars[i] = corev1.EnvVar{
-			Name:  envName,
-			Value: fmt.Sprintf("%v", v), // Convert interface{} to string
+			Name:  config.EnvVarName(config.EnvPrefix, k),
+			Value: v,
 		}
 		i++
 	}
@@ -235,15 +230,16 @@ func WaitForNodeHealthy(
 	}
 	if err := wait.PollImmediateInfinite(healthCheckInterval, func() (bool, error) {
 		healthReply, err := CheckNodeHealth(ctx, localNodeURI)
-		healthy := healthReply != nil && healthReply.Healthy
-		if err != nil && strings.Contains(err.Error(), "connection refused") {
+		if errors.Is(err, ErrUnrecoverableNodeHealthCheck) {
 			return false, err
 		} else if err != nil {
 			// Error is potentially recoverable - log and continue
-			log.Debug("failed to check node health")
+			log.Debug("failed to check node health",
+				zap.Error(err),
+			)
 			return false, nil
 		}
-		return healthy, nil
+		return healthReply.Healthy, nil
 	}); err != nil {
 		return ids.NodeID{}, fmt.Errorf("failed to wait for node to report healthy: %w", err)
 	}
@@ -365,7 +361,9 @@ func GetClientConfig(log log.Logger, path string, context string) (*restclient.C
 		if err == nil {
 			return kubeconfig, nil
 		}
-		log.Warn("failed to create inClusterConfig, falling back to default config")
+		log.Warn("failed to create inClusterConfig, falling back to default config",
+			zap.Error(err),
+		)
 	}
 	overrides := &clientcmd.ConfigOverrides{}
 	if len(context) > 0 {
@@ -452,7 +450,11 @@ func applyManifest(
 		if err != nil {
 			return fmt.Errorf("failed to apply %s %s/%s: %w", gvk.Kind, resourceNamespace, obj.GetName(), err)
 		}
-		log.Info("applied resource")
+		log.Info("applied resource",
+			zap.String("kind", gvk.Kind),
+			zap.String("namespace", resourceNamespace),
+			zap.String("name", obj.GetName()),
+		)
 	}
 
 	// TODO(marun) Check that the resources are running and healthy

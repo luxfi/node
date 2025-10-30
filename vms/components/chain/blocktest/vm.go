@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package blocktest
@@ -21,9 +21,9 @@ type VM struct {
 	T *testing.T
 
 	InitializeF         func(context.Context, context.Context, database.Database, []byte, []byte, []byte, interface{}, []ids.ID, metric.Registry) error
-	BuildBlockF         func(context.Context) (chain.Block, error)
-	ParseBlockF         func(context.Context, []byte) (chain.Block, error)
-	GetBlockF           func(context.Context, ids.ID) (chain.Block, error)
+	BuildBlockF         func(context.Context) (block.Block, error)
+	ParseBlockF         func(context.Context, []byte) (block.Block, error)
+	GetBlockF           func(context.Context, ids.ID) (block.Block, error)
 	LastAcceptedF       func(context.Context) (ids.ID, error)
 	SetPreferenceF      func(context.Context, ids.ID) error
 	SetStateF           func(context.Context, uint8) error
@@ -61,21 +61,21 @@ func (vm *VM) Initialize(ctx context.Context, chainCtx context.Context, db datab
 	return nil
 }
 
-func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	if vm.BuildBlockF != nil {
 		return vm.BuildBlockF(ctx)
 	}
 	return nil, errors.New("not implemented")
 }
 
-func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (block.Block, error) {
 	if vm.ParseBlockF != nil {
 		return vm.ParseBlockF(ctx, blockBytes)
 	}
 	return nil, errors.New("not implemented")
 }
 
-func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
+func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
 	if vm.GetBlockF != nil {
 		return vm.GetBlockF(ctx, blkID)
 	}

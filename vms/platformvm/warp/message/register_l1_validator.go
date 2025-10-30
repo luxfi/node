@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -17,10 +17,10 @@ import (
 )
 
 var (
-	ErrInvalidNetID  = errors.New("invalid net ID")
-	ErrInvalidWeight = errors.New("invalid weight")
-	ErrInvalidNodeID = errors.New("invalid node ID")
-	ErrInvalidOwner  = errors.New("invalid owner")
+	ErrInvalidSubnetID = errors.New("invalid subnet ID")
+	ErrInvalidWeight   = errors.New("invalid weight")
+	ErrInvalidNodeID   = errors.New("invalid node ID")
+	ErrInvalidOwner    = errors.New("invalid owner")
 )
 
 type PChainOwner struct {
@@ -35,7 +35,7 @@ type PChainOwner struct {
 type RegisterL1Validator struct {
 	payload
 
-	NetID                 ids.ID                 `serialize:"true" json:"netID"`
+	SubnetID              ids.ID                 `serialize:"true" json:"subnetID"`
 	NodeID                types.JSONByteSlice    `serialize:"true" json:"nodeID"`
 	BLSPublicKey          [bls.PublicKeyLen]byte `serialize:"true" json:"blsPublicKey"`
 	Expiry                uint64                 `serialize:"true" json:"expiry"`
@@ -45,8 +45,8 @@ type RegisterL1Validator struct {
 }
 
 func (r *RegisterL1Validator) Verify() error {
-	if r.NetID == constants.PrimaryNetworkID {
-		return ErrInvalidNetID
+	if r.SubnetID == constants.PrimaryNetworkID {
+		return ErrInvalidSubnetID
 	}
 	if r.Weight == 0 {
 		return ErrInvalidWeight
@@ -82,7 +82,7 @@ func (r *RegisterL1Validator) ValidationID() ids.ID {
 
 // NewRegisterL1Validator creates a new initialized RegisterL1Validator.
 func NewRegisterL1Validator(
-	netID ids.ID,
+	subnetID ids.ID,
 	nodeID ids.NodeID,
 	blsPublicKey [bls.PublicKeyLen]byte,
 	expiry uint64,
@@ -91,7 +91,7 @@ func NewRegisterL1Validator(
 	weight uint64,
 ) (*RegisterL1Validator, error) {
 	msg := &RegisterL1Validator{
-		NetID:                 netID,
+		SubnetID:              subnetID,
 		NodeID:                nodeID[:],
 		BLSPublicKey:          blsPublicKey,
 		Expiry:                expiry,

@@ -23,6 +23,7 @@ import (
 	"github.com/luxfi/geth/common"
 	gethcore "github.com/luxfi/geth/core"
 	"github.com/luxfi/geth/core/rawdb"
+	"github.com/luxfi/geth/core/state"
 	"github.com/luxfi/geth/core/txpool"
 	"github.com/luxfi/geth/core/types"
 	"github.com/luxfi/geth/eth/ethconfig"
@@ -30,11 +31,13 @@ import (
 	"github.com/luxfi/geth/params"
 	"github.com/luxfi/geth/rlp"
 	"github.com/luxfi/geth/rpc"
+	"github.com/luxfi/geth/trie"
 
 	consensusNode "github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
+	"github.com/luxfi/database/pebbledb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/version"
 )
@@ -93,6 +96,16 @@ func (p *ReplayProgress) Start(totalBlocks uint64) {
 // SetPhase updates the current phase
 func (p *ReplayProgress) SetPhase(phase string) {
 	p.phase.Store(phase)
+}
+
+// UpdatePhase is an alias for SetPhase for compatibility
+func (p *ReplayProgress) UpdatePhase(phase string) {
+	p.SetPhase(phase)
+}
+
+// Update updates the current block count
+func (p *ReplayProgress) Update(blockCount uint64) {
+	p.currentBlock.Store(blockCount)
 }
 
 // UpdateBlock updates the current block number
@@ -185,6 +198,12 @@ func (p *ReplayProgress) GetStatus() map[string]interface{} {
 	return result
 }
 
+// IsReplaying returns true if replay is currently in progress
+func (p *ReplayProgress) IsReplaying() bool {
+	state := ReplayState(p.state.Load())
+	return state == ReplayInProgress
+}
+
 func stateString(state ReplayState) string {
 	switch state {
 	case ReplayNotStarted:
@@ -217,6 +236,14 @@ type DatabaseReplayConfig struct {
 	TestLimit                uint64 `json:"test-limit"`                   // If > 0, limit replay to this many blocks
 	ExtractGenesisFromSource bool   `json:"extract-genesis-from-source"`  // If true, extract genesis from block 0 of source
 	CopyAllState             bool   `json:"copy-all-state"`               // If true, copy all state trie data
+	
+	// Subnet-EVM replay configuration
+	SubnetReplayEnabled      bool   `json:"subnet-replay-enabled"`        // Enable replay from Subnet-EVM via RPC
+	SubnetReplaySourceURL    string `json:"subnet-replay-source-url"`     // RPC URL e.g. http://127.0.0.1:9630/ext/bc/<chainID>/rpc
+	SubnetReplayStart        uint64 `json:"subnet-replay-start"`          // Start block (default 0)
+	SubnetReplayEnd          uint64 `json:"subnet-replay-end"`            // End block (0 = tip)
+	SubnetReplayBatch        uint64 `json:"subnet-replay-batch"`          // Batch size (default 1000)
+	SubnetReplayResume       bool   `json:"subnet-replay-resume"`         // Resume from checkpoint (default true)
 }
 
 // VM implements the C-Chain VM interface using geth
@@ -1037,8 +1064,20 @@ func (vm *VM) Initialize(
 
 		vm.log.Info("Creating unified replayer", "sourcePath", config.SourcePath)
 		fmt.Printf("DEBUG: About to create replayer with source: %s\n", config.SourcePath)
-		
-		replayer, err := NewUnifiedReplayer(config, vm.ethDB, vm.blockChain)
+
+		// CRITICAL FIX: Get the blockchain's state cache
+		// This ensures state changes persist in the blockchain's database
+		var stateCache state.Database
+		if vm.blockChain != nil {
+			// Get the state cache from the blockchain
+			stateCache = vm.blockChain.StateCache()
+			// The state cache contains the trie database reference
+			vm.log.Info("Using blockchain's state cache for replay")
+			fmt.Printf("DEBUG: Got blockchain's state cache for replay\n")
+		}
+
+		// Pass nil for trieDB to let replayer extract it from stateCache
+		replayer, err := NewUnifiedReplayerWithTrieDB(config, vm.ethDB, vm.blockChain, nil, stateCache)
 		if err != nil {
 			vm.log.Error("Failed to create replayer", "error", err)
 			fmt.Printf("ERROR creating replayer: %v\n", err)
@@ -1067,7 +1106,7 @@ func (vm *VM) Initialize(
 
 		vm.replayProgress.Complete()
 
-		// CRITICAL: After replay, we must recreate the backend and blockchain
+		// CRITICAL: After replay, we must recreate the backend and force blockchain reload
 		// The existing blockchain object doesn't know about the replayed blocks
 		// because they were written directly to the database
 		vm.log.Info("Recreating backend to load replayed blockchain data...")
@@ -1084,52 +1123,46 @@ func (vm *VM) Initialize(
 		}
 		fmt.Printf("Saved head before backend creation: block %d, hash %s\n", savedHeadNumber, savedHeadHash.Hex())
 
-		// CRITICAL FIX: Ensure BlobSchedule is set before recreating backend
-		if genesis != nil && genesis.Config != nil && genesis.Config.CancunTime != nil {
-			if genesis.Config.BlobScheduleConfig == nil {
-				genesis.Config.BlobScheduleConfig = &params.BlobScheduleConfig{}
-			}
-			if genesis.Config.BlobScheduleConfig.Cancun == nil {
-				genesis.Config.BlobScheduleConfig.Cancun = &params.BlobConfig{
-					Target:         3,
-					Max:            6,
-					UpdateFraction: 3338477,
+		// Use our comprehensive backend recreation function
+		if err := vm.RecreateBackendAfterReplay(genesis); err != nil {
+			vm.log.Error("Failed to recreate backend after replay", "error", err)
+			// Fallback to manual recreation
+
+			// CRITICAL FIX: Ensure BlobSchedule is set before recreating backend
+			if genesis != nil && genesis.Config != nil && genesis.Config.CancunTime != nil {
+				if genesis.Config.BlobScheduleConfig == nil {
+					genesis.Config.BlobScheduleConfig = &params.BlobScheduleConfig{}
 				}
-				vm.log.Info("Fixed BlobSchedule before backend recreation")
+				if genesis.Config.BlobScheduleConfig.Cancun == nil {
+					genesis.Config.BlobScheduleConfig.Cancun = &params.BlobConfig{
+						Target:         3,
+						Max:            6,
+						UpdateFraction: 3338477,
+					}
+					vm.log.Info("Fixed BlobSchedule before backend recreation")
+				}
 			}
-		}
 
-		// Recreate backend with the genesis (it will load replayed blocks from disk)
-		var err2 error
-		vm.backend, err2 = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, genesis)
-		if err2 != nil {
-			vm.log.Error("Failed to recreate backend after replay", "error", err2)
-			return fmt.Errorf("failed to recreate backend after replay: %w", err2)
-		}
+			// Recreate backend with the genesis (it will load replayed blocks from disk)
+			var err2 error
+			vm.backend, err2 = NewMinimalEthBackend(vm.ethDB, &vm.ethConfig, genesis)
+			if err2 != nil {
+				vm.log.Error("Failed to recreate backend after replay", "error", err2)
+				return fmt.Errorf("failed to recreate backend after replay: %w", err2)
+			}
 
-		// Update blockchain reference
-		vm.blockChain = vm.backend.BlockChain()
-		vm.txPool = vm.backend.TxPool()
+			// Update blockchain reference
+			vm.blockChain = vm.backend.BlockChain()
+			vm.txPool = vm.backend.TxPool()
 
-		// DEBUG: Check if state still exists after backend recreation
-		fmt.Printf("DEBUG: Checking if state exists after backend recreation...\n")
-		testStateRoot := common.HexToHash("0x5b7259be9c69ab17b946f9ca806bdba68b148ad1e9928aad77c9aa31bc233947") // block 10's state root
-		testKey := append([]byte("s"), testStateRoot.Bytes()...)
-		if has, err := vm.ethDB.Has(testKey); err == nil && has {
-			fmt.Printf("✅ State root %x still exists after backend recreation\n", testStateRoot[:8])
-		} else {
-			fmt.Printf("❌ State root %x NOT FOUND after backend recreation! err=%v\n", testStateRoot[:8], err)
-		}
-
-		// RESTORE the head hash that was overwritten by genesis setup
-		if savedHeadHash != (common.Hash{}) && savedHeadNumber > 0 {
-			fmt.Printf("Restoring head to block %d (hash: %s)\n", savedHeadNumber, savedHeadHash.Hex())
-			rawdb.WriteHeadBlockHash(vm.ethDB, savedHeadHash)
-			rawdb.WriteHeadHeaderHash(vm.ethDB, savedHeadHash)
-			rawdb.WriteHeadFastBlockHash(vm.ethDB, savedHeadHash)
-			
-			// Force blockchain to reload with correct head
-			vm.blockChain.SetHead(savedHeadNumber)
+			// Force blockchain reload to recognize replayed data
+			if savedHeadHash != (common.Hash{}) && savedHeadNumber > 0 {
+				if reloadErr := vm.ForceBlockchainReload(savedHeadNumber, savedHeadHash); reloadErr != nil {
+					vm.log.Error("Failed to force blockchain reload", "error", reloadErr)
+					// Fallback to SetHead
+					vm.blockChain.SetHead(savedHeadNumber)
+				}
+			}
 		}
 
 		// Check what the blockchain sees now
@@ -1326,14 +1359,14 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 	if err := rpcServer.RegisterName("web3", web3API); err != nil {
 		return nil, fmt.Errorf("failed to register web3 API: %w", err)
 	}
-	vm.log.Info("Registering lux API (replayStatus)")
-	// Register under "lux" namespace - accessible as lux_replayStatus
+	vm.log.Info("Registering lux API (replayStatus, reloadBlockchain, verifyBlockchain)")
+	// Register under "lux" namespace - accessible as lux_replayStatus, lux_reloadBlockchain, lux_verifyBlockchain
 	// NOTE: User wanted just "replayStatus" but RPC requires a namespace
 	if err := rpcServer.RegisterName("lux", luxAPI); err != nil {
 		vm.log.Error("Failed to register lux API", "error", err)
 		return nil, fmt.Errorf("failed to register lux API: %w", err)
 	}
-	vm.log.Info("Registered lux API")
+	vm.log.Info("Registered lux API with replay methods")
 
 	vm.log.Info("Registered API namespaces")
 
@@ -1448,7 +1481,7 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 		Transactions: txs,
 		Uncles:       []*types.Header{},
 		Withdrawals:  []*types.Withdrawal{},
-	}, []*types.Receipt{}, nil)
+	}, []*types.Receipt{}, trie.NewStackTrie(nil))
 
 	// Create a new block wrapper
 	blk, err := vm.newBlock(block)
@@ -1533,4 +1566,337 @@ func getDirSize(path string) int64 {
 		return nil
 	})
 	return size
+}
+
+// RunReplay executes the runtime replay of blocks from SubnetEVM to C-Chain
+// This method is called by the lux_replayStart RPC method
+func (vm *VM) RunReplay(config *DatabaseReplayConfig) error {
+	// Ensure VM is initialized
+	if vm == nil {
+		return fmt.Errorf("VM is nil")
+	}
+
+	// CRITICAL FIX: Initialize logger if it's nil
+	if vm.log == nil {
+		vm.log = slog.Default().With("vm", "cchain", "component", "replay")
+	}
+
+	// CRITICAL FIX: Initialize replayProgress if it's nil
+	// This can happen if RunReplay is called via RPC before proper initialization
+	if vm.replayProgress == nil {
+		vm.log.Info("RunReplay: Initializing replayProgress (was nil)")
+		vm.replayProgress = NewReplayProgress()
+	}
+
+	vm.log.Info("RunReplay: Starting runtime replay",
+		"source", config.SourcePath,
+		"start", config.SubnetReplayStart,
+		"end", config.SubnetReplayEnd,
+		"batch", config.SubnetReplayBatch)
+
+	// Check if blockchain is initialized
+	if vm.blockChain == nil {
+		vm.log.Warn("RunReplay: Blockchain is not initialized, replay may not persist data")
+	}
+
+	// Open source database (SubnetEVM with PebbleDB)
+	sourceDB, err := OpenPebbleDB(config.SourcePath)
+	if err != nil {
+		return fmt.Errorf("failed to open source database: %w", err)
+	}
+	defer sourceDB.Close()
+
+	// Calculate total blocks to process
+	totalBlocks := config.SubnetReplayEnd - config.SubnetReplayStart
+	processedBlocks := uint64(0)
+
+	// CRITICAL FIX: Track the last successfully inserted block
+	var lastInsertedBlock *types.Block
+	var lastInsertedHash common.Hash
+	var lastInsertedNumber uint64
+
+	// Process blocks in batches
+	for blockNum := config.SubnetReplayStart; blockNum <= config.SubnetReplayEnd; blockNum += config.SubnetReplayBatch {
+		endBlock := blockNum + config.SubnetReplayBatch - 1
+		if endBlock > config.SubnetReplayEnd {
+			endBlock = config.SubnetReplayEnd
+		}
+
+		vm.log.Info("Processing block batch",
+			"start", blockNum,
+			"end", endBlock)
+
+		// Read blocks from source
+		blocks := make([]*types.Block, 0, config.SubnetReplayBatch)
+		for num := blockNum; num <= endBlock; num++ {
+			// Read block with SubnetEVM namespace stripping
+			block, err := readBlockFromSubnetEVM(sourceDB, num)
+			if err != nil {
+				// Log only first few errors to avoid spam
+				if processedBlocks < 10 {
+					vm.log.Debug("Failed to read block", "number", num, "error", err)
+				}
+				continue // Skip missing blocks
+			}
+
+			blocks = append(blocks, block)
+			processedBlocks++
+		}
+
+		// Execute blocks with transactions to update state
+		if len(blocks) > 0 {
+			vm.log.Info("Inserting blocks into blockchain", "count", len(blocks))
+
+			// Use InsertChain to execute transactions and update state
+			if vm.blockChain != nil {
+				// CRITICAL FIX: Write blocks directly to database first
+				// InsertChain may not persist blocks if it thinks they're invalid or side chain
+				for _, block := range blocks {
+					// Write the block components to database
+					rawdb.WriteBlock(vm.ethDB, block)
+					rawdb.WriteHeader(vm.ethDB, block.Header())
+					rawdb.WriteBody(vm.ethDB, block.Hash(), block.NumberU64(), block.Body())
+					rawdb.WriteReceipts(vm.ethDB, block.Hash(), block.NumberU64(), nil) // Empty receipts for now
+
+					// Mark as canonical
+					rawdb.WriteCanonicalHash(vm.ethDB, block.Hash(), block.NumberU64())
+
+					vm.log.Debug("Wrote block to database",
+						"number", block.NumberU64(),
+						"hash", block.Hash().Hex())
+				}
+
+				// Now try InsertChain to execute transactions and update state
+				n, err := vm.blockChain.InsertChain(blocks)
+				if err != nil {
+					vm.log.Error("Failed to insert blocks for state execution",
+						"error", err,
+						"inserted", n,
+						"total", len(blocks))
+					// Continue - blocks are already in database
+				} else {
+					vm.log.Info("Successfully executed blocks", "count", n)
+				}
+
+				// CRITICAL FIX: After writing blocks, update the chain head
+				if len(blocks) > 0 {
+					lastBlock := blocks[len(blocks)-1]
+					lastInsertedBlock = lastBlock
+					lastInsertedHash = lastBlock.Hash()
+					lastInsertedNumber = lastBlock.NumberU64()
+
+					// Force update ALL head markers
+					rawdb.WriteHeadBlockHash(vm.ethDB, lastBlock.Hash())
+					rawdb.WriteHeadHeaderHash(vm.ethDB, lastBlock.Hash())
+					rawdb.WriteHeadFastBlockHash(vm.ethDB, lastBlock.Hash())
+
+					vm.log.Info("Updated blockchain head",
+						"number", lastBlock.NumberU64(),
+						"hash", lastBlock.Hash().Hex())
+				}
+			} else {
+				vm.log.Error("Blockchain is nil, cannot insert blocks")
+				return fmt.Errorf("blockchain not initialized")
+			}
+		}
+
+		// Update progress
+		progress := float64(processedBlocks) / float64(totalBlocks) * 100
+		vm.replayProgress.Update(processedBlocks)
+		vm.replayProgress.UpdatePhase(fmt.Sprintf("Processing: %.1f%%", progress))
+
+		// Log progress
+		if processedBlocks%1000 == 0 {
+			vm.log.Info("Replay progress",
+				"processed", processedBlocks,
+				"total", totalBlocks,
+				"progress", fmt.Sprintf("%.1f%%", progress))
+		}
+	}
+
+	// CRITICAL FIX: After all blocks are inserted, force blockchain to recognize new head
+	if lastInsertedBlock != nil {
+		vm.log.Info("Finalizing replay, updating blockchain head",
+			"number", lastInsertedNumber,
+			"hash", lastInsertedHash.Hex())
+
+		// Use our comprehensive reload function to ensure blockchain recognizes the new head
+		err := vm.ForceBlockchainReload(lastInsertedNumber, lastInsertedHash)
+		if err != nil {
+			vm.log.Error("Failed to force blockchain reload after replay", "error", err)
+			// Try fallback approach
+			vm.blockChain.SetHead(lastInsertedNumber)
+		}
+
+		// Update VM's last accepted block
+		vm.mu.Lock()
+		vm.lastAccepted = ids.ID(lastInsertedHash)
+		vm.mu.Unlock()
+
+		// Verify the head was actually updated
+		currentBlock := vm.blockChain.CurrentBlock()
+		if currentBlock != nil {
+			vm.log.Info("Blockchain head after replay",
+				"number", currentBlock.Number.Uint64(),
+				"hash", currentBlock.Hash().Hex(),
+				"expectedNumber", lastInsertedNumber,
+				"match", currentBlock.Number.Uint64() == lastInsertedNumber)
+
+			// Final verification
+			if currentBlock.Number.Uint64() != lastInsertedNumber {
+				vm.log.Warn("Blockchain head still not at expected height, attempting backend recreation...")
+				// As a last resort, recreate the backend to force reload
+				if reloadErr := vm.RecreateBackendAfterReplay(nil); reloadErr != nil {
+					vm.log.Error("Failed to recreate backend", "error", reloadErr)
+				}
+			}
+		}
+	}
+
+	// Mark replay as complete
+	vm.replayProgress.Complete()
+	vm.log.Info("Replay completed",
+		"processed", processedBlocks,
+		"total", totalBlocks)
+
+	return nil
+}
+
+// OpenPebbleDB opens a PebbleDB database at the given path
+func OpenPebbleDB(path string) (database.Database, error) {
+	// Check if path exists
+	if _, err := os.Stat(path); err != nil {
+		return nil, fmt.Errorf("database path does not exist: %w", err)
+	}
+
+	// Open PebbleDB database
+	// Parameters: path, cacheSize, handleCap, namespace, readOnly
+	db, err := pebbledb.New(path, 1024, 1024, "", false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open PebbleDB: %w", err)
+	}
+
+	return db, nil
+}
+
+// LegacyHeader represents the SubnetEVM header format without newer fields
+type LegacyHeader struct {
+	ParentHash  common.Hash      `json:"parentHash"`
+	UncleHash   common.Hash      `json:"sha3Uncles"`
+	Coinbase    common.Address   `json:"miner"`
+	Root        common.Hash      `json:"stateRoot"`
+	TxHash      common.Hash      `json:"transactionsRoot"`
+	ReceiptHash common.Hash      `json:"receiptsRoot"`
+	Bloom       types.Bloom      `json:"logsBloom"`
+	Difficulty  *big.Int         `json:"difficulty"`
+	Number      *big.Int         `json:"number"`
+	GasLimit    uint64           `json:"gasLimit"`
+	GasUsed     uint64           `json:"gasUsed"`
+	Time        uint64           `json:"timestamp"`
+	Extra       []byte           `json:"extraData"`
+	MixDigest   common.Hash      `json:"mixHash"`
+	Nonce       types.BlockNonce `json:"nonce"`
+	BaseFee     *big.Int         `json:"baseFeePerGas" rlp:"optional"`
+	ExtData     rlp.RawValue     `rlp:"tail"` // Capture any extra SubnetEVM fields
+}
+
+// Helper function to read block from SubnetEVM with namespace stripping
+func readBlockFromSubnetEVM(db database.Database, blockNum uint64) (*types.Block, error) {
+	// SubnetEVM uses the actual 32-byte namespace prefix from our inspection
+	namespace := []byte{
+		0x33, 0x7f, 0xb7, 0x3f, 0x9b, 0xcd, 0xac, 0x8c,
+		0x31, 0xa2, 0xd5, 0xf7, 0xb8, 0x77, 0xab, 0x1e,
+		0x8a, 0x2b, 0x7f, 0x2a, 0x1e, 0x9b, 0xf0, 0x2a,
+		0x0a, 0x0e, 0x6c, 0x6f, 0xd1, 0x64, 0xf1, 0xd1,
+	}
+
+	// Read canonical hash for this block number
+	// Format: namespace + 'h' + block_number(8 bytes) + 'n' -> hash
+	canonicalKey := make([]byte, len(namespace)+10)
+	copy(canonicalKey, namespace)
+	canonicalKey[len(namespace)] = 'h' // Canonical header prefix
+	binary.BigEndian.PutUint64(canonicalKey[len(namespace)+1:], blockNum)
+	canonicalKey[len(namespace)+9] = 'n' // 'n' suffix for canonical entries
+
+	// Read the canonical hash
+	hash, err := db.Get(canonicalKey)
+	if err != nil {
+		return nil, fmt.Errorf("no canonical entry for block %d: %w", blockNum, err)
+	}
+
+	// Read header
+	// Format: namespace + 'h' + blockNum + hash -> header data
+	headerKey := make([]byte, len(namespace)+41)
+	copy(headerKey, namespace)
+	headerKey[len(namespace)] = 'h' // Header prefix (lowercase)
+	binary.BigEndian.PutUint64(headerKey[len(namespace)+1:], blockNum)
+	copy(headerKey[len(namespace)+9:], hash)
+
+	headerData, err := db.Get(headerKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read header for block %d: %w", blockNum, err)
+	}
+
+	// Try to decode as legacy SubnetEVM header first
+	var legacyHeader LegacyHeader
+	if err := rlp.DecodeBytes(headerData, &legacyHeader); err != nil {
+		// If legacy decode fails, try modern format
+		var header types.Header
+		if err2 := rlp.DecodeBytes(headerData, &header); err2 != nil {
+			return nil, fmt.Errorf("failed to decode header for block %d: legacy=%v, modern=%v", blockNum, err, err2)
+		}
+		// Use modern header directly
+		return readBodyAndCreateBlock(db, namespace, blockNum, hash, &header)
+	}
+
+	// Convert legacy header to modern format
+	header := &types.Header{
+		ParentHash:  legacyHeader.ParentHash,
+		UncleHash:   legacyHeader.UncleHash,
+		Coinbase:    legacyHeader.Coinbase,
+		Root:        legacyHeader.Root,
+		TxHash:      legacyHeader.TxHash,
+		ReceiptHash: legacyHeader.ReceiptHash,
+		Bloom:       legacyHeader.Bloom,
+		Difficulty:  legacyHeader.Difficulty,
+		Number:      legacyHeader.Number,
+		GasLimit:    legacyHeader.GasLimit,
+		GasUsed:     legacyHeader.GasUsed,
+		Time:        legacyHeader.Time,
+		Extra:       legacyHeader.Extra,
+		MixDigest:   legacyHeader.MixDigest,
+		Nonce:       legacyHeader.Nonce,
+		BaseFee:     legacyHeader.BaseFee,
+	}
+
+	// Read body and create block
+	return readBodyAndCreateBlock(db, namespace, blockNum, hash, header)
+}
+
+// readBodyAndCreateBlock reads the body and creates a complete block
+func readBodyAndCreateBlock(db database.Database, namespace []byte, blockNum uint64, hash []byte, header *types.Header) (*types.Block, error) {
+	// Try to read body
+	// Format: namespace + 'b' + block_number(8 bytes) + hash
+	bodyKey := make([]byte, len(namespace)+41)
+	copy(bodyKey, namespace)
+	bodyKey[len(namespace)] = 'b' // Body prefix
+	binary.BigEndian.PutUint64(bodyKey[len(namespace)+1:], blockNum)
+	copy(bodyKey[len(namespace)+9:], hash)
+
+	bodyData, err := db.Get(bodyKey)
+	if err != nil {
+		// Some blocks might not have bodies (empty blocks)
+		return types.NewBlockWithHeader(header), nil
+	}
+
+	// Decode body
+	var body types.Body
+	if err := rlp.DecodeBytes(bodyData, &body); err != nil {
+		// If body decode fails, return block with just header
+		return types.NewBlockWithHeader(header), nil
+	}
+
+	// Create full block with body
+	// CRITICAL FIX: Use trie.NewStackTrie(nil) instead of nil to prevent DeriveSha panic
+	return types.NewBlock(header, &body, nil, trie.NewStackTrie(nil)), nil
 }

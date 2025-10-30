@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"fmt"
 	"time"
 
@@ -64,7 +65,7 @@ func (b *ApricotStandardBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *ApricotStandardBlock) InitCtx(ctx context.Context) {
+func (b *ApricotStandardBlock) InitCtx(ctx *consensusctx.Context) {
 	for _, tx := range b.Transactions {
 		tx.Unsigned.InitCtx(ctx)
 	}

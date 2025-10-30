@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -9,16 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
-
-	"github.com/luxfi/consensus/core"
-
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/xvm/fxs"
-
 	"github.com/luxfi/node/vms/xvm/txs"
-
 	"github.com/luxfi/node/vms/xvm/txs/mempool"
-
 	"github.com/luxfi/node/vms/components/lux"
 
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -62,13 +56,9 @@ func TestMarshaller(t *testing.T) {
 func TestGossipMempoolAdd(t *testing.T) {
 	require := require.New(t)
 
-	metrics := metric.NewNoOp().Registry()
-	toEngine := make(chan core.MessageType, 1)
+	metrics := prometheus.NewRegistry()
 
-	baseMempool, err := mempool.New("", metrics, toEngine)
-	require.NoError(err)
-
-	parser, err := txs.NewParser(nil)
+	baseMempool, err := mempool.New("", metrics)
 	require.NoError(err)
 
 	mempool, err := newGossipMempool(
@@ -76,7 +66,6 @@ func TestGossipMempoolAdd(t *testing.T) {
 		metrics,
 		nil,
 		testVerifier{},
-		parser,
 		DefaultConfig.ExpectedBloomFilterElements,
 		DefaultConfig.ExpectedBloomFilterFalsePositiveProbability,
 		DefaultConfig.MaxBloomFilterFalsePositiveProbability,
@@ -99,13 +88,9 @@ func TestGossipMempoolAdd(t *testing.T) {
 func TestGossipMempoolAddVerified(t *testing.T) {
 	require := require.New(t)
 
-	metrics := metric.NewNoOp().Registry()
-	toEngine := make(chan core.MessageType, 1)
+	metrics := prometheus.NewRegistry()
 
-	baseMempool, err := mempool.New("", metrics, toEngine)
-	require.NoError(err)
-
-	parser, err := txs.NewParser(nil)
+	baseMempool, err := mempool.New("", metrics)
 	require.NoError(err)
 
 	mempool, err := newGossipMempool(
@@ -115,7 +100,6 @@ func TestGossipMempoolAddVerified(t *testing.T) {
 		testVerifier{
 			err: errTest, // We shouldn't be attempting to verify the tx in this flow
 		},
-		parser,
 		DefaultConfig.ExpectedBloomFilterElements,
 		DefaultConfig.ExpectedBloomFilterFalsePositiveProbability,
 		DefaultConfig.MaxBloomFilterFalsePositiveProbability,

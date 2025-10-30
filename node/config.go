@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -16,9 +16,18 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/node/nets"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
+	"github.com/luxfi/consensus/networking/benchlist"
+	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/node/network/tracker"
+	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/trace"
+	"github.com/luxfi/node/upgrade"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/profiler"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/trace"
@@ -147,6 +156,8 @@ type Config struct {
 	BootstrapConfig  `json:"bootstrapConfig"`
 	DatabaseConfig   `json:"databaseConfig"`
 
+	UpgradeConfig upgrade.Config `json:"upgradeConfig"`
+
 	// Genesis information
 	GenesisBytes []byte `json:"-"`
 	LuxAssetID   ids.ID `json:"luxAssetID"`
@@ -169,12 +180,16 @@ type Config struct {
 	// LoggingConfig log.Config `json:"loggingConfig"` // log.Config doesn't exist
 
 	PluginDir string `json:"pluginDir"`
+	// DevMode enables local PoA + auto-mine mode (network-id=local, sybil-protection disabled)
+	DevMode bool `json:"devMode"`
 
 	// File Descriptor Limit
 	FdLimit uint64 `json:"fdLimit"`
 
 	// Metrics
 	MeterVMEnabled bool `json:"meterVMEnabled"`
+	// Delay between automatic block proposals when DevMode is set
+	DevBlockDelay time.Duration `json:"devBlockDelay"`
 
 	RouterHealthConfig       HealthConfig  `json:"routerHealthConfig"`
 	ConsensusShutdownTimeout time.Duration `json:"consensusShutdownTimeout"`

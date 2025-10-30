@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -8,11 +8,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/luxfi/consensus/utils/set"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	nodevalidators "github.com/luxfi/node/validators"
+	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/math/set"
 )
 
 var _ nodevalidators.Manager = (*overriddenManager)(nil)
@@ -75,8 +74,15 @@ func (o *overriddenManager) RemoveWeight(_ ids.ID, nodeID ids.NodeID, weight uin
 	return o.manager.RemoveWeight(o.netID, nodeID, weight)
 }
 
-func (o *overriddenManager) Count(ids.ID) int {
-	return len(o.manager.GetValidatorIDs(o.netID))
+func (o *overriddenManager) NumSubnets() int {
+	if o.manager.NumValidators(o.subnetID) == 0 {
+		return 0
+	}
+	return 1
+}
+
+func (o *overriddenManager) NumValidators(ids.ID) int {
+	return o.manager.NumValidators(o.subnetID)
 }
 
 func (o *overriddenManager) TotalWeight(ids.ID) (uint64, error) {

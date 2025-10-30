@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -8,6 +8,9 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/xvm"
 )
 
@@ -27,8 +30,8 @@ func NewContextFromURI(ctx context.Context, uri string) (*Context, error) {
 
 func NewContextFromClients(
 	ctx context.Context,
-	infoClient info.Client,
-	xChainClient xvm.Client,
+	infoClient *info.Client,
+	xChainClient *avm.Client,
 ) (*Context, error) {
 	networkID, err := infoClient.GetNetworkID(ctx)
 	if err != nil {
@@ -52,10 +55,15 @@ func NewContextFromClients(
 	}, nil
 }
 
-func newConsensusContext(c *Context) (context.Context, error) {
-	// For now, just return the context as-is
-	// The consensus package doesn't have WithXXX functions
-	// This function may need to be refactored based on actual usage
-	ctx := context.Background()
-	return ctx, nil
+func newSnowContext(c *Context) (*consensusctx.Context, error) {
+	lookup := ids.NewAliaser()
+	return &consensusctx.Context{
+		NetworkID:   c.NetworkID,
+		SubnetID:    constants.PrimaryNetworkID,
+		ChainID:     c.BlockchainID,
+		CChainID:    c.BlockchainID,
+		LUXAssetID: c.LUXAssetID,
+		Log:         logging.NoLog{},
+		BCLookup:    lookup,
+	}, lookup.Alias(c.BlockchainID, Alias)
 }

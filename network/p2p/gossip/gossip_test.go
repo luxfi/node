@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -13,15 +13,15 @@ import (
 	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
+	"github.com/luxfi/consensus/engine/core/coretest"
+	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 )
 
@@ -104,7 +104,7 @@ func TestGossiperGossip(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			responseSender := &FakeSender{
+			responseSender := &enginetest.SenderStub{
 				SentAppResponse: make(chan []byte, 1),
 			}
 			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, metric.NewNoOp().Registry(), "")
@@ -133,7 +133,7 @@ func TestGossiperGossip(t *testing.T) {
 			require.NoError(err)
 			require.NoError(responseNetwork.AddHandler(0x0, handler))
 
-			requestSender := &FakeSender{
+			requestSender := &enginetest.SenderStub{
 				SentAppRequest: make(chan []byte, 1),
 			}
 
@@ -208,7 +208,7 @@ func TestValidatorGossiper(t *testing.T) {
 
 	nodeID := ids.GenerateTestNodeID()
 
-	validators := testValidatorSet{
+	validators := &testValidatorSet{
 		validators: set.Of(nodeID),
 	}
 
@@ -231,7 +231,7 @@ func TestValidatorGossiper(t *testing.T) {
 	// we are not a validator, so we should not request gossip
 	validators.validators = set.Set[ids.NodeID]{}
 	require.NoError(gossiper.Gossip(context.Background()))
-	require.Equal(2, calls)
+	require.Equal(1, calls)
 }
 
 func TestPushGossiperNew(t *testing.T) {
@@ -509,7 +509,7 @@ func TestPushGossiper(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			sender := &FakeSender{
+			sender := &enginetest.SenderStub{
 				SentAppGossip: make(chan []byte, 2),
 			}
 			network, err := p2p.NewNetwork(

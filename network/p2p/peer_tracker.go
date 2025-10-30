@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -10,12 +10,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/consensus/version"
+	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
+
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/heap"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/version"
 
 	safemath "github.com/luxfi/math/math"
 )

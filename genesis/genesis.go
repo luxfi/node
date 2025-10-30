@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -11,26 +11,25 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/math/set"
+	avm "github.com/luxfi/node/vms/xvm"
+	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/node/vms/platformvm/api"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/xvm/fxs"
 
+	xchaintxs "github.com/luxfi/node/vms/xvm/txs"
 	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 	xchaintxs "github.com/luxfi/node/vms/xvm/txs"
 )
 
 const (
-	defaultEncoding    = formatting.Hex
 	configChainIDAlias = "X"
 )
 
@@ -48,6 +47,7 @@ var (
 	errFutureStartTime                 = errors.New("startTime cannot be in the future")
 	errInitialStakeDurationTooLow      = errors.New("initial stake duration is too low")
 	errOverridesStandardNetworkConfig  = errors.New("overrides standard network genesis config")
+	errAllocationsLockedAmountTooLow   = errors.New("total allocations locked amount is too low")
 )
 
 // validateInitialStakedFunds ensures all staked
@@ -115,6 +115,27 @@ func validateInitialStakedFunds(config *Config) error {
 	return nil
 }
 
+// validateAllocationsLockedAmount ensures that the sum of all locked
+// allocation amounts is at least the number of initial stakers.
+func validateAllocationsLockedAmount(config *Config) error {
+	totalLocked := uint64(0)
+	for _, allocation := range config.Allocations {
+		for _, unlock := range allocation.UnlockSchedule {
+			totalLocked += unlock.Amount
+		}
+	}
+	stakersCount := len(config.InitialStakers)
+	if totalLocked < uint64(stakersCount) {
+		return fmt.Errorf(
+			"%w: %d locked < %d stakers",
+			errAllocationsLockedAmountTooLow,
+			totalLocked,
+			stakersCount,
+		)
+	}
+	return nil
+}
+
 // validateConfig returns an error if the provided
 // *Config is not considered valid.
 func validateConfig(networkID uint32, config *Config, stakingCfg *StakingConfig) error {
@@ -173,6 +194,10 @@ func validateConfig(networkID uint32, config *Config, stakingCfg *StakingConfig)
 
 	if err := validateInitialStakedFunds(config); err != nil {
 		return fmt.Errorf("initial staked funds validation failed: %w", err)
+	}
+
+	if err := validateAllocationsLockedAmount(config); err != nil {
+		return err
 	}
 
 	if len(config.CChainGenesis) == 0 {
@@ -274,65 +299,51 @@ func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig
 func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	hrp := constants.GetHRP(config.NetworkID)
 
-	amount := uint64(0)
-
-	// Specify the genesis state of the XVM
-	xvmArgs := xvm.BuildGenesisArgs{
-		NetworkID: json.Uint32(config.NetworkID),
-		Encoding:  defaultEncoding,
+	// Specify the genesis state of the AVM
+	lux := avm.GenesisAssetDefinition{
+		Name:         "Lux",
+		Symbol:       "LUX",
+		Denomination: 9,
+		InitialState: avm.AssetInitialState{},
 	}
-	{
-		lux := xvm.AssetDefinition{
-			Name:         "Lux",
-			Symbol:       "LUX",
-			Denomination: 9,
-			InitialState: map[string][]interface{}{},
+	memoBytes := []byte{}
+	xAllocations := []Allocation(nil)
+	for _, allocation := range config.Allocations {
+		if allocation.InitialAmount > 0 {
+			xAllocations = append(xAllocations, allocation)
 		}
-		memoBytes := []byte{}
-		xAllocations := []Allocation(nil)
-		for _, allocation := range config.Allocations {
-			if allocation.InitialAmount > 0 {
-				xAllocations = append(xAllocations, allocation)
-			}
-		}
-		utils.Sort(xAllocations)
+	}
+	utils.Sort(xAllocations)
 
-		for _, allocation := range xAllocations {
-			addr, err := address.FormatBech32(hrp, allocation.LUXAddr.Bytes())
-			if err != nil {
-				return nil, ids.Empty, err
-			}
-
-			lux.InitialState["fixedCap"] = append(lux.InitialState["fixedCap"], xvm.Holder{
-				Amount:  json.Uint64(allocation.InitialAmount),
-				Address: addr,
-			})
-			memoBytes = append(memoBytes, allocation.ETHAddr.Bytes()...)
-			amount += allocation.InitialAmount
-		}
-
-		var err error
-		lux.Memo, err = formatting.Encode(defaultEncoding, memoBytes)
+	for _, allocation := range xAllocations {
+		addr, err := address.FormatBech32(hrp, allocation.LUXAddr.Bytes())
 		if err != nil {
-			return nil, ids.Empty, fmt.Errorf("couldn't parse memo bytes to string: %w", err)
+			return nil, ids.Empty, err
 		}
-		xvmArgs.GenesisData = map[string]xvm.AssetDefinition{
-			"LUX": lux, // The XVM starts out with one asset: LUX
-		}
-	}
-	xvmReply := xvm.BuildGenesisReply{}
 
-	xvmSS := xvm.CreateStaticService()
-	err := xvmSS.BuildGenesis(nil, &xvmArgs, &xvmReply)
+		lux.InitialState.FixedCap = append(lux.InitialState.FixedCap, avm.GenesisHolder{
+			Amount:  allocation.InitialAmount,
+			Address: addr,
+		})
+		memoBytes = append(memoBytes, allocation.ETHAddr.Bytes()...)
+	}
+	lux.Memo = memoBytes
+
+	avmGenesis, err := avm.NewGenesis(
+		config.NetworkID,
+		map[string]avm.GenesisAssetDefinition{
+			"LUX": lux, // The AVM starts out with one asset: LUX
+		},
+	)
 	if err != nil {
 		return nil, ids.Empty, err
 	}
-
-	bytes, err := formatting.Decode(defaultEncoding, xvmReply.Bytes)
+	avmGenesisBytes, err := avmGenesis.Bytes()
 	if err != nil {
-		return nil, ids.Empty, fmt.Errorf("couldn't parse xvm genesis reply: %w", err)
+		return nil, ids.Empty, fmt.Errorf("couldn't serialize avm genesis: %w", err)
 	}
-	luxAssetID, err := XAssetID(bytes)
+
+	luxAssetID, err := LUXAssetID(avmGenesisBytes)
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("couldn't generate LUX asset ID: %w", err)
 	}
@@ -346,15 +357,8 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	initiallyStaked := set.Of(config.InitialStakedFunds...)
 	skippedAllocations := []Allocation(nil)
 
-	// Specify the initial state of the Platform Chain
-	platformvmArgs := api.BuildGenesisArgs{
-		LuxAssetID:    luxAssetID,
-		NetworkID:     json.Uint32(config.NetworkID),
-		Time:          json.Uint64(config.StartTime),
-		InitialSupply: json.Uint64(initialSupply),
-		Message:       config.Message,
-		Encoding:      defaultEncoding,
-	}
+	// Build UTXOs for the Platform Chain
+	platformAllocations := []genesis.Allocation{}
 	for _, allocation := range config.Allocations {
 		if initiallyStaked.Contains(allocation.LUXAddr) {
 			skippedAllocations = append(skippedAllocations, allocation)
@@ -366,23 +370,18 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		}
 		for _, unlock := range allocation.UnlockSchedule {
 			if unlock.Amount > 0 {
-				msgStr, err := formatting.Encode(defaultEncoding, allocation.ETHAddr.Bytes())
-				if err != nil {
-					return nil, ids.Empty, fmt.Errorf("couldn't encode message: %w", err)
-				}
-				platformvmArgs.UTXOs = append(platformvmArgs.UTXOs,
-					api.UTXO{
-						Locktime: json.Uint64(unlock.Locktime),
-						Amount:   json.Uint64(unlock.Amount),
-						Address:  addr,
-						Message:  msgStr,
-					},
-				)
-				amount += unlock.Amount
+				platformAllocations = append(platformAllocations, genesis.Allocation{
+					Locktime: unlock.Locktime,
+					Amount:   unlock.Amount,
+					Address:  addr,
+					Message:  allocation.ETHAddr.Bytes(),
+				})
 			}
 		}
 	}
 
+	// Build validators for the Platform Chain
+	validators := []genesis.PermissionlessValidator{}
 	allNodeAllocations := splitAllocations(skippedAllocations, len(config.InitialStakers))
 	endStakingTime := genesisTime.Add(time.Duration(config.InitialStakeDuration) * time.Second)
 	stakingOffset := time.Duration(0)
@@ -396,57 +395,47 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 			return nil, ids.Empty, err
 		}
 
-		utxos := []api.UTXO(nil)
+		allocations := []genesis.Allocation(nil)
 		for _, allocation := range nodeAllocations {
 			addr, err := address.FormatBech32(hrp, allocation.LUXAddr.Bytes())
 			if err != nil {
 				return nil, ids.Empty, err
 			}
 			for _, unlock := range allocation.UnlockSchedule {
-				msgStr, err := formatting.Encode(defaultEncoding, allocation.ETHAddr.Bytes())
-				if err != nil {
-					return nil, ids.Empty, fmt.Errorf("couldn't encode message: %w", err)
-				}
-				utxos = append(utxos, api.UTXO{
-					Locktime: json.Uint64(unlock.Locktime),
-					Amount:   json.Uint64(unlock.Amount),
+				allocations = append(allocations, genesis.Allocation{
+					Locktime: unlock.Locktime,
+					Amount:   unlock.Amount,
 					Address:  addr,
-					Message:  msgStr,
+					Message:  allocation.ETHAddr.Bytes(),
 				})
-				amount += unlock.Amount
 			}
 		}
 
-		delegationFee := json.Uint32(staker.DelegationFee)
-
-		platformvmArgs.Validators = append(platformvmArgs.Validators,
-			api.GenesisPermissionlessValidator{
-				GenesisValidator: api.GenesisValidator{
-					StartTime: json.Uint64(genesisTime.Unix()),
-					EndTime:   json.Uint64(endStakingTime.Unix()),
-					NodeID:    staker.NodeID,
-				},
-				RewardOwner: &api.Owner{
-					Threshold: 1,
-					Addresses: []string{destAddrStr},
-				},
-				Staked:             utxos,
-				ExactDelegationFee: &delegationFee,
-				Signer:             staker.Signer,
+		validators = append(validators, genesis.PermissionlessValidator{
+			Validator: genesis.Validator{
+				StartTime: uint64(genesisTime.Unix()),
+				EndTime:   uint64(endStakingTime.Unix()),
+				NodeID:    staker.NodeID,
 			},
-		)
+			RewardOwner: &genesis.Owner{
+				Threshold: 1,
+				Addresses: []string{destAddrStr},
+			},
+			Staked:             allocations,
+			ExactDelegationFee: staker.DelegationFee,
+			Signer:             staker.Signer,
+		})
 	}
 
 	// Specify the chains that exist upon this network's creation
-	genesisStr, err := formatting.Encode(defaultEncoding, []byte(config.CChainGenesis))
 	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("couldn't encode message: %w", err)
 	}
-	platformvmArgs.Chains = []api.Chain{
+	chains := []genesis.Chain{
 		{
-			GenesisData: xvmReply.Bytes,
-			NetID:       constants.PrimaryNetworkID,
-			VMID:        constants.XVMID,
+			GenesisData: avmGenesisBytes,
+			SubnetID:    constants.PrimaryNetworkID,
+			VMID:        constants.AVMID,
 			FxIDs: []ids.ID{
 				secp256k1fx.ID,
 				nftfx.ID,
@@ -455,25 +444,31 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 			Name: "X-Chain",
 		},
 		{
-			GenesisData: genesisStr,
-			NetID:       constants.PrimaryNetworkID,
+			GenesisData: []byte(config.CChainGenesis),
+			SubnetID:    constants.PrimaryNetworkID,
 			VMID:        constants.EVMID,
 			Name:        "C-Chain",
 		},
 	}
 
-	platformvmReply := api.BuildGenesisReply{}
-	platformvmSS := api.StaticService{}
-	if err := platformvmSS.BuildGenesis(nil, &platformvmArgs, &platformvmReply); err != nil {
+	pChainGenesis, err := genesis.New(
+		luxAssetID,
+		config.NetworkID,
+		platformAllocations,
+		validators,
+		chains,
+		config.StartTime,
+		initialSupply,
+		config.Message,
+	)
+	if err != nil {
 		return nil, ids.Empty, fmt.Errorf("problem while building platform chain's genesis state: %w", err)
 	}
-
-	genesisBytes, err := formatting.Decode(platformvmReply.Encoding, platformvmReply.Bytes)
+	pChainGenesisBytes, err := pChainGenesis.Bytes()
 	if err != nil {
-		return nil, ids.Empty, fmt.Errorf("problem parsing platformvm genesis bytes: %w", err)
+		return nil, ids.Empty, fmt.Errorf("problem while serializing platform chain's genesis state: %w", err)
 	}
-
-	return genesisBytes, luxAssetID, nil
+	return pChainGenesisBytes, luxAssetID, nil
 }
 
 func splitAllocations(allocations []Allocation, numSplits int) [][]Allocation {
@@ -502,7 +497,6 @@ func splitAllocations(allocations []Allocation, numSplits int) [][]Allocation {
 		currentAllocation.UnlockSchedule = nil
 
 		for _, unlock := range allocation.UnlockSchedule {
-			unlock := unlock
 			for currentNodeAmount+unlock.Amount > nodeWeight && len(allNodeAllocations) < numSplits-1 {
 				amountToAdd := nodeWeight - currentNodeAmount
 				currentAllocation.UnlockSchedule = append(currentAllocation.UnlockSchedule, LockedAmount{

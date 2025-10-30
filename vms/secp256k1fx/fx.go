@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -8,14 +8,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luxfi/ids"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
-const (
-	defaultCacheSize = 256
-)
+const defaultCacheSize = 256
 
 var (
 	_ ids.ID // explicitly use ids to avoid unused import warning
@@ -42,10 +40,9 @@ var (
 
 // Fx describes the secp256k1 feature extension
 type Fx struct {
-	RecoverCacheType *RecoverCacheType
-
 	VM           VM
 	bootstrapped bool
+	recoverCache secp256k1.RecoverCacheType
 }
 
 func (fx *Fx) Initialize(vmIntf interface{}) error {
@@ -56,8 +53,7 @@ func (fx *Fx) Initialize(vmIntf interface{}) error {
 	log := fx.VM.Logger()
 	log.Debug("initializing secp256k1 fx")
 
-	cache := NewRecoverCache(defaultCacheSize)
-	fx.RecoverCacheType = cache
+	fx.recoverCache = secp256k1.NewRecoverCache(defaultCacheSize)
 	c := fx.VM.CodecRegistry()
 
 	// Try to register types, but ignore duplicate registration errors
@@ -212,7 +208,7 @@ func (fx *Fx) VerifyCredentials(utx UnsignedTx, in *Input, cred *Credential, out
 		// Make sure each signature in the signature list is from an owner of
 		// the output being consumed
 		sig := cred.Sigs[i]
-		pk, err := fx.RecoverCacheType.RecoverPublicKeyFromHash(txHash, sig[:])
+		pk, err := fx.recoverCache.RecoverPublicKeyFromHash(txHash, sig[:])
 		if err != nil {
 			return err
 		}

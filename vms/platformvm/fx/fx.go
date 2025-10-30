@@ -1,11 +1,9 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fx
 
 import (
-	"context"
-
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -63,7 +61,7 @@ type Owner interface {
 	verify.IsNotState
 
 	verify.Verifiable
-	consensus.Contextualizable
+	consensus.ContextInitializable
 }
 
 type Owned interface {

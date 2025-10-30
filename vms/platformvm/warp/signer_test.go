@@ -1,32 +1,28 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package warp
+package warp_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
+	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/node/vms/platformvm/warp/signertest"
 )
 
 func TestSigner(t *testing.T) {
-	signerTests := map[string]func(t *testing.T, s Signer, sk *bls.SecretKey, networkID uint32, chainID ids.ID){
-		"WrongChainID":   testWrongChainID,
-		"WrongNetworkID": testWrongNetworkID,
-		"Verifies":       testVerifies,
-	}
-
-	for name, test := range signerTests {
+	for name, test := range signertest.SignerTests {
 		t.Run(name, func(t *testing.T) {
-			sk, err := bls.NewSecretKey()
+			sk, err := localsigner.New()
 			require.NoError(t, err)
 
 			chainID := ids.GenerateTestID()
-			s := NewSigner(sk, constants.UnitTestID, chainID)
+			s := warp.NewSigner(sk, constants.UnitTestID, chainID)
 
 			test(t, s, sk, constants.UnitTestID, chainID)
 		})

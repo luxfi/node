@@ -1,4 +1,4 @@
-// Copyright (C) 2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2025, Lux Partners Limited All rights reserved.
 // Q-Chain Quantum Stamper for C-Chain Block Replay
 // Implements Crystal-Dilithium (ML-DSA) and SPHINCS+ (SLH-DSA) for post-quantum security
 

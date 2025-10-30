@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package signer
@@ -8,10 +8,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/keychain"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
@@ -28,7 +29,7 @@ var (
 	ErrUnknownInputType      = errors.New("unknown input type")
 	ErrUnknownOutputType     = errors.New("unknown output type")
 	ErrInvalidUTXOSigIndex   = errors.New("invalid UTXO signature index")
-	ErrUnknownSubnetAuthType = errors.New("unknown net auth type")
+	ErrUnknownAuthType       = errors.New("unknown auth type")
 	ErrUnknownOwnerType      = errors.New("unknown owner type")
 	ErrUnknownCredentialType = errors.New("unknown credential type")
 
@@ -51,14 +52,6 @@ func (*visitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return ErrUnsupportedTxType
 }
 
-func (s *visitor) BaseTx(tx *txs.BaseTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	return sign(s.tx, false, txSigners)
-}
-
 func (s *visitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {
@@ -72,7 +65,7 @@ func (s *visitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.NetValidator.Net, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getAuthSigners(tx.SubnetValidator.Subnet, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
@@ -93,7 +86,7 @@ func (s *visitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.NetID, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getAuthSigners(tx.SubnetID, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
@@ -135,20 +128,7 @@ func (s *visitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.Net, tx.SubnetAuth)
-	if err != nil {
-		return err
-	}
-	txSigners = append(txSigners, subnetAuthSigners)
-	return sign(s.tx, true, txSigners)
-}
-
-func (s *visitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.Net, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getAuthSigners(tx.Subnet, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
@@ -161,7 +141,7 @@ func (s *visitor) TransformNetTx(tx *txs.TransformNetTx) error {
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.Net, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getAuthSigners(tx.Subnet, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
@@ -185,19 +165,37 @@ func (s *visitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegato
 	return sign(s.tx, true, txSigners)
 }
 
-func (s *visitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
+func (s *visitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {
 		return err
 	}
+	subnetAuthSigners, err := s.getAuthSigners(tx.Subnet, tx.SubnetAuth)
+	if err != nil {
+		return err
+	}
+	txSigners = append(txSigners, subnetAuthSigners)
 	return sign(s.tx, true, txSigners)
 }
 
-func (s *visitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
+func (s *visitor) BaseTx(tx *txs.BaseTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {
 		return err
 	}
+	return sign(s.tx, false, txSigners)
+}
+
+func (s *visitor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	if err != nil {
+		return err
+	}
+	subnetAuthSigners, err := s.getAuthSigners(tx.Subnet, tx.SubnetAuth)
+	if err != nil {
+		return err
+	}
+	txSigners = append(txSigners, subnetAuthSigners)
 	return sign(s.tx, true, txSigners)
 }
 
@@ -217,16 +215,24 @@ func (s *visitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
 	return sign(s.tx, true, txSigners)
 }
 
-func (s *visitor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
+func (s *visitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.Net, tx.SubnetAuth)
+	return sign(s.tx, true, txSigners)
+}
+
+func (s *visitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
 	if err != nil {
 		return err
 	}
-	txSigners = append(txSigners, subnetAuthSigners)
+	disableAuthSigners, err := s.getAuthSigners(tx.ValidationID, tx.DisableAuth)
+	if err != nil {
+		return err
+	}
+	txSigners = append(txSigners, disableAuthSigners)
 	return sign(s.tx, true, txSigners)
 }
 
@@ -285,17 +291,17 @@ func (s *visitor) getSigners(sourceChainID ids.ID, ins []*lux.TransferableInput)
 	return txSigners, nil
 }
 
-func (s *visitor) getSubnetSigners(netID ids.ID, subnetAuth verify.Verifiable) ([]keychain.Signer, error) {
-	subnetInput, ok := subnetAuth.(*secp256k1fx.Input)
+func (s *visitor) getAuthSigners(ownerID ids.ID, auth verify.Verifiable) ([]keychain.Signer, error) {
+	input, ok := auth.(*secp256k1fx.Input)
 	if !ok {
-		return nil, ErrUnknownSubnetAuthType
+		return nil, ErrUnknownAuthType
 	}
 
-	ownerIntf, err := s.backend.GetSubnetOwner(s.ctx, netID)
+	ownerIntf, err := s.backend.GetOwner(s.ctx, ownerID)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"failed to fetch net owner for %q: %w",
-			netID,
+			"failed to fetch owner for %q: %w",
+			ownerID,
 			err,
 		)
 	}
@@ -304,8 +310,8 @@ func (s *visitor) getSubnetSigners(netID ids.ID, subnetAuth verify.Verifiable) (
 		return nil, ErrUnknownOwnerType
 	}
 
-	authSigners := make([]keychain.Signer, len(subnetInput.SigIndices))
-	for sigIndex, addrIndex := range subnetInput.SigIndices {
+	authSigners := make([]keychain.Signer, len(input.SigIndices))
+	for sigIndex, addrIndex := range input.SigIndices {
 		if addrIndex >= uint32(len(owner.Addrs)) {
 			return nil, ErrInvalidUTXOSigIndex
 		}

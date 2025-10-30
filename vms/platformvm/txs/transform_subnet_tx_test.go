@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -11,13 +11,13 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/components/verify/verifymock"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/testcontext"
@@ -377,7 +377,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x16,
 		// Locktime
 		0x00, 0x00, 0x00, 0x00, 0x05, 0x39, 0x7f, 0xb1,
-		// seck256k1fx tranfer output type ID
+		// seck256k1fx transfer output type ID
 		0x00, 0x00, 0x00, 0x07,
 		// amount
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
@@ -397,7 +397,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 		0x00, 0x00, 0x00, 0x16,
 		// Locktime
 		0x00, 0x00, 0x00, 0x00, 0x34, 0x3e, 0xfc, 0xea,
-		// seck256k1fx tranfer output type ID
+		// seck256k1fx transfer output type ID
 		0x00, 0x00, 0x00, 0x07,
 		// amount
 		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -545,7 +545,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 
 	unsignedComplexTransformTxJSONBytes, err := json.MarshalIndent(unsignedComplexTransformTx, "", "\t")
 	require.NoError(err)
-	require.Equal(`{
+	require.JSONEq(`{
 	"networkID": 1,
 	"blockchainID": "11111111111111111111111111111111LpoYY",
 	"outputs": [
@@ -972,7 +972,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 			name: "invalid subnetAuth",
 			txFunc: func(ctrl *gomock.Controller) *TransformNetTx {
 				// This SubnetAuth fails verification.
-				invalidSubnetAuth := verify.NewMockVerifiable(ctrl)
+				invalidSubnetAuth := verifymock.NewVerifiable(ctrl)
 				invalidSubnetAuth.EXPECT().Verify().Return(errInvalidSubnetAuth)
 				return &TransformNetTx{
 					BaseTx:                   validBaseTx,
@@ -1022,7 +1022,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 			name: "passes verification",
 			txFunc: func(ctrl *gomock.Controller) *TransformNetTx {
 				// This SubnetAuth passes verification.
-				validSubnetAuth := verify.NewMockVerifiable(ctrl)
+				validSubnetAuth := verifymock.NewVerifiable(ctrl)
 				validSubnetAuth.EXPECT().Verify().Return(nil)
 				return &TransformNetTx{
 					BaseTx:                   validBaseTx,

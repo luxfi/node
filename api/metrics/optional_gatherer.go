@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -12,11 +12,9 @@ import (
 	dto "github.com/prometheus/client_model/go"
 )
 
-var (
-	_ OptionalGatherer = (*optionalGatherer)(nil)
+var errReregisterGatherer = errors.New("attempted to register a gatherer when one is already registered")
 
-	errReregisterGatherer = errors.New("gatherer already registered")
-)
+var _ OptionalGatherer = (*optionalGatherer)(nil)
 
 // OptionalGatherer extends the Gatherer interface by allowing the optional
 // registration of a single gatherer. If no gatherer is registered, Gather will

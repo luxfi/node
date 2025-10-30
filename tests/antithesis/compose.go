@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package antithesis
@@ -23,17 +23,15 @@ import (
 const bootstrapIndex = 0
 
 const (
-	targetPathEnvName        = "TARGET_PATH"
-	imageTagEnvName          = "IMAGE_TAG"
-	luxGoPathEnvName         = "LUXGO_PATH"
-	luxGoPluginDirEnvName    = "LUXGO_PLUGIN_DIR"
+	targetPathEnvName = "TARGET_PATH"
+	imageTagEnvName   = "IMAGE_TAG"
 )
 
 var (
 	errTargetPathEnvVarNotSet = errors.New(targetPathEnvName + " environment variable not set")
 	errImageTagEnvVarNotSet   = errors.New(imageTagEnvName + " environment variable not set")
-	errLuxGoEvVarNotSet = errors.New(luxGoPathEnvName + " environment variable not set")
-	errPluginDirEnvVarNotSet  = errors.New(luxGoPluginDirEnvName + " environment variable not set")
+	errLuxGoEvVarNotSet = errors.New(tmpnet.LuxGoPathEnvName + " environment variable not set")
+	errPluginDirEnvVarNotSet  = errors.New(tmpnet.LuxGoPluginDirEnvName + " environment variable not set")
 )
 
 // Creates docker compose configuration for an antithesis test setup. Configuration is via env vars to
@@ -52,27 +50,23 @@ func GenerateComposeConfig(network *tmpnet.Network, baseImageName string) error 
 
 	// Subnet testing requires creating an initial db state for the bootstrap node
 	if len(network.Subnets) > 0 {
-		luxGoPath := os.Getenv(luxGoPathEnvName)
-		if len(luxGoPath) == 0 {
+		luxPath := os.Getenv(tmpnet.LuxGoPathEnvName)
+		if len(luxPath) == 0 {
 			return errLuxGoEvVarNotSet
 		}
 
 		// Plugin dir configured here is only used for initializing the bootstrap db.
-		pluginDir := os.Getenv(luxGoPluginDirEnvName)
+		pluginDir := os.Getenv(tmpnet.LuxGoPluginDirEnvName)
 		if len(pluginDir) == 0 {
 			return errPluginDirEnvVarNotSet
 		}
 
 		network.DefaultRuntimeConfig = tmpnet.NodeRuntimeConfig{
 			Process: &tmpnet.ProcessRuntimeConfig{
-				LuxNodePath: luxGoPath,
+				LuxGoPath: luxPath,
+				PluginDir:       pluginDir,
 			},
 		}
-		// Set plugin dir in network flags
-		if network.DefaultFlags == nil {
-			network.DefaultFlags = make(tmpnet.FlagsMap)
-		}
-		network.DefaultFlags[config.PluginDirKey] = pluginDir
 
 		bootstrapVolumePath, err := getBootstrapVolumePath(targetPath)
 		if err != nil {
@@ -152,13 +146,13 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 		bootstrapIDs string
 	)
 
-	if network.ChainConfigs == nil {
-		network.ChainConfigs = make(map[string]tmpnet.FlagsMap)
+	if network.PrimaryChainConfigs == nil {
+		network.PrimaryChainConfigs = make(map[string]tmpnet.ConfigMap)
 	}
-	if network.ChainConfigs["C"] == nil {
-		network.ChainConfigs["C"] = make(tmpnet.FlagsMap)
+	if network.PrimaryChainConfigs["C"] == nil {
+		network.PrimaryChainConfigs["C"] = make(tmpnet.ConfigMap)
 	}
-	network.ChainConfigs["C"]["log-json-format"] = true
+	network.PrimaryChainConfigs["C"]["log-json-format"] = true
 
 	chainConfigContent, err := network.GetChainConfigContent()
 	if err != nil {
@@ -174,9 +168,9 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 
 		env := types.Mapping{
 			config.NetworkNameKey:             constants.LocalName,
-			config.LogLevelKey:                log.Debug.String(),
-			config.LogDisplayLevelKey:         log.Trace.String(),
-			config.LogFormatKey:               log.JSONString,
+			config.LogLevelKey:                logging.Debug.String(),
+			config.LogDisplayLevelKey:         logging.Trace.String(),
+			config.LogFormatKey:               logging.JSONString,
 			config.HTTPHostKey:                "0.0.0.0",
 			config.PublicIPKey:                address,
 			config.StakingTLSKeyContentKey:    tlsKey,
@@ -186,7 +180,9 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 		}
 
 		// Apply configuration appropriate to a test network
-		maps.Copy(env, tmpnet.DefaultTmpnetFlags())
+		for k, v := range tmpnet.DefaultTmpnetFlags() {
+			env[k] = v
+		}
 
 		serviceName := getServiceName(i)
 

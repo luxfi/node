@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -7,9 +7,12 @@ import (
 	"errors"
 	"fmt"
 
+	"go.uber.org/zap"
+
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -43,11 +46,11 @@ type options struct {
 }
 
 func (*options) BanffAbortBlock(*block.BanffAbortBlock) error {
-	return ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (*options) BanffCommitBlock(*block.BanffCommitBlock) error {
-	return ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
@@ -96,15 +99,15 @@ func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
 }
 
 func (*options) BanffStandardBlock(*block.BanffStandardBlock) error {
-	return ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (*options) ApricotAbortBlock(*block.ApricotAbortBlock) error {
-	return ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (*options) ApricotCommitBlock(*block.ApricotCommitBlock) error {
-	return ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (o *options) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
@@ -131,11 +134,11 @@ func (o *options) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
 }
 
 func (*options) ApricotStandardBlock(*block.ApricotStandardBlock) error {
-	return ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (*options) ApricotAtomicBlock(*block.ApricotAtomicBlock) error {
-	return ErrNotOracle
+	return chain.ErrNotOracle
 }
 
 func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {
@@ -175,7 +178,6 @@ func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {
 
 	uptime, err := o.uptimes.CalculateUptimePercentFrom(
 		nodeID,
-		constants.PrimaryNetworkID,
 		primaryNetworkValidator.StartTime,
 	)
 	if err != nil {

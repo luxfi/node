@@ -15,7 +15,6 @@ import (
 
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
-	gomock "github.com/luxfi/mock/gomock"
 	maybe "github.com/luxfi/node/utils/maybe"
 )
 

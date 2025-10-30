@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
 
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -23,7 +23,7 @@ type CreateAssetTx struct {
 	States       []*InitialState `serialize:"true" json:"initialStates"`
 }
 
-func (t *CreateAssetTx) InitCtx(ctx context.Context) {
+func (t *CreateAssetTx) InitCtx(ctx *consensusctx.Context) {
 	for _, state := range t.States {
 		state.InitCtx(ctx)
 	}
@@ -31,7 +31,7 @@ func (t *CreateAssetTx) InitCtx(ctx context.Context) {
 }
 
 // InitializeContext initializes the context for this transaction
-func (t *CreateAssetTx) InitializeContext(ctx context.Context) error {
+func (t *CreateAssetTx) InitializeContext(ctx *consensusctx.Context) error {
 	t.InitCtx(ctx)
 	return nil
 }
@@ -47,7 +47,7 @@ func (t *CreateAssetTx) Visit(v Visitor) error {
 }
 
 // InitializeWithContext initializes the transaction with consensus context
-func (tx *CreateAssetTx) InitializeWithContext(ctx context.Context) error {
+func (tx *CreateAssetTx) InitializeWithContext(ctx *consensusctx.Context) error {
 	// Initialize any context-dependent fields here
 	return nil
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -11,36 +11,33 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/network/peer"
+	"github.com/luxfi/math/set"
 )
 
 type metricsImpl struct {
 	// trackedSubnets does not include the primary network ID
 	trackedSubnets set.Set[ids.ID]
 
-	numTracked                      metric.Gauge
-	numPeers                        metric.Gauge
-	numSubnetPeers                  metric.GaugeVec
-	timeSinceLastMsgSent            metric.Gauge
-	timeSinceLastMsgReceived        metric.Gauge
-	sendFailRate                    metric.Gauge
-	connected                       metric.Counter
-	disconnected                    metric.Counter
-	acceptFailed                    metric.Counter
-	inboundConnRateLimited          metric.Counter
-	inboundConnAllowed              metric.Counter
-	tlsConnRejected                 metric.Counter
-	numUselessPeerListBytes         metric.Counter
-	nodeUptimeWeightedAverage       metric.Gauge
-	nodeUptimeRewardingStake        metric.Gauge
-	nodeSubnetUptimeWeightedAverage metric.GaugeVec
-	nodeSubnetUptimeRewardingStake  metric.GaugeVec
-	peerConnectedLifetimeAverage    metric.Gauge
-
-	lock                       sync.RWMutex
-	peerConnectedStartTimes    map[ids.NodeID]float64
-	peerConnectedStartTimesSum float64
+	numTracked                   prometheus.Gauge
+	numPeers                     prometheus.Gauge
+	numSubnetPeers               *prometheus.GaugeVec
+	timeSinceLastMsgSent         prometheus.Gauge
+	timeSinceLastMsgReceived     prometheus.Gauge
+	sendFailRate                 prometheus.Gauge
+	connected                    prometheus.Counter
+	disconnected                 prometheus.Counter
+	acceptFailed                 prometheus.Counter
+	inboundConnRateLimited       prometheus.Counter
+	inboundConnAllowed           prometheus.Counter
+	tlsConnRejected              prometheus.Counter
+	numUselessPeerListBytes      prometheus.Counter
+	nodeUptimeWeightedAverage    prometheus.Gauge
+	nodeUptimeRewardingStake     prometheus.Gauge
+	peerConnectedLifetimeAverage prometheus.Gauge
+	lock                         sync.RWMutex
+	peerConnectedStartTimes      map[ids.NodeID]float64
+	peerConnectedStartTimesSum   float64
 }
 
 func newMetrics(
@@ -112,22 +109,8 @@ func newMetrics(
 			Name: "node_uptime_rewarding_stake",
 			Help: "The percentage of total stake which thinks this node is eligible for rewards",
 		}),
-		nodeSubnetUptimeWeightedAverage: metric.NewGaugeVec(
-			metric.GaugeOpts{
-				Name: "node_subnet_uptime_weighted_average",
-				Help: "This node's net uptime averages weighted by observing net peer stakes",
-			},
-			[]string{"netID"},
-		),
-		nodeSubnetUptimeRewardingStake: metric.NewGaugeVec(
-			metric.GaugeOpts{
-				Name: "node_subnet_uptime_rewarding_stake",
-				Help: "The percentage of subnet's total stake which thinks this node is eligible for subnet's rewards",
-			},
-			[]string{"netID"},
-		),
-		peerConnectedLifetimeAverage: metric.NewGauge(
-			metric.GaugeOpts{
+		peerConnectedLifetimeAverage: prometheus.NewGauge(
+			prometheus.GaugeOpts{
 				Name: "peer_connected_duration_average",
 				Help: "The average duration of all peer connections in nanoseconds",
 			},
@@ -151,18 +134,14 @@ func newMetrics(
 		registerer.Register(m.inboundConnRateLimited),
 		registerer.Register(m.nodeUptimeWeightedAverage),
 		registerer.Register(m.nodeUptimeRewardingStake),
-		registerer.Register(m.nodeSubnetUptimeWeightedAverage),
-		registerer.Register(m.nodeSubnetUptimeRewardingStake),
 		registerer.Register(m.peerConnectedLifetimeAverage),
 	)
 
 	// init net tracker metrics with tracked subnets
 	for netID := range trackedSubnets {
 		// initialize to 0
-		netIDStr := netID.String()
-		m.numSubnetPeers.WithLabelValues(netIDStr).Set(0)
-		m.nodeSubnetUptimeWeightedAverage.WithLabelValues(netIDStr).Set(0)
-		m.nodeSubnetUptimeRewardingStake.WithLabelValues(netIDStr).Set(0)
+		subnetIDStr := subnetID.String()
+		m.numSubnetPeers.WithLabelValues(subnetIDStr).Set(0)
 	}
 
 	return m, err

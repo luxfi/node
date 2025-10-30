@@ -26,7 +26,9 @@ jobs:
         run: ./scripts/run_task.sh build
 
       - name: Install aws cli
-        run: sudo snap install aws-cli --classic
+        run: |
+          sudo apt update
+          sudo apt -y install awscli
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -52,7 +54,7 @@ jobs:
       - name: Create debian package
         run: ./.github/workflows/build-deb-pkg.sh
         env:
-          PKG_ROOT: ${{ github.workspace }}/luxd-pkg
+          PKG_ROOT: /tmp/avalanchego
           TAG: ${{ env.TAG }}
           BUCKET: ${{ secrets.BUCKET }}
           ARCH: "amd64"
@@ -62,18 +64,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jammy
-          path: ${{ github.workspace }}/luxd-pkg/luxd-${{ env.TAG }}-amd64.deb
+          path: /tmp/avalanchego/avalanchego-${{ env.TAG }}-amd64.deb
 
       - name: Cleanup
         run: |
           rm -rf ./build
-          rm -rf ${{ github.workspace }}/luxd-pkg
+          rm -rf /tmp/avalanchego
 
-  build-noble-amd64-package:
-    runs-on: ubuntu-24.04
-    permissions:
-      id-token: write
-      contents: read
+  build-focal-amd64-package:
+    runs-on: ubuntu-20.04
 
     steps:
       - uses: actions/checkout@v4
@@ -110,19 +109,19 @@ jobs:
       - name: Create debian package
         run: ./.github/workflows/build-deb-pkg.sh
         env:
-          PKG_ROOT: ${{ github.workspace }}/luxd-pkg
+          PKG_ROOT: /tmp/avalanchego
           TAG: ${{ env.TAG }}
           BUCKET: ${{ secrets.BUCKET }}
           ARCH: "amd64"
-          RELEASE: "noble"
+          RELEASE: "focal"
 
       - name: Save as Github artifact
         uses: actions/upload-artifact@v4
         with:
-          name: noble
-          path:  ${{ github.workspace }}/luxd-pkg/luxd-${{ env.TAG }}-amd64.deb
+          name: focal
+          path:  /tmp/avalanchego/avalanchego-${{ env.TAG }}-amd64.deb
 
       - name: Cleanup
         run: |
           rm -rf ./build
-          rm -rf ${{ github.workspace }}/luxd-pkg
+          rm -rf /tmp/avalanchego

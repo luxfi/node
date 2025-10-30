@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -13,8 +13,9 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus"
 	consensusctx "github.com/luxfi/consensus/context"
@@ -90,6 +91,9 @@ type VM struct {
 	// Contains information of where this VM is executing
 	ctx context.Context
 
+	// Consensus context
+	consensusCtx *consensusctx.Context
+
 	// Logger for this VM
 	log log.Logger
 
@@ -109,7 +113,7 @@ type VM struct {
 	// Used to check local time
 	clock mockable.Clock
 
-	registerer metric.Registerer
+	registerer metrics.Registerer
 
 	connectedPeers map[ids.NodeID]*version.Application
 
@@ -207,6 +211,7 @@ func (vm *VM) Initialize(
 	// Try to get consensus context for chain info
 	if consensusCtx, ok := chainCtx.(*consensusctx.Context); ok {
 		// Store chain-specific info from consensus context
+		vm.consensusCtx = consensusCtx
 		vm.ChainID = consensusCtx.ChainID
 		vm.XChainID = consensusCtx.ChainID // For XVM, this is the same
 
@@ -275,7 +280,7 @@ func (vm *VM) initialize(
 	)
 
 	// Get metrics from a global registry or create new one
-	vm.registerer = metric.NewRegistry()
+	vm.registerer = prometheus.NewRegistry()
 
 	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
 
@@ -285,7 +290,7 @@ func (vm *VM) initialize(
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}
 
-	vm.AddressManager = lux.NewAddressManager(ctx)
+	vm.AddressManager = lux.NewAddressManager(vm.consensusCtx)
 	vm.Aliaser = ids.NewAliaser()
 
 	vm.ctx = ctx
@@ -345,19 +350,11 @@ func (vm *VM) initialize(
 	vm.walletService.vm = vm
 	vm.walletService.pendingTxs = linked.NewHashmap[ids.ID, *txs.Tx]()
 
-	// use no op impl when disabled in config
-	if xvmConfig.IndexTransactions {
-		vm.log.Warn("deprecated address transaction indexing is enabled")
-		vm.addressTxsIndexer, err = index.NewIndexer(vm.db, vm.log, "", vm.registerer, xvmConfig.IndexAllowIncomplete)
-		if err != nil {
-			return fmt.Errorf("failed to initialize address transaction indexer: %w", err)
-		}
-	} else {
-		vm.log.Info("address transaction indexing is disabled")
-		vm.addressTxsIndexer, err = index.NewNoIndexer(vm.db, xvmConfig.IndexAllowIncomplete)
-		if err != nil {
-			return fmt.Errorf("failed to initialize disabled indexer: %w", err)
-		}
+	// Address transaction indexing is disabled in current implementation
+	vm.log.Info("address transaction indexing is disabled")
+	vm.addressTxsIndexer, err = index.NewNoIndexer(vm.db, false)
+	if err != nil {
+		return fmt.Errorf("failed to initialize disabled indexer: %w", err)
 	}
 
 	vm.txBackend = &txexecutor.Backend{
@@ -494,16 +491,20 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
  ******************************************************************************
  */
 
-func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
-	time := version.GetCortinaTime(consensus.GetNetworkID(vm.ctx))
-	err := vm.state.InitializeChainState(stopVertexID, time)
+func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- core.Message) error {
+	// Use EtnaTime from config for chain state initialization
+	err := vm.state.InitializeChainState(stopVertexID, vm.Config.EtnaTime)
 	if err != nil {
 		return err
 	}
 
+	// Note: toEngine parameter is for compatibility with LinearizableVMWithEngine interface
+	// The XVM uses its own internal channel for mempool communication
+	_ = toEngine
+	
 	// Create a channel for mempool to engine communication
 	vm.toEngine = make(chan core.MessageType, 1)
-	mempool, err := xmempool.New("mempool", vm.registerer, vm.toEngine)
+	mempool, err := xmempool.New("mempool", vm.registerer)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
 	}
@@ -755,8 +756,8 @@ func (vm *VM) lookupAssetID(asset string) (ids.ID, error) {
 
 // Invariant: onAccept is called when [tx] is being marked as accepted, but
 // before its state changes are applied.
-// Invariant: any error returned by onAccept should be considered fatal.
-func (vm *VM) onAccept(tx *txs.Tx) error {
+// Note: errors are logged but not returned as this callback must not fail.
+func (vm *VM) onAccept(tx *txs.Tx) {
 	// Fetch the input UTXOs
 	txID := tx.ID()
 	inputUTXOIDs := tx.Unsigned.InputUTXOs()
@@ -777,9 +778,12 @@ func (vm *VM) onAccept(tx *txs.Tx) error {
 			continue
 		}
 		if err != nil {
-			// should never happen because the UTXO was previously verified to
-			// exist
-			return fmt.Errorf("error finding UTXO %s: %w", utxoID, err)
+			// should never happen because the UTXO was previously verified to exist
+			vm.log.Error("error finding UTXO on accept",
+				log.Stringer("utxoID", utxoID),
+				log.Err(err),
+			)
+			continue
 		}
 		inputUTXOs = append(inputUTXOs, utxo)
 	}
@@ -787,12 +791,14 @@ func (vm *VM) onAccept(tx *txs.Tx) error {
 	outputUTXOs := tx.UTXOs()
 	// index input and output UTXOs
 	if err := vm.addressTxsIndexer.Accept(txID, inputUTXOs, outputUTXOs); err != nil {
-		return fmt.Errorf("error indexing tx: %w", err)
+		vm.log.Error("error indexing tx",
+			log.Stringer("txID", txID),
+			log.Err(err),
+		)
 	}
 
 	vm.pubsub.Publish(NewPubSubFilterer(tx))
 	vm.walletService.decided(txID)
-	return nil
 }
 
 // WaitForEvent implements the core.VM interface
@@ -902,8 +908,7 @@ type validatorStateWrapper struct {
 }
 
 func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
-	// GetCurrentHeight doesn't take context in consensus.ValidatorState
-	return v.vs.GetCurrentHeight()
+	return v.vs.GetCurrentHeight(ctx)
 }
 
 func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
@@ -926,7 +931,7 @@ func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint
 
 func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*GetCurrentValidatorOutput, uint64, error) {
 	// Get current height
-	height, err := v.vs.GetCurrentHeight()
+	height, err := v.vs.GetCurrentHeight(ctx)
 	if err != nil {
 		return nil, 0, err
 	}

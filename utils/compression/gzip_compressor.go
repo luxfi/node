@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package compression
@@ -6,20 +6,13 @@ package compression
 import (
 	"bytes"
 	"compress/gzip"
-	"errors"
 	"fmt"
 	"io"
 	"math"
 	"sync"
 )
 
-var (
-	_ Compressor = (*gzipCompressor)(nil)
-
-	ErrInvalidMaxSizeCompressor = errors.New("invalid gzip compressor max size")
-	ErrDecompressedMsgTooLarge  = errors.New("decompressed msg too large")
-	ErrMsgTooLarge              = errors.New("msg too large to be compressed")
-)
+var _ Compressor = (*gzipCompressor)(nil)
 
 type gzipCompressor struct {
 	maxSize        int64

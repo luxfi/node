@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validatorstest
@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 
-	"github.com/luxfi/consensus/validators"
+	snowvalidators "github.com/luxfi/consensus/validators"
 	vmvalidators "github.com/luxfi/node/vms/platformvm/validators"
 )
 
@@ -24,20 +24,16 @@ func (manager) GetCurrentHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
-func (manager) GetNetID(context.Context, ids.ID) (ids.ID, error) {
+func (manager) GetSubnetID(context.Context, ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
-func (manager) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+func (manager) GetValidatorSet(context.Context, uint64, ids.ID) (map[ids.NodeID]*snowvalidators.GetValidatorOutput, error) {
 	return nil, nil
 }
 
 func (manager) OnAcceptedBlockID(ids.ID) {}
 
-func (manager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetValidatorOutput, uint64, error) {
+func (manager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*snowvalidators.GetCurrentValidatorOutput, uint64, error) {
 	return nil, 0, nil
-}
-
-func (manager) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-	return nil, nil
 }

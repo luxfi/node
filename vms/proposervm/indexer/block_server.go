@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
@@ -6,9 +6,9 @@ package indexer
 import (
 	"context"
 
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 )
 
 // BlockServer represents all requests heightIndexer can issue
@@ -18,5 +18,5 @@ type BlockServer interface {
 
 	// Note: this is a contention heavy call that should be avoided
 	// for frequent/repeated indexer ops
-	GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (chain.Block, error)
+	GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (chainblock.Block, error)
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -9,6 +9,7 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/genesis"
+	"github.com/luxfi/crypto/secp256k1"
 )
 
 func LocalNetworkOrPanic() *Network {

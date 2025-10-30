@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chain
@@ -16,7 +16,11 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/constants"
 )
 
@@ -33,21 +37,18 @@ func cachedBlockBytesSize(blockBytes string, _ ids.ID) int {
 type State struct {
 	// getBlock retrieves a block from the VM's storage. If getBlock returns
 	// a nil error, then the returned block must not have the status Unknown
-	getBlock func(context.Context, ids.ID) (chain.Block, error)
+	getBlock func(context.Context, ids.ID) (block.Block, error)
 	// unmarshals [b] into a block
-	unmarshalBlock        func(context.Context, []byte) (chain.Block, error)
-	batchedUnmarshalBlock func(context.Context, [][]byte) ([]chain.Block, error)
+	unmarshalBlock        func(context.Context, []byte) (block.Block, error)
+	batchedUnmarshalBlock func(context.Context, [][]byte) ([]block.Block, error)
 	// buildBlock attempts to build a block on top of the currently preferred block
 	// buildBlock should always return a block with status Processing since it should never
 	// create an unknown block, and building on top of the preferred block should never yield
 	// a block that has already been decided.
-	buildBlock func(context.Context) (chain.Block, error)
+	buildBlock func(context.Context) (block.Block, error)
 
 	// If nil, [BuildBlockWithContext] returns [BuildBlock].
-	buildBlockWithContext func(context.Context, *block.Context) (chain.Block, error)
-
-	// getStatus returns the status of the block
-	getStatus func(context.Context, chain.Block) (choices.Status, error)
+	buildBlockWithContext func(context.Context, *block.Context) (block.Block, error)
 
 	// verifiedBlocks is a map of blocks that have been verified and are
 	// therefore currently in consensus.
@@ -69,43 +70,12 @@ type Config struct {
 	// Cache configuration:
 	DecidedCacheSize, MissingCacheSize, UnverifiedCacheSize, BytesToIDCacheSize int
 
-	LastAcceptedBlock     chain.Block
-	GetBlock              func(context.Context, ids.ID) (chain.Block, error)
-	UnmarshalBlock        func(context.Context, []byte) (chain.Block, error)
-	BatchedUnmarshalBlock func(context.Context, [][]byte) ([]chain.Block, error)
-	BuildBlock            func(context.Context) (chain.Block, error)
-	BuildBlockWithContext func(context.Context, *block.Context) (chain.Block, error)
-	GetBlockIDAtHeight    func(context.Context, uint64) (ids.ID, error)
-}
-
-// produceGetStatus creates a getStatus function that infers the status of a block by using a function
-// passed in from the VM that gets the block ID at a specific height. It is assumed that for any height
-// less than or equal to the last accepted block, getBlockIDAtHeight returns the accepted blockID at
-// the requested height.
-func produceGetStatus(s *State, getBlockIDAtHeight func(context.Context, uint64) (ids.ID, error)) func(context.Context, chain.Block) (choices.Status, error) {
-	return func(ctx context.Context, blk chain.Block) (choices.Status, error) {
-		lastAcceptedHeight := s.lastAcceptedBlock.Height()
-		blkHeight := blk.Height()
-		if blkHeight > lastAcceptedHeight {
-			return choices.Processing, nil
-		}
-
-		acceptedID, err := getBlockIDAtHeight(ctx, blkHeight)
-		switch err {
-		case nil:
-			if acceptedID == blk.ID() {
-				return choices.Accepted, nil
-			}
-			return choices.Rejected, nil
-		case database.ErrNotFound:
-			// Not found can happen if chain history is missing. In this case,
-			// the block may have been accepted or rejected, it isn't possible
-			// to know here.
-			return choices.Processing, nil
-		default:
-			return choices.Unknown, fmt.Errorf("%w: failed to get accepted blkID at height %d", err, blkHeight)
-		}
-	}
+	LastAcceptedBlock     block.Block
+	GetBlock              func(context.Context, ids.ID) (block.Block, error)
+	UnmarshalBlock        func(context.Context, []byte) (block.Block, error)
+	BatchedUnmarshalBlock func(context.Context, [][]byte) ([]block.Block, error)
+	BuildBlock            func(context.Context) (block.Block, error)
+	BuildBlockWithContext func(context.Context, *block.Context) (block.Block, error)
 }
 
 func (s *State) initialize(config *Config) {
@@ -115,13 +85,6 @@ func (s *State) initialize(config *Config) {
 	s.buildBlockWithContext = config.BuildBlockWithContext
 	s.unmarshalBlock = config.UnmarshalBlock
 	s.batchedUnmarshalBlock = config.BatchedUnmarshalBlock
-	if config.GetBlockIDAtHeight == nil {
-		s.getStatus = func(_ context.Context, blk chain.Block) (choices.Status, error) {
-			return choices.Processing, nil
-		}
-	} else {
-		s.getStatus = produceGetStatus(s, config.GetBlockIDAtHeight)
-	}
 	s.lastAcceptedBlock = &BlockWrapper{
 		Block: config.LastAcceptedBlock,
 		state: s,
@@ -131,20 +94,11 @@ func (s *State) initialize(config *Config) {
 
 func NewState(config *Config) *State {
 	c := &State{
-		verifiedBlocks: make(map[ids.ID]*BlockWrapper),
-		decidedBlocks: cache.NewSizedLRU[ids.ID, *BlockWrapper](
-			config.DecidedCacheSize,
-			cachedBlockSize,
-		),
-		missingBlocks: &cache.LRU[ids.ID, struct{}]{Size: config.MissingCacheSize},
-		unverifiedBlocks: cache.NewSizedLRU[ids.ID, *BlockWrapper](
-			config.UnverifiedCacheSize,
-			cachedBlockSize,
-		),
-		bytesToIDCache: cache.NewSizedLRU[string, ids.ID](
-			config.BytesToIDCacheSize,
-			cachedBlockBytesSize,
-		),
+		verifiedBlocks:   make(map[ids.ID]*BlockWrapper),
+		decidedBlocks:    lru.NewSizedCache(config.DecidedCacheSize, cachedBlockSize),
+		missingBlocks:    lru.NewCache[ids.ID, struct{}](config.MissingCacheSize),
+		unverifiedBlocks: lru.NewSizedCache(config.UnverifiedCacheSize, cachedBlockSize),
+		bytesToIDCache:   lru.NewSizedCache(config.BytesToIDCacheSize, cachedBlockBytesSize),
 	}
 	c.initialize(config)
 	return c
@@ -156,41 +110,32 @@ func NewMeteredState(
 ) (*State, error) {
 	decidedCache, err := metercacher.New[ids.ID, *BlockWrapper](
 		"decided_cache",
-		registerer.(metric.Registry),
-		cache.NewSizedLRU[ids.ID, *BlockWrapper](
-			config.DecidedCacheSize,
-			cachedBlockSize,
-		),
+		registerer,
+		lru.NewSizedCache(config.DecidedCacheSize, cachedBlockSize),
 	)
 	if err != nil {
 		return nil, err
 	}
 	missingCache, err := metercacher.New[ids.ID, struct{}](
 		"missing_cache",
-		registerer.(metric.Registry),
-		&cache.LRU[ids.ID, struct{}]{Size: config.MissingCacheSize},
+		registerer,
+		lru.NewCache[ids.ID, struct{}](config.MissingCacheSize),
 	)
 	if err != nil {
 		return nil, err
 	}
 	unverifiedCache, err := metercacher.New[ids.ID, *BlockWrapper](
 		"unverified_cache",
-		registerer.(metric.Registry),
-		cache.NewSizedLRU[ids.ID, *BlockWrapper](
-			config.UnverifiedCacheSize,
-			cachedBlockSize,
-		),
+		registerer,
+		lru.NewSizedCache(config.UnverifiedCacheSize, cachedBlockSize),
 	)
 	if err != nil {
 		return nil, err
 	}
 	bytesToIDCache, err := metercacher.New[string, ids.ID](
 		"bytes_to_id_cache",
-		registerer.(metric.Registry),
-		cache.NewSizedLRU[string, ids.ID](
-			config.BytesToIDCacheSize,
-			cachedBlockBytesSize,
-		),
+		registerer,
+		lru.NewSizedCache(config.BytesToIDCacheSize, cachedBlockBytesSize),
 	)
 	if err != nil {
 		return nil, err
@@ -214,7 +159,7 @@ var errSetAcceptedWithProcessing = errors.New("cannot set last accepted block wi
 //
 // This also flushes [lastAcceptedBlock] from missingBlocks and unverifiedBlocks
 // to ensure that their contents stay valid.
-func (s *State) SetLastAcceptedBlock(lastAcceptedBlock chain.Block) error {
+func (s *State) SetLastAcceptedBlock(lastAcceptedBlock block.Block) error {
 	if len(s.verifiedBlocks) != 0 {
 		return fmt.Errorf("%w: %d", errSetAcceptedWithProcessing, len(s.verifiedBlocks))
 	}
@@ -244,8 +189,8 @@ func (s *State) Flush() {
 	s.bytesToIDCache.Flush()
 }
 
-// GetBlock returns the BlockWrapper as chain.Block corresponding to [blkID]
-func (s *State) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
+// GetBlock returns the BlockWrapper as block.Block corresponding to [blkID]
+func (s *State) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
 	if blk, ok := s.getCachedBlock(blkID); ok {
 		return blk, nil
 	}
@@ -266,12 +211,12 @@ func (s *State) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error)
 
 	// Since this block is not in consensus, addBlockOutsideConsensus
 	// is called to add [blk] to the correct cache.
-	return s.addBlockOutsideConsensus(ctx, blk)
+	return s.addBlockOutsideConsensus(blk), nil
 }
 
 // getCachedBlock checks the caches for [blkID] by priority. Returning
 // true if [blkID] is found in one of the caches.
-func (s *State) getCachedBlock(blkID ids.ID) (chain.Block, bool) {
+func (s *State) getCachedBlock(blkID ids.ID) (block.Block, bool) {
 	if blk, ok := s.verifiedBlocks[blkID]; ok {
 		return blk, true
 	}
@@ -288,7 +233,7 @@ func (s *State) getCachedBlock(blkID ids.ID) (chain.Block, bool) {
 }
 
 // GetBlockInternal returns the internal representation of [blkID]
-func (s *State) GetBlockInternal(ctx context.Context, blkID ids.ID) (chain.Block, error) {
+func (s *State) GetBlockInternal(ctx context.Context, blkID ids.ID) (block.Block, error) {
 	wrappedBlk, err := s.GetBlock(ctx, blkID)
 	if err != nil {
 		return nil, err
@@ -299,7 +244,7 @@ func (s *State) GetBlockInternal(ctx context.Context, blkID ids.ID) (chain.Block
 
 // ParseBlock attempts to parse [b] into an internal Block and adds it to the
 // appropriate caching layer if successful.
-func (s *State) ParseBlock(ctx context.Context, b []byte) (chain.Block, error) {
+func (s *State) ParseBlock(ctx context.Context, b []byte) (block.Block, error) {
 	// See if we've cached this block's ID by its byte repr.
 	cachedBlkID, blkIDCached := s.bytesToIDCache.Get(string(b))
 	if blkIDCached {
@@ -332,15 +277,15 @@ func (s *State) ParseBlock(ctx context.Context, b []byte) (chain.Block, error) {
 
 	// Since this block is not in consensus, addBlockOutsideConsensus
 	// is called to add [blk] to the correct cache.
-	return s.addBlockOutsideConsensus(ctx, blk)
+	return s.addBlockOutsideConsensus(blk), nil
 }
 
 // BatchedParseBlock implements part of the block.BatchedChainVM interface. In
 // addition to performing all the caching as the ParseBlock function, it
 // performs at most one call to the underlying VM if [batchedUnmarshalBlock] was
 // provided.
-func (s *State) BatchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]chain.Block, error) {
-	blks := make([]chain.Block, len(blksBytes))
+func (s *State) BatchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]block.Block, error) {
+	blks := make([]block.Block, len(blksBytes))
 	idWasCached := make([]bool, len(blksBytes))
 	unparsedBlksBytes := make([][]byte, 0, len(blksBytes))
 	for i, blkBytes := range blksBytes {
@@ -365,7 +310,7 @@ func (s *State) BatchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]ch
 	}
 
 	var (
-		parsedBlks []chain.Block
+		parsedBlks []block.Block
 		err        error
 	)
 	if s.batchedUnmarshalBlock != nil {
@@ -374,7 +319,7 @@ func (s *State) BatchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]ch
 			return nil, err
 		}
 	} else {
-		parsedBlks = make([]chain.Block, len(unparsedBlksBytes))
+		parsedBlks = make([]block.Block, len(unparsedBlksBytes))
 		for i, blkBytes := range unparsedBlksBytes {
 			parsedBlks[i], err = s.unmarshalBlock(ctx, blkBytes)
 			if err != nil {
@@ -407,11 +352,7 @@ func (s *State) BatchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]ch
 		}
 
 		s.missingBlocks.Evict(blkID)
-		wrappedBlk, err := s.addBlockOutsideConsensus(ctx, blk)
-		if err != nil {
-			return nil, err
-		}
-		blks[i] = wrappedBlk
+		blks[i] = s.addBlockOutsideConsensus(blk)
 	}
 	return blks, nil
 }
@@ -419,7 +360,7 @@ func (s *State) BatchedParseBlock(ctx context.Context, blksBytes [][]byte) ([]ch
 // BuildBlockWithContext attempts to build a new internal Block, wraps it, and
 // adds it to the appropriate caching layer if successful.
 // If [s.buildBlockWithContext] is nil, returns [BuildBlock].
-func (s *State) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (chain.Block, error) {
+func (s *State) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (block.Block, error) {
 	if s.buildBlockWithContext == nil {
 		return s.BuildBlock(ctx)
 	}
@@ -429,33 +370,33 @@ func (s *State) BuildBlockWithContext(ctx context.Context, blockCtx *block.Conte
 		return nil, err
 	}
 
-	return s.deduplicate(ctx, blk)
+	return s.deduplicate(blk), nil
 }
 
 // BuildBlock attempts to build a new internal Block, wraps it, and adds it
 // to the appropriate caching layer if successful.
-func (s *State) BuildBlock(ctx context.Context) (chain.Block, error) {
+func (s *State) BuildBlock(ctx context.Context) (block.Block, error) {
 	blk, err := s.buildBlock(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.deduplicate(ctx, blk)
+	return s.deduplicate(blk), nil
 }
 
-func (s *State) deduplicate(ctx context.Context, blk chain.Block) (chain.Block, error) {
+func (s *State) deduplicate(blk block.Block) block.Block {
 	blkID := blk.ID()
 	// Defensive: buildBlock should not return a block that has already been verified.
 	// If it does, make sure to return the existing reference to the block.
 	if existingBlk, ok := s.getCachedBlock(blkID); ok {
-		return existingBlk, nil
+		return existingBlk
 	}
 	// Evict the produced block from missing blocks in case it was previously
 	// marked as missing.
 	s.missingBlocks.Evict(blkID)
 
 	// wrap the returned block and add it to the correct cache
-	return s.addBlockOutsideConsensus(ctx, blk)
+	return s.addBlockOutsideConsensus(blk)
 }
 
 // addBlockOutsideConsensus adds [blk] to the correct cache and returns
@@ -463,27 +404,20 @@ func (s *State) deduplicate(ctx context.Context, blk chain.Block) (chain.Block, 
 // assumes [blk] is a known, non-wrapped block that is not currently
 // in consensus. [blk] could be either decided or a block that has not yet
 // been verified and added to consensus.
-func (s *State) addBlockOutsideConsensus(ctx context.Context, blk chain.Block) (chain.Block, error) {
+func (s *State) addBlockOutsideConsensus(blk block.Block) block.Block {
 	wrappedBlk := &BlockWrapper{
 		Block: blk,
 		state: s,
 	}
 
 	blkID := blk.ID()
-	status, err := s.getStatus(ctx, blk)
-	if err != nil {
-		return nil, fmt.Errorf("could not get block status for %s due to %w", blkID, err)
-	}
-	switch status {
-	case choices.Accepted, choices.Rejected:
+	if blk.Height() <= s.lastAcceptedBlock.Height() {
 		s.decidedBlocks.Put(blkID, wrappedBlk)
-	case choices.Processing:
+	} else {
 		s.unverifiedBlocks.Put(blkID, wrappedBlk)
-	default:
-		return nil, fmt.Errorf("found unexpected status for blk %s: %s", blkID, status)
 	}
 
-	return wrappedBlk, nil
+	return wrappedBlk
 }
 
 func (s *State) LastAccepted(context.Context) (ids.ID, error) {
@@ -495,8 +429,8 @@ func (s *State) LastAcceptedBlock() *BlockWrapper {
 	return s.lastAcceptedBlock
 }
 
-// LastAcceptedBlockInternal returns the internal chain.Block that was last accepted
-func (s *State) LastAcceptedBlockInternal() chain.Block {
+// LastAcceptedBlockInternal returns the internal block.Block that was last accepted
+func (s *State) LastAcceptedBlockInternal() block.Block {
 	return s.LastAcceptedBlock().Block
 }
 

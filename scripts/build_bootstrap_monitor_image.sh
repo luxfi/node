@@ -10,10 +10,10 @@ set -euo pipefail
 # Builds the image for the bootstrap monitor
 
 # Directory above this script
-LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 
 # Load the constants
-source "$LUX_PATH"/scripts/constants.sh
+source "$AVALANCHE_PATH"/scripts/constants.sh
 
 # The published name should be 'avaplatform/bootstrap-monitor', but to avoid unintentional pushes it
 # is defaulted to 'bootstrap-monitor' (without a repo or registry name) which can only be used to
@@ -23,8 +23,8 @@ export DOCKER_IMAGE=${DOCKER_IMAGE:-"bootstrap-monitor"}
 # Skip building the race image
 export SKIP_BUILD_RACE=1
 
-# Reuse the luxd build script for convenience. The image will have a CMD of "./luxd", so
+# Reuse the node build script for convenience. The image will have a CMD of "./node", so
 # to run the bootstrap monitor will need to specify ./bootstrap-monitor".
 #
 # TODO(marun) Figure out how to set the CMD for a multi-arch image.
-bash -x "${LUX_PATH}"/scripts/build_image.sh --build-arg BUILD_SCRIPT=build_bootstrap_monitor.sh
+bash -x "${AVALANCHE_PATH}"/scripts/build_image.sh --build-arg BUILD_SCRIPT=build_bootstrap_monitor.sh

@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package propertyfx
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
 	"errors"
 
 	"github.com/luxfi/node/vms/components/verify"
@@ -19,9 +19,15 @@ type MintOperation struct {
 	OwnedOutput OwnedOutput       `serialize:"true" json:"ownedOutput"`
 }
 
-func (op *MintOperation) InitCtx(ctx context.Context) {
+func (op *MintOperation) InitCtx(ctx *consensusctx.Context) {
 	op.MintOutput.OutputOwners.InitCtx(ctx)
 	op.OwnedOutput.OutputOwners.InitCtx(ctx)
+}
+
+// InitializeContext implements the fxs.FxOperation interface
+func (op *MintOperation) InitializeContext(ctx *consensusctx.Context) error {
+	op.InitCtx(ctx)
+	return nil
 }
 
 func (op *MintOperation) Cost() (uint64, error) {
@@ -41,10 +47,9 @@ func (op *MintOperation) InitializeContext(ctx context.Context) error {
 }
 
 func (op *MintOperation) Verify() error {
-	switch {
-	case op == nil:
+	if op == nil {
 		return errNilMintOperation
-	default:
-		return verify.All(&op.MintInput, &op.MintOutput, &op.OwnedOutput)
 	}
+
+	return verify.All(&op.MintInput, &op.MintOutput, &op.OwnedOutput)
 }

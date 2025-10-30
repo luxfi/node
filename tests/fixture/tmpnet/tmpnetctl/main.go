@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -10,22 +10,18 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/tests/fixture/tmpnet/flags"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
 
-const (
-	cliVersion = "0.0.1"
-
-	// Need a longer timeout to account for time required to deploy nginx ingress controller and chaos mesh
-	startKindClusterTimeout = 5 * time.Minute
-)
+const cliVersion = "0.0.1"
 
 var (
 	errNetworkDirRequired = fmt.Errorf("--network-dir or %s is required", tmpnet.NetworkDirEnvName)
@@ -42,7 +38,7 @@ func main() {
 		Short: "tmpnetctl commands",
 	}
 	rootCmd.PersistentFlags().StringVar(&networkDir, "network-dir", os.Getenv(tmpnet.NetworkDirEnvName), "The path to the configuration directory of a temporary network")
-	rootCmd.PersistentFlags().StringVar(&rawLogFormat, "log-format", "auto", "The structure of log format. Options: 'auto', 'plain', 'colors', 'json'")
+	rootCmd.PersistentFlags().StringVar(&rawLogFormat, "log-format", logging.AutoString, logging.FormatDescription)
 
 	versionCmd := &cobra.Command{
 		Use:   "version",
@@ -84,27 +80,23 @@ func main() {
 				DefaultRuntimeConfig: *nodeRuntimeConfig,
 			}
 
-			timeout := 2 * time.Minute // Default network start timeout
+			timeout, err := nodeRuntimeConfig.GetNetworkStartTimeout(nodeCount)
 			if err != nil {
 				return err
 			}
 			log.Info("waiting for network to start",
-				"timeoutSeconds", fmt.Sprintf("%.2f", timeout.Seconds()),
+				zap.Float64("timeoutSeconds", timeout.Seconds()),
 			)
 
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
-			luxNodeExecPath := ""
-			pluginDir := ""
 			if err := tmpnet.BootstrapNewNetwork(
 				ctx,
-				os.Stdout,
+				log,
 				network,
 				startNetworkVars.RootNetworkDir,
-				luxNodeExecPath,
-				pluginDir,
 			); err != nil {
-				log.Error("failed to bootstrap network", "error", err)
+				log.Error("failed to bootstrap network", zap.Error(err))
 				return err
 			}
 
@@ -143,11 +135,11 @@ func main() {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()
-			_, err := tests.LoggerForFormat("", rawLogFormat)
+			log, err := tests.LoggerForFormat("", rawLogFormat)
 			if err != nil {
 				return err
 			}
-			if err := tmpnet.StopNetwork(ctx, networkDir); err != nil {
+			if err := tmpnet.StopNetwork(ctx, log, networkDir); err != nil {
 				return err
 			}
 			fmt.Fprintf(os.Stdout, "Stopped network configured at: %s\n", networkDir)
@@ -279,16 +271,16 @@ func main() {
 	rootCmd.AddCommand(checkLogsCmd)
 
 	var (
-		kubeconfigVars   *flags.KubeconfigVars
-		installChaosMesh bool
+		kubeconfigVars *flags.KubeconfigVars
+		collectorVars  *flags.CollectorVars
 	)
 	startKindClusterCmd := &cobra.Command{
 		Use:   "start-kind-cluster",
 		Short: "Starts a local kind cluster with an integrated registry",
 		RunE: func(*cobra.Command, []string) error {
-			_, cancel := context.WithTimeout(context.Background(), startKindClusterTimeout)
+			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()
-			_, err := tests.LoggerForFormat("", rawLogFormat)
+			log, err := tests.LoggerForFormat("", rawLogFormat)
 			if err != nil {
 				return err
 			}
@@ -298,24 +290,23 @@ func main() {
 				return errKubeconfigRequired
 			}
 			// TODO(marun) Consider supporting other contexts. Will require modifying the kind cluster start script.
-			if len(kubeconfigVars.Context) > 0 {
-				fmt.Printf("WARNING: ignoring provided kubeconfig context %s for kind cluster\n", kubeconfigVars.Context)
+			if len(kubeconfigVars.Context) > 0 && kubeconfigVars.Context != tmpnet.KindKubeconfigContext {
+				log.Warn("ignoring kubeconfig context for kind cluster",
+					zap.String("providedContext", kubeconfigVars.Context),
+					zap.String("requiredContext", tmpnet.KindKubeconfigContext),
+				)
 			}
-			// TODO: Implement StartKindCluster when available
-			return fmt.Errorf("StartKindCluster not yet implemented")
-			/*return tmpnet.StartKindCluster(
+			return tmpnet.StartKindCluster(
 				ctx,
 				log,
 				kubeconfigVars.Path,
 				collectorVars.StartMetricsCollector,
 				collectorVars.StartLogsCollector,
-				installChaosMesh,
-			)*/
+			)
 		},
 	}
 	kubeconfigVars = flags.NewKubeconfigFlagSetVars(startKindClusterCmd.PersistentFlags())
-	_ = flags.NewCollectorFlagSetVars(startKindClusterCmd.PersistentFlags())
-	startKindClusterCmd.PersistentFlags().BoolVar(&installChaosMesh, "install-chaos-mesh", false, "Install Chaos Mesh in the kind cluster")
+	collectorVars = flags.NewCollectorFlagSetVars(startKindClusterCmd.PersistentFlags())
 	rootCmd.AddCommand(startKindClusterCmd)
 
 	if err := rootCmd.Execute(); err != nil {

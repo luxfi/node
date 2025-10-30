@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package mempool
@@ -14,9 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-
 	"github.com/luxfi/crypto/secp256k1"
-
 	"github.com/luxfi/node/vms/components/lux"
 
 	"github.com/luxfi/node/vms/platformvm/txs"

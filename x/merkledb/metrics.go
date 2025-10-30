@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package merkledb
@@ -7,7 +7,9 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/luxfi/node/utils/metric"
 )
 
 const (
@@ -93,10 +95,13 @@ type prometheusMetrics struct {
 	lookup metric.CounterVec
 }
 
-func newMetrics(namespace string, reg metric.Registerer) (merkleDBMetrics, error) {
+func newMetrics(prefix string, reg prometheus.Registerer) (metrics, error) {
+	// TODO: Should we instead return an error if reg is nil?
 	if reg == nil {
 		return &mockMetrics{}, nil
 	}
+
+	namespace := metric.AppendNamespace(prefix, "merkledb")
 	m := prometheusMetrics{
 		hashes: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,

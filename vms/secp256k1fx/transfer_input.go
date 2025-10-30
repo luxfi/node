@@ -1,11 +1,12 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
 	"errors"
+
 )
 
 var ErrNoValueInput = errors.New("input has no value")
@@ -15,12 +16,7 @@ type TransferInput struct {
 	Input `serialize:"true"`
 }
 
-func (*TransferInput) InitCtx(context.Context) {}
-
-// InitializeWithContext initializes the input with consensus context
-func (*TransferInput) InitializeWithContext(ctx context.Context) error {
-	return nil
-}
+func (*TransferInput) InitCtx(*consensusctx.Context) {}
 
 // Amount returns the quantity of the asset this input produces
 func (in *TransferInput) Amount() uint64 {

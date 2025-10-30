@@ -10,11 +10,11 @@
 package fxmock
 
 import (
-	"context"
 	reflect "reflect"
 
-	gomock "github.com/luxfi/mock/gomock"
+	consensusctx "github.com/luxfi/consensus/context"
 	verify "github.com/luxfi/node/vms/components/verify"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // Owner is a mock of Owner interface.
@@ -43,7 +43,7 @@ func (m *Owner) EXPECT() *OwnerMockRecorder {
 }
 
 // InitCtx mocks base method.
-func (m *Owner) InitCtx(arg0 context.Context) {
+func (m *Owner) InitCtx(arg0 *consensusctx.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", arg0)
 }

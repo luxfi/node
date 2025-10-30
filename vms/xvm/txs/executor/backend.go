@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -11,6 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/codec"
+	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/fxs"
 )
@@ -42,4 +43,22 @@ type Backend struct {
 type SharedMemory interface {
 	Get(peerChainID ids.ID, keys [][]byte) ([][]byte, error)
 	Apply(requests map[ids.ID]interface{}, batch ...interface{}) error
+}
+
+// ToChainContext creates a verify.ChainContext from this backend
+func (b *Backend) ToChainContext() *verify.ChainContext {
+	return &verify.ChainContext{
+		ChainID:        b.LuxCtx.ChainID,
+		SubnetID:       b.LuxCtx.SubnetID,
+		ValidatorState: &validatorStateAdapter{vs: b.LuxCtx.ValidatorState.(consContext.ValidatorState)},
+	}
+}
+
+// validatorStateAdapter adapts consensusctx.ValidatorState to verify.ValidatorState
+type validatorStateAdapter struct {
+	vs consContext.ValidatorState
+}
+
+func (v *validatorStateAdapter) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return v.vs.GetSubnetID(chainID)
 }

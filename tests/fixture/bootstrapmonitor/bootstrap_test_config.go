@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrapmonitor
@@ -14,6 +14,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/version"
 
 	corev1 "k8s.io/api/core/v1"
@@ -35,13 +36,13 @@ const (
 	CChainStateSync    SyncMode = "c-chain-state-sync"     // aka state sync
 	OnlyPChainFullSync SyncMode = "p-chain-full-sync-only" // aka partial sync
 
-	VersionsAnnotationKey = "lux.lux.network/luxd-versions"
+	VersionsAnnotationKey = "lux.lux.network/node-versions"
 )
 
 var (
-	chainConfigContentEnvName        = "LUX_CHAIN_CONFIG_CONTENT"
-	networkEnvName                   = "LUX_NETWORK_NAME"
-	partialSyncPrimaryNetworkEnvName = "LUX_PARTIAL_SYNC_PRIMARY_NETWORK"
+	chainConfigContentEnvName        = config.EnvVarName(config.EnvPrefix, config.ChainConfigContentKey)
+	networkEnvName                   = config.EnvVarName(config.EnvPrefix, config.NetworkNameKey)
+	partialSyncPrimaryNetworkEnvName = config.EnvVarName(config.EnvPrefix, config.PartialSyncPrimaryNetworkKey)
 
 	// Errors for bootstrapTestConfigForPod
 	errContainerNotFound          = errors.New("container not found")

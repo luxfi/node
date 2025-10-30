@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"errors"
 	"fmt"
 
@@ -35,7 +36,7 @@ type ExportTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [UnsignedExportTx]. Also sets the [ctx] to the given [vm.ctx] so that
 // the addresses can be json marshalled into human readable format
-func (tx *ExportTx) InitCtx(ctx context.Context) {
+func (tx *ExportTx) InitCtx(ctx *consensusctx.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	for _, out := range tx.ExportedOutputs {
 		out.FxID = secp256k1fx.ID
@@ -44,7 +45,7 @@ func (tx *ExportTx) InitCtx(ctx context.Context) {
 }
 
 // SyntacticVerify this transaction is well-formed
-func (tx *ExportTx) SyntacticVerify(ctx context.Context) error {
+func (tx *ExportTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

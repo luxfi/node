@@ -1,11 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
 
 import (
-	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
+	"github.com/luxfi/consensus/engine/chain/block"
 
 	vmpb "github.com/luxfi/node/proto/pb/vm"
 )

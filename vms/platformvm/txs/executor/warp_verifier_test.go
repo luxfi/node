@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -9,28 +9,21 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/node/codec"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
-func must[T any](t require.TestingT) func(T, error) T {
-	return func(val T, err error) T {
-		require.NoError(t, err)
-		return val
-	}
-}
-
 func TestVerifyWarpMessages(t *testing.T) {
 	var (
-		_            = ids.GenerateTestID() // netID - unused
+		subnetID     = ids.GenerateTestID()
 		chainID      = ids.GenerateTestID()
 		newValidator = func() (bls.Signer, *validators.GetValidatorOutput) {
 			sk, err := localsigner.New()
@@ -38,7 +31,7 @@ func TestVerifyWarpMessages(t *testing.T) {
 
 			return sk, &validators.GetValidatorOutput{
 				NodeID:    ids.GenerateTestNodeID(),
-				PublicKey: bls.PublicKeyToUncompressedBytes(sk.PublicKey()),
+				PublicKey: sk.PublicKey(),
 				Weight:    1,
 			}
 		}
@@ -49,6 +42,10 @@ func TestVerifyWarpMessages(t *testing.T) {
 			vdr1.NodeID: vdr1,
 		}
 		state = &validatorstest.State{
+			T: t,
+			GetSubnetIDF: func(context.Context, ids.ID) (ids.ID, error) {
+				return subnetID, nil
+			},
 			GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 				return vdrs, nil
 			},
@@ -100,8 +97,8 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.AddValidatorTx{},
 		},
 		{
-			name: "AddNetValidatorTx",
-			tx:   &txs.AddNetValidatorTx{},
+			name: "AddSubnetValidatorTx",
+			tx:   &txs.AddSubnetValidatorTx{},
 		},
 		{
 			name: "AddDelegatorTx",
@@ -112,8 +109,8 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.CreateChainTx{},
 		},
 		{
-			name: "CreateNetTx",
-			tx:   &txs.CreateNetTx{},
+			name: "CreateSubnetTx",
+			tx:   &txs.CreateSubnetTx{},
 		},
 		{
 			name: "ImportTx",
@@ -132,12 +129,12 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.RewardValidatorTx{},
 		},
 		{
-			name: "RemoveNetValidatorTx",
-			tx:   &txs.RemoveNetValidatorTx{},
+			name: "RemoveSubnetValidatorTx",
+			tx:   &txs.RemoveSubnetValidatorTx{},
 		},
 		{
-			name: "TransformNetTx",
-			tx:   &txs.TransformNetTx{},
+			name: "TransformSubnetTx",
+			tx:   &txs.TransformSubnetTx{},
 		},
 		{
 			name: "AddPermissionlessValidatorTx",
@@ -148,16 +145,16 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.AddPermissionlessDelegatorTx{},
 		},
 		{
-			name: "TransferNetOwnershipTx",
-			tx:   &txs.TransferNetOwnershipTx{},
+			name: "TransferSubnetOwnershipTx",
+			tx:   &txs.TransferSubnetOwnershipTx{},
 		},
 		{
 			name: "BaseTx",
 			tx:   &txs.BaseTx{},
 		},
 		{
-			name: "ConvertNetToL1Tx",
-			tx:   &txs.ConvertNetToL1Tx{},
+			name: "ConvertSubnetToL1Tx",
+			tx:   &txs.ConvertSubnetToL1Tx{},
 		},
 		{
 			name:        "RegisterL1ValidatorTx with unparsable message",

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -7,17 +7,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/wrappers"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
 
-var _ block.BatchedChainVM = (*VM)(nil)
+var _ chainblock.BatchedChainVM = (*VM)(nil)
 
 func (vm *VM) GetAncestors(
 	ctx context.Context,
@@ -27,14 +24,14 @@ func (vm *VM) GetAncestors(
 	maxBlocksRetrievalTime time.Duration,
 ) ([][]byte, error) {
 	if vm.batchedVM == nil {
-		return nil, block.ErrRemoteVMNotImplemented
+		return nil, chainblock.ErrRemoteVMNotImplemented
 	}
 
 	res := make([][]byte, 0, maxBlocksNum)
 	currentByteLength := 0
 	startTime := vm.Clock.Time()
 
-	// hereinafter loop over proposerVM cache and DB, possibly till linear++
+	// hereinafter loop over proposerVM cache and DB, possibly till chain++
 	// fork is hit
 	for {
 		blk, err := vm.getStatelessBlk(blkID)
@@ -61,7 +58,7 @@ func (vm *VM) GetAncestors(
 		}
 	}
 
-	// linear++ fork may have been hit.
+	// chain++ fork may have been hit.
 	preMaxBlocksNum := maxBlocksNum - len(res)
 	preMaxBlocksSize := maxBlocksSize - currentByteLength
 	preMaxBlocksRetrivalTime := maxBlocksRetrievalTime - time.Since(startTime)
@@ -82,26 +79,24 @@ func (vm *VM) GetAncestors(
 	return res, nil
 }
 
-func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]block.Block, error) {
-	if vm.batchedVM == nil {
-		return nil, block.ErrRemoteVMNotImplemented
-	}
-
+func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chainblock.Block, error) {
 	type partialData struct {
 		index int
 		block statelessblock.Block
 	}
 	var (
 		blocksIndex int
-		blocks      = make([]block.Block, len(blks))
+		blocks      = make([]chainblock.Block, len(blks))
 
 		innerBlocksIndex    int
 		statelessBlockDescs = make([]partialData, 0, len(blks))
 		innerBlockBytes     = make([][]byte, 0, len(blks))
 	)
+
+	parsingResults := statelessblock.ParseBlocks(blks, vm.ctx.ChainID)
+
 	for ; blocksIndex < len(blks); blocksIndex++ {
-		blkBytes := blks[blocksIndex]
-		statelessBlock, err := statelessblock.Parse(blkBytes, consensus.GetChainID(vm.ctx))
+		statelessBlock, err := parsingResults[blocksIndex].Block, parsingResults[blocksIndex].Err
 		if err != nil {
 			break
 		}
@@ -129,22 +124,13 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]block.Blo
 	for ; innerBlocksIndex < len(statelessBlockDescs); innerBlocksIndex++ {
 		statelessBlockDesc := statelessBlockDescs[innerBlocksIndex]
 		statelessBlk := statelessBlockDesc.block
-		blkID := statelessBlk.ID()
-
-		_, status, err := vm.State.GetBlock(blkID)
-		if err == database.ErrNotFound {
-			status = choices.Processing
-		} else if err != nil {
-			return nil, err
-		}
 
 		if statelessSignedBlock, ok := statelessBlk.(statelessblock.SignedBlock); ok {
 			blocks[statelessBlockDesc.index] = &blockAdapter{Block: &postForkBlock{
 				SignedBlock: statelessSignedBlock,
 				postForkCommonComponents: postForkCommonComponents{
 					vm:       vm,
-					innerBlk: &reverseBlockAdapter{Block: innerBlks[innerBlocksIndex]},
-					status:   status,
+					innerBlk: innerBlks[innerBlocksIndex],
 				},
 			}}
 		} else {
@@ -152,8 +138,7 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]block.Blo
 				Block: statelessBlk,
 				postForkCommonComponents: postForkCommonComponents{
 					vm:       vm,
-					innerBlk: &reverseBlockAdapter{Block: innerBlks[innerBlocksIndex]},
-					status:   status,
+					innerBlk: innerBlks[innerBlocksIndex],
 				},
 			}}
 		}
@@ -171,6 +156,5 @@ func (vm *VM) getStatelessBlk(blkID ids.ID) (statelessblock.Block, error) {
 	if currentBlk, exists := vm.verifiedBlocks[blkID]; exists {
 		return currentBlk.getStatelessBlk(), nil
 	}
-	statelessBlock, _, err := vm.State.GetBlock(blkID)
-	return statelessBlock, err
+	return vm.State.GetBlock(blkID)
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 )
 
 var (
@@ -28,11 +28,11 @@ type TestBlockServer struct {
 	CantGetFullPostForkBlock bool
 	CantCommit               bool
 
-	GetFullPostForkBlockF func(ctx context.Context, blkID ids.ID) (chain.Block, error)
+	GetFullPostForkBlockF func(ctx context.Context, blkID ids.ID) (chainblock.Block, error)
 	CommitF               func() error
 }
 
-func (tsb *TestBlockServer) GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
+func (tsb *TestBlockServer) GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (chainblock.Block, error) {
 	if tsb.GetFullPostForkBlockF != nil {
 		return tsb.GetFullPostForkBlockF(ctx, blkID)
 	}

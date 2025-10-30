@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -23,9 +23,9 @@ import (
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/components/lux"
@@ -44,27 +44,30 @@ import (
 
 const NumKeys = 5
 
-// TODO(marun) Extract the common elements of test execution for reuse across test setups
-
 func main() {
 	// TODO(marun) Support choosing the log format
-	tc := antithesis.NewInstrumentedTestContext(tests.NewDefaultLogger(""))
-	defer tc.RecoverAndExit()
+	tc := tests.NewTestContext(tests.NewDefaultLogger(""))
+	defer tc.Cleanup()
 	require := require.New(tc)
 
 	c := antithesis.NewConfig(
 		tc,
 		&tmpnet.Network{
-			Owner: "antithesis-luxgo",
+			Owner: "antithesis-node",
 		},
 	)
 	ctx := tests.DefaultNotifyContext(c.Duration, tc.DeferCleanup)
-	// Ensure contexts sourced from the test context use the notify context as their parent
-	tc.SetDefaultContextParent(ctx)
 
 	kc := secp256k1fx.NewKeychain(genesis.EWOQKey)
 	walletSyncStartTime := time.Now()
-	wallet := e2e.NewWallet(tc, kc, tmpnet.NodeURI{URI: c.URIs[0]})
+	wallet, err := primary.MakeWallet(
+		ctx,
+		c.URIs[0],
+		kc,
+		kc,
+		primary.WalletConfig{},
+	)
+	require.NoError(err, "failed to initialize wallet")
 	tc.Log().Info("synced wallet",
 		zap.Duration("duration", time.Since(walletSyncStartTime)),
 	)
@@ -119,7 +122,14 @@ func main() {
 		uri := c.URIs[i%len(c.URIs)]
 		kc := secp256k1fx.NewKeychain(key)
 		walletSyncStartTime := time.Now()
-		wallet := e2e.NewWallet(tc, kc, tmpnet.NodeURI{URI: uri})
+		wallet, err := primary.MakeWallet(
+			ctx,
+			uri,
+			kc,
+			kc,
+			primary.WalletConfig{},
+		)
+		require.NoError(err, "failed to initialize wallet")
 		tc.Log().Info("synced wallet",
 			zap.Duration("duration", time.Since(walletSyncStartTime)),
 		)
@@ -152,25 +162,11 @@ type workload struct {
 	uris   []string
 }
 
-// newTestContext returns a test context that ensures that log output and assertions are
-// associated with this worker.
-func (w *workload) newTestContext(ctx context.Context) *tests.SimpleTestContext {
-	return antithesis.NewInstrumentedTestContextWithArgs(
-		ctx,
-		w.log,
-		map[string]any{
-			"worker": w.id,
-		},
-	)
-}
-
 func (w *workload) run(ctx context.Context) {
 	timer := timerpkg.StoppedTimer()
 
-	tc := w.newTestContext(ctx)
-	// Any assertion failure from this test context will result in process exit due to the
-	// panic being rethrown. This ensures that failures in test setup are fatal.
-	defer tc.RecoverAndRethrow()
+	tc := tests.NewTestContext(w.log)
+	defer tc.Cleanup()
 	require := require.New(tc)
 
 	xLUX, pLUX := e2e.GetWalletBalances(tc, w.wallet)
@@ -181,9 +177,28 @@ func (w *workload) run(ctx context.Context) {
 	})
 
 	for {
-		w.executeTest(ctx)
+		val, err := rand.Int(rand.Reader, big.NewInt(5))
+		require.NoError(err, "failed to read randomness")
 
-		val, err := rand.Int(rand.Reader, big.NewInt(int64(time.Second)))
+		flowID := val.Int64()
+		w.log.Info("executing test",
+			zap.Int("workerID", w.id),
+			zap.Int64("flowID", flowID),
+		)
+		switch flowID {
+		case 0:
+			w.issueXChainBaseTx(ctx)
+		case 1:
+			w.issueXChainCreateAssetTx(ctx)
+		case 2:
+			w.issueXChainOperationTx(ctx)
+		case 3:
+			w.issueXToPTransfer(ctx)
+		case 4:
+			w.issuePToXTransfer(ctx)
+		}
+
+		val, err = rand.Int(rand.Reader, big.NewInt(int64(time.Second)))
 		require.NoError(err, "failed to read randomness")
 
 		timer.Reset(time.Duration(val.Int64()))

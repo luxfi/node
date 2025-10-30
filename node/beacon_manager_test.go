@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -10,12 +10,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/networking/handler"
-	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/consensus/networking/router/routermock"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
@@ -95,7 +92,8 @@ func TestBeaconManager_DataRace(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 
-	mockRouter := &mockRouter{}
+	ctrl := gomock.NewController(t)
+	mockRouter := routermock.NewRouter(ctrl)
 
 	b := beaconManager{
 		Router:                  mockRouter,
@@ -108,14 +106,10 @@ func TestBeaconManager_DataRace(t *testing.T) {
 	// Each connection from the primary network should count, others should not
 	wg.Add(2 * numValidators)
 	for _, nodeID := range validatorIDs {
-		go func(id ids.NodeID) {
-			defer wg.Done()
-			b.Connected(id, version.CurrentApp, constants.PrimaryNetworkID)
-		}(nodeID)
-		go func(id ids.NodeID) {
-			defer wg.Done()
-			b.Connected(id, version.CurrentApp, ids.GenerateTestID())
-		}(nodeID)
+		go func() {
+			b.Connected(nodeID, version.CurrentApp, constants.PrimaryNetworkID)
+			b.Connected(nodeID, version.CurrentApp, ids.GenerateTestID())
+		}()
 	}
 	wg.Wait()
 

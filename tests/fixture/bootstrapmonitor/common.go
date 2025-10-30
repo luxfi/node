@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrapmonitor
@@ -14,12 +14,13 @@ import (
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/tests/fixture/tmpnet/flags"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 
 	corev1 "k8s.io/api/core/v1"
@@ -86,10 +87,10 @@ func setImageDetails(ctx context.Context, log log.Logger, clientset *kubernetes.
 		return fmt.Errorf("failed to patch statefulset %s.%s: %w", namespace, statefulSetName, err)
 	}
 	log.Info("Updated statefulset to target new image",
-		"namespace", namespace,
-		"statefulSetName", statefulSetName,
-		"image", imageDetails.Image,
-		"versions", imageDetails.Versions,
+		zap.String("namespace", namespace),
+		zap.String("statefulSetName", statefulSetName),
+		zap.String("image", imageDetails.Image),
+		zap.Reflect("versions", imageDetails.Versions),
 	)
 	return nil
 }
@@ -109,8 +110,8 @@ func getBaseImageName(log log.Logger, imageName string) (string, error) {
 	case 2:
 		// Ambiguous image name - could contain a tag or a registry
 		log.Info("Derived tag-less image name from string",
-			"tagLessImageName", imageNameParts[0],
-			"imageName", imageName,
+			zap.String("tagLessImageName", imageNameParts[0]),
+			zap.String("imageName", imageName),
 		)
 		return imageNameParts[0], nil
 	case 3:
@@ -126,7 +127,7 @@ type ImageDetails struct {
 	Versions *version.Versions
 }
 
-// GetLatestImageDetails retrieves the image details for the luxd image with tag `latest`.
+// GetLatestImageDetails retrieves the image details for the node image with tag `latest`.
 func getLatestImageDetails(
 	ctx context.Context,
 	log log.Logger,
@@ -140,16 +141,16 @@ func getLatestImageDetails(
 		return nil, err
 	}
 
-	// Start a new pod with the `latest`-tagged luxd image to discover its image ID
+	// Start a new pod with the `latest`-tagged node image to discover its image ID
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "luxd-version-check-",
+			GenerateName: "node-version-check-",
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
 					Name:    containerName,
-					Command: []string{"./luxd"},
+					Command: []string{"./node"},
 					Args:    []string{"--version-json"},
 					Image:   baseImageName + ":latest",
 				},
@@ -175,7 +176,7 @@ func getLatestImageDetails(
 		return nil, fmt.Errorf("failed to retrieve terminated pod %s: %w", qualifiedPodName, err)
 	}
 
-	// Get the image id for the luxd image
+	// Get the image id for the node image
 	imageID := ""
 	for _, status := range terminatedPod.Status.ContainerStatuses {
 		if status.Name == containerName {

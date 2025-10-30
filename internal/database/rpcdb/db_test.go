@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcdb
@@ -121,7 +121,7 @@ func TestHealthCheck(t *testing.T) {
 			require := require.New(t)
 
 			baseDB := setupDB(t)
-			db := corruptabledb.New(baseDB.server, log.NoLog{})
+			db := corruptabledb.New(baseDB.server, logging.NoLog{})
 			defer db.Close()
 			require.NoError(scenario.testFn(db))
 

@@ -1,18 +1,18 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
 	"encoding/json"
 	"errors"
 	"reflect"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -33,24 +33,12 @@ type OutputOwners struct {
 	// ctx is used in MarshalJSON to convert Addrs into human readable
 	// format with ChainID and NetworkID. Unexported because we don't use
 	// it outside this object.
-	ctx context.Context
-}
-
-// InitializeWithContext implements consensus.ContextInitializable
-func (out *OutputOwners) InitializeWithContext(ctx context.Context) error {
-	out.ctx = ctx
-	return nil
-}
-
-// InitializeContext implements consensus.Contextualizable
-func (out *OutputOwners) InitializeContext(ctx context.Context) error {
-	out.ctx = ctx
-	return nil
+	ctx *consensusctx.Context
 }
 
 // InitCtx allows addresses to be formatted into their human readable format
 // during json marshalling.
-func (out *OutputOwners) InitCtx(ctx context.Context) {
+func (out *OutputOwners) InitCtx(ctx *consensusctx.Context) {
 	out.ctx = ctx
 }
 
@@ -144,18 +132,13 @@ func (out *OutputOwners) Sort() {
 // formatAddress formats a given [addr] into human readable format using
 // [ChainID] and [NetworkID] if a non-nil [ctx] is provided. If [ctx] is not
 // provided, the address will be returned in cb58 format.
-func formatAddress(ctx context.Context, addr ids.ShortID) (string, error) {
+func formatAddress(ctx *consensusctx.Context, addr ids.ShortID) (string, error) {
 	if ctx == nil {
 		return addr.String(), nil
 	}
 
-	// Use reflection to check if ctx has BCLookup and ChainID fields
-	// This is needed for testcontext.Context which embeds context.Context
-	// but also has BCLookup and ChainID as struct fields
-	ctxValue := reflect.ValueOf(ctx)
-	if ctxValue.Kind() == reflect.Ptr {
-		ctxValue = ctxValue.Elem()
-	}
+	// Use ChainID directly - consensus context doesn't have BCLookup
+	chainIDAlias := ctx.ChainID.String()
 
 	if ctxValue.Kind() == reflect.Struct {
 		bcLookupField := ctxValue.FieldByName("BCLookup")

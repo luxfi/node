@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
@@ -22,8 +22,15 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/server"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/dag/vertex/vertexmock"
+	"github.com/luxfi/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/log"
 )
 
 // mockChainVM is a simple mock for testing
@@ -170,8 +177,7 @@ func TestIndexer(t *testing.T) {
 	require.False(previouslyIndexed)
 
 	// Register this chain, creating a new index
-	chainVM := &mockChainVM{} // Simple mock since interface accepts any type
-	t.Logf("Before RegisterChain, closed=%v", idxr.closed)
+	chainVM := blockmock.NewChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	t.Logf("After RegisterChain, closed=%v", idxr.closed)
 	isIncomplete, err = idxr.isIncomplete(testChainID)
@@ -274,23 +280,26 @@ func TestIndexer(t *testing.T) {
 	require.Equal(1, server.timesCalled) // block index for chain
 	require.Contains(server.endpoints, "/block")
 
-	// Register a DAG chain - commented out as vertexmock is not available
-	// consensus2Ctx := consensustest.Context(t, consensustest.XChainID)
-	// chain2Ctx := consensustest.ConsensusContext(consensus2Ctx)
-	// isIncomplete, err = idxr.isIncomplete(chain2ChainID)
-	// require.NoError(err)
-	// require.False(isIncomplete)
-	// previouslyIndexed, err = idxr.previouslyIndexed(chain2ChainID)
-	// require.NoError(err)
-	// require.False(previouslyIndexed)
-	// For now, use another ChainVM mock for the vertex chain
-	// Define chain2 context early
-	chain2ChainID := ids.GenerateTestID()
-	_ = consensustest.Context(t, chain2ChainID)
-	chain2Ctx := consensuscontext.WithIDs(context.Background(), consensuscontext.IDs{
-		NetID:   constants.PrimaryNetworkID,
-		ChainID: chain2ChainID,
-	})
+	// Register a DAG chain
+	snow2Ctx := snowtest.Context(t, snowtest.XChainID)
+	chain2Ctx := snowtest.ConsensusContext(snow2Ctx)
+	isIncomplete, err = idxr.isIncomplete(chain2Ctx.ChainID)
+	require.NoError(err)
+	require.False(isIncomplete)
+	previouslyIndexed, err = idxr.previouslyIndexed(chain2Ctx.ChainID)
+	require.NoError(err)
+	require.False(previouslyIndexed)
+	dagVM := vertexmock.NewLinearizableVM(ctrl)
+	idxr.RegisterChain("chain2", chain2Ctx, dagVM)
+	require.NoError(err)
+	require.Equal(4, server.timesCalled) // block index for chain, block index for dag, vtx index, tx index
+	require.Contains(server.bases, "index/chain2")
+	require.Contains(server.endpoints, "/block")
+	require.Contains(server.endpoints, "/vtx")
+	require.Contains(server.endpoints, "/tx")
+	require.Len(idxr.blockIndices, 2)
+	require.Len(idxr.txIndices, 1)
+	require.Len(idxr.vtxIndices, 1)
 
 	graphVM := &mockChainVM{}
 	idxr.RegisterChain("chain2", chain2Ctx, graphVM)
@@ -429,7 +438,7 @@ func TestIncompleteIndex(t *testing.T) {
 	previouslyIndexed, err := idxr.previouslyIndexed(testChainID)
 	require.NoError(err)
 	require.False(previouslyIndexed)
-	chainVM := &mockChainVM{}
+	chainVM := blockmock.NewChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	isIncomplete, err = idxr.isIncomplete(testChainID)
 	require.NoError(err)
@@ -517,7 +526,7 @@ func TestIgnoreNonDefaultChains(t *testing.T) {
 	// The test context is configured correctly for a non-primary net
 
 	// RegisterChain should return without adding an index for this chain
-	chainVM := &mockChainVM{}
+	chainVM := blockmock.NewChainVM(ctrl)
 	idxr.RegisterChain("chain1", chain1Ctx, chainVM)
 	require.Empty(idxr.blockIndices)
 }

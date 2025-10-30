@@ -1,30 +1,28 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package statetest
 
 import (
-	"context"
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-
-	// "github.com/luxfi/consensus" // consensus package removed
-	"github.com/luxfi/consensus"
-	consensuscontext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
+	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/state"
 )
@@ -34,12 +32,12 @@ var DefaultNodeID = ids.GenerateTestNodeID()
 type Config struct {
 	DB         database.Database
 	Genesis    []byte
-	Registerer metric.Registerer
+	Registerer prometheus.Registerer
 	Validators validators.Manager
 	Upgrades   upgrade.Config
 	Config     config.Config
-	Context    context.Context
-	Metrics    metric.Metrics
+	Context    *snow.Context
+	Metrics    metrics.Metrics
 	Rewards    reward.Calculator
 }
 
@@ -48,22 +46,19 @@ func New(t testing.TB, c Config) state.State {
 		c.DB = memdb.New()
 	}
 	if c.Context == nil {
-		ctx := context.Background()
-		// Use consensus/context package to set up IDs
-		idsStruct := consensuscontext.IDs{
+		c.Context = &snow.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    DefaultNodeID,
+			Log:       logging.NoLog{},
 		}
-		ctx = consensuscontext.WithIDs(ctx, idsStruct)
-		c.Context = ctx
 	}
 	if len(c.Genesis) == 0 {
 		c.Genesis = genesistest.NewBytes(t, genesistest.Config{
-			NetworkID: consensus.GetNetworkID(c.Context),
+			NetworkID: c.Context.NetworkID,
 		})
 	}
 	if c.Registerer == nil {
-		c.Registerer = metric.NewRegistry()
+		c.Registerer = prometheus.NewRegistry()
 	}
 	if c.Validators == nil {
 		c.Validators = validators.NewManager()
@@ -71,17 +66,11 @@ func New(t testing.TB, c Config) state.State {
 	if c.Upgrades == (upgrade.Config{}) {
 		c.Upgrades = upgradetest.GetConfig(upgradetest.Latest)
 	}
-	// Initialize fee configuration if not set
-	if c.Config.StaticFeeConfig.CreateNetTxFee == 0 {
-		c.Config.StaticFeeConfig.CreateNetTxFee = 1 * units.MilliLux
-		c.Config.StaticFeeConfig.CreateBlockchainTxFee = 1 * units.MilliLux
-	}
-	// Set validators manager in config if not set
-	if c.Config.Validators == nil {
-		c.Config.Validators = c.Validators
+	if c.Config == (config.Config{}) {
+		c.Config = config.Default
 	}
 	if c.Metrics == nil {
-		c.Metrics = metric.NewNoOp()
+		c.Metrics = metrics.Noop
 	}
 	if c.Rewards == nil {
 		c.Rewards = reward.NewCalculator(reward.Config{
@@ -92,23 +81,13 @@ func New(t testing.TB, c Config) state.State {
 		})
 	}
 
-	execCfg := &config.ExecutionConfig{
-		BlockCacheSize:               64,
-		TxCacheSize:                  128,
-		TransformedSubnetTxCacheSize: 64,
-		RewardUTXOsCacheSize:         2048,
-		ChainCacheSize:               2048,
-		ChainDBCacheSize:             2048,
-		BlockIDCacheSize:             8192,
-		FxOwnerCacheSize:             4 * 1024 * 1024,
-	}
-
 	s, err := state.New(
 		c.DB,
 		c.Genesis,
 		c.Registerer,
+		c.Validators,
+		c.Upgrades,
 		&c.Config,
-		execCfg,
 		c.Context,
 		c.Metrics,
 		c.Rewards,

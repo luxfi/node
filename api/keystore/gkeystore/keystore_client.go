@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gkeystore
@@ -9,7 +9,9 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/encdb"
 	"github.com/luxfi/node/api/keystore"
-	"github.com/luxfi/node/proto/rpcdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/encdb"
+	"github.com/luxfi/database/rpcdb"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	keystorepb "github.com/luxfi/node/proto/pb/keystore"

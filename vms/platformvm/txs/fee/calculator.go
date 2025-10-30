@@ -1,144 +1,20 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fee
 
 import (
-	"time"
+	"errors"
 
-	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/upgrade"
 )
 
-var _ txs.Visitor = (*calculator)(nil)
+var ErrUnsupportedTx = errors.New("unsupported transaction type")
 
-func NewStaticCalculator(config StaticConfig, upgradeTimes upgrade.Config) *StaticCalculator {
-	return &StaticCalculator{
-		config:       config,
-		upgradeTimes: upgradeTimes,
-	}
-}
-
-type StaticCalculator struct {
-	config       StaticConfig
-	upgradeTimes upgrade.Config
-}
-
-// [CalculateFee] returns the minimal fee needed to accept [tx], at chain time [time]
-func (c *StaticCalculator) CalculateFee(tx txs.UnsignedTx, time time.Time) uint64 {
-	tmp := &calculator{
-		upgrades:  c.upgradeTimes,
-		staticCfg: c.config,
-		time:      time,
-	}
-
-	// this is guaranteed to never return an error
-	_ = tx.Visit(tmp)
-	return tmp.fee
-}
-
-// calculator is intentionally unexported and used through Calculator to provide
-// a more convenient API
-type calculator struct {
-	// Pre E-fork inputs
-	upgrades  upgrade.Config
-	staticCfg StaticConfig
-	time      time.Time
-
-	// outputs of visitor execution
-	fee uint64
-}
-
-func (c *calculator) AddValidatorTx(*txs.AddValidatorTx) error {
-	c.fee = c.staticCfg.AddPrimaryNetworkValidatorFee
-	return nil
-}
-
-func (c *calculator) AddNetValidatorTx(*txs.AddNetValidatorTx) error {
-	c.fee = c.staticCfg.AddNetValidatorFee
-	return nil
-}
-
-func (c *calculator) AddDelegatorTx(*txs.AddDelegatorTx) error {
-	c.fee = c.staticCfg.AddPrimaryNetworkDelegatorFee
-	return nil
-}
-
-func (c *calculator) CreateChainTx(*txs.CreateChainTx) error {
-	if c.upgrades.IsApricotPhase3Activated(c.time) {
-		c.fee = c.staticCfg.CreateBlockchainTxFee
-	} else {
-		c.fee = c.staticCfg.CreateAssetTxFee
-	}
-	return nil
-}
-
-func (c *calculator) CreateNetTx(*txs.CreateNetTx) error {
-	if c.upgrades.IsApricotPhase3Activated(c.time) {
-		c.fee = c.staticCfg.CreateNetTxFee
-	} else {
-		c.fee = c.staticCfg.CreateAssetTxFee
-	}
-	return nil
-}
-
-func (c *calculator) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	c.fee = 0 // no fees
-	return nil
-}
-
-func (c *calculator) RewardValidatorTx(*txs.RewardValidatorTx) error {
-	c.fee = 0 // no fees
-	return nil
-}
-
-func (c *calculator) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
-	c.fee = c.staticCfg.TxFee
-	return nil
-}
-
-func (c *calculator) TransformNetTx(*txs.TransformNetTx) error {
-	c.fee = c.staticCfg.TransformNetTxFee
-	return nil
-}
-
-func (c *calculator) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
-	c.fee = c.staticCfg.TxFee
-	return nil
-}
-
-func (c *calculator) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
-	if tx.Net != constants.PrimaryNetworkID {
-		c.fee = c.staticCfg.AddNetValidatorFee
-	} else {
-		c.fee = c.staticCfg.AddPrimaryNetworkValidatorFee
-	}
-	return nil
-}
-
-func (c *calculator) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegatorTx) error {
-	if tx.Net != constants.PrimaryNetworkID {
-		c.fee = c.staticCfg.AddNetDelegatorFee
-	} else {
-		c.fee = c.staticCfg.AddPrimaryNetworkDelegatorFee
-	}
-	return nil
-}
-
-func (c *calculator) BaseTx(*txs.BaseTx) error {
-	c.fee = c.staticCfg.TxFee
-	return nil
-}
-
-func (c *calculator) ImportTx(*txs.ImportTx) error {
-	c.fee = c.staticCfg.TxFee
-	return nil
-}
-
-func (c *calculator) ExportTx(*txs.ExportTx) error {
-	c.fee = c.staticCfg.TxFee
-	return nil
+// Calculator calculates the minimum required fee, in nLUX, that an unsigned
+// transaction must pay for valid inclusion into a block.
+type Calculator interface {
+	CalculateFee(tx txs.UnsignedTx) (uint64, error)
 }
 
 func (c *calculator) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {

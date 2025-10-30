@@ -1,14 +1,17 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"sync"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/luxfi/node/utils"
+
 	dto "github.com/prometheus/client_model/go"
 )
 
@@ -18,18 +21,13 @@ type MultiGatherer interface {
 	metric.Gatherer
 
 	// Register adds the outputs of [gatherer] to the results of future calls to
-	// Gather with the provided [name] added to the metric.
-	Register(name string, gatherer metric.Gatherer) error
+	// Gather with the provided [name] added to the metrics.
+	Register(name string, gatherer prometheus.Gatherer) error
 
 	// Deregister removes the outputs of a gatherer with [name] from the results
 	// of future calls to Gather. Returns true if a gatherer with [name] was
 	// found.
 	Deregister(name string) bool
-}
-
-// Deprecated: Use NewPrefixGatherer instead.
-func NewMultiGatherer() MultiGatherer {
-	return NewPrefixGatherer()
 }
 
 type multiGatherer struct {
@@ -59,32 +57,27 @@ func (g *multiGatherer) Gather() ([]*dto.MetricFamily, error) {
 	return allFamilies, nil
 }
 
-func (g *multiGatherer) Register(name string, gatherer metric.Gatherer) error {
-	g.lock.Lock()
-	defer g.lock.Unlock()
-
+func (g *multiGatherer) register(name string, gatherer prometheus.Gatherer) {
 	g.names = append(g.names, name)
 	g.gatherers = append(g.gatherers, gatherer)
-	return nil
 }
 
 func (g *multiGatherer) Deregister(name string) bool {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
-	for i, existingName := range g.names {
-		if existingName == name {
-			// Remove the gatherer and name
-			g.names = append(g.names[:i], g.names[i+1:]...)
-			g.gatherers = append(g.gatherers[:i], g.gatherers[i+1:]...)
-			return true
-		}
+	index := slices.Index(g.names, name)
+	if index == -1 {
+		return false
 	}
-	return false
+
+	g.names = utils.DeleteIndex(g.names, index)
+	g.gatherers = utils.DeleteIndex(g.gatherers, index)
+	return true
 }
 
-func MakeAndRegister(gatherer MultiGatherer, name string) (metric.Registry, error) {
-	reg := metric.NewRegistry()
+func MakeAndRegister(gatherer MultiGatherer, name string) (*prometheus.Registry, error) {
+	reg := prometheus.NewRegistry()
 	if err := gatherer.Register(name, reg); err != nil {
 		return nil, fmt.Errorf("couldn't register %q metrics: %w", name, err)
 	}

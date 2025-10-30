@@ -5,7 +5,7 @@ chains in the specified Subnet.
 
 LuxGo looks for files specified with `{subnetID}.json` under
 `--subnet-config-dir` as documented
-[here](https://build.avax.network/docs/nodes/configure/configs-flags#subnet-configs).
+[here](https://build.lux.network/docs/nodes/configure/configs-flags#subnet-configs).
 
 Here is an example of Subnet config file:
 
@@ -61,7 +61,7 @@ this configuration in order to properly allow a node in the private Subnet.
 Subnet configs supports loading new consensus parameters. JSON keys are
 different from their matching `CLI` keys. These parameters must be grouped under
 `consensusParameters` key. The consensus parameters of a Subnet default to the
-same values used for the Primary Network, which are given [CLI Snow Parameters](https://build.avax.network/docs/nodes/configure/configs-flags#consensus-parameters).
+same values used for the Primary Network, which are given [CLI Snow Parameters](https://build.lux.network/docs/nodes/configure/configs-flags#snow-parameters).
 
 | CLI Key                          | JSON Key              |
 | :------------------------------- | :-------------------- |
@@ -84,13 +84,22 @@ block `proposerMinBlockDelay` after the parent block's timestamp. Some
 high-performance custom VM may find this too strict. This flag allows tuning the
 frequency at which blocks are built.
 
+#### `proposerMinBlockDelay` (duration)
+
+The minimum delay performed when building snowman++ blocks. Default is set to 1 second.
+
+As one of the ways to control network congestion, Snowman++ will only build a
+block `proposerMinBlockDelay` after the parent block's timestamp. Some
+high-performance custom VM may find this too strict. This flag allows tuning the
+frequency at which blocks are built.
+
 ### Gossip Configs
 
 It's possible to define different Gossip configurations for each Subnet without
 changing values for Primary Network. JSON keys of these
 parameters are different from their matching `CLI` keys. These parameters
 default to the same values used for the Primary Network. For more information
-see [CLI Gossip Configs](https://build.avax.network/docs/nodes/configure/configs-flags#gossiping).
+see [CLI Gossip Configs](https://build.lux.network/docs/nodes/configure/configs-flags#gossiping).
 
 | CLI Key                                                 | JSON Key                               |
 | :------------------------------------------------------ | :------------------------------------- |

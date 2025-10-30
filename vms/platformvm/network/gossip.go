@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -9,17 +9,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
-
-	pmempool "github.com/luxfi/node/vms/platformvm/txs/mempool"
 )
 
 var (
@@ -67,8 +66,8 @@ func (txMarshaller) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
 }
 
 func newGossipMempool(
-	mempool pmempool.Mempool,
-	registerer metric.Registerer,
+	mempool mempool.Mempool[*txs.Tx],
+	registerer prometheus.Registerer,
 	log log.Logger,
 	txVerifier TxVerifier,
 	minTargetElements int,
@@ -85,7 +84,7 @@ func newGossipMempool(
 }
 
 type gossipMempool struct {
-	pmempool.Mempool
+	mempool.Mempool[*txs.Tx]
 	log        log.Logger
 	txVerifier TxVerifier
 
@@ -107,8 +106,13 @@ func (g *gossipMempool) Add(tx *txs.Tx) error {
 	}
 
 	if err := g.txVerifier.VerifyTx(tx); err != nil {
+		g.log.Debug("transaction failed verification",
+			zap.Stringer("txID", txID),
+			zap.Error(err),
+		)
+
 		g.Mempool.MarkDropped(txID, err)
-		return err
+		return fmt.Errorf("failed verification: %w", err)
 	}
 
 	if err := g.Mempool.Add(tx); err != nil {
@@ -132,8 +136,6 @@ func (g *gossipMempool) Add(tx *txs.Tx) error {
 			return true
 		})
 	}
-
-	g.Mempool.RequestBuildBlock(false)
 	return nil
 }
 

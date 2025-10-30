@@ -1,15 +1,12 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chain
 
 import (
-	"context"
-
-	"github.com/luxfi/consensus/choices"
-	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 
 	xsblock "github.com/luxfi/node/vms/example/xsvm/block"
@@ -34,7 +31,7 @@ type chain struct {
 	// chain state as driven by the consensus engine
 	chainState consensusinterfaces.State
 
-	lastAccepted   ids.ID
+	lastAcceptedID ids.ID
 	verifiedBlocks map[ids.ID]*block
 }
 
@@ -48,12 +45,16 @@ func New(ctx context.Context, db database.Database) (Chain, error) {
 	}
 
 	c := &chain{
-		chainContext:  ctx,
-		acceptedState: db,
-		lastAccepted:  lastAcceptedID,
+		chainContext:   ctx,
+		acceptedState:  db,
+		lastAcceptedID: lastAcceptedID,
 	}
 
 	lastAccepted, err := c.getBlock(lastAcceptedID)
+	if err != nil {
+		return nil, err
+	}
+
 	c.verifiedBlocks = map[ids.ID]*block{
 		lastAcceptedID: lastAccepted,
 	}
@@ -61,7 +62,7 @@ func New(ctx context.Context, db database.Database) (Chain, error) {
 }
 
 func (c *chain) LastAccepted() ids.ID {
-	return c.lastAccepted
+	return c.lastAcceptedID
 }
 
 func (c *chain) SetChainState(state consensusinterfaces.State) {
@@ -113,7 +114,6 @@ func (c *chain) getBlock(blkID ids.ID) (*block, error) {
 		Stateless: stateless,
 		chain:     c,
 		id:        blkID,
-		status:    choices.Accepted,
 		bytes:     blkBytes,
 	}, nil
 }

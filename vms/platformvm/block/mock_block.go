@@ -10,7 +10,8 @@
 package block
 
 import (
-	context "context"
+	consensusctx "github.com/luxfi/consensus/context"
+
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
@@ -85,15 +86,15 @@ func (mr *MockBlockMockRecorder) ID() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *MockBlock) InitCtx(arg0 context.Context) {
+func (m *MockBlock) InitCtx(ctx *consensusctx.Context) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InitCtx", arg0)
+	m.ctrl.Call(m, "InitCtx", ctx)
 }
 
 // InitCtx indicates an expected call of InitCtx.
-func (mr *MockBlockMockRecorder) InitCtx(arg0 any) *gomock.Call {
+func (mr *MockBlockMockRecorder) InitCtx(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*MockBlock)(nil).InitCtx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*MockBlock)(nil).InitCtx), ctx)
 }
 
 // Parent mocks base method.

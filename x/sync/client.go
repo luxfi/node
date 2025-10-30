@@ -39,6 +39,13 @@ var (
 	errUnexpectedChangeProofResponse = errors.New("unexpected response type")
 )
 
+// ChangeOrRangeProof contains either a ChangeProof or RangeProof.
+// Exactly one of ChangeProof or RangeProof should be non-nil.
+type ChangeOrRangeProof struct {
+	ChangeProof *merkledb.ChangeProof
+	RangeProof  *merkledb.RangeProof
+}
+
 // Client synchronously fetches data from the network
 // to fulfill state sync requests.
 // Repeatedly retries failed requests until the context is canceled.
@@ -61,7 +68,7 @@ type Client interface {
 		ctx context.Context,
 		request *pb.SyncGetChangeProofRequest,
 		verificationDB DB,
-	) (*merkledb.ChangeOrRangeProof, error)
+	) (*ChangeOrRangeProof, error)
 }
 
 type client struct {
@@ -109,8 +116,8 @@ func (c *client) GetChangeProof(
 	ctx context.Context,
 	req *pb.SyncGetChangeProofRequest,
 	db DB,
-) (*merkledb.ChangeOrRangeProof, error) {
-	parseFn := func(ctx context.Context, responseBytes []byte) (*merkledb.ChangeOrRangeProof, error) {
+) (*ChangeOrRangeProof, error) {
+	parseFn := func(ctx context.Context, responseBytes []byte) (*ChangeOrRangeProof, error) {
 		if len(responseBytes) > int(req.BytesLimit) {
 			return nil, fmt.Errorf("%w: (%d) > %d)", errTooManyBytes, len(responseBytes), req.BytesLimit)
 		}
@@ -155,7 +162,7 @@ func (c *client) GetChangeProof(
 				return nil, fmt.Errorf("%w due to %w", errInvalidChangeProof, err)
 			}
 
-			return &merkledb.ChangeOrRangeProof{
+			return &ChangeOrRangeProof{
 				ChangeProof: &changeProof,
 			}, nil
 		case *pb.SyncGetChangeProofResponse_RangeProof:
@@ -181,7 +188,7 @@ func (c *client) GetChangeProof(
 				return nil, err
 			}
 
-			return &merkledb.ChangeOrRangeProof{
+			return &ChangeOrRangeProof{
 				RangeProof: &rangeProof,
 			}, nil
 		default:
@@ -192,11 +199,7 @@ func (c *client) GetChangeProof(
 		}
 	}
 
-	reqBytes, err := proto.Marshal(&pb.Request{
-		Message: &pb.Request_ChangeProofRequest{
-			ChangeProofRequest: req,
-		},
-	})
+	reqBytes, err := proto.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
@@ -222,10 +225,10 @@ func verifyRangeProof(
 	}
 
 	// Ensure the response does not contain more than the maximum requested number of leaves.
-	if len(rangeProof.KeyValues) > keyLimit {
+	if len(rangeProof.KeyChanges) > keyLimit {
 		return fmt.Errorf(
 			"%w: (%d) > %d)",
-			errTooManyKeys, len(rangeProof.KeyValues), keyLimit,
+			errTooManyKeys, len(rangeProof.KeyChanges), keyLimit,
 		)
 	}
 
@@ -282,11 +285,7 @@ func (c *client) GetRangeProof(
 		return &rangeProof, nil
 	}
 
-	reqBytes, err := proto.Marshal(&pb.Request{
-		Message: &pb.Request_RangeProofRequest{
-			RangeProofRequest: req,
-		},
-	})
+	reqBytes, err := proto.Marshal(req)
 	if err != nil {
 		return nil, err
 	}

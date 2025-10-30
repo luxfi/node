@@ -13,13 +13,13 @@ import (
 	"github.com/luxfi/metric"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/luxfi/consensus/core"
-	consensusset "github.com/luxfi/consensus/utils/set"
-	"github.com/luxfi/consensus/version"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/consensus/engine/core"
+	cset "github.com/luxfi/consensus/utils/set"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/version"
 )
 
 // Minimum amount of time to handle a request
@@ -285,6 +285,7 @@ func (c *networkClient) sendRequestLocked(
 	c.peers.RegisterRequest(nodeID)
 
 	// Send an app request to the peer.
+	nodeIDs := cset.Of(nodeID)
 	// Cancellation is removed from this context to avoid erroring unexpectedly.
 	// SendAppRequest should be non-blocking and any error other than context
 	// cancellation is unexpected.

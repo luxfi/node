@@ -1,14 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
 
 import (
-	"context"
-
-	consensusrouter "github.com/luxfi/consensus/router"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
+	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/node/version"
 )
 

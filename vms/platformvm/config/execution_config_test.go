@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -61,9 +61,23 @@ func TestExecutionConfigUnmarshal(t *testing.T) {
 
 		expected := &ExecutionConfig{
 			Network: NetworkConfig{
-				MaxGossipSize:          15,
-				GossipAcceptedFrontier: 5 * time.Second,
-				GossipAccepted:         3 * time.Second,
+				MaxValidatorSetStaleness:                    1,
+				TargetGossipSize:                            2,
+				PushGossipPercentStake:                      .3,
+				PushGossipNumValidators:                     4,
+				PushGossipNumPeers:                          5,
+				PushRegossipNumValidators:                   6,
+				PushRegossipNumPeers:                        7,
+				PushGossipDiscardedCacheSize:                8,
+				PushGossipMaxRegossipFrequency:              9,
+				PushGossipFrequency:                         10,
+				PullGossipPollSize:                          11,
+				PullGossipFrequency:                         12,
+				PullGossipThrottlingPeriod:                  13,
+				PullGossipThrottlingLimit:                   14,
+				ExpectedBloomFilterElements:                 15,
+				ExpectedBloomFilterFalsePositiveProbability: 16,
+				MaxBloomFilterFalsePositiveProbability:      17,
 			},
 			BlockCacheSize:               1,
 			TxCacheSize:                  2,

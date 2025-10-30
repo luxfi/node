@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2ptest
@@ -9,59 +9,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/core"
-	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 )
-
-// testAppSender implements core.AppSender for testing
-type testAppSender struct {
-	sendAppGossipF         func(context.Context, consensusset.Set[ids.NodeID], []byte) error
-	sendAppRequestF        func(context.Context, consensusset.Set[ids.NodeID], uint32, []byte) error
-	sendAppResponseF       func(context.Context, ids.NodeID, uint32, []byte) error
-	sendAppErrorF          func(context.Context, ids.NodeID, uint32, int32, string) error
-	sendAppGossipSpecificF func(context.Context, consensusset.Set[ids.NodeID], []byte) error
-}
-
-func (t *testAppSender) SendAppGossip(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
-	if t.sendAppGossipF != nil {
-		return t.sendAppGossipF(ctx, nodeIDs, appGossipBytes)
-	}
-	return nil
-}
-
-func (t *testAppSender) SendAppRequest(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
-	if t.sendAppRequestF != nil {
-		return t.sendAppRequestF(ctx, nodeIDs, requestID, appRequestBytes)
-	}
-	return nil
-}
-
-func (t *testAppSender) SendAppResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, appResponseBytes []byte) error {
-	if t.sendAppResponseF != nil {
-		return t.sendAppResponseF(ctx, nodeID, requestID, appResponseBytes)
-	}
-	return nil
-}
-
-func (t *testAppSender) SendAppError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
-	if t.sendAppErrorF != nil {
-		return t.sendAppErrorF(ctx, nodeID, requestID, errorCode, errorMessage)
-	}
-	return nil
-}
-
-func (t *testAppSender) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
-	if t.sendAppGossipSpecificF != nil {
-		return t.sendAppGossipSpecificF(ctx, nodeIDs, appGossipBytes)
-	}
-	return nil
-}
 
 func NewSelfClient(t *testing.T, ctx context.Context, nodeID ids.NodeID, handler p2p.Handler) *p2p.Client {
 	return NewClient(t, ctx, nodeID, handler, nodeID, handler)
@@ -98,31 +54,28 @@ func NewClientWithPeers(
 ) *p2p.Client {
 	peers[clientNodeID] = clientHandler
 
-	peerSenders := make(map[ids.NodeID]*testAppSender)
+	peerSenders := make(map[ids.NodeID]*enginetest.Sender)
 	peerNetworks := make(map[ids.NodeID]*p2p.Network)
 	for nodeID := range peers {
-		peerSenders[nodeID] = &testAppSender{}
-		peerNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), peerSenders[nodeID], metric.NewRegistry(), "")
+		peerSenders[nodeID] = &enginetest.Sender{}
+		peerNetwork, err := p2p.NewNetwork(logging.NoLog{}, peerSenders[nodeID], prometheus.NewRegistry(), "")
 		require.NoError(t, err)
 		peerNetworks[nodeID] = peerNetwork
 	}
 
-	peerSenders[clientNodeID].sendAppGossipF = func(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], gossipBytes []byte) error {
-		// Send the gossip to all specified peers asynchronously to avoid deadlock
-		// when the server sends the response back to the client
-		for nodeID := range nodeIDs {
-			if network, ok := peerNetworks[nodeID]; ok {
-				go func(nodeID ids.NodeID, network *p2p.Network) {
-					_ = network.AppGossip(ctx, clientNodeID, gossipBytes)
-				}(nodeID, network)
-			}
+	peerSenders[clientNodeID].SendAppGossipF = func(ctx context.Context, sendConfig core.SendConfig, gossipBytes []byte) error {
+		// Send the request asynchronously to avoid deadlock when the server
+		// sends the response back to the client
+		for nodeID := range sendConfig.NodeIDs {
+			go func() {
+				_ = peerNetworks[nodeID].AppGossip(ctx, nodeID, gossipBytes)
+			}()
 		}
 
 		return nil
 	}
 
-	peerSenders[clientNodeID].sendAppRequestF = func(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], requestID uint32, requestBytes []byte) error {
-		// Send to the first node in the set
+	peerSenders[clientNodeID].SendAppRequestF = func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, requestBytes []byte) error {
 		for nodeID := range nodeIDs {
 			network, ok := peerNetworks[nodeID]
 			if !ok {
@@ -134,15 +87,13 @@ func NewClientWithPeers(
 			go func() {
 				_ = network.AppRequest(ctx, clientNodeID, requestID, time.Time{}, requestBytes)
 			}()
-
-			break // Only send to first node
 		}
 
 		return nil
 	}
 
 	for nodeID := range peers {
-		peerSenders[nodeID].sendAppResponseF = func(ctx context.Context, _ ids.NodeID, requestID uint32, responseBytes []byte) error {
+		peerSenders[nodeID].SendAppResponseF = func(ctx context.Context, _ ids.NodeID, requestID uint32, responseBytes []byte) error {
 			// Send the request asynchronously to avoid deadlock when the server
 			// sends the response back to the client
 			go func() {
@@ -154,7 +105,7 @@ func NewClientWithPeers(
 	}
 
 	for nodeID := range peers {
-		peerSenders[nodeID].sendAppErrorF = func(ctx context.Context, _ ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+		peerSenders[nodeID].SendAppErrorF = func(ctx context.Context, _ ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 			go func() {
 				_ = peerNetworks[clientNodeID].AppRequestFailed(ctx, nodeID, requestID, &core.AppError{
 					Code:    errorCode,

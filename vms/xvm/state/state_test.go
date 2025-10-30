@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -10,22 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"
-	"github.com/luxfi/metric"
-
 	"github.com/luxfi/database/memdb"
-
 	"github.com/luxfi/database/versiondb"
-
 	"github.com/luxfi/ids"
-
-	"github.com/luxfi/node/version"
-
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms/xvm/block"
-
 	"github.com/luxfi/node/vms/xvm/fxs"
-
 	"github.com/luxfi/node/vms/xvm/txs"
-
 	"github.com/luxfi/node/vms/components/lux"
 
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -296,7 +287,7 @@ func TestInitializeChainState(t *testing.T) {
 	require.NoError(err)
 
 	stopVertexID := ids.GenerateTestID()
-	genesisTimestamp := version.DefaultUpgradeTime
+	genesisTimestamp := upgrade.InitiallyActiveTime
 	require.NoError(s.InitializeChainState(stopVertexID, genesisTimestamp))
 
 	lastAcceptedID := s.GetLastAccepted()

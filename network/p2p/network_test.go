@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -10,14 +10,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
-	consensusSet "github.com/luxfi/consensus/utils/set"
+	"github.com/luxfi/consensus/engine/core/coretest"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/metric"
+	"github.com/luxfi/node/version"
 )
 
 const (
@@ -116,10 +116,9 @@ func TestMessageRouting(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 	wantNodeID := ids.GenerateTestNodeID()
-	wantChainID := ids.GenerateTestID()
 	wantMsg := []byte("message")
 
-	var appGossipCalled, appRequestCalled, crossChainAppRequestCalled bool
+	var appGossipCalled, appRequestCalled bool
 	testHandler := &TestHandler{
 		AppGossipF: func(_ context.Context, nodeID ids.NodeID, msg []byte) {
 			appGossipCalled = true
@@ -132,18 +131,11 @@ func TestMessageRouting(t *testing.T) {
 			require.Equal(wantMsg, msg)
 			return nil, nil
 		},
-		CrossChainAppRequestF: func(_ context.Context, chainID ids.ID, _ time.Time, msg []byte) ([]byte, error) {
-			crossChainAppRequestCalled = true
-			require.Equal(wantChainID, chainID)
-			require.Equal(wantMsg, msg)
-			return nil, nil
-		},
 	}
 
-	fakeSender := &FakeSender{
-		SentAppGossip:            make(chan []byte, 1),
-		SentAppRequest:           make(chan []byte, 1),
-		SentCrossChainAppRequest: make(chan []byte, 1),
+	sender := &enginetest.SenderStub{
+		SentAppGossip:  make(chan []byte, 1),
+		SentAppRequest: make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
 
@@ -177,16 +169,6 @@ func TestMessageRouting(t *testing.T) {
 	}
 	require.NoError(err)
 	require.True(appRequestCalled)
-
-	require.NoError(client.CrossChainAppRequest(ctx, ids.Empty, wantMsg, func(context.Context, ids.ID, []byte, error) {}))
-	sentBytes := <-fakeSender.SentCrossChainAppRequest
-	t.Logf("Sent CrossChainAppRequest bytes: %x", sentBytes)
-	err = network.CrossChainAppRequest(ctx, wantChainID, 1, time.Time{}, sentBytes)
-	if err != nil {
-		t.Logf("CrossChainAppRequest error: %v", err)
-	}
-	require.NoError(err)
-	require.True(crossChainAppRequestCalled)
 }
 
 // Tests that the Client prefixes messages with the handler prefix
@@ -194,10 +176,9 @@ func TestClientPrefixesMessages(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	fakeSender := &FakeSender{
-		SentAppRequest:           make(chan []byte, 1),
-		SentAppGossip:            make(chan []byte, 1),
-		SentCrossChainAppRequest: make(chan []byte, 1),
+	sender := enginetest.SenderStub{
+		SentAppRequest: make(chan []byte, 1),
+		SentAppGossip:  make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
 
@@ -227,16 +208,6 @@ func TestClientPrefixesMessages(t *testing.T) {
 	require.Equal(handlerPrefix, gotAppRequest[0])
 	require.Equal(want, gotAppRequest[1:])
 
-	require.NoError(client.CrossChainAppRequest(
-		ctx,
-		ids.Empty,
-		want,
-		func(context.Context, ids.ID, []byte, error) {},
-	))
-	gotCrossChainAppRequest := <-fakeSender.SentCrossChainAppRequest
-	require.Equal(handlerPrefix, gotCrossChainAppRequest[0])
-	require.Equal(want, gotCrossChainAppRequest[1:])
-
 	require.NoError(client.AppGossip(
 		ctx,
 		core.SendConfig{
@@ -254,7 +225,7 @@ func TestAppRequestResponse(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	fakeSender := &FakeSender{
+	sender := enginetest.SenderStub{
 		SentAppRequest: make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
@@ -290,8 +261,8 @@ func TestAppRequestCancelledContext(t *testing.T) {
 	ctx := context.Background()
 
 	sentMessages := make(chan []byte, 1)
-	senderTest := &SenderTest{
-		SendAppRequestF: func(ctx context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, msgBytes []byte) error {
+	sender := &enginetest.Sender{
+		SendAppRequestF: func(ctx context.Context, _ set.Set[ids.NodeID], _ uint32, msgBytes []byte) error {
 			require.NoError(ctx.Err())
 			sentMessages <- msgBytes
 			return nil
@@ -332,7 +303,7 @@ func TestAppRequestFailed(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	fakeSender := &FakeSender{
+	sender := enginetest.SenderStub{
 		SentAppRequest: make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
@@ -355,109 +326,6 @@ func TestAppRequestFailed(t *testing.T) {
 	<-fakeSender.SentAppRequest
 
 	require.NoError(network.AppRequestFailed(ctx, wantNodeID, 1, errFoo))
-	<-done
-}
-
-// Tests that the Client callback is called on a successful response
-func TestCrossChainAppRequestResponse(t *testing.T) {
-	require := require.New(t)
-	ctx := context.Background()
-
-	fakeSender := &FakeSender{
-		SentCrossChainAppRequest: make(chan []byte, 1),
-	}
-	sender := &fakeSenderAdapter{FakeSender: fakeSender}
-	network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
-	require.NoError(err)
-	client := network.NewClient(handlerID)
-
-	wantChainID := ids.GenerateTestID()
-	wantResponse := []byte("response")
-	done := make(chan struct{})
-
-	callback := func(_ context.Context, gotChainID ids.ID, gotResponse []byte, err error) {
-		require.Equal(wantChainID, gotChainID)
-		require.NoError(err)
-		require.Equal(wantResponse, gotResponse)
-
-		close(done)
-	}
-
-	require.NoError(client.CrossChainAppRequest(ctx, wantChainID, []byte("request"), callback))
-	<-fakeSender.SentCrossChainAppRequest
-
-	require.NoError(network.CrossChainAppResponse(ctx, wantChainID, 1, wantResponse))
-	<-done
-}
-
-// Tests that the Client does not provide a cancelled context to the AppSender.
-func TestCrossChainAppRequestCancelledContext(t *testing.T) {
-	require := require.New(t)
-	ctx := context.Background()
-
-	sentMessages := make(chan []byte, 1)
-	senderTest := &SenderTest{
-		SendCrossChainAppRequestF: func(ctx context.Context, _ ids.ID, _ uint32, msgBytes []byte) error {
-			require.NoError(ctx.Err())
-			sentMessages <- msgBytes
-			return nil
-		},
-	}
-	sender := &senderTestAdapter{SenderTest: senderTest}
-	network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
-	require.NoError(err)
-	client := network.NewClient(handlerID)
-
-	cancelledCtx, cancel := context.WithCancel(ctx)
-	cancel()
-
-	wantChainID := ids.GenerateTestID()
-	wantResponse := []byte("response")
-	done := make(chan struct{})
-
-	callback := func(_ context.Context, gotChainID ids.ID, gotResponse []byte, err error) {
-		require.Equal(wantChainID, gotChainID)
-		require.NoError(err)
-		require.Equal(wantResponse, gotResponse)
-
-		close(done)
-	}
-
-	require.NoError(client.CrossChainAppRequest(cancelledCtx, wantChainID, []byte("request"), callback))
-	<-sentMessages
-
-	require.NoError(network.CrossChainAppResponse(ctx, wantChainID, 1, wantResponse))
-	<-done
-}
-
-// Tests that the Client callback is given an error if the request fails
-func TestCrossChainAppRequestFailed(t *testing.T) {
-	require := require.New(t)
-	ctx := context.Background()
-
-	fakeSender := &FakeSender{
-		SentCrossChainAppRequest: make(chan []byte, 1),
-	}
-	sender := &fakeSenderAdapter{FakeSender: fakeSender}
-	network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
-	require.NoError(err)
-	client := network.NewClient(handlerID)
-
-	wantChainID := ids.GenerateTestID()
-	done := make(chan struct{})
-
-	callback := func(_ context.Context, gotChainID ids.ID, gotResponse []byte, err error) {
-		require.Equal(wantChainID, gotChainID)
-		require.ErrorIs(err, errFoo)
-		require.Nil(gotResponse)
-
-		close(done)
-	}
-
-	require.NoError(client.CrossChainAppRequest(ctx, wantChainID, []byte("request"), callback))
-	<-fakeSender.SentCrossChainAppRequest
-
-	require.NoError(network.CrossChainAppRequestFailed(ctx, wantChainID, 1, errFoo))
 	<-done
 }
 
@@ -534,8 +402,8 @@ func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
 			wantRequestID := uint32(111)
 
 			done := make(chan struct{})
-			senderTest := &SenderTest{}
-			senderTest.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+			sender := &enginetest.Sender{}
+			sender.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 				defer close(done)
 
 				require.Equal(wantNodeID, nodeID)
@@ -574,8 +442,8 @@ func TestAppError(t *testing.T) {
 	wantRequestID := uint32(111)
 
 	done := make(chan struct{})
-	senderTest := &SenderTest{}
-	senderTest.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	sender := &enginetest.Sender{}
+	sender.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 		defer close(done)
 
 		require.Equal(wantNodeID, nodeID)
@@ -627,10 +495,6 @@ func TestResponseForUnrequestedRequest(t *testing.T) {
 					require.Fail("should not be called")
 					return nil, nil
 				},
-				CrossChainAppRequestF: func(context.Context, ids.ID, time.Time, []byte) ([]byte, error) {
-					require.Fail("should not be called")
-					return nil, nil
-				},
 			}
 			network, err := NewNetwork(log.NewNoOpLogger(), nil, metric.NewRegistry(), "")
 			require.NoError(err)
@@ -638,12 +502,7 @@ func TestResponseForUnrequestedRequest(t *testing.T) {
 
 			err = network.AppResponse(ctx, ids.EmptyNodeID, 0, []byte("foobar"))
 			require.ErrorIs(err, ErrUnrequestedResponse)
-			err = network.AppRequestFailed(ctx, ids.EmptyNodeID, 0, &core.AppError{Code: -1, Message: "timeout"})
-			require.ErrorIs(err, ErrUnrequestedResponse)
-			err = network.CrossChainAppResponse(ctx, ids.Empty, 0, []byte("foobar"))
-			require.ErrorIs(err, ErrUnrequestedResponse)
-			err = network.CrossChainAppRequestFailed(ctx, ids.Empty, 0, &core.AppError{Code: -1, Message: "timeout"})
-
+			err = network.AppRequestFailed(ctx, ids.EmptyNodeID, 0, core.ErrTimeout)
 			require.ErrorIs(err, ErrUnrequestedResponse)
 		})
 	}
@@ -656,7 +515,7 @@ func TestAppRequestDuplicateRequestIDs(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	fakeSender := &FakeSender{
+	sender := &enginetest.SenderStub{
 		SentAppRequest: make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
@@ -743,7 +602,7 @@ func TestPeersSample(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			network, err := NewNetwork(log.NoLog{}, &fakeSenderAdapter{FakeSender: &FakeSender{}}, metric.NewRegistry(), "")
+			network, err := NewNetwork(logging.NoLog{}, &enginetest.SenderStub{}, prometheus.NewRegistry(), "")
 			require.NoError(err)
 
 			for connected := range tt.connected {
@@ -785,8 +644,8 @@ func TestAppRequestAnyNodeSelection(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			var sent ids.NodeID
-			senderTest := &SenderTest{
+			sent := set.Set[ids.NodeID]{}
+			sender := &enginetest.Sender{
 				SendAppRequestF: func(_ context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, _ []byte) error {
 					nodeID := nodeIDs.List()[0]
 					sent = nodeID
@@ -885,7 +744,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 			require := require.New(t)
 
 			done := make(chan struct{})
-			senderTest := &SenderTest{
+			sender := &enginetest.Sender{
 				SendAppRequestF: func(_ context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, _ []byte) error {
 					nodeID := nodeIDs.List()[0]
 					if len(tt.expected) > 0 {
@@ -920,9 +779,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 func TestMultipleClients(t *testing.T) {
 	require := require.New(t)
 
-	senderTest := &SenderTest{}
-	sender := &senderTestAdapter{SenderTest: senderTest}
-	n, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+	n, err := NewNetwork(logging.NoLog{}, &enginetest.Sender{}, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	_ = n.NewClient(0)
 	_ = n.NewClient(0)

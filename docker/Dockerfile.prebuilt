@@ -1,0 +1,24 @@
+# Simple Dockerfile using pre-built luxd binary
+FROM --platform=linux/arm64 debian:11-slim
+
+# Install required runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create data directory
+RUN mkdir -p /data
+
+# Copy pre-built binary
+COPY node/build/luxd /usr/local/bin/luxd
+RUN chmod +x /usr/local/bin/luxd
+
+# Expose ports
+EXPOSE 9650 9651
+
+# Set the data directory
+VOLUME ["/data"]
+
+# Run luxd
+CMD ["luxd", "--network-id=local", "--http-host=0.0.0.0", "--http-port=9650", "--staking-port=9651", "--db-dir=/data", "--log-level=info"]

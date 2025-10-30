@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"errors"
 	"unicode"
 
@@ -50,7 +51,7 @@ type CreateChainTx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
-func (tx *CreateChainTx) SyntacticVerify(ctx context.Context) error {
+func (tx *CreateChainTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -69,7 +70,7 @@ func (tx *CreateChainTx) SyntacticVerify(ctx context.Context) error {
 	}
 
 	for _, r := range tx.ChainName {
-		if r > unicode.MaxASCII || !(unicode.IsLetter(r) || unicode.IsNumber(r) || r == ' ') {
+		if r > unicode.MaxASCII || (!unicode.IsLetter(r) && !unicode.IsNumber(r) && r != ' ') {
 			return errIllegalNameCharacter
 		}
 	}

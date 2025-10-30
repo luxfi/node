@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -150,12 +150,14 @@ func (g *labelGatherer) Register(labelValue string, gatherer metric.Gatherer) er
 		)
 	}
 
-	g.names = append(g.names, labelValue)
-	g.gatherers = append(g.gatherers, &labeledGatherer{
-		labelName:  g.labelName,
-		labelValue: labelValue,
-		gatherer:   gatherer,
-	})
+	g.register(
+		labelValue,
+		&labeledGatherer{
+			labelName:  g.labelName,
+			labelValue: labelValue,
+			gatherer:   gatherer,
+		},
+	)
 	return nil
 }
 

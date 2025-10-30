@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package flags
@@ -12,17 +12,16 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/tests/fixture/tmpnet/local"
 )
 
 const (
 	processRuntime   = "process"
 	processDocPrefix = "[process runtime] "
 
-	luxdPathFlag = "luxd-path"
+	nodePathFlag = "node-path"
 )
 
-var errLuxdRequired = fmt.Errorf("--%s or %s are required", luxdPathFlag, local.LuxdPathEnvName)
+var errLuxGoRequired = fmt.Errorf("--%s or %s are required", nodePathFlag, tmpnet.LuxGoPathEnvName)
 
 type processRuntimeVars struct {
 	config tmpnet.ProcessRuntimeConfig
@@ -38,13 +37,28 @@ func (v *processRuntimeVars) registerWithFlagSet(flagSet *pflag.FlagSet) {
 
 func (v *processRuntimeVars) register(stringVar varFunc[string], boolVar varFunc[bool]) {
 	stringVar(
-		&v.config.LuxNodePath,
-		luxdPathFlag,
-		os.Getenv(local.LuxdPathEnvName),
+		&v.config.LuxGoPath,
+		nodePathFlag,
+		os.Getenv(tmpnet.LuxGoPathEnvName),
 		processDocPrefix+fmt.Sprintf(
-			"The luxd executable path. Also possible to configure via the %s env variable.",
-			local.LuxdPathEnvName,
+			"The node executable path. Also possible to configure via the %s env variable.",
+			tmpnet.LuxGoPathEnvName,
 		),
+	)
+	stringVar(
+		&v.config.PluginDir,
+		"plugin-dir",
+		tmpnet.GetEnvWithDefault(tmpnet.LuxGoPluginDirEnvName, os.ExpandEnv("$HOME/.node/plugins")),
+		processDocPrefix+fmt.Sprintf(
+			"The dir containing VM plugins. Also possible to configure via the %s env variable.",
+			tmpnet.LuxGoPluginDirEnvName,
+		),
+	)
+	boolVar(
+		&v.config.ReuseDynamicPorts,
+		"reuse-dynamic-ports",
+		false,
+		processDocPrefix+"Whether to attempt to reuse dynamically allocated ports across node restarts.",
 	)
 }
 
@@ -56,15 +70,15 @@ func (v *processRuntimeVars) getProcessRuntimeConfig() (*tmpnet.ProcessRuntimeCo
 }
 
 func (v *processRuntimeVars) validate() error {
-	path := v.config.LuxNodePath
+	path := v.config.LuxGoPath
 
 	if len(path) == 0 {
-		return errLuxdRequired
+		return errLuxGoRequired
 	}
 
 	if filepath.IsAbs(path) {
 		if _, err := os.Stat(path); err != nil {
-			return fmt.Errorf("--%s (%s) not found: %w", luxdPathFlag, path, err)
+			return fmt.Errorf("--%s (%s) not found: %w", nodePathFlag, path, err)
 		}
 		return nil
 	}
@@ -74,7 +88,7 @@ func (v *processRuntimeVars) validate() error {
 	if err != nil {
 		return fmt.Errorf(
 			"--%s (%s) is a relative path but its absolute path cannot be determined: %w",
-			luxdPathFlag,
+			nodePathFlag,
 			path,
 			err,
 		)
@@ -84,7 +98,7 @@ func (v *processRuntimeVars) validate() error {
 	if _, err := os.Stat(absPath); err != nil {
 		return fmt.Errorf(
 			"--%s (%s) is a relative path but its absolute path (%s) is not found: %w",
-			luxdPathFlag,
+			nodePathFlag,
 			path,
 			absPath,
 			err,

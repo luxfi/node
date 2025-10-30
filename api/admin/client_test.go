@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package admin
@@ -13,6 +13,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log/level"
 	"github.com/luxfi/node/api"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/rpc"
 )
 
@@ -77,7 +79,7 @@ func (mc *mockClient) SendRequest(_ context.Context, _ string, _ interface{}, re
 func TestStartCPUProfiler(t *testing.T) {
 	for _, test := range SuccessResponseTests {
 		t.Run(test.name, func(t *testing.T) {
-			mockClient := client{requester: NewMockClient(&api.EmptyReply{}, test.expectedErr)}
+			mockClient := Client{Requester: NewMockClient(&api.EmptyReply{}, test.expectedErr)}
 			err := mockClient.StartCPUProfiler(context.Background())
 			require.ErrorIs(t, err, test.expectedErr)
 		})
@@ -87,7 +89,7 @@ func TestStartCPUProfiler(t *testing.T) {
 func TestStopCPUProfiler(t *testing.T) {
 	for _, test := range SuccessResponseTests {
 		t.Run(test.name, func(t *testing.T) {
-			mockClient := client{requester: NewMockClient(&api.EmptyReply{}, test.expectedErr)}
+			mockClient := Client{Requester: NewMockClient(&api.EmptyReply{}, test.expectedErr)}
 			err := mockClient.StopCPUProfiler(context.Background())
 			require.ErrorIs(t, err, test.expectedErr)
 		})
@@ -97,7 +99,7 @@ func TestStopCPUProfiler(t *testing.T) {
 func TestMemoryProfile(t *testing.T) {
 	for _, test := range SuccessResponseTests {
 		t.Run(test.name, func(t *testing.T) {
-			mockClient := client{requester: NewMockClient(&api.EmptyReply{}, test.expectedErr)}
+			mockClient := Client{Requester: NewMockClient(&api.EmptyReply{}, test.expectedErr)}
 			err := mockClient.MemoryProfile(context.Background())
 			require.ErrorIs(t, err, test.expectedErr)
 		})
@@ -107,7 +109,7 @@ func TestMemoryProfile(t *testing.T) {
 func TestLockProfile(t *testing.T) {
 	for _, test := range SuccessResponseTests {
 		t.Run(test.name, func(t *testing.T) {
-			mockClient := client{requester: NewMockClient(&api.EmptyReply{}, test.expectedErr)}
+			mockClient := Client{Requester: NewMockClient(&api.EmptyReply{}, test.expectedErr)}
 			err := mockClient.LockProfile(context.Background())
 			require.ErrorIs(t, err, test.expectedErr)
 		})
@@ -117,7 +119,7 @@ func TestLockProfile(t *testing.T) {
 func TestAlias(t *testing.T) {
 	for _, test := range SuccessResponseTests {
 		t.Run(test.name, func(t *testing.T) {
-			mockClient := client{requester: NewMockClient(&api.EmptyReply{}, test.expectedErr)}
+			mockClient := Client{Requester: NewMockClient(&api.EmptyReply{}, test.expectedErr)}
 			err := mockClient.Alias(context.Background(), "alias", "alias2")
 			require.ErrorIs(t, err, test.expectedErr)
 		})
@@ -127,7 +129,7 @@ func TestAlias(t *testing.T) {
 func TestAliasChain(t *testing.T) {
 	for _, test := range SuccessResponseTests {
 		t.Run(test.name, func(t *testing.T) {
-			mockClient := client{requester: NewMockClient(&api.EmptyReply{}, test.expectedErr)}
+			mockClient := Client{Requester: NewMockClient(&api.EmptyReply{}, test.expectedErr)}
 			err := mockClient.AliasChain(context.Background(), "chain", "chain-alias")
 			require.ErrorIs(t, err, test.expectedErr)
 		})
@@ -139,7 +141,7 @@ func TestGetChainAliases(t *testing.T) {
 		require := require.New(t)
 
 		expectedReply := []string{"alias1", "alias2"}
-		mockClient := client{requester: NewMockClient(&GetChainAliasesReply{
+		mockClient := Client{Requester: NewMockClient(&GetChainAliasesReply{
 			Aliases: expectedReply,
 		}, nil)}
 
@@ -149,7 +151,7 @@ func TestGetChainAliases(t *testing.T) {
 	})
 
 	t.Run("failure", func(t *testing.T) {
-		mockClient := client{requester: NewMockClient(&GetChainAliasesReply{}, errTest)}
+		mockClient := Client{Requester: NewMockClient(&GetChainAliasesReply{}, errTest)}
 		_, err := mockClient.GetChainAliases(context.Background(), "chain")
 		require.ErrorIs(t, err, errTest)
 	})
@@ -158,7 +160,7 @@ func TestGetChainAliases(t *testing.T) {
 func TestStacktrace(t *testing.T) {
 	for _, test := range SuccessResponseTests {
 		t.Run(test.name, func(t *testing.T) {
-			mockClient := client{requester: NewMockClient(&api.EmptyReply{}, test.expectedErr)}
+			mockClient := Client{Requester: NewMockClient(&api.EmptyReply{}, test.expectedErr)}
 			err := mockClient.Stacktrace(context.Background())
 			require.ErrorIs(t, err, test.expectedErr)
 		})
@@ -177,7 +179,7 @@ func TestReloadInstalledVMs(t *testing.T) {
 			ids.GenerateTestID(): "oops",
 			ids.GenerateTestID(): "uh-oh",
 		}
-		mockClient := client{requester: NewMockClient(&LoadVMsReply{
+		mockClient := Client{Requester: NewMockClient(&LoadVMsReply{
 			NewVMs:    expectedNewVMs,
 			FailedVMs: expectedFailedVMs,
 		}, nil)}
@@ -189,7 +191,7 @@ func TestReloadInstalledVMs(t *testing.T) {
 	})
 
 	t.Run("failure", func(t *testing.T) {
-		mockClient := client{requester: NewMockClient(&LoadVMsReply{}, errTest)}
+		mockClient := Client{Requester: NewMockClient(&LoadVMsReply{}, errTest)}
 		_, _, err := mockClient.LoadVMs(context.Background())
 		require.ErrorIs(t, err, errTest)
 	})
@@ -244,8 +246,8 @@ func TestSetLoggerLevel(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			c := client{
-				requester: NewMockClient(
+			c := Client{
+				Requester: NewMockClient(
 					&LoggerLevelReply{
 						LoggerLevels: tt.serviceResponse,
 					},
@@ -297,8 +299,8 @@ func TestGetLoggerLevel(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			c := client{
-				requester: NewMockClient(
+			c := Client{
+				Requester: NewMockClient(
 					&LoggerLevelReply{
 						LoggerLevels: tt.serviceResponse,
 					},
@@ -344,8 +346,8 @@ func TestGetConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			c := client{
-				requester: NewMockClient(tt.expectedResponse, tt.serviceErr),
+			c := Client{
+				Requester: NewMockClient(tt.expectedResponse, tt.serviceErr),
 			}
 			res, err := c.GetConfig(context.Background())
 			require.ErrorIs(err, tt.clientErr)

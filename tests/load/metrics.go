@@ -1,64 +1,67 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package load
 
 import (
 	"errors"
-	"time"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
-type metricsImpl struct {
-	txsIssuedCounter      metric.Counter
-	txIssuanceLatency     metric.Histogram
-	txConfirmationLatency metric.Histogram
-	txTotalLatency        metric.Histogram
+type Metrics struct {
+	txsIssuedCounter    prometheus.Counter
+	txsConfirmedCounter prometheus.Counter
+	txsFailedCounter    prometheus.Counter
+	txLatency           prometheus.Histogram
 }
 
-func newMetrics(namespace string, registry metric.Registry) (metricsImpl, error) {
-	m := metricsImpl{
-		txsIssuedCounter: metric.NewCounter(metric.CounterOpts{
+func NewMetrics(registry *prometheus.Registry) (*Metrics, error) {
+	m := &Metrics{
+		txsIssuedCounter: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "txs_issued",
 			Help:      "Number of transactions issued",
 		}),
-		txIssuanceLatency: metric.NewHistogram(metric.HistogramOpts{
+		txsConfirmedCounter: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "tx_issuance_latency",
-			Help:      "Issuance latency of transactions",
+			Name:      "txs_confirmed",
+			Help:      "Number of transactions confirmed",
 		}),
-		txConfirmationLatency: metric.NewHistogram(metric.HistogramOpts{
+		txsFailedCounter: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "tx_confirmation_latency",
-			Help:      "Confirmation latency of transactions",
+			Name:      "txs_failed",
+			Help:      "Number of transactions failed",
 		}),
-		txTotalLatency: metric.NewHistogram(metric.HistogramOpts{
+		txLatency: prometheus.NewHistogram(prometheus.HistogramOpts{
 			Namespace: namespace,
-			Name:      "tx_total_latency",
-			Help:      "Total latency of transactions",
+			Name:      "tx_latency",
+			Help:      "Latency of transactions",
 		}),
 	}
 
 	if err := errors.Join(
 		registry.Register(m.txsIssuedCounter),
-		registry.Register(m.txIssuanceLatency),
-		registry.Register(m.txConfirmationLatency),
-		registry.Register(m.txTotalLatency),
+		registry.Register(m.txsConfirmedCounter),
+		registry.Register(m.txsFailedCounter),
+		registry.Register(m.txLatency),
 	); err != nil {
-		return metricsImpl{}, err
+		return nil, err
 	}
 
 	return m, nil
 }
 
-func (m metricsImpl) issue(d time.Duration) {
+func (m *Metrics) IncIssuedTx() {
 	m.txsIssuedCounter.Inc()
-	m.txIssuanceLatency.Observe(float64(d.Milliseconds()))
 }
 
-func (m metricsImpl) accept(confirmationDuration time.Duration, totalDuration time.Duration) {
-	m.txConfirmationLatency.Observe(float64(confirmationDuration.Milliseconds()))
-	m.txTotalLatency.Observe(float64(totalDuration.Milliseconds()))
+func (m *Metrics) RecordConfirmedTx(latencyMS float64) {
+	m.txsConfirmedCounter.Inc()
+	m.txLatency.Observe(latencyMS)
+}
+
+func (m *Metrics) RecordFailedTx(latencyMS float64) {
+	m.txsFailedCounter.Inc()
+	m.txLatency.Observe(latencyMS)
 }

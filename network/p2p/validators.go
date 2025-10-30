@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -10,12 +10,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/consensus/validators"
+	"go.uber.org/zap"
+
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	"github.com/luxfi/math/set"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/sampler"
+	"github.com/luxfi/math/set"
 )
 
 var (
@@ -35,7 +37,7 @@ type ValidatorSubset interface {
 func NewValidators(
 	peers *Peers,
 	log log.Logger,
-	netID ids.ID,
+	subnetID ids.ID,
 	validators validators.State,
 	maxValidatorSetStaleness time.Duration,
 ) *Validators {
@@ -52,7 +54,7 @@ func NewValidators(
 type Validators struct {
 	peers                    *Peers
 	log                      log.Logger
-	netID                    ids.ID
+	subnetID                 ids.ID
 	validators               validators.State
 	maxValidatorSetStaleness time.Duration
 
@@ -96,7 +98,9 @@ func (v *Validators) refresh(ctx context.Context) {
 		return
 	}
 
-	for nodeID, validatorOutput := range validatorSet {
+	delete(validatorSet, ids.EmptyNodeID) // Ignore inactive ACP-77 validators.
+
+	for nodeID, vdr := range validatorSet {
 		v.validatorList = append(v.validatorList, validator{
 			nodeID: nodeID,
 			weight: validatorOutput.Weight,

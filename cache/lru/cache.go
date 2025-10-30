@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lru
@@ -20,17 +20,16 @@ type Cache[K comparable, V any] struct {
 	lock     sync.Mutex
 	elements *linked.Hashmap[K, V]
 	size     int
-	onEvict  func(K, V)
+
+	// onEvict is called with the key and value of an entry before eviction.
+	onEvict func(K, V)
 }
 
 func NewCache[K comparable, V any](size int) *Cache[K, V] {
-	return &Cache[K, V]{
-		elements: linked.NewHashmap[K, V](),
-		size:     max(size, 1),
-	}
+	return NewCacheWithOnEvict(size, func(K, V) {})
 }
 
-// NewCacheWithOnEvict creates a new LRU cache with an eviction callback
+// NewCacheWithOnEvict creates a new LRU cache with the given size and eviction callback.
 func NewCacheWithOnEvict[K comparable, V any](size int, onEvict func(K, V)) *Cache[K, V] {
 	return &Cache[K, V]{
 		elements: linked.NewHashmap[K, V](),
@@ -65,28 +64,17 @@ func (c *Cache[K, V]) Get(key K) (V, bool) {
 	return val, true
 }
 
-func (c *Cache[K, V]) Evict(key K) {
+func (c *Cache[K, _]) Evict(key K) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	if val, ok := c.elements.Get(key); ok {
-		c.elements.Delete(key)
-		if c.onEvict != nil {
-			c.onEvict(key, val)
-		}
-	}
+	c.elements.Delete(key)
 }
 
-func (c *Cache[K, V]) Flush() {
+func (c *Cache[_, _]) Flush() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	if c.onEvict != nil {
-		iter := c.elements.NewIterator()
-		for iter.Next() {
-			c.onEvict(iter.Key(), iter.Value())
-		}
-	}
 	c.elements.Clear()
 }
 

@@ -13,9 +13,6 @@ on:
 jobs:
   build-jammy-arm64-package:
     runs-on: custom-arm64-jammy
-    permissions:
-      id-token: write
-      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +23,9 @@ jobs:
         run: ./scripts/run_task.sh build
 
       - name: Install aws cli
-        run: sudo snap install aws-cli --classic
+        run: |
+          sudo apt update
+          sudo apt -y install awscli
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -52,7 +51,7 @@ jobs:
       - name: Create debian package
         run: ./.github/workflows/build-deb-pkg.sh
         env:
-          PKG_ROOT: ${{ github.workspace }}/luxd-pkg
+          PKG_ROOT: /tmp/avalanchego
           TAG: ${{ env.TAG }}
           BUCKET: ${{ secrets.BUCKET }}
           ARCH: "arm64"
@@ -62,21 +61,19 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jammy
-          path: ${{ github.workspace }}/luxd-pkg/luxd-${{ env.TAG }}-arm64.deb
+          path: /tmp/avalanchego/avalanchego-${{ env.TAG }}-arm64.deb
 
       - name: Cleanup
         run: |
           rm -rf ./build
-          rm -rf ${{ github.workspace }}/luxd-pkg
+          rm -rf /tmp/avalanchego
 
-  build-noble-arm64-package:
-    runs-on: custom-arm64-noble
-    permissions:
-      id-token: write
-      contents: read
+  build-focal-arm64-package:
+    runs-on: custom-arm64-focal
 
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-focal-deps
       - uses: ./.github/actions/setup-go-for-project
       - run: go version
 
@@ -84,7 +81,9 @@ jobs:
         run: ./scripts/run_task.sh build
 
       - name: Install aws cli
-        run: sudo snap install aws-cli --classic
+        run: |
+          sudo apt update
+          sudo apt -y install awscli
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -110,19 +109,19 @@ jobs:
       - name: Create debian package
         run: ./.github/workflows/build-deb-pkg.sh
         env:
-          PKG_ROOT: ${{ github.workspace }}/luxd-pkg
+          PKG_ROOT: /tmp/avalanchego
           TAG: ${{ env.TAG }}
           BUCKET: ${{ secrets.BUCKET }}
           ARCH: "arm64"
-          RELEASE: "noble"
+          RELEASE: "focal"
 
       - name: Save as Github artifact
         uses: actions/upload-artifact@v4
         with:
-          name: noble
-          path: ${{ github.workspace }}/luxd-pkg/luxd-${{ env.TAG }}-arm64.deb
+          name: focal
+          path: /tmp/avalanchego/avalanchego-${{ env.TAG }}-arm64.deb
 
       - name: Cleanup
         run: |
           rm -rf ./build
-          rm -rf ${{ github.workspace }}/luxd-pkg
+          rm -rf /tmp/avalanchego

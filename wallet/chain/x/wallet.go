@@ -1,10 +1,14 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package x
 
 import (
+	"time"
+
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/xvm"
+	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -140,7 +144,7 @@ type Wallet interface {
 func NewWallet(
 	builder builder.Builder,
 	signer signer.Signer,
-	client xvm.Client,
+	client *avm.Client,
 	backend Backend,
 ) Wallet {
 	return &wallet{
@@ -155,7 +159,7 @@ type wallet struct {
 	backend Backend
 	builder builder.Builder
 	signer  signer.Signer
-	client  xvm.Client
+	client  *avm.Client
 }
 
 func (w *wallet) Builder() builder.Builder {
@@ -293,13 +297,19 @@ func (w *wallet) IssueTx(
 ) error {
 	ops := common.NewOptions(options)
 	ctx := ops.Context()
+	startTime := time.Now()
 	txID, err := w.client.IssueTx(ctx, tx.Bytes())
 	if err != nil {
 		return err
 	}
 
-	if f := ops.PostIssuanceFunc(); f != nil {
-		f(txID)
+	issuanceDuration := time.Since(startTime)
+	if f := ops.IssuanceHandler(); f != nil {
+		f(common.IssuanceReceipt{
+			ChainAlias: builder.Alias,
+			TxID:       txID,
+			Duration:   issuanceDuration,
+		})
 	}
 
 	if ops.AssumeDecided() {
@@ -308,6 +318,18 @@ func (w *wallet) IssueTx(
 
 	if err := xvm.AwaitTxAccepted(w.client, ctx, txID, ops.PollFrequency()); err != nil {
 		return err
+	}
+
+	if f := ops.ConfirmationHandler(); f != nil {
+		totalDuration := time.Since(startTime)
+		confirmationDuration := totalDuration - issuanceDuration
+
+		f(common.ConfirmationReceipt{
+			ChainAlias:           builder.Alias,
+			TxID:                 txID,
+			TotalDuration:        totalDuration,
+			ConfirmationDuration: confirmationDuration,
+		})
 	}
 
 	return w.backend.AcceptTx(ctx, tx)

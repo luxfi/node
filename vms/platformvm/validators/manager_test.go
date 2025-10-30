@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators_test
@@ -10,13 +10,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -43,7 +41,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 	sk, err := localsigner.New()
 	require.NoError(err)
 	var (
-		netID         = ids.GenerateTestID()
+		subnetID      = ids.GenerateTestID()
 		startTime     = genesistest.DefaultValidatorStartTime
 		endTime       = startTime.Add(24 * time.Hour)
 		pk            = sk.PublicKey()
@@ -51,7 +49,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 			TxID:            ids.GenerateTestID(),
 			NodeID:          ids.GenerateTestNodeID(),
 			PublicKey:       pk,
-			NetID:           constants.PrimaryNetworkID,
+			SubnetID:        constants.PrimaryNetworkID,
 			Weight:          1,
 			StartTime:       startTime,
 			EndTime:         endTime,
@@ -61,14 +59,14 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 			TxID:      ids.GenerateTestID(),
 			NodeID:    primaryStaker.NodeID,
 			PublicKey: nil, // inherited from primaryStaker
-			NetID:     netID,
+			SubnetID:  subnetID,
 			Weight:    1,
 			StartTime: upgradeTime,
 			EndTime:   endTime,
 		}
 	)
 
-	// Add a net staker during the Etna upgrade
+	// Add a subnet staker during the Etna upgrade
 	{
 		blk, err := block.NewBanffStandardBlock(upgradeTime, s.GetLastAccepted(), 1, nil)
 		require.NoError(err)
@@ -78,13 +76,13 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 		s.AddStatelessBlock(blk)
 		s.SetLastAccepted(blk.ID())
 
-		s.PutCurrentValidator(primaryStaker)
-		s.PutCurrentValidator(subnetStaker)
+		require.NoError(s.PutCurrentValidator(primaryStaker))
+		require.NoError(s.PutCurrentValidator(subnetStaker))
 
 		require.NoError(s.Commit())
 	}
 
-	// Remove a net staker
+	// Remove a subnet staker
 	{
 		blk, err := block.NewBanffStandardBlock(s.GetTimestamp(), s.GetLastAccepted(), 2, nil)
 		require.NoError(err)
@@ -100,28 +98,27 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 	}
 
 	m := NewManager(
-		log.NoLog{},
-		config.Config{
+		config.Internal{
 			Validators: vdrs,
 		},
 		s,
-		metric.Noop,
+		metrics.Noop,
 		new(mockable.Clock),
 	)
 
 	expectedValidators := []map[ids.NodeID]*validators.GetValidatorOutput{
-		{}, // Net staker didn't exist at genesis
+		{}, // Subnet staker didn't exist at genesis
 		{
 			subnetStaker.NodeID: {
 				NodeID:    subnetStaker.NodeID,
-				PublicKey: bls.PublicKeyToUncompressedBytes(pk),
+				PublicKey: pk,
 				Weight:    subnetStaker.Weight,
 			},
-		}, // Net staker was added at height 1
-		{}, // Net staker was removed at height 2
+		}, // Subnet staker was added at height 1
+		{}, // Subnet staker was removed at height 2
 	}
 	for height, expected := range expectedValidators {
-		actual, err := m.GetValidatorSet(context.Background(), uint64(height), netID)
+		actual, err := m.GetValidatorSet(context.Background(), uint64(height), subnetID)
 		require.NoError(err)
 		require.Equal(expected, actual)
 	}

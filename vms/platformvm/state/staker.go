@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -9,27 +9,28 @@ import (
 
 	"github.com/google/btree"
 
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
-var _ btree.LessFunc[*Staker] = (*Staker).Less
-
-// StakerIterator defines an interface for iterating over a set of stakers.
+// StakerIterator is an iterator for Staker objects.
+// Iterators should be released when they are no longer needed.
 type StakerIterator interface {
-	// Next attempts to move the iterator to the next staker. It returns false
-	// once there are no more stakers to return.
+	// Next advances the iterator to the next staker.
+	// Returns false if there are no more stakers.
 	Next() bool
 
-	// Value returns the current staker. Value should only be called after a
-	// call to Next which returned true.
+	// Value returns the current staker.
+	// Should only be called after Next() returns true.
 	Value() *Staker
 
-	// Release any resources associated with the iterator. This must be called
-	// after the interator is no longer needed.
+	// Release frees any resources associated with the iterator.
+	// Must be called when the iterator is no longer needed.
 	Release()
 }
+
+var _ btree.LessFunc[*Staker] = (*Staker).Less
 
 // Staker contains all information required to represent a validator or
 // delegator in the current and pending validator sets.
@@ -56,6 +57,9 @@ type Staker struct {
 	// [priorities.go] and depends on if the stakers are in the pending or
 	// current validator set.
 	Priority txs.Priority
+
+	// ValidatorNFT contains NFT information if this validator is using NFT staking
+	ValidatorNFT *txs.ValidatorNFTInfo
 }
 
 // A *Staker is considered to be less than another *Staker when:

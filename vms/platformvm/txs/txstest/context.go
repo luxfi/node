@@ -1,51 +1,31 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txstest
 
 import (
-	"context"
-	"time"
-
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/config"
-	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/fee"
+	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 )
 
 func newContext(
-	ctx context.Context,
-	networkID uint32,
-	luxAssetID ids.ID,
-	cfg *config.Config,
-	timestamp time.Time,
+	ctx *consensusctx.Context,
+	config *config.Internal,
+	state state.State,
 ) *builder.Context {
-	var (
-		feeCalc         = fee.NewStaticCalculator(cfg.StaticFeeConfig, cfg.UpgradeConfig)
-		createSubnetFee = feeCalc.CalculateFee(&txs.CreateNetTx{}, timestamp)
-		createChainFee  = feeCalc.CalculateFee(&txs.CreateChainTx{}, timestamp)
+	builderContext := &builder.Context{
+		NetworkID:   ctx.NetworkID,
+		LUXAssetID: ctx.LUXAssetID,
+	}
+
+	builderContext.ComplexityWeights = config.DynamicFeeConfig.Weights
+	builderContext.GasPrice = gas.CalculatePrice(
+		config.DynamicFeeConfig.MinPrice,
+		state.GetFeeState().Excess,
+		config.DynamicFeeConfig.ExcessConversionConstant,
 	)
 
-	// Get chain ID from context
-	chainID := ids.Empty
-	if ctx != nil {
-		// Try to get chain ID from consensus context
-		chainID = consensus.GetChainID(ctx)
-	}
-
-	return &builder.Context{
-		NetworkID:                     networkID,
-		BlockchainID:                  chainID,
-		XAssetID:                    luxAssetID,
-		BaseTxFee:                     cfg.StaticFeeConfig.TxFee,
-		CreateNetTxFee:                createSubnetFee,
-		TransformNetTxFee:             cfg.StaticFeeConfig.TransformNetTxFee,
-		CreateBlockchainTxFee:         createChainFee,
-		AddPrimaryNetworkValidatorFee: cfg.StaticFeeConfig.AddPrimaryNetworkValidatorFee,
-		AddPrimaryNetworkDelegatorFee: cfg.StaticFeeConfig.AddPrimaryNetworkDelegatorFee,
-		AddNetValidatorFee:            cfg.StaticFeeConfig.AddNetValidatorFee,
-		AddNetDelegatorFee:            cfg.StaticFeeConfig.AddNetDelegatorFee,
-	}
+	return builderContext
 }

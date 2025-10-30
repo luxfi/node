@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package registry
@@ -12,14 +12,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
-
 	"github.com/luxfi/node/utils/filesystem"
-
+	"github.com/luxfi/node/utils/filesystem/filesystemmock"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/resource"
 
 	"github.com/luxfi/node/vms"
+	"github.com/luxfi/node/vms/vmsmock"
 )
 
 var (
@@ -107,7 +106,7 @@ func TestGet_Success(t *testing.T) {
 	registeredVMId := ids.GenerateTestID()
 	unregisteredVMId := ids.GenerateTestID()
 
-	registeredVMFactory := vms.NewMockFactory(resources.ctrl)
+	registeredVMFactory := vmsmock.NewFactory(resources.ctrl)
 
 	resources.mockReader.EXPECT().ReadDir(pluginDir).Times(1).Return(twoValidVMs, nil)
 	resources.mockManager.EXPECT().Lookup(registeredVMName).Times(1).Return(registeredVMId, nil)
@@ -129,16 +128,17 @@ func TestGet_Success(t *testing.T) {
 
 type vmGetterTestResources struct {
 	ctrl        *gomock.Controller
-	mockReader  *filesystem.MockReader
-	mockManager *vms.MockManager
+	mockReader  *filesystemmock.Reader
+	mockManager *vmsmock.Manager
 	getter      VMGetter
 }
 
 func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 	ctrl := gomock.NewController(t)
 
-	mockReader := filesystem.NewMockReader(ctrl)
-	mockManager := vms.NewMockManager(ctrl)
+	mockReader := filesystemmock.NewReader(ctrl)
+	mockManager := vmsmock.NewManager(ctrl)
+	mockRegistry := prometheus.NewRegistry()
 	mockCPUTracker, err := resource.NewManager(
 		log.NewNoOpLogger(),
 		"",

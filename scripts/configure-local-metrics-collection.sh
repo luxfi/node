@@ -5,9 +5,9 @@ set -euo pipefail
 # Configures prometheus and promtail to collect metrics and logs from
 # a local node.
 
-API_PORT="${API_PORT:-9630}"
+API_PORT="${API_PORT:-9650}"
 
-LOGS_PATH="${LOGS_PATH:-${HOME}/.luxd/logs}"
+LOGS_PATH="${LOGS_PATH:-${HOME}/.node/logs}"
 
 # Generate a uuid to uniquely identify the collected metrics
 METRICS_UUID="$(uuidgen)"
@@ -53,7 +53,7 @@ echo "Metrics collection by prometheus can be started with ./scripts/run_prometh
 echo "Log collection by promtail can be started with ./scripts/run_promtail.sh"
 
 GRAFANA_LINK="https://grafana-poc.lux-dev.network/d/kBQpRdWnk/lux-main-dashboard?var-filter=network_uuid%7C%3D%7C${METRICS_UUID}"
-METRICS_PATH="${HOME}/.luxd/metrics.txt"
+METRICS_PATH="${HOME}/.node/metrics.txt"
 echo "${GRAFANA_LINK}" > "${METRICS_PATH}"
 echo "Metrics and logs can be viewed at: ${GRAFANA_LINK}"
 echo "Link also saved to ${METRICS_PATH}"

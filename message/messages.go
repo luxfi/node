@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -11,8 +11,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
@@ -136,8 +134,6 @@ func (m *outboundMessage) BytesSavedCompression() int {
 }
 
 type msgBuilder struct {
-	log log.Logger
-
 	zstdCompressor compression.Compressor
 	count          metric.CounterVec // type + op + direction
 	duration       metric.GaugeVec   // type + op + direction
@@ -146,8 +142,7 @@ type msgBuilder struct {
 }
 
 func newMsgBuilder(
-	log log.Logger,
-	m metric.Metrics,
+	metrics prometheus.Registerer,
 	maxMessageTimeout time.Duration,
 ) (*msgBuilder, error) {
 	zstdCompressor, err := compression.NewZstdCompressor(constants.DefaultMaxMessageSize)
@@ -156,8 +151,6 @@ func newMsgBuilder(
 	}
 
 	mb := &msgBuilder{
-		log: log,
-
 		zstdCompressor: zstdCompressor,
 		count: m.NewCounterVec(
 			"codec_compressed_count",

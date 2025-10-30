@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -10,22 +10,27 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/consensus/engine/chain/block/blocktest"
+	"github.com/luxfi/consensus/consensustest"
 )
 
 var (
-	_ block.ChainVM                      = &ContextEnabledVMMock{}
-	_ block.BuildBlockWithContextChainVM = &ContextEnabledVMMock{}
+	testPreSummaryBlk = &blocktest.Block{
+		Decidable: consensustest.Decidable{
+			IDV:     ids.ID{'f', 'i', 'r', 's', 't', 'B', 'l', 'K'},
+			StatusV: 0,
+		},
+		HeightV:    1789,
+		ParentV:    ids.ID{'p', 'a', 'r', 'e', 'n', 't', 'B', 'l', 'k'},
+		StatusV:    consensustest.Accepted,
+	}
+)
 
-	_ chain.Block             = &ContextEnabledBlockMock{}
-	_ block.WithVerifyContext = &ContextEnabledBlockMock{}
-
+var (
 	blockContext = &block.Context{
 		PChainHeight: 1,
 	}
@@ -36,154 +41,107 @@ var (
 )
 
 type ContextEnabledVMMock struct {
-	blockmock.ChainVM
-
-	// Override BuildBlockWithContext to return the correct type
-	BuildBlockWithContextF func(context.Context, *block.Context) (block.Block, error)
+	chainVM             *blockmock.MockChainVM
+	buildBlockContextVM *blockmock.MockBuildBlockWithContextVM
 }
 
-// BuildBlockWithContext implements block.BuildBlockWithContextChainVM
-func (vm *ContextEnabledVMMock) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (block.Block, error) {
-	if vm.BuildBlockWithContextF != nil {
-		return vm.BuildBlockWithContextF(ctx, blockCtx)
-	}
-	return nil, nil
+// Ensure ContextEnabledVMMock implements the required interfaces
+var (
+	_ block.ChainVM                         = (*ContextEnabledVMMock)(nil)
+	_ block.BuildBlockWithContextChainVM    = (*ContextEnabledVMMock)(nil)
+)
+
+// Forward ChainVM methods
+func (m *ContextEnabledVMMock) Initialize(ctx context.Context, chainCtx interface{}, db interface{}, genesisBytes, upgradeBytes, configBytes []byte, msgChan interface{}, fxs []interface{}, appSender interface{}) error {
+	return m.chainVM.Initialize(ctx, chainCtx, db, genesisBytes, upgradeBytes, configBytes, msgChan, fxs, appSender)
+}
+func (m *ContextEnabledVMMock) SetState(ctx context.Context, state uint32) error {
+	return m.chainVM.SetState(ctx, state)
+}
+func (m *ContextEnabledVMMock) Shutdown(ctx context.Context) error { return m.chainVM.Shutdown(ctx) }
+func (m *ContextEnabledVMMock) Version(ctx context.Context) (string, error) {
+	return m.chainVM.Version(ctx)
+}
+func (m *ContextEnabledVMMock) NewHTTPHandler(ctx context.Context) (interface{}, error) {
+	return m.chainVM.NewHTTPHandler(ctx)
+}
+func (m *ContextEnabledVMMock) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
+	return m.chainVM.Connected(ctx, nodeID, nodeVersion)
+}
+func (m *ContextEnabledVMMock) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	return m.chainVM.Disconnected(ctx, nodeID)
+}
+func (m *ContextEnabledVMMock) HealthCheck(ctx context.Context) (interface{}, error) {
+	return m.chainVM.HealthCheck(ctx)
+}
+func (m *ContextEnabledVMMock) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
+	return m.chainVM.ParseBlock(ctx, bytes)
+}
+func (m *ContextEnabledVMMock) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
+	return m.chainVM.GetBlock(ctx, id)
+}
+func (m *ContextEnabledVMMock) BuildBlock(ctx context.Context) (block.Block, error) {
+	return m.chainVM.BuildBlock(ctx)
+}
+func (m *ContextEnabledVMMock) SetPreference(ctx context.Context, id ids.ID) error {
+	return m.chainVM.SetPreference(ctx, id)
+}
+func (m *ContextEnabledVMMock) LastAccepted(ctx context.Context) (ids.ID, error) {
+	return m.chainVM.LastAccepted(ctx)
+}
+func (m *ContextEnabledVMMock) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
+	return m.chainVM.GetBlockIDAtHeight(ctx, height)
+}
+func (m *ContextEnabledVMMock) WaitForEvent(ctx context.Context) (interface{}, error) {
+	return m.chainVM.WaitForEvent(ctx)
+}
+
+// Forward BuildBlockWithContextVM method
+func (m *ContextEnabledVMMock) BuildBlockWithContext(ctx context.Context, blockCtx *block.Context) (block.Block, error) {
+	return m.buildBlockContextVM.BuildBlockWithContext(ctx, blockCtx)
 }
 
 type ContextEnabledBlockMock struct {
-	idV        ids.ID
-	parentV    ids.ID
-	heightV    uint64
-	timestampV time.Time
-	statusV    choices.Status
-	bytesV     []byte
-
-	verifyWithContextF       func(context.Context, *block.Context) error
-	shouldVerifyWithContextF func(context.Context) (bool, error)
-	verifyF                  func(context.Context) error
-	acceptF                  func(context.Context) error
-	rejectF                  func(context.Context) error
-}
-
-// ID returns the block ID
-func (b *ContextEnabledBlockMock) ID() ids.ID { return b.idV }
-
-// Parent returns the parent ID
-func (b *ContextEnabledBlockMock) Parent() ids.ID { return b.parentV }
-
-// ParentID returns the parent ID
-func (b *ContextEnabledBlockMock) ParentID() ids.ID { return b.parentV }
-
-// Height returns the block height
-func (b *ContextEnabledBlockMock) Height() uint64 { return b.heightV }
-
-// Timestamp returns the block timestamp
-func (b *ContextEnabledBlockMock) Timestamp() time.Time { return b.timestampV }
-
-// Status returns the block status
-func (b *ContextEnabledBlockMock) Status() uint8 { return uint8(b.statusV) }
-
-// Bytes returns the block bytes
-func (b *ContextEnabledBlockMock) Bytes() []byte { return b.bytesV }
-
-// Verify verifies the block
-func (b *ContextEnabledBlockMock) Verify(ctx context.Context) error {
-	if b.verifyF != nil {
-		return b.verifyF(ctx)
-	}
-	return nil
-}
-
-// Accept accepts the block
-func (b *ContextEnabledBlockMock) Accept(ctx context.Context) error {
-	if b.acceptF != nil {
-		return b.acceptF(ctx)
-	}
-	b.statusV = choices.Accepted
-	return nil
-}
-
-// Reject rejects the block
-func (b *ContextEnabledBlockMock) Reject(ctx context.Context) error {
-	if b.rejectF != nil {
-		return b.rejectF(ctx)
-	}
-	b.statusV = choices.Rejected
-	return nil
-}
-
-// VerifyWithContext implements WithVerifyContext interface
-func (b *ContextEnabledBlockMock) VerifyWithContext(ctx context.Context, blockCtx *block.Context) error {
-	if b.verifyWithContextF != nil {
-		return b.verifyWithContextF(ctx, blockCtx)
-	}
-	return nil
-}
-
-// ShouldVerifyWithContext implements WithVerifyContext interface
-func (b *ContextEnabledBlockMock) ShouldVerifyWithContext(ctx context.Context) (bool, error) {
-	if b.shouldVerifyWithContextF != nil {
-		return b.shouldVerifyWithContextF(ctx)
-	}
-	return false, nil
+	*blockmock.MockBlock
+	*blockmock.MockWithVerifyContext
 }
 
 func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM {
 	// test key is "contextTestKey"
 
 	// create mock
-	chainVM := blockmock.NewChainVM()
+	ctrl := gomock.NewController(t)
 	ctxVM := &ContextEnabledVMMock{
-		ChainVM: *chainVM,
+		chainVM:             blockmock.NewMockChainVM(ctrl),
+		buildBlockContextVM: blockmock.NewMockBuildBlockWithContextVM(ctrl),
 	}
 
 	if loadExpectations {
 		ctxBlock := &ContextEnabledBlockMock{
-			idV:        blkID,
-			parentV:    parentID,
-			heightV:    1,
-			timestampV: time.Now(),
-			statusV:    choices.Processing,
-			bytesV:     blkBytes,
-			shouldVerifyWithContextF: func(context.Context) (bool, error) {
-				return true, nil
-			},
-			verifyWithContextF: func(context.Context, *block.Context) error {
-				return nil
-			},
+			MockBlock:             blockmock.NewMockBlock(ctrl),
+			MockWithVerifyContext: blockmock.NewMockWithVerifyContext(ctrl),
 		}
+		// Initialize expectations
+		ctxVM.chainVM.EXPECT().Initialize(
+			gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+			gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+		).Return(nil).AnyTimes()
+		ctxVM.chainVM.EXPECT().LastAccepted(gomock.Any()).Return(testPreSummaryBlk.ID(), nil).AnyTimes()
+		ctxVM.chainVM.EXPECT().GetBlock(gomock.Any(), gomock.Any()).Return(testPreSummaryBlk, nil).AnyTimes()
 
-		// Set the BuildBlockWithContext function
-		ctxVM.BuildBlockWithContextF = func(ctx context.Context, blockCtx *block.Context) (block.Block, error) {
-			return ctxBlock, nil
-		}
+		// BuildBlockWithContext expectations
+		ctxVM.buildBlockContextVM.EXPECT().BuildBlockWithContext(gomock.Any(), gomock.Any()).Return(ctxBlock, nil).AnyTimes()
+		ctxBlock.MockWithVerifyContext.EXPECT().ShouldVerifyWithContext(gomock.Any()).Return(true, nil).AnyTimes()
+		ctxBlock.MockBlock.EXPECT().ID().Return(blkID).AnyTimes()
+		ctxBlock.MockBlock.EXPECT().ParentID().Return(parentID).AnyTimes()
+		ctxBlock.MockBlock.EXPECT().Parent().Return(parentID).AnyTimes()
+		ctxBlock.MockBlock.EXPECT().Bytes().Return(blkBytes).AnyTimes()
+		ctxBlock.MockBlock.EXPECT().Height().Return(uint64(1)).AnyTimes()
+		ctxBlock.MockBlock.EXPECT().Timestamp().Return(time.Now()).AnyTimes()
 
-		// Set up chainVM expectations
-		chainVM.InitializeF = func(
-			ctx context.Context,
-			chainCtx interface{},
-			db interface{},
-			genesisBytes []byte,
-			upgradeBytes []byte,
-			configBytes []byte,
-			msgChan interface{},
-			fxs []interface{},
-			appSender interface{},
-		) error {
-			return nil
-		}
-
-		chainVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
-			return preSummaryBlk.ID(), nil
-		}
-
-		chainVM.GetBlockF = func(context.Context, ids.ID) (block.Block, error) {
-			return preSummaryBlk, nil
-		}
-
-		chainVM.ParseBlockF = func(context.Context, []byte) (block.Block, error) {
-			return ctxBlock, nil
-		}
+		// VerifyWithContext expectations
+		ctxVM.chainVM.EXPECT().ParseBlock(gomock.Any(), blkBytes).Return(ctxBlock, nil).AnyTimes()
+		ctxBlock.MockWithVerifyContext.EXPECT().VerifyWithContext(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	}
 
 	return ctxVM
@@ -197,7 +155,11 @@ func TestContextVMSummary(t *testing.T) {
 	vm := buildClientHelper(require, testKey)
 	defer vm.runtime.Stop(context.Background())
 
-	ctx := consensustest.Context(t, consensustest.CChainID)
+	ctx := &Context{
+		NetworkID: 1,
+		ChainID:   ids.ID{'C', 'C', 'h', 'a', 'i', 'n'},
+		NodeID:    ids.GenerateTestNodeID(),
+	}
 
 	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, []interface{}{}, nil))
 

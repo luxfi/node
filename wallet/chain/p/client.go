@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
@@ -10,13 +10,13 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
 
 var _ wallet.Client = (*Client)(nil)
 
 func NewClient(
-	c platformvm.Client,
+	c *platformvm.Client,
 	b wallet.Backend,
 ) *Client {
 	return &Client{
@@ -26,7 +26,7 @@ func NewClient(
 }
 
 type Client struct {
-	client  platformvm.Client
+	client  *platformvm.Client
 	backend wallet.Backend
 }
 
@@ -43,8 +43,12 @@ func (c *Client) IssueTx(
 	}
 
 	issuanceDuration := time.Since(startTime)
-	if f := ops.PostIssuanceFunc(); f != nil {
-		f(txID)
+	if f := ops.IssuanceHandler(); f != nil {
+		f(common.IssuanceReceipt{
+			ChainAlias: builder.Alias,
+			TxID:       txID,
+			Duration:   issuanceDuration,
+		})
 	}
 
 	if ops.AssumeDecided() {
@@ -62,7 +66,6 @@ func (c *Client) IssueTx(
 		f(common.ConfirmationReceipt{
 			ChainAlias:           builder.Alias,
 			TxID:                 txID,
-			IssuanceDuration:     issuanceDuration,
 			TotalDuration:        totalDuration,
 			ConfirmationDuration: confirmationDuration,
 		})

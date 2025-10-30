@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package flags
@@ -17,14 +17,13 @@ const (
 	kubeRuntime     = "kube"
 	kubeFlagsPrefix = kubeRuntime + "-"
 	kubeDocPrefix   = "[kube runtime] "
-
-	DefaultTmpnetNamespace = "tmpnet"
 )
 
 var (
-	errKubeNamespaceRequired     = errors.New("--kube-namespace is required")
-	errKubeImageRequired         = errors.New("--kube-image is required")
-	errKubeMinVolumeSizeRequired = fmt.Errorf("--kube-volume-size must be >= %d", tmpnet.MinimumVolumeSizeGB)
+	errKubeNamespaceRequired       = errors.New("--kube-namespace is required")
+	errKubeImageRequired           = errors.New("--kube-image is required")
+	errKubeMinVolumeSizeRequired   = fmt.Errorf("--kube-volume-size must be >= %d", tmpnet.MinimumVolumeSizeGB)
+	errKubeSchedulingLabelRequired = errors.New("--kube-scheduling-label-key and --kube-scheduling-label-value are required when --kube-use-exclusive-scheduling is enabled")
 )
 
 type kubeRuntimeVars struct {
@@ -51,13 +50,13 @@ func (v *kubeRuntimeVars) register(stringVar varFunc[string], uintVar varFunc[ui
 	stringVar(
 		&v.namespace,
 		"kube-namespace",
-		DefaultTmpnetNamespace,
+		tmpnet.DefaultTmpnetNamespace,
 		kubeDocPrefix+"The namespace in the target cluster to create nodes in",
 	)
 	stringVar(
 		&v.image,
 		"kube-image",
-		"avaplatform/luxd:latest",
+		"avaplatform/node:latest",
 		kubeDocPrefix+"The name of the docker image to use for creating nodes",
 	)
 	uintVar(
@@ -73,18 +72,18 @@ func (v *kubeRuntimeVars) register(stringVar varFunc[string], uintVar varFunc[ui
 		&v.useExclusiveScheduling,
 		"kube-use-exclusive-scheduling",
 		false,
-		kubeDocPrefix+"Whether to schedule each Luxd node to a dedicated Kubernetes node",
+		kubeDocPrefix+"Whether to schedule each LuxGo node to a dedicated Kubernetes node",
 	)
 	stringVar(
 		&v.schedulingLabelKey,
 		"kube-scheduling-label-key",
-		"",
+		"purpose",
 		kubeDocPrefix+"The label key to use for exclusive scheduling for node selection and toleration",
 	)
 	stringVar(
 		&v.schedulingLabelValue,
 		"kube-scheduling-label-value",
-		"",
+		"higher-spec",
 		kubeDocPrefix+"The label value to use for exclusive scheduling for node selection and toleration",
 	)
 }
@@ -98,6 +97,9 @@ func (v *kubeRuntimeVars) getKubeRuntimeConfig() (*tmpnet.KubeRuntimeConfig, err
 	}
 	if v.volumeSizeGB < tmpnet.MinimumVolumeSizeGB {
 		return nil, errKubeMinVolumeSizeRequired
+	}
+	if v.useExclusiveScheduling && (len(v.schedulingLabelKey) == 0 || len(v.schedulingLabelValue) == 0) {
+		return nil, errKubeSchedulingLabelRequired
 	}
 	return &tmpnet.KubeRuntimeConfig{
 		ConfigPath:             v.config.Path,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package utxo
@@ -8,11 +8,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/crypto/secp256k1"
+	"go.uber.org/zap"
+
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/math"
-	"github.com/luxfi/math/set"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
+	safemath "github.com/luxfi/node/utils/math"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
@@ -37,6 +40,15 @@ var (
 	errLockedFundsNotMarkedAsLocked = errors.New("locked funds not marked as locked")
 )
 
+// min returns the minimum of two uint64 values
+func min(a, b uint64) uint64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// TODO: Stake and Authorize should be replaced by similar methods in the
 // P-chain wallet
 type Spender interface {
 	// Spend the provided amount while deducting the provided fee.
@@ -234,10 +246,10 @@ func (h *handler) Spend(
 		remainingValue := in.Amount()
 
 		// Stake any value that should be staked
-		amountToStake := amount - amountStaked // Amount we still need to stake
-		if remainingValue < amountToStake {
-			amountToStake = remainingValue // Amount available to stake
-		}
+		amountToStake := min(
+			amount-amountStaked, // Amount we still need to stake
+			remainingValue,      // Amount available to stake
+		)
 		amountStaked += amountToStake
 		remainingValue -= amountToStake
 
@@ -325,18 +337,18 @@ func (h *handler) Spend(
 		remainingValue := in.Amount()
 
 		// Burn any value that should be burned
-		amountToBurn := fee - amountBurned // Amount we still need to burn
-		if remainingValue < amountToBurn {
-			amountToBurn = remainingValue // Amount available to burn
-		}
+		amountToBurn := min(
+			fee-amountBurned, // Amount we still need to burn
+			remainingValue,   // Amount available to burn
+		)
 		amountBurned += amountToBurn
 		remainingValue -= amountToBurn
 
 		// Stake any value that should be staked
-		amountToStake := amount - amountStaked // Amount we still need to stake
-		if remainingValue < amountToStake {
-			amountToStake = remainingValue // Amount available to stake
-		}
+		amountToStake := min(
+			amount-amountStaked, // Amount we still need to stake
+			remainingValue,      // Amount available to stake
+		)
 		amountStaked += amountToStake
 		remainingValue -= amountToStake
 
@@ -549,7 +561,7 @@ func (h *handler) VerifySpendUTXOs(
 		amount := in.Amount()
 
 		if now >= locktime {
-			newUnlockedConsumed, err := math.Add64(unlockedConsumed[realAssetID], amount)
+			newUnlockedConsumed, err := safemath.Add64(unlockedConsumed[realAssetID], amount)
 			if err != nil {
 				return err
 			}
@@ -577,7 +589,7 @@ func (h *handler) VerifySpendUTXOs(
 			owners = make(map[ids.ID]uint64)
 			lockedConsumedAsset[locktime] = owners
 		}
-		newAmount, err := math.Add64(owners[ownerID], amount)
+		newAmount, err := safemath.Add64(owners[ownerID], amount)
 		if err != nil {
 			return err
 		}
@@ -598,7 +610,7 @@ func (h *handler) VerifySpendUTXOs(
 		amount := output.Amount()
 
 		if locktime == 0 {
-			newUnlockedProduced, err := math.Add64(unlockedProduced[assetID], amount)
+			newUnlockedProduced, err := safemath.Add64(unlockedProduced[assetID], amount)
 			if err != nil {
 				return err
 			}
@@ -626,7 +638,7 @@ func (h *handler) VerifySpendUTXOs(
 			owners = make(map[ids.ID]uint64)
 			lockedProducedAsset[locktime] = owners
 		}
-		newAmount, err := math.Add64(owners[ownerID], amount)
+		newAmount, err := safemath.Add64(owners[ownerID], amount)
 		if err != nil {
 			return err
 		}

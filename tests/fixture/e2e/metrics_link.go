@@ -1,7 +1,5 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
-
-//go:build test
 
 package e2e
 
@@ -10,8 +8,8 @@ import (
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
+	"go.uber.org/zap"
 
-	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 )
 
@@ -33,7 +31,8 @@ var _ = ginkgo.BeforeEach(func() {
 // This event handler attempts to emit a metrics link scoped to the duration
 // of the current spec.
 var _ = ginkgo.AfterEach(func() {
-	env := Env
+	tc := NewTestContext()
+	env := GetEnv(tc)
 	// The global env isn't guaranteed to be initialized by importers
 	// of this package since initializing a package-local env is also
 	// supported.
@@ -52,5 +51,7 @@ var _ = ginkgo.AfterEach(func() {
 		strconv.FormatInt(startTime, 10),
 		strconv.FormatInt(endTime, 10),
 	)
-	tests.Outf(tmpnet.MetricsAvailableMessage+" %s\n", metricsLink)
+	tc.Log().Info(tmpnet.MetricsAvailableMessage,
+		zap.String("uri", metricsLink),
+	)
 })

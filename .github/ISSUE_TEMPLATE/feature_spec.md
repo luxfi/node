@@ -1,6 +1,6 @@
 ---
 name: Feature specification
-about: Discussion on design and implementation of new features for luxd.
+about: Discussion on design and implementation of new features for avalanchego.
 title: ''
 labels: enhancement
 assignees: ''

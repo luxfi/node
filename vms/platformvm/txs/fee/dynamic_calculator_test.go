@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fee
@@ -9,19 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/txs"
-)
-
-// Test constants for dynamic fee calculation
-var (
-	testDynamicWeights = gas.Dimensions{
-		gas.Bandwidth: 1,
-		gas.DBRead:    10,
-		gas.DBWrite:   100,
-		gas.Compute:   1,
-	}
-	testDynamicPrice = gas.Price(1000)
 )
 
 func TestDynamicCalculator(t *testing.T) {

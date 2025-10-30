@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -11,8 +11,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/tests/fixture/bootstrapmonitor"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
 
@@ -40,7 +40,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&podName, "pod-name", os.Getenv("POD_NAME"), "The name of the pod")
 	rootCmd.PersistentFlags().StringVar(&nodeContainerName, "node-container-name", "", "The name of the node container in the pod")
 	rootCmd.PersistentFlags().StringVar(&dataDir, "data-dir", "", "The path of the data directory used for the bootstrap job")
-	rootCmd.PersistentFlags().StringVar(&rawLogFormat, "log-format", "auto", "Log output format (auto, plain, json)")
+	rootCmd.PersistentFlags().StringVar(&rawLogFormat, "log-format", logging.AutoString, logging.FormatDescription)
 
 	versionCmd := &cobra.Command{
 		Use:   "version",
@@ -123,6 +123,10 @@ func checkArgs(namespace string, podName string, nodeContainerName string, dataD
 }
 
 func newLogger(rawLogFormat string) (log.Logger, error) {
-	// For simplicity, just return a no-op logger
-	return log.NewNoOpLogger(), nil
+	writeCloser := os.Stdout
+	logFormat, err := logging.ToFormat(rawLogFormat, writeCloser.Fd())
+	if err != nil {
+		return nil, err
+	}
+	return logging.NewLogger("", logging.NewWrappedCore(logging.Verbo, writeCloser, logFormat.ConsoleEncoder())), nil
 }

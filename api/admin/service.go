@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package admin
@@ -17,10 +17,14 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/rpcdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/vms"
@@ -292,9 +296,9 @@ type GetLoggerLevelArgs struct {
 // GetLoggerLevel returns the log level and display level of all loggers.
 func (a *Admin) GetLoggerLevel(_ *http.Request, args *GetLoggerLevelArgs, reply *LoggerLevelReply) error {
 	a.Log.Debug("API called",
-		log.String("service", "admin"),
-		log.String("method", "getLoggerLevels"),
-		log.String("loggerName", args.LoggerName),
+		zap.String("service", "admin"),
+		zap.String("method", "getLoggerLevel"),
+		logging.UserString("loggerName", args.LoggerName),
 	)
 
 	a.lock.RLock()
@@ -388,7 +392,7 @@ type DBGetReply struct {
 	Value string `json:"value"`
 }
 
-//nolint:stylecheck // renaming this method to DBGet would change the API method from "dbGet" to "dBGet"
+//nolint:staticcheck // renaming this method to DBGet would change the API method from "dbGet" to "dBGet"
 func (a *Admin) DbGet(_ *http.Request, args *DBGetArgs, reply *DBGetReply) error {
 	a.Log.Debug("API called",
 		log.String("service", "admin"),

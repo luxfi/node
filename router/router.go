@@ -10,10 +10,10 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
+	metric "github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
 )
@@ -165,12 +165,7 @@ func (r *routerImpl) Initialize(
 		}),
 	}
 
-	if err := reg.Register(r.metrics.droppedMsgs); err != nil {
-		return err
-	}
-	if err := reg.Register(r.metrics.routedMsgs); err != nil {
-		return err
-	}
+	// Metrics are self-registering via metric.NewCounter
 
 	r.log.Info("router initialized",
 		log.Stringer("nodeID", nodeID),

@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	gomock "github.com/luxfi/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockVMRegistry is a mock of VMRegistry interface.

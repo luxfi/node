@@ -2,7 +2,7 @@
 ARG BUILDER_IMAGE_TAG=INVALID # This value is not intended to be used but silences a warning
 
 # ============= Compilation Stage ================
-FROM antithesis-luxgo-builder:$BUILDER_IMAGE_TAG AS builder
+FROM antithesis-node-builder:$BUILDER_IMAGE_TAG AS builder
 
 # The workdir is hard-coded since this Dockerfile is only intended for instrumented builds.
 WORKDIR /instrumented/customer
@@ -28,6 +28,6 @@ COPY --from=builder /opt/antithesis/lib/libvoidstar.so /usr/lib/libvoidstar.so
 WORKDIR /luxgo/build
 
 # Copy the executable into the container
-COPY --from=builder /instrumented/customer/build/luxgo ./luxgo
+COPY --from=builder /instrumented/customer/build/node ./node
 
 CMD [ "./luxgo" ]

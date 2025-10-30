@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -139,38 +139,37 @@ func (m *txMetrics) BaseTx(*txs.BaseTx) error {
 	return nil
 }
 
-// L1 Validator transaction methods
-func (m *txMetrics) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
-	m.numTxs.With(metric.Labels{
-		txLabel: "disable_l1_validator",
-	}).Inc()
-	return nil
-}
-
-func (m *txMetrics) IncreaseL1ValidatorBalanceTx(*txs.IncreaseL1ValidatorBalanceTx) error {
-	m.numTxs.With(metric.Labels{
-		txLabel: "increase_l1_validator_balance",
+func (m *txMetrics) ConvertSubnetToL1Tx(*txs.ConvertSubnetToL1Tx) error {
+	m.numTxs.With(prometheus.Labels{
+		txLabel: "convert_subnet_to_l1",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(prometheus.Labels{
 		txLabel: "register_l1_validator",
 	}).Inc()
 	return nil
 }
 
 func (m *txMetrics) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error {
-	m.numTxs.With(metric.Labels{
+	m.numTxs.With(prometheus.Labels{
 		txLabel: "set_l1_validator_weight",
 	}).Inc()
 	return nil
 }
 
-func (m *txMetrics) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
-	m.numTxs.With(metric.Labels{
-		txLabel: "convert_subnet_to_l1",
+func (m *txMetrics) IncreaseL1ValidatorBalanceTx(*txs.IncreaseL1ValidatorBalanceTx) error {
+	m.numTxs.With(prometheus.Labels{
+		txLabel: "increase_l1_validator_balance",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
+	m.numTxs.With(prometheus.Labels{
+		txLabel: "disable_l1_validator",
 	}).Inc()
 	return nil
 }

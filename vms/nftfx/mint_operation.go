@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package nftfx
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
 	"errors"
 
 	"github.com/luxfi/node/vms/components/verify"
@@ -21,14 +21,13 @@ type MintOperation struct {
 	Outputs   []*secp256k1fx.OutputOwners `serialize:"true" json:"outputs"`
 }
 
-func (op *MintOperation) InitCtx(ctx context.Context) {
+func (op *MintOperation) InitCtx(ctx *consensusctx.Context) {
 	for _, out := range op.Outputs {
 		out.InitCtx(ctx)
 	}
 }
 
-// InitializeContext implements fxs.FxOperation
-func (op *MintOperation) InitializeContext(ctx context.Context) error {
+func (op *MintOperation) InitializeContext(ctx *consensusctx.Context) error {
 	op.InitCtx(ctx)
 	return nil
 }

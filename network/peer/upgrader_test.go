@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer_test
@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
@@ -67,9 +67,7 @@ func TestBlockClientsWithIncorrectRSAKeys(t *testing.T) {
 				clientCert8192 := makeTLSCert(t, privKey8192)
 				return clientCert8192
 			},
-			// An 8192-bit RSA key certificate exceeds the max certificate size,
-			// so it's rejected for size before RSA modulus validation
-			expectedErr: staking.ErrCertificateTooLarge,
+			expectedErr: staking.ErrUnsupportedRSAModulusBitLen,
 		},
 		{
 			description: "Improper public exponent",
@@ -88,25 +86,16 @@ func TestBlockClientsWithIncorrectRSAKeys(t *testing.T) {
 
 			config := peer.TLSConfig(serverCert, nil)
 
-			c := metric.NewCounter(metric.CounterOpts{})
+			c := prometheus.NewCounter(prometheus.CounterOpts{})
 
-			// Initialize upgrader with a mock counter.
-			// For test cases with invalid certs (expectedErr != nil), we expect the counter to be incremented.
-			// For test cases with valid certs (expectedErr == nil), we expect the counter NOT to be incremented.
-			var mockCounter metric.Counter
-			if testCase.expectedErr != nil {
-				// For invalid certs, allow increment
-				mockCounter = c
-			} else {
-				// For valid certs, fail if incremented
-				mockCounter = &mockPrometheusCounter{
-					Counter: c,
-					onIncrement: func() {
-						require.FailNow(t, "should not have invoked")
-					},
-				}
+			// Initialize upgrader with a mock that fails when it's incremented.
+			failOnIncrementCounter := &mockPrometheusCounter{
+				Counter: c,
+				onIncrement: func() {
+					require.FailNow(t, "should not have invoked")
+				},
 			}
-			upgrader := peer.NewTLSServerUpgrader(config, mockCounter)
+			upgrader := peer.NewTLSServerUpgrader(config, failOnIncrementCounter)
 
 			clientConfig := tls.Config{
 				ClientAuth:         tls.RequireAnyClientCert,
@@ -212,7 +201,7 @@ func basicCert() *x509.Certificate {
 }
 
 type mockPrometheusCounter struct {
-	metric.Counter
+	prometheus.Counter
 	onIncrement func()
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fee
@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	// _ Calculator = (*dynamicCalculator)(nil)
+	_ Calculator = (*dynamicCalculator)(nil)
 
 	ErrCalculatingComplexity = errors.New("error calculating complexity")
 	ErrCalculatingGas        = errors.New("error calculating gas")
@@ -22,7 +22,7 @@ var (
 func NewDynamicCalculator(
 	weights gas.Dimensions,
 	price gas.Price,
-) *dynamicCalculator {
+) Calculator {
 	return &dynamicCalculator{
 		weights: weights,
 		price:   price,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package messenger
@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/consensus/core"
+
 	messengerpb "github.com/luxfi/node/proto/pb/messenger"
 )
 
@@ -20,9 +21,13 @@ func NewClient(client messengerpb.MessengerClient) *Client {
 	return &Client{client: client}
 }
 
-func (c *Client) Notify(msg core.MessageType) error {
+func (c *Client) Notify(msg core.Message) error {
 	_, err := c.client.Notify(context.Background(), &messengerpb.NotifyRequest{
-		Message: messengerpb.Message(msg),
+		Message: &messengerpb.Message{
+			Type:    messengerpb.MessageType(msg.Type),
+			NodeId:  msg.NodeID[:],
+			Content: msg.Content,
+		},
 	})
 	return err
 }

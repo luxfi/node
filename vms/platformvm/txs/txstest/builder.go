@@ -1,16 +1,10 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txstest
 
 import (
-	"context"
-
-	"github.com/luxfi/consensus"
-	consContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/crypto/secp256k1"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -19,8 +13,7 @@ import (
 )
 
 func NewWalletFactory(
-	ctx context.Context,
-	sharedMemory atomic.SharedMemory,
+	ctx *consensusctx.Context,
 	cfg *config.Config,
 	state state.State,
 ) *WalletFactory {
@@ -61,10 +54,9 @@ func NewWalletFactoryWithAssets(
 }
 
 type WalletFactory struct {
-	ctx          context.Context
-	sharedMemory atomic.SharedMemory
-	cfg          *config.Config
-	state        state.State
+	ctx   *consensusctx.Context
+	cfg   *config.Config
+	state state.State
 }
 
 func (w *WalletFactory) NewWallet(keys ...*secp256k1.PrivateKey) (builder.Builder, signer.Signer) {

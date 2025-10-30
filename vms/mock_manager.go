@@ -14,8 +14,8 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	log "github.com/luxfi/log"
-	gomock "github.com/luxfi/mock/gomock"
+	"github.com/luxfi/log"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockFactory is a mock of Factory interface.

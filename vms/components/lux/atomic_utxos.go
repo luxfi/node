@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -10,21 +10,25 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 )
 
-// GetAtomicUTXOs returns exported UTXOs such that at least one of the
-// addresses in [addrs] is referenced.
-//
-// Returns at most [limit] UTXOs.
-//
-// Returns:
-// * The fetched UTXOs
-// * The address associated with the last UTXO fetched
-// * The ID of the last UTXO fetched
-// * Any error that may have occurred upstream.
-func GetAtomicUTXOs(
-	sharedMemory atomic.SharedMemory,
-	codec codec.Manager,
+var _ AtomicUTXOManager = (*atomicUTXOManager)(nil)
+
+type atomicUTXOManager struct {
+	sm    atomic.SharedMemory
+	codec codec.Manager
+}
+
+func NewAtomicUTXOManager(sm atomic.SharedMemory, codec codec.Manager) AtomicUTXOManager {
+	return &atomicUTXOManager{
+		sm:    sm,
+		codec: codec,
+	}
+}
+
+func (a *atomicUTXOManager) GetAtomicUTXOs(
 	chainID ids.ID,
 	addrs set.Set[ids.ShortID],
 	startAddr ids.ShortID,
@@ -68,4 +72,27 @@ func GetAtomicUTXOs(
 		utxos[i] = utxo
 	}
 	return utxos, lastAddrID, lastUTXOID, nil
+}
+
+// GetAtomicUTXOs returns exported UTXOs such that at least one of the
+// addresses in [addrs] is referenced.
+//
+// Returns at most [limit] UTXOs.
+//
+// Returns:
+// * The fetched UTXOs
+// * The address associated with the last UTXO fetched
+// * The ID of the last UTXO fetched
+// * Any error that may have occurred upstream.
+func GetAtomicUTXOs(
+	sharedMemory atomic.SharedMemory,
+	codec codec.Manager,
+	chainID ids.ID,
+	addrs set.Set[ids.ShortID],
+	startAddr ids.ShortID,
+	startUTXOID ids.ID,
+	limit int,
+) ([]*UTXO, ids.ShortID, ids.ID, error) {
+	manager := NewAtomicUTXOManager(sharedMemory, codec)
+	return manager.GetAtomicUTXOs(chainID, addrs, startAddr, startUTXOID, limit)
 }

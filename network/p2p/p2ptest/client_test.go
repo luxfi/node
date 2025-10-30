@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2ptest
@@ -10,10 +10,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/math/set"
 )
 
 func TestClient_AppGossip(t *testing.T) {
@@ -34,7 +34,7 @@ func TestClient_AppGossip(t *testing.T) {
 		nodeID,
 		testHandler,
 	)
-	require.NoError(client.AppGossip(ctx, core.SendConfig{NodeIDs: []interface{}{nodeID}}, []byte("foobar")))
+	require.NoError(client.AppGossip(ctx, core.SendConfig{NodeIDs: set.Of(nodeID)}, []byte("foobar")))
 	<-appGossipChan
 }
 
@@ -90,11 +90,8 @@ func TestClient_AppRequest(t *testing.T) {
 			testHandler := p2p.TestHandler{
 				AppRequestF: func(context.Context, ids.NodeID, time.Time, []byte) ([]byte, *core.AppError) {
 					if tt.appErr != nil {
-						if appErr, ok := tt.appErr.(*core.AppError); ok {
-							return nil, appErr
-						}
 						return nil, &core.AppError{
-							Code:    500,
+							Code:    123,
 							Message: tt.appErr.Error(),
 						}
 					}
@@ -114,19 +111,7 @@ func TestClient_AppRequest(t *testing.T) {
 				client,
 				func(_ context.Context, _ ids.NodeID, responseBytes []byte, err error) {
 					defer close(appRequestChan)
-					if tt.appErr != nil {
-						require.Error(err)
-						if expectedAppErr, ok := tt.appErr.(*core.AppError); ok {
-							var appErr *core.AppError
-							require.ErrorAs(err, &appErr)
-							require.Equal(expectedAppErr.Code, appErr.Code)
-							require.Equal(expectedAppErr.Message, appErr.Message)
-						} else {
-							require.ErrorIs(err, tt.appErr)
-						}
-					} else {
-						require.NoError(err)
-					}
+					require.ErrorIs(err, tt.appErr)
 					require.Equal(tt.appResponse, responseBytes)
 				},
 			))

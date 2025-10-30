@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package payload
@@ -33,7 +33,7 @@ func ParseHash(b []byte) (*Hash, error) {
 	}
 	payload, ok := payloadIntf.(*Hash)
 	if !ok {
-		return nil, fmt.Errorf("%w: %T", errWrongType, payloadIntf)
+		return nil, fmt.Errorf("%w: %T", ErrWrongType, payloadIntf)
 	}
 	return payload, nil
 }

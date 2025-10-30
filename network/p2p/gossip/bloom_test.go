@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
 )
 
 func TestBloomFilterRefresh(t *testing.T) {
@@ -98,8 +97,7 @@ func TestBloomFilterRefresh(t *testing.T) {
 			}
 
 			require.Equal(tt.resetCount, resetCount)
-			// Note: Metrics validation disabled due to interface compatibility
-			// require.Equal(float64(tt.resetCount+1), testutil.ToFloat64(bloom.metric.ResetCount))
+			require.InDelta(float64(tt.resetCount+1), testutil.ToFloat64(bloom.metrics.ResetCount), 0)
 			for _, expected := range tt.expected {
 				require.True(bloom.Has(expected))
 			}

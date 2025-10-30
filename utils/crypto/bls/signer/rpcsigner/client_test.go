@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcsigner
@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/proto/pb/signer"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 )
 
 var (
@@ -121,9 +121,17 @@ func (c *stubClient) Sign(_ context.Context, in *signer.SignRequest, _ ...grpc.C
 		}, nil
 	// the client expects a compressed signature so this signature is invalid
 	case string(uncompressedSignatureMsg):
-		// Return an invalid uncompressed signature to trigger decompression error
+		sig, err := c.signer.Sign(in.Message)
+		if err != nil {
+			return nil, err
+		}
+
+		bytes := sig.Serialize()
+
 		return &signer.SignResponse{
-			Signature: make([]byte, 192), // Uncompressed BLS signature size
+			// here, we're using the compressed signature length
+			// we could also use the full signature
+			Signature: bytes[:bls.SignatureLen],
 		}, nil
 	case string(emptySignatureMsg):
 		return &signer.SignResponse{
@@ -148,9 +156,15 @@ func (c *stubClient) SignProofOfPossession(_ context.Context, in *signer.SignPro
 			Signature: bls.SignatureToBytes(sig),
 		}, nil
 	case string(uncompressedSignatureMsg):
-		// Return an invalid uncompressed signature to trigger decompression error
+		sig, err := c.signer.SignProofOfPossession(in.Message)
+		if err != nil {
+			return nil, err
+		}
+
+		bytes := sig.Serialize()
+
 		return &signer.SignProofOfPossessionResponse{
-			Signature: make([]byte, 192), // Uncompressed BLS signature size
+			Signature: bytes[:bls.SignatureLen],
 		}, nil
 	case string(emptySignatureMsg):
 		return &signer.SignProofOfPossessionResponse{

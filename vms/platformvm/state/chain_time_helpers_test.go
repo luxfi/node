@@ -1,7 +1,7 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package state_test
+package state
 
 import (
 	"testing"
@@ -10,14 +10,19 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/utils/units"
+	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
-	"github.com/luxfi/node/vms/platformvm/state"
-	"github.com/luxfi/node/vms/platformvm/state/statetest"
 	"github.com/luxfi/node/vms/platformvm/txs"
+
+	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"
+	validatorfee "github.com/luxfi/node/vms/platformvm/validators/fee"
 )
 
 func TestNextBlockTime(t *testing.T) {
@@ -61,14 +66,15 @@ func TestNextBlockTime(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var (
 				require = require.New(t)
-				s       = statetest.New(t, statetest.Config{DB: memdb.New()})
+				s       = newTestState(t, memdb.New())
 				clk     mockable.Clock
 			)
 
 			s.SetTimestamp(test.chainTime)
 			clk.Set(test.now)
 
-			actualTime, actualCapped, err := state.NextBlockTime(
+			actualTime, actualCapped, err := NextBlockTime(
+				genesis.LocalParams.ValidatorFeeConfig,
 				s,
 				&clk,
 			)
@@ -80,10 +86,17 @@ func TestNextBlockTime(t *testing.T) {
 }
 
 func TestGetNextStakerChangeTime(t *testing.T) {
+	config := validatorfee.Config{
+		Capacity:                 genesis.LocalParams.ValidatorFeeConfig.Capacity,
+		Target:                   genesis.LocalParams.ValidatorFeeConfig.Target,
+		MinPrice:                 gas.Price(2 * units.NanoLux), // Increase minimum price to test fractional seconds
+		ExcessConversionConstant: genesis.LocalParams.ValidatorFeeConfig.ExcessConversionConstant,
+	}
+
 	tests := []struct {
 		name         string
-		pending      []*state.Staker
-		l1Validators []state.L1Validator
+		pending      []*Staker
+		l1Validators []L1Validator
 		maxTime      time.Time
 		expected     time.Time
 	}{
@@ -94,12 +107,12 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 		},
 		{
 			name: "current and pending validators",
-			pending: []*state.Staker{
+			pending: []*Staker{
 				{
 					TxID:      ids.GenerateTestID(),
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: nil,
-					NetID:     constants.PrimaryNetworkID,
+					SubnetID:  constants.PrimaryNetworkID,
 					Weight:    1,
 					StartTime: genesistest.DefaultValidatorStartTime.Add(time.Second),
 					EndTime:   genesistest.DefaultValidatorEndTime,
@@ -112,10 +125,10 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 		},
 		{
 			name: "L1 validator with less than 1 second of fees",
-			l1Validators: []state.L1Validator{
+			l1Validators: []L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					NetID:          ids.GenerateTestID(),
+					SubnetID:          ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					Weight:            1,
 					EndAccumulatedFee: 1, // This validator should be evicted in .5 seconds, which is rounded to 0.
@@ -126,10 +139,10 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 		},
 		{
 			name: "L1 validator with 1 second of fees",
-			l1Validators: []state.L1Validator{
+			l1Validators: []L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					NetID:          ids.GenerateTestID(),
+					SubnetID:          ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					Weight:            1,
 					EndAccumulatedFee: 2, // This validator should be evicted in 1 second.
@@ -140,10 +153,10 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 		},
 		{
 			name: "L1 validator with less than 2 seconds of fees",
-			l1Validators: []state.L1Validator{
+			l1Validators: []L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					NetID:          ids.GenerateTestID(),
+					SubnetID:          ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					Weight:            1,
 					EndAccumulatedFee: 3, // This validator should be evicted in 1.5 seconds, which is rounded to 1.
@@ -154,10 +167,10 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 		},
 		{
 			name: "current and L1 validator with high balance",
-			l1Validators: []state.L1Validator{
+			l1Validators: []L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					NetID:          ids.GenerateTestID(),
+					SubnetID:          ids.GenerateTestID(),
 					NodeID:            ids.GenerateTestNodeID(),
 					Weight:            1,
 					EndAccumulatedFee: units.Lux, // This validator won't be evicted soon.
@@ -176,69 +189,60 @@ func TestGetNextStakerChangeTime(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var (
 				require = require.New(t)
-				s       = statetest.New(t, statetest.Config{DB: memdb.New()})
+				s       = newTestState(t, memdb.New())
 			)
 			for _, staker := range test.pending {
-				s.PutPendingValidator(staker)
+				require.NoError(s.PutPendingValidator(staker))
 			}
 			for _, l1Validator := range test.l1Validators {
 				require.NoError(s.PutL1Validator(l1Validator))
 			}
 
-			actual, err := state.GetNextStakerChangeTime(s)
+			actual, err := GetNextStakerChangeTime(
+				config,
+				s,
+				test.maxTime,
+			)
 			require.NoError(err)
 			require.Equal(test.expected.Local(), actual.Local())
 		})
 	}
 }
 
-// TestPickFeeCalculator is commented out because PickFeeCalculator was removed from the state package
-// func TestPickFeeCalculator(t *testing.T) {
-// 	// Use a default dynamic fee config for testing
-// 	dynamicFeeConfig := gas.Config{
-// 		Weights: gas.Dimensions{
-// 			gas.Bandwidth: 1,
-// 			gas.DBRead:    1,
-// 			gas.DBWrite:   1,
-// 			gas.Compute:   1,
-// 		},
-// 		MaxCapacity:     10_000_000,
-// 		MaxPerSecond:    1_000,
-// 		TargetPerSecond: 500,
-// 		MinPrice:        1,
-// 	}
+func TestPickFeeCalculator(t *testing.T) {
+	dynamicFeeConfig := genesis.LocalParams.DynamicFeeConfig
 
-// 	tests := []struct {
-// 		fork     upgradetest.Fork
-// 		expected txfee.Calculator
-// 	}{
-// 		{
-// 			fork:     upgradetest.ApricotPhase2,
-// 			expected: txfee.NewSimpleCalculator(0),
-// 		},
-// 		{
-// 			fork:     upgradetest.ApricotPhase3,
-// 			expected: txfee.NewSimpleCalculator(0),
-// 		},
-// 		{
-// 			fork: upgradetest.Etna,
-// 			expected: txfee.NewDynamicCalculator(
-// 				dynamicFeeConfig.Weights,
-// 				dynamicFeeConfig.MinPrice,
-// 			),
-// 		},
-// 	}
-// 	for _, test := range tests {
-// 		t.Run(test.fork.String(), func(t *testing.T) {
-// 			var (
-// 				config = &config.Internal{
-// 					DynamicFeeConfig: dynamicFeeConfig,
-// 					UpgradeConfig:    upgradetest.GetConfig(test.fork),
-// 				}
-// 				s = statetest.New(t, statetest.Config{DB: memdb.New()})
-// 			)
-// 			actual := state.PickFeeCalculator(config, s)
-// 			require.Equal(t, test.expected, actual)
-// 		})
-// 	}
-// }
+	tests := []struct {
+		fork     upgradetest.Fork
+		expected txfee.Calculator
+	}{
+		{
+			fork:     upgradetest.ApricotPhase2,
+			expected: txfee.NewSimpleCalculator(0),
+		},
+		{
+			fork:     upgradetest.ApricotPhase3,
+			expected: txfee.NewSimpleCalculator(0),
+		},
+		{
+			fork: upgradetest.Etna,
+			expected: txfee.NewDynamicCalculator(
+				dynamicFeeConfig.Weights,
+				dynamicFeeConfig.MinPrice,
+			),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.fork.String(), func(t *testing.T) {
+			var (
+				config = &config.Internal{
+					DynamicFeeConfig: dynamicFeeConfig,
+					UpgradeConfig:    upgradetest.GetConfig(test.fork),
+				}
+				s = newTestState(t, memdb.New())
+			)
+			actual := PickFeeCalculator(config, s)
+			require.Equal(t, test.expected, actual)
+		})
+	}
+}

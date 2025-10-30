@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 var (
@@ -69,9 +69,10 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 		return ids.Empty, ids.ShortID{}, err
 	}
 
-	chainID, err := a.ctx.BCLookup.Lookup(chainIDAlias)
+	// Try to parse chainIDAlias as an ID directly since consensus context doesn't have BCLookup
+	chainID, err := ids.FromString(chainIDAlias)
 	if err != nil {
-		return ids.Empty, ids.ShortID{}, err
+		return ids.Empty, ids.ShortID{}, fmt.Errorf("failed to parse chain ID %q: %w", chainIDAlias, err)
 	}
 
 	expectedHRP := constants.GetHRP(a.ctx.NetworkID)

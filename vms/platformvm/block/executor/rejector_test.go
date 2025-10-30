@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -8,10 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/mock/gomock"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -119,7 +121,8 @@ func TestRejectBlock(t *testing.T) {
 			blk, err := tt.newBlockFunc()
 			require.NoError(err)
 
-			mempool := mempool.NewMockMempool(ctrl)
+			mempool, err := mempool.New("", prometheus.NewRegistry())
+			require.NoError(err)
 			state := state.NewMockState(ctrl)
 			blkIDToState := map[ids.ID]*blockState{
 				blk.Parent(): nil,
@@ -134,13 +137,6 @@ func TestRejectBlock(t *testing.T) {
 				},
 				addTxsToMempool: true,
 			}
-
-			// Set expected calls on dependencies.
-			for _, tx := range blk.Txs() {
-				mempool.EXPECT().Add(tx).Return(nil).Times(1)
-			}
-
-			mempool.EXPECT().RequestBuildBlock(false).Times(1)
 
 			require.NoError(tt.rejectFunc(rejector, blk))
 			// Make sure block and its parent are removed from the state map.

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -13,13 +13,15 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/api"
-	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
+	"go.uber.org/zap"
 
 	"github.com/luxfi/log"
 )
@@ -33,11 +35,17 @@ func waitForCount(ctx context.Context, log log.Logger, name string, getCount get
 		func(_ context.Context) (bool, error) {
 			count, err := getCount()
 			if err != nil {
-				log.Warn("failed to query for collected count")
+				log.Warn("failed to query for collected count",
+					zap.String("type", name),
+					zap.Error(err),
+				)
 				return false, nil
 			}
 			if count > 0 {
-				log.Info("collected count is non-zero")
+				log.Info("collected count is non-zero",
+					zap.String("type", name),
+					zap.Int("count", count),
+				)
 			}
 			return count > 0, nil
 		},
@@ -68,7 +76,10 @@ func CheckLogsExist(ctx context.Context, log log.Logger, networkUUID string) err
 	}
 	query := fmt.Sprintf("sum(count_over_time({%s}[1h]))", selectors)
 
-	log.Info("checking if logs exist")
+	log.Info("checking if logs exist",
+		zap.String("url", url),
+		zap.String("query", query),
+	)
 
 	return waitForCount(
 		ctx,
@@ -172,7 +183,10 @@ func CheckMetricsExist(ctx context.Context, log log.Logger, networkUUID string) 
 	}
 	query := fmt.Sprintf("count({%s})", selectors)
 
-	log.Info("checking if metrics exist")
+	log.Info("checking if metrics exist",
+		zap.String("url", url),
+		zap.String("query", query),
+	)
 
 	return waitForCount(
 		ctx,
@@ -215,7 +229,9 @@ func queryPrometheus(
 		return 0, fmt.Errorf("query failed: %w", err)
 	}
 	if len(warnings) > 0 {
-		log.Warn("prometheus query warnings")
+		log.Warn("prometheus query warnings",
+			zap.Strings("warnings", warnings),
+		)
 	}
 
 	if matrix, ok := result.(model.Matrix); !ok {
@@ -246,8 +262,8 @@ func getSelectors(networkUUID string) (string, error) {
 
 	// Fall back to using Github labels as selectors
 	selectors := []string{}
-	githubLabels := GetGitHubLabels()
-	for label, value := range githubLabels {
+	for _, label := range githubLabels {
+		value := os.Getenv(strings.ToUpper(label))
 		if len(value) > 0 {
 			selectors = append(selectors, fmt.Sprintf(`%s="%s"`, label, value))
 		}

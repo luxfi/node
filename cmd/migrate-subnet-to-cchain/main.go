@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"os"
 	"time"
@@ -9,6 +10,30 @@ import (
 	"github.com/luxfi/geth/ethdb/badgerdb"
 	"github.com/luxfi/geth/ethdb/pebble"
 )
+
+// encodeBlockNumber encodes a block number as big-endian uint64
+func encodeBlockNumber(number uint64) []byte {
+	enc := make([]byte, 8)
+	binary.BigEndian.PutUint64(enc, number)
+	return enc
+}
+
+// canonicalHashKey returns the key for the canonical hash mapping
+// Format: 'h' + blockNumber + 'n'
+func canonicalHashKey(number uint64) []byte {
+	return append(append([]byte("h"), encodeBlockNumber(number)...), 'n')
+}
+
+// isHeaderKey checks if a key is a header key
+// Format: 'h' + blockNumber (8 bytes) + blockHash (32 bytes)
+func isHeaderKey(key []byte) (bool, uint64, common.Hash) {
+	if len(key) != 41 || key[0] != 'h' {
+		return false, 0, common.Hash{}
+	}
+	number := binary.BigEndian.Uint64(key[1:9])
+	hash := common.BytesToHash(key[9:41])
+	return true, number, hash
+}
 
 func main() {
 	if len(os.Args) < 3 {
@@ -64,6 +89,7 @@ func main() {
 	batch := targetDB.NewBatch()
 	count := 0
 	skipped := 0
+	canonicalMappings := 0
 	startTime := time.Now()
 
 	for iter.Next() {
@@ -93,13 +119,23 @@ func main() {
 		// Strip the namespace prefix
 		targetKey := sourceKey[namespaceLen:]
 
-		// Add to batch
+		// Add original key-value to batch
 		if err := batch.Put(targetKey, value); err != nil {
 			fmt.Printf("❌ Failed to add key to batch: %v\n", err)
 			os.Exit(1)
 		}
 
 		count++
+
+		// If this is a header key, also create canonical hash mapping
+		if isHeader, blockNum, blockHash := isHeaderKey(targetKey); isHeader {
+			canonicalKey := canonicalHashKey(blockNum)
+			if err := batch.Put(canonicalKey, blockHash.Bytes()); err != nil {
+				fmt.Printf("❌ Failed to add canonical mapping: %v\n", err)
+				os.Exit(1)
+			}
+			canonicalMappings++
+		}
 
 		// Commit batch every 10000 keys
 		if count%10000 == 0 {
@@ -112,8 +148,8 @@ func main() {
 			elapsed := time.Since(startTime)
 			keysPerSec := float64(count) / elapsed.Seconds()
 
-			fmt.Printf("  Progress: %d keys migrated, %d skipped (%.0f keys/sec)\n",
-				count, skipped, keysPerSec)
+			fmt.Printf("  Progress: %d keys migrated, %d canonical mappings, %d skipped (%.0f keys/sec)\n",
+				count, canonicalMappings, skipped, keysPerSec)
 		}
 	}
 
@@ -130,11 +166,13 @@ func main() {
 
 	elapsed := time.Since(startTime)
 	fmt.Printf("\n✅ Migration complete!\n")
-	fmt.Printf("   Keys migrated: %d\n", count)
-	fmt.Printf("   Keys skipped:  %d\n", skipped)
-	fmt.Printf("   Time taken:    %s\n", elapsed.Round(time.Second))
-	fmt.Printf("   Average speed: %.0f keys/sec\n\n", float64(count)/elapsed.Seconds())
+	fmt.Printf("   Keys migrated:       %d\n", count)
+	fmt.Printf("   Canonical mappings:  %d\n", canonicalMappings)
+	fmt.Printf("   Keys skipped:        %d\n", skipped)
+	fmt.Printf("   Time taken:          %s\n", elapsed.Round(time.Second))
+	fmt.Printf("   Average speed:       %.0f keys/sec\n\n", float64(count)/elapsed.Seconds())
 
 	fmt.Printf("📍 Target database ready at: %s\n", targetPath)
-	fmt.Printf("\nYou can now start your C-Chain node using this database!\n")
+	fmt.Printf("\n✅ Database includes canonical hash mappings for Coreth!\n")
+	fmt.Printf("You can now start your C-Chain node using this database.\n")
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package dialer
@@ -12,6 +12,7 @@ import (
 
 	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/network/throttling"
+	"github.com/luxfi/log"
 )
 
 var _ Dialer = (*dialer)(nil)
@@ -25,7 +26,7 @@ type Dialer interface {
 
 type dialer struct {
 	dialer    net.Dialer
-	log       luxlog.Logger
+	log       log.Logger
 	network   string
 	throttler throttling.DialThrottler
 }
@@ -40,7 +41,7 @@ type Config struct {
 // [dialerConfig.connectionTimeout] gives the timeout when dialing an IP.
 // [dialerConfig.throttleRps] gives the max number of outgoing connection attempts/second.
 // If [dialerConfig.throttleRps] == 0, outgoing connections aren't rate-limited.
-func NewDialer(network string, dialerConfig Config, log luxlog.Logger) Dialer {
+func NewDialer(network string, dialerConfig Config, log log.Logger) Dialer {
 	var throttler throttling.DialThrottler
 	if dialerConfig.ThrottleRps <= 0 {
 		throttler = throttling.NewNoDialThrottler()

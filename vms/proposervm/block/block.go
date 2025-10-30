@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	nodeids "github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
@@ -21,6 +20,13 @@ var (
 	errUnexpectedSignature = errors.New("signature provided when none was expected")
 	errInvalidCertificate  = errors.New("invalid certificate")
 )
+
+// Epoch represents a P-Chain epoch for validator set coordination
+type Epoch struct {
+	PChainHeight uint64 `serialize:"true" json:"pChainHeight"`
+	Number       uint64 `serialize:"true" json:"number"`
+	StartTime    int64  `serialize:"true" json:"startTime"`
+}
 
 type Block interface {
 	ID() ids.ID
@@ -36,6 +42,7 @@ type SignedBlock interface {
 	Block
 
 	PChainHeight() uint64
+	PChainEpoch() Epoch
 	Timestamp() time.Time
 
 	// Proposer returns the ID of the node that proposed this block. If no node
@@ -47,6 +54,7 @@ type statelessUnsignedBlock struct {
 	ParentID     ids.ID `serialize:"true"`
 	Timestamp    int64  `serialize:"true"`
 	PChainHeight uint64 `serialize:"true"`
+	Epoch        Epoch  `serialize:"true"`
 	Certificate  []byte `serialize:"true"`
 	Block        []byte `serialize:"true"`
 }
@@ -99,7 +107,10 @@ func (b *statelessBlock) initialize(bytes []byte) error {
 		return fmt.Errorf("%w: %w", errInvalidCertificate, err)
 	}
 
-	b.proposer = ids.NodeID(nodeids.NodeIDFromCert(b.cert))
+	b.proposer = ids.NodeIDFromCert(&ids.Certificate{
+		Raw:       b.cert.Raw,
+		PublicKey: b.cert.PublicKey,
+	})
 	return nil
 }
 
@@ -126,6 +137,10 @@ func (b *statelessBlock) verify(chainID ids.ID) error {
 
 func (b *statelessBlock) PChainHeight() uint64 {
 	return b.StatelessBlock.PChainHeight
+}
+
+func (b *statelessBlock) PChainEpoch() Epoch {
+	return b.StatelessBlock.Epoch
 }
 
 func (b *statelessBlock) Timestamp() time.Time {

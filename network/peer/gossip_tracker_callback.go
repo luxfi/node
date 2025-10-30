@@ -1,11 +1,13 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
 
 import (
-	"github.com/luxfi/consensus/validators"
+	"go.uber.org/zap"
+
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/log"
 )
 
@@ -20,19 +22,14 @@ type GossipTrackerCallback struct {
 
 // OnValidatorAdded adds [validatorID] to the set of validators that can be
 // gossiped about
-func (g *GossipTrackerCallback) OnValidatorAdded(
-	nodeID ids.NodeID,
-	weight uint64,
-) {
-	// For compatibility, use empty ID for TxID when not available
+func (g *GossipTrackerCallback) OnValidatorAdded(nodeID ids.NodeID, _ uint64) {
 	vdr := ValidatorID{
 		NodeID: nodeID,
-		TxID:   ids.Empty,
+		TxID:   ids.Empty, // No longer provided, use empty ID
 	}
 	if !g.GossipTracker.AddValidator(vdr) {
 		g.Log.Error("failed to add a validator",
-			log.Stringer("nodeID", nodeID),
-			log.Uint64("weight", weight),
+			zap.Stringer("nodeID", nodeID),
 		)
 	}
 }
@@ -47,10 +44,6 @@ func (g *GossipTrackerCallback) OnValidatorRemoved(nodeID ids.NodeID, _ uint64) 
 	}
 }
 
-// OnValidatorWeightChanged does nothing because PeerList gossip doesn't care
-// about validator weights.
-func (*GossipTrackerCallback) OnValidatorWeightChanged(ids.NodeID, uint64, uint64) {}
-
 // OnValidatorLightChanged does nothing because PeerList gossip doesn't care
-// about validator light values.
+// about validator weights.
 func (*GossipTrackerCallback) OnValidatorLightChanged(ids.NodeID, uint64, uint64) {}

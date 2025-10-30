@@ -63,15 +63,12 @@ tests/upgrade/upgrade.test
 vendor
 
 **/testdata
-staking
 
-# Go workspace files
-go.work
-go.work.sum
+*.bak*
 
-# AI/LLM instruction symlinks
-CLAUDE.md
 AGENTS.md
+CLAUDE.md
 GEMINI.md
-QWEN.md
 GROK.md
+QWEN.md
+.env

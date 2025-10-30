@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
-	utilmetric "github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
 

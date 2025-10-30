@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -7,11 +7,13 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
+
 	_ "embed"
 
 	"github.com/luxfi/log"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -34,8 +36,8 @@ type kubeCollectorConfig struct {
 	manifest     []byte
 }
 
-// deployKubeCollectors deploys collectors of logs and metrics to a Kubernetes cluster.
-func deployKubeCollectors(
+// DeployKubeCollectors deploys collectors of logs and metrics to a Kubernetes cluster.
+func DeployKubeCollectors(
 	ctx context.Context,
 	log log.Logger,
 	configPath string,
@@ -86,7 +88,10 @@ func deployKubeCollectors(
 		},
 	}
 	for _, collectorConfig := range collectorConfigs {
-		log.Debug("log statement")
+		log.Info("deploying kube collector",
+			zap.String("cmd", collectorConfig.name),
+			zap.String("target", collectorConfig.target),
+		)
 		if err := deployKubeCollector(ctx, log, clientset, dynamicClient, collectorConfig); err != nil {
 			return err
 		}
@@ -140,13 +145,19 @@ func createCredentialSecret(
 	_, err := clientset.CoreV1().Secrets(monitoringNamespace).Create(ctx, secret, metav1.CreateOptions{})
 	if err != nil {
 		if apierrors.IsAlreadyExists(err) {
-			log.Debug("log statement")
+			log.Info("secret already exists",
+				zap.String("namespace", monitoringNamespace),
+				zap.String("name", secretName),
+			)
 			return nil
 		}
 		return fmt.Errorf("failed to create secret %s/%s: %w", monitoringNamespace, secretName, err)
 	}
 
-	log.Debug("log statement")
+	log.Info("created secret",
+		zap.String("namespace", monitoringNamespace),
+		zap.String("name", secretName),
+	)
 
 	return nil
 }

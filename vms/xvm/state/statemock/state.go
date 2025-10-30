@@ -15,9 +15,9 @@ import (
 
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
-	lux "github.com/luxfi/node/vms/components/lux"
 	block "github.com/luxfi/node/vms/xvm/block"
 	txs "github.com/luxfi/node/vms/xvm/txs"
+	lux "github.com/luxfi/node/vms/components/lux"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -58,15 +58,15 @@ func (mr *StateMockRecorder) Abort() *gomock.Call {
 }
 
 // AddBlock mocks base method.
-func (m *State) AddBlock(arg0 block.Block) {
+func (m *State) AddBlock(block block.Block) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddBlock", arg0)
+	m.ctrl.Call(m, "AddBlock", block)
 }
 
 // AddBlock indicates an expected call of AddBlock.
-func (mr *StateMockRecorder) AddBlock(arg0 any) *gomock.Call {
+func (mr *StateMockRecorder) AddBlock(block any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBlock", reflect.TypeOf((*State)(nil).AddBlock), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBlock", reflect.TypeOf((*State)(nil).AddBlock), block)
 }
 
 // AddTx mocks base method.
@@ -93,19 +93,18 @@ func (mr *StateMockRecorder) AddUTXO(utxo any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUTXO", reflect.TypeOf((*State)(nil).AddUTXO), utxo)
 }
 
-// Checksums mocks base method.
-func (m *State) Checksums() (ids.ID, ids.ID) {
+// Checksum mocks base method.
+func (m *State) Checksum() ids.ID {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Checksums")
+	ret := m.ctrl.Call(m, "Checksum")
 	ret0, _ := ret[0].(ids.ID)
-	ret1, _ := ret[1].(ids.ID)
-	return ret0, ret1
+	return ret0
 }
 
-// Checksums indicates an expected call of Checksums.
-func (mr *StateMockRecorder) Checksums() *gomock.Call {
+// Checksum indicates an expected call of Checksum.
+func (mr *StateMockRecorder) Checksum() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checksums", reflect.TypeOf((*State)(nil).Checksums))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checksum", reflect.TypeOf((*State)(nil).Checksum))
 }
 
 // Close mocks base method.

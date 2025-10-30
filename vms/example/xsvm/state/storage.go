@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/math"
+	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
@@ -87,11 +87,7 @@ func AddBlock(db database.KeyValueWriter, height uint64, blkID ids.ID, blk []byt
 
 func GetNonce(db database.KeyValueReader, address ids.ShortID) (uint64, error) {
 	key := Flatten(addressPrefix, address[:])
-	nonce, err := database.GetUInt64(db, key)
-	if errors.Is(err, database.ErrNotFound) {
-		return 0, nil
-	}
-	return nonce, err
+	return database.WithDefault(database.GetUInt64, db, key, 0)
 }
 
 func SetNonce(db database.KeyValueWriter, address ids.ShortID, nonce uint64) error {
@@ -112,11 +108,7 @@ func IncrementNonce(db database.KeyValueReaderWriter, address ids.ShortID, nonce
 
 func GetBalance(db database.KeyValueReader, address ids.ShortID, chainID ids.ID) (uint64, error) {
 	key := Flatten(addressPrefix, address[:], chainID[:])
-	balance, err := database.GetUInt64(db, key)
-	if errors.Is(err, database.ErrNotFound) {
-		return 0, nil
-	}
-	return balance, err
+	return database.WithDefault(database.GetUInt64, db, key, 0)
 }
 
 func SetBalance(db database.KeyValueWriterDeleter, address ids.ShortID, chainID ids.ID, balance uint64) error {
@@ -143,7 +135,7 @@ func IncreaseBalance(db database.KeyValueReaderWriterDeleter, address ids.ShortI
 	if err != nil {
 		return err
 	}
-	balance, err = math.Add64(balance, amount)
+	balance, err = math.Add(balance, amount)
 	if err != nil {
 		return err
 	}
@@ -164,11 +156,7 @@ func AddLoanID(db database.KeyValueWriter, chainID ids.ID, loanID ids.ID) error 
 
 func GetLoan(db database.KeyValueReader, chainID ids.ID) (uint64, error) {
 	key := Flatten(chainPrefix, chainID[:])
-	balance, err := database.GetUInt64(db, key)
-	if errors.Is(err, database.ErrNotFound) {
-		return 0, nil
-	}
-	return balance, err
+	return database.WithDefault(database.GetUInt64, db, key, 0)
 }
 
 func SetLoan(db database.KeyValueWriterDeleter, chainID ids.ID, balance uint64) error {
@@ -195,7 +183,7 @@ func IncreaseLoan(db database.KeyValueReaderWriterDeleter, chainID ids.ID, amoun
 	if err != nil {
 		return err
 	}
-	balance, err = math.Add64(balance, amount)
+	balance, err = math.Add(balance, amount)
 	if err != nil {
 		return err
 	}

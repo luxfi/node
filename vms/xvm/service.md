@@ -1,3 +1,9 @@
+<<<<<<< HEAD:vms/avm/service.md
+The [X-Chain](https://build.lux.network/docs/quick-start/primary-network#x-chain),
+Lux's native platform for creating and trading assets, is an instance of the Lux Virtual
+Machine (AVM). This API allows clients to create and trade assets on the X-Chain and other instances
+of the AVM.
+=======
 ---
 tags: [X-Chain, Lux Node APIs]
 description: This page is an overview of the Exchange Chain (X-Chain) API associated with Lux Node.
@@ -11,11 +17,12 @@ The [X-Chain](/learn/lux/lux-platform.md#x-chain),
 Lux’s native platform for creating and trading assets, is an instance of the Lux Virtual
 Machine (XVM). This API allows clients to create and trade assets on the X-Chain and other instances
 of the XVM.
+>>>>>>> origin/regenesis-runtime-replay:vms/xvm/service.md
 
 ## Format
 
 This API uses the `json 2.0` RPC format. For more information on making JSON RPC calls, see
-[here](/reference/standards/guides/issuing-api-calls.md).
+[here](https://build.lux.network/docs/api-reference/guides/issuing-api-calls).
 
 ## Endpoints
 
@@ -26,6 +33,9 @@ blockchain running the XVM.
 
 ## Methods
 
+<<<<<<< HEAD:vms/avm/service.md
+### `avm.getAllBalances`
+=======
 ### `xvm.buildGenesis`
 
 Given a JSON representation of this Virtual Machine’s genesis state, create the byte representation
@@ -729,12 +739,11 @@ curl -X POST --data '{
 ```
 
 ### `xvm.getAllBalances`
+>>>>>>> origin/regenesis-runtime-replay:vms/xvm/service.md
 
-:::caution
-
+<Callout type="warn">
 Deprecated as of [**v1.9.12**](https://github.com/luxfi/node/releases/tag/v1.9.12).
-
-:::
+</Callout>
 
 Get the balances of all assets controlled by a given address.
 
@@ -806,8 +815,7 @@ xvm.getAssetDescription({assetID: string}) -> {
   of this asset are displayed as 10.0. If denomination is 2, 100 units of this asset are displays as
   .100, etc.
 
-:::note
-
+<Callout type="note">
 The AssetID for LUX differs depending on the network you are on.
 
 Mainnet: FvwEAhmxKfeiG8SnEvq42hc6whRyY3EFYAvebMqDNDGCgxN5Z
@@ -815,9 +823,14 @@ Mainnet: FvwEAhmxKfeiG8SnEvq42hc6whRyY3EFYAvebMqDNDGCgxN5Z
 Testnet: U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK
 
 For finding the `assetID` of other assets, this [info] might be useful.
+<<<<<<< HEAD:vms/avm/service.md
+Also, `avm.getUTXOs` returns the `assetID` in its output.
+</Callout>
+=======
 Also, `xvm.getUTXOs` returns the `assetID` in its output.
 
 :::
+>>>>>>> origin/regenesis-runtime-replay:vms/xvm/service.md
 
 **Example Call:**
 
@@ -849,11 +862,9 @@ curl -X POST --data '{
 
 ### `xvm.getBalance`
 
-:::caution
-
+<Callout type="warn">
 Deprecated as of [**v1.9.12**](https://github.com/luxfi/node/releases/tag/v1.9.12).
-
-:::
+</Callout>
 
 Get the balance of an asset controlled by a given address.
 
@@ -989,10 +1000,14 @@ xvm.getBlockByHeight({
 ```sh
 curl -X POST --data '{
     "jsonrpc": "2.0",
+<<<<<<< HEAD:vms/avm/service.md
+    "method": "avm.getBlockByHeight",
+=======
     "method": "xvm.getBlockByHeight”,
+>>>>>>> origin/regenesis-runtime-replay:vms/xvm/service.md
     "params": {
-        “height”: “275686313486”,
-        "encoding": “hex”
+        "height": "275686313486",
+        "encoding": "hex"
     },
     "id": 1
 }' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/X
@@ -1177,11 +1192,56 @@ Most outputs use the secp256k1 FX, look like this:
 The above output can be consumed after Unix time `locktime` by a transaction that has signatures
 from `threshold` of the addresses in `addresses`.
 
-### `xvm.getTxStatus`
+<<<<<<< HEAD:vms/avm/service.md
+### `avm.getTxFee`
 
-:::caution
+Get the fees of the network.
+
+**Signature**:
+
+```
+avm.getTxFee() ->
+{
+  txFee: uint64,
+  createAssetTxFee: uint64,
+}
+```
+
+- `txFee` is the default fee for making transactions.
+- `createAssetTxFee` is the fee for creating a new asset.
+
+All fees are denominated in nLUX.
+
+**Example Call**:
+
+```sh
+curl -X POST --data '{
+    "jsonrpc":"2.0",
+    "id"     : 1,
+    "method" :"avm.getTxFee",
+}' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/X
+```
+
+**Example Response**:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "txFee": "1000000",
+    "createAssetTxFee": "10000000"
+  }
+}
+```
+
+### `avm.getTxStatus`
+=======
+### `xvm.getTxStatus`
+>>>>>>> origin/regenesis-runtime-replay:vms/xvm/service.md
+
+<Callout type="warn">
 Deprecated as of **v1.10.0**.
-:::
+</Callout>
 
 Get the status of a transaction sent to the network.
 
@@ -1390,6 +1450,9 @@ This gives response:
 }
 ```
 
+<<<<<<< HEAD:vms/avm/service.md
+### `avm.issueTx`
+=======
 ### `xvm.import`
 
 :::caution
@@ -1509,6 +1572,7 @@ curl -X POST --data '{
 ```
 
 ### `xvm.issueTx`
+>>>>>>> origin/regenesis-runtime-replay:vms/xvm/service.md
 
 Send a signed transaction to the network. `encoding` specifies the format of the signed transaction.
 Can only be `hex` when a value is provided.
@@ -1550,6 +1614,8 @@ curl -X POST --data '{
 }
 ```
 
+<<<<<<< HEAD:vms/avm/service.md
+=======
 ### `xvm.listAddresses`
 
 :::caution
@@ -1982,6 +2048,7 @@ curl -X POST --data '{
 }
 ```
 
+>>>>>>> origin/regenesis-runtime-replay:vms/xvm/service.md
 ### `wallet.issueTx`
 
 Send a signed transaction to the network and assume the TX will be accepted. `encoding` specifies
@@ -2033,6 +2100,8 @@ curl -X POST --data '{
   }
 }
 ```
+<<<<<<< HEAD:vms/avm/service.md
+=======
 
 ### `wallet.send`
 
@@ -2317,3 +2386,4 @@ Calling **NewSet** or **NewBloom** resets the filter, and must be followed with 
 ```json
 2021/05/11 15:59:35 {"txID":"22HWKHrREyXyAiDnVmGp3TQQ79tHSSVxA9h26VfDEzoxvwveyk"}
 ```
+>>>>>>> origin/regenesis-runtime-replay:vms/xvm/service.md

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package scheduler
@@ -6,7 +6,9 @@ package scheduler
 import (
 	"time"
 
-	"github.com/luxfi/consensus/core"
+	"go.uber.org/zap"
+
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/log"
 )
 
@@ -37,8 +39,8 @@ type scheduler struct {
 	newBuildBlockTime chan time.Time
 }
 
-func New(log log.Logger, toEngine chan<- core.MessageType) (Scheduler, chan<- core.MessageType) {
-	vmToEngine := make(chan core.MessageType, cap(toEngine))
+func New(log log.Logger, toEngine chan<- common.Message) (Scheduler, chan<- common.Message) {
+	vmToEngine := make(chan common.Message, cap(toEngine))
 	return &scheduler{
 		log:               log,
 		fromVM:            vmToEngine,
@@ -81,8 +83,8 @@ waitloop:
 					// If the channel to the engine is full, drop the message
 					// from the VM to avoid deadlock
 					s.log.Debug("dropping message from VM",
-						log.UserString("reason", "channel to engine is full"),
-						log.Stringer("message", msg),
+						zap.String("reason", "channel to engine is full"),
+						zap.String("messageType", msg.Type.String()),
 					)
 				}
 			case buildBlockTime, ok := <-s.newBuildBlockTime:

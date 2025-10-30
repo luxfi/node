@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -7,16 +7,17 @@ import (
 	"sync"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
+	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	nodevalidators "github.com/luxfi/node/validators"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
 
 type insecureValidatorManager struct {
-	Router
+	router.Router
 	log    log.Logger
-	vdrs   nodevalidators.Manager
+	vdrs   validators.Manager
 	weight uint64
 	// Keep track of added validators locally
 	validators map[ids.ID]map[ids.NodeID]uint64

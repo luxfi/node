@@ -12,8 +12,8 @@ package executormock
 import (
 	reflect "reflect"
 
-	chain "github.com/luxfi/consensus/protocol/chain"
 	ids "github.com/luxfi/ids"
+	snowman "github.com/luxfi/consensus/engine/chain/block"
 	set "github.com/luxfi/math/set"
 	block "github.com/luxfi/node/vms/platformvm/block"
 	state "github.com/luxfi/node/vms/platformvm/state"
@@ -133,11 +133,9 @@ func (mr *ManagerMockRecorder) Preferred() *gomock.Call {
 }
 
 // SetPreference mocks base method.
-func (m *Manager) SetPreference(blkID ids.ID) bool {
+func (m *Manager) SetPreference(blkID ids.ID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetPreference", blkID)
-	ret0, _ := ret[0].(bool)
-	return ret0
+	m.ctrl.Call(m, "SetPreference", blkID)
 }
 
 // SetPreference indicates an expected call of SetPreference.

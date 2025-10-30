@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package importtx
@@ -14,6 +14,8 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api/info"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/example/xsvm/api"
 	"github.com/luxfi/node/vms/example/xsvm/cmd/issue/status"
 	"github.com/luxfi/node/vms/example/xsvm/tx"

@@ -12,8 +12,8 @@ package executormock
 import (
 	reflect "reflect"
 
-	chain "github.com/luxfi/consensus/protocol/chain"
 	ids "github.com/luxfi/ids"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	set "github.com/luxfi/math/set"
 	block "github.com/luxfi/node/vms/xvm/block"
 	state "github.com/luxfi/node/vms/xvm/state"
@@ -46,10 +46,10 @@ func (m *Manager) EXPECT() *ManagerMockRecorder {
 }
 
 // GetBlock mocks base method.
-func (m *Manager) GetBlock(blkID ids.ID) (chain.Block, error) {
+func (m *Manager) GetBlock(blkID ids.ID) (chainblock.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlock", blkID)
-	ret0, _ := ret[0].(chain.Block)
+	ret0, _ := ret[0].(chainblock.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -105,10 +105,10 @@ func (mr *ManagerMockRecorder) LastAccepted() *gomock.Call {
 }
 
 // NewBlock mocks base method.
-func (m *Manager) NewBlock(arg0 block.Block) chain.Block {
+func (m *Manager) NewBlock(arg0 block.Block) chainblock.Block {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewBlock", arg0)
-	ret0, _ := ret[0].(chain.Block)
+	ret0, _ := ret[0].(chainblock.Block)
 	return ret0
 }
 

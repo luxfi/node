@@ -1,17 +1,18 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package keychain
 
 import (
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 )
 
 // Keychain interface that wallet signers can use
 // This allows both secp256k1fx.Keychain and ledger-lux-go/keychain.Keychain to be used
 // Generic across chains, DAGs, and post-quantum crypto
 type Keychain interface {
-	Addresses() []ids.ShortID
+	Addresses() set.Set[ids.ShortID]
 	Get(ids.ShortID) (Signer, bool)
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -9,9 +9,10 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/math"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/node/utils/math"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"
@@ -213,7 +214,7 @@ func (b *builder) NewBaseTx(
 	}
 	for _, out := range outputs {
 		assetID := out.AssetID()
-		amountToBurn, err := math.Add64(toBurn[assetID], out.Out.Amount())
+		amountToBurn, err := math.Add(toBurn[assetID], out.Out.Amount())
 		if err != nil {
 			return nil, err
 		}
@@ -408,7 +409,7 @@ func (b *builder) NewImportTx(
 		})
 
 		assetID := utxo.AssetID()
-		newImportedAmount, err := math.Add64(importedAmounts[assetID], out.Amt)
+		newImportedAmount, err := math.Add(importedAmounts[assetID], out.Amt)
 		if err != nil {
 			return nil, err
 		}
@@ -480,7 +481,7 @@ func (b *builder) NewExportTx(
 	}
 	for _, out := range outputs {
 		assetID := out.AssetID()
-		amountToBurn, err := math.Add64(toBurn[assetID], out.Out.Amount())
+		amountToBurn, err := math.Add(toBurn[assetID], out.Out.Amount())
 		if err != nil {
 			return nil, err
 		}
@@ -540,7 +541,7 @@ func (b *builder) getBalance(
 		}
 
 		assetID := utxo.AssetID()
-		balance[assetID], err = math.Add64(balance[assetID], out.Amt)
+		balance[assetID], err = math.Add(balance[assetID], out.Amt)
 		if err != nil {
 			return nil, err
 		}

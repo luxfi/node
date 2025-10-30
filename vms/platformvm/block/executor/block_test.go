@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -11,10 +11,10 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus/uptime/uptimemock"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -24,151 +24,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
 )
-
-// mockCalculator is a simple mock for uptime.Calculator
-type mockCalculator struct {
-	calculateUptimeF            func(ids.NodeID, ids.ID) (time.Duration, time.Duration, error)
-	calculateUptimePercentF     func(ids.NodeID, ids.ID) (float64, error)
-	calculateUptimePercentFromF func(ids.NodeID, ids.ID, time.Time) (float64, error)
-	setCalculateUptimeF         func(ids.NodeID, ids.ID, time.Duration)
-}
-
-func (m *mockCalculator) CalculateUptime(nodeID ids.NodeID, subnetID ids.ID) (time.Duration, time.Duration, error) {
-	if m.calculateUptimeF != nil {
-		return m.calculateUptimeF(nodeID, subnetID)
-	}
-	return 0, 0, nil
-}
-
-func (m *mockCalculator) CalculateUptimePercent(nodeID ids.NodeID, subnetID ids.ID) (float64, error) {
-	if m.calculateUptimePercentF != nil {
-		return m.calculateUptimePercentF(nodeID, subnetID)
-	}
-	return 1.0, nil
-}
-
-func (m *mockCalculator) CalculateUptimePercentFrom(nodeID ids.NodeID, subnetID ids.ID, startTime time.Time) (float64, error) {
-	if m.calculateUptimePercentFromF != nil {
-		return m.calculateUptimePercentFromF(nodeID, subnetID, startTime)
-	}
-	return 1.0, nil
-}
-
-func (m *mockCalculator) SetCalculateUptime(nodeID ids.NodeID, subnetID ids.ID, upDuration time.Duration) {
-	if m.setCalculateUptimeF != nil {
-		m.setCalculateUptimeF(nodeID, subnetID, upDuration)
-	}
-}
-
-func (m *mockCalculator) SetCalculator(ids.ID, uptime.Calculator) error {
-	// Mock implementation - do nothing
-	return nil
-}
-
-func TestStatus(t *testing.T) {
-	type test struct {
-		name           string
-		blockF         func(*gomock.Controller) *Block
-		expectedStatus choices.Status
-	}
-
-	tests := []test{
-		{
-			name: "last accepted",
-			blockF: func(ctrl *gomock.Controller) *Block {
-				blkID := ids.GenerateTestID()
-				statelessBlk := block.NewMockBlock(ctrl)
-				statelessBlk.EXPECT().ID().Return(blkID)
-
-				manager := &manager{
-					backend: &backend{
-						lastAccepted: blkID,
-					},
-				}
-
-				return &Block{
-					Block:   statelessBlk,
-					manager: manager,
-				}
-			},
-			expectedStatus: choices.Accepted,
-		},
-		{
-			name: "processing",
-			blockF: func(ctrl *gomock.Controller) *Block {
-				blkID := ids.GenerateTestID()
-				statelessBlk := block.NewMockBlock(ctrl)
-				statelessBlk.EXPECT().ID().Return(blkID)
-
-				manager := &manager{
-					backend: &backend{
-						blkIDToState: map[ids.ID]*blockState{
-							blkID: {},
-						},
-					},
-				}
-				return &Block{
-					Block:   statelessBlk,
-					manager: manager,
-				}
-			},
-			expectedStatus: choices.Processing,
-		},
-		{
-			name: "in database",
-			blockF: func(ctrl *gomock.Controller) *Block {
-				blkID := ids.GenerateTestID()
-				statelessBlk := block.NewMockBlock(ctrl)
-				statelessBlk.EXPECT().ID().Return(blkID)
-
-				state := state.NewMockState(ctrl)
-				state.EXPECT().GetStatelessBlock(blkID).Return(statelessBlk, nil)
-
-				manager := &manager{
-					backend: &backend{
-						state: state,
-					},
-				}
-				return &Block{
-					Block:   statelessBlk,
-					manager: manager,
-				}
-			},
-			expectedStatus: choices.Accepted,
-		},
-		{
-			name: "not in map or database",
-			blockF: func(ctrl *gomock.Controller) *Block {
-				blkID := ids.GenerateTestID()
-				statelessBlk := block.NewMockBlock(ctrl)
-				statelessBlk.EXPECT().ID().Return(blkID)
-
-				state := state.NewMockState(ctrl)
-				state.EXPECT().GetStatelessBlock(blkID).Return(nil, database.ErrNotFound)
-
-				manager := &manager{
-					backend: &backend{
-						state: state,
-					},
-				}
-				return &Block{
-					Block:   statelessBlk,
-					manager: manager,
-				}
-			},
-			expectedStatus: choices.Processing,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-
-			blk := tt.blockF(ctrl)
-			require.Equal(t, tt.expectedStatus, blk.Status())
-		})
-	}
-}
 
 func TestBlockOptions(t *testing.T) {
 	type test struct {
@@ -183,7 +38,7 @@ func TestBlockOptions(t *testing.T) {
 			blkF: func(ctrl *gomock.Controller) *Block {
 				state := state.NewMockState(ctrl)
 
-				uptimes := &mockCalculator{}
+				uptimes := uptimemock.NewCalculator(ctrl)
 
 				manager := &manager{
 					backend: &backend{
@@ -191,7 +46,7 @@ func TestBlockOptions(t *testing.T) {
 						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
-						Config: &config.Config{
+						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
 						Uptimes: uptimes,
@@ -210,7 +65,7 @@ func TestBlockOptions(t *testing.T) {
 			blkF: func(ctrl *gomock.Controller) *Block {
 				state := state.NewMockState(ctrl)
 
-				uptimes := &mockCalculator{}
+				uptimes := uptimemock.NewCalculator(ctrl)
 
 				manager := &manager{
 					backend: &backend{
@@ -218,7 +73,7 @@ func TestBlockOptions(t *testing.T) {
 						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
-						Config: &config.Config{
+						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
 						Uptimes: uptimes,
@@ -246,7 +101,7 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(nil, status.Unknown, database.ErrNotFound)
 
-				uptimes := &mockCalculator{}
+				uptimes := uptimemock.NewCalculator(ctrl)
 
 				manager := &manager{
 					backend: &backend{
@@ -254,7 +109,7 @@ func TestBlockOptions(t *testing.T) {
 						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
-						Config: &config.Config{
+						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
 						Uptimes: uptimes,
@@ -284,7 +139,7 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(nil, status.Unknown, database.ErrClosed)
 
-				uptimes := &mockCalculator{}
+				uptimes := uptimemock.NewCalculator(ctrl)
 
 				manager := &manager{
 					backend: &backend{
@@ -292,7 +147,7 @@ func TestBlockOptions(t *testing.T) {
 						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
-						Config: &config.Config{
+						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
 						Uptimes: uptimes,
@@ -325,7 +180,7 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 
-				uptimes := &mockCalculator{}
+				uptimes := uptimemock.NewCalculator(ctrl)
 
 				manager := &manager{
 					backend: &backend{
@@ -333,7 +188,7 @@ func TestBlockOptions(t *testing.T) {
 						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
-						Config: &config.Config{
+						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
 						Uptimes: uptimes,
@@ -376,7 +231,7 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(nil, database.ErrNotFound)
 
-				uptimes := &mockCalculator{}
+				uptimes := uptimemock.NewCalculator(ctrl)
 
 				manager := &manager{
 					backend: &backend{
@@ -384,7 +239,7 @@ func TestBlockOptions(t *testing.T) {
 						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
-						Config: &config.Config{
+						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
 						Uptimes: uptimes,
@@ -431,11 +286,8 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
 
-				uptimes := &mockCalculator{
-					calculateUptimePercentFromF: func(ids.NodeID, ids.ID, time.Time) (float64, error) {
-						return 0.0, database.ErrNotFound
-					},
-				}
+				uptimes := uptimemock.NewCalculator(ctrl)
+				uptimes.EXPECT().CalculateUptimePercentFrom(nodeID, primaryNetworkValidatorStartTime).Return(0.0, database.ErrNotFound)
 
 				manager := &manager{
 					backend: &backend{
@@ -443,7 +295,7 @@ func TestBlockOptions(t *testing.T) {
 						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
-						Config: &config.Config{
+						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
 						Uptimes: uptimes,
@@ -491,7 +343,7 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
 				state.EXPECT().GetSubnetTransformation(netID).Return(nil, database.ErrNotFound)
 
-				uptimes := &mockCalculator{}
+				uptimes := uptimemock.NewCalculator(ctrl)
 
 				manager := &manager{
 					backend: &backend{
@@ -499,7 +351,7 @@ func TestBlockOptions(t *testing.T) {
 						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
-						Config: &config.Config{
+						Config: &config.Internal{
 							UptimePercentage: 0,
 						},
 						Uptimes: uptimes,
@@ -552,11 +404,8 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
 				state.EXPECT().GetSubnetTransformation(netID).Return(transformSubnetTx, nil)
 
-				uptimes := &mockCalculator{
-					calculateUptimePercentFromF: func(ids.NodeID, ids.ID, time.Time) (float64, error) {
-						return .5, nil
-					},
-				}
+				uptimes := uptimemock.NewCalculator(ctrl)
+				uptimes.EXPECT().CalculateUptimePercentFrom(nodeID, primaryNetworkValidatorStartTime).Return(.5, nil)
 
 				manager := &manager{
 					backend: &backend{
@@ -564,7 +413,7 @@ func TestBlockOptions(t *testing.T) {
 						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
-						Config: &config.Config{
+						Config: &config.Internal{
 							UptimePercentage: .8,
 						},
 						Uptimes: uptimes,
@@ -617,11 +466,8 @@ func TestBlockOptions(t *testing.T) {
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
 				state.EXPECT().GetSubnetTransformation(netID).Return(transformSubnetTx, nil)
 
-				uptimes := &mockCalculator{
-					calculateUptimePercentFromF: func(ids.NodeID, ids.ID, time.Time) (float64, error) {
-						return .5, nil
-					},
-				}
+				uptimes := uptimemock.NewCalculator(ctrl)
+				uptimes.EXPECT().CalculateUptimePercentFrom(nodeID, primaryNetworkValidatorStartTime).Return(.5, nil)
 
 				manager := &manager{
 					backend: &backend{
@@ -629,7 +475,7 @@ func TestBlockOptions(t *testing.T) {
 						ctx:   context.Background(),
 					},
 					txExecutorBackend: &executor.Backend{
-						Config: &config.Config{
+						Config: &config.Internal{
 							UptimePercentage: .8,
 						},
 						Uptimes: uptimes,

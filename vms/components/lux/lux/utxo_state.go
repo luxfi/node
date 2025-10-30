@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
@@ -6,7 +6,6 @@ package lux
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
@@ -113,7 +112,7 @@ func NewMeteredUTXOState(
 ) (UTXOState, error) {
 	utxoCache, err := metercacher.New[ids.ID, *UTXO](
 		"utxo_cache",
-		metrics.(metric.Registry),
+		metrics,
 		lru.NewCache[ids.ID, *UTXO](utxoCacheSize),
 	)
 	if err != nil {
@@ -122,7 +121,7 @@ func NewMeteredUTXOState(
 
 	indexCache, err := metercacher.New[string, linkeddb.LinkedDB](
 		"index_cache",
-		metrics.(metric.Registry),
+		metrics,
 		lru.NewCache[string, linkeddb.LinkedDB](indexCacheSize),
 	)
 	if err != nil {

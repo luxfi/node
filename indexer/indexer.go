@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package indexer
@@ -22,8 +22,16 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/dag/vertex"
+	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/wrappers"
 )

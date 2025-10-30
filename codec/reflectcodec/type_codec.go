@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package reflectcodec
@@ -13,6 +13,7 @@ import (
 
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/codec"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -295,7 +296,8 @@ func (c *genericCodec) MarshalInto(value interface{}, p *wrappers.Packer) error 
 		return codec.ErrMarshalNil
 	}
 
-	return c.marshal(reflect.ValueOf(value), p, nil /*=typeStack*/)
+	typeStack := set.Set[reflect.Type]{}
+	return c.marshal(reflect.ValueOf(value), p, typeStack)
 }
 
 // marshal writes the byte representation of [value] to [p]
@@ -496,31 +498,18 @@ func (c *genericCodec) marshal(
 	}
 }
 
-// Unmarshal unmarshals [bytes] into [dest], where [dest] must be a pointer or
+// UnmarshalFrom unmarshals [p.Bytes] into [dest], where [dest] must be a pointer or
 // interface
-func (c *genericCodec) Unmarshal(bytes []byte, dest interface{}) error {
+func (c *genericCodec) UnmarshalFrom(p *wrappers.Packer, dest interface{}) error {
 	if dest == nil {
 		return codec.ErrUnmarshalNil
 	}
 
-	p := wrappers.Packer{
-		Bytes: bytes,
-	}
 	destPtr := reflect.ValueOf(dest)
 	if destPtr.Kind() != reflect.Ptr {
 		return errNeedPointer
 	}
-	if err := c.unmarshal(&p, destPtr.Elem(), nil /*=typeStack*/); err != nil {
-		return err
-	}
-	if p.Offset != len(bytes) {
-		return fmt.Errorf("%w: read %d provided %d",
-			codec.ErrExtraSpace,
-			p.Offset,
-			len(bytes),
-		)
-	}
-	return nil
+	return c.unmarshal(p, destPtr.Elem(), nil /*=typeStack*/)
 }
 
 // UnmarshalFrom unpacks data from the Packer into dest
@@ -686,7 +675,7 @@ func (c *genericCodec) unmarshal(
 		if err != nil {
 			return fmt.Errorf("couldn't unmarshal struct: %w", err)
 		}
-		// Go through the fields and umarshal into them
+		// Go through the fields and unmarshal into them
 		for _, fieldIndex := range serializedFieldIndices {
 			if err := c.unmarshal(p, value.Field(fieldIndex), typeStack); err != nil {
 				return err

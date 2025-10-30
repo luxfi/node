@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -10,18 +10,48 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
-	utilmetric "github.com/luxfi/node/utils/metric"
+	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
+	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
-var _ Metrics = (*metricsImpl)(nil)
+const (
+	ResourceLabel   = "resource"
+	GasLabel        = "gas"
+	ValidatorsLabel = "validators"
+)
+
+var (
+	gasLabels = prometheus.Labels{
+		ResourceLabel: GasLabel,
+	}
+	validatorsLabels = prometheus.Labels{
+		ResourceLabel: ValidatorsLabel,
+	}
+)
+
+var _ Metrics = (*metrics)(nil)
+
+type Block struct {
+	Block block.Block
+
+	GasConsumed gas.Gas
+	GasState    gas.State
+	GasPrice    gas.Price
+
+	ActiveL1Validators   int
+	ValidatorExcess      gas.Gas
+	ValidatorPrice       gas.Price
+	AccruedValidatorFees uint64
+}
 
 type Metrics interface {
 	utilmetric.APIInterceptor
 
 	// Mark that the given block was accepted.
-	MarkAccepted(block.Block) error
+	MarkAccepted(Block) error
+
 	// Mark that a validator set was created.
 	IncValidatorSetsCreated()
 	// Mark that a validator set was cached.
@@ -31,6 +61,7 @@ type Metrics interface {
 	// Mark that we computed a validator diff at a height with the given
 	// difference from the top.
 	AddValidatorSetsHeightDiff(uint64)
+
 	// Mark that this much stake is staked on the node.
 	SetLocalStake(uint64)
 	// Mark that this much stake is staked in the network.
@@ -65,7 +96,38 @@ func New(registerer metric.Registerer) (Metrics, error) {
 			Help: "Amount (in nLUX) of LUX staked on the Primary Network",
 		}),
 
-		validatorSetsCached: metric.NewCounter(metric.CounterOpts{
+		gasConsumed: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "gas_consumed",
+			Help: "Cumulative amount of gas consumed by transactions",
+		}),
+		gasCapacity: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "gas_capacity",
+			Help: "Minimum amount of gas that can be consumed in the next block",
+		}),
+		activeL1Validators: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "active_l1_validators",
+			Help: "Number of active L1 validators",
+		}),
+		excess: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "excess",
+				Help: "Excess usage of a resource over the target usage",
+			},
+			[]string{ResourceLabel},
+		),
+		price: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "price",
+				Help: "Price (in nLUX) of a resource",
+			},
+			[]string{ResourceLabel},
+		),
+		accruedValidatorFees: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "accrued_validator_fees",
+			Help: "The total cost of running an active L1 validator since Etna activation",
+		}),
+
+		validatorSetsCached: prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "validator_sets_cached",
 			Help: "Total number of validator sets cached",
 		}),
@@ -92,9 +154,18 @@ func New(registerer metric.Registerer) (Metrics, error) {
 	errs.Add(err)
 	m.APIInterceptor = apiRequestMetrics
 
-	// Metrics created with NewCounter, NewGauge etc. need to be manually registered
-	// but since they don't directly expose prometheus.Collector interface, we need
-	// a different approach - just return any errors from creating metrics
+		registerer.Register(m.gasConsumed),
+		registerer.Register(m.gasCapacity),
+		registerer.Register(m.activeL1Validators),
+		registerer.Register(m.excess),
+		registerer.Register(m.price),
+		registerer.Register(m.accruedValidatorFees),
+
+		registerer.Register(m.validatorSetsCreated),
+		registerer.Register(m.validatorSetsCached),
+		registerer.Register(m.validatorSetsHeightDiff),
+		registerer.Register(m.validatorSetsDuration),
+	)
 
 	return m, errs.Err
 }
@@ -104,19 +175,38 @@ type metricsImpl struct {
 
 	blockMetrics *blockMetrics
 
-	timeUntilUnstake       metric.Gauge
-	timeUntilSubnetUnstake metric.GaugeVec
-	localStake             metric.Gauge
-	totalStake             metric.Gauge
+	// Staking metrics
+	timeUntilUnstake       prometheus.Gauge
+	timeUntilSubnetUnstake *prometheus.GaugeVec
+	localStake             prometheus.Gauge
+	totalStake             prometheus.Gauge
 
-	validatorSetsCached     metric.Counter
-	validatorSetsCreated    metric.Counter
-	validatorSetsHeightDiff metric.Gauge
-	validatorSetsDuration   metric.Gauge
+	gasConsumed          prometheus.Counter
+	gasCapacity          prometheus.Gauge
+	activeL1Validators   prometheus.Gauge
+	excess               *prometheus.GaugeVec
+	price                *prometheus.GaugeVec
+	accruedValidatorFees prometheus.Gauge
+
+	// Validator set diff metrics
+	validatorSetsCached     prometheus.Counter
+	validatorSetsCreated    prometheus.Counter
+	validatorSetsHeightDiff prometheus.Gauge
+	validatorSetsDuration   prometheus.Gauge
 }
 
-func (m *metricsImpl) MarkAccepted(b block.Block) error {
-	return b.Visit(m.blockMetrics)
+func (m *metrics) MarkAccepted(b Block) error {
+	m.gasConsumed.Add(float64(b.GasConsumed))
+	m.gasCapacity.Set(float64(b.GasState.Capacity))
+	m.excess.With(gasLabels).Set(float64(b.GasState.Excess))
+	m.price.With(gasLabels).Set(float64(b.GasPrice))
+
+	m.activeL1Validators.Set(float64(b.ActiveL1Validators))
+	m.excess.With(validatorsLabels).Set(float64(b.ValidatorExcess))
+	m.price.With(validatorsLabels).Set(float64(b.ValidatorPrice))
+	m.accruedValidatorFees.Set(float64(b.AccruedValidatorFees))
+
+	return b.Block.Visit(m.blockMetrics)
 }
 
 func (m *metricsImpl) IncValidatorSetsCreated() {

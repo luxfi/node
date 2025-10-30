@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -10,7 +10,6 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/vms/platformvm"
-	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/wallet/chain/c"
 	"github.com/luxfi/node/wallet/chain/p"
 	"github.com/luxfi/node/wallet/chain/x"
@@ -89,29 +88,21 @@ func MakeWallet(
 	config WalletConfig,
 ) (*Wallet, error) {
 	luxAddrs := luxKeychain.Addresses()
-	// Convert luxfi/math/set to node/utils/set
-	luxAddrsSet := make(map[ids.ShortID]struct{})
-	for addr := range luxAddrs {
-		luxAddrsSet[addr] = struct{}{}
-	}
-	luxState, err := FetchState(ctx, uri, luxAddrsSet)
+	luxState, err := FetchState(ctx, uri, luxAddrs)
 	if err != nil {
 		return nil, err
 	}
 
 	ethAddrs := ethKeychain.EthAddresses()
-	// Convert luxfi/math/set to node/utils/set
-	ethAddrsSet := make(map[ethcommon.Address]struct{})
-	for addr := range ethAddrs {
-		ethAddrsSet[addr] = struct{}{}
-	}
-	ethState, err := FetchEthState(ctx, uri, ethAddrsSet)
+	ethState, err := FetchEthState(ctx, uri, ethAddrs)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: Fetch subnet and validation owners if needed
-	owners := make(map[ids.ID]fx.Owner)
+	owners, err := platformvm.GetOwners(luxState.PClient, ctx, config.SubnetIDs, config.ValidationIDs)
+	if err != nil {
+		return nil, err
+	}
 
 	pUTXOs := common.NewChainUTXOs(constants.PlatformChainID, luxState.UTXOs)
 	pBackend := pwallet.NewBackend(pUTXOs, owners)

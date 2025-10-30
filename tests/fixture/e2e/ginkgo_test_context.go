@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package e2e
@@ -11,12 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/tests"
-	"github.com/luxfi/node/wallet/net/primary/common"
+	"github.com/luxfi/log"
+	"github.com/luxfi/node/wallet/subnet/primary/common"
 )
-
-var _ tests.TestContext = (*GinkgoTestContext)(nil)
 
 type ginkgoWriteCloser struct{}
 
@@ -39,13 +37,20 @@ var ginkgoEncoderConfig = zapcore.EncoderConfig{
 	CallerKey:      "",
 	MessageKey:     "msg",
 	StacktraceKey:  "stacktrace",
-	EncodeLevel:    zapcore.CapitalColorLevelEncoder,
+	EncodeLevel:    logging.ConsoleColorLevelEncoder,
 	EncodeDuration: zapcore.StringDurationEncoder,
 }
 
 // NewGinkgoLogger returns a logger with limited output
 func newGinkgoLogger(cfg zapcore.Encoder) log.Logger {
-	return log.New()
+	return logging.NewLogger(
+		"",
+		logging.NewWrappedCore(
+			logging.Info,
+			&ginkgoWriteCloser{},
+			cfg,
+		),
+	)
 }
 
 type GinkgoTestContext struct {
@@ -57,13 +62,13 @@ type GinkgoTestContext struct {
 // handler e.g. SynchronizedBeforeSuite.
 func NewEventHandlerTestContext() *GinkgoTestContext {
 	return &GinkgoTestContext{
-		logger: newGinkgoLogger(zapcore.NewConsoleEncoder(ginkgoEncoderConfig)),
+		logger: newGinkgoLogger(logging.Auto.ConsoleEncoder()),
 	}
 }
 
 // NewTestContext provides a logger with limited output to account for
 // the context already provided by ginkgo for test logging.
-func NewGinkgoTestContext() *GinkgoTestContext {
+func NewTestContext() *GinkgoTestContext {
 	return &GinkgoTestContext{
 		logger: newGinkgoLogger(
 			zapcore.NewConsoleEncoder(ginkgoEncoderConfig),
@@ -108,10 +113,6 @@ func (tc *GinkgoTestContext) DefaultContext() context.Context {
 // Helper simplifying use via an option of a timed context configured with the default timeout.
 func (tc *GinkgoTestContext) WithDefaultContext() common.Option {
 	return tests.WithDefaultContext(tc)
-}
-
-func (*GinkgoTestContext) GetDefaultContextParent() context.Context {
-	return context.Background()
 }
 
 // Re-implementation of testify/require.Eventually that is compatible with ginkgo. testify's

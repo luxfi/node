@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -7,15 +7,16 @@ import (
 	"context"
 	"errors"
 
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/xvm/txs/mempool"
+	"github.com/luxfi/node/vms/txs/mempool"
 
 	blockexecutor "github.com/luxfi/node/vms/xvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/xvm/txs/executor"
@@ -31,8 +32,11 @@ var (
 )
 
 type Builder interface {
+	// WaitForEvent waits until there is at least one tx available to the
+	// builder.
+	WaitForEvent(ctx context.Context) (core.Message, error)
 	// BuildBlock can be called to attempt to create a new block
-	BuildBlock(context.Context) (chain.Block, error)
+	BuildBlock(context.Context) (chainblock.Block, error)
 }
 
 // builder implements a simple builder to convert txs into valid blocks
@@ -42,14 +46,14 @@ type builder struct {
 	clk     *mockable.Clock
 
 	// Pool of all txs that may be able to be added
-	mempool mempool.Mempool
+	mempool mempool.Mempool[*txs.Tx]
 }
 
 func New(
 	backend *txexecutor.Backend,
 	manager blockexecutor.Manager,
 	clk *mockable.Clock,
-	mempool mempool.Mempool,
+	mempool mempool.Mempool[*txs.Tx],
 ) Builder {
 	return &builder{
 		backend: backend,
@@ -59,10 +63,12 @@ func New(
 	}
 }
 
-// BuildBlock builds a block to be added to consensus.
-func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
-	defer b.mempool.RequestBuildBlock()
+func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
+	return b.mempool.WaitForEvent(ctx)
+}
 
+// BuildBlock builds a block to be added to consensus.
+func (b *builder) BuildBlock(context.Context) (chainblock.Block, error) {
 	b.backend.Log.Debug("starting to attempt to build a block")
 
 	// Get the block to build on top of and retrieve the new block's context.

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package server
@@ -14,19 +14,22 @@ import (
 	"sync"
 	"time"
 
-	"github.com/NYTimes/gziphandler"
-	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/cors"
 	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
+	"github.com/luxfi/ids"
+	consensuscontext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/trace"
+	"github.com/luxfi/log"
 )
 
 const (
@@ -67,7 +70,7 @@ type Server interface {
 	// RegisterChain registers the API endpoints associated with this chain.
 	// That is, add <route, handler> pairs to server so that API calls can be
 	// made to the VM.
-	RegisterChain(chainName string, ctx context.Context, vm core.VM)
+	RegisterChain(chainName string, ctx *consensuscontext.Context, vm core.VM)
 	// Shutdown this server
 	Shutdown() error
 }
@@ -82,8 +85,6 @@ type HTTPConfig struct {
 type server struct {
 	// log this server writes to
 	log log.Logger
-	// generates new logs for chains to write to
-	factory log.Factory
 
 	shutdownTimeout time.Duration
 
@@ -107,7 +108,6 @@ type server struct {
 // New returns an instance of a Server.
 func New(
 	log log.Logger,
-	factory log.Factory,
 	listener net.Listener,
 	allowedOrigins []string,
 	shutdownTimeout time.Duration,
@@ -124,39 +124,24 @@ func New(
 	}
 
 	router := newRouter()
-	allowedHostsHandler := filterInvalidHosts(router, allowedHosts)
-	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   allowedOrigins,
-		AllowCredentials: true,
-	}).Handler(allowedHostsHandler)
-	gzipHandler := gziphandler.GzipHandler(corsHandler)
-	var handler http.Handler = http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			// Attach this node's ID as a header
-			w.Header().Set("node-id", nodeID.String())
-			gzipHandler.ServeHTTP(w, r)
-		},
-	)
+	handler := wrapHandler(router, nodeID, allowedOrigins, allowedHosts)
 
 	httpServer := &http.Server{
-		Handler:           handler,
+		Handler: h2c.NewHandler(
+			handler,
+			&http2.Server{
+				MaxConcurrentStreams: maxConcurrentStreams,
+			}),
 		ReadTimeout:       httpConfig.ReadTimeout,
 		ReadHeaderTimeout: httpConfig.ReadHeaderTimeout,
 		WriteTimeout:      httpConfig.WriteTimeout,
 		IdleTimeout:       httpConfig.IdleTimeout,
-	}
-	err = http2.ConfigureServer(httpServer, &http2.Server{
-		MaxConcurrentStreams: maxConcurrentStreams,
-	})
-	if err != nil {
-		return nil, err
 	}
 
 	log.Info("API created with allowed origins: " + strings.Join(allowedOrigins, ","))
 
 	return &server{
 		log:             log,
-		factory:         factory,
 		shutdownTimeout: shutdownTimeout,
 		tracingEnabled:  tracingEnabled,
 		tracer:          tracer,
@@ -171,30 +156,14 @@ func (s *server) Dispatch() error {
 	return s.srv.Serve(s.listener)
 }
 
-func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM) {
-	// Get chain ID from context
-	chainID := consensus.GetChainID(ctx)
-	if chainID == ids.Empty {
-		// For Platform chain, use a hardcoded ID
-		if chainName == "platform" || chainName == "P" {
-			chainID = constants.PlatformChainID
-			s.log.Info("using hardcoded Platform chain ID",
-				log.Stringer("chainID", chainID),
-			)
-		} else {
-			s.log.Error("no chain ID found in context")
-			return
-		}
-	}
-
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	handlers, err := vm.CreateHandlers(context.TODO())
+func (s *server) RegisterChain(chainName string, ctx *consensuscontext.Context, vm core.VM) {
+	ctx.Lock.Lock()
+	pathRouteHandlers, err := vm.CreateHandlers(context.TODO())
+	ctx.Lock.Unlock()
 	if err != nil {
-		s.log.Error("failed to create handlers",
-			log.UserString("chainName", chainName),
-			log.Err(err),
+		s.log.Error("failed to create path route handlers",
+			zap.String("chainName", chainName),
+			zap.Error(err),
 		)
 		return
 	}
@@ -205,7 +174,7 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 	defaultEndpoint := path.Join(constants.ChainAliasPrefix, chainID.String())
 
 	// Register each endpoint
-	for extension, handler := range handlers {
+	for extension, handler := range pathRouteHandlers {
 		// Validate that the route being added is valid
 		// e.g. "/foo" and "" are ok but "\n" is not
 		_, err := url.ParseRequestURI(extension)
@@ -222,22 +191,48 @@ func (s *server) RegisterChain(chainName string, ctx context.Context, vm core.VM
 			)
 		}
 	}
+
+	ctx.Lock.Lock()
+	headerRouteHandler, err := vm.NewHTTPHandler(context.TODO())
+	ctx.Lock.Unlock()
+	if err != nil {
+		s.log.Error("failed to create header route handler",
+			zap.String("chainName", chainName),
+			zap.Error(err),
+		)
+		return
+	}
+
+	if headerRouteHandler == nil {
+		return
+	}
+
+	headerRouteHandler = s.wrapMiddleware(chainName, headerRouteHandler, ctx)
+	if !s.router.AddHeaderRoute(ctx.ChainID.String(), headerRouteHandler) {
+		s.log.Error(
+			"failed to add header route",
+			zap.String("chainName", chainName),
+		)
+	}
 }
 
-func (s *server) addChainRoute(chainName string, handler http.Handler, ctx context.Context, base, endpoint string) error {
+func (s *server) addChainRoute(chainName string, handler http.Handler, ctx *consensuscontext.Context, base, endpoint string) error {
 	url := fmt.Sprintf("%s/%s", baseURL, base)
 	s.log.Info("adding route",
 		log.UserString("url", url),
 		log.UserString("endpoint", endpoint),
 	)
+	handler = s.wrapMiddleware(chainName, handler, ctx)
+	return s.router.AddRouter(url, endpoint, handler)
+}
+
+func (s *server) wrapMiddleware(chainName string, handler http.Handler, ctx *consensuscontext.Context) http.Handler {
 	if s.tracingEnabled {
 		handler = api.TraceHandler(handler, chainName, s.tracer)
 	}
 	// Apply middleware to reject calls to the handler before the chain finishes bootstrapping
 	handler = rejectMiddleware(handler, ctx)
-	// TODO: Add metrics wrapper when available
-	// handler = s.metric.wrapHandler(chainName, handler)
-	return s.router.AddRouter(url, endpoint, handler)
+	return s.metrics.wrapHandler(chainName, handler)
 }
 
 func (s *server) AddRoute(handler http.Handler, base, endpoint string) error {
@@ -278,30 +273,10 @@ const stateHolderKey contextKey = "stateHolder"
 
 // Reject middleware wraps a handler. If the chain that the context describes is
 // not done state-syncing/bootstrapping, writes back an error.
-func rejectMiddleware(handler http.Handler, ctx context.Context) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Try both string key and contextKey for compatibility
-		var stateHolder interface{}
-
-		// First try with string key (for tests)
-		stateHolder = ctx.Value("stateHolder")
-		if stateHolder == nil {
-			// Then try with contextKey
-			stateHolder = ctx.Value(stateHolderKey)
-		}
-
-		if stateHolder != nil {
-			// Use type assertion to check for StateGetter interface
-			if sh, ok := stateHolder.(StateGetter); ok {
-				state := sh.Get()
-				if state == interfaces.StateSyncing || state == interfaces.Bootstrapping {
-					w.WriteHeader(http.StatusServiceUnavailable)
-					return
-				}
-			}
-		}
-		handler.ServeHTTP(w, r)
-	})
+func rejectMiddleware(handler http.Handler, ctx *consensuscontext.Context) http.Handler {
+	// TODO: Add state tracking to consensus context to properly check if chain is bootstrapped
+	// For now, allow all requests
+	return handler
 }
 
 func (s *server) AddAliases(endpoint string, aliases ...string) error {
@@ -349,4 +324,24 @@ func (a readPathAdder) AddRoute(handler http.Handler, base, endpoint string) err
 
 func (a readPathAdder) AddAliases(endpoint string, aliases ...string) error {
 	return a.pather.AddAliasesWithReadLock(endpoint, aliases...)
+}
+
+func wrapHandler(
+	handler http.Handler,
+	nodeID ids.NodeID,
+	allowedOrigins []string,
+	allowedHosts []string,
+) http.Handler {
+	h := filterInvalidHosts(handler, allowedHosts)
+	h = cors.New(cors.Options{
+		AllowedOrigins:   allowedOrigins,
+		AllowCredentials: true,
+	}).Handler(h)
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			// Attach this node's ID as a header
+			w.Header().Set("node-id", nodeID.String())
+			h.ServeHTTP(w, r)
+		},
+	)
 }

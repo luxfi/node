@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -12,23 +12,30 @@ import (
 
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/consensus/uptime"
-	consensusset "github.com/luxfi/consensus/utils/set"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
+	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/node/network/tracker"
+	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 )
 
 const maxMessageToSend = 1024
+
+// noOpResourceManager implements tracker.ResourceManager for testing
+type noOpResourceManager struct{}
+
+func (*noOpResourceManager) CPUUsage() float64  { return 0 }
+func (*noOpResourceManager) DiskUsage() float64 { return 0 }
+func (*noOpResourceManager) Shutdown()          {}
 
 // StartTestPeer provides a simple interface to create a peer that has finished
 // the p2p handshake.
@@ -79,8 +86,7 @@ func StartTestPeer(
 	metricsInstance := metric.NewNoOp()
 
 	mc, err := message.NewCreator(
-		nil,
-		metricsInstance,
+		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -93,8 +99,15 @@ func StartTestPeer(
 		return nil, err
 	}
 
-	// Create a basic resource tracker for testing
-	resourceTracker := &testResourceTracker{}
+	// Create a no-op resource manager for testing
+	noOpManager := &noOpResourceManager{}
+	resourceTracker, err := tracker.NewResourceTracker(
+		noOpManager,
+		10*time.Second,
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	tlsKey := tlsCert.PrivateKey.(crypto.Signer)
 	blsKey, err := localsigner.New()
@@ -110,7 +123,7 @@ func StartTestPeer(
 			InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
 			Network:              TestNetwork,
 			Router:               router,
-			VersionCompatibility: version.GetCompatibility(networkID),
+			VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 			MySubnets:            set.Set[ids.ID]{},
 			Beacons:              &testValidatorManager{},
 			Validators:           &testValidatorManager{},
@@ -119,7 +132,7 @@ func StartTestPeer(
 			PongTimeout:          constants.DefaultPingPongTimeout,
 			MaxClockDifference:   time.Minute,
 			ResourceTracker:      resourceTracker,
-			UptimeCalculator:     &uptime.NoOpCalculator{},
+			UptimeCalculator:     uptime.NoOpCalculator{},
 			IPSigner: NewIPSigner(
 				utils.NewAtomic(netip.AddrPortFrom(
 					netip.IPv6Loopback(),
@@ -133,10 +146,11 @@ func StartTestPeer(
 		cert,
 		peerID,
 		NewBlockingMessageQueue(
-			SendFailedFunc(func(message.OutboundMessage) {}), // No-op callback
+			metrics,
 			nil,
 			maxMessageToSend,
 		),
+		false,
 	)
 	return peer, peer.AwaitReady(ctx)
 }

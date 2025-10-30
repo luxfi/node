@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package e2e
@@ -13,13 +13,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/luxfi/log"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/config"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/bootstrapmonitor"
 	"github.com/luxfi/node/tests/fixture/e2e"
@@ -45,10 +45,10 @@ const (
 	// of this file.
 	repoRelativePath = "tests/fixture/bootstrapmonitor/e2e"
 
-	luxdImage          = "localhost:5001/luxd"
-	latestLuxdImage    = luxdImage + ":latest"
-	monitorImage       = "localhost:5001/bootstrap-monitor"
-	latestMonitorImage = monitorImage + ":latest"
+	nodeImage       = "localhost:5001/node"
+	latestLuxgoImage = nodeImage + ":latest"
+	monitorImage           = "localhost:5001/bootstrap-monitor"
+	latestMonitorImage     = monitorImage + ":latest"
 
 	initContainerName    = "init"
 	monitorContainerName = "monitor"
@@ -61,9 +61,9 @@ const (
 )
 
 var (
-	kubeconfigVars        *flags.KubeconfigVars
-	skipLuxdImageBuild    bool
-	skipMonitorImageBuild bool
+	kubeconfigVars            *flags.KubeconfigVars
+	skipLuxgoImageBuild bool
+	skipMonitorImageBuild     bool
 
 	nodeDataDir = bootstrapmonitor.NodeDataDir(dataDir) // Use a subdirectory of the data path so that os.RemoveAll can be used when starting a new test
 )
@@ -71,10 +71,10 @@ var (
 func init() {
 	kubeconfigVars = flags.NewKubeconfigFlagVars()
 	flag.BoolVar(
-		&skipLuxdImageBuild,
-		"skip-luxd-image-build",
+		&skipLuxgoImageBuild,
+		"skip-node-image-build",
 		false,
-		"whether to skip building the luxd image",
+		"whether to skip building the node image",
 	)
 	flag.BoolVar(
 		&skipMonitorImageBuild,
@@ -91,11 +91,11 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 		tc := e2e.NewTestContext()
 		require := require.New(tc)
 
-		if skipLuxdImageBuild {
-			tc.Log().Warn("skipping build of luxd image")
+		if skipLuxgoImageBuild {
+			tc.Log().Warn("skipping build of node image")
 		} else {
-			ginkgo.By("Building the luxd image")
-			buildLuxdImage(tc, luxdImage, false /* forceNewHash */)
+			ginkgo.By("Building the node image")
+			buildLuxgoImage(tc, nodeImage, false /* forceNewHash */)
 		}
 
 		if skipMonitorImageBuild {
@@ -122,7 +122,7 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 		ginkgo.By(fmt.Sprintf("Created namespace %q", namespace))
 
 		ginkgo.By("Creating a node to bootstrap from")
-		nodeStatefulSet := newNodeStatefulSet("luxd-node", defaultPodFlags())
+		nodeStatefulSet := newNodeStatefulSet("node-node", defaultPodFlags())
 		createdNodeStatefulSet, err := clientset.AppsV1().StatefulSets(namespace).Create(tc.DefaultContext(), nodeStatefulSet, metav1.CreateOptions{})
 		require.NoError(err)
 		nodePodName := createdNodeStatefulSet.Name + "-0"
@@ -197,8 +197,8 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 		bootstrapResumingMessage := bootstrapMessageForImage(bootstrapmonitor.BootstrapResumingMessage, containerImage)
 		waitForLogOutput(tc, clientset, namespace, bootstrapPodName, initContainerName, bootstrapResumingMessage)
 
-		ginkgo.By("Building and pushing a new luxd image to prompt the start of a new bootstrap test")
-		buildLuxdImage(tc, luxdImage, true /* forceNewHash */)
+		ginkgo.By("Building and pushing a new node image to prompt the start of a new bootstrap test")
+		buildLuxgoImage(tc, nodeImage, true /* forceNewHash */)
 
 		ginkgo.By("Waiting for the pod image to change")
 		require.Eventually(func() bool {
@@ -230,7 +230,7 @@ func bootstrapMessageForImage(message, image string) string {
 	return message + fmt.Sprintf(`{"image": "%s"}`, image)
 }
 
-func buildLuxdImage(tc tests.TestContext, imageName string, forceNewHash bool) {
+func buildLuxgoImage(tc tests.TestContext, imageName string, forceNewHash bool) {
 	buildImage(tc, imageName, forceNewHash, "build_image.sh")
 }
 
@@ -267,7 +267,7 @@ func newNodeStatefulSet(name string, flags tmpnet.FlagsMap) *appsv1.StatefulSet 
 	statefulSet := tmpnet.NewNodeStatefulSet(
 		name,
 		true, // generateName
-		latestLuxdImage,
+		latestLuxgoImage,
 		nodeContainerName,
 		volumeName,
 		volumeSize,
@@ -437,7 +437,7 @@ func grantMonitorPermissions(tc tests.TestContext, clientset *kubernetes.Clients
 
 // waitForLogOutput streams the logs from the specified pod container until the desired output is found or the context times out.
 func waitForLogOutput(tc tests.TestContext, clientset *kubernetes.Clientset, namespace string, podName string, containerName string, desiredOutput string) {
-	// Note: Log output may be incomplete due to buffering/timing issues in k8s log streaming
+	// TODO(marun) Figure out why log output is randomly truncated (not flushed?)
 
 	tc.Log().Info("log output from container (may not be complete)",
 		zap.String("namespace", namespace),

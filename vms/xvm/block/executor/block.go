@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -17,6 +17,7 @@ import (
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs/executor"
+	"go.uber.org/zap"
 )
 
 const SyncBound = 10 * time.Second
@@ -36,8 +37,7 @@ var (
 // Exported for testing in xvm package.
 type Block struct {
 	block.Block
-	manager  *manager
-	rejected bool
+	manager *manager
 }
 
 // ParentID returns the parent block ID
@@ -53,6 +53,29 @@ func (b *Block) EpochBit() bool {
 // FPCVotes returns embedded fast-path vote references
 func (b *Block) FPCVotes() [][]byte {
 	return nil // XVM blocks don't support FPC votes yet
+}
+
+// Status returns the status of this block
+func (b *Block) Status() uint8 {
+	blkID := b.ID()
+	// If this block is the last accepted block, we don't need to go to disk
+	if b.manager.lastAccepted == blkID {
+		return uint8(choices.Accepted)
+	}
+	// Check if the block is in memory. If so, it's processing.
+	if _, ok := b.manager.blkIDToState[blkID]; ok {
+		return uint8(choices.Processing)
+	}
+	// Block isn't in memory. Check in the database.
+	_, err := b.manager.state.GetBlock(blkID)
+	switch err {
+	case nil:
+		return uint8(choices.Accepted)
+	case database.ErrNotFound:
+		return uint8(choices.Processing)
+	default:
+		return uint8(choices.Processing)
+	}
 }
 
 func (b *Block) Verify(ctx context.Context) error {
@@ -96,7 +119,7 @@ func (b *Block) Verify(ctx context.Context) error {
 		if err != nil {
 			txID := tx.ID()
 			b.manager.mempool.MarkDropped(txID, err)
-			return err
+			return fmt.Errorf("failed to syntactically verify tx %s: %w", txID, err)
 		}
 	}
 
@@ -104,7 +127,7 @@ func (b *Block) Verify(ctx context.Context) error {
 	parentID := b.Parent()
 	parent, err := b.manager.GetStatelessBlock(parentID)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get parent %s: %w", parentID, err)
 	}
 
 	// Verify that currentBlkHeight = parentBlkHeight + 1.
@@ -121,7 +144,11 @@ func (b *Block) Verify(ctx context.Context) error {
 
 	stateDiff, err := state.NewDiff(parentID, b.manager)
 	if err != nil {
-		return err
+		return fmt.Errorf(
+			"failed to initialize state diff on state at %s: %w",
+			parentID,
+			err,
+		)
 	}
 
 	parentChainTime := stateDiff.GetTimestamp()
@@ -154,7 +181,7 @@ func (b *Block) Verify(ctx context.Context) error {
 		if err != nil {
 			txID := tx.ID()
 			b.manager.mempool.MarkDropped(txID, err)
-			return err
+			return fmt.Errorf("failed to semantically verify tx %s: %w", txID, err)
 		}
 
 		// Apply the txs state changes to the state.
@@ -171,7 +198,7 @@ func (b *Block) Verify(ctx context.Context) error {
 		if err != nil {
 			txID := tx.ID()
 			b.manager.mempool.MarkDropped(txID, err)
-			return err
+			return fmt.Errorf("failed to execute tx %s: %w", txID, err)
 		}
 
 		// Verify that the transaction we just executed didn't consume inputs
@@ -204,7 +231,11 @@ func (b *Block) Verify(ctx context.Context) error {
 	// already imported in a currently processing block.
 	err = b.manager.VerifyUniqueInputs(parentID, blockState.importedInputs)
 	if err != nil {
-		return err
+		return fmt.Errorf(
+			"failed to verify unique inputs on state at %s: %w",
+			parent,
+			err,
+		)
 	}
 
 	// Now that the block has been executed, we can add the block data to the
@@ -223,13 +254,7 @@ func (b *Block) Accept(ctx context.Context) error {
 
 	txs := b.Txs()
 	for _, tx := range txs {
-		if err := b.manager.onAccept(tx); err != nil {
-			return fmt.Errorf(
-				"failed to mark tx %q as accepted: %w",
-				blkID,
-				err,
-			)
-		}
+		b.manager.onAccept(tx)
 	}
 
 	b.manager.lastAccepted = blkID
@@ -269,15 +294,17 @@ func (b *Block) Accept(ctx context.Context) error {
 		return err
 	}
 
-	txChecksum, utxoChecksum := b.manager.state.Checksums()
-	b.manager.backend.Log.Trace(
-		"accepted block",
-		"blkID", blkID.String(),
-		"height", b.Height(),
-		"parentID", b.Parent().String(),
-		"txChecksum", txChecksum.String(),
-		"utxoChecksum", utxoChecksum.String(),
-	)
+	if logger, ok := b.manager.backend.LuxCtx.Log.(interface {
+		Trace(string, ...zap.Field)
+	}); ok {
+		logger.Trace(
+			"accepted block",
+			zap.Stringer("blkID", blkID),
+			zap.Uint64("height", b.Height()),
+			zap.Stringer("parentID", b.Parent()),
+			zap.Stringer("checksum", b.manager.state.Checksum()),
+		)
+	}
 	return nil
 }
 
@@ -309,54 +336,5 @@ func (b *Block) Reject(ctx context.Context) error {
 			)
 		}
 	}
-
-	// If we added transactions to the mempool, we should be willing to build a
-	// block.
-	b.manager.mempool.RequestBuildBlock()
-
-	b.rejected = true
 	return nil
-}
-
-func (b *Block) Status() uint8 {
-	// If this block's reference was rejected, we should report it as rejected.
-	//
-	// We don't persist the rejection, but that's fine. The consensus engine
-	// will hold the same reference to the block until it no longer needs it.
-	// After the consensus engine has released the reference to the block that
-	// was verified, it may get a new reference that isn't marked as rejected.
-	// The consensus engine may then try to issue the block, but will discover
-	// that it was rejected due to a conflicting block having been accepted.
-	if b.rejected {
-		return uint8(choices.Rejected)
-	}
-
-	blkID := b.ID()
-	// If this block is the last accepted block, we don't need to go to disk to
-	// check the status.
-	if b.manager.lastAccepted == blkID {
-		return uint8(choices.Accepted)
-	}
-	// Check if the block is in memory. If so, it's processing.
-	if _, ok := b.manager.blkIDToState[blkID]; ok {
-		return uint8(choices.Processing)
-	}
-	// Block isn't in memory. Check in the database.
-	_, err := b.manager.state.GetBlock(blkID)
-	switch err {
-	case nil:
-		return uint8(choices.Accepted)
-
-	case database.ErrNotFound:
-		// choices.Unknown means we don't have the bytes of the block.
-		// In this case, we do, so we return choices.Processing.
-		return uint8(choices.Processing)
-
-	default:
-		b.manager.backend.Log.Error(
-			"dropping unhandled database error",
-			"error", err,
-		)
-		return uint8(choices.Processing)
-	}
 }

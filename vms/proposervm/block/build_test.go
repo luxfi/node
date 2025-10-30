@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
+	nodeids "github.com/luxfi/node/ids"
 	"github.com/luxfi/node/staking"
 )
 
@@ -33,12 +34,14 @@ func TestBuild(t *testing.T) {
 		PublicKey: x509Cert.PublicKey,
 	}
 	key := tlsCert.PrivateKey.(crypto.Signer)
-	nodeID := ids.NodeIDFromCert(cert)
+	internalNodeID := nodeids.NodeIDFromCert(cert)
+	nodeID := ids.NodeID(internalNodeID)
 
 	builtBlock, err := Build(
 		parentID,
 		timestamp,
 		pChainHeight,
+		Epoch{},
 		cert,
 		innerBlockBytes,
 		chainID,
@@ -61,7 +64,7 @@ func TestBuildUnsigned(t *testing.T) {
 
 	require := require.New(t)
 
-	builtBlock, err := BuildUnsigned(parentID, timestamp, pChainHeight, innerBlockBytes)
+	builtBlock, err := BuildUnsigned(parentID, timestamp, pChainHeight, Epoch{}, innerBlockBytes)
 	require.NoError(err)
 
 	require.Equal(parentID, builtBlock.ParentID())

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -6,17 +6,20 @@ package tmpnet
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/luxfi/crypto/secp256k1"
+	"go.uber.org/zap"
+
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -25,48 +28,34 @@ import (
 	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
-const defaultSubnetDirName = "subnets"
+const (
+	defaultSubnetDirName = "subnets"
+	jsonFileSuffix       = ".json"
+)
 
 type Chain struct {
 	// Set statically
 	VMID    ids.ID
 	Config  string
 	Genesis []byte
+	// VersionArgs are the argument(s) to pass to the VM binary to receive
+	// version details in json format (e.g. `--version-json`). This
+	// supports checking that the rpcchainvm version of the VM binary
+	// matches the version used by the configured node binary. If
+	// empty, the version check will be skipped.
+	VersionArgs []string
 
 	// Set at runtime
 	ChainID      ids.ID
 	PreFundedKey *secp256k1.PrivateKey
 }
 
-// Write the chain configuration to the specified directory.
-func (c *Chain) WriteConfig(chainDir string) error {
-	// TODO(marun) Ensure removal of an existing file if no configuration should be provided
-	if len(c.Config) == 0 {
-		return nil
-	}
-
-	chainConfigDir := filepath.Join(chainDir, c.ChainID.String())
-	if err := os.MkdirAll(chainConfigDir, perms.ReadWriteExecute); err != nil {
-		return fmt.Errorf("failed to create chain config dir: %w", err)
-	}
-
-	path := filepath.Join(chainConfigDir, defaultConfigFilename)
-	if err := os.WriteFile(path, []byte(c.Config), perms.ReadWrite); err != nil {
-		return fmt.Errorf("failed to write chain config: %w", err)
-	}
-
-	return nil
-}
-
-// Subnet is an alias for Net to maintain backward compatibility
-type Subnet = Net
-
-type Net struct {
-	// A unique string that can be used to refer to the net across different temporary
-	// networks (since the NetID will be different every time the net is created)
+type Subnet struct {
+	// A unique string that can be used to refer to the subnet across different temporary
+	// networks (since the SubnetID will be different every time the subnet is created)
 	Name string
 
-	Config FlagsMap
+	Config ConfigMap
 
 	// The ID of the transaction that created the subnet
 	NetID ids.ID
@@ -81,22 +70,25 @@ type Net struct {
 }
 
 // Retrieves a wallet configured for use with the subnet
-func (s *Subnet) GetWallet(ctx context.Context, uri string) (primary.Wallet, error) {
-	secp256Keychain := secp256k1fx.NewKeychain(s.OwningKey)
+func (s *Subnet) GetWallet(ctx context.Context, uri string) (*primary.Wallet, error) {
+	keychain := secp256k1fx.NewKeychain(s.OwningKey)
 
 	// Only fetch the net transaction if a net ID is present. This won't be true when
 	// the wallet is first used to create the subnet.
-	txIDs := set.Set[ids.ID]{}
-	if s.NetID != ids.Empty {
-		txIDs.Add(s.NetID)
+	subnetIDs := []ids.ID{}
+	if s.SubnetID != ids.Empty {
+		subnetIDs = append(subnetIDs, s.SubnetID)
 	}
 
-	return primary.MakeWallet(ctx, &primary.WalletConfig{
-		URI:              uri,
-		LUXKeychain:      secp256Keychain,
-		EthKeychain:      secp256Keychain,
-		PChainTxsToFetch: txIDs,
-	})
+	return primary.MakeWallet(
+		ctx,
+		uri,
+		keychain,
+		keychain,
+		primary.WalletConfig{
+			SubnetIDs: subnetIDs,
+		},
+	)
 }
 
 // Issues the net creation transaction and retains the result. The URI of a node is
@@ -125,16 +117,16 @@ func (s *Subnet) Create(ctx context.Context, uri string) error {
 	return nil
 }
 
-func (s *Subnet) CreateChains(ctx context.Context, w io.Writer, uri string) error {
+func (s *Subnet) CreateChains(ctx context.Context, log log.Logger, uri string) error {
 	wallet, err := s.GetWallet(ctx, uri)
 	if err != nil {
 		return err
 	}
 	pWallet := wallet.P()
 
-	if _, err := fmt.Fprintf(w, "Creating chains for net %q\n", s.Name); err != nil {
-		return err
-	}
+	log.Info("creating chains for subnet",
+		zap.String("subnet", s.Name),
+	)
 
 	for _, chain := range s.Chains {
 		createChainTx, err := pWallet.IssueCreateChainTx(
@@ -150,15 +142,17 @@ func (s *Subnet) CreateChains(ctx context.Context, w io.Writer, uri string) erro
 		}
 		chain.ChainID = createChainTx.ID()
 
-		if _, err := fmt.Fprintf(w, " created chain %q for VM %q on net %q\n", chain.ChainID, chain.VMID, s.Name); err != nil {
-			return err
-		}
+		log.Info("created chain",
+			zap.Stringer("chain", chain.ChainID),
+			zap.String("subnet", s.Name),
+			zap.Stringer("vm", chain.VMID),
+		)
 	}
 	return nil
 }
 
 // Add validators to the subnet
-func (s *Subnet) AddValidators(ctx context.Context, w io.Writer, apiURI string, nodes ...*Node) error {
+func (s *Subnet) AddValidators(ctx context.Context, log log.Logger, apiURI string, nodes ...*Node) error {
 	wallet, err := s.GetWallet(ctx, apiURI)
 	if err != nil {
 		return err
@@ -199,20 +193,22 @@ func (s *Subnet) AddValidators(ctx context.Context, w io.Writer, apiURI string, 
 			return err
 		}
 
-		if _, err := fmt.Fprintf(w, " added %s as validator for net `%s`\n", node.NodeID, s.Name); err != nil {
-			return err
-		}
+		log.Info("added validator to subnet",
+			zap.String("subnet", s.Name),
+			zap.Stringer("nodeID", node.NodeID),
+		)
 	}
 
 	return nil
 }
 
-// Write the net configuration to disk
-func (s *Subnet) Write(subnetDir string, chainDir string) error {
+// Write the subnet configuration to disk
+func (s *Subnet) Write(subnetDir string) error {
 	if err := os.MkdirAll(subnetDir, perms.ReadWriteExecute); err != nil {
 		return fmt.Errorf("failed to create net dir: %w", err)
 	}
-	tmpnetConfigPath := filepath.Join(subnetDir, s.Name+".json")
+
+	tmpnetConfigPath := filepath.Join(subnetDir, s.Name+jsonFileSuffix)
 
 	// Since subnets are expected to be serialized for the first time
 	// without their chains having been created (i.e. chains will have
@@ -237,38 +233,6 @@ func (s *Subnet) Write(subnetDir string, chainDir string) error {
 		return fmt.Errorf("failed to write tmpnet net config %s: %w", s.Name, err)
 	}
 
-	// The net and chain configurations for node can only be written once
-	// they have been created since the id of the creating transaction must be
-	// included in the path.
-	if s.NetID == ids.Empty {
-		return nil
-	}
-
-	// TODO(marun) Ensure removal of an existing file if no configuration should be provided
-	if len(s.Config) > 0 {
-		// Write net configuration for node
-		bytes, err = DefaultJSONMarshal(s.Config)
-		if err != nil {
-			return fmt.Errorf("failed to marshal node net config %s: %w", s.Name, err)
-		}
-
-		avgoConfigDir := filepath.Join(subnetDir, s.NetID.String())
-		if err := os.MkdirAll(avgoConfigDir, perms.ReadWriteExecute); err != nil {
-			return fmt.Errorf("failed to create node net config dir: %w", err)
-		}
-
-		avgoConfigPath := filepath.Join(avgoConfigDir, defaultConfigFilename)
-		if err := os.WriteFile(avgoConfigPath, bytes, perms.ReadWrite); err != nil {
-			return fmt.Errorf("failed to write node net config %s: %w", s.Name, err)
-		}
-	}
-
-	for _, chain := range s.Chains {
-		if err := chain.WriteConfig(chainDir); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -285,28 +249,21 @@ func (s *Subnet) HasChainConfig() bool {
 	return false
 }
 
-func waitForActiveValidators(
+func WaitForActiveValidators(
 	ctx context.Context,
-	w io.Writer,
-	pChainClient platformvm.Client,
+	log log.Logger,
+	pChainClient *platformvm.Client,
 	subnet *Subnet,
 ) error {
 	ticker := time.NewTicker(DefaultPollingInterval)
 	defer ticker.Stop()
 
-	if _, err := fmt.Fprintf(w, "Waiting for validators of net %q to become active\n", subnet.Name); err != nil {
-		return err
-	}
-
-	if _, err := fmt.Fprint(w, " "); err != nil {
-		return err
-	}
+	log.Info("waiting for subnet validators to become active",
+		zap.String("subnet", subnet.Name),
+	)
 
 	for {
-		if _, err := fmt.Fprint(w, "."); err != nil {
-			return err
-		}
-		validators, err := pChainClient.GetCurrentValidators(ctx, subnet.NetID, nil)
+		validators, err := pChainClient.GetCurrentValidators(ctx, subnet.SubnetID, nil)
 		if err != nil {
 			return err
 		}
@@ -321,15 +278,15 @@ func waitForActiveValidators(
 			}
 		}
 		if allActive {
-			if _, err := fmt.Fprintf(w, "\n saw the expected active validators of net %q\n", subnet.Name); err != nil {
-				return err
-			}
+			log.Info("saw the expected active validators of the subnet",
+				zap.String("subnet", subnet.Name),
+			)
 			return nil
 		}
 
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("failed to see the expected active validators of net %q before timeout", subnet.Name)
+			return fmt.Errorf("failed to see the expected active validators of subnet %q before timeout: %w", subnet.Name, ctx.Err())
 		case <-ticker.C:
 		}
 	}
@@ -337,15 +294,11 @@ func waitForActiveValidators(
 
 // Reads subnets from [network dir]/subnets/[subnet name].json
 func readSubnets(subnetDir string) ([]*Subnet, error) {
-	if _, err := os.Stat(subnetDir); os.IsNotExist(err) {
+	entries, err := os.ReadDir(subnetDir)
+	if errors.Is(err, os.ErrNotExist) {
 		return nil, nil
 	} else if err != nil {
-		return nil, err
-	}
-
-	entries, err := os.ReadDir(subnetDir)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read net dir: %w", err)
+		return nil, fmt.Errorf("failed to read subnet dir: %w", err)
 	}
 
 	subnets := []*Subnet{}
@@ -354,12 +307,13 @@ func readSubnets(subnetDir string) ([]*Subnet, error) {
 			// Looking only for files
 			continue
 		}
-		if filepath.Ext(entry.Name()) != ".json" {
-			// Net files should have a .json extension
+		fileName := entry.Name()
+		if filepath.Ext(fileName) != jsonFileSuffix {
+			// Subnet files should have a .json extension
 			continue
 		}
 
-		subnetPath := filepath.Join(subnetDir, entry.Name())
+		subnetPath := filepath.Join(subnetDir, fileName)
 		bytes, err := os.ReadFile(subnetPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read net file %s: %w", subnetPath, err)

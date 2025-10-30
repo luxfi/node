@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package xvm
@@ -7,16 +7,17 @@ import (
 	"context"
 	"reflect"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
 
 var _ txs.Visitor = (*txInit)(nil)
 
-// Init initializes FxID where required
+// txInit initializes FxID where required
 type txInit struct {
 	tx            *txs.Tx
-	ctx           context.Context
+	ctx           *consensusctx.Context
 	typeToFxIndex map[reflect.Type]int
 	fxs           []*fxs.ParsedFx
 }

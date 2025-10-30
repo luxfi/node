@@ -17,7 +17,7 @@ enables discovery and reproduction of anomalous behavior.
 | config.go                         | Defines common flags for the workload binary.                                      |
 | init_db.go                        | Initializes initial db state for subnet testing.                                   |
 | node_health.go                    | Helper to check node health.                                                       |
-| luxgo/                      | Defines an antithesis test setup for luxgo's primary chains.                 |
+| node/                      | Defines an antithesis test setup for node's primary chains.                 |
 | xsvm/                             | Defines an antithesis test setup for the xsvm VM.                                  |
 
 ## Instrumentation
@@ -89,11 +89,11 @@ $ AVAWL_URIS=... CHAIN_IDS="2S9ypz...AzMj9" go run ./tests/antithesis/xsvm
 ### Running a workload with a tmpnet network
 
 Just like with e2e tests, running an antithesis workload against a
-tmpnet network requires specifying an luxgo path (either as an
+tmpnet network requires specifying an node path (either as an
 argument or an env var):
 
 ```bash
-$ go run ./tests/antithesis/luxgo --luxgo-path=/path/to/luxgo
+$ go run ./tests/antithesis/node --node-path=/path/to/node
 ```
 
 All tmpnet flags are supported (e.g. `--reuse-network`,
@@ -152,7 +152,7 @@ can be performed against master or an arbitrary branch:
  - Wait for the publication job to complete successfully so that the
    images are available to be tested against.
  - Select one of the [Trigger Antithesis Luxgo
-   Setup](https://github.com/luxfi/node/actions/workflows/trigger-antithesis-luxgo.yml)
+   Setup](https://github.com/luxfi/node/actions/workflows/trigger-antithesis-node.yml)
    or [Trigger Antithesis XSVM
    Setup](https://github.com/luxfi/node/actions/workflows/trigger-antithesis-xsvm.yml)
    workflows on the left.

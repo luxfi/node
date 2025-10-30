@@ -14,7 +14,6 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	gomock "github.com/luxfi/mock/gomock"
 	version "github.com/luxfi/node/version"
 )
 

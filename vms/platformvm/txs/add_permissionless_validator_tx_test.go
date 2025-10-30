@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -13,14 +13,15 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/components/lux/luxmock"
+	"github.com/luxfi/node/vms/platformvm/fx/fxmock"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
@@ -44,7 +45,9 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	skBytes, err := hex.DecodeString("6668fecd4595b81e4d568398c820bbf3f073cb222902279fa55ebb84764ed2e3")
 	require.NoError(err)
 
-	sk, err := bls.SecretKeyFromBytes(skBytes)
+	sk, err := localsigner.FromBytes(skBytes)
+	require.NoError(err)
+	pop, err := signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
 	luxAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
@@ -101,14 +104,8 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			End:    12345 + 200*24*60*60,
 			Wght:   2 * units.KiloLux,
 		},
-		Net: constants.PrimaryNetworkID,
-		Signer: func() *signer.ProofOfPossession {
-			pop, err := signer.NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
-			if err != nil {
-				panic(err)
-			}
-			return pop
-		}(),
+		Subnet: constants.PrimaryNetworkID,
+		Signer: pop,
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
@@ -400,14 +397,8 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			End:    12345 + 200*24*60*60,
 			Wght:   5 * units.KiloLux,
 		},
-		Net: constants.PrimaryNetworkID,
-		Signer: func() *signer.ProofOfPossession {
-			pop, err := signer.NewProofOfPossession(func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(sk)); return s }())
-			if err != nil {
-				panic(err)
-			}
-			return pop
-		}(),
+		Subnet: constants.PrimaryNetworkID,
+		Signer: pop,
 		StakeOuts: []*lux.TransferableOutput{
 			{
 				Asset: lux.Asset{
@@ -1430,7 +1421,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		},
 	}
 
-	blsSK, err := bls.NewSecretKey()
+	blsSK, err := localsigner.New()
 	require.NoError(t, err)
 
 	blsPOP, err := signer.NewProofOfPossession(blsSK)
@@ -1530,7 +1521,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "invalid rewards owner",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessValidatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(errCustom)
 				return &AddPermissionlessValidatorTx{
 					BaseTx: validBaseTx,
@@ -1560,7 +1551,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "wrong signer",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessValidatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				return &AddPermissionlessValidatorTx{
 					BaseTx: validBaseTx,
@@ -1590,10 +1581,10 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "invalid stake output",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessValidatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 
-				stakeOut := lux.NewMockTransferableOut(ctrl)
+				stakeOut := luxmock.NewTransferableOut(ctrl)
 				stakeOut.EXPECT().Verify().Return(errCustom)
 				return &AddPermissionlessValidatorTx{
 					BaseTx: validBaseTx,
@@ -1621,7 +1612,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "stake overflow",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessValidatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessValidatorTx{
@@ -1660,7 +1651,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "multiple staked assets",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessValidatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				return &AddPermissionlessValidatorTx{
 					BaseTx: validBaseTx,
@@ -1698,7 +1689,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "stake not sorted",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessValidatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessValidatorTx{
@@ -1737,7 +1728,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "weight mismatch",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessValidatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessValidatorTx{
@@ -1776,7 +1767,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "valid net validator",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessValidatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessValidatorTx{
@@ -1815,7 +1806,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "valid primary network validator",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessValidatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessValidatorTx{

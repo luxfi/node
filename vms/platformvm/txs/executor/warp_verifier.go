@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
@@ -18,34 +17,6 @@ const (
 )
 
 var _ txs.Visitor = (*warpVerifier)(nil)
-
-// validatorStateWrapper wraps validators.State to implement warp.ValidatorState
-type validatorStateWrapper struct {
-	state validators.State
-}
-
-func (w *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*warp.ValidatorData, error) {
-	valSet, err := w.state.GetValidatorSet(ctx, height, netID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert to warp.ValidatorData map
-	result := make(map[ids.NodeID]*warp.ValidatorData, len(valSet))
-	for nodeID, val := range valSet {
-		result[nodeID] = &warp.ValidatorData{
-			NodeID:    nodeID,
-			PublicKey: val.PublicKey,
-			Weight:    val.Weight,
-		}
-	}
-	return result, nil
-}
-
-func (w *validatorStateWrapper) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	// For now, return an error
-	return ids.Empty, nil
-}
 
 // VerifyWarpMessages verifies all warp messages in the tx. If any of the warp
 // messages are invalid, an error is returned.
@@ -59,7 +30,7 @@ func VerifyWarpMessages(
 	return tx.Visit(&warpVerifier{
 		context:        ctx,
 		networkID:      networkID,
-		validatorState: &validatorStateWrapper{state: validatorState},
+		validatorState: validatorState,
 		pChainHeight:   pChainHeight,
 	})
 }
@@ -67,7 +38,7 @@ func VerifyWarpMessages(
 type warpVerifier struct {
 	context        context.Context
 	networkID      uint32
-	validatorState warp.ValidatorState
+	validatorState validators.State
 	pChainHeight   uint64
 }
 
@@ -75,7 +46,7 @@ func (*warpVerifier) AddValidatorTx(*txs.AddValidatorTx) error {
 	return nil
 }
 
-func (*warpVerifier) AddNetValidatorTx(*txs.AddNetValidatorTx) error {
+func (*warpVerifier) AddSubnetValidatorTx(*txs.AddSubnetValidatorTx) error {
 	return nil
 }
 
@@ -87,7 +58,7 @@ func (*warpVerifier) CreateChainTx(*txs.CreateChainTx) error {
 	return nil
 }
 
-func (*warpVerifier) CreateNetTx(*txs.CreateNetTx) error {
+func (*warpVerifier) CreateSubnetTx(*txs.CreateSubnetTx) error {
 	return nil
 }
 
@@ -107,11 +78,11 @@ func (*warpVerifier) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return nil
 }
 
-func (*warpVerifier) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
+func (*warpVerifier) RemoveSubnetValidatorTx(*txs.RemoveSubnetValidatorTx) error {
 	return nil
 }
 
-func (*warpVerifier) TransformNetTx(*txs.TransformNetTx) error {
+func (*warpVerifier) TransformSubnetTx(*txs.TransformSubnetTx) error {
 	return nil
 }
 
@@ -123,7 +94,7 @@ func (*warpVerifier) AddPermissionlessDelegatorTx(*txs.AddPermissionlessDelegato
 	return nil
 }
 
-func (*warpVerifier) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
+func (*warpVerifier) TransferSubnetOwnershipTx(*txs.TransferSubnetOwnershipTx) error {
 	return nil
 }
 
@@ -131,7 +102,7 @@ func (*warpVerifier) BaseTx(*txs.BaseTx) error {
 	return nil
 }
 
-func (*warpVerifier) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
+func (*warpVerifier) ConvertSubnetToL1Tx(*txs.ConvertSubnetToL1Tx) error {
 	return nil
 }
 
@@ -157,13 +128,20 @@ func (w *warpVerifier) verify(message []byte) error {
 		return err
 	}
 
-	// The signature verification now handles getting validators internally
-	return msg.Signature.Verify(
+	validators, err := warp.GetCanonicalValidatorSetFromChainID(
 		w.context,
-		&msg.UnsignedMessage,
-		w.networkID,
 		w.validatorState,
 		w.pChainHeight,
+		msg.SourceChainID,
+	)
+	if err != nil {
+		return err
+	}
+
+	return msg.Signature.Verify(
+		&msg.UnsignedMessage,
+		w.networkID,
+		validators,
 		WarpQuorumNumerator,
 		WarpQuorumDenominator,
 	)

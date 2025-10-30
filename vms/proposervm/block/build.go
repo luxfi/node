@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	nodeids "github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/wrappers"
@@ -19,6 +18,7 @@ func BuildUnsigned(
 	parentID ids.ID,
 	timestamp time.Time,
 	pChainHeight uint64,
+	epoch Epoch,
 	blockBytes []byte,
 ) (SignedBlock, error) {
 	var block SignedBlock = &statelessBlock{
@@ -26,6 +26,7 @@ func BuildUnsigned(
 			ParentID:     parentID,
 			Timestamp:    timestamp.Unix(),
 			PChainHeight: pChainHeight,
+			Epoch:        epoch,
 			Certificate:  nil,
 			Block:        blockBytes,
 		},
@@ -44,6 +45,7 @@ func Build(
 	parentID ids.ID,
 	timestamp time.Time,
 	pChainHeight uint64,
+	epoch Epoch,
 	cert *staking.Certificate,
 	blockBytes []byte,
 	chainID ids.ID,
@@ -54,12 +56,16 @@ func Build(
 			ParentID:     parentID,
 			Timestamp:    timestamp.Unix(),
 			PChainHeight: pChainHeight,
+			Epoch:        epoch,
 			Certificate:  cert.Raw,
 			Block:        blockBytes,
 		},
 		timestamp: timestamp,
 		cert:      cert,
-		proposer:  ids.NodeID(nodeids.NodeIDFromCert(cert)),
+		proposer: ids.NodeIDFromCert(&ids.Certificate{
+			Raw:       cert.Raw,
+			PublicKey: cert.PublicKey,
+		}),
 	}
 	var blockIntf SignedBlock = block
 

@@ -1,20 +1,21 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
 
 import (
-	"context"
+	"sync/atomic"
 	"time"
 
-	"github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
+	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/node/network/tracker"
+	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 )
@@ -45,6 +46,7 @@ type Config struct {
 	Network              Network
 	Router               InboundHandler
 	VersionCompatibility version.Compatibility
+	MyNodeID             ids.NodeID
 	// MySubnets does not include the primary network ID
 	MySubnets          set.Set[ids.ID]
 	Beacons            validators.Manager
@@ -69,4 +71,7 @@ type Config struct {
 
 	// Signs my IP so I can send my signed IP address in the Handshake message
 	IPSigner *IPSigner
+
+	// IngressConnectionCount counts the ingress (to us) connections.
+	IngressConnectionCount atomic.Int64
 }

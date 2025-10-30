@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -9,16 +9,17 @@ import (
 
 	luxlog "github.com/luxfi/log"
 
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/bloom"
+	"github.com/luxfi/log"
 )
 
 var _ p2p.Handler = (*Handler[*testTx])(nil)
 
 func NewHandler[T Gossipable](
-	log luxlog.Logger,
+	log log.Logger,
 	marshaller Marshaller[T],
 	set Set[T],
 	metrics Metrics,
@@ -37,7 +38,7 @@ func NewHandler[T Gossipable](
 type Handler[T Gossipable] struct {
 	p2p.Handler
 	marshaller         Marshaller[T]
-	log                luxlog.Logger
+	log                log.Logger
 	set                Set[T]
 	metrics            Metrics
 	targetResponseSize int

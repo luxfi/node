@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -6,10 +6,8 @@ package validators
 import (
 	"context"
 
-	consensusset "github.com/luxfi/consensus/utils/set"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/validators"
 )
 
 var TestManager Manager = testManager{}
@@ -34,6 +32,10 @@ func (testManager) GetValidatorSet(ctx context.Context, height uint64, netID ids
 
 func (testManager) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	return nil, nil
+}
+
+func (testManager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+	return nil, 0, nil
 }
 
 func (testManager) OnAcceptedBlockID(ids.ID) {}

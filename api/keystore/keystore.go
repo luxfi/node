@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package keystore
@@ -17,7 +17,12 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/encdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/password"
 )
 

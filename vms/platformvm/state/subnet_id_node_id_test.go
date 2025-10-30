@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -11,29 +11,29 @@ import (
 	"github.com/thepudds/fzgen/fuzzer"
 )
 
-func FuzzNetIDNodeIDMarshal(f *testing.F) {
+func FuzzSubnetIDNodeIDMarshal(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		require := require.New(t)
 
-		var v netIDNodeID
+		var v subnetIDNodeID
 		fz := fuzzer.NewFuzzer(data)
 		fz.Fill(&v)
 
 		marshalledData := v.Marshal()
 
-		var parsed netIDNodeID
+		var parsed subnetIDNodeID
 		require.NoError(parsed.Unmarshal(marshalledData))
 		require.Equal(v, parsed)
 	})
 }
 
-func FuzzNetIDNodeIDUnmarshal(f *testing.F) {
+func FuzzSubnetIDNodeIDUnmarshal(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		require := require.New(t)
 
-		var v netIDNodeID
+		var v subnetIDNodeID
 		if err := v.Unmarshal(data); err != nil {
-			require.ErrorIs(err, errUnexpectedNetIDNodeIDLength)
+			require.ErrorIs(err, errUnexpectedSubnetIDNodeIDLength)
 			return
 		}
 
@@ -42,16 +42,16 @@ func FuzzNetIDNodeIDUnmarshal(f *testing.F) {
 	})
 }
 
-func FuzzNetIDNodeIDOrdering(f *testing.F) {
+func FuzzSubnetIDNodeIDOrdering(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		var (
-			v0 netIDNodeID
-			v1 netIDNodeID
+			v0 subnetIDNodeID
+			v1 subnetIDNodeID
 		)
 		fz := fuzzer.NewFuzzer(data)
 		fz.Fill(&v0, &v1)
 
-		if v0.netID == v1.netID {
+		if v0.subnetID == v1.subnetID {
 			return
 		}
 
@@ -59,7 +59,7 @@ func FuzzNetIDNodeIDOrdering(f *testing.F) {
 		key1 := v1.Marshal()
 		require.Equal(
 			t,
-			v0.netID.Compare(v1.netID),
+			v0.subnetID.Compare(v1.subnetID),
 			bytes.Compare(key0, key1),
 		)
 	})

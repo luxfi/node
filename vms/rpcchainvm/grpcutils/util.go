@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package grpcutils
@@ -16,13 +16,6 @@ import (
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
-
-func Errorf(code int, tmpl string, args ...interface{}) error {
-	return GetGRPCErrorFromHTTPResponse(&httppb.HandleSimpleHTTPResponse{
-		Code: int32(code),
-		Body: []byte(fmt.Sprintf(tmpl, args...)),
-	})
-}
 
 // GetGRPCErrorFromHTTPResponse takes an HandleSimpleHTTPResponse as input and returns a gRPC error.
 func GetGRPCErrorFromHTTPResponse(resp *httppb.HandleSimpleHTTPResponse) error {
@@ -71,10 +64,12 @@ func GetHTTPHeader(hs http.Header) []*httppb.Element {
 	return result
 }
 
-// MergeHTTPHeader takes a slice of Header and merges with http.Header map.
-func MergeHTTPHeader(hs []*httppb.Element, header http.Header) {
-	for _, h := range hs {
-		header[h.Key] = h.Values
+// SetHeaders sets headers to next
+func SetHeaders(headers http.Header, next []*httppb.Element) {
+	clear(headers)
+
+	for _, h := range next {
+		headers[h.Key] = h.Values
 	}
 }
 

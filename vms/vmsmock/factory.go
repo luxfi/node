@@ -12,7 +12,7 @@ package vmsmock
 import (
 	reflect "reflect"
 
-	log "github.com/luxfi/log"
+	"github.com/luxfi/log"
 	gomock "go.uber.org/mock/gomock"
 )
 

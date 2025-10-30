@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-
-set -euo pipefail
-
-git add --all
-git update-index --really-refresh >> /dev/null
-
-# Show the status of the working tree.
-git status --short
-
+#!/bin/bash
 # Exits if any uncommitted changes are found.
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+git update-index --really-refresh >> /dev/null
 git diff-index --quiet HEAD

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -13,13 +13,11 @@ import (
 
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/txs"
-
-	xmempool "github.com/luxfi/node/vms/xvm/txs/mempool"
 )
 
 var (
@@ -69,11 +67,10 @@ func (g *txParser) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
 }
 
 func newGossipMempool(
-	mempool xmempool.Mempool,
-	registerer metric.Registerer,
+	mempool mempool.Mempool[*txs.Tx],
+	registerer prometheus.Registerer,
 	log log.Logger,
 	txVerifier TxVerifier,
-	parser txs.Parser,
 	minTargetElements int,
 	targetFalsePositiveProbability,
 	resetFalsePositiveProbability float64,
@@ -83,16 +80,14 @@ func newGossipMempool(
 		Mempool:    mempool,
 		log:        log,
 		txVerifier: txVerifier,
-		parser:     parser,
 		bloom:      bloom,
 	}, err
 }
 
 type gossipMempool struct {
-	xmempool.Mempool
+	mempool.Mempool[*txs.Tx]
 	log        log.Logger
 	txVerifier TxVerifier
-	parser     txs.Parser
 
 	lock  sync.RWMutex
 	bloom *gossip.BloomFilter
@@ -151,8 +146,6 @@ func (g *gossipMempool) AddWithoutVerification(tx *txs.Tx) error {
 			return true
 		})
 	}
-
-	g.Mempool.RequestBuildBlock()
 	return nil
 }
 

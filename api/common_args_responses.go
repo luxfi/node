@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package api
@@ -17,15 +17,15 @@ import (
 // EmptyReply indicates that an api doesn't have a response to return.
 type EmptyReply struct{}
 
-// JSONTxID contains the ID of a transaction
-type JSONTxID struct {
-	TxID ids.ID `json:"txID"`
-}
-
-// UserPass contains a username and a password
+// UserPass contains a username and password
 type UserPass struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+// JSONTxID contains the ID of a transaction
+type JSONTxID struct {
+	TxID ids.ID `json:"txID"`
 }
 
 // JSONAddress contains an address
@@ -36,32 +36,6 @@ type JSONAddress struct {
 // JSONAddresses contains a list of address
 type JSONAddresses struct {
 	Addresses []string `json:"addresses"`
-}
-
-// JSONChangeAddr is the address change is sent to, if any
-type JSONChangeAddr struct {
-	ChangeAddr string `json:"changeAddr"`
-}
-
-// JSONTxIDChangeAddr is a tx ID and change address
-type JSONTxIDChangeAddr struct {
-	JSONTxID
-	JSONChangeAddr
-}
-
-// JSONFromAddrs is a list of addresses to send funds from
-type JSONFromAddrs struct {
-	From []string `json:"from"`
-}
-
-// JSONSpendHeader is 3 arguments to a method that spends (including those with tx fees)
-// 1) The username/password
-// 2) The addresses used in the method
-// 3) The address to send change to
-type JSONSpendHeader struct {
-	UserPass
-	JSONFromAddrs
-	JSONChangeAddr
 }
 
 // GetBlockArgs is the parameters supplied to the GetBlock API

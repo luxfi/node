@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -9,10 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -25,10 +25,6 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 		ChainID:   testChainID,
 	})
 	testSubnet1ID := ids.GenerateTestID()
-	testSubnet1ControlKeys := []*secp256k1.PrivateKey{
-		preFundedKeys[0],
-		preFundedKeys[1],
-	}
 
 	type test struct {
 		description string
@@ -37,7 +33,6 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 		vmID        ids.ID
 		fxIDs       []ids.ID
 		chainName   string
-		keys        []*secp256k1.PrivateKey
 		setup       func(*CreateChainTx) *CreateChainTx
 		expectedErr error
 	}
@@ -50,7 +45,6 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
 			chainName:   "yeet",
-			keys:        []*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 			setup: func(*CreateChainTx) *CreateChainTx {
 				return nil
 			},
@@ -63,7 +57,6 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
 			chainName:   "yeet",
-			keys:        []*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 			setup: func(tx *CreateChainTx) *CreateChainTx {
 				tx.VMID = ids.Empty
 				return tx
@@ -77,7 +70,6 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
 			chainName:   "yeet",
-			keys:        []*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 			setup: func(tx *CreateChainTx) *CreateChainTx {
 				tx.NetID = constants.PrimaryNetworkID
 				return tx
@@ -91,7 +83,6 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
 			chainName:   "yeet",
-			keys:        []*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 			setup: func(tx *CreateChainTx) *CreateChainTx {
 				tx.ChainName = string(make([]byte, MaxNameLen+1))
 				return tx
@@ -105,7 +96,6 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
 			chainName:   "yeet",
-			keys:        []*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 			setup: func(tx *CreateChainTx) *CreateChainTx {
 				tx.ChainName = "⌘"
 				return tx
@@ -119,7 +109,6 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
 			chainName:   "yeet",
-			keys:        []*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 			setup: func(tx *CreateChainTx) *CreateChainTx {
 				tx.GenesisData = make([]byte, MaxGenesisLen+1)
 				return tx
@@ -149,7 +138,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 					Amt: uint64(1234),
 					OutputOwners: secp256k1fx.OutputOwners{
 						Threshold: 1,
-						Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+						Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
 					},
 				},
 			}}

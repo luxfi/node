@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package api
@@ -10,10 +10,11 @@ import (
 	"io"
 
 	"connectrpc.com/connect"
-	"github.com/luxfi/log"
+	"go.uber.org/zap"
 
 	"github.com/luxfi/node/connectproto/pb/xsvm"
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
+	"github.com/luxfi/log"
 )
 
 var _ xsvmconnect.PingHandler = (*PingService)(nil)
@@ -23,7 +24,7 @@ type PingService struct {
 }
 
 func (p *PingService) Ping(_ context.Context, request *connect.Request[xsvm.PingRequest]) (*connect.Response[xsvm.PingReply], error) {
-	p.Log.Debug("ping", log.UserString("message", request.Msg.Message))
+	p.Log.Debug("ping", zap.String("message", request.Msg.Message))
 	return connect.NewResponse[xsvm.PingReply](
 		&xsvm.PingReply{
 			Message: request.Msg.Message,
@@ -42,7 +43,7 @@ func (p *PingService) StreamPing(_ context.Context, server *connect.BidiStream[x
 			return fmt.Errorf("failed to receive message: %w", err)
 		}
 
-		p.Log.Debug("stream ping", log.UserString("message", request.Message))
+		p.Log.Debug("stream ping", zap.String("message", request.Message))
 		err = server.Send(&xsvm.StreamPingReply{
 			Message: request.Message,
 		})

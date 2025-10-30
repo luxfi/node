@@ -1,11 +1,10 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
 
 import (
-	"context"
-
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -21,11 +20,7 @@ type TestState struct {
 	Err error
 }
 
-func (*TestState) InitCtx(context.Context) {}
-
-func (*TestState) InitializeWithContext(ctx context.Context) error {
-	return nil
-}
+func (*TestState) InitCtx(*consensusctx.Context) {}
 
 func (v *TestState) Verify() error {
 	return v.Err
@@ -37,11 +32,7 @@ type TestTransferable struct {
 	Val uint64 `serialize:"true"`
 }
 
-func (*TestTransferable) InitCtx(context.Context) {}
-
-func (*TestTransferable) InitializeWithContext(ctx context.Context) error {
-	return nil
-}
+func (*TestTransferable) InitCtx(*consensusctx.Context) {}
 
 func (t *TestTransferable) Amount() uint64 {
 	return t.Val

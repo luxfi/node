@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -10,10 +10,10 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/math/set"
 )
 
 var (
@@ -31,18 +31,7 @@ type AppResponseCallback func(
 	err error,
 )
 
-// CrossChainAppResponseCallback is called upon receiving an
-// CrossChainAppResponse for a CrossChainAppRequest issued by Client.
-// Callers should check [err] to see whether the AppRequest failed or not.
-type CrossChainAppResponseCallback func(
-	ctx context.Context,
-	chainID ids.ID,
-	responseBytes []byte,
-	err error,
-)
-
 type Client struct {
-	handlerID     uint64
 	handlerIDStr  string
 	handlerPrefix []byte
 	router        *router
@@ -101,7 +90,7 @@ func (c *Client) AppRequest(
 		nodeIDs.Add(nodeID)
 		if err := c.sender.SendAppRequest(
 			ctxWithoutCancel,
-			nodeIDs,
+			toConsensusSet(set.Of(nodeID)),
 			requestID,
 			appRequestBytes,
 		); err != nil {
@@ -145,68 +134,9 @@ func (c *Client) AppGossip(
 
 	return c.sender.SendAppGossip(
 		ctxWithoutCancel,
-		nodeIDs,
+		sendConfigToSet(config),
 		PrefixMessage(c.handlerPrefix, appGossipBytes),
 	)
-}
-
-// CrossChainAppRequest sends a cross chain app request to another vm.
-// [onResponse] is invoked upon an error or a response.
-func (c *Client) CrossChainAppRequest(
-	ctx context.Context,
-	chainID ids.ID,
-	appRequestBytes []byte,
-	onResponse CrossChainAppResponseCallback,
-) error {
-	// Cancellation is removed from this context to avoid erroring unexpectedly.
-	// SendCrossChainAppRequest should be non-blocking and any error other than
-	// context cancellation is unexpected.
-	//
-	// This guarantees that the router should never receive an unexpected
-	// CrossChainAppResponse.
-	ctxWithoutCancel := context.WithoutCancel(ctx)
-
-	c.router.lock.Lock()
-	defer c.router.lock.Unlock()
-
-	requestID := c.router.requestID
-	if _, ok := c.router.pendingCrossChainAppRequests[requestID]; ok {
-		return fmt.Errorf(
-			"failed to issue request with request id %d: %w",
-			requestID,
-			ErrRequestPending,
-		)
-	}
-
-	// Prefix the message with handler ID for cross-chain requests
-	prefixedAppRequestBytes := PrefixMessage(c.handlerPrefix, appRequestBytes)
-
-	// Check if sender supports cross-chain operations
-	var err error
-	if extSender, ok := c.router.sender.(ExtendedAppSender); ok {
-		err = extSender.SendCrossChainAppRequest(ctxWithoutCancel, chainID, requestID, prefixedAppRequestBytes)
-	} else {
-		// Fallback: sender doesn't support cross-chain
-		err = fmt.Errorf("cross-chain app requests not supported by sender")
-	}
-
-	if err != nil {
-		c.router.log.Error("unexpected error when sending message",
-			log.Stringer("op", message.CrossChainAppRequestOp),
-			log.Stringer("chainID", chainID),
-			log.Uint32("requestID", requestID),
-			log.Err(err),
-		)
-		return err
-	}
-
-	c.router.pendingCrossChainAppRequests[requestID] = pendingCrossChainAppRequest{
-		handlerID: c.handlerIDStr,
-		callback:  onResponse,
-	}
-	c.router.requestID += 2
-
-	return nil
 }
 
 // PrefixMessage prefixes the original message with the protocol identifier.

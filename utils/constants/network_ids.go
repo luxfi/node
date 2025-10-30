@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package constants
@@ -24,23 +24,12 @@ const (
 	LuxMainnetID uint32 = 96369
 	LuxTestnetID uint32 = 96368
 
-	// Zoo network IDs
-	ZooMainnetID uint32 = 200200
-	ZooTestnetID uint32 = 200201
+	// Lux-specific network IDs
+	LuxMainnetID    uint32 = 96369  // Lux mainnet
+	LuxTestnetID    uint32 = 96370  // Lux testnet
+	QChainMainnetID uint32 = 96380  // Q-Chain mainnet
+	QChainTestnetID uint32 = 96381  // Q-Chain testnet
 
-	// SPC network IDs
-	SPCMainnetID uint32 = 36911
-	SPCTestnetID uint32 = 36912
-
-	// Hanzo network IDs
-	HanzoMainnetID uint32 = 36963
-	HanzoTestnetID uint32 = 36962
-
-	// Q-Chain network IDs (Quantum-resistant chain)
-	QChainMainnetID uint32 = 99999
-	QChainTestnetID uint32 = 99998
-
-	LocalName    = "local"
 	MainnetName  = "mainnet"
 	TestnetName  = "testnet"
 	UnitTestName = "testing"
@@ -59,6 +48,10 @@ var (
 	// Q-Chain ID for quantum-resistant chain
 	// QChainID = ids.FromStringOrPanic("2QTQfPNhYWJUhmemsBFzqGjRdvXn4LQyJCx4VTxxKjzV6h5J2q")
 	QChainID = ids.Empty // Temporarily using Empty ID until valid ID is generated
+
+	// Q-Chain specific IDs
+	QChainID = ids.ID{'q', 'c', 'h', 'a', 'i', 'n'}
+	QVMID    = ids.ID{'q', 'v', 'm'}
 
 	NetworkIDToNetworkName = map[uint32]string{
 		LocalID:         LocalName,

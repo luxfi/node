@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package health
@@ -17,13 +17,15 @@ import (
 
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 )
 
 var (
 	allTags = []string{AllTag}
 
 	errRestrictedTag  = errors.New("restricted tag")
-	errDuplicateCheck = errors.New("duplicated check")
+	errDuplicateCheck = errors.New("duplicate check")
 )
 
 type worker struct {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package wallet
@@ -54,7 +54,7 @@ func (b *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) CreateNetTx(tx *txs.CreateNetTx) error {
+func (b *backendVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 	b.b.setOwner(
 		b.txID,
 		tx.Owner,
@@ -95,11 +95,11 @@ func (b *backendVisitor) ExportTx(tx *txs.ExportTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
+func (b *backendVisitor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) TransformNetTx(tx *txs.TransformNetTx) error {
+func (b *backendVisitor) TransformSubnetTx(tx *txs.TransformSubnetTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
@@ -111,9 +111,9 @@ func (b *backendVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessD
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
+func (b *backendVisitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
 	b.b.setOwner(
-		tx.Net,
+		tx.Subnet,
 		tx.Owner,
 	)
 	return b.baseTx(&tx.BaseTx)
@@ -123,9 +123,16 @@ func (b *backendVisitor) BaseTx(tx *txs.BaseTx) error {
 	return b.baseTx(tx)
 }
 
-func (b *backendVisitor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
-	// L1 validators no longer have DeactivationOwner, so we don't need to set owners
-	// for each validator anymore
+func (b *backendVisitor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+	for i, vdr := range tx.Validators {
+		b.b.setOwner(
+			tx.Subnet.Append(uint32(i)),
+			&secp256k1fx.OutputOwners{
+				Threshold: vdr.DeactivationOwner.Threshold,
+				Addrs:     vdr.DeactivationOwner.Addresses,
+			},
+		)
+	}
 	return b.baseTx(&tx.BaseTx)
 }
 
@@ -171,4 +178,24 @@ func (b *backendVisitor) baseTx(tx *txs.BaseTx) error {
 		constants.PlatformChainID,
 		tx.InputIDs(),
 	)
+}
+
+func (b *backendVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
+
+func (b *backendVisitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
+
+func (b *backendVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
+
+func (b *backendVisitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
+
+func (b *backendVisitor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
+	return b.baseTx(&tx.BaseTx)
 }

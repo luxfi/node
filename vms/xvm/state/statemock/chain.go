@@ -14,9 +14,9 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
-	lux "github.com/luxfi/node/vms/components/lux"
 	block "github.com/luxfi/node/vms/xvm/block"
 	txs "github.com/luxfi/node/vms/xvm/txs"
+	lux "github.com/luxfi/node/vms/components/lux"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -45,15 +45,15 @@ func (m *Chain) EXPECT() *ChainMockRecorder {
 }
 
 // AddBlock mocks base method.
-func (m *Chain) AddBlock(arg0 block.Block) {
+func (m *Chain) AddBlock(block block.Block) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddBlock", arg0)
+	m.ctrl.Call(m, "AddBlock", block)
 }
 
 // AddBlock indicates an expected call of AddBlock.
-func (mr *ChainMockRecorder) AddBlock(arg0 any) *gomock.Call {
+func (mr *ChainMockRecorder) AddBlock(block any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBlock", reflect.TypeOf((*Chain)(nil).AddBlock), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBlock", reflect.TypeOf((*Chain)(nil).AddBlock), block)
 }
 
 // AddTx mocks base method.

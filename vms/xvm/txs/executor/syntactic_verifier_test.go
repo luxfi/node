@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -11,11 +11,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/vms/xvm/config"
+	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -29,9 +32,13 @@ import (
 var (
 	keys      = secp256k1.TestKeys()
 	feeConfig = config.Config{
+		Upgrades:         upgradetest.GetConfig(upgradetest.Durango),
 		TxFee:            2,
 		CreateAssetTxFee: 3,
+<<<<<<< HEAD:vms/avm/txs/executor/syntactic_verifier_test.go
+=======
 		EtnaTime:         mockable.MaxTime,
+>>>>>>> origin/regenesis-runtime-replay:vms/xvm/txs/executor/syntactic_verifier_test.go
 	}
 )
 

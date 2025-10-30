@@ -1,10 +1,9 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -13,13 +12,11 @@ import (
 	_ "embed"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/node/vms/platformvm/testcontext"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
 )
@@ -169,7 +166,7 @@ func TestIncreaseL1ValidatorBalanceTxSerialization(t *testing.T) {
 		// IncreaseL1ValidatorBalanceTx Type ID
 		0x00, 0x00, 0x00, 0x26,
 		// Network ID
-		0x00, 0x00, 0x01, 0x71,
+		0x00, 0x00, 0x00, 0x0a,
 		// P-chain blockchain ID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -306,15 +303,8 @@ func TestIncreaseL1ValidatorBalanceTxSerialization(t *testing.T) {
 	}
 	require.Equal(expectedBytes, txBytes)
 
-	aliaser := ids.NewAliaser()
-	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
-
-	ctx := consensustest.Context(t, constants.PlatformChainID)
-	goCtx := context.Background()
-	goCtx = consensus.WithContext(goCtx, ctx)
-	testCtx := testcontext.New(goCtx)
-	testCtx.BCLookup = aliaser
-	unsignedTx.InitCtx(testCtx)
+	ctx := snowtest.Context(t, constants.PlatformChainID)
+	unsignedTx.InitCtx(ctx)
 
 	txJSON, err := json.MarshalIndent(unsignedTx, "", "\t")
 	require.NoError(err)
@@ -323,10 +313,10 @@ func TestIncreaseL1ValidatorBalanceTxSerialization(t *testing.T) {
 
 func TestIncreaseL1ValidatorBalanceTxSyntacticVerify(t *testing.T) {
 	var (
-		ctx         = consensustest.Context(t, ids.GenerateTestID())
+		ctx         = snowtest.Context(t, ids.GenerateTestID())
 		validBaseTx = BaseTx{
 			BaseTx: lux.BaseTx{
-				NetworkID:    ctx.QuantumID,
+				NetworkID:    ctx.NetworkID,
 				BlockchainID: ctx.ChainID,
 			},
 		}
@@ -383,8 +373,7 @@ func TestIncreaseL1ValidatorBalanceTxSyntacticVerify(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			goCtx := consensus.WithContext(context.Background(), ctx)
-			err := test.tx.SyntacticVerify(goCtx)
+			err := test.tx.SyntacticVerify(ctx)
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
 				return

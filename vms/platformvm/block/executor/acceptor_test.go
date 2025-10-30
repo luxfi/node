@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -15,6 +15,8 @@ import (
 	"github.com/luxfi/node/chains/atomic/atomicmock"
 	"github.com/luxfi/database/databasemock"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -57,7 +59,7 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 			},
 			state: s,
 		},
-		metrics:    metric.Noop,
+		metrics:    metrics.Noop,
 		validators: validatorstest.Manager,
 	}
 
@@ -90,7 +92,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 			ctx:          context.Background(),
 			SharedMemory: nil, // TODO: Fix SharedMemory mock interface
 		},
-		metrics:    metric.Noop,
+		metrics:    metrics.Noop,
 		validators: validatorstest.Manager,
 	}
 
@@ -118,6 +120,9 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 		statelessBlock: blk,
 		onAcceptState:  onAcceptState,
 		atomicRequests: atomicRequests,
+		metrics: metrics.Block{
+			Block: blk,
+		},
 	}
 	// Give [blk] a child.
 	childOnAcceptState := state.NewMockDiff(ctrl)
@@ -163,7 +168,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 			ctx:          context.Background(),
 			SharedMemory: nil, // TODO: Fix SharedMemory mock interface
 		},
-		metrics:    metric.Noop,
+		metrics:    metrics.Noop,
 		validators: validatorstest.Manager,
 	}
 
@@ -199,6 +204,9 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 		},
 
 		atomicRequests: atomicRequests,
+		metrics: metrics.Block{
+			Block: blk,
+		},
 	}
 	// Give [blk] a child.
 	childOnAcceptState := state.NewMockDiff(ctrl)
@@ -245,7 +253,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 			ctx:          context.Background(),
 			SharedMemory: nil, // TODO: Fix SharedMemory mock interface
 		},
-		metrics:    metric.Noop,
+		metrics:    metrics.Noop,
 		validators: validatorstest.Manager,
 	}
 
@@ -305,6 +313,9 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 		inputs:         parentState.inputs,
 		timestamp:      parentOnCommitState.GetTimestamp(),
 		atomicRequests: parentState.atomicRequests,
+		metrics: metrics.Block{
+			Block: blk,
+		},
 	}
 
 	batch := databasemock.NewBatch(ctrl)
@@ -350,7 +361,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 			ctx:          context.Background(),
 			SharedMemory: nil, // TODO: Fix SharedMemory mock interface
 		},
-		metrics:    metric.Noop,
+		metrics:    metrics.Noop,
 		validators: validatorstest.Manager,
 	}
 
@@ -410,6 +421,9 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 		inputs:         parentState.inputs,
 		timestamp:      parentOnAbortState.GetTimestamp(),
 		atomicRequests: parentState.atomicRequests,
+		metrics: metrics.Block{
+			Block: blk,
+		},
 	}
 
 	batch := databasemock.NewBatch(ctrl)

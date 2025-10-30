@@ -1,16 +1,17 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"errors"
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -35,7 +36,7 @@ type ImportTx struct {
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [ImportTx]. Also sets the [ctx] to the given [vm.ctx] so that
 // the addresses can be json marshalled into human readable format
-func (tx *ImportTx) InitCtx(ctx context.Context) {
+func (tx *ImportTx) InitCtx(ctx *consensusctx.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	for _, in := range tx.ImportedInputs {
 		in.FxID = secp256k1fx.ID
@@ -59,7 +60,7 @@ func (tx *ImportTx) InputIDs() set.Set[ids.ID] {
 }
 
 // SyntacticVerify this transaction is well-formed
-func (tx *ImportTx) SyntacticVerify(ctx context.Context) error {
+func (tx *ImportTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

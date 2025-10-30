@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -15,7 +15,7 @@ import (
 var (
 	hello      = "hello"
 	world      = "world"
-	helloWorld = "hello_world" // The prefix gatherer adds underscore between prefix and name
+	helloWorld = "helloWorld"
 )
 
 func TestMultiGathererEmptyGather(t *testing.T) {

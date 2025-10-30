@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package api
@@ -8,7 +8,6 @@ import (
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/types"
 )
-
 
 // APIL1Validator is the representation of a L1 validator sent over APIs.
 type APIL1Validator struct {
@@ -31,4 +30,3 @@ type BaseL1Validator struct {
 	// validator is inactive, the balance will be 0.
 	Balance *json.Uint64 `json:"balance,omitempty"`
 }
-

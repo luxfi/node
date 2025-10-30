@@ -14,7 +14,6 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
-	gomock "github.com/luxfi/mock/gomock"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
 )
 

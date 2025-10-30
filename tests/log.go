@@ -1,20 +1,29 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tests
 
 import (
+	"os"
+
 	"github.com/luxfi/log"
 )
 
 func NewDefaultLogger(prefix string) log.Logger {
-	// Create a logger with default settings
-	return log.NewLogger(prefix)
+	log, err := LoggerForFormat(prefix, logging.AutoString)
+	if err != nil {
+		// This should never happen since auto is a valid log format
+		panic(err)
+	}
+	return log
 }
 
-// LoggerForFormat creates a logger with the specified format
+// TODO(marun) Does/should the logging package have a function like this?
 func LoggerForFormat(prefix string, rawLogFormat string) (log.Logger, error) {
-	// For now, just return a default logger since the logging package
-	// has changed its API
-	return log.NewLogger(prefix), nil
+	writeCloser := os.Stdout
+	logFormat, err := logging.ToFormat(rawLogFormat, writeCloser.Fd())
+	if err != nil {
+		return nil, err
+	}
+	return logging.NewLogger(prefix, logging.NewWrappedCore(logging.Verbo, writeCloser, logFormat.ConsoleEncoder())), nil
 }

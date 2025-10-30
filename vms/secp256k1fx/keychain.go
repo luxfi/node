@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -8,12 +8,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luxfi/geth/common"
+	gethcommon "github.com/luxfi/geth/common"
 
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils/crypto/keychain"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/wallet/keychain"
 )
@@ -55,12 +56,12 @@ func (s *luxSigner) AddressBytes() []byte {
 // Keychain is a collection of keys that can be used to spend outputs
 type Keychain struct {
 	luxAddrToKeyIndex map[ids.ShortID]int
-	ethAddrToKeyIndex map[common.Address]int
+	ethAddrToKeyIndex  map[gethcommon.Address]int
 
 	// These can be used to iterate over. However, they should not be modified
 	// externally.
 	Addrs    set.Set[ids.ShortID]
-	EthAddrs set.Set[common.Address]
+	EthAddrs set.Set[gethcommon.Address]
 	Keys     []*secp256k1.PrivateKey
 }
 
@@ -68,7 +69,7 @@ type Keychain struct {
 func NewKeychain(keys ...*secp256k1.PrivateKey) *Keychain {
 	kc := &Keychain{
 		luxAddrToKeyIndex: make(map[ids.ShortID]int),
-		ethAddrToKeyIndex: make(map[common.Address]int),
+		ethAddrToKeyIndex:  make(map[gethcommon.Address]int),
 	}
 	for _, key := range keys {
 		kc.Add(key)
@@ -86,7 +87,8 @@ func (kc *Keychain) Add(key *secp256k1.PrivateKey) {
 
 	if _, ok := kc.luxAddrToKeyIndex[luxAddr]; !ok {
 		kc.luxAddrToKeyIndex[luxAddr] = len(kc.Keys)
-		ethAddr := publicKeyToEthAddress(pk)
+		cryptoAddr := secp256k1.PubkeyToAddress(*pk.ToECDSA())
+		ethAddr := gethcommon.Address(cryptoAddr)
 		kc.ethAddrToKeyIndex[ethAddr] = len(kc.Keys)
 		kc.Keys = append(kc.Keys, key)
 		kc.Addrs.Add(luxAddr)
@@ -103,8 +105,8 @@ func (kc Keychain) Get(id ids.ShortID) (keychain.Signer, bool) {
 	return &luxSigner{key: signer}, true
 }
 
-// GetEth gets a key from the keychain by Ethereum address
-func (kc Keychain) GetEth(addr common.Address) (keychain.Signer, bool) {
+// Get a key from the keychain and return whether the key existed.
+func (kc Keychain) GetEth(addr gethcommon.Address) (keychain.Signer, bool) {
 	if i, ok := kc.ethAddrToKeyIndex[addr]; ok {
 		return &luxSigner{key: kc.Keys[i]}, true
 	}
@@ -131,7 +133,7 @@ func (kc Keychain) List() []ids.ShortID {
 }
 
 // EthAddresses returns a list of addresses this keychain manages
-func (kc Keychain) EthAddresses() set.Set[common.Address] {
+func (kc Keychain) EthAddresses() set.Set[gethcommon.Address] {
 	return kc.EthAddrs
 }
 
@@ -217,10 +219,4 @@ func (kc Keychain) get(id ids.ShortID) (*secp256k1.PrivateKey, bool) {
 		return kc.Keys[i], true
 	}
 	return nil, false
-}
-
-func publicKeyToEthAddress(pk *secp256k1.PublicKey) common.Address {
-	// Get address and convert to common.Address
-	addr := pk.Address()
-	return common.BytesToAddress(addr[:])
 }

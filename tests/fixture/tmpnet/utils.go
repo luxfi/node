@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -7,61 +7,44 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"net/url"
+	"os"
+	"syscall"
 	"time"
 
-	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/crypto/secp256k1"
 )
 
 const (
 	DefaultNodeTickerInterval = 50 * time.Millisecond
 )
 
-var (
-	ErrNotRunning = errors.New("not running")
+var ErrUnrecoverableNodeHealthCheck = errors.New("failed to query node health")
 
-	// MetricsAvailableMessage is the message logged when metrics are available
-	MetricsAvailableMessage = "Metrics available"
-)
-
-// MetricsLinkForNetwork returns a metrics link for the given network UUID and time range
-func MetricsLinkForNetwork(networkUUID, startTime, endTime string) string {
-	// Generate Prometheus metrics dashboard link for the specified network and time range
-	prometheusURL := GetEnvWithDefault("PROMETHEUS_URL", "https://prometheus-poc.lux-dev.network")
-	// Use Grafana explore URL format if Grafana is configured
-	grafanaURL := GetEnvWithDefault("GRAFANA_URL", "")
-	if grafanaURL != "" {
-		return fmt.Sprintf("%s/explore?orgId=1&left=[\"now-%s\",\"now-%s\",\"Prometheus\",{\"expr\":\"up{network_uuid=\\\"%s\\\"}\"}]",
-			grafanaURL, startTime, endTime, networkUUID)
+func CheckNodeHealth(ctx context.Context, uri string) (*health.APIReply, error) {
+	// Check that the node is reporting healthy
+	healthReply, err := health.NewClient(uri).Health(ctx, nil)
+	if err == nil {
+		return healthReply, nil
 	}
-	// Fall back to Prometheus graph URL
-	return fmt.Sprintf("%s/graph?g0.expr=up%%7Bnetwork_uuid%%3D%%22%s%%22%%7D&g0.tab=0&g0.range_input=%s",
-		prometheusURL, networkUUID, startTime)
-}
 
-// WaitForHealthy blocks until Node.IsHealthy returns true or an error (including context timeout) is observed.
-func WaitForHealthy(ctx context.Context, node *Node) error {
-	if _, ok := ctx.Deadline(); !ok {
-		return fmt.Errorf("unable to wait for health for node %q with a context without a deadline", node.NodeID)
-	}
-	ticker := time.NewTicker(DefaultNodeTickerInterval)
-	defer ticker.Stop()
-
-	for {
-		healthy, err := node.IsHealthy(ctx)
-		if err != nil && !errors.Is(err, ErrNotRunning) {
-			return fmt.Errorf("failed to wait for health of node %q: %w", node.NodeID, err)
+	switch t := err.(type) {
+	case *net.OpError:
+		if t.Op == "read" {
+			// Connection refused - potentially recoverable
+			return nil, err
 		}
-		if healthy {
-			return nil
-		}
-
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("failed to wait for health of node %q before timeout: %w", node.NodeID, ctx.Err())
-		case <-ticker.C:
+	case syscall.Errno:
+		if t == syscall.ECONNREFUSED {
+			// Connection refused - potentially recoverable
+			return nil, err
 		}
 	}
+	// Assume all other errors are not recoverable
+	return nil, fmt.Errorf("%w: %w", ErrUnrecoverableNodeHealthCheck, err)
 }
 
 // NodeURI is already defined in config.go
@@ -70,23 +53,67 @@ func WaitForHealthy(ctx context.Context, node *Node) error {
 // 	URI    string
 // }
 
-func GetNodeURIs(nodes []*Node) []NodeURI {
-	uris := make([]NodeURI, 0, len(nodes))
+// GetNodeURIs returns the URIs of the provided nodes that are running and not ephemeral. The URIs returned
+// are guaranteed be reachable by the caller until the cleanup function is called regardless of whether the
+// nodes are running as local processes or in a kube cluster.
+func GetNodeURIs(ctx context.Context, nodes []*Node, deferCleanupFunc func(func())) ([]NodeURI, error) {
+	availableNodes := FilterAvailableNodes(nodes)
+	uris := []NodeURI{}
+	for _, node := range availableNodes {
+		uri, cancel, err := node.GetLocalURI(ctx)
+		if err != nil {
+			return nil, err
+		}
+		deferCleanupFunc(cancel)
+		uris = append(uris, NodeURI{
+			NodeID: node.NodeID,
+			URI:    uri,
+		})
+	}
+
+	return uris, nil
+}
+
+// FilteredAvailableNodes filters the provided nodes by whether they are running and not ephemeral.
+func FilterAvailableNodes(nodes []*Node) []*Node {
+	filteredNodes := []*Node{}
 	for _, node := range nodes {
 		if node.IsEphemeral {
 			// Avoid returning URIs for nodes whose lifespan is indeterminate
 			continue
 		}
-		// Only append URIs that are not empty. A node may have an
-		// empty URI if it is not currently running.
-		if len(node.URI) > 0 {
-			uris = append(uris, NodeURI{
-				NodeID: node.NodeID,
-				URI:    node.URI,
-			})
+		if !node.IsRunning() {
+			// Only running nodes have URIs
+			continue
 		}
+		filteredNodes = append(filteredNodes, node)
 	}
-	return uris
+	return filteredNodes
+}
+
+// GetNodeWebsocketURIs returns a list of websocket URIs for the given nodes and
+// blockchain ID, in the form "ws://<node-uri>/ext/bc/<blockchain-id>/ws".
+// Ephemeral and stopped nodes are ignored.
+func GetNodeWebsocketURIs(
+	ctx context.Context,
+	nodes []*Node,
+	blockchainID string,
+	deferCleanupFunc func(func()),
+) ([]string, error) {
+	nodeURIs, err := GetNodeURIs(ctx, nodes, deferCleanupFunc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get node URIs: %w", err)
+	}
+	wsURIs := make([]string, len(nodeURIs))
+	for i := range nodeURIs {
+		uri, err := url.Parse(nodeURIs[i].URI)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse node URI: %w", err)
+		}
+		uri.Scheme = "ws" // use websocket to be able to stream events
+		wsURIs[i] = fmt.Sprintf("%s/ext/bc/%s/ws", uri, blockchainID)
+	}
+	return wsURIs, nil
 }
 
 // DefaultJSONMarshal is already defined in config.go
@@ -113,4 +140,12 @@ func NodesToIDs(nodes ...*Node) []ids.NodeID {
 		nodeIDs[i] = node.NodeID
 	}
 	return nodeIDs
+}
+
+func GetEnvWithDefault(envVar, defaultVal string) string {
+	val := os.Getenv(envVar)
+	if len(val) == 0 {
+		return defaultVal
+	}
+	return val
 }

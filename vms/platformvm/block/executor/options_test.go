@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
@@ -26,7 +27,7 @@ func TestOptionsUnexpectedBlockType(t *testing.T) {
 	for _, blk := range tests {
 		t.Run(fmt.Sprintf("%T", blk), func(t *testing.T) {
 			err := blk.Visit(&options{})
-			require.ErrorIs(t, err, ErrNotOracle)
+			require.ErrorIs(t, err, chain.ErrNotOracle)
 		})
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -9,23 +9,26 @@ import (
 	"net/netip"
 	"time"
 
-	consensustracker "github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
+	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/compression"
+	"github.com/luxfi/node/utils/crypto/bls"
+	"github.com/luxfi/math/set"
 )
 
 // HealthConfig describes parameters for network layer health checks.
 type HealthConfig struct {
 	// Marks if the health check should be enabled
 	Enabled bool `json:"-"`
+
+	// NoIngressValidatorConnectionGracePeriod denotes the time after which the health check fails
+	// for primary network validators with no ingress connections.
+	NoIngressValidatorConnectionGracePeriod time.Duration
 
 	// MinConnectedPeers is the minimum number of peers that the network should
 	// be connected to be considered healthy.
@@ -132,6 +135,7 @@ type Config struct {
 	BLSKey bls.Signer `json:"-"`
 
 	// TrackedSubnets of the node.
+	// It must not include the primary network ID.
 	TrackedSubnets set.Set[ids.ID]    `json:"-"`
 	Beacons        validators.Manager `json:"-"`
 

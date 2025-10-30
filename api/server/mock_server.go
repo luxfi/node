@@ -14,8 +14,9 @@ import (
 	http "net/http"
 	reflect "reflect"
 
+	consensuscontext "github.com/luxfi/consensus/context"
 	core "github.com/luxfi/consensus/core"
-	gomock "github.com/luxfi/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockServer is a mock of Server interface.
@@ -122,7 +123,7 @@ func (mr *MockServerMockRecorder) Dispatch() *gomock.Call {
 }
 
 // RegisterChain mocks base method.
-func (m *MockServer) RegisterChain(arg0 string, arg1 context.Context, arg2 core.VM) {
+func (m *MockServer) RegisterChain(arg0 string, arg1 *consensuscontext.Context, arg2 core.VM) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RegisterChain", arg0, arg1, arg2)
 }

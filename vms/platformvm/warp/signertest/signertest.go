@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package signertest
@@ -8,9 +8,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
@@ -33,6 +33,7 @@ func TestWrongChainID(t *testing.T, s warp.Signer, _ bls.Signer, _ uint32, _ ids
 	require.NoError(err)
 
 	_, err = s.Sign(msg)
+	// TODO: require error to be ErrWrongSourceChainID
 	require.Error(err) //nolint:forbidigo // currently returns grpc errors too
 }
 
@@ -48,6 +49,7 @@ func TestWrongNetworkID(t *testing.T, s warp.Signer, _ bls.Signer, networkID uin
 	require.NoError(err)
 
 	_, err = s.Sign(msg)
+	// TODO: require error to be ErrWrongNetworkID
 	require.Error(err) //nolint:forbidigo // currently returns grpc errors too
 }
 

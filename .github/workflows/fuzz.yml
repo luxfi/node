@@ -16,4 +16,5 @@ jobs:
       - name: Set up Go
         uses: ./.github/actions/setup-go-for-project
       - name: Run fuzz tests
-        run: ./scripts/run_task.sh test-fuzz-long
+        shell: bash
+        run: ./scripts/build_fuzz.sh 180 # Run each fuzz test 180 seconds

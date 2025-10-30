@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -9,29 +9,29 @@ import (
 	"github.com/luxfi/ids"
 )
 
-// netIDNodeID = [netID] + [nodeID]
-const netIDNodeIDEntryLength = ids.IDLen + ids.NodeIDLen
+// subnetIDNodeID = [subnetID] + [nodeID]
+const subnetIDNodeIDEntryLength = ids.IDLen + ids.NodeIDLen
 
-var errUnexpectedNetIDNodeIDLength = fmt.Errorf("expected netID+nodeID entry length %d", netIDNodeIDEntryLength)
+var errUnexpectedSubnetIDNodeIDLength = fmt.Errorf("expected subnetID+nodeID entry length %d", subnetIDNodeIDEntryLength)
 
-type netIDNodeID struct {
-	netID  ids.ID
-	nodeID ids.NodeID
+type subnetIDNodeID struct {
+	subnetID ids.ID
+	nodeID   ids.NodeID
 }
 
-func (s *netIDNodeID) Marshal() []byte {
-	data := make([]byte, netIDNodeIDEntryLength)
-	copy(data, s.netID[:])
+func (s *subnetIDNodeID) Marshal() []byte {
+	data := make([]byte, subnetIDNodeIDEntryLength)
+	copy(data, s.subnetID[:])
 	copy(data[ids.IDLen:], s.nodeID[:])
 	return data
 }
 
-func (s *netIDNodeID) Unmarshal(data []byte) error {
-	if len(data) != netIDNodeIDEntryLength {
-		return errUnexpectedNetIDNodeIDLength
+func (s *subnetIDNodeID) Unmarshal(data []byte) error {
+	if len(data) != subnetIDNodeIDEntryLength {
+		return errUnexpectedSubnetIDNodeIDLength
 	}
 
-	copy(s.netID[:], data)
+	copy(s.subnetID[:], data)
 	copy(s.nodeID[:], data[ids.IDLen:])
 	return nil
 }

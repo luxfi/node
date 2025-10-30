@@ -1,18 +1,17 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package lux
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
+	"github.com/luxfi/math/set"
 )
 
 var (
@@ -45,11 +44,10 @@ type AddressManager interface {
 }
 
 type addressManager struct {
-	ctx      context.Context
-	bcLookup BCLookup
+	ctx *consensusctx.Context
 }
 
-func NewAddressManager(ctx context.Context) AddressManager {
+func NewAddressManager(ctx *consensusctx.Context) AddressManager {
 	return &addressManager{
 		ctx:      ctx,
 		bcLookup: nil,
@@ -79,15 +77,10 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 		return ids.Empty, ids.ShortID{}, err
 	}
 
-	var chainID ids.ID
-	if a.bcLookup != nil {
-		chainID, err = a.bcLookup.Lookup(chainIDAlias)
-		if err != nil {
-			return ids.Empty, ids.ShortID{}, err
-		}
-	} else {
-		// For now, return empty chain ID
-		chainID = ids.Empty
+	// Try to parse chainIDAlias as an ID directly since consensus context doesn't have BCLookup
+	chainID, err := ids.FromString(chainIDAlias)
+	if err != nil {
+		return ids.ID{}, ids.ShortID{}, fmt.Errorf("failed to parse chain ID %q: %w", chainIDAlias, err)
 	}
 
 	networkID := consensus.GetNetworkID(a.ctx)
@@ -113,15 +106,9 @@ func (a *addressManager) FormatLocalAddress(addr ids.ShortID) (string, error) {
 }
 
 func (a *addressManager) FormatAddress(chainID ids.ID, addr ids.ShortID) (string, error) {
-	if a.bcLookup == nil {
-		return addr.String(), nil
-	}
-	chainIDAlias, err := a.bcLookup.PrimaryAlias(chainID)
-	if err != nil {
-		return "", err
-	}
-	networkID := consensus.GetNetworkID(a.ctx)
-	hrp := constants.GetHRP(networkID)
+	// Use ChainID directly - consensus context doesn't have BCLookup
+	chainIDAlias := chainID.String()
+	hrp := constants.GetHRP(a.ctx.NetworkID)
 	return address.Format(chainIDAlias, hrp, addr.Bytes())
 }
 

@@ -5,7 +5,7 @@ ARG BUILDER_IMAGE_TAG=INVALID # This value is not intended to be used but silenc
 ARG LUXD_NODE_IMAGE="invalid-image" # This value is not intended to be used but silences a warning
 
 # ============= Compilation Stage ================
-FROM antithesis-luxgo-builder:$BUILDER_IMAGE_TAG AS builder
+FROM antithesis-node-builder:$BUILDER_IMAGE_TAG AS builder
 
 # The builder workdir will vary between instrumented and non-instrumented builders
 ARG BUILDER_WORKDIR

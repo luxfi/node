@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -7,18 +7,16 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/protocol/chain"
-	"github.com/luxfi/database"
-	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/vms/platformvm/block"
+
+	smblock "github.com/luxfi/consensus/engine/chain/block"
 )
 
 var (
-// Temporarily disable interface check due to Status() method signature issue
-// _ chain.Block = (*Block)(nil)
-// OracleBlock is not available in consensus package
-// _ chain.OracleBlock = (*Block)(nil)
+	_ chain.Block             = (*Block)(nil)
+	_ chain.OracleBlock       = (*Block)(nil)
+	_ smblock.WithVerifyContext = (*Block)(nil)
 )
 
 // Exported for testing in platformvm package.
@@ -27,14 +25,53 @@ type Block struct {
 	manager *manager
 }
 
-func (b *Block) Verify(context.Context) error {
+func (*Block) ShouldVerifyWithContext(context.Context) (bool, error) {
+	return true, nil
+}
+
+func (b *Block) VerifyWithContext(ctx context.Context, blockContext *smblock.Context) error {
 	blkID := b.ID()
-	if _, ok := b.manager.blkIDToState[blkID]; ok {
-		// This block has already been verified.
+	blkState, previouslyExecuted := b.manager.blkIDToState[blkID]
+	warpAlreadyVerified := previouslyExecuted && blkState.verifiedHeights.Contains(blockContext.PChainHeight)
+
+	// If the chain is bootstrapped and the warp messages haven't been verified,
+	// we must verify them.
+	if !warpAlreadyVerified && b.manager.txExecutorBackend.Bootstrapped.Get() {
+		err := VerifyWarpMessages(
+			ctx,
+			b.manager.ctx.NetworkID,
+			b.manager.ctx.ValidatorState,
+			blockContext.PChainHeight,
+			b,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	// If the block was previously executed, we don't need to execute it again,
+	// we can just mark that the warp messages are valid at this height.
+	if previouslyExecuted {
+		blkState.verifiedHeights.Add(blockContext.PChainHeight)
 		return nil
 	}
 
-	return b.Visit(b.manager.verifier)
+	// Since this is the first time we are verifying this block, we must execute
+	// the state transitions to generate the state diffs.
+	return b.Visit(&verifier{
+		backend:           b.manager.backend,
+		txExecutorBackend: b.manager.txExecutorBackend,
+		pChainHeight:      blockContext.PChainHeight,
+	})
+}
+
+func (b *Block) Verify(ctx context.Context) error {
+	return b.VerifyWithContext(
+		ctx,
+		&smblock.Context{
+			PChainHeight: 0,
+		},
+	)
 }
 
 func (b *Block) Accept(context.Context) error {
@@ -43,48 +80,6 @@ func (b *Block) Accept(context.Context) error {
 
 func (b *Block) Reject(context.Context) error {
 	return b.Visit(b.manager.rejector)
-}
-
-func (b *Block) ParentID() ids.ID {
-	return b.Block.Parent()
-}
-
-// StatusChoices returns the status as choices.Status for internal use
-func (b *Block) StatusChoices() choices.Status {
-	blkID := b.ID()
-	// If this block is an accepted Proposal block with no accepted children, it
-	// will be in [blkIDToState], but we should return accepted, not processing,
-	// so we do this check.
-	if b.manager.lastAccepted == blkID {
-		return choices.Accepted
-	}
-	// Check if the block is in memory. If so, it's processing.
-	if _, ok := b.manager.blkIDToState[blkID]; ok {
-		return choices.Processing
-	}
-	// Block isn't in memory. Check in the database.
-	_, err := b.manager.state.GetStatelessBlock(blkID)
-	switch err {
-	case nil:
-		return choices.Accepted
-
-	case database.ErrNotFound:
-		// choices.Unknown means we don't have the bytes of the block.
-		// In this case, we do, so we return choices.Processing.
-		return choices.Processing
-
-	default:
-		b.manager.Log.Error(
-			"dropping unhandled database error",
-			"error", err,
-		)
-		return choices.Processing
-	}
-}
-
-// Status returns the status as uint8 for interface compatibility
-func (b *Block) Status() uint8 {
-	return uint8(b.StatusChoices())
 }
 
 func (b *Block) Timestamp() time.Time {

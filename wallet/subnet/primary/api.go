@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/geth/ethclient"
-	"github.com/luxfi/evm/plugin/evm/client"
+	"github.com/luxfi/geth/plugin/evm/client"
 
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/chains/atomic"
@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/rpc"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm"
@@ -40,8 +40,8 @@ const (
 )
 
 var (
-	_ UTXOClient = platformvm.Client(nil)
-	_ UTXOClient = xvm.Client(nil)
+	_ UTXOClient = (*platformvm.Client)(nil)
+	_ UTXOClient = (*avm.Client)(nil)
 )
 
 type UTXOClient interface {
@@ -57,9 +57,9 @@ type UTXOClient interface {
 }
 
 type LUXState struct {
-	PClient platformvm.Client
-	PCTX    p.Context
-	XClient xvm.Client
+	PClient *platformvm.Client
+	PCTX    *pbuilder.Context
+	XClient *avm.Client
 	XCTX    *xbuilder.Context
 	CClient client.Client
 	CCTX    *c.Context
@@ -76,10 +76,10 @@ func FetchState(
 ) {
 	infoClient := info.NewClient(uri)
 	pClient := platformvm.NewClient(uri)
-	xClient := xvm.NewClient(uri, "X")
-	cClient := client.NewClient(uri, "C")
+	xClient := avm.NewClient(uri, "X")
+	cClient := client.NewCChainClient(uri)
 
-	pCTX, err := p.NewContextFromClients(ctx, infoClient, xClient)
+	pCTX, err := p.NewContextFromClients(ctx, infoClient, pClient)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +110,11 @@ func FetchState(
 			id:     xCTX.BlockchainID,
 			client: xClient,
 			codec:  xbuilder.Parser.Codec(),
+		},
+		{
+			id:     cCTX.BlockchainID,
+			client: cClient,
+			codec:  atomic.Codec,
 		},
 	}
 	for _, destinationChain := range chains {
@@ -144,16 +149,15 @@ func FetchPState(
 	uri string,
 	addrs set.Set[ids.ShortID],
 ) (
-	platformvm.Client,
-	p.Context,
+	*platformvm.Client,
+	*pbuilder.Context,
 	walletcommon.UTXOs,
 	error,
 ) {
 	infoClient := info.NewClient(uri)
-	xClient := xvm.NewClient(uri, "X")
 	chainClient := platformvm.NewClient(uri)
 
-	context, err := p.NewContextFromClients(ctx, infoClient, xClient)
+	context, err := p.NewContextFromClients(ctx, infoClient, chainClient)
 	if err != nil {
 		return nil, nil, nil, err
 	}

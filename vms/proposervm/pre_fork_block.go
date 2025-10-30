@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package proposervm
@@ -12,11 +12,8 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/protocol/chain"
-	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
@@ -27,7 +24,7 @@ var (
 )
 
 type preForkBlock struct {
-	chain.Block
+	chainblock.Block
 	vm *VM
 }
 
@@ -74,28 +71,6 @@ func (b *preForkBlock) acceptInnerBlk(ctx context.Context) error {
 	return b.Block.Accept(ctx)
 }
 
-func (b *preForkBlock) Status() uint8 {
-	forkHeight, err := b.vm.GetForkHeight()
-	if err == database.ErrNotFound {
-		// Pre-fork, so the status is always processing if we have the block
-		return uint8(choices.Processing)
-	}
-	if err != nil {
-		// here.
-		b.vm.log.Error("unexpected error looking up fork height",
-			log.Reflect("error", err),
-		)
-		return uint8(choices.Processing)
-	}
-
-	// The fork has occurred earlier than this block, so preForkBlocks are all
-	// invalid.
-	if b.Height() >= forkHeight {
-		return uint8(choices.Rejected)
-	}
-	return uint8(choices.Processing)
-}
-
 func (b *preForkBlock) Verify(ctx context.Context) error {
 	parent, err := b.vm.getPreForkBlock(ctx, b.Block.Parent())
 	if err != nil {
@@ -104,25 +79,43 @@ func (b *preForkBlock) Verify(ctx context.Context) error {
 	return parent.verifyPreForkChild(ctx, b)
 }
 
-func (b *preForkBlock) Options(ctx context.Context) ([2]chain.Block, error) {
-	// Oracle blocks are not supported in the new consensus
-	return [2]chain.Block{}, nil
+func (b *preForkBlock) Options(ctx context.Context) ([2]chainblock.Block, error) {
+	oracleBlk, ok := b.Block.(OracleBlock)
+	if !ok {
+		return [2]chainblock.Block{}, errNotOracle
+	}
+
+	options, err := oracleBlk.Options(ctx)
+	if err != nil {
+		return [2]chainblock.Block{}, err
+	}
+	// A pre-fork block's child options are always pre-fork blocks
+	return [2]chainblock.Block{
+		&preForkBlock{
+			Block: options[0],
+			vm:    b.vm,
+		},
+		&preForkBlock{
+			Block: options[1],
+			vm:    b.vm,
+		},
+	}, nil
 }
 
-func (b *preForkBlock) getInnerBlk() chain.Block {
+func (b *preForkBlock) getInnerBlk() chainblock.Block {
 	return b.Block
 }
 
 func (b *preForkBlock) verifyPreForkChild(ctx context.Context, child *preForkBlock) error {
 	parentTimestamp := b.Timestamp()
-	if !parentTimestamp.Before(b.vm.ActivationTime) {
+	if b.vm.Upgrades.IsApricotPhase4Activated(parentTimestamp) {
 		if err := verifyIsOracleBlock(ctx, b.Block); err != nil {
 			return err
 		}
 
-		b.vm.log.Debug("allowing pre-fork block after the fork time",
-			log.String("reason", "parent is an oracle block"),
-			log.Stringer("blkID", b.ID()),
+		b.vm.logger.Debug("allowing pre-fork block after the fork time",
+			zap.String("reason", "parent is an oracle block"),
+			zap.Stringer("blkID", b.ID()),
 		)
 	}
 
@@ -137,16 +130,12 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 
 	childID := child.ID()
 	childPChainHeight := child.PChainHeight()
-	vs := consensus.GetValidatorState(b.vm.ctx)
-	if vs == nil {
-		return fmt.Errorf("validator state not available")
-	}
-	currentPChainHeight, err := vs.GetCurrentHeight()
+	currentPChainHeight, err := b.vm.validatorState.GetCurrentHeight(ctx)
 	if err != nil {
-		b.vm.log.Error("block verification failed",
-			log.String("reason", "failed to get current P-Chain height"),
-			log.Stringer("blkID", childID),
-			log.Reflect("error", err),
+		b.vm.logger.Error("block verification failed",
+			zap.String("reason", "failed to get current P-Chain height"),
+			zap.Stringer("blkID", childID),
+			zap.Error(err),
 		)
 		return err
 	}
@@ -157,7 +146,7 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 			currentPChainHeight,
 		)
 	}
-	if childPChainHeight < b.vm.MinimumPChainHeight {
+	if childPChainHeight < b.vm.Upgrades.ApricotPhase4MinPChainHeight {
 		return errPChainHeightTooLow
 	}
 
@@ -172,7 +161,7 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 	// if the *preForkBlock is the last *preForkBlock before activation takes effect
 	// (its timestamp is at or after the activation time)
 	parentTimestamp := b.Timestamp()
-	if parentTimestamp.Before(b.vm.ActivationTime) {
+	if !b.vm.Upgrades.IsApricotPhase4Activated(parentTimestamp) {
 		return errProposersNotActivated
 	}
 
@@ -203,22 +192,18 @@ func (*preForkBlock) verifyPostForkOption(context.Context, *postForkOption) erro
 
 func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	parentTimestamp := b.Timestamp()
-
-	// Check if automining is enabled via environment variable
-	autominingEnabled := os.Getenv("LUX_ENABLE_AUTOMINING") == "true"
-
-	if parentTimestamp.Before(b.vm.ActivationTime) && !autominingEnabled {
-		// The chain hasn't forked yet (unless automining is enabled)
-		engineBlock, err := b.vm.ChainVM.BuildBlock(ctx)
+	if !b.vm.Upgrades.IsApricotPhase4Activated(parentTimestamp) {
+		// The chain hasn't forked yet
+		innerBlock, err := b.vm.ChainVM.BuildBlock(ctx)
 		if err != nil {
 			return nil, err
 		}
 		innerBlock := &reverseBlockAdapter{Block: engineBlock}
 
-		b.vm.log.Info("built block",
-			log.Stringer("blkID", innerBlock.ID()),
-			log.Uint64("height", innerBlock.Height()),
-			log.Time("parentTimestamp", parentTimestamp),
+		b.vm.logger.Info("built block",
+			zap.Stringer("blkID", innerBlock.ID()),
+			zap.Uint64("height", innerBlock.Height()),
+			zap.Time("parentTimestamp", parentTimestamp),
 		)
 
 		return &preForkBlock{
@@ -237,12 +222,12 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 
 	// The child's P-Chain height is proposed as the optimal P-Chain height that
 	// is at least the minimum height
-	pChainHeight, err := b.vm.optimalPChainHeight(ctx, b.vm.MinimumPChainHeight)
+	pChainHeight, err := b.vm.selectChildPChainHeight(ctx, b.vm.Upgrades.ApricotPhase4MinPChainHeight)
 	if err != nil {
-		b.vm.log.Error("unexpected build block failure",
-			log.String("reason", "failed to calculate optimal P-chain height"),
-			log.Stringer("parentID", parentID),
-			log.Reflect("error", err),
+		b.vm.logger.Error("unexpected build block failure",
+			zap.String("reason", "failed to calculate optimal P-chain height"),
+			zap.Stringer("parentID", parentID),
+			zap.Error(err),
 		)
 		return nil, err
 	}
@@ -257,6 +242,7 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		parentID,
 		newTimestamp,
 		pChainHeight,
+		block.Epoch{}, // Pre-fork blocks don't have epochs
 		innerBlock.Bytes(),
 	)
 	if err != nil {
@@ -268,20 +254,27 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       b.vm,
 			innerBlk: innerBlock,
-			status:   choices.Processing,
 		},
 	}
 
-	b.vm.log.Info("built block",
-		log.Stringer("blkID", blk.ID()),
-		log.Stringer("innerBlkID", innerBlock.ID()),
-		log.Uint64("height", blk.Height()),
-		log.Uint64("pChainHeight", pChainHeight),
-		log.Time("parentTimestamp", parentTimestamp),
-		log.Time("blockTimestamp", newTimestamp))
+	b.vm.logger.Info("built block",
+		zap.Stringer("blkID", blk.ID()),
+		zap.Stringer("innerBlkID", innerBlock.ID()),
+		zap.Uint64("height", blk.Height()),
+		zap.Uint64("pChainHeight", pChainHeight),
+		zap.Time("parentTimestamp", parentTimestamp),
+		zap.Time("blockTimestamp", newTimestamp))
 	return blk, nil
 }
 
 func (*preForkBlock) pChainHeight(context.Context) (uint64, error) {
 	return 0, nil
+}
+
+func (*preForkBlock) pChainEpoch(context.Context) (chainblock.Epoch, error) {
+	return chainblock.Epoch{}, nil
+}
+
+func (b *preForkBlock) selectChildPChainHeight(ctx context.Context) (uint64, error) {
+	return b.vm.selectChildPChainHeight(ctx, 0)
 }

@@ -1,14 +1,14 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"errors"
 	"fmt"
 
-	consensusContext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/components/verify"
@@ -113,13 +113,7 @@ type TransformNetTx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
-// Subnet returns the Net field for backward compatibility
-func (tx *TransformNetTx) Subnet() ids.ID {
-	return tx.Net
-}
-
-func (tx *TransformNetTx) SyntacticVerify(ctx context.Context) error {
-	luxAssetID := consensusContext.FromContext(ctx).XAssetID
+func (tx *TransformSubnetTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

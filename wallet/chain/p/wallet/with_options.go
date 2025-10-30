@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package wallet
@@ -6,8 +6,8 @@ package wallet
 import (
 	"time"
 
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -70,8 +70,8 @@ func (w *withOptions) IssueAddValidatorTx(
 	)
 }
 
-func (w *withOptions) IssueAddNetValidatorTx(
-	vdr *txs.NetValidator,
+func (w *withOptions) IssueAddSubnetValidatorTx(
+	vdr *txs.SubnetValidator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
 	return w.wallet.IssueAddNetValidatorTx(
@@ -80,7 +80,7 @@ func (w *withOptions) IssueAddNetValidatorTx(
 	)
 }
 
-func (w *withOptions) IssueRemoveNetValidatorTx(
+func (w *withOptions) IssueRemoveSubnetValidatorTx(
 	nodeID ids.NodeID,
 	netID ids.ID,
 	options ...common.Option,
@@ -105,7 +105,7 @@ func (w *withOptions) IssueAddDelegatorTx(
 }
 
 func (w *withOptions) IssueCreateChainTx(
-	netID ids.ID,
+	subnetID ids.ID,
 	genesis []byte,
 	vmID ids.ID,
 	fxIDs []ids.ID,
@@ -122,7 +122,7 @@ func (w *withOptions) IssueCreateChainTx(
 	)
 }
 
-func (w *withOptions) IssueCreateNetTx(
+func (w *withOptions) IssueCreateSubnetTx(
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.Tx, error) {
@@ -132,8 +132,8 @@ func (w *withOptions) IssueCreateNetTx(
 	)
 }
 
-func (w *withOptions) IssueTransferNetOwnershipTx(
-	netID ids.ID,
+func (w *withOptions) IssueTransferSubnetOwnershipTx(
+	subnetID ids.ID,
 	owner *secp256k1fx.OutputOwners,
 	options ...common.Option,
 ) (*txs.Tx, error) {
@@ -144,15 +144,15 @@ func (w *withOptions) IssueTransferNetOwnershipTx(
 	)
 }
 
-func (w *withOptions) IssueConvertNetToL1Tx(
-	netID ids.ID,
+func (w *withOptions) IssueConvertSubnetToL1Tx(
+	subnetID ids.ID,
 	chainID ids.ID,
 	address []byte,
-	validators []*txs.ConvertNetToL1Validator,
+	validators []*txs.ConvertSubnetToL1Validator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueConvertNetToL1Tx(
-		netID,
+	return w.wallet.IssueConvertSubnetToL1Tx(
+		subnetID,
 		chainID,
 		address,
 		validators,
@@ -230,8 +230,8 @@ func (w *withOptions) IssueExportTx(
 	)
 }
 
-func (w *withOptions) IssueTransformNetTx(
-	netID ids.ID,
+func (w *withOptions) IssueTransformSubnetTx(
+	subnetID ids.ID,
 	assetID ids.ID,
 	initialSupply uint64,
 	maxSupply uint64,
@@ -267,7 +267,7 @@ func (w *withOptions) IssueTransformNetTx(
 }
 
 func (w *withOptions) IssueAddPermissionlessValidatorTx(
-	vdr *txs.NetValidator,
+	vdr *txs.SubnetValidator,
 	signer vmsigner.Signer,
 	assetID ids.ID,
 	validationRewardsOwner *secp256k1fx.OutputOwners,
@@ -287,7 +287,7 @@ func (w *withOptions) IssueAddPermissionlessValidatorTx(
 }
 
 func (w *withOptions) IssueAddPermissionlessDelegatorTx(
-	vdr *txs.NetValidator,
+	vdr *txs.SubnetValidator,
 	assetID ids.ID,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,

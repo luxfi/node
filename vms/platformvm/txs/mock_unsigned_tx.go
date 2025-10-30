@@ -10,12 +10,12 @@
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
 	set "github.com/luxfi/math/set"
-	gomock "github.com/luxfi/mock/gomock"
 	lux "github.com/luxfi/node/vms/components/lux"
 )
 
@@ -57,7 +57,7 @@ func (mr *MockUnsignedTxMockRecorder) Bytes() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *MockUnsignedTx) InitCtx(ctx context.Context) {
+func (m *MockUnsignedTx) InitCtx(ctx *consensusctx.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", ctx)
 }
@@ -123,7 +123,7 @@ func (mr *MockUnsignedTxMockRecorder) SetBytes(unsignedBytes any) *gomock.Call {
 }
 
 // SyntacticVerify mocks base method.
-func (m *MockUnsignedTx) SyntacticVerify(ctx context.Context) error {
+func (m *MockUnsignedTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SyntacticVerify", ctx)
 	ret0, _ := ret[0].(error)

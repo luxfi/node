@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"errors"
 
 	"github.com/luxfi/ids"
@@ -25,7 +26,7 @@ type IncreaseL1ValidatorBalanceTx struct {
 	Balance uint64 `serialize:"true" json:"balance"`
 }
 
-func (tx *IncreaseL1ValidatorBalanceTx) SyntacticVerify(ctx context.Context) error {
+func (tx *IncreaseL1ValidatorBalanceTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

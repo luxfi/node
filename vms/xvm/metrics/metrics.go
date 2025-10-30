@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metrics
@@ -86,11 +86,7 @@ func New(registerer metric.Registerer) (Metrics, error) {
 		Help: "Number of times unique txs have not been unique and weren't cached",
 	})
 
-	registry, ok := registerer.(metric.Registry)
-	if !ok {
-		return nil, errors.New("registerer must be a Registry")
-	}
-	apiRequestMetric, err := utilmetric.NewAPIInterceptor(registry)
+	apiRequestMetric, err := utilmetric.NewAPIInterceptor(registerer)
 	m.APIInterceptor = apiRequestMetric
 	errs.Add(err)
 	// Metrics are self-registering when created with NewCounter etc.

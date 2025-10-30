@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -6,7 +6,7 @@ package node
 import (
 	"time"
 
-	"github.com/luxfi/consensus/networking/tracker"
+	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/ids"
 	nodetracker "github.com/luxfi/node/network/tracker"
 )

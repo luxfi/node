@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build test
@@ -16,7 +16,7 @@ import (
 )
 
 func Test_Metrics_Basic_Usage(t *testing.T) {
-	config := newDefaultConfig()
+	config := NewConfig()
 	// Set to nil so that we use a mockMetrics instead of the real one inside
 	// merkledb.
 	config.Reg = nil
@@ -56,7 +56,7 @@ func Test_Metrics_Initialize(t *testing.T) {
 	db, err := New(
 		context.Background(),
 		memdb.New(),
-		newDefaultConfig(),
+		NewConfig(),
 	)
 	require.NoError(t, err)
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -9,7 +9,10 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/state"
 )
 
@@ -28,7 +31,9 @@ type blockState struct {
 	onAcceptState state.Diff
 	onAcceptFunc  func()
 
-	inputs         set.Set[ids.ID]
-	timestamp      time.Time
-	atomicRequests map[ids.ID]*atomic.Requests
+	inputs          set.Set[ids.ID]
+	timestamp       time.Time
+	atomicRequests  map[ids.ID]*atomic.Requests
+	verifiedHeights set.Set[uint64]
+	metrics         metrics.Block
 }

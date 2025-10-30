@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package signer
@@ -14,7 +14,7 @@ import (
 var (
 	_ Signer = (*ProofOfPossession)(nil)
 
-	errInvalidProofOfPossession = errors.New("invalid proof of possession")
+	ErrInvalidProofOfPossession = errors.New("invalid proof of possession")
 )
 
 type ProofOfPossession struct {
@@ -28,13 +28,14 @@ type ProofOfPossession struct {
 	publicKey *bls.PublicKey
 }
 
-func NewProofOfPossession(signer bls.Signer) (*ProofOfPossession, error) {
-	pk := signer.PublicKey()
+func NewProofOfPossession(sk bls.Signer) (*ProofOfPossession, error) {
+	pk := sk.PublicKey()
 	pkBytes := bls.PublicKeyToCompressedBytes(pk)
-	sig, err := signer.SignProofOfPossession(pkBytes)
+	sig, err := sk.SignProofOfPossession(pkBytes)
 	if err != nil {
 		return nil, err
 	}
+
 	sigBytes := bls.SignatureToBytes(sig)
 
 	pop := &ProofOfPossession{
@@ -55,7 +56,7 @@ func (p *ProofOfPossession) Verify() error {
 		return err
 	}
 	if !bls.VerifyProofOfPossession(publicKey, signature, p.PublicKey[:]) {
-		return errInvalidProofOfPossession
+		return ErrInvalidProofOfPossession
 	}
 
 	p.publicKey = publicKey

@@ -14,7 +14,7 @@ import (
 
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
-	gomock "github.com/luxfi/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockSharedMemory is a mock of SharedMemory interface.

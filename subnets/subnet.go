@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package subnets
@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 var _ Subnet = (*subnet)(nil)
@@ -34,6 +34,9 @@ type Subnet interface {
 	Config() Config
 
 	Allower
+	
+	// AllBootstrapped returns a channel that is closed when all chains have finished bootstrapping
+	AllBootstrapped() <-chan struct{}
 }
 
 type subnet struct {
@@ -42,17 +45,20 @@ type subnet struct {
 	bootstrapped    set.Set[ids.ID]
 	config          Config
 	myNodeID        ids.NodeID
+	bootstrapSignal chan struct{}
+	bootstrapOnce   sync.Once
 }
 
 func New(myNodeID ids.NodeID, config Config) Subnet {
 	return &subnet{
-		config:   config,
-		myNodeID: myNodeID,
+		config:          config,
+		myNodeID:        myNodeID,
+		bootstrapSignal: make(chan struct{}),
 	}
 }
 
 func (s *subnet) AllBootstrapped() <-chan struct{} {
-	ch := make(chan struct{}); close(ch); return ch
+	return s.bootstrapSignal
 }
 
 func (s *subnet) IsBootstrapped() bool {
@@ -60,6 +66,20 @@ func (s *subnet) IsBootstrapped() bool {
 	defer s.lock.RUnlock()
 
 	return s.bootstrapping.Len() == 0
+}
+
+func (s *subnet) OnBootstrapStarted() error {
+	// Required by core.BootstrapTracker interface
+	return nil
+}
+
+func (s *subnet) OnBootstrapCompleted() error {
+	// Required by core.BootstrapTracker interface
+	// Close the signal channel to notify listeners
+	s.bootstrapOnce.Do(func() {
+		close(s.bootstrapSignal)
+	})
+	return nil
 }
 
 func (s *subnet) Bootstrapped(chainID ids.ID) {
@@ -72,6 +92,10 @@ func (s *subnet) Bootstrapped(chainID ids.ID) {
 		return
 	}
 
+	// Close the signal channel when all chains are bootstrapped
+	s.bootstrapOnce.Do(func() {
+		close(s.bootstrapSignal)
+	})
 }
 
 func (s *subnet) AddChain(chainID ids.ID) bool {

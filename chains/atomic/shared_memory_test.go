@@ -1,23 +1,24 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-//go:build test
-
-package atomic
+package atomic_test
 
 import (
 	"testing"
 
+	"github.com/luxfi/node/chains/atomic/atomictest"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+
+	. "github.com/luxfi/node/chains/atomic"
 )
 
 func TestSharedMemory(t *testing.T) {
 	chainID0 := ids.GenerateTestID()
 	chainID1 := ids.GenerateTestID()
 
-	for _, test := range SharedMemoryTests {
+	for _, test := range atomictest.SharedMemoryTests {
 		baseDB := memdb.New()
 
 		memoryDB := prefixdb.New([]byte{0}, baseDB)
