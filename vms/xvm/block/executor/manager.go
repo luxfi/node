@@ -11,11 +11,11 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/vms/avm/block"
-	"github.com/luxfi/node/vms/avm/metrics"
-	"github.com/luxfi/node/vms/avm/state"
-	"github.com/luxfi/node/vms/avm/txs"
-	"github.com/luxfi/node/vms/avm/txs/executor"
+	"github.com/luxfi/node/vms/xvm/block"
+	"github.com/luxfi/node/vms/xvm/metrics"
+	"github.com/luxfi/node/vms/xvm/state"
+	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/vms/xvm/txs/executor"
 	"github.com/luxfi/node/vms/txs/mempool"
 )
 

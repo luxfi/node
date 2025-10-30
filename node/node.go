@@ -72,14 +72,14 @@ import (
 	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
 	databasefactory "github.com/luxfi/node/database/factory"
-	avmconfig "github.com/luxfi/node/vms/avm/config"
+	avmconfig "github.com/luxfi/node/vms/xvm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 	// geth "github.com/luxfi/geth/plugin/factory" // TODO: C-Chain EVM currently disabled - plugin/factory package doesn't exist
 )

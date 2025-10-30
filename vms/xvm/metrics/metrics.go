@@ -4,8 +4,6 @@
 package metrics
 
 import (
-	"errors"
-
 	"github.com/prometheus/client_golang/prometheus"
 
 	utilmetric "github.com/luxfi/node/utils/metric"

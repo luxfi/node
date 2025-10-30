@@ -16,9 +16,9 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/node/vms/avm/block"
-	"github.com/luxfi/node/vms/avm/state"
-	"github.com/luxfi/node/vms/avm/txs/executor"
+	"github.com/luxfi/node/vms/xvm/block"
+	"github.com/luxfi/node/vms/xvm/state"
+	"github.com/luxfi/node/vms/xvm/txs/executor"
 )
 
 const SyncBound = 10 * time.Second

@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/vms/avm"
+	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 )
 
