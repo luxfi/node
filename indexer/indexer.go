@@ -13,8 +13,8 @@ import (
 
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/dag/vertex"
@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -45,7 +45,7 @@ var (
 // Config for an indexer
 type Config struct {
 	DB                   database.Database
-	Log                  logging.Logger
+	Log                  log.Logger
 	IndexingEnabled      bool
 	AllowIncompleteIndex bool
 	BlockAcceptorGroup   snow.AcceptorGroup
@@ -93,7 +93,7 @@ func NewIndexer(config Config) (Indexer, error) {
 type indexer struct {
 	clock  mockable.Clock
 	lock   sync.RWMutex
-	log    logging.Logger
+	log    log.Logger
 	db     database.Database
 	closed bool
 

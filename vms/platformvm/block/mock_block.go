@@ -10,10 +10,11 @@
 package block
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
+
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	snow "github.com/luxfi/consensus/core"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -85,7 +86,7 @@ func (mr *MockBlockMockRecorder) ID() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *MockBlock) InitCtx(ctx *snow.Context) {
+func (m *MockBlock) InitCtx(ctx *consensusctx.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InitCtx", ctx)
 }

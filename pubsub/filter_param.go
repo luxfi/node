@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/node/pubsub/bloom"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 type FilterParam struct {

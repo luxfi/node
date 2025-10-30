@@ -16,17 +16,17 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/ipcs"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 type Service struct {
-	log          logging.Logger
+	log          log.Logger
 	chainManager chains.Manager
 	lock         sync.RWMutex
 	ipcs         *ipcs.ChainIPCs
 }
 
-func NewService(log logging.Logger, chainManager chains.Manager, ipcs *ipcs.ChainIPCs) (http.Handler, error) {
+func NewService(log log.Logger, chainManager chains.Manager, ipcs *ipcs.ChainIPCs) (http.Handler, error) {
 	server := rpc.NewServer()
 	codec := json.NewCodec()
 	server.RegisterCodec(codec, "application/json")

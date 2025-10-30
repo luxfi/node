@@ -4,6 +4,8 @@
 package txs
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"github.com/luxfi/node/vms/types"
 )
 

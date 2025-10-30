@@ -17,8 +17,8 @@ import (
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 )
 
@@ -28,7 +28,7 @@ var _ router.ExternalHandler = (*testExternalHandler)(nil)
 // is possible for multiple concurrent calls to happen with different NodeIDs.
 // However, a given NodeID will only be performing one call at a time.
 type testExternalHandler struct {
-	log logging.Logger
+	log log.Logger
 }
 
 // Note: HandleInbound will be called with raw P2P messages, the networking

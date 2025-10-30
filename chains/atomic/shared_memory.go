@@ -4,8 +4,8 @@
 package atomic
 
 import (
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 )

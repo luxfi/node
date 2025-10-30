@@ -57,12 +57,12 @@ func (g *GenesisAsset) Compare(other *GenesisAsset) int {
 
 // AssetInitialState describes the initial state of an asset
 type AssetInitialState struct {
-	FixedCap    []Holder
-	VariableCap []Owners
+	FixedCap    []GenesisHolder
+	VariableCap []GenesisOwners
 }
 
 // AssetDefinition describes a genesis asset and its initial state
-type AssetDefinition struct {
+type GenesisAssetDefinition struct {
 	Name         string
 	Symbol       string
 	Denomination uint8
@@ -70,14 +70,14 @@ type AssetDefinition struct {
 	Memo         []byte
 }
 
-// Holder describes how much asset is owned by an address
-type Holder struct {
+// GenesisHolder describes how much asset is owned by an address
+type GenesisHolder struct {
 	Amount  uint64
 	Address string
 }
 
-// Owners describes who can perform an action
-type Owners struct {
+// GenesisOwners describes who can perform an action
+type GenesisOwners struct {
 	Threshold uint32
 	Minters   []string
 }
@@ -85,7 +85,7 @@ type Owners struct {
 // NewGenesis creates a new Genesis from genesis data
 func NewGenesis(
 	networkID uint32,
-	genesisData map[string]AssetDefinition,
+	genesisData map[string]GenesisAssetDefinition,
 ) (*Genesis, error) {
 	g := &Genesis{}
 	for assetAlias, assetDefinition := range genesisData {

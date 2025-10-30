@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/node/message/messagemock"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 func TestSybilOutboundMsgThrottler(t *testing.T) {

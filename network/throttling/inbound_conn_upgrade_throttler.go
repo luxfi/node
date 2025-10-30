@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 
 	timerpkg "github.com/luxfi/node/utils/timer"

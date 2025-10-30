@@ -8,9 +8,9 @@ import (
 	"errors"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/consensus/core"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/xvm/block"
@@ -34,9 +34,9 @@ var (
 type Builder interface {
 	// WaitForEvent waits until there is at least one tx available to the
 	// builder.
-	WaitForEvent(ctx context.Context) (common.Message, error)
+	WaitForEvent(ctx context.Context) (core.Message, error)
 	// BuildBlock can be called to attempt to create a new block
-	BuildBlock(context.Context) (chain.Block, error)
+	BuildBlock(context.Context) (chainblock.Block, error)
 }
 
 // builder implements a simple builder to convert txs into valid blocks
@@ -63,14 +63,13 @@ func New(
 	}
 }
 
-func (b *builder) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (b *builder) WaitForEvent(ctx context.Context) (core.Message, error) {
 	return b.mempool.WaitForEvent(ctx)
 }
 
 // BuildBlock builds a block to be added to consensus.
-func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
-	ctx := b.backend.Ctx
-	ctx.Log.Debug("starting to attempt to build a block")
+func (b *builder) BuildBlock(context.Context) (chainblock.Block, error) {
+	b.backend.Log.Debug("starting to attempt to build a block")
 
 	// Get the block to build on top of and retrieve the new block's context.
 	preferredID := b.manager.Preferred()

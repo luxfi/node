@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/node/vms/proposervm/indexer"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 )

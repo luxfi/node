@@ -15,9 +15,9 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/core"
@@ -28,8 +28,8 @@ import (
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -297,7 +297,7 @@ func defaultClock() *mockable.Clock {
 type fxVMInt struct {
 	registry codec.Registry
 	clk      *mockable.Clock
-	log      logging.Logger
+	log      log.Logger
 }
 
 func (fvi *fxVMInt) CodecRegistry() codec.Registry {
@@ -308,11 +308,11 @@ func (fvi *fxVMInt) Clock() *mockable.Clock {
 	return fvi.clk
 }
 
-func (fvi *fxVMInt) Logger() logging.Logger {
+func (fvi *fxVMInt) Logger() log.Logger {
 	return fvi.log
 }
 
-func defaultFx(t *testing.T, clk *mockable.Clock, log logging.Logger, isBootstrapped bool) fx.Fx {
+func defaultFx(t *testing.T, clk *mockable.Clock, log log.Logger, isBootstrapped bool) fx.Fx {
 	require := require.New(t)
 
 	fxVMInt := &fxVMInt{

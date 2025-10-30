@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/crypto/corona"
 	"go.uber.org/zap"
 )
@@ -65,7 +65,7 @@ type AggregatedSignature struct {
 // SignatureAggregator manages network-wide signature aggregation
 type SignatureAggregator struct {
 	config      SignatureConfig
-	log         logging.Logger
+	log         log.Logger
 	
 	// Signature managers
 	blsManager      *BLSManager
@@ -104,7 +104,7 @@ type AggregationSession struct {
 }
 
 // NewSignatureAggregator creates a new signature aggregator
-func NewSignatureAggregator(config SignatureConfig, log logging.Logger) (*SignatureAggregator, error) {
+func NewSignatureAggregator(config SignatureConfig, log log.Logger) (*SignatureAggregator, error) {
 	sa := &SignatureAggregator{
 		config:   config,
 		log:      log,

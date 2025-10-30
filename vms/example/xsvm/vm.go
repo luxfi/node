@@ -14,8 +14,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/acp118"

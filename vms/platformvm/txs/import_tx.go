@@ -4,12 +4,14 @@
 package txs
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"errors"
 	"fmt"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )

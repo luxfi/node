@@ -12,7 +12,7 @@ import (
 	"slices"
 
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -295,7 +295,8 @@ func (c *genericCodec) MarshalInto(value interface{}, p *wrappers.Packer) error 
 		return codec.ErrMarshalNil
 	}
 
-	return c.marshal(reflect.ValueOf(value), p, nil /*=typeStack*/)
+	typeStack := set.Set[reflect.Type]{}
+	return c.marshal(reflect.ValueOf(value), p, typeStack)
 }
 
 // marshal writes the byte representation of [value] to [p]

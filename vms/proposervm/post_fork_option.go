@@ -10,18 +10,23 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/proposervm/block"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/node/vms/proposervm/block"
 )
 
 var _ PostForkBlock = (*postForkOption)(nil)
 
 // The parent of a *postForkOption must be a *postForkBlock.
 type postForkOption struct {
-	chainblock.Block
+	block.Block
 	postForkCommonComponents
 
 	timestamp time.Time
+}
+
+// Status returns the status of the inner block
+func (b *postForkOption) Status() uint8 {
+	return b.innerBlk.Status()
 }
 
 // Height returns the height of the inner block - explicit to resolve ambiguity
@@ -110,7 +115,7 @@ func (b *postForkOption) buildChild(ctx context.Context) (Block, error) {
 	parentID := b.ID()
 	parentPChainHeight, err := b.pChainHeight(ctx)
 	if err != nil {
-		b.vm.ctx.Log.Error("unexpected build block failure",
+		b.vm.logger.Error("unexpected build block failure",
 			zap.String("reason", "failed to fetch parent's P-chain height"),
 			zap.Stringer("parentID", parentID),
 			zap.Error(err),
@@ -119,7 +124,7 @@ func (b *postForkOption) buildChild(ctx context.Context) (Block, error) {
 	}
 	parentEpoch, err := b.pChainEpoch(ctx)
 	if err != nil {
-		b.vm.ctx.Log.Error("unexpected build block failure",
+		b.vm.logger.Error("unexpected build block failure",
 			zap.String("reason", "failed to fetch parent's epoch"),
 			zap.Stringer("parentID", parentID),
 			zap.Error(err),
@@ -162,6 +167,7 @@ func (b *postForkOption) selectChildPChainHeight(ctx context.Context) (uint64, e
 	return b.vm.selectChildPChainHeight(ctx, pChainHeight)
 }
 
-func (b *postForkOption) getStatelessBlk() chainblock.Block {
+func (b *postForkOption) getStatelessBlk() block.Block {
+	// Return the embedded stateless block.Block
 	return b.Block
 }

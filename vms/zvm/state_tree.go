@@ -10,14 +10,14 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/database"
+	"github.com/luxfi/log"
 )
 
 // StateTree manages the Merkle tree of the UTXO set
 type StateTree struct {
 	db     database.Database
-	log    logging.Logger
+	log    log.Logger
 	
 	// Current state
 	currentRoot []byte
@@ -31,7 +31,7 @@ type StateTree struct {
 }
 
 // NewStateTree creates a new state tree
-func NewStateTree(db database.Database, log logging.Logger) (*StateTree, error) {
+func NewStateTree(db database.Database, log log.Logger) (*StateTree, error) {
 	st := &StateTree{
 		db:          db,
 		log:         log,

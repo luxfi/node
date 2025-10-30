@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 func TestSetMapPut(t *testing.T) {

@@ -15,18 +15,17 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	consensuscontext "github.com/luxfi/consensus/context"
 	consensuscore "github.com/luxfi/consensus/core"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
-	enginecore "github.com/luxfi/consensus/engine/core"
 	consensusinterfaces "github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
@@ -75,7 +74,7 @@ type VM struct {
 
 	ctx            *consensuscontext.Context
 	db             *versiondb.Database
-	logger         logging.Logger
+	logger         log.Logger
 	validatorState validators.State
 
 	// Block ID --> Block
@@ -145,7 +144,7 @@ func (vm *VM) Initialize(
 	vmDB := db.(database.Database)
 
 	// Explicit type conversions for interface{} fields - Rob Pike approach: no hiding complexity
-	logger := chainContext.Log.(logging.Logger)
+	logger := chainContext.Log.(log.Logger)
 	validatorState := chainContext.ValidatorState.(validators.State)
 	
 	vm.ctx = chainContext
@@ -795,7 +794,9 @@ func (vm *VM) selectChildPChainHeight(ctx context.Context, minPChainHeight uint6
 		return minPChainHeight, nil
 	}
 
-	recommendedHeight, err := vm.ctx.ValidatorState.GetMinimumHeight(ctx)
+	// Use GetCurrentHeight since GetMinimumHeight is not in the validators.State interface
+	// GetCurrentHeight returns the current P-Chain height which is safe to use
+	recommendedHeight, err := vm.validatorState.GetCurrentHeight(ctx)
 	if err != nil {
 		return 0, err
 	}

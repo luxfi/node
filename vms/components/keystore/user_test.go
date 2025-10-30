@@ -8,11 +8,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/encdb"
-	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/encdb"
+	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 )
 
 // Test user password, must meet minimum complexity/length requirements

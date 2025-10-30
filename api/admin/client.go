@@ -7,10 +7,10 @@ import (
 	"context"
 
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/node/database/rpcdb"
+	"github.com/luxfi/database/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/rpc"
 )
 

@@ -12,8 +12,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 )
 
 var _ ValidatorSet = (*testValidatorSet)(nil)

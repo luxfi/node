@@ -18,8 +18,8 @@ import (
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/consensus/engine/core"
 	cset "github.com/luxfi/consensus/utils/set"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 )
 
@@ -76,7 +76,7 @@ type NetworkClient interface {
 
 type networkClient struct {
 	lock sync.Mutex
-	log  logging.Logger
+	log  log.Logger
 	// requestID counter used to track outbound requests
 	requestID uint32
 	// requestID => handler for the response/failure
@@ -93,7 +93,7 @@ func NewNetworkClient(
 	appSender core.AppSender,
 	myNodeID ids.NodeID,
 	maxActiveRequests int64,
-	log logging.Logger,
+	log log.Logger,
 	metricsNamespace string,
 	registerer prometheus.Registerer,
 	minVersion *version.Application,

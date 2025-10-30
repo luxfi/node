@@ -12,7 +12,7 @@ package databasemock
 import (
 	reflect "reflect"
 
-	database "github.com/luxfi/node/database"
+	database "github.com/luxfi/database"
 	gomock "go.uber.org/mock/gomock"
 )
 

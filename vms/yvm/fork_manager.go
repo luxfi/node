@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 var (
@@ -90,12 +90,12 @@ type ForkManager struct {
 	currentVersion  uint32
 	supportedVersions []uint32
 	
-	log logging.Logger
+	log log.Logger
 	mu  sync.RWMutex
 }
 
 // NewForkManager creates a new fork manager
-func NewForkManager(log logging.Logger) *ForkManager {
+func NewForkManager(log log.Logger) *ForkManager {
 	return &ForkManager{
 		versions:      make(map[uint32]*NetworkVersion),
 		transitions:   make(map[string]*ForkTransition),

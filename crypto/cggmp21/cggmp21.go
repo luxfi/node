@@ -19,7 +19,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 // Signature represents an ECDSA signature
@@ -54,7 +54,7 @@ type Party struct {
 	// Session state
 	sessions      map[string]*SigningSession
 	
-	log           logging.Logger
+	log           log.Logger
 	mu            sync.RWMutex
 }
 
@@ -98,7 +98,7 @@ type ECPoint struct {
 }
 
 // NewParty creates a new CGGMP21 party
-func NewParty(id ids.NodeID, index int, config *Config, log logging.Logger) (*Party, error) {
+func NewParty(id ids.NodeID, index int, config *Config, log log.Logger) (*Party, error) {
 	if index < 0 || index >= config.TotalParties {
 		return nil, errors.New("invalid party index")
 	}

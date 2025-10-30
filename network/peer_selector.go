@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 // ConsistentHashPeerSelector implements O(1) peer selection using consistent hashing

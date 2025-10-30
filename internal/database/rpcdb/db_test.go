@@ -10,10 +10,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database/corruptabledb"
-	"github.com/luxfi/node/database/dbtest"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/database/corruptabledb"
+	"github.com/luxfi/database/dbtest"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"

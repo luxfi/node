@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/crypto"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 // UnifiedKeychain uses the unified crypto interface for all key operations

@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/consensus/engine/core/coretest"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorsmock"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 func TestValidatorsSample(t *testing.T) {

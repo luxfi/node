@@ -9,7 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 )
 
@@ -54,7 +54,7 @@ func (vm *VM) updateHeightIndex(height uint64, blkID ids.ID) error {
 		return err
 	}
 
-	vm.ctx.Log.Debug("indexed block",
+	vm.logger.Debug("indexed block",
 		zap.Stringer("blkID", blkID),
 		zap.Uint64("height", height),
 	)
@@ -94,7 +94,7 @@ func (vm *VM) updateHeightIndex(height uint64, blkID ids.ID) error {
 		return err
 	}
 
-	vm.ctx.Log.Debug("deleted block",
+	vm.logger.Debug("deleted block",
 		zap.Stringer("blkID", blockToDelete),
 		zap.Uint64("height", heightToDelete),
 	)
@@ -130,7 +130,7 @@ func (vm *VM) pruneOldBlocks() error {
 			return err
 		}
 
-		vm.ctx.Log.Debug("deleted block",
+		vm.logger.Debug("deleted block",
 			zap.Stringer("blkID", blockToDelete),
 			zap.Uint64("height", height),
 		)

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/txs/executor"
 )
 

@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/verify"
 )
@@ -37,7 +37,7 @@ var (
 type Fx struct {
 	VM           VM
 	bootstrapped bool
-	recoverCache *secp256k1.RecoverCache
+	recoverCache secp256k1.RecoverCacheType
 }
 
 func (fx *Fx) Initialize(vmIntf interface{}) error {

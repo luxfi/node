@@ -34,10 +34,10 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/config/node"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/leveldb"
-	"github.com/luxfi/node/database/pebbledb"
-	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/leveldb"
+	"github.com/luxfi/database/pebbledb"
+	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/indexer"
@@ -63,13 +63,13 @@ import (
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/resource"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/xvm"
@@ -78,7 +78,7 @@ import (
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
-	databasefactory "github.com/luxfi/node/database/factory"
+	databasefactory "github.com/luxfi/database/factory"
 	avmconfig "github.com/luxfi/node/vms/xvm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 	// geth "github.com/luxfi/geth/plugin/factory" // TODO: C-Chain EVM currently disabled - plugin/factory package doesn't exist
@@ -118,7 +118,7 @@ var (
 func New(
 	config *node.Config,
 	logFactory logging.Factory,
-	logger logging.Logger,
+	logger log.Logger,
 ) (*Node, error) {
 	tlsCert := config.StakingTLSCert.Leaf
 	stakingCert, err := staking.ParseCertificate(tlsCert.Raw)
@@ -275,8 +275,8 @@ func New(
 
 // Node is an instance of an Lux node.
 type Node struct {
-	Log          logging.Logger
-	VMFactoryLog logging.Logger
+	Log          log.Logger
+	VMFactoryLog log.Logger
 	LogFactory   logging.Factory
 
 	// This node's unique ID used when communicating with other nodes

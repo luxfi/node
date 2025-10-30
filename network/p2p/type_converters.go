@@ -8,7 +8,7 @@ import (
 	"github.com/luxfi/consensus/core"
 	consensusset "github.com/luxfi/consensus/utils/set"
 	consensusversion "github.com/luxfi/consensus/version"
-	nodeset "github.com/luxfi/node/utils/set"
+	nodeset "github.com/luxfi/math/set"
 	nodeversion "github.com/luxfi/node/version"
 )
 

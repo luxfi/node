@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 )
 
 const (

@@ -9,10 +9,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/proposervm/state"
 )
 
@@ -40,7 +40,7 @@ type HeightIndexer interface {
 
 func NewHeightIndexer(
 	server BlockServer,
-	log logging.Logger,
+	log log.Logger,
 	indexState state.State,
 ) HeightIndexer {
 	return newHeightIndexer(server, log, indexState)
@@ -48,7 +48,7 @@ func NewHeightIndexer(
 
 func newHeightIndexer(
 	server BlockServer,
-	log logging.Logger,
+	log log.Logger,
 	indexState state.State,
 ) *heightIndexer {
 	return &heightIndexer{
@@ -61,7 +61,7 @@ func newHeightIndexer(
 
 type heightIndexer struct {
 	server BlockServer
-	log    logging.Logger
+	log    log.Logger
 
 	jobDone utils.Atomic[bool]
 	state   state.State

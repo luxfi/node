@@ -7,14 +7,14 @@ import (
 	"fmt"
 
 	"github.com/luxfi/node/api/metrics"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/corruptabledb"
-	"github.com/luxfi/node/database/leveldb"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/meterdb"
-	"github.com/luxfi/node/database/pebbledb"
-	"github.com/luxfi/node/database/versiondb"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/corruptabledb"
+	"github.com/luxfi/database/leveldb"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/meterdb"
+	"github.com/luxfi/database/pebbledb"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/log"
 )
 
 // New creates a new database instance based on the provided configuration.
@@ -33,7 +33,7 @@ func New(
 	readOnly bool,
 	config []byte,
 	gatherer metrics.MultiGatherer,
-	logger logging.Logger,
+	logger log.Logger,
 	metricsPrefix string,
 	meterDBRegName string,
 ) (database.Database, error) {

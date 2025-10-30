@@ -39,6 +39,29 @@ const (
 	maxPageSize uint64 = 1024
 )
 
+// JSONSpendHeader includes common fields for spend transactions
+type JSONSpendHeader struct {
+	api.UserPass
+	JSONFromAddrs
+	JSONChangeAddr
+}
+
+// JSONFromAddrs contains the addresses to spend from
+type JSONFromAddrs struct {
+	From []string `json:"from"`
+}
+
+// JSONChangeAddr contains the change address
+type JSONChangeAddr struct {
+	ChangeAddr string `json:"changeAddr"`
+}
+
+// JSONTxIDChangeAddr contains a transaction ID and a change address
+type JSONTxIDChangeAddr struct {
+	api.JSONTxID
+	JSONChangeAddr
+}
+
 // publicKeyToAddress converts a secp256k1 public key to an ids.ShortID address
 func publicKeyToAddress(pk *secp256k1.PublicKey) (ids.ShortID, error) {
 	pkBytes := pk.Bytes()
@@ -95,7 +118,7 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, reply *api.G
 		for _, tx := range block.Txs() {
 			err := tx.Unsigned.Visit(&txInit{
 				tx:            tx,
-				ctx:           s.vm.ctx,
+				ctx:           s.vm.consensusCtx,
 				typeToFxIndex: s.vm.typeToFxIndex,
 				fxs:           s.vm.fxs,
 			})
@@ -150,7 +173,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 		for _, tx := range block.Txs() {
 			err := tx.Unsigned.Visit(&txInit{
 				tx:            tx,
-				ctx:           s.vm.ctx,
+				ctx:           s.vm.consensusCtx,
 				typeToFxIndex: s.vm.typeToFxIndex,
 				fxs:           s.vm.fxs,
 			})
@@ -357,7 +380,7 @@ func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, reply *api.GetTxRe
 	if args.Encoding == formatting.JSON {
 		err = tx.Unsigned.Visit(&txInit{
 			tx:            tx,
-			ctx:           s.vm.ctx,
+			ctx:           s.vm.consensusCtx,
 			typeToFxIndex: s.vm.typeToFxIndex,
 			fxs:           s.vm.fxs,
 		})
@@ -694,7 +717,7 @@ type Owners struct {
 
 // CreateAssetArgs are arguments for passing into CreateAsset
 type CreateAssetArgs struct {
-	api.JSONSpendHeader           // User, password, from addrs, change addr
+	JSONSpendHeader           // User, password, from addrs, change addr
 	Name                string    `json:"name"`
 	Symbol              string    `json:"symbol"`
 	Denomination        byte      `json:"denomination"`
@@ -705,7 +728,7 @@ type CreateAssetArgs struct {
 // AssetIDChangeAddr is an asset ID and a change address
 type AssetIDChangeAddr struct {
 	FormattedAssetID
-	api.JSONChangeAddr
+	JSONChangeAddr
 }
 
 // CreateAsset returns ID of the newly created asset
@@ -872,7 +895,7 @@ func (s *Service) CreateVariableCapAsset(r *http.Request, args *CreateAssetArgs,
 
 // CreateNFTAssetArgs are arguments for passing into CreateNFTAsset requests
 type CreateNFTAssetArgs struct {
-	api.JSONSpendHeader          // User, password, from addrs, change addr
+	JSONSpendHeader          // User, password, from addrs, change addr
 	Name                string   `json:"name"`
 	Symbol              string   `json:"symbol"`
 	MinterSets          []Owners `json:"minterSets"`
@@ -1112,7 +1135,7 @@ type SendOutput struct {
 // SendArgs are arguments for passing into Send requests
 type SendArgs struct {
 	// User, password, from addrs, change addr
-	api.JSONSpendHeader
+	JSONSpendHeader
 
 	// The amount, assetID, and destination to send funds to
 	SendOutput
@@ -1124,7 +1147,7 @@ type SendArgs struct {
 // SendMultipleArgs are arguments for passing into SendMultiple requests
 type SendMultipleArgs struct {
 	// User, password, from addrs, change addr
-	api.JSONSpendHeader
+	JSONSpendHeader
 
 	// The outputs of the transaction
 	Outputs []SendOutput `json:"outputs"`
@@ -1134,7 +1157,7 @@ type SendMultipleArgs struct {
 }
 
 // Send returns the ID of the newly created transaction
-func (s *Service) Send(r *http.Request, args *SendArgs, reply *api.JSONTxIDChangeAddr) error {
+func (s *Service) Send(r *http.Request, args *SendArgs, reply *JSONTxIDChangeAddr) error {
 	return s.SendMultiple(r, &SendMultipleArgs{
 		JSONSpendHeader: args.JSONSpendHeader,
 		Outputs:         []SendOutput{args.SendOutput},
@@ -1143,7 +1166,7 @@ func (s *Service) Send(r *http.Request, args *SendArgs, reply *api.JSONTxIDChang
 }
 
 // SendMultiple sends a transaction with multiple outputs.
-func (s *Service) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *api.JSONTxIDChangeAddr) error {
+func (s *Service) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *JSONTxIDChangeAddr) error {
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "sendMultiple"),
@@ -1302,14 +1325,14 @@ func (s *Service) buildSendMultiple(args *SendMultipleArgs) (*txs.Tx, ids.ShortI
 
 // MintArgs are arguments for passing into Mint requests
 type MintArgs struct {
-	api.JSONSpendHeader                // User, password, from addrs, change addr
+	JSONSpendHeader                // User, password, from addrs, change addr
 	Amount              avajson.Uint64 `json:"amount"`
 	AssetID             string         `json:"assetID"`
 	To                  string         `json:"to"`
 }
 
 // Mint issues a transaction that mints more of the asset
-func (s *Service) Mint(_ *http.Request, args *MintArgs, reply *api.JSONTxIDChangeAddr) error {
+func (s *Service) Mint(_ *http.Request, args *MintArgs, reply *JSONTxIDChangeAddr) error {
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "mint"),
@@ -1439,14 +1462,14 @@ func (s *Service) buildMint(args *MintArgs) (*txs.Tx, ids.ShortID, error) {
 
 // SendNFTArgs are arguments for passing into SendNFT requests
 type SendNFTArgs struct {
-	api.JSONSpendHeader                // User, password, from addrs, change addr
+	JSONSpendHeader                // User, password, from addrs, change addr
 	AssetID             string         `json:"assetID"`
 	GroupID             avajson.Uint32 `json:"groupID"`
 	To                  string         `json:"to"`
 }
 
 // SendNFT sends an NFT
-func (s *Service) SendNFT(_ *http.Request, args *SendNFTArgs, reply *api.JSONTxIDChangeAddr) error {
+func (s *Service) SendNFT(_ *http.Request, args *SendNFTArgs, reply *JSONTxIDChangeAddr) error {
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "sendNFT"),
@@ -1565,7 +1588,7 @@ func (s *Service) buildSendNFT(args *SendNFTArgs) (*txs.Tx, ids.ShortID, error) 
 
 // MintNFTArgs are arguments for passing into MintNFT requests
 type MintNFTArgs struct {
-	api.JSONSpendHeader                     // User, password, from addrs, change addr
+	JSONSpendHeader                     // User, password, from addrs, change addr
 	AssetID             string              `json:"assetID"`
 	Payload             string              `json:"payload"`
 	To                  string              `json:"to"`
@@ -1573,7 +1596,7 @@ type MintNFTArgs struct {
 }
 
 // MintNFT issues a MintNFT transaction and returns the ID of the newly created transaction
-func (s *Service) MintNFT(_ *http.Request, args *MintNFTArgs, reply *api.JSONTxIDChangeAddr) error {
+func (s *Service) MintNFT(_ *http.Request, args *MintNFTArgs, reply *JSONTxIDChangeAddr) error {
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "mintNFT"),
@@ -1836,7 +1859,7 @@ func (s *Service) buildImport(args *ImportArgs) (*txs.Tx, error) {
 // ExportArgs are arguments for passing into ExportAVA requests
 type ExportArgs struct {
 	// User, password, from addrs, change addr
-	api.JSONSpendHeader
+	JSONSpendHeader
 	// Amount of nLUX to send
 	Amount avajson.Uint64 `json:"amount"`
 
@@ -1853,7 +1876,7 @@ type ExportArgs struct {
 // Export sends an asset from this chain to the P/C-Chain.
 // After this tx is accepted, the LUX must be imported to the P/C-chain with an importTx.
 // Returns the ID of the newly created atomic transaction
-func (s *Service) Export(_ *http.Request, args *ExportArgs, reply *api.JSONTxIDChangeAddr) error {
+func (s *Service) Export(_ *http.Request, args *ExportArgs, reply *JSONTxIDChangeAddr) error {
 	s.vm.log.Warn("deprecated API called",
 		log.String("service", "xvm"),
 		log.String("method", "export"),

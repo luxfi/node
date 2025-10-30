@@ -15,6 +15,11 @@ type BurnOperation struct {
 
 func (*BurnOperation) InitCtx(*consensusctx.Context) {}
 
+// InitializeContext implements the fxs.FxOperation interface
+func (*BurnOperation) InitializeContext(*consensusctx.Context) error {
+	return nil
+}
+
 func (*BurnOperation) Outs() []verify.State {
 	return nil
 }

@@ -15,7 +15,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/gruntime"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
@@ -30,7 +30,7 @@ type Config struct {
 	Stdout io.Writer
 	// Duration engine server will wait for handshake success.
 	HandshakeTimeout time.Duration
-	Log              logging.Logger
+	Log              log.Logger
 }
 
 type Status struct {

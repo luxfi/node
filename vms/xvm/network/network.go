@@ -9,13 +9,12 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
@@ -28,7 +27,7 @@ var (
 type Network struct {
 	*p2p.Network
 
-	log     logging.Logger
+	log     log.Logger
 	mempool *gossipMempool
 
 	txPushGossiper        *gossip.PushGossiper[*txs.Tx]
@@ -45,7 +44,7 @@ func New(
 	parser txs.Parser,
 	txVerifier TxVerifier,
 	mempool mempool.Mempool[*txs.Tx],
-	appSender common.AppSender,
+	appSender core.AppSender,
 	registerer prometheus.Registerer,
 	config Config,
 ) (*Network, error) {

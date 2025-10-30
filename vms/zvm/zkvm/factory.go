@@ -4,7 +4,7 @@
 package zkvm
 
 import (
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 )
 
@@ -14,6 +14,6 @@ var _ vms.Factory = (*Factory)(nil)
 type Factory struct{}
 
 // New returns a new instance of the ZK VM
-func (f *Factory) New(logging.Logger) (interface{}, error) {
+func (f *Factory) New(log.Logger) (interface{}, error) {
 	return &VM{}, nil
 }

@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/tests"
@@ -23,9 +23,9 @@ import (
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/components/lux"
@@ -156,7 +156,7 @@ func main() {
 
 type workload struct {
 	id     int
-	log    logging.Logger
+	log    log.Logger
 	wallet *primary.Wallet
 	addrs  set.Set[ids.ShortID]
 	uris   []string

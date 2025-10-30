@@ -10,7 +10,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 const minBagSize = 16

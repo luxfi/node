@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/networking/sender"
 	"github.com/luxfi/node/subnets"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 var (

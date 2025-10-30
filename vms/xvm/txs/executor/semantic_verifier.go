@@ -4,7 +4,6 @@
 package executor
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -90,7 +89,7 @@ func (v *SemanticVerifier) ImportTx(tx *txs.ImportTx) error {
 		return nil
 	}
 
-	if err := verify.SameSubnet(context.TODO(), v.Ctx, tx.SourceChain); err != nil {
+	if err := verify.SameSubnet(v.Ctx, v.ToChainContext(), tx.SourceChain); err != nil {
 		return err
 	}
 
@@ -128,7 +127,7 @@ func (v *SemanticVerifier) ExportTx(tx *txs.ExportTx) error {
 	}
 
 	if v.Bootstrapped {
-		if err := verify.SameSubnet(context.TODO(), v.Ctx, tx.DestinationChain); err != nil {
+		if err := verify.SameSubnet(v.Ctx, v.ToChainContext(), tx.DestinationChain); err != nil {
 			return err
 		}
 	}

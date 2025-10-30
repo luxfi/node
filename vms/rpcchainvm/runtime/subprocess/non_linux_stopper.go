@@ -12,14 +12,14 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 func NewCmd(path string, args ...string) *exec.Cmd {
 	return exec.Command(path, args...)
 }
 
-func stop(_ context.Context, log logging.Logger, cmd *exec.Cmd) {
+func stop(_ context.Context, log log.Logger, cmd *exec.Cmd) {
 	err := cmd.Process.Kill()
 	if err == nil {
 		log.Debug("subprocess was killed")

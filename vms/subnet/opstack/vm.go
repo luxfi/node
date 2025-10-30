@@ -15,7 +15,7 @@ import (
 	
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
 )
 
@@ -69,7 +69,7 @@ type VM struct {
 	// Consensus
 	consensusEngine ConsensusEngine
 	
-	log logging.Logger
+	log log.Logger
 }
 
 // Sequencer handles transaction ordering and block production

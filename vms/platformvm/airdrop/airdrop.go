@@ -15,9 +15,9 @@ import (
 		"github.com/luxfi/geth/ethclient"
 
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 var (
@@ -36,7 +36,7 @@ type Manager struct {
 	reqlSnapshots map[common.Address]*REQLSnapshot
 	claims        map[common.Address]*AirdropClaim
 	mu            sync.RWMutex
-	log           logging.Logger
+	log           log.Logger
 }
 
 // REQLSnapshot represents a REQL holder's balance at snapshot time
@@ -64,7 +64,7 @@ func NewManager(
 	tokenomics *config.TokenomicsConfig,
 	db database.Database,
 	ethClient *ethclient.Client,
-	log logging.Logger,
+	log log.Logger,
 ) (*Manager, error) {
 	if !config.Enabled {
 		return nil, errAirdropNotEnabled

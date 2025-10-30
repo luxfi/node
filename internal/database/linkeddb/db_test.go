@@ -6,8 +6,8 @@ package linkeddb
 import (
 	"testing"
 
-	"github.com/luxfi/node/database/dbtest"
-	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/database/dbtest"
+	"github.com/luxfi/database/memdb"
 )
 
 func TestInterface(t *testing.T) {

@@ -10,7 +10,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 // Message represents a notification message type
@@ -47,7 +47,7 @@ type Notifier interface {
 type NotificationForwarder struct {
 	Engine    Notifier
 	Subscribe Subscription
-	Log       logging.Logger
+	Log       log.Logger
 
 	lock          sync.Mutex
 	executing     sync.WaitGroup
@@ -59,7 +59,7 @@ type NotificationForwarder struct {
 func NewNotificationForwarder(
 	engine Notifier,
 	subscribe Subscription,
-	log logging.Logger,
+	log log.Logger,
 ) *NotificationForwarder {
 	nf := &NotificationForwarder{
 		Engine:    engine,

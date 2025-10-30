@@ -51,9 +51,9 @@ func (b *preForkBlock) Verify(ctx context.Context) error {
 }
 
 func (b *preForkBlock) Options(ctx context.Context) ([2]chainblock.Block, error) {
-	oracleBlk, ok := b.Block.(chainblock.OracleBlock)
+	oracleBlk, ok := b.Block.(OracleBlock)
 	if !ok {
-		return [2]chainblock.Block{}, chainblock.ErrNotOracle
+		return [2]chainblock.Block{}, errNotOracle
 	}
 
 	options, err := oracleBlk.Options(ctx)
@@ -84,7 +84,7 @@ func (b *preForkBlock) verifyPreForkChild(ctx context.Context, child *preForkBlo
 			return err
 		}
 
-		b.vm.ctx.Log.Debug("allowing pre-fork block after the fork time",
+		b.vm.logger.Debug("allowing pre-fork block after the fork time",
 			zap.String("reason", "parent is an oracle block"),
 			zap.Stringer("blkID", b.ID()),
 		)
@@ -101,9 +101,9 @@ func (b *preForkBlock) verifyPostForkChild(ctx context.Context, child *postForkB
 
 	childID := child.ID()
 	childPChainHeight := child.PChainHeight()
-	currentPChainHeight, err := b.vm.ctx.ValidatorState.GetCurrentHeight(ctx)
+	currentPChainHeight, err := b.vm.validatorState.GetCurrentHeight(ctx)
 	if err != nil {
-		b.vm.ctx.Log.Error("block verification failed",
+		b.vm.logger.Error("block verification failed",
 			zap.String("reason", "failed to get current P-Chain height"),
 			zap.Stringer("blkID", childID),
 			zap.Error(err),
@@ -170,7 +170,7 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 			return nil, err
 		}
 
-		b.vm.ctx.Log.Info("built block",
+		b.vm.logger.Info("built block",
 			zap.Stringer("blkID", innerBlock.ID()),
 			zap.Uint64("height", innerBlock.Height()),
 			zap.Time("parentTimestamp", parentTimestamp),
@@ -194,7 +194,7 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	// is at least the minimum height
 	pChainHeight, err := b.vm.selectChildPChainHeight(ctx, b.vm.Upgrades.ApricotPhase4MinPChainHeight)
 	if err != nil {
-		b.vm.ctx.Log.Error("unexpected build block failure",
+		b.vm.logger.Error("unexpected build block failure",
 			zap.String("reason", "failed to calculate optimal P-chain height"),
 			zap.Stringer("parentID", parentID),
 			zap.Error(err),
@@ -207,11 +207,11 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		return nil, err
 	}
 
-	statelessBlock, err := chainblock.BuildUnsigned(
+	statelessBlock, err := block.BuildUnsigned(
 		parentID,
 		newTimestamp,
 		pChainHeight,
-		chainblock.Epoch{}, // Pre-fork blocks don't have epochs
+		block.Epoch{}, // Pre-fork blocks don't have epochs
 		innerBlock.Bytes(),
 	)
 	if err != nil {
@@ -226,7 +226,7 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		},
 	}
 
-	b.vm.ctx.Log.Info("built block",
+	b.vm.logger.Info("built block",
 		zap.Stringer("blkID", blk.ID()),
 		zap.Stringer("innerBlkID", innerBlock.ID()),
 		zap.Uint64("height", blk.Height()),

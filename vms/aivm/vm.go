@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/api/health"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core/appsender"
 	"github.com/luxfi/consensus"

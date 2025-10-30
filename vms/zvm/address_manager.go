@@ -14,8 +14,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/database"
+	"github.com/luxfi/log"
 )
 
 const (
@@ -28,7 +28,7 @@ const (
 // AddressManager manages private addresses and viewing keys
 type AddressManager struct {
 	db              database.Database
-	log             logging.Logger
+	log             log.Logger
 	enablePrivate   bool
 	
 	// Address mappings
@@ -50,7 +50,7 @@ type PrivateAddress struct {
 }
 
 // NewAddressManager creates a new address manager
-func NewAddressManager(db database.Database, enablePrivate bool, log logging.Logger) (*AddressManager, error) {
+func NewAddressManager(db database.Database, enablePrivate bool, log log.Logger) (*AddressManager, error) {
 	am := &AddressManager{
 		db:            db,
 		log:           log,

@@ -10,9 +10,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 const (
@@ -35,7 +35,7 @@ type UTXO struct {
 // UTXODB manages the UTXO set
 type UTXODB struct {
 	db     database.Database
-	log    logging.Logger
+	log    log.Logger
 	
 	// Caches
 	utxoCache    map[string]*UTXO  // commitment -> UTXO
@@ -48,7 +48,7 @@ type UTXODB struct {
 }
 
 // NewUTXODB creates a new UTXO database
-func NewUTXODB(db database.Database, log logging.Logger) (*UTXODB, error) {
+func NewUTXODB(db database.Database, log log.Logger) (*UTXODB, error) {
 	udb := &UTXODB{
 		db:          db,
 		log:         log,

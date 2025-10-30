@@ -14,8 +14,8 @@ import (
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 )
@@ -29,7 +29,7 @@ type Config struct {
 	Metrics         *Metrics
 	MessageCreator  message.Creator
 
-	Log                  logging.Logger
+	Log                  log.Logger
 	InboundMsgThrottler  throttling.InboundMsgThrottler
 	Network              Network
 	Router               router.InboundHandler

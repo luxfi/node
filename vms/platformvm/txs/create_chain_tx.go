@@ -4,11 +4,12 @@
 package txs
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"errors"
 	"unicode"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
@@ -50,7 +51,7 @@ type CreateChainTx struct {
 	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
-func (tx *CreateChainTx) SyntacticVerify(ctx *snow.Context) error {
+func (tx *CreateChainTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx

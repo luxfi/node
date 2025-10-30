@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/xvm"
+	"github.com/luxfi/math/set"
+	avm "github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/platformvm/genesis"
@@ -295,7 +295,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	hrp := constants.GetHRP(config.NetworkID)
 
 	// Specify the genesis state of the AVM
-	lux := avm.AssetDefinition{
+	lux := avm.GenesisAssetDefinition{
 		Name:         "Lux",
 		Symbol:       "LUX",
 		Denomination: 9,
@@ -316,7 +316,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 			return nil, ids.Empty, err
 		}
 
-		lux.InitialState.FixedCap = append(lux.InitialState.FixedCap, avm.Holder{
+		lux.InitialState.FixedCap = append(lux.InitialState.FixedCap, avm.GenesisHolder{
 			Amount:  allocation.InitialAmount,
 			Address: addr,
 		})
@@ -326,7 +326,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 
 	avmGenesis, err := avm.NewGenesis(
 		config.NetworkID,
-		map[string]avm.AssetDefinition{
+		map[string]avm.GenesisAssetDefinition{
 			"LUX": lux, // The AVM starts out with one asset: LUX
 		},
 	)

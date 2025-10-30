@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/units"

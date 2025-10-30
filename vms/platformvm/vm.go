@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain"
@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/lux"
@@ -482,7 +482,7 @@ func (vm *VM) Clock() *mockable.Clock {
 	return &vm.clock
 }
 
-func (vm *VM) Logger() logging.Logger {
+func (vm *VM) Logger() log.Logger {
 	return vm.ctx.Log
 }
 
