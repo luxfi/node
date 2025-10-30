@@ -9,19 +9,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/consensus/engine/core/common"
+	"github.com/luxfi/log"
 )
 
 func TestDelayFromNew(t *testing.T) {
 	toEngine := make(chan common.Message, 10)
 	startTime := time.Now().Add(50 * time.Millisecond)
 
-	s, fromVM := New(logging.NoLog{}, toEngine)
+	s, fromVM := New(log.NoLog{}, toEngine)
 	defer s.Close()
 	go s.Dispatch(startTime)
 
-	fromVM <- common.PendingTxs
+	fromVM <- common.Message{Type: common.PendingTxs}
 
 	<-toEngine
 	require.LessOrEqual(t, time.Until(startTime), time.Duration(0))
@@ -32,13 +32,13 @@ func TestDelayFromSetTime(t *testing.T) {
 	now := time.Now()
 	startTime := now.Add(50 * time.Millisecond)
 
-	s, fromVM := New(logging.NoLog{}, toEngine)
+	s, fromVM := New(log.NoLog{}, toEngine)
 	defer s.Close()
 	go s.Dispatch(now)
 
 	s.SetBuildBlockTime(startTime)
 
-	fromVM <- common.PendingTxs
+	fromVM <- common.Message{Type: common.PendingTxs}
 
 	<-toEngine
 	require.LessOrEqual(t, time.Until(startTime), time.Duration(0))
@@ -49,11 +49,11 @@ func TestReceipt(*testing.T) {
 	now := time.Now()
 	startTime := now.Add(50 * time.Millisecond)
 
-	s, fromVM := New(logging.NoLog{}, toEngine)
+	s, fromVM := New(log.NoLog{}, toEngine)
 	defer s.Close()
 	go s.Dispatch(now)
 
-	fromVM <- common.PendingTxs
+	fromVM <- common.Message{Type: common.PendingTxs}
 
 	s.SetBuildBlockTime(startTime)
 

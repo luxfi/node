@@ -10,7 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/ids"
+	"github.com/luxfi/ids"
+	nodeids "github.com/luxfi/node/ids"
 	"github.com/luxfi/node/staking"
 )
 
@@ -29,7 +30,8 @@ func TestBuild(t *testing.T) {
 	cert, err := staking.ParseCertificate(tlsCert.Leaf.Raw)
 	require.NoError(err)
 	key := tlsCert.PrivateKey.(crypto.Signer)
-	nodeID := ids.NodeIDFromCert(cert)
+	internalNodeID := nodeids.NodeIDFromCert(cert)
+	nodeID := ids.NodeID(internalNodeID)
 
 	builtBlock, err := Build(
 		parentID,
