@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
@@ -120,8 +120,6 @@ func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *a
 	reply.TxID = txID
 	return err
 }
-<<<<<<< HEAD:vms/avm/wallet_service.go
-=======
 
 // Send returns the ID of the newly created transaction
 func (w *WalletService) Send(r *http.Request, args *SendArgs, reply *api.JSONTxIDChangeAddr) error {
@@ -288,4 +286,3 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 	reply.ChangeAddr, err = w.vm.FormatLocalAddress(changeAddr)
 	return err
 }
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/wallet_service.go

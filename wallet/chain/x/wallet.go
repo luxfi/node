@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/avm"
-	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/xvm"
+	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"

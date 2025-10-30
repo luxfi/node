@@ -6,7 +6,7 @@ package x
 import (
 	"context"
 
-	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
 	"github.com/luxfi/node/wallet/subnet/primary/common"

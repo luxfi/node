@@ -16,15 +16,12 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
-=======
 // BenchmarkLoadUser has been removed - keystore functionality is no longer supported
 
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/vm_benchmark_test.go
 // getAllUTXOsBenchmark is a helper func to benchmark the GetAllUTXOs depending on the size
 func getAllUTXOsBenchmark(b *testing.B, utxoCount int, randSrc rand.Source) {
 	require := require.New(b)
 
-<<<<<<< HEAD:vms/avm/vm_benchmark_test.go
 	env := setup(b, &envConfig{fork: upgradetest.Latest})
 	defer env.vm.ctx.Lock.Unlock()
 

@@ -7,19 +7,17 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/network/p2p/gossip"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/node/network/p2p"
+	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms/avm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/node/vms/xvm/txs"
 )
 
 var (

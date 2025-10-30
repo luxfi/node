@@ -6,7 +6,7 @@ package mempool
 import (
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/node/vms/avm/txs"
+	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
 )
 

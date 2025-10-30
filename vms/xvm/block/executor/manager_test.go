@@ -13,10 +13,10 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/set"
-	"github.com/luxfi/node/vms/avm/block"
-	"github.com/luxfi/node/vms/avm/state/statemock"
-	"github.com/luxfi/node/vms/avm/txs"
-	"github.com/luxfi/node/vms/avm/txs/txsmock"
+	"github.com/luxfi/node/vms/xvm/block"
+	"github.com/luxfi/node/vms/xvm/state/statemock"
+	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/vms/xvm/txs/txsmock"
 )
 
 var (

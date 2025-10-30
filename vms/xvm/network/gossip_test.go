@@ -10,9 +10,9 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms/avm/fxs"
-	"github.com/luxfi/node/vms/avm/txs"
-	"github.com/luxfi/node/vms/avm/txs/mempool"
+	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/vms/xvm/txs/mempool"
 	"github.com/luxfi/node/vms/components/lux"
 
 	"github.com/luxfi/node/vms/secp256k1fx"
