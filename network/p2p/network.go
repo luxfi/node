@@ -17,8 +17,8 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
 	consensusversion "github.com/luxfi/consensus/version"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 )
 
 var (
@@ -57,7 +57,7 @@ type clientOptions struct {
 
 // NewNetwork returns an instance of Network
 func NewNetwork(
-	log logging.Logger,
+	log log.Logger,
 	sender core.AppSender,
 	registerer prometheus.Registerer,
 	namespace string,
@@ -102,7 +102,7 @@ func NewNetwork(
 type Network struct {
 	Peers *Peers
 
-	log    logging.Logger
+	log    log.Logger
 	sender core.AppSender
 
 	router *router

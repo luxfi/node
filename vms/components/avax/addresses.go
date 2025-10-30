@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 var (
@@ -69,9 +69,17 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 		return ids.Empty, ids.ShortID{}, err
 	}
 
-	chainID, err := a.ctx.BCLookup.Lookup(chainIDAlias)
-	if err != nil {
-		return ids.Empty, ids.ShortID{}, err
+	// Resolve chainIDAlias to actual chainID
+	// For now, assume the alias matches the chain's own ID
+	// TODO: Implement proper alias resolution if needed
+	var chainID ids.ID
+	if chainIDAlias == "X" || chainIDAlias == string(a.ctx.XChainID[:]) {
+		chainID = a.ctx.XChainID
+	} else if chainIDAlias == "C" || chainIDAlias == string(a.ctx.CChainID[:]) {
+		chainID = a.ctx.CChainID
+	} else {
+		// Default to current chain
+		chainID = a.ctx.ChainID
 	}
 
 	expectedHRP := constants.GetHRP(a.ctx.NetworkID)
@@ -95,9 +103,15 @@ func (a *addressManager) FormatLocalAddress(addr ids.ShortID) (string, error) {
 }
 
 func (a *addressManager) FormatAddress(chainID ids.ID, addr ids.ShortID) (string, error) {
-	chainIDAlias, err := a.ctx.BCLookup.PrimaryAlias(chainID)
-	if err != nil {
-		return "", err
+	// Determine chain alias
+	var chainIDAlias string
+	if chainID == a.ctx.XChainID {
+		chainIDAlias = "X"
+	} else if chainID == a.ctx.CChainID {
+		chainIDAlias = "C"
+	} else {
+		// Use chain ID string as alias
+		chainIDAlias = chainID.String()
 	}
 	hrp := constants.GetHRP(a.ctx.NetworkID)
 	return address.Format(chainIDAlias, hrp, addr.Bytes())

@@ -8,12 +8,12 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
 
 	smblock "github.com/luxfi/consensus/engine/chain/block"

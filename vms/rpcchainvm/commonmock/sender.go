@@ -15,7 +15,7 @@ import (
 
 	ids "github.com/luxfi/ids"
 	common "github.com/luxfi/consensus/engine/core"
-	set "github.com/luxfi/node/utils/set"
+	set "github.com/luxfi/math/set"
 	gomock "go.uber.org/mock/gomock"
 )
 

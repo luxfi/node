@@ -18,9 +18,9 @@ import (
 
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/chains/atomic/gsharedmemory"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/corruptabledb"
-	"github.com/luxfi/node/database/rpcdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/corruptabledb"
+	"github.com/luxfi/database/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/ids/galiasreader"
 	"github.com/luxfi/consensus/core"
@@ -28,7 +28,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
@@ -73,7 +73,7 @@ type VMServer struct {
 
 	metrics metrics.MultiGatherer
 	db      database.Database
-	log     logging.Logger
+	log     log.Logger
 
 	serverCloser grpcutils.ServerCloser
 	connCloser   wrappers.Closer

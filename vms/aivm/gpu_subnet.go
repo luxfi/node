@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 	
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 // GPUSubnet represents a GPU-powered subnet for AI computation
@@ -24,7 +24,7 @@ type GPUSubnet struct {
 	Tasks        []GPUTask       `json:"tasks"`
 	Performance  SubnetMetrics   `json:"performance"`
 	mu           sync.RWMutex
-	log          logging.Logger
+	log          log.Logger
 }
 
 // GPUSubnetConfig defines configuration for GPU subnet
@@ -168,11 +168,11 @@ type GPUSubnetManager struct {
 	subnets  map[ids.ID]*GPUSubnet
 	aivm     *VM
 	mu       sync.RWMutex
-	log      logging.Logger
+	log      log.Logger
 }
 
 // NewGPUSubnetManager creates a new GPU subnet manager
-func NewGPUSubnetManager(aivm *VM, log logging.Logger) *GPUSubnetManager {
+func NewGPUSubnetManager(aivm *VM, log log.Logger) *GPUSubnetManager {
 	return &GPUSubnetManager{
 		subnets: make(map[ids.ID]*GPUSubnet),
 		aivm:    aivm,

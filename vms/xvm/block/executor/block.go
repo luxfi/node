@@ -14,11 +14,10 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs/executor"
+	"go.uber.org/zap"
 )
 
 const SyncBound = 10 * time.Second
@@ -54,6 +53,29 @@ func (b *Block) EpochBit() bool {
 // FPCVotes returns embedded fast-path vote references
 func (b *Block) FPCVotes() [][]byte {
 	return nil // XVM blocks don't support FPC votes yet
+}
+
+// Status returns the status of this block
+func (b *Block) Status() uint8 {
+	blkID := b.ID()
+	// If this block is the last accepted block, we don't need to go to disk
+	if b.manager.lastAccepted == blkID {
+		return uint8(choices.Accepted)
+	}
+	// Check if the block is in memory. If so, it's processing.
+	if _, ok := b.manager.blkIDToState[blkID]; ok {
+		return uint8(choices.Processing)
+	}
+	// Block isn't in memory. Check in the database.
+	_, err := b.manager.state.GetBlock(blkID)
+	switch err {
+	case nil:
+		return uint8(choices.Accepted)
+	case database.ErrNotFound:
+		return uint8(choices.Processing)
+	default:
+		return uint8(choices.Processing)
+	}
 }
 
 func (b *Block) Verify(ctx context.Context) error {
@@ -272,13 +294,17 @@ func (b *Block) Accept(ctx context.Context) error {
 		return err
 	}
 
-	b.manager.backend.Ctx.Log.Trace(
-		"accepted block",
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-		zap.Stringer("checksum", b.manager.state.Checksum()),
-	)
+	if logger, ok := b.manager.backend.LuxCtx.Log.(interface {
+		Trace(string, ...zap.Field)
+	}); ok {
+		logger.Trace(
+			"accepted block",
+			zap.Stringer("blkID", blkID),
+			zap.Uint64("height", b.Height()),
+			zap.Stringer("parentID", b.Parent()),
+			zap.Stringer("checksum", b.manager.state.Checksum()),
+		)
+	}
 	return nil
 }
 
@@ -312,49 +338,3 @@ func (b *Block) Reject(ctx context.Context) error {
 	}
 	return nil
 }
-<<<<<<< HEAD:vms/avm/block/executor/block.go
-=======
-
-func (b *Block) Status() uint8 {
-	// If this block's reference was rejected, we should report it as rejected.
-	//
-	// We don't persist the rejection, but that's fine. The consensus engine
-	// will hold the same reference to the block until it no longer needs it.
-	// After the consensus engine has released the reference to the block that
-	// was verified, it may get a new reference that isn't marked as rejected.
-	// The consensus engine may then try to issue the block, but will discover
-	// that it was rejected due to a conflicting block having been accepted.
-	if b.rejected {
-		return uint8(choices.Rejected)
-	}
-
-	blkID := b.ID()
-	// If this block is the last accepted block, we don't need to go to disk to
-	// check the status.
-	if b.manager.lastAccepted == blkID {
-		return uint8(choices.Accepted)
-	}
-	// Check if the block is in memory. If so, it's processing.
-	if _, ok := b.manager.blkIDToState[blkID]; ok {
-		return uint8(choices.Processing)
-	}
-	// Block isn't in memory. Check in the database.
-	_, err := b.manager.state.GetBlock(blkID)
-	switch err {
-	case nil:
-		return uint8(choices.Accepted)
-
-	case database.ErrNotFound:
-		// choices.Unknown means we don't have the bytes of the block.
-		// In this case, we do, so we return choices.Processing.
-		return uint8(choices.Processing)
-
-	default:
-		b.manager.backend.Log.Error(
-			"dropping unhandled database error",
-			"error", err,
-		)
-		return uint8(choices.Processing)
-	}
-}
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/block/executor/block.go

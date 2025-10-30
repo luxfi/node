@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 var _ validators.SetCallbackListener = (*GossipTrackerCallback)(nil)
@@ -16,7 +16,7 @@ var _ validators.SetCallbackListener = (*GossipTrackerCallback)(nil)
 // GossipTrackerCallback synchronizes GossipTracker's validator state with the
 // validator set it's registered to.
 type GossipTrackerCallback struct {
-	Log           logging.Logger
+	Log           log.Logger
 	GossipTracker GossipTracker
 }
 

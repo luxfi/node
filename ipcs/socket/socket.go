@@ -16,7 +16,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -30,7 +30,7 @@ var (
 
 // Socket manages sending messages over a socket to many subscribed clients
 type Socket struct {
-	log      logging.Logger
+	log      log.Logger
 	addr     string
 	accept   acceptFn
 	connLock *sync.RWMutex
@@ -42,7 +42,7 @@ type Socket struct {
 
 // NewSocket creates a new socket object for the given address. It does not open
 // the socket until Listen is called.
-func NewSocket(addr string, log logging.Logger) *Socket {
+func NewSocket(addr string, log log.Logger) *Socket {
 	return &Socket{
 		log:      log,
 		addr:     addr,

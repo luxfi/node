@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/networking/sender/sendermock"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 var testSimplexMessage = simplex.Message{

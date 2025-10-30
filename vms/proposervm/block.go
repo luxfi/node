@@ -38,7 +38,32 @@ var (
 	errProposerMismatch         = errors.New("proposer mismatch")
 	errProposersNotActivated    = errors.New("proposers haven't been activated yet")
 	errPChainHeightTooLow       = errors.New("block P-chain height is too low")
+	errNotOracle                = errors.New("block is not an oracle block")
 )
+
+// OracleBlock is a block that can return multiple child options
+type OracleBlock interface {
+	chainblock.Block
+	Options(context.Context) ([2]chainblock.Block, error)
+}
+
+// Convert chainblock.Epoch (consensus) to block.Epoch (proposervm stateless block)
+func toBlockEpoch(ce chainblock.Epoch) block.Epoch {
+	return block.Epoch{
+		PChainHeight: ce.PChainHeight,
+		Number:       ce.Number,
+		StartTime:    ce.StartTime,
+	}
+}
+
+// Convert block.Epoch (proposervm stateless block) to chainblock.Epoch (consensus)
+func toChainBlockEpoch(be block.Epoch) chainblock.Epoch {
+	return chainblock.Epoch{
+		PChainHeight: be.PChainHeight,
+		Number:       be.Number,
+		StartTime:    be.StartTime,
+	}
+}
 
 type Block interface {
 	chainblock.Block
@@ -66,7 +91,7 @@ type Block interface {
 type PostForkBlock interface {
 	Block
 
-	getStatelessBlk() chainblock.Block
+	getStatelessBlk() block.Block
 	setInnerBlk(chainblock.Block)
 }
 
@@ -125,7 +150,7 @@ func (p *postForkCommonComponents) Verify(
 	}
 
 	childEpoch := child.PChainEpoch()
-	if expected := acp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, parentEpoch, parentTimestamp, childTimestamp); childEpoch != expected {
+	if expected := acp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, toBlockEpoch(parentEpoch), parentTimestamp, childTimestamp); childEpoch != expected {
 		return fmt.Errorf("%w: epoch %v != expected %v", errEpochMismatch, childEpoch, expected)
 	}
 
@@ -238,7 +263,7 @@ func (p *postForkCommonComponents) buildChild(
 		return nil, err
 	}
 
-	epoch := acp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, parentEpoch, parentTimestamp, newTimestamp)
+	epoch := acp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, toBlockEpoch(parentEpoch), parentTimestamp, newTimestamp)
 
 	var contextPChainHeight uint64
 	switch {
@@ -323,10 +348,10 @@ func (p *postForkCommonComponents) setInnerBlk(innerBlk chainblock.Block) {
 }
 
 func verifyIsOracleBlock(ctx context.Context, b chainblock.Block) error {
-	oracle, ok := b.(chainblock.OracleBlock)
+	oracle, ok := b.(OracleBlock)
 	if !ok {
 		return fmt.Errorf(
-			"%w: expected block %s to be a chainblock.OracleBlock but it's a %T",
+			"%w: expected block %s to be an OracleBlock but it's a %T",
 			errUnexpectedBlockType, b.ID(), b,
 		)
 	}
@@ -335,7 +360,7 @@ func verifyIsOracleBlock(ctx context.Context, b chainblock.Block) error {
 }
 
 func verifyIsNotOracleBlock(ctx context.Context, b chainblock.Block) error {
-	oracle, ok := b.(chainblock.OracleBlock)
+	oracle, ok := b.(OracleBlock)
 	if !ok {
 		return nil
 	}
@@ -346,7 +371,7 @@ func verifyIsNotOracleBlock(ctx context.Context, b chainblock.Block) error {
 			"%w: expected block %s not to be an oracle block but it's a %T",
 			errUnexpectedBlockType, b.ID(), b,
 		)
-	case chainblock.ErrNotOracle:
+	case errNotOracle:
 		return nil
 	default:
 		return err

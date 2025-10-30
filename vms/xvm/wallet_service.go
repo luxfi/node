@@ -6,9 +6,9 @@ package xvm
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
 
-	"go.uber.org/zap"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
@@ -16,8 +16,9 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/log"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
@@ -25,6 +26,13 @@ import (
 type WalletService struct {
 	vm         *VM
 	pendingTxs *linked.Hashmap[ids.ID, *txs.Tx]
+}
+
+// update refreshes the UTXO set, removing spent UTXOs from pending transactions
+func (w *WalletService) update(utxos []*lux.UTXO) ([]*lux.UTXO, error) {
+	// For now, return UTXOs as-is
+	// TODO: Filter out UTXOs that have been spent by pending transactions
+	return utxos, nil
 }
 
 func (w *WalletService) decided(txID ids.ID) {
@@ -122,7 +130,7 @@ func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *a
 }
 
 // Send returns the ID of the newly created transaction
-func (w *WalletService) Send(r *http.Request, args *SendArgs, reply *api.JSONTxIDChangeAddr) error {
+func (w *WalletService) Send(r *http.Request, args *SendArgs, reply *JSONTxIDChangeAddr) error {
 	return w.SendMultiple(r, &SendMultipleArgs{
 		JSONSpendHeader: args.JSONSpendHeader,
 		Outputs:         []SendOutput{args.SendOutput},
@@ -131,7 +139,7 @@ func (w *WalletService) Send(r *http.Request, args *SendArgs, reply *api.JSONTxI
 }
 
 // SendMultiple sends a transaction with multiple outputs.
-func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *api.JSONTxIDChangeAddr) error {
+func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, reply *JSONTxIDChangeAddr) error {
 	w.vm.log.Warn("deprecated API called",
 		log.String("service", "wallet"),
 		log.String("method", "sendMultiple"),

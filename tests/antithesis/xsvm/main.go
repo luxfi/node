@@ -21,9 +21,9 @@ import (
 	"github.com/luxfi/node/tests/antithesis"
 	"github.com/luxfi/node/tests/fixture/subnet"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/example/xsvm/api"
 	"github.com/luxfi/node/vms/example/xsvm/cmd/issue/status"
@@ -130,7 +130,7 @@ func main() {
 
 type workload struct {
 	id      int
-	log     logging.Logger
+	log     log.Logger
 	chainID ids.ID
 	key     *secp256k1.PrivateKey
 	addrs   set.Set[ids.ShortID]

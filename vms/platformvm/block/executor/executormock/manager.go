@@ -14,7 +14,7 @@ import (
 
 	ids "github.com/luxfi/ids"
 	snowman "github.com/luxfi/consensus/engine/chain/block"
-	set "github.com/luxfi/node/utils/set"
+	set "github.com/luxfi/math/set"
 	block "github.com/luxfi/node/vms/platformvm/block"
 	state "github.com/luxfi/node/vms/platformvm/state"
 	txs "github.com/luxfi/node/vms/platformvm/txs"

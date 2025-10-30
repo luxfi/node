@@ -11,7 +11,7 @@ import (
 
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 type service struct {

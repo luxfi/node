@@ -15,14 +15,14 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/rpcdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/vms"
@@ -44,7 +44,7 @@ var (
 )
 
 type Config struct {
-	Log          logging.Logger
+	Log          log.Logger
 	ProfileDir   string
 	LogFactory   logging.Factory
 	NodeConfig   interface{}

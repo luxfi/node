@@ -4,17 +4,23 @@
 package txs
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
+
+// ContextInitializable defines the interface for initializing context
+type ContextInitializable interface {
+	InitCtx(ctx *consensusctx.Context)
+}
 
 // UnsignedTx is an unsigned transaction
 type UnsignedTx interface {
 	// TODO: Remove this initialization pattern from both the platformvm and the
 	// avm.
-	consensusctx.ContextInitializable
+	ContextInitializable
 	secp256k1fx.UnsignedTx
 	SetBytes(unsignedBytes []byte)
 

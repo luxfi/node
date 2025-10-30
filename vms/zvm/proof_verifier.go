@@ -12,14 +12,14 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	lru "github.com/hashicorp/golang-lru"
 )
 
 // ProofVerifier verifies zero-knowledge proofs
 type ProofVerifier struct {
 	config       ZConfig
-	log          logging.Logger
+	log          log.Logger
 	
 	// Proof verification cache
 	proofCache   *lru.Cache
@@ -36,7 +36,7 @@ type ProofVerifier struct {
 }
 
 // NewProofVerifier creates a new proof verifier
-func NewProofVerifier(config ZConfig, log logging.Logger) (*ProofVerifier, error) {
+func NewProofVerifier(config ZConfig, log log.Logger) (*ProofVerifier, error) {
 	// Create LRU cache for proof verification results
 	cache, err := lru.New(config.ProofCacheSize)
 	if err != nil {

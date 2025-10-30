@@ -14,15 +14,15 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/node/api/server"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/versiondb"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/dag/vertex/vertexmock"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 var (

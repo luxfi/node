@@ -10,11 +10,12 @@
 package txs
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
+
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	snow "github.com/luxfi/consensus/core"
-	set "github.com/luxfi/node/utils/set"
+	set "github.com/luxfi/math/set"
 	lux "github.com/luxfi/node/vms/components/lux"
 	gomock "go.uber.org/mock/gomock"
 )

@@ -8,11 +8,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 type Service struct {
-	log    logging.Logger
+	log    log.Logger
 	health Reporter
 }
 

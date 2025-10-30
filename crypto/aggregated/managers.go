@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/crypto/ringtail"
 	"github.com/luxfi/node/crypto/cggmp21"
@@ -16,12 +16,12 @@ import (
 
 // BLSManager manages BLS signature operations
 type BLSManager struct {
-	log logging.Logger
+	log log.Logger
 	mu  sync.RWMutex
 }
 
 // NewBLSManager creates a new BLS manager
-func NewBLSManager(log logging.Logger) *BLSManager {
+func NewBLSManager(log log.Logger) *BLSManager {
 	return &BLSManager{
 		log: log,
 	}
@@ -46,12 +46,12 @@ func (m *BLSManager) Sign(sk *bls.SecretKey, message []byte) (*bls.Signature, er
 
 // RingtailManager manages Ringtail signature operations
 type RingtailManager struct {
-	log logging.Logger
+	log log.Logger
 	mu  sync.RWMutex
 }
 
 // NewRingtailManager creates a new Ringtail manager
-func NewRingtailManager(log logging.Logger) *RingtailManager {
+func NewRingtailManager(log log.Logger) *RingtailManager {
 	return &RingtailManager{
 		log: log,
 	}
@@ -84,14 +84,14 @@ func (m *RingtailManager) Sign(
 
 // CGGMP21Manager manages CGGMP21 threshold signature operations
 type CGGMP21Manager struct {
-	log     logging.Logger
+	log     log.Logger
 	parties map[int]*cggmp21.Party
 	config  *cggmp21.Config
 	mu      sync.RWMutex
 }
 
 // NewCGGMP21Manager creates a new CGGMP21 manager
-func NewCGGMP21Manager(log logging.Logger) *CGGMP21Manager {
+func NewCGGMP21Manager(log log.Logger) *CGGMP21Manager {
 	return &CGGMP21Manager{
 		log:     log,
 		parties: make(map[int]*cggmp21.Party),

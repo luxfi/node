@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 var _ validators.Manager = (*overriddenManager)(nil)

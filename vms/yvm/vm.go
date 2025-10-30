@@ -22,13 +22,13 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
 
@@ -84,7 +84,7 @@ type VM struct {
 	db       database.Database
 	config   YConfig
 	toEngine chan<- common.Message
-	log      logging.Logger
+	log      log.Logger
 
 	// Epoch tracking
 	currentEpoch    uint64

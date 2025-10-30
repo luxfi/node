@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luxfi/geth/common"
+	gethcommon "github.com/luxfi/geth/common"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/crypto/keychain"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -27,12 +27,12 @@ var (
 // Keychain is a collection of keys that can be used to spend outputs
 type Keychain struct {
 	luxAddrToKeyIndex map[ids.ShortID]int
-	ethAddrToKeyIndex  map[common.Address]int
+	ethAddrToKeyIndex  map[gethcommon.Address]int
 
 	// These can be used to iterate over. However, they should not be modified
 	// externally.
 	Addrs    set.Set[ids.ShortID]
-	EthAddrs set.Set[common.Address]
+	EthAddrs set.Set[gethcommon.Address]
 	Keys     []*secp256k1.PrivateKey
 }
 
@@ -40,7 +40,7 @@ type Keychain struct {
 func NewKeychain(keys ...*secp256k1.PrivateKey) *Keychain {
 	kc := &Keychain{
 		luxAddrToKeyIndex: make(map[ids.ShortID]int),
-		ethAddrToKeyIndex:  make(map[common.Address]int),
+		ethAddrToKeyIndex:  make(map[gethcommon.Address]int),
 	}
 	for _, key := range keys {
 		kc.Add(key)
@@ -54,7 +54,8 @@ func (kc *Keychain) Add(key *secp256k1.PrivateKey) {
 	luxAddr := pk.Address()
 	if _, ok := kc.luxAddrToKeyIndex[luxAddr]; !ok {
 		kc.luxAddrToKeyIndex[luxAddr] = len(kc.Keys)
-		ethAddr := pk.EthAddress()
+		cryptoAddr := secp256k1.PubkeyToAddress(*pk.ToECDSA())
+		ethAddr := gethcommon.Address(cryptoAddr)
 		kc.ethAddrToKeyIndex[ethAddr] = len(kc.Keys)
 		kc.Keys = append(kc.Keys, key)
 		kc.Addrs.Add(luxAddr)
@@ -68,7 +69,7 @@ func (kc Keychain) Get(id ids.ShortID) (keychain.Signer, bool) {
 }
 
 // Get a key from the keychain and return whether the key existed.
-func (kc Keychain) GetEth(addr common.Address) (keychain.Signer, bool) {
+func (kc Keychain) GetEth(addr gethcommon.Address) (keychain.Signer, bool) {
 	if i, ok := kc.ethAddrToKeyIndex[addr]; ok {
 		return kc.Keys[i], true
 	}
@@ -81,7 +82,7 @@ func (kc Keychain) Addresses() set.Set[ids.ShortID] {
 }
 
 // EthAddresses returns a list of addresses this keychain manages
-func (kc Keychain) EthAddresses() set.Set[common.Address] {
+func (kc Keychain) EthAddresses() set.Set[gethcommon.Address] {
 	return kc.EthAddrs
 }
 

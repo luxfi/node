@@ -8,10 +8,11 @@ import (
 	"math"
 	"testing"
 
-	"github.com/luxfi/consensus/core"
 	"github.com/stretchr/testify/require"
 
+	consensuscore "github.com/luxfi/consensus/core"
 	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -19,15 +20,8 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	)
-	require.ErrorIs(err, codec.ErrCantUnpackVersion)
-}
+)
 
 func TestInvalidFx(t *testing.T) {
 	require := require.New(t)
@@ -82,18 +76,8 @@ func TestFxInitializationFailure(t *testing.T) {
 					return errUnknownFx
 				},
 			},
-		},
-	}
-	err := vm.Initialize(
-		context.Background(),
-		ctx,          // chainCtx
-		memdb.New(),  // dbManager
-		genesisBytes, // genesisBytes
-		nil,          // upgradeBytes
-		nil,          // configBytes
-		toEngine,     // toEngine
-		fxList,       // fxs
-		nil,          // appSender
+		}},
+		nil,
 	)
 	require.ErrorIs(err, errUnknownFx)
 }

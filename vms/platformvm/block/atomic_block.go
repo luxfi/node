@@ -4,10 +4,11 @@
 package block
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
@@ -28,7 +29,7 @@ func (b *ApricotAtomicBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *ApricotAtomicBlock) InitCtx(ctx *snow.Context) {
+func (b *ApricotAtomicBlock) InitCtx(ctx *consensusctx.Context) {
 	b.Tx.Unsigned.InitCtx(ctx)
 }
 

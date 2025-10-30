@@ -22,8 +22,8 @@ import (
 	"github.com/luxfi/node/tests/load"
 	"github.com/luxfi/node/tests/load/c"
 	"github.com/luxfi/node/tests/load/c/listener"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/log"
 )
 
 const (
@@ -115,7 +115,7 @@ type workload struct {
 
 func (w *workload) run(
 	ctx context.Context,
-	log logging.Logger,
+	log log.Logger,
 	keys []*secp256k1.PrivateKey,
 	metrics *load.Metrics,
 ) error {

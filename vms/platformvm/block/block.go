@@ -4,17 +4,23 @@
 package block
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"fmt"
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
+// ContextInitializable defines the interface for initializing context
+type ContextInitializable interface {
+	InitCtx(ctx *consensusctx.Context)
+}
+
 // Block defines the common stateless interface for all blocks
 type Block interface {
-	snow.ContextInitializable
+	ContextInitializable
 	ID() ids.ID
 	Parent() ids.ID
 	Bytes() []byte

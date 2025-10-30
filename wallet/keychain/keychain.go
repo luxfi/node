@@ -5,7 +5,7 @@ package keychain
 
 import (
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 // Keychain interface that wallet signers can use

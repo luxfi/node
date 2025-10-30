@@ -3,7 +3,7 @@
 
 package merkledb
 
-import "github.com/luxfi/node/database"
+import "github.com/luxfi/database"
 
 var _ database.Batch = (*batch)(nil)
 

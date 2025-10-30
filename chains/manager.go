@@ -20,11 +20,11 @@ import (
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/node/database/meterdb"
-	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/database/meterdb"
+	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
@@ -48,10 +48,10 @@ import (
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/fx"
 	// "github.com/luxfi/node/vms/metervm" // Temporarily disabled - needs consensus package updates
@@ -190,7 +190,7 @@ type ManagerConfig struct {
 	TracingEnabled         bool
 	// Must not be used unless [TracingEnabled] is true as this may be nil.
 	Tracer                    trace.Tracer
-	Log                       logging.Logger
+	Log                       log.Logger
 	LogFactory                logging.Factory
 	VMManager                 vms.Manager // Manage mappings from vm ID --> vm
 	BlockAcceptorGroup        snow.AcceptorGroup

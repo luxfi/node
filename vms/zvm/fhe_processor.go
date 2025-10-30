@@ -10,13 +10,13 @@ import (
 
 	"go.uber.org/zap"
 	
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 // FHEProcessor handles fully homomorphic encryption operations
 type FHEProcessor struct {
 	config  ZConfig
-	log     logging.Logger
+	log     log.Logger
 	
 	// FHE parameters
 	publicKey  []byte
@@ -29,7 +29,7 @@ type FHEProcessor struct {
 }
 
 // NewFHEProcessor creates a new FHE processor
-func NewFHEProcessor(config ZConfig, log logging.Logger) (*FHEProcessor, error) {
+func NewFHEProcessor(config ZConfig, log log.Logger) (*FHEProcessor, error) {
 	if !config.EnableFHE {
 		return nil, errors.New("FHE not enabled in config")
 	}

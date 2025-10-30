@@ -12,7 +12,7 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 
 	rpcdbpb "github.com/luxfi/node/proto/pb/rpcdb"
 )

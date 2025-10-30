@@ -38,7 +38,7 @@ require (
 	github.com/luxfi/ids v1.1.2
 	github.com/luxfi/ledger-lux-go v1.0.0
 	github.com/luxfi/log v1.1.22
-	github.com/luxfi/math v0.1.2
+	github.com/luxfi/math v0.1.4
 	github.com/luxfi/metric v1.4.3
 	github.com/luxfi/mock v0.1.0
 	github.com/mitchellh/mapstructure v1.5.0

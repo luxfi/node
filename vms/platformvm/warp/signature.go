@@ -9,7 +9,7 @@ import (
 	"math/big"
 
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 var (

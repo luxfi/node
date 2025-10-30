@@ -9,12 +9,12 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/lock"
-	"github.com/luxfi/node/utils/set"
 	"github.com/luxfi/node/utils/setmap"
 	"github.com/luxfi/node/utils/units"
 )

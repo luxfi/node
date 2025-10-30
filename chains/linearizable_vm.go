@@ -7,7 +7,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core/appsender"
 	"github.com/luxfi/consensus"

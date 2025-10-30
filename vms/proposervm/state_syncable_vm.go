@@ -9,7 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
+	"github.com/luxfi/database"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/vms/proposervm/summary"
 )
@@ -103,7 +103,7 @@ func (vm *VM) buildStateSummary(ctx context.Context, innerSummary chainblock.Sta
 	case database.ErrNotFound:
 		// fork has not been reached since there is not fork height
 		// just return innerSummary
-		vm.ctx.Log.Debug("built pre-fork summary",
+		vm.logger.Debug("built pre-fork summary",
 			zap.Stringer("summaryID", innerSummary.ID()),
 			zap.Uint64("summaryHeight", innerSummary.Height()),
 		)
@@ -115,7 +115,7 @@ func (vm *VM) buildStateSummary(ctx context.Context, innerSummary chainblock.Sta
 	height := innerSummary.Height()
 	blkID, err := vm.GetBlockIDAtHeight(ctx, height)
 	if err != nil {
-		vm.ctx.Log.Debug("failed to fetch proposervm block ID",
+		vm.logger.Debug("failed to fetch proposervm block ID",
 			zap.Uint64("height", height),
 			zap.Error(err),
 		)
@@ -123,7 +123,7 @@ func (vm *VM) buildStateSummary(ctx context.Context, innerSummary chainblock.Sta
 	}
 	block, err := vm.getPostForkBlock(ctx, blkID)
 	if err != nil {
-		vm.ctx.Log.Warn("failed to fetch proposervm block",
+		vm.logger.Warn("failed to fetch proposervm block",
 			zap.Stringer("blkID", blkID),
 			zap.Uint64("height", height),
 			zap.Error(err),
@@ -131,12 +131,12 @@ func (vm *VM) buildStateSummary(ctx context.Context, innerSummary chainblock.Sta
 		return nil, err
 	}
 
-	statelessSummary, err := summary.Build(forkHeight, chainblock.Bytes(), innerSummary.Bytes())
+	statelessSummary, err := summary.Build(forkHeight, block.Bytes(), innerSummary.Bytes())
 	if err != nil {
 		return nil, err
 	}
 
-	vm.ctx.Log.Debug("built post-fork summary",
+	vm.logger.Debug("built post-fork summary",
 		zap.Stringer("summaryID", statelessSummary.ID()),
 		zap.Uint64("summaryHeight", forkHeight),
 	)

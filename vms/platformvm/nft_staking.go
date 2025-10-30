@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 	
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/state"
 )
 
@@ -34,7 +34,7 @@ type NFTStakingManager struct {
 	nftContract *ValidatorNFTContract
 	stakedNFTs  map[uint64]ids.NodeID // tokenID -> NodeID mapping
 	mu          sync.RWMutex
-	log         logging.Logger
+	log         log.Logger
 }
 
 // NFTStakingConfig contains configuration for NFT staking
@@ -62,7 +62,7 @@ type ValidatorNFTContract interface {
 }
 
 // NewNFTStakingManager creates a new NFT staking manager
-func NewNFTStakingManager(config *NFTStakingConfig, log logging.Logger) (*NFTStakingManager, error) {
+func NewNFTStakingManager(config *NFTStakingConfig, log log.Logger) (*NFTStakingManager, error) {
 	if !config.Enabled {
 		return nil, nil
 	}

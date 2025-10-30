@@ -80,7 +80,6 @@ func TestWindowerRepeatedValidator(t *testing.T) {
 	)
 
 	vdrState := &validatorstest.State{
-		T: t,
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 			return map[ids.NodeID]*validators.GetValidatorOutput{
 				validatorID: {
@@ -476,7 +475,6 @@ func makeValidators(t testing.TB, count int) ([]ids.NodeID, *validatorstest.Stat
 
 func makeValidatorState(t testing.TB, validatorIDs []ids.NodeID) *validatorstest.State {
 	vdrState := &validatorstest.State{
-		T: t,
 		GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 			vdrs := make(map[ids.NodeID]*validators.GetValidatorOutput, MaxVerifyWindows)
 			for _, id := range validatorIDs {

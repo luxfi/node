@@ -12,12 +12,12 @@ import (
 	"github.com/gorilla/rpc/v2"
 
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/encdb"
-	"github.com/luxfi/node/database/prefixdb"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/encdb"
+	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/password"
 )
 
@@ -93,7 +93,7 @@ type user struct {
 
 type keystore struct {
 	lock sync.Mutex
-	log  logging.Logger
+	log  log.Logger
 
 	// Key: username
 	// Value: The hash of that user's password
@@ -104,7 +104,7 @@ type keystore struct {
 	bcDB   database.Database
 }
 
-func New(log logging.Logger, db database.Database) Keystore {
+func New(log log.Logger, db database.Database) Keystore {
 	return &keystore{
 		log:                log,
 		usernameToPassword: make(map[string]*password.Hash),

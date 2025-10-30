@@ -4,9 +4,9 @@
 package builder
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
 )
 
 const Alias = "X"
@@ -25,13 +25,12 @@ func NewSnowContext(
 	luxAssetID ids.ID,
 ) (*consensusctx.Context, error) {
 	lookup := ids.NewAliaser()
-	return &consensusctx.Context{
+	ctx := &consensusctx.Context{
 		NetworkID:   networkID,
 		SubnetID:    constants.PrimaryNetworkID,
 		ChainID:     blockchainID,
 		XChainID:    blockchainID,
 		LUXAssetID: luxAssetID,
-		Log:         logging.NoLog{},
-		BCLookup:    lookup,
-	}, lookup.Alias(blockchainID, Alias)
+	}
+	return ctx, lookup.Alias(blockchainID, Alias)
 }

@@ -15,9 +15,9 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/sampler"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 var (
@@ -36,7 +36,7 @@ type ValidatorSubset interface {
 
 func NewValidators(
 	peers *Peers,
-	log logging.Logger,
+	log log.Logger,
 	subnetID ids.ID,
 	validators validators.State,
 	maxValidatorSetStaleness time.Duration,
@@ -53,7 +53,7 @@ func NewValidators(
 // Validators contains a set of nodes that are staking.
 type Validators struct {
 	peers                    *Peers
-	log                      logging.Logger
+	log                      log.Logger
 	subnetID                 ids.ID
 	validators               validators.State
 	maxValidatorSetStaleness time.Duration

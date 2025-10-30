@@ -3,7 +3,7 @@
 
 package constants
 
-import "github.com/luxfi/node/utils/set"
+import "github.com/luxfi/math/set"
 
 var (
 	// ActivatedACPs is the set of ACPs that are activated.

@@ -10,8 +10,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/database"
+	"github.com/luxfi/log"
 )
 
 const (
@@ -24,7 +24,7 @@ const (
 // NullifierDB manages spent nullifiers
 type NullifierDB struct {
 	db     database.Database
-	log    logging.Logger
+	log    log.Logger
 	
 	// Caches
 	nullifierCache map[string]uint64  // nullifier -> height when spent
@@ -37,7 +37,7 @@ type NullifierDB struct {
 }
 
 // NewNullifierDB creates a new nullifier database
-func NewNullifierDB(db database.Database, log logging.Logger) (*NullifierDB, error) {
+func NewNullifierDB(db database.Database, log log.Logger) (*NullifierDB, error) {
 	ndb := &NullifierDB{
 		db:             db,
 		log:            log,

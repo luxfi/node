@@ -14,7 +14,7 @@ import (
 
 	ids "github.com/luxfi/ids"
 	snow "github.com/luxfi/consensus/core"
-	set "github.com/luxfi/node/utils/set"
+	set "github.com/luxfi/math/set"
 	avax "github.com/luxfi/node/vms/components/avax"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
 	gomock "go.uber.org/mock/gomock"

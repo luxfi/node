@@ -7,7 +7,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 )
 
 var TestNetwork Network = testNetwork{}

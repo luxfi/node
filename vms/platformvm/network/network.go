@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -28,7 +28,7 @@ import (
 type Network struct {
 	*p2p.Network
 
-	log                       logging.Logger
+	log                       log.Logger
 	mempool                   *gossipMempool
 	partialSyncPrimaryNetwork bool
 
@@ -39,7 +39,7 @@ type Network struct {
 }
 
 func New(
-	log logging.Logger,
+	log log.Logger,
 	nodeID ids.NodeID,
 	subnetID ids.ID,
 	vdrs validators.State,

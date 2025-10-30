@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/constants"
@@ -21,6 +20,12 @@ import (
 )
 
 var ErrRejected = errors.New("rejected")
+
+// GetTxFeeReply is the response from GetTxFee
+type GetTxFeeReply struct {
+	TxFee            json.Uint64 `json:"txFee"`
+	CreateAssetTxFee json.Uint64 `json:"createAssetTxFee"`
+}
 
 type Client struct {
 	Requester rpc.EndpointRequester

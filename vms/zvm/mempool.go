@@ -12,12 +12,12 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 )
 
 // Mempool manages pending transactions
 type Mempool struct {
-	log         logging.Logger
+	log         log.Logger
 	maxSize     int
 	
 	// Transaction storage
@@ -39,7 +39,7 @@ type MempoolTx struct {
 }
 
 // NewMempool creates a new mempool
-func NewMempool(maxSize int, log logging.Logger) *Mempool {
+func NewMempool(maxSize int, log log.Logger) *Mempool {
 	return &Mempool{
 		log:        log,
 		maxSize:    maxSize,

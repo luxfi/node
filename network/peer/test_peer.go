@@ -24,8 +24,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
-	"github.com/luxfi/node/utils/logging"
-	"github.com/luxfi/node/utils/set"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 )
 
@@ -114,7 +113,7 @@ func StartTestPeer(
 		&Config{
 			Metrics:              metrics,
 			MessageCreator:       mc,
-			Log:                  logging.NoLog{},
+			Log:                  nil,
 			InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
 			Network:              TestNetwork,
 			Router:               router,
@@ -142,7 +141,7 @@ func StartTestPeer(
 		peerID,
 		NewBlockingMessageQueue(
 			metrics,
-			logging.NoLog{},
+			nil,
 			maxMessageToSend,
 		),
 		false,

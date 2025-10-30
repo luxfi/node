@@ -4,7 +4,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/upgrade"
@@ -25,7 +25,7 @@ type Context struct {
 	LUXAssetID     ids.ID
 	ChainDataDir   string
 
-	Log            logging.Logger
+	Log            log.Logger
 	SharedMemory   atomic.SharedMemory
 	BCLookup       ids.AliaserReader
 	Metrics        metrics.MultiGatherer

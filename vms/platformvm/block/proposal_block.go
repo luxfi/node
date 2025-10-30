@@ -4,11 +4,12 @@
 package block
 
 import (
+	consensusctx "github.com/luxfi/consensus/context"
+
 	"fmt"
 	"time"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
@@ -35,7 +36,7 @@ func (b *BanffProposalBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *BanffProposalBlock) InitCtx(ctx *snow.Context) {
+func (b *BanffProposalBlock) InitCtx(ctx *consensusctx.Context) {
 	for _, tx := range b.Transactions {
 		tx.Unsigned.InitCtx(ctx)
 	}
@@ -92,7 +93,7 @@ func (b *ApricotProposalBlock) initialize(bytes []byte) error {
 	return nil
 }
 
-func (b *ApricotProposalBlock) InitCtx(ctx *snow.Context) {
+func (b *ApricotProposalBlock) InitCtx(ctx *consensusctx.Context) {
 	b.Tx.Unsigned.InitCtx(ctx)
 }
 
