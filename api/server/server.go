@@ -158,15 +158,15 @@ func (s *server) RegisterChain(chainName string, ctx *consensuscontext.Context, 
 	if err != nil {
 		s.log.Error("failed to create path route handlers",
 			log.String("chainName", chainName),
-			log.Error(err),
+			log.Err(err),
 		)
 		return
 	}
 	s.log.Debug("about to add API endpoints",
-		log.Stringer("chainID", chainID),
+		log.Stringer("chainID", ctx.ChainID),
 	)
 	// all subroutes to a chain begin with "bc/<the chain's ID>"
-	defaultEndpoint := path.Join(constants.ChainAliasPrefix, chainID.String())
+	defaultEndpoint := path.Join(constants.ChainAliasPrefix, ctx.ChainID.String())
 
 	// Register each endpoint
 	for extension, handler := range pathRouteHandlers {
@@ -193,7 +193,7 @@ func (s *server) RegisterChain(chainName string, ctx *consensuscontext.Context, 
 	if err != nil {
 		s.log.Error("failed to create header route handler",
 			log.String("chainName", chainName),
-			log.Error(err),
+			log.Err(err),
 		)
 		return
 	}

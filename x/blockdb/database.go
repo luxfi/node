@@ -21,7 +21,7 @@ import (
 
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/utils/compression"
-	"github.com/luxfi/log"
+	luxlog "github.com/luxfi/log"
 
 	safemath "github.com/luxfi/node/utils/math"
 )
@@ -180,7 +180,7 @@ type Database struct {
 	indexFile  *os.File
 	config     DatabaseConfig
 	header     indexFileHeader
-	log        log.Logger
+	log        luxlog.Logger
 	closed     bool
 	fileCache  *lru.Cache[int, *os.File]
 	compressor compression.Compressor
@@ -204,14 +204,14 @@ type Database struct {
 // Parameters:
 //   - config: Configuration parameters
 //   - log: Logger instance for structured logging
-func New(config DatabaseConfig, log log.Logger) (*Database, error) {
+func New(config DatabaseConfig, log luxlog.Logger) (*Database, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
 
 	databaseLog := log
 	if databaseLog == nil {
-		databaseLog = logging.NoLog{}
+		databaseLog = luxlog.NewNoOpLogger()
 	}
 
 	// from benchmarks, zstd.BestSpeed is about 100% faster than the default
