@@ -4,24 +4,18 @@
 package factory
 
 import (
-	"fmt"
-
-	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/database"
-	"github.com/luxfi/database/corruptabledb"
-	"github.com/luxfi/database/leveldb"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/meterdb"
-	"github.com/luxfi/database/pebbledb"
-	"github.com/luxfi/database/versiondb"
+	dbfactory "github.com/luxfi/database/factory"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/api/metrics"
 )
 
 // New creates a new database instance based on the provided configuration.
 //
-// It also wraps the database with a corruptable DB and a meter DB.
+// This is a thin wrapper around luxfi/database/factory.New that adapts
+// the node's MultiGatherer to the database factory's expected interface.
 //
-// dbName is the name of the database, either leveldb, memdb, or pebbledb.
+// dbName is the name of the database, either leveldb, memdb, pebbledb, or badgerdb.
 // dbPath is the path to the database folder.
 // readOnly indicates if the database should be read-only.
 // dbConfig is the database configuration in JSON format.
@@ -37,57 +31,16 @@ func New(
 	metricsPrefix string,
 	meterDBRegName string,
 ) (database.Database, error) {
-	dbRegisterer, err := metrics.MakeAndRegister(
-		gatherer,
+	// Use the luxfi/database/factory.New which properly handles all database types
+	// The factory handles LevelDB, PebbleDB, BadgerDB, and MemDB with correct signatures
+	return dbfactory.New(
+		name,
+		path,
+		readOnly,
+		config,
+		gatherer, // MultiGatherer implements the interface the factory expects
+		logger,
 		metricsPrefix,
-	)
-	if err != nil {
-		return nil, err
-	}
-	var db database.Database
-	// start the db
-	switch name {
-	case leveldb.Name:
-		db, err = leveldb.New(path, config, logger, dbRegisterer)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't create %s at %s: %w", leveldb.Name, path, err)
-		}
-	case memdb.Name:
-		db = memdb.New()
-	case pebbledb.Name:
-		db, err = pebbledb.New(path, config, logger, dbRegisterer)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't create %s at %s: %w", pebbledb.Name, path, err)
-		}
-	default:
-		return nil, fmt.Errorf(
-			"db-type was %q but should have been one of {%s, %s, %s}",
-			name,
-			leveldb.Name,
-			memdb.Name,
-			pebbledb.Name,
-		)
-	}
-
-	// Wrap with corruptable DB
-	db = corruptabledb.New(db, logger)
-
-	if readOnly && name != memdb.Name {
-		db = versiondb.New(db)
-	}
-
-	meterDBReg, err := metrics.MakeAndRegister(
-		gatherer,
 		meterDBRegName,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	db, err = meterdb.New(meterDBReg, db)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create meterdb: %w", err)
-	}
-
-	return db, nil
 }
