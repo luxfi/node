@@ -15,7 +15,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/components/lux"
@@ -59,7 +58,7 @@ type AddressTxsIndexer interface {
 
 type indexer struct {
 	log     log.Logger
-	metrics metrics
+	metrics *indexMetrics
 	db      database.Database
 }
 
@@ -85,7 +84,7 @@ func NewIndexer(
 	if err != nil {
 		return nil, err
 	}
-	i.metrics = *metrics
+	i.metrics = metrics
 	return i, nil
 }
 

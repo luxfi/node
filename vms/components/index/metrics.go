@@ -3,31 +3,32 @@
 
 package index
 
-import "github.com/prometheus/client_golang/prometheus"
+import "github.com/luxfi/metric"
 
 type indexMetrics struct {
-	numObjects    prometheus.Gauge
-	numTxsIndexed prometheus.Counter
+	numObjects    metric.Gauge
+	numTxsIndexed metric.Counter
 }
 
-func newMetrics(registerer prometheus.Registerer) (*indexMetrics, error) {
-	m := &indexMetrics{
-		numObjects: prometheus.NewGauge(prometheus.GaugeOpts{
-			Name: "index_num_objects",
-			Help: "Number of objects in the index",
-		}),
-		numTxsIndexed: prometheus.NewCounter(prometheus.CounterOpts{
-			Name: "index_txs_indexed",
-			Help: "Number of transactions indexed",
-		}),
-	}
-	if registerer != nil {
-		if err := registerer.Register(m.numObjects); err != nil {
-			return nil, err
+func newMetrics(registerer metric.Registerer) (*indexMetrics, error) {
+	// Check if registerer implements the Metrics interface
+	if metricsImpl, ok := registerer.(interface {
+		NewGauge(name, help string) metric.Gauge
+		NewCounter(name, help string) metric.Counter
+	}); ok {
+		m := &indexMetrics{
+			numObjects: metricsImpl.NewGauge(
+				"index_num_objects",
+				"Number of objects in the index",
+			),
+			numTxsIndexed: metricsImpl.NewCounter(
+				"index_txs_indexed",
+				"Number of transactions indexed",
+			),
 		}
-		if err := registerer.Register(m.numTxsIndexed); err != nil {
-			return nil, err
-		}
+		return m, nil
 	}
-	return m, nil
+	
+	// If not available, create noop metrics
+	return &indexMetrics{}, nil
 }
