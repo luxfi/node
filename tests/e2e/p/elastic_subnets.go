@@ -81,7 +81,7 @@ var _ = e2e.DescribePChain("[Elastic Subnets]", func() {
 				require.NotEqual(subnetID, constants.PrimaryNetworkID)
 			})
 
-			validatorWeight := units.Avax
+			validatorWeight := units.Lux
 			initialSupply := 2 * validatorWeight
 			maxSupply := 2 * initialSupply
 

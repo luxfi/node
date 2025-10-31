@@ -68,7 +68,7 @@ Z-Chain:
 │             │  +Native DEX│             │   MPC Bridge    │
 ├─────────────┴─────────────┼─────────────┴─────────────────┤
 │          Z-Chain          │      External Networks         │
-│    Private Compute        │   ETH, AVAX, L2s, Subnets    │
+│    Private Compute        │   ETH, LUX, L2s, Subnets    │
 │         FHE-EVM          │    (Optional Validation)       │
 └─────────────────────────┴─────────────────────────────────┘
 

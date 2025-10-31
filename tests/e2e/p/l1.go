@@ -367,11 +367,11 @@ var _ = e2e.DescribePChain("[L1]", func() {
 
 			tc.By("issuing a dummy tx to advance the epoch", func() {
 				tx, err := pWallet.IssueBaseTx(
-					[]*avax.TransferableOutput{
+					[]*lux.TransferableOutput{
 						{
-							Asset: avax.Asset{ID: pWallet.Builder().Context().AVAXAssetID},
+							Asset: lux.Asset{ID: pWallet.Builder().Context().LUXAssetID},
 							Out: &secp256k1fx.TransferOutput{
-								Amt: 100 * units.MicroAvax,
+								Amt: 100 * units.MicroLux,
 								OutputOwners: secp256k1fx.OutputOwners{
 									Threshold: 1,
 									Addrs: []ids.ShortID{

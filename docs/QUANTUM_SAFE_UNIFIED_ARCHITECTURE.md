@@ -306,7 +306,7 @@ func (dex *NativeDEX) CrossChainSwap(
       },
       {
         "id": "avalanche-mainnet",
-        "enabled": false  // Can skip AVAX validation
+        "enabled": false  // Can skip LUX validation
       }
     ]
   }
@@ -364,7 +364,7 @@ func (v *UniversalValidator) AddCustomNetwork(
 │             │  +Native DEX│             │                 │
 ├─────────────┴─────────────┼─────────────┴─────────────────┤
 │          Z-Chain          │         External Networks      │
-│        FHE zkVM          │    ETH, AVAX, L2s, Subnets    │
+│        FHE zkVM          │    ETH, LUX, L2s, Subnets    │
 │    Private Compute       │      Optional Validation       │
 │       Ringtail          │         Ringtail PQ           │
 └─────────────────────────┴─────────────────────────────────┘

@@ -416,7 +416,7 @@ func (api *LuxAPI) ReplayStart(req StartReplayRequest) (map[string]interface{}, 
 
 	// Use default source if not provided
 	if req.SourcePath == "" {
-		req.SourcePath = "/home/z/.avalanche-cli/runs/network_current/node1/chainData/dnmzhuf6poM6PUNQCe7MWWfBdTJEnddhHRNXz2x7H6qSmyBEJ/db/pebbledb"
+		req.SourcePath = "/home/z/.lux-cli/runs/network_current/node1/chainData/dnmzhuf6poM6PUNQCe7MWWfBdTJEnddhHRNXz2x7H6qSmyBEJ/db/pebbledb"
 	}
 
 	// Check if source exists

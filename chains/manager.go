@@ -1162,7 +1162,7 @@ func (m *manager) createLuxChain(
 	defer ctx.Lock.Unlock()
 
 	ctx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_LUX,
 		State: snow.Initializing,
 	})
 
@@ -1231,7 +1231,7 @@ func (m *manager) createLuxChain(
 		m.Net,
 		m.ManagerConfig.Router,
 		m.TimeoutManager,
-		p2ppb.EngineType_ENGINE_TYPE_AVALANCHE,
+		p2ppb.EngineType_ENGINE_TYPE_LUX,
 		sb,
 		luxMetrics,
 	)

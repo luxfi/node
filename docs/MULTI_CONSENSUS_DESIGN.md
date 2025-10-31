@@ -63,7 +63,7 @@ type ConsensusManager struct {
         "enabled": true,
         "plugin": "avalanche",
         "config": {
-          "minStake": 2000000000000,  // 2000 AVAX
+          "minStake": 2000000000000,  // 2000 LUX
           "chainConfigs": {}
         }
       },
