@@ -5,7 +5,6 @@ package upgrade
 
 import (
 	"errors"
-	"github.com/luxfi/node/constants"
 	"fmt"
 	"time"
 

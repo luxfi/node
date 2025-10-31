@@ -6,13 +6,13 @@ package proposer
 import (
 	"context"
 	"errors"
-	"github.com/luxfi/math"
 	"math/bits"
 	"time"
 
 	"gonum.org/v1/gonum/mathext/prng"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/sampler"

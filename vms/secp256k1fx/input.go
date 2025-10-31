@@ -5,7 +5,6 @@ package secp256k1fx
 
 import (
 	"errors"
-	"github.com/luxfi/math"
 
 	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils"

@@ -65,34 +65,34 @@ type inboundMessage struct {
 }
 
 func (m *inboundMessage) NodeID() ids.NodeID {
-	return metrics.nodeID
+	return m.nodeID
 }
 
 func (m *inboundMessage) Op() Op {
-	return metrics.op
+	return m.op
 }
 
 func (m *inboundMessage) Message() fmt.Stringer {
-	return metrics.message
+	return m.message
 }
 
 func (m *inboundMessage) Expiration() time.Time {
-	return metrics.expiration
+	return m.expiration
 }
 
 func (m *inboundMessage) OnFinishedHandling() {
-	if metrics.onFinishedHandling != nil {
+	if m.onFinishedHandling != nil {
 		m.onFinishedHandling()
 	}
 }
 
 func (m *inboundMessage) BytesSavedCompression() int {
-	return metrics.bytesSavedCompression
+	return m.bytesSavedCompression
 }
 
 func (m *inboundMessage) String() string {
 	return fmt.Sprintf("%s Op: %s Message: %s",
-		m.nodeID, metrics.op, m.message)
+		m.nodeID, m.op, m.message)
 }
 
 // OutboundMessage represents a set of fields for an outbound message that can
@@ -118,19 +118,19 @@ type outboundMessage struct {
 }
 
 func (m *outboundMessage) BypassThrottling() bool {
-	return metrics.bypassThrottling
+	return m.bypassThrottling
 }
 
 func (m *outboundMessage) Op() Op {
-	return metrics.op
+	return m.op
 }
 
 func (m *outboundMessage) Bytes() []byte {
-	return metrics.bytes
+	return m.bytes
 }
 
 func (m *outboundMessage) BytesSavedCompression() int {
-	return metrics.bytesSavedCompression
+	return m.bytesSavedCompression
 }
 
 type msgBuilder struct {
@@ -152,12 +152,12 @@ func newMsgBuilder(
 
 	mb := &msgBuilder{
 		zstdCompressor: zstdCompressor,
-		count: metrics.NewCounterVec(
+		count: m.NewCounterVec(
 			"codec_compressed_count",
 			"number of compressed messages",
 			metricLabels,
 		),
-		duration: metrics.NewGaugeVec(
+		duration: m.NewGaugeVec(
 			"codec_compressed_duration",
 			"time spent handling compressed messages",
 			metricLabels,
@@ -237,7 +237,7 @@ func (mb *msgBuilder) unmarshal(b []byte) (*p2p.Message, int, Op, error) {
 	var (
 		compressor      compression.Compressor
 		compressedBytes []byte
-		zstdCompressed  = metrics.GetCompressedZstd()
+		zstdCompressed  = m.GetCompressedZstd()
 	)
 	switch {
 	case len(zstdCompressed) > 0:
