@@ -14,6 +14,9 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 	"github.com/luxfi/consensus"
+	consensusctx "github.com/luxfi/consensus/context"
+	enginecore "github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
@@ -25,7 +28,7 @@ import (
 	"github.com/luxfi/node/pubsub"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/timer/mockable"
-	"github.com/luxfi/node/version"
+	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/index"
 	"github.com/luxfi/node/vms/qvm/config"
@@ -122,9 +125,9 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- consensus.Message,
-	fxs []*consensus.Fx,
-	appSender consensus.AppSender,
+	toEngine chan<- common.Message,
+	fxs []*enginecore.Fx,
+	appSender enginecore.AppSender,
 ) error {
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
@@ -207,7 +210,7 @@ func (vm *VM) Initialize(
 }
 
 // BuildBlock builds a new block with pending transactions
-func (vm *VM) BuildBlock(ctx context.Context) (consensus.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (enginecore.Block, error) {
 	vm.lock.Lock()
 	defer vm.lock.Unlock()
 
@@ -219,7 +222,7 @@ func (vm *VM) BuildBlock(ctx context.Context) (consensus.Block, error) {
 	// Get pending transactions from pool
 	pendingTxs := vm.txPool.GetPendingTransactions(vm.Config.ParallelBatchSize)
 	if len(pendingTxs) == 0 {
-		return nil, consensus.ErrNoPendingTxs
+		return nil, enginecore.ErrNoPendingTxs
 	}
 
 	// Process transactions in parallel
@@ -263,7 +266,7 @@ func (vm *VM) BuildBlock(ctx context.Context) (consensus.Block, error) {
 }
 
 // ParseBlock parses a block from bytes
-func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (consensus.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (enginecore.Block, error) {
 	vm.lock.RLock()
 	defer vm.lock.RUnlock()
 
@@ -283,7 +286,7 @@ func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (consensus.Bloc
 }
 
 // GetBlock retrieves a block by its ID
-func (vm *VM) GetBlock(ctx context.Context, blockID ids.ID) (consensus.Block, error) {
+func (vm *VM) GetBlock(ctx context.Context, blockID ids.ID) (enginecore.Block, error) {
 	vm.lock.RLock()
 	defer vm.lock.RUnlock()
 
@@ -301,9 +304,9 @@ func (vm *VM) SetState(ctx context.Context, state consensus.State) error {
 	defer vm.lock.Unlock()
 
 	switch state {
-	case consensus.Bootstrapping:
+	case enginecore.Bootstrapping:
 		vm.log.Info("QVM entering bootstrapping state")
-	case consensus.NormalOp:
+	case enginecore.NormalOp:
 		vm.log.Info("QVM entering normal operation state")
 	case consensus.StateSyncing:
 		vm.log.Info("QVM entering state syncing")
