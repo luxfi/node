@@ -68,7 +68,7 @@ func GetCanonicalValidatorSetFromSubsubnetID(
 	subsubnetID ids.ID,
 ) (CanonicalValidatorSet, error) {
 	// Get the validator set at the given height.
-	vdrSet, err := pChainState.GetValidatorSet(ctx, pChainHeight, subnetID)
+	vdrSet, err := pChainState.GetValidatorSet(ctx, pChainHeight, subsubnetID)
 	if err != nil {
 		return CanonicalValidatorSet{}, err
 	}
@@ -103,42 +103,32 @@ func FlattenValidatorSet(vdrSet map[ids.NodeID]*validators.GetValidatorOutput) (
 			continue // Skip invalid public keys
 		}
 
-		pkBytes := bls.PublicKeyToUncompressedBytes(blsPK)
-		uniqueVdr, ok := pkToValidator[string(pkBytes)]
-		if !ok {
-			uniqueVdr = &Validator{
-				PublicKey:      blsPK,
-				PublicKeyBytes: pkBytes,
-			}
-			pkToValidator[string(pkBytes)] = uniqueVdr
-		}
-
 		// Use uncompressed bytes as the canonical key representation
-		pkBytes := bls.PublicKeyToUncompressedBytes(pk)
+		pkBytes := bls.PublicKeyToUncompressedBytes(blsPK)
 		pkKey := string(pkBytes)
 
 		// Check if we already have a validator with this public key
 		if existingVdr, exists := pkToValidator[pkKey]; exists {
 			// Merge validators with duplicate public keys
-			existingVdr.Weight, err = math.Add64(existingVdr.Weight, vdr.Weight)
+			existingVdr.Weight, err = math.Add(existingVdr.Weight, vdr.Weight)
 			if err != nil {
 				return CanonicalValidatorSet{}, fmt.Errorf("%w: %w", ErrWeightOverflow, err)
 			}
 			existingVdr.NodeIDs = append(existingVdr.NodeIDs, vdr.NodeID)
 		} else {
 			// Create new validator
-			vdr := &Validator{
-				PublicKey:      pk,
+			newVdr := &Validator{
+				PublicKey:      blsPK,
 				PublicKeyBytes: pkBytes,
 				Weight:         vdr.Weight,
 				NodeIDs:        []ids.NodeID{vdr.NodeID},
 			}
-			pkToValidator[pkKey] = vdr
+			pkToValidator[pkKey] = newVdr
 		}
 	}
 
 	// Sort validators by public key
-	vdrList := maps.Values(vdrs)
+	vdrList := maps.Values(pkToValidator)
 	utils.Sort(vdrList)
 	return CanonicalValidatorSet{Validators: vdrList, TotalWeight: totalWeight}, nil
 }

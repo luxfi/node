@@ -50,9 +50,9 @@ func (t *BaseTx) Verify(ctx *consensusctx.Context) error {
 	switch {
 	case t == nil:
 		return ErrNilTx
-	case t.NetworkID != networkID:
+	case t.NetworkID != ctx.NetworkID:
 		return ErrWrongNetworkID
-	case t.BlockchainID != chainID:
+	case t.BlockchainID != ctx.ChainID:
 		return ErrWrongChainID
 	case len(t.Memo) > MaxMemoSize:
 		return fmt.Errorf(

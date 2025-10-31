@@ -11,18 +11,17 @@ import (
 	gethcommon "github.com/luxfi/geth/common"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/wallet/keychain"
+	wkeychain "github.com/luxfi/node/wallet/keychain"
 )
 
 var (
 	errCantSpend = errors.New("unable to spend this UTXO")
 
-	_ keychain.Signer = (*luxSigner)(nil)
+	_ wkeychain.Signer = (*luxSigner)(nil)
 )
 
 // luxSigner wraps a secp256k1.PrivateKey to implement wallet/keychain.Signer
@@ -97,7 +96,7 @@ func (kc *Keychain) Add(key *secp256k1.PrivateKey) {
 }
 
 // Get a key from the keychain and return whether the key existed.
-func (kc Keychain) Get(id ids.ShortID) (keychain.Signer, bool) {
+func (kc Keychain) Get(id ids.ShortID) (wkeychain.Signer, bool) {
 	signer, exists := kc.get(id)
 	if !exists {
 		return nil, false
@@ -106,7 +105,7 @@ func (kc Keychain) Get(id ids.ShortID) (keychain.Signer, bool) {
 }
 
 // Get a key from the keychain and return whether the key existed.
-func (kc Keychain) GetEth(addr gethcommon.Address) (keychain.Signer, bool) {
+func (kc Keychain) GetEth(addr gethcommon.Address) (wkeychain.Signer, bool) {
 	if i, ok := kc.ethAddrToKeyIndex[addr]; ok {
 		return &luxSigner{key: kc.Keys[i]}, true
 	}

@@ -7,7 +7,6 @@ import (
 	"errors"
 
 	"github.com/luxfi/database"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/database/linkeddb"
 	"github.com/luxfi/database/prefixdb"

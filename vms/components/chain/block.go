@@ -107,8 +107,8 @@ func (bw *BlockWrapper) Reject(ctx context.Context) error {
 // OracleBlock is a block that can have multiple valid children, and one needs
 // to be chosen by an oracle.
 type OracleBlock interface {
-	chain.Block
+	block.Block
 
 	// Options returns the block options that may be chosen by the oracle.
-	Options(context.Context) ([2]chain.Block, error)
+	Options(context.Context) ([2]block.Block, error)
 }

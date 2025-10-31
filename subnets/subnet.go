@@ -68,20 +68,6 @@ func (s *subnet) IsBootstrapped() bool {
 	return s.bootstrapping.Len() == 0
 }
 
-func (s *subnet) OnBootstrapStarted() error {
-	// Required by core.BootstrapTracker interface
-	return nil
-}
-
-func (s *subnet) OnBootstrapCompleted() error {
-	// Required by core.BootstrapTracker interface
-	// Close the signal channel to notify listeners
-	s.bootstrapOnce.Do(func() {
-		close(s.bootstrapSignal)
-	})
-	return nil
-}
-
 func (s *subnet) Bootstrapped(chainID ids.ID) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -132,5 +118,9 @@ func (s *subnet) OnBootstrapStarted() error {
 
 // OnBootstrapCompleted implements core.BootstrapTracker
 func (s *subnet) OnBootstrapCompleted() error {
+	// Close the signal channel to notify listeners when all chains are bootstrapped
+	s.bootstrapOnce.Do(func() {
+		close(s.bootstrapSignal)
+	})
 	return nil
 }

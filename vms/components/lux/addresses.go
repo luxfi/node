@@ -49,8 +49,7 @@ type addressManager struct {
 
 func NewAddressManager(ctx *consensusctx.Context) AddressManager {
 	return &addressManager{
-		ctx:      ctx,
-		bcLookup: nil,
+		ctx: ctx,
 	}
 }
 
@@ -59,7 +58,7 @@ func (a *addressManager) ParseLocalAddress(addrStr string) (ids.ShortID, error) 
 	if err != nil {
 		return ids.ShortID{}, err
 	}
-	expectedChainID := consensus.GetChainID(a.ctx)
+	expectedChainID := a.ctx.ChainID
 	if chainID != expectedChainID {
 		return ids.ShortID{}, fmt.Errorf(
 			"%w: expected %q but got %q",
@@ -83,7 +82,7 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 		return ids.ID{}, ids.ShortID{}, fmt.Errorf("failed to parse chain ID %q: %w", chainIDAlias, err)
 	}
 
-	networkID := consensus.GetNetworkID(a.ctx)
+	networkID := a.ctx.NetworkID
 	expectedHRP := constants.GetHRP(networkID)
 	if hrp != expectedHRP {
 		return ids.Empty, ids.ShortID{}, fmt.Errorf(
@@ -101,7 +100,7 @@ func (a *addressManager) ParseAddress(addrStr string) (ids.ID, ids.ShortID, erro
 }
 
 func (a *addressManager) FormatLocalAddress(addr ids.ShortID) (string, error) {
-	chainID := consensus.GetChainID(a.ctx)
+	chainID := a.ctx.ChainID
 	return a.FormatAddress(chainID, addr)
 }
 

@@ -99,19 +99,3 @@ func (utxo *UTXOID) Compare(other *UTXOID) int {
 	}
 	return cmp.Compare(utxoIndex, otherIndex)
 }
-
-func (utxo *UTXOID) Compare(other *UTXOID) int {
-	utxoID, utxoIndex := utxo.InputSource()
-	otherID, otherIndex := other.InputSource()
-
-	if cmp := bytes.Compare(utxoID[:], otherID[:]); cmp != 0 {
-		return cmp
-	}
-	if utxoIndex < otherIndex {
-		return -1
-	}
-	if utxoIndex > otherIndex {
-		return 1
-	}
-	return 0
-}

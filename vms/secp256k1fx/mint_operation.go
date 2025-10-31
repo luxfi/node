@@ -4,9 +4,9 @@
 package secp256k1fx
 
 import (
-	consensusctx "context"
 	"errors"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/node/vms/components/verify"
 )
 
@@ -34,11 +34,6 @@ func (op *MintOperation) Cost() (uint64, error) {
 
 func (op *MintOperation) Outs() []verify.State {
 	return []verify.State{&op.MintOutput, &op.TransferOutput}
-}
-
-func (op *MintOperation) InitializeContext(ctx context.Context) error {
-	op.InitCtx(ctx)
-	return nil
 }
 
 func (op *MintOperation) Verify() error {

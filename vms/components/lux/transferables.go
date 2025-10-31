@@ -4,13 +4,10 @@
 package lux
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
 	"bytes"
-	"context"
 	"errors"
 	"sort"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
@@ -160,10 +157,6 @@ func (in *TransferableInput) Verify() error {
 	default:
 		return verify.All(&in.UTXOID, &in.Asset, in.In)
 	}
-}
-
-func (in *TransferableInput) Compare(other *TransferableInput) int {
-	return in.UTXOID.Compare(&other.UTXOID)
 }
 
 func (in *TransferableInput) Compare(other *TransferableInput) int {
