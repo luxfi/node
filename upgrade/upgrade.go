@@ -196,8 +196,8 @@ func GetConfig(networkID uint32) Config {
 	switch networkID {
 	case constants.MainnetID:
 		return Mainnet
-	case constants.FujiID:
-		return Fuji
+	case constants.TestnetID:
+		return Testnet
 	default:
 		return Default
 	}

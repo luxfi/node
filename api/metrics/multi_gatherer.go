@@ -4,6 +4,7 @@
 package metrics
 
 import (
+	"sort"
 	"github.com/luxfi/metric"
 
 	"fmt"

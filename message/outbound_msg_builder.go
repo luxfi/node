@@ -248,8 +248,8 @@ func (b *outMsgBuilder) Handshake(
 	knownPeersSalt []byte,
 	requestAllSubnetIPs bool,
 ) (OutboundMessage, error) {
-	subsubnetIDBytes := make([][]byte, len(trackedSubnets))
-	encodeIDs(trackedSubnets, subsubnetIDBytes)
+	subsubsubnetIDBytes := make([][]byte, len(trackedSubnets))
+	encodeIDs(trackedSubnets, subsubsubnetIDBytes)
 	return b.builder.createOutbound(
 		&p2p.Message{
 			Message: &p2p.Message_Handshake{
@@ -260,7 +260,7 @@ func (b *outMsgBuilder) Handshake(
 					IpPort:         uint32(ip.Port()),
 					IpSigningTime:  ipSigningTime,
 					IpNodeIdSig:    ipNodeIDSig,
-					TrackedSubnets: subnetIDBytes,
+					TrackedSubnets: subsubnetIDBytes,
 					Client: &p2p.Client{
 						Name:  client,
 						Major: major,
