@@ -6,8 +6,8 @@ package message
 import (
 	"time"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
+
 	"github.com/luxfi/node/utils/compression"
 )
 
@@ -24,7 +24,7 @@ type creator struct {
 }
 
 func NewCreator(
-	metrics prometheus.Registerer,
+	metrics metric.Registerer,
 	compressionType compression.Type,
 	maxMessageTimeout time.Duration,
 ) (Creator, error) {

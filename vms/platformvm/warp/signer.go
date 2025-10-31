@@ -28,7 +28,7 @@ type Signer interface {
 
 func NewSigner(sk bls.Signer, networkID uint32, chainID ids.ID) Signer {
 	return &signer{
-		blsSigner: blsSigner,
+		sk:        sk,
 		networkID: networkID,
 		chainID:   chainID,
 	}

@@ -36,17 +36,12 @@ func SameSubnet(ctx context.Context, chainCtx *ChainContext, peerChainID ids.ID)
 		return ErrSameChainID
 	}
 
-	vs := consensus.GetValidatorState(chainCtx)
-	if vs == nil {
-		return fmt.Errorf("no validator state found in context")
-	}
-	netID, err := vs.GetNetID(peerChainIDLux)
+	peerSubnetID, err := chainCtx.ValidatorState.GetSubnetID(ctx, peerChainID)
 	if err != nil {
-		return fmt.Errorf("failed to get net of %q: %w", peerChainID, err)
+		return fmt.Errorf("failed to get subnet of %q: %w", peerChainID, err)
 	}
-	myNetID := consensus.GetNetID(chainCtx)
-	if myNetID != netID {
-		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, myNetID, netID)
+	if chainCtx.SubnetID != peerSubnetID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, chainCtx.SubnetID, peerSubnetID)
 	}
 	return nil
 }

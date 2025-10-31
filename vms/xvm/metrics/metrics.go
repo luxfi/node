@@ -6,8 +6,8 @@ package metrics
 import (
 	"errors"
 	"github.com/luxfi/metric"
-
 	utilmetric "github.com/luxfi/node/utils/metric"
+
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/txs"

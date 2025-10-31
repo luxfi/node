@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/rpcdb"
+	"github.com/luxfi/node/internal/database/rpcdb"
 
 	pb "github.com/luxfi/node/proto/pb/rpcdb"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"

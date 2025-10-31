@@ -8,7 +8,6 @@ import (
 
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/pubsub/bloom"
-	"github.com/luxfi/math/set"
 )
 
 type FilterParam struct {

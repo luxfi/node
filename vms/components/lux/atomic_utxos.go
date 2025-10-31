@@ -10,8 +10,6 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 )
 
 var _ AtomicUTXOManager = (*atomicUTXOManager)(nil)
@@ -43,7 +41,7 @@ func (a *atomicUTXOManager) GetAtomicUTXOs(
 		i++
 	}
 
-	allUTXOBytes, lastAddr, lastUTXO, err := sharedMemory.Indexed(
+	allUTXOBytes, lastAddr, lastUTXO, err := a.sm.Indexed(
 		chainID,
 		addrsList,
 		startAddr.Bytes(),
@@ -66,7 +64,7 @@ func (a *atomicUTXOManager) GetAtomicUTXOs(
 	utxos := make([]*UTXO, len(allUTXOBytes))
 	for i, utxoBytes := range allUTXOBytes {
 		utxo := &UTXO{}
-		if _, err := codec.Unmarshal(utxoBytes, utxo); err != nil {
+		if _, err := a.codec.Unmarshal(utxoBytes, utxo); err != nil {
 			return nil, ids.ShortID{}, ids.Empty, fmt.Errorf("error parsing UTXO: %w", err)
 		}
 		utxos[i] = utxo

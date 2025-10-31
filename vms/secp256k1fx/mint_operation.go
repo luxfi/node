@@ -4,7 +4,7 @@
 package secp256k1fx
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
+	consensusctx "context"
 	"errors"
 
 	"github.com/luxfi/node/vms/components/verify"

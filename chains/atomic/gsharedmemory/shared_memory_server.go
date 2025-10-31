@@ -9,9 +9,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/database"
-	"github.com/luxfi/ids"
-
 	sharedmemorypb "github.com/luxfi/node/proto/pb/sharedmemory"
 )
 

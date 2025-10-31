@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/maybe"
 	"github.com/luxfi/trace"
-
 	pb "github.com/luxfi/node/proto/pb/sync"
 )
 

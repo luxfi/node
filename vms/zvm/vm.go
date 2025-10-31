@@ -12,13 +12,15 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/core/common"
+
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )
@@ -60,7 +62,7 @@ type ZConfig struct {
 
 // VM implements the Zero-Knowledge UTXO Chain VM
 type VM struct {
-	ctx    *snow.Context
+	ctx    *consensusctx.Context
 	config ZConfig
 	
 	// State management
@@ -95,7 +97,7 @@ type VM struct {
 // Initialize initializes the VM
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensusctx.Context,
 	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -304,7 +306,7 @@ func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 }
 
 // SetState sets the VM state
-func (vm *VM) SetState(ctx context.Context, state snow.State) error {
+func (vm *VM) SetState(ctx context.Context, state interfaces.State) error {
 	return nil
 }
 

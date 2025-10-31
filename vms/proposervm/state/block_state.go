@@ -10,14 +10,11 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
+	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/database"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/node/utils/constants"
-	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/proposervm/block"
@@ -73,7 +70,6 @@ func NewMeteredBlockState(db database.Database, namespace string, metrics metric
 		return nil, errors.New("metrics must be a Registry")
 	}
 	blkCache, err := metercacher.New[ids.ID, *blockWrapper](
-		metric.AppendNamespace(namespace, "block_cache"),
 		metrics,
 		lru.NewSizedCache(blockCacheSize, cachedBlockSize),
 	)

@@ -6,6 +6,7 @@ package proposer
 import (
 	"context"
 	"errors"
+	"github.com/luxfi/math"
 	"math/bits"
 	"time"
 

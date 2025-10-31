@@ -10,7 +10,6 @@ import (
 	"context"
 	"os/exec"
 
-	"go.uber.org/zap"
 
 	"github.com/luxfi/log"
 )

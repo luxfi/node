@@ -4,7 +4,7 @@
 package sampler
 
 import (
-	safemath "github.com/luxfi/math/math"
+	"github.com/luxfi/math/math"
 )
 
 type weightedWithoutReplacementGeneric struct {
@@ -15,7 +15,7 @@ type weightedWithoutReplacementGeneric struct {
 func (s *weightedWithoutReplacementGeneric) Initialize(weights []uint64) error {
 	totalWeight := uint64(0)
 	for _, weight := range weights {
-		newWeight, err := safemath.Add(totalWeight, weight)
+		newWeight, err := math.Add64(totalWeight, weight)
 		if err != nil {
 			return err
 		}

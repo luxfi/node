@@ -9,6 +9,7 @@ import (
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
+	utilmetric "github.com/luxfi/node/utils/metric"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
@@ -16,7 +17,7 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils/metric"
+	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
 

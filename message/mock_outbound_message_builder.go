@@ -10,6 +10,8 @@
 package message
 
 import (
+	"go.uber.org/mock/gomock"
+
 	netip "net/netip"
 	reflect "reflect"
 	time "time"

@@ -20,13 +20,16 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/core/common"
+
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
@@ -80,7 +83,7 @@ type YConfig struct {
 
 // VM implements the Y-Chain Quantum Checkpoint Ledger
 type VM struct {
-	ctx      *snow.Context
+	ctx      *consensusctx.Context
 	db       database.Database
 	config   YConfig
 	toEngine chan<- common.Message
@@ -137,7 +140,7 @@ type EpochRootTx struct {
 // Initialize implements the chain.ChainVM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensusctx.Context,
 	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -601,7 +604,7 @@ func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, er
 }
 
 // SetState implements the common.VM interface
-func (vm *VM) SetState(ctx context.Context, state snow.State) error {
+func (vm *VM) SetState(ctx context.Context, state interfaces.State) error {
 	// For now, no-op
 	// In production, handle state transitions
 	return nil

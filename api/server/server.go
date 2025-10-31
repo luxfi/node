@@ -4,6 +4,8 @@
 package server
 
 import (
+	"github.com/luxfi/metric"
+
 	"context"
 	"fmt"
 	"net"
@@ -13,20 +15,16 @@ import (
 	"strings"
 	"sync"
 	"time"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/cors"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
-
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/ids"
 	consensuscontext "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
@@ -35,7 +33,6 @@ import (
 const (
 	baseURL              = "/ext"
 	maxConcurrentStreams = 64
-	HTTPHeaderRoute      = "X-Lux-Route"
 )
 
 var (
@@ -162,8 +159,8 @@ func (s *server) RegisterChain(chainName string, ctx *consensuscontext.Context, 
 	ctx.Lock.Unlock()
 	if err != nil {
 		s.log.Error("failed to create path route handlers",
-			zap.String("chainName", chainName),
-			zap.Error(err),
+			log.String("chainName", chainName),
+			log.Error(err),
 		)
 		return
 	}
@@ -197,8 +194,8 @@ func (s *server) RegisterChain(chainName string, ctx *consensuscontext.Context, 
 	ctx.Lock.Unlock()
 	if err != nil {
 		s.log.Error("failed to create header route handler",
-			zap.String("chainName", chainName),
-			zap.Error(err),
+			log.String("chainName", chainName),
+			log.Error(err),
 		)
 		return
 	}
@@ -211,7 +208,7 @@ func (s *server) RegisterChain(chainName string, ctx *consensuscontext.Context, 
 	if !s.router.AddHeaderRoute(ctx.ChainID.String(), headerRouteHandler) {
 		s.log.Error(
 			"failed to add header route",
-			zap.String("chainName", chainName),
+			log.String("chainName", chainName),
 		)
 	}
 }

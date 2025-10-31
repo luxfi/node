@@ -14,6 +14,8 @@ import (
 		"github.com/luxfi/crypto"
 	
 	"github.com/luxfi/ids"
+	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms"
@@ -53,7 +55,7 @@ type OPStackConfig struct {
 
 // VM implements an OP Stack based subnet VM
 type VM struct {
-	ctx    *snow.Context
+	ctx    *consensusctx.Context
 	config *OPStackConfig
 	
 	// OP Stack components
@@ -112,7 +114,7 @@ type ConsensusEngine interface {
 // Initialize initializes the VM
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensusctx.Context,
 	db vms.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -337,7 +339,7 @@ func NewHybridConsensus(config *OPStackConfig) ConsensusEngine {
 }
 
 // Additional VM methods for compatibility
-func (vm *VM) SetState(ctx context.Context, state snow.State) error {
+func (vm *VM) SetState(ctx context.Context, state interfaces.State) error {
 	return nil
 }
 

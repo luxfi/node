@@ -4,12 +4,14 @@
 package merkledb
 
 import (
+	"github.com/luxfi/metric"
+
 	"errors"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/luxfi/node/utils/metric"
+	utilmetric "github.com/luxfi/node/utils/metric"
 )
 
 const (

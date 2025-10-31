@@ -9,7 +9,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/encdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 )
 
 var _ BlockchainKeystore = (*blockchainKeystore)(nil)

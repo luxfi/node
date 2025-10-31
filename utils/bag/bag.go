@@ -8,10 +8,8 @@ import (
 	"strings"
 
 	"golang.org/x/exp/maps"
-
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/math/set"
 )
 
 const minBagSize = 16

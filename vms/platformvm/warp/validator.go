@@ -29,7 +29,7 @@ var (
 // ValidatorState defines the functions that must be implemented to get
 // the canonical validator set for warp message validation.
 type ValidatorState interface {
-	GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*ValidatorData, error)
+	GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*ValidatorData, error)
 	GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
 }
 
@@ -58,17 +58,17 @@ func (v *Validator) Compare(o *Validator) int {
 	return bytes.Compare(v.PublicKeyBytes, o.PublicKeyBytes)
 }
 
-// GetCanonicalValidatorSetFromSubnetID returns the CanonicalValidatorSet of [subnetID] at
+// GetCanonicalValidatorSetFromSubsubnetID returns the CanonicalValidatorSet of [subsubnetID] at
 // [pChcainHeight]. The returned CanonicalValidatorSet includes the validator set in a canonical ordering
 // and the total weight.
-func GetCanonicalValidatorSetFromSubnetID(
+func GetCanonicalValidatorSetFromSubsubnetID(
 	ctx context.Context,
 	pChainState ValidatorState,
 	pChainHeight uint64,
-	subnetID ids.ID,
+	subsubnetID ids.ID,
 ) (CanonicalValidatorSet, error) {
 	// Get the validator set at the given height.
-	vdrSet, err := pChainState.GetValidatorSet(ctx, pChainHeight, netID)
+	vdrSet, err := pChainState.GetValidatorSet(ctx, pChainHeight, subnetID)
 	if err != nil {
 		return CanonicalValidatorSet{}, err
 	}
@@ -93,7 +93,7 @@ func FlattenValidatorSet(vdrSet map[ids.NodeID]*validators.GetValidatorOutput) (
 		}
 
 		// Skip validators without public keys
-		if len(vdrData.PublicKey) == 0 {
+		if len(vdr.PublicKey) == 0 {
 			continue
 		}
 
@@ -104,13 +104,13 @@ func FlattenValidatorSet(vdrSet map[ids.NodeID]*validators.GetValidatorOutput) (
 		}
 
 		pkBytes := bls.PublicKeyToUncompressedBytes(blsPK)
-		uniqueVdr, ok := vdrs[string(pkBytes)]
+		uniqueVdr, ok := pkToValidator[string(pkBytes)]
 		if !ok {
 			uniqueVdr = &Validator{
 				PublicKey:      blsPK,
 				PublicKeyBytes: pkBytes,
 			}
-			vdrs[string(pkBytes)] = uniqueVdr
+			pkToValidator[string(pkBytes)] = uniqueVdr
 		}
 
 		// Use uncompressed bytes as the canonical key representation
@@ -120,18 +120,18 @@ func FlattenValidatorSet(vdrSet map[ids.NodeID]*validators.GetValidatorOutput) (
 		// Check if we already have a validator with this public key
 		if existingVdr, exists := pkToValidator[pkKey]; exists {
 			// Merge validators with duplicate public keys
-			existingVdr.Weight, err = math.Add64(existingVdr.Weight, vdrData.Weight)
+			existingVdr.Weight, err = math.Add64(existingVdr.Weight, vdr.Weight)
 			if err != nil {
-				return nil, 0, fmt.Errorf("%w: %w", ErrWeightOverflow, err)
+				return CanonicalValidatorSet{}, fmt.Errorf("%w: %w", ErrWeightOverflow, err)
 			}
-			existingVdr.NodeIDs = append(existingVdr.NodeIDs, nodeID)
+			existingVdr.NodeIDs = append(existingVdr.NodeIDs, vdr.NodeID)
 		} else {
 			// Create new validator
 			vdr := &Validator{
 				PublicKey:      pk,
 				PublicKeyBytes: pkBytes,
-				Weight:         vdrData.Weight,
-				NodeIDs:        []ids.NodeID{nodeID},
+				Weight:         vdr.Weight,
+				NodeIDs:        []ids.NodeID{vdr.NodeID},
 			}
 			pkToValidator[pkKey] = vdr
 		}
@@ -206,5 +206,5 @@ func GetCanonicalValidatorSetFromChainID(ctx context.Context,
 ) (CanonicalValidatorSet, error) {
 	// In the new architecture, use sourceChainID as the subnet ID
 	// This assumes a 1:1 mapping between chains and subnets
-	return GetCanonicalValidatorSetFromSubnetID(ctx, pChainState, pChainHeight, sourceChainID)
+	return GetCanonicalValidatorSetFromSubsubnetID(ctx, pChainState, pChainHeight, sourceChainID)
 }

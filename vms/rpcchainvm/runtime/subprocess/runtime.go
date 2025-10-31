@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"go.uber.org/zap"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"

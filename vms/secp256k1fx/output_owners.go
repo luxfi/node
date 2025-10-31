@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
+	"reflect"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
@@ -138,6 +139,7 @@ func formatAddress(ctx *consensusctx.Context, addr ids.ShortID) (string, error) 
 	}
 
 	// Use ChainID directly - consensus context doesn't have BCLookup
+	ctxValue := reflect.ValueOf(ctx).Elem()
 	chainIDAlias := ctx.ChainID.String()
 
 	if ctxValue.Kind() == reflect.Struct {

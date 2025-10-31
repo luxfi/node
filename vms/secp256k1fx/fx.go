@@ -5,6 +5,7 @@ package secp256k1fx
 
 import (
 	"errors"
+	"github.com/luxfi/ids"
 	"fmt"
 	"strings"
 

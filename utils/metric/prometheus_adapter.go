@@ -1,10 +1,10 @@
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package metric
+package utilmetric
 
 import (
-	"github.com/luxfi/metric"
+	metric "github.com/luxfi/metric"
 )
 
 // PrometheusRegistryAdapter wraps a luxfi/metric Registry to implement metric.Registerer

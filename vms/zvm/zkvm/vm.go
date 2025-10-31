@@ -14,14 +14,17 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-
 	ethcommon "github.com/luxfi/geth/common"
 	
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/core/common"
+
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/version"
 )
@@ -43,7 +46,7 @@ var (
 // VM implements the chain.ChainVM interface for the Zero-Knowledge Chain (Z-Chain)
 // This chain provides ZK proof verification and fraud proof processing
 type VM struct {
-	ctx         *snow.Context
+	ctx         *consensusctx.Context
 	db          database.Database
 	genesisData []byte
 	toEngine    chan<- common.Message
@@ -51,7 +54,7 @@ type VM struct {
 	appSender   common.AppSender
 
 	// State management
-	state       snow.State
+	state       interfaces.State
 	baseDB      database.Database
 	preferredID ids.ID
 
@@ -146,7 +149,7 @@ const (
 // Initialize implements the common.VM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *snow.Context,
+	chainCtx *consensusctx.Context,
 	db database.Database,
 	genesisBytes []byte,
 	upgradeBytes []byte,
@@ -188,7 +191,7 @@ func (vm *VM) Initialize(
 }
 
 // SetState implements the common.VM interface
-func (vm *VM) SetState(ctx context.Context, state snow.State) error {
+func (vm *VM) SetState(ctx context.Context, state interfaces.State) error {
 	vm.state = state
 	return nil
 }

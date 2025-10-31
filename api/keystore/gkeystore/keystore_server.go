@@ -5,11 +5,9 @@ package gkeystore
 
 import (
 	"context"
+	"github.com/luxfi/database"
 
-	"github.com/luxfi/database"
 	"github.com/luxfi/node/api/keystore"
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/rpcdb"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 
 	keystorepb "github.com/luxfi/node/proto/pb/keystore"

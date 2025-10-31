@@ -13,7 +13,6 @@ import (
 
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -500,19 +499,6 @@ func (c *genericCodec) marshal(
 
 // UnmarshalFrom unmarshals [p.Bytes] into [dest], where [dest] must be a pointer or
 // interface
-func (c *genericCodec) UnmarshalFrom(p *wrappers.Packer, dest interface{}) error {
-	if dest == nil {
-		return codec.ErrUnmarshalNil
-	}
-
-	destPtr := reflect.ValueOf(dest)
-	if destPtr.Kind() != reflect.Ptr {
-		return errNeedPointer
-	}
-	return c.unmarshal(p, destPtr.Elem(), nil /*=typeStack*/)
-}
-
-// UnmarshalFrom unpacks data from the Packer into dest
 func (c *genericCodec) UnmarshalFrom(p *wrappers.Packer, dest interface{}) error {
 	if dest == nil {
 		return codec.ErrUnmarshalNil

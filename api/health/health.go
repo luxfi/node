@@ -7,10 +7,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
-
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 )
 
 const (
@@ -65,12 +63,11 @@ type health struct {
 	liveness  *worker
 }
 
-func New(log log.Logger, registerer prometheus.Registerer) (Health, error) {
-	failingChecks := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "checks_failing",
-			Help: "number of currently failing health checks",
-		},
+func New(log log.Logger, registerer metric.Registerer) (Health, error) {
+	metricsInstance := metric.NewWithRegistry("health", registerer.(metric.Registry))
+	failingChecks := metricsInstance.NewGaugeVec(
+		"checks_failing",
+		"number of currently failing health checks",
 		[]string{CheckLabel, TagLabel},
 	)
 	return &health{

@@ -21,15 +21,12 @@ const (
 	UnitTestID uint32 = 369
 
 	// Lux-specific network IDs
-	LuxMainnetID uint32 = 96369
-	LuxTestnetID uint32 = 96368
-
-	// Lux-specific network IDs
 	LuxMainnetID    uint32 = 96369  // Lux mainnet
 	LuxTestnetID    uint32 = 96370  // Lux testnet
 	QChainMainnetID uint32 = 96380  // Q-Chain mainnet
 	QChainTestnetID uint32 = 96381  // Q-Chain testnet
 
+	LocalName    = "local"
 	MainnetName  = "mainnet"
 	TestnetName  = "testnet"
 	UnitTestName = "testing"
@@ -45,13 +42,9 @@ const (
 var (
 	PrimaryNetworkID = ids.Empty
 	PlatformChainID  = ids.Empty
-	// Q-Chain ID for quantum-resistant chain
-	// QChainID = ids.FromStringOrPanic("2QTQfPNhYWJUhmemsBFzqGjRdvXn4LQyJCx4VTxxKjzV6h5J2q")
-	QChainID = ids.Empty // Temporarily using Empty ID until valid ID is generated
-
+	
 	// Q-Chain specific IDs
 	QChainID = ids.ID{'q', 'c', 'h', 'a', 'i', 'n'}
-	QVMID    = ids.ID{'q', 'v', 'm'}
 
 	NetworkIDToNetworkName = map[uint32]string{
 		LocalID:         LocalName,
@@ -60,12 +53,6 @@ var (
 		UnitTestID:      UnitTestName,
 		LuxMainnetID:    MainnetName,
 		LuxTestnetID:    TestnetName,
-		ZooMainnetID:    "zoo-mainnet",
-		ZooTestnetID:    "zoo-testnet",
-		SPCMainnetID:    "spc-mainnet",
-		SPCTestnetID:    "spc-testnet",
-		HanzoMainnetID:  "hanzo-mainnet",
-		HanzoTestnetID:  "hanzo-testnet",
 		QChainMainnetID: "qchain-mainnet",
 		QChainTestnetID: "qchain-testnet",
 	}
@@ -83,12 +70,6 @@ var (
 		UnitTestID:      UnitTestHRP,
 		LuxMainnetID:    MainnetHRP,
 		LuxTestnetID:    TestnetHRP,
-		ZooMainnetID:    "zoo",
-		ZooTestnetID:    "zoo",
-		SPCMainnetID:    "spc",
-		SPCTestnetID:    "spc",
-		HanzoMainnetID:  "hanzo",
-		HanzoTestnetID:  "hanzo",
 		QChainMainnetID: "qchain",
 		QChainTestnetID: "qtest",
 	}

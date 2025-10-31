@@ -10,6 +10,8 @@
 package merkledb
 
 import (
+	"go.uber.org/mock/gomock"
+
 	context "context"
 	reflect "reflect"
 

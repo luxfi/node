@@ -4,12 +4,12 @@
 package message
 
 import (
+	"github.com/luxfi/metric"
+
 	"errors"
 	"fmt"
 	"time"
-
 	"google.golang.org/protobuf/proto"
-
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/compression"
@@ -65,34 +65,34 @@ type inboundMessage struct {
 }
 
 func (m *inboundMessage) NodeID() ids.NodeID {
-	return m.nodeID
+	return metrics.nodeID
 }
 
 func (m *inboundMessage) Op() Op {
-	return m.op
+	return metrics.op
 }
 
 func (m *inboundMessage) Message() fmt.Stringer {
-	return m.message
+	return metrics.message
 }
 
 func (m *inboundMessage) Expiration() time.Time {
-	return m.expiration
+	return metrics.expiration
 }
 
 func (m *inboundMessage) OnFinishedHandling() {
-	if m.onFinishedHandling != nil {
+	if metrics.onFinishedHandling != nil {
 		m.onFinishedHandling()
 	}
 }
 
 func (m *inboundMessage) BytesSavedCompression() int {
-	return m.bytesSavedCompression
+	return metrics.bytesSavedCompression
 }
 
 func (m *inboundMessage) String() string {
 	return fmt.Sprintf("%s Op: %s Message: %s",
-		m.nodeID, m.op, m.message)
+		m.nodeID, metrics.op, m.message)
 }
 
 // OutboundMessage represents a set of fields for an outbound message that can
@@ -118,19 +118,19 @@ type outboundMessage struct {
 }
 
 func (m *outboundMessage) BypassThrottling() bool {
-	return m.bypassThrottling
+	return metrics.bypassThrottling
 }
 
 func (m *outboundMessage) Op() Op {
-	return m.op
+	return metrics.op
 }
 
 func (m *outboundMessage) Bytes() []byte {
-	return m.bytes
+	return metrics.bytes
 }
 
 func (m *outboundMessage) BytesSavedCompression() int {
-	return m.bytesSavedCompression
+	return metrics.bytesSavedCompression
 }
 
 type msgBuilder struct {
@@ -142,7 +142,7 @@ type msgBuilder struct {
 }
 
 func newMsgBuilder(
-	metrics prometheus.Registerer,
+	metrics metric.Registerer,
 	maxMessageTimeout time.Duration,
 ) (*msgBuilder, error) {
 	zstdCompressor, err := compression.NewZstdCompressor(constants.DefaultMaxMessageSize)
@@ -152,12 +152,12 @@ func newMsgBuilder(
 
 	mb := &msgBuilder{
 		zstdCompressor: zstdCompressor,
-		count: m.NewCounterVec(
+		count: metrics.NewCounterVec(
 			"codec_compressed_count",
 			"number of compressed messages",
 			metricLabels,
 		),
-		duration: m.NewGaugeVec(
+		duration: metrics.NewGaugeVec(
 			"codec_compressed_duration",
 			"time spent handling compressed messages",
 			metricLabels,
@@ -237,7 +237,7 @@ func (mb *msgBuilder) unmarshal(b []byte) (*p2p.Message, int, Op, error) {
 	var (
 		compressor      compression.Compressor
 		compressedBytes []byte
-		zstdCompressed  = m.GetCompressedZstd()
+		zstdCompressed  = metrics.GetCompressedZstd()
 	)
 	switch {
 	case len(zstdCompressed) > 0:

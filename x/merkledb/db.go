@@ -14,7 +14,6 @@ import (
 
 	"github.com/luxfi/metric"
 	"go.opentelemetry.io/otel/attribute"
-
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/trace"
@@ -23,7 +22,6 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/trace"
-
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 

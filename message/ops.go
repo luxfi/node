@@ -9,7 +9,6 @@ import (
 
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/proto/pb/p2p"
-	"github.com/luxfi/math/set"
 )
 
 // Op is an opcode

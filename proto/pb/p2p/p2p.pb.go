@@ -3880,17 +3880,18 @@ func file_p2p_p2p_proto_init() {
 		(*Simplex_ReplicationRequest)(nil),
 		(*Simplex_ReplicationResponse)(nil),
 	}
-	file_p2p_p2p_proto_msgTypes[29].OneofWrappers = []interface{}{
-		(*BFT_BlockProposal)(nil),
-		(*BFT_Vote)(nil),
-		(*BFT_EmptyVote)(nil),
-		(*BFT_FinalizeVote)(nil),
-		(*BFT_Notarization)(nil),
-		(*BFT_EmptyNotarization)(nil),
-		(*BFT_Finalization)(nil),
-		(*BFT_ReplicationRequest)(nil),
-		(*BFT_ReplicationResponse)(nil),
-	}
+	// BFT messages temporarily commented out - not defined in proto
+	// file_p2p_p2p_proto_msgTypes[29].OneofWrappers = []interface{}{
+	// 	(*BFT_BlockProposal)(nil),
+	// 	(*BFT_Vote)(nil),
+	// 	(*BFT_EmptyVote)(nil),
+	// 	(*BFT_FinalizeVote)(nil),
+	// 	(*BFT_Notarization)(nil),
+	// 	(*BFT_EmptyNotarization)(nil),
+	// 	(*BFT_Finalization)(nil),
+	// 	(*BFT_ReplicationRequest)(nil),
+	// 	(*BFT_ReplicationResponse)(nil),
+	// }
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

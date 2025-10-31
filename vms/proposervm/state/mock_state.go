@@ -10,6 +10,8 @@
 package state
 
 import (
+	"go.uber.org/mock/gomock"
+
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"

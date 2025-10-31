@@ -37,7 +37,6 @@ type Keychain interface {
 
 // Ledger interface for hardware wallet support
 type Ledger interface {
-	Version() (*version.Semantic, error)
 	Address(displayHRP string, addressIndex uint32) (ids.ShortID, error)
 	SignHash(hash []byte, addressIndex uint32) ([]byte, error)
 	Sign(hash []byte, addressIndex uint32) ([]byte, error)
@@ -103,39 +102,16 @@ func (l *ledgerKeychain) Get(addr ids.ShortID) (Signer, bool) {
 	}, true
 }
 
-// expects to receive a hash of the unsigned tx bytes
-func (l *ledgerSigner) SignHash(b []byte) ([]byte, error) {
-	// Sign using the address with index l.idx on the ledger device. The number
-	// of returned signatures should be the same length as the provided indices.
-	sigs, err := l.ledger.SignHash(b, []uint32{l.idx})
-	if err != nil {
-		return nil, err
-	}
-
-	if sigsLen := len(sigs); sigsLen != 1 {
-		return nil, fmt.Errorf(
-			"%w. expected 1, got %d",
-			ErrInvalidNumSignatures,
-			sigsLen,
-		)
-	}
-
-	return sigs[0], nil
+func (l *ledgerKeychain) Addresses() set.Set[ids.ShortID] {
+	return l.addrs
 }
 
 func (l *ledgerSigner) SignHash(hash []byte) ([]byte, error) {
 	return l.ledger.SignHash(hash, l.idx)
 }
 
-	if sigsLen := len(sigs); sigsLen != 1 {
-		return nil, fmt.Errorf(
-			"%w. expected 1, got %d",
-			ErrInvalidNumSignatures,
-			sigsLen,
-		)
-	}
-
-	return sigs[0], nil
+func (l *ledgerSigner) Sign(hash []byte) ([]byte, error) {
+	return l.ledger.Sign(hash, l.idx)
 }
 
 func (l *ledgerSigner) Address() ids.ShortID {

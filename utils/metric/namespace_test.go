@@ -1,10 +1,10 @@
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package metric
+package utilmetric
 
 import (
-	"github.com/luxfi/metric"
+	luxmetric "github.com/luxfi/metric"
 	"strings"
 	"testing"
 

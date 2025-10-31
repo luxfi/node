@@ -22,6 +22,8 @@ import (
 	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/core/common"
+
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/version"
 )
