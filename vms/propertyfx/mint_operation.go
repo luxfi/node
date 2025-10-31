@@ -41,11 +41,6 @@ func (op *MintOperation) Outs() []verify.State {
 	}
 }
 
-func (op *MintOperation) InitializeContext(ctx context.Context) error {
-	op.InitCtx(ctx)
-	return nil
-}
-
 func (op *MintOperation) Verify() error {
 	if op == nil {
 		return errNilMintOperation
