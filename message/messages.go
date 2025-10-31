@@ -151,7 +151,7 @@ func newMsgBuilder(
 	}
 
 	registry := metrics.(metric.Registry)
-	mb := mb := &msgBuilder{msgBuilder{
+	mb := &msgBuilder{
 		zstdCompressor: zstdCompressor,
 		count: registry.NewCounterVec(
 			"codec_compressed_count",
