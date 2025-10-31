@@ -56,7 +56,7 @@ type TransferableIn interface {
 type TransferableOut interface {
 	verify.State
 	Amounter
-	InitCtx(*consensusctx.Context)
+	InitCtx(*consensusctx.Context.Context)
 }
 
 type TransferableOutput struct {
@@ -66,7 +66,7 @@ type TransferableOutput struct {
 	Out  TransferableOut `serialize:"true"  json:"output"`
 }
 
-func (out *TransferableOutput) InitCtx(ctx *consensusctx.Context) {
+func (out *TransferableOutput) InitCtx(ctx *consensusctx.Context.Context) {
 	out.Out.InitCtx(ctx)
 }
 

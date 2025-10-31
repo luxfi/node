@@ -6,7 +6,7 @@ package secp256k1fx
 import (
 	"errors"
 
-	"github.com/luxfi/math"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils"
 )
 
@@ -28,7 +28,7 @@ type Input struct {
 
 func (in *Input) Cost() (uint64, error) {
 	numSigs := uint64(len(in.SigIndices))
-	return math.Mul(numSigs, CostPerSignature)
+	return math.Mul64(numSigs, CostPerSignature)
 }
 
 // Verify this input is syntactically valid

@@ -12,7 +12,7 @@ import (
 	"gonum.org/v1/gonum/mathext/prng"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/sampler"
@@ -123,7 +123,7 @@ func (w *windower) Proposers(ctx context.Context, blockHeight, pChainHeight uint
 
 	var totalWeight uint64
 	for _, validator := range validators {
-		totalWeight, err = math.Add(totalWeight, validator.weight)
+		totalWeight, err = math.Add64(totalWeight, validator.weight)
 		if err != nil {
 			return nil, err
 		}

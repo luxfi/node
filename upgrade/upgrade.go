@@ -197,7 +197,7 @@ func GetConfig(networkID uint32) Config {
 	case constants.MainnetID:
 		return Mainnet
 	case constants.TestnetID:
-		return Testnet
+		return Default
 	default:
 		return Default
 	}
