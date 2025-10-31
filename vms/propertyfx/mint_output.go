@@ -4,7 +4,7 @@
 package propertyfx
 
 import (
-	"context"
+	consensusctx "github.com/luxfi/consensus/context"
 
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -18,7 +18,7 @@ type MintOutput struct {
 	secp256k1fx.OutputOwners `serialize:"true"`
 }
 
-// InitializeWithContext implements consensus.ContextInitializable
-func (out *MintOutput) InitializeWithContext(ctx context.Context) error {
-	return out.OutputOwners.InitializeWithContext(ctx)
+// InitCtx implements consensus.ContextInitializable
+func (out *MintOutput) InitCtx(ctx *consensusctx.Context) {
+	out.OutputOwners.InitCtx(ctx)
 }

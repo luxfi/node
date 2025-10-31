@@ -10,6 +10,8 @@
 package fx
 
 import (
+	"context"
+
 	"go.uber.org/mock/gomock"
 	consensusctx "github.com/luxfi/consensus/context"
 	reflect "reflect"
@@ -164,7 +166,8 @@ func (mr *MockOwnerMockRecorder) InitCtx(arg0 any) *gomock.Call {
 
 // InitializeContext mocks base method (delegates to InitCtx for compatibility).
 func (m *MockOwner) InitializeContext(arg0 context.Context) error {
-	m.InitCtx(arg0)
+	// This method exists for interface compatibility but does nothing
+	// The actual context initialization is handled via InitCtx with consensusctx.Context
 	return nil
 }
 

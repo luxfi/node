@@ -4,6 +4,8 @@
 package fx
 
 import (
+	"context"
+
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
