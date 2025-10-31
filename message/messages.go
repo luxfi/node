@@ -150,17 +150,20 @@ func newMsgBuilder(
 		return nil, err
 	}
 
-	registry := metrics.(metric.Registry)
 	mb := &msgBuilder{
 		zstdCompressor: zstdCompressor,
-		count: registry.NewCounterVec(
-			"codec_compressed_count",
-			"number of compressed messages",
+		count: metric.NewCounterVec(
+			metric.CounterOpts{
+				Name: "codec_compressed_count",
+				Help: "number of compressed messages",
+			},
 			metricLabels,
 		),
-		duration: registry.NewGaugeVec(
-			"codec_compressed_duration",
-			"time spent handling compressed messages",
+		duration: metric.NewGaugeVec(
+			metric.GaugeOpts{
+				Name: "codec_compressed_duration",
+				Help: "time spent handling compressed messages",
+			},
 			metricLabels,
 		),
 
