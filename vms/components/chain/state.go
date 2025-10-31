@@ -102,9 +102,10 @@ func NewMeteredState(
 	registerer metric.Registerer,
 	config *Config,
 ) (*State, error) {
+	registry := registerer.(metric.Registry)
 	decidedCache, err := metercacher.New[ids.ID, *BlockWrapper](
 		"decided_cache",
-		registerer,
+		registry,
 		lru.NewSizedCache(config.DecidedCacheSize, cachedBlockSize),
 	)
 	if err != nil {
@@ -112,7 +113,7 @@ func NewMeteredState(
 	}
 	missingCache, err := metercacher.New[ids.ID, struct{}](
 		"missing_cache",
-		registerer,
+		registry,
 		lru.NewCache[ids.ID, struct{}](config.MissingCacheSize),
 	)
 	if err != nil {
@@ -120,7 +121,7 @@ func NewMeteredState(
 	}
 	unverifiedCache, err := metercacher.New[ids.ID, *BlockWrapper](
 		"unverified_cache",
-		registerer,
+		registry,
 		lru.NewSizedCache(config.UnverifiedCacheSize, cachedBlockSize),
 	)
 	if err != nil {
@@ -128,7 +129,7 @@ func NewMeteredState(
 	}
 	bytesToIDCache, err := metercacher.New[string, ids.ID](
 		"bytes_to_id_cache",
-		registerer,
+		registry,
 		lru.NewSizedCache(config.BytesToIDCacheSize, cachedBlockBytesSize),
 	)
 	if err != nil {

@@ -10,7 +10,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
-	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
@@ -70,7 +69,8 @@ func NewMeteredBlockState(db database.Database, namespace string, metrics metric
 		return nil, errors.New("metrics must be a Registry")
 	}
 	blkCache, err := metercacher.New[ids.ID, *blockWrapper](
-		metrics,
+		namespace,
+		registry,
 		lru.NewSizedCache(blockCacheSize, cachedBlockSize),
 	)
 
@@ -121,7 +121,7 @@ func (s *blockState) GetBlock(blkID ids.ID) (block.Block, error) {
 func (s *blockState) PutBlock(blk block.Block) error {
 	blkWrapper := blockWrapper{
 		Block:  blk.Bytes(),
-		Status: choices.Accepted,
+		status: choices.Accepted,
 		block:  blk,
 	}
 
