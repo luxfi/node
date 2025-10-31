@@ -18,12 +18,10 @@ import (
 	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/interfaces"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/core/common"
-
 	"github.com/luxfi/consensus/engine/chain/block"
+	enginecore "github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
 )

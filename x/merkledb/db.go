@@ -12,17 +12,16 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/luxfi/metric"
 	"go.opentelemetry.io/otel/attribute"
+	oteltrace "go.opentelemetry.io/otel/trace"
+
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/maybe"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
-	"github.com/luxfi/trace"
-	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 const (

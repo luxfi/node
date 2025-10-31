@@ -29,10 +29,10 @@ type scheduler struct {
 	log log.Logger
 	// The VM sends a message on this channel when it wants to tell the engine
 	// that the engine should call the VM's BuildBlock method
-	fromVM <-chan core.MessageType
+	fromVM <-chan common.MessageType
 	// The scheduler sends a message on this channel to notify the engine that
 	// it should call its VM's BuildBlock method
-	toEngine chan<- core.MessageType
+	toEngine chan<- common.MessageType
 	// When we receive a message on this channel, it means that we must refrain
 	// from telling the engine to call its VM's BuildBlock method until the
 	// given time
