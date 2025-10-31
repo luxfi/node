@@ -12,7 +12,6 @@ import (
 	"github.com/luxfi/node/version"
 
 	ledger "github.com/luxfi/ledger-lux-go"
-	bip32 "github.com/tyler-smith/go-bip32"
 )
 
 // LedgerAdapter wraps ledger.LedgerLux to implement keychain.Ledger interface

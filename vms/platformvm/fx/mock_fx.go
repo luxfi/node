@@ -10,6 +10,7 @@
 package fx
 
 import (
+	"go.uber.org/mock/gomock"
 	consensusctx "github.com/luxfi/consensus/context"
 	reflect "reflect"
 

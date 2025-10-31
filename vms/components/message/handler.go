@@ -4,7 +4,6 @@
 package message
 
 import (
-	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
