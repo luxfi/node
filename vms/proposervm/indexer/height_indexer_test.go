@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/consensus/protocol/chain"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
@@ -65,7 +65,7 @@ func TestHeightBlockIndexPostFork(t *testing.T) {
 	var (
 		blkNumber = uint64(10)
 		lastBlkID = ids.Empty.Prefix(0) // initially set to a dummyGenesisID
-		proBlks   = make(map[ids.ID]chain.Block)
+		proBlks   = make(map[ids.ID]chainblock.Block)
 	)
 
 	for blkHeight := uint64(1); blkHeight <= blkNumber; blkHeight++ {
@@ -82,7 +82,7 @@ func TestHeightBlockIndexPostFork(t *testing.T) {
 			blockBytes[:],
 		)
 		require.NoError(err)
-		require.NoError(storedState.PutBlock(postForkStatelessBlk, choices.Accepted))
+		require.NoError(storedState.PutBlock(postForkStatelessBlk))
 
 		// ... and create a corresponding test block just for block server
 		postForkBlk := &testBlock{
@@ -101,7 +101,7 @@ func TestHeightBlockIndexPostFork(t *testing.T) {
 		CantGetFullPostForkBlock: true,
 		CantCommit:               true,
 
-		GetFullPostForkBlockF: func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+		GetFullPostForkBlockF: func(_ context.Context, blkID ids.ID) (chainblock.Block, error) {
 			blk, found := proBlks[blkID]
 			if !found {
 				return nil, database.ErrNotFound
@@ -146,7 +146,7 @@ func TestHeightBlockIndexAcrossFork(t *testing.T) {
 		blkNumber  = uint64(10)
 		forkHeight = blkNumber / 2
 		lastBlkID  = ids.Empty.Prefix(0) // initially set to a last pre fork blk
-		proBlks    = make(map[ids.ID]chain.Block)
+		proBlks    = make(map[ids.ID]chainblock.Block)
 	)
 
 	for blkHeight := forkHeight; blkHeight <= blkNumber; blkHeight++ {
@@ -163,7 +163,7 @@ func TestHeightBlockIndexAcrossFork(t *testing.T) {
 			blockBytes[:],
 		)
 		require.NoError(err)
-		require.NoError(storedState.PutBlock(postForkStatelessBlk, choices.Accepted))
+		require.NoError(storedState.PutBlock(postForkStatelessBlk))
 
 		// ... and create a corresponding test block just for block server
 		postForkBlk := &testBlock{
@@ -182,7 +182,7 @@ func TestHeightBlockIndexAcrossFork(t *testing.T) {
 		CantGetFullPostForkBlock: true,
 		CantCommit:               true,
 
-		GetFullPostForkBlockF: func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+		GetFullPostForkBlockF: func(_ context.Context, blkID ids.ID) (chainblock.Block, error) {
 			blk, found := proBlks[blkID]
 			if !found {
 				return nil, database.ErrNotFound
@@ -231,7 +231,7 @@ func TestHeightBlockIndexResumeFromCheckPoint(t *testing.T) {
 		blkNumber  = uint64(10)
 		forkHeight = blkNumber / 2
 		lastBlkID  = ids.Empty.Prefix(0) // initially set to a last pre fork blk
-		proBlks    = make(map[ids.ID]chain.Block)
+		proBlks    = make(map[ids.ID]chainblock.Block)
 	)
 
 	for blkHeight := forkHeight; blkHeight <= blkNumber; blkHeight++ {
@@ -248,7 +248,7 @@ func TestHeightBlockIndexResumeFromCheckPoint(t *testing.T) {
 			blockBytes[:],
 		)
 		require.NoError(err)
-		require.NoError(storedState.PutBlock(postForkStatelessBlk, choices.Accepted))
+		require.NoError(storedState.PutBlock(postForkStatelessBlk))
 
 		// ... and create a corresponding test block just for block server
 		postForkBlk := &testBlock{
@@ -267,7 +267,7 @@ func TestHeightBlockIndexResumeFromCheckPoint(t *testing.T) {
 		CantGetFullPostForkBlock: true,
 		CantCommit:               true,
 
-		GetFullPostForkBlockF: func(_ context.Context, blkID ids.ID) (chain.Block, error) {
+		GetFullPostForkBlockF: func(_ context.Context, blkID ids.ID) (chainblock.Block, error) {
 			blk, found := proBlks[blkID]
 			if !found {
 				return nil, database.ErrNotFound
@@ -287,7 +287,7 @@ func TestHeightBlockIndexResumeFromCheckPoint(t *testing.T) {
 
 	// pick a random block in the chain and checkpoint it;...
 	rndPostForkHeight := rand.Intn(int(blkNumber-forkHeight)) + int(forkHeight) // #nosec G404
-	var checkpointBlk chain.Block
+	var checkpointBlk chainblock.Block
 	for _, blk := range proBlks {
 		if blk.Height() != uint64(rndPostForkHeight) {
 			continue // not the blk we are looking for

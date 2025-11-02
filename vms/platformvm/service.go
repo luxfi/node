@@ -368,32 +368,32 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *ap
 	return nil
 }
 
-// GetSubnetArgs are the arguments to GetSubnet
-type GetSubnetArgs struct {
+// GetNetArgs are the arguments to GetNet
+type GetNetArgs struct {
 	// ID of the net to retrieve information about
 	NetID ids.ID `json:"netID"`
 }
 
-// GetSubnetResponse is the response from calling GetSubnet
-type GetSubnetResponse struct {
+// GetNetResponse is the response from calling GetNet
+type GetNetResponse struct {
 	// whether it is permissioned or not
 	IsPermissioned bool `json:"isPermissioned"`
-	// net auth information for a permissioned subnet
+	// net auth information for a permissioned net
 	ControlKeys []string       `json:"controlKeys"`
 	Threshold   avajson.Uint32 `json:"threshold"`
 	Locktime    avajson.Uint64 `json:"locktime"`
-	// subnet transformation tx ID for an elastic subnet
-	SubnetTransformationTxID ids.ID `json:"subnetTransformationTxID"`
-	// subnet conversion information for an L1
+	// net transformation tx ID for an elastic net
+	NetTransformationTxID ids.ID `json:"netTransformationTxID"`
+	// net conversion information for an L1
 	ConversionID   ids.ID              `json:"conversionID"`
 	ManagerChainID ids.ID              `json:"managerChainID"`
 	ManagerAddress types.JSONByteSlice `json:"managerAddress"`
 }
 
-func (s *Service) GetSubnet(_ *http.Request, args *GetSubnetArgs, response *GetSubnetResponse) error {
+func (s *Service) GetNet(_ *http.Request, args *GetNetArgs, response *GetNetResponse) error {
 	s.vm.log.Debug("API called",
 		"service", "platform",
-		"method", "getSubnet",
+		"method", "getNet",
 		"netID", args.NetID,
 	)
 
@@ -404,13 +404,13 @@ func (s *Service) GetSubnet(_ *http.Request, args *GetSubnetArgs, response *GetS
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	subnetOwner, err := s.vm.state.GetSubnetOwner(args.NetID)
+	netOwner, err := s.vm.state.GetNetOwner(args.NetID)
 	if err != nil {
 		return err
 	}
-	owner, ok := subnetOwner.(*secp256k1fx.OutputOwners)
+	owner, ok := netOwner.(*secp256k1fx.OutputOwners)
 	if !ok {
-		return fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", subnetOwner)
+		return fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", netOwner)
 	}
 	controlAddrs := make([]string, len(owner.Addrs))
 	for i, controlKeyID := range owner.Addrs {
@@ -425,18 +425,18 @@ func (s *Service) GetSubnet(_ *http.Request, args *GetSubnetArgs, response *GetS
 	response.Threshold = avajson.Uint32(owner.Threshold)
 	response.Locktime = avajson.Uint64(owner.Locktime)
 
-	switch subnetTransformationTx, err := s.vm.state.GetSubnetTransformation(args.NetID); err {
+	switch netTransformationTx, err := s.vm.state.GetNetTransformation(args.NetID); err {
 	case nil:
 		response.IsPermissioned = false
-		response.SubnetTransformationTxID = subnetTransformationTx.ID()
+		response.NetTransformationTxID = netTransformationTx.ID()
 	case database.ErrNotFound:
 		response.IsPermissioned = true
-		response.SubnetTransformationTxID = ids.Empty
+		response.NetTransformationTxID = ids.Empty
 	default:
 		return err
 	}
 
-	switch c, err := s.vm.state.GetSubnetToL1Conversion(args.SubnetID); err {
+	switch c, err := s.vm.state.GetNetToL1Conversion(args.NetID); err {
 	case nil:
 		response.IsPermissioned = false
 		response.ConversionID = c.ConversionID
@@ -455,7 +455,7 @@ func (s *Service) GetSubnet(_ *http.Request, args *GetSubnetArgs, response *GetS
 
 // APINet is a representation of a net used in API calls
 type APINet struct {
-	// ID of the subnet
+	// ID of the net
 	ID ids.ID `json:"id"`
 
 	// Each element of [ControlKeys] the address of a public key.
@@ -465,26 +465,26 @@ type APINet struct {
 	Threshold   avajson.Uint32 `json:"threshold"`
 }
 
-// GetSubnetsArgs are the arguments to GetSubnets
-type GetSubnetsArgs struct {
-	// IDs of the subnets to retrieve information about
-	// If omitted, gets all subnets
+// GetNetsArgs are the arguments to GetNets
+type GetNetsArgs struct {
+	// IDs of the nets to retrieve information about
+	// If omitted, gets all nets
 	IDs []ids.ID `json:"ids"`
 }
 
-// GetSubnetsResponse is the response from calling GetSubnets
-type GetSubnetsResponse struct {
+// GetNetsResponse is the response from calling GetNets
+type GetNetsResponse struct {
 	// Each element is a net that exists
-	// Null if there are no subnets other than the primary network
-	Subnets []APINet `json:"subnets"`
+	// Null if there are no nets other than the primary network
+	Nets []APINet `json:"nets"`
 }
 
-// GetSubnets returns the subnets whose ID are in [args.IDs]
+// GetNets returns the nets whose ID are in [args.IDs]
 // The response will include the primary network
-func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *GetSubnetsResponse) error {
+func (s *Service) GetNets(_ *http.Request, args *GetNetsArgs, response *GetNetsResponse) error {
 	s.vm.log.Debug("deprecated API called",
 		"service", "platform",
-		"method", "getSubnets",
+		"method", "getNets",
 	)
 
 	s.vm.lock.Lock()
@@ -492,15 +492,15 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 
 	getAll := len(args.IDs) == 0
 	if getAll {
-		netIDs, err := s.vm.state.GetNetIDs() // all subnets
+		netIDs, err := s.vm.state.GetNetIDs() // all nets
 		if err != nil {
-			return fmt.Errorf("error getting subnets from database: %w", err)
+			return fmt.Errorf("error getting nets from database: %w", err)
 		}
 
-		response.Subnets = make([]APINet, len(netIDs)+1)
+		response.Nets = make([]APINet, len(netIDs)+1)
 		for i, netID := range netIDs {
-			if _, err := s.vm.state.GetSubnetTransformation(netID); err == nil {
-				response.Subnets[i] = APINet{
+			if _, err := s.vm.state.GetNetTransformation(netID); err == nil {
+				response.Nets[i] = APINet{
 					ID:          netID,
 					ControlKeys: []string{},
 					Threshold:   avajson.Uint32(0),
@@ -508,14 +508,14 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 				continue
 			}
 
-			subnetOwner, err := s.vm.state.GetSubnetOwner(netID)
+			netOwner, err := s.vm.state.GetNetOwner(netID)
 			if err != nil {
 				return err
 			}
 
-			owner, ok := subnetOwner.(*secp256k1fx.OutputOwners)
+			owner, ok := netOwner.(*secp256k1fx.OutputOwners)
 			if !ok {
-				return fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", subnetOwner)
+				return fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", netOwner)
 			}
 
 			controlAddrs := make([]string, len(owner.Addrs))
@@ -526,14 +526,14 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 				}
 				controlAddrs[i] = addr
 			}
-			response.Subnets[i] = APINet{
+			response.Nets[i] = APINet{
 				ID:          netID,
 				ControlKeys: controlAddrs,
 				Threshold:   avajson.Uint32(owner.Threshold),
 			}
 		}
 		// Include primary network
-		response.Subnets[len(netIDs)] = APINet{
+		response.Nets[len(netIDs)] = APINet{
 			ID:          constants.PrimaryNetworkID,
 			ControlKeys: []string{},
 			Threshold:   avajson.Uint32(0),
@@ -541,15 +541,15 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 		return nil
 	}
 
-	subnetSet := set.NewSet[ids.ID](len(args.IDs))
+	netSet := set.NewSet[ids.ID](len(args.IDs))
 	for _, netID := range args.IDs {
-		if subnetSet.Contains(netID) {
+		if netSet.Contains(netID) {
 			continue
 		}
-		subnetSet.Add(netID)
+		netSet.Add(netID)
 
 		if netID == constants.PrimaryNetworkID {
-			response.Subnets = append(response.Subnets,
+			response.Nets = append(response.Nets,
 				APINet{
 					ID:          constants.PrimaryNetworkID,
 					ControlKeys: []string{},
@@ -559,8 +559,8 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 			continue
 		}
 
-		if _, err := s.vm.state.GetSubnetTransformation(netID); err == nil {
-			response.Subnets = append(response.Subnets, APINet{
+		if _, err := s.vm.state.GetNetTransformation(netID); err == nil {
+			response.Nets = append(response.Nets, APINet{
 				ID:          netID,
 				ControlKeys: []string{},
 				Threshold:   avajson.Uint32(0),
@@ -568,7 +568,7 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 			continue
 		}
 
-		subnetOwner, err := s.vm.state.GetSubnetOwner(netID)
+		netOwner, err := s.vm.state.GetNetOwner(netID)
 		if err == database.ErrNotFound {
 			continue
 		}
@@ -576,9 +576,9 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 			return err
 		}
 
-		owner, ok := subnetOwner.(*secp256k1fx.OutputOwners)
+		owner, ok := netOwner.(*secp256k1fx.OutputOwners)
 		if !ok {
-			return fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", subnetOwner)
+			return fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", netOwner)
 		}
 
 		controlAddrs := make([]string, len(owner.Addrs))
@@ -590,7 +590,7 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 			controlAddrs[i] = addr
 		}
 
-		response.Subnets = append(response.Subnets, APINet{
+		response.Nets = append(response.Nets, APINet{
 			ID:          netID,
 			ControlKeys: controlAddrs,
 			Threshold:   avajson.Uint32(owner.Threshold),
@@ -610,7 +610,7 @@ type GetStakingAssetIDResponse struct {
 }
 
 // GetStakingAssetID returns the assetID of the token used to stake on the
-// provided subnet
+// provided net
 func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs, response *GetStakingAssetIDResponse) error {
 	s.vm.log.Debug("API called",
 		"service", "platform",
@@ -625,7 +625,7 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	transformSubnetIntf, err := s.vm.state.GetSubnetTransformation(args.NetID)
+	transformNetIntf, err := s.vm.state.GetNetTransformation(args.NetID)
 	if err != nil {
 		return fmt.Errorf(
 			"failed fetching net transformation for %s: %w",
@@ -633,15 +633,15 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 			err,
 		)
 	}
-	transformSubnet, ok := transformSubnetIntf.Unsigned.(*txs.TransformNetTx)
+	transformNet, ok := transformNetIntf.Unsigned.(*txs.TransformNetTx)
 	if !ok {
 		return fmt.Errorf(
 			"unexpected net transformation tx type fetched %T",
-			transformSubnetIntf.Unsigned,
+			transformNetIntf.Unsigned,
 		)
 	}
 
-	response.AssetID = transformSubnet.AssetID
+	response.AssetID = transformNet.AssetID
 	return nil
 }
 
@@ -720,27 +720,27 @@ func (s *Service) GetCurrentValidators(request *http.Request, args *GetCurrentVa
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	// Check if subnet is L1
-	_, err := s.vm.state.GetSubnetToL1Conversion(args.SubnetID)
+	// Check if net is L1
+	_, err := s.vm.state.GetNetToL1Conversion(args.NetID)
 	if errors.Is(err, database.ErrNotFound) {
-		// Subnet is not L1, get validators for the subnet
-		reply.Validators, err = s.getPrimaryOrSubnetValidators(
-			args.SubnetID,
+		// Net is not L1, get validators for the net
+		reply.Validators, err = s.getPrimaryOrNetValidators(
+			args.NetID,
 			nodeIDs,
 		)
 		if err != nil {
-			return fmt.Errorf("failed to get primary or subnet validators: %w", err)
+			return fmt.Errorf("failed to get primary or net validators: %w", err)
 		}
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("failed to get subnet to L1 conversion: %w", err)
+		return fmt.Errorf("failed to get net to L1 conversion: %w", err)
 	}
 
-	// Subnet is L1, get validators for L1
+	// Net is L1, get validators for L1
 	reply.Validators, err = s.getL1Validators(
 		request.Context(),
-		args.SubnetID,
+		args.NetID,
 		nodeIDs,
 	)
 	if err != nil {
@@ -751,11 +751,11 @@ func (s *Service) GetCurrentValidators(request *http.Request, args *GetCurrentVa
 
 func (s *Service) getL1Validators(
 	ctx context.Context,
-	subnetID ids.ID,
+	netID ids.ID,
 	nodeIDs set.Set[ids.NodeID],
 ) ([]any, error) {
 	validators := []any{}
-	baseStakers, l1Validators, _, err := s.vm.state.GetCurrentValidators(ctx, subnetID)
+	baseStakers, l1Validators, _, err := s.vm.state.GetCurrentValidators(ctx, netID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current validators: %w", err)
 	}
@@ -787,7 +787,7 @@ func (s *Service) getL1Validators(
 	return validators, nil
 }
 
-func (s *Service) getPrimaryOrSubnetValidators(subnetID ids.ID, nodeIDs set.Set[ids.NodeID]) ([]any, error) {
+func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.NodeID]) ([]any, error) {
 	numNodeIDs := nodeIDs.Len()
 
 	targetStakers := make([]*state.Staker, 0, numNodeIDs)
@@ -804,7 +804,7 @@ func (s *Service) getPrimaryOrSubnetValidators(subnetID ids.ID, nodeIDs set.Set[
 		}
 		for currentStakerIterator.Next() {
 			staker := currentStakerIterator.Value()
-			if subnetID != staker.SubnetID {
+			if netID != staker.NetID {
 				continue
 			}
 			targetStakers = append(targetStakers, staker)
@@ -812,7 +812,7 @@ func (s *Service) getPrimaryOrSubnetValidators(subnetID ids.ID, nodeIDs set.Set[
 		currentStakerIterator.Release()
 	} else {
 		for nodeID := range nodeIDs {
-			staker, err := s.vm.state.GetCurrentValidator(subnetID, nodeID)
+			staker, err := s.vm.state.GetCurrentValidator(netID, nodeID)
 			switch err {
 			case nil:
 			case database.ErrNotFound:
@@ -824,7 +824,7 @@ func (s *Service) getPrimaryOrSubnetValidators(subnetID ids.ID, nodeIDs set.Set[
 			targetStakers = append(targetStakers, staker)
 
 			// TODO: avoid iterating over delegators when numNodeIDs > 1.
-			delegatorsIt, err := s.vm.state.GetCurrentDelegatorIterator(subnetID, nodeID)
+			delegatorsIt, err := s.vm.state.GetCurrentDelegatorIterator(netID, nodeID)
 			if err != nil {
 				return nil, err
 			}
@@ -847,7 +847,7 @@ func (s *Service) getPrimaryOrSubnetValidators(subnetID ids.ID, nodeIDs set.Set[
 		jsonDelegateeReward := avajson.Uint64(delegateeReward)
 
 		switch currentStaker.Priority {
-		case txs.PrimaryNetworkValidatorCurrentPriority, txs.SubnetPermissionlessValidatorCurrentPriority:
+		case txs.PrimaryNetworkValidatorCurrentPriority, txs.NetPermissionlessValidatorCurrentPriority:
 			attr, err := s.loadStakerTxAttributes(currentStaker.TxID)
 			if err != nil {
 				return nil, err
@@ -859,7 +859,7 @@ func (s *Service) getPrimaryOrSubnetValidators(subnetID ids.ID, nodeIDs set.Set[
 				uptime    *avajson.Float32
 				connected *bool
 			)
-			if subnetID == constants.PrimaryNetworkID {
+			if netID == constants.PrimaryNetworkID {
 				rawUptime, err := s.vm.uptimeManager.CalculateUptimePercentFrom(currentStaker.NodeID, currentStaker.StartTime)
 				if err != nil {
 					return nil, err
@@ -907,7 +907,7 @@ func (s *Service) getPrimaryOrSubnetValidators(subnetID ids.ID, nodeIDs set.Set[
 			}
 			validators = append(validators, vdr)
 
-		case txs.PrimaryNetworkDelegatorCurrentPriority, txs.SubnetPermissionlessDelegatorCurrentPriority:
+		case txs.PrimaryNetworkDelegatorCurrentPriority, txs.NetPermissionlessDelegatorCurrentPriority:
 			var rewardOwner *platformapi.Owner
 			// If we are handling multiple nodeIDs, we don't return the
 			// delegator information.
@@ -932,7 +932,7 @@ func (s *Service) getPrimaryOrSubnetValidators(subnetID ids.ID, nodeIDs set.Set[
 			}
 			vdrToDelegators[delegator.NodeID] = append(vdrToDelegators[delegator.NodeID], delegator)
 
-		case txs.SubnetPermissionedValidatorCurrentPriority:
+		case txs.NetPermissionedValidatorCurrentPriority:
 			validators = append(validators, apiStaker)
 
 		default:
@@ -977,7 +977,7 @@ type GetL1ValidatorArgs struct {
 
 type GetL1ValidatorReply struct {
 	platformapi.APIL1Validator
-	SubnetID ids.ID `json:"subnetID"`
+	NetID ids.ID `json:"netID"`
 	// Height is the height of the last accepted block
 	Height avajson.Uint64 `json:"height"`
 }
@@ -1009,7 +1009,7 @@ func (s *Service) GetL1Validator(r *http.Request, args *GetL1ValidatorArgs, repl
 	}
 
 	reply.APIL1Validator = apiVdr
-	reply.SubnetID = l1Validator.SubnetID
+	reply.NetID = l1Validator.NetID
 	reply.Height = avajson.Uint64(height)
 	return nil
 }
@@ -1296,7 +1296,7 @@ func (s *Service) Validates(_ *http.Request, args *ValidatesArgs, response *Vali
 	defer s.vm.lock.Unlock()
 
 	if args.NetID != constants.PrimaryNetworkID {
-		subnetTx, _, err := s.vm.state.GetTx(args.NetID)
+		netTx, _, err := s.vm.state.GetTx(args.NetID)
 		if err != nil {
 			return fmt.Errorf(
 				"problem retrieving net %q: %w",
@@ -1304,9 +1304,9 @@ func (s *Service) Validates(_ *http.Request, args *ValidatesArgs, response *Vali
 				err,
 			)
 		}
-		_, ok := subnetTx.Unsigned.(*txs.CreateNetTx)
+		_, ok := netTx.Unsigned.(*txs.CreateNetTx)
 		if !ok {
-			return fmt.Errorf("%q is not a subnet", args.NetID)
+			return fmt.Errorf("%q is not a net", args.NetID)
 		}
 	}
 
@@ -1356,7 +1356,7 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 
 	netIDs, err := s.vm.state.GetNetIDs()
 	if err != nil {
-		return fmt.Errorf("couldn't retrieve subnets: %w", err)
+		return fmt.Errorf("couldn't retrieve nets: %w", err)
 	}
 
 	response.Blockchains = []APIBlockchain{}
@@ -1387,7 +1387,7 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 
 	chains, err := s.vm.state.GetChains(constants.PrimaryNetworkID)
 	if err != nil {
-		return fmt.Errorf("couldn't retrieve subnets: %w", err)
+		return fmt.Errorf("couldn't retrieve nets: %w", err)
 	}
 	for _, chainTx := range chains {
 		chainID := chainTx.ID()
@@ -1550,7 +1550,7 @@ type GetStakeReply struct {
 //
 // This method assumes that each stake output has only owner
 // This method assumes only LUX can be staked
-// This method only concerns itself with the Primary Network, not subnets
+// This method only concerns itself with the Primary Network, not nets
 // in a data structure rather than re-calculating it by iterating over stakers
 func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetStakeReply) error {
 	s.vm.log.Debug("deprecated API called",
@@ -1663,7 +1663,7 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	transformSubnetIntf, err := s.vm.state.GetSubnetTransformation(args.NetID)
+	transformNetIntf, err := s.vm.state.GetNetTransformation(args.NetID)
 	if err != nil {
 		return fmt.Errorf(
 			"failed fetching net transformation for %s: %w",
@@ -1671,16 +1671,16 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 			err,
 		)
 	}
-	transformSubnet, ok := transformSubnetIntf.Unsigned.(*txs.TransformNetTx)
+	transformNet, ok := transformNetIntf.Unsigned.(*txs.TransformNetTx)
 	if !ok {
 		return fmt.Errorf(
 			"unexpected net transformation tx type fetched %T",
-			transformSubnetIntf.Unsigned,
+			transformNetIntf.Unsigned,
 		)
 	}
 
-	reply.MinValidatorStake = avajson.Uint64(transformSubnet.MinValidatorStake)
-	reply.MinDelegatorStake = avajson.Uint64(transformSubnet.MinDelegatorStake)
+	reply.MinValidatorStake = avajson.Uint64(transformNet.MinValidatorStake)
+	reply.MinDelegatorStake = avajson.Uint64(transformNet.MinDelegatorStake)
 
 	return nil
 }
@@ -1784,7 +1784,7 @@ func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestamp
 // GetValidatorsAtArgs is the response from GetValidatorsAt
 type GetValidatorsAtArgs struct {
 	Height   platformapi.Height `json:"height"`
-	SubnetID ids.ID             `json:"subnetID"`
+	NetID ids.ID             `json:"netID"`
 }
 
 type jsonGetValidatorOutput struct {
@@ -1848,7 +1848,7 @@ type GetValidatorsAtReply struct {
 	Validators map[ids.NodeID]*validators.GetValidatorOutput
 }
 
-// GetValidatorsAt returns the weights of the validator set of a provided subnet
+// GetValidatorsAt returns the weights of the validator set of a provided net
 // at the specified height.
 func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
 	s.vm.ctx.Log.Debug("API called",
@@ -1856,7 +1856,7 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 		zap.String("method", "getValidatorsAt"),
 		zap.Uint64("height", uint64(args.Height)),
 		zap.Bool("isProposed", args.Height.IsProposed()),
-		zap.Stringer("subnetID", args.SubnetID),
+		zap.Stringer("netID", args.NetID),
 	)
 
 	s.vm.lock.Lock()
@@ -1872,7 +1872,7 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 		}
 	}
 
-	reply.Validators, err = s.vm.GetValidatorSet(ctx, height, args.SubnetID)
+	reply.Validators, err = s.vm.GetValidatorSet(ctx, height, args.NetID)
 	if err != nil {
 		return fmt.Errorf("failed to get validator set: %w", err)
 	}

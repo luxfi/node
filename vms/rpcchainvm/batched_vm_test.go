@@ -9,13 +9,17 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/node/database/memdb"
+	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/consensus/engine/chain/block/blocktest"
-	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/node/snow/consensus/snowman"
+	"github.com/luxfi/node/snow/consensus/snowman/snowmanmock"
+	"github.com/luxfi/node/snow/engine/snowman/block"
+	"github.com/luxfi/node/snow/engine/snowman/block/blockmock"
+	"github.com/luxfi/node/snow/snowtest"
+	"github.com/luxfi/node/vms/components/chain"
+	"github.com/luxfi/node/vms/components/chain/blocktest"
 )
 
 var (
@@ -35,17 +39,17 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 
 	// create mock
 	ctrl := gomock.NewController(t)
-	vm := blockmock.NewMockChainVM(ctrl)
+	vm := blockmock.NewChainVM(ctrl)
 
 	if loadExpectations {
-		blk1 := blockmock.NewMockBlock(ctrl)
-		blk2 := blockmock.NewMockBlock(ctrl)
+		blk1 := snowmanmock.NewBlock(ctrl)
+		blk2 := snowmanmock.NewBlock(ctrl)
 		gomock.InOrder(
 			// Initialize
 			vm.EXPECT().Initialize(
 				gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 				gomock.Any(), gomock.Any(), gomock.Any(),
-				gomock.Any(), gomock.Any(),
+				gomock.Any(),
 			).Return(nil).Times(1),
 			vm.EXPECT().LastAccepted(gomock.Any()).Return(preSummaryBlk.ID(), nil).Times(1),
 			vm.EXPECT().GetBlock(gomock.Any(), gomock.Any()).Return(preSummaryBlk, nil).Times(1),
@@ -53,14 +57,14 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 			// Parse Block 1
 			vm.EXPECT().ParseBlock(gomock.Any(), blkBytes1).Return(blk1, nil).Times(1),
 			blk1.EXPECT().ID().Return(blkID1).Times(1),
-			blk1.EXPECT().ParentID().Return(blkID0).Times(1),
+			blk1.EXPECT().Parent().Return(blkID0).Times(1),
 			blk1.EXPECT().Height().Return(uint64(1)).Times(1),
 			blk1.EXPECT().Timestamp().Return(time1).Times(1),
 
 			// Parse Block 2
 			vm.EXPECT().ParseBlock(gomock.Any(), blkBytes2).Return(blk2, nil).Times(1),
 			blk2.EXPECT().ID().Return(blkID2).Times(1),
-			blk2.EXPECT().ParentID().Return(blkID1).Times(1),
+			blk2.EXPECT().Parent().Return(blkID1).Times(1),
 			blk2.EXPECT().Height().Return(uint64(2)).Times(1),
 			blk2.EXPECT().Timestamp().Return(time2).Times(1),
 		)
@@ -77,13 +81,13 @@ func TestBatchedParseBlockCaching(t *testing.T) {
 	vm := buildClientHelper(require, testKey)
 	defer vm.runtime.Stop(context.Background())
 
-	ctx := &Context{
+	chainCtx := &Context{
 		NetworkID: 1,
 		ChainID:   ids.ID{'C', 'C', 'h', 'a', 'i', 'n'},
 		NodeID:    ids.GenerateTestNodeID(),
 	}
 
-	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, nil, nil))
+	require.NoError(vm.Initialize(context.Background(), chainCtx, memdb.New(), nil, nil, nil, nil, nil, nil))
 
 	// Call should parse the first block
 	blk, err := vm.ParseBlock(context.Background(), blkBytes1)

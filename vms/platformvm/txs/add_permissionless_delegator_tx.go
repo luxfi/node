@@ -65,14 +65,14 @@ func (tx *AddPermissionlessDelegatorTx) PendingPriority() Priority {
 	if tx.Net == constants.PrimaryNetworkID {
 		return PrimaryNetworkDelegatorBanffPendingPriority
 	}
-	return SubnetPermissionlessDelegatorPendingPriority
+	return NetPermissionlessDelegatorPendingPriority
 }
 
 func (tx *AddPermissionlessDelegatorTx) CurrentPriority() Priority {
 	if tx.Net == constants.PrimaryNetworkID {
 		return PrimaryNetworkDelegatorCurrentPriority
 	}
-	return SubnetPermissionlessDelegatorCurrentPriority
+	return NetPermissionlessDelegatorCurrentPriority
 }
 
 func (tx *AddPermissionlessDelegatorTx) Stake() []*lux.TransferableOutput {

@@ -21,6 +21,7 @@ import (
 
 var (
 	netID         = ids.GenerateTestID()
+	subnetID      = ids.GenerateTestID()
 	randomChainID = ids.GenerateTestID()
 	fixedChainID  = ids.ID{0, 2}
 )

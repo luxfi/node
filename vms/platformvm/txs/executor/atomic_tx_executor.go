@@ -108,7 +108,7 @@ func (*atomicTxExecutor) BaseTx(*txs.BaseTx) error {
 	return ErrWrongTxType
 }
 
-func (*atomicTxExecutor) ConvertSubnetToL1Tx(*txs.ConvertSubnetToL1Tx) error {
+func (*atomicTxExecutor) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
 	return ErrWrongTxType
 }
 

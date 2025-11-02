@@ -7,14 +7,14 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/coreth/ethclient"
+	"github.com/luxfi/geth/ethclient"
 	"github.com/luxfi/geth/core/types"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/crypto/secp256k1"
+	"github.com/luxfi/node/utils/crypto/secp256k1"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/utils/units"

@@ -93,14 +93,14 @@ func (tx *AddPermissionlessValidatorTx) PendingPriority() Priority {
 	if tx.Net == constants.PrimaryNetworkID {
 		return PrimaryNetworkValidatorPendingPriority
 	}
-	return SubnetPermissionlessValidatorPendingPriority
+	return NetPermissionlessValidatorPendingPriority
 }
 
 func (tx *AddPermissionlessValidatorTx) CurrentPriority() Priority {
 	if tx.Net == constants.PrimaryNetworkID {
 		return PrimaryNetworkValidatorCurrentPriority
 	}
-	return SubnetPermissionlessValidatorCurrentPriority
+	return NetPermissionlessValidatorCurrentPriority
 }
 
 func (tx *AddPermissionlessValidatorTx) Stake() []*lux.TransferableOutput {

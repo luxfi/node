@@ -260,7 +260,7 @@ func (b *outMsgBuilder) Handshake(
 					IpPort:         uint32(ip.Port()),
 					IpSigningTime:  ipSigningTime,
 					IpNodeIdSig:    ipNodeIDSig,
-					TrackedSubnets: subsubsubnetIDBytes,
+					TrackedNets: subsubsubnetIDBytes,
 					Client: &p2p.Client{
 						Name:  client,
 						Major: major,

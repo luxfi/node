@@ -1849,7 +1849,7 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 				env := newValidRemoveSubnetValidatorTxVerifyEnv(t, ctrl)
 
 				staker := *env.staker
-				staker.Priority = txs.SubnetPermissionlessValidatorCurrentPriority
+				staker.Priority = txs.NetPermissionlessValidatorCurrentPriority
 
 				// Set dependency expectations.
 				env.state.EXPECT().GetTimestamp().Return(env.latestForkTime).AnyTimes()
@@ -2365,7 +2365,7 @@ func TestStandardExecutorTransformNetTx(t *testing.T) {
 	}
 }
 
-func TestStandardExecutorConvertSubnetToL1Tx(t *testing.T) {
+func TestStandardExecutorConvertNetToL1Tx(t *testing.T) {
 	var (
 		fx = &secp256k1fx.Fx{}
 		vm = &secp256k1fx.TestVM{
@@ -2552,7 +2552,7 @@ func TestStandardExecutorConvertSubnetToL1Tx(t *testing.T) {
 			pop, err := signer.NewProofOfPossession(sk)
 			require.NoError(err)
 
-			// Create the ConvertSubnetToL1Tx
+			// Create the ConvertNetToL1Tx
 			const (
 				weight  = 1
 				balance = 1
@@ -2579,7 +2579,7 @@ func TestStandardExecutorConvertSubnetToL1Tx(t *testing.T) {
 					DeactivationOwner:     message.PChainOwner{},
 				}
 			)
-			convertSubnetToL1Tx, err := wallet.IssueConvertSubnetToL1Tx(
+			convertSubnetToL1Tx, err := wallet.IssueConvertNetToL1Tx(
 				subnetID,
 				chainID,
 				address,
@@ -2772,7 +2772,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 			DeactivationOwner:     message.PChainOwner{},
 		}
 	)
-	convertSubnetToL1Tx, err := wallet.IssueConvertSubnetToL1Tx(
+	convertSubnetToL1Tx, err := wallet.IssueConvertNetToL1Tx(
 		subnetID,
 		chainID,
 		address,
@@ -3305,7 +3305,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 		validationID = subnetID.Append(0)
 	)
 
-	convertSubnetToL1Tx, err := wallet.IssueConvertSubnetToL1Tx(
+	convertSubnetToL1Tx, err := wallet.IssueConvertNetToL1Tx(
 		subnetID,
 		chainID,
 		address,
@@ -3804,7 +3804,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 		validationID = subnetID.Append(0)
 	)
 
-	convertSubnetToL1Tx, err := wallet.IssueConvertSubnetToL1Tx(
+	convertSubnetToL1Tx, err := wallet.IssueConvertNetToL1Tx(
 		subnetID,
 		chainID,
 		address,
@@ -4098,7 +4098,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 		validationID = subnetID.Append(0)
 	)
 
-	convertSubnetToL1Tx, err := wallet.IssueConvertSubnetToL1Tx(
+	convertSubnetToL1Tx, err := wallet.IssueConvertNetToL1Tx(
 		subnetID,
 		chainID,
 		address,

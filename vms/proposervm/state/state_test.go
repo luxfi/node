@@ -10,6 +10,7 @@ import (
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/metric"
 )
 
 func TestState(t *testing.T) {
@@ -28,7 +29,7 @@ func TestMeteredState(t *testing.T) {
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
-	s, err := NewMetered(vdb, "", metric.NewNoOp().Registry())
+	s, err := NewMetered(vdb, "", metric.NewNoOpRegistry())
 	a.NoError(err)
 
 	testBlockState(a, s)

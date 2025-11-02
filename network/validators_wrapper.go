@@ -38,7 +38,7 @@ func (v *validatorsWrapper) GetValidator(netID ids.ID, nodeID ids.NodeID) (valid
 	return &validatorAdapter{output: output}, true
 }
 
-// GetValidatorIDs returns all validator IDs for a subnet
+// GetValidatorIDs returns all validator IDs for a net
 func (v *validatorsWrapper) GetValidatorIDs(netID ids.ID) []ids.NodeID {
 	validatorSet, err := v.manager.GetValidators(netID)
 	if err != nil {

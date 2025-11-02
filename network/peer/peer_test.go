@@ -305,8 +305,8 @@ func TestTrackedNets(t *testing.T) {
 	rawPeer0 := newRawTestPeer(t, newConfig(t))
 	rawPeer1 := newRawTestPeer(t, newConfig(t))
 
-	makeNetIDs := func(numSubnets int) []ids.ID {
-		netIDs := make([]ids.ID, numSubnets)
+	makeNetIDs := func(numNets int) []ids.ID {
+		netIDs := make([]ids.ID, numNets)
 		for i := range netIDs {
 			netIDs[i] = ids.GenerateTestID()
 		}
@@ -324,17 +324,17 @@ func TestTrackedNets(t *testing.T) {
 			shouldDisconnect: false,
 		},
 		{
-			name:             "single subnet",
+			name:             "single net",
 			trackedNets:   makeNetIDs(1),
 			shouldDisconnect: false,
 		},
 		{
-			name:             "max subnets",
+			name:             "max nets",
 			trackedNets:   makeNetIDs(maxNumTrackedNets),
 			shouldDisconnect: false,
 		},
 		{
-			name:             "too many subnets",
+			name:             "too many nets",
 			trackedNets:   makeNetIDs(maxNumTrackedNets + 1),
 			shouldDisconnect: true,
 		},

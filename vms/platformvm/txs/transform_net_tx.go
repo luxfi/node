@@ -4,10 +4,11 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
-
+	"context"
 	"errors"
 	"fmt"
+
+	consensusctx "github.com/luxfi/consensus/context"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
@@ -17,6 +18,8 @@ import (
 
 var (
 	_ UnsignedTx = (*TransformNetTx)(nil)
+
+	luxAssetID = ids.Empty // LUX asset ID placeholder
 
 	errCantTransformPrimaryNetwork       = errors.New("cannot transform primary network")
 	errEmptyAssetID                      = errors.New("empty asset ID is not valid")
@@ -37,7 +40,7 @@ var (
 	errUptimeRequirementTooLarge         = fmt.Errorf("uptime requirement must be less than or equal to %d", reward.PercentDenominator)
 )
 
-// TransformNetTx is an unsigned transformSubnetTx
+// TransformNetTx is an unsigned transformNetTx
 type TransformNetTx struct {
 	// Metadata, inputs and outputs
 	BaseTx `serialize:"true"`
@@ -45,7 +48,7 @@ type TransformNetTx struct {
 	// Restrictions:
 	// - Must not be the Primary Network ID
 	Net ids.ID `serialize:"true" json:"netID"`
-	// Asset to use when staking on the Subnet
+	// Asset to use when staking on the Net
 	// Restrictions:
 	// - Must not be the Empty ID
 	// - Must not be the LUX ID
@@ -110,10 +113,10 @@ type TransformNetTx struct {
 	// - Must be <= [reward.PercentDenominator]
 	UptimeRequirement uint32 `serialize:"true" json:"uptimeRequirement"`
 	// Authorizes this transformation
-	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
+	NetAuth verify.Verifiable `serialize:"true" json:"netAuthorization"`
 }
 
-func (tx *TransformSubnetTx) SyntacticVerify(ctx *consensusctx.Context) error {
+func (tx *TransformNetTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -158,7 +161,7 @@ func (tx *TransformSubnetTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
 		return err
 	}
-	if err := tx.SubnetAuth.Verify(); err != nil {
+	if err := tx.NetAuth.Verify(); err != nil {
 		return err
 	}
 

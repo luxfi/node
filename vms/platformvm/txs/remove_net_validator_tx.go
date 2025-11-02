@@ -21,18 +21,18 @@ var (
 	ErrRemovePrimaryNetworkValidator = errors.New("can't remove primary network validator with RemoveNetValidatorTx")
 )
 
-// Removes a validator from a subnet.
+// Removes a validator from a net.
 type RemoveNetValidatorTx struct {
 	BaseTx `serialize:"true"`
-	// The node to remove from the subnet.
+	// The node to remove from the net.
 	NodeID ids.NodeID `serialize:"true" json:"nodeID"`
 	// The net to remove the node from.
 	Net ids.ID `serialize:"true" json:"netID"`
-	// Proves that the issuer has the right to remove the node from the subnet.
-	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
+	// Proves that the issuer has the right to remove the node from the net.
+	NetAuth verify.Verifiable `serialize:"true" json:"netAuthorization"`
 }
 
-func (tx // *RemoveSubnetValidatorTx) SyntacticVerify(ctx *consensusctx.Context) error {
+func (tx *RemoveNetValidatorTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -46,7 +46,7 @@ func (tx // *RemoveSubnetValidatorTx) SyntacticVerify(ctx *consensusctx.Context)
 	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
 		return err
 	}
-	if err := tx.SubnetAuth.Verify(); err != nil {
+	if err := tx.NetAuth.Verify(); err != nil {
 		return err
 	}
 

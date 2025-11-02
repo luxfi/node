@@ -19,44 +19,44 @@ import (
 	"github.com/luxfi/node/vms/types"
 )
 
-const MaxSubnetAddressLength = 4096
+const MaxNetAddressLength = 4096
 
 var (
-	_ UnsignedTx                                  = (*ConvertSubnetToL1Tx)(nil)
-	_ utils.Sortable[*ConvertSubnetToL1Validator] = (*ConvertSubnetToL1Validator)(nil)
+	_ UnsignedTx                             = (*ConvertNetToL1Tx)(nil)
+	_ utils.Sortable[*ConvertNetToL1Validator] = (*ConvertNetToL1Validator)(nil)
 
-	ErrConvertPermissionlessSubnet         = errors.New("cannot convert a permissionless subnet")
+	ErrConvertPermissionlessNet            = errors.New("cannot convert a permissionless net")
 	ErrAddressTooLong                      = errors.New("address is too long")
 	ErrConvertMustIncludeValidators        = errors.New("conversion must include at least one validator")
 	ErrConvertValidatorsNotSortedAndUnique = errors.New("conversion validators must be sorted and unique")
 	ErrZeroWeight                          = errors.New("validator weight must be non-zero")
 )
 
-type ConvertSubnetToL1Tx struct {
+type ConvertNetToL1Tx struct {
 	// Metadata, inputs and outputs
 	BaseTx `serialize:"true"`
-	// ID of the Subnet to transform
-	Subnet ids.ID `serialize:"true" json:"subnetID"`
-	// Chain where the Subnet manager lives
+	// ID of the Net to transform
+	Net ids.ID `serialize:"true" json:"netID"`
+	// Chain where the Net manager lives
 	ChainID ids.ID `serialize:"true" json:"chainID"`
-	// Address of the Subnet manager
+	// Address of the Net manager
 	Address types.JSONByteSlice `serialize:"true" json:"address"`
-	// Initial pay-as-you-go validators for the Subnet
-	Validators []*ConvertSubnetToL1Validator `serialize:"true" json:"validators"`
+	// Initial pay-as-you-go validators for the Net
+	Validators []*ConvertNetToL1Validator `serialize:"true" json:"validators"`
 	// Authorizes this conversion
-	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
+	NetAuth verify.Verifiable `serialize:"true" json:"netAuthorization"`
 }
 
-func (tx *ConvertSubnetToL1Tx) SyntacticVerify(ctx *consensusctx.Context) error {
+func (tx *ConvertNetToL1Tx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
 	case tx.SyntacticallyVerified:
 		// already passed syntactic verification
 		return nil
-	case tx.Subnet == constants.PrimaryNetworkID:
-		return ErrConvertPermissionlessSubnet
-	case len(tx.Address) > MaxSubnetAddressLength:
+	case tx.Net == constants.PrimaryNetworkID:
+		return ErrConvertPermissionlessNet
+	case len(tx.Address) > MaxNetAddressLength:
 		return ErrAddressTooLong
 	case len(tx.Validators) == 0:
 		return ErrConvertMustIncludeValidators
@@ -72,7 +72,7 @@ func (tx *ConvertSubnetToL1Tx) SyntacticVerify(ctx *consensusctx.Context) error 
 			return err
 		}
 	}
-	if err := tx.SubnetAuth.Verify(); err != nil {
+	if err := tx.NetAuth.Verify(); err != nil {
 		return err
 	}
 
@@ -80,11 +80,11 @@ func (tx *ConvertSubnetToL1Tx) SyntacticVerify(ctx *consensusctx.Context) error 
 	return nil
 }
 
-func (tx *ConvertSubnetToL1Tx) Visit(visitor Visitor) error {
-	return visitor.ConvertSubnetToL1Tx(tx)
+func (tx *ConvertNetToL1Tx) Visit(visitor Visitor) error {
+	return visitor.ConvertNetToL1Tx(tx)
 }
 
-type ConvertSubnetToL1Validator struct {
+type ConvertNetToL1Validator struct {
 	// NodeID of this validator
 	NodeID types.JSONByteSlice `serialize:"true" json:"nodeID"`
 	// Weight of this validator used when sampling
@@ -94,7 +94,7 @@ type ConvertSubnetToL1Validator struct {
 	// [Signer] is the BLS key for this validator.
 	// Note: We do not enforce that the BLS key is unique across all validators.
 	//       This means that validators can share a key if they so choose.
-	//       However, a NodeID + Subnet does uniquely map to a BLS key
+	//       However, a NodeID + Net does uniquely map to a BLS key
 	Signer signer.ProofOfPossession `serialize:"true" json:"signer"`
 	// Leftover $LUX from the [Balance] will be issued to this owner once it is
 	// removed from the validator set.
@@ -103,11 +103,11 @@ type ConvertSubnetToL1Validator struct {
 	DeactivationOwner message.PChainOwner `serialize:"true" json:"deactivationOwner"`
 }
 
-func (v *ConvertSubnetToL1Validator) Compare(o *ConvertSubnetToL1Validator) int {
+func (v *ConvertNetToL1Validator) Compare(o *ConvertNetToL1Validator) int {
 	return bytes.Compare(v.NodeID, o.NodeID)
 }
 
-func (v *ConvertSubnetToL1Validator) Verify() error {
+func (v *ConvertNetToL1Validator) Verify() error {
 	if v.Weight == 0 {
 		return ErrZeroWeight
 	}

@@ -15,7 +15,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
@@ -31,12 +30,12 @@ import (
 
 const maxMessageToSend = 1024
 
-// noOpResourceManager implements tracker.ResourceManager for testing
-type noOpResourceManager struct{}
+// testNoOpResourceManager implements tracker.ResourceManager for testing
+type testNoOpResourceManager struct{}
 
-func (*noOpResourceManager) CPUUsage() float64  { return 0 }
-func (*noOpResourceManager) DiskUsage() float64 { return 0 }
-func (*noOpResourceManager) Shutdown()          {}
+func (*testNoOpResourceManager) CPUUsage() float64  { return 0 }
+func (*testNoOpResourceManager) DiskUsage() float64 { return 0 }
+func (*testNoOpResourceManager) Shutdown()          {}
 
 // StartTestPeer provides a simple interface to create a peer that has finished
 // the p2p handshake.
@@ -80,14 +79,11 @@ func StartTestPeer(
 		return nil, err
 	}
 
-	// Create a prometheus registry for metrics
-	promRegistry := metric.NewRegistry()
-
-	// Create a no-op metrics instance for message creator
-	metricsInstance := metric.NewNoOp()
+	// Create a metrics registry
+	promRegistry := metric.NewPrometheusRegistry()
 
 	mc, err := message.NewCreator(
-		prometheus.NewRegistry(),
+		promRegistry,
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -101,7 +97,7 @@ func StartTestPeer(
 	}
 
 	// Create a no-op resource manager for testing
-	noOpManager := &noOpResourceManager{}
+	noOpManager := &testNoOpResourceManager{}
 	resourceTracker, err := tracker.NewResourceTracker(
 		noOpManager,
 		10*time.Second,
@@ -125,7 +121,7 @@ func StartTestPeer(
 			Network:              TestNetwork,
 			Router:               router,
 			VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
-			MySubnets:            set.Set[ids.ID]{},
+			MyNets:            set.Set[ids.ID]{},
 			Beacons:              &testValidatorManager{},
 			Validators:           &testValidatorManager{},
 			NetworkID:            networkID,
@@ -147,7 +143,7 @@ func StartTestPeer(
 		cert,
 		peerID,
 		NewBlockingMessageQueue(
-			metrics,
+			nil,
 			nil,
 			maxMessageToSend,
 		),
@@ -159,11 +155,11 @@ func StartTestPeer(
 // testResourceTracker is a minimal implementation for testing
 type testResourceTracker struct{}
 
-func (t *testResourceTracker) CPUTracker() tracker.CPUTracker {
+func (t *testResourceTracker) CPUTracker() tracker.Tracker {
 	return &testCPUTracker{}
 }
 
-func (t *testResourceTracker) DiskTracker() tracker.DiskTracker {
+func (t *testResourceTracker) DiskTracker() tracker.Tracker {
 	return &testDiskTracker{}
 }
 
@@ -175,6 +171,7 @@ type testCPUTracker struct{}
 
 func (t *testCPUTracker) Usage(ids.NodeID, time.Time) float64                         { return 0 }
 func (t *testCPUTracker) TimeUntilUsage(ids.NodeID, time.Time, float64) time.Duration { return 0 }
+func (t *testCPUTracker) TotalUsage() float64                                         { return 0 }
 
 // testTracker is a minimal tracker implementation
 type testTracker struct{}
@@ -259,7 +256,7 @@ func (m *testValidatorManager) Sample(netID ids.ID, n int) ([]ids.NodeID, error)
 	return nil, nil
 }
 
-func (m *testValidatorManager) NumSubnets() int {
+func (m *testValidatorManager) NumNets() int {
 	return 0
 }
 

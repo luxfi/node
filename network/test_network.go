@@ -43,7 +43,7 @@ var (
 	errClosed = errors.New("closed")
 
 	_ net.Listener    = (*noopListener)(nil)
-	_ subnets.Allower = (*nodeIDConnector)(nil)
+	_ nets.Allower = (*nodeIDConnector)(nil)
 )
 
 type noopListener struct {
@@ -166,7 +166,7 @@ func NewTestNetworkConfig(
 		CompressionType:              constants.DefaultNetworkCompressionType,
 		TLSKey:                       tlsCert.PrivateKey.(crypto.Signer),
 		BLSKey:                       blsKey,
-		TrackedSubnets:               trackedNets,
+		TrackedNets:               trackedNets,
 		Beacons:                      nodevalidators.NewManager(),
 		Validators:                   nodevalidators.NewManager(),
 		UptimeCalculator:             &uptime.NoOpCalculator{},
@@ -336,7 +336,7 @@ func (n *noOpValidatorsManager) GetMap(netID ids.ID) map[ids.NodeID]*validators.
 }
 func (n *noOpValidatorsManager) GetValidatorIDs(netID ids.ID) []ids.NodeID { return nil }
 func (n *noOpValidatorsManager) NumValidators(netID ids.ID) int            { return 0 }
-func (n *noOpValidatorsManager) NumSubnets() int                           { return 0 }
+func (n *noOpValidatorsManager) NumNets() int                           { return 0 }
 func (n *noOpValidatorsManager) SubsetWeight(netID ids.ID, nodeIDs consensusset.Set[ids.NodeID]) (uint64, error) {
 	return 0, nil
 }

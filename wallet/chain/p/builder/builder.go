@@ -153,19 +153,19 @@ type Builder interface {
 	// 	options ...common.Option,
 	// ) (*txs.TransferSubnetOwnershipTx, error)
 
-	// NewConvertSubnetToL1Tx converts the subnet to a Permissionless L1.
+	// NewConvertNetToL1Tx converts the subnet to a Permissionless L1.
 	//
 	// - [subnetID] specifies the subnet to be converted
 	// - [chainID] specifies which chain the manager is deployed on
 	// - [address] specifies the address of the manager
 	// - [validators] specifies the initial L1 validators of the L1
-	NewConvertSubnetToL1Tx(
+	NewConvertNetToL1Tx(
 		subnetID ids.ID,
 		chainID ids.ID,
 		address []byte,
-		validators []*txs.ConvertSubnetToL1Validator,
+		validators []*txs.ConvertNetToL1Validator,
 		options ...common.Option,
-	) (*txs.ConvertSubnetToL1Tx, error)
+	) (*txs.ConvertNetToL1Tx, error)
 
 	// NewRegisterL1ValidatorTx adds a validator to an L1.
 	//
@@ -828,13 +828,13 @@ func (b *builder) NewCreateChainTx(
 // 	return tx, b.initCtx(tx)
 // }
 
-func (b *builder) NewConvertSubnetToL1Tx(
+func (b *builder) NewConvertNetToL1Tx(
 	subnetID ids.ID,
 	chainID ids.ID,
 	address []byte,
-	validators []*txs.ConvertSubnetToL1Validator,
+	validators []*txs.ConvertNetToL1Validator,
 	options ...common.Option,
-) (*txs.ConvertSubnetToL1Tx, error) {
+) (*txs.ConvertNetToL1Tx, error) {
 	var luxToBurn uint64
 	for _, vdr := range validators {
 		var err error
@@ -864,7 +864,7 @@ func (b *builder) NewConvertSubnetToL1Tx(
 	bytesComplexity := gas.Dimensions{
 		gas.Bandwidth: additionalBytes,
 	}
-	validatorComplexity, err := fee.ConvertSubnetToL1ValidatorComplexity(validators...)
+	validatorComplexity, err := fee.ConvertNetToL1ValidatorComplexity(validators...)
 	if err != nil {
 		return nil, err
 	}
@@ -872,7 +872,7 @@ func (b *builder) NewConvertSubnetToL1Tx(
 	if err != nil {
 		return nil, err
 	}
-	complexity, err := fee.IntrinsicConvertSubnetToL1TxComplexities.Add(
+	complexity, err := fee.IntrinsicConvertNetToL1TxComplexities.Add(
 		&bytesComplexity,
 		&validatorComplexity,
 		&authComplexity,
@@ -894,7 +894,7 @@ func (b *builder) NewConvertSubnetToL1Tx(
 	}
 
 	utils.Sort(validators)
-	tx := &txs.ConvertSubnetToL1Tx{
+	tx := &txs.ConvertNetToL1Tx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,

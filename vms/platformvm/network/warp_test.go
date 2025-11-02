@@ -353,7 +353,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 			name: "failed to parse subnetID",
 			justification: must[[]byte](t)(proto.Marshal(
 				&platformvm.L1ValidatorRegistrationJustification{
-					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData{},
+					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{},
 				},
 			)),
 			expectedErr: &common.AppError{
@@ -366,8 +366,8 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 			validationID: registerL1ValidatorNotToRegister.ValidationID(),
 			justification: must[[]byte](t)(proto.Marshal(
 				&platformvm.L1ValidatorRegistrationJustification{
-					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData{
-						ConvertSubnetToL1TxData: &platformvm.SubnetIDIndex{
+					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{
+						ConvertNetToL1TxData: &platformvm.SubnetIDIndex{
 							SubnetId: convertedSubnetID[:],
 							Index:    0,
 						},
@@ -384,8 +384,8 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 			validationID: convertSubnetToL1ValidationID,
 			justification: must[[]byte](t)(proto.Marshal(
 				&platformvm.L1ValidatorRegistrationJustification{
-					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData{
-						ConvertSubnetToL1TxData: &platformvm.SubnetIDIndex{
+					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{
+						ConvertNetToL1TxData: &platformvm.SubnetIDIndex{
 							SubnetId: convertedSubnetID[:],
 							Index:    0,
 						},
@@ -402,8 +402,8 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 			validationID: unconvertedSubnetID.Append(0),
 			justification: must[[]byte](t)(proto.Marshal(
 				&platformvm.L1ValidatorRegistrationJustification{
-					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData{
-						ConvertSubnetToL1TxData: &platformvm.SubnetIDIndex{
+					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{
+						ConvertNetToL1TxData: &platformvm.SubnetIDIndex{
 							SubnetId: unconvertedSubnetID[:],
 							Index:    0,
 						},
@@ -420,8 +420,8 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 			validationID: convertedSubnetID.Append(1),
 			justification: must[[]byte](t)(proto.Marshal(
 				&platformvm.L1ValidatorRegistrationJustification{
-					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData{
-						ConvertSubnetToL1TxData: &platformvm.SubnetIDIndex{
+					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{
+						ConvertNetToL1TxData: &platformvm.SubnetIDIndex{
 							SubnetId: convertedSubnetID[:],
 							Index:    1,
 						},

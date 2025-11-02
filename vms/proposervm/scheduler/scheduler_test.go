@@ -14,7 +14,7 @@ import (
 )
 
 func TestDelayFromNew(t *testing.T) {
-	toEngine := make(chan core.MessageType, 10)
+	toEngine := make(chan common.Message, 10)
 	startTime := time.Now().Add(50 * time.Millisecond)
 
 	s, fromVM := New(log.NoLog{}, toEngine)
@@ -28,7 +28,7 @@ func TestDelayFromNew(t *testing.T) {
 }
 
 func TestDelayFromSetTime(t *testing.T) {
-	toEngine := make(chan core.MessageType, 10)
+	toEngine := make(chan common.Message, 10)
 	now := time.Now()
 	startTime := now.Add(50 * time.Millisecond)
 
@@ -45,7 +45,7 @@ func TestDelayFromSetTime(t *testing.T) {
 }
 
 func TestReceipt(*testing.T) {
-	toEngine := make(chan core.MessageType, 10)
+	toEngine := make(chan common.Message, 10)
 	now := time.Now()
 	startTime := now.Add(50 * time.Millisecond)
 

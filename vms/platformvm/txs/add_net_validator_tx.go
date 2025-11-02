@@ -31,7 +31,7 @@ type AddNetValidatorTx struct {
 	// The validator
 	NetValidator `serialize:"true" json:"validator"`
 	// Auth that will be allowing this validator into the network
-	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
+	NetAuth verify.Verifiable `serialize:"true" json:"netAuthorization"`
 }
 
 func (tx *AddNetValidatorTx) NodeID() ids.NodeID {
@@ -43,15 +43,15 @@ func (*AddNetValidatorTx) PublicKey() (*bls.PublicKey, bool, error) {
 }
 
 func (*AddNetValidatorTx) PendingPriority() Priority {
-	return SubnetPermissionedValidatorPendingPriority
+	return NetPermissionedValidatorPendingPriority
 }
 
 func (*AddNetValidatorTx) CurrentPriority() Priority {
-	return SubnetPermissionedValidatorCurrentPriority
+	return NetPermissionedValidatorCurrentPriority
 }
 
 // SyntacticVerify returns nil iff [tx] is valid
-func (tx // *AddSubnetValidatorTx) SyntacticVerify(ctx *consensusctx.Context) error {
+func (tx *AddNetValidatorTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -64,7 +64,7 @@ func (tx // *AddSubnetValidatorTx) SyntacticVerify(ctx *consensusctx.Context) er
 	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
 		return err
 	}
-	if err := verify.All(&tx.Validator, tx.SubnetAuth); err != nil {
+	if err := verify.All(&tx.Validator, tx.NetAuth); err != nil {
 		return err
 	}
 

@@ -11,10 +11,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/node/internal/database/rpcdb"
+	// Commented imports that are not currently used
+	// "github.com/luxfi/database/memdb"
+	// "github.com/luxfi/node/internal/database/rpcdb"
+	// pb "github.com/luxfi/node/proto/pb/rpcdb"
 
-	pb "github.com/luxfi/node/proto/pb/rpcdb"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 )
 

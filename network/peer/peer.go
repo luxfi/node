@@ -38,7 +38,7 @@ const (
 	// maxBloomSaltLen restricts the allowed size of the bloom salt to prevent
 	// excessively expensive bloom filter contains checks.
 	maxBloomSaltLen = 32
-	// maxNumTrackedNets limits how many subnets a peer can track to prevent
+	// maxNumTrackedNets limits how many nets a peer can track to prevent
 	// excessive memory usage.
 	maxNumTrackedNets = 16
 
@@ -92,7 +92,7 @@ type Peer interface {
 	// only be called after [Ready] returns true.
 	Version() *version.Application
 
-	// TrackedNets returns the subnets this peer is running. It should only
+	// TrackedNets returns the nets this peer is running. It should only
 	// be called after [Ready] returns true.
 	TrackedNets() set.Set[ids.ID]
 

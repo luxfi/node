@@ -350,7 +350,7 @@ func (n *network) Send(
 	requestID uint32,
 ) set.Set[ids.NodeID] {
 	// Create a default allowance policy that allows all connections
-	var allower subnets.Allower = &noOpAllower{}
+	var allower nets.Allower = &noOpAllower{}
 
 	// Use provided nodeIDs directly
 	namedPeers := n.getPeers(nodeIDs, netID, allower)
@@ -537,9 +537,9 @@ func (n *network) Connected(nodeID ids.NodeID) {
 
 	peerVersion := peer.Version()
 	n.router.Connected(nodeID, peerVersion, constants.PrimaryNetworkID)
-	for subnetID := range n.peerConfig.MyNets {
-		if trackedNets.Contains(subnetID) {
-			n.router.Connected(nodeID, peerVersion, subnetID)
+	for netID := range n.peerConfig.MyNets {
+		if trackedNets.Contains(netID) {
+			n.router.Connected(nodeID, peerVersion, netID)
 		}
 	}
 }
@@ -591,14 +591,14 @@ func (n *network) KnownPeers() ([]byte, []byte) {
 
 // There are 3 types of responses:
 //
-// - Respond with subnet IPs tracked by both ourselves and the peer
+// - Respond with net IPs tracked by both ourselves and the peer
 //   - We do not consider ourself to be a primary network validator
 //
-// - Respond with all subnet IPs
+// - Respond with all net IPs
 //   - The peer requests all peers
 //   - We believe ourself to be a primary network validator
 //
-// - Respond with subnet IPs tracked by the peer
+// - Respond with net IPs tracked by the peer
 //   - The peer does not request all peers
 //   - We believe ourself to be a primary network validator
 //
@@ -614,21 +614,21 @@ func (n *network) Peers(
 ) []*ips.ClaimedIPPort {
 	_, areWeAPrimaryNetworkValidator := n.config.Validators.GetValidator(constants.PrimaryNetworkID, n.config.MyNodeID)
 
-	// Only return IPs for subnets that we are tracking.
+	// Only return IPs for nets that we are tracking.
 	var allowedNets func(ids.ID) bool
 	if areWeAPrimaryNetworkValidator {
 		allowedNets = func(ids.ID) bool { return true }
 	} else {
-		allowedNets = func(subnetID ids.ID) bool {
-			return subnetID == constants.PrimaryNetworkID || n.ipTracker.trackedNets.Contains(subnetID)
+		allowedNets = func(netID ids.ID) bool {
+			return netID == constants.PrimaryNetworkID || n.ipTracker.trackedNets.Contains(netID)
 		}
 	}
 
 	if areWeAPrimaryNetworkValidator && requestAllPeers {
-		// Return IPs for all subnets.
+		// Return IPs for all nets.
 		return getGossipableIPs(
 			n.ipTracker,
-			n.ipTracker.subnet,
+			n.ipTracker.net,
 			allowedNets,
 			peerID,
 			knownPeers,
@@ -742,7 +742,7 @@ func (n *network) ManuallyTrack(nodeID ids.NodeID, ip netip.AddrPort) {
 	}
 }
 
-func (n *network) track(ip *ips.ClaimedIPPort, trackAllSubnets bool) error {
+func (n *network) track(ip *ips.ClaimedIPPort, trackAllNets bool) error {
 	// To avoid signature verification when the IP isn't needed, we
 	// optimistically filter out IPs. This can result in us not tracking an IP
 	// that we otherwise would have. This case can only happen if the node
@@ -751,7 +751,7 @@ func (n *network) track(ip *ips.ClaimedIPPort, trackAllSubnets bool) error {
 	//
 	// Note: Avoiding signature verification when the IP isn't needed is a
 	// **significant** performance optimization.
-	if !n.ipTracker.ShouldVerifyIP(ip, trackAllSubnets) {
+	if !n.ipTracker.ShouldVerifyIP(ip, trackAllNets) {
 		n.metrics.numUselessPeerListBytes.Add(float64(ip.Size()))
 		return nil
 	}
@@ -799,14 +799,14 @@ func (n *network) track(ip *ips.ClaimedIPPort, trackAllSubnets bool) error {
 //
 //   - [nodeIDs] the IDs of the peers that should be returned if they are
 //     connected.
-//   - [subnetID] the subnetID whose membership should be considered to
+//   - [netID] the netID whose membership should be considered to
 //     determine if the node is a validator.
 //   - [allower] interface that determines if a node is allowed to connect to
-//     the subnet based on its validator status.
+//     the net based on its validator status.
 func (n *network) getPeers(
 	nodeIDs set.Set[ids.NodeID],
 	netID ids.ID,
-	allower subnets.Allower,
+	allower nets.Allower,
 ) []peer.Peer {
 	peers := make([]peer.Peer, 0, nodeIDs.Len())
 
@@ -820,7 +820,7 @@ func (n *network) getPeers(
 		}
 
 		_, areTheyAValidator := n.config.Validators.GetValidator(netID, nodeID)
-		// check if the peer is allowed to connect to the subnet
+		// check if the peer is allowed to connect to the net
 		if !allower.IsAllowed(nodeID, areTheyAValidator) {
 			continue
 		}
@@ -837,7 +837,7 @@ func (n *network) getPeers(
 func (n *network) samplePeers(
 	config core.SendConfig,
 	netID ids.ID,
-	allower subnets.Allower,
+	allower nets.Allower,
 ) []peer.Peer {
 	// As an optimization, if there are fewer validators than
 	// [numValidatorsToSample], only attempt to sample [numValidatorsToSample]
@@ -867,7 +867,7 @@ func (n *network) samplePeers(
 			}
 
 			_, areTheyAValidator := n.config.Validators.GetValidator(netID, peerID)
-			// check if the peer is allowed to connect to the subnet
+			// check if the peer is allowed to connect to the net
 			if !allower.IsAllowed(peerID, areTheyAValidator) {
 				return false
 			}

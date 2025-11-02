@@ -106,7 +106,7 @@ func ExampleNewTestNetwork() {
 		Manager: validators.NewManager(),
 	}
 
-	// If we want to be able to communicate with non-primary network subnets, we
+	// If we want to be able to communicate with non-primary network nets, we
 	// should register them here.
 	trackedNets := set.Set[ids.ID]{}
 

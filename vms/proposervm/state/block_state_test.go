@@ -13,6 +13,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/staking"
 
 	"github.com/luxfi/node/vms/proposervm/block"
@@ -74,7 +75,7 @@ func TestMeteredBlockState(t *testing.T) {
 	a := require.New(t)
 
 	db := memdb.New()
-	bs, err := NewMeteredBlockState(db, "", metric.NewNoOp().Registry())
+	bs, err := NewMeteredBlockState(db, "", metric.NewNoOpRegistry())
 	a.NoError(err)
 
 	testBlockState(a, bs)

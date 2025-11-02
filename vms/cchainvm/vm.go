@@ -33,13 +33,11 @@ import (
 	"github.com/luxfi/geth/rpc"
 	"github.com/luxfi/geth/trie"
 
-	consensusNode "github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/pebbledb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/version"
 )
 
 // newUint64 is a helper function to create a pointer to uint64
@@ -1304,7 +1302,7 @@ func (vm *VM) logDatabaseStatus() {
 }
 
 // SetState implements the block.ChainVM interface
-func (vm *VM) SetState(ctx context.Context, state consensusNode.State) error {
+func (vm *VM) SetState(ctx context.Context, state uint32) error {
 	return nil
 }
 
@@ -1383,7 +1381,7 @@ func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, erro
 }
 
 // NewHTTPHandler implements the block.ChainVM interface
-func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+func (vm *VM) NewHTTPHandler(ctx context.Context) (interface{}, error) {
 	return nil, nil
 }
 

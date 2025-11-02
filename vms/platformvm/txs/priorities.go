@@ -12,22 +12,22 @@ const (
 	// then primary network banff delegators,
 	PrimaryNetworkDelegatorBanffPendingPriority
 	// then permissionless net validators,
-	SubnetPermissionlessValidatorPendingPriority
+	NetPermissionlessValidatorPendingPriority
 	// then permissionless net delegators.
-	SubnetPermissionlessDelegatorPendingPriority
+	NetPermissionlessDelegatorPendingPriority
 	// then permissioned net validators,
-	SubnetPermissionedValidatorPendingPriority
+	NetPermissionedValidatorPendingPriority
 
 	// First permissioned net validators are removed from the current
 	// validator set,
 	// Invariant: All permissioned stakers must be removed first because they
 	//            are removed by the advancement of time. Permissionless stakers
 	//            are removed with a RewardValidatorTx after time has advanced.
-	SubnetPermissionedValidatorCurrentPriority
+	NetPermissionedValidatorCurrentPriority
 	// then permissionless net delegators,
-	SubnetPermissionlessDelegatorCurrentPriority
+	NetPermissionlessDelegatorCurrentPriority
 	// then permissionless net validators,
-	SubnetPermissionlessValidatorCurrentPriority
+	NetPermissionlessValidatorCurrentPriority
 	// then primary network delegators,
 	PrimaryNetworkDelegatorCurrentPriority
 	// then primary network validators.
@@ -38,9 +38,9 @@ var PendingToCurrentPriorities = []Priority{
 	PrimaryNetworkDelegatorApricotPendingPriority: PrimaryNetworkDelegatorCurrentPriority,
 	PrimaryNetworkValidatorPendingPriority:        PrimaryNetworkValidatorCurrentPriority,
 	PrimaryNetworkDelegatorBanffPendingPriority:   PrimaryNetworkDelegatorCurrentPriority,
-	SubnetPermissionlessValidatorPendingPriority:  SubnetPermissionlessValidatorCurrentPriority,
-	SubnetPermissionlessDelegatorPendingPriority:  SubnetPermissionlessDelegatorCurrentPriority,
-	SubnetPermissionedValidatorPendingPriority:    SubnetPermissionedValidatorCurrentPriority,
+	NetPermissionlessValidatorPendingPriority:  NetPermissionlessValidatorCurrentPriority,
+	NetPermissionlessDelegatorPendingPriority:  NetPermissionlessDelegatorCurrentPriority,
+	NetPermissionedValidatorPendingPriority:    NetPermissionedValidatorCurrentPriority,
 }
 
 type Priority byte
@@ -58,8 +58,8 @@ func (p Priority) IsValidator() bool {
 }
 
 func (p Priority) IsPermissionedValidator() bool {
-	return p == SubnetPermissionedValidatorCurrentPriority ||
-		p == SubnetPermissionedValidatorPendingPriority
+	return p == NetPermissionedValidatorCurrentPriority ||
+		p == NetPermissionedValidatorPendingPriority
 }
 
 func (p Priority) IsDelegator() bool {
@@ -68,23 +68,23 @@ func (p Priority) IsDelegator() bool {
 
 func (p Priority) IsCurrentValidator() bool {
 	return p == PrimaryNetworkValidatorCurrentPriority ||
-		p == SubnetPermissionedValidatorCurrentPriority ||
-		p == SubnetPermissionlessValidatorCurrentPriority
+		p == NetPermissionedValidatorCurrentPriority ||
+		p == NetPermissionlessValidatorCurrentPriority
 }
 
 func (p Priority) IsCurrentDelegator() bool {
 	return p == PrimaryNetworkDelegatorCurrentPriority ||
-		p == SubnetPermissionlessDelegatorCurrentPriority
+		p == NetPermissionlessDelegatorCurrentPriority
 }
 
 func (p Priority) IsPendingValidator() bool {
 	return p == PrimaryNetworkValidatorPendingPriority ||
-		p == SubnetPermissionedValidatorPendingPriority ||
-		p == SubnetPermissionlessValidatorPendingPriority
+		p == NetPermissionedValidatorPendingPriority ||
+		p == NetPermissionlessValidatorPendingPriority
 }
 
 func (p Priority) IsPendingDelegator() bool {
 	return p == PrimaryNetworkDelegatorBanffPendingPriority ||
 		p == PrimaryNetworkDelegatorApricotPendingPriority ||
-		p == SubnetPermissionlessDelegatorPendingPriority
+		p == NetPermissionlessDelegatorPendingPriority
 }

@@ -19,7 +19,7 @@ type metricsImpl struct {
 
 	numTracked                   metric.Gauge
 	numPeers                     metric.Gauge
-	numSubnetPeers               metric.GaugeVec
+	numNetPeers               metric.GaugeVec
 	timeSinceLastMsgSent         metric.Gauge
 	timeSinceLastMsgReceived     metric.Gauge
 	sendFailRate                 metric.Gauge
@@ -47,7 +47,7 @@ func newMetrics(
 		trackedNets:               trackedNets,
 		numPeers:                     metricsInstance.NewGauge("peers", "Number of network peers"),
 		numTracked:                   metricsInstance.NewGauge("tracked", "Number of currently tracked IPs attempting to be connected to"),
-		numSubnetPeers:               metricsInstance.NewGaugeVec("peers_subnet", "Number of peers that are validating a particular subnet", []string{"netID"}),
+		numNetPeers:               metricsInstance.NewGaugeVec("peers_net", "Number of peers that are validating a particular net", []string{"netID"}),
 		timeSinceLastMsgReceived:     metricsInstance.NewGauge("time_since_last_msg_received", "Time (in ns) since the last msg was received"),
 		timeSinceLastMsgSent:         metricsInstance.NewGauge("time_since_last_msg_sent", "Time (in ns) since the last msg was sent"),
 		sendFailRate:                 metricsInstance.NewGauge("send_fail_rate", "Portion of messages that recently failed to be sent over the network"),
@@ -64,11 +64,11 @@ func newMetrics(
 		peerConnectedStartTimes:      make(map[ids.NodeID]float64),
 	}
 
-	// init net tracker metrics with tracked subnets
+	// init net tracker metrics with tracked nets
 	for netID := range trackedNets {
 		// initialize to 0
 		netIDStr := netID.String()
-		m.numSubnetPeers.WithLabelValues(netIDStr).Set(0)
+		m.numNetPeers.WithLabelValues(netIDStr).Set(0)
 	}
 
 	return m, nil
@@ -78,10 +78,10 @@ func (m *metricsImpl) markConnected(peer peer.Peer) {
 	m.numPeers.Inc()
 	m.connected.Inc()
 
-	trackedNets := peer.TrackedSubnets()
+	trackedNets := peer.TrackedNets()
 	for netID := range m.trackedNets {
 		if trackedNets.Contains(netID) {
-			m.numSubnetPeers.WithLabelValues(netID.String()).Inc()
+			m.numNetPeers.WithLabelValues(netID.String()).Inc()
 		}
 	}
 
@@ -97,10 +97,10 @@ func (m *metricsImpl) markDisconnected(peer peer.Peer) {
 	m.numPeers.Dec()
 	m.disconnected.Inc()
 
-	trackedNets := peer.TrackedSubnets()
+	trackedNets := peer.TrackedNets()
 	for netID := range m.trackedNets {
 		if trackedNets.Contains(netID) {
-			m.numSubnetPeers.WithLabelValues(netID.String()).Dec()
+			m.numNetPeers.WithLabelValues(netID.String()).Dec()
 		}
 	}
 

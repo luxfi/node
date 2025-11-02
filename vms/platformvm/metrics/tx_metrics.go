@@ -144,9 +144,9 @@ func (m *txMetrics) BaseTx(*txs.BaseTx) error {
 	return nil
 }
 
-func (m *txMetrics) ConvertSubnetToL1Tx(*txs.ConvertSubnetToL1Tx) error {
+func (m *txMetrics) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
 	m.numTxs.With(metric.Labels{
-		txLabel: "convert_subnet_to_l1",
+		txLabel: "convert_net_to_l1",
 	}).Inc()
 	return nil
 }
@@ -175,6 +175,41 @@ func (m *txMetrics) IncreaseL1ValidatorBalanceTx(*txs.IncreaseL1ValidatorBalance
 func (m *txMetrics) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "disable_l1_validator",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) AddNetValidatorTx(*txs.AddNetValidatorTx) error {
+	m.numTxs.With(metric.Labels{
+		txLabel: "add_net_validator",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) CreateNetTx(*txs.CreateNetTx) error {
+	m.numTxs.With(metric.Labels{
+		txLabel: "create_net",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
+	m.numTxs.With(metric.Labels{
+		txLabel: "remove_net_validator",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) TransformNetTx(*txs.TransformNetTx) error {
+	m.numTxs.With(metric.Labels{
+		txLabel: "transform_net",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
+	m.numTxs.With(metric.Labels{
+		txLabel: "transfer_net_ownership",
 	}).Inc()
 	return nil
 }

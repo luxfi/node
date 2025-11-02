@@ -125,7 +125,7 @@ func (c *staticVisitor) ExportTx(*txs.ExportTx) error {
 	return nil
 }
 
-func (c *staticVisitor) ConvertSubnetToL1Tx(*txs.ConvertSubnetToL1Tx) error {
+func (c *staticVisitor) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
 	c.fee = c.config.TxFee // Use TxFee since TransformSubnetTxFee was removed in regenesis
 	return nil
 }
@@ -147,5 +147,30 @@ func (c *staticVisitor) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error 
 
 func (c *staticVisitor) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error {
 	c.fee = c.config.TxFee
+	return nil
+}
+
+func (v *staticVisitor) AddNetValidatorTx(*txs.AddNetValidatorTx) error {
+	v.fee = v.config.AddNetValidatorFee
+	return nil
+}
+
+func (v *staticVisitor) CreateNetTx(*txs.CreateNetTx) error {
+	v.fee = v.config.CreateNetTxFee
+	return nil
+}
+
+func (v *staticVisitor) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
+	v.fee = v.config.TxFee
+	return nil
+}
+
+func (v *staticVisitor) TransformNetTx(*txs.TransformNetTx) error {
+	v.fee = v.config.TransformNetTxFee
+	return nil
+}
+
+func (v *staticVisitor) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
+	v.fee = v.config.TxFee
 	return nil
 }

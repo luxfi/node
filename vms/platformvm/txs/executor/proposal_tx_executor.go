@@ -127,7 +127,7 @@ func (*proposalTxExecutor) BaseTx(*txs.BaseTx) error {
 	return ErrWrongTxType
 }
 
-func (*proposalTxExecutor) ConvertSubnetToL1Tx(*txs.ConvertSubnetToL1Tx) error {
+func (*proposalTxExecutor) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
 	return ErrWrongTxType
 }
 

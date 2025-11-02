@@ -613,7 +613,7 @@ type Handshake struct {
 	// key.
 	IpNodeIdSig []byte `protobuf:"bytes,7,opt,name=ip_node_id_sig,json=ipNodeIdSig,proto3" json:"ip_node_id_sig,omitempty"`
 	// Subnets the peer is tracking
-	TrackedSubnets [][]byte     `protobuf:"bytes,8,rep,name=tracked_subnets,json=trackedSubnets,proto3" json:"tracked_subnets,omitempty"`
+	TrackedNets [][]byte     `protobuf:"bytes,8,rep,name=tracked_subnets,json=trackedSubnets,proto3" json:"tracked_subnets,omitempty"`
 	Client         *Client      `protobuf:"bytes,9,opt,name=client,proto3" json:"client,omitempty"`
 	SupportedLps   []uint32     `protobuf:"varint,10,rep,packed,name=supported_lps,json=supportedLps,proto3" json:"supported_lps,omitempty"`
 	ObjectedLps    []uint32     `protobuf:"varint,11,rep,packed,name=objected_lps,json=objectedLps,proto3" json:"objected_lps,omitempty"`
@@ -698,9 +698,9 @@ func (x *Handshake) GetIpNodeIdSig() []byte {
 	return nil
 }
 
-func (x *Handshake) GetTrackedSubnets() [][]byte {
+func (x *Handshake) GetTrackedNets() [][]byte {
 	if x != nil {
-		return x.TrackedSubnets
+		return x.TrackedNets
 	}
 	return nil
 }

@@ -69,8 +69,8 @@ type Metrics interface {
 	SetTotalStake(uint64)
 	// Mark when this node will unstake from the Primary Network.
 	SetTimeUntilUnstake(time.Duration)
-	// Mark when this node will unstake from a subnet.
-	SetTimeUntilSubnetUnstake(netID ids.ID, timeUntilUnstake time.Duration)
+	// Mark when this node will unstake from a net.
+	SetTimeUntilNetUnstake(netID ids.ID, timeUntilUnstake time.Duration)
 }
 
 func New(registerer metric.Registerer) (Metrics, error) {
@@ -81,10 +81,10 @@ func New(registerer metric.Registerer) (Metrics, error) {
 			Name: "time_until_unstake",
 			Help: "Time (in ns) until this node leaves the Primary Network's validator set",
 		}),
-		timeUntilSubnetUnstake: prometheus.NewGaugeVec(
+		timeUntilNetUnstake: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: "time_until_unstake_subnet",
-				Help: "Time (in ns) until this node leaves the subnet's validator set",
+				Name: "time_until_unstake_net",
+				Help: "Time (in ns) until this node leaves the net's validator set",
 			},
 			[]string{"netID"},
 		),
@@ -156,6 +156,10 @@ func New(registerer metric.Registerer) (Metrics, error) {
 	m.APIInterceptor = apiRequestMetrics
 
 	errs.Add(
+		registerer.Register(m.timeUntilUnstake),
+		registerer.Register(m.timeUntilNetUnstake),
+		registerer.Register(m.localStake),
+		registerer.Register(m.totalStake),
 		registerer.Register(m.gasConsumed),
 		registerer.Register(m.gasCapacity),
 		registerer.Register(m.activeL1Validators),
@@ -179,7 +183,7 @@ type metricsImpl struct {
 
 	// Staking metrics
 	timeUntilUnstake       prometheus.Gauge
-	timeUntilSubnetUnstake *prometheus.GaugeVec
+	timeUntilNetUnstake *prometheus.GaugeVec
 	localStake             prometheus.Gauge
 	totalStake             prometheus.Gauge
 
@@ -239,6 +243,6 @@ func (m *metricsImpl) SetTimeUntilUnstake(timeUntilUnstake time.Duration) {
 	m.timeUntilUnstake.Set(float64(timeUntilUnstake))
 }
 
-func (m *metricsImpl) SetTimeUntilSubnetUnstake(netID ids.ID, timeUntilUnstake time.Duration) {
-	m.timeUntilSubnetUnstake.WithLabelValues(netID.String()).Set(float64(timeUntilUnstake))
+func (m *metricsImpl) SetTimeUntilNetUnstake(netID ids.ID, timeUntilUnstake time.Duration) {
+	m.timeUntilNetUnstake.WithLabelValues(netID.String()).Set(float64(timeUntilUnstake))
 }

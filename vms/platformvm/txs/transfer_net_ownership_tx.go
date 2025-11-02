@@ -20,7 +20,7 @@ import (
 var (
 	_ UnsignedTx = (*TransferNetOwnershipTx)(nil)
 
-	ErrTransferPermissionlessNet = errors.New("cannot transfer ownership of a permissionless subnet")
+	ErrTransferPermissionlessNet = errors.New("cannot transfer ownership of a permissionless net")
 )
 
 type TransferNetOwnershipTx struct {
@@ -28,16 +28,16 @@ type TransferNetOwnershipTx struct {
 	BaseTx `serialize:"true"`
 	// ID of the net this tx is modifying
 	Net ids.ID `serialize:"true" json:"netID"`
-	// Proves that the issuer has the right to remove the node from the subnet.
-	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
-	// Who is now authorized to manage this subnet
+	// Proves that the issuer has the right to remove the node from the net.
+	NetAuth verify.Verifiable `serialize:"true" json:"netAuthorization"`
+	// Who is now authorized to manage this net
 	Owner fx.Owner `serialize:"true" json:"newOwner"`
 }
 
 // InitCtx sets the FxID fields in the inputs and outputs of this
 // [TransferNetOwnershipTx]. Also sets the [ctx] to the given [vm.ctx] so
 // that the addresses can be json marshalled into human readable format
-func (tx // *TransferSubnetOwnershipTx) InitCtx(ctx *consensusctx.Context) {
+func (tx *TransferNetOwnershipTx) InitCtx(ctx *consensusctx.Context) {
 	tx.BaseTx.InitCtx(ctx)
 	// Initialize context for Owner if it's *secp256k1fx.OutputOwners
 	if owner, ok := tx.Owner.(*secp256k1fx.OutputOwners); ok {
@@ -45,7 +45,7 @@ func (tx // *TransferSubnetOwnershipTx) InitCtx(ctx *consensusctx.Context) {
 	}
 }
 
-func (tx // *TransferSubnetOwnershipTx) SyntacticVerify(ctx *consensusctx.Context) error {
+func (tx *TransferNetOwnershipTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
@@ -59,7 +59,7 @@ func (tx // *TransferSubnetOwnershipTx) SyntacticVerify(ctx *consensusctx.Contex
 	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
 		return err
 	}
-	if err := verify.All(tx.SubnetAuth, tx.Owner); err != nil {
+	if err := verify.All(tx.NetAuth, tx.Owner); err != nil {
 		return err
 	}
 

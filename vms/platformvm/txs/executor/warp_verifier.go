@@ -102,7 +102,7 @@ func (*warpVerifier) BaseTx(*txs.BaseTx) error {
 	return nil
 }
 
-func (*warpVerifier) ConvertSubnetToL1Tx(*txs.ConvertSubnetToL1Tx) error {
+func (*warpVerifier) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
 	return nil
 }
 

@@ -29,13 +29,13 @@ import (
 )
 
 var (
-	//go:embed convert_subnet_to_l1_tx_test_simple.json
-	convertSubnetToL1TxSimpleJSON []byte
-	//go:embed convert_subnet_to_l1_tx_test_complex.json
-	convertSubnetToL1TxComplexJSON []byte
+	//go:embed convert_net_to_l1_tx_test_simple.json
+	convertNetToL1TxSimpleJSON []byte
+	//go:embed convert_net_to_l1_tx_test_complex.json
+	convertNetToL1TxComplexJSON []byte
 )
 
-func TestConvertSubnetToL1TxSerialization(t *testing.T) {
+func TestConvertNetToL1TxSerialization(t *testing.T) {
 	skBytes, err := hex.DecodeString("6668fecd4595b81e4d568398c820bbf3f073cb222902279fa55ebb84764ed2e3")
 	require.NoError(t, err)
 	sk, err := localsigner.FromBytes(skBytes)
@@ -93,13 +93,13 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		tx            *ConvertSubnetToL1Tx
+		tx            *ConvertNetToL1Tx
 		expectedBytes []byte
 		expectedJSON  []byte
 	}{
 		{
 			name: "simple",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{
 					BaseTx: lux.BaseTx{
 						NetworkID:    constants.UnitTestID,
@@ -128,7 +128,7 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 				Subnet:     subnetID,
 				ChainID:    managerChainID,
 				Address:    managerAddress,
-				Validators: []*ConvertSubnetToL1Validator{},
+				Validators: []*ConvertNetToL1Validator{},
 				SubnetAuth: &secp256k1fx.Input{
 					SigIndices: []uint32{3},
 				},
@@ -136,7 +136,7 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 			expectedBytes: []byte{
 				// Codec version
 				0x00, 0x00,
-				// ConvertSubnetToL1Tx Type ID
+				// ConvertNetToL1Tx Type ID
 				0x00, 0x00, 0x00, 0x23,
 				// Network ID
 				0x00, 0x00, 0x00, 0x0a,
@@ -197,11 +197,11 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 				// index of signer
 				0x00, 0x00, 0x00, 0x03,
 			},
-			expectedJSON: convertSubnetToL1TxSimpleJSON,
+			expectedJSON: convertNetToL1TxSimpleJSON,
 		},
 		{
 			name: "complex",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{
 					BaseTx: lux.BaseTx{
 						NetworkID:    constants.UnitTestID,
@@ -298,7 +298,7 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 				Subnet:  subnetID,
 				ChainID: managerChainID,
 				Address: managerAddress,
-				Validators: []*ConvertSubnetToL1Validator{
+				Validators: []*ConvertNetToL1Validator{
 					{
 						NodeID:  nodeID[:],
 						Weight:  0x0102030405060708,
@@ -325,7 +325,7 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 			expectedBytes: []byte{
 				// Codec version
 				0x00, 0x00,
-				// ConvertSubnetToL1Tx Type ID
+				// ConvertNetToL1Tx Type ID
 				0x00, 0x00, 0x00, 0x23,
 				// Network ID
 				0x00, 0x00, 0x00, 0x0a,
@@ -525,7 +525,7 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 				// number of signatures needed in authorization
 				0x00, 0x00, 0x00, 0x00,
 			},
-			expectedJSON: convertSubnetToL1TxComplexJSON,
+			expectedJSON: convertNetToL1TxComplexJSON,
 		},
 	}
 	for _, test := range tests {
@@ -547,7 +547,7 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 	}
 }
 
-func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
+func TestConvertNetToL1TxSyntacticVerify(t *testing.T) {
 	sk, err := localsigner.New()
 	require.NoError(t, err)
 	pop, err := signer.NewProofOfPossession(sk)
@@ -562,8 +562,8 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 			},
 		}
 		validSubnetID   = ids.GenerateTestID()
-		invalidAddress  = make(types.JSONByteSlice, MaxSubnetAddressLength+1)
-		validValidators = []*ConvertSubnetToL1Validator{
+		invalidAddress  = make(types.JSONByteSlice, MaxNetAddressLength+1)
+		validValidators = []*ConvertNetToL1Validator{
 			{
 				NodeID:                utils.RandomBytes(ids.NodeIDLen),
 				Weight:                1,
@@ -581,7 +581,7 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		tx          *ConvertSubnetToL1Tx
+		tx          *ConvertNetToL1Tx
 		expectedErr error
 	}{
 		{
@@ -593,7 +593,7 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 			name: "already verified",
 			// The tx includes invalid data to verify that a cached result is
 			// returned.
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: BaseTx{
 					SyntacticallyVerified: true,
 				},
@@ -606,17 +606,17 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "invalid subnetID",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx:     validBaseTx,
 				Subnet:     constants.PrimaryNetworkID,
 				Validators: validValidators,
 				SubnetAuth: validSubnetAuth,
 			},
-			expectedErr: ErrConvertPermissionlessSubnet,
+			expectedErr: ErrConvertPermissionlessNet,
 		},
 		{
 			name: "invalid address",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx:     validBaseTx,
 				Subnet:     validSubnetID,
 				Address:    invalidAddress,
@@ -627,7 +627,7 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "invalid number of validators",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx:     validBaseTx,
 				Subnet:     validSubnetID,
 				Validators: nil,
@@ -637,10 +637,10 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "invalid validator order",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: validBaseTx,
 				Subnet: validSubnetID,
-				Validators: []*ConvertSubnetToL1Validator{
+				Validators: []*ConvertNetToL1Validator{
 					{
 						NodeID: []byte{
 							0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -662,10 +662,10 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "invalid validator weight",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: validBaseTx,
 				Subnet: validSubnetID,
-				Validators: []*ConvertSubnetToL1Validator{
+				Validators: []*ConvertNetToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen),
 						Weight:                0,
@@ -680,10 +680,10 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "invalid validator nodeID length",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: validBaseTx,
 				Subnet: validSubnetID,
-				Validators: []*ConvertSubnetToL1Validator{
+				Validators: []*ConvertNetToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen + 1),
 						Weight:                1,
@@ -698,10 +698,10 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "invalid validator nodeID",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: validBaseTx,
 				Subnet: validSubnetID,
-				Validators: []*ConvertSubnetToL1Validator{
+				Validators: []*ConvertNetToL1Validator{
 					{
 						NodeID:                ids.EmptyNodeID[:],
 						Weight:                1,
@@ -716,10 +716,10 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "invalid validator pop",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: validBaseTx,
 				Subnet: validSubnetID,
-				Validators: []*ConvertSubnetToL1Validator{
+				Validators: []*ConvertNetToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen),
 						Weight:                1,
@@ -734,10 +734,10 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "invalid validator remaining balance owner",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: validBaseTx,
 				Subnet: validSubnetID,
-				Validators: []*ConvertSubnetToL1Validator{
+				Validators: []*ConvertNetToL1Validator{
 					{
 						NodeID: utils.RandomBytes(ids.NodeIDLen),
 						Weight: 1,
@@ -754,10 +754,10 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "invalid validator deactivation owner",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx: validBaseTx,
 				Subnet: validSubnetID,
-				Validators: []*ConvertSubnetToL1Validator{
+				Validators: []*ConvertNetToL1Validator{
 					{
 						NodeID:                utils.RandomBytes(ids.NodeIDLen),
 						Weight:                1,
@@ -774,7 +774,7 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "invalid BaseTx",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx:     BaseTx{},
 				Subnet:     validSubnetID,
 				Validators: validValidators,
@@ -784,7 +784,7 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "invalid subnetAuth",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx:     validBaseTx,
 				Subnet:     validSubnetID,
 				Validators: validValidators,
@@ -794,7 +794,7 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 		},
 		{
 			name: "passes verification",
-			tx: &ConvertSubnetToL1Tx{
+			tx: &ConvertNetToL1Tx{
 				BaseTx:     validBaseTx,
 				Subnet:     validSubnetID,
 				Validators: validValidators,
