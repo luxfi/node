@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -83,9 +83,6 @@ func newSystemThrottlerMetrics(namespace string, reg metric.Registerer) (*system
 		}),
 	}
 	err := errors.Join(
-		reg.Register(m.totalWaits),
-		reg.Register(m.totalNoWaits),
-		reg.Register(m.awaitingAcquire),
 	)
 	return m, err
 }

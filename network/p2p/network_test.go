@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -8,16 +8,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/core/coretest"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/version"
 )
 
 const (
@@ -35,7 +34,7 @@ type fakeSenderAdapter struct {
 	*FakeSender
 }
 
-func (f *fakeSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
+func (f *fakeSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
 	// FakeSender.SendAppRequest expects a set
 	return f.FakeSender.SendAppRequest(ctx, nodeIDs, requestID, appRequestBytes)
 }
@@ -48,12 +47,12 @@ func (f *fakeSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID,
 	return f.FakeSender.SendAppError(ctx, nodeID, requestID, errorCode, errorMessage)
 }
 
-func (f *fakeSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], appGossipBytes []byte) error {
+func (f *fakeSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
 	// FakeSender.SendAppGossip expects nodeIDs
 	return f.FakeSender.SendAppGossip(ctx, nodeIDs, appGossipBytes)
 }
 
-func (f *fakeSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], appGossipBytes []byte) error {
+func (f *fakeSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
 	// FakeSender.SendAppGossipSpecific expects the same type
 	return f.FakeSender.SendAppGossipSpecific(ctx, nodeIDs, appGossipBytes)
 }
@@ -77,7 +76,7 @@ type senderTestAdapter struct {
 	*SenderTest
 }
 
-func (s *senderTestAdapter) SendAppRequest(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
+func (s *senderTestAdapter) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
 	// SenderTest.SendAppRequest expects a set
 	return s.SenderTest.SendAppRequest(ctx, nodeIDs, requestID, appRequestBytes)
 }
@@ -90,11 +89,11 @@ func (s *senderTestAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID,
 	return s.SenderTest.SendAppError(ctx, nodeID, requestID, errorCode, errorMessage)
 }
 
-func (s *senderTestAdapter) SendAppGossip(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], appGossipBytes []byte) error {
+func (s *senderTestAdapter) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
 	return s.SenderTest.SendAppGossip(ctx, nodeIDs, appGossipBytes)
 }
 
-func (s *senderTestAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusSet.Set[ids.NodeID], appGossipBytes []byte) error {
+func (s *senderTestAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
 	return s.SenderTest.SendAppGossipSpecific(ctx, nodeIDs, appGossipBytes)
 }
 
@@ -133,13 +132,13 @@ func TestMessageRouting(t *testing.T) {
 		},
 	}
 
-	sender := &enginetest.SenderStub{
+	fakeSender := &FakeSender{
 		SentAppGossip:  make(chan []byte, 1),
 		SentAppRequest: make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
 
-	network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+	network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	require.NoError(network.AddHandler(1, testHandler))
 	client := network.NewClient(1)
@@ -160,7 +159,7 @@ func TestMessageRouting(t *testing.T) {
 	require.NoError(err)
 	require.True(appGossipCalled)
 
-	require.NoError(client.AppRequest(ctx, consensusSet.Of(ids.EmptyNodeID), wantMsg, func(context.Context, ids.NodeID, []byte, error) {}))
+	require.NoError(client.AppRequest(ctx, set.Of(ids.EmptyNodeID), wantMsg, func(context.Context, ids.NodeID, []byte, error) {}))
 	requestBytes := <-fakeSender.SentAppRequest
 	t.Logf("Sent AppRequest bytes: %x", requestBytes)
 	err = network.AppRequest(ctx, wantNodeID, 1, time.Time{}, requestBytes)
@@ -176,13 +175,13 @@ func TestClientPrefixesMessages(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := enginetest.SenderStub{
+	fakeSender := &FakeSender{
 		SentAppRequest: make(chan []byte, 1),
 		SentAppGossip:  make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
 
-	network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+	network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	require.NoError(network.Connected(ctx, ids.EmptyNodeID, nil))
 	client := network.NewClient(handlerID)
@@ -191,7 +190,7 @@ func TestClientPrefixesMessages(t *testing.T) {
 
 	require.NoError(client.AppRequest(
 		ctx,
-		consensusSet.Of(ids.EmptyNodeID),
+		set.Of(ids.EmptyNodeID),
 		want,
 		func(context.Context, ids.NodeID, []byte, error) {},
 	))
@@ -225,11 +224,11 @@ func TestAppRequestResponse(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := enginetest.SenderStub{
+	fakeSender := &FakeSender{
 		SentAppRequest: make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
-	network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+	network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
 
@@ -246,7 +245,7 @@ func TestAppRequestResponse(t *testing.T) {
 	}
 
 	want := []byte("request")
-	require.NoError(client.AppRequest(ctx, consensusSet.Of(wantNodeID), want, callback))
+	require.NoError(client.AppRequest(ctx, set.Of(wantNodeID), want, callback))
 	got := <-fakeSender.SentAppRequest
 	require.Equal(handlerPrefix, got[0])
 	require.Equal(want, got[1:])
@@ -261,15 +260,14 @@ func TestAppRequestCancelledContext(t *testing.T) {
 	ctx := context.Background()
 
 	sentMessages := make(chan []byte, 1)
-	sender := &enginetest.Sender{
+	senderTest := &SenderTest{
 		SendAppRequestF: func(ctx context.Context, _ set.Set[ids.NodeID], _ uint32, msgBytes []byte) error {
 			require.NoError(ctx.Err())
 			sentMessages <- msgBytes
 			return nil
 		},
 	}
-	sender := &senderTestAdapter{SenderTest: senderTest}
-	network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+	network, err := NewNetwork(log.NewNoOpLogger(), senderTest, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
 
@@ -289,7 +287,7 @@ func TestAppRequestCancelledContext(t *testing.T) {
 	cancel()
 
 	want := []byte("request")
-	require.NoError(client.AppRequest(cancelledCtx, consensusSet.Of(wantNodeID), want, callback))
+	require.NoError(client.AppRequest(cancelledCtx, set.Of(wantNodeID), want, callback))
 	got := <-sentMessages
 	require.Equal(handlerPrefix, got[0])
 	require.Equal(want, got[1:])
@@ -303,11 +301,11 @@ func TestAppRequestFailed(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := enginetest.SenderStub{
+	fakeSender := &FakeSender{
 		SentAppRequest: make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
-	network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+	network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	client := network.NewClient(handlerID)
 
@@ -322,7 +320,7 @@ func TestAppRequestFailed(t *testing.T) {
 		close(done)
 	}
 
-	require.NoError(client.AppRequest(ctx, consensusSet.Of(wantNodeID), []byte("request"), callback))
+	require.NoError(client.AppRequest(ctx, set.Of(wantNodeID), []byte("request"), callback))
 	<-fakeSender.SentAppRequest
 
 	require.NoError(network.AppRequestFailed(ctx, wantNodeID, 1, errFoo))
@@ -358,7 +356,7 @@ func TestAppGossipMessageForUnregisteredHandler(t *testing.T) {
 					require.Fail("should not be called")
 				},
 			}
-			network, err := NewNetwork(log.NewNoOpLogger(), nil, metric.NewRegistry(), "")
+			network, err := NewNetwork(log.NewNoOpLogger(), nil, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(network.AddHandler(handlerID, handler))
 			require.NoError(network.AppGossip(ctx, ids.EmptyNodeID, tt.msg))
@@ -402,8 +400,8 @@ func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
 			wantRequestID := uint32(111)
 
 			done := make(chan struct{})
-			sender := &enginetest.Sender{}
-			sender.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+			senderTest := &SenderTest{}
+			senderTest.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 				defer close(done)
 
 				require.Equal(wantNodeID, nodeID)
@@ -413,8 +411,7 @@ func TestAppRequestMessageForUnregisteredHandler(t *testing.T) {
 
 				return nil
 			}
-			sender := &senderTestAdapter{SenderTest: senderTest}
-			network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+			network, err := NewNetwork(log.NewNoOpLogger(), senderTest, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(network.AddHandler(handlerID, handler))
 
@@ -442,8 +439,8 @@ func TestAppError(t *testing.T) {
 	wantRequestID := uint32(111)
 
 	done := make(chan struct{})
-	sender := &enginetest.Sender{}
-	sender.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	senderTest := &SenderTest{}
+	senderTest.SendAppErrorF = func(_ context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
 		defer close(done)
 
 		require.Equal(wantNodeID, nodeID)
@@ -453,8 +450,7 @@ func TestAppError(t *testing.T) {
 
 		return nil
 	}
-	sender := &senderTestAdapter{SenderTest: senderTest}
-	network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+	network, err := NewNetwork(log.NewNoOpLogger(), senderTest, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	require.NoError(network.AddHandler(handlerID, handler))
 	msg := PrefixMessage(ProtocolPrefix(handlerID), []byte("message"))
@@ -496,13 +492,13 @@ func TestResponseForUnrequestedRequest(t *testing.T) {
 					return nil, nil
 				},
 			}
-			network, err := NewNetwork(log.NewNoOpLogger(), nil, metric.NewRegistry(), "")
+			network, err := NewNetwork(log.NewNoOpLogger(), nil, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(network.AddHandler(handlerID, handler))
 
 			err = network.AppResponse(ctx, ids.EmptyNodeID, 0, []byte("foobar"))
 			require.ErrorIs(err, ErrUnrequestedResponse)
-			err = network.AppRequestFailed(ctx, ids.EmptyNodeID, 0, core.ErrTimeout)
+			err = network.AppRequestFailed(ctx, ids.EmptyNodeID, 0, &core.AppError{Code: -1, Message: "timeout"})
 			require.ErrorIs(err, ErrUnrequestedResponse)
 		})
 	}
@@ -515,24 +511,24 @@ func TestAppRequestDuplicateRequestIDs(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
 
-	sender := &enginetest.SenderStub{
+	fakeSender := &FakeSender{
 		SentAppRequest: make(chan []byte, 1),
 	}
 	sender := &fakeSenderAdapter{FakeSender: fakeSender}
 
-	network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+	network, err := NewNetwork(log.NewNoOpLogger(), sender, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	client := network.NewClient(0x1)
 
 	noOpCallback := func(context.Context, ids.NodeID, []byte, error) {}
 	// create a request that never gets a response
 	network.router.requestID = 1
-	require.NoError(client.AppRequest(ctx, consensusSet.Of(ids.EmptyNodeID), []byte{}, noOpCallback))
+	require.NoError(client.AppRequest(ctx, set.Of(ids.EmptyNodeID), []byte{}, noOpCallback))
 	<-fakeSender.SentAppRequest
 
 	// force the network to use the same requestID
 	network.router.requestID = 1
-	err = client.AppRequest(context.Background(), consensusSet.Of(ids.EmptyNodeID), []byte{}, noOpCallback)
+	err = client.AppRequest(context.Background(), set.Of(ids.EmptyNodeID), []byte{}, noOpCallback)
 	require.ErrorIs(err, ErrRequestPending)
 }
 
@@ -602,7 +598,7 @@ func TestPeersSample(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			network, err := NewNetwork(logging.NoLog{}, &enginetest.SenderStub{}, prometheus.NewRegistry(), "")
+			network, err := NewNetwork(log.NewNoOpLogger(), &SenderTest{}, prometheus.NewRegistry(), "")
 			require.NoError(err)
 
 			for connected := range tt.connected {
@@ -644,17 +640,16 @@ func TestAppRequestAnyNodeSelection(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			sent := set.Set[ids.NodeID]{}
-			sender := &enginetest.Sender{
+			var sent ids.NodeID
+			senderTest := &SenderTest{
 				SendAppRequestF: func(_ context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, _ []byte) error {
 					nodeID := nodeIDs.List()[0]
 					sent = nodeID
 					return nil
 				},
 			}
-			sender := &senderTestAdapter{SenderTest: senderTest}
 
-			n, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+			n, err := NewNetwork(log.NewNoOpLogger(), senderTest, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			for _, peer := range tt.peers {
 				require.NoError(n.Connected(context.Background(), peer, nil))
@@ -744,7 +739,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 			require := require.New(t)
 
 			done := make(chan struct{})
-			sender := &enginetest.Sender{
+			senderTest := &SenderTest{
 				SendAppRequestF: func(_ context.Context, nodeIDs set.Set[ids.NodeID], _ uint32, _ []byte) error {
 					nodeID := nodeIDs.List()[0]
 					if len(tt.expected) > 0 {
@@ -755,8 +750,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 					return nil
 				},
 			}
-			sender := &senderTestAdapter{SenderTest: senderTest}
-			network, err := NewNetwork(log.NoLog{}, sender, metric.NewRegistry(), "")
+			network, err := NewNetwork(log.NewNoOpLogger(), senderTest, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			ctx := context.Background()
 			for _, peer := range tt.peers {
@@ -779,7 +773,7 @@ func TestNodeSamplerClientOption(t *testing.T) {
 func TestMultipleClients(t *testing.T) {
 	require := require.New(t)
 
-	n, err := NewNetwork(logging.NoLog{}, &enginetest.Sender{}, prometheus.NewRegistry(), "")
+	n, err := NewNetwork(log.NewNoOpLogger(), &SenderTest{}, prometheus.NewRegistry(), "")
 	require.NoError(err)
 	_ = n.NewClient(0)
 	_ = n.NewClient(0)

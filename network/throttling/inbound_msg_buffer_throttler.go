@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -12,7 +12,6 @@ import (
 	utilmetric "github.com/luxfi/node/utils/metric"
 
 	"github.com/luxfi/ids"
-	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -147,7 +146,6 @@ func (m *inboundMsgBufferThrottlerMetrics) initialize(reg metric.Registerer) err
 		Help: "Number of inbound messages waiting to take space on the inbound message buffer",
 	})
 	errs.Add(
-		reg.Register(m.awaitingAcquire),
 	)
 	return errs.Err
 }

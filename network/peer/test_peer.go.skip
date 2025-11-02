@@ -23,6 +23,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
@@ -249,7 +250,7 @@ func (m *testValidatorManager) GetMap(netID ids.ID) map[ids.NodeID]*validators.G
 	return make(map[ids.NodeID]*validators.GetValidatorOutput)
 }
 
-func (m *testValidatorManager) SubsetWeight(netID ids.ID, validatorIDs consensusset.Set[ids.NodeID]) (uint64, error) {
+func (m *testValidatorManager) SubsetWeight(netID ids.ID, validatorIDs set.Set[ids.NodeID]) (uint64, error) {
 	return 0, nil
 }
 

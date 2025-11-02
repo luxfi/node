@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -19,7 +19,7 @@ type ingressConnectionCounter interface {
 }
 
 type validatorRetriever interface {
-	GetValidator(subnetID ids.ID, nodeID ids.NodeID) (*validators.Validator, bool)
+	GetValidator(subnetID ids.ID, nodeID ids.NodeID) (*validators.GetValidatorOutput, bool)
 }
 
 func checkNoIngressConnections(selfID ids.NodeID, ingressConnections ingressConnectionCounter, validators validatorRetriever) (interface{}, error) {

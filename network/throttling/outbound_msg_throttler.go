@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -14,7 +14,6 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
 )
 
 var (
@@ -44,7 +43,7 @@ type outboundMsgThrottler struct {
 
 func NewSybilOutboundMsgThrottler(
 	log log.Logger,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	vdrs validators.Manager,
 	config MsgByteThrottlerConfig,
 ) (OutboundMsgThrottler, error) {
@@ -199,11 +198,6 @@ func (m *outboundMsgThrottlerMetrics) initialize(registerer metric.Registerer) e
 		Help: "Number of messages waiting to be sent",
 	})
 	return errors.Join(
-		registerer.Register(m.acquireSuccesses),
-		registerer.Register(m.acquireFailures),
-		registerer.Register(m.remainingAtLargeBytes),
-		registerer.Register(m.remainingVdrBytes),
-		registerer.Register(m.awaitingRelease),
 	)
 }
 

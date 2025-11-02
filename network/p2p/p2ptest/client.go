@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2ptest
@@ -54,22 +54,22 @@ func NewClientWithPeers(
 ) *p2p.Client {
 	peers[clientNodeID] = clientHandler
 
-	peerSenders := make(map[ids.NodeID]*enginetest.Sender)
+	peerSenders := make(map[ids.NodeID]*p2p.SenderTest)
 	peerNetworks := make(map[ids.NodeID]*p2p.Network)
 	for nodeID := range peers {
-		peerSenders[nodeID] = &enginetest.Sender{}
-		peerNetwork, err := p2p.NewNetwork(logging.NoLog{}, peerSenders[nodeID], prometheus.NewRegistry(), "")
+		peerSenders[nodeID] = &p2p.SenderTest{}
+		peerNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), peerSenders[nodeID], prometheus.NewRegistry(), "")
 		require.NoError(t, err)
 		peerNetworks[nodeID] = peerNetwork
 	}
 
-	peerSenders[clientNodeID].SendAppGossipF = func(ctx context.Context, sendConfig core.SendConfig, gossipBytes []byte) error {
+	peerSenders[clientNodeID].SendAppGossipF = func(ctx context.Context, nodeIDs set.Set[ids.NodeID], gossipBytes []byte) error {
 		// Send the request asynchronously to avoid deadlock when the server
 		// sends the response back to the client
-		for nodeID := range sendConfig.NodeIDs {
-			go func() {
-				_ = peerNetworks[nodeID].AppGossip(ctx, nodeID, gossipBytes)
-			}()
+		for nodeID := range nodeIDs {
+			go func(nid ids.NodeID) {
+				_ = peerNetworks[nid].AppGossip(ctx, nid, gossipBytes)
+			}(nodeID)
 		}
 
 		return nil

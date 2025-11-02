@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -53,7 +53,7 @@ type InboundMsgThrottlerConfig struct {
 // Returns a new, sybil-safe inbound message throttler.
 func NewInboundMsgThrottler(
 	log log.Logger,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	vdrs validators.Manager,
 	throttlerConfig InboundMsgThrottlerConfig,
 	resourceTracker tracker.ResourceTracker,

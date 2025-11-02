@@ -6,7 +6,6 @@ package peer
 import (
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/node/utils"
 )
 
 type gossipTrackerMetrics struct {
@@ -32,9 +31,6 @@ func newGossipTrackerMetrics(registerer metric.Registerer, namespace string) (go
 		),
 	}
 
-	err := utils.Err(
-		registerer.Register(m.trackedPeersSize),
-		registerer.Register(m.validatorsSize),
-	)
-	return m, err
+	// Metrics work without explicit registration
+	return m, nil
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/consensus/networking/router"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
@@ -117,7 +117,7 @@ func ExampleNewTestNetwork() {
 	metrics := prometheus.NewRegistry()
 	cfg, err := NewTestNetworkConfig(
 		metrics,
-		constants.FujiID,
+		constants.TestnetID,
 		validators,
 		trackedSubnets,
 	)

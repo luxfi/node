@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer_test
@@ -207,4 +207,8 @@ type mockPrometheusCounter struct {
 
 func (m *mockPrometheusCounter) Inc() {
 	m.onIncrement()
+}
+
+func (m *mockPrometheusCounter) Get() float64 {
+	return 0
 }

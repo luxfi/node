@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package dialer
@@ -22,7 +22,7 @@ func TestDialerDialCanceledContext(t *testing.T) {
 	require := require.New(t)
 
 	listenAddrPort := netip.AddrPortFrom(netip.IPv4Unspecified(), 0)
-	dialer := NewDialer("tcp", Config{}, logging.NoLog{})
+	dialer := NewDialer("tcp", Config{}, log.NewNoOpLogger())
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()

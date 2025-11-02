@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -15,8 +15,6 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
-	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -60,7 +58,7 @@ type BandwidthThrottlerConfig struct {
 
 func newBandwidthThrottler(
 	log log.Logger,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	config BandwidthThrottlerConfig,
 ) (bandwidthThrottler, error) {
 	errs := wrappers.Errs{}
@@ -86,7 +84,6 @@ func newBandwidthThrottler(
 			}),
 		},
 	}
-	errs.Add(registerer.Register(t.metrics.awaitingAcquire))
 	return t, errs.Err
 }
 

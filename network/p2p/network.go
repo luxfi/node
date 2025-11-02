@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -79,10 +79,10 @@ type clientOptions struct {
 func NewNetwork(
 	log log.Logger,
 	sender core.AppSender,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	namespace string,
 ) (*Network, error) {
-	metrics := metricsImpl{
+	m := metrics{
 		msgTime: metric.NewGaugeVec(
 			metric.GaugeOpts{
 				Namespace: namespace,
@@ -102,8 +102,6 @@ func NewNetwork(
 	}
 
 	err := errors.Join(
-		registerer.Register(metrics.msgTime),
-		registerer.Register(metrics.msgCount),
 	)
 	if err != nil {
 		return nil, err
@@ -113,7 +111,7 @@ func NewNetwork(
 		Peers:  &Peers{},
 		log:    log,
 		sender: sender,
-		router: newRouter(log, sender, &metrics),
+		router: newRouter(log, sender, m),
 	}, nil
 }
 

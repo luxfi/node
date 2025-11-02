@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -13,28 +13,29 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/metric"
+	consensusset "github.com/luxfi/math/set"
+	consensustracker "github.com/luxfi/consensus/networking/tracker"
+	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/message"
-	subnets "github.com/luxfi/node/nets"
+	nodevalidators "github.com/luxfi/node/validators"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/consensus/uptime"
-	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/staking"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
-	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils/math/meter"
-	"github.com/luxfi/node/utils/resource"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/units"
 )
 
@@ -94,15 +95,6 @@ func NewTestNetworkConfig(
 	// TODO actually monitor usage
 	// TestNetwork doesn't use disk so we don't need to track it, but we should
 	// still have guardrails around cpu/memory usage.
-	resourceTracker, err := tracker.NewResourceTracker(
-		metrics,
-		resource.NoUsage,
-		&meter.ContinuousFactory{},
-		constants.DefaultHealthCheckAveragerHalflife,
-	)
-	if err != nil {
-		return nil, err
-	}
 	return &Config{
 		HealthConfig: HealthConfig{
 			Enabled:                      true,
@@ -175,46 +167,40 @@ func NewTestNetworkConfig(
 		TLSKey:                       tlsCert.PrivateKey.(crypto.Signer),
 		BLSKey:                       blsKey,
 		TrackedSubnets:               trackedSubnets,
-		Beacons:                      validators.NewManager(),
-		Validators:                   currentValidators,
-		UptimeCalculator:             uptime.NoOpCalculator,
+		Beacons:                      nodevalidators.NewManager(),
+		Validators:                   nodevalidators.NewManager(),
+		UptimeCalculator:             &uptime.NoOpCalculator{},
 		UptimeMetricFreq:             constants.DefaultUptimeMetricFreq,
 		RequireValidatorToConnect:    constants.DefaultNetworkRequireValidatorToConnect,
 		MaximumInboundMessageTimeout: constants.DefaultNetworkMaximumInboundTimeout,
 		PeerReadBufferSize:           constants.DefaultNetworkPeerReadBufferSize,
 		PeerWriteBufferSize:          constants.DefaultNetworkPeerWriteBufferSize,
-		ResourceTracker:              resourceTracker,
+		ResourceTracker:              &noOpConsensusResourceTracker{},
 		CPUTargeter: tracker.NewTargeter(
-			logging.NoLog{},
 			&tracker.TargeterConfig{
 				VdrAlloc:           float64(runtime.NumCPU()),
 				MaxNonVdrUsage:     .8 * float64(runtime.NumCPU()),
 				MaxNonVdrNodeUsage: float64(runtime.NumCPU()) / 8,
 			},
-			currentValidators,
-			resourceTracker.CPUTracker(),
 		),
 		DiskTargeter: tracker.NewTargeter(
-			logging.NoLog{},
 			&tracker.TargeterConfig{
 				VdrAlloc:           1000 * units.GiB,
 				MaxNonVdrUsage:     1000 * units.GiB,
 				MaxNonVdrNodeUsage: 1000 * units.GiB,
 			},
-			currentValidators,
-			resourceTracker.DiskTracker(),
 		),
 	}, nil
 }
 
 func NewTestNetwork(
 	log log.Logger,
-	metrics prometheus.Registerer,
+	registry metric.Registry,
 	cfg *Config,
-	router router.ExternalHandler,
+	router ExternalHandler,
 ) (Network, error) {
 	msgCreator, err := message.NewCreator(
-		metrics,
+		registry,
 		constants.DefaultNetworkCompressionType,
 		constants.DefaultNetworkMaximumInboundTimeout,
 	)
@@ -226,7 +212,7 @@ func NewTestNetwork(
 		cfg,
 		upgrade.GetConfig(cfg.NetworkID).FortunaTime, // Must be updated for each network upgrade
 		msgCreator,
-		promRegistry,
+		registry,
 		log,
 		newNoopListener(),
 		dialer.NewDialer(
@@ -260,6 +246,36 @@ func (n *noOpResourceManager) CPUUsage() float64  { return 0 }
 func (n *noOpResourceManager) DiskUsage() float64 { return 0 }
 func (n *noOpResourceManager) Shutdown()          {}
 
+// noOpConsensusResourceTracker implements consensus ResourceTracker for testing
+type noOpConsensusResourceTracker struct{}
+
+func (n *noOpConsensusResourceTracker) StartProcessing(nodeID ids.NodeID, now time.Time) {}
+func (n *noOpConsensusResourceTracker) StopProcessing(nodeID ids.NodeID, now time.Time)  {}
+func (n *noOpConsensusResourceTracker) CPUTracker() consensustracker.CPUTracker {
+	return &noOpConsensusCPUTracker{}
+}
+func (n *noOpConsensusResourceTracker) DiskTracker() consensustracker.DiskTracker {
+	return &noOpConsensusDiskTracker{}
+}
+
+// noOpConsensusCPUTracker implements consensus CPUTracker for testing
+type noOpConsensusCPUTracker struct{}
+
+func (n *noOpConsensusCPUTracker) Usage(nodeID ids.NodeID, now time.Time) float64 { return 0 }
+func (n *noOpConsensusCPUTracker) TimeUntilUsage(nodeID ids.NodeID, now time.Time, value float64) time.Duration {
+	return 0
+}
+func (n *noOpConsensusCPUTracker) TotalUsage() float64 { return 0 }
+
+// noOpConsensusDiskTracker implements consensus DiskTracker for testing
+type noOpConsensusDiskTracker struct{}
+
+func (n *noOpConsensusDiskTracker) Usage(nodeID ids.NodeID, now time.Time) float64 { return 0 }
+func (n *noOpConsensusDiskTracker) TimeUntilUsage(nodeID ids.NodeID, now time.Time, value float64) time.Duration {
+	return 0
+}
+func (n *noOpConsensusDiskTracker) TotalUsage() float64 { return 0 }
+
 // noOpTargeter is a no-op targeter for testing
 type noOpTargeter struct {
 	target uint64
@@ -272,8 +288,8 @@ type noOpResourceTracker struct{}
 
 func (n *noOpResourceTracker) StartProcessing(nodeID ids.NodeID, time time.Time) {}
 func (n *noOpResourceTracker) StopProcessing(nodeID ids.NodeID, time time.Time)  {}
-func (n *noOpResourceTracker) CPUTracker() tracker.CPUTracker                    { return &noOpCPUTracker{} }
-func (n *noOpResourceTracker) DiskTracker() tracker.DiskTracker                  { return &noOpDiskTracker{} }
+func (n *noOpResourceTracker) CPUTracker() tracker.Tracker                       { return &noOpCPUTracker{} }
+func (n *noOpResourceTracker) DiskTracker() tracker.Tracker                      { return &noOpDiskTracker{} }
 
 // noOpCPUTracker is a no-op CPU tracker
 type noOpCPUTracker struct{}

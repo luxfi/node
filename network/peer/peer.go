@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -15,6 +15,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/ids"
@@ -24,6 +26,7 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/ips"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/math/set"
@@ -225,6 +228,7 @@ func Start(
 		onClosingCtxCancel: onClosingCtxCancel,
 		onClosed:           make(chan struct{}),
 		getPeerListChan:    make(chan struct{}, 1),
+		trackedSubnets:     make(set.Set[ids.ID]),
 	}
 
 	if isIngress {
@@ -288,8 +292,7 @@ func (p *peer) Info() Info {
 		LastReceived:   p.LastReceived(),
 		ObservedUptime: json.Uint32(primaryUptime),
 		TrackedSubnets: p.trackedSubnets,
-		SupportedACPs:  p.supportedACPs,
-		ObjectedACPs:   p.objectedACPs,
+		// TODO: Add support for SupportedACPs and ObjectedACPs
 	}
 }
 

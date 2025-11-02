@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/proto"
@@ -16,7 +17,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/proto/pb/sdk"
-	"github.com/luxfi/consensus/engine/core/coretest"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/node/utils/constants"
@@ -104,13 +104,18 @@ func TestGossiperGossip(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			responseSender := &enginetest.SenderStub{
-				SentAppResponse: make(chan []byte, 1),
-			}
-			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, metric.NewNoOp().Registry(), "")
+		// Channel to capture sent app responses
+		sentAppResponse := make(chan []byte, 1)
+		responseSender := &p2p.SenderTest{
+			SendAppResponseF: func(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+				sentAppResponse <- response
+				return nil
+			},
+		}
+			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, prometheus.NewRegistry(), "")
 			require.NoError(err)
 
-			responseBloom, err := NewBloomFilter(metric.NewNoOp().Registry(), "", 1000, 0.01, 0.05)
+			responseBloom, err := NewBloomFilter(prometheus.NewRegistry(), "", 1000, 0.01, 0.05)
 			require.NoError(err)
 			responseSet := &testSet{
 				txs:   make(map[ids.ID]*testTx),
@@ -120,7 +125,7 @@ func TestGossiperGossip(t *testing.T) {
 				require.NoError(responseSet.Add(item))
 			}
 
-			testMetrics, err := NewMetrics(metric.NewNoOp().Registry(), "")
+			testMetrics, err := NewMetrics(prometheus.NewRegistry(), "")
 			require.NoError(err)
 			marshaller := testMarshaller{}
 			handler := NewHandler[*testTx](
@@ -133,15 +138,20 @@ func TestGossiperGossip(t *testing.T) {
 			require.NoError(err)
 			require.NoError(responseNetwork.AddHandler(0x0, handler))
 
-			requestSender := &enginetest.SenderStub{
-				SentAppRequest: make(chan []byte, 1),
-			}
+		// Channel to capture sent app requests
+		sentAppRequest := make(chan []byte, 1)
+		requestSender := &p2p.SenderTest{
+			SendAppRequestF: func(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
+				sentAppRequest <- request
+				return nil
+			},
+		}
 
-			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, metric.NewRegistry(), "")
+			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, prometheus.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(requestNetwork.Connected(context.Background(), ids.EmptyNodeID, nil))
 
-			bloom, err := NewBloomFilter(metric.NewRegistry(), "", 1000, 0.01, 0.05)
+			bloom, err := NewBloomFilter(prometheus.NewRegistry(), "", 1000, 0.01, 0.05)
 			require.NoError(err)
 			requestSet := &testSet{
 				txs:   make(map[ids.ID]*testTx),
@@ -155,7 +165,7 @@ func TestGossiperGossip(t *testing.T) {
 
 			require.NoError(err)
 			gossiper := NewPullGossiper[*testTx](
-				log.NoLog{},
+				log.NewNoOpLogger(),
 				marshaller,
 				requestSet,
 				requestClient,
@@ -169,8 +179,8 @@ func TestGossiperGossip(t *testing.T) {
 			}
 
 			require.NoError(gossiper.Gossip(ctx))
-			require.NoError(responseNetwork.AppRequest(ctx, ids.EmptyNodeID, 1, time.Time{}, <-requestSender.SentAppRequest))
-			require.NoError(requestNetwork.AppResponse(ctx, ids.EmptyNodeID, 1, <-responseSender.SentAppResponse))
+			require.NoError(responseNetwork.AppRequest(ctx, ids.EmptyNodeID, 1, time.Time{}, <-sentAppRequest))
+			require.NoError(requestNetwork.AppResponse(ctx, ids.EmptyNodeID, 1, <-sentAppResponse))
 
 			require.Len(requestSet.txs, tt.expectedLen)
 			require.Subset(tt.expectedPossibleValues, maps.Values(requestSet.txs))
@@ -509,13 +519,18 @@ func TestPushGossiper(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			sender := &enginetest.SenderStub{
-				SentAppGossip: make(chan []byte, 2),
-			}
+		// Channel to capture sent app gossip
+		sentAppGossip := make(chan []byte, 2)
+		sender := &p2p.SenderTest{
+			SendAppGossipF: func(ctx context.Context, nodeIDs set.Set[ids.NodeID], gossip []byte) error {
+				sentAppGossip <- gossip
+				return nil
+			},
+		}
 			network, err := p2p.NewNetwork(
 				nil,
 				sender,
-				metric.NewNoOp().Registry(),
+				prometheus.NewRegistry(),
 				"",
 			)
 			require.NoError(err)
@@ -534,7 +549,7 @@ func TestPushGossiper(t *testing.T) {
 				},
 				time.Hour,
 			)
-			metrics, err := NewMetrics(metric.NewNoOp().Registry(), "")
+			metrics, err := NewMetrics(prometheus.NewRegistry(), "")
 			require.NoError(err)
 			marshaller := testMarshaller{}
 
@@ -579,14 +594,14 @@ func TestPushGossiper(t *testing.T) {
 
 					if len(want.Gossip) > 0 {
 						// remove the handler prefix
-						sentMsg := <-sender.SentAppGossip
+						sentMsg := <-sentAppGossip
 						got := &sdk.PushGossip{}
 						require.NoError(proto.Unmarshal(sentMsg[1:], got))
 
 						require.Equal(want.Gossip, got.Gossip)
 					} else {
 						select {
-						case <-sender.SentAppGossip:
+						case <-sentAppGossip:
 							require.FailNow("unexpectedly sent gossip message")
 						default:
 						}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/core/coretest"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/consensus/validators/validatorsmock"
+	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/log"
 )
 
@@ -166,9 +166,7 @@ func TestValidatorsSample(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
-			subnetID := ids.GenerateTestID()
-			ctrl := gomock.NewController(t)
-			mockValidators := validatorsmock.NewState(ctrl)
+			mockValidators := &validatorstest.State{}
 
 			// Set up mock behavior
 			callIndex := 0
@@ -201,14 +199,14 @@ func TestValidatorsSample(t *testing.T) {
 				return validatorSet, call.getValidatorSetErr
 			}
 
-			network, err := NewNetwork(logging.NoLog{}, &enginetest.SenderStub{}, prometheus.NewRegistry(), "")
+			network, err := NewNetwork(log.NewNoOpLogger(), &SenderTest{}, prometheus.NewRegistry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()
 			require.NoError(network.Connected(ctx, nodeID1, nil))
 			require.NoError(network.Connected(ctx, nodeID2, nil))
 
-			v := NewValidators(network.Peers, network.log, netID, mockValidators, tt.maxStaleness)
+			v := NewValidators(network.Peers, network.log, ids.Empty, mockValidators, tt.maxStaleness)
 			for _, call := range tt.calls {
 				v.lastUpdated = call.time
 				sampled := v.Sample(ctx, call.limit)
@@ -339,8 +337,7 @@ func TestValidatorsTop(t *testing.T) {
 				}
 			}
 
-			subnetID := ids.GenerateTestID()
-			mockValidators := validatorsmock.NewState(ctrl)
+			mockValidators := &validatorstest.State{}
 
 			mockValidators.GetCurrentHeightF = func(context.Context) (uint64, error) {
 				return uint64(1), nil
@@ -349,14 +346,14 @@ func TestValidatorsTop(t *testing.T) {
 				return validatorSet, nil
 			}
 
-			network, err := NewNetwork(logging.NoLog{}, &enginetest.SenderStub{}, prometheus.NewRegistry(), "")
+			network, err := NewNetwork(log.NewNoOpLogger(), &SenderTest{}, prometheus.NewRegistry(), "")
 			require.NoError(err)
 
 			ctx := context.Background()
 			require.NoError(network.Connected(ctx, nodeID1, nil))
 			require.NoError(network.Connected(ctx, nodeID2, nil))
 
-			v := NewValidators(network.Peers, network.log, netID, mockValidators, time.Second)
+			v := NewValidators(network.Peers, network.log, ids.Empty, mockValidators, time.Second)
 			nodeIDs := v.Top(ctx, test.percentage)
 			require.Equal(test.expected, nodeIDs)
 		})

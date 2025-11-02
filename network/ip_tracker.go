@@ -1,25 +1,23 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
 
 import (
 	"crypto/rand"
-	"errors"
 	"sync"
 
-	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
+	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/sampler"
-	"github.com/luxfi/math/set"
 )
 
 const (
@@ -43,44 +41,25 @@ var _ validators.ManagerCallbackListener = (*ipTracker)(nil)
 func newIPTracker(
 	trackedSubnets set.Set[ids.ID],
 	log log.Logger,
-	registerer prometheus.Registerer,
+	registry metric.Registry,
 ) (*ipTracker, error) {
-	registry, ok := registerer.(metric.Registry)
-	if !ok {
-		return nil, errors.New("registerer must be a Registry")
-	}
 	bloomMetrics, err := bloom.NewMetrics("ip_bloom", registry)
 	if err != nil {
 		return nil, err
 	}
+
+	metricsInstance := metric.NewWithRegistry("ip_tracker", registry)
 	tracker := &ipTracker{
-		trackedSubnets: trackedSubnets,
-		log:            log,
-		numTrackedPeers: prometheus.NewGauge(prometheus.GaugeOpts{
-			Name: "tracked_peers",
-			Help: "number of peers this node is monitoring",
-		}),
-		numGossipableIPs: metric.NewGauge(metric.GaugeOpts{
-			Name: "gossipable_ips",
-			Help: "number of IPs this node considers able to be gossiped",
-		}),
-		numTrackedSubnets: prometheus.NewGauge(prometheus.GaugeOpts{
-			Name: "tracked_subnets",
-			Help: "number of subnets this node is monitoring",
-		}),
-		bloomMetrics:   bloomMetrics,
-		tracked:        make(map[ids.NodeID]*trackedNode),
-		bloomAdditions: make(map[ids.NodeID]int),
-		connected:      make(map[ids.NodeID]*connectedNode),
-		subnet:         make(map[ids.ID]*gossipableSubnet),
-	}
-	err = errors.Join(
-		registerer.Register(tracker.numTrackedPeers),
-		registerer.Register(tracker.numGossipableIPs),
-		registerer.Register(tracker.numTrackedSubnets),
-	)
-	if err != nil {
-		return nil, err
+		trackedSubnets:    trackedSubnets,
+		log:               log,
+		numTrackedPeers:   metricsInstance.NewGauge("tracked_peers", "number of peers this node is monitoring"),
+		numGossipableIPs:  metricsInstance.NewGauge("gossipable_ips", "number of IPs this node considers able to be gossiped"),
+		numTrackedSubnets: metricsInstance.NewGauge("tracked_subnets", "number of subnets this node is monitoring"),
+		bloomMetrics:      bloomMetrics,
+		tracked:           make(map[ids.NodeID]*trackedNode),
+		bloomAdditions:    make(map[ids.NodeID]int),
+		connected:         make(map[ids.NodeID]*connectedNode),
+		subnet:            make(map[ids.ID]*gossipableSubnet),
 	}
 	return tracker, tracker.resetBloom()
 }
@@ -119,7 +98,7 @@ type connectedNode struct {
 }
 
 type gossipableSubnet struct {
-	numGossipableIPs prometheus.Gauge
+	numGossipableIPs metric.Gauge
 
 	// manuallyGossipable contains the nodeIDs of all nodes whose IP was
 	// manually configured to be gossiped for this subnet.
@@ -211,9 +190,9 @@ type ipTracker struct {
 	// trackedSubnets does not include the primary network.
 	trackedSubnets    set.Set[ids.ID]
 	log               log.Logger
-	numTrackedPeers   prometheus.Gauge
-	numGossipableIPs  prometheus.Gauge // IPs are not deduplicated across subnets
-	numTrackedSubnets prometheus.Gauge
+	numTrackedPeers   metric.Gauge
+	numGossipableIPs  metric.Gauge // IPs are not deduplicated across subnets
+	numTrackedSubnets metric.Gauge
 	bloomMetrics      *bloom.Metrics
 
 	lock    sync.RWMutex
@@ -411,7 +390,7 @@ func (i *ipTracker) Disconnected(nodeID ids.NodeID) {
 	}
 }
 
-func (i *ipTracker) OnValidatorAdded(subnetID ids.ID, nodeID ids.NodeID, _ *bls.PublicKey, _ ids.ID, _ uint64) {
+func (i *ipTracker) OnValidatorAdded(subnetID ids.ID, nodeID ids.NodeID, weight uint64) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
@@ -424,7 +403,10 @@ func (i *ipTracker) addTrackableID(nodeID ids.NodeID, subnetID *ids.ID) {
 	nodeTracker, previouslyTracked := i.tracked[nodeID]
 	if !previouslyTracked {
 		i.numTrackedPeers.Inc()
-		nodeTracker = &trackedNode{}
+		nodeTracker = &trackedNode{
+			validatedSubnets: make(set.Set[ids.ID]),
+			trackedSubnets:   make(set.Set[ids.ID]),
+		}
 		i.tracked[nodeID] = nodeTracker
 	}
 
@@ -456,8 +438,10 @@ func (i *ipTracker) addGossipableID(nodeID ids.NodeID, subnetID ids.ID, manually
 	if !ok {
 		i.numTrackedSubnets.Inc()
 		subnet = &gossipableSubnet{
-			numGossipableIPs:  i.numGossipableIPs,
-			gossipableIndices: make(map[ids.NodeID]int),
+			numGossipableIPs:   i.numGossipableIPs,
+			manuallyGossipable: make(set.Set[ids.NodeID]),
+			gossipableIDs:      make(set.Set[ids.NodeID]),
+			gossipableIndices:  make(map[ids.NodeID]int),
 		}
 		i.subnet[subnetID] = subnet
 	}
@@ -480,16 +464,16 @@ func (i *ipTracker) addGossipableID(nodeID ids.NodeID, subnetID ids.ID, manually
 	}
 }
 
-func (*ipTracker) OnValidatorWeightChanged(ids.ID, ids.NodeID, uint64, uint64) {}
+func (*ipTracker) OnValidatorLightChanged(netID ids.ID, nodeID ids.NodeID, oldLight, newLight uint64) {}
 
-func (i *ipTracker) OnValidatorRemoved(subnetID ids.ID, nodeID ids.NodeID, _ uint64) {
+func (i *ipTracker) OnValidatorRemoved(netID ids.ID, nodeID ids.NodeID, light uint64) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
-	subnet, ok := i.subnet[subnetID]
+	subnet, ok := i.subnet[netID]
 	if !ok {
 		i.log.Error("attempted removal of validator from untracked subnet",
-			zap.Stringer("subnetID", subnetID),
+			zap.Stringer("subnetID", netID),
 			zap.Stringer("nodeID", nodeID),
 		)
 		return
@@ -504,20 +488,20 @@ func (i *ipTracker) OnValidatorRemoved(subnetID ids.ID, nodeID ids.NodeID, _ uin
 
 	if subnet.canDelete() {
 		i.numTrackedSubnets.Dec()
-		delete(i.subnet, subnetID)
+		delete(i.subnet, netID)
 	}
 
 	trackedNode, ok := i.tracked[nodeID]
 	if !ok {
 		i.log.Error("attempted removal of untracked validator",
-			zap.Stringer("subnetID", subnetID),
+			zap.Stringer("subnetID", netID),
 			zap.Stringer("nodeID", nodeID),
 		)
 		return
 	}
 
-	trackedNode.validatedSubnets.Remove(subnetID)
-	trackedNode.trackedSubnets.Remove(subnetID)
+	trackedNode.validatedSubnets.Remove(netID)
+	trackedNode.trackedSubnets.Remove(netID)
 
 	if trackedNode.canDelete() {
 		i.numTrackedPeers.Dec()

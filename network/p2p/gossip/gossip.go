@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -17,9 +17,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/buffer"
 	"github.com/luxfi/log"
@@ -149,11 +147,11 @@ func NewMetrics(
 		),
 	}
 	err := errors.Join(
-		metric.Register(m.count),
-		metric.Register(m.bytes),
-		metric.Register(m.tracking),
-		metric.Register(m.trackingLifetimeAverage),
-		metric.Register(m.topValidators),
+		// metric.Register(m.count),
+		// metric.Register(m.bytes),
+		// metric.Register(m.tracking),
+		// metric.Register(m.trackingLifetimeAverage),
+		// metric.Register(m.topValidators),
 	)
 	return m, err
 }

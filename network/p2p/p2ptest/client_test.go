@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2ptest
@@ -34,7 +34,7 @@ func TestClient_AppGossip(t *testing.T) {
 		nodeID,
 		testHandler,
 	)
-	require.NoError(client.AppGossip(ctx, core.SendConfig{NodeIDs: set.Of(nodeID)}, []byte("foobar")))
+	require.NoError(client.AppGossip(ctx, core.SendConfig{Peers: 1}, []byte("foobar")))
 	<-appGossipChan
 }
 

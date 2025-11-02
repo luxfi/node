@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -16,8 +16,6 @@ import (
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/linked"
-	"github.com/luxfi/log"
-	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 )
 
@@ -25,7 +23,7 @@ import (
 
 func newInboundMsgByteThrottler(
 	log log.Logger,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	vdrs validators.Manager,
 	config MsgByteThrottlerConfig,
 ) (*inboundMsgByteThrottler, error) {
@@ -337,10 +335,6 @@ func (m *inboundMsgByteThrottlerMetrics) initialize(reg metric.Registerer) error
 		Help: "Number of messages currently being read/handled",
 	})
 	errs.Add(
-		reg.Register(m.remainingAtLargeBytes),
-		reg.Register(m.remainingVdrBytes),
-		reg.Register(m.awaitingAcquire),
-		reg.Register(m.awaitingRelease),
 	)
 	return errs.Err
 }

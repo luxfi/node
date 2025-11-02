@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -15,30 +15,26 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/luxfi/log"
-	"github.com/luxfi/metric"
 	"github.com/pires/go-proxyproto"
+	"go.uber.org/zap"
 
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus/core"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	subnets "github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/networking/router"
-	"github.com/luxfi/consensus/networking/sender"
+	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/subnets"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/log"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
 
@@ -204,7 +200,7 @@ func NewNetwork(
 	config *Config,
 	minCompatibleTime time.Time,
 	msgCreator message.Creator,
-	metricsRegisterer prometheus.Registerer,
+	metricsRegistry metric.Registry,
 	log log.Logger,
 	listener net.Listener,
 	dialer dialer.Dialer,
@@ -236,9 +232,12 @@ func NewNetwork(
 		return nil, errTrackingPrimaryNetwork
 	}
 
+	// Wrap consensus ResourceTracker to match network tracker interface
+	resourceTrackerWrapper := &resourceTrackerWrapper{rt: config.ResourceTracker}
+
 	inboundMsgThrottler, err := throttling.NewInboundMsgThrottler(
 		log,
-		metricsRegisterer,
+		metricsRegistry,
 		config.Validators,
 		config.ThrottlerConfig.InboundMsgThrottlerConfig,
 		resourceTrackerWrapper,
@@ -251,7 +250,7 @@ func NewNetwork(
 
 	outboundMsgThrottler, err := throttling.NewSybilOutboundMsgThrottler(
 		log,
-		metricsRegisterer,
+		metricsRegistry,
 		config.Validators,
 		config.ThrottlerConfig.OutboundMsgThrottlerConfig,
 	)
@@ -259,17 +258,17 @@ func NewNetwork(
 		return nil, fmt.Errorf("initializing outbound message throttler failed with: %w", err)
 	}
 
-	peerMetrics, err := peer.NewMetrics(metricsRegisterer)
+	peerMetrics, err := peer.NewMetrics(metricsRegistry)
 	if err != nil {
 		return nil, fmt.Errorf("initializing peer metrics failed with: %w", err)
 	}
 
-	metrics, err := newMetrics(metricsRegisterer, config.TrackedSubnets)
+	metrics, err := newMetrics(metricsRegistry, config.TrackedSubnets)
 	if err != nil {
 		return nil, fmt.Errorf("initializing network metrics failed with: %w", err)
 	}
 
-	ipTracker, err := newIPTracker(config.TrackedSubnets, log, metricsRegisterer)
+	ipTracker, err := newIPTracker(config.TrackedSubnets, log, metricsRegistry)
 	if err != nil {
 		return nil, fmt.Errorf("initializing ip tracker failed with: %w", err)
 	}
@@ -306,7 +305,7 @@ func NewNetwork(
 		MaxClockDifference:   config.MaxClockDifference,
 		SupportedLPs:         config.SupportedLPs.List(),
 		ObjectedLPs:          config.ObjectedLPs.List(),
-		ResourceTracker:      config.ResourceTracker,
+		ResourceTracker:      resourceTrackerWrapper,
 		UptimeCalculator:     config.UptimeCalculator,
 		IPSigner:             peer.NewIPSigner(config.MyIPPort, config.TLSKey, config.BLSKey),
 	}
@@ -820,7 +819,7 @@ func (n *network) getPeers(
 			continue
 		}
 
-		_, areTheyAValidator := n.config.Validators.GetValidator(subnetID, nodeID)
+		_, areTheyAValidator := n.config.Validators.GetValidator(netID, nodeID)
 		// check if the peer is allowed to connect to the subnet
 		if !allower.IsAllowed(nodeID, areTheyAValidator) {
 			continue
@@ -843,7 +842,7 @@ func (n *network) samplePeers(
 	// As an optimization, if there are fewer validators than
 	// [numValidatorsToSample], only attempt to sample [numValidatorsToSample]
 	// validators to potentially avoid iterating over the entire peer set.
-	numValidatorsToSample := min(config.Validators, n.config.Validators.NumValidators(subnetID))
+	numValidatorsToSample := min(config.Validators, n.config.Validators.NumValidators(netID))
 
 	n.peersLock.RLock()
 	defer n.peersLock.RUnlock()
@@ -867,7 +866,7 @@ func (n *network) samplePeers(
 				}
 			}
 
-			_, areTheyAValidator := n.config.Validators.GetValidator(subnetID, peerID)
+			_, areTheyAValidator := n.config.Validators.GetValidator(netID, peerID)
 			// check if the peer is allowed to connect to the subnet
 			if !allower.IsAllowed(peerID, areTheyAValidator) {
 				return false

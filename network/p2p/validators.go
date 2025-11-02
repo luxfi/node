@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"
@@ -44,7 +43,7 @@ func NewValidators(
 	return &Validators{
 		peers:                    peers,
 		log:                      log,
-		netID:                    netID,
+		subnetID:                 subnetID,
 		validators:               validators,
 		maxValidatorSetStaleness: maxValidatorSetStaleness,
 	}
@@ -92,7 +91,7 @@ func (v *Validators) refresh(ctx context.Context) {
 		v.log.Warn("failed to get current height", log.Reflect("error", err))
 		return
 	}
-	validatorSet, err := v.validators.GetValidatorSet(ctx, height, v.netID)
+	validatorSet, err := v.validators.GetValidatorSet(ctx, height, v.subnetID)
 	if err != nil {
 		v.log.Warn("failed to get validator set", log.Reflect("error", err))
 		return
@@ -103,10 +102,10 @@ func (v *Validators) refresh(ctx context.Context) {
 	for nodeID, vdr := range validatorSet {
 		v.validatorList = append(v.validatorList, validator{
 			nodeID: nodeID,
-			weight: validatorOutput.Weight,
+			weight: vdr.Weight,
 		})
 		v.validatorSet.Add(nodeID)
-		v.totalWeight += validatorOutput.Weight
+		v.totalWeight += vdr.Weight
 	}
 	utils.Sort(v.validatorList)
 

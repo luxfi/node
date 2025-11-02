@@ -1,11 +1,10 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
 
 import (
 	"crypto"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"net/netip"
 	"testing"
 	"time"
@@ -13,9 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 )
 
 func TestSignedIpVerify(t *testing.T) {
@@ -100,7 +98,7 @@ func TestSignedIpVerify(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			signedIP, err := tt.ip.Sign(tt.tlsSigner, func() bls.Signer { s, _ := localsigner.FromBytes(bls.SecretKeyToBytes(tt.blsSigner)); return s }())
+			signedIP, err := tt.ip.Sign(tt.tlsSigner, tt.blsSigner)
 			require.NoError(t, err)
 
 			err = signedIP.Verify(tt.expectedCert, tt.maxTimestamp)

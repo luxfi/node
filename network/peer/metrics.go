@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -83,13 +83,6 @@ func NewMetrics(registerer metric.Registerer) (*Metrics, error) {
 		),
 	}
 	return m, errors.Join(
-		registerer.Register(m.ClockSkewCount),
-		registerer.Register(m.ClockSkewSum),
-		registerer.Register(m.NumFailedToParse),
-		registerer.Register(m.NumSendFailed),
-		registerer.Register(m.Messages),
-		registerer.Register(m.Bytes),
-		registerer.Register(m.BytesSaved),
 	)
 }
 
