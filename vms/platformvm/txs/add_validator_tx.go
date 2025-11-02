@@ -4,11 +4,14 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
+	"context"
 	"fmt"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
+	safemath "github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -110,14 +113,14 @@ func (tx *AddValidatorTx) SyntacticVerify(ctx *consensusctx.Context) error {
 		if err := out.Verify(); err != nil {
 			return fmt.Errorf("failed to verify output: %w", err)
 		}
-		newWeight, err := math.Add(totalStakeWeight, out.Output().Amount())
+		newWeight, err := safemath.Add64(totalStakeWeight, out.Output().Amount())
 		if err != nil {
 			return err
 		}
 		totalStakeWeight = newWeight
 
 		assetID := out.AssetID()
-		luxAssetID := consensusContext.FromContext(ctx).XAssetID
+		luxAssetID := ctx.XAssetID
 		if assetID != luxAssetID {
 			return fmt.Errorf("%w but is %q", errStakeMustBeLUX, assetID)
 		}

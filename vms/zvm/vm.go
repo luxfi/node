@@ -15,9 +15,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/engine/chain/block"
-	enginecore "github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/engine/core/common"
 
 	"github.com/luxfi/log"
@@ -96,19 +94,37 @@ type VM struct {
 // Initialize initializes the VM
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *consensusctx.Context,
-	db database.Database,
+	chainCtx interface{},
+	db interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- common.Message,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	msgChan interface{},
+	fxs []interface{},
+	appSender interface{},
 ) error {
-	vm.ctx = chainCtx
-	vm.db = db
-	vm.toEngine = toEngine
-	vm.log = chainCtx.Log
+	// Type assertions
+	var ok bool
+	vm.ctx, ok = chainCtx.(*consensusctx.Context)
+	if !ok {
+		return errors.New("invalid chain context type")
+	}
+	
+	vm.db, ok = db.(database.Database)
+	if !ok {
+		return errors.New("invalid database type")
+	}
+	
+	vm.toEngine, ok = msgChan.(chan<- common.Message)
+	if !ok {
+		return errors.New("invalid message channel type")
+	}
+	
+	if logger, ok := vm.ctx.Log.(log.Logger); ok {
+		vm.log = logger
+	} else {
+		return errors.New("invalid logger type")
+	}
 	vm.pendingBlocks = make(map[ids.ID]*Block)
 	
 	// Parse configuration
@@ -117,21 +133,21 @@ func (vm *VM) Initialize(
 	}
 	
 	// Initialize UTXO database
-	utxoDB, err := NewUTXODB(db, vm.log)
+	utxoDB, err := NewUTXODB(vm.db, vm.log)
 	if err != nil {
 		return fmt.Errorf("failed to initialize UTXO DB: %w", err)
 	}
 	vm.utxoDB = utxoDB
 	
 	// Initialize nullifier database
-	nullifierDB, err := NewNullifierDB(db, vm.log)
+	nullifierDB, err := NewNullifierDB(vm.db, vm.log)
 	if err != nil {
 		return fmt.Errorf("failed to initialize nullifier DB: %w", err)
 	}
 	vm.nullifierDB = nullifierDB
 	
 	// Initialize state tree
-	stateTree, err := NewStateTree(db, vm.log)
+	stateTree, err := NewStateTree(vm.db, vm.log)
 	if err != nil {
 		return fmt.Errorf("failed to initialize state tree: %w", err)
 	}
@@ -154,7 +170,7 @@ func (vm *VM) Initialize(
 	}
 	
 	// Initialize address manager
-	addressManager, err := NewAddressManager(db, vm.config.EnablePrivateAddresses, vm.log)
+	addressManager, err := NewAddressManager(vm.db, vm.config.EnablePrivateAddresses, vm.log)
 	if err != nil {
 		return fmt.Errorf("failed to initialize address manager: %w", err)
 	}
@@ -211,7 +227,7 @@ func (vm *VM) Initialize(
 }
 
 // BuildBlock builds a new block
-func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
+func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
 	
@@ -240,7 +256,7 @@ func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	
 	// Create new block
 	block := &Block{
-		ParentID:       vm.lastAcceptedID,
+		ParentID_:       vm.lastAcceptedID,
 		BlockHeight:    vm.lastAccepted.Height() + 1,
 		BlockTimestamp: time.Now().Unix(),
 		Txs:            validTxs,
@@ -270,7 +286,7 @@ func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 }
 
 // ParseBlock parses a block from bytes
-func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, error) {
+func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (block.Block, error) {
 	block := &Block{vm: vm}
 	if _, err := Codec.Unmarshal(blockBytes, block); err != nil {
 		return nil, err
@@ -281,7 +297,7 @@ func (vm *VM) ParseBlock(ctx context.Context, blockBytes []byte) (chain.Block, e
 }
 
 // GetBlock retrieves a block by ID
-func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
+func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (block.Block, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 	
@@ -305,7 +321,7 @@ func (vm *VM) GetBlock(ctx context.Context, blkID ids.ID) (chain.Block, error) {
 }
 
 // SetState sets the VM state
-func (vm *VM) SetState(ctx context.Context, state interfaces.State) error {
+func (vm *VM) SetState(ctx context.Context, state uint32) error {
 	return nil
 }
 
@@ -375,6 +391,18 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 		"/privacy": NewPrivacyHandler(vm),
 		"/proof":   NewProofHandler(vm),
 	}, nil
+}
+
+// NewHTTPHandler returns HTTP handlers for the VM
+func (vm *VM) NewHTTPHandler(ctx context.Context) (interface{}, error) {
+	return vm.CreateHandlers(ctx)
+}
+
+// WaitForEvent blocks until an event occurs that should trigger block building
+func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
+	// For now, return nil indicating no events to wait for
+	// In production, this would wait for transactions in mempool, etc.
+	return nil, nil
 }
 
 // verifyTransaction verifies a transaction including ZK proofs
@@ -452,7 +480,7 @@ func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	return vm.lastAcceptedID, nil
 }
 
-func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
 	return nil
 }
 

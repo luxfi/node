@@ -42,9 +42,10 @@ func (b *backendVisitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
-	return b.baseTx(&tx.BaseTx)
-}
+// Removed in regenesis
+// func (b *backendVisitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
+// 	return b.baseTx(&tx.BaseTx)
+// }
 
 func (b *backendVisitor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
 	return b.baseTx(&tx.BaseTx)
@@ -54,13 +55,14 @@ func (b *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
-	b.b.setOwner(
-		b.txID,
-		tx.Owner,
-	)
-	return b.baseTx(&tx.BaseTx)
-}
+// Removed in regenesis
+// func (b *backendVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
+// 	b.b.setOwner(
+// 		b.txID,
+// 		tx.Owner,
+// 	)
+// 	return b.baseTx(&tx.BaseTx)
+// }
 
 func (b *backendVisitor) ImportTx(tx *txs.ImportTx) error {
 	err := b.b.removeUTXOs(
@@ -95,13 +97,15 @@ func (b *backendVisitor) ExportTx(tx *txs.ExportTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx) error {
-	return b.baseTx(&tx.BaseTx)
-}
+// Removed in regenesis
+// func (b *backendVisitor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx) error {
+// 	return b.baseTx(&tx.BaseTx)
+// }
 
-func (b *backendVisitor) TransformSubnetTx(tx *txs.TransformSubnetTx) error {
-	return b.baseTx(&tx.BaseTx)
-}
+// Removed in regenesis
+// func (b *backendVisitor) TransformSubnetTx(tx *txs.TransformSubnetTx) error {
+// 	return b.baseTx(&tx.BaseTx)
+// }
 
 func (b *backendVisitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
 	return b.baseTx(&tx.BaseTx)
@@ -111,13 +115,14 @@ func (b *backendVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessD
 	return b.baseTx(&tx.BaseTx)
 }
 
-func (b *backendVisitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
-	b.b.setOwner(
-		tx.Subnet,
-		tx.Owner,
-	)
-	return b.baseTx(&tx.BaseTx)
-}
+// Removed in regenesis
+// func (b *backendVisitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
+// 	b.b.setOwner(
+// 		tx.Subnet,
+// 		tx.Owner,
+// 	)
+// 	return b.baseTx(&tx.BaseTx)
+// }
 
 func (b *backendVisitor) BaseTx(tx *txs.BaseTx) error {
 	return b.baseTx(tx)
@@ -180,22 +185,4 @@ func (b *backendVisitor) baseTx(tx *txs.BaseTx) error {
 	)
 }
 
-func (b *backendVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
-	return b.baseTx(&tx.BaseTx)
-}
-
-func (b *backendVisitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
-	return b.baseTx(&tx.BaseTx)
-}
-
-func (b *backendVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
-	return b.baseTx(&tx.BaseTx)
-}
-
-func (b *backendVisitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
-	return b.baseTx(&tx.BaseTx)
-}
-
-func (b *backendVisitor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
-	return b.baseTx(&tx.BaseTx)
-}
+// Duplicate methods removed - already defined above

@@ -60,7 +60,7 @@ func NewManager(
 	return &manager{
 		backend:      backend,
 		state:        state,
-		metrics:      m,
+		metrics:      metrics,
 		mempool:      mempool,
 		clk:          clk,
 		onAccept:     onAccept,

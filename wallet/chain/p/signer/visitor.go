@@ -11,7 +11,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/vms/components/lux"
@@ -60,18 +59,19 @@ func (s *visitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	return sign(s.tx, false, txSigners)
 }
 
-func (s *visitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	subnetAuthSigners, err := s.getAuthSigners(tx.SubnetValidator.Subnet, tx.SubnetAuth)
-	if err != nil {
-		return err
-	}
-	txSigners = append(txSigners, subnetAuthSigners)
-	return sign(s.tx, false, txSigners)
-}
+// Removed in regenesis
+// func (s *visitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
+// 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	subnetAuthSigners, err := s.getAuthSigners(tx.SubnetValidator.Subnet, tx.SubnetAuth)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	txSigners = append(txSigners, subnetAuthSigners)
+// 	return sign(s.tx, false, txSigners)
+// }
 
 func (s *visitor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
@@ -86,7 +86,7 @@ func (s *visitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getAuthSigners(tx.SubnetID, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getAuthSigners(tx.NetID, tx.SubnetAuth)
 	if err != nil {
 		return err
 	}
@@ -94,13 +94,14 @@ func (s *visitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return sign(s.tx, false, txSigners)
 }
 
-func (s *visitor) CreateNetTx(tx *txs.CreateNetTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	return sign(s.tx, false, txSigners)
-}
+// Removed in regenesis
+// func (s *visitor) CreateNetTx(tx *txs.CreateNetTx) error {
+// 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return sign(s.tx, false, txSigners)
+// }
 
 func (s *visitor) ImportTx(tx *txs.ImportTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
@@ -123,31 +124,33 @@ func (s *visitor) ExportTx(tx *txs.ExportTx) error {
 	return sign(s.tx, false, txSigners)
 }
 
-func (s *visitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	subnetAuthSigners, err := s.getAuthSigners(tx.Subnet, tx.SubnetAuth)
-	if err != nil {
-		return err
-	}
-	txSigners = append(txSigners, subnetAuthSigners)
-	return sign(s.tx, true, txSigners)
-}
+// Removed in regenesis
+// func (s *visitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
+// 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	subnetAuthSigners, err := s.getAuthSigners(tx.Subnet, tx.SubnetAuth)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	txSigners = append(txSigners, subnetAuthSigners)
+// 	return sign(s.tx, true, txSigners)
+// }
 
-func (s *visitor) TransformNetTx(tx *txs.TransformNetTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	subnetAuthSigners, err := s.getAuthSigners(tx.Subnet, tx.SubnetAuth)
-	if err != nil {
-		return err
-	}
-	txSigners = append(txSigners, subnetAuthSigners)
-	return sign(s.tx, true, txSigners)
-}
+// Removed in regenesis
+// func (s *visitor) TransformNetTx(tx *txs.TransformNetTx) error {
+// 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	subnetAuthSigners, err := s.getAuthSigners(tx.Subnet, tx.SubnetAuth)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	txSigners = append(txSigners, subnetAuthSigners)
+// 	return sign(s.tx, true, txSigners)
+// }
 
 func (s *visitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
@@ -165,18 +168,19 @@ func (s *visitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegato
 	return sign(s.tx, true, txSigners)
 }
 
-func (s *visitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	subnetAuthSigners, err := s.getAuthSigners(tx.Subnet, tx.SubnetAuth)
-	if err != nil {
-		return err
-	}
-	txSigners = append(txSigners, subnetAuthSigners)
-	return sign(s.tx, true, txSigners)
-}
+// Removed in regenesis (was TransferNetOwnershipTx)
+// func (s *visitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
+// 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	subnetAuthSigners, err := s.getAuthSigners(tx.Subnet, tx.SubnetAuth)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	txSigners = append(txSigners, subnetAuthSigners)
+// 	return sign(s.tx, true, txSigners)
+// }
 
 func (s *visitor) BaseTx(tx *txs.BaseTx) error {
 	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)

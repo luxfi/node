@@ -17,10 +17,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/interfaces"
-	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/chain/block"
-	enginecore "github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/version"
@@ -134,22 +131,40 @@ type CompletedBridge struct {
 	MPCSignature    []byte
 }
 
-// Initialize implements the chain.ChainVM interface
+// Initialize implements the block.ChainVM interface
 func (vm *VM) Initialize(
 	ctx context.Context,
-	chainCtx *consensusctx.Context,
-	db database.Database,
+	chainCtx interface{},
+	db interface{},
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	toEngine chan<- common.Message,
-	fxs []*common.Fx,
-	appSender common.AppSender,
+	msgChan interface{},
+	fxs []interface{},
+	appSender interface{},
 ) error {
-	vm.ctx = chainCtx
-	vm.db = db
-	vm.toEngine = toEngine
-	vm.log = chainCtx.Log
+	// Type assertions
+	var ok bool
+	vm.ctx, ok = chainCtx.(*consensusctx.Context)
+	if !ok {
+		return errors.New("invalid chain context type")
+	}
+	
+	vm.db, ok = db.(database.Database)
+	if !ok {
+		return errors.New("invalid database type")
+	}
+	
+	vm.toEngine, ok = msgChan.(chan<- common.Message)
+	if !ok {
+		return errors.New("invalid message channel type")
+	}
+	
+	if logger, ok := vm.ctx.Log.(log.Logger); ok {
+		vm.log = logger
+	} else {
+		return errors.New("invalid logger type")
+	}
 	vm.pendingBlocks = make(map[ids.ID]*Block)
 	vm.pendingBridges = make(map[ids.ID]*BridgeRequest)
 	vm.chainClients = make(map[string]ChainClient)
@@ -175,7 +190,7 @@ func (vm *VM) Initialize(
 	
 	// Create MPC party with node index (simplified for now)
 	vm.mpcParty = &cggmp21.Party{
-		ID:     chainCtx.NodeID,
+		ID:     vm.ctx.NodeID,
 		Index:  0, // Would be determined by validator set in production
 		Config: mpcConfig,
 	}
@@ -206,7 +221,7 @@ func (vm *VM) Initialize(
 	genesisBlock := &Block{
 		BlockHeight:     0,
 		BlockTimestamp:  genesis.Timestamp,
-		ParentID:        ids.Empty,
+		ParentID_:       ids.Empty,
 		BridgeRequests:  []*BridgeRequest{},
 		vm:              vm,
 	}
@@ -217,8 +232,8 @@ func (vm *VM) Initialize(
 	return vm.putBlock(genesisBlock)
 }
 
-// BuildBlock implements the chain.ChainVM interface
-func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
+// BuildBlock implements the block.ChainVM interface
+func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
 	
@@ -258,7 +273,7 @@ func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	
 	// Create new block
 	block := &Block{
-		ParentID:        parentID,
+		ParentID_:       parentID,
 		BlockHeight:     parent.Height() + 1,
 		BlockTimestamp:  time.Now().Unix(),
 		BridgeRequests:  requests,
@@ -278,8 +293,8 @@ func (vm *VM) BuildBlock(ctx context.Context) (chain.Block, error) {
 	return block, nil
 }
 
-// GetBlock implements the chain.ChainVM interface
-func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (chain.Block, error) {
+// GetBlock implements the block.ChainVM interface
+func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (block.Block, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 	
@@ -291,8 +306,8 @@ func (vm *VM) GetBlock(ctx context.Context, id ids.ID) (chain.Block, error) {
 	return vm.getBlock(id)
 }
 
-// ParseBlock implements the chain.ChainVM interface
-func (vm *VM) ParseBlock(ctx context.Context, bytes []byte) (chain.Block, error) {
+// ParseBlock implements the block.ChainVM interface
+func (vm *VM) ParseBlock(ctx context.Context, bytes []byte) (block.Block, error) {
 	block := &Block{vm: vm}
 	if _, err := Codec.Unmarshal(bytes, block); err != nil {
 		return nil, err
@@ -350,7 +365,7 @@ func (vm *VM) CreateStaticHandlers(ctx context.Context) (map[string]http.Handler
 }
 
 // Connected implements the common.VM interface
-func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
 	return nil
 }
 
@@ -409,10 +424,22 @@ func (vm *VM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, er
 }
 
 // SetState implements the common.VM interface
-func (vm *VM) SetState(ctx context.Context, state interfaces.State) error {
+func (vm *VM) SetState(ctx context.Context, state uint32) error {
 	// For now, no-op
 	// In production, handle state transitions
 	return nil
+}
+
+// NewHTTPHandler returns HTTP handlers for the VM
+func (vm *VM) NewHTTPHandler(ctx context.Context) (interface{}, error) {
+	return vm.CreateHandlers(ctx)
+}
+
+// WaitForEvent blocks until an event occurs that should trigger block building
+func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
+	// For now, return nil indicating no events to wait for
+	// In production, this would wait for bridge requests, etc.
+	return nil, nil
 }
 
 // Helper methods

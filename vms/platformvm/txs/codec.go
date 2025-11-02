@@ -83,10 +83,10 @@ func RegisterApricotTypes(targetCodec linearcodec.Codec) error {
 		targetCodec.RegisterType(&secp256k1fx.OutputOwners{}),
 
 		targetCodec.RegisterType(&AddValidatorTx{}),
-		targetCodec.RegisterType(&AddNetValidatorTx{}),
+		// targetCodec.RegisterType(&AddNetValidatorTx{}), // Removed in regenesis
 		targetCodec.RegisterType(&AddDelegatorTx{}),
 		targetCodec.RegisterType(&CreateChainTx{}),
-		targetCodec.RegisterType(&CreateNetTx{}),
+		// targetCodec.RegisterType(&CreateNetTx{}), // Removed in regenesis
 		targetCodec.RegisterType(&ImportTx{}),
 		targetCodec.RegisterType(&ExportTx{}),
 		targetCodec.RegisterType(&AdvanceTimeTx{}),
@@ -102,8 +102,8 @@ func RegisterApricotTypes(targetCodec linearcodec.Codec) error {
 // valid during the Banff series of upgrades.
 func RegisterBanffTypes(targetCodec linearcodec.Codec) error {
 	return errors.Join(
-		targetCodec.RegisterType(&RemoveSubnetValidatorTx{}),
-		targetCodec.RegisterType(&TransformSubnetTx{}),
+		// targetCodec.RegisterType(&RemoveSubnetValidatorTx{}), // Removed in regenesis
+		// targetCodec.RegisterType(&TransformSubnetTx{}), // Removed in regenesis
 		targetCodec.RegisterType(&AddPermissionlessValidatorTx{}),
 		targetCodec.RegisterType(&AddPermissionlessDelegatorTx{}),
 
@@ -116,13 +116,10 @@ func RegisterBanffTypes(targetCodec linearcodec.Codec) error {
 // were valid during the Durango series of upgrades.
 func RegisterDurangoTypes(targetCodec linearcodec.Codec) error {
 	return errors.Join(
-		targetCodec.RegisterType(&TransferNetOwnershipTx{}),
+		// targetCodec.RegisterType(&TransferNetOwnershipTx{}), // Removed in regenesis
 		targetCodec.RegisterType(&BaseTx{}),
-		targetCodec.RegisterType(&ConvertNetToL1Tx{}),
-		targetCodec.RegisterType(&RegisterL1ValidatorTx{}),
-		targetCodec.RegisterType(&SetL1ValidatorWeightTx{}),
-		targetCodec.RegisterType(&IncreaseL1ValidatorBalanceTx{}),
-		targetCodec.RegisterType(&DisableL1ValidatorTx{}),
+		// targetCodec.RegisterType(&ConvertNetToL1Tx{}), // Removed in regenesis
+		// L1 validator types moved to RegisterEtnaTypes (Etna upgrade)
 	)
 }
 

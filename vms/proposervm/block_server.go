@@ -23,8 +23,8 @@ func (vm *VM) GetFullPostForkBlock(ctx context.Context, blkID ids.ID) (chainbloc
 }
 
 func (vm *VM) Commit() error {
-	vm.lock.Lock()
-	defer vm.lock.Unlock()
+	vm.ctx.Lock.Lock()
+	defer vm.ctx.Lock.Unlock()
 
 	return vm.db.Commit()
 }

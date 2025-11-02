@@ -12,8 +12,8 @@ package txsmock
 import (
 	reflect "reflect"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	ids "github.com/luxfi/ids"
-	snow "github.com/luxfi/consensus/core"
 	set "github.com/luxfi/math/set"
 	lux "github.com/luxfi/node/vms/components/lux"
 	txs "github.com/luxfi/node/vms/platformvm/txs"

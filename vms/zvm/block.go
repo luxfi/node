@@ -19,7 +19,7 @@ import (
 
 // Block represents a block in the ZK UTXO chain
 type Block struct {
-	ParentID   ids.ID         `json:"parentId"`
+	ParentID_   ids.ID         `json:"parentId"`
 	BlockHeight uint64         `json:"height"`
 	BlockTimestamp  int64          `json:"timestamp"`
 	Txs        []*Transaction `json:"transactions"`
@@ -46,7 +46,7 @@ func (b *Block) ID() ids.ID {
 // computeID computes the block ID
 func (b *Block) computeID() ids.ID {
 	h := sha256.New()
-	h.Write(b.ParentID[:])
+	h.Write(b.ParentID_[:])
 	binary.Write(h, binary.BigEndian, b.BlockHeight)
 	binary.Write(h, binary.BigEndian, b.BlockTimestamp)
 	
@@ -71,15 +71,35 @@ func (b *Block) computeID() ids.ID {
 	return ids.ID(h.Sum(nil))
 }
 
-// Parent returns the parent block ID
+// ParentID returns the parent block ID
+func (b *Block) ParentID() ids.ID {
+	return b.ParentID_
+}
+
+// Parent is an alias for ParentID for compatibility
 func (b *Block) Parent() ids.ID {
-	return b.ParentID
+	return b.ParentID_
+}
+
+// Height returns the block height
+func (b *Block) Height() uint64 {
+	return b.BlockHeight
+}
+
+// Timestamp returns the block timestamp
+func (b *Block) Timestamp() time.Time {
+	return time.Unix(b.BlockTimestamp, 0)
+}
+
+// Status returns the block status
+func (b *Block) Status() uint8 {
+	return uint8(b.status)
 }
 
 // Verify verifies the block
 func (b *Block) Verify(ctx context.Context) error {
 	// Basic validation
-	if b.BlockHeight == 0 && b.ParentID != ids.Empty {
+	if b.BlockHeight == 0 && b.ParentID_ != ids.Empty {
 		return errInvalidBlock
 	}
 	
@@ -109,7 +129,7 @@ func (b *Block) Verify(ctx context.Context) error {
 	
 	// Verify against parent
 	if b.BlockHeight > 0 {
-		parent, err := b.vm.GetBlock(nil, b.ParentID)
+		parent, err := b.vm.GetBlock(nil, b.ParentID_)
 		if err != nil {
 			return err
 		}
@@ -231,20 +251,6 @@ func (b *Block) Reject(ctx context.Context) error {
 	return nil
 }
 
-// Status returns the block status
-func (b *Block) Status() choices.Status {
-	return b.status
-}
-
-// Height returns the block height  
-func (b *Block) Height() uint64 {
-	return b.BlockHeight
-}
-
-// Timestamp returns the block timestamp
-func (b *Block) Timestamp() time.Time {
-	return time.Unix(b.BlockTimestamp, 0)
-}
 
 // Bytes returns the block bytes
 func (b *Block) Bytes() []byte {
@@ -319,7 +325,6 @@ func (b *Block) ToSummary() *BlockSummary {
 }
 
 const (
-	codecVersion = 0
 	maxClockSkew = 60 // seconds
 )
 

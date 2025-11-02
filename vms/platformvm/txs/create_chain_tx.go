@@ -4,11 +4,11 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
-
+	"context"
 	"errors"
 	"unicode"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"

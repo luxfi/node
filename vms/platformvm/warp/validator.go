@@ -79,7 +79,7 @@ func GetCanonicalValidatorSetFromSubsubnetID(
 
 // FlattenValidatorSet converts the provided [vdrSet] into a canonical ordering.
 // Also returns the total weight of the validator set.
-func FlattenValidatorSet(vdrSet map[ids.NodeID]*validators.GetValidatorOutput) (CanonicalValidatorSet, error) {
+func FlattenValidatorSet(vdrSet map[ids.NodeID]*ValidatorData) (CanonicalValidatorSet, error) {
 	var (
 		// Map public keys to validators to handle duplicates
 		pkToValidator = make(map[string]*Validator)
@@ -188,13 +188,46 @@ func AggregatePublicKeys(vdrs []*Validator) (*bls.PublicKey, error) {
 	return bls.AggregatePublicKeys(pks)
 }
 
+// validatorStateAdapter adapts validators.State to ValidatorState
+type validatorStateAdapter struct {
+	state validators.State
+	netID ids.ID
+}
+
+func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*ValidatorData, error) {
+	validatorSet, err := v.state.GetValidatorSet(ctx, height, subnetID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[ids.NodeID]*ValidatorData, len(validatorSet))
+	for nodeID, validator := range validatorSet {
+		result[nodeID] = &ValidatorData{
+			NodeID:    validator.NodeID,
+			PublicKey: validator.PublicKey,
+			Weight:    validator.Weight,
+		}
+	}
+	return result, nil
+}
+
+func (v *validatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	// Return the network ID from the adapter
+	return v.netID, nil
+}
+
 // GetCanonicalValidatorSetFromChainID returns the canonical validator set given a validators.State, pChain height and a sourceChainID.
 func GetCanonicalValidatorSetFromChainID(ctx context.Context,
 	pChainState validators.State,
 	pChainHeight uint64,
 	sourceChainID ids.ID,
 ) (CanonicalValidatorSet, error) {
+	// Adapt validators.State to ValidatorState
+	adapter := &validatorStateAdapter{
+		state: pChainState,
+		netID: sourceChainID, // Use sourceChainID as network ID
+	}
 	// In the new architecture, use sourceChainID as the subnet ID
 	// This assumes a 1:1 mapping between chains and subnets
-	return GetCanonicalValidatorSetFromSubsubnetID(ctx, pChainState, pChainHeight, sourceChainID)
+	return GetCanonicalValidatorSetFromSubsubnetID(ctx, adapter, pChainHeight, sourceChainID)
 }

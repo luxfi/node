@@ -4,8 +4,9 @@
 package signer
 
 import (
+	"context"
+
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils/crypto/keychain"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -23,12 +24,12 @@ type Signer interface {
 	//
 	// If the signer doesn't have the ability to provide a required signature,
 	// the signature slot will be skipped without reporting an error.
-	Sign(ctx stdcontext.Context, tx *txs.Tx) error
+	Sign(ctx context.Context, tx *txs.Tx) error
 }
 
 type Backend interface {
-	GetUTXO(ctx stdcontext.Context, chainID, utxoID ids.ID) (*lux.UTXO, error)
-	GetOwner(ctx stdcontext.Context, ownerID ids.ID) (fx.Owner, error)
+	GetUTXO(ctx context.Context, chainID, utxoID ids.ID) (*lux.UTXO, error)
+	GetOwner(ctx context.Context, ownerID ids.ID) (fx.Owner, error)
 }
 
 type txSigner struct {
@@ -43,7 +44,7 @@ func New(kc keychain.Keychain, backend Backend) Signer {
 	}
 }
 
-func (s *txSigner) Sign(ctx stdcontext.Context, tx *txs.Tx) error {
+func (s *txSigner) Sign(ctx context.Context, tx *txs.Tx) error {
 	return tx.Unsigned.Visit(&visitor{
 		kc:      s.kc,
 		backend: s.backend,
@@ -53,7 +54,7 @@ func (s *txSigner) Sign(ctx stdcontext.Context, tx *txs.Tx) error {
 }
 
 func SignUnsigned(
-	ctx stdcontext.Context,
+	ctx context.Context,
 	signer Signer,
 	utx txs.UnsignedTx,
 ) (*txs.Tx, error) {

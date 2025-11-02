@@ -56,8 +56,8 @@ func GetTxFeeConfig(networkID uint32) TxFeeConfig {
 	switch networkID {
 	case constants.MainnetID:
 		return MainnetParams.TxFeeConfig
-	case constants.FujiID:
-		return FujiParams.TxFeeConfig
+	case constants.TestnetID:
+		return TestnetParams.TxFeeConfig
 	case constants.LocalID:
 		return LocalParams.TxFeeConfig
 	default:

@@ -7,10 +7,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luxfi/metric"
-	utilmetric "github.com/luxfi/node/utils/metric"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/components/gas"
@@ -32,7 +32,7 @@ var (
 	}
 )
 
-var _ Metrics = (*metrics)(nil)
+var _ Metrics = (*metricsImpl)(nil)
 
 type Block struct {
 	Block block.Block
@@ -77,22 +77,22 @@ func New(registerer metric.Registerer) (Metrics, error) {
 	blockMetrics, err := newBlockMetrics(registerer)
 	m := &metricsImpl{
 		blockMetrics: blockMetrics,
-		timeUntilUnstake: metric.NewGauge(metric.GaugeOpts{
+		timeUntilUnstake: prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "time_until_unstake",
 			Help: "Time (in ns) until this node leaves the Primary Network's validator set",
 		}),
-		timeUntilSubnetUnstake: metric.NewGaugeVec(
-			metric.GaugeOpts{
+		timeUntilSubnetUnstake: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
 				Name: "time_until_unstake_subnet",
 				Help: "Time (in ns) until this node leaves the subnet's validator set",
 			},
 			[]string{"netID"},
 		),
-		localStake: metric.NewGauge(metric.GaugeOpts{
+		localStake: prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "local_staked",
 			Help: "Amount (in nLUX) of LUX staked on this node",
 		}),
-		totalStake: metric.NewGauge(metric.GaugeOpts{
+		totalStake: prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "total_staked",
 			Help: "Amount (in nLUX) of LUX staked on the Primary Network",
 		}),
@@ -132,15 +132,15 @@ func New(registerer metric.Registerer) (Metrics, error) {
 			Name: "validator_sets_cached",
 			Help: "Total number of validator sets cached",
 		}),
-		validatorSetsCreated: metric.NewCounter(metric.CounterOpts{
+		validatorSetsCreated: prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "validator_sets_created",
 			Help: "Total number of validator sets created from applying difflayers",
 		}),
-		validatorSetsHeightDiff: metric.NewGauge(metric.GaugeOpts{
+		validatorSetsHeightDiff: prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "validator_sets_height_diff_sum",
 			Help: "Total number of validator sets diffs applied for generating validator sets",
 		}),
-		validatorSetsDuration: metric.NewGauge(metric.GaugeOpts{
+		validatorSetsDuration: prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "validator_sets_duration_sum",
 			Help: "Total amount of time generating validator sets in nanoseconds",
 		}),
@@ -155,6 +155,7 @@ func New(registerer metric.Registerer) (Metrics, error) {
 	errs.Add(err)
 	m.APIInterceptor = apiRequestMetrics
 
+	errs.Add(
 		registerer.Register(m.gasConsumed),
 		registerer.Register(m.gasCapacity),
 		registerer.Register(m.activeL1Validators),
@@ -196,7 +197,7 @@ type metricsImpl struct {
 	validatorSetsDuration   prometheus.Gauge
 }
 
-func (m *metrics) MarkAccepted(b Block) error {
+func (m *metricsImpl) MarkAccepted(b Block) error {
 	m.gasConsumed.Add(float64(b.GasConsumed))
 	m.gasCapacity.Set(float64(b.GasState.Capacity))
 	m.excess.With(gasLabels).Set(float64(b.GasState.Excess))

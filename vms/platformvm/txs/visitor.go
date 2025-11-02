@@ -7,23 +7,23 @@ package txs
 type Visitor interface {
 	// Apricot Transactions:
 	AddValidatorTx(*AddValidatorTx) error
-	AddNetValidatorTx(*AddNetValidatorTx) error
+	// AddNetValidatorTx(*// AddNetValidatorTx) error
 	AddDelegatorTx(*AddDelegatorTx) error
 	CreateChainTx(*CreateChainTx) error
-	CreateNetTx(*CreateNetTx) error
+	// CreateNetTx(*// CreateNetTx) error
 	ImportTx(*ImportTx) error
 	ExportTx(*ExportTx) error
 	AdvanceTimeTx(*AdvanceTimeTx) error
 	RewardValidatorTx(*RewardValidatorTx) error
 
 	// Banff Transactions:
-	RemoveSubnetValidatorTx(*RemoveSubnetValidatorTx) error
-	TransformSubnetTx(*TransformSubnetTx) error
+	// RemoveSubnetValidatorTx(*// RemoveSubnetValidatorTx) error
+	// TransformSubnetTx(*// TransformSubnetTx) error
 	AddPermissionlessValidatorTx(*AddPermissionlessValidatorTx) error
 	AddPermissionlessDelegatorTx(*AddPermissionlessDelegatorTx) error
 
 	// Durango Transactions:
-	TransferSubnetOwnershipTx(*TransferSubnetOwnershipTx) error
+	// TransferSubnetOwnershipTx(*// TransferSubnetOwnershipTx) error
 	BaseTx(*BaseTx) error
 
 	// Etna Transactions:

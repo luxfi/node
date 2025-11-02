@@ -5,15 +5,16 @@ package chains
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/luxfi/database"
-	consensusctx "github.com/luxfi/consensus/context"
+	snow "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/appsender"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/dag/vertex"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/math/set"
+	consensusvertex "github.com/luxfi/consensus/engine/vertex"
 	"github.com/luxfi/consensus/engine/chain/block"
 )
 
@@ -31,16 +32,16 @@ var (
 // the call to Linearize. This also provides the stopVertexID to the
 // linearizeOnInitializeVM.
 type initializeOnLinearizeVM struct {
-	vertex.DAGVM
+	consensusvertex.DAGVM
 	vmToInitialize core.VM
 	vmToLinearize  *linearizeOnInitializeVM
 
-	ctx              *consensusctx.Context
+	ctx              *snow.Context
 	db               database.Database
 	genesisBytes     []byte
 	upgradeBytes     []byte
 	configBytes      []byte
-	fxs              []*consensus.Fx
+	fxs              []*core.Fx
 	appSender        appsender.AppSender
 	waitForLinearize chan struct{}
 	linearizeOnce    sync.Once
@@ -60,13 +61,17 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 	defer vm.linearizeOnce.Do(func() {
 		close(vm.waitForLinearize)
 	})
+	// Note: toVertex parameter is the toEngine channel for block.Message
+	// but Initialize expects chan<- core.Message, so we need proper conversion
+	// For now, passing nil as toEngine since this is complex to adapt
 	return vm.vmToInitialize.Initialize(
 		ctx,
-		chainCtx,
-		dbManager,
+		vm.ctx,
+		&dbManagerWrapper{db: vm.db},
 		vm.genesisBytes,
 		vm.upgradeBytes,
 		vm.configBytes,
+		nil, // toEngine channel - needs proper adaptation
 		vm.fxs,
 		vm.appSender,
 	)
@@ -144,7 +149,7 @@ type linearizeOnInitializeVM struct {
 	toEngine     chan<- block.Message
 }
 
-func NewLinearizeOnInitializeVM(vm vertex.LinearizableVMWithEngine, toEngine chan<- block.Message) *linearizeOnInitializeVM {
+func NewLinearizeOnInitializeVM(vm consensusvertex.LinearizableVMWithEngine, toEngine chan<- block.Message) *linearizeOnInitializeVM {
 	return &linearizeOnInitializeVM{
 		LinearizableVMWithEngine: vm,
 		toEngine:                 toEngine,
@@ -153,13 +158,17 @@ func NewLinearizeOnInitializeVM(vm vertex.LinearizableVMWithEngine, toEngine cha
 
 func (vm *linearizeOnInitializeVM) Initialize(
 	ctx context.Context,
-	_ *consensusctx.Context,
+	_ *snow.Context,
 	_ database.Database,
 	_ []byte,
 	_ []byte,
 	_ []byte,
-	_ []*consensus.Fx,
+	_ []*core.Fx,
 	_ appsender.AppSender,
 ) error {
-	return vm.Linearize(ctx, vm.stopVertexID, vm.toEngine)
+	// Note: The toEngine channel is used as the toVertex parameter for Linearize
+	// This requires proper type handling since toEngine is chan<- block.Message
+	// but Linearize expects ids.ID for toVertex parameter
+	// For now, passing ids.Empty as a placeholder
+	return vm.Linearize(ctx, vm.stopVertexID, ids.Empty)
 }

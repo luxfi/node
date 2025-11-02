@@ -151,12 +151,12 @@ func New(
 
 	registry, ok := metrics.(metric.Registry)
 	if !ok {
-		return nil, errors.New("metrics must be a Registry")
+		return nil, errors.New("metrics must implement metric.Registry")
 	}
 
 	txCache, err := metercacher.New[ids.ID, *txs.Tx](
 		"tx_cache",
-		metrics,
+		registry,
 		lru.NewCache[ids.ID, *txs.Tx](txCacheSize),
 	)
 	if err != nil {
@@ -165,7 +165,7 @@ func New(
 
 	blockIDCache, err := metercacher.New[uint64, ids.ID](
 		"block_id_cache",
-		metrics,
+		registry,
 		lru.NewCache[uint64, ids.ID](blockIDCacheSize),
 	)
 	if err != nil {
@@ -174,14 +174,14 @@ func New(
 
 	blockCache, err := metercacher.New[ids.ID, block.Block](
 		"block_cache",
-		metrics,
+		registry,
 		lru.NewCache[ids.ID, block.Block](blockCacheSize),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	utxoState, err := lux.NewMeteredUTXOState(utxoDB, parser.Codec(), metrics, trackChecksums)
+	utxoState, err := lux.NewMeteredUTXOState(utxoDB, parser.Codec(), registry, trackChecksums)
 	if err != nil {
 		return nil, err
 	}

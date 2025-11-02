@@ -4,7 +4,6 @@
 package xvm
 
 import (
-	"context"
 	"reflect"
 
 	consensusctx "github.com/luxfi/consensus/context"

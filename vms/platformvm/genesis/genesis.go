@@ -316,7 +316,7 @@ func New(
 				NetworkID:    networkID,
 				BlockchainID: ids.Empty,
 			}},
-			SubnetID:    chain.SubnetID,
+			NetID:       chain.SubnetID, // Renamed from SubnetID to NetID in regenesis
 			ChainName:   chain.Name,
 			VMID:        chain.VMID,
 			FxIDs:       chain.FxIDs,

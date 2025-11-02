@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/formatting/address"
@@ -278,7 +279,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 			}
 			stake[i] = utxo
 
-			newWeight, err := math.Add(weight, uint64(apiUTXO.Amount))
+			newWeight, err := math.Add64(weight, uint64(apiUTXO.Amount))
 			if err != nil {
 				return errStakeOverflow
 			}

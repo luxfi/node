@@ -4,8 +4,11 @@
 package server
 
 import (
+	"net/http"
+
 	"github.com/luxfi/metric"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type serverMetrics struct {
@@ -49,4 +52,14 @@ func newMetrics(registerer metric.Registerer) (*serverMetrics, error) {
 	}
 
 	return m, nil
+}
+
+func (m *serverMetrics) wrapHandler(chainName string, handler http.Handler) http.Handler {
+	return promhttp.InstrumentHandlerInFlight(m.inflight,
+		promhttp.InstrumentHandlerDuration(m.duration.MustCurryWith(prometheus.Labels{"endpoint": chainName}),
+			promhttp.InstrumentHandlerCounter(m.requests.MustCurryWith(prometheus.Labels{"endpoint": chainName}),
+				handler,
+			),
+		),
+	)
 }

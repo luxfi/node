@@ -4,23 +4,29 @@
 package bvm
 
 import (
+	"errors"
+	"math"
+
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
 )
 
-const CodecVersion = 0
+const codecVersion = 0
 
-var (
-	Codec codec.Manager
-)
+var Codec codec.Manager
 
 func init() {
-	c := linearcodec.NewDefault()
-	Codec = codec.NewDefaultManager()
-	if err := Codec.RegisterCodec(CodecVersion, c); err != nil {
+	Codec = codec.NewManager(math.MaxInt)
+	lc := linearcodec.NewDefault()
+
+	err := errors.Join(
+		// Register BVM-specific types
+		lc.RegisterType(&BridgeRequest{}),
+		lc.RegisterType(&Block{}),
+		lc.RegisterType(&Genesis{}),
+		Codec.RegisterCodec(codecVersion, lc),
+	)
+	if err != nil {
 		panic(err)
 	}
 }
-
-// codecVersion is the current codec version
-const codecVersion = CodecVersion

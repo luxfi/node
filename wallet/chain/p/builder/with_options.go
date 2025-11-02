@@ -4,15 +4,13 @@
 package builder
 
 import (
-	"time"
-
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/wallet/subnet/primary/common"
+	"github.com/luxfi/node/wallet/net/primary/common"
 )
 
 var _ Builder = (*withOptions)(nil)
@@ -81,27 +79,29 @@ func (w *withOptions) NewAddValidatorTx(
 	)
 }
 
-func (w *withOptions) NewAddSubnetValidatorTx(
-	vdr *txs.SubnetValidator,
-	options ...common.Option,
-) (*txs.AddSubnetValidatorTx, error) {
-	return w.builder.NewAddSubnetValidatorTx(
-		vdr,
-		common.UnionOptions(w.options, options)...,
-	)
-}
+// Removed in regenesis
+// func (w *withOptions) NewAddSubnetValidatorTx(
+// 	vdr *txs.SubnetValidator,
+// 	options ...common.Option,
+// ) (*txs.AddSubnetValidatorTx, error) {
+// 	return w.builder.NewAddSubnetValidatorTx(
+// 		vdr,
+// 		common.UnionOptions(w.options, options)...,
+// 	)
+// }
 
-func (w *withOptions) NewRemoveSubnetValidatorTx(
-	nodeID ids.NodeID,
-	subnetID ids.ID,
-	options ...common.Option,
-) (*txs.RemoveSubnetValidatorTx, error) {
-	return w.builder.NewRemoveSubnetValidatorTx(
-		nodeID,
-		subnetID,
-		common.UnionOptions(w.options, options)...,
-	)
-}
+// Removed in regenesis
+// func (w *withOptions) NewRemoveSubnetValidatorTx(
+// 	nodeID ids.NodeID,
+// 	subnetID ids.ID,
+// 	options ...common.Option,
+// ) (*txs.RemoveSubnetValidatorTx, error) {
+// 	return w.builder.NewRemoveSubnetValidatorTx(
+// 		nodeID,
+// 		subnetID,
+// 		common.UnionOptions(w.options, options)...,
+// 	)
+// }
 
 func (w *withOptions) NewAddDelegatorTx(
 	vdr *txs.Validator,
@@ -133,27 +133,29 @@ func (w *withOptions) NewCreateChainTx(
 	)
 }
 
-func (w *withOptions) NewCreateSubnetTx(
-	owner *secp256k1fx.OutputOwners,
-	options ...common.Option,
-) (*txs.CreateSubnetTx, error) {
-	return w.builder.NewCreateSubnetTx(
-		owner,
-		common.UnionOptions(w.options, options)...,
-	)
-}
+// Removed in regenesis
+// func (w *withOptions) NewCreateSubnetTx(
+// 	owner *secp256k1fx.OutputOwners,
+// 	options ...common.Option,
+// ) (*txs.CreateSubnetTx, error) {
+// 	return w.builder.NewCreateSubnetTx(
+// 		owner,
+// 		common.UnionOptions(w.options, options)...,
+// 	)
+// }
 
-func (w *withOptions) NewTransferSubnetOwnershipTx(
-	subnetID ids.ID,
-	owner *secp256k1fx.OutputOwners,
-	options ...common.Option,
-) (*txs.TransferSubnetOwnershipTx, error) {
-	return w.builder.NewTransferSubnetOwnershipTx(
-		subnetID,
-		owner,
-		common.UnionOptions(w.options, options)...,
-	)
-}
+// Removed in regenesis
+// func (w *withOptions) NewTransferSubnetOwnershipTx(
+// 	subnetID ids.ID,
+// 	owner *secp256k1fx.OutputOwners,
+// 	options ...common.Option,
+// ) (*txs.TransferSubnetOwnershipTx, error) {
+// 	return w.builder.NewTransferSubnetOwnershipTx(
+// 		subnetID,
+// 		owner,
+// 		common.UnionOptions(w.options, options)...,
+// 	)
+// }
 
 func (w *withOptions) NewConvertSubnetToL1Tx(
 	subnetID ids.ID,
@@ -241,44 +243,45 @@ func (w *withOptions) NewExportTx(
 	)
 }
 
-func (w *withOptions) NewTransformSubnetTx(
-	subnetID ids.ID,
-	assetID ids.ID,
-	initialSupply uint64,
-	maxSupply uint64,
-	minConsumptionRate uint64,
-	maxConsumptionRate uint64,
-	minValidatorStake uint64,
-	maxValidatorStake uint64,
-	minStakeDuration time.Duration,
-	maxStakeDuration time.Duration,
-	minDelegationFee uint32,
-	minDelegatorStake uint64,
-	maxValidatorWeightFactor byte,
-	uptimeRequirement uint32,
-	options ...common.Option,
-) (*txs.TransformSubnetTx, error) {
-	return w.builder.NewTransformSubnetTx(
-		subnetID,
-		assetID,
-		initialSupply,
-		maxSupply,
-		minConsumptionRate,
-		maxConsumptionRate,
-		minValidatorStake,
-		maxValidatorStake,
-		minStakeDuration,
-		maxStakeDuration,
-		minDelegationFee,
-		minDelegatorStake,
-		maxValidatorWeightFactor,
-		uptimeRequirement,
-		common.UnionOptions(w.options, options)...,
-	)
-}
+// Removed in regenesis
+// func (w *withOptions) NewTransformSubnetTx(
+// 	subnetID ids.ID,
+// 	assetID ids.ID,
+// 	initialSupply uint64,
+// 	maxSupply uint64,
+// 	minConsumptionRate uint64,
+// 	maxConsumptionRate uint64,
+// 	minValidatorStake uint64,
+// 	maxValidatorStake uint64,
+// 	minStakeDuration time.Duration,
+// 	maxStakeDuration time.Duration,
+// 	minDelegationFee uint32,
+// 	minDelegatorStake uint64,
+// 	maxValidatorWeightFactor byte,
+// 	uptimeRequirement uint32,
+// 	options ...common.Option,
+// ) (*txs.TransformSubnetTx, error) {
+// 	return w.builder.NewTransformSubnetTx(
+// 		subnetID,
+// 		assetID,
+// 		initialSupply,
+// 		maxSupply,
+// 		minConsumptionRate,
+// 		maxConsumptionRate,
+// 		minValidatorStake,
+// 		maxValidatorStake,
+// 		minStakeDuration,
+// 		maxStakeDuration,
+// 		minDelegationFee,
+// 		minDelegatorStake,
+// 		maxValidatorWeightFactor,
+// 		uptimeRequirement,
+// 		common.UnionOptions(w.options, options)...,
+// 	)
+// }
 
 func (w *withOptions) NewAddPermissionlessValidatorTx(
-	vdr *txs.SubnetValidator,
+	vdr *txs.NetValidator,
 	signer signer.Signer,
 	assetID ids.ID,
 	validationRewardsOwner *secp256k1fx.OutputOwners,
@@ -298,7 +301,7 @@ func (w *withOptions) NewAddPermissionlessValidatorTx(
 }
 
 func (w *withOptions) NewAddPermissionlessDelegatorTx(
-	vdr *txs.SubnetValidator,
+	vdr *txs.NetValidator,
 	assetID ids.ID,
 	rewardsOwner *secp256k1fx.OutputOwners,
 	options ...common.Option,

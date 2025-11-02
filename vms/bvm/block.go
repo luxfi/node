@@ -21,7 +21,7 @@ import (
 
 // Block represents a block in the Bridge chain
 type Block struct {
-	ParentID        ids.ID            `json:"parentId"`
+	ParentID_       ids.ID            `json:"parentId"`  // Field renamed to avoid method collision
 	BlockHeight     uint64            `json:"height"`
 	BlockTimestamp  int64             `json:"timestamp"`
 	BridgeRequests  []*BridgeRequest  `json:"bridgeRequests"`
@@ -55,7 +55,7 @@ func (b *Block) ID() ids.ID {
 func (b *Block) computeID() ids.ID {
 	h := sha256.New()
 	
-	h.Write(b.ParentID[:])
+	h.Write(b.ParentID_[:])
 	
 	heightBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(heightBytes, b.BlockHeight)
@@ -135,19 +135,24 @@ func (b *Block) Reject(ctx context.Context) error {
 }
 
 // Status returns the block's status
-func (b *Block) Status() choices.Status {
-	return b.status
+func (b *Block) Status() uint8 {
+	return uint8(b.status)
 }
 
-// Parent returns the parent block ID
+// ParentID returns the parent block ID
+func (b *Block) ParentID() ids.ID {
+	return b.ParentID_
+}
+
+// Parent returns the parent block (for block.Block interface compatibility)
 func (b *Block) Parent() ids.ID {
-	return b.ParentID
+	return b.ParentID_
 }
 
 // Verify verifies the block
 func (b *Block) Verify(ctx context.Context) error {
 	// Basic validation
-	if b.BlockHeight == 0 && b.ParentID != ids.Empty {
+	if b.BlockHeight == 0 && b.ParentID_ != ids.Empty {
 		return errInvalidBlock
 	}
 	

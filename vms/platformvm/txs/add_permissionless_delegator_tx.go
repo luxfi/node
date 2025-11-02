@@ -4,12 +4,14 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
-
+	"context"
 	"fmt"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
+	safemath "github.com/luxfi/math/math"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -109,7 +111,7 @@ func (tx *AddPermissionlessDelegatorTx) SyntacticVerify(ctx *consensusctx.Contex
 	stakedAssetID := firstStakeOutput.AssetID()
 	totalStakeWeight := firstStakeOutput.Output().Amount()
 	for _, out := range tx.StakeOuts[1:] {
-		newWeight, err := math.Add(totalStakeWeight, out.Output().Amount())
+		newWeight, err := safemath.Add64(totalStakeWeight, out.Output().Amount())
 		if err != nil {
 			return err
 		}

@@ -12,7 +12,6 @@ import (
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/nftfx"

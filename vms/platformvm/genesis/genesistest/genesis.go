@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	snowtest "github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/secp256k1"
@@ -34,7 +33,9 @@ const (
 )
 
 var (
-	LUXAsset = lux.Asset{ID: snowtest.LUXAssetID}
+	// Use a fixed test asset ID for LUX
+	LUXAssetID = ids.ID{'l', 'u', 'x', ' ', 'a', 's', 's', 'e', 't', ' ', 'i', 'd'}
+	LUXAsset   = lux.Asset{ID: LUXAssetID}
 
 	DefaultValidatorStartTime     = upgrade.InitiallyActiveTime
 	DefaultValidatorStartTimeUnix = uint64(DefaultValidatorStartTime.Unix())
@@ -102,7 +103,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 	for i, key := range c.FundedKeys {
 		genesis.UTXOs[i] = &platformvmgenesis.UTXO{UTXO: lux.UTXO{
 			UTXOID: lux.UTXOID{
-				TxID:        snowtest.LUXAssetID,
+				TxID:        LUXAssetID,
 				OutputIndex: uint32(i),
 			},
 			Asset: LUXAsset,
@@ -159,9 +160,9 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 			NetworkID:    c.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 		}},
-		SubnetID:   constants.PrimaryNetworkID,
+		NetID:      constants.PrimaryNetworkID, // Changed from SubnetID to NetID in regenesis
 		ChainName:  XChainName,
-		VMID:       constants.AVMID,
+		VMID:       constants.XVMID, // Changed from AVMID to XVMID in Lux
 		SubnetAuth: &secp256k1fx.Input{},
 	}
 	chainTx := &txs.Tx{Unsigned: chain}

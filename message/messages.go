@@ -4,16 +4,16 @@
 package message
 
 import (
-	"github.com/luxfi/metric"
-
 	"errors"
 	"fmt"
 	"time"
+
 	"google.golang.org/protobuf/proto"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
 

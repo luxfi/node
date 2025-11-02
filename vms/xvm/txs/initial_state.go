@@ -6,7 +6,6 @@ package txs
 import (
 	"bytes"
 	"cmp"
-	"context"
 	"errors"
 	"sort"
 

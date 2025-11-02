@@ -8,14 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/choices"
 	consensuscontext "github.com/luxfi/consensus/context"
 	consensuscore "github.com/luxfi/consensus/core"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
@@ -25,7 +25,6 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/math"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
@@ -35,8 +34,6 @@ import (
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms"
 
-	// Using consensus protocol/chain for Block interface
-	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 	"github.com/luxfi/node/vms/proposervm/state"
 	"github.com/luxfi/node/vms/proposervm/tree"
@@ -172,7 +169,7 @@ func (vm *VM) Initialize(
 	}
 	innerBlkCache, err := metercacher.New(
 		"inner_block_cache",
-		vm.Config.Registerer,
+		registry,
 		lru.NewSizedCache(innerBlkCacheSize, cachedBlockSize),
 	)
 	if err != nil {
@@ -184,8 +181,8 @@ func (vm *VM) Initialize(
 
 	err = vm.ChainVM.Initialize(
 		ctx,
-		chainCtxIntf,
-		dbManagerIntf,
+		chainCtx,
+		db,
 		genesisBytes,
 		upgradeBytes,
 		configBytes,
@@ -213,13 +210,13 @@ func (vm *VM) Initialize(
 	switch err {
 	case nil:
 		logger.Info("initialized proposervm",
-			zap.String("state", "after fork"),
-			zap.Uint64("forkHeight", forkHeight),
-			zap.Uint64("lastAcceptedHeight", vm.lastAcceptedHeight),
+			log.String("state", "after fork"),
+			log.Uint64("forkHeight", forkHeight),
+			log.Uint64("lastAcceptedHeight", vm.lastAcceptedHeight),
 		)
 	case database.ErrNotFound:
 		logger.Info("initialized proposervm",
-			zap.String("state", "before fork"),
+			log.String("state", "before fork"),
 		)
 	default:
 		return fmt.Errorf("failed to get fork height: %w", err)
@@ -229,7 +226,7 @@ func (vm *VM) Initialize(
 		Name: "block_building_slot",
 		Help: "the slot that this node may attempt to build a block",
 	})
-	vm.acceptedBlocksSlotHistogram = metric.NewHistogram(metric.HistogramOpts{
+	vm.acceptedBlocksSlotHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Name: "accepted_blocks_slot",
 		Help: "the slot accepted blocks were proposed in",
 		// define the following ranges:
@@ -250,7 +247,7 @@ func (vm *VM) Initialize(
 	)
 
 	return errors.Join(
-		vm.Config.Registerer.Register(vm.proposerBuildSlotGauge),
+		// vm.proposerBuildSlotGauge is a metric.Gauge, already registered internally
 		vm.Config.Registerer.Register(vm.acceptedBlocksSlotHistogram),
 		vm.Config.Registerer.Register(vm.lastAcceptedTimestampGaugeVec),
 	)
@@ -291,9 +288,9 @@ func (vm *VM) BuildBlock(ctx context.Context) (chainblock.Block, error) {
 	preferredBlock, err := vm.getBlock(ctx, vm.preferred)
 	if err != nil {
 		vm.logger.Error("unexpected build block failure",
-			zap.String("reason", "failed to fetch preferred block"),
-			zap.Stringer("parentID", vm.preferred),
-			zap.Error(err),
+			log.String("reason", "failed to fetch preferred block"),
+			log.Stringer("parentID", vm.preferred),
+			log.Err(err),
 		)
 		return nil, err
 	}
@@ -305,7 +302,7 @@ func (vm *VM) ParseBlock(ctx context.Context, b []byte) (chainblock.Block, error
 	if blk, err := vm.parsePostForkBlock(ctx, b, true); err == nil {
 		return blk, nil
 	}
-	return &blockAdapter{Block: child}, nil
+	return vm.parsePreForkBlock(ctx, b)
 }
 
 func (vm *VM) ParseLocalBlock(ctx context.Context, b []byte) (chainblock.Block, error) {
@@ -336,8 +333,8 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 	}
 
 	vm.logger.Debug("set preference",
-		zap.Stringer("blkID", preferred),
-		zap.Stringer("innerBlkID", innerBlkID),
+		log.Stringer("blkID", preferred),
+		log.Stringer("innerBlkID", innerBlkID),
 	)
 	return nil
 }
@@ -345,13 +342,13 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 	for {
 		if err := ctx.Err(); err != nil {
-			vm.logger.Debug("Aborting WaitForEvent, context is done", zap.Error(err))
+			vm.logger.Debug("Aborting WaitForEvent, context is done", log.Err(err))
 			return 0, err
 		}
 
 		timeToBuild, shouldWait, err := vm.timeToBuild(ctx)
 		if err != nil {
-			vm.logger.Debug("Aborting WaitForEvent", zap.Error(err))
+			vm.logger.Debug("Aborting WaitForEvent", log.Err(err))
 			return 0, err
 		}
 
@@ -368,7 +365,7 @@ func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 			return vm.ChainVM.WaitForEvent(ctx)
 		}
 
-		vm.logger.Debug("Waiting until we should build a block", zap.Duration("duration", duration))
+		vm.logger.Debug("Waiting until we should build a block", log.Duration("duration", duration))
 
 		// Wait until it is our turn to build a block.
 		select {
@@ -435,7 +432,7 @@ func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
 	}
 	if err != nil {
 		vm.logger.Debug("failed to fetch the expected delay",
-			zap.Error(err),
+			log.Err(err),
 		)
 
 		// A nil error is returned here because it is possible that
@@ -454,7 +451,7 @@ func (vm *VM) getPreDurangoSlotTime(
 	pChainHeight uint64,
 	parentTimestamp time.Time,
 ) (time.Time, error) {
-	delay, err := vm.Windower.Delay(ctx, blkHeight, pChainHeight, consensus.GetNodeID(vm.ctx), proposer.MaxBuildWindows)
+	delay, err := vm.Windower.Delay(ctx, blkHeight, pChainHeight, vm.ctx.NodeID, proposer.MaxBuildWindows)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -480,7 +477,7 @@ func (vm *VM) getPostDurangoSlotTime(
 		ctx,
 		blkHeight,
 		pChainHeight,
-		consensus.GetNodeID(vm.ctx),
+		vm.ctx.NodeID,
 		slot,
 	)
 	// Note: The P-chain does not currently try to target any block time. It
@@ -547,8 +544,8 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 	}
 
 	vm.logger.Info("repairing accepted chain by height",
-		zap.Uint64("outerHeight", proLastAcceptedHeight),
-		zap.Uint64("innerHeight", innerLastAcceptedHeight),
+		log.Uint64("outerHeight", proLastAcceptedHeight),
+		log.Uint64("innerHeight", innerLastAcceptedHeight),
 	)
 
 	// The inner vm must be behind the proposer vm, so we must roll the
@@ -807,28 +804,8 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockCtx *chainblock.
 	return nil
 }
 
-// fujiOverridePChainHeightUntilHeight is the P-chain height at which the
-// proposervm will no longer attempt to keep the P-chain height the same.
-const fujiOverridePChainHeightUntilHeight = 200041
-
-// fujiOverridePChainHeightUntilTimestamp is the timestamp at which the
-// proposervm will no longer attempt to keep the P-chain height the same.
-var fujiOverridePChainHeightUntilTimestamp = time.Date(2025, time.March, 7, 17, 0, 0, 0, time.UTC) // noon ET
-
 func (vm *VM) selectChildPChainHeight(ctx context.Context, minPChainHeight uint64) (uint64, error) {
-	var (
-		now            = vm.Clock.Time()
-		shouldOverride = vm.ctx.NetworkID == constants.FujiID &&
-			vm.ctx.SubnetID != constants.PrimaryNetworkID &&
-			now.Before(fujiOverridePChainHeightUntilTimestamp) &&
-			minPChainHeight < fujiOverridePChainHeightUntilHeight
-	)
-	if shouldOverride {
-		return minPChainHeight, nil
-	}
-
-	// Use GetCurrentHeight since GetMinimumHeight is not in the validators.State interface
-	// GetCurrentHeight returns the current P-Chain height which is safe to use
+	// Use GetCurrentHeight to get the recommended P-Chain height
 	recommendedHeight, err := vm.validatorState.GetCurrentHeight(ctx)
 	if err != nil {
 		return 0, err
@@ -869,7 +846,7 @@ type validatorStateWrapper struct {
 }
 
 func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
-	return v.vs.GetCurrentHeight()
+	return v.vs.GetCurrentHeight(ctx)
 }
 
 func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
@@ -905,7 +882,7 @@ func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height
 
 func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*validators.GetValidatorOutput, uint64, error) {
 	// For now, return empty set with current height - need proper implementation
-	height, err := v.vs.GetCurrentHeight()
+	height, err := v.vs.GetCurrentHeight(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -922,9 +899,8 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetMinimumHeight(ctx contex
 	return a.vs.GetMinimumHeight(ctx)
 }
 
-func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentHeight() (uint64, error) {
-	// interfaces.ValidatorState.GetCurrentHeight doesn't take context
-	return a.vs.GetCurrentHeight()
+func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return a.vs.GetCurrentHeight(ctx)
 }
 
 func (a *interfacesToConsensusValidatorStateAdapter) GetChainID(chainID ids.ID) (ids.ID, error) {
@@ -950,7 +926,7 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(height uint
 	return valSet, nil
 }
 
-func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*consContext.GetValidatorOutput, error) {
+func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	// Get the validator set from the interfaces version
 	valSet, err := a.vs.GetValidatorSet(height, netID)
 	if err != nil {
@@ -958,9 +934,9 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetCurrentValidators(ctx co
 	}
 
 	// Convert map[ids.NodeID]uint64 to map[ids.NodeID]*GetValidatorOutput
-	result := make(map[ids.NodeID]*consContext.GetValidatorOutput, len(valSet))
+	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(valSet))
 	for nodeID, weight := range valSet {
-		result[nodeID] = &consContext.GetValidatorOutput{
+		result[nodeID] = &validators.GetValidatorOutput{
 			NodeID:    nodeID,
 			Weight:    weight,
 			PublicKey: nil, // Public key not available in this interface

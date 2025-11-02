@@ -7,10 +7,9 @@ import (
 	"errors"
 	"time"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
-
 	"github.com/luxfi/node/vms/platformvm/txs"
-
 	txmempool "github.com/luxfi/node/vms/txs/mempool"
 )
 
@@ -24,7 +23,7 @@ type Mempool struct {
 	txmempool.Mempool[*txs.Tx]
 }
 
-func New(namespace string, registerer prometheus.Registerer) (*Mempool, error) {
+func New(namespace string, registerer metric.Registerer) (*Mempool, error) {
 	metrics, err := txmempool.NewMetrics(namespace, registerer)
 	if err != nil {
 		return nil, err
@@ -46,16 +45,16 @@ func (m *Mempool) Add(tx *txs.Tx) error {
 	}
 }
 
-func (m *mempool) HasTxs() bool {
+func (m *Mempool) HasTxs() bool {
 	return m.Len() > 0
 }
 
-func (m *mempool) Has(txID ids.ID) bool {
+func (m *Mempool) Has(txID ids.ID) bool {
 	_, exists := m.Get(txID)
 	return exists
 }
 
-func (m *mempool) PeekTxs(n int) []*txs.Tx {
+func (m *Mempool) PeekTxs(n int) []*txs.Tx {
 	var result []*txs.Tx
 	count := 0
 	m.Iterate(func(tx *txs.Tx) bool {
@@ -69,7 +68,7 @@ func (m *mempool) PeekTxs(n int) []*txs.Tx {
 	return result
 }
 
-func (m *mempool) DropExpiredStakerTxs(minStartTime time.Time) []ids.ID {
+func (m *Mempool) DropExpiredStakerTxs(minStartTime time.Time) []ids.ID {
 	var droppedTxIDs []ids.ID
 	var txsToRemove []*txs.Tx
 
@@ -107,12 +106,6 @@ func (m *mempool) DropExpiredStakerTxs(minStartTime time.Time) []ids.ID {
 	return droppedTxIDs
 }
 
-func (m *mempool) Remove(txs ...*txs.Tx) {
-	for _, tx := range txs {
-		if size, ok := m.txSizes[tx.ID()]; ok {
-			m.bytesAvailable += size
-			delete(m.txSizes, tx.ID())
-		}
-	}
+func (m *Mempool) Remove(txs ...*txs.Tx) {
 	m.Mempool.Remove(txs...)
 }

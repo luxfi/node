@@ -5,6 +5,7 @@ package metrics
 
 import (
 	"errors"
+
 	"github.com/luxfi/metric"
 	utilmetric "github.com/luxfi/node/utils/metric"
 
@@ -68,7 +69,11 @@ func (m *metricsImpl) MarkTxAccepted(tx *txs.Tx) error {
 }
 
 func New(registerer metric.Registerer) (Metrics, error) {
-	txMetrics, err := newTxMetrics(registerer)
+	registry, ok := registerer.(metric.Registry)
+	if !ok {
+		return nil, errors.New("registerer must implement metric.Registry")
+	}
+	txMetrics, err := newTxMetrics(registry)
 	errs := wrappers.Errs{Err: err}
 
 	m := &metricsImpl{txMetrics: txMetrics}
@@ -86,7 +91,7 @@ func New(registerer metric.Registerer) (Metrics, error) {
 		Help: "Number of times unique txs have not been unique and weren't cached",
 	})
 
-	apiRequestMetric, err := utilmetric.NewAPIInterceptor(registerer)
+	apiRequestMetric, err := utilmetric.NewAPIInterceptor(registry)
 	m.APIInterceptor = apiRequestMetric
 	errs.Add(err)
 	// Metrics are self-registering when created with NewCounter etc.

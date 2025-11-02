@@ -104,8 +104,8 @@ func (vm *VM) buildStateSummary(ctx context.Context, innerSummary chainblock.Sta
 		// fork has not been reached since there is not fork height
 		// just return innerSummary
 		vm.logger.Debug("built pre-fork summary",
-			zap.Stringer("summaryID", innerSummary.ID()),
-			zap.Uint64("summaryHeight", innerSummary.Height()),
+			log.Stringer("summaryID", innerSummary.ID()),
+			log.Uint64("summaryHeight", innerSummary.Height()),
 		)
 		return innerSummary, nil
 	default:
@@ -116,17 +116,17 @@ func (vm *VM) buildStateSummary(ctx context.Context, innerSummary chainblock.Sta
 	blkID, err := vm.GetBlockIDAtHeight(ctx, height)
 	if err != nil {
 		vm.logger.Debug("failed to fetch proposervm block ID",
-			zap.Uint64("height", height),
-			zap.Error(err),
+			log.Uint64("height", height),
+			log.Err(err),
 		)
 		return nil, err
 	}
 	block, err := vm.getPostForkBlock(ctx, blkID)
 	if err != nil {
 		vm.logger.Warn("failed to fetch proposervm block",
-			zap.Stringer("blkID", blkID),
-			zap.Uint64("height", height),
-			zap.Error(err),
+			log.Stringer("blkID", blkID),
+			log.Uint64("height", height),
+			log.Err(err),
 		)
 		return nil, err
 	}
@@ -137,8 +137,8 @@ func (vm *VM) buildStateSummary(ctx context.Context, innerSummary chainblock.Sta
 	}
 
 	vm.logger.Debug("built post-fork summary",
-		zap.Stringer("summaryID", statelessSummary.ID()),
-		zap.Uint64("summaryHeight", forkHeight),
+		log.Stringer("summaryID", statelessSummary.ID()),
+		log.Uint64("summaryHeight", forkHeight),
 	)
 	return &stateSummary{
 		StateSummary: statelessSummary,

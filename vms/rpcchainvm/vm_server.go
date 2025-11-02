@@ -105,7 +105,7 @@ func NewServer(vm block.ChainVM, allowShutdown *utils.Atomic[bool]) *VMServer {
 }
 
 func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest) (*vmpb.InitializeResponse, error) {
-	_, err := ids.ToID(req.SubnetId) // netID not used
+	subnetID, err := ids.ToID(req.SubnetId)
 	if err != nil {
 		return nil, err
 	}
@@ -135,11 +135,11 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	if err != nil {
 		return nil, err
 	}
-	_, err = ids.ToID(req.CChainId) // cChainID not used
+	cChainID, err := ids.ToID(req.CChainId)
 	if err != nil {
 		return nil, err
 	}
-	_, err = ids.ToID(req.LuxAssetId) // luxAssetID not used
+	luxAssetID, err := ids.ToID(req.LuxAssetId)
 	if err != nil {
 		return nil, err
 	}
@@ -229,30 +229,27 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		NodeID:          nodeID,
 		PublicKey:       publicKey,
 		NetworkUpgrades: networkUpgrades,
+		XChainID:        xChainID,
+		CChainID:        cChainID,
+		LUXAssetID:      luxAssetID,
+		Log:             vm.log,
+		SharedMemory:    sharedMemoryClient,
+		BCLookup:        bcLookupClient,
+		Metrics:         vmMetrics,
+		ValidatorState:  validatorStateClient,
+		ChainDataDir:    req.ChainDataDir,
+	}
 
 	// Store network information
 	vm.networkID = req.NetworkId
 	vm.chainID = chainID
 	vm.nodeID = nodeID
 
-		Log:          vm.log,
-		SharedMemory: sharedMemoryClient,
-		BCLookup:     bcLookupClient,
-		Metrics:      vmMetrics,
-
-	// Create a simple DBManager implementation
-	dbMgr := &dbManagerImpl{db: vm.db}
-
-		ValidatorState: validatorStateClient,
-
-		ChainDataDir: req.ChainDataDir,
-	}
-
 	if err := vm.vm.Initialize(ctx, vm.ctx, vm.db, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, nil, nil, appSenderClient); err != nil {
 		// Ignore errors closing resources to return the original error
 		_ = vm.connCloser.Close()
 		close(vm.closed)
-		vm.log.Error("failed to initialize vm", zap.Error(err))
+		vm.log.Error("failed to initialize vm", log.Err(err))
 		return nil, err
 	}
 
@@ -263,7 +260,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		// _ = vm.vm.Shutdown(ctx)
 		_ = vm.connCloser.Close()
 		close(vm.closed)
-		vm.log.Error("failed to get last accepted block ID", zap.Error(err))
+		vm.log.Error("failed to get last accepted block ID", log.Err(err))
 		return nil, err
 	}
 
@@ -704,7 +701,7 @@ func (vm *VMServer) GetAncestors(ctx context.Context, req *vmpb.GetAncestorsRequ
 	}
 	maxBlksNum := int(req.MaxBlocksNum)
 	maxBlksSize := int(req.MaxBlocksSize)
-	_ = time.Duration(req.MaxBlocksRetrivalTime) // Not used in simple implementation
+	maxBlocksRetrievalTime := time.Duration(req.MaxBlocksRetrivalTime)
 
 	blocks, err := block.GetAncestors(
 		ctx,
@@ -712,7 +709,7 @@ func (vm *VMServer) GetAncestors(ctx context.Context, req *vmpb.GetAncestorsRequ
 		blkID,
 		maxBlksNum,
 		maxBlksSize,
-		maxBlocksRetrivalTime,
+		maxBlocksRetrievalTime,
 	)
 	return &vmpb.GetAncestorsResponse{
 		BlksBytes: blocks,

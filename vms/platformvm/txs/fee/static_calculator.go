@@ -52,10 +52,11 @@ func (c *staticVisitor) AddValidatorTx(*txs.AddValidatorTx) error {
 	return nil
 }
 
-func (c *staticVisitor) AddSubnetValidatorTx(*txs.AddSubnetValidatorTx) error {
-	c.fee = c.config.AddSubnetValidatorFee
-	return nil
-}
+// Removed in regenesis
+// func (c *staticVisitor) AddSubnetValidatorTx(*txs.AddSubnetValidatorTx) error {
+// 	c.fee = c.config.AddSubnetValidatorFee
+// 	return nil
+// }
 
 func (c *staticVisitor) AddDelegatorTx(*txs.AddDelegatorTx) error {
 	c.fee = c.config.AddPrimaryNetworkDelegatorFee
@@ -67,29 +68,33 @@ func (c *staticVisitor) CreateChainTx(*txs.CreateChainTx) error {
 	return nil
 }
 
-func (c *staticVisitor) CreateSubnetTx(*txs.CreateSubnetTx) error {
-	c.fee = c.config.CreateSubnetTxFee
-	return nil
-}
+// Removed in regenesis
+// func (c *staticVisitor) CreateSubnetTx(*txs.CreateSubnetTx) error {
+// 	c.fee = c.config.CreateSubnetTxFee
+// 	return nil
+// }
 
-func (c *staticVisitor) RemoveSubnetValidatorTx(*txs.RemoveSubnetValidatorTx) error {
-	c.fee = c.config.TxFee
-	return nil
-}
+// Removed in regenesis
+// func (c *staticVisitor) RemoveSubnetValidatorTx(*txs.RemoveSubnetValidatorTx) error {
+// 	c.fee = c.config.TxFee
+// 	return nil
+// }
 
-func (c *staticVisitor) TransformSubnetTx(*txs.TransformSubnetTx) error {
-	c.fee = c.config.TransformSubnetTxFee
-	return nil
-}
+// Removed in regenesis
+// func (c *staticVisitor) TransformSubnetTx(*txs.TransformSubnetTx) error {
+// 	c.fee = c.config.TransformSubnetTxFee
+// 	return nil
+// }
 
-func (c *staticVisitor) TransferSubnetOwnershipTx(*txs.TransferSubnetOwnershipTx) error {
-	c.fee = c.config.TxFee
-	return nil
-}
+// Removed in regenesis
+// func (c *staticVisitor) TransferSubnetOwnershipTx(*txs.TransferSubnetOwnershipTx) error {
+// 	c.fee = c.config.TxFee
+// 	return nil
+// }
 
 func (c *staticVisitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
-	if tx.Subnet != constants.PrimaryNetworkID {
-		c.fee = c.config.AddSubnetValidatorFee
+	if tx.Net != constants.PrimaryNetworkID {
+		c.fee = c.config.TxFee // Use TxFee since AddSubnetValidatorFee was removed in regenesis
 	} else {
 		c.fee = c.config.AddPrimaryNetworkValidatorFee
 	}
@@ -97,8 +102,8 @@ func (c *staticVisitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessVa
 }
 
 func (c *staticVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegatorTx) error {
-	if tx.Subnet != constants.PrimaryNetworkID {
-		c.fee = c.config.AddSubnetDelegatorFee
+	if tx.Net != constants.PrimaryNetworkID {
+		c.fee = c.config.TxFee // Use TxFee since AddSubnetDelegatorFee was removed in regenesis
 	} else {
 		c.fee = c.config.AddPrimaryNetworkDelegatorFee
 	}
@@ -121,7 +126,7 @@ func (c *staticVisitor) ExportTx(*txs.ExportTx) error {
 }
 
 func (c *staticVisitor) ConvertSubnetToL1Tx(*txs.ConvertSubnetToL1Tx) error {
-	c.fee = c.config.TransformSubnetTxFee
+	c.fee = c.config.TxFee // Use TxFee since TransformSubnetTxFee was removed in regenesis
 	return nil
 }
 
@@ -136,7 +141,7 @@ func (c *staticVisitor) IncreaseL1ValidatorBalanceTx(*txs.IncreaseL1ValidatorBal
 }
 
 func (c *staticVisitor) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
-	c.fee = c.config.AddSubnetValidatorFee
+	c.fee = c.config.TxFee // Use TxFee since AddSubnetValidatorFee was removed in regenesis
 	return nil
 }
 

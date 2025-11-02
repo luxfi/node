@@ -4,10 +4,11 @@
 package network
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
+
 	"context"
 	"time"
 
-	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/validators"

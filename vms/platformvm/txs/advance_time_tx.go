@@ -4,9 +4,10 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
-
+	"context"
 	"time"
+
+	consensusctx "github.com/luxfi/consensus/context"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"

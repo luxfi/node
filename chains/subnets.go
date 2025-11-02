@@ -20,12 +20,12 @@ type Subnets struct {
 	configs map[ids.ID]subnets.Config
 
 	lock    sync.RWMutex
-	subnets map[ids.ID]subnets.Net
+	subnets map[ids.ID]subnets.Subnet
 }
 
-// GetOrCreate returns a net running on this node, or creates one if it was
-// not running before. Returns the net and if the net was created.
-func (s *Subnets) GetOrCreate(netID ids.ID) (subnets.Net, bool) {
+// GetOrCreate returns a subnet running on this node, or creates one if it was
+// not running before. Returns the subnet and if the subnet was created.
+func (s *Subnets) GetOrCreate(netID ids.ID) (subnets.Subnet, bool) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 

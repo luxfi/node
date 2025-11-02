@@ -4,14 +4,14 @@
 package txs
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
-
+	"context"
 	"errors"
 	"fmt"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/utils"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
@@ -71,7 +71,9 @@ func (tx *BaseTx) InitCtx(ctx *consensusctx.Context) {
 
 // InitializeContext initializes the context for this transaction
 func (tx *BaseTx) InitializeContext(ctx context.Context) error {
-	tx.InitCtx(ctx)
+	if consensusCtx := consensusctx.FromContext(ctx); consensusCtx != nil {
+		tx.InitCtx(consensusCtx)
+	}
 	return nil
 }
 

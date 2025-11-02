@@ -9,8 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"

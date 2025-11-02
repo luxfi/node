@@ -4,11 +4,11 @@
 package block
 
 import (
-	consensusctx "github.com/luxfi/consensus/context"
-
+	"context"
 	"fmt"
 	"time"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )

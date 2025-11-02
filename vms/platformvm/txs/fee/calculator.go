@@ -17,27 +17,5 @@ type Calculator interface {
 	CalculateFee(tx txs.UnsignedTx) (uint64, error)
 }
 
-func (c *calculator) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
-	c.fee = c.staticCfg.TxFee
-	return nil
-}
-
-func (c *calculator) IncreaseL1ValidatorBalanceTx(*txs.IncreaseL1ValidatorBalanceTx) error {
-	c.fee = c.staticCfg.TxFee
-	return nil
-}
-
-func (c *calculator) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
-	c.fee = c.staticCfg.TxFee
-	return nil
-}
-
-func (c *calculator) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error {
-	c.fee = c.staticCfg.TxFee
-	return nil
-}
-
-func (c *calculator) ConvertNetToL1Tx(*txs.ConvertNetToL1Tx) error {
-	c.fee = c.staticCfg.TxFee
-	return nil
-}
+// Note: The following methods were for a legacy calculator struct that no longer exists.
+// Fee calculation is now handled by staticCalculator and dynamicCalculator in their respective files.

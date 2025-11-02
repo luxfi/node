@@ -22,20 +22,20 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/database"
-	consensusctx "github.com/luxfi/consensus/context"
+	snow "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/database/meterdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/consensus/engine/dag/bootstrap/queue"
 	"github.com/luxfi/consensus/engine/dag/state"
-	"github.com/luxfi/consensus/engine/dag/vertex"
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/core/tracker"
+	"github.com/luxfi/consensus/engine/vertex"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/core/tracker"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/syncer"
 	"github.com/luxfi/consensus/networking/handler"
@@ -58,7 +58,6 @@ import (
 	"github.com/luxfi/node/vms/fx"
 	// "github.com/luxfi/node/vms/metervm" // Temporarily disabled - needs consensus package updates
 	"github.com/luxfi/node/vms/nftfx"
-	"github.com/luxfi/trace"
 
 	// "github.com/luxfi/node/vms/platformvm/warp" // Not used
 	"github.com/luxfi/node/vms/propertyfx"
@@ -83,14 +82,14 @@ const (
 	defaultChannelSize = 1
 	initialQueueSize   = 3
 
-	luxNamespace    = constants.PlatformName + metric.NamespaceSeparator + "lux"
-	handlerNamespace      = constants.PlatformName + metric.NamespaceSeparator + "handler"
-	meterchainvmNamespace = constants.PlatformName + metric.NamespaceSeparator + "meterchainvm"
-	meterdagvmNamespace   = constants.PlatformName + metric.NamespaceSeparator + "meterdagvm"
-	proposervmNamespace   = constants.PlatformName + metric.NamespaceSeparator + "proposervm"
-	p2pNamespace          = constants.PlatformName + metric.NamespaceSeparator + "p2p"
-	chainNamespace      = constants.PlatformName + metric.NamespaceSeparator + "snowman"
-	stakeNamespace        = constants.PlatformName + metric.NamespaceSeparator + "stake"
+	luxNamespace    = constants.PlatformName + utilmetric.NamespaceSeparator + "lux"
+	handlerNamespace      = constants.PlatformName + utilmetric.NamespaceSeparator + "handler"
+	meterchainvmNamespace = constants.PlatformName + utilmetric.NamespaceSeparator + "meterchainvm"
+	meterdagvmNamespace   = constants.PlatformName + utilmetric.NamespaceSeparator + "meterdagvm"
+	proposervmNamespace   = constants.PlatformName + utilmetric.NamespaceSeparator + "proposervm"
+	p2pNamespace          = constants.PlatformName + utilmetric.NamespaceSeparator + "p2p"
+	chainNamespace      = constants.PlatformName + utilmetric.NamespaceSeparator + "snowman"
+	stakeNamespace        = constants.PlatformName + utilmetric.NamespaceSeparator + "stake"
 )
 
 var (
@@ -173,7 +172,7 @@ type ChainParameters struct {
 
 type chainInfo struct {
 	Name    string
-	Context *snow.ConsensusContext
+	Context *snow.Context
 	VM      core.VM
 	Handler handler.Handler
 	Engine  Engine // Added to handle Start/Stop operations
@@ -250,8 +249,9 @@ func (c *chainVMWrapper) HealthCheck(ctx context.Context) (interface{}, error) {
 	return nil, nil
 }
 
-func (c *chainVMWrapper) SetState(ctx context.Context, state consensusinterfaces.State) error {
-	// ChainVM doesn't have SetState, return nil
+func (c *chainVMWrapper) SetState(ctx context.Context, state core.VMState) error {
+	// ChainVM doesn't have SetState, return error or forward to underlying VM
+	// For now return nil as this is a wrapper
 	return nil
 }
 
@@ -358,7 +358,7 @@ func (v *consensusValidatorStateWrapper) GetSubnetID(chainID ids.ID) (ids.ID, er
 	return ids.Empty, nil
 }
 
-func (v *consensusValidatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*consContext.GetValidatorOutput, error) {
+func (v *consensusValidatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*snow.GetValidatorOutput, error) {
 	// Get the validator set from the underlying state
 	valSet, err := v.state.GetValidatorSet(ctx, height, netID)
 	if err != nil {
@@ -366,9 +366,9 @@ func (v *consensusValidatorStateWrapper) GetCurrentValidators(ctx context.Contex
 	}
 
 	// Convert to GetValidatorOutput format
-	result := make(map[ids.NodeID]*consContext.GetValidatorOutput, len(valSet))
+	result := make(map[ids.NodeID]*snow.GetValidatorOutput, len(valSet))
 	for nodeID, val := range valSet {
-		result[nodeID] = &consContext.GetValidatorOutput{
+		result[nodeID] = &snow.GetValidatorOutput{
 			NodeID:    nodeID,
 			PublicKey: val.PublicKey,
 			Weight:    val.Weight,
@@ -420,7 +420,7 @@ type ManagerConfig struct {
 	// Must not be used unless [TracingEnabled] is true as this may be nil.
 	Tracer                    trace.Tracer
 	Log                       log.Logger
-	LogFactory                logging.Factory
+	LogFactory                log.Factory
 	VMManager                 vms.Manager // Manage mappings from vm ID --> vm
 	BlockAcceptorGroup        consensus.AcceptorGroup
 	TxAcceptorGroup           consensus.AcceptorGroup
@@ -569,7 +569,7 @@ func New(config *ManagerConfig) (Manager, error) {
 		meterGRAPHVMGatherer: meterGRAPHVMGatherer,
 		proposervmGatherer:   proposervmGatherer,
 		p2pGatherer:          p2pGatherer,
-		linearGatherer:       linearGatherer,
+		linearGatherer:       snowmanGatherer,
 		stakeGatherer:        stakeGatherer,
 		vmGatherer:           make(map[ids.ID]metric.MultiGatherer),
 	}, nil
@@ -813,7 +813,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 }
 
 // Create a chain
-func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chainInfo, error) {
+func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*chainInfo, error) {
 	if chainParams.ID != constants.PlatformChainID && chainParams.VMID == constants.PlatformVMID {
 		return nil, errCreatePlatformVM
 	}
@@ -849,34 +849,22 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Net) (*chai
 		pubKeyBytes = nil
 	}
 
-	ctx := &snow.ConsensusContext{
-		Context: &consensusctx.Context{
-			NetworkID:       m.NetworkID,
-			SubnetID:        chainParams.SubnetID,
-			ChainID:         chainParams.ID,
-			NodeID:          m.NodeID,
-			PublicKey:       m.StakingBLSKey.PublicKey(),
-			NetworkUpgrades: m.Upgrades,
+	chainCtx := &snow.Context{
+		NetworkID:    m.NetworkID,
+		QuantumID:    m.NetworkID,
+		NetID:        chainParams.NetID,
+		SubnetID:     chainParams.NetID, // Alias
+		ChainID:      chainParams.ID,
+		NodeID:       m.NodeID,
+		PublicKey:    pubKeyBytes,
 
-			XChainID:    m.XChainID,
-			CChainID:    m.CChainID,
-			LUXAssetID: m.LUXAssetID,
+		XChainID:     m.XChainID,
+		CChainID:     m.CChainID,
+		XAssetID:     m.XAssetID,
+		LUXAssetID:   m.XAssetID,
+		ChainDataDir: chainDataDir,
 
-			Log:          chainLog,
-			SharedMemory: m.AtomicMemory.NewSharedMemory(chainParams.ID),
-			BCLookup:     m,
-			Metrics:      metrics.NewPrefixGatherer(),
-
-			WarpSigner: warp.NewSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID),
-
-			ValidatorState: m.validatorState,
-			ChainDataDir:   chainDataDir,
-		},
-		PrimaryAlias:   primaryAlias,
-		Registerer:     prometheus.NewRegistry(),
-		BlockAcceptor:  m.BlockAcceptorGroup,
-		TxAcceptor:     m.TxAcceptorGroup,
-		VertexAcceptor: m.VertexAcceptorGroup,
+		ValidatorState: m.validatorState,
 	}
 
 	// Get a factory for the vm we want to use on our chain
@@ -1670,7 +1658,7 @@ func (m *manager) createLuxChain(
 
 	return &chainInfo{
 		Name:    primaryAlias,
-		Context: ctx,
+		Context: chainCtx,
 		VM:      vmWrapper,
 		Handler: h,
 	}, nil
@@ -1679,14 +1667,14 @@ func (m *manager) createLuxChain(
 
 // Create a linear chain using the Chain consensus engine
 func (m *manager) createSnowmanChain(
-	ctx *snow.ConsensusContext,
+	ctx *snow.Context,
 	genesisData []byte,
 	vdrs validators.Manager,
 	beacons validators.Manager,
 	vm block.ChainVM,
-	fxs []*consensus.Fx,
+	fxs []*core.Fx,
 	sb subnets.Subnet,
-) (*chain, error) {
+) (*chainInfo, error) {
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
 
@@ -2221,7 +2209,7 @@ func (m *manager) createSnowmanChain(
 	vmWrapper := newChainVMWrapper(vm)
 	return &chainInfo{
 		Name:    primaryAlias,
-		Context: ctx,
+		Context: chainCtx,
 		VM:      vmWrapper,
 		Handler: h,
 	}, nil
@@ -2348,7 +2336,7 @@ func (m *manager) LookupVM(alias string) (ids.ID, error) {
 
 // Notify registrants [those who want to know about the creation of chains]
 // that the specified chain has been created
-func (m *manager) notifyRegistrants(name string, ctx *snow.ConsensusContext, vm core.VM) {
+func (m *manager) notifyRegistrants(name string, ctx *snow.Context, vm core.VM) {
 	for _, registrant := range m.registrants {
 		// registrant.RegisterChain expects core.VM, but we use interface{}
 		// since core.VM uses context.Context which we're not using
@@ -2471,7 +2459,7 @@ func (e *emptyValidatorManager) NumSubnets() int {
 	return 0
 }
 
-func (e *emptyValidatorManager) SubsetWeight(netID ids.ID, nodeIDs consensusset.Set[ids.NodeID]) (uint64, error) {
+func (e *emptyValidatorManager) SubsetWeight(netID ids.ID, nodeIDs set.Set[ids.NodeID]) (uint64, error) {
 	return 0, nil
 }
 
@@ -2496,7 +2484,7 @@ func (e *emptyValidatorManager) GetCurrentValidators(ctx context.Context, height
 // placeholderHandler implements handler.Handler interface
 type placeholderHandler struct{}
 
-func (p *placeholderHandler) Context() *consContext.Context                 { return nil }
+func (p *placeholderHandler) Context() *snow.Context                 { return nil }
 func (p *placeholderHandler) Start(ctx context.Context, startReqID uint32)  {}
 func (p *placeholderHandler) Push(ctx context.Context, msg handler.Message) {}
 func (p *placeholderHandler) Len() int                                      { return 0 }
@@ -2602,7 +2590,7 @@ type singleNodeAppSender struct {
 // Ensure singleNodeAppSender implements core.AppSender
 var _ core.AppSender = (*singleNodeAppSender)(nil)
 
-func (s *singleNodeAppSender) SendAppRequest(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
+func (s *singleNodeAppSender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
 	s.log.Debug("SendAppRequest called in single-node mode (no-op)")
 	return nil
 }
@@ -2617,12 +2605,12 @@ func (s *singleNodeAppSender) SendAppError(ctx context.Context, nodeID ids.NodeI
 	return nil
 }
 
-func (s *singleNodeAppSender) SendAppGossip(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
+func (s *singleNodeAppSender) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
 	s.log.Debug("SendAppGossip called in single-node mode (no-op)")
 	return nil
 }
 
-func (s *singleNodeAppSender) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
+func (s *singleNodeAppSender) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
 	s.log.Debug("SendAppGossipSpecific called in single-node mode (no-op)")
 	return nil
 }

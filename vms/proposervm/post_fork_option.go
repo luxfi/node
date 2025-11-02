@@ -122,18 +122,18 @@ func (b *postForkOption) buildChild(ctx context.Context) (Block, error) {
 	parentPChainHeight, err := b.pChainHeight(ctx)
 	if err != nil {
 		b.vm.logger.Error("unexpected build block failure",
-			zap.String("reason", "failed to fetch parent's P-chain height"),
-			zap.Stringer("parentID", parentID),
-			zap.Error(err),
+			log.String("reason", "failed to fetch parent's P-chain height"),
+			log.Stringer("parentID", parentID),
+			log.Err(err),
 		)
 		return nil, err
 	}
 	parentEpoch, err := b.pChainEpoch(ctx)
 	if err != nil {
 		b.vm.logger.Error("unexpected build block failure",
-			zap.String("reason", "failed to fetch parent's epoch"),
-			zap.Stringer("parentID", parentID),
-			zap.Error(err),
+			log.String("reason", "failed to fetch parent's epoch"),
+			log.Stringer("parentID", parentID),
+			log.Err(err),
 		)
 		return nil, err
 	}
