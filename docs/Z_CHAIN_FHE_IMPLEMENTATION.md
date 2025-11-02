@@ -17,7 +17,7 @@ Z-Chain implements a privacy-preserving smart contract platform using Fully Homo
 │  │   Core      │   (TFHE)     │     Management         │   │
 │  └─────────────┴──────────────┴────────────────────────┘   │
 ├─────────────────────────────────────────────────────────────┤
-│                 Consensus Layer (Snowman)                    │
+│                 Consensus Layer (Consensusman)                    │
 ├─────────────────────────────────────────────────────────────┤
 │              Ringtail PQ Signature Support                   │
 └─────────────────────────────────────────────────────────────┘
@@ -32,7 +32,7 @@ import (
     "github.com/zama-ai/fhevm-go/fhevm"
     "github.com/zama-ai/tfhe-go"
     "github.com/consensys/gnark/backend/groth16"
-    "github.com/luxfi/node/snow/engine/snowman/block"
+    "github.com/luxfi/node/consensus/engine/consensusman/block"
 )
 
 type ZVM struct {
@@ -58,7 +58,7 @@ type ZVM struct {
 
 func (vm *ZVM) Initialize(
     ctx context.Context,
-    snowCtx *snow.Context,
+    consensusCtx *consensus.Context,
     db database.Database,
     genesisBytes []byte,
     upgradeBytes []byte,
@@ -67,7 +67,7 @@ func (vm *ZVM) Initialize(
     _ []*common.Fx,
     _ common.AppSender,
 ) error {
-    vm.ctx = snowCtx
+    vm.ctx = consensusCtx
     vm.db = db
     
     // Initialize FHE context

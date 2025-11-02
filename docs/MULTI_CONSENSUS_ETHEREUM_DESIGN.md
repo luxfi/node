@@ -54,7 +54,7 @@ type EthereumConsensusPlugin struct {
 │  Avalanche   │     Lux      │   Ethereum   │   L2 Chains   │
 │  Consensus   │  Consensus   │  Consensus   │  (Future)     │
 ├──────────────┼──────────────┼──────────────┼────────────────┤
-│  Snowman     │  Snowman+    │   Gasper     │   Various     │
+│  Consensusman     │  Consensusman+    │   Gasper     │   Various     │
 │  P/C/X-Chain │  P/C/X/B     │  Beacon+Exec │  Optimistic/  │
 │              │              │              │  ZK-Rollup    │
 ├──────────────┴──────────────┴──────────────┴────────────────┤

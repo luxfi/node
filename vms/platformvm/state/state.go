@@ -363,7 +363,7 @@ type state struct {
 	validatorState
 
 	validators validators.Manager
-	ctx        *snow.Context
+	ctx        *consensus.Context
 	upgrades   upgrade.Config
 	metrics    metrics.Metrics
 	rewards    reward.Calculator
@@ -561,7 +561,7 @@ func New(
 	validators validators.Manager,
 	upgrades upgrade.Config,
 	execCfg *config.Config,
-	ctx *snow.Context,
+	ctx *consensus.Context,
 	metrics metrics.Metrics,
 	rewards reward.Calculator,
 ) (State, error) {

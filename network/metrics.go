@@ -14,8 +14,8 @@ import (
 )
 
 type metricsImpl struct {
-	// trackedSubnets does not include the primary network ID
-	trackedSubnets set.Set[ids.ID]
+	// trackedNets does not include the primary network ID
+	trackedNets set.Set[ids.ID]
 
 	numTracked                   metric.Gauge
 	numPeers                     metric.Gauge
@@ -40,11 +40,11 @@ type metricsImpl struct {
 
 func newMetrics(
 	registry metric.Registry,
-	trackedSubnets set.Set[ids.ID],
+	trackedNets set.Set[ids.ID],
 ) (*metricsImpl, error) {
 	metricsInstance := metric.NewWithRegistry("network", registry)
 	m := &metricsImpl{
-		trackedSubnets:               trackedSubnets,
+		trackedNets:               trackedNets,
 		numPeers:                     metricsInstance.NewGauge("peers", "Number of network peers"),
 		numTracked:                   metricsInstance.NewGauge("tracked", "Number of currently tracked IPs attempting to be connected to"),
 		numSubnetPeers:               metricsInstance.NewGaugeVec("peers_subnet", "Number of peers that are validating a particular subnet", []string{"netID"}),
@@ -65,7 +65,7 @@ func newMetrics(
 	}
 
 	// init net tracker metrics with tracked subnets
-	for netID := range trackedSubnets {
+	for netID := range trackedNets {
 		// initialize to 0
 		netIDStr := netID.String()
 		m.numSubnetPeers.WithLabelValues(netIDStr).Set(0)
@@ -78,9 +78,9 @@ func (m *metricsImpl) markConnected(peer peer.Peer) {
 	m.numPeers.Inc()
 	m.connected.Inc()
 
-	trackedSubnets := peer.TrackedSubnets()
-	for netID := range m.trackedSubnets {
-		if trackedSubnets.Contains(netID) {
+	trackedNets := peer.TrackedSubnets()
+	for netID := range m.trackedNets {
+		if trackedNets.Contains(netID) {
 			m.numSubnetPeers.WithLabelValues(netID.String()).Inc()
 		}
 	}
@@ -97,9 +97,9 @@ func (m *metricsImpl) markDisconnected(peer peer.Peer) {
 	m.numPeers.Dec()
 	m.disconnected.Inc()
 
-	trackedSubnets := peer.TrackedSubnets()
-	for netID := range m.trackedSubnets {
-		if trackedSubnets.Contains(netID) {
+	trackedNets := peer.TrackedSubnets()
+	for netID := range m.trackedNets {
+		if trackedNets.Contains(netID) {
 			m.numSubnetPeers.WithLabelValues(netID.String()).Dec()
 		}
 	}

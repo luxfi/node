@@ -1,8 +1,0 @@
-{
-    "skip_packages": [
-        "github.com/luxfi/node/xchain",
-        "github.com/luxfi/node/wallet/keychain"
-    ],
-    "timeout": "30s",
-    "short": true
-}

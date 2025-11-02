@@ -36,7 +36,7 @@ type Config struct {
 	Validators validators.Manager
 	Upgrades   upgrade.Config
 	Config     config.Config
-	Context    *snow.Context
+	Context    *consensus.Context
 	Metrics    metrics.Metrics
 	Rewards    reward.Calculator
 }
@@ -46,7 +46,7 @@ func New(t testing.TB, c Config) state.State {
 		c.DB = memdb.New()
 	}
 	if c.Context == nil {
-		c.Context = &snow.Context{
+		c.Context = &consensus.Context{
 			NetworkID: constants.UnitTestID,
 			NodeID:    DefaultNodeID,
 			Log:       logging.NoLog{},

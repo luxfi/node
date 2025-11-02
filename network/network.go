@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/ips"
@@ -228,7 +228,7 @@ func NewNetwork(
 		}
 	}
 
-	if config.TrackedSubnets.Contains(constants.PrimaryNetworkID) {
+	if config.TrackedNets.Contains(constants.PrimaryNetworkID) {
 		return nil, errTrackingPrimaryNetwork
 	}
 
@@ -263,12 +263,12 @@ func NewNetwork(
 		return nil, fmt.Errorf("initializing peer metrics failed with: %w", err)
 	}
 
-	metrics, err := newMetrics(metricsRegistry, config.TrackedSubnets)
+	metrics, err := newMetrics(metricsRegistry, config.TrackedNets)
 	if err != nil {
 		return nil, fmt.Errorf("initializing network metrics failed with: %w", err)
 	}
 
-	ipTracker, err := newIPTracker(config.TrackedSubnets, log, metricsRegistry)
+	ipTracker, err := newIPTracker(config.TrackedNets, log, metricsRegistry)
 	if err != nil {
 		return nil, fmt.Errorf("initializing ip tracker failed with: %w", err)
 	}
@@ -296,7 +296,7 @@ func NewNetwork(
 		Router:               router,
 		VersionCompatibility: version.GetCompatibility(minCompatibleTime),
 		MyNodeID:             config.MyNodeID,
-		MySubnets:            config.TrackedSubnets,
+		MyNets:            config.TrackedNets,
 		Beacons:              config.Beacons,
 		Validators:           config.Validators,
 		NetworkID:            config.NetworkID,
@@ -530,15 +530,15 @@ func (n *network) Connected(nodeID ids.NodeID) {
 		peerIP.Timestamp,
 		peerIP.TLSSignature,
 	)
-	trackedSubnets := peer.TrackedSubnets()
-	n.ipTracker.Connected(newIP, trackedSubnets)
+	trackedNets := peer.TrackedNets()
+	n.ipTracker.Connected(newIP, trackedNets)
 
 	n.metrics.markConnected(peer)
 
 	peerVersion := peer.Version()
 	n.router.Connected(nodeID, peerVersion, constants.PrimaryNetworkID)
-	for subnetID := range n.peerConfig.MySubnets {
-		if trackedSubnets.Contains(subnetID) {
+	for subnetID := range n.peerConfig.MyNets {
+		if trackedNets.Contains(subnetID) {
 			n.router.Connected(nodeID, peerVersion, subnetID)
 		}
 	}
@@ -607,7 +607,7 @@ func (n *network) KnownPeers() ([]byte, []byte) {
 // validator but they do not consider themselves one.
 func (n *network) Peers(
 	peerID ids.NodeID,
-	trackedSubnets set.Set[ids.ID],
+	trackedNets set.Set[ids.ID],
 	requestAllPeers bool,
 	knownPeers *bloom.ReadFilter,
 	salt []byte,
@@ -615,12 +615,12 @@ func (n *network) Peers(
 	_, areWeAPrimaryNetworkValidator := n.config.Validators.GetValidator(constants.PrimaryNetworkID, n.config.MyNodeID)
 
 	// Only return IPs for subnets that we are tracking.
-	var allowedSubnets func(ids.ID) bool
+	var allowedNets func(ids.ID) bool
 	if areWeAPrimaryNetworkValidator {
-		allowedSubnets = func(ids.ID) bool { return true }
+		allowedNets = func(ids.ID) bool { return true }
 	} else {
-		allowedSubnets = func(subnetID ids.ID) bool {
-			return subnetID == constants.PrimaryNetworkID || n.ipTracker.trackedSubnets.Contains(subnetID)
+		allowedNets = func(subnetID ids.ID) bool {
+			return subnetID == constants.PrimaryNetworkID || n.ipTracker.trackedNets.Contains(subnetID)
 		}
 	}
 
@@ -629,7 +629,7 @@ func (n *network) Peers(
 		return getGossipableIPs(
 			n.ipTracker,
 			n.ipTracker.subnet,
-			allowedSubnets,
+			allowedNets,
 			peerID,
 			knownPeers,
 			salt,
@@ -638,8 +638,8 @@ func (n *network) Peers(
 	}
 	return getGossipableIPs(
 		n.ipTracker,
-		trackedSubnets,
-		allowedSubnets,
+		trackedNets,
+		allowedNets,
 		peerID,
 		knownPeers,
 		salt,
@@ -851,7 +851,7 @@ func (n *network) samplePeers(
 		numValidatorsToSample+config.NonValidators+config.Peers,
 		func(p peer.Peer) bool {
 			// Only return peers that are tracking [netID]
-			if trackedSubnets := p.TrackedSubnets(); !trackedSubnets.Contains(netID) {
+			if trackedNets := p.TrackedNets(); !trackedNets.Contains(netID) {
 				return false
 			}
 

@@ -20,7 +20,7 @@ type Info struct {
 	LastSent       time.Time       `json:"lastSent"`
 	LastReceived   time.Time       `json:"lastReceived"`
 	ObservedUptime json.Uint32     `json:"observedUptime"`
-	TrackedSubnets set.Set[ids.ID] `json:"trackedSubnets"`
+	TrackedNets set.Set[ids.ID] `json:"trackedNets"`
 	SupportedACPs  set.Set[uint32] `json:"supportedACPs"`
 	ObjectedACPs   set.Set[uint32] `json:"objectedACPs"`
 }

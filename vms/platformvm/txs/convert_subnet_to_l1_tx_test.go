@@ -537,7 +537,7 @@ func TestConvertSubnetToL1TxSerialization(t *testing.T) {
 			require.NoError(err)
 			require.Equal(test.expectedBytes, txBytes)
 
-			ctx := snowtest.Context(t, constants.PlatformChainID)
+			ctx := consensustest.Context(t, constants.PlatformChainID)
 			test.tx.InitCtx(ctx)
 
 			txJSON, err := json.MarshalIndent(test.tx, "", "\t")
@@ -554,7 +554,7 @@ func TestConvertSubnetToL1TxSyntacticVerify(t *testing.T) {
 	require.NoError(t, err)
 
 	var (
-		ctx         = snowtest.Context(t, ids.GenerateTestID())
+		ctx         = consensustest.Context(t, ids.GenerateTestID())
 		validBaseTx = BaseTx{
 			BaseTx: lux.BaseTx{
 				NetworkID:    ctx.NetworkID,

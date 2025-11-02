@@ -1891,7 +1891,7 @@ func (b *builder) authorize(ownerID ids.ID, options *common.Options) (*secp256k1
 }
 
 func (b *builder) initCtx(tx txs.UnsignedTx) error {
-	ctx, err := NewSnowContext(b.context.NetworkID, b.context.LUXAssetID)
+	ctx, err := NewConsensusContext(b.context.NetworkID, b.context.LUXAssetID)
 	if err != nil {
 		return err
 	}

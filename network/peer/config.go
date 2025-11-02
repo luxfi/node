@@ -47,8 +47,8 @@ type Config struct {
 	Router               InboundHandler
 	VersionCompatibility version.Compatibility
 	MyNodeID             ids.NodeID
-	// MySubnets does not include the primary network ID
-	MySubnets          set.Set[ids.ID]
+	// MyNets does not include the primary network ID
+	MyNets          set.Set[ids.ID]
 	Beacons            validators.Manager
 	Validators         validators.Manager
 	NetworkID          uint32

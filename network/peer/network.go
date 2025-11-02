@@ -36,7 +36,7 @@ type Network interface {
 	// Peers returns peers that are not known.
 	Peers(
 		peerID ids.NodeID,
-		trackedSubnets set.Set[ids.ID],
+		trackedNets set.Set[ids.ID],
 		requestAllPeers bool,
 		knownPeers *bloom.ReadFilter,
 		peerSalt []byte,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1fx
@@ -24,7 +24,7 @@ func (kw *keychainWrapper) Get(addr ids.ShortID) (keychain.Signer, bool) {
 
 // Addresses implements keychain.Keychain
 func (kw *keychainWrapper) Addresses() set.Set[ids.ShortID] {
-	return kw.Keychain.AddressSet()
+	return kw.Keychain.Addresses()
 }
 
 // WrapKeychain wraps a Keychain to implement the ledger keychain interface

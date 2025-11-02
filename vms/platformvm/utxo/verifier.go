@@ -26,7 +26,7 @@ func NewVerifier(ctx context.Context, clk *mockable.Clock, fx fx.Fx) *UTXOVerifi
 }
 
 type verifier struct {
-	ctx *snow.Context
+	ctx *consensus.Context
 	clk *mockable.Clock
 	fx  fx.Fx
 }

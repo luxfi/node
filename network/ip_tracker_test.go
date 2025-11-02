@@ -74,7 +74,7 @@ func TestIPTracker_ManuallyTrack(t *testing.T) {
 				tracker.tracked[ip.NodeID] = &trackedNode{
 					manuallyTracked:  true,
 					validatedSubnets: make(set.Set[ids.ID]),
-					trackedSubnets:   make(set.Set[ids.ID]),
+					trackedNets:   make(set.Set[ids.ID]),
 				}
 			},
 		},
@@ -90,7 +90,7 @@ func TestIPTracker_ManuallyTrack(t *testing.T) {
 				tracker.tracked[ip.NodeID] = &trackedNode{
 					manuallyTracked:  true,
 					validatedSubnets: make(set.Set[ids.ID]),
-					trackedSubnets:   make(set.Set[ids.ID]),
+					trackedNets:   make(set.Set[ids.ID]),
 					ip:               ip,
 				}
 				tracker.bloomAdditions[ip.NodeID] = 1
@@ -175,7 +175,7 @@ func TestIPTracker_ManuallyGossip(t *testing.T) {
 				tracker.tracked[ip.NodeID] = &trackedNode{
 					manuallyTracked:  true,
 					validatedSubnets: set.Of(constants.PrimaryNetworkID),
-					trackedSubnets:   set.Of(constants.PrimaryNetworkID),
+					trackedNets:   set.Of(constants.PrimaryNetworkID),
 				}
 				tracker.subnet[constants.PrimaryNetworkID] = &gossipableSubnet{
 					numGossipableIPs:   tracker.numGossipableIPs,
@@ -194,7 +194,7 @@ func TestIPTracker_ManuallyGossip(t *testing.T) {
 				tracker.numTrackedSubnets.Inc()
 				tracker.tracked[ip.NodeID] = &trackedNode{
 					validatedSubnets: set.Of(subnetID),
-					trackedSubnets:   make(set.Set[ids.ID]),
+					trackedNets:   make(set.Set[ids.ID]),
 				}
 				tracker.subnet[subnetID] = &gossipableSubnet{
 					numGossipableIPs:   tracker.numGossipableIPs,
@@ -219,7 +219,7 @@ func TestIPTracker_ManuallyGossip(t *testing.T) {
 				tracker.tracked[ip.NodeID] = &trackedNode{
 					manuallyTracked:  true,
 					validatedSubnets: set.Of(constants.PrimaryNetworkID),
-					trackedSubnets:   set.Of(constants.PrimaryNetworkID),
+					trackedNets:   set.Of(constants.PrimaryNetworkID),
 					ip:               ip,
 				}
 				tracker.bloomAdditions[ip.NodeID] = 1
@@ -249,7 +249,7 @@ func TestIPTracker_ManuallyGossip(t *testing.T) {
 				tracker.numTrackedSubnets.Inc()
 				tracker.tracked[ip.NodeID] = &trackedNode{
 					validatedSubnets: set.Of(subnetID),
-					trackedSubnets:   make(set.Set[ids.ID]),
+					trackedNets:   make(set.Set[ids.ID]),
 					ip:               ip,
 				}
 				tracker.bloomAdditions[ip.NodeID] = 1
@@ -599,7 +599,7 @@ func TestIPTracker_Connected(t *testing.T) {
 			ip:           ip,
 			expectedChange: func(tracker *ipTracker) {
 				tracker.connected[ip.NodeID] = &connectedNode{
-					trackedSubnets: set.Of(constants.PrimaryNetworkID),
+					trackedNets: set.Of(constants.PrimaryNetworkID),
 					ip:             ip,
 				}
 			},
@@ -617,7 +617,7 @@ func TestIPTracker_Connected(t *testing.T) {
 				tracker.tracked[ip.NodeID].ip = ip
 				tracker.bloomAdditions[ip.NodeID] = 1
 				tracker.connected[ip.NodeID] = &connectedNode{
-					trackedSubnets: set.Of(constants.PrimaryNetworkID),
+					trackedNets: set.Of(constants.PrimaryNetworkID),
 					ip:             ip,
 				}
 
@@ -640,7 +640,7 @@ func TestIPTracker_Connected(t *testing.T) {
 				tracker.tracked[ip.NodeID].ip = ip
 				tracker.bloomAdditions[ip.NodeID] = 1
 				tracker.connected[ip.NodeID] = &connectedNode{
-					trackedSubnets: set.Of(constants.PrimaryNetworkID),
+					trackedNets: set.Of(constants.PrimaryNetworkID),
 					ip:             ip,
 				}
 			},
@@ -657,7 +657,7 @@ func TestIPTracker_Connected(t *testing.T) {
 			expectedChange: func(tracker *ipTracker) {
 				tracker.numGossipableIPs.Inc()
 				tracker.connected[ip.NodeID] = &connectedNode{
-					trackedSubnets: set.Of(constants.PrimaryNetworkID),
+					trackedNets: set.Of(constants.PrimaryNetworkID),
 					ip:             ip,
 				}
 
@@ -679,7 +679,7 @@ func TestIPTracker_Connected(t *testing.T) {
 			ip: ip,
 			expectedChange: func(tracker *ipTracker) {
 				tracker.connected[ip.NodeID] = &connectedNode{
-					trackedSubnets: set.Of(constants.PrimaryNetworkID),
+					trackedNets: set.Of(constants.PrimaryNetworkID),
 					ip:             ip,
 				}
 			},
@@ -698,7 +698,7 @@ func TestIPTracker_Connected(t *testing.T) {
 				tracker.tracked[newerIP.NodeID].ip = newerIP
 				tracker.bloomAdditions[newerIP.NodeID] = 2
 				tracker.connected[newerIP.NodeID] = &connectedNode{
-					trackedSubnets: set.Of(constants.PrimaryNetworkID),
+					trackedNets: set.Of(constants.PrimaryNetworkID),
 					ip:             newerIP,
 				}
 
@@ -722,7 +722,7 @@ func TestIPTracker_Connected(t *testing.T) {
 				tracker.tracked[newerIP.NodeID].ip = newerIP
 				tracker.bloomAdditions[newerIP.NodeID] = 2
 				tracker.connected[newerIP.NodeID] = &connectedNode{
-					trackedSubnets: set.Of(constants.PrimaryNetworkID),
+					trackedNets: set.Of(constants.PrimaryNetworkID),
 					ip:             newerIP,
 				}
 			},
@@ -739,7 +739,7 @@ func TestIPTracker_Connected(t *testing.T) {
 			expectedChange: func(tracker *ipTracker) {
 				tracker.numGossipableIPs.Inc()
 				tracker.connected[ip.NodeID] = &connectedNode{
-					trackedSubnets: set.Of(constants.PrimaryNetworkID),
+					trackedNets: set.Of(constants.PrimaryNetworkID),
 					ip:             ip,
 				}
 
@@ -761,7 +761,7 @@ func TestIPTracker_Connected(t *testing.T) {
 			ip: ip,
 			expectedChange: func(tracker *ipTracker) {
 				tracker.connected[ip.NodeID] = &connectedNode{
-					trackedSubnets: set.Of(constants.PrimaryNetworkID),
+					trackedNets: set.Of(constants.PrimaryNetworkID),
 					ip:             ip,
 				}
 			},
@@ -893,7 +893,7 @@ func TestIPTracker_OnValidatorAdded(t *testing.T) {
 			subnetID: constants.PrimaryNetworkID,
 			expectedChange: func(tracker *ipTracker) {
 				tracker.tracked[ip.NodeID].validatedSubnets.Add(constants.PrimaryNetworkID)
-				tracker.tracked[ip.NodeID].trackedSubnets.Add(constants.PrimaryNetworkID)
+				tracker.tracked[ip.NodeID].trackedNets.Add(constants.PrimaryNetworkID)
 				tracker.subnet[constants.PrimaryNetworkID] = &gossipableSubnet{
 					numGossipableIPs:   tracker.numGossipableIPs,
 					manuallyGossipable: make(set.Set[ids.NodeID]),
@@ -914,7 +914,7 @@ func TestIPTracker_OnValidatorAdded(t *testing.T) {
 			expectedChange: func(tracker *ipTracker) {
 				tracker.numGossipableIPs.Inc()
 				tracker.tracked[ip.NodeID].validatedSubnets.Add(constants.PrimaryNetworkID)
-				tracker.tracked[ip.NodeID].trackedSubnets.Add(constants.PrimaryNetworkID)
+				tracker.tracked[ip.NodeID].trackedNets.Add(constants.PrimaryNetworkID)
 				tracker.subnet[constants.PrimaryNetworkID] = &gossipableSubnet{
 					numGossipableIPs:   tracker.numGossipableIPs,
 					manuallyGossipable: make(set.Set[ids.NodeID]),
@@ -941,7 +941,7 @@ func TestIPTracker_OnValidatorAdded(t *testing.T) {
 			expectedChange: func(tracker *ipTracker) {
 				tracker.numGossipableIPs.Inc()
 				tracker.tracked[ip.NodeID].validatedSubnets.Add(constants.PrimaryNetworkID)
-				tracker.tracked[ip.NodeID].trackedSubnets.Add(constants.PrimaryNetworkID)
+				tracker.tracked[ip.NodeID].trackedNets.Add(constants.PrimaryNetworkID)
 				tracker.subnet[constants.PrimaryNetworkID] = &gossipableSubnet{
 					numGossipableIPs:   tracker.numGossipableIPs,
 					manuallyGossipable: make(set.Set[ids.NodeID]),
@@ -972,7 +972,7 @@ func TestIPTracker_OnValidatorAdded(t *testing.T) {
 			expectedChange: func(tracker *ipTracker) {
 				tracker.tracked[ip.NodeID] = &trackedNode{
 					validatedSubnets: set.Of(constants.PrimaryNetworkID),
-					trackedSubnets:   set.Of(constants.PrimaryNetworkID),
+					trackedNets:   set.Of(constants.PrimaryNetworkID),
 				}
 				tracker.subnet[constants.PrimaryNetworkID] = &gossipableSubnet{
 					numGossipableIPs:   tracker.numGossipableIPs,
@@ -994,7 +994,7 @@ func TestIPTracker_OnValidatorAdded(t *testing.T) {
 				tracker.numGossipableIPs.Inc()
 				tracker.tracked[ip.NodeID] = &trackedNode{
 					validatedSubnets: set.Of(constants.PrimaryNetworkID),
-					trackedSubnets:   set.Of(constants.PrimaryNetworkID),
+					trackedNets:   set.Of(constants.PrimaryNetworkID),
 					ip:               ip,
 				}
 				tracker.bloomAdditions[ip.NodeID] = 1
@@ -1023,7 +1023,7 @@ func TestIPTracker_OnValidatorAdded(t *testing.T) {
 				tracker.numTrackedSubnets.Inc()
 				tracker.tracked[ip.NodeID] = &trackedNode{
 					validatedSubnets: set.Of(subnetID),
-					trackedSubnets:   make(set.Set[ids.ID]),
+					trackedNets:   make(set.Set[ids.ID]),
 					ip:               ip,
 				}
 				tracker.bloomAdditions[ip.NodeID] = 1
@@ -1088,7 +1088,7 @@ func TestIPTracker_OnValidatorRemoved(t *testing.T) {
 
 				node := tracker.tracked[ip.NodeID]
 				node.validatedSubnets.Remove(constants.PrimaryNetworkID)
-				node.trackedSubnets.Remove(constants.PrimaryNetworkID)
+				node.trackedNets.Remove(constants.PrimaryNetworkID)
 
 				delete(tracker.subnet, constants.PrimaryNetworkID)
 			},
@@ -1109,7 +1109,7 @@ func TestIPTracker_OnValidatorRemoved(t *testing.T) {
 
 				node := tracker.tracked[ip.NodeID]
 				node.validatedSubnets.Remove(constants.PrimaryNetworkID)
-				node.trackedSubnets.Remove(constants.PrimaryNetworkID)
+				node.trackedNets.Remove(constants.PrimaryNetworkID)
 
 				delete(tracker.subnet, constants.PrimaryNetworkID)
 			},

@@ -14,7 +14,7 @@ import (
 
 	reflect "reflect"
 
-	snow "github.com/luxfi/consensus/core"
+	consensus "github.com/luxfi/consensus/core"
 	gomock "go.uber.org/mock/gomock"
 )
 

@@ -45,7 +45,7 @@ Transform the Lux node into a universal, quantum-safe, multi-chain validator wit
 Lux Network:
   Total Supply: 2,000,000,000,000 LUX (2T)
   Min Validator Stake: 1,000 LUX
-  Consensus: Avalanche Snowman + Ringtail
+  Consensus: Avalanche Consensusman + Ringtail
   
 B-Chain:
   Validators: 100 (NFT-controlled)
@@ -170,7 +170,7 @@ All chains feature:
 
 2. **Start with ConsensusPlugin interface**
    ```go
-   // snow/consensus/plugin.go
+   // consensus/consensus/plugin.go
    type ConsensusPlugin interface {
        // Your implementation here
    }

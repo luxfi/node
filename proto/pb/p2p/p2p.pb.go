@@ -27,7 +27,7 @@ const (
 	EngineType_ENGINE_TYPE_UNSPECIFIED EngineType = 0
 	// Only the X-Chain uses lux consensus
 	EngineType_ENGINE_TYPE_DAG EngineType = 1
-	EngineType_ENGINE_TYPE_SNOWMAN   EngineType = 2
+	EngineType_ENGINE_TYPE_CONSENSUSMAN   EngineType = 2
 )
 
 // Enum value maps for EngineType.
@@ -35,12 +35,12 @@ var (
 	EngineType_name = map[int32]string{
 		0: "ENGINE_TYPE_UNSPECIFIED",
 		1: "ENGINE_TYPE_DAG",
-		2: "ENGINE_TYPE_SNOWMAN",
+		2: "ENGINE_TYPE_CONSENSUSMAN",
 	}
 	EngineType_value = map[string]int32{
 		"ENGINE_TYPE_UNSPECIFIED": 0,
 		"ENGINE_TYPE_DAG":   1,
-		"ENGINE_TYPE_SNOWMAN":     2,
+		"ENGINE_TYPE_CONSENSUSMAN":     2,
 	}
 )
 

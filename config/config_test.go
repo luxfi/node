@@ -21,7 +21,7 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/nets"
 )
 
 const chainConfigFilenameExtension = ".ex"

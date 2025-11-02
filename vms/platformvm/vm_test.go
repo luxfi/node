@@ -49,7 +49,7 @@ import (
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
@@ -79,7 +79,7 @@ import (
 	smcon "github.com/luxfi/consensus/engine/chain/block"
 	smeng "github.com/luxfi/consensus/engine/chain/block"
 	smblock "github.com/luxfi/consensus/engine/chain/block"
-	snowgetter "github.com/luxfi/consensus/engine/chain/getter"
+	consensusgetter "github.com/luxfi/consensus/engine/chain/getter"
 	timetracker "github.com/luxfi/node/network/tracker"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
@@ -165,7 +165,7 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	atomicDB := prefixdb.New([]byte{1}, db)
 
 	vm.clock.Set(latestForkTime)
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 
 	m := atomic.NewMemory(atomicDB)
 	msm := &mutableSharedMemory{
@@ -1245,7 +1245,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	// Advance the time so that the VM will want to remove the first validator.
 	vm.clock.Set(genesistest.DefaultValidatorEndTime)
 
-	ctx := snowtest.Context(t, snowtest.PChainID)
+	ctx := consensustest.Context(t, consensustest.PChainID)
 	ctx.Lock.Lock()
 	defer func() {
 		require.NoError(vm.Shutdown(context.Background()))
@@ -1302,7 +1302,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	)
 	require.NoError(err)
 
-	consensusCtx := snowtest.ConsensusContext(ctx)
+	consensusCtx := consensustest.ConsensusContext(ctx)
 	externalSender := &sendertest.External{TB: t}
 	externalSender.Default(true)
 	subnet := subnets.New(ctx.NodeID, subnets.Config{})
@@ -1313,7 +1313,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		externalSender,
 		chainRouter,
 		timeoutManager,
-		p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		p2ppb.EngineType_ENGINE_TYPE_CONSENSUSMAN,
 		subnet,
 		prometheus.NewRegistry(),
 	)
@@ -1340,7 +1340,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	// The engine handles consensus
-	snowGetHandler, err := snowgetter.New(
+	consensusGetHandler, err := consensusgetter.New(
 		vm,
 		sender,
 		ctx.Log,
@@ -1362,7 +1362,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	bootstrapConfig := bootstrap.Config{
 		Haltable:                       &common.Halter{},
 		NonVerifyingParse:              vm.ParseBlock,
-		AllGetsServer:                  snowGetHandler,
+		AllGetsServer:                  consensusGetHandler,
 		Ctx:                            consensusCtx,
 		Beacons:                        beacons,
 		SampleK:                        1,
@@ -1407,12 +1407,12 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	engineConfig := smeng.Config{
 		Ctx:                 bootstrapConfig.Ctx,
-		AllGetsServer:       snowGetHandler,
+		AllGetsServer:       consensusGetHandler,
 		VM:                  bootstrapConfig.VM,
 		Sender:              bootstrapConfig.Sender,
 		Validators:          beacons,
 		ConnectedValidators: peers,
-		Params: snowball.Parameters{
+		Params: consensusball.Parameters{
 			K:                     1,
 			AlphaPreference:       1,
 			AlphaConfidence:       1,
@@ -1422,7 +1422,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 			MaxOutstandingItems:   1,
 			MaxItemProcessingTime: 1,
 		},
-		Consensus: &smcon.Topological{Factory: snowball.SnowflakeFactory},
+		Consensus: &smcon.Topological{Factory: consensusball.ConsensusflakeFactory},
 	}
 	engine, err := smeng.New(engineConfig)
 	require.NoError(err)
@@ -1436,16 +1436,16 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	h.SetEngineManager(&handler.EngineManager{
 		Lux: nil,
-		Snowman: &handler.Engine{
+		Consensusman: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
 		},
 	})
 
-	consensusCtx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.Bootstrapping,
+	consensusCtx.State.Set(consensus.EngineState{
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CONSENSUSMAN,
+		State: consensus.Bootstrapping,
 	})
 
 	// Allow incoming messages to be routed to the new chain

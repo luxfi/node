@@ -58,7 +58,7 @@ import (
 type testVerifierConfig struct {
 	DB                 database.Database
 	Upgrades           upgrade.Config
-	Context            *snow.Context
+	Context            *consensus.Context
 	ValidatorFeeConfig validatorfee.Config
 }
 
@@ -72,7 +72,7 @@ func newTestVerifier(t testing.TB, c testVerifierConfig) *verifier {
 		c.Upgrades = upgradetest.GetConfig(upgradetest.Latest)
 	}
 	if c.Context == nil {
-		c.Context = snowtest.Context(t, constants.PlatformChainID)
+		c.Context = consensustest.Context(t, constants.PlatformChainID)
 	}
 	if c.ValidatorFeeConfig == (validatorfee.Config{}) {
 		c.ValidatorFeeConfig = genesis.LocalParams.ValidatorFeeConfig
@@ -303,7 +303,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 	require := require.New(t)
 
 	var (
-		ctx = snowtest.Context(t, constants.PlatformChainID)
+		ctx = consensustest.Context(t, constants.PlatformChainID)
 
 		baseDB  = memdb.New()
 		stateDB = prefixdb.New([]byte{0}, baseDB)
@@ -1370,7 +1370,7 @@ func TestDeactivateLowBalanceL1ValidatorBlockChanges(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			ctx := snowtest.Context(t, constants.PlatformChainID)
+			ctx := consensustest.Context(t, constants.PlatformChainID)
 			ctx.NetworkID = test.networkID
 			verifier := newTestVerifier(t, testVerifierConfig{
 				Upgrades: upgradetest.GetConfig(test.currentFork),

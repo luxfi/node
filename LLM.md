@@ -1651,8 +1651,8 @@ gasLimit := lp176.MinBaseFee
 ### Known Issues (Updated)
 
 **FIXED** ✅:
-- ✅ `api/server/*`: All snow references replaced with consensus packages
-- ✅ `ipcs/*`: All snow references removed, interfaces updated
+- ✅ `api/server/*`: All consensus references replaced with consensus packages
+- ✅ `ipcs/*`: All consensus references removed, interfaces updated
 - ✅ `api/keystore/*`: Missing UserPass type added
 - ✅ `benchlist/*`: Metrics import corrected
 - ✅ `crypto/aggregated/*`: BLS function signatures fixed
@@ -1668,7 +1668,7 @@ gasLimit := lp176.MinBaseFee
 - `network/p2p/p2ptest/*`: Unused import cleanup
 
 **Root Causes**:
-1. ~~Transition from "snow" naming to consensus packages incomplete~~ ✅ MOSTLY COMPLETE
+1. ~~Transition from "consensus" naming to consensus packages incomplete~~ ✅ MOSTLY COMPLETE
 2. Interface signature changes in consensus package (Lock, NewHTTPHandler, PrimaryAlias)
 3. Protobuf definitions not regenerated after consensus restructure
 4. Some VM integration points not fully updated
@@ -1709,7 +1709,7 @@ gasLimit := lp176.MinBaseFee
 - `/Users/z/work/lux/node/CLAUDE.md` (this file)
 - `/Users/z/work/lux/lps/LLM.md`
 
-**Snow Elimination Fixes** (THIS SESSION):
+**Consensus Elimination Fixes** (THIS SESSION):
 - `/Users/z/work/lux/node/api/server/server.go` - consensus context types
 - `/Users/z/work/lux/node/api/server/mock_server.go` - consensus context types
 - `/Users/z/work/lux/node/ipcs/chainipc.go` - consensus.AcceptorGroup, renamed context to ipcContext
@@ -1727,7 +1727,7 @@ gasLimit := lp176.MinBaseFee
 - ✅ Consensus package builds
 - ✅ Granite integration complete
 - ✅ All LP specifications documented
-- ✅ **Snow package ELIMINATED**: All deprecated snow references removed from 9 packages:
+- ✅ **Consensus package ELIMINATED**: All deprecated consensus references removed from 9 packages:
   - api/server + mock (consensus context types)
   - ipcs/chainipc + eventsocket (consensus acceptor interfaces)
   - api/keystore (UserPass type added)
@@ -1738,7 +1738,7 @@ gasLimit := lp176.MinBaseFee
   - cmd/derive-validators (certificate conversion)
 
 **In Progress**:
-- ⚠️ Node build (remaining issues are NOT snow-related - they are integration/interface issues)
+- ⚠️ Node build (remaining issues are NOT consensus-related - they are integration/interface issues)
 
 **Pending**:
 - ⏳ Fix remaining 9 package build errors
@@ -1747,27 +1747,27 @@ gasLimit := lp176.MinBaseFee
 
 ---
 
-## Session Summary - Snow Package Elimination
+## Session Summary - Consensus Package Elimination
 
 **Date**: Current Session  
-**Goal**: Eliminate all "snow" package references and fix node build issues  
-**Status**: SNOW ELIMINATION COMPLETE ✅ - Additional integration work needed
+**Goal**: Eliminate all "consensus" package references and fix node build issues  
+**Status**: CONSENSUS ELIMINATION COMPLETE ✅ - Additional integration work needed
 
 ### Major Achievements ✅
 
-1. **✅ Snow References ELIMINATED**: Successfully removed ALL deprecated "snow" package references
-2. **✅ Core Packages Fixed**: 9 critical packages now compile without snow dependencies
-3. **✅ Consensus Integration**: All snow references replaced with proper consensus package types
+1. **✅ Consensus References ELIMINATED**: Successfully removed ALL deprecated "consensus" package references
+2. **✅ Core Packages Fixed**: 9 critical packages now compile without consensus dependencies
+3. **✅ Consensus Integration**: All consensus references replaced with proper consensus package types
 4. **✅ Interface Corrections**: Fixed multiple interface mismatches (Acceptor, VM, BLS, etc.)
 
-### Snow Elimination - Packages Fixed (9)
+### Consensus Elimination - Packages Fixed (9)
 
 | Package | Issue | Solution |
 |---------|-------|----------|
-| `api/server` | snow.ConsensusContext | ✅ Use consensuscontext.Context |
+| `api/server` | consensus.ConsensusContext | ✅ Use consensuscontext.Context |
 | `api/server/mock` | Consensus imports | ✅ Updated to consensus/context and core |
-| `ipcs/chainipc` | snow.AcceptorGroup | ✅ Use consensus.AcceptorGroup |
-| `ipcs/eventsocket` | snow.Acceptor interface | ✅ Use consensus.Acceptor with context.Context |
+| `ipcs/chainipc` | consensus.AcceptorGroup | ✅ Use consensus.AcceptorGroup |
+| `ipcs/eventsocket` | consensus.Acceptor interface | ✅ Use consensus.Acceptor with context.Context |
 | `api/keystore` | Missing api.UserPass | ✅ Added UserPass struct |
 | `benchlist` | Wrong metrics import | ✅ Fixed alias to `metrics` |
 | `crypto/aggregated` | BLS API mismatch | ✅ Use sk.PublicKey(), sk.Sign() methods |
@@ -1780,9 +1780,9 @@ gasLimit := lp176.MinBaseFee
 |---------|-------|--------|
 | `cmd/derive-validators` | Missing CertificateFromX509 | ⚠️ Converted but type mismatch remains |
 
-### Remaining Build Issues (Not Snow-Related)
+### Remaining Build Issues (Not Consensus-Related)
 
-These are **NOT** snow-related - they are pre-existing integration issues:
+These are **NOT** consensus-related - they are pre-existing integration issues:
 
 - **vms/secp256k1fx** + **vms/components/lux**: Missing PrimaryAlias() method on consensus BlockchainIDLookup interface
 - **network/throttling**: API signature changes in upstream (TargetUsage, TimeUntilUsage)
@@ -1791,20 +1791,20 @@ These are **NOT** snow-related - they are pre-existing integration issues:
 - **vms/rpcchainvm/appsender**: Missing protobuf definitions for cross-chain messages
 - **Various VMs**: Type mismatches and integration issues with consensus package
 
-### Snow Elimination Impact
+### Consensus Elimination Impact
 
 **Before This Session**:
-- Snow package used in: api/server, ipcs, benchlist, crypto/aggregated, and others
-- Deprecated snow.* types throughout codebase
-- Mixed consensus/snow naming causing confusion
+- Consensus package used in: api/server, ipcs, benchlist, crypto/aggregated, and others
+- Deprecated consensus.* types throughout codebase
+- Mixed consensus/consensus naming causing confusion
 
 **After This Session**:
-- ✅ Zero snow references in fixed packages
+- ✅ Zero consensus references in fixed packages
 - ✅ Clean consensus package usage
 - ✅ Proper type hierarchy established
 - ✅ Foundation for future consensus improvements
 
-### Files Modified - Snow Elimination
+### Files Modified - Consensus Elimination
 
 1. `/Users/z/work/lux/node/api/server/server.go` - consensus context types
 2. `/Users/z/work/lux/node/api/server/mock_server.go` - consensus context types
@@ -1826,5 +1826,257 @@ The remaining issues require:
 3. **VM Integration**: Update proposervm and other VMs to use new consensus engine packages
 4. **Type Consolidation**: Resolve remaining type mismatches (Certificate types, Logger types, etc.)
 
-**Critical Success**: The snow package has been completely eliminated from all modified packages. The remaining work is standard integration and interface evolution, not legacy cleanup.
+**Critical Success**: The consensus package has been completely eliminated from all modified packages. The remaining work is standard integration and interface evolution, not legacy cleanup.
 
+# Lux Multi-Chain Architecture: Hamiltonian Market Implementation
+
+## Overview
+
+Lux implements a 6-chain architecture where each chain has a specific role in the Hamiltonian compute market:
+
+## Chain Roles
+
+### C-Chain (EVM/CoreVM) - Market Settlement
+**Purpose**: On-chain invariant enforcement and settlement
+
+**Implementation**: Pure Solidity CFMM enforcing `H(Ψ,Θ) ≥ κ`
+- Ψ = resource supply vector (compute credits per class)
+- Θ = price vector (dual variables)
+- κ = Hamiltonian constant
+
+**Design Pattern**: Controller on EVM + Θ from A-Chain
+```solidity
+contract HamiltonianMarket {
+    // Enforces H(Ψ,Θ) ≥ κ invariant
+    // Accepts Θ updates only from verified A-Chain attestations
+    // Settles swaps with deterministic math (PRBMath UD60x18)
+}
+```
+
+**What Lives Here**:
+- Constant-product pools (ψᵢ vs payment token)
+- Swap execution with slippage protection
+- Fee collection and distribution
+- Attestation root verification
+- Θ vector state updates
+
+### A-Chain (AVM - AttestationVM) - Supply & Price Oracles
+**Purpose**: On-chain attestations for compute market signals
+
+**Implementation**: Custom VM with attestation types
+- `ModelAttestation`: ML model weights, architecture
+- `ComputeAttestation`: Job completions, SLOs, latency
+- `DataAttestation`: Training data provenance
+- `NetworkAttestation`: Validator performance
+
+**What Lives Here**:
+- Supply proofs (available GPU hours, capacity)
+- Performance SLOs (latency, throughput, reliability)
+- Θ vector computation (dual variable optimization)
+- Validator reputation scores
+- PQ signatures for security
+
+**C-Chain Integration**:
+```solidity
+// In HamiltonianMarket contract:
+function applyTheta(bytes calldata attestation, bytes calldata proof) external {
+    // Verify A-Chain attestation via Merkle proof
+    // Check signer threshold and epoch
+    // Enforce drift limits: |Θᵢ(new) − Θᵢ(old)| ≤ driftCap
+    // Update Θ and emit ThetaUpdated event
+}
+```
+
+### Z-Chain (ZVM - Zero-Knowledge/FHE VM) - Private Clearing
+**Purpose**: Privacy-preserving order matching and clearing
+
+**Implementation**: ZK proofs + FHE (zama.ai integration)
+- Private orders and bids
+- Sealed-bid auctions
+- Confidential capacity reservations
+- Zero-knowledge clearing proofs
+
+**What Lives Here**:
+- Private order book (encrypted with FHE)
+- ZK-SNARK proofs that clearing obeyed constraints
+- Nullifier set (double-spend prevention)
+- Confidential transaction state
+
+**C-Chain Integration**:
+```solidity
+// Z-Chain posts succinct proof to C-Chain
+function settleBatch(bytes calldata zkProof, uint256[] calldata deltas) external {
+    // Verify SNARK proving: H(Ψ_after, Θ) ≥ κ
+    // Update reserves: Ψ += deltas
+    // Emit settlement events
+}
+```
+
+### B-Chain (BVM - BridgeVM) - Cross-Chain Interoperability
+**Purpose**: MPC-based bridges and attestation verification
+
+**Implementation**: Threshold signatures (CGGMP21)
+- MPC threshold: t-of-n validators
+- Atomic cross-chain swaps
+- Attestation root imports from A-Chain
+- Light client state verification
+
+**What Lives Here**:
+- Cross-chain asset bridges
+- A-Chain attestation root checkpoints
+- Light client state (Merkle roots)
+- Validator coordination (MPC key shares)
+
+**Integration Pattern**:
+- A-Chain → B-Chain → C-Chain attestation pipeline
+- External chains → B-Chain → Lux native assets
+
+### X-Chain (XVM - ExchangeVM) - Asset Exchange
+**Purpose**: UTXO-based asset exchange (based on old Avalanche AVM)
+
+**What Lives Here**:
+- Native asset issuance (LUX, custom tokens)
+- UTXO-based transactions
+- Atomic swaps
+- Asset metadata registry
+
+### Q-Chain (QVM - Quantum VM) - Post-Quantum Security
+**Purpose**: Quantum-resistant cryptography layer
+
+**What Lives Here**:
+- Ringtail signatures (PQ-secure)
+- Quantum-resistant state anchors
+- PQ validator key rotation
+- Future-proof security proofs
+
+## Data Flow: Hamiltonian Market Operation
+
+### 1. Supply Attestation Flow
+```
+Provider → A-Chain: Submit attestation (100 GPU hours available)
+         ↓
+A-Chain: Verify, sign with PQ keys, publish
+         ↓
+B-Chain: Import A-Chain root, verify attestation
+         ↓
+C-Chain: Accept Θ update via applyTheta()
+         ↓
+Market: Adjust prices based on new Θ vector
+```
+
+### 2. Private Order Flow (with Z-Chain)
+```
+Buyer → Z-Chain: Submit encrypted bid
+        ↓
+Z-Chain: Match orders privately (FHE computation)
+        ↓
+Z-Chain: Generate ZK proof of valid clearing
+        ↓
+C-Chain: Verify proof, settle batch
+        ↓
+Settlement: Update Ψ, emit events
+```
+
+### 3. Public Order Flow (direct C-Chain)
+```
+Buyer → C-Chain: buy(resourceId, payAmount, minOut)
+        ↓
+C-Chain: Check H(Ψ',Θ) ≥ κ with new reserves
+        ↓
+C-Chain: Execute swap if invariant holds
+        ↓
+Settlement: Transfer tokens, update reserves
+```
+
+## Implementation Paths
+
+### Path 1: Pure EVM (Production Now) ✅
+- Deploy constant-product pools on C-Chain
+- Each resource = Uniswap-v2 style (ψᵢ vs USDC)
+- Simple, audited, battle-tested
+- **Status**: Can ship immediately
+
+### Path 2: Controller + A-Chain (Recommended) 🎯
+- C-Chain enforces H(Ψ,Θ) ≥ κ
+- A-Chain publishes Θ via attestations
+- Modular, upgradeable, Hamiltonian-faithful
+- **Status**: Requires AVM + BVM working
+
+### Path 3: Z-Clearing + Settlement (Privacy) 🔐
+- Z-Chain private matching + ZK proofs
+- C-Chain verifies and settles
+- Maximum privacy, credible commitments
+- **Status**: Future enhancement
+
+## Current Implementation Status
+
+### Completed ✅
+- AVM created with attestation types
+- BVM exists with MPC infrastructure
+- ZVM exists with ZK/FHE foundation
+- Architecture documented
+
+### In Progress ⚠️
+- VM compilation fixes (Initialize signatures)
+- Block interface compliance
+- Cross-VM communication patterns
+
+### Next Steps 📋
+1. Finish VM fixes → all VMs compile
+2. Implement attestation verification on C-Chain
+3. Build Θ update pipeline (A-Chain → B-Chain → C-Chain)
+4. Deploy Path 1 on C-Chain (constant-product)
+5. Evolve to Path 2 (controller pattern)
+6. Add Path 3 (Z-clearing) for privacy
+
+## Economic Model
+
+**Invariant**: `Σᵢ Ψᵢ · Θᵢ = κ` (dot-product form)
+
+- **Ψᵢ**: Supply of resource class i (GPU hours, bandwidth, storage)
+- **Θᵢ**: Price per unit of resource i (dual variable)
+- **κ**: Total market value (constant or monotonically increasing)
+
+**Properties**:
+- Conservation: Total value preserved across swaps
+- Price discovery: Θ responds to supply/demand
+- Multi-resource coupling: Resources can substitute
+- Gas-efficient: Single dot-product check on C-Chain
+
+## Security Considerations
+
+### C-Chain (Market)
+- Reentrancy guards (checks-effects-interactions)
+- Rounding bias against trader (preserve κ)
+- Θ drift limits (prevent manipulation)
+- TWAP oracles (MEV resistance)
+
+### A-Chain (Attestations)
+- Threshold signatures (Byzantine fault tolerance)
+- PQ cryptography (quantum resistance)
+- Epoch-based checkpoints (rollback prevention)
+
+### Z-Chain (Privacy)
+- Nullifier tracking (double-spend prevention)
+- ZK proof verification (soundness)
+- FHE correctness (confidential compute)
+
+### B-Chain (Bridges)
+- MPC threshold security (no single point of failure)
+- Atomic transaction guarantees
+- Light client verification (trust-minimized)
+
+## References
+
+- **Hamiltonian Markets**: Conservation-based AMM design
+- **CFMM**: Constant Function Market Makers (Uniswap, Balancer)
+- **PRBMath**: Solidity fixed-point math library
+- **CGGMP21**: Threshold ECDSA MPC protocol
+- **Zama.ai**: FHE library for confidential compute
+- **Ringtail**: Post-quantum signature scheme
+
+---
+
+*Last Updated*: 2025-10-31
+*Status*: Architecture defined, VMs in development
+*Next Milestone*: All VMs compiling, Path 1 deployed

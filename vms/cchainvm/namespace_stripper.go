@@ -16,27 +16,27 @@ import (
 	"github.com/luxfi/geth/rlp"
 )
 
-// SubnetEVM namespace for LUX mainnet (blockchain ID 4aYc2FXx...)
-var SubnetEVMNamespace = []byte{
+// NetEVM namespace for LUX mainnet (blockchain ID 4aYc2FXx...)
+var NetEVMNamespace = []byte{
 	0x33, 0x7f, 0xb7, 0x3f, 0x9b, 0xcd, 0xac, 0x8c,
 	0x31, 0xa2, 0xd5, 0xf7, 0xb8, 0x77, 0xab, 0x1e,
 	0x8a, 0x2b, 0x7f, 0x2a, 0x1e, 0x9b, 0xf0, 0x2a,
 	0x0a, 0x0e, 0x6c, 0x6f, 0xd1, 0x64, 0xf1, 0xd1,
 }
 
-// SubnetNamespaceStripper wraps a database and strips the 32-byte namespace prefix
-// from SubnetEVM migrated data, making it readable by C-Chain
-type SubnetNamespaceStripper struct {
+// NetNamespaceStripper wraps a database and strips the 32-byte namespace prefix
+// from NetEVM migrated data, making it readable by C-Chain
+type NetNamespaceStripper struct {
 	db        ethdb.Database
 	namespace []byte
 	cache     map[string][]byte // Simple cache for frequently accessed keys
 }
 
-// NewSubnetNamespaceStripper creates a new namespace stripping wrapper
-func NewSubnetNamespaceStripper(db ethdb.Database) ethdb.Database {
-	namespace := SubnetEVMNamespace
+// NewNetNamespaceStripper creates a new namespace stripping wrapper
+func NewNetNamespaceStripper(db ethdb.Database) ethdb.Database {
+	namespace := NetEVMNamespace
 
-	return &SubnetNamespaceStripper{
+	return &NetNamespaceStripper{
 		db:        db,
 		namespace: namespace,
 		cache:     make(map[string][]byte),
@@ -44,7 +44,7 @@ func NewSubnetNamespaceStripper(db ethdb.Database) ethdb.Database {
 }
 
 // stripNamespace removes the namespace prefix if present
-func (s *SubnetNamespaceStripper) stripNamespace(key []byte) []byte {
+func (s *NetNamespaceStripper) stripNamespace(key []byte) []byte {
 	if len(key) > 32 && bytes.HasPrefix(key, s.namespace) {
 		return key[32:]
 	}
@@ -52,7 +52,7 @@ func (s *SubnetNamespaceStripper) stripNamespace(key []byte) []byte {
 }
 
 // addNamespace adds the namespace prefix to a key
-func (s *SubnetNamespaceStripper) addNamespace(key []byte) []byte {
+func (s *NetNamespaceStripper) addNamespace(key []byte) []byte {
 	// For certain key types, we need to add the namespace when querying
 	result := make([]byte, len(s.namespace)+len(key))
 	copy(result, s.namespace)
@@ -61,7 +61,7 @@ func (s *SubnetNamespaceStripper) addNamespace(key []byte) []byte {
 }
 
 // Has checks if a key exists
-func (s *SubnetNamespaceStripper) Has(key []byte) (bool, error) {
+func (s *NetNamespaceStripper) Has(key []byte) (bool, error) {
 	// Try without namespace first
 	if has, err := s.db.Has(key); err == nil && has {
 		return true, nil
@@ -73,7 +73,7 @@ func (s *SubnetNamespaceStripper) Has(key []byte) (bool, error) {
 }
 
 // Get retrieves a value, handling namespace translation
-func (s *SubnetNamespaceStripper) Get(key []byte) ([]byte, error) {
+func (s *NetNamespaceStripper) Get(key []byte) ([]byte, error) {
 	// Check cache first
 	cacheKey := string(key)
 	if cached, ok := s.cache[cacheKey]; ok {
@@ -221,7 +221,7 @@ func (s *SubnetNamespaceStripper) Get(key []byte) ([]byte, error) {
 }
 
 // Put stores a value (no namespace manipulation on writes)
-func (s *SubnetNamespaceStripper) Put(key []byte, value []byte) error {
+func (s *NetNamespaceStripper) Put(key []byte, value []byte) error {
 	// Clear cache entry if it exists
 	delete(s.cache, string(key))
 
@@ -230,7 +230,7 @@ func (s *SubnetNamespaceStripper) Put(key []byte, value []byte) error {
 }
 
 // Delete removes a key
-func (s *SubnetNamespaceStripper) Delete(key []byte) error {
+func (s *NetNamespaceStripper) Delete(key []byte) error {
 	// Clear cache entry if it exists
 	delete(s.cache, string(key))
 
@@ -241,7 +241,7 @@ func (s *SubnetNamespaceStripper) Delete(key []byte) error {
 }
 
 // NewBatch creates a new batch
-func (s *SubnetNamespaceStripper) NewBatch() ethdb.Batch {
+func (s *NetNamespaceStripper) NewBatch() ethdb.Batch {
 	return &NamespaceStrippingBatch{
 		batch:     s.db.NewBatch(),
 		stripper:  s,
@@ -249,7 +249,7 @@ func (s *SubnetNamespaceStripper) NewBatch() ethdb.Batch {
 }
 
 // NewBatchWithSize creates a batch with size hint
-func (s *SubnetNamespaceStripper) NewBatchWithSize(size int) ethdb.Batch {
+func (s *NetNamespaceStripper) NewBatchWithSize(size int) ethdb.Batch {
 	if batcher, ok := s.db.(ethdb.Batcher); ok {
 		return &NamespaceStrippingBatch{
 			batch:    batcher.NewBatchWithSize(size),
@@ -260,7 +260,7 @@ func (s *SubnetNamespaceStripper) NewBatchWithSize(size int) ethdb.Batch {
 }
 
 // NewIterator creates an iterator
-func (s *SubnetNamespaceStripper) NewIterator(prefix []byte, start []byte) ethdb.Iterator {
+func (s *NetNamespaceStripper) NewIterator(prefix []byte, start []byte) ethdb.Iterator {
 	// If iterating with a prefix, try both with and without namespace
 	if len(prefix) > 0 {
 		// For now, use the namespace-prefixed iterator
@@ -279,7 +279,7 @@ func (s *SubnetNamespaceStripper) NewIterator(prefix []byte, start []byte) ethdb
 }
 
 // LoadLastBlock loads the highest block from the migrated database
-func (s *SubnetNamespaceStripper) LoadLastBlock() (*types.Block, error) {
+func (s *NetNamespaceStripper) LoadLastBlock() (*types.Block, error) {
 	fmt.Println("Scanning for highest block in migrated database...")
 
 	var highestNum uint64
@@ -421,104 +421,111 @@ func (s *SubnetNamespaceStripper) LoadLastBlock() (*types.Block, error) {
 
 // Implement remaining ethdb.Database methods...
 
-func (s *SubnetNamespaceStripper) Stat() (string, error) {
+func (s *NetNamespaceStripper) Stat() (string, error) {
 	return s.db.Stat()
 }
 
-func (s *SubnetNamespaceStripper) Compact(start []byte, limit []byte) error {
+func (s *NetNamespaceStripper) Compact(start []byte, limit []byte) error {
 	return s.db.Compact(start, limit)
 }
 
-func (s *SubnetNamespaceStripper) Close() error {
+func (s *NetNamespaceStripper) Close() error {
 	return s.db.Close()
 }
 
 // Ancient store methods (delegate to underlying)
-func (s *SubnetNamespaceStripper) Ancient(kind string, number uint64) ([]byte, error) {
+func (s *NetNamespaceStripper) Ancient(kind string, number uint64) ([]byte, error) {
 	if reader, ok := s.db.(ethdb.AncientReaderOp); ok {
 		return reader.Ancient(kind, number)
 	}
 	return nil, fmt.Errorf("ancient store not supported")
 }
 
-func (s *SubnetNamespaceStripper) AncientRange(kind string, start, count, maxBytes uint64) ([][]byte, error) {
+func (s *NetNamespaceStripper) AncientRange(kind string, start, count, maxBytes uint64) ([][]byte, error) {
 	if reader, ok := s.db.(ethdb.AncientReaderOp); ok {
 		return reader.AncientRange(kind, start, count, maxBytes)
 	}
 	return nil, fmt.Errorf("ancient store not supported")
 }
 
-func (s *SubnetNamespaceStripper) Ancients() (uint64, error) {
+func (s *NetNamespaceStripper) Ancients() (uint64, error) {
 	if reader, ok := s.db.(ethdb.AncientReaderOp); ok {
 		return reader.Ancients()
 	}
 	return 0, nil
 }
 
-func (s *SubnetNamespaceStripper) Tail() (uint64, error) {
+func (s *NetNamespaceStripper) Tail() (uint64, error) {
 	if reader, ok := s.db.(ethdb.AncientReaderOp); ok {
 		return reader.Tail()
 	}
 	return 0, nil
 }
 
-func (s *SubnetNamespaceStripper) AncientSize(kind string) (uint64, error) {
+func (s *NetNamespaceStripper) AncientSize(kind string) (uint64, error) {
 	if reader, ok := s.db.(ethdb.AncientReaderOp); ok {
 		return reader.AncientSize(kind)
 	}
 	return 0, nil
 }
 
-func (s *SubnetNamespaceStripper) ReadAncients(fn func(ethdb.AncientReaderOp) error) error {
+func (s *NetNamespaceStripper) AncientBytes(kind string, id, offset, length uint64) ([]byte, error) {
+	if reader, ok := s.db.(ethdb.AncientReaderOp); ok {
+		return reader.AncientBytes(kind, id, offset, length)
+	}
+	return nil, fmt.Errorf("ancient store not supported")
+}
+
+func (s *NetNamespaceStripper) ReadAncients(fn func(ethdb.AncientReaderOp) error) error {
 	if reader, ok := s.db.(ethdb.AncientReader); ok {
 		return reader.ReadAncients(fn)
 	}
 	return fn(s)
 }
 
-func (s *SubnetNamespaceStripper) ModifyAncients(fn func(ethdb.AncientWriteOp) error) (int64, error) {
+func (s *NetNamespaceStripper) ModifyAncients(fn func(ethdb.AncientWriteOp) error) (int64, error) {
 	if writer, ok := s.db.(ethdb.AncientWriter); ok {
 		return writer.ModifyAncients(fn)
 	}
 	return 0, fmt.Errorf("ancient store not supported")
 }
 
-func (s *SubnetNamespaceStripper) TruncateHead(n uint64) (uint64, error) {
+func (s *NetNamespaceStripper) TruncateHead(n uint64) (uint64, error) {
 	if writer, ok := s.db.(ethdb.AncientWriter); ok {
 		return writer.TruncateHead(n)
 	}
 	return 0, fmt.Errorf("ancient store not supported")
 }
 
-func (s *SubnetNamespaceStripper) TruncateTail(n uint64) (uint64, error) {
+func (s *NetNamespaceStripper) TruncateTail(n uint64) (uint64, error) {
 	if writer, ok := s.db.(ethdb.AncientWriter); ok {
 		return writer.TruncateTail(n)
 	}
 	return 0, fmt.Errorf("ancient store not supported")
 }
 
-func (s *SubnetNamespaceStripper) SyncAncient() error {
+func (s *NetNamespaceStripper) SyncAncient() error {
 	if writer, ok := s.db.(ethdb.AncientWriter); ok {
 		return writer.SyncAncient()
 	}
 	return nil
 }
 
-func (s *SubnetNamespaceStripper) AncientDatadir() (string, error) {
+func (s *NetNamespaceStripper) AncientDatadir() (string, error) {
 	if stater, ok := s.db.(ethdb.AncientStater); ok {
 		return stater.AncientDatadir()
 	}
 	return "", fmt.Errorf("ancient store not supported")
 }
 
-func (s *SubnetNamespaceStripper) DeleteRange(start, end []byte) error {
+func (s *NetNamespaceStripper) DeleteRange(start, end []byte) error {
 	if deleter, ok := s.db.(ethdb.KeyValueRangeDeleter); ok {
 		return deleter.DeleteRange(start, end)
 	}
 	return fmt.Errorf("delete range not supported")
 }
 
-func (s *SubnetNamespaceStripper) SyncKeyValue() error {
+func (s *NetNamespaceStripper) SyncKeyValue() error {
 	if syncer, ok := s.db.(ethdb.KeyValueSyncer); ok {
 		return syncer.SyncKeyValue()
 	}
@@ -528,7 +535,7 @@ func (s *SubnetNamespaceStripper) SyncKeyValue() error {
 // NamespaceStrippingBatch wraps a batch to handle namespace stripping
 type NamespaceStrippingBatch struct {
 	batch    ethdb.Batch
-	stripper *SubnetNamespaceStripper
+	stripper *NetNamespaceStripper
 }
 
 func (b *NamespaceStrippingBatch) Put(key []byte, value []byte) error {

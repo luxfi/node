@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	snowman "github.com/luxfi/consensus/engine/chain/block"
+	consensusman "github.com/luxfi/consensus/engine/chain/block"
 	set "github.com/luxfi/math/set"
 	block "github.com/luxfi/node/vms/platformvm/block"
 	state "github.com/luxfi/node/vms/platformvm/state"

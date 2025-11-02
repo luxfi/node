@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package scheduler
@@ -6,7 +6,7 @@ package scheduler
 import (
 	"time"
 
-	"github.com/luxfi/consensus/engine/core/common"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 )
 
@@ -37,8 +37,8 @@ type autominingCommand struct {
 }
 
 // NewAutomining creates a new scheduler with automining capabilities
-func NewAutomining(log log.Logger, toEngine chan<- common.Message) (AutominingScheduler, chan<- common.Message) {
-	vmToEngine := make(chan common.Message, cap(toEngine))
+func NewAutomining(log log.Logger, toEngine chan<- core.MessageType) (AutominingScheduler, chan<- core.MessageType) {
+	vmToEngine := make(chan core.MessageType, cap(toEngine))
 	baseScheduler := &scheduler{
 		log:               log,
 		fromVM:            vmToEngine,
@@ -136,7 +136,7 @@ func (s *autominingScheduler) Dispatch(buildBlockTime time.Time) {
 
 func (s *autominingScheduler) handleBuildRequest() {
 	// Send a build block message to the engine
-	msg := common.Message{Type: common.PendingTxs}
+	msg := core.PendingTxs
 	select {
 	case s.toEngine <- msg:
 		s.log.Debug("sent build block request to engine",

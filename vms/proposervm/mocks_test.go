@@ -14,8 +14,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/luxfi/ids"
-	chain "github.com/luxfi/consensus/engine/chain/block"
+	ids "github.com/luxfi/node/ids"
+	consensusman "github.com/luxfi/node/consensus/consensus/consensusman"
 	block "github.com/luxfi/node/vms/proposervm/block"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -200,10 +200,10 @@ func (mr *MockPostForkBlockMockRecorder) buildChild(arg0 any) *gomock.Call {
 }
 
 // getInnerBlk mocks base method.
-func (m *MockPostForkBlock) getInnerBlk() block.Block {
+func (m *MockPostForkBlock) getInnerBlk() consensusman.Block {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "getInnerBlk")
-	ret0, _ := ret[0].(block.Block)
+	ret0, _ := ret[0].(consensusman.Block)
 	return ret0
 }
 
@@ -227,6 +227,21 @@ func (mr *MockPostForkBlockMockRecorder) getStatelessBlk() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "getStatelessBlk", reflect.TypeOf((*MockPostForkBlock)(nil).getStatelessBlk))
 }
 
+// pChainEpoch mocks base method.
+func (m *MockPostForkBlock) pChainEpoch(arg0 context.Context) (block.Epoch, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "pChainEpoch", arg0)
+	ret0, _ := ret[0].(block.Epoch)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// pChainEpoch indicates an expected call of pChainEpoch.
+func (mr *MockPostForkBlockMockRecorder) pChainEpoch(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "pChainEpoch", reflect.TypeOf((*MockPostForkBlock)(nil).pChainEpoch), arg0)
+}
+
 // pChainHeight mocks base method.
 func (m *MockPostForkBlock) pChainHeight(arg0 context.Context) (uint64, error) {
 	m.ctrl.T.Helper()
@@ -243,7 +258,7 @@ func (mr *MockPostForkBlockMockRecorder) pChainHeight(arg0 any) *gomock.Call {
 }
 
 // setInnerBlk mocks base method.
-func (m *MockPostForkBlock) setInnerBlk(arg0 block.Block) {
+func (m *MockPostForkBlock) setInnerBlk(arg0 consensusman.Block) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "setInnerBlk", arg0)
 }

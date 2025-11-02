@@ -55,7 +55,7 @@ func NewContextFromClients(
 	}, nil
 }
 
-func newSnowContext(c *Context) (*consensusctx.Context, error) {
+func newConsensusContext(c *Context) (*consensusctx.Context, error) {
 	lookup := ids.NewAliaser()
 	return &consensusctx.Context{
 		NetworkID:   c.NetworkID,

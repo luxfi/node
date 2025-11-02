@@ -15,14 +15,14 @@ import (
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting/address"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/xvm"
-	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/vms/exchangevm"
+	"github.com/luxfi/node/vms/exchangevm/fxs"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 
-	xchaintxs "github.com/luxfi/node/vms/xvm/txs"
+	xchaintxs "github.com/luxfi/node/vms/exchangevm/txs"
 	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 )
 

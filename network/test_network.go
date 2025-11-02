@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/node/subnets"
+	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -80,7 +80,7 @@ func NewTestNetworkConfig(
 	metrics prometheus.Registerer,
 	networkID uint32,
 	currentValidators validators.Manager,
-	trackedSubnets set.Set[ids.ID],
+	trackedNets set.Set[ids.ID],
 ) (*Config, error) {
 	tlsCert, err := staking.NewTLSCert()
 	if err != nil {
@@ -166,7 +166,7 @@ func NewTestNetworkConfig(
 		CompressionType:              constants.DefaultNetworkCompressionType,
 		TLSKey:                       tlsCert.PrivateKey.(crypto.Signer),
 		BLSKey:                       blsKey,
-		TrackedSubnets:               trackedSubnets,
+		TrackedSubnets:               trackedNets,
 		Beacons:                      nodevalidators.NewManager(),
 		Validators:                   nodevalidators.NewManager(),
 		UptimeCalculator:             &uptime.NoOpCalculator{},

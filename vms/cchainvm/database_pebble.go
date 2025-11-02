@@ -82,6 +82,10 @@ func (db *PebbleWithAncient) Ancient(kind string, number uint64) ([]byte, error)
 	return nil, nil
 }
 
+func (db *PebbleWithAncient) AncientBytes(kind string, id, offset, length uint64) ([]byte, error) {
+	return nil, nil
+}
+
 func (db *PebbleWithAncient) AncientBatch() ethdb.AncientWriteOp {
 	return nil
 }

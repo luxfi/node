@@ -36,19 +36,19 @@ func TestRejectMiddleware(t *testing.T) {
 	type test struct {
 		name               string
 		handler            http.Handler
-		state              snow.State
+		state              consensus.State
 		expectedStatusCode int
 	}
 
 	tests := []test{
 		{
 			name:               "chain is state syncing",
-			state:              snow.StateSyncing,
+			state:              consensus.StateSyncing,
 			expectedStatusCode: http.StatusServiceUnavailable,
 		},
 		{
 			name:               "chain is bootstrapping",
-			state:              snow.Bootstrapping,
+			state:              consensus.Bootstrapping,
 			expectedStatusCode: http.StatusServiceUnavailable,
 		},
 		{
@@ -56,7 +56,7 @@ func TestRejectMiddleware(t *testing.T) {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusTeapot)
 			}),
-			state:              snow.NormalOp,
+			state:              consensus.NormalOp,
 			expectedStatusCode: http.StatusTeapot,
 		},
 	}

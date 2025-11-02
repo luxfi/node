@@ -43,7 +43,7 @@ var (
 type VM struct {
 	*p2p.Network
 
-	chainContext *snow.Context
+	chainContext *consensus.Context
 	db           database.Database
 	genesis      *genesis.Genesis
 
@@ -53,7 +53,7 @@ type VM struct {
 
 func (vm *VM) Initialize(
 	_ context.Context,
-	chainContext *snow.Context,
+	chainContext *consensus.Context,
 	db database.Database,
 	genesisBytes []byte,
 	_ []byte,

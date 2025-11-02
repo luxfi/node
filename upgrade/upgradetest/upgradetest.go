@@ -22,6 +22,6 @@ const LatestVersion = "latest"
 // GetConfigForVersion returns an upgrade configuration for testing
 func GetConfigForVersion(version string) upgrade.Config {
 	return upgrade.Config{
-		DurangoTime: time.Now().Add(time.Hour),
+		ActivationTime: time.Now().Add(time.Hour),
 	}
 }

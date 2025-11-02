@@ -133,7 +133,7 @@ func newConfig(t *testing.T) *Config {
 		Network:              TestNetwork,
 		Router:               nil,
 		VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
-		MySubnets:            nil,
+		MyNets:            nil,
 		Beacons:              validators.NewManager(),
 		Validators:           validators.NewManager(),
 		NetworkID:            constants.LocalID,
@@ -301,7 +301,7 @@ func TestPingUptimes(t *testing.T) {
 	require.Equal(uint32(1), uptime)
 }
 
-func TestTrackedSubnets(t *testing.T) {
+func TestTrackedNets(t *testing.T) {
 	rawPeer0 := newRawTestPeer(t, newConfig(t))
 	rawPeer1 := newRawTestPeer(t, newConfig(t))
 
@@ -315,27 +315,27 @@ func TestTrackedSubnets(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		trackedSubnets   []ids.ID
+		trackedNets   []ids.ID
 		shouldDisconnect bool
 	}{
 		{
 			name:             "primary network only",
-			trackedSubnets:   makeNetIDs(0),
+			trackedNets:   makeNetIDs(0),
 			shouldDisconnect: false,
 		},
 		{
 			name:             "single subnet",
-			trackedSubnets:   makeNetIDs(1),
+			trackedNets:   makeNetIDs(1),
 			shouldDisconnect: false,
 		},
 		{
 			name:             "max subnets",
-			trackedSubnets:   makeNetIDs(maxNumTrackedSubnets),
+			trackedNets:   makeNetIDs(maxNumTrackedNets),
 			shouldDisconnect: false,
 		},
 		{
 			name:             "too many subnets",
-			trackedSubnets:   makeNetIDs(maxNumTrackedSubnets + 1),
+			trackedNets:   makeNetIDs(maxNumTrackedNets + 1),
 			shouldDisconnect: true,
 		},
 	}
@@ -344,7 +344,7 @@ func TestTrackedSubnets(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			rawPeer0.config.MySubnets = set.Of(test.trackedSubnets...)
+			rawPeer0.config.MyNets = set.Of(test.trackedNets...)
 			peer0, peer1 := startTestPeers(rawPeer0, rawPeer1)
 			if test.shouldDisconnect {
 				require.NoError(peer0.AwaitClosed(context.Background()))
@@ -361,11 +361,11 @@ func TestTrackedSubnets(t *testing.T) {
 
 			awaitReady(t, peer0, peer1)
 
-			require.Equal(set.Of(constants.PrimaryNetworkID), peer0.TrackedSubnets())
+			require.Equal(set.Of(constants.PrimaryNetworkID), peer0.TrackedNets())
 
-			expectedTrackedSubnets := set.Of(test.trackedSubnets...)
-			expectedTrackedSubnets.Add(constants.PrimaryNetworkID)
-			require.Equal(expectedTrackedSubnets, peer1.TrackedSubnets())
+			expectedTrackedNets := set.Of(test.trackedNets...)
+			expectedTrackedNets.Add(constants.PrimaryNetworkID)
+			require.Equal(expectedTrackedNets, peer1.TrackedNets())
 		})
 	}
 }

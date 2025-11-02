@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/database"
-	snow "github.com/luxfi/consensus/context"
+	consensus "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/appsender"
 	"github.com/luxfi/ids"
@@ -36,7 +36,7 @@ type initializeOnLinearizeVM struct {
 	vmToInitialize core.VM
 	vmToLinearize  *linearizeOnInitializeVM
 
-	ctx              *snow.Context
+	ctx              *consensus.Context
 	db               database.Database
 	genesisBytes     []byte
 	upgradeBytes     []byte
@@ -158,7 +158,7 @@ func NewLinearizeOnInitializeVM(vm consensusvertex.LinearizableVMWithEngine, toE
 
 func (vm *linearizeOnInitializeVM) Initialize(
 	ctx context.Context,
-	_ *snow.Context,
+	_ *consensus.Context,
 	_ database.Database,
 	_ []byte,
 	_ []byte,

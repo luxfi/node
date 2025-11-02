@@ -1957,7 +1957,7 @@ func TestStandardExecutorRemoveNetValidatorTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2297,7 +2297,7 @@ func TestStandardExecutorTransformNetTx(t *testing.T) {
 						Bootstrapped: utils.NewAtomic(true),
 						Fx:           env.fx,
 						FlowChecker:  env.flowChecker,
-						Ctx:          &snow.Context{},
+						Ctx:          &consensus.Context{},
 					},
 					feeCalculator: feeCalculator,
 					tx:            env.tx,
@@ -2375,7 +2375,7 @@ func TestStandardExecutorConvertSubnetToL1Tx(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(vm))
 
 	var (
-		ctx           = snowtest.Context(t, constants.PlatformChainID)
+		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
 			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
@@ -2449,7 +2449,7 @@ func TestStandardExecutorConvertSubnetToL1Tx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = snowtest.Context(t, ids.GenerateTestID())
+				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,
@@ -2693,7 +2693,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(vm))
 
 	var (
-		ctx           = snowtest.Context(t, constants.PlatformChainID)
+		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
 			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
@@ -2869,7 +2869,7 @@ func TestStandardExecutorRegisterL1ValidatorTx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = snowtest.Context(t, ids.GenerateTestID())
+				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,
@@ -3217,7 +3217,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(vm))
 
 	var (
-		ctx           = snowtest.Context(t, constants.PlatformChainID)
+		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
 			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
@@ -3407,7 +3407,7 @@ func TestStandardExecutorSetL1ValidatorWeightTx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = snowtest.Context(t, ids.GenerateTestID())
+				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,
@@ -3716,7 +3716,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(vm))
 
 	var (
-		ctx           = snowtest.Context(t, constants.PlatformChainID)
+		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
 			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
@@ -3851,7 +3851,7 @@ func TestStandardExecutorIncreaseL1ValidatorBalanceTx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = snowtest.Context(t, ids.GenerateTestID())
+				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,
@@ -4006,7 +4006,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 	require.NoError(t, fx.Bootstrapped())
 
 	var (
-		ctx           = snowtest.Context(t, constants.PlatformChainID)
+		ctx           = consensustest.Context(t, constants.PlatformChainID)
 		defaultConfig = &config.Internal{
 			DynamicFeeConfig:   genesis.LocalParams.DynamicFeeConfig,
 			ValidatorFeeConfig: genesis.LocalParams.ValidatorFeeConfig,
@@ -4144,7 +4144,7 @@ func TestStandardExecutorDisableL1ValidatorTx(t *testing.T) {
 		{
 			name: "tx fails syntactic verification",
 			updateExecutor: func(e *standardTxExecutor) error {
-				e.backend.Ctx = snowtest.Context(t, ids.GenerateTestID())
+				e.backend.Ctx = consensustest.Context(t, ids.GenerateTestID())
 				return nil
 			},
 			expectedErr: lux.ErrWrongChainID,

@@ -38,9 +38,9 @@ const (
 	// maxBloomSaltLen restricts the allowed size of the bloom salt to prevent
 	// excessively expensive bloom filter contains checks.
 	maxBloomSaltLen = 32
-	// maxNumTrackedSubnets limits how many subnets a peer can track to prevent
+	// maxNumTrackedNets limits how many subnets a peer can track to prevent
 	// excessive memory usage.
-	maxNumTrackedSubnets = 16
+	maxNumTrackedNets = 16
 
 	disconnectingLog         = "disconnecting from peer"
 	failedToCreateMessageLog = "failed to create message"
@@ -92,9 +92,9 @@ type Peer interface {
 	// only be called after [Ready] returns true.
 	Version() *version.Application
 
-	// TrackedSubnets returns the subnets this peer is running. It should only
+	// TrackedNets returns the subnets this peer is running. It should only
 	// be called after [Ready] returns true.
-	TrackedSubnets() set.Set[ids.ID]
+	TrackedNets() set.Set[ids.ID]
 
 	// ObservedUptime returns the local node's primary network uptime according to the
 	// peer. The value ranges from [0, 100]. It should only be called after
@@ -145,9 +145,9 @@ type peer struct {
 	// version is the claimed version the peer is running that we received in
 	// the Handshake message.
 	version *version.Application
-	// trackedSubnets are the netIDs the peer sent us in the Handshake
+	// trackedNets are the netIDs the peer sent us in the Handshake
 	// message. The primary network ID is always included.
-	trackedSubnets set.Set[ids.ID]
+	trackedNets set.Set[ids.ID]
 	// options of LPs provided in the Handshake message.
 	supportedLPs set.Set[uint32]
 	objectedLPs  set.Set[uint32]
@@ -228,7 +228,7 @@ func Start(
 		onClosingCtxCancel: onClosingCtxCancel,
 		onClosed:           make(chan struct{}),
 		getPeerListChan:    make(chan struct{}, 1),
-		trackedSubnets:     make(set.Set[ids.ID]),
+		trackedNets:     make(set.Set[ids.ID]),
 	}
 
 	if isIngress {
@@ -291,7 +291,7 @@ func (p *peer) Info() Info {
 		LastSent:       p.LastSent(),
 		LastReceived:   p.LastReceived(),
 		ObservedUptime: json.Uint32(primaryUptime),
-		TrackedSubnets: p.trackedSubnets,
+		TrackedNets: p.trackedNets,
 		// TODO: Add support for SupportedACPs and ObjectedACPs
 	}
 }
@@ -304,8 +304,8 @@ func (p *peer) Version() *version.Application {
 	return p.version
 }
 
-func (p *peer) TrackedSubnets() set.Set[ids.ID] {
-	return p.trackedSubnets
+func (p *peer) TrackedNets() set.Set[ids.ID] {
+	return p.trackedNets
 }
 
 func (p *peer) ObservedUptime() uint32 {
@@ -538,7 +538,7 @@ func (p *peer) writeMessages() {
 		mySignedIP.Timestamp,
 		mySignedIP.TLSSignature,
 		mySignedIP.BLSSignatureBytes,
-		p.MySubnets.List(),
+		p.MyNets.List(),
 		p.SupportedLPs,
 		p.ObjectedLPs,
 		knownPeersFilter,
@@ -900,31 +900,31 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 	}
 
 	// handle net IDs
-	if numTrackedSubnets := len(msg.TrackedSubnets); numTrackedSubnets > maxNumTrackedSubnets {
+	if numTrackedNets := len(msg.TrackedNets); numTrackedNets > maxNumTrackedNets {
 		p.Log.Debug(malformedMessageLog,
 			log.Stringer("nodeID", p.id),
 			log.Stringer("messageOp", message.HandshakeOp),
-			log.String("field", "trackedSubnets"),
-			log.Int("numTrackedSubnets", numTrackedSubnets),
+			log.String("field", "trackedNets"),
+			log.Int("numTrackedNets", numTrackedNets),
 		)
 		p.StartClose()
 		return
 	}
 
-	p.trackedSubnets.Add(constants.PrimaryNetworkID)
-	for _, netIDBytes := range msg.TrackedSubnets {
+	p.trackedNets.Add(constants.PrimaryNetworkID)
+	for _, netIDBytes := range msg.TrackedNets {
 		netID, err := ids.ToID(netIDBytes)
 		if err != nil {
 			p.Log.Debug(malformedMessageLog,
 				log.Stringer("nodeID", p.id),
 				log.Stringer("messageOp", message.HandshakeOp),
-				log.String("field", "trackedSubnets"),
+				log.String("field", "trackedNets"),
 				log.Reflect("error", err),
 			)
 			p.StartClose()
 			return
 		}
-		p.trackedSubnets.Add(netID)
+		p.trackedNets.Add(netID)
 	}
 
 	for _, lp := range msg.SupportedLps {
@@ -1059,7 +1059,7 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 
 	p.gotHandshake.Set(true)
 
-	peerIPs := p.Network.Peers(p.id, p.trackedSubnets, msg.AllSubnets, knownPeers, salt)
+	peerIPs := p.Network.Peers(p.id, p.trackedNets, msg.AllSubnets, knownPeers, salt)
 
 	// We bypass throttling here to ensure that the handshake message is
 	// acknowledged correctly.
@@ -1121,7 +1121,7 @@ func (p *peer) handleGetPeerList(msg *p2p.GetPeerList) {
 		return
 	}
 
-	peerIPs := p.Network.Peers(p.id, p.trackedSubnets, msg.AllSubnets, filter, salt)
+	peerIPs := p.Network.Peers(p.id, p.trackedNets, msg.AllSubnets, filter, salt)
 	if len(peerIPs) == 0 {
 		p.Log.Debug("skipping sending of empty peer list",
 			log.Stringer("nodeID", p.id),

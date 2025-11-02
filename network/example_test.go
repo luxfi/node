@@ -108,7 +108,7 @@ func ExampleNewTestNetwork() {
 
 	// If we want to be able to communicate with non-primary network subnets, we
 	// should register them here.
-	trackedSubnets := set.Set[ids.ID]{}
+	trackedNets := set.Set[ids.ID]{}
 
 	// Messages and connections are handled by the external handler.
 	handler := &testExternalHandler{
@@ -119,7 +119,7 @@ func ExampleNewTestNetwork() {
 		metrics,
 		constants.TestnetID,
 		validators,
-		trackedSubnets,
+		trackedNets,
 	)
 	if err != nil {
 		log.Fatal(

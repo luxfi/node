@@ -35,7 +35,7 @@ The regenesis branch represents a complete reimagining of the Lux Network, exten
 - **FHE Support**: Optional computation on encrypted data
 
 ### 4. Multi-Consensus Support
-- Avalanche Snowman++ (default)
+- Avalanche Consensusman++ (default)
 - Ethereum Clique PoA
 - Tendermint BFT
 - OP Stack compatibility

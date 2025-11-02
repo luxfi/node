@@ -212,7 +212,7 @@ package consensus
 
 type GlobalConsensus struct {
     // Avalanche consensus for B-Chain blocks
-    snowman     snowman.Consensus
+    consensusman     consensusman.Consensus
     
     // MPC consensus for signatures
     mpcConsensus *MPCConsensusEngine

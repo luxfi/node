@@ -406,12 +406,12 @@ func (vm *VM) Initialize(
 					}
 					ethDB, err := NewBadgerDatabase(nil, badgerConfig)
 					if err == nil {
-						// CRITICAL: Wrap with namespace stripper for SubnetEVM compatibility
-						vm.ethDB = NewSubnetNamespaceStripper(ethDB)
+						// CRITICAL: Wrap with namespace stripper for NetEVM compatibility
+						vm.ethDB = NewNetNamespaceStripper(ethDB)
 						fmt.Printf("Successfully opened migrated ethdb with namespace stripper\n")
 
 						// Try to load the last block to get the actual height
-						if stripper, ok := vm.ethDB.(*SubnetNamespaceStripper); ok {
+						if stripper, ok := vm.ethDB.(*NetNamespaceStripper); ok {
 							if lastBlock, err := stripper.LoadLastBlock(); err == nil {
 								migratedHeight = lastBlock.NumberU64()
 								migratedBlockHash = lastBlock.Hash()
@@ -475,12 +475,12 @@ func (vm *VM) Initialize(
 						ReadOnly:      false,
 					}
 					if ethDB, err := NewBadgerDatabase(nil, badgerConfig); err == nil {
-						// CRITICAL: Wrap with namespace stripper for SubnetEVM compatibility
-						vm.ethDB = NewSubnetNamespaceStripper(ethDB)
+						// CRITICAL: Wrap with namespace stripper for NetEVM compatibility
+						vm.ethDB = NewNetNamespaceStripper(ethDB)
 						hasMigratedData = true
 
 						// Try to load actual height from the database
-						if stripper, ok := vm.ethDB.(*SubnetNamespaceStripper); ok {
+						if stripper, ok := vm.ethDB.(*NetNamespaceStripper); ok {
 							if lastBlock, err := stripper.LoadLastBlock(); err == nil {
 								migratedHeight = lastBlock.NumberU64()
 								migratedBlockHash = lastBlock.Hash()
@@ -1399,7 +1399,7 @@ func (vm *VM) HealthCheck(ctx context.Context) (interface{}, error) {
 }
 
 // Connected implements the block.ChainVM interface
-func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version interface{}) error {
 	return nil
 }
 

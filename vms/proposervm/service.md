@@ -1,6 +1,6 @@
 # ProposerVM API
 
-The ProposerVM API allows clients to fetch information about a chain's Snowman++ wrapper information.
+The ProposerVM API allows clients to fetch information about a chain's Consensusman++ wrapper information.
 
 ## Endpoint
 

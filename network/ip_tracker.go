@@ -39,7 +39,7 @@ const (
 var _ validators.ManagerCallbackListener = (*ipTracker)(nil)
 
 func newIPTracker(
-	trackedSubnets set.Set[ids.ID],
+	trackedNets set.Set[ids.ID],
 	log log.Logger,
 	registry metric.Registry,
 ) (*ipTracker, error) {
@@ -50,7 +50,7 @@ func newIPTracker(
 
 	metricsInstance := metric.NewWithRegistry("ip_tracker", registry)
 	tracker := &ipTracker{
-		trackedSubnets:    trackedSubnets,
+		trackedNets:    trackedNets,
 		log:               log,
 		numTrackedPeers:   metricsInstance.NewGauge("tracked_peers", "number of peers this node is monitoring"),
 		numGossipableIPs:  metricsInstance.NewGauge("gossipable_ips", "number of IPs this node considers able to be gossiped"),
@@ -75,13 +75,13 @@ type trackedNode struct {
 	validatedSubnets set.Set[ids.ID]
 	// subnets contains the subset of [subnets] that the local node also tracks,
 	// including potentially the primary network.
-	trackedSubnets set.Set[ids.ID]
+	trackedNets set.Set[ids.ID]
 	// ip is the most recently known IP of this node.
 	ip *ips.ClaimedIPPort
 }
 
 func (n *trackedNode) wantsConnection() bool {
-	return n.manuallyTracked || n.trackedSubnets.Len() > 0
+	return n.manuallyTracked || n.trackedNets.Len() > 0
 }
 
 func (n *trackedNode) canDelete() bool {
@@ -89,9 +89,9 @@ func (n *trackedNode) canDelete() bool {
 }
 
 type connectedNode struct {
-	// trackedSubnets contains all the subnets that this node is syncing,
+	// trackedNets contains all the subnets that this node is syncing,
 	// including the primary network.
-	trackedSubnets set.Set[ids.ID]
+	trackedNets set.Set[ids.ID]
 	// ip this node claimed when connecting. The IP is not necessarily the same
 	// IP as in the tracked map.
 	ip *ips.ClaimedIPPort
@@ -187,8 +187,8 @@ func (s *gossipableSubnet) canDelete() bool {
 }
 
 type ipTracker struct {
-	// trackedSubnets does not include the primary network.
-	trackedSubnets    set.Set[ids.ID]
+	// trackedNets does not include the primary network.
+	trackedNets    set.Set[ids.ID]
 	log               log.Logger
 	numTrackedPeers   metric.Gauge
 	numGossipableIPs  metric.Gauge // IPs are not deduplicated across subnets
@@ -238,7 +238,7 @@ func (i *ipTracker) ManuallyGossip(subnetID ids.ID, nodeID ids.NodeID) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
-	if subnetID == constants.PrimaryNetworkID || i.trackedSubnets.Contains(subnetID) {
+	if subnetID == constants.PrimaryNetworkID || i.trackedNets.Contains(subnetID) {
 		i.addTrackableID(nodeID, nil)
 	}
 
@@ -301,7 +301,7 @@ func (i *ipTracker) AddIP(ip *ips.ClaimedIPPort) bool {
 	}
 
 	if connectedNode, ok := i.connected[ip.NodeID]; ok {
-		i.setGossipableIP(trackedNode.ip, connectedNode.trackedSubnets)
+		i.setGossipableIP(trackedNode.ip, connectedNode.trackedNets)
 	}
 	return trackedNode.wantsConnection()
 }
@@ -324,18 +324,18 @@ func (i *ipTracker) GetIP(nodeID ids.NodeID) (*ips.ClaimedIPPort, bool) {
 
 // Connected is called when a connection is established. The peer should have
 // provided [ip] during the handshake.
-func (i *ipTracker) Connected(ip *ips.ClaimedIPPort, trackedSubnets set.Set[ids.ID]) {
+func (i *ipTracker) Connected(ip *ips.ClaimedIPPort, trackedNets set.Set[ids.ID]) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
 	i.connected[ip.NodeID] = &connectedNode{
-		trackedSubnets: trackedSubnets,
+		trackedNets: trackedNets,
 		ip:             ip,
 	}
 
 	timestampComparison, trackedNode := i.addIP(ip)
 	if timestampComparison != untrackedTimestamp {
-		i.setGossipableIP(trackedNode.ip, trackedSubnets)
+		i.setGossipableIP(trackedNode.ip, trackedNets)
 	}
 }
 
@@ -364,8 +364,8 @@ func (i *ipTracker) addIP(ip *ips.ClaimedIPPort) (int, *trackedNode) {
 	return newerTimestamp, node
 }
 
-func (i *ipTracker) setGossipableIP(ip *ips.ClaimedIPPort, trackedSubnets set.Set[ids.ID]) {
-	for subnetID := range trackedSubnets {
+func (i *ipTracker) setGossipableIP(ip *ips.ClaimedIPPort, trackedNets set.Set[ids.ID]) {
+	for subnetID := range trackedNets {
 		if subnet, ok := i.subnet[subnetID]; ok && subnet.gossipableIDs.Contains(ip.NodeID) {
 			subnet.setGossipableIP(ip)
 		}
@@ -383,7 +383,7 @@ func (i *ipTracker) Disconnected(nodeID ids.NodeID) {
 	}
 	delete(i.connected, nodeID)
 
-	for subnetID := range connectedNode.trackedSubnets {
+	for subnetID := range connectedNode.trackedNets {
 		if subnet, ok := i.subnet[subnetID]; ok {
 			subnet.removeGossipableIP(nodeID)
 		}
@@ -405,7 +405,7 @@ func (i *ipTracker) addTrackableID(nodeID ids.NodeID, subnetID *ids.ID) {
 		i.numTrackedPeers.Inc()
 		nodeTracker = &trackedNode{
 			validatedSubnets: make(set.Set[ids.ID]),
-			trackedSubnets:   make(set.Set[ids.ID]),
+			trackedNets:   make(set.Set[ids.ID]),
 		}
 		i.tracked[nodeID] = nodeTracker
 	}
@@ -414,8 +414,8 @@ func (i *ipTracker) addTrackableID(nodeID ids.NodeID, subnetID *ids.ID) {
 		nodeTracker.manuallyTracked = true
 	} else {
 		nodeTracker.validatedSubnets.Add(*subnetID)
-		if *subnetID == constants.PrimaryNetworkID || i.trackedSubnets.Contains(*subnetID) {
-			nodeTracker.trackedSubnets.Add(*subnetID)
+		if *subnetID == constants.PrimaryNetworkID || i.trackedNets.Contains(*subnetID) {
+			nodeTracker.trackedNets.Add(*subnetID)
 		}
 	}
 
@@ -455,7 +455,7 @@ func (i *ipTracker) addGossipableID(nodeID ids.NodeID, subnetID ids.ID, manually
 
 	subnet.gossipableIDs.Add(nodeID)
 	node, connected := i.connected[nodeID]
-	if !connected || !node.trackedSubnets.Contains(subnetID) {
+	if !connected || !node.trackedNets.Contains(subnetID) {
 		return
 	}
 
@@ -501,7 +501,7 @@ func (i *ipTracker) OnValidatorRemoved(netID ids.ID, nodeID ids.NodeID, light ui
 	}
 
 	trackedNode.validatedSubnets.Remove(netID)
-	trackedNode.trackedSubnets.Remove(netID)
+	trackedNode.trackedNets.Remove(netID)
 
 	if trackedNode.canDelete() {
 		i.numTrackedPeers.Dec()

@@ -283,7 +283,7 @@ The plugin version is unchanged at `39` and is compatible with version `v1.12.2`
 - [tmpnet] Deploy collectors with golang to simplify cross-repo use by @maru-ava in https://github.com/luxfi/node/pull/3692
 - fix spelling issues config_test.go by @futreall in https://github.com/luxfi/node/pull/3760
 - [tmpnet] Add check for collection of logs and metrics to custom github action by @maru-ava in https://github.com/luxfi/node/pull/3740
-- Deprecate the `snow.Context.Lock` by @StephenButtolph in https://github.com/luxfi/node/pull/3762
+- Deprecate the `consensus.Context.Lock` by @StephenButtolph in https://github.com/luxfi/node/pull/3762
 - Name F-Upgrade Fortuna by @StephenButtolph in https://github.com/luxfi/node/pull/3761
 - Add CodecID to ICM README by @iansuvak in https://github.com/luxfi/node/pull/3759
 - Update CODEOWNERS s/marun/maru-ava/ by @maru-ava in https://github.com/luxfi/node/pull/3768
@@ -432,7 +432,7 @@ The plugin version is updated to `39` all plugins must update to be compatible.
 - Add F Upgrade Scaffolding. Post-Etna Cleanup by @michaelkaplan13 in https://github.com/luxfi/node/pull/3672
 - [testing] Fix instructions for triggering antithesis test runs by @marun in https://github.com/luxfi/node/pull/3664
 - [testing] Ensure run_prometheus.sh uses a writeable storage path by @marun in https://github.com/luxfi/node/pull/3662
-- Make snowman use snowflake directly instead of snowball by @yacovm in https://github.com/luxfi/node/pull/3403
+- Make consensusman use consensusflake directly instead of consensusball by @yacovm in https://github.com/luxfi/node/pull/3403
 - chore: fix some typos by @chuangjinglu in https://github.com/luxfi/node/pull/3670
 - Bump antithesishq/antithesis-trigger-action from 0.6 to 0.7 by @dependabot in https://github.com/luxfi/node/pull/3667
 - [ci] Use go env {GOOS,GOARCH} for os and arch detection by @marun in https://github.com/luxfi/node/pull/3661
@@ -577,7 +577,7 @@ The plugin version is updated to `38` all plugins must update to be compatible.
 - Add SoV Excess to P-chain state by @StephenButtolph in https://github.com/luxfi/node/pull/3482
 - Remove deprecated X-chain pubsub server by @StephenButtolph in https://github.com/luxfi/node/pull/3490
 - Update SoV struct to align with latest ACP-77 spec by @StephenButtolph in https://github.com/luxfi/node/pull/3492
-- Register VM and snowman metrics after chain creation by @yacovm in https://github.com/luxfi/node/pull/3489
+- Register VM and consensusman metrics after chain creation by @yacovm in https://github.com/luxfi/node/pull/3489
 - Skip Flaky Test by @joshua-kim in https://github.com/luxfi/node/pull/3495
 - Add request to update `releases.md` in PR template by @ceyonur in https://github.com/luxfi/node/pull/3476
 - ACP-77: Update P-chain state staker tests by @StephenButtolph in https://github.com/luxfi/node/pull/3494
@@ -703,14 +703,14 @@ The plugin version is updated to `37` all plugins must update to be compatible.
 - ACP 118 reference implementation by @cam-schultz in https://github.com/luxfi/node/pull/3218
 - Storage OpenBSD/adJ by @vtamara in https://github.com/luxfi/node/pull/2809
 - Remove unused error from fee calculator creation by @StephenButtolph in https://github.com/luxfi/node/pull/3245
-- Rename Transitive snowman to Engine snowman by @yacovm in https://github.com/luxfi/node/pull/3244
+- Rename Transitive consensusman to Engine consensusman by @yacovm in https://github.com/luxfi/node/pull/3244
 - Simplify static fee calculations by @StephenButtolph in https://github.com/luxfi/node/pull/3240
 - Remove targetBlockSize arg by @StephenButtolph in https://github.com/luxfi/node/pull/3249
 - Add dynamic fees config by @StephenButtolph in https://github.com/luxfi/node/pull/3250
 - Remove unused Samplers by @dhrubabasu in https://github.com/luxfi/node/pull/3219
 - Inline `verifier` struct creation by @dhrubabasu in https://github.com/luxfi/node/pull/3252
 - Add fee.State to P-chain state by @StephenButtolph in https://github.com/luxfi/node/pull/3248
-- Fix comparison comment in snowflake algorithms by @yacovm in https://github.com/luxfi/node/pull/3256
+- Fix comparison comment in consensusflake algorithms by @yacovm in https://github.com/luxfi/node/pull/3256
 - Add network upgrade config by @aaronbuchwald in https://github.com/luxfi/node/pull/3207
 - [vms/platformvm] Add `VerifyWithContext` to `Block`s by @dhrubabasu in https://github.com/luxfi/node/pull/3236
 - [ci] Switch to v2 of docker compose plugin by @marun in https://github.com/luxfi/node/pull/3259
@@ -892,7 +892,7 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 
 ### What's Changed
 
-- Error driven snowflake multi counter by @aaronbuchwald in https://github.com/luxfi/node/pull/3092
+- Error driven consensusflake multi counter by @aaronbuchwald in https://github.com/luxfi/node/pull/3092
 - [antithesis] Add ci jobs to trigger test runs by @marun in https://github.com/luxfi/node/pull/3076
 - bump ledger-lux dependency to current main branch by @felipemadero in https://github.com/luxfi/node/pull/3115
 - [antithesis] Fix image publication job by quoting default tag value by @marun in https://github.com/luxfi/node/pull/3112
@@ -944,7 +944,7 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 - [vms/platformvm] Rename `txstest.Builder` to `txstest.WalletFactory` by @dhrubabasu in https://github.com/luxfi/node/pull/2890
 - Small metrics cleanup by @StephenButtolph in https://github.com/luxfi/node/pull/3088
 - Fix race in test by @StephenButtolph in https://github.com/luxfi/node/pull/3089
-- Implement error driven snowflake hardcoded to support a single beta by @aaronbuchwald in https://github.com/luxfi/node/pull/2978
+- Implement error driven consensusflake hardcoded to support a single beta by @aaronbuchwald in https://github.com/luxfi/node/pull/2978
 - Replace all chain namespaces with labels by @StephenButtolph in https://github.com/luxfi/node/pull/3053
 - add a metrics gauge for built block slot by @tsachiherman in https://github.com/luxfi/node/pull/3048
 - [ci] Switch to gh workers for arm64 by @marun in https://github.com/luxfi/node/pull/3090
@@ -1140,8 +1140,8 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 
 ### Configs
 
-- Removed `--snow-virtuous-commit-threshold`
-- Removed `--snow-rogue-commit-threshold`
+- Removed `--consensus-virtuous-commit-threshold`
+- Removed `--consensus-rogue-commit-threshold`
 
 ### Fixes
 
@@ -1325,11 +1325,11 @@ The plugin version is updated to `35` all plugins must update to be compatible.
 - [vms/platformvm] Remove `ErrFutureStakeTime` check in `VerifyTx` by @dhrubabasu in https://github.com/luxfi/node/pull/2797
 - Remove pre-Durango block building logic and verification by @StephenButtolph in https://github.com/luxfi/node/pull/2823
 - Remove pre-Durango checks in BLS key verification by @StephenButtolph in https://github.com/luxfi/node/pull/2824
-- [snow/networking] Enforce `PreferredIDAtHeight` in `Chits` messages by @dhrubabasu in https://github.com/luxfi/node/pull/2827
+- [consensus/networking] Enforce `PreferredIDAtHeight` in `Chits` messages by @dhrubabasu in https://github.com/luxfi/node/pull/2827
 - Combine AppGossip and AppGossipSpecific by @StephenButtolph in https://github.com/luxfi/node/pull/2836
 - [network/peer] Disconnect from peers who only send legacy version field by @dhrubabasu in https://github.com/luxfi/node/pull/2830
 - [vms/avm] Cleanup `GetTx` + remove state pruning logic by @dhrubabasu in https://github.com/luxfi/node/pull/2826
-- [vms/avm] Remove `snow.Context` from `Network` by @dhrubabasu in https://github.com/luxfi/node/pull/2834
+- [vms/avm] Remove `consensus.Context` from `Network` by @dhrubabasu in https://github.com/luxfi/node/pull/2834
 - [vms/platformvm] Remove state pruning logic by @dhrubabasu in https://github.com/luxfi/node/pull/2825
 - Prevent zero length values in slices and maps in codec by @StephenButtolph in https://github.com/luxfi/node/pull/2819
 - [utils/compression] Remove gzip compressor by @dhrubabasu in https://github.com/luxfi/node/pull/2839
@@ -1533,7 +1533,7 @@ The plugin version is updated to `33` all plugins must update to be compatible.
 - Provide pgo file during compilation by @StephenButtolph in https://github.com/luxfi/node/pull/2724
 - P-chain - Tx builder cleanup by @abi87 in https://github.com/luxfi/node/pull/2718
 - Refactor chain manager subnets by @joshua-kim in https://github.com/luxfi/node/pull/2711
-- Replace snowball/snowflake interface with single shared snow interface by @aaronbuchwald in https://github.com/luxfi/node/pull/2717
+- Replace consensusball/consensusflake interface with single shared consensus interface by @aaronbuchwald in https://github.com/luxfi/node/pull/2717
 - Remove duplicate IP length constant by @StephenButtolph in https://github.com/luxfi/node/pull/2733
 - Add `platform.getSubnet` API by @felipemadero in https://github.com/luxfi/node/pull/2704
 - Provide BLS signature in Handshake message by @StephenButtolph in https://github.com/luxfi/node/pull/2730
@@ -1646,7 +1646,7 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - Added:
   - `--acp-support`
   - `--acp-object`
-  - `snow-commit-threshold`
+  - `consensus-commit-threshold`
   - `network-peer-list-pull-gossip-frequency`
   - `network-peer-list-bloom-reset-frequency`
   - `network` to the X-chain and P-chain configs including:
@@ -1661,8 +1661,8 @@ The plugin version is updated to `31` all plugins must update to be compatible.
     - `max-bloom-filter-false-positive-probability`
     - `legacy-push-gossip-cache-size`
 - Deprecated:
-    - `snow-virtuous-commit-threshold`
-    - `snow-rogue-commit-threshold`
+    - `consensus-virtuous-commit-threshold`
+    - `consensus-rogue-commit-threshold`
     - `network-peer-list-validator-gossip-size`
     - `network-peer-list-non-validator-gossip-size`
     - `network-peer-list-peers-gossip-size`
@@ -1764,7 +1764,7 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - Merkledb readme updates by @danlaine in https://github.com/luxfi/node/pull/2510
 - Gossip Test structs by @joshua-kim in https://github.com/luxfi/node/pull/2514
 - `tmpnet`: Separate node into orchestration, config and process  by @marun in https://github.com/luxfi/node/pull/2460
-- Move `snow.DefaultConsensusContextTest` to `snowtest.ConsensusContext` by @dhrubabasu in https://github.com/luxfi/node/pull/2507
+- Move `consensus.DefaultConsensusContextTest` to `consensustest.ConsensusContext` by @dhrubabasu in https://github.com/luxfi/node/pull/2507
 - Add gossip Marshaller interface by @joshua-kim in https://github.com/luxfi/node/pull/2509
 - Include chain creation error in health check by @marun in https://github.com/luxfi/node/pull/2519
 - Make X-chain mempool safe for concurrent use by @StephenButtolph in https://github.com/luxfi/node/pull/2520
@@ -1774,10 +1774,10 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - Rework X-chain locking in tests by @StephenButtolph in https://github.com/luxfi/node/pull/2526
 - `vms/avm`: Simplify `mempool.Remove` signature by @dhrubabasu in https://github.com/luxfi/node/pull/2527
 - Remove unused mocks by @dhrubabasu in https://github.com/luxfi/node/pull/2528
-- Move `avm.newContext` to `snowtest.Context` by @dhrubabasu in https://github.com/luxfi/node/pull/2513
+- Move `avm.newContext` to `consensustest.Context` by @dhrubabasu in https://github.com/luxfi/node/pull/2513
 - Do not fail-fast Tests / Unit by @StephenButtolph in https://github.com/luxfi/node/pull/2530
 - Make P-Chain Mempool thread-safe by @joshua-kim in https://github.com/luxfi/node/pull/2523
-- `vms/platformvm`: Use `snowtest.Context` helper by @dhrubabasu in https://github.com/luxfi/node/pull/2515
+- `vms/platformvm`: Use `consensustest.Context` helper by @dhrubabasu in https://github.com/luxfi/node/pull/2515
 - Export mempool errors by @StephenButtolph in https://github.com/luxfi/node/pull/2531
 - Move locking into issueTx by @StephenButtolph in https://github.com/luxfi/node/pull/2532
 - Fix merge in wallet service by @StephenButtolph in https://github.com/luxfi/node/pull/2534
@@ -1794,7 +1794,7 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - Add TxVerifier interface to network by @joshua-kim in https://github.com/luxfi/node/pull/2542
 - X-chain SDK gossip by @joshua-kim in https://github.com/luxfi/node/pull/2490
 - Remove network context by @joshua-kim in https://github.com/luxfi/node/pull/2543
-- Remove `snow.DefaultContextTest` by @dhrubabasu in https://github.com/luxfi/node/pull/2518
+- Remove `consensus.DefaultContextTest` by @dhrubabasu in https://github.com/luxfi/node/pull/2518
 - Fix windowing when no validator is available by @abi87 in https://github.com/luxfi/node/pull/2529
 - Unexport fields from gossip.BloomFilter by @StephenButtolph in https://github.com/luxfi/node/pull/2547
 - P-Chain SDK Gossip by @joshua-kim in https://github.com/luxfi/node/pull/2487
@@ -1835,7 +1835,7 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - [ci] Increase Fuzz Time in Periodic Runs by @patrick-ogrady in https://github.com/luxfi/node/pull/2599
 - `tmpnet`: Save metrics snapshot to disk before node shutdown by @marun in https://github.com/luxfi/node/pull/2601
 - chore: Fix typo s/useage/usage by @hugo-syn in https://github.com/luxfi/node/pull/2602
-- Deprecate `SnowRogueCommitThresholdKey` and `SnowVirtuousCommitThresholdKey` by @dhrubabasu in https://github.com/luxfi/node/pull/2600
+- Deprecate `ConsensusRogueCommitThresholdKey` and `ConsensusVirtuousCommitThresholdKey` by @dhrubabasu in https://github.com/luxfi/node/pull/2600
 - Fix networking invalid field log by @StephenButtolph in https://github.com/luxfi/node/pull/2604
 - chore: Fix typo s/seperate/separate/ by @hugo-syn in https://github.com/luxfi/node/pull/2605
 - Support dynamic port peerlist gossip by @StephenButtolph in https://github.com/luxfi/node/pull/2603
@@ -1921,7 +1921,7 @@ The plugin version is unchanged at `30` and is compatible with versions `v1.10.1
 - `vms/platformvm`: Move `toEngine` channel to mempool by @dhrubabasu in https://github.com/luxfi/node/pull/2333
 - `vms/avm`: Rename `states` pkg to `state` by @dhrubabasu in https://github.com/luxfi/node/pull/2381
 - Implement generic bimap by @StephenButtolph in https://github.com/luxfi/node/pull/2383
-- Unexport RequestID from snowman engine by @StephenButtolph in https://github.com/luxfi/node/pull/2384
+- Unexport RequestID from consensusman engine by @StephenButtolph in https://github.com/luxfi/node/pull/2384
 - Add metric to track the stake weight of block providers by @StephenButtolph in https://github.com/luxfi/node/pull/2376
 - Add block source metrics to monitor gossip by @StephenButtolph in https://github.com/luxfi/node/pull/2386
 - Rename `D` to `Durango` by @dhrubabasu in https://github.com/luxfi/node/pull/2389
@@ -2017,11 +2017,11 @@ The plugin version is unchanged at `30` and compatible with version `v1.10.15`.
 - Remove `common.Config` functions by @StephenButtolph in https://github.com/luxfi/node/pull/2328
 - Move engine startup into helper function by @StephenButtolph in https://github.com/luxfi/node/pull/2329
 - Remove bootstrapping retry config by @StephenButtolph in https://github.com/luxfi/node/pull/2301
-- Export snowman bootstrapper by @StephenButtolph in https://github.com/luxfi/node/pull/2331
+- Export consensusman bootstrapper by @StephenButtolph in https://github.com/luxfi/node/pull/2331
 - Remove common.Config from syncer.Config by @StephenButtolph in https://github.com/luxfi/node/pull/2330
 - `platformvm.VM` -- replace `Config` field with `validators.Manager` by @danlaine in https://github.com/luxfi/node/pull/2319
 - Improve height monitoring by @StephenButtolph in https://github.com/luxfi/node/pull/2347
-- Cleanup snowman consensus metrics by @StephenButtolph in https://github.com/luxfi/node/pull/2349
+- Cleanup consensusman consensus metrics by @StephenButtolph in https://github.com/luxfi/node/pull/2349
 - Expand consensus health check by @StephenButtolph in https://github.com/luxfi/node/pull/2354
 - Reduce the size of the OracleBlock interface by @StephenButtolph in https://github.com/luxfi/node/pull/2355
 - [vms/proposervm] Update Build Heuristic by @patrick-ogrady in https://github.com/luxfi/node/pull/2348
@@ -2182,8 +2182,8 @@ The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - 
 
 ### Configs
 
-- Added `--snow-preference-quorum-size` flag
-- Added `--snow-confidence-quorum-size` flag
+- Added `--consensus-preference-quorum-size` flag
+- Added `--consensus-confidence-quorum-size` flag
 - Added `"fx-owner-cache-size"` to the P-chain config
 
 ### Fixes
@@ -2196,13 +2196,13 @@ The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - 
 
 ### What's Changed
 
-- Add last accepted height to the snowman interface by @StephenButtolph in https://github.com/luxfi/node/pull/2091
+- Add last accepted height to the consensusman interface by @StephenButtolph in https://github.com/luxfi/node/pull/2091
 - Delete kurtosis CI jobs by @marun in https://github.com/luxfi/node/pull/2068
 - e2e: Ensure all Issue* calls use the default context by @marun in https://github.com/luxfi/node/pull/2069
 - Remove Finalized from the consensus interface by @StephenButtolph in https://github.com/luxfi/node/pull/2093
 - Remove embedding of `verify.Verifiable` in `FxCredential` by @dhrubabasu in https://github.com/luxfi/node/pull/2089
 - Clarify decidable interface simple default parameter tests by @gyuho in https://github.com/luxfi/node/pull/2094
-- snow/consensus/snowman/poll: remove "unused" no early term poller by @gyuho in https://github.com/luxfi/node/pull/2095
+- consensus/consensus/consensusman/poll: remove "unused" no early term poller by @gyuho in https://github.com/luxfi/node/pull/2095
 - Cleanup `.golangci.yml` by @dhrubabasu in https://github.com/luxfi/node/pull/2097
 - Refactor `ancestor.Tree` by @StephenButtolph in https://github.com/luxfi/node/pull/2099
 - Update AMI runner image and instance type by @charlie-ava in https://github.com/luxfi/node/pull/1939
@@ -2212,8 +2212,8 @@ The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - 
 - Add preference lookups by height to the consensus interface by @StephenButtolph in https://github.com/luxfi/node/pull/2092
 - Remove duplicate pullQuery method by @StephenButtolph in https://github.com/luxfi/node/pull/2103
 - Add additional validator set metrics by @aaronbuchwald in https://github.com/luxfi/node/pull/2051
-- Remove `snowball.Initialize` and `snowball.Factory` by @danlaine in https://github.com/luxfi/node/pull/2104
-- Remove initialize functions from the snowball package by @danlaine in https://github.com/luxfi/node/pull/2105
+- Remove `consensusball.Initialize` and `consensusball.Factory` by @danlaine in https://github.com/luxfi/node/pull/2104
+- Remove initialize functions from the consensusball package by @danlaine in https://github.com/luxfi/node/pull/2105
 - Remove `genesis.State` by @joshua-kim in https://github.com/luxfi/node/pull/2112
 - add `SetSubnetOwner` to `Chain` interface by @dhrubabasu in https://github.com/luxfi/node/pull/2031
 - Move vote bubbling before poll termination by @StephenButtolph in https://github.com/luxfi/node/pull/2100
@@ -2330,7 +2330,7 @@ The plugin version is unchanged at `28` and compatible with version `v1.10.9`.
 - Update golang to 1.20.8 by @StephenButtolph in https://github.com/luxfi/node/pull/1826
 - Use odd-numbered request ids for SDK by @joshua-kim in https://github.com/luxfi/node/pull/1975
 - update iterator invariant by @danlaine in https://github.com/luxfi/node/pull/1978
-- Document common usage of requestIDs for snow senders by @StephenButtolph in https://github.com/luxfi/node/pull/1981
+- Document common usage of requestIDs for consensus senders by @StephenButtolph in https://github.com/luxfi/node/pull/1981
 - e2e: Diagnose and fix flakes by @marun in https://github.com/luxfi/node/pull/1941
 - `merkledb` -- `db_test.go` cleanup by @danlaine in https://github.com/luxfi/node/pull/1954
 - `merkledb` -- make config fields uints by @danlaine in https://github.com/luxfi/node/pull/1963
@@ -2608,7 +2608,7 @@ The plugin version is updated to `27` all plugins must update to be compatible.
 - Make AVM implement `block.HeightIndexedChainVM` by @dhrubabasu in https://github.com/luxfi/node/pull/1699
 - ProposerVM nits by @abi87 in https://github.com/luxfi/node/pull/1688
 - Sorting -- Remove old `IsSortedAndUnique`, rename `IsSortedAndUniqueSortable` to `IsSortedAndUnique` by @danlaine in https://github.com/luxfi/node/pull/1666
-- Update snow consensus doc post X-chain linearization by @exdx in https://github.com/luxfi/node/pull/1703
+- Update consensus consensus doc post X-chain linearization by @exdx in https://github.com/luxfi/node/pull/1703
 - `merkledb` / `sync` -- remove TODOs by @danlaine in https://github.com/luxfi/node/pull/1718
 - remove cache TODOs by @danlaine in https://github.com/luxfi/node/pull/1721
 - Adjust `NewSizedCache` to take in a size function by @dhrubabasu in https://github.com/luxfi/node/pull/1725
@@ -2663,13 +2663,13 @@ The plugin version is unchanged at `26` and compatible with versions `v1.10.1 - 
 
 - e2e: Support testing on MacOS without requiring firewall exceptions by @marun in https://github.com/luxfi/node/pull/1613
 - Reduce resource log level by @StephenButtolph in https://github.com/luxfi/node/pull/1622
-- Improve `snow/` tests with `require` by @dhrubabasu in https://github.com/luxfi/node/pull/1503
+- Improve `consensus/` tests with `require` by @dhrubabasu in https://github.com/luxfi/node/pull/1503
 - Improve `x/` tests with `require` by @dhrubabasu in https://github.com/luxfi/node/pull/1454
 - `sync` -- fix `TestFindNextKeyRandom` by @danlaine in https://github.com/luxfi/node/pull/1624
 - Improve `vms/` tests with `require` by @dhrubabasu in https://github.com/luxfi/node/pull/1505
 - Improve `database/` tests with `require` by @dhrubabasu in https://github.com/luxfi/node/pull/1506
 - Ban usage of `t.Fatal` and `t.Error` by @dhrubabasu in https://github.com/luxfi/node/pull/1453
-- chore: fix typo in binary_snowflake.go by @eltociear in https://github.com/luxfi/node/pull/1630
+- chore: fix typo in binary_consensusflake.go by @eltociear in https://github.com/luxfi/node/pull/1630
 - Discriminate window fit err msg from overdelegated error msg by @felipemadero in https://github.com/luxfi/node/pull/1606
 - Remove MaxConnectionAge gRPC StreamID overflow mitigation by @hexfusion in https://github.com/luxfi/node/pull/1388
 - add fuzzing action by @danlaine in https://github.com/luxfi/node/pull/1635
@@ -2739,8 +2739,8 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 ### Configs
 
 - Added `--http-allowed-hosts` with a default value of `localhost`
-- Removed `--snow-mixed-query-num-push-vdr`
-- Removed `--snow-mixed-query-num-push-non-vdr`
+- Removed `--consensus-mixed-query-num-push-vdr`
+- Removed `--consensus-mixed-query-num-push-non-vdr`
 - Removed `minPercentConnectedStakeHealthy` from the subnet config
 
 ### Fixes
@@ -2798,7 +2798,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - Rename license header file to avoid unintended license indexing by @StephenButtolph in https://github.com/luxfi/node/pull/1608
 - `merkledb` and `sync` -- use time based rand seed by @danlaine in https://github.com/luxfi/node/pull/1607
 - add `local-prefixes` setting for `goimports` by @dhrubabasu in https://github.com/luxfi/node/pull/1612
-- snow/engine/snowman: instantiate voter after issuer by @gyuho in https://github.com/luxfi/node/pull/1610
+- consensus/engine/consensusman: instantiate voter after issuer by @gyuho in https://github.com/luxfi/node/pull/1610
 - Update CodeQL to v2 by @StephenButtolph in https://github.com/luxfi/node/pull/1616
 - Remove old networking metric by @StephenButtolph in https://github.com/luxfi/node/pull/1619
 - Fix --http-host flag to support IPv6 by @StephenButtolph in https://github.com/luxfi/node/pull/1620
@@ -2872,8 +2872,8 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - ban usage of `require.Equal` when testing for length by @dhrubabasu in https://github.com/luxfi/node/pull/1497
 - ban usage of `nil` in require functions by @dhrubabasu in https://github.com/luxfi/node/pull/1498
 - Sized LRU cache by @abi87 in https://github.com/luxfi/node/pull/1517
-- engine/snowman: clean up some comments in "bubbleVotes" unit tests by @gyuho in https://github.com/luxfi/node/pull/1444
-- snow/networking/sender: add missing verbo check by @gyuho in https://github.com/luxfi/node/pull/1504
+- engine/consensusman: clean up some comments in "bubbleVotes" unit tests by @gyuho in https://github.com/luxfi/node/pull/1444
+- consensus/networking/sender: add missing verbo check by @gyuho in https://github.com/luxfi/node/pull/1504
 - Delete duplicate test var definitions by @StephenButtolph in https://github.com/luxfi/node/pull/1518
 - utils/bag: print generic type for bag elements by @gyuho in https://github.com/luxfi/node/pull/1507
 - Fix incorrect test refactor by @abi87 in https://github.com/luxfi/node/pull/1526
@@ -2916,12 +2916,12 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 
 ### Configs
 
-- Removed `--snow-lux-num-parents`
-- Removed `--snow-lux-batch-size`
+- Removed `--consensus-lux-num-parents`
+- Removed `--consensus-lux-batch-size`
 
 ### Fixes
 
-- Fixed panic when restarting partially completed X-chain snowman bootstrapping
+- Fixed panic when restarting partially completed X-chain consensusman bootstrapping
 - Fixed `--network-allow-private-ips` handling to correctly prevent outbound connections to private IP ranges
 - Fixed UniformSampler to support sampling numbers between MaxInt64 and MaxUint64
 - Fixed data race in txID access during transaction gossip in the AVM
@@ -2981,7 +2981,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - Change ChangeProofs to only have one list of key/value change instead of key/values and deleted by @dboehm-avalabs in https://github.com/luxfi/node/pull/1385
 - Update AMI generation workflow by @charlie-ava in https://github.com/luxfi/node/pull/1289
 - Support `height` as a string in `avm.getBlockByHeight` by @StephenButtolph in https://github.com/luxfi/node/pull/1437
-- Defer Snowman Bootstrapper parser initialization to Start by @StephenButtolph in https://github.com/luxfi/node/pull/1442
+- Defer Consensusman Bootstrapper parser initialization to Start by @StephenButtolph in https://github.com/luxfi/node/pull/1442
 - Cleanup proposervm ancestors packing @StephenButtolph in https://github.com/luxfi/node/pull/1446
 
 ### New Contributors
@@ -3011,7 +3011,7 @@ The supported plugin version is `25`.
 - Fixed grammatical errors in `README.md` by @krakxn in https://github.com/luxfi/node/pull/1102
 - Add tests for race conditions in merkledb by @kyl27 in https://github.com/luxfi/node/pull/1256
 - Add P-chain indexer API example by @StephenButtolph in https://github.com/luxfi/node/pull/1271
-- use `require` in `snow/choices` tests by @dhrubabasu in https://github.com/luxfi/node/pull/1279
+- use `require` in `consensus/choices` tests by @dhrubabasu in https://github.com/luxfi/node/pull/1279
 - use `require` in `utils/wrappers` tests by @dhrubabasu in https://github.com/luxfi/node/pull/1280
 - add support for tracking delegatee rewards to validator metadata by @dhrubabasu in https://github.com/luxfi/node/pull/1273
 - defer delegatee rewards until end of validator staking period by @dhrubabasu in https://github.com/luxfi/node/pull/1262
@@ -3055,7 +3055,7 @@ The supported plugin version is `25`.
 This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `24`.
 
 - Removed unnecessary repoll after rejecting vertices
-- Improved snowstorm lookup error handling
+- Improved consensusstorm lookup error handling
 - Removed rejected vertices from the Lux frontier more aggressively
 - Reduced default health check values for processing decisions
 
@@ -3067,7 +3067,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Added test for `avm/txs/executor.SemanticVerifier#verifyFxUsage` with multiple valid fxs
 - Fixed CPU + bandwidth performance regression during vertex processing
 - Added example usage of the `/ext/index/X/block` API
-- Reduced the default value of `--snow-optimal-processing` from `50` to `10`
+- Reduced the default value of `--consensus-optimal-processing` from `50` to `10`
 - Updated the year in the license header
 
 ## [v1.9.14](https://github.com/luxfi/node/releases/tag/v1.9.14)
@@ -3092,13 +3092,13 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### Consensus
 
-- Added support to switch from `Lux` consensus to `Snowman` consensus
-- Added support for routing consensus messages to either `Lux` or `Snowman` consensus on the same chain
+- Added support to switch from `Lux` consensus to `Consensusman` consensus
+- Added support for routing consensus messages to either `Lux` or `Consensusman` consensus on the same chain
 - Removed usage of deferred evaluation of the `handler.Consensus` in the `Lux` `OnFinished` callback
-- Dropped inbound `Lux` consensus messages after switching to `Snowman` consensus
+- Dropped inbound `Lux` consensus messages after switching to `Consensusman` consensus
 - Renamed the `Lux` VM metrics prefix from `lux_{chainID}_vm_` to `lux_{chainID}_vm_lux`
 - Replaced `consensus` and `decision` dispatchers with `block`, `tx`, and `vertex` dispatchers
-- Removed `Lux` bootstrapping restarts during the switch to `Snowman` consensus
+- Removed `Lux` bootstrapping restarts during the switch to `Consensusman` consensus
 
 ### AVM
 
@@ -3259,7 +3259,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Updated the minimum golang version to `v1.19.6`
 - Fixed `rpcchainvm` signal handling to only shutdown upon receipt of `SIGTERM`
 - Added `warp.Signature#NumSigners` for better cost tracking support
-- Added `snow.Context#PublicKey` to provide access to the local node's BLS public key inside the VM execution environment
+- Added `consensus.Context#PublicKey` to provide access to the local node's BLS public key inside the VM execution environment
 - Renamed Lux consensus metric prefix to `lux_{chainID}_lux`
 - Specified an explicit TCP `Linger` timeout of `15` seconds
 - Updated the `secp256k1` library to `v4.1.0`
@@ -3271,7 +3271,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Removed `Factory` embedding from `platformvm.VM` and `avm.VM`
 - Removed `validator` package from the `platformvm`
 - Removed `timer.TimeoutManager`
-- Replaced `snow.Context` in `Factory.New` with `logging.Logger`
+- Replaced `consensus.Context` in `Factory.New` with `logging.Logger`
 - Renamed `set.Bits#Len` to `BitLen` and `set.Bits#HammingWeight` to `Len` to align with `set.Bits64`
 
 ## [v1.9.9](https://github.com/luxfi/node/releases/tag/v1.9.9)
@@ -3429,7 +3429,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### VMs
 
-- Populated non-trivial logger in the `rpcchainvm` `Server`'s `snow.Context`
+- Populated non-trivial logger in the `rpcchainvm` `Server`'s `consensus.Context`
 - Updated `rpcchainvm` proto definitions to use enums
 - Added `Block` format and definition to the `AVM`
 - Removed `proposervm` height index reset
@@ -3463,7 +3463,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 - Added subnet message serialization format
 - Added subnet message signing
-- Replaced `bls.SecretKey` with a `teleporter.Signer` in the `snow.Context`
+- Replaced `bls.SecretKey` with a `teleporter.Signer` in the `consensus.Context`
 - Moved `SNLookup` into the `validators.State` interface to support non-whitelisted chainID to subnetID lookups
 - Added support for non-whitelisted subnetIDs for fetching the validator set at a given height
 - Added subnet message verification
@@ -3554,7 +3554,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### Chain Data
 
-- Added `ChainDataDir` to the `snow.Context` to allow blockchains to canonically access disk outside node's database
+- Added `ChainDataDir` to the `consensus.Context` to allow blockchains to canonically access disk outside node's database
 - Added `--chain-data-dir` as a CLI flag to specify the base directory for all `ChainDataDir`s
 
 ### Miscellaneous
@@ -3562,7 +3562,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Removed `Version` from the `peer.Network` interface
 - Removed `Pong` from the `peer.Network` interface
 - Reduced memory allocations inside the system throttler
-- Added `CChainID` to the `snow.Context`
+- Added `CChainID` to the `consensus.Context`
 - Converted all sorting to utilize generics
 - Converted all set management to utilize generics
 
@@ -3578,7 +3578,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Added `tracedVM` implementations for `block.ChainVM` and `vertex.DAGVM`
 - Added `tracedState` implementation for `validators.State`
 - Added `tracedHandler` implementation for `http.Handler`
-- Added `tracedConsensus` implementations for `snowman.Consensus` and `lux.Consensus`
+- Added `tracedConsensus` implementations for `consensusman.Consensus` and `lux.Consensus`
 
 ### Fixes
 
@@ -3653,7 +3653,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### RPCChainVM
 
-- Added `validators.State` to the rpcchainvm server's `snow.Context`
+- Added `validators.State` to the rpcchainvm server's `consensus.Context`
 - Added `rpcProtocolVersion` to the output of `info.getNodeVersion`
 - Added `rpcchainvm` protocol version to the output of the `--version` flag
 - Added `version.RPCChainVMProtocolCompatibility` map to easily compare plugin compatibility against node versions
@@ -3688,7 +3688,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Added Ledger support to the Primary Network wallet
 - Converted Bionic builds to Jammy builds
 - Added `mock.gen.sh` to programmatically generate mock implementations
-- Added BLS signer to the `snow.Context`
+- Added BLS signer to the `consensus.Context`
 - Moved `base` from `rpc.NewEndpointRequester` to be included in the `method` in `SendRequest`
 - Converted `UnboundedQueue` to `UnboundedDeque`
 
@@ -3709,7 +3709,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 - Fixed ProposerVM inner block caching after verification
 - Fixed PlatformVM mempool verification to use an updated chain time
 - Removed deprecated CLI flags: `--dynamic-update-duration`, `--dynamic-public-ip`
-- Added unexpected Put bytes tests to the Lux and Snowman consensus engines
+- Added unexpected Put bytes tests to the Lux and Consensusman consensus engines
 - Removed mockery generated mock implementations
 - Converted safe math functions to use generics where possible
 - Added linting to prevent usage of `assert` in unit tests
@@ -4015,7 +4015,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Added bootstrapping ETA metrics
 - Converted all logs to support structured fields
-- Improved Snowman++ oracle block verification error messages
+- Improved Consensusman++ oracle block verification error messages
 - Removed deprecated or unused scripts
 
 ## [v1.7.16](https://github.com/luxfi/node/releases/tag/v1.7.16)
@@ -4049,7 +4049,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### Fixes
 
-- Updated Snowman and Lux consensus engines to report original container preferences before processing the provided container
+- Updated Consensusman and Lux consensus engines to report original container preferences before processing the provided container
 - Fixed inbound message byte throttler context cancellation cleanup
 - Removed case sensitivity of IP resolver services
 - Added failing health check when a whitelisted subnet fails to initialize a chain
@@ -4078,7 +4078,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### PlatformVM
 
-- Fixed incorrect `P-chain` height in `Snowman++` when staking is disabled
+- Fixed incorrect `P-chain` height in `Consensusman++` when staking is disabled
 - Moved `platformvm` transactions to be defined in a sub-package
 - Moved `platformvm` genesis management to be defined in a sub-package
 - Moved `platformvm` state to be defined in a sub-package
@@ -4128,8 +4128,8 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Added process metrics by default in the `rpcchainvm#Server`
 - Added `Database` health checks
 - Removed the deprecated `Database.Stat` call from the `rpcdb#Server`
-- Added fail fast logic to duplicated Snowman additions to avoid undefined behavior
-- Added additional testing around Snowman diverged voting tests
+- Added fail fast logic to duplicated Consensusman additions to avoid undefined behavior
+- Added additional testing around Consensusman diverged voting tests
 - Deprecated `--dynamic-update-duration` and `--dynamic-public-ip` CLI flags
 - Added `--public-ip-resolution-frequency` and `--public-ip-resolution-service` to replace `--dynamic-update-duration` and `--dynamic-public-ip`, respectively
 
@@ -4167,7 +4167,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Refactored the avm to utilize the external txs package
 - Unified platformvm dropped tx handling
-- Clarified snowman child block acceptance calls
+- Clarified consensusman child block acceptance calls
 - Fixed small consensus typos
 - Reduced minor duplicated code in consensus
 - Moved the platformvm key factory out of the VM into the test file
@@ -4225,7 +4225,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### Networking
 
-- Added `--snow-mixed-query-num-push-vdr` and `--snow-mixed-query-num-push-non-vdr` to allow parameterization of sending push queries
+- Added `--consensus-mixed-query-num-push-vdr` and `--consensus-mixed-query-num-push-non-vdr` to allow parameterization of sending push queries
   - By default, non-validators now send only pull queries, not push queries.
   - By default, validators now send both pull queries and push queries upon inserting a container into consensus. Previously, nodes sent only push queries.
 - Added metrics to track the amount of over gossiping of `peerlist` messages
@@ -4261,7 +4261,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Increased recommended disk size to 1 TB
 - Updated issue template
-- Documented additional `snowman.Block` invariants
+- Documented additional `consensusman.Block` invariants
 
 ## [v1.7.10](https://github.com/luxfi/node/releases/tag/v1.7.10)
 
@@ -4482,11 +4482,11 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### Consensus
 
-- Removed deprecated Snowstorm consensus implementation that no longer aligned with the updated specification.
+- Removed deprecated Consensusstorm consensus implementation that no longer aligned with the updated specification.
 - Updated bootstrapping logs to no longer reset counters after a node restart.
-- Added bootstrapping ETAs for fetching Snowman blocks and executing operations.
+- Added bootstrapping ETAs for fetching Consensusman blocks and executing operations.
 - Renamed the `MultiPut` message to the `Ancestors` message to match other message naming conventions.
-- Introduced Whitelist conflicts into the Snowstorm specification that will be used in future X-chain improvements.
+- Introduced Whitelist conflicts into the Consensusstorm specification that will be used in future X-chain improvements.
 - Refactored the separation between the Bootstrapping engine and the Consensus engine to support Fast-Sync.
 
 ### Geth
@@ -4636,7 +4636,7 @@ The changes in the upgrade go into effect at 1 PM EST, December 2nd 2021 on Main
 
 ### Configs
 
-- Removed `--snow-epoch-first-transition` and `snow-epoch-duration` as command line arguments.
+- Removed `--consensus-epoch-first-transition` and `consensus-epoch-duration` as command line arguments.
 
 ## [v1.6.5](https://github.com/luxfi/node/releases/tag/v1.6.5)
 

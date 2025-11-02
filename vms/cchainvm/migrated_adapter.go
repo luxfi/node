@@ -242,6 +242,14 @@ func (m *MigratedDataAdapter) AncientSize(kind string) (uint64, error) {
 	return 0, nil
 }
 
+// AncientBytes retrieves the value segment of the element specified by the id and value offsets.
+func (m *MigratedDataAdapter) AncientBytes(kind string, id, offset, length uint64) ([]byte, error) {
+	if ancientStore, ok := m.underlying.(ethdb.AncientReaderOp); ok {
+		return ancientStore.AncientBytes(kind, id, offset, length)
+	}
+	return nil, fmt.Errorf("ancient store not supported")
+}
+
 // ReadAncients runs the given read operation while ensuring that no writes take place
 // on the underlying ancient store.
 func (m *MigratedDataAdapter) ReadAncients(fn func(ethdb.AncientReaderOp) error) error {

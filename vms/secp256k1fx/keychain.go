@@ -117,8 +117,13 @@ func (kc Keychain) AddressSet() set.Set[ids.ShortID] {
 	return kc.Addrs
 }
 
-// Addresses returns a list of addresses this keychain manages (implements keychain.Keychain)
-func (kc Keychain) Addresses() []ids.ShortID {
+// Addresses returns a set of addresses this keychain manages (implements keychain.Keychain)
+func (kc Keychain) Addresses() set.Set[ids.ShortID] {
+	return kc.Addrs
+}
+
+// AddressList returns a list of addresses this keychain manages
+func (kc Keychain) AddressList() []ids.ShortID {
 	return kc.List()
 }
 

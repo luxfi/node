@@ -31,8 +31,8 @@ type ConsensusPlugin interface {
     GetValidatorSet(height uint64) (validators.Set, error)
     
     // Block processing
-    BuildBlock(ctx context.Context) (snowman.Block, error)
-    ParseBlock(ctx context.Context, bytes []byte) (snowman.Block, error)
+    BuildBlock(ctx context.Context) (consensusman.Block, error)
+    ParseBlock(ctx context.Context, bytes []byte) (consensusman.Block, error)
     
     // State management
     GetState() database.Database

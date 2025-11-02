@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -12,10 +12,10 @@ import (
 
 	_ "embed"
 
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/platformvm/signer"
@@ -322,7 +322,7 @@ func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 	}
 	require.Equal(expectedBytes, txBytes)
 
-	ctx := snowtest.Context(t, constants.PlatformChainID)
+	ctx := consensustest.Context(t, constants.PlatformChainID)
 	unsignedTx.InitCtx(ctx)
 
 	txJSON, err := json.MarshalIndent(unsignedTx, "", "\t")
@@ -331,7 +331,7 @@ func TestRegisterL1ValidatorTxSerialization(t *testing.T) {
 }
 
 func TestRegisterL1ValidatorTxSyntacticVerify(t *testing.T) {
-	ctx := snowtest.Context(t, ids.GenerateTestID())
+	ctx := consensustest.Context(t, ids.GenerateTestID())
 	tests := []struct {
 		name        string
 		tx          *RegisterL1ValidatorTx

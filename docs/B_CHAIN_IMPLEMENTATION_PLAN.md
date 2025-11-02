@@ -60,7 +60,7 @@ package mpc
 
 import (
     "github.com/luxfi/node/ids"
-    "github.com/luxfi/node/snow/consensus/snowman"
+    "github.com/luxfi/node/consensus/consensus/consensusman"
 )
 
 type Manager struct {
@@ -90,13 +90,13 @@ package bvm
 
 import (
     "github.com/luxfi/node/database"
-    "github.com/luxfi/node/snow"
-    "github.com/luxfi/node/snow/engine/snowman/block"
+    "github.com/luxfi/node/consensus"
+    "github.com/luxfi/node/consensus/engine/consensusman/block"
     "github.com/luxfi/node/vms/bvm/mpc"
 )
 
 type VM struct {
-    ctx         *snow.Context
+    ctx         *consensus.Context
     db          database.Database
     
     // Bridge components
@@ -114,7 +114,7 @@ type VM struct {
 
 func (vm *VM) Initialize(
     ctx context.Context,
-    snowCtx *snow.Context,
+    consensusCtx *consensus.Context,
     db database.Database,
     genesisBytes []byte,
     upgradeBytes []byte,
@@ -123,7 +123,7 @@ func (vm *VM) Initialize(
     _ []*common.Fx,
     _ common.AppSender,
 ) error {
-    vm.ctx = snowCtx
+    vm.ctx = consensusCtx
     vm.db = db
     
     // Initialize MPC manager
