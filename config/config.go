@@ -92,8 +92,8 @@ var (
 	errFileDoesNotExist                       = errors.New("file does not exist")
 )
 
-func getConsensusConfig(v *viper.Viper) consensus.Parameters {
-	p := consensus.Parameters{
+func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
+	p := consensusconfig.Parameters{
 		K:                     v.GetInt(ConsensusSampleSizeKey),
 		AlphaPreference:       v.GetInt(ConsensusPreferenceQuorumSizeKey),
 		AlphaConfidence:       v.GetInt(ConsensusConfidenceQuorumSizeKey),
@@ -110,11 +110,11 @@ func getConsensusConfig(v *viper.Viper) consensus.Parameters {
 	return p
 }
 
-func getLoggingConfig(v *viper.Viper) (logging.Config, error) {
-	loggingConfig := logging.Config{}
+func getLoggingConfig(v *viper.Viper) (log.Config, error) {
+	loggingConfig := log.Config{}
 	loggingConfig.Directory = getExpandedArg(v, LogsDirKey)
 	var err error
-	loggingConfig.LogLevel, err = logging.ToLevel(v.GetString(LogLevelKey))
+	loggingConfig.LogLevel, err = log.ToLevel(v.GetString(LogLevelKey))
 	if err != nil {
 		return loggingConfig, err
 	}
@@ -122,11 +122,11 @@ func getLoggingConfig(v *viper.Viper) (logging.Config, error) {
 	if v.IsSet(LogDisplayLevelKey) {
 		logDisplayLevel = v.GetString(LogDisplayLevelKey)
 	}
-	loggingConfig.DisplayLevel, err = logging.ToLevel(logDisplayLevel)
+	loggingConfig.DisplayLevel, err = log.ToLevel(logDisplayLevel)
 	if err != nil {
 		return loggingConfig, err
 	}
-	loggingConfig.LogFormat, err = logging.ToFormat(v.GetString(LogFormatKey), os.Stdout.Fd())
+	loggingConfig.LogFormat, err = log.ToFormat(v.GetString(LogFormatKey), os.Stdout.Fd())
 	loggingConfig.DisableWriterDisplaying = v.GetBool(LogDisableDisplayPluginLogsKey)
 	loggingConfig.MaxSize = int(v.GetUint(LogRotaterMaxSizeKey))
 	loggingConfig.MaxFiles = int(v.GetUint(LogRotaterMaxFilesKey))
@@ -423,7 +423,7 @@ func getNetworkConfig(
 	return config, nil
 }
 
-func getBenchlistConfig(v *viper.Viper, consensusParameters consensus.Parameters) (benchlist.Config, error) {
+func getBenchlistConfig(v *viper.Viper, consensusParameters consensusconfig.Parameters) (benchlist.Config, error) {
 	// AlphaConfidence is used here to ensure that benching can't cause a
 	// liveness failure. If AlphaPreference were used, the benchlist may grow to
 	// a point that committing would be extremely unlikely to happen.
@@ -1060,14 +1060,14 @@ func readChainConfigPath(chainConfigPath string) (map[string]chains.ChainConfig,
 
 // getSubnetConfigs reads net configs from the correct place
 // (flag or file) and returns a non-nil map.
-func getSubnetConfigs(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]subnets.Config, error) {
+func getSubnetConfigs(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Config, error) {
 	if v.IsSet(SubnetConfigContentKey) {
 		return getSubnetConfigsFromFlags(v, netIDs)
 	}
 	return getSubnetConfigsFromDir(v, netIDs)
 }
 
-func getSubnetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]subnets.Config, error) {
+func getSubnetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Config, error) {
 	subnetConfigContentB64 := v.GetString(SubnetConfigContentKey)
 	subnetConfigContent, err := base64.StdEncoding.DecodeString(subnetConfigContentB64)
 	if err != nil {
@@ -1080,7 +1080,7 @@ func getSubnetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]subn
 		return nil, fmt.Errorf("could not unmarshal JSON: %w", err)
 	}
 
-	res := make(map[ids.ID]subnets.Config)
+	res := make(map[ids.ID]nets.Config)
 	for _, subnetID := range subnetIDs {
 		config := getDefaultSubnetConfig(v)
 
@@ -1106,13 +1106,13 @@ func getSubnetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]subn
 }
 
 // getSubnetConfigsFromDir reads SubnetConfigs to node config map
-func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]subnets.Config, error) {
+func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]nets.Config, error) {
 	subnetConfigPath, err := getPathFromDirKey(v, SubnetConfigDirKey)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetConfigs := make(map[ids.ID]subnets.Config)
+	subnetConfigs := make(map[ids.ID]nets.Config)
 
 	// reads subnet config files from a path and given subnetIDs and returns a map.
 	for _, subnetID := range subnetIDs {
@@ -1165,8 +1165,8 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 	return subnetConfigs, nil
 }
 
-func getDefaultSubnetConfig(v *viper.Viper) subnets.Config {
-	config := subnets.Config{
+func getDefaultSubnetConfig(v *viper.Viper) nets.Config {
+	config := nets.Config{
 		ConsensusParameters:         getConsensusConfig(v),
 		ValidatorOnly:               false,
 		ProposerMinBlockDelay:       v.GetDuration(ProposerVMMinBlockDelayKey),
