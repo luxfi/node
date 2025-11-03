@@ -4,7 +4,6 @@
 package indexer
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -14,24 +13,16 @@ import (
 
 	"github.com/luxfi/consensus"
 	consensuscontext "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
-	// "github.com/luxfi/consensus/engine/dag/vertex" // Not used anymore
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/prefixdb"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/dag/vertex"
-	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/wrappers"
 )
@@ -138,13 +129,13 @@ type indexer struct {
 }
 
 // RegisterChain registers a chain for indexing
-func (i *indexer) RegisterChain(chainName string, ctx context.Context, vm interface{}) {
+func (i *indexer) RegisterChain(chainName string, ctx *consensuscontext.Context, vm core.VM) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
-	// Extract IDs from context using new helper functions
-	netID := consensuscontext.GetNetID(ctx)
-	chainID := consensuscontext.GetChainID(ctx)
+	// Extract IDs from context
+	netID := ctx.NetID
+	chainID := ctx.ChainID
 
 	if i.closed {
 		i.log.Debug("not registering chain to indexer",

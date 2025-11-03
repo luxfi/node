@@ -51,7 +51,7 @@ type Config struct {
 	MempoolPruneFrequency         time.Duration    `json:"mempool-prune-frequency"`
 	SybilProtectionEnabled        bool             `json:"sybil-protection-enabled"`
 	TrackedSubnets                set.Set[ids.ID]  `json:"tracked-subnets"`
-	Chains                        *chains.Manager  `json:"-"`
+	Chains                        chains.Manager   `json:"-"`
 }
 
 // GetConfig returns a Config from the provided json encoded bytes. If a

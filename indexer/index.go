@@ -9,13 +9,11 @@ import (
 	"fmt"
 	"sync"
 
-	"go.uber.org/zap"
-
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 )
@@ -79,14 +77,13 @@ func newIndex(
 	}
 
 	// Get next accepted index from db
-	nextAcceptedIndex, err := database.WithDefault(
-		database.GetUInt64,
-		i.vDB,
-		nextAcceptedIndexKey,
-		0,
-	)
+	nextAcceptedIndex, err := database.GetUInt64(i.vDB, nextAcceptedIndexKey)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get next accepted index from database: %w", err)
+		if err == database.ErrNotFound {
+			nextAcceptedIndex = 0
+		} else {
+			return nil, fmt.Errorf("couldn't get next accepted index from database: %w", err)
+		}
 	}
 
 	i.nextAcceptedIndex = nextAcceptedIndex

@@ -92,14 +92,14 @@ type Internal struct {
 // the subnet that validates the chain
 func (c *Internal) CreateChain(chainID ids.ID, tx *txs.CreateChainTx) {
 	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all chains
-		constants.PrimaryNetworkID != tx.SubnetID && // All nodes must validate the primary network
-		!c.TrackedSubnets.Contains(tx.SubnetID) { // This node doesn't validate this blockchain
+		constants.PrimaryNetworkID != tx.NetID && // All nodes must validate the primary network
+		!c.TrackedSubnets.Contains(tx.NetID) { // This node doesn't validate this blockchain
 		return
 	}
 
 	chainParams := chains.ChainParameters{
 		ID:          chainID,
-		SubnetID:    tx.SubnetID,
+		NetID:       tx.NetID,
 		GenesisData: tx.GenesisData,
 		VMID:        tx.VMID,
 		FxIDs:       tx.FxIDs,
