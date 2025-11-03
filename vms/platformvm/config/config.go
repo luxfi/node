@@ -7,6 +7,10 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/chains"
+	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
 )
 
@@ -30,21 +34,24 @@ var Default = Config{
 
 // Config contains all of the user-configurable parameters of the PlatformVM.
 type Config struct {
-	Network                       Network       `json:"network"`
-	BlockCacheSize                int           `json:"block-cache-size"`
-	TxCacheSize                   int           `json:"tx-cache-size"`
-	TransformedSubnetTxCacheSize  int           `json:"transformed-subnet-tx-cache-size"`
-	RewardUTXOsCacheSize          int           `json:"reward-utxos-cache-size"`
-	ChainCacheSize                int           `json:"chain-cache-size"`
-	ChainDBCacheSize              int           `json:"chain-db-cache-size"`
-	BlockIDCacheSize              int           `json:"block-id-cache-size"`
-	FxOwnerCacheSize              int           `json:"fx-owner-cache-size"`
-	SubnetToL1ConversionCacheSize int           `json:"subnet-to-l1-conversion-cache-size"`
-	L1WeightsCacheSize            int           `json:"l1-weights-cache-size"`
-	L1InactiveValidatorsCacheSize int           `json:"l1-inactive-validators-cache-size"`
-	L1SubnetIDNodeIDCacheSize     int           `json:"l1-subnet-id-node-id-cache-size"`
-	ChecksumsEnabled              bool          `json:"checksums-enabled"`
-	MempoolPruneFrequency         time.Duration `json:"mempool-prune-frequency"`
+	Network                       Network          `json:"network"`
+	BlockCacheSize                int              `json:"block-cache-size"`
+	TxCacheSize                   int              `json:"tx-cache-size"`
+	TransformedSubnetTxCacheSize  int              `json:"transformed-subnet-tx-cache-size"`
+	RewardUTXOsCacheSize          int              `json:"reward-utxos-cache-size"`
+	ChainCacheSize                int              `json:"chain-cache-size"`
+	ChainDBCacheSize              int              `json:"chain-db-cache-size"`
+	BlockIDCacheSize              int              `json:"block-id-cache-size"`
+	FxOwnerCacheSize              int              `json:"fx-owner-cache-size"`
+	SubnetToL1ConversionCacheSize int              `json:"subnet-to-l1-conversion-cache-size"`
+	L1WeightsCacheSize            int              `json:"l1-weights-cache-size"`
+	L1InactiveValidatorsCacheSize int              `json:"l1-inactive-validators-cache-size"`
+	L1SubnetIDNodeIDCacheSize     int              `json:"l1-subnet-id-node-id-cache-size"`
+	ChecksumsEnabled              bool             `json:"checksums-enabled"`
+	MempoolPruneFrequency         time.Duration    `json:"mempool-prune-frequency"`
+	SybilProtectionEnabled        bool             `json:"sybil-protection-enabled"`
+	TrackedSubnets                set.Set[ids.ID]  `json:"tracked-subnets"`
+	Chains                        *chains.Manager  `json:"-"`
 }
 
 // GetConfig returns a Config from the provided json encoded bytes. If a

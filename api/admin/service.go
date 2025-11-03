@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/rpc/v2"
+	// "go.uber.org/zap" // Unused
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
@@ -17,14 +18,11 @@ import (
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/database"
-	"github.com/luxfi/node/internal/database/rpcdb"
-	"github.com/luxfi/ids"
+	// "github.com/luxfi/node/internal/database/rpcdb" // Unused
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/formatting"
 	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/vms"
@@ -296,9 +294,9 @@ type GetLoggerLevelArgs struct {
 // GetLoggerLevel returns the log level and display level of all loggers.
 func (a *Admin) GetLoggerLevel(_ *http.Request, args *GetLoggerLevelArgs, reply *LoggerLevelReply) error {
 	a.Log.Debug("API called",
-		zap.String("service", "admin"),
-		zap.String("method", "getLoggerLevel"),
-		logging.UserString("loggerName", args.LoggerName),
+		log.String("service", "admin"),
+		log.String("method", "getLoggerLevel"),
+		log.String("loggerName", args.LoggerName),
 	)
 
 	a.lock.RLock()

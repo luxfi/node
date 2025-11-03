@@ -14,13 +14,13 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/consensus/networking/benchlist"
-	"github.com/luxfi/consensus/networking/router"
+	// "github.com/luxfi/consensus/networking/router" // Unused
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/node/nets"
+	// "github.com/luxfi/node/nets" // Unused
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/log"
+	// "github.com/luxfi/log" // Unused
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer"
@@ -152,7 +152,7 @@ type Config struct {
 
 	ProfilerConfig profiler.Config `json:"profilerConfig"`
 
-	LoggingConfig logging.Config `json:"loggingConfig"`
+	// LoggingConfig logging.Config `json:"loggingConfig"` // logging package not available
 
 	PluginDir string `json:"pluginDir"`
 
@@ -162,8 +162,8 @@ type Config struct {
 	// Metrics
 	MeterVMEnabled bool `json:"meterVMEnabled"`
 
-	RouterHealthConfig       router.HealthConfig `json:"routerHealthConfig"`
-	ConsensusShutdownTimeout time.Duration       `json:"consensusShutdownTimeout"`
+	// RouterHealthConfig       router.HealthConfig `json:"routerHealthConfig"` // router.HealthConfig not available
+	ConsensusShutdownTimeout time.Duration `json:"consensusShutdownTimeout"`
 	// Poll for new frontiers every [FrontierPollFrequency]
 	FrontierPollFrequency time.Duration `json:"consensusGossipFreq"`
 	// ConsensusAppConcurrency defines the maximum number of goroutines to
@@ -172,7 +172,7 @@ type Config struct {
 
 	TrackedSubnets set.Set[ids.ID] `json:"trackedSubnets"`
 
-	SubnetConfigs map[ids.ID]subnets.Config `json:"subnetConfigs"`
+	// SubnetConfigs map[ids.ID]subnets.Config `json:"subnetConfigs"` // subnets package not available
 
 	ChainConfigs map[string]chains.ChainConfig `json:"-"`
 	ChainAliases map[ids.ID][]string           `json:"chainAliases"`

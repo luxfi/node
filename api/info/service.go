@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/peer"
-	"github.com/luxfi/consensus/networking/benchlist"
+	// "github.com/luxfi/consensus/networking/benchlist" // Unused
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
@@ -36,31 +36,31 @@ var (
 	errNoChainProvided = errors.New("argument 'chain' not given")
 
 	mainnetGetTxFeeResponse = GetTxFeeResponse{
-		CreateSubnetTxFee:             json.Uint64(1 * units.Lux),
-		TransformSubnetTxFee:          json.Uint64(10 * units.Lux),
+		CreateNetTxFee:                json.Uint64(1 * units.Lux),
+		TransformNetTxFee:             json.Uint64(10 * units.Lux),
 		CreateBlockchainTxFee:         json.Uint64(1 * units.Lux),
 		AddPrimaryNetworkValidatorFee: json.Uint64(0),
 		AddPrimaryNetworkDelegatorFee: json.Uint64(0),
-		AddSubnetValidatorFee:         json.Uint64(units.MilliLux),
-		AddSubnetDelegatorFee:         json.Uint64(units.MilliLux),
+		AddNetValidatorFee:            json.Uint64(units.MilliLux),
+		AddNetDelegatorFee:            json.Uint64(units.MilliLux),
 	}
 	fujiGetTxFeeResponse = GetTxFeeResponse{
-		CreateSubnetTxFee:             json.Uint64(100 * units.MilliLux),
-		TransformSubnetTxFee:          json.Uint64(1 * units.Lux),
+		CreateNetTxFee:                json.Uint64(100 * units.MilliLux),
+		TransformNetTxFee:             json.Uint64(1 * units.Lux),
 		CreateBlockchainTxFee:         json.Uint64(100 * units.MilliLux),
 		AddPrimaryNetworkValidatorFee: json.Uint64(0),
 		AddPrimaryNetworkDelegatorFee: json.Uint64(0),
-		AddSubnetValidatorFee:         json.Uint64(units.MilliLux),
-		AddSubnetDelegatorFee:         json.Uint64(units.MilliLux),
+		AddNetValidatorFee:            json.Uint64(units.MilliLux),
+		AddNetDelegatorFee:            json.Uint64(units.MilliLux),
 	}
 	defaultGetTxFeeResponse = GetTxFeeResponse{
-		CreateSubnetTxFee:             json.Uint64(100 * units.MilliLux),
-		TransformSubnetTxFee:          json.Uint64(100 * units.MilliLux),
+		CreateNetTxFee:                json.Uint64(100 * units.MilliLux),
+		TransformNetTxFee:             json.Uint64(100 * units.MilliLux),
 		CreateBlockchainTxFee:         json.Uint64(100 * units.MilliLux),
 		AddPrimaryNetworkValidatorFee: json.Uint64(0),
 		AddPrimaryNetworkDelegatorFee: json.Uint64(0),
-		AddSubnetValidatorFee:         json.Uint64(units.MilliLux),
-		AddSubnetDelegatorFee:         json.Uint64(units.MilliLux),
+		AddNetValidatorFee:            json.Uint64(units.MilliLux),
+		AddNetDelegatorFee:            json.Uint64(units.MilliLux),
 	}
 )
 
@@ -320,8 +320,8 @@ func (i *Info) IsBootstrapped(_ *http.Request, args *IsBootstrappedArgs, reply *
 // Upgrades returns the upgrade schedule this node is running.
 func (i *Info) Upgrades(_ *http.Request, _ *struct{}, reply *upgrade.Config) error {
 	i.log.Debug("API called",
-		zap.String("service", "info"),
-		zap.String("method", "upgrades"),
+		log.String("service", "info"),
+		log.String("method", "upgrades"),
 	)
 
 	*reply = i.Parameters.Upgrades
@@ -396,16 +396,18 @@ func (i *Info) Lps(_ *http.Request, _ *struct{}, reply *LPsReply) error {
 			continue
 		}
 
-		for lpNum := range peer.SupportedLPs {
-			lp := reply.getLP(lpNum)
-			lp.Supporters.Add(peer.ID)
-			lp.SupportWeight += weight
-		}
-		for lpNum := range peer.ObjectedLPs {
-			lp := reply.getLP(lpNum)
-			lp.Objectors.Add(peer.ID)
-			lp.ObjectWeight += weight
-		}
+		// SupportedLPs and ObjectedLPs not available on peer.Info type
+		// for lpNum := range peer.SupportedLPs {
+		// 	lp := reply.getLP(lpNum)
+		// 	lp.Supporters.Add(peer.ID)
+		// 	lp.SupportWeight += weight
+		// }
+		// for lpNum := range peer.ObjectedLPs {
+		// 	lp := reply.getLP(lpNum)
+		// 	lp.Objectors.Add(peer.ID)
+		// 	lp.ObjectWeight += weight
+		// }
+		_ = peer // Silence unused variable warning
 	}
 
 	totalWeight, err := i.validators.TotalWeight(constants.PrimaryNetworkID)
@@ -434,15 +436,15 @@ type GetTxFeeResponse struct {
 // GetTxFee returns the transaction fee in nLUX.
 func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) error {
 	i.log.Warn("deprecated API called",
-		zap.String("service", "info"),
-		zap.String("method", "getTxFee"),
+		log.String("service", "info"),
+		log.String("method", "getTxFee"),
 	)
 
 	switch i.NetworkID {
 	case constants.MainnetID:
 		*reply = mainnetGetTxFeeResponse
-	case constants.FujiID:
-		*reply = fujiGetTxFeeResponse
+	// case constants.FujiID: // FujiID not available in constants package
+	// 	*reply = fujiGetTxFeeResponse
 	default:
 		*reply = defaultGetTxFeeResponse
 	}

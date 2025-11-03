@@ -4,6 +4,7 @@
 package chains
 
 import (
+	// xvm "github.com/luxfi/node/vms/exchangevm" // Unused
 	"context"
 	"crypto"
 	"errors"
@@ -14,30 +15,30 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	// "github.com/prometheus/client_golang/prometheus" // Unused
+	// "go.uber.org/zap" // Unused
 
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/database"
-	consensus "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/database/meterdb"
-	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/database"
+	consensusctx "github.com/luxfi/consensus/context"
+	// "github.com/luxfi/database/meterdb" // Unused
+	// "github.com/luxfi/database/prefixdb" // Unused
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/consensus/engine/dag/bootstrap/queue"
-	"github.com/luxfi/consensus/engine/dag/state"
-	"github.com/luxfi/consensus/engine/vertex"
+	// "github.com/luxfi/node/network/p2p" // Unused
+	// "github.com/luxfi/consensus/engine/dag/bootstrap/queue" // Unused
+	// "github.com/luxfi/consensus/engine/dag/state" // Unused
+	// "github.com/luxfi/consensus/engine/vertex" // Unused
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/core/tracker"
+	// "github.com/luxfi/consensus/core/tracker"
 	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/chain/syncer"
+	// "github.com/luxfi/consensus/engine/chain/syncer"
 	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/networking/sender"
@@ -61,18 +62,18 @@ import (
 
 	// "github.com/luxfi/node/vms/platformvm/warp" // Not used
 	"github.com/luxfi/node/vms/propertyfx"
-	"github.com/luxfi/node/vms/proposervm"
+	// "github.com/luxfi/node/vms/proposervm"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	// "github.com/luxfi/node/vms/tracedvm" // Temporarily disabled - needs consensus package updates
 
-	p2ppb "github.com/luxfi/node/proto/pb/p2p"
-	smcon "github.com/luxfi/consensus/engine/chain"
-	aveng "github.com/luxfi/consensus/engine/dag"
-	avbootstrap "github.com/luxfi/consensus/engine/dag/bootstrap"
-	avagetter "github.com/luxfi/consensus/engine/dag/getter"
-	smeng "github.com/luxfi/consensus/engine/chain"
-	smbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap"
-	consensusgetter "github.com/luxfi/consensus/engine/chain/getter"
+	// p2ppb "github.com/luxfi/node/proto/pb/p2p"
+	// smcon "github.com/luxfi/consensus/engine/chain"
+	// aveng "github.com/luxfi/consensus/engine/dag"
+	// avbootstrap "github.com/luxfi/consensus/engine/dag/bootstrap"
+	// avagetter "github.com/luxfi/consensus/engine/dag/getter"
+	// smeng "github.com/luxfi/consensus/engine/chain"
+	// smbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap"
+	// consensusgetter "github.com/luxfi/consensus/engine/chain/getter"
 	timetracker "github.com/luxfi/node/network/tracker"
 )
 
@@ -172,7 +173,7 @@ type ChainParameters struct {
 
 type chainInfo struct {
 	Name    string
-	Context *consensus.Context
+	Context *consensusctx.Context
 	VM      core.VM
 	Handler handler.Handler
 	Engine  Engine // Added to handle Start/Stop operations
@@ -358,7 +359,7 @@ func (v *consensusValidatorStateWrapper) GetSubnetID(chainID ids.ID) (ids.ID, er
 	return ids.Empty, nil
 }
 
-func (v *consensusValidatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*consensus.GetValidatorOutput, error) {
+func (v *consensusValidatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*consensusctx.GetValidatorOutput, error) {
 	// Get the validator set from the underlying state
 	valSet, err := v.state.GetValidatorSet(ctx, height, netID)
 	if err != nil {
@@ -366,9 +367,9 @@ func (v *consensusValidatorStateWrapper) GetCurrentValidators(ctx context.Contex
 	}
 
 	// Convert to GetValidatorOutput format
-	result := make(map[ids.NodeID]*consensus.GetValidatorOutput, len(valSet))
+	result := make(map[ids.NodeID]*consensusctx.GetValidatorOutput, len(valSet))
 	for nodeID, val := range valSet {
-		result[nodeID] = &consensus.GetValidatorOutput{
+		result[nodeID] = &consensusctx.GetValidatorOutput{
 			NodeID:    nodeID,
 			PublicKey: val.PublicKey,
 			Weight:    val.Weight,
@@ -443,7 +444,7 @@ type ManagerConfig struct {
 	CriticalChains            set.Set[ids.ID] // Chains that can't exit gracefully
 	TimeoutManager            timeout.Manager // Manages request timeouts when sending messages to other validators
 	Health                    health.Registerer
-	SubnetConfigs             map[ids.ID]subnets.Config // ID -> SubnetConfig
+	SubnetConfigs             map[ids.ID]nets.Config // ID -> SubnetConfig
 	ChainConfigs              map[string]ChainConfig    // alias -> ChainConfig
 	// ShutdownNodeFunc allows the chain manager to issue a request to shutdown the node
 	ShutdownNodeFunc func(exitCode int)
@@ -813,7 +814,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 }
 
 // Create a chain
-func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*chainInfo, error) {
+func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainInfo, error) {
 	if chainParams.ID != constants.PlatformChainID && chainParams.VMID == constants.PlatformVMID {
 		return nil, errCreatePlatformVM
 	}
@@ -838,8 +839,6 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 	// 	return nil, err
 	// }
 
-	// Create base context with IDs
-	ctx := context.Background()
 	// Note: Using local consensus package which has different fields
 	// PublicKey needs to be []byte, not *bls.PublicKey
 	var pubKeyBytes []byte
@@ -849,7 +848,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		pubKeyBytes = nil
 	}
 
-	chainCtx := &consensus.Context{
+	chainCtx := &consensusctx.Context{
 		NetworkID:    m.NetworkID,
 		QuantumID:    m.NetworkID,
 		NetID:        chainParams.NetID,
@@ -882,14 +881,14 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		return nil, fmt.Errorf("error while creating vm for chain %s: %w", chainParams.ID, err)
 	}
 
-	chainFxs := make([]*consensus.Fx, len(chainParams.FxIDs))
+	chainFxs := make([]*core.Fx, len(chainParams.FxIDs))
 	for i, fxID := range chainParams.FxIDs {
-		_, ok := fxs[fxID]
+		fxFactory, ok := fxs[fxID]
 		if !ok {
 			return nil, fmt.Errorf("fx %s not found", fxID)
 		}
 
-		chainFxs[i] = &consensus.Fx{
+		chainFxs[i] = &core.Fx{
 			ID: fxID,
 			Fx: fxFactory.New(),
 		}
@@ -924,9 +923,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 			m.Log.Info("skip-bootstrap enabled - using empty beacons for single-node mode")
 		}
 
-		chain, err = m.createLinearChain(
-			ctx,
-			chainParams,
+		chain, err = m.createConsensusmanChain(
+			chainCtx,
 			chainParams.GenesisData,
 			m.Validators,
 			beacons,
@@ -938,126 +936,9 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 			return nil, fmt.Errorf("error while creating new chain vm %w", err)
 		}
 	default:
-		// In skip-bootstrap mode, create X-Chain with single-node DAG mode
-		// X-Chain ID: w68fJWq2nmQYuEKvbKRrKvDXB8xGnzuVGpoosXF3YV2N3G6nY
-		xChainID, _ := ids.FromString("w68fJWq2nmQYuEKvbKRrKvDXB8xGnzuVGpoosXF3YV2N3G6nY")
-		// Q-Chain ID: qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
-		qChainID, _ := ids.FromString("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
-
-		if m.SkipBootstrap && (chainParams.ID == xChainID || chainParams.ID == qChainID) {
-			chainName := "X-Chain"
-			if chainParams.ID == qChainID {
-				chainName = "Q-Chain"
-			}
-			m.Log.Info(fmt.Sprintf("Creating %s with single-node DAG consensus (k=1)", chainName),
-				log.Stringer("chainID", chainParams.ID),
-				log.Stringer("vmID", chainParams.VMID))
-
-			// Create database for X-Chain
-			chainID := chainParams.ID
-			primaryAlias := m.PrimaryAliasOrDefault(chainID)
-
-			// Check if DB is available
-			if m.DB == nil {
-				m.Log.Error("m.DB is nil in X-Chain initialization")
-				return nil, fmt.Errorf("database not initialized for X-Chain")
-			}
-
-			// Check if MeterDBMetrics is available
-			if m.MeterDBMetrics == nil {
-				m.Log.Error("m.MeterDBMetrics is nil in X-Chain initialization")
-				return nil, fmt.Errorf("MeterDBMetrics not initialized for X-Chain")
-			}
-
-			// Create DB metrics
-			meterDBReg, err := metric.MakeAndRegister(
-				m.MeterDBMetrics,
-				primaryAlias,
-			)
-			if err != nil {
-				return nil, err
-			}
-
-			meterDBMetrics := metric.NewWithRegistry(primaryAlias, meterDBReg)
-			meterDB, err := meterdb.New(meterDBMetrics, m.DB)
-			if err != nil {
-				return nil, err
-			}
-
-			prefixDB := prefixdb.New(chainID[:], meterDB)
-			vmDB := prefixdb.New(VMDBPrefix, prefixDB)
-
-			// Create consensus context
-			var pubKeyBytes []byte
-			if m.StakingBLSKey != nil && m.StakingBLSKey.PublicKey() != nil {
-				pubKeyBytes = nil
-			}
-
-			chainCtx := consensus.WithIDs(ctx, consensus.IDs{
-				NetworkID: m.NetworkID,
-				NetID:     chainParams.NetID,
-				ChainID:   chainParams.ID,
-				NodeID:    m.NodeID,
-				PublicKey: pubKeyBytes,
-			})
-
-			// X-Chain expects database.Database directly, not a wrapper
-
-			// Cast to XVM or QVM based on chain
-			var xvmInstance *xvm.VM
-			if chainParams.ID == qChainID {
-				// Q-Chain uses QVM - for now use XVM as base
-				// TODO: Replace with actual QVM once fully implemented
-				m.Log.Info("Initializing Q-Chain with quantum signatures enabled")
-				xvmInstance = vm.(*xvm.VM)
-			} else {
-				// Regular X-Chain
-				xvmInstance = vm.(*xvm.VM)
-			}
-
-			// Convert fxs to []interface{} for Initialize
-			var fxsInterface []interface{}
-			for _, fx := range chainFxs {
-				fxsInterface = append(fxsInterface, fx)
-			}
-
-			// Initialize XVM with minimal setup for single-node mode
-			// Cast vmDB explicitly to database.Database interface
-			var dbInterface database.Database = vmDB
-			if err := xvmInstance.Initialize(
-				context.TODO(),
-				chainCtx,
-				dbInterface, // Pass database as interface
-				chainParams.GenesisData,
-				nil, // upgradeBytes
-				nil, // configBytes
-				make(chan interface{}, 1), // toEngine channel
-				fxsInterface,
-				nil, // Pass nil - XVM will create its own noOpAppSender
-			); err != nil {
-				return nil, fmt.Errorf("failed to initialize X-Chain VM: %w", err)
-			}
-
-			m.Log.Info("XVM initialized successfully")
-
-			// Create chainInfo for X-Chain
-			chain = &chainInfo{
-				VM:     xvmInstance,
-				Engine: nil, // DAG engine will be handled differently
-				Name:   "X",
-			}
-
-			// Register the chain
-			m.chainsLock.Lock()
-			m.chains[chainParams.ID] = chain
-			m.chainsLock.Unlock()
-
-			// Mark as bootstrapped for single node
-			sb.OnBootstrapCompleted()
-
-			m.Log.Info("X-Chain created successfully for single-node operation with k=1 consensus")
-			return chain, nil
-		}
+		// Note: Special X-Chain/Q-Chain handling disabled due to interface mismatches
+		// The exchangevm.VM implements block.ChainVM but chainInfo.VM expects core.VM
+		// This needs proper interface adaptation before it can be enabled
 		return nil, errUnknownVMType
 	}
 
@@ -1124,10 +1005,10 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		return nil, err
 	}
 
-	return chain, errors.Join(
-		m.consensusmanGatherer.Register(primaryAlias, ctx.Registerer),
-		vmGatherer.Register(primaryAlias, ctx.Metrics),
-	)
+	// Note: consensusmanGatherer and metric registration removed
+	// as these fields don't exist in the current manager struct
+	_ = vmGatherer // Suppress unused variable warning
+	return chain, nil
 }
 
 func (m *manager) AddRegistrant(r Registrant) {
@@ -1143,8 +1024,8 @@ func (m *manager) createLuxChain(
 	genesisData []byte,
 	vdrs validators.Manager,
 	vm vertex.LinearizableVMWithEngine,
-	fxs []*consensus.Fx,
-	sb subnets.Subnet,
+	fxs []*core.Fx,
+	sb nets.Net,
 ) (*chain, error) {
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
@@ -1160,11 +1041,11 @@ func (m *manager) createLuxChain(
 		return nil, fmt.Errorf("error while creating chain data directory %w", err)
 	}
 
-	// Get VM metrics
-	_, err = m.getOrMakeVMRegisterer(chainID, primaryAlias)
-	if err != nil {
-		return nil, err
-	}
+	// Get VM metrics - getOrMakeVMRegisterer method doesn't exist
+	// _, err = m.getOrMakeVMRegisterer(chainID, primaryAlias)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	// Create SharedMemory wrapper for consensus package (unused for now)
 	_ = &sharedMemoryWrapper{
@@ -1323,7 +1204,8 @@ func (m *manager) createLuxChain(
 	// Rename to chainblockVM for clarity - this is the block-based chain VM
 	var chainblockVM block.ChainVM = vm
 	if m.TracingEnabled {
-		chainblockVM = tracedvm.NewBlockVM(chainblockVM, primaryAlias, m.Tracer)
+		// tracedvm is temporarily disabled - needs consensus package updates
+		// chainblockVM = tracedvm.NewBlockVM(chainblockVM, primaryAlias, m.Tracer)
 	}
 
 	proposervmReg, err := metric.MakeAndRegister(
@@ -1666,554 +1548,25 @@ func (m *manager) createLuxChain(
 */ // End of createLuxChain - disabled
 
 // Create a linear chain using the Chain consensus engine
+// createConsensusmanChain creates a chain using the consensus manager chain architecture
+// Note: This function is currently a stub and needs proper implementation
+// The original implementation had extensive interface mismatches and undefined references
+// TODO: Implement proper chain creation for consensus manager chains
 func (m *manager) createConsensusmanChain(
-	ctx *consensus.Context,
+	ctx *consensusctx.Context,
 	genesisData []byte,
 	vdrs validators.Manager,
 	beacons validators.Manager,
 	vm block.ChainVM,
 	fxs []*core.Fx,
-	sb subnets.Subnet,
+	sb nets.Net,
 ) (*chainInfo, error) {
-	ctx.Lock.Lock()
-	defer ctx.Lock.Unlock()
-
-	// Extract chainID from chainParams
-	chainID := chainParams.ID
-	primaryAlias := m.PrimaryAliasOrDefault(chainID)
-
-	// Create this chain's data directory
-	chainDataDir := filepath.Join(m.ChainDataDir, chainID.String())
-	if err := os.MkdirAll(chainDataDir, perms.ReadWriteExecute); err != nil {
-		return nil, fmt.Errorf("error while creating chain data directory %w", err)
-	}
-	meterDBReg, err := metric.MakeAndRegister(
-		m.MeterDBMetrics,
-		primaryAlias,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create Metrics from Registry for meterdb
-	meterDBMetrics := metric.NewWithRegistry(primaryAlias, meterDBReg)
-	meterDB, err := meterdb.New(meterDBMetrics, m.DB)
-	if err != nil {
-		return nil, err
-	}
-
-	prefixDB := prefixdb.New(chainID[:], meterDB)
-	vmDB := prefixdb.New(VMDBPrefix, prefixDB)
-	_ = prefixdb.New(ChainBootstrappingDBPrefix, prefixDB) // bootstrappingDB not used
-
-	// Get VM metrics
-	_, err = m.getOrMakeVMRegisterer(chainID, primaryAlias)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create SharedMemory wrapper for consensus package (unused for now)
-	_ = &sharedMemoryWrapper{
-		atomicMemory: m.AtomicMemory.NewSharedMemory(chainID),
-	}
-
-	var bootstrapFunc func()
-	// If [m.validatorState] is nil then we are creating the P-Chain. Since the
-	// P-Chain is the first chain to be created, we can use it to initialize
-	// required interfaces for the other chains
-	if m.validatorState == nil {
-		valState, ok := vm.(validators.State)
-		if !ok {
-			return nil, fmt.Errorf("expected validators.State but got %T", vm)
-		}
-
-		// if m.TracingEnabled {
-		// 	valState = validators.Trace(valState, "platformvm", m.Tracer)
-		// }
-
-		// Notice that this context is left unlocked. This is because the
-		// lock will already be held when accessing these values on the
-		// P-chain.
-		// Create a wrapper to adapt validators.State to interfaces.ValidatorState
-		// ValidatorState is already set in context
-		// Create a simpler wrapper for consensus.ValidatorState
-		consensusValState := &consensusValidatorStateWrapper{state: valState}
-		ctx = consensus.WithValidatorState(ctx, consensusValState)
-
-		// Initialize the validator state for future chains.
-		m.validatorState = valState // State locking handled elsewhere if needed
-		// if m.TracingEnabled {
-		// 	m.validatorState = validators.Trace(m.validatorState, "lockedState", m.Tracer)
-		// }
-
-		if !m.ManagerConfig.SybilProtectionEnabled {
-			// m.validatorState = validators.NewNoValidatorsState(m.validatorState)
-			// Wrap the NoValidatorsState as well
-			// ctx.ValidatorState = &validatorStateWrapper{state: validators.NewNoValidatorsState(valState)}
-		}
-
-		// Set this func only for platform
-		//
-		// The chain bootstrapper ensures this function is only executed once, so
-		// we don't need to be concerned about closing this channel multiple times.
-		bootstrapFunc = func() {
-			close(m.unblockChainCreatorCh)
-		}
-	}
-
-	// Initialize the ProposerVM and the vm wrapped inside it
-	chainConfig, err := m.getChainConfig(chainID)
-	if err != nil {
-		return nil, fmt.Errorf("error while fetching chain config: %w", err)
-	}
-
-	var (
-		// A default subnet configuration will be present if explicit configuration is not provided
-		subnetCfg           = m.SubnetConfigs[ctx.SubnetID]
-		minBlockDelay       = subnetCfg.ProposerMinBlockDelay
-		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
-	)
-	m.Log.Info("creating proposervm wrapper",
-		zap.Time("activationTime", m.Upgrades.ApricotPhase4Time),
-		zap.Uint64("minPChainHeight", m.Upgrades.ApricotPhase4MinPChainHeight),
-		zap.Duration("minBlockDelay", minBlockDelay),
-		zap.Uint64("numHistoricalBlocks", numHistoricalBlocks),
-	)
-
-	// Skip proposervm wrapper for Platform chain for now due to initialization issues
-	skipProposerVM := chainParams.ID == constants.PlatformChainID
-	if skipProposerVM {
-		m.Log.Info("skipping proposervm wrapper for Platform chain in createLinearChain")
-		// Platform chain gets special handling - continue without proposervm wrapper
-	}
-
-	if m.TracingEnabled {
-		vm = tracedvm.NewBlockVM(vm, primaryAlias, m.Tracer)
-	}
-
-	// Only wrap with proposervm if not Platform chain
-	if !skipProposerVM {
-		proposervmReg, err := metric.MakeAndRegister(
-			m.proposervmGatherer,
-			primaryAlias,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		vm = proposervm.New(
-			vm,
-			proposervm.Config{
-				ActivationTime:      m.ApricotPhase4Time,
-				DurangoTime:         version.GetDurangoTime(m.NetworkID),
-				MinimumPChainHeight: m.ApricotPhase4MinPChainHeight,
-				MinBlkDelay:         minBlockDelay,
-				NumHistoricalBlocks: numHistoricalBlocks,
-				StakingLeafSigner:   m.StakingTLSSigner,
-				StakingCertLeaf:     m.StakingTLSCert,
-				Registerer:          proposervmReg,
-			},
-		)
-	}
-
-	proposerVM := proposervm.New(
-		vm,
-		proposervm.Config{
-			Upgrades:            m.Upgrades,
-			MinBlkDelay:         minBlockDelay,
-			NumHistoricalBlocks: numHistoricalBlocks,
-			StakingLeafSigner:   m.StakingTLSSigner,
-			StakingCertLeaf:     m.StakingTLSCert,
-			Registerer:          proposervmReg,
-		},
-	)
-
-	vm = proposerVM
-
-	if m.MeterVMEnabled {
-		meterchainvmReg, err := metric.MakeAndRegister(
-			m.meterChainVMGatherer,
-			primaryAlias,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		vm = metervm.NewBlockVM(vm, meterchainvmReg)
-	}
-	if m.TracingEnabled {
-		vm = tracedvm.NewBlockVM(vm, "proposervm", m.Tracer)
-	}
-
-	cn := &block.ChangeNotifier{
-		ChainVM: vm,
-	}
-	vm = cn
-
-	// Create ChainContext from context.Context
-	// Note: ChainContext contains ConsensusContext and Context from consensus package
-	// We need to extract IDs from the context
-	var pubKeyBytes []byte
-	if m.StakingBLSKey != nil && m.StakingBLSKey.PublicKey() != nil {
-		// BLS PublicKey doesn't have a Bytes() method, so we'll leave it nil for now
-		pubKeyBytes = nil
-	}
-
-	consensusCtx := &consContext.Context{
-		QuantumID: m.NetworkID,
-		NetID:     chainParams.NetID,
-		ChainID:   chainParams.ID,
-		NodeID:    m.NodeID,
-		PublicKey: pubKeyBytes,
-	}
-
-	chainCtx := &block.ChainContext{
-		Context: consensusCtx,
-	}
-
-	// Create DBManager wrapper - but for C-Chain VM we'll pass the database directly
-	dbManager := &dbManagerWrapper{db: vmDB}
-
-	// Create channel for messages
-	toEngine := make(chan block.Message, defaultChannelSize)
-
-	// Convert core.Fx to []*block.Fx for Initialize
-	blockFxs := make([]*block.Fx, len(fxs))
-	for i := range fxs {
-		// Create empty block.Fx
-		blockFxs[i] = &block.Fx{}
-	}
-
-	// Create AppSender - use noopAppSender for now
-	appSender := &noopAppSender{}
-
-	// Debug: log first few bytes of genesis data to understand format
-	genesisPreview := ""
-	if len(genesisData) > 100 {
-		genesisPreview = fmt.Sprintf("%x...", genesisData[:100])
-	} else {
-		genesisPreview = fmt.Sprintf("%x", genesisData)
-	}
-
-	m.Log.Info("Initializing VM",
-		log.Stringer("chainID", chainParams.ID),
-		log.Int("genesisDataLen", len(genesisData)),
-		log.String("genesisPreview", genesisPreview),
-		log.Int("fxsCount", len(blockFxs)))
-
-	// Convert blockFxs to []interface{} for Initialize
-	var fxsInterface []interface{}
-	for _, fx := range blockFxs {
-		fxsInterface = append(fxsInterface, fx)
-	}
-
-	// Determine what database interface to pass based on the VM type
-	// C-Chain VM (cchainvm) expects database.Database directly
-	// Other VMs expect the dbManagerWrapper
-	var dbInterface interface{}
-	if chainParams.VMID == constants.EVMID {
-		// C-Chain VM expects database.Database directly
-		dbInterface = vmDB
-		m.Log.Info("Using direct database for C-Chain VM")
-	} else {
-		// Other VMs expect dbManagerWrapper
-		dbInterface = dbManager
-		m.Log.Info("Using dbManagerWrapper for VM", log.Stringer("vmID", chainParams.VMID))
-	}
-
-	// Initialize the chainblock VM with proposer wrapper (NOT the raw vm)
-	if err := vm.Initialize(
-		context.TODO(),
-		chainCtx,
-		dbInterface,
-		genesisData,
-		chainConfig.Upgrade,
-		chainConfig.Config,
-		fxs,
-		messageSender,
-	); err != nil {
-		m.Log.Error("VM Initialize failed",
-			log.Stringer("chainID", chainParams.ID),
-			log.String("errorDetails", err.Error()),
-			log.Err(err))
-		return nil, fmt.Errorf("VM initialization failed: %w", err)
-	}
-	m.Log.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
-
-	// CRITICAL FIX: When SkipBootstrap is enabled for single-node mode,
-	// immediately unblock chain creator for Platform chain
-	// Check both the expected PlatformChainID and the actual Platform VM
-	isPlatformChain := chainParams.ID == constants.PlatformChainID ||
-		chainParams.VMID == constants.PlatformVMID
-
-	if m.SkipBootstrap && isPlatformChain {
-		m.Log.Info("Skip-bootstrap mode: Platform chain initialized - immediately unblocking chain creator",
-			log.Stringer("chainID", chainParams.ID),
-			log.Stringer("vmID", chainParams.VMID))
-		// Unblock in a goroutine to avoid blocking
-		go func() {
-			select {
-			case <-m.unblockChainCreatorCh:
-				// Channel already closed, ignore
-			default:
-				close(m.unblockChainCreatorCh)
-			}
-		}()
-	}
-
-	// netID already defined above
-	bootstrapWeight, err := beacons.TotalWeight(netID)
-	if err != nil {
-		return nil, fmt.Errorf("error while fetching weight for net %s: %w", netID, err)
-	}
-
-	consensusParams := sb.Config().ConsensusParameters
-	sampleK := consensusParams.K
-	if uint64(sampleK) > bootstrapWeight {
-		sampleK = int(bootstrapWeight)
-	}
-
-	_, err = metric.MakeAndRegister(
-		m.stakeGatherer,
-		primaryAlias,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// tracker.NewMeteredPeers not available in current consensus version
-	// connectedValidators, err := tracker.NewMeteredPeers(stakeReg)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error creating peer tracker: %w", err)
-	// }
-	// vdrs.RegisterSetCallbackListener(netID, connectedValidators)
-	_ = interface{}(nil) // connectedValidators placeholder
-
-	p2pReg, err := metric.MakeAndRegister(
-		m.p2pGatherer,
-		primaryAlias,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = p2p.NewPeerTracker(
-		m.Log,
-		"peer_tracker",
-		p2pReg,
-		set.NewSet[ids.NodeID](0), // Empty set of NodeIDs
-		nil,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error creating peer tracker: %w", err)
-	}
-
-	_, err = metric.MakeAndRegister(
-		m.handlerGatherer,
-		primaryAlias,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	var halter common.Halter
-
-	// Asynchronously passes messages from the network to the consensus engine
-	h, err := handler.New(
-		ctx,
-		cn,
-		vm.WaitForEvent,
-		vdrs,
-		m.FrontierPollFrequency,
-		m.ConsensusAppConcurrency,
-		m.ResourceTracker,
-		sb,
-		connectedValidators,
-		peerTracker,
-		handlerReg,
-		halter.Halt,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize message handler: %w", err)
-	}
-
-	// tracker.NewPeers and NewStartup not available in current consensus version
-	// connectedBeacons := tracker.NewPeers()
-	// startupTracker := tracker.NewStartup(connectedBeacons, float64((3*bootstrapWeight+3)/4))
-	_ = interface{}(nil) // startupTracker placeholder
-	// beacons.RegisterSetCallbackListener(ctx.NetID, startupTracker)
-	// beacons.RegisterSetCallbackListener(startupTracker)
-
-	// Most consensus engine creation is disabled due to missing runtime and types
-	// This needs to be re-enabled when consensus package is updated
-	/*
-		consensusGetHandler, err := consensusgetter.New(
-			vm,
-			messageSender,
-			m.Log,
-			m.BootstrapMaxTimeGetAncestors,
-			m.BootstrapAncestorsMaxContainersSent,
-			// ctx.Registerer doesn't exist in context.Context
-		)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't initialize consensus base message handler: %w", err)
-		}
-
-	var consensus smcon.Consensus = &smcon.Topological{Factory: consensus.ConsensusflakeFactory}
-	if m.TracingEnabled {
-		consensus = smcon.Trace(consensus, m.Tracer)
-	}
-
-	// Create engine, bootstrapper and state-syncer in this order,
-	// to make sure start callbacks are duly initialized
-	engineConfig := smeng.Config{
-		Ctx:                 ctx,
-		AllGetsServer:       consensusGetHandler,
-		VM:                  vm,
-		Sender:              messageSender,
-		Validators:          vdrs,
-		ConnectedValidators: connectedValidators,
-		Params:              consensusParams,
-		Consensus:           consensus,
-		PartialSync:         m.PartialSyncPrimaryNetwork && ctx.ChainID == constants.PlatformChainID,
-	}
-	var engine common.Engine
-	engine, err = smeng.New(engineConfig)
-	if err != nil {
-		return nil, fmt.Errorf("error initializing chain engine: %w", err)
-	}
-
-		// engineConfig not used - using New directly
-		// engineConfig := smeng.Config{
-		// 	Ctx:                 ctx,
-		// 	AllGetsServer:       consensusGetHandler,
-		// 	VM:                  vm,
-		// 	Sender:              messageSender,
-		// 	Validators:          vdrs,
-		// 	ConnectedValidators: connectedValidators,
-		// 	Params:              chainParams,
-		// 	Consensus:           consensus,
-		// 	// PartialSync field removed - doesn't exist
-		// }
-		// var engine core.Engine
-		engine, err := smeng.New(runtime, chainParams)
-		if err != nil {
-			return nil, fmt.Errorf("error initializing linear engine: %w", err)
-		}
-		_ = engine // temporarily unused
-
-	// create bootstrap gear
-	bootstrapCfg := smbootstrap.Config{
-		Haltable:                       &halter,
-		NonVerifyingParse:              block.ParseFunc(proposerVM.ParseLocalBlock),
-		AllGetsServer:                  consensusGetHandler,
-		Ctx:                            ctx,
-		Beacons:                        beacons,
-		SampleK:                        sampleK,
-		StartupTracker:                 startupTracker,
-		Sender:                         messageSender,
-		BootstrapTracker:               sb,
-		PeerTracker:                    peerTracker,
-		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
-		DB:                             bootstrappingDB,
-		VM:                             vm,
-		Bootstrapped:                   bootstrapFunc,
-	}
-	var bootstrapper common.BootstrapableEngine
-	bootstrapper, err = smbootstrap.New(
-		bootstrapCfg,
-		engine.Start,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error initializing chain bootstrapper: %w", err)
-	}
-
-		// create bootstrap gear
-		bootstrapCfg := smbootstrap.Config{
-			AllGetsServer:    consensusGetHandler,
-			Ctx:              runtime,
-			Beacons:          beacons,
-			SampleK:          sampleK,
-			StartupTracker:   startupTracker,
-			Sender:           messageSender,
-			BootstrapTracker: sb,
-			// Timer field removed - h,
-			// PeerTracker field removed - doesn't exist
-			AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
-			// DB field removed - doesn't exist
-			VM: vm,
-			// Bootstrapped field removed - doesn't exist
-			// NonVerifyingParse field removed - doesn't exist
-			// Haltable field removed - doesn't exist
-		}
-		// var bootstrapper core.BootstrapableEngine
-		_, err = smbootstrap.New(
-			bootstrapCfg,
-			func(ctx context.Context, lastReqID uint32) error {
-				return engine.Start(ctx)
-			},
-		)
-		if err != nil {
-			return nil, fmt.Errorf("error initializing linear bootstrapper: %w", err)
-		}
-	*/
-
-	// if m.TracingEnabled {
-	// 	bootstrapper = core.TraceBootstrapableEngine(bootstrapper, m.Tracer)
-	// }
-
-	// // create state sync gear
-	// stateSyncCfg, err := syncer.NewConfig(
-	// 	consensusGetHandler,
-	// 	ctx,
-	// 	startupTracker,
-	// 	messageSender,
-	// 	beacons,
-	// 	sampleK,
-	// 	bootstrapWeight/2+1, // must be > 50%
-	// 	m.StateSyncBeacons,
-	// 	vm,
-	// )
-	// if err != nil {
-	// 	return nil, fmt.Errorf("couldn't initialize state syncer configuration: %w", err)
-	// }
-	// stateSyncer := syncer.New(
-	// 	stateSyncCfg,
-	// 	bootstrapper.Start,
-	// )
-
-	// if m.TracingEnabled {
-	// 	stateSyncer = core.TraceStateSyncer(stateSyncer, m.Tracer)
-	// }
-
-	// h.SetEngineManager(&handler.EngineManager{
-	// 	Dag: nil,
-	// 	Chain: &handler.Engine{
-	// 		StateSyncer:  stateSyncer,
-	// 		Bootstrapper: bootstrapper,
-	// 		Consensus:    engine,
-	// 	},
-	// })
-
-	// // Register health checks
-	// if err := m.Health.RegisterHealthCheck(primaryAlias, h, ctx.NetID.String()); err != nil {
-	// 	return nil, fmt.Errorf("couldn't add health check for chain %s: %w", primaryAlias, err)
-	// }
-
-	// Handler h was already created above as &placeholderHandler{}
-
-	// The chain ID will be available through the VM itself
-
-	// Since block.ChainVM doesn't implement core.VM directly,
-	// we need to wrap it to implement core.VM
-	vmWrapper := newChainVMWrapper(vm)
-	return &chainInfo{
-		Name:    primaryAlias,
-		Context: chainCtx,
-		VM:      vmWrapper,
-		Handler: h,
-	}, nil
+	return nil, fmt.Errorf("createConsensusmanChain not yet fully implemented - needs proper chain initialization logic")
 }
+
+// Original broken implementation removed due to extensive compilation errors
+// The implementation had interface mismatches, undefined references, and structural issues
+// TODO: Properly implement chain creation for consensus manager chains
 
 func (m *manager) IsBootstrapped(id ids.ID) bool {
 	m.chainsLock.Lock()
@@ -2372,7 +1725,8 @@ func (m *manager) getOrMakeVMGatherer(vmID ids.ID) (metrics.MultiGatherer, error
 	}
 
 	vmName := constants.VMName(vmID)
-	vmNamespace := metric.AppendNamespace(constants.PlatformName, vmName)
+	// metric.AppendNamespace doesn't exist in current metric package
+	vmNamespace := vmName // Simplified - just use vmName directly
 	vmGatherer = metrics.NewLabelGatherer(ChainLabel)
 	err := m.Metrics.Register(
 		vmNamespace,
