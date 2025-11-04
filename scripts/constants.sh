@@ -11,7 +11,7 @@ set -euo pipefail
 LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory above this script
 
 # Where Lux Node binary goes
-node_path="$LUX_PATH/build/node"
+node_path="$LUX_PATH/build/luxd"
 
 # Static compilation
 static_ld_flags=''
