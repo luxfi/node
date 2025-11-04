@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/vms/evm/lp226"
-	"github.com/luxfi/node/vms/proposervm/acp181"
+	"github.com/luxfi/node/vms/proposervm/lp181"
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
 
@@ -219,7 +219,7 @@ func TestLP181_EpochTransitions(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			epoch := acp181.NewEpoch(
+			epoch := lp181.NewEpoch(
 				upgradetest.GetConfig(test.fork),
 				test.parentPChainHeight,
 				test.parentEpoch,
@@ -570,7 +570,7 @@ func TestGraniteIntegration_AllLPsTogether(t *testing.T) {
 	config := upgradetest.GetConfig(upgradetest.Latest)
 
 	// Test LP-181 (Epoching)
-	epoch := acp181.NewEpoch(
+	epoch := lp181.NewEpoch(
 		config,
 		100,
 		statelessblock.Epoch{},
@@ -660,7 +660,7 @@ func TestGraniteRollbackScenarios(t *testing.T) {
 			require.Equal(t, test.expectGranite, isActive)
 
 			if test.expectEpoch {
-				epoch := acp181.NewEpoch(
+				epoch := lp181.NewEpoch(
 					config,
 					100,
 					statelessblock.Epoch{},
@@ -727,7 +727,7 @@ func BenchmarkLP181_EpochTransition(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = acp181.NewEpoch(
+		_ = lp181.NewEpoch(
 			config,
 			101,
 			parentEpoch,
@@ -806,7 +806,7 @@ func BenchmarkFullGraniteIntegration(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// LP-181
-		_ = acp181.NewEpoch(config, 101, parentEpoch, now, now.Add(time.Second))
+		_ = lp181.NewEpoch(config, 101, parentEpoch, now, now.Add(time.Second))
 
 		// LP-226
 		excess := lp226.DelayExcess(lp226.InitialDelayExcess)

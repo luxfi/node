@@ -80,16 +80,15 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/xvm"
+	"github.com/luxfi/node/vms/exchangevm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
-	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/trace"
 
 	databasefactory "github.com/luxfi/database/factory"
-	avmconfig "github.com/luxfi/node/vms/xvm/config"
+	avmconfig "github.com/luxfi/node/vms/exchangevm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 	// geth "github.com/luxfi/geth/plugin/factory" // TODO: C-Chain EVM currently disabled - plugin/factory package doesn't exist
 )
@@ -1218,8 +1217,8 @@ func (n *Node) initVMs() error {
 	n.Log.Info("Platform VM registered successfully")
 
 	n.Log.Info("Registering X VM", "vmID", constants.XVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.XVMID, &xvm.Factory{
-		Config: xvmconfig.Config{
+	err = n.VMManager.RegisterFactory(context.TODO(), constants.XVMID, &exchangevm.Factory{
+		Config: avmconfig.Config{
 			TxFee:            n.Config.TxFee,
 			CreateAssetTxFee: n.Config.CreateAssetTxFee,
 			EtnaTime:         etnaTime,

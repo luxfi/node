@@ -3,7 +3,7 @@
 
 // ACP-226 implements the dynamic minimum block delay mechanism specified here:
 // https://github.com/lux-foundation/ACPs/blob/main/ACPs/226-dynamic-minimum-block-times/README.md
-package acp226
+package lp226
 
 import (
 	"sort"

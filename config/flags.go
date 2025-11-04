@@ -13,15 +13,11 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/luxfi/database/leveldb"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/pebbledb"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/dynamicip"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/ulimit"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/gas"
@@ -106,9 +102,9 @@ func addNodeFlags(fs *pflag.FlagSet) {
 
 	// Network ID
 	fs.String(NetworkNameKey, constants.MainnetName, "Network ID this node will connect to")
-	fs.Bool(MainnetKey, false, "Connect to Lux mainnet (network ID 96369)")
-	fs.Bool(TestnetKey, false, "Connect to Lux testnet (network ID 96368)")
-	fs.Bool(LocalnetKey, false, "Connect to local network (network ID 1337)")
+// 	fs.Bool(MainnetKey, false, "Connect to Lux mainnet (network ID 96369)")
+// 	fs.Bool(TestnetKey, false, "Connect to Lux testnet (network ID 96368)")
+// 	fs.Bool(LocalnetKey, false, "Connect to local network (network ID 1337)")
 
 	// LP flagging
 	fs.IntSlice(LPSupportKey, nil, "LPs to support adoption")
@@ -149,7 +145,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(LogsDirKey, defaultLogDir, "Logging directory for Lux")
 	fs.String(LogLevelKey, "info", "The log level. Should be one of {verbo, debug, trace, info, warn, error, fatal, off}")
 	fs.String(LogDisplayLevelKey, "", "The log display level. If left blank, will inherit the value of log-level. Otherwise, should be one of {verbo, debug, trace, info, warn, error, fatal, off}")
-	fs.String(LogFormatKey, logging.AutoString, logging.FormatDescription)
+// 	fs.String(LogFormatKey, "auto", "Format to use for log output. Should be one of {auto, json, terminal}")
 	fs.Uint(LogRotaterMaxSizeKey, 8, "The maximum file size in megabytes of the log file before it gets rotated.")
 	fs.Uint(LogRotaterMaxFilesKey, 7, "The maximum number of old log files to retain. 0 means retain all old log files.")
 	fs.Uint(LogRotaterMaxAgeKey, 0, "The maximum number of days to retain old log files based on the timestamp encoded in their filename. 0 means retain all old log files.")
@@ -316,17 +312,17 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint(BootstrapAncestorsMaxContainersReceivedKey, 2000, "This node reads at most this many containers from an incoming Ancestors message")
 
 	// Consensus
-	fs.Int(ConsensusSampleSizeKey, consensus.DefaultParameters.K, "Number of nodes to query for each network poll")
-	fs.Int(ConsensusQuorumSizeKey, consensus.DefaultParameters.AlphaConfidence, "Threshold of nodes required to update this node's preference and increase its confidence in a network poll")
-	fs.Int(ConsensusPreferenceQuorumSizeKey, consensus.DefaultParameters.AlphaPreference, fmt.Sprintf("Threshold of nodes required to update this node's preference in a network poll. Ignored if %s is provided", ConsensusQuorumSizeKey))
-	fs.Int(ConsensusConfidenceQuorumSizeKey, consensus.DefaultParameters.AlphaConfidence, fmt.Sprintf("Threshold of nodes required to increase this node's confidence in a network poll. Ignored if %s is provided", ConsensusQuorumSizeKey))
+// 	fs.Int(ConsensusSampleSizeKey, consensus.DefaultParameters.K, "Number of nodes to query for each network poll")
+// 	fs.Int(ConsensusQuorumSizeKey, consensus.DefaultParameters.AlphaConfidence, "Threshold of nodes required to update this node's preference and increase its confidence in a network poll")
+// 	fs.Int(ConsensusPreferenceQuorumSizeKey, consensus.DefaultParameters.AlphaPreference, fmt.Sprintf("Threshold of nodes required to update this node's preference in a network poll. Ignored if %s is provided", ConsensusQuorumSizeKey))
+// 	fs.Int(ConsensusConfidenceQuorumSizeKey, consensus.DefaultParameters.AlphaConfidence, fmt.Sprintf("Threshold of nodes required to increase this node's confidence in a network poll. Ignored if %s is provided", ConsensusQuorumSizeKey))
+// 
+// 	fs.Int(ConsensusCommitThresholdKey, consensus.DefaultParameters.Beta, "Beta value to use for consensus")
 
-	fs.Int(ConsensusCommitThresholdKey, consensus.DefaultParameters.Beta, "Beta value to use for consensus")
-
-	fs.Int(ConsensusConcurrentRepollsKey, consensus.DefaultParameters.ConcurrentRepolls, "Minimum number of concurrent polls for finalizing consensus")
-	fs.Int(ConsensusOptimalProcessingKey, consensus.DefaultParameters.OptimalProcessing, "Optimal number of processing containers in consensus")
-	fs.Int(ConsensusMaxProcessingKey, consensus.DefaultParameters.MaxOutstandingItems, "Maximum number of processing items to be considered healthy")
-	fs.Duration(ConsensusMaxTimeProcessingKey, consensus.DefaultParameters.MaxItemProcessingTime, "Maximum amount of time an item should be processing and still be healthy")
+// 	fs.Int(ConsensusConcurrentRepollsKey, consensus.DefaultParameters.ConcurrentRepolls, "Minimum number of concurrent polls for finalizing consensus")
+// 	fs.Int(ConsensusOptimalProcessingKey, consensus.DefaultParameters.OptimalProcessing, "Optimal number of processing containers in consensus")
+// 	fs.Int(ConsensusMaxProcessingKey, consensus.DefaultParameters.MaxOutstandingItems, "Maximum number of processing items to be considered healthy")
+// 	fs.Duration(ConsensusMaxTimeProcessingKey, consensus.DefaultParameters.MaxItemProcessingTime, "Maximum amount of time an item should be processing and still be healthy")
 
 	// ProposerVM
 	fs.Bool(ProposerVMUseCurrentHeightKey, false, "Have the ProposerVM always report the last accepted P-chain block height")

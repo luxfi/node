@@ -10,10 +10,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/luxfi/node/utils/timer/mockable"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/consensustest"
-	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/vms/exchangevm/config"
@@ -22,9 +22,6 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/exchangevm/config"
-	"github.com/luxfi/node/vms/exchangevm/fxs"
-	"github.com/luxfi/node/vms/exchangevm/txs"
 
 	safemath "github.com/luxfi/math/math"
 )
@@ -32,13 +29,9 @@ import (
 var (
 	keys      = secp256k1.TestKeys()
 	feeConfig = config.Config{
-		Upgrades:         upgradetest.GetConfig(upgradetest.Durango),
 		TxFee:            2,
 		CreateAssetTxFee: 3,
-<<<<<<< HEAD:vms/avm/txs/executor/syntactic_verifier_test.go
-=======
 		EtnaTime:         mockable.MaxTime,
->>>>>>> origin/regenesis-runtime-replay:vms/xvm/txs/executor/syntactic_verifier_test.go
 	}
 )
 

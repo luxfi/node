@@ -725,9 +725,9 @@ func (mr *MockStateMockRecorder) GetUTXO(utxoID any) *gomock.Call {
 }
 
 // GetUptime mocks base method.
-func (m *MockState) GetUptime(nodeID ids.NodeID) (time.Duration, time.Time, error) {
+func (m *MockState) GetUptime(nodeID ids.NodeID, netID ids.ID) (time.Duration, time.Duration, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUptime", nodeID)
+	ret := m.ctrl.Call(m, "GetUptime", nodeID, netID)
 	ret0, _ := ret[0].(time.Duration)
 	ret1, _ := ret[1].(time.Duration)
 	ret2, _ := ret[2].(error)
@@ -735,9 +735,9 @@ func (m *MockState) GetUptime(nodeID ids.NodeID) (time.Duration, time.Time, erro
 }
 
 // GetUptime indicates an expected call of GetUptime.
-func (mr *MockStateMockRecorder) GetUptime(nodeID any) *gomock.Call {
+func (mr *MockStateMockRecorder) GetUptime(nodeID, netID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUptime", reflect.TypeOf((*MockState)(nil).GetUptime), nodeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUptime", reflect.TypeOf((*MockState)(nil).GetUptime), nodeID, netID)
 }
 
 // HasExpiry mocks base method.

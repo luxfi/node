@@ -8,24 +8,24 @@ import (
 	"context"
 	"testing"
 
-	"github.com/luxfi/consensus/protocol/chain"
+	protocolchain "github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/metric"
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensus/consensusman"
-	"github.com/luxfi/node/consensus/consensus/consensusman/consensusmantest"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/consensusman/block"
-	"github.com/luxfi/node/consensus/engine/consensusman/block/blocktest"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/chain/chaintest"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/enginetest"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/node/vms/components/chain/blocktest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/proposervm/summary"
 )
@@ -47,7 +47,7 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	// load innerVM expectations
 	innerVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte,
-		[]*common.Fx, common.AppSender,
+		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}

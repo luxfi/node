@@ -902,11 +902,11 @@ func (b *builder) NewConvertNetToL1Tx(
 			Outs:         outputs,
 			Memo:         memo,
 		}},
-		Subnet:     subnetID,
+		Net:        subnetID,
 		ChainID:    chainID,
 		Address:    address,
 		Validators: validators,
-		SubnetAuth: subnetAuth,
+		NetAuth:    subnetAuth,
 	}
 	return tx, b.initCtx(tx)
 }

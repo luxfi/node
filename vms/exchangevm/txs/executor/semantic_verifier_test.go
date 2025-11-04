@@ -18,17 +18,15 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/prefixdb"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/consensus/validators/validatorsmock"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	"github.com/luxfi/node/vms/exchangevm/state"
+	"github.com/luxfi/node/vms/exchangevm/state/statemock"
 	"github.com/luxfi/node/vms/exchangevm/txs"
 )
 
@@ -81,6 +79,7 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 
 	backendObj := &Backend{
 		Ctx:      ctx,
+		LuxCtx:   nil,
 		CChainID: cChainID,
 		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
@@ -444,6 +443,7 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 
 	backendObj := &Backend{
 		Ctx:      ctx,
+		LuxCtx:   nil,
 		CChainID: cChainID,
 		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
@@ -760,8 +760,10 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 
 	ctx := consensustest.Context(t, consensustest.XChainID)
 
-	validatorState := validatorsmock.NewState(ctrl)
-	validatorState.EXPECT().GetSubnetID(gomock.Any(), ctx.CChainID).AnyTimes().Return(ids.GenerateTestID(), nil)
+	validatorState := validatorsmock.NewState(t)
+	validatorState.GetNetIDF = func(context.Context, ids.ID) (ids.ID, error) {
+		return ids.GenerateTestID(), nil
+	}
 	ctx.ValidatorState = validatorState
 
 	typeToFxIndex := make(map[reflect.Type]int)
@@ -812,7 +814,8 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 	}
 
 	backendObj := &Backend{
-		Ctx:      ctx,
+		Ctx:      context.Background(),
+		LuxCtx:   ctx,
 		CChainID: cChainID,
 		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{
@@ -952,6 +955,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 
 	backendObj := &Backend{
 		Ctx:      ctx,
+		LuxCtx:   nil,
 		CChainID: cChainID,
 		Config:   &feeConfig,
 		Fxs: []*fxs.ParsedFx{

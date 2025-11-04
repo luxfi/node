@@ -10,27 +10,59 @@ import (
 	"math"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/consensus/engine/core"
+	consensuscore "github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/txs/mempool"
 
-	smblock "github.com/luxfi/consensus/engine/chain/block"
+	chainblock "github.com/luxfi/consensus/engine/chain/block"
+	platformblock "github.com/luxfi/node/vms/platformvm/block"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
+	consensusctx "github.com/luxfi/consensus/context"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 )
+
+// validatorStateAdapter adapts consensusctx.ValidatorState to validators.State
+type validatorStateAdapter struct {
+	state consensusctx.ValidatorState
+}
+
+func (a *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	weights, err := a.state.GetValidatorSet(height, netID)
+	if err != nil {
+		return nil, err
+	}
+	
+	result := make(map[ids.NodeID]*validators.GetValidatorOutput, len(weights))
+	for nodeID, weight := range weights {
+		result[nodeID] = &validators.GetValidatorOutput{
+			NodeID: nodeID,
+			Light:  weight,
+		}
+	}
+	return result, nil
+}
+
+func (a *validatorStateAdapter) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	// Use GetValidatorSet for current validators
+	return a.GetValidatorSet(ctx, height, netID)
+}
+
+func (a *validatorStateAdapter) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return a.state.GetCurrentHeight(ctx)
+}
 
 const (
 	// targetBlockSize is maximum number of transaction bytes to place into a
@@ -52,11 +84,22 @@ var (
 )
 
 type Builder interface {
-	smblock.BuildBlockWithContextChainVM
 	mempool.Mempool[*txs.Tx]
 
 	// BuildBlock can be called to attempt to create a new block
-	BuildBlock(context.Context) (chain.Block, error)
+	BuildBlock(context.Context) (chainblock.Block, error)
+
+	// BuildBlockWithContext builds a block with context
+	BuildBlockWithContext(context.Context, *chainblock.Context) (chainblock.Block, error)
+
+	// WaitForEvent waits for an event that should trigger block building
+	WaitForEvent(context.Context) (consensuscore.Message, error)
+
+	// Connected is called when a node connects
+	Connected(context.Context, ids.NodeID, interface{}) error
+
+	// Disconnected is called when a node disconnects
+	Disconnected(context.Context, ids.NodeID) error
 
 	// PackAllBlockTxs returns an array of all txs that could be packed into a
 	// valid block of infinite size. The returned txs are all verified against
@@ -86,26 +129,37 @@ func New(
 	}
 }
 
-func (b *builder) WaitForEvent(ctx context.Context) (common.Message, error) {
+func (b *builder) Connected(ctx context.Context, nodeID ids.NodeID, version interface{}) error {
+	// No-op implementation for builder
+	return nil
+}
+
+func (b *builder) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	// No-op implementation for builder
+	return nil
+}
+
+func (b *builder) WaitForEvent(ctx context.Context) (consensuscore.Message, error) {
+	logger := b.txExecutorBackend.Ctx.Log.(log.Logger)
 	for {
 		if err := ctx.Err(); err != nil {
-			return 0, err
+			return consensuscore.Message{}, err
 		}
 
 		duration, err := b.durationToSleep()
 		if err != nil {
-			b.txExecutorBackend.Ctx.Log.Error("block builder failed to calculate next staker change time",
+			logger.Error("block builder failed to calculate next staker change time",
 				zap.Error(err),
 			)
-			return 0, err
+			return consensuscore.Message{}, err
 		}
 		if duration <= 0 {
-			b.txExecutorBackend.Ctx.Log.Debug("Skipping block build wait, next staker change is ready")
+			logger.Debug("Skipping block build wait, next staker change is ready")
 			// The next staker change is ready to be performed.
-			return common.PendingTxs, nil
+			return consensuscore.Message{Type: consensuscore.PendingTxs}, nil
 		}
 
-		b.txExecutorBackend.Ctx.Log.Debug("Will wait until a transaction comes", zap.Duration("maxWait", duration))
+		logger.Debug("Will wait until a transaction comes", zap.Duration("maxWait", duration))
 
 		// Wait for a transaction in the mempool until there is a next staker
 		// change ready to be performed.
@@ -115,28 +169,23 @@ func (b *builder) WaitForEvent(ctx context.Context) (common.Message, error) {
 
 		switch {
 		case err == nil:
-			b.txExecutorBackend.Ctx.Log.Debug("New transaction received", zap.Stringer("msg", msg))
+			logger.Debug("New transaction received")
 			return msg, nil
 		case errors.Is(err, context.DeadlineExceeded):
 			continue // Recheck the staker change time before returning
 		default:
 			// Error could have been due to the parent context being cancelled
 			// or another unexpected error.
-			return 0, err
+			return consensuscore.Message{}, err
 		}
 	}
 }
 
 func (b *builder) durationToSleep() (time.Duration, error) {
 	// Check if builder is properly initialized
-	if b.txExecutorBackend == nil || b.txExecutorBackend.Lock == nil {
+	if b.txExecutorBackend == nil {
 		return 0, nil
 	}
-
-	// Grabbing the lock here enforces that this function is not called mid-way
-	// through modifying of the state.
-	b.txExecutorBackend.Lock.Lock()
-	defer b.txExecutorBackend.Lock.Unlock()
 
 	preferredID := b.blkManager.Preferred()
 	preferredState, ok := b.blkManager.GetState(preferredID)
@@ -158,10 +207,10 @@ func (b *builder) durationToSleep() (time.Duration, error) {
 	return nextStakerChangeTime.Sub(now), nil
 }
 
-func (b *builder) BuildBlock(ctx context.Context) (chain.Block, error) {
+func (b *builder) BuildBlock(ctx context.Context) (chainblock.Block, error) {
 	return b.BuildBlockWithContext(
 		ctx,
-		&smblock.Context{
+		&chainblock.Context{
 			PChainHeight: 0,
 		},
 	)
@@ -169,9 +218,10 @@ func (b *builder) BuildBlock(ctx context.Context) (chain.Block, error) {
 
 func (b *builder) BuildBlockWithContext(
 	ctx context.Context,
-	blockContext *smblock.Context,
-) (chain.Block, error) {
-	b.txExecutorBackend.Ctx.Log.Debug("starting to attempt to build a block")
+	blockContext *chainblock.Context,
+) (chainblock.Block, error) {
+	logger := b.txExecutorBackend.Ctx.Log.(log.Logger)
+	logger.Debug("starting to attempt to build a block")
 
 	// Get the block to build on top of and retrieve the new block's context.
 	preferredID := b.blkManager.Preferred()
@@ -227,7 +277,11 @@ func (b *builder) PackAllBlockTxs() ([]*txs.Tx, error) {
 		return nil, fmt.Errorf("could not calculate next staker change time: %w", err)
 	}
 
-	recommendedPChainHeight, err := b.txExecutorBackend.Ctx.ValidatorState.GetMinimumHeight(context.TODO())
+	// Type assert ValidatorState to get GetMinimumHeight method
+	validatorState := b.txExecutorBackend.Ctx.ValidatorState.(interface {
+		GetMinimumHeight(context.Context) (uint64, error)
+	})
+	recommendedPChainHeight, err := validatorState.GetMinimumHeight(context.TODO())
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +322,7 @@ func buildBlock(
 	forceAdvanceTime bool,
 	parentState state.Chain,
 	pChainHeight uint64,
-) (block.Block, error) {
+) (platformblock.Block, error) {
 	var (
 		blockTxs []*txs.Tx
 		err      error
@@ -299,7 +353,8 @@ func buildBlock(
 		)
 	}
 	if err != nil {
-		builder.txExecutorBackend.Ctx.Log.Warn("failed to pack block transactions",
+		logger := builder.txExecutorBackend.Ctx.Log.(log.Logger)
+		logger.Warn("failed to pack block transactions",
 			zap.Error(err),
 		)
 		return nil, fmt.Errorf("failed to pack block txs: %w", err)
@@ -313,12 +368,12 @@ func buildBlock(
 		return nil, fmt.Errorf("could not find next staker to reward: %w", err)
 	}
 	if shouldReward {
-		rewardValidatorTx, err := NewRewardValidatorTx(builder.txExecutorBackend.Ctx, stakerTxID)
+		rewardValidatorTx, err := NewRewardValidatorTx(context.TODO(), stakerTxID)
 		if err != nil {
 			return nil, fmt.Errorf("could not build tx to reward staker: %w", err)
 		}
 
-		return block.NewBanffProposalBlock(
+		return platformblock.NewBanffProposalBlock(
 			timestamp,
 			parentID,
 			height,
@@ -334,7 +389,7 @@ func buildBlock(
 	}
 
 	// Issue a block with as many transactions as possible.
-	return block.NewBanffStandardBlock(
+	return platformblock.NewBanffStandardBlock(
 		timestamp,
 		parentID,
 		height,
@@ -433,7 +488,8 @@ func packEtnaBlockTxs(
 		feeCalculator   = state.PickFeeCalculator(backend.Config, stateDiff)
 	)
 
-	backend.Ctx.Log.Debug("starting to pack block txs",
+	logger := backend.Ctx.Log.(log.Logger)
+	logger.Debug("starting to pack block txs",
 		zap.Stringer("parentID", parentID),
 		zap.Time("blockTimestamp", timestamp),
 		zap.Uint64("capacity", uint64(capacity)),
@@ -447,7 +503,7 @@ func packEtnaBlockTxs(
 
 		tx, exists := mempool.Peek()
 		if !exists {
-			backend.Ctx.Log.Debug("mempool is empty",
+			logger.Debug("mempool is empty",
 				zap.Uint64("capacity", uint64(capacity)),
 				zap.Uint64("blockGas", uint64(currentBlockGas)),
 				zap.Int("blockLen", len(blockTxs)),
@@ -468,7 +524,7 @@ func packEtnaBlockTxs(
 			return nil, err
 		}
 		if newBlockGas > capacity {
-			backend.Ctx.Log.Debug("block is full",
+			logger.Debug("block is full",
 				zap.Uint64("nextBlockGas", uint64(newBlockGas)),
 				zap.Uint64("capacity", uint64(capacity)),
 				zap.Uint64("blockGas", uint64(currentBlockGas)),
@@ -519,16 +575,27 @@ func executeTx(
 
 	// Invariant: [tx] has already been syntactically verified.
 
+	logger := backend.Ctx.Log.(log.Logger)
 	txID := tx.ID()
+	
+	// Type assert ValidatorState to consensusctx.ValidatorState
+	validatorState, ok := backend.Ctx.ValidatorState.(consensusctx.ValidatorState)
+	if !ok {
+		return false, fmt.Errorf("invalid validator state type")
+	}
+	
+	// Wrap it in an adapter to implement validators.State
+	stateAdapter := &validatorStateAdapter{state: validatorState}
+	
 	err := txexecutor.VerifyWarpMessages(
 		ctx,
 		backend.Ctx.NetworkID,
-		backend.Ctx.ValidatorState,
+		stateAdapter,
 		pChainHeight,
 		tx.Unsigned,
 	)
 	if err != nil {
-		backend.Ctx.Log.Debug("transaction failed warp verification",
+		logger.Debug("transaction failed warp verification",
 			zap.Stringer("txID", txID),
 			zap.Error(err),
 		)
@@ -549,7 +616,7 @@ func executeTx(
 		txDiff,
 	)
 	if err != nil {
-		backend.Ctx.Log.Debug("transaction failed execution",
+		logger.Debug("transaction failed execution",
 			zap.Stringer("txID", txID),
 			zap.Error(err),
 		)
@@ -561,7 +628,7 @@ func executeTx(
 	if inputs.Overlaps(txInputs) {
 		// This log is a warn because the mempool should not have allowed this
 		// transaction to be included.
-		backend.Ctx.Log.Warn("transaction conflicts with prior transaction",
+		logger.Warn("transaction conflicts with prior transaction",
 			zap.Stringer("txID", txID),
 			zap.Error(err),
 		)
@@ -570,7 +637,7 @@ func executeTx(
 		return false, nil
 	}
 	if err := manager.VerifyUniqueInputs(parentID, txInputs); err != nil {
-		backend.Ctx.Log.Debug("transaction conflicts with ancestor's import transaction",
+		logger.Debug("transaction conflicts with ancestor's import transaction",
 			zap.Stringer("txID", txID),
 			zap.Error(err),
 		)
@@ -580,7 +647,7 @@ func executeTx(
 	}
 	inputs.Union(txInputs)
 
-	backend.Ctx.Log.Debug("successfully executed transaction",
+	logger.Debug("successfully executed transaction",
 		zap.Stringer("txID", txID),
 		zap.Error(err),
 	)
@@ -613,10 +680,10 @@ func getNextStakerToReward(
 	for currentStakerIterator.Next() {
 		currentStaker := currentStakerIterator.Value()
 		priority := currentStaker.Priority
-		// If the staker is a permissionless staker (not a permissioned subnet
+		// If the staker is a permissionless staker (not a permissioned net
 		// validator), it's the next staker we will want to remove with a
 		// RewardValidatorTx rather than an AdvanceTimeTx.
-		if priority != txs.SubnetPermissionedValidatorCurrentPriority {
+		if priority != txs.NetPermissionedValidatorCurrentPriority {
 			return currentStaker.TxID, chainTimestamp.Equal(currentStaker.EndTime), nil
 		}
 	}
@@ -629,5 +696,6 @@ func NewRewardValidatorTx(ctx context.Context, txID ids.ID) (*txs.Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	return tx, tx.SyntacticVerify(ctx)
+	// RewardValidatorTx doesn't need context for syntactic verification
+	return tx, tx.SyntacticVerify(nil)
 }

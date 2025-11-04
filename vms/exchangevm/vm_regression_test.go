@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package xvm
+package exchangevm
 
 import (
 	"testing"
@@ -19,8 +19,8 @@ import (
 func TestVerifyFxUsage(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: upgradetest.Latest})
-	env.vm.ctx.Lock.Unlock()
+	env := setup(t, &envConfig{fork: upgradetest.GetConfig(upgradetest.Latest)})
+	env.vm.Lock.Unlock()
 
 	var (
 		key = keys[0]

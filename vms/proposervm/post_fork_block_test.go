@@ -12,14 +12,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus/consensus/consensusman"
-	"github.com/luxfi/node/consensus/consensus/consensusman/consensusmantest"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/validators"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/upgrade/upgradetest"
-	"github.com/luxfi/node/vms/proposervm/acp181"
+
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/chain/chaintest"
+	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/node/vms/proposervm/lp181"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 )
@@ -240,7 +242,7 @@ func TestBlockVerify_PostForkBlock_PostDurango_ParentChecks(t *testing.T) {
 
 	require.NoError(waitForProposerWindow(proVM, parentBlk, parentBlk.(*postForkBlock).PChainHeight()))
 	parentPChainHeight := parentBlk.(*postForkBlock).PChainHeight()
-	nextEpoch := acp181.NewEpoch(
+	nextEpoch := lp181.NewEpoch(
 		proVM.Upgrades,
 		parentPChainHeight,
 		block.Epoch{},
@@ -560,7 +562,7 @@ func TestBlockVerify_PostForkBlock_PChainHeightChecks(t *testing.T) {
 	}
 
 	parentBlkPChainHeight := parentBlk.(*postForkBlock).PChainHeight()
-	nextEpoch := acp181.NewEpoch(
+	nextEpoch := lp181.NewEpoch(
 		proVM.Upgrades,
 		parentBlkPChainHeight,
 		block.Epoch{},

@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/utils/crypto/secp256k1"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/utils/units"

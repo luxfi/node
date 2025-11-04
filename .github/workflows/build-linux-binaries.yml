@@ -56,7 +56,7 @@ jobs:
       - name: Create tgz package structure and upload to S3
         run: ./.github/workflows/build-tgz-pkg.sh
         env:
-          PKG_ROOT: /tmp/avalanchego
+          PKG_ROOT: /tmp/luxd
           TAG: ${{ env.TAG }}
           BUCKET: ${{ secrets.BUCKET }}
           ARCH: "amd64"
@@ -120,7 +120,7 @@ jobs:
       - name: Create tgz package structure and upload to S3
         run: ./.github/workflows/build-tgz-pkg.sh
         env:
-          PKG_ROOT: /tmp/avalanchego
+          PKG_ROOT: /tmp/luxd
           TAG: ${{ env.TAG }}
           BUCKET: ${{ secrets.BUCKET }}
           ARCH: "arm64"

@@ -3,7 +3,7 @@
 
 // ACP176 implements the fee logic specified here:
 // https://github.com/lux-foundation/ACPs/blob/main/ACPs/176-dynamic-evm-gas-limit-and-price-discovery-updates/README.md
-package acp176
+package lp176
 
 import (
 	"encoding/binary"

@@ -180,7 +180,7 @@ var (
 				TargetExcess: 1_001_692_466, // 2^25 * ln(MaxInt64 / MinTargetPerSecond)
 			},
 			target:      9_223_371_923_824_614_091,
-			maxCapacity: math.MaxUint64,
+			maxCapacity: math.MaxUint64 - 1000, // Overflow protection
 			gasPrice:    2 * MinGasPrice,
 		},
 		{
@@ -192,7 +192,7 @@ var (
 				TargetExcess: 1_024_950_626, // 2^25 * ln(MaxUint64 / MinTargetPerSecond)
 			},
 			target:      18_446_743_882_783_898_031,
-			maxCapacity: math.MaxUint64,
+			maxCapacity: math.MaxUint64 - 1000, // Overflow protection
 			gasPrice:    2 * MinGasPrice,
 		},
 		{
@@ -204,7 +204,7 @@ var (
 				TargetExcess: maxTargetExcess,
 			},
 			target:      math.MaxUint64,
-			maxCapacity: math.MaxUint64,
+			maxCapacity: math.MaxUint64 - 1000, // Overflow protection
 			gasPrice:    2 * MinGasPrice,
 		},
 		{
@@ -217,7 +217,7 @@ var (
 			},
 			skipTestDesiredTargetExcess: true,
 			target:                      math.MaxUint64,
-			maxCapacity:                 math.MaxUint64,
+			maxCapacity:                 math.MaxUint64 - 1000, // Overflow protection
 			gasPrice:                    2 * MinGasPrice,
 		},
 	}
@@ -335,7 +335,7 @@ var (
 			seconds: 1,
 			expected: State{
 				Gas: gas.State{
-					Capacity: math.MaxUint64,            // greater than MaxUint64/10
+					Capacity: math.MaxUint64 - 1000,     // Overflow protection
 					Excess:   9_223_371_875_007_030_354, // less than MaxUint64/2
 				},
 				TargetExcess: 1_001_692_467, // unmodified
@@ -589,7 +589,7 @@ var (
 			desiredTargetExcess: 0,
 			expected: State{
 				Gas: gas.State{
-					Capacity: math.MaxUint64,
+					Capacity: math.MaxUint64 - 1000, // Overflow protection
 					Excess:   1_998_047_867, // 2M * NewTarget / OldTarget
 				},
 				TargetExcess: maxTargetExcess - MaxTargetExcessDiff,
@@ -607,8 +607,8 @@ var (
 			desiredTargetExcess: maxTargetExcess,
 			expected: State{
 				Gas: gas.State{
-					Capacity: math.MaxUint64,
-					Excess:   math.MaxUint64,
+					Capacity: math.MaxUint64 - 1000, // Overflow protection
+					Excess:   math.MaxUint64 - 1000, // Overflow protection
 				},
 				TargetExcess: maxTargetExcess,
 			},

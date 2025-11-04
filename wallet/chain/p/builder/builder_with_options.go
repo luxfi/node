@@ -252,14 +252,14 @@ func (b *builderWithOptions) NewAddPermissionlessDelegatorTx(
 	)
 }
 
-func (b *builderWithOptions) NewConvertSubnetToL1Tx(
+func (b *builderWithOptions) NewConvertNetToL1Tx(
 	subnetID ids.ID,
 	chainID ids.ID,
 	address []byte,
-	validators []*txs.ConvertSubnetToL1Validator,
+	validators []*txs.ConvertNetToL1Validator,
 	options ...common.Option,
-) (*txs.ConvertSubnetToL1Tx, error) {
-	return b.builder.NewConvertSubnetToL1Tx(
+) (*txs.ConvertNetToL1Tx, error) {
+	return b.builder.NewConvertNetToL1Tx(
 		subnetID,
 		chainID,
 		address,

@@ -226,13 +226,13 @@ func TestSignatureVerification(t *testing.T) {
 						PublicKey: testVdrs[0].vdr.PublicKey,
 						Weight:    math.MaxUint64,
 					},
-					getValidatorSetF: func(ctx context.Context, height uint64, sID ids.ID) (map[ids.NodeID]*ValidatorData, error) {
-						return map[ids.NodeID]*ValidatorData{
-							nodeID0: {NodeID: nodeID0, Weight: math.MaxUint64},
-							nodeID1: {NodeID: nodeID1, Weight: math.MaxUint64},
-						}, nil
+					testVdrs[1].nodeID: {
+						NodeID:    testVdrs[1].nodeID,
+						PublicKey: testVdrs[1].vdr.PublicKey,
+						Weight:    math.MaxUint64,
 					},
-				}
+				}, nil)
+				return state
 			},
 			quorumNum: 1,
 			quorumDen: 2,

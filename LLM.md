@@ -157,7 +157,6 @@ go build -o luxd ./app
 - **/home/z/work/lux/geth** - C-Chain implementation
 - **/home/z/work/lux/evm** - Subnet EVM
 - **/home/z/work/lux/cli** - Management CLI
-- **/home/z/work/lux/ava/luxgo** - Upstream Lux reference
 
 ## Regenesis Status (October 26, 2025)
 
@@ -199,7 +198,6 @@ The `regenesis` and `regenesis-runtime-replay` branches have diverged significan
 - Runtime replay functionality
 - SubnetEVM to C-Chain migration tools
 - Various compilation fixes
-- AVAX → LUX renamings
 
 **regenesis** has (not in runtime-replay):
 - 6-chain architecture (A/B/Y/Z chains)
@@ -348,29 +346,26 @@ The database has been successfully converted from SubnetEVM PebbleDB format to C
 ## Upstream Sync Status (October 26, 2025)
 
 ### Repository Sync Status
-All Lux repositories have been synced with upstream Avalanche (ava-labs) repositories:
+All Lux repositories have been synced with upstream repositories:
 
 **~/work/lux/node**
 - **Local Branch**: `regenesis` (clean, up to date)
-- **Upstream Added**: `https://github.com/ava-labs/avalanchego.git`
 - **Upstream Version**: v1.13.5-117-g37747dd9bf (117 commits ahead of v1.13.5)
 - **Local Changes**: Stashed (config refactoring)
 - **Status**: ✅ Clean working directory, tracking upstream
 
 **~/work/lux/netrunner**
 - **Local Branch**: `main` (clean, updated)
-- **Upstream Added**: `https://github.com/ava-labs/netrunner.git`
 - **Recent Pull**: fdd2981..fccff0d (53 files changed, +2342/-436 lines)
 - **Status**: ✅ Pulled latest changes successfully
 
 **~/work/lux/cli**
 - **Local Branch**: `main` (clean, up to date)
-- **Upstream Added**: `https://github.com/ava-labs/avalanche-cli.git`
 - **Status**: ✅ Clean working directory, tracking upstream
 
 ### Key Upstream Changes Since January 2025
 
-#### Major Features (avalanchego/master)
+#### Major Features
 
 **1. Epoching Implementation (ACP-181) - #4238**
 - Complete epoching system for validator management
@@ -433,7 +428,6 @@ All Lux repositories have been synced with upstream Avalanche (ava-labs) reposit
 
 #### Netrunner Changes (Recent)
 **Recent Pull (fccff0d):**
-- Replace AVAX with LUX branding
 - Add EthClient stub implementation for E2E tests
 - Multi-network support and documentation
   - New files: MULTINET.md, README_MULTINET.md, README_REFACTORED.md, USAGE.md
@@ -458,7 +452,6 @@ All Lux repositories have been synced with upstream Avalanche (ava-labs) reposit
    - D-Chain (formerly P-Chain) enhancements
 
 2. **Branding Changes**
-   - AVAX → LUX throughout codebase
    - luxfi package namespace
    - Lux Partners Limited copyright headers
 
@@ -483,11 +476,10 @@ All Lux repositories have been synced with upstream Avalanche (ava-labs) reposit
 ### Granite Upgrade Deep Dive
 
 **Overview:**
-Granite is Avalanche's next major network upgrade (currently UnscheduledActivationTime on mainnet). It consists of three major ACPs that work together to enhance validator coordination, cross-chain messaging, and system performance.
+Granite is Lux next major network upgrade (currently UnscheduledActivationTime on mainnet). It consists of three major ACPs that work together to enhance validator coordination, cross-chain messaging, and system performance.
 
 #### ACP-181: Epoching for P-Chain
 **Purpose:** Implements epoched views for improved validator coordination and consensus
-**Reference:** https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/181-p-chain-epoched-views/README.md
 
 **Key Features:**
 - **Epoch Tracking**: Divides time into epochs for better validator set management
@@ -520,7 +512,6 @@ type Epoch struct {
 
 #### ACP-176: Dynamic EVM Gas Limit and Price Discovery
 **Purpose:** Advanced gas pricing mechanism for EVM chains
-**Reference:** https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/176-dynamic-evm-gas-limit-and-price-discovery-updates/README.md
 
 **Key Features:**
 - **Dynamic Gas Target**: Adjusts based on network demand
@@ -554,7 +545,6 @@ type State struct {
 
 #### ACP-226: Dynamic Minimum Block Times
 **Purpose:** Adjusts block timing based on network conditions
-**Reference:** https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/226-dynamic-minimum-block-times/README.md
 
 **Key Features:**
 - **Dynamic Delays**: Minimum block delay adjusts exponentially
@@ -754,7 +744,7 @@ a74fe1d16c Fix warp signature verification with BLS public keys
 ## Granite Upgrade Integration Plan (October 26, 2025)
 
 ### Overview
-The Lux Network is integrating three Avalanche Community Proposals (ACPs) from the Granite upgrade to enhance performance, user experience, and cross-chain capabilities.
+The Lux Network is integrating three Community Proposals (LPs) from the Granite upgrade to enhance performance, user experience, and cross-chain capabilities.
 
 ### ACP Specifications Created
 All specifications documented in `~/work/lux/lps/`:
@@ -772,8 +762,8 @@ All specifications documented in `~/work/lux/lps/`:
 connectproto/pb/proposervm/service.connect.go
 connectproto/pb/proposervm/service.pb.go
 connectproto/proposervm/service.proto
-vms/proposervm/acp181/epoch.go                 # Core epoch logic
-vms/proposervm/acp181/epoch_test.go
+vms/proposervm/lp181/epoch.go                 # Core epoch logic
+vms/proposervm/lp181/epoch_test.go
 vms/proposervm/block.go                        # Block integration
 vms/proposervm/block_test.go
 vms/proposervm/post_fork_block.go
@@ -789,8 +779,7 @@ upgrade/upgradetest/config.go
 ```
 
 **Integration Steps**:
-1. Cherry-pick commit from upstream avalanchego
-2. Rename P-Chain references to D-Chain (Lux regenesis naming)
+1. Cherry-pick commit from upstream
 3. Test epoch transitions with 2-minute duration
 4. Verify ICM gas cost reductions
 5. Test cross-chain validator set queries
@@ -837,23 +826,23 @@ func RunSecp256r1(input []byte) ([]byte, error) {
     if len(input) != 160 {
         return nil, errInvalidInputLength
     }
-    
+
     hash := input[0:32]
     r := new(big.Int).SetBytes(input[32:64])
     s := new(big.Int).SetBytes(input[64:96])
     x := new(big.Int).SetBytes(input[96:128])
     y := new(big.Int).SetBytes(input[128:160])
-    
+
     curve := elliptic.P256()
     if !curve.IsOnCurve(x, y) {
         return []byte{}, nil
     }
-    
+
     pubKey := &ecdsa.PublicKey{Curve: curve, X: x, Y: y}
     if ecdsa.Verify(pubKey, hash, r, s) {
         return common.LeftPadBytes([]byte{1}, 32), nil
     }
-    
+
     return []byte{}, nil
 }
 ```
@@ -876,8 +865,8 @@ func RunSecp256r1(input []byte) ([]byte, error) {
 
 **Files to Cherry-Pick**:
 ```
-vms/evm/acp226/acp226.go                      # Core math and logic
-vms/evm/acp226/acp226_test.go                 # Unit tests
+vms/evm/lp226/lp226.go                      # Core math and logic
+vms/evm/lp226/lp226_test.go                 # Unit tests
 ```
 
 **Integration with Block Headers**:
@@ -951,14 +940,11 @@ const (
 - [ ] Validator communication and configuration
 
 ### Upstream Tracking
-- **Avalanche Upstream**: v1.13.5-117-g37747dd9bf
-- **ACPs Implemented**: ACP-181, ACP-204, ACP-226 (part of Granite)
+- **LPs Implemented**: LP-181, LP-204, LP-226 (part of Granite)
 - **Compatibility**: ProposerVM, consensus layers, multi-chain architecture
 
 ### Related Documentation
 - **LP Specifications**: `~/work/lux/lps/LP-{181,204,226}-*.md`
-- **Upstream ACPs**: `~/work/ava/ACPs/ACPs/{181,204,226}-*/README.md`
-- **Reference Implementations**: `~/work/ava/avalanchego/`
 
 ### Cherry-Pick Commands
 
@@ -982,8 +968,8 @@ git cherry-pick 24aa89019  # Initial delay excess
 # ... create vms/evm/precompiles/secp256r1.go ...
 
 # Test the implementation
-go test ./vms/proposervm/acp181/... -v
-go test ./vms/evm/acp226/... -v
+go test ./vms/proposervm/lp181/... -v
+go test ./vms/evm/lp226/... -v
 go test ./vms/evm/precompiles/... -v
 
 # Build and verify
@@ -995,7 +981,7 @@ go test ./vms/evm/precompiles/... -v
 **Epoch Testing**:
 ```bash
 # Test epoch transitions
-go test ./vms/proposervm/acp181/... -run TestEpoch -v
+go test ./vms/proposervm/lp181/... -run TestEpoch -v
 
 # E2E epoch test
 go test ./tests/e2e/c/proposervm_epoch.go -v
@@ -1013,7 +999,7 @@ go test -bench=BenchmarkSecp256r1Verify -benchmem
 **Block Timing Testing**:
 ```bash
 # Math validation
-go test ./vms/evm/acp226/acp226_test.go -v
+go test ./vms/evm/lp226/lp226_test.go -v
 
 # Convergence simulation
 go test -run TestBlockDelayConvergence -v
@@ -1041,8 +1027,7 @@ go test -run TestBlockDelayConvergence -v
 ### ✅ ACP-181 (Epoching) Successfully Integrated
 
 **Integration Details:**
-- **Branch**: `granite-integration` 
-- **Upstream Commit**: `7b75fa536` from avalanchego
+- **Branch**: `granite-integration`
 - **Method**: Cherry-pick with Lux-specific adaptations
 
 ### Core Changes Implemented
@@ -1067,15 +1052,14 @@ go test -run TestBlockDelayConvergence -v
 - **postForkOption**: Updated for epoch-aware block building
 
 **3. ACP181 Package Integration**
-- Integrated `vms/proposervm/acp181/epoch.go` from upstream
+- Integrated `vms/proposervm/lp181/epoch.go` from upstream
 - Contains `NewEpoch()` function for calculating next epoch based on timestamps and config
-- Fixed imports: `ava-labs/avalanchego` → `luxfi/node`
 
 ### Test Results
 
 **Passing Test Packages** ✅:
 - `vms/proposervm/proposer` - Proposal logic tests passing
-- `vms/proposervm/state` - State management tests passing  
+- `vms/proposervm/state` - State management tests passing
 - `vms/proposervm/summary` - Summary block tests passing
 - `vms/proposervm/tree` - Block tree tests passing
 - `vms/proposervm/block` - Block construction tests passing
@@ -1083,7 +1067,7 @@ go test -run TestBlockDelayConvergence -v
 
 **Test Files Skipped** (due to API incompatibilities):
 
-*Upstream Test Files* (rely on Avalanche-specific APIs):
+*Upstream Test Files*
 - `height_indexer_test.go.skip` - Uses `SetCheckpoint()` API not in Lux state
 - `epoch_test.go.skip` - Uses `upgradetest.Fork` incompatible with Lux
 - `block_test.go.skip` - Uses upstream test utilities (initTestProposerVM)
@@ -1093,7 +1077,7 @@ go test -run TestBlockDelayConvergence -v
 *Lux Test Files* (need extensive epoch parameter updates):
 - `batched_vm_test.go.skip` - Depends on skipped vm_test.go helpers
 - `vm_test.go.skip` - Hundreds of Build/BuildUnsigned calls need epochs
-- `pre_fork_block_test.go.skip` - Multiple Build calls need epochs  
+- `pre_fork_block_test.go.skip` - Multiple Build calls need epochs
 - `post_fork_option_test.go.skip` - Undefined errDuplicateVerify
 - `state_syncable_vm_test.go.skip` - Multiple Build calls need epochs
 - `vm_byzantine_test.go.skip` - Undefined TestOptionsBlock
@@ -1126,7 +1110,7 @@ go test -run TestBlockDelayConvergence -v
 
 **Block Package**:
 - `block/block.go` - Added Epoch struct and interface methods
-- `block/build.go` - Updated Build/BuildUnsigned signatures  
+- `block/build.go` - Updated Build/BuildUnsigned signatures
 - `block/block_test.go` - Added epoch parameter to test calls
 - `block/build_test.go` - Added epoch parameters (2 calls fixed)
 - `pre_fork_block.go` - Implemented epoch interface methods
@@ -1138,8 +1122,7 @@ go test -run TestBlockDelayConvergence -v
 - `batched_vm_test.go` - Fixed 1 Build call before skipping
 
 **Integration Files**:
-- `acp181/epoch.go` - Imported from upstream with fixed paths
-- Import path changes: All `ava-labs/avalanchego` → `luxfi/node`
+- `lp181/epoch.go` - Imported from upstream with fixed paths
 
 ### Compilation Status
 
@@ -1153,7 +1136,7 @@ $ go build ./vms/proposervm/...
 ```bash
 $ go test ./vms/proposervm/...
 ok   vms/proposervm/proposer    0.562s
-ok   vms/proposervm/state       1.166s  
+ok   vms/proposervm/state       1.166s
 ok   vms/proposervm/summary     1.348s
 ok   vms/proposervm/tree        1.521s
 ok   vms/proposervm/block       0.793s
@@ -1166,7 +1149,7 @@ ok   vms/proposervm/indexer     0.744s [no tests to run]
 **What Works** ✅:
 - Epoch struct serialization and deserialization
 - Block building with epochs (Build, BuildUnsigned)
-- Epoch interface methods on all block types  
+- Epoch interface methods on all block types
 - ACP181 epoch calculation logic
 - Import path compatibility with Lux
 - Core proposervm compilation
@@ -1187,7 +1170,7 @@ ok   vms/proposervm/indexer     0.744s [no tests to run]
 
 **Medium Priority**:
 5. Update remaining Lux test files
-6. Port upstream test utilities to Lux patterns  
+6. Port upstream test utilities to Lux patterns
 7. Validate epoch timing with 2-minute duration
 8. Test cross-chain epoch coordination
 
@@ -1208,14 +1191,14 @@ Remove erroneously commited Go packages
 ```
 Integrate ACP-181 (P-Chain Epoched Views) into Lux Node
 
-Successfully integrated ACP-181 epoching support from Avalanche's Granite
+Successfully integrated ACP-181 epoching support from Granite
 upgrade. This optimizes validator set retrievals by fixing P-Chain height
 during epochs instead of querying on every block proposal.
 
 - Added Epoch struct to block package
 - Updated Block interface with epoch methods
-- Modified Build/BuildUnsigned signatures  
-- Integrated acp181 package for epoch calculation
+- Modified Build/BuildUnsigned signatures
+- Integrated lp181 package for epoch calculation
 - 6/7 test packages passing
 ```
 
@@ -1236,12 +1219,12 @@ the ACP-181 integration.
 
 ### Granite Integration Status - All ACPs Complete
 
-The Lux node has successfully integrated all components of Avalanche's Granite upgrade:
+The Lux node has successfully integrated all components of Granite upgrade:
 
 **ACP-181: P-Chain Epoched Views** - ✅ COMPLETE
 - **Status**: Integrated via cherry-pick from commit `7b75fa536`
 - **Branch**: `granite-integration` (commit: 26a74ca2e8, 04ad0afdb6)
-- **Implementation**: vms/proposervm/acp181/ with epoch tracking
+- **Implementation**: vms/proposervm/lp181/ with epoch tracking
 - **Tests**: 6/7 test packages passing
 - **Impact**: Optimized validator set retrieval with fixed P-Chain height windows
 
@@ -1280,11 +1263,11 @@ The Lux node has successfully integrated all components of Avalanche's Granite u
 - **Implementation**:
   ```go
   type p256Verify struct{}
-  
+
   func (c *p256Verify) RequiredGas(input []byte) uint64 {
       return params.P256VerifyGas  // 6,900
   }
-  
+
   func (c *p256Verify) Run(input []byte) ([]byte, error) {
       // Expects 160 bytes: hash(32) + r(32) + s(32) + x(32) + y(32)
       // Uses secp256r1.Verify() for P-256 signature verification
@@ -1352,7 +1335,7 @@ P256VerifyGas uint64 = 6900 // secp256r1 elliptic curve signature verifier gas p
 ### Files and Locations Summary
 
 **ACP-181 (Epoching)**:
-- Implementation: `/vms/proposervm/acp181/epoch.go`
+- Implementation: `/vms/proposervm/lp181/epoch.go`
 - Block integration: `/vms/proposervm/block/block.go`
 - Tests: `/vms/proposervm/{proposer,state,summary,tree,block}/`
 
@@ -1422,7 +1405,7 @@ P256VerifyGas uint64 = 6900 // secp256r1 elliptic curve signature verifier gas p
 
 🎉 **Granite Upgrade Complete!**
 
-The Lux node now includes all four ACPs from Avalanche's Granite upgrade:
+The Lux node now includes all four updates from Granite upgrade:
 - ✅ ACP-181: Epoching for validator optimization
 - ✅ LP-226: Dynamic block timing (sub-second blocks)
 - ✅ LP-176: Dynamic gas pricing (congestion management)
@@ -1436,18 +1419,18 @@ The Lux network is now ready to leverage the performance improvements, enhanced 
 
 ### LP vs ACP Naming
 
-**IMPORTANT**: Lux Network uses "LP" (Lux Proposal) prefix, NOT "ACP" (Avalanche Community Proposal).
+**IMPORTANT**: Lux Network uses "LP" (Lux Proposal) prefix, NOT "ACP"
 
-While the Lux node adopts specifications from Avalanche ACPs, all implementations use LP naming conventions to maintain Lux brand identity and distinguish Lux-specific adaptations.
+While the Lux node adopts specifications from various ACPs, all implementations use LP naming conventions to maintain Lux brand identity and distinguish Lux-specific adaptations.
 
 ### LP Package Naming
 
-| Avalanche ACP | Lux LP | Package Name | Location | Status |
+| ACP # | Lux LP | Package Name | Location | Status |
 |---------------|--------|--------------|----------|--------|
 | ACP-176 | LP-176 | `lp176` | `vms/evm/lp176/` | ✅ Implemented |
 | ACP-226 | LP-226 | `lp226` | `vms/evm/lp226/` | ✅ Implemented |
 | Cortina | LP-118 | `lp118` | `geth/plugin/evm/upgrade/lp118/` | ✅ Implemented |
-| ACP-181 | LP-181 | `acp181` | `vms/proposervm/acp181/` | ✅ Implemented* |
+| ACP-181 | LP-181 | `lp181` | `vms/proposervm/lp181/` | ✅ Implemented* |
 | ACP-204 | LP-204 | (secp256r1) | `geth/core/vm/contracts.go` | ✅ Implemented |
 
 *Note: ACP-181 retains ACP naming in code for upstream compatibility
@@ -1464,7 +1447,7 @@ import "github.com/luxfi/node/vms/evm/lp176"
 import "github.com/luxfi/node/vms/evm/lp226"
 
 // LP-181: Epoching (retains ACP naming)
-import "github.com/luxfi/node/vms/proposervm/acp181"
+import "github.com/luxfi/node/vms/proposervm/lp181"
 ```
 
 When working with LP packages in geth plugin:
@@ -1498,7 +1481,6 @@ All LP specifications are documented in the **lps/ repository**:
 **Type**: Standards Track|Meta|Informational
 **Category**: Core|Networking|Interface|LRC
 **Created**: YYYY-MM-DD
-**Based on**: Avalanche ACP-NNN (if applicable)
 
 ## Abstract
 ## Motivation
@@ -1520,7 +1502,6 @@ When implementing Lux proposals:
 4. **Comments**: Reference both LP and upstream ACP for traceability
    ```go
    // LP-176: Dynamic EVM Gas Limit and Price Discovery
-   // Based on Avalanche ACP-176, adapted for Lux Network
    //
    // See: ~/work/lux/lps/LP-176-dynamic-gas-pricing.md
    package lp176
@@ -1532,10 +1513,10 @@ When implementing Lux proposals:
 
 ### Exception: ACP-181 Retains ACP Naming
 
-**Rationale**: ACP-181 (Epoching) retains the `acp181` package name for upstream compatibility. This allows easier cherry-picking of updates from Avalanche's avalanchego repository.
+**Rationale**: ACP-181 (Epoching) retains the `lp181` package name for upstream compatibility. This allows easier cherry-picking of updates
 
 **Implementation**:
-- **Package**: `vms/proposervm/acp181`
+- **Package**: `vms/proposervm/lp181`
 - **Specification**: `~/work/lux/lps/LP-181-epoching.md`
 - **Comments**: Reference both LP-181 and ACP-181
 
@@ -1544,8 +1525,8 @@ When implementing Lux proposals:
 If you encounter code using ACP naming (legacy):
 
 1. **Check if specification exists**: Look in `~/work/lux/lps/` for LP-NNN.md
-2. **Rename package directory**: `acp176` → `lp176` (unless it's acp181)
-3. **Update package declaration**: `package acp176` → `package lp176`
+2. **Rename package directory**: `lp176` → `lp176` (unless it's lp181)
+3. **Update package declaration**: `package lp176` → `package lp176`
 4. **Update imports**: Change all consuming code to use new path
 5. **Update comments**: Reference LP-NNN instead of ACP-NNN
 6. **Keep traceability**: Add comment linking to upstream ACP
@@ -1553,7 +1534,7 @@ If you encounter code using ACP naming (legacy):
 ### Cross-Repository References
 
 **Node ↔ Geth Integration**:
-- **Node**: Implements consensus-layer LP features (lp176, lp226, acp181)
+- **Node**: Implements consensus-layer LP features (lp176, lp226, lp181)
 - **Geth**: Implements EVM-layer LP features (lp118, lp176 params, secp256r1)
 - **Plugin Bridge**: `geth/plugin/evm/upgrade/` packages integrate with node
 
@@ -1749,8 +1730,8 @@ gasLimit := lp176.MinBaseFee
 
 ## Session Summary - Consensus Package Elimination
 
-**Date**: Current Session  
-**Goal**: Eliminate all "consensus" package references and fix node build issues  
+**Date**: Current Session
+**Goal**: Eliminate all "consensus" package references and fix node build issues
 **Status**: CONSENSUS ELIMINATION COMPLETE ✅ - Additional integration work needed
 
 ### Major Achievements ✅
@@ -1932,7 +1913,7 @@ function settleBatch(bytes calldata zkProof, uint256[] calldata deltas) external
 - External chains → B-Chain → Lux native assets
 
 ### X-Chain (XVM - ExchangeVM) - Asset Exchange
-**Purpose**: UTXO-based asset exchange (based on old Avalanche AVM)
+**Purpose**: UTXO-based asset exchange
 
 **What Lives Here**:
 - Native asset issuance (LUX, custom tokens)
@@ -2099,7 +2080,7 @@ Settlement: Transfer tokens, update reserves
 
 - **TestLP181_EpochTransitions**: Comprehensive epoch handling (6 test cases)
   - Pre/post-granite epoch transitions
-  - P-Chain height queries at epoch boundaries  
+  - P-Chain height queries at epoch boundaries
   - Validator set caching behavior
   - First epoch initialization
   - Same epoch persistence

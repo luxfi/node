@@ -93,16 +93,16 @@
 - name: "Warp Signature API"
   color: "68A7EA"
 
-# ACP labels
-- name: "acp103"
+# LP labels
+- name: "lp103"
   color: "AB2C58"
-- name: "acp113"
+- name: "lp113"
   color: "3359BA"
-- name: "acp118"
+- name: "lp118"
   color: "DFC715"
-- name: "acp125"
+- name: "lp125"
   color: "bfdadc"
-- name: "acp20"
+- name: "lp20"
   color: "DB7D37"
-- name: "acp77"
+- name: "lp77"
   color: "45CDF2"

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus/engine/chain/block"
-	chain "github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"

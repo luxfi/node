@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package xvm
+package exchangevm
 
 import (
 	"math/rand"
@@ -22,8 +22,8 @@ import (
 func getAllUTXOsBenchmark(b *testing.B, utxoCount int, randSrc rand.Source) {
 	require := require.New(b)
 
-	env := setup(b, &envConfig{fork: upgradetest.Latest})
-	defer env.vm.ctx.Lock.Unlock()
+	env := setup(b, &envConfig{fork: upgradetest.GetConfig(upgradetest.Latest)})
+	defer env.vm.Lock.Unlock()
 
 	addr := ids.GenerateTestShortID()
 

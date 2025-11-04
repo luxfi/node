@@ -297,11 +297,11 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	hrp := constants.GetHRP(config.NetworkID)
 
 	// Specify the genesis state of the XVM (formerly AVM)
-	lux := xvm.GenesisAssetDefinition{
+	lux := exchangevm.GenesisAssetDefinition{
 		Name:         "Lux",
 		Symbol:       "LUX",
 		Denomination: 9,
-		InitialState: xvm.AssetInitialState{},
+		InitialState: exchangevm.AssetInitialState{},
 	}
 	memoBytes := []byte{}
 	xAllocations := []Allocation(nil)
@@ -318,7 +318,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 			return nil, ids.Empty, err
 		}
 
-		lux.InitialState.FixedCap = append(lux.InitialState.FixedCap, xvm.GenesisHolder{
+		lux.InitialState.FixedCap = append(lux.InitialState.FixedCap, exchangevm.GenesisHolder{
 			Amount:  allocation.InitialAmount,
 			Address: addr,
 		})
@@ -326,9 +326,9 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	}
 	lux.Memo = memoBytes
 
-	xvmGenesis, err := xvm.NewGenesis(
+	xvmGenesis, err := exchangevm.NewGenesis(
 		config.NetworkID,
-		map[string]xvm.GenesisAssetDefinition{
+		map[string]exchangevm.GenesisAssetDefinition{
 			"LUX": lux, // The XVM starts out with one asset: LUX
 		},
 	)
@@ -560,7 +560,7 @@ func XAssetID(xvmGenesisBytes []byte) (ids.ID, error) {
 	}
 
 	genesisCodec := parser.GenesisCodec()
-	genesis := xvm.Genesis{}
+	genesis := exchangevm.Genesis{}
 	if _, err := genesisCodec.Unmarshal(xvmGenesisBytes, &genesis); err != nil {
 		return ids.Empty, err
 	}

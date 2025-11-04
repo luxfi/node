@@ -8,17 +8,13 @@ import (
 
 	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 )
 
 // Manager interface for validator management
 type Manager interface {
 	validators.Manager
-	// Additional methods needed by node tests
-	AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error
-	AddWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error
-	RemoveWeight(subnetID ids.ID, nodeID ids.NodeID, weight uint64) error
+	// Additional methods needed by node (beyond consensus.validators.Manager)
 	Count(subnetID ids.ID) int
 	Sample(subnetID ids.ID, size int) ([]ids.NodeID, error)
 	GetValidatorIDs(subnetID ids.ID) []ids.NodeID
@@ -26,7 +22,6 @@ type Manager interface {
 	GetMap(subnetID ids.ID) map[ids.NodeID]*validators.GetValidatorOutput
 	RegisterCallbackListener(listener validators.ManagerCallbackListener)
 	RegisterSetCallbackListener(subnetID ids.ID, listener validators.SetCallbackListener)
-	NumSubnets() int
 	NumValidators(subnetID ids.ID) int
 }
 
@@ -43,7 +38,7 @@ type manager struct {
 	mu         *sync.RWMutex
 }
 
-func (m *manager) AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
+func (m *manager) AddStaker(subnetID ids.ID, nodeID ids.NodeID, publicKey []byte, txID ids.ID, light uint64) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -53,8 +48,10 @@ func (m *manager) AddStaker(subnetID ids.ID, nodeID ids.NodeID, pk *bls.PublicKe
 
 	m.validators[subnetID][nodeID] = &validators.GetValidatorOutput{
 		NodeID:    nodeID,
-		PublicKey: nil, // pk can be stored if needed
-		Weight:    weight,
+		PublicKey: publicKey,
+		Light:     light,
+		Weight:    light,
+		TxID:      txID,
 	}
 	return nil
 }

@@ -19,8 +19,8 @@ Returns peer preferences for Lux Community Proposals (LPs)
 **Signature**:
 
 ```
-info.acps() -> {
-  acps: map[uint32]{
+info.lps() -> {
+  lps: map[uint32]{
     supportWeight: uint64
     supporters:    set[string]
     objectWeight:  uint64

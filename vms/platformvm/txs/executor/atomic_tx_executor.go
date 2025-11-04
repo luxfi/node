@@ -60,7 +60,7 @@ func (*atomicTxExecutor) AddValidatorTx(*txs.AddValidatorTx) error {
 	return ErrWrongTxType
 }
 
-func (*atomicTxExecutor) AddSubnetValidatorTx(*txs.AddSubnetValidatorTx) error {
+func (*atomicTxExecutor) AddNetValidatorTx(*txs.AddNetValidatorTx) error {
 	return ErrWrongTxType
 }
 
@@ -72,7 +72,7 @@ func (*atomicTxExecutor) CreateChainTx(*txs.CreateChainTx) error {
 	return ErrWrongTxType
 }
 
-func (*atomicTxExecutor) CreateSubnetTx(*txs.CreateSubnetTx) error {
+func (*atomicTxExecutor) CreateNetTx(*txs.CreateNetTx) error {
 	return ErrWrongTxType
 }
 
@@ -84,11 +84,11 @@ func (*atomicTxExecutor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return ErrWrongTxType
 }
 
-func (*atomicTxExecutor) RemoveSubnetValidatorTx(*txs.RemoveSubnetValidatorTx) error {
+func (*atomicTxExecutor) RemoveNetValidatorTx(*txs.RemoveNetValidatorTx) error {
 	return ErrWrongTxType
 }
 
-func (*atomicTxExecutor) TransformSubnetTx(*txs.TransformSubnetTx) error {
+func (*atomicTxExecutor) TransformNetTx(*txs.TransformNetTx) error {
 	return ErrWrongTxType
 }
 
@@ -100,7 +100,7 @@ func (*atomicTxExecutor) AddPermissionlessDelegatorTx(*txs.AddPermissionlessDele
 	return ErrWrongTxType
 }
 
-func (*atomicTxExecutor) TransferSubnetOwnershipTx(*txs.TransferSubnetOwnershipTx) error {
+func (*atomicTxExecutor) TransferNetOwnershipTx(*txs.TransferNetOwnershipTx) error {
 	return ErrWrongTxType
 }
 
@@ -155,27 +155,3 @@ func (e *atomicTxExecutor) atomicTx() error {
 	return err
 }
 
-// DisableL1ValidatorTx handles L1 validator disabling
-func (e *AtomicTxExecutor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
-	return ErrWrongTxType
-}
-
-// IncreaseL1ValidatorBalanceTx handles L1 validator balance increase
-func (e *AtomicTxExecutor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
-	return ErrWrongTxType
-}
-
-// RegisterL1ValidatorTx handles L1 validator registration
-func (e *AtomicTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
-	return ErrWrongTxType
-}
-
-// SetL1ValidatorWeightTx handles L1 validator weight setting
-func (e *AtomicTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
-	return ErrWrongTxType
-}
-
-// ConvertNetToL1Tx handles converting a net to L1
-func (e *AtomicTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
-	return ErrWrongTxType
-}

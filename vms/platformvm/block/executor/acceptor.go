@@ -9,6 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/luxfi/log"
+	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/state"
@@ -93,12 +95,9 @@ func (a *acceptor) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
 	}
 
 	// Note that this method writes [batch] to the database.
-	// Convert atomicRequests to map[ids.ID]interface{}
-	requests := make(map[ids.ID]interface{})
-	for chainID, req := range blkState.atomicRequests {
-		requests[chainID] = req
-	}
-	if err := a.SharedMemory.Apply(requests, batch); err != nil {
+	// Apply atomic requests via SharedMemory from context
+	sharedMemory := a.ctx.SharedMemory.(atomic.SharedMemory)
+	if err := sharedMemory.Apply(blkState.atomicRequests, batch); err != nil {
 		return fmt.Errorf(
 			"failed to atomically accept tx %s in block %s: %w",
 			b.Tx.ID(),
@@ -169,12 +168,9 @@ func (a *acceptor) optionBlock(b block.Block, blockType string) error {
 	}
 
 	// Note that this method writes [batch] to the database.
-	// Convert atomicRequests to map[ids.ID]interface{}
-	requests := make(map[ids.ID]interface{})
-	for chainID, req := range parentState.atomicRequests {
-		requests[chainID] = req
-	}
-	if err := a.SharedMemory.Apply(requests, batch); err != nil {
+	// Apply atomic requests via SharedMemory from context
+	sharedMemory := a.ctx.SharedMemory.(atomic.SharedMemory)
+	if err := sharedMemory.Apply(parentState.atomicRequests, batch); err != nil {
 		return fmt.Errorf("failed to apply vm's state to shared memory: %w", err)
 	}
 
@@ -253,12 +249,9 @@ func (a *acceptor) standardBlock(b block.Block, blockType string) error {
 	}
 
 	// Note that this method writes [batch] to the database.
-	// Convert atomicRequests to map[ids.ID]interface{}
-	requests := make(map[ids.ID]interface{})
-	for chainID, req := range blkState.atomicRequests {
-		requests[chainID] = req
-	}
-	if err := a.SharedMemory.Apply(requests, batch); err != nil {
+	// Apply atomic requests via SharedMemory from context
+	sharedMemory := a.ctx.SharedMemory.(atomic.SharedMemory)
+	if err := sharedMemory.Apply(blkState.atomicRequests, batch); err != nil {
 		return fmt.Errorf("failed to apply vm's state to shared memory: %w", err)
 	}
 

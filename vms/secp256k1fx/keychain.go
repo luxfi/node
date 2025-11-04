@@ -69,6 +69,8 @@ func NewKeychain(keys ...*secp256k1.PrivateKey) *Keychain {
 	kc := &Keychain{
 		luxAddrToKeyIndex: make(map[ids.ShortID]int),
 		ethAddrToKeyIndex:  make(map[gethcommon.Address]int),
+		Addrs:             make(set.Set[ids.ShortID]),
+		EthAddrs:          make(set.Set[gethcommon.Address]),
 	}
 	for _, key := range keys {
 		kc.Add(key)

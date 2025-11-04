@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
@@ -21,15 +22,11 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/codecmock"
-	"github.com/luxfi/database/memdb"
-	"github.com/luxfi/database/versiondb"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/exchangevm/block"
 	blkexecutor "github.com/luxfi/node/vms/exchangevm/block/executor"
+	"github.com/luxfi/node/vms/exchangevm/block/executor/executormock"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	xvmmetrics "github.com/luxfi/node/vms/exchangevm/metrics"
 	"github.com/luxfi/node/vms/exchangevm/state"
@@ -62,7 +59,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				manager.EXPECT().Preferred().Return(preferredID)
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(nil, errTest)
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 
 				ctx := context.Background()
@@ -92,7 +89,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				manager.EXPECT().GetStatelessBlock(preferredID).Return(preferredBlock, nil)
 				manager.EXPECT().GetState(preferredID).Return(nil, false)
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 
 				ctx := context.Background()
@@ -131,7 +128,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, mempool.Add(tx))
 
@@ -172,7 +169,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, mempool.Add(tx))
 
@@ -214,7 +211,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, mempool.Add(tx))
 
@@ -295,7 +292,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 					},
 				)
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, mempool.Add(tx1))
 				require.NoError(t, mempool.Add(tx2))
@@ -364,7 +361,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, mempool.Add(tx))
 
@@ -434,7 +431,7 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, mempool.Add(tx))
 
@@ -473,7 +470,7 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 
 	require := require.New(t)
 
-	registerer := prometheus.NewRegistry()
+	registerer := metric.NewRegistry()
 	mempool, err := mempool.New("mempool", registerer)
 	require.NoError(err)
 	// add a tx to the mempool

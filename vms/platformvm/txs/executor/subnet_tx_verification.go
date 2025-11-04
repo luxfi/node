@@ -31,7 +31,7 @@ func verifyPoASubnetAuthorization(
 	netID ids.ID,
 	subnetAuth verify.Verifiable,
 ) ([]verify.Verifiable, error) {
-	creds, err := verifySubnetAuthorization(fx, chainState, sTx, subnetID, subnetAuth)
+	creds, err := verifySubnetAuthorization(fx, chainState, sTx, netID, subnetAuth)
 	if err != nil {
 		return nil, err
 	}
@@ -44,9 +44,9 @@ func verifyPoASubnetAuthorization(
 		return nil, err
 	}
 
-	_, err = chainState.GetSubnetToL1Conversion(subnetID)
+	_, err = chainState.GetSubnetToL1Conversion(netID)
 	if err == nil {
-		return nil, fmt.Errorf("%q %w", subnetID, errIsImmutable)
+		return nil, fmt.Errorf("%q %w", netID, errIsImmutable)
 	}
 	if err != database.ErrNotFound {
 		return nil, err
@@ -63,10 +63,10 @@ func verifySubnetAuthorization(
 	fx fx.Fx,
 	chainState state.Chain,
 	tx *txs.Tx,
-	subnetID ids.ID,
+	netID ids.ID,
 	subnetAuth verify.Verifiable,
 ) ([]verify.Verifiable, error) {
-	subnetOwner, err := chainState.GetSubnetOwner(subnetID)
+	subnetOwner, err := chainState.GetSubnetOwner(netID)
 	if err != nil {
 		return nil, err
 	}

@@ -3,7 +3,7 @@
 
 // ACP181 implements the epoch logic specified here:
 // https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/181-p-chain-epoched-views/README.md
-package acp181
+package lp181
 
 import (
 	"time"

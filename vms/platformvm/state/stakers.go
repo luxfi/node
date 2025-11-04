@@ -323,7 +323,7 @@ func (s *diffStakers) GetValidator(netID ids.ID, nodeID ids.NodeID) (*Staker, di
 }
 
 func (s *diffStakers) PutValidator(staker *Staker) error {
-	validatorDiff := s.getOrCreateDiff(staker.SubnetID, staker.NodeID)
+	validatorDiff := s.getOrCreateDiff(staker.NetID, staker.NodeID)
 	if validatorDiff.validatorStatus == deleted {
 		// Enforce the invariant that a validator cannot be added after being
 		// deleted.
@@ -367,7 +367,7 @@ func (s *diffStakers) GetDelegatorIterator(
 		addedDelegatorIterator iterator.Iterator[*Staker] = iterator.Empty[*Staker]{}
 		deletedDelegators      map[ids.ID]*Staker
 	)
-	if subnetValidatorDiffs, ok := s.validatorDiffs[netID]; ok {
+	if subnetValidatorDiffs, ok := s.validatorDiffs[subnetID]; ok {
 		if validatorDiff, ok := subnetValidatorDiffs[nodeID]; ok {
 			addedDelegatorIterator = iterator.FromTree(validatorDiff.addedDelegators)
 			deletedDelegators = validatorDiff.deletedDelegators

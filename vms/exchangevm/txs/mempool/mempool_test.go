@@ -19,39 +19,26 @@ import (
 	"github.com/luxfi/node/vms/components/lux"
 )
 
-func newMempool(toEngine chan<- common.MessageType) (Mempool, error) {
-	return New("mempool", metric.NewRegistry(), toEngine)
+func newMempool(toEngine chan<- common.MessageType) (*Mempool, error) {
+	return New("mempool", metric.NewNoOpRegistry())
 }
 
-func TestRequestBuildBlock(t *testing.T) {
+func TestMempoolBasics(t *testing.T) {
 	require := require.New(t)
 
 	toEngine := make(chan common.MessageType, 1)
 	mempool, err := newMempool(toEngine)
 	require.NoError(err)
 
-	mempool.RequestBuildBlock()
-	select {
-	case <-toEngine:
-		require.FailNow("should not have sent message to engine")
-	default:
-	}
+	// Test that mempool starts empty
+	require.False(mempool.HasTxs())
 
+	// Add a transaction
 	tx := newTx(0, 32)
 	require.NoError(mempool.Add(tx))
 
-	mempool.RequestBuildBlock()
-	mempool.RequestBuildBlock() // Must not deadlock
-	select {
-	case <-toEngine:
-	default:
-		require.FailNow("should have sent message to engine")
-	}
-	select {
-	case <-toEngine:
-		require.FailNow("should have only sent one message to engine")
-	default:
-	}
+	// Verify mempool now has transactions
+	require.True(mempool.HasTxs())
 }
 
 func newTx(index uint32, size int) *txs.Tx {

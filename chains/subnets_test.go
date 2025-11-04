@@ -15,7 +15,7 @@ import (
 
 func TestNewSubnets(t *testing.T) {
 	require := require.New(t)
-	config := map[ids.ID]subnets.Config{
+	config := map[ids.ID]nets.Config{
 		constants.PrimaryNetworkID: {},
 	}
 
@@ -29,7 +29,7 @@ func TestNewSubnets(t *testing.T) {
 
 func TestNewSubnetsNoPrimaryNetworkConfig(t *testing.T) {
 	require := require.New(t)
-	config := map[ids.ID]subnets.Config{}
+	config := map[ids.ID]nets.Config{}
 
 	_, err := NewSubnets(ids.EmptyNodeID, config)
 	require.ErrorIs(err, ErrNoPrimaryNetworkConfig)
@@ -81,7 +81,7 @@ func TestSubnetsGetOrCreate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
-			config := map[ids.ID]subnets.Config{
+			config := map[ids.ID]nets.Config{
 				constants.PrimaryNetworkID: {},
 			}
 			subnets, err := NewSubnets(ids.EmptyNodeID, config)
@@ -100,28 +100,28 @@ func TestSubnetConfigs(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		config map[ids.ID]subnets.Config
+		config map[ids.ID]nets.Config
 		netID  ids.ID
-		want   subnets.Config
+		want   nets.Config
 	}{
 		{
 			name: "default to primary network config",
-			config: map[ids.ID]subnets.Config{
+			config: map[ids.ID]nets.Config{
 				constants.PrimaryNetworkID: {},
 			},
 			netID: testNetID,
-			want:  subnets.Config{},
+			want:  nets.Config{},
 		},
 		{
 			name: "use net config",
-			config: map[ids.ID]subnets.Config{
+			config: map[ids.ID]nets.Config{
 				constants.PrimaryNetworkID: {},
 				testNetID: {
 					ValidatorOnly: true,
 				},
 			},
 			netID: testNetID,
-			want: subnets.Config{
+			want: nets.Config{
 				ValidatorOnly: true,
 			},
 		},
@@ -145,7 +145,7 @@ func TestSubnetConfigs(t *testing.T) {
 func TestSubnetsBootstrapping(t *testing.T) {
 	require := require.New(t)
 
-	config := map[ids.ID]subnets.Config{
+	config := map[ids.ID]nets.Config{
 		constants.PrimaryNetworkID: {},
 	}
 

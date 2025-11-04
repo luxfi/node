@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/vms/platformvm/block"
-	"github.com/luxfi/node/vms/platformvm/txs/executor"
+	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 )
 
 // VerifyWarpMessages verifies all warp messages in the block. If any of the
@@ -21,7 +21,7 @@ func VerifyWarpMessages(
 	b block.Block,
 ) error {
 	for _, tx := range b.Txs() {
-		err := executor.VerifyWarpMessages(
+		err := txexecutor.VerifyWarpMessages(
 			ctx,
 			networkID,
 			validatorState,

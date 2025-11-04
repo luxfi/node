@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	chain "github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/state"
 )
@@ -101,7 +100,7 @@ func (b *Block) State() state.ReadOnlyChain {
 }
 
 // BuildChild creates a child block of the given parent
-func BuildChild(parent block.Block) *Block {
+func BuildChild(parent *Block) *Block {
 	nextID++
 	blockID := ids.ID{}
 	copy(blockID[:], fmt.Sprintf("block_%d", nextID))

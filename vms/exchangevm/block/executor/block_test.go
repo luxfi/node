@@ -12,14 +12,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/mock/gomock"
 	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/chains/atomic/atomicmock"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/upgrade/upgradetest"
 )
 

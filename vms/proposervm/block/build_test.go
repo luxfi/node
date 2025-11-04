@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	nodeids "github.com/luxfi/node/ids"
+	nodeids "github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 )
 

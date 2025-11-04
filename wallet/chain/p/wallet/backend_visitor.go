@@ -42,10 +42,9 @@ func (b *backendVisitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-// Removed in regenesis
-// func (b *backendVisitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
-// 	return b.baseTx(&tx.BaseTx)
-// }
+func (b *backendVisitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
 
 func (b *backendVisitor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
 	return b.baseTx(&tx.BaseTx)
@@ -55,14 +54,13 @@ func (b *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-// Removed in regenesis
-// func (b *backendVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
-// 	b.b.setOwner(
-// 		b.txID,
-// 		tx.Owner,
-// 	)
-// 	return b.baseTx(&tx.BaseTx)
-// }
+func (b *backendVisitor) CreateNetTx(tx *txs.CreateNetTx) error {
+	b.b.setOwner(
+		b.txID,
+		tx.Owner,
+	)
+	return b.baseTx(&tx.BaseTx)
+}
 
 func (b *backendVisitor) ImportTx(tx *txs.ImportTx) error {
 	err := b.b.removeUTXOs(
@@ -97,15 +95,13 @@ func (b *backendVisitor) ExportTx(tx *txs.ExportTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
-// Removed in regenesis
-// func (b *backendVisitor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx) error {
-// 	return b.baseTx(&tx.BaseTx)
-// }
+func (b *backendVisitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
 
-// Removed in regenesis
-// func (b *backendVisitor) TransformSubnetTx(tx *txs.TransformSubnetTx) error {
-// 	return b.baseTx(&tx.BaseTx)
-// }
+func (b *backendVisitor) TransformNetTx(tx *txs.TransformNetTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
 
 func (b *backendVisitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
 	return b.baseTx(&tx.BaseTx)
@@ -115,23 +111,22 @@ func (b *backendVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessD
 	return b.baseTx(&tx.BaseTx)
 }
 
-// Removed in regenesis
-// func (b *backendVisitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
-// 	b.b.setOwner(
-// 		tx.Subnet,
-// 		tx.Owner,
-// 	)
-// 	return b.baseTx(&tx.BaseTx)
-// }
+func (b *backendVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
+	b.b.setOwner(
+		tx.Net,
+		tx.Owner,
+	)
+	return b.baseTx(&tx.BaseTx)
+}
 
 func (b *backendVisitor) BaseTx(tx *txs.BaseTx) error {
 	return b.baseTx(tx)
 }
 
-func (b *backendVisitor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+func (b *backendVisitor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 	for i, vdr := range tx.Validators {
 		b.b.setOwner(
-			tx.Subnet.Append(uint32(i)),
+			tx.Net.Append(uint32(i)),
 			&secp256k1fx.OutputOwners{
 				Threshold: vdr.DeactivationOwner.Threshold,
 				Addrs:     vdr.DeactivationOwner.Addresses,

@@ -150,7 +150,7 @@ func (d *diff) GetCurrentSupply(subnetID ids.ID) (uint64, error) {
 	if !ok {
 		return 0, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
 	}
-	return parentState.GetCurrentSupply(netID)
+	return parentState.GetCurrentSupply(subnetID)
 }
 
 func (d *diff) SetCurrentSupply(netID ids.ID, currentSupply uint64) {
@@ -265,7 +265,7 @@ func (d *diff) PutL1Validator(l1Validator L1Validator) error {
 func (d *diff) GetCurrentValidator(subnetID ids.ID, nodeID ids.NodeID) (*Staker, error) {
 	// If the validator was modified in this diff, return the modified
 	// validator.
-	newValidator, status := d.currentStakerDiffs.GetValidator(netID, nodeID)
+	newValidator, status := d.currentStakerDiffs.GetValidator(subnetID, nodeID)
 	switch status {
 	case added:
 		return newValidator, nil
@@ -277,7 +277,7 @@ func (d *diff) GetCurrentValidator(subnetID ids.ID, nodeID ids.NodeID) (*Staker,
 		if !ok {
 			return nil, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
 		}
-		return parentState.GetCurrentValidator(netID, nodeID)
+		return parentState.GetCurrentValidator(subnetID, nodeID)
 	}
 }
 
@@ -320,12 +320,12 @@ func (d *diff) GetCurrentDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (
 		return nil, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
 	}
 
-	parentIterator, err := parentState.GetCurrentDelegatorIterator(netID, nodeID)
+	parentIterator, err := parentState.GetCurrentDelegatorIterator(subnetID, nodeID)
 	if err != nil {
 		return nil, err
 	}
 
-	return d.currentStakerDiffs.GetDelegatorIterator(parentIterator, netID, nodeID), nil
+	return d.currentStakerDiffs.GetDelegatorIterator(parentIterator, subnetID, nodeID), nil
 }
 
 func (d *diff) PutCurrentDelegator(staker *Staker) {
@@ -383,12 +383,12 @@ func (d *diff) GetPendingDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (
 		return nil, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
 	}
 
-	parentIterator, err := parentState.GetPendingDelegatorIterator(netID, nodeID)
+	parentIterator, err := parentState.GetPendingDelegatorIterator(subnetID, nodeID)
 	if err != nil {
 		return nil, err
 	}
 
-	return d.pendingStakerDiffs.GetDelegatorIterator(parentIterator, netID, nodeID), nil
+	return d.pendingStakerDiffs.GetDelegatorIterator(parentIterator, subnetID, nodeID), nil
 }
 
 func (d *diff) PutPendingDelegator(staker *Staker) {
@@ -463,7 +463,7 @@ func (d *diff) GetSubnetTransformation(subnetID ids.ID) (*txs.Tx, error) {
 	if !ok {
 		return nil, ErrMissingParentState
 	}
-	return parentState.GetSubnetTransformation(netID)
+	return parentState.GetSubnetTransformation(subnetID)
 }
 
 func (d *diff) AddNetTransformation(transformSubnetTxIntf *txs.Tx) {
@@ -475,6 +475,11 @@ func (d *diff) AddNetTransformation(transformSubnetTxIntf *txs.Tx) {
 	} else {
 		d.transformedSubnets[transformSubnetTx.Net] = transformSubnetTxIntf
 	}
+}
+
+// AddSubnetTransformation is an alias for AddNetTransformation to satisfy the Chain interface
+func (d *diff) AddSubnetTransformation(transformSubnetTx *txs.Tx) {
+	d.AddNetTransformation(transformSubnetTx)
 }
 
 func (d *diff) AddChain(createChainTx *txs.Tx) {
@@ -555,36 +560,6 @@ func (d *diff) DeleteUTXO(utxoID ids.ID) {
 	} else {
 		d.modifiedUTXOs[utxoID] = nil
 	}
-}
-
-// L1 Validator support methods
-func (d *diff) GetL1Validator(validationID ids.ID) (L1Validator, error) {
-	parentState, ok := d.stateVersions.GetState(d.parentID)
-	if !ok {
-		return L1Validator{}, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
-	}
-	return parentState.GetL1Validator(validationID)
-}
-
-func (d *diff) HasL1Validator(netID ids.ID, nodeID ids.NodeID) (bool, error) {
-	parentState, ok := d.stateVersions.GetState(d.parentID)
-	if !ok {
-		return false, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
-	}
-	return parentState.HasL1Validator(netID, nodeID)
-}
-
-func (d *diff) WeightOfL1Validators(netID ids.ID) (uint64, error) {
-	parentState, ok := d.stateVersions.GetState(d.parentID)
-	if !ok {
-		return 0, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
-	}
-	return parentState.WeightOfL1Validators(netID)
-}
-
-func (d *diff) PutL1Validator(validator L1Validator) error {
-	// For now, just return nil
-	return nil
 }
 
 func (d *diff) Apply(baseState Chain) error {
@@ -677,7 +652,7 @@ func (d *diff) Apply(baseState Chain) error {
 		baseState.AddNet(netID)
 	}
 	for _, tx := range d.transformedSubnets {
-		baseState.AddNetTransformation(tx)
+		baseState.AddSubnetTransformation(tx)
 	}
 	for _, chains := range d.addedChains {
 		for _, chain := range chains {
@@ -706,22 +681,4 @@ func (d *diff) Apply(baseState Chain) error {
 		baseState.SetSubnetToL1Conversion(subnetID, c)
 	}
 	return nil
-}
-
-// GetActiveL1ValidatorsIterator implements L1Validators interface
-func (d *diff) GetActiveL1ValidatorsIterator() (iterator.Iterator[L1Validator], error) {
-	parentState, ok := d.stateVersions.GetState(d.parentID)
-	if !ok {
-		return nil, fmt.Errorf("%w: %s", ErrMissingParentState, d.parentID)
-	}
-	return parentState.GetActiveL1ValidatorsIterator()
-}
-
-// NumActiveL1Validators implements L1Validators interface
-func (d *diff) NumActiveL1Validators() int {
-	parentState, ok := d.stateVersions.GetState(d.parentID)
-	if !ok {
-		return 0
-	}
-	return parentState.NumActiveL1Validators()
 }

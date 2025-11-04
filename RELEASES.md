@@ -144,7 +144,7 @@ The plugin version is updated to `40` all plugins must update to be compatible.
 - Bump bufbuild/buf-action from 1.1.0 to 1.1.1 by @dependabot in https://github.com/luxfi/node/pull/3855
 - Bump github/codeql-action from 3.28.13 to 3.28.16 by @dependabot in https://github.com/luxfi/node/pull/3916
 - Ensure HTTP headers are propagated through the rpcchainvm by @joshua-kim in https://github.com/luxfi/node/pull/3917
-- Document acp-118 message verification by @StephenButtolph in https://github.com/luxfi/node/pull/3925
+- Document lp-118 message verification by @StephenButtolph in https://github.com/luxfi/node/pull/3925
 - Add P-Chain state test by @StephenButtolph in https://github.com/luxfi/node/pull/3924
 - Document ACP-77 handling of 0 weight requests by @StephenButtolph in https://github.com/luxfi/node/pull/3926
 - Refactor cache implementations by @StephenButtolph in https://github.com/luxfi/node/pull/3239
@@ -562,7 +562,7 @@ The plugin version is updated to `38` all plugins must update to be compatible.
 - Cleanup editorconfig by @dhrubabasu in https://github.com/luxfi/node/pull/3473
 - Update lux ledger go package by @sukantoraymond in https://github.com/luxfi/node/pull/3456
 - [testing] Enable config of log format for bootstrap monitor by @marun in https://github.com/luxfi/node/pull/3467
-- cache signatures only in acp118 handler by @ceyonur in https://github.com/luxfi/node/pull/3474
+- cache signatures only in lp118 handler by @ceyonur in https://github.com/luxfi/node/pull/3474
 - Introduce and use `database.WithDefault` by @StephenButtolph in https://github.com/luxfi/node/pull/3478
 - Evict recentlyAccepted blocks based on wall-clock time  by @iansuvak in https://github.com/luxfi/node/pull/3460
 - fix improper use of FailNow in testing by @tsachiherman in https://github.com/luxfi/node/pull/3479
@@ -1620,7 +1620,7 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 
 ### APIs
 
-- Added `info.acps` API
+- Added `info.lps` API
 - Added `supportedACPs` and `objectedACPs` for each peer returned by `info.peers`
 - Added `txs` field to `BanffProposalBlock`'s json format
 - Added metrics:
@@ -1644,8 +1644,8 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 ### Configs
 
 - Added:
-  - `--acp-support`
-  - `--acp-object`
+  - `--lp-support`
+  - `--lp-object`
   - `consensus-commit-threshold`
   - `network-peer-list-pull-gossip-frequency`
   - `network-peer-list-bloom-reset-frequency`

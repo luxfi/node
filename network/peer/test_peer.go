@@ -22,7 +22,6 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
@@ -230,7 +229,7 @@ func (m *testValidatorManager) RegisterCallbackListener(listener validators.Mana
 	// No-op for testing
 }
 
-func (m *testValidatorManager) AddStaker(netID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, validationID ids.ID, weight uint64) error {
+func (m *testValidatorManager) AddStaker(netID ids.ID, nodeID ids.NodeID, publicKey []byte, validationID ids.ID, light uint64) error {
 	return nil
 }
 
@@ -257,6 +256,10 @@ func (m *testValidatorManager) Sample(netID ids.ID, n int) ([]ids.NodeID, error)
 }
 
 func (m *testValidatorManager) NumNets() int {
+	return 0
+}
+
+func (m *testValidatorManager) NumSubnets() int {
 	return 0
 }
 

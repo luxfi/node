@@ -12,13 +12,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensus/consensusman"
-	"github.com/luxfi/node/consensus/consensus/consensusman/consensusmantest"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/consensustest"
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/chain/chaintest"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
@@ -549,8 +549,8 @@ func TestOptionTimestampValidity(t *testing.T) {
 		[]byte,
 		[]byte,
 		[]byte,
-		[]*common.Fx,
-		common.AppSender,
+		[]*core.Fx,
+		core.AppSender,
 	) error {
 		return nil
 	}

@@ -157,14 +157,14 @@ func (w *withOptions) NewCreateChainTx(
 // 	)
 // }
 
-func (w *withOptions) NewConvertSubnetToL1Tx(
+func (w *withOptions) NewConvertNetToL1Tx(
 	subnetID ids.ID,
 	chainID ids.ID,
 	address []byte,
-	validators []*txs.ConvertSubnetToL1Validator,
+	validators []*txs.ConvertNetToL1Validator,
 	options ...common.Option,
-) (*txs.ConvertSubnetToL1Tx, error) {
-	return w.builder.NewConvertSubnetToL1Tx(
+) (*txs.ConvertNetToL1Tx, error) {
+	return w.builder.NewConvertNetToL1Tx(
 		subnetID,
 		chainID,
 		address,

@@ -4,6 +4,8 @@
 package executor
 
 import (
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/node/utils"

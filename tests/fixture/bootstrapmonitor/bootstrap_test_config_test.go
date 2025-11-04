@@ -19,7 +19,7 @@ import (
 
 func TestBootstrapTestConfigForPod(t *testing.T) {
 	networkName := "network"
-	nodeContainerName := "avago"
+	nodeContainerName := "luxd"
 	imageName := "image"
 	validVersionsString := `{"application": "node/1.11.11", "database": "v1.4.5", "rpcchainvm": 37, "commit": "5bcfb0fb30cc311adb22173daabb56eae736fac3","go": "1.21.12" }`
 	invalidVersionsString := "invalid"

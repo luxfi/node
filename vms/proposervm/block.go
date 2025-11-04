@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/core"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
-	"github.com/luxfi/node/vms/proposervm/acp181"
+	"github.com/luxfi/node/vms/proposervm/lp181"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 )
@@ -150,7 +150,7 @@ func (p *postForkCommonComponents) Verify(
 	}
 
 	childEpoch := child.PChainEpoch()
-	if expected := acp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, toBlockEpoch(parentEpoch), parentTimestamp, childTimestamp); childEpoch != expected {
+	if expected := lp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, toBlockEpoch(parentEpoch), parentTimestamp, childTimestamp); childEpoch != expected {
 		return fmt.Errorf("%w: epoch %v != expected %v", errEpochMismatch, childEpoch, expected)
 	}
 
@@ -263,7 +263,7 @@ func (p *postForkCommonComponents) buildChild(
 		return nil, err
 	}
 
-	epoch := acp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, toBlockEpoch(parentEpoch), parentTimestamp, newTimestamp)
+	epoch := lp181.NewEpoch(p.vm.Upgrades, parentPChainHeight, toBlockEpoch(parentEpoch), parentTimestamp, newTimestamp)
 
 	var contextPChainHeight uint64
 	switch {

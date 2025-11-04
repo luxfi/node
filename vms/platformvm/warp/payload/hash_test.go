@@ -11,7 +11,6 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
-	"github.com/luxfi/ids"
 )
 
 func TestHash(t *testing.T) {

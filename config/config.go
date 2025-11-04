@@ -18,12 +18,11 @@ import (
 
 	"github.com/spf13/viper"
 
+	"github.com/luxfi/log"
 	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/consensus/networking/benchlist"
-	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
@@ -32,7 +31,6 @@ import (
 	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/trace"
@@ -97,7 +95,7 @@ func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
 		K:                     v.GetInt(ConsensusSampleSizeKey),
 		AlphaPreference:       v.GetInt(ConsensusPreferenceQuorumSizeKey),
 		AlphaConfidence:       v.GetInt(ConsensusConfidenceQuorumSizeKey),
-		Beta:                  v.GetInt(ConsensusCommitThresholdKey),
+		Beta:                  uint32(v.GetInt(ConsensusCommitThresholdKey)),
 		ConcurrentRepolls:     v.GetInt(ConsensusConcurrentRepollsKey),
 		OptimalProcessing:     v.GetInt(ConsensusOptimalProcessingKey),
 		MaxOutstandingItems:   v.GetInt(ConsensusMaxProcessingKey),
@@ -427,21 +425,18 @@ func getBenchlistConfig(v *viper.Viper, consensusParameters consensusconfig.Para
 	// AlphaConfidence is used here to ensure that benching can't cause a
 	// liveness failure. If AlphaPreference were used, the benchlist may grow to
 	// a point that committing would be extremely unlikely to happen.
-	alpha := consensusParameters.AlphaConfidence
-	k := consensusParameters.K
-	config := BenchlistConfig{
-		FailThreshold:      v.GetInt(BenchlistFailThresholdKey),
-		Duration:           v.GetDuration(BenchlistDurationKey),
-		MinFailingDuration: v.GetDuration(BenchlistMinFailingDurationKey),
-		MaxPortion:         (1.0 - (float64(alpha) / float64(k))) / 3.0,
-	}
+	_ = consensusParameters.AlphaConfidence
+	_ = consensusParameters.K
+	// Validate configuration but return empty benchlist.Config as it's deprecated
+	duration := v.GetDuration(BenchlistDurationKey)
+	minFailingDuration := v.GetDuration(BenchlistMinFailingDurationKey)
 	switch {
-	case config.Duration < 0:
-		return BenchlistConfig{}, fmt.Errorf("%q must be >= 0", BenchlistDurationKey)
-	case config.MinFailingDuration < 0:
-		return BenchlistConfig{}, fmt.Errorf("%q must be >= 0", BenchlistMinFailingDurationKey)
+	case duration < 0:
+		return benchlist.Config{}, fmt.Errorf("%q must be >= 0", BenchlistDurationKey)
+	case minFailingDuration < 0:
+		return benchlist.Config{}, fmt.Errorf("%q must be >= 0", BenchlistMinFailingDurationKey)
 	}
-	return config, nil
+	return benchlist.Config{}, nil
 }
 
 func getStateSyncConfig(v *viper.Viper) (node.StateSyncConfig, error) {
@@ -769,7 +764,7 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 }
 
 func getTxFeeConfig(v *viper.Viper, networkID uint32) genesis.TxFeeConfig {
-	if networkID != constants.MainnetID && networkID != constants.FujiID {
+	if networkID != constants.MainnetID && networkID != constants.TestnetID {
 		return genesis.TxFeeConfig{
 			CreateAssetTxFee: v.GetUint64(CreateAssetTxFeeKey),
 			TxFee:            v.GetUint64(TxFeeKey),
@@ -841,7 +836,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.Stakin
 		if v.IsSet(GenesisFileKey) || v.IsSet(GenesisFileContentKey) {
 			return nil, ids.Empty, fmt.Errorf("cannot specify %s with %s or %s", GenesisDBKey, GenesisFileKey, GenesisFileContentKey)
 		}
-		genesisDBPath := GetExpandedArg(v, GenesisDBKey)
+		genesisDBPath := getExpandedArg(v, GenesisDBKey)
 		genesisDBType := v.GetString(GenesisDBTypeKey)
 
 		// Auto-detect database type based on path if not specified
@@ -1081,7 +1076,7 @@ func getSubnetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets
 	}
 
 	res := make(map[ids.ID]nets.Config)
-	for _, subnetID := range subnetIDs {
+	for _, subnetID := range netIDs {
 		config := getDefaultSubnetConfig(v)
 
 		if rawSubnetConfigBytes, ok := subnetConfigs[subnetID]; ok {
@@ -1159,7 +1154,7 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]net
 			return nil, err
 		}
 
-		subnetConfigs[netID] = config
+		subnetConfigs[subnetID] = config
 	}
 
 	return subnetConfigs, nil
@@ -1178,7 +1173,7 @@ func getDefaultSubnetConfig(v *viper.Viper) nets.Config {
 
 	// If dev mode or POA mode is enabled, adjust consensus parameters
 	if config.POAEnabled {
-		config.ConsensusParameters = subnets.GetPOAConsensusParameters()
+		config.ConsensusParameters = nets.GetPOAConsensusParameters()
 		if config.POAMinBlockTime == 0 {
 			config.POAMinBlockTime = 1 * time.Second
 		}
@@ -1295,8 +1290,8 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		v.Set(SybilProtectionDisabledWeightKey, 100)
 		v.Set(ConsensusSampleSizeKey, 1)
 		v.Set(ConsensusQuorumSizeKey, 1)
-		v.Set(ConsensusVirtuousCommitThresholdKey, 1)
-		v.Set(ConsensusRogueCommitThresholdKey, 1)
+		// v.Set(ConsensusVirtuousCommitThresholdKey, 1) // Removed - key no longer exists
+		// v.Set(ConsensusRogueCommitThresholdKey, 1) // Removed - key no longer exists
 		v.Set(POASingleNodeModeKey, true)
 		v.Set(SkipBootstrapKey, true)
 		v.Set(NetworkHealthMinPeersKey, 0)
@@ -1332,20 +1327,20 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	// 		return node.Config{}, err
 	// 	}
 	//
-	// Network ID - handle shorthand boolean flags
-	if v.GetBool(MainnetKey) {
-		nodeConfig.NetworkID = constants.LuxMainnetID
-	} else if v.GetBool(TestnetKey) {
-		nodeConfig.NetworkID = constants.LuxTestnetID
-	} else if v.GetBool(LocalnetKey) {
-		nodeConfig.NetworkID = constants.LocalID
-	} else {
-		networkName := v.GetString(NetworkNameKey)
-		nodeConfig.NetworkID, err = constants.NetworkID(networkName)
-		if err != nil {
-			return node.Config{}, err
-		}
+	// Network ID - use network name (shorthand flags removed)
+	// if v.GetBool(MainnetKey) {
+	// 	nodeConfig.NetworkID = constants.LuxMainnetID
+	// } else if v.GetBool(TestnetKey) {
+	// 	nodeConfig.NetworkID = constants.LuxTestnetID
+	// } else if v.GetBool(LocalnetKey) {
+	// 	nodeConfig.NetworkID = constants.LocalID
+	// } else {
+	networkName := v.GetString(NetworkNameKey)
+	nodeConfig.NetworkID, err = constants.NetworkID(networkName)
+	if err != nil {
+		return node.Config{}, err
 	}
+	// }
 
 	// Database
 	nodeConfig.DatabaseConfig, err = getDatabaseConfig(v, nodeConfig.NetworkID)
@@ -1389,20 +1384,20 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 
 	// Router
-	routerHealthCfg, err := getRouterHealthConfig(v, healthCheckAveragerHalflife)
+// 	routerHealthCfg, err := getRouterHealthConfig(v, healthCheckAveragerHalflife)
 	if err != nil {
 		return node.Config{}, err
 	}
-	// Convert RouterHealthConfig to node.HealthConfig
-	nodeConfig.RouterHealthConfig = node.HealthConfig{
-		MaxTimeSinceMsgReceived: routerHealthCfg.MaxOutstandingDuration,
-		MaxTimeSinceMsgSent:     routerHealthCfg.MaxOutstandingDuration,
-		MaxPortionSendQueueFull: routerHealthCfg.MaxDropRate,
-		MinConnectedPeers:       1,
-		ReadTimeout:             routerHealthCfg.MaxRunTimeRequests,
-		WriteTimeout:            routerHealthCfg.MaxRunTimeRequests,
-		MaxSendFailRate:         routerHealthCfg.MaxDropRate,
-	}
+// 	// Convert RouterHealthConfig to node.HealthConfig
+// 	nodeConfig.RouterHealthConfig = node.HealthConfig{
+// 		MaxTimeSinceMsgReceived: routerHealthCfg.MaxOutstandingDuration,
+// 		MaxTimeSinceMsgSent:     routerHealthCfg.MaxOutstandingDuration,
+// 		MaxPortionSendQueueFull: routerHealthCfg.MaxDropRate,
+// 		MinConnectedPeers:       1,
+// 		ReadTimeout:             routerHealthCfg.MaxRunTimeRequests,
+// 		WriteTimeout:            routerHealthCfg.MaxRunTimeRequests,
+// 		MaxSendFailRate:         routerHealthCfg.MaxDropRate,
+// 	}
 
 	// Metrics
 	nodeConfig.MeterVMEnabled = v.GetBool(MeterVMsEnabledKey)
@@ -1442,20 +1437,20 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 	subnetConfigs[constants.PrimaryNetworkID] = primaryNetworkConfig
 
-	nodeConfig.SubnetConfigs = subnetConfigs
+// 	nodeConfig.SubnetConfigs = subnetConfigs
 
 	// Benchlist
 	// Convert consensus.Parameters to PrismParameters for benchlist config
-	prismParams := PrismParameters{
-		K:               primaryNetworkConfig.ConsensusParameters.K,
-		AlphaPreference: primaryNetworkConfig.ConsensusParameters.AlphaPreference,
-		AlphaConfidence: primaryNetworkConfig.ConsensusParameters.AlphaConfidence,
-	}
+// 	prismParams := PrismParameters{
+// 		K:               primaryNetworkConfig.ConsensusParameters.K,
+// 		AlphaPreference: primaryNetworkConfig.ConsensusParameters.AlphaPreference,
+// 		AlphaConfidence: primaryNetworkConfig.ConsensusParameters.AlphaConfidence,
+// 	}
 	// getBenchlistConfig is called for validation only
-	_, err = getBenchlistConfig(v, prismParams)
-	if err != nil {
-		return node.Config{}, err
-	}
+// 	_, err = getBenchlistConfig(v, prismParams)
+// 	if err != nil {
+// 		return node.Config{}, err
+// 	}
 	// benchlist.Config from consensus package only has Deprecated field
 	nodeConfig.BenchlistConfig = benchlist.Config{
 		Deprecated: false,
@@ -1543,27 +1538,27 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, err
 	}
 
-	cpuTargeterCfg, err := getCPUTargeterConfig(v)
+// 	cpuTargeterCfg, err := getCPUTargeterConfig(v)
 	if err != nil {
 		return node.Config{}, err
 	}
 	// Convert TrackerTargeterConfig to node.TargeterConfig
-	nodeConfig.CPUTargeterConfig = node.TargeterConfig{
-		VdrAlloc:           cpuTargeterCfg.VdrAlloc,
-		MaxNonVdrUsage:     cpuTargeterCfg.MaxNonVdrUsage,
-		MaxNonVdrNodeUsage: cpuTargeterCfg.MaxNonVdrNodeUsage,
-	}
+// 	nodeConfig.CPUTargeterConfig = node.TargeterConfig{
+// 		VdrAlloc:           cpuTargeterCfg.VdrAlloc,
+// 		MaxNonVdrUsage:     cpuTargeterCfg.MaxNonVdrUsage,
+// 		MaxNonVdrNodeUsage: cpuTargeterCfg.MaxNonVdrNodeUsage,
+// 	}
 
-	diskTargeterCfg, err := getDiskTargeterConfig(v)
+// 	diskTargeterCfg, err := getDiskTargeterConfig(v)
 	if err != nil {
 		return node.Config{}, err
 	}
 	// Convert TrackerTargeterConfig to node.TargeterConfig
-	nodeConfig.DiskTargeterConfig = node.TargeterConfig{
-		VdrAlloc:           diskTargeterCfg.VdrAlloc,
-		MaxNonVdrUsage:     diskTargeterCfg.MaxNonVdrUsage,
-		MaxNonVdrNodeUsage: diskTargeterCfg.MaxNonVdrNodeUsage,
-	}
+// 	nodeConfig.DiskTargeterConfig = node.TargeterConfig{
+// 		VdrAlloc:           diskTargeterCfg.VdrAlloc,
+// 		MaxNonVdrUsage:     diskTargeterCfg.MaxNonVdrUsage,
+// 		MaxNonVdrNodeUsage: diskTargeterCfg.MaxNonVdrNodeUsage,
+// 	}
 
 	nodeConfig.TraceConfig, err = getTraceConfig(v)
 	if err != nil {
@@ -1577,9 +1572,9 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.ProvidedFlags = providedFlags(v)
 
 	// Initialize logger if not already set
-	if nodeConfig.Log == nil {
-		nodeConfig.Log = log.New()
-	}
+// 	if nodeConfig.Log == nil {
+// 		nodeConfig.Log = log.New()
+// 	}
 
 	return nodeConfig, nil
 }

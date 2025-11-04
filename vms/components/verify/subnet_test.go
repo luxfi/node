@@ -9,8 +9,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/luxfi/ids"
+	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators/validatorsmock"
 )
@@ -76,20 +78,13 @@ func TestSameSubnet(t *testing.T) {
 	}{
 		{
 			name: "same chain",
-			ctxF: func(ctrl *gomock.Controller) *consensus.Context {
+			ctxF: func(t *testing.T) context.Context {
+				ctrl := gomock.NewController(t)
 				state := validatorsmock.NewState(ctrl)
-				return &consensus.Context{
-					SubnetID:       subnetID0,
-					ChainID:        chainID0,
-					ValidatorState: state,
-				}
 				ctx := context.Background()
-				ids := consensus.IDs{
-					NetID:   netID0,
-					ChainID: chainID0,
-				}
-				ctx = consensus.WithIDs(ctx, ids)
-				ctx = consensus.WithValidatorState(ctx, state)
+				ctx = consensuscontext.WithState(ctx, state)
+				ctx = consensuscontext.WithChainID(ctx, chainID0)
+				ctx = consensuscontext.WithNetworkID(ctx, netID0)
 				return ctx
 			},
 			chainID: chainID0,
@@ -97,21 +92,14 @@ func TestSameSubnet(t *testing.T) {
 		},
 		{
 			name: "unknown chain",
-			ctxF: func(ctrl *gomock.Controller) *consensus.Context {
+			ctxF: func(t *testing.T) context.Context {
+				ctrl := gomock.NewController(t)
 				state := validatorsmock.NewState(ctrl)
-				state.EXPECT().GetSubnetID(gomock.Any(), chainID1).Return(subnetID1, errMissing)
-				return &consensus.Context{
-					SubnetID:       subnetID0,
-					ChainID:        chainID0,
-					ValidatorState: state,
-				}
+				state.EXPECT().GetNetID(gomock.Any(), chainID1).Return(netID1, errMissing)
 				ctx := context.Background()
-				ids := consensus.IDs{
-					NetID:   netID0,
-					ChainID: chainID0,
-				}
-				ctx = consensus.WithIDs(ctx, ids)
-				ctx = consensus.WithValidatorState(ctx, state)
+				ctx = consensuscontext.WithState(ctx, state)
+				ctx = consensuscontext.WithChainID(ctx, chainID0)
+				ctx = consensuscontext.WithNetworkID(ctx, netID0)
 				return ctx
 			},
 			chainID: chainID1,
@@ -119,21 +107,14 @@ func TestSameSubnet(t *testing.T) {
 		},
 		{
 			name: "wrong subnet",
-			ctxF: func(ctrl *gomock.Controller) *consensus.Context {
+			ctxF: func(t *testing.T) context.Context {
+				ctrl := gomock.NewController(t)
 				state := validatorsmock.NewState(ctrl)
-				state.EXPECT().GetSubnetID(gomock.Any(), chainID1).Return(subnetID1, nil)
-				return &consensus.Context{
-					SubnetID:       subnetID0,
-					ChainID:        chainID0,
-					ValidatorState: state,
-				}
+				state.EXPECT().GetNetID(gomock.Any(), chainID1).Return(netID1, nil)
 				ctx := context.Background()
-				ids := consensus.IDs{
-					NetID:   netID0,
-					ChainID: chainID0,
-				}
-				ctx = consensus.WithIDs(ctx, ids)
-				ctx = consensus.WithValidatorState(ctx, state)
+				ctx = consensuscontext.WithState(ctx, state)
+				ctx = consensuscontext.WithChainID(ctx, chainID0)
+				ctx = consensuscontext.WithNetworkID(ctx, netID0)
 				return ctx
 			},
 			chainID: chainID1,
@@ -141,21 +122,14 @@ func TestSameSubnet(t *testing.T) {
 		},
 		{
 			name: "same subnet",
-			ctxF: func(ctrl *gomock.Controller) *consensus.Context {
+			ctxF: func(t *testing.T) context.Context {
+				ctrl := gomock.NewController(t)
 				state := validatorsmock.NewState(ctrl)
-				state.EXPECT().GetSubnetID(gomock.Any(), chainID1).Return(subnetID0, nil)
-				return &consensus.Context{
-					SubnetID:       subnetID0,
-					ChainID:        chainID0,
-					ValidatorState: state,
-				}
+				state.EXPECT().GetNetID(gomock.Any(), chainID1).Return(netID0, nil)
 				ctx := context.Background()
-				ids := consensus.IDs{
-					NetID:   netID0,
-					ChainID: chainID0,
-				}
-				ctx = consensus.WithIDs(ctx, ids)
-				ctx = consensus.WithValidatorState(ctx, state)
+				ctx = consensuscontext.WithState(ctx, state)
+				ctx = consensuscontext.WithChainID(ctx, chainID0)
+				ctx = consensuscontext.WithNetworkID(ctx, netID0)
 				return ctx
 			},
 			chainID: chainID1,

@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
@@ -24,7 +25,7 @@ type testOperable struct {
 
 func (*testOperable) InitCtx(context.Context) {}
 
-func (*testOperable) InitializeContext(context.Context) error { return nil }
+func (*testOperable) InitializeContext(*consensusctx.Context) error { return nil }
 
 func (o *testOperable) Outs() []verify.State {
 	return o.Outputs

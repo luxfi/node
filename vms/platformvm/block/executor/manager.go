@@ -9,9 +9,10 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/platformvm/block"
+	platformblock "github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -37,9 +38,9 @@ type Manager interface {
 	SetPreference(blkID ids.ID)
 	Preferred() ids.ID
 
-	GetBlock(blkID ids.ID) (chain.Block, error)
-	GetStatelessBlock(blkID ids.ID) (block.Block, error)
-	NewBlock(block.Block) chain.Block
+	GetBlock(blkID ids.ID) (block.Block, error)
+	GetStatelessBlock(blkID ids.ID) (platformblock.Block, error)
+	NewBlock(platformblock.Block) block.Block
 
 	// VerifyTx verifies that the transaction can be issued based on the currently
 	// preferred state. This should *not* be used to verify transactions in a block.
@@ -64,7 +65,6 @@ func NewManager(
 		state:        s,
 		ctx:          txExecutorBackend.Ctx,
 		blkIDToState: map[ids.ID]*blockState{},
-		SharedMemory: txExecutorBackend.SharedMemory,
 	}
 
 	return &manager{
@@ -80,21 +80,23 @@ func NewManager(
 		},
 		preferred:         lastAccepted,
 		txExecutorBackend: txExecutorBackend,
+		validatorManager:  validatorManager,
 		Log:               log.NoLog{},
 	}
 }
 
 type manager struct {
 	*backend
-	acceptor block.Visitor
-	rejector block.Visitor
+	acceptor platformblock.Visitor
+	rejector platformblock.Visitor
 
 	preferred         ids.ID
 	txExecutorBackend *executor.Backend
+	validatorManager  validators.Manager
 	Log               log.Logger
 }
 
-func (m *manager) GetBlock(blkID ids.ID) (chain.Block, error) {
+func (m *manager) GetBlock(blkID ids.ID) (block.Block, error) {
 	blk, err := m.backend.GetBlock(blkID)
 	if err != nil {
 		return nil, err
@@ -102,11 +104,11 @@ func (m *manager) GetBlock(blkID ids.ID) (chain.Block, error) {
 	return m.NewBlock(blk), nil
 }
 
-func (m *manager) GetStatelessBlock(blkID ids.ID) (block.Block, error) {
+func (m *manager) GetStatelessBlock(blkID ids.ID) (platformblock.Block, error) {
 	return m.backend.GetBlock(blkID)
 }
 
-func (m *manager) NewBlock(blk block.Block) chain.Block {
+func (m *manager) NewBlock(blk platformblock.Block) block.Block {
 	return &Block{
 		manager: m,
 		Block:   blk,
@@ -135,14 +137,15 @@ func (m *manager) VerifyTx(tx *txs.Tx) error {
 		}
 	}
 
-	recommendedPChainHeight, err := m.ctx.ValidatorState.GetMinimumHeight(context.TODO())
+	// Get current height from validator manager
+	recommendedPChainHeight, err := m.validatorManager.GetCurrentHeight(context.TODO())
 	if err != nil {
 		return fmt.Errorf("failed to fetch P-chain height: %w", err)
 	}
 	err = executor.VerifyWarpMessages(
 		context.TODO(),
 		m.ctx.NetworkID,
-		m.ctx.ValidatorState,
+		m.validatorManager,
 		recommendedPChainHeight,
 		tx.Unsigned,
 	)

@@ -1785,7 +1785,7 @@ func (e *emptyValidatorManager) TotalLight(netID ids.ID) (uint64, error) {
 	return 0, nil
 }
 
-func (e *emptyValidatorManager) AddStaker(netID ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
+func (e *emptyValidatorManager) AddStaker(netID ids.ID, nodeID ids.NodeID, publicKey []byte, txID ids.ID, light uint64) error {
 	return nil
 }
 

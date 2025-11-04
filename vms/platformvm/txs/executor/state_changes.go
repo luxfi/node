@@ -144,7 +144,7 @@ func advanceTimeTo(
 		stakerToAdd.NextTime = stakerToRemove.EndTime
 		stakerToAdd.Priority = txs.PendingToCurrentPriorities[stakerToRemove.Priority]
 
-		if stakerToRemove.Priority == txs.SubnetPermissionedValidatorPendingPriority {
+		if stakerToRemove.Priority == txs.NetPermissionedValidatorPendingPriority {
 			if err := changes.PutCurrentValidator(&stakerToAdd); err != nil {
 				return nil, false, err
 			}
@@ -211,7 +211,7 @@ func advanceTimeTo(
 
 		// Invariant: Permissioned stakers are encountered first for a given
 		//            timestamp because their priority is the smallest.
-		if stakerToRemove.Priority != txs.SubnetPermissionedValidatorCurrentPriority {
+		if stakerToRemove.Priority != txs.NetPermissionedValidatorCurrentPriority {
 			// Permissionless stakers are removed by the RewardValidatorTx, not
 			// an AdvanceTimeTx.
 			break

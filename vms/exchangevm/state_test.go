@@ -1,17 +1,17 @@
 // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package xvm
+package exchangevm
 
 import (
 	"math"
 	"testing"
 
-	"github.com/luxfi/consensus/core"
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/engine/core/common"
+	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/units"
@@ -24,8 +24,8 @@ func TestSetsAndGets(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: upgradetest.Latest,
-		additionalFxs: []*common.Fx{{
+		fork: upgradetest.GetConfig(upgradetest.Latest),
+		additionalFxs: []interface{}{&common.Fx{
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {
@@ -84,8 +84,8 @@ func TestSetsAndGets(t *testing.T) {
 
 func TestFundingNoAddresses(t *testing.T) {
 	env := setup(t, &envConfig{
-		fork: upgradetest.Latest,
-		additionalFxs: []*common.Fx{{
+		fork: upgradetest.GetConfig(upgradetest.Latest),
+		additionalFxs: []interface{}{&common.Fx{
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {
@@ -114,8 +114,8 @@ func TestFundingAddresses(t *testing.T) {
 	require := require.New(t)
 
 	env := setup(t, &envConfig{
-		fork: upgradetest.Latest,
-		additionalFxs: []*common.Fx{{
+		fork: upgradetest.GetConfig(upgradetest.Latest),
+		additionalFxs: []interface{}{&common.Fx{
 			ID: ids.GenerateTestID(),
 			Fx: &FxTest{
 				InitializeF: func(vmIntf interface{}) error {

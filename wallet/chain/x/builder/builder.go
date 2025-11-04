@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/node/vms/exchangevm/txs"
 	"github.com/luxfi/node/wallet/net/primary/common"
 )
 

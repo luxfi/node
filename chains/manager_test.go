@@ -82,7 +82,7 @@ func TestQueueChainCreation(t *testing.T) {
 	require := require.New(t)
 
 	// Create subnets with primary network config
-	subnetConfigs := map[ids.ID]subnets.Config{
+	subnetConfigs := map[ids.ID]nets.Config{
 		constants.PrimaryNetworkID: {},
 	}
 	subnets, err := NewSubnets(ids.GenerateTestNodeID(), subnetConfigs)

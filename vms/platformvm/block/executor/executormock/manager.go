@@ -46,10 +46,10 @@ func (m *Manager) EXPECT() *ManagerMockRecorder {
 }
 
 // GetBlock mocks base method.
-func (m *Manager) GetBlock(blkID ids.ID) (chain.Block, error) {
+func (m *Manager) GetBlock(blkID ids.ID) (consensusman.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlock", blkID)
-	ret0, _ := ret[0].(chain.Block)
+	ret0, _ := ret[0].(consensusman.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -105,10 +105,10 @@ func (mr *ManagerMockRecorder) LastAccepted() *gomock.Call {
 }
 
 // NewBlock mocks base method.
-func (m *Manager) NewBlock(arg0 block.Block) chain.Block {
+func (m *Manager) NewBlock(arg0 block.Block) consensusman.Block {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewBlock", arg0)
-	ret0, _ := ret[0].(chain.Block)
+	ret0, _ := ret[0].(consensusman.Block)
 	return ret0
 }
 

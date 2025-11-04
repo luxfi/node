@@ -7,7 +7,7 @@ on:
 
 jobs:
   firewood-load-test:
-    runs-on: avalanche-avalanchego-runner
+    runs-on: lux-luxd-runner
     container:
       image: ghcr.io/actions/actions-runner:2.325.0
     steps:

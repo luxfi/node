@@ -7,7 +7,8 @@ import (
 	"context"
 
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/vms/xvm"
+	xvm "github.com/luxfi/node/vms/exchangevm"
+	avm "github.com/luxfi/node/vms/exchangevm"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 )
 
@@ -45,7 +46,7 @@ func NewContextFromClients(
 	return &builder.Context{
 		NetworkID:        networkID,
 		BlockchainID:     chainID,
-		LUXAssetID:      asset.AssetID,
+		XAssetID:         asset.AssetID,
 		BaseTxFee:        baseTxFee,
 		CreateAssetTxFee: createAssetTxFee,
 	}, nil

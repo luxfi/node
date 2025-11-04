@@ -12,6 +12,8 @@ package utxo
 import (
 	reflect "reflect"
 
+	gomock "go.uber.org/mock/gomock"
+
 	ids "github.com/luxfi/ids"
 	lux "github.com/luxfi/node/vms/components/lux"
 	verify "github.com/luxfi/node/vms/components/verify"

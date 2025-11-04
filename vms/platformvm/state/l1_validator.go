@@ -414,8 +414,7 @@ func (a *activeL1Validators) newIterator() iterator.Iterator[L1Validator] {
 
 func (a *activeL1Validators) addStakersToValidatorManager(vdrs validators.Manager) error {
 	for validationID, l1Validator := range a.lookup {
-		pk := bls.PublicKeyFromValidUncompressedBytes(l1Validator.PublicKey)
-		if err := vdrs.AddStaker(l1Validator.SubnetID, l1Validator.NodeID, pk, validationID, l1Validator.Weight); err != nil {
+		if err := vdrs.AddStaker(l1Validator.SubnetID, l1Validator.NodeID, l1Validator.PublicKey, validationID, l1Validator.Weight); err != nil {
 			return err
 		}
 	}
@@ -430,7 +429,7 @@ func addL1ValidatorToValidatorManager(vdrs validators.Manager, l1Validator L1Val
 	return vdrs.AddStaker(
 		l1Validator.SubnetID,
 		nodeID,
-		l1Validator.effectivePublicKey(),
+		l1Validator.effectivePublicKeyBytes(),
 		l1Validator.effectiveValidationID(),
 		l1Validator.Weight,
 	)

@@ -13,13 +13,13 @@ import (
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/snow/consensus/snowman"
-	"github.com/luxfi/node/snow/consensus/snowman/snowmanmock"
-	"github.com/luxfi/node/snow/engine/snowman/block"
-	"github.com/luxfi/node/snow/engine/snowman/block/blockmock"
-	"github.com/luxfi/node/snow/snowtest"
-	"github.com/luxfi/node/vms/components/chain"
-	"github.com/luxfi/node/vms/components/chain/blocktest"
+	vmchain "github.com/luxfi/node/vms/components/chain"
+
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/chain/chaintest"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/chain/chainmock"
+	"github.com/luxfi/consensus/engine/chain/block/blockmock"
 )
 
 var (
@@ -42,8 +42,8 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 	vm := blockmock.NewChainVM(ctrl)
 
 	if loadExpectations {
-		blk1 := snowmanmock.NewBlock(ctrl)
-		blk2 := snowmanmock.NewBlock(ctrl)
+		blk1 := chainmock.NewMockConsensusBlock(ctrl)
+		blk2 := chainmock.NewMockConsensusBlock(ctrl)
 		gomock.InOrder(
 			// Initialize
 			vm.EXPECT().Initialize(

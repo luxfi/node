@@ -8,10 +8,8 @@ import (
 	"errors"
 	"fmt"
 
-	"go.uber.org/zap"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/utils/hashing"
 	safemath "github.com/luxfi/node/utils/math"

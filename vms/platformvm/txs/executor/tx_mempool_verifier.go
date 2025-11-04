@@ -119,9 +119,9 @@ func (v *MempoolTxVerifier) standardTx(tx txs.UnsignedTx) error {
 		tx:      v.Tx,
 	}
 	err = tx.Visit(&executor)
-	// We ignore [errFutureStakeTime] here because the time will be advanced
+	// We ignore [ErrFutureStakeTime] here because the time will be advanced
 	// when this transaction is issued.
-	if errors.Is(err, errFutureStakeTime) {
+	if errors.Is(err, ErrFutureStakeTime) {
 		return nil
 	}
 	return err
@@ -169,27 +169,3 @@ func (v *MempoolTxVerifier) nextBlockTime(chainState state.Diff) (time.Time, err
 	return nextBlkTime, nil
 }
 
-// DisableL1ValidatorTx handles L1 validator disabling
-func (v *MempoolTxVerifier) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
-	return nil
-}
-
-// IncreaseL1ValidatorBalanceTx handles L1 validator balance increase
-func (v *MempoolTxVerifier) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
-	return nil
-}
-
-// RegisterL1ValidatorTx handles L1 validator registration
-func (v *MempoolTxVerifier) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
-	return nil
-}
-
-// SetL1ValidatorWeightTx handles L1 validator weight setting
-func (v *MempoolTxVerifier) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
-	return nil
-}
-
-// ConvertNetToL1Tx handles converting a net to L1
-func (v *MempoolTxVerifier) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
-	return nil
-}

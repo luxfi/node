@@ -85,7 +85,8 @@ func (c *genericCodec) Size(value interface{}) (int, error) {
 		return 0, codec.ErrMarshalNil
 	}
 
-	size, _, err := c.size(reflect.ValueOf(value), nil /*=typeStack*/)
+	typeStack := set.Set[reflect.Type]{}
+	size, _, err := c.size(reflect.ValueOf(value), typeStack)
 	return size, err
 }
 
@@ -508,7 +509,8 @@ func (c *genericCodec) UnmarshalFrom(p *wrappers.Packer, dest interface{}) error
 	if destPtr.Kind() != reflect.Ptr {
 		return errNeedPointer
 	}
-	return c.unmarshal(p, destPtr.Elem(), nil /*=typeStack*/)
+	typeStack := set.Set[reflect.Type]{}
+	return c.unmarshal(p, destPtr.Elem(), typeStack)
 }
 
 // Unmarshal from p.Bytes into [value]. [value] must be addressable.

@@ -10,25 +10,26 @@ import (
 	"time"
 
 	"github.com/luxfi/mock/gomock"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/vms/common"
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/engine/core/coremock"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/vms/exchangevm/block/executor"
 	"github.com/luxfi/node/vms/exchangevm/block/executor/executormock"
 	"github.com/luxfi/node/vms/exchangevm/fxs"
 	"github.com/luxfi/node/vms/exchangevm/txs"
+	xmempool "github.com/luxfi/node/vms/exchangevm/txs/mempool"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/nftfx"
 	"github.com/luxfi/node/vms/propertyfx"
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/txs/mempool"
-	"github.com/luxfi/node/vms/exchangevm/block/executor"
-	"github.com/luxfi/node/vms/exchangevm/fxs"
-	"github.com/luxfi/node/vms/exchangevm/txs"
-	xmempool "github.com/luxfi/node/vms/exchangevm/txs/mempool"
 )
 
 var (

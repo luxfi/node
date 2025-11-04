@@ -6,8 +6,9 @@ package validators
 import (
 	"context"
 
-	"github.com/luxfi/ids"
+	consensusset "github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/ids"
 )
 
 var TestManager Manager = testManager{}
@@ -34,14 +35,14 @@ func (testManager) GetCurrentValidators(ctx context.Context, height uint64, netI
 	return nil, nil
 }
 
-func (testManager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
-	return nil, 0, nil
-}
+// func (testManager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetCurrentValidatorOutput, uint64, error) {
+// 	return nil, 0, nil
+// }
 
 func (testManager) OnAcceptedBlockID(ids.ID) {}
 
 // AddStaker implements validators.Manager interface
-func (testManager) AddStaker(ids.ID, ids.NodeID, *bls.PublicKey, ids.ID, uint64) error {
+func (testManager) AddStaker(ids.ID, ids.NodeID, []byte, ids.ID, uint64) error {
 	return nil
 }
 
@@ -113,8 +114,4 @@ func (testManager) TotalLight(ids.ID) (uint64, error) {
 // String implements validators.Manager interface
 func (testManager) String() string {
 	return "test_manager"
-}
-
-func (testManager) GetCurrentValidatorSet(context.Context, ids.ID) (map[ids.ID]*validators.GetValidatorOutput, uint64, error) {
-	return nil, 0, nil
 }

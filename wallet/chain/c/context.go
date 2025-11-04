@@ -8,10 +8,10 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/vms/xvm"
+	"github.com/luxfi/node/vms/exchangevm"
+	xvm "github.com/luxfi/node/vms/exchangevm"
 )
 
 const Alias = "C"
@@ -31,7 +31,7 @@ func NewContextFromURI(ctx context.Context, uri string) (*Context, error) {
 func NewContextFromClients(
 	ctx context.Context,
 	infoClient *info.Client,
-	xChainClient *avm.Client,
+	xChainClient *xvm.Client,
 ) (*Context, error) {
 	networkID, err := infoClient.GetNetworkID(ctx)
 	if err != nil {

@@ -16,28 +16,28 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensus/consensusman"
-	"github.com/luxfi/node/consensus/consensus/consensusman/consensusmanmock"
-	"github.com/luxfi/node/consensus/consensus/consensusman/consensusmantest"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/enginetest"
-	"github.com/luxfi/node/consensus/engine/consensusman/block"
-	"github.com/luxfi/node/consensus/engine/consensusman/block/blockmock"
-	"github.com/luxfi/node/consensus/engine/consensusman/block/blocktest"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/consensus/validators/validatorstest"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/chain/chainmock"
+	"github.com/luxfi/consensus/engine/chain/chaintest"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/consensus/engine/enginetest"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/chain/block/blockmock"
+	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/node/vms/components/chain/blocktest"
+	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/consensus/validators/validatorstest"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/logging"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/proposer"
 
@@ -106,7 +106,7 @@ func initTestProposerVM(
 
 	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte,
-		[]*common.Fx, common.AppSender,
+		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
@@ -811,8 +811,8 @@ func TestExpiredBuildBlock(t *testing.T) {
 		}
 	}
 
-	events := make(chan common.Message, 1)
-	coreVM.WaitForEventF = func(ctx context.Context) (common.Message, error) {
+	events := make(chan core.Message, 1)
+	coreVM.WaitForEventF = func(ctx context.Context) (core.Message, error) {
 		select {
 		case <-ctx.Done():
 			return 0, nil
@@ -866,8 +866,8 @@ func TestExpiredBuildBlock(t *testing.T) {
 		_ []byte,
 		_ []byte,
 		_ []byte,
-		_ []*common.Fx,
-		_ common.AppSender,
+		_ []*core.Fx,
+		_ core.AppSender,
 	) error {
 		return nil
 	}
@@ -1093,8 +1093,8 @@ func TestInnerVMRollback(t *testing.T) {
 				[]byte,
 				[]byte,
 				[]byte,
-				[]*common.Fx,
-				common.AppSender,
+				[]*core.Fx,
+				core.AppSender,
 			) error {
 				return nil
 			},
@@ -1567,7 +1567,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 
 	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte,
-		[]*common.Fx, common.AppSender,
+		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
@@ -1738,7 +1738,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 
 	coreVM.InitializeF = func(context.Context, *consensus.Context, database.Database,
 		[]byte, []byte, []byte,
-		[]*common.Fx, common.AppSender,
+		[]*core.Fx, core.AppSender,
 	) error {
 		return nil
 	}
@@ -2161,7 +2161,7 @@ func TestHistoricalBlockDeletion(t *testing.T) {
 	coreVM := &blocktest.VM{
 		VM: enginetest.VM{
 			T: t,
-			InitializeF: func(context.Context, *consensus.Context, database.Database, []byte, []byte, []byte, []*common.Fx, common.AppSender) error {
+			InitializeF: func(context.Context, *consensus.Context, database.Database, []byte, []byte, []byte, []*core.Fx, core.AppSender) error {
 				return nil
 			},
 		},
@@ -2460,7 +2460,7 @@ func TestLocalParse(t *testing.T) {
 		},
 	}
 
-	innerVM.VM.WaitForEventF = func(_ context.Context) (common.Message, error) {
+	innerVM.VM.WaitForEventF = func(_ context.Context) (core.Message, error) {
 		return common.PendingTxs, nil
 	}
 
@@ -2689,7 +2689,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 	coreVM := &blocktest.VM{
 		VM: enginetest.VM{
 			T: t,
-			InitializeF: func(_ context.Context, _ *consensus.Context, _ database.Database, _ []byte, _ []byte, _ []byte, _ []*common.Fx, _ common.AppSender) error {
+			InitializeF: func(_ context.Context, _ *consensus.Context, _ database.Database, _ []byte, _ []byte, _ []byte, _ []*core.Fx, _ core.AppSender) error {
 				return nil
 			},
 		},

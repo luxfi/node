@@ -7,9 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"go.uber.org/zap"
-
-	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
@@ -17,7 +14,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/executor"
+	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 )
 
 var (
@@ -46,11 +43,11 @@ type options struct {
 }
 
 func (*options) BanffAbortBlock(*block.BanffAbortBlock) error {
-	return chain.ErrNotOracle
+	return ErrNotOracle
 }
 
 func (*options) BanffCommitBlock(*block.BanffCommitBlock) error {
-	return chain.ErrNotOracle
+	return ErrNotOracle
 }
 
 func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
@@ -99,15 +96,15 @@ func (o *options) BanffProposalBlock(b *block.BanffProposalBlock) error {
 }
 
 func (*options) BanffStandardBlock(*block.BanffStandardBlock) error {
-	return chain.ErrNotOracle
+	return ErrNotOracle
 }
 
 func (*options) ApricotAbortBlock(*block.ApricotAbortBlock) error {
-	return chain.ErrNotOracle
+	return ErrNotOracle
 }
 
 func (*options) ApricotCommitBlock(*block.ApricotCommitBlock) error {
-	return chain.ErrNotOracle
+	return ErrNotOracle
 }
 
 func (o *options) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
@@ -134,11 +131,11 @@ func (o *options) ApricotProposalBlock(b *block.ApricotProposalBlock) error {
 }
 
 func (*options) ApricotStandardBlock(*block.ApricotStandardBlock) error {
-	return chain.ErrNotOracle
+	return ErrNotOracle
 }
 
 func (*options) ApricotAtomicBlock(*block.ApricotAtomicBlock) error {
-	return chain.ErrNotOracle
+	return ErrNotOracle
 }
 
 func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {
@@ -166,9 +163,10 @@ func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {
 		return false, fmt.Errorf("%w: %w", errFailedFetchingPrimaryStaker, err)
 	}
 
+	netID := staker.NetID()
 	expectedUptimePercentage := o.primaryUptimePercentage
-	if netID := staker.NetID(); netID != constants.PrimaryNetworkID {
-		transformSubnet, err := executor.GetTransformNetTx(o.state, netID)
+	if netID != constants.PrimaryNetworkID {
+		transformSubnet, err := txexecutor.GetTransformNetTx(o.state, netID)
 		if err != nil {
 			return false, fmt.Errorf("%w: %w", errFailedFetchingSubnetTransformation, err)
 		}
@@ -178,6 +176,7 @@ func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {
 
 	uptime, err := o.uptimes.CalculateUptimePercentFrom(
 		nodeID,
+		netID,
 		primaryNetworkValidator.StartTime,
 	)
 	if err != nil {

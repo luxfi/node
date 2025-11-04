@@ -13,53 +13,58 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/node/database"
-	"github.com/luxfi/node/database/memdb"
-	"github.com/luxfi/node/database/prefixdb"
-	"github.com/luxfi/node/ids"
-	"github.com/luxfi/node/consensus"
-	"github.com/luxfi/node/consensus/consensus/consensusman"
-	"github.com/luxfi/node/consensus/consensus/consensusman/consensusmantest"
-	"github.com/luxfi/node/consensus/engine/common"
-	"github.com/luxfi/node/consensus/engine/consensusman/block"
-	"github.com/luxfi/node/consensus/engine/consensusman/block/blocktest"
-	"github.com/luxfi/node/consensus/consensustest"
-	"github.com/luxfi/node/consensus/validators"
-	"github.com/luxfi/node/consensus/validators/validatorstest"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
+	"github.com/luxfi/database/prefixdb"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/timer/mockable"
 
+	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/chain/chaintest"
+	"github.com/luxfi/consensus/validators"
+	consensusvalidatorstest "github.com/luxfi/consensus/validators/validatorstest"
+	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/node/vms/components/chain/blocktest"
+
 	blockbuilder "github.com/luxfi/node/vms/proposervm/block"
 )
 
-// validatorStateAdapter adapts validatorstest.State to consensus ValidatorState interface
+// validatorStateAdapter adapts consensusvalidatorstest.State to consensus ValidatorState interface
 type validatorStateAdapter struct {
-	state *validatorstest.State
+	state *consensusvalidatorstest.State
 }
 
 func (v *validatorStateAdapter) GetChainID(subnetID ids.ID) (ids.ID, error) {
-	return v.state.GetChainID(subnetID)
+	// Not available in test state, return empty ID
+	return ids.Empty, nil
 }
 
 func (v *validatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
-	return v.state.GetNetID(chainID)
+	// Not available in test state, return empty ID
+	return ids.Empty, nil
 }
 
 func (v *validatorStateAdapter) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	return v.state.GetSubnetID(chainID)
+	// Not available in test state, return empty ID
+	return ids.Empty, nil
 }
 
-func (v *validatorStateAdapter) GetValidatorSet(height uint64, subnetID ids.ID) (map[ids.NodeID]uint64, error) {
-	return v.state.GetValidatorSetSimple(height, subnetID)
+func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	return v.state.GetValidatorSet(ctx, height, subnetID)
 }
 
-func (v *validatorStateAdapter) GetCurrentHeight() (uint64, error) {
-	return v.state.GetCurrentHeight(context.Background())
+func (v *validatorStateAdapter) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return v.state.GetCurrentHeight(ctx)
 }
 
 func (v *validatorStateAdapter) GetMinimumHeight(ctx context.Context) (uint64, error) {
-	return v.state.GetMinimumHeight(ctx)
+	// Not available in test state, return 0
+	return 0, nil
 }
 
 func TestCoreVMNotRemote(t *testing.T) {
@@ -967,8 +972,8 @@ func initTestRemoteProposerVM(
 		[]byte,
 		[]byte,
 		[]byte,
-		[]*common.Fx,
-		common.AppSender,
+		[]*core.Fx,
+		core.AppSender,
 	) error {
 		return nil
 	}

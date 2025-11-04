@@ -7,26 +7,27 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/utils/timer/mockable"
+	"github.com/luxfi/node/vms/components/lux"
+	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/stakeable"
+	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
 var _ Verifier = (*verifier)(nil)
 
 // NewVerifier creates a new UTXO verifier
-func NewVerifier(ctx context.Context, clk *mockable.Clock, fx fx.Fx) *UTXOVerifier {
-	return &UTXOVerifier{
-		ctx: ctx,
+func NewVerifier(clk *mockable.Clock, fx fx.Fx) *verifier {
+	return &verifier{
 		clk: clk,
 		fx:  fx,
 	}
 }
 
 type verifier struct {
-	ctx *consensus.Context
 	clk *mockable.Clock
 	fx  fx.Fx
 }

@@ -126,8 +126,8 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 							PublicKey: testVdrs[1].vdr.PublicKey,
 							Weight:    testVdrs[1].vdr.Weight,
 						},
-					},
-				}
+					}, nil)
+				return state
 			},
 			expectedVdrs:   []*Validator{testVdrs[0].vdr, testVdrs[1].vdr},
 			expectedWeight: 6,
@@ -154,8 +154,8 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 							PublicKey: testVdrs[0].vdr.PublicKey,
 							Weight:    testVdrs[0].vdr.Weight,
 						},
-					},
-				}
+					}, nil)
+				return state
 			},
 			expectedVdrs: []*Validator{
 				{

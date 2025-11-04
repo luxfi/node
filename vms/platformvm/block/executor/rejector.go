@@ -4,9 +4,8 @@
 package executor
 
 import (
-	"go.uber.org/zap"
-
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/log"
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/node/vms/platformvm/block"
 )
 
@@ -89,7 +88,7 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 	}
 
 	select {
-	case r.toEngine <- common.PendingTxs:
+	case r.toEngine <- common.Message{Type: common.PendingTxs}:
 	default:
 	}
 

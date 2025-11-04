@@ -10,18 +10,16 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains/atomic"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/math"
-	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/executor"
+	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 
+	"github.com/luxfi/node/vms/components/gas"
 	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"
 	validatorfee "github.com/luxfi/node/vms/platformvm/validators/fee"
 )
@@ -40,7 +38,7 @@ var (
 // verifier handles the logic for verifying a block.
 type verifier struct {
 	*backend
-	txExecutorBackend *executor.Backend
+	txExecutorBackend *txexecutor.Backend
 	pChainHeight      uint64
 }
 
@@ -71,7 +69,7 @@ func (v *verifier) BanffProposalBlock(b *block.BanffProposalBlock) error {
 
 	// Advance the time to [nextChainTime].
 	nextChainTime := b.Timestamp()
-	if _, err := executor.AdvanceTimeTo(v.txExecutorBackend, onDecisionState, nextChainTime); err != nil {
+	if _, err := txexecutor.AdvanceTimeTo(v.txExecutorBackend, onDecisionState, nextChainTime); err != nil {
 		return err
 	}
 
@@ -122,7 +120,7 @@ func (v *verifier) BanffStandardBlock(b *block.BanffStandardBlock) error {
 	}
 
 	// Advance the time to [b.Timestamp()].
-	changed, err := executor.AdvanceTimeTo(
+	changed, err := txexecutor.AdvanceTimeTo(
 		v.txExecutorBackend,
 		onAcceptState,
 		b.Timestamp(),
@@ -226,7 +224,7 @@ func (v *verifier) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
 	}
 
 	feeCalculator := txfee.NewSimpleCalculator(0)
-	onAcceptState, atomicInputs, atomicRequests, err := executor.AtomicTx(
+	onAcceptState, atomicInputs, atomicRequests, err := txexecutor.AtomicTx(
 		v.txExecutorBackend,
 		feeCalculator,
 		parentID,
@@ -303,7 +301,7 @@ func (v *verifier) banffNonOptionBlock(b block.BanffBlock) error {
 
 	newChainTime := b.Timestamp()
 	now := v.txExecutorBackend.Clk.Time()
-	return executor.VerifyNewChainTime(
+	return txexecutor.VerifyNewChainTime(
 		v.txExecutorBackend.Config.ValidatorFeeConfig,
 		newChainTime,
 		now,
@@ -418,7 +416,7 @@ func (v *verifier) proposalBlock(
 	atomicRequests map[ids.ID]*atomic.Requests,
 	onAcceptFunc func(),
 ) error {
-	err := executor.ProposalTx(
+	err := txexecutor.ProposalTx(
 		v.txExecutorBackend,
 		feeCalculator,
 		tx,
@@ -567,7 +565,7 @@ func (v *verifier) processStandardTxs(txs []*txs.Tx, feeCalculator txfee.Calcula
 		atomicRequests = make(map[ids.ID]*atomic.Requests)
 	)
 	for _, tx := range txs {
-		txInputs, txAtomicRequests, onAccept, err := executor.StandardTx(
+		txInputs, txAtomicRequests, onAccept, err := txexecutor.StandardTx(
 			v.txExecutorBackend,
 			feeCalculator,
 			tx,

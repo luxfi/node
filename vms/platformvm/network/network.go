@@ -12,12 +12,12 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/network/p2p"
-	"github.com/luxfi/node/network/p2p/acp118"
+	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/node/network/p2p/gossip"
-	"github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -50,7 +50,7 @@ func New(
 	stateLock sync.Locker,
 	state state.Chain,
 	signer warp.Signer,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	config config.Network,
 ) (*Network, error) {
 	p2pNetwork, err := p2p.NewNetwork(log, appSender, registerer, "p2p")
@@ -164,9 +164,12 @@ func New(
 		stateLock: stateLock,
 		state:     state,
 	}
-	signatureRequestHandler := acp118.NewHandler(signatureRequestVerifier, signer)
+	// Create a cache for signature requests (100 entries)
+	signatureCache := &cache.LRU[ids.ID, []byte]{Size: 100}
+	lp118Handler := lp118.NewCachedHandler(signatureCache, signatureRequestVerifier, signer)
+	signatureRequestHandler := lp118.NewHandlerAdapter(lp118Handler)
 
-	if err := p2pNetwork.AddHandler(acp118.HandlerID, signatureRequestHandler); err != nil {
+	if err := p2pNetwork.AddHandler(lp118.HandlerID, signatureRequestHandler); err != nil {
 		return nil, err
 	}
 

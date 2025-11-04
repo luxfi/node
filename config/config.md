@@ -34,14 +34,14 @@ If set to `false`, this node will not expose the Metrics API. Defaults to
 
 ## Lux Community Proposals
 
-#### `--acp-support` (array of integers)
+#### `--lp-support` (array of integers)
 
-The `--acp-support` flag allows an LuxGo node to indicate support for a
+The `--lp-support` flag allows an LuxGo node to indicate support for a
 set of [Lux Community Proposals](https://github.com/lux-foundation/ACPs).
 
-#### `--acp-object` (array of integers)
+#### `--lp-object` (array of integers)
 
-The `--acp-object` flag allows an LuxGo node to indicate objection for a
+The `--lp-object` flag allows an LuxGo node to indicate objection for a
 set of [Lux Community Proposals](https://github.com/lux-foundation/ACPs).
 
 ## Bootstrapping

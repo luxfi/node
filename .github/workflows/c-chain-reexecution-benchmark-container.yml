@@ -19,11 +19,11 @@ on:
       block-dir-src:
         description: 'The source block directory. Supports S3 directory/zip and local directories.'
         required: false
-        default: s3://avalanchego-bootstrap-testing/cchain-mainnet-blocks-1m-ldb/**
+        default: s3://luxd-bootstrap-testing/cchain-mainnet-blocks-1m-ldb/**
       current-state-dir-src:
         description: 'The current state directory. Supports S3 directory/zip and local directories.'
         required: false
-        default: s3://avalanchego-bootstrap-testing/cchain-current-state-hashdb-full-100/**
+        default: s3://luxd-bootstrap-testing/cchain-current-state-hashdb-full-100/**
       runner:
         description: 'Runner to execute the benchmark. Input to the runs-on field of the job.'
         required: false

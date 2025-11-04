@@ -146,14 +146,14 @@ func (w *withOptions) IssueCreateChainTx(
 // 	)
 // }
 
-func (w *withOptions) IssueConvertSubnetToL1Tx(
+func (w *withOptions) IssueConvertNetToL1Tx(
 	subnetID ids.ID,
 	chainID ids.ID,
 	address []byte,
-	validators []*txs.ConvertSubnetToL1Validator,
+	validators []*txs.ConvertNetToL1Validator,
 	options ...common.Option,
 ) (*txs.Tx, error) {
-	return w.wallet.IssueConvertSubnetToL1Tx(
+	return w.wallet.IssueConvertNetToL1Tx(
 		subnetID,
 		chainID,
 		address,
