@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
-	dto "github.com/luxfi/metric"
+	dto "github.com/prometheus/client_model/go"
 )
 
 var (

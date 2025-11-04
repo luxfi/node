@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/metric"
 	"sync"
 
-	dto "github.com/luxfi/metric"
+	dto "github.com/prometheus/client_model/go"
 )
 
 var errReregisterGatherer = errors.New("attempted to register a gatherer when one is already registered")

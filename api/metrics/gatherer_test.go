@@ -6,7 +6,7 @@ package metrics
 import (
 	"github.com/luxfi/metric"
 
-	dto "github.com/luxfi/metric"
+	dto "github.com/prometheus/client_model/go"
 )
 
 var counterOpts = metric.CounterOpts{
