@@ -23,7 +23,7 @@ import (
 //go:embed yaml/promtail-daemonset.yaml
 var promtailManifest []byte
 
-//go:embed yaml/metric-agent.yaml
+//go:embed yaml/prometheus-agent.yaml
 var metricManifest []byte
 
 // This must match the namespace defined in the manifests
