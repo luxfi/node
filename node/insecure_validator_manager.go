@@ -4,13 +4,18 @@
 package node
 
 import (
+	"context"
 	"sync"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/proto/pb/p2p"
+	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/version"
 )
 
@@ -41,7 +46,8 @@ func (i *insecureValidatorManager) Connected(vdrID ids.NodeID, nodeVersion *vers
 		)
 	}
 	// Forward to the underlying router
-	i.Router.Connected(vdrID, nodeVersion, netID)
+	// Note: Router.Connected is deprecated and not implemented
+	// i.Router.Connected(vdrID, nodeVersion, netID)
 }
 
 func (i *insecureValidatorManager) Disconnected(vdrID ids.NodeID) {
@@ -57,6 +63,63 @@ func (i *insecureValidatorManager) Disconnected(vdrID ids.NodeID) {
 		log.Stringer("netID", constants.PrimaryNetworkID),
 	)
 
-	// Forward to the underlying router
-	i.Router.Disconnected(vdrID)
+	// Note: Router.Disconnected is deprecated and not implemented
+	// i.Router.Disconnected(vdrID)
+}
+
+func (i *insecureValidatorManager) Deprecated() {
+	// No-op - Router interface requirement
+}
+
+func (i *insecureValidatorManager) AddChain(ctx context.Context, handler handler.Handler) {
+	// Stub - consensus router doesn't have AddChain
+}
+
+func (i *insecureValidatorManager) Benched(chainID ids.ID, nodeID ids.NodeID) {
+	// Stub
+}
+
+func (i *insecureValidatorManager) Unbenched(chainID ids.ID, nodeID ids.NodeID) {
+	// Stub
+}
+
+func (i *insecureValidatorManager) HealthCheck(ctx context.Context) (interface{}, error) {
+	return nil, nil
+}
+
+func (i *insecureValidatorManager) Initialize(
+	nodeID ids.NodeID,
+	logger log.Logger,
+	timeoutManager timer.AdaptiveTimeoutManager,
+	gossipFrequency uint64,
+	harshQuittersTime uint64,
+	harshQuittersSlashingFraction uint64,
+	appGossipValidatorSize uint64,
+	appGossipNonValidatorSize uint64,
+	gossipAcceptedFrontierSize uint64,
+	appSendQueueSize uint64,
+	peerNotConnectedF uint64,
+	connectedPeers ...ids.NodeID,
+) error {
+	return nil
+}
+
+func (i *insecureValidatorManager) RegisterRequest(
+	ctx context.Context,
+	nodeID ids.NodeID,
+	chainID ids.ID,
+	requestID uint32,
+	op message.Op,
+	failedMsg message.InboundMessage,
+	engineType p2p.EngineType,
+) {
+	// Stub
+}
+
+func (i *insecureValidatorManager) HandleInbound(ctx context.Context, msg message.InboundMessage) {
+	// Stub
+}
+
+func (i *insecureValidatorManager) Shutdown(ctx context.Context) {
+	// Stub
 }

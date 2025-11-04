@@ -8,7 +8,6 @@ import (
 	"sync/atomic"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/version"

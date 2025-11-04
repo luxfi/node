@@ -33,7 +33,7 @@ import (
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/compression"
 	"github.com/luxfi/node/utils/constants"
@@ -1437,7 +1437,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 	subnetConfigs[constants.PrimaryNetworkID] = primaryNetworkConfig
 
-// 	nodeConfig.NetConfigs = subnetConfigs
+	nodeConfig.NetConfigs = subnetConfigs
 
 	// Benchlist
 	// Convert consensus.Parameters to PrismParameters for benchlist config

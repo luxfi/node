@@ -11,10 +11,8 @@ import (
 	"syscall"
 
 	"github.com/luxfi/log"
-
 	"github.com/luxfi/node/node"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/ulimit"
 
@@ -54,33 +52,42 @@ func New(config nodeconfig.Config) (App, error) {
 	// 	return nil, fmt.Errorf("failed to restrict the permissions of the log directory with: %w", err)
 	// }
 
-	// Use the logger from config if available, otherwise create a new one
-	logger := config.Log
-	if logger == nil {
-		// Create a basic logger if one wasn't provided
-		logger = log.NewNoOpLogger()
+	// Create a logger and log factory
+	infoLevel, _ := log.ToLevel("info")
+	debugLevel, _ := log.ToLevel("debug")
+	logFactory := log.NewFactoryWithConfig(log.Config{
+		RotatingWriterConfig: log.RotatingWriterConfig{
+			MaxSize:   100,                        // 100MB per log file
+			MaxFiles:  10,
+			MaxAge:    30,                         // 30 days
+			Directory: config.DatabaseConfig.Path, // Use db path for logs
+		},
+		DisplayLevel: infoLevel,
+		LogLevel:     debugLevel,
+	})
+	logger, err := logFactory.Make("main")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create logger: %w", err)
 	}
 
 	// update fd limit
 	fdLimit := config.FdLimit
 	if err := ulimit.Set(fdLimit, logger); err != nil {
 		logger.Error("failed to set fd-limit",
-			log.Reflect("error", err),
+			"error", err,
 		)
 		return nil, err
 	}
 
-	n, err := node.New(&config, nil, logger) // Factory is nil now
+	n, err := node.New(&config, logFactory, logger)
 	if err != nil {
-		log.Fatal("failed to initialize node", log.Error(err))
-		log.Stop()
-		logFactory.Close()
 		return nil, fmt.Errorf("failed to initialize node: %w", err)
 	}
 
 	return &app{
-		node: n,
-		log:  logger,
+		node:       n,
+		log:        logger,
+		logFactory: logFactory,
 	}, nil
 }
 
@@ -130,7 +137,7 @@ func Run(app App) int {
 type app struct {
 	node       *node.Node
 	log        log.Logger
-	logFactory logging.Factory
+	logFactory log.Factory
 	exitWG     sync.WaitGroup
 }
 

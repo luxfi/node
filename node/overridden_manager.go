@@ -74,6 +74,10 @@ func (o *overriddenManager) RemoveWeight(_ ids.ID, nodeID ids.NodeID, weight uin
 	return o.manager.RemoveWeight(o.netID, nodeID, weight)
 }
 
+func (o *overriddenManager) Count(ids.ID) int {
+	return o.manager.NumValidators(o.netID)
+}
+
 func (o *overriddenManager) NumNets() int {
 	if o.manager.NumValidators(o.netID) == 0 {
 		return 0

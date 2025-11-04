@@ -17,8 +17,6 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/network"
-	"github.com/luxfi/consensus/networking/router"
-	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"

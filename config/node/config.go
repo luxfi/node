@@ -16,8 +16,8 @@ import (
 	"github.com/luxfi/consensus/networking/benchlist"
 	// "github.com/luxfi/consensus/networking/router" // Unused
 	"github.com/luxfi/node/network/tracker"
-	// "github.com/luxfi/node/nets" // Unused
-	"github.com/luxfi/node/trace"
+	"github.com/luxfi/node/nets"
+	"github.com/luxfi/trace"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils/crypto/bls"
 	// "github.com/luxfi/log" // Unused
@@ -178,7 +178,7 @@ type Config struct {
 
 	TrackedNets set.Set[ids.ID] `json:"trackedNets"`
 
-	// NetConfigs map[ids.ID]subnets.Config `json:"subnetConfigs"` // subnets package not available
+	NetConfigs map[ids.ID]nets.Config `json:"subnetConfigs"`
 
 	ChainConfigs map[string]chains.ChainConfig `json:"-"`
 	ChainAliases map[ids.ID][]string           `json:"chainAliases"`

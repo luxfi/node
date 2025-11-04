@@ -6,19 +6,19 @@ package node
 import (
 	"time"
 
-	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/ids"
-	nodetracker "github.com/luxfi/node/network/tracker"
+	consensustracker "github.com/luxfi/consensus/networking/tracker"
+	"github.com/luxfi/node/network/tracker"
 )
 
 // resourceTrackerAdapter adapts node tracker to consensus tracker interface
 type resourceTrackerAdapter struct {
-	tracker nodetracker.ResourceTracker
+	tracker tracker.ResourceTracker
 }
 
-func (r *resourceTrackerAdapter) CPUTracker() tracker.Tracker {
-	// Return the CPU tracker from the underlying resource tracker
-	return r.tracker.CPUTracker()
+func (r *resourceTrackerAdapter) CPUTracker() consensustracker.CPUTracker {
+	// Return adapted CPU tracker from the underlying resource tracker
+	return &cpuTrackerAdapter{tracker: r.tracker.CPUTracker()}
 }
 
 func (r *resourceTrackerAdapter) StartProcessing(nodeID ids.NodeID, t time.Time) {
@@ -29,16 +29,16 @@ func (r *resourceTrackerAdapter) StopProcessing(nodeID ids.NodeID, t time.Time) 
 	// Stub implementation
 }
 
-func (r *resourceTrackerAdapter) DiskTracker() tracker.Tracker {
-	// Return the disk tracker from the underlying resource tracker
-	return r.tracker.DiskTracker()
+func (r *resourceTrackerAdapter) DiskTracker() consensustracker.DiskTracker {
+	// Return adapted disk tracker from the underlying resource tracker
+	return &diskTrackerAdapter{tracker: r.tracker.DiskTracker()}
 }
 
 // BandwidthTracker is not implemented in node tracker
 
 // cpuTrackerAdapter adapts node CPU tracker to consensus CPU tracker
 type cpuTrackerAdapter struct {
-	tracker nodetracker.Tracker
+	tracker tracker.Tracker
 }
 
 func (c *cpuTrackerAdapter) Usage(nodeID ids.NodeID, t time.Time) float64 {
@@ -53,7 +53,7 @@ func (c *cpuTrackerAdapter) TimeUntilUsage(nodeID ids.NodeID, t time.Time, usage
 
 // diskTrackerAdapter adapts node disk tracker to consensus disk tracker
 type diskTrackerAdapter struct {
-	tracker nodetracker.Tracker
+	tracker tracker.Tracker
 }
 
 func (d *diskTrackerAdapter) Usage(nodeID ids.NodeID, t time.Time) float64 {

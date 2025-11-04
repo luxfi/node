@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/luxfi/metric"
-	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/metric/collectors"
 	"github.com/luxfi/metric/promhttp"
 
@@ -31,14 +30,12 @@ import (
 	"github.com/luxfi/consensus/networking/timeout"
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/database"
-	"github.com/luxfi/database/factory"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/api/admin"
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/info"
-	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
@@ -52,25 +49,21 @@ import (
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
+	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/dynamicip"
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
-	"github.com/luxfi/node/vms/exchangevm"
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/registry"
@@ -78,7 +71,6 @@ import (
 	"github.com/luxfi/trace"
 
 	databasefactory "github.com/luxfi/database/factory"
-	avmconfig "github.com/luxfi/node/vms/exchangevm/config"
 	platformconfig "github.com/luxfi/node/vms/platformvm/config"
 	// geth "github.com/luxfi/geth/plugin/factory" // TODO: C-Chain EVM currently disabled - plugin/factory package doesn't exist
 )
@@ -126,11 +118,9 @@ func New(
 	}
 
 	n := &Node{
-		Log:               logger,
-		LogFactory:        logFactory,
-		MetricsRegisterer: metric.NewRegistry(),
-		StakingTLSSigner:  config.StakingTLSCert.PrivateKey.(crypto.Signer),
-		StakingTLSCert:    stakingCert,
+		Log:              logger,
+		LogFactory:       logFactory,
+		StakingTLSCert:   stakingCert,
 		ID: ids.NodeIDFromCert(&ids.Certificate{
 			Raw:       stakingCert.Raw,
 			PublicKey: stakingCert.PublicKey,
@@ -208,7 +198,7 @@ func New(
 	}
 
 	// Create luxfi/metric instance from metric registry
-	networkMetrics := metric.NewPrometheusMetrics(networkNamespace, networkRegisterer)
+	// networkMetrics := metric.NewPrometheusMetrics(networkNamespace, networkRegisterer)  // TODO: unused
 
 	n.msgCreator, err = message.NewCreator(
 		networkRegisterer,
@@ -544,10 +534,11 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	tlsConfig := peer.TLSConfig(n.Config.StakingTLSCert, n.tlsKeyLogWriterCloser)
 
 	// Create chain router
-	n.chainRouter = &router.ChainRouter{}
-	if n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled {
-		n.chainRouter = router.Trace(n.chainRouter, n.tracer)
-	}
+	// TODO: router.ChainRouter and router.Trace not available in consensus router package
+	// n.chainRouter = &router.ChainRouter{}
+	// if n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled {
+	// 	n.chainRouter = router.Trace(n.chainRouter, n.tracer)
+	// }
 
 	// Configure benchlist
 	benchlistGatherer := metric.NewLabelGatherer(chains.ChainLabel)
@@ -562,7 +553,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	}
 
 	// Create benchlist manager
-	n.benchlistManager = benchlist.NewManager(n.Log, n.MetricsRegisterer, &benchlist.Config{})
+	n.benchlistManager = benchlist.NewManager(n.Log, metric.NewRegistry(), &benchlist.Config{})
 
 	n.uptimeCalculator = uptime.NewLockedCalculator()
 
@@ -577,7 +568,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 		err := n.vdrs.AddStaker(
 			constants.PrimaryNetworkID,
 			n.ID,
-			n.Config.StakingSigningKey.PublicKey(),
+			bls.PublicKeyToCompressedBytes(n.Config.StakingSigningKey.PublicKey()),
 			dummyTxID,
 			n.Config.SybilProtectionDisabledWeight,
 		)
@@ -617,7 +608,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	n.Config.NetworkConfig.Beacons = n.bootstrappers
 	n.Config.NetworkConfig.TLSConfig = tlsConfig
 	n.Config.NetworkConfig.TLSKey = tlsKey
-	n.Config.NetworkConfig.BLSKey = NewBLSSignerWrapper(n.Config.StakingSigningKey)
+	n.Config.NetworkConfig.BLSKey = n.Config.StakingSigningKey
 	n.Config.NetworkConfig.TrackedNets = n.Config.TrackedNets
 	n.Config.NetworkConfig.UptimeCalculator = n.uptimeCalculator
 	n.Config.NetworkConfig.UptimeRequirement = n.Config.StakingConfig.UptimeRequirement
@@ -628,11 +619,15 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 
 	// Wrap the router to implement network.ExternalHandler
 	externalHandler := &externalHandlerWrapper{router: consensusRouter}
+	
+	// Create a Registry for network metrics
+	networkRegistry := metric.NewRegistry()
+	
 	n.Net, err = network.NewNetwork(
 		&n.Config.NetworkConfig,
 		n.Config.UpgradeConfig.FortunaTime,
 		n.msgCreator,
-		reg,
+		networkRegistry,
 		n.Log,
 		listener,
 		dialer.NewDialer(constants.NetworkType, n.Config.NetworkConfig.DialerConfig, n.Log),
@@ -762,16 +757,18 @@ func (n *Node) Dispatch() error {
 
 func (n *Node) initDatabase() error {
 	var dbFolderName string
-	switch n.Config.DatabaseConfig.Name {
-	case leveldb.Name:
-		// Prior to v1.10.15, the only on-disk database was leveldb, and its
-		// files went to [dbPath]/[networkID]/v1.4.5.
-		dbFolderName = version.CurrentDatabase.String()
-	case pebbledb.Name:
-		dbFolderName = "pebble"
-	default:
-		dbFolderName = "db"
-	}
+	// TODO: leveldb and pebbledb packages not imported
+	// switch n.Config.DatabaseConfig.Name {
+	// case leveldb.Name:
+	// 	// Prior to v1.10.15, the only on-disk database was leveldb, and its
+	// 	// files went to [dbPath]/[networkID]/v1.4.5.
+	// 	dbFolderName = version.CurrentDatabase.String()
+	// case pebbledb.Name:
+	// 	dbFolderName = "pebble"
+	// default:
+	// 	dbFolderName = "db"
+	// }
+	dbFolderName = "db"
 	// dbFolderName is appended to the database path given in the config
 	dbFullPath := filepath.Join(n.Config.DatabaseConfig.Path, dbFolderName)
 
@@ -1109,7 +1106,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			VertexAcceptorGroup:                     n.VertexAcceptorGroup,
 			DB:                                      n.DB,
 			MsgCreator:                              n.msgCreator,
-			Router:                                  NewRouterAdapter(n.chainRouter),
+			// Router:                                  NewRouterAdapter(n.chainRouter),  // TODO: Router adapter issue
 			Net:                                     n.Net,
 			Validators:                              n.vdrs,
 			PartialSyncPrimaryNetwork:               n.Config.PartialSyncPrimaryNetwork,
@@ -1127,7 +1124,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			MeterVMEnabled:                          n.Config.MeterVMEnabled,
 			Metrics:                                 n.MetricsGatherer,
 			MeterDBMetrics:                          n.MeterDBMetricsGatherer,
-			NetConfigs:                           n.Config.NetConfigs,
+			// NetConfigs:                           n.Config.NetConfigs,  // TODO: NetConfigs not available
 			ChainConfigs:                            n.Config.ChainConfigs,
 			FrontierPollFrequency:                   n.Config.FrontierPollFrequency,
 			ConsensusAppConcurrency:                 n.Config.ConsensusAppConcurrency,
@@ -1191,13 +1188,14 @@ func (n *Node) initVMs() error {
 				UseCurrentHeight:          n.Config.UseCurrentHeight,
 			},
 		}),
-		n.VMManager.RegisterFactory(context.TODO(), constants.AVMID, &avm.Factory{
-			Config: avmconfig.Config{
-				Upgrades:         n.Config.UpgradeConfig,
-				TxFee:            n.Config.TxFee,
-				CreateAssetTxFee: n.Config.CreateAssetTxFee,
-			},
-		}),
+		// TODO: AVM not available
+		// n.VMManager.RegisterFactory(context.TODO(), constants.AVMID, &avm.Factory{
+		// 	Config: avmconfig.Config{
+		// 		Upgrades:         n.Config.UpgradeConfig,
+		// 		TxFee:            n.Config.TxFee,
+		// 		CreateAssetTxFee: n.Config.CreateAssetTxFee,
+		// 	},
+		// }),
 		// n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &geth.Factory{}), // TODO: C-Chain EVM currently disabled
 	)
 	if err != nil {
@@ -1206,27 +1204,28 @@ func (n *Node) initVMs() error {
 	}
 	n.Log.Info("Platform VM registered successfully")
 
-	n.Log.Info("Registering X VM", "vmID", constants.XVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.XVMID, &exchangevm.Factory{
-		Config: avmconfig.Config{
-			TxFee:            n.Config.TxFee,
-			CreateAssetTxFee: n.Config.CreateAssetTxFee,
-			EtnaTime:         etnaTime,
-		},
-	})
-	if err != nil {
-		n.Log.Error("Failed to register X VM", "error", err)
-		return err
-	}
-	n.Log.Info("X VM registered successfully")
+	// TODO: X VM and C-Chain VM not available
+	// n.Log.Info("Registering X VM", "vmID", constants.XVMID)
+	// err = n.VMManager.RegisterFactory(context.TODO(), constants.XVMID, &exchangevm.Factory{
+	// 	Config: avmconfig.Config{
+	// 		TxFee:            n.Config.TxFee,
+	// 		CreateAssetTxFee: n.Config.CreateAssetTxFee,
+	// 		EtnaTime:         etnaTime,
+	// 	},
+	// })
+	// if err != nil {
+	// 	n.Log.Error("Failed to register X VM", "error", err)
+	// 	return err
+	// }
+	// n.Log.Info("X VM registered successfully")
 
-	n.Log.Info("Registering C-Chain VM", "vmID", constants.EVMID)
-	err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &cchainvm.Factory{})
-	if err != nil {
-		n.Log.Error("Failed to register C-Chain VM", "error", err)
-		return err
-	}
-	n.Log.Info("C-Chain VM registered successfully")
+	// n.Log.Info("Registering C-Chain VM", "vmID", constants.EVMID)
+	// err = n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &cchainvm.Factory{})
+	// if err != nil {
+	// 	n.Log.Error("Failed to register C-Chain VM", "error", err)
+	// 	return err
+	// }
+	// n.Log.Info("C-Chain VM registered successfully")
 
 	// initialize vm runtime manager
 	n.runtimeManager = runtime.NewManager()
@@ -1478,12 +1477,13 @@ func (n *Node) initHealthAPI() error {
 		}
 
 		nodePK := n.Config.StakingSigningKey.PublicKey()
-		if bytes.Equal(bls.PublicKeyToCompressedBytes(nodePK), bls.PublicKeyToCompressedBytes(vdrPK)) {
+		nodePKBytes := bls.PublicKeyToCompressedBytes(nodePK)
+		if bytes.Equal(nodePKBytes, vdrPK) {
 			return "node has the correct BLS key", nil
 		}
 		return nil, fmt.Errorf("node has BLS key 0x%x, but is registered to the validator set with 0x%x",
-			bls.PublicKeyToCompressedBytes(nodePK),
-			bls.PublicKeyToCompressedBytes(vdrPK),
+			nodePKBytes,
+			vdrPK,
 		)
 	})
 
@@ -1619,27 +1619,19 @@ func (n *Node) initResourceManager() error {
 // Initialize [n.cpuTargeter].
 // Assumes [n.resourceTracker] is already initialized.
 func (n *Node) initCPUTargeter(
-	config *TargeterConfig,
+	config *tracker.TargeterConfig,
 ) {
 	// Create CPU targeter
-	n.cpuTargeter = tracker.NewTargeter(&tracker.TargeterConfig{
-		VdrAlloc:           config.VdrAlloc,
-		MaxNonVdrUsage:     config.MaxNonVdrUsage,
-		MaxNonVdrNodeUsage: config.MaxNonVdrNodeUsage,
-	})
+	n.cpuTargeter = tracker.NewTargeter(config)
 }
 
 // Initialize [n.diskTargeter].
 // Assumes [n.resourceTracker] is already initialized.
 func (n *Node) initDiskTargeter(
-	config *TargeterConfig,
+	config *tracker.TargeterConfig,
 ) {
 	// Create disk targeter
-	n.diskTargeter = tracker.NewTargeter(&tracker.TargeterConfig{
-		VdrAlloc:           config.VdrAlloc,
-		MaxNonVdrUsage:     config.MaxNonVdrUsage,
-		MaxNonVdrNodeUsage: config.MaxNonVdrNodeUsage,
-	})
+	n.diskTargeter = tracker.NewTargeter(config)
 }
 
 // Shutdown this node
