@@ -50,7 +50,7 @@ import (
 func main() {
 	// Command-line flags
 	var (
-		sourcePath   = flag.String("source", "", "Path to source SubnetEVM database (required)")
+		sourcePath   = flag.String("source", "", "Path to source EVM database (required)")
 		targetPath   = flag.String("target", "", "Path to target C-Chain database (required)")
 		targetHeight = flag.Uint64("height", 1082780, "Target block height to replay to")
 		walletAddr   = flag.String("wallet", "0x9011E888251AB053B7bD1cdB598Db4f9DEd94714", "Wallet address to track")

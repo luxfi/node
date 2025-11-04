@@ -15,20 +15,20 @@ import (
 	"github.com/luxfi/log"
 )
 
-// GPUSubnet represents a GPU-powered subnet for AI computation
-type GPUSubnet struct {
-	SubnetID     ids.ID          `json:"subnetId"`
+// GPUNet represents a GPU-powered subnet for AI computation
+type GPUNet struct {
+	NetID     ids.ID          `json:"subnetId"`
 	Name         string          `json:"name"`
-	Config       GPUSubnetConfig `json:"config"`
+	Config       GPUNetConfig `json:"config"`
 	Providers    []GPUProvider   `json:"providers"`
 	Tasks        []GPUTask       `json:"tasks"`
-	Performance  SubnetMetrics   `json:"performance"`
+	Performance  NetMetrics   `json:"performance"`
 	mu           sync.RWMutex
 	log          log.Logger
 }
 
-// GPUSubnetConfig defines configuration for GPU subnet
-type GPUSubnetConfig struct {
+// GPUNetConfig defines configuration for GPU subnet
+type GPUNetConfig struct {
 	MinGPUCount      int                `json:"minGpuCount"`
 	RequiredGPUTypes []string           `json:"requiredGpuTypes"`
 	TaskTypes        []string           `json:"taskTypes"`
@@ -112,8 +112,8 @@ type ComputeMetrics struct {
 	Throughput    float64       `json:"throughput,omitempty"`
 }
 
-// SubnetMetrics tracks subnet performance
-type SubnetMetrics struct {
+// NetMetrics tracks subnet performance
+type NetMetrics struct {
 	TotalTasks       uint64        `json:"totalTasks"`
 	CompletedTasks   uint64        `json:"completedTasks"`
 	FailedTasks      uint64        `json:"failedTasks"`
@@ -163,37 +163,37 @@ type ProviderStatus struct {
 	MaxTasks     int       `json:"maxTasks"`
 }
 
-// GPUSubnetManager manages GPU subnets
-type GPUSubnetManager struct {
-	subnets  map[ids.ID]*GPUSubnet
+// GPUNetManager manages GPU subnets
+type GPUNetManager struct {
+	subnets  map[ids.ID]*GPUNet
 	aivm     *VM
 	mu       sync.RWMutex
 	log      log.Logger
 }
 
-// NewGPUSubnetManager creates a new GPU subnet manager
-func NewGPUSubnetManager(aivm *VM, log log.Logger) *GPUSubnetManager {
-	return &GPUSubnetManager{
-		subnets: make(map[ids.ID]*GPUSubnet),
+// NewGPUNetManager creates a new GPU subnet manager
+func NewGPUNetManager(aivm *VM, log log.Logger) *GPUNetManager {
+	return &GPUNetManager{
+		subnets: make(map[ids.ID]*GPUNet),
 		aivm:    aivm,
 		log:     log,
 	}
 }
 
-// CreateSubnet creates a new GPU subnet
-func (m *GPUSubnetManager) CreateSubnet(name string, config GPUSubnetConfig) (*GPUSubnet, error) {
+// CreateNet creates a new GPU subnet
+func (m *GPUNetManager) CreateNet(name string, config GPUNetConfig) (*GPUNet, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	subnetID := ids.GenerateTestID()
 	
-	subnet := &GPUSubnet{
-		SubnetID:    subnetID,
+	subnet := &GPUNet{
+		NetID:    subnetID,
 		Name:        name,
 		Config:      config,
 		Providers:   []GPUProvider{},
 		Tasks:       []GPUTask{},
-		Performance: SubnetMetrics{},
+		Performance: NetMetrics{},
 		log:         m.log,
 	}
 
@@ -209,7 +209,7 @@ func (m *GPUSubnetManager) CreateSubnet(name string, config GPUSubnetConfig) (*G
 }
 
 // RegisterProvider registers a GPU provider to a subnet
-func (s *GPUSubnet) RegisterProvider(nodeID ids.NodeID, info ProviderInfo, gpus []GPUSpec) error {
+func (s *GPUNet) RegisterProvider(nodeID ids.NodeID, info ProviderInfo, gpus []GPUSpec) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -255,7 +255,7 @@ func (s *GPUSubnet) RegisterProvider(nodeID ids.NodeID, info ProviderInfo, gpus 
 }
 
 // SubmitTask submits a new GPU task
-func (s *GPUSubnet) SubmitTask(ctx context.Context, taskType string, requirements TaskRequirements, requester ids.ShortID) (*GPUTask, error) {
+func (s *GPUNet) SubmitTask(ctx context.Context, taskType string, requirements TaskRequirements, requester ids.ShortID) (*GPUTask, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -311,7 +311,7 @@ func (s *GPUSubnet) SubmitTask(ctx context.Context, taskType string, requirement
 }
 
 // findSuitableProvider finds a provider that meets requirements
-func (s *GPUSubnet) findSuitableProvider(req TaskRequirements) (*GPUProvider, error) {
+func (s *GPUNet) findSuitableProvider(req TaskRequirements) (*GPUProvider, error) {
 	var candidates []GPUProvider
 
 	for _, provider := range s.Providers {
@@ -362,7 +362,7 @@ func (s *GPUSubnet) findSuitableProvider(req TaskRequirements) (*GPUProvider, er
 }
 
 // executeTask simulates task execution
-func (s *GPUSubnet) executeTask(task *GPUTask) {
+func (s *GPUNet) executeTask(task *GPUTask) {
 	// Simulate task execution
 	time.Sleep(5 * time.Second)
 
@@ -407,8 +407,8 @@ func (s *GPUSubnet) executeTask(task *GPUTask) {
 	}
 }
 
-// GetSubnetStats returns subnet statistics
-func (s *GPUSubnet) GetSubnetStats() SubnetMetrics {
+// GetNetStats returns subnet statistics
+func (s *GPUNet) GetNetStats() NetMetrics {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -444,9 +444,9 @@ func (s *GPUSubnet) GetSubnetStats() SubnetMetrics {
 	return s.Performance
 }
 
-// TestGPUSubnet creates a test GPU subnet configuration
-func TestGPUSubnet() *GPUSubnetConfig {
-	return &GPUSubnetConfig{
+// TestGPUNet creates a test GPU subnet configuration
+func TestGPUNet() *GPUNetConfig {
+	return &GPUNetConfig{
 		MinGPUCount:      2,
 		RequiredGPUTypes: []string{"RTX 4090", "A100", "H100"},
 		TaskTypes:        []string{"training", "inference", "rendering", "mining"},

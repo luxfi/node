@@ -259,10 +259,6 @@ func (m *testValidatorManager) NumNets() int {
 	return 0
 }
 
-func (m *testValidatorManager) NumSubnets() int {
-	return 0
-}
-
 func (m *testValidatorManager) Count(netID ids.ID) int {
 	return 0
 }

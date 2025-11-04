@@ -1218,7 +1218,7 @@ func TestDeactivateLowBalanceL1Validators(t *testing.T) {
 		newL1Validator = func(endAccumulatedFee uint64) state.L1Validator {
 			return state.L1Validator{
 				ValidationID:      ids.GenerateTestID(),
-				SubnetID:          ids.GenerateTestID(),
+				NetID:          ids.GenerateTestID(),
 				NodeID:            ids.GenerateTestNodeID(),
 				PublicKey:         pkBytes,
 				Weight:            1,
@@ -1313,7 +1313,7 @@ func TestDeactivateLowBalanceL1ValidatorBlockChanges(t *testing.T) {
 
 	fractionalTimeL1Validator := state.L1Validator{
 		ValidationID:      ids.GenerateTestID(),
-		SubnetID:          ids.GenerateTestID(),
+		NetID:          ids.GenerateTestID(),
 		NodeID:            ids.GenerateTestNodeID(),
 		PublicKey:         bls.PublicKeyToUncompressedBytes(signer.PublicKey()),
 		Weight:            1,

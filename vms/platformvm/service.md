@@ -387,7 +387,7 @@ platform.getBlockchains() ->
 - `blockchains` is all of the blockchains that exists on the Lux network.
 - `name` is the human-readable name of this blockchain.
 - `id` is the blockchain’s ID.
-- `subnetID` is the ID of the Subnet that validates this blockchain.
+- `subnetID` is the ID of the Net that validates this blockchain.
 - `vmID` is the ID of the Virtual Machine the blockchain runs.
 
 **Example Call:**
@@ -507,7 +507,7 @@ curl -X POST --data '{
 
 ### `platform.getCurrentSupply`
 
-Returns an upper bound on amount of tokens that exist that can stake the requested Subnet. This is
+Returns an upper bound on amount of tokens that exist that can stake the requested Net. This is
 an upper bound because it does not account for burnt tokens, including transaction fees.
 
 **Signature:**
@@ -549,7 +549,7 @@ The response in this example indicates that LUX’s supply is at most 365.865 mi
 
 ### `platform.getCurrentValidators`
 
-List the current validators of the given Subnet.
+List the current validators of the given Net.
 
 **Signature:**
 
@@ -615,23 +615,23 @@ platform.getCurrentValidators({
 }
 ```
 
-- `subnetID` is the Subnet whose current validators are returned. If omitted, returns the current
+- `subnetID` is the Net whose current validators are returned. If omitted, returns the current
   validators of the Primary Network.
 - `nodeIDs` is a list of the NodeIDs of current validators to request. If omitted, all current
   validators are returned. If a specified NodeID is not in the set of current validators, it will
   not be included in the response.
-- `validators` can include different fields based on the subnet type (L1, PoA Subnets, the Primary Network):
+- `validators` can include different fields based on the subnet type (L1, PoA Nets, the Primary Network):
   - `txID` is the validator transaction.
-  - `startTime` is the Unix time when the validator starts validating the Subnet.
-  - `endTime` is the Unix time when the validator stops validating the Subnet. Ommitted if `subnetID` is a L1 Subnet.
+  - `startTime` is the Unix time when the validator starts validating the Net.
+  - `endTime` is the Unix time when the validator stops validating the Net. Ommitted if `subnetID` is a L1 Net.
   - `nodeID` is the validator’s node ID.
   - `weight` is the validator’s weight (stake) when sampling validators.
-  - `validationID` is the ID for L1 subnet validator registration transaction. Omitted if `subnetID` is not an L1 Subnet.
-  - `publicKey` is the compressed BLS public key of the validator. Omitted if `subnetID` is not an L1 Subnet.
-  - `remainingBalanceOwner` is an `OutputOwners` which includes a `locktime`, `threshold`, and an array of `addresses`. It specifies the owner that will receive any withdrawn balance. Omitted if `subnetID` is not an L1 Subnet.
-  - `deactivationOwner` is an `OutputOwners` which includes a `locktime`, `threshold`, and an array of `addresses`. It specifies the owner that can withdraw the balance. Omitted if `subnetID` is not an L1 Subnet.
-  - `minNonce` is minimum nonce that must be included in a `SetL1ValidatorWeightTx` for the transaction to be valid. Omitted if `subnetID` is not an L1 Subnet.
-  - `balance` is current remaining balance that can be used to pay for the validators continuous fee. Omitted if `subnetID` is not an L1 Subnet.
+  - `validationID` is the ID for L1 subnet validator registration transaction. Omitted if `subnetID` is not an L1 Net.
+  - `publicKey` is the compressed BLS public key of the validator. Omitted if `subnetID` is not an L1 Net.
+  - `remainingBalanceOwner` is an `OutputOwners` which includes a `locktime`, `threshold`, and an array of `addresses`. It specifies the owner that will receive any withdrawn balance. Omitted if `subnetID` is not an L1 Net.
+  - `deactivationOwner` is an `OutputOwners` which includes a `locktime`, `threshold`, and an array of `addresses`. It specifies the owner that can withdraw the balance. Omitted if `subnetID` is not an L1 Net.
+  - `minNonce` is minimum nonce that must be included in a `SetL1ValidatorWeightTx` for the transaction to be valid. Omitted if `subnetID` is not an L1 Net.
+  - `balance` is current remaining balance that can be used to pay for the validators continuous fee. Omitted if `subnetID` is not an L1 Net.
   - `validationRewardOwner` is an `OutputOwners` output which includes `locktime`, `threshold` and
     array of `addresses`. Specifies the owner of the potential reward earned from staking. Omitted
     if `subnetID` is not the Primary Network.
@@ -641,8 +641,8 @@ platform.getCurrentValidators({
   - `delegationFeeRate` is the percent fee this validator charges when others delegate stake to
     them. Omitted if `subnetID` is not the Primary Network.
   - `uptime` is the % of time the queried node has reported the peer as online and validating the
-    Subnet. Omitted if `subnetID` is not the Primary Network.
-  - `connected` is if the node is connected and tracks the Subnet. Omitted if `subnetID` is not the Primary Network.
+    Net. Omitted if `subnetID` is not the Primary Network.
+  - `connected` is if the node is connected and tracks the Net. Omitted if `subnetID` is not the Primary Network.
   - `signer` is the node's BLS public key and proof of possession. Omitted if the validator doesn't
     have a BLS public key. Omitted if `subnetID` is not the Primary Network.
   - `delegatorCount` is the number of delegators on this validator.
@@ -659,7 +659,7 @@ platform.getCurrentValidators({
       `addresses`.
     - `potentialReward` is the potential reward earned from staking
 
-Note: An L1 Subnet can include both initial legacy PoA validators (before L1 conversion) and L1 validators. The response will include both types of validators.
+Note: An L1 Net can include both initial legacy PoA validators (before L1 conversion) and L1 validators. The response will include both types of validators.
 
 **Example Call:**
 
@@ -1015,7 +1015,7 @@ curl -X POST --data '{
 
 ### `platform.getMinStake`
 
-Get the minimum amount of tokens required to validate the requested Subnet and the minimum amount of
+Get the minimum amount of tokens required to validate the requested Net and the minimum amount of
 tokens that can be delegated.
 
 **Signature:**
@@ -1185,7 +1185,7 @@ curl -X POST --data '{
 
 ### `platform.getStakingAssetID`
 
-Retrieve an assetID for a Subnet’s staking asset.
+Retrieve an assetID for a Net’s staking asset.
 
 **Signature:**
 
@@ -1197,8 +1197,8 @@ platform.getStakingAssetID({
 }
 ```
 
-- `subnetID` is the Subnet whose assetID is requested.
-- `assetID` is the assetID for a Subnet’s staking asset.
+- `subnetID` is the Net whose assetID is requested.
+- `assetID` is the assetID for a Net’s staking asset.
 
 **Example Call:**
 
@@ -1235,14 +1235,14 @@ Testnet: U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK
 
 </Callout>
 
-### `platform.getSubnet`
+### `platform.getNet`
 
-Get owners and info about the Subnet or L1.
+Get owners and info about the Net or L1.
 
 **Signature:**
 
 ```
-platform.getSubnet({
+platform.getNet({
     subnetID: string
 }) ->
 {
@@ -1257,13 +1257,13 @@ platform.getSubnet({
 }
 ```
 
-- `subnetID` is the ID of the Subnet to get information about. If omitted, fails.
+- `subnetID` is the ID of the Net to get information about. If omitted, fails.
 - `threshold` signatures from addresses in `controlKeys` are needed to make changes to
-  a permissioned subnet. If the Subnet is not a PoA Subnet, then `threshold` will be `0` and `controlKeys`
+  a permissioned subnet. If the Net is not a PoA Net, then `threshold` will be `0` and `controlKeys`
   will be empty.
 - changes can not be made into the subnet until `locktime` is in the past.
 - `subnetTransformationTxID` is the ID of the transaction that changed the subnet into an elastic one, if it exists.
-- `conversionID` is the ID of the conversion from a permissioned Subnet into an L1, if it exists.
+- `conversionID` is the ID of the conversion from a permissioned Net into an L1, if it exists.
 - `managerChainID` is the ChainID that has the ability to modify this L1s validator set, if it exists.
 - `managerAddress` is the address that has the ability to modify this L1s validator set, if it exists.
 
@@ -1272,7 +1272,7 @@ platform.getSubnet({
 ```sh
 curl -X POST --data '{
     "jsonrpc": "2.0",
-    "method": "platform.getSubnet",
+    "method": "platform.getNet",
     "params": {"subnetID":"Vz2ArUpigHt7fyE79uF3gAXvTPLJi2LGgZoMpgNPHowUZJxBb"},
     "id": 1
 }' -H 'content-type:application/json;' 127.0.0.1:9650/ext/bc/P
@@ -1300,7 +1300,7 @@ curl -X POST --data '{
 }
 ```
 
-### `platform.getSubnets`
+### `platform.getNets`
 
 <Callout title="Caution" type="warn">
 
@@ -1308,12 +1308,12 @@ Deprecated as of [**v1.9.12**](https://github.com/luxfi/node/releases/tag/v1.9.1
 
 </Callout>
 
-Get info about the Subnets.
+Get info about the Nets.
 
 **Signature:**
 
 ```
-platform.getSubnets({
+platform.getNets({
     ids: []string
 }) ->
 {
@@ -1325,11 +1325,11 @@ platform.getSubnets({
 }
 ```
 
-- `ids` are the IDs of the Subnets to get information about. If omitted, gets information about all
-  Subnets.
-- `id` is the Subnet’s ID.
+- `ids` are the IDs of the Nets to get information about. If omitted, gets information about all
+  Nets.
+- `id` is the Net’s ID.
 - `threshold` signatures from addresses in `controlKeys` are needed to add a validator to the
-  Subnet. If the Subnet is not a PoA Subnet, then `threshold` will be `0` and `controlKeys` will be
+  Net. If the Net is not a PoA Net, then `threshold` will be `0` and `controlKeys` will be
   empty.
 
 **Example Call:**
@@ -1337,7 +1337,7 @@ platform.getSubnets({
 ```sh
 curl -X POST --data '{
     "jsonrpc": "2.0",
-    "method": "platform.getSubnets",
+    "method": "platform.getNets",
     "params": {"ids":["hW8Ma7dLMA7o4xmJf3AXBbo17bXzE7xnThUd3ypM4VAWo1sNJ"]},
     "id": 1
 }' -H 'content-type:application/json;' 127.0.0.1:9630/ext/bc/P
@@ -1400,7 +1400,7 @@ curl -X POST --data '{
 
 ### `platform.getTotalStake`
 
-Get the total amount of tokens staked on the requested Subnet.
+Get the total amount of tokens staked on the requested Net.
 
 **Signature:**
 
@@ -1442,7 +1442,7 @@ curl -X POST --data '{
 }
 ```
 
-#### Subnet Example
+#### Net Example
 
 **Example Call:**
 
@@ -1797,7 +1797,7 @@ This gives response:
 
 ### `platform.getValidatorsAt`
 
-Get the validators and their weights of a Subnet or the Primary Network at a given P-Chain height.
+Get the validators and their weights of a Net or the Primary Network at a given P-Chain height.
 
 **Signature:**
 
@@ -1812,7 +1812,7 @@ platform.getValidatorsAt(
 
 - `height` is the P-Chain height to get the validator set at, or the string literal "proposed"
   to return the validator set at this node's ProposerVM height.
-- `subnetID` is the Subnet ID to get the validator set of. If not given, gets validator set of the
+- `subnetID` is the Net ID to get the validator set of. If not given, gets validator set of the
   Primary Network.
 
 **Example Call:**
@@ -1978,7 +1978,7 @@ curl -X POST --data '{
 
 ### `platform.sampleValidators`
 
-Sample validators from the specified Subnet.
+Sample validators from the specified Net.
 
 **Signature:**
 
@@ -1995,7 +1995,7 @@ platform.sampleValidators(
 ```
 
 - `size` is the number of validators to sample.
-- `subnetID` is the Subnet to sampled from. If omitted, defaults to the Primary Network.
+- `subnetID` is the Net to sampled from. If omitted, defaults to the Primary Network.
 - Each element of `validators` is the ID of a validator.
 
 **Example Call:**
@@ -2028,7 +2028,7 @@ curl -X POST --data '{
 
 ### `platform.validatedBy`
 
-Get the Subnet that validates a given blockchain.
+Get the Net that validates a given blockchain.
 
 **Signature:**
 
@@ -2041,7 +2041,7 @@ platform.validatedBy(
 ```
 
 - `blockchainID` is the blockchain’s ID.
-- `subnetID` is the ID of the Subnet that validates the blockchain.
+- `subnetID` is the ID of the Net that validates the blockchain.
 
 **Example Call:**
 
@@ -2070,7 +2070,7 @@ curl -X POST --data '{
 
 ### `platform.validates`
 
-Get the IDs of the blockchains a Subnet validates.
+Get the IDs of the blockchains a Net validates.
 
 **Signature:**
 
@@ -2082,8 +2082,8 @@ platform.validates(
 ) -> { blockchainIDs: []string }
 ```
 
-- `subnetID` is the Subnet’s ID.
-- Each element of `blockchainIDs` is the ID of a blockchain the Subnet validates.
+- `subnetID` is the Net’s ID.
+- Each element of `blockchainIDs` is the ID of a blockchain the Net validates.
 
 **Example Call:**
 

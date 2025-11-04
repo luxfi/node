@@ -1,13 +1,13 @@
-# SubnetEVM to C-Chain Import Tool
+# EVM to C-Chain Import Tool
 
 ## Overview
 
-This tool provides a comprehensive solution for importing SubnetEVM blockchain data into the C-Chain VM format. It handles the critical namespace prefix issue where SubnetEVM uses a 32-byte prefix (337fb73f...) that C-Chain doesn't expect.
+This tool provides a comprehensive solution for importing EVM blockchain data into the C-Chain VM format. It handles the critical namespace prefix issue where EVM uses a 32-byte prefix (337fb73f...) that C-Chain doesn't expect.
 
 ## Features
 
-- **Namespace Prefix Stripping**: Automatically removes the 32-byte SubnetEVM namespace prefix
-- **Key Format Translation**: Converts SubnetEVM key formats to C-Chain compatible formats
+- **Namespace Prefix Stripping**: Automatically removes the 32-byte EVM namespace prefix
+- **Key Format Translation**: Converts EVM key formats to C-Chain compatible formats
 - **Batch Processing**: Efficiently processes blocks in configurable batches
 - **State Rebuilding**: Reconstructs state trie during import
 - **Progress Tracking**: Real-time progress reporting and ETA calculation
@@ -74,8 +74,8 @@ vi import_config.json
 // In your VM initialization code
 vm := &VM{...}
 
-// Import SubnetEVM database
-err := vm.ImportSubnetEVMDatabase(
+// Import EVM database
+err := vm.ImportEVMDatabase(
     "/path/to/subnet/db",
     1082780, // target height
 )
@@ -85,7 +85,7 @@ err := vm.ImportSubnetEVMDatabase(
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `source_path` | SubnetEVM database path | Required |
+| `source_path` | EVM database path | Required |
 | `target_path` | C-Chain database path | Required |
 | `start_block` | Starting block number | 0 |
 | `end_block` | Ending block number | 1082780 |
@@ -100,7 +100,7 @@ err := vm.ImportSubnetEVMDatabase(
 
 ### Namespace Prefix Issue
 
-SubnetEVM databases use a 32-byte namespace prefix (337fb73f...) on all keys. This tool:
+EVM databases use a 32-byte namespace prefix (337fb73f...) on all keys. This tool:
 
 1. **Detects** namespace prefixes by checking for the 337fb73f pattern
 2. **Strips** the 32-byte prefix during key translation
@@ -109,7 +109,7 @@ SubnetEVM databases use a 32-byte namespace prefix (337fb73f...) on all keys. Th
 
 ### Database Compatibility
 
-- **Source**: Pebble DB (SubnetEVM format)
+- **Source**: Pebble DB (EVM format)
 - **Target**: LevelDB (C-Chain format)
 - **Key Translation**: Automatic format conversion
 - **State Migration**: Full state trie reconstruction
@@ -124,7 +124,7 @@ SubnetEVM databases use a 32-byte namespace prefix (337fb73f...) on all keys. Th
 ## Import Process
 
 1. **Initialization**
-   - Open source database (SubnetEVM/Pebble)
+   - Open source database (EVM/Pebble)
    - Create target database (C-Chain/LevelDB)
    - Initialize blockchain instance
 
@@ -212,9 +212,9 @@ func (vm *VM) Initialize(...) error {
 
     // Check if import is needed
     if vm.needsImport() {
-        log.Info("Importing SubnetEVM database")
+        log.Info("Importing EVM database")
 
-        err := vm.ImportSubnetEVMDatabase(
+        err := vm.ImportEVMDatabase(
             vm.config.ImportSource,
             vm.config.ImportHeight,
         )
@@ -239,7 +239,7 @@ TARGET="/home/z/work/lux/node/chaindata/cchain"
 HEIGHT=1082780
 WALLET="0x9011E888251AB053B7bD1cdB598Db4f9DEd94714"
 
-echo "Starting SubnetEVM import..."
+echo "Starting EVM import..."
 ./import_tool \
     -source "$SOURCE" \
     -target "$TARGET" \
@@ -269,7 +269,7 @@ The import is successful when:
 - Partial imports are supported (use start/end parameters)
 - The tool preserves all transaction receipts and logs
 - State verification is optional but recommended for critical imports
-- The namespace stripping is essential for SubnetEVM compatibility
+- The namespace stripping is essential for EVM compatibility
 
 ## Support
 

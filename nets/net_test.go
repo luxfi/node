@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/math/set"
 )
 
-func TestSubnet(t *testing.T) {
+func TestNet(t *testing.T) {
 	require := require.New(t)
 
 	myNodeID := ids.GenerateTestNodeID()

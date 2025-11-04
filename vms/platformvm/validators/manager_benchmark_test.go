@@ -83,11 +83,11 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	netID := ids.GenerateTestID()
 	for _, nodeID := range nodeIDs {
 		currentHeight++
-		require.NoError(addSubnetValidator(s, subnetID, genesistest.DefaultValidatorStartTime, genesistest.DefaultValidatorEndTime, nodeID, currentHeight))
+		require.NoError(addNetValidator(s, subnetID, genesistest.DefaultValidatorStartTime, genesistest.DefaultValidatorEndTime, nodeID, currentHeight))
 	}
 	for i := 0; i < 9900; i++ {
 		currentHeight++
-		require.NoError(addSubnetDelegator(s, subnetID, genesistest.DefaultValidatorStartTime, genesistest.DefaultValidatorEndTime, nodeIDs, currentHeight))
+		require.NoError(addNetDelegator(s, subnetID, genesistest.DefaultValidatorStartTime, genesistest.DefaultValidatorEndTime, nodeIDs, currentHeight))
 	}
 
 	ctx := context.Background()
@@ -121,7 +121,7 @@ func addPrimaryValidator(
 		TxID:            ids.GenerateTestID(),
 		NodeID:          nodeID,
 		PublicKey:       sk.PublicKey(),
-		SubnetID:        constants.PrimaryNetworkID,
+		NetID:        constants.PrimaryNetworkID,
 		Weight:          2 * units.MegaLux,
 		StartTime:       startTime,
 		EndTime:         endTime,
@@ -159,7 +159,7 @@ func addNetValidator(
 		EndTime:         endTime,
 		PotentialReward: 0,
 		NextTime:        endTime,
-		Priority:        txs.SubnetPermissionlessValidatorCurrentPriority,
+		Priority:        txs.NetPermissionlessValidatorCurrentPriority,
 	}); err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func addNetValidator(
 	return s.Commit()
 }
 
-func addSubnetDelegator(
+func addNetDelegator(
 	s state.State,
 	netID ids.ID,
 	startTime time.Time,
@@ -193,7 +193,7 @@ func addSubnetDelegator(
 		EndTime:         endTime,
 		PotentialReward: 0,
 		NextTime:        endTime,
-		Priority:        txs.SubnetPermissionlessDelegatorCurrentPriority,
+		Priority:        txs.NetPermissionlessDelegatorCurrentPriority,
 	})
 
 	blk, err := block.NewBanffStandardBlock(startTime, ids.GenerateTestID(), height, nil)

@@ -58,7 +58,7 @@ func main() {
 
 	addValidatorStartTime := time.Now()
 	addValidatorTx, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.SubnetValidator{Validator: txs.Validator{
+		&txs.NetValidator{Validator: txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(startTime.Unix()),
 			End:    uint64(startTime.Add(duration).Unix()),

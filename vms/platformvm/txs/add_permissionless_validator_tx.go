@@ -40,8 +40,8 @@ type AddPermissionlessValidatorTx struct {
 	Validator `serialize:"true" json:"validator"`
 	// ID of the net this validator is validating
 	Net ids.ID `serialize:"true" json:"netID"`
-	// If the [Subnet] is the primary network, [Signer] is the BLS key for this
-	// validator. If the [Subnet] is not the primary network, this value is the
+	// If the [Net] is the primary network, [Signer] is the BLS key for this
+	// validator. If the [Net] is not the primary network, this value is the
 	// empty signer
 	// Note: We do not enforce that the BLS key is unique across all validators.
 	//       This means that validators can share a key if they so choose.

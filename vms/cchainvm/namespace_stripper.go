@@ -16,8 +16,8 @@ import (
 	"github.com/luxfi/geth/rlp"
 )
 
-// NetEVM namespace for LUX mainnet (blockchain ID 4aYc2FXx...)
-var NetEVMNamespace = []byte{
+// EVM namespace for LUX mainnet (blockchain ID 4aYc2FXx...)
+var EVMNamespace = []byte{
 	0x33, 0x7f, 0xb7, 0x3f, 0x9b, 0xcd, 0xac, 0x8c,
 	0x31, 0xa2, 0xd5, 0xf7, 0xb8, 0x77, 0xab, 0x1e,
 	0x8a, 0x2b, 0x7f, 0x2a, 0x1e, 0x9b, 0xf0, 0x2a,
@@ -25,7 +25,7 @@ var NetEVMNamespace = []byte{
 }
 
 // NetNamespaceStripper wraps a database and strips the 32-byte namespace prefix
-// from NetEVM migrated data, making it readable by C-Chain
+// from EVM migrated data, making it readable by C-Chain
 type NetNamespaceStripper struct {
 	db        ethdb.Database
 	namespace []byte
@@ -34,7 +34,7 @@ type NetNamespaceStripper struct {
 
 // NewNetNamespaceStripper creates a new namespace stripping wrapper
 func NewNetNamespaceStripper(db ethdb.Database) ethdb.Database {
-	namespace := NetEVMNamespace
+	namespace := EVMNamespace
 
 	return &NetNamespaceStripper{
 		db:        db,
@@ -178,7 +178,7 @@ func (s *NetNamespaceStripper) Get(key []byte) ([]byte, error) {
 		if isStateKey {
 			fmt.Printf("🔍 [STATE KEY ACCESS] Type: %s, KeyLen: %d, Key: %x\n", keyType, len(key), key)
 
-			// CRITICAL: State keys are stored WITH namespace in SubnetEVM database
+			// CRITICAL: State keys are stored WITH namespace in EVM database
 			// We MUST add the namespace to find them
 			nsKey := s.addNamespace(key)
 			fmt.Printf("   Trying with namespace: %x\n", nsKey)

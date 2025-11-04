@@ -1,21 +1,21 @@
 ---
 tags: [Nodes]
-description: Reference for all available Subnet config options and flags.
-sidebar_label: Subnet Configs
-pagination_label: Subnet Configs
+description: Reference for all available Net config options and flags.
+sidebar_label: Net Configs
+pagination_label: Net Configs
 sidebar_position: 2
 ---
 
-# Subnet Configs
+# Net Configs
 
-It is possible to provide parameters for a Subnet. Parameters here apply to all
-chains in the specified Subnet.
+It is possible to provide parameters for a Net. Parameters here apply to all
+chains in the specified Net.
 
 Lux Node looks for files specified with `{subnetID}.json` under
 `--subnet-config-dir` as documented
 [here](/nodes/configure/node-config-flags.md#subnet-configs).
 
-Here is an example of Subnet config file:
+Here is an example of Net config file:
 
 ```json
 {
@@ -29,38 +29,38 @@ Here is an example of Subnet config file:
 
 ## Parameters
 
-### Private Subnet
+### Private Net
 
 #### `validatorOnly` (bool)
 
-If `true` this node does not expose Subnet blockchain contents to non-validators
+If `true` this node does not expose Net blockchain contents to non-validators
 via P2P messages. Defaults to `false`.
 
-Lux Subnets are public by default. It means that every node can sync and
-listen ongoing transactions/blocks in Subnets, even they're not validating the
-listened Subnet.
+Lux Nets are public by default. It means that every node can sync and
+listen ongoing transactions/blocks in Nets, even they're not validating the
+listened Net.
 
-Subnet validators can choose not to publish contents of blockchains via this
+Net validators can choose not to publish contents of blockchains via this
 configuration. If a node sets `validatorOnly` to true, the node exchanges
-messages only with this Subnet's validators. Other peers will not be able to
-learn contents of this Subnet from this node.
+messages only with this Net's validators. Other peers will not be able to
+learn contents of this Net from this node.
 
 :::tip
 
-This is a node-specific configuration. Every validator of this Subnet has to use
-this configuration in order to create a full private Subnet.
+This is a node-specific configuration. Every validator of this Net has to use
+this configuration in order to create a full private Net.
 
 :::
 
 #### `allowedNodes` (string list)
 
 If `validatorOnly=true` this allows explicitly specified NodeIDs to be allowed
-to sync the Subnet regardless of validator status. Defaults to be empty.
+to sync the Net regardless of validator status. Defaults to be empty.
 
 :::tip
 
-This is a node-specific configuration. Every validator of this Subnet has to use
-this configuration in order to properly allow a node in the private Subnet.
+This is a node-specific configuration. Every validator of this Net has to use
+this configuration in order to properly allow a node in the private Net.
 
 :::
 
@@ -75,9 +75,9 @@ frequency at which blocks are built.
 
 ### Consensus Parameters
 
-Subnet configs supports loading new consensus parameters. JSON keys are
+Net configs supports loading new consensus parameters. JSON keys are
 different from their matching `CLI` keys. These parameters must be grouped under
-`consensusParameters` key. The consensus parameters of a Subnet default to the
+`consensusParameters` key. The consensus parameters of a Net default to the
 same values used for the Primary Network, which are given [CLI Consensus Parameters](/nodes/configure/node-config-flags.md#consensus-parameters).
 
 | CLI Key                          | JSON Key              |
@@ -94,7 +94,7 @@ same values used for the Primary Network, which are given [CLI Consensus Paramet
 
 ### Gossip Configs
 
-It's possible to define different Gossip configurations for each Subnet without
+It's possible to define different Gossip configurations for each Net without
 changing values for Primary Network. JSON keys of these
 parameters are different from their matching `CLI` keys. These parameters
 default to the same values used for the Primary Network. For more information

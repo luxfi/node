@@ -176,9 +176,9 @@ type Config struct {
 	// handle App messages per chain.
 	ConsensusAppConcurrency int `json:"consensusAppConcurrency"`
 
-	TrackedSubnets set.Set[ids.ID] `json:"trackedSubnets"`
+	TrackedNets set.Set[ids.ID] `json:"trackedNets"`
 
-	// SubnetConfigs map[ids.ID]subnets.Config `json:"subnetConfigs"` // subnets package not available
+	// NetConfigs map[ids.ID]subnets.Config `json:"subnetConfigs"` // subnets package not available
 
 	ChainConfigs map[string]chains.ChainConfig `json:"-"`
 	ChainAliases map[ids.ID][]string           `json:"chainAliases"`

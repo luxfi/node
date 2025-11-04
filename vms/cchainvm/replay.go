@@ -33,8 +33,8 @@ import (
 	"github.com/luxfi/geth/triedb"
 )
 
-// SubnetEVMHeader is the SubnetEVM header format with additional optional fields
-type SubnetEVMHeader struct {
+// EVMHeader is the EVM header format with additional optional fields
+type EVMHeader struct {
 	ParentHash      common.Hash      `json:"parentHash"       gencodec:"required"`
 	UncleHash       common.Hash      `json:"sha3Uncles"       gencodec:"required"`
 	Coinbase        common.Address   `json:"miner"`
@@ -74,7 +74,7 @@ type DatabaseType string
 const (
 	// StandardDB is a regular geth/coreth database without namespacing
 	StandardDB DatabaseType = "standard"
-	// NamespacedDB is a SubnetEVM database with 32-byte namespace prefix
+	// NamespacedDB is a EVM database with 32-byte namespace prefix
 	NamespacedDB DatabaseType = "namespaced"
 	// AutoDetect will attempt to detect the database type
 	AutoDetect DatabaseType = "auto"
@@ -488,7 +488,7 @@ func (r *UnifiedReplayer) detectDatabaseType() error {
 	if iter.First() && iter.Valid() {
 		r.isNamespaced = true
 		r.namespace = testNamespace
-		log.Printf("Detected namespaced SubnetEVM database")
+		log.Printf("Detected namespaced EVM database")
 		return nil
 	}
 
@@ -748,8 +748,8 @@ func (r *UnifiedReplayer) getHeader(blockNum uint64, hash common.Hash) (*types.H
 
 	var header types.Header
 	if err := rlp.DecodeBytes(headerData, &header); err != nil {
-		// Try SubnetEVM format
-		var subnetHeader SubnetEVMHeader
+		// Try EVM format
+		var subnetHeader EVMHeader
 		if err2 := rlp.DecodeBytes(headerData, &subnetHeader); err2 != nil {
 			return nil, fmt.Errorf("failed to decode header: %v", err)
 		}

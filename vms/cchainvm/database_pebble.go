@@ -20,7 +20,7 @@ func NewPebbleWithAncient(db *pebble.Database) ethdb.Database {
 }
 
 // Ancient store method stubs (same pattern as BadgerDB)
-// These are no-ops since we don't actually use the ancient store with SubnetEVM data
+// These are no-ops since we don't actually use the ancient store with EVM data
 
 func (db *PebbleWithAncient) AncientDatadir() (string, error) {
 	return "", nil

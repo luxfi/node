@@ -11,8 +11,6 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/formatting"
@@ -117,8 +115,8 @@ func (c *Client) GetAtomicUTXOs(
 	return utxos, endAddr, endUTXOID, err
 }
 
-// GetSubnetClientResponse is the response from calling GetNet on the client
-type GetSubnetClientResponse struct {
+// GetNetClientResponse is the response from calling GetNet on the client
+type GetNetClientResponse struct {
 	// whether it is permissioned or not
 	IsPermissioned bool
 	// net auth information for a permissioned subnet
@@ -126,33 +124,33 @@ type GetSubnetClientResponse struct {
 	Threshold   uint32
 	Locktime    uint64
 	// net transformation tx ID for a permissionless subnet
-	SubnetTransformationTxID ids.ID
+	NetTransformationTxID ids.ID
 	// subnet conversion information for an L1
 	ConversionID   ids.ID
 	ManagerChainID ids.ID
 	ManagerAddress []byte
 }
 
-// GetSubnet returns information about the specified subnet.
-func (c *Client) GetSubnet(ctx context.Context, subnetID ids.ID, options ...rpc.Option) (GetSubnetClientResponse, error) {
-	res := &GetSubnetResponse{}
-	err := c.Requester.SendRequest(ctx, "platform.getSubnet", &GetSubnetArgs{
-		SubnetID: subnetID,
+// GetNet returns information about the specified subnet.
+func (c *Client) GetNet(ctx context.Context, subnetID ids.ID, options ...rpc.Option) (GetNetClientResponse, error) {
+	res := &GetNetResponse{}
+	err := c.Requester.SendRequest(ctx, "platform.getNet", &GetNetArgs{
+		NetID: subnetID,
 	}, res, options...)
 	if err != nil {
-		return GetSubnetClientResponse{}, err
+		return GetNetClientResponse{}, err
 	}
 	controlKeys, err := address.ParseToIDs(res.ControlKeys)
 	if err != nil {
-		return GetSubnetClientResponse{}, err
+		return GetNetClientResponse{}, err
 	}
 
-	return GetSubnetClientResponse{
+	return GetNetClientResponse{
 		IsPermissioned:           res.IsPermissioned,
 		ControlKeys:              controlKeys,
 		Threshold:                uint32(res.Threshold),
 		Locktime:                 uint64(res.Locktime),
-		SubnetTransformationTxID: res.SubnetTransformationTxID,
+		NetTransformationTxID: res.NetTransformationTxID,
 		ConversionID:             res.ConversionID,
 		ManagerChainID:           res.ManagerChainID,
 		ManagerAddress:           res.ManagerAddress,
@@ -170,19 +168,19 @@ type ClientNet struct {
 	Threshold   uint32
 }
 
-// GetSubnets returns information about the specified subnets
+// GetNets returns information about the specified subnets
 //
-// Deprecated: Subnets should be fetched from a dedicated indexer.
-func (c *Client) GetSubnets(ctx context.Context, ids []ids.ID, options ...rpc.Option) ([]ClientSubnet, error) {
-	res := &GetSubnetsResponse{}
-	err := c.Requester.SendRequest(ctx, "platform.getSubnets", &GetSubnetsArgs{
+// Deprecated: Nets should be fetched from a dedicated indexer.
+func (c *Client) GetNets(ctx context.Context, ids []ids.ID, options ...rpc.Option) ([]ClientNet, error) {
+	res := &GetNetsResponse{}
+	err := c.Requester.SendRequest(ctx, "platform.getNets", &GetNetsArgs{
 		IDs: ids,
 	}, res, options...)
 	if err != nil {
 		return nil, err
 	}
-	subnets := make([]ClientNet, len(res.Subnets))
-	for i, apiNet := range res.Subnets {
+	subnets := make([]ClientNet, len(res.Nets))
+	for i, apiNet := range res.Nets {
 		controlKeys, err := address.ParseToIDs(apiNet.ControlKeys)
 		if err != nil {
 			return nil, err
@@ -202,7 +200,7 @@ func (c *Client) GetSubnets(ctx context.Context, ids []ids.ID, options ...rpc.Op
 func (c *Client) GetStakingAssetID(ctx context.Context, subnetID ids.ID, options ...rpc.Option) (ids.ID, error) {
 	res := &GetStakingAssetIDResponse{}
 	err := c.Requester.SendRequest(ctx, "platform.getStakingAssetID", &GetStakingAssetIDArgs{
-		SubnetID: subnetID,
+		NetID: subnetID,
 	}, res, options...)
 	return res.AssetID, err
 }
@@ -216,8 +214,8 @@ func (c *Client) GetCurrentValidators(
 ) ([]ClientPermissionlessValidator, error) {
 	res := &GetCurrentValidatorsReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getCurrentValidators", &GetCurrentValidatorsArgs{
-		SubnetID: subnetID,
-		NodeIDs:  nodeIDs,
+		NetID:   netID,
+		NodeIDs: nodeIDs,
 	}, res, options...)
 	if err != nil {
 		return nil, err
@@ -227,7 +225,7 @@ func (c *Client) GetCurrentValidators(
 
 // L1Validator is the response from calling GetL1Validator on the API client.
 type L1Validator struct {
-	SubnetID              ids.ID
+	NetID              ids.ID
 	NodeID                ids.NodeID
 	PublicKey             *bls.PublicKey
 	RemainingBalanceOwner *secp256k1fx.OutputOwners
@@ -283,7 +281,7 @@ func (c *Client) GetL1Validator(
 	}
 
 	return L1Validator{
-		SubnetID:  res.SubnetID,
+		NetID:  res.NetID,
 		NodeID:    res.NodeID,
 		PublicKey: pk,
 		RemainingBalanceOwner: &secp256k1fx.OutputOwners{
@@ -308,7 +306,7 @@ func (c *Client) GetL1Validator(
 func (c *Client) GetCurrentSupply(ctx context.Context, subnetID ids.ID, options ...rpc.Option) (uint64, uint64, error) {
 	res := &GetCurrentSupplyReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getCurrentSupply", &GetCurrentSupplyArgs{
-		SubnetID: subnetID,
+		NetID: subnetID,
 	}, res, options...)
 	return uint64(res.Supply), uint64(res.Height), err
 }
@@ -318,7 +316,7 @@ func (c *Client) GetCurrentSupply(ctx context.Context, subnetID ids.ID, options 
 func (c *Client) SampleValidators(ctx context.Context, subnetID ids.ID, sampleSize uint16, options ...rpc.Option) ([]ids.NodeID, error) {
 	res := &SampleValidatorsReply{}
 	err := c.Requester.SendRequest(ctx, "platform.sampleValidators", &SampleValidatorsArgs{
-		SubnetID: subnetID,
+		NetID: subnetID,
 		Size:     json.Uint16(sampleSize),
 	}, res, options...)
 	return res.Validators, err
@@ -346,7 +344,7 @@ func (c *Client) ValidatedBy(ctx context.Context, blockchainID ids.ID, options .
 func (c *Client) Validates(ctx context.Context, subnetID ids.ID, options ...rpc.Option) ([]ids.ID, error) {
 	res := &ValidatesResponse{}
 	err := c.Requester.SendRequest(ctx, "platform.validates", &ValidatesArgs{
-		SubnetID: subnetID,
+		NetID: subnetID,
 	}, res, options...)
 	return res.BlockchainIDs, err
 }
@@ -446,16 +444,16 @@ func (c *Client) GetStake(
 func (c *Client) GetMinStake(ctx context.Context, subnetID ids.ID, options ...rpc.Option) (uint64, uint64, error) {
 	res := &GetMinStakeReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getMinStake", &GetMinStakeArgs{
-		SubnetID: subnetID,
+		NetID: subnetID,
 	}, res, options...)
 	return uint64(res.MinValidatorStake), uint64(res.MinDelegatorStake), err
 }
 
 // GetTotalStake returns the total amount (in nLUX) staked on the network.
-func (c *Client) GetTotalStake(ctx context.Context, subnetID ids.ID, options ...rpc.Option) (uint64, error) {
+func (c *Client) GetTotalStake(ctx context.Context, netID ids.ID, options ...rpc.Option) (uint64, error) {
 	res := &GetTotalStakeReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getTotalStake", &GetTotalStakeArgs{
-		SubnetID: subnetID,
+		NetID: netID,
 	}, res, options...)
 	var amount json.Uint64
 	if netID == constants.PrimaryNetworkID {
@@ -504,7 +502,7 @@ func (c *Client) GetValidatorsAt(
 ) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	res := &GetValidatorsAtReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getValidatorsAt", &GetValidatorsAtArgs{
-		SubnetID: subnetID,
+		NetID: subnetID,
 		Height:   height,
 	}, res, options...)
 	return res.Validators, err
@@ -602,15 +600,15 @@ func AwaitTxAccepted(
 	}
 }
 
-// GetSubnetOwners returns a map of subnet ID to current subnet's owner
-func GetSubnetOwners(
+// GetNetOwners returns a map of subnet ID to current subnet's owner
+func GetNetOwners(
 	c *Client,
 	ctx context.Context,
 	subnetIDs ...ids.ID,
 ) (map[ids.ID]fx.Owner, error) {
 	subnetOwners := make(map[ids.ID]fx.Owner, len(subnetIDs))
 	for _, subnetID := range subnetIDs {
-		subnetInfo, err := c.GetSubnet(ctx, subnetID)
+		subnetInfo, err := c.GetNet(ctx, subnetID)
 		if err != nil {
 			return nil, err
 		}
@@ -640,14 +638,14 @@ func GetDeactivationOwners(
 	return deactivationOwners, nil
 }
 
-// GetOwners returns the union of GetSubnetOwners and GetDeactivationOwners.
+// GetOwners returns the union of GetNetOwners and GetDeactivationOwners.
 func GetOwners(
 	c *Client,
 	ctx context.Context,
 	subnetIDs []ids.ID,
 	validationIDs []ids.ID,
 ) (map[ids.ID]fx.Owner, error) {
-	subnetOwners, err := GetSubnetOwners(c, ctx, subnetIDs...)
+	subnetOwners, err := GetNetOwners(c, ctx, subnetIDs...)
 	if err != nil {
 		return nil, err
 	}

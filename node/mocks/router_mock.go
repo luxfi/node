@@ -164,17 +164,17 @@ func (mr *MockRouterMockRecorder) HealthCheck(ctx any) *gomock.Call {
 }
 
 // Initialize mocks base method.
-func (m *MockRouter) Initialize(nodeID ids.NodeID, log, timeoutManager any, closeTimeout time.Duration, criticalChains any, sybilProtectionEnabled bool, trackedSubnets any, onFatal func(int), healthConfig interface{}, metricsRegisterer any) error {
+func (m *MockRouter) Initialize(nodeID ids.NodeID, log, timeoutManager any, closeTimeout time.Duration, criticalChains any, sybilProtectionEnabled bool, trackedNets any, onFatal func(int), healthConfig interface{}, metricsRegisterer any) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Initialize", nodeID, log, timeoutManager, closeTimeout, criticalChains, sybilProtectionEnabled, trackedSubnets, onFatal, healthConfig, metricsRegisterer)
+	ret := m.ctrl.Call(m, "Initialize", nodeID, log, timeoutManager, closeTimeout, criticalChains, sybilProtectionEnabled, trackedNets, onFatal, healthConfig, metricsRegisterer)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Initialize indicates an expected call of Initialize.
-func (mr *MockRouterMockRecorder) Initialize(nodeID, log, timeoutManager, closeTimeout, criticalChains, sybilProtectionEnabled, trackedSubnets, onFatal, healthConfig, metricsRegisterer any) *gomock.Call {
+func (mr *MockRouterMockRecorder) Initialize(nodeID, log, timeoutManager, closeTimeout, criticalChains, sybilProtectionEnabled, trackedNets, onFatal, healthConfig, metricsRegisterer any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initialize", reflect.TypeOf((*MockRouter)(nil).Initialize), nodeID, log, timeoutManager, closeTimeout, criticalChains, sybilProtectionEnabled, trackedSubnets, onFatal, healthConfig, metricsRegisterer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initialize", reflect.TypeOf((*MockRouter)(nil).Initialize), nodeID, log, timeoutManager, closeTimeout, criticalChains, sybilProtectionEnabled, trackedNets, onFatal, healthConfig, metricsRegisterer)
 }
 
 // RemoveChain mocks base method.

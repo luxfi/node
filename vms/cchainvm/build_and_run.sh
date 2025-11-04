@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build and run the SubnetEVM to C-Chain import tool
+# Build and run the EVM to C-Chain import tool
 
 set -e
 

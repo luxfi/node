@@ -26,16 +26,16 @@ func (vm *VM) HealthCheck(context.Context) (interface{}, error) {
 		return nil, fmt.Errorf("couldn't get current local validator: %w", err)
 	}
 
-	for netID := range vm.TrackedSubnets {
+	for netID := range vm.TrackedNets {
 		localNetValidator, err := vm.state.GetCurrentValidator(
 			netID,
 			vm.nodeID,
 		)
 		switch err {
 		case nil:
-			vm.metrics.SetTimeUntilSubnetUnstake(netID, time.Until(localNetValidator.EndTime))
+			vm.metrics.SetTimeUntilNetUnstake(netID, time.Until(localNetValidator.EndTime))
 		case database.ErrNotFound:
-			vm.metrics.SetTimeUntilSubnetUnstake(netID, 0)
+			vm.metrics.SetTimeUntilNetUnstake(netID, 0)
 		default:
 			return nil, fmt.Errorf("couldn't get current net validator of %q: %w", netID, err)
 		}

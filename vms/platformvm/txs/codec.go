@@ -102,8 +102,8 @@ func RegisterApricotTypes(targetCodec linearcodec.Codec) error {
 // valid during the Banff series of upgrades.
 func RegisterBanffTypes(targetCodec linearcodec.Codec) error {
 	return errors.Join(
-		// targetCodec.RegisterType(&RemoveSubnetValidatorTx{}), // Removed in regenesis
-		// targetCodec.RegisterType(&TransformSubnetTx{}), // Removed in regenesis
+		// targetCodec.RegisterType(&RemoveNetValidatorTx{}), // Removed in regenesis
+		// targetCodec.RegisterType(&TransformNetTx{}), // Removed in regenesis
 		targetCodec.RegisterType(&AddPermissionlessValidatorTx{}),
 		targetCodec.RegisterType(&AddPermissionlessDelegatorTx{}),
 

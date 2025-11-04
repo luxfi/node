@@ -41,7 +41,7 @@ func main() {
 		uri,
 		kc,
 		primary.WalletConfig{
-			SubnetIDs: []ids.ID{subnetID},
+			NetIDs: []ids.ID{subnetID},
 		},
 	)
 	if err != nil {
@@ -50,7 +50,7 @@ func main() {
 	log.Printf("synced wallet in %s\n", time.Since(walletSyncStartTime))
 
 	removeValidatorStartTime := time.Now()
-	removeValidatorTx, err := wallet.IssueRemoveSubnetValidatorTx(
+	removeValidatorTx, err := wallet.IssueRemoveNetValidatorTx(
 		nodeID,
 		subnetID,
 	)

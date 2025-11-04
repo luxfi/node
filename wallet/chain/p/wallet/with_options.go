@@ -69,7 +69,7 @@ func (w *withOptions) IssueAddValidatorTx(
 }
 
 // Removed in regenesis
-// func (w *withOptions) IssueAddSubnetValidatorTx(
+// func (w *withOptions) IssueAddNetValidatorTx(
 // 	vdr *txs.NetValidator,
 // 	options ...common.Option,
 // ) (*txs.Tx, error) {
@@ -80,7 +80,7 @@ func (w *withOptions) IssueAddValidatorTx(
 // }
 
 // Removed in regenesis
-// func (w *withOptions) IssueRemoveSubnetValidatorTx(
+// func (w *withOptions) IssueRemoveNetValidatorTx(
 // 	nodeID ids.NodeID,
 // 	netID ids.ID,
 // 	options ...common.Option,
@@ -123,7 +123,7 @@ func (w *withOptions) IssueCreateChainTx(
 }
 
 // Removed in regenesis
-// func (w *withOptions) IssueCreateSubnetTx(
+// func (w *withOptions) IssueCreateNetTx(
 // 	owner *secp256k1fx.OutputOwners,
 // 	options ...common.Option,
 // ) (*txs.Tx, error) {
@@ -134,7 +134,7 @@ func (w *withOptions) IssueCreateChainTx(
 // }
 
 // Removed in regenesis
-// func (w *withOptions) IssueTransferSubnetOwnershipTx(
+// func (w *withOptions) IssueTransferNetOwnershipTx(
 // 	subnetID ids.ID,
 // 	owner *secp256k1fx.OutputOwners,
 // 	options ...common.Option,
@@ -233,7 +233,7 @@ func (w *withOptions) IssueExportTx(
 }
 
 // Removed in regenesis
-// func (w *withOptions) IssueTransformSubnetTx(
+// func (w *withOptions) IssueTransformNetTx(
 // 	subnetID ids.ID,
 // 	assetID ids.ID,
 // 	initialSupply uint64,

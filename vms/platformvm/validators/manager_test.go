@@ -49,7 +49,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 			TxID:            ids.GenerateTestID(),
 			NodeID:          ids.GenerateTestNodeID(),
 			PublicKey:       pk,
-			SubnetID:        constants.PrimaryNetworkID,
+			NetID:        constants.PrimaryNetworkID,
 			Weight:          1,
 			StartTime:       startTime,
 			EndTime:         endTime,
@@ -59,7 +59,7 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 			TxID:      ids.GenerateTestID(),
 			NodeID:    primaryStaker.NodeID,
 			PublicKey: nil, // inherited from primaryStaker
-			SubnetID:  subnetID,
+			NetID:  subnetID,
 			Weight:    1,
 			StartTime: upgradeTime,
 			EndTime:   endTime,
@@ -107,15 +107,15 @@ func TestGetValidatorSet_AfterEtna(t *testing.T) {
 	)
 
 	expectedValidators := []map[ids.NodeID]*validators.GetValidatorOutput{
-		{}, // Subnet staker didn't exist at genesis
+		{}, // Net staker didn't exist at genesis
 		{
 			subnetStaker.NodeID: {
 				NodeID:    subnetStaker.NodeID,
 				PublicKey: pk,
 				Weight:    subnetStaker.Weight,
 			},
-		}, // Subnet staker was added at height 1
-		{}, // Subnet staker was removed at height 2
+		}, // Net staker was added at height 1
+		{}, // Net staker was removed at height 2
 	}
 	for height, expected := range expectedValidators {
 		actual, err := m.GetValidatorSet(context.Background(), uint64(height), subnetID)

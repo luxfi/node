@@ -60,7 +60,7 @@ var _ = e2e.DescribePChain("[Validator Sets]", func() {
 
 			for i := 0; i < delegatorCount; i++ {
 				_, err := pWallet.IssueAddPermissionlessDelegatorTx(
-					&txs.SubnetValidator{
+					&txs.NetValidator{
 						Validator: txs.Validator{
 							NodeID: nodeURI.NodeID,
 							End:    uint64(endTime.Unix()),

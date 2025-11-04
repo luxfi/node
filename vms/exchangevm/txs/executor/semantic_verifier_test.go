@@ -754,7 +754,7 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	}
 }
 
-func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
+func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cChainID := ids.GenerateTestID()
 

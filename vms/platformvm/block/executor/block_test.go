@@ -341,7 +341,7 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
-				state.EXPECT().GetSubnetTransformation(netID).Return(nil, database.ErrNotFound)
+				state.EXPECT().GetNetTransformation(netID).Return(nil, database.ErrNotFound)
 
 				uptimes := uptimemock.NewCalculator(ctrl)
 
@@ -392,7 +392,7 @@ func TestBlockOptions(t *testing.T) {
 					staker                           = &state.Staker{
 						StartTime: primaryNetworkValidatorStartTime,
 					}
-					transformSubnetTx = &txs.Tx{
+					transformNetTx = &txs.Tx{
 						Unsigned: &txs.TransformNetTx{
 							UptimeRequirement: .2 * reward.PercentDenominator,
 						},
@@ -402,7 +402,7 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
-				state.EXPECT().GetSubnetTransformation(netID).Return(transformSubnetTx, nil)
+				state.EXPECT().GetNetTransformation(netID).Return(transformNetTx, nil)
 
 				uptimes := uptimemock.NewCalculator(ctrl)
 				uptimes.EXPECT().CalculateUptimePercentFrom(nodeID, primaryNetworkValidatorStartTime).Return(.5, nil)
@@ -454,7 +454,7 @@ func TestBlockOptions(t *testing.T) {
 					staker                           = &state.Staker{
 						StartTime: primaryNetworkValidatorStartTime,
 					}
-					transformSubnetTx = &txs.Tx{
+					transformNetTx = &txs.Tx{
 						Unsigned: &txs.TransformNetTx{
 							UptimeRequirement: .6 * reward.PercentDenominator,
 						},
@@ -464,7 +464,7 @@ func TestBlockOptions(t *testing.T) {
 				state := state.NewMockState(ctrl)
 				state.EXPECT().GetTx(stakerTxID).Return(stakerTx, status.Committed, nil)
 				state.EXPECT().GetCurrentValidator(constants.PrimaryNetworkID, nodeID).Return(staker, nil)
-				state.EXPECT().GetSubnetTransformation(netID).Return(transformSubnetTx, nil)
+				state.EXPECT().GetNetTransformation(netID).Return(transformNetTx, nil)
 
 				uptimes := uptimemock.NewCalculator(ctrl)
 				uptimes.EXPECT().CalculateUptimePercentFrom(nodeID, primaryNetworkValidatorStartTime).Return(.5, nil)

@@ -28,7 +28,7 @@ func TestPOAConsensusParameters(t *testing.T) {
 	require.Equal(1, params.ConcurrentPolls, "POA mode should have ConcurrentPolls=1")
 }
 
-func TestPOASubnetConfig(t *testing.T) {
+func TestPOANetConfig(t *testing.T) {
 	require := require.New(t)
 
 	// Test net config with POA enabled

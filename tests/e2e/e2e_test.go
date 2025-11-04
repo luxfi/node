@@ -46,7 +46,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 	nodeCount, err := flagVars.NodeCount()
 	require.NoError(tc, err)
 	nodes := tmpnet.NewNodesOrPanic(nodeCount)
-	subnets := vms.XSVMSubnetsOrPanic(nodes...)
+	subnets := vms.XSVMNetsOrPanic(nodes...)
 
 	upgrades := upgrade.Default
 	if flagVars.ActivateGranite() {
@@ -78,7 +78,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 			Owner:        flagVars.NetworkOwner(),
 			DefaultFlags: defaultFlags,
 			Nodes:        nodes,
-			Subnets:      subnets,
+			Nets:      subnets,
 		},
 	).Marshal()
 }, func(envBytes []byte) {

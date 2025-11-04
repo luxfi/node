@@ -256,12 +256,12 @@ func CheckBootstrapIsPossible(tc tests.TestContext, network *tmpnet.Network) *tm
 	tc.By("checking if bootstrap is possible with the current network state")
 
 	// Ensure all subnets are bootstrapped
-	subnetIDs := make([]string, len(network.Subnets))
-	for i, subnet := range network.Subnets {
-		subnetIDs[i] = subnet.SubnetID.String()
+	subnetIDs := make([]string, len(network.Nets))
+	for i, subnet := range network.Nets {
+		subnetIDs[i] = subnet.NetID.String()
 	}
 	flags := tmpnet.FlagsMap{
-		config.TrackSubnetsKey: strings.Join(subnetIDs, ","),
+		config.TrackNetsKey: strings.Join(subnetIDs, ","),
 	}
 
 	node := tmpnet.NewEphemeralNode(flags)

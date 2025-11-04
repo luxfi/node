@@ -49,7 +49,7 @@ func main() {
 		uri,
 		kc,
 		primary.WalletConfig{
-			SubnetIDs: []ids.ID{subnetID},
+			NetIDs: []ids.ID{subnetID},
 		},
 	)
 	if err != nil {
@@ -58,14 +58,14 @@ func main() {
 	log.Printf("synced wallet in %s\n", time.Since(walletSyncStartTime))
 
 	addValidatorStartTime := time.Now()
-	addValidatorTx, err := wallet.IssueAddSubnetValidatorTx(&txs.SubnetValidator{
+	addValidatorTx, err := wallet.IssueAddNetValidatorTx(&txs.NetValidator{
 		Validator: txs.Validator{
 			NodeID: nodeID,
 			Start:  uint64(startTime.Unix()),
 			End:    uint64(startTime.Add(duration).Unix()),
 			Wght:   weight,
 		},
-		Subnet: subnetID,
+		Net: subnetID,
 	})
 	if err != nil {
 		log.Fatalf("failed to issue add subnet validator transaction: %s\n", err)

@@ -26,7 +26,7 @@ import (
 	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
-var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {
+var _ = e2e.DescribePChain("[Permissionless Nets]", func() {
 	require := require.New(ginkgo.GinkgoT())
 
 	ginkgo.It("subnets operations",

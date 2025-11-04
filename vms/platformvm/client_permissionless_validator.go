@@ -51,10 +51,10 @@ type ClientPermissionlessValidator struct {
 	PotentialReward        *uint64
 	AccruedDelegateeReward *uint64
 	DelegationFee          float32
-	// Uptime is deprecated for Subnet Validators.
+	// Uptime is deprecated for Net Validators.
 	// It will be available only for Primary Network Validators.
 	Uptime *float32
-	// Connected is deprecated for Subnet Validators.
+	// Connected is deprecated for Net Validators.
 	// It will be available only for Primary Network Validators.
 	Connected *bool
 	Signer    *signer.ProofOfPossession
@@ -108,7 +108,7 @@ func getClientPermissionlessValidators(validatorsSliceIntf []interface{}) ([]Cli
 			return nil, err
 		}
 
-		clientValidator, err := getClientPrimaryOrSubnetValidator(apiValidator)
+		clientValidator, err := getClientPrimaryOrNetValidator(apiValidator)
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +147,7 @@ func getClientL1Validator(apiValidator api.PermissionlessValidator) (ClientL1Val
 	}, nil
 }
 
-func getClientPrimaryOrSubnetValidator(apiValidator api.PermissionlessValidator) (ClientPermissionlessValidator, error) {
+func getClientPrimaryOrNetValidator(apiValidator api.PermissionlessValidator) (ClientPermissionlessValidator, error) {
 	validationRewardOwner, err := apiOwnerToClientOwner(apiValidator.ValidationRewardOwner)
 	if err != nil {
 		return ClientPermissionlessValidator{}, err

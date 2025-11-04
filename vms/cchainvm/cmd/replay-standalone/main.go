@@ -1,7 +1,7 @@
 // (c) 2024 Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// replay-standalone is a standalone tool for replaying SubnetEVM data into C-Chain format
+// replay-standalone is a standalone tool for replaying EVM data into C-Chain format
 // It doesn't depend on the node package, making it more portable.
 package main
 
@@ -35,7 +35,7 @@ type StandaloneReplayer struct {
 func main() {
 	// Command-line flags
 	var (
-		sourcePath   = flag.String("source", "/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb", "Path to source SubnetEVM database")
+		sourcePath   = flag.String("source", "/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb", "Path to source EVM database")
 		targetPath   = flag.String("target", "", "Path to target C-Chain database (required)")
 		targetHeight = flag.Uint64("height", 100, "Target block height to replay to")
 		walletAddr   = flag.String("wallet", "0x9011E888251AB053B7bD1cdB598Db4f9DEd94714", "Wallet address to track")
@@ -71,7 +71,7 @@ func main() {
 	log.Printf("Copy State: %v", *copyState)
 	log.Printf("===========================================")
 
-	// Open source database (SubnetEVM with namespace)
+	// Open source database (EVM with namespace)
 	sourceDB, err := pebble.Open(*sourcePath, &pebble.Options{ReadOnly: true})
 	if err != nil {
 		log.Fatalf("Failed to open source database: %v", err)

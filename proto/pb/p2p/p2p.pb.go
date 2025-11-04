@@ -612,8 +612,8 @@ type Handshake struct {
 	// Signature of the peer IP port pair at a provided timestamp with the TLS
 	// key.
 	IpNodeIdSig []byte `protobuf:"bytes,7,opt,name=ip_node_id_sig,json=ipNodeIdSig,proto3" json:"ip_node_id_sig,omitempty"`
-	// Subnets the peer is tracking
-	TrackedNets [][]byte     `protobuf:"bytes,8,rep,name=tracked_subnets,json=trackedSubnets,proto3" json:"tracked_subnets,omitempty"`
+	// Nets the peer is tracking
+	TrackedNets [][]byte     `protobuf:"bytes,8,rep,name=tracked_subnets,json=trackedNets,proto3" json:"tracked_subnets,omitempty"`
 	Client         *Client      `protobuf:"bytes,9,opt,name=client,proto3" json:"client,omitempty"`
 	SupportedLps   []uint32     `protobuf:"varint,10,rep,packed,name=supported_lps,json=supportedLps,proto3" json:"supported_lps,omitempty"`
 	ObjectedLps    []uint32     `protobuf:"varint,11,rep,packed,name=objected_lps,json=objectedLps,proto3" json:"objected_lps,omitempty"`
@@ -623,7 +623,7 @@ type Handshake struct {
 	IpBlsSig []byte `protobuf:"bytes,13,opt,name=ip_bls_sig,json=ipBlsSig,proto3" json:"ip_bls_sig,omitempty"`
 	// To avoid sending IPs that the client isn't interested in tracking, the
 	// server expects the client to confirm that it is tracking all subnets.
-	AllSubnets bool `protobuf:"varint,14,opt,name=all_subnets,json=allSubnets,proto3" json:"all_subnets,omitempty"`
+	AllNets bool `protobuf:"varint,14,opt,name=all_subnets,json=allNets,proto3" json:"all_subnets,omitempty"`
 }
 
 func (x *Handshake) Reset() {
@@ -740,9 +740,9 @@ func (x *Handshake) GetIpBlsSig() []byte {
 	return nil
 }
 
-func (x *Handshake) GetAllSubnets() bool {
+func (x *Handshake) GetAllNets() bool {
 	if x != nil {
-		return x.AllSubnets
+		return x.AllNets
 	}
 	return false
 }
@@ -977,7 +977,7 @@ type GetPeerList struct {
 	unknownFields protoimpl.UnknownFields
 
 	KnownPeers *BloomFilter `protobuf:"bytes,1,opt,name=known_peers,json=knownPeers,proto3" json:"known_peers,omitempty"`
-	AllSubnets bool         `protobuf:"varint,2,opt,name=all_subnets,json=allSubnets,proto3" json:"all_subnets,omitempty"`
+	AllNets bool         `protobuf:"varint,2,opt,name=all_subnets,json=allNets,proto3" json:"all_subnets,omitempty"`
 }
 
 func (x *GetPeerList) Reset() {
@@ -1017,9 +1017,9 @@ func (x *GetPeerList) GetKnownPeers() *BloomFilter {
 	return nil
 }
 
-func (x *GetPeerList) GetAllSubnets() bool {
+func (x *GetPeerList) GetAllNets() bool {
 	if x != nil {
-		return x.AllSubnets
+		return x.AllNets
 	}
 	return false
 }

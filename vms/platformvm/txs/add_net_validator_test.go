@@ -90,7 +90,7 @@ func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 			},
 			Net: netID,
 		},
-		SubnetAuth: subnetAuth,
+		NetAuth: subnetAuth,
 	}
 
 	// Case: valid tx
@@ -127,7 +127,7 @@ func TestAddNetValidatorTxSyntacticVerify(t *testing.T) {
 
 	// Case: Net auth indices not unique
 	addNetValidatorTx.SyntacticallyVerified = false
-	input := addNetValidatorTx.SubnetAuth.(*secp256k1fx.Input)
+	input := addNetValidatorTx.NetAuth.(*secp256k1fx.Input)
 	oldInput := *input
 	input.SigIndices[0] = input.SigIndices[1]
 	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
@@ -208,7 +208,7 @@ func TestAddNetValidatorMarshal(t *testing.T) {
 			},
 			Net: netID,
 		},
-		SubnetAuth: subnetAuth,
+		NetAuth: subnetAuth,
 	}
 
 	// Case: valid tx

@@ -129,7 +129,7 @@ Full reference for all configuration options for some standard chains can be
 found in a separate [chain config flags](https://docs.lux.network/docs/nodes/chain-configs) document.
 
 Full reference for `subnet-evm` upgrade configuration can be found in a separate
-[Customize a Subnet](https://docs.lux.network/docs/lux-l1s/upgrade/customize-lux-l1) document.
+[Customize a Net](https://docs.lux.network/docs/lux-l1s/upgrade/customize-lux-l1) document.
 
 #### `--chain-config-content` (string)
 
@@ -161,7 +161,7 @@ The above example aliases the Blockchain whose ID is
 `"q2aTwKuyzgs8pynF7UXBZCU7DejbZbZ6EUyHr3JQzYgwNPUPi"` to `"DFK"`. Chain
 aliases are added after adding primary network aliases and before any changes to
 the aliases via the admin API. This means that the first alias included for a
-Blockchain on a Subnet will be treated as the `"Primary Alias"` instead of the
+Blockchain on a Net will be treated as the `"Primary Alias"` instead of the
 full blockchainID. The Primary Alias is used in all metrics and logs.
 
 #### `--chain-aliases-file-content` (string)
@@ -586,7 +586,7 @@ Defaults to `0.1`.
 
 Partial sync enables nodes that are not primary network validators to optionally sync
 only the P-chain on the primary network. Nodes that use this option can still track
-Subnets. After the Etna upgrade, nodes that use this option can also validate L1s.
+Nets. After the Etna upgrade, nodes that use this option can also validate L1s.
 This config defaults to `false`.
 
 ## Public IP
@@ -687,34 +687,34 @@ As an alternative to `--staking-tls-key-file`, it allows specifying base64
 encoded content of the TLS private key used by the node. Note that full private
 key content, with the leading and trailing header, must be base64 encoded.
 
-## Subnets
+## Nets
 
-### Subnet Tracking
+### Net Tracking
 
 #### `--track-subnets` (string)
 
-Comma separated list of Subnet IDs that this node would track if added to.
+Comma separated list of Net IDs that this node would track if added to.
 Defaults to empty (will only validate the Primary Network).
 
-### Subnet Configs
+### Net Configs
 
-It is possible to provide parameters for Subnets. Parameters here apply to all
-chains in the specified Subnets. Parameters must be specified with a
+It is possible to provide parameters for Nets. Parameters here apply to all
+chains in the specified Nets. Parameters must be specified with a
 `{subnetID}.json` config file under `--subnet-config-dir`. LuxGo loads
-configs for Subnets specified in
+configs for Nets specified in
 `--track-subnets` parameter.
 
-Full reference for all configuration options for a Subnet can be found in a
-separate [Subnet Configs](https://docs.lux.network/docs/nodes/configure/lux-l1-configs) document.
+Full reference for all configuration options for a Net can be found in a
+separate [Net Configs](https://docs.lux.network/docs/nodes/configure/lux-l1-configs) document.
 
 #### `--subnet-config-dir` (`string`)
 
-Specifies the directory that contains Subnet configs, as described above.
+Specifies the directory that contains Net configs, as described above.
 Defaults to `$HOME/.node/configs/subnets`. If the flag is set explicitly,
 the specified folder must exist, or LuxGo will exit with an error. This
 flag is ignored if `--subnet-config-content` is specified.
 
-Example: Let's say we have a Subnet with ID
+Example: Let's say we have a Net with ID
 `p4jUwqZsA2LuSftroCd3zb4ytH8W99oXKuKVZdsty7eQ3rXD6`. We can create a config file
 under the default `subnet-config-dir` at
 `$HOME/.node/configs/subnets/p4jUwqZsA2LuSftroCd3zb4ytH8W99oXKuKVZdsty7eQ3rXD6.json`.
@@ -736,7 +736,7 @@ By default, none of these directories and/or files exist. You would need to crea
 
 #### `--subnet-config-content` (string)
 
-As an alternative to `--subnet-config-dir`, it allows specifying base64 encoded parameters for a Subnet.
+As an alternative to `--subnet-config-dir`, it allows specifying base64 encoded parameters for a Net.
 
 ## Version
 

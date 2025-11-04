@@ -27,7 +27,7 @@ Lux Network implements a 7-chain architecture optimized for specific use cases:
 4. **D-Chain (DaoVM - dvm)** *(formerly P-Chain)*
    - Ecosystem governance
    - Validator staking and delegation
-   - Subnet management
+   - Net management
    - Treasury operations
    - NFT-based validator staking (1M LUX minimum or equivalent NFT)
 

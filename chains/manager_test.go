@@ -85,7 +85,7 @@ func TestQueueChainCreation(t *testing.T) {
 	subnetConfigs := map[ids.ID]nets.Config{
 		constants.PrimaryNetworkID: {},
 	}
-	subnets, err := NewSubnets(ids.GenerateTestNodeID(), subnetConfigs)
+	subnets, err := NewNets(ids.GenerateTestNodeID(), subnetConfigs)
 	require.NoError(err)
 
 	config := &ManagerConfig{
@@ -93,7 +93,7 @@ func TestQueueChainCreation(t *testing.T) {
 		Metrics:      metric.NewMultiGatherer(),
 		VMManager:    vms.NewManager(nil, ids.NewAliaser()),
 		ChainDataDir: t.TempDir(),
-		Subnets:      subnets,
+		Nets:      subnets,
 	}
 
 	m, err := New(config)

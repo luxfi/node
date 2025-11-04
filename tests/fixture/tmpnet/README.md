@@ -20,7 +20,7 @@ orchestrate the same temporary networks without the use of an rpc daemon.
 - [Configuration on disk](#configuration-on-disk)
   - [Common networking configuration](#common-networking-configuration)
   - [Genesis](#genesis)
-  - [Subnet and Chain configuration](#subnet-and-chain-configuration)
+  - [Net and Chain configuration](#subnet-and-chain-configuration)
   - [Network env](#network-env)
   - [Node configuration](#node-configuration)
     - [Runtime config](#runtime-config)
@@ -83,7 +83,7 @@ the following non-test files:
 | node_config.go              | Node           | Reads and writes node configuration                                    |
 | process_runtime.go          | ProcessRuntime | Orchestrates node processes                                            |
 | start_kind_cluster.go       |                | Starts a local kind cluster                                            |
-| subnet.go                   | Subnet         | Orchestrates subnets                                                   |
+| subnet.go                   | Net         | Orchestrates subnets                                                   |
 | utils.go                    |                | Defines shared utility functions                                       |
 
 ## Usage
@@ -151,7 +151,7 @@ network := &tmpnet.Network{                         // Configure non-default val
         config.LogLevelKey: "INFO",                 // Change one of the network's defaults
     },
     Nodes: tmpnet.NewNodesOrPanic(5),               // Number of initial validating nodes
-    Subnets: []*tmpnet.Subnet{                      // Subnets to create on the new network once it is running
+    Nets: []*tmpnet.Net{                      // Nets to create on the new network once it is running
         {
             Name: "xsvm-a",                         // User-defined name used to reference subnet in code and on disk
             Chains: []*tmpnet.Chain{
@@ -252,11 +252,11 @@ not supplied. The content of the file is provided to each node via
 the `--genesis-file-content` flag if a node does not set a value for
 the flag.
 
-### Subnet and chain configuration
+### Net and chain configuration
 [Top](#table-of-contents)
 
 tmpnet configuration for a given subnet and its chain(s) is stored at
-`[network-dir]/subnets/[subnet name].json`. Subnet configuration for
+`[network-dir]/subnets/[subnet name].json`. Net configuration for
 all subnets is provided to each node via the
 `--subnet-config-content` flag if a node does not set a value for the
 flag. Chain configuration for all chains is provided to each node via

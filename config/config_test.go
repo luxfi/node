@@ -366,12 +366,12 @@ func TestGetVMAliasesDirNotExists(t *testing.T) {
 	require.NoError(err)
 }
 
-func TestGetSubnetConfigsFromFile(t *testing.T) {
+func TestGetNetConfigsFromFile(t *testing.T) {
 	netID, err := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
 	require.NoError(t, err)
 
 	defaultConfigs := map[ids.ID]subnets.Config{
-		subnetID: getDefaultSubnetConfig(setupViperFlags()),
+		subnetID: getDefaultNetConfig(setupViperFlags()),
 	}
 
 	tests := map[string]struct {
@@ -436,13 +436,13 @@ func TestGetSubnetConfigsFromFile(t *testing.T) {
 			root := t.TempDir()
 			subnetPath := filepath.Join(root, "subnets")
 
-			configJSON := fmt.Sprintf(`{%q: %q}`, SubnetConfigDirKey, subnetPath)
+			configJSON := fmt.Sprintf(`{%q: %q}`, NetConfigDirKey, subnetPath)
 			configFilePath := setupConfigJSON(t, root, configJSON)
 
 			setupFile(t, subnetPath, test.fileName, test.givenJSON)
 
 			v := setupViper(configFilePath)
-			subnetConfigs, err := getSubnetConfigs(v, []ids.ID{netID})
+			subnetConfigs, err := getNetConfigs(v, []ids.ID{netID})
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
 				return
@@ -452,12 +452,12 @@ func TestGetSubnetConfigsFromFile(t *testing.T) {
 	}
 }
 
-func TestGetSubnetConfigsFromFlags(t *testing.T) {
+func TestGetNetConfigsFromFlags(t *testing.T) {
 	netID, err := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
 	require.NoError(t, err)
 
 	defaultConfigs := map[ids.ID]subnets.Config{
-		subnetID: getDefaultSubnetConfig(setupViperFlags()),
+		subnetID: getDefaultNetConfig(setupViperFlags()),
 	}
 
 	tests := map[string]struct {
@@ -541,9 +541,9 @@ func TestGetSubnetConfigsFromFlags(t *testing.T) {
 
 			// build viper config
 			v := setupViperFlags()
-			v.Set(SubnetConfigContentKey, encodedFileContent)
+			v.Set(NetConfigContentKey, encodedFileContent)
 
-			subnetConfigs, err := getSubnetConfigs(v, []ids.ID{netID})
+			subnetConfigs, err := getNetConfigs(v, []ids.ID{netID})
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
 				return

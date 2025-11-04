@@ -55,7 +55,7 @@ func main() {
 		uri,
 		kc,
 		primary.WalletConfig{
-			SubnetIDs: []ids.ID{subnetID},
+			NetIDs: []ids.ID{subnetID},
 		},
 	)
 	if err != nil {

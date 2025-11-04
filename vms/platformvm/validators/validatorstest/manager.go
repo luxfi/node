@@ -24,7 +24,7 @@ func (manager) GetCurrentHeight(context.Context) (uint64, error) {
 	return 0, nil
 }
 
-func (manager) GetSubnetID(context.Context, ids.ID) (ids.ID, error) {
+func (manager) GetNetID(context.Context, ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 

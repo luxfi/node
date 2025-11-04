@@ -44,9 +44,9 @@ func main() {
 		log.Fatalf("failed to fetch network ID: %s\n", err)
 	}
 
-	subnetToL1Conversion, err := warpmessage.NewSubnetToL1Conversion(conversionID)
+	subnetToL1Conversion, err := warpmessage.NewNetToL1Conversion(conversionID)
 	if err != nil {
-		log.Fatalf("failed to create SubnetToL1Conversion message: %s\n", err)
+		log.Fatalf("failed to create NetToL1Conversion message: %s\n", err)
 	}
 
 	addressedCall, err := payload.NewAddressedCall(

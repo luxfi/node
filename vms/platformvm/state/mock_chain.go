@@ -71,28 +71,28 @@ func (mr *MockChainMockRecorder) AddRewardUTXO(txID, utxo any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRewardUTXO", reflect.TypeOf((*MockChain)(nil).AddRewardUTXO), txID, utxo)
 }
 
-// AddSubnet mocks base method.
-func (m *MockChain) AddSubnet(subnetID ids.ID) {
+// AddNet mocks base method.
+func (m *MockChain) AddNet(subnetID ids.ID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddSubnet", subnetID)
+	m.ctrl.Call(m, "AddNet", subnetID)
 }
 
-// AddSubnet indicates an expected call of AddSubnet.
-func (mr *MockChainMockRecorder) AddSubnet(subnetID any) *gomock.Call {
+// AddNet indicates an expected call of AddNet.
+func (mr *MockChainMockRecorder) AddNet(subnetID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSubnet", reflect.TypeOf((*MockChain)(nil).AddSubnet), subnetID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNet", reflect.TypeOf((*MockChain)(nil).AddNet), subnetID)
 }
 
-// AddSubnetTransformation mocks base method.
-func (m *MockChain) AddSubnetTransformation(transformSubnetTx *txs.Tx) {
+// AddNetTransformation mocks base method.
+func (m *MockChain) AddNetTransformation(transformNetTx *txs.Tx) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddSubnetTransformation", transformSubnetTx)
+	m.ctrl.Call(m, "AddNetTransformation", transformNetTx)
 }
 
-// AddSubnetTransformation indicates an expected call of AddSubnetTransformation.
-func (mr *MockChainMockRecorder) AddSubnetTransformation(transformSubnetTx any) *gomock.Call {
+// AddNetTransformation indicates an expected call of AddNetTransformation.
+func (mr *MockChainMockRecorder) AddNetTransformation(transformNetTx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSubnetTransformation", reflect.TypeOf((*MockChain)(nil).AddSubnetTransformation), transformSubnetTx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNetTransformation", reflect.TypeOf((*MockChain)(nil).AddNetTransformation), transformNetTx)
 }
 
 // AddTx mocks base method.
@@ -398,49 +398,49 @@ func (mr *MockChainMockRecorder) GetPendingValidator(subnetID, nodeID any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingValidator", reflect.TypeOf((*MockChain)(nil).GetPendingValidator), subnetID, nodeID)
 }
 
-// GetSubnetOwner mocks base method.
-func (m *MockChain) GetSubnetOwner(subnetID ids.ID) (fx.Owner, error) {
+// GetNetOwner mocks base method.
+func (m *MockChain) GetNetOwner(subnetID ids.ID) (fx.Owner, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSubnetOwner", subnetID)
+	ret := m.ctrl.Call(m, "GetNetOwner", subnetID)
 	ret0, _ := ret[0].(fx.Owner)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetSubnetOwner indicates an expected call of GetSubnetOwner.
-func (mr *MockChainMockRecorder) GetSubnetOwner(subnetID any) *gomock.Call {
+// GetNetOwner indicates an expected call of GetNetOwner.
+func (mr *MockChainMockRecorder) GetNetOwner(subnetID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubnetOwner", reflect.TypeOf((*MockChain)(nil).GetSubnetOwner), subnetID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetOwner", reflect.TypeOf((*MockChain)(nil).GetNetOwner), subnetID)
 }
 
-// GetSubnetToL1Conversion mocks base method.
-func (m *MockChain) GetSubnetToL1Conversion(subnetID ids.ID) (SubnetToL1Conversion, error) {
+// GetNetToL1Conversion mocks base method.
+func (m *MockChain) GetNetToL1Conversion(subnetID ids.ID) (NetToL1Conversion, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSubnetToL1Conversion", subnetID)
-	ret0, _ := ret[0].(SubnetToL1Conversion)
+	ret := m.ctrl.Call(m, "GetNetToL1Conversion", subnetID)
+	ret0, _ := ret[0].(NetToL1Conversion)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetSubnetToL1Conversion indicates an expected call of GetSubnetToL1Conversion.
-func (mr *MockChainMockRecorder) GetSubnetToL1Conversion(subnetID any) *gomock.Call {
+// GetNetToL1Conversion indicates an expected call of GetNetToL1Conversion.
+func (mr *MockChainMockRecorder) GetNetToL1Conversion(subnetID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubnetToL1Conversion", reflect.TypeOf((*MockChain)(nil).GetSubnetToL1Conversion), subnetID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetToL1Conversion", reflect.TypeOf((*MockChain)(nil).GetNetToL1Conversion), subnetID)
 }
 
-// GetSubnetTransformation mocks base method.
-func (m *MockChain) GetSubnetTransformation(subnetID ids.ID) (*txs.Tx, error) {
+// GetNetTransformation mocks base method.
+func (m *MockChain) GetNetTransformation(subnetID ids.ID) (*txs.Tx, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSubnetTransformation", subnetID)
+	ret := m.ctrl.Call(m, "GetNetTransformation", subnetID)
 	ret0, _ := ret[0].(*txs.Tx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetSubnetTransformation indicates an expected call of GetSubnetTransformation.
-func (mr *MockChainMockRecorder) GetSubnetTransformation(subnetID any) *gomock.Call {
+// GetNetTransformation indicates an expected call of GetNetTransformation.
+func (mr *MockChainMockRecorder) GetNetTransformation(subnetID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubnetTransformation", reflect.TypeOf((*MockChain)(nil).GetSubnetTransformation), subnetID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetTransformation", reflect.TypeOf((*MockChain)(nil).GetNetTransformation), subnetID)
 }
 
 // GetTimestamp mocks base method.
@@ -672,28 +672,28 @@ func (mr *MockChainMockRecorder) SetL1ValidatorExcess(e any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetL1ValidatorExcess", reflect.TypeOf((*MockChain)(nil).SetL1ValidatorExcess), e)
 }
 
-// SetSubnetOwner mocks base method.
-func (m *MockChain) SetSubnetOwner(subnetID ids.ID, owner fx.Owner) {
+// SetNetOwner mocks base method.
+func (m *MockChain) SetNetOwner(subnetID ids.ID, owner fx.Owner) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetSubnetOwner", subnetID, owner)
+	m.ctrl.Call(m, "SetNetOwner", subnetID, owner)
 }
 
-// SetSubnetOwner indicates an expected call of SetSubnetOwner.
-func (mr *MockChainMockRecorder) SetSubnetOwner(subnetID, owner any) *gomock.Call {
+// SetNetOwner indicates an expected call of SetNetOwner.
+func (mr *MockChainMockRecorder) SetNetOwner(subnetID, owner any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSubnetOwner", reflect.TypeOf((*MockChain)(nil).SetSubnetOwner), subnetID, owner)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNetOwner", reflect.TypeOf((*MockChain)(nil).SetNetOwner), subnetID, owner)
 }
 
-// SetSubnetToL1Conversion mocks base method.
-func (m *MockChain) SetSubnetToL1Conversion(subnetID ids.ID, c SubnetToL1Conversion) {
+// SetNetToL1Conversion mocks base method.
+func (m *MockChain) SetNetToL1Conversion(subnetID ids.ID, c NetToL1Conversion) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetSubnetToL1Conversion", subnetID, c)
+	m.ctrl.Call(m, "SetNetToL1Conversion", subnetID, c)
 }
 
-// SetSubnetToL1Conversion indicates an expected call of SetSubnetToL1Conversion.
-func (mr *MockChainMockRecorder) SetSubnetToL1Conversion(subnetID, c any) *gomock.Call {
+// SetNetToL1Conversion indicates an expected call of SetNetToL1Conversion.
+func (mr *MockChainMockRecorder) SetNetToL1Conversion(subnetID, c any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSubnetToL1Conversion", reflect.TypeOf((*MockChain)(nil).SetSubnetToL1Conversion), subnetID, c)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNetToL1Conversion", reflect.TypeOf((*MockChain)(nil).SetNetToL1Conversion), subnetID, c)
 }
 
 // SetTimestamp mocks base method.

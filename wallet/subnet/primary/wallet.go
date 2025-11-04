@@ -62,9 +62,9 @@ func NewWalletWithOptions(w *Wallet, options ...common.Option) *Wallet {
 }
 
 type WalletConfig struct {
-	// Subnet IDs that the wallet should know about to be able to generate
+	// Net IDs that the wallet should know about to be able to generate
 	// transactions.
-	SubnetIDs []ids.ID // optional
+	NetIDs []ids.ID // optional
 	// Validation IDs that the wallet should know about to be able to generate
 	// transactions.
 	ValidationIDs []ids.ID // optional
@@ -99,7 +99,7 @@ func MakeWallet(
 		return nil, err
 	}
 
-	owners, err := platformvm.GetOwners(luxState.PClient, ctx, config.SubnetIDs, config.ValidationIDs)
+	owners, err := platformvm.GetOwners(luxState.PClient, ctx, config.NetIDs, config.ValidationIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func MakePWallet(
 		return nil, err
 	}
 
-	owners, err := platformvm.GetOwners(client, ctx, config.SubnetIDs, config.ValidationIDs)
+	owners, err := platformvm.GetOwners(client, ctx, config.NetIDs, config.ValidationIDs)
 	if err != nil {
 		return nil, err
 	}

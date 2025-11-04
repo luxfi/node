@@ -81,7 +81,7 @@ type AIAgent struct {
 	ID           ids.ShortID `json:"id"`
 	Name         string      `json:"name"`
 	Capabilities []string    `json:"capabilities"`
-	Subnet       ids.ID      `json:"subnet"`
+	Net       ids.ID      `json:"subnet"`
 	Endpoint     string      `json:"endpoint"`
 	PublicKey    []byte      `json:"publicKey"`
 }

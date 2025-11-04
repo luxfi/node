@@ -16,7 +16,7 @@ type ChainDatabaseConfig struct {
 	CChainDBType string
 
 	// Additional net configurations can be added here
-	// SubnetDBTypes map[ids.ID]string
+	// NetDBTypes map[ids.ID]string
 }
 
 // GetDatabaseType returns the database type for a specific chain

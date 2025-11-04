@@ -55,10 +55,10 @@ type diff struct {
 	addedNetIDs []ids.ID
 	// Net ID --> Owner of the subnet
 	subnetOwners map[ids.ID]fx.Owner
-	// Subnet ID --> Conversion of the subnet
-	subnetToL1Conversions map[ids.ID]SubnetToL1Conversion
-	// Subnet ID --> Tx that transforms the subnet
-	transformedSubnets map[ids.ID]*txs.Tx
+	// Net ID --> Conversion of the subnet
+	subnetToL1Conversions map[ids.ID]NetToL1Conversion
+	// Net ID --> Tx that transforms the subnet
+	transformedNets map[ids.ID]*txs.Tx
 
 	addedChains map[ids.ID][]*txs.Tx
 
@@ -89,7 +89,7 @@ func NewDiff(
 		expiryDiff:                  newExpiryDiff(),
 		l1ValidatorsDiff:            newL1ValidatorsDiff(),
 		subnetOwners:                make(map[ids.ID]fx.Owner),
-		subnetToL1Conversions:       make(map[ids.ID]SubnetToL1Conversion),
+		subnetToL1Conversions:       make(map[ids.ID]NetToL1Conversion),
 	}, nil
 }
 
@@ -417,7 +417,7 @@ func (d *diff) AddNet(netID ids.ID) {
 	d.addedNetIDs = append(d.addedNetIDs, netID)
 }
 
-func (d *diff) GetSubnetOwner(netID ids.ID) (fx.Owner, error) {
+func (d *diff) GetNetOwner(netID ids.ID) (fx.Owner, error) {
 	owner, exists := d.subnetOwners[netID]
 	if exists {
 		return owner, nil
@@ -428,14 +428,14 @@ func (d *diff) GetSubnetOwner(netID ids.ID) (fx.Owner, error) {
 	if !ok {
 		return nil, ErrMissingParentState
 	}
-	return parentState.GetSubnetOwner(netID)
+	return parentState.GetNetOwner(netID)
 }
 
-func (d *diff) SetSubnetOwner(netID ids.ID, owner fx.Owner) {
+func (d *diff) SetNetOwner(netID ids.ID, owner fx.Owner) {
 	d.subnetOwners[netID] = owner
 }
 
-func (d *diff) GetSubnetToL1Conversion(subnetID ids.ID) (SubnetToL1Conversion, error) {
+func (d *diff) GetNetToL1Conversion(subnetID ids.ID) (NetToL1Conversion, error) {
 	if c, ok := d.subnetToL1Conversions[subnetID]; ok {
 		return c, nil
 	}
@@ -443,17 +443,17 @@ func (d *diff) GetSubnetToL1Conversion(subnetID ids.ID) (SubnetToL1Conversion, e
 	// If the subnet conversion was not assigned in this diff, ask the parent state.
 	parentState, ok := d.stateVersions.GetState(d.parentID)
 	if !ok {
-		return SubnetToL1Conversion{}, ErrMissingParentState
+		return NetToL1Conversion{}, ErrMissingParentState
 	}
-	return parentState.GetSubnetToL1Conversion(subnetID)
+	return parentState.GetNetToL1Conversion(subnetID)
 }
 
-func (d *diff) SetSubnetToL1Conversion(subnetID ids.ID, c SubnetToL1Conversion) {
+func (d *diff) SetNetToL1Conversion(subnetID ids.ID, c NetToL1Conversion) {
 	d.subnetToL1Conversions[subnetID] = c
 }
 
-func (d *diff) GetSubnetTransformation(subnetID ids.ID) (*txs.Tx, error) {
-	tx, exists := d.transformedSubnets[subnetID]
+func (d *diff) GetNetTransformation(subnetID ids.ID) (*txs.Tx, error) {
+	tx, exists := d.transformedNets[subnetID]
 	if exists {
 		return tx, nil
 	}
@@ -463,23 +463,18 @@ func (d *diff) GetSubnetTransformation(subnetID ids.ID) (*txs.Tx, error) {
 	if !ok {
 		return nil, ErrMissingParentState
 	}
-	return parentState.GetSubnetTransformation(subnetID)
+	return parentState.GetNetTransformation(subnetID)
 }
 
-func (d *diff) AddNetTransformation(transformSubnetTxIntf *txs.Tx) {
-	transformSubnetTx := transformSubnetTxIntf.Unsigned.(*txs.TransformNetTx)
-	if d.transformedSubnets == nil {
-		d.transformedSubnets = map[ids.ID]*txs.Tx{
-			transformSubnetTx.Net: transformSubnetTxIntf,
+func (d *diff) AddNetTransformation(transformNetTxIntf *txs.Tx) {
+	transformNetTx := transformNetTxIntf.Unsigned.(*txs.TransformNetTx)
+	if d.transformedNets == nil {
+		d.transformedNets = map[ids.ID]*txs.Tx{
+			transformNetTx.Net: transformNetTxIntf,
 		}
 	} else {
-		d.transformedSubnets[transformSubnetTx.Net] = transformSubnetTxIntf
+		d.transformedNets[transformNetTx.Net] = transformNetTxIntf
 	}
-}
-
-// AddSubnetTransformation is an alias for AddNetTransformation to satisfy the Chain interface
-func (d *diff) AddSubnetTransformation(transformSubnetTx *txs.Tx) {
-	d.AddNetTransformation(transformSubnetTx)
 }
 
 func (d *diff) AddChain(createChainTx *txs.Tx) {
@@ -651,8 +646,8 @@ func (d *diff) Apply(baseState Chain) error {
 	for _, netID := range d.addedNetIDs {
 		baseState.AddNet(netID)
 	}
-	for _, tx := range d.transformedSubnets {
-		baseState.AddSubnetTransformation(tx)
+	for _, tx := range d.transformedNets {
+		baseState.AddNetTransformation(tx)
 	}
 	for _, chains := range d.addedChains {
 		for _, chain := range chains {
@@ -675,10 +670,10 @@ func (d *diff) Apply(baseState Chain) error {
 		}
 	}
 	for netID, owner := range d.subnetOwners {
-		baseState.SetSubnetOwner(netID, owner)
+		baseState.SetNetOwner(netID, owner)
 	}
 	for subnetID, c := range d.subnetToL1Conversions {
-		baseState.SetSubnetToL1Conversion(subnetID, c)
+		baseState.SetNetToL1Conversion(subnetID, c)
 	}
 	return nil
 }

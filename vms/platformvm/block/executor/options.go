@@ -25,7 +25,7 @@ var (
 	errFailedFetchingStakerTx             = errors.New("failed fetching staker transaction")
 	errUnexpectedStakerTxType             = errors.New("unexpected staker transaction type")
 	errFailedFetchingPrimaryStaker        = errors.New("failed fetching primary staker")
-	errFailedFetchingSubnetTransformation = errors.New("failed fetching net transformation")
+	errFailedFetchingNetTransformation = errors.New("failed fetching net transformation")
 	errFailedCalculatingUptime            = errors.New("failed calculating uptime")
 )
 
@@ -166,12 +166,12 @@ func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {
 	netID := staker.NetID()
 	expectedUptimePercentage := o.primaryUptimePercentage
 	if netID != constants.PrimaryNetworkID {
-		transformSubnet, err := txexecutor.GetTransformNetTx(o.state, netID)
+		transformNet, err := txexecutor.GetTransformNetTx(o.state, netID)
 		if err != nil {
-			return false, fmt.Errorf("%w: %w", errFailedFetchingSubnetTransformation, err)
+			return false, fmt.Errorf("%w: %w", errFailedFetchingNetTransformation, err)
 		}
 
-		expectedUptimePercentage = float64(transformSubnet.UptimeRequirement) / reward.PercentDenominator
+		expectedUptimePercentage = float64(transformNet.UptimeRequirement) / reward.PercentDenominator
 	}
 
 	uptime, err := o.uptimes.CalculateUptimePercentFrom(

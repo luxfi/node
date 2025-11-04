@@ -368,7 +368,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 			VMID:        chain.VMID,
 			FxIDs:       chain.FxIDs,
 			GenesisData: genesisBytes,
-			SubnetAuth:  &secp256k1fx.Input{},
+			NetAuth:  &secp256k1fx.Input{},
 		}}
 		if err := tx.Initialize(txs.GenesisCodec); err != nil {
 			return err

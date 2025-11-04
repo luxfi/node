@@ -105,7 +105,7 @@ func NewServer(vm block.ChainVM, allowShutdown *utils.Atomic[bool]) *VMServer {
 }
 
 func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest) (*vmpb.InitializeResponse, error) {
-	subnetID, err := ids.ToID(req.SubnetId)
+	subnetID, err := ids.ToID(req.NetId)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 
 	vm.ctx = &Context{
 		NetworkID:       req.NetworkId,
-		SubnetID:        subnetID,
+		NetID:        subnetID,
 		ChainID:         chainID,
 		NodeID:          nodeID,
 		PublicKey:       publicKey,

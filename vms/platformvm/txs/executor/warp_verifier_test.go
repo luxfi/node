@@ -43,7 +43,7 @@ func TestVerifyWarpMessages(t *testing.T) {
 		}
 		state = &validatorstest.State{
 			T: t,
-			GetSubnetIDF: func(context.Context, ids.ID) (ids.ID, error) {
+			GetNetIDF: func(context.Context, ids.ID) (ids.ID, error) {
 				return subnetID, nil
 			},
 			GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
@@ -97,8 +97,8 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.AddValidatorTx{},
 		},
 		{
-			name: "AddSubnetValidatorTx",
-			tx:   &txs.AddSubnetValidatorTx{},
+			name: "AddNetValidatorTx",
+			tx:   &txs.AddNetValidatorTx{},
 		},
 		{
 			name: "AddDelegatorTx",
@@ -109,8 +109,8 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.CreateChainTx{},
 		},
 		{
-			name: "CreateSubnetTx",
-			tx:   &txs.CreateSubnetTx{},
+			name: "CreateNetTx",
+			tx:   &txs.CreateNetTx{},
 		},
 		{
 			name: "ImportTx",
@@ -129,12 +129,12 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.RewardValidatorTx{},
 		},
 		{
-			name: "RemoveSubnetValidatorTx",
-			tx:   &txs.RemoveSubnetValidatorTx{},
+			name: "RemoveNetValidatorTx",
+			tx:   &txs.RemoveNetValidatorTx{},
 		},
 		{
-			name: "TransformSubnetTx",
-			tx:   &txs.TransformSubnetTx{},
+			name: "TransformNetTx",
+			tx:   &txs.TransformNetTx{},
 		},
 		{
 			name: "AddPermissionlessValidatorTx",
@@ -145,8 +145,8 @@ func TestVerifyWarpMessages(t *testing.T) {
 			tx:   &txs.AddPermissionlessDelegatorTx{},
 		},
 		{
-			name: "TransferSubnetOwnershipTx",
-			tx:   &txs.TransferSubnetOwnershipTx{},
+			name: "TransferNetOwnershipTx",
+			tx:   &txs.TransferNetOwnershipTx{},
 		},
 		{
 			name: "BaseTx",

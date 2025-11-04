@@ -27,7 +27,7 @@ type L1ValidatorRegistrationJustification struct {
 
 	// Types that are assignable to Preimage:
 	//
-	//	*L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData
+	//	*L1ValidatorRegistrationJustification_ConvertNetToL1TxData
 	//	*L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage
 	Preimage isL1ValidatorRegistrationJustification_Preimage `protobuf_oneof:"preimage"`
 }
@@ -69,9 +69,9 @@ func (m *L1ValidatorRegistrationJustification) GetPreimage() isL1ValidatorRegist
 	return nil
 }
 
-func (x *L1ValidatorRegistrationJustification) GetConvertSubnetToL1TxData() *SubnetIDIndex {
-	if x, ok := x.GetPreimage().(*L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData); ok {
-		return x.ConvertSubnetToL1TxData
+func (x *L1ValidatorRegistrationJustification) GetConvertNetToL1TxData() *NetIDIndex {
+	if x, ok := x.GetPreimage().(*L1ValidatorRegistrationJustification_ConvertNetToL1TxData); ok {
+		return x.ConvertNetToL1TxData
 	}
 	return nil
 }
@@ -87,10 +87,10 @@ type isL1ValidatorRegistrationJustification_Preimage interface {
 	isL1ValidatorRegistrationJustification_Preimage()
 }
 
-type L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData struct {
+type L1ValidatorRegistrationJustification_ConvertNetToL1TxData struct {
 	// This should be set to obtain an attestation that a validator specified in
-	// a ConvertSubnetToL1Tx has been removed from the validator set.
-	ConvertSubnetToL1TxData *SubnetIDIndex `protobuf:"bytes,1,opt,name=convert_subnet_to_l1_tx_data,json=convertSubnetToL1TxData,proto3,oneof"`
+	// a ConvertNetToL1Tx has been removed from the validator set.
+	ConvertNetToL1TxData *NetIDIndex `protobuf:"bytes,1,opt,name=convert_subnet_to_l1_tx_data,json=convertNetToL1TxData,proto3,oneof"`
 }
 
 type L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage struct {
@@ -102,35 +102,35 @@ type L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage struct {
 	RegisterL1ValidatorMessage []byte `protobuf:"bytes,2,opt,name=register_l1_validator_message,json=registerL1ValidatorMessage,proto3,oneof"`
 }
 
-func (*L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData) isL1ValidatorRegistrationJustification_Preimage() {
+func (*L1ValidatorRegistrationJustification_ConvertNetToL1TxData) isL1ValidatorRegistrationJustification_Preimage() {
 }
 
 func (*L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage) isL1ValidatorRegistrationJustification_Preimage() {
 }
 
-type SubnetIDIndex struct {
+type NetIDIndex struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	SubnetId []byte `protobuf:"bytes,1,opt,name=subnet_id,json=subnetId,proto3" json:"subnet_id,omitempty"`
+	NetId []byte `protobuf:"bytes,1,opt,name=subnet_id,json=subnetId,proto3" json:"subnet_id,omitempty"`
 	Index    uint32 `protobuf:"varint,2,opt,name=index,proto3" json:"index,omitempty"`
 }
 
-func (x *SubnetIDIndex) Reset() {
-	*x = SubnetIDIndex{}
+func (x *NetIDIndex) Reset() {
+	*x = NetIDIndex{}
 	mi := &file_platformvm_platformvm_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SubnetIDIndex) String() string {
+func (x *NetIDIndex) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SubnetIDIndex) ProtoMessage() {}
+func (*NetIDIndex) ProtoMessage() {}
 
-func (x *SubnetIDIndex) ProtoReflect() protoreflect.Message {
+func (x *NetIDIndex) ProtoReflect() protoreflect.Message {
 	mi := &file_platformvm_platformvm_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -142,19 +142,19 @@ func (x *SubnetIDIndex) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SubnetIDIndex.ProtoReflect.Descriptor instead.
-func (*SubnetIDIndex) Descriptor() ([]byte, []int) {
+// Deprecated: Use NetIDIndex.ProtoReflect.Descriptor instead.
+func (*NetIDIndex) Descriptor() ([]byte, []int) {
 	return file_platformvm_platformvm_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *SubnetIDIndex) GetSubnetId() []byte {
+func (x *NetIDIndex) GetNetId() []byte {
 	if x != nil {
-		return x.SubnetId
+		return x.NetId
 	}
 	return nil
 }
 
-func (x *SubnetIDIndex) GetIndex() uint32 {
+func (x *NetIDIndex) GetIndex() uint32 {
 	if x != nil {
 		return x.Index
 	}
@@ -206,10 +206,10 @@ func file_platformvm_platformvm_proto_rawDescGZIP() []byte {
 var file_platformvm_platformvm_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_platformvm_platformvm_proto_goTypes = []any{
 	(*L1ValidatorRegistrationJustification)(nil), // 0: platformvm.L1ValidatorRegistrationJustification
-	(*SubnetIDIndex)(nil),                        // 1: platformvm.SubnetIDIndex
+	(*NetIDIndex)(nil),                        // 1: platformvm.NetIDIndex
 }
 var file_platformvm_platformvm_proto_depIdxs = []int32{
-	1, // 0: platformvm.L1ValidatorRegistrationJustification.convert_subnet_to_l1_tx_data:type_name -> platformvm.SubnetIDIndex
+	1, // 0: platformvm.L1ValidatorRegistrationJustification.convert_subnet_to_l1_tx_data:type_name -> platformvm.NetIDIndex
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -223,7 +223,7 @@ func file_platformvm_platformvm_proto_init() {
 		return
 	}
 	file_platformvm_platformvm_proto_msgTypes[0].OneofWrappers = []any{
-		(*L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData)(nil),
+		(*L1ValidatorRegistrationJustification_ConvertNetToL1TxData)(nil),
 		(*L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage)(nil),
 	}
 	type x struct{}

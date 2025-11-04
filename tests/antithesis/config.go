@@ -31,13 +31,13 @@ type Config struct {
 	Duration time.Duration
 }
 
-type SubnetsForNodesFunc func(nodes ...*tmpnet.Node) []*tmpnet.Subnet
+type NetsForNodesFunc func(nodes ...*tmpnet.Node) []*tmpnet.Net
 
 func NewConfig(tc tests.TestContext, defaultNetwork *tmpnet.Network) *Config {
-	return NewConfigWithSubnets(tc, defaultNetwork, nil)
+	return NewConfigWithNets(tc, defaultNetwork, nil)
 }
 
-func NewConfigWithSubnets(tc tests.TestContext, defaultNetwork *tmpnet.Network, getSubnets SubnetsForNodesFunc) *Config {
+func NewConfigWithNets(tc tests.TestContext, defaultNetwork *tmpnet.Network, getNets NetsForNodesFunc) *Config {
 	// tmpnet configuration
 	flagVars := e2e.RegisterFlags()
 
@@ -77,14 +77,14 @@ func NewConfigWithSubnets(tc tests.TestContext, defaultNetwork *tmpnet.Network, 
 	}
 
 	// Create a new network
-	return configForNewNetwork(tc, defaultNetwork, getSubnets, flagVars, duration)
+	return configForNewNetwork(tc, defaultNetwork, getNets, flagVars, duration)
 }
 
 // configForNewNetwork creates a new network and returns the resulting config.
 func configForNewNetwork(
 	tc tests.TestContext,
 	defaultNetwork *tmpnet.Network,
-	getSubnets SubnetsForNodesFunc,
+	getNets NetsForNodesFunc,
 	flagVars *e2e.FlagVars,
 	duration time.Duration,
 ) *Config {
@@ -93,8 +93,8 @@ func configForNewNetwork(
 		require.NoError(tc, err)
 		defaultNetwork.Nodes = tmpnet.NewNodesOrPanic(nodeCount)
 	}
-	if defaultNetwork.Subnets == nil && getSubnets != nil {
-		defaultNetwork.Subnets = getSubnets(defaultNetwork.Nodes...)
+	if defaultNetwork.Nets == nil && getNets != nil {
+		defaultNetwork.Nets = getNets(defaultNetwork.Nodes...)
 	}
 
 	testEnv := e2e.NewTestEnvironment(tc, flagVars, defaultNetwork)
@@ -108,8 +108,8 @@ func configForNewNetwork(
 		c.URIs[i] = nodeURI.URI
 	}
 	network := testEnv.GetNetwork()
-	c.ChainIDs = make(CSV, len(network.Subnets))
-	for i, subnet := range network.Subnets {
+	c.ChainIDs = make(CSV, len(network.Nets))
+	for i, subnet := range network.Nets {
 		c.ChainIDs[i] = subnet.Chains[0].ChainID.String()
 	}
 

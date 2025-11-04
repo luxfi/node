@@ -47,11 +47,11 @@ func main() {
 	log.Printf("fetched node ID %s in %s\n", nodeID, time.Since(nodeInfoStartTime))
 
 	validationID := netID.Append(0)
-	conversionID, err := message.SubnetToL1ConversionID(message.SubnetToL1ConversionData{
+	conversionID, err := message.NetToL1ConversionID(message.NetToL1ConversionData{
 		NetID:          netID,
 		ManagerChainID: chainID,
 		ManagerAddress: address,
-		Validators: []message.SubnetToL1ConversionValidatorData{
+		Validators: []message.NetToL1ConversionValidatorData{
 			{
 				NodeID:       nodeID.Bytes(),
 				BLSPublicKey: nodePoP.PublicKey,
@@ -80,8 +80,8 @@ func main() {
 	}
 	log.Printf("synced wallet in %s\n", time.Since(walletSyncStartTime))
 
-	convertSubnetToL1StartTime := time.Now()
-	convertSubnetToL1Tx, err := wallet.P().IssueConvertNetToL1Tx(
+	convertNetToL1StartTime := time.Now()
+	convertNetToL1Tx, err := wallet.P().IssueConvertNetToL1Tx(
 		netID,
 		chainID,
 		address,
@@ -101,9 +101,9 @@ func main() {
 	}
 	log.Printf("converted net %s with transactionID %s, validationID %s, and conversionID %s in %s\n",
 		netID,
-		convertSubnetToL1Tx.ID(),
+		convertNetToL1Tx.ID(),
 		validationID,
 		conversionID,
-		time.Since(convertSubnetToL1StartTime),
+		time.Since(convertNetToL1StartTime),
 	)
 }

@@ -80,23 +80,23 @@ func (w *withOptions) NewAddValidatorTx(
 }
 
 // Removed in regenesis
-// func (w *withOptions) NewAddSubnetValidatorTx(
-// 	vdr *txs.SubnetValidator,
+// func (w *withOptions) NewAddNetValidatorTx(
+// 	vdr *txs.NetValidator,
 // 	options ...common.Option,
-// ) (*txs.AddSubnetValidatorTx, error) {
-// 	return w.builder.NewAddSubnetValidatorTx(
+// ) (*txs.AddNetValidatorTx, error) {
+// 	return w.builder.NewAddNetValidatorTx(
 // 		vdr,
 // 		common.UnionOptions(w.options, options)...,
 // 	)
 // }
 
 // Removed in regenesis
-// func (w *withOptions) NewRemoveSubnetValidatorTx(
+// func (w *withOptions) NewRemoveNetValidatorTx(
 // 	nodeID ids.NodeID,
 // 	subnetID ids.ID,
 // 	options ...common.Option,
-// ) (*txs.RemoveSubnetValidatorTx, error) {
-// 	return w.builder.NewRemoveSubnetValidatorTx(
+// ) (*txs.RemoveNetValidatorTx, error) {
+// 	return w.builder.NewRemoveNetValidatorTx(
 // 		nodeID,
 // 		subnetID,
 // 		common.UnionOptions(w.options, options)...,
@@ -134,23 +134,23 @@ func (w *withOptions) NewCreateChainTx(
 }
 
 // Removed in regenesis
-// func (w *withOptions) NewCreateSubnetTx(
+// func (w *withOptions) NewCreateNetTx(
 // 	owner *secp256k1fx.OutputOwners,
 // 	options ...common.Option,
-// ) (*txs.CreateSubnetTx, error) {
-// 	return w.builder.NewCreateSubnetTx(
+// ) (*txs.CreateNetTx, error) {
+// 	return w.builder.NewCreateNetTx(
 // 		owner,
 // 		common.UnionOptions(w.options, options)...,
 // 	)
 // }
 
 // Removed in regenesis
-// func (w *withOptions) NewTransferSubnetOwnershipTx(
+// func (w *withOptions) NewTransferNetOwnershipTx(
 // 	subnetID ids.ID,
 // 	owner *secp256k1fx.OutputOwners,
 // 	options ...common.Option,
-// ) (*txs.TransferSubnetOwnershipTx, error) {
-// 	return w.builder.NewTransferSubnetOwnershipTx(
+// ) (*txs.TransferNetOwnershipTx, error) {
+// 	return w.builder.NewTransferNetOwnershipTx(
 // 		subnetID,
 // 		owner,
 // 		common.UnionOptions(w.options, options)...,
@@ -244,7 +244,7 @@ func (w *withOptions) NewExportTx(
 }
 
 // Removed in regenesis
-// func (w *withOptions) NewTransformSubnetTx(
+// func (w *withOptions) NewTransformNetTx(
 // 	subnetID ids.ID,
 // 	assetID ids.ID,
 // 	initialSupply uint64,
@@ -260,8 +260,8 @@ func (w *withOptions) NewExportTx(
 // 	maxValidatorWeightFactor byte,
 // 	uptimeRequirement uint32,
 // 	options ...common.Option,
-// ) (*txs.TransformSubnetTx, error) {
-// 	return w.builder.NewTransformSubnetTx(
+// ) (*txs.TransformNetTx, error) {
+// 	return w.builder.NewTransformNetTx(
 // 		subnetID,
 // 		assetID,
 // 		initialSupply,

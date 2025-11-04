@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/vms/types"
 )
 
-var errInvalidSubnetAuth = errors.New("invalid net auth")
+var errInvalidNetAuth = errors.New("invalid net auth")
 
 func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 	require := require.New(t)
@@ -92,7 +92,7 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 		},
 		NodeID: nodeID,
 		Net:    netID,
-		SubnetAuth: &secp256k1fx.Input{
+		NetAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{3},
 		},
 	}
@@ -261,7 +261,7 @@ func TestRemoveNetValidatorTxSerialization(t *testing.T) {
 		},
 		NodeID: nodeID,
 		Net:    netID,
-		SubnetAuth: &secp256k1fx.Input{
+		NetAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{},
 		},
 	}
@@ -607,33 +607,33 @@ func TestRemoveNetValidatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "invalid subnetAuth",
 			txFunc: func(ctrl *gomock.Controller) *RemoveNetValidatorTx {
-				// This SubnetAuth fails verification.
-				invalidSubnetAuth := verifymock.NewVerifiable(ctrl)
-				invalidSubnetAuth.EXPECT().Verify().Return(errInvalidSubnetAuth)
+				// This NetAuth fails verification.
+				invalidNetAuth := verifymock.NewVerifiable(ctrl)
+				invalidNetAuth.EXPECT().Verify().Return(errInvalidNetAuth)
 				return &RemoveNetValidatorTx{
 					// Set netID so we don't error on that check.
 					Net: ids.GenerateTestID(),
 					// Set NodeID so we don't error on that check.
 					NodeID:     ids.GenerateTestNodeID(),
 					BaseTx:     validBaseTx,
-					SubnetAuth: invalidSubnetAuth,
+					NetAuth: invalidNetAuth,
 				}
 			},
-			expectedErr: errInvalidSubnetAuth,
+			expectedErr: errInvalidNetAuth,
 		},
 		{
 			name: "passes verification",
 			txFunc: func(ctrl *gomock.Controller) *RemoveNetValidatorTx {
-				// This SubnetAuth passes verification.
-				validSubnetAuth := verifymock.NewVerifiable(ctrl)
-				validSubnetAuth.EXPECT().Verify().Return(nil)
+				// This NetAuth passes verification.
+				validNetAuth := verifymock.NewVerifiable(ctrl)
+				validNetAuth.EXPECT().Verify().Return(nil)
 				return &RemoveNetValidatorTx{
 					// Set netID so we don't error on that check.
 					Net: ids.GenerateTestID(),
 					// Set NodeID so we don't error on that check.
 					NodeID:     ids.GenerateTestNodeID(),
 					BaseTx:     validBaseTx,
-					SubnetAuth: validSubnetAuth,
+					NetAuth: validNetAuth,
 				}
 			},
 			expectedErr: nil,

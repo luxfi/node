@@ -62,22 +62,22 @@ type Wallet interface {
 	) (*txs.Tx, error)
 
 	// Removed in regenesis
-	// // IssueAddSubnetValidatorTx creates, signs, and issues a new validator of a
+	// // IssueAddNetValidatorTx creates, signs, and issues a new validator of a
 	// // subnet.
 	// //
 	// // - [vdr] specifies all the details of the validation period such as the
 	// //   startTime, endTime, sampling weight, nodeID, and subnetID.
-	// IssueAddSubnetValidatorTx(
+	// IssueAddNetValidatorTx(
 	// 	vdr *txs.NetValidator,
 	// 	options ...common.Option,
 	// ) (*txs.Tx, error)
 
 	// Removed in regenesis
-	// // IssueRemoveSubnetValidatorTx creates, signs, and issues a transaction
+	// // IssueRemoveNetValidatorTx creates, signs, and issues a transaction
 	// // that removes a validator of a subnet.
 	// //
 	// // - [nodeID] is the validator being removed from [subnetID].
-	// IssueRemoveSubnetValidatorTx(
+	// IssueRemoveNetValidatorTx(
 	// 	nodeID ids.NodeID,
 	// 	subnetID ids.ID,
 	// 	options ...common.Option,
@@ -115,24 +115,24 @@ type Wallet interface {
 	) (*txs.Tx, error)
 
 // Removed in regenesis
-	// // IssueCreateSubnetTx creates, signs, and issues a new subnet with the
+	// // IssueCreateNetTx creates, signs, and issues a new subnet with the
 	// // specified owner.
 	// //
 	// // - [owner] specifies who has the ability to create new chains and add new
 	// //   validators to the subnet.
-	// IssueCreateSubnetTx(
+	// IssueCreateNetTx(
 	// 	owner *secp256k1fx.OutputOwners,
 	// 	options ...common.Option,
 	// ) (*txs.Tx, error)
 
 // Removed in regenesis
-	// // IssueTransferSubnetOwnershipTx creates, signs, and issues a transaction that
+	// // IssueTransferNetOwnershipTx creates, signs, and issues a transaction that
 	// // changes the owner of the named subnet.
 	// //
 	// // - [subnetID] specifies the subnet to be modified
 	// // - [owner] specifies who has the ability to create new chains and add new
 	// //   validators to the subnet.
-	// IssueTransferSubnetOwnershipTx(
+	// IssueTransferNetOwnershipTx(
 	// 	subnetID ids.ID,
 	// 	owner *secp256k1fx.OutputOwners,
 	// 	options ...common.Option,
@@ -222,7 +222,7 @@ type Wallet interface {
 		options ...common.Option,
 	) (*txs.Tx, error)
 
-	// IssueTransformSubnetTx creates a transform subnet transaction that attempts
+	// IssueTransformNetTx creates a transform subnet transaction that attempts
 	// to convert the provided [subnetID] from a permissioned subnet to a
 	// permissionless subnet. This transaction will convert
 	// [maxSupply] - [initialSupply] of [assetID] to staking rewards.
@@ -253,7 +253,7 @@ type Wallet interface {
 	// - [uptimeRequirement] is the minimum percentage a validator must be
 	//   online and responsive to receive a reward.
 	// Removed in regenesis
-	// IssueTransformSubnetTx(
+	// IssueTransformNetTx(
 	// subnetID ids.ID,
 	// assetID ids.ID,
 	// initialSupply uint64,
@@ -369,11 +369,11 @@ func (w *wallet) IssueAddValidatorTx(
 }
 
 // Removed in regenesis
-// func (w *wallet) IssueAddSubnetValidatorTx(
+// func (w *wallet) IssueAddNetValidatorTx(
 // 	vdr *txs.NetValidator,
 // 	options ...common.Option,
 // ) (*txs.Tx, error) {
-// 	utx, err := w.builder.NewAddSubnetValidatorTx(vdr, options...)
+// 	utx, err := w.builder.NewAddNetValidatorTx(vdr, options...)
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -381,12 +381,12 @@ func (w *wallet) IssueAddValidatorTx(
 // }
 
 // Removed in regenesis
-// func (w *wallet) IssueRemoveSubnetValidatorTx(
+// func (w *wallet) IssueRemoveNetValidatorTx(
 // 	nodeID ids.NodeID,
 // 	subnetID ids.ID,
 // 	options ...common.Option,
 // ) (*txs.Tx, error) {
-// 	utx, err := w.builder.NewRemoveSubnetValidatorTx(nodeID, subnetID, options...)
+// 	utx, err := w.builder.NewRemoveNetValidatorTx(nodeID, subnetID, options...)
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -421,11 +421,11 @@ func (w *wallet) IssueCreateChainTx(
 }
 
 // Removed in regenesis
-// func (w *wallet) IssueCreateSubnetTx(
+// func (w *wallet) IssueCreateNetTx(
 // 	owner *secp256k1fx.OutputOwners,
 // 	options ...common.Option,
 // ) (*txs.Tx, error) {
-// 	utx, err := w.builder.NewCreateSubnetTx(owner, options...)
+// 	utx, err := w.builder.NewCreateNetTx(owner, options...)
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -433,12 +433,12 @@ func (w *wallet) IssueCreateChainTx(
 // }
 
 // Removed in regenesis
-// func (w *wallet) IssueTransferSubnetOwnershipTx(
+// func (w *wallet) IssueTransferNetOwnershipTx(
 // 	subnetID ids.ID,
 // 	owner *secp256k1fx.OutputOwners,
 // 	options ...common.Option,
 // ) (*txs.Tx, error) {
-// 	utx, err := w.builder.NewTransferSubnetOwnershipTx(subnetID, owner, options...)
+// 	utx, err := w.builder.NewTransferNetOwnershipTx(subnetID, owner, options...)
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -532,7 +532,7 @@ func (w *wallet) IssueExportTx(
 
 // Removed in regenesis
 	// Removed in regenesis
-	// // func (w *wallet) IssueTransformSubnetTx(
+	// // func (w *wallet) IssueTransformNetTx(
 	// // 	subnetID ids.ID,
 	// // 	assetID ids.ID,
 	// // 	initialSupply uint64,
@@ -549,7 +549,7 @@ func (w *wallet) IssueExportTx(
 	// // 	uptimeRequirement uint32,
 	// // 	options ...common.Option,
 	// // ) (*txs.Tx, error) {
-// 	utx, err := w.builder.NewTransformSubnetTx(
+// 	utx, err := w.builder.NewTransformNetTx(
 // 		subnetID,
 // 		assetID,
 // 		initialSupply,

@@ -397,25 +397,25 @@ info.getTxFee() ->
 {
   txFee: uint64,
   createAssetTxFee: uint64,
-  createSubnetTxFee: uint64,
-  transformSubnetTxFee: uint64,
+  createNetTxFee: uint64,
+  transformNetTxFee: uint64,
   createBlockchainTxFee: uint64,
   addPrimaryNetworkValidatorFee: uint64,
   addPrimaryNetworkDelegatorFee: uint64,
-  addSubnetValidatorFee: uint64,
-  addSubnetDelegatorFee: uint64
+  addNetValidatorFee: uint64,
+  addNetDelegatorFee: uint64
 }
 ```
 
 - `txFee` is the default fee for issuing X-Chain transactions.
 - `createAssetTxFee` is the fee for issuing a `CreateAssetTx` on the X-Chain.
-- `createSubnetTxFee` is no longer used.
-- `transformSubnetTxFee` is no longer used.
+- `createNetTxFee` is no longer used.
+- `transformNetTxFee` is no longer used.
 - `createBlockchainTxFee` is no longer used.
 - `addPrimaryNetworkValidatorFee` is no longer used.
 - `addPrimaryNetworkDelegatorFee` is no longer used.
-- `addSubnetValidatorFee` is no longer used.
-- `addSubnetDelegatorFee` is no longer used.
+- `addNetValidatorFee` is no longer used.
+- `addNetDelegatorFee` is no longer used.
 
 All fees are denominated in nLUX.
 
@@ -438,13 +438,13 @@ curl -X POST --data '{
   "result": {
     "txFee": "1000000",
     "createAssetTxFee": "10000000",
-    "createSubnetTxFee": "1000000000",
-    "transformSubnetTxFee": "10000000000",
+    "createNetTxFee": "1000000000",
+    "transformNetTxFee": "10000000000",
     "createBlockchainTxFee": "1000000000",
     "addPrimaryNetworkValidatorFee": "0",
     "addPrimaryNetworkDelegatorFee": "0",
-    "addSubnetValidatorFee": "1000000",
-    "addSubnetDelegatorFee": "1000000"
+    "addNetValidatorFee": "1000000",
+    "addNetDelegatorFee": "1000000"
   }
 }
 ```
@@ -561,7 +561,7 @@ curl -X POST --data '{
         "lastReceived": "2020-06-01T15:22:57Z",
         "benched": [],
         "observedUptime": "99",
-        "trackedSubnets": [],
+        "trackedNets": [],
         "benched": []
       },
       {
@@ -573,7 +573,7 @@ curl -X POST --data '{
         "lastReceived": "2020-06-01T15:22:34Z",
         "benched": [],
         "observedUptime": "75",
-        "trackedSubnets": [
+        "trackedNets": [
           "29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL"
         ],
         "benched": []
@@ -587,7 +587,7 @@ curl -X POST --data '{
         "lastReceived": "2020-06-01T15:22:55Z",
         "benched": [],
         "observedUptime": "95",
-        "trackedSubnets": [],
+        "trackedNets": [],
         "benched": []
       }
     ]

@@ -81,7 +81,7 @@ func TestExecutionConfigUnmarshal(t *testing.T) {
 			},
 			BlockCacheSize:               1,
 			TxCacheSize:                  2,
-			TransformedSubnetTxCacheSize: 3,
+			TransformedNetTxCacheSize: 3,
 			RewardUTXOsCacheSize:         5,
 			ChainCacheSize:               6,
 			ChainDBCacheSize:             7,

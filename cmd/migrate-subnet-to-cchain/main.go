@@ -47,7 +47,7 @@ func main() {
 	targetPath := os.Args[2]
 
 	fmt.Printf("=== SUBNET-EVM TO C-CHAIN MIGRATION ===\n")
-	fmt.Printf("Source (SubnetEVM PebbleDB): %s\n", sourcePath)
+	fmt.Printf("Source (EVM PebbleDB): %s\n", sourcePath)
 	fmt.Printf("Target (C-Chain BadgerDB):   %s\n\n", targetPath)
 
 	// Open source PebbleDB
@@ -74,7 +74,7 @@ func main() {
 	defer targetDB.Close()
 	fmt.Printf("✅ Target database created\n\n")
 
-	// SubnetEVM namespace prefix (discovered from earlier scan)
+	// EVM namespace prefix (discovered from earlier scan)
 	namespace := common.FromHex("337fb73f9bcdac8c31a2d5f7b877ab1e8a2b7f2a1e9bf02a0a0e6c6fd164f1d1")
 	namespaceLen := len(namespace)
 

@@ -100,7 +100,7 @@ func TestMessage(t *testing.T) {
 						IpPort:         9631,
 						IpSigningTime:  uint64(nowUnix),
 						IpNodeIdSig:    []byte{'y', 'e', 'e', 't'},
-						TrackedSubnets: [][]byte{testID[:]},
+						TrackedNets: [][]byte{testID[:]},
 						IpBlsSig:       []byte{'y', 'e', 'e', 't', '2'},
 					},
 				},

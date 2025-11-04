@@ -18,16 +18,16 @@ var Default = Config{
 	Network:                       DefaultNetwork,
 	BlockCacheSize:                64 * units.MiB,
 	TxCacheSize:                   128 * units.MiB,
-	TransformedSubnetTxCacheSize:  4 * units.MiB,
+	TransformedNetTxCacheSize:  4 * units.MiB,
 	RewardUTXOsCacheSize:          2048,
 	ChainCacheSize:                2048,
 	ChainDBCacheSize:              2048,
 	BlockIDCacheSize:              8192,
 	FxOwnerCacheSize:              4 * units.MiB,
-	SubnetToL1ConversionCacheSize: 4 * units.MiB,
+	NetToL1ConversionCacheSize: 4 * units.MiB,
 	L1WeightsCacheSize:            16 * units.KiB,
 	L1InactiveValidatorsCacheSize: 256 * units.KiB,
-	L1SubnetIDNodeIDCacheSize:     16 * units.KiB,
+	L1NetIDNodeIDCacheSize:     16 * units.KiB,
 	ChecksumsEnabled:              false,
 	MempoolPruneFrequency:         30 * time.Minute,
 }
@@ -37,20 +37,20 @@ type Config struct {
 	Network                       Network          `json:"network"`
 	BlockCacheSize                int              `json:"block-cache-size"`
 	TxCacheSize                   int              `json:"tx-cache-size"`
-	TransformedSubnetTxCacheSize  int              `json:"transformed-subnet-tx-cache-size"`
+	TransformedNetTxCacheSize  int              `json:"transformed-subnet-tx-cache-size"`
 	RewardUTXOsCacheSize          int              `json:"reward-utxos-cache-size"`
 	ChainCacheSize                int              `json:"chain-cache-size"`
 	ChainDBCacheSize              int              `json:"chain-db-cache-size"`
 	BlockIDCacheSize              int              `json:"block-id-cache-size"`
 	FxOwnerCacheSize              int              `json:"fx-owner-cache-size"`
-	SubnetToL1ConversionCacheSize int              `json:"subnet-to-l1-conversion-cache-size"`
+	NetToL1ConversionCacheSize int              `json:"subnet-to-l1-conversion-cache-size"`
 	L1WeightsCacheSize            int              `json:"l1-weights-cache-size"`
 	L1InactiveValidatorsCacheSize int              `json:"l1-inactive-validators-cache-size"`
-	L1SubnetIDNodeIDCacheSize     int              `json:"l1-subnet-id-node-id-cache-size"`
+	L1NetIDNodeIDCacheSize     int              `json:"l1-subnet-id-node-id-cache-size"`
 	ChecksumsEnabled              bool             `json:"checksums-enabled"`
 	MempoolPruneFrequency         time.Duration    `json:"mempool-prune-frequency"`
 	SybilProtectionEnabled        bool             `json:"sybil-protection-enabled"`
-	TrackedSubnets                set.Set[ids.ID]  `json:"tracked-subnets"`
+	TrackedNets                set.Set[ids.ID]  `json:"tracked-subnets"`
 	Chains                        chains.Manager   `json:"-"`
 }
 
@@ -73,7 +73,7 @@ func GetConfig(b []byte) (*Config, error) {
 func (c *Config) QueueExistingChain(chainID ids.ID, netID ids.ID, vmID ids.ID) {
 	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all chains
 		constants.PrimaryNetworkID != netID && // All nodes must validate the primary network
-		!c.TrackedSubnets.Contains(netID) { // This node doesn't validate this blockchain
+		!c.TrackedNets.Contains(netID) { // This node doesn't validate this blockchain
 		return
 	}
 
@@ -96,7 +96,7 @@ func (c *Config) QueueExistingChain(chainID ids.ID, netID ids.ID, vmID ids.ID) {
 func (c *Config) QueueExistingChainWithGenesis(chainID ids.ID, netID ids.ID, vmID ids.ID, genesisData []byte) {
 	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all chains
 		constants.PrimaryNetworkID != netID && // All nodes must validate the primary network
-		!c.TrackedSubnets.Contains(netID) { // This node doesn't validate this blockchain
+		!c.TrackedNets.Contains(netID) { // This node doesn't validate this blockchain
 		return
 	}
 

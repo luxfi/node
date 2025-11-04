@@ -29,7 +29,7 @@ var (
 	errUnknownInputType      = errors.New("unknown input type")
 	errUnknownCredentialType = errors.New("unknown credential type")
 	errUnknownOutputType     = errors.New("unknown output type")
-	errUnknownSubnetAuthType = errors.New("unknown net auth type")
+	errUnknownNetAuthType = errors.New("unknown net auth type")
 	errInvalidUTXOSigIndex   = errors.New("invalid UTXO signature index")
 
 	emptySig [secp256k1.SignatureLen]byte
@@ -72,7 +72,7 @@ func (s *signerVisitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.NetValidator.Net, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getNetSigners(tx.NetValidator.Net, tx.NetAuth)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (s *signerVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.NetID, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getNetSigners(tx.NetID, tx.NetAuth)
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func (s *signerVisitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.Net, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getNetSigners(tx.Net, tx.NetAuth)
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func (s *signerVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) e
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.Net, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getNetSigners(tx.Net, tx.NetAuth)
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func (s *signerVisitor) TransformNetTx(tx *txs.TransformNetTx) error {
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.Net, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getNetSigners(tx.Net, tx.NetAuth)
 	if err != nil {
 		return err
 	}
@@ -240,10 +240,10 @@ func (s *signerVisitor) getSigners(sourceChainID ids.ID, ins []*lux.Transferable
 	return txSigners, nil
 }
 
-func (s *signerVisitor) getSubnetSigners(netID ids.ID, subnetAuth verify.Verifiable) ([]keychain.Signer, error) {
+func (s *signerVisitor) getNetSigners(netID ids.ID, subnetAuth verify.Verifiable) ([]keychain.Signer, error) {
 	subnetInput, ok := subnetAuth.(*secp256k1fx.Input)
 	if !ok {
-		return nil, errUnknownSubnetAuthType
+		return nil, errUnknownNetAuthType
 	}
 
 	subnetTx, err := s.backend.GetTx(s.ctx, netID)
@@ -394,7 +394,7 @@ func (s *signerVisitor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 	if err != nil {
 		return err
 	}
-	subnetAuthSigners, err := s.getSubnetSigners(tx.Net, tx.SubnetAuth)
+	subnetAuthSigners, err := s.getNetSigners(tx.Net, tx.NetAuth)
 	if err != nil {
 		return err
 	}

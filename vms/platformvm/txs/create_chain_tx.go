@@ -48,7 +48,7 @@ type CreateChainTx struct {
 	// Byte representation of genesis state of the new chain
 	GenesisData []byte `serialize:"true" json:"genesisData"`
 	// Authorizes this blockchain to be added to this subnet
-	SubnetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
+	NetAuth verify.Verifiable `serialize:"true" json:"subnetAuthorization"`
 }
 
 func (tx *CreateChainTx) SyntacticVerify(ctx *consensusctx.Context) error {
@@ -78,7 +78,7 @@ func (tx *CreateChainTx) SyntacticVerify(ctx *consensusctx.Context) error {
 	if err := tx.BaseTx.SyntacticVerify(ctx); err != nil {
 		return err
 	}
-	if err := tx.SubnetAuth.Verify(); err != nil {
+	if err := tx.NetAuth.Verify(); err != nil {
 		return err
 	}
 

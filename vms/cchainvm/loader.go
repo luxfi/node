@@ -6,11 +6,11 @@ import (
 	"github.com/luxfi/geth/ethdb"
 )
 
-// LoadSubnetEVMDatabase is DEPRECATED - we now use the migrated BadgerDB directly
+// LoadEVMDatabase is DEPRECATED - we now use the migrated BadgerDB directly
 // The migrated data is at /home/z/.luxd/chainData/C/db/badgerdb/ethdb
-func LoadSubnetEVMDatabase(targetDB ethdb.Database) error {
+func LoadEVMDatabase(targetDB ethdb.Database) error {
 	// This function is no longer used - we load directly from the migrated BadgerDB
-	return fmt.Errorf("LoadSubnetEVMDatabase is deprecated - use migrated BadgerDB at /home/z/.luxd/chainData/C/db/badgerdb/ethdb")
+	return fmt.Errorf("LoadEVMDatabase is deprecated - use migrated BadgerDB at /home/z/.luxd/chainData/C/db/badgerdb/ethdb")
 }
 
 // Original implementation kept for reference but commented out
@@ -24,24 +24,24 @@ import (
 	"github.com/luxfi/geth/rlp"
 )
 
-func LoadSubnetEVMDatabase_OLD(targetDB ethdb.Database) error {
-	fmt.Println("Loading SubnetEVM database...")
+func LoadEVMDatabase_OLD(targetDB ethdb.Database) error {
+	fmt.Println("Loading EVM database...")
 
-	// Hardcoded path to SubnetEVM database
+	// Hardcoded path to EVM database
 	subnetDBPath := "/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb"
 
-	// Open SubnetEVM database
+	// Open EVM database
 	opts := &pebble.Options{
 		ReadOnly: true,
 	}
 
 	sourceDB, err := pebble.Open(subnetDBPath, opts)
 	if err != nil {
-		return fmt.Errorf("failed to open SubnetEVM database: %w", err)
+		return fmt.Errorf("failed to open EVM database: %w", err)
 	}
 	defer sourceDB.Close()
 
-	// Subnet-EVM namespace
+	// Net-EVM namespace
 	namespace := []byte{
 		0x33, 0x7f, 0xb7, 0x3f, 0x9b, 0xcd, 0xac, 0x8c,
 		0x31, 0xa2, 0xd5, 0xf7, 0xb8, 0x77, 0xab, 0x1e,
@@ -161,7 +161,7 @@ func LoadSubnetEVMDatabase_OLD(targetDB ethdb.Database) error {
 		fmt.Printf("Set head to block %d with hash %x\n", highestBlock, latestHash)
 	}
 
-	fmt.Printf("✅ Successfully loaded %d blocks from SubnetEVM database\n", blocksLoaded)
+	fmt.Printf("✅ Successfully loaded %d blocks from EVM database\n", blocksLoaded)
 	fmt.Printf("Highest block: %d\n", highestBlock)
 
 	return nil

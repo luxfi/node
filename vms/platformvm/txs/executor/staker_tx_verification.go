@@ -253,7 +253,7 @@ func verifyAddNetValidatorTx(
 		return err
 	}
 
-	baseTxCreds, err := verifyPoASubnetAuthorization(backend.Fx, chainState, sTx, tx.NetValidator.Net, tx.NetAuth)
+	baseTxCreds, err := verifyPoANetAuthorization(backend.Fx, chainState, sTx, tx.NetValidator.Net, tx.NetAuth)
 	if err != nil {
 		return err
 	}
@@ -333,7 +333,7 @@ func verifyRemoveNetValidatorTx(
 		return vdr, isCurrentValidator, nil
 	}
 
-	baseTxCreds, err := verifySubnetAuthorization(backend.Fx, chainState, sTx, tx.Net, tx.NetAuth)
+	baseTxCreds, err := verifyNetAuthorization(backend.Fx, chainState, sTx, tx.Net, tx.NetAuth)
 	if err != nil {
 		return nil, false, err
 	}
@@ -782,7 +782,7 @@ func verifyTransferNetOwnershipTx(
 		return nil
 	}
 
-	baseTxCreds, err := verifySubnetAuthorization(backend.Fx, chainState, sTx, tx.Net, tx.NetAuth)
+	baseTxCreds, err := verifyNetAuthorization(backend.Fx, chainState, sTx, tx.Net, tx.NetAuth)
 	if err != nil {
 		return err
 	}

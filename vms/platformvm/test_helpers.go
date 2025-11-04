@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 )
 
-// GetSubnetOwners returns the owners of the given subnet (stub for tests)
-func GetSubnetOwners(client *Client, ctx context.Context, subnetID ids.ID) (map[ids.ID]interface{}, error) {
+// GetNetOwners returns the owners of the given subnet (stub for tests)
+func GetNetOwners(client *Client, ctx context.Context, subnetID ids.ID) (map[ids.ID]interface{}, error) {
 	// Stub implementation for tests
 	return map[ids.ID]interface{}{
 		subnetID: &secp256k1fx.OutputOwners{

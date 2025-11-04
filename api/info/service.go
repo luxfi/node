@@ -424,13 +424,13 @@ func (i *Info) Lps(_ *http.Request, _ *struct{}, reply *LPsReply) error {
 type GetTxFeeResponse struct {
 	TxFee                         json.Uint64 `json:"txFee"`
 	CreateAssetTxFee              json.Uint64 `json:"createAssetTxFee"`
-	CreateNetTxFee                json.Uint64 `json:"createSubnetTxFee"`
-	TransformNetTxFee             json.Uint64 `json:"transformSubnetTxFee"`
+	CreateNetTxFee                json.Uint64 `json:"createNetTxFee"`
+	TransformNetTxFee             json.Uint64 `json:"transformNetTxFee"`
 	CreateBlockchainTxFee         json.Uint64 `json:"createBlockchainTxFee"`
 	AddPrimaryNetworkValidatorFee json.Uint64 `json:"addPrimaryNetworkValidatorFee"`
 	AddPrimaryNetworkDelegatorFee json.Uint64 `json:"addPrimaryNetworkDelegatorFee"`
 	AddNetValidatorFee            json.Uint64 `json:"addNetValidatorFee"`
-	AddNetDelegatorFee            json.Uint64 `json:"addSubnetDelegatorFee"`
+	AddNetDelegatorFee            json.Uint64 `json:"addNetDelegatorFee"`
 }
 
 // GetTxFee returns the transaction fee in nLUX.

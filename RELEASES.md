@@ -487,11 +487,11 @@ The plugin version is unchanged at `38` and is compatible with version `v1.12.0`
 ## [v1.12.0](https://github.com/luxfi/node/releases/tag/v1.12.0)
 
 This upgrade consists of the following Lux Community Proposals (ACPs):
-- [ACP-77](https://github.com/lux-foundation/ACPs/blob/main/ACPs/77-reinventing-subnets/README.md) Reinventing Subnets
+- [ACP-77](https://github.com/lux-foundation/ACPs/blob/main/ACPs/77-reinventing-subnets/README.md) Reinventing Nets
 - [ACP-103](https://github.com/lux-foundation/ACPs/blob/main/ACPs/103-dynamic-fees/README.md) Add Dynamic Fees to the P-Chain
 - [ACP-118](https://github.com/lux-foundation/ACPs/blob/main/ACPs/118-warp-signature-request/README.md) Warp Signature Interface Standard
 - [ACP-125](https://github.com/lux-foundation/ACPs/blob/main/ACPs/125-basefee-reduction/README.md) Reduce C-Chain minimum base fee from 25 nLUX to 1 nLUX
-- [ACP-131](https://github.com/lux-foundation/ACPs/blob/main/ACPs/131-cancun-eips/README.md) Activate Cancun EIPs on C-Chain and Subnet-EVM chains
+- [ACP-131](https://github.com/lux-foundation/ACPs/blob/main/ACPs/131-cancun-eips/README.md) Activate Cancun EIPs on C-Chain and Net-EVM chains
 - [ACP-151](https://github.com/lux-foundation/ACPs/blob/main/ACPs/151-use-current-block-pchain-height-as-context/README.md) Use current block P-Chain height as context for state verification
 
 The changes in the upgrade go into effect at 12 AM ET (5 PM UTC) on Monday, December 16th, 2024 on Mainnet.
@@ -506,7 +506,7 @@ The plugin version is unchanged at `38` and is compatible with version `v1.11.13
 
 ### What's Changed
 
-- Fix SubnetToL1ConversionData typo by @cam-schultz in https://github.com/luxfi/node/pull/3555
+- Fix NetToL1ConversionData typo by @cam-schultz in https://github.com/luxfi/node/pull/3555
 - Refactor `logging.Format` to expose constants by @StephenButtolph in https://github.com/luxfi/node/pull/3561
 - [testing] Switch to logging with zap by @marun in https://github.com/luxfi/node/pull/3557
 - Use JSON logs during Antithesis runs by @StephenButtolph in https://github.com/luxfi/node/pull/3562
@@ -516,7 +516,7 @@ The plugin version is unchanged at `38` and is compatible with version `v1.11.13
 - Remove unused wallet interface by @StephenButtolph in https://github.com/luxfi/node/pull/3568
 - Remove required fields from config by @StephenButtolph in https://github.com/luxfi/node/pull/3569
 - Remove redundant field in platformVM/network's Network by @yacovm in https://github.com/luxfi/node/pull/3571
-- Remove observedSubnetUptime from Info Docs by @samliok in https://github.com/luxfi/node/pull/3575
+- Remove observedNetUptime from Info Docs by @samliok in https://github.com/luxfi/node/pull/3575
 - Allow issuing transactions when using partial-sync by @StephenButtolph in https://github.com/luxfi/node/pull/3570
 - Add partial-sync support to the wallet by @StephenButtolph in https://github.com/luxfi/node/pull/3567
 
@@ -552,7 +552,7 @@ The plugin version is updated to `38` all plugins must update to be compatible.
 - Fixed compilations on macos 14.7 and higher
 - Fixed node wallet usage with ledger v0.8.4
 - Fixed missing `NodeIDs` argument in the `info.peers` client implementation
-- Fixed `getSubnetID` state tracing
+- Fixed `getNetID` state tracing
 
 ### What's Changed
 
@@ -587,7 +587,7 @@ The plugin version is updated to `38` all plugins must update to be compatible.
 - Use subnet public key diffs after Etna is activated by @StephenButtolph in https://github.com/luxfi/node/pull/3502
 - Split `writeCurrentStakers` into multiple functions by @StephenButtolph in https://github.com/luxfi/node/pull/3500
 - [tmpnet] Refactor bootstrap monitor kubernetes functions for reuse by @marun in https://github.com/luxfi/node/pull/3446
-- Add NumSubnets to the validator manager interface by @StephenButtolph in https://github.com/luxfi/node/pull/3504
+- Add NumNets to the validator manager interface by @StephenButtolph in https://github.com/luxfi/node/pull/3504
 - Clarify partial sync flag by @michaelkaplan13 in https://github.com/luxfi/node/pull/3505
 - Update BLST to v0.3.13 by @yacovm in https://github.com/luxfi/node/pull/3506
 - Restrict public keys prior to TLS handshake by @yacovm in https://github.com/luxfi/node/pull/3501
@@ -606,27 +606,27 @@ The plugin version is updated to `38` all plugins must update to be compatible.
 - ACP-77: Deactivate SoVs without sufficient fees by @StephenButtolph in https://github.com/luxfi/node/pull/3412
 - ACP-77: Allow legacy validator removal after conversion by @StephenButtolph in https://github.com/luxfi/node/pull/3521
 - ACP-77: Refactor e2e test by @StephenButtolph in https://github.com/luxfi/node/pull/3522
-- ACP-77: Update `ConvertSubnetTx` by @StephenButtolph in https://github.com/luxfi/node/pull/3397
+- ACP-77: Update `ConvertNetTx` by @StephenButtolph in https://github.com/luxfi/node/pull/3397
 - Remove stutter in P-chain wallet builder by @StephenButtolph in https://github.com/luxfi/node/pull/3524
 - Clarify EndAccumulatedFee comment by @michaelkaplan13 in https://github.com/luxfi/node/pull/3523
 - [tmpnet] Misc cleanup for monitoring tooling by @marun in https://github.com/luxfi/node/pull/3527
 - Remove P-chain txsmock package by @StephenButtolph in https://github.com/luxfi/node/pull/3528
 - Unexport all P-Chain visitors by @StephenButtolph in https://github.com/luxfi/node/pull/3525
 - Standardize P-Chain tx visitor order by @StephenButtolph in https://github.com/luxfi/node/pull/3529
-- ACP-77: Implement `RegisterSubnetValidatorTx` by @StephenButtolph in https://github.com/luxfi/node/pull/3420
+- ACP-77: Implement `RegisterNetValidatorTx` by @StephenButtolph in https://github.com/luxfi/node/pull/3420
 - ACP-77: Refactor P-Chain configs by @StephenButtolph in https://github.com/luxfi/node/pull/3533
 - Add additional BLS benchmarks by @StephenButtolph in https://github.com/luxfi/node/pull/3538
 - ACP-77: Refactor subnet auth verification by @StephenButtolph in https://github.com/luxfi/node/pull/3537
-- ACP-77: Implement `SetSubnetValidatorWeightTx` by @StephenButtolph in https://github.com/luxfi/node/pull/3421
+- ACP-77: Implement `SetNetValidatorWeightTx` by @StephenButtolph in https://github.com/luxfi/node/pull/3421
 - Rename error to be more generic by @StephenButtolph in https://github.com/luxfi/node/pull/3543
-- fix getSubnetIDTag in traced state by @ceyonur in https://github.com/luxfi/node/pull/3542
-- Add `platform.getSubnetOnlyValidator` API by @StephenButtolph in https://github.com/luxfi/node/pull/3540
+- fix getNetIDTag in traced state by @ceyonur in https://github.com/luxfi/node/pull/3542
+- Add `platform.getNetOnlyValidator` API by @StephenButtolph in https://github.com/luxfi/node/pull/3540
 - Add SoV deactivation owner support to the P-chain wallet by @StephenButtolph in https://github.com/luxfi/node/pull/3541
 - ACP-77: Implement Warp message verification by @StephenButtolph in https://github.com/luxfi/node/pull/3423
 - ACP-77: Current validators API for SoV by @ceyonur in https://github.com/luxfi/node/pull/3404
 - ACP-77: Implement Warp message signing by @StephenButtolph in https://github.com/luxfi/node/pull/3428
 - ACP-77: Implement IncreaseBalanceTx by @StephenButtolph in https://github.com/luxfi/node/pull/3429
-- ACP-77: Implement DisableSubnetValidatorTx by @StephenButtolph in https://github.com/luxfi/node/pull/3440
+- ACP-77: Implement DisableNetValidatorTx by @StephenButtolph in https://github.com/luxfi/node/pull/3440
 - Improve P-Chain error messages by @StephenButtolph in https://github.com/luxfi/node/pull/3536
 - Add Etna logging by @StephenButtolph in https://github.com/luxfi/node/pull/3454
 - Add Etna P-chain metrics by @StephenButtolph in https://github.com/luxfi/node/pull/3458
@@ -659,7 +659,7 @@ The plugin version is updated to `37` all plugins must update to be compatible.
 - Added `platform.getFeeState`
 - Deprecated subnet uptimes
   - `info.uptimes` with non-primary network subnetIDs is deprecated
-  - `info.peers` `observedSubnetUptimes` is deprecated
+  - `info.peers` `observedNetUptimes` is deprecated
   - `platform.getCurrentValidators` `uptime` and `connected` are deprecated for non-primary network subnetIDs.
   - `lux_network_node_subnet_uptime_weighted_average` metric is deprecated
   - `lux_network_node_subnet_uptime_rewarding_stake` metric is deprecated
@@ -715,8 +715,8 @@ The plugin version is updated to `37` all plugins must update to be compatible.
 - [vms/platformvm] Add `VerifyWithContext` to `Block`s by @dhrubabasu in https://github.com/luxfi/node/pull/3236
 - [ci] Switch to v2 of docker compose plugin by @marun in https://github.com/luxfi/node/pull/3259
 - Minimize signature verification when bootstrapping by @yacovm in https://github.com/luxfi/node/pull/3255
-- [vms/platformvm] Add tracking of a Subnet manager by @dhrubabasu in https://github.com/luxfi/node/pull/3126
-- Remove trackedSubnet check for explicitly named peers in network.Send() by @iansuvak in https://github.com/luxfi/node/pull/3258
+- [vms/platformvm] Add tracking of a Net manager by @dhrubabasu in https://github.com/luxfi/node/pull/3126
+- Remove trackedNet check for explicitly named peers in network.Send() by @iansuvak in https://github.com/luxfi/node/pull/3258
 - refactor: introduce `*test` packages in lieu of `//go:build test` by @ARR4N in https://github.com/luxfi/node/pull/3238
 - [e2e] Enhance post-test bootstrap checks by @marun in https://github.com/luxfi/node/pull/3253
 - [e2e] Abstract usage of ginkgo with a new test context by @marun in https://github.com/luxfi/node/pull/3254
@@ -730,7 +730,7 @@ The plugin version is updated to `37` all plugins must update to be compatible.
 - Implement P-chain ACP-103 complexity calculations by @StephenButtolph in https://github.com/luxfi/node/pull/3209
 - Implement dynamic fee calculator by @StephenButtolph in https://github.com/luxfi/node/pull/3211
 - [tmpnet] Add Network.GetNetworkID() to get ID of a running network by @marun in https://github.com/luxfi/node/pull/3269
-- Disable `TransformSubnetTx` post-Etna by @dhrubabasu in https://github.com/luxfi/node/pull/3152
+- Disable `TransformNetTx` post-Etna by @dhrubabasu in https://github.com/luxfi/node/pull/3152
 - [tmpnet] Fail node health check if node is not running by @marun in https://github.com/luxfi/node/pull/3274
 - [tmpnet] Enable network restart to simplify iteration by @marun in https://github.com/luxfi/node/pull/3272
 - Add StoppedTimer helper by @marun in https://github.com/luxfi/node/pull/3280
@@ -743,7 +743,7 @@ The plugin version is updated to `37` all plugins must update to be compatible.
 - Implement dynamic fee builder by @StephenButtolph in https://github.com/luxfi/node/pull/3232
 - bump geth past upgrade schedule refactor by @darioush in https://github.com/luxfi/node/pull/3278
 - Remove cross-chain requests by @darioush in https://github.com/luxfi/node/pull/3277
-- wallet: obtain subnet owners by using P-Chain's getSubnet API call by @felipemadero in https://github.com/luxfi/node/pull/3247
+- wallet: obtain subnet owners by using P-Chain's getNet API call by @felipemadero in https://github.com/luxfi/node/pull/3247
 - [antithesis] Add tmpnet support to workloads to simplify development by @marun in https://github.com/luxfi/node/pull/3215
 - Refactor e2e tests for P-chain tests by @StephenButtolph in https://github.com/luxfi/node/pull/3295
 - Fix e2e tests to support dynamic fees by @StephenButtolph in https://github.com/luxfi/node/pull/3296
@@ -755,7 +755,7 @@ The plugin version is updated to `37` all plugins must update to be compatible.
 - [tmpnet] Add support for checking rpcchainvm version compatibility by @marun in https://github.com/luxfi/node/pull/3276
 - Rename gas price calculation function by @StephenButtolph in https://github.com/luxfi/node/pull/3302
 - Remove duplicate fork definitions by @StephenButtolph in https://github.com/luxfi/node/pull/3304
-- Restrict `Owner` usage after a Subnet manager is set by @dhrubabasu in https://github.com/luxfi/node/pull/3147
+- Restrict `Owner` usage after a Net manager is set by @dhrubabasu in https://github.com/luxfi/node/pull/3147
 - SoV networking support by @StephenButtolph in https://github.com/luxfi/node/pull/2951
 - [antithesis] Enable custom plugin dir for subnet-evm by @marun in https://github.com/luxfi/node/pull/3305
 - Refactor state tests to always use initialized state by @StephenButtolph in https://github.com/luxfi/node/pull/3310
@@ -778,7 +778,7 @@ The plugin version is updated to `37` all plugins must update to be compatible.
 - Add tx complexity helper by @StephenButtolph in https://github.com/luxfi/node/pull/3334
 - Fixed segfault when --tracing-enabled is set by @blenessy in https://github.com/luxfi/node/pull/3330
 - chore: remove deprecated `validatorstest.TestState` by @ARR4N in https://github.com/luxfi/node/pull/3301
-- Enforce network config not including `PrimaryNetworkID` in `trackedSubnets` by @iansuvak in https://github.com/luxfi/node/pull/3336
+- Enforce network config not including `PrimaryNetworkID` in `trackedNets` by @iansuvak in https://github.com/luxfi/node/pull/3336
 - Use wallet in `platformvm/block` tests by @StephenButtolph in https://github.com/luxfi/node/pull/3328
 - [ci] Stop using setup-go-v3 by @marun in https://github.com/luxfi/node/pull/3339
 - Use wallet in `platformvm/txs` tests by @StephenButtolph in https://github.com/luxfi/node/pull/3333
@@ -852,7 +852,7 @@ The plugin version is updated to `36` all plugins must update to be compatible.
 - Fix typos by @omahs in https://github.com/luxfi/node/pull/3208
 - Cleanup fee.staticCalculator by @StephenButtolph in https://github.com/luxfi/node/pull/3210
 - typo by @meaghanfitzgerald in https://github.com/luxfi/node/pull/3220
-- add getSubnet to p-chain api reference by @felipemadero in https://github.com/luxfi/node/pull/3204
+- add getNet to p-chain api reference by @felipemadero in https://github.com/luxfi/node/pull/3204
 - [ci] Update fuzz workflows to target master branch by @marun in https://github.com/luxfi/node/pull/3221
 - Cleanup wallet tests by @StephenButtolph in https://github.com/luxfi/node/pull/3230
 - Update local validator start time by @ceyonur in https://github.com/luxfi/node/pull/3224
@@ -962,7 +962,7 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 
 ### APIs
 
-- Added peer's `trackedSubnets` that are not locally tracked to the response from `info.peers`
+- Added peer's `trackedNets` that are not locally tracked to the response from `info.peers`
 
 ### Configs
 
@@ -973,16 +973,16 @@ The plugin version is unchanged at `35` and is compatible with versions `v1.11.3
 - Removed repeated DB compaction during bootstrapping that caused a significant regression in bootstrapping times
 - Fixed C-Chain state-sync crash
 - Fixed C-Chain state-sync ETA calculation
-- Fixed Subnet owner reported by `platform.getSubnets` after a subnet's owner was rotated
+- Fixed Net owner reported by `platform.getNets` after a subnet's owner was rotated
 
 ### What's Changed
 
 - Expose canonical warp formatting function by @StephenButtolph in https://github.com/luxfi/node/pull/3049
-- Remove subnet filter from Peer.TrackedSubnets() by @StephenButtolph in https://github.com/luxfi/node/pull/2975
+- Remove subnet filter from Peer.TrackedNets() by @StephenButtolph in https://github.com/luxfi/node/pull/2975
 - Remove optional gatherer by @StephenButtolph in https://github.com/luxfi/node/pull/3052
-- [vms/platformvm] Return the correct owner in `platform.GetSubnets` after transfer by @dhrubabasu in https://github.com/luxfi/node/pull/3054
+- [vms/platformvm] Return the correct owner in `platform.GetNets` after transfer by @dhrubabasu in https://github.com/luxfi/node/pull/3054
 - Add metrics client by @StephenButtolph in https://github.com/luxfi/node/pull/3057
-- [vms/platformvm] Replace `GetSubnets` with `GetSubnetIDs` in `State` by @dhrubabasu in https://github.com/luxfi/node/pull/3055
+- [vms/platformvm] Replace `GetNets` with `GetNetIDs` in `State` by @dhrubabasu in https://github.com/luxfi/node/pull/3055
 - Implement `constants.VMName` by @StephenButtolph in https://github.com/luxfi/node/pull/3058
 - [testing] Remove superfluous gomega dep by @marun in https://github.com/luxfi/node/pull/3063
 - [antithesis] Enable workload instrumentation by @marun in https://github.com/luxfi/node/pull/3059
@@ -1379,8 +1379,8 @@ The plugin version is updated to `34` all plugins must update to be compatible.
   - `platform.createAddress`
   - `platform.addValidator`
   - `platform.addDelegator`
-  - `platform.addSubnetValidator`
-  - `platform.createSubnet`
+  - `platform.addNetValidator`
+  - `platform.createNet`
   - `platform.exportLUX`
   - `platform.importLUX`
   - `platform.createBlockchain`
@@ -1455,7 +1455,7 @@ The plugin version is updated to `34` all plugins must update to be compatible.
 - [trace] upgrade opentelemetry to v1.22.0 by @bianyuanop in https://github.com/luxfi/node/pull/2702
 - Reenable the upgrade tests by @StephenButtolph in https://github.com/luxfi/node/pull/2769
 - [network/p2p] Redesign Push Gossip by @patrick-ogrady in https://github.com/luxfi/node/pull/2772
-- Move AppGossip configs from SubnetConfig into ChainConfig by @StephenButtolph in https://github.com/luxfi/node/pull/2785
+- Move AppGossip configs from NetConfig into ChainConfig by @StephenButtolph in https://github.com/luxfi/node/pull/2785
 - `merkledb` -- move compressedKey declaration to avoid usage of stale values in loop by @danlaine in https://github.com/luxfi/node/pull/2777
 - `merkledb` -- fix `hasValue` in `recordNodeDeleted` by @danlaine in https://github.com/luxfi/node/pull/2779
 - `merkledb` -- rename metrics and add missing call by @danlaine in https://github.com/luxfi/node/pull/2781
@@ -1474,7 +1474,7 @@ This upgrade consists of the following Lux Community Proposals (ACPs):
 - [ACP-24](https://github.com/lux-foundation/ACPs/blob/main/ACPs/24-shanghai-eips/README.md) Activate Shanghai EIPs on C-Chain
 - [ACP-25](https://github.com/lux-foundation/ACPs/blob/main/ACPs/25-vm-application-errors/README.md) Virtual Machine Application Errors
 - [ACP-30](https://github.com/lux-foundation/ACPs/blob/main/ACPs/30-lux-warp-x-evm/README.md) Integrate Lux Warp Messaging into the EVM
-- [ACP-31](https://github.com/lux-foundation/ACPs/blob/main/ACPs/31-enable-subnet-ownership-transfer/README.md) Enable Subnet Ownership Transfer
+- [ACP-31](https://github.com/lux-foundation/ACPs/blob/main/ACPs/31-enable-subnet-ownership-transfer/README.md) Enable Net Ownership Transfer
 - [ACP-41](https://github.com/lux-foundation/ACPs/blob/main/ACPs/41-remove-pending-stakers/README.md) Remove Pending Stakers
 - [ACP-62](https://github.com/lux-foundation/ACPs/blob/main/ACPs/62-disable-addvalidatortx-and-adddelegatortx/README.md) Disable AddValidatorTx and AddDelegatorTx
 
@@ -1486,7 +1486,7 @@ The plugin version is updated to `33` all plugins must update to be compatible.
 
 ### APIs
 
-- Added `platform.getSubnet` API
+- Added `platform.getNet` API
 
 ### Configs
 
@@ -1535,7 +1535,7 @@ The plugin version is updated to `33` all plugins must update to be compatible.
 - Refactor chain manager subnets by @joshua-kim in https://github.com/luxfi/node/pull/2711
 - Replace consensusball/consensusflake interface with single shared consensus interface by @aaronbuchwald in https://github.com/luxfi/node/pull/2717
 - Remove duplicate IP length constant by @StephenButtolph in https://github.com/luxfi/node/pull/2733
-- Add `platform.getSubnet` API by @felipemadero in https://github.com/luxfi/node/pull/2704
+- Add `platform.getNet` API by @felipemadero in https://github.com/luxfi/node/pull/2704
 - Provide BLS signature in Handshake message by @StephenButtolph in https://github.com/luxfi/node/pull/2730
 - Verify BLS signature provided in Handshake messages by @StephenButtolph in https://github.com/luxfi/node/pull/2735
 - Move UTXOs definition from primary to primary/common by @StephenButtolph in https://github.com/luxfi/node/pull/2741
@@ -1932,7 +1932,7 @@ The plugin version is unchanged at `30` and is compatible with versions `v1.10.1
 - Update bootstrap IPs by @StephenButtolph in https://github.com/luxfi/node/pull/2396
 - Rename `testnet` fixture to `tmpnet` by @marun in https://github.com/luxfi/node/pull/2307
 - Add `p2p.Network` component by @joshua-kim in https://github.com/luxfi/node/pull/2283
-- `vms/platformvm`: Move `GetRewardUTXOs`, `GetSubnets`, and `GetChains` to `State` interface by @dhrubabasu in https://github.com/luxfi/node/pull/2402
+- `vms/platformvm`: Move `GetRewardUTXOs`, `GetNets`, and `GetChains` to `State` interface by @dhrubabasu in https://github.com/luxfi/node/pull/2402
 - Add more descriptive formatted error by @aaronbuchwald in https://github.com/luxfi/node/pull/2403
 
 **Full Changelog**: https://github.com/luxfi/node/compare/v1.10.16...v1.10.17
@@ -2115,7 +2115,7 @@ The plugin version is unchanged at `29` and compatible with version `v1.10.13`.
 - Remove `aggregate` struct by @dhrubabasu in https://github.com/luxfi/node/pull/2213
 - Add log for ungraceful shutdown on startup by @joshua-kim in https://github.com/luxfi/node/pull/2215
 - Add pebble database implementation by @danlaine in https://github.com/luxfi/node/pull/1999
-- Add `TransferSubnetOwnershipTx` by @dhrubabasu in https://github.com/luxfi/node/pull/2178
+- Add `TransferNetOwnershipTx` by @dhrubabasu in https://github.com/luxfi/node/pull/2178
 - Revert networking AllowConnection change by @StephenButtolph in https://github.com/luxfi/node/pull/2219
 - Fix unexpected unlock by @StephenButtolph in https://github.com/luxfi/node/pull/2221
 - Improve logging for block verification failure by @StephenButtolph in https://github.com/luxfi/node/pull/2224
@@ -2131,7 +2131,7 @@ The plugin version is updated to `29` all plugins must update to be compatible.
 ### Fixes
 
 - Added `Prefetcher` to the `merkledb` interface
-- Fixed json marshalling of `TrackedSubnets` and `AllowedNodes`
+- Fixed json marshalling of `TrackedNets` and `AllowedNodes`
 
 ### What's Changed
 
@@ -2141,7 +2141,7 @@ The plugin version is updated to `29` all plugins must update to be compatible.
 - Remove write lock option from the avm static API by @StephenButtolph in https://github.com/luxfi/node/pull/2154
 - Remove write lock option from the avm wallet API by @StephenButtolph in https://github.com/luxfi/node/pull/2155
 - Fix json marshalling of Sets by @StephenButtolph in https://github.com/luxfi/node/pull/2161
-- Rename `removeSubnetValidatorValidation` to `verifyRemoveSubnetValidatorTx` by @dhrubabasu in https://github.com/luxfi/node/pull/2162
+- Rename `removeNetValidatorValidation` to `verifyRemoveNetValidatorTx` by @dhrubabasu in https://github.com/luxfi/node/pull/2162
 - Remove lock options from the IPCs api by @StephenButtolph in https://github.com/luxfi/node/pull/2151
 - Remove write lock option from the xsvm API by @StephenButtolph in https://github.com/luxfi/node/pull/2152
 - Remove lock options from the admin API by @StephenButtolph in https://github.com/luxfi/node/pull/2150
@@ -2215,7 +2215,7 @@ The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - 
 - Remove `consensusball.Initialize` and `consensusball.Factory` by @danlaine in https://github.com/luxfi/node/pull/2104
 - Remove initialize functions from the consensusball package by @danlaine in https://github.com/luxfi/node/pull/2105
 - Remove `genesis.State` by @joshua-kim in https://github.com/luxfi/node/pull/2112
-- add `SetSubnetOwner` to `Chain` interface by @dhrubabasu in https://github.com/luxfi/node/pull/2031
+- add `SetNetOwner` to `Chain` interface by @dhrubabasu in https://github.com/luxfi/node/pull/2031
 - Move vote bubbling before poll termination by @StephenButtolph in https://github.com/luxfi/node/pull/2100
 - testing: Switch upgrade test to testnet fixture by @marun in https://github.com/luxfi/node/pull/1887
 - Reduce archivedb key lengths by 1 byte by @StephenButtolph in https://github.com/luxfi/node/pull/2113
@@ -2261,7 +2261,7 @@ The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - 
 - Cancel stale SH actions by @danlaine in https://github.com/luxfi/node/pull/2003
 - e2e: Switch assertion library from gomega to testify by @marun in https://github.com/luxfi/node/pull/1909
 - e2e: Add bootstrap checks to migrated kurtosis tests by @marun in https://github.com/luxfi/node/pull/1935
-- Add `GetTransformSubnetTx` helper by @dhrubabasu in https://github.com/luxfi/node/pull/2047
+- Add `GetTransformNetTx` helper by @dhrubabasu in https://github.com/luxfi/node/pull/2047
 - Add readme for the staking/local folder by @StephenButtolph in https://github.com/luxfi/node/pull/2046
 - use `IsCortinaActivated` helper by @dhrubabasu in https://github.com/luxfi/node/pull/2048
 - add `D` upgrade boilerplate by @dhrubabasu in https://github.com/luxfi/node/pull/2049
@@ -3145,7 +3145,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### Examples
 
-- Added P-chain `RemoveSubnetValidatorTx` example using the wallet
+- Added P-chain `RemoveNetValidatorTx` example using the wallet
 - Added X-chain `CreateAssetTx` example using the wallet
 
 ### Configs
@@ -3203,11 +3203,11 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
   - `platform.getBalance`
   - `platform.createAddress`
   - `platform.listAddresses`
-  - `platform.getSubnets`
+  - `platform.getNets`
   - `platform.addValidator`
   - `platform.addDelegator`
-  - `platform.addSubnetValidator`
-  - `platform.createSubnet`
+  - `platform.addNetValidator`
+  - `platform.createNet`
   - `platform.exportLUX`
   - `platform.importLUX`
   - `platform.createBlockchain`
@@ -3370,7 +3370,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### Fixes
 
-- Fixed `RemoveSubnetValidatorTx` weight diff corruption
+- Fixed `RemoveNetValidatorTx` weight diff corruption
 - Released network lock before attempting to close a peer connection
 - Fixed X-Chain last accepted block initialization to use the genesis block, not the stop vertex after linearization
 - Removed plugin directory handling from AMI generation
@@ -3417,7 +3417,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 ### Configs
 
 - Added `--plugin-dir` flag. The default value is `[DATADIR]/plugins`
-- Removed `--build-dir` flag. The location of the node binary is no longer considered when looking for the `plugins` directory. Subnet maintainers should ensure that their node is able to properly discover plugins, as the default location is likely changed. See `--plugin-dir`
+- Removed `--build-dir` flag. The location of the node binary is no longer considered when looking for the `plugins` directory. Net maintainers should ensure that their node is able to properly discover plugins, as the default location is likely changed. See `--plugin-dir`
 - Changed the default value of `--api-keystore-enabled` to `false`
 - Added `--track-subnets` flag as a replacement of `--whitelisted-subnets`
 
@@ -3459,7 +3459,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/releases/tag/v1.9.0). It is optional, but encouraged. The supported plugin version is `21`.
 
-### Subnet Messaging
+### Net Messaging
 
 - Added subnet message serialization format
 - Added subnet message signing
@@ -3524,8 +3524,8 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ### Uptime Tracking
 
-- Added ConnectedSubnet message handling to the chain handler
-- Added SubnetConnector interface and implemented it in the platformvm
+- Added ConnectedNet message handling to the chain handler
+- Added NetConnector interface and implemented it in the platformvm
 - Added subnet uptimes to p2p `pong` messages
 - Added subnet uptimes to `platform.getCurrentValidators`
 - Added `subnetID` as an argument to `info.Uptime`
@@ -3718,7 +3718,7 @@ This version is backwards compatible to [v1.9.0](https://github.com/luxfi/node/r
 
 ## [v1.9.0](https://github.com/luxfi/node/releases/tag/v1.9.0)
 
-This upgrade adds support for creating Proof-of-Stake Subnets.
+This upgrade adds support for creating Proof-of-Stake Nets.
 
 This version is not backwards compatible. The changes in the upgrade go into effect at 12 PM EDT, October 18th 2022 on Mainnet.
 
@@ -3732,8 +3732,8 @@ The supported plugin version is `17`.
 - Activated non-LUX `ImportTx`/`ExportTx`s to/from the P-chain
 - Activated `Banff*` blocks on the P-chain
 - Deactivated `Apricot*` blocks on the P-chain
-- Activated `RemoveSubnetValidatorTx`s on the P-chain
-- Activated `TransformSubnetTx`s on the P-chain
+- Activated `RemoveNetValidatorTx`s on the P-chain
+- Activated `TransformNetTx`s on the P-chain
 - Activated `AddPermissionlessValidatorTx`s on the P-chain
 - Activated `AddPermissionlessDelegatorTx`s on the P-chain
 - Deactivated ANT `ImportTx`/`ExportTx`s on the C-chain
@@ -3859,7 +3859,7 @@ The supported plugin version is `16`.
 ### PlatformVM APIs
 
 - Fixed `GetBlock` API when requesting the encoding as `json`
-- Changed the json key in `AddSubnetValidatorTx`s from `subnet` to `subnetID`
+- Changed the json key in `AddNetValidatorTx`s from `subnet` to `subnetID`
 - Added multiple asset support to `getBalance`
 - Updated `PermissionlessValidator`s returned from `getCurrentValidators` and `getPendingValidators` to include `validationRewardOwner` and `delegationRewardOwner`
 - Deprecated `rewardOwner` in `PermissionlessValidator`s returned from `getCurrentValidators` and `getPendingValidators`
@@ -3885,10 +3885,10 @@ The supported plugin version is `16`.
   - `BlueberryStandardBlock`
     - Introduces a `Time` field before the remaining `ApricotStandardBlock` fields
 - Added new transaction types **to be enabled in a future release**
-  - `RemoveSubnetValidatorTx`
+  - `RemoveNetValidatorTx`
     - Can be included into `BlueberryStandardBlock`s
     - Allows a subnet owner to remove a validator from their subnet
-  - `TransformSubnetTx`
+  - `TransformNetTx`
     - Can be included into `BlueberryStandardBlock`s
     - Allows a subnet owner to convert their subnet into a permissionless subnet
   - `AddPermissionlessValidatorTx`
@@ -3909,7 +3909,7 @@ The supported plugin version is `16`.
 
 ### PlatformVM Block Execution
 
-- Added support for executing `AddValidatorTx`, `AddDelegatorTx`, and `AddSubnetValidatorTx` inside of a `BlueberryStandardBlock`
+- Added support for executing `AddValidatorTx`, `AddDelegatorTx`, and `AddNetValidatorTx` inside of a `BlueberryStandardBlock`
 - Refactored time advancement into a standard state modification structure
 - Refactored `ProposalTxExecutor` to abstract state diff creation
 - Standardized upgrade checking rules
@@ -4699,7 +4699,7 @@ This version is backwards compatible to [v1.6.0](https://github.com/luxfi/node/r
 - Added a new admin API for updating the log level and measuring performance.
 - Added a new `--allow-unprotected-txs` flag to allow issuance of transactions without EIP-155 replay protection.
 
-### Subnet & Custom VMs
+### Net & Custom VMs
 
 - Ensured that all possible chains are run in `--staking-enabled=false` networks.
 
@@ -4762,7 +4762,7 @@ This was the version used for the first public Lux Network deployment in Decembe
 ### Network Support
 
 - **Primary Network**: LUX mainnet and testnet
-- **Subnet Support**: Full L2/subnet capabilities
+- **Net Support**: Full L2/subnet capabilities
 - **Cross-Chain**: Warp messaging and atomic swaps
 - **Validator Management**: Staking and delegation
 

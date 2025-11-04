@@ -628,7 +628,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	n.Config.NetworkConfig.TLSConfig = tlsConfig
 	n.Config.NetworkConfig.TLSKey = tlsKey
 	n.Config.NetworkConfig.BLSKey = NewBLSSignerWrapper(n.Config.StakingSigningKey)
-	n.Config.NetworkConfig.TrackedSubnets = n.Config.TrackedSubnets
+	n.Config.NetworkConfig.TrackedNets = n.Config.TrackedNets
 	n.Config.NetworkConfig.UptimeCalculator = n.uptimeCalculator
 	n.Config.NetworkConfig.UptimeRequirement = n.Config.StakingConfig.UptimeRequirement
 	// Wrap the resource tracker for consensus compatibility
@@ -1100,7 +1100,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 	// The chain router is already initialized as a stub
 	// No further initialization needed for the stub implementation
 
-	subnets, err := chains.NewSubnets(n.ID, n.Config.SubnetConfigs)
+	subnets, err := chains.NewNets(n.ID, n.Config.NetConfigs)
 	if err != nil {
 		return fmt.Errorf("failed to initialize subnets: %w", err)
 	}
@@ -1137,7 +1137,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			MeterVMEnabled:                          n.Config.MeterVMEnabled,
 			Metrics:                                 n.MetricsGatherer,
 			MeterDBMetrics:                          n.MeterDBMetricsGatherer,
-			SubnetConfigs:                           n.Config.SubnetConfigs,
+			NetConfigs:                           n.Config.NetConfigs,
 			ChainConfigs:                            n.Config.ChainConfigs,
 			FrontierPollFrequency:                   n.Config.FrontierPollFrequency,
 			ConsensusAppConcurrency:                 n.Config.ConsensusAppConcurrency,
@@ -1150,7 +1150,7 @@ func (n *Node) initChainManager(luxAssetID ids.ID) error {
 			TracingEnabled:                          n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled,
 			Tracer:                                  n.tracer,
 			ChainDataDir:                            filepath.Join(n.Config.ChainDataDir, fmt.Sprintf("network-%d", n.Config.NetworkID)),
-			Subnets:                                 subnets,
+			Nets:                                 subnets,
 			SkipBootstrap:                           n.Config.SkipBootstrap,
 			EnableAutomining:                        n.Config.EnableAutomining,
 		},
@@ -1186,7 +1186,7 @@ func (n *Node) initVMs() error {
 				UptimeLockedCalculator:    n.uptimeCalculator,
 				SybilProtectionEnabled:    n.Config.SybilProtectionEnabled,
 				PartialSyncPrimaryNetwork: n.Config.PartialSyncPrimaryNetwork,
-				TrackedSubnets:            n.Config.TrackedSubnets,
+				TrackedNets:            n.Config.TrackedNets,
 				DynamicFeeConfig:          n.Config.DynamicFeeConfig,
 				ValidatorFeeConfig:        n.Config.ValidatorFeeConfig,
 				UptimePercentage:          n.Config.UptimeRequirement,

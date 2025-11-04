@@ -49,7 +49,7 @@ type SharedMemory interface {
 func (b *Backend) ToChainContext() *verify.ChainContext {
 	return &verify.ChainContext{
 		ChainID:        b.LuxCtx.ChainID,
-		SubnetID:       b.LuxCtx.SubnetID,
+		NetID:       b.LuxCtx.NetID,
 		ValidatorState: &validatorStateAdapter{vs: b.LuxCtx.ValidatorState.(consContext.ValidatorState)},
 	}
 }
@@ -59,6 +59,6 @@ type validatorStateAdapter struct {
 	vs consContext.ValidatorState
 }
 
-func (v *validatorStateAdapter) GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return v.vs.GetSubnetID(chainID)
+func (v *validatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
+	return v.vs.GetNetID(chainID)
 }

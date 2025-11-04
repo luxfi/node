@@ -104,7 +104,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			End:    12345 + 200*24*60*60,
 			Wght:   2 * units.KiloLux,
 		},
-		Subnet: constants.PrimaryNetworkID,
+		Net: constants.PrimaryNetworkID,
 		Signer: pop,
 		StakeOuts: []*lux.TransferableOutput{
 			{
@@ -397,7 +397,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			End:    12345 + 200*24*60*60,
 			Wght:   5 * units.KiloLux,
 		},
-		Subnet: constants.PrimaryNetworkID,
+		Net: constants.PrimaryNetworkID,
 		Signer: pop,
 		StakeOuts: []*lux.TransferableOutput{
 			{

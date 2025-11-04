@@ -22,15 +22,15 @@ This is the Lux blockchain node implementation, a fork of Lux with modifications
 
 ## Current State (as of last work session)
 
-### SubnetEVM Genesis Support (2025-09-25)
-- **Added SubnetEVM compatibility to coreth/geth**
-  - Extended `core.Genesis` struct to include SubnetEVM fields (AirdropHash, AirdropAmount)
-  - Added `params.ChainConfig` support for SubnetEVM-specific configurations:
+### EVM Genesis Support (2025-09-25)
+- **Added EVM compatibility to coreth/geth**
+  - Extended `core.Genesis` struct to include EVM fields (AirdropHash, AirdropAmount)
+  - Added `params.ChainConfig` support for EVM-specific configurations:
     - FeeConfig: Dynamic fee configuration
     - WarpConfig: Warp messaging support
-    - SubnetEVMTimestamp: Network upgrade timestamps
+    - EVMTimestamp: Network upgrade timestamps
     - Durango, Etna, Fortuna upgrades
-  - Successfully loads both standard Ethereum and SubnetEVM genesis formats
+  - Successfully loads both standard Ethereum and EVM genesis formats
   - Tested with chain ID 96369 genesis files
 
 ### Test Coverage Status
@@ -57,7 +57,7 @@ This is the Lux blockchain node implementation, a fork of Lux with modifications
 
 ### Known Issues
 1. **Mock Interfaces**: Some mocks don't match current State/Chain interfaces
-2. **Removed Types**: Tests reference removed types like `SubnetToL1Conversion`
+2. **Removed Types**: Tests reference removed types like `NetToL1Conversion`
 3. **Context Patterns**: Major refactoring needed - tests expect old-style context struct
 4. **SharedMemory Interface**: Requires adapters for interface compatibility
 5. **Clock Types**: Mismatch between consensus and node clock types
@@ -155,22 +155,22 @@ go build -o luxd ./app
 
 ## Related Projects
 - **/home/z/work/lux/geth** - C-Chain implementation
-- **/home/z/work/lux/evm** - Subnet EVM
+- **/home/z/work/lux/evm** - Net EVM
 - **/home/z/work/lux/cli** - Management CLI
 
 ## Regenesis Status (October 26, 2025)
 
 ### Branch Status
 - **Current Branch**: `regenesis` (commit: c95557c5d "Remove erroneously commited Go packages")
-- **Runtime Replay Branch**: `regenesis-runtime-replay` (has SubnetEVM migration tools)
+- **Runtime Replay Branch**: `regenesis-runtime-replay` (has EVM migration tools)
   - Contains `migrate-subnet-to-cchain` command for database migration
   - Contains runtime replay functionality for zero-downtime migration
   - Not yet merged due to extensive conflicts in CI/CD workflows
 
 ### Migration Tools Built
 1. **`/cmd/migrate-subnet-to-cchain/`** - ✅ Successfully built from regenesis-runtime-replay branch
-   - Migrates SubnetEVM PebbleDB to C-Chain BadgerDB
-   - Strips 32-byte SubnetEVM namespace prefix: `337fb73f9bcdac8c31a2d5f7b877ab1e8a2b7f2a1e9bf02a0a0e6c6fd164f1d1`
+   - Migrates EVM PebbleDB to C-Chain BadgerDB
+   - Strips 32-byte EVM namespace prefix: `337fb73f9bcdac8c31a2d5f7b877ab1e8a2b7f2a1e9bf02a0a0e6c6fd164f1d1`
    - Creates canonical hash mappings for Coreth compatibility
    - Batch processing for performance (~10,000 keys per batch)
 
@@ -196,7 +196,7 @@ The `regenesis` and `regenesis-runtime-replay` branches have diverged significan
 **regenesis-runtime-replay** has (not in regenesis):
 - `migrate-subnet-to-cchain` command
 - Runtime replay functionality
-- SubnetEVM to C-Chain migration tools
+- EVM to C-Chain migration tools
 - Various compilation fixes
 
 **regenesis** has (not in runtime-replay):
@@ -213,7 +213,7 @@ The `regenesis` and `regenesis-runtime-replay` branches have diverged significan
 ### Next Steps Required
 
 1. **Database Recovery** (CRITICAL)
-   - Locate complete/valid SubnetEVM PebbleDB source
+   - Locate complete/valid EVM PebbleDB source
    - OR obtain fresh copy of lux-mainnet-96369 database
    - OR use backup/snapshot from running node
 
@@ -244,7 +244,7 @@ The `regenesis` and `regenesis-runtime-replay` branches have diverged significan
 - **Network ID**: 96369 (Lux Mainnet)
 - **Expected Blocks**: ~1,074,617
 - **Database Format**: PebbleDB (source) → BadgerDB (target)
-- **Namespace Stripping**: Required for SubnetEVM → C-Chain migration
+- **Namespace Stripping**: Required for EVM → C-Chain migration
 
 ### Performance Expectations
 - Migration Speed: 10,000-50,000 keys/second
@@ -254,7 +254,7 @@ The `regenesis` and `regenesis-runtime-replay` branches have diverged significan
 
 ## Session Update (October 26, 2025 - Continued)
 
-### ✅ MIGRATION COMPLETE - SubnetEVM to C-Chain Database Successfully Migrated!
+### ✅ MIGRATION COMPLETE - EVM to C-Chain Database Successfully Migrated!
 
 **Migration Results:**
 - **Source Database**: `/Users/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb` (7.1GB, 743 SST files)
@@ -266,7 +266,7 @@ The `regenesis` and `regenesis-runtime-replay` branches have diverged significan
 - **Average Speed**: 761,806 keys/sec
 - **Namespace Stripped**: `337fb73f9bcdac8c31a2d5f7b877ab1e8a2b7f2a1e9bf02a0a0e6c6fd164f1d1` (32 bytes)
 
-The database has been successfully converted from SubnetEVM PebbleDB format to C-Chain BadgerDB format with all canonical hash mappings in place. The C-Chain node can now be started using this migrated database.
+The database has been successfully converted from EVM PebbleDB format to C-Chain BadgerDB format with all canonical hash mappings in place. The C-Chain node can now be started using this migrated database.
 
 ### Database Investigation Results
 - **Source Database Status**: `/Users/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb`
@@ -310,7 +310,7 @@ The database has been successfully converted from SubnetEVM PebbleDB format to C
    - Would verify integration if consensus compiled
 
 3. **`/cmd/migrate-subnet-to-cchain/`** - Migration tool (from regenesis-runtime-replay) ✅ SUCCESSFULLY USED
-   - Strips SubnetEVM namespace prefix
+   - Strips EVM namespace prefix
    - Creates BadgerDB with canonical hash mappings
    - Processes in 10,000 key batches for optimal performance
    - Migration log available at `/tmp/migration-full-output.log`
@@ -395,7 +395,7 @@ All Lux repositories have been synced with upstream repositories:
 **5. Performance & Optimization**
 - Go version updates: 1.24.8 → 1.24.9 (#4428, #4403)
 - Remove max contiguous height optimization (#4401)
-- Subnet proposervm delay default changed to 0 (#4422)
+- Net proposervm delay default changed to 0 (#4422)
 - Remove prealloc linting workarounds (#4431, #4432)
 - Add generics to x/sync package (#4275)
 
@@ -461,7 +461,7 @@ All Lux repositories have been synced with upstream repositories:
    - Modified consensus parameters
 
 4. **Database Migration Tools**
-   - SubnetEVM to C-Chain migration tooling
+   - EVM to C-Chain migration tooling
    - BadgerDB integration for C-Chain
    - Namespace stripping utilities
 
@@ -1453,7 +1453,7 @@ import "github.com/luxfi/node/vms/proposervm/lp181"
 When working with LP packages in geth plugin:
 
 ```go
-// LP-118: Subnet-EVM Compatibility
+// LP-118: Net-EVM Compatibility
 import "github.com/luxfi/geth/plugin/evm/upgrade/lp118"
 
 // LP-176: Dynamic Gas Pricing (geth plugin)
@@ -1468,7 +1468,7 @@ All LP specifications are documented in the **lps/ repository**:
 
 **Current LP Specifications**:
 - `LP-176-dynamic-gas-pricing.md` - Dynamic EVM gas limit and price discovery
-- `LP-118-subnetevm-compat.md` - Subnet-EVM compatibility layer
+- `LP-118-subnetevm-compat.md` - Net-EVM compatibility layer
 - `LP-181-epoching.md` - P-Chain epoched views for validator optimization
 - `LP-204-secp256r1.md` - secp256r1 elliptic curve precompile
 - `LP-226-dynamic-block-timing.md` - Dynamic minimum block times
@@ -1595,7 +1595,7 @@ gasLimit := lp176.MinBaseFee
    - Documented LP workflow and governance
 
 2. ✅ **Database Migration Complete** (from previous session)
-   - SubnetEVM PebbleDB → C-Chain BadgerDB migration successful
+   - EVM PebbleDB → C-Chain BadgerDB migration successful
    - 34.1M keys migrated
    - 1.08M canonical hash mappings created
    - Migration tool: `/Users/z/work/lux/node/build/migrate-subnet-to-cchain`

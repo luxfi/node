@@ -62,7 +62,7 @@ const (
 var (
 	lastAcceptedID = ids.GenerateTestID()
 
-	testSubnet1 *txs.Tx
+	testNet1 *txs.Tx
 )
 
 type mutableSharedMemory struct {
@@ -159,7 +159,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 		backend:        backend,
 	}
 
-	addSubnet(t, env)
+	addNet(t, env)
 
 	t.Cleanup(func() {
 		env.ctx.Lock.Lock()
@@ -210,7 +210,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	)
 }
 
-func addSubnet(t *testing.T, env *environment) {
+func addNet(t *testing.T, env *environment) {
 	require := require.New(t)
 
 	wallet := newWallet(t, env, walletConfig{
@@ -218,7 +218,7 @@ func addSubnet(t *testing.T, env *environment) {
 	})
 
 	var err error
-	testSubnet1, err = wallet.IssueCreateSubnetTx(
+	testNet1, err = wallet.IssueCreateNetTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 2,
 			Addrs: []ids.ShortID{
@@ -237,12 +237,12 @@ func addSubnet(t *testing.T, env *environment) {
 	_, _, _, err = StandardTx(
 		&env.backend,
 		feeCalculator,
-		testSubnet1,
+		testNet1,
 		stateDiff,
 	)
 	require.NoError(err)
 
-	stateDiff.AddTx(testSubnet1, status.Committed)
+	stateDiff.AddTx(testNet1, status.Committed)
 	require.NoError(stateDiff.Apply(env.state))
 	require.NoError(env.state.Commit())
 }

@@ -29,7 +29,7 @@ func TestCreateChainTxInsufficientControlSigs(t *testing.T) {
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	subnetID := testSubnet1.ID()
+	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
 	})
@@ -66,7 +66,7 @@ func TestCreateChainTxWrongControlSig(t *testing.T) {
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	subnetID := testSubnet1.ID()
+	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
 	})
@@ -104,13 +104,13 @@ func TestCreateChainTxWrongControlSig(t *testing.T) {
 
 // Ensure Execute fails when the Net the blockchain specifies as
 // its validator set doesn't exist
-func TestCreateChainTxNoSuchSubnet(t *testing.T) {
+func TestCreateChainTxNoSuchNet(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.Banff)
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	subnetID := testSubnet1.ID()
+	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
 	})
@@ -149,7 +149,7 @@ func TestCreateChainTxValid(t *testing.T) {
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	subnetID := testSubnet1.ID()
+	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
 	})
@@ -215,7 +215,7 @@ func TestCreateChainTxAP3FeeChange(t *testing.T) {
 			env.state.SetTimestamp(test.time) // to duly set fee
 
 			config := *env.config
-			subnetID := testSubnet1.ID()
+			subnetID := testNet1.ID()
 			wallet := newWallet(t, env, walletConfig{
 				config:    &config,
 				subnetIDs: []ids.ID{subnetID},
@@ -247,13 +247,13 @@ func TestCreateChainTxAP3FeeChange(t *testing.T) {
 	}
 }
 
-func TestEtnaCreateChainTxInvalidWithManagedSubnet(t *testing.T) {
+func TestEtnaCreateChainTxInvalidWithManagedNet(t *testing.T) {
 	require := require.New(t)
 	env := newEnvironment(t, upgradetest.Etna)
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	subnetID := testSubnet1.ID()
+	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
 	})
@@ -273,9 +273,9 @@ func TestEtnaCreateChainTxInvalidWithManagedSubnet(t *testing.T) {
 	builderDiff, err := state.NewDiffOn(stateDiff)
 	require.NoError(err)
 
-	stateDiff.SetSubnetToL1Conversion(
+	stateDiff.SetNetToL1Conversion(
 		subnetID,
-		state.SubnetToL1Conversion{
+		state.NetToL1Conversion{
 			ConversionID: ids.GenerateTestID(),
 			ChainID:      ids.GenerateTestID(),
 			Addr:         []byte("address"),

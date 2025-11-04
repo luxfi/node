@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # C-Chain Replay Execution Script
-# Performs full EVM-based transaction replay from SubnetEVM to C-Chain
+# Performs full EVM-based transaction replay from EVM to C-Chain
 set -e
 
 # Colors for output

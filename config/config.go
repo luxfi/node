@@ -864,12 +864,12 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.Stakin
 	return genesis.FromConfig(config)
 }
 
-func getTrackedSubnets(v *viper.Viper) (set.Set[ids.ID], error) {
-	trackSubnetsStr := v.GetString(TrackSubnetsKey)
-	trackSubnetsStrs := strings.Split(trackSubnetsStr, ",")
-	trackedNetIDs := set.NewSet[ids.ID](len(trackSubnetsStrs))
+func getTrackedNets(v *viper.Viper) (set.Set[ids.ID], error) {
+	trackNetsStr := v.GetString(TrackNetsKey)
+	trackNetsStrs := strings.Split(trackNetsStr, ",")
+	trackedNetIDs := set.NewSet[ids.ID](len(trackNetsStrs))
 
-	for _, net := range trackSubnetsStrs {
+	for _, net := range trackNetsStrs {
 		if net == "" {
 			continue
 		}
@@ -1053,17 +1053,17 @@ func readChainConfigPath(chainConfigPath string) (map[string]chains.ChainConfig,
 	return chainConfigMap, nil
 }
 
-// getSubnetConfigs reads net configs from the correct place
+// getNetConfigs reads net configs from the correct place
 // (flag or file) and returns a non-nil map.
-func getSubnetConfigs(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Config, error) {
-	if v.IsSet(SubnetConfigContentKey) {
-		return getSubnetConfigsFromFlags(v, netIDs)
+func getNetConfigs(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Config, error) {
+	if v.IsSet(NetConfigContentKey) {
+		return getNetConfigsFromFlags(v, netIDs)
 	}
-	return getSubnetConfigsFromDir(v, netIDs)
+	return getNetConfigsFromDir(v, netIDs)
 }
 
-func getSubnetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Config, error) {
-	subnetConfigContentB64 := v.GetString(SubnetConfigContentKey)
+func getNetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Config, error) {
+	subnetConfigContentB64 := v.GetString(NetConfigContentKey)
 	subnetConfigContent, err := base64.StdEncoding.DecodeString(subnetConfigContentB64)
 	if err != nil {
 		return nil, fmt.Errorf("unable to decode base64 content: %w", err)
@@ -1077,10 +1077,10 @@ func getSubnetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets
 
 	res := make(map[ids.ID]nets.Config)
 	for _, subnetID := range netIDs {
-		config := getDefaultSubnetConfig(v)
+		config := getDefaultNetConfig(v)
 
-		if rawSubnetConfigBytes, ok := subnetConfigs[subnetID]; ok {
-			if err := json.Unmarshal(rawSubnetConfigBytes, &config); err != nil {
+		if rawNetConfigBytes, ok := subnetConfigs[subnetID]; ok {
+			if err := json.Unmarshal(rawNetConfigBytes, &config); err != nil {
 				return nil, err
 			}
 
@@ -1100,9 +1100,9 @@ func getSubnetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets
 	return res, nil
 }
 
-// getSubnetConfigsFromDir reads SubnetConfigs to node config map
-func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]nets.Config, error) {
-	subnetConfigPath, err := getPathFromDirKey(v, SubnetConfigDirKey)
+// getNetConfigsFromDir reads NetConfigs to node config map
+func getNetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]nets.Config, error) {
+	subnetConfigPath, err := getPathFromDirKey(v, NetConfigDirKey)
 	if err != nil {
 		return nil, err
 	}
@@ -1112,7 +1112,7 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]net
 	// reads subnet config files from a path and given subnetIDs and returns a map.
 	for _, subnetID := range subnetIDs {
 		// Ensure default configuration
-		config := getDefaultSubnetConfig(v)
+		config := getDefaultNetConfig(v)
 		subnetConfigs[subnetID] = config
 
 		if len(subnetConfigPath) == 0 {
@@ -1160,7 +1160,7 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]net
 	return subnetConfigs, nil
 }
 
-func getDefaultSubnetConfig(v *viper.Viper) nets.Config {
+func getDefaultNetConfig(v *viper.Viper) nets.Config {
 	config := nets.Config{
 		ConsensusParameters:         getConsensusConfig(v),
 		ValidatorOnly:               false,
@@ -1360,8 +1360,8 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, err
 	}
 
-	// Tracked Subnets
-	nodeConfig.TrackedSubnets, err = getTrackedSubnets(v)
+	// Tracked Nets
+	nodeConfig.TrackedNets, err = getTrackedNets(v)
 	if err != nil {
 		return node.Config{}, err
 	}
@@ -1426,18 +1426,18 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 
 	// Net Configs
-	subnetConfigs, err := getSubnetConfigs(v, nodeConfig.TrackedSubnets.List())
+	subnetConfigs, err := getNetConfigs(v, nodeConfig.TrackedNets.List())
 	if err != nil {
 		return node.Config{}, fmt.Errorf("couldn't read net configs: %w", err)
 	}
 
-	primaryNetworkConfig := getDefaultSubnetConfig(v)
+	primaryNetworkConfig := getDefaultNetConfig(v)
 	if err := primaryNetworkConfig.Valid(); err != nil {
 		return node.Config{}, fmt.Errorf("invalid consensus parameters: %w", err)
 	}
 	subnetConfigs[constants.PrimaryNetworkID] = primaryNetworkConfig
 
-// 	nodeConfig.SubnetConfigs = subnetConfigs
+// 	nodeConfig.NetConfigs = subnetConfigs
 
 	// Benchlist
 	// Convert consensus.Parameters to PrismParameters for benchlist config

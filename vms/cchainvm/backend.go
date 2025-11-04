@@ -28,8 +28,8 @@ import (
 	"github.com/luxfi/geth/triedb"
 )
 
-// PreShanghaiHeader represents header format from SubnetEVM before Shanghai upgrade
-// SubnetEVM headers may have 16 or 17 fields depending on presence of ExtDataHash
+// PreShanghaiHeader represents header format from EVM before Shanghai upgrade
+// EVM headers may have 16 or 17 fields depending on presence of ExtDataHash
 type PreShanghaiHeader struct {
 	ParentHash  common.Hash
 	UncleHash   common.Hash
@@ -49,7 +49,7 @@ type PreShanghaiHeader struct {
 	BaseFee     *big.Int `rlp:"optional"` // EIP-1559
 	// ExtDataHash can be present as empty bytes, so use []byte instead of Hash
 	// to allow RLP decoder to handle variable-length data
-	ExtDataHash []byte `rlp:"optional"` // SubnetEVM specific, may be empty or 32 bytes
+	ExtDataHash []byte `rlp:"optional"` // EVM specific, may be empty or 32 bytes
 }
 
 // ToPostShanghai converts pre-Shanghai header to post-Shanghai types.Header
@@ -256,7 +256,7 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 
 	fmt.Printf("Found header data (%d bytes), decoding as pre-Shanghai format...\n", len(headerData))
 
-	// Decode as pre-Shanghai header (SubnetEVM format)
+	// Decode as pre-Shanghai header (EVM format)
 	preGenesisHeader := new(PreShanghaiHeader)
 	if err := rlp.DecodeBytes(headerData, preGenesisHeader); err != nil {
 		return nil, fmt.Errorf("failed to decode pre-Shanghai genesis header: %w", err)
@@ -472,7 +472,7 @@ func NewMigratedBackend(db ethdb.Database, migratedHeight uint64) (*MinimalEthBa
 	// DISABLED: go rebuildChainWithFixedHashes(blockchain, rawDB, actualHeight)
 
 	fmt.Printf("✅ Blockchain ready at height %d with canonical mappings\n", actualHeight)
-	fmt.Printf("   No rebuild needed - SubnetEVM data accessible via namespace stripper\n")
+	fmt.Printf("   No rebuild needed - EVM data accessible via namespace stripper\n")
 
 	return backend, nil
 }

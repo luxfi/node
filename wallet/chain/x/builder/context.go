@@ -27,7 +27,7 @@ func NewConsensusContext(
 	lookup := ids.NewAliaser()
 	ctx := &consensusctx.Context{
 		NetworkID:   networkID,
-		SubnetID:    constants.PrimaryNetworkID,
+		NetID:    constants.PrimaryNetworkID,
 		ChainID:     blockchainID,
 		XChainID:    blockchainID,
 		LUXAssetID: luxAssetID,

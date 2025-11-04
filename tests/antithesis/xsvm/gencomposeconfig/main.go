@@ -20,7 +20,7 @@ const baseImageName = "antithesis-xsvm"
 // Creates docker-compose.yml and its associated volumes in the target path.
 func main() {
 	network := tmpnet.LocalNetworkOrPanic()
-	network.Subnets = []*tmpnet.Subnet{
+	network.Nets = []*tmpnet.Net{
 		subnet.NewXSVMOrPanic("xsvm", genesis.VMRQKey, network.Nodes...),
 	}
 	if err := antithesis.GenerateComposeConfig(network, baseImageName); err != nil {

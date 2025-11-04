@@ -132,8 +132,8 @@ A node should initiate outbound connections to an `IP:Port` pair that is believe
 - The peer is in the initial bootstrapper set.
 - The peer is in the default bootstrapper set.
 - The peer is a Primary Network validator.
-- The peer is a validator of a tracked Subnet.
-- The peer is a validator of a Subnet and the local node is a Primary Network validator.
+- The peer is a validator of a tracked Net.
+- The peer is a validator of a Net and the local node is a Primary Network validator.
 
 #### IP Authentication
 
@@ -183,7 +183,7 @@ A `GetPeerList` message contains the Bloom Filter of the currently known peers a
 `PeerList` messages are expected to contain `IP:Port` pairs that satisfy all of the following constraints:
 - The Bloom Filter sent when requesting the `PeerList` message does not contain the node claiming the `IP:Port` pair.
 - The node claiming the `IP:Port` pair is currently connected.
-- The node claiming the `IP:Port` pair is either in the default bootstrapper set, is a current Primary Network validator, is a validator of a tracked Subnet, or is a validator of a Subnet and the peer is a Primary Network validator.
+- The node claiming the `IP:Port` pair is either in the default bootstrapper set, is a current Primary Network validator, is a validator of a tracked Net, or is a validator of a Net and the peer is a Primary Network validator.
 
 #### Avoiding Persistent Network Traffic
 

@@ -41,18 +41,18 @@ func getValidatorRules(
 		}, nil
 	}
 
-	transformSubnet, err := GetTransformNetTx(chainState, netID)
+	transformNet, err := GetTransformNetTx(chainState, netID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &addValidatorRules{
-		assetID:           transformSubnet.AssetID,
-		minValidatorStake: transformSubnet.MinValidatorStake,
-		maxValidatorStake: transformSubnet.MaxValidatorStake,
-		minStakeDuration:  time.Duration(transformSubnet.MinStakeDuration) * time.Second,
-		maxStakeDuration:  time.Duration(transformSubnet.MaxStakeDuration) * time.Second,
-		minDelegationFee:  transformSubnet.MinDelegationFee,
+		assetID:           transformNet.AssetID,
+		minValidatorStake: transformNet.MinValidatorStake,
+		maxValidatorStake: transformNet.MaxValidatorStake,
+		minStakeDuration:  time.Duration(transformNet.MinStakeDuration) * time.Second,
+		maxStakeDuration:  time.Duration(transformNet.MaxStakeDuration) * time.Second,
+		minDelegationFee:  transformNet.MinDelegationFee,
 	}, nil
 }
 
@@ -81,18 +81,18 @@ func getDelegatorRules(
 		}, nil
 	}
 
-	transformSubnet, err := GetTransformNetTx(chainState, netID)
+	transformNet, err := GetTransformNetTx(chainState, netID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &addDelegatorRules{
-		assetID:                  transformSubnet.AssetID,
-		minDelegatorStake:        transformSubnet.MinDelegatorStake,
-		maxValidatorStake:        transformSubnet.MaxValidatorStake,
-		minStakeDuration:         time.Duration(transformSubnet.MinStakeDuration) * time.Second,
-		maxStakeDuration:         time.Duration(transformSubnet.MaxStakeDuration) * time.Second,
-		maxValidatorWeightFactor: transformSubnet.MaxValidatorWeightFactor,
+		assetID:                  transformNet.AssetID,
+		minDelegatorStake:        transformNet.MinDelegatorStake,
+		maxValidatorStake:        transformNet.MaxValidatorStake,
+		minStakeDuration:         time.Duration(transformNet.MinStakeDuration) * time.Second,
+		maxStakeDuration:         time.Duration(transformNet.MaxStakeDuration) * time.Second,
+		maxValidatorWeightFactor: transformNet.MaxValidatorWeightFactor,
 	}, nil
 }
 
@@ -219,15 +219,15 @@ func GetMaxWeight(
 }
 
 func GetTransformNetTx(chain state.Chain, netID ids.ID) (*txs.TransformNetTx, error) {
-	transformSubnetIntf, err := chain.GetSubnetTransformation(netID)
+	transformNetIntf, err := chain.GetNetTransformation(netID)
 	if err != nil {
 		return nil, err
 	}
 
-	transformSubnet, ok := transformSubnetIntf.Unsigned.(*txs.TransformNetTx)
+	transformNet, ok := transformNetIntf.Unsigned.(*txs.TransformNetTx)
 	if !ok {
 		return nil, ErrIsNotTransformNetTx
 	}
 
-	return transformSubnet, nil
+	return transformNet, nil
 }

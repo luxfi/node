@@ -431,7 +431,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	chains := []genesis.Chain{
 		{
 			GenesisData: xvmGenesisBytes,
-			SubnetID:    constants.PrimaryNetworkID,
+			NetID:       constants.PrimaryNetworkID,
 			VMID:        constants.XVMID,
 			FxIDs: []ids.ID{
 				secp256k1fx.ID,
@@ -442,7 +442,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 		},
 		{
 			GenesisData: []byte(config.CChainGenesis),
-			SubnetID:    constants.PrimaryNetworkID,
+			NetID:       constants.PrimaryNetworkID,
 			VMID:        constants.EVMID,
 			Name:        "C-Chain",
 		},

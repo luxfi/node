@@ -19,29 +19,29 @@ var (
 // ChainContext provides context for chain operations
 type ChainContext struct {
 	ChainID        ids.ID
-	SubnetID       ids.ID
+	NetID       ids.ID
 	ValidatorState ValidatorState
 }
 
 // ValidatorState provides validator state lookups
 type ValidatorState interface {
-	GetSubnetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
+	GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
 }
 
-// SameSubnet verifies that the provided [ctx] was provided to a chain in the
+// SameNet verifies that the provided [ctx] was provided to a chain in the
 // same subnet as [peerChainID], but not the same chain. If this verification
 // fails, a non-nil error will be returned.
-func SameSubnet(ctx context.Context, chainCtx *ChainContext, peerChainID ids.ID) error {
+func SameNet(ctx context.Context, chainCtx *ChainContext, peerChainID ids.ID) error {
 	if peerChainID == chainCtx.ChainID {
 		return ErrSameChainID
 	}
 
-	peerSubnetID, err := chainCtx.ValidatorState.GetSubnetID(ctx, peerChainID)
+	peerNetID, err := chainCtx.ValidatorState.GetNetID(ctx, peerChainID)
 	if err != nil {
 		return fmt.Errorf("failed to get subnet of %q: %w", peerChainID, err)
 	}
-	if chainCtx.SubnetID != peerSubnetID {
-		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, chainCtx.SubnetID, peerSubnetID)
+	if chainCtx.NetID != peerNetID {
+		return fmt.Errorf("%w; expected %q got %q", ErrMismatchedNetIDs, chainCtx.NetID, peerNetID)
 	}
 	return nil
 }

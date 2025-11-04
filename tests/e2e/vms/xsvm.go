@@ -40,7 +40,7 @@ var (
 	subnetBName = "xsvm-b"
 )
 
-func XSVMSubnetsOrPanic(nodes ...*tmpnet.Node) []*tmpnet.Net {
+func XSVMNetsOrPanic(nodes ...*tmpnet.Node) []*tmpnet.Net {
 	key, err := secp256k1.NewPrivateKey()
 	if err != nil {
 		panic(err)
@@ -53,7 +53,7 @@ func XSVMSubnetsOrPanic(nodes ...*tmpnet.Node) []*tmpnet.Net {
 		subnetANodes = nodes[:midpoint]
 		subnetBNodes = nodes[midpoint:]
 	}
-	return []*tmpnet.Subnet{
+	return []*tmpnet.Net{
 		subnet.NewXSVMOrPanic(subnetAName, key, subnetANodes...),
 		subnet.NewXSVMOrPanic(subnetBName, key, subnetBNodes...),
 	}
@@ -66,15 +66,15 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 	ginkgo.It("should support transfers between subnets", func() {
 		network := e2e.GetEnv(tc).GetNetwork()
 
-		sourceSubnet := network.GetSubnet(subnetAName)
-		require.NotNil(sourceSubnet)
-		destinationSubnet := network.GetSubnet(subnetBName)
-		require.NotNil(destinationSubnet)
+		sourceNet := network.GetNet(subnetAName)
+		require.NotNil(sourceNet)
+		destinationNet := network.GetNet(subnetBName)
+		require.NotNil(destinationNet)
 
-		sourceChain := sourceSubnet.Chains[0]
-		destinationChain := destinationSubnet.Chains[0]
+		sourceChain := sourceNet.Chains[0]
+		destinationChain := destinationNet.Chains[0]
 
-		sourceValidators := getNodesForIDs(network.Nodes, sourceSubnet.ValidatorIDs)
+		sourceValidators := getNodesForIDs(network.Nodes, sourceNet.ValidatorIDs)
 		require.NotEmpty(sourceValidators)
 		sourceAPINode := sourceValidators[0]
 		sourceAPINodeURI := e2e.GetLocalURI(tc, sourceAPINode)
@@ -84,7 +84,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 			zap.String("nodeURI", sourceAPINodeURI),
 		)
 
-		destinationValidators := getNodesForIDs(network.Nodes, destinationSubnet.ValidatorIDs)
+		destinationValidators := getNodesForIDs(network.Nodes, destinationNet.ValidatorIDs)
 		require.NotEmpty(destinationValidators)
 		destinationAPINode := destinationValidators[0]
 		destinationAPINodeURI := e2e.GetLocalURI(tc, destinationAPINode)
@@ -106,7 +106,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 		require.NoError(err)
 		require.GreaterOrEqual(initialSourcedBalance, units.Schmeckle)
 
-		tc.By(fmt.Sprintf("exporting from chain %s on subnet %s", sourceChain.ChainID, sourceSubnet.SubnetID))
+		tc.By(fmt.Sprintf("exporting from chain %s on subnet %s", sourceChain.ChainID, sourceNet.NetID))
 		exportTxStatus, err := export.Export(
 			tc.DefaultContext(),
 			&export.Config{
@@ -136,7 +136,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 		}
 
 		tc.By(fmt.Sprintf("issuing transaction on chain %s on subnet %s to activate chain++ consensus",
-			destinationChain.ChainID, destinationSubnet.SubnetID))
+			destinationChain.ChainID, destinationNet.NetID))
 		recipientKey := e2e.NewPrivateKey(tc)
 		transferTxStatus, err := transfer.Transfer(
 			tc.DefaultContext(),
@@ -154,7 +154,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 			zap.Stringer("txID", transferTxStatus.TxID),
 		)
 
-		tc.By(fmt.Sprintf("importing to blockchain %s on subnet %s", destinationChain.ChainID, destinationSubnet.SubnetID))
+		tc.By(fmt.Sprintf("importing to blockchain %s on subnet %s", destinationChain.ChainID, destinationNet.NetID))
 		sourceURIs := make([]string, len(sourceValidators))
 		for i, node := range sourceValidators {
 			sourceURIs[i] = e2e.GetLocalURI(tc, node)
@@ -197,7 +197,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 		}
 
 		tc.By("establishing connection")
-		nodeID := network.GetSubnet(subnetAName).ValidatorIDs[0]
+		nodeID := network.GetNet(subnetAName).ValidatorIDs[0]
 		node, err := network.GetNode(nodeID)
 		require.NoError(err)
 
@@ -211,7 +211,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 			},
 		}
 
-		chainID := network.GetSubnet(subnetAName).Chains[0].ChainID.String()
+		chainID := network.GetNet(subnetAName).Chains[0].ChainID.String()
 		client := xsvmconnect.NewPingClient(
 			httpClient,
 			node.URI,

@@ -61,11 +61,6 @@ func (testManager) GetWeight(ids.ID, ids.NodeID) uint64 {
 	return 0
 }
 
-// GetSubnetID implements validators.Manager interface
-func (testManager) GetSubnetID(context.Context, ids.ID) (ids.ID, error) {
-	return ids.Empty, nil
-}
-
 // SubsetWeight implements validators.Manager interface
 func (testManager) SubsetWeight(ids.ID, consensusset.Set[ids.NodeID]) (uint64, error) {
 	return 0, nil

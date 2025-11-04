@@ -77,7 +77,7 @@ func NewWallet(
 
 	owners := make(map[ids.ID]fx.Owner, len(subnetIDs)+len(validationIDs))
 	for _, subnetID := range subnetIDs {
-		owner, err := state.GetSubnetOwner(subnetID)
+		owner, err := state.GetNetOwner(subnetID)
 		require.NoError(err)
 		owners[subnetID] = owner
 	}

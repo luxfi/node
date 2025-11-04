@@ -97,7 +97,7 @@ message Handshake {
   // Signature of the peer IP port pair at a provided timestamp with the TLS
   // key.
   bytes ip_node_id_sig = 7;
-  // Subnets the peer is tracking
+  // Nets the peer is tracking
   repeated bytes tracked_nets = 8;
   Client client = 9;
   repeated uint32 supported_lps = 10;

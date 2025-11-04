@@ -13,13 +13,13 @@ import (
 	"github.com/luxfi/node/utils/constants"
 )
 
-func TestNewSubnets(t *testing.T) {
+func TestNewNets(t *testing.T) {
 	require := require.New(t)
 	config := map[ids.ID]nets.Config{
 		constants.PrimaryNetworkID: {},
 	}
 
-	subnets, err := NewSubnets(ids.EmptyNodeID, config)
+	subnets, err := NewNets(ids.EmptyNodeID, config)
 	require.NoError(err)
 
 	subnet, ok := subnets.GetOrCreate(constants.PrimaryNetworkID)
@@ -27,15 +27,15 @@ func TestNewSubnets(t *testing.T) {
 	require.Equal(config[constants.PrimaryNetworkID], subnet.Config())
 }
 
-func TestNewSubnetsNoPrimaryNetworkConfig(t *testing.T) {
+func TestNewNetsNoPrimaryNetworkConfig(t *testing.T) {
 	require := require.New(t)
 	config := map[ids.ID]nets.Config{}
 
-	_, err := NewSubnets(ids.EmptyNodeID, config)
+	_, err := NewNets(ids.EmptyNodeID, config)
 	require.ErrorIs(err, ErrNoPrimaryNetworkConfig)
 }
 
-func TestSubnetsGetOrCreate(t *testing.T) {
+func TestNetsGetOrCreate(t *testing.T) {
 	testNetID := ids.GenerateTestID()
 
 	type args struct {
@@ -84,7 +84,7 @@ func TestSubnetsGetOrCreate(t *testing.T) {
 			config := map[ids.ID]nets.Config{
 				constants.PrimaryNetworkID: {},
 			}
-			subnets, err := NewSubnets(ids.EmptyNodeID, config)
+			subnets, err := NewNets(ids.EmptyNodeID, config)
 			require.NoError(err)
 
 			for _, arg := range tt.args {
@@ -95,7 +95,7 @@ func TestSubnetsGetOrCreate(t *testing.T) {
 	}
 }
 
-func TestSubnetConfigs(t *testing.T) {
+func TestNetConfigs(t *testing.T) {
 	testNetID := ids.GenerateTestID()
 
 	tests := []struct {
@@ -131,7 +131,7 @@ func TestSubnetConfigs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			subnets, err := NewSubnets(ids.EmptyNodeID, tt.config)
+			subnets, err := NewNets(ids.EmptyNodeID, tt.config)
 			require.NoError(err)
 
 			subnet, ok := subnets.GetOrCreate(tt.netID)
@@ -142,14 +142,14 @@ func TestSubnetConfigs(t *testing.T) {
 	}
 }
 
-func TestSubnetsBootstrapping(t *testing.T) {
+func TestNetsBootstrapping(t *testing.T) {
 	require := require.New(t)
 
 	config := map[ids.ID]nets.Config{
 		constants.PrimaryNetworkID: {},
 	}
 
-	subnets, err := NewSubnets(ids.EmptyNodeID, config)
+	subnets, err := NewNets(ids.EmptyNodeID, config)
 	require.NoError(err)
 
 	netID := ids.GenerateTestID()

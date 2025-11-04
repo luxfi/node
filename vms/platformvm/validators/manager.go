@@ -250,7 +250,7 @@ func (m *manager) GetValidatorSetWithContext(
 
 func (m *manager) getValidatorSetCache(netID ids.ID) cache.Cacher[uint64, map[ids.NodeID]*validators.GetValidatorOutput] {
 	// Only cache tracked subnets
-	if netID != constants.PrimaryNetworkID && !m.cfg.TrackedSubnets.Contains(netID) {
+	if netID != constants.PrimaryNetworkID && !m.cfg.TrackedNets.Contains(netID) {
 		return &cache.Empty[uint64, map[ids.NodeID]*validators.GetValidatorOutput]{}
 	}
 

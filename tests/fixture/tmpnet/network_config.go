@@ -30,7 +30,7 @@ func (n *Network) Read(ctx context.Context) error {
 	if err := n.readNodes(ctx); err != nil {
 		return err
 	}
-	return n.readSubnets()
+	return n.readNets()
 }
 
 // Write network configuration to disk.
@@ -154,7 +154,7 @@ func (n *Network) readConfig() error {
 type serializedNetworkConfig struct {
 	UUID                 string                  `json:"uuid,omitempty"`
 	Owner                string                  `json:"owner,omitempty"`
-	PrimarySubnetConfig  ConfigMap               `json:"primarySubnetConfig,omitempty"`
+	PrimaryNetConfig  ConfigMap               `json:"primaryNetConfig,omitempty"`
 	PrimaryChainConfigs  map[string]ConfigMap    `json:"primaryChainConfigs,omitempty"`
 	DefaultFlags         FlagsMap                `json:"defaultFlags,omitempty"`
 	DefaultRuntimeConfig NodeRuntimeConfig       `json:"defaultRuntimeConfig,omitempty"`
@@ -165,7 +165,7 @@ func (n *Network) writeNetworkConfig() error {
 	config := &serializedNetworkConfig{
 		UUID:                 n.UUID,
 		Owner:                n.Owner,
-		PrimarySubnetConfig:  n.PrimarySubnetConfig,
+		PrimaryNetConfig:  n.PrimaryNetConfig,
 		PrimaryChainConfigs:  n.PrimaryChainConfigs,
 		DefaultFlags:         n.DefaultFlags,
 		DefaultRuntimeConfig: n.DefaultRuntimeConfig,
@@ -197,15 +197,15 @@ func (n *Network) writeEnvFile() error {
 	return nil
 }
 
-func (n *Network) GetSubnetDir() string {
-	return filepath.Join(n.Dir, defaultSubnetDirName)
+func (n *Network) GetNetDir() string {
+	return filepath.Join(n.Dir, defaultNetDirName)
 }
 
-func (n *Network) readSubnets() error {
-	subnets, err := readSubnets(n.GetSubnetDir())
+func (n *Network) readNets() error {
+	subnets, err := readNets(n.GetNetDir())
 	if err != nil {
 		return err
 	}
-	n.Subnets = subnets
+	n.Nets = subnets
 	return nil
 }

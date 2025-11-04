@@ -46,7 +46,7 @@ export LUX_GENESIS=1
 export LUX_GENESIS_IMPORT_PATH="$GENESIS_DB"
 
 echo -e "${YELLOW}Starting luxd with block replay enabled...${NC}"
-echo "This will replay 1,082,781 historic blocks from the SubnetEVM"
+echo "This will replay 1,082,781 historic blocks from the EVM"
 echo ""
 
 # Run luxd with genesis database

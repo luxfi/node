@@ -369,7 +369,7 @@ func testDecisionTxs() ([]*txs.Tx, error) {
 			VMID:        ids.GenerateTestID(),
 			FxIDs:       []ids.ID{ids.GenerateTestID()},
 			GenesisData: []byte{'g', 'e', 'n', 'D', 'a', 't', 'a'},
-			SubnetAuth:  &secp256k1fx.Input{SigIndices: []uint32{1}},
+			NetAuth:  &secp256k1fx.Input{SigIndices: []uint32{1}},
 		}
 
 		signers := [][]*secp256k1.PrivateKey{{preFundedKeys[0]}}

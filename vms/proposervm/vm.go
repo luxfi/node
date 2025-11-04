@@ -161,7 +161,7 @@ func (vm *VM) Initialize(
 		return err
 	}
 	vm.State = baseState
-	vm.Windower = proposer.New(validatorState, chainContext.SubnetID, chainContext.ChainID)
+	vm.Windower = proposer.New(validatorState, chainContext.NetID, chainContext.ChainID)
 	vm.Tree = tree.New()
 	registry, ok := vm.Config.Registerer.(metric.Registry)
 	if !ok {
@@ -909,10 +909,6 @@ func (a *interfacesToConsensusValidatorStateAdapter) GetChainID(chainID ids.ID) 
 
 func (a *interfacesToConsensusValidatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
 	return a.vs.GetNetID(chainID)
-}
-
-func (a *interfacesToConsensusValidatorStateAdapter) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	return a.vs.GetSubnetID(chainID)
 }
 
 func (a *interfacesToConsensusValidatorStateAdapter) GetValidatorSet(height uint64, netID ids.ID) (map[ids.NodeID]uint64, error) {

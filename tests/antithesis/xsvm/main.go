@@ -43,13 +43,13 @@ func main() {
 	defer tc.Cleanup()
 	require := require.New(tc)
 
-	c := antithesis.NewConfigWithSubnets(
+	c := antithesis.NewConfigWithNets(
 		tc,
 		&tmpnet.Network{
 			Owner: "antithesis-xsvm",
 		},
-		func(nodes ...*tmpnet.Node) []*tmpnet.Subnet {
-			return []*tmpnet.Subnet{
+		func(nodes ...*tmpnet.Node) []*tmpnet.Net {
+			return []*tmpnet.Net{
 				subnet.NewXSVMOrPanic("xsvm", genesis.VMRQKey, nodes...),
 			}
 		},

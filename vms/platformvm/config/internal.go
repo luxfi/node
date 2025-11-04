@@ -49,7 +49,7 @@ type Internal struct {
 	PartialSyncPrimaryNetwork bool
 
 	// Set of subnets that this node is validating
-	TrackedSubnets set.Set[ids.ID]
+	TrackedNets set.Set[ids.ID]
 
 	// The minimum amount of tokens one must bond to be a validator
 	MinValidatorStake uint64
@@ -93,7 +93,7 @@ type Internal struct {
 func (c *Internal) CreateChain(chainID ids.ID, tx *txs.CreateChainTx) {
 	if c.SybilProtectionEnabled && // Sybil protection is enabled, so nodes might not validate all chains
 		constants.PrimaryNetworkID != tx.NetID && // All nodes must validate the primary network
-		!c.TrackedSubnets.Contains(tx.NetID) { // This node doesn't validate this blockchain
+		!c.TrackedNets.Contains(tx.NetID) { // This node doesn't validate this blockchain
 		return
 	}
 

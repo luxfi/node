@@ -24,7 +24,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 		QuantumID: constants.UnitTestID,
 		ChainID:   testChainID,
 	})
-	testSubnet1ID := ids.GenerateTestID()
+	testNet1ID := ids.GenerateTestID()
 
 	type test struct {
 		description string
@@ -40,7 +40,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 	tests := []test{
 		{
 			description: "tx is nil",
-			netID:       testSubnet1ID,
+			netID:       testNet1ID,
 			genesisData: nil,
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
@@ -52,7 +52,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 		},
 		{
 			description: "vm ID is empty",
-			netID:       testSubnet1ID,
+			netID:       testNet1ID,
 			genesisData: nil,
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
@@ -65,7 +65,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 		},
 		{
 			description: "subnet ID is primary network ID",
-			netID:       testSubnet1ID,
+			netID:       testNet1ID,
 			genesisData: nil,
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
@@ -78,7 +78,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 		},
 		{
 			description: "chain name is too long",
-			netID:       testSubnet1ID,
+			netID:       testNet1ID,
 			genesisData: nil,
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
@@ -91,7 +91,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 		},
 		{
 			description: "chain name has invalid character",
-			netID:       testSubnet1ID,
+			netID:       testNet1ID,
 			genesisData: nil,
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
@@ -104,7 +104,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 		},
 		{
 			description: "genesis data is too long",
-			netID:       testSubnet1ID,
+			netID:       testNet1ID,
 			genesisData: nil,
 			vmID:        constants.XVMID,
 			fxIDs:       nil,
@@ -158,7 +158,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 				VMID:        test.vmID,
 				FxIDs:       test.fxIDs,
 				GenesisData: test.genesisData,
-				SubnetAuth:  subnetAuth,
+				NetAuth:  subnetAuth,
 			}
 
 			signers := [][]*secp256k1.PrivateKey{preFundedKeys}

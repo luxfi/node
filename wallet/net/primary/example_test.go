@@ -108,18 +108,18 @@ func ExampleWallet() {
 	importTxID := importTx.ID()
 	log.Printf("issued X->P import %s in %s\n", importTxID, time.Since(importStartTime))
 
-	createSubnetStartTime := time.Now()
-	createSubnetTx, err := pWallet.IssueCreateNetTx(owner)
+	createNetStartTime := time.Now()
+	createNetTx, err := pWallet.IssueCreateNetTx(owner)
 	if err != nil {
 		log.Fatalf("failed to issue create net transaction with: %s\n", err)
 		return
 	}
-	createSubnetTxID := createSubnetTx.ID()
-	log.Printf("issued create net transaction %s in %s\n", createSubnetTxID, time.Since(createSubnetStartTime))
+	createNetTxID := createNetTx.ID()
+	log.Printf("issued create net transaction %s in %s\n", createNetTxID, time.Since(createNetStartTime))
 
-	transformSubnetStartTime := time.Now()
-	transformSubnetTx, err := pWallet.IssueTransformNetTx(
-		createSubnetTxID,
+	transformNetStartTime := time.Now()
+	transformNetTx, err := pWallet.IssueTransformNetTx(
+		createNetTxID,
 		createAssetTxID,
 		50*units.MegaLux,
 		100*units.MegaLux,
@@ -138,8 +138,8 @@ func ExampleWallet() {
 		log.Fatalf("failed to issue transform net transaction with: %s\n", err)
 		return
 	}
-	transformSubnetTxID := transformSubnetTx.ID()
-	log.Printf("issued transform net transaction %s in %s\n", transformSubnetTxID, time.Since(transformSubnetStartTime))
+	transformNetTxID := transformNetTx.ID()
+	log.Printf("issued transform net transaction %s in %s\n", transformNetTxID, time.Since(transformNetStartTime))
 
 	addPermissionlessValidatorStartTime := time.Now()
 	startTime := time.Now().Add(time.Minute)
@@ -151,7 +151,7 @@ func ExampleWallet() {
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
 				Wght:   25 * units.MegaLux,
 			},
-			Net: createSubnetTxID,
+			Net: createNetTxID,
 		},
 		&signer.Empty{},
 		createAssetTx.ID(),
@@ -167,7 +167,7 @@ func ExampleWallet() {
 	log.Printf("issued add net validator transaction %s in %s\n", addNetValidatorTxID, time.Since(addPermissionlessValidatorStartTime))
 
 	addPermissionlessDelegatorStartTime := time.Now()
-	addSubnetDelegatorTx, err := pWallet.IssueAddPermissionlessDelegatorTx(
+	addNetDelegatorTx, err := pWallet.IssueAddPermissionlessDelegatorTx(
 		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: genesis.LocalConfig.InitialStakers[0].NodeID,
@@ -175,7 +175,7 @@ func ExampleWallet() {
 				End:    uint64(startTime.Add(5 * time.Second).Unix()),
 				Wght:   25 * units.MegaLux,
 			},
-			Net: createSubnetTxID,
+			Net: createNetTxID,
 		},
 		createAssetTxID,
 		&secp256k1fx.OutputOwners{},
@@ -184,6 +184,6 @@ func ExampleWallet() {
 		log.Fatalf("failed to issue add net delegator with: %s\n", err)
 		return
 	}
-	addSubnetDelegatorTxID := addSubnetDelegatorTx.ID()
-	log.Printf("issued add net validator delegator %s in %s\n", addSubnetDelegatorTxID, time.Since(addPermissionlessDelegatorStartTime))
+	addNetDelegatorTxID := addNetDelegatorTx.ID()
+	log.Printf("issued add net validator delegator %s in %s\n", addNetDelegatorTxID, time.Since(addPermissionlessDelegatorStartTime))
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/thepudds/fzgen/fuzzer"
 )
 
-func FuzzSubnetIDNodeIDMarshal(f *testing.F) {
+func FuzzNetIDNodeIDMarshal(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		require := require.New(t)
 
@@ -27,13 +27,13 @@ func FuzzSubnetIDNodeIDMarshal(f *testing.F) {
 	})
 }
 
-func FuzzSubnetIDNodeIDUnmarshal(f *testing.F) {
+func FuzzNetIDNodeIDUnmarshal(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		require := require.New(t)
 
 		var v subnetIDNodeID
 		if err := v.Unmarshal(data); err != nil {
-			require.ErrorIs(err, errUnexpectedSubnetIDNodeIDLength)
+			require.ErrorIs(err, errUnexpectedNetIDNodeIDLength)
 			return
 		}
 
@@ -42,7 +42,7 @@ func FuzzSubnetIDNodeIDUnmarshal(f *testing.F) {
 	})
 }
 
-func FuzzSubnetIDNodeIDOrdering(f *testing.F) {
+func FuzzNetIDNodeIDOrdering(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		var (
 			v0 subnetIDNodeID

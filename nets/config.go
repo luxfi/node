@@ -16,10 +16,10 @@ import (
 var errAllowedNodesWhenNotValidatorOnly = errors.New("allowedNodes can only be set when ValidatorOnly is true")
 
 type Config struct {
-	// ValidatorOnly indicates that this Subnet's Chains are available to only net validators.
+	// ValidatorOnly indicates that this Net's Chains are available to only net validators.
 	// No chain related messages will go out to non-validators.
 	// Validators will drop messages received from non-validators.
-	// Also see [AllowedNodes] to allow non-validators to connect to this Subnet.
+	// Also see [AllowedNodes] to allow non-validators to connect to this Net.
 	ValidatorOnly bool `json:"validatorOnly" yaml:"validatorOnly"`
 	// AllowedNodes is the set of node IDs that are explicitly allowed to connect to this Net when
 	// ValidatorOnly is enabled.

@@ -145,12 +145,12 @@ func (b *builderWithOptions) NewCreateChainTx(
 // }
 
 // Removed in regenesis
-// func (b *builderWithOptions) NewTransferSubnetOwnershipTx(
+// func (b *builderWithOptions) NewTransferNetOwnershipTx(
 // 	subnetID ids.ID,
 // 	owner *secp256k1fx.OutputOwners,
 // 	options ...common.Option,
-// ) (*txs.TransferSubnetOwnershipTx, error) {
-// 	return b.builder.NewTransferSubnetOwnershipTx(
+// ) (*txs.TransferNetOwnershipTx, error) {
+// 	return b.builder.NewTransferNetOwnershipTx(
 // 		subnetID,
 // 		owner,
 // 		common.UnionOptions(b.options, options)...,

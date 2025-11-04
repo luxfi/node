@@ -105,13 +105,13 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 		validatorID, err := ids.ToNodeID(utils.RandomBytes(ids.NodeIDLen))
 		require.NoError(err)
 
-		vdr := &txs.SubnetValidator{
+		vdr := &txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: validatorID,
 				End:    uint64(time.Now().Add(72 * time.Hour).Unix()),
 				Wght:   minValStake,
 			},
-			Subnet: constants.PrimaryNetworkID,
+			Net: constants.PrimaryNetworkID,
 		}
 
 		tc.By("issuing an AddPermissionlessValidatorTx", func() {

@@ -25,7 +25,7 @@ import (
 	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
-var _ = e2e.DescribePChain("[Elastic Subnets]", func() {
+var _ = e2e.DescribePChain("[Elastic Nets]", func() {
 	tc := e2e.NewTestContext()
 	require := require.New(tc)
 
@@ -43,7 +43,7 @@ var _ = e2e.DescribePChain("[Elastic Subnets]", func() {
 
 			now := time.Now()
 			if upgrades.IsEtnaActivated(now) {
-				ginkgo.Skip("Etna is activated. Elastic Subnets are disabled post-Etna, skipping test.")
+				ginkgo.Skip("Etna is activated. Elastic Nets are disabled post-Etna, skipping test.")
 			}
 
 			keychain := env.NewKeychain()
@@ -72,7 +72,7 @@ var _ = e2e.DescribePChain("[Elastic Subnets]", func() {
 
 			var subnetID ids.ID
 			tc.By("create a permissioned subnet", func() {
-				subnetTx, err := pWallet.IssueCreateSubnetTx(
+				subnetTx, err := pWallet.IssueCreateNetTx(
 					owner,
 					tc.WithDefaultContext(),
 				)
@@ -134,7 +134,7 @@ var _ = e2e.DescribePChain("[Elastic Subnets]", func() {
 			})
 
 			tc.By("make subnet permissionless", func() {
-				_, err := pWallet.IssueTransformSubnetTx(
+				_, err := pWallet.IssueTransformNetTx(
 					subnetID,
 					subnetAssetID,
 					initialSupply,
@@ -157,13 +157,13 @@ var _ = e2e.DescribePChain("[Elastic Subnets]", func() {
 			endTime := time.Now().Add(time.Minute)
 			tc.By("add permissionless validator", func() {
 				_, err := pWallet.IssueAddPermissionlessValidatorTx(
-					&txs.SubnetValidator{
+					&txs.NetValidator{
 						Validator: txs.Validator{
 							NodeID: validatorID,
 							End:    uint64(endTime.Unix()),
 							Wght:   validatorWeight,
 						},
-						Subnet: subnetID,
+						Net: subnetID,
 					},
 					&signer.Empty{},
 					subnetAssetID,
@@ -177,13 +177,13 @@ var _ = e2e.DescribePChain("[Elastic Subnets]", func() {
 
 			tc.By("add permissionless delegator", func() {
 				_, err := pWallet.IssueAddPermissionlessDelegatorTx(
-					&txs.SubnetValidator{
+					&txs.NetValidator{
 						Validator: txs.Validator{
 							NodeID: validatorID,
 							End:    uint64(endTime.Unix()),
 							Wght:   validatorWeight,
 						},
-						Subnet: subnetID,
+						Net: subnetID,
 					},
 					subnetAssetID,
 					&secp256k1fx.OutputOwners{},

@@ -33,7 +33,7 @@ const (
 		wrappers.LongLen + // end
 		wrappers.LongLen // weight
 
-	intrinsicSubnetValidatorBandwidth = intrinsicValidatorBandwidth + // validator
+	intrinsicNetValidatorBandwidth = intrinsicValidatorBandwidth + // validator
 		ids.IDLen // subsubnetID
 
 	intrinsicOutputBandwidth = ids.IDLen + // assetID
@@ -538,12 +538,12 @@ func (*complexityVisitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 }
 
 // Removed in regenesis
-// func (*complexityVisitor) TransformSubnetTx(*txs.TransformSubnetTx) error {
+// func (*complexityVisitor) TransformNetTx(*txs.TransformNetTx) error {
 // 	return ErrUnsupportedTx
 // }
 
 // Removed in regenesis
-// func (c *complexityVisitor) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) error {
+// func (c *complexityVisitor) AddNetValidatorTx(tx *txs.AddNetValidatorTx) error {
 // 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 // 	if err != nil {
 // 		return err
@@ -552,7 +552,7 @@ func (*complexityVisitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 // 	if err != nil {
 // 		return err
 // 	}
-// 	c.output, err = IntrinsicAddSubnetValidatorTxComplexities.Add(
+// 	c.output, err = IntrinsicAddNetValidatorTxComplexities.Add(
 // 		&baseTxComplexity,
 // 		&authComplexity,
 // 	)
@@ -580,7 +580,7 @@ func (c *complexityVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	if err != nil {
 		return err
 	}
-	authComplexity, err := AuthComplexity(tx.SubnetAuth)
+	authComplexity, err := AuthComplexity(tx.NetAuth)
 	if err != nil {
 		return err
 	}
@@ -593,7 +593,7 @@ func (c *complexityVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 }
 
 // Removed in regenesis
-// func (c *complexityVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
+// func (c *complexityVisitor) CreateNetTx(tx *txs.CreateNetTx) error {
 // 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 // 	if err != nil {
 // 		return err
@@ -602,7 +602,7 @@ func (c *complexityVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 // 	if err != nil {
 // 		return err
 // 	}
-// 	c.output, err = IntrinsicCreateSubnetTxComplexities.Add(
+// 	c.output, err = IntrinsicCreateNetTxComplexities.Add(
 // 		&baseTxComplexity,
 // 		&ownerComplexity,
 // 	)
@@ -642,7 +642,7 @@ func (c *complexityVisitor) ExportTx(tx *txs.ExportTx) error {
 }
 
 // Removed in regenesis
-// func (c *complexityVisitor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx) error {
+// func (c *complexityVisitor) RemoveNetValidatorTx(tx *txs.RemoveNetValidatorTx) error {
 // 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 // 	if err != nil {
 // 		return err
@@ -651,7 +651,7 @@ func (c *complexityVisitor) ExportTx(tx *txs.ExportTx) error {
 // 	if err != nil {
 // 		return err
 // 	}
-// 	c.output, err = IntrinsicRemoveSubnetValidatorTxComplexities.Add(
+// 	c.output, err = IntrinsicRemoveNetValidatorTxComplexities.Add(
 // 		&baseTxComplexity,
 // 		&authComplexity,
 // 	)
@@ -711,7 +711,7 @@ func (c *complexityVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionle
 }
 
 // Removed in regenesis
-// func (c *complexityVisitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
+// func (c *complexityVisitor) TransferNetOwnershipTx(tx *txs.TransferNetOwnershipTx) error {
 // 	baseTxComplexity, err := baseTxComplexity(&tx.BaseTx)
 // 	if err != nil {
 // 		return err

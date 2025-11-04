@@ -142,16 +142,16 @@ type Builder interface {
 	// ) (*txs.CreateNetTx, error)
 
 	// Removed in regenesis
-	// // NewTransferSubnetOwnershipTx changes the owner of the named subnet.
+	// // NewTransferNetOwnershipTx changes the owner of the named subnet.
 	// //
 	// // - [subnetID] specifies the subnet to be modified
 	// // - [owner] specifies who has the ability to create new chains and add new
 	// //   validators to the subnet.
-	// NewTransferSubnetOwnershipTx(
+	// NewTransferNetOwnershipTx(
 	// 	subnetID ids.ID,
 	// 	owner *secp256k1fx.OutputOwners,
 	// 	options ...common.Option,
-	// ) (*txs.TransferSubnetOwnershipTx, error)
+	// ) (*txs.TransferNetOwnershipTx, error)
 
 	// NewConvertNetToL1Tx converts the subnet to a Permissionless L1.
 	//
@@ -484,12 +484,12 @@ func (b *builder) NewAddValidatorTx(
 // func (b *builder) NewAddNetValidatorTx(
 // 	vdr *txs.NetValidator,
 // 	options ...common.Option,
-// ) (*txs.AddSubnetValidatorTx, error) {
+// ) (*txs.AddNetValidatorTx, error) {
 // 	toBurn := map[ids.ID]uint64{}
 // 	toStake := map[ids.ID]uint64{}
 //
 // 	ops := common.NewOptions(options)
-// 	subnetAuth, err := b.authorize(vdr.Subnet, ops)
+// 	subnetAuth, err := b.authorize(vdr.Net, ops)
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -502,7 +502,7 @@ func (b *builder) NewAddValidatorTx(
 // 	if err != nil {
 // 		return nil, err
 // 	}
-// 	complexity, err := fee.IntrinsicAddSubnetValidatorTxComplexities.Add(
+// 	complexity, err := fee.IntrinsicAddNetValidatorTxComplexities.Add(
 // 		&memoComplexity,
 // 		&authComplexity,
 // 	)
@@ -531,7 +531,7 @@ func (b *builder) NewAddValidatorTx(
 // 			Memo:         memo,
 // 		}},
 // 		NetValidator: *vdr,
-// 		SubnetAuth:   subnetAuth,
+// 		NetAuth:   subnetAuth,
 // 	}
 // 	return tx, b.initCtx(tx)
 // }
@@ -541,7 +541,7 @@ func (b *builder) NewAddValidatorTx(
 // 	nodeID ids.NodeID,
 // 	netID ids.ID,
 // 	options ...common.Option,
-// ) (*txs.RemoveSubnetValidatorTx, error) {
+// ) (*txs.RemoveNetValidatorTx, error) {
 // 	toBurn := map[ids.ID]uint64{}
 // 	toStake := map[ids.ID]uint64{}
 //
@@ -559,7 +559,7 @@ func (b *builder) NewAddValidatorTx(
 // 	if err != nil {
 // 		return nil, err
 // 	}
-// 	complexity, err := fee.IntrinsicRemoveSubnetValidatorTxComplexities.Add(
+// 	complexity, err := fee.IntrinsicRemoveNetValidatorTxComplexities.Add(
 // 		&memoComplexity,
 // 		&authComplexity,
 // 	)
@@ -589,7 +589,7 @@ func (b *builder) NewAddValidatorTx(
 // 		}},
 // 		Net:        netID,
 // 		NodeID:     nodeID,
-// 		SubnetAuth: subnetAuth,
+// 		NetAuth: subnetAuth,
 // 	}
 // 	return tx, b.initCtx(tx)
 // }
@@ -708,7 +708,7 @@ func (b *builder) NewCreateChainTx(
 		VMID:        vmID,
 		FxIDs:       fxIDs,
 		GenesisData: genesis,
-		SubnetAuth:  subnetAuth,
+		NetAuth:  subnetAuth,
 	}
 	return tx, b.initCtx(tx)
 }
@@ -717,7 +717,7 @@ func (b *builder) NewCreateChainTx(
 // func (b *builder) NewCreateNetTx(
 // 	owner *secp256k1fx.OutputOwners,
 // 	options ...common.Option,
-// ) (*txs.CreateSubnetTx, error) {
+// ) (*txs.CreateNetTx, error) {
 // 	toBurn := map[ids.ID]uint64{}
 // 	toStake := map[ids.ID]uint64{}
 //
@@ -730,7 +730,7 @@ func (b *builder) NewCreateChainTx(
 // 	if err != nil {
 // 		return nil, err
 // 	}
-// 	complexity, err := fee.IntrinsicCreateSubnetTxComplexities.Add(
+// 	complexity, err := fee.IntrinsicCreateNetTxComplexities.Add(
 // 		&memoComplexity,
 // 		&ownerComplexity,
 // 	)
@@ -765,11 +765,11 @@ func (b *builder) NewCreateChainTx(
 // }
 
 // Removed in regenesis
-// func (b *builder) NewTransferSubnetOwnershipTx(
+// func (b *builder) NewTransferNetOwnershipTx(
 // 	subnetID ids.ID,
 // 	owner *secp256k1fx.OutputOwners,
 // 	options ...common.Option,
-// ) (*txs.TransferSubnetOwnershipTx, error) {
+// ) (*txs.TransferNetOwnershipTx, error) {
 // 	toBurn := map[ids.ID]uint64{}
 // 	toStake := map[ids.ID]uint64{}
 //
@@ -791,7 +791,7 @@ func (b *builder) NewCreateChainTx(
 // 	if err != nil {
 // 		return nil, err
 // 	}
-// 	complexity, err := fee.IntrinsicTransferSubnetOwnershipTxComplexities.Add(
+// 	complexity, err := fee.IntrinsicTransferNetOwnershipTxComplexities.Add(
 // 		&memoComplexity,
 // 		&authComplexity,
 // 		&ownerComplexity,
@@ -823,7 +823,7 @@ func (b *builder) NewCreateChainTx(
 // 		}},
 // 		Net:        netID,
 // 		Owner:      owner,
-// 		SubnetAuth: subnetAuth,
+// 		NetAuth: subnetAuth,
 // 	}
 // 	return tx, b.initCtx(tx)
 // }
@@ -1376,7 +1376,7 @@ func (b *builder) NewExportTx(
 // 		MinDelegatorStake:        minDelegatorStake,
 // 		MaxValidatorWeightFactor: maxValidatorWeightFactor,
 // 		UptimeRequirement:        uptimeRequirement,
-// 		SubnetAuth:               subnetAuth,
+// 		NetAuth:               subnetAuth,
 // 	}
 // 	return tx, b.initCtx(tx)
 // }

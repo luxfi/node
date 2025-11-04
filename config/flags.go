@@ -49,7 +49,7 @@ var (
 	defaultVMConfigDir          = filepath.Join(defaultConfigDir, "vms")
 	defaultVMAliasFilePath      = filepath.Join(defaultVMConfigDir, "aliases.json")
 	defaultChainAliasFilePath   = filepath.Join(defaultChainConfigDir, "aliases.json")
-	defaultSubnetConfigDir      = filepath.Join(defaultConfigDir, "subnets")
+	defaultNetConfigDir      = filepath.Join(defaultConfigDir, "subnets")
 	defaultPluginDir            = filepath.Join(defaultUnexpandedDataDir, "plugins")
 	defaultChainDataDir         = filepath.Join(defaultUnexpandedDataDir, "chainData")
 	defaultProcessContextPath   = filepath.Join(defaultUnexpandedDataDir, DefaultProcessContextFilename)
@@ -294,8 +294,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint64(StakeMinConsumptionRateKey, genesis.LocalParams.RewardConfig.MinConsumptionRate, "Minimum consumption rate of the remaining tokens to mint in the staking function")
 	fs.Duration(StakeMintingPeriodKey, genesis.LocalParams.RewardConfig.MintingPeriod, "Consumption period of the staking function")
 	fs.Uint64(StakeSupplyCapKey, genesis.LocalParams.RewardConfig.SupplyCap, "Supply cap of the staking function")
-	// Subnets
-	fs.String(TrackSubnetsKey, "", "List of subnets for the node to track. A node tracking a net will track the uptimes of the net validators and attempt to sync all the chains in the subnet. Before validating a subnet, a node should be tracking the net to avoid impacting their net validation uptime")
+	// Nets
+	fs.String(TrackNetsKey, "", "List of subnets for the node to track. A node tracking a net will track the uptimes of the net validators and attempt to sync all the chains in the subnet. Before validating a subnet, a node should be tracking the net to avoid impacting their net validation uptime")
 
 	// State syncing
 	fs.String(StateSyncIPsKey, "", "Comma separated list of state sync peer ips to connect to. Example: 127.0.0.1:9630,127.0.0.1:9631")
@@ -339,8 +339,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// Config Directories
 	fs.String(ChainConfigDirKey, defaultChainConfigDir, fmt.Sprintf("Chain specific configurations parent directory. Ignored if %s is specified", ChainConfigContentKey))
 	fs.String(ChainConfigContentKey, "", "Specifies base64 encoded chains configurations")
-	fs.String(SubnetConfigDirKey, defaultSubnetConfigDir, fmt.Sprintf("Net specific configurations parent directory. Ignored if %s is specified", SubnetConfigContentKey))
-	fs.String(SubnetConfigContentKey, "", "Specifies base64 encoded subnets configurations")
+	fs.String(NetConfigDirKey, defaultNetConfigDir, fmt.Sprintf("Net specific configurations parent directory. Ignored if %s is specified", NetConfigContentKey))
+	fs.String(NetConfigContentKey, "", "Specifies base64 encoded subnets configurations")
 
 	// Chain Data Directory
 	fs.String(ChainDataDirKey, defaultChainDataDir, "Chain specific data directory")

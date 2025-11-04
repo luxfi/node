@@ -1,4 +1,4 @@
-// Database key format helpers for both SubnetEVM and geth formats
+// Database key format helpers for both EVM and geth formats
 package cchainvm
 
 import (
@@ -10,7 +10,7 @@ import (
 
 // Database key prefixes
 var (
-	// SubnetEVM format prefixes
+	// EVM format prefixes
 	subnetHeaderPrefix    = []byte{0x68} // 'h' - header data
 	subnetBodyPrefix      = []byte{0x62} // 'b' - block body
 	subnetHashToNumPrefix = []byte{0x48} // 'H' - hash to number
@@ -29,12 +29,12 @@ type DatabaseFormat int
 
 const (
 	UnknownFormat DatabaseFormat = iota
-	SubnetEVMFormat
+	EVMFormat
 	GethFormat
 )
 
-// makeSubnetHeaderKey creates a SubnetEVM format header key
-func makeSubnetHeaderKey(number uint64, hash common.Hash) []byte {
+// makeNetHeaderKey creates a EVM format header key
+func makeNetHeaderKey(number uint64, hash common.Hash) []byte {
 	key := make([]byte, 41)
 	key[0] = 0x68 // 'h'
 	binary.BigEndian.PutUint64(key[1:9], number)
@@ -42,8 +42,8 @@ func makeSubnetHeaderKey(number uint64, hash common.Hash) []byte {
 	return key
 }
 
-// makeSubnetBodyKey creates a SubnetEVM format body key
-func makeSubnetBodyKey(number uint64, hash common.Hash) []byte {
+// makeNetBodyKey creates a EVM format body key
+func makeNetBodyKey(number uint64, hash common.Hash) []byte {
 	key := make([]byte, 41)
 	key[0] = 0x62 // 'b'
 	binary.BigEndian.PutUint64(key[1:9], number)
@@ -84,13 +84,13 @@ func makeGethHashToNumberKey(hash common.Hash) []byte {
 
 // detectDatabaseFormat attempts to detect the database format
 func detectDatabaseFormat(db ethdb.Database) DatabaseFormat {
-	// Check for SubnetEVM format (hash-to-number with 'H' prefix)
+	// Check for EVM format (hash-to-number with 'H' prefix)
 	iter := db.NewIterator([]byte{0x48}, nil)
-	hasSubnetFormat := iter.Next()
+	hasNetFormat := iter.Next()
 	iter.Release()
 
-	if hasSubnetFormat {
-		return SubnetEVMFormat
+	if hasNetFormat {
+		return EVMFormat
 	}
 
 	// Check for geth format (canonical hash mapping)

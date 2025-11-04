@@ -447,10 +447,10 @@ func (api *LuxAPI) ReplayStart(req StartReplayRequest) (map[string]interface{}, 
 		// Create the replay coordinator
 		config := &DatabaseReplayConfig{
 			SourcePath:          req.SourcePath,
-			SubnetReplayEnabled: true,
-			SubnetReplayStart:   req.StartBlock,
-			SubnetReplayEnd:     req.EndBlock,
-			SubnetReplayBatch:   req.BatchSize,
+			NetReplayEnabled: true,
+			NetReplayStart:   req.StartBlock,
+			NetReplayEnd:     req.EndBlock,
+			NetReplayBatch:   req.BatchSize,
 			CopyAllState:        true,
 			DatabaseType:        "pebbledb",
 		}

@@ -85,7 +85,7 @@ func (s *visitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	if err != nil {
 		return err
 	}
-	netAuthSigners, err := s.getAuthSigners(tx.NetID, tx.SubnetAuth)
+	netAuthSigners, err := s.getAuthSigners(tx.NetID, tx.NetAuth)
 	if err != nil {
 		return err
 	}

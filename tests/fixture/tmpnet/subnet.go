@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	defaultSubnetDirName = "subnets"
+	defaultNetDirName = "subnets"
 	jsonFileSuffix       = ".json"
 )
 
@@ -50,9 +50,9 @@ type Chain struct {
 	PreFundedKey *secp256k1.PrivateKey
 }
 
-type Subnet struct {
+type Net struct {
 	// A unique string that can be used to refer to the subnet across different temporary
-	// networks (since the SubnetID will be different every time the subnet is created)
+	// networks (since the NetID will be different every time the subnet is created)
 	Name string
 
 	Config ConfigMap
@@ -70,14 +70,14 @@ type Subnet struct {
 }
 
 // Retrieves a wallet configured for use with the subnet
-func (s *Subnet) GetWallet(ctx context.Context, uri string) (*primary.Wallet, error) {
+func (s *Net) GetWallet(ctx context.Context, uri string) (*primary.Wallet, error) {
 	keychain := secp256k1fx.NewKeychain(s.OwningKey)
 
 	// Only fetch the net transaction if a net ID is present. This won't be true when
 	// the wallet is first used to create the subnet.
 	subnetIDs := []ids.ID{}
-	if s.SubnetID != ids.Empty {
-		subnetIDs = append(subnetIDs, s.SubnetID)
+	if s.NetID != ids.Empty {
+		subnetIDs = append(subnetIDs, s.NetID)
 	}
 
 	return primary.MakeWallet(
@@ -86,14 +86,14 @@ func (s *Subnet) GetWallet(ctx context.Context, uri string) (*primary.Wallet, er
 		keychain,
 		keychain,
 		primary.WalletConfig{
-			SubnetIDs: subnetIDs,
+			NetIDs: subnetIDs,
 		},
 	)
 }
 
 // Issues the net creation transaction and retains the result. The URI of a node is
 // required to issue the transaction.
-func (s *Subnet) Create(ctx context.Context, uri string) error {
+func (s *Net) Create(ctx context.Context, uri string) error {
 	wallet, err := s.GetWallet(ctx, uri)
 	if err != nil {
 		return err
@@ -117,7 +117,7 @@ func (s *Subnet) Create(ctx context.Context, uri string) error {
 	return nil
 }
 
-func (s *Subnet) CreateChains(ctx context.Context, log log.Logger, uri string) error {
+func (s *Net) CreateChains(ctx context.Context, log log.Logger, uri string) error {
 	wallet, err := s.GetWallet(ctx, uri)
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func (s *Subnet) CreateChains(ctx context.Context, log log.Logger, uri string) e
 }
 
 // Add validators to the subnet
-func (s *Subnet) AddValidators(ctx context.Context, log log.Logger, apiURI string, nodes ...*Node) error {
+func (s *Net) AddValidators(ctx context.Context, log log.Logger, apiURI string, nodes ...*Node) error {
 	wallet, err := s.GetWallet(ctx, apiURI)
 	if err != nil {
 		return err
@@ -203,7 +203,7 @@ func (s *Subnet) AddValidators(ctx context.Context, log log.Logger, apiURI strin
 }
 
 // Write the subnet configuration to disk
-func (s *Subnet) Write(subnetDir string) error {
+func (s *Net) Write(subnetDir string) error {
 	if err := os.MkdirAll(subnetDir, perms.ReadWriteExecute); err != nil {
 		return fmt.Errorf("failed to create net dir: %w", err)
 	}
@@ -240,7 +240,7 @@ func (s *Subnet) Write(subnetDir string) error {
 // chains have explicit configuration. This can be used to determine
 // whether validator restart is required after chain creation to
 // ensure that chains are configured correctly.
-func (s *Subnet) HasChainConfig() bool {
+func (s *Net) HasChainConfig() bool {
 	for _, chain := range s.Chains {
 		if len(chain.Config) > 0 {
 			return true
@@ -253,7 +253,7 @@ func WaitForActiveValidators(
 	ctx context.Context,
 	log log.Logger,
 	pChainClient *platformvm.Client,
-	subnet *Subnet,
+	subnet *Net,
 ) error {
 	ticker := time.NewTicker(DefaultPollingInterval)
 	defer ticker.Stop()
@@ -263,7 +263,7 @@ func WaitForActiveValidators(
 	)
 
 	for {
-		validators, err := pChainClient.GetCurrentValidators(ctx, subnet.SubnetID, nil)
+		validators, err := pChainClient.GetCurrentValidators(ctx, subnet.NetID, nil)
 		if err != nil {
 			return err
 		}
@@ -293,7 +293,7 @@ func WaitForActiveValidators(
 }
 
 // Reads subnets from [network dir]/subnets/[subnet name].json
-func readSubnets(subnetDir string) ([]*Subnet, error) {
+func readNets(subnetDir string) ([]*Net, error) {
 	entries, err := os.ReadDir(subnetDir)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, nil
@@ -301,7 +301,7 @@ func readSubnets(subnetDir string) ([]*Subnet, error) {
 		return nil, fmt.Errorf("failed to read subnet dir: %w", err)
 	}
 
-	subnets := []*Subnet{}
+	subnets := []*Net{}
 	for _, entry := range entries {
 		if entry.IsDir() {
 			// Looking only for files
@@ -309,7 +309,7 @@ func readSubnets(subnetDir string) ([]*Subnet, error) {
 		}
 		fileName := entry.Name()
 		if filepath.Ext(fileName) != jsonFileSuffix {
-			// Subnet files should have a .json extension
+			// Net files should have a .json extension
 			continue
 		}
 
@@ -318,7 +318,7 @@ func readSubnets(subnetDir string) ([]*Subnet, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to read net file %s: %w", subnetPath, err)
 		}
-		subnet := &Subnet{}
+		subnet := &Net{}
 		if err := json.Unmarshal(bytes, subnet); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal net from %s: %w", subnetPath, err)
 		}

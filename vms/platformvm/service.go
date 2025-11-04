@@ -14,22 +14,21 @@ import (
 	"slices"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/database"
-	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/node/utils/formatting"
-	"github.com/luxfi/log"
-	"github.com/luxfi/math/set"
+	safemath "github.com/luxfi/node/utils/math"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -105,17 +104,20 @@ func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *api.GetHeigh
 
 // GetProposedHeight returns the current ProposerVM height
 func (s *Service) GetProposedHeight(r *http.Request, _ *struct{}, reply *api.GetHeightResponse) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getProposedHeight"),
 	)
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	ctx := r.Context()
-	proposerHeight, err := s.vm.GetMinimumHeight(ctx)
-	reply.Height = avajson.Uint64(proposerHeight)
-	return err
+	currentHeight, err := s.vm.state.GetCurrentHeight(ctx)
+	if err != nil {
+		return err
+	}
+	reply.Height = avajson.Uint64(currentHeight)
+	return nil
 }
 
 type GetBalanceRequest struct {

@@ -1,6 +1,6 @@
 # Linear VMs
 
-## Recap of Lux Subnets
+## Recap of Lux Nets
 
 The Lux Network is composed of multiple validator sets and blockchains. A validator set defines a group of validators and their specified weights in the consensus process. A subnet is a validator set working together to achieve consensus on a set of blockchains. Every blockchain is validated by one subnet, and one subnet can validate many blockchains.
 

@@ -36,11 +36,11 @@ func TestPriorityIsCurrent(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: SubnetPermissionedValidatorPendingPriority,
+			priority: NetPermissionedValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: SubnetPermissionedValidatorCurrentPriority,
+			priority: NetPermissionedValidatorCurrentPriority,
 			expected: true,
 		},
 		{
@@ -93,11 +93,11 @@ func TestPriorityIsPending(t *testing.T) {
 			expected: true,
 		},
 		{
-			priority: SubnetPermissionedValidatorPendingPriority,
+			priority: NetPermissionedValidatorPendingPriority,
 			expected: true,
 		},
 		{
-			priority: SubnetPermissionedValidatorCurrentPriority,
+			priority: NetPermissionedValidatorCurrentPriority,
 			expected: false,
 		},
 		{
@@ -150,11 +150,11 @@ func TestPriorityIsValidator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: SubnetPermissionedValidatorPendingPriority,
+			priority: NetPermissionedValidatorPendingPriority,
 			expected: true,
 		},
 		{
-			priority: SubnetPermissionedValidatorCurrentPriority,
+			priority: NetPermissionedValidatorCurrentPriority,
 			expected: true,
 		},
 		{
@@ -207,11 +207,11 @@ func TestPriorityIsPermissionedValidator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: SubnetPermissionedValidatorPendingPriority,
+			priority: NetPermissionedValidatorPendingPriority,
 			expected: true,
 		},
 		{
-			priority: SubnetPermissionedValidatorCurrentPriority,
+			priority: NetPermissionedValidatorCurrentPriority,
 			expected: true,
 		},
 		{
@@ -264,11 +264,11 @@ func TestPriorityIsDelegator(t *testing.T) {
 			expected: true,
 		},
 		{
-			priority: SubnetPermissionedValidatorPendingPriority,
+			priority: NetPermissionedValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: SubnetPermissionedValidatorCurrentPriority,
+			priority: NetPermissionedValidatorCurrentPriority,
 			expected: false,
 		},
 		{
@@ -321,11 +321,11 @@ func TestPriorityIsCurrentValidator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: SubnetPermissionedValidatorPendingPriority,
+			priority: NetPermissionedValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: SubnetPermissionedValidatorCurrentPriority,
+			priority: NetPermissionedValidatorCurrentPriority,
 			expected: true,
 		},
 		{
@@ -378,11 +378,11 @@ func TestPriorityIsCurrentDelegator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: SubnetPermissionedValidatorPendingPriority,
+			priority: NetPermissionedValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: SubnetPermissionedValidatorCurrentPriority,
+			priority: NetPermissionedValidatorCurrentPriority,
 			expected: false,
 		},
 		{
@@ -435,11 +435,11 @@ func TestPriorityIsPendingValidator(t *testing.T) {
 			expected: false,
 		},
 		{
-			priority: SubnetPermissionedValidatorPendingPriority,
+			priority: NetPermissionedValidatorPendingPriority,
 			expected: true,
 		},
 		{
-			priority: SubnetPermissionedValidatorCurrentPriority,
+			priority: NetPermissionedValidatorCurrentPriority,
 			expected: false,
 		},
 		{
@@ -492,11 +492,11 @@ func TestPriorityIsPendingDelegator(t *testing.T) {
 			expected: true,
 		},
 		{
-			priority: SubnetPermissionedValidatorPendingPriority,
+			priority: NetPermissionedValidatorPendingPriority,
 			expected: false,
 		},
 		{
-			priority: SubnetPermissionedValidatorCurrentPriority,
+			priority: NetPermissionedValidatorCurrentPriority,
 			expected: false,
 		},
 		{

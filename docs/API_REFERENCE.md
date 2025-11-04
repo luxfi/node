@@ -224,7 +224,7 @@ Get an address's balance.
 }
 ```
 
-### platform.createSubnet
+### platform.createNet
 
 Create a new subnet.
 
@@ -232,7 +232,7 @@ Create a new subnet.
 ```json
 {
     "jsonrpc": "2.0",
-    "method": "platform.createSubnet",
+    "method": "platform.createNet",
     "params": {
         "controlKeys": ["P-lux1g65uqn6t77p656w64023nh8nd9updzmxwd59gh"],
         "threshold": 1

@@ -213,7 +213,7 @@ func (m *manager) RegisterSetCallbackListener(subnetID ids.ID, listener validato
 	// No-op for now
 }
 
-func (m *manager) NumSubnets() int {
+func (m *manager) NumNets() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return len(m.validators)

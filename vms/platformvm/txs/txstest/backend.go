@@ -78,6 +78,6 @@ func (b *Backend) GetUTXO(_ context.Context, chainID, utxoID ids.ID) (*lux.UTXO,
 	return &utxo, nil
 }
 
-func (b *Backend) GetSubnetOwner(_ context.Context, netID ids.ID) (fx.Owner, error) {
-	return b.state.GetSubnetOwner(netID)
+func (b *Backend) GetNetOwner(_ context.Context, netID ids.ID) (fx.Owner, error) {
+	return b.state.GetNetOwner(netID)
 }

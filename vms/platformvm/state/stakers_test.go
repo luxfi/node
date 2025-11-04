@@ -123,19 +123,19 @@ func TestBaseStakersDelegator(t *testing.T) {
 
 	v := newBaseStakers()
 
-	delegatorIterator := v.GetDelegatorIterator(delegator.SubnetID, delegator.NodeID)
+	delegatorIterator := v.GetDelegatorIterator(delegator.NetID, delegator.NodeID)
 	require.Empty(
 		iterator.ToSlice(delegatorIterator),
 	)
 
 	v.PutDelegator(delegator)
 
-	delegatorIterator = v.GetDelegatorIterator(delegator.SubnetID, ids.GenerateTestNodeID())
+	delegatorIterator = v.GetDelegatorIterator(delegator.NetID, ids.GenerateTestNodeID())
 	require.Empty(
 		iterator.ToSlice(delegatorIterator),
 	)
 
-	delegatorIterator = v.GetDelegatorIterator(delegator.SubnetID, delegator.NodeID)
+	delegatorIterator = v.GetDelegatorIterator(delegator.NetID, delegator.NodeID)
 	require.Equal(
 		[]*Staker{delegator},
 		iterator.ToSlice(delegatorIterator),
@@ -143,7 +143,7 @@ func TestBaseStakersDelegator(t *testing.T) {
 
 	v.DeleteDelegator(delegator)
 
-	delegatorIterator = v.GetDelegatorIterator(delegator.SubnetID, delegator.NodeID)
+	delegatorIterator = v.GetDelegatorIterator(delegator.NetID, delegator.NodeID)
 	require.Empty(
 		iterator.ToSlice(delegatorIterator),
 	)
@@ -153,7 +153,7 @@ func TestBaseStakersDelegator(t *testing.T) {
 	v.PutDelegator(delegator)
 	v.DeleteDelegator(delegator)
 
-	delegatorIterator = v.GetDelegatorIterator(staker.SubnetID, staker.NodeID)
+	delegatorIterator = v.GetDelegatorIterator(staker.NetID, staker.NodeID)
 	require.Empty(
 		iterator.ToSlice(delegatorIterator),
 	)
@@ -239,7 +239,7 @@ func TestDiffStakersDelegator(t *testing.T) {
 
 	v.PutDelegator(delegator)
 
-	delegatorIterator = v.GetDelegatorIterator(iterator.Empty[*Staker]{}, delegator.SubnetID, delegator.NodeID)
+	delegatorIterator = v.GetDelegatorIterator(iterator.Empty[*Staker]{}, delegator.NetID, delegator.NodeID)
 	require.Equal(
 		[]*Staker{delegator},
 		iterator.ToSlice(delegatorIterator),

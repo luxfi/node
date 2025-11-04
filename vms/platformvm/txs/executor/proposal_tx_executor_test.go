@@ -287,7 +287,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	defer env.ctx.Lock.Unlock()
 
 	nodeID := genesistest.DefaultNodeIDs[0]
-	subnetID := testSubnet1.ID()
+	subnetID := testNet1.ID()
 	{
 		// Case: Proposed validator currently validating primary network
 		// but stops validating net after stops validating primary network
@@ -295,15 +295,15 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		wallet := newWallet(t, env, walletConfig{
 			subnetIDs: []ids.ID{subnetID},
 		})
-		tx, err := wallet.IssueAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		tx, err := wallet.IssueAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  genesistest.DefaultValidatorStartTimeUnix + 1,
 					End:    genesistest.DefaultValidatorEndTimeUnix + 1,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: subnetID,
+				Net: subnetID,
 			},
 		)
 		require.NoError(err)
@@ -333,15 +333,15 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		wallet := newWallet(t, env, walletConfig{
 			subnetIDs: []ids.ID{subnetID},
 		})
-		tx, err := wallet.IssueAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		tx, err := wallet.IssueAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  genesistest.DefaultValidatorStartTimeUnix + 1,
 					End:    genesistest.DefaultValidatorEndTimeUnix,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: subnetID,
+				Net: subnetID,
 			},
 		)
 		require.NoError(err)
@@ -391,15 +391,15 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		wallet := newWallet(t, env, walletConfig{
 			subnetIDs: []ids.ID{subnetID},
 		})
-		tx, err := wallet.IssueAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		tx, err := wallet.IssueAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: pendingDSValidatorID,
 					Start:  uint64(dsStartTime.Unix()), // start validating net before primary network
 					End:    uint64(dsEndTime.Unix()),
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: subnetID,
+				Net: subnetID,
 			},
 		)
 		require.NoError(err)
@@ -444,15 +444,15 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		wallet := newWallet(t, env, walletConfig{
 			subnetIDs: []ids.ID{subnetID},
 		})
-		tx, err := wallet.IssueAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		tx, err := wallet.IssueAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: pendingDSValidatorID,
 					Start:  uint64(dsStartTime.Unix()) - 1, // start validating net before primary network
 					End:    uint64(dsEndTime.Unix()),
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: subnetID,
+				Net: subnetID,
 			},
 		)
 		require.NoError(err)
@@ -480,15 +480,15 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		wallet := newWallet(t, env, walletConfig{
 			subnetIDs: []ids.ID{subnetID},
 		})
-		tx, err := wallet.IssueAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		tx, err := wallet.IssueAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: pendingDSValidatorID,
 					Start:  uint64(dsStartTime.Unix()),
 					End:    uint64(dsEndTime.Unix()) + 1, // stop validating subnet after stopping validating primary network
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: subnetID,
+				Net: subnetID,
 			},
 		)
 		require.NoError(err)
@@ -516,15 +516,15 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		wallet := newWallet(t, env, walletConfig{
 			subnetIDs: []ids.ID{subnetID},
 		})
-		tx, err := wallet.IssueAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		tx, err := wallet.IssueAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: pendingDSValidatorID,
 					Start:  uint64(dsStartTime.Unix()), // same start time as for primary network
 					End:    uint64(dsEndTime.Unix()),   // same end time as for primary network
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: subnetID,
+				Net: subnetID,
 			},
 		)
 		require.NoError(err)
@@ -554,15 +554,15 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		wallet := newWallet(t, env, walletConfig{
 			subnetIDs: []ids.ID{subnetID},
 		})
-		tx, err := wallet.IssueAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		tx, err := wallet.IssueAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  uint64(newTimestamp.Unix()),
 					End:    uint64(newTimestamp.Add(defaultMinStakingDuration).Unix()),
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: subnetID,
+				Net: subnetID,
 			},
 		)
 		require.NoError(err)
@@ -592,24 +592,24 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	wallet = newWallet(t, env, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
 	})
-	subnetTx, err := wallet.IssueAddSubnetValidatorTx(
-		&txs.SubnetValidator{
+	subnetTx, err := wallet.IssueAddNetValidatorTx(
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  genesistest.DefaultValidatorStartTimeUnix,
 				End:    genesistest.DefaultValidatorEndTimeUnix,
 				Wght:   genesistest.DefaultValidatorWeight,
 			},
-			Subnet: subnetID,
+			Net: subnetID,
 		},
 	)
 	require.NoError(err)
 
-	addSubnetValTx := subnetTx.Unsigned.(*txs.AddNetValidatorTx)
+	addNetValTx := subnetTx.Unsigned.(*txs.AddNetValidatorTx)
 	staker, err = state.NewCurrentStaker(
 		subnetTx.ID(),
-		addSubnetValTx,
-		addSubnetValTx.StartTime(),
+		addNetValTx,
+		addNetValTx.StartTime(),
 		0,
 	)
 	require.NoError(err)
@@ -620,19 +620,19 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 	require.NoError(env.state.Commit())
 
 	{
-		// Node with ID nodeIDKey.Address() now validating subnet with ID testSubnet1.ID
+		// Node with ID nodeIDKey.Address() now validating subnet with ID testNet1.ID
 		wallet = newWallet(t, env, walletConfig{
 			subnetIDs: []ids.ID{subnetID},
 		})
-		duplicateSubnetTx, err := wallet.IssueAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		duplicateNetTx, err := wallet.IssueAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  genesistest.DefaultValidatorStartTimeUnix + 1,
 					End:    genesistest.DefaultValidatorEndTimeUnix,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: subnetID,
+				Net: subnetID,
 			},
 		)
 		require.NoError(err)
@@ -647,7 +647,7 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		err = ProposalTx(
 			&env.backend,
 			feeCalculator,
-			duplicateSubnetTx,
+			duplicateNetTx,
 			onCommitState,
 			onAbortState,
 		)
@@ -663,22 +663,22 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		wallet = newWallet(t, env, walletConfig{
 			subnetIDs: []ids.ID{subnetID},
 		})
-		tx, err := wallet.IssueAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		tx, err := wallet.IssueAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  genesistest.DefaultValidatorStartTimeUnix + 1,
 					End:    uint64(genesistest.DefaultValidatorStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: subnetID,
+				Net: subnetID,
 			},
 		)
 		require.NoError(err)
 
 		// Remove a signature
 		addNetValidatorTx := tx.Unsigned.(*txs.AddNetValidatorTx)
-		input := addNetValidatorTx.SubnetAuth.(*secp256k1fx.Input)
+		input := addNetValidatorTx.NetAuth.(*secp256k1fx.Input)
 		input.SigIndices = input.SigIndices[1:]
 		// This tx was syntactically verified when it was created...pretend it wasn't so we don't use cache
 		addNetValidatorTx.SyntacticallyVerified = false
@@ -705,15 +705,15 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		wallet = newWallet(t, env, walletConfig{
 			subnetIDs: []ids.ID{subnetID},
 		})
-		tx, err := wallet.IssueAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		tx, err := wallet.IssueAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  genesistest.DefaultValidatorStartTimeUnix + 1,
 					End:    uint64(genesistest.DefaultValidatorStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: subnetID,
+				Net: subnetID,
 			},
 		)
 		require.NoError(err)
@@ -746,24 +746,24 @@ func TestProposalTxExecuteAddNetValidator(t *testing.T) {
 		wallet = newWallet(t, env, walletConfig{
 			subnetIDs: []ids.ID{subnetID},
 		})
-		tx, err := wallet.IssueAddSubnetValidatorTx(
-			&txs.SubnetValidator{
+		tx, err := wallet.IssueAddNetValidatorTx(
+			&txs.NetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
 					Start:  genesistest.DefaultValidatorStartTimeUnix + 1,
 					End:    uint64(genesistest.DefaultValidatorStartTime.Add(defaultMinStakingDuration).Unix()) + 1,
 					Wght:   genesistest.DefaultValidatorWeight,
 				},
-				Subnet: subnetID,
+				Net: subnetID,
 			},
 		)
 		require.NoError(err)
 
-		addSubnetValTx := subnetTx.Unsigned.(*txs.AddNetValidatorTx)
+		addNetValTx := subnetTx.Unsigned.(*txs.AddNetValidatorTx)
 		staker, err = state.NewCurrentStaker(
 			subnetTx.ID(),
-			addSubnetValTx,
-			addSubnetValTx.StartTime(),
+			addNetValTx,
+			addNetValTx.StartTime(),
 			0,
 		)
 		require.NoError(err)

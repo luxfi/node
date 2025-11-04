@@ -235,8 +235,8 @@ func (m *metadata) WriteValidatorMetadata(
 	dbNet database.KeyValueWriter,
 	codecVersion uint16,
 ) error {
-	for vdrID, updatedSubnets := range m.updatedMetadata {
-		for netID := range updatedSubnets {
+	for vdrID, updatedNets := range m.updatedMetadata {
+		for netID := range updatedNets {
 			metadata := m.metadata[vdrID][netID]
 			metadata.LastUpdated = uint64(metadata.lastUpdated.Unix())
 
@@ -258,10 +258,10 @@ func (m *metadata) WriteValidatorMetadata(
 }
 
 func (m *metadata) addUpdatedMetadata(vdrID ids.NodeID, netID ids.ID) {
-	updatedSubnetMetadata, ok := m.updatedMetadata[vdrID]
+	updatedNetMetadata, ok := m.updatedMetadata[vdrID]
 	if !ok {
-		updatedSubnetMetadata = set.Set[ids.ID]{}
-		m.updatedMetadata[vdrID] = updatedSubnetMetadata
+		updatedNetMetadata = set.Set[ids.ID]{}
+		m.updatedMetadata[vdrID] = updatedNetMetadata
 	}
-	updatedSubnetMetadata.Add(netID)
+	updatedNetMetadata.Add(netID)
 }

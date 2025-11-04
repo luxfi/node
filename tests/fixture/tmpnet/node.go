@@ -399,12 +399,12 @@ func (n *Node) composeFlags() (FlagsMap, error) {
 		}
 	}
 
-	subnetConfigContent, err := n.network.GetSubnetConfigContent()
+	subnetConfigContent, err := n.network.GetNetConfigContent()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get subnet config content: %w", err)
 	}
 	if len(subnetConfigContent) > 0 {
-		flags.SetDefault(config.SubnetConfigContentKey, subnetConfigContent)
+		flags.SetDefault(config.NetConfigContentKey, subnetConfigContent)
 	}
 
 	chainConfigContent, err := n.network.GetChainConfigContent()

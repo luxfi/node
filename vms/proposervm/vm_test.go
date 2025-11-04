@@ -2657,7 +2657,7 @@ func TestSelectChildPChainHeight(t *testing.T) {
 
 			proVM.Clock.Set(test.time)
 			proVM.ctx.NetworkID = test.networkID
-			proVM.ctx.SubnetID = test.subnetID
+			proVM.ctx.NetID = test.subnetID
 
 			vdrState.GetMinimumHeightF = func(context.Context) (uint64, error) {
 				return test.currentPChainHeight, nil

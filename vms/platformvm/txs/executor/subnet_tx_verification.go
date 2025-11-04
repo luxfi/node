@@ -21,22 +21,22 @@ var (
 	errUnauthorizedModification = errors.New("unauthorized modification")
 )
 
-// verifyPoASubnetAuthorization carries out the validation for modifying a PoA
-// subnet. This is an extension of [verifySubnetAuthorization] that additionally
+// verifyPoANetAuthorization carries out the validation for modifying a PoA
+// subnet. This is an extension of [verifyNetAuthorization] that additionally
 // verifies that the net being modified is currently a PoA subnet.
-func verifyPoASubnetAuthorization(
+func verifyPoANetAuthorization(
 	fx fx.Fx,
 	chainState state.Chain,
 	sTx *txs.Tx,
 	netID ids.ID,
 	subnetAuth verify.Verifiable,
 ) ([]verify.Verifiable, error) {
-	creds, err := verifySubnetAuthorization(fx, chainState, sTx, netID, subnetAuth)
+	creds, err := verifyNetAuthorization(fx, chainState, sTx, netID, subnetAuth)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = chainState.GetSubnetTransformation(netID)
+	_, err = chainState.GetNetTransformation(netID)
 	if err == nil {
 		return nil, fmt.Errorf("%q %w", netID, errIsImmutable)
 	}
@@ -44,7 +44,7 @@ func verifyPoASubnetAuthorization(
 		return nil, err
 	}
 
-	_, err = chainState.GetSubnetToL1Conversion(netID)
+	_, err = chainState.GetNetToL1Conversion(netID)
 	if err == nil {
 		return nil, fmt.Errorf("%q %w", netID, errIsImmutable)
 	}
@@ -55,18 +55,18 @@ func verifyPoASubnetAuthorization(
 	return creds, nil
 }
 
-// verifySubnetAuthorization carries out the validation for modifying a subnet.
+// verifyNetAuthorization carries out the validation for modifying a subnet.
 // The last credential in [tx.Creds] is used as the subnet authorization.
 // Returns the remaining tx credentials that should be used to authorize the
 // other operations in the tx.
-func verifySubnetAuthorization(
+func verifyNetAuthorization(
 	fx fx.Fx,
 	chainState state.Chain,
 	tx *txs.Tx,
 	netID ids.ID,
 	subnetAuth verify.Verifiable,
 ) ([]verify.Verifiable, error) {
-	subnetOwner, err := chainState.GetSubnetOwner(netID)
+	subnetOwner, err := chainState.GetNetOwner(netID)
 	if err != nil {
 		return nil, err
 	}

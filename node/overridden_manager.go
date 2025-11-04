@@ -74,7 +74,7 @@ func (o *overriddenManager) RemoveWeight(_ ids.ID, nodeID ids.NodeID, weight uin
 	return o.manager.RemoveWeight(o.netID, nodeID, weight)
 }
 
-func (o *overriddenManager) NumSubnets() int {
+func (o *overriddenManager) NumNets() int {
 	if o.manager.NumValidators(o.subnetID) == 0 {
 		return 0
 	}
@@ -136,7 +136,7 @@ func (o *overriddenManager) String() string {
 		subnetValidators := o.manager.GetMap(subnetID)
 		subnetWeight, _ := o.manager.TotalWeight(subnetID)
 
-		sb.WriteString(fmt.Sprintf("    Subnet[%s]: Validator Set: (Size = %d, Weight = %d)\n",
+		sb.WriteString(fmt.Sprintf("    Net[%s]: Validator Set: (Size = %d, Weight = %d)\n",
 			subnetID, len(subnetValidators), subnetWeight))
 
 		// Sort validators by node ID for consistent output
@@ -174,8 +174,8 @@ func (o *overriddenManager) GetValidators(ids.ID) (validators.Set, error) {
 	return o.manager.GetValidators(o.netID)
 }
 
-func (o *overriddenManager) NumSubnets() int {
-	return o.manager.NumSubnets()
+func (o *overriddenManager) NumNets() int {
+	return o.manager.NumNets()
 }
 
 func (o *overriddenManager) NumValidators(netID ids.ID) int {

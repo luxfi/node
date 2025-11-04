@@ -63,7 +63,7 @@ var (
 	_ State = (*state)(nil)
 
 	errValidatorSetAlreadyPopulated   = errors.New("validator set already populated")
-	errIsNotSubnet                    = errors.New("is not a subnet")
+	errIsNotNet                    = errors.New("is not a subnet")
 	errMissingPrimaryNetworkValidator = errors.New("missing primary network validator")
 
 	BlockIDPrefix                 = []byte("blockID")
@@ -74,22 +74,22 @@ var (
 	ValidatorPrefix               = []byte("validator")
 	DelegatorPrefix               = []byte("delegator")
 	NetValidatorPrefix            = []byte("subnetValidator")
-	SubnetDelegatorPrefix         = []byte("subnetDelegator")
+	NetDelegatorPrefix         = []byte("subnetDelegator")
 	ValidatorWeightDiffsPrefix    = []byte("flatValidatorDiffs")
 	ValidatorPublicKeyDiffsPrefix = []byte("flatPublicKeyDiffs")
 	TxPrefix                      = []byte("tx")
 	RewardUTXOsPrefix             = []byte("rewardUTXOs")
 	UTXOPrefix                    = []byte("utxo")
-	SubnetPrefix                  = []byte("subnet")
-	SubnetOwnerPrefix             = []byte("subnetOwner")
-	SubnetToL1ConversionPrefix    = []byte("subnetToL1Conversion")
-	TransformedSubnetPrefix       = []byte("transformedSubnet")
+	NetPrefix                  = []byte("subnet")
+	NetOwnerPrefix             = []byte("subnetOwner")
+	NetToL1ConversionPrefix    = []byte("subnetToL1Conversion")
+	TransformedNetPrefix       = []byte("transformedNet")
 	SupplyPrefix                  = []byte("supply")
 	ChainPrefix                   = []byte("chain")
 	ExpiryReplayProtectionPrefix  = []byte("expiryReplayProtection")
 	L1Prefix                      = []byte("l1")
 	WeightsPrefix                 = []byte("weights")
-	SubnetIDNodeIDPrefix          = []byte("subnetIDNodeID")
+	NetIDNodeIDPrefix          = []byte("subnetIDNodeID")
 	ActivePrefix                  = []byte("active")
 	InactivePrefix                = []byte("inactive")
 	SingletonPrefix               = []byte("singleton")
@@ -137,14 +137,14 @@ type Chain interface {
 
 	AddNet(netID ids.ID)
 
-	GetSubnetOwner(netID ids.ID) (fx.Owner, error)
-	SetSubnetOwner(netID ids.ID, owner fx.Owner)
+	GetNetOwner(netID ids.ID) (fx.Owner, error)
+	SetNetOwner(netID ids.ID, owner fx.Owner)
 
-	GetSubnetToL1Conversion(subnetID ids.ID) (SubnetToL1Conversion, error)
-	SetSubnetToL1Conversion(subnetID ids.ID, c SubnetToL1Conversion)
+	GetNetToL1Conversion(subnetID ids.ID) (NetToL1Conversion, error)
+	SetNetToL1Conversion(subnetID ids.ID, c NetToL1Conversion)
 
-	GetSubnetTransformation(subnetID ids.ID) (*txs.Tx, error)
-	AddSubnetTransformation(transformSubnetTx *txs.Tx)
+	GetNetTransformation(subnetID ids.ID) (*txs.Tx, error)
+	AddNetTransformation(transformNetTx *txs.Tx)
 
 	AddChain(createChainTx *txs.Tx)
 
@@ -399,8 +399,8 @@ type state struct {
 	currentDelegatorList         linkeddb.LinkedDB
 	currentNetValidatorBaseDB    database.Database
 	currentNetValidatorList      linkeddb.LinkedDB
-	currentSubnetDelegatorBaseDB database.Database
-	currentSubnetDelegatorList   linkeddb.LinkedDB
+	currentNetDelegatorBaseDB database.Database
+	currentNetDelegatorList   linkeddb.LinkedDB
 	pendingValidatorsDB          database.Database
 	pendingValidatorBaseDB       database.Database
 	pendingValidatorList         linkeddb.LinkedDB
@@ -408,8 +408,8 @@ type state struct {
 	pendingDelegatorList         linkeddb.LinkedDB
 	pendingNetValidatorBaseDB    database.Database
 	pendingNetValidatorList      linkeddb.LinkedDB
-	pendingSubnetDelegatorBaseDB database.Database
-	pendingSubnetDelegatorList   linkeddb.LinkedDB
+	pendingNetDelegatorBaseDB database.Database
+	pendingNetDelegatorList   linkeddb.LinkedDB
 
 	validatorWeightDiffsDB    database.Database
 	validatorPublicKeyDiffsDB database.Database
@@ -435,13 +435,13 @@ type state struct {
 	subnetOwnerCache cache.Cacher[ids.ID, fxOwnerAndSize] // cache of netID -> owner; if the entry is nil, it is not in the database
 	subnetOwnerDB    database.Database
 
-	subnetToL1Conversions     map[ids.ID]SubnetToL1Conversion            // map of subnetID -> conversion of the subnet
-	subnetToL1ConversionCache cache.Cacher[ids.ID, SubnetToL1Conversion] // cache of subnetID -> conversion
+	subnetToL1Conversions     map[ids.ID]NetToL1Conversion            // map of subnetID -> conversion of the subnet
+	subnetToL1ConversionCache cache.Cacher[ids.ID, NetToL1Conversion] // cache of subnetID -> conversion
 	subnetToL1ConversionDB    database.Database
 
-	transformedSubnets     map[ids.ID]*txs.Tx            // map of subnetID -> transformSubnetTx
-	transformedSubnetCache cache.Cacher[ids.ID, *txs.Tx] // cache of subnetID -> transformSubnetTx; if the entry is nil, it is not in the database
-	transformedSubnetDB    database.Database
+	transformedNets     map[ids.ID]*txs.Tx            // map of subnetID -> transformNetTx
+	transformedNetCache cache.Cacher[ids.ID, *txs.Tx] // cache of subnetID -> transformNetTx; if the entry is nil, it is not in the database
+	transformedNetDB    database.Database
 
 	modifiedSupplies map[ids.ID]uint64             // map of netID -> current supply
 	supplyCache      cache.Cacher[ids.ID, *uint64] // cache of netID -> current supply; if the entry is nil, it is not in the database
@@ -517,7 +517,7 @@ type fxOwnerAndSize struct {
 	size  int
 }
 
-type SubnetToL1Conversion struct {
+type NetToL1Conversion struct {
 	ConversionID ids.ID `serialize:"true"`
 	ChainID      ids.ID `serialize:"true"`
 	Addr         []byte `serialize:"true"`
@@ -581,13 +581,13 @@ func New(
 	currentValidatorBaseDB := prefixdb.New(ValidatorPrefix, currentValidatorsDB)
 	currentDelegatorBaseDB := prefixdb.New(DelegatorPrefix, currentValidatorsDB)
 	currentNetValidatorBaseDB := prefixdb.New(NetValidatorPrefix, currentValidatorsDB)
-	currentSubnetDelegatorBaseDB := prefixdb.New(SubnetDelegatorPrefix, currentValidatorsDB)
+	currentNetDelegatorBaseDB := prefixdb.New(NetDelegatorPrefix, currentValidatorsDB)
 
 	pendingValidatorsDB := prefixdb.New(PendingPrefix, validatorsDB)
 	pendingValidatorBaseDB := prefixdb.New(ValidatorPrefix, pendingValidatorsDB)
 	pendingDelegatorBaseDB := prefixdb.New(DelegatorPrefix, pendingValidatorsDB)
 	pendingNetValidatorBaseDB := prefixdb.New(NetValidatorPrefix, pendingValidatorsDB)
-	pendingSubnetDelegatorBaseDB := prefixdb.New(SubnetDelegatorPrefix, pendingValidatorsDB)
+	pendingNetDelegatorBaseDB := prefixdb.New(NetDelegatorPrefix, pendingValidatorsDB)
 
 	l1ValidatorsDB := prefixdb.New(L1Prefix, validatorsDB)
 
@@ -632,7 +632,7 @@ func New(
 	subnetIDNodeIDCache, err := metercacher.New(
 		"l1_validator_subnet_id_node_id_cache",
 		nil, // TODO: Convert prometheus.Registerer to metric.Registry
-		lru.NewSizedCache(execCfg.L1SubnetIDNodeIDCacheSize, func(subnetIDNodeID, bool) int {
+		lru.NewSizedCache(execCfg.L1NetIDNodeIDCacheSize, func(subnetIDNodeID, bool) int {
 			return ids.IDLen + ids.NodeIDLen + wrappers.BoolLen
 		}),
 	)
@@ -665,9 +665,9 @@ func New(
 		return nil, err
 	}
 
-	subnetBaseDB := prefixdb.New(SubnetPrefix, baseDB)
+	subnetBaseDB := prefixdb.New(NetPrefix, baseDB)
 
-	subnetOwnerDB := prefixdb.New(SubnetOwnerPrefix, baseDB)
+	subnetOwnerDB := prefixdb.New(NetOwnerPrefix, baseDB)
 	subnetOwnerCache, err := metercacher.New[ids.ID, fxOwnerAndSize](
 		"subnet_owner_cache",
 		nil, // TODO: Convert prometheus.Registerer to metric.Registry
@@ -679,11 +679,11 @@ func New(
 		return nil, err
 	}
 
-	subnetToL1ConversionDB := prefixdb.New(SubnetToL1ConversionPrefix, baseDB)
-	subnetToL1ConversionCache, err := metercacher.New[ids.ID, SubnetToL1Conversion](
+	subnetToL1ConversionDB := prefixdb.New(NetToL1ConversionPrefix, baseDB)
+	subnetToL1ConversionCache, err := metercacher.New[ids.ID, NetToL1Conversion](
 		"subnet_conversion_cache",
 		nil, // TODO: Convert prometheus.Registerer to metric.Registry
-		lru.NewSizedCache(execCfg.SubnetToL1ConversionCacheSize, func(_ ids.ID, c SubnetToL1Conversion) int {
+		lru.NewSizedCache(execCfg.NetToL1ConversionCacheSize, func(_ ids.ID, c NetToL1Conversion) int {
 			return 3*ids.IDLen + len(c.Addr)
 		}),
 	)
@@ -691,10 +691,10 @@ func New(
 		return nil, err
 	}
 
-	transformedSubnetCache, err := metercacher.New(
+	transformedNetCache, err := metercacher.New(
 		"transformed_subnet_cache",
 		nil, // TODO: Convert prometheus.Registerer to metric.Registry
-		lru.NewSizedCache(execCfg.TransformedSubnetTxCacheSize, txSize),
+		lru.NewSizedCache(execCfg.TransformedNetTxCacheSize, txSize),
 	)
 	if err != nil {
 		return nil, err
@@ -755,7 +755,7 @@ func New(
 		weightsCache:        weightsCache,
 		weightsDB:           prefixdb.New(WeightsPrefix, l1ValidatorsDB),
 		subnetIDNodeIDCache: subnetIDNodeIDCache,
-		subnetIDNodeIDDB:    prefixdb.New(SubnetIDNodeIDPrefix, l1ValidatorsDB),
+		subnetIDNodeIDDB:    prefixdb.New(NetIDNodeIDPrefix, l1ValidatorsDB),
 		activeDB:            prefixdb.New(ActivePrefix, l1ValidatorsDB),
 		inactiveCache:       inactiveL1ValidatorsCache,
 		inactiveDB:          prefixdb.New(InactivePrefix, l1ValidatorsDB),
@@ -773,8 +773,8 @@ func New(
 		currentDelegatorList:         linkeddb.NewDefault(currentDelegatorBaseDB),
 		currentNetValidatorBaseDB:    currentNetValidatorBaseDB,
 		currentNetValidatorList:      linkeddb.NewDefault(currentNetValidatorBaseDB),
-		currentSubnetDelegatorBaseDB: currentSubnetDelegatorBaseDB,
-		currentSubnetDelegatorList:   linkeddb.NewDefault(currentSubnetDelegatorBaseDB),
+		currentNetDelegatorBaseDB: currentNetDelegatorBaseDB,
+		currentNetDelegatorList:   linkeddb.NewDefault(currentNetDelegatorBaseDB),
 		pendingValidatorsDB:          pendingValidatorsDB,
 		pendingValidatorBaseDB:       pendingValidatorBaseDB,
 		pendingValidatorList:         linkeddb.NewDefault(pendingValidatorBaseDB),
@@ -782,8 +782,8 @@ func New(
 		pendingDelegatorList:         linkeddb.NewDefault(pendingDelegatorBaseDB),
 		pendingNetValidatorBaseDB:    pendingNetValidatorBaseDB,
 		pendingNetValidatorList:      linkeddb.NewDefault(pendingNetValidatorBaseDB),
-		pendingSubnetDelegatorBaseDB: pendingSubnetDelegatorBaseDB,
-		pendingSubnetDelegatorList:   linkeddb.NewDefault(pendingSubnetDelegatorBaseDB),
+		pendingNetDelegatorBaseDB: pendingNetDelegatorBaseDB,
+		pendingNetDelegatorList:   linkeddb.NewDefault(pendingNetDelegatorBaseDB),
 		validatorWeightDiffsDB:       validatorWeightDiffsDB,
 		validatorPublicKeyDiffsDB:    validatorPublicKeyDiffsDB,
 
@@ -806,13 +806,13 @@ func New(
 		subnetOwnerDB:    subnetOwnerDB,
 		subnetOwnerCache: subnetOwnerCache,
 
-		subnetToL1Conversions:     make(map[ids.ID]SubnetToL1Conversion),
+		subnetToL1Conversions:     make(map[ids.ID]NetToL1Conversion),
 		subnetToL1ConversionDB:    subnetToL1ConversionDB,
 		subnetToL1ConversionCache: subnetToL1ConversionCache,
 
-		transformedSubnets:     make(map[ids.ID]*txs.Tx),
-		transformedSubnetCache: transformedSubnetCache,
-		transformedSubnetDB:    prefixdb.New(TransformedSubnetPrefix, baseDB),
+		transformedNets:     make(map[ids.ID]*txs.Tx),
+		transformedNetCache: transformedNetCache,
+		transformedNetDB:    prefixdb.New(TransformedNetPrefix, baseDB),
 
 		modifiedSupplies: make(map[ids.ID]uint64),
 		supplyCache:      supplyCache,
@@ -1033,7 +1033,7 @@ func (s *state) GetPendingStakerIterator() (iterator.Iterator[*Staker], error) {
 	return s.pendingStakers.GetStakerIterator(), nil
 }
 
-func (s *state) GetSubnetIDs() ([]ids.ID, error) {
+func (s *state) GetNetIDs() ([]ids.ID, error) {
 	if s.cachedNetIDs != nil {
 		return s.cachedNetIDs, nil
 	}
@@ -1058,11 +1058,6 @@ func (s *state) GetSubnetIDs() ([]ids.ID, error) {
 	return netIDs, nil
 }
 
-// GetNetIDs is an alias for GetSubnetIDs to satisfy the State interface
-func (s *state) GetNetIDs() ([]ids.ID, error) {
-	return s.GetSubnetIDs()
-}
-
 func (s *state) AddNet(netID ids.ID) {
 	s.addedNetIDs = append(s.addedNetIDs, netID)
 	if s.cachedNetIDs != nil {
@@ -1070,7 +1065,7 @@ func (s *state) AddNet(netID ids.ID) {
 	}
 }
 
-func (s *state) GetSubnetOwner(netID ids.ID) (fx.Owner, error) {
+func (s *state) GetNetOwner(netID ids.ID) (fx.Owner, error) {
 	if owner, exists := s.subnetOwners[netID]; exists {
 		return owner, nil
 	}
@@ -1108,19 +1103,19 @@ func (s *state) GetSubnetOwner(netID ids.ID) (fx.Owner, error) {
 
 	subnet, ok := subnetIntf.Unsigned.(*txs.CreateNetTx)
 	if !ok {
-		return nil, fmt.Errorf("%q %w", netID, errIsNotSubnet)
+		return nil, fmt.Errorf("%q %w", netID, errIsNotNet)
 	}
 
-	s.SetSubnetOwner(netID, subnet.Owner)
+	s.SetNetOwner(netID, subnet.Owner)
 	return subnet.Owner, nil
 }
 
-func (s *state) SetSubnetOwner(netID ids.ID, owner fx.Owner) {
+func (s *state) SetNetOwner(netID ids.ID, owner fx.Owner) {
 	s.subnetOwners[netID] = owner
 }
 
-// GetSubnetToL1Conversion allows for concurrent reads.
-func (s *state) GetSubnetToL1Conversion(subnetID ids.ID) (SubnetToL1Conversion, error) {
+// GetNetToL1Conversion allows for concurrent reads.
+func (s *state) GetNetToL1Conversion(subnetID ids.ID) (NetToL1Conversion, error) {
 	if c, ok := s.subnetToL1Conversions[subnetID]; ok {
 		return c, nil
 	}
@@ -1131,58 +1126,53 @@ func (s *state) GetSubnetToL1Conversion(subnetID ids.ID) (SubnetToL1Conversion, 
 
 	bytes, err := s.subnetToL1ConversionDB.Get(subnetID[:])
 	if err != nil {
-		return SubnetToL1Conversion{}, err
+		return NetToL1Conversion{}, err
 	}
 
-	var c SubnetToL1Conversion
+	var c NetToL1Conversion
 	if _, err := block.GenesisCodec.Unmarshal(bytes, &c); err != nil {
-		return SubnetToL1Conversion{}, err
+		return NetToL1Conversion{}, err
 	}
 	s.subnetToL1ConversionCache.Put(subnetID, c)
 	return c, nil
 }
 
-func (s *state) SetSubnetToL1Conversion(subnetID ids.ID, c SubnetToL1Conversion) {
+func (s *state) SetNetToL1Conversion(subnetID ids.ID, c NetToL1Conversion) {
 	s.subnetToL1Conversions[subnetID] = c
 }
 
-func (s *state) GetSubnetTransformation(subnetID ids.ID) (*txs.Tx, error) {
-	if tx, exists := s.transformedSubnets[subnetID]; exists {
+func (s *state) GetNetTransformation(subnetID ids.ID) (*txs.Tx, error) {
+	if tx, exists := s.transformedNets[subnetID]; exists {
 		return tx, nil
 	}
 
-	if tx, cached := s.transformedSubnetCache.Get(subnetID); cached {
+	if tx, cached := s.transformedNetCache.Get(subnetID); cached {
 		if tx == nil {
 			return nil, database.ErrNotFound
 		}
 		return tx, nil
 	}
 
-	transformSubnetTxID, err := database.GetID(s.transformedSubnetDB, subnetID[:])
+	transformNetTxID, err := database.GetID(s.transformedNetDB, subnetID[:])
 	if err == database.ErrNotFound {
-		s.transformedSubnetCache.Put(subnetID, nil)
+		s.transformedNetCache.Put(subnetID, nil)
 		return nil, database.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	transformSubnetTx, _, err := s.GetTx(transformSubnetTxID)
+	transformNetTx, _, err := s.GetTx(transformNetTxID)
 	if err != nil {
 		return nil, err
 	}
-	s.transformedSubnetCache.Put(subnetID, transformSubnetTx)
-	return transformSubnetTx, nil
+	s.transformedNetCache.Put(subnetID, transformNetTx)
+	return transformNetTx, nil
 }
 
-func (s *state) AddNetTransformation(transformSubnetTxIntf *txs.Tx) {
-	transformSubnetTx := transformSubnetTxIntf.Unsigned.(*txs.TransformNetTx)
-	s.transformedSubnets[transformSubnetTx.Net] = transformSubnetTxIntf
-}
-
-// AddSubnetTransformation is an alias for AddNetTransformation to satisfy the Chain interface
-func (s *state) AddSubnetTransformation(transformSubnetTx *txs.Tx) {
-	s.AddNetTransformation(transformSubnetTx)
+func (s *state) AddNetTransformation(transformNetTxIntf *txs.Tx) {
+	transformNetTx := transformNetTxIntf.Unsigned.(*txs.TransformNetTx)
+	s.transformedNets[transformNetTx.Net] = transformNetTxIntf
 }
 
 func (s *state) GetChains(netID ids.ID) ([]*txs.Tx, error) {
@@ -1881,7 +1871,7 @@ func (s *state) loadCurrentValidators() error {
 	delegatorIt := s.currentDelegatorList.NewIterator()
 	defer delegatorIt.Release()
 
-	subnetDelegatorIt := s.currentSubnetDelegatorList.NewIterator()
+	subnetDelegatorIt := s.currentNetDelegatorList.NewIterator()
 	defer subnetDelegatorIt.Release()
 
 	for _, delegatorIt := range []database.Iterator{delegatorIt, subnetDelegatorIt} {
@@ -1985,7 +1975,7 @@ func (s *state) loadPendingValidators() error {
 	delegatorIt := s.pendingDelegatorList.NewIterator()
 	defer delegatorIt.Release()
 
-	subnetDelegatorIt := s.pendingSubnetDelegatorList.NewIterator()
+	subnetDelegatorIt := s.pendingNetDelegatorList.NewIterator()
 	defer subnetDelegatorIt.Release()
 
 	for _, delegatorIt := range []database.Iterator{delegatorIt, subnetDelegatorIt} {
@@ -2031,7 +2021,7 @@ func (s *state) loadPendingValidators() error {
 // Invariant: initValidatorSets requires loadActiveL1Validators and
 // loadCurrentValidators to have already been called.
 func (s *state) initValidatorSets() error {
-	if s.validators.NumSubnets() != 0 {
+	if s.validators.NumNets() != 0 {
 		// Enforce the invariant that the validator set is empty here.
 		return errValidatorSetAlreadyPopulated
 	}
@@ -2138,11 +2128,11 @@ func (s *state) write(updateValidators bool, height uint64) error {
 		s.writeTXs(),
 		s.writeRewardUTXOs(),
 		s.writeUTXOs(),
-		s.writeSubnets(),
-		s.writeSubnetOwners(),
-		s.writeSubnetToL1Conversions(),
-		s.writeTransformedSubnets(),
-		s.writeSubnetSupplies(),
+		s.writeNets(),
+		s.writeNetOwners(),
+		s.writeNetToL1Conversions(),
+		s.writeTransformedNets(),
+		s.writeNetSupplies(),
 		s.writeChains(),
 		s.writeMetadata(),
 	)
@@ -2157,12 +2147,12 @@ func (s *state) Close() error {
 		s.inactiveDB.Close(),
 		s.l1ValidatorsDB.Close(),
 		s.pendingNetValidatorBaseDB.Close(),
-		s.pendingSubnetDelegatorBaseDB.Close(),
+		s.pendingNetDelegatorBaseDB.Close(),
 		s.pendingDelegatorBaseDB.Close(),
 		s.pendingValidatorBaseDB.Close(),
 		s.pendingValidatorsDB.Close(),
 		s.currentNetValidatorBaseDB.Close(),
-		s.currentSubnetDelegatorBaseDB.Close(),
+		s.currentNetDelegatorBaseDB.Close(),
 		s.currentDelegatorBaseDB.Close(),
 		s.currentValidatorBaseDB.Close(),
 		s.currentValidatorsDB.Close(),
@@ -2172,7 +2162,7 @@ func (s *state) Close() error {
 		s.utxoDB.Close(),
 		s.subnetBaseDB.Close(),
 		s.subnetToL1ConversionDB.Close(),
-		s.transformedSubnetDB.Close(),
+		s.transformedNetDB.Close(),
 		s.supplyDB.Close(),
 		s.chainDB.Close(),
 		s.singletonDB.Close(),
@@ -2476,7 +2466,7 @@ func (s *state) updateValidatorManager(updateValidators bool) error {
 			return err
 		}
 
-		if err := s.validators.RemoveWeight(priorL1Validator.SubnetID, priorL1Validator.effectiveNodeID(), priorL1Validator.Weight); err != nil {
+		if err := s.validators.RemoveWeight(priorL1Validator.NetID, priorL1Validator.effectiveNodeID(), priorL1Validator.Weight); err != nil {
 			return err
 		}
 	}
@@ -2497,14 +2487,14 @@ func (s *state) updateValidatorManager(updateValidators bool) error {
 				// the effectiveNodeIDs are equal.
 				nodeID := l1Validator.effectiveNodeID()
 				if priorL1Validator.Weight < l1Validator.Weight {
-					err = s.validators.AddWeight(l1Validator.SubnetID, nodeID, l1Validator.Weight-priorL1Validator.Weight)
+					err = s.validators.AddWeight(l1Validator.NetID, nodeID, l1Validator.Weight-priorL1Validator.Weight)
 				} else if priorL1Validator.Weight > l1Validator.Weight {
-					err = s.validators.RemoveWeight(l1Validator.SubnetID, nodeID, priorL1Validator.Weight-l1Validator.Weight)
+					err = s.validators.RemoveWeight(l1Validator.NetID, nodeID, priorL1Validator.Weight-l1Validator.Weight)
 				}
 			} else {
 				// This validator's active status is changing.
 				err = errors.Join(
-					s.validators.RemoveWeight(l1Validator.SubnetID, priorL1Validator.effectiveNodeID(), priorL1Validator.Weight),
+					s.validators.RemoveWeight(l1Validator.NetID, priorL1Validator.effectiveNodeID(), priorL1Validator.Weight),
 					addL1ValidatorToValidatorManager(s.validators, l1Validator),
 				)
 			}
@@ -2583,7 +2573,7 @@ func (s *state) calculateValidatorDiffs() (map[subnetIDNodeID]*validatorDiff, er
 		if err == nil {
 			// Delete the prior validator
 			subnetIDNodeID := subnetIDNodeID{
-				subnetID: priorL1Validator.SubnetID,
+				subnetID: priorL1Validator.NetID,
 				nodeID:   priorL1Validator.effectiveNodeID(),
 			}
 			diff := getOrSetDefault(changes, subnetIDNodeID)
@@ -2603,7 +2593,7 @@ func (s *state) calculateValidatorDiffs() (map[subnetIDNodeID]*validatorDiff, er
 
 		// Add the new validator
 		subnetIDNodeID := subnetIDNodeID{
-			subnetID: l1Validator.SubnetID,
+			subnetID: l1Validator.NetID,
 			nodeID:   l1Validator.effectiveNodeID(),
 		}
 		diff := getOrSetDefault(changes, subnetIDNodeID)
@@ -2667,7 +2657,7 @@ func (s *state) writeCurrentStakers(codecVersion uint16) error {
 	for subnetID, validatorDiffs := range s.currentStakers.validatorDiffs {
 		// Select db to write to
 		validatorDB := s.currentNetValidatorList
-		delegatorDB := s.currentSubnetDelegatorList
+		delegatorDB := s.currentNetDelegatorList
 		if subnetID == constants.PrimaryNetworkID {
 			validatorDB = s.currentValidatorList
 			delegatorDB = s.currentDelegatorList
@@ -2761,7 +2751,7 @@ func (s *state) writePendingStakers() error {
 		delete(s.pendingStakers.validatorDiffs, netID)
 
 		validatorDB := s.pendingNetValidatorList
-		delegatorDB := s.pendingSubnetDelegatorList
+		delegatorDB := s.pendingNetDelegatorList
 		if netID == constants.PrimaryNetworkID {
 			validatorDB = s.pendingValidatorList
 			delegatorDB = s.pendingDelegatorList
@@ -2855,7 +2845,7 @@ func (s *state) writeL1Validators() error {
 
 		var (
 			subnetIDNodeID = subnetIDNodeID{
-				subnetID: l1Validator.SubnetID,
+				subnetID: l1Validator.NetID,
 				nodeID:   l1Validator.NodeID,
 			}
 			subnetIDNodeIDKey = subnetIDNodeID.Marshal()
@@ -2875,7 +2865,7 @@ func (s *state) writeL1Validators() error {
 		// Update the subnetIDNodeID mapping
 		var (
 			subnetIDNodeID = subnetIDNodeID{
-				subnetID: l1Validator.SubnetID,
+				subnetID: l1Validator.NetID,
 				nodeID:   l1Validator.NodeID,
 			}
 			subnetIDNodeIDKey = subnetIDNodeID.Marshal()
@@ -2967,7 +2957,7 @@ func (s *state) writeUTXOs() error {
 	return nil
 }
 
-func (s *state) writeSubnets() error {
+func (s *state) writeNets() error {
 	for _, netID := range s.addedNetIDs {
 		if err := s.subnetDB.Put(netID[:], nil); err != nil {
 			return fmt.Errorf("failed to write subnet: %w", err)
@@ -2977,7 +2967,7 @@ func (s *state) writeSubnets() error {
 	return nil
 }
 
-func (s *state) writeSubnetOwners() error {
+func (s *state) writeNetOwners() error {
 	for subnetID, owner := range s.subnetOwners {
 		delete(s.subnetOwners, subnetID)
 
@@ -2998,7 +2988,7 @@ func (s *state) writeSubnetOwners() error {
 	return nil
 }
 
-func (s *state) writeSubnetToL1Conversions() error {
+func (s *state) writeNetToL1Conversions() error {
 	for subnetID, c := range s.subnetToL1Conversions {
 		delete(s.subnetToL1Conversions, subnetID)
 
@@ -3016,23 +3006,23 @@ func (s *state) writeSubnetToL1Conversions() error {
 	return nil
 }
 
-func (s *state) writeTransformedSubnets() error {
-	for netID, tx := range s.transformedSubnets {
+func (s *state) writeTransformedNets() error {
+	for netID, tx := range s.transformedNets {
 		txID := tx.ID()
 
-		delete(s.transformedSubnets, netID)
+		delete(s.transformedNets, netID)
 		// Note: Evict is used rather than Put here because tx may end up
 		// referencing additional data (because of shared byte slices) that
 		// would not be properly accounted for in the cache sizing.
-		s.transformedSubnetCache.Evict(netID)
-		if err := database.PutID(s.transformedSubnetDB, netID[:], txID); err != nil {
+		s.transformedNetCache.Evict(netID)
+		if err := database.PutID(s.transformedNetDB, netID[:], txID); err != nil {
 			return fmt.Errorf("failed to write transformed subnet: %w", err)
 		}
 	}
 	return nil
 }
 
-func (s *state) writeSubnetSupplies() error {
+func (s *state) writeNetSupplies() error {
 	for subnetID, supply := range s.modifiedSupplies {
 		delete(s.modifiedSupplies, subnetID)
 		s.supplyCache.Put(subnetID, &supply)

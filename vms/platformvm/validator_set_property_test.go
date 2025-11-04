@@ -105,8 +105,8 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 				return "failed building events sequence: " + err.Error()
 			}
 
-			validatorSetByHeightAndSubnet := make(map[uint64]map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput)
-			if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndSubnet); err != nil {
+			validatorSetByHeightAndNet := make(map[uint64]map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput)
+			if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndNet); err != nil {
 				return failedValidatorSnapshotString + err.Error()
 			}
 
@@ -124,15 +124,15 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 					}
 					currentNetValidator = nil
 
-					if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndSubnet); err != nil {
+					if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndNet); err != nil {
 						return failedValidatorSnapshotString + err.Error()
 					}
 				}
 
 				switch ev.eventType {
-				case startSubnetValidator:
-					currentSubnetValidator = addSubnetValidator(t, vm, ev, subnetID)
-					if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndSubnet); err != nil {
+				case startNetValidator:
+					currentNetValidator = addNetValidator(t, vm, ev, subnetID)
+					if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndNet); err != nil {
 						return failedValidatorSnapshotString + err.Error()
 					}
 
@@ -147,12 +147,12 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 						// no need to nil current primary validator, we'll
 						// reassign immediately
 
-						if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndSubnet); err != nil {
+						if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndNet); err != nil {
 							return failedValidatorSnapshotString + err.Error()
 						}
 					}
 					currentPrimaryValidator = addPrimaryValidatorWithBLSKey(t, vm, ev)
-					if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndSubnet); err != nil {
+					if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndNet); err != nil {
 						return failedValidatorSnapshotString + err.Error()
 					}
 
@@ -163,7 +163,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 
 			// Checks: let's look back at validator sets at previous heights and
 			// make sure they match the snapshots already taken
-			snapshotHeights := maps.Keys(validatorSetByHeightAndSubnet)
+			snapshotHeights := maps.Keys(validatorSetByHeightAndNet)
 			slices.Sort(snapshotHeights)
 			for idx, snapShotHeight := range snapshotHeights {
 				lastAcceptedHeight, err := vm.GetCurrentHeight(context.Background())
@@ -179,7 +179,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 				// within [snapShotHeight] and [nextSnapShotHeight], the validator set
 				// does not change and must be equal to snapshot at [snapShotHeight]
 				for height := snapShotHeight; height < nextSnapShotHeight; height++ {
-					for netID, validatorsSet := range validatorSetByHeightAndSubnet[snapShotHeight] {
+					for netID, validatorsSet := range validatorSetByHeightAndNet[snapShotHeight] {
 						res, err := vm.GetValidatorSet(context.Background(), height, netID)
 						if err != nil {
 							return fmt.Sprintf("failed GetValidatorSet at height %v: %v", height, err)
@@ -219,10 +219,10 @@ func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndNet m
 		return err
 	}
 	height := lastBlk.Height()
-	validatorsSetBySubnet, ok := validatorsSetByHeightAndNet[height]
+	validatorsSetByNet, ok := validatorsSetByHeightAndNet[height]
 	if !ok {
 		validatorsSetByHeightAndNet[height] = make(map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput)
-		validatorsSetBySubnet = validatorsSetByHeightAndNet[height]
+		validatorsSetByNet = validatorsSetByHeightAndNet[height]
 	}
 
 	stakerIt, err := vm.state.GetCurrentStakerIterator()
@@ -232,10 +232,10 @@ func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndNet m
 	defer stakerIt.Release()
 	for stakerIt.Next() {
 		v := stakerIt.Value()
-		validatorsSet, ok := validatorsSetBySubnet[v.NetID]
+		validatorsSet, ok := validatorsSetByNet[v.NetID]
 		if !ok {
-			validatorsSetBySubnet[v.NetID] = make(map[ids.NodeID]*validators.GetValidatorOutput)
-			validatorsSet = validatorsSetBySubnet[v.NetID]
+			validatorsSetByNet[v.NetID] = make(map[ids.NodeID]*validators.GetValidatorOutput)
+			validatorsSet = validatorsSetByNet[v.NetID]
 		}
 
 		blsKey := v.PublicKey
@@ -258,14 +258,14 @@ func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndNet m
 	return nil
 }
 
-func addSubnetValidator(t testing.TB, vm *VM, data *validatorInputData, subnetID ids.ID) *state.Staker {
+func addNetValidator(t testing.TB, vm *VM, data *validatorInputData, subnetID ids.ID) *state.Staker {
 	require := require.New(t)
 
 	wallet := newWallet(t, vm, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
 	})
-	tx, err := wallet.IssueAddSubnetValidatorTx(
-		&txs.SubnetValidator{
+	tx, err := wallet.IssueAddNetValidatorTx(
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: data.nodeID,
 				Start:  uint64(data.startTime.Unix()),
@@ -298,7 +298,7 @@ func addPrimaryValidatorWithBLSKey(t testing.TB, vm *VM, data *validatorInputDat
 	}
 
 	tx, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.SubnetValidator{
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: data.nodeID,
 				Start:  uint64(data.startTime.Unix()),
@@ -539,13 +539,13 @@ func TestTimestampListGenerator(t *testing.T) {
 			}
 
 			// nil out non net validators
-			nonSubnetIndexes := make([]int, 0)
+			nonNetIndexes := make([]int, 0)
 			for idx, ev := range validatorsTimes {
 				if ev.eventType != startNetValidator {
-					nonSubnetIndexes = append(nonSubnetIndexes, idx)
+					nonNetIndexes = append(nonNetIndexes, idx)
 				}
 			}
-			for _, idx := range nonSubnetIndexes {
+			for _, idx := range nonNetIndexes {
 				validatorsTimes[idx] = nil
 			}
 
@@ -675,7 +675,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		return nil, ids.Empty, err
 	}
 
-	// Create a net and store it in testSubnet1
+	// Create a net and store it in testNet1
 	// Note: following Banff activation, block acceptance will move
 	// chain time ahead
 	wallet := newWallet(t, vm, walletConfig{})
@@ -683,7 +683,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		Threshold: 1,
 		Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
 	}
-	testSubnet1, err = wallet.IssueCreateSubnetTx(
+	testNet1, err = wallet.IssueCreateNetTx(
 		owner,
 		walletcommon.WithChangeOwner(owner),
 	)
@@ -692,7 +692,7 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	}
 
 	vm.ctx.Lock.Unlock()
-	err = vm.issueTxFromRPC(testSubnet1)
+	err = vm.issueTxFromRPC(testNet1)
 	vm.lock.Lock()
 	if err != nil {
 		return nil, ids.Empty, err
@@ -712,5 +712,5 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		return nil, ids.Empty, err
 	}
 
-	return vm, testSubnet1.ID(), nil
+	return vm, testNet1.ID(), nil
 }

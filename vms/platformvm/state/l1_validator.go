@@ -76,14 +76,14 @@ type L1Validators interface {
 }
 
 // L1Validator defines an ACP-77 validator. For a given ValidationID, it is
-// expected for SubnetID, NodeID, PublicKey, RemainingBalanceOwner,
+// expected for NetID, NodeID, PublicKey, RemainingBalanceOwner,
 // DeactivationOwner, and StartTime to be constant.
 type L1Validator struct {
 	// ValidationID is not serialized because it is used as the key in the
 	// database, so it doesn't need to be stored in the value.
 	ValidationID ids.ID
 
-	SubnetID ids.ID     `serialize:"true"`
+	NetID ids.ID     `serialize:"true"`
 	NodeID   ids.NodeID `serialize:"true"`
 
 	// PublicKey is the uncompressed BLS public key of the validator. It is
@@ -149,7 +149,7 @@ func (v L1Validator) immutableFieldsAreUnmodified(o L1Validator) bool {
 	if v.ValidationID != o.ValidationID {
 		return true
 	}
-	return v.SubnetID == o.SubnetID &&
+	return v.NetID == o.NetID &&
 		v.NodeID == o.NodeID &&
 		bytes.Equal(v.PublicKey, o.PublicKey) &&
 		bytes.Equal(v.RemainingBalanceOwner, o.RemainingBalanceOwner) &&
@@ -311,7 +311,7 @@ func (d *l1ValidatorsDiff) putL1Validator(state Chain, l1Validator L1Validator) 
 	case database.ErrNotFound:
 		// Verify that there is not a legacy subnet validator with the same
 		// subnetID+nodeID as this L1 validator.
-		_, err := state.GetCurrentValidator(l1Validator.SubnetID, l1Validator.NodeID)
+		_, err := state.GetCurrentValidator(l1Validator.NetID, l1Validator.NodeID)
 		if err == nil {
 			return ErrConflictingL1Validator
 		}
@@ -319,7 +319,7 @@ func (d *l1ValidatorsDiff) putL1Validator(state Chain, l1Validator L1Validator) 
 			return err
 		}
 
-		has, err := state.HasL1Validator(l1Validator.SubnetID, l1Validator.NodeID)
+		has, err := state.HasL1Validator(l1Validator.NetID, l1Validator.NodeID)
 		if err != nil {
 			return err
 		}
@@ -331,7 +331,7 @@ func (d *l1ValidatorsDiff) putL1Validator(state Chain, l1Validator L1Validator) 
 	}
 
 	if prevWeight != l1Validator.Weight {
-		weight, err := state.WeightOfL1Validators(l1Validator.SubnetID)
+		weight, err := state.WeightOfL1Validators(l1Validator.NetID)
 		if err != nil {
 			return err
 		}
@@ -345,7 +345,7 @@ func (d *l1ValidatorsDiff) putL1Validator(state Chain, l1Validator L1Validator) 
 			return err
 		}
 
-		d.modifiedTotalWeight[l1Validator.SubnetID] = weight
+		d.modifiedTotalWeight[l1Validator.NetID] = weight
 	}
 
 	switch {
@@ -361,7 +361,7 @@ func (d *l1ValidatorsDiff) putL1Validator(state Chain, l1Validator L1Validator) 
 	d.modified[l1Validator.ValidationID] = l1Validator
 
 	subnetIDNodeID := subnetIDNodeID{
-		subnetID: l1Validator.SubnetID,
+		subnetID: l1Validator.NetID,
 		nodeID:   l1Validator.NodeID,
 	}
 	d.modifiedHasNodeIDs[subnetIDNodeID] = !l1Validator.isDeleted()
@@ -414,7 +414,7 @@ func (a *activeL1Validators) newIterator() iterator.Iterator[L1Validator] {
 
 func (a *activeL1Validators) addStakersToValidatorManager(vdrs validators.Manager) error {
 	for validationID, l1Validator := range a.lookup {
-		if err := vdrs.AddStaker(l1Validator.SubnetID, l1Validator.NodeID, l1Validator.PublicKey, validationID, l1Validator.Weight); err != nil {
+		if err := vdrs.AddStaker(l1Validator.NetID, l1Validator.NodeID, l1Validator.PublicKey, validationID, l1Validator.Weight); err != nil {
 			return err
 		}
 	}
@@ -423,11 +423,11 @@ func (a *activeL1Validators) addStakersToValidatorManager(vdrs validators.Manage
 
 func addL1ValidatorToValidatorManager(vdrs validators.Manager, l1Validator L1Validator) error {
 	nodeID := l1Validator.effectiveNodeID()
-	if vdrs.GetWeight(l1Validator.SubnetID, nodeID) != 0 {
-		return vdrs.AddWeight(l1Validator.SubnetID, nodeID, l1Validator.Weight)
+	if vdrs.GetWeight(l1Validator.NetID, nodeID) != 0 {
+		return vdrs.AddWeight(l1Validator.NetID, nodeID, l1Validator.Weight)
 	}
 	return vdrs.AddStaker(
-		l1Validator.SubnetID,
+		l1Validator.NetID,
 		nodeID,
 		l1Validator.effectivePublicKeyBytes(),
 		l1Validator.effectiveValidationID(),

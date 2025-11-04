@@ -235,13 +235,13 @@ type DatabaseReplayConfig struct {
 	ExtractGenesisFromSource bool   `json:"extract-genesis-from-source"`  // If true, extract genesis from block 0 of source
 	CopyAllState             bool   `json:"copy-all-state"`               // If true, copy all state trie data
 	
-	// Subnet-EVM replay configuration
-	SubnetReplayEnabled      bool   `json:"subnet-replay-enabled"`        // Enable replay from Subnet-EVM via RPC
-	SubnetReplaySourceURL    string `json:"subnet-replay-source-url"`     // RPC URL e.g. http://127.0.0.1:9630/ext/bc/<chainID>/rpc
-	SubnetReplayStart        uint64 `json:"subnet-replay-start"`          // Start block (default 0)
-	SubnetReplayEnd          uint64 `json:"subnet-replay-end"`            // End block (0 = tip)
-	SubnetReplayBatch        uint64 `json:"subnet-replay-batch"`          // Batch size (default 1000)
-	SubnetReplayResume       bool   `json:"subnet-replay-resume"`         // Resume from checkpoint (default true)
+	// Net-EVM replay configuration
+	NetReplayEnabled      bool   `json:"subnet-replay-enabled"`        // Enable replay from Net-EVM via RPC
+	NetReplaySourceURL    string `json:"subnet-replay-source-url"`     // RPC URL e.g. http://127.0.0.1:9630/ext/bc/<chainID>/rpc
+	NetReplayStart        uint64 `json:"subnet-replay-start"`          // Start block (default 0)
+	NetReplayEnd          uint64 `json:"subnet-replay-end"`            // End block (0 = tip)
+	NetReplayBatch        uint64 `json:"subnet-replay-batch"`          // Batch size (default 1000)
+	NetReplayResume       bool   `json:"subnet-replay-resume"`         // Resume from checkpoint (default true)
 }
 
 // VM implements the C-Chain VM interface using geth
@@ -383,9 +383,9 @@ func (vm *VM) Initialize(
 			}
 			// Check both possible locations for ethdb
 			// CRITICAL FIX: Use the correct migrated database paths
-			// The ACTUAL SubnetEVM migrated data is in the state directory
+			// The ACTUAL EVM migrated data is in the state directory
 			possiblePaths := []string{
-				"/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb",  // ACTUAL migrated SubnetEVM data
+				"/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb",  // ACTUAL migrated EVM data
 				"/home/z/.luxd/node4/chainData/C/db/ethdb/ethdb",                  // Node4 location
 				"/home/z/.luxd/chainData/C/db/ethdb/ethdb",                        // Primary location
 				"/home/z/.luxd/chainData/C/db/badgerdb/ethdb",                     // BadgerDB location
@@ -404,7 +404,7 @@ func (vm *VM) Initialize(
 					}
 					ethDB, err := NewBadgerDatabase(nil, badgerConfig)
 					if err == nil {
-						// CRITICAL: Wrap with namespace stripper for NetEVM compatibility
+						// CRITICAL: Wrap with namespace stripper for EVM compatibility
 						vm.ethDB = NewNetNamespaceStripper(ethDB)
 						fmt.Printf("Successfully opened migrated ethdb with namespace stripper\n")
 
@@ -445,7 +445,7 @@ func (vm *VM) Initialize(
 		// ALWAYS check chainData/C/db first for C-Chain (no blockchain ID dependency)
 		// CRITICAL FIX: Check all possible migrated database paths
 		possiblePaths := []string{
-			"/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb",  // ACTUAL migrated SubnetEVM data
+			"/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb",  // ACTUAL migrated EVM data
 			"/home/z/.luxd/node4/chainData/C/db/ethdb/ethdb",                  // Node4 migrated location
 			"/home/z/.luxd/chainData/C/db/ethdb/ethdb",                        // Primary migrated location
 			"/home/z/.luxd/chainData/C/db/badgerdb/ethdb",                     // BadgerDB migrated location
@@ -473,7 +473,7 @@ func (vm *VM) Initialize(
 						ReadOnly:      false,
 					}
 					if ethDB, err := NewBadgerDatabase(nil, badgerConfig); err == nil {
-						// CRITICAL: Wrap with namespace stripper for NetEVM compatibility
+						// CRITICAL: Wrap with namespace stripper for EVM compatibility
 						vm.ethDB = NewNetNamespaceStripper(ethDB)
 						hasMigratedData = true
 
@@ -1566,7 +1566,7 @@ func getDirSize(path string) int64 {
 	return size
 }
 
-// RunReplay executes the runtime replay of blocks from SubnetEVM to C-Chain
+// RunReplay executes the runtime replay of blocks from EVM to C-Chain
 // This method is called by the lux_replayStart RPC method
 func (vm *VM) RunReplay(config *DatabaseReplayConfig) error {
 	// Ensure VM is initialized
@@ -1588,16 +1588,16 @@ func (vm *VM) RunReplay(config *DatabaseReplayConfig) error {
 
 	vm.log.Info("RunReplay: Starting runtime replay",
 		"source", config.SourcePath,
-		"start", config.SubnetReplayStart,
-		"end", config.SubnetReplayEnd,
-		"batch", config.SubnetReplayBatch)
+		"start", config.NetReplayStart,
+		"end", config.NetReplayEnd,
+		"batch", config.NetReplayBatch)
 
 	// Check if blockchain is initialized
 	if vm.blockChain == nil {
 		vm.log.Warn("RunReplay: Blockchain is not initialized, replay may not persist data")
 	}
 
-	// Open source database (SubnetEVM with PebbleDB)
+	// Open source database (EVM with PebbleDB)
 	sourceDB, err := OpenPebbleDB(config.SourcePath)
 	if err != nil {
 		return fmt.Errorf("failed to open source database: %w", err)
@@ -1605,7 +1605,7 @@ func (vm *VM) RunReplay(config *DatabaseReplayConfig) error {
 	defer sourceDB.Close()
 
 	// Calculate total blocks to process
-	totalBlocks := config.SubnetReplayEnd - config.SubnetReplayStart
+	totalBlocks := config.NetReplayEnd - config.NetReplayStart
 	processedBlocks := uint64(0)
 
 	// CRITICAL FIX: Track the last successfully inserted block
@@ -1614,10 +1614,10 @@ func (vm *VM) RunReplay(config *DatabaseReplayConfig) error {
 	var lastInsertedNumber uint64
 
 	// Process blocks in batches
-	for blockNum := config.SubnetReplayStart; blockNum <= config.SubnetReplayEnd; blockNum += config.SubnetReplayBatch {
-		endBlock := blockNum + config.SubnetReplayBatch - 1
-		if endBlock > config.SubnetReplayEnd {
-			endBlock = config.SubnetReplayEnd
+	for blockNum := config.NetReplayStart; blockNum <= config.NetReplayEnd; blockNum += config.NetReplayBatch {
+		endBlock := blockNum + config.NetReplayBatch - 1
+		if endBlock > config.NetReplayEnd {
+			endBlock = config.NetReplayEnd
 		}
 
 		vm.log.Info("Processing block batch",
@@ -1625,10 +1625,10 @@ func (vm *VM) RunReplay(config *DatabaseReplayConfig) error {
 			"end", endBlock)
 
 		// Read blocks from source
-		blocks := make([]*types.Block, 0, config.SubnetReplayBatch)
+		blocks := make([]*types.Block, 0, config.NetReplayBatch)
 		for num := blockNum; num <= endBlock; num++ {
-			// Read block with SubnetEVM namespace stripping
-			block, err := readBlockFromSubnetEVM(sourceDB, num)
+			// Read block with EVM namespace stripping
+			block, err := readBlockFromEVM(sourceDB, num)
 			if err != nil {
 				// Log only first few errors to avoid spam
 				if processedBlocks < 10 {
@@ -1777,7 +1777,7 @@ func OpenPebbleDB(path string) (database.Database, error) {
 	return db, nil
 }
 
-// LegacyHeader represents the SubnetEVM header format without newer fields
+// LegacyHeader represents the EVM header format without newer fields
 type LegacyHeader struct {
 	ParentHash  common.Hash      `json:"parentHash"`
 	UncleHash   common.Hash      `json:"sha3Uncles"`
@@ -1795,12 +1795,12 @@ type LegacyHeader struct {
 	MixDigest   common.Hash      `json:"mixHash"`
 	Nonce       types.BlockNonce `json:"nonce"`
 	BaseFee     *big.Int         `json:"baseFeePerGas" rlp:"optional"`
-	ExtData     rlp.RawValue     `rlp:"tail"` // Capture any extra SubnetEVM fields
+	ExtData     rlp.RawValue     `rlp:"tail"` // Capture any extra EVM fields
 }
 
-// Helper function to read block from SubnetEVM with namespace stripping
-func readBlockFromSubnetEVM(db database.Database, blockNum uint64) (*types.Block, error) {
-	// SubnetEVM uses the actual 32-byte namespace prefix from our inspection
+// Helper function to read block from EVM with namespace stripping
+func readBlockFromEVM(db database.Database, blockNum uint64) (*types.Block, error) {
+	// EVM uses the actual 32-byte namespace prefix from our inspection
 	namespace := []byte{
 		0x33, 0x7f, 0xb7, 0x3f, 0x9b, 0xcd, 0xac, 0x8c,
 		0x31, 0xa2, 0xd5, 0xf7, 0xb8, 0x77, 0xab, 0x1e,
@@ -1835,7 +1835,7 @@ func readBlockFromSubnetEVM(db database.Database, blockNum uint64) (*types.Block
 		return nil, fmt.Errorf("failed to read header for block %d: %w", blockNum, err)
 	}
 
-	// Try to decode as legacy SubnetEVM header first
+	// Try to decode as legacy EVM header first
 	var legacyHeader LegacyHeader
 	if err := rlp.DecodeBytes(headerData, &legacyHeader); err != nil {
 		// If legacy decode fails, try modern format

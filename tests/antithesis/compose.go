@@ -48,8 +48,8 @@ func GenerateComposeConfig(network *tmpnet.Network, baseImageName string) error 
 		return errImageTagEnvVarNotSet
 	}
 
-	// Subnet testing requires creating an initial db state for the bootstrap node
-	if len(network.Subnets) > 0 {
+	// Net testing requires creating an initial db state for the bootstrap node
+	if len(network.Nets) > 0 {
 		luxPath := os.Getenv(tmpnet.LuxGoPathEnvName)
 		if len(luxPath) == 0 {
 			return errLuxGoEvVarNotSet
@@ -194,9 +194,9 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 			},
 		}
 
-		trackSubnets := node.Flags[config.TrackSubnetsKey]
-		if len(trackSubnets) > 0 {
-			env[config.TrackSubnetsKey] = trackSubnets
+		trackNets := node.Flags[config.TrackNetsKey]
+		if len(trackNets) > 0 {
+			env[config.TrackNetsKey] = trackNets
 			if i == bootstrapIndex {
 				// DB volume for bootstrap node will need to initialized with the subnet
 				volumes = append(volumes, types.ServiceVolumeConfig{
@@ -241,7 +241,7 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 		config.EnvVarName(EnvPrefix, URIsKey): uris.String(),
 	}
 	chainIDs := CSV{}
-	for _, subnet := range network.Subnets {
+	for _, subnet := range network.Nets {
 		for _, chain := range subnet.Chains {
 			chainIDs = append(chainIDs, chain.ChainID.String())
 		}
@@ -271,7 +271,7 @@ func newComposeProject(network *tmpnet.Network, nodeImageName string, workloadIm
 				Ipam: types.IPAMConfig{
 					Config: []*types.IPAMPool{
 						{
-							Subnet: baseNetworkAddress + ".0/24",
+							Net: baseNetworkAddress + ".0/24",
 						},
 					},
 				},

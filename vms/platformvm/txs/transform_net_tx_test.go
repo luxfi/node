@@ -112,7 +112,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 		MinDelegatorStake:        1,
 		MaxValidatorWeightFactor: 1,
 		UptimeRequirement:        .95 * reward.PercentDenominator,
-		SubnetAuth: &secp256k1fx.Input{
+		NetAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{3},
 		},
 	}
@@ -339,7 +339,7 @@ func TestTransformNetTxSerialization(t *testing.T) {
 		MinDelegatorStake:        0xffffffffffffffff,
 		MaxValidatorWeightFactor: 255,
 		UptimeRequirement:        0,
-		SubnetAuth: &secp256k1fx.Input{
+		NetAuth: &secp256k1fx.Input{
 			SigIndices: []uint32{},
 		},
 	}
@@ -971,9 +971,9 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 		{
 			name: "invalid subnetAuth",
 			txFunc: func(ctrl *gomock.Controller) *TransformNetTx {
-				// This SubnetAuth fails verification.
-				invalidSubnetAuth := verifymock.NewVerifiable(ctrl)
-				invalidSubnetAuth.EXPECT().Verify().Return(errInvalidSubnetAuth)
+				// This NetAuth fails verification.
+				invalidNetAuth := verifymock.NewVerifiable(ctrl)
+				invalidNetAuth.EXPECT().Verify().Return(errInvalidNetAuth)
 				return &TransformNetTx{
 					BaseTx:                   validBaseTx,
 					Net:                      ids.GenerateTestID(),
@@ -990,10 +990,10 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MinDelegatorStake:        1,
 					MaxValidatorWeightFactor: 1,
 					UptimeRequirement:        reward.PercentDenominator,
-					SubnetAuth:               invalidSubnetAuth,
+					NetAuth:               invalidNetAuth,
 				}
 			},
-			err: errInvalidSubnetAuth,
+			err: errInvalidNetAuth,
 		},
 		{
 			name: "invalid BaseTx",
@@ -1021,9 +1021,9 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 		{
 			name: "passes verification",
 			txFunc: func(ctrl *gomock.Controller) *TransformNetTx {
-				// This SubnetAuth passes verification.
-				validSubnetAuth := verifymock.NewVerifiable(ctrl)
-				validSubnetAuth.EXPECT().Verify().Return(nil)
+				// This NetAuth passes verification.
+				validNetAuth := verifymock.NewVerifiable(ctrl)
+				validNetAuth.EXPECT().Verify().Return(nil)
 				return &TransformNetTx{
 					BaseTx:                   validBaseTx,
 					Net:                      ids.GenerateTestID(),
@@ -1040,7 +1040,7 @@ func TestTransformNetTxSyntacticVerify(t *testing.T) {
 					MinDelegatorStake:        1,
 					MaxValidatorWeightFactor: 1,
 					UptimeRequirement:        reward.PercentDenominator,
-					SubnetAuth:               validSubnetAuth,
+					NetAuth:               validNetAuth,
 				}
 			},
 			err: nil,

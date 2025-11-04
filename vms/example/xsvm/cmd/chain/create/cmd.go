@@ -46,7 +46,7 @@ func createFunc(c *cobra.Command, args []string) error {
 		config.URI,
 		kc,
 		primary.WalletConfig{
-			SubnetIDs: []ids.ID{config.SubnetID},
+			NetIDs: []ids.ID{config.NetID},
 		},
 	)
 	if err != nil {
@@ -69,7 +69,7 @@ func createFunc(c *cobra.Command, args []string) error {
 
 	createChainStartTime := time.Now()
 	createChainTxID, err := wallet.IssueCreateChainTx(
-		config.SubnetID,
+		config.NetID,
 		genesisBytes,
 		constants.XSVMID,
 		nil,

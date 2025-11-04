@@ -408,7 +408,7 @@ func (b *builder) NewCreateChainTx(
 		VMID:        vmID,
 		FxIDs:       fxIDs,
 		GenesisData: genesisData,
-		SubnetAuth:  subnetAuth,
+		NetAuth:  subnetAuth,
 	}
 	tx, err := txs.NewSigned(utx, txs.Codec, signers)
 	if err != nil {
@@ -424,8 +424,8 @@ func (b *builder) NewCreateNetTx(
 	changeAddr ids.ShortID,
 ) (*txs.Tx, error) {
 	timestamp := b.state.GetTimestamp()
-	createSubnetTxFee := b.cfg.GetCreateNetTxFee(timestamp)
-	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, createSubnetTxFee, changeAddr)
+	createNetTxFee := b.cfg.GetCreateNetTxFee(timestamp)
+	ins, outs, _, signers, err := b.Spend(b.state, keys, 0, createNetTxFee, changeAddr)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
@@ -574,7 +574,7 @@ func (b *builder) NewAddNetValidatorTx(
 			},
 			Net: netID,
 		},
-		SubnetAuth: subnetAuth,
+		NetAuth: subnetAuth,
 	}
 	tx, err := txs.NewSigned(utx, txs.Codec, signers)
 	if err != nil {
@@ -610,7 +610,7 @@ func (b *builder) NewRemoveNetValidatorTx(
 		}},
 		Net:        netID,
 		NodeID:     nodeID,
-		SubnetAuth: subnetAuth,
+		NetAuth: subnetAuth,
 	}
 	tx, err := txs.NewSigned(utx, txs.Codec, signers)
 	if err != nil {
@@ -664,7 +664,7 @@ func (b *builder) NewTransferNetOwnershipTx(
 			Outs:         outs,
 		}},
 		Net:        netID,
-		SubnetAuth: subnetAuth,
+		NetAuth: subnetAuth,
 		Owner: &secp256k1fx.OutputOwners{
 			Threshold: threshold,
 			Addrs:     ownerAddrs,

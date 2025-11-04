@@ -20,7 +20,7 @@ func init() {
 	lc := linearcodec.NewDefault()
 
 	err := errors.Join(
-		lc.RegisterType(&SubnetToL1Conversion{}),
+		lc.RegisterType(&NetToL1Conversion{}),
 		lc.RegisterType(&RegisterL1Validator{}),
 		lc.RegisterType(&L1ValidatorRegistration{}),
 		lc.RegisterType(&L1ValidatorWeight{}),

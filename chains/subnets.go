@@ -14,8 +14,8 @@ import (
 
 var ErrNoPrimaryNetworkConfig = errors.New("no net config for primary network found")
 
-// Subnets holds the currently running subnets on this node
-type Subnets struct {
+// Nets holds the currently running subnets on this node
+type Nets struct {
 	nodeID  ids.NodeID
 	configs map[ids.ID]nets.Config
 
@@ -25,7 +25,7 @@ type Subnets struct {
 
 // GetOrCreate returns a subnet running on this node, or creates one if it was
 // not running before. Returns the subnet and if the subnet was created.
-func (s *Subnets) GetOrCreate(netID ids.ID) (nets.Net, bool) {
+func (s *Nets) GetOrCreate(netID ids.ID) (nets.Net, bool) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -48,7 +48,7 @@ func (s *Subnets) GetOrCreate(netID ids.ID) (nets.Net, bool) {
 
 // Bootstrapping returns the netIDs of any chains that are still
 // bootstrapping.
-func (s *Subnets) Bootstrapping() []ids.ID {
+func (s *Nets) Bootstrapping() []ids.ID {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -62,16 +62,16 @@ func (s *Subnets) Bootstrapping() []ids.ID {
 	return subnetsBootstrapping
 }
 
-// NewSubnets returns an instance of Subnets
-func NewSubnets(
+// NewNets returns an instance of Nets
+func NewNets(
 	nodeID ids.NodeID,
 	configs map[ids.ID]nets.Config,
-) (*Subnets, error) {
+) (*Nets, error) {
 	if _, ok := configs[constants.PrimaryNetworkID]; !ok {
 		return nil, ErrNoPrimaryNetworkConfig
 	}
 
-	s := &Subnets{
+	s := &Nets{
 		nodeID:  nodeID,
 		configs: configs,
 		subnets: make(map[ids.ID]nets.Net),

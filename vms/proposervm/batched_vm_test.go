@@ -49,7 +49,7 @@ func (v *validatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
 	return ids.Empty, nil
 }
 
-func (v *validatorStateAdapter) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+func (v *validatorStateAdapter) GetNetID(chainID ids.ID) (ids.ID, error) {
 	// Not available in test state, return empty ID
 	return ids.Empty, nil
 }

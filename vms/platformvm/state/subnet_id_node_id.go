@@ -12,7 +12,7 @@ import (
 // subnetIDNodeID = [subnetID] + [nodeID]
 const subnetIDNodeIDEntryLength = ids.IDLen + ids.NodeIDLen
 
-var errUnexpectedSubnetIDNodeIDLength = fmt.Errorf("expected subnetID+nodeID entry length %d", subnetIDNodeIDEntryLength)
+var errUnexpectedNetIDNodeIDLength = fmt.Errorf("expected subnetID+nodeID entry length %d", subnetIDNodeIDEntryLength)
 
 type subnetIDNodeID struct {
 	subnetID ids.ID
@@ -28,7 +28,7 @@ func (s *subnetIDNodeID) Marshal() []byte {
 
 func (s *subnetIDNodeID) Unmarshal(data []byte) error {
 	if len(data) != subnetIDNodeIDEntryLength {
-		return errUnexpectedSubnetIDNodeIDLength
+		return errUnexpectedNetIDNodeIDLength
 	}
 
 	copy(s.subnetID[:], data)

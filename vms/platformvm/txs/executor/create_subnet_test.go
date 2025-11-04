@@ -21,7 +21,7 @@ import (
 	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 )
 
-func TestCreateSubnetTxAP3FeeChange(t *testing.T) {
+func TestCreateNetTxAP3FeeChange(t *testing.T) {
 	ap3Time := genesistest.DefaultValidatorStartTime.Add(time.Hour)
 	tests := []struct {
 		name        string

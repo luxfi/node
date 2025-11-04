@@ -414,7 +414,7 @@ func (h *handler) Authorize(
 	[]*secp256k1.PrivateKey, // Keys that prove ownership
 	error,
 ) {
-	subnetOwner, err := state.GetSubnetOwner(netID)
+	subnetOwner, err := state.GetNetOwner(netID)
 	if err != nil {
 		return nil, nil, fmt.Errorf(
 			"failed to fetch net owner for %s: %w",

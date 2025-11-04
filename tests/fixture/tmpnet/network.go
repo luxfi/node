@@ -124,7 +124,7 @@ type Network struct {
 	Genesis *genesis.UnparsedConfig
 
 	// Configuration for primary subnets
-	PrimarySubnetConfig ConfigMap
+	PrimaryNetConfig ConfigMap
 
 	// Configuration for primary network chains (P, X, C)
 	PrimaryChainConfigs map[string]ConfigMap
@@ -139,8 +139,8 @@ type Network struct {
 	// Nodes that constitute the network
 	Nodes []*Node
 
-	// Subnets that have been enabled on the network
-	Subnets []*Subnet
+	// Nets that have been enabled on the network
+	Nets []*Net
 
 	log log.Logger
 }
@@ -174,7 +174,7 @@ func BootstrapNewNetwork(
 		return errInsufficientNodes
 	}
 
-	if err := checkVMBinaries(log, network.Subnets, network.DefaultRuntimeConfig.Process); err != nil {
+	if err := checkVMBinaries(log, network.Nets, network.DefaultRuntimeConfig.Process); err != nil {
 		return err
 	}
 	if err := network.EnsureDefaultConfig(log); err != nil {
@@ -409,7 +409,7 @@ func (n *Network) StartNodes(ctx context.Context, log log.Logger, nodesToStart .
 
 // Start the network for the first time
 func (n *Network) Bootstrap(ctx context.Context, log log.Logger) error {
-	if len(n.Subnets) == 0 {
+	if len(n.Nets) == 0 {
 		// Without the need to coordinate net configuration,
 		// starting all nodes at once is the simplest option.
 		return n.StartNodes(ctx, log, n.Nodes...)
@@ -447,7 +447,7 @@ func (n *Network) Bootstrap(ctx context.Context, log log.Logger) error {
 		return err
 	}
 	defer cancel()
-	if err := n.CreateSubnets(ctx, log, uri, false /* restartRequired */); err != nil {
+	if err := n.CreateNets(ctx, log, uri, false /* restartRequired */); err != nil {
 		return err
 	}
 
@@ -579,24 +579,24 @@ func (n *Network) EnsureNodeConfig(node *Node) error {
 	return nil
 }
 
-// TrackedSubnetsForNode returns the net IDs for the given node
-func (n *Network) TrackedSubnetsForNode(nodeID ids.NodeID) string {
-	netIDs := make([]string, 0, len(n.Subnets))
-	for _, net := range n.Subnets {
+// TrackedNetsForNode returns the net IDs for the given node
+func (n *Network) TrackedNetsForNode(nodeID ids.NodeID) string {
+	netIDs := make([]string, 0, len(n.Nets))
+	for _, net := range n.Nets {
 		if net.NetID == ids.Empty {
 			// Net has not yet been created
 			continue
 		}
 		// Only track subnets that this node validates
 		if slices.Contains(subnet.ValidatorIDs, nodeID) {
-			subnetIDs = append(subnetIDs, subnet.SubnetID.String())
+			subnetIDs = append(subnetIDs, subnet.NetID.String())
 		}
 	}
 	return strings.Join(netIDs, ",")
 }
 
-func (n *Network) GetSubnet(name string) *Net {
-	for _, net := range n.Subnets {
+func (n *Network) GetNet(name string) *Net {
+	for _, net := range n.Nets {
 		if net.Name == name {
 			return net
 		}
@@ -606,9 +606,9 @@ func (n *Network) GetSubnet(name string) *Net {
 
 // Ensure that each net on the network is created. If restartRequired is false, node restart
 // to pick up configuration changes becomes the responsibility of the caller.
-func (n *Network) CreateSubnets(ctx context.Context, log log.Logger, apiURI string, restartRequired bool) error {
-	createdSubnets := make([]*Subnet, 0, len(n.Subnets))
-	for _, net := range n.Subnets {
+func (n *Network) CreateNets(ctx context.Context, log log.Logger, apiURI string, restartRequired bool) error {
+	createdNets := make([]*Net, 0, len(n.Nets))
+	for _, net := range n.Nets {
 		if len(net.ValidatorIDs) == 0 {
 			return fmt.Errorf("net %s needs at least one validator", net.NetID)
 		}
@@ -638,11 +638,11 @@ func (n *Network) CreateSubnets(ctx context.Context, log log.Logger, apiURI stri
 
 		log.Info("created subnet",
 			zap.String("name", subnet.Name),
-			zap.Stringer("id", subnet.SubnetID),
+			zap.Stringer("id", subnet.NetID),
 		)
 
 		// Persist the subnet configuration
-		if err := subnet.Write(n.GetSubnetDir()); err != nil {
+		if err := subnet.Write(n.GetNetDir()); err != nil {
 			return err
 		}
 
@@ -650,10 +650,10 @@ func (n *Network) CreateSubnets(ctx context.Context, log log.Logger, apiURI stri
 			zap.String("name", subnet.Name),
 		)
 
-		createdSubnets = append(createdSubnets, net)
+		createdNets = append(createdNets, net)
 	}
 
-	if len(createdSubnets) == 0 {
+	if len(createdNets) == 0 {
 		return nil
 	}
 
@@ -664,12 +664,12 @@ func (n *Network) CreateSubnets(ctx context.Context, log log.Logger, apiURI stri
 
 	reconfiguredNodes := []*Node{}
 	for _, node := range n.Nodes {
-		existingTrackedSubnets := node.Flags[config.TrackSubnetsKey]
-		trackedSubnets := n.TrackedSubnetsForNode(node.NodeID)
-		if existingTrackedSubnets == trackedSubnets {
+		existingTrackedNets := node.Flags[config.TrackNetsKey]
+		trackedNets := n.TrackedNetsForNode(node.NodeID)
+		if existingTrackedNets == trackedNets {
 			continue
 		}
-		node.Flags[config.TrackSubnetsKey] = trackedSubnets
+		node.Flags[config.TrackNetsKey] = trackedNets
 		reconfiguredNodes = append(reconfiguredNodes, node)
 	}
 
@@ -693,7 +693,7 @@ func (n *Network) CreateSubnets(ctx context.Context, log log.Logger, apiURI stri
 	}
 
 	// Add validators for the subnet
-	for _, subnet := range createdSubnets {
+	for _, subnet := range createdNets {
 		log.Info("adding validators for subnet",
 			zap.String("name", subnet.Name),
 		)
@@ -717,7 +717,7 @@ func (n *Network) CreateSubnets(ctx context.Context, log log.Logger, apiURI stri
 	// Wait for nodes to become subnet validators
 	pChainClient := platformvm.NewClient(apiURI)
 	validatorsToRestart := set.Set[ids.NodeID]{}
-	for _, subnet := range createdSubnets {
+	for _, subnet := range createdNets {
 		if err := WaitForActiveValidators(ctx, log, pChainClient, subnet); err != nil {
 			return err
 		}
@@ -727,12 +727,12 @@ func (n *Network) CreateSubnets(ctx context.Context, log log.Logger, apiURI stri
 			return err
 		}
 
-		if err := subnet.Write(n.GetSubnetDir()); err != nil {
+		if err := subnet.Write(n.GetNetDir()); err != nil {
 			return err
 		}
 		log.Info("wrote subnet configuration",
 			zap.String("name", subnet.Name),
-			zap.Stringer("id", subnet.SubnetID),
+			zap.Stringer("id", subnet.NetID),
 		)
 
 		// If one or more of the subnets chains have explicit configuration, the
@@ -844,18 +844,18 @@ func (n *Network) GetGenesisFileContent() (string, error) {
 	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
-// GetSubnetConfigContent returns the base64-encoded and
+// GetNetConfigContent returns the base64-encoded and
 // JSON-marshaled map of subnetID to subnet configuration.
-func (n *Network) GetSubnetConfigContent() (string, error) {
+func (n *Network) GetNetConfigContent() (string, error) {
 	subnetConfigs := map[ids.ID]ConfigMap{}
 
-	if len(n.PrimarySubnetConfig) > 0 {
-		subnetConfigs[constants.PrimaryNetworkID] = n.PrimarySubnetConfig
+	if len(n.PrimaryNetConfig) > 0 {
+		subnetConfigs[constants.PrimaryNetworkID] = n.PrimaryNetConfig
 	}
 
 	// Collect configuration for non-primary subnets
-	for _, subnet := range n.Subnets {
-		if subnet.SubnetID == ids.Empty {
+	for _, subnet := range n.Nets {
+		if subnet.NetID == ids.Empty {
 			// The subnet hasn't been created yet and it's not
 			// possible to supply configuration without an ID.
 			continue
@@ -863,7 +863,7 @@ func (n *Network) GetSubnetConfigContent() (string, error) {
 		if len(subnet.Config) == 0 {
 			continue
 		}
-		subnetConfigs[subnet.SubnetID] = subnet.Config
+		subnetConfigs[subnet.NetID] = subnet.Config
 	}
 
 	if len(subnetConfigs) == 0 {
@@ -892,7 +892,7 @@ func (n *Network) GetChainConfigContent() (string, error) {
 	}
 
 	// Collect custom chain configuration
-	for _, subnet := range n.Subnets {
+	for _, subnet := range n.Nets {
 		for _, chain := range subnet.Chains {
 			if chain.ChainID == ids.Empty {
 				// The chain hasn't been created yet and it's not possible to supply
@@ -1010,7 +1010,7 @@ const invalidRPCVersion = 0
 
 // checkVMBinaries checks that VM binaries for the given subnets exist and optionally checks that VM
 // binaries have the same rpcchainvm version as the indicated node binary.
-func checkVMBinaries(log log.Logger, subnets []*Subnet, config *ProcessRuntimeConfig) error {
+func checkVMBinaries(log log.Logger, subnets []*Net, config *ProcessRuntimeConfig) error {
 	if len(subnets) == 0 {
 		// Without subnets there are no VM binaries to check
 		return nil

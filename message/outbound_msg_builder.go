@@ -30,18 +30,18 @@ type OutboundMsgBuilder interface {
 		ipSigningTime uint64,
 		ipNodeIDSig []byte,
 		ipBLSSig []byte,
-		trackedSubnets []ids.ID,
+		trackedNets []ids.ID,
 		supportedLPs []uint32,
 		objectedLPs []uint32,
 		knownPeersFilter []byte,
 		knownPeersSalt []byte,
-		requestAllSubnetIPs bool,
+		requestAllNetIPs bool,
 	) (OutboundMessage, error)
 
 	GetPeerList(
 		knownPeersFilter []byte,
 		knownPeersSalt []byte,
-		requestAllSubnetIPs bool,
+		requestAllNetIPs bool,
 	) (OutboundMessage, error)
 
 	PeerList(
@@ -241,15 +241,15 @@ func (b *outMsgBuilder) Handshake(
 	ipSigningTime uint64,
 	ipNodeIDSig []byte,
 	ipBLSSig []byte,
-	trackedSubnets []ids.ID,
+	trackedNets []ids.ID,
 	supportedLPs []uint32,
 	objectedLPs []uint32,
 	knownPeersFilter []byte,
 	knownPeersSalt []byte,
-	requestAllSubnetIPs bool,
+	requestAllNetIPs bool,
 ) (OutboundMessage, error) {
-	subsubsubnetIDBytes := make([][]byte, len(trackedSubnets))
-	encodeIDs(trackedSubnets, subsubsubnetIDBytes)
+	subsubsubnetIDBytes := make([][]byte, len(trackedNets))
+	encodeIDs(trackedNets, subsubsubnetIDBytes)
 	return b.builder.createOutbound(
 		&p2p.Message{
 			Message: &p2p.Message_Handshake{
@@ -274,7 +274,7 @@ func (b *outMsgBuilder) Handshake(
 						Salt:   knownPeersSalt,
 					},
 					IpBlsSig:   ipBLSSig,
-					AllSubnets: requestAllSubnetIPs,
+					AllNets: requestAllNetIPs,
 				},
 			},
 		},
@@ -286,7 +286,7 @@ func (b *outMsgBuilder) Handshake(
 func (b *outMsgBuilder) GetPeerList(
 	knownPeersFilter []byte,
 	knownPeersSalt []byte,
-	requestAllSubnetIPs bool,
+	requestAllNetIPs bool,
 ) (OutboundMessage, error) {
 	return b.builder.createOutbound(
 		&p2p.Message{
@@ -296,7 +296,7 @@ func (b *outMsgBuilder) GetPeerList(
 						Filter: knownPeersFilter,
 						Salt:   knownPeersSalt,
 					},
-					AllSubnets: requestAllSubnetIPs,
+					AllNets: requestAllNetIPs,
 				},
 			},
 		},

@@ -372,7 +372,7 @@ func (b *txBuilder) NewAddNetValidatorTx(
 		return nil, err
 	}
 
-	subnetAuth, err := b.authorizeSubnet(vdr.Net, ops)
+	subnetAuth, err := b.authorizeNet(vdr.Net, ops)
 	if err != nil {
 		return nil, err
 	}
@@ -386,7 +386,7 @@ func (b *txBuilder) NewAddNetValidatorTx(
 			Memo:         ops.Memo(),
 		}},
 		NetValidator: *vdr,
-		SubnetAuth:   subnetAuth,
+		NetAuth:   subnetAuth,
 	}, nil
 }
 
@@ -405,7 +405,7 @@ func (b *txBuilder) NewRemoveNetValidatorTx(
 		return nil, err
 	}
 
-	subnetAuth, err := b.authorizeSubnet(netID, ops)
+	subnetAuth, err := b.authorizeNet(netID, ops)
 	if err != nil {
 		return nil, err
 	}
@@ -420,7 +420,7 @@ func (b *txBuilder) NewRemoveNetValidatorTx(
 		}},
 		Net:        netID,
 		NodeID:     nodeID,
-		SubnetAuth: subnetAuth,
+		NetAuth: subnetAuth,
 	}, nil
 }
 
@@ -475,7 +475,7 @@ func (b *txBuilder) NewCreateChainTx(
 		return nil, err
 	}
 
-	subnetAuth, err := b.authorizeSubnet(netID, ops)
+	subnetAuth, err := b.authorizeNet(netID, ops)
 	if err != nil {
 		return nil, err
 	}
@@ -494,7 +494,7 @@ func (b *txBuilder) NewCreateChainTx(
 		VMID:        vmID,
 		FxIDs:       fxIDs,
 		GenesisData: genesis,
-		SubnetAuth:  subnetAuth,
+		NetAuth:  subnetAuth,
 	}, nil
 }
 
@@ -697,7 +697,7 @@ func (b *txBuilder) NewTransformNetTx(
 		return nil, err
 	}
 
-	subnetAuth, err := b.authorizeSubnet(netID, ops)
+	subnetAuth, err := b.authorizeNet(netID, ops)
 	if err != nil {
 		return nil, err
 	}
@@ -724,7 +724,7 @@ func (b *txBuilder) NewTransformNetTx(
 		MinDelegatorStake:        minDelegatorStake,
 		MaxValidatorWeightFactor: maxValidatorWeightFactor,
 		UptimeRequirement:        uptimeRequirement,
-		SubnetAuth:               subnetAuth,
+		NetAuth:               subnetAuth,
 	}, nil
 }
 
@@ -1087,7 +1087,7 @@ func (b *txBuilder) spend(
 	return inputs, changeOutputs, stakeOutputs, nil
 }
 
-func (b *txBuilder) authorizeSubnet(netID ids.ID, options *common.Options) (*secp256k1fx.Input, error) {
+func (b *txBuilder) authorizeNet(netID ids.ID, options *common.Options) (*secp256k1fx.Input, error) {
 	subnetTx, err := b.backend.GetTx(options.Context(), netID)
 	if err != nil {
 		return nil, fmt.Errorf(

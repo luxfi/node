@@ -195,12 +195,12 @@ contract PrivateAuction {
 }
 ```
 
-## 3. Subnet Staking & Native Liquidity System
+## 3. Net Staking & Native Liquidity System
 
-### 3.1 Subnet Integration Requirements
+### 3.1 Net Integration Requirements
 ```go
 // vms/platformvm/txs/create_subnet_tx.go
-type CreateSubnetTxV2 struct {
+type CreateNetTxV2 struct {
     BaseTx
     Owner            fx.Owner
     
@@ -243,7 +243,7 @@ type LiquidityPool struct {
     // LP token with Ringtail support
     LPToken      *RingtailAsset
     
-    // Subnet staking rewards
+    // Net staking rewards
     StakingBonus uint32
 }
 
@@ -260,9 +260,9 @@ func (dex *NativeDEX) CrossChainSwap(
 }
 ```
 
-### 3.3 Subnet Validator Staking Flow
+### 3.3 Net Validator Staking Flow
 ```
-1. Subnet creator defines liquidity requirements
+1. Net creator defines liquidity requirements
    └── e.g., 10% of native token supply staked as LUX liquidity
 
 2. Validators joining subnet must:
@@ -277,7 +277,7 @@ func (dex *NativeDEX) CrossChainSwap(
 
 5. Trading fees distributed to:
    ├── Liquidity providers (50%)
-   ├── Subnet validators (25%)
+   ├── Net validators (25%)
    └── LUX treasury (25%)
 ```
 
@@ -364,7 +364,7 @@ func (v *UniversalValidator) AddCustomNetwork(
 │             │  +Native DEX│             │                 │
 ├─────────────┴─────────────┼─────────────┴─────────────────┤
 │          Z-Chain          │         External Networks      │
-│        FHE zkVM          │    ETH, LUX, L2s, Subnets    │
+│        FHE zkVM          │    ETH, LUX, L2s, Nets    │
 │    Private Compute       │      Optional Validation       │
 │       Ringtail          │         Ringtail PQ           │
 └─────────────────────────┴─────────────────────────────────┘

@@ -3,7 +3,7 @@
 
 // +build ignore
 
-// This is a standalone tool to run the SubnetEVM import
+// This is a standalone tool to run the EVM import
 // Build with: go build -o import_tool run_import.go import.go import_integration.go
 // Run with: ./import_tool
 
@@ -21,7 +21,7 @@ import (
 
 func main() {
 	var (
-		sourcePath   = flag.String("source", "/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb", "Source SubnetEVM database path")
+		sourcePath   = flag.String("source", "/home/z/work/lux/state/chaindata/lux-mainnet-96369/db/pebbledb", "Source EVM database path")
 		targetPath   = flag.String("target", "/home/z/work/lux/node/chaindata/cchain", "Target C-Chain database path")
 		startBlock   = flag.Uint64("start", 0, "Start block number")
 		endBlock     = flag.Uint64("end", 1082780, "End block number")
@@ -31,14 +31,14 @@ func main() {
 		configFile   = flag.String("config", "", "Configuration file path (JSON)")
 		verifyState  = flag.Bool("verify", false, "Verify state roots during import")
 		rebuildState = flag.Bool("rebuild", true, "Rebuild state during import")
-		stripNS      = flag.Bool("strip-namespace", true, "Strip SubnetEVM namespace prefix")
+		stripNS      = flag.Bool("strip-namespace", true, "Strip EVM namespace prefix")
 	)
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "SubnetEVM to C-Chain Import Tool\n")
+		fmt.Fprintf(os.Stderr, "EVM to C-Chain Import Tool\n")
 		fmt.Fprintf(os.Stderr, "=================================\n\n")
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "This tool imports SubnetEVM blockchain data into C-Chain format.\n")
+		fmt.Fprintf(os.Stderr, "This tool imports EVM blockchain data into C-Chain format.\n")
 		fmt.Fprintf(os.Stderr, "It handles namespace prefix stripping and key format translation.\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
@@ -57,7 +57,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 
 	fmt.Println("╔════════════════════════════════════════════╗")
-	fmt.Println("║   SubnetEVM to C-Chain Import Tool         ║")
+	fmt.Println("║   EVM to C-Chain Import Tool         ║")
 	fmt.Println("╚════════════════════════════════════════════╝")
 	fmt.Println()
 

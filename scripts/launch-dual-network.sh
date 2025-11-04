@@ -1,6 +1,6 @@
 #!/bin/bash
 # Launch Lux Mainnet and Testnet validation in parallel
-# Subnets (Zoo, Hanzo, SPC) are L1s/L2s on these primary networks
+# Nets (Zoo, Hanzo, SPC) are L1s/L2s on these primary networks
 
 set -e
 
@@ -98,18 +98,18 @@ list_subnets() {
     local port=$1
     local network=$2
 
-    print_color "$BLUE" "\n  Subnets on $network:"
+    print_color "$BLUE" "\n  Nets on $network:"
 
     # Get subnet list from P-Chain
     local subnets=$(curl -s -X POST -H "Content-Type: application/json" \
-        -d '{"jsonrpc":"2.0","method":"platform.getSubnets","params":{},"id":1}' \
+        -d '{"jsonrpc":"2.0","method":"platform.getNets","params":{},"id":1}' \
         "http://127.0.0.1:$port/ext/P" 2>/dev/null | jq -r '.result.subnets[]?.id' 2>/dev/null)
 
     if [ -z "$subnets" ]; then
         echo "    No subnets found or P-Chain not ready"
     else
         echo "$subnets" | while read subnet_id; do
-            echo "    • Subnet: $subnet_id"
+            echo "    • Net: $subnet_id"
         done
     fi
 }

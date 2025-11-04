@@ -78,7 +78,7 @@ const (
 	defaultTxFee = 100 * units.NanoLux
 )
 
-var testSubnet1 *txs.Tx
+var testNet1 *txs.Tx
 
 type stakerStatus uint
 
@@ -94,14 +94,14 @@ type test struct {
 	subnetStakers         []staker
 	advanceTimeTo         []time.Time
 	expectedStakers       map[ids.NodeID]stakerStatus
-	expectedSubnetStakers map[ids.NodeID]stakerStatus
+	expectedNetStakers map[ids.NodeID]stakerStatus
 }
 
 // testContext provides a mock context for testing
 type testContext struct {
 	context.Context
 	NetworkID    uint32
-	SubnetID     ids.ID
+	NetID     ids.ID
 	ChainID      ids.ID
 	NodeID       ids.NodeID
 	XChainID     ids.ID
@@ -202,7 +202,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 			res.backend,
 			validatorstest.Manager,
 		)
-		addSubnet(t, res)
+		addNet(t, res)
 	} else {
 		res.blkManager = NewManager(
 			res.mempool,
@@ -264,7 +264,7 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 	)
 }
 
-func addSubnet(t testing.TB, env *environment) {
+func addNet(t testing.TB, env *environment) {
 	require := require.New(t)
 
 	wallet := newWallet(t, env, walletConfig{
@@ -272,7 +272,7 @@ func addSubnet(t testing.TB, env *environment) {
 	})
 
 	var err error
-	testSubnet1, err = wallet.IssueCreateSubnetTx(
+	testNet1, err = wallet.IssueCreateNetTx(
 		&secp256k1fx.OutputOwners{
 			Threshold: 2,
 			Addrs: []ids.ShortID{
@@ -292,12 +292,12 @@ func addSubnet(t testing.TB, env *environment) {
 	_, _, _, err = executor.StandardTx(
 		env.backend,
 		feeCalculator,
-		testSubnet1,
+		testNet1,
 		stateDiff,
 	)
 	require.NoError(err)
 
-	stateDiff.AddTx(testSubnet1, status.Committed)
+	stateDiff.AddTx(testNet1, status.Committed)
 	require.NoError(stateDiff.Apply(env.state))
 	require.NoError(env.state.Commit())
 }

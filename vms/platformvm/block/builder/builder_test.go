@@ -39,7 +39,7 @@ func TestBuildBlockBasic(t *testing.T) {
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	subnetID := testSubnet1.ID()
+	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
 	})
@@ -125,7 +125,7 @@ func TestBuildBlockShouldReward(t *testing.T) {
 
 	// Create a valid [AddPermissionlessValidatorTx]
 	tx, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.SubnetValidator{
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: nodeID,
 				Start:  uint64(validatorStartTime.Unix()),
@@ -251,7 +251,7 @@ func TestBuildBlockForceAdvanceTime(t *testing.T) {
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	subnetID := testSubnet1.ID()
+	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
 	})
@@ -333,7 +333,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 	}
 	tx1, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.SubnetValidator{
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 				Start:  uint64(now.Unix()),
@@ -364,7 +364,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 	require.NoError(err)
 
 	tx2, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.SubnetValidator{
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 				Start:  uint64(now.Unix()),
@@ -415,14 +415,14 @@ func TestPreviouslyDroppedTxsCannotBeReAddedToMempool(t *testing.T) {
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	subnetID := testSubnet1.ID()
+	subnetID := testNet1.ID()
 	wallet := newWallet(t, env, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
 	})
 
 	// Create a valid transaction
 	tx, err := wallet.IssueCreateChainTx(
-		testSubnet1.ID(),
+		testNet1.ID(),
 		nil,
 		constants.XVMID,
 		nil,
@@ -504,12 +504,12 @@ func TestGetNextStakerToReward(t *testing.T) {
 				s.EXPECT().GetCurrentStakerIterator().Return(
 					iterator.FromSlice(
 						&state.Staker{
-							Priority: txs.SubnetPermissionedValidatorCurrentPriority,
+							Priority: txs.NetPermissionedValidatorCurrentPriority,
 							EndTime:  now,
 						},
 						&state.Staker{
 							TxID:     txID,
-							Priority: txs.SubnetPermissionlessDelegatorCurrentPriority,
+							Priority: txs.NetPermissionlessDelegatorCurrentPriority,
 							EndTime:  now,
 						},
 					),
@@ -528,7 +528,7 @@ func TestGetNextStakerToReward(t *testing.T) {
 				s.EXPECT().GetCurrentStakerIterator().Return(
 					iterator.FromSlice(
 						&state.Staker{
-							Priority: txs.SubnetPermissionedValidatorCurrentPriority,
+							Priority: txs.NetPermissionedValidatorCurrentPriority,
 							EndTime:  now,
 						},
 						&state.Staker{
@@ -552,7 +552,7 @@ func TestGetNextStakerToReward(t *testing.T) {
 				s.EXPECT().GetCurrentStakerIterator().Return(
 					iterator.FromSlice(
 						&state.Staker{
-							Priority: txs.SubnetPermissionedValidatorCurrentPriority,
+							Priority: txs.NetPermissionedValidatorCurrentPriority,
 							EndTime:  now,
 						},
 						&state.Staker{

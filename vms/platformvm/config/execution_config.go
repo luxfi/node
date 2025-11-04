@@ -14,7 +14,7 @@ var DefaultExecutionConfig = ExecutionConfig{
 	Network:                      DefaultNetworkConfig,
 	BlockCacheSize:               64 * units.MiB,
 	TxCacheSize:                  128 * units.MiB,
-	TransformedSubnetTxCacheSize: 4 * units.MiB,
+	TransformedNetTxCacheSize: 4 * units.MiB,
 	RewardUTXOsCacheSize:         2048,
 	ChainCacheSize:               2048,
 	ChainDBCacheSize:             2048,
@@ -29,7 +29,7 @@ type ExecutionConfig struct {
 	Network                      NetworkConfig `json:"network"`
 	BlockCacheSize               int            `json:"block-cache-size"`
 	TxCacheSize                  int            `json:"tx-cache-size"`
-	TransformedSubnetTxCacheSize int            `json:"transformed-subnet-tx-cache-size"`
+	TransformedNetTxCacheSize int            `json:"transformed-subnet-tx-cache-size"`
 	RewardUTXOsCacheSize         int            `json:"reward-utxos-cache-size"`
 	ChainCacheSize               int            `json:"chain-cache-size"`
 	ChainDBCacheSize             int            `json:"chain-db-cache-size"`

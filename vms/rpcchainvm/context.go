@@ -14,7 +14,7 @@ import (
 // Context is the node-specific context for RPC chain VM
 type Context struct {
 	NetworkID       uint32
-	SubnetID        ids.ID
+	NetID        ids.ID
 	ChainID         ids.ID
 	NodeID          ids.NodeID
 	PublicKey       *bls.PublicKey

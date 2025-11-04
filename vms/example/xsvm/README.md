@@ -1,6 +1,6 @@
-# Cross Subnet Virtual Machine (XSVM)
+# Cross Net Virtual Machine (XSVM)
 
-Cross Subnet Asset Transfers README Overview
+Cross Net Asset Transfers README Overview
 
 [Background](#lux-subnets-and-custom-vms)
 
@@ -12,9 +12,9 @@ Cross Subnet Asset Transfers README Overview
 
 [Demo](#cross-subnet-transaction-example)
 
-## Lux Subnets and Custom VMs
+## Lux Nets and Custom VMs
 
-Lux is a network composed of multiple sub-networks (called [subnets][Subnet])
+Lux is a network composed of multiple sub-networks (called [subnets][Net])
 that each contain any number of blockchains. Each blockchain is an instance of a
 [Virtual Machine
 (VM)](https://build.lux.network/docs/quick-start/virtual-machines), much like an
@@ -24,11 +24,11 @@ defines the behavior of the blockchain where it is instantiated. For example,
 
 ## Introduction
 
-Just as [Geth] powers the [C-Chain], XSVM can be used to power its own blockchain in an Lux [Subnet]. Instead of providing a place to execute Solidity smart contracts, however, XSVM enables asset transfers for assets originating on its own chain or other XSVM chains on other subnets.
+Just as [Geth] powers the [C-Chain], XSVM can be used to power its own blockchain in an Lux [Net]. Instead of providing a place to execute Solidity smart contracts, however, XSVM enables asset transfers for assets originating on its own chain or other XSVM chains on other subnets.
 
 ## How it Works
 
-XSVM utilizes LuxGo's [interchain messaging] package to create and authenticate Subnet Messages.
+XSVM utilizes LuxGo's [interchain messaging] package to create and authenticate Net Messages.
 
 ### Transfer
 
@@ -293,25 +293,25 @@ You can do this by following the [subnet tutorial] or by using the [subnet-cli].
 [subnet tutorial]: https://build.lux.network/docs/tooling/create-lux-l1
 [Geth]: https://github.com/luxfi/geth
 [C-Chain]: https://build.lux.network/docs/quick-start/primary-network#c-chain
-[Subnet]: https://build.lux.network/docs/lux-l1s
+[Net]: https://build.lux.network/docs/lux-l1s
 
-## Cross Subnet Transaction Example
+## Cross Net Transaction Example
 
 The following example shows how to interact with the XSVM to send and receive native assets across subnets.
 
 ### Overview of Steps
 
-1. Create & deploy Subnet A
-2. Create  & deploy Subnet B
-3. Issue an **export** Tx on Subnet A
-4. Issue an **import** Tx on Subnet B
+1. Create & deploy Net A
+2. Create  & deploy Net B
+3. Issue an **export** Tx on Net A
+4. Issue an **import** Tx on Net B
 5. Confirm Txs processed correctly
 
 > **Note:**  This demo requires [lux-cli](https://github.com/luxfi/lux-cli) version > 1.0.5, [xsvm](https://github.com/luxfi/xsvm) version > 1.0.2 and [lux-network-runner](https://github.com/luxfi/lux-network-runner) v1.3.5.
 
-### Create and Deploy Subnet A, Subnet B
+### Create and Deploy Net A, Net B
 
-Using the lux-cli, this step deploys two subnets running the XSVM. Subnet A will act as the sender in this demo, and Subnet B will act as the receiver.
+Using the lux-cli, this step deploys two subnets running the XSVM. Net A will act as the sender in this demo, and Net B will act as the receiver.
 
 Steps
 
@@ -323,37 +323,37 @@ Build the [XSVM](https://github.com/luxfi/xsvm)
 xsvm chain genesis --encoding binary > xsvm.genesis
 ```
 
-### Create Subnet A and Subnet B
+### Create Net A and Net B
 
 ```bash
 lux subnet create subnetA --custom --genesis <path_to_genesis> --vm <path_to_vm_binary>
 lux subnet create subnetB --custom --genesis <path_to_genesis> --vm <path_to_vm_binary>
 ```
 
-### Deploy Subnet A and Subnet B
+### Deploy Net A and Net B
 
 ```bash
 lux subnet deploy subnetA --local
 lux subnet deploy subnetB --local
 ```
 
-### Issue Export Tx from Subnet A
+### Issue Export Tx from Net A
 
-The SubnetID and ChainIDs are stored in the sidecar.json files in your lux-cli directory. Typically this is located at $HOME/.lux/subnets/
+The NetID and ChainIDs are stored in the sidecar.json files in your lux-cli directory. Typically this is located at $HOME/.lux/subnets/
 
 ```bash
-xsvm issue export --source-chain-id <SubnetA.BlockchainID> --amount <export_amount> --destination-chain-id <SubnetB.BlockchainID>
+xsvm issue export --source-chain-id <NetA.BlockchainID> --amount <export_amount> --destination-chain-id <NetB.BlockchainID>
 ```
 
 Save the TxID printed out by running the export command.
 
-### Issue Import Tx from Subnet B
+### Issue Import Tx from Net B
 
 > Note: The import tx requires **linear++** consensus to be activated on the importing chain. A chain requires ~3 blocks to be produced for linear++ to start.
-> Run `xsvm issue transfer --chain-id <SubnetB.BlockchainID> --amount 1000`  to issue simple Txs on SubnetB
+> Run `xsvm issue transfer --chain-id <NetB.BlockchainID> --amount 1000`  to issue simple Txs on NetB
 
 ```bash
-xsvm issue import --source-chain-id <SubnetA.BlockchainID> --destination-chain-id <SubnetB.BlockchainID> --tx-id <exportTxID> --source-uris <source_uris>
+xsvm issue import --source-chain-id <NetA.BlockchainID> --destination-chain-id <NetB.BlockchainID> --tx-id <exportTxID> --source-uris <source_uris>
 ```
 
 > The <source_uris> can be found by running `lux network status`. The default URIs are
@@ -362,14 +362,14 @@ xsvm issue import --source-chain-id <SubnetA.BlockchainID> --destination-chain-i
 **Account Values**
 To check proper execution, use the `xsvm account` command to check balances.
 
-Verify the balance on SubnetA decreased by your export amount using
+Verify the balance on NetA decreased by your export amount using
 
 ```bash
-xsvm account --chain-id <SubnetA.BlockchainID>
+xsvm account --chain-id <NetA.BlockchainID>
 ```
 
-Now verify chain A's assets were successfully imported to SubnetB
+Now verify chain A's assets were successfully imported to NetB
 
 ```bash
-xsvm account --chain-id <SubnetB.BlockchainID> --asset-id <SubnetA.BlockchainID>
+xsvm account --chain-id <NetB.BlockchainID> --asset-id <NetA.BlockchainID>
 ```

@@ -41,18 +41,18 @@ type backend struct {
 func NewBackend(context *builder.Context, utxos common.ChainUTXOs, subnetTxs map[ids.ID]*txs.Tx) Backend {
 	subnetOwner := make(map[ids.ID]fx.Owner)
 	for txID, tx := range subnetTxs { // first get owners from the CreateNetTx
-		createSubnetTx, ok := tx.Unsigned.(*txs.CreateNetTx)
+		createNetTx, ok := tx.Unsigned.(*txs.CreateNetTx)
 		if !ok {
 			continue
 		}
-		subnetOwner[txID] = createSubnetTx.Owner
+		subnetOwner[txID] = createNetTx.Owner
 	}
 	for _, tx := range subnetTxs { // then check for TransferNetOwnershipTx
-		transferSubnetOwnershipTx, ok := tx.Unsigned.(*txs.TransferNetOwnershipTx)
+		transferNetOwnershipTx, ok := tx.Unsigned.(*txs.TransferNetOwnershipTx)
 		if !ok {
 			continue
 		}
-		subnetOwner[transferSubnetOwnershipTx.Net] = transferSubnetOwnershipTx.Owner
+		subnetOwner[transferNetOwnershipTx.Net] = transferNetOwnershipTx.Owner
 	}
 	return &backend{
 		ChainUTXOs:  utxos,
@@ -94,7 +94,7 @@ func (b *backend) removeUTXOs(ctx context.Context, sourceChain ids.ID, utxoIDs s
 	return nil
 }
 
-func (b *backend) GetSubnetOwner(_ context.Context, netID ids.ID) (fx.Owner, error) {
+func (b *backend) GetNetOwner(_ context.Context, netID ids.ID) (fx.Owner, error) {
 	b.subnetOwnerLock.RLock()
 	defer b.subnetOwnerLock.RUnlock()
 
@@ -105,7 +105,7 @@ func (b *backend) GetSubnetOwner(_ context.Context, netID ids.ID) (fx.Owner, err
 	return owner, nil
 }
 
-func (b *backend) setSubnetOwner(netID ids.ID, owner fx.Owner) {
+func (b *backend) setNetOwner(netID ids.ID, owner fx.Owner) {
 	b.subnetOwnerLock.Lock()
 	defer b.subnetOwnerLock.Unlock()
 

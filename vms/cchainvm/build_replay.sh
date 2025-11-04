@@ -90,7 +90,7 @@ if [ $? -eq 0 ]; then
     echo "     -verify"
     echo ""
     echo "Options:"
-    echo "  -source       Path to source SubnetEVM database (required)"
+    echo "  -source       Path to source EVM database (required)"
     echo "  -target       Path to target C-Chain database (required)"
     echo "  -height       Target block height to replay to (default: 1082780)"
     echo "  -wallet       Wallet address to track balance"

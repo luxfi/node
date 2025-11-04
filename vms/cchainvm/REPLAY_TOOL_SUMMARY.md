@@ -1,14 +1,14 @@
 # C-Chain Replay Tool - Build Summary
 
 ## Overview
-Successfully built the C-Chain replay tool that performs full EVM-based transaction replay from SubnetEVM to C-Chain format, properly handling namespace prefix stripping and state reconstruction.
+Successfully built the C-Chain replay tool that performs full EVM-based transaction replay from EVM to C-Chain format, properly handling namespace prefix stripping and state reconstruction.
 
 ## Components Built
 
 ### 1. Main Replay Binary
 - **Location**: `/home/z/work/lux/node/bin/cchain-replay`
 - **Size**: 25MB (optimized build)
-- **Purpose**: Replays SubnetEVM blocks with full EVM execution to build C-Chain state
+- **Purpose**: Replays EVM blocks with full EVM execution to build C-Chain state
 
 ### 2. Build Script
 - **Location**: `/home/z/work/lux/node/vms/cchainvm/build_replay.sh`
@@ -66,7 +66,7 @@ Successfully built the C-Chain replay tool that performs full EVM-based transact
 ## Features
 
 1. **EVM Transaction Replay**: Re-executes all transactions through the EVM for accurate state building
-2. **Namespace Stripping**: Removes 32-byte SubnetEVM prefix from all keys
+2. **Namespace Stripping**: Removes 32-byte EVM prefix from all keys
 3. **Progress Tracking**: Real-time progress with ETA calculation
 4. **Wallet Tracking**: Monitors specific wallet balance throughout replay
 5. **State Verification**: Optional state root verification after each block

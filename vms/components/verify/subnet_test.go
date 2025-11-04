@@ -58,13 +58,13 @@ func (s *testValidatorState) GetCurrentValidators(ctx context.Context, height ui
 	return nil, nil
 }
 
-func (s *testValidatorState) GetSubnetID(chainID ids.ID) (ids.ID, error) {
+func (s *testValidatorState) GetNetID(chainID ids.ID) (ids.ID, error) {
 	return s.GetNetID(chainID)
 }
 
 var errMissing = errors.New("missing")
 
-func TestSameSubnet(t *testing.T) {
+func TestSameNet(t *testing.T) {
 	netID0 := ids.GenerateTestID()
 	netID1 := ids.GenerateTestID()
 	chainID0 := ids.GenerateTestID()
@@ -140,7 +140,7 @@ func TestSameSubnet(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			chainCtx := test.ctxF(t)
 
-			result := SameSubnet(context.Background(), chainCtx, test.chainID)
+			result := SameNet(context.Background(), chainCtx, test.chainID)
 			require.ErrorIs(t, result, test.result)
 		})
 	}

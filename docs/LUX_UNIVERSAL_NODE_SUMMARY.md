@@ -33,7 +33,7 @@ Transform the Lux node into a universal, quantum-safe, multi-chain validator wit
 - **Zero-knowledge proofs**: Verify without revealing
 
 ### 5. 💱 Native Liquidity System
-- **Subnet staking requirement**: Stake portion to LUX
+- **Net staking requirement**: Stake portion to LUX
 - **Automatic liquidity pools**: Created on X-Chain
 - **Native DEX**: Cross-chain swaps through bridge
 - **Revenue sharing**: Fees distributed to validators
@@ -68,7 +68,7 @@ Z-Chain:
 │             │  +Native DEX│             │   MPC Bridge    │
 ├─────────────┴─────────────┼─────────────┴─────────────────┤
 │          Z-Chain          │      External Networks         │
-│    Private Compute        │   ETH, LUX, L2s, Subnets    │
+│    Private Compute        │   ETH, LUX, L2s, Nets    │
 │         FHE-EVM          │    (Optional Validation)       │
 └─────────────────────────┴─────────────────────────────────┘
 

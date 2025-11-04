@@ -40,10 +40,10 @@ type Net interface {
 	// OnBootstrapCompleted is called when bootstrapping completes
 	OnBootstrapCompleted() error
 
-	// AddChain adds a chain to this Subnet
+	// AddChain adds a chain to this Net
 	AddChain(chainID ids.ID) bool
 
-	// Config returns config of this Subnet
+	// Config returns config of this Net
 	Config() Config
 
 	Allower

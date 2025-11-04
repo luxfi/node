@@ -23,7 +23,7 @@ func TestNetworkSerialization(t *testing.T) {
 	// Runtime configuration is required
 	network.DefaultRuntimeConfig.Process = &ProcessRuntimeConfig{}
 	// Validate round-tripping of primary subnet configuration
-	network.PrimarySubnetConfig = ConfigMap{
+	network.PrimaryNetConfig = ConfigMap{
 		"validatorOnly": true,
 	}
 	require.NoError(network.EnsureDefaultConfig(logging.NoLog{}))

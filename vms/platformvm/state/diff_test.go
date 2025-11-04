@@ -286,7 +286,7 @@ func TestDiffExpiry(t *testing.T) {
 func TestDiffL1ValidatorsErrors(t *testing.T) {
 	l1Validator := L1Validator{
 		ValidationID: ids.GenerateTestID(),
-		SubnetID:     ids.GenerateTestID(),
+		NetID:     ids.GenerateTestID(),
 		NodeID:       ids.GenerateTestNodeID(),
 		Weight:       1, // Not removed
 	}
@@ -352,7 +352,7 @@ func TestDiffL1ValidatorsErrors(t *testing.T) {
 
 			require.NoError(state.PutCurrentValidator(&Staker{
 				TxID:     ids.GenerateTestID(),
-				SubnetID: l1Validator.SubnetID,
+				NetID: l1Validator.NetID,
 				NodeID:   defaultValidatorNodeID,
 			}))
 
@@ -364,7 +364,7 @@ func TestDiffL1ValidatorsErrors(t *testing.T) {
 
 			// Initialize subnetID, weight, and endAccumulatedFee as they are
 			// constant among all tests.
-			test.l1Validator.SubnetID = l1Validator.SubnetID
+			test.l1Validator.NetID = l1Validator.NetID
 			test.l1Validator.Weight = 1                        // Not removed
 			test.l1Validator.EndAccumulatedFee = rand.Uint64() //#nosec G404
 			err = d.PutL1Validator(test.l1Validator)
@@ -480,7 +480,7 @@ func TestDiffCurrentDelegator(t *testing.T) {
 		currentDelegator.NetID,
 		currentDelegator.NodeID,
 	).Return(iterator.Empty[*Staker]{}, nil).Times(2)
-	gotCurrentDelegatorIter, err := d.GetCurrentDelegatorIterator(currentDelegator.SubnetID, currentDelegator.NodeID)
+	gotCurrentDelegatorIter, err := d.GetCurrentDelegatorIterator(currentDelegator.NetID, currentDelegator.NodeID)
 	require.NoError(err)
 	// The iterator should have the 1 delegator we put in [d]
 	require.True(gotCurrentDelegatorIter.Next())
@@ -526,7 +526,7 @@ func TestDiffPendingDelegator(t *testing.T) {
 		pendingDelegator.NetID,
 		pendingDelegator.NodeID,
 	).Return(iterator.Empty[*Staker]{}, nil).Times(2)
-	gotPendingDelegatorIter, err := d.GetPendingDelegatorIterator(pendingDelegator.SubnetID, pendingDelegator.NodeID)
+	gotPendingDelegatorIter, err := d.GetPendingDelegatorIterator(pendingDelegator.NetID, pendingDelegator.NodeID)
 	require.NoError(err)
 	// The iterator should have the 1 delegator we put in [d]
 	require.True(gotPendingDelegatorIter.Next())
@@ -542,15 +542,15 @@ func TestDiffPendingDelegator(t *testing.T) {
 	require.False(gotPendingDelegatorIter.Next())
 }
 
-func TestDiffSubnet(t *testing.T) {
+func TestDiffNet(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
 	state := newTestState(t, memdb.New())
 
 	// Initialize parent with one subnet
-	parentStateCreateSubnetTx := &txs.Tx{
-		Unsigned: &txs.CreateSubnetTx{
+	parentStateCreateNetTx := &txs.Tx{
+		Unsigned: &txs.CreateNetTx{
 			Owner: fxmock.NewOwner(ctrl),
 		},
 	}
@@ -561,7 +561,7 @@ func TestDiffSubnet(t *testing.T) {
 	require.NoError(err)
 	require.Equal(
 		[]ids.ID{
-			parentStateCreateSubnetTx.ID(),
+			parentStateCreateNetTx.ID(),
 		},
 		subnetIDs,
 	)
@@ -570,12 +570,12 @@ func TestDiffSubnet(t *testing.T) {
 	require.NoError(err)
 
 	// Put a subnet
-	createSubnetTx := &txs.Tx{
-		Unsigned: &txs.CreateSubnetTx{
+	createNetTx := &txs.Tx{
+		Unsigned: &txs.CreateNetTx{
 			Owner: fxmock.NewOwner(ctrl),
 		},
 	}
-	diff.AddNet(createSubnetTx.ID())
+	diff.AddNet(createNetTx.ID())
 
 	// Apply diff to parent state
 	require.NoError(diff.Apply(state))
@@ -585,8 +585,8 @@ func TestDiffSubnet(t *testing.T) {
 	require.NoError(err)
 	require.Equal(
 		[]ids.ID{
-			parentStateCreateSubnetTx.ID(),
-			createSubnetTx.ID(),
+			parentStateCreateNetTx.ID(),
+			createNetTx.ID(),
 		},
 		subnetIDs,
 	)
@@ -853,7 +853,7 @@ func assertChainsEqual(t *testing.T, expected, actual Chain) {
 	require.Equal(expectedCurrentSupply, actualCurrentSupply)
 }
 
-func TestDiffSubnetOwner(t *testing.T) {
+func TestDiffNetOwner(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
@@ -863,25 +863,25 @@ func TestDiffSubnetOwner(t *testing.T) {
 		owner1 = fxmock.NewOwner(ctrl)
 		owner2 = fxmock.NewOwner(ctrl)
 
-		createSubnetTx = &txs.Tx{
+		createNetTx = &txs.Tx{
 			Unsigned: &txs.CreateNetTx{
 				BaseTx: txs.BaseTx{},
 				Owner:  owner1,
 			},
 		}
 
-		netID = createSubnetTx.ID()
+		netID = createNetTx.ID()
 	)
 
 	// Create net on base state
-	owner, err := state.GetSubnetOwner(netID)
+	owner, err := state.GetNetOwner(netID)
 	require.ErrorIs(err, database.ErrNotFound)
 	require.Nil(owner)
 
 	state.AddNet(netID)
-	state.SetSubnetOwner(netID, owner1)
+	state.SetNetOwner(netID, owner1)
 
-	owner, err = state.GetSubnetOwner(netID)
+	owner, err = state.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
@@ -889,64 +889,64 @@ func TestDiffSubnetOwner(t *testing.T) {
 	d, err := NewDiffOn(state)
 	require.NoError(err)
 
-	owner, err = d.GetSubnetOwner(netID)
+	owner, err = d.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
 	// Transferring net ownership on diff should be reflected on diff not state
-	d.SetSubnetOwner(netID, owner2)
-	owner, err = d.GetSubnetOwner(netID)
+	d.SetNetOwner(netID, owner2)
+	owner, err = d.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner2, owner)
 
-	owner, err = state.GetSubnetOwner(netID)
+	owner, err = state.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
 	// State should reflect new net owner after diff is applied.
 	require.NoError(d.Apply(state))
 
-	owner, err = state.GetSubnetOwner(netID)
+	owner, err = state.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner2, owner)
 }
 
-func TestDiffSubnetToL1Conversion(t *testing.T) {
+func TestDiffNetToL1Conversion(t *testing.T) {
 	var (
 		require            = require.New(t)
 		state              = newTestState(t, memdb.New())
 		subnetID           = ids.GenerateTestID()
-		expectedConversion = SubnetToL1Conversion{
+		expectedConversion = NetToL1Conversion{
 			ConversionID: ids.GenerateTestID(),
 			ChainID:      ids.GenerateTestID(),
 			Addr:         []byte{1, 2, 3, 4},
 		}
 	)
 
-	actualConversion, err := state.GetSubnetToL1Conversion(subnetID)
+	actualConversion, err := state.GetNetToL1Conversion(subnetID)
 	require.ErrorIs(err, database.ErrNotFound)
 	require.Zero(actualConversion)
 
 	d, err := NewDiffOn(state)
 	require.NoError(err)
 
-	actualConversion, err = d.GetSubnetToL1Conversion(subnetID)
+	actualConversion, err = d.GetNetToL1Conversion(subnetID)
 	require.ErrorIs(err, database.ErrNotFound)
 	require.Zero(actualConversion)
 
 	// Setting a subnet conversion should be reflected on diff not state
-	d.SetSubnetToL1Conversion(subnetID, expectedConversion)
-	actualConversion, err = d.GetSubnetToL1Conversion(subnetID)
+	d.SetNetToL1Conversion(subnetID, expectedConversion)
+	actualConversion, err = d.GetNetToL1Conversion(subnetID)
 	require.NoError(err)
 	require.Equal(expectedConversion, actualConversion)
 
-	actualConversion, err = state.GetSubnetToL1Conversion(subnetID)
+	actualConversion, err = state.GetNetToL1Conversion(subnetID)
 	require.ErrorIs(err, database.ErrNotFound)
 	require.Zero(actualConversion)
 
 	// State should reflect new subnet conversion after diff is applied
 	require.NoError(d.Apply(state))
-	actualConversion, err = state.GetSubnetToL1Conversion(subnetID)
+	actualConversion, err = state.GetNetToL1Conversion(subnetID)
 	require.NoError(err)
 	require.Equal(expectedConversion, actualConversion)
 }
@@ -962,25 +962,25 @@ func TestDiffStacking(t *testing.T) {
 		owner2 = fxmock.NewOwner(ctrl)
 		owner3 = fxmock.NewOwner(ctrl)
 
-		createSubnetTx = &txs.Tx{
+		createNetTx = &txs.Tx{
 			Unsigned: &txs.CreateNetTx{
 				BaseTx: txs.BaseTx{},
 				Owner:  owner1,
 			},
 		}
 
-		netID = createSubnetTx.ID()
+		netID = createNetTx.ID()
 	)
 
 	// Create net on base state
-	owner, err := state.GetSubnetOwner(netID)
+	owner, err := state.GetNetOwner(netID)
 	require.ErrorIs(err, database.ErrNotFound)
 	require.Nil(owner)
 
 	state.AddNet(netID)
-	state.SetSubnetOwner(netID, owner1)
+	state.SetNetOwner(netID, owner1)
 
-	owner, err = state.GetSubnetOwner(netID)
+	owner, err = state.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
@@ -988,55 +988,55 @@ func TestDiffStacking(t *testing.T) {
 	statesDiff, err := NewDiffOn(state)
 	require.NoError(err)
 
-	owner, err = statesDiff.GetSubnetOwner(netID)
+	owner, err = statesDiff.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
 	// Transferring net ownership on first diff should be reflected on first diff not state
-	statesDiff.SetSubnetOwner(netID, owner2)
-	owner, err = statesDiff.GetSubnetOwner(netID)
+	statesDiff.SetNetOwner(netID, owner2)
+	owner, err = statesDiff.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner2, owner)
 
-	owner, err = state.GetSubnetOwner(netID)
+	owner, err = state.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
 	// Create a second diff on first diff and verify that net owner returns correctly
 	stackedDiff, err := NewDiffOn(statesDiff)
 	require.NoError(err)
-	owner, err = stackedDiff.GetSubnetOwner(netID)
+	owner, err = stackedDiff.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner2, owner)
 
 	// Transfer ownership on stacked diff and verify it is only reflected on stacked diff
-	stackedDiff.SetSubnetOwner(netID, owner3)
-	owner, err = stackedDiff.GetSubnetOwner(netID)
+	stackedDiff.SetNetOwner(netID, owner3)
+	owner, err = stackedDiff.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner3, owner)
 
-	owner, err = statesDiff.GetSubnetOwner(netID)
+	owner, err = statesDiff.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner2, owner)
 
-	owner, err = state.GetSubnetOwner(netID)
+	owner, err = state.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
 	// Applying both diffs successively should work as expected.
 	require.NoError(stackedDiff.Apply(statesDiff))
 
-	owner, err = statesDiff.GetSubnetOwner(netID)
+	owner, err = statesDiff.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner3, owner)
 
-	owner, err = state.GetSubnetOwner(netID)
+	owner, err = state.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner1, owner)
 
 	require.NoError(statesDiff.Apply(state))
 
-	owner, err = state.GetSubnetOwner(netID)
+	owner, err = state.GetNetOwner(netID)
 	require.NoError(err)
 	require.Equal(owner3, owner)
 }

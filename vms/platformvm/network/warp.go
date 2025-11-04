@@ -33,7 +33,7 @@ const (
 	ErrMismatchedConversionID
 
 	ErrInvalidJustificationType
-	ErrFailedToParseSubnetID
+	ErrFailedToParseNetID
 	ErrMismatchedValidationID
 	ErrValidationDoesNotExist
 	ErrValidationExists
@@ -80,8 +80,8 @@ func (s signatureRequestVerifier) Verify(
 	}
 
 	switch payload := payloadIntf.(type) {
-	case *message.SubnetToL1Conversion:
-		return s.verifySubnetToL1Conversion(payload, justification)
+	case *message.NetToL1Conversion:
+		return s.verifyNetToL1Conversion(payload, justification)
 	case *message.L1ValidatorRegistration:
 		return s.verifyL1ValidatorRegistration(payload, justification)
 	case *message.L1ValidatorWeight:
@@ -94,8 +94,8 @@ func (s signatureRequestVerifier) Verify(
 	}
 }
 
-func (s signatureRequestVerifier) verifySubnetToL1Conversion(
-	msg *message.SubnetToL1Conversion,
+func (s signatureRequestVerifier) verifyNetToL1Conversion(
+	msg *message.NetToL1Conversion,
 	justification []byte,
 ) *core.AppError {
 	subnetID, err := ids.ToID(justification)
@@ -109,7 +109,7 @@ func (s signatureRequestVerifier) verifySubnetToL1Conversion(
 	s.stateLock.Lock()
 	defer s.stateLock.Unlock()
 
-	conversion, err := s.state.GetSubnetToL1Conversion(subnetID)
+	conversion, err := s.state.GetNetToL1Conversion(subnetID)
 	if err == database.ErrNotFound {
 		return &core.AppError{
 			Code:    ErrConversionDoesNotExist,
@@ -150,10 +150,10 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistration(
 	}
 
 	switch preimage := justification.GetPreimage().(type) {
-	case *platformvm.L1ValidatorRegistrationJustification_ConvertSubnetToL1TxData:
-		return s.verifySubnetValidatorNotCurrentlyRegistered(msg.ValidationID, preimage.ConvertSubnetToL1TxData)
+	case *platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData:
+		return s.verifyNetValidatorNotCurrentlyRegistered(msg.ValidationID, preimage.ConvertNetToL1TxData)
 	case *platformvm.L1ValidatorRegistrationJustification_RegisterL1ValidatorMessage:
-		return s.verifySubnetValidatorCanNotValidate(msg.ValidationID, preimage.RegisterL1ValidatorMessage)
+		return s.verifyNetValidatorCanNotValidate(msg.ValidationID, preimage.RegisterL1ValidatorMessage)
 	default:
 		return &core.AppError{
 			Code:    ErrInvalidJustificationType,
@@ -187,17 +187,17 @@ func (s signatureRequestVerifier) verifyL1ValidatorRegistered(
 	return nil
 }
 
-// verifySubnetValidatorNotCurrentlyRegistered verifies that the validationID
+// verifyNetValidatorNotCurrentlyRegistered verifies that the validationID
 // could only correspond to a validator from a ConvertNetToL1Tx and that it
 // is not currently a validator.
-func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
+func (s signatureRequestVerifier) verifyNetValidatorNotCurrentlyRegistered(
 	validationID ids.ID,
-	justification *platformvm.SubnetIDIndex,
+	justification *platformvm.NetIDIndex,
 ) *core.AppError {
-	subnetID, err := ids.ToID(justification.GetSubnetId())
+	subnetID, err := ids.ToID(justification.GetNetId())
 	if err != nil {
 		return &core.AppError{
-			Code:    ErrFailedToParseSubnetID,
+			Code:    ErrFailedToParseNetID,
 			Message: "failed to parse subnetID: " + err.Error(),
 		}
 	}
@@ -214,7 +214,7 @@ func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
 	defer s.stateLock.Unlock()
 
 	// Verify that the provided subnetID has been converted.
-	_, err = s.state.GetSubnetToL1Conversion(subnetID)
+	_, err = s.state.GetNetToL1Conversion(subnetID)
 	if err == database.ErrNotFound {
 		return &core.AppError{
 			Code:    ErrConversionDoesNotExist,
@@ -248,9 +248,9 @@ func (s signatureRequestVerifier) verifySubnetValidatorNotCurrentlyRegistered(
 	return nil
 }
 
-// verifySubnetValidatorCanNotValidate verifies that the validationID is not
+// verifyNetValidatorCanNotValidate verifies that the validationID is not
 // currently and can never become a validator.
-func (s signatureRequestVerifier) verifySubnetValidatorCanNotValidate(
+func (s signatureRequestVerifier) verifyNetValidatorCanNotValidate(
 	validationID ids.ID,
 	justificationBytes []byte,
 ) *core.AppError {

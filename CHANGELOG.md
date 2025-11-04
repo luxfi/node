@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - L1 (Layer 1) validator support with complete transaction types:
-  - `ConvertSubnetToL1Tx` - Convert existing subnets to L1
+  - `ConvertNetToL1Tx` - Convert existing subnets to L1
   - `RegisterL1ValidatorTx` - Register new L1 validators  
   - `SetL1ValidatorWeightTx` - Adjust validator weights
   - `IncreaseL1ValidatorBalanceTx` - Increase validator balance

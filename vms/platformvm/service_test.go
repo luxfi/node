@@ -98,7 +98,7 @@ func TestGetProposedHeight(t *testing.T) {
 	service.vm.ctx.Lock.Lock()
 
 	// issue any transaction to put into the new block
-	subnetID := testSubnet1.ID()
+	subnetID := testNet1.ID()
 	wallet := newWallet(t, service.vm, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
 	})
@@ -252,7 +252,7 @@ func TestGetTx(t *testing.T) {
 		{
 			"standard block",
 			func(t testing.TB, s *Service) *txs.Tx {
-				subnetID := testSubnet1.ID()
+				subnetID := testNet1.ID()
 				wallet := newWallet(t, s.vm, walletConfig{
 					subnetIDs: []ids.ID{subnetID},
 				})
@@ -284,14 +284,14 @@ func TestGetTx(t *testing.T) {
 					Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 				}
 				tx, err := wallet.IssueAddPermissionlessValidatorTx(
-					&txs.SubnetValidator{
+					&txs.NetValidator{
 						Validator: txs.Validator{
 							NodeID: ids.GenerateTestNodeID(),
 							Start:  uint64(s.vm.clock.Time().Add(txexecutor.SyncBound).Unix()),
 							End:    uint64(s.vm.clock.Time().Add(txexecutor.SyncBound).Add(defaultMinStakingDuration).Unix()),
 							Wght:   s.vm.MinValidatorStake,
 						},
-						Subnet: constants.PrimaryNetworkID,
+						Net: constants.PrimaryNetworkID,
 					},
 					pop,
 					s.vm.ctx.LUXAssetID,
@@ -403,7 +403,7 @@ func TestGetBalance(t *testing.T) {
 	service, _ := defaultService(t)
 
 	feeCalculator := state.PickFeeCalculator(&service.vm.Internal, service.vm.state)
-	createSubnetFee, err := feeCalculator.CalculateFee(testSubnet1.Unsigned)
+	createNetFee, err := feeCalculator.CalculateFee(testNet1.Unsigned)
 	require.NoError(err)
 
 	// Ensure GetStake is correct for each of the genesis validators
@@ -428,7 +428,7 @@ func TestGetBalance(t *testing.T) {
 		if idx == 0 {
 			// we use the first key to fund a subnet creation in [defaultGenesis].
 			// As such we need to account for the subnet creation fee
-			balance = genesistest.DefaultInitialBalance - createSubnetFee
+			balance = genesistest.DefaultInitialBalance - createNetFee
 		}
 		require.Equal(avajson.Uint64(balance), reply.Balance)
 		require.Equal(avajson.Uint64(balance), reply.Unlocked)
@@ -818,14 +818,14 @@ func TestGetValidatorsAt(t *testing.T) {
 	require.NoError(err)
 
 	tx, err := wallet.IssueAddPermissionlessValidatorTx(
-		&txs.SubnetValidator{
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: ids.GenerateTestNodeID(),
 				Start:  uint64(service.vm.clock.Time().Add(txexecutor.SyncBound).Unix()),
 				End:    uint64(service.vm.clock.Time().Add(txexecutor.SyncBound).Add(defaultMinStakingDuration).Unix()),
 				Wght:   service.vm.MinValidatorStake,
 			},
-			Subnet: constants.PrimaryNetworkID,
+			Net: constants.PrimaryNetworkID,
 		},
 		pop,
 		service.vm.ctx.LUXAssetID,
@@ -891,7 +891,7 @@ func TestGetValidatorsAtArgsMarshalling(t *testing.T) {
 			name: "specific height",
 			args: GetValidatorsAtArgs{
 				Height:   pchainapi.Height(12345),
-				SubnetID: subnetID,
+				NetID: subnetID,
 			},
 			json: `{"height":"12345","subnetID":"u3Jjpzzj95827jdENvR1uc76f4zvvVQjGshbVWaSr2Ce5WV1H"}`,
 		},
@@ -899,7 +899,7 @@ func TestGetValidatorsAtArgsMarshalling(t *testing.T) {
 			name: "proposed height",
 			args: GetValidatorsAtArgs{
 				Height:   pchainapi.ProposedHeight,
-				SubnetID: subnetID,
+				NetID: subnetID,
 			},
 			json: `{"height":"proposed","subnetID":"u3Jjpzzj95827jdENvR1uc76f4zvvVQjGshbVWaSr2Ce5WV1H"}`,
 		},
@@ -962,7 +962,7 @@ func TestGetBlock(t *testing.T) {
 			service, _ := defaultService(t)
 			service.vm.ctx.Lock.Lock()
 
-			subnetID := testSubnet1.ID()
+			subnetID := testNet1.ID()
 			wallet := newWallet(t, service.vm, walletConfig{
 				subnetIDs: []ids.ID{subnetID},
 			})
@@ -1245,17 +1245,17 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 	}
 }
 
-func TestServiceGetSubnets(t *testing.T) {
+func TestServiceGetNets(t *testing.T) {
 	require := require.New(t)
 	service, _ := defaultService(t)
 
-	testSubnet1ID := testSubnet1.ID()
+	testNet1ID := testNet1.ID()
 
-	var response GetSubnetsResponse
-	require.NoError(service.GetSubnets(nil, &GetSubnetsArgs{}, &response))
-	require.Equal([]APISubnet{
+	var response GetNetsResponse
+	require.NoError(service.GetNets(nil, &GetNetsArgs{}, &response))
+	require.Equal([]APINet{
 		{
-			ID: testSubnet1ID,
+			ID: testNet1ID,
 			ControlKeys: []string{
 				"P-testing1d6kkj0qh4wcmus3tk59npwt3rluc6en72ngurd",
 				"P-testing17fpqs358de5lgu7a5ftpw2t8axf0pm33983krk",
@@ -1268,23 +1268,23 @@ func TestServiceGetSubnets(t *testing.T) {
 			ControlKeys: []string{},
 			Threshold:   0,
 		},
-	}, response.Subnets)
+	}, response.Nets)
 
 	newOwnerIDStr := "P-testing1t73fa4p4dypa4s3kgufuvr6hmprjclw66mgqgm"
 	newOwnerID, err := service.addrManager.ParseLocalAddress(newOwnerIDStr)
 	require.NoError(err)
 
 	service.vm.ctx.Lock.Lock()
-	service.vm.state.SetSubnetOwner(testSubnet1ID, &secp256k1fx.OutputOwners{
+	service.vm.state.SetNetOwner(testNet1ID, &secp256k1fx.OutputOwners{
 		Addrs:     []ids.ShortID{newOwnerID},
 		Threshold: 1,
 	})
 	service.vm.ctx.Lock.Unlock()
 
-	require.NoError(service.GetSubnets(nil, &GetSubnetsArgs{}, &response))
-	require.Equal([]APISubnet{
+	require.NoError(service.GetNets(nil, &GetNetsArgs{}, &response))
+	require.Equal([]APINet{
 		{
-			ID: testSubnet1ID,
+			ID: testNet1ID,
 			ControlKeys: []string{
 				newOwnerIDStr,
 			},
@@ -1295,7 +1295,7 @@ func TestServiceGetSubnets(t *testing.T) {
 			ControlKeys: []string{},
 			Threshold:   0,
 		},
-	}, response.Subnets)
+	}, response.Nets)
 }
 
 func TestGetFeeConfig(t *testing.T) {
@@ -1368,7 +1368,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			initial: []*state.Staker{
 				{
 					TxID:      ids.GenerateTestID(),
-					SubnetID:  subnetID,
+					NetID:  subnetID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: pk,
 					Weight:    1,
@@ -1376,7 +1376,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					TxID:      ids.GenerateTestID(),
-					SubnetID:  subnetID,
+					NetID:  subnetID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: otherPK,
 					Weight:    1,
@@ -1389,7 +1389,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			l1Validators: []state.L1Validator{
 				{
 					ValidationID: ids.GenerateTestID(),
-					SubnetID:     subnetID,
+					NetID:     subnetID,
 					NodeID:       ids.GenerateTestNodeID(),
 					StartTime:    0,
 					PublicKey:    pkBytes,
@@ -1397,7 +1397,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					ValidationID: ids.GenerateTestID(),
-					SubnetID:     subnetID,
+					NetID:     subnetID,
 					NodeID:       ids.GenerateTestNodeID(),
 					PublicKey:    otherPKBytes,
 					StartTime:    1,
@@ -1410,7 +1410,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			initial: []*state.Staker{
 				{
 					TxID:      ids.GenerateTestID(),
-					SubnetID:  subnetID,
+					NetID:  subnetID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: pk,
 					Weight:    123123,
@@ -1418,7 +1418,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					TxID:      ids.GenerateTestID(),
-					SubnetID:  subnetID,
+					NetID:  subnetID,
 					NodeID:    ids.GenerateTestNodeID(),
 					PublicKey: otherPK,
 					Weight:    0,
@@ -1428,7 +1428,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			l1Validators: []state.L1Validator{
 				{
 					ValidationID:      ids.GenerateTestID(),
-					SubnetID:          subnetID,
+					NetID:          subnetID,
 					NodeID:            ids.GenerateTestNodeID(),
 					StartTime:         0,
 					PublicKey:         pkBytes,
@@ -1438,7 +1438,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					ValidationID:      ids.GenerateTestID(),
-					SubnetID:          subnetID,
+					NetID:          subnetID,
 					NodeID:            ids.GenerateTestNodeID(),
 					PublicKey:         pkBytes,
 					StartTime:         2,
@@ -1447,7 +1447,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 				},
 				{
 					ValidationID:      ids.GenerateTestID(),
-					SubnetID:          subnetID,
+					NetID:          subnetID,
 					NodeID:            ids.GenerateTestNodeID(),
 					PublicKey:         otherPKBytes,
 					StartTime:         3,
@@ -1468,7 +1468,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			for _, staker := range test.initial {
 				primaryStaker := &state.Staker{
 					TxID:      ids.GenerateTestID(),
-					SubnetID:  constants.PrimaryNetworkID,
+					NetID:  constants.PrimaryNetworkID,
 					NodeID:    staker.NodeID,
 					PublicKey: staker.PublicKey,
 					Weight:    5,
@@ -1477,7 +1477,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 					Priority:  txs.PrimaryNetworkValidatorCurrentPriority,
 				}
 				require.NoError(service.vm.state.PutCurrentValidator(primaryStaker))
-				staker.Priority = txs.SubnetPermissionedValidatorCurrentPriority
+				staker.Priority = txs.NetPermissionedValidatorCurrentPriority
 				require.NoError(service.vm.state.PutCurrentValidator(staker))
 
 				stakersByTxID[staker.TxID] = staker
@@ -1485,8 +1485,8 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 
 			l1ValidatorsByVID := make(map[ids.ID]state.L1Validator)
 			if len(test.l1Validators) != 0 {
-				service.vm.state.SetSubnetToL1Conversion(subnetID,
-					state.SubnetToL1Conversion{
+				service.vm.state.SetNetToL1Conversion(subnetID,
+					state.NetToL1Conversion{
 						ConversionID: ids.GenerateTestID(),
 						ChainID:      ids.GenerateTestID(),
 						Addr:         []byte{'a', 'd', 'd', 'r'},
@@ -1570,7 +1570,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 			}
 
 			args := GetCurrentValidatorsArgs{
-				SubnetID: subnetID,
+				NetID: subnetID,
 			}
 			reply := GetCurrentValidatorsReply{}
 			require.NoError(service.GetCurrentValidators(&http.Request{}, &args, &reply))

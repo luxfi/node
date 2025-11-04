@@ -23,10 +23,14 @@ import (
 	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/math/set"
+	consensuscore "github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/engine/core"
+	enginecore "github.com/luxfi/consensus/engine/core"
+	"github.com/luxfi/consensus/engine/core/common"
+	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/uptime"
+	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
@@ -62,12 +66,12 @@ var (
 	_ validators.State                          = (*VM)(nil)
 )
 
-// appSenderAdapter adapts linearblock.AppSender to appsender.AppSender (for network.New)
+// appSenderAdapter adapts consensusmanblock.AppSender to appsender.AppSender (for network.New)
 type appSenderAdapter struct {
-	linearblock.AppSender
+	consensusmanblock.AppSender
 }
 
-func (a *appSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
+func (a *appSenderAdapter) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
 	// Send to the first node in the set for compatibility
 	for nodeID := range nodeIDs {
 		nodeIDsSlice := []ids.NodeID{nodeID}
@@ -80,7 +84,7 @@ func (a *appSenderAdapter) SendAppResponse(ctx context.Context, nodeID ids.NodeI
 	return a.AppSender.SendAppResponse(ctx, nodeID, requestID, appResponseBytes)
 }
 
-func (a *appSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
+func (a *appSenderAdapter) SendAppGossip(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
 	// Convert set to slice for compatibility
 	nodeIDSlice := nodeIDs.List()
 	return a.AppSender.SendAppGossip(ctx, nodeIDSlice, appGossipBytes)
@@ -91,7 +95,7 @@ func (a *appSenderAdapter) SendAppError(ctx context.Context, nodeID ids.NodeID, 
 	return nil
 }
 
-func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs consensusset.Set[ids.NodeID], appGossipBytes []byte) error {
+func (a *appSenderAdapter) SendAppGossipSpecific(ctx context.Context, nodeIDs set.Set[ids.NodeID], appGossipBytes []byte) error {
 	// Convert set to slice for compatibility
 	nodeIDSlice := nodeIDs.List()
 	return a.AppSender.SendAppGossip(ctx, nodeIDSlice, appGossipBytes)
@@ -156,8 +160,9 @@ func (vm *VM) Initialize(
 	genesisBytes []byte,
 	upgradeBytes []byte,
 	configBytes []byte,
-	_ []*common.Fx,
-	appSender common.AppSender,
+	toEngineIntf interface{},
+	fxsIntf []interface{},
+	appSenderIntf interface{},
 ) error {
 	// Handle chain context as interface for now
 	_ = chainCtxIntf
@@ -173,10 +178,10 @@ func (vm *VM) Initialize(
 	_ = fxsIntf
 
 	// Handle appSender
-	var appSender linearblock.AppSender
+	var appSender consensusmanblock.AppSender
 	if appSenderIntf != nil {
 		var ok bool
-		appSender, ok = appSenderIntf.(linearblock.AppSender)
+		appSender, ok = appSenderIntf.(consensusmanblock.AppSender)
 		if !ok {
 			return fmt.Errorf("invalid app sender type")
 		}
@@ -570,7 +575,7 @@ func (vm *VM) checkExistingChains() error {
 func (vm *VM) initBlockchains() error {
 	if vm.Internal.PartialSyncPrimaryNetwork {
 		vm.ctx.Log.Info("skipping primary network chain creation")
-	} else if err := vm.createSubnet(constants.PrimaryNetworkID); err != nil {
+	} else if err := vm.createNet(constants.PrimaryNetworkID); err != nil {
 		return err
 	}
 
@@ -582,8 +587,8 @@ func (vm *VM) initBlockchains() error {
 	}
 
 	if vm.SybilProtectionEnabled {
-		for netID := range vm.TrackedSubnets {
-			if err := vm.createSubnet(netID); err != nil {
+		for netID := range vm.TrackedNets {
+			if err := vm.createNet(netID); err != nil {
 				return err
 			}
 		}
@@ -593,7 +598,7 @@ func (vm *VM) initBlockchains() error {
 			return err
 		}
 		for _, netID := range netIDs {
-			if err := vm.createSubnet(netID); err != nil {
+			if err := vm.createNet(netID); err != nil {
 				return err
 			}
 		}
@@ -683,7 +688,7 @@ func (vm *VM) createCChainIfNeeded() error {
 }
 
 // Create the net with ID [netID]
-func (vm *VM) createSubnet(netID ids.ID) error {
+func (vm *VM) createNet(netID ids.ID) error {
 	chains, err := vm.state.GetChains(netID)
 	if err != nil {
 		return err
@@ -728,7 +733,7 @@ func (vm *VM) onNormalOperationsStarted() error {
 	// vl := validators.NewLogger(vm.log, constants.PrimaryNetworkID, vm.nodeID)
 	// vm.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, vl)
 
-	for subnetID := range vm.TrackedSubnets {
+	for subnetID := range vm.TrackedNets {
 		vl := validators.NewLogger(vm.ctx.Log, subnetID, vm.ctx.NodeID)
 		vm.Validators.RegisterSetCallbackListener(subnetID, vl)
 	}
@@ -736,7 +741,8 @@ func (vm *VM) onNormalOperationsStarted() error {
 	return vm.state.Commit()
 }
 
-func (vm *VM) SetState(_ context.Context, state interfaces.State) error {
+func (vm *VM) SetState(_ context.Context, stateNum uint32) error {
+	state := interfaces.State(stateNum)
 	switch state {
 	case interfaces.Bootstrapping:
 		return vm.onBootstrapStarted()
@@ -777,7 +783,7 @@ func (vm *VM) Shutdown(context.Context) error {
 	return errors.Join(errs...)
 }
 
-func (vm *VM) ParseBlock(_ context.Context, b []byte) (chain.Block, error) {
+func (vm *VM) ParseBlock(_ context.Context, b []byte) (consensusmanblock.Block, error) {
 	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
 	// rather than blocks.GenesisCodec
 	statelessBlk, err := block.Parse(block.Codec, b)
@@ -787,7 +793,7 @@ func (vm *VM) ParseBlock(_ context.Context, b []byte) (chain.Block, error) {
 	return wrapBlock(vm.manager.NewBlock(statelessBlk)), nil
 }
 
-func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (consensusmanblock.Block, error) {
 	return vm.manager.GetBlock(blkID)
 }
 
@@ -826,15 +832,17 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	}, err
 }
 
-func (*VM) NewHTTPHandler(context.Context) (http.Handler, error) {
-	return nil, nil
-}
-
-func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
 	if err := vm.uptimeManager.Connect(nodeID); err != nil {
 		return err
 	}
-	return vm.Network.Connected(ctx, nodeID, consensusVer)
+	// Convert interface{} to version if needed
+	var versionApp *version.Application
+	if v, ok := nodeVersion.(*version.Application); ok {
+		versionApp = v
+	}
+	_ = versionApp // Use versionApp if needed, otherwise ignore
+	return vm.Network.Connected(ctx, nodeID, nodeVersion)
 }
 
 func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
@@ -878,8 +886,8 @@ func (vm *VM) issueTxFromRPC(tx *txs.Tx) error {
 }
 
 // NewHTTPHandler returns a new HTTP handler that can handle API calls
-// This is required by the linearblock.ChainVM interface
-func (vm *VM) NewHTTPHandler(context.Context) (http.Handler, error) {
+// This is required by the consensusmanblock.ChainVM interface
+func (vm *VM) NewHTTPHandler(context.Context) (interface{}, error) {
 	return nil, nil
 }
 

@@ -105,7 +105,7 @@ func (p *ProcessRuntime) Start(ctx context.Context) error {
 	runtimeConfig := p.getRuntimeConfig()
 
 	// Attempt to check for rpc version compatibility
-	if err := checkVMBinaries(log, p.node.network.Subnets, runtimeConfig); err != nil {
+	if err := checkVMBinaries(log, p.node.network.Nets, runtimeConfig); err != nil {
 		return err
 	}
 

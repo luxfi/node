@@ -103,10 +103,10 @@ func TestSignatureRequestVerify(t *testing.T) {
 	}
 }
 
-func TestSignatureRequestVerifySubnetToL1Conversion(t *testing.T) {
+func TestSignatureRequestVerifyNetToL1Conversion(t *testing.T) {
 	var (
 		subnetID   = ids.GenerateTestID()
-		conversion = state.SubnetToL1Conversion{
+		conversion = state.NetToL1Conversion{
 			ConversionID: ids.ID{1, 2, 3, 4, 5, 6, 7, 8},
 			ChainID:      ids.GenerateTestID(),
 			Addr:         utils.RandomBytes(20),
@@ -118,7 +118,7 @@ func TestSignatureRequestVerifySubnetToL1Conversion(t *testing.T) {
 		}
 	)
 
-	state.SetSubnetToL1Conversion(subnetID, conversion)
+	state.SetNetToL1Conversion(subnetID, conversion)
 
 	tests := []struct {
 		name         string
@@ -165,7 +165,7 @@ func TestSignatureRequestVerifySubnetToL1Conversion(t *testing.T) {
 					constants.PlatformChainID,
 					must[*payload.AddressedCall](t)(payload.NewAddressedCall(
 						nil,
-						must[*message.SubnetToL1Conversion](t)(message.NewSubnetToL1Conversion(
+						must[*message.NetToL1Conversion](t)(message.NewNetToL1Conversion(
 							test.conversionID,
 						)).Bytes(),
 					)).Bytes(),
@@ -184,7 +184,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationRegistered(t *testing.T) {
 	var (
 		l1Validator = state.L1Validator{
 			ValidationID: ids.GenerateTestID(),
-			SubnetID:     ids.GenerateTestID(),
+			NetID:     ids.GenerateTestID(),
 			NodeID:       ids.GenerateTestNodeID(),
 			PublicKey:    bls.PublicKeyToUncompressedBytes(sk.PublicKey()),
 			Weight:       1,
@@ -245,8 +245,8 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 	require.NoError(t, err)
 
 	var (
-		convertedSubnetID          = ids.ID{3}
-		unconvertedSubnetID        = ids.ID{7}
+		convertedNetID          = ids.ID{3}
+		unconvertedNetID        = ids.ID{7}
 		nodeID0                    = ids.NodeID{4}
 		nodeID1                    = ids.NodeID{5}
 		nodeID2                    = ids.NodeID{6}
@@ -257,7 +257,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 	)
 
 	registerL1ValidatorToRegister, err := message.NewRegisterL1Validator(
-		convertedSubnetID,
+		convertedNetID,
 		nodeID0,
 		[bls.PublicKeyLen]byte(bls.PublicKeyToCompressedBytes(pk)),
 		expiry,
@@ -268,7 +268,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 	require.NoError(t, err)
 
 	registerL1ValidatorNotToRegister, err := message.NewRegisterL1Validator(
-		convertedSubnetID,
+		convertedNetID,
 		nodeID1,
 		[bls.PublicKeyLen]byte(bls.PublicKeyToCompressedBytes(pk)),
 		expiry,
@@ -279,7 +279,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 	require.NoError(t, err)
 
 	registerL1ValidatorExpired, err := message.NewRegisterL1Validator(
-		convertedSubnetID,
+		convertedNetID,
 		nodeID2,
 		[bls.PublicKeyLen]byte(bls.PublicKeyToCompressedBytes(pk)),
 		genesistest.DefaultValidatorStartTimeUnix,
@@ -290,7 +290,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 	require.NoError(t, err)
 
 	registerL1ValidatorToMarkExpired, err := message.NewRegisterL1Validator(
-		convertedSubnetID,
+		convertedNetID,
 		nodeID3,
 		[bls.PublicKeyLen]byte(bls.PublicKeyToCompressedBytes(pk)),
 		expiry,
@@ -301,19 +301,19 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 	require.NoError(t, err)
 
 	var (
-		conversion                      = state.SubnetToL1Conversion{}
+		conversion                      = state.NetToL1Conversion{}
 		registerL1ValidatorValidationID = registerL1ValidatorToRegister.ValidationID()
 		registerL1ValidatorValidator    = state.L1Validator{
 			ValidationID: registerL1ValidatorValidationID,
-			SubnetID:     registerL1ValidatorToRegister.SubnetID,
+			NetID:     registerL1ValidatorToRegister.NetID,
 			NodeID:       ids.NodeID(registerL1ValidatorToRegister.NodeID),
 			PublicKey:    bls.PublicKeyToUncompressedBytes(pk),
 			Weight:       registerL1ValidatorToRegister.Weight,
 		}
-		convertSubnetToL1ValidationID = registerL1ValidatorToRegister.SubnetID.Append(0)
-		convertSubnetToL1Validator    = state.L1Validator{
-			ValidationID: convertSubnetToL1ValidationID,
-			SubnetID:     registerL1ValidatorToRegister.SubnetID,
+		convertNetToL1ValidationID = registerL1ValidatorToRegister.NetID.Append(0)
+		convertNetToL1Validator    = state.L1Validator{
+			ValidationID: convertNetToL1ValidationID,
+			NetID:     registerL1ValidatorToRegister.NetID,
 			NodeID:       ids.GenerateTestNodeID(),
 			PublicKey:    bls.PublicKeyToUncompressedBytes(pk),
 			Weight:       registerL1ValidatorToRegister.Weight,
@@ -330,9 +330,9 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 		}
 	)
 
-	state.SetSubnetToL1Conversion(convertedSubnetID, conversion)
+	state.SetNetToL1Conversion(convertedNetID, conversion)
 	require.NoError(t, state.PutL1Validator(registerL1ValidatorValidator))
-	require.NoError(t, state.PutL1Validator(convertSubnetToL1Validator))
+	require.NoError(t, state.PutL1Validator(convertNetToL1Validator))
 	state.PutExpiry(expiryEntry)
 
 	tests := []struct {
@@ -357,7 +357,7 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 				},
 			)),
 			expectedErr: &common.AppError{
-				Code:    ErrFailedToParseSubnetID,
+				Code:    ErrFailedToParseNetID,
 				Message: "failed to parse subnetID: invalid hash length: expected 32 bytes but got 0",
 			},
 		},
@@ -367,8 +367,8 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 			justification: must[[]byte](t)(proto.Marshal(
 				&platformvm.L1ValidatorRegistrationJustification{
 					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{
-						ConvertNetToL1TxData: &platformvm.SubnetIDIndex{
-							SubnetId: convertedSubnetID[:],
+						ConvertNetToL1TxData: &platformvm.NetIDIndex{
+							NetId: convertedNetID[:],
 							Index:    0,
 						},
 					},
@@ -381,12 +381,12 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 		},
 		{
 			name:         "convert subnet validation exists",
-			validationID: convertSubnetToL1ValidationID,
+			validationID: convertNetToL1ValidationID,
 			justification: must[[]byte](t)(proto.Marshal(
 				&platformvm.L1ValidatorRegistrationJustification{
 					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{
-						ConvertNetToL1TxData: &platformvm.SubnetIDIndex{
-							SubnetId: convertedSubnetID[:],
+						ConvertNetToL1TxData: &platformvm.NetIDIndex{
+							NetId: convertedNetID[:],
 							Index:    0,
 						},
 					},
@@ -399,12 +399,12 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 		},
 		{
 			name:         "conversion does not exist",
-			validationID: unconvertedSubnetID.Append(0),
+			validationID: unconvertedNetID.Append(0),
 			justification: must[[]byte](t)(proto.Marshal(
 				&platformvm.L1ValidatorRegistrationJustification{
 					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{
-						ConvertNetToL1TxData: &platformvm.SubnetIDIndex{
-							SubnetId: unconvertedSubnetID[:],
+						ConvertNetToL1TxData: &platformvm.NetIDIndex{
+							NetId: unconvertedNetID[:],
 							Index:    0,
 						},
 					},
@@ -417,12 +417,12 @@ func TestSignatureRequestVerifyL1ValidatorRegistrationNotRegistered(t *testing.T
 		},
 		{
 			name:         "valid convert subnet data",
-			validationID: convertedSubnetID.Append(1),
+			validationID: convertedNetID.Append(1),
 			justification: must[[]byte](t)(proto.Marshal(
 				&platformvm.L1ValidatorRegistrationJustification{
 					Preimage: &platformvm.L1ValidatorRegistrationJustification_ConvertNetToL1TxData{
-						ConvertNetToL1TxData: &platformvm.SubnetIDIndex{
-							SubnetId: convertedSubnetID[:],
+						ConvertNetToL1TxData: &platformvm.NetIDIndex{
+							NetId: convertedNetID[:],
 							Index:    1,
 						},
 					},
@@ -555,7 +555,7 @@ func TestSignatureRequestVerifyL1ValidatorWeight(t *testing.T) {
 	var (
 		l1Validator = state.L1Validator{
 			ValidationID: ids.GenerateTestID(),
-			SubnetID:     ids.GenerateTestID(),
+			NetID:     ids.GenerateTestID(),
 			NodeID:       ids.GenerateTestNodeID(),
 			PublicKey:    bls.PublicKeyToUncompressedBytes(sk.PublicKey()),
 			Weight:       weight,

@@ -765,7 +765,7 @@ func TestAddPermissionlessPrimaryDelegatorSerialization(t *testing.T) {
 }`, string(unsignedComplexAddPrimaryTxJSONBytes))
 }
 
-func TestAddPermissionlessSubnetDelegatorSerialization(t *testing.T) {
+func TestAddPermissionlessNetDelegatorSerialization(t *testing.T) {
 	require := require.New(t)
 	// Use empty chain ID for serialization test to match expected bytes
 	testChainID := ids.Empty

@@ -256,18 +256,18 @@ func (mr *OutboundMsgBuilderMockRecorder) GetAncestors(chainID, requestID, deadl
 }
 
 // GetPeerList mocks base method.
-func (m *OutboundMsgBuilder) GetPeerList(knownPeersFilter, knownPeersSalt []byte, requestAllSubnetIPs bool) (message.OutboundMessage, error) {
+func (m *OutboundMsgBuilder) GetPeerList(knownPeersFilter, knownPeersSalt []byte, requestAllNetIPs bool) (message.OutboundMessage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPeerList", knownPeersFilter, knownPeersSalt, requestAllSubnetIPs)
+	ret := m.ctrl.Call(m, "GetPeerList", knownPeersFilter, knownPeersSalt, requestAllNetIPs)
 	ret0, _ := ret[0].(message.OutboundMessage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPeerList indicates an expected call of GetPeerList.
-func (mr *OutboundMsgBuilderMockRecorder) GetPeerList(knownPeersFilter, knownPeersSalt, requestAllSubnetIPs any) *gomock.Call {
+func (mr *OutboundMsgBuilderMockRecorder) GetPeerList(knownPeersFilter, knownPeersSalt, requestAllNetIPs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPeerList", reflect.TypeOf((*OutboundMsgBuilder)(nil).GetPeerList), knownPeersFilter, knownPeersSalt, requestAllSubnetIPs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPeerList", reflect.TypeOf((*OutboundMsgBuilder)(nil).GetPeerList), knownPeersFilter, knownPeersSalt, requestAllNetIPs)
 }
 
 // GetStateSummaryFrontier mocks base method.
@@ -286,18 +286,18 @@ func (mr *OutboundMsgBuilderMockRecorder) GetStateSummaryFrontier(chainID, reque
 }
 
 // Handshake mocks base method.
-func (m *OutboundMsgBuilder) Handshake(networkID uint32, myTime uint64, ip netip.AddrPort, client string, major, minor, patch uint32, ipSigningTime uint64, ipNodeIDSig, ipBLSSig []byte, trackedSubnets []ids.ID, supportedACPs, objectedACPs []uint32, knownPeersFilter, knownPeersSalt []byte, requestAllSubnetIPs bool) (message.OutboundMessage, error) {
+func (m *OutboundMsgBuilder) Handshake(networkID uint32, myTime uint64, ip netip.AddrPort, client string, major, minor, patch uint32, ipSigningTime uint64, ipNodeIDSig, ipBLSSig []byte, trackedNets []ids.ID, supportedACPs, objectedACPs []uint32, knownPeersFilter, knownPeersSalt []byte, requestAllNetIPs bool) (message.OutboundMessage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Handshake", networkID, myTime, ip, client, major, minor, patch, ipSigningTime, ipNodeIDSig, ipBLSSig, trackedSubnets, supportedACPs, objectedACPs, knownPeersFilter, knownPeersSalt, requestAllSubnetIPs)
+	ret := m.ctrl.Call(m, "Handshake", networkID, myTime, ip, client, major, minor, patch, ipSigningTime, ipNodeIDSig, ipBLSSig, trackedNets, supportedACPs, objectedACPs, knownPeersFilter, knownPeersSalt, requestAllNetIPs)
 	ret0, _ := ret[0].(message.OutboundMessage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Handshake indicates an expected call of Handshake.
-func (mr *OutboundMsgBuilderMockRecorder) Handshake(networkID, myTime, ip, client, major, minor, patch, ipSigningTime, ipNodeIDSig, ipBLSSig, trackedSubnets, supportedACPs, objectedACPs, knownPeersFilter, knownPeersSalt, requestAllSubnetIPs any) *gomock.Call {
+func (mr *OutboundMsgBuilderMockRecorder) Handshake(networkID, myTime, ip, client, major, minor, patch, ipSigningTime, ipNodeIDSig, ipBLSSig, trackedNets, supportedACPs, objectedACPs, knownPeersFilter, knownPeersSalt, requestAllNetIPs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handshake", reflect.TypeOf((*OutboundMsgBuilder)(nil).Handshake), networkID, myTime, ip, client, major, minor, patch, ipSigningTime, ipNodeIDSig, ipBLSSig, trackedSubnets, supportedACPs, objectedACPs, knownPeersFilter, knownPeersSalt, requestAllSubnetIPs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handshake", reflect.TypeOf((*OutboundMsgBuilder)(nil).Handshake), networkID, myTime, ip, client, major, minor, patch, ipSigningTime, ipNodeIDSig, ipBLSSig, trackedNets, supportedACPs, objectedACPs, knownPeersFilter, knownPeersSalt, requestAllNetIPs)
 }
 
 // PeerList mocks base method.

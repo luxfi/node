@@ -216,7 +216,7 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 		subnetStakers         []staker
 		advanceTimeTo         []time.Time
 		expectedStakers       map[ids.NodeID]stakerStatus
-		expectedSubnetStakers map[ids.NodeID]stakerStatus
+		expectedNetStakers map[ids.NodeID]stakerStatus
 	}
 
 	// Chronological order (not in scale):
@@ -270,7 +270,7 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 				staker4.nodeID: pending,
 				staker5.nodeID: pending,
 			},
-			expectedSubnetStakers: map[ids.NodeID]stakerStatus{
+			expectedNetStakers: map[ids.NodeID]stakerStatus{
 				staker1.nodeID: pending,
 				staker2.nodeID: pending,
 				staker3.nodeID: pending,
@@ -290,7 +290,7 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 				staker4.nodeID: pending,
 				staker5.nodeID: pending,
 			},
-			expectedSubnetStakers: map[ids.NodeID]stakerStatus{
+			expectedNetStakers: map[ids.NodeID]stakerStatus{
 				staker1.nodeID: current,
 				staker2.nodeID: pending,
 				staker3.nodeID: pending,
@@ -322,7 +322,7 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 				staker4.nodeID: current,
 				staker5.nodeID: pending,
 			},
-			expectedSubnetStakers: map[ids.NodeID]stakerStatus{
+			expectedNetStakers: map[ids.NodeID]stakerStatus{
 				staker1.nodeID:    current,
 				staker2.nodeID:    current,
 				staker3Sub.nodeID: pending,
@@ -342,7 +342,7 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 				staker4.nodeID: current,
 				staker5.nodeID: pending,
 			},
-			expectedSubnetStakers: map[ids.NodeID]stakerStatus{
+			expectedNetStakers: map[ids.NodeID]stakerStatus{
 				staker1.nodeID: current,
 				staker2.nodeID: current,
 				staker3.nodeID: current,
@@ -373,8 +373,8 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 
 			dummyHeight := uint64(1)
 
-			netID := testSubnet1.ID()
-			env.config.TrackedSubnets.Add(netID)
+			netID := testNet1.ID()
+			env.config.TrackedNets.Add(netID)
 
 			for _, staker := range test.stakers {
 				addPendingValidator(
@@ -392,8 +392,8 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 					subnetIDs: []ids.ID{subnetID},
 				})
 
-				tx, err := wallet.IssueAddSubnetValidatorTx(
-					&txs.SubnetValidator{
+				tx, err := wallet.IssueAddNetValidatorTx(
+					&txs.NetValidator{
 						Validator: txs.Validator{
 							NodeID: staker.nodeID,
 							Start:  uint64(staker.startTime.Unix()),
@@ -457,7 +457,7 @@ func TestAdvanceTimeTxUpdateStakers(t *testing.T) {
 				}
 			}
 
-			for stakerNodeID, status := range test.expectedSubnetStakers {
+			for stakerNodeID, status := range test.expectedNetStakers {
 				switch status {
 				case pending:
 					_, ok := env.config.Validators.GetValidator(netID, stakerNodeID)
@@ -481,8 +481,8 @@ func TestAdvanceTimeTxRemoveNetValidator(t *testing.T) {
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	netID := testSubnet1.ID()
-	env.config.TrackedSubnets.Add(netID)
+	netID := testNet1.ID()
+	env.config.TrackedNets.Add(netID)
 
 	wallet := newWallet(t, env, walletConfig{
 		subnetIDs: []ids.ID{subnetID},
@@ -493,8 +493,8 @@ func TestAdvanceTimeTxRemoveNetValidator(t *testing.T) {
 	subnetValidatorNodeID := genesistest.DefaultNodeIDs[0]
 	subnetVdr1EndTime := genesistest.DefaultValidatorStartTime.Add(defaultMinStakingDuration)
 
-	tx, err := wallet.IssueAddSubnetValidatorTx(
-		&txs.SubnetValidator{
+	tx, err := wallet.IssueAddNetValidatorTx(
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: subnetValidatorNodeID,
 				Start:  genesistest.DefaultValidatorStartTimeUnix,
@@ -506,11 +506,11 @@ func TestAdvanceTimeTxRemoveNetValidator(t *testing.T) {
 	)
 	require.NoError(err)
 
-	addSubnetValTx := tx.Unsigned.(*txs.AddNetValidatorTx)
+	addNetValTx := tx.Unsigned.(*txs.AddNetValidatorTx)
 	staker, err := state.NewCurrentStaker(
 		tx.ID(),
-		addSubnetValTx,
-		addSubnetValTx.StartTime(),
+		addNetValTx,
+		addNetValTx.StartTime(),
 		0,
 	)
 	require.NoError(err)
@@ -524,8 +524,8 @@ func TestAdvanceTimeTxRemoveNetValidator(t *testing.T) {
 
 	// Queue a staker that joins the staker set after the above validator leaves
 	subnetVdr2NodeID := genesistest.DefaultNodeIDs[1]
-	tx, err = wallet.IssueAddSubnetValidatorTx(
-		&txs.SubnetValidator{
+	tx, err = wallet.IssueAddNetValidatorTx(
+		&txs.NetValidator{
 			Validator: txs.Validator{
 				NodeID: subnetVdr2NodeID,
 				Start:  uint64(subnetVdr1EndTime.Add(time.Second).Unix()),
@@ -584,7 +584,7 @@ func TestAdvanceTimeTxRemoveNetValidator(t *testing.T) {
 	require.False(ok)
 }
 
-func TestTrackedSubnet(t *testing.T) {
+func TestTrackedNet(t *testing.T) {
 	for _, tracked := range []bool{true, false} {
 		t.Run(fmt.Sprintf("tracked %t", tracked), func(t *testing.T) {
 			require := require.New(t)
@@ -593,9 +593,9 @@ func TestTrackedSubnet(t *testing.T) {
 			defer env.ctx.Lock.Unlock()
 			dummyHeight := uint64(1)
 
-			netID := testSubnet1.ID()
+			netID := testNet1.ID()
 			if tracked {
-				env.config.TrackedSubnets.Add(netID)
+				env.config.TrackedNets.Add(netID)
 			}
 
 			wallet := newWallet(t, env, walletConfig{
@@ -607,8 +607,8 @@ func TestTrackedSubnet(t *testing.T) {
 
 			subnetVdr1StartTime := genesistest.DefaultValidatorStartTime.Add(1 * time.Minute)
 			subnetVdr1EndTime := genesistest.DefaultValidatorStartTime.Add(10 * defaultMinStakingDuration).Add(1 * time.Minute)
-			tx, err := wallet.IssueAddSubnetValidatorTx(
-				&txs.SubnetValidator{
+			tx, err := wallet.IssueAddNetValidatorTx(
+				&txs.NetValidator{
 					Validator: txs.Validator{
 						NodeID: subnetValidatorNodeID,
 						Start:  uint64(subnetVdr1StartTime.Unix()),

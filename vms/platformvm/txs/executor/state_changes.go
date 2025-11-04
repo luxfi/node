@@ -361,15 +361,15 @@ func GetRewardsCalculator(
 		return backend.Rewards, nil
 	}
 
-	transformSubnet, err := GetTransformNetTx(parentState, netID)
+	transformNet, err := GetTransformNetTx(parentState, netID)
 	if err != nil {
 		return nil, err
 	}
 
 	return reward.NewCalculator(reward.Config{
-		MaxConsumptionRate: transformSubnet.MaxConsumptionRate,
-		MinConsumptionRate: transformSubnet.MinConsumptionRate,
+		MaxConsumptionRate: transformNet.MaxConsumptionRate,
+		MinConsumptionRate: transformNet.MinConsumptionRate,
 		MintingPeriod:      backend.Config.RewardConfig.MintingPeriod,
-		SupplyCap:          transformSubnet.MaximumSupply,
+		SupplyCap:          transformNet.MaximumSupply,
 	}), nil
 }

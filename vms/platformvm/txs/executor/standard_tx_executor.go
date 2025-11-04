@@ -48,7 +48,7 @@ var (
 	errEtnaUpgradeNotActive             = errors.New("attempting to use an Etna-upgrade feature prior to activation")
 	errTransformNetTxPostEtna        = errors.New("TransformNetTx is not permitted post-Etna")
 	errMaxNumActiveValidators           = errors.New("already at the max number of active validators")
-	errCouldNotLoadSubnetToL1Conversion = errors.New("could not load subnet conversion")
+	errCouldNotLoadNetToL1Conversion = errors.New("could not load subnet conversion")
 	errWrongWarpMessageSourceChainID    = errors.New("wrong warp message source chain ID")
 	errWrongWarpMessageSourceAddress    = errors.New("wrong warp message source address")
 	errWarpMessageExpired               = errors.New("warp message expired")
@@ -200,7 +200,7 @@ func (e *standardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 		return err
 	}
 
-	baseTxCreds, err := verifyPoASubnetAuthorization(e.backend.Fx, e.state, e.tx, tx.NetID, tx.SubnetAuth)
+	baseTxCreds, err := verifyPoANetAuthorization(e.backend.Fx, e.state, e.tx, tx.NetID, tx.NetAuth)
 	if err != nil {
 		return err
 	}
@@ -280,7 +280,7 @@ func (e *standardTxExecutor) CreateNetTx(tx *txs.CreateNetTx) error {
 	lux.Produce(e.state, txID, tx.Outs)
 	// Add the new subnet to the database
 	e.state.AddNet(txID)
-	e.state.SetSubnetOwner(txID, tx.Owner)
+	e.state.SetNetOwner(txID, tx.Owner)
 	return nil
 }
 
@@ -310,7 +310,7 @@ func (e *standardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 	// network chains are not guaranteed to be up-to-date.
 	if e.backend.Bootstrapped.Get() && !e.backend.Config.PartialSyncPrimaryNetwork {
 		// TODO: Fix ChainContext type mismatch and SharedMemory interface
-		// if err := verify.SameSubnet(context.TODO(), e.backend.Ctx, tx.SourceChain); err != nil {
+		// if err := verify.SameNet(context.TODO(), e.backend.Ctx, tx.SourceChain); err != nil {
 		// 	return err
 		// }
 		//
@@ -396,7 +396,7 @@ func (e *standardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 
 	if e.backend.Bootstrapped.Get() {
 		// TODO: Fix ChainContext type mismatch
-		// if err := verify.SameSubnet(context.TODO(), e.backend.Ctx, tx.DestinationChain); err != nil {
+		// if err := verify.SameNet(context.TODO(), e.backend.Ctx, tx.DestinationChain); err != nil {
 		// 	return err
 		// }
 	}
@@ -516,7 +516,7 @@ func (e *standardTxExecutor) TransformNetTx(tx *txs.TransformNetTx) error {
 		return errMaxStakeDurationTooLarge
 	}
 
-	baseTxCreds, err := verifyPoASubnetAuthorization(e.backend.Fx, e.state, e.tx, tx.Net, tx.NetAuth)
+	baseTxCreds, err := verifyPoANetAuthorization(e.backend.Fx, e.state, e.tx, tx.Net, tx.NetAuth)
 	if err != nil {
 		return err
 	}
@@ -551,7 +551,7 @@ func (e *standardTxExecutor) TransformNetTx(tx *txs.TransformNetTx) error {
 	// Produce the UTXOS
 	lux.Produce(e.state, txID, tx.Outs)
 	// Transform the new subnet in the database
-	e.state.AddSubnetTransformation(e.tx)
+	e.state.AddNetTransformation(e.tx)
 	e.state.SetCurrentSupply(tx.Net, tx.InitialSupply)
 	return nil
 }
@@ -626,7 +626,7 @@ func (e *standardTxExecutor) TransferNetOwnershipTx(tx *txs.TransferNetOwnership
 		return err
 	}
 
-	e.state.SetSubnetOwner(tx.Net, tx.Owner)
+	e.state.SetNetOwner(tx.Net, tx.Owner)
 
 	txID := e.tx.ID()
 	lux.Consume(e.state, tx.Ins)
@@ -695,7 +695,7 @@ func (e *standardTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 		return err
 	}
 
-	baseTxCreds, err := verifyPoASubnetAuthorization(e.backend.Fx, e.state, e.tx, tx.Net, tx.NetAuth)
+	baseTxCreds, err := verifyPoANetAuthorization(e.backend.Fx, e.state, e.tx, tx.Net, tx.NetAuth)
 	if err != nil {
 		return err
 	}
@@ -709,11 +709,11 @@ func (e *standardTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 	var (
 		startTime                = uint64(currentTimestamp.Unix())
 		currentFees              = e.state.GetAccruedFees()
-		subnetToL1ConversionData = message.SubnetToL1ConversionData{
-			SubnetID:       tx.Net,
+		subnetToL1ConversionData = message.NetToL1ConversionData{
+			NetID:       tx.Net,
 			ManagerChainID: tx.ChainID,
 			ManagerAddress: tx.Address,
-			Validators:     make([]message.SubnetToL1ConversionValidatorData, len(tx.Validators)),
+			Validators:     make([]message.NetToL1ConversionValidatorData, len(tx.Validators)),
 		}
 	)
 	for i, vdr := range tx.Validators {
@@ -733,7 +733,7 @@ func (e *standardTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 
 		l1Validator := state.L1Validator{
 			ValidationID:          tx.Net.Append(uint32(i)),
-			SubnetID:              tx.Net,
+			NetID:              tx.Net,
 			NodeID:                nodeID,
 			PublicKey:             bls.PublicKeyToUncompressedBytes(vdr.Signer.Key()),
 			RemainingBalanceOwner: remainingBalanceOwner,
@@ -764,7 +764,7 @@ func (e *standardTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 			return err
 		}
 
-		subnetToL1ConversionData.Validators[i] = message.SubnetToL1ConversionValidatorData{
+		subnetToL1ConversionData.Validators[i] = message.NetToL1ConversionValidatorData{
 			NodeID:       vdr.NodeID,
 			BLSPublicKey: vdr.Signer.PublicKey,
 			Weight:       vdr.Weight,
@@ -783,7 +783,7 @@ func (e *standardTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 		return err
 	}
 
-	conversionID, err := message.SubnetToL1ConversionID(subnetToL1ConversionData)
+	conversionID, err := message.NetToL1ConversionID(subnetToL1ConversionData)
 	if err != nil {
 		return err
 	}
@@ -795,9 +795,9 @@ func (e *standardTxExecutor) ConvertNetToL1Tx(tx *txs.ConvertNetToL1Tx) error {
 	// Produce the UTXOS
 	lux.Produce(e.state, txID, tx.Outs)
 	// Track the subnet conversion in the database
-	e.state.SetSubnetToL1Conversion(
+	e.state.SetNetToL1Conversion(
 		tx.Net,
-		state.SubnetToL1Conversion{
+		state.NetToL1Conversion{
 			ConversionID: conversionID,
 			ChainID:      tx.ChainID,
 			Addr:         tx.Address,
@@ -865,7 +865,7 @@ func (e *standardTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx
 
 	// Verify that the warp message was sent from the expected chain and
 	// address.
-	if err := verifyL1Conversion(e.state, msg.SubnetID, warpMessage.SourceChainID, addressedCall.SourceAddress); err != nil {
+	if err := verifyL1Conversion(e.state, msg.NetID, warpMessage.SourceChainID, addressedCall.SourceAddress); err != nil {
 		return err
 	}
 
@@ -917,7 +917,7 @@ func (e *standardTxExecutor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx
 	}
 	l1Validator := state.L1Validator{
 		ValidationID:          validationID,
-		SubnetID:              msg.SubnetID,
+		NetID:              msg.NetID,
 		NodeID:                nodeID,
 		PublicKey:             bls.PublicKeyToUncompressedBytes(pop.Key()),
 		RemainingBalanceOwner: remainingBalanceOwner,
@@ -1022,7 +1022,7 @@ func (e *standardTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeight
 
 	// Verify that the warp message was sent from the expected chain and
 	// address.
-	if err := verifyL1Conversion(e.state, l1Validator.SubnetID, warpMessage.SourceChainID, addressedCall.SourceAddress); err != nil {
+	if err := verifyL1Conversion(e.state, l1Validator.NetID, warpMessage.SourceChainID, addressedCall.SourceAddress); err != nil {
 		return err
 	}
 
@@ -1031,7 +1031,7 @@ func (e *standardTxExecutor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeight
 	// Check if we are removing the validator.
 	if msg.Weight == 0 {
 		// Verify that we are not removing the last validator.
-		weight, err := e.state.WeightOfL1Validators(l1Validator.SubnetID)
+		weight, err := e.state.WeightOfL1Validators(l1Validator.NetID)
 		if err != nil {
 			return fmt.Errorf("could not load L1 validator weights: %w", err)
 		}
@@ -1354,9 +1354,9 @@ func verifyL1Conversion(
 	expectedChainID ids.ID,
 	expectedAddress []byte,
 ) error {
-	subnetToL1Conversion, err := state.GetSubnetToL1Conversion(subnetID)
+	subnetToL1Conversion, err := state.GetNetToL1Conversion(subnetID)
 	if err != nil {
-		return fmt.Errorf("%w for %s with: %w", errCouldNotLoadSubnetToL1Conversion, subnetID, err)
+		return fmt.Errorf("%w for %s with: %w", errCouldNotLoadNetToL1Conversion, subnetID, err)
 	}
 	if expectedChainID != subnetToL1Conversion.ChainID {
 		return fmt.Errorf("%w expected %s but had %s", errWrongWarpMessageSourceChainID, subnetToL1Conversion.ChainID, expectedChainID)

@@ -354,11 +354,6 @@ func (v *consensusValidatorStateWrapper) GetChainID(netID ids.ID) (ids.ID, error
 	return ids.Empty, nil
 }
 
-func (v *consensusValidatorStateWrapper) GetSubnetID(chainID ids.ID) (ids.ID, error) {
-	// Not available in validators.State, return empty ID
-	return ids.Empty, nil
-}
-
 func (v *consensusValidatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*consensusctx.GetValidatorOutput, error) {
 	// Get the validator set from the underlying state
 	valSet, err := v.state.GetValidatorSet(ctx, height, netID)
@@ -444,7 +439,7 @@ type ManagerConfig struct {
 	CriticalChains            set.Set[ids.ID] // Chains that can't exit gracefully
 	TimeoutManager            timeout.Manager // Manages request timeouts when sending messages to other validators
 	Health                    health.Registerer
-	SubnetConfigs             map[ids.ID]nets.Config // ID -> SubnetConfig
+	NetConfigs             map[ids.ID]nets.Config // ID -> NetConfig
 	ChainConfigs              map[string]ChainConfig    // alias -> ChainConfig
 	// ShutdownNodeFunc allows the chain manager to issue a request to shutdown the node
 	ShutdownNodeFunc func(exitCode int)
@@ -474,7 +469,7 @@ type ManagerConfig struct {
 
 	ChainDataDir string
 
-	Subnets *Subnets
+	Nets *Nets
 }
 
 type manager struct {
@@ -604,7 +599,7 @@ func (m *manager) QueueChainCreation(chainParams ChainParameters) {
 		}
 	}
 
-	if sb, _ := m.Subnets.GetOrCreate(chainParams.NetID); !sb.AddChain(chainParams.ID) {
+	if sb, _ := m.Nets.GetOrCreate(chainParams.NetID); !sb.AddChain(chainParams.ID) {
 		m.Log.Debug("skipping chain creation",
 			log.String("reason", "chain already staged"),
 			log.Stringer("netID", chainParams.NetID),
@@ -635,7 +630,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		log.Stringer("vmID", chainParams.VMID),
 	)
 
-	sb, _ := m.Subnets.GetOrCreate(chainParams.NetID)
+	sb, _ := m.Nets.GetOrCreate(chainParams.NetID)
 
 	// Note: buildChain builds all chain's relevant objects (notably engine and handler)
 	// but does not start their operations. Starting of the handler (which could potentially
@@ -852,7 +847,6 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		NetworkID:    m.NetworkID,
 		QuantumID:    m.NetworkID,
 		NetID:        chainParams.NetID,
-		SubnetID:     chainParams.NetID, // Alias
 		ChainID:      chainParams.ID,
 		NodeID:       m.NodeID,
 		PublicKey:    pubKeyBytes,
@@ -1178,7 +1172,7 @@ func (m *manager) createLuxChain(
 	// Initialize the ProposerVM and the vm wrapped inside it
 	var (
 		// A default subnet configuration will be present if explicit configuration is not provided
-		subnetCfg           = m.SubnetConfigs[ctx.SubnetID]
+		subnetCfg           = m.NetConfigs[ctx.NetID]
 		minBlockDelay       = subnetCfg.ProposerMinBlockDelay
 		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
 	)
@@ -1582,7 +1576,7 @@ func (m *manager) IsBootstrapped(id ids.ID) bool {
 
 func (m *manager) registerBootstrappedHealthChecks() error {
 	bootstrappedCheck := health.CheckerFunc(func(context.Context) (interface{}, error) {
-		if netIDs := m.Subnets.Bootstrapping(); len(netIDs) != 0 {
+		if netIDs := m.Nets.Bootstrapping(); len(netIDs) != 0 {
 			return netIDs, errNotBootstrapped
 		}
 		return []ids.ID{}, nil
@@ -1625,7 +1619,7 @@ func (m *manager) registerBootstrappedHealthChecks() error {
 // Starts chain creation loop to process queued chains
 func (m *manager) StartChainCreator(platformParams ChainParameters) error {
 	// Add the P-Chain to the Primary Network
-	sb, _ := m.Subnets.GetOrCreate(constants.PrimaryNetworkID)
+	sb, _ := m.Nets.GetOrCreate(constants.PrimaryNetworkID)
 	sb.AddChain(platformParams.ID)
 
 	// The P-chain is created synchronously to ensure that `VM.Initialize` has
@@ -1809,7 +1803,7 @@ func (e *emptyValidatorManager) NumValidators(netID ids.ID) int {
 	return 0
 }
 
-func (e *emptyValidatorManager) NumSubnets() int {
+func (e *emptyValidatorManager) NumNets() int {
 	return 0
 }
 

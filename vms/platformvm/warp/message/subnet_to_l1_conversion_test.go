@@ -14,13 +14,13 @@ import (
 	"github.com/luxfi/node/vms/types"
 )
 
-func TestSubnetToL1ConversionID(t *testing.T) {
+func TestNetToL1ConversionID(t *testing.T) {
 	require := require.New(t)
 
 	subnetToL1ConversionDataBytes := []byte{
 		// Codec version:
 		0x00, 0x00,
-		// SubnetID:
+		// NetID:
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
@@ -53,10 +53,10 @@ func TestSubnetToL1ConversionID(t *testing.T) {
 		// Weight:
 		0x86, 0x87, 0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d,
 	}
-	var expectedSubnetToL1ConversionID ids.ID = hashing.ComputeHash256Array(subnetToL1ConversionDataBytes)
+	var expectedNetToL1ConversionID ids.ID = hashing.ComputeHash256Array(subnetToL1ConversionDataBytes)
 
-	subnetToL1ConversionData := SubnetToL1ConversionData{
-		SubnetID: ids.ID{
+	subnetToL1ConversionData := NetToL1ConversionData{
+		NetID: ids.ID{
 			0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 			0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
 			0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
@@ -69,7 +69,7 @@ func TestSubnetToL1ConversionID(t *testing.T) {
 			0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x40,
 		},
 		ManagerAddress: []byte{0x41},
-		Validators: []SubnetToL1ConversionValidatorData{
+		Validators: []NetToL1ConversionValidatorData{
 			{
 				NodeID: types.JSONByteSlice([]byte{
 					0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49,
@@ -88,18 +88,18 @@ func TestSubnetToL1ConversionID(t *testing.T) {
 			},
 		},
 	}
-	subnetToL1ConversionID, err := SubnetToL1ConversionID(subnetToL1ConversionData)
+	subnetToL1ConversionID, err := NetToL1ConversionID(subnetToL1ConversionData)
 	require.NoError(err)
-	require.Equal(expectedSubnetToL1ConversionID, subnetToL1ConversionID)
+	require.Equal(expectedNetToL1ConversionID, subnetToL1ConversionID)
 }
 
-func TestSubnetToL1Conversion(t *testing.T) {
+func TestNetToL1Conversion(t *testing.T) {
 	require := require.New(t)
 
-	msg, err := NewSubnetToL1Conversion(ids.GenerateTestID())
+	msg, err := NewNetToL1Conversion(ids.GenerateTestID())
 	require.NoError(err)
 
-	parsed, err := ParseSubnetToL1Conversion(msg.Bytes())
+	parsed, err := ParseNetToL1Conversion(msg.Bytes())
 	require.NoError(err)
 	require.Equal(msg, parsed)
 }

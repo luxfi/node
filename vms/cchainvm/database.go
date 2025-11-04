@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/geth/ethdb"
 )
 
-// Subnet-EVM namespace for LUX mainnet
+// Net-EVM namespace for LUX mainnet
 var subnetNamespace = []byte{
 	0x33, 0x7f, 0xb7, 0x3f, 0x9b, 0xcd, 0xac, 0x8c,
 	0x31, 0xa2, 0xd5, 0xf7, 0xb8, 0x77, 0xab, 0x1e,
@@ -22,7 +22,7 @@ var subnetNamespace = []byte{
 }
 
 // Flag to enable net namespace handling (set when using --genesis-db)
-var UseSubnetNamespace = false
+var UseNetNamespace = false
 
 // canonicalKey returns the standard C-chain canonical key format:
 //
@@ -57,7 +57,7 @@ func (d *DatabaseWrapper) Has(key []byte) (bool, error) {
 // Get retrieves the given key if it's present in the key-value data store
 func (d *DatabaseWrapper) Get(key []byte) ([]byte, error) {
 	// Handle subnet-EVM namespaced keys when flag is set
-	if UseSubnetNamespace {
+	if UseNetNamespace {
 		// For canonical hash lookups (H prefix, 9 bytes)
 		if len(key) == 9 && key[0] == 'H' {
 			// First try standard format
