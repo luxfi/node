@@ -43,7 +43,6 @@ import (
 	"github.com/luxfi/node/vms/secp256k1fx"
 	"github.com/luxfi/node/vms/types"
 
-	safemath "github.com/luxfi/math/math"
 	avajson "github.com/luxfi/node/utils/json"
 	platformapi "github.com/luxfi/node/vms/platformvm/api"
 )
@@ -111,12 +110,12 @@ func (s *Service) GetProposedHeight(r *http.Request, _ *struct{}, reply *api.Get
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	ctx := r.Context()
-	currentHeight, err := s.vm.state.GetCurrentHeight(ctx)
+	lastAcceptedID := s.vm.state.GetLastAccepted()
+	lastAcceptedBlock, err := s.vm.manager.GetStatelessBlock(lastAcceptedID)
 	if err != nil {
 		return err
 	}
-	reply.Height = avajson.Uint64(currentHeight)
+	reply.Height = avajson.Uint64(lastAcceptedBlock.Height())
 	return nil
 }
 
@@ -711,7 +710,7 @@ func (s *Service) loadStakerTxAttributes(txID ids.ID) (*stakerAttributes, error)
 // is provided, full delegators information is also returned. Otherwise only
 // delegators' number and total weight is returned.
 func (s *Service) GetCurrentValidators(request *http.Request, args *GetCurrentValidatorsArgs, reply *GetCurrentValidatorsReply) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getCurrentValidators"),
 	)
@@ -862,7 +861,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 				connected *bool
 			)
 			if netID == constants.PrimaryNetworkID {
-				rawUptime, err := s.vm.uptimeManager.CalculateUptimePercentFrom(currentStaker.NodeID, currentStaker.StartTime)
+				rawUptime, err := s.vm.uptimeManager.CalculateUptimePercentFrom(currentStaker.NodeID, netID, currentStaker.StartTime)
 				if err != nil {
 					return nil, err
 				}
@@ -872,8 +871,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 				if err != nil {
 					return nil, err
 				}
-				isConnected := s.vm.uptimeManager.IsConnected(currentStaker.NodeID)
-				connected = &isConnected
+				// connected field left nil - IsConnected method no longer exists
 				uptime = &currentUptime
 			}
 
@@ -986,14 +984,14 @@ type GetL1ValidatorReply struct {
 
 // GetL1Validator returns the L1 validator if it exists
 func (s *Service) GetL1Validator(r *http.Request, args *GetL1ValidatorArgs, reply *GetL1ValidatorReply) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getL1Validator"),
 		zap.Stringer("validationID", args.ValidationID),
 	)
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	l1Validator, err := s.vm.state.GetL1Validator(args.ValidationID)
 	if err != nil {
@@ -1853,7 +1851,7 @@ type GetValidatorsAtReply struct {
 // GetValidatorsAt returns the weights of the validator set of a provided net
 // at the specified height.
 func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getValidatorsAt"),
 		zap.Uint64("height", uint64(args.Height)),
@@ -1957,7 +1955,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 
 // GetFeeConfig returns the dynamic fee config of the chain.
 func (s *Service) GetFeeConfig(_ *http.Request, _ *struct{}, reply *gas.Config) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getFeeConfig"),
 	)
@@ -1974,13 +1972,13 @@ type GetFeeStateReply struct {
 
 // GetFeeState returns the current fee state of the chain.
 func (s *Service) GetFeeState(_ *http.Request, _ *struct{}, reply *GetFeeStateReply) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getFeeState"),
 	)
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	reply.State = s.vm.state.GetFeeState()
 	reply.Price = gas.CalculatePrice(
@@ -1994,7 +1992,7 @@ func (s *Service) GetFeeState(_ *http.Request, _ *struct{}, reply *GetFeeStateRe
 
 // GetValidatorFeeConfig returns the validator fee config of the chain.
 func (s *Service) GetValidatorFeeConfig(_ *http.Request, _ *struct{}, reply *fee.Config) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getValidatorFeeConfig"),
 	)
@@ -2011,13 +2009,13 @@ type GetValidatorFeeStateReply struct {
 
 // GetValidatorFeeState returns the current validator fee state of the chain.
 func (s *Service) GetValidatorFeeState(_ *http.Request, _ *struct{}, reply *GetValidatorFeeStateReply) error {
-	s.vm.ctx.Log.Debug("API called",
+	s.vm.log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getValidatorFeeState"),
 	)
 
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
+	s.vm.lock.Lock()
+	defer s.vm.lock.Unlock()
 
 	reply.Excess = s.vm.state.GetL1ValidatorExcess()
 	reply.Price = gas.CalculatePrice(

@@ -74,7 +74,7 @@ returned. Can only be `hex` when a value is provided.
     {
         "assetAlias1": {               // Each object defines an asset
             "name": "human readable name",
-            "symbol":"AVAL",           // Symbol is between 0 and 4 characters
+            "symbol":"LUXY",           // Symbol is between 0 and 4 characters
             "initialState": {
                 "fixedCap" : [         // Choose the asset type.
                     {                  // Can be "fixedCap", "variableCap", "limitedTransfer", "nonFungible"
@@ -91,7 +91,7 @@ returned. Can only be `hex` when a value is provided.
         },
         "assetAliasCanBeAnythingUnique": { // Asset alias can be used in place of assetID in calls
             "name": "human readable name", // names need not be unique
-            "symbol": "AVAL",              // symbols need not be unique
+            "symbol": "LUXY",              // symbols need not be unique
             "initialState": {
                 "variableCap" : [          // No units of the asset exist at genesis
                     {

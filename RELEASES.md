@@ -267,7 +267,7 @@ The plugin version is unchanged at `39` and is compatible with version `v1.12.2`
 - [ci] Update to golangci-lint version compatible with go 1.23 by @maru-ava in https://github.com/luxfi/node/pull/3739
 - [testing] Provide more logging context for SynchronizedBeforeSuite by @maru-ava in https://github.com/luxfi/node/pull/3741
 - refactor: export PeerSample by @Elvis339 in https://github.com/luxfi/node/pull/3745
-- [antithesis] Set AVAGO_PLUGIN_DIR for VM images by @maru-ava in https://github.com/luxfi/node/pull/3751
+- [antithesis] Set LUXD_PLUGIN_DIR for VM images by @maru-ava in https://github.com/luxfi/node/pull/3751
 - [ci] Drop support for Ubuntu 20.04 by @maru-ava in https://github.com/luxfi/node/pull/3737
 - Fix spelling errors in `majority.go`, `minority.go`, `compressor.go`, and `logger.go` by @tomasandroil in https://github.com/luxfi/node/pull/3738
 - [ci] Simplify tmpnet monitoring action by @maru-ava in https://github.com/luxfi/node/pull/3736

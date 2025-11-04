@@ -54,19 +54,19 @@ and initiates a new test when one is found.
    contention for the backing data volume. Both commands derive the
    configuration of a bootstrap test from the pod:
    - The network targeted by the test is determined by the value of
-     the `AVAGO_NETWORK_NAME` env var set for the node
+     the `LUXD_NETWORK_NAME` env var set for the node
      container.
    - By default, the sync mode will be `c-chain-state-sync`. The other sync
      modes require providing additional configuration:
      - The `only-p-chain-full-sync` mode is enabled by setting the
-       `AVAGO_PARTIAL_SYNC_PRIMARY_NETWORK` env var to `"true"` for
+       `LUXD_PARTIAL_SYNC_PRIMARY_NETWORK` env var to `"true"` for
        the node container. If this mode is enabled, the state
        sync configuration for the C-Chain will be ignored.
      - The `full-sync` mode is enabled by including
        `state-sync-enabled:false` in the
-       `AVAGO_CHAIN_CONFIG_CONTENT` env var set for the node
+       `LUXD_CHAIN_CONFIG_CONTENT` env var set for the node
        container and either not including a value for
-       `AVAGO_PARTIAL_SYNC_PRIMARY_NETWORK` or setting it to
+       `LUXD_PARTIAL_SYNC_PRIMARY_NETWORK` or setting it to
        `"false"`.
    - The image used by the test is determined by the image configured
      for the node container.

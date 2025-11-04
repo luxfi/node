@@ -8,10 +8,10 @@ set -euo pipefail
 # Use lower_case variables in the scripts and UPPER_CASE variables for override
 # Use the constants.sh for env overrides
 
-AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory above this script
+LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory above this script
 
 # Where LuxGo binary goes
-node_path="$AVALANCHE_PATH/build/node"
+node_path="$LUX_PATH/build/node"
 
 # Static compilation
 static_ld_flags=''

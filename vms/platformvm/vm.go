@@ -15,13 +15,15 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/luxfi/metric"
+	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	consensuscore "github.com/luxfi/consensus/core"
@@ -32,6 +34,7 @@ import (
 	"github.com/luxfi/consensus/uptime"
 	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
 	"github.com/luxfi/consensus/validators"
+	consensusversion "github.com/luxfi/consensus/version"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
@@ -210,23 +213,17 @@ func (vm *VM) Initialize(
 	vm.log.Info("using VM execution config", "config", execConfig)
 	fmt.Printf("Got execution config successfully\n")
 
-	// Use luxfi/metric NoOp registry to avoid duplicate registration issues
-	noopMetrics := metric.NewNoOp()
+	// Create Prometheus registries for metrics
+	registerer := prometheus.NewRegistry()
 
-	// Create separate registries to avoid duplicate registration
-	vmMetricsRegistry := metric.NewRegistry()
-	stateRegistry := metric.NewRegistry()
-	mempoolRegistry := metric.NewRegistry()
-	networkRegistry := metric.NewRegistry()
-
-	// Initialize platformvm-specific metrics with its own registry
-	vm.metrics, err = platformvmmetrics.New(vmMetricsRegistry)
+	// Initialize platformvm-specific metrics
+	vm.metrics, err = platformvmmetrics.New(registerer)
 	if err != nil {
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}
 
-	// Create luxfi/metric.Metrics instance for state (use NoOp to avoid duplicates)
-	stateMetrics := noopMetrics
+	// Create metric interface for state
+	stateMetrics := metric.NewNoOp()
 
 	// Set context
 	vm.ctx = context.Background() // Use the runtime context
@@ -833,16 +830,21 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 }
 
 func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion interface{}) error {
-	if err := vm.uptimeManager.Connect(nodeID); err != nil {
-		return err
+	// Uptime tracking Connect is no longer available on Calculator interface
+	// if err := vm.uptimeManager.Connect(nodeID); err != nil {
+	//	return err
+	// }
+
+	// Type assert nodeVersion to *consensusversion.Application
+	var versionApp *consensusversion.Application
+	if nodeVersion != nil {
+		var ok bool
+		versionApp, ok = nodeVersion.(*consensusversion.Application)
+		if !ok {
+			return fmt.Errorf("invalid node version type: %T", nodeVersion)
+		}
 	}
-	// Convert interface{} to version if needed
-	var versionApp *version.Application
-	if v, ok := nodeVersion.(*version.Application); ok {
-		versionApp = v
-	}
-	_ = versionApp // Use versionApp if needed, otherwise ignore
-	return vm.Network.Connected(ctx, nodeID, nodeVersion)
+	return vm.Network.Connected(ctx, nodeID, versionApp)
 }
 
 func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {

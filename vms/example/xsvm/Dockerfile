@@ -25,9 +25,9 @@ RUN ./scripts/build_xsvm.sh
 FROM $LUXD_NODE_IMAGE AS execution
 
 # Configure the node with the location of the xsvm plugin
-ENV AVAGO_PLUGIN_DIR=/node/build/plugins
+ENV LUXD_PLUGIN_DIR=/node/build/plugins
 
 # Copy the xsvm binary to the default plugin dir for images
-COPY --from=builder /build/build/xsvm $AVAGO_PLUGIN_DIR/v3m4wPxaHpvGr8qfMeyK6PRW3idZrPHmYcMTt7oXdK47yurVH
+COPY --from=builder /build/build/xsvm $LUXD_PLUGIN_DIR/v3m4wPxaHpvGr8qfMeyK6PRW3idZrPHmYcMTt7oXdK47yurVH
 
 # The node image's entrypoint will be reused.

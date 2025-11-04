@@ -148,7 +148,7 @@ func syncModeFromEnvVars(env []corev1.EnvVar) (SyncMode, error) {
 
 // partialSyncEnabledFromEnvVars determines whether the env vars configure partial sync
 // for a node container. Partial sync is assumed to be enabled if the
-// AVAGO_PARTIAL_SYNC_PRIMARY_NETWORK env var is set and evaluates to true.
+// LUXD_PARTIAL_SYNC_PRIMARY_NETWORK env var is set and evaluates to true.
 func partialSyncEnabledFromEnvVars(env []corev1.EnvVar) (bool, error) {
 	var rawPartialSyncPrimaryNetwork string
 	for _, envVar := range env {

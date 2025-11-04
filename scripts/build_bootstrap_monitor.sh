@@ -3,13 +3,13 @@
 set -euo pipefail
 
 # Luxgo root folder
-AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Load the constants
-source "$AVALANCHE_PATH"/scripts/constants.sh
-source "$AVALANCHE_PATH"/scripts/git_commit.sh
+source "$LUX_PATH"/scripts/constants.sh
+source "$LUX_PATH"/scripts/git_commit.sh
 
 echo "Building bootstrap-monitor..."
 go build -ldflags\
    "-X github.com/luxfi/node/version.GitCommit=$git_commit $static_ld_flags"\
-   -o "$AVALANCHE_PATH/build/bootstrap-monitor"\
-   "$AVALANCHE_PATH/tests/fixture/bootstrapmonitor/cmd/"*.go
+   -o "$LUX_PATH/build/bootstrap-monitor"\
+   "$LUX_PATH/tests/fixture/bootstrapmonitor/cmd/"*.go

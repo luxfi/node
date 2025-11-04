@@ -27,7 +27,7 @@ set -euo pipefail
 # Reference: https://docs.docker.com/buildx/working-with-buildx/
 
 # Directory above this script
-AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+LUX_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 
 # Skip building the race image
 SKIP_BUILD_RACE="${SKIP_BUILD_RACE:-}"
@@ -36,9 +36,9 @@ SKIP_BUILD_RACE="${SKIP_BUILD_RACE:-}"
 FORCE_TAG_LATEST="${FORCE_TAG_LATEST:-}"
 
 # Load the constants
-source "$AVALANCHE_PATH"/scripts/constants.sh
-source "$AVALANCHE_PATH"/scripts/git_commit.sh
-source "$AVALANCHE_PATH"/scripts/image_tag.sh
+source "$LUX_PATH"/scripts/constants.sh
+source "$LUX_PATH"/scripts/git_commit.sh
+source "$LUX_PATH"/scripts/image_tag.sh
 
 if [[ -z "${SKIP_BUILD_RACE}" && $image_tag == *"-r" ]]; then
   echo "Branch name must not end in '-r'"
@@ -108,12 +108,12 @@ fi
 
 echo "Building Docker Image with tags: $DOCKER_IMAGE:$commit_hash , $DOCKER_IMAGE:$image_tag"
 ${DOCKER_CMD} -t "$DOCKER_IMAGE:$commit_hash" -t "$DOCKER_IMAGE:$image_tag" \
-              "$AVALANCHE_PATH" -f "$AVALANCHE_PATH/Dockerfile"
+              "$LUX_PATH" -f "$LUX_PATH/Dockerfile"
 
 if [[ -z "${SKIP_BUILD_RACE}" ]]; then
    echo "Building Docker Image with tags (race detector): $DOCKER_IMAGE:$commit_hash-r , $DOCKER_IMAGE:$image_tag-r"
    ${DOCKER_CMD} --build-arg="RACE_FLAG=-r" -t "$DOCKER_IMAGE:$commit_hash-r" -t "$DOCKER_IMAGE:$image_tag-r" \
-                 "$AVALANCHE_PATH" -f "$AVALANCHE_PATH/Dockerfile"
+                 "$LUX_PATH" -f "$LUX_PATH/Dockerfile"
 fi
 
 # Only tag the latest image for the master branch when images are pushed to a registry

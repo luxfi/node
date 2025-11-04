@@ -2,7 +2,7 @@
 // See the file LICENSE for licensing terms.
 
 // ACP181 implements the epoch logic specified here:
-// https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/181-p-chain-epoched-views/README.md
+// https://github.com/lux-foundation/ACPs/blob/main/ACPs/181-p-chain-epoched-views/README.md
 package lp181
 
 import (
