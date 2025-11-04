@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/node/utils/crypto/bls"
+	nodevalidators "github.com/luxfi/node/validators"
 	"github.com/luxfi/math/set"
 )
 
@@ -34,7 +34,7 @@ type overriddenManager struct {
 	netID   ids.ID
 }
 
-func (o *overriddenManager) AddStaker(_ ids.ID, nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) error {
+func (o *overriddenManager) AddStaker(_ ids.ID, nodeID ids.NodeID, pk []byte, txID ids.ID, weight uint64) error {
 	return o.manager.AddStaker(o.netID, nodeID, pk, txID, weight)
 }
 
@@ -75,14 +75,14 @@ func (o *overriddenManager) RemoveWeight(_ ids.ID, nodeID ids.NodeID, weight uin
 }
 
 func (o *overriddenManager) NumNets() int {
-	if o.manager.NumValidators(o.subnetID) == 0 {
+	if o.manager.NumValidators(o.netID) == 0 {
 		return 0
 	}
 	return 1
 }
 
 func (o *overriddenManager) NumValidators(ids.ID) int {
-	return o.manager.NumValidators(o.subnetID)
+	return o.manager.NumValidators(o.netID)
 }
 
 func (o *overriddenManager) TotalWeight(ids.ID) (uint64, error) {
@@ -172,12 +172,4 @@ func (o *overriddenManager) GetValidatorIDs(ids.ID) []ids.NodeID {
 
 func (o *overriddenManager) GetValidators(ids.ID) (validators.Set, error) {
 	return o.manager.GetValidators(o.netID)
-}
-
-func (o *overriddenManager) NumNets() int {
-	return o.manager.NumNets()
-}
-
-func (o *overriddenManager) NumValidators(netID ids.ID) int {
-	return o.manager.NumValidators(netID)
 }

@@ -44,12 +44,7 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/config/node"
-	"github.com/luxfi/database"
-	"github.com/luxfi/database/leveldb"
-	"github.com/luxfi/database/pebbledb"
-	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/indexer"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/nat"
@@ -58,11 +53,8 @@ import (
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/networking/benchlist"
 	"github.com/luxfi/consensus/networking/router"
-	"github.com/luxfi/consensus/networking/timeout"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/utils"
@@ -71,9 +63,7 @@ import (
 	"github.com/luxfi/node/utils/filesystem"
 	"github.com/luxfi/node/utils/hashing"
 	"github.com/luxfi/node/utils/ips"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/math/meter"
-	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/perms"
 	"github.com/luxfi/node/utils/profiler"
 	"github.com/luxfi/node/utils/resource"
@@ -126,7 +116,7 @@ var (
 // New returns an instance of Node
 func New(
 	config *node.Config,
-	logFactory logging.Factory,
+	logFactory log.Factory,
 	logger log.Logger,
 ) (*Node, error) {
 	tlsCert := config.StakingTLSCert.Leaf
@@ -292,7 +282,7 @@ func New(
 type Node struct {
 	Log          log.Logger
 	VMFactoryLog log.Logger
-	LogFactory   logging.Factory
+	LogFactory   log.Factory
 
 	// This node's unique ID used when communicating with other nodes
 	// (in consensus, for example)

@@ -3,13 +3,15 @@
 set -euo pipefail
 
 print_usage() {
-  printf "Usage: build [OPTIONS]
+  printf "Usage: build [OPTIONS] [BUILD_ARGS]
 
   Build node
 
   Options:
 
     -r  Build with race detector
+
+  BUILD_ARGS: Additional arguments to pass to go build (e.g., -tags purego)
 "
 }
 
@@ -25,6 +27,9 @@ while getopts 'r' flag; do
   esac
 done
 
+# Shift to get remaining arguments (build tags, etc.)
+shift $((OPTIND-1))
+
 REPO_ROOT=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 # Configure the build environment
 source "${REPO_ROOT}"/scripts/constants.sh
@@ -32,6 +37,6 @@ source "${REPO_ROOT}"/scripts/constants.sh
 source "${REPO_ROOT}"/scripts/git_commit.sh
 
 echo "Building Lux Node with [$(go version)]..."
-go build ${race} -o "${node_path}" \
+go build ${race} "$@" -o "${node_path}" \
    -ldflags "-X github.com/luxfi/node/version.GitCommit=$git_commit $static_ld_flags" \
    "${REPO_ROOT}"/main

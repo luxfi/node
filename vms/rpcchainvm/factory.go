@@ -8,8 +8,6 @@ import (
 	"fmt"
 
 	"github.com/luxfi/log"
-
-	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils/resource"
 	"github.com/luxfi/node/vms"

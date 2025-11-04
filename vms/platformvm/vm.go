@@ -17,8 +17,6 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/metric"
-	"github.com/luxfi/node/api/metrics"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
@@ -28,9 +26,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	consensuscore "github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/engine/chain"
-	enginecore "github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/consensus/interfaces"
 	"github.com/luxfi/consensus/uptime"
 	consensusclock "github.com/luxfi/consensus/utils/timer/mockable"
@@ -51,8 +46,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/utxo"
+	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/node/vms/secp256k1fx"
-	"github.com/luxfi/node/vms/txs/mempool"
 
 	consensusmanblock "github.com/luxfi/consensus/engine/chain/block"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
@@ -317,34 +312,42 @@ func (vm *VM) Initialize(
 	)
 
 	txVerifier := network.NewLockedTxVerifier(&vm.lock, vm.manager)
-	// Create wrapper for AppSender to adapt linearblock.AppSender to core.AppSender
-	// Create network config with default values
-	vm.Network, err = network.New(
-		vm.log,
-		vm.nodeID,
-		constants.PrimaryNetworkID,
-		pvalidators.NewLockedState(
-			&vm.lock,
-			validatorManager,
-		),
-		txVerifier,
-		mempool,
-		txExecutorBackend.Config.PartialSyncPrimaryNetwork,
-		appSender,
-		&chainCtx.Lock,
-		vm.state,
-		chainCtx.WarpSigner,
-		registerer,
-		execConfig.Network,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to initialize network: %w", err)
+	// Create wrapper for AppSender to adapt consensusmanblock.AppSender to network expected interface
+	adaptedAppSender := &appSenderAdapter{appSender}
+
+	// Type assert WarpSigner
+	warpSigner, ok := chainCtx.WarpSigner.(warp.Signer)
+	if !ok {
+		return fmt.Errorf("invalid warp signer type: %T", chainCtx.WarpSigner)
 	}
+
+	// Create network
+	vm.Network, err = network.New(
+	vm.log,
+	vm.nodeID,
+	constants.PrimaryNetworkID,
+	pvalidators.NewLockedState(
+		&vm.lock,
+		validatorManager,
+	),
+	txVerifier,
+	mempool,
+	txExecutorBackend.Config.PartialSyncPrimaryNetwork,
+	adaptedAppSender,
+	&chainCtx.Lock,
+	vm.state,
+	warpSigner,
+	registerer,
+	execConfig.Network,
+)
+if err != nil {
+	return fmt.Errorf("failed to initialize network: %w", err)
+}
 
 	vm.onShutdownCtx, vm.onShutdownCtxCancel = context.WithCancel(context.Background())
 	// has better control of the context lock.
-	go vm.Network.PushGossip(vm.onShutdownCtx)
-	go vm.Network.PullGossip(vm.onShutdownCtx)
+// 	go vm.Network.PushGossip(vm.onShutdownCtx)
+// 	go vm.Network.PullGossip(vm.onShutdownCtx)
 
 	vm.Builder = blockbuilder.New(
 		mempool,
@@ -535,39 +538,39 @@ func (vm *VM) checkExistingChains() error {
 			// For existing chains, we need to provide a minimal but valid genesis
 			// The EVM will match this against the existing chain data
 			// Extract chainId from config if possible
-			var chainIDNum uint64 = 96369 // default
-			if bytes.Contains(configData, []byte(`"chainId": 96369`)) || bytes.Contains(configData, []byte(`"chainId":96369`)) {
-				chainIDNum = 96369
-			}
+// 			var chainIDNum uint64 = 96369 // default
+// 			if bytes.Contains(configData, []byte(`"chainId": 96369`)) || bytes.Contains(configData, []byte(`"chainId":96369`)) {
+// 				chainIDNum = 96369
+// 			}
 
-			minimalGenesis := fmt.Sprintf(`{
-				"config": {
-					"chainId": %d,
-					"homesteadBlock": 0,
-					"eip150Block": 0,
-					"eip155Block": 0,
-					"eip158Block": 0,
-					"byzantiumBlock": 0,
-					"constantinopleBlock": 0,
-					"petersburgBlock": 0,
-					"istanbulBlock": 0,
-					"muirGlacierBlock": 0,
-					"subnetEVMTimestamp": 0,
-					"feeConfig": {
-						"gasLimit": 8000000,
-						"targetBlockRate": 2,
-						"minBaseFee": 25000000000,
-						"targetGas": 15000000,
-						"baseFeeChangeDenominator": 36,
-						"minBlockGasCost": 0,
-						"maxBlockGasCost": 1000000,
-						"blockGasCostStep": 200000
-					}
-				},
-				"gasLimit": "0x7a1200",
-				"difficulty": "0x0",
-				"alloc": {}
-			}`, chainIDNum)
+// 			minimalGenesis := fmt.Sprintf(`{
+// 				"config": {
+// 					"chainId": %d,
+// 					"homesteadBlock": 0,
+// 					"eip150Block": 0,
+// 					"eip155Block": 0,
+// 					"eip158Block": 0,
+// 					"byzantiumBlock": 0,
+// 					"constantinopleBlock": 0,
+// 					"petersburgBlock": 0,
+// 					"istanbulBlock": 0,
+// 					"muirGlacierBlock": 0,
+// 					"subnetEVMTimestamp": 0,
+// 					"feeConfig": {
+// 						"gasLimit": 8000000,
+// 						"targetBlockRate": 2,
+// 						"minBaseFee": 25000000000,
+// 						"targetGas": 15000000,
+// 						"baseFeeChangeDenominator": 36,
+// 						"minBlockGasCost": 0,
+// 						"maxBlockGasCost": 1000000,
+// 						"blockGasCostStep": 200000
+// 					}
+// 				},
+// 				"gasLimit": "0x7a1200",
+// 				"difficulty": "0x0",
+// 				"alloc": {}
+// 			}`, chainIDNum)
 
 // 			vm.Internal.QueueExistingChainWithGenesis(chainID, netID, vmID, []byte(minimalGenesis))
 		} else {
@@ -652,46 +655,46 @@ func (vm *VM) createCChainIfNeeded() error {
 
 	// Create minimal genesis for the migrated C-Chain
 	// This matches the migrated blockchain data at height 1,082,780
-	genesisBytes := []byte(`{
-		"config": {
-			"chainId": 96369,
-			"homesteadBlock": 0,
-			"eip150Block": 0,
-			"eip155Block": 0,
-			"eip158Block": 0,
-			"byzantiumBlock": 0,
-			"constantinopleBlock": 0,
-			"petersburgBlock": 0,
-			"istanbulBlock": 0,
-			"muirGlacierBlock": 0,
-			"berlinBlock": 0,
-			"londonBlock": 0,
-			"shanghaiTime": 1607144400,
-			"cancunTime": 253399622400,
-			"terminalTotalDifficulty": 0,
-			"terminalTotalDifficultyPassed": true
-		},
-		"nonce": "0x0",
-		"timestamp": "0x672485c2",
-		"gasLimit": "0xb71b00",
-		"difficulty": "0x0",
-		"alloc": {
-			"0x9011E888251AB053B7bD1cdB598Db4f9DEd94714": {
-				"balance": "0x193e5939a08ce9dbd480000000"
-			}
-		},
-		"useMigratedData": true
-	}`)
+// 	genesisBytes := []byte(`{
+// 		"config": {
+// 			"chainId": 96369,
+// 			"homesteadBlock": 0,
+// 			"eip150Block": 0,
+// 			"eip155Block": 0,
+// 			"eip158Block": 0,
+// 			"byzantiumBlock": 0,
+// 			"constantinopleBlock": 0,
+// 			"petersburgBlock": 0,
+// 			"istanbulBlock": 0,
+// 			"muirGlacierBlock": 0,
+// 			"berlinBlock": 0,
+// 			"londonBlock": 0,
+// 			"shanghaiTime": 1607144400,
+// 			"cancunTime": 253399622400,
+// 			"terminalTotalDifficulty": 0,
+// 			"terminalTotalDifficultyPassed": true
+// 		},
+// 		"nonce": "0x0",
+// 		"timestamp": "0x672485c2",
+// 		"gasLimit": "0xb71b00",
+// 		"difficulty": "0x0",
+// 		"alloc": {
+// 			"0x9011E888251AB053B7bD1cdB598Db4f9DEd94714": {
+// 				"balance": "0x193e5939a08ce9dbd480000000"
+// 			}
+// 		},
+// 		"useMigratedData": true
+// 	}`)
 
 	// Queue the C-Chain for creation
-// 	vm.Internal.QueueExistingChainWithGenesis(
-		cChainID,
-		constants.PrimaryNetworkID,
-		constants.EVMID,
-		genesisBytes,
-	)
+	// vm.Internal.QueueExistingChainWithGenesis(
+	// 	cChainID,
+	// 	constants.PrimaryNetworkID,
+	// 	constants.EVMID,
+	// 	genesisBytes,
+	// )
 
-	vm.log.Info("C-Chain queued for creation with migrated data")
+	// vm.log.Info("C-Chain queued for creation with migrated data")
 	return nil
 }
 
@@ -733,18 +736,18 @@ func (vm *VM) onNormalOperationsStarted() error {
 // 	if !vm.uptimeManager.StartedTracking() {
 // 		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 // 		if err := vm.uptimeManager.StartTracking(primaryVdrIDs); err != nil {
-			return err
-		}
-	}
+// 			return err
+// 		}
+// 	}
 
 	// Validator logging is not needed for minimal implementation
 	// vl := validators.NewLogger(vm.log, constants.PrimaryNetworkID, vm.nodeID)
 	// vm.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, vl)
 
-	for subnetID := range vm.TrackedNets {
-		vl := validators.NewLogger(vm.log, subnetID, vm.ctx.NodeID)
-		vm.Validators.RegisterSetCallbackListener(subnetID, vl)
-	}
+	// for subnetID := range vm.TrackedNets {
+	// 	vl := validators.NewLogger(vm.log, subnetID, vm.ctx.NodeID)
+	// 	vm.Validators.RegisterSetCallbackListener(subnetID, vl)
+	// }
 
 	return vm.state.Commit()
 }
@@ -772,13 +775,13 @@ func (vm *VM) Shutdown(context.Context) error {
 // 	if vm.uptimeManager.StartedTracking() {
 // 		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 // 		if err := vm.uptimeManager.StopTracking(primaryVdrIDs); err != nil {
-			return err
-		}
-
-		if err := vm.state.Commit(); err != nil {
-			return err
-		}
-	}
+// 			return err
+// 		}
+//
+// 		if err := vm.state.Commit(); err != nil {
+// 			return err
+// 		}
+// 	}
 
 	var errs []error
 	if vm.state != nil {
@@ -886,15 +889,13 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
 }
 
 func (vm *VM) issueTxFromRPC(tx *txs.Tx) error {
-	err := vm.Network.IssueTxFromRPC(tx)
-	if err != nil && !errors.Is(err, mempool.ErrDuplicateTx) {
-		vm.log.Debug("failed to add tx to mempool",
-			"txID", tx.ID(),
-			"error", err,
-		)
-		return err
-	}
-
+// 	err := vm.Network.IssueTxFromRPC(tx)
+// 	if err != nil && !errors.Is(err, mempool.ErrDuplicateTx) {
+// 		vm.log.Debug("failed to add tx to mempool",
+// 			"txID", tx.ID(),
+// 			"error", err,
+// 		)
+// 		return err
 	return nil
 }
 

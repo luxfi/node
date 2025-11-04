@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -16,21 +16,15 @@ import (
 	"github.com/luxfi/node/api/server"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/genesis"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network"
-	"github.com/luxfi/consensus/networking/benchlist"
 	"github.com/luxfi/consensus/networking/router"
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/nets"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/profiler"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
-	"github.com/luxfi/trace"
 )
 
 type APIIndexerConfig struct {
@@ -201,7 +195,7 @@ type Config struct {
 
 	TrackedNets set.Set[ids.ID] `json:"trackedNets"`
 
-	NetConfigs map[ids.ID]subnets.Config `json:"subnetConfigs"`
+	NetConfigs map[ids.ID]nets.Config `json:"subnetConfigs"`
 
 	ChainConfigs map[string]chains.ChainConfig `json:"-"`
 	ChainAliases map[ids.ID][]string           `json:"chainAliases"`

@@ -1,15 +1,29 @@
 # Makefile for Lux Node
 
-.PHONY: all build build-fips test test-fips clean fmt lint install-mockgen mockgen verify-fips
+.PHONY: all build build-cgo build-nocgo build-fips test test-cgo test-nocgo test-fips clean fmt lint install-mockgen mockgen verify-fips
 
-# FIPS 140-3 Configuration
-export GOFIPS140 := latest
-export GODEBUG := fips140=on
-export CGO_ENABLED := 1
+# Configuration toggles (override with make FIPS=0 CGO=1 etc.)
+FIPS ?= 1
+CGO ?= 0
+FIPS_STRICT ?= 0
 
-# FIPS build environment
-FIPS_ENV := GOFIPS140=$(GOFIPS140) GODEBUG=$(GODEBUG) CGO_ENABLED=$(CGO_ENABLED)
-FIPS_BUILD_FLAGS := -tags fips
+# Derived environment variables
+ifeq ($(FIPS),1)
+	export GOFIPS140 := latest
+	ifeq ($(FIPS_STRICT),1)
+		export GODEBUG := fips140=only
+	else
+		export GODEBUG := fips140=on
+	endif
+else
+	export GOFIPS140 :=
+	export GODEBUG :=
+endif
+
+export CGO_ENABLED := $(CGO)
+
+# Environment block for all go commands
+ENV := GOFIPS140=$(GOFIPS140) GODEBUG=$(GODEBUG) CGO_ENABLED=$(CGO_ENABLED)
 
 # Build variables
 GO := go
@@ -26,51 +40,57 @@ GREEN := \033[0;32m
 YELLOW := \033[1;33m
 NC := \033[0m
 
-all: build-fips
+all: build
 
 # Verify FIPS environment
 verify-fips:
 	@echo "$(GREEN)Verifying FIPS 140-3 Environment...$(NC)"
+	@echo "FIPS: $(FIPS)"
+	@echo "CGO: $(CGO)"
+	@echo "FIPS_STRICT: $(FIPS_STRICT)"
 	@echo "GOFIPS140: $(GOFIPS140)"
 	@echo "GODEBUG: $(GODEBUG)"
-	@echo "$(GREEN)✓ FIPS environment ready$(NC)"
+	@echo "CGO_ENABLED: $(CGO_ENABLED)"
+	@echo "$(GREEN)✓ Environment ready$(NC)"
 
-# Build with FIPS 140-3 mode (default)
-build-fips: verify-fips
-	@echo "$(GREEN)Building luxd with FIPS 140-3 mode...$(NC)"
-	@$(FIPS_ENV) ./scripts/build.sh
-	@echo "$(GREEN)✓ FIPS build complete$(NC)"
-
-# Standard build (non-FIPS, for comparison only)
+# Default build (uses current FIPS and CGO settings)
 build:
-	@echo "$(YELLOW)Building luxd (standard, non-FIPS)...$(NC)"
-	@./scripts/build.sh
+	@echo "$(GREEN)Building luxd (FIPS=$(FIPS) CGO=$(CGO))...$(NC)"
+	@$(ENV) ./scripts/build.sh
+	@echo "$(GREEN)✓ Build complete$(NC)"
 
-# Test with FIPS 140-3 mode (default)
-test-fips: verify-fips
-	@echo "$(GREEN)Running tests with FIPS 140-3 mode...$(NC)"
-	@$(FIPS_ENV) go test $(FIPS_BUILD_FLAGS) -shuffle=on -race -timeout=$(TEST_TIMEOUT) -coverprofile=coverage.out -covermode=atomic $(TEST_PACKAGES)
+# Convenience aliases
+build-cgo:
+	@$(MAKE) build CGO=1
 
-# Standard test (non-FIPS, for comparison)
+build-nocgo:
+	@$(MAKE) build CGO=0
+
+build-fips:
+	@$(MAKE) build FIPS=1
+
+# Default test (uses current FIPS and CGO settings)
 test:
-	@echo "$(YELLOW)Running tests (standard, non-FIPS)...$(NC)"
-	@go test -shuffle=on -race -timeout=$(TEST_TIMEOUT) $(TEST_PACKAGES)
+	@echo "$(GREEN)Running tests (FIPS=$(FIPS) CGO=$(CGO))...$(NC)"
+	@$(ENV) go test -shuffle=on -race -timeout=$(TEST_TIMEOUT) -coverprofile=coverage.out -covermode=atomic $(TEST_PACKAGES)
 
-test-short-fips: verify-fips
-	@echo "$(GREEN)Running short tests with FIPS...$(NC)"
-	@$(FIPS_ENV) go test $(FIPS_BUILD_FLAGS) -short -race -timeout=60s $(TEST_PACKAGES)
+# Convenience aliases
+test-cgo:
+	@$(MAKE) test CGO=1
+
+test-nocgo:
+	@$(MAKE) test CGO=0
+
+test-fips:
+	@$(MAKE) test FIPS=1
 
 test-short:
-	@echo "Running short tests..."
-	@go test -short -race -timeout=60s $(TEST_PACKAGES)
-
-test-100-fips: verify-fips
-	@echo "$(GREEN)=== ENSURING 100% TEST PASS RATE WITH FIPS ===$(NC)"
-	@$(FIPS_ENV) go test $(FIPS_BUILD_FLAGS) -shuffle=on -race -timeout=$(TEST_TIMEOUT) $(TEST_PACKAGES)
+	@echo "Running short tests (FIPS=$(FIPS) CGO=$(CGO))..."
+	@$(ENV) go test -short -race -timeout=60s $(TEST_PACKAGES)
 
 test-100:
-	@echo "=== ENSURING 100% TEST PASS RATE ==="
-	@go test -shuffle=on -race -timeout=$(TEST_TIMEOUT) $(TEST_PACKAGES)
+	@echo "$(GREEN)=== ENSURING 100% TEST PASS RATE (FIPS=$(FIPS) CGO=$(CGO)) ===$(NC)"
+	@$(ENV) go test -shuffle=on -race -timeout=$(TEST_TIMEOUT) $(TEST_PACKAGES)
 
 fmt:
 	@echo "Formatting Go code..."
@@ -96,41 +116,41 @@ mockgen: install-mockgen
 
 # Specific test targets
 test-unit:
-	@echo "Running unit tests..."
-	@go test -short -race $(TEST_PACKAGES)
+	@echo "Running unit tests (FIPS=$(FIPS) CGO=$(CGO))..."
+	@$(ENV) go test -short -race $(TEST_PACKAGES)
 
 test-integration:
-	@echo "Running integration tests..."
-	@go test -run Integration -race -timeout=300s $(TEST_PACKAGES)
+	@echo "Running integration tests (FIPS=$(FIPS) CGO=$(CGO))..."
+	@$(ENV) go test -run Integration -race -timeout=300s $(TEST_PACKAGES)
 
 test-e2e:
-	@echo "Running e2e tests..."
-	@./scripts/tests.e2e.sh
+	@echo "Running e2e tests (FIPS=$(FIPS) CGO=$(CGO))..."
+	@$(ENV) ./scripts/tests.e2e.sh
 
 # Build specific binaries
 luxd:
-	@echo "Building luxd..."
-	@./scripts/build.sh
+	@echo "Building luxd (FIPS=$(FIPS) CGO=$(CGO))..."
+	@$(ENV) ./scripts/build.sh
 
 # Installation targets
 install:
-	@echo "Installing luxd..."
-	@go install -v ./cmd/luxd
+	@echo "Installing luxd (FIPS=$(FIPS) CGO=$(CGO))..."
+	@$(ENV) go install -v ./cmd/luxd
 
 # Development helpers
 dev-setup:
 	@echo "Setting up development environment..."
-	@go mod download
-	@go mod tidy
+	@$(ENV) go mod download
+	@$(ENV) go mod tidy
 
 # Show all available test packages
 list-packages:
 	@echo "Available test packages:"
-	@go list ./... 2>/dev/null | grep -v -E '$(EXCLUDED_DIRS)'
+	@$(ENV) go list ./... 2>/dev/null | grep -v -E '$(EXCLUDED_DIRS)'
 
 # Count packages
 count-packages:
-	@echo "Total packages: $$(go list ./... 2>/dev/null | grep -v -E '$(EXCLUDED_DIRS)' | wc -l)"
+	@echo "Total packages: $$($(ENV) go list ./... 2>/dev/null | grep -v -E '$(EXCLUDED_DIRS)' | wc -l)"
 
 # Run specific package tests
 test-package:
@@ -138,8 +158,8 @@ test-package:
 		echo "Usage: make test-package PKG=./path/to/package"; \
 		exit 1; \
 	fi
-	@echo "Testing package: $(PKG)"
-	@go test -race -timeout=$(TEST_TIMEOUT) $(PKG)
+	@echo "Testing package: $(PKG) (FIPS=$(FIPS) CGO=$(CGO))"
+	@$(ENV) go test -race -timeout=$(TEST_TIMEOUT) $(PKG)
 
 # Node runtime targets
 init-chains:
@@ -200,16 +220,37 @@ stop-node:
 
 # Help target
 help:
-	@echo "Available targets:"
-	@echo "$(GREEN)Build & Test:$(NC)"
-	@echo "  build-fips    - Build luxd binary with FIPS 140-3"
-	@echo "  build         - Build luxd binary (standard)"
-	@echo "  test-fips     - Run all tests with FIPS"
-	@echo "  test          - Run all tests"
+	@echo "$(GREEN)Lux Node Build System$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Configuration:$(NC)"
+	@echo "  FIPS ?= 1         - Enable FIPS 140-3 mode (default: 1)"
+	@echo "  CGO ?= 0          - Enable CGO (default: 0)"
+	@echo "  FIPS_STRICT ?= 0  - Use FIPS strict mode (fips140=only) (default: 0)"
+	@echo ""
+	@echo "  Examples:"
+	@echo "    make build              # Default: FIPS=1 CGO=0"
+	@echo "    make build FIPS=0       # Build without FIPS"
+	@echo "    make build CGO=1        # Build with CGO"
+	@echo "    make test FIPS=1 CGO=1  # Test with both FIPS and CGO"
+	@echo ""
+	@echo "$(GREEN)Build Targets:$(NC)"
+	@echo "  build         - Build luxd binary (uses FIPS=$(FIPS) CGO=$(CGO))"
+	@echo "  build-fips    - Build with FIPS enabled (FIPS=1)"
+	@echo "  build-cgo     - Build with CGO enabled (CGO=1)"
+	@echo "  build-nocgo   - Build without CGO (CGO=0)"
+	@echo "  verify-fips   - Show current FIPS/CGO configuration"
+	@echo ""
+	@echo "$(GREEN)Test Targets:$(NC)"
+	@echo "  test          - Run all tests (uses FIPS=$(FIPS) CGO=$(CGO))"
+	@echo "  test-fips     - Run tests with FIPS enabled (FIPS=1)"
+	@echo "  test-cgo      - Run tests with CGO enabled (CGO=1)"
+	@echo "  test-nocgo    - Run tests without CGO (CGO=0)"
 	@echo "  test-short    - Run short tests only"
 	@echo "  test-100      - Ensure 100% test pass rate"
 	@echo "  test-unit     - Run unit tests"
+	@echo "  test-integration - Run integration tests"
 	@echo "  test-e2e      - Run end-to-end tests"
+	@echo "  test-package  - Test specific package (use PKG=./path)"
 	@echo ""
 	@echo "$(GREEN)Node Operations:$(NC)"
 	@echo "  run-mainnet   - Run Lux mainnet node (ID: 96369)"
@@ -227,5 +268,4 @@ help:
 	@echo "  dev-setup     - Setup development environment"
 	@echo "  list-packages - List all test packages"
 	@echo "  count-packages- Count total packages"
-	@echo "  test-package  - Test specific package (use PKG=./path)"
 	@echo "  help          - Show this help message"

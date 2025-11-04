@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Partners Limited All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries Inc All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -16,9 +16,9 @@ type resourceTrackerAdapter struct {
 	tracker nodetracker.ResourceTracker
 }
 
-func (r *resourceTrackerAdapter) CPUTracker() tracker.CPUTracker {
-	// Return a stub CPU tracker that satisfies the interface
-	return &cpuTrackerAdapter{tracker: r.tracker.CPUTracker()}
+func (r *resourceTrackerAdapter) CPUTracker() tracker.Tracker {
+	// Return the CPU tracker from the underlying resource tracker
+	return r.tracker.CPUTracker()
 }
 
 func (r *resourceTrackerAdapter) StartProcessing(nodeID ids.NodeID, t time.Time) {
@@ -29,9 +29,9 @@ func (r *resourceTrackerAdapter) StopProcessing(nodeID ids.NodeID, t time.Time) 
 	// Stub implementation
 }
 
-func (r *resourceTrackerAdapter) DiskTracker() tracker.DiskTracker {
-	// Return a stub disk tracker
-	return &diskTrackerAdapter{tracker: r.tracker.DiskTracker()}
+func (r *resourceTrackerAdapter) DiskTracker() tracker.Tracker {
+	// Return the disk tracker from the underlying resource tracker
+	return r.tracker.DiskTracker()
 }
 
 // BandwidthTracker is not implemented in node tracker

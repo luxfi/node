@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/luxfi/consensus/validators"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
 	"github.com/luxfi/node/utils/constants"

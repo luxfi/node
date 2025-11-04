@@ -9,8 +9,6 @@ import (
 	"sync"
 
 	"github.com/luxfi/log"
-
-	"github.com/luxfi/log"
 )
 
 // Message represents a notification message type

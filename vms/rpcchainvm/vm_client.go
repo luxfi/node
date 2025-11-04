@@ -41,7 +41,7 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 
-	grpc_metric "github.com/grpc-ecosystem/go-grpc-metric"
+	grpc_metric "github.com/grpc-ecosystem/go-grpc-prometheus"
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"

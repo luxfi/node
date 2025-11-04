@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/luxfi/metric/collectors"
-	"github.com/luxfi/log"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -24,12 +23,12 @@ import (
 	"github.com/luxfi/node/internal/database/rpcdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/internal/ids/galiasreader"
+	"github.com/luxfi/log"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/crypto/bls"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/platformvm/warp/gwarp"
@@ -38,7 +37,7 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 
-	grpc_metric "github.com/grpc-ecosystem/go-grpc-metric"
+	grpc_metric "github.com/grpc-ecosystem/go-grpc-prometheus"
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
