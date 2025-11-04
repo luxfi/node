@@ -142,7 +142,7 @@ type Wallet interface {
 func NewWallet(
 	builder builder.Builder,
 	signer signer.Signer,
-	client *avm.Client,
+	client *exchangevm.Client,
 	backend Backend,
 ) Wallet {
 	return &wallet{
@@ -157,7 +157,7 @@ type wallet struct {
 	backend Backend
 	builder builder.Builder
 	signer  signer.Signer
-	client  *avm.Client
+	client  *exchangevm.Client
 }
 
 func (w *wallet) Builder() builder.Builder {
@@ -314,7 +314,7 @@ func (w *wallet) IssueTx(
 		return w.backend.AcceptTx(ctx, tx)
 	}
 
-	if err := xvm.AwaitTxAccepted(w.client, ctx, txID, ops.PollFrequency()); err != nil {
+	if err := exchangevm.AwaitTxAccepted(w.client, ctx, txID, ops.PollFrequency()); err != nil {
 		return err
 	}
 

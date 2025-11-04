@@ -7,21 +7,20 @@ import (
 	"context"
 
 	"github.com/luxfi/node/api/info"
-	xvm "github.com/luxfi/node/vms/exchangevm"
-	avm "github.com/luxfi/node/vms/exchangevm"
+	"github.com/luxfi/node/vms/exchangevm"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 )
 
 func NewContextFromURI(ctx context.Context, uri string) (*builder.Context, error) {
 	infoClient := info.NewClient(uri)
-	xChainClient := xvm.NewClient(uri, builder.Alias)
+	xChainClient := exchangevm.NewClient(uri, builder.Alias)
 	return NewContextFromClients(ctx, infoClient, xChainClient)
 }
 
 func NewContextFromClients(
 	ctx context.Context,
 	infoClient *info.Client,
-	xChainClient *avm.Client,
+	xChainClient *exchangevm.Client,
 ) (*builder.Context, error) {
 	networkID, err := infoClient.GetNetworkID(ctx)
 	if err != nil {
