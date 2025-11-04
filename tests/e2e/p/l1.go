@@ -13,7 +13,7 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
-	"luxfi/log"
+	"github.com/luxfi/log"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/node/api/info"

@@ -9,7 +9,7 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	"luxfi/log/zapcore"
+	"github.com/luxfi/log/zapcore"
 
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/log"

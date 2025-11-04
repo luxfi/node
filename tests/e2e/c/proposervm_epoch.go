@@ -7,14 +7,14 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/luxfi/geth/ethclient"
 	"github.com/luxfi/geth/core/types"
+	"github.com/luxfi/geth/ethclient"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	"luxfi/log"
+	"go.uber.org/zap"
 
-	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/crypto/secp256k1"
+	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/e2e"
 	"github.com/luxfi/node/utils/units"
@@ -86,7 +86,7 @@ func issueTransaction(
 	require.NoError(tc, err)
 
 	gasPrice := e2e.SuggestGasPrice(tc, ethClient)
-	const amount = 10 * units.Avax // Arbitrary amount to transfer
+	const amount = 10 * units.Lux // Arbitrary amount to transfer
 	tx := types.NewTransaction(
 		acceptedNonce,
 		addr,

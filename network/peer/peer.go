@@ -4,6 +4,7 @@
 package peer
 
 import (
+	"github.com/luxfi/log"
 	"bufio"
 	"context"
 	"errors"
@@ -15,9 +16,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"luxfi/log"
-
 	"github.com/luxfi/log"
+
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"

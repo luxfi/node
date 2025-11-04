@@ -15,7 +15,7 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	"luxfi/log"
+	"github.com/luxfi/log"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/luxfi/ids"

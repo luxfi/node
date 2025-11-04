@@ -14,7 +14,7 @@ import (
 	"slices"
 	"time"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/secp256k1"

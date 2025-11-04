@@ -7,7 +7,7 @@
 package vm
 
 import (
-	_go "github.com/metric/client_model/go"
+	_go "github.com/prometheus/client_model/go"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/tests/fixture/tmpnet"
 )

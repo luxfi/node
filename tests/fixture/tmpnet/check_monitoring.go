@@ -18,10 +18,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/metric/client_golang/api"
-	"github.com/metric/client_golang/api/metric/v1"
-	"github.com/metric/common/model"
-	"luxfi/log"
+	"github.com/prometheus/client_golang/api"
+	v1 "github.com/prometheus/client_golang/api/metric/v1"
+	"github.com/prometheus/common/model"
 
 	"github.com/luxfi/log"
 )
@@ -36,15 +35,15 @@ func waitForCount(ctx context.Context, log log.Logger, name string, getCount get
 			count, err := getCount()
 			if err != nil {
 				log.Warn("failed to query for collected count",
-					zap.String("type", name),
-					zap.Error(err),
+					"type", name,
+					"error", err,
 				)
 				return false, nil
 			}
 			if count > 0 {
 				log.Info("collected count is non-zero",
-					zap.String("type", name),
-					zap.Int("count", count),
+					"type", name,
+					"count", count,
 				)
 			}
 			return count > 0, nil
@@ -77,8 +76,8 @@ func CheckLogsExist(ctx context.Context, log log.Logger, networkUUID string) err
 	query := fmt.Sprintf("sum(count_over_time({%s}[1h]))", selectors)
 
 	log.Info("checking if logs exist",
-		zap.String("url", url),
-		zap.String("query", query),
+		"url", url,
+		"query", query,
 	)
 
 	return waitForCount(
@@ -184,8 +183,8 @@ func CheckMetricsExist(ctx context.Context, log log.Logger, networkUUID string) 
 	query := fmt.Sprintf("count({%s})", selectors)
 
 	log.Info("checking if metrics exist",
-		zap.String("url", url),
-		zap.String("query", query),
+		"url", url,
+		"query", query,
 	)
 
 	return waitForCount(
@@ -230,7 +229,7 @@ func queryPrometheus(
 	}
 	if len(warnings) > 0 {
 		log.Warn("metric query warnings",
-			zap.Strings("warnings", warnings),
+			"warnings", warnings,
 		)
 	}
 

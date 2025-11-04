@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"sync"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/log"
 )

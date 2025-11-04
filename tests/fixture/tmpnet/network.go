@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/config"

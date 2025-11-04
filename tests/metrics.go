@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/api/metrics"
 
-	dto "github.com/metric/client_model/go"
+	dto "github.com/prometheus/client_model/go"
 )
 
 // "metric name" -> "metric value"

@@ -1738,13 +1738,13 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - Refactor SDK by @joshua-kim in https://github.com/luxfi/node/pull/2452
 - Cleanup CI by @dhrubabasu in https://github.com/luxfi/node/pull/2480
 - Ensure upgrade test uses the correct binary on restart by @marun in https://github.com/luxfi/node/pull/2478
-- Prefetch Improvement by @dboehm-avalabs in https://github.com/luxfi/node/pull/2435
+- Prefetch Improvement  in https://github.com/luxfi/node/pull/2435
 - ci: run each fuzz test for 10 seconds by @dhrubabasu in https://github.com/luxfi/node/pull/2483
 - Remove nullable options by @nytzuga in https://github.com/luxfi/node/pull/2481
 - `merkledb` -- dynamic root by @danlaine in https://github.com/luxfi/node/pull/2177
 - fix onEvictCache by @danlaine in https://github.com/luxfi/node/pull/2484
-- Remove cached node bytes from merkle nodes  by @dboehm-avalabs in https://github.com/luxfi/node/pull/2393
-- Fix race in view iteration by @dboehm-avalabs in https://github.com/luxfi/node/pull/2486
+- Remove cached node bytes from merkle nodes   in https://github.com/luxfi/node/pull/2393
+- Fix race in view iteration  in https://github.com/luxfi/node/pull/2486
 - MerkleDB -- update readme by @danlaine in https://github.com/luxfi/node/pull/2423
 - Drop Pending Stakers 3 - persist stakers' StartTime by @abi87 in https://github.com/luxfi/node/pull/2306
 - SDK Push Gossiper implementation by @joshua-kim in https://github.com/luxfi/node/pull/2428
@@ -1802,7 +1802,7 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - Notify block builder of txs after reject by @StephenButtolph in https://github.com/luxfi/node/pull/2549
 - Set dependabot target branch to `dev` by @dhrubabasu in https://github.com/luxfi/node/pull/2553
 - Remove `MockLogger` by @dhrubabasu in https://github.com/luxfi/node/pull/2554
-- Clean up merkleDB interface and duplicate code by @dboehm-avalabs in https://github.com/luxfi/node/pull/2445
+- Clean up merkleDB interface and duplicate code  in https://github.com/luxfi/node/pull/2445
 - Do not mark txs as dropped when mempool is full by @dhrubabasu in https://github.com/luxfi/node/pull/2557
 - Update bug bounty program to immunefi by @StephenButtolph in https://github.com/luxfi/node/pull/2558
 - Fix p2p sdk metric labels by @StephenButtolph in https://github.com/luxfi/node/pull/2561
@@ -1821,9 +1821,9 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - Add missing import by @dhrubabasu in https://github.com/luxfi/node/pull/2573
 - `vms/platformvm`: Prune mempool periodically by @dhrubabasu in https://github.com/luxfi/node/pull/2566
 - Update license header to 2025 by @dhrubabasu in https://github.com/luxfi/node/pull/2572
-- [MerkleDB] Make intermediate node cache two layered by @dboehm-avalabs in https://github.com/luxfi/node/pull/2576
-- Fix merkledb rebuild iterator by @dboehm-avalabs in https://github.com/luxfi/node/pull/2581
-- Fix intermediate node caching by @dboehm-avalabs in https://github.com/luxfi/node/pull/2585
+- [MerkleDB] Make intermediate node cache two layered  in https://github.com/luxfi/node/pull/2576
+- Fix merkledb rebuild iterator  in https://github.com/luxfi/node/pull/2581
+- Fix intermediate node caching  in https://github.com/luxfi/node/pull/2585
 - Remove codec length check after Durango by @StephenButtolph in https://github.com/luxfi/node/pull/2586
 - `tmpnet`: Use LuxLocalChainConfig for cchain genesis by @marun in https://github.com/luxfi/node/pull/2583
 - `testing`: Ensure CheckBootstrapIsPossible is safe for teardown by @marun in https://github.com/luxfi/node/pull/2582
@@ -1926,7 +1926,7 @@ The plugin version is unchanged at `30` and is compatible with versions `v1.10.1
 - Add block source metrics to monitor gossip by @StephenButtolph in https://github.com/luxfi/node/pull/2386
 - Rename `D` to `Durango` by @dhrubabasu in https://github.com/luxfi/node/pull/2389
 - Replace periodic push accepted gossip with pull preference gossip for block discovery by @StephenButtolph in https://github.com/luxfi/node/pull/2367
-- MerkleDB Remove ID from Node to reduce size and removal channel creation. by @dboehm-avalabs in https://github.com/luxfi/node/pull/2324
+- MerkleDB Remove ID from Node to reduce size and removal channel creation.  in https://github.com/luxfi/node/pull/2324
 - Remove method `CappedList` from `set.Set` by @danlaine in https://github.com/luxfi/node/pull/2395
 - Periodically PullGossip only from connected validators by @StephenButtolph in https://github.com/luxfi/node/pull/2399
 - Update bootstrap IPs by @StephenButtolph in https://github.com/luxfi/node/pull/2396
@@ -1972,7 +1972,7 @@ The plugin version is unchanged at `30` and compatible with version `v1.10.15`.
 - Track all subnet validator sets in the validator manager by @StephenButtolph in https://github.com/luxfi/node/pull/2253
 - e2e: Make NewWallet and NewEthclient regular functions by @marun in https://github.com/luxfi/node/pull/2262
 - Fix typos in docs by @vuittont60 in https://github.com/luxfi/node/pull/2261
-- Remove Token constants information from keys by @dboehm-avalabs in https://github.com/luxfi/node/pull/2197
+- Remove Token constants information from keys  in https://github.com/luxfi/node/pull/2197
 - Remove unused `UnsortedEquals` function by @dhrubabasu in https://github.com/luxfi/node/pull/2264
 - Document p2p package by @joshua-kim in https://github.com/luxfi/node/pull/2254
 - Use extended public key to derive ledger addresses by @felipemadero in https://github.com/luxfi/node/pull/2246
@@ -1985,12 +1985,12 @@ The plugin version is unchanged at `30` and compatible with version `v1.10.15`.
 - `mempool.NewMempool` -> `mempool.New` by @dhrubabasu in https://github.com/luxfi/node/pull/2276
 - e2e: Refactor suite setup and helpers to tests/fixture/e2e for reuse by geth by @marun in https://github.com/luxfi/node/pull/2265
 - Cleanup platformvm mempool errs by @dhrubabasu in https://github.com/luxfi/node/pull/2278
-- MerkleDB:Naming and comments cleanup by @dboehm-avalabs in https://github.com/luxfi/node/pull/2274
+- MerkleDB:Naming and comments cleanup  in https://github.com/luxfi/node/pull/2274
 - Move `DropExpiredStakerTxs` to platformvm mempool by @dhrubabasu in https://github.com/luxfi/node/pull/2279
 - Cleanup `ids.NodeID` usage by @abi87 in https://github.com/luxfi/node/pull/2280
 - Genesis validators cleanup by @abi87 in https://github.com/luxfi/node/pull/2282
 - Remove Lazy Initialize on Node by @joshua-kim in https://github.com/luxfi/node/pull/1384
-- Remove sentinel node from MerkleDB proofs by @dboehm-avalabs in https://github.com/luxfi/node/pull/2106
+- Remove sentinel node from MerkleDB proofs  in https://github.com/luxfi/node/pull/2106
 - Embed `noop` handler for all unhandled messages by @dhrubabasu in https://github.com/luxfi/node/pull/2288
 - `merkledb` -- Add `Clearer` interface  by @danlaine in https://github.com/luxfi/node/pull/2277
 - Simplify get server creation by @StephenButtolph in https://github.com/luxfi/node/pull/2285
@@ -2051,7 +2051,7 @@ The plugin version is updated to `30` all plugins must update to be compatible.
 
 ### What's Changed
 
-- Reduce allocations on insert and remove by @dboehm-avalabs in https://github.com/luxfi/node/pull/2201
+- Reduce allocations on insert and remove  in https://github.com/luxfi/node/pull/2201
 - `merkledb` -- shift nit by @danlaine in https://github.com/luxfi/node/pull/2218
 - Update `golangci-lint` to `v1.55.1` by @dhrubabasu in https://github.com/luxfi/node/pull/2228
 - Add json marshal tests to existing serialization tests in `platformvm/txs` pkg by @dhrubabasu in https://github.com/luxfi/node/pull/2227
@@ -2095,7 +2095,7 @@ The plugin version is unchanged at `29` and compatible with version `v1.10.13`.
 - Update cgo usage by @StephenButtolph in https://github.com/luxfi/node/pull/2184
 - Deprecate IPC configs by @danlaine in https://github.com/luxfi/node/pull/2168
 - Update P2P proto docs by @joshua-kim in https://github.com/luxfi/node/pull/2181
-- Merkle db Make Paths only refer to lists of nodes by @dboehm-avalabs in https://github.com/luxfi/node/pull/2143
+- Merkle db Make Paths only refer to lists of nodes  in https://github.com/luxfi/node/pull/2143
 - Deprecate keystore config by @danlaine in https://github.com/luxfi/node/pull/2195
 - Add tests for BanffBlock serialization by @dhrubabasu in https://github.com/luxfi/node/pull/2194
 - Move Shutdown lock from Handler into Engines by @StephenButtolph in https://github.com/luxfi/node/pull/2179
@@ -2153,7 +2153,7 @@ The plugin version is updated to `29` all plugins must update to be compatible.
 - Bump google.golang.org/grpc from 1.55.0 to 1.58.3 by @dependabot in https://github.com/luxfi/node/pull/2159
 - [x/merkledb] `Prefetcher` interface by @patrick-ogrady in https://github.com/luxfi/node/pull/2167
 - Validator Diffs: docs and UTs cleanup by @abi87 in https://github.com/luxfi/node/pull/2037
-- MerkleDB Reduce buffer creation/memcopy on path construction by @dboehm-avalabs in https://github.com/luxfi/node/pull/2124
+- MerkleDB Reduce buffer creation/memcopy on path construction  in https://github.com/luxfi/node/pull/2124
 - Fix some P-chain UTs by @abi87 in https://github.com/luxfi/node/pull/2117
 
 ### New Contributors
@@ -2220,8 +2220,8 @@ The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - 
 - testing: Switch upgrade test to testnet fixture by @marun in https://github.com/luxfi/node/pull/1887
 - Reduce archivedb key lengths by 1 byte by @StephenButtolph in https://github.com/luxfi/node/pull/2113
 - Cleanup uptime manager constructor by @abi87 in https://github.com/luxfi/node/pull/2118
-- MerkleDB Compact Path Bytes by @dboehm-avalabs in https://github.com/luxfi/node/pull/2010
-- MerkleDB Path changes cleanup by @dboehm-avalabs in https://github.com/luxfi/node/pull/2120
+- MerkleDB Compact Path Bytes  in https://github.com/luxfi/node/pull/2010
+- MerkleDB Path changes cleanup  in https://github.com/luxfi/node/pull/2120
 - Fix consensus engine interface comments by @StephenButtolph in https://github.com/luxfi/node/pull/2115
 - Standardize consensus variable names in tests by @StephenButtolph in https://github.com/luxfi/node/pull/2129
 - Prevent bytesNeeded overflow by @StephenButtolph in https://github.com/luxfi/node/pull/2130
@@ -2230,11 +2230,11 @@ The plugin version is unchanged at `28` and compatible with versions `v1.10.9 - 
 - Update go.mod and add update check by @StephenButtolph in https://github.com/luxfi/node/pull/2133
 - Reduce log level of failing to send a peerList message by @StephenButtolph in https://github.com/luxfi/node/pull/2134
 - RPCChainVM fail-fast health RPCs by @hexfusion in https://github.com/luxfi/node/pull/2123
-- MerkleDB allow warming node cache by @dboehm-avalabs in https://github.com/luxfi/node/pull/2128
+- MerkleDB allow warming node cache  in https://github.com/luxfi/node/pull/2128
 - Add vote bubbling metrics by @StephenButtolph in https://github.com/luxfi/node/pull/2138
 - Reduce log level of an error during Prune by @StephenButtolph in https://github.com/luxfi/node/pull/2141
 - Exit chain creation routine before shutting down chain router by @StephenButtolph in https://github.com/luxfi/node/pull/2140
-- Merkle db fix type cast bug by @dboehm-avalabs in https://github.com/luxfi/node/pull/2142
+- Merkle db fix type cast bug  in https://github.com/luxfi/node/pull/2142
 - Add Warp Payload Types by @nytzuga in https://github.com/luxfi/node/pull/2116
 - Add height voting for chits by @StephenButtolph in https://github.com/luxfi/node/pull/2102
 - Add Heap Queue by @joshua-kim in https://github.com/luxfi/node/pull/2135
@@ -2303,17 +2303,17 @@ The plugin version is unchanged at `28` and compatible with version `v1.10.9`.
 
 - e2e: Save network data for each test run as an uploaded artifact by @marun in https://github.com/luxfi/node/pull/1856
 - e2e: Ensure interchain workflow coverage for X-Chain and C-Chain by @marun in https://github.com/luxfi/node/pull/1871
-- MerkleDB Adjust New View function(s) by @dboehm-avalabs in https://github.com/luxfi/node/pull/1927
+- MerkleDB Adjust New View function(s)  in https://github.com/luxfi/node/pull/1927
 - e2e: Migrate duplicate node id test from kurtosis by @marun in https://github.com/luxfi/node/pull/1573
 - Add tracing levels to merkledb by @StephenButtolph in https://github.com/luxfi/node/pull/1933
 - [x/merkledb] Add Configuration for `RootGenConcurrency` by @patrick-ogrady in https://github.com/luxfi/node/pull/1936
 - e2e: Ensure testnet network dir is archived on failed test run by @marun in https://github.com/luxfi/node/pull/1930
-- Merkle db cleanup view creation by @dboehm-avalabs in https://github.com/luxfi/node/pull/1934
+- Merkle db cleanup view creation  in https://github.com/luxfi/node/pull/1934
 - Add async DB deletion helper by @StephenButtolph in https://github.com/luxfi/node/pull/1931
 - Implement SDK handler to drop messages from non-validators by @joshua-kim in https://github.com/luxfi/node/pull/1917
 - Support proposervm historical block deletion by @StephenButtolph in https://github.com/luxfi/node/pull/1929
 - Remove thread pool by @StephenButtolph in https://github.com/luxfi/node/pull/1940
-- Merkledb split node storage into value and intermediate by @dboehm-avalabs in https://github.com/luxfi/node/pull/1918
+- Merkledb split node storage into value and intermediate  in https://github.com/luxfi/node/pull/1918
 - `merkledb` -- remove unneeded codec test helper by @danlaine in https://github.com/luxfi/node/pull/1943
 - `merkledb` -- add codec test and move helper by @danlaine in https://github.com/luxfi/node/pull/1944
 - Add throttler implementation to SDK by @joshua-kim in https://github.com/luxfi/node/pull/1905
@@ -2321,7 +2321,7 @@ The plugin version is unchanged at `28` and compatible with version `v1.10.9`.
 - Change merkledb caches to be size based by @StephenButtolph in https://github.com/luxfi/node/pull/1947
 - Rename `node.marshal` to `node.bytes` by @danlaine in https://github.com/luxfi/node/pull/1951
 - e2e: Switch to a default network node count of 2 by @marun in https://github.com/luxfi/node/pull/1928
-- MerkleDB Improve Node Size Calculation by @dboehm-avalabs in https://github.com/luxfi/node/pull/1950
+- MerkleDB Improve Node Size Calculation  in https://github.com/luxfi/node/pull/1950
 - `merkledb` -- remove unneeded return values by @danlaine in https://github.com/luxfi/node/pull/1959
 - `sync` -- reduce test sizes by @danlaine in https://github.com/luxfi/node/pull/1962
 - `merkledb` -- limit number of goroutines calculating node IDs by @danlaine in https://github.com/luxfi/node/pull/1960
@@ -2339,18 +2339,18 @@ The plugin version is unchanged at `28` and compatible with version `v1.10.9`.
 - Change max response size to target response size by @joshua-kim in https://github.com/luxfi/node/pull/1995
 - Add sdk gossip handler metrics by @joshua-kim in https://github.com/luxfi/node/pull/1997
 - Add p2p SDK Router metrics by @joshua-kim in https://github.com/luxfi/node/pull/2000
-- Merkledb Attempt to reduce test runtime by @dboehm-avalabs in https://github.com/luxfi/node/pull/1990
+- Merkledb Attempt to reduce test runtime  in https://github.com/luxfi/node/pull/1990
 - longer timeout on windows UT by @danlaine in https://github.com/luxfi/node/pull/2001
 - `sync` -- log tweaks by @danlaine in https://github.com/luxfi/node/pull/2008
 - Add Validator Gossiper by @joshua-kim in https://github.com/luxfi/node/pull/2015
 - database: comment that Get returns ErrNotFound if key is not present by @aaronbuchwald in https://github.com/luxfi/node/pull/2018
 - Return `height` from `GetCurrentSupply` by @dhrubabasu in https://github.com/luxfi/node/pull/2022
 - simplify platformvm `GetHeight` function by @dhrubabasu in https://github.com/luxfi/node/pull/2023
-- Merkle db fix range proof commit bug by @dboehm-avalabs in https://github.com/luxfi/node/pull/2019
+- Merkle db fix range proof commit bug  in https://github.com/luxfi/node/pull/2019
 - Add `bag.Of` helper by @StephenButtolph in https://github.com/luxfi/node/pull/2027
 - Cleanup early poll termination logic by @StephenButtolph in https://github.com/luxfi/node/pull/2029
 - fix typo by @dhrubabasu in https://github.com/luxfi/node/pull/2030
-- Merkle db intermediate node key compression by @dboehm-avalabs in https://github.com/luxfi/node/pull/1987
+- Merkle db intermediate node key compression  in https://github.com/luxfi/node/pull/1987
 - Improve RPC Chain version mismatch error message by @martineckardt in https://github.com/luxfi/node/pull/2021
 - Move subnet owner lookup to platformvm state by @dhrubabasu in https://github.com/luxfi/node/pull/2025
 - Fix fuzz tests; add iterator fuzz test by @danlaine in https://github.com/luxfi/node/pull/1991
@@ -2360,9 +2360,9 @@ The plugin version is unchanged at `28` and compatible with version `v1.10.9`.
 - add `IsCortinaActivated` helper by @dhrubabasu in https://github.com/luxfi/node/pull/2013
 - Fix P-chain Import by @StephenButtolph in https://github.com/luxfi/node/pull/2035
 - Rename avm/blocks package to avm/block by @joshua-kim in https://github.com/luxfi/node/pull/1970
-- Merkledb Update rangeproof proto to be consistent with changeproof proto by @dboehm-avalabs in https://github.com/luxfi/node/pull/2040
+- Merkledb Update rangeproof proto to be consistent with changeproof proto  in https://github.com/luxfi/node/pull/2040
 - `merkledb` -- encode lengths as uvarints by @danlaine in https://github.com/luxfi/node/pull/2039
-- MerkleDB Remove GetNodeFromParent by @dboehm-avalabs in https://github.com/luxfi/node/pull/2041
+- MerkleDB Remove GetNodeFromParent  in https://github.com/luxfi/node/pull/2041
 
 ### New Contributors
 
@@ -2393,7 +2393,7 @@ The plugin version is updated to `28` all plugins must update to be compatible.
 - `corruptabledb` -- corrupt on iterator error by @danlaine in https://github.com/luxfi/node/pull/1829
 - Add support for Maps to the reflect_codec by @nytzuga in https://github.com/luxfi/node/pull/1790
 - Make linter fail if `github.com/golang/mock/gomock` is used by @danlaine in https://github.com/luxfi/node/pull/1843
-- Firewoodize merkle db Part 1: Make Views ReadOnly by @dboehm-avalabs in https://github.com/luxfi/node/pull/1816
+- Firewoodize merkle db Part 1: Make Views ReadOnly  in https://github.com/luxfi/node/pull/1816
 - E2E tests -- use appropriate timeouts by @danlaine in https://github.com/luxfi/node/pull/1851
 - e2e: Switch to testnet fixture by @marun in https://github.com/luxfi/node/pull/1709
 - `secp256k1` -- add fuzz tests by @danlaine in https://github.com/luxfi/node/pull/1809
@@ -2419,13 +2419,13 @@ The plugin version is updated to `28` all plugins must update to be compatible.
 - Update account nonce on exportTx accept by @StephenButtolph in https://github.com/luxfi/node/pull/1881
 - `sync` -- add workheap test by @danlaine in https://github.com/luxfi/node/pull/1879
 - `merkledb` -- commit to db only by @danlaine in https://github.com/luxfi/node/pull/1885
-- Remove node/value lock from trieview by @dboehm-avalabs in https://github.com/luxfi/node/pull/1865
+- Remove node/value lock from trieview  in https://github.com/luxfi/node/pull/1865
 - remove old todo by @danlaine in https://github.com/luxfi/node/pull/1892
 - Fix race in TestHandlerDispatchInternal by @joshua-kim in https://github.com/luxfi/node/pull/1895
 - Remove duplicate code from proposervm block acceptance by @StephenButtolph in https://github.com/luxfi/node/pull/1894
 - e2e: Bump permissionless subnets timeouts by @marun in https://github.com/luxfi/node/pull/1897
 - `merkledb` -- codec remove err checks by @danlaine in https://github.com/luxfi/node/pull/1899
-- Merkle db fix new return type by @dboehm-avalabs in https://github.com/luxfi/node/pull/1898
+- Merkle db fix new return type  in https://github.com/luxfi/node/pull/1898
 - Add SDK Sampling interface by @joshua-kim in https://github.com/luxfi/node/pull/1877
 - Add NoOpHandler implementation to SDK by @joshua-kim in https://github.com/luxfi/node/pull/1903
 - Remove unused scripts by @StephenButtolph in https://github.com/luxfi/node/pull/1908
@@ -2479,12 +2479,12 @@ The plugin version is unchanged at `27` and compatible with versions `v1.10.5 - 
 - `merkledb` -- add proof fuzz test by @danlaine in https://github.com/luxfi/node/pull/1804
 - `sync` -- re-add network client metrics by @danlaine in https://github.com/luxfi/node/pull/1787
 - Add function to initialize set from elements by @joshua-kim in https://github.com/luxfi/node/pull/1808
-- Add Maybe to the end bound of proofs (Part 1) by @dboehm-avalabs in https://github.com/luxfi/node/pull/1793
+- Add Maybe to the end bound of proofs (Part 1)  in https://github.com/luxfi/node/pull/1793
 - add go version to --version by @amirhasanzadehpy in https://github.com/luxfi/node/pull/1819
 - e2e: Add local network fixture by @marun in https://github.com/luxfi/node/pull/1700
 - Fix test flake in TestProposalTxsInMempool by @StephenButtolph in https://github.com/luxfi/node/pull/1822
 - `sync` -- remove todo by @danlaine in https://github.com/luxfi/node/pull/1788
-- Add Maybe to the end bound of proofs (Part 2) by @dboehm-avalabs in https://github.com/luxfi/node/pull/1813
+- Add Maybe to the end bound of proofs (Part 2)  in https://github.com/luxfi/node/pull/1813
 - Move Maybe to its own package by @danlaine in https://github.com/luxfi/node/pull/1817
 - `merkledb` -- clarify/improve change proof invariants by @danlaine in https://github.com/luxfi/node/pull/1810
 - P-chain state prune + height index by @dhrubabasu in https://github.com/luxfi/node/pull/1719
@@ -2751,7 +2751,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 
 ### What's Changed
 
-- `x/sync` -- Add proto for P2P messages  by @dboehm-avalabs in https://github.com/luxfi/node/pull/1472
+- `x/sync` -- Add proto for P2P messages   in https://github.com/luxfi/node/pull/1472
 - Bump Protobuf and tooling and add section to proto docs outlining buf publishing by @hexfusion in https://github.com/luxfi/node/pull/1552
 - Minor pchain UTs cleanup by @abi87 in https://github.com/luxfi/node/pull/1554
 - Add ping uptimes test by @ceyonur in https://github.com/luxfi/node/pull/1550
@@ -2778,7 +2778,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - Reduce the number of test health checks by @StephenButtolph in https://github.com/luxfi/node/pull/1571
 - Fix proposervm.GetAncestors test flake by @StephenButtolph in https://github.com/luxfi/node/pull/1572
 - Remove list from AcceptedFrontier message by @StephenButtolph in https://github.com/luxfi/node/pull/1578
-- Remove version db from merkle db by @dboehm-avalabs in https://github.com/luxfi/node/pull/1534
+- Remove version db from merkle db  in https://github.com/luxfi/node/pull/1534
 - `MerkleDB` -- add eviction batch size config by @danlaine in https://github.com/luxfi/node/pull/1586
 - `MerkleDB` -- fix `onEvictCache.Flush` by @danlaine in https://github.com/luxfi/node/pull/1589
 - Revert P-Chain height index by @StephenButtolph in https://github.com/luxfi/node/pull/1591
@@ -2790,7 +2790,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - Improve metrics error msging by @anusha-ctrl in https://github.com/luxfi/node/pull/1598
 - Separate health checks by tags by @StephenButtolph in https://github.com/luxfi/node/pull/1579
 - Separate subnet stake connected health and metrics from P-chain by @ceyonur in https://github.com/luxfi/node/pull/1358
-- Merkle db iterator by @dboehm-avalabs in https://github.com/luxfi/node/pull/1533
+- Merkle db iterator  in https://github.com/luxfi/node/pull/1533
 - Fix unreadable message errors by @morrisettjohn in https://github.com/luxfi/node/pull/1585
 - Log unexpected errors during GetValidatorSet by @hexfusion in https://github.com/luxfi/node/pull/1592
 - `merkleDB` -- add inner heap type to syncWorkHeap by @danlaine in https://github.com/luxfi/node/pull/1582
@@ -2865,8 +2865,8 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - codec: remove "SetMaxSize" from "Manager", remove unnecessary lock by @gyuho in https://github.com/luxfi/node/pull/1481
 - config: disallow "ThrottlerConfig.MaxRecheckDelay" < 1 ms by @gyuho in https://github.com/luxfi/node/pull/1435
 - ban `require.Equal` when testing for `0` by @dhrubabasu in https://github.com/luxfi/node/pull/1495
-- Clean up MerkleDVB Sync Close lock by @dboehm-avalabs in https://github.com/luxfi/node/pull/1469
-- MerkleDB Cleanup by @dboehm-avalabs in https://github.com/luxfi/node/pull/1465
+- Clean up MerkleDVB Sync Close lock  in https://github.com/luxfi/node/pull/1469
+- MerkleDB Cleanup  in https://github.com/luxfi/node/pull/1465
 - Remove comment referencing old IP based tracking by @StephenButtolph in https://github.com/luxfi/node/pull/1509
 - ban usage of `require.Len` when testing for length `0` by @dhrubabasu in https://github.com/luxfi/node/pull/1496
 - ban usage of `require.Equal` when testing for length by @dhrubabasu in https://github.com/luxfi/node/pull/1497
@@ -2930,23 +2930,23 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 
 - Add benchmark for gRPC GetValidatorSet by @hexfusion in https://github.com/luxfi/node/pull/1326
 - Add checks for database being closed in merkledb; other nits by @danlaine in https://github.com/luxfi/node/pull/1333
-- Update linkedhashmap to only Rlock when possible by @dboehm-avalabs in https://github.com/luxfi/node/pull/1329
-- Remove no-op changes from history results by @dboehm-avalabs in https://github.com/luxfi/node/pull/1335
+- Update linkedhashmap to only Rlock when possible  in https://github.com/luxfi/node/pull/1329
+- Remove no-op changes from history results  in https://github.com/luxfi/node/pull/1335
 - Cleanup type assertions in the linkedHashmap by @StephenButtolph in https://github.com/luxfi/node/pull/1341
 - Fix racy avm tx access by @StephenButtolph in https://github.com/luxfi/node/pull/1349
 - Update Fuji beacon ips by @StephenButtolph in https://github.com/luxfi/node/pull/1354
 - Remove duplicate TLS verification by @StephenButtolph in https://github.com/luxfi/node/pull/1364
-- Adjust Merkledb Trie invalidation locking by @dboehm-avalabs in https://github.com/luxfi/node/pull/1355
+- Adjust Merkledb Trie invalidation locking  in https://github.com/luxfi/node/pull/1355
 - Use require in Lux bootstrapping tests by @StephenButtolph in https://github.com/luxfi/node/pull/1344
-- Add Proof size limit to sync client by @dboehm-avalabs in https://github.com/luxfi/node/pull/1269
+- Add Proof size limit to sync client  in https://github.com/luxfi/node/pull/1269
 - Add stake priority helpers by @StephenButtolph in https://github.com/luxfi/node/pull/1375
 - add contribution file by @joshua-kim in https://github.com/luxfi/node/pull/1373
 - Remove max sample value by @StephenButtolph in https://github.com/luxfi/node/pull/1374
 - Prefetch rpcdb iterator batches by @StephenButtolph in https://github.com/luxfi/node/pull/1323
-- Temp fix for flaky Sync Test by @dboehm-avalabs in https://github.com/luxfi/node/pull/1378
-- Update merkle cache to be FIFO instead of LRU by @dboehm-avalabs in https://github.com/luxfi/node/pull/1353
+- Temp fix for flaky Sync Test  in https://github.com/luxfi/node/pull/1378
+- Update merkle cache to be FIFO instead of LRU  in https://github.com/luxfi/node/pull/1353
 - Improve cost of BLS key serialization for gRPC by @hexfusion in https://github.com/luxfi/node/pull/1343
-- [Issue-1368]: Panic in serializedPath.HasPrefix by @dboehm-avalabs in https://github.com/luxfi/node/pull/1371
+- [Issue-1368]: Panic in serializedPath.HasPrefix  in https://github.com/luxfi/node/pull/1371
 - Add ValidatorsOnly flag to GetStake by @StephenButtolph in https://github.com/luxfi/node/pull/1377
 - Use proto in `x/sync` by @danlaine in https://github.com/luxfi/node/pull/1336
 - Update incorrect fuji beacon IPs by @StephenButtolph in https://github.com/luxfi/node/pull/1392
@@ -2965,7 +2965,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - Simplify `syncWorkHeap` less function in `x/sync` by @danlaine in https://github.com/luxfi/node/pull/1351
 - Replace `switch` with `txs.Visitor` in X chain signer by @dhrubabasu in https://github.com/luxfi/node/pull/1404
 - Include IDs in json marshalling by @StephenButtolph in https://github.com/luxfi/node/pull/1408
-- Adjust find next key logic in x/Sync by @dboehm-avalabs in https://github.com/luxfi/node/pull/1331
+- Adjust find next key logic in x/Sync  in https://github.com/luxfi/node/pull/1331
 - Remove bitmask from writeMsgLen by @StephenButtolph in https://github.com/luxfi/node/pull/1342
 - Require `txID`s in PeerList messages by @StephenButtolph in https://github.com/luxfi/node/pull/1411
 - Allow dependent tx issuance over the wallet API by @StephenButtolph in https://github.com/luxfi/node/pull/1413
@@ -2978,7 +2978,7 @@ This version is backwards compatible to [v1.10.0](https://github.com/luxfi/node/
 - Remove DAG based consensus by @StephenButtolph in https://github.com/luxfi/node/pull/1359
 - Remove IssueStopVertex message by @StephenButtolph in https://github.com/luxfi/node/pull/1419
 - Fix msgHandlingTime by @StephenButtolph in https://github.com/luxfi/node/pull/1432
-- Change ChangeProofs to only have one list of key/value change instead of key/values and deleted by @dboehm-avalabs in https://github.com/luxfi/node/pull/1385
+- Change ChangeProofs to only have one list of key/value change instead of key/values and deleted  in https://github.com/luxfi/node/pull/1385
 - Update AMI generation workflow by @charlie-ava in https://github.com/luxfi/node/pull/1289
 - Support `height` as a string in `avm.getBlockByHeight` by @StephenButtolph in https://github.com/luxfi/node/pull/1437
 - Defer Consensusman Bootstrapper parser initialization to Start by @StephenButtolph in https://github.com/luxfi/node/pull/1442
@@ -3034,8 +3034,8 @@ The supported plugin version is `25`.
 - Add BLS benchmarks by @StephenButtolph in https://github.com/luxfi/node/pull/1318
 - Encode codec version in merkledb by @danlaine in https://github.com/luxfi/node/pull/1313
 - Expose consensus-app-concurrency by @StephenButtolph in https://github.com/luxfi/node/pull/1322
-- Adjust Logic In Merkle DB History by @dboehm-avalabs in https://github.com/luxfi/node/pull/1310
-- Fix Concurrency Bug In CommitToParent by @dboehm-avalabs in https://github.com/luxfi/node/pull/1320
+- Adjust Logic In Merkle DB History  in https://github.com/luxfi/node/pull/1310
+- Fix Concurrency Bug In CommitToParent  in https://github.com/luxfi/node/pull/1320
 - Cleanup goroutines on health.Stop by @StephenButtolph in https://github.com/luxfi/node/pull/1325
 
 ### New Contributors

@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/luxfi/metric/collectors"
-	"luxfi/log"
+	"github.com/luxfi/log"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 

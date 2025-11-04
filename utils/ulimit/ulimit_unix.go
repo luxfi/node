@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"syscall"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/log"
 )

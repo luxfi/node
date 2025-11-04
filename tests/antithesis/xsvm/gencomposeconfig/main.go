@@ -6,7 +6,7 @@ package main
 import (
 	"os"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/node/tests"

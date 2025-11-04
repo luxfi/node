@@ -10,7 +10,7 @@ import (
 	"io"
 
 	"connectrpc.com/connect"
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/connectproto/pb/xsvm"
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"

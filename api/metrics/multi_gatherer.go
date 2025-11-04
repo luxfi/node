@@ -11,11 +11,10 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/luxfi/metric"
 
 	"github.com/luxfi/node/utils"
 
-	dto "github.com/metric/client_model/go"
+	dto "github.com/prometheus/client_model/go"
 )
 
 // MultiGatherer extends the Gatherer interface by allowing additional gatherers
@@ -79,7 +78,7 @@ func (g *multiGatherer) Deregister(name string) bool {
 	return true
 }
 
-func MakeAndRegister(gatherer MultiGatherer, name string) (*metric.Registry, error) {
+func MakeAndRegister(gatherer MultiGatherer, name string) (metric.Registry, error) {
 	reg := metric.NewRegistry()
 	if err := gatherer.Register(name, reg); err != nil {
 		return nil, fmt.Errorf("couldn't register %q metrics: %w", name, err)

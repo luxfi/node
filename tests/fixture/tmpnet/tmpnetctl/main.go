@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"

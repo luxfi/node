@@ -10,7 +10,7 @@ import (
 	"math"
 	"time"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/log"
 

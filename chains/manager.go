@@ -16,7 +16,7 @@ import (
 	"time"
 
 	// "github.com/luxfi/metric" // Unused
-	// "luxfi/log" // Unused
+	// "github.com/luxfi/log" // Unused
 
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/metrics"

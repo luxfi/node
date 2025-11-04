@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/geth/params"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/node/tests/fixture/e2e"

@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 	"github.com/luxfi/node/crypto/cggmp21"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"

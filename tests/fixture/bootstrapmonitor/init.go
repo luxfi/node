@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"

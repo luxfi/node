@@ -50,7 +50,7 @@ import (
 	validatorstatepb "github.com/luxfi/node/proto/pb/validatorstate"
 	vmpb "github.com/luxfi/node/proto/pb/vm"
 	warppb "github.com/luxfi/node/proto/pb/warp"
-	dto "github.com/metric/client_model/go"
+	dto "github.com/prometheus/client_model/go"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 

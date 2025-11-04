@@ -112,7 +112,7 @@ type VM struct {
 
 	// lastAcceptedTimestampGaugeVec reports timestamps for the last-accepted
 	// [postForkBlock] and its inner block.
-	lastAcceptedTimestampGaugeVec *metric.GaugeVec
+	lastAcceptedTimestampGaugeVec metric.GaugeVec
 }
 
 // New performs best when [minBlkDelay] is whole seconds. This is because block

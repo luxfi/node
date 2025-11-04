@@ -2,25 +2,19 @@
 // See the file LICENSE for licensing terms.
 
 package throttling
-
 import (
+	"github.com/luxfi/log"
 	"context"
 	"time"
-
-	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	utilmetric "github.com/luxfi/node/utils/metric"
-	"luxfi/log"
-
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/linked"
 	"github.com/luxfi/node/utils/wrappers"
 )
-
 // See inbound_msg_throttler.go
-
 func newInboundMsgByteThrottler(
 	log log.Logger,
 	registerer metric.Registerer,
@@ -43,7 +37,6 @@ func newInboundMsgByteThrottler(
 	}
 	return t, t.metrics.initialize(registerer)
 }
-
 // Information about a message waiting to be read.
 type msgMetadata struct {
 	// Need this many more bytes before Acquire returns
@@ -54,8 +47,6 @@ type msgMetadata struct {
 	nodeID ids.NodeID
 	// Closed when the message can be read.
 	closeOnAcquireChan chan struct{}
-}
-
 // It gives more space to validators with more stake.
 // Messages are guaranteed to make progress toward
 // acquiring enough bytes to be read.
@@ -72,11 +63,8 @@ type inboundMsgByteThrottler struct {
 	// Invariant: waitingToAcquire.Get(nodeToWaitingMsgIDs[nodeID])
 	// is the info about the message [nodeID] that has been blocking
 	// on reading.
-	//
 	// Invariant: len(nodeToWaitingMsgIDs) >= 1
 	// implies waitingToAcquire.Len() >= 1, and vice versa.
-}
-
 // Returns when we can read a message of size [msgSize] from node [nodeID].
 // The returned ReleaseFunc must be called (!) when done with the message
 // or when we give up trying to read the message, if applicable.
@@ -90,10 +78,7 @@ func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, n
 		bytesNeeded: msgSize,
 		msgSize:     msgSize,
 		nodeID:      nodeID,
-	}
-
 	t.lock.Lock()
-
 	// If there is already a message waiting, log the error and return
 	if existingID, exists := t.nodeToWaitingMsgID[nodeID]; exists {
 		t.log.Error("node already waiting on message",
@@ -102,8 +87,6 @@ func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, n
 		)
 		t.lock.Unlock()
 		return t.metrics.awaitingRelease.Dec
-	}
-
 	// Take as many bytes as we can from the at-large allocation.
 	atLargeBytesUsed := min(
 		// only give as many bytes as needed
@@ -124,8 +107,6 @@ func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, n
 				t.release(metadata, nodeID)
 			}
 		}
-	}
-
 	// Take as many bytes as we can from [nodeID]'s validator allocation.
 	// Calculate [nodeID]'s validator allocation size based on its weight
 	vdrAllocationSize := uint64(0)
@@ -138,8 +119,6 @@ func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, n
 			)
 		} else {
 			vdrAllocationSize = uint64(float64(t.maxVdrBytes) * float64(weight) / float64(totalWeight))
-		}
-	}
 	vdrBytesAlreadyUsed := t.nodeToVdrBytesUsed[nodeID]
 	// [vdrBytesAllowed] is the number of bytes this node
 	// may take from its validator allocation.
@@ -149,7 +128,6 @@ func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, n
 		vdrBytesAllowed = 0
 	} else {
 		vdrBytesAllowed -= vdrBytesAlreadyUsed
-	}
 	vdrBytesUsed := min(t.remainingVdrBytes, metadata.bytesNeeded, vdrBytesAllowed)
 	if vdrBytesUsed > 0 {
 		// Mark that [nodeID] used [vdrBytesUsed] from its validator allocation
@@ -157,17 +135,8 @@ func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, n
 		t.remainingVdrBytes -= vdrBytesUsed
 		t.metrics.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
 		metadata.bytesNeeded -= vdrBytesUsed
-		if metadata.bytesNeeded == 0 { // If we acquired enough bytes, return
-			t.lock.Unlock()
-			return func() {
-				t.release(metadata, nodeID)
-			}
-		}
-	}
-
 	// We still haven't acquired enough bytes to read the message.
 	// Wait until more bytes are released.
-
 	// [closeOnAcquireChan] is closed when [msgSize] bytes have
 	// been acquired and the message can be read.
 	metadata.closeOnAcquireChan = make(chan struct{})
@@ -176,45 +145,27 @@ func (t *inboundMsgByteThrottler) Acquire(ctx context.Context, msgSize uint64, n
 	t.waitingToAcquire.Put(
 		msgID,
 		metadata,
-	)
-
 	t.nodeToWaitingMsgID[nodeID] = msgID
 	t.lock.Unlock()
-
 	t.metrics.awaitingAcquire.Inc()
 	defer t.metrics.awaitingAcquire.Dec()
-
 	select {
 	case <-metadata.closeOnAcquireChan:
 	case <-ctx.Done():
 		t.lock.Lock()
 		t.waitingToAcquire.Delete(msgID)
 		delete(t.nodeToWaitingMsgID, nodeID)
-		t.lock.Unlock()
-	}
-
 	return func() {
 		t.release(metadata, nodeID)
-	}
-}
-
 // Must correspond to a previous call of Acquire([msgSize], [nodeID])
 func (t *inboundMsgByteThrottler) release(metadata *msgMetadata, nodeID ids.NodeID) {
-	t.lock.Lock()
-	defer func() {
-		t.metrics.remainingAtLargeBytes.Set(float64(t.remainingAtLargeBytes))
-		t.metrics.remainingVdrBytes.Set(float64(t.remainingVdrBytes))
 		t.metrics.awaitingRelease.Dec()
-		t.lock.Unlock()
-	}()
-
 	// [vdrBytesToReturn] is the number of bytes from [msgSize]
 	// that will be given back to [nodeID]'s validator allocation
 	// or messages from [nodeID] currently waiting to acquire bytes.
 	vdrBytesUsed := t.nodeToVdrBytesUsed[nodeID]
 	releasedBytes := metadata.msgSize - metadata.bytesNeeded
 	vdrBytesToReturn := min(releasedBytes, vdrBytesUsed)
-
 	// [atLargeBytesToReturn] is the number of bytes from [msgSize]
 	// that will be given to the at-large allocation or a message
 	// from any node currently waiting to acquire bytes.
@@ -225,8 +176,6 @@ func (t *inboundMsgByteThrottler) release(metadata *msgMetadata, nodeID ids.Node
 		t.nodeToAtLargeBytesUsed[nodeID] -= atLargeBytesToReturn
 		if t.nodeToAtLargeBytesUsed[nodeID] == 0 {
 			delete(t.nodeToAtLargeBytesUsed, nodeID)
-		}
-
 		// Iterates over messages waiting to acquire bytes from oldest
 		// (waiting the longest) to newest. Try to give bytes to the
 		// oldest message, then next oldest, etc. until there are no
@@ -243,26 +192,19 @@ func (t *inboundMsgByteThrottler) release(metadata *msgMetadata, nodeID ids.Node
 				t.nodeMaxAtLargeBytes-t.nodeToAtLargeBytesUsed[msg.nodeID],
 				// don't give more bytes than are in the allocation
 				t.remainingAtLargeBytes,
-			)
 			if atLargeBytesGiven > 0 {
 				// Mark that we gave [atLargeBytesGiven] to [msg]
 				t.nodeToAtLargeBytesUsed[msg.nodeID] += atLargeBytesGiven
 				t.remainingAtLargeBytes -= atLargeBytesGiven
 				atLargeBytesToReturn -= atLargeBytesGiven
 				msg.bytesNeeded -= atLargeBytesGiven
-			}
 			if msg.bytesNeeded == 0 {
 				// [msg] has acquired enough bytes to be read.
 				// Unblock the corresponding thread in Acquire
 				close(msg.closeOnAcquireChan)
 				// Mark that this message is no longer waiting to acquire bytes
 				delete(t.nodeToWaitingMsgID, msg.nodeID)
-
 				t.waitingToAcquire.Delete(iter.Key())
-			}
-		}
-	}
-
 	// Get the message from [nodeID], if any, waiting to acquire
 	msgID, ok := t.nodeToWaitingMsgID[nodeID]
 	if vdrBytesToReturn > 0 && ok {
@@ -272,52 +214,36 @@ func (t *inboundMsgByteThrottler) release(metadata *msgMetadata, nodeID ids.Node
 			bytesToGive := min(msg.bytesNeeded, vdrBytesToReturn)
 			msg.bytesNeeded -= bytesToGive
 			vdrBytesToReturn -= bytesToGive
-			if msg.bytesNeeded == 0 {
-				// Unblock the corresponding thread in Acquire
-				close(msg.closeOnAcquireChan)
 				delete(t.nodeToWaitingMsgID, nodeID)
 				t.waitingToAcquire.Delete(msgID)
-			}
-		} else {
 			// This should never happen
 			t.log.Warn("couldn't find message",
 				zap.Stringer("nodeID", nodeID),
 				zap.Uint64("messageID", msgID),
-			)
-		}
-	}
 	if vdrBytesToReturn > 0 {
 		// We gave back all the bytes we could to waiting messages from [nodeID]
 		// but some are still left.
 		t.nodeToVdrBytesUsed[nodeID] -= vdrBytesToReturn
 		if t.nodeToVdrBytesUsed[nodeID] == 0 {
 			delete(t.nodeToVdrBytesUsed, nodeID)
-		}
 		t.remainingVdrBytes += vdrBytesToReturn
-	}
-}
-
 type inboundMsgByteThrottlerMetrics struct {
 	acquireLatency        utilmetric.Averager
 	remainingAtLargeBytes metric.Gauge
 	remainingVdrBytes     metric.Gauge
 	awaitingAcquire       metric.Gauge
 	awaitingRelease       metric.Gauge
-}
-
 func (m *inboundMsgByteThrottlerMetrics) initialize(reg metric.Registerer) error {
 	errs := wrappers.Errs{}
 	registry, ok := reg.(metric.Registry)
 	if !ok {
 		errs.Add(nil)
 		return errs.Err
-	}
 	m.acquireLatency = utilmetric.NewAveragerWithErrs(
 		"byte_throttler_inbound_acquire_latency",
 		"average time (in ns) to get space on the inbound message byte buffer",
 		registry,
 		&errs,
-	)
 	m.remainingAtLargeBytes = metric.NewGauge(metric.GaugeOpts{
 		Name: "byte_throttler_inbound_remaining_at_large_bytes",
 		Help: "Bytes remaining in the at-large byte buffer",
@@ -325,16 +251,11 @@ func (m *inboundMsgByteThrottlerMetrics) initialize(reg metric.Registerer) error
 	m.remainingVdrBytes = metric.NewGauge(metric.GaugeOpts{
 		Name: "byte_throttler_inbound_remaining_validator_bytes",
 		Help: "Bytes remaining in the validator byte buffer",
-	})
 	m.awaitingAcquire = metric.NewGauge(metric.GaugeOpts{
 		Name: "byte_throttler_inbound_awaiting_acquire",
 		Help: "Number of inbound messages waiting to acquire space on the inbound message byte buffer",
-	})
 	m.awaitingRelease = metric.NewGauge(metric.GaugeOpts{
 		Name: "byte_throttler_inbound_awaiting_release",
 		Help: "Number of messages currently being read/handled",
-	})
 	errs.Add(
-	)
 	return errs.Err
-}

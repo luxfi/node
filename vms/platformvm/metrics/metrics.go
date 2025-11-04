@@ -10,7 +10,6 @@ import (
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
 	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/vms/components/gas"
@@ -182,16 +181,16 @@ type metricsImpl struct {
 	blockMetrics *blockMetrics
 
 	// Staking metrics
-	timeUntilUnstake       metric.Gauge
-	timeUntilNetUnstake *metric.GaugeVec
-	localStake             metric.Gauge
-	totalStake             metric.Gauge
+	timeUntilUnstake     metric.Gauge
+	timeUntilNetUnstake  metric.GaugeVec
+	localStake           metric.Gauge
+	totalStake           metric.Gauge
 
 	gasConsumed          metric.Counter
 	gasCapacity          metric.Gauge
 	activeL1Validators   metric.Gauge
-	excess               *metric.GaugeVec
-	price                *metric.GaugeVec
+	excess               metric.GaugeVec
+	price                metric.GaugeVec
 	accruedValidatorFees metric.Gauge
 
 	// Validator set diff metrics

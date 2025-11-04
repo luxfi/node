@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"

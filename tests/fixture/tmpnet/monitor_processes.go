@@ -17,7 +17,7 @@ import (
 	"syscall"
 	"time"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/luxfi/log"

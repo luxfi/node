@@ -2,21 +2,16 @@
 // See the file LICENSE for licensing terms.
 
 package throttling
-
 import (
 	"context"
 	"sync"
 	"time"
-
 	"github.com/luxfi/metric"
 	utilmetric "github.com/luxfi/node/utils/metric"
-
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/wrappers"
 )
-
 // See inbound_msg_throttler.go
-
 func newInboundMsgBufferThrottler(
 	registerer metric.Registerer,
 	maxProcessingMsgsPerNode uint64,
@@ -28,7 +23,6 @@ func newInboundMsgBufferThrottler(
 	}
 	return t, t.metrics.initialize(registerer)
 }
-
 // Rate-limits inbound messages based on the number of
 // messages from a given node that we're currently processing.
 type inboundMsgBufferThrottler struct {
@@ -47,10 +41,7 @@ type inboundMsgBufferThrottler struct {
 	nodeToNumProcessingMsgs map[ids.NodeID]uint64
 	// Node ID --> Channel, when closed
 	// causes a goroutine waiting in Acquire to return.
-	// Must only be accessed when [lock] is held.
 	awaitingAcquire map[ids.NodeID]chan struct{}
-}
-
 // Acquire returns when we've acquired space on the inbound message
 // buffer so that we can read a message from [nodeID].
 // The returned release function must be called (!) when done processing the message
@@ -63,7 +54,6 @@ func (t *inboundMsgBufferThrottler) Acquire(ctx context.Context, nodeID ids.Node
 	defer func() {
 		t.metrics.acquireLatency.Observe(float64(time.Since(startTime)))
 	}()
-
 	t.lock.Lock()
 	if t.nodeToNumProcessingMsgs[nodeID] < t.maxProcessingMsgsPerNode {
 		t.nodeToNumProcessingMsgs[nodeID]++
@@ -71,8 +61,6 @@ func (t *inboundMsgBufferThrottler) Acquire(ctx context.Context, nodeID ids.Node
 		return func() {
 			t.release(nodeID)
 		}
-	}
-
 	// We're currently processing the maximum number of
 	// messages from [nodeID]. Wait until we've finished
 	// processing some messages from [nodeID].
@@ -84,57 +72,36 @@ func (t *inboundMsgBufferThrottler) Acquire(ctx context.Context, nodeID ids.Node
 	t.lock.Unlock()
 	t.metrics.awaitingAcquire.Inc()
 	defer t.metrics.awaitingAcquire.Dec()
-
 	var releaseFunc ReleaseFunc
 	select {
 	case <-closeOnAcquireChan:
 		t.lock.Lock()
-		t.nodeToNumProcessingMsgs[nodeID]++
 		releaseFunc = func() {
-			t.release(nodeID)
-		}
 	case <-ctx.Done():
-		t.lock.Lock()
 		delete(t.awaitingAcquire, nodeID)
 		releaseFunc = noopRelease
-	}
-
-	t.lock.Unlock()
 	return releaseFunc
-}
-
 // release marks that we've finished processing a message from [nodeID]
 // and can release the space it took on the inbound message buffer.
 func (t *inboundMsgBufferThrottler) release(nodeID ids.NodeID) {
-	t.lock.Lock()
 	defer t.lock.Unlock()
-
 	t.nodeToNumProcessingMsgs[nodeID]--
 	if t.nodeToNumProcessingMsgs[nodeID] == 0 {
 		delete(t.nodeToNumProcessingMsgs, nodeID)
-	}
-
 	// If we're waiting to acquire space on the inbound message
 	// buffer for messages from [nodeID], allow it to proceed
 	// (i.e. for its call to Acquire to return.)
 	if waiting, ok := t.awaitingAcquire[nodeID]; ok {
 		close(waiting)
-		delete(t.awaitingAcquire, nodeID)
-	}
-}
-
 type inboundMsgBufferThrottlerMetrics struct {
 	acquireLatency  utilmetric.Averager
 	awaitingAcquire metric.Gauge
-}
-
 func (m *inboundMsgBufferThrottlerMetrics) initialize(reg metric.Registerer) error {
 	errs := wrappers.Errs{}
 	registry, ok := reg.(metric.Registry)
 	if !ok {
 		errs.Add(nil)
 		return errs.Err
-	}
 	m.acquireLatency = utilmetric.NewAveragerWithErrs(
 		"buffer_throttler_inbound_acquire_latency",
 		"average time (in ns) to get space on the inbound message buffer",
@@ -146,6 +113,4 @@ func (m *inboundMsgBufferThrottlerMetrics) initialize(reg metric.Registerer) err
 		Help: "Number of inbound messages waiting to take space on the inbound message buffer",
 	})
 	errs.Add(
-	)
 	return errs.Err
-}

@@ -14,7 +14,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	"luxfi/log"
+	"github.com/luxfi/log"
 	"golang.org/x/net/http2"
 	"golang.org/x/sync/errgroup"
 

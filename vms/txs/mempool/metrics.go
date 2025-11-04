@@ -6,7 +6,6 @@ package mempool
 import (
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/metric"
 )
 
 type mempoolMetrics struct {

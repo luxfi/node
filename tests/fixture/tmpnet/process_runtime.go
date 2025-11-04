@@ -21,7 +21,7 @@ import (
 	"syscall"
 	"time"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/config/node"

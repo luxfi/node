@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/chains/atomic"

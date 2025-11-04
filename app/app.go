@@ -10,7 +10,7 @@ import (
 	"sync"
 	"syscall"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/node"
 	"github.com/luxfi/node/utils"

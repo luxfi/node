@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/rpc/v2"
-	// "luxfi/log" // Unused
+	// "github.com/luxfi/log" // Unused
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"

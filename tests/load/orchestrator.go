@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/luxfi/log"

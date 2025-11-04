@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/block"
 	"github.com/luxfi/node/vms/exchangevm/state"
 	"github.com/luxfi/node/vms/exchangevm/txs/executor"
-	"luxfi/log"
+	"github.com/luxfi/log"
 )
 
 const SyncBound = 10 * time.Second

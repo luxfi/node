@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"

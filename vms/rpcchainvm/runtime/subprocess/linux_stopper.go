@@ -14,7 +14,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/wrappers"

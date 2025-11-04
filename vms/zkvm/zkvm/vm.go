@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"luxfi/log"
+	"github.com/luxfi/log"
 	ethcommon "github.com/luxfi/geth/common"
 	
 	"github.com/luxfi/database"

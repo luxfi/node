@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
-	dto "github.com/metric/client_model/go"
+	dto "github.com/prometheus/client_model/go"
 )
 
 func TestPrefixGatherer_Gather(t *testing.T) {

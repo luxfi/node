@@ -11,7 +11,7 @@ import (
 	"connectrpc.com/grpcreflect"
 	"github.com/gorilla/rpc/v2"
 	"github.com/luxfi/metric"
-	"luxfi/log"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
 	"github.com/luxfi/database"
