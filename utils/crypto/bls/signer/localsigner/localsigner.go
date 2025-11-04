@@ -7,13 +7,9 @@
 package localsigner
 
 import (
-	"crypto/rand"
 	"errors"
-	"runtime"
 
 	"github.com/luxfi/node/utils/crypto/bls"
-
-	blst "github.com/supranational/blst/bindings/go"
 )
 
 var (
@@ -21,44 +17,36 @@ var (
 	_                             bls.Signer = (*LocalSigner)(nil)
 )
 
-type secretKey = blst.SecretKey
-
 type LocalSigner struct {
-	sk *secretKey
+	sk *bls.SecretKey
 	pk *bls.PublicKey
 }
 
 // NewSecretKey generates a new secret key from the local source of
 // cryptographically secure randomness.
 func New() (*LocalSigner, error) {
-	var ikm [32]byte
-	_, err := rand.Read(ikm[:])
+	sk, err := bls.NewSecretKey()
 	if err != nil {
 		return nil, err
 	}
-	sk := blst.KeyGen(ikm[:])
-	ikm = [32]byte{} // zero out the ikm
-	pk := new(bls.PublicKey).From(sk)
+	pk := sk.PublicKey()
 
 	return &LocalSigner{sk: sk, pk: pk}, nil
 }
 
 // ToBytes returns the big-endian format of the secret key.
 func (s *LocalSigner) ToBytes() []byte {
-	return s.sk.Serialize()
+	return bls.SecretKeyToBytes(s.sk)
 }
 
 // FromBytes parses the big-endian format of the secret key into a
 // secret key.
 func FromBytes(skBytes []byte) (*LocalSigner, error) {
-	sk := new(secretKey).Deserialize(skBytes)
-	if sk == nil {
+	sk, err := bls.SecretKeyFromBytes(skBytes)
+	if err != nil {
 		return nil, ErrFailedSecretKeyDeserialize
 	}
-	runtime.SetFinalizer(sk, func(sk *secretKey) {
-		sk.Zeroize()
-	})
-	pk := new(bls.PublicKey).From(sk)
+	pk := sk.PublicKey()
 
 	return &LocalSigner{sk: sk, pk: pk}, nil
 }
@@ -71,10 +59,10 @@ func (s *LocalSigner) PublicKey() *bls.PublicKey {
 
 // Sign [msg] to authorize this message
 func (s *LocalSigner) Sign(msg []byte) (*bls.Signature, error) {
-	return new(bls.Signature).Sign(s.sk, msg, bls.CiphersuiteSignature.Bytes()), nil
+	return s.sk.Sign(msg)
 }
 
 // Sign [msg] to prove the ownership
 func (s *LocalSigner) SignProofOfPossession(msg []byte) (*bls.Signature, error) {
-	return new(bls.Signature).Sign(s.sk, msg, bls.CiphersuiteProofOfPossession.Bytes()), nil
+	return s.sk.SignProofOfPossession(msg)
 }
