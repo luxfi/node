@@ -433,8 +433,8 @@ func (n *Node) WaitForHealthy(ctx context.Context) error {
 			return fmt.Errorf("%w for node %q", err, n.NodeID)
 		case err != nil:
 			n.network.log.Verbo("failed to query node health",
-				zap.Stringer("nodeID", n.NodeID),
-				zap.Error(err),
+				log.Stringer("nodeID", n.NodeID),
+				log.Error(err),
 			)
 			continue
 		case healthy:

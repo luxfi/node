@@ -104,8 +104,8 @@ func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *api.GetHeigh
 // GetProposedHeight returns the current ProposerVM height
 func (s *Service) GetProposedHeight(r *http.Request, _ *struct{}, reply *api.GetHeightResponse) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getProposedHeight"),
+		log.String("service", "platform"),
+		log.String("method", "getProposedHeight"),
 	)
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
@@ -711,8 +711,8 @@ func (s *Service) loadStakerTxAttributes(txID ids.ID) (*stakerAttributes, error)
 // delegators' number and total weight is returned.
 func (s *Service) GetCurrentValidators(request *http.Request, args *GetCurrentValidatorsArgs, reply *GetCurrentValidatorsReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getCurrentValidators"),
+		log.String("service", "platform"),
+		log.String("method", "getCurrentValidators"),
 	)
 
 	// Create set of nodeIDs
@@ -985,9 +985,9 @@ type GetL1ValidatorReply struct {
 // GetL1Validator returns the L1 validator if it exists
 func (s *Service) GetL1Validator(r *http.Request, args *GetL1ValidatorArgs, reply *GetL1ValidatorReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getL1Validator"),
-		zap.Stringer("validationID", args.ValidationID),
+		log.String("service", "platform"),
+		log.String("method", "getL1Validator"),
+		log.Stringer("validationID", args.ValidationID),
 	)
 
 	s.vm.lock.Lock()
@@ -1852,11 +1852,11 @@ type GetValidatorsAtReply struct {
 // at the specified height.
 func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getValidatorsAt"),
-		zap.Uint64("height", uint64(args.Height)),
-		zap.Bool("isProposed", args.Height.IsProposed()),
-		zap.Stringer("netID", args.NetID),
+		log.String("service", "platform"),
+		log.String("method", "getValidatorsAt"),
+		log.Uint64("height", uint64(args.Height)),
+		log.Bool("isProposed", args.Height.IsProposed()),
+		log.Stringer("netID", args.NetID),
 	)
 
 	s.vm.lock.Lock()
@@ -1959,8 +1959,8 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 // GetFeeConfig returns the dynamic fee config of the chain.
 func (s *Service) GetFeeConfig(_ *http.Request, _ *struct{}, reply *gas.Config) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getFeeConfig"),
+		log.String("service", "platform"),
+		log.String("method", "getFeeConfig"),
 	)
 
 	*reply = s.vm.DynamicFeeConfig
@@ -1976,8 +1976,8 @@ type GetFeeStateReply struct {
 // GetFeeState returns the current fee state of the chain.
 func (s *Service) GetFeeState(_ *http.Request, _ *struct{}, reply *GetFeeStateReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getFeeState"),
+		log.String("service", "platform"),
+		log.String("method", "getFeeState"),
 	)
 
 	s.vm.lock.Lock()
@@ -1996,8 +1996,8 @@ func (s *Service) GetFeeState(_ *http.Request, _ *struct{}, reply *GetFeeStateRe
 // GetValidatorFeeConfig returns the validator fee config of the chain.
 func (s *Service) GetValidatorFeeConfig(_ *http.Request, _ *struct{}, reply *fee.Config) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getValidatorFeeConfig"),
+		log.String("service", "platform"),
+		log.String("method", "getValidatorFeeConfig"),
 	)
 
 	*reply = s.vm.ValidatorFeeConfig
@@ -2013,8 +2013,8 @@ type GetValidatorFeeStateReply struct {
 // GetValidatorFeeState returns the current validator fee state of the chain.
 func (s *Service) GetValidatorFeeState(_ *http.Request, _ *struct{}, reply *GetValidatorFeeStateReply) error {
 	s.vm.log.Debug("API called",
-		zap.String("service", "platform"),
-		zap.String("method", "getValidatorFeeState"),
+		log.String("service", "platform"),
+		log.String("method", "getValidatorFeeState"),
 	)
 
 	s.vm.lock.Lock()

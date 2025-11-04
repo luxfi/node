@@ -132,7 +132,7 @@ func (vm *VM) Initialize(
 		}
 	}
 
-	chainCtx.Log.Info("initialized AI VM", zap.String("version", vmVersion))
+	chainCtx.Log.Info("initialized AI VM", log.String("version", vmVersion))
 
 	return nil
 }

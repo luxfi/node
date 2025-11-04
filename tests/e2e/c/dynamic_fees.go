@@ -112,7 +112,7 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 			}
 		})
 		tc.Log().Info("set gas limit",
-			zap.Uint64("gasLimit", gasLimit),
+			log.Uint64("gasLimit", gasLimit),
 		)
 
 		var contractAddress common.Address
@@ -148,8 +148,8 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 		targetGasPrice.Div(targetGasPrice, bigExpectedGasPriceIncreaseDenominator)
 
 		tc.Log().Info("initializing gas prices",
-			zap.Stringer("initialPrice", initialGasPrice),
-			zap.Stringer("targetPrice", targetGasPrice),
+			log.Stringer("initialPrice", initialGasPrice),
+			log.Stringer("targetPrice", targetGasPrice),
 		)
 
 		tc.By("calling the contract repeatedly until a sufficient gas price increase is detected", func() {
@@ -167,17 +167,17 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 				// If the gas price has increased, stop the loop.
 				if gasPrice.Cmp(targetGasPrice) >= 0 {
 					tc.Log().Info("gas price has increased",
-						zap.Stringer("initialPrice", initialGasPrice),
-						zap.Stringer("targetPrice", targetGasPrice),
-						zap.Stringer("newPrice", gasPrice),
+						log.Stringer("initialPrice", initialGasPrice),
+						log.Stringer("targetPrice", targetGasPrice),
+						log.Stringer("newPrice", gasPrice),
 					)
 					return true
 				}
 
 				tc.Log().Info("gas price hasn't sufficiently increased",
-					zap.Stringer("initialPrice", initialGasPrice),
-					zap.Stringer("newPrice", gasPrice),
-					zap.Stringer("targetPrice", targetGasPrice),
+					log.Stringer("initialPrice", initialGasPrice),
+					log.Stringer("newPrice", gasPrice),
+					log.Stringer("targetPrice", targetGasPrice),
 				)
 
 				// Create the transaction
@@ -218,15 +218,15 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 				// If the gas price has decreased, stop the loop.
 				if gasPrice.Cmp(initialGasPrice) <= 0 {
 					tc.Log().Info("gas price has decreased",
-						zap.Stringer("initialPrice", initialGasPrice),
-						zap.Stringer("newPrice", gasPrice),
+						log.Stringer("initialPrice", initialGasPrice),
+						log.Stringer("newPrice", gasPrice),
 					)
 					return true
 				}
 
 				tc.Log().Info("gas price hasn't sufficiently decreased",
-					zap.Stringer("initialPrice", initialGasPrice),
-					zap.Stringer("newPrice", gasPrice),
+					log.Stringer("initialPrice", initialGasPrice),
+					log.Stringer("newPrice", gasPrice),
 				)
 
 				// Create the transaction

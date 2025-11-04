@@ -58,13 +58,13 @@ func StartKindCluster(
 	}
 	if clusterRunning {
 		log.Info("local kind cluster already running",
-			zap.String("kubeconfig", configPath),
-			zap.String("kubeconfigContext", configContext),
+			log.String("kubeconfig", configPath),
+			log.String("kubeconfigContext", configContext),
 		)
 	} else {
 		log.Info("attempting to start local kind cluster",
-			zap.String("kubeconfig", configPath),
-			zap.String("kubeconfigContext", configContext),
+			log.String("kubeconfig", configPath),
+			log.String("kubeconfigContext", configContext),
 		)
 
 		startCtx, cancel := context.WithTimeout(ctx, DefaultNetworkTimeout)
@@ -108,7 +108,7 @@ func isKindClusterRunning(log log.Logger, configPath string, configContext strin
 	_, err := os.Stat(configPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		log.Info("specified kubeconfig path does not exist",
-			zap.String("kubeconfig", configPath),
+			log.String("kubeconfig", configPath),
 		)
 		return false, nil
 	}
@@ -120,8 +120,8 @@ func isKindClusterRunning(log log.Logger, configPath string, configContext strin
 	if err != nil {
 		if strings.Contains(err.Error(), missingContextMsg) {
 			log.Info("specified kubeconfig context does not exist",
-				zap.String("kubeconfig", configPath),
-				zap.String("kubeconfigContext", configContext),
+				log.String("kubeconfig", configPath),
+				log.String("kubeconfigContext", configContext),
 			)
 			return false, nil
 		} else {
@@ -136,9 +136,9 @@ func isKindClusterRunning(log log.Logger, configPath string, configContext strin
 	_, err = clientset.Discovery().ServerVersion()
 	if err != nil {
 		log.Info("failed to contact kubernetes cluster",
-			zap.String("kubeconfig", configPath),
-			zap.String("kubeconfigContext", configContext),
-			zap.Error(err),
+			log.String("kubeconfig", configPath),
+			log.String("kubeconfigContext", configContext),
+			log.Error(err),
 		)
 		return false, nil
 	}
@@ -151,7 +151,7 @@ func ensureNamespace(ctx context.Context, log log.Logger, clientset *kubernetes.
 	_, err := clientset.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err == nil {
 		log.Info("namespace already exists",
-			zap.String("namespace", namespace),
+			log.String("namespace", namespace),
 		)
 		return nil
 	}
@@ -160,7 +160,7 @@ func ensureNamespace(ctx context.Context, log log.Logger, clientset *kubernetes.
 	}
 
 	log.Info("namespace not found, creating",
-		zap.String("namespace", namespace),
+		log.String("namespace", namespace),
 	)
 	_, err = clientset.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -171,7 +171,7 @@ func ensureNamespace(ctx context.Context, log log.Logger, clientset *kubernetes.
 		return fmt.Errorf("failed to create namespace %s: %w", namespace, err)
 	}
 	log.Info("created namespace",
-		zap.String("namespace", namespace),
+		log.String("namespace", namespace),
 	)
 
 	return nil
@@ -186,7 +186,7 @@ func deployRBAC(
 	namespace string,
 ) error {
 	log.Info("deploying tmpnet RBAC resources",
-		zap.String("namespace", namespace),
+		log.String("namespace", namespace),
 	)
 
 	clientConfig, err := GetClientConfig(log, configPath, configContext)
@@ -204,7 +204,7 @@ func deployRBAC(
 	}
 
 	log.Info("successfully deployed tmpnet RBAC resources",
-		zap.String("namespace", namespace),
+		log.String("namespace", namespace),
 	)
 
 	return nil
@@ -230,8 +230,8 @@ func createServiceAccountKubeconfig(
 	// Check if the context already exists
 	if _, exists := config.Contexts[newContextName]; exists {
 		log.Info("service account kubeconfig context already exists",
-			zap.String("context", newContextName),
-			zap.String("namespace", namespace),
+			log.String("context", newContextName),
+			log.String("namespace", namespace),
 		)
 		return nil
 	}
@@ -279,8 +279,8 @@ func createServiceAccountKubeconfig(
 	}
 
 	log.Info("created service account kubeconfig context",
-		zap.String("context", newContextName),
-		zap.String("namespace", namespace),
+		log.String("context", newContextName),
+		log.String("namespace", namespace),
 	)
 
 	return nil

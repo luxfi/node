@@ -96,8 +96,8 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 		)
 		require.NoError(err)
 		tc.Log().Info("fetched minimal stake amounts",
-			zap.Uint64("minValidatorStake", minValStake),
-			zap.Uint64("minDelegatorStake", minDelStake),
+			log.Uint64("minValidatorStake", minValStake),
+			log.Uint64("minDelegatorStake", minDelStake),
 		)
 
 		// Use a random node ID to ensure that repeated test runs will succeed
@@ -150,7 +150,7 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 
 			initialLUXBalance := balances[luxAssetID]
 			tc.Log().Info("retrieved P-chain balance before P->X export",
-				zap.Uint64("balance", initialLUXBalance),
+				log.Uint64("balance", initialLUXBalance),
 			)
 
 			exportTx, err := pWallet.IssueExportTx(
@@ -179,7 +179,7 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 
 			finalLUXBalance := balances[luxAssetID]
 			tc.Log().Info("retrieved P-chain balance after P->X export",
-				zap.Uint64("balance", finalLUXBalance),
+				log.Uint64("balance", finalLUXBalance),
 			)
 
 			require.Equal(initialLUXBalance-toTransfer-exportFee, finalLUXBalance)
@@ -191,7 +191,7 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 
 			initialLUXBalance := balances[luxAssetID]
 			tc.Log().Info("retrieved X-chain balance before P->X import",
-				zap.Uint64("balance", initialLUXBalance),
+				log.Uint64("balance", initialLUXBalance),
 			)
 
 			_, err = xWallet.IssueImportTx(
@@ -207,7 +207,7 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 
 			finalLUXBalance := balances[luxAssetID]
 			tc.Log().Info("retrieved X-chain balance after P->X import",
-				zap.Uint64("balance", finalLUXBalance),
+				log.Uint64("balance", finalLUXBalance),
 			)
 
 			require.Equal(initialLUXBalance+toTransfer-xContext.BaseTxFee, finalLUXBalance)

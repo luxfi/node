@@ -87,10 +87,10 @@ func setImageDetails(ctx context.Context, log log.Logger, clientset *kubernetes.
 		return fmt.Errorf("failed to patch statefulset %s.%s: %w", namespace, statefulSetName, err)
 	}
 	log.Info("Updated statefulset to target new image",
-		zap.String("namespace", namespace),
-		zap.String("statefulSetName", statefulSetName),
-		zap.String("image", imageDetails.Image),
-		zap.Reflect("versions", imageDetails.Versions),
+		log.String("namespace", namespace),
+		log.String("statefulSetName", statefulSetName),
+		log.String("image", imageDetails.Image),
+		log.Reflect("versions", imageDetails.Versions),
 	)
 	return nil
 }
@@ -110,8 +110,8 @@ func getBaseImageName(log log.Logger, imageName string) (string, error) {
 	case 2:
 		// Ambiguous image name - could contain a tag or a registry
 		log.Info("Derived tag-less image name from string",
-			zap.String("tagLessImageName", imageNameParts[0]),
-			zap.String("imageName", imageName),
+			log.String("tagLessImageName", imageNameParts[0]),
+			log.String("imageName", imageName),
 		)
 		return imageNameParts[0], nil
 	case 3:

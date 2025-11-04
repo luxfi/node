@@ -147,8 +147,8 @@ func (am *AddressManager) GenerateAddress() (*PrivateAddress, error) {
 	}
 	
 	am.log.Info("Generated new private address",
-		zap.String("address", fmt.Sprintf("%x", address[:8])),
-		zap.String("diversifier", fmt.Sprintf("%x", diversifier[:4])),
+		log.String("address", fmt.Sprintf("%x", address[:8])),
+		log.String("diversifier", fmt.Sprintf("%x", diversifier[:4])),
 	)
 	
 	return privAddr, nil

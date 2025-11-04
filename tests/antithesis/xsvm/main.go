@@ -58,13 +58,13 @@ func main() {
 
 	require.Len(c.ChainIDs, 1)
 	tc.Log().Debug("raw chain ID",
-		zap.String("chainID", c.ChainIDs[0]),
+		log.String("chainID", c.ChainIDs[0]),
 	)
 	chainID, err := ids.FromString(c.ChainIDs[0])
 	require.NoError(err, "failed to parse chainID")
 	tc.Log().Info("node and chain configuration",
-		zap.Stringer("chainID", chainID),
-		zap.Strings("uris", c.URIs),
+		log.Stringer("chainID", chainID),
+		log.Strings("uris", c.URIs),
 	)
 
 	genesisWorkload := &workload{
@@ -101,8 +101,8 @@ func main() {
 		)
 		require.NoError(err, "failed to issue initial funding transfer")
 		tc.Log().Info("issued initial funding transfer",
-			zap.Stringer("txID", transferTxStatus.TxID),
-			zap.Duration("duration", time.Since(baseStartTime)),
+			log.Stringer("txID", transferTxStatus.TxID),
+			log.Duration("duration", time.Since(baseStartTime)),
 		)
 
 		genesisWorkload.confirmTransferTx(ctx, transferTxStatus)
@@ -150,8 +150,8 @@ func (w *workload) run(ctx context.Context) {
 	balance, err := client.Balance(ctx, w.key.Address(), w.chainID)
 	require.NoError(err, "failed to fetch balance")
 	w.log.Info("worker starting",
-		zap.Int("worker", w.id),
-		zap.Uint64("balance", balance),
+		log.Int("worker", w.id),
+		log.Uint64("balance", balance),
 	)
 	assert.Reachable("worker starting", map[string]any{
 		"worker":  w.id,
@@ -160,7 +160,7 @@ func (w *workload) run(ctx context.Context) {
 
 	for {
 		w.log.Info("executing transfer",
-			zap.Int("worker", w.id),
+			log.Int("worker", w.id),
 		)
 		destAddress, _ := w.addrs.Peek()
 		txStatus, err := transfer.Transfer(
@@ -176,14 +176,14 @@ func (w *workload) run(ctx context.Context) {
 		)
 		if err != nil {
 			w.log.Warn("failed to issue transfer",
-				zap.Int("worker", w.id),
-				zap.Error(err),
+				log.Int("worker", w.id),
+				log.Error(err),
 			)
 		} else {
 			w.log.Info("issued transfer",
-				zap.Int("worker", w.id),
-				zap.Stringer("txID", txStatus.TxID),
-				zap.Duration("duration", time.Since(txStatus.StartTime)),
+				log.Int("worker", w.id),
+				log.Stringer("txID", txStatus.TxID),
+				log.Duration("duration", time.Since(txStatus.StartTime)),
 			)
 			w.confirmTransferTx(ctx, txStatus)
 		}
@@ -205,16 +205,16 @@ func (w *workload) confirmTransferTx(ctx context.Context, tx *status.TxIssuance)
 		client := api.NewClient(uri, w.chainID.String())
 		if err := api.AwaitTxAccepted(ctx, client, w.key.Address(), tx.Nonce, PollingInterval); err != nil {
 			w.log.Warn("failed to confirm transaction",
-				zap.Int("worker", w.id),
-				zap.Stringer("txID", tx.TxID),
-				zap.String("uri", uri),
-				zap.Error(err),
+				log.Int("worker", w.id),
+				log.Stringer("txID", tx.TxID),
+				log.String("uri", uri),
+				log.Error(err),
 			)
 			return
 		}
 	}
 	w.log.Info("confirmed transaction on all nodes",
-		zap.Int("worker", w.id),
-		zap.Stringer("txID", tx.TxID),
+		log.Int("worker", w.id),
+		log.Stringer("txID", tx.TxID),
 	)
 }

@@ -200,9 +200,9 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			networkID,
 			router.InboundHandlerFunc(func(_ context.Context, m p2pmessage.InboundMessage) {
 				tc.Log().Info("received a message",
-					zap.Stringer("op", m.Op()),
-					zap.Stringer("message", m.Message()),
-					zap.Stringer("from", m.NodeID()),
+					log.Stringer("op", m.Op()),
+					log.Stringer("message", m.Message()),
+					log.Stringer("from", m.NodeID()),
 				)
 				genesisPeerMessages.PushRight(m)
 			}),

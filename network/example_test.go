@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/version"
 )

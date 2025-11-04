@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luxfi/log"
+
 	"github.com/luxfi/consensus/choices"
 	"github.com/luxfi/consensus/protocol/chain"
 	"github.com/luxfi/database"
@@ -17,7 +19,6 @@ import (
 	"github.com/luxfi/node/vms/exchangevm/block"
 	"github.com/luxfi/node/vms/exchangevm/state"
 	"github.com/luxfi/node/vms/exchangevm/txs/executor"
-	"github.com/luxfi/log"
 )
 
 const SyncBound = 10 * time.Second
@@ -295,14 +296,14 @@ func (b *Block) Accept(ctx context.Context) error {
 	}
 
 	if logger, ok := b.manager.backend.LuxCtx.Log.(interface {
-		Trace(string, ...zap.Field)
+		Trace(string, ...log.Field)
 	}); ok {
 		logger.Trace(
 			"accepted block",
-			zap.Stringer("blkID", blkID),
-			zap.Uint64("height", b.Height()),
-			zap.Stringer("parentID", b.Parent()),
-			zap.Stringer("checksum", b.manager.state.Checksum()),
+			log.Stringer("blkID", blkID),
+			log.Uint64("height", b.Height()),
+			log.Stringer("parentID", b.Parent()),
+			log.Stringer("checksum", b.manager.state.Checksum()),
 		)
 	}
 	return nil

@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/geth/ethclient"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
+	"github.com/luxfi/log"
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/node/api/info"
@@ -50,7 +50,7 @@ var _ = e2e.DescribeCChain("[ProposerVM Epoch]", func() {
 		initialEpoch, err := proposerClient.GetCurrentEpoch(ctx)
 		require.NoError(err)
 		tc.Log().Info("initial epoch",
-			zap.Reflect("epoch", initialEpoch),
+			log.Reflect("epoch", initialEpoch),
 		)
 
 		issueTransaction(tc, ethClient, senderKey)
@@ -61,7 +61,7 @@ var _ = e2e.DescribeCChain("[ProposerVM Epoch]", func() {
 		require.NoError(err)
 
 		tc.Log().Info("advanced epoch",
-			zap.Reflect("epoch", advancedEpoch),
+			log.Reflect("epoch", advancedEpoch),
 		)
 
 		require.Greater(advancedEpoch.Number, initialEpoch.Number)

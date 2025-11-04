@@ -134,12 +134,12 @@ func benchmarkReexecuteRange(b *testing.B, sourceBlockDir string, targetDir stri
 	)
 
 	log.Info("re-executing block range with params",
-		zap.String("source-block-dir", sourceBlockDir),
-		zap.String("target-db-dir", targetDBDir),
-		zap.String("chain-data-dir", chainDataDir),
-		zap.Uint64("start-block", startBlock),
-		zap.Uint64("end-block", endBlock),
-		zap.Int("chan-size", chanSize),
+		log.String("source-block-dir", sourceBlockDir),
+		log.String("target-db-dir", targetDBDir),
+		log.String("chain-data-dir", chainDataDir),
+		log.Uint64("start-block", startBlock),
+		log.Uint64("end-block", endBlock),
+		log.Int("chan-size", chanSize),
 	)
 
 	blockChan, err := createBlockChanFromLevelDB(b, sourceBlockDir, startBlock, endBlock, chanSize)
@@ -331,8 +331,8 @@ func (e *vmExecutor) executeSequence(ctx context.Context, blkChan <-chan blockRe
 
 	start := time.Now()
 	e.config.Log.Info("last accepted block",
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", blk.Height()),
+		log.Stringer("blkID", blkID),
+		log.Uint64("height", blk.Height()),
 	)
 
 	if e.config.ExecutionTimeout > 0 {
@@ -353,8 +353,8 @@ func (e *vmExecutor) executeSequence(ctx context.Context, blkChan <-chan blockRe
 				e.config.EndBlock-e.config.StartBlock,
 			)
 			e.config.Log.Info("executing block",
-				zap.Uint64("height", blkResult.Height),
-				zap.Duration("eta", eta),
+				log.Uint64("height", blkResult.Height),
+				log.Duration("eta", eta),
 			)
 		}
 		if err := e.execute(ctx, blkResult.BlockBytes); err != nil {
@@ -363,9 +363,9 @@ func (e *vmExecutor) executeSequence(ctx context.Context, blkChan <-chan blockRe
 
 		if err := ctx.Err(); err != nil {
 			e.config.Log.Info("exiting early due to context timeout",
-				zap.Duration("elapsed", time.Since(start)),
-				zap.Duration("execution-timeout", e.config.ExecutionTimeout),
-				zap.Error(ctx.Err()),
+				log.Duration("elapsed", time.Since(start)),
+				log.Duration("execution-timeout", e.config.ExecutionTimeout),
+				log.Error(ctx.Err()),
 			)
 			return nil
 		}

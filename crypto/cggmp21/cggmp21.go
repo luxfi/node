@@ -144,9 +144,9 @@ func (p *Party) KeyGen(parties []int) error {
 	// Y = sum([x_i]G) for all i
 	
 	p.log.Info("Key generation completed",
-		zap.Stringer("partyID", p.ID),
-		zap.Int("index", p.Index),
-		zap.Int("threshold", p.Config.Threshold),
+		log.Stringer("partyID", p.ID),
+		log.Int("index", p.Index),
+		log.Int("threshold", p.Config.Threshold),
 	)
 	
 	return nil

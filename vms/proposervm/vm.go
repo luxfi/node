@@ -10,8 +10,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luxfi/metric"
-
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
@@ -167,6 +165,7 @@ func (vm *VM) Initialize(
 	if !ok {
 		return errors.New("registerer must be a Registry")
 	}
+	metrics := metric.NewWithRegistry("", registry)
 	innerBlkCache, err := metercacher.New(
 		"inner_block_cache",
 		registry,
@@ -222,13 +221,13 @@ func (vm *VM) Initialize(
 		return fmt.Errorf("failed to get fork height: %w", err)
 	}
 
-	vm.proposerBuildSlotGauge = metric.NewGauge(metric.GaugeOpts{
-		Name: "block_building_slot",
-		Help: "the slot that this node may attempt to build a block",
-	})
-	vm.acceptedBlocksSlotHistogram = metric.NewHistogram(metric.HistogramOpts{
-		Name: "accepted_blocks_slot",
-		Help: "the slot accepted blocks were proposed in",
+	vm.proposerBuildSlotGauge = metrics.NewGauge(
+		"block_building_slot",
+		"the slot that this node may attempt to build a block",
+	)
+	vm.acceptedBlocksSlotHistogram = metrics.NewHistogram(
+		"accepted_blocks_slot",
+		"the slot accepted blocks were proposed in",
 		// define the following ranges:
 		// (-inf, 0]
 		// (0, 1]
@@ -236,21 +235,16 @@ func (vm *VM) Initialize(
 		// (2, inf)
 		// the usage of ".5" before was to ensure we work around the limitation
 		// of comparing floating point of the same numerical value.
-		Buckets: []float64{0.5, 1.5, 2.5},
-	})
-	vm.lastAcceptedTimestampGaugeVec = metric.NewGaugeVec(
-		metric.GaugeOpts{
-			Name: "last_accepted_timestamp",
-			Help: "timestamp of the last block accepted",
-		},
+		[]float64{0.5, 1.5, 2.5},
+	)
+	vm.lastAcceptedTimestampGaugeVec = metrics.NewGaugeVec(
+		"last_accepted_timestamp",
+		"timestamp of the last block accepted",
 		[]string{"block_type"},
 	)
 
-	return errors.Join(
-		// vm.proposerBuildSlotGauge is a metric.Gauge, already registered internally
-		vm.Config.Registerer.Register(vm.acceptedBlocksSlotHistogram),
-		vm.Config.Registerer.Register(vm.lastAcceptedTimestampGaugeVec),
-	)
+	// Metrics are automatically registered by the metrics instance
+	return nil
 }
 
 // Shutdown ops then propagate shutdown to innerVM

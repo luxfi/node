@@ -144,7 +144,7 @@ func NewTestEnvironment(tc tests.TestContext, flagVars *FlagVars, desiredNetwork
 			network, err = tmpnet.ReadNetwork(tc.DefaultContext(), tc.Log(), networkDir)
 			require.NoError(err)
 			tc.Log().Info("loaded a network",
-				zap.String("networkDir", networkDir),
+				log.String("networkDir", networkDir),
 			)
 		}
 
@@ -152,7 +152,7 @@ func NewTestEnvironment(tc tests.TestContext, flagVars *FlagVars, desiredNetwork
 			if len(networkSymlink) > 0 {
 				// Remove the symlink to avoid attempts to reuse the stopped network
 				tc.Log().Info("removing symlink",
-					zap.String("path", networkSymlink),
+					log.String("path", networkSymlink),
 				)
 				if err := os.Remove(networkSymlink); !errors.Is(err, os.ErrNotExist) {
 					require.NoError(err)
@@ -227,7 +227,7 @@ func NewTestEnvironment(tc tests.TestContext, flagVars *FlagVars, desiredNetwork
 		uris := env.GetNodeURIs()
 		require.NotEmpty(uris, "network contains no nodes")
 		tc.Log().Info("network nodes are available",
-			zap.Any("uris", uris),
+			log.Any("uris", uris),
 		)
 	} else {
 		// Only display node IDs for kube-based networks since the nodes may not be network accessible and
@@ -235,7 +235,7 @@ func NewTestEnvironment(tc tests.TestContext, flagVars *FlagVars, desiredNetwork
 		nodeIDs := network.GetAvailableNodeIDs()
 		require.NotEmpty(nodeIDs, "network contains no nodes")
 		tc.Log().Info("network nodes are available. Not showing node URIs since kube nodes may be running remotely.",
-			zap.Strings("nodeIDs", nodeIDs),
+			log.Strings("nodeIDs", nodeIDs),
 		)
 	}
 
@@ -290,8 +290,8 @@ func (te *TestEnvironment) GetRandomNodeURI() tmpnet.NodeURI {
 		URI:    uri,
 	}
 	tc.Log().Info("targeting random node",
-		zap.Stringer("nodeID", nodeURI.NodeID),
-		zap.String("uri", nodeURI.URI),
+		log.Stringer("nodeID", nodeURI.NodeID),
+		log.String("uri", nodeURI.URI),
 	)
 
 	return nodeURI

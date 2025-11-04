@@ -4,19 +4,20 @@
 package network
 
 import (
+	"go.uber.org/zap"
+
 	"context"
 	"fmt"
 	"sync"
 	"time"
 
-	"github.com/luxfi/metric"
 	"github.com/luxfi/log"
 
+	"github.com/luxfi/metric"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
 	"github.com/luxfi/node/network/p2p/gossip"
 	"github.com/luxfi/consensus/engine/core"
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
 )
@@ -107,7 +108,7 @@ func (g *gossipMempool) Add(tx *txs.Tx) error {
 
 	if err := g.txVerifier.VerifyTx(tx); err != nil {
 		g.log.Debug("transaction failed verification",
-			zap.Stringer("txID", txID),
+			log.Stringer("txID", txID),
 			zap.Error(err),
 		)
 

@@ -138,9 +138,9 @@ func (m *NFTStakingManager) ValidateNFTOwnership(
 	m.stakedNFTs[tokenID] = nodeID
 	
 	m.log.Info("NFT staked for validation",
-		zap.String("nodeID", nodeID.String()),
-		zap.Uint64("tokenID", tokenID),
-		zap.String("ethAddress", ethAddress.Hex()),
+		log.String("nodeID", nodeID.String()),
+		log.Uint64("tokenID", tokenID),
+		log.String("ethAddress", ethAddress.Hex()),
 	)
 	
 	return nil
@@ -177,8 +177,8 @@ func (m *NFTStakingManager) ReleaseNFT(nodeID ids.NodeID, tokenID uint64) error 
 		delete(m.stakedNFTs, tokenID)
 		
 		m.log.Info("NFT released from staking",
-			zap.String("nodeID", nodeID.String()),
-			zap.Uint64("tokenID", tokenID),
+			log.String("nodeID", nodeID.String()),
+			log.Uint64("tokenID", tokenID),
 		)
 	}
 	

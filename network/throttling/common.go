@@ -1,19 +1,24 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
+
 import (
 	"sync"
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/log"
 )
+
 // Used by the sybil-safe inbound and outbound message throttlers
 type MsgByteThrottlerConfig struct {
 	VdrAllocSize        uint64 `json:"vdrAllocSize"`
 	AtLargeAllocSize    uint64 `json:"atLargeAllocSize"`
 	NodeMaxAtLargeBytes uint64 `json:"nodeMaxAtLargeBytes"`
 }
+
+// Used by the sybil-safe inbound and outbound message throttlers
 type commonMsgThrottler struct {
 	log  log.Logger
 	lock sync.Mutex
@@ -32,3 +37,4 @@ type commonMsgThrottler struct {
 	nodeToAtLargeBytesUsed map[ids.NodeID]uint64
 	// Max number of unprocessed bytes from validators
 	maxVdrBytes uint64
+}

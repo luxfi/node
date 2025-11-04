@@ -4,6 +4,8 @@
 package builder
 
 import (
+	"go.uber.org/zap"
+
 	"context"
 	"errors"
 	"fmt"
@@ -12,7 +14,6 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/log"
 
 	"github.com/luxfi/ids"
 	consensuscore "github.com/luxfi/consensus/core"
@@ -159,7 +160,7 @@ func (b *builder) WaitForEvent(ctx context.Context) (consensuscore.Message, erro
 			return consensuscore.Message{Type: consensuscore.PendingTxs}, nil
 		}
 
-		logger.Debug("Will wait until a transaction comes", zap.Duration("maxWait", duration))
+		logger.Debug("Will wait until a transaction comes", log.Duration("maxWait", duration))
 
 		// Wait for a transaction in the mempool until there is a next staker
 		// change ready to be performed.
@@ -490,10 +491,10 @@ func packEtnaBlockTxs(
 
 	logger := backend.Ctx.Log.(log.Logger)
 	logger.Debug("starting to pack block txs",
-		zap.Stringer("parentID", parentID),
-		zap.Time("blockTimestamp", timestamp),
-		zap.Uint64("capacity", uint64(capacity)),
-		zap.Int("mempoolLen", mempool.Len()),
+		log.Stringer("parentID", parentID),
+		log.Time("blockTimestamp", timestamp),
+		log.Uint64("capacity", uint64(capacity)),
+		log.Int("mempoolLen", mempool.Len()),
 	)
 	for {
 		currentBlockGas, err := blockComplexity.ToGas(backend.Config.DynamicFeeConfig.Weights)
@@ -504,9 +505,9 @@ func packEtnaBlockTxs(
 		tx, exists := mempool.Peek()
 		if !exists {
 			logger.Debug("mempool is empty",
-				zap.Uint64("capacity", uint64(capacity)),
-				zap.Uint64("blockGas", uint64(currentBlockGas)),
-				zap.Int("blockLen", len(blockTxs)),
+				log.Uint64("capacity", uint64(capacity)),
+				log.Uint64("blockGas", uint64(currentBlockGas)),
+				log.Int("blockLen", len(blockTxs)),
 			)
 			break
 		}
@@ -525,10 +526,10 @@ func packEtnaBlockTxs(
 		}
 		if newBlockGas > capacity {
 			logger.Debug("block is full",
-				zap.Uint64("nextBlockGas", uint64(newBlockGas)),
-				zap.Uint64("capacity", uint64(capacity)),
-				zap.Uint64("blockGas", uint64(currentBlockGas)),
-				zap.Int("blockLen", len(blockTxs)),
+				log.Uint64("nextBlockGas", uint64(newBlockGas)),
+				log.Uint64("capacity", uint64(capacity)),
+				log.Uint64("blockGas", uint64(currentBlockGas)),
+				log.Int("blockLen", len(blockTxs)),
 			)
 			break
 		}
@@ -596,7 +597,7 @@ func executeTx(
 	)
 	if err != nil {
 		logger.Debug("transaction failed warp verification",
-			zap.Stringer("txID", txID),
+			log.Stringer("txID", txID),
 			zap.Error(err),
 		)
 
@@ -617,7 +618,7 @@ func executeTx(
 	)
 	if err != nil {
 		logger.Debug("transaction failed execution",
-			zap.Stringer("txID", txID),
+			log.Stringer("txID", txID),
 			zap.Error(err),
 		)
 
@@ -629,7 +630,7 @@ func executeTx(
 		// This log is a warn because the mempool should not have allowed this
 		// transaction to be included.
 		logger.Warn("transaction conflicts with prior transaction",
-			zap.Stringer("txID", txID),
+			log.Stringer("txID", txID),
 			zap.Error(err),
 		)
 
@@ -638,7 +639,7 @@ func executeTx(
 	}
 	if err := manager.VerifyUniqueInputs(parentID, txInputs); err != nil {
 		logger.Debug("transaction conflicts with ancestor's import transaction",
-			zap.Stringer("txID", txID),
+			log.Stringer("txID", txID),
 			zap.Error(err),
 		)
 
@@ -648,7 +649,7 @@ func executeTx(
 	inputs.Union(txInputs)
 
 	logger.Debug("successfully executed transaction",
-		zap.Stringer("txID", txID),
+		log.Stringer("txID", txID),
 		zap.Error(err),
 	)
 	txDiff.AddTx(tx, status.Committed)

@@ -10,7 +10,6 @@ import (
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/math/set"
@@ -473,8 +472,8 @@ func (i *ipTracker) OnValidatorRemoved(netID ids.ID, nodeID ids.NodeID, light ui
 	net, ok := i.net[netID]
 	if !ok {
 		i.log.Error("attempted removal of validator from untracked net",
-			zap.Stringer("netID", netID),
-			zap.Stringer("nodeID", nodeID),
+			log.Stringer("netID", netID),
+			log.Stringer("nodeID", nodeID),
 		)
 		return
 	}
@@ -494,8 +493,8 @@ func (i *ipTracker) OnValidatorRemoved(netID ids.ID, nodeID ids.NodeID, light ui
 	trackedNode, ok := i.tracked[nodeID]
 	if !ok {
 		i.log.Error("attempted removal of untracked validator",
-			zap.Stringer("netID", netID),
-			zap.Stringer("nodeID", nodeID),
+			log.Stringer("netID", netID),
+			log.Stringer("nodeID", nodeID),
 		)
 		return
 	}

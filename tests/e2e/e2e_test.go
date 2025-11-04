@@ -56,7 +56,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 		upgrades.GraniteTime = upgrade.UnscheduledActivationTime
 	}
 	tc.Log().Info("setting upgrades",
-		zap.Reflect("upgrades", upgrades),
+		log.Reflect("upgrades", upgrades),
 	)
 
 	upgradeJSON, err := json.Marshal(upgrades)

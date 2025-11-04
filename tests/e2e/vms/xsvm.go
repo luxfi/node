@@ -79,9 +79,9 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 		sourceAPINode := sourceValidators[0]
 		sourceAPINodeURI := e2e.GetLocalURI(tc, sourceAPINode)
 		tc.Log().Info("issuing transactions for source subnet",
-			zap.String("subnetName", subnetAName),
-			zap.Stringer("nodeID", sourceAPINode.NodeID),
-			zap.String("nodeURI", sourceAPINodeURI),
+			log.String("subnetName", subnetAName),
+			log.Stringer("nodeID", sourceAPINode.NodeID),
+			log.String("nodeURI", sourceAPINodeURI),
 		)
 
 		destinationValidators := getNodesForIDs(network.Nodes, destinationNet.ValidatorIDs)
@@ -89,9 +89,9 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 		destinationAPINode := destinationValidators[0]
 		destinationAPINodeURI := e2e.GetLocalURI(tc, destinationAPINode)
 		tc.Log().Info("issuing transactions for destination subnet",
-			zap.String("subnetName", subnetBName),
-			zap.Stringer("nodeID", destinationAPINode.NodeID),
-			zap.String("nodeURI", destinationAPINodeURI),
+			log.String("subnetName", subnetBName),
+			log.Stringer("nodeID", destinationAPINode.NodeID),
+			log.String("nodeURI", destinationAPINodeURI),
 		)
 
 		destinationKey := e2e.NewPrivateKey(tc)
@@ -120,7 +120,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 		)
 		require.NoError(err)
 		tc.Log().Info("issued export transaction",
-			zap.Stringer("txID", exportTxStatus.TxID),
+			log.Stringer("txID", exportTxStatus.TxID),
 		)
 
 		tc.By("checking that the export transaction has been accepted on all nodes")
@@ -151,7 +151,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 		)
 		require.NoError(err)
 		tc.Log().Info("issued transfer transaction",
-			zap.Stringer("txID", transferTxStatus.TxID),
+			log.Stringer("txID", transferTxStatus.TxID),
 		)
 
 		tc.By(fmt.Sprintf("importing to blockchain %s on subnet %s", destinationChain.ChainID, destinationNet.NetID))
@@ -172,7 +172,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 		)
 		require.NoError(err)
 		tc.Log().Info("issued import transaction",
-			zap.Stringer("txID", importTxStatus.TxID),
+			log.Stringer("txID", importTxStatus.TxID),
 		)
 
 		tc.By("checking that the balance of the source key has decreased")
@@ -253,7 +253,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 					return err
 				}
 
-				log.Info("sent message", zap.String("msg", msg))
+				log.Info("sent message", log.String("msg", msg))
 			}
 
 			return nil
@@ -270,7 +270,7 @@ var _ = ginkgo.Describe("[XSVM]", ginkgo.Label("xsvm"), func() {
 					return fmt.Errorf("unexpected ping reply: %s", reply.Message)
 				}
 
-				log.Info("received message", zap.String("msg", reply.Message))
+				log.Info("received message", log.String("msg", reply.Message))
 			}
 
 			return nil

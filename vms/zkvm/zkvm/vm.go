@@ -184,7 +184,7 @@ func (vm *VM) Initialize(
 		}
 	}
 
-	chainCtx.Log.Info("initialized ZK VM", zap.String("version", vmVersion))
+	chainCtx.Log.Info("initialized ZK VM", log.String("version", vmVersion))
 
 	return nil
 }

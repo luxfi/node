@@ -9,7 +9,6 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/log"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/metrics"
@@ -108,11 +107,11 @@ func (a *acceptor) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
 
 	log.Trace(
 		"accepted block",
-		zap.String("blockType", "apricot atomic"),
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-		zap.Stringer("checksum", a.state.Checksum()),
+		log.String("blockType", "apricot atomic"),
+		log.Stringer("blkID", blkID),
+		log.Uint64("height", b.Height()),
+		log.Stringer("parentID", b.Parent()),
+		log.Stringer("checksum", a.state.Checksum()),
 	)
 
 	return nil
@@ -180,11 +179,11 @@ func (a *acceptor) optionBlock(b block.Block, blockType string) error {
 
 	log.Trace(
 		"accepted block",
-		zap.String("blockType", blockType),
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", parentID),
-		zap.Stringer("checksum", a.state.Checksum()),
+		log.String("blockType", blockType),
+		log.Stringer("blkID", blkID),
+		log.Uint64("height", b.Height()),
+		log.Stringer("parentID", parentID),
+		log.Stringer("checksum", a.state.Checksum()),
 	)
 
 	return nil
@@ -212,11 +211,11 @@ func (a *acceptor) proposalBlock(b block.Block, blockType string) {
 
 	log.Trace(
 		"accepted block",
-		zap.String("blockType", blockType),
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-		zap.Stringer("checksum", a.state.Checksum()),
+		log.String("blockType", blockType),
+		log.Stringer("blkID", blkID),
+		log.Uint64("height", b.Height()),
+		log.Stringer("parentID", b.Parent()),
+		log.Stringer("checksum", a.state.Checksum()),
 	)
 }
 
@@ -261,11 +260,11 @@ func (a *acceptor) standardBlock(b block.Block, blockType string) error {
 
 	log.Trace(
 		"accepted block",
-		zap.String("blockType", blockType),
-		zap.Stringer("blkID", blkID),
-		zap.Uint64("height", b.Height()),
-		zap.Stringer("parentID", b.Parent()),
-		zap.Stringer("checksum", a.state.Checksum()),
+		log.String("blockType", blockType),
+		log.Stringer("blkID", blkID),
+		log.Uint64("height", b.Height()),
+		log.Stringer("parentID", b.Parent()),
+		log.Stringer("checksum", a.state.Checksum()),
 	)
 
 	return nil

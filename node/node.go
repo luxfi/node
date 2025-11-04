@@ -154,13 +154,13 @@ func New(
 	}
 
 	logger.Info("initializing node",
-		zap.Stringer("version", version.CurrentApp),
-		zap.String("commit", version.GitCommit),
-		zap.Stringer("nodeID", n.ID),
-		zap.Stringer("stakingKeyType", tlsCert.PublicKeyAlgorithm),
-		zap.Reflect("nodePOP", pop),
-		zap.Reflect("providedFlags", n.Config.ProvidedFlags),
-		zap.Reflect("config", n.Config),
+		log.Stringer("version", version.CurrentApp),
+		log.String("commit", version.GitCommit),
+		log.Stringer("nodeID", n.ID),
+		log.Stringer("stakingKeyType", tlsCert.PublicKeyAlgorithm),
+		log.Reflect("nodePOP", pop),
+		log.Reflect("providedFlags", n.Config.ProvidedFlags),
+		log.Reflect("config", n.Config),
 	)
 
 	n.VMFactoryLog = n.Log // Use main log instead of vm-factory specific log

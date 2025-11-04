@@ -1,16 +1,20 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
+
 import (
 	"github.com/luxfi/metric"
 	"context"
 	"sync"
 	"testing"
+
 	"github.com/stretchr/testify/require"
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 )
+
 func TestBandwidthThrottler(t *testing.T) {
 	require := require.New(t)
 	// Assert initial state
@@ -27,15 +31,23 @@ func TestBandwidthThrottler(t *testing.T) {
 	require.Equal(config.RefillRate, throttler.RefillRate)
 	require.Equal(config.MaxBurstSize, throttler.MaxBurstSize)
 	require.Empty(throttler.limiters)
+
 	// Add a node
 	nodeID1 := ids.GenerateTestNodeID()
 	throttler.AddNode(nodeID1)
 	require.Len(throttler.limiters, 1)
+
 	// Remove the node
 	throttler.RemoveNode(nodeID1)
+	require.Empty(throttler.limiters)
+
 	// Add the node back
+	throttler.AddNode(nodeID1)
+	require.Len(throttler.limiters, 1)
+
 	// Should be able to acquire 8
 	throttler.Acquire(context.Background(), 8, nodeID1)
+
 	// Make several goroutines that acquire bytes.
 	wg := sync.WaitGroup{}
 	wg.Add(int(config.MaxBurstSize) + 5)
@@ -44,5 +56,6 @@ func TestBandwidthThrottler(t *testing.T) {
 			throttler.Acquire(context.Background(), 1, nodeID1)
 			wg.Done()
 		}()
+	}
 	wg.Wait()
 }

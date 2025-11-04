@@ -4,7 +4,6 @@
 package peer
 
 import (
-	"github.com/luxfi/log"
 	"bufio"
 	"context"
 	"errors"
@@ -17,7 +16,6 @@ import (
 	"time"
 
 	"github.com/luxfi/log"
-
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
@@ -586,9 +584,9 @@ func (p *peer) writeMessages() {
 func (p *peer) writeMessage(writer io.Writer, msg message.OutboundMessage) {
 	msgBytes := msg.Bytes()
 	p.Log.Verbo("sending message",
-		zap.Stringer("op", msg.Op()),
-		zap.Stringer("nodeID", p.id),
-		zap.Binary("messageBytes", msgBytes),
+		log.Stringer("op", msg.Op()),
+		log.Stringer("nodeID", p.id),
+		log.Binary("messageBytes", msgBytes),
 	)
 
 	if err := p.conn.SetWriteDeadline(p.nextTimeout()); err != nil {
@@ -719,9 +717,9 @@ func (p *peer) shouldDisconnect() bool {
 	blsPublicKey, err := bls.PublicKeyFromCompressedBytes(vdr.PublicKey)
 	if err != nil {
 		p.Log.Debug(disconnectingLog,
-			zap.String("reason", "invalid BLS public key"),
-			zap.Stringer("nodeID", p.id),
-			zap.Error(err),
+			log.String("reason", "invalid BLS public key"),
+			log.Stringer("nodeID", p.id),
+			"error", err,
 		)
 		return true
 	}

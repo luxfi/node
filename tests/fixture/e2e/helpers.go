@@ -82,8 +82,8 @@ func NewPrivateKey(tc tests.TestContext) *secp256k1.PrivateKey {
 func NewWallet(tc tests.TestContext, keychain *secp256k1fx.Keychain, nodeURI tmpnet.NodeURI) *primary.Wallet {
 	log := tc.Log()
 	log.Info("initializing a new wallet",
-		zap.Stringer("nodeID", nodeURI.NodeID),
-		zap.String("URI", nodeURI.URI),
+		log.Stringer("nodeID", nodeURI.NodeID),
+		log.String("URI", nodeURI.URI),
 	)
 	baseWallet, err := primary.MakeWallet(
 		tc.DefaultContext(),
@@ -97,17 +97,17 @@ func NewWallet(tc tests.TestContext, keychain *secp256k1fx.Keychain, nodeURI tmp
 		baseWallet,
 		common.WithIssuanceHandler(func(r common.IssuanceReceipt) {
 			log.Info("issued transaction",
-				zap.String("chainAlias", r.ChainAlias),
-				zap.Stringer("txID", r.TxID),
-				zap.Duration("duration", r.Duration),
+				log.String("chainAlias", r.ChainAlias),
+				log.Stringer("txID", r.TxID),
+				log.Duration("duration", r.Duration),
 			)
 		}),
 		common.WithConfirmationHandler(func(r common.ConfirmationReceipt) {
 			log.Info("confirmed transaction",
-				zap.String("chainAlias", r.ChainAlias),
-				zap.Stringer("txID", r.TxID),
-				zap.Duration("totalDuration", r.TotalDuration),
-				zap.Duration("confirmationDuration", r.ConfirmationDuration),
+				log.String("chainAlias", r.ChainAlias),
+				log.Stringer("txID", r.TxID),
+				log.Duration("totalDuration", r.TotalDuration),
+				log.Duration("confirmationDuration", r.ConfirmationDuration),
 			)
 		}),
 		// Reducing the default from 100ms speeds up detection of tx acceptance
@@ -142,8 +142,8 @@ func GetWalletBalances(tc tests.TestContext, wallet *primary.Wallet) (uint64, ui
 		pLUX       = pBalances[luxAssetID]
 	)
 	tc.Log().Info("wallet balances in nLUX",
-		zap.Uint64("xChain", xLUX),
-		zap.Uint64("pChain", pLUX),
+		log.Uint64("xChain", xLUX),
+		log.Uint64("pChain", pLUX),
 	)
 	return xLUX, pLUX
 }
@@ -151,8 +151,8 @@ func GetWalletBalances(tc tests.TestContext, wallet *primary.Wallet) (uint64, ui
 // Create a new eth client targeting the specified node URI.
 func NewEthClient(tc tests.TestContext, nodeURI tmpnet.NodeURI) *ethclient.Client {
 	tc.Log().Info("initializing a new eth client",
-		zap.Stringer("nodeID", nodeURI.NodeID),
-		zap.String("URI", nodeURI.URI),
+		log.Stringer("nodeID", nodeURI.NodeID),
+		log.String("URI", nodeURI.URI),
 	)
 	nodeAddress := strings.Split(nodeURI.URI, "//")[1]
 	uri := fmt.Sprintf("ws://%s/ext/bc/C/ws", nodeAddress)
@@ -169,7 +169,7 @@ func AddEphemeralNode(tc tests.TestContext, network *tmpnet.Network, node *tmpne
 
 	tc.DeferCleanup(func() {
 		tc.Log().Info("shutting down ephemeral node",
-			zap.Stringer("nodeID", node.NodeID),
+			log.Stringer("nodeID", node.NodeID),
 		)
 		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 		defer cancel()
@@ -193,7 +193,7 @@ func SendEthTransaction(tc tests.TestContext, ethClient *ethclient.Client, signe
 
 	txID := signedTx.Hash()
 	tc.Log().Info("sending eth transaction",
-		zap.Stringer("txID", txID),
+		log.Stringer("txID", txID),
 	)
 
 	require.NoError(ethClient.SendTransaction(tc.DefaultContext(), signedTx))
@@ -211,10 +211,10 @@ func SendEthTransaction(tc tests.TestContext, ethClient *ethclient.Client, signe
 	}, DefaultTimeout, DefaultPollingInterval, "failed to see transaction acceptance before timeout")
 
 	tc.Log().Info("eth transaction accepted",
-		zap.Stringer("txID", txID),
-		zap.Uint64("gasUsed", receipt.GasUsed),
-		zap.Stringer("gasPrice", receipt.EffectiveGasPrice),
-		zap.Stringer("blockNumber", receipt.BlockNumber),
+		log.Stringer("txID", txID),
+		log.Uint64("gasUsed", receipt.GasUsed),
+		log.Stringer("gasPrice", receipt.EffectiveGasPrice),
+		log.Stringer("blockNumber", receipt.BlockNumber),
 	)
 	return receipt
 }
@@ -226,7 +226,7 @@ func SuggestGasPrice(tc tests.TestContext, ethClient *ethclient.Client) *big.Int
 	require.NoError(tc, err)
 
 	tc.Log().Info("suggested gas price",
-		zap.Stringer("price", gasPrice),
+		log.Stringer("price", gasPrice),
 	)
 
 	// Double the suggested gas price to maximize the chances of
@@ -249,7 +249,7 @@ func CheckBootstrapIsPossible(tc tests.TestContext, network *tmpnet.Network) *tm
 
 	if len(os.Getenv(SkipBootstrapChecksEnvName)) > 0 {
 		tc.Log().Info("skipping bootstrap check due to env var being set",
-			zap.String("envVar", SkipBootstrapChecksEnvName),
+			log.String("envVar", SkipBootstrapChecksEnvName),
 		)
 		return nil
 	}
@@ -306,7 +306,7 @@ func StartNetwork(
 	timeout, err := network.DefaultRuntimeConfig.GetNetworkStartTimeout(nodeCount)
 	require.NoError(err)
 	tc.Log().Info("waiting for network to start",
-		zap.Float64("timeoutSeconds", timeout.Seconds()),
+		log.Float64("timeoutSeconds", timeout.Seconds()),
 	)
 	ctx := tc.ContextWithTimeout(timeout)
 
@@ -336,30 +336,30 @@ func StartNetwork(
 		// to enable easy discovery for reuse.
 		require.NoError(os.Symlink(network.Dir, symlinkPath))
 		tc.Log().Info("symlinked network dir for reuse",
-			zap.String("networkDir", network.Dir),
-			zap.String("symlinkPath", symlinkPath),
+			log.String("networkDir", network.Dir),
+			log.String("symlinkPath", symlinkPath),
 		)
 	}
 
 	tc.DeferCleanup(func() {
 		if networkCmd == ReuseNetworkCmd || networkCmd == RestartNetworkCmd {
 			tc.Log().Info("skipping shutdown for network intended for reuse",
-				zap.String("networkDir", network.Dir),
-				zap.String("symlinkPath", symlinkPath),
+				log.String("networkDir", network.Dir),
+				log.String("symlinkPath", symlinkPath),
 			)
 			return
 		}
 
 		if networkCmd == StartNetworkCmd {
 			tc.Log().Info("skipping shutdown for --start-network",
-				zap.String("networkDir", network.Dir),
+				log.String("networkDir", network.Dir),
 			)
 			return
 		}
 
 		if shutdownDelay > 0 {
 			tc.Log().Info("delaying network shutdown to ensure final metrics scrape",
-				zap.Duration("delay", shutdownDelay),
+				log.Duration("delay", shutdownDelay),
 			)
 			time.Sleep(shutdownDelay)
 		}

@@ -106,9 +106,9 @@ func (st *StateTree) Finalize(newRoot []byte) error {
 	}
 	
 	st.log.Debug("State tree finalized",
-		zap.String("root", fmt.Sprintf("%x", newRoot[:8])),
-		zap.Int("adds", len(st.pendingAdds)),
-		zap.Int("removes", len(st.pendingRemoves)),
+		log.String("root", fmt.Sprintf("%x", newRoot[:8])),
+		log.Int("adds", len(st.pendingAdds)),
+		log.Int("removes", len(st.pendingRemoves)),
 	)
 	
 	return nil

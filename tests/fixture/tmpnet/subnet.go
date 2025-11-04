@@ -125,7 +125,7 @@ func (s *Net) CreateChains(ctx context.Context, log log.Logger, uri string) erro
 	pWallet := wallet.P()
 
 	log.Info("creating chains for subnet",
-		zap.String("subnet", s.Name),
+		log.String("subnet", s.Name),
 	)
 
 	for _, chain := range s.Chains {
@@ -143,9 +143,9 @@ func (s *Net) CreateChains(ctx context.Context, log log.Logger, uri string) erro
 		chain.ChainID = createChainTx.ID()
 
 		log.Info("created chain",
-			zap.Stringer("chain", chain.ChainID),
-			zap.String("subnet", s.Name),
-			zap.Stringer("vm", chain.VMID),
+			log.Stringer("chain", chain.ChainID),
+			log.String("subnet", s.Name),
+			log.Stringer("vm", chain.VMID),
 		)
 	}
 	return nil
@@ -194,8 +194,8 @@ func (s *Net) AddValidators(ctx context.Context, log log.Logger, apiURI string, 
 		}
 
 		log.Info("added validator to subnet",
-			zap.String("subnet", s.Name),
-			zap.Stringer("nodeID", node.NodeID),
+			log.String("subnet", s.Name),
+			log.Stringer("nodeID", node.NodeID),
 		)
 	}
 
@@ -259,7 +259,7 @@ func WaitForActiveValidators(
 	defer ticker.Stop()
 
 	log.Info("waiting for subnet validators to become active",
-		zap.String("subnet", subnet.Name),
+		log.String("subnet", subnet.Name),
 	)
 
 	for {
@@ -279,7 +279,7 @@ func WaitForActiveValidators(
 		}
 		if allActive {
 			log.Info("saw the expected active validators of the subnet",
-				zap.String("subnet", subnet.Name),
+				log.String("subnet", subnet.Name),
 			)
 			return nil
 		}

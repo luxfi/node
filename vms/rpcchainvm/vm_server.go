@@ -38,7 +38,7 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 
-	grpc_metric "github.com/grpc-ecosystem/go-grpc-prometheus"
+	grpc_metric "github.com/grpc-ecosystem/go-grpc-metric"
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
@@ -271,7 +271,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		// _ = vm.vm.Shutdown(ctx)
 		_ = vm.connCloser.Close()
 		close(vm.closed)
-		vm.log.Error("failed to get last accepted block", zap.Error(err))
+		vm.log.Error("failed to get last accepted block", "error", err)
 		return nil, err
 	}
 	parentID := blk.Parent()
@@ -415,7 +415,7 @@ func (vm *VMServer) NewHTTPHandler(ctx context.Context, _ *emptypb.Empty) (*vmpb
 func (vm *VMServer) WaitForEvent(ctx context.Context, _ *emptypb.Empty) (*vmpb.WaitForEventResponse, error) {
 	message, err := vm.vm.WaitForEvent(ctx)
 	if err != nil {
-		vm.log.Debug("Received error while waiting for event", zap.Error(err))
+		vm.log.Debug("Received error while waiting for event", "error", err)
 	}
 	
 	var msgEnum vmpb.Message

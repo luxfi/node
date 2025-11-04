@@ -14,7 +14,7 @@ import (
 
 	"github.com/luxfi/node/utils"
 
-	dto "github.com/prometheus/client_model/go"
+	dto "github.com/luxfi/metric"
 )
 
 // MultiGatherer extends the Gatherer interface by allowing additional gatherers

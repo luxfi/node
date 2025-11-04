@@ -508,7 +508,7 @@ The plugin version is unchanged at `38` and is compatible with version `v1.11.13
 
 - Fix NetToL1ConversionData typo by @cam-schultz in https://github.com/luxfi/node/pull/3555
 - Refactor `logging.Format` to expose constants by @StephenButtolph in https://github.com/luxfi/node/pull/3561
-- [testing] Switch to logging with zap by @marun in https://github.com/luxfi/node/pull/3557
+- [testing] Switch to logging with log by @marun in https://github.com/luxfi/node/pull/3557
 - Use JSON logs during Antithesis runs by @StephenButtolph in https://github.com/luxfi/node/pull/3562
 - Antithesis: Skip checks if tx confirmation fails by @StephenButtolph in https://github.com/luxfi/node/pull/3563
 - chore: fix some function names in comment by @wanxiangchwng in https://github.com/luxfi/node/pull/3566
@@ -2000,7 +2000,7 @@ The plugin version is unchanged at `30` and compatible with version `v1.10.15`.
 - Add `VerifyTx` to `executor.Manager` by @dhrubabasu in https://github.com/luxfi/node/pull/2293
 - Simplify lux bootstrapping by @StephenButtolph in https://github.com/luxfi/node/pull/2286
 - Replace unique slices with sets in the engine interface by @StephenButtolph in https://github.com/luxfi/node/pull/2317
-- Use zap.Stringer rather than zap.Any by @StephenButtolph in https://github.com/luxfi/node/pull/2320
+- Use log.Stringer rather than log.Any by @StephenButtolph in https://github.com/luxfi/node/pull/2320
 - Move `AddUnverifiedTx` logic to `network.IssueTx` by @dhrubabasu in https://github.com/luxfi/node/pull/2310
 - Remove `AddUnverifiedTx` from `Builder` by @dhrubabasu in https://github.com/luxfi/node/pull/2311
 - Remove error from SDK AppGossip handler by @joshua-kim in https://github.com/luxfi/node/pull/2252
@@ -2010,7 +2010,7 @@ The plugin version is unchanged at `30` and compatible with version `v1.10.15`.
 - Refactor bootstrapper implementation into consensus by @StephenButtolph in https://github.com/luxfi/node/pull/2300
 - Pchain - Cleanup NodeID generation in UTs by @abi87 in https://github.com/luxfi/node/pull/2291
 - nit: loop --> variadic by @danlaine in https://github.com/luxfi/node/pull/2316
-- Update zap dependency to v1.26.0 by @danlaine in https://github.com/luxfi/node/pull/2325
+- Update log dependency to v1.26.0 by @danlaine in https://github.com/luxfi/node/pull/2325
 - Remove useless anon functions by @StephenButtolph in https://github.com/luxfi/node/pull/2326
 - Move `network` implementation to separate package by @dhrubabasu in https://github.com/luxfi/node/pull/2296
 - Unexport lux constant from common package by @StephenButtolph in https://github.com/luxfi/node/pull/2327
@@ -4234,7 +4234,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### Logging
 
-- Replaced Lux Node's internal logger with [uber-go/zap](https://github.com/uber-go/zap).
+- Replaced Lux Node's internal logger with [uber-go/log](https://github.com/uber-go/log).
 - Replaced Lux Node's log rotation with [lumberjack](https://github.com/natefinch/lumberjack).
 - Renamed `log-display-highlight` to `log-format` and added `json` option.
 - Added `log-rotater-max-size`, `log-rotater-max-files`, `log-rotater-max-age`, `log-rotater-compress-enabled` options for log rotation.

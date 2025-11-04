@@ -204,16 +204,16 @@ All Granite features implemented:
 - Fixed consensus context extraction from interface parameters  
 - Fixed clock references (vm.consensusClock)
 - Fixed import redeclarations in wallet packages
-- Fixed metric/zap usage in test fixtures
+- Fixed metric/log usage in test fixtures
 - Created luxfi/metric/collectors and luxfi/metric/promhttp packages
 - Fixed GaugeVec type declarations (interface vs pointer)
 
 ### 🔧 Remaining Issues
 - **metric.Registerer compatibility**: metric interfaces don't implement metric.Collector
-- **network/peer zap usage**: Files still using github.com/luxfi/log directly
+- **network/peer log usage**: Files still using github.com/luxfi/log directly
 - **Import redeclarations**: Some files have duplicate log imports
 
-**Strategy**: Complete metric package integration, then fix network/peer zap usage.
+**Strategy**: Complete metric package integration, then fix network/peer log usage.
 
 ## Special Files
 

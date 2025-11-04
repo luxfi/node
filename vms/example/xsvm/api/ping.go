@@ -24,7 +24,7 @@ type PingService struct {
 }
 
 func (p *PingService) Ping(_ context.Context, request *connect.Request[xsvm.PingRequest]) (*connect.Response[xsvm.PingReply], error) {
-	p.Log.Debug("ping", zap.String("message", request.Msg.Message))
+	p.Log.Debug("ping", log.String("message", request.Msg.Message))
 	return connect.NewResponse[xsvm.PingReply](
 		&xsvm.PingReply{
 			Message: request.Msg.Message,
@@ -43,7 +43,7 @@ func (p *PingService) StreamPing(_ context.Context, server *connect.BidiStream[x
 			return fmt.Errorf("failed to receive message: %w", err)
 		}
 
-		p.Log.Debug("stream ping", zap.String("message", request.Message))
+		p.Log.Debug("stream ping", log.String("message", request.Message))
 		err = server.Send(&xsvm.StreamPingReply{
 			Message: request.Message,
 		})

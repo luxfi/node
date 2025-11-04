@@ -66,7 +66,7 @@ func (f *factory) New(log log.Logger) (interface{}, error) {
 
 	clientConn, err := grpcutils.Dial(status.Addr)
 	if err != nil {
-		log.Error("failed to dial VM gRPC service", zap.Error(err))
+		log.Error("failed to dial VM gRPC service", "error", err)
 		return nil, err
 	}
 

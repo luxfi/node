@@ -91,14 +91,14 @@ func (nf *NotificationForwarder) forwardNotification() {
 
 	msg, err := nf.Subscribe(ctx)
 	if err != nil {
-		nf.Log.Debug("Failed subscribing to notifications", zap.Error(err))
+		nf.Log.Debug("Failed subscribing to notifications", "error", err)
 		return
 	}
 
-	nf.Log.Debug("Received notification", zap.Stringer("msg", msg))
+	nf.Log.Debug("Received notification", "msg", msg)
 
 	if err := nf.Engine.Notify(ctx, msg); err != nil {
-		nf.Log.Debug("Failed notifying engine", zap.Error(err))
+		nf.Log.Debug("Failed notifying engine", "error", err)
 		return
 	}
 

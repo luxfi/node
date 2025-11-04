@@ -103,7 +103,7 @@ var _ = e2e.DescribePChain("[Validator Sets]", func() {
 
 			for height := uint64(0); height <= currentPChainHeight; height++ {
 				tc.Log().Info("checked validator sets",
-					zap.Uint64("height", height),
+					log.Uint64("height", height),
 				)
 				var observedValidatorSet map[ids.NodeID]*validators.GetValidatorOutput
 				for _, pvmClient := range pvmClients {

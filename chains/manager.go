@@ -1177,10 +1177,10 @@ func (m *manager) createLuxChain(
 		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
 	)
 	m.Log.Info("creating proposervm wrapper",
-		zap.Time("activationTime", m.Upgrades.ApricotPhase4Time),
-		zap.Uint64("minPChainHeight", m.Upgrades.ApricotPhase4MinPChainHeight),
-		zap.Duration("minBlockDelay", minBlockDelay),
-		zap.Uint64("numHistoricalBlocks", numHistoricalBlocks),
+		log.Time("activationTime", m.Upgrades.ApricotPhase4Time),
+		log.Uint64("minPChainHeight", m.Upgrades.ApricotPhase4MinPChainHeight),
+		log.Duration("minBlockDelay", minBlockDelay),
+		log.Uint64("numHistoricalBlocks", numHistoricalBlocks),
 	)
 
 	// Note: this does not use [dagVM] to ensure we use the [vm]'s height index.

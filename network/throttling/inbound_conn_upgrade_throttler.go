@@ -1,18 +1,24 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
+
 import (
 	"net/netip"
 	"sync"
 	"time"
+
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/utils/timer/mockable"
+
 	timerpkg "github.com/luxfi/node/utils/timer"
 )
+
 var (
 	_ InboundConnUpgradeThrottler = (*inboundConnUpgradeThrottler)(nil)
 	_ InboundConnUpgradeThrottler = (*noInboundConnUpgradeThrottler)(nil)
+)
+
 // InboundConnUpgradeThrottler returns whether we should upgrade an inbound connection from IP [ipStr].
 // If ShouldUpgrade(ipStr) returns false, the connection to that IP should be closed.
 // Note that InboundConnUpgradeThrottler rate-limits _upgrading_ of
@@ -33,6 +39,7 @@ type InboundConnUpgradeThrottler interface {
 	// Must not be called after [Stop] has been called.
 	ShouldUpgrade(ip netip.AddrPort) bool
 }
+
 type InboundConnUpgradeThrottlerConfig struct {
 	// ShouldUpgrade(ipStr) returns true if it has been at least [UpgradeCooldown]
 	// since the last time ShouldUpgrade(ipStr) returned true or if
@@ -42,7 +49,10 @@ type InboundConnUpgradeThrottlerConfig struct {
 	// Maximum number of inbound connections upgraded within [UpgradeCooldown].
 	// (As implemented in inboundConnUpgradeThrottler, may actually upgrade
 	// [MaxRecentConnsUpgraded+1] due to a race condition but that's fine.)
+	// If <= 0, inbound connections not rate-limited.
 	MaxRecentConnsUpgraded int `json:"maxRecentConnsUpgraded"`
+}
+
 // Returns an InboundConnUpgradeThrottler that upgrades an inbound
 // connection from a given IP at most every [UpgradeCooldown].
 func NewInboundConnUpgradeThrottler(config InboundConnUpgradeThrottlerConfig) InboundConnUpgradeThrottler {
@@ -53,15 +63,25 @@ func NewInboundConnUpgradeThrottler(config InboundConnUpgradeThrottlerConfig) In
 		InboundConnUpgradeThrottlerConfig: config,
 		done:                              make(chan struct{}),
 		recentIPsAndTimes:                 make(chan ipAndTime, config.MaxRecentConnsUpgraded),
+	}
+}
+
 // noInboundConnUpgradeThrottler upgrades all inbound connections
 type noInboundConnUpgradeThrottler struct{}
+
 func (*noInboundConnUpgradeThrottler) Dispatch() {}
+
 func (*noInboundConnUpgradeThrottler) Stop() {}
+
 func (*noInboundConnUpgradeThrottler) ShouldUpgrade(netip.AddrPort) bool {
 	return true
+}
+
 type ipAndTime struct {
 	ip                netip.Addr
 	cooldownElapsedAt time.Time
+}
+
 type inboundConnUpgradeThrottler struct {
 	InboundConnUpgradeThrottlerConfig
 	lock sync.Mutex
@@ -77,6 +97,8 @@ type inboundConnUpgradeThrottler struct {
 	// For each IP in this channel, ShouldUpgrade(ipStr)
 	// returned true within the last [UpgradeCooldown].
 	recentIPsAndTimes chan ipAndTime
+}
+
 // Returns whether we should upgrade an inbound connection from [ipStr].
 func (n *inboundConnUpgradeThrottler) ShouldUpgrade(addrPort netip.AddrPort) bool {
 	// Only use addr (not port). This mitigates DoS attacks from many nodes on one
@@ -85,26 +107,38 @@ func (n *inboundConnUpgradeThrottler) ShouldUpgrade(addrPort netip.AddrPort) boo
 	if addr.IsLoopback() {
 		// Don't rate-limit loopback IPs
 		return true
+	}
+
 	n.lock.Lock()
 	defer n.lock.Unlock()
+
 	if n.recentIPs.Contains(addr) {
 		// We recently upgraded an inbound connection from this IP
 		return false
+	}
+
 	select {
 	case n.recentIPsAndTimes <- ipAndTime{
 		ip:                addr,
 		cooldownElapsedAt: n.clock.Time().Add(n.UpgradeCooldown),
 	}:
 		n.recentIPs.Add(addr)
+		return true
 	default:
+		return false
+	}
+}
+
 func (n *inboundConnUpgradeThrottler) Dispatch() {
 	timer := timerpkg.StoppedTimer()
+
 	defer timer.Stop()
 	for {
 		select {
 		case next := <-n.recentIPsAndTimes:
 			// Sleep until it's time to remove the next IP
 			timer.Reset(next.cooldownElapsedAt.Sub(n.clock.Time()))
+
 			select {
 			case <-timer.C:
 				// Remove the next IP (we'd upgrade another inbound connection from it)
@@ -117,5 +151,9 @@ func (n *inboundConnUpgradeThrottler) Dispatch() {
 		case <-n.done:
 			return
 		}
+	}
+}
+
 func (n *inboundConnUpgradeThrottler) Stop() {
 	close(n.done)
+}

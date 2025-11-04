@@ -69,7 +69,7 @@ func main() {
 	)
 	require.NoError(err, "failed to initialize wallet")
 	tc.Log().Info("synced wallet",
-		zap.Duration("duration", time.Since(walletSyncStartTime)),
+		log.Duration("duration", time.Since(walletSyncStartTime)),
 	)
 
 	genesisWorkload := &workload{
@@ -113,8 +113,8 @@ func main() {
 		}})
 		require.NoError(err, "failed to issue initial funding X-chain baseTx")
 		tc.Log().Info("issued initial funding X-chain baseTx",
-			zap.Stringer("txID", baseTx.ID()),
-			zap.Duration("duration", time.Since(baseStartTime)),
+			log.Stringer("txID", baseTx.ID()),
+			log.Duration("duration", time.Since(baseStartTime)),
 		)
 
 		require.NoError(genesisWorkload.confirmXChainTx(ctx, baseTx), "failed to confirm initial funding X-chain baseTx")
@@ -131,7 +131,7 @@ func main() {
 		)
 		require.NoError(err, "failed to initialize wallet")
 		tc.Log().Info("synced wallet",
-			zap.Duration("duration", time.Since(walletSyncStartTime)),
+			log.Duration("duration", time.Since(walletSyncStartTime)),
 		)
 
 		workloads[i] = &workload{
@@ -182,8 +182,8 @@ func (w *workload) run(ctx context.Context) {
 
 		flowID := val.Int64()
 		w.log.Info("executing test",
-			zap.Int("workerID", w.id),
-			zap.Int64("flowID", flowID),
+			log.Int("workerID", w.id),
+			log.Int64("flowID", flowID),
 		)
 		switch flowID {
 		case 0:
@@ -260,7 +260,7 @@ func (w *workload) issueXChainBaseTx(ctx context.Context) {
 	balances, err := xBuilder.GetFTBalance()
 	if err != nil {
 		w.log.Error("failed to fetch X-chain balances",
-			zap.Error(err),
+			log.Error(err),
 		)
 		assert.Unreachable("failed to fetch X-chain balances", map[string]any{
 			"worker": w.id,
@@ -278,8 +278,8 @@ func (w *workload) issueXChainBaseTx(ctx context.Context) {
 	)
 	if luxBalance < neededBalance {
 		w.log.Info("skipping X-chain tx issuance due to insufficient balance",
-			zap.Uint64("balance", luxBalance),
-			zap.Uint64("neededBalance", neededBalance),
+			log.Uint64("balance", luxBalance),
+			log.Uint64("neededBalance", neededBalance),
 		)
 		return
 	}
@@ -303,20 +303,20 @@ func (w *workload) issueXChainBaseTx(ctx context.Context) {
 	)
 	if err != nil {
 		w.log.Warn("failed to issue X-chain baseTx",
-			zap.Error(err),
+			log.Error(err),
 		)
 		return
 	}
 	w.log.Info("issued new X-chain baseTx",
-		zap.Stringer("txID", baseTx.ID()),
-		zap.Duration("duration", time.Since(baseStartTime)),
+		log.Stringer("txID", baseTx.ID()),
+		log.Duration("duration", time.Since(baseStartTime)),
 	)
 
 	if err := w.confirmXChainTx(ctx, baseTx); err != nil {
 		w.log.Warn("failed to confirm transaction",
-			zap.String("chain", "X"),
-			zap.String("txType", "base"),
-			zap.Error(err),
+			log.String("chain", "X"),
+			log.String("txType", "base"),
+			log.Error(err),
 		)
 		return
 	}
@@ -332,7 +332,7 @@ func (w *workload) issueXChainCreateAssetTx(ctx context.Context) {
 	balances, err := xBuilder.GetFTBalance()
 	if err != nil {
 		w.log.Error("failed to fetch X-chain balances",
-			zap.Error(err),
+			log.Error(err),
 		)
 		assert.Unreachable("failed to fetch X-chain balances", map[string]any{
 			"worker": w.id,
@@ -349,8 +349,8 @@ func (w *workload) issueXChainCreateAssetTx(ctx context.Context) {
 	)
 	if luxBalance < neededBalance {
 		w.log.Info("skipping X-chain tx issuance due to insufficient balance",
-			zap.Uint64("balance", luxBalance),
-			zap.Uint64("neededBalance", neededBalance),
+			log.Uint64("balance", luxBalance),
+			log.Uint64("neededBalance", neededBalance),
 		)
 		return
 	}
@@ -374,20 +374,20 @@ func (w *workload) issueXChainCreateAssetTx(ctx context.Context) {
 	)
 	if err != nil {
 		w.log.Warn("failed to issue X-chain create asset transaction",
-			zap.Error(err),
+			log.Error(err),
 		)
 		return
 	}
 	w.log.Info("created new X-chain asset",
-		zap.Stringer("txID", createAssetTx.ID()),
-		zap.Duration("duration", time.Since(createAssetStartTime)),
+		log.Stringer("txID", createAssetTx.ID()),
+		log.Duration("duration", time.Since(createAssetStartTime)),
 	)
 
 	if err := w.confirmXChainTx(ctx, createAssetTx); err != nil {
 		w.log.Warn("failed to confirm transaction",
-			zap.String("chain", "X"),
-			zap.String("txType", "createAsset"),
-			zap.Error(err),
+			log.String("chain", "X"),
+			log.String("txType", "createAsset"),
+			log.Error(err),
 		)
 		return
 	}
@@ -403,7 +403,7 @@ func (w *workload) issueXChainOperationTx(ctx context.Context) {
 	balances, err := xBuilder.GetFTBalance()
 	if err != nil {
 		w.log.Error("failed to fetch X-chain balances",
-			zap.Error(err),
+			log.Error(err),
 		)
 		assert.Unreachable("failed to fetch X-chain balances", map[string]any{
 			"worker": w.id,
@@ -422,8 +422,8 @@ func (w *workload) issueXChainOperationTx(ctx context.Context) {
 	)
 	if luxBalance < neededBalance {
 		w.log.Info("skipping X-chain tx issuance due to insufficient balance",
-			zap.Uint64("balance", luxBalance),
-			zap.Uint64("neededBalance", neededBalance),
+			log.Uint64("balance", luxBalance),
+			log.Uint64("neededBalance", neededBalance),
 		)
 		return
 	}
@@ -446,13 +446,13 @@ func (w *workload) issueXChainOperationTx(ctx context.Context) {
 	)
 	if err != nil {
 		w.log.Warn("failed to issue X-chain create asset transaction",
-			zap.Error(err),
+			log.Error(err),
 		)
 		return
 	}
 	w.log.Info("created new X-chain asset",
-		zap.Stringer("txID", createAssetTx.ID()),
-		zap.Duration("duration", time.Since(createAssetStartTime)),
+		log.Stringer("txID", createAssetTx.ID()),
+		log.Duration("duration", time.Since(createAssetStartTime)),
 	)
 
 	operationStartTime := time.Now()
@@ -462,20 +462,20 @@ func (w *workload) issueXChainOperationTx(ctx context.Context) {
 	)
 	if err != nil {
 		w.log.Warn("failed to issue X-chain operation transaction",
-			zap.Error(err),
+			log.Error(err),
 		)
 		return
 	}
 	w.log.Info("issued X-chain operation transaction",
-		zap.Stringer("txID", operationTx.ID()),
-		zap.Duration("duration", time.Since(operationStartTime)),
+		log.Stringer("txID", operationTx.ID()),
+		log.Duration("duration", time.Since(operationStartTime)),
 	)
 
 	if err := w.confirmXChainTx(ctx, createAssetTx); err != nil {
 		w.log.Warn("failed to confirm transaction",
-			zap.String("chain", "X"),
-			zap.String("txType", "createAsset"),
-			zap.Error(err),
+			log.String("chain", "X"),
+			log.String("txType", "createAsset"),
+			log.Error(err),
 		)
 		return
 	}
@@ -484,9 +484,9 @@ func (w *workload) issueXChainOperationTx(ctx context.Context) {
 
 	if err := w.confirmXChainTx(ctx, operationTx); err != nil {
 		w.log.Warn("failed to confirm transaction",
-			zap.String("chain", "X"),
-			zap.String("txType", "operation"),
-			zap.Error(err),
+			log.String("chain", "X"),
+			log.String("txType", "operation"),
+			log.Error(err),
 		)
 		return
 	}
@@ -503,7 +503,7 @@ func (w *workload) issueXToPTransfer(ctx context.Context) {
 	balances, err := xBuilder.GetFTBalance()
 	if err != nil {
 		w.log.Error("failed to fetch X-chain balances",
-			zap.Error(err),
+			log.Error(err),
 		)
 		assert.Unreachable("failed to fetch X-chain balances", map[string]any{
 			"worker": w.id,
@@ -521,8 +521,8 @@ func (w *workload) issueXToPTransfer(ctx context.Context) {
 	)
 	if luxBalance < neededBalance {
 		w.log.Info("skipping X-chain tx issuance due to insufficient balance",
-			zap.Uint64("balance", luxBalance),
-			zap.Uint64("neededBalance", neededBalance),
+			log.Uint64("balance", luxBalance),
+			log.Uint64("neededBalance", neededBalance),
 		)
 		return
 	}
@@ -544,13 +544,13 @@ func (w *workload) issueXToPTransfer(ctx context.Context) {
 	)
 	if err != nil {
 		w.log.Warn("failed to issue X-chain export transaction",
-			zap.Error(err),
+			log.Error(err),
 		)
 		return
 	}
 	w.log.Info("created X-chain export transaction",
-		zap.Stringer("txID", exportTx.ID()),
-		zap.Duration("duration", time.Since(exportStartTime)),
+		log.Stringer("txID", exportTx.ID()),
+		log.Duration("duration", time.Since(exportStartTime)),
 	)
 
 	var (
@@ -563,20 +563,20 @@ func (w *workload) issueXToPTransfer(ctx context.Context) {
 	)
 	if err != nil {
 		w.log.Warn("failed to issue P-chain import transaction",
-			zap.Error(err),
+			log.Error(err),
 		)
 		return
 	}
 	w.log.Info("created P-chain import transaction",
-		zap.Stringer("txID", importTx.ID()),
-		zap.Duration("duration", time.Since(importStartTime)),
+		log.Stringer("txID", importTx.ID()),
+		log.Duration("duration", time.Since(importStartTime)),
 	)
 
 	if err := w.confirmXChainTx(ctx, exportTx); err != nil {
 		w.log.Warn("failed to confirm transaction",
-			zap.String("chain", "X"),
-			zap.String("txType", "export"),
-			zap.Error(err),
+			log.String("chain", "X"),
+			log.String("txType", "export"),
+			log.Error(err),
 		)
 		return
 	}
@@ -585,9 +585,9 @@ func (w *workload) issueXToPTransfer(ctx context.Context) {
 
 	if err := w.confirmPChainTx(ctx, importTx); err != nil {
 		w.log.Warn("failed to confirm transaction",
-			zap.String("chain", "P"),
-			zap.String("txType", "import"),
-			zap.Error(err),
+			log.String("chain", "P"),
+			log.String("txType", "import"),
+			log.Error(err),
 		)
 		return
 	}
@@ -605,7 +605,7 @@ func (w *workload) issuePToXTransfer(ctx context.Context) {
 	balances, err := pBuilder.GetBalance()
 	if err != nil {
 		w.log.Error("failed to fetch P-chain balances",
-			zap.Error(err),
+			log.Error(err),
 		)
 		assert.Unreachable("failed to fetch P-chain balances", map[string]any{
 			"worker": w.id,
@@ -624,8 +624,8 @@ func (w *workload) issuePToXTransfer(ctx context.Context) {
 	)
 	if luxBalance < neededBalance {
 		w.log.Info("skipping P-chain tx issuance due to insufficient balance",
-			zap.Uint64("balance", luxBalance),
-			zap.Uint64("neededBalance", neededBalance),
+			log.Uint64("balance", luxBalance),
+			log.Uint64("neededBalance", neededBalance),
 		)
 		return
 	}
@@ -648,13 +648,13 @@ func (w *workload) issuePToXTransfer(ctx context.Context) {
 	)
 	if err != nil {
 		w.log.Warn("failed to issue P-chain export transaction",
-			zap.Error(err),
+			log.Error(err),
 		)
 		return
 	}
 	w.log.Info("created P-chain export transaction",
-		zap.Stringer("txID", exportTx.ID()),
-		zap.Duration("duration", time.Since(exportStartTime)),
+		log.Stringer("txID", exportTx.ID()),
+		log.Duration("duration", time.Since(exportStartTime)),
 	)
 
 	importStartTime := time.Now()
@@ -664,20 +664,20 @@ func (w *workload) issuePToXTransfer(ctx context.Context) {
 	)
 	if err != nil {
 		w.log.Warn("failed to issue X-chain import transaction",
-			zap.Error(err),
+			log.Error(err),
 		)
 		return
 	}
 	w.log.Info("created X-chain import transaction",
-		zap.Stringer("txID", importTx.ID()),
-		zap.Duration("duration", time.Since(importStartTime)),
+		log.Stringer("txID", importTx.ID()),
+		log.Duration("duration", time.Since(importStartTime)),
 	)
 
 	if err := w.confirmPChainTx(ctx, exportTx); err != nil {
 		w.log.Warn("failed to confirm transaction",
-			zap.String("chain", "P"),
-			zap.String("txType", "export"),
-			zap.Error(err),
+			log.String("chain", "P"),
+			log.String("txType", "export"),
+			log.Error(err),
 		)
 		return
 	}
@@ -686,9 +686,9 @@ func (w *workload) issuePToXTransfer(ctx context.Context) {
 
 	if err := w.confirmXChainTx(ctx, importTx); err != nil {
 		w.log.Warn("failed to confirm transaction",
-			zap.String("chain", "X"),
-			zap.String("txType", "import"),
-			zap.Error(err),
+			log.String("chain", "X"),
+			log.String("txType", "import"),
+			log.Error(err),
 		)
 		return
 	}
@@ -714,12 +714,12 @@ func (w *workload) confirmXChainTx(ctx context.Context, tx *xtxs.Tx) error {
 			return fmt.Errorf("failed to confirm X-chain transaction %s on %s: %w", txID, uri, err)
 		}
 		w.log.Info("confirmed X-chain transaction",
-			zap.Stringer("txID", txID),
-			zap.String("uri", uri),
+			log.Stringer("txID", txID),
+			log.String("uri", uri),
 		)
 	}
 	w.log.Info("confirmed X-chain transaction",
-		zap.Stringer("txID", txID),
+		log.Stringer("txID", txID),
 	)
 	return nil
 }
@@ -732,12 +732,12 @@ func (w *workload) confirmPChainTx(ctx context.Context, tx *ptxs.Tx) error {
 			return fmt.Errorf("failed to confirm P-chain transaction %s on %s: %w", txID, uri, err)
 		}
 		w.log.Info("confirmed P-chain transaction",
-			zap.Stringer("txID", txID),
-			zap.String("uri", uri),
+			log.Stringer("txID", txID),
+			log.String("uri", uri),
 		)
 	}
 	w.log.Info("confirmed P-chain transaction",
-		zap.Stringer("txID", txID),
+		log.Stringer("txID", txID),
 	)
 	return nil
 }
@@ -760,8 +760,8 @@ func (w *workload) verifyXChainTxConsumedUTXOs(ctx context.Context, tx *xtxs.Tx)
 		)
 		if err != nil {
 			w.log.Warn("failed to fetch X-chain UTXOs",
-				zap.String("uri", uri),
-				zap.Error(err),
+				log.String("uri", uri),
+				log.Error(err),
 			)
 			return
 		}
@@ -771,10 +771,10 @@ func (w *workload) verifyXChainTxConsumedUTXOs(ctx context.Context, tx *xtxs.Tx)
 			_, err := utxos.GetUTXO(ctx, chainID, chainID, input)
 			if err != database.ErrNotFound {
 				w.log.Error("failed to verify that X-chain UTXO was deleted",
-					zap.String("uri", uri),
-					zap.Stringer("txID", txID),
-					zap.Stringer("utxoID", input),
-					zap.Error(err),
+					log.String("uri", uri),
+					log.Stringer("txID", txID),
+					log.Stringer("utxoID", input),
+					log.Error(err),
 				)
 				assert.Unreachable("failed to verify that X-chain UTXO was deleted", map[string]any{
 					"worker": w.id,
@@ -787,12 +787,12 @@ func (w *workload) verifyXChainTxConsumedUTXOs(ctx context.Context, tx *xtxs.Tx)
 			}
 		}
 		w.log.Info("confirmed all X-chain UTXOs consumed by tx are not present on node",
-			zap.Stringer("txID", txID),
-			zap.String("uri", uri),
+			log.Stringer("txID", txID),
+			log.String("uri", uri),
 		)
 	}
 	w.log.Info("confirmed all X-chain UTXOs consumed by tx are not present on all nodes",
-		zap.Stringer("txID", txID),
+		log.Stringer("txID", txID),
 	)
 }
 
@@ -813,8 +813,8 @@ func (w *workload) verifyPChainTxConsumedUTXOs(ctx context.Context, tx *ptxs.Tx)
 		)
 		if err != nil {
 			w.log.Warn("failed to fetch P-chain UTXOs",
-				zap.String("uri", uri),
-				zap.Error(err),
+				log.String("uri", uri),
+				log.Error(err),
 			)
 			return
 		}
@@ -824,10 +824,10 @@ func (w *workload) verifyPChainTxConsumedUTXOs(ctx context.Context, tx *ptxs.Tx)
 			_, err := utxos.GetUTXO(ctx, constants.PlatformChainID, constants.PlatformChainID, input)
 			if err != database.ErrNotFound {
 				w.log.Error("failed to verify that P-chain UTXO was deleted",
-					zap.String("uri", uri),
-					zap.Stringer("txID", txID),
-					zap.Stringer("utxoID", input),
-					zap.Error(err),
+					log.String("uri", uri),
+					log.Stringer("txID", txID),
+					log.Stringer("utxoID", input),
+					log.Error(err),
 				)
 				assert.Unreachable("failed to verify that P-chain UTXO was deleted", map[string]any{
 					"worker": w.id,
@@ -840,11 +840,11 @@ func (w *workload) verifyPChainTxConsumedUTXOs(ctx context.Context, tx *ptxs.Tx)
 			}
 		}
 		w.log.Info("confirmed all P-chain UTXOs consumed by tx are not present on node",
-			zap.Stringer("txID", txID),
-			zap.String("uri", uri),
+			log.Stringer("txID", txID),
+			log.String("uri", uri),
 		)
 	}
 	w.log.Info("confirmed all P-chain UTXOs consumed by tx are not present on all nodes",
-		zap.Stringer("txID", txID),
+		log.Stringer("txID", txID),
 	)
 }

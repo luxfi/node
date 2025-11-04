@@ -146,8 +146,8 @@ func (pv *ProofVerifier) verifyGroth16Proof(tx *Transaction) error {
 	}
 	
 	pv.log.Debug("Groth16 proof verified",
-		zap.String("txID", tx.ID.String()),
-		zap.Int("vkLen", len(vk)),
+		log.String("txID", tx.ID.String()),
+		log.Int("vkLen", len(vk)),
 	)
 	
 	return nil
@@ -190,8 +190,8 @@ func (pv *ProofVerifier) verifyBulletproof(tx *Transaction) error {
 		time.Sleep(5 * time.Millisecond)
 		
 		pv.log.Debug("Range proof verified",
-			zap.Int("outputIndex", i),
-			zap.String("commitment", fmt.Sprintf("%x", output.Commitment[:8])),
+			log.Int("outputIndex", i),
+			log.String("commitment", fmt.Sprintf("%x", output.Commitment[:8])),
 		)
 	}
 	
@@ -250,8 +250,8 @@ func (pv *ProofVerifier) loadVerifyingKeys() error {
 	pv.verifyingKeys[string(TransactionTypeUnshield)] = make([]byte, 1024)
 	
 	pv.log.Info("Loaded verifying keys",
-		zap.Int("count", len(pv.verifyingKeys)),
-		zap.String("proofSystem", pv.config.ProofSystem),
+		log.Int("count", len(pv.verifyingKeys)),
+		log.String("proofSystem", pv.config.ProofSystem),
 	)
 	
 	return nil

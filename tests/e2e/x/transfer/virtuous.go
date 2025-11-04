@@ -121,7 +121,7 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx LUX]", func() {
 
 			runFunc := func(round int) {
 				tc.Log().Info("starting new round",
-					zap.Int("round", round),
+					log.Int("round", round),
 				)
 
 				needPermute := round > 3
@@ -160,9 +160,9 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx LUX]", func() {
 				for _, uri := range rpcEps {
 					for _, metric := range []string{blksProcessingMetric, blksAcceptedMetric} {
 						tc.Log().Info("metric before tx",
-							zap.String("metric", metric),
-							zap.String("uri", uri),
-							zap.Any("value", metricsBeforeTx[uri][metric]),
+							log.String("metric", metric),
+							log.String("uri", uri),
+							log.Any("value", metricsBeforeTx[uri][metric]),
 						)
 					}
 				}
@@ -176,8 +176,8 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx LUX]", func() {
 					testBalances = append(testBalances, bal)
 
 					tc.Log().Info("balance in LUX",
-						zap.Uint64("balance", bal),
-						zap.Stringer("address", testKeys[i].PublicKey().Address()),
+						log.Uint64("balance", bal),
+						log.Stringer("address", testKeys[i].PublicKey().Address()),
 					)
 				}
 				fromIdx := -1
@@ -228,13 +228,13 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx LUX]", func() {
 				})
 
 				tc.Log().Info("issuing transfer",
-					zap.Stringer("sender", shortAddrs[fromIdx]),
-					zap.Uint64("senderOriginalBalance", senderOrigBal),
-					zap.Uint64("senderNewBalance", senderNewBal),
-					zap.Uint64("amountToTransfer", amountToTransfer),
-					zap.Stringer("receiver", shortAddrs[toIdx]),
-					zap.Uint64("receiverOriginalBalance", receiverOrigBal),
-					zap.Uint64("receiverNewBalance", receiverNewBal),
+					log.Stringer("sender", shortAddrs[fromIdx]),
+					log.Uint64("senderOriginalBalance", senderOrigBal),
+					log.Uint64("senderNewBalance", senderNewBal),
+					log.Uint64("amountToTransfer", amountToTransfer),
+					log.Stringer("receiver", shortAddrs[toIdx]),
+					log.Uint64("receiverOriginalBalance", receiverOrigBal),
+					log.Uint64("receiverNewBalance", receiverNewBal),
 				)
 
 				tx, err := wallets[fromIdx].X().IssueBaseTx(
@@ -258,14 +258,14 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx LUX]", func() {
 				require.NoError(err)
 				senderCurBalX := balances[luxAssetID]
 				tc.Log().Info("first wallet balance",
-					zap.Uint64("balance", senderCurBalX),
+					log.Uint64("balance", senderCurBalX),
 				)
 
 				balances, err = wallets[toIdx].X().Builder().GetFTBalance()
 				require.NoError(err)
 				receiverCurBalX := balances[luxAssetID]
 				tc.Log().Info("second wallet balance",
-					zap.Uint64("balance", receiverCurBalX),
+					log.Uint64("balance", receiverCurBalX),
 				)
 
 				require.Equal(senderCurBalX, senderNewBal)

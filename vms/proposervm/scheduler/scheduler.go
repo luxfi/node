@@ -83,8 +83,8 @@ waitloop:
 					// If the channel to the engine is full, drop the message
 					// from the VM to avoid deadlock
 					s.log.Debug("dropping message from VM",
-						zap.String("reason", "channel to engine is full"),
-						zap.String("messageType", msg.Type.String()),
+						log.String("reason", "channel to engine is full"),
+						log.String("messageType", msg.Type.String()),
 					)
 				}
 			case buildBlockTime, ok := <-s.newBuildBlockTime:

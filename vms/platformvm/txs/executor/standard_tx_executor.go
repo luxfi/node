@@ -136,10 +136,10 @@ func (e *standardTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 
 	if e.backend.Config.PartialSyncPrimaryNetwork && tx.Validator.NodeID == e.backend.Ctx.NodeID {
 		e.backend.Log.Warn("verified transaction that would cause this node to become unhealthy",
-			zap.String("reason", "primary network is not being fully synced"),
-			zap.Stringer("txID", txID),
-			zap.String("txType", "addValidator"),
-			zap.Stringer("nodeID", tx.Validator.NodeID),
+			log.String("reason", "primary network is not being fully synced"),
+			log.Stringer("txID", txID),
+			log.String("txType", "addValidator"),
+			log.Stringer("nodeID", tx.Validator.NodeID),
 		)
 	}
 	return nil
@@ -579,10 +579,10 @@ func (e *standardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionl
 		tx.Net == constants.PrimaryNetworkID &&
 		tx.Validator.NodeID == e.backend.Ctx.NodeID {
 		e.backend.Log.Warn("verified transaction that would cause this node to become unhealthy",
-			zap.String("reason", "primary network is not being fully synced"),
-			zap.Stringer("txID", txID),
-			zap.String("txType", "addPermissionlessValidator"),
-			zap.Stringer("nodeID", tx.Validator.NodeID),
+			log.String("reason", "primary network is not being fully synced"),
+			log.Stringer("txID", txID),
+			log.String("txType", "addPermissionlessValidator"),
+			log.Stringer("nodeID", tx.Validator.NodeID),
 		)
 	}
 

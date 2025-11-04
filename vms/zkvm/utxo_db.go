@@ -114,9 +114,9 @@ func (udb *UTXODB) AddUTXO(utxo *UTXO) error {
 	}
 	
 	udb.log.Debug("Added UTXO",
-		zap.String("txID", utxo.TxID.String()),
-		zap.Uint32("outputIndex", utxo.OutputIndex),
-		zap.Uint64("height", utxo.Height),
+		log.String("txID", utxo.TxID.String()),
+		log.Uint32("outputIndex", utxo.OutputIndex),
+		log.Uint64("height", utxo.Height),
 	)
 	
 	return nil
@@ -264,7 +264,7 @@ func (udb *UTXODB) PruneOldUTXOs(minHeight uint64) error {
 			// Remove from database
 			key := makeUTXOKey(commitment)
 			if err := udb.db.Delete(key); err != nil {
-				udb.log.Warn("Failed to prune UTXO", zap.Error(err))
+				udb.log.Warn("Failed to prune UTXO", log.Error(err))
 				continue
 			}
 			
@@ -286,9 +286,9 @@ func (udb *UTXODB) PruneOldUTXOs(minHeight uint64) error {
 	}
 	
 	udb.log.Info("Pruned old UTXOs",
-		zap.Int("pruneCount", pruneCount),
-		zap.Uint64("minHeight", minHeight),
-		zap.Uint64("remainingUTXOs", udb.utxoCount),
+		log.Int("pruneCount", pruneCount),
+		log.Uint64("minHeight", minHeight),
+		log.Uint64("remainingUTXOs", udb.utxoCount),
 	)
 	
 	return nil

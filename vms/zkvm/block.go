@@ -226,9 +226,9 @@ func (b *Block) Accept(ctx context.Context) error {
 	delete(b.vm.pendingBlocks, b.ID())
 	
 	b.vm.log.Info("Block accepted",
-		zap.Uint64("height", b.BlockHeight),
-		zap.String("id", b.ID().String()),
-		zap.Int("txCount", len(b.Txs)),
+		log.Uint64("height", b.BlockHeight),
+		log.String("id", b.ID().String()),
+		log.Int("txCount", len(b.Txs)),
 	)
 	
 	return nil

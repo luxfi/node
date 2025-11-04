@@ -16,7 +16,7 @@ import (
 	// "github.com/luxfi/node/internal/database/rpcdb"
 	// pb "github.com/luxfi/node/proto/pb/rpcdb"
 
-	grpc_metric "github.com/grpc-ecosystem/go-grpc-prometheus"
+	grpc_metric "github.com/grpc-ecosystem/go-grpc-metric"
 )
 
 func TestDialOptsSmoke(t *testing.T) {

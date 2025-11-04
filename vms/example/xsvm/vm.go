@@ -63,7 +63,7 @@ func (vm *VM) Initialize(
 	appSender common.AppSender,
 ) error {
 	chainContext.Log.Info("initializing xsvm",
-		zap.Stringer("version", Version),
+		log.Stringer("version", Version),
 	)
 
 	metrics := metric.NewRegistry()

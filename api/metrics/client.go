@@ -10,9 +10,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/prometheus/common/expfmt"
-
-	dto "github.com/prometheus/client_model/go"
+	"github.com/luxfi/metric"
 )
 
 // Client for requesting metrics from a remote Lux Node instance
@@ -29,7 +27,7 @@ func NewClient(uri string) *Client {
 
 // GetMetrics returns the metrics from the connected node. The metrics are
 // returned as a map of metric family name to the metric family.
-func (c *Client) GetMetrics(ctx context.Context) (map[string]*dto.MetricFamily, error) {
+func (c *Client) GetMetrics(ctx context.Context) (map[string]*metric.DTOMetricFamily, error) {
 	uri, err := url.Parse(c.uri)
 	if err != nil {
 		return nil, err
@@ -57,7 +55,7 @@ func (c *Client) GetMetrics(ctx context.Context) (map[string]*dto.MetricFamily, 
 		return nil, fmt.Errorf("received status code: %d", resp.StatusCode)
 	}
 
-	var parser expfmt.TextParser
+	var parser metric.TextParser
 	metrics, err := parser.TextToMetricFamilies(resp.Body)
 	if err != nil {
 		// Drop any error during close to report the original error

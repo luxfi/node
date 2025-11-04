@@ -207,7 +207,7 @@ func (vm *VM) Initialize(
 		// Initialize appropriate client based on chain type
 		// This would be implemented based on specific chain requirements
 		vm.log.Info("initializing chain client",
-			zap.String("chainID", chainID),
+			log.String("chainID", chainID),
 		)
 	}
 	
@@ -286,8 +286,8 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	vm.pendingBlocks[block.ID()] = block
 	
 	vm.log.Info("built bridge block",
-		zap.Stringer("blockID", block.ID()),
-		zap.Int("numRequests", len(requests)),
+		log.Stringer("blockID", block.ID()),
+		log.Int("numRequests", len(requests)),
 	)
 	
 	return block, nil

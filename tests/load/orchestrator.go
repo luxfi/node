@@ -196,8 +196,8 @@ func (o *Orchestrator[_]) run(ctx context.Context) bool {
 		if achievedTargetTPS && !o.config.Terminate {
 			o.log.Info(
 				"current network state",
-				zap.Uint64("current TPS", tps),
-				zap.Int64("max observed TPS", o.maxObservedTPS.Load()),
+				log.Uint64("current TPS", tps),
+				log.Int64("max observed TPS", o.maxObservedTPS.Load()),
 			)
 			continue
 		}
@@ -207,8 +207,8 @@ func (o *Orchestrator[_]) run(ctx context.Context) bool {
 				achievedTargetTPS = true
 				o.log.Info(
 					"max TPS target reached",
-					zap.Int64("max TPS target", currTargetTPS.Load()),
-					zap.Uint64("average TPS", tps),
+					log.Int64("max TPS target", currTargetTPS.Load()),
+					log.Uint64("average TPS", tps),
 				)
 				if o.config.Terminate {
 					o.log.Info("terminating orchestrator")
@@ -219,9 +219,9 @@ func (o *Orchestrator[_]) run(ctx context.Context) bool {
 			}
 			o.log.Info(
 				"increasing TPS",
-				zap.Int64("previous target TPS", currTargetTPS.Load()),
-				zap.Uint64("average TPS", tps),
-				zap.Int64("new target TPS", currTargetTPS.Load()+o.config.Step),
+				log.Int64("previous target TPS", currTargetTPS.Load()),
+				log.Uint64("average TPS", tps),
+				log.Int64("new target TPS", currTargetTPS.Load()+o.config.Step),
 			)
 			currTargetTPS.Add(o.config.Step)
 			attempts = 1
@@ -229,16 +229,16 @@ func (o *Orchestrator[_]) run(ctx context.Context) bool {
 			if attempts >= o.config.MaxAttempts {
 				o.log.Info(
 					"max attempts reached",
-					zap.Int64("attempted target TPS", currTargetTPS.Load()),
-					zap.Uint64("number of attempts", attempts),
+					log.Int64("attempted target TPS", currTargetTPS.Load()),
+					log.Uint64("number of attempts", attempts),
 				)
 				break // Case 3
 			}
 			o.log.Info(
 				"failed to reach target TPS, retrying",
-				zap.Int64("current target TPS", currTargetTPS.Load()),
-				zap.Uint64("average TPS", tps),
-				zap.Uint64("attempt number", attempts),
+				log.Int64("current target TPS", currTargetTPS.Load()),
+				log.Uint64("average TPS", tps),
+				log.Uint64("attempt number", attempts),
 			)
 			attempts++
 		}

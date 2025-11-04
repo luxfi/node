@@ -78,9 +78,9 @@ func (fp *FHEProcessor) VerifyFHEOperations(tx *Transaction) error {
 	// 3. Verify the result matches the claimed output
 	
 	fp.log.Debug("FHE operations verified",
-		zap.String("txID", tx.ID.String()),
-		zap.String("circuitID", tx.FHEData.CircuitID),
-		zap.Int("inputCount", len(tx.FHEData.EncryptedInputs)),
+		log.String("txID", tx.ID.String()),
+		log.String("circuitID", tx.FHEData.CircuitID),
+		log.Int("inputCount", len(tx.FHEData.EncryptedInputs)),
 	)
 	
 	return nil
@@ -98,8 +98,8 @@ func (fp *FHEProcessor) ProcessFHEComputation(
 	computationProof := make([]byte, 256)
 	
 	fp.log.Debug("FHE computation processed",
-		zap.String("circuitID", circuitID),
-		zap.Int("inputCount", len(encryptedInputs)),
+		log.String("circuitID", circuitID),
+		log.Int("inputCount", len(encryptedInputs)),
 	)
 	
 	return encryptedResult, computationProof, nil
@@ -180,8 +180,8 @@ func (fp *FHEProcessor) initializeFHEParams() error {
 	}
 	
 	fp.log.Info("FHE parameters initialized",
-		zap.String("scheme", fp.config.FHEScheme),
-		zap.Int("securityLevel", fp.config.SecurityLevel),
+		log.String("scheme", fp.config.FHEScheme),
+		log.Int("securityLevel", fp.config.SecurityLevel),
 	)
 	
 	return nil

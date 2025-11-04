@@ -1,16 +1,21 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
+
 import (
 	"context"
+
 	"github.com/luxfi/metric"
+
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/log"
 )
+
 var _ InboundMsgThrottler = (*inboundMsgThrottler)(nil)
+
 // InboundMsgThrottler rate-limits inbound messages from the network.
 type InboundMsgThrottler interface {
 	// Blocks until [nodeID] can read a message of size [msgSize].
@@ -22,22 +27,29 @@ type InboundMsgThrottler interface {
 	// invariant: There should be a maximum of 1 blocking call to Acquire for a
 	//            given nodeID. Callers must enforce this invariant.
 	Acquire(ctx context.Context, msgSize uint64, nodeID ids.NodeID) ReleaseFunc
+
 	// Add a new node to this throttler.
 	// Must be called before Acquire(..., [nodeID]) is called.
 	// RemoveNode([nodeID]) must have been called since the last time
 	// AddNode([nodeID], ...) was called, if any.
 	AddNode(nodeID ids.NodeID)
+
 	// Remove a node from this throttler.
+	// AddNode([nodeID], ...) must have been called since
+	// the last time RemoveNode([nodeID]) was called, if any.
 	// Must be called when we stop reading messages from [nodeID].
 	// It's safe for multiple goroutines to concurrently call RemoveNode.
 	RemoveNode(nodeID ids.NodeID)
 }
+
 type InboundMsgThrottlerConfig struct {
 	MsgByteThrottlerConfig   `json:"byteThrottlerConfig"`
 	BandwidthThrottlerConfig `json:"bandwidthThrottlerConfig"`
 	CPUThrottlerConfig       SystemThrottlerConfig `json:"cpuThrottlerConfig"`
 	DiskThrottlerConfig      SystemThrottlerConfig `json:"diskThrottlerConfig"`
 	MaxProcessingMsgsPerNode uint64                `json:"maxProcessingMsgsPerNode"`
+}
+
 // Returns a new, sybil-safe inbound message throttler.
 func NewInboundMsgThrottler(
 	log log.Logger,
@@ -58,19 +70,40 @@ func NewInboundMsgThrottler(
 		return nil, err
 	}
 	bufferThrottler, err := newInboundMsgBufferThrottler(
+		registerer,
 		throttlerConfig.MaxProcessingMsgsPerNode,
+	)
+	if err != nil {
+		return nil, err
+	}
 	bandwidthThrottler, err := newBandwidthThrottler(
+		log,
+		registerer,
 		throttlerConfig.BandwidthThrottlerConfig,
+	)
+	if err != nil {
+		return nil, err
+	}
 	cpuThrottler, err := NewSystemThrottler(
 		"cpu",
+		registerer,
 		throttlerConfig.CPUThrottlerConfig,
 		resourceTracker.CPUTracker(),
 		cpuTargeter,
+	)
+	if err != nil {
+		return nil, err
+	}
 	diskThrottler, err := NewSystemThrottler(
 		"disk",
+		registerer,
 		throttlerConfig.DiskThrottlerConfig,
 		resourceTracker.DiskTracker(),
 		diskTargeter,
+	)
+	if err != nil {
+		return nil, err
+	}
 	return &inboundMsgThrottler{
 		byteThrottler:      byteThrottler,
 		bufferThrottler:    bufferThrottler,
@@ -78,6 +111,8 @@ func NewInboundMsgThrottler(
 		cpuThrottler:       cpuThrottler,
 		diskThrottler:      diskThrottler,
 	}, nil
+}
+
 // A sybil-safe inbound message throttler.
 // Rate-limits reading of inbound messages to prevent peers from consuming
 // excess resources.
@@ -89,6 +124,7 @@ func NewInboundMsgThrottler(
 //     that we're currently processing takes up n units of space on the buffer.
 //  3. Bandwidth. The bandwidth rate-limiting is implemented using a token
 //     bucket, where each token is 1 byte. See BandwidthThrottler.
+//
 // A call to Acquire([msgSize], [nodeID]) blocks until we've secured
 // enough of both these resources to read a message of size [msgSize] from
 // [nodeID].
@@ -105,6 +141,8 @@ type inboundMsgThrottler struct {
 	cpuThrottler SystemThrottler
 	// Rate-limits based on disk usage caused by a given node.
 	diskThrottler SystemThrottler
+}
+
 // Returns when we can read a message of size [msgSize] from node [nodeID].
 // Release([msgSize], [nodeID]) must be called (!) when done with the message
 // or when we give up trying to read the message, if applicable.
@@ -124,8 +162,15 @@ func (t *inboundMsgThrottler) Acquire(ctx context.Context, msgSize uint64, nodeI
 	return func() {
 		bufferRelease()
 		byteRelease()
+	}
+}
+
 // See BandwidthThrottler.
 func (t *inboundMsgThrottler) AddNode(nodeID ids.NodeID) {
 	t.bandwidthThrottler.AddNode(nodeID)
+}
+
+// See BandwidthThrottler.
 func (t *inboundMsgThrottler) RemoveNode(nodeID ids.NodeID) {
 	t.bandwidthThrottler.RemoveNode(nodeID)
+}

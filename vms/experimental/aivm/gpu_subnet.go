@@ -200,9 +200,9 @@ func (m *GPUNetManager) CreateNet(name string, config GPUNetConfig) (*GPUNet, er
 	m.subnets[subnetID] = subnet
 	
 	m.log.Info("GPU subnet created",
-		zap.String("subnetID", subnetID.String()),
-		zap.String("name", name),
-		zap.Int("minGPUs", config.MinGPUCount),
+		log.String("subnetID", subnetID.String()),
+		log.String("name", name),
+		log.Int("minGPUs", config.MinGPUCount),
 	)
 
 	return subnet, nil
@@ -246,9 +246,9 @@ func (s *GPUNet) RegisterProvider(nodeID ids.NodeID, info ProviderInfo, gpus []G
 	s.Performance.ActiveProviders++
 
 	s.log.Info("GPU provider registered",
-		zap.String("nodeID", nodeID.String()),
-		zap.Int("gpuCount", len(gpus)),
-		zap.String("location", info.Location),
+		log.String("nodeID", nodeID.String()),
+		log.Int("gpuCount", len(gpus)),
+		log.String("location", info.Location),
 	)
 
 	return nil
@@ -299,9 +299,9 @@ func (s *GPUNet) SubmitTask(ctx context.Context, taskType string, requirements T
 	}
 
 	s.log.Info("GPU task submitted",
-		zap.String("taskID", task.TaskID.String()),
-		zap.String("type", taskType),
-		zap.String("provider", provider.NodeID.String()),
+		log.String("taskID", task.TaskID.String()),
+		log.String("type", taskType),
+		log.String("provider", provider.NodeID.String()),
 	)
 
 	// Start task execution in background

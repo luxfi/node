@@ -31,24 +31,24 @@ func awaitHealthyNode(ctx context.Context, log log.Logger, uri string) error {
 	defer ticker.Stop()
 
 	log.Info("awaiting node health",
-		zap.String("uri", uri),
+		log.String("uri", uri),
 	)
 	for {
 		res, err := client.Health(ctx, nil)
 		switch {
 		case err != nil:
 			log.Warn("failed to reach node",
-				zap.String("uri", uri),
-				zap.Error(err),
+				log.String("uri", uri),
+				log.Error(err),
 			)
 		case res.Healthy:
 			log.Info("node reported healthy",
-				zap.String("uri", uri),
+				log.String("uri", uri),
 			)
 			return nil
 		default:
 			log.Info("node reported unhealthy",
-				zap.String("uri", uri),
+				log.String("uri", uri),
 			)
 		}
 

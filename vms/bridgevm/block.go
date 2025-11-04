@@ -106,9 +106,9 @@ func (b *Block) Accept(ctx context.Context) error {
 		delete(b.vm.pendingBridges, req.ID)
 		
 		b.vm.log.Info("completed bridge request",
-			zap.Stringer("requestID", req.ID),
-			zap.String("destChain", req.DestChain),
-			zap.Uint64("amount", req.Amount),
+			log.Stringer("requestID", req.ID),
+			log.String("destChain", req.DestChain),
+			log.Uint64("amount", req.Amount),
 		)
 	}
 	

@@ -25,7 +25,6 @@ import (
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/node/validators"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/metric"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"

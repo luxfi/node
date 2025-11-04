@@ -236,7 +236,7 @@ func ReadNetwork(ctx context.Context, log log.Logger, dir string) (*Network, err
 // Initializes a new network with default configuration.
 func (n *Network) EnsureDefaultConfig(log log.Logger) error {
 	log.Info("preparing configuration for new network",
-		zap.Any("runtimeConfig", n.DefaultRuntimeConfig),
+		log.Any("runtimeConfig", n.DefaultRuntimeConfig),
 	)
 
 	n.log = log
@@ -367,8 +367,8 @@ func (n *Network) StartNodes(ctx context.Context, log log.Logger, nodesToStart .
 		// Simplify output by only logging network start when starting all nodes or when starting
 		// the first node by itself to bootstrap subnet creation.
 		log.Info("starting network",
-			zap.String("networkDir", n.Dir),
-			zap.String("uuid", n.UUID),
+			log.String("networkDir", n.Dir),
+			log.String("uuid", n.UUID),
 		)
 	}
 
@@ -386,8 +386,8 @@ func (n *Network) StartNodes(ctx context.Context, log log.Logger, nodesToStart .
 		return err
 	}
 	log.Info("started network",
-		zap.String("networkDir", n.Dir),
-		zap.String("uuid", n.UUID),
+		log.String("networkDir", n.Dir),
+		log.String("uuid", n.UUID),
 	)
 	// Provide a link to the main dashboard filtered by the uuid and showing results from now till whenever the link is viewed
 	startTimeStr := strconv.FormatInt(startTime.UnixMilli(), 10)
@@ -400,8 +400,8 @@ func (n *Network) StartNodes(ctx context.Context, log log.Logger, nodesToStart .
 	}
 
 	log.Info(MetricsAvailableMessage,
-		zap.String("url", metricsURL),
-		zap.String("linkPath", metricsPath),
+		log.String("url", metricsURL),
+		log.String("linkPath", metricsPath),
 	)
 
 	return nil
@@ -453,13 +453,13 @@ func (n *Network) Bootstrap(ctx context.Context, log log.Logger) error {
 
 	if existingSybilProtectionValue == nil {
 		log.Info("re-enabling sybil protection",
-			zap.Stringer("nodeID", bootstrapNode.NodeID),
+			log.Stringer("nodeID", bootstrapNode.NodeID),
 		)
 		delete(bootstrapNode.Flags, config.SybilProtectionEnabledKey)
 	} else {
 		log.Info("restoring previous sybil protection value",
-			zap.Stringer("nodeID", bootstrapNode.NodeID),
-			zap.String("sybilProtectionEnabled", *existingSybilProtectionValue),
+			log.Stringer("nodeID", bootstrapNode.NodeID),
+			log.String("sybilProtectionEnabled", *existingSybilProtectionValue),
 		)
 		bootstrapNode.Flags[config.SybilProtectionEnabledKey] = *existingSybilProtectionValue
 	}
@@ -470,7 +470,7 @@ func (n *Network) Bootstrap(ctx context.Context, log log.Logger) error {
 	// - sybil protection didn't change
 	// - the node is not a subnet validator
 	log.Info("restarting bootstrap node",
-		zap.Stringer("nodeID", bootstrapNode.NodeID),
+		log.Stringer("nodeID", bootstrapNode.NodeID),
 	)
 	if err := bootstrapNode.Restart(ctx); err != nil {
 		return err
@@ -552,7 +552,7 @@ func (n *Network) Restart(ctx context.Context) error {
 func WaitForHealthyNodes(ctx context.Context, log log.Logger, nodes []*Node) error {
 	for _, node := range nodes {
 		log.Info("waiting for node to become healthy",
-			zap.Stringer("nodeID", node.NodeID),
+			log.Stringer("nodeID", node.NodeID),
 		)
 		if err := node.WaitForHealthy(ctx); err != nil {
 			return err
@@ -618,7 +618,7 @@ func (n *Network) CreateNets(ctx context.Context, log log.Logger, apiURI string,
 		}
 
 		log.Info("creating subnet",
-			zap.String("name", subnet.Name),
+			log.String("name", subnet.Name),
 		)
 
 		if net.OwningKey == nil {
@@ -637,8 +637,8 @@ func (n *Network) CreateNets(ctx context.Context, log log.Logger, apiURI string,
 		}
 
 		log.Info("created subnet",
-			zap.String("name", subnet.Name),
-			zap.Stringer("id", subnet.NetID),
+			log.String("name", subnet.Name),
+			log.Stringer("id", subnet.NetID),
 		)
 
 		// Persist the subnet configuration
@@ -647,7 +647,7 @@ func (n *Network) CreateNets(ctx context.Context, log log.Logger, apiURI string,
 		}
 
 		log.Info("wrote subnet configuration",
-			zap.String("name", subnet.Name),
+			log.String("name", subnet.Name),
 		)
 
 		createdNets = append(createdNets, net)
@@ -695,7 +695,7 @@ func (n *Network) CreateNets(ctx context.Context, log log.Logger, apiURI string,
 	// Add validators for the subnet
 	for _, subnet := range createdNets {
 		log.Info("adding validators for subnet",
-			zap.String("name", subnet.Name),
+			log.String("name", subnet.Name),
 		)
 
 		// Collect the nodes intended to validate the net
@@ -731,8 +731,8 @@ func (n *Network) CreateNets(ctx context.Context, log log.Logger, apiURI string,
 			return err
 		}
 		log.Info("wrote subnet configuration",
-			zap.String("name", subnet.Name),
-			zap.Stringer("id", subnet.NetID),
+			log.String("name", subnet.Name),
+			log.Stringer("id", subnet.NetID),
 		)
 
 		// If one or more of the subnets chains have explicit configuration, the
@@ -961,8 +961,8 @@ func waitForHealthy(ctx context.Context, log log.Logger, nodes []*Node) error {
 
 			unhealthyNodes.Remove(node)
 			log.Info("node is healthy",
-				zap.Stringer("nodeID", node.NodeID),
-				zap.String("uri", node.URI),
+				log.Stringer("nodeID", node.NodeID),
+				log.String("uri", node.URI),
 			)
 		}
 
@@ -1023,7 +1023,7 @@ func checkVMBinaries(log log.Logger, subnets []*Net, config *ProcessRuntimeConfi
 
 	nodeRPCVersion, err := getRPCVersion(log, config.Lux NodePath, "--version-json")
 	if err != nil {
-		log.Warn("unable to check rpcchainvm version for node", zap.Error(err))
+		log.Warn("unable to check rpcchainvm version for node", log.Error(err))
 		return nil
 	}
 
@@ -1035,8 +1035,8 @@ func checkVMBinaries(log log.Logger, subnets []*Net, config *ProcessRuntimeConfi
 			// Check that the path exists
 			if _, err := os.Stat(vmPath); err != nil {
 				log.Warn("unable to check rpcchainvm version for VM",
-					zap.String("vmPath", vmPath),
-					zap.Error(err),
+					log.String("vmPath", vmPath),
+					log.Error(err),
 				)
 				continue
 			}
@@ -1050,16 +1050,16 @@ func checkVMBinaries(log log.Logger, subnets []*Net, config *ProcessRuntimeConfi
 			vmRPCVersion, err := getRPCVersion(log, vmPath, chain.VersionArgs...)
 			if err != nil {
 				log.Warn("unable to check rpcchainvm version for VM Binary",
-					zap.String("subnet", subnet.Name),
-					zap.Error(err),
+					log.String("subnet", subnet.Name),
+					log.Error(err),
 				)
 			} else if nodeRPCVersion != vmRPCVersion {
 				log.Error("unexpected rpcchainvm version for VM binary",
-					zap.String("subnet", subnet.Name),
-					zap.String("nodePath", config.Lux NodePath),
-					zap.Uint64("nodeRPCVersion", nodeRPCVersion),
-					zap.String("vmPath", vmPath),
-					zap.Uint64("vmRPCVersion", vmRPCVersion),
+					log.String("subnet", subnet.Name),
+					log.String("nodePath", config.Lux NodePath),
+					log.Uint64("nodeRPCVersion", nodeRPCVersion),
+					log.String("vmPath", vmPath),
+					log.Uint64("vmRPCVersion", vmRPCVersion),
 				)
 				incompatibleChains = true
 			}
@@ -1089,8 +1089,8 @@ func getRPCVersion(log log.Logger, command string, versionArgs ...string) (uint6
 	// with `go run` and the go toolchain emitting diagnostic logging before the version output.
 	if idx := bytes.IndexByte(output, '{'); idx > 0 {
 		log.Info("ignoring leading bytes of JSON version output in advance of opening `{`",
-			zap.String("command", command),
-			zap.String("ignoredLeadingBytes", string(output[:idx])),
+			log.String("command", command),
+			log.String("ignoredLeadingBytes", string(output[:idx])),
 		)
 		output = output[idx:]
 	}

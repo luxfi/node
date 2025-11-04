@@ -118,7 +118,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 
 			endTime := time.Now().Add(targetValidationPeriod)
 			tc.Log().Info("determined alpha node validation end time",
-				zap.Time("time", endTime),
+				log.Time("time", endTime),
 			)
 
 			_, err := pWallet.IssueAddPermissionlessValidatorTx(
@@ -148,7 +148,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 
 		betaValidatorEndTime := time.Now().Add(targetValidationPeriod)
 		tc.Log().Info("determined beta node validation end time",
-			zap.Time("time", betaValidatorEndTime),
+			log.Time("time", betaValidatorEndTime),
 		)
 
 		tc.By("adding beta node as a validator", func() {
@@ -188,7 +188,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 
 			endTime := time.Now().Add(targetDelegationPeriod)
 			tc.Log().Info("determined gamma delegator validation end time",
-				zap.Time("time", endTime),
+				log.Time("time", endTime),
 			)
 
 			_, err := pWallet.IssueAddPermissionlessDelegatorTx(
@@ -215,7 +215,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 
 			endTime := time.Now().Add(targetDelegationPeriod)
 			tc.Log().Info("determined delta delegator delegation period end time",
-				zap.Time("time", endTime),
+				log.Time("time", endTime),
 			)
 
 			_, err := pWallet.IssueAddPermissionlessDelegatorTx(

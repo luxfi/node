@@ -235,7 +235,7 @@ func WaitForNodeHealthy(
 		} else if err != nil {
 			// Error is potentially recoverable - log and continue
 			log.Debug("failed to check node health",
-				zap.Error(err),
+				log.Error(err),
 			)
 			return false, nil
 		}
@@ -351,7 +351,7 @@ func enableLocalForwardForPod(
 	return forwardedPorts[0].Local, stopChan, nil
 }
 
-// GetClientConfig replicates the behavior of clientcmd.BuildConfigFromFlags with zap logging and
+// GetClientConfig replicates the behavior of clientcmd.BuildConfigFromFlags with log logging and
 // support for an optional config context. If path is not provided, use of in-cluster config will
 // be attempted.
 func GetClientConfig(log log.Logger, path string, context string) (*restclient.Config, error) {
@@ -362,7 +362,7 @@ func GetClientConfig(log log.Logger, path string, context string) (*restclient.C
 			return kubeconfig, nil
 		}
 		log.Warn("failed to create inClusterConfig, falling back to default config",
-			zap.Error(err),
+			log.Error(err),
 		)
 	}
 	overrides := &clientcmd.ConfigOverrides{}
@@ -451,9 +451,9 @@ func applyManifest(
 			return fmt.Errorf("failed to apply %s %s/%s: %w", gvk.Kind, resourceNamespace, obj.GetName(), err)
 		}
 		log.Info("applied resource",
-			zap.String("kind", gvk.Kind),
-			zap.String("namespace", resourceNamespace),
-			zap.String("name", obj.GetName()),
+			log.String("kind", gvk.Kind),
+			log.String("namespace", resourceNamespace),
+			log.String("name", obj.GetName()),
 		)
 	}
 

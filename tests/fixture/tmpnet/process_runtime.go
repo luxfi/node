@@ -145,9 +145,9 @@ func (p *ProcessRuntime) Start(ctx context.Context) error {
 	}
 
 	log.Info("started local node",
-		zap.Stringer("nodeID", p.node.NodeID),
-		zap.String("dataDir", p.node.DataDir),
-		zap.Bool("isEphemeral", p.node.IsEphemeral),
+		log.Stringer("nodeID", p.node.NodeID),
+		log.String("dataDir", p.node.DataDir),
+		log.Bool("isEphemeral", p.node.IsEphemeral),
 	)
 
 	// Configure collection of metrics and logs
@@ -471,8 +471,8 @@ func watchLogFileForFatal(ctx context.Context, cancelWithCause context.CancelCau
 	file, err := os.Open(path)
 	if err != nil {
 		log.Error("failed to open log file",
-			zap.String("path", path),
-			zap.Error(err),
+			log.String("path", path),
+			log.Error(err),
 		)
 		return
 	}
@@ -494,8 +494,8 @@ func watchLogFileForFatal(ctx context.Context, cancelWithCause context.CancelCau
 					continue
 				} else {
 					log.Error("failed to read log file",
-						zap.String("path", path),
-						zap.Error(err),
+						log.String("path", path),
+						log.Error(err),
 					)
 					return
 				}

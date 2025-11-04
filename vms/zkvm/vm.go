@@ -216,11 +216,11 @@ func (vm *VM) Initialize(
 	}
 	
 	vm.log.Info("ZK UTXO VM initialized",
-		zap.String("version", Version.String()),
-		zap.Bool("confidentialTransfers", vm.config.EnableConfidentialTransfers),
-		zap.Bool("privateAddresses", vm.config.EnablePrivateAddresses),
-		zap.String("proofSystem", vm.config.ProofSystem),
-		zap.Bool("fheEnabled", vm.config.EnableFHE),
+		log.String("version", Version.String()),
+		log.Bool("confidentialTransfers", vm.config.EnableConfidentialTransfers),
+		log.Bool("privateAddresses", vm.config.EnablePrivateAddresses),
+		log.String("proofSystem", vm.config.ProofSystem),
+		log.Bool("fheEnabled", vm.config.EnableFHE),
 	)
 	
 	return nil
@@ -242,8 +242,8 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	for _, tx := range txs {
 		if err := vm.verifyTransaction(tx); err != nil {
 			vm.log.Debug("Transaction verification failed",
-				zap.String("txID", tx.ID.String()),
-				zap.Error(err),
+				log.String("txID", tx.ID.String()),
+				log.Error(err),
 			)
 			continue
 		}
@@ -277,9 +277,9 @@ func (vm *VM) BuildBlock(ctx context.Context) (block.Block, error) {
 	vm.pendingBlocks[block.ID()] = block
 	
 	vm.log.Debug("Built new block",
-		zap.String("blockID", block.ID().String()),
-		zap.Uint64("height", block.BlockHeight),
-		zap.Int("txCount", len(validTxs)),
+		log.String("blockID", block.ID().String()),
+		log.Uint64("height", block.BlockHeight),
+		log.Int("txCount", len(validTxs)),
 	)
 	
 	return block, nil

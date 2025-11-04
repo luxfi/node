@@ -25,7 +25,7 @@ func main() {
 	}
 	if err := antithesis.GenerateComposeConfig(network, baseImageName); err != nil {
 		tests.NewDefaultLogger("").Fatal("failed to generate compose config",
-			zap.Error(err),
+			log.Error(err),
 		)
 		os.Exit(1)
 	}

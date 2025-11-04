@@ -52,6 +52,6 @@ var _ = ginkgo.AfterEach(func() {
 		strconv.FormatInt(endTime, 10),
 	)
 	tc.Log().Info(tmpnet.MetricsAvailableMessage,
-		zap.String("uri", metricsLink),
+		log.String("uri", metricsLink),
 	)
 })

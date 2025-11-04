@@ -6,7 +6,7 @@ package metrics
 import (
 	"context"
 
-	dto "github.com/prometheus/client_model/go"
+	dto "github.com/luxfi/metric"
 )
 
 type testGathererWithContext struct {

@@ -63,8 +63,8 @@ func (mp *Mempool) AddTransaction(tx *Transaction) error {
 	for _, nullifier := range tx.Nullifiers {
 		if existingTxID, exists := mp.nullifiers[string(nullifier)]; exists {
 			mp.log.Debug("Nullifier conflict in mempool",
-				zap.String("newTx", tx.ID.String()),
-				zap.String("existingTx", existingTxID.String()),
+				log.String("newTx", tx.ID.String()),
+				log.String("existingTx", existingTxID.String()),
 			)
 			return errors.New("nullifier already in mempool")
 		}
@@ -101,9 +101,9 @@ func (mp *Mempool) AddTransaction(tx *Transaction) error {
 	}
 	
 	mp.log.Debug("Added transaction to mempool",
-		zap.String("txID", tx.ID.String()),
-		zap.Uint64("fee", tx.Fee),
-		zap.Int("mempoolSize", len(mp.txs)),
+		log.String("txID", tx.ID.String()),
+		log.Uint64("fee", tx.Fee),
+		log.Int("mempoolSize", len(mp.txs)),
 	)
 	
 	return nil
@@ -218,8 +218,8 @@ func (mp *Mempool) PruneExpired(currentHeight uint64) {
 	
 	if len(toRemove) > 0 {
 		mp.log.Info("Pruned expired transactions",
-			zap.Int("count", len(toRemove)),
-			zap.Uint64("currentHeight", currentHeight),
+			log.Int("count", len(toRemove)),
+			log.Uint64("currentHeight", currentHeight),
 		)
 	}
 }

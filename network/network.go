@@ -16,10 +16,10 @@ import (
 	"time"
 
 	"github.com/pires/go-proxyproto"
-	"github.com/luxfi/log"
+	"go.uber.org/zap"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/consensus/core"
@@ -699,7 +699,7 @@ func (n *network) Dispatch() error {
 
 			if err := n.upgrade(conn, n.serverUpgrader, true); err != nil {
 				n.peerConfig.Log.Verbo("failed to upgrade connection",
-					zap.String("direction", "inbound"),
+					log.String("direction", "inbound"),
 					zap.Error(err),
 				)
 			}
