@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -22,6 +22,7 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
+	consensusctx "github.com/luxfi/consensus/context"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
@@ -119,7 +120,7 @@ type VM struct {
 	uptimeManager uptime.Calculator
 
 	// The context of this vm
-	ctx context.Context
+	ctx *consensusctx.Context
 	db  database.Database
 
 	// Additional fields needed for platformvm
@@ -167,8 +168,21 @@ func (vm *VM) Initialize(
 	fxsIntf []interface{},
 	appSenderIntf interface{},
 ) error {
-	// Handle chain context as interface for now
-	_ = chainCtxIntf
+	// Extract chain context
+	var chainCtx *consensusctx.Context
+	if chainCtxIntf != nil {
+		var ok bool
+		chainCtx, ok = chainCtxIntf.(*consensusctx.Context)
+		if !ok {
+			return fmt.Errorf("invalid chain context type")
+		}
+	} else {
+		// Create a minimal context if none provided
+		chainCtx = &consensusctx.Context{
+			NetworkID: 1,
+			ChainID:   constants.PlatformChainID,
+		}
+	}
 
 	// DBManager is an interface, we'll handle it as such
 	dbManager := dbManagerIntf
@@ -225,8 +239,8 @@ func (vm *VM) Initialize(
 	// Create metric interface for state
 	stateMetrics := metric.NewNoOp()
 
-	// Set context
-	vm.ctx = context.Background() // Use the runtime context
+	// Set consensus context
+	vm.ctx = chainCtx
 	// Get the current database from the DBManager
 	// Since DBManager is now an interface{}, we need to handle it differently
 	if dbManager != nil {
@@ -272,7 +286,7 @@ func (vm *VM) Initialize(
 	}
 	vm.log.Info("Platform VM state created successfully")
 
-	validatorManager := pvalidators.NewManager(vm.Internal, vm.state, vm.metrics, &vm.clock)
+	validatorManager := pvalidators.NewManager(vm.Internal, vm.state, vm.metrics, &vm.consensusClock)
 	vm.State = validatorManager
 	utxoHandler := utxo.NewHandler(vm.ctx, &vm.nodeClock, vm.fx)
 	// Create uptime manager with noop implementation for now
@@ -320,7 +334,7 @@ func (vm *VM) Initialize(
 		mempool,
 		txExecutorBackend.Config.PartialSyncPrimaryNetwork,
 		appSender,
-		chainCtx.Lock.RLocker(),
+		&chainCtx.Lock,
 		vm.state,
 		chainCtx.WarpSigner,
 		registerer,

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # C-Chain Replay Tool Build Script with EVM Integration
-# (c) 2024 Lux Industries, Inc. All rights reserved.
+# (c) 2025 Lux Industries, Inc. All rights reserved.
 set -e
 
 # Colors for output

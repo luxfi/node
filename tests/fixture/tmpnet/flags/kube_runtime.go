@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package flags
@@ -72,7 +72,7 @@ func (v *kubeRuntimeVars) register(stringVar varFunc[string], uintVar varFunc[ui
 		&v.useExclusiveScheduling,
 		"kube-use-exclusive-scheduling",
 		false,
-		kubeDocPrefix+"Whether to schedule each LuxGo node to a dedicated Kubernetes node",
+		kubeDocPrefix+"Whether to schedule each Lux Node to a dedicated Kubernetes node",
 	)
 	stringVar(
 		&v.schedulingLabelKey,

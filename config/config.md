@@ -1,4 +1,4 @@
-# LuxGo Configs and Flags
+# Lux Node Configs and Flags
 
 <!-- markdownlint-disable MD001 -->
 
@@ -36,13 +36,13 @@ If set to `false`, this node will not expose the Metrics API. Defaults to
 
 #### `--lp-support` (array of integers)
 
-The `--lp-support` flag allows an LuxGo node to indicate support for a
-set of [Lux Community Proposals](https://github.com/lux-foundation/ACPs).
+The `--lp-support` flag allows an Lux Node to indicate support for a
+set of [Lux Community Proposals](https://github.com/luxfi/ACPs).
 
 #### `--lp-object` (array of integers)
 
-The `--lp-object` flag allows an LuxGo node to indicate objection for a
-set of [Lux Community Proposals](https://github.com/lux-foundation/ACPs).
+The `--lp-object` flag allows an Lux Node to indicate objection for a
+set of [Lux Community Proposals](https://github.com/luxfi/ACPs).
 
 ## Bootstrapping
 
@@ -91,7 +91,7 @@ Specifies how many times bootstrap should be retried before warning the operator
 
 Some blockchains allow the node operator to provide custom configurations for
 individual blockchains. These custom configurations are broken down into two
-categories: network upgrades and optional chain configurations. LuxGo
+categories: network upgrades and optional chain configurations. Lux Node
 reads in these configurations from the chain configuration directory and passes
 them into the VM on initialization.
 
@@ -100,8 +100,8 @@ them into the VM on initialization.
 Specifies the directory that contains chain configs, as described
 [here](https://docs.lux.network/docs/nodes/chain-configs). Defaults to `$HOME/.node/configs/chains`.
 If this flag is not provided and the default directory does not exist,
-LuxGo will not exit since custom configs are optional. However, if the
-flag is set, the specified folder must exist, or LuxGo will exit with an
+Lux Node will not exit since custom configs are optional. However, if the
+flag is set, the specified folder must exist, or Lux Node will exit with an
 error. This flag is ignored if `--chain-config-content` is specified.
 
 :::note
@@ -192,7 +192,7 @@ Example JSON config file:
 :::tip
 [Install Script](https://docs.lux.network/docs/tooling/lux-go-installer) creates the
 node config file at `~/.node/configs/node.json`. No default file is
-created if [LuxGo is built from source](https://docs.lux.network/docs/nodes/run-a-node/from-source), you
+created if [Lux Node is built from source](https://docs.lux.network/docs/nodes/run-a-node/from-source), you
 would need to create it manually if needed.
 :::
 
@@ -560,7 +560,7 @@ The identity of the network the node should connect to. Can be one of:
 
 ## OpenTelemetry
 
-LuxGo supports collecting and exporting [OpenTelemetry](https://opentelemetry.io/) traces.
+Lux Node supports collecting and exporting [OpenTelemetry](https://opentelemetry.io/) traces.
 This might be useful for debugging, performance analysis, or monitoring.
 
 #### `--tracing-endpoint` (string)
@@ -700,7 +700,7 @@ Defaults to empty (will only validate the Primary Network).
 
 It is possible to provide parameters for Nets. Parameters here apply to all
 chains in the specified Nets. Parameters must be specified with a
-`{subnetID}.json` config file under `--subnet-config-dir`. LuxGo loads
+`{subnetID}.json` config file under `--subnet-config-dir`. Lux Node loads
 configs for Nets specified in
 `--track-subnets` parameter.
 
@@ -711,7 +711,7 @@ separate [Net Configs](https://docs.lux.network/docs/nodes/configure/lux-l1-conf
 
 Specifies the directory that contains Net configs, as described above.
 Defaults to `$HOME/.node/configs/subnets`. If the flag is set explicitly,
-the specified folder must exist, or LuxGo will exit with an error. This
+the specified folder must exist, or Lux Node will exit with an error. This
 flag is ignored if `--subnet-config-content` is specified.
 
 Example: Let's say we have a Net with ID
@@ -1095,7 +1095,7 @@ Timeout while dialing a peer. Defaults to `30s`.
 
 These flags govern rate-limiting of inbound and outbound messages. For more
 information on rate-limiting and the flags below, see package `throttling` in
-LuxGo.
+Lux Node.
 
 #### CPU Based
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package antithesis
@@ -30,8 +30,8 @@ const (
 var (
 	errTargetPathEnvVarNotSet = errors.New(targetPathEnvName + " environment variable not set")
 	errImageTagEnvVarNotSet   = errors.New(imageTagEnvName + " environment variable not set")
-	errLuxGoEvVarNotSet = errors.New(tmpnet.LuxGoPathEnvName + " environment variable not set")
-	errPluginDirEnvVarNotSet  = errors.New(tmpnet.LuxGoPluginDirEnvName + " environment variable not set")
+	errLux NodeEvVarNotSet = errors.New(tmpnet.Lux NodePathEnvName + " environment variable not set")
+	errPluginDirEnvVarNotSet  = errors.New(tmpnet.Lux NodePluginDirEnvName + " environment variable not set")
 )
 
 // Creates docker compose configuration for an antithesis test setup. Configuration is via env vars to
@@ -50,20 +50,20 @@ func GenerateComposeConfig(network *tmpnet.Network, baseImageName string) error 
 
 	// Net testing requires creating an initial db state for the bootstrap node
 	if len(network.Nets) > 0 {
-		luxPath := os.Getenv(tmpnet.LuxGoPathEnvName)
+		luxPath := os.Getenv(tmpnet.Lux NodePathEnvName)
 		if len(luxPath) == 0 {
-			return errLuxGoEvVarNotSet
+			return errLux NodeEvVarNotSet
 		}
 
 		// Plugin dir configured here is only used for initializing the bootstrap db.
-		pluginDir := os.Getenv(tmpnet.LuxGoPluginDirEnvName)
+		pluginDir := os.Getenv(tmpnet.Lux NodePluginDirEnvName)
 		if len(pluginDir) == 0 {
 			return errPluginDirEnvVarNotSet
 		}
 
 		network.DefaultRuntimeConfig = tmpnet.NodeRuntimeConfig{
 			Process: &tmpnet.ProcessRuntimeConfig{
-				LuxGoPath: luxPath,
+				Lux NodePath: luxPath,
 				PluginDir:       pluginDir,
 			},
 		}

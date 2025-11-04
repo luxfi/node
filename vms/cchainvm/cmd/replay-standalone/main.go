@@ -1,4 +1,4 @@
-// (c) 2024 Lux Industries, Inc. All rights reserved.
+// (c) 2025 Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // replay-standalone is a standalone tool for replaying EVM data into C-Chain format

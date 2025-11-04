@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 //go:build test
@@ -61,7 +61,7 @@ var _ = ginkgo.Describe("[Upgrade]", func() {
 
 		network.DefaultRuntimeConfig = tmpnet.NodeRuntimeConfig{
 			Process: &tmpnet.ProcessRuntimeConfig{
-				LuxGoPath: luxExecPath,
+				Lux NodePath: luxExecPath,
 			},
 		}
 
@@ -111,7 +111,7 @@ var _ = ginkgo.Describe("[Upgrade]", func() {
 
 			node.RuntimeConfig = &tmpnet.NodeRuntimeConfig{
 				Process: &tmpnet.ProcessRuntimeConfig{
-					LuxGoPath: luxExecPathToUpgradeTo,
+					Lux NodePath: luxExecPathToUpgradeTo,
 				},
 			}
 

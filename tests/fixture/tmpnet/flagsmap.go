@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -12,7 +12,7 @@ import (
 )
 
 // Defines a mapping of flag keys to values intended to be supplied to
-// an invocation of an LuxGo node.
+// an invocation of an Lux Node.
 type FlagsMap map[string]string
 
 // Utility function simplifying construction of a FlagsMap from a file.

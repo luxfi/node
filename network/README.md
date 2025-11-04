@@ -58,7 +58,7 @@ Upon connection to a new peer, a handshake is performed between the node attempt
 
 When attempting to establish the connection, the first message that the node sends is a `Handshake` message describing the configuration of the node. If the `Handshake` message is successfully received and the peer decides that it will allow a connection with this node, it replies with a `PeerList` message that contains metadata about other peers that allows a node to connect to them. See [PeerList Gossip](#peerlist-gossip).
 
-As an example, nodes that are attempting to connect with an incompatible version of LuxGo or a significantly skewed local clock are rejected.
+As an example, nodes that are attempting to connect with an incompatible version of Lux Node or a significantly skewed local clock are rejected.
 
 ```mermaid
 sequenceDiagram
@@ -66,9 +66,9 @@ sequenceDiagram
     actor Rick
     Note over Morty,Rick: Connection Created
     par
-        Morty->>Rick: LuxGo v1.0.0
+        Morty->>Rick: Lux Node v1.0.0
     and
-        Rick->>Morty: LuxGo v1.11.4
+        Rick->>Morty: Lux Node v1.11.4
     end
     Note right of Rick: v1.0.0 is incompatible with v1.11.4.
     Note left of Morty: v1.11.4 could be compatible with v1.0.0!
@@ -88,9 +88,9 @@ sequenceDiagram
     actor Rick
     Note over Morty,Rick: Connection Created
     par
-        Morty->>Rick: LuxGo v1.11.0
+        Morty->>Rick: Lux Node v1.11.0
     and
-        Rick->>Morty: LuxGo v1.11.4
+        Rick->>Morty: Lux Node v1.11.4
     end
     Note right of Rick: v1.11.0 is compatible with v1.11.4!
     Note left of Morty: v1.11.4 could be compatible with v1.11.0!

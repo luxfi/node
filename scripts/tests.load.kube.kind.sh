@@ -12,7 +12,7 @@ fi
 # This script will use kubeconfig arguments if supplied
 ./scripts/start_kind_cluster.sh "$@"
 
-# Build LuxGo image
+# Build Lux Node image
 LUXD_IMAGE="localhost:5001/node"
 if [[ -n "${SKIP_BUILD_IMAGE:-}" ]]; then
   echo "Skipping build of node image due to SKIP_BUILD_IMAGE=${SKIP_BUILD_IMAGE}"

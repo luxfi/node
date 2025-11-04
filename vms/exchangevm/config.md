@@ -1,5 +1,5 @@
 ---
-tags: [Nodes, LuxGo]
+tags: [Nodes, Lux Node]
 description: Reference for all available X-chain config options and flags.
 pagination_label: X-Chain Configs
 sidebar_position: 2

@@ -11,7 +11,7 @@ if ! [[ "$0" =~ scripts/tests.upgrade.sh ]]; then
   exit 255
 fi
 
-# The LuxGo local network does not support long-lived
+# The Lux Node local network does not support long-lived
 # backwards-compatible networks. When a breaking change is made to the
 # local network, this flag must be updated to the last compatible
 # version with the latest code.

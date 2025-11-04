@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -1021,7 +1021,7 @@ func checkVMBinaries(log log.Logger, subnets []*Net, config *ProcessRuntimeConfi
 		return nil
 	}
 
-	nodeRPCVersion, err := getRPCVersion(log, config.LuxGoPath, "--version-json")
+	nodeRPCVersion, err := getRPCVersion(log, config.Lux NodePath, "--version-json")
 	if err != nil {
 		log.Warn("unable to check rpcchainvm version for node", zap.Error(err))
 		return nil
@@ -1056,7 +1056,7 @@ func checkVMBinaries(log log.Logger, subnets []*Net, config *ProcessRuntimeConfi
 			} else if nodeRPCVersion != vmRPCVersion {
 				log.Error("unexpected rpcchainvm version for VM binary",
 					zap.String("subnet", subnet.Name),
-					zap.String("nodePath", config.LuxGoPath),
+					zap.String("nodePath", config.Lux NodePath),
 					zap.Uint64("nodeRPCVersion", nodeRPCVersion),
 					zap.String("vmPath", vmPath),
 					zap.Uint64("vmRPCVersion", vmRPCVersion),

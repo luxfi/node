@@ -60,7 +60,7 @@ func DefaultConfig() Config {
 		RingtailKeySize:         1024,
 		QuantumStampEnabled:     true,
 		QuantumStampWindow:      30 * time.Second,
-		QuantumTime:             time.Unix(1704067200, 0), // Jan 1, 2024
+		QuantumTime:             time.Unix(1704067200, 0), // Jan 1, 2025
 		ParallelBatchSize:       10,
 		QuantumSigCacheSize:     10000,
 		RingtailEnabled:         true,

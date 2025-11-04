@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -30,20 +30,20 @@ import (
 )
 
 const (
-	LuxGoPathEnvName = "LUXD_PATH"
+	Lux NodePathEnvName = "LUXD_PATH"
 
 	defaultNodeInitTimeout = 10 * time.Second
 )
 
 var (
-	LuxGoPluginDirEnvName = config.EnvVarName(config.EnvPrefix, config.PluginDirKey)
+	Lux NodePluginDirEnvName = config.EnvVarName(config.EnvPrefix, config.PluginDirKey)
 
 	errNodeAlreadyRunning = errors.New("failed to start node: node is already running")
 	errNotRunning         = errors.New("node is not running")
 )
 
 type ProcessRuntimeConfig struct {
-	LuxGoPath   string `json:"luxPath,omitempty"`
+	Lux NodePath   string `json:"luxPath,omitempty"`
 	PluginDir         string `json:"pluginDir,omitempty"`
 	ReuseDynamicPorts bool   `json:"reuseDynamicPorts,omitempty"`
 }
@@ -120,7 +120,7 @@ func (p *ProcessRuntime) Start(ctx context.Context) error {
 	}
 
 	// All arguments are provided in the flags file
-	cmd := exec.Command(runtimeConfig.LuxGoPath, "--config-file", p.node.GetFlagsPath()) // #nosec G204
+	cmd := exec.Command(runtimeConfig.Lux NodePath, "--config-file", p.node.GetFlagsPath()) // #nosec G204
 	// Ensure process is detached from the parent process so that an error in the parent will not affect the child
 	configureDetachedProcess(cmd)
 

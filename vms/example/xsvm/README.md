@@ -28,7 +28,7 @@ Just as [Geth] powers the [C-Chain], XSVM can be used to power its own blockchai
 
 ## How it Works
 
-XSVM utilizes LuxGo's [interchain messaging] package to create and authenticate Net Messages.
+XSVM utilizes Lux Node's [interchain messaging] package to create and authenticate Net Messages.
 
 ### Transfer
 

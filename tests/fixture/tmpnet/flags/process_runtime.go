@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package flags
@@ -21,7 +21,7 @@ const (
 	nodePathFlag = "node-path"
 )
 
-var errLuxGoRequired = fmt.Errorf("--%s or %s are required", nodePathFlag, tmpnet.LuxGoPathEnvName)
+var errLux NodeRequired = fmt.Errorf("--%s or %s are required", nodePathFlag, tmpnet.Lux NodePathEnvName)
 
 type processRuntimeVars struct {
 	config tmpnet.ProcessRuntimeConfig
@@ -37,21 +37,21 @@ func (v *processRuntimeVars) registerWithFlagSet(flagSet *pflag.FlagSet) {
 
 func (v *processRuntimeVars) register(stringVar varFunc[string], boolVar varFunc[bool]) {
 	stringVar(
-		&v.config.LuxGoPath,
+		&v.config.Lux NodePath,
 		nodePathFlag,
-		os.Getenv(tmpnet.LuxGoPathEnvName),
+		os.Getenv(tmpnet.Lux NodePathEnvName),
 		processDocPrefix+fmt.Sprintf(
 			"The node executable path. Also possible to configure via the %s env variable.",
-			tmpnet.LuxGoPathEnvName,
+			tmpnet.Lux NodePathEnvName,
 		),
 	)
 	stringVar(
 		&v.config.PluginDir,
 		"plugin-dir",
-		tmpnet.GetEnvWithDefault(tmpnet.LuxGoPluginDirEnvName, os.ExpandEnv("$HOME/.node/plugins")),
+		tmpnet.GetEnvWithDefault(tmpnet.Lux NodePluginDirEnvName, os.ExpandEnv("$HOME/.node/plugins")),
 		processDocPrefix+fmt.Sprintf(
 			"The dir containing VM plugins. Also possible to configure via the %s env variable.",
-			tmpnet.LuxGoPluginDirEnvName,
+			tmpnet.Lux NodePluginDirEnvName,
 		),
 	)
 	boolVar(
@@ -70,10 +70,10 @@ func (v *processRuntimeVars) getProcessRuntimeConfig() (*tmpnet.ProcessRuntimeCo
 }
 
 func (v *processRuntimeVars) validate() error {
-	path := v.config.LuxGoPath
+	path := v.config.Lux NodePath
 
 	if len(path) == 0 {
-		return errLuxGoRequired
+		return errLux NodeRequired
 	}
 
 	if filepath.IsAbs(path) {

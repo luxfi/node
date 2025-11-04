@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -28,8 +28,8 @@ const (
 	DefaultHTTPPort    = 9630
 	DefaultStakingPort = 9631
 
-	LuxGoDataDirVar    = "LUXD_DATA_DIR"
-	defaultUnexpandedDataDir = "$" + LuxGoDataDirVar
+	Lux NodeDataDirVar    = "LUXD_DATA_DIR"
+	defaultUnexpandedDataDir = "$" + Lux NodeDataDirVar
 
 	DefaultProcessContextFilename = "process.json"
 )
@@ -408,14 +408,14 @@ func BuildFlagSet() *pflag.FlagSet {
 }
 
 // getExpandedArg gets the string in viper corresponding to [key] and expands
-// any variables using the OS env. If the [LuxGoDataDirVar] var is used,
+// any variables using the OS env. If the [Lux NodeDataDirVar] var is used,
 // we expand the value of the variable with the string in viper corresponding to
 // [DataDirKey].
 func getExpandedArg(v *viper.Viper, key string) string {
 	return os.Expand(
 		v.GetString(key),
 		func(strVar string) string {
-			if strVar == LuxGoDataDirVar {
+			if strVar == Lux NodeDataDirVar {
 				return os.ExpandEnv(v.GetString(DataDirKey))
 			}
 			return os.Getenv(strVar)

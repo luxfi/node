@@ -215,7 +215,7 @@ Fully populate test context by @StephenButtolph in https://github.com/luxfi/node
 ## [v1.13.0](https://github.com/luxfi/node/releases/tag/v1.13.0)
 
 This upgrade consists of the following Lux Community Proposal (ACP):
-- [ACP-176](https://github.com/lux-foundation/ACPs/blob/main/ACPs/176-dynamic-evm-gas-limit-and-price-discovery-updates/README.md) Dynamic EVM Gas Limits and Price Discovery Updates
+- [ACP-176](https://github.com/luxfi/ACPs/blob/main/ACPs/176-dynamic-evm-gas-limit-and-price-discovery-updates/README.md) Dynamic EVM Gas Limits and Price Discovery Updates
 
 The ACP in this upgrade goes into effect at 11 AM ET (3 PM UTC) on Tuesday, April 8th, 2025 on Mainnet.
 
@@ -414,7 +414,7 @@ The plugin version is updated to `39` all plugins must update to be compatible.
 - Add BLS healthcheck to communicate incorrect BLS key configuration by @StephenButtolph in https://github.com/luxfi/node/pull/3638
 - chore(all): mocks generation improved by @qdm12 in https://github.com/luxfi/node/pull/3628
 - fix LRU sized cache: consistent size at element removal by @rrazvan1 in https://github.com/luxfi/node/pull/3634
-- Index API and LuxGo Configs Docs Fix by @meaghanfitzgerald in https://github.com/luxfi/node/pull/3632
+- Index API and Lux Node Configs Docs Fix by @meaghanfitzgerald in https://github.com/luxfi/node/pull/3632
 - [ci] Migrate from buf-*-action to buf-action by @marun in https://github.com/luxfi/node/pull/3639
 - chore(ci): define Github labels as code with a workflow by @qdm12 in https://github.com/luxfi/node/pull/3629
 - feat(github): add "needs Go upgrade" label by @qdm12 in https://github.com/luxfi/node/pull/3642
@@ -487,16 +487,16 @@ The plugin version is unchanged at `38` and is compatible with version `v1.12.0`
 ## [v1.12.0](https://github.com/luxfi/node/releases/tag/v1.12.0)
 
 This upgrade consists of the following Lux Community Proposals (ACPs):
-- [ACP-77](https://github.com/lux-foundation/ACPs/blob/main/ACPs/77-reinventing-subnets/README.md) Reinventing Nets
-- [ACP-103](https://github.com/lux-foundation/ACPs/blob/main/ACPs/103-dynamic-fees/README.md) Add Dynamic Fees to the P-Chain
-- [ACP-118](https://github.com/lux-foundation/ACPs/blob/main/ACPs/118-warp-signature-request/README.md) Warp Signature Interface Standard
-- [ACP-125](https://github.com/lux-foundation/ACPs/blob/main/ACPs/125-basefee-reduction/README.md) Reduce C-Chain minimum base fee from 25 nLUX to 1 nLUX
-- [ACP-131](https://github.com/lux-foundation/ACPs/blob/main/ACPs/131-cancun-eips/README.md) Activate Cancun EIPs on C-Chain and Net-EVM chains
-- [ACP-151](https://github.com/lux-foundation/ACPs/blob/main/ACPs/151-use-current-block-pchain-height-as-context/README.md) Use current block P-Chain height as context for state verification
+- [ACP-77](https://github.com/luxfi/ACPs/blob/main/ACPs/77-reinventing-subnets/README.md) Reinventing Nets
+- [ACP-103](https://github.com/luxfi/ACPs/blob/main/ACPs/103-dynamic-fees/README.md) Add Dynamic Fees to the P-Chain
+- [ACP-118](https://github.com/luxfi/ACPs/blob/main/ACPs/118-warp-signature-request/README.md) Warp Signature Interface Standard
+- [ACP-125](https://github.com/luxfi/ACPs/blob/main/ACPs/125-basefee-reduction/README.md) Reduce C-Chain minimum base fee from 25 nLUX to 1 nLUX
+- [ACP-131](https://github.com/luxfi/ACPs/blob/main/ACPs/131-cancun-eips/README.md) Activate Cancun EIPs on C-Chain and Net-EVM chains
+- [ACP-151](https://github.com/luxfi/ACPs/blob/main/ACPs/151-use-current-block-pchain-height-as-context/README.md) Use current block P-Chain height as context for state verification
 
-The changes in the upgrade go into effect at 12 AM ET (5 PM UTC) on Monday, December 16th, 2024 on Mainnet.
+The changes in the upgrade go into effect at 12 AM ET (5 PM UTC) on Monday, December 16th, 2025 on Mainnet.
 
-**All Etna supporting Mainnet nodes should upgrade before 12 AM ET, December 16th 2024.**
+**All Etna supporting Mainnet nodes should upgrade before 12 AM ET, December 16th 2025.**
 
 The plugin version is unchanged at `38` and is compatible with version `v1.11.13`.
 
@@ -1470,17 +1470,17 @@ The plugin version is updated to `34` all plugins must update to be compatible.
 
 This upgrade consists of the following Lux Community Proposals (ACPs):
 
-- [ACP-23](https://github.com/lux-foundation/ACPs/blob/main/ACPs/23-p-chain-native-transfers/README.md) P-Chain Native Transfers
-- [ACP-24](https://github.com/lux-foundation/ACPs/blob/main/ACPs/24-shanghai-eips/README.md) Activate Shanghai EIPs on C-Chain
-- [ACP-25](https://github.com/lux-foundation/ACPs/blob/main/ACPs/25-vm-application-errors/README.md) Virtual Machine Application Errors
-- [ACP-30](https://github.com/lux-foundation/ACPs/blob/main/ACPs/30-lux-warp-x-evm/README.md) Integrate Lux Warp Messaging into the EVM
-- [ACP-31](https://github.com/lux-foundation/ACPs/blob/main/ACPs/31-enable-subnet-ownership-transfer/README.md) Enable Net Ownership Transfer
-- [ACP-41](https://github.com/lux-foundation/ACPs/blob/main/ACPs/41-remove-pending-stakers/README.md) Remove Pending Stakers
-- [ACP-62](https://github.com/lux-foundation/ACPs/blob/main/ACPs/62-disable-addvalidatortx-and-adddelegatortx/README.md) Disable AddValidatorTx and AddDelegatorTx
+- [ACP-23](https://github.com/luxfi/ACPs/blob/main/ACPs/23-p-chain-native-transfers/README.md) P-Chain Native Transfers
+- [ACP-24](https://github.com/luxfi/ACPs/blob/main/ACPs/24-shanghai-eips/README.md) Activate Shanghai EIPs on C-Chain
+- [ACP-25](https://github.com/luxfi/ACPs/blob/main/ACPs/25-vm-application-errors/README.md) Virtual Machine Application Errors
+- [ACP-30](https://github.com/luxfi/ACPs/blob/main/ACPs/30-lux-warp-x-evm/README.md) Integrate Lux Warp Messaging into the EVM
+- [ACP-31](https://github.com/luxfi/ACPs/blob/main/ACPs/31-enable-subnet-ownership-transfer/README.md) Enable Net Ownership Transfer
+- [ACP-41](https://github.com/luxfi/ACPs/blob/main/ACPs/41-remove-pending-stakers/README.md) Remove Pending Stakers
+- [ACP-62](https://github.com/luxfi/ACPs/blob/main/ACPs/62-disable-addvalidatortx-and-adddelegatortx/README.md) Disable AddValidatorTx and AddDelegatorTx
 
-The changes in the upgrade go into effect at 11 AM ET (4 PM UTC) on Wednesday, March 6th, 2024 on Mainnet.
+The changes in the upgrade go into effect at 11 AM ET (4 PM UTC) on Wednesday, March 6th, 2025 on Mainnet.
 
-**All Durango supporting Mainnet nodes should upgrade before 11 AM ET, March 6th 2024.**
+**All Durango supporting Mainnet nodes should upgrade before 11 AM ET, March 6th 2025.**
 
 The plugin version is updated to `33` all plugins must update to be compatible.
 
@@ -1820,7 +1820,7 @@ The plugin version is updated to `31` all plugins must update to be compatible.
 - Remove license from mocks by @dhrubabasu in https://github.com/luxfi/node/pull/2574
 - Add missing import by @dhrubabasu in https://github.com/luxfi/node/pull/2573
 - `vms/platformvm`: Prune mempool periodically by @dhrubabasu in https://github.com/luxfi/node/pull/2566
-- Update license header to 2024 by @dhrubabasu in https://github.com/luxfi/node/pull/2572
+- Update license header to 2025 by @dhrubabasu in https://github.com/luxfi/node/pull/2572
 - [MerkleDB] Make intermediate node cache two layered by @dboehm-avalabs in https://github.com/luxfi/node/pull/2576
 - Fix merkledb rebuild iterator by @dboehm-avalabs in https://github.com/luxfi/node/pull/2581
 - Fix intermediate node caching by @dboehm-avalabs in https://github.com/luxfi/node/pull/2585
@@ -2352,7 +2352,7 @@ The plugin version is unchanged at `28` and compatible with version `v1.10.9`.
 - fix typo by @dhrubabasu in https://github.com/luxfi/node/pull/2030
 - Merkle db intermediate node key compression by @dboehm-avalabs in https://github.com/luxfi/node/pull/1987
 - Improve RPC Chain version mismatch error message by @martineckardt in https://github.com/luxfi/node/pull/2021
-- Move subnet owner lookup to platformvm state by @dhrubabasu in https://github.com/luxfi/node/pull/2024
+- Move subnet owner lookup to platformvm state by @dhrubabasu in https://github.com/luxfi/node/pull/2025
 - Fix fuzz tests; add iterator fuzz test by @danlaine in https://github.com/luxfi/node/pull/1991
 - Refactor subnet validator primary network requirements by @dhrubabasu in https://github.com/luxfi/node/pull/2014
 - Rename events to event by @joshua-kim in https://github.com/luxfi/node/pull/1973
@@ -4069,7 +4069,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### APIs
 
-**These API format changes are breaking changes. https://api.lux.network and https://api.lux-test.network have been updated with this format. If you are using LuxGo APIs in your code, please ensure you have updated to the latest versions. See  https://docs.lux.network/apis/node/cb58-deprecation for details about the CB58 removal.**
+**These API format changes are breaking changes. https://api.lux.network and https://api.lux-test.network have been updated with this format. If you are using Lux Node APIs in your code, please ensure you have updated to the latest versions. See  https://docs.lux.network/apis/node/cb58-deprecation for details about the CB58 removal.**
 
 - Removed `CB58` as an encoding option from all APIs
 - Added `HexC` and `HexNC` as encoding options for all APIs that accept an encoding format
@@ -4234,8 +4234,8 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 ### Logging
 
-- Replaced LuxGo's internal logger with [uber-go/zap](https://github.com/uber-go/zap).
-- Replaced LuxGo's log rotation with [lumberjack](https://github.com/natefinch/lumberjack).
+- Replaced Lux Node's internal logger with [uber-go/zap](https://github.com/uber-go/zap).
+- Replaced Lux Node's log rotation with [lumberjack](https://github.com/natefinch/lumberjack).
 - Renamed `log-display-highlight` to `log-format` and added `json` option.
 - Added `log-rotater-max-size`, `log-rotater-max-files`, `log-rotater-max-age`, `log-rotater-compress-enabled` options for log rotation.
 
@@ -4246,8 +4246,8 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 - Logged health checks whenever a failing health check is queried
 - Added callback support for the validator set manager
 - Increased `geth` trie tip buffer size to 32
-- Added CPU usage metrics for LuxGo and all sub-processes
-- Added Disk IO usage metrics for LuxGo and all sub-processes
+- Added CPU usage metrics for Lux Node and all sub-processes
+- Added Disk IO usage metrics for Lux Node and all sub-processes
 
 ### Cleanup
 
@@ -4295,7 +4295,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Fixed a bug where a deadlock on shutdown caused historical re-generation on restart.
 - Added an API endpoint to fetch the current VM Config.
-- Added LuxGo custom log formatting to the logs.
+- Added Lux Node custom log formatting to the logs.
 - Removed support for the JS Tracer.
 
 ### Logging
@@ -4556,7 +4556,7 @@ This version is backwards compatible to [v1.7.0](https://github.com/luxfi/node/r
 
 - Notified VMs of peer versions on `Connected`.
 - Fixed acceptance broadcasting over IPC.
-- Fixed 32-bit architecture builds for LuxGo (not Geth).
+- Fixed 32-bit architecture builds for Lux Node (not Geth).
 
 ## [v1.7.2](https://github.com/luxfi/node/releases/tag/v1.7.2)
 
@@ -4710,7 +4710,7 @@ This version is backwards compatible to [v1.6.0](https://github.com/luxfi/node/r
 ### Preserved for Historical Reference
 
 - **v1.10.20** - Chain ID 7777 genesis version (December 2023)
-- **v1.11.13** - Chain ID 96369 original genesis version (November 2024)
+- **v1.11.13** - Chain ID 96369 original genesis version (November 2025)
 - **v1.13.13** - Current development version (August 2025)
 
 ---
@@ -4727,7 +4727,7 @@ This version represents the current state of development, fully synchronized wit
 
 **Chain ID 96369 Genesis Version**
 
-This was the version used for the official Lux Network mainnet launch in November 2024 with Chain ID 96369.
+This was the version used for the official Lux Network mainnet launch in November 2025 with Chain ID 96369.
 
 ## [v1.10.20](https://github.com/luxfi/node/releases/tag/v1.10.20)
 

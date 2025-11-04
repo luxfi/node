@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -64,7 +64,7 @@ type KubeRuntimeConfig struct {
 	Image string `json:"image,omitempty"`
 	// Size in gigabytes of the PersistentVolumeClaim  to allocate for the node
 	VolumeSizeGB uint `json:"volumeSizeGB,omitempty"`
-	// Whether to schedule each LuxGo node to a dedicated Kubernetes node
+	// Whether to schedule each Lux Node to a dedicated Kubernetes node
 	UseExclusiveScheduling bool `json:"useExclusiveScheduling,omitempty"`
 	// Label key to use for exclusive scheduling for node selection and toleration
 	SchedulingLabelKey string `json:"schedulingLabelKey,omitempty"`

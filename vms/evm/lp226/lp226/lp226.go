@@ -2,7 +2,7 @@
 // See the file LICENSE for licensing terms.
 
 // ACP-226 implements the dynamic minimum block delay mechanism specified here:
-// https://github.com/lux-foundation/ACPs/blob/main/ACPs/226-dynamic-minimum-block-times/README.md
+// https://github.com/luxfi/ACPs/blob/main/ACPs/226-dynamic-minimum-block-times/README.md
 package lp226
 
 import (

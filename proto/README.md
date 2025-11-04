@@ -13,7 +13,7 @@ Please find installation instructions on
 [https://docs.buf.build/installation/](https://docs.buf.build/installation/).
 
 Any changes made to proto definition can be updated by running
-`protobuf_codegen.sh` located in the `scripts/` directory of LuxGo.
+`protobuf_codegen.sh` located in the `scripts/` directory of Lux Node.
 
 `buf` Quickstart
 [https://buf.build/docs/cli/quickstart](https://buf.build/docs/cli/quickstart)
@@ -28,7 +28,7 @@ subnet vm must use the same protocol version to be compatible.
 
 ## Publishing to Buf Schema Registry
 
-- Checkout appropriate tag in LuxGo `git checkout v1.10.1`
+- Checkout appropriate tag in Lux Node `git checkout v1.10.1`
 - Change to proto/ directory `cd proto`.
 - Publish new tag to buf registry. `buf push -t v26`
 

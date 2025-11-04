@@ -4,7 +4,7 @@
   #  - run `nix develop` or use direnv (https://direnv.net/)
   #    - for quieter direnv output, set `export DIRENV_LOG_FORMAT=`
 
-  description = "LuxGo development environment";
+  description = "Lux Node development environment";
 
   # Flake inputs
   inputs = {

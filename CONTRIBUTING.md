@@ -2,13 +2,13 @@
 
 Thank you for your interest in contributing to Lux Node! This document provides guidelines and instructions for contributing to the project.
 
-To start developing on LuxGo, you'll need a few things installed.
+To start developing on Lux Node, you'll need a few things installed.
 
 - Golang version >= 1.23.9
 - gcc
 - g++
 
-On MacOS, a modern version of bash is required (e.g. via [homebrew](https://brew.sh/) with `brew install bash`). The version installed by default is not compatible with LuxGo's [shell scripts](scripts).
+On MacOS, a modern version of bash is required (e.g. via [homebrew](https://brew.sh/) with `brew install bash`). The version installed by default is not compatible with Lux Node's [shell scripts](scripts).
 
 ## Running tasks
 
@@ -22,7 +22,7 @@ This repo uses the [Task](https://taskfile.dev/) task runner to simplify usage a
 
 We are committed to fostering a welcoming and inclusive community. Please be respectful and considerate in all interactions.
 
-- Do not open up a GitHub issue if it relates to a security vulnerability in LuxGo, and instead refer to our [security policy](./SECURITY.md).
+- Do not open up a GitHub issue if it relates to a security vulnerability in Lux Node, and instead refer to our [security policy](./SECURITY.md).
 
 - Use welcoming and inclusive language
 - Be respectful of differing viewpoints and experiences
@@ -42,7 +42,7 @@ We are committed to fostering a welcoming and inclusive community. Please be res
 ### Setting Up Your Development Environment
 
 - If you want to start a discussion about the development of a new feature or the modification of an existing one, start a thread under GitHub [discussions](https://github.com/luxfi/node/discussions/categories/ideas).
-- Post a thread about your idea and why it should be added to LuxGo.
+- Post a thread about your idea and why it should be added to Lux Node.
 - Don't start working on a pull request until you've received positive feedback from the maintainers.
 
 2. **Clone your fork**
@@ -89,7 +89,7 @@ Mocks are auto-generated using [mockgen](https://pkg.go.dev/go.uber.org/mock/moc
   - if the file `mocks_generate_test.go` does not exist in the package where the interface is located, create it with content (adapt as needed):
 
     ```go
-    // Copyright (C) 2019-2024, Lux Industries, Inc. All rights reserved.
+    // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
     // See the file LICENSE for licensing terms.
 
     package mypackage
@@ -143,7 +143,7 @@ Email security@lux.network with:
 - Steps to reproduce
 - Potential impact
 
-- Ask any question about LuxGo under GitHub [discussions](https://github.com/luxfi/node/discussions/categories/q-a).
+- Ask any question about Lux Node under GitHub [discussions](https://github.com/luxfi/node/discussions/categories/q-a).
 
 - [Discord Community](https://discord.gg/lux)
 - [GitHub Discussions](https://github.com/luxfi/node/discussions)
