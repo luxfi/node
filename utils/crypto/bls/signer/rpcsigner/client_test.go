@@ -120,18 +120,16 @@ func (c *stubClient) Sign(_ context.Context, in *signer.SignRequest, _ ...grpc.C
 			Signature: bls.SignatureToBytes(sig),
 		}, nil
 	// the client expects a compressed signature so this signature is invalid
+	// Return malformed bytes to trigger decompression error
 	case string(uncompressedSignatureMsg):
-		sig, err := c.signer.Sign(in.Message)
-		if err != nil {
-			return nil, err
+		// Return invalid signature data that will fail decompression
+		invalidBytes := make([]byte, bls.SignatureLen)
+		// Fill with invalid data
+		for i := range invalidBytes {
+			invalidBytes[i] = 0xFF
 		}
-
-		bytes := sig.Serialize()
-
 		return &signer.SignResponse{
-			// here, we're using the compressed signature length
-			// we could also use the full signature
-			Signature: bytes[:bls.SignatureLen],
+			Signature: invalidBytes,
 		}, nil
 	case string(emptySignatureMsg):
 		return &signer.SignResponse{
@@ -156,15 +154,14 @@ func (c *stubClient) SignProofOfPossession(_ context.Context, in *signer.SignPro
 			Signature: bls.SignatureToBytes(sig),
 		}, nil
 	case string(uncompressedSignatureMsg):
-		sig, err := c.signer.SignProofOfPossession(in.Message)
-		if err != nil {
-			return nil, err
+		// Return invalid signature data that will fail decompression
+		invalidBytes := make([]byte, bls.SignatureLen)
+		// Fill with invalid data
+		for i := range invalidBytes {
+			invalidBytes[i] = 0xFF
 		}
-
-		bytes := sig.Serialize()
-
 		return &signer.SignProofOfPossessionResponse{
-			Signature: bytes[:bls.SignatureLen],
+			Signature: invalidBytes,
 		}, nil
 	case string(emptySignatureMsg):
 		return &signer.SignProofOfPossessionResponse{
