@@ -13,7 +13,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/luxfi/geth/ethclient"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/tests"
@@ -65,7 +65,7 @@ func main() {
 		require.NoError(network.Stop(ctx), "failed to stop network")
 	})
 
-	registry := prometheus.NewRegistry()
+	registry := metric.NewRegistry()
 	metrics, err := load.NewMetrics(registry)
 	require.NoError(err, "failed to register load metrics")
 

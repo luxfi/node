@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"

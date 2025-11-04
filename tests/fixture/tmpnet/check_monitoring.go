@@ -18,10 +18,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/api"
-	"github.com/prometheus/client_golang/api/prometheus/v1"
-	"github.com/prometheus/common/model"
-	"go.uber.org/zap"
+	"github.com/metric/client_golang/api"
+	"github.com/metric/client_golang/api/metric/v1"
+	"github.com/metric/common/model"
+	"luxfi/log"
 
 	"github.com/luxfi/log"
 )
@@ -167,14 +167,14 @@ func queryLoki(
 // CheckMetricsExist checks if metrics exist for the given network. Github labels are also
 // used as filters if provided as env vars (GH_*).
 func CheckMetricsExist(ctx context.Context, log log.Logger, networkUUID string) error {
-	username, password, err := getCollectorCredentials(prometheusCmd)
+	username, password, err := getCollectorCredentials(metricCmd)
 	if err != nil {
 		return fmt.Errorf("failed to get collector credentials: %w", err)
 	}
 
 	url := getPrometheusURL()
 	if !strings.HasPrefix(url, "https") {
-		return fmt.Errorf("prometheus URL must be https for basic auth to be secure: %s", url)
+		return fmt.Errorf("metric URL must be https for basic auth to be secure: %s", url)
 	}
 
 	selectors, err := getSelectors(networkUUID)
@@ -229,7 +229,7 @@ func queryPrometheus(
 		return 0, fmt.Errorf("query failed: %w", err)
 	}
 	if len(warnings) > 0 {
-		log.Warn("prometheus query warnings",
+		log.Warn("metric query warnings",
 			zap.Strings("warnings", warnings),
 		)
 	}

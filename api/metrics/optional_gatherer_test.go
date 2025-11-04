@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	dto "github.com/prometheus/client_model/go"
+	dto "github.com/metric/client_model/go"
 )
 
 var (

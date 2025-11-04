@@ -2,6 +2,6 @@
 version: v1
 deps:
   - remote: buf.build
-    owner: prometheus
+    owner: metric
     repository: client-model
     commit: 1d56a02d481a412a83b3c4984eb90c2e

@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/rpc/v2"
-	// "go.uber.org/zap" // Unused
+	// "luxfi/log" // Unused
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"

@@ -162,6 +162,8 @@ Use `//go:generate` directives:
 ### Package Dependencies
 - **DO NOT** use `github.com/ava-labs` packages - use `github.com/luxfi` equivalents
 - **DO NOT** use `go-ethereum` - use `github.com/luxfi/geth`
+- **DO NOT** use `github.com/metric/client_golang` - use `github.com/luxfi/metric`
+- **DO NOT** use `luxfi/log` - use `github.com/luxfi/log`
 - **ALWAYS** use Lux consensus packages, not snow/avalanche consensus
 
 ### Naming Conventions

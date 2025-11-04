@@ -397,7 +397,7 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 			Upgrades:          upgradetest.GetConfig(upgradetest.Durango), // Use Durango for pre-Etna behavior
 			StakingCertLeaf:   pTestCert,
 			StakingLeafSigner: pTestSigner,
-			Registerer:        prometheus.NewRegistry(),
+			Registerer:        metric.NewRegistry(),
 		},
 		blockBuilderVM: innerBlockBuilderVM,
 		ctx: &consensus.Context{

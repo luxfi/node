@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/node/tests/fixture/tmpnet"
@@ -230,7 +230,7 @@ func main() {
 
 	checkMetricsCmd := &cobra.Command{
 		Use:   "check-metrics",
-		Short: "Checks whether the default prometheus server has the expected metrics",
+		Short: "Checks whether the default metric server has the expected metrics",
 		RunE: func(*cobra.Command, []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
 			defer cancel()

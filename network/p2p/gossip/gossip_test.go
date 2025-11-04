@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/proto"
@@ -112,10 +112,10 @@ func TestGossiperGossip(t *testing.T) {
 				return nil
 			},
 		}
-			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, prometheus.NewRegistry(), "")
+			responseNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), responseSender, metric.NewRegistry(), "")
 			require.NoError(err)
 
-			responseBloom, err := NewBloomFilter(prometheus.NewRegistry(), "", 1000, 0.01, 0.05)
+			responseBloom, err := NewBloomFilter(metric.NewRegistry(), "", 1000, 0.01, 0.05)
 			require.NoError(err)
 			responseSet := &testSet{
 				txs:   make(map[ids.ID]*testTx),
@@ -125,7 +125,7 @@ func TestGossiperGossip(t *testing.T) {
 				require.NoError(responseSet.Add(item))
 			}
 
-			testMetrics, err := NewMetrics(prometheus.NewRegistry(), "")
+			testMetrics, err := NewMetrics(metric.NewRegistry(), "")
 			require.NoError(err)
 			marshaller := testMarshaller{}
 			handler := NewHandler[*testTx](
@@ -147,11 +147,11 @@ func TestGossiperGossip(t *testing.T) {
 			},
 		}
 
-			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, prometheus.NewRegistry(), "")
+			requestNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), requestSender, metric.NewRegistry(), "")
 			require.NoError(err)
 			require.NoError(requestNetwork.Connected(context.Background(), ids.EmptyNodeID, nil))
 
-			bloom, err := NewBloomFilter(prometheus.NewRegistry(), "", 1000, 0.01, 0.05)
+			bloom, err := NewBloomFilter(metric.NewRegistry(), "", 1000, 0.01, 0.05)
 			require.NoError(err)
 			requestSet := &testSet{
 				txs:   make(map[ids.ID]*testTx),
@@ -530,7 +530,7 @@ func TestPushGossiper(t *testing.T) {
 			network, err := p2p.NewNetwork(
 				nil,
 				sender,
-				prometheus.NewRegistry(),
+				metric.NewRegistry(),
 				"",
 			)
 			require.NoError(err)
@@ -549,7 +549,7 @@ func TestPushGossiper(t *testing.T) {
 				},
 				time.Hour,
 			)
-			metrics, err := NewMetrics(prometheus.NewRegistry(), "")
+			metrics, err := NewMetrics(metric.NewRegistry(), "")
 			require.NoError(err)
 			marshaller := testMarshaller{}
 

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -121,7 +121,7 @@ func TestRejectBlock(t *testing.T) {
 			blk, err := tt.newBlockFunc()
 			require.NoError(err)
 
-			mempool, err := mempool.New("", prometheus.NewRegistry())
+			mempool, err := mempool.New("", metric.NewRegistry())
 			require.NoError(err)
 			state := state.NewMockState(ctrl)
 			blkIDToState := map[ids.ID]*blockState{

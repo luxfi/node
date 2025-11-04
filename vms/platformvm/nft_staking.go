@@ -13,7 +13,7 @@ import (
 		"github.com/luxfi/geth/accounts/abi/bind"
 		"github.com/luxfi/geth/common"
 		"github.com/luxfi/geth/ethclient"
-	"go.uber.org/zap"
+	"luxfi/log"
 	
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"

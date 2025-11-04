@@ -71,7 +71,7 @@ data:
       pipeline_stages:
         - docker: {}
       relabel_configs:
-        # TODO(marun) Ensure consistency with prometheus labeling
+        # TODO(marun) Ensure consistency with metric labeling
         - source_labels: [__meta_kubernetes_pod_annotation_promtail_collect]
           action: keep
           regex: true

@@ -8,7 +8,7 @@ import (
 	"errors"
 	"sync"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"

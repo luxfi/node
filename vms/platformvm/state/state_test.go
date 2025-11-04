@@ -65,7 +65,7 @@ func newTestState(t testing.TB, db database.Database) *state {
 		genesistest.NewBytes(t, genesistest.Config{
 			NodeIDs: []ids.NodeID{defaultValidatorNodeID},
 		}),
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		validators.NewManager(),
 		upgradetest.GetConfig(upgradetest.Latest),
 		&config.Default,

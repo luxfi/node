@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"luxfi/log"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/network/p2p"
@@ -67,7 +67,7 @@ func (txMarshaller) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
 
 func newGossipMempool(
 	mempool mempool.Mempool[*txs.Tx],
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	log log.Logger,
 	txVerifier TxVerifier,
 	minTargetElements int,

@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 
@@ -23,8 +23,8 @@ import (
 //go:embed yaml/promtail-daemonset.yaml
 var promtailManifest []byte
 
-//go:embed yaml/prometheus-agent.yaml
-var prometheusManifest []byte
+//go:embed yaml/metric-agent.yaml
+var metricManifest []byte
 
 // This must match the namespace defined in the manifests
 const monitoringNamespace = "ci-monitoring"
@@ -81,10 +81,10 @@ func DeployKubeCollectors(
 			manifest:     promtailManifest,
 		},
 		{
-			name:         prometheusCmd,
+			name:         metricCmd,
 			target:       "metrics",
-			secretPrefix: prometheusCmd,
-			manifest:     prometheusManifest,
+			secretPrefix: metricCmd,
+			manifest:     metricManifest,
 		},
 	}
 	for _, collectorConfig := range collectorConfigs {

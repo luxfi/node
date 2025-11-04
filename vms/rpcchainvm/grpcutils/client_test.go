@@ -16,7 +16,7 @@ import (
 	// "github.com/luxfi/node/internal/database/rpcdb"
 	// pb "github.com/luxfi/node/proto/pb/rpcdb"
 
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	grpc_metric "github.com/grpc-ecosystem/go-grpc-prometheus"
 )
 
 func TestDialOptsSmoke(t *testing.T) {
@@ -26,8 +26,8 @@ func TestDialOptsSmoke(t *testing.T) {
 	require.Len(opts, 3)
 
 	opts = newDialOpts(
-		WithChainUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor),
-		WithChainStreamInterceptor(grpc_prometheus.StreamClientInterceptor),
+		WithChainUnaryInterceptor(grpc_metric.UnaryClientInterceptor),
+		WithChainStreamInterceptor(grpc_metric.StreamClientInterceptor),
 	)
 	require.Len(opts, 5)
 }

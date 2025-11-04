@@ -12,7 +12,7 @@ import (
 	"math/big"
 	"time"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/node/crypto/cggmp21"
 	"github.com/luxfi/ids"

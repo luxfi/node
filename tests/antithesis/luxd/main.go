@@ -13,7 +13,7 @@ import (
 	"github.com/antithesishq/antithesis-sdk-go/assert"
 	"github.com/antithesishq/antithesis-sdk-go/lifecycle"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/genesis"

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/mock/gomock"
@@ -119,7 +119,7 @@ func TestBlockVerify(t *testing.T) {
 				}
 				mockBlock.EXPECT().Txs().Return([]*txs.Tx{errTx}).AnyTimes()
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				return &Block{
 					Block: mockBlock,
@@ -277,7 +277,7 @@ func TestBlockVerify(t *testing.T) {
 				mockParentState.EXPECT().GetLastAccepted().Return(parentID)
 				mockParentState.EXPECT().GetTimestamp().Return(blockTimestamp)
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				return &Block{
 					Block: mockBlock,
@@ -328,7 +328,7 @@ func TestBlockVerify(t *testing.T) {
 				mockParentState.EXPECT().GetLastAccepted().Return(parentID)
 				mockParentState.EXPECT().GetTimestamp().Return(blockTimestamp)
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				return &Block{
 					Block: mockBlock,
@@ -406,7 +406,7 @@ func TestBlockVerify(t *testing.T) {
 				mockParentState.EXPECT().GetLastAccepted().Return(parentID)
 				mockParentState.EXPECT().GetTimestamp().Return(blockTimestamp)
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				return &Block{
 					Block: mockBlock,
@@ -517,7 +517,7 @@ func TestBlockVerify(t *testing.T) {
 				mockParentState.EXPECT().GetLastAccepted().Return(parentID)
 				mockParentState.EXPECT().GetTimestamp().Return(blockTimestamp)
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 
 				return &Block{
@@ -591,7 +591,7 @@ func TestBlockAccept(t *testing.T) {
 				mockBlock.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
 				mockBlock.EXPECT().Txs().Return([]*txs.Tx{}).AnyTimes()
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 
 				return &Block{
@@ -614,7 +614,7 @@ func TestBlockAccept(t *testing.T) {
 				mockBlock.EXPECT().ID().Return(blockID).AnyTimes()
 				mockBlock.EXPECT().Txs().Return([]*txs.Tx{}).AnyTimes()
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 
 				mockManagerState := statemock.NewState(ctrl)
@@ -648,7 +648,7 @@ func TestBlockAccept(t *testing.T) {
 				mockBlock.EXPECT().ID().Return(blockID).AnyTimes()
 				mockBlock.EXPECT().Txs().Return([]*txs.Tx{}).AnyTimes()
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 
 				mockManagerState := statemock.NewState(ctrl)
@@ -687,7 +687,7 @@ func TestBlockAccept(t *testing.T) {
 				mockBlock.EXPECT().ID().Return(blockID).AnyTimes()
 				mockBlock.EXPECT().Txs().Return([]*txs.Tx{}).AnyTimes()
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 
 				mockManagerState := statemock.NewState(ctrl)
@@ -732,7 +732,7 @@ func TestBlockAccept(t *testing.T) {
 				mockBlock.EXPECT().Parent().Return(ids.GenerateTestID()).AnyTimes()
 				mockBlock.EXPECT().Txs().Return([]*txs.Tx{}).AnyTimes()
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 
 				mockManagerState := statemock.NewState(ctrl)
@@ -838,7 +838,7 @@ func TestBlockReject(t *testing.T) {
 					executionFailsTx,
 				})
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 
 				lastAcceptedID := ids.GenerateTestID()
@@ -891,7 +891,7 @@ func TestBlockReject(t *testing.T) {
 					tx2,
 				})
 
-				mempool, err := mempool.New("", prometheus.NewRegistry())
+				mempool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 
 				lastAcceptedID := ids.GenerateTestID()

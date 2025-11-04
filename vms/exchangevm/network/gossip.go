@@ -4,7 +4,7 @@
 package network
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"context"
 	"fmt"
@@ -69,7 +69,7 @@ func (g *txParser) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
 
 func newGossipMempool(
 	mempool mempool.Mempool[*txs.Tx],
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	log log.Logger,
 	txVerifier TxVerifier,
 	minTargetElements int,

@@ -22,7 +22,7 @@ func TestMessage(t *testing.T) {
 	t.Parallel()
 
 	mb, err := newMsgBuilder(
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		5*time.Second,
 	)
 	require.NoError(t, err)
@@ -678,7 +678,7 @@ func TestInboundMessageToString(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		5*time.Second,
 	)
 	require.NoError(err)
@@ -707,7 +707,7 @@ func TestEmptyInboundMessage(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		5*time.Second,
 	)
 	require.NoError(err)
@@ -726,7 +726,7 @@ func TestNilInboundMessage(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		5*time.Second,
 	)
 	require.NoError(err)

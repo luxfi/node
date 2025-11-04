@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/utils/crypto/bls"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/crypto/ringtail"
-	"go.uber.org/zap"
+	"luxfi/log"
 )
 
 // SignatureType represents the type of aggregated signature

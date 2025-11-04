@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/prometheus/common/expfmt"
+	"github.com/metric/common/expfmt"
 
-	dto "github.com/prometheus/client_model/go"
+	dto "github.com/metric/client_model/go"
 )
 
 // Client for requesting metrics from a remote Lux Node instance

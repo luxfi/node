@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	utilmetric "github.com/luxfi/node/utils/metric"
-	"go.uber.org/zap"
+	"luxfi/log"
 	"golang.org/x/time/rate"
 
 	"github.com/luxfi/ids"

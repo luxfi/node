@@ -12,8 +12,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/collectors"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric/collectors"
+	"luxfi/log"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -38,7 +38,7 @@ import (
 	"github.com/luxfi/node/vms/rpcchainvm/grpcutils"
 	"github.com/luxfi/node/vms/rpcchainvm/gvalidators"
 
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	grpc_metric "github.com/grpc-ecosystem/go-grpc-prometheus"
 	aliasreaderpb "github.com/luxfi/node/proto/pb/aliasreader"
 	appsenderpb "github.com/luxfi/node/proto/pb/appsender"
 	httppb "github.com/luxfi/node/proto/pb/http"
@@ -173,7 +173,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	}
 
 	// gRPC client metrics
-	grpcClientMetrics := grpc_prometheus.NewClientMetrics()
+	grpcClientMetrics := grpc_metric.NewClientMetrics()
 	if err := grpcMetrics.Register(grpcClientMetrics); err != nil {
 		return nil, err
 	}

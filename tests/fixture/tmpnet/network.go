@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/config"

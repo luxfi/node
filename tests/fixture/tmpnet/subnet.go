@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/utils/constants"

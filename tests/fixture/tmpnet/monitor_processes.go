@@ -17,7 +17,7 @@ import (
 	"syscall"
 	"time"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/luxfi/log"
@@ -30,11 +30,11 @@ const (
 	// TODO(marun) Maybe use dynamic HTTP ports to avoid the possibility of them being already bound?
 
 	// Prometheus configuration
-	prometheusCmd            = "prometheus"
-	defaultPrometheusURL     = "https://prometheus-poc.lux-dev.network"
-	prometheusScrapeInterval = 10 * time.Second
-	prometheusListenAddress  = "127.0.0.1:9090"
-	prometheusReadinessURL   = "http://" + prometheusListenAddress + "/-/ready"
+	metricCmd            = "metric"
+	defaultPrometheusURL     = "https://metric-poc.lux-dev.network"
+	metricScrapeInterval = 10 * time.Second
+	metricListenAddress  = "127.0.0.1:9090"
+	metricReadinessURL   = "http://" + metricListenAddress + "/-/ready"
 
 	// Promtail configuration
 	promtailCmd          = "promtail"
@@ -43,18 +43,18 @@ const (
 	promtailReadinessURL = "http://127.0.0.1:" + promtailHTTPPort + "/ready"
 
 	// Use a delay slightly longer than the scrape interval to ensure a final scrape before shutdown
-	NetworkShutdownDelay = prometheusScrapeInterval + 2*time.Second
+	NetworkShutdownDelay = metricScrapeInterval + 2*time.Second
 )
 
-// StartPrometheus ensures prometheus is running to collect metrics from local nodes.
+// StartPrometheus ensures metric is running to collect metrics from local nodes.
 func StartPrometheus(ctx context.Context, log log.Logger) error {
 	if _, ok := ctx.Deadline(); !ok {
-		return errors.New("unable to start prometheus with a context without a deadline")
+		return errors.New("unable to start metric with a context without a deadline")
 	}
 	if err := startPrometheus(ctx, log); err != nil {
 		return err
 	}
-	if err := waitForReadiness(ctx, log, prometheusCmd, prometheusReadinessURL); err != nil {
+	if err := waitForReadiness(ctx, log, metricCmd, metricReadinessURL); err != nil {
 		return err
 	}
 	log.Info("To stop: tmpnetctl stop-metrics-collector")
@@ -74,15 +74,15 @@ func StartPromtail(ctx context.Context, log log.Logger) error {
 	return nil
 }
 
-// WaitForPromtailReadiness waits until prometheus is ready. It can only succeed after
+// WaitForPromtailReadiness waits until metric is ready. It can only succeed after
 // one or more nodes have written their service discovery configuration.
 func WaitForPromtailReadiness(ctx context.Context, log log.Logger) error {
 	return waitForReadiness(ctx, log, promtailCmd, promtailReadinessURL)
 }
 
-// StopMetricsCollector ensures prometheus is not running.
+// StopMetricsCollector ensures metric is not running.
 func StopMetricsCollector(ctx context.Context, log log.Logger) error {
-	return stopCollector(ctx, log, prometheusCmd)
+	return stopCollector(ctx, log, metricCmd)
 }
 
 // StopLogsCollector ensures promtail is not running.
@@ -157,14 +157,14 @@ func stopCollector(ctx context.Context, log log.Logger, cmdName string) error {
 	return nil
 }
 
-// startPrometheus ensures an agent-mode prometheus process is running to collect metrics from local nodes.
+// startPrometheus ensures an agent-mode metric process is running to collect metrics from local nodes.
 func startPrometheus(ctx context.Context, log log.Logger) error {
-	cmdName := prometheusCmd
+	cmdName := metricCmd
 
 	args := fmt.Sprintf(
 		"--config.file=%s.yaml --web.listen-address=%s --enable-feature=agent --storage.agent.path=./data",
 		cmdName,
-		prometheusListenAddress,
+		metricListenAddress,
 	)
 
 	username, password, err := getCollectorCredentials(cmdName)
@@ -198,7 +198,7 @@ remote_write:
     basic_auth:
       username: "%s"
       password: "%s"
-`, prometheusScrapeInterval, serviceDiscoveryDir, getPrometheusURL(), username, password)
+`, metricScrapeInterval, serviceDiscoveryDir, getPrometheusURL(), username, password)
 
 	return startCollector(ctx, log, cmdName, args, config)
 }
@@ -259,10 +259,10 @@ func getWorkingDir(cmdName string) (string, error) {
 	return filepath.Join(tmpnetDir, cmdName), nil
 }
 
-// GetPrometheusServiceDiscoveryDir returns the path for prometheus file-based
+// GetPrometheusServiceDiscoveryDir returns the path for metric file-based
 // service discovery configuration.
 func GetPrometheusServiceDiscoveryDir() (string, error) {
-	return getServiceDiscoveryDir(prometheusCmd)
+	return getServiceDiscoveryDir(metricCmd)
 }
 
 func getServiceDiscoveryDir(cmdName string) (string, error) {
@@ -275,14 +275,14 @@ func getServiceDiscoveryDir(cmdName string) (string, error) {
 
 // SDConfig represents a Prometheus service discovery config entry.
 //
-// file_sd_config docs: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#file_sd_config
+// file_sd_config docs: https://metric.io/docs/metric/latest/configuration/configuration/#file_sd_config
 type SDConfig struct {
 	Targets []string          `json:"targets"`
 	Labels  map[string]string `json:"labels"`
 }
 
 // WritePrometheusSDConfig writes the SDConfig with the provided name
-// to the location expected by the prometheus instance start by tmpnet.
+// to the location expected by the metric instance start by tmpnet.
 //
 // If withGitHubLabels is true, checks env vars for GitHub-specific labels
 // and adds them as labels if present before writing the SDConfig.
@@ -451,7 +451,7 @@ func getLokiURL() string {
 func getCollectorCredentials(cmdName string) (string, string, error) {
 	var baseEnvName string
 	switch cmdName {
-	case prometheusCmd:
+	case metricCmd:
 		baseEnvName = "PROMETHEUS"
 	case promtailCmd:
 		baseEnvName = "LOKI"

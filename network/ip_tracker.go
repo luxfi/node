@@ -7,7 +7,7 @@ import (
 	"crypto/rand"
 	"sync"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"

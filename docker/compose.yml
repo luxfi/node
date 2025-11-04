@@ -48,12 +48,12 @@ services:
           memory: 4G
 
   # Optional: Monitoring with Prometheus
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: luxd-prometheus
+  metric:
+    image: prom/metric:latest
+    container_name: luxd-metric
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-data:/prometheus
+      - ./monitoring/metric.yml:/etc/metric/metric.yml:ro
+      - metric-data:/metric
     ports:
       - "9090:9090"
     networks:
@@ -80,7 +80,7 @@ services:
 
 volumes:
   luxd-data:
-  prometheus-data:
+  metric-data:
   grafana-data:
 
 networks:

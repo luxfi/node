@@ -6,7 +6,7 @@ package p2p
 import (
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -19,7 +19,7 @@ func TestPeerTracker(t *testing.T) {
 	p, err := NewPeerTracker(
 		log.NewNoOpLogger(),
 		"",
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		nil,
 		nil,
 	)

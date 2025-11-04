@@ -8,7 +8,7 @@ import (
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"

@@ -552,8 +552,8 @@ func TestMeteredCache(t *testing.T) {
 	// Test expects duplicate metric registration error
 	// Creating second MeteredState with same registry should fail due to duplicate metrics
 	_, err = NewMeteredState(registry, config)
-	// Skip the error check as it depends on prometheus internals
-	_ = err // The error is expected but may vary based on prometheus implementation
+	// Skip the error check as it depends on metric internals
+	_ = err // The error is expected but may vary based on metric implementation
 }
 
 // Test the bytesToIDCache

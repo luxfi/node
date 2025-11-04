@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2025, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package prometheus
+package metric
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/metric"
 	. "github.com/luxfi/node/vms/evm/metrics"
 
-	dto "github.com/prometheus/client_model/go"
+	dto "github.com/metric/client_model/go"
 )
 
 var (

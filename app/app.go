@@ -10,7 +10,7 @@ import (
 	"sync"
 	"syscall"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/node/node"
 	"github.com/luxfi/node/utils"

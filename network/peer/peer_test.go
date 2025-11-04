@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -101,7 +101,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 	t.Helper()
 
 	mc, err := message.NewCreator(
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -114,7 +114,7 @@ func newConfig(t *testing.T) *Config {
 	t.Helper()
 	require := require.New(t)
 
-	metrics, err := NewMetrics(prometheus.NewRegistry())
+	metrics, err := NewMetrics(metric.NewRegistry())
 	require.NoError(err)
 
 	// Create a no-op consensus resource tracker for testing

@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/api/metrics"
@@ -228,7 +228,7 @@ func (vm *VM) Initialize(
 	fmt.Printf("Got execution config successfully\n")
 
 	// Create Prometheus registries for metrics
-	registerer := prometheus.NewRegistry()
+	registerer := metric.NewRegistry()
 
 	// Initialize platformvm-specific metrics
 	vm.metrics, err = platformvmmetrics.New(registerer)
@@ -237,7 +237,6 @@ func (vm *VM) Initialize(
 	}
 
 	// Create metric interface for state
-	stateMetrics := metric.NewNoOp()
 
 	// Set consensus context
 	vm.ctx = chainCtx
@@ -277,7 +276,7 @@ func (vm *VM) Initialize(
 		vm.Internal.UpgradeConfig,
 		execConfig,
 		vm.ctx,
-		stateMetrics,
+		vm.metrics,
 		rewards,
 	)
 	if err != nil {
@@ -286,9 +285,9 @@ func (vm *VM) Initialize(
 	}
 	vm.log.Info("Platform VM state created successfully")
 
-	validatorManager := pvalidators.NewManager(vm.Internal, vm.state, vm.metrics, &vm.consensusClock)
+	validatorManager := pvalidators.NewManager(vm.Internal, vm.state, vm.metrics, &vm.nodeClock)
 	vm.State = validatorManager
-	utxoHandler := utxo.NewHandler(vm.ctx, &vm.nodeClock, vm.fx)
+	utxoHandler := utxo.NewHandler(context.Background(), &vm.nodeClock, vm.fx)
 	// Create uptime manager with noop implementation for now
 	vm.uptimeManager = &uptime.NoOpCalculator{}
 	vm.UptimeLockedCalculator.SetCalculator(constants.PrimaryNetworkID, vm.uptimeManager)
@@ -319,9 +318,7 @@ func (vm *VM) Initialize(
 
 	txVerifier := network.NewLockedTxVerifier(&vm.lock, vm.manager)
 	// Create wrapper for AppSender to adapt linearblock.AppSender to core.AppSender
-	appSenderWrapper := &appSenderAdapter{appSender}
 	// Create network config with default values
-	networkConfig := network.DefaultConfig
 	vm.Network, err = network.New(
 		vm.log,
 		vm.nodeID,
@@ -572,7 +569,7 @@ func (vm *VM) checkExistingChains() error {
 				"alloc": {}
 			}`, chainIDNum)
 
-			vm.Config.QueueExistingChainWithGenesis(chainID, netID, vmID, []byte(minimalGenesis))
+// 			vm.Internal.QueueExistingChainWithGenesis(chainID, netID, vmID, []byte(minimalGenesis))
 		} else {
 			vm.log.Debug("chain already registered",
 				"chainID", chainID.String(),
@@ -585,7 +582,7 @@ func (vm *VM) checkExistingChains() error {
 // Create all chains that exist that this node validates.
 func (vm *VM) initBlockchains() error {
 	if vm.Internal.PartialSyncPrimaryNetwork {
-		vm.ctx.Log.Info("skipping primary network chain creation")
+		vm.log.Info("skipping primary network chain creation")
 	} else if err := vm.createNet(constants.PrimaryNetworkID); err != nil {
 		return err
 	}
@@ -687,7 +684,7 @@ func (vm *VM) createCChainIfNeeded() error {
 	}`)
 
 	// Queue the C-Chain for creation
-	vm.Config.QueueExistingChainWithGenesis(
+// 	vm.Internal.QueueExistingChainWithGenesis(
 		cChainID,
 		constants.PrimaryNetworkID,
 		constants.EVMID,
@@ -733,9 +730,9 @@ func (vm *VM) onNormalOperationsStarted() error {
 		return err
 	}
 
-	if !vm.uptimeManager.StartedTracking() {
-		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-		if err := vm.uptimeManager.StartTracking(primaryVdrIDs); err != nil {
+// 	if !vm.uptimeManager.StartedTracking() {
+// 		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+// 		if err := vm.uptimeManager.StartTracking(primaryVdrIDs); err != nil {
 			return err
 		}
 	}
@@ -745,7 +742,7 @@ func (vm *VM) onNormalOperationsStarted() error {
 	// vm.Validators.RegisterSetCallbackListener(constants.PrimaryNetworkID, vl)
 
 	for subnetID := range vm.TrackedNets {
-		vl := validators.NewLogger(vm.ctx.Log, subnetID, vm.ctx.NodeID)
+		vl := validators.NewLogger(vm.log, subnetID, vm.ctx.NodeID)
 		vm.Validators.RegisterSetCallbackListener(subnetID, vl)
 	}
 
@@ -772,9 +769,9 @@ func (vm *VM) Shutdown(context.Context) error {
 
 	vm.onShutdownCtxCancel()
 
-	if vm.uptimeManager.StartedTracking() {
-		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-		if err := vm.uptimeManager.StopTracking(primaryVdrIDs); err != nil {
+// 	if vm.uptimeManager.StartedTracking() {
+// 		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+// 		if err := vm.uptimeManager.StopTracking(primaryVdrIDs); err != nil {
 			return err
 		}
 
@@ -881,7 +878,7 @@ func (vm *VM) Clock() *mockable.Clock {
 }
 
 func (vm *VM) Logger() log.Logger {
-	return vm.ctx.Log
+	return vm.log
 }
 
 func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, error) {
@@ -912,5 +909,5 @@ func (vm *VM) NewHTTPHandler(context.Context) (interface{}, error) {
 func (vm *VM) WaitForEvent(ctx context.Context) (interface{}, error) {
 	// For now, just block until context is cancelled
 	<-ctx.Done()
-	return core.MessageType(0), ctx.Err()
+	return consensuscore.MessageType(0), ctx.Err()
 }

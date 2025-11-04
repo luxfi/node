@@ -4,23 +4,23 @@
 package mempool
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/metric"
 )
 
 type mempoolMetrics struct {
-	numTxs prometheus.Gauge
-	bytesUsed prometheus.Gauge
+	numTxs metric.Gauge
+	bytesUsed metric.Gauge
 }
 
 func newMetrics(registerer metric.Registerer) (*mempoolMetrics, error) {
 	m := &mempoolMetrics{
-		numTxs: prometheus.NewGauge(prometheus.GaugeOpts{
+		numTxs: metric.NewGauge(metric.GaugeOpts{
 			Name: "mempool_num_txs",
 			Help: "Number of transactions in mempool",
 		}),
-		bytesUsed: prometheus.NewGauge(prometheus.GaugeOpts{
+		bytesUsed: metric.NewGauge(metric.GaugeOpts{
 			Name: "mempool_bytes_used",
 			Help: "Number of bytes used by mempool",
 		}),

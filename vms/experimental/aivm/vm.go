@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/database"

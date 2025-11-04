@@ -42,7 +42,7 @@ func TestInterface(t *testing.T) {
 		t.Run(scenario.name, func(t *testing.T) {
 			for _, test := range cachetest.Tests {
 				baseCache := scenario.setup(test.Size)
-				c, err := New("", prometheus.NewRegistry(), baseCache)
+				c, err := New("", metric.NewRegistry(), baseCache)
 				require.NoError(t, err)
 				test.Func(t, c)
 			}

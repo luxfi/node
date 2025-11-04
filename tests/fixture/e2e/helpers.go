@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/geth/ethclient"
 	"github.com/luxfi/geth/core/types"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/tests"

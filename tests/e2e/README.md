@@ -125,7 +125,7 @@ Both methods require:
    - `PROMETHEUS_PASSWORD`
    - `LOKI_USERNAME`
    - `LOKI_PASSWORD`
- - The availability in the path of binaries for promtail and prometheus
+ - The availability in the path of binaries for promtail and metric
    - Starting a development shell with `nix develop` is one way to
      ensure this and requires the installation of nix
      (e.g. `./scripts/run_task.sh install-nix`).

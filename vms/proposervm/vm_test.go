@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/metric/testutil"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"
@@ -2495,7 +2495,7 @@ func TestLocalParse(t *testing.T) {
 		NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 		StakingLeafSigner:   pTestSigner,
 		StakingCertLeaf:     pTestCert,
-		Registerer:          prometheus.NewRegistry(),
+		Registerer:          metric.NewRegistry(),
 	}
 
 	vm := New(innerVM, conf)
@@ -2736,7 +2736,7 @@ func TestBootstrappingAheadOfPChainBuildBlockRegression(t *testing.T) {
 			NumHistoricalBlocks: DefaultNumHistoricalBlocks,
 			StakingLeafSigner:   pTestSigner,
 			StakingCertLeaf:     pTestCert,
-			Registerer:          prometheus.NewRegistry(),
+			Registerer:          metric.NewRegistry(),
 		},
 	)
 	proVM.Set(consensusmantest.GenesisTimestamp)

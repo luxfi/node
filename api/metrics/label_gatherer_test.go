@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
-	dto "github.com/prometheus/client_model/go"
+	dto "github.com/metric/client_model/go"
 )
 
 func TestLabelGatherer_Gather(t *testing.T) {
@@ -182,7 +182,7 @@ func TestLabelGatherer_Registration(t *testing.T) {
 					firstLabeledGatherer.labelValue,
 					secondLabeledGatherer.labelValue,
 				},
-				gatherers: prometheus.Gatherers{
+				gatherers: metric.Gatherers{
 					firstLabeledGatherer,
 					secondLabeledGatherer,
 				},
@@ -194,7 +194,7 @@ func TestLabelGatherer_Registration(t *testing.T) {
 			names: []string{
 				secondLabeledGatherer.labelValue,
 			},
-			gatherers: prometheus.Gatherers{
+			gatherers: metric.Gatherers{
 				secondLabeledGatherer,
 			},
 		},
@@ -274,7 +274,7 @@ func TestLabelGatherer_Registration(t *testing.T) {
 					// We must populate with empty slices rather than nil slices
 					// to pass the equality check.
 					names:     []string{},
-					gatherers: prometheus.Gatherers{},
+					gatherers: metric.Gatherers{},
 				},
 			},
 		},

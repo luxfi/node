@@ -166,7 +166,7 @@ The plugin version is updated to `40` all plugins must update to be compatible.
 Fully populate test context by @StephenButtolph in https://github.com/luxfi/node/pull/3943
 [tmpnet] Define reusable flags for configuring kubernetes client access by @maru-ava in https://github.com/luxfi/node/pull/3945
 - Fix flaky bootstrapping test by @StephenButtolph in https://github.com/luxfi/node/pull/3955
-- [tmpnet] Separate start of prometheus and promtail collectors by @maru-ava in https://github.com/luxfi/node/pull/3947
+- [tmpnet] Separate start of metric and promtail collectors by @maru-ava in https://github.com/luxfi/node/pull/3947
 - Add L1 validators to getCurrentValidators response by @ceyonur in https://github.com/luxfi/node/pull/3843
 - refactor: use slices.Contains to simplify code by @yetyear in https://github.com/luxfi/node/pull/3952
 - Update proposervm summary to roll forward only by @aaronbuchwald in https://github.com/luxfi/node/pull/3950
@@ -431,7 +431,7 @@ The plugin version is updated to `39` all plugins must update to be compatible.
 - Remove the Keystore API by @StephenButtolph in https://github.com/luxfi/node/pull/3657
 - Add F Upgrade Scaffolding. Post-Etna Cleanup by @michaelkaplan13 in https://github.com/luxfi/node/pull/3672
 - [testing] Fix instructions for triggering antithesis test runs by @marun in https://github.com/luxfi/node/pull/3664
-- [testing] Ensure run_prometheus.sh uses a writeable storage path by @marun in https://github.com/luxfi/node/pull/3662
+- [testing] Ensure run_metric.sh uses a writeable storage path by @marun in https://github.com/luxfi/node/pull/3662
 - Make consensusman use consensusflake directly instead of consensusball by @yacovm in https://github.com/luxfi/node/pull/3403
 - chore: fix some typos by @chuangjinglu in https://github.com/luxfi/node/pull/3670
 - Bump antithesishq/antithesis-trigger-action from 0.6 to 0.7 by @dependabot in https://github.com/luxfi/node/pull/3667

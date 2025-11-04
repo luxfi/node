@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -77,7 +77,7 @@ func TestBloomFilterRefresh(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
-			bloom, err := NewBloomFilter(prometheus.NewRegistry(), "", tt.minTargetElements, tt.targetFalsePositiveProbability, tt.resetFalsePositiveProbability)
+			bloom, err := NewBloomFilter(metric.NewRegistry(), "", tt.minTargetElements, tt.targetFalsePositiveProbability, tt.resetFalsePositiveProbability)
 			require.NoError(err)
 
 			var resetCount uint64
@@ -98,7 +98,7 @@ func TestBloomFilterRefresh(t *testing.T) {
 			}
 
 			require.Equal(tt.resetCount, resetCount)
-			// Metric wrapper types do not expose prometheus.Collector interface
+			// Metric wrapper types do not expose metric.Collector interface
 			// require.InDelta(float64(tt.resetCount+1), testutil.ToFloat64(bloom.metrics.ResetCount), 0)
 			for _, expected := range tt.expected {
 				require.True(bloom.Has(expected))

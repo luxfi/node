@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/luxfi/mock/gomock"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -69,7 +69,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		{
 			name: "mempool has transaction",
 			mempool: func() mempool.Mempool[*txs.Tx] {
-				mempool, err := xmempool.New("", prometheus.NewRegistry())
+				mempool, err := xmempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, mempool.Add(&txs.Tx{Unsigned: &txs.BaseTx{}}))
 				return mempool
@@ -80,7 +80,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		{
 			name: "transaction marked as dropped in mempool",
 			mempool: func() mempool.Mempool[*txs.Tx] {
-				mempool, err := xmempool.New("", prometheus.NewRegistry())
+				mempool, err := xmempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				mempool.MarkDropped(ids.Empty, errTest)
 				return mempool
@@ -91,7 +91,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		{
 			name: "tx too big",
 			mempool: func() mempool.Mempool[*txs.Tx] {
-				mempool, err := xmempool.New("", prometheus.NewRegistry())
+				mempool, err := xmempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				return mempool
 			}(),
@@ -111,7 +111,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		{
 			name: "tx conflicts",
 			mempool: func() mempool.Mempool[*txs.Tx] {
-				mempool, err := xmempool.New("", prometheus.NewRegistry())
+				mempool, err := xmempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 
 				tx := &txs.Tx{
@@ -154,7 +154,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		{
 			name: "mempool full",
 			mempool: func() mempool.Mempool[*txs.Tx] {
-				m, err := xmempool.New("", prometheus.NewRegistry())
+				m, err := xmempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 
 				for i := 0; i < 1024; i++ {
@@ -182,7 +182,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		{
 			name: "happy path",
 			mempool: func() mempool.Mempool[*txs.Tx] {
-				mempool, err := xmempool.New("", prometheus.NewRegistry())
+				mempool, err := xmempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				return mempool
 			}(),
@@ -269,7 +269,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 		{
 			name: "happy path",
 			mempool: func() mempool.Mempool[*txs.Tx] {
-				mempool, err := xmempool.New("", prometheus.NewRegistry())
+				mempool, err := xmempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				return mempool
 			}(),

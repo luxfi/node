@@ -20,7 +20,7 @@ func Test_newMsgBuilder(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		10*time.Second,
 	)
 	require.NoError(err)
@@ -386,7 +386,7 @@ func TestAppError(t *testing.T) {
 	require := require.New(t)
 
 	mb, err := newMsgBuilder(
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		time.Second,
 	)
 	require.NoError(err)

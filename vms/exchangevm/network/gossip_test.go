@@ -6,7 +6,7 @@ package network
 import (
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -57,7 +57,7 @@ func TestMarshaller(t *testing.T) {
 func TestGossipMempoolAdd(t *testing.T) {
 	require := require.New(t)
 
-	metrics := prometheus.NewRegistry()
+	metrics := metric.NewRegistry()
 
 	baseMempool, err := mempool.New("", metrics)
 	require.NoError(err)
@@ -89,7 +89,7 @@ func TestGossipMempoolAdd(t *testing.T) {
 func TestGossipMempoolAddVerified(t *testing.T) {
 	require := require.New(t)
 
-	metrics := prometheus.NewRegistry()
+	metrics := metric.NewRegistry()
 
 	baseMempool, err := mempool.New("", metrics)
 	require.NoError(err)

@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 	ethcommon "github.com/luxfi/geth/common"
 	
 	"github.com/luxfi/database"

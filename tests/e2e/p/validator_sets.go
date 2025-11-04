@@ -9,7 +9,7 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/secp256k1"

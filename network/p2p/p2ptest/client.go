@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -58,7 +58,7 @@ func NewClientWithPeers(
 	peerNetworks := make(map[ids.NodeID]*p2p.Network)
 	for nodeID := range peers {
 		peerSenders[nodeID] = &p2p.SenderTest{}
-		peerNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), peerSenders[nodeID], prometheus.NewRegistry(), "")
+		peerNetwork, err := p2p.NewNetwork(log.NewNoOpLogger(), peerSenders[nodeID], metric.NewRegistry(), "")
 		require.NoError(t, err)
 		peerNetworks[nodeID] = peerNetwork
 	}

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils/perms"

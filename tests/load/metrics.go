@@ -6,34 +6,34 @@ package load
 import (
 	"errors"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 )
 
 type Metrics struct {
-	txsIssuedCounter    prometheus.Counter
-	txsConfirmedCounter prometheus.Counter
-	txsFailedCounter    prometheus.Counter
-	txLatency           prometheus.Histogram
+	txsIssuedCounter    metric.Counter
+	txsConfirmedCounter metric.Counter
+	txsFailedCounter    metric.Counter
+	txLatency           metric.Histogram
 }
 
-func NewMetrics(registry *prometheus.Registry) (*Metrics, error) {
+func NewMetrics(registry *metric.Registry) (*Metrics, error) {
 	m := &Metrics{
-		txsIssuedCounter: prometheus.NewCounter(prometheus.CounterOpts{
+		txsIssuedCounter: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "txs_issued",
 			Help:      "Number of transactions issued",
 		}),
-		txsConfirmedCounter: prometheus.NewCounter(prometheus.CounterOpts{
+		txsConfirmedCounter: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "txs_confirmed",
 			Help:      "Number of transactions confirmed",
 		}),
-		txsFailedCounter: prometheus.NewCounter(prometheus.CounterOpts{
+		txsFailedCounter: metric.NewCounter(metric.CounterOpts{
 			Namespace: namespace,
 			Name:      "txs_failed",
 			Help:      "Number of transactions failed",
 		}),
-		txLatency: prometheus.NewHistogram(prometheus.HistogramOpts{
+		txLatency: metric.NewHistogram(metric.HistogramOpts{
 			Namespace: namespace,
 			Name:      "tx_latency",
 			Help:      "Latency of transactions",

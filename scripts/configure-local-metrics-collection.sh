@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# Configures prometheus and promtail to collect metrics and logs from
+# Configures metric and promtail to collect metrics and logs from
 # a local node.
 
 API_PORT="${API_PORT:-9650}"
@@ -14,7 +14,7 @@ METRICS_UUID="$(uuidgen)"
 
 echo "Configuring metrics and log collection for a local node with API port ${API_PORT} and logs path ${LOGS_PATH}"
 
-PROMETHEUS_CONFIG_PATH="${HOME}/.tmpnet/prometheus/file_sd_configs"
+PROMETHEUS_CONFIG_PATH="${HOME}/.tmpnet/metric/file_sd_configs"
 PROMETHEUS_CONFIG_FILE="${PROMETHEUS_CONFIG_PATH}/local.json"
 mkdir -p "${PROMETHEUS_CONFIG_PATH}"
 cat > "${PROMETHEUS_CONFIG_FILE}" <<EOL
@@ -29,7 +29,7 @@ cat > "${PROMETHEUS_CONFIG_FILE}" <<EOL
   }
 ]
 EOL
-echo "Wrote prometheus configuration to ${PROMETHEUS_CONFIG_FILE}"
+echo "Wrote metric configuration to ${PROMETHEUS_CONFIG_FILE}"
 
 PROMTAIL_CONFIG_PATH="${HOME}/.tmpnet/promtail/file_sd_configs"
 PROMTAIL_CONFIG_FILE="${PROMTAIL_CONFIG_PATH}/local.json"
@@ -49,7 +49,7 @@ cat > "${PROMTAIL_CONFIG_FILE}" <<EOL
 EOL
 echo "Wrote promtail configuration to ${PROMTAIL_CONFIG_FILE}"
 
-echo "Metrics collection by prometheus can be started with ./scripts/run_prometheus.sh"
+echo "Metrics collection by metric can be started with ./scripts/run_metric.sh"
 echo "Log collection by promtail can be started with ./scripts/run_promtail.sh"
 
 GRAFANA_LINK="https://grafana-poc.lux-dev.network/d/kBQpRdWnk/lux-main-dashboard?var-filter=network_uuid%7C%3D%7C${METRICS_UUID}"

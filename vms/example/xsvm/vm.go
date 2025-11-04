@@ -10,8 +10,8 @@ import (
 
 	"connectrpc.com/grpcreflect"
 	"github.com/gorilla/rpc/v2"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"luxfi/log"
 
 	"github.com/luxfi/node/connectproto/pb/xsvm/xsvmconnect"
 	"github.com/luxfi/database"
@@ -66,7 +66,7 @@ func (vm *VM) Initialize(
 		zap.Stringer("version", Version),
 	)
 
-	metrics := prometheus.NewRegistry()
+	metrics := metric.NewRegistry()
 	err := chainContext.Metrics.Register("p2p", metrics)
 	if err != nil {
 		return err

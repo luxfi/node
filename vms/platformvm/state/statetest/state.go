@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"
@@ -32,7 +32,7 @@ var DefaultNodeID = ids.GenerateTestNodeID()
 type Config struct {
 	DB         database.Database
 	Genesis    []byte
-	Registerer prometheus.Registerer
+	Registerer metric.Registerer
 	Validators validators.Manager
 	Upgrades   upgrade.Config
 	Config     config.Config
@@ -58,7 +58,7 @@ func New(t testing.TB, c Config) state.State {
 		})
 	}
 	if c.Registerer == nil {
-		c.Registerer = prometheus.NewRegistry()
+		c.Registerer = metric.NewRegistry()
 	}
 	if c.Validators == nil {
 		c.Validators = validators.NewManager()

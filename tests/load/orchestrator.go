@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/luxfi/log"

@@ -184,7 +184,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 		Lock:         res.ctx.Lock,
 	}
 
-	registerer := prometheus.NewRegistry()
+	registerer := metric.NewRegistry()
 
 	platformMetrics := metric.Noop
 

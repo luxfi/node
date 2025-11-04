@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"

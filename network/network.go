@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/pires/go-proxyproto"
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"

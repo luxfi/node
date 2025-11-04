@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/geth/core/types"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/node/api/info"
 	"github.com/luxfi/crypto/secp256k1"

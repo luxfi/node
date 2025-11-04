@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"sync"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/log"
 )

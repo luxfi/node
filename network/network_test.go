@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/node/validators"
 	"github.com/luxfi/metric"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/utils"
@@ -223,7 +223,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 	t.Helper()
 
 	mc, err := message.NewCreator(
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -822,7 +822,7 @@ func TestGetAllPeers(t *testing.T) {
 		configs[0],
 		upgrade.InitiallyActiveTime,
 		newMessageCreator(t),
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		log.NewNoOpLogger(),
 		listeners[0],
 		dialer,

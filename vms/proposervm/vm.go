@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
@@ -108,11 +108,11 @@ type VM struct {
 
 	// acceptedBlocksSlotHistogram reports the slots that accepted blocks were
 	// proposed in.
-	acceptedBlocksSlotHistogram prometheus.Histogram
+	acceptedBlocksSlotHistogram metric.Histogram
 
 	// lastAcceptedTimestampGaugeVec reports timestamps for the last-accepted
 	// [postForkBlock] and its inner block.
-	lastAcceptedTimestampGaugeVec *prometheus.GaugeVec
+	lastAcceptedTimestampGaugeVec *metric.GaugeVec
 }
 
 // New performs best when [minBlkDelay] is whole seconds. This is because block
@@ -226,7 +226,7 @@ func (vm *VM) Initialize(
 		Name: "block_building_slot",
 		Help: "the slot that this node may attempt to build a block",
 	})
-	vm.acceptedBlocksSlotHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+	vm.acceptedBlocksSlotHistogram = metric.NewHistogram(metric.HistogramOpts{
 		Name: "accepted_blocks_slot",
 		Help: "the slot accepted blocks were proposed in",
 		// define the following ranges:
@@ -238,8 +238,8 @@ func (vm *VM) Initialize(
 		// of comparing floating point of the same numerical value.
 		Buckets: []float64{0.5, 1.5, 2.5},
 	})
-	vm.lastAcceptedTimestampGaugeVec = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
+	vm.lastAcceptedTimestampGaugeVec = metric.NewGaugeVec(
+		metric.GaugeOpts{
 			Name: "last_accepted_timestamp",
 			Help: "timestamp of the last block accepted",
 		},

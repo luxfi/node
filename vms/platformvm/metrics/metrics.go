@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
@@ -24,10 +24,10 @@ const (
 )
 
 var (
-	gasLabels = prometheus.Labels{
+	gasLabels = metric.Labels{
 		ResourceLabel: GasLabel,
 	}
-	validatorsLabels = prometheus.Labels{
+	validatorsLabels = metric.Labels{
 		ResourceLabel: ValidatorsLabel,
 	}
 )
@@ -77,70 +77,70 @@ func New(registerer metric.Registerer) (Metrics, error) {
 	blockMetrics, err := newBlockMetrics(registerer)
 	m := &metricsImpl{
 		blockMetrics: blockMetrics,
-		timeUntilUnstake: prometheus.NewGauge(prometheus.GaugeOpts{
+		timeUntilUnstake: metric.NewGauge(metric.GaugeOpts{
 			Name: "time_until_unstake",
 			Help: "Time (in ns) until this node leaves the Primary Network's validator set",
 		}),
-		timeUntilNetUnstake: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
+		timeUntilNetUnstake: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Name: "time_until_unstake_net",
 				Help: "Time (in ns) until this node leaves the net's validator set",
 			},
 			[]string{"netID"},
 		),
-		localStake: prometheus.NewGauge(prometheus.GaugeOpts{
+		localStake: metric.NewGauge(metric.GaugeOpts{
 			Name: "local_staked",
 			Help: "Amount (in nLUX) of LUX staked on this node",
 		}),
-		totalStake: prometheus.NewGauge(prometheus.GaugeOpts{
+		totalStake: metric.NewGauge(metric.GaugeOpts{
 			Name: "total_staked",
 			Help: "Amount (in nLUX) of LUX staked on the Primary Network",
 		}),
 
-		gasConsumed: prometheus.NewCounter(prometheus.CounterOpts{
+		gasConsumed: metric.NewCounter(metric.CounterOpts{
 			Name: "gas_consumed",
 			Help: "Cumulative amount of gas consumed by transactions",
 		}),
-		gasCapacity: prometheus.NewGauge(prometheus.GaugeOpts{
+		gasCapacity: metric.NewGauge(metric.GaugeOpts{
 			Name: "gas_capacity",
 			Help: "Minimum amount of gas that can be consumed in the next block",
 		}),
-		activeL1Validators: prometheus.NewGauge(prometheus.GaugeOpts{
+		activeL1Validators: metric.NewGauge(metric.GaugeOpts{
 			Name: "active_l1_validators",
 			Help: "Number of active L1 validators",
 		}),
-		excess: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
+		excess: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Name: "excess",
 				Help: "Excess usage of a resource over the target usage",
 			},
 			[]string{ResourceLabel},
 		),
-		price: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
+		price: metric.NewGaugeVec(
+			metric.GaugeOpts{
 				Name: "price",
 				Help: "Price (in nLUX) of a resource",
 			},
 			[]string{ResourceLabel},
 		),
-		accruedValidatorFees: prometheus.NewGauge(prometheus.GaugeOpts{
+		accruedValidatorFees: metric.NewGauge(metric.GaugeOpts{
 			Name: "accrued_validator_fees",
 			Help: "The total cost of running an active L1 validator since Etna activation",
 		}),
 
-		validatorSetsCached: prometheus.NewCounter(prometheus.CounterOpts{
+		validatorSetsCached: metric.NewCounter(metric.CounterOpts{
 			Name: "validator_sets_cached",
 			Help: "Total number of validator sets cached",
 		}),
-		validatorSetsCreated: prometheus.NewCounter(prometheus.CounterOpts{
+		validatorSetsCreated: metric.NewCounter(metric.CounterOpts{
 			Name: "validator_sets_created",
 			Help: "Total number of validator sets created from applying difflayers",
 		}),
-		validatorSetsHeightDiff: prometheus.NewGauge(prometheus.GaugeOpts{
+		validatorSetsHeightDiff: metric.NewGauge(metric.GaugeOpts{
 			Name: "validator_sets_height_diff_sum",
 			Help: "Total number of validator sets diffs applied for generating validator sets",
 		}),
-		validatorSetsDuration: prometheus.NewGauge(prometheus.GaugeOpts{
+		validatorSetsDuration: metric.NewGauge(metric.GaugeOpts{
 			Name: "validator_sets_duration_sum",
 			Help: "Total amount of time generating validator sets in nanoseconds",
 		}),
@@ -182,23 +182,23 @@ type metricsImpl struct {
 	blockMetrics *blockMetrics
 
 	// Staking metrics
-	timeUntilUnstake       prometheus.Gauge
-	timeUntilNetUnstake *prometheus.GaugeVec
-	localStake             prometheus.Gauge
-	totalStake             prometheus.Gauge
+	timeUntilUnstake       metric.Gauge
+	timeUntilNetUnstake *metric.GaugeVec
+	localStake             metric.Gauge
+	totalStake             metric.Gauge
 
-	gasConsumed          prometheus.Counter
-	gasCapacity          prometheus.Gauge
-	activeL1Validators   prometheus.Gauge
-	excess               *prometheus.GaugeVec
-	price                *prometheus.GaugeVec
-	accruedValidatorFees prometheus.Gauge
+	gasConsumed          metric.Counter
+	gasCapacity          metric.Gauge
+	activeL1Validators   metric.Gauge
+	excess               *metric.GaugeVec
+	price                *metric.GaugeVec
+	accruedValidatorFees metric.Gauge
 
 	// Validator set diff metrics
-	validatorSetsCached     prometheus.Counter
-	validatorSetsCreated    prometheus.Counter
-	validatorSetsHeightDiff prometheus.Gauge
-	validatorSetsDuration   prometheus.Gauge
+	validatorSetsCached     metric.Counter
+	validatorSetsCreated    metric.Counter
+	validatorSetsHeightDiff metric.Gauge
+	validatorSetsDuration   metric.Gauge
 }
 
 func (m *metricsImpl) MarkAccepted(b Block) error {

@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"

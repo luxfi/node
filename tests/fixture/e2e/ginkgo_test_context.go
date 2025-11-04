@@ -9,7 +9,7 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
+	"luxfi/log/zapcore"
 
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/log"

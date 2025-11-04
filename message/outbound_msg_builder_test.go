@@ -17,7 +17,7 @@ func Test_newOutboundBuilder(t *testing.T) {
 	t.Parallel()
 
 	mb, err := newMsgBuilder(
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		10*time.Second,
 	)
 	require.NoError(t, err)

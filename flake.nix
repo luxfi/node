@@ -41,7 +41,7 @@
 
             # Monitoring tools
             promtail                                   # Loki log shipper
-            prometheus                                 # Metrics collector
+            metric                                 # Metrics collector
 
             # Kube tools
             kubectl                                    # Kubernetes CLI

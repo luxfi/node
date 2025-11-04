@@ -1,4 +1,4 @@
-# A secret named prometheus-credentials must exist with keys `username` and `password`
+# A secret named metric-credentials must exist with keys `username` and `password`
 ---
 apiVersion: v1
 kind: Namespace
@@ -9,14 +9,14 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-    name: prometheus-agent
+    name: metric-agent
     namespace: ci-monitoring
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: prometheus-agent
+  name: metric-agent
 rules:
 - apiGroups: [""]
   resources:
@@ -27,25 +27,25 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: prometheus-agent
+  name: metric-agent
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: prometheus-agent
+  name: metric-agent
 subjects:
 - kind: ServiceAccount
-  name: prometheus-agent
+  name: metric-agent
   namespace: ci-monitoring
 
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: prometheus-config
+  name: metric-config
   namespace: ci-monitoring
 data:
   # This template needs to have PROMETHEUS_USERNAME and PROMETHEUS_PASSWORD substituted before use
-  prometheus.yaml.template: |
+  metric.yaml.template: |
     global:
       # Make sure this value takes into account the network-shutdown-delay in tests/fixture/e2e/env.go
       scrape_interval: 10s     # Default is every 1 minute.
@@ -57,11 +57,11 @@ data:
         kubernetes_sd_configs:
           - role: pod
         relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          - source_labels: [__meta_kubernetes_pod_annotation_metric_io_scrape]
             regex: "true"
             replacement: $1
             action: keep
-          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          - source_labels: [__meta_kubernetes_pod_annotation_metric_io_path]
             action: replace
             target_label: __metrics_path__
             regex: (.+)
@@ -107,7 +107,7 @@ data:
           # TODO(marun) Add kube cluster identifier as a label
 
     remote_write:
-    - url: "https://prometheus-poc.lux-dev.network/api/v1/write"
+    - url: "https://metric-poc.lux-dev.network/api/v1/write"
       basic_auth:
         username: "${PROMETHEUS_USERNAME}"
         password: "${PROMETHEUS_PASSWORD}"
@@ -115,45 +115,45 @@ data:
 ---
 apiVersion: apps/v1
 # A statefulset ensures that only a single pod at a time will have
-# access to the PVC backing local storage for prometheus.
+# access to the PVC backing local storage for metric.
 kind: StatefulSet
 metadata:
-  name: prometheus-agent
+  name: metric-agent
   namespace: ci-monitoring
 spec:
-  serviceName: prometheus-agent
+  serviceName: metric-agent
   replicas: 1
   selector:
     matchLabels:
-      app: prometheus-agent
+      app: metric-agent
   template:
     metadata:
       labels:
-        app: prometheus-agent
+        app: metric-agent
     spec:
-      serviceAccountName: prometheus-agent
-      # Since prometheus doesn't support env substitution, an init
+      serviceAccountName: metric-agent
+      # Since metric doesn't support env substitution, an init
       # container is required to parameterize the config file with
       # auth credentials.
       initContainers:
-      - name: init-prometheus-config
+      - name: init-metric-config
         # This is one of the few published images that includes
         # envsubst. Simpler than having to maintain our own image.
         image: bitnami/nginx:1.27.3
         command: ["/bin/sh", "-c"]
         args:
         - |
-          envsubst < /tmp/config-template/prometheus.yaml.template > /tmp/config/prometheus.yaml
+          envsubst < /tmp/config-template/metric.yaml.template > /tmp/config/metric.yaml
         env:
         - name: PROMETHEUS_USERNAME
           valueFrom:
             secretKeyRef:
-              name: prometheus-credentials
+              name: metric-credentials
               key: username
         - name: PROMETHEUS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: prometheus-credentials
+              name: metric-credentials
               key: password
         volumeMounts:
         - name: config-template
@@ -161,24 +161,24 @@ spec:
         - name: config
           mountPath: /tmp/config
       containers:
-      - name: prometheus
-        # For consistency use the same minor version as the scripts/run_prometheus.sh
-        image: prom/prometheus:v2.45.6
+      - name: metric
+        # For consistency use the same minor version as the scripts/run_metric.sh
+        image: prom/metric:v2.45.6
         args:
-        - --config.file=/etc/prometheus/config/prometheus.yaml
-        - --storage.agent.path=/prometheus
+        - --config.file=/etc/metric/config/metric.yaml
+        - --storage.agent.path=/metric
         - --enable-feature=agent
         volumeMounts:
         - name: config
-          mountPath: /etc/prometheus/config/prometheus.yaml
-          subPath: prometheus.yaml
+          mountPath: /etc/metric/config/metric.yaml
+          subPath: metric.yaml
           readOnly: true
-        - name: prometheus-data
-          mountPath: /prometheus
+        - name: metric-data
+          mountPath: /metric
       volumes:
       - name: config-template
         configMap:
-          name: prometheus-config
+          name: metric-config
       - name: config
         # The config path doesn't need to be persistent since the config
         # file will be written to the volume by the init container every
@@ -186,7 +186,7 @@ spec:
         emptyDir: {}
   volumeClaimTemplates:
   - metadata:
-      name: prometheus-data
+      name: metric-data
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:

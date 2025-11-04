@@ -24,8 +24,8 @@ import (
 
 	"github.com/luxfi/metric"
 	utilmetric "github.com/luxfi/node/utils/metric"
-	"github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/luxfi/metric/collectors"
+	"github.com/luxfi/metric/promhttp"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/networking/timeout"
@@ -217,7 +217,7 @@ func New(
 		return nil, err
 	}
 
-	// Create luxfi/metric instance from prometheus registry
+	// Create luxfi/metric instance from metric registry
 	networkMetrics := metric.NewPrometheusMetrics(networkNamespace, networkRegisterer)
 
 	n.msgCreator, err = message.NewCreator(

@@ -488,7 +488,7 @@ func newConsensusMetrics(registry metric.Registerer) (*consensusMetrics, error) 
 	return m, nil
 }
 
-// collectRegistry starts prometheus and collects metrics from the provided gatherer.
+// collectRegistry starts metric and collects metrics from the provided gatherer.
 // Attaches the provided labels + GitHub labels if available to the collected metric.
 func collectRegistry(tb testing.TB, name string, timeout time.Duration, gatherer metric.Gatherer, labels map[string]string) {
 	r := require.New(tb)
@@ -496,7 +496,7 @@ func collectRegistry(tb testing.TB, name string, timeout time.Duration, gatherer
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	tb.Cleanup(cancel)
 
-	r.NoError(tmpnet.StartPrometheus(ctx, tests.NewDefaultLogger("prometheus")))
+	r.NoError(tmpnet.StartPrometheus(ctx, tests.NewDefaultLogger("metric")))
 
 	server, err := tests.NewPrometheusServer(gatherer)
 	r.NoError(err)

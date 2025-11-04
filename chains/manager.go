@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
-	// "github.com/prometheus/client_golang/prometheus" // Unused
-	// "go.uber.org/zap" // Unused
+	// "github.com/luxfi/metric" // Unused
+	// "luxfi/log" // Unused
 
 	"github.com/luxfi/node/api/health"
 	"github.com/luxfi/node/api/metrics"

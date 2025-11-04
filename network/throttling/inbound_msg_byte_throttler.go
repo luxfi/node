@@ -10,7 +10,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	utilmetric "github.com/luxfi/node/utils/metric"
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"

@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"

@@ -272,7 +272,7 @@ func (p *NodeProcess) writeMonitoringConfig() error {
 		"node_id":           p.node.NodeID,
 		"is_ephemeral_node": strconv.FormatBool(p.node.IsEphemeral),
 		"network_owner":     p.node.NetworkOwner,
-		// prometheus/promtail ignore empty values so including these
+		// metric/promtail ignore empty values so including these
 		// labels with empty values outside of a github worker (where
 		// the env vars will not be set) should not be a problem.
 		"gh_repo":        os.Getenv("GH_REPO"),
@@ -288,13 +288,13 @@ func (p *NodeProcess) writeMonitoringConfig() error {
 		return err
 	}
 
-	prometheusConfig := []FlagsMap{
+	metricConfig := []FlagsMap{
 		{
 			"targets": []string{strings.TrimPrefix(p.node.URI, "http://")},
 			"labels":  commonLabels,
 		},
 	}
-	if err := p.writeMonitoringConfigFile(tmpnetDir, "prometheus", prometheusConfig); err != nil {
+	if err := p.writeMonitoringConfigFile(tmpnetDir, "metric", metricConfig); err != nil {
 		return err
 	}
 
@@ -311,21 +311,21 @@ func (p *NodeProcess) writeMonitoringConfig() error {
 	return p.writeMonitoringConfigFile(tmpnetDir, "promtail", promtailConfig)
 }
 
-// Return the path for this node's prometheus configuration.
+// Return the path for this node's metric configuration.
 func (p *NodeProcess) getMonitoringConfigPath(tmpnetDir string, name string) string {
 	// Ensure a unique filename to allow config files to be added and removed
 	// by multiple nodes without conflict.
 	return filepath.Join(tmpnetDir, name, "file_sd_configs", fmt.Sprintf("%s_%s.json", p.node.NetworkUUID, p.node.NodeID))
 }
 
-// Ensure the removal of the prometheus configuration file for this node.
+// Ensure the removal of the metric configuration file for this node.
 func (p *NodeProcess) removeMonitoringConfig() error {
 	tmpnetDir, err := getTmpnetPath()
 	if err != nil {
 		return err
 	}
 
-	for _, name := range []string{"promtail", "prometheus"} {
+	for _, name := range []string{"promtail", "metric"} {
 		configPath := p.getMonitoringConfigPath(tmpnetDir, name)
 		if err := os.Remove(configPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("failed to remove %s config: %w", name, err)
@@ -335,7 +335,7 @@ func (p *NodeProcess) removeMonitoringConfig() error {
 	return nil
 }
 
-// Write the configuration for a type of monitoring (e.g. prometheus, promtail).
+// Write the configuration for a type of monitoring (e.g. metric, promtail).
 func (p *NodeProcess) writeMonitoringConfigFile(tmpnetDir string, name string, config []FlagsMap) error {
 	configPath := p.getMonitoringConfigPath(tmpnetDir, name)
 

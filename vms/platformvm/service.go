@@ -14,7 +14,7 @@ import (
 	"slices"
 	"time"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/crypto/secp256k1"
@@ -1866,10 +1866,13 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 	var err error
 	height := uint64(args.Height)
 	if args.Height.IsProposed() {
-		height, err = s.vm.GetMinimumHeight(ctx)
+		// Get the proposed height from the last accepted block
+		lastAcceptedID := s.vm.state.GetLastAccepted()
+		lastAcceptedBlock, err := s.vm.manager.GetStatelessBlock(lastAcceptedID)
 		if err != nil {
-			return fmt.Errorf("failed to get proposed height: %w", err)
+			return fmt.Errorf("failed to get last accepted block: %w", err)
 		}
+		height = lastAcceptedBlock.Height()
 	}
 
 	reply.Validators, err = s.vm.GetValidatorSet(ctx, height, args.NetID)

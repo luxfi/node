@@ -207,8 +207,8 @@ A temporary network relies on configuration written to disk in the following str
 ```
 HOME
 └── .tmpnet                                              // Root path for the temporary network fixture
-    ├── prometheus                                       // Working directory for a metrics-scraping prometheus instance
-    │   └── file_sd_configs                              // Directory containing file-based service discovery config for prometheus
+    ├── metric                                       // Working directory for a metrics-scraping metric instance
+    │   └── file_sd_configs                              // Directory containing file-based service discovery config for metric
     ├── promtail                                         // Working directory for a log-collecting promtail instance
     │   └── file_sd_configs                              // Directory containing file-based service discovery config for promtail
     └── networks                                         // Default parent directory for temporary networks
@@ -319,14 +319,14 @@ use to bootstrap themselves (aka staking address).
 Monitoring is an essential part of understanding the workings of a
 distributed system such as node. The tmpnet fixture enables
 collection of logs and metrics from temporary networks to a monitoring
-stack (prometheus+loki+grafana) to enable results to be analyzed and
+stack (metric+loki+grafana) to enable results to be analyzed and
 shared.
 
 ### Example usage
 [Top](#table-of-contents)
 
 ```bash
-# Start a nix shell to ensure the availability of promtail and prometheus.
+# Start a nix shell to ensure the availability of promtail and metric.
 nix develop
 
 # Enable collection of logs and metrics
@@ -348,15 +348,15 @@ LOKI_PASSWORD=<password> \
 ### Running collectors
 [Top](#table-of-contents)
 
- - `tmpnetctl start-metrics-collector` starts `prometheus` in agent mode
+ - `tmpnetctl start-metrics-collector` starts `metric` in agent mode
    configured to scrape metrics from configured nodes and forward
-   them to https://prometheus-poc.lux-dev.network.
+   them to https://metric-poc.lux-dev.network.
    - Requires:
      - Credentials supplied as env vars:
        - `PROMETHEUS_USERNAME`
        - `PROMETHEUS_PASSWORD`
-     - A `prometheus` binary available in the path
-   - Once started, `prometheus` can be stopped by `tmpnetctl stop-metrics-collector`
+     - A `metric` binary available in the path
+   - Once started, `metric` can be stopped by `tmpnetctl stop-metrics-collector`
  - `tmpnetctl start-logs-collector` starts `promtail` configured to collect logs
    from configured nodes and forward them to
    https://loki-poc.lux-dev.network.
@@ -375,7 +375,7 @@ LOKI_PASSWORD=<password> \
 
 When a node is started, configuration enabling collection of metrics
 from the node is written to
-`~/.tmpnet/prometheus/file_sd_configs/[network uuid]-[node id].json`.
+`~/.tmpnet/metric/file_sd_configs/[network uuid]-[node id].json`.
 
 ### Log collection configuration
 [Top](#table-of-contents)
@@ -451,8 +451,8 @@ Example usage:
     artifact_prefix: e2e
 
     # These credentials are mandatory
-    prometheus_username: ${{ secrets.PROMETHEUS_ID || '' }}
-    prometheus_password: ${{ secrets.PROMETHEUS_PASSWORD || '' }}
+    metric_username: ${{ secrets.PROMETHEUS_ID || '' }}
+    metric_password: ${{ secrets.PROMETHEUS_PASSWORD || '' }}
     loki_username: ${{ secrets.LOKI_ID || '' }}
     loki_password: ${{ secrets.LOKI_PASSWORD || '' }}
 ```
@@ -464,7 +464,7 @@ Example usage:
 
 When a network is started with tmpnet, a link to the [default grafana
 instance](https://grafana-poc.lux-dev.network) will be
-emitted. The dashboards will only be populated if prometheus and
+emitted. The dashboards will only be populated if metric and
 promtail are running locally (as per previous sections) to collect
 metrics and logs.
 

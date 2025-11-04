@@ -9,7 +9,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"

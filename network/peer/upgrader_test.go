@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
@@ -86,7 +86,7 @@ func TestBlockClientsWithIncorrectRSAKeys(t *testing.T) {
 
 			config := peer.TLSConfig(serverCert, nil)
 
-			c := prometheus.NewCounter(prometheus.CounterOpts{})
+			c := metric.NewCounter(metric.CounterOpts{})
 
 			// Initialize upgrader with a mock that fails when it's incremented.
 			failOnIncrementCounter := &mockPrometheusCounter{
@@ -201,7 +201,7 @@ func basicCert() *x509.Certificate {
 }
 
 type mockPrometheusCounter struct {
-	prometheus.Counter
+	metric.Counter
 	onIncrement func()
 }
 

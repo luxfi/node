@@ -7,7 +7,7 @@
 package vm
 
 import (
-	_go "github.com/prometheus/client_model/go"
+	_go "github.com/metric/client_model/go"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -3484,7 +3484,7 @@ var file_vm_vm_proto_goTypes = []any{
 	(*StateSummaryAcceptRequest)(nil),          // 46: vm.StateSummaryAcceptRequest
 	(*StateSummaryAcceptResponse)(nil),         // 47: vm.StateSummaryAcceptResponse
 	(*timestamppb.Timestamp)(nil),              // 48: google.protobuf.Timestamp
-	(*_go.MetricFamily)(nil),                   // 49: io.prometheus.client.MetricFamily
+	(*_go.MetricFamily)(nil),                   // 49: io.metric.client.MetricFamily
 	(*emptypb.Empty)(nil),                      // 50: google.protobuf.Empty
 }
 var file_vm_vm_proto_depIdxs = []int32{
@@ -3516,7 +3516,7 @@ var file_vm_vm_proto_depIdxs = []int32{
 	48, // 25: vm.AppRequestMsg.deadline:type_name -> google.protobuf.Timestamp
 	16, // 26: vm.BatchedParseBlockResponse.response:type_name -> vm.ParseBlockResponse
 	1,  // 27: vm.GetBlockIDAtHeightResponse.err:type_name -> vm.Error
-	49, // 28: vm.GatherResponse.metric_families:type_name -> io.prometheus.client.MetricFamily
+	49, // 28: vm.GatherResponse.metric_families:type_name -> io.metric.client.MetricFamily
 	1,  // 29: vm.StateSyncEnabledResponse.err:type_name -> vm.Error
 	1,  // 30: vm.GetOngoingSyncStateSummaryResponse.err:type_name -> vm.Error
 	1,  // 31: vm.GetLastStateSummaryResponse.err:type_name -> vm.Error

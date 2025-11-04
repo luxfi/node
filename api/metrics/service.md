@@ -20,6 +20,6 @@ curl -X POST 127.0.0.1:9630/ext/metrics
 
 ## Format
 
-This API produces Prometheus compatible metrics. See [here](https://prometheus.io/docs/instrumenting/exposition_formats) for information on Prometheus' formatting.
+This API produces Prometheus compatible metrics. See [here](https://metric.io/docs/instrumenting/exposition_formats) for information on Prometheus' formatting.
 
 [Here](https://docs.lux.network/docs/nodes/maintain/monitoring) is a tutorial that shows how to set up Prometheus and Grafana to monitor Lux Node using the Metrics API.

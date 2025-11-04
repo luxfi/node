@@ -7,8 +7,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
+	"github.com/luxfi/metric"
+	"luxfi/log"
 
 	"github.com/luxfi/node/genesis"
 	"github.com/luxfi/ids"
@@ -114,7 +114,7 @@ func ExampleNewTestNetwork() {
 	handler := &testExternalHandler{
 		log: log,
 	}
-	metrics := prometheus.NewRegistry()
+	metrics := metric.NewRegistry()
 	cfg, err := NewTestNetworkConfig(
 		metrics,
 		constants.TestnetID,

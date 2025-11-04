@@ -21,7 +21,7 @@ import (
 	"syscall"
 	"time"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/node/config"
 	"github.com/luxfi/node/config/node"
@@ -346,13 +346,13 @@ func (p *ProcessRuntime) writeMonitoringConfig() error {
 	// Ensure labeling that uniquely identifies the node and its network
 	commonLabels := p.node.getMonitoringLabels()
 
-	prometheusConfig := []ConfigMap{
+	metricConfig := []ConfigMap{
 		{
 			"targets": []string{strings.TrimPrefix(p.node.URI, "http://")},
 			"labels":  commonLabels,
 		},
 	}
-	if err := p.writeMonitoringConfigFile(prometheusCmd, prometheusConfig); err != nil {
+	if err := p.writeMonitoringConfigFile(metricCmd, metricConfig); err != nil {
 		return err
 	}
 
@@ -368,7 +368,7 @@ func (p *ProcessRuntime) writeMonitoringConfig() error {
 	return p.writeMonitoringConfigFile(promtailCmd, promtailConfig)
 }
 
-// Return the path for this node's prometheus configuration.
+// Return the path for this node's metric configuration.
 func (p *ProcessRuntime) getMonitoringConfigPath(name string) (string, error) {
 	// Ensure a unique filename to allow config files to be added and removed
 	// by multiple nodes without conflict.
@@ -381,7 +381,7 @@ func (p *ProcessRuntime) getMonitoringConfigPath(name string) (string, error) {
 
 // Ensure the removal of the monitoring configuration files for this node.
 func (p *ProcessRuntime) removeMonitoringConfig() error {
-	for _, name := range []string{promtailCmd, prometheusCmd} {
+	for _, name := range []string{promtailCmd, metricCmd} {
 		configPath, err := p.getMonitoringConfigPath(name)
 		if err != nil {
 			return err
@@ -393,7 +393,7 @@ func (p *ProcessRuntime) removeMonitoringConfig() error {
 	return nil
 }
 
-// Write the configuration for a type of monitoring (e.g. prometheus, promtail).
+// Write the configuration for a type of monitoring (e.g. metric, promtail).
 func (p *ProcessRuntime) writeMonitoringConfigFile(name string, config []ConfigMap) error {
 	configPath, err := p.getMonitoringConfigPath(name)
 	if err != nil {

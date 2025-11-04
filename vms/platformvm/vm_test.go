@@ -1273,8 +1273,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 			TimeoutCoefficient: 1.25,
 		},
 		benchlist.NewNoBenchlist(),
-		prometheus.NewRegistry(),
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
+		metric.NewRegistry(),
 	)
 	require.NoError(err)
 
@@ -1292,11 +1292,11 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		nil,
 		nil,
 		router.HealthConfig{},
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 	))
 
 	mc, err := message.NewCreator(
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
 	)
@@ -1315,7 +1315,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		timeoutManager,
 		p2ppb.EngineType_ENGINE_TYPE_CONSENSUSMAN,
 		subnet,
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 	)
 	require.NoError(err)
 
@@ -1346,14 +1346,14 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		ctx.Log,
 		time.Second,
 		2000,
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 	)
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
 		ctx.Log,
 		"peer_tracker",
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		set.Of(ctx.NodeID),
 		nil,
 	)
@@ -1377,7 +1377,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 	// Asynchronously passes messages from the network to the consensus engine
 	cpuTracker, err := timetracker.NewResourceTracker(
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		resource.NoUsage,
 		meter.ContinuousFactory{},
 		time.Second,
@@ -1400,7 +1400,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		subnet,
 		peers,
 		peerTracker,
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		func() {},
 	)
 	require.NoError(err)

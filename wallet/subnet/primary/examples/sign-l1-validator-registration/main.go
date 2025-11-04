@@ -9,7 +9,7 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/node/api/info"
@@ -78,7 +78,7 @@ func main() {
 	}
 
 	messageBuilder, err := p2pmessage.NewCreator(
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 		compression.TypeZstd,
 		time.Hour,
 	)

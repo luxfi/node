@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/luxfi/metric"
+	"github.com/luxfi/metric/promhttp"
 )
 
 const defaultPrometheusListenAddr = "127.0.0.1:0"
@@ -20,14 +20,14 @@ const defaultPrometheusListenAddr = "127.0.0.1:0"
 // gahterer.
 // Listens on localhost with a dynamic port and serves metrics at /ext/metrics.
 type PrometheusServer struct {
-	gatherer prometheus.Gatherer
+	gatherer metric.Gatherer
 	server   http.Server
 	errChan  chan error
 }
 
 // NewPrometheusServer creates and starts a Prometheus server with the provided gatherer
 // listening on 127.0.0.1:0 and serving /ext/metrics.
-func NewPrometheusServer(gatherer prometheus.Gatherer) (*PrometheusServer, error) {
+func NewPrometheusServer(gatherer metric.Gatherer) (*PrometheusServer, error) {
 	server := &PrometheusServer{
 		gatherer: gatherer,
 	}

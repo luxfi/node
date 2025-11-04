@@ -2,14 +2,14 @@ version: v1
 name: buf.build/luxfi/lux
 build:
   excludes:
-    # for golang we handle prometheus as a buf dep so we exclude it from generate, this proto
+    # for golang we handle metric as a buf dep so we exclude it from generate, this proto
     # file is required by languages such as rust.
-    - io/prometheus
+    - io/metric
 breaking:
   use:
     - FILE
 deps:
-  - buf.build/prometheus/client-model
+  - buf.build/metric/client-model
 lint:
   use:
     - STANDARD

@@ -4,7 +4,7 @@
 package network
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"context"
 	"time"
@@ -46,7 +46,7 @@ func New(
 	txVerifier TxVerifier,
 	mempool mempool.Mempool[*txs.Tx],
 	appSender core.AppSender,
-	registerer prometheus.Registerer,
+	registerer metric.Registerer,
 	config Config,
 ) (*Network, error) {
 	p2pNetwork, err := p2p.NewNetwork(log, appSender, registerer, "p2p")

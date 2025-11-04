@@ -7,7 +7,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -30,7 +30,7 @@ func TestGossipMempoolAddVerificationError(t *testing.T) {
 		TxID: txID,
 	}
 
-	mempool, err := pmempool.New("", prometheus.NewRegistry())
+	mempool, err := pmempool.New("", metric.NewRegistry())
 	require.NoError(err)
 	txVerifier := testTxVerifier{err: errFoo}
 
@@ -54,7 +54,7 @@ func TestGossipMempoolAddVerificationError(t *testing.T) {
 func TestMempoolDuplicate(t *testing.T) {
 	require := require.New(t)
 
-	testMempool, err := pmempool.New("", prometheus.NewRegistry())
+	testMempool, err := pmempool.New("", metric.NewRegistry())
 	require.NoError(err)
 	txVerifier := testTxVerifier{}
 
@@ -92,7 +92,7 @@ func TestGossipAddBloomFilter(t *testing.T) {
 	}
 
 	txVerifier := testTxVerifier{}
-	mempool, err := pmempool.New("", prometheus.NewRegistry())
+	mempool, err := pmempool.New("", metric.NewRegistry())
 	require.NoError(err)
 
 	gossipMempool, err := newGossipMempool(

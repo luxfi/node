@@ -152,7 +152,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 		Lock:         res.ctx.Lock,
 	}
 
-	registerer := prometheus.NewRegistry()
+	registerer := metric.NewRegistry()
 	res.sender = &enginetest.Sender{T: t}
 	res.sender.SendAppGossipF = func(context.Context, common.SendConfig, []byte) error {
 		return nil

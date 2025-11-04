@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -61,7 +61,7 @@ func TestOrchestratorTPS(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			m, err := NewMetrics(prometheus.NewRegistry())
+			m, err := NewMetrics(metric.NewRegistry())
 			r.NoError(err)
 
 			tracker := NewTracker[ids.ID](m)
@@ -104,7 +104,7 @@ func TestOrchestratorExecution(t *testing.T) {
 		errMockIssuer      = errors.New("mock issuer error")
 	)
 
-	m, err := NewMetrics(prometheus.NewRegistry())
+	m, err := NewMetrics(metric.NewRegistry())
 	require.NoError(t, err, "creating metrics")
 	tracker := NewTracker[ids.ID](m)
 

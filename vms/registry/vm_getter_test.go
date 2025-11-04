@@ -138,7 +138,7 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 
 	mockReader := filesystemmock.NewReader(ctrl)
 	mockManager := vmsmock.NewManager(ctrl)
-	mockRegistry := prometheus.NewRegistry()
+	mockRegistry := metric.NewRegistry()
 	mockCPUTracker, err := resource.NewManager(
 		log.NewNoOpLogger(),
 		"",

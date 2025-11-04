@@ -6,7 +6,7 @@ package network
 import (
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
@@ -21,7 +21,7 @@ func newTestIPTracker(t *testing.T) *ipTracker {
 	tracker, err := newIPTracker(
 		nil,
 		log.NewNoOpLogger(),
-		prometheus.NewRegistry(),
+		metric.NewRegistry(),
 	)
 	require.NoError(t, err)
 	return tracker
@@ -47,7 +47,7 @@ func requireEqual(t *testing.T, expected, actual *ipTracker) {
 
 func requireMetricsConsistent(t *testing.T, tracker *ipTracker) {
 	_ = require.New(t)
-	// Metric assertions commented out because metric wrapper types don't expose prometheus.Collector interface
+	// Metric assertions commented out because metric wrapper types don't expose metric.Collector interface
 	// require.InDelta(float64(len(tracker.tracked)), testutil.ToFloat64(tracker.numTrackedPeers), 0)
 	// var numGossipableIPs int
 	// for _, net := range tracker.net {

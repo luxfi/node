@@ -11,7 +11,7 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	// ensure test packages are scanned by ginkgo
 	_ "github.com/luxfi/node/tests/e2e/banff"

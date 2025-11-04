@@ -4,7 +4,7 @@
 package peer
 
 import (
-	"go.uber.org/zap"
+	"luxfi/log"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/consensus/validators"

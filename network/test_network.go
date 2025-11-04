@@ -13,12 +13,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/metric"
 	consensusset "github.com/luxfi/math/set"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/consensus/uptime"
@@ -77,7 +76,7 @@ func (*noopListener) Addr() net.Addr {
 }
 
 func NewTestNetworkConfig(
-	metrics prometheus.Registerer,
+	metrics metric.Registerer,
 	networkID uint32,
 	currentValidators validators.Manager,
 	trackedNets set.Set[ids.ID],

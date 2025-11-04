@@ -12,7 +12,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"go.uber.org/zap"
+	"luxfi/log"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
