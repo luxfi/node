@@ -9,7 +9,7 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	"github.com/luxfi/log/logcore"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/luxfi/node/tests"
 	"github.com/luxfi/log"
@@ -29,7 +29,7 @@ func (*ginkgoWriteCloser) Close() error {
 }
 
 // Define a simple encoder config appropriate for logging with ginkgo
-var ginkgoEncoderConfig = logcore.EncoderConfig{
+var ginkgoEncoderConfig = zapcore.EncoderConfig{
 	// Time, name and caller are omitted for consistency with previous output.
 	TimeKey:        "",
 	LevelKey:       "level",
@@ -38,11 +38,11 @@ var ginkgoEncoderConfig = logcore.EncoderConfig{
 	MessageKey:     "msg",
 	StacktraceKey:  "stacktrace",
 	EncodeLevel:    logging.ConsoleColorLevelEncoder,
-	EncodeDuration: logcore.StringDurationEncoder,
+	EncodeDuration: zapcore.StringDurationEncoder,
 }
 
 // NewGinkgoLogger returns a logger with limited output
-func newGinkgoLogger(cfg logcore.Encoder) log.Logger {
+func newGinkgoLogger(cfg zapcore.Encoder) log.Logger {
 	return logging.NewLogger(
 		"",
 		logging.NewWrappedCore(
@@ -71,7 +71,7 @@ func NewEventHandlerTestContext() *GinkgoTestContext {
 func NewTestContext() *GinkgoTestContext {
 	return &GinkgoTestContext{
 		logger: newGinkgoLogger(
-			logcore.NewConsoleEncoder(ginkgoEncoderConfig),
+			zapcore.NewConsoleEncoder(ginkgoEncoderConfig),
 		),
 	}
 }

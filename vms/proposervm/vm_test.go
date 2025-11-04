@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/luxfi/metric"
-	"github.com/luxfi/metric/testutil"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/database"

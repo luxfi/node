@@ -12,7 +12,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/luxfi/metric/collectors"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 

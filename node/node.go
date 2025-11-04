@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"github.com/luxfi/metric"
-	"github.com/luxfi/metric/collectors"
-	"github.com/luxfi/metric/promhttp"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/networking/timeout"
