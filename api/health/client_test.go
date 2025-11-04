@@ -4,7 +4,6 @@
 package health
 
 import (
-	"github.com/luxfi/metric"
 	"context"
 	"testing"
 	"time"

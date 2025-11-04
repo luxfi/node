@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	nodevalidators "github.com/luxfi/node/validators"
+	nodevalidators "github.com/luxfi/consensus/validators"
 	"io"
 	"io/fs"
 	"net"
@@ -534,11 +534,8 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	tlsConfig := peer.TLSConfig(n.Config.StakingTLSCert, n.tlsKeyLogWriterCloser)
 
 	// Create chain router
-	// TODO: router.ChainRouter and router.Trace not available in consensus router package
-	// n.chainRouter = &router.ChainRouter{}
-	// if n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled {
-	// 	n.chainRouter = router.Trace(n.chainRouter, n.tracer)
-	// }
+	// Note: passing nil for timeoutManager - SimpleRouter doesn't strictly need it for health checks
+	n.chainRouter = NewSimpleRouter(n.Log, nil)
 
 	// Configure benchlist
 	benchlistGatherer := metric.NewLabelGatherer(chains.ChainLabel)

@@ -91,15 +91,33 @@ var (
 )
 
 func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
-	p := consensusconfig.Parameters{
-		K:                     v.GetInt(ConsensusSampleSizeKey),
-		AlphaPreference:       v.GetInt(ConsensusPreferenceQuorumSizeKey),
-		AlphaConfidence:       v.GetInt(ConsensusConfidenceQuorumSizeKey),
-		Beta:                  uint32(v.GetInt(ConsensusCommitThresholdKey)),
-		ConcurrentRepolls:     v.GetInt(ConsensusConcurrentRepollsKey),
-		OptimalProcessing:     v.GetInt(ConsensusOptimalProcessingKey),
-		MaxOutstandingItems:   v.GetInt(ConsensusMaxProcessingKey),
-		MaxItemProcessingTime: v.GetDuration(ConsensusMaxTimeProcessingKey),
+	// Start with default parameters
+	p := consensusconfig.DefaultParams()
+	
+	// Override with config values if set
+	if v.IsSet(ConsensusSampleSizeKey) {
+		p.K = v.GetInt(ConsensusSampleSizeKey)
+	}
+	if v.IsSet(ConsensusPreferenceQuorumSizeKey) {
+		p.AlphaPreference = v.GetInt(ConsensusPreferenceQuorumSizeKey)
+	}
+	if v.IsSet(ConsensusConfidenceQuorumSizeKey) {
+		p.AlphaConfidence = v.GetInt(ConsensusConfidenceQuorumSizeKey)
+	}
+	if v.IsSet(ConsensusCommitThresholdKey) {
+		p.Beta = uint32(v.GetInt(ConsensusCommitThresholdKey))
+	}
+	if v.IsSet(ConsensusConcurrentRepollsKey) {
+		p.ConcurrentRepolls = v.GetInt(ConsensusConcurrentRepollsKey)
+	}
+	if v.IsSet(ConsensusOptimalProcessingKey) {
+		p.OptimalProcessing = v.GetInt(ConsensusOptimalProcessingKey)
+	}
+	if v.IsSet(ConsensusMaxProcessingKey) {
+		p.MaxOutstandingItems = v.GetInt(ConsensusMaxProcessingKey)
+	}
+	if v.IsSet(ConsensusMaxTimeProcessingKey) {
+		p.MaxItemProcessingTime = v.GetDuration(ConsensusMaxTimeProcessingKey)
 	}
 	if v.IsSet(ConsensusQuorumSizeKey) {
 		p.AlphaPreference = v.GetInt(ConsensusQuorumSizeKey)

@@ -21,7 +21,7 @@ func TestOverriddenManager(t *testing.T) {
 	netID0 := ids.GenerateTestID()
 	netID1 := ids.GenerateTestID()
 
-	m := nodevalidators.NewManager()
+	m := validators.NewManager()
 	require.NoError(m.AddStaker(netID0, nodeID0, nil, ids.Empty, 1))
 	require.NoError(m.AddStaker(netID1, nodeID1, nil, ids.Empty, 1))
 
@@ -58,7 +58,7 @@ func TestOverriddenString(t *testing.T) {
 	netID1, err := ids.FromString("2mcwQKiD8VEspmMJpL1dc7okQQ5dDVAWeCBZ7FWBFAbxpv3t7w")
 	require.NoError(err)
 
-	m := nodevalidators.NewManager()
+	m := validators.NewManager()
 	require.NoError(m.AddStaker(netID0, nodeID0, nil, ids.Empty, 1))
 	require.NoError(m.AddStaker(netID0, nodeID1, nil, ids.Empty, math.MaxInt64-1))
 	require.NoError(m.AddStaker(netID1, nodeID1, nil, ids.Empty, 1))

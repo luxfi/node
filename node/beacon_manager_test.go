@@ -11,10 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/networking/router/routermock"
-	"github.com/luxfi/consensus/validators"
+	"github.com/luxfi/log"
+	"github.com/luxfi/consensus/networking/handler"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/proto/pb/p2p"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer"
+	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/version"
 )
 
@@ -92,11 +95,10 @@ func TestBeaconManager_DataRace(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 
-	ctrl := gomock.NewController(t)
-	mockRouter := routermock.NewRouter(ctrl)
+	router := &mockRouter{}
 
 	b := beaconManager{
-		Router:                  mockRouter,
+		Router:                  router,
 		beacons:                 validatorSet,
 		requiredConns:           numValidators,
 		onSufficientlyConnected: make(chan struct{}),

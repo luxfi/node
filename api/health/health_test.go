@@ -4,7 +4,6 @@
 package health
 
 import (
-	"github.com/luxfi/metric"
 	"context"
 	"errors"
 	"fmt"
@@ -17,7 +16,6 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/log"
 )
 
 const (

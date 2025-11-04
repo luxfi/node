@@ -91,12 +91,18 @@ func (w *worker) RegisterCheck(name string, check Checker, tags ...string) error
 
 	// Add the check to each tag
 	for _, tag := range tags {
-		names := w.tags[tag]
+		names, ok := w.tags[tag]
+		if !ok {
+			names = set.Set[string]{}
+		}
 		names.Add(name)
 		w.tags[tag] = names
 	}
 	// Add the special AllTag descriptor
-	names := w.tags[AllTag]
+	names, ok := w.tags[AllTag]
+	if !ok {
+		names = set.Set[string]{}
+	}
 	names.Add(name)
 	w.tags[AllTag] = names
 

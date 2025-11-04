@@ -23,7 +23,7 @@ import (
 	"github.com/luxfi/consensus/uptime"
 	"github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/message"
-	nodevalidators "github.com/luxfi/node/validators"
+	nodevalidators "github.com/luxfi/consensus/validators"
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
