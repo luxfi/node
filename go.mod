@@ -33,13 +33,13 @@ require (
 	github.com/luxfi/bft v0.1.0
 	github.com/luxfi/consensus v1.19.13
 	github.com/luxfi/crypto v1.17.4
-	github.com/luxfi/database v1.2.5
+	github.com/luxfi/database v1.2.7
 	github.com/luxfi/geth v1.16.39
 	github.com/luxfi/ids v1.1.2
 	github.com/luxfi/ledger-lux-go v1.0.0
 	github.com/luxfi/log v1.1.22
 	github.com/luxfi/math v0.1.4
-	github.com/luxfi/metric v1.4.3
+	github.com/luxfi/metric v1.4.5
 	github.com/luxfi/mock v0.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mr-tron/base58 v1.2.0
