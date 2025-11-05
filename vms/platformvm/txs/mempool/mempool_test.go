@@ -30,7 +30,7 @@ func TestBlockBuilderMaxMempoolSizeHandling(t *testing.T) {
 	require := require.New(t)
 
 	registerer := metric.NewRegistry()
-	mpool, err := New("mempool", registerer, nil)
+	mpool, err := New("mempool", registerer)
 	require.NoError(err)
 
 	decisionTxs, err := createTestDecisionTxs(1)
@@ -54,7 +54,7 @@ func TestDecisionTxsInMempool(t *testing.T) {
 	require := require.New(t)
 
 	registerer := metric.NewRegistry()
-	mpool, err := New("mempool", registerer, nil)
+	mpool, err := New("mempool", registerer)
 	require.NoError(err)
 
 	decisionTxs, err := createTestDecisionTxs(2)
@@ -107,7 +107,7 @@ func TestProposalTxsInMempool(t *testing.T) {
 	require := require.New(t)
 
 	registerer := metric.NewRegistry()
-	mpool, err := New("mempool", registerer, nil)
+	mpool, err := New("mempool", registerer)
 	require.NoError(err)
 
 	// The proposal txs are ordered by decreasing start time. This means after
@@ -241,7 +241,7 @@ func TestDropExpiredStakerTxs(t *testing.T) {
 	require := require.New(t)
 
 	registerer := metric.NewRegistry()
-	mempool, err := New("mempool", registerer, nil)
+	mempool, err := New("mempool", registerer)
 	require.NoError(err)
 
 	tx1, err := generateAddValidatorTx(10, 20)
