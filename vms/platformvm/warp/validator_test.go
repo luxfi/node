@@ -189,7 +189,8 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 							Weight:    testVdrs[1].vdr.Weight,
 						},
 					},
-				}
+					nil,
+				)
 			},
 			expectedVdrs:   []*Validator{testVdrs[1].vdr},
 			expectedWeight: 3, // Only count validators with valid public keys
