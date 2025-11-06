@@ -30,7 +30,6 @@ var (
 // the canonical validator set for warp message validation.
 type ValidatorState interface {
 	GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*ValidatorData, error)
-	GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error)
 }
 
 // ValidatorData contains the data for a single validator
@@ -191,7 +190,6 @@ func AggregatePublicKeys(vdrs []*Validator) (*bls.PublicKey, error) {
 // validatorStateAdapter adapts validators.State to ValidatorState
 type validatorStateAdapter struct {
 	state validators.State
-	netID ids.ID
 }
 
 func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*ValidatorData, error) {
@@ -211,11 +209,6 @@ func (v *validatorStateAdapter) GetValidatorSet(ctx context.Context, height uint
 	return result, nil
 }
 
-func (v *validatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	// Return the network ID from the adapter
-	return v.netID, nil
-}
-
 // GetCanonicalValidatorSetFromChainID returns the canonical validator set given a validators.State, pChain height and a sourceChainID.
 func GetCanonicalValidatorSetFromChainID(ctx context.Context,
 	pChainState validators.State,
@@ -225,7 +218,6 @@ func GetCanonicalValidatorSetFromChainID(ctx context.Context,
 	// Adapt validators.State to ValidatorState
 	adapter := &validatorStateAdapter{
 		state: pChainState,
-		netID: sourceChainID, // Use sourceChainID as network ID
 	}
 	// In the new architecture, use sourceChainID as the subnet ID
 	// This assumes a 1:1 mapping between chains and subnets

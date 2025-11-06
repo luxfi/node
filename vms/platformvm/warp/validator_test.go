@@ -32,10 +32,9 @@ var (
 )
 
 // testValidatorStateAdapter wraps validators.State to implement ValidatorState
-// by adding a stub GetNetID method for testing
+// converting GetValidatorOutput to ValidatorData
 type testValidatorStateAdapter struct {
 	validators.State
-	netID ids.ID
 }
 
 func (t *testValidatorStateAdapter) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*ValidatorData, error) {
@@ -53,10 +52,6 @@ func (t *testValidatorStateAdapter) GetValidatorSet(ctx context.Context, height 
 		}
 	}
 	return result, nil
-}
-
-func (t *testValidatorStateAdapter) GetNetID(ctx context.Context, chainID ids.ID) (ids.ID, error) {
-	return t.netID, nil
 }
 
 type testValidator struct {
@@ -215,7 +210,6 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 			// Wrap validators.State to implement ValidatorState
 			wrappedState := &testValidatorStateAdapter{
 				State: state,
-				netID: subnetID,
 			}
 
 			validators, err := GetCanonicalValidatorSetFromSubsubnetID(t.Context(), wrappedState, pChainHeight, subnetID)
@@ -418,7 +412,6 @@ func BenchmarkGetCanonicalValidatorSet(b *testing.B) {
 		// Wrap validators.State to implement ValidatorState
 		wrappedState := &testValidatorStateAdapter{
 			State: validatorState,
-			netID: subnetID,
 		}
 
 		b.Run(strconv.Itoa(size), func(b *testing.B) {
