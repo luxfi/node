@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/math/set"
 	consensusset "github.com/luxfi/math/set"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validator/uptime"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/message"
 	nodevalidators "github.com/luxfi/consensus/validator"

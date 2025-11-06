@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/engine/dag"
 	dagvertex "github.com/luxfi/consensus/engine/dag/vertex"
-	consensusinterfaces "github.com/luxfi/consensus/interfaces"
+	consensusinterfaces "github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/consensus/protocol/chain"
 	consensusset "github.com/luxfi/consensus/utils/set"
 	validators "github.com/luxfi/consensus/validator"

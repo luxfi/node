@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/luxfi/consensus/consensustest"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/consensus/core/coremock"
-	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validator/uptime"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"

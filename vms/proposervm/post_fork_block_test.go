@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/upgrade/upgradetest"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/consensustest"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/chain/chaintest"
 	validators "github.com/luxfi/consensus/validator"

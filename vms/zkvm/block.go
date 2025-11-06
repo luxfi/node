@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/core/choices"
 )
 
 // Block represents a block in the ZK UTXO chain

@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/consensus/core"
 	consensusrouter "github.com/luxfi/consensus/networking/router"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validator/uptime"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/staking"

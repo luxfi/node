@@ -11,7 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/consensustest"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	consensuscontext "github.com/luxfi/consensus/context"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"

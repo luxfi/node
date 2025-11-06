@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
-	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/node/network/dialer"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/network/throttling"

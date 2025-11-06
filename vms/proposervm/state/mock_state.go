@@ -15,7 +15,7 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	choices "github.com/luxfi/consensus/choices"
+	choices "github.com/luxfi/consensus/core/choices"
 	block "github.com/luxfi/node/vms/proposervm/block"
 )
 

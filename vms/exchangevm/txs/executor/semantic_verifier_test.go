@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/consensustest"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -20,7 +20,6 @@ import (
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/timer/mockable"
-	validatorsmock "github.com/luxfi/consensus/validator/validatorsmock"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/secp256k1fx"
@@ -754,17 +753,25 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	}
 }
 
+// testValidatorState is a simple stub for consensusctx.ValidatorState used in tests
+type testValidatorState struct {
+	netID ids.ID
+}
+
+func (t *testValidatorState) GetNetID(_ ids.ID) (ids.ID, error) {
+	return t.netID, nil
+}
+
 func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cChainID := ids.GenerateTestID()
 
 	ctx := consensustest.Context(t, consensustest.XChainID)
 
-	validatorState := validatorsmock.NewState(t)
-	validatorState.GetNetIDF = func(context.Context, ids.ID) (ids.ID, error) {
-		return ids.GenerateTestID(), nil
+	// Set up a validator state that returns a different NetID to trigger the error
+	ctx.ValidatorState = &testValidatorState{
+		netID: ids.GenerateTestID(), // Different from ctx.NetID
 	}
-	ctx.ValidatorState = validatorState
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}

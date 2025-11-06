@@ -19,7 +19,7 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/interfaces"
+	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/api"
 	consensuscontext "github.com/luxfi/consensus/context"

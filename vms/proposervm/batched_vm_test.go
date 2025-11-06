@@ -23,11 +23,11 @@ import (
 	"github.com/luxfi/node/utils/timer/mockable"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/consensustest"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/chaintest"
-	"github.com/luxfi/consensus/interfaces"
+	"github.com/luxfi/consensus/core/interfaces"
 	validators "github.com/luxfi/consensus/validator"
 	validatorstest "github.com/luxfi/consensus/validator/validatorstest"
 	"github.com/luxfi/consensus/core"
@@ -942,6 +942,11 @@ func TestBatchedParseBlockAtSnomanPlusPlusFork(t *testing.T) {
 type TestRemoteProposerVM struct {
 	*blocktest.BatchedVM
 	*blocktest.VM
+}
+
+// GetBlockIDAtHeight resolves ambiguous selector by delegating to VM
+func (vm TestRemoteProposerVM) GetBlockIDAtHeight(ctx context.Context, height uint64) (ids.ID, error) {
+	return vm.VM.GetBlockIDAtHeight(ctx, height)
 }
 
 func initTestRemoteProposerVM(

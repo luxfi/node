@@ -22,7 +22,7 @@ import (
 	"github.com/luxfi/node/network/p2p/lp118"
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/core/common"
-	"github.com/luxfi/consensus/interfaces"
+	"github.com/luxfi/consensus/core/interfaces"
 	"github.com/luxfi/node/utils/constants"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/example/xsvm/api"

@@ -13,7 +13,7 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/consensustest"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/consensus/engine/core"
 	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/consensus/engine/core/coremock"

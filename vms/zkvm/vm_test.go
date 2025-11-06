@@ -11,9 +11,9 @@ import (
 
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/core"
+	consensusctx "github.com/luxfi/consensus/context"
+	"github.com/luxfi/consensus/engine/core/common"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/utils"
 )
 
 func TestVMInitialize(t *testing.T) {
@@ -21,7 +21,7 @@ func TestVMInitialize(t *testing.T) {
 
 	// Create test context
 	ctx := context.Background()
-	chainCtx := &core.Context{
+	chainCtx := &consensusctx.Context{
 		ChainID: ids.GenerateTestID(),
 		Log:     log.NoLog{},
 	}
@@ -52,11 +52,11 @@ func TestVMInitialize(t *testing.T) {
 		},
 	}
 
-	genesisBytes, err := utils.Codec.Marshal(codecVersion, genesis)
+	genesisBytes, err := Codec.Marshal(codecVersion, genesis)
 	require.NoError(err)
 
 	// Create config
-	config := ZKConfig{
+	config := ZConfig{
 		EnableConfidentialTransfers: true,
 		EnablePrivateAddresses:      true,
 		ProofSystem:                 "groth16",
@@ -66,13 +66,14 @@ func TestVMInitialize(t *testing.T) {
 		ProofCacheSize:              1000,
 	}
 
-	configBytes, err := utils.Codec.Marshal(codecVersion, config)
+	configBytes, err := Codec.Marshal(codecVersion, config)
 	require.NoError(err)
 
 	// Create VM
 	vm := &VM{}
 
 	// Initialize VM
+	toEngine := make(chan common.Message, 1)
 	err = vm.Initialize(
 		ctx,
 		chainCtx,
@@ -80,8 +81,9 @@ func TestVMInitialize(t *testing.T) {
 		genesisBytes,
 		nil, // upgradeBytes
 		configBytes,
-		nil, // fxs
-		nil, // appSender
+		toEngine, // msgChan
+		nil,      // fxs
+		nil,      // appSender
 	)
 	require.NoError(err)
 
@@ -182,7 +184,7 @@ func TestPrivateAddress(t *testing.T) {
 
 func setupTestVM(t *testing.T) *VM {
 	ctx := context.Background()
-	chainCtx := &core.Context{
+	chainCtx := &consensusctx.Context{
 		ChainID: ids.GenerateTestID(),
 		Log:     log.NoLog{},
 	}
@@ -193,18 +195,19 @@ func setupTestVM(t *testing.T) *VM {
 		Timestamp: 1607144400,
 		InitialTxs: []*Transaction{},
 	}
-	genesisBytes, _ := utils.Codec.Marshal(codecVersion, genesis)
+	genesisBytes, _ := Codec.Marshal(codecVersion, genesis)
 
-	config := ZKConfig{
+	config := ZConfig{
 		ProofSystem:      "groth16",
 		MaxUTXOsPerBlock: 100,
 		ProofCacheSize:   1000,
 	}
-	configBytes, _ := utils.Codec.Marshal(codecVersion, config)
+	configBytes, _ := Codec.Marshal(codecVersion, config)
 
 	vm := &VM{}
+	toEngine := make(chan common.Message, 1)
 
-	err := vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, nil, nil)
+	err := vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, toEngine, nil, nil)
 	require.NoError(t, err)
 
 	return vm
@@ -212,7 +215,7 @@ func setupTestVM(t *testing.T) *VM {
 
 func setupTestVMWithPrivacy(t *testing.T) *VM {
 	ctx := context.Background()
-	chainCtx := &core.Context{
+	chainCtx := &consensusctx.Context{
 		ChainID: ids.GenerateTestID(),
 		Log:     log.NoLog{},
 	}
@@ -223,19 +226,20 @@ func setupTestVMWithPrivacy(t *testing.T) *VM {
 		Timestamp: 1607144400,
 		InitialTxs: []*Transaction{},
 	}
-	genesisBytes, _ := utils.Codec.Marshal(codecVersion, genesis)
+	genesisBytes, _ := Codec.Marshal(codecVersion, genesis)
 
-	config := ZKConfig{
+	config := ZConfig{
 		EnablePrivateAddresses: true,
 		ProofSystem:            "groth16",
 		MaxUTXOsPerBlock:       100,
 		ProofCacheSize:         1000,
 	}
-	configBytes, _ := utils.Codec.Marshal(codecVersion, config)
+	configBytes, _ := Codec.Marshal(codecVersion, config)
 
 	vm := &VM{}
+	toEngine := make(chan common.Message, 1)
 
-	err := vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, nil, nil)
+	err := vm.Initialize(ctx, chainCtx, db, genesisBytes, nil, configBytes, toEngine, nil, nil)
 	require.NoError(t, err)
 
 	return vm

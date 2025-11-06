@@ -11,8 +11,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/choices"
-	"github.com/luxfi/consensus/consensustest"
+	"github.com/luxfi/consensus/core/choices"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	chainblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"

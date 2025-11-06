@@ -28,7 +28,7 @@ import (
 
 	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/networking/timeout"
-	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"

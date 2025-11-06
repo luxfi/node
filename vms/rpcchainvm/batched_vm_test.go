@@ -14,11 +14,8 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/metric"
-	vmchain "github.com/luxfi/node/vms/components/chain"
 	"github.com/luxfi/node/vms/components/chain/blocktest"
 
-	"github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/consensus/engine/chain/block"
 )
 
@@ -55,7 +52,7 @@ func batchedParseBlockCachingTestPlugin(t *testing.T, loadExpectations bool) blo
 		blk2.HeightV = 2
 		blk2.TimestampV = time2
 
-		vm.InitializeF = func(context.Context, context.Context, database.Database, []byte, []byte, []byte, interface{}, []ids.ID, metric.Registry) error {
+		vm.InitializeF = func(context.Context, interface{}, interface{}, []byte, []byte, []byte, interface{}, []interface{}, interface{}) error {
 			return nil
 		}
 		vm.LastAcceptedF = func(context.Context) (ids.ID, error) {

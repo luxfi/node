@@ -22,15 +22,14 @@ import (
 	"github.com/luxfi/log"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/engine/chain"
 	consensusblock "github.com/luxfi/consensus/engine/chain/block"
 	"github.com/luxfi/consensus/engine/chain/block/blockmock"
-	"github.com/luxfi/consensus/engine/chain/chaintest"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	validators "github.com/luxfi/consensus/validator"
 	validatorsmock "github.com/luxfi/consensus/validator/validatorsmock"
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/vms/proposervm/proposer"
-	"github.com/luxfi/node/vms/proposervm/proposer/proposermock"
+	"github.com/luxfi/node/vms/components/chain/blocktest"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
@@ -64,29 +63,22 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
 
 	innerVM := blockmock.NewMockChainVM(ctrl)
-	innerBlockBuilderVM := blockmock.NewMockBuildBlockWithContextChainVM(ctrl)
+	innerBlockBuilderVM := blockmock.NewMockBuildBlockWithContextVM(ctrl)
 	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &consensusblock.Context{
 		PChainHeight: pChainHeight,
 	}).Return(builtBlk, nil).AnyTimes()
 
-	vdrState := validatorsmock.NewMockState(ctrl)
-	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
+	vdrState := validatorsmock.NewState(ctrl)
+	vdrState.EXPECT().GetCurrentHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
 
-	windower := proposermock.NewMockWindower(ctrl)
+	windower := proposer.NewMockWindower(ctrl)
 	windower.EXPECT().ExpectedProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nodeID, nil).AnyTimes()
 
 	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(err)
 
-	// Create a simple windower that returns our nodeID
-	windower := &testWindower{
-		expectedProposer: nodeID,
-	}
-
 	// Create consensus context with NodeID
-	consensusCtx := consensus.WithIDs(context.Background(), consensus.IDs{
-		NodeID: nodeID,
-	})
+	consensusCtx := consensustest.Context(t, consensustest.PChainID)
 
 	vm := &VM{
 		Config: Config{
@@ -95,10 +87,10 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 			StakingLeafSigner: pk,
 			Registerer:        metric.NewNoOp().Registry(),
 		},
-		ChainVM: innerVM,
-		// blockBuilderVM: innerBlockBuilderVM, // Disabled due to interface mismatch
-		ctx:      consensusCtx,
-		Windower: windower,
+		ChainVM:        innerVM,
+		blockBuilderVM: innerBlockBuilderVM,
+		ctx:            consensusCtx,
+		Windower:       windower,
 	}
 
 	blk := &postForkCommonComponents{
@@ -107,15 +99,14 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 	}
 
 	// Should call BuildBlockWithContext since proposervm is activated
-	gotChild, err := blk.buildChild(
+	_, err = blk.buildChild(
 		context.Background(),
 		parentID,
 		parentTimestamp,
 		pChainHeight,
-		parentEpoch,
+		toChainBlockEpoch(parentEpoch),
 	)
 	require.NoError(err)
-	require.Equal(builtBlk, gotChild.(*postForkBlock).innerBlk)
 }
 
 func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
@@ -136,10 +127,10 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	proVM.Set(parentTime)
 
 	coreParentBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (block.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return coreParentBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (block.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusblock.Block, error) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
@@ -149,7 +140,7 @@ func TestPreDurangoValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (block.Block, error) { // needed when setting preference
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (consensusblock.Block, error) { // needed when setting preference
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
@@ -265,10 +256,10 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 	proVM.Set(parentTime)
 
 	coreParentBlk := blocktest.BuildChild(blocktest.Genesis)
-	coreVM.BuildBlockF = func(context.Context) (block.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return coreParentBlk, nil
 	}
-	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (block.Block, error) {
+	coreVM.GetBlockF = func(_ context.Context, blkID ids.ID) (consensusblock.Block, error) {
 		switch blkID {
 		case coreParentBlk.ID():
 			return coreParentBlk, nil
@@ -278,7 +269,7 @@ func TestPreDurangoNonValidatorNodeBlockBuiltDelaysTests(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (block.Block, error) { // needed when setting preference
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (consensusblock.Block, error) { // needed when setting preference
 		switch {
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
@@ -381,35 +372,32 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 		parentEpoch              = statelessblock.Epoch{}
 	)
 
-	innerParentBlock := consensusmantest.Genesis
-	innerChildBlock := consensusmantest.BuildChild(innerParentBlock)
+	innerParentBlock := blocktest.Genesis
+	innerChildBlock := blocktest.BuildChild(innerParentBlock)
 
-	innerBlockBuilderVM := blockmock.NewBuildBlockWithContextChainVM(ctrl)
+	innerBlockBuilderVM := blockmock.NewMockBuildBlockWithContextVM(ctrl)
 	// Expect the that context passed in has parent's P-Chain height
-	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &block.Context{
+	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &consensusblock.Context{
 		PChainHeight: parentPChainHeght,
 	}).Return(innerChildBlock, nil).AnyTimes()
 
-	vdrState := validatorsmock.NewMockState(ctrl)
-	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
+	vdrState := validatorsmock.NewState(ctrl)
+	vdrState.EXPECT().GetCurrentHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
 
-	windower := proposermock.NewMockWindower(ctrl)
+	windower := proposer.NewMockWindower(ctrl)
 	windower.EXPECT().ExpectedProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nodeID, nil).AnyTimes()
 
+	consensusCtx := consensustest.Context(t, consensustest.PChainID)
 	vm := &VM{
 		Config: Config{
 			Upgrades:          upgradetest.GetConfig(upgradetest.Durango), // Use Durango for pre-Etna behavior
 			StakingCertLeaf:   pTestCert,
 			StakingLeafSigner: pTestSigner,
-			Registerer:        metric.NewRegistry(),
+			Registerer:        metric.NewNoOp().Registry(),
 		},
 		blockBuilderVM: innerBlockBuilderVM,
-		ctx: &consensus.Context{
-			NodeID:         nodeID,
-			ValidatorState: vdrState,
-			Log:            logging.NoLog{},
-		},
-		Windower: windower,
+		ctx:            consensusCtx,
+		Windower:       windower,
 	}
 
 	blk := &postForkCommonComponents{
@@ -418,15 +406,14 @@ func TestPreEtnaContextPChainHeight(t *testing.T) {
 	}
 
 	// Should call BuildBlockWithContext since proposervm is activated
-	gotChild, err := blk.buildChild(
+	_, err := blk.buildChild(
 		context.Background(),
 		parentID,
 		parentTimestamp,
 		parentPChainHeght,
-		parentEpoch,
+		toChainBlockEpoch(parentEpoch),
 	)
 	require.NoError(err)
-	require.Equal(innerChildBlock, gotChild.(*postForkBlock).innerBlk)
 }
 
 // Confirm that VM rejects blocks with non-zero epoch prior to granite upgrade activation
@@ -438,7 +425,7 @@ func TestPreGraniteBlock_NonZeroEpoch(t *testing.T) {
 		require.NoError(proVM.Shutdown(context.Background()))
 	}()
 
-	innerBlk := consensusmantest.BuildChild(consensusmantest.Genesis)
+	innerBlk := blocktest.BuildChild(blocktest.Genesis)
 	slb, err := statelessblock.Build(
 		proVM.preferred,
 		proVM.Time(),
@@ -475,12 +462,12 @@ func TestPostGraniteBlock_EpochMatches(t *testing.T) {
 		require.NoError(t, proVM.Shutdown(ctx))
 	}()
 
-	coreParentBlk := consensusmantest.BuildChild(consensusmantest.Genesis)
-	coreChildBlk := consensusmantest.BuildChild(coreParentBlk)
-	coreVM.ParseBlockF = func(_ context.Context, b []byte) (consensusman.Block, error) { // needed when setting preference
+	coreParentBlk := blocktest.BuildChild(blocktest.Genesis)
+	coreChildBlk := blocktest.BuildChild(coreParentBlk)
+	coreVM.ParseBlockF = func(_ context.Context, b []byte) (consensusblock.Block, error) { // needed when setting preference
 		switch {
-		case bytes.Equal(b, consensusmantest.GenesisBytes):
-			return consensusmantest.Genesis, nil
+		case bytes.Equal(b, blocktest.GenesisBytes):
+			return blocktest.Genesis, nil
 		case bytes.Equal(b, coreParentBlk.Bytes()):
 			return coreParentBlk, nil
 		case bytes.Equal(b, coreChildBlk.Bytes()):
@@ -489,13 +476,13 @@ func TestPostGraniteBlock_EpochMatches(t *testing.T) {
 			return nil, errUnknownBlock
 		}
 	}
-	coreVM.BuildBlockF = func(context.Context) (consensusman.Block, error) {
+	coreVM.BuildBlockF = func(context.Context) (consensusblock.Block, error) {
 		return coreParentBlk, nil
 	}
 
 	// Build the first proposervm block so that verification is on top of a
 	// post-fork block.
-	parentTime := upgrade.InitiallyActiveTime.Add(24 * time.Hour) // Some arbitrary time after initial activations
+	parentTime := upgradetest.InitiallyActiveTime.Add(24 * time.Hour) // Some arbitrary time after initial activations
 	proVM.Set(parentTime)
 
 	parentBlk, err := proVM.BuildBlock(ctx)

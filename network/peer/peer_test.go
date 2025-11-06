@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validator/uptime"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"

@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"

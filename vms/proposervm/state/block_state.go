@@ -6,7 +6,7 @@ package state
 import (
 	"errors"
 
-	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"

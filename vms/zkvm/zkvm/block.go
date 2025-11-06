@@ -11,7 +11,7 @@ import (
 	ethcommon "github.com/luxfi/geth/common"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/node/utils/hashing"
 )
 

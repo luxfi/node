@@ -11,24 +11,24 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/consensus/consensustest"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/engine/enginetest"
-	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/core/coremock"
+	"github.com/luxfi/consensus/validator/uptime"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/math/set"
+
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/chains/atomic"
 	"github.com/luxfi/node/codec"
 	"github.com/luxfi/node/codec/linearcodec"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/utils"
-	"github.com/luxfi/node/utils/constants"
+
 	"github.com/luxfi/node/utils/timer/mockable"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -50,8 +50,12 @@ import (
 
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	"github.com/luxfi/node/vms/platformvm/testcontext"
+	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/consensus/core"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 	txmempool "github.com/luxfi/node/vms/txs/mempool"
+
+	validators "github.com/luxfi/consensus/validator"
 )
 
 const (
@@ -70,7 +74,7 @@ type environment struct {
 	blkManager blockexecutor.Manager
 	mempool    txmempool.Mempool[*txs.Tx]
 	network    *network.Network
-	sender     *enginetest.Sender
+	sender     *coremock.MockAppSender
 
 	isBootstrapped *utils.Atomic[bool]
 	config         *config.Internal
@@ -118,11 +122,21 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	res.fx = defaultFx(t, res.clk, res.ctx.Log, res.isBootstrapped.Get())
 
 	rewardsCalc := reward.NewCalculator(res.config.RewardConfig)
+	// Convert testcontext.Context to consensusctx.Context for state
+	stateConsensusCtx := &consensusctx.Context{
+		NetworkID:  res.ctx.NetworkID,
+		QuantumID:  res.ctx.NetworkID,
+		NetID:      res.ctx.NetID,
+		ChainID:    res.ctx.ChainID,
+		NodeID:     res.ctx.NodeID,
+		XAssetID:   res.ctx.XAssetID,
+		LUXAssetID: res.ctx.LUXAssetID,
+	}
 	res.state = statetest.New(t, statetest.Config{
 		DB:         res.baseDB,
 		Genesis:    genesistest.NewBytes(t, genesistest.Config{}),
 		Validators: res.config.Validators,
-		Context:    res.ctx,
+		Context:    stateConsensusCtx,
 		Rewards:    rewardsCalc,
 	})
 
@@ -131,7 +145,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 
 	genesisID := res.state.GetLastAccepted()
 	// Convert testcontext.Context to consensusctx.Context
-	consensusCtx := &consensusctx.Context{
+	backendConsensusCtx := &consensusctx.Context{
 		NetworkID:  res.ctx.NetworkID,
 		QuantumID:  res.ctx.NetworkID,
 		NetID:      res.ctx.NetID,
@@ -143,7 +157,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 
 	res.backend = txexecutor.Backend{
 		Config:       res.config,
-		Ctx:          consensusCtx,
+		Ctx:          backendConsensusCtx,
 		Clk:          res.clk,
 		Bootstrapped: res.isBootstrapped,
 		Fx:           res.fx,
@@ -153,10 +167,8 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 	}
 
 	registerer := prometheus.NewRegistry()
-	res.sender = &enginetest.Sender{}
-	res.sender.SendAppGossipF = func(context.Context, set.Set[ids.NodeID], []byte) error {
-		return nil
-	}
+	res.sender = coremock.NewMockAppSender(gomock.NewController(t))
+	res.sender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
 	platformMetrics, err := metrics.New(registerer)
 	require.NoError(err)
@@ -241,10 +253,19 @@ func newWallet(t testing.TB, e *environment, c walletConfig) wallet.Wallet {
 		XAssetID:   e.ctx.XAssetID,
 		LUXAssetID: e.ctx.LUXAssetID,
 	}
+	// Create a minimal Config for the wallet
+	walletCfg := &config.Config{
+		TxFee:                         units.MilliLux,
+		CreateAssetTxFee:              units.MilliLux,
+		CreateNetTxFee:             units.Lux,
+		CreateBlockchainTxFee:         units.Lux,
+		AddPrimaryNetworkValidatorFee: 0,
+		AddPrimaryNetworkDelegatorFee: 0,
+	}
 	return txstest.NewWallet(
 		t,
 		walletCtx,
-		e.config,
+		walletCfg,
 		e.state,
 		secp256k1fx.NewKeychain(c.keys...),
 		c.subnetIDs,

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	consensusctx "github.com/luxfi/consensus/context"
-	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"

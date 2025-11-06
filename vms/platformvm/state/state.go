@@ -17,7 +17,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/luxfi/consensus"
-	"github.com/luxfi/consensus/uptime"
+	"github.com/luxfi/consensus/validator/uptime"
 	validators "github.com/luxfi/consensus/validator"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"

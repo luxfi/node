@@ -12,7 +12,7 @@ package proposervm
 // 	"github.com/stretchr/testify/require"
 //
 // 	"github.com/luxfi/consensus"
-// 	"github.com/luxfi/consensus/consensustest"
+// 	consensustest "github.com/luxfi/consensus/test/helpers"
 // 	"github.com/luxfi/node/vms/components/chain/blocktest"
 // 	"github.com/luxfi/consensus/core"
 // 	"github.com/luxfi/database"

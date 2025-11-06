@@ -16,7 +16,7 @@ import (
 
 	"github.com/luxfi/node/crypto/cggmp21"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus/choices"
+	"github.com/luxfi/consensus/core/choices"
 )
 
 // Block represents a block in the Bridge chain
