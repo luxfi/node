@@ -6,7 +6,6 @@ package txs
 import (
 	"fmt"
 
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"

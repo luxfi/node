@@ -9,7 +9,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/luxfi/consensus"
+	"github.com/luxfi/consensus/core"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/utils"
@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/warp/socket"
 )
 
-var _ consensus.Acceptor = (*EventSockets)(nil)
+var _ core.Acceptor = (*EventSockets)(nil)
 
 // EventSockets is a set of named eventSockets
 type EventSockets struct {
@@ -135,10 +135,10 @@ func newEventIPCSocket(
 		url:    url,
 		socket: socket.NewSocket(url, ctx.log),
 		unregisterFn: func() error {
-			return utils.Err(
-				linearAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
-				luxAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
-			)
+			// TODO: AcceptorGroup interface removed from consensus package
+			// Need to implement proper registration mechanism or remove this feature
+			ctx.log.Warn("acceptor deregistration not implemented")
+			return nil
 		},
 	}
 
@@ -149,19 +149,12 @@ func newEventIPCSocket(
 		return nil, err
 	}
 
-	if err := linearAcceptorGroup.RegisterAcceptor(chainID, ipcName, eis, false); err != nil {
-		if err := eis.stop(); err != nil {
-			return nil, err
-		}
-		return nil, err
-	}
-
-	if err := luxAcceptorGroup.RegisterAcceptor(chainID, ipcName, eis, false); err != nil {
-		if err := eis.stop(); err != nil {
-			return nil, err
-		}
-		return nil, err
-	}
+	// TODO: AcceptorGroup interface removed from consensus package
+	// Need to implement proper registration mechanism or remove this feature
+	ctx.log.Warn("acceptor registration not implemented",
+		log.Stringer("chainID", chainID),
+		log.String("name", ipcName),
+	)
 
 	return eis, nil
 }
