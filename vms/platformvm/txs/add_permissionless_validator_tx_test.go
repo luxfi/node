@@ -6,7 +6,6 @@ package txs
 import (
 	"context"
 	"encoding/hex"
-	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"math"
 	"testing"
 
@@ -14,10 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/core"
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils"
 	"github.com/luxfi/node/utils/constants"
-	"github.com/luxfi/node/utils/crypto/bls/signer/localsigner"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/components/lux"
 	"github.com/luxfi/node/vms/components/lux/luxmock"

@@ -38,13 +38,13 @@ func TestBlockBuilderMaxMempoolSizeHandling(t *testing.T) {
 	tx := decisionTxs[0]
 
 	// shortcut to simulated almost filled mempool
-	mpool.(*mempool).bytesAvailable = len(tx.Bytes()) - 1
+	mpool.bytesAvailable = len(tx.Bytes()) - 1
 
 	err = mpool.Add(tx)
 	require.True(errors.Is(err, errMempoolFull), err, "max mempool size breached")
 
 	// shortcut to simulated almost filled mempool
-	mpool.(*mempool).bytesAvailable = len(tx.Bytes())
+	mpool.bytesAvailable = len(tx.Bytes())
 
 	err = mpool.Add(tx)
 	require.NoError(err, "should have added tx to mempool")

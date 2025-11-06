@@ -14,13 +14,14 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/consensus"
 	"github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/engine/chain/chaintest"
+	"github.com/luxfi/consensus/engine/chain/block"
+	"github.com/luxfi/consensus/engine/chain/block/blocktest"
 	"github.com/luxfi/consensus/core"
-	"github.com/luxfi/consensus/consensustest"
 	"github.com/luxfi/node/upgrade/upgradetest"
 	"github.com/luxfi/node/vms/proposervm/block"
+
+	engineBlock "github.com/luxfi/consensus/engine/chain/block"
 )
 
 var (
@@ -31,13 +32,13 @@ var (
 )
 
 type TestOptionsBlock struct {
-	consensusmantest.Block
-	opts    [2]*consensusmantest.Block
+	blocktest.Block
+	opts    [2]*blocktest.Block
 	optsErr error
 }
 
-func (tob TestOptionsBlock) Options(context.Context) ([2]consensusman.Block, error) {
-	return [2]consensusman.Block{tob.opts[0], tob.opts[1]}, tob.optsErr
+func (tob TestOptionsBlock) Options(context.Context) ([2]block.Block, error) {
+	return [2]block.Block{tob.opts[0], tob.opts[1]}, tob.optsErr
 }
 
 // ProposerBlock.Verify tests section
@@ -58,7 +59,7 @@ func TestBlockVerify_PostForkOption_ParentChecks(t *testing.T) {
 	preferredBlk := blocktest.BuildChild(coreTestBlk)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*consensusmantest.Block{
+		opts: [2]*blocktest.Block{
 			preferredBlk,
 			blocktest.BuildChild(coreTestBlk),
 		},
@@ -148,7 +149,7 @@ func TestBlockVerify_PostForkOption_CoreBlockVerifyIsCalledOnce(t *testing.T) {
 	coreOpt1 := blocktest.BuildChild(coreTestBlk)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*consensusmantest.Block{
+		opts: [2]*blocktest.Block{
 			coreOpt0,
 			coreOpt1,
 		},
@@ -228,9 +229,9 @@ func TestBlockAccept_PostForkOption_SetsLastAcceptedBlock(t *testing.T) {
 	coreTestBlk := blocktest.BuildChild(blocktest.Genesis)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*consensusmantest.Block{
-			consensusmantest.BuildChild(coreTestBlk),
-			consensusmantest.BuildChild(coreTestBlk),
+		opts: [2]*blocktest.Block{
+			blocktest.BuildChild(coreTestBlk),
+			blocktest.BuildChild(coreTestBlk),
 		},
 	}
 
@@ -272,9 +273,9 @@ func TestBlockAccept_PostForkOption_SetsLastAcceptedBlock(t *testing.T) {
 	// accept oracle block
 	require.NoError(parentBlk.Accept(context.Background()))
 
-	coreVM.LastAcceptedF = consensusmantest.MakeLastAcceptedBlockF(
-		[]*consensusmantest.Block{
-			consensusmantest.Genesis,
+	coreVM.LastAcceptedF = blocktest.MakeLastAcceptedBlockF(
+		[]*blocktest.Block{
+			blocktest.Genesis,
 			&oracleCoreBlk.Block,
 		},
 		oracleCoreBlk.opts[:],
@@ -313,9 +314,9 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 	coreTestBlk := blocktest.BuildChild(blocktest.Genesis)
 	oracleCoreBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*consensusmantest.Block{
-			consensusmantest.BuildChild(coreTestBlk),
-			consensusmantest.BuildChild(coreTestBlk),
+		opts: [2]*blocktest.Block{
+			blocktest.BuildChild(coreTestBlk),
+			blocktest.BuildChild(coreTestBlk),
 		},
 	}
 
@@ -356,7 +357,7 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 
 	// reject oracle block
 	require.NoError(builtBlk.Reject(context.Background()))
-	require.NotEqual(consensustest.Rejected, oracleCoreBlk.Status)
+	require.NotEqual(block.StatusRejected, oracleCoreBlk.StatusV)
 
 	// reject an option
 	require.IsType(&postForkBlock{}, builtBlk)
@@ -365,7 +366,7 @@ func TestBlockReject_InnerBlockIsNotRejected(t *testing.T) {
 	require.NoError(err)
 
 	require.NoError(opts[0].Reject(context.Background()))
-	require.NotEqual(consensustest.Rejected, oracleCoreBlk.opts[0].Status)
+	require.NotEqual(block.StatusRejected, oracleCoreBlk.opts[0].StatusV)
 }
 
 func TestBlockVerify_PostForkOption_ParentIsNotOracleWithError(t *testing.T) {
@@ -454,9 +455,9 @@ func TestOptionTimestampValidity(t *testing.T) {
 	coreTestBlk := blocktest.BuildChild(blocktest.Genesis)
 	coreOracleBlk := &TestOptionsBlock{
 		Block: *coreTestBlk,
-		opts: [2]*consensusmantest.Block{
-			consensusmantest.BuildChild(coreTestBlk),
-			consensusmantest.BuildChild(coreTestBlk),
+		opts: [2]*blocktest.Block{
+			blocktest.BuildChild(coreTestBlk),
+			blocktest.BuildChild(coreTestBlk),
 		},
 	}
 

@@ -12,11 +12,11 @@ package txsmock
 import (
 	reflect "reflect"
 
+	context "github.com/luxfi/consensus/context"
 	ids "github.com/luxfi/ids"
-	consensusctx "github.com/luxfi/consensus/context"
 	set "github.com/luxfi/math/set"
-	txs "github.com/luxfi/node/vms/exchangevm/txs"
 	lux "github.com/luxfi/node/vms/components/lux"
+	txs "github.com/luxfi/node/vms/exchangevm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -59,15 +59,29 @@ func (mr *UnsignedTxMockRecorder) Bytes() *gomock.Call {
 }
 
 // InitCtx mocks base method.
-func (m *UnsignedTx) InitCtx(ctx *consensusctx.Context) {
+func (m *UnsignedTx) InitCtx(arg0 *context.Context) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InitCtx", ctx)
+	m.ctrl.Call(m, "InitCtx", arg0)
 }
 
 // InitCtx indicates an expected call of InitCtx.
-func (mr *UnsignedTxMockRecorder) InitCtx(ctx any) *gomock.Call {
+func (mr *UnsignedTxMockRecorder) InitCtx(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*UnsignedTx)(nil).InitCtx), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitCtx", reflect.TypeOf((*UnsignedTx)(nil).InitCtx), arg0)
+}
+
+// InitializeContext mocks base method.
+func (m *UnsignedTx) InitializeContext(arg0 *context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InitializeContext", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InitializeContext indicates an expected call of InitializeContext.
+func (mr *UnsignedTxMockRecorder) InitializeContext(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeContext", reflect.TypeOf((*UnsignedTx)(nil).InitializeContext), arg0)
 }
 
 // InputIDs mocks base method.

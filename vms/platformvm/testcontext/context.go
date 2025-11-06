@@ -18,17 +18,19 @@ import (
 // for compatibility with existing tests
 type Context struct {
 	context.Context
-	NetworkID    uint32
-	NetID        ids.ID
-	ChainID      ids.ID
-	NodeID       ids.NodeID
-	XChainID     ids.ID
-	CChainID     ids.ID
-	XAssetID   ids.ID
-	Log          log.Logger
-	Lock         *sync.RWMutex
-	SharedMemory atomic.SharedMemory
-	BCLookup     ids.AliaserReader
+	NetworkID     uint32
+	NetID         ids.ID
+	ChainID       ids.ID
+	NodeID        ids.NodeID
+	XChainID      ids.ID
+	CChainID      ids.ID
+	XAssetID      ids.ID
+	LUXAssetID    ids.ID
+	WarpSigner    interface{}
+	Log           log.Logger
+	Lock          *sync.RWMutex
+	SharedMemory  atomic.SharedMemory
+	BCLookup      ids.AliaserReader
 }
 
 // New creates a new test context
@@ -47,5 +49,6 @@ func (c *Context) WithIDs(ids consensus.IDs) *Context {
 	c.NetID = ids.NetID
 	c.NodeID = ids.NodeID
 	c.XAssetID = ids.LUXAssetID
+	c.LUXAssetID = ids.LUXAssetID
 	return c
 }

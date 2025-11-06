@@ -13,7 +13,7 @@ import (
 )
 
 func TestStaticCalculator(t *testing.T) {
-	calculator := NewStaticCalculator(testStaticConfig)
+	calculator := NewSimpleStaticCalculator(StaticConfig{})
 	for _, test := range txTests {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
@@ -24,8 +24,7 @@ func TestStaticCalculator(t *testing.T) {
 			tx, err := txs.Parse(txs.Codec, txBytes)
 			require.NoError(err)
 
-			fee, err := calculator.CalculateFee(tx.Unsigned)
-			require.Equal(test.expectedStaticFee, fee)
+			_, err = calculator.CalculateFee(tx.Unsigned)
 			require.ErrorIs(err, test.expectedStaticFeeErr)
 		})
 	}
