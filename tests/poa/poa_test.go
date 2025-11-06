@@ -18,7 +18,7 @@ func TestPOAConsensusParameters(t *testing.T) {
 	require := require.New(t)
 
 	// Test that POA consensus parameters are correctly set
-	params := subnets.GetPOAConsensusParameters()
+	params := nets.GetPOAConsensusParameters()
 
 	// POA mode should have K=1, Alpha=1, Beta=1 for single-node operation
 	require.Equal(1, params.K, "POA mode should have K=1")
@@ -32,7 +32,7 @@ func TestPOANetConfig(t *testing.T) {
 	require := require.New(t)
 
 	// Test net config with POA enabled
-	cfg := subnets.Config{
+	cfg := nets.Config{
 		POAEnabled:        true,
 		POASingleNodeMode: true,
 		POAMinBlockTime:   1 * time.Second,
