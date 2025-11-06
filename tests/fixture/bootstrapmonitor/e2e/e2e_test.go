@@ -122,7 +122,7 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 		ginkgo.By(fmt.Sprintf("Created namespace %q", namespace))
 
 		ginkgo.By("Creating a node to bootstrap from")
-		nodeStatefulSet := newNodeStatefulSet("node-node", defaultPodFlags())
+		nodeStatefulSet := newNodeStatefulSet("node-node", toFlagsMap(defaultPodFlags()))
 		createdNodeStatefulSet, err := clientset.AppsV1().StatefulSets(namespace).Create(tc.DefaultContext(), nodeStatefulSet, metav1.CreateOptions{})
 		require.NoError(err)
 		nodePodName := createdNodeStatefulSet.Name + "-0"
@@ -148,7 +148,7 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 					log.String("container", nodeContainerName),
 					log.String("namespace", namespace),
 					log.String("pod", bootstrapPodName),
-					log.Error(err),
+					log.String("error", err.Error()),
 				)
 				return false
 			}
@@ -187,7 +187,7 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 				tc.Log().Debug("failed to retrieve pod",
 					log.String("namespace", namespace),
 					log.String("pod", bootstrapPodName),
-					log.Error(err),
+					log.String("error", err.Error()),
 				)
 				return false
 			}
@@ -208,7 +208,7 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 					log.String("container", nodeContainerName),
 					log.String("namespace", namespace),
 					log.String("pod", bootstrapPodName),
-					log.Error(err),
+					log.String("error", err.Error()),
 				)
 				return false
 			}
@@ -289,6 +289,14 @@ func defaultPodFlags() map[string]string {
 	return tmpnet.DefaultPodFlags(constants.LocalName, nodeDataDir)
 }
 
+func toFlagsMap(m map[string]string) tmpnet.FlagsMap {
+	result := make(tmpnet.FlagsMap, len(m))
+	for k, v := range m {
+		result[k] = v
+	}
+	return result
+}
+
 // waitForPodCondition waits until the specified pod reports the specified condition
 func waitForPodCondition(tc tests.TestContext, clientset *kubernetes.Clientset, namespace string, podName string, conditionType corev1.PodConditionType) {
 	require.NoError(tc, tmpnet.WaitForPodCondition(tc.DefaultContext(), clientset, namespace, podName, conditionType))
@@ -315,7 +323,7 @@ func createBootstrapTester(tc tests.TestContext, clientset *kubernetes.Clientset
 	flags[config.BootstrapIPsKey] = fmt.Sprintf("%s:%d", bootstrapIP, config.DefaultStakingPort)
 	flags[config.BootstrapIDsKey] = bootstrapNodeID.String()
 
-	statefulSet := newNodeStatefulSet("bootstrap-tester", flags)
+	statefulSet := newNodeStatefulSet("bootstrap-tester", toFlagsMap(flags))
 
 	// Add the bootstrap-monitor containers to enable continuous bootstrap testing
 
